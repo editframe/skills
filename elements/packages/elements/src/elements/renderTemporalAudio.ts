@@ -1,0 +1,108 @@
+import type { EFMedia } from "./EFMedia.js";
+
+interface TemporalAudioHost {
+  startTimeMs: number;
+  endTimeMs: number;
+  durationMs: number;
+  getMediaElements(): EFMedia[];
+  waitForMediaDurations?(): Promise<void>;
+}
+
+export async function renderTemporalAudio(
+  host: TemporalAudioHost,
+  fromMs: number,
+  toMs: number,
+): Promise<AudioBuffer> {
+  const durationMs = toMs - fromMs;
+  const duration = durationMs / 1000;
+  const exactSamples = 48000 * duration;
+  const aacFrames = exactSamples / 1024;
+  const alignedFrames = Math.round(aacFrames);
+  const contextSize = alignedFrames * 1024;
+
+  if (contextSize <= 0) {
+    throw new Error(
+      `Duration must be greater than 0 when rendering audio. ${contextSize}ms`,
+    );
+  }
+
+  const audioContext = new OfflineAudioContext(2, contextSize, 48000);
+
+  if (host.waitForMediaDurations) {
+    await host.waitForMediaDurations();
+  }
+
+  const abortController = new AbortController();
+
+  await Promise.all(
+    host.getMediaElements().map(async (mediaElement) => {
+      if (mediaElement.mute) {
+        return;
+      }
+
+      const mediaStartsBeforeEnd = mediaElement.startTimeMs <= toMs;
+      const mediaEndsAfterStart = mediaElement.endTimeMs >= fromMs;
+      const mediaOverlaps = mediaStartsBeforeEnd && mediaEndsAfterStart;
+      if (!mediaOverlaps) {
+        return;
+      }
+
+      const mediaLocalFromMs = Math.max(0, fromMs - mediaElement.startTimeMs);
+      const mediaLocalToMs = Math.min(
+        mediaElement.endTimeMs - mediaElement.startTimeMs,
+        toMs - mediaElement.startTimeMs,
+      );
+
+      if (mediaLocalFromMs >= mediaLocalToMs) {
+        return;
+      }
+
+      const sourceInMs =
+        mediaElement.sourceInMs || mediaElement.trimStartMs || 0;
+      const mediaSourceFromMs = mediaLocalFromMs + sourceInMs;
+      const mediaSourceToMs = mediaLocalToMs + sourceInMs;
+
+      const audio = await mediaElement.fetchAudioSpanningTime(
+        mediaSourceFromMs,
+        mediaSourceToMs,
+        abortController.signal,
+      );
+      if (!audio) {
+        return;
+      }
+
+      const bufferSource = audioContext.createBufferSource();
+      bufferSource.buffer = await audioContext.decodeAudioData(
+        await audio.blob.arrayBuffer(),
+      );
+      bufferSource.connect(audioContext.destination);
+
+      const ctxStartMs = Math.max(0, mediaElement.startTimeMs - fromMs);
+
+      const requestedSourceFromMs = mediaSourceFromMs;
+      const actualSourceStartMs = audio.startMs;
+      const offsetInBufferMs = requestedSourceFromMs - actualSourceStartMs;
+
+      const safeOffsetMs = Math.max(0, offsetInBufferMs);
+
+      const requestedDurationMs = mediaSourceToMs - mediaSourceFromMs;
+      const availableAudioMs = audio.endMs - audio.startMs;
+      const actualDurationMs = Math.min(
+        requestedDurationMs,
+        availableAudioMs - safeOffsetMs,
+      );
+
+      if (actualDurationMs <= 0) {
+        return;
+      }
+
+      bufferSource.start(
+        ctxStartMs / 1000,
+        safeOffsetMs / 1000,
+        actualDurationMs / 1000,
+      );
+    }),
+  );
+
+  return audioContext.startRendering();
+}

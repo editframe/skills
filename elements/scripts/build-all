@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -ex
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+"${SCRIPT_DIR}"/docker-compose run --rm runner npm run build:all
+

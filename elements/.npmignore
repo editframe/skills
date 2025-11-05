@@ -1,0 +1,26 @@
+**/src/*.*
+elements.css
+elements.ts
+tsconfig.json
+!**/templates/**/tsconfig.json
+
+vite.config.ts
+!**/templates/**/vite.config.ts
+
+vite.config.js
+!**/templates/**/vite.config.js
+
+postcss.config.cjs
+!**/templates/**/postcss.config.cjs
+
+tailwind.config.ts
+!**/templates/**/tailwind.config.ts
+
+docker-compose.yaml
+.env
+.env.example
+
+!**/packages/*/types.json
+
+__screenshots__/** */test/
+src/

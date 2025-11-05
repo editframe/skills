@@ -1,0 +1,527 @@
+import { ContextProvider } from "@lit/context";
+import { Task, TaskStatus } from "@lit/task";
+import type { ReactiveController, ReactiveControllerHost } from "lit";
+import { EF_INTERACTIVE } from "../EF_INTERACTIVE.js";
+import { currentTimeContext } from "./currentTimeContext.js";
+import { durationContext } from "./durationContext.js";
+import { loopContext, playingContext } from "./playingContext.js";
+
+interface PlaybackHost extends HTMLElement, ReactiveControllerHost {
+  currentTimeMs: number;
+  durationMs: number;
+  endTimeMs: number;
+  frameTask: { run(): void; taskComplete: Promise<unknown> };
+  renderAudio?(fromMs: number, toMs: number): Promise<AudioBuffer>;
+  waitForMediaDurations?(): Promise<void>;
+  saveTimeToLocalStorage?(time: number): void;
+  loadTimeFromLocalStorage?(): number | undefined;
+  requestUpdate(property?: string): void;
+  updateComplete: Promise<boolean>;
+  playing: boolean;
+  loop: boolean;
+  play(): void;
+  pause(): void;
+  playbackController?: PlaybackController;
+  parentTimegroup?: any;
+  rootTimegroup?: any;
+}
+
+export type PlaybackControllerUpdateEvent = {
+  property: "playing" | "loop" | "currentTimeMs";
+  value: boolean | number;
+};
+
+/**
+ * Manages playback state and audio-driven timing for root temporal elements
+ *
+ * Created automatically when a temporal element becomes a root (no parent timegroup)
+ * Provides playback contexts (playing, loop, currentTimeMs, durationMs) to descendants
+ * Handles:
+ * - Audio-driven playback with Web Audio API
+ * - Seek and frame rendering throttling
+ * - Time state management with pending seek handling
+ * - Playback loop behavior
+ *
+ * Works with any temporal element (timegroups or standalone media) via PlaybackHost interface
+ */
+export class PlaybackController implements ReactiveController {
+  #host: PlaybackHost;
+  #playing = false;
+  #loop = false;
+  #listeners = new Set<(event: PlaybackControllerUpdateEvent) => void>();
+  #playingProvider: ContextProvider<typeof playingContext>;
+  #loopProvider: ContextProvider<typeof loopContext>;
+  #currentTimeMsProvider: ContextProvider<typeof currentTimeContext>;
+  #durationMsProvider: ContextProvider<typeof durationContext>;
+
+  #FPS = 30;
+  #MS_PER_FRAME = 1000 / this.#FPS;
+  #playbackAudioContext: AudioContext | null = null;
+  #playbackAnimationFrameRequest: number | null = null;
+  #AUDIO_PLAYBACK_SLICE_MS = ((47 * 1024) / 48000) * 1000;
+
+  #frameTaskInProgress = false;
+  #pendingFrameTaskRun = false;
+  #processingPendingFrameTask = false;
+
+  #currentTime: number | undefined = undefined;
+  #seekInProgress = false;
+  #pendingSeekTime: number | undefined;
+  #processingPendingSeek = false;
+  #loopingPlayback = false; // Track if we're in a looping playback session
+  #playbackWrapTimeSeconds = 0; // The AudioContext time when we wrapped
+
+  seekTask!: Task<readonly [number | undefined], number | undefined>;
+
+  constructor(host: PlaybackHost) {
+    this.#host = host;
+    host.addController(this);
+
+    this.seekTask = new Task(this.#host, {
+      autoRun: false,
+      args: () => [this.#pendingSeekTime ?? this.#currentTime] as const,
+      onComplete: () => {},
+      task: async ([targetTime]) => {
+        await this.#host.waitForMediaDurations?.();
+        const newTime = Math.max(
+          0,
+          Math.min(targetTime ?? 0, this.#host.durationMs / 1000),
+        );
+        this.#currentTime = newTime;
+        this.#host.requestUpdate("currentTime");
+        this.#currentTimeMsProvider.setValue(this.currentTimeMs);
+        this.#notifyListeners({
+          property: "currentTimeMs",
+          value: this.currentTimeMs,
+        });
+        await this.runThrottledFrameTask();
+        this.#host.saveTimeToLocalStorage?.(newTime);
+        this.#seekInProgress = false;
+        return newTime;
+      },
+    });
+
+    this.#playingProvider = new ContextProvider(host, {
+      context: playingContext,
+      initialValue: this.#playing,
+    });
+    this.#loopProvider = new ContextProvider(host, {
+      context: loopContext,
+      initialValue: this.#loop,
+    });
+    this.#currentTimeMsProvider = new ContextProvider(host, {
+      context: currentTimeContext,
+      initialValue: host.currentTimeMs,
+    });
+    this.#durationMsProvider = new ContextProvider(host, {
+      context: durationContext,
+      initialValue: host.durationMs,
+    });
+  }
+
+  get currentTime(): number {
+    const rawTime = this.#currentTime ?? 0;
+    // Quantize to frame boundaries based on host's fps
+    const fps = (this.#host as any).fps ?? 30;
+    if (!fps || fps <= 0) return rawTime;
+    const frameDurationS = 1 / fps;
+    return Math.round(rawTime / frameDurationS) * frameDurationS;
+  }
+
+  set currentTime(time: number) {
+    time = Math.max(0, Math.min(this.#host.durationMs / 1000, time));
+    if (Number.isNaN(time)) {
+      return;
+    }
+    if (time === this.#currentTime && !this.#processingPendingSeek) {
+      return;
+    }
+    if (this.#pendingSeekTime === time) {
+      return;
+    }
+
+    if (this.#seekInProgress) {
+      this.#pendingSeekTime = time;
+      this.#currentTime = time;
+      return;
+    }
+
+    this.#currentTime = time;
+    this.#seekInProgress = true;
+
+    this.seekTask.run().finally(() => {
+      if (
+        this.#pendingSeekTime !== undefined &&
+        this.#pendingSeekTime !== time
+      ) {
+        const pendingTime = this.#pendingSeekTime;
+        this.#pendingSeekTime = undefined;
+        this.#processingPendingSeek = true;
+        try {
+          this.currentTime = pendingTime;
+        } finally {
+          this.#processingPendingSeek = false;
+        }
+      } else {
+        this.#pendingSeekTime = undefined;
+      }
+    });
+  }
+
+  get playing(): boolean {
+    return this.#playing;
+  }
+
+  setPlaying(value: boolean): void {
+    if (this.#playing === value) return;
+    this.#playing = value;
+    this.#playingProvider.setValue(value);
+    this.#host.requestUpdate("playing");
+    this.#notifyListeners({ property: "playing", value });
+
+    if (value) {
+      this.startPlayback();
+    } else {
+      this.stopPlayback();
+    }
+  }
+
+  get loop(): boolean {
+    return this.#loop;
+  }
+
+  setLoop(value: boolean): void {
+    if (this.#loop === value) return;
+    this.#loop = value;
+    this.#loopProvider.setValue(value);
+    this.#host.requestUpdate("loop");
+    this.#notifyListeners({ property: "loop", value });
+  }
+
+  get currentTimeMs(): number {
+    return this.currentTime * 1000;
+  }
+
+  setCurrentTimeMs(value: number): void {
+    this.currentTime = value / 1000;
+  }
+
+  // Update time during playback without triggering a seek
+  // Used by #syncPlayheadToAudioContext to avoid frame drops
+  #updatePlaybackTime(timeMs: number): void {
+    const timeSec = timeMs / 1000;
+    if (this.#currentTime === timeSec) {
+      return;
+    }
+    this.#currentTime = timeSec;
+    this.#host.requestUpdate("currentTime");
+    this.#currentTimeMsProvider.setValue(timeMs);
+    this.#notifyListeners({
+      property: "currentTimeMs",
+      value: timeMs,
+    });
+    // Trigger frame rendering without the async seek mechanism
+    this.runThrottledFrameTask();
+  }
+
+  play(): void {
+    this.setPlaying(true);
+  }
+
+  pause(): void {
+    this.setPlaying(false);
+  }
+
+  hostConnected(): void {
+    if (this.#playing) {
+      this.startPlayback();
+    } else {
+      this.#host.waitForMediaDurations?.().then(() => {
+        const maybeLoadedTime = this.#host.loadTimeFromLocalStorage?.();
+        if (maybeLoadedTime !== undefined) {
+          this.currentTime = maybeLoadedTime;
+        } else if (this.#currentTime === undefined) {
+          this.#currentTime = 0;
+        }
+        if (EF_INTERACTIVE && this.seekTask.status === TaskStatus.INITIAL) {
+          this.seekTask.run();
+        }
+      });
+    }
+  }
+
+  hostDisconnected(): void {
+    this.pause();
+  }
+
+  hostUpdated(): void {
+    this.#durationMsProvider.setValue(this.#host.durationMs);
+    this.#currentTimeMsProvider.setValue(this.currentTimeMs);
+  }
+
+  async runThrottledFrameTask(): Promise<void> {
+    if (this.#frameTaskInProgress) {
+      this.#pendingFrameTaskRun = true;
+      while (this.#frameTaskInProgress) {
+        await this.#host.frameTask.taskComplete;
+      }
+      return;
+    }
+
+    this.#frameTaskInProgress = true;
+
+    try {
+      await this.#host.frameTask.run();
+    } catch (error) {
+      console.error("Frame task error:", error);
+    } finally {
+      this.#frameTaskInProgress = false;
+
+      if (this.#pendingFrameTaskRun && !this.#processingPendingFrameTask) {
+        this.#pendingFrameTaskRun = false;
+        this.#processingPendingFrameTask = true;
+        try {
+          await this.runThrottledFrameTask();
+        } finally {
+          this.#processingPendingFrameTask = false;
+        }
+      } else {
+        this.#pendingFrameTaskRun = false;
+      }
+    }
+  }
+
+  addListener(listener: (event: PlaybackControllerUpdateEvent) => void): void {
+    this.#listeners.add(listener);
+  }
+
+  removeListener(
+    listener: (event: PlaybackControllerUpdateEvent) => void,
+  ): void {
+    this.#listeners.delete(listener);
+  }
+
+  #notifyListeners(event: PlaybackControllerUpdateEvent): void {
+    for (const listener of this.#listeners) {
+      listener(event);
+    }
+  }
+
+  remove(): void {
+    this.stopPlayback();
+    this.#listeners.clear();
+    this.#host.removeController(this);
+  }
+
+  #syncPlayheadToAudioContext(startMs: number) {
+    const audioContextTime = this.#playbackAudioContext?.currentTime ?? 0;
+    const endMs = this.#host.endTimeMs;
+
+    // Calculate raw time based on audio context
+    let rawTimeMs: number;
+    if (
+      this.#playbackWrapTimeSeconds > 0 &&
+      audioContextTime >= this.#playbackWrapTimeSeconds
+    ) {
+      // After wrap: time since wrap, wrapped to duration
+      const timeSinceWrap =
+        (audioContextTime - this.#playbackWrapTimeSeconds) * 1000;
+      rawTimeMs = timeSinceWrap % endMs;
+    } else {
+      // Before wrap or no wrap: normal calculation
+      rawTimeMs = startMs + audioContextTime * 1000;
+
+      // If looping and we've reached the end, wrap around
+      if (this.#loopingPlayback && rawTimeMs >= endMs) {
+        rawTimeMs = rawTimeMs % endMs;
+      }
+    }
+
+    const nextTimeMs =
+      Math.round(rawTimeMs / this.#MS_PER_FRAME) * this.#MS_PER_FRAME;
+
+    // During playback, update time directly without triggering seek
+    // This avoids frame drops at the loop boundary
+    this.#updatePlaybackTime(nextTimeMs);
+
+    // Only check for end if we haven't already handled looping
+    if (!this.#loopingPlayback && nextTimeMs >= endMs) {
+      this.maybeLoopPlayback();
+      return;
+    }
+
+    this.#playbackAnimationFrameRequest = requestAnimationFrame(() => {
+      this.#syncPlayheadToAudioContext(startMs);
+    });
+  }
+
+  private async maybeLoopPlayback() {
+    if (this.#loop) {
+      // Loop enabled: reset to beginning and restart playback
+      // We restart the audio system directly without changing #playing state
+      // to keep the play button in sync
+      this.setCurrentTimeMs(0);
+      // Restart in next frame without awaiting to minimize gap
+      requestAnimationFrame(() => {
+        this.startPlayback();
+      });
+    } else {
+      // No loop: reset to beginning and stop
+      // This ensures play button works when clicked again
+      this.setCurrentTimeMs(0);
+      this.pause();
+    }
+  }
+
+  private async stopPlayback() {
+    if (this.#playbackAudioContext) {
+      if (this.#playbackAudioContext.state !== "closed") {
+        await this.#playbackAudioContext.close();
+      }
+    }
+    if (this.#playbackAnimationFrameRequest) {
+      cancelAnimationFrame(this.#playbackAnimationFrameRequest);
+    }
+    this.#playbackAudioContext = null;
+    this.#playbackAnimationFrameRequest = null;
+  }
+
+  private async startPlayback() {
+    await this.stopPlayback();
+    const host = this.#host;
+    if (!host) {
+      return;
+    }
+
+    if (host.waitForMediaDurations) {
+      await host.waitForMediaDurations();
+    }
+
+    const currentMs = this.currentTimeMs;
+    const fromMs = currentMs;
+    const toMs = host.endTimeMs;
+
+    if (fromMs >= toMs) {
+      this.pause();
+      return;
+    }
+
+    let bufferCount = 0;
+    this.#playbackAudioContext = new AudioContext({
+      latencyHint: "playback",
+    });
+    this.#loopingPlayback = this.#loop; // Remember if we're in a looping session
+    this.#playbackWrapTimeSeconds = 0; // Reset wrap time
+
+    if (this.#playbackAnimationFrameRequest) {
+      cancelAnimationFrame(this.#playbackAnimationFrameRequest);
+    }
+    this.#syncPlayheadToAudioContext(currentMs);
+    const playbackContext = this.#playbackAudioContext;
+    if (playbackContext.state === "suspended") {
+      console.warn(
+        "AudioContext is suspended, media playback will not work until user has interacted with page.",
+      );
+      this.setPlaying(false);
+      return;
+    }
+    await playbackContext.suspend();
+
+    // Track the logical media time (what position in the media we're rendering)
+    // vs the AudioContext schedule time (when to play it)
+    let logicalTimeMs = currentMs;
+    let audioContextTimeMs = 0; // Tracks the schedule position in the AudioContext timeline
+    let hasWrapped = false;
+
+    const fillBuffer = async () => {
+      if (bufferCount > 2) {
+        return;
+      }
+      const canFillBuffer = await queueBufferSource();
+      if (canFillBuffer) {
+        fillBuffer();
+      }
+    };
+
+    const queueBufferSource = async () => {
+      // Check if we've already wrapped and aren't looping anymore
+      if (hasWrapped && !this.#loopingPlayback) {
+        return false;
+      }
+
+      const startMs = logicalTimeMs;
+      const endMs = Math.min(
+        logicalTimeMs + this.#AUDIO_PLAYBACK_SLICE_MS,
+        toMs,
+      );
+
+      // Will this slice reach the end?
+      const willReachEnd = endMs >= toMs;
+
+      if (!host.renderAudio) {
+        return false;
+      }
+
+      const audioBuffer = await host.renderAudio(startMs, endMs);
+      bufferCount++;
+      const source = playbackContext.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(playbackContext.destination);
+      // Schedule this buffer to play at the current audioContextTime position
+      source.start(audioContextTimeMs / 1000);
+
+      const sliceDurationMs = endMs - startMs;
+
+      source.onended = () => {
+        bufferCount--;
+
+        if (willReachEnd) {
+          if (!this.#loopingPlayback) {
+            // Not looping, end playback
+            this.maybeLoopPlayback();
+          } else {
+            // Looping: continue filling buffer after wrap
+            fillBuffer();
+          }
+        } else {
+          // Continue filling buffer
+          fillBuffer();
+        }
+      };
+
+      // Advance the AudioContext schedule time
+      audioContextTimeMs += sliceDurationMs;
+
+      // If this buffer reaches the end and we're looping, immediately queue the wraparound
+      if (willReachEnd && this.#loopingPlayback) {
+        // Mark that we've wrapped
+        hasWrapped = true;
+        // Store when we wrapped (relative to when playback started, which is time 0 in AudioContext)
+        // This is the duration from start to end
+        this.#playbackWrapTimeSeconds = (toMs - fromMs) / 1000;
+        // Reset logical time to beginning
+        logicalTimeMs = 0;
+        // Continue buffering will happen in fillBuffer() call below
+      } else {
+        // Normal advance
+        logicalTimeMs = endMs;
+      }
+
+      return true;
+    };
+
+    try {
+      await fillBuffer();
+      await playbackContext.resume();
+    } catch (error) {
+      // Ignore errors if AudioContext is closed or during test cleanup
+      if (
+        error instanceof Error &&
+        (error.name === "InvalidStateError" || error.message.includes("closed"))
+      ) {
+        return;
+      }
+      throw error;
+    }
+  }
+}

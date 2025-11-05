@@ -1,0 +1,505 @@
+import { withSpan } from "../../otel/tracingHelpers.js";
+import { RequestDeduplicator } from "../../transcoding/cache/RequestDeduplicator.js";
+import type {
+  AudioRendition,
+  SegmentTimeRange,
+  ThumbnailResult,
+  VideoRendition,
+} from "../../transcoding/types";
+import { SizeAwareLRUCache } from "../../utils/LRUCache.js";
+import type { EFMedia } from "../EFMedia.js";
+import type { MediaRendition } from "./shared/MediaTaskUtils.js";
+
+// Global instances shared across all media engines
+export const mediaCache = new SizeAwareLRUCache<string>(100 * 1024 * 1024); // 100MB cache limit
+export const globalRequestDeduplicator = new RequestDeduplicator();
+
+export abstract class BaseMediaEngine {
+  protected host: EFMedia;
+
+  constructor(host: EFMedia) {
+    this.host = host;
+  }
+
+  abstract get videoRendition(): VideoRendition | undefined;
+  abstract get audioRendition(): AudioRendition | undefined;
+
+  /**
+   * Get video rendition if available. Returns undefined for audio-only assets.
+   * Callers should handle undefined gracefully.
+   */
+  getVideoRendition(): VideoRendition | undefined {
+    return this.videoRendition;
+  }
+
+  /**
+   * Get audio rendition if available. Returns undefined for video-only assets.
+   * Callers should handle undefined gracefully.
+   */
+  getAudioRendition(): AudioRendition | undefined {
+    return this.audioRendition;
+  }
+
+  /**
+   * Generate cache key for segment requests
+   */
+  private getSegmentCacheKey(
+    segmentId: number,
+    rendition: { src: string; trackId: number | undefined; id?: string },
+  ): string {
+    return `${rendition.src}-${rendition.id}-${segmentId}-${rendition.trackId}`;
+  }
+
+  /**
+   * Unified fetch method with caching and global deduplication
+   * All requests (media, manifest, init segments) go through this method
+   */
+  protected async fetchWithCache(
+    url: string,
+    options: {
+      responseType: "arrayBuffer" | "json";
+      headers?: Record<string, string>;
+      signal?: AbortSignal;
+    },
+  ): Promise<any> {
+    return withSpan(
+      "mediaEngine.fetchWithCache",
+      {
+        url: url.length > 100 ? `${url.substring(0, 100)}...` : url,
+        responseType: options.responseType,
+        hasHeaders: !!options.headers,
+      },
+      undefined,
+      async (span) => {
+        const t0 = performance.now();
+        const { responseType, headers, signal } = options;
+
+        // Create cache key that includes URL and headers for proper isolation
+        // Note: We don't include signal in cache key as it would prevent proper deduplication
+        const cacheKey = headers ? `${url}:${JSON.stringify(headers)}` : url;
+
+        // Check cache first
+        const t1 = performance.now();
+        const cached = mediaCache.get(cacheKey);
+        const t2 = performance.now();
+        span.setAttribute("cacheLookupMs", Math.round((t2 - t1) * 1000) / 1000);
+
+        if (cached) {
+          span.setAttribute("cacheHit", true);
+          // If we have a cached promise, we need to handle the caller's abort signal
+          // without affecting the underlying request that other instances might be using
+          if (signal) {
+            const t3 = performance.now();
+            const result = await this.handleAbortForCachedRequest(
+              cached,
+              signal,
+            );
+            const t4 = performance.now();
+            span.setAttribute(
+              "handleAbortMs",
+              Math.round((t4 - t3) * 100) / 100,
+            );
+            span.setAttribute(
+              "totalCacheHitMs",
+              Math.round((t4 - t0) * 100) / 100,
+            );
+            return result;
+          }
+          span.setAttribute(
+            "totalCacheHitMs",
+            Math.round((t2 - t0) * 100) / 100,
+          );
+          return cached;
+        }
+
+        span.setAttribute("cacheHit", false);
+
+        // Use global deduplicator to prevent concurrent requests for the same resource
+        // Note: We do NOT pass the signal to the deduplicator - each caller manages their own abort
+        const promise = globalRequestDeduplicator.executeRequest(
+          cacheKey,
+          async () => {
+            const fetchStart = performance.now();
+            try {
+              // Make the fetch request WITHOUT the signal - let each caller handle their own abort
+              // This prevents one instance's abort from affecting other instances using the shared cache
+              const response = await this.host.fetch(url, { headers });
+              const fetchEnd = performance.now();
+              span.setAttribute("fetchMs", fetchEnd - fetchStart);
+
+              if (responseType === "json") {
+                return response.json();
+              }
+              const buffer = await response.arrayBuffer();
+              span.setAttribute("sizeBytes", buffer.byteLength);
+              return buffer;
+            } catch (error) {
+              // If the request was aborted, don't cache the error
+              if (
+                error instanceof DOMException &&
+                error.name === "AbortError"
+              ) {
+                // Remove from cache so other requests can retry
+                mediaCache.delete(cacheKey);
+              }
+              throw error;
+            }
+          },
+        );
+
+        // Cache the promise (not the result) to handle concurrent requests
+        mediaCache.set(cacheKey, promise);
+
+        // Handle the case where the promise might be aborted
+        promise.catch((error) => {
+          // If the request was aborted, remove it from cache to prevent corrupted data
+          if (error instanceof DOMException && error.name === "AbortError") {
+            mediaCache.delete(cacheKey);
+          }
+        });
+
+        // If the caller has a signal, handle abort logic without affecting the underlying request
+        if (signal) {
+          const result = await this.handleAbortForCachedRequest(
+            promise,
+            signal,
+          );
+          const tEnd = performance.now();
+          span.setAttribute(
+            "totalFetchMs",
+            Math.round((tEnd - t0) * 100) / 100,
+          );
+          return result;
+        }
+
+        const result = await promise;
+        const tEnd = performance.now();
+        span.setAttribute("totalFetchMs", Math.round((tEnd - t0) * 100) / 100);
+        return result;
+      },
+    );
+  }
+
+  /**
+   * Handles abort logic for a cached request without affecting the underlying fetch
+   * This allows multiple instances to share the same cached request while each
+   * manages their own abort behavior
+   */
+  private handleAbortForCachedRequest<T>(
+    promise: Promise<T>,
+    signal: AbortSignal,
+  ): Promise<T> {
+    // If signal is already aborted, reject immediately
+    if (signal.aborted) {
+      throw new DOMException("Aborted", "AbortError");
+    }
+
+    // Return a promise that respects the caller's abort signal
+    // but doesn't affect the underlying cached request
+    return Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        signal.addEventListener("abort", () => {
+          reject(new DOMException("Aborted", "AbortError"));
+        });
+      }),
+    ]);
+  }
+
+  // Public wrapper methods that delegate to fetchWithCache
+  async fetchMedia(url: string, signal?: AbortSignal): Promise<ArrayBuffer> {
+    // Check abort signal immediately before any processing
+    if (signal?.aborted) {
+      throw new DOMException("Aborted", "AbortError");
+    }
+    return this.fetchWithCache(url, { responseType: "arrayBuffer", signal });
+  }
+
+  async fetchManifest(url: string, signal?: AbortSignal): Promise<any> {
+    // Check abort signal immediately before any processing
+    if (signal?.aborted) {
+      throw new DOMException("Aborted", "AbortError");
+    }
+    return this.fetchWithCache(url, { responseType: "json", signal });
+  }
+
+  async fetchMediaWithHeaders(
+    url: string,
+    headers: Record<string, string>,
+    signal?: AbortSignal,
+  ): Promise<ArrayBuffer> {
+    // Check abort signal immediately before any processing
+    if (signal?.aborted) {
+      throw new DOMException("Aborted", "AbortError");
+    }
+    return this.fetchWithCache(url, {
+      responseType: "arrayBuffer",
+      headers,
+      signal,
+    });
+  }
+
+  // Legacy methods for backward compatibility
+  async fetchMediaCache(
+    url: string,
+    signal?: AbortSignal,
+  ): Promise<ArrayBuffer> {
+    return this.fetchMedia(url, signal);
+  }
+
+  async fetchManifestCache(url: string, signal?: AbortSignal): Promise<any> {
+    return this.fetchManifest(url, signal);
+  }
+
+  async fetchMediaCacheWithHeaders(
+    url: string,
+    headers: Record<string, string>,
+    signal?: AbortSignal,
+  ): Promise<ArrayBuffer> {
+    return this.fetchMediaWithHeaders(url, headers, signal);
+  }
+
+  /**
+   * Abstract method for actual segment fetching - implemented by subclasses
+   */
+  abstract fetchMediaSegment(
+    segmentId: number,
+    rendition: { trackId: number | undefined; src: string },
+  ): Promise<ArrayBuffer>;
+
+  abstract fetchInitSegment(
+    rendition: { trackId: number | undefined; src: string },
+    signal: AbortSignal,
+  ): Promise<ArrayBuffer>;
+
+  abstract computeSegmentId(
+    desiredSeekTimeMs: number,
+    rendition: MediaRendition,
+  ): number | undefined;
+
+  /**
+   * Fetch media segment with built-in deduplication
+   * Now uses global deduplication for all requests
+   */
+  async fetchMediaSegmentWithDeduplication(
+    segmentId: number,
+    rendition: { trackId: number | undefined; src: string },
+    _signal?: AbortSignal,
+  ): Promise<ArrayBuffer> {
+    const cacheKey = this.getSegmentCacheKey(segmentId, rendition);
+
+    return globalRequestDeduplicator.executeRequest(cacheKey, async () => {
+      return this.fetchMediaSegment(segmentId, rendition);
+    });
+  }
+
+  /**
+   * Check if a segment is currently being fetched
+   */
+  isSegmentBeingFetched(
+    segmentId: number,
+    rendition: { src: string; trackId: number | undefined },
+  ): boolean {
+    const cacheKey = this.getSegmentCacheKey(segmentId, rendition);
+    return globalRequestDeduplicator.isPending(cacheKey);
+  }
+
+  /**
+   * Get count of active segment requests (for debugging/monitoring)
+   */
+  getActiveSegmentRequestCount(): number {
+    return globalRequestDeduplicator.getPendingCount();
+  }
+
+  /**
+   * Cancel all active segment requests (for cleanup)
+   */
+  cancelAllSegmentRequests(): void {
+    globalRequestDeduplicator.clear();
+  }
+
+  /**
+   * Calculate audio segments needed for a time range
+   * Each media engine implements this based on their segment structure
+   */
+  calculateAudioSegmentRange(
+    fromMs: number,
+    toMs: number,
+    rendition: AudioRendition,
+    durationMs: number,
+  ): SegmentTimeRange[] {
+    // Default implementation for uniform segments (used by JitMediaEngine)
+    if (fromMs >= toMs) {
+      return [];
+    }
+
+    const segments: SegmentTimeRange[] = [];
+
+    // Use actual segment durations if available (more accurate)
+    if (
+      rendition.segmentDurationsMs &&
+      rendition.segmentDurationsMs.length > 0
+    ) {
+      let cumulativeTime = 0;
+
+      for (let i = 0; i < rendition.segmentDurationsMs.length; i++) {
+        const segmentDuration = rendition.segmentDurationsMs[i];
+        if (segmentDuration === undefined) {
+          continue; // Skip undefined segment durations
+        }
+        const segmentStartMs = cumulativeTime;
+        const segmentEndMs = Math.min(
+          cumulativeTime + segmentDuration,
+          durationMs,
+        );
+
+        // Don't include segments that start at or beyond the file duration
+        if (segmentStartMs >= durationMs) {
+          break;
+        }
+
+        // Only include segments that overlap with requested time range
+        if (segmentStartMs < toMs && segmentEndMs > fromMs) {
+          segments.push({
+            segmentId: i + 1, // Convert to 1-based
+            startMs: segmentStartMs,
+            endMs: segmentEndMs,
+          });
+        }
+
+        cumulativeTime += segmentDuration;
+
+        // If we've reached or exceeded file duration, stop
+        if (cumulativeTime >= durationMs) {
+          break;
+        }
+      }
+
+      return segments;
+    }
+
+    // Fall back to fixed duration calculation for backward compatibility
+    const segmentDurationMs = rendition.segmentDurationMs || 1000;
+    const startSegmentIndex = Math.floor(fromMs / segmentDurationMs);
+    const endSegmentIndex = Math.floor(toMs / segmentDurationMs);
+
+    for (let i = startSegmentIndex; i <= endSegmentIndex; i++) {
+      const segmentId = i + 1; // Convert to 1-based
+      const segmentStartMs = i * segmentDurationMs;
+      const segmentEndMs = Math.min((i + 1) * segmentDurationMs, durationMs);
+
+      // Don't include segments that start at or beyond the file duration
+      if (segmentStartMs >= durationMs) {
+        break;
+      }
+
+      // Only include segments that overlap with requested time range
+      if (segmentStartMs < toMs && segmentEndMs > fromMs) {
+        segments.push({
+          segmentId,
+          startMs: segmentStartMs,
+          endMs: segmentEndMs,
+        });
+      }
+    }
+
+    return segments;
+  }
+
+  /**
+   * Check if a segment is cached for a given rendition
+   * This needs to check the URL-based cache since that's where segments are actually stored
+   */
+  isSegmentCached(
+    segmentId: number,
+    rendition: AudioRendition | VideoRendition,
+  ): boolean {
+    try {
+      // Check if this is a JIT engine by looking for urlGenerator property
+      const maybeJitEngine = this as any;
+      if (
+        maybeJitEngine.urlGenerator &&
+        typeof maybeJitEngine.urlGenerator.generateSegmentUrl === "function"
+      ) {
+        // This is a JIT engine - generate the URL and check URL-based cache
+        if (!rendition.id) {
+          return false;
+        }
+
+        const segmentUrl = maybeJitEngine.urlGenerator.generateSegmentUrl(
+          segmentId,
+          rendition.id,
+          maybeJitEngine,
+        );
+        const urlIsCached = mediaCache.has(segmentUrl);
+
+        return urlIsCached;
+      }
+      // For other engine types, fall back to the old segment-based key approach
+      const cacheKey = `${rendition.src}-${rendition.id || "default"}-${segmentId}-${rendition.trackId}`;
+      const isCached = mediaCache.has(cacheKey);
+      return isCached;
+    } catch (error) {
+      console.warn(
+        `🎬 BaseMediaEngine: Error checking if segment ${segmentId} is cached:`,
+        error,
+      );
+      return false;
+    }
+  }
+
+  /**
+   * Get cached segment IDs from a list for a given rendition
+   */
+  getCachedSegments(
+    segmentIds: number[],
+    rendition: AudioRendition | VideoRendition,
+  ): Set<number> {
+    return new Set(
+      segmentIds.filter((id) => this.isSegmentCached(id, rendition)),
+    );
+  }
+
+  /**
+   * Extract thumbnail canvases at multiple timestamps efficiently
+   * Default implementation provides helpful error information
+   */
+  async extractThumbnails(
+    timestamps: number[],
+  ): Promise<(ThumbnailResult | null)[]> {
+    const engineName = this.constructor.name;
+    console.warn(
+      `${engineName}: extractThumbnails not properly implemented. ` +
+        "This MediaEngine type does not support thumbnail generation. " +
+        "Supported engines: JitMediaEngine. " +
+        `Requested ${timestamps.length} thumbnail${timestamps.length === 1 ? "" : "s"}.`,
+    );
+    return timestamps.map(() => null);
+  }
+
+  abstract convertToSegmentRelativeTimestamps(
+    globalTimestamps: number[],
+    segmentId: number,
+    rendition: VideoRendition,
+  ): number[];
+
+  /**
+   * Get buffer configuration for this media engine
+   * Can be overridden by subclasses to provide custom buffer settings
+   */
+  getBufferConfig(): {
+    videoBufferDurationMs: number;
+    audioBufferDurationMs: number;
+    maxVideoBufferFetches: number;
+    maxAudioBufferFetches: number;
+    bufferThresholdMs: number;
+  } {
+    return {
+      videoBufferDurationMs: 10000, // 10 seconds
+      audioBufferDurationMs: 10000, // 10 seconds
+      maxVideoBufferFetches: 3,
+      maxAudioBufferFetches: 3,
+      bufferThresholdMs: 30000, // 30 seconds - timeline-aware buffering threshold
+    };
+  }
+}

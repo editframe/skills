@@ -1,0 +1,338 @@
+{
+  "text": " The Queen of Spades, a mysterious and formidable presence in the deck. Cloaked in the enigma of the Spade, she is the embodiment of intellect and intuition. The Queen of Spades, a strategist in her own right, weaves a tapestry of complexity and depth, challenging all who cross her path.",
+  "segments": [
+    {
+      "start": 0.12,
+      "end": 3.74,
+      "text": " The Queen of Spades, a mysterious and formidable presence in the deck.",
+      "confidence": 0.94,
+      "words": [
+        {
+          "text": "The",
+          "start": 0.12,
+          "end": 0.24,
+          "confidence": 0.8
+        },
+        {
+          "text": "Queen",
+          "start": 0.24,
+          "end": 0.4,
+          "confidence": 0.86
+        },
+        {
+          "text": "of",
+          "start": 0.4,
+          "end": 0.56,
+          "confidence": 0.98
+        },
+        {
+          "text": "Spades,",
+          "start": 0.56,
+          "end": 1.02,
+          "confidence": 0.99
+        },
+        {
+          "text": "a",
+          "start": 1.2,
+          "end": 1.28,
+          "confidence": 0.87
+        },
+        {
+          "text": "mysterious",
+          "start": 1.28,
+          "end": 1.72,
+          "confidence": 0.98
+        },
+        {
+          "text": "and",
+          "start": 1.72,
+          "end": 2.16,
+          "confidence": 0.99
+        },
+        {
+          "text": "formidable",
+          "start": 2.16,
+          "end": 2.58,
+          "confidence": 0.99
+        },
+        {
+          "text": "presence",
+          "start": 2.58,
+          "end": 3.06,
+          "confidence": 0.99
+        },
+        {
+          "text": "in",
+          "start": 3.06,
+          "end": 3.36,
+          "confidence": 0.98
+        },
+        {
+          "text": "the",
+          "start": 3.36,
+          "end": 3.5,
+          "confidence": 0.99
+        },
+        {
+          "text": "deck.",
+          "start": 3.5,
+          "end": 3.74,
+          "confidence": 0.87
+        }
+      ]
+    },
+    {
+      "start": 4.88,
+      "end": 8.94,
+      "text": " Cloaked in the enigma of the Spade, she is the embodiment of intellect and intuition.",
+      "confidence": 0.94,
+      "words": [
+        {
+          "text": "Cloaked",
+          "start": 4.88,
+          "end": 5.16,
+          "confidence": 0.85
+        },
+        {
+          "text": "in",
+          "start": 5.16,
+          "end": 5.28,
+          "confidence": 1.0
+        },
+        {
+          "text": "the",
+          "start": 5.28,
+          "end": 5.38,
+          "confidence": 1.0
+        },
+        {
+          "text": "enigma",
+          "start": 5.38,
+          "end": 5.72,
+          "confidence": 0.93
+        },
+        {
+          "text": "of",
+          "start": 5.72,
+          "end": 5.92,
+          "confidence": 1.0
+        },
+        {
+          "text": "the",
+          "start": 5.92,
+          "end": 6.02,
+          "confidence": 0.95
+        },
+        {
+          "text": "Spade,",
+          "start": 6.02,
+          "end": 6.46,
+          "confidence": 0.76
+        },
+        {
+          "text": "she",
+          "start": 6.64,
+          "end": 6.76,
+          "confidence": 0.96
+        },
+        {
+          "text": "is",
+          "start": 6.76,
+          "end": 6.88,
+          "confidence": 1.0
+        },
+        {
+          "text": "the",
+          "start": 6.88,
+          "end": 7.02,
+          "confidence": 1.0
+        },
+        {
+          "text": "embodiment",
+          "start": 7.02,
+          "end": 7.52,
+          "confidence": 1.0
+        },
+        {
+          "text": "of",
+          "start": 7.52,
+          "end": 7.7,
+          "confidence": 0.99
+        },
+        {
+          "text": "intellect",
+          "start": 7.7,
+          "end": 8.14,
+          "confidence": 0.99
+        },
+        {
+          "text": "and",
+          "start": 8.14,
+          "end": 8.46,
+          "confidence": 0.98
+        },
+        {
+          "text": "intuition.",
+          "start": 8.46,
+          "end": 8.94,
+          "confidence": 0.99
+        }
+      ]
+    },
+    {
+      "start": 10.14,
+      "end": 15.28,
+      "text": " The Queen of Spades, a strategist in her own right, weaves a tapestry of complexity and depth,",
+      "confidence": 0.94,
+      "words": [
+        {
+          "text": "The",
+          "start": 10.14,
+          "end": 10.24,
+          "confidence": 1.0
+        },
+        {
+          "text": "Queen",
+          "start": 10.24,
+          "end": 10.44,
+          "confidence": 0.99
+        },
+        {
+          "text": "of",
+          "start": 10.44,
+          "end": 10.58,
+          "confidence": 1.0
+        },
+        {
+          "text": "Spades,",
+          "start": 10.58,
+          "end": 11.06,
+          "confidence": 1.0
+        },
+        {
+          "text": "a",
+          "start": 11.22,
+          "end": 11.3,
+          "confidence": 0.99
+        },
+        {
+          "text": "strategist",
+          "start": 11.3,
+          "end": 11.94,
+          "confidence": 1.0
+        },
+        {
+          "text": "in",
+          "start": 11.94,
+          "end": 12.12,
+          "confidence": 0.99
+        },
+        {
+          "text": "her",
+          "start": 12.12,
+          "end": 12.28,
+          "confidence": 1.0
+        },
+        {
+          "text": "own",
+          "start": 12.28,
+          "end": 12.46,
+          "confidence": 1.0
+        },
+        {
+          "text": "right,",
+          "start": 12.46,
+          "end": 12.78,
+          "confidence": 0.99
+        },
+        {
+          "text": "weaves",
+          "start": 13.1,
+          "end": 13.36,
+          "confidence": 0.67
+        },
+        {
+          "text": "a",
+          "start": 13.36,
+          "end": 13.48,
+          "confidence": 0.99
+        },
+        {
+          "text": "tapestry",
+          "start": 13.48,
+          "end": 13.94,
+          "confidence": 0.99
+        },
+        {
+          "text": "of",
+          "start": 13.94,
+          "end": 14.12,
+          "confidence": 0.98
+        },
+        {
+          "text": "complexity",
+          "start": 14.12,
+          "end": 14.64,
+          "confidence": 0.99
+        },
+        {
+          "text": "and",
+          "start": 14.64,
+          "end": 15.08,
+          "confidence": 0.8
+        },
+        {
+          "text": "depth,",
+          "start": 15.08,
+          "end": 15.28,
+          "confidence": 0.86
+        }
+      ]
+    },
+    {
+      "start": 15.28,
+      "end": 17.38,
+      "text": " challenging all who cross her path.",
+      "confidence": 1.0,
+      "words": [
+        {
+          "text": "challenging",
+          "start": 15.28,
+          "end": 16.1,
+          "confidence": 0.98
+        },
+        {
+          "text": "all",
+          "start": 16.1,
+          "end": 16.46,
+          "confidence": 1.0
+        },
+        {
+          "text": "who",
+          "start": 16.46,
+          "end": 16.64,
+          "confidence": 1.0
+        },
+        {
+          "text": "cross",
+          "start": 16.64,
+          "end": 16.88,
+          "confidence": 1.0
+        },
+        {
+          "text": "her",
+          "start": 16.88,
+          "end": 17.08,
+          "confidence": 1.0
+        },
+        {
+          "text": "path.",
+          "start": 17.08,
+          "end": 17.38,
+          "confidence": 1.0
+        }
+      ]
+    }
+  ],
+  "language": "en"
+}

@@ -1,0 +1,712 @@
+import { html, LitElement } from "lit";
+import { customElement } from "lit/decorators.js";
+import { afterEach, describe, expect, test, vi } from "vitest";
+
+import "../elements/EFAudio.js";
+import "../elements/EFTimegroup.js";
+import "../elements/EFVideo.js";
+import "../elements/EFWaveform.js";
+import type { EFAudio } from "../elements/EFAudio.js";
+import type { EFTimegroup } from "../elements/EFTimegroup.js";
+import type { EFVideo } from "../elements/EFVideo.js";
+import type { EFWaveform } from "../elements/EFWaveform.js";
+import { ContextMixin } from "./ContextMixin.js";
+import "./EFFilmstrip.js";
+import type { EFFilmstrip } from "./EFFilmstrip.js";
+
+@customElement("test-context-wrapper")
+class TestContextWrapper extends ContextMixin(LitElement) {
+  render() {
+    return html`<slot></slot>`;
+  }
+}
+
+let idCounter = 0;
+const nextId = () => `test-timegroup-${idCounter++}`;
+
+describe("EFFilmstrip", () => {
+  afterEach(() => {
+    document.body.innerHTML = "";
+    idCounter = 0;
+  });
+
+  test("should target temporal element by ID", async () => {
+    const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+    timegroup.id = nextId();
+    timegroup.setAttribute("mode", "fixed");
+    timegroup.setAttribute("duration", "10s");
+    document.body.appendChild(timegroup);
+
+    const filmstrip = document.createElement("ef-filmstrip") as EFFilmstrip;
+    filmstrip.target = timegroup.id;
+    document.body.appendChild(filmstrip);
+
+    await timegroup.updateComplete;
+    await filmstrip.updateComplete;
+
+    expect(filmstrip.targetElement).toBe(timegroup);
+    expect(filmstrip.targetTemporal).toBe(timegroup);
+  }, 1000);
+
+  test("should handle missing target gracefully", async () => {
+    const filmstrip = document.createElement("ef-filmstrip") as EFFilmstrip;
+    filmstrip.target = "nonexistent-id";
+    document.body.appendChild(filmstrip);
+
+    await filmstrip.updateComplete;
+
+    expect(filmstrip.targetElement).toBe(null);
+    expect(filmstrip.targetTemporal).toBe(null);
+  }, 1000);
+
+  test("should update when target element is added to DOM after filmstrip", async () => {
+    const filmstrip = document.createElement("ef-filmstrip") as EFFilmstrip;
+    const id = nextId();
+    filmstrip.target = id;
+    document.body.appendChild(filmstrip);
+
+    await filmstrip.updateComplete;
+    expect(filmstrip.targetElement).toBe(null);
+
+    const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+    timegroup.id = id;
+    timegroup.setAttribute("mode", "fixed");
+    timegroup.setAttribute("duration", "10s");
+    document.body.appendChild(timegroup);
+
+    await timegroup.updateComplete;
+    await filmstrip.updateComplete;
+
+    expect(filmstrip.targetElement).toBe(timegroup);
+    expect(filmstrip.targetTemporal).toBe(timegroup);
+  }, 1000);
+
+  test("should update when target ID changes", async () => {
+    const timegroup1 = document.createElement("ef-timegroup") as EFTimegroup;
+    timegroup1.id = nextId();
+    timegroup1.setAttribute("mode", "fixed");
+    timegroup1.setAttribute("duration", "5s");
+    document.body.appendChild(timegroup1);
+
+    const timegroup2 = document.createElement("ef-timegroup") as EFTimegroup;
+    timegroup2.id = nextId();
+    timegroup2.setAttribute("mode", "fixed");
+    timegroup2.setAttribute("duration", "10s");
+    document.body.appendChild(timegroup2);
+
+    const filmstrip = document.createElement("ef-filmstrip") as EFFilmstrip;
+    filmstrip.target = timegroup1.id;
+    document.body.appendChild(filmstrip);
+
+    await timegroup1.updateComplete;
+    await timegroup2.updateComplete;
+    await filmstrip.updateComplete;
+
+    expect(filmstrip.targetElement).toBe(timegroup1);
+
+    filmstrip.target = timegroup2.id;
+    await filmstrip.updateComplete;
+
+    expect(filmstrip.targetElement).toBe(timegroup2);
+    expect(filmstrip.targetTemporal).toBe(timegroup2);
+  }, 1000);
+
+  test("should handle target element removal from DOM", async () => {
+    const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+    timegroup.id = nextId();
+    timegroup.setAttribute("mode", "fixed");
+    timegroup.setAttribute("duration", "10s");
+    document.body.appendChild(timegroup);
+
+    const filmstrip = document.createElement("ef-filmstrip") as EFFilmstrip;
+    filmstrip.target = timegroup.id;
+    document.body.appendChild(filmstrip);
+
+    await timegroup.updateComplete;
+    await filmstrip.updateComplete;
+
+    expect(filmstrip.targetElement).toBe(timegroup);
+
+    document.body.removeChild(timegroup);
+    await filmstrip.updateComplete;
+
+    expect(filmstrip.targetElement).toBe(null);
+    expect(filmstrip.targetTemporal).toBe(null);
+  }, 1000);
+
+  test("should support multiple filmstrips targeting same element", async () => {
+    const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+    timegroup.id = nextId();
+    timegroup.setAttribute("mode", "fixed");
+    timegroup.setAttribute("duration", "10s");
+    document.body.appendChild(timegroup);
+
+    const filmstrip1 = document.createElement("ef-filmstrip") as EFFilmstrip;
+    filmstrip1.target = timegroup.id;
+    document.body.appendChild(filmstrip1);
+
+    const filmstrip2 = document.createElement("ef-filmstrip") as EFFilmstrip;
+    filmstrip2.target = timegroup.id;
+    document.body.appendChild(filmstrip2);
+
+    await timegroup.updateComplete;
+    await filmstrip1.updateComplete;
+    await filmstrip2.updateComplete;
+
+    expect(filmstrip1.targetElement).toBe(timegroup);
+    expect(filmstrip2.targetElement).toBe(timegroup);
+    expect(filmstrip1.targetTemporal).toBe(timegroup);
+    expect(filmstrip2.targetTemporal).toBe(timegroup);
+  }, 1000);
+
+  test("should use context-based targeting when nested in ContextMixin", async () => {
+    const wrapper = document.createElement(
+      "test-context-wrapper",
+    ) as TestContextWrapper;
+    document.body.appendChild(wrapper);
+
+    const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+    timegroup.setAttribute("mode", "fixed");
+    timegroup.setAttribute("duration", "10s");
+    wrapper.appendChild(timegroup);
+
+    const filmstrip = document.createElement("ef-filmstrip") as EFFilmstrip;
+    wrapper.appendChild(filmstrip);
+
+    await wrapper.updateComplete;
+    await timegroup.updateComplete;
+    await filmstrip.updateComplete;
+
+    expect(filmstrip.targetTemporal).toBe(timegroup);
+  }, 1000);
+
+  test("should prefer target attribute over context with warning", async () => {
+    const consoleWarnSpy = vi
+      .spyOn(console, "warn")
+      .mockImplementation(() => {});
+
+    const wrapper = document.createElement(
+      "test-context-wrapper",
+    ) as TestContextWrapper;
+    document.body.appendChild(wrapper);
+
+    const contextTimegroup = document.createElement(
+      "ef-timegroup",
+    ) as EFTimegroup;
+    contextTimegroup.setAttribute("mode", "fixed");
+    contextTimegroup.setAttribute("duration", "5s");
+    wrapper.appendChild(contextTimegroup);
+
+    const targetTimegroup = document.createElement(
+      "ef-timegroup",
+    ) as EFTimegroup;
+    targetTimegroup.id = nextId();
+    targetTimegroup.setAttribute("mode", "fixed");
+    targetTimegroup.setAttribute("duration", "10s");
+    document.body.appendChild(targetTimegroup);
+
+    const filmstrip = document.createElement("ef-filmstrip") as EFFilmstrip;
+    filmstrip.target = targetTimegroup.id;
+    wrapper.appendChild(filmstrip);
+
+    await wrapper.updateComplete;
+    await contextTimegroup.updateComplete;
+    await targetTimegroup.updateComplete;
+    await filmstrip.updateComplete;
+
+    expect(filmstrip.targetElement).toBe(targetTimegroup);
+    expect(filmstrip.targetTemporal).toBe(targetTimegroup);
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      "EFFilmstrip: Both target attribute and parent context found. Using target attribute.",
+      expect.objectContaining({
+        target: targetTimegroup.id,
+        fromTarget: targetTimegroup,
+        fromContext: contextTimegroup,
+      }),
+    );
+
+    consoleWarnSpy.mockRestore();
+  }, 1000);
+
+  test("should handle dynamic target property changes", async () => {
+    const filmstrip = document.createElement("ef-filmstrip") as EFFilmstrip;
+    document.body.appendChild(filmstrip);
+
+    await filmstrip.updateComplete;
+    expect(filmstrip.targetElement).toBe(null);
+
+    const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+    timegroup.id = nextId();
+    timegroup.setAttribute("mode", "fixed");
+    timegroup.setAttribute("duration", "10s");
+    document.body.appendChild(timegroup);
+
+    await timegroup.updateComplete;
+
+    filmstrip.target = timegroup.id;
+    await filmstrip.updateComplete;
+
+    expect(filmstrip.targetElement).toBe(timegroup);
+    expect(filmstrip.targetTemporal).toBe(timegroup);
+
+    filmstrip.target = "";
+    await filmstrip.updateComplete;
+
+    expect(filmstrip.targetElement).toBe(null);
+  }, 1000);
+
+  test("should work with auto-scale feature on targeted element", async () => {
+    const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+    timegroup.id = nextId();
+    timegroup.setAttribute("mode", "fixed");
+    timegroup.setAttribute("duration", "10s");
+    document.body.appendChild(timegroup);
+
+    const filmstrip = document.createElement("ef-filmstrip") as EFFilmstrip;
+    filmstrip.target = timegroup.id;
+    filmstrip.autoScale = true;
+    document.body.appendChild(filmstrip);
+
+    await timegroup.updateComplete;
+    await filmstrip.updateComplete;
+
+    expect(filmstrip.targetTemporal).toBe(timegroup);
+    expect(filmstrip.autoScale).toBe(true);
+    expect(filmstrip.pixelsPerMs).toBeGreaterThan(0);
+  }, 1000);
+
+  test("should clear targetElement when target is set to undefined", async () => {
+    const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+    timegroup.id = nextId();
+    timegroup.setAttribute("mode", "fixed");
+    timegroup.setAttribute("duration", "10s");
+    document.body.appendChild(timegroup);
+
+    const filmstrip = document.createElement("ef-filmstrip") as EFFilmstrip;
+    filmstrip.target = timegroup.id;
+    document.body.appendChild(filmstrip);
+
+    await timegroup.updateComplete;
+    await filmstrip.updateComplete;
+
+    expect(filmstrip.targetElement).toBe(timegroup);
+    expect(filmstrip.targetTemporal).toBe(timegroup);
+
+    filmstrip.target = "";
+    await filmstrip.updateComplete;
+
+    expect(filmstrip.targetElement).toBe(null);
+    expect(filmstrip.targetTemporal).toBe(null);
+  }, 1000);
+
+  test("should disconnect when targeted element ID changes", async () => {
+    const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+    const originalId = nextId();
+    timegroup.id = originalId;
+    timegroup.setAttribute("mode", "fixed");
+    timegroup.setAttribute("duration", "10s");
+    document.body.appendChild(timegroup);
+
+    const filmstrip = document.createElement("ef-filmstrip") as EFFilmstrip;
+    filmstrip.target = originalId;
+    document.body.appendChild(filmstrip);
+
+    await timegroup.updateComplete;
+    await filmstrip.updateComplete;
+
+    expect(filmstrip.targetElement).toBe(timegroup);
+    expect(filmstrip.targetTemporal).toBe(timegroup);
+
+    timegroup.id = nextId();
+    await filmstrip.updateComplete;
+
+    expect(filmstrip.targetElement).toBe(null);
+    expect(filmstrip.targetTemporal).toBe(null);
+  }, 1000);
+
+  describe("element filtering", () => {
+    test("should render all children by default with no filters", async () => {
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      timegroup.id = nextId();
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "10s");
+      document.body.appendChild(timegroup);
+
+      const video = document.createElement("ef-video") as EFVideo;
+      const audio = document.createElement("ef-audio") as EFAudio;
+      const waveform = document.createElement("ef-waveform") as EFWaveform;
+
+      timegroup.appendChild(video);
+      timegroup.appendChild(audio);
+      timegroup.appendChild(waveform);
+
+      const filmstrip = document.createElement("ef-filmstrip") as EFFilmstrip;
+      filmstrip.target = timegroup.id;
+      document.body.appendChild(filmstrip);
+
+      await timegroup.updateComplete;
+      await video.updateComplete;
+      await audio.updateComplete;
+      await waveform.updateComplete;
+      await filmstrip.updateComplete;
+
+      const timegroupFilmstrip = filmstrip.shadowRoot?.querySelector(
+        "ef-timegroup-filmstrip",
+      );
+      await (timegroupFilmstrip as any)?.updateComplete;
+
+      const videoFilmstrip =
+        timegroupFilmstrip?.shadowRoot?.querySelector("ef-video-filmstrip");
+      const audioFilmstrip =
+        timegroupFilmstrip?.shadowRoot?.querySelector("ef-audio-filmstrip");
+      const waveformFilmstrip = timegroupFilmstrip?.shadowRoot?.querySelector(
+        "ef-waveform-filmstrip",
+      );
+
+      expect(videoFilmstrip).toBeTruthy();
+      expect(audioFilmstrip).toBeTruthy();
+      expect(waveformFilmstrip).toBeTruthy();
+    }, 1000);
+
+    test("should hide elements matching hide selectors", async () => {
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      timegroup.id = nextId();
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "10s");
+      document.body.appendChild(timegroup);
+
+      const video = document.createElement("ef-video") as EFVideo;
+      const audio = document.createElement("ef-audio") as EFAudio;
+      const waveform = document.createElement("ef-waveform") as EFWaveform;
+
+      timegroup.appendChild(video);
+      timegroup.appendChild(audio);
+      timegroup.appendChild(waveform);
+
+      const filmstrip = document.createElement("ef-filmstrip") as EFFilmstrip;
+      filmstrip.target = timegroup.id;
+      filmstrip.hide = "ef-waveform, ef-audio";
+      document.body.appendChild(filmstrip);
+
+      await timegroup.updateComplete;
+      await video.updateComplete;
+      await audio.updateComplete;
+      await waveform.updateComplete;
+      await filmstrip.updateComplete;
+
+      const timegroupFilmstrip = filmstrip.shadowRoot?.querySelector(
+        "ef-timegroup-filmstrip",
+      );
+      await (timegroupFilmstrip as any)?.updateComplete;
+
+      const videoFilmstrip =
+        timegroupFilmstrip?.shadowRoot?.querySelector("ef-video-filmstrip");
+      const audioFilmstrip =
+        timegroupFilmstrip?.shadowRoot?.querySelector("ef-audio-filmstrip");
+      const waveformFilmstrip = timegroupFilmstrip?.shadowRoot?.querySelector(
+        "ef-waveform-filmstrip",
+      );
+
+      expect(videoFilmstrip).toBeTruthy();
+      expect(audioFilmstrip).toBeFalsy();
+      expect(waveformFilmstrip).toBeFalsy();
+    }, 1000);
+
+    test("should show only elements matching show selectors", async () => {
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      timegroup.id = nextId();
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "10s");
+      document.body.appendChild(timegroup);
+
+      const video = document.createElement("ef-video") as EFVideo;
+      const audio = document.createElement("ef-audio") as EFAudio;
+      const waveform = document.createElement("ef-waveform") as EFWaveform;
+
+      timegroup.appendChild(video);
+      timegroup.appendChild(audio);
+      timegroup.appendChild(waveform);
+
+      const filmstrip = document.createElement("ef-filmstrip") as EFFilmstrip;
+      filmstrip.target = timegroup.id;
+      filmstrip.show = "ef-video, ef-audio";
+      document.body.appendChild(filmstrip);
+
+      await timegroup.updateComplete;
+      await video.updateComplete;
+      await audio.updateComplete;
+      await waveform.updateComplete;
+      await filmstrip.updateComplete;
+
+      const timegroupFilmstrip = filmstrip.shadowRoot?.querySelector(
+        "ef-timegroup-filmstrip",
+      );
+      await (timegroupFilmstrip as any)?.updateComplete;
+
+      const videoFilmstrip =
+        timegroupFilmstrip?.shadowRoot?.querySelector("ef-video-filmstrip");
+      const audioFilmstrip =
+        timegroupFilmstrip?.shadowRoot?.querySelector("ef-audio-filmstrip");
+      const waveformFilmstrip = timegroupFilmstrip?.shadowRoot?.querySelector(
+        "ef-waveform-filmstrip",
+      );
+
+      expect(videoFilmstrip).toBeTruthy();
+      expect(audioFilmstrip).toBeTruthy();
+      expect(waveformFilmstrip).toBeFalsy();
+    }, 1000);
+
+    test("should filter HTML elements by tag name", async () => {
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      timegroup.id = nextId();
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "10s");
+      document.body.appendChild(timegroup);
+
+      const video = document.createElement("ef-video") as EFVideo;
+      const div = document.createElement("div");
+      div.textContent = "Test div";
+      const span = document.createElement("span");
+      span.textContent = "Test span";
+
+      timegroup.appendChild(video);
+      timegroup.appendChild(div);
+      timegroup.appendChild(span);
+
+      const filmstrip = document.createElement("ef-filmstrip") as EFFilmstrip;
+      filmstrip.target = timegroup.id;
+      filmstrip.hide = "div";
+      document.body.appendChild(filmstrip);
+
+      await timegroup.updateComplete;
+      await video.updateComplete;
+      await filmstrip.updateComplete;
+
+      const timegroupFilmstrip = filmstrip.shadowRoot?.querySelector(
+        "ef-timegroup-filmstrip",
+      );
+      await (timegroupFilmstrip as any)?.updateComplete;
+
+      const videoFilmstrip =
+        timegroupFilmstrip?.shadowRoot?.querySelector("ef-video-filmstrip");
+      const htmlFilmstrips =
+        timegroupFilmstrip?.shadowRoot?.querySelectorAll("ef-html-filmstrip");
+
+      expect(videoFilmstrip).toBeTruthy();
+      expect(htmlFilmstrips?.length).toBe(1);
+    }, 1000);
+
+    test("should filter HTML elements by CSS class selector", async () => {
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      timegroup.id = nextId();
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "10s");
+      document.body.appendChild(timegroup);
+
+      const video = document.createElement("ef-video") as EFVideo;
+      const div1 = document.createElement("div");
+      div1.className = "helper";
+      const div2 = document.createElement("div");
+      div2.className = "content";
+
+      timegroup.appendChild(video);
+      timegroup.appendChild(div1);
+      timegroup.appendChild(div2);
+
+      const filmstrip = document.createElement("ef-filmstrip") as EFFilmstrip;
+      filmstrip.target = timegroup.id;
+      filmstrip.hide = ".helper";
+      document.body.appendChild(filmstrip);
+
+      await timegroup.updateComplete;
+      await video.updateComplete;
+      await filmstrip.updateComplete;
+
+      const timegroupFilmstrip = filmstrip.shadowRoot?.querySelector(
+        "ef-timegroup-filmstrip",
+      );
+      await (timegroupFilmstrip as any)?.updateComplete;
+
+      const videoFilmstrip =
+        timegroupFilmstrip?.shadowRoot?.querySelector("ef-video-filmstrip");
+      const htmlFilmstrips =
+        timegroupFilmstrip?.shadowRoot?.querySelectorAll("ef-html-filmstrip");
+
+      expect(videoFilmstrip).toBeTruthy();
+      expect(htmlFilmstrips?.length).toBe(1);
+    }, 1000);
+
+    test("should filter HTML elements by attribute selector", async () => {
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      timegroup.id = nextId();
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "10s");
+      document.body.appendChild(timegroup);
+
+      const video = document.createElement("ef-video") as EFVideo;
+      const div1 = document.createElement("div");
+      div1.setAttribute("data-internal", "true");
+      const div2 = document.createElement("div");
+      div2.setAttribute("data-visible", "true");
+
+      timegroup.appendChild(video);
+      timegroup.appendChild(div1);
+      timegroup.appendChild(div2);
+
+      const filmstrip = document.createElement("ef-filmstrip") as EFFilmstrip;
+      filmstrip.target = timegroup.id;
+      filmstrip.hide = "[data-internal]";
+      document.body.appendChild(filmstrip);
+
+      await timegroup.updateComplete;
+      await video.updateComplete;
+      await filmstrip.updateComplete;
+
+      const timegroupFilmstrip = filmstrip.shadowRoot?.querySelector(
+        "ef-timegroup-filmstrip",
+      );
+      await (timegroupFilmstrip as any)?.updateComplete;
+
+      const videoFilmstrip =
+        timegroupFilmstrip?.shadowRoot?.querySelector("ef-video-filmstrip");
+      const htmlFilmstrips =
+        timegroupFilmstrip?.shadowRoot?.querySelectorAll("ef-html-filmstrip");
+
+      expect(videoFilmstrip).toBeTruthy();
+      expect(htmlFilmstrips?.length).toBe(1);
+    }, 1000);
+
+    test("should filter recursively in nested timegroups", async () => {
+      const rootTimegroup = document.createElement(
+        "ef-timegroup",
+      ) as EFTimegroup;
+      rootTimegroup.id = nextId();
+      rootTimegroup.setAttribute("mode", "fixed");
+      rootTimegroup.setAttribute("duration", "10s");
+      document.body.appendChild(rootTimegroup);
+
+      const childTimegroup = document.createElement(
+        "ef-timegroup",
+      ) as EFTimegroup;
+      childTimegroup.setAttribute("mode", "fixed");
+      childTimegroup.setAttribute("duration", "5s");
+
+      const video = document.createElement("ef-video") as EFVideo;
+      const waveform = document.createElement("ef-waveform") as EFWaveform;
+
+      childTimegroup.appendChild(video);
+      childTimegroup.appendChild(waveform);
+      rootTimegroup.appendChild(childTimegroup);
+
+      const filmstrip = document.createElement("ef-filmstrip") as EFFilmstrip;
+      filmstrip.target = rootTimegroup.id;
+      filmstrip.hide = "ef-waveform";
+      document.body.appendChild(filmstrip);
+
+      await rootTimegroup.updateComplete;
+      await childTimegroup.updateComplete;
+      await video.updateComplete;
+      await waveform.updateComplete;
+      await filmstrip.updateComplete;
+
+      const waveformFilmstrips = filmstrip.shadowRoot?.querySelectorAll(
+        "ef-waveform-filmstrip",
+      );
+
+      expect(waveformFilmstrips?.length).toBe(0);
+    }, 1000);
+
+    test("should handle multiple comma-separated selectors", async () => {
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      timegroup.id = nextId();
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "10s");
+      document.body.appendChild(timegroup);
+
+      const video = document.createElement("ef-video") as EFVideo;
+      const audio = document.createElement("ef-audio") as EFAudio;
+      const waveform = document.createElement("ef-waveform") as EFWaveform;
+      const div = document.createElement("div");
+      div.className = "helper";
+
+      timegroup.appendChild(video);
+      timegroup.appendChild(audio);
+      timegroup.appendChild(waveform);
+      timegroup.appendChild(div);
+
+      const filmstrip = document.createElement("ef-filmstrip") as EFFilmstrip;
+      filmstrip.target = timegroup.id;
+      filmstrip.hide = "ef-waveform, .helper, ef-audio";
+      document.body.appendChild(filmstrip);
+
+      await timegroup.updateComplete;
+      await video.updateComplete;
+      await audio.updateComplete;
+      await waveform.updateComplete;
+      await filmstrip.updateComplete;
+
+      const timegroupFilmstrip = filmstrip.shadowRoot?.querySelector(
+        "ef-timegroup-filmstrip",
+      );
+      await (timegroupFilmstrip as any)?.updateComplete;
+
+      const videoFilmstrip =
+        timegroupFilmstrip?.shadowRoot?.querySelector("ef-video-filmstrip");
+      const audioFilmstrip =
+        timegroupFilmstrip?.shadowRoot?.querySelector("ef-audio-filmstrip");
+      const waveformFilmstrip = timegroupFilmstrip?.shadowRoot?.querySelector(
+        "ef-waveform-filmstrip",
+      );
+      const htmlFilmstrips =
+        timegroupFilmstrip?.shadowRoot?.querySelectorAll("ef-html-filmstrip");
+
+      expect(videoFilmstrip).toBeTruthy();
+      expect(audioFilmstrip).toBeFalsy();
+      expect(waveformFilmstrip).toBeFalsy();
+      expect(htmlFilmstrips?.length).toBe(0);
+    }, 1000);
+
+    test("should handle invalid selectors gracefully", async () => {
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      timegroup.id = nextId();
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "10s");
+      document.body.appendChild(timegroup);
+
+      const video = document.createElement("ef-video") as EFVideo;
+      const audio = document.createElement("ef-audio") as EFAudio;
+
+      timegroup.appendChild(video);
+      timegroup.appendChild(audio);
+
+      const filmstrip = document.createElement("ef-filmstrip") as EFFilmstrip;
+      filmstrip.target = timegroup.id;
+      filmstrip.hide = "[[invalid]]selector, ef-audio";
+      document.body.appendChild(filmstrip);
+
+      await timegroup.updateComplete;
+      await video.updateComplete;
+      await audio.updateComplete;
+      await filmstrip.updateComplete;
+
+      const timegroupFilmstrip = filmstrip.shadowRoot?.querySelector(
+        "ef-timegroup-filmstrip",
+      );
+      await (timegroupFilmstrip as any)?.updateComplete;
+
+      const videoFilmstrip =
+        timegroupFilmstrip?.shadowRoot?.querySelector("ef-video-filmstrip");
+      const audioFilmstrip =
+        timegroupFilmstrip?.shadowRoot?.querySelector("ef-audio-filmstrip");
+
+      expect(videoFilmstrip).toBeTruthy();
+      expect(audioFilmstrip).toBeFalsy();
+    }, 1000);
+  });
+});
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "test-context-wrapper": TestContextWrapper;
+  }
+}

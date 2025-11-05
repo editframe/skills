@@ -1,0 +1,52 @@
+name: ef-elements
+services:
+  runner:
+    build:
+      context: .
+    init: true
+    env_file:
+      - .env
+    working_dir: /packages
+    volumes:
+      - .:/packages
+      - node_modules:/packages/node_modules
+    stop_grace_period: 1s
+    ports:
+      - "63315:63315"
+      - "8794:8794" # Record-replay proxy server
+    command: ["sleep", "infinity"]
+
+  dev-projects:
+    build:
+      context: .
+    init: true
+    env_file:
+      - .env
+    working_dir: /packages
+    volumes:
+      - .:/packages
+      - node_modules:/packages/node_modules
+    stop_grace_period: 1s
+    ports:
+      - "4321:4321"
+    command: ["sleep", "infinity"]
+
+  ci-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.ci-runner
+    init: true
+    env_file:
+      - .env
+    working_dir: /packages
+    volumes:
+      - .:/packages
+      - node_modules:/packages/node_modules
+    stop_grace_period: 1s
+    ports:
+      - "8795:8794" # Record-replay proxy server for CI (mapped to different host port)
+      - "63315:63315" # Test server port for browser tests
+    command: ["sleep", "infinity"]
+
+volumes:
+  node_modules:

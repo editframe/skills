@@ -1,0 +1,55 @@
+{
+  "name": "@editframe/react",
+  "version": "0.26.4-beta.0",
+  "description": "",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "./package.json": "./package.json",
+    "./types.json": "./types.json"
+  },
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false",
+    "build": "tsdown",
+    "build:watch": "tsdown --watch",
+    "typedoc": "typedoc --json ./types.json --plugin typedoc-plugin-zod --excludeExternals ./src && jq -c . ./types.json > ./types.tmp.json && mv ./types.tmp.json ./types.json"
+  },
+  "author": "",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@editframe/elements": "0.26.4-beta.0",
+    "@lit/task": "^1.0.1",
+    "lit": "^3.3.1",
+    "react": "^18.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.3",
+    "typescript": "^5.5.4",
+    "vitest": "^1.6.0"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "import": {
+          "types": "./dist/index.d.ts",
+          "default": "./dist/index.js"
+        }
+      },
+      "./package.json": "./package.json",
+      "./types.json": "./types.json"
+    }
+  }
+}

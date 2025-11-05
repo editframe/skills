@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.DS_Store
+**/vite.config.ts.timestamp*.mjs
+.cache
+.env
+packages/*/types.json
+dev-projects/
+.cursor/
+.wsEndpoint.json
+.xcursor
+__screenshots__
+test-install/
+.packed-packages

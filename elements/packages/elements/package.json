@@ -1,0 +1,66 @@
+{
+  "name": "@editframe/elements",
+  "version": "0.26.4-beta.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false",
+    "build": "tsdown && node scripts/build-css.js",
+    "build:watch": "tsdown --watch",
+    "typedoc": "typedoc --json ./types.json --plugin typedoc-plugin-zod --excludeExternals ./src && jq -c . ./types.json > ./types.tmp.json && mv ./types.tmp.json ./types.json"
+  },
+  "author": "",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@bramus/style-observer": "^1.3.0",
+    "@editframe/assets": "0.26.4-beta.0",
+    "@lit/context": "^1.1.6",
+    "@lit/task": "^1.0.3",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/context-zone": "^1.26.0",
+    "@opentelemetry/core": "^1.26.0",
+    "@opentelemetry/resources": "^1.26.0",
+    "@opentelemetry/sdk-trace-base": "^1.26.0",
+    "@opentelemetry/sdk-trace-web": "^1.26.0",
+    "@opentelemetry/semantic-conventions": "^1.37.0",
+    "debug": "^4.3.5",
+    "lit": "^3.3.1",
+    "mediabunny": "^1.1.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/dom-webcodecs": "^0.1.11",
+    "@types/node": "^20.14.13",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.3",
+    "typescript": "^5.5.4"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "./package.json": "./package.json",
+    "./styles.css": "./dist/style.css",
+    "./types.json": "./types.json"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "import": {
+          "types": "./dist/index.d.ts",
+          "default": "./dist/index.js"
+        }
+      },
+      "./package.json": "./package.json",
+      "./styles.css": "./dist/style.css",
+      "./types.json": "./types.json"
+    }
+  }
+}

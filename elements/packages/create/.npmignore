@@ -1,0 +1,6 @@
+src/*
+!dist/templates/*/src/*
+.cache/*
+docker-compose.yaml
+.env
+.env.example

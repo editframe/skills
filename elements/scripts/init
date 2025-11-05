@@ -1,0 +1,7 @@
+#!/bin/bash
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+"${SCRIPT_DIR}"/docker-compose build runner
+"${SCRIPT_DIR}"/npm install

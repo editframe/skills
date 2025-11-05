@@ -1,0 +1,17 @@
+#!/bin/bash
+set -ex
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+# Get the current tag name from git
+TAG_NAME=$(git describe --tags --exact-match 2>/dev/null || echo "")
+
+# Determine npm tag based on tag name
+if [[ "$TAG_NAME" == *"beta"* ]]; then
+    NPM_TAG="beta"
+else
+    NPM_TAG="latest"
+fi
+
+echo "Publishing with npm tag: $NPM_TAG"
+npm publish --tag "$NPM_TAG" --workspaces

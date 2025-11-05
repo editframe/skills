@@ -1,0 +1,41 @@
+#!/usr/bin/env node
+
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import autoprefixer from "autoprefixer";
+import postcss from "postcss";
+import tailwindcss from "tailwindcss";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const srcDir = join(__dirname, "..", "src");
+const distDir = join(__dirname, "..", "dist");
+
+// Ensure dist directory exists
+mkdirSync(distDir, { recursive: true });
+
+// Read source CSS
+const cssPath = join(srcDir, "elements.css");
+const css = readFileSync(cssPath, "utf-8");
+
+// Process through PostCSS
+console.log("Processing CSS through Tailwind and PostCSS...");
+
+postcss([
+  tailwindcss({
+    content: [join(srcDir, "**/*.ts")],
+  }),
+  autoprefixer(),
+])
+  .process(css, { from: cssPath, to: join(distDir, "style.css") })
+  .then((result) => {
+    writeFileSync(join(distDir, "style.css"), result.css);
+    if (result.map) {
+      writeFileSync(join(distDir, "style.css.map"), result.map.toString());
+    }
+    console.log("✅ CSS processed and written to dist/style.css");
+  })
+  .catch((error) => {
+    console.error("❌ CSS processing failed:", error);
+    process.exit(1);
+  });

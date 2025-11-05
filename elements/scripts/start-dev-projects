@@ -1,0 +1,12 @@
+#/usr/bin/env bash
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+"${SCRIPT_DIR}"/docker-compose \
+  run --rm \
+    -p 4321:4321 \
+    -w /packages/dev-projects \
+    -e DEBUG="ef:*" \
+    dev-projects \
+      node start.js 

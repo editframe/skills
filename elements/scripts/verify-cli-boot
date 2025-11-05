@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+set -ex
+
+echo "Verifying CLI can boot without dev mode tsconfig path overrides..."
+
+# Create temporary directory for the test
+TEMP_DIR=$(mktemp -d)
+trap "rm -rf $TEMP_DIR" EXIT
+
+# Create a test package.json that installs our built packages from local paths
+cat > "$TEMP_DIR/package.json" << 'EOF'
+{
+  "name": "cli-boot-test",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {}
+}
+EOF
+
+# Create a simple test script that tries to run the CLI
+cat > "$TEMP_DIR/test-cli.js" << 'EOF'
+#!/usr/bin/env node
+
+import { spawn } from 'child_process';
+import { exit } from 'process';
+
+console.log('Testing CLI boot...');
+
+const cli = spawn('npx', ['editframe', 'check'], {
+  stdio: ['inherit', 'inherit', 'inherit'],
+  env: {
+    ...process.env,
+    // Provide minimal env to make check command work
+    EF_HOST: 'https://editframe.dev'
+  }
+});
+
+cli.on('close', (code) => {
+  if (code === 0) {
+    console.log('✅ CLI booted successfully');
+    exit(0);
+  } else {
+    console.error('❌ CLI failed to boot properly');
+    exit(1);
+  }
+});
+
+cli.on('error', (error) => {
+  console.error('❌ Failed to start CLI:', error);
+  exit(1);
+});
+EOF
+
+chmod +x "$TEMP_DIR/test-cli.js"
+
+# Create npm package tarballs (this simulates what gets published to npm)
+echo "Creating package tarballs..."
+cd "$PROJECT_ROOT/packages/api" && npm pack --pack-destination="$TEMP_DIR"
+cd "$PROJECT_ROOT/packages/assets" && npm pack --pack-destination="$TEMP_DIR"
+cd "$PROJECT_ROOT/packages/elements" && npm pack --pack-destination="$TEMP_DIR"
+cd "$PROJECT_ROOT/packages/vite-plugin" && npm pack --pack-destination="$TEMP_DIR"
+cd "$PROJECT_ROOT/packages/cli" && npm pack --pack-destination="$TEMP_DIR"
+
+# Run Docker container with the test environment
+docker run --rm \
+  -v "$TEMP_DIR:/test:rw" \
+  -w /test \
+  node:24-slim \
+  bash -c "
+    set -ex
+    echo 'Installing all packages from tarballs (simulating real npm install)...'
+    
+    # Install all packages at once so npm can resolve inter-dependencies locally
+    npm install ./editframe-*.tgz
+    
+    echo 'Running CLI boot test...'
+    node test-cli.js
+  "
+
+echo "✅ CLI boot verification completed successfully"
