@@ -1,0 +1,73 @@
+{
+  "name": "@editframe/packages",
+  "version": "0.26.4-beta.0",
+  "description": "Editframe Elements Development package",
+  "main": "index.js",
+  "scripts": {
+    "test": "npx vitest --config vitest.config.ts --configLoader bundle --run",
+    "test:watch": "npx vitest --config vitest.config.ts --configLoader bundle --watch",
+    "browsertest": "npx vitest --config vitest.config.browser.ts --configLoader bundle --run",
+    "browsertest:watch": "npx vitest --config vitest.config.browser.ts --configLoader bundle --watch",
+    "lint": "biome lint",
+    "format": "biome format",
+    "start": "scripts/start",
+    "build:all": "node scripts/deps.js sorted 2>/dev/null | xargs -I {} npm run build --workspace {}",
+    "typedoc": "typedoc --out docs/packages/ packages/api/src"
+  },
+  "type": "module",
+  "author": "Editframe",
+  "license": "UNLICENSED",
+  "workspaces": [
+    "packages/*"
+  ],
+  "devDependencies": {
+    "@biomejs/biome": "^2.0.0",
+    "@lit/context": "^1.1.6",
+    "@lit/react": "^1.0.5",
+    "@types/connect": "^3.4.38",
+    "@types/debug": "^4.1.12",
+    "@types/dom-webcodecs": "^0.1.11",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^20.14.13",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@types/uuid": "^10.0.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "@vitest/browser": "^3.2.3",
+    "eventsource-parser": "^3.0.0",
+    "jsdom": "^26.1.0",
+    "lefthook": "^1.7.14",
+    "lit": "^3.3.1",
+    "msw": "^2.10.2",
+    "playwright": "^1.53.0",
+    "prettier": "^3.3.2",
+    "prettier-plugin-tailwindcss": "^0.6.5",
+    "publint": "^0.3.14",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tsconfig-paths": "^4.2.0",
+    "tsdown": "^0.15.7",
+    "typedoc-plugin-zod": "^1.3.0",
+    "typescript": "^5.5.4",
+    "unplugin-unused": "^0.5.4",
+    "uuid": "^10.0.0",
+    "vite-plugin-singlefile": "^2.1.0",
+    "vitest": "^3.2.3",
+    "vitest-tsconfig-paths": "^3.4.1"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-darwin-arm64": "^4.21.0",
+    "@rollup/rollup-linux-x64-gnu": "^4.18.0"
+  },
+  "dependencies": {
+    "@editframe/api": "^0.20.4-beta.0",
+    "mediabunny": "^1.9.3",
+    "prism-react-renderer": "^2.3.1",
+    "typedoc": "^0.26.11"
+  },
+  "msw": {
+    "workerDirectory": [
+      "test-assets"
+    ]
+  }
+}

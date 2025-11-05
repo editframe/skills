@@ -1,0 +1,45 @@
+#!/bin/bash
+set -e
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+cd "$PROJECT_ROOT"
+
+echo "🏗️  Building all packages..."
+"$SCRIPT_DIR/build-all"
+
+echo ""
+echo "📦 Packing packages..."
+PACKED_DIR="$PROJECT_ROOT/.packed-packages"
+rm -rf "$PACKED_DIR"
+mkdir -p "$PACKED_DIR"
+
+for pkg_dir in packages/*/; do
+  if [ -f "$pkg_dir/package.json" ]; then
+    pkg_name=$(node -p "require('./$pkg_dir/package.json').name" 2>/dev/null || echo "")
+    if [ -n "$pkg_name" ]; then
+      echo "  📦 Packing $pkg_name..."
+      (cd "$pkg_dir" && npm pack --pack-destination="$PACKED_DIR" 2>&1 | tail -1)
+    fi
+  fi
+done
+
+echo ""
+echo "✅ Packages packed:"
+ls -lh "$PACKED_DIR"
+
+echo ""
+echo "🐳 Building Docker test environment..."
+docker build -t editframe-package-test -f test-install/Dockerfile .
+
+echo ""
+echo "✅ Docker image built!"
+echo ""
+echo "🚀 Starting interactive shell in test container..."
+echo "   - Generated project at: /app/my-test-project"
+echo "   - To start preview server: npm start"
+echo "   - Port 5173 is forwarded to your host"
+echo ""
+
+docker run -it --rm -p 5173:5173 editframe-package-test sh

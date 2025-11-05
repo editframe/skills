@@ -1,0 +1,3 @@
+#!/bin/bash
+
+process-compose --no-server -f process-compose.yaml

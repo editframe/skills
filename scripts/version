@@ -1,0 +1,24 @@
+#!/bin/bash
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+if ! git diff-index --quiet HEAD --; then
+  echo "Error: Working tree is not clean."
+  echo "The following files have changes:"
+  git status --porcelain
+  exit 1
+else
+  echo "Working tree is clean."
+fi
+
+echo "export const VERSION = \"$@\";" > "${SCRIPT_DIR}/../packages/cli/src/version.ts"; 
+
+npm -s version --no-git-tag-version --workspaces --include-workspace-root --allow-same-version "$@"
+set -ex
+"${SCRIPT_DIR}"/node scripts/deps.js update-dependencies
+"${SCRIPT_DIR}"/npm install --workspaces --include-workspace-root
+
+git add .
+git commit -m "Bump version to v$@"
+git tag -a "v$@" -m "$@"
+git push
+git push --tag

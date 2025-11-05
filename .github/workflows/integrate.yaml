@@ -1,0 +1,21 @@
+name: Integrate
+run-name: ${{ github.actor }} is integrating
+on:
+  push:
+    branches-ignore:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: touch .env
+
+      - name: Run integration script
+        run: ./scripts/integrate
+        working-directory: ${{ github.workspace }}

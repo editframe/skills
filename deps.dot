@@ -1,0 +1,7 @@
+digraph dependencies {
+  "@editframe/cli" -> "@editframe/assets";
+  "@editframe/cli" -> "@editframe/elements";
+  "@editframe/cli" -> "@editframe/vite-plugin";
+  "@editframe/elements" -> "@editframe/assets";
+  "@editframe/vite-plugin" -> "@editframe/assets";
+}

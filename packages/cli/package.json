@@ -1,0 +1,64 @@
+{
+  "name": "@editframe/cli",
+  "version": "0.26.4-beta.0",
+  "description": "Command line interface for EditFrame",
+  "bin": {
+    "editframe": "./dist/index.js"
+  },
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false",
+    "build": "tsdown",
+    "build:watch": "tsdown --watch"
+  },
+  "author": "",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@types/dom-webcodecs": "^0.1.11",
+    "@types/node": "^20.14.13",
+    "@types/promptly": "^3.0.5",
+    "@types/tar": "^6.1.13",
+    "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "@editframe/api": "0.26.4-beta.0",
+    "@editframe/assets": "0.26.4-beta.0",
+    "@editframe/elements": "0.26.4-beta.0",
+    "@editframe/vite-plugin": "0.26.4-beta.0",
+    "@inquirer/prompts": "^5.3.8",
+    "chalk": "^5.3.0",
+    "commander": "^12.0.0",
+    "debug": "^4.3.5",
+    "dotenv": "^16.4.5",
+    "node-html-parser": "^6.1.13",
+    "ora": "^8.0.1",
+    "playwright": "^1.53.0",
+    "tailwindcss": "^3.4.3",
+    "vite": "npm:rolldown-vite@^7.1.15",
+    "tar": "^7.1.0",
+    "zod": "^3.23.8"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "import": {
+          "types": "./dist/index.d.ts",
+          "default": "./dist/index.js"
+        }
+      },
+      "./package.json": "./package.json"
+    }
+  }
+}

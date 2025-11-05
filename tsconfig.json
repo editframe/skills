@@ -1,0 +1,61 @@
+{
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node",
+    "transpileOnly": true,
+    "require": ["tsconfig-paths/register"]
+  },
+  "compilerOptions": {
+    "plugins": [
+      /*
+        Plugin to generate CSS modules typings, nice DX affordance.
+        Requires using Workspace typescript rather than VSCode typescript.
+        For more details, see:
+          https://www.npmjs.com/package/typescript-plugin-css-modules#recommended-usage
+       */
+      { "name": "typescript-plugin-css-modules" }
+    ],
+
+    "typeRoots": ["./node_modules/@types", "@types"],
+
+    "target": "ESNext",
+    /** This will probably need to change when we can use the correct decorators. */
+    "useDefineForClassFields": false,
+    "module": "CommonJS",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true,
+    "experimentalDecorators": true,
+
+    /* Bundler mode */
+    "moduleResolution": "node",
+    "allowImportingTsExtensions": true,
+    "allowArbitraryExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "allowSyntheticDefaultImports": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "baseUrl": ".",
+    "paths": {
+      "@editframe/vite-plugin": ["./packages/vite-plugin/src/index.ts"],
+      "@editframe/assets": ["./packages/assets/src/index.ts"],
+
+      "@editframe/api": ["packages/api/src/index.ts"],
+      "@editframe/api/node": ["./packages/api/src/node.ts"],
+      "@editframe/cli": ["./packages/cli/src/index.ts"],
+      "@editframe/react": ["./packages/react/src/index.ts"],
+      "@editframe/elements": ["./packages/elements/src/index.ts"],
+      "TEST/*": ["./test/*"]
+    }
+  },
+  "include": ["./packages/*/src/**/*.*"],
+  "exclude": ["node_modules", "dist/**/*.*"]
+}

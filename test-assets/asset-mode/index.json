@@ -1,0 +1,126 @@
+{
+  "1": {
+    "track": 1,
+    "type": "video",
+    "width": 1920,
+    "height": 1080,
+    "timescale": 12800,
+    "sample_count": 250,
+    "codec": "avc1.640028",
+    "duration": 125440,
+    "initSegment": {
+      "offset": 0,
+      "size": 727
+    },
+    "segments": [
+      {
+        "cts": 1024,
+        "dts": 0,
+        "duration": 12288,
+        "offset": 727,
+        "size": 728258
+      },
+      {
+        "cts": 13824,
+        "dts": 12800,
+        "duration": 12288,
+        "offset": 728985,
+        "size": 782574
+      },
+      {
+        "cts": 26624,
+        "dts": 25600,
+        "duration": 12288,
+        "offset": 1511559,
+        "size": 798246
+      },
+      {
+        "cts": 39424,
+        "dts": 38400,
+        "duration": 12800,
+        "offset": 2309805,
+        "size": 775591
+      },
+      {
+        "cts": 52224,
+        "dts": 51200,
+        "duration": 12800,
+        "offset": 3085396,
+        "size": 736765
+      },
+      {
+        "cts": 65024,
+        "dts": 64000,
+        "duration": 12288,
+        "offset": 3822161,
+        "size": 753796
+      },
+      {
+        "cts": 77824,
+        "dts": 76800,
+        "duration": 12800,
+        "offset": 4575957,
+        "size": 798552
+      },
+      {
+        "cts": 90624,
+        "dts": 89600,
+        "duration": 12800,
+        "offset": 5374509,
+        "size": 773776
+      },
+      {
+        "cts": 103424,
+        "dts": 102400,
+        "duration": 12288,
+        "offset": 6148285,
+        "size": 740160
+      },
+      {
+        "cts": 116224,
+        "dts": 115200,
+        "duration": 12800,
+        "offset": 6888445,
+        "size": 773055
+      }
+    ]
+  },
+  "2": {
+    "track": 2,
+    "type": "audio",
+    "channel_count": 1,
+    "sample_rate": 48000,
+    "sample_size": 16,
+    "sample_count": 470,
+    "timescale": 48000,
+    "codec": "mp4a.40.2",
+    "duration": 484096,
+    "initSegment": {
+      "offset": 0,
+      "size": 697
+    },
+    "segments": [
+      {
+        "cts": 0,
+        "dts": 0,
+        "duration": 195328,
+        "offset": 697,
+        "size": 83423
+      },
+      {
+        "cts": 195328,
+        "dts": 195328,
+        "duration": 192512,
+        "offset": 84120,
+        "size": 84638
+      },
+      {
+        "cts": 387840,
+        "dts": 387840,
+        "duration": 96256,
+        "offset": 168758,
+        "size": 42280
+      }
+    ]
+  }
+}

@@ -1,0 +1,344 @@
+{
+  "text": " The King of Clubs, a majestic ruler in the royal court of cards. This regal figure, adorned with the symbol of prosperity, exudes authority and power. The King of Clubs, a strategic sovereign in the game of suits, symbolizes both leadership and mastery, a card that commands respect and demands attention.",
+  "segments": [
+    {
+      "start": 0.1,
+      "end": 3.86,
+      "text": " The King of Clubs, a majestic ruler in the royal court of cards.",
+      "confidence": 0.9,
+      "words": [
+        {
+          "text": "The",
+          "start": 0.1,
+          "end": 0.24,
+          "confidence": 0.59
+        },
+        {
+          "text": "King",
+          "start": 0.24,
+          "end": 0.42,
+          "confidence": 0.86
+        },
+        {
+          "text": "of",
+          "start": 0.42,
+          "end": 0.58,
+          "confidence": 0.96
+        },
+        {
+          "text": "Clubs,",
+          "start": 0.58,
+          "end": 1.04,
+          "confidence": 0.98
+        },
+        {
+          "text": "a",
+          "start": 1.26,
+          "end": 1.34,
+          "confidence": 0.88
+        },
+        {
+          "text": "majestic",
+          "start": 1.34,
+          "end": 1.72,
+          "confidence": 0.84
+        },
+        {
+          "text": "ruler",
+          "start": 1.72,
+          "end": 2.18,
+          "confidence": 0.99
+        },
+        {
+          "text": "in",
+          "start": 2.18,
+          "end": 2.52,
+          "confidence": 0.98
+        },
+        {
+          "text": "the",
+          "start": 2.52,
+          "end": 2.64,
+          "confidence": 1.0
+        },
+        {
+          "text": "royal",
+          "start": 2.64,
+          "end": 2.88,
+          "confidence": 0.67
+        },
+        {
+          "text": "court",
+          "start": 2.88,
+          "end": 3.24,
+          "confidence": 0.99
+        },
+        {
+          "text": "of",
+          "start": 3.24,
+          "end": 3.52,
+          "confidence": 0.99
+        },
+        {
+          "text": "cards.",
+          "start": 3.52,
+          "end": 3.86,
+          "confidence": 0.97
+        }
+      ]
+    },
+    {
+      "start": 5.1,
+      "end": 9.72,
+      "text": " This regal figure, adorned with the symbol of prosperity, exudes authority and power.",
+      "confidence": 0.98,
+      "words": [
+        {
+          "text": "This",
+          "start": 5.1,
+          "end": 5.26,
+          "confidence": 0.99
+        },
+        {
+          "text": "regal",
+          "start": 5.26,
+          "end": 5.6,
+          "confidence": 0.97
+        },
+        {
+          "text": "figure,",
+          "start": 5.6,
+          "end": 5.96,
+          "confidence": 1.0
+        },
+        {
+          "text": "adorned",
+          "start": 6.24,
+          "end": 6.68,
+          "confidence": 0.99
+        },
+        {
+          "text": "with",
+          "start": 6.68,
+          "end": 6.7,
+          "confidence": 1.0
+        },
+        {
+          "text": "the",
+          "start": 6.7,
+          "end": 6.86,
+          "confidence": 0.9
+        },
+        {
+          "text": "symbol",
+          "start": 6.86,
+          "end": 7.12,
+          "confidence": 1.0
+        },
+        {
+          "text": "of",
+          "start": 7.12,
+          "end": 7.3,
+          "confidence": 0.99
+        },
+        {
+          "text": "prosperity,",
+          "start": 7.3,
+          "end": 7.84,
+          "confidence": 0.99
+        },
+        {
+          "text": "exudes",
+          "start": 8.22,
+          "end": 8.54,
+          "confidence": 0.97
+        },
+        {
+          "text": "authority",
+          "start": 8.54,
+          "end": 8.98,
+          "confidence": 1.0
+        },
+        {
+          "text": "and",
+          "start": 8.98,
+          "end": 9.4,
+          "confidence": 0.96
+        },
+        {
+          "text": "power.",
+          "start": 9.4,
+          "end": 9.72,
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "start": 10.88,
+      "end": 15.9,
+      "text": " The King of Clubs, a strategic sovereign in the game of suits, symbolizes both leadership",
+      "confidence": 0.95,
+      "words": [
+        {
+          "text": "The",
+          "start": 10.88,
+          "end": 10.98,
+          "confidence": 0.99
+        },
+        {
+          "text": "King",
+          "start": 10.98,
+          "end": 11.18,
+          "confidence": 0.96
+        },
+        {
+          "text": "of",
+          "start": 11.18,
+          "end": 11.36,
+          "confidence": 1.0
+        },
+        {
+          "text": "Clubs,",
+          "start": 11.36,
+          "end": 11.8,
+          "confidence": 0.99
+        },
+        {
+          "text": "a",
+          "start": 12.0,
+          "end": 12.1,
+          "confidence": 0.99
+        },
+        {
+          "text": "strategic",
+          "start": 12.1,
+          "end": 12.56,
+          "confidence": 1.0
+        },
+        {
+          "text": "sovereign",
+          "start": 12.56,
+          "end": 13.1,
+          "confidence": 0.99
+        },
+        {
+          "text": "in",
+          "start": 13.1,
+          "end": 13.36,
+          "confidence": 0.99
+        },
+        {
+          "text": "the",
+          "start": 13.36,
+          "end": 13.44,
+          "confidence": 0.99
+        },
+        {
+          "text": "game",
+          "start": 13.44,
+          "end": 13.64,
+          "confidence": 0.91
+        },
+        {
+          "text": "of",
+          "start": 13.64,
+          "end": 13.8,
+          "confidence": 0.99
+        },
+        {
+          "text": "suits,",
+          "start": 13.8,
+          "end": 14.14,
+          "confidence": 0.95
+        },
+        {
+          "text": "symbolizes",
+          "start": 14.46,
+          "end": 15.12,
+          "confidence": 0.81
+        },
+        {
+          "text": "both",
+          "start": 15.12,
+          "end": 15.46,
+          "confidence": 0.91
+        },
+        {
+          "text": "leadership",
+          "start": 15.46,
+          "end": 15.9,
+          "confidence": 0.95
+        }
+      ]
+    },
+    {
+      "start": 16.12,
+      "end": 19.56,
+      "text": " and mastery, a card that commands respect and demands attention.",
+      "confidence": 0.99,
+      "words": [
+        {
+          "text": "and",
+          "start": 16.12,
+          "end": 16.28,
+          "confidence": 0.97
+        },
+        {
+          "text": "mastery,",
+          "start": 16.28,
+          "end": 16.74,
+          "confidence": 1.0
+        },
+        {
+          "text": "a",
+          "start": 17.06,
+          "end": 17.18,
+          "confidence": 1.0
+        },
+        {
+          "text": "card",
+          "start": 17.18,
+          "end": 17.4,
+          "confidence": 1.0
+        },
+        {
+          "text": "that",
+          "start": 17.4,
+          "end": 17.6,
+          "confidence": 1.0
+        },
+        {
+          "text": "commands",
+          "start": 17.6,
+          "end": 17.94,
+          "confidence": 0.99
+        },
+        {
+          "text": "respect",
+          "start": 17.94,
+          "end": 18.42,
+          "confidence": 1.0
+        },
+        {
+          "text": "and",
+          "start": 18.42,
+          "end": 18.74,
+          "confidence": 1.0
+        },
+        {
+          "text": "demands",
+          "start": 18.74,
+          "end": 19.06,
+          "confidence": 0.99
+        },
+        {
+          "text": "attention.",
+          "start": 19.06,
+          "end": 19.56,
+          "confidence": 1.0
+        }
+      ]
+    }
+  ],
+  "language": "en"
+}

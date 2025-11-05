@@ -1,0 +1,49 @@
+{
+  "name": "@editframe/assets",
+  "version": "0.26.4-beta.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false",
+    "build": "tsdown",
+    "build:watch": "tsdown --watch",
+    "typedoc": "typedoc --json ./types.json --plugin typedoc-plugin-zod --excludeExternals ./src && jq -c . ./types.json > ./types.tmp.json && mv ./types.tmp.json ./types.json"
+  },
+  "author": "",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "debug": "^4.3.5",
+    "ora": "^8.0.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/dom-webcodecs": "^0.1.11",
+    "@types/node": "^20.14.13",
+    "typescript": "^5.5.4"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "./package.json": "./package.json",
+    "./types.json": "./types.json"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "import": {
+          "types": "./dist/index.d.ts",
+          "default": "./dist/index.js"
+        }
+      },
+      "./package.json": "./package.json",
+      "./types.json": "./types.json"
+    }
+  }
+}

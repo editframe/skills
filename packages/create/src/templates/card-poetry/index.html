@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <script type="module" src="./src/index.js"></script>
+    <link rel="stylesheet" href="./src/styles.css" />
+    <link rel="stylesheet" href="./src/keyframes.css" />
+    <meta name="version" content="169" />
+  </head>
+  <body>
+    <ef-timegroup
+      mode="sequence"
+      class="h-[500px] w-[500px] overflow-scroll bg-slate-400"
+    >
+      <ef-timegroup
+        mode="contain"
+        class="absolute"
+        style="
+          animation:
+            fadein 1250ms backwards,
+            fadeout 500ms calc(var(--ef-duration) - 500ms) forwards;
+        "
+      >
+        <ef-audio
+          id="nine-spades-poem"
+          src="/assets/cards/card-9-spades.mp3"
+        ></ef-audio>
+        <div
+          class="absolute z-10 flex h-full w-full flex-col items-center justify-center"
+        >
+          <h1
+            class="mb-3 inline-block font-serif text-7xl font-extralight underline"
+            style="animation: 1s slide-in-left ease-out"
+          >
+            9 of Spades
+          </h1>
+          <ef-image
+            class="w-1/4"
+            src="/assets/cards/card-9-spades.png"
+            style="
+              animation-composition: add;
+              animation:
+                4s rotate 4s,
+                1s slide-in-left 0.25s ease-out backwards;
+            "
+          ></ef-image>
+          <ef-waveform
+            class="h-4 w-1/2 self-center"
+            target="nine-spades-poem"
+          ></ef-waveform>
+          <ef-captions
+            class="h-24 p-2 text-center text-4xl"
+            target="nine-spades-poem"
+            ><ef-captions-active-word
+              style="
+                animation: 0.1s bounce-in ease-out forwards;
+                animation-play-state: paused;
+              "
+            ></ef-captions-active-word
+          ></ef-captions>
+        </div>
+        <ef-image
+          class="absolute z-0 h-full opacity-20 blur-md"
+          src="/assets/cards/card-9-spades.png"
+          style="animation: 1.25s slide-in-left 0.25s ease-out backwards"
+        ></ef-image>
+      </ef-timegroup>
+      <ef-timegroup
+        mode="contain"
+        class="absolute"
+        style="
+          animation:
+            fadein 1250ms backwards,
+            fadeout 500ms calc(var(--ef-duration) - 500ms) forwards;
+        "
+      >
+        <ef-audio id="joker-poem" src="/assets/cards/card-joker.mp3"></ef-audio>
+        <div
+          class="absolute z-10 flex h-full w-full flex-col items-center justify-center"
+        >
+          <h1
+            class="mb-3 inline-block font-serif text-7xl font-extralight underline"
+            style="animation: 1s slide-in-left ease-out"
+          >
+            The Joker
+          </h1>
+          <ef-image
+            class="w-1/4"
+            src="/assets/cards/card-joker.png"
+            style="
+              animation-composition: add;
+              animation:
+                4s rotate 4s,
+                1s slide-in-left 0.25s ease-out backwards;
+            "
+          ></ef-image>
+          <ef-waveform
+            class="h-4 w-1/2 self-center"
+            target="joker-poem"
+          ></ef-waveform>
+          <ef-captions class="h-24 p-2 text-center text-4xl" target="joker-poem"
+            ><ef-captions-active-word
+              style="
+                animation: 0.1s bounce-in ease-out forwards;
+                animation-play-state: paused;
+              "
+            ></ef-captions-active-word
+          ></ef-captions>
+        </div>
+        <ef-image
+          class="absolute z-0 h-full opacity-20 blur-md"
+          src="/assets/cards/card-joker.png"
+          style="animation: 1.25s slide-in-left 0.25s ease-out backwards"
+        ></ef-image>
+      </ef-timegroup>
+    </ef-timegroup>
+  </body>
+</html>
