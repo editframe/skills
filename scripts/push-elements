@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Push elements subtree to public repository
+
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+MONOREPO_ROOT="$SCRIPT_DIR/.."
+
+cd "$MONOREPO_ROOT"
+
+BRANCH="${1:-main}"
+
+echo "Pushing elements subtree to elements remote (branch: $BRANCH)..."
+git subtree push --prefix=elements elements "$BRANCH"
+
+echo "✅ Successfully pushed elements subtree to public repository"

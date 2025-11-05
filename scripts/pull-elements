@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Pull elements subtree updates from public repository
+
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+MONOREPO_ROOT="$SCRIPT_DIR/.."
+
+cd "$MONOREPO_ROOT"
+
+BRANCH="${1:-main}"
+
+echo "Pulling elements subtree updates from elements remote (branch: $BRANCH)..."
+git subtree pull --prefix=elements elements "$BRANCH" --squash
+
+echo "✅ Successfully pulled elements subtree updates"

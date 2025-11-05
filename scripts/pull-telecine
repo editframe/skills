@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Pull telecine subtree updates from private repository
+
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+MONOREPO_ROOT="$SCRIPT_DIR/.."
+
+cd "$MONOREPO_ROOT"
+
+BRANCH="${1:-main}"
+
+echo "Pulling telecine subtree updates from telecine remote (branch: $BRANCH)..."
+git subtree pull --prefix=telecine telecine "$BRANCH" --squash
+
+echo "✅ Successfully pulled telecine subtree updates"
