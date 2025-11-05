@@ -1,21 +1,71 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-# # Download Electron build
-# "$SCRIPT_DIR/download-electron-build"
+# Source worktree configuration to get project name and domain
+. "$SCRIPT_DIR/worktree-config"
 
-# Export worker resource limits from the single source of truth
-eval $(npx tsx "$SCRIPT_DIR/export-worker-resources.ts")
+# Ensure shared Traefik network exists (needed for all worktrees)
+if ! docker network inspect telecine-traefik > /dev/null 2>&1; then
+  echo "Creating shared Traefik network: telecine-traefik"
+  docker network create telecine-traefik
+fi
 
-# Find all docker-compose files, including the root directory
-compose_files=$(find "$SCRIPT_DIR/.." -maxdepth 3 -type f \( -name "docker-compose.yml" -o -name "docker-compose.yaml" \) | sort)
+# Resolve elements path for docker-compose volume mounts
+PROJECT_ROOT="$SCRIPT_DIR/.."
+WORKTREE_ROOT=$(cd "$PROJECT_ROOT" && git rev-parse --show-toplevel 2>/dev/null || echo "$PROJECT_ROOT")
+WORKTREE_PARENT=$(dirname "$WORKTREE_ROOT")
 
-# Explicitly check for the root docker-compose.yaml and prepend it if found
-root_compose_file="$SCRIPT_DIR/../docker-compose.yaml"
-if [ -f "$root_compose_file" ]; then
-    compose_files="$root_compose_file"$'\n'"$compose_files"
+ELEMENTS_PATH=""
+if [ -d "$WORKTREE_PARENT/elements" ]; then
+    # Main worktree pattern: ../elements
+    ELEMENTS_PATH="$WORKTREE_PARENT/elements"
+elif [ -n "$WORKTREE_ID" ] && [ "$WORKTREE_ID" != "main" ] && [ -d "$WORKTREE_PARENT/elements-${WORKTREE_ID}" ]; then
+    # Parallel worktree pattern: ../elements-<branch>
+    ELEMENTS_PATH="$WORKTREE_PARENT/elements-${WORKTREE_ID}"
+else
+    # Fallback to relative path (relative to docker-compose.yaml location)
+    ELEMENTS_PATH="$PROJECT_ROOT/../elements"
+fi
+
+export ELEMENTS_PATH
+
+# Export absolute path to telecine root for docker-compose volume mounts
+# For docker-in-docker: paths must exist on the HOST filesystem
+# Worktrees should be created in /workspace/.cursor-worktrees so they exist on the host
+PROJECT_ROOT="$SCRIPT_DIR/.."
+WORKTREE_ROOT=$(cd "$PROJECT_ROOT" && git rev-parse --show-toplevel 2>/dev/null || echo "$PROJECT_ROOT")
+
+# Check if we're in a worktree under /workspace/.cursor-worktrees (host-mounted)
+if [[ "$WORKTREE_ROOT" == /workspace/.cursor-worktrees/* ]]; then
+    # Worktree is in the host-mounted directory - use it directly
+    TELECINE_ROOT="$WORKTREE_ROOT/telecine"
+    if [[ ! -d "$TELECINE_ROOT" ]]; then
+        TELECINE_ROOT="$WORKTREE_ROOT"
+    fi
+elif [[ "$WORKTREE_ROOT" == /workspace/* ]]; then
+    # Main worktree or worktree directly under /workspace
+    TELECINE_ROOT="$WORKTREE_ROOT/telecine"
+    if [[ ! -d "$TELECINE_ROOT" ]]; then
+        TELECINE_ROOT="$WORKTREE_ROOT"
+    fi
+elif [[ -d "/workspace/telecine" ]]; then
+    # Fallback: use main worktree's telecine
+    TELECINE_ROOT="/workspace/telecine"
+else
+    # Last resort: use current directory (may not work in docker-in-docker)
+    TELECINE_ROOT=$(cd "$PROJECT_ROOT" && pwd)
+fi
+export TELECINE_ROOT
+    if [ "$WORKTREE_DOMAIN" = "main.localhost" ]; then
+        # Main worktree: include Traefik service by activating profile
+        compose_files="$root_compose_file"$'\n'"$compose_files"
+        export COMPOSE_PROFILES="main-worktree"
+    else
+        # Worktree: include compose file but Traefik won't start (profile not activated)
+        compose_files="$root_compose_file"$'\n'"$compose_files"
+    fi
 fi
 
 # Remove any potential duplicate entries
@@ -29,5 +79,6 @@ if [ -n "$CI" ]; then
     echo "Found docker-compose files: $compose_flags"
 fi
 
-# Uncomment the following line when you're ready to run the docker compose command
-docker compose ${compose_flags} --project-name telecine "$@"
+# Run docker compose with worktree-specific project name
+# COMPOSE_PROFILES is set above for main worktree to activate Traefik service
+docker compose ${compose_flags} --project-name "$WORKTREE_DOCKER_PROJECT_NAME" "$@"

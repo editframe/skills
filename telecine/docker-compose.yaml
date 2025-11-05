@@ -8,15 +8,21 @@ services:
       - "3001:3001"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - traefik-shared
     command:
       - --api.insecure=true
       - --providers.docker
+      - --providers.docker.exposedbydefault=false
       - --entrypoints.web.address=:3000
       - --entrypoints.traefik.address=:7777
       - --entrypoints.port24678.address=:24678
       - --entrypoints.port3001.address=:3001
       - --log.level=INFO
       - --accesslog
+    restart: unless-stopped
+    profiles:
+      - main-worktree
 
   # autoheal:
   #   environment:
@@ -47,7 +53,7 @@ services:
       - .:/app
       - node_modules:/app/node_modules
       - ${HOME}/.config/gcloud:/root/.config/gcloud
-      - ../elements:/app/lib/packages
+      - ${ELEMENTS_PATH:-../elements}:/app/lib/packages
     env_file:
       - ${PWD}/.env
     working_dir: /app
@@ -72,7 +78,7 @@ services:
       - .:/app
       - node_modules:/app/node_modules
       - ${HOME}/.config/gcloud:/root/.config/gcloud
-      - ../elements:/app/lib/packages
+      - ${ELEMENTS_PATH:-../elements}:/app/lib/packages
     devices:
       - /dev/mps0:/dev/mps0
     privileged: true
@@ -111,3 +117,10 @@ services:
 volumes:
   node_modules:
   node_modules_amd64:
+
+networks:
+  traefik-shared:
+    name: telecine-traefik
+    external: true
+  default:
+    name: ${WORKTREE_DOCKER_NETWORK_NAME:-telecine_default}
