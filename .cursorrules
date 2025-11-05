@@ -1,0 +1,23 @@
+# Monorepo Setup - Git Subtrees
+
+This monorepo contains `telecine` (private) and `elements` (public) as git subtrees.
+
+## Structure
+- `telecine/` - Private repository (git subtree)
+- `elements/` - Public repository (git subtree)
+- `scripts/` - Helper scripts for subtree management
+
+## Publishing Changes
+
+Use helper scripts to push to respective repositories:
+- `./scripts/push-telecine` - Push telecine subtree to private repo
+- `./scripts/push-elements` - Push elements subtree to public repo
+- `./scripts/pull-telecine` - Pull telecine updates
+- `./scripts/pull-elements` - Pull elements updates
+
+## Important
+- Elements commits are PUBLIC - ensure commit messages don't reference telecine internals
+- Both repos developed in lock-step (same branch)
+- Worktrees contain both directories automatically
+- See `.cursor/rules/monorepo-setup.mdc` for detailed documentation
+

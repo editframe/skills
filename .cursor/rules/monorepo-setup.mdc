@@ -1,0 +1,128 @@
+# Monorepo Setup and Git Subtrees
+
+## Overview
+
+This is a git monorepo containing both `telecine` (private) and `elements` (public) as git subtrees. This structure enables Cursor's multi-model feature while maintaining separate GitHub repositories for public/private publishing.
+
+## Repository Structure
+
+```
+monorepo/
+├── telecine/          # Private repository (git subtree)
+├── elements/          # Public repository (git subtree)
+└── scripts/          # Helper scripts for subtree management
+```
+
+## Git Subtrees
+
+Both `telecine` and `elements` are git subtrees, meaning:
+- They are tracked as subdirectories in this monorepo
+- Each subtree maintains its own commit history
+- Changes can be pushed independently to their respective GitHub repositories
+- The monorepo tracks which commit of each subtree is currently used
+
+## Important: Commit Messages
+
+**CRITICAL**: When committing changes that will be pushed to `elements` (public repo), ensure commit messages do NOT reference telecine-specific code or internal details. Elements commits are visible publicly.
+
+## Daily Workflow
+
+### Making Changes
+
+1. Edit files normally in `telecine/` or `elements/` directories
+2. Commit changes as usual:
+   ```bash
+   git add telecine/...
+   git commit -m "Your commit message"
+   ```
+
+### Publishing Changes
+
+Use the helper scripts to push changes to the respective repositories:
+
+**Push telecine changes (private):**
+```bash
+./scripts/push-telecine [branch-name]
+# Default branch: main
+```
+
+**Push elements changes (public):**
+```bash
+./scripts/push-elements [branch-name]
+# Default branch: main
+```
+
+### Pulling Updates
+
+To pull updates from the remote repositories:
+
+**Pull telecine updates:**
+```bash
+./scripts/pull-telecine [branch-name]
+```
+
+**Pull elements updates:**
+```bash
+./scripts/pull-elements [branch-name]
+```
+
+## Git Remotes
+
+The monorepo has separate remotes configured:
+- `telecine` → `git@github.com:editframe/telecine.git` (private)
+- `elements` → `git@github.com:editframe/elements.git` (public)
+
+## Worktrees
+
+Worktrees work at the monorepo level:
+```bash
+git worktree add ../monorepo-feature-auth feature-auth
+```
+
+This creates a worktree containing BOTH `telecine` and `elements` directories on the same branch. Both repositories will be on the same branch automatically.
+
+## Manual Subtree Commands
+
+If you need to use git subtree commands directly:
+
+**Push telecine subtree:**
+```bash
+git subtree push --prefix=telecine telecine main
+```
+
+**Push elements subtree:**
+```bash
+git subtree push --prefix=elements elements main
+```
+
+**Pull telecine subtree:**
+```bash
+git subtree pull --prefix=telecine telecine main --squash
+```
+
+**Pull elements subtree:**
+```bash
+git subtree pull --prefix=elements elements main --squash
+```
+
+## Development Notes
+
+- Both repositories are developed in lock-step (typically on the same branch)
+- Test assets are preserved in both repositories
+- Large binary files (guide assets, compiled binaries) have been removed from git history
+- The monorepo enables Cursor's multi-model feature by providing a single git context
+
+## Troubleshooting
+
+**Subtree push fails:**
+- Ensure you're on the correct branch
+- Check that the remote repositories are accessible
+- Verify you have push permissions
+
+**Subtree pull conflicts:**
+- Resolve conflicts as normal
+- The `--squash` flag merges remote changes into a single commit
+
+**Working with both repos:**
+- Changes to telecine and elements can be committed together in a single monorepo commit
+- Each subtree push creates separate commits in the respective GitHub repositories
