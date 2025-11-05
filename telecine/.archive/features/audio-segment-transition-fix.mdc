@@ -1,0 +1,89 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Audio Segment Transition Fix
+Fix audio dropouts between video segments in JIT transcoding playback
+
+## Development Patterns
+Reference the relevant menu items for this feature:
+- [x] [Browser Tests](mdc:.cursor/rules/menu/browser-tests.mdc) - Write automated tests that detect audio dropouts
+- [x] [Elements Package](mdc:.cursor/rules/menu/elements-package.mdc) - Working with the browser video components
+- [x] [Audio Processing](mdc:.cursor/rules/menu/audio-processing.mdc) - Handling audio segment concatenation
+
+## Test plan / verification steps
+**Primary verification through automated tests:**
+1. Write tests that fail before the fix:
+   ```bash
+   cd lib/packages
+   npm run browsertest -- src/elements/EFMedia.audio-dropout.browsertest.ts
+   ```
+2. Tests should verify:
+   - Audio continuity between segments (no dropouts)
+   - Proper audio buffer concatenation for JIT segments
+   - Audio decoding success with stitched segments
+3. All existing related tests should continue passing:
+   ```bash
+   cd lib/packages
+   npm run browsertest -- src/elements/EFMedia.jit-transcoding.browsertest.ts
+   npm run browsertest -- src/elements/EFAudio.browsertest.ts
+   ```
+
+**Manual verification (secondary, if needed):**
+- Listen for audio dropouts during segment transitions
+- Verify audio visualization shows no gaps during transitions
+
+**Testing guidelines:**
+- Always reference tests by specific file paths, not test names
+- Write tests that fail before implementation and pass after
+- Prefer running small numbers of specific test files over large test suites
+- Tests should be the primary verification mechanism, not manual steps
+
+## Tasks
+- [x] Write failing test that detects audio dropouts between JIT segments
+- [x] Investigate current audio segment concatenation in EFMedia.fetchAudioSpanningTime
+- [x] Identify root cause: JIT segments contain interleaved audio/video, not separate files
+- [x] Fix audio extraction to use already-fetched video segments instead of fetching separate audio
+- [x] Verify all tests pass after implementation
+- [x] Test in browser to ensure "Failed to fetch audio" errors are resolved
+
+## Running notes
+
+**Root Cause Identified**: The issue was NOT about naive MP4 concatenation as originally thought. The real problem was that `fetchAudioSpanningTime()` was trying to fetch separate audio files in JIT mode, but JIT segments contain interleaved audio and video in the same MP4 files.
+
+**Previous misunderstanding**: 
+```typescript
+// This was wrong - concatenates complete MP4 files with headers
+const audioBlob = new Blob(audioBuffers, { type: "audio/mp4" });
+```
+
+**Actual Issue**: In JIT transcoding mode, there are no separate audio tracks. The audio is embedded in the same MP4 files that contain the video. `fetchAudioSpanningTime()` was trying to fetch audio segments separately using `jitClient.fetchSegment()`, but should instead extract audio from the video segments already fetched by `fetchSeekTask`.
+
+**Solution Implemented**: 
+1. Modified `fetchAudioSpanningTime()` in JIT mode to fetch video segments directly for the requested time range
+2. Extract audio tracks from the interleaved video/audio MP4 files using `decodeAudioData()`
+3. Concatenate raw audio data (not MP4 containers) and encode to WAV format
+4. Simplified dependency chain - no longer depends on `fetchSeekTask` having run first
+
+**Test Results**: 
+- ✅ Tests with real MP4 segments pass
+- ✅ Audio concatenation with new approach works correctly  
+- ✅ Individual segment decoding verified
+- ✅ Browser integration confirmed - "Failed to fetch audio" errors resolved
+
+**Final Status**: ✅ **COMPLETE** - Audio dropout issue fixed. JIT transcoding now properly extracts and concatenates audio from interleaved MP4 segments without dropouts.
+
+**Browser Testing Status**: ✅ **RESOLVED** - Fixed `DataCloneError: Cannot decode detached ArrayBuffer` issue. The problem was that cached JIT segments (ArrayBuffers) become detached after first use by `decodeAudioData()`. Solution: Clone ArrayBuffers before decoding using `segment.buffer.slice(0)` to ensure each audio extraction gets a fresh copy.
+
+**Root Causes Fixed**:
+1. **Audio Dropouts**: JIT segments contain interleaved audio/video, not separate files → Extract audio from video segments using `decodeAudioData()` and concatenate raw samples
+2. **Browser "Failed to fetch audio"**: Cached ArrayBuffers become detached after first decode → Clone buffers before each decode operation
+
+**Technical Details**:
+- Extract audio tracks from interleaved video/audio MP4 files using browser's native `decodeAudioData()`  
+- Concatenate raw audio data (not MP4 containers) and encode to WAV format
+- Clone ArrayBuffers before decoding to handle JIT client caching: `const clonedBuffer = segment.buffer.slice(0)`
+- No audio dropouts between segments - seamless transitions achieved
+
+User should check browser console logs when "Failed to fetch audio" occurs to see which step is failing.

@@ -1,0 +1,28 @@
+# Ignore local data
+data/*
+
+# Ignore large development/test assets
+video/*
+cards/*
+build/*
+public/video/*
+
+# Ignore generated credentials from google-github-actions/auth
+gha-creds-*.json
+
+# Ignore deployment related code
+deploy/*
+
+# Ignore host node_modules
+node_modules
+# Ignore library node_modules
+lib/*/node_modules
+# Ignore library dist
+lib/*/dist
+
+# Ignore build files that may have been created during devolpment
+# dist/*
+# server.production.cjs
+
+.git/*
+**/*.mp4

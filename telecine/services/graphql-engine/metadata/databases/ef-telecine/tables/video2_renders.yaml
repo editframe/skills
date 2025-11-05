@@ -1,0 +1,246 @@
+table:
+  name: renders
+  schema: video2
+object_relationships:
+  - name: api_key
+    using:
+      foreign_key_constraint_on: api_key_id
+  - name: org
+    using:
+      foreign_key_constraint_on: org_id
+  - name: render_status
+    using:
+      foreign_key_constraint_on: status
+  - name: user
+    using:
+      foreign_key_constraint_on: creator_id
+array_relationships:
+  - name: render_fragments
+    using:
+      foreign_key_constraint_on:
+        column: render_id
+        table:
+          name: render_fragments
+          schema: video2
+insert_permissions:
+  - role: org-editor
+    permission:
+      check:
+        org:
+          memberships:
+            _and:
+              - role:
+                  _in:
+                    - admin
+                    - editor
+              - user_id:
+                  _eq: X-Hasura-User-Id
+      set:
+        creator_id: x-hasura-user-id
+        status: created
+      columns:
+        - api_key_id
+        - duration_ms
+        - fps
+        - height
+        - html
+        - id
+        - md5
+        - metadata
+        - org_id
+        - strategy
+        - width
+        - work_slice_ms
+    comment: ""
+select_permissions:
+  - role: ef-admin
+    permission:
+      columns:
+        - restricted
+        - byte_size
+        - duration_ms
+        - height
+        - width
+        - work_slice_ms
+        - metadata
+        - fps
+        - html
+        - status
+        - strategy
+        - completed_at
+        - created_at
+        - failed_at
+        - api_key_id
+        - creator_id
+        - id
+        - md5
+        - org_id
+      filter: {}
+      allow_aggregations: true
+    comment: ""
+  - role: org-admin
+    permission:
+      columns:
+        - api_key_id
+        - byte_size
+        - completed_at
+        - created_at
+        - creator_id
+        - duration_ms
+        - failed_at
+        - fps
+        - height
+        - html
+        - id
+        - md5
+        - metadata
+        - org_id
+        - status
+        - strategy
+        - width
+        - work_slice_ms
+      filter:
+        org:
+          memberships:
+            _and:
+              - role:
+                  _eq: admin
+              - user_id:
+                  _eq: X-Hasura-user-id
+      allow_aggregations: true
+    comment: ""
+  - role: org-editor
+    permission:
+      columns:
+        - api_key_id
+        - byte_size
+        - completed_at
+        - created_at
+        - creator_id
+        - duration_ms
+        - failed_at
+        - fps
+        - height
+        - html
+        - id
+        - md5
+        - metadata
+        - org_id
+        - status
+        - strategy
+        - width
+        - work_slice_ms
+      filter:
+        org:
+          memberships:
+            _and:
+              - role:
+                  _in:
+                    - admin
+                    - editor
+              - user_id:
+                  _eq: X-Hasura-User-Id
+      allow_aggregations: true
+    comment: ""
+  - role: org-primary
+    permission:
+      columns:
+        - api_key_id
+        - byte_size
+        - completed_at
+        - created_at
+        - creator_id
+        - duration_ms
+        - failed_at
+        - fps
+        - height
+        - html
+        - id
+        - md5
+        - metadata
+        - org_id
+        - status
+        - strategy
+        - width
+        - work_slice_ms
+      filter:
+        org:
+          memberships:
+            user_id:
+              _eq: X-Hasura-User-Id
+      allow_aggregations: true
+    comment: ""
+  - role: org-reader
+    permission:
+      columns:
+        - api_key_id
+        - byte_size
+        - completed_at
+        - created_at
+        - creator_id
+        - duration_ms
+        - failed_at
+        - fps
+        - height
+        - html
+        - id
+        - md5
+        - metadata
+        - org_id
+        - output_config
+        - status
+        - strategy
+        - width
+        - work_slice_ms
+      filter:
+        org:
+          memberships:
+            user_id:
+              _eq: X-Hasura-User-Id
+      limit: 50
+      allow_aggregations: true
+    comment: ""
+event_triggers:
+  - name: renders_create_process_html
+    definition:
+      enable_manual: false
+      insert:
+        columns: '*'
+    retry_conf:
+      interval_sec: 10
+      num_retries: 3
+      timeout_sec: 60
+    webhook: '{{HASURA_ACTION_ORIGIN}}/hdb/create_process_html'
+    headers:
+      - name: X-ACTION-SECRET
+        value_from_env: ACTION_SECRET
+  - name: renders_slack_notification
+    definition:
+      enable_manual: true
+      update:
+        columns:
+          - status
+    retry_conf:
+      interval_sec: 30
+      num_retries: 3
+      timeout_sec: 60
+    webhook: '{{HASURA_ACTION_ORIGIN}}/hdb/send_render_completed_slack'
+    headers:
+      - name: X-ACTION-SECRET
+        value_from_env: ACTION_SECRET
+  - name: renders_webhook
+    definition:
+      enable_manual: false
+      insert:
+        columns: '*'
+      update:
+        columns:
+          - status
+    retry_conf:
+      interval_sec: 30
+      num_retries: 3
+      timeout_sec: 60
+    webhook: '{{HASURA_ACTION_ORIGIN}}/hdb/webhook_create_event'
+    headers:
+      - name: X-ACTION-SECRET
+        value_from_env: ACTION_SECRET

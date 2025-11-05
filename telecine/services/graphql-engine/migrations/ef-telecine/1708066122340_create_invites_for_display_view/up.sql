@@ -1,0 +1,9 @@
+create view identity.invite_for_display as
+select
+i.*,
+o.display_name as org_display_name,
+ep.email_address as invited_by
+from identity.invites i
+join identity.orgs o on i.org_id=o.id
+join identity.users u on i.creator_id=u.id
+join identity.email_passwords ep on u.id=ep.user_id;

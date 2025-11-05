@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+source $SCRIPT_DIR/../.test-env
+
+PROJECT_DIR="${SCRIPT_DIR}/../services/graphql-engine"
+
+# echo "ℹ️  Hasura project dir: ${PROJECT_DIR}"
+# echo "ℹ️  Hasura admin secret: *****"
+if [[ "$@" =~ migrate ]]
+then
+  # echo "ℹ️  Hasura database name: ${DB_NAME}"
+  npx hasura-cli \
+    --endpoint http://localhost:9090 \
+    --project ${PROJECT_DIR} \
+    --database-name ${DB_NAME} \
+    --admin-secret ${HASURA_ADMIN_SECRET} \
+    "$@"
+else
+  npx hasura-cli \
+    --endpoint http://localhost:9090 \
+    --project ${PROJECT_DIR} \
+    --admin-secret ${HASURA_ADMIN_SECRET} \
+    "$@"
+fi
+

@@ -1,0 +1,14 @@
+.captionTimelineWord {
+  display: inline-block;
+  position: absolute;
+  bottom: 0;
+  background: white;
+  transform-origin: bottom left;
+  --scale: 0.5;
+  opacity: calc(0.5 + var(--scale));
+  transform: scale(calc(0.5 + var(--scale)));
+  /* transition: 0.1s ease-in-out transform; */
+}
+.captionTimelineWordCurrent {
+  z-index: 1;
+}

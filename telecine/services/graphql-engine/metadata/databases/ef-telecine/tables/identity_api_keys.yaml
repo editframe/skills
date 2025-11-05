@@ -1,0 +1,232 @@
+table:
+  name: api_keys
+  schema: identity
+object_relationships:
+  - name: org
+    using:
+      foreign_key_constraint_on: org_id
+  - name: user
+    using:
+      foreign_key_constraint_on: user_id
+array_relationships:
+  - name: events
+    using:
+      foreign_key_constraint_on:
+        column: api_key_id
+        table:
+          name: webhook_events
+          schema: api
+  - name: image_files
+    using:
+      foreign_key_constraint_on:
+        column: api_key_id
+        table:
+          name: image_files
+          schema: video2
+  - name: isobmff_files
+    using:
+      foreign_key_constraint_on:
+        column: api_key_id
+        table:
+          name: isobmff_files
+          schema: video2
+  - name: isobmff_tracks
+    using:
+      foreign_key_constraint_on:
+        column: api_key_id
+        table:
+          name: isobmff_tracks
+          schema: video2
+  - name: renders
+    using:
+      foreign_key_constraint_on:
+        column: api_key_id
+        table:
+          name: renders
+          schema: video2
+insert_permissions:
+  - role: org-admin
+    permission:
+      check:
+        org:
+          memberships:
+            _and:
+              - role:
+                  _eq: admin
+              - user_id:
+                  _eq: X-Hasura-user-id
+      set:
+        user_id: x-hasura-User-Id
+      columns:
+        - hash
+        - name
+        - org_id
+        - salt
+    comment: ""
+  - role: org-developer
+    permission:
+      check: {}
+      columns: []
+    comment: ""
+select_permissions:
+  - role: ef-admin
+    permission:
+      columns:
+        - webhook_events
+        - hash
+        - salt
+        - name
+        - webhook_secret
+        - webhook_url
+        - created_at
+        - expiration_reminder_sent_at
+        - expired_at
+        - updated_at
+        - id
+        - org_id
+        - user_id
+      filter: {}
+      allow_aggregations: true
+    comment: ""
+  - role: org-admin
+    permission:
+      columns:
+        - created_at
+        - expired_at
+        - id
+        - name
+        - org_id
+        - updated_at
+        - user_id
+        - webhook_events
+        - webhook_secret
+        - webhook_url
+      filter:
+        org:
+          memberships:
+            _and:
+              - role:
+                  _eq: admin
+              - user_id:
+                  _eq: X-Hasura-user-id
+    comment: ""
+  - role: org-editor
+    permission:
+      columns:
+        - expired_at
+        - id
+        - name
+        - webhook_events
+        - webhook_url
+      filter:
+        org:
+          memberships:
+            _and:
+              - role:
+                  _in:
+                    - admin
+                    - editor
+              - user_id:
+                  _eq: X-Hasura-User-Id
+      limit: 50
+    comment: ""
+  - role: org-reader
+    permission:
+      columns:
+        - webhook_events
+        - hash
+        - salt
+        - id
+        - expired_at
+        - name
+        - webhook_secret
+        - webhook_url
+        - created_at
+        - updated_at
+        - org_id
+        - user_id
+      filter:
+        org:
+          memberships:
+            _and:
+              - user_id:
+                  _eq: X-Hasura-user-id
+      allow_aggregations: true
+    comment: ""
+update_permissions:
+  - role: org-admin
+    permission:
+      columns:
+        - expired_at
+        - name
+        - updated_at
+        - webhook_events
+        - webhook_url
+      filter:
+        org:
+          memberships:
+            _and:
+              - role:
+                  _eq: admin
+              - user_id:
+                  _eq: X-Hasura-user-id
+      check: null
+    comment: ""
+  - role: org-editor
+    permission:
+      columns:
+        - name
+        - webhook_events
+        - webhook_url
+      filter:
+        org:
+          memberships:
+            _and:
+              - role:
+                  _in:
+                    - admin
+                    - editor
+              - user_id:
+                  _eq: X-Hasura-User-Id
+      check: null
+    comment: ""
+delete_permissions:
+  - role: org-admin
+    permission:
+      filter:
+        org:
+          memberships:
+            _and:
+              - role:
+                  _eq: admin
+              - user_id:
+                  _eq: X-Hasura-user-id
+    comment: ""
+event_triggers:
+  - name: api_key_created_email
+    definition:
+      enable_manual: false
+      insert:
+        columns: '*'
+    retry_conf:
+      interval_sec: 10
+      num_retries: 0
+      timeout_sec: 60
+    webhook: '{{HASURA_ACTION_ORIGIN}}/hdb/deliver_new_api_email_notification'
+    headers:
+      - name: X-ACTION-SECRET
+        value_from_env: ACTION_SECRET
+  - name: api_keys_test_webhook_url
+    definition:
+      enable_manual: true
+      update:
+        columns:
+          - webhook_url
+    retry_conf:
+      interval_sec: 120
+      num_retries: 3
+      timeout_sec: 120
+    webhook: '{{HASURA_ACTION_ORIGIN}}/hdb/test_webhook_url'
+    headers:
+      - name: X-ACTION-SECRET
+        value_from_env: ACTION_SECRET

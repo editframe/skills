@@ -1,0 +1,24 @@
+
+FROM mcr.microsoft.com/playwright:v1.53.0-noble
+
+WORKDIR /app
+
+RUN apt-get update \
+  && apt-get install -y \
+  ffmpeg \
+  xvfb \
+  zsh \
+  unzip \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# It's nice to have oh-my-zsh in dev containers
+RUN wget https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -O - | zsh || true
+
+
+RUN npm install -g tsx
+COPY ./install-stable-chrome.ts /root/install-stable-chrome.ts
+RUN chmod +x /root/install-stable-chrome.ts
+RUN tsx /root/install-stable-chrome.ts
+
+WORKDIR /app

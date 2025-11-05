@@ -1,0 +1,60 @@
+table:
+  name: process_isobmff
+  schema: video2
+object_relationships:
+  - name: api_key
+    using:
+      foreign_key_constraint_on: api_key_id
+  - name: isobmff_file
+    using:
+      foreign_key_constraint_on: isobmff_file_id
+  - name: org
+    using:
+      foreign_key_constraint_on: org_id
+  - name: unprocessed_file
+    using:
+      foreign_key_constraint_on: unprocessed_file_id
+array_relationships:
+  - name: attempts
+    using:
+      foreign_key_constraint_on:
+        column: process_isobmff_id
+        table:
+          name: process_isobmff_attempts
+          schema: video2
+select_permissions:
+  - role: org-reader
+    permission:
+      columns:
+        - completed_at
+        - started_at
+        - created_at
+        - failed_at
+        - id
+        - isobmff_file_id
+        - org_id
+        - source_type
+        - unprocessed_file_id
+        - url
+      filter:
+        org:
+          memberships:
+            user_id:
+              _eq: X-Hasura-User-Id
+      limit: 50
+      allow_aggregations: true
+    comment: ""
+event_triggers:
+  - name: process_isobmff
+    definition:
+      enable_manual: false
+      insert:
+        columns: '*'
+    retry_conf:
+      interval_sec: 30
+      num_retries: 3
+      timeout_sec: 60
+    webhook: '{{HASURA_ACTION_ORIGIN}}/hdb/process_isobmff'
+    headers:
+      - name: X-ACTION-SECRET
+        value_from_env: ACTION_SECRET

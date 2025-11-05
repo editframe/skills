@@ -1,0 +1,2 @@
+CREATE TABLE "video2"."process_isobmff_attempts" ("id" uuid NOT NULL DEFAULT gen_random_uuid(), "created_at" timestamptz NOT NULL DEFAULT now(), "failed_at" timestamptz, "completed_at" timestamptz, "log_info" text, "public_error" Text, "process_isobmff_id" uuid NOT NULL, "attempt_number" integer NOT NULL, PRIMARY KEY ("id") , FOREIGN KEY ("process_isobmff_id") REFERENCES "video2"."process_isobmff"("id") ON UPDATE restrict ON DELETE cascade, UNIQUE ("process_isobmff_id", "attempt_number"));
+CREATE EXTENSION IF NOT EXISTS pgcrypto;

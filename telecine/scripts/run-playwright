@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+# If no arguments are provided, use the current shell as the default command
+if [ $# -eq 0 ]; then
+    echo "Starting $SHELL in container..."
+    $SCRIPT_DIR/docker-compose run -it --rm playwright-runner "$SHELL"
+else
+    $SCRIPT_DIR/docker-compose run -it --rm playwright-runner "$@"
+fi

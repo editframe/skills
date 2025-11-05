@@ -1,0 +1,305 @@
+---
+meta:
+  - title:  'Add new audio to video files with FFmpeg and Editframe (no mixing required!)'
+  - name: description
+    content: 'With Editframe and FFmpeg, you can add music to your videos and upload these enhanced files directly to social networks in just a few seconds.'
+headers:
+  Cache-Control: cache
+featured_image: /guides/add-new-audio-to-video-files-with-ffmpeg-and-editframe-(no-mixing-required!)/video-editing.jpeg
+published_date:  2023-06-08
+author: Ilias Haddad
+---
+
+
+Have you ever wanted to replace the audio of an existing video with a new song or a background track? Maybe you have a library of hundreds of videos you’d like to do this to, but you don’t want to spend hours on repetitive, labor-intensive video editing work. 
+
+
+If that describes you, you’ve come to the right place. This guide will show you two methods of programmatically adding songs, music, MP3, or any other audio to your videos using FFmpeg and the Editframe API.
+
+
+Whether you’re creating custom YouTube videos or adding background music to an existing Twitch Stream, adding your favorite music to a video can greatly enhance the viewing experience, and allow you to put more of a creative stamp on your video content. With Editframe and FFmpeg, you can add music to your videos and upload these enhanced files directly to social networks in just a few seconds. 
+
+
+Use cases for this workflow include:
+
+- Adding music to Twitch or YouTube recordings
+- Replace music or background audio of video
+- Adding voice over or recorded audio to podcast videos
+
+Let’s get started! 
+
+
+## File assets
+
+
+Here is a sample video (provided by [pexels.com](http://pexels.com/)) and some background music (provided by [pixabay.com](https://pixabay.com/)) that we will use in this tutorial: 
+
+
+#### video.mp4 <Video controls="true" url="/guides/add-new-audio-to-video-files-with-ffmpeg-and-editframe-(no-mixing-required!)/video.mp4" />
+####  audio.mp3
+<Audio controls="true" url="/guides/add-new-audio-to-video-files-with-ffmpeg-and-editframe-(no-mixing-required!)/audio.mp3" />
+
+
+
+
+
+
+## Part 1: Using FFmpeg
+
+
+First, we’ll walk through this workflow using FFmpeg. 
+
+
+### Required Tools
+
+- Sample video and audio files (provided above)
+- [**FFmpeg**](https://ffmpeg.org/download.html): (You’ll need to install FFmpeg and set up the appropriate environment variables before beginning this tutorial)
+
+## Replace the existing video audio with new audio or music
+
+
+Here is the FFmpeg command to replace the video’s existing audio with new audio.
+
+
+```shell
+ffmpeg -i video.mp4  -i audio.mp3 \
+-map 0:v -map 1:a -c:v copy -shortest audio.mp4
+```
+
+
+Let’s break this down and see what each part of the command is doing.
+
+- In this line, we import the video file and a new background audio file:
+
+```shell
+ffmpeg -i video.mp4  -i audio.mp3 \
+```
+
+- In this line, we map over the video and background music stream, and combine them into an ouput.mp4 file. We use the `-shortest` flag to trim the video to match the audio stream:
+
+```shell
+-map 0:v -map 1:a -c:v copy -shortest audio.mp4
+```
+
+
+## Using the fade In Audio Effect
+
+
+Here is the FFmpeg command to replace the video audio with a new audio with a fade in effect.
+
+
+```shell
+ffmpeg -i video.mp4  -i audio.mp3 \
+-map 0:v -map 1:a -c:v copy -shortest \
+-af "afade=t=in:st=0:d=3"  audio-fadein.mp4
+```
+
+
+Let’s take a look at each part of this command. 
+
+- In this line, we import the video and background music files:
+
+```shell
+ffmpeg -i video.mp4  -i audio.mp3 \
+```
+
+- In this line, we map over the video and background music streams and combine them into an ouput.mp4 file. The `-shortest` flag trims the video to match the audio stream.
+
+```shell
+-map 0:v -map 1:a -c:v copy -shortest
+```
+
+- In this line, we add the fade in effect `afade=t=in` or `afade=t=out`, starting at 0 seconds `st=0` with a duration of 3 seconds `d=3`.
+
+```shell
+-af "afade=t=in:st=0:d=3"  audio-fadein.mp4
+```
+
+
+Here is the output video using the FFmpeg command:
+
+
+#### audio.mp4 <Video controls="true" url="/guides/add-new-audio-to-video-files-with-ffmpeg-and-editframe-(no-mixing-required!)/audio.mp4" />
+
+#### audio-fadein.mp4 <Video controls="true" url="/guides/add-new-audio-to-video-files-with-ffmpeg-and-editframe-(no-mixing-required!)/audio-fadein.mp4" />
+
+
+## Part 2: Using Editframe
+
+
+Now let’s perform the same task using Editframe instead of FFmpeg.
+
+
+### Required tools: 
+
+- Node.js installed on your machine (v16+)
+- Editframe API Token (you can create an account from [this link](https://app.editframe.com/signup))
+
+*No need to have FFmpeg installed on your machine
+
+- Create a folder for your project:
+
+```shell
+mkdir editframe-audio
+```
+
+- Initialize a Node.js project:
+
+```shell
+yarn init -y
+```
+
+- Install the Editframe Node.js SDK:
+
+```shell
+cd editframe-audio && yarn add @editframe/editframe-js
+```
+
+- Create a `create-video.js` file for merging your video files:
+
+```javascript
+const { Editframe } = require("@editframe/editframe-js");
+
+const main = async () => {
+ const editframe = new Editframe({
+    develop: true,
+    clientId: "YOUR_EDITFRAME_CLIENT_ID",
+    token: "YOUR_EDITFRAME_TOKEN",
+  });
+  const composition = await editframe.videos.new({
+    backgroundColor: "#000",
+    dimensions: {
+      height: 1920,
+      width: 1080,
+    },
+    duration: 8,
+  });
+
+  const videoLayer = await composition.addVideo(
+    // file
+    `${__dirname}/video.mp4`,
+    // config
+    {
+      size: {
+        format: "fit",
+      },
+    }
+  );
+  await composition.addAudio(
+    `${__dirname}/audio.mp3`,
+    { volume: 1 }
+    /*
+Add fade in audio effect
+    {
+      transitions: [
+        {
+          options: {
+						duration: 3  // seconds that transition takes to complete
+          },
+					type: "fadeIn", // or fadeIn,
+        },
+      ],
+    }
+*/
+  );
+  const video = await composition.encodeSync();
+  console.log(video);
+};
+
+main();
+```
+
+
+Let’s break down what did above. Here, we initialized an Editframe instance with our Editframe Token, which we got by creating an Editframe application. We also set the `develop` key to `true` to open the output video in a new tab when encoding has finished:
+
+
+```javascript
+const editframe = new Editframe({
+    develop: true,
+    clientId: "YOUR_EDITFRAME_CLIENT_ID",
+    token: "YOUR_EDITFRAME_TOKEN",
+  });
+```
+
+
+In these lines, we created a [new video composition](/docs/composition) with 1080x1920 dimensions and a black background:
+
+
+```javascript
+const composition = await editframe.videos.new({
+    backgroundColor: "#000",
+    dimensions: {
+      height: 1920,
+      width: 1080,
+    },
+    duration: 8,
+  });
+```
+
+
+In these lines, we added the video file path to the video composition using the [composition.addVideo](/docs/composition/layers/video) method:
+
+
+```javascript
+const videoLayer = await composition.addVideo(
+    // file
+    `${__dirname}/video.mp4`,
+    // config
+    {
+      size: {
+        format: "fit",
+      },
+    }
+  );
+```
+
+
+Here, we add background music to the video using [addAudio method](/docs/composition/layers/audio). (If you want to, you can also add the fade in transitions using [transitions Array](/docs/composition/layers/configuration/transitions)):
+
+
+```javascript
+await composition.addAudio(
+    `${__dirname}/audio.mp3`,
+    { volume: 1 }
+    /*
+Add fade in audio effect
+    {
+      transitions: [
+        {
+          options: {
+						duration: 3 // seconds that transition takes to complete
+					},
+          type: "fadeIn", // or fadeIn,
+        },
+      ],
+    }
+*/
+  );
+```
+
+
+In these lines, we will encoded the [video synchronously](/docs/composition/rendering#synchronous-encoding). Note: We also could have done this [asynchronously](/docs/composition/rendering#asynchronous-encoding) with a webhook:
+
+
+```javascript
+const video = await composition.encodeSync();
+console.log(video);
+```
+
+- Run the video script
+
+```shell
+node create-video
+```
+
+
+Here’s the output video from the Editframe API:
+
+
+#### editframe-audio.mp4 <Video controls="true" url="/guides/add-new-audio-to-video-files-with-ffmpeg-and-editframe-(no-mixing-required!)/editframe-audio-fadein.mp4" />
+
+#### editframe-audio-fadein.mp4 <Video controls="true" url="/guides/add-new-audio-to-video-files-with-ffmpeg-and-editframe-(no-mixing-required!)/editframe-audio.mp4" />
+
+
+You can also add transitions, filters, trim your videos, and more. Learn more about this process and the APIs involved in the [Editframe API docs](/docs). 
+

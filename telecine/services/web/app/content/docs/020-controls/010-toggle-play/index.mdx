@@ -1,0 +1,107 @@
+---
+meta:
+  - title: Play/Pause Button
+  - name:  description
+    content: Documentation for the Editframe Toggle Play Button Element
+headers:
+  Cache-Control: no-cache
+---
+
+# Play/Pause Button
+
+The `<ef-toggle-play>` element is a playback control that toggles between play and pause states. It automatically switches between two slots based on the current playing state, allowing you to provide custom UI for each state.
+
+## Demonstration
+
+<Demonstration layout="horizontal" defaultSourceVisible alwaysShowSource hideFilmstrip hideFocusOverlay>
+  <Video loop id="toggle-play-demo" src="https://assets.editframe.com/bars-n-tone.mp4" sourceout="2s"className="w-full h-full object-contain" />
+  <TogglePlay target="toggle-play-demo" className="absolute bottom-0 left-0 right-0 p-3 bg-gray-900 flex items-center justify-center gap-2">
+    <button slot="play" className="size-12 rounded-full bg-blue-600 text-white hover:scale-110 transition-all grid place-items-center">▶</button>
+    <button slot="pause" className="size-12 rounded-full bg-orange-600 text-white hover:scale-110 transition-all grid place-items-center">⏸</button>
+  </TogglePlay>
+</Demonstration>
+
+## How It Works
+
+The toggle play element:
+1. Consumes the `playing` context from its ancestor (`<ef-preview>`, `<ef-workbench>`, or `<ef-controls>`) or from a targeted element
+2. Displays the `play` slot when paused
+3. Displays the `pause` slot when playing
+4. Listens for click events on itself and all children
+5. Toggles the playback state when clicked
+
+Any element placed in either slot will trigger the toggle when clicked.
+
+## Targeting
+
+Like all control elements, `<ef-toggle-play>` can target any temporal element on the page using the `target` attribute:
+
+```html
+<ef-preview id="my-video">
+  <ef-timegroup slot="canvas" mode="contain" className="w-[1920px] h-[1080px]">
+    <ef-video src="/video.mp4"></ef-video>
+  </ef-timegroup>
+</ef-preview>
+
+<!-- Control placed outside the preview -->
+<ef-toggle-play target="my-video">
+  <button slot="play">Play</button>
+  <button slot="pause">Pause</button>
+</ef-toggle-play>
+```
+
+This allows you to place controls anywhere on the page, not just nested within the element they control.
+
+For more information about targeting and temporal elements, see [Understanding Temporal Elements](/docs/getting-started/temporal-elements).
+
+## Properties
+
+<PropertyDocList>
+  <PropertyDoc name="target" type="string" defaultValue='""'>
+    Optional ID of a temporal element to control. If not provided, the control will use context from its nearest ancestor (`<ef-preview>`, `<ef-workbench>`, or `<ef-controls>`).
+
+    Example:
+    ```html
+    <ef-toggle-play target="my-video">
+      <button slot="play">Play</button>
+      <button slot="pause">Pause</button>
+    </ef-toggle-play>
+    ```
+  </PropertyDoc>
+</PropertyDocList>
+
+## Slots
+
+<PropertyDocList>
+  <PropertyDoc name="play" type="slot">
+    Content to display when the video is paused (ready to play).
+
+    This slot is shown when `playing = false`. Clicking any element in this slot will start playback.
+
+    Example:
+    ```html
+    <ef-toggle-play>
+      <button slot="play">
+        <svg><!-- play icon --></svg>
+        Play Video
+      </button>
+    </ef-toggle-play>
+    ```
+  </PropertyDoc>
+
+  <PropertyDoc name="pause" type="slot">
+    Content to display when the video is playing (ready to pause).
+
+    This slot is shown when `playing = true`. Clicking any element in this slot will pause playback.
+
+    Example:
+    ```html
+    <ef-toggle-play>
+      <button slot="pause">
+        <svg><!-- pause icon --></svg>
+        Pause Video
+      </button>
+    </ef-toggle-play>
+    ```
+  </PropertyDoc>
+</PropertyDocList>

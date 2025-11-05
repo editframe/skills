@@ -1,0 +1,9 @@
+node_modules
+
+# Due to issues running a web server inside an electron instance and eslint configurations not being correct
+# for now, we are ignoring these files
+lib/render/engines/ElectronEngine/preload_FRAMEGEN.cjs
+lib/render/engines/ElectronEngine/init-electron.js
+lib/render/engines/ElectronEngine/exec-render.js
+services/render/test.js
+services/render/src/server.js

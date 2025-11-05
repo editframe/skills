@@ -1,0 +1,15 @@
+#/usr/bin/env bash
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+$SCRIPT_DIR/docker-compose rm -fsv
+
+rm -rf $SCRIPT_DIR/../data/audio_tracks/*
+rm -rf $SCRIPT_DIR/../data/video_tracks/*
+rm -rf $SCRIPT_DIR/../data/images/*
+rm -rf $SCRIPT_DIR/../data/local/*
+
+touch $SCRIPT_DIR/../data/audio_tracks/.gitkeep
+touch $SCRIPT_DIR/../data/video_tracks/.gitkeep
+touch $SCRIPT_DIR/../data/images/.gitkeep
+touch $SCRIPT_DIR/../data/local/.gitkeep

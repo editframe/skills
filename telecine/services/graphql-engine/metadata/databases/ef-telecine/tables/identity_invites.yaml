@@ -1,0 +1,155 @@
+table:
+  name: invites
+  schema: identity
+configuration:
+  column_config: {}
+  custom_column_names: {}
+  custom_name: invites
+  custom_root_fields: {}
+object_relationships:
+  - name: org
+    using:
+      foreign_key_constraint_on: org_id
+  - name: roleByRole
+    using:
+      foreign_key_constraint_on: role
+  - name: user
+    using:
+      foreign_key_constraint_on: creator_id
+insert_permissions:
+  - role: org-admin
+    permission:
+      check:
+        org:
+          memberships:
+            _and:
+              - role:
+                  _eq: admin
+              - user_id:
+                  _eq: X-Hasura-user-id
+      set:
+        creator_id: X-Hasura-user-Id
+      columns:
+        - email_address
+        - org_id
+        - role
+    comment: ""
+select_permissions:
+  - role: ef-admin
+    permission:
+      columns:
+        - email_address
+        - role
+        - accepted_at
+        - created_at
+        - denied_at
+        - updated_at
+        - creator_id
+        - id
+        - invite_token
+        - org_id
+      filter: {}
+      limit: 50
+    comment: ""
+  - role: org-admin
+    permission:
+      columns:
+        - accepted_at
+        - created_at
+        - creator_id
+        - denied_at
+        - email_address
+        - id
+        - org_id
+        - role
+        - updated_at
+      filter:
+        org:
+          memberships:
+            _and:
+              - role:
+                  _eq: admin
+              - user_id:
+                  _eq: X-Hasura-user-id
+      allow_aggregations: true
+    comment: ""
+  - role: org-reader
+    permission:
+      columns:
+        - accepted_at
+        - created_at
+        - creator_id
+        - denied_at
+        - email_address
+        - id
+        - org_id
+        - role
+        - updated_at
+      filter: {}
+    comment: ""
+  - role: user
+    permission:
+      columns:
+        - email_address
+        - role
+        - accepted_at
+        - created_at
+        - denied_at
+        - updated_at
+        - creator_id
+        - id
+        - invite_token
+        - org_id
+      filter: {}
+      allow_aggregations: true
+    comment: ""
+update_permissions:
+  - role: org-admin
+    permission:
+      columns:
+        - role
+      filter:
+        org:
+          memberships:
+            _and:
+              - role:
+                  _eq: admin
+              - user_id:
+                  _eq: X-Hasura-User-Id
+      check:
+        org:
+          memberships:
+            _and:
+              - role:
+                  _eq: admin
+              - user_id:
+                  _eq: X-Hasura-User-Id
+      set:
+        creator_id: x-hasura-X-Hasura-User-Id
+    comment: ""
+delete_permissions:
+  - role: org-admin
+    permission:
+      filter:
+        org:
+          memberships:
+            _and:
+              - role:
+                  _eq: admin
+              - user_id:
+                  _eq: X-Hasura-user-id
+    comment: ""
+event_triggers:
+  - name: invites_email
+    definition:
+      enable_manual: false
+      insert:
+        columns: '*'
+    retry_conf:
+      interval_sec: 30
+      num_retries: 0
+      timeout_sec: 60
+    webhook: '{{HASURA_ACTION_ORIGIN}}/hdb/deliver_invitation_email'
+    headers:
+      - name: X-ACTION-SECRET
+        value_from_env: ACTION_SECRET

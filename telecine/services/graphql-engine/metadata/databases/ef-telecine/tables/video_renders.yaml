@@ -1,0 +1,46 @@
+table:
+  name: renders
+  schema: video
+object_relationships:
+  - name: user
+    using:
+      foreign_key_constraint_on: creator_id
+insert_permissions:
+  - role: user
+    permission:
+      check: {}
+      set:
+        creator_id: x-hasura-user-id
+      columns:
+        - snapshot
+    comment: ""
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - snapshot
+        - created_at
+        - updated_at
+        - creator_id
+        - id
+      filter:
+        creator_id:
+          _eq: X-Hasura-User-Id
+    comment: ""
+update_permissions:
+  - role: user
+    permission:
+      columns:
+        - snapshot
+      filter:
+        creator_id:
+          _eq: X-Hasura-User-Id
+      check: null
+    comment: ""
+delete_permissions:
+  - role: user
+    permission:
+      filter:
+        creator_id:
+          _eq: X-Hasura-User-Id
+    comment: ""

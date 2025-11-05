@@ -1,0 +1,37 @@
+---
+meta:
+  - title: Isobmff Tracks
+  - name: description
+    content: Documentation for the Editframe packages
+headers:
+  Cache-Control: no-cache
+---
+
+## Create ISOBMFF Track
+
+<ResourceOperation>
+  <PersistentTab label="HTTP">
+    <HTTPEndpoint method="POST" path="/api/v1/isobmff_tracks">
+      <HTTPPayload docName="CreateISOBMFFTrackPayload" />
+      <HTTPResponse docName="CreateISOBMFFTrackResult" />
+    </HTTPEndpoint>
+  </PersistentTab>
+
+  <PersistentTab label="TypeScript">
+    <ShowDocItemByName name="createISOBMFFTrack" />
+  </PersistentTab>
+</ResourceOperation>
+
+## Upload ISOBMFF Track
+
+<ResourceOperation>
+  <PersistentTab label="HTTP">
+    <HTTPEndpoint method="POST" path="/api/v1/isobmff_tracks/:fileId/:trackId/upload">
+      <HTTPResponse docName="UploadISOBMFFTrackResult" />
+    </HTTPEndpoint>
+  </PersistentTab>
+
+  <PersistentTab label="TypeScript">
+    <ShowDocItemByName name="uploadISOBMFFTrack" />
+  </PersistentTab>
+</ResourceOperation>

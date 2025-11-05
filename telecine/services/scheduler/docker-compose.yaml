@@ -1,0 +1,19 @@
+services:
+  scheduler:
+    image: telecine-runner
+    pull_policy: never
+    depends_on:
+      - runner
+    working_dir: /app
+    env_file:
+      - ${PWD}/.env
+    environment:
+      - SHELL=/bin/sh
+      - OTEL_SERVICE_NAME=scheduler
+    volumes_from:
+      - runner
+    stop_grace_period: 1s
+    init: true
+    scale: 0
+    # prettier-ignore
+    command: [ "tsx", "/app/services/scheduler/src/server.ts" ]

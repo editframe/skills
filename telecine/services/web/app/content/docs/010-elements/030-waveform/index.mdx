@@ -1,0 +1,84 @@
+---
+meta:
+  - title: Waveform
+  - name: description
+    content: Documentation for the Editframe Waveform Element
+headers:
+    Cache-Control: no-cache
+---
+
+# Waveform
+
+
+The `<ef-waveform>` is a custom HTML element that extends the functionality of the standard HTML audio element. It's designed to work seamlessly with `<ef-audio>` and `<ef-video>` elements.
+
+## Demonstrations
+
+### Basic Usage
+
+<Demonstration layout="horizontal" alwaysShowSource>
+  <Timegroup mode="contain" className="aspect-[1/1] w-[500px] h-[500px]  text-pink-400 bg-black flex items-center justify-center">
+    <Audio src="https://assets.editframe.com/card-joker.mp3" id="sample-audio"></Audio>
+    <Waveform target="sample-audio" mode="wave" className="w-full h-[300px] block"></Waveform>
+  </Timegroup>
+</Demonstration>
+
+### Sandbox
+
+Play with the different modes and properties to see how they affect the waveform's visual appearance.
+
+<EditableWaveform />
+
+## Custom waveform drawing
+
+
+<div className="text-sm bg-gray-100 w-1/2 p-4 rounded-md text-gray-800">
+  🤔 If you would like complete control over the waveform drawing, let us know. We haven't comitted to an API yet, but providing the raw frequency data and access to a canvas in a frame-by-frame callback is something we're considering.
+</div>
+
+## Attributes
+
+<PropertyDocList>
+  <PropertyDoc name="target" type="string" domReadable domWritable htmlAttribute="target">
+    The ID of an `<ef-audio>` or `<ef-video>` element to use as the source for the waveform.
+    
+    The waveform will be synchronized to the audio or video element.
+  </PropertyDoc>
+  <PropertyDoc name="mode" type="string" domReadable domWritable htmlAttribute="mode">
+    The mode of the waveform.
+
+    See the [sandbox example](/docs/elements/waveform#sandbox) to see what the different modes look like.
+
+    The modes are:
+
+    - `roundBars`
+    - `bars`
+    - `bricks`
+    - `line`
+    - `curve`
+    - `pixel`
+    - `wave`
+    - `spikes`
+    
+  </PropertyDoc>
+  <PropertyDoc name="lineWidth" type="number" domReadable domWritable htmlAttribute="line-width">
+    The width of the line in `line` mode.
+
+    This property is only applicable in `line` mode.
+  </PropertyDoc>
+  <PropertyDoc name="color" type="string" domReadable domWritable htmlAttribute="color">
+    The color of the waveform.
+
+    This can be set to any valid CSS color value.
+
+    The default color is `currentColor`, which will use the computed text color according to the cascade.
+  </PropertyDoc>
+    <PropertyDoc name="barSpacing" type="number" domReadable domWritable htmlAttribute="bar-spacing">
+    The spacing between bars in `bars` and `roundBars` mode.
+
+    More spacing generally results in narrower bars. But this may vary depending on the selected fft-size of the audio or video element.
+
+    Default value is `0.5`.
+  </PropertyDoc>
+</PropertyDocList>
+

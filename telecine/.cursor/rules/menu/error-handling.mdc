@@ -1,0 +1,757 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Error Handling Patterns
+
+Comprehensive guide to error boundaries and recovery patterns in the @web service.
+
+## Error Architecture
+
+### React Error Boundaries
+
+```tsx
+import React, { Component, ErrorInfo, ReactNode } from "react";
+import { logger } from "@/logging";
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error?: Error;
+  errorInfo?: ErrorInfo;
+}
+
+interface ErrorBoundaryProps {
+  children: ReactNode;
+  fallback?: ReactNode;
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
+}
+
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return {
+      hasError: true,
+      error,
+    };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    logger.error({ error, errorInfo }, "React error boundary caught error");
+    
+    this.setState({
+      error,
+      errorInfo,
+    });
+
+    this.props.onError?.(error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback || (
+        <div className="p-6 text-center">
+          <h2 className="text-xl font-semibold text-red-600 mb-2">
+            Something went wrong
+          </h2>
+          <p className="text-gray-600 mb-4">
+            We're sorry, but something unexpected happened.
+          </p>
+          <button
+            onClick={() => this.setState({ hasError: false })}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Try Again
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+```
+
+### Global Error Boundary
+
+```tsx
+export function RootErrorBoundary({ children }: { children: ReactNode }) {
+  return (
+    <ErrorBoundary
+      onError={(error, errorInfo) => {
+        // Send to error reporting service
+        if (process.env.NODE_ENV === "production") {
+          sendErrorReport(error, errorInfo);
+        }
+      }}
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="max-w-md mx-auto text-center">
+            <div className="mb-4">
+              <svg className="mx-auto h-12 w-12 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.728-.833-2.498 0L4.316 15.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              Application Error
+            </h1>
+            <p className="text-gray-600 mb-6">
+              We're experiencing technical difficulties. Please try refreshing the page.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+            >
+              Refresh Page
+            </button>
+          </div>
+        </div>
+      }
+    >
+      {children}
+    </ErrorBoundary>
+  );
+}
+```
+
+## API Error Handling
+
+### Typed Error Responses
+
+```tsx
+// Error types
+export class APIError extends Error {
+  constructor(
+    message: string,
+    public status: number = 500,
+    public code?: string,
+    public details?: Record<string, any>
+  ) {
+    super(message);
+    this.name = "APIError";
+  }
+}
+
+export class ValidationError extends APIError {
+  constructor(message: string, public fieldErrors?: Record<string, string>) {
+    super(message, 400, "VALIDATION_ERROR", { fieldErrors });
+    this.name = "ValidationError";
+  }
+}
+
+export class NotFoundError extends APIError {
+  constructor(resource: string) {
+    super(`${resource} not found`, 404, "NOT_FOUND");
+    this.name = "NotFoundError";
+  }
+}
+
+export class UnauthorizedError extends APIError {
+  constructor(message = "Unauthorized") {
+    super(message, 401, "UNAUTHORIZED");
+    this.name = "UnauthorizedError";
+  }
+}
+```
+
+### Error Handler Middleware
+
+```tsx
+import { isRouteErrorResponse } from "react-router";
+import { ZodError } from "zod";
+
+export function handleApiError(error: unknown): Response {
+  logger.error(error, "API error occurred");
+
+  // Zod validation errors
+  if (error instanceof ZodError) {
+    const fieldErrors: Record<string, string> = {};
+    error.issues.forEach((issue) => {
+      const path = issue.path.join(".");
+      fieldErrors[path] = issue.message;
+    });
+
+    return Response.json(
+      {
+        error: "Validation failed",
+        code: "VALIDATION_ERROR",
+        fieldErrors,
+      },
+      { status: 400 }
+    );
+  }
+
+  // Custom API errors
+  if (error instanceof APIError) {
+    return Response.json(
+      {
+        error: error.message,
+        code: error.code,
+        details: error.details,
+      },
+      { status: error.status }
+    );
+  }
+
+  // Database errors
+  if (error instanceof Error && error.message.includes("duplicate key")) {
+    return Response.json(
+      {
+        error: "Resource already exists",
+        code: "DUPLICATE_RESOURCE",
+      },
+      { status: 409 }
+    );
+  }
+
+  // Generic server errors
+  return Response.json(
+    {
+      error: process.env.NODE_ENV === "development" 
+        ? error instanceof Error ? error.message : "Unknown error"
+        : "Internal server error",
+      code: "INTERNAL_ERROR",
+    },
+    { status: 500 }
+  );
+}
+
+// Route error wrapper
+export function withErrorHandler<T extends (...args: any[]) => any>(
+  handler: T
+): T {
+  return (async (...args: Parameters<T>) => {
+    try {
+      return await handler(...args);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  }) as T;
+}
+```
+
+### Route Error Handling
+
+```tsx
+// API route with error handling
+export const action = withErrorHandler(async ({ request, params }: Route.ActionArgs) => {
+  const session = await requireCookieOrTokenSession(request);
+  const body = await request.json();
+  
+  // Validate input
+  const validData = createUserSchema.parse(body);
+  
+  // Check permissions
+  if (!hasPermission(session, "create_user")) {
+    throw new UnauthorizedError("Insufficient permissions");
+  }
+  
+  // Create user
+  const user = await db
+    .insertInto("identity.users")
+    .values(validData)
+    .returningAll()
+    .executeTakeFirstOrThrow(() => new APIError("Failed to create user"));
+  
+  return Response.json({ user });
+});
+
+// Error boundary for routes
+export function ErrorBoundary({ error }: { error: unknown }) {
+  if (isRouteErrorResponse(error)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            {error.status}
+          </h1>
+          <p className="text-xl text-gray-600 mb-8">
+            {error.statusText || "Something went wrong"}
+          </p>
+          <Link
+            to="/"
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            Go Home
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-red-600 mb-4">
+          Unexpected Error
+        </h1>
+        <p className="text-gray-600 mb-8">
+          {error instanceof Error ? error.message : "An unexpected error occurred"}
+        </p>
+        <Link
+          to="/"
+          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+        >
+          Go Home
+        </Link>
+      </div>
+    </div>
+  );
+}
+```
+
+## Client-Side Error Handling
+
+### Async Error Handling
+
+```tsx
+import { useFetcher } from "react-router";
+import { useEffect, useState } from "react";
+
+export function useAsyncError() {
+  const [error, setError] = useState<Error | null>(null);
+
+  const captureError = (error: Error) => {
+    setError(error);
+    logger.error(error, "Async error captured");
+  };
+
+  const clearError = () => setError(null);
+
+  return { error, captureError, clearError };
+}
+
+// Safe async wrapper
+export function useSafeAsync<T>(
+  asyncFn: () => Promise<T>,
+  deps: React.DependencyList
+) {
+  const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState(false);
+  const { error, captureError, clearError } = useAsyncError();
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    clearError();
+
+    asyncFn()
+      .then((result) => {
+        if (!cancelled) {
+          setData(result);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          captureError(err);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, deps);
+
+  return { data, loading, error, clearError };
+}
+```
+
+### Form Error Handling
+
+```tsx
+export function useFormErrors() {
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const setFieldError = (field: string, message: string) => {
+    setErrors(prev => ({ ...prev, [field]: message }));
+  };
+
+  const clearFieldError = (field: string) => {
+    setErrors(prev => {
+      const { [field]: _, ...rest } = prev;
+      return rest;
+    });
+  };
+
+  const clearAllErrors = () => setErrors({});
+
+  const hasErrors = Object.keys(errors).length > 0;
+
+  return {
+    errors,
+    setFieldError,
+    clearFieldError,
+    clearAllErrors,
+    hasErrors,
+  };
+}
+
+// Form with error handling
+export function UserForm() {
+  const fetcher = useFetcher();
+  const { errors, setFieldError, clearFieldError, clearAllErrors } = useFormErrors();
+
+  useEffect(() => {
+    if (fetcher.data?.fieldErrors) {
+      Object.entries(fetcher.data.fieldErrors).forEach(([field, message]) => {
+        setFieldError(field, message as string);
+      });
+    }
+  }, [fetcher.data]);
+
+  return (
+    <fetcher.Form method="post" onSubmit={clearAllErrors}>
+      <div>
+        <input
+          name="email"
+          type="email"
+          onChange={() => clearFieldError("email")}
+          className={errors.email ? "border-red-500" : ""}
+        />
+        {errors.email && (
+          <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+        )}
+      </div>
+      
+      {fetcher.data?.error && (
+        <div className="bg-red-50 border border-red-200 rounded p-3 mb-4">
+          <p className="text-red-700">{fetcher.data.error}</p>
+        </div>
+      )}
+      
+      <button
+        type="submit"
+        disabled={fetcher.state === "submitting"}
+      >
+        {fetcher.state === "submitting" ? "Submitting..." : "Submit"}
+      </button>
+    </fetcher.Form>
+  );
+}
+```
+
+## Error Logging and Monitoring
+
+### Structured Error Logging
+
+```tsx
+import pino from "pino";
+
+export const logger = pino({
+  level: process.env.LOG_LEVEL || "info",
+  serializers: {
+    error: pino.stdSerializers.err,
+    req: pino.stdSerializers.req,
+    res: pino.stdSerializers.res,
+  },
+});
+
+// Enhanced error logging
+export function logError(
+  error: Error,
+  context: {
+    userId?: string;
+    orgId?: string;
+    action?: string;
+    metadata?: Record<string, any>;
+  } = {}
+) {
+  logger.error(
+    {
+      error: {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+      },
+      context,
+      timestamp: new Date().toISOString(),
+    },
+    "Error occurred"
+  );
+}
+
+// Database error logging
+export async function logErrorToDatabase(
+  error: Error,
+  context: Record<string, any> = {}
+) {
+  try {
+    await db
+      .insertInto("error_logs")
+      .values({
+        error_name: error.name,
+        error_message: error.message,
+        error_stack: error.stack,
+        context: JSON.stringify(context),
+        user_id: context.userId,
+        org_id: context.orgId,
+      })
+      .execute();
+  } catch (logError) {
+    logger.error(logError, "Failed to log error to database");
+  }
+}
+```
+
+### Error Reporting
+
+```tsx
+// Send errors to external service
+export function sendErrorReport(error: Error, errorInfo?: any) {
+  if (process.env.NODE_ENV !== "production") return;
+
+  const errorData = {
+    name: error.name,
+    message: error.message,
+    stack: error.stack,
+    url: window.location.href,
+    userAgent: navigator.userAgent,
+    timestamp: new Date().toISOString(),
+    errorInfo,
+  };
+
+  // Send to error tracking service (e.g., Sentry, Bugsnag)
+  fetch("/api/errors", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(errorData),
+  }).catch((err) => {
+    console.error("Failed to send error report:", err);
+  });
+}
+
+// Global error handlers
+export function setupGlobalErrorHandlers() {
+  // Unhandled promise rejections
+  window.addEventListener("unhandledrejection", (event) => {
+    console.error("Unhandled promise rejection:", event.reason);
+    sendErrorReport(
+      event.reason instanceof Error ? event.reason : new Error(String(event.reason)),
+      { type: "unhandledrejection" }
+    );
+  });
+
+  // Global JavaScript errors
+  window.addEventListener("error", (event) => {
+    console.error("Global error:", event.error);
+    sendErrorReport(event.error, {
+      type: "javascript",
+      filename: event.filename,
+      line: event.lineno,
+      column: event.colno,
+    });
+  });
+}
+```
+
+## Recovery Patterns
+
+### Retry Logic
+
+```tsx
+export async function withRetry<T>(
+  operation: () => Promise<T>,
+  options: {
+    maxAttempts?: number;
+    delay?: number;
+    backoff?: "linear" | "exponential";
+    shouldRetry?: (error: any) => boolean;
+  } = {}
+): Promise<T> {
+  const {
+    maxAttempts = 3,
+    delay = 1000,
+    backoff = "exponential",
+    shouldRetry = () => true,
+  } = options;
+
+  let lastError: any;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+
+      if (attempt === maxAttempts || !shouldRetry(error)) {
+        throw error;
+      }
+
+      const waitTime = backoff === "exponential" 
+        ? delay * Math.pow(2, attempt - 1)
+        : delay * attempt;
+
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+  }
+
+  throw lastError;
+}
+
+// Usage example
+const data = await withRetry(
+  () => fetch("/api/data").then(res => res.json()),
+  {
+    maxAttempts: 3,
+    delay: 1000,
+    shouldRetry: (error) => {
+      // Only retry on network errors or 5xx responses
+      return error.name === "TypeError" || 
+             (error.status >= 500 && error.status < 600);
+    },
+  }
+);
+```
+
+### Circuit Breaker Pattern
+
+```tsx
+export class CircuitBreaker {
+  private failures = 0;
+  private lastFailureTime = 0;
+  private state: "closed" | "open" | "half-open" = "closed";
+
+  constructor(
+    private threshold: number = 5,
+    private timeout: number = 60000
+  ) {}
+
+  async execute<T>(operation: () => Promise<T>): Promise<T> {
+    if (this.state === "open") {
+      if (Date.now() - this.lastFailureTime > this.timeout) {
+        this.state = "half-open";
+      } else {
+        throw new Error("Circuit breaker is open");
+      }
+    }
+
+    try {
+      const result = await operation();
+      
+      if (this.state === "half-open") {
+        this.reset();
+      }
+      
+      return result;
+    } catch (error) {
+      this.recordFailure();
+      throw error;
+    }
+  }
+
+  private recordFailure() {
+    this.failures++;
+    this.lastFailureTime = Date.now();
+
+    if (this.failures >= this.threshold) {
+      this.state = "open";
+    }
+  }
+
+  private reset() {
+    this.failures = 0;
+    this.state = "closed";
+  }
+}
+```
+
+### Graceful Degradation
+
+```tsx
+export function useGracefulDegradation<T>(
+  primaryOperation: () => Promise<T>,
+  fallback: T,
+  deps: React.DependencyList
+) {
+  const [data, setData] = useState<T>(fallback);
+  const [isUsingFallback, setIsUsingFallback] = useState(false);
+
+  useEffect(() => {
+    primaryOperation()
+      .then((result) => {
+        setData(result);
+        setIsUsingFallback(false);
+      })
+      .catch((error) => {
+        logger.warn(error, "Primary operation failed, using fallback");
+        setData(fallback);
+        setIsUsingFallback(true);
+      });
+  }, deps);
+
+  return { data, isUsingFallback };
+}
+
+// Component with graceful degradation
+export function UserProfile({ userId }: { userId: string }) {
+  const { data: user, isUsingFallback } = useGracefulDegradation(
+    () => fetchUserProfile(userId),
+    { name: "Unknown User", avatar: "/default-avatar.png" },
+    [userId]
+  );
+
+  return (
+    <div>
+      {isUsingFallback && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded p-2 mb-4">
+          <p className="text-yellow-700 text-sm">
+            Unable to load full profile. Showing basic information.
+          </p>
+        </div>
+      )}
+      <div className="flex items-center">
+        <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full" />
+        <span className="ml-3">{user.name}</span>
+      </div>
+    </div>
+  );
+}
+```
+
+## Best Practices
+
+### Error Prevention
+- Use TypeScript for compile-time error checking
+- Implement comprehensive input validation
+- Use ESLint and proper code reviews
+- Write thorough unit and integration tests
+- Implement proper authentication and authorization
+
+### Error Detection
+- Set up comprehensive logging
+- Use error boundaries in React components
+- Implement health checks for external dependencies
+- Monitor application performance and errors
+- Set up alerts for critical errors
+
+### Error Recovery
+- Implement retry logic for transient failures
+- Provide meaningful error messages to users
+- Offer alternative workflows when possible
+- Cache data to provide offline functionality
+- Implement graceful degradation for non-critical features
+
+### User Experience
+- Show loading states during operations
+- Provide clear error messages without technical jargon
+- Offer actionable steps to resolve errors
+- Maintain application state when possible
+- Allow users to retry failed operations
+
+### Monitoring and Alerting
+- Log errors with sufficient context
+- Set up automated alerts for critical errors
+- Monitor error rates and patterns
+- Track error resolution time
+- Implement error budgets for reliability targets

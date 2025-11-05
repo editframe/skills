@@ -1,0 +1,193 @@
+---
+meta:
+  - title:  Image files
+  - name:  description
+    content: Process image files for use in editframe
+headers:
+  Cache-Control: no-cache
+---
+
+# Upload/process Audio/Video files
+
+### Understanding Chunked Uploads
+
+Before diving into the implementation, it's important to understand how file uploads work in Editframe. Files are uploaded in chunks (8MB pieces) rather than all at once. This approach offers several benefits:
+
+- **Reliability**: If an upload fails, only the current chunk needs to be retried rather than the entire file
+- **Progress tracking**: Chunked uploads allow for accurate progress reporting
+- **Infrastructure compatibility**: Many cloud platforms and load balancers have request size limits that chunked uploads can work around
+- **Memory efficiency**: Processing files in chunks requires less memory on both client and server
+
+### Upload Process Overview
+
+The upload process consists of two main steps. First, you create a file record by sending metadata about your file (filename, size, mime type) to Editframe. This returns a file ID and upload URLs. Then, you upload the actual file data in 8MB chunks, using the Content-Range header to specify which portion of the file each chunk represents. The server tracks these chunks and reassembles them into the complete file.
+
+It is possible to upload files in smaller chunks than 8MB, but this is the size recommended by the underlying storage system.
+
+Each chunk upload returns either a 202 status (chunk accepted, continue uploading) or 201 status (upload complete). This allows for precise progress tracking and graceful handling of network interruptions. If an upload is interrupted, you can resume from the last successfully uploaded chunk rather than starting over.
+
+### CLI
+
+The editframe cli can be used to upload files for processing.
+
+```sh
+editframe upload-image <path-to-file>
+# editframe upload-image path/to/file.jpeg
+```
+
+
+### API
+
+Uploading an image file requires a few steps. The required operations are:
+
+<PersistentTabGroup stateKey="language-implementation">
+  <PersistentTab label="TypeScript">
+    <CodeSteps>
+      <CodeStep>
+        <CodeStepLabel title="Create a client">
+          Import required functions and set up your API client.
+        </CodeStepLabel>
+        <CodeStepCode>
+        ```ts
+        import { Client, createImageFile, uploadImageFile } from "@editframe/api/node";
+        const EF_TOKEN = "/* Load your API TOKEN */";
+        const client = new Client(EF_TOKEN);
+        ```
+        </CodeStepCode>
+      </CodeStep>
+
+      <CodeStep>
+        <CodeStepLabel title="Create an image file record">
+          Sends necessary metadata to Editframe.
+        </CodeStepLabel>
+        <CodeStepCode>  
+        ```ts
+        const filePath = "/* Path to file to process */";
+
+        const imageFileRecord = await createImageFileFromPath(client, filePath);
+        ```
+        </CodeStepCode>
+      </CodeStep>
+
+      <CodeStep>
+        <CodeStepLabel title="Upload the file to Editframe">
+        Uploads the file in 8MB chunks to Editframe.
+        </CodeStepLabel>
+        <CodeStepCode>
+        ```ts
+        const upload = uploadImageFile(client, imageFileRecord, file.stream());
+        );
+        ```
+        </CodeStepCode>
+      </CodeStep>
+
+      <CodeStep>
+        <CodeStepLabel title="Follow the upload progress" />
+        <CodeStepCode>
+        ```ts
+        for await (const event of upload) {
+          console.log(event);
+          // Shape of event:
+          // {
+          //   type: "progress"
+          //   progress: number; // from 0 to 1
+          // }
+        }
+
+        // Alternatively, you may await a promise that resolves when the upload is complete.
+        await upload.whenUploaded();
+        ```
+        </CodeStepCode>
+      </CodeStep>
+    </CodeSteps>
+  </PersistentTab>
+
+  <PersistentTab label="PHP (Laravel)">
+    <CodeSteps>
+      <CodeStep>
+        <CodeStepLabel title="Set up dependencies">
+        Import required classes and define configuration variables.
+        </CodeStepLabel>
+        <CodeStepCode>
+        ```php
+        use Illuminate\Support\Facades\Http;
+
+        $apiToken = 'YOUR_API_TOKEN';
+        $baseUrl = 'https://editframe.dev';
+        $filePath = '/path/to/your/image.jpg';
+        ```
+        </CodeStepCode>
+      </CodeStep>
+
+      <CodeStep>
+        <CodeStepLabel title="Create an image file record">
+        Send necessary metadata to Editframe.
+        </CodeStepLabel>
+        <CodeStepCode>
+        ```php
+        $fileSize = filesize($filePath);
+
+        $response = Http::withToken($apiToken)
+            ->post("{$baseUrl}/api/v1/image_files", [
+                'filename' => basename($filePath),
+                'byte_size' => $fileSize,
+                'mime_type' => mime_content_type($filePath)
+            ]);
+
+        if (!$response->successful()) {
+            throw new Exception('Failed to create image file: ' . $response->body());
+        }
+
+        $imageFile = $response->json();
+        ```
+        </CodeStepCode>
+      </CodeStep>
+
+      <CodeStep>
+        <CodeStepLabel title="Upload file in chunks">
+        Upload the file in 8MB chunks to Editframe.
+        </CodeStepLabel>
+        <CodeStepCode>
+        ```php
+        $chunkSize = 8 * 1024 * 1024; // 8MB chunks
+        $handle = fopen($filePath, 'rb');
+        $uploaded = 0;
+
+        while (!feof($handle)) {
+            $chunk = fread($handle, $chunkSize);
+            $response = Http::withToken($apiToken)
+                ->withHeaders([
+                    'Content-Range' => "bytes={$uploaded}-" . 
+                        ($uploaded + strlen($chunk) - 1) . "/{$fileSize}",
+                    'Content-Type' => 'application/octet-stream'
+                ])
+                ->post(
+                    "{$baseUrl}/api/v1/image_files/{$imageFile['id']}/upload",
+                    $chunk
+                );
+
+            if ($response->status() === 201) {
+                // Upload is complete
+                break;
+            } else if ($response->status() === 202) {
+                // Chunk uploaded successfully, continue with next chunk
+                $uploaded += strlen($chunk);
+                echo "Progress: " . round(($uploaded / $fileSize) * 100) . "%\n";
+                continue;
+            }
+
+            // If we get here, something went wrong
+            fclose($handle);
+            throw new Exception("Failed to upload chunk: {$response->status()} {$response->body()}");
+        }
+
+        fclose($handle);
+        echo "Upload complete! Image ID: {$imageFile['id']}\n";
+        ```
+        </CodeStepCode>
+      </CodeStep>
+    </CodeSteps>
+  </PersistentTab>
+</PersistentTabGroup>
+
+The `imageRecord.id` id is used to display the image with the `<ef-image>`/`<Image>` element.

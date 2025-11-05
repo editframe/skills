@@ -1,0 +1,10 @@
+#/usr/bin/env bash
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+# Run the hasura migrations and metadata apply to ensure the database is up to date
+# before starting the playwright tests
+${SCRIPT_DIR}/hasura metadata apply
+${SCRIPT_DIR}/hasura migrate apply
+${SCRIPT_DIR}/hasura metadata apply

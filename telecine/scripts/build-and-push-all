@@ -1,0 +1,14 @@
+#!/bin/bash
+set -ex
+
+SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+ALL_SERVICES="web worker-ingest-image worker-process-html-initializer worker-process-html-finalizer worker-process-isobmff worker-render-initializer worker-render-fragment worker-render-finalizer scheduler"
+
+for service in $ALL_SERVICES; do
+  "${SCRIPTS_DIR}/build-docker-prod" $service
+done
+
+for service in $ALL_SERVICES; do
+  "${SCRIPTS_DIR}/push-docker-prod" $service
+done

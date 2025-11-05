@@ -1,0 +1,20 @@
+services:
+  otel-viewer:
+    image: telecine-runner
+    pull_policy: never
+    working_dir: /app/services/otel-viewer
+    volumes_from:
+      - runner
+    command: ["npx", "vite", "--host"]
+    ports:
+      - "4320:4320"
+    environment:
+      - VITE_OTEL_RELAY_URL=http://localhost:4319
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.otel-viewer.rule=Host(`otel-viewer.localhost`)
+      - traefik.http.routers.otel-viewer.entrypoints=web
+      - traefik.http.services.otel-viewer.loadbalancer.server.port=4320
+    depends_on:
+      - runner
+    stop_grace_period: 1s

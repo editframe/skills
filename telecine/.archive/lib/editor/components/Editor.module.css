@@ -1,0 +1,107 @@
+.editor {
+  /* padding: var(--ef-length-s); */
+  background-color: var(--ef-panel-background);
+  border: 1px solid var(--ef-panel-border);
+  display: grid;
+  grid-template-areas:
+    "topbar topbar"
+    "stage properties"
+    "timeline timeline";
+
+  grid-template-rows: 20px 1fr auto;
+  grid-template-columns: 1fr 250px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+}
+
+.topbar {
+  z-index: 1;
+  grid-area: topbar;
+  background-color: var(--ef-panel-background);
+  display: flex;
+}
+
+.stage {
+  z-index: 0;
+  position: relative;
+  overflow: hidden;
+  grid-area: stage;
+  --checkerboard-color-a: #e7e7e7;
+  --checkerboard-color-b: #dddddd;
+
+  background-image: linear-gradient(
+      45deg,
+      var(--checkerboard-color-a) 25%,
+      transparent 25%
+    ),
+    linear-gradient(135deg, var(--checkerboard-color-a) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--checkerboard-color-a) 75%),
+    linear-gradient(135deg, transparent 75%, var(--checkerboard-color-a) 75%);
+  background-size: 25px 25px; /* Must be a square */
+  background-position:
+    0 0,
+    12.5px 0,
+    12.5px -12.5px,
+    0px 12.5px; /* Must be half of one side of the square */
+
+  background-color: var(--checkerboard-color-b);
+}
+
+.timeline {
+  z-index: 1;
+  grid-area: timeline;
+  background-color: var(--ef-panel-background);
+  display: flex;
+  flex-direction: column;
+}
+
+.timelineControls {
+  display: flex;
+  align-items: center;
+}
+
+.timelineGutter {
+  position: relative;
+  overflow: scroll;
+  flex-grow: 1;
+}
+
+.properties {
+  z-index: 1;
+  grid-area: properties;
+  background-color: var(--ef-panel-background);
+}
+
+.acceptFiles {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: grid;
+  place-content: center;
+  font-family: var(--ef-text-default);
+  font-size: var(--ef-length-l);
+  background: color-mix(in srgb, var(--ef-color-selected), transparent 50%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.playButton {
+  width: var(--ef-length-l);
+  height: var(--ef-length-l);
+  background-color: var(--ef-color-selected);
+  border: none;
+  border-radius: 50%;
+  outline: none;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: var(--ef-length-m);
+  color: var(--ef-color-background);
+  pointer-events: auto;
+}

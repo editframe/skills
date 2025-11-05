@@ -1,0 +1,350 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Authentication Pattern Guide
+
+User authentication and session management patterns.
+
+## Session Management
+
+### Required Session (Protected Routes)
+```typescript
+import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+
+export const loader = async (args: Route.LoaderArgs) => {
+  const session = await requireCookieOrTokenSession(args.request);
+  
+  // session.cid contains the authenticated user/api key ID
+  // session.userId contains the user ID
+  // session.orgId contains the organization ID
+  
+  return { userId: session.userId };
+};
+```
+
+### Optional Session (Public Routes)
+```typescript
+import { parseRequestSession } from "@/util/session";
+
+export const loader = async (args: Route.LoaderArgs) => {
+  const session = await parseRequestSession(args.request);
+  
+  return {
+    isLoggedIn: !!session,
+    user: session?.user || null
+  };
+};
+```
+
+### No Session Required (Auth Pages)
+```typescript
+import { requireNoSession } from "@/util/requireSession.server";
+import { commitSession } from "@/util/session";
+
+export const loader = async (args: Route.LoaderArgs) => {
+  const { sessionCookie } = await requireNoSession(args.request);
+  
+  // Handle flash messages
+  const errorMessage = sessionCookie.get("error") || null;
+  const successMessage = sessionCookie.get("success") || null;
+  
+  sessionCookie.unset("error");
+  sessionCookie.unset("success");
+  
+  return data(
+    { errorMessage, successMessage },
+    { headers: { "Set-Cookie": await commitSession(sessionCookie) } }
+  );
+};
+```
+
+## Login Patterns
+
+### Email/Password Login
+```typescript
+import { loginUserWithPassword } from "~/loginUserWithPassword.server";
+import { createEmailPasswordSessionCookie } from "@/util/session";
+
+const loginSchema = z.object({
+  email_address: z.string().email().toLowerCase(),
+  password: z.string(),
+  redirect_to: z.string().optional(),
+});
+
+const loginForm = formFor(loginSchema);
+
+export const action = async ({ request }: Route.ActionArgs) => {
+  const formResult = await loginForm.parseFormData(request);
+
+  if (!formResult.success) {
+    return data(formResult.errors, { status: 400 });
+  }
+
+  const { email_address, password, redirect_to } = formResult.data;
+
+  const sessionInfo = await loginUserWithPassword(email_address, password);
+
+  if (!sessionInfo) {
+    return data(
+      { formErrors: ["Incorrect email address or password"] },
+      { status: 401 }
+    );
+  }
+
+  const redirectUrl = redirect_to || "/dashboard";
+  
+  return redirect(redirectUrl, {
+    headers: {
+      "Set-Cookie": await createEmailPasswordSessionCookie(sessionInfo),
+    },
+  });
+};
+```
+
+### Magic Link Login
+```typescript
+import { loginUserWithMagicLink } from "~/loginUserWithMagicLink";
+
+export const loader = async ({ request }: Route.LoaderArgs) => {
+  const url = new URL(request.url);
+  const token = url.searchParams.get("token");
+  
+  if (!token) {
+    throw new Response("Invalid magic link", { status: 400 });
+  }
+  
+  const sessionInfo = await loginUserWithMagicLink(token);
+  
+  if (!sessionInfo) {
+    throw new Response("Invalid or expired magic link", { status: 401 });
+  }
+  
+  return redirect("/dashboard", {
+    headers: {
+      "Set-Cookie": await createEmailPasswordSessionCookie(sessionInfo),
+    },
+  });
+};
+```
+
+## Registration Patterns
+
+```typescript
+import { registerUserWithPassword } from "~/registerUserWithPassword.server";
+
+const registerSchema = z.object({
+  email_address: z.string().email().toLowerCase(),
+  password: z.string().min(8),
+  first_name: z.string().min(1),
+  last_name: z.string().min(1),
+});
+
+const registerForm = formFor(registerSchema);
+
+export const action = async ({ request }: Route.ActionArgs) => {
+  const formResult = await registerForm.parseFormData(request);
+
+  if (!formResult.success) {
+    return data(formResult.errors, { status: 400 });
+  }
+
+  try {
+    const sessionInfo = await registerUserWithPassword(formResult.data);
+    
+    return redirect("/welcome", {
+      headers: {
+        "Set-Cookie": await createEmailPasswordSessionCookie(sessionInfo),
+      },
+    });
+  } catch (error) {
+    return data(
+      { formErrors: ["An account with this email already exists"] },
+      { status: 400 }
+    );
+  }
+};
+```
+
+## Password Reset Patterns
+
+### Request Reset
+```typescript
+import { resetPasswordWithEmail } from "~/resetPasswordWithEmail.server";
+
+const resetSchema = z.object({
+  email_address: z.string().email().toLowerCase(),
+});
+
+export const action = async ({ request }: Route.ActionArgs) => {
+  const formResult = await resetForm.parseFormData(request);
+
+  if (!formResult.success) {
+    return data(formResult.errors, { status: 400 });
+  }
+
+  await resetPasswordWithEmail(formResult.data.email_address);
+  
+  // Always return success to prevent email enumeration
+  return data({ success: true });
+};
+```
+
+### Update Password
+```typescript
+import { updatePassword } from "~/updatePassword.server";
+
+const updatePasswordSchema = z.object({
+  current_password: z.string(),
+  new_password: z.string().min(8),
+  confirm_password: z.string()
+}).refine((data) => data.new_password === data.confirm_password, {
+  message: "Passwords don't match",
+  path: ["confirm_password"]
+});
+
+export const action = async ({ request }: Route.ActionArgs) => {
+  const session = await requireCookieOrTokenSession(request);
+  const formResult = await updatePasswordForm.parseFormData(request);
+
+  if (!formResult.success) {
+    return data(formResult.errors, { status: 400 });
+  }
+
+  try {
+    await updatePassword(
+      session.userId, 
+      formResult.data.current_password,
+      formResult.data.new_password
+    );
+    
+    return data({ success: true });
+  } catch (error) {
+    return data(
+      { formErrors: ["Current password is incorrect"] },
+      { status: 400 }
+    );
+  }
+};
+```
+
+## API Key Authentication
+
+```typescript
+// For API routes
+export const loader = async (args: Route.LoaderArgs) => {
+  const session = await requireCookieOrTokenSession(args.request);
+  
+  // session.cid contains the API key ID when using token auth
+  const result = await db
+    .selectFrom("identity.api_keys")
+    .where("identity.api_keys.id", "=", session.cid)
+    .select(["org_id", "name", "permissions"])
+    .executeTakeFirst();
+
+  if (!result) {
+    throw new Response("Unauthorized", { status: 401 });
+  }
+
+  return { apiKey: result };
+};
+```
+
+## Logout Pattern
+
+```typescript
+import { destroySession, getSession } from "@/util/session";
+
+export const action = async ({ request }: Route.ActionArgs) => {
+  const session = await getSession(request.headers.get("Cookie"));
+  
+  return redirect("/", {
+    headers: {
+      "Set-Cookie": await destroySession(session),
+    },
+  });
+};
+```
+
+## Session Utilities
+
+### Flash Messages
+```typescript
+import { commitSession, getSession } from "@/util/session";
+
+// Set flash message
+export const setFlashMessage = async (request: Request, type: "error" | "success", message: string) => {
+  const session = await getSession(request.headers.get("Cookie"));
+  session.flash(type, message);
+  
+  return {
+    headers: { "Set-Cookie": await commitSession(session) }
+  };
+};
+
+// Get and clear flash messages
+export const getFlashMessages = async (request: Request) => {
+  const session = await getSession(request.headers.get("Cookie"));
+  
+  const error = session.get("error") || null;
+  const success = session.get("success") || null;
+  
+  return {
+    error,
+    success,
+    headers: { "Set-Cookie": await commitSession(session) }
+  };
+};
+```
+
+## Role-Based Access
+
+```typescript
+import { requireRole } from "@/util/requireRole.server";
+
+export const loader = async (args: Route.LoaderArgs) => {
+  const session = await requireCookieOrTokenSession(args.request);
+  
+  // Check if user has required role
+  await requireRole(session.userId, "admin");
+  
+  // Continue with admin-only logic
+};
+```
+
+## Testing Authentication
+
+```typescript
+import { createAuthenticatedRequest } from "~/test/utils";
+
+test("protected route requires authentication", async () => {
+  const request = new Request("http://test/protected");
+  
+  const response = await loader({ request, params: {} });
+  
+  expect(response.status).toBe(401);
+});
+
+test("authenticated user can access protected route", async () => {
+  const request = createAuthenticatedRequest("/protected", { userId: "test-user" });
+  
+  const response = await loader({ request, params: {} });
+  const data = await response.json();
+  
+  expect(data.userId).toBe("test-user");
+});
+```
+
+## Best Practices
+
+1. **Always validate sessions** on protected routes
+2. **Use HTTPS in production** for session security
+3. **Implement proper CSRF protection**
+4. **Set secure session cookie flags**
+5. **Handle session expiration gracefully**
+6. **Use strong password requirements**
+7. **Implement rate limiting** on auth endpoints
+8. **Log authentication events** for security
+9. **Provide clear error messages** without leaking information
+10. **Test authentication flows** thoroughly

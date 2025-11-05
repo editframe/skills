@@ -1,0 +1,6 @@
+-- Could not auto-generate a down migration.
+-- Please write an appropriate down migration for the SQL below:
+-- ALTER TABLE video2.unprocessed_files
+-- ALTER COLUMN completed_at
+-- SET DATA TYPE timestamp with time zone
+-- USING (current_date + completed_at::time with time zone);

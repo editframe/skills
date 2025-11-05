@@ -1,0 +1,25 @@
+---
+alwaysApply: false
+---
+
+This project is a prototype for a video playback component in a software as a service product.
+
+The component will be used to playback video content from a remote source.
+
+The component will be used in a web application that will be used to playback video content.
+
+Our primary goal is to support realtime playback of arbitrary supplied video URLs.
+
+For now, we'll start by supporting a small subset of video formats.
+
+Formats we'll support must be seekable. That is, we need to be able to efficiently seek to random access points in the video, and transcode to a lower bitrate segment using a just-in-time approach.
+
+Assume we will not need to defensively code around multiple ffpmeg versions, we control the deployment environment, and we currently have ffmpeg 6.1.
+
+[package.json](mdc:package.json) contains build scripts
+
+We're NOT building a re-usable piece of software. This is for a production system, we do not need to create lots of options and branches for every contingency. We control the inputs to this and make simplifying assumptions.
+
+Only make changes to solve the current request. Do not make unrelated improvements to code quality or for other purposes. Those changes should be made only upon request.
+
+Use `npx tsx` to execute typescript files.

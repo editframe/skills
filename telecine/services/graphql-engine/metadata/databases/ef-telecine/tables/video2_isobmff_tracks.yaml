@@ -1,0 +1,163 @@
+table:
+  name: isobmff_tracks
+  schema: video2
+object_relationships:
+  - name: api_key
+    using:
+      foreign_key_constraint_on: api_key_id
+  - name: isobmff_file
+    using:
+      foreign_key_constraint_on: file_id
+  - name: isobmff_track_type
+    using:
+      foreign_key_constraint_on: type
+  - name: transcription
+    using:
+      foreign_key_constraint_on:
+        columns:
+          - track_id
+          - file_id
+        table:
+          name: transcriptions
+          schema: video2
+  - name: user
+    using:
+      foreign_key_constraint_on: creator_id
+array_relationships:
+  - name: isobmff_track_fragments
+    using:
+      foreign_key_constraint_on:
+        columns:
+          - track_id
+          - file_id
+        table:
+          name: isobmff_track_fragments
+          schema: video2
+insert_permissions:
+  - role: org-editor
+    permission:
+      check:
+        isobmff_file:
+          org:
+            memberships:
+              _and:
+                - role:
+                    _in:
+                      - admin
+                      - editor
+                - user_id:
+                    _eq: X-Hasura-User-Id
+      set:
+        api_key_id: x-hasura-api-key
+        creator_id: x-hasura-user-id
+      columns:
+        - byte_size
+        - codec_name
+        - duration_ms
+        - file_id
+        - probe_info
+        - track_id
+        - type
+    comment: ""
+select_permissions:
+  - role: org-admin
+    permission:
+      columns:
+        - byte_size
+        - duration_ms
+        - last_received_byte
+        - track_id
+        - probe_info
+        - codec_name
+        - type
+        - api_key_id
+        - creator_id
+        - file_id
+      filter:
+        api_key:
+          org:
+            memberships:
+              _and:
+                - role:
+                    _in:
+                      - admin
+                      - editor
+      allow_aggregations: true
+    comment: ""
+  - role: org-editor
+    permission:
+      columns:
+        - byte_size
+        - codec_name
+        - complete
+        - creator_id
+        - duration_ms
+        - file_id
+        - last_received_byte
+        - next_byte
+        - probe_info
+        - remote_uri
+        - track_id
+        - type
+      filter:
+        isobmff_file:
+          org:
+            memberships:
+              _and:
+                - role:
+                    _in:
+                      - admin
+                      - editor
+                - user_id:
+                    _eq: X-Hasura-User-Id
+    comment: ""
+  - role: org-reader
+    permission:
+      columns:
+        - byte_size
+        - codec_name
+        - complete
+        - creator_id
+        - duration_ms
+        - file_id
+        - last_received_byte
+        - next_byte
+        - probe_info
+        - remote_uri
+        - track_id
+        - type
+      filter:
+        isobmff_file:
+          org:
+            memberships:
+              user_id:
+                _eq: X-Hasura-User-Id
+      limit: 50
+    comment: ""
+event_triggers:
+  - name: isobmff_tracks_cleanup
+    definition:
+      delete:
+        columns: '*'
+      enable_manual: false
+    retry_conf:
+      interval_sec: 60
+      num_retries: 3
+      timeout_sec: 60
+    webhook: '{{HASURA_ACTION_ORIGIN}}/hdb/delete_isobmff_tracks'
+    headers:
+      - name: X-ACTION-SECRET
+        value_from_env: ACTION_SECRET
+  - name: isobmff_tracks_webhook
+    definition:
+      enable_manual: false
+      insert:
+        columns: '*'
+    retry_conf:
+      interval_sec: 30
+      num_retries: 3
+      timeout_sec: 60
+    webhook: '{{HASURA_ACTION_ORIGIN}}/hdb/webhook_create_event'
+    headers:
+      - name: X-ACTION-SECRET
+        value_from_env: ACTION_SECRET

@@ -1,0 +1,453 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Page Routes Pattern Guide
+
+Frontend route and page patterns using React Router file-based routing.
+
+## Basic Route Structure
+
+```typescript
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import { useLoaderData, useNavigation } from "react-router";
+import type { Route } from "./+types/route-name";
+
+export const loader = async (args: Route.LoaderArgs) => {
+  // Server-side data loading
+  return { data: "example" };
+};
+
+export const action = async (args: Route.ActionArgs) => {
+  // Form submission handling
+};
+
+export const meta: MetaFunction = () => {
+  return [
+    { title: "Page Title | App Name" },
+    { name: "description", content: "Page description" }
+  ];
+};
+
+export default function PageComponent() {
+  const data = useLoaderData<typeof loader>();
+  const navigation = useNavigation();
+  
+  return (
+    <div>
+      {/* Page content */}
+    </div>
+  );
+}
+```
+
+## Authentication Patterns
+
+### Protected Route
+```typescript
+import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+
+export const loader = async (args: Route.LoaderArgs) => {
+  const session = await requireCookieOrTokenSession(args.request);
+  
+  // Load user-specific data
+  const userData = await fetchUserData(session.userId);
+  
+  return { user: userData };
+};
+```
+
+### Optional Authentication
+```typescript
+import { parseRequestSession } from "@/util/session";
+
+export const loader = async (args: Route.LoaderArgs) => {
+  const session = await parseRequestSession(args.request);
+  
+  return {
+    isLoggedIn: !!session,
+    user: session?.user || null
+  };
+};
+```
+
+### Public Route with Auth Check
+```typescript
+export const loader = async (args: Route.LoaderArgs) => {
+  const { sessionCookie } = await requireNoSession(args.request);
+  
+  // Handle flash messages
+  const errorMessage = sessionCookie.get("error") || null;
+  const successMessage = sessionCookie.get("success") || null;
+  
+  sessionCookie.unset("error");
+  sessionCookie.unset("success");
+  
+  return data(
+    { errorMessage, successMessage },
+    { headers: { "Set-Cookie": await commitSession(sessionCookie) } }
+  );
+};
+```
+
+## Form Handling Patterns
+
+### Simple Form Page
+```typescript
+import { formFor } from "~/formFor";
+import { z } from "zod";
+import { Button } from "~/components/Button";
+
+const schema = z.object({
+  name: z.string().min(1),
+  email: z.string().email()
+});
+
+const form = formFor(schema);
+
+export const action = async (args: Route.ActionArgs) => {
+  const formResult = await form.parseFormData(args.request);
+  
+  if (!formResult.success) {
+    return data(formResult.errors, { status: 400 });
+  }
+  
+  // Process form data
+  await processFormData(formResult.data);
+  
+  return redirect("/success");
+};
+
+export default function FormPage() {
+  const navigation = useNavigation();
+  
+  return (
+    <div className="max-w-md mx-auto">
+      <h1 className="text-2xl font-bold mb-6">Create Account</h1>
+      
+      {form.FormErrors() && <form.FormErrors />}
+      
+      <form.Form className="space-y-4">
+        <form.Input field="name" label="Full Name" />
+        <form.Input field="email" label="Email Address" type="email" />
+        
+        <Button
+          mode="primary"
+          type="submit"
+          loading={navigation.state === "submitting"}
+        >
+          Create Account
+        </Button>
+      </form.Form>
+    </div>
+  );
+}
+```
+
+### Form with Redirect Handling
+```typescript
+export const action = async (args: Route.ActionArgs) => {
+  const formResult = await form.parseFormData(args.request);
+  
+  if (!formResult.success) {
+    return data(formResult.errors, { status: 400 });
+  }
+  
+  const formData = formResult.data;
+  
+  // Handle redirect parameter
+  if (formData.redirect_to) {
+    return redirect(formData.redirect_to);
+  }
+  
+  return redirect("/dashboard");
+};
+
+export default function LoginPage() {
+  const [searchParams] = useSearchParams();
+  
+  return (
+    <form.Form>
+      {/* Hidden field for redirect */}
+      {searchParams.has("redirect_to") && (
+        <form.Input
+          type="hidden"
+          field="redirect_to"
+          value={searchParams.get("redirect_to") || ""}
+        />
+      )}
+      
+      {/* Form fields */}
+    </form.Form>
+  );
+}
+```
+
+## Data Loading Patterns
+
+### Simple Data Loading
+```typescript
+export const loader = async (args: Route.LoaderArgs) => {
+  const session = await requireCookieOrTokenSession(args.request);
+  
+  const items = await db
+    .selectFrom("items")
+    .where("org_id", "=", session.orgId)
+    .selectAll()
+    .execute();
+    
+  return { items };
+};
+
+export default function ItemsPage() {
+  const { items } = useLoaderData<typeof loader>();
+  
+  return (
+    <div>
+      <h1>Items</h1>
+      <ul>
+        {items.map(item => (
+          <li key={item.id}>{item.name}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+### Paginated Data Loading
+```typescript
+export const loader = async (args: Route.LoaderArgs) => {
+  const url = new URL(args.request.url);
+  const page = parseInt(url.searchParams.get("page") ?? "1");
+  const search = url.searchParams.get("search") ?? "";
+  
+  const session = await requireCookieOrTokenSession(args.request);
+  
+  let query = db
+    .selectFrom("items")
+    .where("org_id", "=", session.orgId);
+    
+  if (search) {
+    query = query.where("name", "ilike", `%${search}%`);
+  }
+  
+  const [items, countResult] = await Promise.all([
+    query
+      .limit(20)
+      .offset((page - 1) * 20)
+      .selectAll()
+      .execute(),
+    query.select(db.fn.count("id").as("count")).executeTakeFirst()
+  ]);
+  
+  return {
+    items,
+    pagination: {
+      page,
+      total: Number(countResult?.count ?? 0),
+      hasMore: items.length === 20
+    },
+    search
+  };
+};
+```
+
+## Navigation Patterns
+
+### Breadcrumb Data
+```typescript
+export const loader = async (args: Route.LoaderArgs) => {
+  const { id } = args.params;
+  const item = await fetchItem(id);
+  
+  return {
+    item,
+    breadcrumbs: [
+      { label: "Dashboard", href: "/dashboard" },
+      { label: "Items", href: "/items" },
+      { label: item.name, href: `/items/${id}` }
+    ]
+  };
+};
+```
+
+### Tab Navigation
+```typescript
+export default function SettingsPage() {
+  const location = useLocation();
+  const currentTab = location.pathname.split("/").pop();
+  
+  const tabs = [
+    { id: "profile", label: "Profile", href: "/settings/profile" },
+    { id: "security", label: "Security", href: "/settings/security" },
+    { id: "billing", label: "Billing", href: "/settings/billing" }
+  ];
+  
+  return (
+    <div>
+      <Tabs tabs={tabs} currentTab={currentTab} />
+      <Outlet />
+    </div>
+  );
+}
+```
+
+## Error Handling Patterns
+
+### Error Boundary
+```typescript
+import { useRouteError, isRouteErrorResponse } from "react-router";
+
+export function ErrorBoundary() {
+  const error = useRouteError();
+  
+  if (isRouteErrorResponse(error)) {
+    return (
+      <div className="text-center py-12">
+        <h1 className="text-2xl font-bold">{error.status} Error</h1>
+        <p className="text-gray-600">{error.statusText}</p>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="text-center py-12">
+      <h1 className="text-2xl font-bold">Something went wrong</h1>
+      <p className="text-gray-600">Please try again later</p>
+    </div>
+  );
+}
+```
+
+### Not Found Handling
+```typescript
+export const loader = async (args: Route.LoaderArgs) => {
+  const { id } = args.params;
+  const item = await fetchItem(id);
+  
+  if (!item) {
+    throw new Response("Item not found", { status: 404 });
+  }
+  
+  return { item };
+};
+```
+
+## SEO and Meta Patterns
+
+### Dynamic Meta Tags
+```typescript
+export const meta: MetaFunction<typeof loader> = ({ data }) => {
+  if (!data?.item) {
+    return [{ title: "Item Not Found" }];
+  }
+  
+  return [
+    { title: `${data.item.name} | App Name` },
+    { name: "description", content: data.item.description },
+    { property: "og:title", content: data.item.name },
+    { property: "og:description", content: data.item.description }
+  ];
+};
+```
+
+### Sitemap Route
+```typescript
+export const loader = async () => {
+  const items = await fetchAllPublicItems();
+  
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+      <url>
+        <loc>https://example.com/</loc>
+        <lastmod>${new Date().toISOString()}</lastmod>
+      </url>
+      ${items.map(item => `
+        <url>
+          <loc>https://example.com/items/${item.id}</loc>
+          <lastmod>${item.updated_at}</lastmod>
+        </url>
+      `).join('')}
+    </urlset>`;
+    
+  return new Response(sitemap, {
+    headers: {
+      "Content-Type": "application/xml",
+      "Cache-Control": "public, max-age=3600"
+    }
+  });
+};
+```
+
+## Layout Integration
+
+### Using Layouts
+```typescript
+// In route file
+export const layout = "dashboard"; // References app/layouts/dashboard.tsx
+
+export default function DashboardPage() {
+  // This content will be wrapped by the dashboard layout
+  return <div>Dashboard content</div>;
+}
+```
+
+### Nested Routes
+```typescript
+// app/routes/settings.tsx - Layout route
+export default function SettingsLayout() {
+  return (
+    <div className="max-w-4xl mx-auto">
+      <h1>Settings</h1>
+      <nav>
+        <Link to="/settings/profile">Profile</Link>
+        <Link to="/settings/security">Security</Link>
+      </nav>
+      <Outlet /> {/* Child routes render here */}
+    </div>
+  );
+}
+
+// app/routes/settings/profile.tsx - Child route
+export default function ProfileSettings() {
+  return <div>Profile settings content</div>;
+}
+```
+
+## Testing Patterns
+
+```typescript
+import { createRemixStub } from "@remix-run/testing";
+import { render, screen } from "@testing-library/react";
+
+test("renders page correctly", async () => {
+  const RemixStub = createRemixStub([
+    {
+      path: "/items",
+      Component: ItemsPage,
+      loader() {
+        return { items: [{ id: "1", name: "Test Item" }] };
+      }
+    }
+  ]);
+  
+  render(<RemixStub initialEntries={["/items"]} />);
+  
+  expect(screen.getByText("Test Item")).toBeInTheDocument();
+});
+```
+
+## Best Practices
+
+1. **Use TypeScript** for all route functions
+2. **Handle loading states** with `useNavigation`
+3. **Implement proper error boundaries**
+4. **Optimize data loading** with parallel queries
+5. **Handle redirects** properly for forms
+6. **Use proper meta tags** for SEO
+7. **Implement breadcrumbs** for complex navigation
+8. **Cache static data** when appropriate
+9. **Test both success and error paths**
+10. **Follow progressive enhancement** principles

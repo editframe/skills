@@ -1,0 +1,271 @@
+---
+meta:
+  - title: Loop Button
+  - name:  description
+    content: Documentation for the Editframe Toggle Loop Button Element
+headers:
+  Cache-Control: no-cache
+---
+
+# Loop Button
+
+The `<ef-toggle-loop>` element is a control that toggles whether the video should loop when it reaches the end. It provides a simple way to enable/disable continuous playback.
+
+## Basic Usage
+
+```html
+<ef-preview>
+  <ef-timegroup mode="contain" className="w-[500px] h-[500px]">
+    <ef-video src="/assets/video.mp4"></ef-video>
+  </ef-timegroup>
+  
+  <ef-toggle-loop>
+    <button>🔁 Loop</button>
+  </ef-toggle-loop>
+</ef-preview>
+```
+
+## How It Works
+
+The toggle loop element:
+1. Consumes the `loop` context from its ancestor (`<ef-preview>`, `<ef-workbench>`, or `<ef-controls>`) or from a targeted element
+2. Listens for click events on itself and all children
+3. Toggles the loop state when clicked (switches between `true` and `false`)
+4. Updates the context so all media elements will loop when reaching the end
+
+Unlike `<ef-toggle-play>`, this element doesn't have separate slots for different states. You provide a single slot content that toggles the loop state on click.
+
+> **Learn More:** This element uses the Target system to find controllable elements. See [Understanding Temporal Elements](/docs/getting-started/temporal-elements) for details.
+
+## Properties
+
+<PropertyDocList>
+  <PropertyDoc name="target" type="string" defaultValue='""'>
+    Optional ID of a temporal element to control. If not provided, the control will use context from its nearest ancestor (`<ef-preview>`, `<ef-workbench>`, or `<ef-controls>`).
+
+    Example:
+    ```html
+    <ef-toggle-loop target="my-video">
+      <button>🔁 Loop</button>
+    </ef-toggle-loop>
+    ```
+  </PropertyDoc>
+</PropertyDocList>
+
+## Examples
+
+### Simple Button
+
+```html
+<ef-toggle-loop>
+  <button className="p-2 rounded bg-gray-500 text-white hover:bg-gray-600">
+    🔁 Toggle Loop
+  </button>
+</ef-toggle-loop>
+```
+
+### Icon Button
+
+```html
+<ef-toggle-loop>
+  <button className="w-10 h-10 rounded-full bg-blue-500 text-white hover:bg-blue-600 flex items-center justify-center">
+    🔁
+  </button>
+</ef-toggle-loop>
+```
+
+### Custom Styled
+
+```html
+<style>
+  .loop-button {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 2px solid #3b82f6;
+    background: transparent;
+    color: #3b82f6;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .loop-button:hover {
+    background: #3b82f6;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+  }
+</style>
+
+<ef-toggle-loop>
+  <button className="loop-button">
+    <span>🔁</span>
+    <span>Loop</span>
+  </button>
+</ef-toggle-loop>
+```
+
+### With State Indicator
+
+You can style the button based on loop state using CSS or by subscribing to the loop context yourself:
+
+```html
+<ef-toggle-loop>
+  <button className="loop-btn" data-loop="false">
+    🔁 Loop: OFF
+  </button>
+</ef-toggle-loop>
+
+<script>
+// You can track loop state and update button appearance
+// This is optional - the element handles the toggle automatically
+</script>
+```
+
+### Non-Button Element
+
+Any clickable element works:
+
+```html
+<ef-toggle-loop>
+  <div className="flex items-center gap-2 cursor-pointer p-2 hover:bg-gray-100 rounded">
+    <svg width="20" height="20" viewBox="0 0 24 24">
+      <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" fill="currentColor"/>
+    </svg>
+    <span>Toggle Loop</span>
+  </div>
+</ef-toggle-loop>
+```
+
+### In Control Bar
+
+```html
+<div className="flex items-center gap-4 p-4 bg-gray-800">
+  <ef-toggle-play>
+    <button slot="play" className="text-white">▶</button>
+    <button slot="pause" className="text-white">⏸</button>
+  </ef-toggle-play>
+  <ef-scrubber className="flex-1"></ef-scrubber>
+  <ef-time-display className="text-white"></ef-time-display>
+  <ef-toggle-loop>
+    <button className="text-white hover:text-blue-400">🔁</button>
+  </ef-toggle-loop>
+</div>
+```
+
+### With Remote Controls
+
+```html
+<ef-preview id="player">
+  <ef-timegroup mode="contain" className="w-[500px] h-[500px]">
+    <ef-video src="/video.mp4"></ef-video>
+  </ef-timegroup>
+</ef-preview>
+
+<!-- Controls in a different location -->
+<div className="settings-panel">
+  <ef-controls target="player">
+    <label className="flex items-center gap-2">
+      <ef-toggle-loop>
+        <input type="checkbox" />
+      </ef-toggle-loop>
+      <span>Loop playback</span>
+    </label>
+  </ef-controls>
+</div>
+```
+
+## Use Cases
+
+### Video Players
+
+Enable loop for background videos or looping content:
+
+```html
+<ef-preview>
+  <ef-timegroup mode="contain" className="w-full h-[400px]">
+    <ef-video src="/background-loop.mp4" className="w-full h-full object-cover"></ef-video>
+  </ef-timegroup>
+  
+  <div className="absolute bottom-4 right-4">
+    <ef-toggle-loop>
+      <button className="bg-black bg-opacity-50 text-white px-3 py-2 rounded">
+        🔁
+      </button>
+    </ef-toggle-loop>
+  </div>
+</ef-preview>
+```
+
+### Editor Settings
+
+Include in editor settings panel:
+
+```html
+<div className="settings-panel">
+  <h3>Playback Settings</h3>
+  <ef-toggle-loop>
+    <div className="setting-row">
+      <span>Loop Video</span>
+      <div className="toggle-switch"></div>
+    </div>
+  </ef-toggle-loop>
+</div>
+```
+
+### Presentation Mode
+
+Allow looping for presentations or kiosks:
+
+```html
+<ef-workbench>
+  <ef-timegroup slot="canvas" mode="sequence" className="w-[1920px] h-[1080px]">
+    <ef-video src="/slide1.mp4"></ef-video>
+    <ef-video src="/slide2.mp4"></ef-video>
+    <ef-video src="/slide3.mp4"></ef-video>
+  </ef-timegroup>
+  
+  <div slot="timeline">
+    <ef-toggle-loop>
+      <button>🔁 Loop Presentation</button>
+    </ef-toggle-loop>
+  </div>
+</ef-workbench>
+```
+
+## Behavior
+
+### Click Handling
+
+Clicking anywhere within the toggle loop element (including its children) will toggle the loop state.
+
+### State Persistence
+
+The loop state is maintained in the context and persists across playback. If loop is enabled, the video will automatically restart from the beginning when it reaches the end.
+
+### Context Integration
+
+The element toggles the `loop` property in the context (typically an `<ef-preview>` or `<ef-workbench>`), which affects all media elements within that context.
+
+## Technical Notes
+
+- Uses `TargetOrContextMixin` to find context from ancestors or a target
+- Directly modifies the `loop` property in context on click
+- No separate slots needed (unlike toggle-play)
+- Styling is completely customizable via slot content
+- Click handler is attached to the slot element itself
+
+## Accessibility Considerations
+
+- Use semantic `<button>` elements for keyboard accessibility
+- Consider adding `aria-label`: `aria-label="Toggle loop playback"`
+- Use `aria-pressed` to indicate current state: `aria-pressed="true"` when looping
+- Provide visual feedback for the current loop state
+- Ensure sufficient color contrast
+
+## Related Elements
+
+- [EFTogglePlay](/docs/controls/toggle-play) - Toggle play/pause state
+- [EFScrubber](/docs/controls/scrubber) - Timeline scrubbing control
+- [EFTimeDisplay](/docs/controls/time-display) - Display current time
+- [EFControls](/docs/controls/controls) - Remote control proxy
+- [EFPreview](/docs/editor-ui/preview) - Preview container

@@ -1,0 +1,66 @@
+#!/bin/bash
+set -e
+
+# Docker Compile Cache Pre-warming Utility
+# Usage: docker-compile-cache-prewarm <service-executable> [port] [health-path]
+#
+# This script pre-warms the Node.js compile cache by booting a service,
+# making a health check request, and then terminating it gracefully.
+
+EXECUTABLE="$1"
+PORT="${2:-3001}"
+HEALTH_PATH="${3:-/health}"
+CACHE_DIR="${NODE_COMPILE_CACHE:-/app/.compile-cache}"
+TIMEOUT="${COMPILE_CACHE_TIMEOUT:-30}"
+
+if [ -z "$EXECUTABLE" ]; then
+    echo "Usage: docker-compile-cache-prewarm <service-executable> [port] [health-path]"
+    echo "Example: docker-compile-cache-prewarm 'node /app/services/my-service/dist/server.js' 3001 /health"
+    exit 1
+fi
+
+echo "Pre-warming compile cache by booting service..."
+echo "Executable: $EXECUTABLE"
+echo "Port: $PORT"
+echo "Health path: $HEALTH_PATH"
+echo "Cache directory: $CACHE_DIR"
+
+# Create cache directory
+mkdir -p "$CACHE_DIR"
+
+# Set up dummy environment variables that most services need
+export STORAGE_BUCKET="${STORAGE_BUCKET:-dummy-bucket}"
+export POSTGRES_USER="${POSTGRES_USER:-dummy}"
+export POSTGRES_DB="${POSTGRES_DB:-dummy}"
+export POSTGRES_HOST="${POSTGRES_HOST:-dummy}"
+export HASURA_SERVER_URL="${HASURA_SERVER_URL:-http://dummy}"
+export VITE_HASURA_CLIENT_URL="${VITE_HASURA_CLIENT_URL:-http://dummy}"
+export VALKEY_HOST="${VALKEY_HOST:-dummy}"
+export VALKEY_PORT="${VALKEY_PORT:-6379}"
+export PORT="$PORT"
+
+# Run the pre-warming process with timeout
+timeout "${TIMEOUT}s" bash -c "
+    # Start service in background
+    $EXECUTABLE &
+    SERVER_PID=\$!
+    
+    # Wait for service to start
+    sleep 5
+    
+    # Make health check request to exercise code paths
+    curl -f http://localhost:$PORT$HEALTH_PATH || echo 'Health check failed (expected in build environment)'
+    
+    # Terminate service gracefully
+    kill \$SERVER_PID 2>/dev/null || true
+    wait \$SERVER_PID 2>/dev/null || true
+" || echo "Server pre-warming completed (timeout or error expected)"
+
+# Report cache statistics
+if [ -d "$CACHE_DIR" ]; then
+    CACHE_SIZE=$(du -sh "$CACHE_DIR" 2>/dev/null | cut -f1 || echo "unknown")
+    FILE_COUNT=$(find "$CACHE_DIR" -type f 2>/dev/null | wc -l || echo "unknown")
+    echo "✅ Compile cache pre-warmed: $CACHE_SIZE ($FILE_COUNT files)"
+else
+    echo "⚠️  Compile cache directory not found"
+fi

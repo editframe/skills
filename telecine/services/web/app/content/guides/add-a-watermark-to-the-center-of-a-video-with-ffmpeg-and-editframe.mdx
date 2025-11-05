@@ -1,0 +1,202 @@
+---
+meta:
+  - title: Add a Watermark to the Center of a Video with FFmpeg and Editframe (Updated)
+  - name: description
+    content: In this tutorial, we will walk through the process of programmatically adding a watermark to a video using two methods—FFmpeg, and Editframe
+headers:
+  Cache-Control: cache
+featured_image: /guides/add-a-watermark-to-the-center-of-a-video-with-ffmpeg-and-editframe/video-editing.jpeg
+published_date: 2023-07-10
+last_updated: 2024-09-25
+author: Ilias Haddad
+---
+
+
+A watermark is a graphic image or text element that’s overlaid on top of a video. Watermarks are typically a logo or brand identity, and are often used to protect the copyright of a video. Common use cases for adding watermarks in videos include:
+
+- Adding copyright information to your content
+- Adding a company logo in your videos
+- Preventing a video from being used without your permission
+- Adding social handles to your videos
+
+In this tutorial, we will walk through the process of programmatically adding a watermark to a video using two methods—FFmpeg, and Editframe. Both of these powerful and versatile tools can help you accomplish a wide range of video editing tasks, like adding filters to videos, trimming, and adding text, to name just a few.
+
+Let’s get started!
+
+## Files assets
+
+Here’s a sample video file provided by [pexels.com](http://pexels.com/) and a watermark photo provided by [unsplash.com](https://unsplash.com/) that we will use in this tutorial.
+
+#### car.mp4 <Video controls="true" url="/guides/add-a-watermark-to-the-center-of-a-video-with-ffmpeg-and-editframe/car.mp4" />
+
+#### watermark.png
+![](/guides/add-a-watermark-to-the-center-of-a-video-with-ffmpeg-and-editframe/watermark.png)
+
+## Part 1: Using FFmpeg
+
+First, we’ll walk through this workflow using FFmpeg.
+
+### Required Tools
+
+- Sample video file overlay (provided above)
+- [**FFmpeg**](https://ffmpeg.org/download.html): (You’ll need to install FFmpeg and set up the appropriate environment variables before beginning this tutorial)
+
+Here’s the FFmpeg command used to add a watermark image in the center of the video:
+
+```shell
+ffmpeg -i car.mp4 -i watermark.png \
+-filter_complex "[1]format=rgba \
+,scale=w=326:h=490:force_original_aspect_ratio=decrease[logo]; \
+[0][logo]overlay=(W-w)/2:(H-h)/2:format=auto,format=yuv420p" \
+-c:a copy watermark.mp4
+```
+
+Let’s break down what the code above is doing.
+
+In this line, we import the car.mp4 video file and [watermark.](http://watermark.ong/)png image:
+
+```shell
+ffmpeg -i car.mp4 -i watermark.png \
+```
+
+Here, we resize the watermark image to 326x490 and keep the original aspect ratio:
+
+```shell
+-filter_complex "[1]format=rgba,scale=w=326:h=490:force_original_aspect_ratio=decrease[logo]; \
+```
+
+In this line, will add the watermark as an overlay and center it using 50% of the width for the x position and 50% of the height for the y position:
+
+```shell
+[0][logo]overlay=(W-w)/2:(H-h)/2:format=auto,format=yuv420p" \
+```
+
+Here, we copy the audio and video streams, and set the output video to watermark.mp4:
+
+```shell
+-c:a copy watermark.mp4
+```
+
+Here’s the output of the video using this FFmpeg command:
+
+#### watermark.mp4 <Video controls="true" url="/guides/add-a-watermark-to-the-center-of-a-video-with-ffmpeg-and-editframe/watermark.mp4" />
+
+## Part 2: Using Editframe
+
+Now let’s perform the same task using Editframe instead of FFmpeg.
+
+### Required tools: 
+
+- Node.js installed on your machine (v16+)
+- Editframe API Token (you can create an account from [this link](https://editframe.dev/auth/register))
+
+* No need to have FFmpeg installed on your machine
+
+- Setup a new Node.js project using the Editframe CLI:
+
+```shell
+ npx @editframe/create@beta
+```
+
+- Install the required dependencies:
+
+```shell
+cd add-music-to-an-image && npm install
+```
+
+- Add assets to the project:
+
+Add `car.mp4` and `watermark.png` to the `assets` folder in the project directory.
+
+
+- Update the `index.html` file with the following code:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <script type="module" src="./src/index.js"></script>
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <ef-timegroup
+      mode="sequence"
+      class="w-[1920px] h-[1080px] relative overflow-hidden"
+    >
+      <ef-timegroup
+        mode="sequence"
+      >
+      <ef-video class="w-full h-full object-cover z-0"  style="z-index: 1; object-fit:cover;" src="/assets/car.mp4"></ef-video>
+      <ef-image style=" width:326px; height:490px;position: absolute; top:50%; left:50%; transform: translate(-50%, -50%); z-index: 100;" src="/assets/watermark.png"></ef-image>
+      </ef-timegroup>
+    </ef-timegroup>
+  </body>
+</html>
+
+```
+
+
+Let’s walk through what the code in this file is doing. 
+
+- In these lines, we import the `index.js` file and the `styles.css` file which contains the styles for the video and `@editframe/elements`:
+
+```html
+  <head>
+    <meta charset="UTF-8" />
+    <script type="module" src="./src/index.js"></script>
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+```
+
+- In this line, we create a new video composition using the `ef-timegroup` element.
+
+```html
+<ef-timegroup
+      mode="sequence"
+      class="w-[1920px] h-[1080px]"
+    >
+    { /* Add elements here */ }
+</ef-timegroup>
+```
+
+- In these lines, we import the image and audio files:
+
+```html
+<ef-video class="w-full h-full object-cover z-0"  style="z-index: 1; object-fit:cover;" src="/assets/car.mp4"></ef-video>
+<ef-image style=" width:326px; height:490px;position: absolute; top:50%; left:50%; transform: translate(-50%, -50%); z-index: 100;" src="/assets/watermark.png"></ef-image>
+```
+
+- [`ef-image`](/docs/elements/image) is an Editframe element that allows you to add images to your video composition.
+- [`ef-video`](/docs/elements/video) is an Editframe element that allows you to add videos to your video composition.
+
+
+- Preview the project:
+
+```shell
+npx vite .
+```
+
+- Update the `.env` file with your Editframe API token:
+
+```shell
+EF_TOKEN="YOUR_API_TOKEN"
+```
+
+- Render the video:
+
+```shell
+npx @editframe/cli render .
+```
+
+Here is the output video using the Editframe API:
+
+#### editframe-watermark.mp4 <Video controls="true" url="/guides/add-a-watermark-to-the-center-of-a-video-with-ffmpeg-and-editframe/editframe-watermark.mp4" />
+
+Note: You can add transitions, filters, trim videos, and much more using Editframe. You can learn more about Editframe’s video API here, [Editframe API docs](/docs).
+
+## Comparison video between FFmpeg and Editframe API
+
+Here’s a comparison between the video produced using FFmpeg (left) and Editframe (right):
+
+#### compare.mp4 <Video controls="true" url="/guides/add-a-watermark-to-the-center-of-a-video-with-ffmpeg-and-editframe/compare.mp4" />

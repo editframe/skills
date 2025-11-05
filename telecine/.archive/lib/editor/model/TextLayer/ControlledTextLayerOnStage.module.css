@@ -1,0 +1,15 @@
+.controlledTextLayer {
+  :global .ql-container.ql-snow {
+    border: none;
+    font: inherit;
+    line-height: inherit;
+    text-align: inherit;
+  }
+
+  :global .ql-editor {
+    font: inherit;
+    line-height: inherit;
+    text-align: inherit;
+    padding: 0;
+  }
+}

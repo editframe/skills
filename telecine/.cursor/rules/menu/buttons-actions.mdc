@@ -1,0 +1,393 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Buttons & Actions Pattern Guide
+
+Interactive element patterns using the established Button component system.
+
+## Basic Button Usage
+
+```tsx
+import { Button } from "~/components/Button";
+
+// Basic button modes
+<Button mode="primary">Primary Action</Button>
+<Button mode="secondary">Secondary Action</Button>
+<Button mode="action">Special Action</Button>
+<Button mode="creative">Creative Action</Button>
+<Button mode="destructive">Delete Action</Button>
+```
+
+## Button with Loading States
+
+```tsx
+import { useNavigation } from "react-router";
+
+export default function FormPage() {
+  const navigation = useNavigation();
+  
+  return (
+    <Button
+      mode="primary"
+      type="submit"
+      loading={navigation.state === "submitting"}
+    >
+      Save Changes
+    </Button>
+  );
+}
+```
+
+## Button with Icons
+
+```tsx
+import { PlusIcon, KeyIcon, TrashIcon } from "@heroicons/react/24/outline";
+
+// Icon with text
+<Button mode="creative" icon={PlusIcon}>
+  Create New
+</Button>
+
+// API key example from resources
+<Button mode="creative" icon={KeyIcon}>
+  Create API key
+</Button>
+
+// Destructive action
+<Button mode="destructive" icon={TrashIcon}>
+  Delete Item
+</Button>
+```
+
+## Confirmation Dialog Pattern
+
+```tsx
+<Button
+  mode="destructive"
+  confirmation={{
+    title: "Delete Item",
+    description: "Are you sure you want to delete this item? This action cannot be undone.",
+    confirmText: "Delete",
+    cancelText: "Cancel"
+  }}
+  onConfirm={() => handleDelete(itemId)}
+>
+  Delete Item
+</Button>
+```
+
+## Confirmation with Form Inputs
+
+```tsx
+<Button
+  mode="destructive"
+  confirmation={{
+    title: "Archive Project",
+    description: "Please provide a reason for archiving this project.",
+    confirmText: "Archive",
+    inputs: [
+      {
+        type: "textarea",
+        name: "reason",
+        label: "Reason for archiving",
+        description: "This will be logged for audit purposes",
+        schema: z.string().min(10, "Please provide at least 10 characters")
+      }
+    ]
+  }}
+  onConfirm={(values) => handleArchive(projectId, values.reason)}
+>
+  Archive Project
+</Button>
+```
+
+## Challenge Text Pattern
+
+```tsx
+<Button
+  mode="destructive"
+  confirmation={{
+    title: "Delete Organization",
+    description: "This will permanently delete all data associated with this organization.",
+    challengeText: orgName, // User must type this to confirm
+    confirmText: "Delete Forever",
+    cancelText: "Keep Organization"
+  }}
+  onConfirm={() => handleDeleteOrg(orgId)}
+>
+  Delete Organization
+</Button>
+```
+
+## Fetcher-Based Actions
+
+```tsx
+import { useFetcher } from "react-router";
+
+export default function ActionButton({ memberId, orgId }: { memberId: string; orgId: string }) {
+  const fetcher = useFetcher<{ success: boolean }>();
+  
+  const isLoading = fetcher.state !== "idle";
+  const isSuccess = fetcher.state === "idle" && !!fetcher.data?.success;
+  const isError = fetcher.state === "idle" && !!fetcher.data && !fetcher.data.success;
+  
+  return (
+    <div className="flex gap-2">
+      <Button
+        mode="destructive"
+        disabled={isLoading}
+        loading={isLoading}
+        confirmation={{
+          title: "Revoke Membership",
+          description: "Are you sure you want to remove this member?",
+          confirmText: "Remove member"
+        }}
+        onConfirm={() => {
+          fetcher.submit(
+            {},
+            {
+              method: "POST",
+              action: `/organizations/${orgId}/members/${memberId}/revoke`
+            }
+          );
+        }}
+      >
+        {isSuccess ? "Removed!" : "Remove"}
+      </Button>
+      
+      {isError && (
+        <span className="text-red-600 text-xs self-center">
+          Action failed. Please try again.
+        </span>
+      )}
+    </div>
+  );
+}
+```
+
+## Form Action Buttons
+
+```tsx
+import { useSubmit } from "react-router";
+
+// Export action button
+const ExportButton = () => {
+  const submit = useSubmit();
+  
+  return (
+    <Button
+      mode="secondary"
+      onClick={() => {
+        submit({ action: "export" }, { method: "post" });
+      }}
+    >
+      Export CSV
+    </Button>
+  );
+};
+
+// Bulk action button
+const BulkDeleteButton = ({ selectedIds }: { selectedIds: string[] }) => {
+  const submit = useSubmit();
+  
+  return (
+    <Button
+      mode="destructive"
+      disabled={selectedIds.length === 0}
+      confirmation={{
+        title: `Delete ${selectedIds.length} items`,
+        description: "Are you sure you want to delete the selected items?",
+        confirmText: "Delete All"
+      }}
+      onConfirm={() => {
+        submit(
+          { action: "bulk_delete", ids: selectedIds },
+          { method: "post" }
+        );
+      }}
+    >
+      Delete Selected ({selectedIds.length})
+    </Button>
+  );
+};
+```
+
+## Link-Style Buttons
+
+```tsx
+import { Link } from "react-router";
+
+// Navigation button
+<Link to="/create-new">
+  <Button mode="creative" icon={PlusIcon}>
+    Create New Item
+  </Button>
+</Link>
+
+// In table headers (from resources pattern)
+const TableHeader = ({ orgId }: { orgId: string }) => (
+  <div className="flex justify-start py-2">
+    <Link to={`/resource/api_keys/new?org=${orgId}`}>
+      <Button mode="creative" icon={KeyIcon}>
+        Create API key
+      </Button>
+    </Link>
+  </div>
+);
+```
+
+## Conditional Action Buttons
+
+```tsx
+interface ConditionalActionsProps {
+  canEdit: boolean;
+  canDelete: boolean;
+  item: { id: string; name: string };
+}
+
+const ConditionalActions = ({ canEdit, canDelete, item }: ConditionalActionsProps) => {
+  if (!canEdit && !canDelete) {
+    return <span className="text-gray-400 text-xs">No access</span>;
+  }
+  
+  return (
+    <div className="flex gap-2">
+      {canEdit && (
+        <Link to={`/items/${item.id}/edit`}>
+          <Button mode="secondary">Edit</Button>
+        </Link>
+      )}
+      
+      {canDelete && (
+        <Button
+          mode="destructive"
+          confirmation={{
+            title: `Delete ${item.name}`,
+            description: "This action cannot be undone.",
+            confirmText: "Delete"
+          }}
+          onConfirm={() => handleDelete(item.id)}
+        >
+          Delete
+        </Button>
+      )}
+    </div>
+  );
+};
+```
+
+## Disabled Button States
+
+```tsx
+// Conditional disable
+<Button
+  mode="primary"
+  disabled={!isFormValid}
+  title={!isFormValid ? "Please fill all required fields" : undefined}
+>
+  Submit
+</Button>
+
+// Loading disable
+<Button
+  mode="primary"
+  disabled={isSubmitting}
+  loading={isSubmitting}
+>
+  {isSubmitting ? "Saving..." : "Save"}
+</Button>
+```
+
+## Button Sizes and Variants
+
+```tsx
+// Different sizes (if implemented)
+<Button mode="primary" size="sm">Small</Button>
+<Button mode="primary" size="md">Medium</Button>
+<Button mode="primary" size="lg">Large</Button>
+
+// Full width
+<Button mode="primary" className="w-full">
+  Full Width Button
+</Button>
+```
+
+## Testing Patterns
+
+```typescript
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+
+test("button shows confirmation dialog", async () => {
+  const onConfirm = vi.fn();
+  
+  render(
+    <Button
+      mode="destructive"
+      confirmation={{
+        title: "Delete Item",
+        description: "Are you sure?",
+        confirmText: "Delete"
+      }}
+      onConfirm={onConfirm}
+    >
+      Delete
+    </Button>
+  );
+  
+  fireEvent.click(screen.getByText("Delete"));
+  
+  expect(screen.getByText("Delete Item")).toBeInTheDocument();
+  
+  fireEvent.click(screen.getByText("Delete"));
+  
+  await waitFor(() => {
+    expect(onConfirm).toHaveBeenCalled();
+  });
+});
+
+test("button shows loading state", () => {
+  render(
+    <Button mode="primary" loading={true}>
+      Submit
+    </Button>
+  );
+  
+  expect(screen.getByText("Submit")).toBeInTheDocument();
+  expect(screen.getByRole("button")).toBeDisabled();
+});
+```
+
+## Style Customization
+
+```tsx
+// Custom styling with className
+<Button 
+  mode="primary" 
+  className="mt-4 w-32"
+>
+  Custom Style
+</Button>
+
+// Overriding default styles
+<Button 
+  mode="primary"
+  className="!bg-purple-600 hover:!bg-purple-700"
+>
+  Purple Button
+</Button>
+```
+
+## Best Practices
+
+1. **Use appropriate modes** - `destructive` for delete actions, `creative` for create actions
+2. **Always confirm destructive actions** with confirmation dialogs
+3. **Show loading states** for async operations
+4. **Disable buttons appropriately** to prevent double-submission
+5. **Use icons** to enhance button meaning
+6. **Provide helpful titles** for disabled buttons
+7. **Handle error states** in fetcher-based actions
+8. **Use challenge text** for critical operations
+9. **Test interactive behavior** thoroughly
+10. **Follow accessibility guidelines** for button text and interactions

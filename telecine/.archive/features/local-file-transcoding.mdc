@@ -1,0 +1,73 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Local File Transcoding Support
+Add support for local file transcoding to JitTranscoder and associated C++ code, removing the HTTP-only requirement.
+
+## Test plan / verification steps
+```bash
+# Test with local file instead of HTTP URL
+cd lib/transcode
+npm test tests/LocalFileSupport.test.ts
+npm test tests/LocalFileJitTranscoding.test.ts
+
+# Test both HTTP and local file transcoding
+npx tsx tests/integration-test.ts
+```
+
+## Tasks
+- [x] Analyze current HTTP-only architecture and dependencies
+- [x] Create LocalFileByteRangeFetcher to complement HttpByteRangeFetcher
+- [x] Create local file MOOV scanner (localMoovScanner.ts)
+- [x] Create UnifiedByteRangeFetcher that automatically chooses HTTP vs local
+- [x] Create unified MOOV scanner that automatically chooses HTTP vs local
+- [x] Update JitTranscoder to use unified fetchers instead of HTTP-only versions
+- [x] Update transcodeVideoSegment function to support both HTTP and local files
+- [x] Add comprehensive tests for local file transcoding
+- [x] Verify integration tests pass
+
+## Running notes
+
+✅ **IMPLEMENTATION COMPLETE**
+
+### What was implemented:
+
+1. **LocalFileByteRangeFetcher** - Handles byte range operations on local files
+   - Supports both regular file paths and `file://` URLs
+   - Provides same interface as HttpByteRangeFetcher
+   - Includes proper error handling and file validation
+
+2. **UnifiedByteRangeFetcher** - Automatically chooses between HTTP and local file fetching
+   - Detects URL protocol to determine source type
+   - Groups requests by type for efficient parallel processing
+   - Maintains compatibility with existing HttpByteRangeFetcher interface
+
+3. **localMoovScanner.ts** - Local file version of MOOV/FTYP box scanning
+   - Uses file system operations instead of HTTP fetch
+   - Implements same scanning logic for head/tail moov detection
+   - Compatible with existing moovScanner interface
+
+4. **unifiedMoovScanner.ts** - Automatically chooses between HTTP and local MOOV scanning
+   - Exports unified `fetchMoovAndFtypUnified` function
+   - Maintains compatibility with existing buildFakeMp4 functions
+
+5. **Updated JitTranscoder** - Now supports both HTTP and local files
+   - Uses UnifiedByteRangeFetcher instead of HttpByteRangeFetcher
+   - Uses fetchMoovAndFtypUnified instead of fetchMoovAndFtyp
+   - Maintains full backward compatibility with HTTP sources
+
+### Verification:
+- ✅ LocalFileByteRangeFetcher tests pass (byte ranges, file size, range support)
+- ✅ UnifiedByteRangeFetcher tests pass (local file detection, file:// URLs)
+- ✅ fetchMoovAndFtypUnified tests pass (local file routing)
+- ✅ JitTranscoder integration tests pass (local file paths and file:// URLs)
+
+### Usage:
+The transcodeVideoSegment function now accepts:
+- HTTP URLs: `https://example.com/video.mp4`
+- Local file paths: `/path/to/video.mp4` 
+- File URLs: `file:///path/to/video.mp4`
+
+No changes required to existing code - the system automatically detects and handles the appropriate source type.

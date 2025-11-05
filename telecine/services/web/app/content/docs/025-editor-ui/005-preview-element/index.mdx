@@ -1,0 +1,178 @@
+---
+meta:
+  - title: Preview
+  - name:  description
+    content: Documentation for the Editframe Preview Element
+headers:
+  Cache-Control: no-cache
+---
+
+# Preview
+
+The `<ef-preview>` element is a lightweight container for video preview interfaces. It provides context management for playback controls and includes built-in focus tracking for interactive editing experiences.
+
+## Basic Usage
+
+```html
+<ef-preview>
+  <ef-timegroup mode="contain" class="w-[500px] h-[500px] bg-black">
+    <ef-video src="/assets/video.mp4" class="w-full h-full"></ef-video>
+  </ef-timegroup>
+</ef-preview>
+```
+
+## Features
+
+### Context Provider
+
+The preview element provides context to all descendant elements, making playback state and timing information available to controls:
+
+- Current playback time
+- Total duration
+- Playing/paused state
+- Loop state
+- Focused element
+
+Child elements like `<ef-scrubber>`, `<ef-toggle-play>`, and `<ef-time-display>` automatically consume this context.
+
+### Focus Tracking
+
+The preview automatically tracks which element inside it is being hovered over. This is useful for building interactive editors where you need to know which element the user is interacting with.
+
+When you hover over elements inside a timegroup, the preview sets `focusedElement` in context, which can be consumed by other elements (like focus overlays or property panels).
+
+### Cursor Styling
+
+The preview displays a `crosshair` cursor by default, indicating that the area is interactive. This can be overridden with CSS if needed.
+
+## With Controls
+
+```html
+<ef-preview>
+  <ef-timegroup mode="contain" class="w-[500px] h-[500px] bg-black">
+    <ef-video src="/assets/video.mp4" class="w-full h-full"></ef-video>
+  </ef-timegroup>
+  
+  <div class="controls">
+    <ef-toggle-play>
+      <button slot="play">Play</button>
+      <button slot="pause">Pause</button>
+    </ef-toggle-play>
+    <ef-scrubber></ef-scrubber>
+    <ef-time-display></ef-time-display>
+  </div>
+</ef-preview>
+```
+
+## Styling
+
+The preview can be styled like any HTML element:
+
+```css
+ef-preview {
+  display: block;
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+}
+```
+
+To override the default cursor:
+
+```css
+ef-preview {
+  cursor: default;
+}
+```
+
+## Use Cases
+
+### Simple Video Player
+
+```html
+<ef-preview>
+  <ef-timegroup mode="contain" class="w-[1920px] h-[1080px] bg-black">
+    <ef-video src="/video.mp4" class="w-full h-full object-contain"></ef-video>
+  </ef-timegroup>
+  
+  <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black">
+    <ef-scrubber class="mb-2"></ef-scrubber>
+    <div class="flex items-center gap-4">
+      <ef-toggle-play>
+        <button class="text-white" slot="play">▶</button>
+        <button class="text-white" slot="pause">⏸</button>
+      </ef-toggle-play>
+      <ef-time-display class="text-white"></ef-time-display>
+    </div>
+  </div>
+</ef-preview>
+```
+
+### With EFWorkbench
+
+For more complex editor layouts, consider using `<ef-workbench>` instead, which provides a structured layout with canvas and timeline areas:
+
+```html
+<ef-workbench>
+  <ef-timegroup slot="canvas" mode="contain" class="w-[1920px] h-[1080px]">
+    <ef-video src="/video.mp4"></ef-video>
+  </ef-timegroup>
+  
+  <div slot="timeline">
+    <!-- Timeline controls -->
+  </div>
+</ef-workbench>
+```
+
+### Remote Control with EFControls
+
+The preview can be controlled remotely using `<ef-controls>`:
+
+```html
+<ef-preview id="my-preview">
+  <ef-timegroup mode="contain" class="w-[500px] h-[500px]">
+    <ef-video src="/video.mp4"></ef-video>
+  </ef-timegroup>
+</ef-preview>
+
+<!-- Controls in a different part of the UI -->
+<ef-controls target="my-preview">
+  <ef-toggle-play>
+    <button slot="play">Play</button>
+    <button slot="pause">Pause</button>
+  </ef-toggle-play>
+  <ef-scrubber></ef-scrubber>
+</ef-controls>
+```
+
+## Comparison with EFWorkbench
+
+| Feature | EFPreview | EFWorkbench |
+|---------|-----------|-------------|
+| Layout structure | None (free-form) | Structured (canvas + timeline) |
+| Automatic scaling | No | Yes (via ef-fit-scale) |
+| Focus overlay | No | Yes (built-in visual) |
+| Use case | Simple players, custom layouts | Full-featured editors |
+| Rendering mode | No | Yes |
+
+Use `<ef-preview>` for simpler use cases where you want full control over the layout. Use `<ef-workbench>` when building a full editor interface.
+
+## Technical Notes
+
+- Extends `ContextMixin` for context management
+- Extends `EFTargetable` for remote control support
+- Uses `display: block` and `position: relative` by default
+- Focus tracking uses `mouseover` and `mouseout` events
+- Only tracks focus for elements inside `<ef-timegroup>` elements
+- Can be targeted by `<ef-controls>` using its `id` attribute
+
+## Related Elements
+
+- [EFControls](/docs/controls/controls) - Remote control proxy
+- [EFTogglePlay](/docs/controls/toggle-play) - Play/pause control
+- [EFScrubber](/docs/controls/scrubber) - Timeline scrubbing
+- [EFTimeDisplay](/docs/controls/time-display) - Time display

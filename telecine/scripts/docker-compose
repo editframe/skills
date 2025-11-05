@@ -1,0 +1,33 @@
+#!/usr/bin/env sh
+
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+# # Download Electron build
+# "$SCRIPT_DIR/download-electron-build"
+
+# Export worker resource limits from the single source of truth
+eval $(npx tsx "$SCRIPT_DIR/export-worker-resources.ts")
+
+# Find all docker-compose files, including the root directory
+compose_files=$(find "$SCRIPT_DIR/.." -maxdepth 3 -type f \( -name "docker-compose.yml" -o -name "docker-compose.yaml" \) | sort)
+
+# Explicitly check for the root docker-compose.yaml and prepend it if found
+root_compose_file="$SCRIPT_DIR/../docker-compose.yaml"
+if [ -f "$root_compose_file" ]; then
+    compose_files="$root_compose_file"$'\n'"$compose_files"
+fi
+
+# Remove any potential duplicate entries
+compose_files=$(echo "$compose_files" | awk '!seen[$0]++')
+
+# Add -f flag to each file
+compose_flags=$(echo "$compose_files" | sed 's/^/-f /' | tr '\n' ' ')
+
+# Debug output
+if [ -n "$CI" ]; then
+    echo "Found docker-compose files: $compose_flags"
+fi
+
+# Uncomment the following line when you're ready to run the docker compose command
+docker compose ${compose_flags} --project-name telecine "$@"

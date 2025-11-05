@@ -1,0 +1,96 @@
+---
+meta:
+  - title: "Utilizing FFmpeg for Video Speed Adjustment: Slow Motion and Time-lapse Techniques"
+  - name: description
+    content: "FFmpeg stands as a versatile tool in video editing, particularly for altering video playback speed to achieve effects such as slow motion or time-lapse. This capability enhances the visual impact of video content by offering a new dimension of storytelling."
+headers:
+  Cache-Control: cache
+featured_image: "/guides/utilizing-ffmpeg-for-video-speed-adjustment-slow-motion-and-time-lapse-techniques/featured.jpg"
+published_date: 2024-03-27
+last_updated: 2024-09-17
+author: Ilias Haddad
+---
+
+FFmpeg stands as a versatile tool in video editing, particularly for altering video playback speed to achieve effects such as slow motion or time-lapse. This capability enhances the visual impact of video content by offering a new dimension of storytelling.
+
+To begin using FFmpeg for these purposes, ensure FFmpeg is installed on your system. A concise guide for FFmpeg installation is available [here](https://www.editframe.com/guides/how-to-install-and-start-using-ffmpeg-in-under-10-minutes).
+
+This guide outlines the steps to manipulate video speed using FFmpeg, covering both acceleration and deceleration of video playback.
+
+### **Accelerating Video Playback**
+
+To increase the speed of an MP4 video by 8 times, use the following FFmpeg command:
+
+```bash
+ffmpeg -i input.mp4  -vf "setpts=0.125*PTS" -filter:a "atempo=8"  fast.mp4
+```
+
+Let’s break down what we’re doing here:
+
+- **`i input.mp4`**: Specifies the input video file. Replace **`input.mp4`** with your actual video filename.
+- **`vf "setpts=0.125*PTS"`**: Adjusts the video speed. The value **`0.125`** results from the inverse of the desired speed factor (1/8), indicating an 8x speed increase.
+- **`filter:a "atempo=8"`**: Increases the audio speed to match the video speed.
+- **`fast.mp4`**: Names the output file as **`fast.mp4`**.
+
+To target a specific video segment for acceleration, use this command:
+
+```bash
+ffmpeg -i input.mp4 -filter_complex "[0:v]trim=start=0:end=5,setpts=0.125*PTS[v1];[0:v]trim=start=5,setpts=PTS[v2];[0:a]atrim=start=0:end=5,atempo=8[a1];[0:a]atrim=start=5,atempo=1[a2];[v1][a1][v2][a2]concat=n=2:v=1:a=1[v3]" -map "[v3]" -c:v libx264 -c:a aac -strict experimental output_speedup.mp4
+```
+
+Here, we trim and accelerate a video segment from 0 to 5 seconds and then concatenates it with the rest of the video, which retains its original speed.
+
+Let’s look at some specific parts of this command:
+
+- `-`**`i input.mp4`**: Specifies the input file. (Replace **`input.mp4`** with the name of your video file.) Note: instead of `-vf`, we’re using `-fliter_complex`
+- **`[0:v]trim=start=0:end=5,setpts=0.125*PTS[v1]`\*\***:\*\* Trims the video from 0 to 5 seconds.
+  - **`setpts=0.125*PTS`\*\***:\*\* Speeds up this segment of the video.
+- **`[0:a]atrim=start=0:end=5,atempo=8[a1]`\*\***:\*\* Speeds up the audio by 8x
+- **`[0:v]trim=start=5,setpts=PTS[v2]`\*\***:** Trims video from 5 until the end of the video, have the video at their normal speed to this part using **`setpts=PTS`\*\*
+- **`[0:a]atrim=start=5,atempo=1[a2]`\*\***:\*\* Trims the audio from 5 seconds to the end
+  - **`atempo=1`\*\***:\*\* Plays the video at normal speed in this segment
+  - **`[v1][a1][v2][a2]concat=n=2:v=1:a=1[v3]`**: Merges two video segments with the corresponding audio using the **`concat`** function
+- **`-map "[v3]"`\*\***:** Maps the output of the complex filtergraph (**`[v3]`\*\*) to be used as the video stream.
+- `-`**`c:v libx264`**: Sets the video codec to `libx264`, which is a widely used and efficient `H.264` video codec.
+- `-`**`c:a aac`**: Sets the audio codec to AAC, a commonly used audio codec.
+- `-`**`strict experimental`**: Allows the use of experimental codecs, necessary in some FFmpeg versions for certain codec combinations.
+- **`output_speedup.mp4`**: Specifies the output file.
+
+### **Slow down a video:**
+
+Here’s an FFmpeg command to slow down a mp4 video by 2x:
+
+```bash
+ffmpeg -i input.mp4 -vf "setpts=2*PTS" slow.mp4
+```
+
+Again, let’s get our hands dirty:
+
+- `-`**`i input.mp4`**: Specifies the input file. (Replace **`input.mp4`** with the name of your video file.)
+- **`-vf "setpts=2*PTS"`**: Specifies how much to slow down or speed up the video (in our example its 2x).
+- **`-filter:a "atempo=8"`**: Slows down the audio by 2x
+- `s`**`low.mp4`**: Specifies the output file (in this case, an MP4 file named `slow.mp4`).
+
+Finally, here’s an FFmpeg command that decelerates a specific part of a video:
+
+```bash
+ffmpeg -i input.mp4 -filter_complex "[0:v]trim=start=0:end=5,setpts=PTS*2[v1];[0:v]trim=start=5,setpts=PTS[v2];[0:a]atrim=start=0:end=5,atempo=0.5[a1];[0:a]atrim=start=5,atempo=1[a2];[v1][a1][v2][a2]concat=n=2:v=1:a=1[v3]" -map "[v3]" -c:v libx264 -c:a aac -strict experimental output_slowdown.mp4
+```
+
+Let’s dive in one last time:
+
+- `-`**`i input.mp4`**: Specifies the input file. (Replace **`input.mp4`** with the name of your video file.)
+- **`-filter_complex "[0:v]trim=start=0:end=5,setpts=PTS*2[v1];[0:v]trim=start=5,setpts=PTS[v2];[0:a]atrim=start=0:end=5,atempo=8[a1];[0:a]atrim=start=5,atempo=1[a2];[v1][a1][v2][a2]concat=n=2:v=1:a=1[v3]"`**
+  - Note: Instead of `-vf`, we’re using `-fliter_complex`
+  - **`[0:v]trim=start=0:end=5,setpts=PTS*2[v1]`\*\***:** Trims the video from 0 to 5 seconds, apples slow motion to this segment using **`setpts=PTS*2`\*\*
+  - **`[0:a]atrim=start=0:end=5,atempo=0.5[a1]`\*\***:\*\* Slows the audio by 2x
+  - **`[0:v]trim=start=5,setpts=PTS[v2]`**: Trims the video from 5 seconds to the end, returns this segment to its normal speed using **`setpts=PTS`**
+  - **`[0:a]atrim=start=5,atempo=1[a2]`\*\***:** Trims the audio from 5 seconds to the end, returning the video to its normal speed in this segment using **`atempo=1`\*\*
+  - **`[v1][a1][v2][a2]concat=n=2:v=1:a=1[v3]`**: Merges the two parts of the video with the audio using the **`concat`** function
+- **`-map "[v3]"`\*\***:** Maps the output of the complex filtergraph (**`[v3]`\*\*) to be used as the video stream.
+- `-`**`c:v libx264`**: Sets the video codec to `libx264` (a widely used and efficient `H.264` video codec).
+- `-`**`c:a aac`**: Sets the audio codec to AAC (a commonly used audio codec).
+- `-`**`strict experimental`**: Allows the use of experimental codecs, necessary in some FFmpeg versions for certain codec combinations.
+- **`output_slowdown.mp4`**: Specifies the output file.
+
+That's it! You have successfully sped up or slowed down a video or a part in a video using FFmpeg. Following these instructions allows for effective speed adjustments in videos using FFmpeg, adding dynamic slow-motion or time-lapse effects to enhance your video projects.

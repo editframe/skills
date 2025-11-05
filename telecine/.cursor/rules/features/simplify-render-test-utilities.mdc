@@ -1,0 +1,65 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Simplify Render Test Utilities
+Refactor render test utilities to eliminate excessive indirection and create a clear 3-tier architecture
+
+## Development Patterns
+Reference the relevant menu items for this feature:
+- [ ] [Refactor](mdc:.cursor/rules/refactor.mdc) - Applying refactoring principles to reduce complexity
+- [ ] [Components](mdc:.cursor/rules/menu/components.mdc) - Creating focused, single-responsibility utilities
+
+## Test plan / verification steps
+**Primary verification through automated tests:**
+1. All existing tests continue to pass after refactoring:
+   ```bash
+   npm test lib/queues/units-of-work/Render/
+   ```
+2. Test files become more readable and easier to follow
+3. Each tier has clear, single responsibilities
+
+**Manual verification (secondary, if needed):**
+- Review test files to ensure arrange/act/assert pattern is clearer
+- Verify utilities have reduced cyclomatic complexity
+
+**Testing guidelines:**
+- Preserve existing test behavior exactly
+- Ensure no regressions in test coverage
+- Tests should be the primary verification mechanism
+
+## Current Problem Analysis
+
+**Tier 2 calling Tier 2 Issues:**
+- `executeMultiSegmentRender` calls `setupRenderTemplate`, `generateInitSegment`, `generateFragment`, `assembleVideo`
+- `video-validation.ts` functions call each other creating complex call chains
+- Test utilities have deep hierarchies that obscure the actual test logic
+
+**Target Architecture:**
+1. **Test Layer (Tier 1)** - Actual test functions that orchestrate testing workflows
+2. **Conceptual Helpers (Tier 2)** - Domain-specific test operations (e.g., renderVideoWithSpec, validateVideoOutput)  
+3. **Value Transformations (Tier 3)** - Pure utility functions (e.g., createTempFile, parseFFprobeOutput, extractVideoMetadata)
+
+## Tasks
+- [x] Analyze current utility dependencies and call patterns
+- [ ] Identify tier 2 functions that should be moved to tier 3
+- [ ] Create focused tier 2 conceptual helpers that don't call each other
+- [ ] Refactor `executeMultiSegmentRender` to be composable rather than orchestrating
+- [ ] Simplify `video-validation.ts` to have cleaner separation
+- [ ] Update test files to use the new simplified utilities
+- [ ] Verify all tests pass with new architecture
+
+## Running notes
+
+**Initial Analysis:**
+- Tests are integration tests that take significant time to run (3+ minutes) 
+- Current baseline shows tests failing on frame extraction (FFmpeg command issues)
+- The core issue is confirmed: `executeMultiSegmentRender` is a massive orchestrator that calls multiple other tier-2 functions
+- `video-validation.ts` has 836 lines with complex interdependencies
+- Tests have multiple levels of indirection making the arrange/act/assert pattern hard to follow
+
+**Next Steps:**
+- Focus on a smaller subset for initial refactoring (e.g., one test file)
+- Start with `render-executor.ts` as it's the most problematic orchestrator
+- Break down into focused, composable functions

@@ -1,0 +1,133 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Worker Architecture
+
+## Overview
+Guidelines for developing and maintaining the distributed worker system in Telecine. The system uses specialized worker services for different processing tasks, coordinated through a queue-based architecture.
+
+## Worker Services
+
+### Render Pipeline Workers
+- **worker-render-initializer**: Prepares render jobs, validates inputs, sets up initial state
+- **worker-render-fragment**: Processes individual video segments/fragments
+- **worker-render-finalizer**: Combines fragments, finalizes output, cleanup
+
+### File Processing Workers
+- **worker-process-isobmff**: Handles ISO Base Media File Format processing
+- **worker-process-html-initializer**: Prepares HTML for video conversion
+- **worker-process-html-finalizer**: Completes HTML to video conversion
+- **worker-ingest-image**: Processes uploaded image files
+
+### Supporting Services
+- **scheduler**: Manages job scheduling and coordination
+- **transcribe**: Audio transcription processing
+- **transcribe-ctl**: Transcription job control and management
+
+## Architecture Patterns
+
+### Job Queue System
+- Uses Redis/Valkey for job queue management
+- Each worker type has dedicated queues
+- Jobs include retry logic and failure handling
+- Progress tracking through database state
+
+### Worker Structure
+```typescript
+// Standard worker service structure
+export class WorkerService {
+  async processJob(job: JobData) {
+    try {
+      // 1. Validate job data
+      // 2. Process the work
+      // 3. Update progress/state
+      // 4. Handle completion/failure
+    } catch (error) {
+      // Error handling and retry logic
+    }
+  }
+}
+```
+
+### Database Integration
+- Workers update job status in PostgreSQL
+- Use transactions for atomic state changes
+- Track attempts, failures, and progress
+- Implement idempotent operations
+
+## Development Guidelines
+
+### Worker Implementation
+- Each worker is a separate Docker service
+- Use TypeScript with shared libraries from `/lib/`
+- Implement graceful shutdown handling
+- Include health check endpoints
+
+### Error Handling
+- Implement exponential backoff for retries
+- Log errors with structured logging
+- Update database state on failures
+- Provide meaningful error messages
+
+### Performance Considerations
+- Process jobs concurrently where possible
+- Use streaming for large file operations
+- Implement memory-efficient processing
+- Monitor resource usage
+
+### Testing Strategy
+- Unit tests for job processing logic
+- Integration tests with queue system
+- End-to-end tests for complete workflows
+- Load testing for performance validation
+
+## Queue Management
+
+### Job Lifecycle
+1. **Enqueue**: Job added to appropriate queue
+2. **Dequeue**: Worker picks up job for processing
+3. **Processing**: Worker executes job logic
+4. **Completion**: Success/failure state updated
+5. **Cleanup**: Resources released, next job processed
+
+### Priority and Scheduling
+- Use job priorities for important tasks
+- Implement fair scheduling across organizations
+- Handle job dependencies and ordering
+- Support delayed job execution
+
+## Configuration
+
+### Environment Variables
+- Queue connection settings
+- Worker concurrency limits
+- Retry policies and timeouts
+- Resource limits and thresholds
+
+### Docker Compose
+- Each worker has dedicated service definition
+- Shared volumes for temporary files
+- Network configuration for service communication
+- Resource limits and health checks
+
+## Monitoring and Observability
+
+### Metrics
+- Job processing rates and latencies
+- Queue depths and wait times
+- Error rates and retry counts
+- Resource utilization
+
+### Logging
+- Structured logging with correlation IDs
+- Job lifecycle events
+- Error details and stack traces
+- Performance metrics
+
+## Related Files
+- `lib/queues/` - Queue management utilities
+- `services/scheduler/` - Job scheduling service
+- `lib/sql-client.server/` - Database integration
+- `lib/logging/` - Centralized logging system

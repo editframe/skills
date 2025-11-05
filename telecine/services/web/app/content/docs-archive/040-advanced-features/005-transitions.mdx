@@ -1,0 +1,258 @@
+---
+meta:
+  - title: Transitions
+    name:  description
+    content: Learn how to add transitions between frames in your videos.
+---
+
+# Transitions
+
+Transitions are animations that occur between two frames in a video.
+
+## Overview
+
+Transitions are animations that occur between two frames in a video. They can be used to create a seamless transition between two frames, or to add a visual effect to the video. Transitions can be created using CSS animations, and can be customized to fit the style of the video
+
+## Creating Transitions
+
+To create a transition between two frames, you can use CSS animations. You can create a custom animation using keyframes, and apply it to the frames that you want to transition between. You can also use pre-built animations, such as fade in, fade out, slide in, slide out, etc.
+
+## Example
+
+In this example, we will create a transition between two frames using a custom animation. We will create a keyframe animation called `shutters-out`, which will animate the clip-path property of the frame to create a shutter effect. We will apply this animation to the frames that we want to transition between.
+
+#### index.html
+```html
+<ef-timegroup
+  class="relative h-[500px] w-[500px] overflow-hidden bg-slate-500"
+  mode="sequence"
+  overlap="1s"
+>
+    <ef-timegroup
+        mode="fixed"
+        duration="3s"
+        class="flex items-center justify-center bg-red-400"
+        style="
+        z-index: 100;
+        transform-origin: bottom right;
+        animation: var(--ef-transition--duration) var(--ef-transition-out-start) shutters-out;
+        "
+    >
+        <h1>bg-red-500</h1>
+    </ef-timegroup>
+    
+    <ef-timegroup
+        mode="fixed"
+        duration="3s"
+        class="flex items-center justify-center bg-blue-400"
+
+        style="
+        z-index: 200;
+        transform-origin: bottom right;
+        animation: var(--ef-transition--duration) var(--ef-transition-out-start) shutters-out;
+        ">
+        <h1>bg-blue-500</h1>
+    </ef-timegroup>
+    </ef-timegroup>
+```
+#### style.css 
+    ```css
+        @keyframes shutters-out {
+      0% {
+        clip-path: polygon(
+          0% 0%,
+          20% 0%,
+          20% 100%,
+          20% 100%,
+          20% 0%,
+          40% 0%,
+          40% 100%,
+          40% 100%,
+          40% 0%,
+          60% 0%,
+          60% 100%,
+          60% 100%,
+          60% 0%,
+          80% 0%,
+          80% 100%,
+          80% 100%,
+          80% 0%,
+          100% 0%,
+          100% 100%,
+          0% 100%
+        );
+      }
+      100% {
+        clip-path: polygon(
+          20% 0%,
+          20% 0%,
+          20% 100%,
+          40% 100%,
+          40% 0%,
+          40% 0%,
+          40% 100%,
+          60% 100%,
+          60% 0%,
+          60% 0%,
+          60% 100%,
+          80% 100%,
+          80% 0%,
+          80% 0%,
+          80% 100%,
+          100% 100%,
+          100% 0%,
+          100% 0%,
+          100% 100%,
+          20% 100%
+        );
+      }
+    }
+    ```
+
+## Full Example
+
+To add a transition between two frames, you can use the `ef-timegroup` component with the `mode` attribute set to `sequence` and the `overlap` attribute set to the duration of the transition.
+
+
+#### index.html
+```html
+    <ef-timegroup
+      class="relative h-[500px] w-[500px] overflow-hidden bg-slate-500"
+      mode="sequence"
+      overlap="1s"
+    >
+      <ef-timegroup
+        mode="fixed"
+        duration="3s"
+        class="flex items-center justify-center bg-red-400"
+        style="
+          z-index: 100;
+          transform-origin: bottom right;
+          animation: var(--ef-transition--duration) var(--ef-transition-out-start) shutters-out;
+        "
+      >
+        <h1>bg-red-500</h1>
+      </ef-timegroup>
+
+      <ef-timegroup
+        mode="fixed"
+        duration="3s"
+        class="flex items-center justify-center bg-blue-400"
+        style="
+          z-index: 200;
+          transform-origin: bottom right;
+          animation: var(--ef-transition--duration) var(--ef-transition-out-start) shutters-out;
+
+        "
+      >
+        <h1>bg-blue-500</h1>
+      </ef-timegroup>
+      
+      <ef-timegroup
+        mode="fixed"
+        duration="3s"
+        class="flex items-center justify-center bg-green-400"
+        style="
+          z-index: 300;
+          transform-origin: bottom right;
+          animation: var(--ef-transition--duration) var(--ef-transition-out-start) shutters-out;
+        "
+      >
+        <h1>bg-green-500</h1>
+      </ef-timegroup>
+
+      <ef-timegroup
+        mode="fixed"
+        duration="3s"
+        class="flex items-center justify-center bg-yellow-400"
+        style="
+          z-index: 400;
+          transform-origin: bottom right;
+          animation: var(--ef-transition--duration) var(--ef-transition-out-start) shutters-out;
+        "
+      >
+        <h1>bg-yellow-500</h1>
+        </ef-timegroup> 
+
+      <ef-timegroup
+        mode="fixed"
+        duration="3s"
+        class="flex items-center justify-center bg-purple-400"
+        style="
+          z-index: 500;
+          transform-origin: bottom right;
+          animation: var(--ef-transition--duration) var(--ef-transition-out-start) shutters-out;
+        "
+      >
+        <h1>bg-purple-500</h1>
+      </ef-timegroup>
+
+      <ef-timegroup
+        mode="fixed"
+        duration="3s"
+        class="flex items-center justify-center bg-pink-400"
+        style="
+          z-index: 600;
+          transform-origin: bottom right;
+          animation: var(--ef-transition--duration) var(--ef-transition-out-start) shutters-out;
+        "
+      >
+        <h1>bg-pink-500</h1>
+      </ef-timegroup>
+
+    </ef-timegroup>
+    ```
+
+#### style.css 
+    ```css
+        @keyframes shutters-out {
+      0% {
+        clip-path: polygon(
+          0% 0%,
+          20% 0%,
+          20% 100%,
+          20% 100%,
+          20% 0%,
+          40% 0%,
+          40% 100%,
+          40% 100%,
+          40% 0%,
+          60% 0%,
+          60% 100%,
+          60% 100%,
+          60% 0%,
+          80% 0%,
+          80% 100%,
+          80% 100%,
+          80% 0%,
+          100% 0%,
+          100% 100%,
+          0% 100%
+        );
+      }
+      100% {
+        clip-path: polygon(
+          20% 0%,
+          20% 0%,
+          20% 100%,
+          40% 100%,
+          40% 0%,
+          40% 0%,
+          40% 100%,
+          60% 100%,
+          60% 0%,
+          60% 0%,
+          60% 100%,
+          80% 100%,
+          80% 0%,
+          80% 0%,
+          80% 100%,
+          100% 100%,
+          100% 0%,
+          100% 0%,
+          100% 100%,
+          20% 100%
+        );
+      }
+    }
+    ```

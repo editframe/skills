@@ -1,0 +1,29 @@
+{
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "playwright.env": {
+    "MAILHOG_URL": "http://localhost:8025",
+    "POSTGRES_PASSWORD": "postgrespassword",
+    "POSTGRES_HOST": "localhost",
+    "POSTGRES_USER": "postgres",
+    "POSTGRES_PORT": "6432",
+    "POSTGRES_DB": "telecine-dev",
+    "DEBUG": "ef:*",
+    // This allows playwright-in-vscode to follow email links
+    "PLAYWRIGHT_WEB_HOST": "http://localhost:3000"
+  },
+  // These settings cause port conflicts when running a devcontainer.
+  // We use docker.host.internal to have containers make requests b ack through the traefik
+  // load balancer. If the devcontainer binds to those ports it can cause conflicts that 
+  // break the hasura triggers.
+  //
+  // Which is terrible and will waste at least a day of your life.
+  "remote.autoForwardPorts": false,
+  "remote.forwardOnOpen": false,
+  "typescript.preferences.includePackageJsonAutoImports": "on",
+  "typescript.suggest.autoImports": true,
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "typescript.preferences.includeCompletionsForModuleExports": true,
+  "typescript.preferences.includeCompletionsWithInsertText": true,
+  "typescript.suggest.completeFunctionCalls": false
+}

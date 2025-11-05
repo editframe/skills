@@ -1,0 +1,583 @@
+---
+meta:
+  - title: Generate a Promo Video with Editframe and OpenAI API using Node.js
+  - name: description
+    content: Using Editframe and the OpenAI API, tech-savvy creators and businesses can produce beautiful and eye-catching promotional videos in a fraction of the time
+headers:
+  Cache-Control: cache
+featured_image: /guides/generate-a-promo-video-with-editframe-and-openai-api-using-node.js/featured.jpg
+published_date: 2024-01-24
+author: Ilias Haddad
+---
+
+Promotional videos are a vital tool in the ever-evolving landscape of digital marketing. They provide a gateway to engage your audience effectively, convey your message clearly, and promote your products or services in an engaging and human way.
+
+While promotional videos can be extremely impactful, creating them can also be laborious and time-intensive. Using Editframe and the OpenAI API, tech-savvy creators and businesses can produce beautiful and eye-catching promotional videos in a fraction of the time, and scale their marketing efforts without draining internal resources or spending an entire budget.
+
+Let's dive in!
+
+### Required Tools
+
+Before we begin, ensure you have the necessary tools and credentials:
+
+- Node.js installed on your machine (v16+)
+- Editframe Token (Create a free account [here](https://app.editframe.com/signup))
+- OpenAI API Token (Get free API credits with a new account)
+
+### **Setting Up Your Project**
+
+- Create a dedicated folder for your project:
+
+```shell
+mkdir editframe-open-ai
+```
+
+- Initialize your Node.js project:
+
+```shell
+cd editframe-open-ai
+npm init -y
+```
+
+- Install the OpenAI Node.js SDK:
+
+```shell
+npm i openai
+```
+
+- Install the dotenv package to load environment variables from a .env file:
+
+```shell
+npm i dotenv
+```
+
+- Create a new JavaScript file to write your code:
+
+```shell
+touch index.js
+```
+
+### OpenAI **Integration**
+
+- Paste the following code into index.js:
+
+```javascript
+import "dotenv/config";
+import OpenAI from "openai";
+
+const openai = new OpenAI();
+
+const generateImage = ({ prompt }) => {
+  return new Promise(async (resolve, reject) => {
+    const image = await openai.images.generate({ prompt });
+    console.log(image.data);
+    resolve(image.data);
+  });
+};
+
+generateImage("a product image about electronics");
+```
+
+### **Environment Variables**
+
+Before running your code, set up your environment variables by creating a .env file:
+
+```shell
+// .env file
+OPENAI_API_KEY=
+EDITFRAME_TOKEN=
+```
+
+### **Editframe Integration**
+
+- Install the Editframe Node.js SDK:
+
+```shell
+npm i @editframe/editframe-js
+```
+
+- Add the following code for video composition to index.js:
+
+```javascript
+import "dotenv/config";
+import OpenAI from "openai";
+import { Editframe } from "@editframe/editframe-js";
+import { argv } from "node:process";
+
+if (!process.env.OPENAI_API_KEY) {
+  throw new Error("OPENAI_API_KEY is not set");
+}
+const [...args] = argv;
+
+if (args.length === 0) {
+  throw new Error("Prompt is not set");
+}
+const prompt = args.join(" ");
+
+const openai = new OpenAI();
+
+const generateImage = ({ prompt }) => {
+  return new Promise(async (resolve, reject) => {
+    const image = await openai.images.generate({ prompt });
+    console.log(image.data);
+    resolve(image.data);
+  });
+};
+
+const main = async () => {
+  const editframe = new Editframe({
+    token: process.env.EDITFRAME_TOKEN,
+  });
+
+  const composition = await editframe.videos.new({
+    backgroundColor: "#062424",
+    dimensions: {
+      height: 1080,
+      width: 1920,
+    },
+    duration: 10,
+  });
+
+  const imagePrompt = await generateImage({ prompt });
+  const image = await composition.addImage(imagePrompt[0].url, {
+    size: {
+      scale: 1,
+      width: 897,
+      format: "fit",
+      height: 1080,
+    },
+    trim: {
+      end: 5,
+      start: 0,
+    },
+    position: {
+      x: 1020,
+      y: 0,
+      z: 0,
+      angle: 0,
+      angleX: 0,
+      angleY: 0,
+      origin: "center",
+      isRelative: false,
+    },
+    timeline: {
+      end: 5,
+      start: 0,
+    },
+    transitions: [],
+  });
+  const end = 1;
+  const scale1 = 1;
+  const scale2 = 2;
+  const start = 0;
+  const x1 = 0;
+  const x2 = 10;
+  const y1 = 0;
+  const y2 = 10;
+  image.addTransition({
+    options: {
+      end,
+      scale1,
+      scale2,
+      start,
+      x1,
+      x2,
+      y1,
+      y2,
+    },
+    type: "kenBurns",
+  });
+  await composition.addText(
+    {
+      text: "Your Text goes here",
+      color: "#fff",
+      fontSize: 49,
+      fontStyle: "normal",
+      textAlign: "left",
+      fontFamily: "Cabin",
+      fontWeight: "normal",
+      lineHeight: 1.2,
+      borderRadius: 0,
+    },
+    {
+      size: {
+        scale: 1,
+        width: 426,
+        format: "fit",
+        height: 195,
+      },
+      trim: {
+        end: 5,
+        start: 0,
+      },
+      position: {
+        x: 261,
+        y: 305,
+        z: 0,
+        angle: 0,
+        angleX: 0,
+        angleY: 0,
+        origin: "center",
+        isRelative: false,
+      },
+      timeline: {
+        end: 5,
+        start: 0,
+      },
+      transitions: [],
+    },
+  );
+  await composition.addText(
+    {
+      text: "Buy Now",
+      color: "#fff",
+      fontSize: 40,
+      fontStyle: "normal",
+      textAlign: "left",
+      fontFamily: "Cabin",
+      fontWeight: "normal",
+      lineHeight: 1.2,
+      borderRadius: 0,
+    },
+    {
+      size: {
+        scale: 1,
+        width: 177.2,
+        format: "fit",
+        height: 104.16,
+      },
+      trim: {
+        end: 5,
+        start: 0,
+      },
+      position: {
+        x: 267,
+        y: 560,
+        z: 0,
+        angle: 0,
+        angleX: 0,
+        angleY: 0,
+        origin: "center",
+        isRelative: false,
+      },
+      timeline: {
+        end: 5,
+        start: 0,
+      },
+      transitions: [],
+    },
+  );
+  const video = await composition.encode();
+
+  console.log(video);
+};
+
+main();
+```
+
+Let’s break down the code above.
+
+- In these lines, we create a new video composition with HD video resolution
+
+```javascript
+const composition = await editframe.videos.new({
+  backgroundColor: "#062424",
+  dimensions: {
+    height: 1080,
+    width: 1920,
+  },
+  duration: 10,
+});
+```
+
+- Here, we add our first layer (the image layer) to the video composition:
+
+```javascript
+const image = await composition.addImage(imagePrompt[0].url, {
+  size: {
+    scale: 1,
+    width: 897,
+    format: "fit",
+    height: 1080,
+  },
+  trim: {
+    end: 5,
+    start: 0,
+  },
+  position: {
+    x: 1020,
+    y: 0,
+    z: 0,
+    angle: 0,
+    angleX: 0,
+    angleY: 0,
+    origin: "center",
+    isRelative: false,
+  },
+  timeline: {
+    end: 5,
+    start: 0,
+  },
+  transitions: [],
+});
+```
+
+- Here, we add a Ken Burns effect as transition to the image layer:
+
+```javascript
+const end = 1;
+const scale1 = 1;
+const scale2 = 2;
+const start = 0;
+const x1 = 0;
+const x2 = 10;
+const y1 = 0;
+const y2 = 10;
+image.addTransition({
+  options: {
+    end,
+    scale1,
+    scale2,
+    start,
+    x1,
+    x2,
+    y1,
+    y2,
+  },
+  type: "kenBurns",
+});
+```
+
+- In this code, we add a text layer to give our video a call to action:
+
+```javascript
+await composition.addText(
+  {
+    text: "Your Text goes here",
+    color: "#fff",
+    fontSize: 49,
+    fontStyle: "normal",
+    textAlign: "left",
+    fontFamily: "Cabin",
+    fontWeight: "normal",
+    lineHeight: 1.2,
+    borderRadius: 0,
+  },
+  {
+    size: {
+      scale: 1,
+      width: 426,
+      format: "fit",
+      height: 195,
+    },
+    trim: {
+      end: 5,
+      start: 0,
+    },
+    position: {
+      x: 261,
+      y: 305,
+      z: 0,
+      angle: 0,
+      angleX: 0,
+      angleY: 0,
+      origin: "center",
+      isRelative: false,
+    },
+    timeline: {
+      end: 5,
+      start: 0,
+    },
+    transitions: [],
+  },
+);
+```
+
+- Finally, we run the `composition.encode()` method to render the video asynchronously:
+
+```javascript
+const video = await composition.encode();
+```
+
+Here’s the full JavaScript file:
+
+```javascript
+import "dotenv/config";
+import OpenAI from "openai";
+import { Editframe } from "@editframe/editframe-js";
+import { argv } from "node:process";
+
+if (!process.env.OPENAI_API_KEY) {
+  throw new Error("OPENAI_API_KEY is not set");
+}
+const [...args] = argv;
+
+if (args.length === 0) {
+  throw new Error("Prompt is not set");
+}
+const prompt = args.join(" ");
+
+const openai = new OpenAI();
+
+const generateImage = ({ prompt }) => {
+  return new Promise(async (resolve, reject) => {
+    const image = await openai.images.generate({ prompt });
+    console.log(image.data);
+    resolve(image.data);
+  });
+};
+
+const main = async () => {
+  const editframe = new Editframe({
+    token: process.env.EDITFRAME_TOKEN,
+  });
+
+  const composition = await editframe.videos.new({
+    backgroundColor: "#062424",
+    dimensions: {
+      height: 1080,
+      width: 1920,
+    },
+    duration: 10,
+  });
+
+  const imagePrompt = await generateImage({ prompt });
+  const image = await composition.addImage(imagePrompt[0].url, {
+    size: {
+      scale: 1,
+      width: 897,
+      format: "fit",
+      height: 1080,
+    },
+    trim: {
+      end: 5,
+      start: 0,
+    },
+    position: {
+      x: 1020,
+      y: 0,
+      z: 0,
+      angle: 0,
+      angleX: 0,
+      angleY: 0,
+      origin: "center",
+      isRelative: false,
+    },
+    timeline: {
+      end: 5,
+      start: 0,
+    },
+    transitions: [],
+  });
+  const end = 1;
+  const scale1 = 1;
+  const scale2 = 2;
+  const start = 0;
+  const x1 = 0;
+  const x2 = 10;
+  const y1 = 0;
+  const y2 = 10;
+  image.addTransition({
+    options: {
+      end,
+      scale1,
+      scale2,
+      start,
+      x1,
+      x2,
+      y1,
+      y2,
+    },
+    type: "kenBurns",
+  });
+  await composition.addText(
+    {
+      text: "Your Text goes here",
+      color: "#fff",
+      fontSize: 49,
+      fontStyle: "normal",
+      textAlign: "left",
+      fontFamily: "Cabin",
+      fontWeight: "normal",
+      lineHeight: 1.2,
+      borderRadius: 0,
+    },
+    {
+      size: {
+        scale: 1,
+        width: 426,
+        format: "fit",
+        height: 195,
+      },
+      trim: {
+        end: 5,
+        start: 0,
+      },
+      position: {
+        x: 261,
+        y: 305,
+        z: 0,
+        angle: 0,
+        angleX: 0,
+        angleY: 0,
+        origin: "center",
+        isRelative: false,
+      },
+      timeline: {
+        end: 5,
+        start: 0,
+      },
+      transitions: [],
+    },
+  );
+  await composition.addText(
+    {
+      text: "Buy Now",
+      color: "#fff",
+      fontSize: 40,
+      fontStyle: "normal",
+      textAlign: "left",
+      fontFamily: "Cabin",
+      fontWeight: "normal",
+      lineHeight: 1.2,
+      borderRadius: 0,
+    },
+    {
+      size: {
+        scale: 1,
+        width: 177.2,
+        format: "fit",
+        height: 104.16,
+      },
+      trim: {
+        end: 5,
+        start: 0,
+      },
+      position: {
+        x: 267,
+        y: 560,
+        z: 0,
+        angle: 0,
+        angleX: 0,
+        angleY: 0,
+        origin: "center",
+        isRelative: false,
+      },
+      timeline: {
+        end: 5,
+        start: 0,
+      },
+      transitions: [],
+    },
+  );
+  const video = await composition.encode();
+
+  console.log(video);
+};
+
+main();
+```
+
+That's it! You've learned how to generate promotional videos using Editframe and the OpenAI API with Node.js. Feel free to customize and expand your video creation capabilities with Editframe's versatile features and OpenAI's powerful AI capabilities.
+
+Thank you for exploring this guide. If you have any comments or feedback on our developer tools, please let us know.

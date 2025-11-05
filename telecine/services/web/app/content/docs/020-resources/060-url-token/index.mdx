@@ -1,0 +1,23 @@
+---
+meta:
+  - title: URL Tokens
+  - name:  description
+    content: Documentation for the Editframe packages
+headers:
+  Cache-Control: no-cache
+---
+
+## Create URL Token
+
+<ResourceOperation>
+  <PersistentTab label="HTTP">
+    <HTTPEndpoint method="POST" path="/api/v1/url-token">
+      <HTTPPayload docName="CreateURLTokenPayload" />
+      <HTTPResponse docName="CreateURLTokenResult" />
+    </HTTPEndpoint>
+  </PersistentTab>
+
+  <PersistentTab label="TypeScript">
+    <ShowDocItemByName name="createURLToken" />
+  </PersistentTab>
+</ResourceOperation>

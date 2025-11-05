@@ -1,0 +1,263 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Layout Patterns
+
+Comprehensive guide to page layout and structure patterns in the @web service.
+
+## Layout Architecture
+
+### Grid-Based Layouts
+
+The application uses CSS Grid for complex layouts:
+
+```tsx
+// Resource Layout - Main app layout with header and sidebar
+<div className="grid h-screen w-full grid-rows-[auto_1fr] grid-cols-[auto_1fr]">
+  <Header className="col-span-2" orgs={orgs} email={email} />
+  <div className="h-full overflow-y-auto">
+    <UserNavigation />
+  </div>
+  <div className="pl-2 pb-4 h-full overflow-y-auto">
+    <Outlet />
+  </div>
+</div>
+
+// Admin Layout - Two-tier layout
+<div className="grid grid-rows-[auto_1fr] h-screen w-screen grid-cols-[auto_1fr]">
+  <div className="col-span-2 bg-red-800 text-white flex justify-center items-center h-10">
+    🚧 ADMINISTRATION AREA 🚧
+  </div>
+  <AdminNavigation />
+  <main className="overflow-y-auto">
+    <Outlet />
+  </main>
+</div>
+```
+
+### Marketing Layouts
+
+For public-facing pages:
+
+```tsx
+// Flexible column layout with header/footer
+<div className="flex min-h-screen flex-col bg-white text-gray-900 dark:bg-editframe-900 dark:text-gray-200">
+  <Header />
+  <main>
+    <div className="lg:px-[7.2rem] mx-auto">
+      <Outlet />
+    </div>
+  </main>
+  <Footer />
+</div>
+```
+
+## Layout Components
+
+### Header Patterns
+
+#### Application Header
+```tsx
+interface HeaderProps {
+  className?: string;
+  orgs: Array<{ id: string; display_name: string }>;
+  email: string;
+}
+
+export function Header({ className, orgs, email }: HeaderProps) {
+  return (
+    <header className={clsx("border-b border-gray-200", className)}>
+      {/* Header content */}
+    </header>
+  );
+}
+```
+
+#### Marketing Header
+```tsx
+interface MarketingHeaderProps {
+  isLoggedIn?: boolean;
+  className?: string;
+}
+
+export function MarketingHeader({ isLoggedIn, className }: MarketingHeaderProps) {
+  const [isScrolled, setIsScrolled] = useState(false);
+  
+  useEffect(() => {
+    function onScroll() {
+      setIsScrolled(window.scrollY > 10);
+    }
+    // Scroll detection logic
+  }, []);
+
+  return (
+    <header className={clsx(
+      "z-1000 w-full transition-all duration-300",
+      { "bg-white border-b border-[#E2E2E3]": isScrolled },
+      className
+    )}>
+      {/* Navigation content */}
+    </header>
+  );
+}
+```
+
+### Container Patterns
+
+#### Inner Container
+```tsx
+export function InnerContainer({ children, className }: ContainerProps) {
+  return (
+    <div className={clsx("mx-auto max-w-7xl px-4 sm:px-6 lg:px-8", className)}>
+      {children}
+    </div>
+  );
+}
+```
+
+#### Content Container
+```tsx
+// For docs and content pages
+<div className="lg:px-[7.2rem] mx-auto">
+  {children}
+</div>
+
+// For tools and interactive pages
+<div className="lg:px-[5.5rem] max-w-6xl mx-auto">
+  {children}
+</div>
+```
+
+## Responsive Design Patterns
+
+### Breakpoint Strategy
+- `sm:` - 640px and up
+- `md:` - 768px and up  
+- `lg:` - 1024px and up
+- `xl:` - 1280px and up
+
+### Mobile-First Layouts
+```tsx
+// Navigation that collapses on mobile
+<nav className="flex space-x-4 text-sm font-medium items-center">
+  <div className="hidden md:flex">
+    {/* Desktop navigation */}
+  </div>
+  <div className="md:hidden">
+    {/* Mobile menu button */}
+  </div>
+</nav>
+```
+
+### Responsive Grid
+```tsx
+// Responsive sidebar layout
+<div className="grid grid-cols-[auto_1fr_auto] overflow-hidden">
+  <Menu className="overflow-auto pl-4 pr-8 pb-20" />
+  <main className="overflow-auto relative">
+    {/* Main content */}
+  </main>
+  <aside className="hidden lg:block">
+    {/* Right sidebar */}
+  </aside>
+</div>
+```
+
+## Overflow Management
+
+### Scrollable Areas
+```tsx
+// Sidebar with independent scrolling
+<div className="h-full overflow-y-auto">
+  <UserNavigation />
+</div>
+
+// Main content area
+<div className="pl-2 pb-4 h-full overflow-y-auto">
+  <Outlet />
+</div>
+```
+
+### Content Containment
+```tsx
+// Prevent layout shifts
+<div className="grid grid-rows-[auto_minmax(0,1fr)] h-screen contain-layout">
+  <Header />
+  <main className="overflow-hidden">
+    {/* Constrained content */}
+  </main>
+</div>
+```
+
+## Layout Utilities
+
+### Background Patterns
+```tsx
+// Dark mode support
+className="bg-white text-gray-900 dark:bg-editframe-900 dark:text-gray-200"
+
+// Selection styling
+className="selection:bg-blue-200 selection:text-black dark:selection:bg-blue-800 dark:selection:text-white"
+```
+
+### Spacing Utilities
+```tsx
+// Consistent spacing
+className="px-4 sm:px-6 lg:px-8"  // Horizontal padding
+className="py-3"                   // Vertical padding
+className="space-y-6"              // Vertical spacing between children
+className="gap-4 sm:gap-8"         // Flexbox/grid gaps
+```
+
+## Layout Route Patterns
+
+### Layout Route Structure
+```tsx
+// Route configuration
+layout("routes/resource/Layout.tsx", [
+  route("/welcome", "routes/welcome.tsx"),
+  route("/org/settings", "routes/org/settings.tsx"),
+  // Nested routes inherit layout
+])
+```
+
+### Layout Component Pattern
+```tsx
+export default function Layout({ loaderData }: Route.ComponentProps) {
+  return (
+    <div className="layout-container">
+      <Header {...loaderData.headerProps} />
+      <div className="content-wrapper">
+        <Navigation />
+        <main>
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+}
+```
+
+## Best Practices
+
+### Performance
+- Use `contain-layout` for layout containment
+- Implement proper overflow handling
+- Minimize layout shifts with fixed dimensions
+
+### Accessibility
+- Maintain proper heading hierarchy
+- Ensure keyboard navigation works
+- Use semantic HTML structure
+
+### Maintainability
+- Keep layout logic separate from content
+- Use consistent spacing utilities
+- Document responsive breakpoints
+
+### Dark Mode
+- Always provide dark mode variants
+- Use CSS custom properties for theme switching
+- Test all layouts in both themes

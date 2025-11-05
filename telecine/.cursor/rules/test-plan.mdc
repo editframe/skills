@@ -1,0 +1,459 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Test Plan Development Guide
+
+## Testing Philosophy
+
+**Core Principle:** Tests should reduce fear of change and enable confident refactoring. They are an investment in maintainability, not a burden.
+
+**Quality over Coverage:** Better to have fewer high-value tests that catch real bugs than 100% coverage of trivial scenarios.
+
+## Pre-Test Planning
+
+### 1. Validation Environment Check
+**ALWAYS establish test validation first:**
+- What test commands should run? (`npm test`, `npm run browsertest`)
+- Are there existing test patterns to follow?
+- What's the current test structure and naming conventions?
+- Run baseline: `npm test` to ensure existing tests pass
+
+### 2. Test Environment Mapping
+**Understand your testing contexts:**
+- **Node.js tests** (`.test.ts`): Business logic, APIs, server-side utilities
+- **Browser tests** (`.browsertest.ts`): WebCodecs, DOM APIs, real browser features
+- **E2E tests** (`playwright/`): Full user workflows and integration scenarios
+
+## Test Strategy Decision Tree
+
+### 1. What Are You Testing?
+
+#### A. Pure Functions & Business Logic
+**Characteristics:** No side effects, deterministic output
+```typescript
+// EXAMPLE: Date formatting utility
+describe("formatDuration", () => {
+  test("formats seconds to human readable", () => {
+    expect(formatDuration(90)).toBe("1m 30s");
+    expect(formatDuration(3661)).toBe("1h 1m 1s");
+  });
+  
+  test("handles edge cases", () => {
+    expect(formatDuration(0)).toBe("0s");
+    expect(formatDuration(-1)).toBe("0s");
+  });
+});
+```
+
+**Test Strategy:**
+- **Input/Output testing**: Cover edge cases, boundary conditions
+- **Property-based testing**: Test mathematical properties when applicable
+- **No mocking needed**: Pure functions are self-contained
+
+#### B. Components & UI
+**Characteristics:** User interface, interaction, visual behavior
+```typescript
+// EXAMPLE: Video player component
+describe("EFPlayer", () => {
+  test("displays video controls when ready", () => {
+    render(<EFPlayer src="test.mp4" />);
+    
+    expect(screen.getByRole("button", { name: /play/i })).toBeInTheDocument();
+    expect(screen.getByRole("slider", { name: /progress/i })).toBeInTheDocument();
+  });
+  
+  test("handles play/pause interaction", async () => {
+    const user = userEvent.setup();
+    
+    render(<EFPlayer src="test.mp4" />);
+    
+    const playButton = screen.getByRole("button", { name: /play/i });
+    await user.click(playButton);
+    
+    expect(screen.getByRole("button", { name: /pause/i })).toBeInTheDocument();
+  });
+});
+```
+
+**Test Strategy:**
+- **User behavior focus**: Test what users see and do
+- **Accessibility testing**: Verify ARIA labels and keyboard navigation
+- **Visual state testing**: Component states (loading, error, success)
+
+#### C. APIs & Integration Points
+**Characteristics:** External dependencies, network calls, side effects
+```typescript
+// EXAMPLE: File processing API
+describe("processISOBMFFFile", () => {
+  const server = useMSW();
+  
+  test("successfully processes valid file", async () => {
+    server.use(
+      http.post("http://localhost/api/files/process", () => {
+        return HttpResponse.json({ 
+          success: true, 
+          fileId: "processed-123",
+          tracks: [{ id: 1, type: "video" }]
+        });
+      })
+    );
+    
+    const result = await processISOBMFFFile("test.mp4");
+    
+    expect(result.success).toBe(true);
+    expect(result.tracks).toHaveLength(1);
+  });
+  
+  test("handles processing errors gracefully", async () => {
+    server.use(
+      http.post("http://localhost/api/files/process", () => {
+        return HttpResponse.text("Processing failed", { status: 500 });
+      })
+    );
+    
+    await expect(processISOBMFFFile("invalid.mp4")).rejects.toThrow("Processing failed");
+  });
+});
+```
+
+**Test Strategy:**
+- **Mock external dependencies**: Use MSW for HTTP, mock file system
+- **Test both success and failure**: Network errors, API errors, timeouts
+- **Verify side effects**: Database changes, file creation, queue jobs
+
+#### D. Complex Business Workflows
+**Characteristics:** Multi-step processes, state machines, orchestration
+```typescript
+// EXAMPLE: Video transcoding pipeline
+describe("Video Transcoding Workflow", () => {
+  test("complete transcoding pipeline", async () => {
+    const mockStorage = createMockStorage();
+    const controller = new Video2EncodingController({
+      storage: mockStorage,
+      outputFormat: "mp4"
+    });
+    
+    // Step 1: Initialize transcoding
+    const job = await controller.initializeTranscoding({
+      inputFile: "source.mov",
+      targetBitrate: 1000000
+    });
+    
+    expect(job.status).toBe("initialized");
+    
+    // Step 2: Process segments
+    const segments = await controller.processSegments(job.id);
+    
+    expect(segments).toHaveLength(10);
+    expect(mockStorage.writeFile).toHaveBeenCalledTimes(10);
+    
+    // Step 3: Finalize output
+    const result = await controller.finalizeTranscoding(job.id);
+    
+    expect(result.outputFile).toBeDefined();
+    expect(result.status).toBe("completed");
+  });
+});
+```
+
+**Test Strategy:**
+- **Integration testing**: Test the whole workflow, not just individual steps
+- **State verification**: Verify state transitions and side effects
+- **Resource management**: Test cleanup, error recovery, partial failures
+
+### 2. Risk Assessment Matrix
+
+#### High-Risk Areas (Require Comprehensive Testing)
+- **Video processing pipeline**: Transcoding, segment generation, format conversion
+- **File upload/download**: Data integrity, partial uploads, resume capability
+- **Authentication/Authorization**: Session management, permission checks
+- **Database migrations**: Schema changes, data integrity
+- **Payment processing**: Billing logic, subscription management
+
+#### Medium-Risk Areas (Require Targeted Testing)
+- **UI components**: User interactions, form validation
+- **API endpoints**: Request/response handling, error cases
+- **Background jobs**: Queue processing, retry logic
+- **Real-time features**: WebSocket connections, SSE streams
+
+#### Low-Risk Areas (Minimal Testing Sufficient)
+- **Static content**: Simple display components
+- **Configuration**: Environment variable parsing
+- **Logging**: Debug output, telemetry
+- **Development tools**: Build scripts, dev utilities
+
+## Test Implementation Flow
+
+### Phase 1: Test Plan Creation
+1. **Identify test scope**: What functionality needs testing?
+2. **Map user journeys**: How do users interact with this feature?
+3. **List failure modes**: What can go wrong and how?
+4. **Prioritize test cases**: Start with highest-risk scenarios
+
+### Phase 2: Test Environment Setup
+1. **Choose test type**: Unit, integration, or E2E?
+2. **Set up mocking**: What external dependencies need mocking?
+3. **Prepare test data**: Create realistic test fixtures
+4. **Configure test utilities**: MSW, test helpers, custom matchers
+
+### Phase 3: Test Implementation
+1. **Write failing tests first**: Red-Green-Refactor cycle
+2. **Test one thing at a time**: Single responsibility per test
+3. **Use descriptive names**: Test name should explain the scenario
+4. **Assert specific outcomes**: Avoid generic assertions
+
+### Phase 4: Test Maintenance
+1. **Run tests regularly**: Ensure they pass in CI/CD
+2. **Update tests with features**: Keep tests in sync with code
+3. **Remove obsolete tests**: Delete tests for removed features
+4. **Refactor test code**: Apply same quality standards as production code
+
+## Test Writing Decision Heuristics
+
+### When to Write Unit Tests
+- **Pure functions**: Mathematical operations, data transformations
+- **Business logic**: Domain rules, validation logic
+- **Error handling**: Input validation, error boundaries
+- **Utility functions**: Shared helpers, formatting functions
+
+### When to Write Integration Tests
+- **API endpoints**: Request handling, database operations
+- **Component interactions**: Parent-child component communication
+- **External service integration**: Third-party APIs, file systems
+- **Workflow orchestration**: Multi-step business processes
+
+### When to Write E2E Tests
+- **Critical user paths**: Registration, payment, core features
+- **Cross-browser compatibility**: Browser-specific functionality
+- **Real-world scenarios**: Complete user workflows
+- **Regression prevention**: Previously broken critical features
+
+### When NOT to Test
+- **Third-party library behavior**: Don't test React, don't test fetch()
+- **Implementation details**: Private methods, internal state
+- **Trivial getters/setters**: Simple property access
+- **Configuration constants**: Static values, environment variables
+
+## Testing Patterns for This Codebase
+
+### Video Processing Tests
+```typescript
+describe("Video Transcoding", () => {
+  test("transcodes video segment with correct parameters", async () => {
+    const transcoder = await createTranscoder({
+      input: { width: 1920, height: 1080, codec: "h264" },
+      output: { width: 854, height: 480, bitrate: 1000000 }
+    });
+    
+    const segment = await transcoder.processSegment(testVideoData, {
+      startTime: 0,
+      duration: 10000
+    });
+    
+    expect(segment.byteLength).toBeGreaterThan(0);
+    expect(segment.format).toBe("mp4");
+  });
+});
+```
+
+### Worker System Tests
+```typescript
+describe("Render Worker", () => {
+  test("processes render job from queue", async () => {
+    const mockQueue = createMockQueue();
+    const worker = new RenderWorker(mockQueue);
+    
+    mockQueue.addJob({
+      type: "render_fragment",
+      data: { templateId: "test", frameIndex: 0 }
+    });
+    
+    await worker.processNext();
+    
+    expect(mockQueue.completeJob).toHaveBeenCalled();
+  });
+});
+```
+
+### Database Migration Tests
+```typescript
+describe("Database Migrations", () => {
+  test("migration 001 creates users table", async () => {
+    await runMigration("001_create_users");
+    
+    const tableExists = await db
+      .selectFrom("information_schema.tables")
+      .where("table_name", "=", "users")
+      .executeTakeFirst();
+    
+    expect(tableExists).toBeDefined();
+  });
+});
+```
+
+### GraphQL Integration Tests
+```typescript
+describe("GraphQL API", () => {
+  test("user query returns authenticated user data", async () => {
+    const result = await graphqlRequest(`
+      query CurrentUser {
+        user {
+          id
+          email
+          organization {
+            name
+          }
+        }
+      }
+    `, {
+      headers: { authorization: "Bearer test-token" }
+    });
+    
+    expect(result.data.user.id).toBeDefined();
+    expect(result.data.user.organization.name).toBe("Test Org");
+  });
+});
+```
+
+## Test Data Management
+
+### Test Fixtures Strategy
+```typescript
+// tests/fixtures/videoData.ts
+export const createTestVideoMetadata = (overrides = {}) => ({
+  width: 1920,
+  height: 1080,
+  duration: 60000,
+  codec: "h264",
+  bitrate: 5000000,
+  ...overrides
+});
+
+// Usage in tests
+test("processes HD video", () => {
+  const metadata = createTestVideoMetadata({ width: 1280, height: 720 });
+  // Test implementation
+});
+```
+
+### Mock Data Factories
+```typescript
+// tests/factories/userFactory.ts
+export const createTestUser = (overrides = {}) => ({
+  id: `user-${Math.random().toString(36).substring(7)}`,
+  email: `test-${Date.now()}@example.com`,
+  orgId: "test-org",
+  createdAt: new Date().toISOString(),
+  ...overrides
+});
+```
+
+## Common Test Anti-Patterns to Avoid
+
+### ❌ Testing Implementation Details
+```typescript
+// BAD: Testing internal state
+test("component sets loading state", () => {
+  const wrapper = render(<VideoPlayer />);
+  expect(wrapper.instance().state.loading).toBe(true);
+});
+
+// GOOD: Testing user-visible behavior
+test("shows loading indicator while video loads", () => {
+  render(<VideoPlayer src="test.mp4" />);
+  expect(screen.getByText("Loading...")).toBeInTheDocument();
+});
+```
+
+### ❌ Over-Mocking
+```typescript
+// BAD: Mocking everything
+test("user service gets user", async () => {
+  const mockDb = { getUser: vi.fn() };
+  const mockLogger = { log: vi.fn() };
+  const mockValidator = { validate: vi.fn() };
+  // ... 10 more mocks
+});
+
+// GOOD: Mock only what you need
+test("user service handles missing user", async () => {
+  const mockDb = { getUser: vi.fn().mockResolvedValue(null) };
+  const service = new UserService(mockDb);
+  
+  const result = await service.findUser("nonexistent");
+  
+  expect(result).toBeNull();
+});
+```
+
+### ❌ Testing Everything at Once
+```typescript
+// BAD: Giant integration test
+test("entire video processing workflow", async () => {
+  // 200 lines of test code testing upload, processing, transcoding, 
+  // storage, notification, billing, analytics...
+});
+
+// GOOD: Focused test
+test("video transcoding preserves aspect ratio", async () => {
+  const transcoder = await createTranscoder();
+  const result = await transcoder.process(testVideo);
+  
+  expect(result.aspectRatio).toBe(testVideo.aspectRatio);
+});
+```
+
+## Test Maintenance Guidelines
+
+### Regular Test Health Checks
+1. **Flaky test detection**: Identify tests that pass/fail inconsistently
+2. **Performance monitoring**: Watch for slow tests that impact developer productivity
+3. **Coverage analysis**: Identify untested critical paths
+4. **Dependency updates**: Keep test utilities and mocking libraries current
+
+### Test Code Quality Standards
+1. **DRY principle**: Extract common test setup into utilities
+2. **Clear test names**: Use descriptive names that explain the scenario
+3. **Minimal setup**: Only create what the test actually needs
+4. **Predictable teardown**: Clean up resources to avoid test pollution
+
+## Success Metrics
+
+### Quantitative Indicators
+- **Test execution time**: Full test suite completes in <5 minutes
+- **Test stability**: <1% flaky test rate
+- **Coverage targets**: >80% line coverage for critical paths
+- **Failure detection**: Catch bugs before production deployment
+
+### Qualitative Indicators
+- **Developer confidence**: Team feels safe making changes
+- **Bug reduction**: Fewer production issues after releases
+- **Faster debugging**: Tests help locate problem areas quickly
+- **Documentation value**: Tests serve as usage examples
+
+## Validation Commands
+
+```bash
+# Node.js tests (main repository)
+npm test                         # Run all Node.js tests
+npm test -- --watch            # Watch mode for development
+npm test -- path/to/file.test.ts # Run specific test file
+
+# Browser tests (lib/packages repository)
+cd lib/packages
+npm run browsertest             # Run browser-specific tests
+npm run browsertest:watch      # Watch mode for browser tests
+
+# End-to-end tests
+npm run test:e2e               # Full application testing
+npm run test:e2e -- --headed   # Run with browser UI visible
+
+# Integration validation
+npm run build && npm test      # Verify tests pass after build
+```
+
+## Key Insight
+
+**The best tests make future development faster, not slower.** When in doubt, prioritize tests that would catch the most painful bugs to debug in production. Focus on testing contracts and behaviors that matter to users, not implementation details that change frequently.

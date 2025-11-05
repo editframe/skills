@@ -1,0 +1,8 @@
+-- Could not auto-generate a down migration.
+-- Please write an appropriate down migration for the SQL below:
+-- CREATE VIEW identity.valid_email_confirmations AS
+-- SELECT *
+-- FROM identity.email_confirmations
+-- WHERE confirmed_at IS NULL
+-- AND created_at >= now() - interval '2 weeks'
+-- ORDER BY created_at DESC;

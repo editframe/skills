@@ -1,0 +1,85 @@
+# Build stage for whisper.cpp
+FROM nvidia/cuda:12.3.1-devel-ubuntu22.04 AS whisper-builder
+
+# Add build arguments to detect changes
+ARG WHISPER_BRANCH=v1.7.1
+ARG WHISPER_REPO_ID=distil-whisper/distil-large-v3-ggml
+ARG WHISPER_MODEL_FILE=ggml-distil-large-v3.bin
+
+WORKDIR /app
+
+# Install system dependencies first (this layer rarely changes)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        build-essential=12.9* \
+        git=1:2.34.1-1ubuntu1.* \
+        python3=3.10.* \
+        python3-pip=22.0.* && \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+
+# Install Python dependencies (this layer rarely changes)
+RUN pip3 install --no-cache-dir huggingface_hub==0.20.*
+
+# Clone whisper.cpp at specific version (cached unless version changes)
+RUN git clone --depth 1 --branch ${WHISPER_BRANCH} https://github.com/ggerganov/whisper.cpp.git
+
+# Build whisper.cpp (cached unless source or build args change)
+WORKDIR /app/whisper.cpp
+RUN CUDA_ARCH=89 CUDA_EXTRA_FLAGS="-std=c++14" GGML_CUDA=1 make -j$(nproc)
+
+# Download model (cached unless model args change)
+WORKDIR /app
+RUN python3 -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='${WHISPER_REPO_ID}', filename='${WHISPER_MODEL_FILE}', local_dir='/app/whisper.cpp/models')"
+
+# Final runtime stage
+FROM nvidia/cuda:12.3.1-runtime-ubuntu22.04
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV CUDA_MAIN_VERSION=12.3
+ENV LD_LIBRARY_PATH=/usr/local/cuda-${CUDA_MAIN_VERSION}/compat:$LD_LIBRARY_PATH
+
+# Install Node.js first, then other dependencies
+RUN apt-get update && \
+    apt-get install -y curl && \
+    curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        nodejs \
+        python3-pip=22.0.* \
+        ffmpeg=7:4.4.* \
+        git=1:2.34.1-1ubuntu1.* && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    pip3 install --no-cache-dir \
+        torch==2.3.1 torchvision==0.18.1 torchaudio==2.3.1 \
+        --index-url https://download.pytorch.org/whl/cpu && \
+    pip3 install --no-cache-dir git+https://github.com/m-bain/whisperx.git@main
+
+# Copy whisper.cpp build artifacts
+COPY --from=whisper-builder /app/whisper.cpp /app/whisper.cpp
+COPY --from=whisper-builder /app/whisper.cpp/models/ggml-distil-large-v3.bin /app/whisper.cpp/models/ggml-distil-large-v3.bin
+
+ENV WHISPER_PATH=/app/whisper.cpp/main
+ENV GGML_MODEL_PATH=/app/whisper.cpp/models/ggml-distil-large-v3.bin
+
+# Now npm will be available for the install command
+COPY package.json package-lock.json ./
+ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1
+RUN npm install
+
+COPY lib/ lib/
+COPY services/transcribe/ services/transcribe/
+COPY tsconfig.json ./
+
+WORKDIR /app/services/transcribe
+RUN npx vite build
+RUN cp -r dist/* ./
+
+WORKDIR /app
+# Add proper permissions before the final CMD
+RUN chmod +x /app/services/transcribe/server.js
+
+# Change the CMD to explicitly use node
+CMD ["node", "/app/services/transcribe/server.js"]

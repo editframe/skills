@@ -1,0 +1,2 @@
+CREATE TABLE "video2"."process_html_attempts" ("id" uuid NOT NULL DEFAULT gen_random_uuid(), "started_at" timestamptz NOT NULL, "failed_at" timestamptz, "completed_at" timestamptz, "attempt_number" integer NOT NULL, "process_html_id" uuid NOT NULL, PRIMARY KEY ("id") , FOREIGN KEY ("process_html_id") REFERENCES "video2"."process_html"("id") ON UPDATE restrict ON DELETE cascade);
+CREATE EXTENSION IF NOT EXISTS pgcrypto;

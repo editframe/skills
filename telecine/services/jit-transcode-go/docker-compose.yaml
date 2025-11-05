@@ -1,0 +1,37 @@
+services:
+  jit-transcode-go:
+    build:
+      context: .
+      dockerfile: services/jit-transcode-go/Dockerfile.dev
+    restart: unless-stopped
+    env_file:
+      - ${PWD}/.env
+    environment:
+      - OTEL_SERVICE_NAME=jit-transcode-go
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tracing:4318
+      - PORT=3002
+      - NODE_ENV=development
+      - TEMP_DIR=/app/temp
+    volumes:
+      - ./services/jit-transcode-go:/app/services/jit-transcode-go
+      - ./test-assets:/app/test-assets:ro
+      - jit-transcode-go-cache:/app/temp
+    networks:
+      - telecine_default
+    labels:
+      traefik.http.routers.jit-transcode-go.rule: (Host(`host.docker.internal`) || Host(`localhost`)) && PathPrefix(`/api/v1/transcode-go`)
+      traefik.http.routers.jit-transcode-go.entrypoints: web
+      traefik.http.routers.jit-transcode-go.priority: 999
+      traefik.http.services.jit-transcode-go.loadbalancer.server.port: 3002
+    deploy:
+      resources:
+        limits:
+          cpus: ${JIT_TRANSCODE_GO_CPUS:-1.0}
+          memory: ${JIT_TRANSCODE_GO_MEMORY:-512M}
+
+volumes:
+  jit-transcode-go-cache:
+
+networks:
+  telecine_default:
+    external: true

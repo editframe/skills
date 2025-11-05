@@ -1,0 +1,92 @@
+---
+meta:
+  - title: Webhook Verification
+    name: description
+    content: Learn how to verify the signature of incoming Editframe webhooks using an Express.js application.
+---
+# Webhook Verification Process
+
+## Introduction
+
+When receiving webhooks from Editframe, it is best practice to verify the signature of the incoming request. This ensures that the webhook is authentic and is not being sent by a third party pretending to be Editframe.
+
+This is crucial because your webhook endpoint might be a public endpoint that is accessible to anyone.
+
+This example will show how to verify the signature with node.js and the built-in `crypto` module. You can use any language that supports similar cryptographic functions, which should be most languages. If you would like more help in this or any other programming language please contact us directly and we will do our best to help you.
+
+## Prerequisites
+
+- Node.js and npm installed
+- `crypto` module (built-in Node.js module)
+- Environment variable `EF_WEBHOOK_SECRET` set with the webhook secret
+
+## Webhook Verification Steps
+
+### 1. Receiving the Webhook
+
+The application sets up a POST endpoint at the root (`/`) to receive incoming webhook events.
+
+```javascript
+app.post('/', (req, res) => {
+  // Webhook handling logic
+});
+```
+
+### 2. Extracting the Signature
+
+The webhook signature is expected to be in the `X-Webhook-Signature` header of the incoming request.
+
+```javascript
+const signature = req.headers['x-webhook-signature'];
+```
+
+### 3. Calculating the Hash
+
+The application calculates a hash using the following steps:
+
+a. Retrieve the webhook secret from the environment variable:
+```javascript
+const secret = process.env.EF_WEBHOOK_SECRET;
+```
+
+b. Create an HMAC (Hash-based Message Authentication Code) using SHA-256:
+```javascript
+const hash = crypto.createHmac('sha256', secret)
+  .update(await req.text())
+  .digest('hex');
+
+// If you are unable to access the raw text of the request body, you should be
+// able to re-serialize into JSON and verify that. However, this will require that
+// the object is not re-ordered or modified from the original object.
+
+// For example, if the request body is a JSON object, you can do the following:
+const body = await req.json();
+const hash = crypto.createHmac('sha256', secret)
+  .update(JSON.stringify(body))
+  .digest('hex');
+
+// Note that no indentation has been added to the JSON object. It must be a 
+// 100% bit-for-bit match of the original body text.
+```
+
+### 4. Comparing the Signature
+
+The calculated hash is compared with the received signature:
+
+```javascript
+if (hash !== signature) {
+  res.status(401).send('Invalid signature');
+  return;
+}
+```
+
+### 5. Handling the Result
+
+- If the signatures match, the event is considered valid, and the application responds with a 200 status code.
+- If the signatures don't match, the application responds with a 401 status code, indicating an invalid signature.
+- In case of any errors during the process, the application responds with a 500 status code.
+
+## Security Considerations
+
+- The webhook secret (`EF_WEBHOOK_SECRET`) should be kept secure and not exposed in the codebase.
+- Always use HTTPS for webhook endpoints to ensure the security of the transmitted data.

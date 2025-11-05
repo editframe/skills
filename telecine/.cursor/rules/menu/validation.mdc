@@ -1,0 +1,482 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Validation Patterns
+
+Comprehensive guide to data validation and error handling patterns in the @web service.
+
+## Validation Architecture
+
+### Zod Schema Validation
+
+The application uses Zod for runtime type validation and schema definition:
+
+```tsx
+import { z } from "zod";
+
+// Basic schema definition
+const userSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+});
+
+type User = z.infer<typeof userSchema>;
+```
+
+### Integration with formFor
+
+Validation integrates seamlessly with the formFor utility:
+
+```tsx
+import { formFor } from "~/ui/form";
+
+const { Form, FieldError, Field } = formFor(userSchema);
+
+export default function UserForm() {
+  return (
+    <Form>
+      <Field name="email" type="email" />
+      <FieldError name="email" />
+      
+      <Field name="password" type="password" />
+      <FieldError name="password" />
+    </Form>
+  );
+}
+```
+
+## Schema Patterns
+
+### Basic Types
+```tsx
+// String validation
+const emailSchema = z.string().email();
+const phoneSchema = z.string().regex(/^\+?[\d\s-()]+$/);
+const uuidSchema = z.string().uuid();
+
+// Number validation
+const idSchema = z.coerce.number().int().positive();
+const priceSchema = z.number().min(0).max(999999);
+
+// Boolean validation
+const activeSchema = z.boolean().default(false);
+const optionalBoolSchema = z.boolean().optional();
+```
+
+### Object Schemas
+```tsx
+// Nested object validation
+const addressSchema = z.object({
+  street: z.string().min(1),
+  city: z.string().min(1),
+  state: z.string().length(2),
+  zipCode: z.string().regex(/^\d{5}(-\d{4})?$/),
+});
+
+const userProfileSchema = z.object({
+  user: userSchema,
+  address: addressSchema.optional(),
+  preferences: z.object({
+    notifications: z.boolean().default(true),
+    theme: z.enum(["light", "dark"]).default("light"),
+  }),
+});
+```
+
+### Array Validation
+```tsx
+// Array schemas
+const tagsSchema = z.array(z.string().min(1)).max(10);
+const numbersSchema = z.array(z.number()).nonempty();
+
+// Array of objects
+const itemsSchema = z.array(z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1),
+  quantity: z.number().int().positive(),
+}));
+```
+
+### Union and Enum Types
+```tsx
+// Enum validation
+const statusSchema = z.enum(["pending", "completed", "failed"]);
+const roleSchema = z.enum(["admin", "editor", "viewer"]);
+
+// Union types
+const idOrSlugSchema = z.union([
+  z.string().uuid(),
+  z.string().regex(/^[a-z0-9-]+$/)
+]);
+
+// Discriminated unions
+const eventSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("user_created"),
+    userId: z.string().uuid(),
+  }),
+  z.object({
+    type: z.literal("file_uploaded"),
+    fileId: z.string().uuid(),
+    filename: z.string(),
+  }),
+]);
+```
+
+## API Validation Patterns
+
+### Route Parameter Validation
+```tsx
+import type { Route } from "./+types/api-endpoint";
+
+const paramsSchema = z.object({
+  id: z.string().uuid(),
+  orgId: z.string().uuid(),
+});
+
+const querySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(10),
+  offset: z.coerce.number().int().min(0).default(0),
+  search: z.string().optional(),
+});
+
+export const loader = async ({ params, request }: Route.LoaderArgs) => {
+  const validParams = paramsSchema.parse(params);
+  const url = new URL(request.url);
+  const validQuery = querySchema.parse(Object.fromEntries(url.searchParams));
+  
+  // Use validated data
+  return fetchData(validParams.id, validQuery);
+};
+```
+
+### Request Body Validation
+```tsx
+const createUserSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
+});
+
+export const action = async ({ request }: Route.ActionArgs) => {
+  const body = await request.json();
+  const validData = createUserSchema.parse(body);
+  
+  // Create user with validated data
+  return createUser(validData);
+};
+```
+
+### File Upload Validation
+```tsx
+const fileUploadSchema = z.object({
+  file: z.custom<File>((val) => val instanceof File),
+  type: z.enum(["image", "video", "document"]),
+  maxSizeBytes: z.number().max(10 * 1024 * 1024), // 10MB
+});
+
+const validateFile = (file: File, type: string) => {
+  return fileUploadSchema.parse({
+    file,
+    type,
+    maxSizeBytes: file.size,
+  });
+};
+```
+
+## Form Validation Patterns
+
+### Client-Side Validation
+```tsx
+import { formFor } from "~/ui/form";
+
+const profileSchema = z.object({
+  displayName: z.string().min(1, "Display name is required"),
+  email: z.string().email("Please enter a valid email"),
+  bio: z.string().max(500, "Bio must be 500 characters or less"),
+  website: z.string().url().optional().or(z.literal("")),
+});
+
+const { Form, Field, FieldError, useFormData } = formFor(profileSchema);
+
+export default function ProfileForm() {
+  const formData = useFormData();
+  
+  return (
+    <Form>
+      <Field name="displayName" />
+      <FieldError name="displayName" />
+      
+      <Field name="email" type="email" />
+      <FieldError name="email" />
+      
+      <Field name="bio" as="textarea" />
+      <FieldError name="bio" />
+      <p className="text-xs text-gray-500">
+        {formData.bio?.length || 0}/500 characters
+      </p>
+      
+      <Field name="website" type="url" placeholder="https://" />
+      <FieldError name="website" />
+    </Form>
+  );
+}
+```
+
+### Custom Validation Rules
+```tsx
+// Custom validators
+const passwordSchema = z.string()
+  .min(8, "Password must be at least 8 characters")
+  .regex(/[A-Z]/, "Password must contain an uppercase letter")
+  .regex(/[a-z]/, "Password must contain a lowercase letter")
+  .regex(/[0-9]/, "Password must contain a number")
+  .regex(/[^A-Za-z0-9]/, "Password must contain a special character");
+
+// Async validation
+const uniqueEmailSchema = z.string().email().refine(
+  async (email) => {
+    const exists = await checkEmailExists(email);
+    return !exists;
+  },
+  {
+    message: "Email is already taken",
+  }
+);
+
+// Cross-field validation
+const passwordConfirmSchema = z.object({
+  password: passwordSchema,
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+```
+
+## Error Handling Patterns
+
+### Validation Error Types
+```tsx
+import { ZodError } from "zod";
+
+// Handle validation errors
+const handleValidationError = (error: ZodError) => {
+  const fieldErrors: Record<string, string> = {};
+  
+  error.issues.forEach((issue) => {
+    const path = issue.path.join(".");
+    fieldErrors[path] = issue.message;
+  });
+  
+  return {
+    success: false,
+    errors: fieldErrors,
+  };
+};
+
+// API error response
+export const action = async ({ request }: Route.ActionArgs) => {
+  try {
+    const body = await request.json();
+    const validData = userSchema.parse(body);
+    
+    const user = await createUser(validData);
+    return { success: true, user };
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return json(handleValidationError(error), { status: 400 });
+    }
+    
+    return json({ success: false, error: "Internal server error" }, { status: 500 });
+  }
+};
+```
+
+### Custom Error Messages
+```tsx
+const customMessageSchema = z.object({
+  age: z.number({
+    required_error: "Age is required",
+    invalid_type_error: "Age must be a number",
+  }).min(18, "Must be 18 or older"),
+  
+  terms: z.boolean().refine((val) => val === true, {
+    message: "You must accept the terms and conditions",
+  }),
+});
+```
+
+## Advanced Validation Patterns
+
+### Conditional Validation
+```tsx
+const accountSchema = z.object({
+  type: z.enum(["personal", "business"]),
+  businessName: z.string().optional(),
+  taxId: z.string().optional(),
+}).refine((data) => {
+  if (data.type === "business") {
+    return data.businessName && data.taxId;
+  }
+  return true;
+}, {
+  message: "Business name and tax ID are required for business accounts",
+  path: ["businessName"],
+});
+```
+
+### Transform and Preprocess
+```tsx
+const preprocessedSchema = z.object({
+  email: z.string().transform((val) => val.toLowerCase().trim()),
+  phone: z.string().transform((val) => val.replace(/\D/g, "")),
+  tags: z.string().transform((val) => val.split(",").map(tag => tag.trim())),
+});
+
+// Preprocess before validation
+const dateSchema = z.preprocess(
+  (val) => {
+    if (typeof val === "string") {
+      return new Date(val);
+    }
+    return val;
+  },
+  z.date()
+);
+```
+
+### Schema Composition
+```tsx
+const baseEntitySchema = z.object({
+  id: z.string().uuid(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+
+const userSchema = baseEntitySchema.extend({
+  email: z.string().email(),
+  firstName: z.string(),
+  lastName: z.string(),
+});
+
+const orgSchema = baseEntitySchema.extend({
+  name: z.string(),
+  website: z.string().url().optional(),
+  memberCount: z.number().int().min(0),
+});
+```
+
+## Integration Patterns
+
+### Database Integration
+```tsx
+import { db } from "@/sql-client.server";
+
+const createUserWithValidation = async (data: unknown) => {
+  const validUser = userSchema.parse(data);
+  
+  return db
+    .insertInto("identity.users")
+    .values({
+      email: validUser.email,
+      first_name: validUser.firstName,
+      last_name: validUser.lastName,
+    })
+    .returningAll()
+    .executeTakeFirstOrThrow();
+};
+```
+
+### GraphQL Integration
+```tsx
+import { requireQueryAs } from "@/graphql.server/userClient";
+
+const apiActionSchema = z.object({
+  resourceId: z.string().uuid(),
+  action: z.enum(["create", "update", "delete"]),
+});
+
+export const action = async ({ request }: Route.ActionArgs) => {
+  const session = await requireCookieOrTokenSession(request);
+  const body = await request.json();
+  const { resourceId, action } = apiActionSchema.parse(body);
+  
+  // Use validated data with GraphQL
+  const result = await requireQueryAs(session, "org-editor", query, {
+    id: resourceId,
+  });
+  
+  return result;
+};
+```
+
+## Testing Validation
+
+### Schema Testing
+```tsx
+import { describe, test, expect } from "vitest";
+
+describe("userSchema", () => {
+  test("validates correct user data", () => {
+    const validUser = {
+      email: "test@example.com",
+      firstName: "John",
+      lastName: "Doe",
+    };
+    
+    expect(() => userSchema.parse(validUser)).not.toThrow();
+  });
+  
+  test("rejects invalid email", () => {
+    const invalidUser = {
+      email: "not-an-email",
+      firstName: "John",
+      lastName: "Doe",
+    };
+    
+    expect(() => userSchema.parse(invalidUser)).toThrow();
+  });
+  
+  test("provides specific error messages", () => {
+    try {
+      userSchema.parse({ email: "invalid" });
+    } catch (error) {
+      if (error instanceof ZodError) {
+        expect(error.issues[0].message).toContain("email");
+      }
+    }
+  });
+});
+```
+
+## Best Practices
+
+### Schema Design
+- Keep schemas close to their usage
+- Use specific error messages for better UX
+- Leverage TypeScript inference with `z.infer<>`
+- Compose schemas for reusability
+
+### Performance
+- Avoid complex async validations in forms
+- Cache validation results when appropriate
+- Use `safeParse` for optional validation
+- Validate at API boundaries
+
+### Security
+- Always validate on the server side
+- Sanitize data after validation
+- Use type-safe schemas for API contracts
+- Validate file uploads thoroughly
+
+### User Experience
+- Provide real-time validation feedback
+- Show specific error messages
+- Validate on blur and submit
+- Clear errors when fields are corrected

@@ -1,0 +1,765 @@
+---
+meta:
+  - title: Generate podcast video snippets using Node.js, AssemblyAI, and Editframe
+  - name: description
+    content: In this video, we’ll show you how to use Node.js, AssemblyAI, and Editframe to do this programmatically.
+headers:
+  Cache-Control: cache
+featured_image: /guides/generate-podcast-video-snippets-using-node.js-assemblyai-and-editframe/video-editing.jpeg
+published_date: 2023-07-04
+author: Ilias Haddad
+---
+
+
+With nearly 400 million podcast listeners around the globe, creating and distributing a podcast can be a great way to get your message in front of a wide audiences and create awareness for your brand. Producing a podcast is no small feat, however, so you do decide to take on this project, you’ll want to make sure you’re maximizing your return on investment.
+
+One technique for effectively distributing podcasts is to trim each episode into segments based on the topics discussed, and generate a title and synopsis for each segment. This strategy goes a long way with helping with indexing and discoverability in places like YouTube, allows you to distribute your podcast more effectively on social networks, and helps your audience easily find relevant content.
+
+As you might imagine, though, trimming multiple hours-long podcast episodes into individual segments then writing a synopsis for each clip can be extremely tedious. But don’t go looking for a digital intern just yet––in this video, we’ll show you how to use Node.js, AssemblyAI, and Editframe to do this programmatically.
+
+Let’s get started!
+
+### Required tools
+
+For this project, you’ll need:
+
+- Node.js installed on your machine (v16+)
+- An AssemblyAI account (create one [here](https://www.assemblyai.com/))
+- An Editframe API Token (create one [here](https://app.editframe.com/signup))
+- An Ngrok account (create one [here](https://ngrok.com/))
+
+### Set up a Node.js project
+
+- Create a new project folder:
+
+```bash
+mkdir podcast-audio-snippets-generator
+```
+
+```bash
+cd podcast-audio-snippets-generator
+```
+
+- Initialize a new Node.js project
+
+```bash
+yarn init -y
+```
+
+- Install Express.js to create a small web server that will handle a webhook response from the AssemblyAI API:
+
+```bash
+yarn add express
+```
+
+- Create a server.js file to house your Express server:
+
+```bash
+touch server.js
+```
+
+- Paste the code below inside server.js:
+
+```javascript
+const express = require("express");
+const app = express();
+const port = 3000;
+
+app.get("/", (req, res) => {
+  res.send("Hello World!");
+});
+
+app.listen(port, () => {
+  console.log(`Example app listening on port ${port}`);
+});
+```
+
+### Add the AssemblyAI API
+
+- Create an audio.js file to send AssemblyAI API requests:
+
+```bash
+touch audio.js
+```
+
+- Install the Axios and dotenv package for sending API requests:
+
+```bash
+yarn add axios dotenv
+```
+
+- Create an assembly.js folder inside the `lib` directory:
+
+```bash
+mkdir lib
+touch lib/assembly.js
+```
+
+- Paste the code below inside `lib/assembly.js` file:
+
+```javascript
+require("dotenv").config({});
+
+const axios = require("axios");
+
+const assembly = axios.create({
+  baseURL: "https://api.assemblyai.com/v2",
+  headers: {
+    authorization: "YOUR_ASSEMBLY_TOKEN",
+    "content-type": "application/json",
+    "transfer-encoding": "chunked",
+  },
+});
+
+module.exports = { assembly };
+```
+
+In these lines of code above, we are creating a new Axios instance that will hold our AssemblyAI API base URL and credentials in order to easily send requests.
+
+- Paste the code below into `audio.js`:
+
+```javascript
+const fs = require("fs");
+const { assembly } = require("./lib/assembly");
+
+const file = `${__dirname}/podcast-demo.mp3`;
+fs.readFile(file, async (err, data) => {
+  if (err) return console.error(err);
+
+  const { data: audioUpload } = await assembly.post("/upload", data);
+  console.log(audioUpload);
+  const transcript = await assembly.post("/transcript", {
+    audio_url: audioUpload.upload_url,
+    webhook_url: "YOUR_NGROK_URL/webhook",
+    iab_categories: true,
+    auto_chapters: true,
+    boost_param: "high",
+    custom_spelling: [],
+  });
+});
+```
+
+In in the code above, we are reading the podcast audio file and sending it to the AssemblyAI API which gives us an upload URL for the file. We then then send this to the transcript endpoint on AssemblyAI, which will start the transcription job and assign it a webhook URL. Once the job is complete, AssemblyAI will send us a POST request for our webhook URL that contains the transcription data.
+
+- Update `server.js` with a webhook handler:
+
+```javascript
+const express = require("express");
+const app = express();
+const port = 3000;
+const { assembly } = require("./lib/assembly");
+
+app.get("/", (req, res) => {
+  res.send("Hello World!");
+});
+app.use(express.json());
+
+app.post("/webhook", (req, res) => {
+  console.log(req.body.transcript_id);
+  assembly
+    .get(`/transcript/${req.body.transcript_id}`)
+    .then(async (res) => {
+      console.log(res.data);
+    })
+    .catch((err) => console.error(err));
+  res.sendStatus(200);
+});
+app.listen(port, () => {
+  console.log(`Example app listening on port ${port}`);
+});
+```
+
+Let’s break down what the code above is doing:
+
+- First, we will import the Axios instance where we are storing all of our AssemblyAI API credentials:
+
+```javascript
+const assembly = require("./lib/assembly");
+```
+
+- Next, we add body parser to parse the webhook JSON data:
+
+```javascript
+app.use(express.json());
+```
+
+- Finally, we add a POST API endpoint to handle the webhook from the AssemblyAI API which will have a transcript job ID. We’ll use this later to get our transcription data:
+
+```javascript
+app.post("/webhook", (req, res) => {
+  console.log(req.body.transcript_id);
+  assembly
+    .get(`/transcript/${req.body.transcript_id}`)
+    .then(async (res) => {
+      console.log(res.data);
+    })
+    .catch((err) => console.error(err));
+  res.sendStatus(200);
+});
+```
+
+- Now, run the express.js server:
+
+```javascript
+node server
+```
+
+- Run ngrok service to share the public URL with our local express.js server (localhost:3000):
+
+```javascript
+ngrok http 3000
+```
+
+- Update the ngrok URL in the audio.js file:
+
+```javascript
+const transcript = await assembly.post("/transcript", {
+  audio_url: audioUpload.upload_url,
+  webhook_url: "https://77e8-102-48-82-243.ngrok.io/webhook",
+  iab_categories: true,
+  auto_chapters: true,
+  boost_param: "high",
+  custom_spelling: [],
+});
+```
+
+- Send the transcription and upload the API requests by running audio.js:
+
+```javascript
+node audio.js
+```
+
+### Add the Editframe API
+
+Now we’re going to bring the Editframe API into our project to handle the creation of video segments.
+
+- Install the `@editframe/editframe-js` SDK
+
+```bash
+ yarn add @editframe/editframe-js
+```
+
+- Create a `generate_videos.js` file inside the lib directory:
+
+```bash
+touch lib/generate_videos.js
+```
+
+- Paste the code below into `generate_videos.js`:
+
+```javascript
+const { Editframe } = require("@editframe/editframe-js");
+
+const editframe = new Editframe({
+  clientId: "YOUR_EDITFRAME_CLIENT_ID",
+  token: "YOUR_EDITFRAME_TOKEN",
+  develop: true, // dev mode to get progress logs on the terminal and open new encoded video in a new tab
+});
+
+const generateVideos = async (chapters, wordsArr, categories) => {
+  for (const chapter of chapters) {
+    let composition = await editframe.videos.new(
+      // options
+      {
+        dimensions: {
+          // Height in pixels
+          height: 1920,
+
+          // Width in pixels
+          width: 1080,
+        },
+        metadata: {
+          headline: chapter.headline,
+          gist: chapter.gist,
+          summary: chapter.summary,
+        },
+
+        // Duration of final output video in seconds
+        duration: chapter.end / 1000 - chapter.start / 1000,
+      },
+    );
+
+    const video = await composition.encodeSync();
+    console.log(video);
+  }
+};
+
+module.exports = { generateVideos };
+```
+
+Let’s dive into what the code above is doing
+
+- In these lines of code, we import the Editframe SDK and initialize a new Editframe instance:
+
+```javascript
+const { Editframe } = require("@editframe/editframe-js");
+
+const editframe = new Editframe({
+  clientId: "YOUR_EDITFRAME_CLIENT_ID",
+  token: "YOUR_EDITFRAME_TOKEN",
+  develop: true, // dev mode to get progress logs on the terminal and open a new encoded video in a new tab
+});
+```
+
+- Here, we create a new function that will take in chapters, words, and categories from the AssemblyAI API as its arguments. After that, we create new video composition to contain metadata (summary, gist, and headline) for each chapter, as well as specify each chapter’s duration. Finally, we encode the video:
+
+```javascript
+const generateVideos = async (chapters, wordsArr, categories) => {
+  for (const chapter of chapters) {
+    let composition = await editframe.videos.new(
+      // options
+      {
+        dimensions: {
+          // Height in pixels
+          height: 1920,
+
+          // Width in pixels
+          width: 1080,
+        },
+        metadata: {
+          headline: chapter.headline,
+          gist: chapter.gist,
+          summary: chapter.summary,
+        },
+
+        // Duration of final output video in seconds
+        duration: chapter.end / 1000 - chapter.start / 1000,
+      },
+    );
+
+    const video = await composition.encode();
+    console.log(video);
+  }
+};
+```
+
+- Now, let’s update the webhook API POST endpoint handler with a function to generate our videos:
+
+```javascript
+// import generateVideos function from lib/generate_videos.js
+
+const { generateVideos } = require("./lib/generate_videos");
+
+// update POST API handler
+
+app.post("/", (req, res) => {
+  assembly
+    .get(`/transcript/${req.body.transcript_id}`)
+    .then(async (res) => {
+      generateVideos(
+        res.data.chapters,
+        res.data.words,
+        res.data.iab_categories_result.results,
+      );
+    })
+    .catch((err) => console.error(err));
+  res.sendStatus(200);
+});
+```
+
+- Create an `add_subtitles.js` file inside lib folder to add subtitles to the video:
+
+```bash
+touch lib/add_subtitles.js
+```
+
+- Paste the code below inside `add_subtitles.js`:
+
+```javascript
+const addSubtitles = async (words, chapter, composition) => {
+  let wordsConcatenated = [];
+  for (const word of words) {
+    if (wordsConcatenated.length >= 8) {
+      await composition.addText(
+        // options
+        {
+          text: wordsConcatenated.map((el) => el.text).join(" "),
+          color: "#ffffff",
+          fontSize: 40,
+          textAlign: "center",
+          textPosition: {
+            x: "center",
+            y: "center",
+          },
+        },
+        // layer config
+        {
+          position: {
+            x: "center",
+            y: "center",
+          },
+          size: {
+            height: 1920,
+            width: 1080,
+          },
+          timeline: {
+            start: wordsConcatenated[0].start / 1000 - chapter.start / 1000,
+          },
+          trim: {
+            end:
+              Math.round(
+                (wordsConcatenated[wordsConcatenated.length - 1].end / 1000 -
+                  wordsConcatenated[0].start / 1000) *
+                  100,
+              ) / 100,
+          },
+        },
+      );
+      wordsConcatenated = [];
+    } else {
+      wordsConcatenated.push(word);
+    }
+  }
+  return new Promise((resolve, reject) => {
+    resolve("done");
+  });
+};
+
+module.exports = { addSubtitles };
+```
+
+Let’s explore what the code above is doing.
+
+- In these lines, we create a new function called `addSubtitles` that take in three arguments: words, chapter (the current video segment that has been split by AssemblyAI), and composition (the Editframe composition to which the text will be added). Also, we will initialize a new `wordsConcatenated` array that will hold up to eight words, since the AssemblyAI API gives one word per array item and we’d like to add multiple words per video composition to prevent layout issues:
+
+```javascript
+const addSubtitles = async (words, chapter, composition) => {
+  let wordsConcatenated = [];
+
+```
+
+- Below, will loop through the words array and check that the wordsConcatenated array does not exceed the maximum number of words that can be added to the video composition (which is eight). Also, we will calculate the start of the text with `wordsConcatenated[0].start / 1000 - chapter.start / 1000`, in which we take the first word start time, divide it by 1000 (which converts it to seconds), then subtract the chapter (current split video part) start time to reset the timestamp to 0:
+
+```javascript
+for (const word of words) {
+  if (wordsConcatenated.length >= 8) {
+    await composition.addText(
+      // options
+      {
+        text: wordsConcatenated.map((el) => el.text).join(" "),
+        color: "#ffffff",
+        fontSize: 40,
+        textAlign: "center",
+        textPosition: {
+          x: "center",
+          y: "center",
+        },
+      },
+      // layer config
+      {
+        position: {
+          x: "center",
+          y: "center",
+        },
+        size: {
+          height: 1920,
+          width: 1080,
+        },
+        timeline: {
+          start: wordsConcatenated[0].start / 1000 - chapter.start / 1000,
+        },
+        // Calculates the duration of text in the video by subtracting the last
+        // text item end time in the wordsConcatenated Array from the start time of the
+        // first item in the same array.
+        trim: {
+          end:
+            Math.round(
+              (wordsConcatenated[wordsConcatenated.length - 1].end / 1000 -
+                wordsConcatenated[0].start / 1000) *
+                100,
+            ) / 100,
+        },
+      },
+    );
+    wordsConcatenated = [];
+  } else {
+    wordsConcatenated.push(word);
+  }
+}
+return new Promise((resolve, reject) => {
+  resolve("done");
+});
+```
+
+- Now, create an `add_images.js` file inside the lib folder to get images from the Unsplash API that match subtitltes topics:
+
+```bash
+touch lib/add_images.js
+```
+
+- Install the wordsninja package to split the AssemblyAI labels string. (Learn more [here](https://www.assemblyai.com/docs/audio-intelligence#topic-detection-iab-classification)). For example, with wordsninja and simple JavaScript, we can convert `Automotive>AutoBodyStyles>SUV` to `Automotive AutoBodyStyles SUV`, then to `Automotive Auto Body Styles SUV`.
+
+```bash
+yarn add wordsninja
+```
+
+```javascript
+const WordsNinjaPack = require("wordsninja");
+const WordsNinja = new WordsNinjaPack();
+const axios = require("axios");
+
+const addImages = async (categories, composition, start) => {
+  const promises = categories.map(async (category) => {
+    if (category.timestamp.end > category.timestamp.start) {
+      const label = category.labels[0].label;
+      await WordsNinja.loadDictionary();
+      let string = label.split(">").join("");
+      const { data } = await axios.get(
+        "https://api.unsplash.com/search/photos",
+        {
+          params: {
+            query: WordsNinja.splitSentence(string).join(" "),
+            client_id: "YOUR_UNSPLASH_CLIENT_ID",
+            orientation: "portrait",
+            content_filter: "high",
+          },
+          headers: {
+            "Content-Type": "application/data",
+            Authorization: "Basic YOUR_UNSPLASH_CLIENT_TOKEN",
+          },
+        },
+      );
+
+      const duration = Math.round(
+        category.timestamp.end / 1000 - category.timestamp.start / 1000,
+      );
+
+      let imagesArr = Array.from({ length: ath.ceil(duration / 5) });
+      const imagesPromises = imagesArr.map(async (_el, index) => {
+        if (data.results[index] && data.results[index].urls) {
+          const imageUrl =
+            data.results[index].urls.full.split("?")[0] + "?q=80";
+          start += 5;
+          await composition.addImage(imageUrl, {
+            position: {
+              x: 0,
+              y: 0,
+            },
+            size: {
+              height: 1800,
+              width: 1080,
+              format: "fit",
+            },
+            timeline: {
+              start,
+            },
+            trim: {
+              end: 5,
+            },
+          });
+
+          return new Promise((resolve) => resolve());
+        }
+      });
+      await Promise.all(imagesPromises);
+      console.log("Image Added", imagesPromises.length);
+      start += duration;
+      return new Promise((resolve) => resolve());
+    }
+  });
+
+  await Promise.all(promises);
+
+  return new Promise((resolve) => resolve());
+};
+
+module.exports = { addImages };
+```
+
+Let’s break down the code above.
+
+- Here, we will import wordsninja to split label strings, and Axios to get images using the Unsplash API:
+
+```javascript
+const WordsNinjaPack = require("wordsninja");
+const WordsNinja = new WordsNinjaPack();
+const axios = require("axios");
+```
+
+- In these lines, we create a new function called addImages to hold categories (Topic labels), current chapter, and the Editframe composition. We also load the wordsninja dictionary to split topic label strings and use a first labels array item with a high degree of accuracy. We then use the Unsplash API to retrieve photos that match our topic label:
+
+```javascript
+const WordsNinjaPack = require("wordsninja");
+const WordsNinja = new WordsNinjaPack();
+const axios = require("axios");
+
+const addImages = async (categories, composition, start) => {
+
+    const promises = categories.map(async (category) => {
+        if (category.timestamp.end > category.timestamp.start) {
+            const label = category.labels[0].label;
+            await WordsNinja.loadDictionary();
+            let string = label.split(">").join("");
+            const { data } = await axios.get("https://api.unsplash.com/search/photos", {
+                params: {
+                    query: WordsNinja.splitSentence(string).join(" "),
+                    client_id: "YOUR_UNSPLASH_CLIENT_ID",
+                    orientation: "portrait",
+                    content_filter: "high",
+                },
+                headers: {
+                    "Content-Type": "application/data",
+                    Authorization:
+                        "Basic YOUR_UNSPLASH_CLIENT_TOKEN",
+                },
+            });;
+
+```
+
+- In the lines below, we calculate the duration of the category labels to get the number of images we will need to fill using our label data. We then map the number of needed images, and add them to our video composition. Finally, we wait for all promises to be resolved, then return a promise as a result of this function:
+
+```javascript
+
+            const duration = Math.round(
+                category.timestamp.end / 1000 - category.timestamp.start / 1000
+            );
+
+    let imagesArr = Array.from({ length: Math.ceil(duration / 5) });
+            const imagesPromises = imagesArr.map(async (_el, index) => {
+                if (data.results[index] && data.results[index].urls) {
+                    const imageUrl = data.results[index].urls.full.split("?")[0] + "?q=80";
+                    start += 5;
+                    await composition.addImage(imageUrl, {
+                        position: {
+                            x: 0,
+                            y: 0,
+                        },
+                        size: {
+                            height: 1800,
+                            width: 1080,
+                            format: "fit",
+                        },
+                        timeline: {
+                            start,
+                        },
+                        trim: {
+                            end: 5,
+                        }
+                    });
+
+
+                    return new Promise((resolve) => resolve());
+                }
+            });
+    await Promise.all(imagesPromises);
+    console.log("Image Added", imagesPromises.length);
+    return new Promise((resolve) => resolve());
+  });
+
+  await Promise.all(promises);
+
+  console.log("End");
+  return new Promise((resolve) => resolve());
+```
+
+- Update `lib/generate_video.js`:
+
+```javascript
+const { Editframe } = require("@editframe/editframe-js");
+const { addImages } = require("./add_images");
+const { addSubtitles } = require("./add_subtitles");
+const path = require("path");
+const editframe = new Editframe({
+  clientId: "YOUR_EDITFRAME_CLIENT_ID",
+  token: "YOUR_EDITFRAME_TOKEN",
+  develop: true, // dev mode to get progress logs on the terminal and open new encoded video in a new tab
+});
+
+const generateVideos = async (chapters, wordsArr, categories) => {
+  for (const chapter of chapters) {
+    let composition = await editframe.videos.new(
+      // options
+      {
+        dimensions: {
+          // Height in pixels
+          height: 1920,
+
+          // Width in pixels
+          width: 1080,
+        },
+        metadata: {
+          headline: chapter.headline,
+          gist: chapter.gist,
+          summary: chapter.summary,
+        },
+
+        // Duration of final output video in seconds
+        duration: chapter.end / 1000 - chapter.start / 1000,
+      },
+    );
+    // filter wordsArr Array to get only words that is in the current video chapter
+    const words = wordsArr.filter(
+      (el) => el.end <= chapter.end && el.start >= chapter.start,
+    );
+    const chapterCategories = categories.filter(
+      (el) =>
+        el.timestamp.end <= chapter.end && el.timestamp.start >= chapter.start,
+    );
+    let start = 0;
+
+    // chapterCategories.slice(0, 12) used it fro Unsplash API rate limit 50 requests per hour
+
+    await addImages(chapterCategories.slice(0, 12), composition, start);
+    await addSubtitles(words, chapter, composition);
+    // Add audio file to video composition that matches the subtitle by trimming the audio using chaprt timestamps
+    await composition.addAudio(
+      path.resolve("podcast-demo.mp3"),
+      {
+        volume: 1,
+      },
+      {
+        trim: {
+          start: chapter.start / 1000,
+          end: chapter.end / 1000,
+        },
+      },
+    );
+
+    // Add audio Waveform to video composition that matches the subtitle by trimming the audio using chaprt timestamps
+    await composition.addWaveform(
+      // file
+      path.resolve("podcast-demo.mp3"),
+      // options
+      { color: "#fff", style: "bars" },
+
+      // config
+      {
+        position: {
+          x: "center",
+          y: "bottom",
+        },
+        size: {
+          height: 100,
+          width: 1080,
+        },
+        trim: {
+          start: chapter.start / 1000,
+          end: chapter.end / 1000,
+        },
+      },
+    );
+    const video = await composition.encode();
+    console.log(video);
+  }
+};
+
+module.exports = { generateVideos };
+```
+
+## Conclusion
+
+Et voila! We have successfully automated the process of generating podcast video snippets which we can now distribute on social networks, and get as much milage out of our podcast content as possible.
+
+Here’s some examples of video generated using this project:
+
+#### file1.mp4 <Video controls="true" url="/guides/generate-podcast-video-snippets-using-node.js-assemblyai-and-editframe/file1.mp4" />
+
+#### file2.mp4 <Video controls="true" url="/guides/generate-podcast-video-snippets-using-node.js-assemblyai-and-editframe/file2.mp4" />
+
+#### file3.mp4 <Video controls="true" url="/guides/generate-podcast-video-snippets-using-node.js-assemblyai-and-editframe/file3.mp4" />
+
+#### file4.mp4 <Video controls="true" url="/guides/generate-podcast-video-snippets-using-node.js-assemblyai-and-editframe/file4.mp4" />
+
+This example is generated using the video version, you can find it in [the Github repo](https://github.com/editframe/podcast-snippets-generator/tree/feat/with-videos)
+
+#### with-video.mp4 <Video controls="true" url="/guides/generate-podcast-video-snippets-using-node.js-assemblyai-and-editframe/with-video.mp4" />

@@ -1,0 +1,25 @@
+services:
+  transcribe-ctl:
+    image: telecine-runner
+    pull_policy: never
+    depends_on:
+      - runner
+    working_dir: /app
+    env_file:
+      - ${PWD}/.env
+    environment:
+      - SHELL=/bin/sh
+      - OTEL_SERVICE_NAME=transcribe-ctl
+    volumes_from:
+      - runner
+    stop_grace_period: 1s
+    init: true
+    scale: 1
+    # prettier-ignore
+    command: [ "--loader", "/app/loader.js", "--watch", "/app/services/transcribe-ctl/src/server.ts" ]
+
+    labels:
+      traefik.http.routers.transcribe-ctl.rule: Host(`host.docker.internal`) && Path(`/hdb/transcribe_audio_track`)
+      traefik.http.routers.transcribe-ctl.entrypoints: web
+      traefik.http.routers.transcribe-ctl.priority: 1000
+      traefik.http.services.transcribe-ctl.loadbalancer.server.port: 3000

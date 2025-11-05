@@ -1,0 +1,29 @@
+FROM node:22
+
+ENV NODE_ENV=production
+# IMPLEMENTATION GUIDELINES: Enable Node.js native compile cache for faster cold starts
+ENV NODE_COMPILE_CACHE=/app/.compile-cache
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm install
+
+COPY lib/ lib/
+COPY services/worker-process-html-finalizer/ services/worker-process-html-finalizer/
+COPY tsconfig.json ./
+COPY ./loader.js /app/loader.js
+
+WORKDIR /app/services/worker-process-html-finalizer
+RUN npx vite build
+
+WORKDIR /app
+
+# Install only production dependencies
+RUN rm -rf node_modules && npm install --only=production
+
+# IMPLEMENTATION GUIDELINES: Pre-warm the compile cache using reusable utility
+COPY scripts/docker-compile-cache-prewarm /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-compile-cache-prewarm && \
+    docker-compile-cache-prewarm "node /app/services/worker-process-html-finalizer/dist/server.js" 3000 /health
+
+CMD ["node", "/app/services/worker-process-html-finalizer/dist/server.js"]

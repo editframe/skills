@@ -1,0 +1,223 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Email Notifications
+
+## Overview
+Email notifications in this application follow consistent patterns for different use cases. The most common pattern involves token-based workflow continuation for authentication and invitation flows, but the system also supports informational emails that don't require user action.
+
+All email delivery is typically triggered by Hasura database event triggers and follows standardized file organization and security practices.
+
+## File Structure
+
+### Email Templates
+- **Location**: `services/web/emails/`
+- **Naming**: Use descriptive names like `auth.magic_link.tsx`, `org.invite-member.tsx`, `auth.reset_password.tsx`
+- **Purpose**: React Email components that render the email content
+
+### Email Delivery Handlers  
+- **Location**: `services/web/app/hdb/`
+- **Naming**: Use `deliver_[action]_email.tsx` pattern like `deliver_invitation_email.tsx`
+- **Purpose**: Route handlers that fetch data, render emails, and send via transport
+- **Route Registration**: Must be added to `routes.ts` under the `hdb.prefix("/hdb", [...])` section
+
+## Security Pattern
+**CRITICAL**: All HDB routes must use `requireActionSecretOrThrow(request)` as the first line in the action function. This validates that the request comes from Hasura with the proper secret.
+
+```typescript
+export const action = async ({ request }: Route.ActionArgs) => {
+  requireActionSecretOrThrow(request);
+  // ... rest of implementation
+};
+```
+
+## Email Patterns
+
+### Token-Based Workflow Emails
+Common for authentication flows, invitations, and other workflows requiring secure user action:
+- Use secret tokens embedded in URLs for workflow continuation
+- Include call-to-action buttons linking to token-protected endpoints
+- Examples: magic links, password resets, member invitations, email confirmations
+
+### Informational Emails  
+Notification-style emails that inform users of events or changes:
+- May not require user action or tokens
+- Focus on conveying information clearly
+- Examples: API key creation notifications, password change confirmations
+
+## Email Template Pattern
+
+### Structure
+Use `@react-email/components` with this standard structure:
+- `Html`, `Head`, `Preview` (for email preview text)
+- `Body` with `main` style
+- `Container` with `container` style  
+- `Logo` component for branding
+- `Section` for content organization
+- `Text` components with `text` style
+- `EmailButton` for call-to-action (when applicable)
+
+### Props Interface
+Define clear TypeScript interfaces for email component props:
+```typescript
+// For token-based emails
+interface TokenEmailProps {
+  host: string;
+  token: string;
+  // additional context-specific props
+}
+
+// For informational emails
+interface InfoEmailProps {
+  // context-specific props only
+  recipientName?: string;
+  // other relevant data
+}
+```
+
+### Preview Props
+Include `PreviewProps` for email development and testing:
+```typescript
+ComponentName.PreviewProps = {
+  host: "http://localhost:3000",
+  token: "sample-token", // if applicable
+  // other props
+} satisfies EmailProps;
+```
+
+### Token URLs (when applicable)
+For workflow continuation emails, generate secure URLs:
+```typescript
+<EmailButton
+  href={`${host}/auth/magic-link/${token}`}
+  label="Continue workflow"
+/>
+```
+
+
+## Email Delivery Handler Pattern
+
+### Imports
+```typescript
+import { render } from "@react-email/components";
+import { transport, NO_REPLY_ADDRESS } from "~/mailer.server";
+import { db } from "@/sql-client.server";
+import EmailTemplate from "services/web/emails/template-name";
+import type { Route } from "./+types/handler-name";
+import { requireActionSecretOrThrow } from "@/http/requireActionSecret";
+```
+
+### Handler Structure
+```typescript
+export const action = async ({ request }: Route.ActionArgs) => {
+  requireActionSecretOrThrow(request);
+  const payload = await request.json();
+  
+  // Extract relevant data from Hasura event payload
+  const { id, token, user_id } = payload.event.data.new;
+  
+  // Query database for email details and context
+  const emailData = await db
+    .selectFrom("relevant_table")
+    .where("id", "=", id)
+    .select(["email_address", "token", "other_fields"])
+    .executeTakeFirst();
+    
+  if (!emailData) {
+    throw new Response("Not found", { status: 404 });
+  }
+  
+  // Send email using transport
+  await transport.sendMail({
+    from: NO_REPLY_ADDRESS,
+    to: emailData.email_address as string,
+    subject: "[Editframe] Descriptive subject",
+    html: render(
+      <EmailTemplate
+        host={process.env.WEB_HOST}
+        token={emailData.token}
+        // other props
+      />,
+    ),
+  });
+  
+  return {};
+};
+```
+
+## Styling Standards
+
+### Base Styles
+Use consistent styles across all email templates:
+```typescript
+const main = {
+  backgroundColor: "#f6f9fc",
+  padding: "10px 0",
+};
+
+const container = {
+  backgroundColor: "#ffffff", 
+  border: "1px solid #f0f0f0",
+  padding: "45px",
+};
+
+const text = {
+  fontSize: "16px",
+  fontFamily: "'Open Sans', 'HelveticaNeue-Light', 'Helvetica Neue Light', 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif",
+  fontWeight: "300",
+  color: "#404040", 
+  lineHeight: "26px",
+};
+```
+
+### Content Guidelines
+- Use professional, concise language
+- Include clear call-to-action
+- Provide security guidance (don't forward emails)
+- Include contact information: `team@editframe.com`
+- Add instructions for unwanted emails ("just ignore and delete this message")
+
+## Token Workflow Pattern (Authentication & Invitations)
+
+### Database Integration
+- Tokens are typically generated by database triggers or application logic
+- Email handlers query the database to retrieve token and recipient details
+- Tokens are embedded in URLs for workflow continuation
+
+### Hasura Event Triggers
+Email delivery is triggered by Hasura database event triggers configured in metadata files. The trigger sends a webhook to the HDB route with event data containing the new record information.
+
+### Route Registration
+Add new email delivery routes to `services/web/app/routes.ts`:
+```typescript
+hdb.route("/deliver_new_email_type", "deliver_new_email_type.tsx"),
+```
+
+## Common Email Types
+
+### Authentication Flows (Token-Based)
+- Email confirmation: `auth.confirmation.tsx` / `deliver_confirmation_email.tsx`
+- Magic link login: `auth.magic_link.tsx` / `deliver_magic_link_email.tsx`  
+- Password reset: `auth.reset_password.tsx` / `deliver_reset_password_email.tsx`
+
+### Organizational Workflows (Token-Based)
+- Member invitation: `org.invite-member.tsx` / `deliver_invitation_email.tsx`
+
+### Informational Notifications
+- Password updated: `auth.update_password.tsx` / `deliver_update_password_email.tsx`
+- API key notifications: `api.new.tsx` / `deliver_new_api_email_notification.tsx`
+
+## Implementation Checklist
+
+When implementing a new email notification:
+
+1. ✅ Create email template in `services/web/emails/`
+2. ✅ Create delivery handler in `services/web/app/hdb/`  
+3. ✅ Add route to `routes.ts` under hdb prefix
+4. ✅ Include `requireActionSecretOrThrow(request)` for security
+5. ✅ Use consistent styling and component structure
+6. ✅ Include PreviewProps for development
+7. ✅ Configure Hasura event trigger (if applicable)
+8. ✅ Test email rendering and delivery

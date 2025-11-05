@@ -1,0 +1,26 @@
+services:
+  tracing:
+    build:
+      context: ./services/otel-relay
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "4319:4319"
+    environment:
+      - OTEL_GRPC_PORT=4317
+      - OTEL_HTTP_PORT=4318
+      - SSE_PORT=4319
+      - BUFFER_SIZE=50000
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.otel-relay.rule=Host(`otel.localhost`)
+      - traefik.http.routers.otel-relay.entrypoints=web
+      - traefik.http.services.otel-relay.loadbalancer.server.port=4319
+    networks:
+      - telecine_default
+
+networks:
+  telecine_default:
+    external: true

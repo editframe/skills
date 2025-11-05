@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Electron Engine Test</title>
+</head>
+
+<body>
+  <script>
+    addEventListener("error", (event) => {
+      console.log("[RENDERER] [error] ", event.error);
+      FRAMEGEN_BRIDGE.uncaughtError(event.error);
+    });
+
+    addEventListener("unhandledrejection", (event) => {
+      console.log("[RENDERER] [unhandledrejection] ", event.reason);
+      FRAMEGEN_BRIDGE.uncaughtError(event.reason);
+    });
+
+    FRAMEGEN_BRIDGE.onInitialize((renderOptions) => {
+      console.log("[RENDERER] [onInitialize] ", renderOptions);
+      FRAMEGEN_BRIDGE.initialized();
+    });
+  </script>
+</body>
+
+</html>

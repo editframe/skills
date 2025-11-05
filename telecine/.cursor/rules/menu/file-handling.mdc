@@ -1,0 +1,580 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# File Handling Patterns
+
+Comprehensive guide to file upload and processing patterns in the @web service.
+
+## File Upload Architecture
+
+### Chunked Upload System
+
+The application supports chunked file uploads for large files:
+
+```tsx
+// Route: /:uploadType/:id/chunks
+export const action = async ({ params, request }: Route.ActionArgs) => {
+  const { uploadType, id } = params;
+  const formData = await request.formData();
+  const chunk = formData.get("chunk") as File;
+  const chunkIndex = Number(formData.get("chunkIndex"));
+  const totalChunks = Number(formData.get("totalChunks"));
+  
+  // Process chunk
+  await processFileChunk({
+    uploadType,
+    fileId: id,
+    chunk,
+    chunkIndex,
+    totalChunks,
+  });
+  
+  return json({ success: true });
+};
+```
+
+### File Upload Component
+
+```tsx
+import { useState, useCallback } from "react";
+import { useFetcher } from "react-router";
+
+interface FileUploaderProps {
+  onUploadComplete: (fileId: string) => void;
+  acceptedTypes?: string[];
+  maxFileSize?: number;
+}
+
+export function FileUploader({ 
+  onUploadComplete, 
+  acceptedTypes = ["video/*", "image/*"],
+  maxFileSize = 100 * 1024 * 1024 // 100MB
+}: FileUploaderProps) {
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const fetcher = useFetcher();
+
+  const uploadFile = useCallback(async (file: File) => {
+    if (file.size > maxFileSize) {
+      throw new Error("File too large");
+    }
+
+    setIsUploading(true);
+    const chunkSize = 1024 * 1024; // 1MB chunks
+    const totalChunks = Math.ceil(file.size / chunkSize);
+    const fileId = crypto.randomUUID();
+
+    for (let i = 0; i < totalChunks; i++) {
+      const start = i * chunkSize;
+      const end = Math.min(start + chunkSize, file.size);
+      const chunk = file.slice(start, end);
+
+      const formData = new FormData();
+      formData.append("chunk", chunk);
+      formData.append("chunkIndex", i.toString());
+      formData.append("totalChunks", totalChunks.toString());
+
+      await fetcher.submit(formData, {
+        method: "POST",
+        action: `/upload/video/${fileId}/chunks`,
+      });
+
+      setUploadProgress((i + 1) / totalChunks * 100);
+    }
+
+    setIsUploading(false);
+    onUploadComplete(fileId);
+  }, [maxFileSize, fetcher, onUploadComplete]);
+
+  return (
+    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+      <input
+        type="file"
+        accept={acceptedTypes.join(",")}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) uploadFile(file);
+        }}
+        disabled={isUploading}
+      />
+      {isUploading && (
+        <div className="mt-4">
+          <div className="bg-gray-200 rounded-full h-2">
+            <div 
+              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${uploadProgress}%` }}
+            />
+          </div>
+          <p className="text-sm text-gray-600 mt-2">
+            Uploading... {Math.round(uploadProgress)}%
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+## File Processing Pipeline
+
+### ISOBMFF Processing
+
+```tsx
+// API endpoint to process video files
+export const action = async ({ params }: Route.ActionArgs) => {
+  const session = await requireCookieOrTokenSession(request);
+  const { id } = params;
+
+  const file = await requireQueryAs(
+    session,
+    "org-editor",
+    graphql(`
+      query GetUnprocessedFile($id: uuid!) {
+        result: video2_unprocessed_files_by_pk(id: $id) {
+          id
+          filename
+          file_size
+        }
+      }
+    `),
+    { id }
+  );
+
+  // Create processing record
+  const processRecord = await db
+    .insertInto("video2.process_isobmff")
+    .values({
+      unprocessed_file_id: file.id,
+      api_key_id: session.cid,
+      org_id: session.oid,
+      source_type: "unprocessed_file",
+      creator_id: session.uid,
+    })
+    .returning(["id"])
+    .executeTakeFirstOrThrow();
+
+  return json(processRecord);
+};
+```
+
+### File Validation
+
+```tsx
+import { z } from "zod";
+
+const fileUploadSchema = z.object({
+  file: z.custom<File>((val) => val instanceof File, {
+    message: "Invalid file",
+  }),
+  type: z.enum(["video", "image", "audio"]),
+});
+
+export function validateFile(file: File, expectedType: string) {
+  // Check file size
+  const maxSizes = {
+    video: 500 * 1024 * 1024, // 500MB
+    image: 10 * 1024 * 1024,  // 10MB
+    audio: 50 * 1024 * 1024,  // 50MB
+  };
+
+  if (file.size > maxSizes[expectedType]) {
+    throw new Error(`File too large. Max size: ${maxSizes[expectedType]} bytes`);
+  }
+
+  // Check file type
+  const allowedMimeTypes = {
+    video: ["video/mp4", "video/quicktime", "video/x-msvideo"],
+    image: ["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"],
+    audio: ["audio/mpeg", "audio/wav", "audio/ogg"],
+  };
+
+  if (!allowedMimeTypes[expectedType].includes(file.type)) {
+    throw new Error(`Invalid file type. Expected: ${allowedMimeTypes[expectedType].join(", ")}`);
+  }
+
+  return true;
+}
+```
+
+## File Storage Patterns
+
+### Database File Records
+
+```tsx
+// Insert file record with metadata
+export async function createFileRecord(
+  fileData: {
+    filename: string;
+    mimeType: string;
+    fileSize: number;
+    orgId: string;
+    creatorId: string;
+  }
+) {
+  return db
+    .insertInto("video2.unprocessed_files")
+    .values({
+      filename: fileData.filename,
+      mime_type: fileData.mimeType,
+      file_size: fileData.fileSize,
+      org_id: fileData.orgId,
+      creator_id: fileData.creatorId,
+      status: "uploading",
+    })
+    .returning(["id", "filename", "status"])
+    .executeTakeFirstOrThrow();
+}
+
+// Update file status after processing
+export async function updateFileStatus(
+  fileId: string, 
+  status: "completed" | "failed" | "processing"
+) {
+  return db
+    .updateTable("video2.unprocessed_files")
+    .set({ 
+      status,
+      completed_at: status === "completed" ? new Date() : undefined,
+      failed_at: status === "failed" ? new Date() : undefined,
+    })
+    .where("id", "=", fileId)
+    .execute();
+}
+```
+
+### File Metadata Extraction
+
+```tsx
+import ffprobe from "ffprobe-static";
+import { promisify } from "util";
+import { exec } from "child_process";
+
+const execAsync = promisify(exec);
+
+export async function extractVideoMetadata(filePath: string) {
+  try {
+    const { stdout } = await execAsync(
+      `${ffprobe} -v quiet -print_format json -show_format -show_streams "${filePath}"`
+    );
+    
+    const metadata = JSON.parse(stdout);
+    
+    return {
+      duration: parseFloat(metadata.format.duration),
+      fileSize: parseInt(metadata.format.size),
+      bitrate: parseInt(metadata.format.bit_rate),
+      streams: metadata.streams.map((stream: any) => ({
+        type: stream.codec_type,
+        codec: stream.codec_name,
+        width: stream.width,
+        height: stream.height,
+        frameRate: eval(stream.r_frame_rate), // Evaluate fraction
+      })),
+    };
+  } catch (error) {
+    throw new Error(`Failed to extract metadata: ${error.message}`);
+  }
+}
+```
+
+## File Processing Workers
+
+### Background Processing
+
+```tsx
+// Worker for processing uploaded files
+export class FileProcessingWorker {
+  async processFile(fileId: string) {
+    try {
+      await this.updateStatus(fileId, "processing");
+      
+      const file = await this.getFileRecord(fileId);
+      const metadata = await extractVideoMetadata(file.filePath);
+      
+      // Process video tracks
+      if (metadata.streams.some(s => s.type === "video")) {
+        await this.processVideoTracks(fileId, metadata);
+      }
+      
+      // Process audio tracks
+      if (metadata.streams.some(s => s.type === "audio")) {
+        await this.processAudioTracks(fileId, metadata);
+      }
+      
+      await this.updateStatus(fileId, "completed");
+    } catch (error) {
+      await this.updateStatus(fileId, "failed");
+      throw error;
+    }
+  }
+
+  private async processVideoTracks(fileId: string, metadata: any) {
+    const videoStreams = metadata.streams.filter(s => s.type === "video");
+    
+    for (const [index, stream] of videoStreams.entries()) {
+      await db
+        .insertInto("video2.isobmff_tracks")
+        .values({
+          file_id: fileId,
+          track_id: index,
+          type: "video",
+          codec: stream.codec,
+          width: stream.width,
+          height: stream.height,
+          frame_rate: stream.frameRate,
+        })
+        .execute();
+    }
+  }
+
+  private async updateStatus(fileId: string, status: string) {
+    await db
+      .updateTable("video2.unprocessed_files")
+      .set({ status })
+      .where("id", "=", fileId)
+      .execute();
+  }
+}
+```
+
+### Transcription Processing
+
+```tsx
+export const action = async ({ params, request }: Route.ActionArgs) => {
+  const session = await requireCookieOrTokenSession(request);
+  const { id } = params;
+  const { trackId } = await request.json();
+
+  // Verify file and track exist
+  const file = await requireQueryAs(
+    session,
+    "org-editor",
+    graphql(`
+      query GetFileForTranscription($id: uuid!) {
+        result: video2_isobmff_files_by_pk(id: $id) {
+          id
+          isobmff_tracks(where: { type: { _eq: audio }}) {
+            file_id
+            track_id
+            type
+          }
+        }
+      }
+    `),
+    { id }
+  );
+
+  const audioTrack = file.isobmff_tracks.find(
+    track => track.track_id === trackId
+  );
+
+  if (!audioTrack) {
+    throw new Response("Audio track not found", { status: 400 });
+  }
+
+  // Create transcription job
+  const transcription = await db
+    .insertInto("video2.transcriptions")
+    .values({
+      file_id: file.id,
+      track_id: audioTrack.track_id,
+      api_key_id: session.cid,
+      org_id: session.oid,
+      creator_id: session.uid,
+      status: "pending",
+      work_slice_ms: 30_000,
+    })
+    .onConflict((oc) => 
+      oc.columns(["file_id", "track_id"]).doNothing()
+    )
+    .returning(["id"])
+    .executeTakeFirstOrThrow();
+
+  return json(transcription);
+};
+```
+
+## File Download and Serving
+
+### Secure File Serving
+
+```tsx
+export async function serveFile(request: Request, fileId: string) {
+  const session = await requireCookieOrTokenSession(request);
+  
+  // Verify user has access to file
+  const file = await requireQueryAs(
+    session,
+    "org-reader",
+    graphql(`
+      query GetFile($id: uuid!) {
+        result: video2_isobmff_files_by_pk(id: $id) {
+          id
+          filename
+          file_path
+          mime_type
+        }
+      }
+    `),
+    { id: fileId }
+  );
+
+  if (!file) {
+    throw new Response("File not found", { status: 404 });
+  }
+
+  // Return file stream
+  const fileStream = createReadStream(file.file_path);
+  
+  return new Response(fileStream, {
+    headers: {
+      "Content-Type": file.mime_type,
+      "Content-Disposition": `attachment; filename="${file.filename}"`,
+      "Cache-Control": "private, max-age=3600",
+    },
+  });
+}
+```
+
+### Temporary URLs
+
+```tsx
+import { createHmac } from "crypto";
+
+export function generateTemporaryUrl(
+  fileId: string, 
+  expiresInSeconds: number = 3600
+) {
+  const expiresAt = Math.floor(Date.now() / 1000) + expiresInSeconds;
+  const signature = createHmac("sha256", process.env.FILE_SECRET!)
+    .update(`${fileId}:${expiresAt}`)
+    .digest("hex");
+
+  return `/files/${fileId}?expires=${expiresAt}&signature=${signature}`;
+}
+
+export function verifyTemporaryUrl(
+  fileId: string,
+  expires: string,
+  signature: string
+) {
+  const expiresAt = parseInt(expires);
+  
+  if (Date.now() / 1000 > expiresAt) {
+    throw new Error("URL expired");
+  }
+
+  const expectedSignature = createHmac("sha256", process.env.FILE_SECRET!)
+    .update(`${fileId}:${expiresAt}`)
+    .digest("hex");
+
+  if (signature !== expectedSignature) {
+    throw new Error("Invalid signature");
+  }
+
+  return true;
+}
+```
+
+## File Cleanup and Management
+
+### Orphaned File Cleanup
+
+```tsx
+export async function cleanupOrphanedFiles() {
+  // Find files not referenced in any table
+  const orphanedFiles = await db
+    .selectFrom("video2.unprocessed_files")
+    .leftJoin(
+      "video2.isobmff_files",
+      "video2.unprocessed_files.id",
+      "video2.isobmff_files.unprocessed_file_id"
+    )
+    .where("video2.isobmff_files.id", "is", null)
+    .where("video2.unprocessed_files.created_at", "<", 
+      sql<Date>`now() - interval '7 days'`
+    )
+    .select(["video2.unprocessed_files.id", "video2.unprocessed_files.file_path"])
+    .execute();
+
+  for (const file of orphanedFiles) {
+    // Delete physical file
+    try {
+      await fs.unlink(file.file_path);
+    } catch (error) {
+      console.warn(`Failed to delete file ${file.file_path}:`, error);
+    }
+
+    // Delete database record
+    await db
+      .deleteFrom("video2.unprocessed_files")
+      .where("id", "=", file.id)
+      .execute();
+  }
+
+  return orphanedFiles.length;
+}
+```
+
+### File Size Monitoring
+
+```tsx
+export async function getStorageStats(orgId: string) {
+  const stats = await db
+    .selectFrom("video2.isobmff_files")
+    .where("org_id", "=", orgId)
+    .select(({ fn }) => [
+      fn.count<number>("id").as("total_files"),
+      fn.sum<number>("file_size").as("total_size"),
+      fn.avg<number>("file_size").as("average_size"),
+    ])
+    .groupBy("org_id")
+    .executeTakeFirst();
+
+  return {
+    totalFiles: stats?.total_files || 0,
+    totalSize: stats?.total_size || 0,
+    averageSize: stats?.average_size || 0,
+    totalSizeFormatted: formatBytes(stats?.total_size || 0),
+  };
+}
+
+function formatBytes(bytes: number): string {
+  const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
+  if (bytes === 0) return "0 Bytes";
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + " " + sizes[i];
+}
+```
+
+## Best Practices
+
+### Security
+- Always validate file types and sizes
+- Use secure file paths (no directory traversal)
+- Implement proper access controls
+- Scan uploaded files for malware
+- Use temporary URLs for file access
+
+### Performance
+- Implement chunked uploads for large files
+- Use streaming for file downloads
+- Compress files when possible
+- Implement proper caching headers
+- Use CDN for file delivery
+
+### Reliability
+- Implement retry logic for failed uploads
+- Store file metadata in database
+- Use background workers for processing
+- Implement proper error handling
+- Regular cleanup of orphaned files
+
+### User Experience
+- Show upload progress
+- Provide file preview capabilities
+- Support drag-and-drop uploads
+- Display helpful error messages
+- Implement resume functionality for interrupted uploads

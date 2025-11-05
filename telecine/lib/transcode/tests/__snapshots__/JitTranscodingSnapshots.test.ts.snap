@@ -1,0 +1,247 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`JIT Transcoding - Snapshot Testing > should produce consistent output for high_quality_720p_1s > high_quality_720p_1s-metadata.json 1`] = `
+{
+  "audio": {
+    "avgPacketSize": 436,
+    "channels": 2,
+    "codec": "aac",
+    "packetCount": 46,
+    "profile": "LC",
+    "sampleFormat": "fltp",
+    "sampleRate": 48000,
+    "timebase": "1/48000",
+  },
+  "format": {
+    "bitrate": 2809125,
+    "duration": 0.96,
+    "size": 337095,
+    "startTime": 0,
+  },
+  "timing": {
+    "firstAudioPacketPts": 0,
+    "firstVideoFramePts": 0,
+    "keyframeInterval": 0,
+    "lastAudioPacketPts": 45056,
+    "lastVideoFramePts": 82800,
+  },
+  "video": {
+    "avgPacketSize": 13131,
+    "codec": "h264",
+    "frameCount": 24,
+    "frameRate": 25,
+    "height": 480,
+    "keyframeCount": 1,
+    "level": 30,
+    "pixelFormat": "yuv420p",
+    "profile": "Constrained Baseline",
+    "timebase": "1/90000",
+    "width": 720,
+  },
+}
+`;
+
+exports[`JIT Transcoding - Snapshot Testing > should produce consistent output for low_quality_320p_3s > low_quality_320p_3s-metadata.json 1`] = `
+{
+  "audio": {
+    "avgPacketSize": 411,
+    "channels": 1,
+    "codec": "aac",
+    "packetCount": 2,
+    "profile": "LC",
+    "sampleFormat": "fltp",
+    "sampleRate": 22050,
+    "timebase": "1/22050",
+  },
+  "format": {
+    "bitrate": 505360,
+    "duration": 3,
+    "size": 189510,
+    "startTime": 0,
+  },
+  "timing": {
+    "firstAudioPacketPts": 0,
+    "firstVideoFramePts": 0,
+    "keyframeInterval": 90000,
+    "lastAudioPacketPts": 0,
+    "lastVideoFramePts": 266400,
+  },
+  "video": {
+    "avgPacketSize": 2493,
+    "codec": "h264",
+    "frameCount": 75,
+    "frameRate": 25,
+    "height": 180,
+    "keyframeCount": 3,
+    "level": 12,
+    "pixelFormat": "yuv420p",
+    "profile": "Constrained Baseline",
+    "timebase": "1/90000",
+    "width": 320,
+  },
+}
+`;
+
+exports[`JIT Transcoding - Snapshot Testing > should produce consistent output for mid_segment_640p_1_5s > mid_segment_640p_1_5s-metadata.json 1`] = `
+{
+  "audio": {
+    "avgPacketSize": 518,
+    "channels": 2,
+    "codec": "aac",
+    "packetCount": 2,
+    "profile": "LC",
+    "sampleFormat": "fltp",
+    "sampleRate": 44100,
+    "timebase": "1/44100",
+  },
+  "format": {
+    "bitrate": 1782248,
+    "duration": 1.48,
+    "size": 329716,
+    "startTime": 0,
+  },
+  "timing": {
+    "firstAudioPacketPts": 0,
+    "firstVideoFramePts": 0,
+    "keyframeInterval": 86400,
+    "lastAudioPacketPts": 0,
+    "lastVideoFramePts": 129600,
+  },
+  "video": {
+    "avgPacketSize": 8841,
+    "codec": "h264",
+    "frameCount": 37,
+    "frameRate": 25,
+    "height": 360,
+    "keyframeCount": 2,
+    "level": 30,
+    "pixelFormat": "yuv420p",
+    "profile": "Constrained Baseline",
+    "timebase": "1/90000",
+    "width": 640,
+  },
+}
+`;
+
+exports[`JIT Transcoding - Snapshot Testing > should produce consistent output for minimal_160p_1s > minimal_160p_1s-metadata.json 1`] = `
+{
+  "audio": {
+    "avgPacketSize": 297,
+    "channels": 1,
+    "codec": "aac",
+    "packetCount": 2,
+    "profile": "LC",
+    "sampleFormat": "fltp",
+    "sampleRate": 16000,
+    "timebase": "1/16000",
+  },
+  "format": {
+    "bitrate": 225968,
+    "duration": 1,
+    "size": 28246,
+    "startTime": 0,
+  },
+  "timing": {
+    "firstAudioPacketPts": 0,
+    "firstVideoFramePts": 0,
+    "keyframeInterval": 43200,
+    "lastAudioPacketPts": 0,
+    "lastVideoFramePts": 86400,
+  },
+  "video": {
+    "avgPacketSize": 1046,
+    "codec": "h264",
+    "frameCount": 25,
+    "frameRate": 25,
+    "height": 90,
+    "keyframeCount": 2,
+    "level": 11,
+    "pixelFormat": "yuv420p",
+    "profile": "Constrained Baseline",
+    "timebase": "1/90000",
+    "width": 160,
+  },
+}
+`;
+
+exports[`JIT Transcoding - Snapshot Testing > should produce consistent output for short_segment_480p_500ms > short_segment_480p_500ms-metadata.json 1`] = `
+{
+  "audio": {
+    "avgPacketSize": 336,
+    "channels": 2,
+    "codec": "aac",
+    "packetCount": 22,
+    "profile": "LC",
+    "sampleFormat": "fltp",
+    "sampleRate": 48000,
+    "timebase": "1/48000",
+  },
+  "format": {
+    "bitrate": 1238483,
+    "duration": 0.48,
+    "size": 74309,
+    "startTime": 0,
+  },
+  "timing": {
+    "firstAudioPacketPts": 0,
+    "firstVideoFramePts": 0,
+    "keyframeInterval": 0,
+    "lastAudioPacketPts": 20480,
+    "lastVideoFramePts": 39600,
+  },
+  "video": {
+    "avgPacketSize": 5440,
+    "codec": "h264",
+    "frameCount": 12,
+    "frameRate": 25,
+    "height": 270,
+    "keyframeCount": 1,
+    "level": 21,
+    "pixelFormat": "yuv420p",
+    "profile": "Constrained Baseline",
+    "timebase": "1/90000",
+    "width": 480,
+  },
+}
+`;
+
+exports[`JIT Transcoding - Snapshot Testing > should produce consistent output for standard_480p_2s > standard_480p_2s-metadata.json 1`] = `
+{
+  "audio": {
+    "avgPacketSize": 339,
+    "channels": 2,
+    "codec": "aac",
+    "packetCount": 93,
+    "profile": "LC",
+    "sampleFormat": "fltp",
+    "sampleRate": 48000,
+    "timebase": "1/48000",
+  },
+  "format": {
+    "bitrate": 1213169,
+    "duration": 1.963,
+    "size": 297631,
+    "startTime": 0,
+  },
+  "timing": {
+    "firstAudioPacketPts": 0,
+    "firstVideoFramePts": 0,
+    "keyframeInterval": 86400,
+    "lastAudioPacketPts": 93184,
+    "lastVideoFramePts": 172800,
+  },
+  "video": {
+    "avgPacketSize": 5380,
+    "codec": "h264",
+    "frameCount": 49,
+    "frameRate": 25,
+    "height": 270,
+    "keyframeCount": 2,
+    "level": 21,
+    "pixelFormat": "yuv420p",
+    "profile": "Constrained Baseline",
+    "timebase": "1/90000",
+    "width": 480,
+  },
+}
+`;

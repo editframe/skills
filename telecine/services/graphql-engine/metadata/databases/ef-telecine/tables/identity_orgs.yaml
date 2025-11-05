@@ -1,0 +1,249 @@
+table:
+  name: orgs
+  schema: identity
+configuration:
+  column_config: {}
+  custom_column_names: {}
+  custom_name: orgs
+  custom_root_fields: {}
+object_relationships:
+  - name: primary_user
+    using:
+      foreign_key_constraint_on: primary_user_id
+array_relationships:
+  - name: api_keys
+    using:
+      foreign_key_constraint_on:
+        column: org_id
+        table:
+          name: api_keys
+          schema: identity
+  - name: caption_files
+    using:
+      foreign_key_constraint_on:
+        column: org_id
+        table:
+          name: caption_files
+          schema: video2
+  - name: image_files
+    using:
+      foreign_key_constraint_on:
+        column: org_id
+        table:
+          name: image_files
+          schema: video2
+  - name: invites
+    using:
+      foreign_key_constraint_on:
+        column: org_id
+        table:
+          name: invites
+          schema: identity
+  - name: isobmff_files
+    using:
+      foreign_key_constraint_on:
+        column: org_id
+        table:
+          name: isobmff_files
+          schema: video2
+  - name: memberships
+    using:
+      foreign_key_constraint_on:
+        column: org_id
+        table:
+          name: memberships
+          schema: identity
+  - name: process_htmls
+    using:
+      foreign_key_constraint_on:
+        column: org_id
+        table:
+          name: process_html
+          schema: video2
+  - name: process_isobmffs
+    using:
+      foreign_key_constraint_on:
+        column: org_id
+        table:
+          name: process_isobmff
+          schema: video2
+  - name: projects
+    using:
+      foreign_key_constraint_on:
+        column: org_id
+        table:
+          name: projects
+          schema: video
+  - name: renders
+    using:
+      foreign_key_constraint_on:
+        column: org_id
+        table:
+          name: renders
+          schema: video2
+  - name: transcriptions
+    using:
+      foreign_key_constraint_on:
+        column: org_id
+        table:
+          name: transcriptions
+          schema: video2
+  - name: unprocessed_files
+    using:
+      foreign_key_constraint_on:
+        column: org_id
+        table:
+          name: unprocessed_files
+          schema: video2
+  - name: webhook_events
+    using:
+      foreign_key_constraint_on:
+        column: org_id
+        table:
+          name: webhook_events
+          schema: api
+insert_permissions:
+  - role: org-primary
+    permission:
+      check: {}
+      set:
+        primary_user_id: X-Hasura-user-id
+      columns:
+        - display_name
+        - website
+    comment: ""
+  - role: user
+    permission:
+      check: {}
+      set:
+        primary_user_id: X-Hasura-user-id
+      columns:
+        - display_name
+    comment: ""
+select_permissions:
+  - role: ef-admin
+    permission:
+      columns:
+        - is_paid
+        - display_name
+        - website
+        - created_at
+        - updated_at
+        - id
+        - primary_user_id
+      filter: {}
+      allow_aggregations: true
+    comment: ""
+  - role: org-admin
+    permission:
+      columns:
+        - display_name
+        - id
+        - primary_user_id
+        - website
+      filter:
+        memberships:
+          _and:
+            - role:
+                _eq: admin
+            - user_id:
+                _eq: X-Hasura-user-id
+      allow_aggregations: true
+    comment: ""
+  - role: org-editor
+    permission:
+      columns:
+        - display_name
+        - id
+        - website
+      filter:
+        memberships:
+          _and:
+            - role:
+                _in:
+                  - admin
+                  - editor
+            - user_id:
+                _eq: X-Hasura-User-Id
+      allow_aggregations: true
+    comment: ""
+  - role: org-primary
+    permission:
+      columns:
+        - display_name
+        - created_at
+        - updated_at
+        - id
+        - primary_user_id
+      filter:
+        primary_user:
+          id:
+            _eq: X-Hasura-User-Id
+    comment: ""
+  - role: org-reader
+    permission:
+      columns:
+        - created_at
+        - display_name
+        - id
+        - primary_user_id
+        - updated_at
+        - website
+      filter:
+        memberships:
+          user_id:
+            _eq: X-Hasura-User-Id
+      allow_aggregations: true
+    comment: ""
+  - role: user
+    permission:
+      columns:
+        - display_name
+        - id
+      filter:
+        memberships:
+          user_id:
+            _eq: X-Hasura-user-id
+    comment: ""
+update_permissions:
+  - role: org-admin
+    permission:
+      columns:
+        - display_name
+        - website
+      filter:
+        memberships:
+          _and: []
+      check: null
+    comment: ""
+  - role: org-editor
+    permission:
+      columns:
+        - display_name
+      filter:
+        memberships:
+          _and:
+            - role:
+                _in:
+                  - admin
+                  - editor
+            - user_id:
+                _eq: X-Hasura-User-Id
+      check: null
+    comment: ""
+  - role: org-primary
+    permission:
+      columns:
+        - display_name
+      filter:
+        primary_user_id:
+          _eq: X-Hasura-User-Id
+      check: null
+    comment: ""
+delete_permissions:
+  - role: org-primary
+    permission:
+      filter:
+        primary_user_id:
+          _eq: X-Hasura-User-Id
+    comment: ""

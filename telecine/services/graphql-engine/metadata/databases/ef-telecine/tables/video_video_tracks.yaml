@@ -1,0 +1,98 @@
+table:
+  name: video_tracks
+  schema: video
+configuration:
+  column_config: {}
+  custom_column_names: {}
+  custom_name: video_tracks
+  custom_root_fields: {}
+object_relationships:
+  - name: project
+    using:
+      foreign_key_constraint_on: project_id
+array_relationships:
+  - name: video_track_fragments
+    using:
+      foreign_key_constraint_on:
+        column: video_track_id
+        table:
+          name: video_track_fragments
+          schema: video
+insert_permissions:
+  - role: org-editor
+    permission:
+      check:
+        project:
+          org:
+            memberships:
+              _and:
+                - role:
+                    _in:
+                      - editor
+                      - admin
+                - user_id:
+                    _eq: X-Hasura-User-Id
+      set:
+        creator_id: x-hasura-user-id
+      columns:
+        - bytesize
+        - codec
+        - duration_ms
+        - format
+        - height
+        - id
+        - original_container_id
+        - project_id
+        - remote_uri
+        - width
+    comment: ""
+select_permissions:
+  - role: org-editor
+    permission:
+      columns:
+        - complete
+        - bytesize
+        - duration_ms
+        - height
+        - next_byte
+        - width
+        - codec
+        - format
+        - creator_id
+        - id
+        - project_id
+        - original_container_id
+      filter:
+        project:
+          org:
+            memberships:
+              _and:
+                - role:
+                    _in:
+                      - editor
+                      - admin
+                - user_id:
+                    _eq: X-Hasura-User-Id
+    comment: Select permission required to use insert_one mutation.
+  - role: org-reader
+    permission:
+      columns:
+        - complete
+        - bytesize
+        - duration_ms
+        - height
+        - next_byte
+        - width
+        - codec
+        - format
+        - creator_id
+        - id
+        - project_id
+        - original_container_id
+      filter:
+        project:
+          org:
+            memberships:
+              user_id:
+                _eq: X-Hasura-User-Id
+    comment: ""

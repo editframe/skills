@@ -1,0 +1,13 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+Say nothing, and run `npm run make`.
+
+If the build is successful, STOP. Do not investigate any further.
+
+If there are build warnings or errors, fix them, and re-build errors until the build succeeds.
+
+Describe your diagnosis and fixes pedagogically for a staff level engineer (20 yrs) who is new to c++.
+I'll understand what you're doing, but I just have not seen a lot of this stuff before.

@@ -1,0 +1,3 @@
+table:
+  name: webhook_topics
+  schema: api

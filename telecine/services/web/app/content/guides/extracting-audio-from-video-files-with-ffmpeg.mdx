@@ -1,0 +1,43 @@
+---
+meta:
+  - title: Extracting Audio from Video Files with FFmpeg
+  - name: description
+    content: "Extracting audio from video files is a common task that can serve various purposes, such as isolating audio for podcast creation or obtaining audio for transcription purposes. FFmpeg, a versatile command-line tool, simplifies this process significantly."
+headers:
+  Cache-Control: cache
+featured_image: /guides/extracting-audio-from-video-files-with-ffmpeg/featured.jpg
+published_date: 2024-04-15
+last_updated: 2024-09-17
+author: Ilias Haddad
+---
+
+Extracting audio from video files is a common task that can serve various purposes, such as isolating audio for podcast creation or obtaining audio for transcription purposes. FFmpeg, a versatile command-line tool, simplifies this process significantly.
+
+Before you begin, ensure FFmpeg is installed on your system. Verify the installation with this command in your terminal:
+
+```bash
+ffmpeg -version
+```
+
+If FFmpeg is not installed, refer to our installation guide for FFmpeg on Windows or Mac [here](https://www.editframe.com/guides/how-to-install-and-start-using-ffmpeg-in-under-10-minutes).
+
+Run this command to extract the audio from a video
+
+### **Steps to Extract Audio from Video:**
+
+To extract audio from a video file, execute the following command:
+
+```text
+ffmpeg -i input.mp4 -vn -acodec copy audio.mp3
+```
+
+Let’s break this down:
+
+- **`i input.mp4`**: Specifies the input video file. Replace **`input.mp4`** with your video's filename.
+- **`vn`**: Disables video processing to ensure no video output is generated.
+- **`acodec copy`**: Copies the audio stream from the input file directly to the output without re-encoding, preserving the original audio quality.
+- **`audio.mp3`**: Names the output audio file. You can change **`audio.mp3`** to your preferred filename.
+
+After the command is executed, the audio file will be available in the same directory as the source video file.
+
+With these straightforward steps, you can efficiently extract audio from video files using FFmpeg, maintaining the original audio quality in the process.

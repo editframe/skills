@@ -1,0 +1,9 @@
+#/usr/bin/env bash
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+${SCRIPT_DIR}/npm install
+${SCRIPT_DIR}/docker-compose up --build -d --force-recreate
+${SCRIPT_DIR}/migrate-db
+${SCRIPT_DIR}/seed

@@ -1,0 +1,170 @@
+# New build stage for Electron
+FROM node:22 AS electron-installer
+
+# Install unzip
+RUN apt-get update && apt-get install -y unzip && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Add new build stage for whisper.cpp before the electron-installer stage
+FROM ubuntu:24.04 AS whisper-builder
+
+WORKDIR /app
+
+RUN apt-get update && \
+  apt-get install -y build-essential git \
+  && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+
+ARG WHISPER_BRANCH=v1.7.1
+RUN git clone --depth 1 --branch ${WHISPER_BRANCH} https://github.com/ggerganov/whisper.cpp.git && \
+  cd whisper.cpp && \
+  make -j
+
+RUN apt-get update && \
+  apt-get install -y python3 python3-pip && \
+  pip3 install --no-cache-dir huggingface_hub --break-system-packages && \
+  python3 -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='distil-whisper/distil-small.en', filename='ggml-distil-small.en.bin', local_dir='/app/whisper.cpp/models')"
+
+# Build stage for FFmpeg
+FROM ubuntu:24.04 AS ffmpeg-builder
+
+WORKDIR /app
+
+# Install basic tools first
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends \
+  ca-certificates \
+  wget \
+  git \
+  autoconf \
+  automake \
+  libtool \
+  && rm -rf /var/lib/apt/lists/*
+
+# Copy FFmpeg build scripts
+COPY lib/transcode/scripts/install-ffmpeg-deps-ubuntu.sh /tmp/
+COPY lib/transcode/scripts/build-ffmpeg.sh /tmp/
+
+# Install FFmpeg dependencies and build from source
+RUN chmod +x /tmp/install-ffmpeg-deps-ubuntu.sh /tmp/build-ffmpeg.sh \
+  && /tmp/install-ffmpeg-deps-ubuntu.sh \
+  && /tmp/build-ffmpeg.sh \
+  && rm -f /tmp/install-ffmpeg-deps-ubuntu.sh /tmp/build-ffmpeg.sh
+
+# Build stage for Bento4
+FROM ubuntu:24.04 AS bento4-builder
+
+WORKDIR /app
+
+# Install dependencies for Bento4
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends \
+  ca-certificates \
+  git \
+  cmake \
+  build-essential \
+  && rm -rf /var/lib/apt/lists/* \
+  && update-ca-certificates
+
+# Clone and build Bento4
+RUN git clone https://github.com/axiomatic-systems/Bento4.git && \
+  cd Bento4 && \
+  mkdir cmakebuild && \
+  cd cmakebuild && \
+  cmake -DCMAKE_BUILD_TYPE=Release .. && \
+  make -j$(nproc)
+
+FROM mcr.microsoft.com/playwright:v1.53.0-noble
+
+# Install Node.js 22 and other dependencies
+RUN apt-get -y update && \
+  apt-get install -y --fix-missing \
+  curl \
+  ca-certificates \
+  xvfb \
+  python3-pip \
+  ffmpeg \
+  zsh \
+  cmake \
+  git \
+  pkg-config \
+  libcurl4-openssl-dev \
+  libfdk-aac2 \
+  libasound2t64 \
+  libatk-bridge2.0-0 \
+  libatk1.0-0 \
+  libcups2 \
+  libdrm2 \
+  libgbm1 \
+  libgtk-3-0 \
+  libnss3 \
+  libxss1 \
+  imagemagick \
+  gcc \
+  g++ \
+  build-essential \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+# Set environment variables for FFmpeg
+ENV PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
+ENV PATH="/usr/local/bin:$PATH"
+
+RUN npm install -g hasura-cli@2.36.1
+
+RUN pip3 install \
+  torch \
+  torchvision \
+  torchaudio \
+  --index-url https://download.pytorch.org/whl/cpu \
+  --break-system-packages
+
+RUN pip3 install \
+  git+https://github.com/m-bain/whisperx.git \
+  --break-system-packages
+
+COPY ./scripts/load-whisperx-models.py /usr/local/bin/load-whisperx-models.py
+RUN python3 /usr/local/bin/load-whisperx-models.py
+
+WORKDIR /app
+
+# RUN npx playwright@1.53.0 install chromium
+
+#  This and libc-amd64-cross are required for running odiff-bin on M1 in docker
+RUN ln -s /usr/x86_64-linux-gnu/lib64/ /lib64
+
+# It's nice to have oh-my-zsh in dev containers
+RUN wget https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -O - | zsh || true
+
+RUN npm i -g tsx
+
+# Install additional Chrome dependencies for Playwright Chromium
+RUN apt-get update && apt-get install -y \
+  libxcomposite1 \
+  libxdamage1 \
+  libxrandr2 \
+  libxkbcommon0 \
+  unzip \
+  && rm -rf /var/lib/apt/lists/*
+
+# Copy FFmpeg libraries and run ldconfig to update library cache
+COPY --from=ffmpeg-builder /usr/local /usr/local
+
+# Copy Bento4 binaries
+COPY --from=bento4-builder /app/Bento4/cmakebuild/mp4dump /usr/local/bin/
+COPY --from=bento4-builder /app/Bento4/cmakebuild/mp4info /usr/local/bin/
+
+RUN ldconfig
+
+# Add the alias for editframe CLI
+RUN echo 'alias editframe="tsx /app/lib/packages/packages/cli/src/index.ts"' >> /root/.zshrc && \
+  echo 'alias editframe="tsx /app/lib/packages/packages/cli/src/index.ts"' >> /root/.bashrc
+
+
+# In the final stage, add these environment variables after the existing RUN commands
+ENV WHISPER_PATH=/whisper.cpp/main
+ENV GGML_MODEL_PATH=/whisper.cpp/models/ggml-distil-small.en.bin
+ENV BEAM_SIZE=1
+
+# Add this copy command with the other COPY commands
+COPY --from=whisper-builder /app/whisper.cpp /whisper.cpp

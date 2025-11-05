@@ -1,0 +1,17 @@
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+set -ex
+
+# If no arguments are provided, print usage and exit
+if [ $# -eq 0 ]; then
+  echo "Usage: $0 item1 item2 item3 ..."
+  echo "Each item will be built and pushed using build-docker-prod and push-docker-prod"
+  exit 1
+fi
+
+# Process each item
+for item in "$@"; do
+  echo "Processing $item..."
+  $SCRIPT_DIR/build-docker-prod "$item"
+  $SCRIPT_DIR/push-docker-prod "$item"
+done

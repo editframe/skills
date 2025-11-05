@@ -1,0 +1,4 @@
+-- Could not auto-generate a down migration.
+-- Please write an appropriate down migration for the SQL below:
+-- alter table "identity"."api_keys" add column "expiration_reminder_sent_at" timestamptz
+--  null;

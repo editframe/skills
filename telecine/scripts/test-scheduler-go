@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+echo "Running scheduler-go integration tests..."
+echo ""
+echo "Prerequisites:"
+echo "  1. Start dev services: scripts/docker-compose up -d scheduler-go valkey"
+echo "  2. Start test workers: scripts/docker-compose up -d worker-test-fast-initializer worker-test-fast-main worker-test-fast-finalizer"
+echo ""
+echo "Checking if scheduler-go is accessible..."
+
+# Quick health check
+if ! $SCRIPT_DIR/run curl -f -s http://scheduler-go:3000/healthz > /dev/null 2>&1; then
+  echo "ERROR: scheduler-go is not accessible at http://scheduler-go:3000"
+  echo "Please start the development environment first."
+  exit 1
+fi
+
+echo "✓ scheduler-go is running"
+echo ""
+
+$SCRIPT_DIR/run npx vitest --run tests/integration/scheduler-go/*.test.ts "$@"
+

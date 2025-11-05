@@ -1,0 +1,3 @@
+table:
+  name: temporal_segments
+  schema: video

@@ -1,0 +1,434 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# API Development
+
+## Overview
+Guidelines for developing REST and GraphQL APIs in the Telecine system, covering both the Remix-based REST endpoints, Hasura GraphQL integration, and specialized JIT transcoding services.
+
+## REST API Structure
+
+### Endpoint Organization (`services/web/app/api/v1/`)
+- **Resource-based routing**: `/api/v1/{resource}/{action}`
+- **Standard CRUD operations**: `index`, `detail`, `upload`, `delete`
+- **Specialized endpoints**: `md5`, `progress`, `transcribe`
+- **File operations**: Upload, download, and processing endpoints
+
+### Common Patterns
+```typescript
+// Standard resource endpoint structure
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  // 1. Authentication and authorization
+  // 2. Input validation
+  // 3. Business logic
+  // 4. Response formatting
+}
+
+export async function action({ request, params }: ActionFunctionArgs) {
+  // 1. Parse request data
+  // 2. Validate inputs
+  // 3. Execute operation
+  // 4. Return response
+}
+```
+
+### Resource Types
+- **image_files**: Image upload and management
+- **isobmff_files**: Video file processing and metadata
+- **isobmff_tracks**: Video track data and operations
+- **unprocessed_files**: Raw file uploads before processing
+- **renders**: Video rendering jobs and outputs
+- **transcription**: Audio transcription services
+- **process_isobmff**: Video processing job management
+
+## JIT Transcoding API Patterns
+
+### Standalone Service Architecture (`services/jit-transcoding/`)
+- **Microservice deployment**: Independent from main web application
+- **Express-based**: Simple REST API for video segment transcoding
+- **FFmpeg integration**: Uses JitTranscoder for real-time processing
+- **Streaming endpoints**: Returns binary video data directly
+
+### Quality Preset System
+```typescript
+// Quality preset definitions
+export interface QualityPreset {
+  name: string;
+  width: number;
+  height: number;
+  videoBitrate: number;
+  audioBitrate: number;
+  audioChannels: number;
+  audioSampleRate: number;
+}
+
+export const QUALITY_PRESETS: Record<string, QualityPreset> = {
+  low: {
+    name: 'low',
+    width: 480,
+    height: 270,
+    videoBitrate: 400000, // 400kbps
+    audioBitrate: 64000,  // 64kbps
+    audioChannels: 2,
+    audioSampleRate: 48000
+  },
+  medium: {
+    name: 'medium', 
+    width: 854,
+    height: 480,
+    videoBitrate: 1000000, // 1Mbps
+    audioBitrate: 128000,  // 128kbps
+    audioChannels: 2,
+    audioSampleRate: 48000
+  },
+  high: {
+    name: 'high',
+    width: 1280,
+    height: 720,
+    videoBitrate: 2500000, // 2.5Mbps
+    audioBitrate: 192000,  // 192kbps
+    audioChannels: 2,
+    audioSampleRate: 48000
+  }
+};
+```
+
+### Transcoding Endpoint Pattern
+```typescript
+// JIT transcoding endpoint structure - preset as URL parameter
+export async function GET(request: Request, { params }: { params: { preset: string } }): Promise<Response> {
+  // 1. Parse and validate query parameters
+  // 2. Align start time to 2s boundaries
+  // 3. Execute JIT transcoding
+  // 4. Return binary video data with proper headers
+  
+  const url = new URL(request.url);
+  const videoUrl = url.searchParams.get('url');
+  const startTime = parseInt(url.searchParams.get('start') || '0');
+  const preset = params.preset; // Now from URL path parameter
+  
+  // Validate 2s alignment
+  if (startTime % 2000 !== 0) {
+    return new Response('Start time must be aligned to 2s boundaries', { 
+      status: 400 
+    });
+  }
+  
+  // Use predefined quality presets only (no custom allowed for security)
+  const quality = QUALITY_PRESETS[preset];
+    
+  if (!quality) {
+    return new Response('Invalid quality preset', { status: 400 });
+  }
+  
+  try {
+    const result = await transcodeVideoSegment({
+      url: videoUrl,
+      startTimeMs: startTime,
+      durationMs: 2000, // Always 2s segments
+      ...quality
+    });
+    
+    return new Response(result.outputData, {
+      headers: {
+        'Content-Type': 'video/mp4',
+        'Content-Length': result.outputData.length.toString(),
+        'Cache-Control': 'public, max-age=3600'
+      }
+    });
+  } catch (error) {
+    return new Response('Transcoding failed', { status: 500 });
+  }
+}
+```
+
+### Parameter Validation
+```typescript
+// Start time alignment validation
+function validateStartTime(startTimeMs: number): boolean {
+  return startTimeMs >= 0 && startTimeMs % 2000 === 0;
+}
+
+// Validate preset parameter (predefined presets only)
+function validatePreset(preset: string): boolean {
+  return preset in QUALITY_PRESETS;
+}
+```
+
+### Error Handling for Video Processing
+```typescript
+// JIT transcoding specific error responses
+export enum TranscodeErrorCode {
+  INVALID_URL = 'INVALID_URL',
+  UNSUPPORTED_FORMAT = 'UNSUPPORTED_FORMAT', 
+  TIME_ALIGNMENT_ERROR = 'TIME_ALIGNMENT_ERROR',
+  TRANSCODING_FAILED = 'TRANSCODING_FAILED',
+  NETWORK_ERROR = 'NETWORK_ERROR'
+}
+
+// Structured error response for transcoding
+{
+  error: {
+    code: "TIME_ALIGNMENT_ERROR",
+    message: "Start time must be aligned to 2s boundaries",
+    details: { 
+      providedTime: 1500,
+      nearestValidTime: 2000,
+      segmentDuration: 2000
+    }
+  }
+}
+```
+
+### Performance Optimization
+- **Concurrent request limits**: Prevent resource exhaustion
+- **Metadata caching**: Cache video metadata for repeated requests
+- **Resource cleanup**: Proper disposal of FFmpeg resources
+- **Memory management**: Monitor and limit transcoding memory usage
+
+### Testing JIT Endpoints
+```typescript
+// Integration testing for transcoding endpoints using vitest
+import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { createServer } from './server.js';
+import { transcodeVideoSegment } from '../lib/transcode/src/jit/JitTranscoder.js';
+
+// Mock the JitTranscoder for unit tests
+vi.mock('../lib/transcode/src/jit/JitTranscoder.js');
+
+describe('JIT Transcoding API', () => {
+  let server: any;
+  
+  beforeEach(() => {
+    server = createServer();
+    vi.clearAllMocks();
+  });
+
+  describe('Quality Presets', () => {
+    test('should transcode 2s segment with low quality preset', async () => {
+      const mockResult = {
+        success: true,
+        outputData: new Uint8Array([0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70]), // Mock MP4 header
+        actualStartTimeMs: 0,
+        actualDurationMs: 2000
+      };
+      
+      vi.mocked(transcodeVideoSegment).mockResolvedValue(mockResult);
+      
+      const response = await fetch(
+        `http://localhost:3001/api/v1/transcode/low?url=https://example.com/video.mp4&start=0`
+      );
+      
+      expect(response.status).toBe(200);
+      expect(response.headers.get('content-type')).toBe('video/mp4');
+      expect(transcodeVideoSegment).toHaveBeenCalledWith({
+        url: 'https://example.com/video.mp4',
+        startTimeMs: 0,
+        durationMs: 2000,
+        width: 480,
+        height: 270,
+        videoBitrate: 400000,
+        audioBitrate: 64000,
+        audioChannels: 2,
+        audioSampleRate: 48000,
+        audioCodec: 'aac'
+      });
+    });
+
+    test('should reject custom preset for security', async () => {
+      const response = await fetch(
+        `http://localhost:3001/api/v1/transcode/custom?url=https://example.com/video.mp4&start=0`
+      );
+      
+      expect(response.status).toBe(400);
+      expect(await response.text()).toContain('Invalid quality preset');
+    });
+  });
+
+  describe('Validation', () => {
+    test('should reject misaligned start times', async () => {
+      const response = await fetch(
+        `http://localhost:3001/api/v1/transcode/low?url=https://example.com/video.mp4&start=1500`
+      );
+      
+      expect(response.status).toBe(400);
+      expect(await response.text()).toContain('2s boundaries');
+    });
+
+    test('should reject invalid preset', async () => {
+      const response = await fetch(
+        `http://localhost:3001/api/v1/transcode/invalid?url=https://example.com/video.mp4&start=0`
+      );
+      
+      expect(response.status).toBe(400);
+      expect(await response.text()).toContain('Invalid quality preset');
+    });
+
+    test('should reject missing url parameter', async () => {
+      const response = await fetch(
+        `http://localhost:3001/api/v1/transcode/low?start=0`
+      );
+      
+      expect(response.status).toBe(400);
+    });
+  });
+
+  describe('Error Handling', () => {
+    test('should handle transcoding failures gracefully', async () => {
+      vi.mocked(transcodeVideoSegment).mockRejectedValue(new Error('Network error'));
+      
+      const response = await fetch(
+        `http://localhost:3001/api/v1/transcode/low?url=https://example.com/video.mp4&start=0`
+      );
+      
+      expect(response.status).toBe(500);
+      expect(await response.text()).toContain('Transcoding failed');
+    });
+  });
+});
+```
+
+## GraphQL Integration
+
+### Hasura Engine (`services/graphql-engine/`)
+- Auto-generated GraphQL API from PostgreSQL schema
+- Role-based access control (RBAC)
+- Real-time subscriptions support
+- Custom business logic through actions and events
+
+### Client Integration
+```typescript
+// Progressive enhancement pattern
+const AllProjects = progressiveQuery(
+  "org-reader", // Hasura role
+  graphql(`
+    query AllProjects {
+      video_projects(order_by: { created_at: desc }) {
+        id
+        title
+      }
+    }
+  `),
+);
+
+// Server-side usage
+export const loader = requireSession(async function loader(args) {
+  return serverQuery(args, AllProjects, {});
+});
+
+// Client-side subscription
+const result = useSubscriptionForQuery(
+  data.token,
+  AllProjects,
+  {},
+  data.result, // Initial server data
+);
+```
+
+### Security Roles
+- **user**: Personal data access
+- **primary**: Organization owner privileges
+- **org-admin**: Administrative actions
+- **org-editor**: Content modification
+- **org-viewer**: Read-only access
+
+## Authentication & Authorization
+
+### JWT Token Structure
+- User ID and organization context
+- Role-based permissions
+- Expiration and refresh handling
+- Secure token generation and validation
+
+### Session Management
+```typescript
+// Session requirement pattern
+export const loader = requireSession(async function loader(args) {
+  const sessionInfo = await parseRequestSession(args.request);
+  // Use sessionInfo for authorization
+});
+```
+
+## File Upload Patterns
+
+### Chunked Upload Support
+- Large file handling with resumable uploads
+- Progress tracking and error recovery
+- MD5 validation for integrity
+- Temporary storage before processing
+
+### Upload Flow
+1. **Initiate**: Create upload session
+2. **Chunk**: Send file chunks with progress
+3. **Validate**: Verify integrity and format
+4. **Process**: Queue for background processing
+5. **Complete**: Notify completion and provide access
+
+## Error Handling
+
+### Standard Error Responses
+```typescript
+// Consistent error structure
+{
+  error: {
+    code: "VALIDATION_ERROR",
+    message: "Invalid file format",
+    details: { field: "file", reason: "unsupported_format" }
+  }
+}
+```
+
+### HTTP Status Codes
+- **200**: Success
+- **400**: Bad Request (validation errors)
+- **401**: Unauthorized
+- **403**: Forbidden (insufficient permissions)
+- **404**: Not Found
+- **422**: Unprocessable Entity (business logic errors)
+- **500**: Internal Server Error
+
+## Testing Patterns
+
+### API Testing
+```typescript
+// MSW for API mocking
+const server = useMSW();
+
+test("should upload file successfully", async () => {
+  server.use(
+    http.post("/api/v1/image_files/upload", () => 
+      HttpResponse.json({ id: "123", status: "uploaded" })
+    )
+  );
+  
+  // Test implementation
+});
+```
+
+### Integration Testing
+- End-to-end API workflows
+- Database state validation
+- File processing verification
+- Error scenario coverage
+
+## Performance Considerations
+
+### Caching Strategy
+- Response caching for static data
+- ETags for conditional requests
+- CDN integration for file delivery
+- Database query optimization
+
+### Rate Limiting
+- Per-user and per-organization limits
+- Different limits for different endpoints
+- Graceful degradation under load
+- Queue-based processing for heavy operations
+
+## Related Files
+- `services/web/app/api/v1/` - REST API endpoints
+- `lib/graphql.server/` - GraphQL server utilities
+- `services/graphql-engine/metadata/` - Hasura configuration
+- `lib/http/` - HTTP utilities and middleware

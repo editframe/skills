@@ -1,0 +1,76 @@
+table:
+  name: webhook_events
+  schema: api
+object_relationships:
+  - name: api_key
+    using:
+      foreign_key_constraint_on: api_key_id
+array_relationships:
+  - name: deliveries
+    using:
+      foreign_key_constraint_on:
+        column: webhook_event_id
+        table:
+          name: webhook_event_deliveries
+          schema: api
+select_permissions:
+  - role: ef-admin
+    permission:
+      columns:
+        - json_payload
+        - qualified_table
+        - record_id
+        - topic
+        - url
+        - created_at
+        - delivered_at
+        - failed_at
+        - updated_at
+        - api_key_id
+        - id
+        - org_id
+      filter: {}
+    comment: ""
+  - role: org-reader
+    permission:
+      columns:
+        - api_key_id
+        - created_at
+        - delivered_at
+        - failed_at
+        - id
+        - json_payload
+        - org_id
+        - qualified_table
+        - record_id
+        - topic
+        - updated_at
+        - url
+      filter:
+        api_key:
+          org:
+            memberships:
+              _and:
+                - role:
+                    _in:
+                      - admin
+                      - editor
+                      - reader
+                - user_id:
+                    _eq: X-Hasura-User-Id
+      allow_aggregations: true
+    comment: ""
+event_triggers:
+  - name: webhook_events_deliver
+    definition:
+      enable_manual: false
+      insert:
+        columns: '*'
+    retry_conf:
+      interval_sec: 10
+      num_retries: 3
+      timeout_sec: 30
+    webhook: '{{HASURA_ACTION_ORIGIN}}/hdb/webhook_deliver_event'
+    headers:
+      - name: X-ACTION-SECRET
+        value_from_env: ACTION_SECRET

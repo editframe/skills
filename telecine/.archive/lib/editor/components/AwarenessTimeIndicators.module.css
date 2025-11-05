@@ -1,0 +1,39 @@
+.awarenessTimeIndicator {
+  position: absolute;
+  border: dashed black 1px;
+  border-right: 1px solid black;
+  opacity: 1;
+  height: 100%;
+  width: 1px;
+  top: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.awarenessUserIndicator {
+  position: absolute;
+  border: dashed black 1px;
+  border-right: 1px solid black;
+  opacity: 1;
+  height: 100%;
+  width: 1px;
+  top: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.awarenessUserIndicatorIcon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translate(-50%, 0%);
+}
+
+.awarenessUserIndicatorLabel {
+  color: black;
+}
