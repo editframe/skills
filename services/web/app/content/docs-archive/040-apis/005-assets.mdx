@@ -1,0 +1,42 @@
+---
+meta:
+  - title: Assets 
+    name:  description
+    content: Learn how yo manage assets with the Editframe API.
+---
+
+# Assets API
+
+List and manage video and audio assets with the Editframe API.
+
+## GET `/api/v1/assets`
+
+
+When manually making a call to one of our HTTP endpoints, you must supply your API token via a header. Here's how to add the token to the request header using cURL:
+
+
+```bash
+curl https://editframe.dev/api/v1/assets \
+  -H "Authorization: Bearer {token}"
+```
+
+### Response
+
+```json
+{
+    "assets": [
+        {
+            "id": "63e0c882-4407-b698-02a7-cefb04b8700e",
+            "filename": "video-2.mp4"
+        },
+        {
+            "id": "60e546a5-5885-3928-c28e-405edf7c09cb",
+            "filename": "demo.mp4"
+        },
+        {
+            "id": "cdd5a807-9dda-1acd-da84-8defdd1c256a",
+            "filename": "demo-2.mp3"
+        }
+    ]
+}
+```

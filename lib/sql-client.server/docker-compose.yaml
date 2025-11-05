@@ -1,0 +1,16 @@
+services:
+  sql-codegen:
+    image: telecine-runner
+    pull_policy: never
+    working_dir: /app
+    volumes_from:
+      - runner
+    stop_grace_period: 1s
+    env_file:
+      - ${PWD}/.env
+    depends_on:
+      - postgres
+      - runner
+    labels:
+      - traefik.enable=false
+    command: [ "node", "--watch", "--no-warnings=ExperimentalWarning", "--loader", "ts-node/esm/transpile-only", "/app/lib/sql-client.server/typeGenerator/codegen.ts" ]

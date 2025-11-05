@@ -1,0 +1,81 @@
+---
+meta:
+  - title: Isobmff Files
+  - name: description
+    content: Documentation for the Editframe packages
+headers:
+  Cache-Control: no-cache
+---
+
+## Create ISOBMFF File
+
+<ResourceOperation>
+  <PersistentTab label="HTTP">
+    <HTTPEndpoint method="POST" path="/api/v1/isobmff_files">
+      <HTTPPayload docName="CreateISOBMFFFilePayload" />
+      <HTTPResponse docName="CreateISOBMFFFileResult" />
+    </HTTPEndpoint>
+  </PersistentTab>
+
+  <PersistentTab label="TypeScript">
+    <ShowDocItemByName name="createISOBMFFFile" />
+  </PersistentTab>
+</ResourceOperation>
+
+## Upload Fragment Index
+
+<ResourceOperation>
+  <PersistentTab label="HTTP">
+    <HTTPEndpoint method="POST" path="/api/v1/isobmff_files/:id/index/upload">
+      <HTTPResponse docName="UploadFragmentIndexResult" />
+    </HTTPEndpoint>
+  </PersistentTab>
+
+  <PersistentTab label="TypeScript">
+    <ShowDocItemByName name="uploadFragmentIndex" />
+  </PersistentTab>
+</ResourceOperation>
+
+## Lookup ISOBMFF File by MD5
+
+<ResourceOperation>
+  <PersistentTab label="HTTP">
+    <HTTPEndpoint method="GET" path="/api/v1/isobmff_files/md5/:md5">
+      <HTTPResponse docName="LookupISOBMFFFileByMd5Result" />
+    </HTTPEndpoint>
+  </PersistentTab>
+
+  <PersistentTab label="TypeScript">
+    <ShowDocItemByName name="lookupISOBMFFFileByMd5" />
+  </PersistentTab>
+</ResourceOperation>
+
+## Get ISOBMFF File Transcription
+
+<ResourceOperation>
+  <PersistentTab label="HTTP">
+    <HTTPEndpoint method="GET" path="/api/v1/isobmff_files/:id/transcription">
+      <HTTPResponse docName="GetISOBMFFFileTranscriptionResult" />
+    </HTTPEndpoint>
+  </PersistentTab>
+
+  <PersistentTab label="TypeScript">
+    <ShowDocItemByName name="getISOBMFFFileTranscription" />
+  </PersistentTab>
+</ResourceOperation>
+
+## Transcribe ISOBMFF File
+
+<ResourceOperation>
+  <PersistentTab label="HTTP">
+    <HTTPEndpoint method="POST" path="/api/v1/isobmff_files/:id/transcribe">
+      <HTTPPayload docName="TranscribeISOBMFFFilePayload" />
+      <HTTPResponse docName="TranscribeISOBMFFFileResult" />
+    </HTTPEndpoint>
+  </PersistentTab>
+
+  <PersistentTab label="TypeScript">
+    <ShowDocItemByName name="transcribeISOBMFFFile" />
+  </PersistentTab>
+</ResourceOperation>
+

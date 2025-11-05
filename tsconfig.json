@@ -1,0 +1,107 @@
+{
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node",
+    "transpileOnly": true,
+    "require": ["tsconfig-paths/register"]
+  },
+  "compilerOptions": {
+    "plugins": [
+      /*
+        Plugin to generate CSS modules typings, nice DX affordance.
+        Requires using Workspace typescript rather than VSCode typescript.
+        For more details, see:
+          https://www.npmjs.com/package/typescript-plugin-css-modules#recommended-usage
+       */
+      { "name": "typescript-plugin-css-modules" },
+      /*
+        GQL.tada for better typescript support with gql queries
+      */
+      {
+        "name": "@0no-co/graphqlsp",
+        "schema": {
+          "url": "http://graphql-engine:8080/v1/graphql",
+          "headers": {
+            "x-hasura-admin-secret": "hasuraadminsecret"
+          }
+        },
+        "tadaOutputLocation": "./lib/graphql/graphql-env.d.ts",
+        "trackFieldUsage": false
+      }
+    ],
+
+    "typeRoots": ["./node_modules/@types", "./@types"],
+    "rootDirs": [".", "./.react-router/types"],
+
+    "target": "ESNext",
+    /** This will probably need to change when we can use the correct decorators. */
+    "useDefineForClassFields": false,
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true,
+    "experimentalDecorators": true,
+    "module": "ESNext",
+
+    /* Bundler mode */
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": true,
+    "allowArbitraryExtensions": true,
+    "resolveJsonModule": true,
+    "resolvePackageJsonExports": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "allowSyntheticDefaultImports": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./lib/*"],
+      "~/*": ["./services/web/app/*"],
+      "TEST/*": ["./tests/*"],
+      "@editframe/cli": ["./lib/packages/packages/cli/src/index.ts"],
+      "@editframe/api/node": ["./lib/packages/packages/api/src/node.ts"],
+      "@editframe/api": ["./lib/packages/packages/api/src/index.ts"],
+      "@editframe/assets": ["./lib/packages/packages/assets/src/index.ts"],
+      "@editframe/react": ["./lib/packages/packages/react/src/index.ts"],
+      "@editframe/elements": ["./lib/packages/packages/elements/src/index.ts"],
+      "@editframe/vite-plugin": [
+        "./lib/packages/packages/vite-plugin/src/index.ts"
+      ],
+      "@editframe/api/types.json": ["./lib/packages/packages/api/types.json"],
+      "@editframe/react/types.json": [
+        "./lib/packages/packages/react/types.json"
+      ],
+      "@editframe/elements/types.json": [
+        "./lib/packages/packages/elements/types.json"
+      ],
+      "@editframe/assets/types.json": [
+        "./lib/packages/packages/assets/types.json"
+      ],
+      "@editframe/elements/styles.css": [
+        "./lib/packages/packages/elements/styles.css"
+      ]
+    },
+    "types": ["mdx"]
+  },
+  "exclude": [
+    "**/node_modules/",
+    "tmp",
+    "generated",
+    "build",
+    ".archive",
+    "**/*.mdx",
+  ],
+  "typeAcquisition": { "enable": false },
+  "watchOptions": {
+    "watchFile": "useFsEvents",
+    "watchDirectory": "useFsEvents",
+    "fallbackPolling": "dynamicPriority",
+    "synchronousWatchDirectory": true,
+    "excludeDirectories": ["**/node_modules", "build", "dist", ".archive"]
+  }
+}

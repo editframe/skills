@@ -1,0 +1,16 @@
+services:
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.53.0-jammy
+    command: [ "npx", "-y", "playwright@1.53.0", "test", "--project=chromium", "--ui-port=4444", "--ui-host=0.0.0.0" ]
+    working_dir: /app
+    env_file:
+      - ${PWD}/.env
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+      - ${HOME}/.config/gcloud:/root/.config/gcloud
+      - ../elements:/app/lib/packages
+    labels:
+      - traefik.enable=false
+    ports:
+      - "4444:4444"

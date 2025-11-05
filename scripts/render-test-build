@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+$SCRIPT_DIR/docker-compose run -it --rm runner npm install
+$SCRIPT_DIR/docker-compose run -it --rm runner npx tsx /app/lib/queues/units-of-work/Render/test-assets/bundle.ts
+$SCRIPT_DIR/render-test "$@"

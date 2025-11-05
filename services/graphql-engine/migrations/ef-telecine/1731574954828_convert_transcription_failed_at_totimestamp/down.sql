@@ -1,0 +1,5 @@
+-- Could not auto-generate a down migration.
+-- Please write an appropriate down migration for the SQL below:
+-- ALTER TABLE video2.transcriptions
+-- ALTER COLUMN failed_at TYPE timestamptz
+-- USING (CURRENT_DATE + failed_at)::timestamptz AT TIME ZONE 'UTC';

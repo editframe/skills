@@ -1,0 +1,16 @@
+name: 'Run Playwright Integration'
+description: 'Run Playwright integration script'
+inputs:
+  shard:
+    description: 'Shard number'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Run Playwright integration script
+      # AUDIT: the format of this shard arugment is not immediately apparent.
+      # This interacts with both the calling workflow and the script itself.
+      # It is not obvious having this as a distinct step adds value.
+      run: ./integration/playwright ${{ inputs.shard }}
+      shell: bash
+      working-directory: ${{ github.workspace }}

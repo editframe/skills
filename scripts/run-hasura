@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+source $SCRIPT_DIR/../.env
+
+PROJECT_DIR=/app/services/graphql-engine
+
+# echo "ℹ️  Hasura project dir: ${PROJECT_DIR}"
+# echo "ℹ️  Hasura admin secret: *****"
+if [[ "$@" =~ migrate ]]
+then
+  # echo "ℹ️  Hasura database name: ${DB_NAME}"
+    npx -y hasura-cli@${HASURA_VERSION} \
+      --project ${PROJECT_DIR} \
+      --endpoint http://graphql-engine:8080 \
+      --database-name ${DB_NAME} \
+      --admin-secret ${HASURA_ADMIN_SECRET} \
+      "$@"
+elif [[ "$@" =~ console ]]
+then
+  npx -y hasura-cli@${HASURA_VERSION} \
+    --project ${PROJECT_DIR} \
+    --admin-secret ${HASURA_ADMIN_SECRET} \
+    "$@"  
+else
+  ${SCRIPT_DIR}/docker-compose run --rm runner \
+    npx -y hasura-cli@${HASURA_VERSION} \
+      --project ${PROJECT_DIR} \
+      --endpoint http://graphql-engine:8080 \
+      --admin-secret ${HASURA_ADMIN_SECRET} \
+      "$@"
+fi

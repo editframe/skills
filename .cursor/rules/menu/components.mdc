@@ -1,0 +1,294 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Components Pattern Guide
+
+Reusable UI component patterns following the established design system.
+
+## Component Structure Pattern
+
+### Basic Component Template
+```tsx
+import clsx from "clsx";
+import type { PropsWithChildren } from "react";
+
+interface ComponentNameProps {
+  className?: string;
+  variant?: "primary" | "secondary";
+  disabled?: boolean;
+}
+
+export const ComponentName = ({
+  className = "",
+  variant = "primary",
+  disabled = false,
+  children,
+  ...props
+}: PropsWithChildren<ComponentNameProps>) => {
+  return (
+    <div
+      className={clsx(
+        "base-styles",
+        variant === "primary" && "primary-styles",
+        variant === "secondary" && "secondary-styles",
+        disabled && "disabled-styles",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+};
+```
+
+## Design System Patterns
+
+### Typography Classes
+- Content: `text-xs font-light`
+- Labels: `text-xs font-medium text-gray-600`
+- Headers: `text-sm font-medium text-gray-900`
+
+### Spacing
+- Minimal padding: `p-1`
+- Standard spacing: `py-2`
+- Section gaps: `gap-4`, `space-y-4`
+
+### Colors
+- Subtle UI: `gray-50` (hover), `gray-300` (borders), `gray-600` (labels)
+- Selection: `blue-100` (background), `blue-500` (accent)
+- Professional grayscale focus
+
+### Interactive States
+```tsx
+className={clsx(
+  "base-styles",
+  "hover:bg-gray-50 focus:ring-2 focus:ring-blue-500",
+  disabled && "disabled:cursor-not-allowed disabled:opacity-50"
+)}
+```
+
+## Common Component Patterns
+
+### Info Display Component
+```tsx
+interface InfoRowProps {
+  label: string;
+  value: string | React.ReactNode;
+  className?: string;
+}
+
+export const InfoRow = ({ label, value, className = "" }: InfoRowProps) => {
+  return (
+    <div className={clsx("flex justify-between py-2", className)}>
+      <span className="text-xs font-medium text-gray-600">{label}</span>
+      <span className="text-xs font-light">{value}</span>
+    </div>
+  );
+};
+```
+
+### Status Display Component
+```tsx
+interface StatusProps {
+  status: "success" | "error" | "pending" | "processing";
+  className?: string;
+}
+
+export const RenderStatus = ({ status, className = "" }: StatusProps) => {
+  const statusConfig = {
+    success: { color: "text-green-600", bg: "bg-green-100" },
+    error: { color: "text-red-600", bg: "bg-red-100" },
+    pending: { color: "text-yellow-600", bg: "bg-yellow-100" },
+    processing: { color: "text-blue-600", bg: "bg-blue-100" },
+  };
+
+  const config = statusConfig[status];
+
+  return (
+    <span
+      className={clsx(
+        "inline-flex items-center px-2 py-1 rounded-md text-xs font-medium",
+        config.color,
+        config.bg,
+        className
+      )}
+    >
+      {status.charAt(0).toUpperCase() + status.slice(1)}
+    </span>
+  );
+};
+```
+
+### Avatar Component Pattern
+```tsx
+interface AvatarProps {
+  src?: string;
+  alt: string;
+  size?: "sm" | "md" | "lg";
+  fallback?: string;
+}
+
+export const Avatar = ({ 
+  src, 
+  alt, 
+  size = "md", 
+  fallback 
+}: AvatarProps) => {
+  const sizeClasses = {
+    sm: "w-6 h-6 text-xs",
+    md: "w-8 h-8 text-sm", 
+    lg: "w-12 h-12 text-base"
+  };
+
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt={alt}
+        className={clsx("rounded-full", sizeClasses[size])}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={clsx(
+        "rounded-full bg-gray-300 flex items-center justify-center",
+        "text-gray-600 font-medium",
+        sizeClasses[size]
+      )}
+    >
+      {fallback || alt.charAt(0).toUpperCase()}
+    </div>
+  );
+};
+```
+
+## Composition Patterns
+
+### Container Components
+```tsx
+export const Card = ({ children, className = "" }: PropsWithChildren<{ className?: string }>) => (
+  <div className={clsx("bg-white rounded-lg shadow-sm border border-gray-200 p-4", className)}>
+    {children}
+  </div>
+);
+
+export const CardHeader = ({ children }: PropsWithChildren) => (
+  <div className="border-b border-gray-200 pb-2 mb-4">
+    {children}
+  </div>
+);
+
+export const CardContent = ({ children }: PropsWithChildren) => (
+  <div className="space-y-2">
+    {children}
+  </div>
+);
+```
+
+### Layout Components
+```tsx
+export const Stack = ({ 
+  direction = "vertical", 
+  gap = "4", 
+  children, 
+  className = "" 
+}: PropsWithChildren<{
+  direction?: "vertical" | "horizontal";
+  gap?: "1" | "2" | "4" | "6" | "8";
+  className?: string;
+}>) => (
+  <div
+    className={clsx(
+      direction === "vertical" ? `space-y-${gap}` : `space-x-${gap} flex`,
+      className
+    )}
+  >
+    {children}
+  </div>
+);
+```
+
+## Interactive Component Patterns
+
+### Listbox/Dropdown Pattern
+```tsx
+interface ListboxProps<T> {
+  value: T;
+  onChange: (value: T) => void;
+  options: Array<{ value: T; label: string; disabled?: boolean }>;
+  placeholder?: string;
+}
+
+export function Listbox<T>({ value, onChange, options, placeholder }: ListboxProps<T>) {
+  // Implementation using Headless UI or similar
+}
+```
+
+### Modal/Dialog Pattern
+```tsx
+interface DialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+}
+
+export const Dialog = ({ isOpen, onClose, title, children }: DialogProps) => {
+  // Use Headless UI Dialog component
+};
+```
+
+## Performance Patterns
+
+### Memo for Expensive Components
+```tsx
+import { memo } from "react";
+
+export const ExpensiveComponent = memo(({ data }: { data: ComplexData }) => {
+  // Expensive rendering logic
+});
+```
+
+### Lazy Loading
+```tsx
+import { lazy, Suspense } from "react";
+
+const LazyComponent = lazy(() => import("./HeavyComponent"));
+
+export const LazyWrapper = () => (
+  <Suspense fallback={<div>Loading...</div>}>
+    <LazyComponent />
+  </Suspense>
+);
+```
+
+## Testing Patterns
+
+```typescript
+import { render, screen } from "@testing-library/react";
+import { InfoRow } from "./InfoRow";
+
+test("displays label and value correctly", () => {
+  render(<InfoRow label="Name" value="John Doe" />);
+  
+  expect(screen.getByText("Name")).toBeInTheDocument();
+  expect(screen.getByText("John Doe")).toBeInTheDocument();
+});
+```
+
+## Best Practices
+
+1. **Use TypeScript interfaces** for all props
+2. **Provide default values** using destructuring
+3. **Support className prop** for style customization
+4. **Use clsx** for conditional styling
+5. **Follow the established design tokens**
+6. **Make components composable** when possible
+7. **Use PropsWithChildren** when accepting children
+8. **Forward refs** when component wraps native elements
+9. **Test component behavior**, not implementation

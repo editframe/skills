@@ -1,0 +1,22 @@
+FROM golang:1.23-alpine AS builder
+
+WORKDIR /app
+
+# Copy go.mod and go.sum to download dependencies
+COPY services/scheduler-go/go.mod services/scheduler-go/go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+FROM golang:1.23-alpine AS test
+
+WORKDIR /app
+
+# Install dependencies for testing
+RUN apk --no-cache add ca-certificates postgresql-client redis zsh watchexec
+
+# Copy dependencies from builder
+COPY --from=builder /go/pkg/mod /go/pkg/mod
+
+# Set zsh as the default command
+CMD ["zsh"]

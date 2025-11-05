@@ -1,0 +1,172 @@
+---
+meta:
+  - title: "@editframe/cli"
+  - name: description
+    content: Documentation for the @editframe/cli package
+headers:
+    Cache-Control: no-cache
+---
+# @editframe/cli
+
+`@editframe/cli` is a command-line tool for interacting with the Editframe platform. It provides a comprehensive CLI for authentication, synchronization, rendering, processing, and more.
+
+## Installation
+
+You can install `@editframe/cli` globally using npm:
+
+```bash
+npm install -g @editframe/cli
+```
+
+Or use it directly with npx:
+
+```bash
+npx @editframe/cli
+```
+The package also provides a comprehensive CLI for interacting with the Editframe platform. To use the CLI, run:
+
+```bash
+editframe [command] [options]
+```
+
+## Global Options
+
+- `-t, --token <token>`: API Token (can also be set via EF_TOKEN environment variable)
+- `--ef-host <host>`: Editframe Host (default: https://editframe.dev, can be set via EF_HOST environment variable)
+- `--ef-render-host <host>`: Editframe Render Host (default: https://editframe.dev, can be set via EF_RENDER_HOST environment variable)
+- `-V, --version`: Output the version number
+- `-h, --help`: Display help for command
+
+## Commands
+
+The CLI supports the following commands:
+
+- `auth`: Get current authentication information
+- `sync`: Synchronize local directory with Editframe API
+- `render`: Render the video project using the Editframe API
+- `process-file`: Process file using the Editframe API
+- `webhook`: Test webhooks events 
+
+To get more information about each command, you can run:
+
+```bash
+editframe [command] --help
+```
+
+### Authentication
+
+The `auth` command provides subcommands for managing authentication:
+
+```bash
+editframe auth
+```
+or using npx:
+
+```bash
+npx @editframe/cli auth
+```
+
+This command will return the current authenticated API key and organization linked to the key.
+
+### Synchronization
+
+The `sync` command provides subcommands for managing synchronization:
+
+```bash
+editframe sync /path/to/project
+```
+or using npx:
+
+```bash
+npx @editframe/cli sync /path/to/project
+```
+
+This command will synchronize the local directory with the Editframe platform.
+
+### Rendering
+
+The `render` command provides subcommands for managing rendering:
+
+```bash
+editframe render /path/to/project
+```
+or using npx:
+
+```bash
+npx @editframe/cli render /path/to/project
+```
+
+This command will render a project or video.
+
+
+
+### Processing Files
+
+
+The `process-file` command provides subcommands for managing file processing:
+
+```bash
+editframe process-file /path/to/file
+```
+or using npx:
+
+```bash  
+npx @editframe/cli process-file /path/to/file
+```
+
+
+
+### Webhook
+
+
+The `webhook` command provides subcommands for managing webhooks:
+
+```bash
+editframe webhook [options]
+```
+or using npx:
+
+```bash
+npx @editframe/cli webhook [options]
+```
+
+#### Options
+
+- `--topic <topic>`: The webhook topic to test
+- `--webhookURL <webhookURL>`:  The webhook URL to test (Tip: Use a service like [webhook.site](https://webhook.site) to test webhooks)
+
+
+#### Supported Topics
+
+- `render.created`: Triggered when a render is created
+- `render.pending`: Triggered when a render is pending or queued
+- `render.rendering`: Triggered when a render is rendering
+- `render.completed`: Triggered when a render is completed
+- `render.failed`: Triggered when a render fails
+
+#### Examples
+
+```bash
+editframe webhook --topic render.created --webhookURL https://webhook.site/your-webhook-url
+```
+or using npx:
+
+```bash
+npx @editframe/cli webhook --topic render.created --webhookURL https://webhook.site/your-webhook-url
+```
+
+
+
+## Environment Variables
+
+The CLI supports the following environment variables:
+
+- `EF_TOKEN`: Your Editframe API token
+- `EF_HOST`: The Editframe host (defaults to https://editframe.dev)
+- `EF_RENDER_HOST`: The Editframe render host (defaults to https://editframe.dev)
+
+You can set these in a `.env` file in your project directory or export them in your shell.
+
+### Support
+
+For issues, feature requests, or questions, please contact us at [team@editframe.com](mailto:team@editframe.com).

@@ -1,0 +1,44 @@
+.layerStage {
+  transform-origin: 0 0;
+}
+
+.stageMask {
+  pointer-events: none;
+  position: absolute;
+  background: white;
+  opacity: 0.5;
+}
+
+.stageOuter {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  background: pink;
+  cursor: none !important;
+}
+
+.temporalRoot {
+  outline: 1px dotted black;
+  position: fixed;
+  pointer-events: none;
+}
+
+.awarenessCursor {
+  filter: drop-shadow(0 0 1px white);
+}
+
+.awarenessCursorLabel {
+  margin-left: 5px;
+  font-size: 1rem;
+  white-space: nowrap;
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: black;
+  text-shadow:
+    1px 1px 1px white,
+    -1px -1px 1px white,
+    1px -1px 1px white,
+    -1px 1px 1px white;
+}

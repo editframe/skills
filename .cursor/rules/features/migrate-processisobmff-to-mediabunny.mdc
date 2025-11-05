@@ -1,0 +1,132 @@
+# Migrate processISOBMFF to Mediabunny
+
+Migrate the ISOBMFF processing pipeline from the deleted MP4File library to mediabunny while preserving all existing functionality, performance characteristics, and data formats.
+
+## Test plan / verification steps
+
+**Primary verification through automated tests:**
+1. Write comprehensive tests for existing functionality before migration:
+   ```bash
+   npm test lib/process-file/processISOBMFF.test.ts
+   ```
+2. Add new test cases for timing offset scenarios:
+   ```bash
+   npm test lib/process-file/processISOBMFF.timing.test.ts
+   ```
+3. Verify fragment index compatibility:
+   ```bash
+   npm test lib/process-file/processISOBMFF.fragments.test.ts
+   ```
+4. All existing integration tests should pass:
+   ```bash
+   npm test lib/process-file/
+   ```
+
+**Manual verification (secondary, if needed):**
+- Process a large video file (>1GB) and verify memory usage remains stable
+- Verify progress tracking updates smoothly from 0% to 100%
+- Check that generated fragment indexes match the format used by client-side playback
+
+**Testing guidelines:**
+- Tests should verify byte-exact fragment boundaries
+- Progress tracking tests should use deterministic file sizes
+- Timing offset tests should cover all detection methods (format, stream, composition)
+
+## Tasks
+
+- [x] 1.0 Add Comprehensive Test Coverage for Existing Implementation
+  - [x] 1.1 Create test fixtures with various timing offset scenarios
+    - **Test**: `processISOBMFF.timing.test.ts` - Test files with format.start_time, stream.start_time, and CTS>DTS scenarios
+  - [x] 1.2 Add fragment boundary validation tests
+    - **Test**: `processISOBMFF.fragments.test.ts` - Verify init segment detection, moof+mdat pairing, fragment offsets
+  - [x] 1.3 Add progress tracking tests
+    - **Test**: `processISOBMFF.test.ts` - Mock ProgressTracker to verify 20%-95% scaling and heartbeat
+  - [x] 1.4 Add error handling tests
+    - **Test**: `processISOBMFF.test.ts` - Test storage failures, corrupted files, missing tracks
+  - [x] 1.5 Add multi-track processing tests
+    - **Test**: `processISOBMFF.test.ts` - Test files with multiple video/audio tracks
+
+- [x] 2.0 Update processISOBMFF to Use Mediabunny
+  - [x] 2.1 Replace MP4File import with mediabunny imports
+    - **Test**: Existing `processISOBMFF.test.ts` should still pass
+  - [x] 2.2 Replace MP4File approach with mediabunny's generateFragmentIndex
+    - **Test**: All timing offset tests should pass unchanged
+  - [x] 2.3 Update fragment processing to generate per-track fragment indexes
+    - **Test**: Fragment index output should match track file byte offsets exactly
+  - [x] 2.4 Fix fragment timestamp accumulation
+    - **Test**: Fragment timestamps should accumulate correctly (not all be 0)
+  - [x] 2.5 Migrate timing offset detection to work with new approach
+    - **Test**: All timing offset scenarios working correctly
+
+- [x] 3.0 Optimize Performance and Memory Usage
+  - [x] 3.1 Ensure streaming processing without full file buffering
+    - **Test**: Implementation uses streams throughout, no full file buffering
+  - [x] 3.2 Verify concurrent track writing still works
+    - **Test**: Parallel track extraction confirmed working in tests
+  - [x] 3.3 Validate progress reporting accuracy
+    - **Test**: Progress updates working correctly (20%-95% during processing)
+
+- [x] 4.0 Cleanup and Final Verification
+  - [x] 4.1 Update TypeScript types to remove MP4Box dependencies
+    - **Test**: All MP4File references removed, TypeScript compilation passes
+  - [x] 4.2 Update linter configuration if needed
+    - **Test**: No linter errors in processISOBMFF.ts
+  - [x] 4.3 Verify fragment indexes work with existing playback code
+    - **Test**: All integration tests passing
+
+## Running notes
+
+### Architecture Decisions
+- Using mediabunny's `generateFragmentIndex` directly instead of creating adapter layer
+- Generating separate fragment indexes for each track to ensure correct byte offsets
+- Preserving exact fragment index format to maintain client compatibility
+- Keeping the same progress tracking behavior (20%-95% range during processing)
+
+### Technical Constraints
+- Must maintain streaming processing for large files
+- Fragment byte offsets must match actual track file positions
+- Timing offset detection must support all three methods (format, stream, CTS)
+
+### Key Files Updated
+- `lib/process-file/processISOBMFF.ts` - Main implementation
+- `lib/process-file/processISOBMFF.test.ts` - Existing tests
+- `lib/process-file/processISOBMFF.timing.test.ts` - Timing tests
+- `lib/process-file/processISOBMFF.fragments.test.ts` - Fragment tests
+- `lib/packages/packages/assets/src/generateFragmentIndex.ts` - Fixed timestamp accumulation
+
+### Dependencies
+- mediabunny is already installed in @editframe/assets package
+- No new dependencies needed
+
+### Migration Strategy
+1. Added tests first to lock in current behavior
+2. Refactored to use mediabunny's existing APIs
+3. Fixed issues discovered during migration (timestamps, offsets)
+4. All tests passing with new implementation
+
+### Final Status (2024-08-11)
+- ✅ Migration complete - all references to MP4File removed
+- ✅ Fragment indexes now correctly reference individual track files
+- ✅ Fragment timestamps properly accumulate (fixed dts=0, cts=0 bug)
+- ✅ All 8 tests in processISOBMFF.test.ts passing
+- ✅ Performance characteristics preserved (streaming, parallel processing)
+
+### Key Changes Made
+1. Used mediabunny's `generateFragmentIndex` for fragment metadata extraction
+2. Generated separate fragment indexes for each track file
+3. Used Probe's `createTrackReadstream(streamIndex)` for individual track extraction
+4. Fixed fragment timestamp accumulation in generateFragmentIndex.ts
+5. Added implementation guidelines to prevent future timestamp bugs
+6. Preserved all existing functionality including timing offset detection and progress tracking
+
+### Bugs Fixed
+1. **Fragment byte offsets**: Were referencing conforming stream positions instead of individual track files
+2. **Fragment timestamps**: All segments had dts=0, cts=0 due to parsing fragments in isolation
+3. **Database field compatibility**: Fixed `fragment_index_complete` and `probe_info` JSON handling
+
+### Lessons Learned
+- The initial attempt to create an adapter layer (MP4FragmentIterator) was unnecessary
+- Mediabunny already had the required functionality through generateFragmentIndex
+- The Probe class provides excellent abstractions for FFmpeg operations
+- Understanding the difference between conforming streams and individual tracks was crucial
+- Always verify that byte offsets match the actual files being stored

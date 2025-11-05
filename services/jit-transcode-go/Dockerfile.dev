@@ -1,0 +1,39 @@
+FROM golang:1.21-alpine AS builder
+
+RUN apk add --no-cache \
+    gcc \
+    g++ \
+    make \
+    pkgconf \
+    ffmpeg-dev \
+    ffmpeg
+
+WORKDIR /app
+
+COPY services/jit-transcode-go/go.mod services/jit-transcode-go/go.sum ./
+RUN go mod download
+
+COPY services/jit-transcode-go/ ./
+
+RUN CGO_ENABLED=1 go build -o /jit-transcode ./cmd/server
+
+FROM alpine:latest
+
+RUN apk add --no-cache \
+    ca-certificates \
+    ffmpeg \
+    curl
+
+WORKDIR /app
+
+COPY --from=builder /jit-transcode .
+
+RUN mkdir -p /app/temp && chmod 777 /app/temp
+
+EXPOSE 3002
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3002/health || exit 1
+
+CMD ["./jit-transcode"]
+

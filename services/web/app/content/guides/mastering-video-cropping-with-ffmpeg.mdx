@@ -1,0 +1,59 @@
+---
+meta:
+  - title: Mastering Video Cropping with FFmpeg
+  - name: description
+    content: If your objective involves removing extraneous portions from a video, such as black bars, or adapting a video to suit platforms like TikTok or Instagram, FFmpeg offers the precision needed for these tasks.
+headers:
+  Cache-Control: cache
+featured_image: "/guides/mastering-video-cropping-with-ffmpeg/featured.jpg"
+published_date: 2024-04-01
+last_updated: 2024-09-17
+author: Ilias Haddad
+---
+
+FFmpeg stands as a pivotal tool in the realm of video editing, offering robust capabilities for tasks such as cropping and resizing videos to fit various aspect ratios. This guide provides an overview of how to effectively utilize FFmpeg for modifying video dimensions to align with specific layout and aspect ratio requirements.
+
+If your objective involves removing extraneous portions from a video, such as black bars, or adapting a video to suit platforms like TikTok or Instagram, FFmpeg offers the precision needed for these tasks.
+
+For those new to FFmpeg, a concise installation guide is available [here](https://www.editframe.com/guides/how-to-install-and-start-using-ffmpeg-in-under-10-minutes) to facilitate a quick setup.
+
+### **Utilizing FFmpeg for Video Cropping**
+
+To crop a video using FFmpeg, you can use the following command:
+
+```bash
+ffmpeg -i input.mp4 -vf "crop=1080:1920:0:0" -c:a copy output.mp4
+```
+
+Let’s break down what we’re doing here:
+
+- **`i input.mp4`**: Designates the input video file. Replace **`input.mp4`** with the actual filename of your video.
+- **`vf "crop=1080:1920:0:0"`**: Specifies the cropping parameters. **`1080:1920`** indicates the dimensions of the cropped area, while **`0:0`** sets the starting position for the crop.
+- **`c:a copy`**: Instructs FFmpeg to copy the audio stream directly, thus preserving the original audio quality and expediting the process.
+- **`output.mp4`**: Defines the name of the resulting video file, here termed as **`output.mp4`**.
+
+### **Changing Aspect Ratios**
+
+Here’s a command that converts a video from a 16:9 aspect ratio to a 9:16 aspect ratio:
+
+```bash
+ffmpeg -i input.mp4 -vf "crop=ih*9/16:ih" -c:a copy output.mp4
+```
+
+Again, let’s dive in:
+
+- **`i input.mp4`**: Identifies the input video file.
+- **`vf "crop=ih*9/16:ih"`**: Adjusts the crop dimensions to achieve the desired 9:16 aspect ratio. The width is determined by **`ih*9/16`**, with **`ih`** representing the input video's height.
+- **`c:a copy`** and **`output.mp4`**: These components function identically to the previous example, ensuring the preservation of audio quality and naming the output file.
+
+Here’s the output video:
+
+{" "}
+<Video
+  controls="true"
+  url="/guides/mastering-video-cropping-with-ffmpeg/output.mp4"
+/>
+
+You should now feel comfortable using FFmpeg to crop videos that adhere to whatever aspect ratios your project requires.
+
+Happy editing!

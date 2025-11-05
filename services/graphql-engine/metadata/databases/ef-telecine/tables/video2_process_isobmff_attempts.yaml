@@ -1,0 +1,27 @@
+table:
+  name: process_isobmff_attempts
+  schema: video2
+object_relationships:
+  - name: process_isobmff
+    using:
+      foreign_key_constraint_on: process_isobmff_id
+select_permissions:
+  - role: org-reader
+    permission:
+      columns:
+        - attempt_number
+        - completed_at
+        - started_at
+        - failed_at
+        - id
+        - process_isobmff_id
+        - public_error
+      filter:
+        process_isobmff:
+          org:
+            memberships:
+              user_id:
+                _eq: X-Hasura-User-Id
+      limit: 10
+      allow_aggregations: true
+    comment: ""

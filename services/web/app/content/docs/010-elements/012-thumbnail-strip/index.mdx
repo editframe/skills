@@ -1,0 +1,88 @@
+---
+meta:
+  - title: Thumbnail Strip
+  - name: description
+    content: Documentation for the Editframe Thumbnail Strip Element
+headers:
+    Cache-Control: no-cache
+---
+
+## Interactive Sandbox
+
+Experiment with different thumbnail strip settings to see how they affect the appearance and behavior. Adjust the dimensions, thumbnail width, time ranges, and video trimming to understand how each property works.
+
+<EditableThumbnailStrip />
+
+## Demonstration
+
+<Demonstration layout="horizontal" defaultSourceVisible alwaysShowSource>
+  <div className="flex flex-col gap-4">
+    <Video 
+      id="demo-video"
+      src="https://assets.editframe.com/bars-n-tone.mp4" 
+      className="aspect-[16/9]" 
+    />
+    <ThumbnailStrip 
+      target="demo-video" 
+      thumbnailWidth={80}
+      className="h-16 rounded border border-gray-600"
+    />
+  </div>
+</Demonstration>
+
+## Attributes
+
+<PropertyDocList>
+  <PropertyDoc name="target" type="string" domReadable domWritable htmlAttribute="target">
+    The ID of the video element to generate thumbnails from. Do not include the # character.
+
+    The thumbnail strip will automatically track the target video element and update thumbnails when the video's properties change.
+
+    <div className="bg-blue-100 text-blue-900 p-2 rounded">
+      💡 Specify the element ID without the # prefix (e.g., "my-video" to target a video with id="my-video").
+    </div>
+  </PropertyDoc>
+
+  <PropertyDoc name="thumbnailWidth" type="number" domReadable domWritable htmlAttribute="thumbnail-width" defaultValue="80">
+    The desired width of individual thumbnails in pixels.
+
+    The thumbnail strip automatically calculates how many thumbnails to display based on the available width and this thumbnail width. Larger values result in fewer, more detailed thumbnails.
+
+    Height is automatically calculated to maintain the video's aspect ratio within the strip's height.
+  </PropertyDoc>
+
+  <PropertyDoc name="startTimeMs" type="number" domReadable domWritable htmlAttribute="start-time-ms">
+    Custom start time in milliseconds for thumbnail generation.
+
+    When specified, overrides the natural start time of the video (including any trimming) to generate thumbnails from this absolute time in the source media.
+
+    This is useful for showing thumbnails from a specific portion of the video regardless of how it's trimmed or positioned in the timeline.
+  </PropertyDoc>
+
+  <PropertyDoc name="endTimeMs" type="number" domReadable domWritable htmlAttribute="end-time-ms">
+    Custom end time in milliseconds for thumbnail generation.
+
+    When specified, overrides the natural end time of the video (including any trimming) to generate thumbnails up to this absolute time in the source media.
+
+    Must be used in conjunction with `startTimeMs` to define a custom time range.
+  </PropertyDoc>
+
+  <PropertyDoc name="useIntrinsicDuration" type="boolean" domReadable domWritable htmlAttribute="use-intrinsic-duration" defaultValue="false">
+    Use the full source media duration instead of the trimmed duration for thumbnail generation.
+
+    When true, thumbnails are generated from the entire source video file, ignoring any `trimStart`, `trimEnd`, `sourceIn`, or `sourceOut` properties on the target video element.
+
+    <div className="bg-orange-100 text-orange-900 p-2 rounded">
+      ⚠️ This property is ignored if custom `startTimeMs` or `endTimeMs` values are provided.
+    </div>
+  </PropertyDoc>
+</PropertyDocList>
+
+## Performance
+
+The thumbnail strip includes several performance optimizations:
+
+- **Intelligent Caching**: Thumbnails are cached globally across all strip instances
+- **Batch Processing**: Thumbnails are generated efficiently in batches
+- **Responsive Layout**: Automatically adjusts thumbnail count based on available width
+- **Aspect Ratio Preservation**: Thumbnails maintain proper aspect ratios without distortion

@@ -1,0 +1,179 @@
+---
+meta:
+  - title: Integrating FFmpeg with React.js via WebAssembly
+  - name: description
+    content: This guide explores utilizing FFmpeg within a React.js environment, leveraging WebAssembly (WASM) for browser-based video processing tasks. This approach combines the power of WASM, React.js, and FFmpeg to perform client-side video manipulations such as format conversion and adding text overlays.
+headers:
+  Cache-Control: cache
+featured_image: "/guides/integrating-ffmpeg-with-react.js-via-webassembly/featured.jpg"
+published_date: 2024-06-20
+last_updated: 2024-09-17
+author: Ilias Haddad
+---
+
+This guide explores utilizing FFmpeg within a React.js environment, leveraging WebAssembly (WASM) for browser-based video processing tasks. This approach combines the power of WASM, React.js, and FFmpeg to perform client-side video manipulations such as format conversion and adding text overlays.
+
+#### input.mp4 <Video controls="true" url="/guides/integrating-ffmpeg-with-react.js-via-webassembly/input.mp4" />
+
+### **Common Use Cases:**
+
+- Client-side video format conversion using FFmpeg
+- Adding text overlays to videos with FFmpeg's Filtergraph
+
+### **Setting Up the Project:**
+
+- Start by creating a new React.js project using Vite, which includes TypeScript support:
+
+```bash
+npm create vite@latest react-ffmpeg -- --template react-ts
+```
+
+Navigate to your project directory, install dependencies, and initiate the development server:
+
+```bash
+  cd react-ffmpeg
+  npm install
+  npm run dev
+```
+
+- Add the FFmpeg packages to your project:
+
+```bash
+npm install @ffmpeg/ffmpeg @ffmpeg/util
+```
+
+- Revise the **`src/App.tsx`** file as shown below:
+
+```typescript
+import { useState, useRef } from "react";
+import { FFmpeg } from "@ffmpeg/ffmpeg";
+import { toBlobURL, fetchFile } from "@ffmpeg/util";
+
+function App() {
+  const [loaded, setLoaded] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const ffmpegRef = useRef(new FFmpeg());
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const messageRef = useRef<HTMLParagraphElement | null>(null);
+
+  const load = async () => {
+    try {
+      setLoading(true);
+      const baseURL = "https://unpkg.com/@ffmpeg/core-mt@0.12.6/dist/esm";
+      const ffmpeg = ffmpegRef.current;
+      ffmpeg.on("log", ({ message }) => {
+        if (messageRef.current) messageRef.current.innerHTML = message;
+      });
+      ffmpeg.on("progress", (ratio) => {
+        if (messageRef.current) {
+          messageRef.current.innerHTML = `Progress: ${ratio}`;
+        }
+        console.log(ratio);
+      });
+      // toBlobURL is used to bypass CORS issue, urls with the same
+      // domain can be used directly.
+      await ffmpeg.load({
+        coreURL: await toBlobURL(
+          `${baseURL}/ffmpeg-core.js`,
+          "text/javascript"
+        ),
+        wasmURL: await toBlobURL(
+          `${baseURL}/ffmpeg-core.wasm`,
+          "application/wasm"
+        ),
+        workerURL: await toBlobURL(
+          `${baseURL}/ffmpeg-core.worker.js`,
+          "text/javascript"
+        ),
+      });
+      setLoaded(true);
+      setLoading(false);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+  const watermark = async () => {
+    const videoURL =
+      "https://www.editframe.com/docs/composition/layers/video/puppy-beach.mp4";
+    const ffmpeg = ffmpegRef.current;
+    await ffmpeg.writeFile("input.mp4", await fetchFile(videoURL));
+    await ffmpeg.writeFile('arial.ttf', await fetchFile('https://raw.githubusercontent.com/ffmpegwasm/testdata/master/arial.ttf'));
+    await ffmpeg.exec([
+      "-i",
+      "input.mp4",
+      "-vf",
+      "drawtext=fontfile=/arial.ttf:text='Editframe':x=(w-text_w)/2:y=(h-text_h)/2:fontsize=50:fontcolor=white",
+      "output.mp4",
+    ]);
+    const fileData = await ffmpeg.readFile("output.mp4");
+    const data = new Uint8Array(fileData as ArrayBuffer);
+    if (videoRef.current) {
+      videoRef.current.src = URL.createObjectURL(
+        new Blob([data.buffer], { type: "video/mp4" })
+      );
+    }
+  };
+
+  return (
+    <div
+      style={{
+        margin: "auto",
+        padding: "20px",
+      }}
+    >
+      {loaded ? (
+        <>
+          <video
+            style={{
+              height: "500px",
+            }}
+            ref={videoRef}
+            controls
+          ></video>
+          <br />
+          <p ref={messageRef}></p>
+          <button onClick={watermark}>Add Watermark</button>
+        </>
+      ) : (
+        <>
+          {loading && <p>Loading ffmpeg-core...</p>}
+          <button onClick={load}>Load ffmpeg-core</button>
+        </>
+      )}
+    </div>
+  );
+}
+
+export default App;
+```
+
+Here are some key elements in the code above:
+
+- FFmpeg core, WASM file, and worker file are loaded dynamically.
+- A watermark button becomes available post-FFmpeg initialization.
+- Clicking the watermark button fetches a video file and font, subsequently adding a centered text overlay.
+
+Now adjust the **`vite.config.ts`** file to ensure correct FFmpeg loading, as per [FFmpeg.wasm's GitHub repository](https://github.com/ffmpegwasm/ffmpeg.wasm/tree/main/apps/react-vite-app):
+
+```javascript
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  optimizeDeps: {
+    exclude: ["@ffmpeg/ffmpeg", "@ffmpeg/util"],
+  },
+  server: {
+    headers: {
+      "Cross-Origin-Opener-Policy": "same-origin",
+      "Cross-Origin-Embedder-Policy": "require-corp",
+    },
+  },
+});
+```
+
+Here’s the output video made using FFmpeg.js:
+
+#### output.mp4 <Video controls="true" url="/guides/integrating-ffmpeg-with-react.js-via-webassembly/output.mp4" />

@@ -1,0 +1,16 @@
+{
+  "name": "jit-transcode-go-tests",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:parity": "vitest run parity-validation.test.ts",
+    "test:jit": "vitest run jit-architecture-validation.test.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "vitest": "^2.0.0",
+    "@types/node": "^20.0.0"
+  }
+}

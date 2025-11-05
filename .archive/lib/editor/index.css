@@ -1,0 +1,80 @@
+/**
+CSS RESET
+*/
+
+html {
+  /* apply a natural box layout model to all elements, but allowing components to change */
+  /* Pin 1em == 10px, maintains accessibility */
+  /*
+    Disable overscroll effects, which are distracting in an app that
+    doesn't scroll at the viewport level
+  */
+  overscroll-behavior: none;
+}
+
+/* All children inherit box-sizing and overscroll-behavior, making them universable, but overridable. */
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+  overscroll-behavior: inherit;
+}
+
+* {
+  margin: 0;
+}
+
+body {
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  overflow-wrap: break-word;
+}
+
+/** VARIABLES **/
+:root {
+  /* Text */
+  --ef-text-mono: monospace;
+  --ef-text-default: sans-serif;
+
+  /** Lengths */
+  --ex-length-xl: 3rem;
+  --ef-length-l: 2.4rem;
+  --ef-length-m: 1.8rem;
+  --ef-length-s: 1.5rem;
+  --ef-length-xs: 1.4rem;
+  --ef-length-2xs: 1.2rem;
+  --ex-length-3xs: 1rem;
+
+  /* TODO: Dark Mode variants */
+
+  /** Colors */
+  --ef-color-interactive: #b9d9ff;
+  --ef-color-interactive-outline: color-mix(
+    in srgb,
+    var(--ef-color-interactive),
+    black 20%
+  );
+
+  --ef-color-selected: #7da2cd;
+  --ef-color-selected-outline: color-mix(
+    in srgb,
+    var(--ef-color-selected),
+    black 20%
+  );
+
+  --ef-color-handle: blue;
+
+  --ef-panel-background: #ead8ff;
+  --ef-panel-border: color-mix(in srgb, var(--ef-panel-background), black 20%);
+
+  font-family: var(--ef-text-default);
+}

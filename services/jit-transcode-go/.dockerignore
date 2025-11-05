@@ -1,0 +1,11 @@
+temp/
+test-assets/
+bin/
+*.log
+.git
+.gitignore
+README.md
+Makefile
+Dockerfile*
+docker-compose*.yaml
+

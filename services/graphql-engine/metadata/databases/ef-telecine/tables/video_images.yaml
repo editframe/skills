@@ -1,0 +1,84 @@
+table:
+  name: images
+  schema: video
+object_relationships:
+  - name: project
+    using:
+      foreign_key_constraint_on: project_id
+  - name: user
+    using:
+      foreign_key_constraint_on: creator_id
+insert_permissions:
+  - role: org-editor
+    permission:
+      check:
+        project:
+          org:
+            memberships:
+              _and:
+                - role:
+                    _in:
+                      - admin
+                      - editor
+                - user_id:
+                    _eq: X-Hasura-User-Id
+      set:
+        creator_id: x-hasura-user-id
+      columns:
+        - bytesize
+        - created_at
+        - format
+        - height
+        - id
+        - next_byte
+        - project_id
+        - remote_uri
+        - width
+    comment: ""
+select_permissions:
+  - role: org-editor
+    permission:
+      columns:
+        - bytesize
+        - complete
+        - created_at
+        - creator_id
+        - format
+        - height
+        - id
+        - next_byte
+        - project_id
+        - remote_uri
+        - width
+      filter:
+        project:
+          org:
+            memberships:
+              _and:
+                - role:
+                    _in:
+                      - admin
+                      - editor
+                - user_id:
+                    _eq: X-Hasura-User-Id
+    comment: ""
+  - role: org-reader
+    permission:
+      columns:
+        - bytesize
+        - complete
+        - created_at
+        - creator_id
+        - format
+        - height
+        - id
+        - next_byte
+        - project_id
+        - width
+      filter:
+        project:
+          org:
+            memberships:
+              user_id:
+                _eq: X-Hasura-User-Id
+    comment: ""

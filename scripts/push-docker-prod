@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+set -ex
+
+REPO=us-central1-docker.pkg.dev/editframe/telecine-artifacts
+
+name=$1
+
+VERSION="latest"
+
+if [ -n "$GITHUB_SHA" ]; then
+  VERSION=$GITHUB_SHA
+else
+  # Try to get current git commit SHA if not in CI environment
+  GIT_SHA=$(git rev-parse HEAD 2>/dev/null || echo "latest")
+  VERSION=$GIT_SHA
+fi
+
+TAG=${REPO}/${name}:${VERSION}
+
+if [ "$name" = "transcribe" ]; then
+  WHISPER_BUILDER_TAG="${REPO}/${name}-whisper-builder:latest"
+fi
+
+if [ -n "$CI" ]; then
+  # Set up cache args with registry caching
+  CACHE_FROM="--cache-from=type=registry,ref=${REPO}/${name}:buildcache"
+  CACHE_TO_ARGS="--cache-to=type=registry,ref=${REPO}/${name}:buildcache,mode=max,compression=zstd"
+  
+  if [ "$name" = "transcribe" ]; then
+    # Push whisper builder first with proper registry caching
+    docker buildx build \
+      ${SCRIPT_DIR}/.. \
+      --target whisper-builder \
+      --platform=linux/amd64 \
+      --push \
+      -t ${WHISPER_BUILDER_TAG} \
+      --cache-from=type=registry,ref=${WHISPER_BUILDER_TAG} \
+      --cache-to=type=registry,ref=${WHISPER_BUILDER_TAG},mode=max,compression=zstd \
+      -f ${SCRIPT_DIR}/../Dockerfile.${name}.prod
+
+    CACHE_FROM="${CACHE_FROM} --cache-from=type=registry,ref=${WHISPER_BUILDER_TAG}"
+    CACHE_TO_ARGS="${CACHE_TO_ARGS} --cache-to=type=registry,ref=${WHISPER_BUILDER_TAG},mode=max,compression=zstd"
+  fi
+
+
+
+  # Push final image with registry caching
+  docker buildx build \
+    ${SCRIPT_DIR}/.. \
+    --build-arg WHISPER_BRANCH=v1.7.1 \
+    --build-arg WHISPER_REPO_ID=distil-whisper/distil-large-v3-ggml \
+    --build-arg WHISPER_MODEL_FILE=ggml-distil-large-v3.bin \
+    -f ${SCRIPT_DIR}/../Dockerfile.${name}.prod \
+    --platform=linux/amd64 \
+    --push \
+    ${CACHE_FROM} \
+    ${CACHE_TO_ARGS} \
+    -t ${TAG} \
+    --progress=plain
+else
+  docker push ${TAG}
+  if [ "$name" = "transcribe" ]; then
+    docker push ${WHISPER_BUILDER_TAG}
+  fi
+fi

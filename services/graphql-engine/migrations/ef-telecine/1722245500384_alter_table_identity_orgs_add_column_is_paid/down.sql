@@ -1,0 +1,4 @@
+-- Could not auto-generate a down migration.
+-- Please write an appropriate down migration for the SQL below:
+-- alter table "identity"."orgs" add column "is_paid" bool
+--  null default 'false';

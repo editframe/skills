@@ -1,0 +1,589 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Resources Pattern Guide
+
+Generalized dashboard page creation system for rapid development of data management interfaces.
+
+## Overview
+
+The resources system provides a highly generalized pattern for creating dashboard pages with:
+- Standardized table views with pagination
+- Detail views with consistent field display
+- Built-in filtering and search capabilities
+- Content blocks for reusable display components
+- GraphQL integration with progressive queries
+- Separation between organization-level and admin-level resources
+
+## File Structure & Organization
+
+### Directory Layout
+
+```
+services/web/app/components/resources/
+├── index.ts                    # Main resource registry (org-level)
+├── admin/                      # Admin-only resources
+│   ├── index.ts               # Admin resource registry 
+│   ├── users.tsx              # Admin user management
+│   ├── orgs.tsx               # Admin organization management
+│   ├── api-keys.tsx           # Admin API key management
+│   └── webhooks.tsx           # Admin webhook management
+├── blocks/                     # Reusable content blocks
+│   ├── index.tsx              # Core content blocks (CreatedAt, ID, etc.)
+│   ├── user.tsx               # User-related content blocks
+│   ├── org.tsx                # Organization-related content blocks
+│   ├── api-keys.tsx           # API key-specific content blocks
+│   ├── webhooks.tsx           # Webhook-specific content blocks
+│   ├── members.tsx            # Membership-specific content blocks
+│   └── [resource-name].tsx    # Resource-specific content blocks
+├── api-keys.tsx               # Organization API keys
+├── members.tsx                # Organization members
+├── webhooks.tsx               # Organization webhooks
+├── renders.tsx                # Video renders
+├── isobmff-files.tsx          # Video files
+├── unprocessed-files.tsx      # Uploaded files
+├── image-files.tsx            # Image files
+├── transcriptions.tsx         # Audio transcriptions
+└── [other-resources].tsx     # Additional resources
+```
+
+### Resource Types
+
+#### Organization-Level Resources
+Located in `services/web/app/components/resources/[name].tsx`
+- **Access Level**: `org-reader` or `org-admin` 
+- **Scope**: Data scoped to user's organization
+- **Examples**: api-keys, members, webhooks, renders, files
+
+#### Admin-Level Resources  
+Located in `services/web/app/components/resources/admin/[name].tsx`
+- **Access Level**: `ef-admin` (system administrator)
+- **Scope**: Cross-organization system management
+- **Examples**: users, orgs, system-wide api-keys, webhooks
+
+### Content Blocks System
+
+Content blocks are reusable display components organized by domain:
+
+#### Core Blocks (`blocks/index.tsx`)
+Universal blocks used across all resources:
+```typescript
+export const CreatedAt: ContentBlock<{ created_at: string }>;
+export const ID: ContentBlock<{ id: string }>;
+export const StartedAt: ContentBlock<{ started_at: string | null }>;
+export const CompletedAt: ContentBlock<{ completed_at: string | null }>;
+export const FailedAt: ContentBlock<{ failed_at: string | null }>;
+export const ExpiresAt: ContentBlock<{ expires_at: string | null }>;
+```
+
+#### Domain-Specific Blocks (`blocks/[domain].tsx`)
+Specialized blocks for specific data types:
+
+**User Blocks (`blocks/user.tsx`):**
+```typescript
+export const UserName: ContentBlock<{ first_name: string | null; last_name: string | null }>;
+export const UserEmail: ContentBlock<{ email_passwords: { email_address: string }[] }>;
+```
+
+**Organization Blocks (`blocks/org.tsx`):**
+```typescript
+export const OrgName: ContentBlock<{ display_name: string }>;
+export const OrgWebsite: ContentBlock<{ website: string | null }>;
+export const OrgIsPaid: ContentBlock<{ is_paid: boolean | null }>;
+export const OrgMembers: ContentBlock<{ memberships: MembershipData[] }>;
+export const OrgMemberships: ContentBlock<{ memberships: { org: OrgData; role: string }[] }>;
+```
+
+**Resource-Specific Blocks (`blocks/api-keys.tsx`, `blocks/webhooks.tsx`, etc.):**
+```typescript
+// API Keys
+export const Name: ContentBlock<{ name: string }>;
+export const WebhookURL: ContentBlock<{ webhook_url: string | null }>;
+export const ExpiresIn: ContentBlock<{ expired_at: string | null }>;
+
+// Webhooks  
+export const URL: ContentBlock<{ url: string }>;
+export const Events: ContentBlock<{ events: string[] }>;
+```
+
+## Core Resource Structure
+
+### Organization-Level Resource
+
+```typescript
+import { progressiveQuery } from "@/graphql.client";
+import { graphql } from "@/graphql";
+import type { ResourceView } from "~/components/resources";
+import { CreatedAt, RelatedUser, RelatedOrg } from "~/components/resources/blocks";
+import { SpecificBlock } from "~/components/resources/blocks/my-resource";
+
+// Organization-scoped query
+const IndexQuery = progressiveQuery(
+  "org-reader", // or "org-admin" for admin features within org
+  graphql(`
+    query MyResources($orgId: uuid!, $limit: Int!, $offset: Int!, $where_clause: my_table_bool_exp) {
+      org: orgs_by_pk(id: $orgId) {
+        page_info: my_table_aggregate(where: $where_clause) {
+          aggregate {
+            count
+          }
+        }
+        rows: my_table(
+          where: $where_clause,
+          order_by: {created_at: desc},
+          limit: $limit,
+          offset: $offset
+        ) {
+          id
+          name
+          status
+          created_at
+          # ... other fields
+        }
+      }
+    }
+  `)
+);
+
+const DetailQuery = progressiveQuery(
+  "org-reader",
+  graphql(`
+    query MyResource($id: uuid!, $orgId: uuid!) {
+      record: my_table(where: { org_id: { _eq: $orgId }, id: { _eq: $id } }) {
+        id
+        name
+        status
+        created_at
+        # ... other fields
+      }
+    }
+  `)
+);
+
+export const MyResources: ResourceView<typeof IndexQuery, typeof DetailQuery> = {
+  index: {
+    query: IndexQuery,
+    TableHeader, // Optional header component
+    buildWhereClause, // Optional filtering function
+    columns: [
+      { name: "Name", content: SpecificBlock },
+      { name: "Created", content: CreatedAt },
+      { name: "User", content: RelatedUser }
+    ]
+  },
+  detail: {
+    query: DetailQuery,
+    fields: [
+      { name: "Name", content: SpecificBlock },
+      { name: "Created", content: CreatedAt, vertical: true }
+    ]
+  }
+};
+```
+
+### Admin-Level Resource
+
+```typescript
+import { progressiveQuery } from "@/graphql.client";
+import { graphql } from "@/graphql";
+import type { ResourceView } from "~/components/resources/admin";
+import { CreatedAt, ID } from "~/components/resources/blocks";
+import { UserName, UserEmail } from "~/components/resources/blocks/user";
+import { OrgMemberships } from "~/components/resources/blocks/org";
+
+// System-wide admin query (no org scoping)
+const IndexQuery = progressiveQuery(
+  "ef-admin", // System administrator access
+  graphql(`
+    query AdminUsers($limit: Int!, $offset: Int!, $where_clause: users_bool_exp) {
+      rows: users(
+        where: $where_clause,
+        order_by: {created_at: desc},
+        limit: $limit,
+        offset: $offset
+      ) {
+        id
+        first_name
+        last_name
+        created_at
+        email_passwords {
+          email_address
+        }
+      }
+    }
+  `)
+);
+
+const DetailQuery = progressiveQuery(
+  "ef-admin",
+  graphql(`
+    query AdminUser($id: uuid!) {
+      record: users_by_pk(id: $id) {
+        id
+        first_name
+        last_name
+        created_at
+        email_passwords {
+          email_address
+        }
+        memberships {
+          role
+          org {
+            display_name
+          }
+        }
+      }
+    }
+  `)
+);
+
+export const Users: ResourceView<typeof IndexQuery, typeof DetailQuery> = {
+  index: {
+    query: IndexQuery,
+    buildWhereClause,
+    TableHeader: () => <Filter />,
+    columns: [
+      { name: "Name", content: UserName },
+      { name: "Email", content: UserEmail },
+      { name: "Joined", content: CreatedAt }
+    ]
+  },
+  detail: {
+    query: DetailQuery,
+    fields: [
+      { name: "ID", content: ID },
+      { name: "Name", content: UserName },
+      { name: "Email", content: UserEmail },
+      { name: "Joined", content: CreatedAt },
+      { name: "Memberships", content: OrgMemberships }
+    ]
+  }
+};
+```
+
+## Content Blocks Development
+
+### Creating Reusable Blocks
+
+**Core Utility Blocks (`blocks/index.tsx`):**
+```typescript
+import type { ContentBlock } from "~/components/resources/blocks";
+
+export const CreatedAt: ContentBlock<{ created_at: string }> = ({
+  record: { created_at },
+}) => <TimeAgoInWords date={created_at} />;
+
+export const Status: ContentBlock<{ status: string }> = ({ 
+  record: { status } 
+}) => {
+  const config = {
+    success: { color: "text-green-600", bg: "bg-green-100" },
+    error: { color: "text-red-600", bg: "bg-red-100" },
+    pending: { color: "text-yellow-600", bg: "bg-yellow-100" }
+  }[status] || { color: "text-gray-600", bg: "bg-gray-100" };
+  
+  return (
+    <span className={clsx(
+      "inline-flex items-center px-2 py-1 rounded-md text-xs font-medium",
+      config.color,
+      config.bg
+    )}>
+      {status.charAt(0).toUpperCase() + status.slice(1)}
+    </span>
+  );
+};
+```
+
+**Domain-Specific Blocks (`blocks/user.tsx`):**
+```typescript
+export const UserName: ContentBlock<{
+  first_name: string | null;
+  last_name: string | null;
+}> = ({ record: { first_name, last_name } }) => (
+  <span>
+    {first_name ?? ""} {last_name ?? ""}
+  </span>
+);
+
+export const UserEmail: ContentBlock<{
+  email_passwords: { email_address: string }[];
+}> = ({ record: { email_passwords } }) => (
+  <span>
+    {email_passwords?.map(({ email_address }) => email_address).join(", ")}
+  </span>
+);
+```
+
+**Resource-Specific Blocks (`blocks/api-keys.tsx`):**
+```typescript
+export const ExpiresIn: ContentBlock<{ expired_at: string | null }> = ({
+  record: { expired_at },
+}) => {
+  if (!expired_at) {
+    return <>Never expires</>;
+  }
+
+  const expirationDate = new Date(expired_at);
+  const isExpired = expirationDate < new Date();
+
+  if (isExpired) {
+    return <>Expired</>;
+  }
+
+  return (
+    <>
+      Expires in <TimeAgoInWords date={expired_at} />
+    </>
+  );
+};
+```
+
+### Complex Blocks with Tables
+
+```typescript
+export const OrgMembers: ContentBlock<{
+  memberships: {
+    role: string;
+    user: {
+      first_name: string | null;
+      last_name: string | null;
+      email_passwords: { email_address: string }[];
+    };
+  }[];
+}> = ({ record: { memberships } }) => (
+  <Table
+    rows={memberships ?? []}
+    emptyResultMessage="No members"
+    rowKey={(member) =>
+      `${member.user.email_passwords?.[0]?.email_address}-${member.role}`
+    }
+    columns={[
+      {
+        name: "Name",
+        content: (member) => (
+          <span>
+            {member.user.first_name} {member.user.last_name}
+          </span>
+        ),
+      },
+      {
+        name: "Email",
+        content: (member) => member.user.email_passwords?.[0]?.email_address,
+      },
+      {
+        name: "Role",
+        content: (member) => member.role,
+      },
+    ]}
+  />
+);
+```
+
+## Resource Registration
+
+### Organization Resources (`services/web/app/components/resources/index.ts`)
+
+```typescript
+import { z } from "zod";
+// Import all organization-level resources
+import { ApiKeys } from "./api-keys";
+import { Members } from "./members";
+import { Webhooks } from "./webhooks";
+// ... other imports
+
+export const ResourceType = z.enum([
+  "api_keys",
+  "members", 
+  "webhooks",
+  "renders",
+  "isobmff_files",
+  "unprocessed_files",
+  "transcriptions",
+  "image_files",
+  // ... other org resources
+]);
+
+export const ResourceModules = {
+  api_keys: ApiKeys,
+  members: Members,
+  webhooks: Webhooks,
+  renders: Renders,
+  isobmff_files: ISOBMFFFiles,
+  unprocessed_files: UnprocessedFiles,
+  transcriptions: Transcriptions,
+  image_files: ImageFiles,
+  // ... other mappings
+} as const;
+```
+
+### Admin Resources (`services/web/app/components/resources/admin/index.ts`)
+
+```typescript
+import { z } from "zod";
+// Import admin-specific resources  
+import { Users } from "./users";
+import { Orgs } from "./orgs";
+import { ApiKeys } from "./api-keys";
+// ... other imports
+
+export const ResourceType = z.enum([
+  "users",
+  "orgs", 
+  "api_keys",
+  "webhooks",
+  "image_files",
+  "invites",
+  // ... other admin resources
+]);
+
+export const ResourceModules = {
+  users: Users,
+  orgs: Orgs,
+  api_keys: ApiKeys,
+  webhooks: Webhooks,
+  image_files: ImageFiles,
+  invites: Invites,
+  // ... other mappings  
+} as const;
+```
+
+## URL Patterns
+
+### Organization Resources
+```typescript
+// List view
+/resource/api_keys
+/resource/members
+/resource/webhooks
+
+// Detail view  
+/resource/api_keys/{id}
+/resource/members/{id}
+
+// Create/Edit forms
+/resource/api_keys/new
+/resource/api_keys/{id}/edit
+```
+
+### Admin Resources
+```typescript
+// Admin list views
+/admin/resource/users
+/admin/resource/orgs
+/admin/resource/api_keys
+
+// Admin detail views
+/admin/resource/users/{id}
+/admin/resource/orgs/{id}
+```
+
+## Access Control Patterns
+
+### Organization-Level Access
+```typescript
+// Read access within organization
+const ReaderQuery = progressiveQuery("org-reader", graphql(`...`));
+
+// Admin access within organization  
+const AdminQuery = progressiveQuery("org-admin", graphql(`...`));
+```
+
+### System Admin Access
+```typescript
+// System-wide administrative access
+const SystemAdminQuery = progressiveQuery("ef-admin", graphql(`...`));
+```
+
+## Block Reusability Guidelines
+
+### When to Create New Blocks
+
+1. **Core Blocks** (`blocks/index.tsx`): Universal patterns used across multiple resources
+   - Timestamps (CreatedAt, UpdatedAt, etc.)
+   - IDs and references
+   - Common status indicators
+
+2. **Domain Blocks** (`blocks/[domain].tsx`): Shared within a logical domain
+   - User-related fields (UserName, UserEmail)
+   - Organization fields (OrgName, OrgMembers)
+   - Common relationship patterns
+
+3. **Resource-Specific Blocks** (`blocks/[resource].tsx`): Unique to one resource type
+   - API key expiration logic
+   - Webhook event formatting
+   - File-specific metadata
+
+### Block Naming Convention
+
+- **Domain prefix**: `UserName`, `OrgMembers`, `WebhookEvents`
+- **Descriptive suffix**: `CreatedAt`, `ExpiresIn`, `IsActive`
+- **Avoid generic names**: Use `ApiKeyName` instead of `Name` when domain-specific
+
+## Testing Resource Components
+
+```typescript
+import { ResourceModules } from "~/components/resources";
+import { ResourceModules as AdminResourceModules } from "~/components/resources/admin";
+
+describe("Organization Resources", () => {
+  test("api keys resource configuration", () => {
+    const ApiKeysResource = ResourceModules.api_keys;
+    
+    expect(ApiKeysResource.index.query).toBeDefined();
+    expect(ApiKeysResource.index.columns).toBeInstanceOf(Array);
+  });
+});
+
+describe("Admin Resources", () => {
+  test("users resource configuration", () => {
+    const UsersResource = AdminResourceModules.users;
+    
+    expect(UsersResource.index.query).toBeDefined();
+    expect(UsersResource.detail.fields).toBeInstanceOf(Array);
+  });
+});
+
+describe("Content Blocks", () => {
+  test("user name block renders correctly", () => {
+    const { UserName } = require("~/components/resources/blocks/user");
+    
+    render(
+      <UserName 
+        id="test"
+        record={{ first_name: "John", last_name: "Doe" }}
+        resourceType="users"
+        resourceId="test"
+      />
+    );
+    
+    expect(screen.getByText("John Doe")).toBeInTheDocument();
+  });
+});
+```
+
+## Best Practices
+
+1. **Separate organization and admin resources** clearly by directory structure
+2. **Reuse content blocks** across resources when possible
+3. **Create domain-specific block files** for related functionality
+4. **Use appropriate access levels** (`org-reader`, `org-admin`, `ef-admin`)
+5. **Follow naming conventions** for blocks and resources
+6. **Test resource configurations** and block rendering
+7. **Document custom blocks** with clear TypeScript interfaces
+8. **Consider performance** when creating complex nested blocks
+9. **Handle null/undefined data** gracefully in blocks
+10. **Use consistent styling** patterns across all blocks
+
+## Quick Start Checklist
+
+- [ ] Determine if resource is organization-level or admin-level
+- [ ] Create resource file in appropriate directory
+- [ ] Define GraphQL queries with correct access level
+- [ ] Identify reusable vs. custom content blocks needed
+- [ ] Create new content blocks in appropriate block files
+- [ ] Register resource in correct index file
+- [ ] Add resource type to enum
+- [ ] Test resource views and content blocks
+- [ ] Document any custom patterns used

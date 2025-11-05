@@ -1,0 +1,11 @@
+services:
+  valkey:
+    image: valkey/valkey:8.0-alpine
+    env_file:
+      - ${PWD}/.env
+    ports:
+      - 6379:6379
+    volumes:
+      - ./services/dev-valkey/valkey.conf:/usr/local/etc/valkey/valkey.conf
+    command: ["valkey-server", "/usr/local/etc/valkey/valkey.conf"]
+

@@ -1,0 +1,466 @@
+---
+meta:
+  - title: Multi-Track Composition
+  - name: description
+    content: Creating complex multi-track video compositions
+headers:
+    Cache-Control: no-cache
+---
+
+# Multi-Track Composition
+
+This guide demonstrates how to create complex multi-track video compositions using Editframe's timegroup system. You'll learn how to layer video, audio, and visual elements to create professional-looking videos.
+
+## Basic Multi-Track
+
+The fundamental pattern for multi-track compositions is using `contain` mode timegroups with absolute positioning:
+
+<Demonstration layout="horizontal" alwaysShowSource>
+  <Timegroup mode="contain" className="w-[1280px] h-[720px] bg-black relative overflow-hidden">
+    <Video 
+      src="https://assets.editframe.com/bars-n-tone.mp4" 
+      className="absolute inset-0 w-full h-full object-cover"
+    />
+    <Audio src="https://assets.editframe.com/card-joker.mp3" />
+    <div className="absolute top-10 left-10 bg-blue-500 text-white px-6 py-3 rounded-lg text-2xl font-bold">
+      Overlay Text
+    </div>
+  </Timegroup>
+</Demonstration>
+
+## Picture-in-Picture
+
+Create picture-in-picture effects by layering videos:
+
+<Demonstration layout="horizontal" alwaysShowSource>
+  <Timegroup mode="contain" className="w-[1280px] h-[720px] bg-black relative overflow-hidden">
+    <Video 
+      src="https://assets.editframe.com/bars-n-tone.mp4" 
+      className="absolute inset-0 w-full h-full object-cover"
+    />
+    <Video 
+      src="https://assets.editframe.com/bars-n-tone.mp4" 
+      sourcein="3s"
+      className="absolute bottom-4 right-4 w-64 h-36 border-4 border-white rounded-lg shadow-2xl"
+    />
+  </Timegroup>
+</Demonstration>
+
+## Split Screen
+
+Create split-screen layouts using multiple videos:
+
+<Demonstration layout="horizontal" alwaysShowSource>
+    <Timegroup mode="contain" className="w-[1280px] h-[720px] bg-black relative grid grid-cols-2 gap-2 p-2">
+      <Video 
+        src="https://assets.editframe.com/bars-n-tone.mp4" 
+        sourcein="0s"
+        sourceout="5s"
+        className="w-full h-full object-cover rounded"
+      />
+      <Video 
+        src="https://assets.editframe.com/bars-n-tone.mp4" 
+        sourcein="5s"
+        className="w-full h-full object-cover rounded"
+      />
+    </Timegroup>
+</Demonstration>
+
+## Background Video with Overlay Content
+
+Use a video as a background with foreground content:
+
+<Demonstration layout="horizontal" alwaysShowSource>
+    <Timegroup mode="contain" className="w-[1280px] h-[720px] bg-black relative overflow-hidden">
+      <Video 
+        src="https://assets.editframe.com/bars-n-tone.mp4" 
+        className="absolute inset-0 w-full h-full object-cover blur-sm opacity-50"
+      />
+      <Video 
+        src="https://assets.editframe.com/bars-n-tone.mp4" 
+        className="absolute inset-0 w-2/3 h-2/3 m-auto object-contain z-10"
+      />
+      <div className="absolute bottom-8 left-0 right-0 text-center">
+        <h1 className="text-white text-5xl font-bold drop-shadow-lg">
+          Main Title
+        </h1>
+        <p className="text-white text-2xl mt-2 drop-shadow-lg">
+          Subtitle text
+        </p>
+      </div>
+    </Timegroup>
+</Demonstration>
+
+## Sequential Tracks with Parallel Audio
+
+Combine sequence mode for video with contain mode for continuous audio:
+
+<Demonstration layout="horizontal" alwaysShowSource>
+    <Timegroup mode="contain" className="w-[1280px] h-[720px] bg-black relative overflow-hidden">
+      <Timegroup mode="sequence" className="absolute inset-0">
+        <Video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="0s" sourceout="3s" className="w-full h-full" />
+        <Video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="3s" sourceout="6s" className="w-full h-full" />
+        <Video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="6s" className="w-full h-full" />
+      </Timegroup>
+      <Audio src="https://assets.editframe.com/card-joker.mp3" mute={false} />
+    </Timegroup>
+</Demonstration>
+
+## Multi-Layer Composition
+
+Create complex compositions with multiple visual layers:
+
+<Demonstration layout="horizontal" alwaysShowSource>
+    <Timegroup mode="contain" className="w-[1280px] h-[720px] bg-gradient-to-br from-purple-900 to-blue-900 relative overflow-hidden">
+      <Video 
+        src="https://assets.editframe.com/bars-n-tone.mp4" 
+        className="absolute inset-0 w-full h-full object-cover opacity-30 mix-blend-overlay"
+      />
+      <Timegroup 
+        mode="fixed" 
+        duration="3s"
+        className="absolute inset-0 flex items-center justify-center"
+        style={{
+          animation: 'fade-in 1s ease-in paused, fade-out 1s ease-out 2s paused'
+        }}
+      >
+        <h1 className="text-white text-7xl font-bold">Opening</h1>
+      </Timegroup>
+      <Timegroup 
+        mode="fit"
+        className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm p-4"
+      >
+        <Waveform target="bg-audio" mode="wave" className="h-16 text-blue-400" />
+      </Timegroup>
+      <Audio id="bg-audio" src="https://assets.editframe.com/card-joker.mp3" />
+    </Timegroup>
+    <style>{`
+      @keyframes fade-in {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes fade-out {
+        from { opacity: 1; transform: translateY(0); }
+        to { opacity: 0; transform: translateY(-20px); }
+      }
+    `}</style>
+</Demonstration>
+
+## Synchronized Multi-Video
+
+Multiple videos playing in sync on different tracks:
+
+```html
+<ef-timegroup mode="contain" class="w-[1920px] h-[1080px] bg-black grid grid-rows-2 grid-cols-2 gap-4 p-4">
+  <!-- All videos start at the same time and play in parallel -->
+  <ef-video src="/video1.mp4" class="w-full h-full object-cover rounded"></ef-video>
+  <ef-video src="/video2.mp4" class="w-full h-full object-cover rounded"></ef-video>
+  <ef-video src="/video3.mp4" class="w-full h-full object-cover rounded"></ef-video>
+  <ef-video src="/video4.mp4" class="w-full h-full object-cover rounded"></ef-video>
+</ef-timegroup>
+```
+
+## Using Surfaces for Efficiency
+
+When displaying the same video multiple times, use surfaces to share decoders:
+
+```html
+<ef-timegroup mode="contain" class="w-[1920px] h-[1080px] bg-black">
+  <!-- Single video element (hidden) -->
+  <ef-video id="source" src="/video.mp4" class="hidden"></ef-video>
+  
+  <!-- Multiple surfaces showing the same video with different effects -->
+  <ef-surface target="source" class="absolute top-0 left-0 w-1/2 h-full object-cover"></ef-surface>
+  <ef-surface target="source" class="absolute top-0 right-0 w-1/2 h-full object-cover blur-md"></ef-surface>
+  <ef-surface target="source" class="absolute bottom-4 right-4 w-64 h-36 border-2 border-white"></ef-surface>
+</ef-timegroup>
+```
+
+## Advanced: Multi-Track Timeline
+
+Create a professional multi-track timeline structure:
+
+```html
+<ef-timegroup mode="contain" class="w-[1920px] h-[1080px] bg-black relative">
+  <!-- Video Track 1 - Background -->
+  <ef-timegroup mode="fit" class="absolute inset-0 z-0">
+    <ef-video src="/background.mp4" class="w-full h-full object-cover"></ef-video>
+  </ef-timegroup>
+  
+  <!-- Video Track 2 - Main Content -->
+  <ef-timegroup mode="sequence" class="absolute inset-0 z-10">
+    <ef-video src="/clip1.mp4" class="w-full h-full object-contain"></ef-video>
+    <ef-video src="/clip2.mp4" class="w-full h-full object-contain"></ef-video>
+  </ef-timegroup>
+  
+  <!-- Graphics Track - Overlays -->
+  <ef-timegroup mode="sequence" class="absolute top-10 left-10 z-20">
+    <ef-image src="/logo.png" duration="3s" class="w-32 h-32"></ef-image>
+    <ef-timegroup mode="fixed" duration="5s" class="invisible"></ef-timegroup>
+    <ef-image src="/endcard.png" duration="3s" class="w-64 h-64"></ef-image>
+  </ef-timegroup>
+  
+  <!-- Audio Track 1 - Music -->
+  <ef-audio src="/background-music.mp3"></ef-audio>
+  
+  <!-- Audio Track 2 - Voiceover -->
+  <ef-audio src="/voiceover.mp3"></ef-audio>
+  
+  <!-- Captions Track -->
+  <ef-captions 
+    assetId="caption-file-id"
+    class="absolute bottom-20 left-0 right-0 text-center z-30"
+  >
+    <ef-captions-segment class="text-white text-3xl font-bold bg-black/70 px-4 py-2 rounded"></ef-captions-segment>
+  </ef-captions>
+</ef-timegroup>
+```
+
+## Key Concepts
+
+### Z-Index Layering
+
+Control which elements appear on top:
+
+```html
+<ef-timegroup mode="contain" class="relative">
+  <ef-video class="z-0">...</ef-video>  <!-- Background -->
+  <ef-video class="z-10">...</ef-video> <!-- Middle layer -->
+  <div class="z-20">...</div>          <!-- Foreground -->
+</ef-timegroup>
+```
+
+### Fit Mode for Backgrounds
+
+Use `mode="fit"` to make elements span the entire duration:
+
+```html
+<ef-timegroup mode="contain">
+  <!-- This background will match the total duration -->
+  <ef-timegroup mode="fit" class="bg-gradient-to-r from-blue-500 to-purple-500">
+  </ef-timegroup>
+  
+  <!-- Other elements define the duration -->
+  <ef-video src="/video.mp4"></ef-video>
+</ef-timegroup>
+```
+
+### Mix Blend Modes
+
+Use CSS blend modes for visual effects:
+
+```css
+.overlay-video {
+  mix-blend-mode: screen;    /* Lighten */
+  mix-blend-mode: multiply;  /* Darken */
+  mix-blend-mode: overlay;   /* Contrast */
+  mix-blend-mode: soft-light; /* Gentle blend */
+}
+```
+
+## React Version
+
+```tsx
+import { Timegroup, Video, Audio, Image, Waveform } from '@editframe/react';
+
+export function MultiTrackComposition() {
+  return (
+    <Timegroup mode="contain" className="w-[1920px] h-[1080px] bg-black relative">
+      {/* Background video track */}
+      <Video 
+        src="/background.mp4" 
+        className="absolute inset-0 w-full h-full object-cover z-0"
+      />
+      
+      {/* Main content track */}
+      <Timegroup mode="sequence" className="absolute inset-0 z-10">
+        <Video src="/clip1.mp4" className="w-full h-full object-contain" />
+        <Video src="/clip2.mp4" className="w-full h-full object-contain" />
+      </Timegroup>
+      
+      {/* Overlay graphics */}
+      <Image 
+        src="/logo.png" 
+        duration="5s"
+        className="absolute top-10 right-10 w-32 h-32 z-20"
+      />
+      
+      {/* Audio tracks */}
+      <Audio src="/music.mp3" />
+      <Audio src="/voiceover.mp3" />
+      
+      {/* Waveform visualization */}
+      <div className="absolute bottom-4 left-4 right-4 z-20">
+        <Waveform target="voiceover-audio" mode="wave" className="h-16 text-green-400" />
+      </div>
+    </Timegroup>
+  );
+}
+```
+
+## Common Patterns
+
+### Lower Third
+
+Add a lower third graphic that appears during specific sections:
+
+```html
+<ef-timegroup mode="contain" class="w-[1920px] h-[1080px]">
+  <ef-video src="/main.mp4" class="w-full h-full"></ef-video>
+  
+  <ef-timegroup 
+    mode="fixed" 
+    duration="5s"
+    class="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-r from-blue-600 to-blue-800 z-20"
+    style="animation: slide-up 0.5s ease-out paused, slide-down 0.5s ease-in 4.5s paused"
+  >
+    <div class="flex items-center h-full px-8">
+      <div class="text-white">
+        <h3 class="text-2xl font-bold">John Doe</h3>
+        <p class="text-lg">CEO, Example Corp</p>
+      </div>
+    </div>
+  </ef-timegroup>
+</ef-timegroup>
+
+<style>
+  @keyframes slide-up {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  @keyframes slide-down {
+    from { transform: translateY(0); }
+    to { transform: translateY(100%); }
+  }
+</style>
+```
+
+### Multiple Audio Tracks
+
+Layer multiple audio sources with different timing:
+
+```html
+<ef-timegroup mode="contain" class="w-[1920px] h-[1080px]">
+  <ef-video src="/video.mp4" mute></ef-video>
+  
+  <!-- Background music -->
+  <ef-audio src="/music.mp3"></ef-audio>
+  
+  <!-- Sound effects that start at specific times -->
+  <ef-timegroup mode="fixed" duration="0s" class="invisible">
+    <!-- Delay the sound effect -->
+  </ef-timegroup>
+  <ef-audio src="/sound-effect.mp3" sourcein="0s" sourceout="2s"></ef-audio>
+</ef-timegroup>
+```
+
+### Video Collage
+
+Create a collage of multiple videos:
+
+```html
+<ef-timegroup mode="contain" class="w-[1920px] h-[1080px] bg-black relative">
+  <ef-video 
+    src="/video1.mp4" 
+    class="absolute top-0 left-0 w-1/2 h-1/2 object-cover p-2"
+  ></ef-video>
+  <ef-video 
+    src="/video2.mp4" 
+    class="absolute top-0 right-0 w-1/2 h-1/2 object-cover p-2"
+  ></ef-video>
+  <ef-video 
+    src="/video3.mp4" 
+    class="absolute bottom-0 left-0 w-1/2 h-1/2 object-cover p-2"
+  ></ef-video>
+  <ef-video 
+    src="/video4.mp4" 
+    class="absolute bottom-0 right-0 w-1/2 h-1/2 object-cover p-2"
+  ></ef-video>
+</ef-timegroup>
+```
+
+## Advanced: Programmatic Track Management
+
+Build tracks dynamically:
+
+```tsx
+import { Timegroup, Video, Audio } from '@editframe/react';
+
+interface Track {
+  id: string;
+  type: 'video' | 'audio';
+  src: string;
+  className?: string;
+}
+
+export function MultiTrackEditor({ tracks }: { tracks: Track[] }) {
+  const videoTracks = tracks.filter(t => t.type === 'video');
+  const audioTracks = tracks.filter(t => t.type === 'audio');
+  
+  return (
+    <Timegroup mode="contain" className="w-[1920px] h-[1080px] bg-black relative">
+      {/* Render all video tracks */}
+      {videoTracks.map((track, index) => (
+        <Video 
+          key={track.id}
+          src={track.src}
+          className={track.className || `absolute inset-0 z-${index}`}
+        />
+      ))}
+      
+      {/* Render all audio tracks */}
+      {audioTracks.map(track => (
+        <Audio key={track.id} src={track.src} />
+      ))}
+    </Timegroup>
+  );
+}
+```
+
+## Performance Considerations
+
+### Using Surfaces
+
+When the same video appears multiple times, use one video with multiple surfaces:
+
+```html
+<ef-timegroup mode="contain" class="w-[1920px] h-[1080px]">
+  <!-- Single decoder -->
+  <ef-video id="main" src="/video.mp4" class="hidden"></ef-video>
+  
+  <!-- Multiple views -->
+  <ef-surface target="main" class="absolute top-0 left-0 w-1/2 h-1/2"></ef-surface>
+  <ef-surface target="main" class="absolute top-0 right-0 w-1/2 h-1/2 blur-sm"></ef-surface>
+  <ef-surface target="main" class="absolute bottom-0 left-0 w-1/2 h-1/2 grayscale"></ef-surface>
+  <ef-surface target="main" class="absolute bottom-0 right-0 w-1/2 h-1/2 sepia"></ef-surface>
+</ef-timegroup>
+```
+
+### Muting Video Audio
+
+When using separate audio tracks, mute video elements:
+
+```html
+<ef-video src="/video.mp4" mute class="w-full h-full"></ef-video>
+<ef-audio src="/custom-audio.mp3"></ef-audio>
+```
+
+## Tips
+
+1. **Positioning**: Use `absolute` positioning for overlay tracks
+2. **Z-Index**: Control layer order with z-index classes
+3. **Duration**: Use `mode="fit"` for background elements that should span the full duration
+4. **Audio**: Layer multiple audio sources for music + voiceover + sound effects
+5. **Performance**: Use surfaces instead of multiple video elements when showing the same video
+6. **Transitions**: Use CSS animations with `--ef-transition-duration` for smooth transitions between clips
+
+## Related Documentation
+
+- [EFTimegroup](/docs/elements/timegroup) - Timeline container with modes
+- [EFVideo](/docs/elements/video) - Video element
+- [EFAudio](/docs/elements/audio) - Audio element
+- [EFSurface](/docs/elements/surface) - Efficient video copying
+- [EFWaveform](/docs/elements/waveform) - Audio visualization
+- [EFCaptions](/docs/elements/captions) - Text overlays
+
+

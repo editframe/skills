@@ -1,0 +1,9 @@
+.currentTimeIndicator {
+  position: absolute;
+  border: solid black 1.5px;
+  height: 100%;
+  width: 1px;
+  top: 0;
+  z-index: 10;
+  pointer-events: none;
+}

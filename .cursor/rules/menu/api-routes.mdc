@@ -1,0 +1,306 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# API Routes Pattern Guide
+
+Guidelines for creating new API endpoints in the React Router backend following established patterns.
+
+## File Structure and Organization
+
+### API Route Location
+All API routes are located in `services/web/app/api/v1/` following this structure:
+
+```
+services/web/app/api/v1/
+├── organization.ts                    # Single resource endpoints
+├── url-token.ts
+├── resource_name/                     # Resource collection directories
+│   ├── index.ts                      # Collection operations (GET list, POST create)
+│   ├── detail.ts                     # Single resource operations (GET by ID)
+│   ├── delete.ts                     # DELETE operations 
+│   ├── upload.ts                     # File upload operations
+│   ├── progress.ts                   # Progress tracking/SSE endpoints
+│   ├── md5.ts                        # Lookup by hash/identifier
+│   ├── operation.ts                  # Specific operations (transcribe, process, etc.)
+│   └── *.test.ts                     # Tests alongside implementation
+```
+
+### Route Registration
+Add routes to `services/web/app/routes.ts` following the existing v1 prefix pattern:
+
+```typescript
+...v1.prefix("/api/v1", [
+  ...v1.prefix("/resource_name", [
+    v1.route("/", "resource_name/index.ts"),
+    v1.route("/:id", "resource_name/detail.ts"),
+    v1.route("/:id/delete", "resource_name/delete.ts"),
+    v1.route("/:id/upload", "resource_name/upload.ts"),
+    v1.route("/:id/progress", "resource_name/progress.ts"),
+    v1.route("/md5/:md5", "resource_name/md5.ts"),
+  ]),
+])
+```
+
+## Route Handler Patterns
+
+### Basic Route Structure
+```typescript
+import type { Route } from "./+types/filename";
+import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+
+export const loader = async ({ request, params }: Route.LoaderArgs) => {
+  // GET request handler
+};
+
+export const action = async ({ request, params }: Route.ActionArgs) => {
+  // POST/PUT/DELETE request handler
+};
+```
+
+### Authentication
+All endpoints requiring authentication use the same pattern:
+
+```typescript
+export const loader = async ({ request }: Route.LoaderArgs) => {
+  const session = await requireCookieOrTokenSession(request);
+  // session.cid = API key ID
+  // session.uid = User ID  
+  // session.oid = Organization ID
+};
+```
+
+### Response Patterns
+Return raw data objects directly (no json() wrapper needed):
+
+```typescript
+// Single resource
+return resourceData;
+
+// Collection with metadata  
+return {
+  results: items,
+  pagination: { page, limit, total }
+};
+
+// Error responses
+throw new Response("Error message", { status: 404 });
+```
+
+## Data Access Patterns
+
+### Direct SQL Queries
+For simple operations, use Kysely directly:
+
+```typescript
+import { db } from "@/sql-client.server";
+
+const result = await db
+  .selectFrom("schema.table_name")
+  .where("org_id", "=", session.oid)
+  .selectAll()
+  .execute();
+```
+
+See @database.mdc for comprehensive query patterns.
+
+### GraphQL Queries
+For complex queries with authorization, use GraphQL:
+
+```typescript
+import { graphql } from "@/graphql";
+import { requireQueryAs } from "@/graphql.server/userClient";
+
+const result = await requireQueryAs(
+  session,
+  "org-reader", // or "org-admin"
+  graphql(`
+    query GetResource($id: uuid!) {
+      result: table_name_by_pk(id: $id) {
+        id
+        field1
+        field2
+      }
+    }
+  `),
+  { id }
+);
+```
+
+## Input Validation
+
+### Payload Validation
+Use Zod schemas from `@editframe/api` package:
+
+```typescript
+import { CreateResourcePayload } from "@editframe/api";
+
+export const action = async ({ request }: Route.ActionArgs) => {
+  const payload = CreateResourcePayload.parse(await request.json());
+  // payload is now type-safe and validated
+};
+```
+
+### Adding New Validation Schemas
+When creating new API endpoints that require payload validation, add the Zod schemas to the `@editframe/api` package first:
+
+**Location**: `lib/packages/packages/api/src/resources/{resource-name}.ts`
+
+```typescript
+// In @editframe/api package
+import { z } from "zod";
+
+export const CreateResourcePayload = z.object({
+  name: z.string().min(1),
+  description: z.string().optional(),
+  metadata: z.record(z.string()).optional(),
+});
+
+export type CreateResourcePayload = z.infer<typeof CreateResourcePayload>;
+
+export interface CreateResourceResult {
+  id: string;
+  name: string;
+  created_at: string;
+}
+```
+
+**Why this pattern matters:**
+- The `@editframe/api` package is published for external clients
+- These schemas serve as the **source of truth** for validation 
+- Both backend endpoints and client code use the same validation logic
+- Ensures API contract consistency between server and client implementations
+- External users can validate payloads before sending requests
+
+**Workflow for new endpoints:**
+1. Add validation schemas to `@editframe/api` package
+2. Export from package index (`lib/packages/packages/api/src/index.ts`)
+3. Import and use in backend API endpoint
+4. Rebuild and publish `@editframe/api` package if needed for external clients
+
+### URL Parameters
+```typescript
+export const loader = async ({ params: { id } }: Route.LoaderArgs) => {
+  // id is automatically available from route parameter
+  // No additional validation needed for UUIDs in most cases
+};
+```
+
+## Specialized Endpoint Types
+
+### File Upload Endpoints
+```typescript
+// Filename: upload.ts
+export const action = async ({ request, params: { id } }: Route.ActionArgs) => {
+  const session = await requireCookieOrTokenSession(request);
+  
+  // Handle multipart/form-data upload
+  const formData = await request.formData();
+  const file = formData.get("file") as File;
+  
+  // Process and store file
+  return { success: true, uploadId: "..." };
+};
+```
+
+### Progress Tracking (SSE)
+```typescript
+// Filename: progress.ts
+import { progressEventStream } from "@/progress-tracking/progressEventStream";
+
+export const loader = async ({ params: { id }, request }: Route.LoaderArgs) => {
+  const session = await requireCookieOrTokenSession(request);
+  
+  // Get resource to track
+  const resource = await getResource(id, session);
+  
+  return progressEventStream("resource_type", resource);
+};
+```
+
+### File Download/Serving
+```typescript
+// Filename: format.ts (e.g., mp4.ts, png.ts)
+export const loader = async ({ params: { id }, request }: Route.LoaderArgs) => {
+  const session = await requireCookieOrTokenSession(request);
+  
+  // Serve file content with appropriate headers
+  return new Response(fileStream, {
+    headers: {
+      "Content-Type": "video/mp4", // or appropriate mime type
+      "Content-Disposition": "attachment; filename=...",
+    },
+  });
+};
+```
+
+### Lookup by Hash/Identifier
+```typescript  
+// Filename: md5.ts
+export const loader = async ({ params: { md5 }, request }: Route.LoaderArgs) => {
+  const session = await requireCookieOrTokenSession(request);
+  
+  const result = await db
+    .selectFrom("table_name")
+    .where("md5", "=", md5)
+    .where("org_id", "=", session.oid)
+    .selectAll()
+    .executeTakeFirst();
+    
+  if (!result) {
+    throw new Response("Not found", { status: 404 });
+  }
+  
+  return result;
+};
+```
+
+## Naming Conventions
+
+### Endpoint Files
+- `index.ts` - Collection operations (list, create)
+- `detail.ts` - Single resource operations (show, update)  
+- `delete.ts` - Delete operations
+- `upload.ts` - File upload operations
+- `progress.ts` - Progress tracking endpoints
+- `md5.ts` - Lookup by hash (or other identifier)
+- `{operation}.ts` - Specific operations (transcribe, process, etc.)
+- `{format}.ts` - File format endpoints (mp4, png, jpeg, etc.)
+
+### Route Parameters
+- `:id` - Primary resource identifier (UUID)
+- `:md5` - Hash-based lookup
+- `:track_id`, `:file_id` - Related resource identifiers
+- `:stage` - Process stage identifier
+
+### HTTP Methods
+- `loader` exports handle GET requests
+- `action` exports handle POST/PUT/DELETE requests
+- Use `request.method` within action to differentiate if needed
+
+## Testing Patterns
+
+### Test Files
+Place `*.test.ts` files alongside implementation in same directory.
+
+### Common Test Scenarios
+- Authenticated vs unauthenticated access
+- Valid vs invalid payloads
+- Resource ownership verification
+- Error conditions (not found, forbidden, etc.)
+
+See existing test files for specific patterns.
+
+## Best Practices
+
+1. **Follow file naming conventions** exactly as shown above
+2. **Use consistent authentication patterns** with `requireCookieOrTokenSession`
+3. **Validate inputs** using Zod schemas from `@editframe/api`
+4. **Reference @database.mdc** for query patterns and database operations
+5. **Return raw data objects** rather than wrapping in json()
+6. **Use GraphQL for complex queries** with authorization requirements
+7. **Test both success and failure cases** with comprehensive test coverage
+8. **Follow HTTP method conventions** (GET = loader, POST/PUT/DELETE = action)
+9. **Include progress tracking** for long-running operations
+10. **Organize by logical resource groupings** in subdirectories

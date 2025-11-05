@@ -1,0 +1,4 @@
+config:
+  telecine:cloudflareZoneId: "YOUR_CLOUDFLARE_ZONE_ID_HERE"
+  cloudflare:apiToken: "YOUR_CLOUDFLARE_API_TOKEN_HERE"
+

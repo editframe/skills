@@ -1,0 +1,25 @@
+table:
+  name: render_fragments
+  schema: video2
+object_relationships:
+  - name: render
+    using:
+      foreign_key_constraint_on: render_id
+select_permissions:
+  - role: org-reader
+    permission:
+      columns:
+        - attempt_number
+        - completed_at
+        - failed_at
+        - last_error
+        - render_id
+        - segment_id
+        - started_at
+      filter:
+        render:
+          org:
+            memberships:
+              user_id:
+                _eq: X-Hasura-User-Id
+    comment: ""

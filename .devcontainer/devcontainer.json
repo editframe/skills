@@ -1,0 +1,35 @@
+{
+  "name": "Node Container",
+  "dockerComposeFile": ["../docker-compose.yaml"],
+  "service": "devcontainer",
+  "shutdownAction": "none",
+  "workspaceFolder": "/app",
+  "forwardPorts": [], // Empty array to disable automatic forwarding
+  "otherPortsAttributes": {
+    "onAutoForward": "ignore" // Ignore any attempts to automatically forward ports
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-playwright.playwright",
+        "biomejs.biome",
+        "bradlc.vscode-tailwindcss",
+        "unifiedjs.vscode-mdx",
+        "bradymholt.pgformatter",
+        "bierner.comment-tagged-templates",
+        "GraphQL.vscode-graphql",
+        "GraphQL.vscode-graphql-syntax",
+        "ms-azuretools.vscode-docker"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "terminal.integrated.profiles.linux": {
+          "zsh": {
+            "path": "zsh",
+            "icon": "terminal-bash"
+          }
+        }
+      }
+    }
+  }
+}

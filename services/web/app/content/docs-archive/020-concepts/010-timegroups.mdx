@@ -1,0 +1,23 @@
+---
+meta:
+  - title: Timegroups
+  - name: description
+    content: Learn about timegroups, the fundamental organizing principle of an editframe video.
+headers:
+  Cache-Control: no-cache
+---
+
+import EFTimegroup from "@editframe/react";
+
+# Timegroups
+
+The fundamental organizing unit of an Editframe video is the timegroup. A timegroup can be used to declare several kinds of video timelines.
+
+<EFTimegroup
+  mode="sequence"
+  duration="10s"
+  className="w-[500px] h-[500px]"
+>
+  <EFTimegroup mode="fixed" duration="5s"></EFTimegroup>
+  <EFTimegroup mode="fixed" duration="15s"></EFTimegroup>
+</EFTimegroup>

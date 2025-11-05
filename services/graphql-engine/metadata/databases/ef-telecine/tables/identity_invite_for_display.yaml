@@ -1,0 +1,28 @@
+table:
+  name: invite_for_display
+  schema: identity
+configuration:
+  column_config: {}
+  custom_column_names: {}
+  custom_name: invite_for_display
+  custom_root_fields: {}
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - email_address
+        - invited_by
+        - org_display_name
+        - role
+        - accepted_at
+        - created_at
+        - denied_at
+        - updated_at
+        - creator_id
+        - id
+        - invite_token
+        - org_id
+      filter:
+        invite_token:
+          _eq: X-Hasura-Invite-Token
+    comment: ""

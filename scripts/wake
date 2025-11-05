@@ -1,0 +1,6 @@
+#!/usr/bin/env bash 
+
+wakeonlan --ip 192.168.2.255 b0:41:6f:0f:4c:35
+wakeonlan --ip 192.168.2.255 b0:41:6f:0f:4c:d3
+wakeonlan --ip 192.168.2.255 b0:41:6f:0f:51:8e
+wakeonlan --ip 192.168.2.255 b0:41:6f:0f:50:f8

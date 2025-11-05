@@ -1,0 +1,57 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Development Menu for @web Service
+
+A comprehensive menu of development patterns to aid in LLM-driven feature implementation automation.
+
+## Available Development Patterns
+
+When implementing features, choose from these established patterns based on your needs:
+
+### **Core Building Blocks**
+- [Forms](mdc:.cursor/rules/menu/forms.mdc) - Form creation, validation, and submission patterns
+- [Components](mdc:.cursor/rules/menu/components.mdc) - Reusable UI component patterns
+- [API Routes](mdc:.cursor/rules/menu/api-routes.mdc) - Backend API endpoint patterns
+- [Page Routes](mdc:.cursor/rules/menu/page-routes.mdc) - Frontend route and page patterns
+
+### **UI & UX Patterns**
+- [Tables](mdc:.cursor/rules/menu/tables.mdc) - Data display and pagination patterns
+- [Layouts](mdc:.cursor/rules/menu/layouts.mdc) - Page layout and structure patterns
+- [Navigation](mdc:.cursor/rules/menu/navigation.mdc) - Navigation and routing patterns
+- [Buttons & Actions](mdc:.cursor/rules/menu/buttons-actions.mdc) - Interactive element patterns
+
+### **Data & State**
+- [Database Integration](mdc:.cursor/rules/menu/database.mdc) - Database query and transaction patterns
+- [Authentication](mdc:.cursor/rules/menu/authentication.mdc) - User authentication and session patterns
+- [Validation](mdc:.cursor/rules/menu/validation.mdc) - Data validation and error handling patterns
+- [Resources](mdc:.cursor/rules/menu/resources.mdc) - Generalized dashboard pages with GraphQL integration
+
+### **Infrastructure**
+- [Server Setup](mdc:.cursor/rules/menu/server.mdc) - Server configuration and middleware patterns
+- [File Handling](mdc:.cursor/rules/menu/file-handling.mdc) - File upload and processing patterns
+- [Email & Notifications](mdc:.cursor/rules/menu/email-notifications.mdc) - Communication patterns
+
+### **Testing & Quality**
+- [Testing Patterns](mdc:.cursor/rules/menu/testing.mdc) - Unit and integration testing patterns
+- [Error Handling](mdc:.cursor/rules/menu/error-handling.mdc) - Error boundaries and recovery patterns
+
+## Usage Instructions
+
+1. **Feature Planning**: Review relevant menu items when planning feature implementation
+2. **Pattern Selection**: Choose the most appropriate patterns for your specific feature needs
+3. **Implementation**: Follow the detailed guidelines in each menu item
+4. **Testing**: Use testing patterns to ensure quality
+5. **Integration**: Ensure proper integration with existing systems
+
+## Quality Standards
+
+All patterns follow these principles:
+- TypeScript-first development
+- Accessibility compliance
+- Mobile-responsive design
+- Performance optimization
+- Security best practices
+- Maintainable code structure

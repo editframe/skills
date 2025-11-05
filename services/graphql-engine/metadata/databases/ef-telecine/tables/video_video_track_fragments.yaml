@@ -1,0 +1,45 @@
+table:
+  name: video_track_fragments
+  schema: video
+configuration:
+  column_config: {}
+  custom_column_names: {}
+  custom_name: video_track_fragments
+  custom_root_fields: {}
+object_relationships:
+  - name: video_track
+    using:
+      foreign_key_constraint_on: video_track_id
+insert_permissions:
+  - role: org-editor
+    permission:
+      check:
+        video_track:
+          creator_id:
+            _eq: X-Hasura-User-Id
+      columns:
+        - duration_ms
+        - offset
+        - sequence_number
+        - size
+        - start_ms
+        - video_track_id
+    comment: This permission is set at the org-editor role because it is intended to be written in a single mutation along with the video_track object. Otherwise this could technically be run as the user role.
+select_permissions:
+  - role: org-reader
+    permission:
+      columns:
+        - duration_ms
+        - offset
+        - sequence_number
+        - size
+        - start_ms
+        - video_track_id
+      filter:
+        video_track:
+          project:
+            org:
+              memberships:
+                user_id:
+                  _eq: X-Hasura-User-Id
+    comment: ""

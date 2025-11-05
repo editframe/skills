@@ -1,0 +1,13 @@
+---
+description: Adding logs.
+globs: 
+alwaysApply: false
+---
+
+Applies to backend logging only:
+
+Logging is imported from "@/logging" [index.ts](mdc:lib/logging/index.ts)
+
+First argument must be an object of log details, second argument is a text name for the log.
+
+Error logs must have an error key { error: inspect(error) } using the nodejs inspect utility.

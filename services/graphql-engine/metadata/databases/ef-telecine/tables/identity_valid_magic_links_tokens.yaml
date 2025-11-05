@@ -1,0 +1,3 @@
+table:
+  name: valid_magic_links_tokens
+  schema: identity

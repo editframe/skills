@@ -1,0 +1,155 @@
+---
+meta:
+  - title: Preview Components (Next.js)
+    name:  description
+    content: Learn how to show a live preview with Editframe Elements in a Next.js application
+---
+
+# Preview Components Next.js (App Router)
+
+## Install Packages
+
+To use Editframe in your Next.js Application you'll need to install the `@editframe/api` and `@editframe/react` packages.
+
+```sh
+npm install @editframe/api@beta @editframe/react@beta
+```
+
+## Client-only Rendering
+
+Editframe's preview components are designed to be used in a client-only environment. This means that you should only use them in components that are rendered on the client-side.
+
+There are two steps required to fully render editframe preview components in your Next.js application:
+
+1. Use a component marked "use client"
+2. Load that component asyncronously with ssr disabled.
+
+Together, those will look something like the following:
+
+### The preview component:
+
+```tsx
+"use client"; // ⬅ Your preview components must be marked as "use client"
+
+import { Preview, Timegroup, Video } from "@editframe/react";
+
+const PreviewElement = () => {
+  {/* The purpose and instructions for the signingURL will be covered next. */}
+  return (
+    <Preview signingURL="/api/sign-token" className="w-[400px] h-[400px]">
+      <Timegroup className="w-[500px] h-[500px]" mode="contain">
+        <Video
+          {/*
+            This assetId will need to be replaced by an assetId for a file
+            you uploaded and has completed processing.
+
+            This value is returned when you upload a file using the @editframe/api package.
+          */}
+          assetId="45c18bcc-8fcb-3e2d-4db4-9cef9ecdb432"
+        />
+      </Timegroup>
+    </Preview>
+  );
+};
+
+export default PreviewElement;
+```
+
+### The page that uses the preview component:
+
+```tsx
+import dynamic from "next/dynamic";
+
+                    // ⬇ Wrap the preview component in a dynamic clientside-loader
+const PreviewElement = dynamic(() => import("./PreviewElement"), {
+  ssr: false, // ⬅ Disable SSR
+});
+
+export default function PreviewPage() {
+  return (
+    <div>
+      <PreviewElement />
+    </div>
+  );
+}
+```
+
+## Signing URL
+
+The signing URL is a URL that Editframe Elements will coordinate with to retrieve signed access tokens for individual assets.
+
+For example, this is how you might implement a signing URL in a Next.js application:
+
+In file: `src/app/api/sign-token/route.tsx`
+
+```tsx
+"use server";
+
+import { Client, createURLToken } from "@editframe/api/node";
+
+if (!process.env.EF_TOKEN) {
+  throw new Error("Missing EF_TOKEN environment variable");
+}
+
+const client = new Client(process.env.EF_TOKEN);
+
+export async function POST(request: Request) {
+  const { url } = await request.json();
+  const token = await createURLToken(client, url);
+  return new Response(JSON.stringify({ token }), {
+    headers: { "content-type": "application/json" },
+  });
+}
+```
+
+### 🚨 Securing your Signing url
+You should take care to secure your signing URL. This URL will be accessed by the client and will create access tokens that allow reading uploaded assets. You should take care that the signingURL is gated behind appropriate authentication and access control so users can only access the assets they are permitted to view.
+
+⏳ Pending: We are working on a more detailed guide on how to secure your signing URL.
+
+## Playback
+
+In order to control playback, you can either use props on the `Preview` component or obtain a reference to the underlying element.
+
+### Props
+
+- `playing: boolean`: When playing is set, the preview will play through the timeline.
+- `loop: boolean`: When loop is set, the preview will loop playback once it reaches the end of the timeline.
+
+```tsx
+<Preview playing loop>
+</Preview>
+```
+
+### Ref
+
+You can obtain a reference to the underlying video element by using the `useRef` hook.
+
+```tsx
+import { useRef } from "react";
+
+const PreviewElement = () => {
+  const previewRef = useRef();
+
+  return (
+    <Preview ref={previewRef}>
+    </Preview>
+  );
+};
+```
+
+With this ref, you can toggle `playing`, and `loop` directly.
+
+```tsx
+previewRef.current.playing = true;
+previewRef.current.loop = false;
+```
+
+Further, you can read and write the current time of the preview directly:
+
+```tsx
+console.log(previewRef.current.currentTimeMs);
+previewRef.current.currentTimeMs = 5000;
+``` 
+
+

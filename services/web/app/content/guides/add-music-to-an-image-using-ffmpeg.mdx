@@ -1,0 +1,217 @@
+---
+meta:
+  - title:  Add Music to an Image using FFmpeg and Editframe (Updated) 
+  - name: description
+    content: In this guide, we’ll walk through how to add music to an image using FFmpeg and the Editframe API.
+headers:
+  Cache-Control: cache
+featured_image: /guides/add-music-to-an-image-using-ffmpeg/video-editing.jpeg
+published_date: 2023-07-17
+last_updated: 2023-09-25
+author: Ilias Haddad
+---
+
+Video content tends to perform very well on social networks and possesses more potential to go viral than static images and text. Producing original video content at scale can be very labor-intensive and time consuming, however. Fortunately, by adding music or another soundtrack to an image, you can effectively turn a photo into a video, and reap all of the benefits that a steady stream of video content affords without having to create these assets from scratch. 
+
+
+This tutorial will show you how to combine an image and an audio file into a video programmatically using two methods—FFmpeg, and the Editframe video API. Using this method, you can quickly and easily create videos that you can upload directly to social networks. You can also use this work flow to do things like:
+
+- Converting podcast snippets into videos for use across Instagram, YouTube, and other video platforms
+- Adding background audio to a vlog or radio show
+- (For musicians) Creating album or single previews for Twitter, TikTok, and Instagram
+- (For marketing agencies) Making quick promotional videos out of an image and voice over to quickly A/B test hundreds of variants
+- Adding music to an image to make an audiogram
+- Promote a podcast or song on TikTok
+
+Let’s get started! 
+
+
+## Files Assets
+
+
+Here’s a sample image file provided by [unsplash.com](http://unsplash.com/), and a background music file from [pixabay.com](https://pixabay.com/) that we will use in this tutorial:
+
+#### image.jpg
+
+![](/guides/add-music-to-an-image-using-ffmpeg/image.jpg)
+
+<Audio controls="true" url="/guides/add-music-to-an-image-using-ffmpeg/background-music.mp3" />
+
+#### background-music.mp3
+
+
+
+
+## Part 1: Using FFmpeg
+
+
+First, we’ll walk through this workflow using FFmpeg. 
+
+
+### Required Tools
+
+- Sample video file overlay (provided above)
+- [**FFmpeg**](https://ffmpeg.org/download.html): (You’ll need to install FFmpeg and set up the appropriate environment variables before beginning this tutorial)
+
+Here’s the FFmpeg command to create a video out of an image and background audio track:
+
+
+```shell
+ffmpeg -loop 1 -i image.jpg -i background-music.mp3 \-c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p \-t 5 out-image.mp4
+```
+
+
+Let’s step through what this code is doing. 
+
+- In this line, we import `image.jpg` and `background-music.mp3`. We then loop through the image during the video `-loop 1`.
+
+```shell
+ffmpeg -loop 1 -i image.jpg -i background-music.mp3 \
+```
+
+- Here,  we copy the video and audio streams. `-tune stillimage` optimizes for image encoding:
+
+```shell
+-c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p \
+```
+
+- In this line, we set the duration of the video to 5 seconds:
+
+```shell
+-t 5 out-image.mp4
+```
+
+
+Here’s the output video from the FFmpeg command: 
+
+
+#### out-image.mp4 <Video controls="true" url="/guides/add-music-to-an-image-using-ffmpeg/out-image.mp4" />
+
+
+## Part 2: Using Editframe
+
+
+Now let’s perform the same task using Editframe instead of FFmpeg.
+
+
+### Required tools: 
+
+- Node.js installed on your machine (v16+)
+- Editframe API Token (you can create an account from [this link](https://editframe.dev/auth/register))
+
+*No need to have FFmpeg installed on your machine
+
+- Setup a new Node.js project using the Editframe CLI:
+
+```shell
+ npx @editframe/create@beta
+```
+
+- Install the required dependencies:
+
+```shell
+cd add-music-to-an-image && npm install
+```
+
+- Add assets to the project:
+
+Add `image.jpg` and `background-music.mp3` to the `src/assets` folder.
+
+
+
+- Update the `index.html` file with the following code:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <script type="module" src="./src/index.js"></script>
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <ef-timegroup
+      mode="fixed"
+      duration="5s"
+      class="w-[1920px] h-[1080px]"
+    >
+        <ef-image style="object-fit: cover; width: 100%; height: 100%"  src="/assets/image.jpg"></ef-image>
+        <ef-audio src="/assets/background-music.mp3"></ef-audio>
+    </ef-timegroup>
+  </body>
+</html>
+
+```
+
+
+Let’s walk through what the code in this file is doing. 
+
+- In these lines, we import the `index.js` file and the `styles.css` file which contains the styles for the video and `@editframe/elements`:
+
+```html
+  <head>
+    <meta charset="UTF-8" />
+    <script type="module" src="./src/index.js"></script>
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+```
+
+- In this line, we create a new video composition using the `ef-timegroup` element. We set the duration of the video to 5 seconds:
+
+```html
+<ef-timegroup
+      mode="fixed"
+      duration="5s"
+      class="w-[1920px] h-[1080px]"
+    >
+    { /* Add elements here */ }
+</ef-timegroup>
+```
+
+- In these lines, we import the image and audio files:
+
+```html
+  <ef-image style="object-fit: cover; width: 100%; height: 100%"  src="/assets/image.jpg"></ef-image>
+  <ef-audio src="/assets/background-music.mp3"></ef-audio>
+```
+
+- [`ef-image`](/docs/elements/image) is an Editframe element that allows you to add images to your video.
+- [`ef-audio`](/docs/elements/audio) is an Editframe element that allows you to add audio to your video.
+
+
+- Preview the project:
+
+```shell
+npx vite .
+```
+
+- Update the `.env` file with your Editframe API token:
+
+```shell
+EF_TOKEN="YOUR_API_TOKEN"
+```
+
+- Render the video:
+
+```shell
+npx @editframe/cli render .
+```
+
+
+Boom! Here’s the output video from the Editframe API:
+
+
+#### editframe-image.mp4 <Video controls="true" url="/guides/add-music-to-an-image-using-ffmpeg/editframe-image.mp4" />
+
+
+Note: Editframe also lets you add transitions, filters, trim videos, and do much more. Learn more from the [Editframe API docs](/docs).
+
+
+## Comparison video between FFmpeg and Editframe API
+
+
+Here’s a comparison of the videos created with Editframe (left) and FFmpeg (right):
+
+
+#### compare-image.mp4 <Video controls="true" url="/guides/add-music-to-an-image-using-ffmpeg/compare.mp4" />
+

@@ -1,0 +1,244 @@
+---
+meta:
+  - title: Rendering With the API
+  - name:  description
+    content: Learn how to dispatch a render job into the Editframe cloud
+headers:
+  Cache-Control: no-cache
+---
+
+# Rendering
+
+Rendering is the process of dispatching a render job into the Editframe cloud. The render job is split into work slices and distributed to multiple machines to render the final output.
+
+In order to render efficiently in parallel, assets must be structured in a way that allows each worker to download only the assets it needs.
+
+The core assets required to render a video are an html file, with css and javascript assets bundled. Media assets, such as images, audio, and video, are uploaded separately and referenced from the html file. This way each worker only needs to download the assets it needs.
+
+## TAR file
+
+The format of a render is a gzipped tarfile containing a bare directory.
+
+The directory MUST contain an `index.html` file as well as any other html, css, and javascript assets required for the render. This includes bundled copy of the editframe javascript libraries and any other dependencies.
+
+Audio, Video, Image, and other media types MUST be uploaded and processed separately through the editframe API.
+
+This bundle SHOULD be bundled/optimized as though it were a static site. Load performance of these assets will impact overall performance time and costs as each worker will need to download and boot the index.html file before it can start rendering frames.
+
+## Bundling and Rendering
+
+<PersistentTabGroup stateKey="language-implementation">
+  <PersistentTab label="TypeScript">
+    <CodeSteps>
+      <CodeStep>
+        <CodeStepLabel title="Create a client">
+          Import required functions and set up your API client.
+        </CodeStepLabel>
+        <CodeStepCode>
+        ```tsx
+        import * as api from '@editframe/api';
+        import { bundleRender } from '@editframe/api/bundleRender';
+
+        const EF_TOKEN = "/* Load your API token from a secure location */";
+        const client = new api.Client(EF_TOKEN);
+        ```
+        </CodeStepCode>
+      </CodeStep>
+
+      <CodeStep>
+        <CodeStepLabel title="Bundle your render">
+          Bundle your render with the `bundleRender` function.
+        </CodeStepLabel>
+        <CodeStepCode>
+        ```tsx
+        const renderData = {};
+
+        const tarStream = await bundleRender(client, renderData);
+        ```
+        </CodeStepCode>
+      </CodeStep>
+
+      <CodeStep>
+        <CodeStepLabel title="Create a render">
+          Create a render record with the `createRender` function.
+        </CodeStepLabel>
+        <CodeStepCode>
+        ```tsx
+        const render = await api.createRender(client, {
+          /* Optional, desired output frame rate. Defaults to 30. */
+          fps: 30,
+
+          /* Optional, override output width.
+           * Default is measured from the root timegroup in the html file.
+           * Not typically needed. */
+          width: 1920,
+
+          /* Optional, override output height.
+           * Default is measured from the root timegroup in the html file.
+           * Not typically needed. */
+          height: 1080,
+
+          /* Optional, override output diration in milliseconds.
+           * Default is measured from the root timegroup in the html file.
+           * Not typically needed. */
+          duration_ms: 30_000,
+        });
+        ```
+        </CodeStepCode>
+      </CodeStep>
+
+      <CodeStep>
+        <CodeStepLabel title="Upload the tarfile">
+          Upload the tarfile with the `uploadRender` function.
+        </CodeStepLabel>
+        <CodeStepCode>
+        ```tsx
+        await api.uploadRender(client, render.id, tarStream);
+        ```
+        </CodeStepCode>
+      </CodeStep>
+
+      <CodeStep>
+        <CodeStepLabel title="Wait for the render to complete">
+          Wait for the render to complete with the `getRenderProgress` function.
+        </CodeStepLabel>
+        <CodeStepCode>
+        ```tsx
+        for await (const progressUpdate of api.getRenderProgress(client, render.id)) {
+          console.log(progressUpdate);
+          // {
+          //   type: "progress";
+          //   progress: number; // Between 0 and 1
+          // }
+        }
+
+        // Alternatively, you can await the render without individual progress updates.
+        await api.getRenderProgress(client, render.id).whenComplete();
+        ```
+        </CodeStepCode>
+      </CodeStep>
+
+      <CodeStep>
+        <CodeStepLabel title="Download the render"/>
+        <CodeStepCode>
+        ```tsx
+        const response = await api.downloadRender(client, render.id);
+        /* Response is a fetch Response object. You can use the response.body to stream the data to a file or other storage. */
+        ```
+        </CodeStepCode>
+      </CodeStep>
+    </CodeSteps>
+  </PersistentTab>
+
+  <PersistentTab label="PHP (Laravel)">
+    <CodeSteps>
+      <CodeStep>
+        <CodeStepLabel title="Set up dependencies">
+          Import required classes and define configuration variables.
+        </CodeStepLabel>
+        <CodeStepCode>
+        ```php
+        use Illuminate\Support\Facades\Http;
+        use Illuminate\Support\Facades\Storage;
+
+        $apiToken = 'YOUR_API_TOKEN';
+        $baseUrl = 'https://editframe.dev';
+        ```
+        </CodeStepCode>
+      </CodeStep>
+
+      <CodeStep>
+        <CodeStepLabel title="Create a render">
+          Create a render record with configuration options.
+        </CodeStepLabel>
+        <CodeStepCode>
+        ```php
+        $response = Http::withToken($apiToken)
+            ->post("{$baseUrl}/api/v1/renders", [
+                'fps' => 30,
+            ]);
+
+        if (!$response->successful()) {
+            throw new Exception('Failed to create render: ' . $response->body());
+        }
+
+        $render = $response->json();
+        ```
+        </CodeStepCode>
+      </CodeStep>
+
+      <CodeStep>
+        <CodeStepLabel title="Upload the tarfile">
+          Upload your bundled tar file to Editframe.
+        </CodeStepLabel>
+        <CodeStepCode>
+        ```php
+        // Assuming you have already created your tar.gz file
+        $tarPath = 'path/to/your/bundle.tar.gz';
+        
+        $response = Http::withToken($apiToken)
+            ->withHeaders([
+                'Content-Type' => 'application/octet-stream'
+            ])
+            ->post(
+                "{$baseUrl}/api/v1/renders/{$render['id']}/upload", 
+                file_get_contents($tarPath)
+            );
+
+        if (!$response->successful()) {
+            throw new Exception('Failed to upload render: ' . $response->body());
+        }
+        ```
+        </CodeStepCode>
+      </CodeStep>
+
+      <CodeStep>
+        <CodeStepLabel title="Monitor render progress">
+          Poll the render status until complete.
+        </CodeStepLabel>
+        <CodeStepCode>
+        ```php
+        $complete = false;
+        while (!$complete) {
+            $response = Http::withToken($apiToken)
+                ->get("{$baseUrl}/api/v1/renders/{$render['id']}");
+            
+            if (!$response->successful()) {
+                throw new Exception('Failed to get status: ' . $response->body());
+            }
+
+            $status = $response->json();
+            
+            if ($status['type'] === 'complete') {
+                $complete = true;
+                echo "Render complete!\n";
+                break;
+            }
+            
+            sleep(2); // Wait 2 seconds before checking again
+        }
+        ```
+        </CodeStepCode>
+      </CodeStep>
+
+      <CodeStep>
+        <CodeStepLabel title="Download the render">
+          Download the completed render file.
+        </CodeStepLabel>
+        <CodeStepCode>
+        ```php
+        $response = Http::withToken($apiToken)
+            ->get("{$baseUrl}/api/v1/renders/{$render['id']}.mp4");
+
+        if (!$response->successful()) {
+            throw new Exception('Failed to download render: ' . $response->body());
+        }
+
+        // Save the file locally
+        Storage::put('renders/' . $render['id'] . '.mp4', $response->body());
+        ```
+        </CodeStepCode>
+      </CodeStep>
+    </CodeSteps>
+  </PersistentTab>
+</PersistentTabGroup>

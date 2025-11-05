@@ -1,0 +1,31 @@
+services:
+  worker-render-fragment:
+    image: telecine-runner
+    pull_policy: never
+    depends_on:
+      - runner
+    working_dir: /app
+    env_file:
+      - ${PWD}/.env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 3s
+      timeout: 1s
+      retries: 3
+      start_period: 20s
+    environment:
+      - SHELL=/bin/sh
+      - OTEL_SERVICE_NAME=worker-render-fragment
+    volumes_from:
+      - runner
+    stop_grace_period: 1s
+    init: true
+    scale: 1
+    # prettier-ignore
+    command: ["tsx", "--watch", "/app/services/worker-render-fragment/server.ts"]
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: ${WORKER_RENDER_FRAGMENT_CPUS:-2}
+          memory: ${WORKER_RENDER_FRAGMENT_MEMORY:-4G}

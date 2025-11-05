@@ -1,0 +1,39 @@
+services:
+  web:
+    image: telecine-runner
+    pull_policy: never
+    env_file:
+      - ${PWD}/.env
+    environment:
+      - OTEL_SERVICE_NAME="web"
+    working_dir: /app
+    volumes_from:
+      - runner
+    #  Layering a volume over the render diretory hides the render directory. This fixes some unfortunate reload behaviors with vite.
+    volumes:
+      - /app/services/render
+    stop_grace_period: 1s
+
+    # prettier-ignore
+    command: ["node", "/app/services/web/server.js"]
+    depends_on:
+      - runner
+      - postgres
+      - graphql-engine
+    labels:
+      traefik.enable: true
+
+      traefik.http.routers.web.rule: "Host(`host.docker.internal`) || Host(`localhost`)"
+      traefik.http.routers.web.entrypoints: web
+      traefik.http.routers.web.service: web
+      traefik.http.services.web.loadbalancer.server.port: 3000
+
+      traefik.http.routers.web24678.rule: Host(`localhost`)
+      traefik.http.routers.web24678.entrypoints: port24678
+      traefik.http.routers.web24678.service: web24678
+      traefik.http.services.web24678.loadbalancer.server.port: 24678
+
+      traefik.http.routers.web3001.rule: Host(`localhost`)
+      traefik.http.routers.web3001.entrypoints: port3001
+      traefik.http.routers.web3001.service: web3001
+      traefik.http.services.web3001.loadbalancer.server.port: 3001

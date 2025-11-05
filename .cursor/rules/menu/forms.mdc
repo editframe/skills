@@ -1,0 +1,198 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Forms Pattern Guide
+
+Form creation, validation, and submission patterns using the established `formFor` utility.
+
+## Core Pattern
+
+Use the `formFor` utility with Zod schemas for type-safe forms:
+
+```typescript
+import { formFor } from "~/formFor";
+import { z } from "zod";
+
+const schema = z.object({
+  email_address: z.string().email().toLowerCase(),
+  password: z.string().min(8),
+  name: z.string().min(1),
+});
+
+const myForm = formFor(schema);
+```
+
+## Available Form Components
+
+### Basic Input
+```tsx
+<myForm.Input
+  field="email_address"
+  label="Email Address"
+  placeholder="Enter your email"
+  autoComplete="email"
+/>
+```
+
+### Select Dropdown
+```tsx
+<myForm.Select
+  field="role"
+  label="Role"
+  options={[
+    { value: "admin", label: "Administrator" },
+    { value: "user", label: "User" }
+  ]}
+/>
+```
+
+### Checkbox
+```tsx
+<myForm.Checkbox
+  field="terms_accepted"
+  label="I accept the terms and conditions"
+  description="Required to proceed"
+/>
+```
+
+### Textarea
+```tsx
+<myForm.TextArea
+  field="description"
+  label="Description"
+  rows={4}
+/>
+```
+
+## Form Structure Pattern
+
+```tsx
+export default function MyFormPage() {
+  return (
+    <div className="max-w-md mx-auto">
+      <h1>Form Title</h1>
+      
+      {myForm.FormErrors() && <myForm.FormErrors />}
+      
+      <myForm.Form className="space-y-6">
+        <myForm.Input field="email_address" label="Email" />
+        <myForm.Input field="password" type="password" label="Password" />
+        
+        <Button 
+          mode="primary" 
+          type="submit"
+          loading={navigation.state === "submitting"}
+        >
+          Submit
+        </Button>
+      </myForm.Form>
+    </div>
+  );
+}
+```
+
+## Action Handler Pattern
+
+```typescript
+export const action = async ({ request }: Route.ActionArgs) => {
+  const formResult = await myForm.parseFormData(request);
+
+  if (!formResult.success) {
+    return data(formResult.errors, { status: 400 });
+  }
+
+  const formData = formResult.data;
+  
+  // Process the validated data
+  try {
+    await processFormData(formData);
+    return redirect("/success");
+  } catch (error) {
+    return data(
+      { formErrors: ["An error occurred processing your request"] },
+      { status: 500 }
+    );
+  }
+};
+```
+
+## Validation Patterns
+
+### Email Validation
+```typescript
+email_address: z.string().email().toLowerCase()
+```
+
+### Password Validation
+```typescript
+password: z.string().min(8, "Password must be at least 8 characters")
+```
+
+### Optional Fields
+```typescript
+middle_name: z.string().optional()
+```
+
+### Conditional Validation
+```typescript
+z.object({
+  type: z.enum(["personal", "business"]),
+  business_name: z.string().optional()
+}).refine((data) => {
+  if (data.type === "business" && !data.business_name) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Business name is required for business accounts",
+  path: ["business_name"]
+})
+```
+
+## Error Display Pattern
+
+The `formFor` utility automatically handles:
+- Field-level error display
+- Form-level error display
+- Accessible error messages
+- Error styling
+
+## Hidden Fields
+
+For preserving state or redirects:
+```tsx
+<myForm.Input
+  type="hidden"
+  field="redirect_to"
+  value={searchParams.get("redirect_to") || ""}
+/>
+```
+
+## Best Practices
+
+1. **Always use Zod schemas** for validation
+2. **Provide clear labels** and descriptions
+3. **Use appropriate input types** (email, password, etc.)
+4. **Include autoComplete attributes** for better UX
+5. **Show loading states** during submission
+6. **Handle both client and server validation**
+7. **Provide meaningful error messages**
+
+## Testing Pattern
+
+```typescript
+// Test form validation
+test("form validates required fields", async () => {
+  const formData = new FormData();
+  formData.append("email_address", "");
+  
+  const result = await myForm.parseFormData(
+    new Request("http://test", { method: "POST", body: formData })
+  );
+  
+  expect(result.success).toBe(false);
+  expect(result.errors.fieldErrors.email_address).toBeDefined();
+});
+```

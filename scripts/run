@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+# Detect if we have a TTY
+if [ -t 0 ]; then
+    TTY_FLAGS="-it"
+else
+    TTY_FLAGS=""
+fi
+
+DOCKER_FLAGS=""
+CMD_ARGS=()
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --memory|--memory=*|-m)
+            if [[ $1 == --memory=* ]]; then
+                DOCKER_FLAGS="$DOCKER_FLAGS $1"
+                shift
+            elif [[ $1 == -m ]]; then
+                DOCKER_FLAGS="$DOCKER_FLAGS $1 $2"
+                shift 2
+            else
+                DOCKER_FLAGS="$DOCKER_FLAGS $1 $2"
+                shift 2
+            fi
+            ;;
+        --cpus|--cpus=*)
+            if [[ $1 == --cpus=* ]]; then
+                DOCKER_FLAGS="$DOCKER_FLAGS $1"
+                shift
+            else
+                DOCKER_FLAGS="$DOCKER_FLAGS $1 $2"
+                shift 2
+            fi
+            ;;
+        --memory-reservation|--memory-reservation=*)
+            if [[ $1 == --memory-reservation=* ]]; then
+                DOCKER_FLAGS="$DOCKER_FLAGS $1"
+                shift
+            else
+                DOCKER_FLAGS="$DOCKER_FLAGS $1 $2"
+                shift 2
+            fi
+            ;;
+        --memory-swap|--memory-swap=*)
+            if [[ $1 == --memory-swap=* ]]; then
+                DOCKER_FLAGS="$DOCKER_FLAGS $1"
+                shift
+            else
+                DOCKER_FLAGS="$DOCKER_FLAGS $1 $2"
+                shift 2
+            fi
+            ;;
+        *)
+            CMD_ARGS+=("$1")
+            shift
+            ;;
+    esac
+done
+
+if [ -n "$DOCKER_FLAGS" ]; then
+    PROJECT_ROOT="$SCRIPT_DIR/.."
+    ENV_FILE="$PROJECT_ROOT/.env"
+    
+    VOLUMES=(
+        -v "$PROJECT_ROOT:/app"
+        -v "telecine_node_modules:/app/node_modules"
+        -v "$HOME/.config/gcloud:/root/.config/gcloud"
+        -v "$PROJECT_ROOT/../elements:/app/lib/packages"
+    )
+    
+    DOCKER_RUN_FLAGS="$TTY_FLAGS --rm"
+    DOCKER_RUN_FLAGS="$DOCKER_RUN_FLAGS --network telecine_default"
+    DOCKER_RUN_FLAGS="$DOCKER_RUN_FLAGS ${VOLUMES[@]}"
+    DOCKER_RUN_FLAGS="$DOCKER_RUN_FLAGS --device /dev/mps0:/dev/mps0"
+    DOCKER_RUN_FLAGS="$DOCKER_RUN_FLAGS --privileged"
+    DOCKER_RUN_FLAGS="$DOCKER_RUN_FLAGS -w /app"
+    DOCKER_RUN_FLAGS="$DOCKER_RUN_FLAGS -e PYTORCH_ENABLE_MPS_FALLBACK=1"
+    
+    if [ -f "$ENV_FILE" ]; then
+        DOCKER_RUN_FLAGS="$DOCKER_RUN_FLAGS --env-file $ENV_FILE"
+    fi
+    
+    if [ ${#CMD_ARGS[@]} -eq 0 ]; then
+        echo "Starting $SHELL in container with resource limits..."
+        docker run $DOCKER_RUN_FLAGS $DOCKER_FLAGS telecine-runner "$SHELL"
+    else
+        docker run $DOCKER_RUN_FLAGS $DOCKER_FLAGS telecine-runner "${CMD_ARGS[@]}"
+    fi
+else
+    if [ ${#CMD_ARGS[@]} -eq 0 ]; then
+        echo "Starting $SHELL in container..."
+        $SCRIPT_DIR/docker-compose run $TTY_FLAGS --rm runner "$SHELL"
+    else
+        $SCRIPT_DIR/docker-compose run $TTY_FLAGS --rm runner "${CMD_ARGS[@]}"
+    fi
+fi

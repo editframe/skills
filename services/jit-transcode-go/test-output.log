@@ -1,0 +1,44 @@
+=== RUN   TestTranscodeInMemory
+Fetching metadata to build synthetic MP4 for analysis...
+[fetchMoovAndFtyp] Testing range request support for: https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4
+[testRangeRequestSupport] Range requests supported for: https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4
+[fetchMoovAndFtyp] Fetching head bytes: 0-1048576
+[fetchMoovAndFtyp] Found ftyp box: 0-24
+[fetchMoovAndFtyp] Found moov box: 24-6514 (size: 6490)
+[fetchMoovAndFtyp] Processing complete. Boxes found: [ftyp@0-24 moov@24-6514]
+[fetchMoovAndFtyp] Total bytes processed: 6514 / 1MB target
+[fetchMoovAndFtyp] ftyp: true, moov: true, mdatOffset: <nil>
+[FetchMoovAndFtyp] Detected real file size: 2299653 bytes
+Built synthetic MP4 (6522 bytes) for test.
+[VideoSource] Using provided synthetic MP4 (6522 bytes) for: https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4
+[VideoSource] Extracted real duration: 15.047s (15047ms)
+[PreciseAnalysis] Real FFmpeg analysis: duration=15.047s, codec=h264, 1280x720
+[PRECISE CGO] Stream 0: 0.000s-2.500s → REAL bytes 6522-582393, 61 samples
+Fetching precise byte range: 6522-582393
+Fetched 575872 bytes for transcoding test.
+Attempting to transcode segment to 'low' quality (854x480)
+CGO: Starting in-memory transcode
+CGO: Input context and AVIO context ready
+CGO: avformat_open_input OK
+CGO: avformat_find_stream_info OK
+CGO: av_find_best_stream OK
+CGO: avcodec_open2 (decoder) OK
+CGO: Output context and encoder allocated
+CGO: avcodec_open2 (encoder) OK
+CGO: Output buffer and AVIO context ready
+CGO: avformat_write_header OK
+CGO: Scaling context and frames allocated
+CGO: Starting transcoding loop
+CGO: Transcoding loop finished
+CGO: Flushing encoder
+CGO: Encoder flushed
+CGO: Trailer written
+CGO: AVIO context flushed
+CGO: Transcoding complete, cleaning up...
+CGO: Cleanup finished.
+Wrote transcoded segment to /tmp/TestTranscodeInMemory1142112387/001/transcoded_segment.mp4 for validation.
+    cgo_transcoder_test.go:104: ffprobe validation failed: ffprobe execution failed: exit status 1, stderr: 
+--- FAIL: TestTranscodeInMemory (0.88s)
+FAIL
+FAIL	github.com/editframe/telecine/jit-transcode-go/internal/ffmpeg	0.899s
+FAIL

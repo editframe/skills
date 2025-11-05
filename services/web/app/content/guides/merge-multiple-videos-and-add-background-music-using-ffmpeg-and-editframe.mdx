@@ -1,0 +1,338 @@
+---
+meta:
+  - title: Merge multiple videos and add background music using FFmpeg and Editframe
+  - name: description
+    content: Merging multiple videos into a single file is a simple and versatile process with widespread applications.
+headers:
+  Cache-Control: cache
+featured_image: "/guides/merge-multiple-videos-and-add-background-music-using-ffmpeg-and-editframe/video-editing.jpeg"
+published_date: 2023-07-07
+author: Ilias Haddad
+---
+
+Merging multiple videos into a single file is a simple and versatile process with widespread applications. For example, you can use this technique to:
+
+- Create marketing videos like video slideshows, promotional ads
+- Develop real estate videos for Zillow, Airbnb, or similar listing sites
+- Combine multiple TikTok videos into a single file for social media content.
+
+Like any video editing process, however, merging videos can become extremely time-consuming if done manually. In this video, we will learn how to programmatically concatenate multiple videos into a single file, and add audio to the composite video file. We look at two methods for completing this task—using FFmpeg (a command line tool that can be used to merge videos for free) and the Editframe Video Editing API.
+
+Let’s get started!
+
+## File assets
+
+Here are the sample video files provided by [pexels.com](https://www.pexels.com) that we will use in this tutorial:
+
+{' '}
+
+<Video
+  controls="true"
+  url="/guides/merge-multiple-videos-and-add-background-music-using-ffmpeg-and-editframe/file1.mp4"
+/>
+
+{' '}
+
+<Video
+  controls="true"
+  url="/guides/merge-multiple-videos-and-add-background-music-using-ffmpeg-and-editframe/file2.mp4"
+/>
+
+### file2.mp4
+
+{' '}
+
+<Video
+  controls="true"
+  url="/guides/merge-multiple-videos-and-add-background-music-using-ffmpeg-and-editframe/file3.mp4"
+/>
+
+<Audio
+  controls="true"
+  url="/guides/merge-multiple-videos-and-add-background-music-using-ffmpeg-and-editframe/background-music.mp3"
+/>
+
+## Part 1: Using FFmpeg
+
+First, we’ll walk through this workflow using FFmpeg.
+
+### Required Tools
+
+- Sample video and audio files (provided above)
+- [**FFmpeg**](https://ffmpeg.org/download.html): (You’ll need to install FFmpeg and set up the appropriate environment variables before beginning this tutorial)
+
+Create a video directory in which you would like the final merged video file to live:
+
+```shell
+mkdir video
+```
+
+Here’s the FFmpeg command that will be used to merge all videos in a directory into one video:
+
+```shell
+for filename in  video/*.mp4; do
+    ffmpeg -y -i "$filename" -c:a copy -c:v copy -bsf:v h264_mp4toannexb -f mpegts "${filename//.mp4/}.ts"
+    echo "file './${filename//.mp4/}.ts'" >> video.txt
+done
+ffmpeg -f concat -segment_time_metadata 1  -safe 0 -i video.txt -i background-music.mp3 -vf "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:-1:-1,setsar=1,fps=30,format=yuv420p"  -map 1:a -map v -shortest stitched-video.mp4
+rm -rf video.txt video/*.ts
+```
+
+Let’s break down what this command is doing.
+
+- In this line, we iterate over each MP4 video file in our video folder and run an FFmpeg command to create a .ts video file. (A TS file is a Video Transport Stream (TS) file that stores video data compressed with standard MPEG-2.). After that, write the file path for the .ts files in the video.txt file:
+
+```shell
+for filename in  video/*.mp4; do
+    ffmpeg -y -i "$filename" -c:a copy -c:v copy -bsf:v h264_mp4toannexb -f mpegts "${filename//.mp4/}.ts"
+    echo "file './${filename//.mp4/}.ts'" >> video.txt
+done
+```
+
+- In this line, we use FFmpeg to concat all of the .ts videos files using the concat.txt file. Additionally, we resize the output file to 1920:1080, and set the frame rate to 30 fps. We also use `map` to add the background-music.mp3 file and video streams-
+
+```shell
+ffmpeg -f concat -segment_time_metadata 1  -safe 0 -i video.txt -i background-music.mp3 -vf "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:-1:-1,setsar=1,fps=30,format=yuv420p"  -map 1:a -map v -shortest stitched-video.mp4
+```
+
+- Here, after the videos have been merged together, we remove all of the .ts files created previousl:
+
+```shell
+rm -rf video.txt video/*.ts
+```
+
+## Using the filter complex
+
+- Here is the script that will use filter_complex syntax to map videos and audio streams, and concat the streams inside of a single video file:
+
+```shell
+ffmpeg -i file1.mp4 -i file2.mp4 -i file3.mp4 -i background-music.mp3 \
+       -filter_complex "[0:v][1:v][2:v]
+                        concat=n=3:v=1[vv]" \
+       -map "[vv]"  -map 3:a   -vsync 2 -shortest  mergedVideo.mp4
+```
+
+Let’s break this script down.
+
+- In this line, we import the sample video files and background music file as inputs:
+
+```shell
+ffmpeg -i file1.mp4 -i file2.mp4 -i file3.mp4  -i background-music.mp3\
+```
+
+- Here, we specify only video steams, concat these three videos, and assign the output file to [vv]:
+
+```shell
+-filter_complex "[0:v][1:v][2:v]
+                   concat=n=3:v=1 [vv]" \
+```
+
+- This line, we map the video streams and background music stream using `-map`. Note: You will need to use `-vsync` to drop duplicate frames in the video stream:
+
+```shell
+ -map "[vv]" -map 3:a  -vsync 2 -shortest mergedVideo.mp4
+```
+
+Here’s the output video from the FFmpeg command.
+
+#### mergedVideo.mp4 <Video controls="true" url="/guides/merge-multiple-videos-and-add-background-music-using-ffmpeg-and-editframe/mergedvideo.mp4" />
+
+## Part 2: Using Editframe
+
+Now let’s perform the same task using Editframe instead of FFmpeg.
+
+### Required tools:
+
+- Node.js installed on your machine (v16+)
+- Editframe API Token (you can create an account from [this link](https://app.editframe.com/signup))
+
+\*No need to have FFmpeg installed on your machine
+
+- Create a folder project:
+
+```shell
+mkdir editframe-video
+```
+
+- Initialize the Node.js project:
+
+```shell
+yarn init -y
+```
+
+- Install the Editframe Node.js SDK:
+
+```shell
+yarn add @editframe/editframe-js
+```
+
+- Create a create-video.js file to merge videos into one video:
+
+```javascript
+const { Editframe } = require("@editframe/editframe-js");
+
+const main = async () => {
+  const editframe = new Editframe({
+    develop: true,
+    token: "YOUR_EDITFRAME_TOKEN",
+  });
+  const composition = await editframe.videos.new({
+    backgroundColor: "#000",
+    dimensions: {
+      height: 1080,
+      width: 1920,
+    },
+    duration: 8,
+  });
+
+  const video1 = await composition.addVideo(
+    // file
+    `${__dirname}/file1.mp4`,
+    // config
+    {
+      size: {
+        format: "fit",
+      },
+      audio: {
+        volume: 0,
+      },
+    },
+  );
+  const video2 = await composition.addVideo(
+    // file
+    `${__dirname}/file2.mp4`,
+    // config
+    {
+      size: {
+        format: "fit",
+      },
+      audio: {
+        volume: 0,
+      },
+    },
+  );
+  const video3 = await composition.addVideo(
+    // file
+    `${__dirname}/file3.mp4`,
+    // config
+    {
+      size: {
+        format: "fit",
+      },
+      audio: {
+        volume: 0,
+      },
+    },
+  );
+  await composition.addAudio(`${__dirname}/background-music.mp3`);
+  await composition.addSequence([video1, video2, video3]);
+  const video = await composition.encodeSync();
+  console.log(video);
+};
+
+main();
+```
+
+Let’s break down what the code in this file is doing.
+
+- In this line, we initialize an Editframe instance with our Editframe Token, which we can acquire by creating an Editframe application. Also, we will set develop to `true`, which will open encoded video automatically in new browser tab:
+
+```javascript
+const editframe = new Editframe({
+  develop: true,
+  token: "YOUR_EDITFRAME_TOKEN",
+});
+```
+
+- In the object below, we create a [new video composition](/docs/composition) with 1920x1080 dimensions:
+
+```javascript
+const composition = await editframe.videos.new({
+  backgroundColor: "#000",
+  dimensions: {
+    height: 1080,
+    width: 1920,
+  },
+});
+```
+
+- In these lines, we add the videos files using the [composition.addVideo](/docs/composition/layers/video) method, and mute the video audio using `audio` layer attribute:
+
+```javascript
+const video1 = await composition.addVideo(
+  // file
+  `${__dirname}/file1.mp4`,
+  // config
+  {
+    size: {
+      format: "fit",
+    },
+    audio: {
+      volume: 0,
+    },
+  },
+);
+const video2 = await composition.addVideo(
+  // file
+  `${__dirname}/file2.mp4`,
+  // config
+  {
+    size: {
+      format: "fit",
+    },
+    audio: {
+      volume: 0,
+    },
+  },
+);
+const video3 = await composition.addVideo(
+  // file
+  `${__dirname}/file3.mp4`,
+  // config
+  {
+    size: {
+      format: "fit",
+    },
+    audio: {
+      volume: 0,
+    },
+  },
+);
+```
+
+- In these lines, we will add background music file using [composition.addAudio](/docs/composition/layers/audio) method:
+
+```javascript
+await composition.addAudio(`${__dirname}/background-music.mp3`);
+```
+
+- Here, we add the video layers to the video composition using [composition.addSequence](/docs/composition/layers/sequence) method. we encode the [video synchronously](/docs/composition/rendering#synchronous-encoding). We can also do this [async](/docs/composition/rendering#asynchronous-encoding) using a webhook:
+
+```javascript
+await composition.addSequence([video1, video2, video3]);
+const video = await composition.encodeSync();
+console.log(video);
+```
+
+- Run the video script:
+
+```shell
+node  create-video.js
+```
+
+Here’s the output video using the Editframe API.
+
+#### editframe-mergedVideo.mp4 <Video controls="true" url="/guides/merge-multiple-videos-and-add-background-music-using-ffmpeg-and-editframe/editframe-mergedVideo.mp4" />
+
+Note: You can add transitions, filters, trim videos, and much more using Editframe. See the [Editframe API docs](/docs) for more information.
+
+## Final video comparison
+
+Here’s a comparison of the final videos produced by FFmpeg (left) and Editframe (right):
+
+{' '}
+
+<Video
+  controls="true"
+  url="/guides/merge-multiple-videos-and-add-background-music-using-ffmpeg-and-editframe/compare.mp4"
+/>

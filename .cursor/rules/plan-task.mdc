@@ -1,0 +1,26 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+We're going to plan a feature.
+
+The feature document is kept in @feature.md
+
+A feature plan has three sections:
+
+0. context
+1. requirements
+2. considerations
+3. tasks
+- [ ] this task is not done
+- ✅ this task is done
+
+Context is information that is useful in the near term
+If requirements are not clear, prompt the user for clarification
+If considerations are not illuminating enough, prompt the user for clarification
+If a task is ready to be worked on, prompt the user to allow starting it
+
+As you go, keep modifying the sections of the feature plan. Add and truncate sections as makes sense.
+
+When working on a task, prompt the user if they'd like to make a git commit frequently. Execute this in the terminal.

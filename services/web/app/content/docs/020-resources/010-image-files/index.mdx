@@ -1,0 +1,64 @@
+---
+meta:
+  - title: Image Files
+  - name:  description
+    content: Documentation for the Editframe packages
+headers:
+  Cache-Control: no-cache
+---
+
+
+## Create Image File
+
+<ResourceOperation>
+  <PersistentTab label="HTTP">
+    <HTTPEndpoint method="POST" path="/api/v1/image_files">
+      <HTTPPayload docName="CreateImageFilePayload" />
+      <HTTPResponse docName="CreateImageFileResult" />
+    </HTTPEndpoint>
+  </PersistentTab>
+
+  <PersistentTab label="TypeScript">
+    <ShowDocItemByName name="createImageFile" />
+  </PersistentTab>
+</ResourceOperation>
+
+## Upload Image File
+<ResourceOperation>
+  <PersistentTab label="HTTP">
+    <HTTPEndpoint method="POST" path="/api/v1/image_files/:id/upload">
+      <HTTPResponse docName="UploadImageFileResult" />
+    </HTTPEndpoint>
+  </PersistentTab>
+
+  <PersistentTab label="TypeScript">
+    <ShowDocItemByName name="uploadImageFile" />
+  </PersistentTab>
+</ResourceOperation>
+
+## Get Image File (metadata)
+
+<ResourceOperation>
+  <PersistentTab label="HTTP">
+    <HTTPEndpoint method="GET" path="/api/v1/image_files/:id.json">
+      <HTTPResponse docName="GetImageFileMetadataResult" />
+    </HTTPEndpoint>
+  </PersistentTab>
+
+  <PersistentTab label="TypeScript">
+    <ShowDocItemByName name="getImageFileMetadata" />
+  </PersistentTab>
+</ResourceOperation>
+
+## Lookup Image by MD5
+<ResourceOperation>
+  <PersistentTab label="HTTP">
+    <HTTPEndpoint method="GET" path="/api/v1/image_files/md5/:md5">
+      <HTTPResponse docName="LookupImageFileByMd5Result" />
+    </HTTPEndpoint>
+  </PersistentTab>
+
+  <PersistentTab label="TypeScript">
+    <ShowDocItemByName name="lookupImageFileByMd5" />
+  </PersistentTab>
+</ResourceOperation>

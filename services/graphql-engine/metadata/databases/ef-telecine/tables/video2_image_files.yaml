@@ -1,0 +1,176 @@
+table:
+  name: image_files
+  schema: video2
+object_relationships:
+  - name: api_key
+    using:
+      foreign_key_constraint_on: api_key_id
+  - name: org
+    using:
+      foreign_key_constraint_on: org_id
+  - name: user
+    using:
+      foreign_key_constraint_on: creator_id
+insert_permissions:
+  - role: org-editor
+    permission:
+      check:
+        org:
+          memberships:
+            _and:
+              - role:
+                  _in:
+                    - editor
+                    - admin
+              - user_id:
+                  _eq: X-Hasura-User-Id
+      set:
+        api_key_id: x-hasura-api-key
+        creator_id: x-hasura-user-id
+      columns:
+        - filename
+        - height
+        - id
+        - mime_type
+        - org_id
+        - width
+    comment: ""
+select_permissions:
+  - role: ef-admin
+    permission:
+      columns:
+        - complete
+        - byte_size
+        - height
+        - next_byte
+        - width
+        - filename
+        - mime_type
+        - remote_uri
+        - created_at
+        - api_key_id
+        - creator_id
+        - id
+        - md5
+        - org_id
+      filter: {}
+    comment: ""
+  - role: org-admin
+    permission:
+      columns:
+        - api_key_id
+        - byte_size
+        - complete
+        - created_at
+        - creator_id
+        - filename
+        - height
+        - id
+        - md5
+        - mime_type
+        - org_id
+        - width
+      filter:
+        org:
+          memberships:
+            _and:
+              - role:
+                  _in:
+                    - admin
+                    - editor
+                    - reader
+              - user_id:
+                  _eq: X-Hasura-User-Id
+    comment: ""
+  - role: org-editor
+    permission:
+      columns:
+        - api_key_id
+        - byte_size
+        - complete
+        - created_at
+        - creator_id
+        - filename
+        - height
+        - id
+        - md5
+        - mime_type
+        - next_byte
+        - org_id
+        - remote_uri
+        - width
+      filter:
+        org:
+          memberships:
+            _and:
+              - role:
+                  _in:
+                    - editor
+                    - admin
+              - user_id:
+                  _eq: X-Hasura-User-Id
+    comment: ""
+  - role: org-reader
+    permission:
+      columns:
+        - byte_size
+        - complete
+        - created_at
+        - creator_id
+        - expires_at
+        - filename
+        - height
+        - id
+        - md5
+        - mime_type
+        - next_byte
+        - org_id
+        - width
+      filter:
+        org:
+          memberships:
+            user_id:
+              _eq: X-Hasura-User-Id
+      limit: 50
+      allow_aggregations: true
+    comment: ""
+delete_permissions:
+  - role: org-admin
+    permission:
+      filter:
+        org:
+          memberships:
+            _and:
+              - role:
+                  _in:
+                    - admin
+              - user_id:
+                  _eq: X-Hasura-User-Id
+    comment: ""
+  - role: org-editor
+    permission:
+      filter:
+        org:
+          memberships:
+            _and:
+              - role:
+                  _in:
+                    - editor
+                    - admin
+              - user_id:
+                  _eq: X-Hasura-User-Id
+    comment: ""
+event_triggers:
+  - name: image_files_cleanup
+    definition:
+      delete:
+        columns: '*'
+      enable_manual: false
+    retry_conf:
+      interval_sec: 120
+      num_retries: 3
+      timeout_sec: 120
+    webhook: '{{HASURA_ACTION_ORIGIN}}/hdb/delete_image_files'
+    headers:
+      - name: X-ACTION-SECRET
+        value_from_env: ACTION_SECRET

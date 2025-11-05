@@ -1,0 +1,11 @@
+services:
+  mailhog:
+    image: mailhog/mailhog
+    env_file:
+      - ${PWD}/.env
+    ports:
+      - 1025:1025 # smtp server
+      - 8025:8025 # web ui
+    volumes:
+      - ./docker/data/mailhog:/maildir
+    stop_grace_period: 1s

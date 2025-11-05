@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+set -ex
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+# if `.env` doesnt exist, copy .env-example to .env
+# some parts of the integration tests require the .env file to exist
+if [ ! -f $SCRIPT_DIR/../.env ]; then
+  cp $SCRIPT_DIR/../.env-example $SCRIPT_DIR/../.env
+fi
+
+source $SCRIPT_DIR/.env
+
+${SCRIPT_DIR}/../scripts/download-electron-build
+${SCRIPT_DIR}/../scripts/docker-compose run --rm --env CI=true runner npm install
+${SCRIPT_DIR}/../scripts/start-for-playwright
+
+shard=""
+if [ -n "$1" ]; then
+  shard="--shard=$1"
+fi
+
+${SCRIPT_DIR}/../scripts/docker-compose run \
+  --rm \
+  --env CI=true \
+  runner \
+    npx vitest \
+      --run \
+      --fileParallelism=false \
+      --testTimeout=20000 \
+      --hookTimeout=20000 \
+      --teardownTimeout=20000

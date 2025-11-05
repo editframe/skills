@@ -1,0 +1,4 @@
+-- Could not auto-generate a down migration.
+-- Please write an appropriate down migration for the SQL below:
+-- alter table "video2"."unprocessed_files" add column "remote_uri" text
+--  null;

@@ -1,0 +1,10 @@
+CREATE OR REPLACE VIEW "identity"."valid_email_confirmations" AS 
+ SELECT id,
+    created_at,
+    updated_at,
+    confirmed_at,
+    user_id,
+    confirmation_token
+   FROM identity.email_confirmations
+  WHERE ((confirmed_at IS NULL) AND (created_at >= (now() - '14 days'::interval)))
+  ORDER BY created_at DESC;

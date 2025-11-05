@@ -1,0 +1,54 @@
+---
+meta:
+  - title: Unprocessed Files
+  - name:  description
+    content: Documentation for the Editframe packages
+headers:
+  Cache-Control: no-cache
+---
+
+## Create Unprocessed File
+
+// CURRENT: Route reference docs through to normal loader so we don't need to serve the entire types.json files
+<ResourceOperation>
+  <PersistentTab label="HTTP">
+    <HTTPEndpoint method="POST" path="/api/v1/unprocessed_files">
+      <HTTPPayload docName="CreateUnprocessedFilePayload" />
+      <HTTPResponse docName="CreateUnprocessedFileResult" />
+    </HTTPEndpoint>
+  </PersistentTab>
+
+  <PersistentTab label="TypeScript">
+    <ShowDocItemByName name="createUnprocessedFile" />
+  </PersistentTab>
+</ResourceOperation>
+
+
+## Lookup Unprocessed File by MD5
+
+<ResourceOperation>
+  <PersistentTab label="HTTP">
+    <HTTPEndpoint method="GET" path="/api/v1/unprocessed_files/md5/:md5">
+      <HTTPResponse docName="LookupUnprocessedFileByMd5Result" />
+    </HTTPEndpoint>
+  </PersistentTab>
+
+  <PersistentTab label="TypeScript">
+    <ShowDocItemByName name="lookupUnprocessedFileByMd5" />
+  </PersistentTab>
+</ResourceOperation>
+
+
+## Process Isobmff File
+
+<ResourceOperation>
+  <PersistentTab label="HTTP">
+    <HTTPEndpoint method="POST" path="/api/v1/unprocessed_files/:id/process">
+      <HTTPResponse docName="ProcessIsobmffFileResult" />
+    </HTTPEndpoint>
+  </PersistentTab>
+
+  <PersistentTab label="TypeScript">
+    <ShowDocItemByName name="processIsobmffFile" />
+  </PersistentTab>
+</ResourceOperation>

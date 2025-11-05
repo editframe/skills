@@ -1,0 +1,197 @@
+---
+meta:
+  - title: React
+  - name:  description
+    content: Documentation for the Editframe React package
+headers:
+  Cache-Control: no-cache
+---
+
+# React
+
+Editframe provides React wrapper components for all elements, allowing you to build video editing applications with React's familiar component model and full TypeScript support.
+
+## Getting Started
+
+```bash
+npm install @editframe/react
+```
+
+```tsx
+import { Timegroup, Video, Audio, Image } from '@editframe/react';
+
+function MyVideo() {
+  return (
+    <Timegroup mode="sequence" className="w-[1920px] h-[1080px]">
+      <Video src="/intro.mp4" />
+      <Image src="/title.jpg" duration="3s" />
+      <Video src="/main.mp4" />
+      <Audio src="/music.mp3" />
+    </Timegroup>
+  );
+}
+```
+
+## Documentation
+
+### Components
+
+All Editframe elements are available as React components with full TypeScript support:
+
+- [React Components Overview](/docs/react/components) - Complete component documentation
+
+**Core Elements:**
+- Timegroup, Video, Audio, Image
+- Waveform, Captions, Surface, ThumbnailStrip
+
+**Editor UI:**
+- Configuration, Workbench, Preview, Controls
+- Filmstrip, Scrubber, TimeDisplay, TogglePlay, ToggleLoop
+- FitScale, FocusOverlay, ResizableBox, Dial
+- Advanced editors (EasingEditor, MotionPathEditor, etc.)
+
+### Hooks
+
+React hooks for accessing timing and state:
+
+- [React Hooks](/docs/react/hooks) - Hook documentation
+- `useTimingInfo` - Access timing information from timegroups
+
+## Quick Examples
+
+### Simple Video Player
+
+```tsx
+import { Preview, Timegroup, Video, TogglePlay, Scrubber } from '@editframe/react';
+
+export function VideoPlayer() {
+  return (
+    <Preview>
+      <Timegroup mode="contain" className="w-[1920px] h-[1080px]">
+        <Video src="/video.mp4" />
+      </Timegroup>
+      
+      <div className="controls">
+        <TogglePlay>
+          <button slot="play">Play</button>
+          <button slot="pause">Pause</button>
+        </TogglePlay>
+        <Scrubber />
+      </div>
+    </Preview>
+  );
+}
+```
+
+### Video Editor
+
+```tsx
+import { 
+  Configuration,
+  Workbench,
+  Timegroup,
+  Video,
+  Filmstrip,
+  TogglePlay,
+  Scrubber
+} from '@editframe/react';
+
+export function VideoEditor() {
+  return (
+    <Configuration apiHost="https://api.editframe.com">
+      <Workbench>
+        <Timegroup slot="canvas" mode="sequence" className="w-[1920px] h-[1080px]">
+          <Video src="/clip1.mp4" />
+          <Video src="/clip2.mp4" />
+        </Timegroup>
+        
+        <div slot="timeline">
+          <div className="controls">
+            <TogglePlay>
+              <button slot="play">▶</button>
+              <button slot="pause">⏸</button>
+            </TogglePlay>
+            <Scrubber />
+          </div>
+          <Filmstrip />
+        </div>
+      </Workbench>
+    </Configuration>
+  );
+}
+```
+
+### Using Hooks
+
+```tsx
+import { useTimingInfo } from '@editframe/react';
+import { Timegroup, Video } from '@editframe/react';
+
+function VideoWithTiming() {
+  const { ownCurrentTimeMs, durationMs, ref } = useTimingInfo();
+  
+  return (
+    <div>
+      <Timegroup ref={ref} mode="contain" className="w-[1920px] h-[1080px]">
+        <Video src="/video.mp4" />
+      </Timegroup>
+      <p>Progress: {Math.round((ownCurrentTimeMs / durationMs) * 100)}%</p>
+    </div>
+  );
+}
+```
+
+## TypeScript Support
+
+All components include TypeScript definitions:
+
+```tsx
+import { Timegroup, Video, type TimegroupProps } from '@editframe/react';
+
+const MyTimeline: React.FC<{ mode: TimegroupProps['mode'] }> = ({ mode }) => {
+  return (
+    <Timegroup mode={mode} className="w-[1920px] h-[1080px]">
+      <Video src="/video.mp4" />
+    </Timegroup>
+  );
+};
+```
+
+## Framework Integration
+
+### Next.js (App Router)
+
+```tsx
+'use client';
+
+import { Timegroup, Video } from '@editframe/react';
+
+export default function VideoPage() {
+  return (
+    <Timegroup mode="contain" className="w-[1920px] h-[1080px]">
+      <Video src="/video.mp4" />
+    </Timegroup>
+  );
+}
+```
+
+### Vite
+
+```tsx
+import { Timegroup, Video } from '@editframe/react';
+
+function App() {
+  return (
+    <Timegroup mode="contain" className="w-[1920px] h-[1080px]">
+      <Video src="/video.mp4" />
+    </Timegroup>
+  );
+}
+```
+
+## Related Documentation
+
+- [Core Elements](/docs/elements) - Web component documentation
+- [Editor UI](/docs/editor-ui) - Editor component documentation
+- [React Components](/docs/react/components) - Detailed component docs
+- [React Hooks](/docs/react/hooks) - Hook documentation

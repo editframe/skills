@@ -1,0 +1,26 @@
+table:
+  name: process_html_attempts
+  schema: video2
+object_relationships:
+  - name: process_html
+    using:
+      foreign_key_constraint_on: process_html_id
+select_permissions:
+  - role: org-reader
+    permission:
+      columns:
+        - attempt_number
+        - completed_at
+        - failed_at
+        - started_at
+        - id
+        - process_html_id
+      filter:
+        process_html:
+          org:
+            memberships:
+              user_id:
+                _eq: X-Hasura-User-Id
+      limit: 10
+      allow_aggregations: true
+    comment: ""

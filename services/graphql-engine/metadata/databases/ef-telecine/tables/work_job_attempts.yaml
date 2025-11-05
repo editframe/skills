@@ -1,0 +1,3 @@
+table:
+  name: job_attempts
+  schema: work
