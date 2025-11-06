@@ -23,7 +23,7 @@ export function EFSourceMixin<T extends Constructor<LitElement>>(
         this.closest("ef-workbench")?.apiHost ??
         this.closest("ef-preview")?.apiHost;
 
-      return apiHost || "https://editframe.dev";
+      return apiHost || "https://editframe.com";
     }
 
     @property({ type: String })

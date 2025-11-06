@@ -1,23 +1,121 @@
-# Monorepo Setup - Git Subtrees
+# Monorepo Setup with Git Worktrees
 
-This monorepo contains `telecine` (private) and `elements` (public) as git subtrees.
+## Overview
 
-## Structure
-- `telecine/` - Private repository (git subtree)
-- `elements/` - Public repository (git subtree)
-- `scripts/` - Helper scripts for subtree management
+This is a monorepo containing two main projects:
+- **telecine**: Located at `/workspace/telecine/`
+- **elements**: Located at `/workspace/elements/`
 
-## Publishing Changes
+Both projects are maintained as git worktrees with separate remotes configured in the root repository.
 
-Use helper scripts to push to respective repositories:
-- `./scripts/push-telecine` - Push telecine subtree to private repo
-- `./scripts/push-elements` - Push elements subtree to public repo
-- `./scripts/pull-telecine` - Pull telecine updates
-- `./scripts/pull-elements` - Pull elements updates
+## Git Remotes Configuration
 
-## Important
-- Elements commits are PUBLIC - ensure commit messages don't reference telecine internals
-- Both repos developed in lock-step (same branch)
-- Worktrees contain both directories automatically
-- See `.cursor/rules/monorepo-setup.mdc` for detailed documentation
+The root repository has two remotes configured:
+- `telecine`: Points to `git@github.com:editframe/telecine.git`
+- `elements`: Points to `git@github.com:editframe/elements.git`
+
+These remotes are used for syncing changes to/from the separate repositories.
+
+## Worktree Setup
+
+### Telecine Worktrees
+
+The telecine project uses git worktrees for branch isolation. Each worktree:
+- Has its own directory (e.g., `../telecine-feature-auth` for branch `feature-auth`)
+- Gets a unique domain based on branch name (e.g., `feature-auth.localhost`)
+- Uses isolated Docker Compose project names (e.g., `telecine-feature-auth`)
+- Shares a common Traefik instance for routing
+
+**Worktree Configuration Script**: `telecine/scripts/worktree-config`
+- Detects current branch and worktree context
+- Exports environment variables: `WORKTREE_BRANCH`, `WORKTREE_DOMAIN`, `WORKTREE_DOCKER_PROJECT_NAME`, `WORKTREE_DOCKER_NETWORK_NAME`
+- Must be sourced: `. scripts/worktree-config`
+
+**Documentation**: See `telecine/WORKTREE_SETUP.md` for detailed worktree setup and Docker environment configuration.
+
+### Elements Worktrees
+
+The elements project also uses git worktrees with similar structure:
+- Worktrees get isolated Docker environments
+- Docker project names: `ef-elements` (main) or `ef-elements-<branch-name>` (worktrees)
+- Unique domains: `main.localhost` or `<branch-name>.localhost`
+
+**Worktree Configuration Script**: `elements/scripts/worktree-config`
+- Same structure as telecine's worktree-config
+- Exports similar environment variables for elements-specific configuration
+
+## Push/Pull Workflows
+
+### Pushing Changes to Remotes
+
+To push changes from the monorepo to the telecine or elements remotes:
+
+```bash
+# Push current branch to telecine remote
+git push telecine <branch-name>:<branch-name>
+
+# Push current branch to elements remote  
+git push elements <branch-name>:<branch-name>
+
+# Push all branches (example)
+git push telecine --all
+git push elements --all
+```
+
+### Pulling Changes from Remotes
+
+To pull changes from the remotes into the monorepo:
+
+```bash
+# Fetch from telecine remote
+git fetch telecine
+
+# Fetch from elements remote
+git fetch elements
+
+# Merge specific branch from remote
+git merge telecine/<branch-name>
+git merge elements/<branch-name>
+```
+
+### Creating Worktrees
+
+When creating worktrees for telecine or elements:
+
+```bash
+# Create worktree for telecine branch
+git worktree add ../telecine-<branch-name> <branch-name>
+
+# Create worktree for elements branch  
+git worktree add ../elements-<branch-name> <branch-name>
+```
+
+### Syncing Between Monorepo and Remotes
+
+The monorepo acts as the primary working repository. Changes should be:
+1. Committed in the monorepo
+2. Pushed to the appropriate remote (telecine or elements) when ready
+3. Pulled from remotes when syncing upstream changes
+
+**Important**: The monorepo structure means that `telecine/` and `elements/` directories are part of the root repository, but they should be synced with their respective remote repositories using the configured remotes.
+
+## Scripts Location
+
+- Root scripts: `/workspace/scripts/` - Delegates to telecine/elements scripts
+- Telecine scripts: `/workspace/telecine/scripts/`
+- Elements scripts: `/workspace/elements/scripts/`
+
+Both telecine and elements have `worktree-config` scripts that handle worktree detection and Docker environment configuration.
+
+## Docker Environment
+
+Both projects use Docker Compose with worktree-aware configuration:
+- Each worktree gets isolated Docker resources
+- Shared Traefik instance routes traffic based on branch-specific domains
+- `.localhost` domains auto-resolve on macOS
+
+See `telecine/WORKTREE_SETUP.md` for detailed Docker setup documentation.
+
+
+
 

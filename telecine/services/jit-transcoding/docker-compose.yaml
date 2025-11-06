@@ -15,9 +15,19 @@ services:
       - runner
     stop_grace_period: 1s
     init: true
+    networks:
+      - default
+      - traefik-shared
     command: ["npx", "tsx", "--watch", "/app/services/jit-transcoding/server.ts" ]
     labels:
-      traefik.http.routers.jit-transcoding.rule: (Host(`host.docker.internal`) || Host(`localhost`)) && PathPrefix(`/api/v1/transcode`)
+      traefik.enable: true
+      traefik.http.routers.jit-transcoding.rule: "Host(`${WORKTREE_DOMAIN:-localhost}`) && PathPrefix(`/api/v1/transcode`)"
       traefik.http.routers.jit-transcoding.entrypoints: web
       traefik.http.routers.jit-transcoding.priority: 1000
+      traefik.http.routers.jit-transcoding.service: jit-transcoding
       traefik.http.services.jit-transcoding.loadbalancer.server.port: 3001
+
+networks:
+  traefik-shared:
+    name: telecine-traefik
+    external: true

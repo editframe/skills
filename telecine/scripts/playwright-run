@@ -2,10 +2,13 @@
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
+# Source worktree configuration to get network name
+. "$SCRIPT_DIR/worktree-config"
+
 docker run -it --rm \
   --workdir /app \
   --volume $SCRIPT_DIR/../:/app \
-  --network telecine_default \
+  --network "$WORKTREE_DOCKER_NETWORK_NAME" \
   mcr.microsoft.com/playwright:v1.53.0-jammy \
   npm install -g @playwright/test@1.53.0 && \
   npx -y playwright@1.53.0 test \

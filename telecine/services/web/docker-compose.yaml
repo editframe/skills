@@ -6,6 +6,9 @@ services:
       - ${PWD}/.env
     environment:
       - OTEL_SERVICE_NAME="web"
+      - VITE_HMR_HOST=${WORKTREE_DOMAIN:-localhost}
+      - VITE_WEB_HOST=http://${WORKTREE_DOMAIN:-localhost}:3000
+      - WEB_HOST=http://${WORKTREE_DOMAIN:-localhost}:3000
     working_dir: /app
     volumes_from:
       - runner
@@ -13,6 +16,9 @@ services:
     volumes:
       - /app/services/render
     stop_grace_period: 1s
+    networks:
+      - default
+      - traefik-shared
 
     # prettier-ignore
     command: ["node", "/app/services/web/server.js"]
@@ -23,17 +29,23 @@ services:
     labels:
       traefik.enable: true
 
-      traefik.http.routers.web.rule: "Host(`host.docker.internal`) || Host(`localhost`)"
+      traefik.http.routers.web.rule: "Host(`${WORKTREE_DOMAIN:-localhost}`) || Host(`host.docker.internal`)"
       traefik.http.routers.web.entrypoints: web
       traefik.http.routers.web.service: web
+      traefik.http.routers.web.priority: 1
       traefik.http.services.web.loadbalancer.server.port: 3000
 
-      traefik.http.routers.web24678.rule: Host(`localhost`)
+      traefik.http.routers.web24678.rule: Host(`${WORKTREE_DOMAIN:-localhost}`)
       traefik.http.routers.web24678.entrypoints: port24678
       traefik.http.routers.web24678.service: web24678
       traefik.http.services.web24678.loadbalancer.server.port: 24678
 
-      traefik.http.routers.web3001.rule: Host(`localhost`)
+      traefik.http.routers.web3001.rule: Host(`${WORKTREE_DOMAIN:-localhost}`)
       traefik.http.routers.web3001.entrypoints: port3001
       traefik.http.routers.web3001.service: web3001
       traefik.http.services.web3001.loadbalancer.server.port: 3001
+
+networks:
+  traefik-shared:
+    name: telecine-traefik
+    external: true

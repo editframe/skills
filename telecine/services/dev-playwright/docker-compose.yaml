@@ -6,10 +6,10 @@ services:
     env_file:
       - ${PWD}/.env
     volumes:
-      - .:/app
+      - ${TELECINE_ROOT_HOST:-${PWD}}:/app
       - node_modules:/app/node_modules
       - ${HOME}/.config/gcloud:/root/.config/gcloud
-      - ../elements:/app/lib/packages
+      - ${ELEMENTS_PATH:-../elements}:/app/lib/packages
     labels:
       - traefik.enable=false
     ports:

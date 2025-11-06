@@ -3,8 +3,11 @@ set -e
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
+# Source worktree configuration to get project name
+. "$SCRIPT_DIR/worktree-config"
+
 docker compose \
-  --project-name telecine \
+  --project-name "$WORKTREE_DOCKER_PROJECT_NAME" \
   -f $SCRIPT_DIR/../docker-compose.yaml \
   -f $SCRIPT_DIR/../services/dev-postgres/docker-compose.yaml \
   -f $SCRIPT_DIR/../services/dev-valkey/docker-compose.yaml \

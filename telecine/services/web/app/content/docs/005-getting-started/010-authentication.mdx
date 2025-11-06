@@ -11,7 +11,7 @@ headers:
 
 All requests made to any of the Editframe endpoints must be authorised. The primary form of authentication we use is header-based bearer token authentication. 
 
-You will need your API token which can be found in the [Editframe dashboard](https://editframe.dev/resource/api_keys).
+You will need your API token which can be found in the [Editframe dashboard](https://editframe.com/resource/api_keys).
 
 Please ensure your secret API keys are not publicly accessible in your code. Anybody with access to your secret API keys will be able to make requests to the Editframe API on your behalf. If you suspect your API keys have been compromised, please revoke them and generate new ones.
 
@@ -21,7 +21,7 @@ If manually making a call to one of our HTTP endpoints, you must supply your API
 
 
 ```bash
-curl https://editframe.dev/api/v1/[...] \
+curl https://editframe.com/api/v1/[...] \
   -H "Authorization: Bearer {token}"
 ```
 
@@ -49,7 +49,7 @@ import { createURLToken, Client } from "@editframe/api";
 const EF_TOKEN = "/* load your EF_API_TOKEN here. */";
 const client = new Client(EF_TOKEN);
 
-const url = "https://editframe.dev/api/v1/unprocessed_files";
+const url = "https://editframe.com/api/v1/unprocessed_files";
 const token = await createURLToken(client, url);
 ```
 

@@ -57,7 +57,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
             fields: [
               {
                 type: "mrkdwn",
-                text: `*ID:* <https://editframe.dev/admin/renders/${id}|${id}>`,
+                text: `*ID:* <https://editframe.com/admin/renders/${id}|${id}>`,
               },
               {
                 type: "mrkdwn",
@@ -78,7 +78,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
             elements: [
               {
                 type: "mrkdwn",
-                text: `*Org:* <https://editframe.dev/admin/orgs/${org?.id}|${org?.display_name}> • *API Key:* <https://editframe.dev/admin/keys/${api_key_id}|${api_key?.name}>${status === "complete" ? ` • *Render Time:* ${formatMs(renderDuration)}` : ""}`,
+                text: `*Org:* <https://editframe.com/admin/orgs/${org?.id}|${org?.display_name}> • *API Key:* <https://editframe.com/admin/keys/${api_key_id}|${api_key?.name}>${status === "complete" ? ` • *Render Time:* ${formatMs(renderDuration)}` : ""}`,
               },
             ],
           },

@@ -15,11 +15,19 @@ services:
     stop_grace_period: 1s
     init: true
     scale: 1
+    networks:
+      - default
+      - traefik-shared
     # prettier-ignore
     command: [ "--loader", "/app/loader.js", "--watch", "/app/services/transcribe-ctl/src/server.ts" ]
 
     labels:
-      traefik.http.routers.transcribe-ctl.rule: Host(`host.docker.internal`) && Path(`/hdb/transcribe_audio_track`)
+      traefik.http.routers.transcribe-ctl.rule: Host(`${WORKTREE_DOMAIN:-localhost}`) && Path(`/hdb/transcribe_audio_track`)
       traefik.http.routers.transcribe-ctl.entrypoints: web
       traefik.http.routers.transcribe-ctl.priority: 1000
       traefik.http.services.transcribe-ctl.loadbalancer.server.port: 3000
+
+networks:
+  traefik-shared:
+    name: telecine-traefik
+    external: true

@@ -15,8 +15,16 @@ services:
       - runner
     stop_grace_period: 1s
     init: true
+    networks:
+      - default
+      - traefik-shared
     command: [ "--loader", "/app/loader.js", "--watch", "/app/services/transcribe/src/server.ts" ]
     labels:
-      traefik.http.routers.transcribe.rule: Host(`localhost`) && PathPrefix(`/_/transcribe`)
+      traefik.http.routers.transcribe.rule: Host(`${WORKTREE_DOMAIN:-localhost}`) && PathPrefix(`/_/transcribe`)
       traefik.http.routers.transcribe.entrypoints: web
       traefik.http.services.transcribe.loadbalancer.server.port: 3000
+
+networks:
+  traefik-shared:
+    name: telecine-traefik
+    external: true

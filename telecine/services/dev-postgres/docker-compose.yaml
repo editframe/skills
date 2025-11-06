@@ -2,7 +2,7 @@ services:
   postgres:
     image: postgres:16.1-alpine
     volumes:
-      - ${PWD}/services/dev-postgres/create-databases.sh:/docker-entrypoint-initdb.d/create-databases.sh
+      - ${TELECINE_ROOT_HOST:-${PWD}}/services/dev-postgres/create-databases.sh:/docker-entrypoint-initdb.d/create-databases.sh
       - /var/lib/postgresql/data
     env_file:
       - ${PWD}/.env

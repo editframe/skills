@@ -2,6 +2,9 @@
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
+# Source worktree configuration to get network name and domain
+. "$SCRIPT_DIR/worktree-config"
+
 # Detect if we have a TTY
 if [ -t 0 ]; then
     TTY_FLAGS="-it"
@@ -64,15 +67,33 @@ if [ -n "$DOCKER_FLAGS" ]; then
     PROJECT_ROOT="$SCRIPT_DIR/.."
     ENV_FILE="$PROJECT_ROOT/.env"
     
+    # Resolve elements path relative to worktree root
+    # Find worktree root (works for both main worktree and git worktrees)
+    WORKTREE_ROOT=$(cd "$PROJECT_ROOT" && git rev-parse --show-toplevel 2>/dev/null || echo "$PROJECT_ROOT")
+    WORKTREE_PARENT=$(dirname "$WORKTREE_ROOT")
+    
+    # Try to find elements directory - check both ../elements and parallel worktree pattern
+    ELEMENTS_PATH=""
+    if [ -d "$WORKTREE_PARENT/elements" ]; then
+        # Main worktree pattern: ../elements
+        ELEMENTS_PATH="$WORKTREE_PARENT/elements"
+    elif [ -n "$WORKTREE_ID" ] && [ "$WORKTREE_ID" != "main" ] && [ -d "$WORKTREE_PARENT/elements-${WORKTREE_ID}" ]; then
+        # Parallel worktree pattern: ../elements-<branch>
+        ELEMENTS_PATH="$WORKTREE_PARENT/elements-${WORKTREE_ID}"
+    else
+        # Fallback to relative path
+        ELEMENTS_PATH="$PROJECT_ROOT/../elements"
+    fi
+    
     VOLUMES=(
         -v "$PROJECT_ROOT:/app"
         -v "telecine_node_modules:/app/node_modules"
         -v "$HOME/.config/gcloud:/root/.config/gcloud"
-        -v "$PROJECT_ROOT/../elements:/app/lib/packages"
+        -v "$ELEMENTS_PATH:/app/lib/packages"
     )
     
     DOCKER_RUN_FLAGS="$TTY_FLAGS --rm"
-    DOCKER_RUN_FLAGS="$DOCKER_RUN_FLAGS --network telecine_default"
+    DOCKER_RUN_FLAGS="$DOCKER_RUN_FLAGS --network $WORKTREE_DOCKER_NETWORK_NAME"
     DOCKER_RUN_FLAGS="$DOCKER_RUN_FLAGS ${VOLUMES[@]}"
     DOCKER_RUN_FLAGS="$DOCKER_RUN_FLAGS --device /dev/mps0:/dev/mps0"
     DOCKER_RUN_FLAGS="$DOCKER_RUN_FLAGS --privileged"

@@ -12,9 +12,17 @@ services:
       - VITE_OTEL_RELAY_URL=http://localhost:4319
     labels:
       - traefik.enable=true
-      - traefik.http.routers.otel-viewer.rule=Host(`otel-viewer.localhost`)
+      - traefik.http.routers.otel-viewer.rule=Host(`otel-viewer.${WORKTREE_DOMAIN:-localhost}`)
       - traefik.http.routers.otel-viewer.entrypoints=web
       - traefik.http.services.otel-viewer.loadbalancer.server.port=4320
     depends_on:
       - runner
+    networks:
+      - default
+      - traefik-shared
     stop_grace_period: 1s
+
+networks:
+  traefik-shared:
+    name: telecine-traefik
+    external: true

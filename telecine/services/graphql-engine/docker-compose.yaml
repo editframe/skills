@@ -2,8 +2,8 @@ services:
   graphql-engine:
     image: hasura/graphql-engine:v2.36.0
     volumes:
-      - ${PWD}/services/graphql-engine/metadata:/hasura-metadata
-      - ${PWD}/services/graphql-engine/migrations:/hasura-migrations
+      - ${TELECINE_ROOT_HOST:-${PWD}}/services/graphql-engine/metadata:/hasura-metadata
+      - ${TELECINE_ROOT_HOST:-${PWD}}/services/graphql-engine/migrations:/hasura-migrations
     ports:
       - "8080:8080"
     env_file:

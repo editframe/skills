@@ -12,67 +12,148 @@ if ! docker network inspect telecine-traefik > /dev/null 2>&1; then
   docker network create telecine-traefik
 fi
 
-# Resolve elements path for docker-compose volume mounts
-PROJECT_ROOT="$SCRIPT_DIR/.."
-WORKTREE_ROOT=$(cd "$PROJECT_ROOT" && git rev-parse --show-toplevel 2>/dev/null || echo "$PROJECT_ROOT")
-WORKTREE_PARENT=$(dirname "$WORKTREE_ROOT")
-
-ELEMENTS_PATH=""
-if [ -d "$WORKTREE_PARENT/elements" ]; then
-    # Main worktree pattern: ../elements
-    ELEMENTS_PATH="$WORKTREE_PARENT/elements"
-elif [ -n "$WORKTREE_ID" ] && [ "$WORKTREE_ID" != "main" ] && [ -d "$WORKTREE_PARENT/elements-${WORKTREE_ID}" ]; then
-    # Parallel worktree pattern: ../elements-<branch>
-    ELEMENTS_PATH="$WORKTREE_PARENT/elements-${WORKTREE_ID}"
-else
-    # Fallback to relative path (relative to docker-compose.yaml location)
-    ELEMENTS_PATH="$PROJECT_ROOT/../elements"
-fi
-
-export ELEMENTS_PATH
-
 # Export absolute path to telecine root for docker-compose volume mounts
 # For docker-in-docker: paths must exist on the HOST filesystem
-# Worktrees should be created in /workspace/.cursor-worktrees so they exist on the host
+# Since devcontainer uses Docker socket mounting, we need to resolve container paths to host paths
 PROJECT_ROOT="$SCRIPT_DIR/.."
 WORKTREE_ROOT=$(cd "$PROJECT_ROOT" && git rev-parse --show-toplevel 2>/dev/null || echo "$PROJECT_ROOT")
 
-# Check if we're in a worktree under /workspace/.cursor-worktrees (host-mounted)
+# Resolve host path from container path
+# The devcontainer mounts the repo root to /workspace, so we need to find the host mount source
+resolve_host_path() {
+    local container_path="$1"
+    
+    # If path starts with /workspace, try to resolve via container inspect
+    if [[ "$container_path" == /workspace* ]]; then
+        # Get the host path of /workspace mount from the devcontainer
+        # Try jq first (more reliable), fall back to grep/sed
+        local host_workspace=""
+        if command -v jq > /dev/null 2>&1; then
+            host_workspace=$(docker inspect $(hostname) 2>/dev/null | \
+                jq -r '.[0].Mounts[] | select(.Destination == "/workspace") | .Source' 2>/dev/null | head -1)
+        else
+            # Fallback: use grep/sed to extract Source from JSON
+            host_workspace=$(docker inspect $(hostname) 2>/dev/null | \
+                grep -A 5 '"Destination": "/workspace"' | \
+                grep '"Source"' | \
+                sed 's/.*"Source": "\([^"]*\)".*/\1/' | head -1)
+        fi
+        
+        if [ -n "$host_workspace" ] && [ "$host_workspace" != "null" ]; then
+            # Replace /workspace with host path
+            local relative_path="${container_path#/workspace}"
+            echo "${host_workspace}${relative_path}"
+            return
+        fi
+    fi
+    
+    # Fallback: return as-is (might work if path already exists on host)
+    echo "$container_path"
+}
+
+# Determine telecine root path (container path)
 if [[ "$WORKTREE_ROOT" == /workspace/.cursor-worktrees/* ]]; then
-    # Worktree is in the host-mounted directory - use it directly
-    TELECINE_ROOT="$WORKTREE_ROOT/telecine"
-    if [[ ! -d "$TELECINE_ROOT" ]]; then
-        TELECINE_ROOT="$WORKTREE_ROOT"
+    # Worktree is in the host-mounted directory
+    TELECINE_ROOT_CONTAINER="$WORKTREE_ROOT/telecine"
+    if [[ ! -d "$TELECINE_ROOT_CONTAINER" ]]; then
+        TELECINE_ROOT_CONTAINER="$WORKTREE_ROOT"
     fi
 elif [[ "$WORKTREE_ROOT" == /workspace/* ]]; then
     # Main worktree or worktree directly under /workspace
-    TELECINE_ROOT="$WORKTREE_ROOT/telecine"
-    if [[ ! -d "$TELECINE_ROOT" ]]; then
-        TELECINE_ROOT="$WORKTREE_ROOT"
+    TELECINE_ROOT_CONTAINER="$WORKTREE_ROOT/telecine"
+    if [[ ! -d "$TELECINE_ROOT_CONTAINER" ]]; then
+        TELECINE_ROOT_CONTAINER="$WORKTREE_ROOT"
     fi
 elif [[ -d "/workspace/telecine" ]]; then
     # Fallback: use main worktree's telecine
-    TELECINE_ROOT="/workspace/telecine"
+    TELECINE_ROOT_CONTAINER="/workspace/telecine"
 else
-    # Last resort: use current directory (may not work in docker-in-docker)
-    TELECINE_ROOT=$(cd "$PROJECT_ROOT" && pwd)
+    # Last resort: use current directory
+    TELECINE_ROOT_CONTAINER=$(cd "$PROJECT_ROOT" && pwd)
 fi
-export TELECINE_ROOT
-    if [ "$WORKTREE_DOMAIN" = "main.localhost" ]; then
-        # Main worktree: include Traefik service by activating profile
+
+# Resolve to host path for Docker volume mounts (but keep container path for file operations)
+TELECINE_ROOT_HOST=$(resolve_host_path "$TELECINE_ROOT_CONTAINER")
+TELECINE_ROOT="$TELECINE_ROOT_CONTAINER"  # Use container path for file operations
+export TELECINE_ROOT TELECINE_ROOT_HOST
+
+# Resolve elements path for docker-compose volume mounts
+# Elements is at the same level as telecine in the workspace
+ELEMENTS_PATH_CONTAINER=""
+if [ -d "$WORKTREE_ROOT/elements" ]; then
+    # Elements is in the workspace root (same level as telecine)
+    ELEMENTS_PATH_CONTAINER="$WORKTREE_ROOT/elements"
+elif [ -d "$PROJECT_ROOT/../elements" ]; then
+    # Elements is sibling to telecine directory
+    ELEMENTS_PATH_CONTAINER="$PROJECT_ROOT/../elements"
+else
+    WORKTREE_PARENT=$(dirname "$WORKTREE_ROOT")
+    if [ -d "$WORKTREE_PARENT/elements" ]; then
+        # Main worktree pattern: ../elements
+        ELEMENTS_PATH_CONTAINER="$WORKTREE_PARENT/elements"
+    elif [ -n "$WORKTREE_ID" ] && [ "$WORKTREE_ID" != "main" ] && [ -d "$WORKTREE_PARENT/elements-${WORKTREE_ID}" ]; then
+        # Parallel worktree pattern: ../elements-<branch>
+        ELEMENTS_PATH_CONTAINER="$WORKTREE_PARENT/elements-${WORKTREE_ID}"
+    fi
+fi
+
+# Resolve to host path for Docker volume mounts (Docker-in-Docker requires host paths)
+ELEMENTS_PATH=$(resolve_host_path "$ELEMENTS_PATH_CONTAINER")
+export ELEMENTS_PATH
+
+# Find all docker-compose files in the telecine directory (using container path)
+compose_files=""
+root_compose_file=""
+
+# Find root docker-compose.yaml
+if [ -f "$TELECINE_ROOT/docker-compose.yaml" ]; then
+    root_compose_file="$TELECINE_ROOT/docker-compose.yaml"
+fi
+
+# Find all docker-compose.*.yaml files in root
+for file in "$TELECINE_ROOT"/docker-compose.*.yaml; do
+    if [ -f "$file" ]; then
+        compose_files="$compose_files"$'\n'"$file"
+    fi
+done
+
+# Find all service-specific docker-compose.yaml files
+if [ -d "$TELECINE_ROOT/services" ]; then
+    for file in "$TELECINE_ROOT"/services/*/docker-compose.yaml; do
+        if [ -f "$file" ]; then
+            compose_files="$compose_files"$'\n'"$file"
+        fi
+    done
+fi
+
+# Handle main worktree vs regular worktree
+if [ "$WORKTREE_DOMAIN" = "main.localhost" ]; then
+    # Main worktree: include Traefik service by activating profile
+    if [ -n "$root_compose_file" ]; then
         compose_files="$root_compose_file"$'\n'"$compose_files"
-        export COMPOSE_PROFILES="main-worktree"
-    else
-        # Worktree: include compose file but Traefik won't start (profile not activated)
+    fi
+    export COMPOSE_PROFILES="main-worktree"
+else
+    # Worktree: include compose file but Traefik won't start (profile not activated)
+    if [ -n "$root_compose_file" ]; then
         compose_files="$root_compose_file"$'\n'"$compose_files"
     fi
 fi
 
-# Remove any potential duplicate entries
-compose_files=$(echo "$compose_files" | awk '!seen[$0]++')
+# Remove any potential duplicate entries and empty lines, then build flags
+compose_flags=""
+for file in $(echo "$compose_files" | awk 'NF && !seen[$0]++'); do
+    if [ -n "$file" ] && [ -f "$file" ]; then
+        if [ -z "$compose_flags" ]; then
+            compose_flags="-f $file"
+        else
+            compose_flags="$compose_flags -f $file"
+        fi
+    fi
+done
 
-# Add -f flag to each file
-compose_flags=$(echo "$compose_files" | sed 's/^/-f /' | tr '\n' ' ')
+# Trim leading/trailing whitespace
+compose_flags=$(echo "$compose_flags" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 
 # Debug output
 if [ -n "$CI" ]; then
@@ -81,4 +162,44 @@ fi
 
 # Run docker compose with worktree-specific project name
 # COMPOSE_PROFILES is set above for main worktree to activate Traefik service
-docker compose ${compose_flags} --project-name "$WORKTREE_DOCKER_PROJECT_NAME" "$@"
+if [ -z "$compose_flags" ]; then
+    echo "Error: No docker-compose files found in $TELECINE_ROOT" >&2
+    exit 1
+fi
+
+# Change to TELECINE_ROOT (container path) so that ${PWD}/.env resolves correctly in compose files
+# The compose files use ${PWD}/.env which expects to be run from the telecine directory
+cd "$TELECINE_ROOT"
+
+# Rebuild compose_flags with relative paths from TELECINE_ROOT
+relative_compose_flags=""
+for file in $(echo "$compose_files" | awk 'NF && !seen[$0]++'); do
+    if [ -n "$file" ] && [ -f "$file" ]; then
+        # Convert absolute paths to relative paths from TELECINE_ROOT
+        rel_file="${file#$TELECINE_ROOT/}"
+        # If path doesn't start with TELECINE_ROOT, use it as-is (already relative)
+        if [ "$rel_file" = "$file" ]; then
+            rel_file="$file"
+        fi
+        if [ -z "$relative_compose_flags" ]; then
+            relative_compose_flags="-f $rel_file"
+        else
+            relative_compose_flags="$relative_compose_flags -f $rel_file"
+        fi
+    fi
+done
+
+# Export TELECINE_ROOT_HOST so docker-compose can use it in volume mounts
+export TELECINE_ROOT_HOST
+
+# Detect which compose command is available
+if command -v docker-compose > /dev/null 2>&1; then
+    # Use standalone docker-compose (hyphenated)
+    docker-compose $relative_compose_flags --project-name "$WORKTREE_DOCKER_PROJECT_NAME" "$@"
+elif docker compose version > /dev/null 2>&1; then
+    # Use docker compose plugin (space-separated)
+    docker compose $relative_compose_flags --project-name "$WORKTREE_DOCKER_PROJECT_NAME" "$@"
+else
+    echo "Error: Neither 'docker-compose' nor 'docker compose' is available" >&2
+    exit 1
+fi

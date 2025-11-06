@@ -8,6 +8,7 @@ import express from "express";
 import cors from "cors";
 import mime from "mime-types";
 import morgan from "morgan";
+import { trace } from "@opentelemetry/api";
 import "react-router";
 
 import {
@@ -33,16 +34,41 @@ export const app = express();
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+    if (!origin) {
+      // Allow requests with no origin (e.g., mobile apps, Postman)
       callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
+      return;
     }
+    
+    // Check exact matches
+    if (ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+    
+    // In development, allow any *.localhost domain
+    if (process.env.NODE_ENV === "development" && origin.match(/^https?:\/\/[^:]+\.localhost(:\d+)?$/)) {
+      callback(null, true);
+      return;
+    }
+    
+    callback(new Error("Not allowed by CORS"));
   },
   credentials: true,
 }));
 
-app.use(morgan("tiny"));
+morgan.token("host", (req) => req.get("host") || "");
+app.use(morgan(":method :url :status :res[content-length] - :response-time ms :host"));
+
+app.use((req, res, next) => {
+  const host = req.get("host") || "";
+  const activeSpan = trace.getActiveSpan();
+  if (activeSpan) {
+    activeSpan.setAttribute("http.host", host);
+    activeSpan.setAttribute("http.domain", host.split(":")[0]);
+  }
+  next();
+});
 
 const rootDir = path.join(
   path.dirname(new URL(import.meta.url).pathname),
@@ -51,6 +77,29 @@ const rootDir = path.join(
 
 app.get("/healthz", (_req, res) => {
   res.status(200).end("ok");
+});
+
+app.use((req, res, next) => {
+  const host = req.get("host") || "";
+  const protocol = req.protocol || "https";
+
+  let shouldRedirect = false;
+  let redirectHost = "";
+
+  if (host === "editframe.dev" || host === "www.editframe.dev") {
+    shouldRedirect = true;
+    redirectHost = "editframe.com";
+  } else if (host === "www.editframe.com") {
+    shouldRedirect = true;
+    redirectHost = "editframe.com";
+  }
+
+  if (shouldRedirect) {
+    const redirectUrl = `${protocol}://${redirectHost}${req.originalUrl || req.url}`;
+    return res.redirect(301, redirectUrl);
+  }
+
+  next();
 });
 
 if (UPLOAD_TO_BUCKET) {

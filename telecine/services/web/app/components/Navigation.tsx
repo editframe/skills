@@ -14,6 +14,7 @@ import {
   BuildingOfficeIcon,
   DocumentTextIcon,
   CpuChipIcon,
+  ChartBarIcon,
 } from "@heroicons/react/24/outline";
 import { NavLink } from "./Link";
 import clsx from "clsx";
@@ -188,6 +189,7 @@ const adminNavGroups: NavGroup[] = [
     items: [
       { to: "/admin/api_keys", Icon: KeyIcon, label: "API Keys" },
       { to: "/admin/webhooks", Icon: WebhookIcon, label: "Webhooks" },
+      { to: "/admin/api-traffic", Icon: ChartBarIcon, label: "API Traffic" },
     ],
   },
   {

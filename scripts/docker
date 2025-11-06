@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+# Delegate to telecine's docker script if it exists
+if [ -f "${SCRIPT_DIR}/../telecine/scripts/docker" ]; then
+  "${SCRIPT_DIR}/../telecine/scripts/docker" "$@"
+else
+  # Fallback to docker directly
+  docker "$@"
+fi
+
+
+
+
+
+
+
+

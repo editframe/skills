@@ -14,12 +14,16 @@ services:
       - --api.insecure=true
       - --providers.docker
       - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=telecine-traefik
       - --entrypoints.web.address=:3000
       - --entrypoints.traefik.address=:7777
       - --entrypoints.port24678.address=:24678
       - --entrypoints.port3001.address=:3001
       - --log.level=INFO
       - --accesslog
+      - --entrypoints.web.transport.respondingTimeouts.readTimeout=0s
+      - --entrypoints.web.transport.respondingTimeouts.writeTimeout=0s
+      - --entrypoints.web.transport.respondingTimeouts.idleTimeout=3600s
     restart: unless-stopped
     profiles:
       - main-worktree
@@ -75,7 +79,7 @@ services:
       - PYTORCH_ENABLE_MPS_FALLBACK=1
     working_dir: /app
     volumes:
-      - .:/app
+      - ${TELECINE_ROOT_HOST:-${PWD}}:/app
       - node_modules:/app/node_modules
       - ${HOME}/.config/gcloud:/root/.config/gcloud
       - ${ELEMENTS_PATH:-../elements}:/app/lib/packages

@@ -2,6 +2,9 @@
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
+# Source worktree configuration to get network name
+. "$SCRIPT_DIR/worktree-config"
+
 echo "🚨 Playwright will run inside the docker container"
 echo "You will have to access it through a web browser"
 echo "Visit this url: http://localhost:4444"
@@ -12,7 +15,7 @@ echo "🚨🚨🚨 Do not visit 0.0.0.0:4444, you MUST load localhost:4444"
 docker run -it --rm \
   --workdir /app \
   --volume $SCRIPT_DIR/../:/app \
-  --network telecine_default \
+  --network "$WORKTREE_DOCKER_NETWORK_NAME" \
   --publish 4444:4444 \
   mcr.microsoft.com/playwright:v1.53.0-jammy \
   npm install -g @playwright/test@1.53.0 && \

@@ -10,12 +10,12 @@ program
   .addOption(
     new Option("--ef-host <host>", "Editframe Host")
       .env("EF_HOST")
-      .default("https://editframe.dev"),
+      .default("https://editframe.com"),
   )
   .addOption(
     new Option("--ef-render-host <host>", "Editframe Render Host")
       .env("EF_RENDER_HOST")
-      .default("https://editframe.dev"),
+      .default("https://editframe.com"),
   )
   .version(VERSION);
 

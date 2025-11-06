@@ -7,7 +7,7 @@ export class Client {
   #token?: string;
   #efHost: string;
 
-  constructor(token?: string, efHost = "https://editframe.dev") {
+  constructor(token?: string, efHost = "https://editframe.com") {
     log("Creating client with efHost", { efHost, tokenIsSet: !!token });
     this.#token = token;
     this.#efHost = efHost;

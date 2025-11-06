@@ -21,12 +21,25 @@ const imagesDir = path.resolve(__dirname, "public/images");
 
 app.use("/images", express.static(imagesDir, { maxAge: "1h" }));
 
+let viteDevServer;
+let server;
 if (DEVELOPMENT) {
   console.log("Starting development server");
-  const viteDevServer = await import("vite").then((vite) =>
+  // Create HTTP server first
+  server = app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+  });
+  
+  // Pass the server to Vite so HMR WebSocket uses the same server
+  viteDevServer = await import("vite").then((vite) =>
     vite.createServer({
       configFile: "/app/services/web/vite.config.ts",
-      server: { middlewareMode: true },
+      server: { 
+        middlewareMode: true,
+        hmr: {
+          server: server, // Use the Express server for HMR WebSocket
+        },
+      },
     })
   );
   app.use(viteDevServer.middlewares);
@@ -58,6 +71,9 @@ if (DEVELOPMENT) {
 
 app.use(morgan("tiny"));
 
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
+// Server is created above in DEVELOPMENT mode, create it here for production
+if (!DEVELOPMENT) {
+  app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+  });
+}

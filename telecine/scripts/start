@@ -2,8 +2,46 @@
 set -e
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+PROJECT_ROOT="$SCRIPT_DIR/.."
 
-${SCRIPT_DIR}/npm install
-${SCRIPT_DIR}/docker-compose up --build -d --force-recreate
+# Change to project root so npm install runs in the correct directory
+cd "$PROJECT_ROOT"
+
+# Run npm install on the host (faster and avoids container volume mount issues)
+if command -v npm > /dev/null 2>&1; then
+    echo "Running npm install on host..."
+    npm install
+else
+    echo "npm not found on host, attempting to use container..."
+    # Start docker services first (needed for runner service to be available)
+    ${SCRIPT_DIR}/docker-compose up --build -d --force-recreate
+    # Run npm install in the container
+    ${SCRIPT_DIR}/npm install
+fi
+
+# Build native transcode module (required for jit-transcoding service)
+echo "Building native transcode module..."
+if command -v npm > /dev/null 2>&1; then
+    npm run build
+else
+    ${SCRIPT_DIR}/docker-compose exec runner npm run build
+fi
+
+# Start docker services (all services needed for migrations)
+# Use the same approach as start-for-playwright to ensure all services are started
+. "$SCRIPT_DIR/worktree-config"
+
+${SCRIPT_DIR}/docker-compose \
+  -f ${SCRIPT_DIR}/../docker-compose.yaml \
+  -f ${SCRIPT_DIR}/../services/dev-postgres/docker-compose.yaml \
+  -f ${SCRIPT_DIR}/../services/dev-valkey/docker-compose.yaml \
+  -f ${SCRIPT_DIR}/../services/dev-mailhog/docker-compose.yaml \
+  -f ${SCRIPT_DIR}/../services/graphql-engine/docker-compose.yaml \
+  up --build -d --force-recreate --wait
+
+# Wait a moment for volumes to be fully mounted and services to be ready
+sleep 2
+
+# Run migrations and seed
 ${SCRIPT_DIR}/migrate-db
 ${SCRIPT_DIR}/seed
