@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+# Delegate to telecine's soft-start script
+# It handles starting docker services without recreating containers
+"${SCRIPT_DIR}/../telecine/scripts/soft-start" "$@"
+

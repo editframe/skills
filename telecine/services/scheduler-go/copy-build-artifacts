@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Copies Go scheduler binary from main worktree to current worktree
+# Builds in main if it doesn't exist
+
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+PROJECT_ROOT=$(cd "$SCRIPT_DIR/../../.." && pwd)
+
+# Paths
+MAIN_BINARY="/workspace/telecine/services/scheduler-go/scheduler"
+CURRENT_BINARY="$PROJECT_ROOT/services/scheduler-go/scheduler"
+
+# Check if we're in the main worktree
+if [ "$PROJECT_ROOT" = "/workspace/telecine" ]; then
+  # We're in main - just build if needed
+  if [ -f "$CURRENT_BINARY" ]; then
+    echo "Go scheduler binary already exists in main worktree"
+    exit 0
+  fi
+  if ! command -v go > /dev/null 2>&1; then
+    echo "Go not available on host - binary will be built in Docker"
+    exit 0
+  fi
+  echo "Building Go scheduler binary in main worktree..."
+  cd "$PROJECT_ROOT/services/scheduler-go"
+  CGO_ENABLED=0 go build -o scheduler ./cmd/scheduler
+  exit 0
+fi
+
+# We're in a worktree - copy from main
+# If binary already exists in current worktree, skip
+if [ -f "$CURRENT_BINARY" ]; then
+  echo "Go scheduler binary already exists in worktree"
+  exit 0
+fi
+
+# If main has the binary, copy it
+if [ -f "$MAIN_BINARY" ]; then
+  cp "$MAIN_BINARY" "$CURRENT_BINARY"
+  echo "Copied Go scheduler binary from main worktree"
+  exit 0
+fi
+
+# Main doesn't have binary - build it in main, then copy
+if ! command -v go > /dev/null 2>&1; then
+  echo "Go not available on host - binary will be built in Docker"
+  exit 0
+fi
+echo "Building Go scheduler binary in main worktree..."
+cd /workspace/telecine/services/scheduler-go
+CGO_ENABLED=0 go build -o scheduler ./cmd/scheduler
+cd "$PROJECT_ROOT"
+cp "$MAIN_BINARY" "$CURRENT_BINARY"
+echo "Built Go scheduler binary in main worktree and copied to worktree"
+

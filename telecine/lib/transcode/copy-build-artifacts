@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# Copies native module build artifacts from main worktree to current worktree
+# Builds in main if they don't exist
+
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+PROJECT_ROOT=$(cd "$SCRIPT_DIR/../../.." && pwd)
+
+# Paths
+MAIN_BUILD="/workspace/telecine/lib/transcode/build/Release/playback.node"
+CURRENT_BUILD="$PROJECT_ROOT/lib/transcode/build/Release/playback.node"
+
+# Check if we're in the main worktree
+if [ "$PROJECT_ROOT" = "/workspace/telecine" ]; then
+  # We're in main - just build if needed
+  if [ -f "$CURRENT_BUILD" ]; then
+    echo "Native module build already exists in main worktree"
+    exit 0
+  fi
+  echo "Building native module in main worktree..."
+  cd "$PROJECT_ROOT"
+  npm run build
+  exit 0
+fi
+
+# We're in a worktree - copy from main
+# If build already exists in current worktree, skip
+if [ -f "$CURRENT_BUILD" ]; then
+  echo "Native module build already exists in worktree"
+  exit 0
+fi
+
+# Ensure build directory exists
+mkdir -p "$(dirname "$CURRENT_BUILD")"
+
+# If main has the build, copy it
+if [ -f "$MAIN_BUILD" ]; then
+  cp "$MAIN_BUILD" "$CURRENT_BUILD"
+  echo "Copied native module build from main worktree"
+  exit 0
+fi
+
+# Main doesn't have build - build it in main, then copy
+echo "Building native module in main worktree..."
+cd /workspace/telecine
+npm run build
+cd "$PROJECT_ROOT"
+cp "$MAIN_BUILD" "$CURRENT_BUILD"
+echo "Built native module in main worktree and copied to worktree"
+

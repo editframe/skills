@@ -1,0 +1,9 @@
+{
+  "setup-worktree": [
+    "cd telecine && npm install",
+    "cd telecine && scripts/copy-native-build"
+  ],
+  "cleanup-worktree": [
+    "cd telecine && scripts/docker-compose stop"
+  ]
+}
