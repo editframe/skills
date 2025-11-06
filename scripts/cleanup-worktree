@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+# Delegate to telecine's cleanup-worktree script
+"${SCRIPT_DIR}/../telecine/scripts/cleanup-worktree" "$@"
+
