@@ -1,0 +1,8 @@
+# Worktree override: Remove port mappings since services are accessed via Traefik
+services:
+  postgres:
+    ports: []
+  graphql-engine:
+    ports: []
+  data-connector-agent:
+    ports: []

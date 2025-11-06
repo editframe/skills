@@ -4,8 +4,8 @@ services:
     volumes:
       - ${TELECINE_ROOT_HOST:-${PWD}}/services/graphql-engine/metadata:/hasura-metadata
       - ${TELECINE_ROOT_HOST:-${PWD}}/services/graphql-engine/migrations:/hasura-migrations
-    ports:
-      - "8080:8080"
+    # ports:
+      # - "8080:8080"
     env_file:
       - ${PWD}/.env
     depends_on:
@@ -25,8 +25,8 @@ services:
   #       condition: service_healthy
   data-connector-agent:
     image: hasura/graphql-data-connector:v2.36.0
-    ports:
-      - 8081:8081
+    # ports:
+      # - 8081:8081
     environment:
       QUARKUS_LOG_LEVEL: ERROR # FATAL, ERROR, WARN, INFO, DEBUG, TRACE
       ## https://quarkus.io/guides/opentelemetry#configuration-reference

@@ -6,8 +6,8 @@ services:
       - /var/lib/postgresql/data
     env_file:
       - ${PWD}/.env
-    ports:
-      - 6432:5432
+    # ports:
+      # - 6432:5432
     # These configurtion options are for development only, and should not be used in production.
     # They trade off durability for performance, and WILL LOSE/CORRUPT DATA in the event of a crash.
     # prettier-ignore

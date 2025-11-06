@@ -135,6 +135,11 @@ if [ "$WORKTREE_DOMAIN" = "main.localhost" ]; then
     export COMPOSE_PROFILES="main-worktree"
 else
     # Worktree: include compose file but Traefik won't start (profile not activated)
+    # Add worktree override to remove port mappings (services accessed via Traefik)
+    worktree_override="$TELECINE_ROOT/docker-compose.worktree-override.yaml"
+    if [ -f "$worktree_override" ]; then
+        compose_files="$compose_files"$'\n'"$worktree_override"
+    fi
     if [ -n "$root_compose_file" ]; then
         compose_files="$root_compose_file"$'\n'"$compose_files"
     fi

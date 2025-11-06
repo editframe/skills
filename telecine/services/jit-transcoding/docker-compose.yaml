@@ -21,11 +21,11 @@ services:
     command: ["npx", "tsx", "--watch", "/app/services/jit-transcoding/server.ts" ]
     labels:
       traefik.enable: true
-      traefik.http.routers.jit-transcoding.rule: "Host(`${WORKTREE_DOMAIN:-localhost}`) && PathPrefix(`/api/v1/transcode`)"
-      traefik.http.routers.jit-transcoding.entrypoints: web
-      traefik.http.routers.jit-transcoding.priority: 1000
-      traefik.http.routers.jit-transcoding.service: jit-transcoding
-      traefik.http.services.jit-transcoding.loadbalancer.server.port: 3001
+      traefik.http.routers.jit-transcoding-chore-gitignore-cleanup-32jwk.rule: "Host(`${WORKTREE_DOMAIN:-localhost}`) && PathPrefix(`/api/v1/transcode`)"
+      traefik.http.routers.jit-transcoding-chore-gitignore-cleanup-32jwk.entrypoints: web
+      traefik.http.routers.jit-transcoding-chore-gitignore-cleanup-32jwk.priority: 1000
+      traefik.http.routers.jit-transcoding-chore-gitignore-cleanup-32jwk.service: jit-transcoding-chore-gitignore-cleanup-32jwk
+      traefik.http.services.jit-transcoding-chore-gitignore-cleanup-32jwk.loadbalancer.server.port: 3001
 
 networks:
   traefik-shared:
