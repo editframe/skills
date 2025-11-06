@@ -8,7 +8,7 @@ services:
       - .env
     working_dir: /packages
     volumes:
-      - .:/packages
+      - ${ELEMENTS_ROOT_HOST:-${PWD}}:/packages
       - node_modules:/packages/node_modules
     stop_grace_period: 1s
     ports:
@@ -24,12 +24,22 @@ services:
       - .env
     working_dir: /packages
     volumes:
-      - .:/packages
+      - ${ELEMENTS_ROOT_HOST:-${PWD}}:/packages
       - node_modules:/packages/node_modules
     stop_grace_period: 1s
-    ports:
-      - "4321:4321"
+    # Don't expose port directly - only accessible through Traefik
+    expose:
+      - "4321"
     command: ["sleep", "infinity"]
+    networks:
+      - default
+      - traefik-shared
+    labels:
+      traefik.enable: true
+      traefik.http.routers.elements-dev.rule: "Host(`${WORKTREE_DOMAIN}`)"
+      traefik.http.routers.elements-dev.entrypoints: elements
+      traefik.http.routers.elements-dev.service: elements-dev
+      traefik.http.services.elements-dev.loadbalancer.server.port: 4321
 
   ci-runner:
     build:
@@ -40,7 +50,7 @@ services:
       - .env
     working_dir: /packages
     volumes:
-      - .:/packages
+      - ${ELEMENTS_ROOT_HOST:-${PWD}}:/packages
       - node_modules:/packages/node_modules
     stop_grace_period: 1s
     ports:
@@ -50,3 +60,10 @@ services:
 
 volumes:
   node_modules:
+
+networks:
+  traefik-shared:
+    name: telecine-traefik
+    external: true
+  default:
+    name: ${WORKTREE_DOCKER_NETWORK_NAME:-ef-elements_default}

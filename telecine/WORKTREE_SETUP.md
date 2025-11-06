@@ -286,3 +286,104 @@ Each worktree has:
 - **Unique domain**: For external access
 - **Isolated project**: For Docker resource management
 
+## Elements Integration
+
+The elements project is integrated into the worktree routing system, allowing dev servers to be accessed via worktree-specific domains.
+
+### Elements Dev Server Routing
+
+Elements dev servers are accessible through Traefik using a dedicated entrypoint:
+
+- **Dev Server URL**: `http://<branch-name>.localhost:4321`
+- **Traefik Entrypoint**: `elements` (port 4321)
+- **Network**: Joins shared `telecine-traefik` network for routing
+- **Service**: `dev-projects` service in elements docker-compose
+
+### Starting Elements Services
+
+```bash
+cd elements
+./scripts/start
+```
+
+This starts (via process-compose):
+1. **Docker Compose runner** - Test infrastructure
+2. **Dev projects server** - Development server (routed through Traefik)
+
+**Note on Host Chrome**: The `host-chrome` process needs to run on the macOS host (not in the dev container) to access the system Chrome browser. If running from a dev container, start host services manually on the macOS host:
+
+```bash
+# On macOS host (outside dev container)
+./scripts/start-host
+```
+
+Or from the elements directory:
+```bash
+cd elements
+npx tsx scripts/start-host-chrome.ts
+```
+
+All worktrees will share the same host-chrome instance. The process-compose dependency on host-chrome is optional (`required: false`), so services will start even if host-chrome is already running externally.
+
+### Verification
+
+```bash
+cd elements
+./scripts/verify-worktree-setup
+```
+
+This verifies:
+- Worktree configuration is loaded correctly
+- Traefik network exists and is accessible
+- Docker Compose configuration is valid
+- Traefik labels are present on dev-projects service
+- Domain resolution works (macOS)
+
+### Accessing Elements Dev Server
+
+After starting services, access the dev server at:
+- **Main worktree**: `http://main.localhost:4321`
+- **Feature branch**: `http://feature-name.localhost:4321`
+
+### Prerequisites
+
+1. **Traefik must be running** in telecine main worktree with port 4321 entrypoint configured
+2. **Shared network** `telecine-traefik` must exist (created automatically when Traefik starts)
+3. **Dev server must bind to 0.0.0.0** inside container (not just localhost) for Traefik access
+
+### Troubleshooting Elements
+
+**Dev server not accessible via domain:**
+
+```bash
+# Verify Traefik is running with port 4321
+docker ps | grep traefik
+docker port <traefik-container> | grep 4321
+
+# Check Traefik has elements entrypoint
+docker logs <traefik-container> | grep elements
+
+# Verify dev-projects service is on shared network
+docker inspect <dev-projects-container> | jq '.[0].NetworkSettings.Networks | keys'
+# Should include: "telecine-traefik"
+```
+
+**Port 4321 conflicts:**
+
+Only one dev-projects service should be running per worktree. Check for conflicts:
+```bash
+docker ps | grep dev-projects
+# Stop extra instances if needed
+```
+
+**Traefik not routing to elements:**
+
+```bash
+# Check Traefik dashboard for routers
+open http://localhost:7777
+# Look for elements-dev router
+
+# Check Traefik logs
+docker logs <traefik-container> | grep elements
+```
+

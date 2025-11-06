@@ -1,12 +1,20 @@
-#/usr/bin/env bash
+#!/usr/bin/env bash
 set -e
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-"${SCRIPT_DIR}"/docker-compose \
-  run --rm \
-    -p 4321:4321 \
-    -w /packages/dev-projects \
-    -e DEBUG="ef:*" \
-    dev-projects \
-      node start.js 
+# Check if dev-projects container is already running
+CONTAINER=$("${SCRIPT_DIR}"/docker-compose ps -q dev-projects)
+if [ -n "$CONTAINER" ] && docker inspect "$CONTAINER" --format='{{.State.Status}}' 2>/dev/null | grep -q "running"; then
+  # Container is running, exec into it
+  docker exec -w /packages/dev-projects -e DEBUG="ef:*" "$CONTAINER" npx tsx start.ts
+else
+  # Container not running, create new one
+  "${SCRIPT_DIR}"/docker-compose \
+    run --rm \
+      -p 4321:4321 \
+      -w /packages/dev-projects \
+      -e DEBUG="ef:*" \
+      dev-projects \
+        npx tsx start.ts
+fi 

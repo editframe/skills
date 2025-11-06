@@ -12,3 +12,4 @@ dev-projects/
 __screenshots__
 test-install/
 .packed-packages
+.logs/

@@ -3,8 +3,32 @@ set -e
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-# Delegate to telecine's start script
+# Start telecine services
 # It handles npm install, docker-compose, migrations, and seeding
-"${SCRIPT_DIR}/../telecine/scripts/start" "$@"
+echo "🚀 Starting telecine services..."
+if ! "${SCRIPT_DIR}/../telecine/scripts/start" "$@"; then
+  echo "⚠️  Telecine services failed to start (this may be expected in dev container)"
+  echo "   Continuing with elements services..."
+fi
+
+# Start elements services
+echo "🚀 Starting elements services..."
+cd "${SCRIPT_DIR}/../elements"
+nohup "${SCRIPT_DIR}/../elements/scripts/start" > /tmp/elements-process-compose.log 2>&1 &
+ELEMENTS_PC_PID=$!
+echo "   Elements process-compose PID: $ELEMENTS_PC_PID"
+sleep 2
+
+# Get worktree domains
+TELECINE_DOMAIN=$(cd "${SCRIPT_DIR}/../telecine" && . scripts/worktree-config 2>/dev/null && echo "$WORKTREE_DOMAIN" || echo "localhost")
+ELEMENTS_DOMAIN=$(cd "${SCRIPT_DIR}/../elements" && . scripts/worktree-config 2>/dev/null && echo "$WORKTREE_DOMAIN" || echo "localhost")
+
+echo "✅ Services started"
+echo ""
+echo "   Telecine: http://${TELECINE_DOMAIN}:3000"
+echo "   Elements: http://${ELEMENTS_DOMAIN}:4321"
+echo ""
+echo "Elements process-compose running in background"
+echo "   Stop:  cd elements && ./scripts/stop"
 
 

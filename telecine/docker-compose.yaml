@@ -6,6 +6,7 @@ services:
       - "3000:3000"
       - "24678:24678"
       - "3001:3001"
+      - "4321:4321"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
@@ -19,6 +20,7 @@ services:
       - --entrypoints.traefik.address=:7777
       - --entrypoints.port24678.address=:24678
       - --entrypoints.port3001.address=:3001
+      - --entrypoints.elements.address=:4321
       - --log.level=INFO
       - --accesslog
       - --entrypoints.web.transport.respondingTimeouts.readTimeout=0s
@@ -47,10 +49,37 @@ services:
         FROM node:22
         RUN apt-get update && apt-get install -y \
             zsh \
+            curl \
+            build-essential \
+            cmake \
+            pkg-config \
+            libavcodec-dev \
+            libavformat-dev \
+            libavutil-dev \
+            libswscale-dev \
+            libswresample-dev \
+            libavfilter-dev \
+            libcurl4-openssl-dev \
             && rm -rf /var/lib/apt/lists/*
 
         # Install tsx globally for running TypeScript files
         RUN npm install -g tsx
+
+        # Install process-compose (Go binary)
+        # Detect architecture and download appropriate binary from tar.gz
+        RUN ARCH=$(uname -m) && \
+            if [ "$$ARCH" = "x86_64" ]; then \
+                ARCH_NAME="amd64"; \
+            elif [ "$$ARCH" = "aarch64" ] || [ "$$ARCH" = "arm64" ]; then \
+                ARCH_NAME="arm64"; \
+            else \
+                echo "Unsupported architecture: $$ARCH" && exit 1; \
+            fi && \
+            curl -L "https://github.com/F1bonacc1/process-compose/releases/latest/download/process-compose_linux_$$ARCH_NAME.tar.gz" -o /tmp/process-compose.tar.gz && \
+            tar -xzf /tmp/process-compose.tar.gz -C /tmp && \
+            mv /tmp/process-compose /usr/local/bin/process-compose && \
+            chmod +x /usr/local/bin/process-compose && \
+            rm /tmp/process-compose.tar.gz
 
         SHELL ["/bin/zsh", "-c"]
     volumes:

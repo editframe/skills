@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# Cleanup script for worktree Docker resources and filesystem
+# This script stops containers, removes volumes/networks, and optionally removes the worktree
+
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+PROJECT_ROOT="$SCRIPT_DIR/.."
+
+# Source worktree config to get worktree-specific Docker project name
+. "$SCRIPT_DIR/worktree-config"
+
+echo "🧹 Cleaning up worktree resources..."
+echo "   Branch: $WORKTREE_BRANCH"
+echo "   Docker Project: $WORKTREE_DOCKER_PROJECT_NAME"
+echo ""
+
+# Step 1: Stop and remove Docker containers, volumes, and networks
+echo "1️⃣  Stopping Docker containers and removing resources..."
+if [ -n "$WORKTREE_DOCKER_PROJECT_NAME" ] && [ "$WORKTREE_DOCKER_PROJECT_NAME" != "telecine" ]; then
+  # Only cleanup if this is a worktree (not main)
+  "$SCRIPT_DIR/docker-compose" down -v --remove-orphans 2>&1 | grep -v "No such" || true
+  echo "✅ Docker resources cleaned up"
+else
+  echo "⚠️  Skipping Docker cleanup (this appears to be the main worktree)"
+fi
+
+# Step 2: Remove worktree from git (if requested)
+if [ "$1" = "--remove-worktree" ]; then
+  echo ""
+  echo "2️⃣  Removing git worktree..."
+  WORKTREE_ROOT=$(git rev-parse --show-toplevel)
+  
+  # Check if we're in a worktree
+  if git worktree list | grep -q "$WORKTREE_ROOT"; then
+    # Get the main worktree root
+    MAIN_ROOT=$(cd "$(git rev-parse --git-dir)/.." && pwd)
+    cd "$MAIN_ROOT"
+    
+    # Remove the worktree
+    git worktree remove "$WORKTREE_ROOT" --force 2>&1 || true
+    echo "✅ Git worktree removed"
+    
+    # Remove the directory if it still exists
+    if [ -d "$WORKTREE_ROOT" ]; then
+      rm -rf "$WORKTREE_ROOT"
+      echo "✅ Worktree directory removed"
+    fi
+  else
+    echo "⚠️  Not a git worktree, skipping git worktree removal"
+  fi
+fi
+
+echo ""
+echo "✅ Cleanup complete!"

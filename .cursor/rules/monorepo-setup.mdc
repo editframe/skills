@@ -43,10 +43,17 @@ The elements project also uses git worktrees with similar structure:
 - Worktrees get isolated Docker environments
 - Docker project names: `ef-elements` (main) or `ef-elements-<branch-name>` (worktrees)
 - Unique domains: `main.localhost` or `<branch-name>.localhost`
+- Dev servers are routed through shared Traefik instance on port 4321
+- Accessible at `http://<branch-name>.localhost:4321`
 
 **Worktree Configuration Script**: `elements/scripts/worktree-config`
 - Same structure as telecine's worktree-config
 - Exports similar environment variables for elements-specific configuration
+
+**Elements Services**: Managed via `process-compose`:
+- `compose`: Docker Compose runner service for tests
+- `dev-projects`: Development server (routed through Traefik)
+- `host-chrome`: Playwright browser server (must run on macOS host, shared across all worktrees)
 
 ## Push/Pull Workflows
 
@@ -133,6 +140,26 @@ The root `scripts/docker` wrapper delegates to telecine's docker script (`teleci
 
 **Usage**: Run `scripts/docker` from anywhere in the monorepo to execute docker commands with project-specific enhancements.
 
+### `scripts/start`
+
+The root `scripts/start` script starts both telecine and elements services:
+- Starts telecine services (npm install, build, docker-compose, migrations, seeding)
+- Starts elements services via process-compose (runs in background)
+- Displays worktree-specific URLs for both services
+
+**Usage**: Run `./scripts/start` from the monorepo root to start all services.
+
+### `scripts/start-host`
+
+The root `scripts/start-host` script starts host-level services that must run on the macOS host (not in containers):
+- **Host Chrome**: Playwright browser server for tests
+- All worktrees share the same host-chrome instance
+- Must be run on macOS host (outside dev container) to access system Chrome
+
+**Usage**: Run `./scripts/start-host` from the monorepo root on the macOS host.
+
+**Note**: When running from a dev container, start host services manually on the macOS host before starting elements services.
+
 ### Other Script Runners
 
 Project-specific scripts (like `npm`, `node`, `npx`, etc.) are located in their respective project directories:
@@ -147,6 +174,23 @@ Both projects use Docker Compose with worktree-aware configuration:
 - Each worktree gets isolated Docker resources
 - Shared Traefik instance routes traffic based on branch-specific domains
 - `.localhost` domains auto-resolve on macOS
+
+### Traefik Routing
+
+The shared Traefik instance routes traffic for both projects:
+- **Telecine**: `http://<branch-name>.localhost:3000`
+- **Elements**: `http://<branch-name>.localhost:4321`
+- Traefik dashboard: `http://localhost:7777`
+
+Elements dev servers connect to the shared `telecine-traefik` network and are routed via the `elements` entrypoint (port 4321).
+
+### Process Compose
+
+Elements services are orchestrated using `process-compose`:
+- Configuration: `elements/process-compose.yaml`
+- Manages: Docker Compose runner, dev-projects server, and host-chrome (optional)
+- Host-chrome dependency is optional (`required: false`) to allow manual startup on macOS host
+- Process-compose is installed in the dev container and should be available on macOS host for full functionality
 
 See `telecine/WORKTREE_SETUP.md` for detailed Docker setup documentation.
 

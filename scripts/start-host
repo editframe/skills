@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+# Start host-level services (services that need to run on the macOS host, not in containers)
+
+# Start host Chrome browser server for Playwright tests
+# All worktrees will share the same host-chrome instance
+echo "🚀 Starting host Chrome browser server..."
+cd "${SCRIPT_DIR}/../elements"
+npx tsx scripts/start-host-chrome.ts "$@"
+
