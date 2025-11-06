@@ -1097,7 +1097,10 @@ export class EFFilmstrip extends TWMixin(LitElement) {
     if (!this.scrubbing) {
       return;
     }
-    if (this.capturedPointerId !== null && e.pointerId !== this.capturedPointerId) {
+    if (
+      this.capturedPointerId !== null &&
+      e.pointerId !== this.capturedPointerId
+    ) {
       return;
     }
     e.preventDefault();
@@ -1111,7 +1114,7 @@ export class EFFilmstrip extends TWMixin(LitElement) {
     e.stopPropagation();
     this.scrubbing = true;
     this.capturedPointerId = e.pointerId;
-    
+
     const target = e.currentTarget as HTMLElement;
     if (target) {
       try {
@@ -1121,13 +1124,13 @@ export class EFFilmstrip extends TWMixin(LitElement) {
         console.warn("Failed to set pointer capture:", err);
       }
     }
-    
+
     // Running scrub in the current microtask doesn't
     // result in an actual update. Not sure why.
     queueMicrotask(() => {
       this.applyScrub(e);
     });
-    
+
     const handlePointerUp = (upEvent: PointerEvent) => {
       if (upEvent.pointerId === this.capturedPointerId) {
         upEvent.preventDefault();
@@ -1135,7 +1138,7 @@ export class EFFilmstrip extends TWMixin(LitElement) {
         if (target) {
           try {
             target.releasePointerCapture(upEvent.pointerId);
-          } catch (err) {
+          } catch (_err) {
             // releasePointerCapture may fail if capture was already lost
           }
         }
@@ -1144,13 +1147,13 @@ export class EFFilmstrip extends TWMixin(LitElement) {
         removeEventListener("pointerup", handlePointerUp);
       }
     };
-    
+
     const handlePointerCancel = (cancelEvent: PointerEvent) => {
       if (cancelEvent.pointerId === this.capturedPointerId) {
         if (target) {
           try {
             target.releasePointerCapture(cancelEvent.pointerId);
-          } catch (err) {
+          } catch (_err) {
             // releasePointerCapture may fail if capture was already lost
           }
         }
@@ -1159,9 +1162,15 @@ export class EFFilmstrip extends TWMixin(LitElement) {
         removeEventListener("pointercancel", handlePointerCancel);
       }
     };
-    
-    addEventListener("pointerup", handlePointerUp, { once: true, passive: false });
-    addEventListener("pointercancel", handlePointerCancel, { once: true, passive: false });
+
+    addEventListener("pointerup", handlePointerUp, {
+      once: true,
+      passive: false,
+    });
+    addEventListener("pointercancel", handlePointerCancel, {
+      once: true,
+      passive: false,
+    });
   }
 
   @eventOptions({ passive: false, capture: false })

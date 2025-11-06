@@ -97,7 +97,7 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
   @eventOptions({ passive: false, capture: false })
   private handlePointerDown(e: PointerEvent) {
     if (!this.scrubberRef) return;
-    
+
     this.isMoving = true;
     e.preventDefault();
     e.stopPropagation();
@@ -125,7 +125,7 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
       e.stopPropagation();
       try {
         this.scrubberRef.releasePointerCapture(e.pointerId);
-      } catch (err) {
+      } catch (_err) {
         // releasePointerCapture may fail if capture was already lost
       }
       this.capturedPointerId = null;
@@ -137,7 +137,7 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
     if (e.pointerId === this.capturedPointerId && this.scrubberRef) {
       try {
         this.scrubberRef.releasePointerCapture(e.pointerId);
-      } catch (err) {
+      } catch (_err) {
         // releasePointerCapture may fail if capture was already lost
       }
       this.capturedPointerId = null;
@@ -179,17 +179,35 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
 
   connectedCallback() {
     super.connectedCallback();
-    window.addEventListener("pointerup", this.boundHandlePointerUp as EventListener, { passive: false });
-    window.addEventListener("pointermove", this.boundHandlePointerMove, { passive: false });
-    window.addEventListener("pointercancel", this.boundHandlePointerCancel as EventListener, { passive: false });
-    this.addEventListener("contextmenu", this.boundHandleContextMenu, { passive: false });
+    window.addEventListener(
+      "pointerup",
+      this.boundHandlePointerUp as EventListener,
+      { passive: false },
+    );
+    window.addEventListener("pointermove", this.boundHandlePointerMove, {
+      passive: false,
+    });
+    window.addEventListener(
+      "pointercancel",
+      this.boundHandlePointerCancel as EventListener,
+      { passive: false },
+    );
+    this.addEventListener("contextmenu", this.boundHandleContextMenu, {
+      passive: false,
+    });
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
-    window.removeEventListener("pointerup", this.boundHandlePointerUp as EventListener);
+    window.removeEventListener(
+      "pointerup",
+      this.boundHandlePointerUp as EventListener,
+    );
     window.removeEventListener("pointermove", this.boundHandlePointerMove);
-    window.removeEventListener("pointercancel", this.boundHandlePointerCancel as EventListener);
+    window.removeEventListener(
+      "pointercancel",
+      this.boundHandlePointerCancel as EventListener,
+    );
     this.removeEventListener("contextmenu", this.boundHandleContextMenu);
   }
 }

@@ -90,8 +90,12 @@ export class EFDial extends LitElement {
     this.dragStartAngle = this.getAngleFromPoint(e.clientX, e.clientY, rect);
     this.dragStartValue = this.value;
     this.setPointerCapture(e.pointerId);
-    this.addEventListener("pointermove", this.handlePointerMove, { passive: false });
-    this.addEventListener("pointerup", this.handlePointerUp, { passive: false });
+    this.addEventListener("pointermove", this.handlePointerMove, {
+      passive: false,
+    });
+    this.addEventListener("pointerup", this.handlePointerUp, {
+      passive: false,
+    });
   }
 
   private handlePointerMove(e: PointerEvent) {

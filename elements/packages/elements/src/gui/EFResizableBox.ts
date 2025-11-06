@@ -405,8 +405,12 @@ export class EFResizableBox extends LitElement {
     };
     this.modifiers = { shift: e.shiftKey, alt: e.altKey };
 
-    document.addEventListener("pointermove", this.handlePointerMove, { passive: false });
-    document.addEventListener("pointerup", this.handlePointerUp, { passive: false });
+    document.addEventListener("pointermove", this.handlePointerMove, {
+      passive: false,
+    });
+    document.addEventListener("pointerup", this.handlePointerUp, {
+      passive: false,
+    });
   }
 
   private handlePointerMove = (e: PointerEvent) => {
@@ -416,7 +420,7 @@ export class EFResizableBox extends LitElement {
       e.pointerId !== this.interaction.pointerId
     )
       return;
-    
+
     e.preventDefault();
 
     const deltaX = e.clientX - this.interaction.startPoint.x;
