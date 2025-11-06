@@ -38,14 +38,14 @@ export class EFPreview extends EFTargetable(ContextMixin(TWMixin(LitElement))) {
 
   constructor() {
     super();
-    this.addEventListener("mouseover", (e) => {
+    this.addEventListener("pointerover", (e) => {
       const target = e.target as HTMLElement;
       const temporal = this.findClosestTemporal(target);
       if (target !== this && temporal) {
         this.focusedElement = target;
       }
     });
-    this.addEventListener("mouseout", (e) => {
+    this.addEventListener("pointerout", (e) => {
       const relatedTarget = e.relatedTarget as HTMLElement;
       const targetingTemporal = this.findClosestTemporal(relatedTarget);
       // Clear focus if:

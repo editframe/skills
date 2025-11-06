@@ -982,6 +982,8 @@ export class EFFilmstrip extends TWMixin(LitElement) {
   @state()
   scrubbing = false;
 
+  private capturedPointerId: number | null = null;
+
   @state()
   timelineScrolltop = 0;
 
@@ -1087,36 +1089,90 @@ export class EFFilmstrip extends TWMixin(LitElement) {
     }
   }
 
-  @eventOptions({ capture: false })
-  scrub(e: MouseEvent) {
+  @eventOptions({ capture: false, passive: false })
+  scrub(e: PointerEvent) {
     if (this.playing) {
       return;
     }
     if (!this.scrubbing) {
       return;
     }
+    if (this.capturedPointerId !== null && e.pointerId !== this.capturedPointerId) {
+      return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
     this.applyScrub(e);
   }
 
-  @eventOptions({ capture: false })
-  startScrub(e: MouseEvent) {
+  @eventOptions({ capture: false, passive: false })
+  startScrub(e: PointerEvent) {
     e.preventDefault();
+    e.stopPropagation();
     this.scrubbing = true;
+    this.capturedPointerId = e.pointerId;
+    
+    const target = e.currentTarget as HTMLElement;
+    if (target) {
+      try {
+        target.setPointerCapture(e.pointerId);
+      } catch (err) {
+        // setPointerCapture may fail in some cases, continue anyway
+        console.warn("Failed to set pointer capture:", err);
+      }
+    }
+    
     // Running scrub in the current microtask doesn't
     // result in an actual update. Not sure why.
     queueMicrotask(() => {
       this.applyScrub(e);
     });
-    addEventListener(
-      "mouseup",
-      () => {
+    
+    const handlePointerUp = (upEvent: PointerEvent) => {
+      if (upEvent.pointerId === this.capturedPointerId) {
+        upEvent.preventDefault();
+        upEvent.stopPropagation();
+        if (target) {
+          try {
+            target.releasePointerCapture(upEvent.pointerId);
+          } catch (err) {
+            // releasePointerCapture may fail if capture was already lost
+          }
+        }
+        this.capturedPointerId = null;
         this.scrubbing = false;
-      },
-      { once: true },
-    );
+        removeEventListener("pointerup", handlePointerUp);
+      }
+    };
+    
+    const handlePointerCancel = (cancelEvent: PointerEvent) => {
+      if (cancelEvent.pointerId === this.capturedPointerId) {
+        if (target) {
+          try {
+            target.releasePointerCapture(cancelEvent.pointerId);
+          } catch (err) {
+            // releasePointerCapture may fail if capture was already lost
+          }
+        }
+        this.capturedPointerId = null;
+        this.scrubbing = false;
+        removeEventListener("pointercancel", handlePointerCancel);
+      }
+    };
+    
+    addEventListener("pointerup", handlePointerUp, { once: true, passive: false });
+    addEventListener("pointercancel", handlePointerCancel, { once: true, passive: false });
   }
 
-  applyScrub(e: MouseEvent) {
+  @eventOptions({ passive: false, capture: false })
+  handleContextMenu(e: Event) {
+    if (this.scrubbing) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }
+
+  applyScrub(e: PointerEvent) {
     const gutter = this.shadowRoot?.querySelector("#gutter");
     if (!gutter) {
       return;
@@ -1223,17 +1279,18 @@ export class EFFilmstrip extends TWMixin(LitElement) {
         )}
       </div>
       <div
-        class="flex h-full w-full cursor-crosshair overflow-auto bg-slate-200 pt-[8px]"
+        class="flex h-full w-full cursor-crosshair overflow-auto bg-slate-200 pt-[8px] touch-pan-x"
         id="gutter"
         ${ref(this.gutterRef)}
         @scroll=${this.syncGutterScroll}
         @wheel=${this.scrollScrub}
       >
         <div
-          class="relative h-full w-full"
-          style="width: ${this.pixelsPerMs * (target?.durationMs ?? 0)}px;"
-          @mousemove=${this.scrub}
-          @mousedown=${this.startScrub}
+          class="relative h-full w-full touch-none"
+          style="width: ${this.pixelsPerMs * (target?.durationMs ?? 0)}px; touch-action: none; user-select: none;"
+          @pointermove=${this.scrub}
+          @pointerdown=${this.startScrub}
+          @contextmenu=${this.handleContextMenu}
         >
           <div
             class="border-red pointer-events-none absolute z-[20] h-full w-[2px] border-r-2 border-red-700"

@@ -1,6 +1,6 @@
 import { consume } from "@lit/context";
 import { css, html, LitElement } from "lit";
-import { customElement, state } from "lit/decorators.js";
+import { customElement, eventOptions, state } from "lit/decorators.js";
 
 import { ref } from "lit/directives/ref.js";
 import type { ControllableInterface } from "./Controllable.js";
@@ -32,6 +32,8 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
       position: relative;
       cursor: pointer;
       border-radius: 2px;
+      touch-action: none;
+      user-select: none;
     }
 
     .progress {
@@ -79,8 +81,9 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
   private isMoving = false;
 
   private scrubberRef?: HTMLElement;
+  private capturedPointerId: number | null = null;
 
-  private updateProgress(e: MouseEvent) {
+  private updateProgress(e: PointerEvent) {
     if (!this.context || !this.scrubberRef) return;
 
     const rect = this.scrubberRef.getBoundingClientRect();
@@ -91,20 +94,62 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
     this.context.currentTimeMs = progress * this.durationMs;
   }
 
-  private boundHandlePointerDown = (e: MouseEvent) => {
+  @eventOptions({ passive: false, capture: false })
+  private handlePointerDown(e: PointerEvent) {
+    if (!this.scrubberRef) return;
+    
     this.isMoving = true;
     e.preventDefault();
+    e.stopPropagation();
+    this.capturedPointerId = e.pointerId;
+    try {
+      this.scrubberRef.setPointerCapture(e.pointerId);
+    } catch (err) {
+      // setPointerCapture may fail in some cases, continue anyway
+      console.warn("Failed to set pointer capture:", err);
+    }
     this.updateProgress(e);
-  };
+  }
 
-  private boundHandlePointerMove = (e: MouseEvent) => {
-    if (this.isMoving) {
+  private boundHandlePointerMove = (e: PointerEvent) => {
+    if (this.isMoving && e.pointerId === this.capturedPointerId) {
+      e.preventDefault();
+      e.stopPropagation();
       this.updateProgress(e);
     }
   };
 
-  private boundHandlePointerUp = () => {
-    this.isMoving = false;
+  private boundHandlePointerUp = (e: PointerEvent) => {
+    if (e.pointerId === this.capturedPointerId && this.scrubberRef) {
+      e.preventDefault();
+      e.stopPropagation();
+      try {
+        this.scrubberRef.releasePointerCapture(e.pointerId);
+      } catch (err) {
+        // releasePointerCapture may fail if capture was already lost
+      }
+      this.capturedPointerId = null;
+      this.isMoving = false;
+    }
+  };
+
+  private boundHandlePointerCancel = (e: PointerEvent) => {
+    if (e.pointerId === this.capturedPointerId && this.scrubberRef) {
+      try {
+        this.scrubberRef.releasePointerCapture(e.pointerId);
+      } catch (err) {
+        // releasePointerCapture may fail if capture was already lost
+      }
+      this.capturedPointerId = null;
+      this.isMoving = false;
+    }
+  };
+
+  private boundHandleContextMenu = (e: Event) => {
+    if (this.isMoving) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
   };
 
   render() {
@@ -123,7 +168,8 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
         })}
         part="scrubber"
         class="scrubber"
-        @mousedown=${this.boundHandlePointerDown}
+        @pointerdown=${this.handlePointerDown}
+        @contextmenu=${this.boundHandleContextMenu}
       >
         <div class="progress" style="width: ${displayProgress * 100}%"></div>
         <div class="handle" style="left: ${displayProgress * 100}%"></div>
@@ -133,14 +179,18 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
 
   connectedCallback() {
     super.connectedCallback();
-    window.addEventListener("pointerup", this.boundHandlePointerUp);
-    window.addEventListener("pointermove", this.boundHandlePointerMove);
+    window.addEventListener("pointerup", this.boundHandlePointerUp as EventListener, { passive: false });
+    window.addEventListener("pointermove", this.boundHandlePointerMove, { passive: false });
+    window.addEventListener("pointercancel", this.boundHandlePointerCancel as EventListener, { passive: false });
+    this.addEventListener("contextmenu", this.boundHandleContextMenu, { passive: false });
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
-    window.removeEventListener("pointerup", this.boundHandlePointerUp);
+    window.removeEventListener("pointerup", this.boundHandlePointerUp as EventListener);
     window.removeEventListener("pointermove", this.boundHandlePointerMove);
+    window.removeEventListener("pointercancel", this.boundHandlePointerCancel as EventListener);
+    this.removeEventListener("contextmenu", this.boundHandleContextMenu);
   }
 }
 

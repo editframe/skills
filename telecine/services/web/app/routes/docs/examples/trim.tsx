@@ -32,14 +32,18 @@ export default function Trim(_props: Route.ComponentProps) {
     return video.intrinsicDurationMs / 1000
   }
 
-  const handleTrimDrag = (e: React.MouseEvent, type: 'start' | 'end') => {
+  const handleTrimDrag = (e: React.PointerEvent, type: 'start' | 'end') => {
     e.preventDefault()
+    e.stopPropagation()
     const timeline = e.currentTarget.parentElement as HTMLElement
     const startX = e.clientX
     const videoDuration = getVideoDuration()
     const originalValue = type === 'start' ? state.startTime : state.endTime
+    const pointerId = e.pointerId
 
-    const handleMouseMove = (moveEvent: MouseEvent) => {
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      if (moveEvent.pointerId !== pointerId) return
+      moveEvent.preventDefault()
       const deltaX = moveEvent.clientX - startX
       const timelineWidth = timeline.offsetWidth
       const deltaTime = (deltaX / timelineWidth) * videoDuration
@@ -66,30 +70,36 @@ export default function Trim(_props: Route.ComponentProps) {
       }
     }
 
-    const handleMouseUp = () => {
-      document.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('mouseup', handleMouseUp)
+    const handlePointerUp = (upEvent: PointerEvent) => {
+      if (upEvent.pointerId !== pointerId) return
+      upEvent.preventDefault()
+      document.removeEventListener('pointermove', handlePointerMove)
+      document.removeEventListener('pointerup', handlePointerUp)
     }
 
-    document.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseup', handleMouseUp)
+    document.addEventListener('pointermove', handlePointerMove, { passive: false })
+    document.addEventListener('pointerup', handlePointerUp, { passive: false })
   }
 
-  const handleMiddleDrag = (e: React.MouseEvent) => {
+  const handleMiddleDrag = (e: React.PointerEvent) => {
     e.preventDefault()
+    e.stopPropagation()
     const timeline = e.currentTarget.parentElement as HTMLElement
     const startX = e.clientX
     const videoDuration = getVideoDuration()
     const originalStartTime = state.startTime
     const originalEndTime = state.endTime
     const trimDuration = originalEndTime - originalStartTime
+    const pointerId = e.pointerId
 
     // Set currentTime to 0 immediately when starting middle drag
     if (timegroupRef.current) {
       timegroupRef.current.currentTime = 0
     }
 
-    const handleMouseMove = (moveEvent: MouseEvent) => {
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      if (moveEvent.pointerId !== pointerId) return
+      moveEvent.preventDefault()
       const deltaX = moveEvent.clientX - startX
       const timelineWidth = timeline.offsetWidth
       const deltaTime = (deltaX / timelineWidth) * videoDuration
@@ -118,13 +128,15 @@ export default function Trim(_props: Route.ComponentProps) {
       }
     }
 
-    const handleMouseUp = () => {
-      document.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('mouseup', handleMouseUp)
+    const handlePointerUp = (upEvent: PointerEvent) => {
+      if (upEvent.pointerId !== pointerId) return
+      upEvent.preventDefault()
+      document.removeEventListener('pointermove', handlePointerMove)
+      document.removeEventListener('pointerup', handlePointerUp)
     }
 
-    document.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseup', handleMouseUp)
+    document.addEventListener('pointermove', handlePointerMove, { passive: false })
+    document.addEventListener('pointerup', handlePointerUp, { passive: false })
   }
 
   return (
@@ -273,7 +285,7 @@ export default function Trim(_props: Route.ComponentProps) {
                         left: `${(state.startTime / getVideoDuration()) * 100}%`,
                         width: `${((state.endTime - state.startTime) / getVideoDuration()) * 100}%`
                       }}
-                      onMouseDown={handleMiddleDrag}
+                      onPointerDown={handleMiddleDrag}
                     >
                       {/* Drag indicator in center */}
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -289,7 +301,7 @@ export default function Trim(_props: Route.ComponentProps) {
                     <div
                       className="absolute top-0 w-3 h-full bg-green-500 cursor-ew-resize hover:bg-green-600 transition-colors z-20 rounded-l shadow-lg border-r-2 border-green-600"
                       style={{ left: `${(state.startTime / getVideoDuration()) * 100}%` }}
-                      onMouseDown={(e) => handleTrimDrag(e, 'start')}
+                      onPointerDown={(e) => handleTrimDrag(e, 'start')}
                     >
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="w-0.5 h-8 bg-white rounded opacity-90" />
@@ -300,7 +312,7 @@ export default function Trim(_props: Route.ComponentProps) {
                     <div
                       className="absolute top-0 w-3 h-full bg-red-500 cursor-ew-resize hover:bg-red-600 transition-colors z-20 rounded-r shadow-lg border-l-2 border-red-600"
                       style={{ left: `calc(${(state.endTime / getVideoDuration()) * 100}% - 0.75rem)` }}
-                      onMouseDown={(e) => handleTrimDrag(e, 'end')}
+                      onPointerDown={(e) => handleTrimDrag(e, 'end')}
                     >
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="w-0.5 h-8 bg-white rounded opacity-90" />

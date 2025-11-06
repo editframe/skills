@@ -405,8 +405,8 @@ export class EFResizableBox extends LitElement {
     };
     this.modifiers = { shift: e.shiftKey, alt: e.altKey };
 
-    document.addEventListener("pointermove", this.handlePointerMove);
-    document.addEventListener("pointerup", this.handlePointerUp);
+    document.addEventListener("pointermove", this.handlePointerMove, { passive: false });
+    document.addEventListener("pointerup", this.handlePointerUp, { passive: false });
   }
 
   private handlePointerMove = (e: PointerEvent) => {
@@ -416,6 +416,8 @@ export class EFResizableBox extends LitElement {
       e.pointerId !== this.interaction.pointerId
     )
       return;
+    
+    e.preventDefault();
 
     const deltaX = e.clientX - this.interaction.startPoint.x;
     const deltaY = e.clientY - this.interaction.startPoint.y;
@@ -460,7 +462,11 @@ export class EFResizableBox extends LitElement {
     this.dispatchBoundsChange();
   };
 
-  private handlePointerUp = () => {
+  private handlePointerUp = (e: PointerEvent) => {
+    if (this.interaction && e.pointerId !== this.interaction.pointerId) {
+      return;
+    }
+    e.preventDefault();
     this.isDragging = false;
     this.dragMode = null;
     this.interaction = null;

@@ -59,6 +59,7 @@ function KeyframeMarker({ keyframe, track, totalDuration, onDrag, onValueChange,
     const startRect = timelineElement.getBoundingClientRect();
 
     const handlePointerMove = (e: PointerEvent) => {
+      e.preventDefault();
       setHasDragged(true);
       // Use the captured timeline element and its original rect
       const relativeX = e.clientX - startRect.left;
@@ -77,8 +78,8 @@ function KeyframeMarker({ keyframe, track, totalDuration, onDrag, onValueChange,
       document.removeEventListener('pointerup', handlePointerUp);
     };
 
-    document.addEventListener('pointermove', handlePointerMove);
-    document.addEventListener('pointerup', handlePointerUp);
+    document.addEventListener('pointermove', handlePointerMove, { passive: false });
+    document.addEventListener('pointerup', handlePointerUp, { passive: false });
   };
 
   const handleClick = (e: React.MouseEvent) => {

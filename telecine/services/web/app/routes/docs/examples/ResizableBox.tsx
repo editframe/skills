@@ -688,6 +688,8 @@ function useResizeDrag(
   const globalPointerMove = useCallback((e: PointerEvent) => {
     if (!facts.interaction || e.pointerId !== facts.interaction.pointerId) return
 
+    e.preventDefault()
+
     // Update facts: current pointer position and modifier keys
     setFacts(current => ({
       ...current,
@@ -711,6 +713,8 @@ function useResizeDrag(
   const globalPointerUp = useCallback((e: PointerEvent) => {
     if (!facts.interaction || e.pointerId !== facts.interaction.pointerId) return
 
+    e.preventDefault()
+
     // Clear facts - interaction is over
     setFacts({
       interaction: null,
@@ -729,9 +733,9 @@ function useResizeDrag(
     // pointer events outside the component bounds. This eliminates the need for
     // pointer capture and local event handlers.
 
-    document.addEventListener('pointermove', globalPointerMove)
-    document.addEventListener('pointerup', globalPointerUp)
-    document.addEventListener('pointercancel', globalPointerUp)
+    document.addEventListener('pointermove', globalPointerMove, { passive: false })
+    document.addEventListener('pointerup', globalPointerUp, { passive: false })
+    document.addEventListener('pointercancel', globalPointerUp, { passive: false })
 
     return () => {
       document.removeEventListener('pointermove', globalPointerMove)

@@ -118,15 +118,16 @@ export default function DocsPage() {
   const isDocsIndex = matches.some((match) => match.id.endsWith("index"));
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [isMobileTocOpen, setIsMobileTocOpen] = React.useState(false);
+  const tocButtonRef = React.useRef<HTMLButtonElement>(null);
 
   return (
     <div className="grid grid-rows-[auto_minmax(0,1fr)] h-screen contain-layout bg-background text-foreground">
       <div className="relative">
-        <Header className="bg-background" />
+        <Header className="bg-background" hideMobileMenu={true} />
         <button
           onClick={() => setIsMobileMenuOpen(true)}
-          className="absolute left-4 top-1/2 -translate-y-1/2 z-10 rounded-md p-2 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 md:hidden"
-          aria-label="Open menu"
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-[1001] rounded-md p-2 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 md:hidden touch-manipulation"
+          aria-label="Open documentation menu"
         >
           <svg
             className="h-6 w-6"
@@ -152,71 +153,74 @@ export default function DocsPage() {
 
         {/* Mobile Table of Contents Toggle */}
         {!isDocsIndex && headings.length >= 2 && (
-          <button
-            onClick={() => setIsMobileTocOpen(!isMobileTocOpen)}
-            className="md:hidden fixed bottom-4 right-4 z-30 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full p-3 shadow-lg hover:shadow-xl transition-shadow touch-manipulation"
-            aria-label="Toggle table of contents"
-          >
-            <svg
-              className="h-5 w-5 text-gray-600 dark:text-gray-300"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
-          </button>
-        )}
-
-        {/* Mobile Table of Contents Drawer */}
-        {!isDocsIndex && headings.length >= 2 && (
           <>
-            {isMobileTocOpen && (
-              <div
-                className="md:hidden fixed inset-0 z-40 bg-black/50 transition-opacity"
-                onClick={() => setIsMobileTocOpen(false)}
-                aria-hidden="true"
-              />
-            )}
-            <div
-              className={clsx(
-                "md:hidden fixed inset-y-0 right-0 z-50 w-64 transform bg-white dark:bg-gray-900 shadow-lg transition-transform duration-300 ease-in-out",
-                isMobileTocOpen ? "translate-x-0" : "translate-x-full"
-              )}
+            <button
+              ref={tocButtonRef}
+              onClick={() => setIsMobileTocOpen(!isMobileTocOpen)}
+              className="md:hidden fixed bottom-4 right-4 z-30 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full p-3 shadow-lg hover:shadow-xl transition-shadow touch-manipulation"
+              aria-label="Toggle table of contents"
             >
-              <div className="flex h-full flex-col">
-                <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 p-4">
-                  <h2 className="text-lg font-semibold">On this page</h2>
-                  <button
-                    onClick={() => setIsMobileTocOpen(false)}
-                    className="rounded-md p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200 touch-manipulation"
-                    aria-label="Close"
-                  >
-                    <svg
-                      className="h-6 w-6"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+              <svg
+                className="h-5 w-5 text-gray-600 dark:text-gray-300"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
+
+            {/* Mobile Table of Contents Popover */}
+            {isMobileTocOpen && (
+              <>
+                <div
+                  className="md:hidden fixed inset-0 z-40"
+                  onClick={() => setIsMobileTocOpen(false)}
+                  aria-hidden="true"
+                />
+                <div
+                  className={clsx(
+                    "md:hidden fixed z-50 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 w-64 max-h-[60vh] overflow-hidden transition-all duration-200",
+                    isMobileTocOpen ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-2"
+                  )}
+                  style={{
+                    bottom: 'calc(4rem + 0.75rem)',
+                    right: '1rem',
+                  }}
+                >
+                  <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 px-4 py-3">
+                    <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">On this page</h2>
+                    <button
+                      onClick={() => setIsMobileTocOpen(false)}
+                      className="rounded-md p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200 touch-manipulation"
+                      aria-label="Close"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="overflow-y-auto max-h-[calc(60vh-3.5rem)] px-4 py-3">
+                    <MobileOnThisPage headings={headings} onLinkClick={() => setIsMobileTocOpen(false)} />
+                  </div>
                 </div>
-                <div className="flex-1 overflow-y-auto p-4">
-                  <MobileOnThisPage headings={headings} onLinkClick={() => setIsMobileTocOpen(false)} />
-                </div>
-              </div>
-            </div>
+              </>
+            )}
           </>
         )}
 
