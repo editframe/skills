@@ -77,8 +77,6 @@ services/transcribe/test-transcribe/*.wav.json
 ./renders/
 .react-router
 build/
-lib/transcode/build/
-services/scheduler-go/scheduler
 services/render/test-render/deps*
 temp/
 debug-frames/

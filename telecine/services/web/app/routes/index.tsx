@@ -46,6 +46,11 @@ export default function IndexPage() {
     <div className="bg-white text-slate-900">
       <Header isLoggedIn={isLoggedIn} />
 
+      {/* Worktree Demo Banner */}
+      <div className="bg-blue-600 text-white text-center py-2 px-4">
+        <p className="text-sm font-medium">Worktree Demo</p>
+      </div>
+
       {/* Hero Section */}
       <section className="relative py-20 bg-gradient-to-b from-white to-gray-50">
         <div className="container mx-auto px-6">
