@@ -18,17 +18,17 @@ export function PropertyDoc({
   htmlAttribute,
 }: PropertyDocProps) {
   return (
-    <div className="flex flex-col gap-4 py-2 text-xs hover:bg-gray-50">
+    <div className="flex flex-col gap-3 sm:gap-4 py-2 text-xs sm:text-sm hover:bg-gray-50">
       <h3
-        className="px-2 my-0 font-mono text-lg bg-blue-200 text-gray-900"
+        className="px-2 my-0 font-mono text-base sm:text-lg bg-blue-200 text-gray-900 break-words"
         id={`attr-${name}`}
       >
         {name}
       </h3>
 
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="w-48 shrink-0 flex flex-col gap-2">
-          <div className="px-2 flex flex-col gap-1.5 text-gray-600">
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+        <div className="w-full sm:w-48 sm:shrink-0 flex flex-col gap-1.5 sm:gap-2">
+          <div className="px-2 flex flex-col gap-1 sm:gap-1.5 text-gray-600 text-xs sm:text-sm">
             {(domReadable || domWritable) && (
               <div>
                 <span className="font-medium">DOM: </span>

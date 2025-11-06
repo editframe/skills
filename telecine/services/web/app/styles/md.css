@@ -19,7 +19,7 @@
     /* general text styles */
   
     & p {
-      @apply mb-4 mt-0;
+      @apply mb-4 mt-0 text-sm sm:text-base;
     }
   
     & strong {
@@ -43,7 +43,7 @@
   
     & ol,
     & ul {
-      @apply my-0 mb-4 pl-8;
+      @apply my-0 mb-4 pl-5 sm:pl-8;
     }
   
     & ol ol,
@@ -163,7 +163,7 @@
   
       /* only apply these styles for links starting with a hash -- if a header does not start with a hash, it was generated from HTML, not markdown headers */
       & a[href^="#"] {
-        @apply absolute -left-6 -right-0 top-0 z-10 flex h-full items-center leading-none;
+        @apply absolute -left-4 md:-left-6 -right-0 top-0 z-10 flex h-full items-center leading-none;
       }
   
       &:hover a[href^="#"],
@@ -220,11 +220,13 @@
     & kbd,
     & pre {
       word-wrap: normal;
-      @apply overflow-auto rounded-lg p-3 text-sm leading-none md:p-4;
+      @apply overflow-auto rounded-lg p-2 text-xs leading-none sm:p-3 sm:text-sm md:p-4;
     }
   
     & pre {
       @apply my-4 border border-gray-100 leading-relaxed dark:border-gray-800;
+      @apply -mx-4 sm:mx-0;
+      @apply overflow-x-auto;
     }
   
     & code,
@@ -283,13 +285,15 @@
     }
   
     & [data-code-block-copy] {
-      @apply absolute right-4 top-[1.125rem] h-5 w-5 cursor-pointer bg-gray-500 opacity-0 hover:bg-black dark:bg-gray-400 dark:hover:bg-gray-100;
+      @apply absolute right-2 sm:right-4 top-2 sm:top-[1.125rem] h-5 w-5 cursor-pointer touch-manipulation bg-gray-500 opacity-0 hover:bg-black dark:bg-gray-400 dark:hover:bg-gray-100;
       mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='9' y='9' width='13' height='13' rx='2' ry='2' vector-effect='non-scaling-stroke'%3E%3C/rect%3E%3Cpath d='M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1' vector-effect='non-scaling-stroke'%3E%3C/path%3E%3C/svg%3E");
       mask-size: cover;
     }
   
     & [data-code-block]:hover [data-code-block-copy],
-    & [data-code-block-copy]:focus {
+    & [data-code-block]:active [data-code-block-copy],
+    & [data-code-block-copy]:focus,
+    & [data-code-block-copy]:active {
       @apply opacity-100;
     }
   
@@ -379,12 +383,15 @@
     & table {
       text-indent: 0;
       border-spacing: 0;
-      @apply my-10 block w-full max-w-full border-collapse overflow-auto border-[color:inherit] text-left;
+      @apply my-6 sm:my-10 block w-full max-w-full border-collapse overflow-x-auto border-[color:inherit] text-left;
+      @apply -mx-4 sm:mx-0;
+      @apply shadow-sm sm:shadow-none;
     }
   
     & table th {
-      @apply sticky top-0 w-full bg-transparent text-sm font-semibold text-gray-700 dark:text-gray-300;
-      @apply border-0 border-b border-gray-200 p-0 pb-1 pr-4 dark:border-gray-800;
+      @apply sticky top-0 bg-white dark:bg-gray-900 text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300;
+      @apply border-0 border-b border-gray-200 px-2 sm:px-4 py-2 sm:py-3 pb-1 sm:pb-1 pr-2 sm:pr-4 dark:border-gray-800;
+      @apply min-w-[120px];
     }
   
     & table tbody {
@@ -392,7 +399,7 @@
     }
   
     & table td {
-      @apply w-full whitespace-nowrap border-0 border-b border-gray-100 p-0 py-2 pr-4 text-sm text-black dark:border-gray-800 dark:text-white;
+      @apply whitespace-nowrap border-0 border-b border-gray-100 px-2 sm:px-4 py-2 sm:py-3 pr-2 sm:pr-4 text-xs sm:text-sm text-black dark:border-gray-800 dark:text-white;
     }
   
     /*****************************************************************************/
@@ -402,7 +409,7 @@
     & docs-success,
     & docs-warning,
     & docs-error {
-      @apply relative mb-3 mt-0 block rounded-lg border-l-2 border-r-2 border-current px-4 py-2;
+      @apply relative mb-3 mt-0 block rounded-lg border-l-2 border-r-2 border-current px-3 sm:px-4 py-2 text-sm sm:text-base;
     }
   
     & docs-info::before,
@@ -488,7 +495,7 @@
     /* blockquotes */
   
     & blockquote {
-      @apply mx-0 mb-4 mt-0 border-l-4 border-gray-200 p-0 pl-4 text-gray-600 dark:border-gray-800 dark:text-gray-400;
+      @apply mx-0 mb-4 mt-0 border-l-4 border-gray-200 p-0 pl-3 sm:pl-4 text-sm sm:text-base text-gray-600 dark:border-gray-800 dark:text-gray-400;
     }
   
     & blockquote > :first-child {

@@ -162,20 +162,20 @@ export function Demonstration({
 
   return (
     <div
-      className={clsx("border-l-4 border-slate-300 pl-4", {
-        "grid grid-cols-[1fr_1fr]": layout === "horizontal" && !hideSource,
+      className={clsx("border-l-4 border-slate-300 pl-2 sm:pl-4", {
+        "grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-4": layout === "horizontal" && !hideSource,
       })}
     >
-      <div className="h-[calc(60vh-4rem)]">
+      <div className="h-[calc(50vh-4rem)] sm:h-[calc(60vh-4rem)] min-h-[250px]">
         {renderPreviewContent()}
       </div>
 
       {!hideSource && (
-        <div className="max-h-[calc(60vh-4rem)] flex flex-col">
+        <div className="max-h-[calc(50vh-4rem)] sm:max-h-[calc(60vh-4rem)] flex flex-col">
           {!alwaysShowSource && (
             <button
               onClick={() => setIsSourceVisible(!isSourceVisible)}
-              className="text-xs font-medium text-gray-600 hover:text-gray-900 flex items-center gap-1 py-2"
+              className="text-xs font-medium text-gray-600 hover:text-gray-900 flex items-center gap-1 py-2 touch-manipulation"
             >
               {isSourceVisible ? "▼" : "▶"} Show Source
             </button>
@@ -185,7 +185,7 @@ export function Demonstration({
             <PersistentTabGroup stateKey="demonstration">
               <PersistentTab label="HTML">
                 <CodeEditor
-                  className="my-4"
+                  className="my-2 sm:my-4"
                   code={editableHtmlVersion}
                   onChange={(newCode) => setEditableHtmlVersion(newCode || "")}
                   language="html"
@@ -194,7 +194,7 @@ export function Demonstration({
               <PersistentTab label="JSX (read only)">
                 <CodeEditor
                   readOnly
-                  className="my-4"
+                  className="my-2 sm:my-4"
                   code={jsxVersion}
                   onChange={() => { }}
                   language="javascript"

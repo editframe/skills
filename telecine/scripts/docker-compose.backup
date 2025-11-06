@@ -22,29 +22,6 @@ WORKTREE_ROOT=$(cd "$PROJECT_ROOT" && git rev-parse --show-toplevel 2>/dev/null 
 # The devcontainer mounts the repo root to /workspace, so we need to find the host mount source
 resolve_host_path() {
     local container_path="$1"
-    # If path is in Cursor's default worktree location, resolve via mount
-    if [[ "$container_path" == /home/vscode/.cursor/worktrees/* ]]; then
-        # Get the host path of the Cursor worktrees mount
-        local host_cursor_worktrees=""
-        if command -v jq > /dev/null 2>&1; then
-            host_cursor_worktrees=$(docker inspect $(hostname) 2>/dev/null | \
-                jq -r '.[0].Mounts[] | select(.Destination == "/home/vscode/.cursor/worktrees") | .Source' 2>/dev/null | head -1)
-        else
-            # Fallback: use grep/sed to extract Source from JSON
-            host_cursor_worktrees=$(docker inspect $(hostname) 2>/dev/null | \
-                grep -A 5 '"Destination": "/home/vscode/.cursor/worktrees"' | \
-                grep '"Source"' | \
-                sed 's/.*"Source": "\([^"]*\)".*/\1/' | head -1)
-        fi
-        
-        if [ -n "$host_cursor_worktrees" ] && [ "$host_cursor_worktrees" != "null" ]; then
-            # Replace /home/vscode/.cursor/worktrees with host path
-            local relative_path="${container_path#/home/vscode/.cursor/worktrees}"
-            echo "${host_cursor_worktrees}${relative_path}"
-            return
-        fi
-    fi
-    
     
     # If path starts with /workspace, try to resolve via container inspect
     if [[ "$container_path" == /workspace* ]]; then
@@ -75,8 +52,8 @@ resolve_host_path() {
 }
 
 # Determine telecine root path (container path)
-if [[ "$WORKTREE_ROOT" == /home/vscode/.cursor/worktrees/* ]]; then
-    # Worktree is in Cursor's default location (mounted from host)
+if [[ "$WORKTREE_ROOT" == /workspace/.cursor-worktrees/* ]]; then
+    # Worktree is in the host-mounted directory
     TELECINE_ROOT_CONTAINER="$WORKTREE_ROOT/telecine"
     if [[ ! -d "$TELECINE_ROOT_CONTAINER" ]]; then
         TELECINE_ROOT_CONTAINER="$WORKTREE_ROOT"

@@ -108,6 +108,6 @@
   "remoteUser": "vscode",
   "mounts": [
     "source=${localEnv:HOME}${localEnv:USERPROFILE}/.config/gcloud,target=/home/vscode/.config/gcloud,type=bind,consistency=cached",
-    "source=${localWorkspaceFolder}/.cursor-worktrees,target=/workspace/.cursor-worktrees,type=bind,consistency=cached"
+    "source=${localEnv:HOME}${localEnv:USERPROFILE}/.cursor/worktrees,target=/home/vscode/.cursor/worktrees,type=bind,consistency=cached"
   ]
 }
