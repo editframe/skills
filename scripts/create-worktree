@@ -61,36 +61,27 @@ if [ -d "$WORKTREE_DIR" ]; then
   exit 1
 fi
 
-# Store original branch to restore later
-ORIGINAL_BRANCH="$CURRENT_BRANCH"
-NEED_RESTORE=false
+# Determine base branch for new branch creation
+if [ -z "$CURRENT_BRANCH" ] || [ "$CURRENT_BRANCH" = "HEAD" ]; then
+  # Detached HEAD, use main/master
+  BASE_BRANCH="main"
+  if ! git show-ref --verify --quiet "refs/heads/main"; then
+    BASE_BRANCH="master"
+  fi
+else
+  BASE_BRANCH="$CURRENT_BRANCH"
+fi
 
 # Check if branch exists
 if git show-ref --verify --quiet "refs/heads/${BRANCH_NAME}"; then
   echo "📦 Using existing branch: $BRANCH_NAME"
+  echo "🌳 Creating worktree at: $WORKTREE_DIR"
+  git worktree add "$WORKTREE_DIR" "$BRANCH_NAME"
 else
   echo "📦 Creating new branch: $BRANCH_NAME"
-  NEED_RESTORE=true
-  # Create branch from current branch (or main/master if detached)
-  if [ -z "$CURRENT_BRANCH" ] || [ "$CURRENT_BRANCH" = "HEAD" ]; then
-    # Detached HEAD, use main/master
-    git checkout -b "$BRANCH_NAME" main 2>/dev/null || git checkout -b "$BRANCH_NAME" master 2>/dev/null || {
-      echo "Error: Could not create branch. Ensure main or master branch exists." >&2
-      exit 1
-    }
-    ORIGINAL_BRANCH="main"
-  else
-    git checkout -b "$BRANCH_NAME"
-  fi
-fi
-
-# Create worktree
-echo "🌳 Creating worktree at: $WORKTREE_DIR"
-git worktree add "$WORKTREE_DIR" "$BRANCH_NAME"
-
-# Restore original branch in main worktree if we changed it
-if [ "$NEED_RESTORE" = true ] && [ -n "$ORIGINAL_BRANCH" ] && [ "$ORIGINAL_BRANCH" != "HEAD" ]; then
-  git checkout "$ORIGINAL_BRANCH" > /dev/null 2>&1 || true
+  echo "🌳 Creating worktree at: $WORKTREE_DIR"
+  # Use -b flag to create branch and worktree atomically without checking out in main
+  git worktree add -b "$BRANCH_NAME" "$WORKTREE_DIR" "$BASE_BRANCH"
 fi
 
 # Verify worktree structure
@@ -108,6 +99,87 @@ if [ -f "$WORKTREE_DIR/telecine/scripts/copy-native-build" ]; then
   cd "$CURRENT_ROOT"
 else
   echo "Warning: copy-native-build script not found. Skipping artifact copy." >&2
+fi
+
+# Copy .env files
+echo "📋 Copying .env files..."
+if [ -f "$CURRENT_ROOT/telecine/.env" ]; then
+  cp "$CURRENT_ROOT/telecine/.env" "$WORKTREE_DIR/telecine/.env" 2>/dev/null || {
+    echo "Warning: Failed to copy telecine/.env" >&2
+  }
+  echo "   ✅ Copied telecine/.env"
+fi
+
+if [ -f "$CURRENT_ROOT/elements/.env" ]; then
+  cp "$CURRENT_ROOT/elements/.env" "$WORKTREE_DIR/elements/.env" 2>/dev/null || {
+    echo "Warning: Failed to copy elements/.env" >&2
+  }
+  echo "   ✅ Copied elements/.env"
+fi
+
+# Copy node_modules for faster startup
+echo ""
+echo "📦 Copying node_modules (this may take a moment)..."
+if [ -d "$CURRENT_ROOT/telecine/node_modules" ]; then
+  echo "   Copying telecine/node_modules..."
+  # Use rsync for efficiency (only copies changed files), fallback to cp if rsync unavailable
+  if command -v rsync > /dev/null 2>&1; then
+    rsync -a "$CURRENT_ROOT/telecine/node_modules/" "$WORKTREE_DIR/telecine/node_modules/" 2>/dev/null || {
+      echo "   ⚠️  rsync failed, trying cp..." >&2
+      cp -R "$CURRENT_ROOT/telecine/node_modules" "$WORKTREE_DIR/telecine/" 2>/dev/null || {
+        echo "   ⚠️  Failed to copy telecine/node_modules (will install on first run)" >&2
+      }
+    }
+  else
+    cp -R "$CURRENT_ROOT/telecine/node_modules" "$WORKTREE_DIR/telecine/" 2>/dev/null || {
+      echo "   ⚠️  Failed to copy telecine/node_modules (will install on first run)" >&2
+    }
+  fi
+  echo "   ✅ Copied telecine/node_modules"
+else
+  echo "   ℹ️  telecine/node_modules not found in main worktree (will install on first run)"
+fi
+
+if [ -d "$CURRENT_ROOT/elements/node_modules" ]; then
+  echo "   Copying elements/node_modules..."
+  # Use rsync for efficiency (only copies changed files), fallback to cp if rsync unavailable
+  if command -v rsync > /dev/null 2>&1; then
+    rsync -a "$CURRENT_ROOT/elements/node_modules/" "$WORKTREE_DIR/elements/node_modules/" 2>/dev/null || {
+      echo "   ⚠️  rsync failed, trying cp..." >&2
+      cp -R "$CURRENT_ROOT/elements/node_modules" "$WORKTREE_DIR/elements/" 2>/dev/null || {
+        echo "   ⚠️  Failed to copy elements/node_modules (will install on first run)" >&2
+      }
+    }
+  else
+    cp -R "$CURRENT_ROOT/elements/node_modules" "$WORKTREE_DIR/elements/" 2>/dev/null || {
+      echo "   ⚠️  Failed to copy elements/node_modules (will install on first run)" >&2
+    }
+  fi
+  echo "   ✅ Copied elements/node_modules"
+else
+  echo "   ℹ️  elements/node_modules not found in main worktree (will install on first run)"
+fi
+
+# Start Docker resources
+echo ""
+echo "🚀 Starting Docker resources..."
+if [ -f "$WORKTREE_DIR/scripts/start" ]; then
+  cd "$WORKTREE_DIR"
+  # Run start script and capture exit code
+  set +e  # Temporarily disable exit on error
+  ./scripts/start
+  START_EXIT_CODE=$?
+  set -e  # Re-enable exit on error
+  cd "$CURRENT_ROOT"
+  
+  if [ $START_EXIT_CODE -ne 0 ]; then
+    echo ""
+    echo "⚠️  Warning: Some services may have failed to start." >&2
+    echo "   Check logs and start manually if needed:" >&2
+    echo "   cd $WORKTREE_DIR && ./scripts/start" >&2
+  fi
+else
+  echo "Warning: start script not found. Skipping service startup." >&2
 fi
 
 # Calculate domain and docker project names

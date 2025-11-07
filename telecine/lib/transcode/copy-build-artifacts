@@ -28,7 +28,7 @@ if [ -n "$MAIN_WORKTREE" ]; then
 else
   MAIN_BUILD=""
 fi
-CURRENT_BUILD="$PROJECT_ROOT/lib/transcode/build/Release/playback.node"
+CURRENT_BUILD="$PROJECT_ROOT/telecine/lib/transcode/build/Release/playback.node"
 
 # Check if we're in the main worktree
 BRANCH=$(git branch --show-current 2>/dev/null || git symbolic-ref --short HEAD 2>/dev/null)
@@ -39,7 +39,7 @@ if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
     exit 0
   fi
   echo "Building native module in main worktree..."
-  cd "$PROJECT_ROOT"
+  cd "$PROJECT_ROOT/telecine"
   npm run build
   exit 0
 fi
@@ -69,7 +69,17 @@ fi
 echo "Building native module in main worktree..."
 cd "$MAIN_TELECINE_ROOT"
 npm run build
-cd "$PROJECT_ROOT"
+
+# Ensure target directory exists in worktree before copying
+mkdir -p "$(dirname "$CURRENT_BUILD")"
+
+# Verify source exists before copying
+if [ ! -f "$MAIN_BUILD" ]; then
+  echo "Error: Build not found at $MAIN_BUILD after building" >&2
+  exit 1
+fi
+
+# Copy from main to worktree
 cp "$MAIN_BUILD" "$CURRENT_BUILD"
 echo "Built native module in main worktree and copied to worktree"
 

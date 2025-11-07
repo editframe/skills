@@ -1,4 +1,4 @@
-#/usr/bin/env bash
+#!/usr/bin/env bash
 set -e
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
@@ -18,22 +18,22 @@ echo "Running npm install in container..."
 ${SCRIPT_DIR}/npm install
 
 # Build native transcode module (required for jit-transcoding service)
-echo "Building native transcode module in container..."
-# Clean build directory to avoid CMake cache path mismatches
-${SCRIPT_DIR}/docker-compose exec runner rm -rf lib/transcode/build
-${SCRIPT_DIR}/docker-compose exec runner npm run build
+# Check if build already exists (may have been copied from main worktree)
+TRANCODE_BUILD="$PROJECT_ROOT/lib/transcode/build/Release/playback.node"
+if [ ! -f "$TRANCODE_BUILD" ]; then
+  echo "Building native transcode module in container..."
+  # Clean build directory to avoid CMake cache path mismatches
+  ${SCRIPT_DIR}/docker-compose exec runner rm -rf lib/transcode/build
+  ${SCRIPT_DIR}/docker-compose exec runner npm run build
+else
+  echo "Native transcode module build already exists (copied from main worktree)"
+fi
 
 # Start docker services (all services needed for migrations)
-# Use the same approach as start-for-playwright to ensure all services are started
+# The docker-compose wrapper script handles finding all compose files automatically
 . "$SCRIPT_DIR/worktree-config"
 
-${SCRIPT_DIR}/docker-compose \
-  -f ${SCRIPT_DIR}/../docker-compose.yaml \
-  -f ${SCRIPT_DIR}/../services/dev-postgres/docker-compose.yaml \
-  -f ${SCRIPT_DIR}/../services/dev-valkey/docker-compose.yaml \
-  -f ${SCRIPT_DIR}/../services/dev-mailhog/docker-compose.yaml \
-  -f ${SCRIPT_DIR}/../services/graphql-engine/docker-compose.yaml \
-  up --build -d --force-recreate --wait
+${SCRIPT_DIR}/docker-compose up --build -d --force-recreate --wait
 
 # Wait a moment for volumes to be fully mounted and services to be ready
 sleep 2

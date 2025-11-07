@@ -7,6 +7,9 @@ set -e
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 PROJECT_ROOT=$(cd "$SCRIPT_DIR/../../.." && pwd)
 
+# Ensure PROJECT_ROOT is absolute
+PROJECT_ROOT=$(cd "$PROJECT_ROOT" && pwd)
+
 # Find main worktree
 MAIN_WORKTREE=$(git worktree list | grep -E '\[main\]|\[master\]' | awk '{print $1}' | head -1)
 if [ -z "$MAIN_WORKTREE" ]; then
@@ -28,7 +31,7 @@ if [ -n "$MAIN_WORKTREE" ]; then
 else
   MAIN_BINARY=""
 fi
-CURRENT_BINARY="$PROJECT_ROOT/services/scheduler-go/scheduler"
+CURRENT_BINARY="$PROJECT_ROOT/telecine/services/scheduler-go/scheduler"
 
 # Check if we're in the main worktree
 BRANCH=$(git branch --show-current 2>/dev/null || git symbolic-ref --short HEAD 2>/dev/null)
@@ -43,7 +46,7 @@ if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
     exit 0
   fi
   echo "Building Go scheduler binary in main worktree..."
-  cd "$PROJECT_ROOT/services/scheduler-go"
+  cd "$PROJECT_ROOT/telecine/services/scheduler-go"
   CGO_ENABLED=0 go build -o scheduler ./cmd/scheduler
   exit 0
 fi
@@ -54,6 +57,9 @@ if [ -f "$CURRENT_BINARY" ]; then
   echo "Go scheduler binary already exists in worktree"
   exit 0
 fi
+
+# Ensure target directory exists
+mkdir -p "$(dirname "$CURRENT_BINARY")"
 
 # If main has the binary, copy it
 if [ -n "$MAIN_BINARY" ] && [ -f "$MAIN_BINARY" ]; then
@@ -74,7 +80,18 @@ fi
 echo "Building Go scheduler binary in main worktree..."
 cd "$MAIN_TELECINE_ROOT/services/scheduler-go"
 CGO_ENABLED=0 go build -o scheduler ./cmd/scheduler
-cd "$PROJECT_ROOT"
+
+# Ensure target directory exists in worktree before copying
+TARGET_DIR=$(dirname "$CURRENT_BINARY")
+mkdir -p "$TARGET_DIR"
+
+# Verify source exists before copying
+if [ ! -f "$MAIN_BINARY" ]; then
+  echo "Error: Binary not found at $MAIN_BINARY after building" >&2
+  exit 1
+fi
+
+# Copy from main to worktree
 cp "$MAIN_BINARY" "$CURRENT_BINARY"
 echo "Built Go scheduler binary in main worktree and copied to worktree"
 
