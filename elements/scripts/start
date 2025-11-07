@@ -4,7 +4,7 @@ set -e
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 cd "${SCRIPT_DIR}/.."
 
-# Note: host-chrome should be started manually on the macOS host if running from dev container
+# Note: host-chrome should be started manually on the macOS host
 # All worktrees will share the same host-chrome instance
 # The dependency is marked as required: false, so compose will start even if host-chrome
 # is already running externally

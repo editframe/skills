@@ -7,12 +7,32 @@ set -e
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 PROJECT_ROOT=$(cd "$SCRIPT_DIR/../../.." && pwd)
 
+# Find main worktree
+MAIN_WORKTREE=$(git worktree list | grep -E '\[main\]|\[master\]' | awk '{print $1}' | head -1)
+if [ -z "$MAIN_WORKTREE" ]; then
+  # Fallback: use current worktree if it's main/master branch
+  BRANCH=$(git branch --show-current 2>/dev/null || git symbolic-ref --short HEAD 2>/dev/null)
+  if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
+    MAIN_WORKTREE=$(git rev-parse --show-toplevel)
+  fi
+fi
+
 # Paths
-MAIN_BUILD="/workspace/telecine/lib/transcode/build/Release/playback.node"
+if [ -n "$MAIN_WORKTREE" ]; then
+  if [ -d "$MAIN_WORKTREE/telecine" ]; then
+    MAIN_TELECINE_ROOT="$MAIN_WORKTREE/telecine"
+  else
+    MAIN_TELECINE_ROOT="$MAIN_WORKTREE"
+  fi
+  MAIN_BUILD="$MAIN_TELECINE_ROOT/lib/transcode/build/Release/playback.node"
+else
+  MAIN_BUILD=""
+fi
 CURRENT_BUILD="$PROJECT_ROOT/lib/transcode/build/Release/playback.node"
 
 # Check if we're in the main worktree
-if [ "$PROJECT_ROOT" = "/workspace/telecine" ]; then
+BRANCH=$(git branch --show-current 2>/dev/null || git symbolic-ref --short HEAD 2>/dev/null)
+if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
   # We're in main - just build if needed
   if [ -f "$CURRENT_BUILD" ]; then
     echo "Native module build already exists in main worktree"
@@ -35,15 +55,19 @@ fi
 mkdir -p "$(dirname "$CURRENT_BUILD")"
 
 # If main has the build, copy it
-if [ -f "$MAIN_BUILD" ]; then
+if [ -n "$MAIN_BUILD" ] && [ -f "$MAIN_BUILD" ]; then
   cp "$MAIN_BUILD" "$CURRENT_BUILD"
   echo "Copied native module build from main worktree"
   exit 0
 fi
 
 # Main doesn't have build - build it in main, then copy
+if [ -z "$MAIN_TELECINE_ROOT" ]; then
+  echo "Error: Could not find main worktree" >&2
+  exit 1
+fi
 echo "Building native module in main worktree..."
-cd /workspace/telecine
+cd "$MAIN_TELECINE_ROOT"
 npm run build
 cd "$PROJECT_ROOT"
 cp "$MAIN_BUILD" "$CURRENT_BUILD"

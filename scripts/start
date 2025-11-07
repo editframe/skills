@@ -7,7 +7,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 # It handles npm install, docker-compose, migrations, and seeding
 echo "🚀 Starting telecine services..."
 if ! "${SCRIPT_DIR}/../telecine/scripts/start" "$@"; then
-  echo "⚠️  Telecine services failed to start (this may be expected in dev container)"
+  echo "⚠️  Telecine services failed to start"
   echo "   Continuing with elements services..."
 fi
 

@@ -13,118 +13,43 @@ if ! docker network inspect telecine-traefik > /dev/null 2>&1; then
 fi
 
 # Export absolute path to telecine root for docker-compose volume mounts
-# For docker-in-docker: paths must exist on the HOST filesystem
-# Since devcontainer uses Docker socket mounting, we need to resolve container paths to host paths
 PROJECT_ROOT="$SCRIPT_DIR/.."
 WORKTREE_ROOT=$(cd "$PROJECT_ROOT" && git rev-parse --show-toplevel 2>/dev/null || echo "$PROJECT_ROOT")
 
-# Resolve host path from container path
-# The devcontainer mounts the repo root to /workspace, so we need to find the host mount source
-resolve_host_path() {
-    local container_path="$1"
-    # If path is in Cursor's default worktree location, resolve via mount
-    if [[ "$container_path" == /home/vscode/.cursor/worktrees/* ]]; then
-        # Get the host path of the Cursor worktrees mount
-        local host_cursor_worktrees=""
-        if command -v jq > /dev/null 2>&1; then
-            host_cursor_worktrees=$(docker inspect $(hostname) 2>/dev/null | \
-                jq -r '.[0].Mounts[] | select(.Destination == "/home/vscode/.cursor/worktrees") | .Source' 2>/dev/null | head -1)
-        else
-            # Fallback: use grep/sed to extract Source from JSON
-            host_cursor_worktrees=$(docker inspect $(hostname) 2>/dev/null | \
-                grep -A 5 '"Destination": "/home/vscode/.cursor/worktrees"' | \
-                grep '"Source"' | \
-                sed 's/.*"Source": "\([^"]*\)".*/\1/' | head -1)
-        fi
-        
-        if [ -n "$host_cursor_worktrees" ] && [ "$host_cursor_worktrees" != "null" ]; then
-            # Replace /home/vscode/.cursor/worktrees with host path
-            local relative_path="${container_path#/home/vscode/.cursor/worktrees}"
-            echo "${host_cursor_worktrees}${relative_path}"
-            return
-        fi
-    fi
-    
-    
-    # If path starts with /workspace, try to resolve via container inspect
-    if [[ "$container_path" == /workspace* ]]; then
-        # Get the host path of /workspace mount from the devcontainer
-        # Try jq first (more reliable), fall back to grep/sed
-        local host_workspace=""
-        if command -v jq > /dev/null 2>&1; then
-            host_workspace=$(docker inspect $(hostname) 2>/dev/null | \
-                jq -r '.[0].Mounts[] | select(.Destination == "/workspace") | .Source' 2>/dev/null | head -1)
-        else
-            # Fallback: use grep/sed to extract Source from JSON
-            host_workspace=$(docker inspect $(hostname) 2>/dev/null | \
-                grep -A 5 '"Destination": "/workspace"' | \
-                grep '"Source"' | \
-                sed 's/.*"Source": "\([^"]*\)".*/\1/' | head -1)
-        fi
-        
-        if [ -n "$host_workspace" ] && [ "$host_workspace" != "null" ]; then
-            # Replace /workspace with host path
-            local relative_path="${container_path#/workspace}"
-            echo "${host_workspace}${relative_path}"
-            return
-        fi
-    fi
-    
-    # Fallback: return as-is (might work if path already exists on host)
-    echo "$container_path"
-}
-
-# Determine telecine root path (container path)
-if [[ "$WORKTREE_ROOT" == /home/vscode/.cursor/worktrees/* ]]; then
-    # Worktree is in Cursor's default location (mounted from host)
-    TELECINE_ROOT_CONTAINER="$WORKTREE_ROOT/telecine"
-    if [[ ! -d "$TELECINE_ROOT_CONTAINER" ]]; then
-        TELECINE_ROOT_CONTAINER="$WORKTREE_ROOT"
-    fi
-elif [[ "$WORKTREE_ROOT" == /workspace/* ]]; then
-    # Main worktree or worktree directly under /workspace
-    TELECINE_ROOT_CONTAINER="$WORKTREE_ROOT/telecine"
-    if [[ ! -d "$TELECINE_ROOT_CONTAINER" ]]; then
-        TELECINE_ROOT_CONTAINER="$WORKTREE_ROOT"
-    fi
-elif [[ -d "/workspace/telecine" ]]; then
-    # Fallback: use main worktree's telecine
-    TELECINE_ROOT_CONTAINER="/workspace/telecine"
+# Determine telecine root path
+if [ -d "$WORKTREE_ROOT/telecine" ]; then
+    TELECINE_ROOT="$WORKTREE_ROOT/telecine"
 else
-    # Last resort: use current directory
-    TELECINE_ROOT_CONTAINER=$(cd "$PROJECT_ROOT" && pwd)
+    TELECINE_ROOT="$WORKTREE_ROOT"
 fi
 
-# Resolve to host path for Docker volume mounts (but keep container path for file operations)
-TELECINE_ROOT_HOST=$(resolve_host_path "$TELECINE_ROOT_CONTAINER")
-TELECINE_ROOT="$TELECINE_ROOT_CONTAINER"  # Use container path for file operations
+# Export TELECINE_ROOT_HOST for docker-compose.yaml volume mounts
+TELECINE_ROOT_HOST="$TELECINE_ROOT"
 export TELECINE_ROOT TELECINE_ROOT_HOST
 
 # Resolve elements path for docker-compose volume mounts
 # Elements is at the same level as telecine in the workspace
-ELEMENTS_PATH_CONTAINER=""
+ELEMENTS_PATH=""
 if [ -d "$WORKTREE_ROOT/elements" ]; then
     # Elements is in the workspace root (same level as telecine)
-    ELEMENTS_PATH_CONTAINER="$WORKTREE_ROOT/elements"
+    ELEMENTS_PATH="$WORKTREE_ROOT/elements"
 elif [ -d "$PROJECT_ROOT/../elements" ]; then
     # Elements is sibling to telecine directory
-    ELEMENTS_PATH_CONTAINER="$PROJECT_ROOT/../elements"
+    ELEMENTS_PATH="$PROJECT_ROOT/../elements"
 else
     WORKTREE_PARENT=$(dirname "$WORKTREE_ROOT")
     if [ -d "$WORKTREE_PARENT/elements" ]; then
         # Main worktree pattern: ../elements
-        ELEMENTS_PATH_CONTAINER="$WORKTREE_PARENT/elements"
+        ELEMENTS_PATH="$WORKTREE_PARENT/elements"
     elif [ -n "$WORKTREE_ID" ] && [ "$WORKTREE_ID" != "main" ] && [ -d "$WORKTREE_PARENT/elements-${WORKTREE_ID}" ]; then
         # Parallel worktree pattern: ../elements-<branch>
-        ELEMENTS_PATH_CONTAINER="$WORKTREE_PARENT/elements-${WORKTREE_ID}"
+        ELEMENTS_PATH="$WORKTREE_PARENT/elements-${WORKTREE_ID}"
     fi
 fi
 
-# Resolve to host path for Docker volume mounts (Docker-in-Docker requires host paths)
-ELEMENTS_PATH=$(resolve_host_path "$ELEMENTS_PATH_CONTAINER")
 export ELEMENTS_PATH
 
-# Find all docker-compose files in the telecine directory (using container path)
+# Find all docker-compose files in the telecine directory
 compose_files=""
 root_compose_file=""
 
@@ -195,7 +120,7 @@ if [ -z "$compose_flags" ]; then
     exit 1
 fi
 
-# Change to TELECINE_ROOT (container path) so that ${PWD}/.env resolves correctly in compose files
+# Change to TELECINE_ROOT so that ${PWD}/.env resolves correctly in compose files
 # The compose files use ${PWD}/.env which expects to be run from the telecine directory
 cd "$TELECINE_ROOT"
 

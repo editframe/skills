@@ -5,6 +5,5 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 # Always delegate to telecine's docker-compose script
 # It handles worktree detection and finding all compose files
-# The devcontainer uses docker-compose.devcontainer.yaml directly via devcontainer.json
 "${SCRIPT_DIR}/../telecine/scripts/docker-compose" "$@"
 

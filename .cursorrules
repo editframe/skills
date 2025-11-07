@@ -3,8 +3,8 @@
 ## Overview
 
 This is a monorepo containing two main projects:
-- **telecine**: Located at `/workspace/telecine/`
-- **elements**: Located at `/workspace/elements/`
+- **telecine**: Located at `telecine/`
+- **elements**: Located at `elements/`
 
 Both projects are maintained as git worktrees with separate remotes configured in the root repository.
 
@@ -101,9 +101,9 @@ The monorepo acts as the primary working repository. Changes should be:
 
 ## Scripts Location
 
-- Root scripts: `/workspace/scripts/` - Delegates to telecine/elements scripts
-- Telecine scripts: `/workspace/telecine/scripts/`
-- Elements scripts: `/workspace/elements/scripts/`
+- Root scripts: `scripts/` - Delegates to telecine/elements scripts
+- Telecine scripts: `telecine/scripts/`
+- Elements scripts: `elements/scripts/`
 
 Both telecine and elements have `worktree-config` scripts that handle worktree detection and Docker environment configuration.
 

@@ -5,65 +5,19 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 # Source worktree configuration to get project name
 . "$SCRIPT_DIR/worktree-config"
 
-# Resolve host path from container path for Docker volume mounts
-# Similar to telecine's docker-compose script
-resolve_host_path() {
-    local container_path="$1"
-    
-    # If path starts with /workspace, try to resolve via container inspect
-    if [[ "$container_path" == /workspace* ]]; then
-        # Get the host path of /workspace mount from the devcontainer
-        local host_workspace=""
-        if command -v jq > /dev/null 2>&1; then
-            host_workspace=$(docker inspect $(hostname) 2>/dev/null | \
-                jq -r '.[0].Mounts[] | select(.Destination == "/workspace") | .Source' 2>/dev/null | head -1)
-        else
-            # Fallback: use grep/sed to extract Source from JSON
-            host_workspace=$(docker inspect $(hostname) 2>/dev/null | \
-                grep -A 5 '"Destination": "/workspace"' | \
-                grep '"Source"' | \
-                sed 's/.*"Source": "\([^"]*\)".*/\1/' | head -1)
-        fi
-        
-        if [ -n "$host_workspace" ] && [ "$host_workspace" != "null" ]; then
-            # Replace /workspace with host path
-            local relative_path="${container_path#/workspace}"
-            echo "${host_workspace}${relative_path}"
-            return
-        fi
-    fi
-    
-    # Fallback: return as-is (might work if path already exists on host)
-    echo "$container_path"
-}
-
 # Determine elements root path
 PROJECT_ROOT="$SCRIPT_DIR/.."
 WORKTREE_ROOT=$(cd "$PROJECT_ROOT" && git rev-parse --show-toplevel 2>/dev/null || echo "$PROJECT_ROOT")
 
-# Determine elements root path (container path)
-if [[ "$WORKTREE_ROOT" == /workspace/.cursor-worktrees/* ]]; then
-    # Worktree is in the host-mounted directory
-    ELEMENTS_ROOT_CONTAINER="$WORKTREE_ROOT/elements"
-    if [[ ! -d "$ELEMENTS_ROOT_CONTAINER" ]]; then
-        ELEMENTS_ROOT_CONTAINER="$WORKTREE_ROOT"
-    fi
-elif [[ "$WORKTREE_ROOT" == /workspace/* ]]; then
-    # Main worktree or worktree directly under /workspace
-    ELEMENTS_ROOT_CONTAINER="$WORKTREE_ROOT/elements"
-    if [[ ! -d "$ELEMENTS_ROOT_CONTAINER" ]]; then
-        ELEMENTS_ROOT_CONTAINER="$WORKTREE_ROOT"
-    fi
-elif [[ -d "/workspace/elements" ]]; then
-    # Fallback: use main worktree's elements
-    ELEMENTS_ROOT_CONTAINER="/workspace/elements"
+# Determine elements root path
+if [ -d "$WORKTREE_ROOT/elements" ]; then
+    ELEMENTS_ROOT="$WORKTREE_ROOT/elements"
 else
-    # Last resort: use current directory
-    ELEMENTS_ROOT_CONTAINER=$(cd "$PROJECT_ROOT" && pwd)
+    ELEMENTS_ROOT="$WORKTREE_ROOT"
 fi
 
-# Resolve to host path for Docker volume mounts
-ELEMENTS_ROOT_HOST=$(resolve_host_path "$ELEMENTS_ROOT_CONTAINER")
+# Export ELEMENTS_ROOT_HOST for docker-compose.yaml volume mounts
+ELEMENTS_ROOT_HOST="$ELEMENTS_ROOT"
 export ELEMENTS_ROOT_HOST
 
 docker-compose \
