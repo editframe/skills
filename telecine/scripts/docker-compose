@@ -25,25 +25,23 @@ fi
 
 # Ensure Traefik is running (needed for worktree routing)
 # Traefik is defined in main worktree but needs to run for all worktrees
-TRAEFIK_CONTAINER=$(docker ps -a --filter "name=traefik" --format "{{.Names}}" | head -1)
-if [ -n "$TRAEFIK_CONTAINER" ]; then
-  # Check if Traefik is running
-  if ! docker ps --filter "name=traefik" --format "{{.Names}}" | grep -q traefik; then
-    # Traefik exists but isn't running - start it
-    # Find main worktree to start Traefik with correct profile
-    MAIN_WORKTREE=$(git worktree list 2>/dev/null | grep -E '\[main\]|\[master\]' | awk '{print $1}' | head -1)
-    if [ -n "$MAIN_WORKTREE" ] && [ -f "$MAIN_WORKTREE/telecine/docker-compose.yaml" ]; then
-      cd "$MAIN_WORKTREE/telecine"
-      COMPOSE_PROFILES="main-worktree" docker compose up -d traefik > /dev/null 2>&1 || true
-      cd "$TELECINE_ROOT"
-    fi
-  fi
-else
-  # Traefik doesn't exist - start it from main worktree
+TRAEFIK_RUNNING=$(docker ps --filter "name=traefik" --format "{{.Names}}" | head -1)
+if [ -z "$TRAEFIK_RUNNING" ]; then
+  # Traefik is not running - try to start it
+  # Find main worktree to start Traefik with correct profile
   MAIN_WORKTREE=$(git worktree list 2>/dev/null | grep -E '\[main\]|\[master\]' | awk '{print $1}' | head -1)
   if [ -n "$MAIN_WORKTREE" ] && [ -f "$MAIN_WORKTREE/telecine/docker-compose.yaml" ]; then
     cd "$MAIN_WORKTREE/telecine"
-    COMPOSE_PROFILES="main-worktree" docker compose up -d traefik > /dev/null 2>&1 || true
+    # Check if port 4321 is in use by a non-Traefik container
+    PORT_4321_USER=$(docker ps --filter "publish=4321" --format "{{.Names}}" | grep -v traefik | head -1)
+    if [ -n "$PORT_4321_USER" ]; then
+      echo "⚠️  Warning: Port 4321 is in use by $PORT_4321_USER. Traefik may not start." >&2
+      echo "   Stop the conflicting container or restart services to resolve." >&2
+    fi
+    # Try to start Traefik
+    COMPOSE_PROFILES="main-worktree" docker compose up -d traefik > /dev/null 2>&1 || {
+      echo "⚠️  Warning: Failed to start Traefik. Port 4321 may be in use." >&2
+    }
     cd "$TELECINE_ROOT"
   fi
 fi

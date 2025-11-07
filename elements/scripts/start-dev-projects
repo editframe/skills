@@ -10,9 +10,9 @@ if [ -n "$CONTAINER" ] && docker inspect "$CONTAINER" --format='{{.State.Status}
   docker exec -w /packages/dev-projects -e DEBUG="ef:*" "$CONTAINER" npx tsx start.ts
 else
   # Container not running, create new one
+  # Note: Port 4321 is exposed via Traefik, not directly
   "${SCRIPT_DIR}"/docker-compose \
     run --rm \
-      -p 4321:4321 \
       -w /packages/dev-projects \
       -e DEBUG="ef:*" \
       dev-projects \
