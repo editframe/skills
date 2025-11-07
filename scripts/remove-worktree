@@ -1,13 +1,27 @@
 #!/usr/bin/env bash
 # Remove worktree and branch
 # Can be run from within worktree directory or from main with branch name argument
-# Usage: ./scripts/remove-worktree [branch-name]
-# Fails if branch is not merged into main or identical to main
+# Usage: ./scripts/remove-worktree [--force] [branch-name]
+# Fails if branch is not merged into main or identical to main (unless --force is used)
 
 set -e
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 PROJECT_ROOT="$SCRIPT_DIR/.."
+
+# Parse arguments
+FORCE=false
+BRANCH_ARG=""
+
+if [ "$1" = "--force" ]; then
+  FORCE=true
+  BRANCH_ARG="$2"
+elif [ "$2" = "--force" ]; then
+  FORCE=true
+  BRANCH_ARG="$1"
+elif [ -n "$1" ]; then
+  BRANCH_ARG="$1"
+fi
 
 # Check if we're in a git repository
 if ! git rev-parse --git-dir > /dev/null 2>&1; then
@@ -20,8 +34,8 @@ CURRENT_ROOT=$(git rev-parse --show-toplevel)
 CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || git symbolic-ref --short HEAD 2>/dev/null)
 
 # Check if branch name provided as argument (running from main)
-if [ -n "$1" ]; then
-  BRANCH_NAME="$1"
+if [ -n "$BRANCH_ARG" ]; then
+  BRANCH_NAME="$BRANCH_ARG"
   # Find worktree for this branch using porcelain output
   WORKTREE_ROOT=""
   while IFS= read -r line; do
@@ -79,44 +93,50 @@ fi
 
 echo "🗑️  Removing worktree for branch '$BRANCH_NAME'"
 echo "   Worktree: $WORKTREE_ROOT"
+if [ "$FORCE" = true ]; then
+  echo "   ⚠️  Force mode: Skipping merge check"
+fi
 echo ""
 
-# Check if branch has been merged into main or is identical to main
-cd "$MAIN_WORKTREE"
-git checkout "$MAIN_BRANCH" > /dev/null 2>&1
+# Check if branch has been merged into main or is identical to main (unless --force)
+if [ "$FORCE" = false ]; then
+  cd "$MAIN_WORKTREE"
+  git checkout "$MAIN_BRANCH" > /dev/null 2>&1
 
-# Check if branch is merged
-IS_MERGED=false
-if git branch --merged | grep -q "^\s*${BRANCH_NAME}$" || git branch --merged | grep -q "^\s*\*.*${BRANCH_NAME}$"; then
-  IS_MERGED=true
-fi
-
-# Check if branch is identical to main (no commits ahead)
-IS_IDENTICAL=false
-if git rev-parse --verify "refs/heads/${BRANCH_NAME}" > /dev/null 2>&1; then
-  BRANCH_COMMIT=$(git rev-parse "refs/heads/${BRANCH_NAME}")
-  MAIN_COMMIT=$(git rev-parse "refs/heads/${MAIN_BRANCH}")
-  if [ "$BRANCH_COMMIT" = "$MAIN_COMMIT" ]; then
-    IS_IDENTICAL=true
+  # Check if branch is merged
+  IS_MERGED=false
+  if git branch --merged | grep -q "^\s*${BRANCH_NAME}$" || git branch --merged | grep -q "^\s*\*.*${BRANCH_NAME}$"; then
+    IS_MERGED=true
   fi
-fi
 
-if [ "$IS_MERGED" = false ] && [ "$IS_IDENTICAL" = false ]; then
-  echo "❌ Error: Branch '$BRANCH_NAME' has not been merged into '$MAIN_BRANCH' and is not identical to main" >&2
-  echo ""
-  echo "Please merge the branch first:"
-  echo "  ./scripts/merge-worktree $BRANCH_NAME"
-  echo ""
-  echo "Or if you want to remove without merging, use git commands directly."
-  exit 1
-fi
+  # Check if branch is identical to main (no commits ahead)
+  IS_IDENTICAL=false
+  if git rev-parse --verify "refs/heads/${BRANCH_NAME}" > /dev/null 2>&1; then
+    BRANCH_COMMIT=$(git rev-parse "refs/heads/${BRANCH_NAME}")
+    MAIN_COMMIT=$(git rev-parse "refs/heads/${MAIN_BRANCH}")
+    if [ "$BRANCH_COMMIT" = "$MAIN_COMMIT" ]; then
+      IS_IDENTICAL=true
+    fi
+  fi
 
-if [ "$IS_IDENTICAL" = true ]; then
-  echo "✅ Branch is identical to main (no changes). Proceeding with cleanup..."
-else
-  echo "✅ Branch is merged. Proceeding with cleanup..."
+  if [ "$IS_MERGED" = false ] && [ "$IS_IDENTICAL" = false ]; then
+    echo "❌ Error: Branch '$BRANCH_NAME' has not been merged into '$MAIN_BRANCH' and is not identical to main" >&2
+    echo ""
+    echo "Please merge the branch first:"
+    echo "  ./scripts/merge-worktree $BRANCH_NAME"
+    echo ""
+    echo "Or use --force to remove without merging:"
+    echo "  ./scripts/remove-worktree --force $BRANCH_NAME"
+    exit 1
+  fi
+
+  if [ "$IS_IDENTICAL" = true ]; then
+    echo "✅ Branch is identical to main (no changes). Proceeding with cleanup..."
+  else
+    echo "✅ Branch is merged. Proceeding with cleanup..."
+  fi
+  echo ""
 fi
-echo ""
 
 # Stop and remove Docker containers
 echo "1️⃣  Stopping and removing Docker containers..."
@@ -183,5 +203,9 @@ fi
 
 echo "✅ Worktree removal complete!"
 echo ""
-echo "Branch '$BRANCH_NAME' has been merged and removed."
+if [ "$FORCE" = true ]; then
+  echo "Branch '$BRANCH_NAME' has been force removed (may not have been merged)."
+else
+  echo "Branch '$BRANCH_NAME' has been merged and removed."
+fi
 

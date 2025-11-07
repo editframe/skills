@@ -117,48 +117,70 @@ if [ -f "$CURRENT_ROOT/elements/.env" ]; then
   echo "   ✅ Copied elements/.env"
 fi
 
-# Copy node_modules for faster startup
+# Copy node_modules from main worktree Docker volumes to new worktree volumes
 echo ""
-echo "📦 Copying node_modules (this may take a moment)..."
-if [ -d "$CURRENT_ROOT/telecine/node_modules" ]; then
-  echo "   Copying telecine/node_modules..."
-  # Use rsync for efficiency (only copies changed files), fallback to cp if rsync unavailable
-  if command -v rsync > /dev/null 2>&1; then
-    rsync -a "$CURRENT_ROOT/telecine/node_modules/" "$WORKTREE_DIR/telecine/node_modules/" 2>/dev/null || {
-      echo "   ⚠️  rsync failed, trying cp..." >&2
-      cp -R "$CURRENT_ROOT/telecine/node_modules" "$WORKTREE_DIR/telecine/" 2>/dev/null || {
-        echo "   ⚠️  Failed to copy telecine/node_modules (will install on first run)" >&2
-      }
-    }
-  else
-    cp -R "$CURRENT_ROOT/telecine/node_modules" "$WORKTREE_DIR/telecine/" 2>/dev/null || {
-      echo "   ⚠️  Failed to copy telecine/node_modules (will install on first run)" >&2
-    }
+echo "📦 Copying node_modules from Docker volumes..."
+
+# Function to copy between Docker volumes
+copy_docker_volume() {
+  local source_volume="$1"
+  local target_volume="$2"
+  local mount_path="$3"
+  
+  # Check if source volume exists
+  if ! docker volume inspect "$source_volume" > /dev/null 2>&1; then
+    echo "   ℹ️  Source volume '$source_volume' does not exist (will install on first run)"
+    return 0
   fi
-  echo "   ✅ Copied telecine/node_modules"
+  
+  # Create target volume if it doesn't exist (will be created by docker-compose, but create early for copying)
+  if ! docker volume inspect "$target_volume" > /dev/null 2>&1; then
+    docker volume create "$target_volume" > /dev/null 2>&1 || true
+  fi
+  
+  # Use a temporary container to copy between volumes
+  # Mount both volumes and copy from source to target
+  # Create target directory first, then copy contents
+  docker run --rm \
+    -v "$source_volume:/source$mount_path:ro" \
+    -v "$target_volume:/target$mount_path" \
+    alpine:latest \
+    sh -c "mkdir -p /target$mount_path && if [ -d \"/source$mount_path\" ] && [ \"\$(ls -A /source$mount_path 2>/dev/null)\" ]; then cp -a \"/source$mount_path/\"* \"/target$mount_path/\" 2>/dev/null; fi" \
+    > /dev/null 2>&1 || true
+  
+  echo "   ✅ Copied $source_volume -> $target_volume"
+}
+
+# Determine main worktree Docker project names
+if [ "$CURRENT_BRANCH" = "main" ] || [ "$CURRENT_BRANCH" = "master" ]; then
+  MAIN_TELECINE_PROJECT="telecine"
+  MAIN_ELEMENTS_PROJECT="ef-elements"
 else
-  echo "   ℹ️  telecine/node_modules not found in main worktree (will install on first run)"
+  # If creating from a worktree, try to detect main worktree project names
+  MAIN_TELECINE_PROJECT="telecine"
+  MAIN_ELEMENTS_PROJECT="ef-elements"
 fi
 
-if [ -d "$CURRENT_ROOT/elements/node_modules" ]; then
-  echo "   Copying elements/node_modules..."
-  # Use rsync for efficiency (only copies changed files), fallback to cp if rsync unavailable
-  if command -v rsync > /dev/null 2>&1; then
-    rsync -a "$CURRENT_ROOT/elements/node_modules/" "$WORKTREE_DIR/elements/node_modules/" 2>/dev/null || {
-      echo "   ⚠️  rsync failed, trying cp..." >&2
-      cp -R "$CURRENT_ROOT/elements/node_modules" "$WORKTREE_DIR/elements/" 2>/dev/null || {
-        echo "   ⚠️  Failed to copy elements/node_modules (will install on first run)" >&2
-      }
-    }
-  else
-    cp -R "$CURRENT_ROOT/elements/node_modules" "$WORKTREE_DIR/elements/" 2>/dev/null || {
-      echo "   ⚠️  Failed to copy elements/node_modules (will install on first run)" >&2
-    }
-  fi
-  echo "   ✅ Copied elements/node_modules"
+# Determine new worktree Docker project names
+if [ "$BRANCH_NAME" = "main" ] || [ "$BRANCH_NAME" = "master" ]; then
+  NEW_TELECINE_PROJECT="telecine"
+  NEW_ELEMENTS_PROJECT="ef-elements"
 else
-  echo "   ℹ️  elements/node_modules not found in main worktree (will install on first run)"
+  NEW_TELECINE_PROJECT="telecine-${SANITIZED_BRANCH}"
+  NEW_ELEMENTS_PROJECT="ef-elements-${SANITIZED_BRANCH}"
 fi
+
+# Copy telecine node_modules
+MAIN_TELECINE_VOLUME="${MAIN_TELECINE_PROJECT}_node_modules"
+NEW_TELECINE_VOLUME="${NEW_TELECINE_PROJECT}_node_modules"
+echo "   Copying telecine node_modules..."
+copy_docker_volume "$MAIN_TELECINE_VOLUME" "$NEW_TELECINE_VOLUME" "/app/node_modules"
+
+# Copy elements node_modules
+MAIN_ELEMENTS_VOLUME="${MAIN_ELEMENTS_PROJECT}_node_modules"
+NEW_ELEMENTS_VOLUME="${NEW_ELEMENTS_PROJECT}_node_modules"
+echo "   Copying elements node_modules..."
+copy_docker_volume "$MAIN_ELEMENTS_VOLUME" "$NEW_ELEMENTS_VOLUME" "/packages/node_modules"
 
 # Start Docker resources
 echo ""

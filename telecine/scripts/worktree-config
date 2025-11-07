@@ -117,8 +117,11 @@ calculate_worktree_port() {
 }
 
 # Export port variables for common services
+# For main worktree: set ports to expose on host
+# For worktrees: set to empty string to skip port mapping (services accessed via Traefik/internal network)
 if [ "$IS_MAIN_WORKTREE" = true ]; then
-  # Main worktree: standard ports
+  # Main worktree: standard ports exposed on host
+  export WORKTREE_POSTGRES_PORT=5432
   export WORKTREE_VALKEY_PORT=6379
   export WORKTREE_MAILHOG_SMTP_PORT=1025
   export WORKTREE_MAILHOG_WEB_PORT=8025
@@ -128,14 +131,15 @@ if [ "$IS_MAIN_WORKTREE" = true ]; then
   export WORKTREE_TRACING_SSE_PORT=4319
   export WORKTREE_OTEL_VIEWER_PORT=4320
 else
-  # Worktree: calculated ports
-  export WORKTREE_VALKEY_PORT=$(calculate_worktree_port 6379)
+  # Worktree: empty ports (not exposed on host, accessed via Traefik/internal network)
+  export WORKTREE_POSTGRES_PORT=""
+  export WORKTREE_VALKEY_PORT=""
   export WORKTREE_MAILHOG_SMTP_PORT=$(calculate_worktree_port 1025)
-  export WORKTREE_MAILHOG_WEB_PORT=$(calculate_worktree_port 8025)
-  export WORKTREE_PLAYWRIGHT_PORT=$(calculate_worktree_port 4444)
+  export WORKTREE_MAILHOG_WEB_PORT=""
+  export WORKTREE_PLAYWRIGHT_PORT=""
   export WORKTREE_TRACING_GRPC_PORT=$(calculate_worktree_port 4317)
   export WORKTREE_TRACING_HTTP_PORT=$(calculate_worktree_port 4318)
   export WORKTREE_TRACING_SSE_PORT=$(calculate_worktree_port 4319)
-  export WORKTREE_OTEL_VIEWER_PORT=$(calculate_worktree_port 4320)
+  export WORKTREE_OTEL_VIEWER_PORT=""
 fi
 

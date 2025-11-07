@@ -101,6 +101,7 @@ fi
 echo ""
 echo "💡 To merge a worktree: ./scripts/merge-worktree <branch-name>"
 echo "   (or from worktree: cd <worktree-path> && ./scripts/merge-worktree)"
-echo "💡 To remove a worktree: ./scripts/remove-worktree <branch-name>"
-echo "   (or from worktree: cd <worktree-path> && ./scripts/remove-worktree)"
+echo "💡 To remove a worktree: ./scripts/remove-worktree [--force] <branch-name>"
+echo "   (or from worktree: cd <worktree-path> && ./scripts/remove-worktree [--force])"
+echo "   Use --force to remove without merging"
 

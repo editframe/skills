@@ -10,7 +10,10 @@ services:
       - node_modules:/app/node_modules
       - ${HOME}/.config/gcloud:/root/.config/gcloud
       - ${ELEMENTS_PATH:-../elements}:/app/lib/packages
-    # Playwright UI accessible via Traefik HTTP routing (same port for all worktrees!)
+    # Port mapping: only exposed in main worktree (via WORKTREE_PLAYWRIGHT_PORT env var)
+    # Playwright UI also accessible via Traefik HTTP routing
+    ports:
+      - "${WORKTREE_PLAYWRIGHT_PORT:-}:4444"
     expose:
       - "4444"
     networks:

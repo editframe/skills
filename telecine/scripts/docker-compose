@@ -74,30 +74,18 @@ if [ -d "$TELECINE_ROOT/services" ]; then
     done
 fi
 
+# Add root compose file
+if [ -n "$root_compose_file" ]; then
+    compose_files="$root_compose_file"$'\n'"$compose_files"
+fi
+
 # Handle main worktree vs regular worktree
 if [ "$WORKTREE_DOMAIN" = "main.localhost" ]; then
-    # Main worktree: include Traefik service and port mappings by activating profile
-    if [ -n "$root_compose_file" ]; then
-        compose_files="$root_compose_file"$'\n'"$compose_files"
-    fi
-    # Add main worktree override for port mappings
-    main_override="$TELECINE_ROOT/docker-compose.main-worktree.yaml"
-    if [ -f "$main_override" ]; then
-        compose_files="$compose_files"$'\n'"$main_override"
-    fi
+    # Main worktree: activate Traefik service via profile
     export COMPOSE_PROFILES="main-worktree"
-else
-    # Worktree: include compose file but Traefik won't start (profile not activated)
-    # Add root compose file first
-    if [ -n "$root_compose_file" ]; then
-        compose_files="$root_compose_file"$'\n'"$compose_files"
-    fi
-    # Add worktree override to remove port mappings (services accessed via Traefik)
-    worktree_override="$TELECINE_ROOT/docker-compose.worktree-override.yaml"
-    if [ -f "$worktree_override" ]; then
-        compose_files="$compose_files"$'\n'"$worktree_override"
-    fi
 fi
+# Port mappings are handled via environment variables set in worktree-config
+# No override files needed - ports are conditionally exposed based on env vars
 
 # Remove any potential duplicate entries and empty lines, then build flags
 compose_flags=""
