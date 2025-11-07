@@ -49,7 +49,7 @@ const IndexPage = () => {
       }}
       content={`
                 <p class="mb-4">
-Automate video cropping for various social media platforms using Editframe's API. Implement custom cropping logic to optimize videos for TikTok, Instagram, Twitter, Facebook, YouTube Shorts, or Snapchat Stories. Editframe offers precise control over aspect ratios and focal points, ensuring your programmatically cropped videos look polished across different platforms.
+Automate video cropping for various social media platforms using Editframe's API. Implement custom cropping logic to optimize videos for TikTok, Instagram, X, Facebook, YouTube Shorts, or Snapchat Stories. Editframe offers precise control over aspect ratios and focal points, ensuring your programmatically cropped videos look polished across different platforms.
 </p>
 <p class="mb-4">
 This functionality is crucial for developers building multi-platform content distribution systems. You could create a tool that automatically adapts a single video for optimal display across various social media platforms, saving content creators significant time and effort.

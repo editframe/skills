@@ -1,6 +1,8 @@
 import { Link, NavLink } from "react-router";
 import clsx from "clsx";
 import { useEffect, useState } from "react";
+import { ThemeToggle } from "~/components/ThemeToggle";
+import { themeClasses } from "~/utils/theme-classes";
 
 const navigation = [
   // {
@@ -48,41 +50,57 @@ export const Header = ({
     };
   }, []);
 
+  useEffect(() => {
+    if (!isMenuOpen) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isMenuOpen]);
+
   return (
     <header
       className={clsx(
-        "z-1000 w-full transition-all duration-300 ease-in-out text-gray-800",
+        "z-1000 w-full transition-all duration-300 ease-in-out",
+        themeClasses.pageText,
         className,
         {
-          "bg-white border-b border-[#E2E2E3]": isScrolled,
+          [clsx(themeClasses.pageBg, themeClasses.pageBorder, "border-b")]: isScrolled,
         },
       )}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-20">
         <div className="flex justify-between items-center min-h-[64px] py-3">
           <div className="flex-shrink-0 flex items-center">
-            <Link className="flex items-center text-base font-semibold" to="/">
+            <Link className={clsx("flex items-center text-base font-semibold", themeClasses.pageText)} to="/">
               <img
-                className="mr-2 h-5 sm:h-6 w-auto"
+                className="mr-2 h-5 sm:h-6 w-auto dark:invert"
                 src="/images/logo/dark.svg"
                 alt="Editframe logo"
               />
               <span className="hidden sm:block text-sm sm:text-base">Editframe</span>
             </Link>
           </div>
-          <div className="hidden lg:-ml-24 md:flex items-center space-x-4">
+          <div className={`hidden lg:-ml-24 ${hideMobileMenu ? 'lg:flex' : 'md:flex'} items-center space-x-4`}>
             <nav className="flex space-x-4 text-sm font-medium items-center">
               {isLoggedIn ? (
                 <Link
                   to="/welcome"
-                  className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md text-white bg-[#646CFF] hover:bg-[#4b51ff] transition-colors"
+                  className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors"
                 >
                   Dashboard
                 </Link>
               ) : (
                 <Link
                   to="/auth/login"
-                  className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md text-white bg-[#646CFF] hover:bg-[#4b51ff] transition-colors"
+                  className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors"
                 >
                   Login
                 </Link>
@@ -92,65 +110,35 @@ export const Header = ({
                   key={item.label}
                   to={item.to}
                   className={({ isActive }) =>
-                    `text-sm font-medium ${isActive
-                      ? "text-[#646CFF]"
-                      : "text-[#3c3c43] hover:text-gray-700"
-                    }`
+                    clsx(
+                      "text-sm font-medium",
+                      isActive
+                        ? "text-blue-600 dark:text-blue-400"
+                        : clsx(themeClasses.pageTextSecondary, "hover:text-slate-900 dark:hover:text-white")
+                    )
                   }
                 >
                   {item.label}
                 </NavLink>
               ))}
             </nav>
-            <div className="border-l border-gray-200 h-4" />
-            <div className="flex space-x-2">
+            <div className={clsx("border-l h-4", themeClasses.pageBorder)} />
+            <div className="flex items-center space-x-2">
+              <ThemeToggle />
               <a
                 href="https://x.com/editframe"
-                aria-label="twitter"
+                aria-label="x"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-500 flex items-center hover:text-gray-700"
+                className={clsx("flex items-center transition-colors", themeClasses.pageTextMuted, "hover:text-slate-700 dark:hover:text-slate-200")}
               >
                 <svg
                   className="h-4 w-4"
-                  viewBox="0 0 20 20"
-                  fill="none"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
                   xmlns="http://www.w3.org/2000/svg"
                 >
-                  <mask
-                    id="mask0_95_1445"
-                    style={{ maskType: "alpha" }}
-                    maskUnits="userSpaceOnUse"
-                    x="0"
-                    y="0"
-                    width="20"
-                    height="20"
-                  >
-                    <g clipPath="url(#clip0_95_1445)">
-                      <g clipPath="url(#clip1_95_1445)">
-                        <path
-                          d="M15.7508 0.960815H18.8175L12.1175 8.61915L20 19.0383H13.8283L8.995 12.7183L3.46333 19.0383H0.395L7.56167 10.8466L0 0.961649H6.32833L10.6975 6.73832L15.7508 0.960815ZM14.675 17.2033H16.3742L5.405 2.69998H3.58167L14.675 17.2033Z"
-                          fill="black"
-                        />
-                      </g>
-                    </g>
-                  </mask>
-                  <g mask="url(#mask0_95_1445)">
-                    <rect
-                      width="20"
-                      height="20"
-                      fill="currentColor"
-                      fillOpacity="0.78"
-                    />
-                  </g>
-                  <defs>
-                    <clipPath id="clip0_95_1445">
-                      <rect width="20" height="20" fill="white" />
-                    </clipPath>
-                    <clipPath id="clip1_95_1445">
-                      <rect width="20" height="20" fill="white" />
-                    </clipPath>
-                  </defs>
+                  <path d="M13.6823 10.6218L20.2391 3H18.6854L12.9921 9.61788L8.44486 3H3.2002L10.0765 13.0074L3.2002 21H4.75404L10.7663 14.0113L15.5685 21H20.8131L13.6819 10.6218H13.6823ZM11.5541 13.0956L10.8574 12.0991L5.31391 4.16971H7.70053L12.1742 10.5689L12.8709 11.5655L18.6861 19.8835H16.2995L11.5541 13.096V13.0956Z" />
                 </svg>
               </a>
               <a
@@ -158,7 +146,7 @@ export const Header = ({
                 aria-label="github"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-500 hover:text-gray-700"
+                className={clsx("transition-colors", themeClasses.pageTextMuted, "hover:text-slate-700 dark:hover:text-slate-200")}
               >
                 <svg
                   fill="currentColor"
@@ -178,7 +166,11 @@ export const Header = ({
             <div className="md:hidden">
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#646CFF]"
+                className={clsx(
+                  "inline-flex items-center justify-center p-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-600 dark:focus:ring-blue-400",
+                  themeClasses.pageTextSecondary,
+                  "hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+                )}
                 aria-label="Open main menu"
               >
               {isMenuOpen ? (
@@ -220,12 +212,12 @@ export const Header = ({
         </div>
       </div>
       {isMenuOpen && !hideMobileMenu && (
-        <div className="md:hidden border-t border-gray-200 bg-white">
+        <div className={clsx("md:hidden border-t", themeClasses.pageBg, themeClasses.pageBorder)}>
           <div className="px-4 pt-4 pb-3 space-y-1">
             {isLoggedIn ? (
               <Link
                 to="/welcome"
-                className="block w-full text-center px-4 py-2.5 text-sm font-medium rounded-md text-white bg-[#646CFF] hover:bg-[#4b51ff] transition-colors mb-3"
+                className="block w-full text-center px-4 py-2.5 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors mb-3"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Dashboard
@@ -233,7 +225,7 @@ export const Header = ({
             ) : (
               <Link
                 to="/auth/login"
-                className="block w-full text-center px-4 py-2.5 text-sm font-medium rounded-md text-white bg-[#646CFF] hover:bg-[#4b51ff] transition-colors mb-3"
+                className="block w-full text-center px-4 py-2.5 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors mb-3"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Login
@@ -244,10 +236,12 @@ export const Header = ({
                 key={item.label}
                 to={item.to}
                 className={({ isActive }) =>
-                  `block px-3 py-2.5 rounded-md text-base font-medium ${isActive
-                    ? "text-[#646CFF] bg-[#646CFF]/10"
-                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                  }`
+                  clsx(
+                    "block px-3 py-2.5 rounded-md text-base font-medium transition-colors",
+                    isActive
+                      ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30"
+                      : clsx(themeClasses.pageTextSecondary, "hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800")
+                  )
                 }
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -255,63 +249,42 @@ export const Header = ({
               </NavLink>
             ))}
           </div>
-          <div className="pt-4 pb-4 border-t border-gray-200">
+          <div className={clsx("pt-4 pb-4 border-t", themeClasses.pageBorder)}>
             <div className="px-4 space-y-1">
+              <div className="flex items-center px-3 py-2.5">
+                <ThemeToggle className="text-slate-700 hover:text-slate-900 hover:bg-slate-50 dark:text-slate-300 dark:hover:text-slate-100 dark:hover:bg-slate-800" />
+                <span className={clsx("ml-3 text-base font-medium", themeClasses.pageTextSecondary)}>Theme</span>
+              </div>
               <a
                 href="https://x.com/editframe"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center px-3 py-2.5 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                className={clsx(
+                  "flex items-center px-3 py-2.5 rounded-md text-base font-medium transition-colors",
+                  themeClasses.pageTextSecondary,
+                  "hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800"
+                )}
                 onClick={() => setIsMenuOpen(false)}
               >
                 <svg
                   className="h-5 w-5 mr-3"
-                  viewBox="0 0 20 20"
-                  fill="none"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
                   xmlns="http://www.w3.org/2000/svg"
                 >
-                  <mask
-                    id="mask0_95_1445"
-                    style={{ maskType: "alpha" }}
-                    maskUnits="userSpaceOnUse"
-                    x="0"
-                    y="0"
-                    width="20"
-                    height="20"
-                  >
-                    <g clipPath="url(#clip0_95_1445)">
-                      <g clipPath="url(#clip1_95_1445)">
-                        <path
-                          d="M15.7508 0.960815H18.8175L12.1175 8.61915L20 19.0383H13.8283L8.995 12.7183L3.46333 19.0383H0.395L7.56167 10.8466L0 0.961649H6.32833L10.6975 6.73832L15.7508 0.960815ZM14.675 17.2033H16.3742L5.405 2.69998H3.58167L14.675 17.2033Z"
-                          fill="black"
-                        />
-                      </g>
-                    </g>
-                  </mask>
-                  <g mask="url(#mask0_95_1445)">
-                    <rect
-                      width="20"
-                      height="20"
-                      fill="currentColor"
-                      fillOpacity="0.78"
-                    />
-                  </g>
-                  <defs>
-                    <clipPath id="clip0_95_1445">
-                      <rect width="20" height="20" fill="white" />
-                    </clipPath>
-                    <clipPath id="clip1_95_1445">
-                      <rect width="20" height="20" fill="white" />
-                    </clipPath>
-                  </defs>
+                  <path d="M13.6823 10.6218L20.2391 3H18.6854L12.9921 9.61788L8.44486 3H3.2002L10.0765 13.0074L3.2002 21H4.75404L10.7663 14.0113L15.5685 21H20.8131L13.6819 10.6218H13.6823ZM11.5541 13.0956L10.8574 12.0991L5.31391 4.16971H7.70053L12.1742 10.5689L12.8709 11.5655L18.6861 19.8835H16.2995L11.5541 13.096V13.0956Z" />
                 </svg>
-                Twitter
+                X
               </a>
               <a
                 href="https://github.com/editframe"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center px-3 py-2.5 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                className={clsx(
+                  "flex items-center px-3 py-2.5 rounded-md text-base font-medium transition-colors",
+                  themeClasses.pageTextSecondary,
+                  "hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800"
+                )}
                 onClick={() => setIsMenuOpen(false)}
               >
                 <svg
