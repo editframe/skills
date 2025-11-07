@@ -7,9 +7,6 @@ services:
       - "24678:24678"
       - "3001:3001"
       - "4321:4321"
-      # TCP ports routed by domain (requires TLS/SNI)
-      - "5432:5432"   # PostgreSQL
-      - "6379:6379"   # Valkey/Redis
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
@@ -24,9 +21,6 @@ services:
       - --entrypoints.port24678.address=:24678
       - --entrypoints.port3001.address=:3001
       - --entrypoints.elements.address=:4321
-      # TCP entrypoints for database services (routed by SNI/domain)
-      - --entrypoints.postgres.address=:5432
-      - --entrypoints.valkey.address=:6379
       - --log.level=INFO
       - --accesslog
       - --entrypoints.web.transport.respondingTimeouts.readTimeout=0s

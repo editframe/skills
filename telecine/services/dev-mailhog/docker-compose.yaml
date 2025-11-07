@@ -3,9 +3,10 @@ services:
     image: mailhog/mailhog
     env_file:
       - ${PWD}/.env
-    # SMTP port: deterministic per worktree, Web UI: via Traefik HTTP routing
+    # SMTP port: exposed on host for main worktree only
+    # For worktrees: empty (not exposed, use internal Docker network or Traefik TCP routing)
     ports:
-      - "${WORKTREE_MAILHOG_SMTP_PORT:-1025}:1025" # smtp server
+      - "${WORKTREE_MAILHOG_SMTP_PORT:-}:1025" # smtp server
     expose:
       - "8025" # Web UI via Traefik
     volumes:

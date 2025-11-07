@@ -19,8 +19,4 @@ services:
     # prettier-ignore
     command: [ "postgres", "-c", "fsync=off", "-c", "full_page_writes=off", "-c", "synchronous_commit=off", "-c", "temp_tablespaces='/dev/shm'" ]
     labels:
-      - traefik.enable=true
-      # TCP routing by domain (requires TLS/SNI for domain-based routing)
-      - traefik.tcp.routers.postgres.rule=HostSNI(`postgres.${WORKTREE_DOMAIN:-localhost}`)
-      - traefik.tcp.routers.postgres.entrypoints=postgres
-      - traefik.tcp.services.postgres.loadbalancer.server.port=5432
+      - traefik.enable=false

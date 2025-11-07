@@ -15,9 +15,5 @@ services:
       - default
       - traefik-shared
     labels:
-      - traefik.enable=true
-      # TCP routing by domain (requires TLS/SNI for domain-based routing)
-      - traefik.tcp.routers.valkey.rule=HostSNI(`valkey.${WORKTREE_DOMAIN:-localhost}`)
-      - traefik.tcp.routers.valkey.entrypoints=valkey
-      - traefik.tcp.services.valkey.loadbalancer.server.port=6379
+      - traefik.enable=false
 

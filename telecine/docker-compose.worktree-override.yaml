@@ -1,9 +1,0 @@
-# Worktree override: No port mappings needed
-# Base service files don't include ports, so worktrees have no port conflicts
-# Services are accessed via Traefik (web services) or internal Docker network (databases)
-# This file exists for documentation and potential future overrides
-services:
-  # Ports are not defined in base service files, so no override needed
-  # All services accessible via:
-  # - Traefik (web services): http://<worktree-domain>:3000
-  # - Internal Docker network: Use service names (postgres, valkey, etc.)

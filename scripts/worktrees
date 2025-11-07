@@ -40,6 +40,27 @@ sanitize_branch_name() {
   echo "$name"
 }
 
+# Calculate port offset for a branch (from worktree-config)
+calculate_port_offset() {
+  local branch_name="$1"
+  if [ "$branch_name" = "main" ] || [ "$branch_name" = "master" ]; then
+    echo "0"
+    return
+  fi
+  
+  # Simple hash: sum of character codes modulo 10, then multiply by 1000
+  local hash=$(echo -n "$branch_name" | od -An -tu1 | awk '{sum += $1} END {print sum % 10}')
+  echo $((hash * 1000))
+}
+
+# Calculate ports for a branch
+calculate_ports() {
+  local branch_name="$1"
+  local offset=$(calculate_port_offset "$branch_name")
+  
+  echo "$((5432 + offset)) $((6379 + offset)) $((1025 + offset))"
+}
+
 # Check merge status function
 is_merged() {
   local branch="$1"
@@ -52,13 +73,20 @@ echo "📋 Git Worktrees"
 echo ""
 
 # Print header
-printf "%-20s %-50s %-30s %-20s\n" "BRANCH" "PATH" "DOMAIN" "STATUS"
-printf "%-20s %-50s %-30s %-20s\n" "$(printf '%.0s-' {1..20})" "$(printf '%.0s-' {1..50})" "$(printf '%.0s-' {1..30})" "$(printf '%.0s-' {1..20})"
+printf "%-20s %-50s %-30s %-15s %-20s\n" "BRANCH" "PATH" "DOMAIN" "PORTS" "STATUS"
+printf "%-20s %-50s %-30s %-15s %-20s\n" "$(printf '%.0s-' {1..20})" "$(printf '%.0s-' {1..50})" "$(printf '%.0s-' {1..30})" "$(printf '%.0s-' {1..15})" "$(printf '%.0s-' {1..20})"
+
+# Determine main branch name
+MAIN_BRANCH="main"
+if ! git show-ref --verify --quiet "refs/heads/main"; then
+  MAIN_BRANCH="master"
+fi
 
 # Process worktree list --porcelain output
 # Use process substitution to avoid subshell issues
 WORKTREE_COUNT=0
 WORKTREE_PATH=""
+MAIN_WORKTREE_SHOWN=false
 
 while IFS= read -r line; do
   if [[ "$line" =~ ^worktree[[:space:]]+(.+)$ ]]; then
@@ -66,14 +94,21 @@ while IFS= read -r line; do
   elif [[ "$line" =~ ^branch[[:space:]]+refs/heads/(.+)$ ]]; then
     BRANCH_NAME="${BASH_REMATCH[1]}"
     
-    # Skip main/master branches (they're not worktrees)
-    if [ "$BRANCH_NAME" != "main" ] && [ "$BRANCH_NAME" != "master" ]; then
+    # Get domain and docker project name
+    if [ "$BRANCH_NAME" = "main" ] || [ "$BRANCH_NAME" = "master" ]; then
+      DOMAIN="main.localhost"
+      PORTS_DISPLAY="pg:5432"
+      STATUS="main"
+      MAIN_WORKTREE_SHOWN=true
+    else
       WORKTREE_COUNT=$((WORKTREE_COUNT + 1))
-      
-      # Get domain and docker project name
       SANITIZED=$(sanitize_branch_name "$BRANCH_NAME")
       DOMAIN="${SANITIZED}.localhost"
-      DOCKER_PROJECT="telecine-${SANITIZED}"
+      
+      # Calculate ports
+      PORTS=$(calculate_ports "$BRANCH_NAME")
+      POSTGRES_PORT=$(echo $PORTS | awk '{print $1}')
+      PORTS_DISPLAY="pg:${POSTGRES_PORT}"
       
       # Check merge status
       if is_merged "$BRANCH_NAME"; then
@@ -81,24 +116,68 @@ while IFS= read -r line; do
       else
         STATUS="⚠️  not merged"
       fi
-      
-      # Truncate path if too long
-      DISPLAY_PATH="$WORKTREE_PATH"
-      if [ ${#DISPLAY_PATH} -gt 48 ]; then
-        DISPLAY_PATH="...${DISPLAY_PATH: -45}"
-      fi
-      
-      printf "%-20s %-50s %-30s %-20s\n" "$BRANCH_NAME" "$DISPLAY_PATH" "$DOMAIN" "$STATUS"
     fi
+    
+    # Truncate path if too long
+    DISPLAY_PATH="$WORKTREE_PATH"
+    if [ ${#DISPLAY_PATH} -gt 48 ]; then
+      DISPLAY_PATH="...${DISPLAY_PATH: -45}"
+    fi
+    
+    printf "%-20s %-50s %-30s %-15s %-20s\n" "$BRANCH_NAME" "$DISPLAY_PATH" "$DOMAIN" "$PORTS_DISPLAY" "$STATUS"
+    
     WORKTREE_PATH=""
   fi
 done < <(git worktree list --porcelain)
 
-if [ "$WORKTREE_COUNT" -eq 0 ]; then
-  echo "No worktrees found (only main/master)"
+if [ "$WORKTREE_COUNT" -eq 0 ] && [ "$MAIN_WORKTREE_SHOWN" = true ]; then
+  echo ""
+  echo "No additional worktrees found"
 fi
 
 echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+# Show detailed info for all worktrees
+echo "Worktree Details:"
+echo ""
+
+WORKTREE_PATH=""
+while IFS= read -r line; do
+  if [[ "$line" =~ ^worktree[[:space:]]+(.+)$ ]]; then
+    WORKTREE_PATH="${BASH_REMATCH[1]}"
+  elif [[ "$line" =~ ^branch[[:space:]]+refs/heads/(.+)$ ]]; then
+    BRANCH_NAME="${BASH_REMATCH[1]}"
+    
+    if [ "$BRANCH_NAME" = "main" ] || [ "$BRANCH_NAME" = "master" ]; then
+      echo "  $BRANCH_NAME (main):"
+      echo "    Domain:        http://main.localhost:3000 (telecine)"
+      echo "    Domain:        http://main.localhost:4321 (elements)"
+      echo "    PostgreSQL:    localhost:5432"
+      echo "    Valkey:        localhost:6379"
+      echo "    Mailhog SMTP:  localhost:1025"
+    else
+      SANITIZED=$(sanitize_branch_name "$BRANCH_NAME")
+      DOMAIN="${SANITIZED}.localhost"
+      PORTS=$(calculate_ports "$BRANCH_NAME")
+      POSTGRES_PORT=$(echo $PORTS | awk '{print $1}')
+      VALKEY_PORT=$(echo $PORTS | awk '{print $2}')
+      MAILHOG_PORT=$(echo $PORTS | awk '{print $3}')
+      
+      echo "  $BRANCH_NAME:"
+      echo "    Domain:        http://${DOMAIN}:3000 (telecine)"
+      echo "    Domain:        http://${DOMAIN}:4321 (elements)"
+      echo "    PostgreSQL:    localhost:${POSTGRES_PORT}"
+      echo "    Valkey:        localhost:${VALKEY_PORT}"
+      echo "    Mailhog SMTP:  localhost:${MAILHOG_PORT}"
+    fi
+    echo ""
+    
+    WORKTREE_PATH=""
+  fi
+done < <(git worktree list --porcelain)
+
 echo "💡 To merge a worktree: ./scripts/merge-worktree <branch-name>"
 echo "   (or from worktree: cd <worktree-path> && ./scripts/merge-worktree)"
 echo "💡 To remove a worktree: ./scripts/remove-worktree [--force] <branch-name>"
