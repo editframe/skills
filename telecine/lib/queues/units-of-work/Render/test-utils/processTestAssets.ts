@@ -87,8 +87,17 @@ export async function processTestVideoAsset(
         .selectAll()
         .executeTakeFirst();
 
-      if (existingFile) {
+      // Only return existing file if it's complete
+      if (existingFile && existingFile.fragment_index_complete) {
         return existingFile;
+      }
+
+      // If file exists but is incomplete, delete it to force reprocessing
+      if (existingFile && !existingFile.fragment_index_complete) {
+        await db
+          .deleteFrom("video2.isobmff_files")
+          .where("id", "=", existingFile.id)
+          .execute();
       }
 
       if (filenameOrUrl.startsWith('http://') || filenameOrUrl.startsWith('https://')) {
