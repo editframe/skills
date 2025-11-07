@@ -1,8 +1,0 @@
-{
-  "setup-worktree": [
-    "scripts/setup-worktree"
-  ],
-  "cleanup-worktree": [
-    "scripts/cleanup-worktree"
-  ]
-}
