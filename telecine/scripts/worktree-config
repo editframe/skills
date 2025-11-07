@@ -80,3 +80,62 @@ else
   export WORKTREE_ID="$SANITIZED_BRANCH"
 fi
 
+# Calculate deterministic ports for worktrees based on branch name hash
+# Ports are in range 10000-60000, distributed based on branch name
+# Main worktree uses standard ports, worktrees get calculated ports
+calculate_worktree_port() {
+  local base_port=$1
+  local branch_name="${2:-$BRANCH_NAME}"
+  
+  if [ "$IS_MAIN_WORKTREE" = true ]; then
+    # Main worktree uses standard ports
+    echo "$base_port"
+    return
+  fi
+  
+  # Calculate hash of branch name (simple numeric hash)
+  # Use a simple hash function that produces consistent results
+  local hash=$(echo -n "$branch_name" | cksum | awk '{print $1}')
+  
+  # Make hash within port range (0-50000)
+  hash=$((hash % 50000))
+  
+  # Port range: 10000-60000 (avoiding common ports < 10000)
+  local worktree_port=$((10000 + hash))
+  
+  # Add service-specific offset to avoid collisions
+  # Each service gets a small offset (0-99) based on base_port
+  local service_offset=$((base_port % 100))
+  worktree_port=$((worktree_port + service_offset))
+  
+  # Ensure port is in valid range
+  if [ $worktree_port -gt 60000 ]; then
+    worktree_port=$((worktree_port - 50000))
+  fi
+  
+  echo "$worktree_port"
+}
+
+# Export port variables for common services
+if [ "$IS_MAIN_WORKTREE" = true ]; then
+  # Main worktree: standard ports
+  export WORKTREE_VALKEY_PORT=6379
+  export WORKTREE_MAILHOG_SMTP_PORT=1025
+  export WORKTREE_MAILHOG_WEB_PORT=8025
+  export WORKTREE_PLAYWRIGHT_PORT=4444
+  export WORKTREE_TRACING_GRPC_PORT=4317
+  export WORKTREE_TRACING_HTTP_PORT=4318
+  export WORKTREE_TRACING_SSE_PORT=4319
+  export WORKTREE_OTEL_VIEWER_PORT=4320
+else
+  # Worktree: calculated ports
+  export WORKTREE_VALKEY_PORT=$(calculate_worktree_port 6379)
+  export WORKTREE_MAILHOG_SMTP_PORT=$(calculate_worktree_port 1025)
+  export WORKTREE_MAILHOG_WEB_PORT=$(calculate_worktree_port 8025)
+  export WORKTREE_PLAYWRIGHT_PORT=$(calculate_worktree_port 4444)
+  export WORKTREE_TRACING_GRPC_PORT=$(calculate_worktree_port 4317)
+  export WORKTREE_TRACING_HTTP_PORT=$(calculate_worktree_port 4318)
+  export WORKTREE_TRACING_SSE_PORT=$(calculate_worktree_port 4319)
+  export WORKTREE_OTEL_VIEWER_PORT=$(calculate_worktree_port 4320)
+fi
+

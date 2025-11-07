@@ -6,9 +6,19 @@ services:
       - /var/lib/postgresql/data
     env_file:
       - ${PWD}/.env
-    # ports:
-      # - 6432:5432
+    # No direct port mapping - accessed via Traefik TCP routing
+    expose:
+      - "5432"
+    networks:
+      - default
+      - traefik-shared
     # These configurtion options are for development only, and should not be used in production.
     # They trade off durability for performance, and WILL LOSE/CORRUPT DATA in the event of a crash.
     # prettier-ignore
     command: [ "postgres", "-c", "fsync=off", "-c", "full_page_writes=off", "-c", "synchronous_commit=off", "-c", "temp_tablespaces='/dev/shm'" ]
+    labels:
+      - traefik.enable=true
+      # TCP routing by domain (requires TLS/SNI for domain-based routing)
+      - traefik.tcp.routers.postgres.rule=HostSNI(`postgres.${WORKTREE_DOMAIN:-localhost}`)
+      - traefik.tcp.routers.postgres.entrypoints=postgres
+      - traefik.tcp.services.postgres.loadbalancer.server.port=5432

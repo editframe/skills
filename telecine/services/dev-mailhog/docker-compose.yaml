@@ -3,9 +3,20 @@ services:
     image: mailhog/mailhog
     env_file:
       - ${PWD}/.env
+    # SMTP port: deterministic per worktree, Web UI: via Traefik HTTP routing
     ports:
-      - 1025:1025 # smtp server
-      - 8025:8025 # web ui
+      - "${WORKTREE_MAILHOG_SMTP_PORT:-1025}:1025" # smtp server
+    expose:
+      - "8025" # Web UI via Traefik
     volumes:
       - ${TELECINE_ROOT_HOST:-${PWD}}/docker/data/mailhog:/maildir
     stop_grace_period: 1s
+    networks:
+      - default
+      - traefik-shared
+    labels:
+      - traefik.enable=true
+      # Web UI via HTTP routing (same port for all worktrees!)
+      - traefik.http.routers.mailhog-web.rule=Host(`mailhog.${WORKTREE_DOMAIN:-localhost}`)
+      - traefik.http.routers.mailhog-web.entrypoints=web
+      - traefik.http.services.mailhog-web.loadbalancer.server.port=8025

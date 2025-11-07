@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Remove current worktree and branch
-# Run from within worktree directory
-# Fails if branch is not merged into main
+# Remove worktree and branch
+# Can be run from within worktree directory or from main with branch name argument
+# Usage: ./scripts/remove-worktree [branch-name]
+# Fails if branch is not merged into main or identical to main
 
 set -e
 
@@ -15,18 +16,44 @@ if ! git rev-parse --git-dir > /dev/null 2>&1; then
 fi
 
 # Detect current worktree and branch
-WORKTREE_ROOT=$(git rev-parse --show-toplevel)
-BRANCH_NAME=$(git branch --show-current 2>/dev/null || git symbolic-ref --short HEAD 2>/dev/null)
+CURRENT_ROOT=$(git rev-parse --show-toplevel)
+CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || git symbolic-ref --short HEAD 2>/dev/null)
 
-if [ -z "$BRANCH_NAME" ]; then
-  echo "Error: Could not detect git branch name. Ensure you are on a valid branch." >&2
-  exit 1
-fi
-
-# Check if we're in main worktree
-if [ "$BRANCH_NAME" = "main" ] || [ "$BRANCH_NAME" = "master" ]; then
-  echo "Error: Cannot remove main/master worktree. This script should be run from a worktree branch." >&2
-  exit 1
+# Check if branch name provided as argument (running from main)
+if [ -n "$1" ]; then
+  BRANCH_NAME="$1"
+  # Find worktree for this branch using porcelain output
+  WORKTREE_ROOT=""
+  while IFS= read -r line; do
+    if [[ "$line" =~ ^worktree[[:space:]]+(.+)$ ]]; then
+      WORKTREE_ROOT="${BASH_REMATCH[1]}"
+    elif [[ "$line" =~ ^branch[[:space:]]+refs/heads/(.+)$ ]]; then
+      if [ "${BASH_REMATCH[1]}" = "$BRANCH_NAME" ]; then
+        break
+      fi
+      WORKTREE_ROOT=""
+    fi
+  done < <(git worktree list --porcelain)
+  
+  if [ -z "$WORKTREE_ROOT" ]; then
+    echo "Error: Could not find worktree for branch '$BRANCH_NAME'" >&2
+    exit 1
+  fi
+else
+  # Running from within worktree
+  WORKTREE_ROOT="$CURRENT_ROOT"
+  BRANCH_NAME="$CURRENT_BRANCH"
+  
+  if [ -z "$BRANCH_NAME" ]; then
+    echo "Error: Could not detect git branch name. Ensure you are on a valid branch or provide branch name as argument." >&2
+    exit 1
+  fi
+  
+  # Check if we're in main worktree
+  if [ "$BRANCH_NAME" = "main" ] || [ "$BRANCH_NAME" = "master" ]; then
+    echo "Error: Cannot remove main/master worktree. This script should be run from a worktree branch or with a branch name argument." >&2
+    exit 1
+  fi
 fi
 
 # Find main worktree
@@ -54,39 +81,73 @@ echo "🗑️  Removing worktree for branch '$BRANCH_NAME'"
 echo "   Worktree: $WORKTREE_ROOT"
 echo ""
 
-# Check if branch has been merged into main
+# Check if branch has been merged into main or is identical to main
 cd "$MAIN_WORKTREE"
 git checkout "$MAIN_BRANCH" > /dev/null 2>&1
 
-if ! git branch --merged | grep -q "^\s*${BRANCH_NAME}$" && ! git branch --merged | grep -q "^\s*\*.*${BRANCH_NAME}$"; then
-  echo "❌ Error: Branch '$BRANCH_NAME' has not been merged into '$MAIN_BRANCH'" >&2
+# Check if branch is merged
+IS_MERGED=false
+if git branch --merged | grep -q "^\s*${BRANCH_NAME}$" || git branch --merged | grep -q "^\s*\*.*${BRANCH_NAME}$"; then
+  IS_MERGED=true
+fi
+
+# Check if branch is identical to main (no commits ahead)
+IS_IDENTICAL=false
+if git rev-parse --verify "refs/heads/${BRANCH_NAME}" > /dev/null 2>&1; then
+  BRANCH_COMMIT=$(git rev-parse "refs/heads/${BRANCH_NAME}")
+  MAIN_COMMIT=$(git rev-parse "refs/heads/${MAIN_BRANCH}")
+  if [ "$BRANCH_COMMIT" = "$MAIN_COMMIT" ]; then
+    IS_IDENTICAL=true
+  fi
+fi
+
+if [ "$IS_MERGED" = false ] && [ "$IS_IDENTICAL" = false ]; then
+  echo "❌ Error: Branch '$BRANCH_NAME' has not been merged into '$MAIN_BRANCH' and is not identical to main" >&2
   echo ""
   echo "Please merge the branch first:"
-  echo "  cd $WORKTREE_ROOT && ./scripts/merge-worktree"
+  echo "  ./scripts/merge-worktree $BRANCH_NAME"
   echo ""
   echo "Or if you want to remove without merging, use git commands directly."
   exit 1
 fi
 
-echo "✅ Branch is merged. Proceeding with cleanup..."
+if [ "$IS_IDENTICAL" = true ]; then
+  echo "✅ Branch is identical to main (no changes). Proceeding with cleanup..."
+else
+  echo "✅ Branch is merged. Proceeding with cleanup..."
+fi
 echo ""
 
-# Stop Docker containers
-echo "1️⃣  Stopping Docker containers..."
+# Stop and remove Docker containers
+echo "1️⃣  Stopping and removing Docker containers..."
 if [ -d "$WORKTREE_ROOT/telecine" ] && [ -f "$WORKTREE_ROOT/telecine/scripts/docker-compose" ]; then
   cd "$WORKTREE_ROOT/telecine"
+  # Source worktree-config to get Docker project name
+  if [ -f "$WORKTREE_ROOT/telecine/scripts/worktree-config" ]; then
+    . "$WORKTREE_ROOT/telecine/scripts/worktree-config" 2>/dev/null || true
+  fi
+  # Stop and remove containers, volumes, and networks
   ./scripts/docker-compose down -v --remove-orphans 2>&1 | grep -v "No such" || true
-  echo "   ✅ Telecine Docker resources stopped"
+  echo "   ✅ Telecine Docker resources stopped and removed"
 fi
 
-if [ -d "$WORKTREE_ROOT/elements" ] && [ -f "$WORKTREE_ROOT/elements/docker-compose.yaml" ]; then
+if [ -d "$WORKTREE_ROOT/elements" ]; then
   cd "$WORKTREE_ROOT/elements"
-  if command -v docker-compose > /dev/null 2>&1; then
-    docker-compose down -v --remove-orphans 2>&1 | grep -v "No such" || true
-  elif docker compose version > /dev/null 2>&1; then
-    docker compose down -v --remove-orphans 2>&1 | grep -v "No such" || true
+  # Source worktree-config to get Docker project name
+  if [ -f "$WORKTREE_ROOT/elements/scripts/worktree-config" ]; then
+    . "$WORKTREE_ROOT/elements/scripts/worktree-config" 2>/dev/null || true
   fi
-  echo "   ✅ Elements Docker resources stopped"
+  # Use elements docker-compose script if available, otherwise fall back to docker compose
+  if [ -f "$WORKTREE_ROOT/elements/scripts/docker-compose" ]; then
+    ./scripts/docker-compose down -v --remove-orphans 2>&1 | grep -v "No such" || true
+  elif [ -f "$WORKTREE_ROOT/elements/docker-compose.yaml" ]; then
+    if command -v docker-compose > /dev/null 2>&1; then
+      docker-compose -f "$WORKTREE_ROOT/elements/docker-compose.yaml" down -v --remove-orphans 2>&1 | grep -v "No such" || true
+    elif docker compose version > /dev/null 2>&1; then
+      docker compose -f "$WORKTREE_ROOT/elements/docker-compose.yaml" down -v --remove-orphans 2>&1 | grep -v "No such" || true
+    fi
+  fi
+  echo "   ✅ Elements Docker resources stopped and removed"
 fi
 
 echo ""

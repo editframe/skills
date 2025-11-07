@@ -2,7 +2,7 @@
 set -e
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-PROJECT_ROOT="$SCRIPT_DIR/.."
+PROJECT_ROOT=$(cd "$SCRIPT_DIR/.." && pwd)
 
 # Change to project root so npm install runs in the correct directory
 cd "$PROJECT_ROOT"
@@ -19,6 +19,7 @@ ${SCRIPT_DIR}/npm install
 
 # Build native transcode module (required for jit-transcoding service)
 # Check if build already exists (may have been copied from main worktree)
+# PROJECT_ROOT is telecine/, so check lib/transcode relative to that
 TRANCODE_BUILD="$PROJECT_ROOT/lib/transcode/build/Release/playback.node"
 if [ ! -f "$TRANCODE_BUILD" ]; then
   echo "Building native transcode module in container..."

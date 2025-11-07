@@ -5,9 +5,9 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "4317:4317"
-      - "4318:4318"
-      - "4319:4319"
+      - "${WORKTREE_TRACING_GRPC_PORT:-4317}:4317"
+      - "${WORKTREE_TRACING_HTTP_PORT:-4318}:4318"
+      - "${WORKTREE_TRACING_SSE_PORT:-4319}:4319"
     environment:
       - OTEL_GRPC_PORT=4317
       - OTEL_HTTP_PORT=4318

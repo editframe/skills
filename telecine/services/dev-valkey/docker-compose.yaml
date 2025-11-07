@@ -3,9 +3,19 @@ services:
     image: valkey/valkey:8.0-alpine
     env_file:
       - ${PWD}/.env
-    ports:
-      - 6379:6379
+    # No direct port mapping - accessed via Traefik TCP routing
+    expose:
+      - "6379"
     volumes:
       - ${TELECINE_ROOT_HOST:-${PWD}}/services/dev-valkey/valkey.conf:/usr/local/etc/valkey/valkey.conf
     command: ["valkey-server", "/usr/local/etc/valkey/valkey.conf"]
+    networks:
+      - default
+      - traefik-shared
+    labels:
+      - traefik.enable=true
+      # TCP routing by domain (requires TLS/SNI for domain-based routing)
+      - traefik.tcp.routers.valkey.rule=HostSNI(`valkey.${WORKTREE_DOMAIN:-localhost}`)
+      - traefik.tcp.routers.valkey.entrypoints=valkey
+      - traefik.tcp.services.valkey.loadbalancer.server.port=6379
 

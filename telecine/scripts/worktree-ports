@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Display port mappings for current worktree
+# Run from telecine directory
+
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+# Source worktree config to get port variables
+. "$SCRIPT_DIR/worktree-config"
+
+echo "🔌 Port Mappings for Worktree: $WORKTREE_BRANCH"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "HTTP Services (via Traefik - same port for all worktrees):"
+echo "   Web:              http://${WORKTREE_DOMAIN}:3000"
+echo "   Mailhog Web UI:   http://mailhog.${WORKTREE_DOMAIN}:3000"
+echo "   Playwright UI:    http://playwright.${WORKTREE_DOMAIN}:3000"
+echo "   Otel Viewer:      http://otel-viewer.${WORKTREE_DOMAIN}:3000"
+echo ""
+echo "TCP Services (via Traefik - same port for all worktrees, routed by domain):"
+echo "   PostgreSQL:       postgres.${WORKTREE_DOMAIN}:5432"
+echo "   Valkey:           valkey.${WORKTREE_DOMAIN}:6379"
+echo ""
+echo "   Mailhog SMTP:     localhost:${WORKTREE_MAILHOG_SMTP_PORT} (direct, not via Traefik)"
+echo ""
+echo "💡 Note: TCP routing by domain requires TLS/SNI"
+echo "   For raw TCP connections, use service names from within containers"
+echo "   (e.g., postgres:5432, valkey:6379)"
+echo ""
+
