@@ -3,8 +3,7 @@ import { progressiveQuery } from "@/graphql.client";
 import { graphql } from "@/graphql";
 import type { ResourceView } from ".";
 import { Button } from "~/components/Button";
-import { TrashIcon, ArrowUpTrayIcon } from "@heroicons/react/24/outline";
-import { LinkIcon } from "@heroicons/react/24/solid";
+import { Trash, Upload, Link as LinkIcon } from "@phosphor-icons/react";
 import { useFetcher } from "react-router";
 import { CompletedAt, type ContentBlock, CreatedAt, ID, MD5 } from "./blocks";
 import {
@@ -88,7 +87,7 @@ const Actions: ContentBlock<{ filename: string }> = ({
     <div className="flex flex-wrap gap-2">
       <Button
         mode="destructive"
-        icon={TrashIcon}
+        icon={Trash}
         disabled={isLoading}
         loading={isLoading}
         confirmation={{
@@ -116,9 +115,9 @@ const Actions: ContentBlock<{ filename: string }> = ({
 
 const TableHeader = () => {
   return (
-    <div className="flex justify-start py-2 gap-2">
+    <div className="flex items-center gap-2 pb-2">
       <Link to="/resource/isobmff_files/upload">
-        <Button mode="creative" icon={ArrowUpTrayIcon}>
+        <Button mode="creative" icon={Upload}>
           Upload File
         </Button>
       </Link>

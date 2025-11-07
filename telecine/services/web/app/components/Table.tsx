@@ -11,7 +11,15 @@ export const TableHead = (
 ) => {
   return (
     <thead className={props.className}>
-      <tr className="border-y text-xs border-gray-300 bg-gray-100">
+      <tr className={clsx(
+        "border-b transition-colors relative",
+        "border-slate-300/75 dark:border-slate-700/75",
+        "bg-gradient-to-br from-slate-50/95 via-slate-50/85 to-slate-50/95",
+        "dark:from-slate-800/95 dark:via-slate-800/85 dark:to-slate-800/95",
+        "before:absolute before:inset-0 before:bg-gradient-to-br before:from-amber-50/30 before:via-transparent before:to-transparent",
+        "dark:before:from-blue-950/20 dark:before:via-transparent dark:before:to-transparent",
+        "before:pointer-events-none"
+      )}>
         {props.children}
       </tr>
     </thead>
@@ -22,7 +30,11 @@ export const ColumnHead = (
   props: React.PropsWithChildren & { className?: string },
 ) => {
   return (
-    <th className={clsx("p-1 font-medium text-left", props.className)}>
+    <th className={clsx(
+      "px-3 py-2.5 text-xs font-semibold text-left tracking-wider transition-colors align-middle whitespace-nowrap",
+      "text-slate-700 dark:text-slate-300",
+      props.className
+    )}>
       {props.children}
     </th>
   );
@@ -39,9 +51,17 @@ export const TableRow = (
   return (
     <tr
       className={clsx(
-        "border-b text-xs border-gray-300 bg-white",
-        !props.noHighlight && !props.selected && "hover:bg-gray-100",
-        props.selected && "bg-blue-100",
+        "border-b transition-all duration-150 relative",
+        "border-slate-200/60 dark:border-slate-800/60",
+        "bg-white dark:bg-slate-900",
+        !props.noHighlight && !props.selected && "hover:bg-slate-50/60 dark:hover:bg-slate-800/40",
+        props.selected && [
+          "bg-blue-50/80 dark:bg-blue-950/50",
+          "border-blue-300/70 dark:border-blue-900/70",
+          "before:absolute before:inset-0 before:bg-gradient-to-r before:from-blue-50/40 before:via-transparent before:to-transparent",
+          "dark:before:from-blue-950/30 dark:before:via-transparent dark:before:to-transparent",
+          "before:pointer-events-none"
+        ],
         props.className,
       )}
       onClick={props.onClick}
@@ -56,7 +76,12 @@ export const TableCell = (
 ) => {
   return (
     <td
-      className={clsx("p-1 font-light align-baseline", props.className)}
+      className={clsx(
+        "px-3 py-2.5 text-sm align-middle transition-colors",
+        "text-slate-900 dark:text-slate-100",
+        "leading-snug",
+        props.className
+      )}
       colSpan={props.colSpan}
     >
       {props.children}
@@ -104,70 +129,79 @@ export const Table = <
   const navigate = useNavigateWithSearch();
 
   return (
-    <table className="w-full border-collapse">
-      <TableHead>
-        {columns.map((column) => (
-          <ColumnHead key={column.name}>{column.name}</ColumnHead>
-        ))}
-      </TableHead>
-      <tbody>
-        {rows.length === 0 && (
-          <TableRow noHighlight>
-            <TableCell colSpan={columns.length}>
-              <EmptyResult resourceLabel={emptyResultMessage}>
-                {emptyResultContent}
-              </EmptyResult>
-            </TableCell>
-          </TableRow>
-        )}
-        {rows.map((row) => {
-          const url = buildRowURL?.(row);
-          const customClassName = rowClassName ? rowClassName(row) : undefined;
-
-          return (
-            <TableRow
-              key={rowKey ? String(row[rowKey]) : String(row.id)}
-              onClick={
-                url
-                  ? (event) => {
-                      // Check if the click is on a link or other interactive element
-                      if (event.target instanceof HTMLElement) {
-                        const isInteractive = event.target.closest(
-                          "a, button, input, select, textarea",
-                        );
-                        if (isInteractive) {
-                          return; // Don't navigate if clicking on an interactive element
-                        }
-                      }
-                      event.preventDefault();
-                      navigate(url);
-                    }
-                  : undefined
-              }
-              className={clsx(
-                "border-b text-xs border-gray-300 bg-white",
-                !url && "hover:bg-gray-100",
-                url && "cursor-pointer hover:bg-gray-100",
-                customClassName,
-              )}
-            >
-              {columns.map((column) => (
-                <TableCell key={column.name}>
-                  <column.content {...row} />
-                </TableCell>
-              ))}
+    <div className={clsx(
+      "overflow-hidden rounded-lg border backdrop-blur-sm transition-all relative w-full",
+      "bg-white/95 dark:bg-slate-900/95",
+      "border-slate-300/75 dark:border-slate-700/75",
+      "shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08),0_4px_12px_0_rgb(0_0_0_/_0.12)]",
+      "dark:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.4),0_4px_12px_0_rgb(0_0_0_/_0.5)]",
+      "before:absolute before:inset-0 before:bg-gradient-to-br before:from-amber-50/25 before:via-transparent before:to-transparent",
+      "dark:before:from-blue-950/18 dark:before:via-transparent dark:before:to-transparent",
+      "before:pointer-events-none before:rounded-lg"
+    )}>
+      <table className="w-full border-collapse">
+        <TableHead>
+          {columns.map((column) => (
+            <ColumnHead key={column.name}>{column.name}</ColumnHead>
+          ))}
+        </TableHead>
+        <tbody>
+          {rows.length === 0 && (
+            <TableRow noHighlight>
+              <TableCell colSpan={columns.length}>
+                <EmptyResult resourceLabel={emptyResultMessage}>
+                  {emptyResultContent}
+                </EmptyResult>
+              </TableCell>
             </TableRow>
-          );
-        })}
-      </tbody>
-      {footerContent && (
-        <tfoot>
-          <tr>
-            <td colSpan={columns.length}>{footerContent}</td>
-          </tr>
-        </tfoot>
-      )}
-    </table>
+          )}
+          {rows.map((row) => {
+            const url = buildRowURL?.(row);
+            const customClassName = rowClassName ? rowClassName(row) : undefined;
+
+            return (
+              <TableRow
+                key={rowKey ? String(row[rowKey]) : String(row.id)}
+                onClick={
+                  url
+                    ? (event) => {
+                        // Check if the click is on a link or other interactive element
+                        if (event.target instanceof HTMLElement) {
+                          const isInteractive = event.target.closest(
+                            "a, button, input, select, textarea",
+                          );
+                          if (isInteractive) {
+                            return; // Don't navigate if clicking on an interactive element
+                          }
+                        }
+                        event.preventDefault();
+                        navigate(url);
+                      }
+                    : undefined
+                }
+                className={clsx(
+                  url && "cursor-pointer",
+                  customClassName,
+                )}
+              >
+                {columns.map((column) => (
+                  <TableCell key={column.name}>
+                    <column.content {...row} />
+                  </TableCell>
+                ))}
+              </TableRow>
+            );
+          })}
+        </tbody>
+        {footerContent && (
+          <tfoot>
+            <tr>
+              <td className="p-0 w-full" colSpan={columns.length} style={{ width: '100%' }}>{footerContent}</td>
+            </tr>
+          </tfoot>
+        )}
+      </table>
+    </div>
   );
 };
 

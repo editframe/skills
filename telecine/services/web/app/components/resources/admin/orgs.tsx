@@ -13,6 +13,7 @@ import {
   OrgVideoMinutes,
 } from "../blocks/org";
 import { useDebouncedSearchParams } from "~/hooks/useDebouncedSearchParams";
+import clsx from "clsx";
 
 const IndexQuery = progressiveQuery(
   "ef-admin",
@@ -118,26 +119,72 @@ const Filter = () => {
   };
 
   return (
-    <div className="flex items-center gap-4 p-2 text-xs">
+    <div className={clsx(
+      "flex flex-col sm:flex-row items-start sm:items-center gap-3 pb-3 text-xs transition-colors"
+    )}>
       <div className="flex items-center gap-2">
-        <span className="font-medium text-gray-600">Search:</span>
+        <span className={clsx(
+          "font-medium transition-colors",
+          "text-slate-600 dark:text-slate-400"
+        )}>
+          Search:
+        </span>
         <input
           type="text"
           value={search}
           placeholder="Search by name, website, or primary user..."
-          className="border-gray-300 px-2 py-1 border rounded text-xs"
+          className={clsx(
+            "px-3 py-1.5 border rounded-md text-xs transition-all duration-150 relative",
+            "bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm",
+            "text-slate-900 dark:text-white",
+            "border-slate-300/75 dark:border-slate-700/75",
+            "placeholder:text-slate-400 dark:placeholder:text-slate-500",
+            "shadow-[0_1px_2px_0_rgb(0_0_0_/_0.06)] dark:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.3)]",
+            "before:absolute before:inset-0 before:bg-gradient-to-br before:from-amber-50/18 before:via-transparent before:to-transparent",
+            "dark:before:from-blue-950/15 dark:before:via-transparent dark:before:to-transparent",
+            "before:pointer-events-none before:rounded-md",
+            "focus:outline-none focus:ring-1 focus:ring-blue-500/50 dark:focus:ring-blue-400/50",
+            "focus:border-blue-500/85 dark:focus:border-blue-400/85",
+            "focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08),0_2px_4px_0_rgb(59_130_246_/_0.15)]",
+            "dark:focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.35),0_2px_4px_0_rgb(59_130_246_/_0.2)]",
+            "focus:before:from-blue-50/30 dark:focus:before:from-blue-950/22"
+          )}
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
       <div className="flex items-center gap-2">
-        <span className="font-medium text-gray-600">Analytics End Date:</span>
+        <span className={clsx(
+          "font-medium transition-colors",
+          "text-slate-600 dark:text-slate-400"
+        )}>
+          Analytics End Date:
+        </span>
         <input
           type="date"
           value={endDate}
-          className="border-gray-300 px-2 py-1 border rounded text-xs"
+          className={clsx(
+            "px-3 py-1.5 border rounded-md text-xs transition-all duration-150 relative",
+            "bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm",
+            "text-slate-900 dark:text-white",
+            "border-slate-300/75 dark:border-slate-700/75",
+            "shadow-[0_1px_2px_0_rgb(0_0_0_/_0.06)] dark:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.3)]",
+            "before:absolute before:inset-0 before:bg-gradient-to-br before:from-amber-50/18 before:via-transparent before:to-transparent",
+            "dark:before:from-blue-950/15 dark:before:via-transparent dark:before:to-transparent",
+            "before:pointer-events-none before:rounded-md",
+            "focus:outline-none focus:ring-1 focus:ring-blue-500/50 dark:focus:ring-blue-400/50",
+            "focus:border-blue-500/85 dark:focus:border-blue-400/85",
+            "focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08),0_2px_4px_0_rgb(59_130_246_/_0.15)]",
+            "dark:focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.35),0_2px_4px_0_rgb(59_130_246_/_0.2)]",
+            "focus:before:from-blue-50/30 dark:focus:before:from-blue-950/22"
+          )}
           onChange={(e) => handleDateChange(e.target.value)}
         />
-        <span className="text-gray-500 text-xs">(30 days ending on this date)</span>
+        <span className={clsx(
+          "text-xs transition-colors",
+          "text-slate-500 dark:text-slate-400"
+        )}>
+          (30 days ending on this date)
+        </span>
       </div>
     </div>
   );

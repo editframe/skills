@@ -31,7 +31,7 @@ describe("EFCaptions", () => {
       document.body.appendChild(captions);
       workbench.appendChild(captions);
       expect(captions.captionsPath()).toBe(
-        "https://editframe.dev/api/v1/caption_files/550e8400-e29b-41d4-a716-446655440000",
+        "https://editframe.com/api/v1/caption_files/550e8400-e29b-41d4-a716-446655440000",
       );
     });
   });
@@ -47,7 +47,7 @@ describe("EFCaptions", () => {
       captions.setAttribute("target", id);
       document.body.appendChild(captions);
       expect(captions.captionsPath()).toBe(
-        `https://editframe.dev/api/v1/caption_files/${id}`,
+        `https://editframe.com/api/v1/caption_files/${id}`,
       );
     });
 

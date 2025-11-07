@@ -2,7 +2,7 @@ import type { Route } from "./+types/trim"
 import { useState, useRef } from "react"
 import { Timegroup, Preview, Video, Scrubber, TimeDisplay, TogglePlay, ThumbnailStrip } from "@editframe/react"
 import { WithEnv } from "~/components/WithEnv"
-import { PauseIcon, PlayIcon } from "@heroicons/react/20/solid"
+import { Pause, Play } from "@phosphor-icons/react"
 
 interface TrimState {
   startTime: number
@@ -246,13 +246,13 @@ export default function Trim(_props: Route.ComponentProps) {
                     slot="pause"
                     className="text-gray-800 hover:text-gray-800/80 flex flex-col items-center p-1 rounded hover:bg-gray-800/10 transition-colors"
                   >
-                    <PauseIcon className="size-5" />
+                    <Pause className="size-5" weight="fill" />
                   </button>
                   <button
                     slot="play"
                     className="text-gray-800 hover:text-gray-800/80 flex flex-col items-center p-1 rounded hover:bg-gray-800/10 transition-colors"
                   >
-                    <PlayIcon className="size-5" />
+                    <Play className="size-5" weight="fill" />
                   </button>
                 </TogglePlay>
                 <Scrubber />

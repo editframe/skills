@@ -1,6 +1,6 @@
 import { Dialog, DialogPanel, DialogTitle, Transition, } from '@headlessui/react';
 import { Button } from "./Button";
-import { InformationCircleIcon } from "@heroicons/react/20/solid";
+import { Info } from "@phosphor-icons/react";
 
 
 export const ConfirmationDialog = ({
@@ -62,9 +62,10 @@ export const ConfirmationDialog = ({
             <DialogPanel className="relative overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all transform sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
               <div className="sm:flex sm:items-start">
                 <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
-                  <InformationCircleIcon
+                  <Info
                     className="h-6 w-6 text-blue-600"
                     aria-hidden="true"
+                    weight="fill"
                   />
                 </div>
                 <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">

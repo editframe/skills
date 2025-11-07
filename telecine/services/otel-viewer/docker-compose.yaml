@@ -5,7 +5,9 @@ services:
     working_dir: /app/services/otel-viewer
     volumes_from:
       - runner
-    command: ["npx", "vite", "--host"]
+    stdin_open: true
+    tty: true
+    command: ["sh", "-c", "cd /app/services/otel-viewer && /app/node_modules/.bin/vite --host"]
     ports:
       - "4320:4320"
     environment:

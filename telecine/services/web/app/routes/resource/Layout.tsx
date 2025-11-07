@@ -6,6 +6,8 @@ import { commitSession, getSession, type SessionInfo } from "@/util/session";
 import { SpanStatusCode } from "@opentelemetry/api";
 import { trace } from "@opentelemetry/api";
 import { Header } from "~/components/Header";
+import clsx from "clsx";
+import { useState } from "react";
 
 import type { Route } from "./+types/Layout";
 import { requireSession } from "@/util/requireSession.server";
@@ -115,18 +117,30 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 };
 
 export default function ResourceLayout({ loaderData }: Route.ComponentProps) {
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+
   return (
-    <div className="grid h-screen w-full grid-rows-[auto_1fr] grid-cols-[auto_1fr]">
+    <div className={clsx(
+      "grid h-screen w-full grid-rows-[auto_0_1fr] lg:grid-rows-[auto_1fr] grid-cols-1 lg:grid-cols-[auto_1fr] transition-colors",
+      "bg-white dark:bg-slate-900"
+    )}>
       <Header
-        className="col-span-2"
+        className="col-span-1 lg:col-span-2"
         orgs={loaderData.orgs}
         email={loaderData.email}
+        onMobileNavToggle={() => setIsMobileNavOpen(!isMobileNavOpen)}
       />
-      <div className="h-full overflow-y-auto">
-        <UserNavigation />
+      {/* Navigation - always rendered, handles its own mobile visibility */}
+      <div className="lg:h-full lg:overflow-y-auto">
+        <UserNavigation 
+          isMobileOpen={isMobileNavOpen} 
+          setIsMobileOpen={setIsMobileNavOpen}
+        />
       </div>
-      <div className="pl-2 pb-4 h-full overflow-y-auto">
-        <Outlet />
+      <div className="flex flex-col h-full min-h-0 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-y-auto px-2 sm:px-4 lg:pl-2 pb-4">
+          <Outlet />
+        </div>
       </div>
     </div>
   );

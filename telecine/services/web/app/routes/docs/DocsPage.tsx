@@ -61,6 +61,8 @@ import Rotation from "./examples/rotation.tsx";
 import Crop from "./examples/crop.tsx";
 import { MobileMenuDrawer } from "~/components/docs/MobileMenuDrawer";
 import { ResponsiveContainer } from "~/components/docs/ResponsiveContainer";
+import { useTheme } from "~/hooks/useTheme";
+import { ThemeToggle } from "~/components/ThemeToggle";
 
 import {
   HTTPEndpoint,
@@ -111,6 +113,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
 };
 
 export default function DocsPage() {
+  useTheme();
   const { post, menu } = useLoaderData<typeof loader>();
   const { headings, code } = post;
   const MDXAsComponent = React.useMemo(() => getMDXComponent(code), [code]);
@@ -120,29 +123,47 @@ export default function DocsPage() {
   const [isMobileTocOpen, setIsMobileTocOpen] = React.useState(false);
   const tocButtonRef = React.useRef<HTMLButtonElement>(null);
 
+  React.useEffect(() => {
+    if (!isMobileTocOpen) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsMobileTocOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isMobileTocOpen]);
+
   return (
     <div className="grid grid-rows-[auto_minmax(0,1fr)] h-screen contain-layout bg-background text-foreground">
       <div className="relative">
         <Header className="bg-background" hideMobileMenu={true} />
-        <button
-          onClick={() => setIsMobileMenuOpen(true)}
-          className="absolute right-4 top-1/2 -translate-y-1/2 z-[1001] rounded-md p-2 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 md:hidden touch-manipulation"
-          aria-label="Open documentation menu"
-        >
-          <svg
-            className="h-6 w-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 z-[1001] flex items-center gap-2 md:hidden">
+          <ThemeToggle />
+          <button
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="rounded-md p-2 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 touch-manipulation"
+            aria-label="Open documentation menu"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 6h16M4 12h16M4 18h16"
-            />
-          </svg>
-        </button>
+            <svg
+              className="h-6 w-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <MobileMenuDrawer
@@ -236,18 +257,42 @@ export default function DocsPage() {
                 "md:pr-6",
                 "markdown",
                 "prose prose-slate max-w-none dark:prose-invert",
-                // headings
-                "prose-headings:scroll-mt-20 sm:prose-headings:scroll-mt-24 prose-headings:font-display prose-headings:font-normal lg:prose-headings:scroll-mt-[8.5rem]",
-                "prose-lead:text-slate-500 dark:prose-lead:text-slate-400",
-                // links
-                "prose-a:no-underline",
-                "prose-pre:bg-slate-900 dark:prose-pre:bg-slate-800/60 dark:prose-pre:ring-1 dark:prose-pre:ring-slate-300/10 prose-pre:overflow-hidden",
-                // hr
-                "dark:prose-hr:border-slate-800",
-                "prose-h1:font-semibold dark:prose-h1:text-white",
-                // selection style
-                "selection:bg-slate-200 dark:selection:bg-slate-700",
-                "prose-code:selection:bg-slate-200 dark:prose-code:selection:bg-slate-700",
+                // Base typography - Mintlify-inspired
+                "prose-base prose-slate",
+                "prose-p:text-slate-600 prose-p:leading-7 dark:prose-p:text-slate-300 dark:prose-p:leading-7",
+                "prose-p:mb-6",
+                // Headings - cleaner, more spacious
+                "prose-headings:scroll-mt-20 sm:prose-headings:scroll-mt-24 lg:prose-headings:scroll-mt-[8.5rem]",
+                "prose-headings:font-display prose-headings:font-semibold prose-headings:tracking-tight",
+                "prose-h1:text-slate-900 prose-h1:text-4xl prose-h1:mb-6 prose-h1:mt-0 dark:prose-h1:text-white",
+                "prose-h2:text-slate-900 prose-h2:text-2xl prose-h2:mt-12 prose-h2:mb-4 prose-h2:font-semibold dark:prose-h2:text-white",
+                "prose-h3:text-slate-900 prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3 prose-h3:font-semibold dark:prose-h3:text-slate-100",
+                "prose-h4:text-slate-900 prose-h4:text-lg prose-h4:mt-6 prose-h4:mb-2 prose-h4:font-semibold dark:prose-h4:text-slate-200",
+                // Lead text
+                "prose-lead:text-slate-600 prose-lead:text-lg prose-lead:leading-7 dark:prose-lead:text-slate-400",
+                // Links - subtle underline on hover
+                "prose-a:text-blue-600 prose-a:font-medium prose-a:no-underline hover:prose-a:underline dark:prose-a:text-blue-400",
+                "prose-a:transition-colors",
+                // Lists
+                "prose-ul:my-6 prose-ol:my-6",
+                "prose-li:text-slate-600 prose-li:leading-7 dark:prose-li:text-slate-300",
+                "prose-li:my-2",
+                // Code blocks - refined styling
+                "prose-pre:bg-slate-900 prose-pre:rounded-lg prose-pre:border prose-pre:border-slate-800 dark:prose-pre:bg-slate-900/50 dark:prose-pre:ring-1 dark:prose-pre:ring-slate-300/10 prose-pre:overflow-hidden",
+                "prose-pre:shadow-lg",
+                "prose-code:text-slate-900 prose-code:bg-slate-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm dark:prose-code:text-slate-100 dark:prose-code:bg-slate-800",
+                "prose-code:font-mono prose-code:font-normal",
+                // HR
+                "prose-hr:border-slate-200 dark:prose-hr:border-slate-800 prose-hr:my-8",
+                // Blockquotes
+                "prose-blockquote:border-l-4 prose-blockquote:border-blue-500 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-slate-600 dark:prose-blockquote:text-slate-400",
+                // Tables
+                "prose-table:text-sm",
+                "prose-th:text-slate-900 prose-th:font-semibold dark:prose-th:text-slate-100",
+                "prose-td:text-slate-600 dark:prose-td:text-slate-300",
+                // Selection style
+                "selection:bg-blue-100 dark:selection:bg-blue-900/30",
+                "prose-code:selection:bg-blue-200 dark:prose-code:selection:bg-blue-800/50",
               )}
             >
               <MDXAsComponent
@@ -331,15 +376,16 @@ export default function DocsPage() {
 
 function MobileOnThisPage({ headings, onLinkClick }: { headings: Heading[]; onLinkClick: () => void }) {
   return (
-    <ul className="md-toc flex flex-col gap-3 leading-[1.125]">
+    <ul className="md-toc flex flex-col gap-0.5">
       {headings.map((heading, i) => (
-        <li key={i} className={heading.level === 2 ? "ml-0" : "ml-4"}>
+        <li key={i} className={heading.level === 2 ? "ml-0" : "ml-3"}>
           <Link
             to={`#${heading.id}`}
             onClick={onLinkClick}
             className={clsx(
-              "group relative py-1 text-sm text-gray-500 decoration-gray-200 underline-offset-4 hover:underline dark:text-gray-400 dark:decoration-gray-500 touch-manipulation",
-              heading.level === 2 ? "font-semibold" : "",
+              "group relative block py-0.5 text-xs leading-5 transition-colors touch-manipulation",
+              "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300",
+              heading.level === 2 ? "font-medium" : "font-normal",
             )}
           >
             {heading.text}
@@ -352,23 +398,79 @@ function MobileOnThisPage({ headings, onLinkClick }: { headings: Heading[]; onLi
 
 
 function LargeOnThisPage({ headings }: { headings: Heading[] }) {
+  const [activeId, setActiveId] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (headings.length === 0) return;
+
+    const observerOptions = {
+      rootMargin: "-20% 0px -70% 0px",
+      threshold: 0,
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      // Find the first intersecting entry (closest to top)
+      const intersecting = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((a, b) => {
+          const aTop = a.boundingClientRect.top;
+          const bTop = b.boundingClientRect.top;
+          return aTop - bTop;
+        });
+
+      if (intersecting.length > 0) {
+        setActiveId(intersecting[0].target.id);
+      }
+    }, observerOptions);
+
+    headings.forEach((heading) => {
+      const element = document.getElementById(heading.id);
+      if (element) {
+        observer.observe(element);
+      }
+    });
+
+    // Set initial active heading
+    const firstHeading = headings[0];
+    if (firstHeading) {
+      setActiveId(firstHeading.id);
+    }
+
+    return () => {
+      headings.forEach((heading) => {
+        const element = document.getElementById(heading.id);
+        if (element) {
+          observer.unobserve(element);
+        }
+      });
+    };
+  }, [headings]);
+
   return (
-    <div className="order-1 w-56 flex-shrink-0 self-start overflow-y-auto pb-10 xl:block sticky top-0">
-      <nav className="mb-3 flex items-center font-semibold">On this page</nav>
-      <ul className="md-toc flex flex-col flex-wrap gap-3 leading-[1.125]">
-        {headings.map((heading, i) => (
-          <li key={i} className={heading.level === 2 ? "ml-0" : "ml-4"}>
-            <Link
-              to={`#${heading.id}`}
-              className={clsx(
-                "group relative py-1 text-sm text-gray-500 decoration-gray-200 underline-offset-4 hover:underline dark:text-gray-400 dark:decoration-gray-500",
-                heading.level === 2 ? "font-semibold" : "",
-              )}
-            >
-              {heading.text}
-            </Link>
-          </li>
-        ))}
+    <div className="order-1 w-56 flex-shrink-0 self-start overflow-y-auto pb-10 xl:block sticky top-0 pt-8">
+      <nav className="mb-3 text-[10px] font-medium uppercase tracking-wider text-slate-400 dark:text-slate-500">
+        On this page
+      </nav>
+      <ul className="md-toc flex flex-col gap-0.5">
+        {headings.map((heading, i) => {
+          const isActive = activeId === heading.id;
+          return (
+            <li key={i} className={heading.level === 2 ? "ml-0" : "ml-3"}>
+              <Link
+                to={`#${heading.id}`}
+                className={clsx(
+                  "group relative block py-0.5 text-xs leading-5 transition-colors",
+                  isActive
+                    ? "font-medium text-slate-900 dark:text-slate-100"
+                    : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300",
+                  heading.level === 2 ? "font-medium" : "font-normal",
+                )}
+              >
+                {heading.text}
+              </Link>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

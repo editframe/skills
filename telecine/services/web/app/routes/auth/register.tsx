@@ -10,6 +10,7 @@ import type { MetaFunction } from "react-router";
 import { SuccessMessage } from "~/components/SuccessMessage";
 import { Button } from "~/components/Button";
 import { logger } from "@/logging";
+import { useTheme } from "~/hooks/useTheme";
 
 import type { Route } from "./+types/register";
 import { requireNoSession } from "@/util/requireSession.server";
@@ -97,6 +98,7 @@ export const meta: MetaFunction = () => {
   return [{ title: "Register | Editframe" }];
 };
 export default function Register() {
+  useTheme();
   const navigation = useNavigation();
   const submitting = navigation.state === "submitting";
   const [searchParams] = useSearchParams();

@@ -186,13 +186,13 @@ describe("validateUrlToken", () => {
   });
 
   test("transcode use case - multiple segments share token", () => {
-    const session = createUrlSession("https://editframe.dev/api/v1/transcode", { url: "https://example.com/video.mp4" });
+    const session = createUrlSession("https://editframe.com/api/v1/transcode", { url: "https://example.com/video.mp4" });
 
     // All these different segments should validate with the same token
     const requests = [
-      "https://editframe.dev/api/v1/transcode/video-1080p/1.mp4?url=https%3A//example.com/video.mp4",
-      "https://editframe.dev/api/v1/transcode/video-1080p/2.mp4?url=https%3A//example.com/video.mp4",
-      "https://editframe.dev/api/v1/transcode/audio-44100/1.m4a?url=https%3A//example.com/video.mp4"
+      "https://editframe.com/api/v1/transcode/video-1080p/1.mp4?url=https%3A//example.com/video.mp4",
+      "https://editframe.com/api/v1/transcode/video-1080p/2.mp4?url=https%3A//example.com/video.mp4",
+      "https://editframe.com/api/v1/transcode/audio-44100/1.m4a?url=https%3A//example.com/video.mp4"
     ];
 
     for (const requestUrl of requests) {
@@ -204,7 +204,7 @@ describe("validateUrlToken", () => {
 
   test("handles relative URLs by using signed URL's origin", () => {
     // Store signed parameters in decoded form as expected by the system
-    const session = createUrlSession("https://editframe.dev/api/v1/transcode", { url: "http://web:3000/bars-n-tone.mp4" });
+    const session = createUrlSession("https://editframe.com/api/v1/transcode", { url: "http://web:3000/bars-n-tone.mp4" });
 
     // This is the scenario from the error logs - relative URL from Express request.url
     const relativeRequestUrl = "/api/v1/transcode/manifest.json?url=http%3A%2F%2Fweb%3A3000%2Fbars-n-tone.mp4";

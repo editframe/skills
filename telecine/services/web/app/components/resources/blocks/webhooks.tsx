@@ -2,7 +2,7 @@ import { Fragment } from "react";
 import { RenderStatus } from "~/components/RenderStatus";
 import type { ContentBlock } from ".";
 import { WebhookTopicBadge } from "~/components/Webhooks";
-import { BellAlertIcon } from "@heroicons/react/24/outline";
+import { Bell } from "@phosphor-icons/react";
 import { FormatStatusCode } from "~/ui/formatStatusCode";
 import { ColumnHead, TableCell, TableHead, TableRow } from "~/components/Table";
 import { TimeAgoInWords } from "~/ui/timeAgoInWords";
@@ -96,7 +96,7 @@ export const DeliveriesTable: ContentBlock<{
           <TableRow noHighlight>
             <TableCell colSpan={3}>
               <div className="flex items-baseline justify-center gap-2 py-4">
-                <BellAlertIcon className="h-8 w-8 text-orange-500" />
+                <Bell className="h-8 w-8 text-orange-500" />
                 <div className="flex flex-col gap-2">
                   <p className="text-orange-500 text-4xl">
                     No deliveries yet...

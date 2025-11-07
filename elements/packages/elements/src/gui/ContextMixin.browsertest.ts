@@ -315,9 +315,9 @@ describe("ContextMixin", () => {
       const token = createJWTToken(futureTime);
 
       const sourceUrl = "https://example.com/source-video.mp4";
-      const segment1 = `https://editframe.dev/api/v1/transcode/video-1080p/1.mp4?url=${encodeURIComponent(sourceUrl)}`;
-      const segment2 = `https://editframe.dev/api/v1/transcode/video-1080p/2.mp4?url=${encodeURIComponent(sourceUrl)}`;
-      const segment3 = `https://editframe.dev/api/v1/transcode/audio-44100/1.m4a?url=${encodeURIComponent(sourceUrl)}`;
+      const segment1 = `https://editframe.com/api/v1/transcode/video-1080p/1.mp4?url=${encodeURIComponent(sourceUrl)}`;
+      const segment2 = `https://editframe.com/api/v1/transcode/video-1080p/2.mp4?url=${encodeURIComponent(sourceUrl)}`;
+      const segment3 = `https://editframe.com/api/v1/transcode/audio-44100/1.m4a?url=${encodeURIComponent(sourceUrl)}`;
 
       // Should only sign once for the base URL + params combination
       mockFetch.mockResolvedValueOnce({
@@ -353,7 +353,7 @@ describe("ContextMixin", () => {
         {
           method: "POST",
           body: JSON.stringify({
-            url: "https://editframe.dev/api/v1/transcode",
+            url: "https://editframe.com/api/v1/transcode",
             params: { url: sourceUrl },
           }),
         },
@@ -388,9 +388,9 @@ describe("ContextMixin", () => {
       const sourceUrl1 = "https://example.com/video1.mp4";
       const sourceUrl2 = "https://example.com/video2.mp4";
 
-      const segment1A = `https://editframe.dev/api/v1/transcode/video-1080p/1.mp4?url=${encodeURIComponent(sourceUrl1)}`;
-      const segment1B = `https://editframe.dev/api/v1/transcode/video-1080p/2.mp4?url=${encodeURIComponent(sourceUrl1)}`;
-      const segment2A = `https://editframe.dev/api/v1/transcode/video-720p/1.mp4?url=${encodeURIComponent(sourceUrl2)}`;
+      const segment1A = `https://editframe.com/api/v1/transcode/video-1080p/1.mp4?url=${encodeURIComponent(sourceUrl1)}`;
+      const segment1B = `https://editframe.com/api/v1/transcode/video-1080p/2.mp4?url=${encodeURIComponent(sourceUrl1)}`;
+      const segment2A = `https://editframe.com/api/v1/transcode/video-720p/1.mp4?url=${encodeURIComponent(sourceUrl2)}`;
 
       // First source URL token request
       mockFetch.mockResolvedValueOnce({
@@ -434,7 +434,7 @@ describe("ContextMixin", () => {
         {
           method: "POST",
           body: JSON.stringify({
-            url: "https://editframe.dev/api/v1/transcode",
+            url: "https://editframe.com/api/v1/transcode",
             params: { url: sourceUrl1 },
           }),
         },
@@ -444,7 +444,7 @@ describe("ContextMixin", () => {
         {
           method: "POST",
           body: JSON.stringify({
-            url: "https://editframe.dev/api/v1/transcode",
+            url: "https://editframe.com/api/v1/transcode",
             params: { url: sourceUrl2 },
           }),
         },

@@ -1,5 +1,6 @@
-import { BellAlertIcon } from "@heroicons/react/24/outline";
+import { Bell } from "@phosphor-icons/react";
 import type { PropsWithChildren } from "react";
+import clsx from "clsx";
 
 const prettyText = (text: string) => {
   return text.replace(/_/g, " ");
@@ -13,10 +14,16 @@ export const EmptyResult = ({
   children,
 }: PropsWithChildren<EmptyResultProps>) => {
   return (
-    <div className="p-4 flex gap-2 items-start">
-      <BellAlertIcon className="size-6 text-gray-400 fill-gray-300 mt-1" aria-hidden />
+    <div className="p-6 flex gap-3 items-start">
+      <Bell className={clsx(
+        "h-6 w-6 flex-shrink-0 mt-0.5 transition-colors",
+        "text-slate-500 dark:text-slate-400"
+      )} weight="regular" aria-hidden />
       <div>
-        <p className="text-lg font-medium mb-2">
+        <p className={clsx(
+          "text-sm font-medium mb-1.5 transition-colors",
+          "text-slate-700 dark:text-slate-300"
+        )}>
           No {prettyText(resourceLabel)} records found matching filters
         </p>
         {children}

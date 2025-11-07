@@ -1,12 +1,12 @@
 import type React from "react";
 import type { ButtonHTMLAttributes } from "react";
 import {
-  ArrowRightIcon,
-  BoltIcon,
-  HandThumbDownIcon,
-  PlusIcon,
-  XCircleIcon,
-} from "@heroicons/react/24/outline";
+  ArrowRight,
+  Lightning,
+  ThumbsDown,
+  Plus,
+  XCircle,
+} from "@phosphor-icons/react";
 import type { ComponentType } from "react";
 import clsx from "clsx";
 import {
@@ -27,31 +27,64 @@ const buttonStyles = {
   primary: {
     base: baseStyles,
     variant:
-      "font-medium text-gray-600 fill-gray-400 bg-gray-200 shadow-sm hover:bg-gray-300 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:ring-gray-100",
+      "font-medium shadow-sm disabled:cursor-not-allowed transition-colors " +
+      "text-slate-700 dark:text-slate-200 fill-slate-500 dark:fill-slate-400 " +
+      "bg-slate-200 dark:bg-slate-700 " +
+      "hover:bg-slate-300 dark:hover:bg-slate-600 " +
+      "disabled:bg-slate-100 dark:disabled:bg-slate-800 " +
+      "disabled:ring-slate-100 dark:disabled:ring-slate-800",
     icon: "size-4 fill-inherit",
   },
   secondary: {
     base: baseStyles,
     variant:
-      "font-medium text-gray-500 fill-gray-400 bg-gray-100 shadow-sm hover:bg-gray-200 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:ring-gray-50",
+      "font-medium shadow-sm disabled:cursor-not-allowed transition-colors " +
+      "text-slate-600 dark:text-slate-300 fill-slate-400 dark:fill-slate-500 " +
+      "bg-slate-100 dark:bg-slate-800 " +
+      "hover:bg-slate-200 dark:hover:bg-slate-700 " +
+      "disabled:bg-slate-50 dark:disabled:bg-slate-900 " +
+      "disabled:ring-slate-50 dark:disabled:ring-slate-900",
     icon: "size-4 fill-inherit",
   },
   action: {
     base: baseStyles,
     variant:
-      "font-medium text-purple-600 fill-purple-400 bg-purple-200 shadow-sm hover:bg-purple-300 disabled:cursor-not-allowed disabled:bg-purple-100 disabled:ring-purple-100",
+      "font-medium shadow-sm disabled:cursor-not-allowed transition-colors " +
+      "text-purple-700 dark:text-purple-300 fill-purple-500 dark:fill-purple-400 " +
+      "bg-purple-200 dark:bg-purple-900/50 " +
+      "hover:bg-purple-300 dark:hover:bg-purple-900/70 " +
+      "disabled:bg-purple-100 dark:disabled:bg-purple-950/30 " +
+      "disabled:ring-purple-100 dark:disabled:ring-purple-950/30",
     icon: "size-4 fill-inherit",
   },
   creative: {
     base: baseStyles,
     variant:
-      "font-medium text-mantis-800 fill-mantis-500 bg-mantis-200 shadow-sm hover:bg-mantis-300 disabled:cursor-not-allowed disabled:bg-mantis-100 disabled:ring-mantis-100",
+      "font-medium disabled:cursor-not-allowed transition-all duration-150 relative backdrop-blur-sm " +
+      "text-mantis-800 dark:text-mantis-300 fill-mantis-500 dark:fill-mantis-400 " +
+      "bg-mantis-200/90 dark:bg-mantis-900/60 " +
+      "border border-mantis-300/60 dark:border-mantis-800/60 " +
+      "shadow-[0_1px_2px_0_rgb(0_0_0_/_0.06),0_2px_4px_0_rgb(34_197_94_/_0.1)] " +
+      "dark:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.3),0_2px_4px_0_rgb(34_197_94_/_0.15)] " +
+      "before:absolute before:inset-0 before:bg-gradient-to-br before:from-mantis-100/20 before:via-transparent before:to-transparent " +
+      "dark:before:from-mantis-950/15 dark:before:via-transparent dark:before:to-transparent " +
+      "before:pointer-events-none before:rounded-md " +
+      "hover:bg-mantis-300/95 dark:hover:bg-mantis-900/75 " +
+      "hover:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08),0_4px_8px_0_rgb(34_197_94_/_0.15)] " +
+      "dark:hover:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.35),0_4px_8px_0_rgb(34_197_94_/_0.2)] " +
+      "disabled:bg-mantis-100/60 dark:disabled:bg-mantis-950/40 " +
+      "disabled:border-mantis-200/40 dark:disabled:border-mantis-900/40",
     icon: "size-4 fill-inherit",
   },
   destructive: {
     base: baseStyles,
     variant:
-      "font-medium text-red-600 fill-red-300 bg-red-200 shadow-sm hover:bg-red-300 disabled:cursor-not-allowed disabled:bg-red-100 disabled:ring-red-100",
+      "font-medium shadow-sm disabled:cursor-not-allowed transition-colors " +
+      "text-red-700 dark:text-red-300 fill-red-400 dark:fill-red-500 " +
+      "bg-red-200 dark:bg-red-900/50 " +
+      "hover:bg-red-300 dark:hover:bg-red-900/70 " +
+      "disabled:bg-red-100 dark:disabled:bg-red-950/30 " +
+      "disabled:ring-red-100 dark:disabled:ring-red-950/30",
     icon: "size-4 fill-inherit",
   },
 };
@@ -98,11 +131,11 @@ type ButtonProps = {
 } & ButtonHTMLAttributes<HTMLButtonElement>;
 
 const defaultIcons = {
-  primary: ArrowRightIcon,
-  secondary: PlusIcon,
-  destructive: XCircleIcon,
-  action: BoltIcon,
-  creative: PlusIcon,
+  primary: ArrowRight,
+  secondary: Plus,
+  destructive: XCircle,
+  action: Lightning,
+  creative: Plus,
 };
 
 const createInputSchema = (inputs?: ConfirmationInputConfig[]) => {
@@ -224,7 +257,7 @@ const ConfirmationForm = ({
             buttonStyles.secondary.variant,
           )}
         >
-          <HandThumbDownIcon className={buttonStyles.secondary.icon} />
+          <ThumbsDown className={buttonStyles.secondary.icon} />
           {cancelText || "Cancel"}
         </HeadlessButton>
         <Button mode={mode} icon={Icon} type="submit" disabled={isDisabled}>

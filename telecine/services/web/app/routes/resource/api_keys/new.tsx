@@ -18,7 +18,7 @@ import { formFor } from "~/formFor";
 import { requireQueryAs } from "@/graphql.server/userClient";
 import { Link } from "~/components/Link";
 import { ErrorMessage } from "~/components/ErrorMessage";
-import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { ArrowLeft } from "@phosphor-icons/react";
 
 import type { Route } from "./+types/new";
 import { requireSession } from "@/util/requireSession.server";
@@ -54,7 +54,7 @@ export const ErrorBoundary = () => {
       <>
         <ErrorMessage message="You don't have permission to create an API key for this organization." />
         <Link to="/resource/api_keys">
-          <Button mode="secondary" icon={ArrowLeftIcon}>
+          <Button mode="secondary" icon={ArrowLeft}>
             Go back
           </Button>
         </Link>

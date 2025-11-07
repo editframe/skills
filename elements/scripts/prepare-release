@@ -14,7 +14,7 @@ set -ex
 echo "Running tests in cache-only mode..."
 export EF_CACHE_ONLY=true
 "${SCRIPT_DIR}"/npm run test
-"${SCRIPT_DIR}"/npm run browsertest
+VITEST_BROWSER_MODE=connect "${SCRIPT_DIR}"/npm run browsertest
 
 "${SCRIPT_DIR}"/build-all
 "${SCRIPT_DIR}"/verify-cli-boot

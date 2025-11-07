@@ -2,12 +2,13 @@ import { progressiveQuery } from "@/graphql.client";
 import { graphql } from "@/graphql";
 import type { ResourceView } from ".";
 import { Link } from "../Link";
-import { EnvelopeIcon, UserPlusIcon } from "@heroicons/react/24/outline";
+import { Envelope, UserPlus } from "@phosphor-icons/react";
 import { Button } from "../Button";
-import { useFetcher, useSearchParams } from "react-router";
+import { useFetcher } from "react-router";
 import { Email, InvitedBy, Role, Status } from "./blocks/invites";
 import { type ContentBlock, CreatedAt } from "./blocks";
 import { useDebouncedSearchParams } from "~/hooks/useDebouncedSearchParams";
+import clsx from "clsx";
 
 const IndexQuery = progressiveQuery(
   "org-admin",
@@ -80,7 +81,7 @@ const Actions: ContentBlock<{ id: string; org_id: string }> = ({
     <div className="flex gap-2">
       <Button
         mode="action"
-        icon={EnvelopeIcon}
+        icon={Envelope}
         disabled={isLoading}
         loading={isLoading && fetcher.formAction?.includes("/resend")}
         confirmation={{
@@ -155,17 +156,35 @@ const Filter = () => {
   const [search, setSearch] = useDebouncedSearchParams("search");
 
   return (
-    <div className="flex items-center gap-4 p-2 text-xs">
-      <div className="flex items-center gap-2">
-        <span className="font-medium text-gray-600">Search:</span>
-        <input
-          type="text"
-          value={search}
-          placeholder="Search by email..."
-          className="rounded border border-gray-300 px-2 py-1 text-xs"
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
+    <div className="flex items-center gap-2">
+      <span className={clsx(
+        "text-xs font-medium whitespace-nowrap transition-colors",
+        "text-slate-700 dark:text-slate-300"
+      )}>
+        Search:
+      </span>
+      <input
+        type="text"
+        value={search}
+        placeholder="Search by email..."
+        className={clsx(
+          "px-2.5 py-1.5 border rounded-lg text-xs leading-snug transition-all duration-150 relative",
+          "bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm",
+          "text-slate-900 dark:text-slate-100",
+          "border-slate-300/75 dark:border-slate-700/75",
+          "shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08)] dark:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.3)]",
+          "placeholder:text-slate-400 dark:placeholder:text-slate-500",
+          "before:absolute before:inset-0 before:bg-gradient-to-br before:from-amber-50/18 before:via-transparent before:to-transparent",
+          "dark:before:from-blue-950/15 before:via-transparent dark:before:to-transparent",
+          "before:pointer-events-none before:rounded-lg",
+          "focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20",
+          "focus:border-blue-500/85 dark:focus:border-blue-400/85",
+          "focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08),0_4px_12px_0_rgb(59_130_246_/_0.22)] dark:focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.4),0_4px_12px_0_rgb(59_130_246_/_0.35)]",
+          "focus:before:from-blue-50/30 focus:before:via-transparent focus:before:to-transparent",
+          "dark:focus:before:from-blue-950/22 dark:focus:before:via-transparent dark:focus:before:to-transparent"
+        )}
+        onChange={(e) => setSearch(e.target.value)}
+      />
     </div>
   );
 };
@@ -176,11 +195,11 @@ export const Invites: ResourceView<typeof IndexQuery, typeof detailQuery> = {
     buildWhereClause,
     TableHeader: ({ orgId }) => {
       return (
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-center pb-2">
           <Filter />
-          <div className="flex justify-start py-2">
+          <div className="flex items-center">
             <Link to={`/organizations/${orgId}/invite-member`}>
-              <Button mode="creative" icon={UserPlusIcon}>
+              <Button mode="creative" icon={UserPlus}>
                 Invite member
               </Button>
             </Link>

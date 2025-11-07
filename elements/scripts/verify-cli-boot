@@ -35,7 +35,7 @@ const cli = spawn('npx', ['editframe', 'check'], {
   env: {
     ...process.env,
     // Provide minimal env to make check command work
-    EF_HOST: 'https://editframe.dev'
+    EF_HOST: 'https://editframe.com'
   }
 });
 

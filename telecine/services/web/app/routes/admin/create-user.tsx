@@ -13,6 +13,7 @@ import crypto from "node:crypto";
 import { useState } from "react";
 import { SuccessMessage } from "~/components/SuccessMessage";
 import { OrgCombobox } from "~/components/OrgCombobox";
+import clsx from "clsx";
 
 const schema = z.object({
   email_address: z.string().email().toLowerCase(),
@@ -135,7 +136,12 @@ export default function CreateUser(_props: Route.ComponentProps) {
 
   return (
     <div className="p-6">
-      <h1 className="text-xl font-semibold mb-6">Create User</h1>
+      <h1 className={clsx(
+        "text-xl font-semibold mb-6 transition-colors",
+        "text-slate-900 dark:text-white"
+      )}>
+        Create User
+      </h1>
 
       <createUserForm.Success>
         <SuccessMessage message="User created successfully! A password reset email has been sent." />
@@ -167,7 +173,10 @@ export default function CreateUser(_props: Route.ComponentProps) {
         />
 
         <div className="space-y-4">
-          <label className="block font-medium text-gray-900 text-sm">
+          <label className={clsx(
+            "block font-medium text-sm transition-colors",
+            "text-slate-900 dark:text-white"
+          )}>
             Organization
           </label>
 
@@ -179,9 +188,17 @@ export default function CreateUser(_props: Route.ComponentProps) {
                 value="new"
                 checked={orgChoice === "new"}
                 onChange={(e) => setOrgChoice(e.target.value as "new" | "existing")}
-                className="border-gray-300 rounded focus:ring-blue-500 w-4 h-4 text-blue-500"
+                className={clsx(
+                  "rounded focus:ring-blue-500 dark:focus:ring-blue-400 w-4 h-4 text-blue-500 dark:text-blue-400 transition-colors",
+                  "border-slate-300 dark:border-slate-600"
+                )}
               />
-              <span className="text-sm text-gray-700">Create new organization</span>
+              <span className={clsx(
+                "text-sm transition-colors",
+                "text-slate-700 dark:text-slate-300"
+              )}>
+                Create new organization
+              </span>
             </label>
 
             {orgChoice === "new" && (
@@ -203,15 +220,26 @@ export default function CreateUser(_props: Route.ComponentProps) {
                 value="existing"
                 checked={orgChoice === "existing"}
                 onChange={(e) => setOrgChoice(e.target.value as "new" | "existing")}
-                className="border-gray-300 rounded focus:ring-blue-500 w-4 h-4 text-blue-500"
+                className={clsx(
+                  "rounded focus:ring-blue-500 dark:focus:ring-blue-400 w-4 h-4 text-blue-500 dark:text-blue-400 transition-colors",
+                  "border-slate-300 dark:border-slate-600"
+                )}
               />
-              <span className="text-sm text-gray-700">Add to existing organization</span>
+              <span className={clsx(
+                "text-sm transition-colors",
+                "text-slate-700 dark:text-slate-300"
+              )}>
+                Add to existing organization
+              </span>
             </label>
 
             {orgChoice === "existing" && (
               <div className="ml-6 space-y-4">
                 <div>
-                  <label className="block font-medium text-gray-900 text-sm mb-2">
+                  <label className={clsx(
+                    "block font-medium text-sm mb-2 transition-colors",
+                    "text-slate-900 dark:text-white"
+                  )}>
                     Select Organization
                   </label>
                   <OrgCombobox
@@ -226,7 +254,10 @@ export default function CreateUser(_props: Route.ComponentProps) {
                 </div>
 
                 <div>
-                  <label className="block font-medium text-gray-900 text-sm mb-2">
+                  <label className={clsx(
+                    "block font-medium text-sm mb-2 transition-colors",
+                    "text-slate-900 dark:text-white"
+                  )}>
                     Role
                   </label>
                   <div className="flex gap-3">
@@ -237,9 +268,17 @@ export default function CreateUser(_props: Route.ComponentProps) {
                         value="reader"
                         checked={selectedRole === "reader"}
                         onChange={(e) => setSelectedRole(e.target.value as "admin" | "editor" | "reader")}
-                        className="border-gray-300 rounded focus:ring-blue-500 w-4 h-4 text-blue-500"
+                        className={clsx(
+                          "rounded focus:ring-blue-500 dark:focus:ring-blue-400 w-4 h-4 text-blue-500 dark:text-blue-400 transition-colors",
+                          "border-slate-300 dark:border-slate-600"
+                        )}
                       />
-                      <span className="text-sm text-gray-700">Reader</span>
+                      <span className={clsx(
+                        "text-sm transition-colors",
+                        "text-slate-700 dark:text-slate-300"
+                      )}>
+                        Reader
+                      </span>
                     </label>
 
                     <label className="flex items-center gap-2">
@@ -249,9 +288,17 @@ export default function CreateUser(_props: Route.ComponentProps) {
                         value="editor"
                         checked={selectedRole === "editor"}
                         onChange={(e) => setSelectedRole(e.target.value as "admin" | "editor" | "reader")}
-                        className="border-gray-300 rounded focus:ring-blue-500 w-4 h-4 text-blue-500"
+                        className={clsx(
+                          "rounded focus:ring-blue-500 dark:focus:ring-blue-400 w-4 h-4 text-blue-500 dark:text-blue-400 transition-colors",
+                          "border-slate-300 dark:border-slate-600"
+                        )}
                       />
-                      <span className="text-sm text-gray-700">Editor</span>
+                      <span className={clsx(
+                        "text-sm transition-colors",
+                        "text-slate-700 dark:text-slate-300"
+                      )}>
+                        Editor
+                      </span>
                     </label>
 
                     <label className="flex items-center gap-2">
@@ -261,12 +308,23 @@ export default function CreateUser(_props: Route.ComponentProps) {
                         value="admin"
                         checked={selectedRole === "admin"}
                         onChange={(e) => setSelectedRole(e.target.value as "admin" | "editor" | "reader")}
-                        className="border-gray-300 rounded focus:ring-blue-500 w-4 h-4 text-blue-500"
+                        className={clsx(
+                          "rounded focus:ring-blue-500 dark:focus:ring-blue-400 w-4 h-4 text-blue-500 dark:text-blue-400 transition-colors",
+                          "border-slate-300 dark:border-slate-600"
+                        )}
                       />
-                      <span className="text-sm text-gray-700">Admin</span>
+                      <span className={clsx(
+                        "text-sm transition-colors",
+                        "text-slate-700 dark:text-slate-300"
+                      )}>
+                        Admin
+                      </span>
                     </label>
                   </div>
-                  <p className="mt-1 text-xs text-gray-500">
+                  <p className={clsx(
+                    "mt-1 text-xs transition-colors",
+                    "text-slate-500 dark:text-slate-400"
+                  )}>
                     Reader: view only • Editor: typical access • Admin: full control
                   </p>
                 </div>
@@ -282,9 +340,20 @@ export default function CreateUser(_props: Route.ComponentProps) {
         </div>
       </createUserForm.Form>
 
-      <div className="mt-8 p-4 bg-gray-50 rounded-md max-w-2xl">
-        <h2 className="text-sm font-medium text-gray-900 mb-2">What happens next?</h2>
-        <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside">
+      <div className={clsx(
+        "mt-8 p-4 rounded-md max-w-2xl transition-colors",
+        "bg-slate-50 dark:bg-slate-800"
+      )}>
+        <h2 className={clsx(
+          "text-sm font-medium mb-2 transition-colors",
+          "text-slate-900 dark:text-white"
+        )}>
+          What happens next?
+        </h2>
+        <ul className={clsx(
+          "text-xs space-y-1 list-disc list-inside transition-colors",
+          "text-slate-600 dark:text-slate-400"
+        )}>
           <li>User account will be created with email confirmed</li>
           <li>User will be assigned to the selected organization</li>
           <li>A password reset email will be sent to the user</li>

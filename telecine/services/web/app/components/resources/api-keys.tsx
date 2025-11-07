@@ -2,7 +2,7 @@ import { progressiveQuery } from "@/graphql.client";
 import { graphql } from "@/graphql";
 import type { ResourceView } from ".";
 import { Button } from "~/components/Button";
-import { KeyIcon } from "@heroicons/react/24/outline";
+import { Key } from "@phosphor-icons/react";
 import { Link } from "react-router";
 import { CreatedAt, RelatedOrg, RelatedUser } from "./blocks";
 import { ExpiresIn, Name, WebhookURL } from "./blocks/api-keys";
@@ -66,9 +66,9 @@ const detailQuery = progressiveQuery(
 
 const TableHeader = () => {
   return (
-    <div className="flex justify-start py-2">
+    <div className="flex items-center pb-2">
       <Link to="/resource/api_keys/new">
-        <Button mode="creative" icon={KeyIcon}>
+        <Button mode="creative" icon={Key}>
           Create API key
         </Button>
       </Link>

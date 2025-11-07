@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRevalidator } from "react-router";
+import clsx from "clsx";
 
 const useAutoRefresh = (intervalMs = 1000) => {
   const [refresh, setRefresh] = useState(false);
@@ -43,12 +44,21 @@ export const AutoRefresh = () => {
   const { percentage, enabled, setEnabled } = useAutoRefresh(2500);
 
   return (
-    <div className="flex items-center gap-3 text-xs text-gray-600 p-1">
+    <div className={clsx(
+      "flex items-center gap-3 text-xs p-1 transition-colors",
+      "text-slate-600 dark:text-slate-400"
+    )}>
       {enabled && (
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-gray-200 rounded-full overflow-hidden flex items-center justify-center">
+          <div className={clsx(
+            "w-4 h-4 rounded-full overflow-hidden flex items-center justify-center transition-colors",
+            "bg-slate-200 dark:bg-slate-700"
+          )}>
             <div
-              className="w-4 h-4 bg-blue-500 rounded-full transition-transform duration-50 ease-linear"
+              className={clsx(
+                "w-4 h-4 rounded-full transition-all duration-50 ease-linear",
+                "bg-blue-500 dark:bg-blue-400"
+              )}
               style={{ transform: `scale(${percentage / 100})` }}
             />
           </div>
@@ -60,9 +70,15 @@ export const AutoRefresh = () => {
           id="auto-refresh"
           checked={enabled}
           onChange={(e) => setEnabled(e.target.checked)}
-          className="h-3.5 w-3.5"
+          className={clsx(
+            "h-3.5 w-3.5 transition-colors",
+            "accent-blue-500 dark:accent-blue-400"
+          )}
         />
-        <label htmlFor="auto-refresh" className="font-medium">
+        <label htmlFor="auto-refresh" className={clsx(
+          "font-medium transition-colors",
+          "text-slate-700 dark:text-slate-300"
+        )}>
           Auto-refresh
         </label>
       </div>

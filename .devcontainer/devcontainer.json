@@ -45,34 +45,18 @@
     }
   },
   "forwardPorts": [
-    3000,
     3001,
-    4321,
-    63315,
     6432,
     6379,
     7777,
     8025,
-    8080,
     8794,
     24678
   ],
   "postStartCommand": "bash -c 'cd telecine && . scripts/worktree-config && echo \"Worktree: $WORKTREE_DOMAIN\"'",
   "portsAttributes": {
-    "3000": {
-      "label": "Web (Telecine)",
-      "onAutoForward": "notify"
-    },
     "3001": {
       "label": "Web Alt (Telecine)",
-      "onAutoForward": "silent"
-    },
-    "4321": {
-      "label": "Dev Projects (Elements)",
-      "onAutoForward": "silent"
-    },
-    "63315": {
-      "label": "Test Server (Elements)",
       "onAutoForward": "silent"
     },
     "6432": {
@@ -89,10 +73,6 @@
     },
     "8025": {
       "label": "MailHog UI",
-      "onAutoForward": "silent"
-    },
-    "8080": {
-      "label": "GraphQL Engine",
       "onAutoForward": "silent"
     },
     "8794": {

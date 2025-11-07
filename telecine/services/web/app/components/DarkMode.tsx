@@ -1,37 +1,20 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { Switch } from '@headlessui/react'
+import { useTheme } from '~/hooks/useTheme'
 
 export const DarkMode = () => {
-    const [darkMode, setDarkMode] = useState<boolean | null>(null);
+    const { theme, setTheme, resolvedTheme } = useTheme();
+    const darkMode = resolvedTheme === 'dark';
 
-    useEffect(() => {
-        if (localStorage.theme === 'dark') {
-            setDarkMode(true);
-        } else {
-            setDarkMode(false);
-        }
-        return () => { }
-    }, [])
-
-    useEffect(() => {
-
-        if (darkMode === true) {
-            document.documentElement.classList.add('dark');
-            localStorage.theme = 'dark';
-            window.dispatchEvent(new Event("theme"));
-        } else if (darkMode === false) {
-            document.documentElement.classList.remove('dark');
-            localStorage.theme = 'light';
-            window.dispatchEvent(new Event("theme"));
-        }
-    }, [darkMode]);
+    const handleToggle = (checked: boolean) => {
+        setTheme(checked ? 'dark' : 'light');
+    };
 
     return (
         <Switch
-            checked={darkMode === true}
-            onChange={setDarkMode}
+            checked={darkMode}
+            onChange={handleToggle}
             className="group relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-gray-200 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#646CFF] focus:ring-offset-2 "
         >
             <span className="sr-only">Switch to dark mode</span>

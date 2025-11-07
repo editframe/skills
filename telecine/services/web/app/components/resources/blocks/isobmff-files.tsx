@@ -1,6 +1,5 @@
 import type { ContentBlock } from ".";
 
-import {} from "@heroicons/react/24/outline";
 import type { AudioStreamSchema, VideoStreamSchema } from "@editframe/assets";
 import { ClientOnly } from "remix-utils/client-only";
 import { TranscriptionProgress } from "../isobmff-files";
@@ -9,15 +8,15 @@ import { Table } from "~/components/Table";
 import { useCallback, useEffect } from "react";
 import { useRef, useState } from "react";
 import {
-  PauseCircleIcon,
-  PauseIcon,
-  PlayCircleIcon,
-  PlayIcon,
-  SpeakerXMarkIcon,
-  VideoCameraIcon,
-  VideoCameraSlashIcon,
-  SpeakerWaveIcon,
-} from "@heroicons/react/24/outline";
+  PauseCircle,
+  Pause,
+  PlayCircle,
+  Play,
+  SpeakerSlash,
+  VideoCamera,
+  VideoCameraSlash,
+  SpeakerHigh,
+} from "@phosphor-icons/react";
 import {
   Video,
   Preview as PreviewContainer,
@@ -46,14 +45,14 @@ export const Filename: ContentBlock<{
     <>
       <div className="flex items-center gap-1">
         {hasVideo ? (
-          <VideoCameraIcon className="size-3 stroke-blue-600 fill-blue-400" />
+          <VideoCamera className="size-3 stroke-blue-600 fill-blue-400" />
         ) : (
-          <VideoCameraSlashIcon className="size-3 stroke-red-600 fill-red-400" />
+          <VideoCameraSlash className="size-3 stroke-red-600 fill-red-400" />
         )}
         {hasAudio ? (
-          <SpeakerWaveIcon className="size-3 stroke-blue-600 fill-blue-400" />
+          <SpeakerHigh className="size-3 stroke-blue-600 fill-blue-400" />
         ) : (
-          <SpeakerXMarkIcon className="size-3 stroke-red-600  fill-red-400" />
+          <SpeakerSlash className="size-3 stroke-red-600  fill-red-400" />
         )}
         <span>{filename}</span>
       </div>
@@ -171,7 +170,7 @@ export const TracksTable: ContentBlock<{
           if (track.type === "audio") {
             return (
               <span className="flex items-center gap-1">
-                <SpeakerWaveIcon className="size-3 stroke-blue-600 fill-blue-400" />{" "}
+                <SpeakerHigh className="size-3 stroke-blue-600 fill-blue-400" />{" "}
                 audio
               </span>
             );
@@ -179,7 +178,7 @@ export const TracksTable: ContentBlock<{
 
           return (
             <span className="flex items-center gap-1">
-              <VideoCameraIcon className="size-3 stroke-blue-600 fill-blue-400" />{" "}
+              <VideoCamera className="size-3 stroke-blue-600 fill-blue-400" />{" "}
               video
             </span>
           );
@@ -303,10 +302,10 @@ export const Preview: ContentBlock<{
             <div className="absolute inset-0 flex items-center justify-center bg-black/20">
               <TogglePlay>
                 <button slot="pause" className="text-white/90 hover:text-white">
-                  <PauseCircleIcon className="size-16" />
+                  <PauseCircle className="size-16" />
                 </button>
                 <button slot="play" className="text-white/90 hover:text-white">
-                  <PlayCircleIcon className="size-16" />
+                  <PlayCircle className="size-16" />
                 </button>
               </TogglePlay>
             </div>
@@ -330,13 +329,13 @@ export const Preview: ContentBlock<{
                       slot="pause"
                       className="text-white hover:text-white/80"
                     >
-                      <PauseIcon className="size-5" />
+                      <Pause className="size-5" />
                     </button>
                     <button
                       slot="play"
                       className="text-white hover:text-white/80"
                     >
-                      <PlayIcon className="size-5" />
+                      <Play className="size-5" />
                     </button>
                   </TogglePlay>
                   <TimeDisplay className="text-white text-sm min-w-[5rem]" />

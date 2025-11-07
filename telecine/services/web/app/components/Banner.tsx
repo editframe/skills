@@ -1,4 +1,4 @@
-import { XMarkIcon } from "@heroicons/react/20/solid";
+import { X } from "@phosphor-icons/react";
 import { useState } from "react";
 
 export default function Banner() {
@@ -47,7 +47,7 @@ export default function Banner() {
           onClick={handleClose}
         >
           <span className="sr-only">Dismiss</span>
-          <XMarkIcon className="h-5 w-5 text-white" aria-hidden="true" />
+          <X className="h-5 w-5 text-white" aria-hidden="true" weight="fill" />
         </button>
       </div>
     </div>

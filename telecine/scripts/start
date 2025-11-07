@@ -7,25 +7,21 @@ PROJECT_ROOT="$SCRIPT_DIR/.."
 # Change to project root so npm install runs in the correct directory
 cd "$PROJECT_ROOT"
 
-# Run npm install on the host (faster and avoids container volume mount issues)
-if command -v npm > /dev/null 2>&1; then
-    echo "Running npm install on host..."
-    npm install
-else
-    echo "npm not found on host, attempting to use container..."
-    # Start docker services first (needed for runner service to be available)
-    ${SCRIPT_DIR}/docker-compose up --build -d --force-recreate
-    # Run npm install in the container
-    ${SCRIPT_DIR}/npm install
-fi
+# Ensure docker services are started (needed for runner service to be available)
+echo "Starting runner container..."
+${SCRIPT_DIR}/docker-compose up -d runner
+# Wait for runner to be ready
+sleep 2
+
+# Run npm install in the container
+echo "Running npm install in container..."
+${SCRIPT_DIR}/npm install
 
 # Build native transcode module (required for jit-transcoding service)
-echo "Building native transcode module..."
-if command -v npm > /dev/null 2>&1; then
-    npm run build
-else
-    ${SCRIPT_DIR}/docker-compose exec runner npm run build
-fi
+echo "Building native transcode module in container..."
+# Clean build directory to avoid CMake cache path mismatches
+${SCRIPT_DIR}/docker-compose exec runner rm -rf lib/transcode/build
+${SCRIPT_DIR}/docker-compose exec runner npm run build
 
 # Start docker services (all services needed for migrations)
 # Use the same approach as start-for-playwright to ensure all services are started

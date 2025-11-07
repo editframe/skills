@@ -160,6 +160,25 @@ The root `scripts/start-host` script starts host-level services that must run on
 
 **Note**: When running from a dev container, start host services manually on the macOS host before starting elements services.
 
+### `scripts/npm` (Telecine)
+
+The `telecine/scripts/npm` script wraps npm commands to ensure they run in the correct context:
+- Executes npm commands in the telecine project directory
+- Handles worktree-aware configuration
+- Ensures dependencies are installed in the correct location
+
+**Usage**: Always use `telecine/scripts/npm` instead of direct `npm` commands when working with the telecine project:
+
+```bash
+# Install a package
+cd /workspace/telecine && ./scripts/npm install <package-name>
+
+# Run npm scripts
+cd /workspace/telecine && ./scripts/npm run <script-name>
+```
+
+**Important**: When installing packages or running npm commands for telecine, use `telecine/scripts/npm` to ensure proper worktree context and dependency management.
+
 ### Other Script Runners
 
 Project-specific scripts (like `npm`, `node`, `npx`, etc.) are located in their respective project directories:
@@ -195,3 +214,5 @@ Elements services are orchestrated using `process-compose`:
 See `telecine/WORKTREE_SETUP.md` for detailed Docker setup documentation.
 
 
+# Fallbacks
+It is tempting to make something work by creating a fallback. However, this is a bad idea. It is better to fix the root cause of the problem. It's better to CRASH and burn than to create a fallback.

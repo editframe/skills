@@ -1,4 +1,4 @@
-import { CheckCircleIcon } from "@heroicons/react/24/outline";
+import { CheckCircle } from "@phosphor-icons/react";
 
 export const SuccessMessage = ({
   message,
@@ -12,7 +12,7 @@ export const SuccessMessage = ({
       <div className="py-4">
         <div className="flex justify-center items-center">
           <div className="flex-shrink-0">
-            <CheckCircleIcon
+            <CheckCircle
               className="w-6 h-6 text-green-400 fill-green-100"
               aria-hidden="true"
             />

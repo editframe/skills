@@ -5,9 +5,9 @@ import clsx from "clsx";
 import { convertToWebComponents } from "./convertToWebComponents";
 import { convertToJsx } from "./convertToJsx";
 import {
-  CheckCircleIcon,
-  ClipboardDocumentListIcon,
-} from "@heroicons/react/24/outline";
+  CheckCircle,
+  ClipboardText,
+} from "@phosphor-icons/react";
 import { PersistentTab } from "../PersistentTabGroup";
 import { PersistentTabGroup } from "../PersistentTabGroup";
 
@@ -55,12 +55,12 @@ function CopyButton({ text }: CopyButtonProps) {
       {copied ? (
         <span className="flex items-center gap-1">
           Copied!{" "}
-          <CheckCircleIcon className="w-4 h-4 fill-mantis-300 text-mantis-500" />
+          <CheckCircle className="w-4 h-4 fill-mantis-300 text-mantis-500" />
         </span>
       ) : (
         <span className="flex items-center gap-1">
           Copy{" "}
-          <ClipboardDocumentListIcon className="w-4 h-4 fill-mantis-300 text-mantis-500" />
+          <ClipboardText className="w-4 h-4 fill-mantis-300 text-mantis-500" />
         </span>
       )}
     </button>

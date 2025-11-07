@@ -17,12 +17,13 @@ interface TestConfiguration {
 }
 
 function loadWebSocketEndpoint(): string | null {
-  if (!existsSync(".wsEndpoint.json")) {
+  const wsEndpointPath = path.resolve(__dirname, ".wsEndpoint.json");
+  if (!existsSync(wsEndpointPath)) {
     return null;
   }
 
   try {
-    const content = readFileSync(".wsEndpoint.json", "utf-8");
+    const content = readFileSync(wsEndpointPath, "utf-8");
     const parsed = JSON.parse(content);
     return typeof parsed.wsEndpoint === "string" ? parsed.wsEndpoint : null;
   } catch {

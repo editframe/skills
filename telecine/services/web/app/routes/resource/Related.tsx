@@ -1,4 +1,4 @@
-import { XCircleIcon } from "@heroicons/react/24/outline";
+import { XCircle } from "@phosphor-icons/react";
 import { serverQuery } from "@/graphql.server";
 import { useSubscriptionForQuery } from "@/graphql.client";
 import { ResourceModules } from "~/components/resources";
@@ -129,7 +129,7 @@ export default function ResourceDetail({
           to={`/resource/${resourceType}`}
           title="Close"
         >
-          <XCircleIcon
+          <XCircle
             aria-hidden="true"
             className="h-4 w-4 stroke-gray-500 stroke-1 fill-gray-300 hover:stroke-gray-800 hover:fill-gray-400"
             title="Close"

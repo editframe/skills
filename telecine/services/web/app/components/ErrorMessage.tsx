@@ -1,4 +1,4 @@
-import { XCircleIcon } from "@heroicons/react/24/outline";
+import { XCircle } from "@phosphor-icons/react";
 
 export const ErrorMessage = ({
   message,
@@ -9,7 +9,7 @@ export const ErrorMessage = ({
       <div className="py-4">
         <div className="flex justify-center items-center">
           <div className="flex-shrink-0">
-            <XCircleIcon className="w-6 h-6 text-red-400 fill-red-100" aria-hidden="true" />
+            <XCircle className="w-6 h-6 text-red-400 fill-red-100" aria-hidden="true" />
           </div>
           <div className="flex-1 ml-3 pt-0.5 w-0">
             <h3 className="font-medium text-gray-900 text-sm">{message}</h3>

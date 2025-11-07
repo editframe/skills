@@ -18,9 +18,9 @@ export function PropertyDoc({
   htmlAttribute,
 }: PropertyDocProps) {
   return (
-    <div className="flex flex-col gap-3 sm:gap-4 py-2 text-xs sm:text-sm hover:bg-gray-50">
+    <div className="flex flex-col gap-3 sm:gap-4 py-2 text-xs sm:text-sm hover:bg-gray-50 dark:hover:bg-gray-800">
       <h3
-        className="px-2 my-0 font-mono text-base sm:text-lg bg-blue-200 text-gray-900 break-words"
+        className="px-2 my-0 font-mono text-base sm:text-lg bg-blue-200 dark:bg-blue-900 text-gray-900 dark:text-gray-100 break-words"
         id={`attr-${name}`}
       >
         {name}
@@ -28,17 +28,17 @@ export function PropertyDoc({
 
       <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
         <div className="w-full sm:w-48 sm:shrink-0 flex flex-col gap-1.5 sm:gap-2">
-          <div className="px-2 flex flex-col gap-1 sm:gap-1.5 text-gray-600 text-xs sm:text-sm">
+          <div className="px-2 flex flex-col gap-1 sm:gap-1.5 text-gray-600 dark:text-gray-400 text-xs sm:text-sm">
             {(domReadable || domWritable) && (
               <div>
                 <span className="font-medium">DOM: </span>
-                <span className="text-gray-500">
+                <span className="text-gray-500 dark:text-gray-400">
                   {domReadable &&
                     (typeof domReadable === "string"
                       ? `read (${domReadable})`
                       : "read")}
                   {domReadable && domWritable && (
-                    <span className="text-gray-400"> / </span>
+                    <span className="text-gray-400 dark:text-gray-500"> / </span>
                   )}
                   {domWritable &&
                     (typeof domWritable === "string"
@@ -52,13 +52,13 @@ export function PropertyDoc({
               <>
                 <div>
                   <span className="font-medium">HTML: </span>
-                  <code className="not-prose font-mono bg-gray-50 px-1 rounded text-gray-500">
+                  <code className="not-prose font-mono bg-gray-50 dark:bg-gray-800 px-1 rounded text-gray-500 dark:text-gray-400">
                     {typeof htmlAttribute === "string" ? htmlAttribute : name}
                   </code>
                 </div>
                 <div>
                   <span className="font-medium">JSX: </span>
-                  <code className="not-prose font-mono bg-gray-50 px-1 rounded text-gray-500">
+                  <code className="not-prose font-mono bg-gray-50 dark:bg-gray-800 px-1 rounded text-gray-500 dark:text-gray-400">
                     {name}
                   </code>
                 </div>
@@ -71,7 +71,7 @@ export function PropertyDoc({
           <div className="flex flex-col gap-1.5">
             <div>
               <span className="font-medium">Type: </span>
-              <code className="not-prose font-mono bg-gray-50 px-1 rounded">
+              <code className="not-prose font-mono bg-gray-50 dark:bg-gray-800 px-1 rounded dark:text-gray-300">
                 {type}
               </code>
             </div>
@@ -80,18 +80,18 @@ export function PropertyDoc({
               <div>
                 <span className="font-medium">Default: </span>
                 {defaultValue ? (
-                  <code className="not-prose font-mono bg-gray-50 px-1 rounded">
+                  <code className="not-prose font-mono bg-gray-50 dark:bg-gray-800 px-1 rounded dark:text-gray-300">
                     {defaultValue}
                   </code>
                 ) : (
-                  <span className="text-gray-500">—</span>
+                  <span className="text-gray-500 dark:text-gray-400">—</span>
                 )}
               </div>
             )}
           </div>
 
           {type === "timestring" && (
-            <p className="text-gray-600 mb-0">
+            <p className="text-gray-600 dark:text-gray-400 mb-0">
               A string representing time duration (e.g. "5s", "1.5s", "500ms")
             </p>
           )}
@@ -108,7 +108,7 @@ interface PropertyDocListProps {
 
 export function PropertyDocList({ children }: PropertyDocListProps) {
   return (
-    <div className="[&>*:nth-child(odd)]:bg-white [&>*:nth-child(even)]:bg-gray-50">
+    <div className="[&>*:nth-child(odd)]:bg-white dark:[&>*:nth-child(odd)]:bg-gray-900 [&>*:nth-child(even)]:bg-gray-50 dark:[&>*:nth-child(even)]:bg-gray-800">
       {children}
     </div>
   );

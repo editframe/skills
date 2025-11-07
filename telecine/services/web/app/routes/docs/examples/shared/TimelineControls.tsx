@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react"
 import { Scrubber, TimeDisplay, TogglePlay, Controls } from "@editframe/react"
-import { PauseIcon, PlayIcon } from "@heroicons/react/20/solid"
+import { Pause, Play } from "@phosphor-icons/react"
 
 export interface TimelineControlsProps {
   className?: string
@@ -24,13 +24,13 @@ export function TimelineControls({
           slot="pause"
           className="text-gray-800 hover:text-gray-800/80 flex flex-col items-center p-1 rounded hover:bg-gray-800/10 transition-colors"
         >
-          <PauseIcon className="size-5" />
+          <Pause className="size-5" weight="fill" />
         </button>
         <button
           slot="play"
           className="text-gray-800 hover:text-gray-800/80 flex flex-col items-center p-1 rounded hover:bg-gray-800/10 transition-colors"
         >
-          <PlayIcon className="size-5" />
+          <Play className="size-5" weight="fill" />
         </button>
       </TogglePlay>
 

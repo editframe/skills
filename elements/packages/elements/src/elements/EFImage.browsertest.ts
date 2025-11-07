@@ -18,7 +18,7 @@ describe("EFImage", () => {
       workbench.appendChild(element);
       element.assetId = "550e8400-e29b-41d4-a716-446655440000";
       expect(element.assetPath()).toBe(
-        "https://editframe.dev/api/v1/image_files/550e8400-e29b-41d4-a716-446655440000",
+        "https://editframe.com/api/v1/image_files/550e8400-e29b-41d4-a716-446655440000",
       );
     });
   });
@@ -29,7 +29,7 @@ describe("EFImage", () => {
       const image = document.createElement("ef-image");
       image.setAttribute("asset-id", id);
       expect(image.assetPath()).toBe(
-        `https://editframe.dev/api/v1/image_files/${id}`,
+        `https://editframe.com/api/v1/image_files/${id}`,
       );
     });
 
@@ -62,7 +62,7 @@ describe("EFImage", () => {
     test("Can be set on element directly", () => {
       const image = document.createElement("ef-image");
       image.src =
-        "https://editframe.dev/api/v1/image_files/550e8400-e29b-41d4-a716-446655440000";
+        "https://editframe.com/api/v1/image_files/550e8400-e29b-41d4-a716-446655440000";
       image.duration = "1s";
       expect(image.durationMs).toBe(1000);
     });
@@ -70,7 +70,7 @@ describe("EFImage", () => {
     test("Can be set through setAttribute", () => {
       const image = document.createElement("ef-image");
       image.src =
-        "https://editframe.dev/api/v1/image_files/550e8400-e29b-41d4-a716-446655440000";
+        "https://editframe.com/api/v1/image_files/550e8400-e29b-41d4-a716-446655440000";
       image.setAttribute("duration", "1s");
       expect(image.durationMs).toBe(1000);
     });

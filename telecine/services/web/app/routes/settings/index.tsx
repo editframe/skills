@@ -1,5 +1,5 @@
 import { graphql } from "@/graphql";
-import { EnvelopeIcon, LockClosedIcon } from "@heroicons/react/20/solid";
+import { Envelope, Lock } from "@phosphor-icons/react";
 
 import type { MetaFunction } from "react-router";
 import { data } from "react-router";
@@ -192,9 +192,10 @@ export default function Page({
           to="/settings/update-password"
           className="inline-flex items-center bg-editframe-600 hover:bg-editframe-400 shadow-sm px-3 py-2 rounded-md font-semibold text-sm text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-editframe-600"
         >
-          <LockClosedIcon
+          <Lock
             className="mr-1.5 -ml-0.5 w-5 h-5"
             aria-hidden="true"
+            weight="fill"
           />
           Change Password
         </Link>
@@ -238,7 +239,7 @@ const EmailRow: FC<{
             <Button
               type="submit"
               disabled={isResending}
-              icon={EnvelopeIcon}
+              icon={Envelope}
               className="disabled:opacity-50 font-medium text-editframe-600 text-xs hover:text-editframe-500"
               mode={"action"}
             >

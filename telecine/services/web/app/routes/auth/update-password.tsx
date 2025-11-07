@@ -7,7 +7,7 @@ import {
   resetPasswordWithToken,
 } from "~/resetPasswordWithEmail.server";
 import type { MetaFunction } from "react-router";
-import { InformationCircleIcon } from "@heroicons/react/20/solid";
+import { Info } from "@phosphor-icons/react";
 import { commitSession } from "@/util/session";
 import { ErrorMessage } from "~/components/ErrorMessage";
 import { Button } from "~/components/Button";
@@ -165,7 +165,7 @@ export default function Welcome() {
           <div className="rounded-md bg-blue-50 p-4">
             <div className="flex">
               <div className="flex-shrink-0">
-                <InformationCircleIcon
+                <Info
                   className="h-5 w-5 text-blue-400"
                   aria-hidden="true"
                 />

@@ -1,7 +1,7 @@
 import { formFor } from "~/formFor";
 import z from "zod";
 import { Listbox, Transition } from "@headlessui/react";
-import { CheckIcon, ChevronUpDownIcon } from "@heroicons/react/20/solid";
+import { Check, CaretUpDown } from "@phosphor-icons/react";
 import classNames from "classnames";
 import { Fragment, useState } from "react";
 import { data, Link, type MetaFunction } from "react-router";
@@ -177,9 +177,10 @@ export default function Page() {
                       {selectedChannel?.name}
                     </span>
                     <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-                      <ChevronUpDownIcon
+                      <CaretUpDown
                         className="h-5 w-5 text-gray-400"
                         aria-hidden="true"
+                        weight="fill"
                       />
                     </span>
                   </Listbox.Button>
@@ -225,9 +226,10 @@ export default function Page() {
                                     "absolute inset-y-0 right-0 flex items-center pr-4",
                                   )}
                                 >
-                                  <CheckIcon
+                                  <Check
                                     className="h-5 w-5"
                                     aria-hidden="true"
+                                    weight="fill"
                                   />
                                 </span>
                               )}

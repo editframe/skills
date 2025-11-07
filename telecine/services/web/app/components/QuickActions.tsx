@@ -1,32 +1,32 @@
 import {
-  AcademicCapIcon,
-  AtSymbolIcon,
-  Bars4Icon,
-  CodeBracketIcon,
-} from "@heroicons/react/24/outline";
+  GraduationCap,
+  At,
+  List,
+  Code,
+} from "@phosphor-icons/react";
 const items = [
   {
     title: "Check out our docs",
     description: "A list of different layers we support in our platform",
-    icon: AcademicCapIcon,
+    icon: GraduationCap,
     href: "/docs",
   },
   {
     title: "Create an API key",
     description: "Another way to create and render a project",
-    icon: Bars4Icon,
+    icon: List,
     href: "/developers/new",
   },
   {
     title: "Use our CLI",
     description: "Another way to interact with our platform",
-    icon: CodeBracketIcon,
+    icon: Code,
     href: "https://www.npmjs.com/package/@editframe/cli",
   },
   {
     title: "Contact Us",
     description: "Get in touch with our engineering team ",
-    icon: AtSymbolIcon,
+    icon: At,
     href: "mailto:team@editframe.com",
   },
 ];

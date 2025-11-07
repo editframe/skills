@@ -1,7 +1,7 @@
 import { Menu, MenuButton, MenuItems, MenuItem } from "@headlessui/react";
 import { useFetcher } from "react-router";
 import type { ContentBlock } from ".";
-import { ChevronDownIcon } from "@heroicons/react/20/solid";
+import { CaretDown } from "@phosphor-icons/react";
 
 export const Email: ContentBlock<{
   user: { email_passwords: { email_address: string }[] };
@@ -37,7 +37,7 @@ export const Role: ContentBlock<{
         className="inline-flex items-center gap-0.5 hover:bg-gray-50 rounded text-xs capitalize"
       >
         {role.replace("org-", "")}
-        {!isPrimaryUser && <ChevronDownIcon className="ml-0.5 w-3 h-3" />}
+        {!isPrimaryUser && <CaretDown className="ml-0.5 w-3 h-3" weight="fill" />}
       </MenuButton>
       {!isPrimaryUser && (
         <MenuItems className="z-10 absolute bg-white ring-opacity-5 shadow-lg mt-1 rounded-md ring-1 ring-black w-28">

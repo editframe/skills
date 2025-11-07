@@ -4,6 +4,7 @@ import { requireAdminSession } from "@/util/requireAdminSession";
 
 import { Table } from "~/components/Table";
 import { TimeAgoInWords } from "~/ui/timeAgoInWords";
+import clsx from "clsx";
 
 import { AutoRefresh } from "./AutoRefresh";
 
@@ -115,7 +116,10 @@ function SchedulersTable({ schedulers }: { schedulers: any[] }) {
                 return <span className="font-medium">{row.id}</span>;
               }
               return (
-                <span className="pl-6 text-xs text-gray-600">
+                <span className={clsx(
+                  "pl-6 text-xs transition-colors",
+                  "text-slate-600 dark:text-slate-400"
+                )}>
                   {row.queueName}
                 </span>
               );
@@ -245,7 +249,11 @@ function QueuesTable({
           {
             name: "Queue",
             content: ({ name }: QueueRowData) => (
-              <span className="bg-blue-50 text-xs px-2 py-1 rounded-lg inline-block">
+              <span className={clsx(
+                "text-xs px-2 py-1 rounded-lg inline-block transition-colors",
+                "bg-blue-50 dark:bg-blue-900/30",
+                "text-blue-900 dark:text-blue-100"
+              )}>
                 {name}
               </span>
             ),

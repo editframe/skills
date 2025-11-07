@@ -2,8 +2,7 @@ import { useRef } from "react";
 import { Preview, Scrubber, TimeDisplay, TogglePlay } from "@editframe/react";
 import type { EFPreview } from "@editframe/elements";
 import clsx from "classnames";
-import { PauseIcon } from "@heroicons/react/24/outline";
-import { PlayIcon } from "@heroicons/react/24/outline";
+import { Pause, Play } from "@phosphor-icons/react";
 
 export const EFPlayer = ({
   code,
@@ -39,13 +38,13 @@ export const EFPlayer = ({
                   slot="pause"
                   className="text-white hover:text-white/80 flex flex-col items-center p-1 rounded hover:bg-white/10 transition-colors"
                 >
-                  <PauseIcon className="size-5" />
+                  <Pause className="size-5" />
                 </button>
                 <button
                   slot="play"
                   className="text-white hover:text-white/80 flex flex-col items-center p-1 rounded hover:bg-white/10 transition-colors"
                 >
-                  <PlayIcon className="size-5" />
+                  <Play className="size-5" />
                 </button>
               </TogglePlay>
               <TimeDisplay className="text-xs font-medium text-white/80" />

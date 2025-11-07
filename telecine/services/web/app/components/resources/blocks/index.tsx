@@ -25,7 +25,7 @@ export const RelatedOrg: ContentBlock<{ org: { display_name: string } }> = ({
 }) => <>{org ? org.display_name : "—"}</>;
 
 export const ID: ContentBlock<{ id: string }> = ({ record: { id } }) => (
-  <span className="text-xs text-gray-500 font-mono">{id}</span>
+  <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">{id}</span>
 );
 
 export const StartedAt: ContentBlock<{ started_at: string | null }> = ({

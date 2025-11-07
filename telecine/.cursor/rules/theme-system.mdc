@@ -1,0 +1,412 @@
+---
+description: Theme system documentation and aesthetic patterns
+globs: ["**/*.tsx", "**/*.html"]
+alwaysApply: false
+---
+
+# Theme System Documentation
+
+## Overview
+
+The application uses a three-mode theme system: **light**, **dark**, and **system** (automatic). The system respects user preferences and system-level color scheme settings.
+
+## Theme Modes
+
+### Light Mode
+- Explicitly sets light theme
+- Removes `.dark` class from `document.documentElement`
+- Stored as `'light'` in localStorage
+
+### Dark Mode
+- Explicitly sets dark theme
+- Adds `.dark` class to `document.documentElement`
+- Stored as `'dark'` in localStorage
+
+### System Mode (Automatic)
+- Follows system preference via `prefers-color-scheme` media query
+- Listens for real-time changes to system preference
+- Automatically applies/removes `.dark` class based on system setting
+- Stored as `'system'` in localStorage
+- Default mode if no preference is stored
+
+## Implementation
+
+### Theme Hook: `useTheme`
+
+**Location**: `telecine/services/web/app/hooks/useTheme.ts`
+
+The `useTheme` hook manages theme state and synchronization:
+
+```tsx
+import { useTheme } from "~/hooks/useTheme";
+
+function MyComponent() {
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  // theme: 'light' | 'dark' | 'system'
+  // resolvedTheme: 'light' | 'dark' (actual applied theme)
+  // setTheme: (theme: Theme) => void
+}
+```
+
+**How it works:**
+
+1. **Initialization**: Reads theme preference from localStorage (defaults to 'system')
+2. **System Preference Detection**: Uses `window.matchMedia('(prefers-color-scheme: dark)')` to detect system preference
+3. **Real-time Listening**: When theme is 'system', listens to MediaQueryList 'change' events for real-time updates
+4. **Class Application**: Applies/removes `.dark` class on `document.documentElement` based on resolved theme
+5. **Event Dispatch**: Dispatches custom 'theme' event for other components to listen to
+
+**Storage Pattern:**
+- localStorage key: `theme`
+- Values: `'light'`, `'dark'`, `'system'`
+- Default: `'system'` (if no preference stored)
+
+### Tailwind Integration
+
+**Configuration**: `telecine/tailwind.config.ts`
+
+Tailwind is configured with `darkMode: "selector"`, which means:
+- Dark mode styles are activated when `.dark` class is present on a parent element
+- Typically applied to `document.documentElement` (the `<html>` tag)
+- Use `dark:` prefix for dark mode variants: `dark:bg-gray-900`
+
+**Example:**
+```tsx
+<div className="bg-white dark:bg-gray-900 text-black dark:text-white">
+  Content that adapts to theme
+</div>
+```
+
+### Theme Toggle Component
+
+**Location**: `telecine/services/web/app/components/ThemeToggle.tsx`
+
+A reusable button component that cycles through theme modes:
+- Click cycles: light → dark → system → light
+- Shows appropriate icon for current mode (sun, moon, monitor)
+- Accessible with ARIA labels
+- Mobile-friendly touch targets (44x44px minimum)
+
+**Usage:**
+```tsx
+import { ThemeToggle } from "~/components/ThemeToggle";
+
+<ThemeToggle className="optional-custom-classes" />
+```
+
+## System Preference Detection
+
+### How `prefers-color-scheme` Works
+
+The system preference detection uses the CSS Media Query API:
+
+```typescript
+const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+const isDark = mediaQuery.matches; // true if system prefers dark
+
+// Listen for changes
+mediaQuery.addEventListener('change', (e) => {
+  const isDark = e.matches;
+  // Update theme accordingly
+});
+```
+
+**Real-time Updates:**
+- When theme is set to 'system', the hook sets up a listener
+- System preference changes (e.g., user changes OS theme) trigger immediate updates
+- The `.dark` class is applied/removed automatically
+- Listener is cleaned up when theme changes away from 'system' or component unmounts
+
+## Best Practices
+
+### Initializing Theme
+
+Always initialize theme early in the component tree to prevent flash of unstyled content:
+
+```tsx
+export default function Page() {
+  useTheme(); // Initialize theme before rendering
+  // ... rest of component
+}
+```
+
+### Using Resolved Theme
+
+When you need to know the actual applied theme (not just the preference):
+
+```tsx
+const { resolvedTheme } = useTheme();
+// resolvedTheme is 'light' or 'dark', regardless of whether theme is 'system'
+```
+
+### Listening to Theme Changes
+
+Components can listen to theme changes via the custom 'theme' event:
+
+```tsx
+useEffect(() => {
+  const handleThemeChange = () => {
+    // React to theme changes
+  };
+  window.addEventListener('theme', handleThemeChange);
+  return () => window.removeEventListener('theme', handleThemeChange);
+}, []);
+```
+
+### Dark Mode Styles
+
+Always provide dark mode variants for UI elements:
+
+```tsx
+// Good: Provides both light and dark variants
+className="bg-white dark:bg-gray-900 text-black dark:text-white"
+
+// Bad: Only light mode
+className="bg-white text-black"
+```
+
+## Aesthetic Decisions and Patterns
+
+**Note**: As aesthetic decisions are made and patterns are established, add them to this section to maintain consistency across the codebase.
+
+### Typography
+
+**Font Family**: Inter (from Google Fonts)
+- Primary font for all UI text
+- Weights: 300 (light), 400 (regular), 500 (medium), 600 (semibold), 700 (bold)
+- Configured in `tailwind.config.ts` as `font-display` and `font-sans`
+- Applied globally via Inter font import in `root.tsx`
+
+**Documentation Typography** (Mintlify-inspired):
+- **Headings**: 
+  - H1: `text-4xl`, `font-semibold`, `tracking-tight`, `mb-6`
+  - H2: `text-2xl`, `font-semibold`, `mt-12`, `mb-4`
+  - H3: `text-xl`, `font-semibold`, `mt-8`, `mb-3`
+  - H4: `text-lg`, `font-semibold`, `mt-6`, `mb-2`
+- **Body Text**: 
+  - Base: `text-slate-600`, `leading-7` (light mode)
+  - Dark: `text-slate-300`, `leading-7` (dark mode)
+  - Paragraph spacing: `mb-6`
+- **Line Heights**: 
+  - Body: `leading-7` (1.75rem / 28px)
+  - Headings: `tracking-tight` for better visual hierarchy
+
+### Color Palette
+
+**Documentation Colors** (Mintlify-inspired):
+- **Text Colors**:
+  - Primary: `slate-900` (light) / `white` (dark)
+  - Secondary: `slate-600` (light) / `slate-300` (dark)
+  - Muted: `slate-500` (light) / `slate-400` (dark)
+- **Links**: 
+  - `blue-600` (light) / `blue-400` (dark)
+  - Underline on hover (not default)
+  - `font-medium` weight
+- **Accents**: 
+  - Blue (`blue-600`/`blue-400`) for active states and links
+  - Consistent use of blue for interactive elements
+
+### Navigation & Sidebar
+
+**Menu Component** (`components/docs/Menu.tsx`) - Mintlify-inspired:
+- **Section titles**: `text-xs`, `font-medium`, `uppercase`, `tracking-wider`
+- **Layout**: Flex layout with icons (`flex items-center gap-2`)
+- **Icons**: 
+  - **Library**: `@phosphor-icons/react` (1,300+ icons, tree-shakeable)
+  - Section icons: `h-4 w-4` (16px)
+  - Link icons: `h-3.5 w-3.5` (14px)
+  - **Icon mapping**: Comprehensive mapping based on both title and href patterns for specificity
+    - Getting Started: `Rocket` (main), `Key` (auth), `Cube` (packages), `WebhooksLogo` (webhooks), `Brain` (main idea), `Clock` (temporal)
+    - Elements: `PuzzlePiece` (main), `SquaresFour` (timegroup), `SpeakerHigh` (audio), `VideoCamera` (video), `FilmStrip` (thumbnail), `Translate` (captions), `Image` (image), `ProjectorScreen` (surface), `WaveSine` (waveform), `Sparkle` (examples)
+    - Rendering: `FilmReel` (main), `Terminal` (API)
+    - React: `Code` (main), `PuzzlePiece` (components), `Code` (hooks)
+    - Controls: `Sliders` (main), `Play` (toggle-play), `ArrowClockwise` (toggle-loop), `FastForward` (scrubber), `Clock` (time-display)
+    - Resources: `Stack` (main), `Image` (image-files), `CloudArrowUp` (unprocessed), `Cpu` (process), `FilmReel` (isobmff), `Microphone` (transcriptions), `FilmReel` (renders), `Key` (url-token)
+    - Editor UI: `Eye` (main), `PlayCircle` (preview), `Gear` (configuration)
+    - Processing Files: `Cpu` (main), `VideoCamera` (audio-video), `Image` (images)
+- **Section titles styling**:
+  - Padding: `px-2 py-1.5`
+  - Border radius: `rounded-md` (6px)
+  - **Active state**: `bg-slate-100` (light) / `bg-slate-800` (dark), `text-slate-900` (light) / `text-slate-100` (dark)
+  - **Hover state**: `hover:bg-slate-50` (light) / `hover:bg-slate-900/50` (dark), `hover:text-slate-700` (light) / `hover:text-slate-300` (dark)
+  - **Inactive**: `text-slate-500` (light) / `text-slate-400` (dark) - muted gray
+  - Transition: `transition-all` for smooth background/text changes
+- **Sub-menu items styling**:
+  - Padding: `px-2 py-1` - compact
+  - Border radius: `rounded-md` (6px)
+  - **Active state**: `bg-slate-100` (light) / `bg-slate-800` (dark), `text-slate-900` (light) / `text-slate-100` (dark), `font-medium`
+  - **Hover state**: `hover:bg-slate-50` (light) / `hover:bg-slate-900/50` (dark), `hover:text-slate-900` (light) / `hover:text-slate-200` (dark)
+  - **Inactive**: `text-slate-600` (light) / `text-slate-400` (dark)
+  - **No dot indicator**: Removed `before:` pseudo-element dot - active state is indicated by background color only
+- **Border**: `border-l` (1px), `border-slate-200` (light) / `border-slate-800` (dark) - thinner
+- **Spacing**: `space-y-6` between sections, `space-y-0.5` between items - tighter
+- **Padding**: `pl-3` for sub-items (less indentation)
+
+**Table of Contents** ("On this page") - Mintlify-inspired minimal design:
+- **Label**: `text-[10px]`, `font-medium`, `uppercase`, `tracking-wider`, `text-slate-400` - extremely small and subtle
+- **Links**: `text-xs`, `leading-5`, `py-0.5` - minimal padding
+- **Colors**: 
+  - Inactive: `text-slate-500` (light) / `text-slate-400` (dark) - very muted
+  - Active: `text-slate-900` (light) / `text-slate-100` (dark) - darker for contrast
+  - Hover: `text-slate-700` (light) / `text-slate-300` (dark)
+- **H2 items**: `font-medium`
+- **H3+ items**: `font-normal`, indented with `ml-3` (less indentation)
+- **Spacing**: `gap-0.5` between items - very tight
+- **Scroll spy**: Uses IntersectionObserver to highlight active heading as user scrolls
+- **Active detection**: Highlights the first heading that intersects with the viewport (top 20% to 30% of viewport)
+
+### Code Blocks
+
+**Inline Code**:
+- Background: `bg-slate-100` (light) / `bg-slate-800` (dark)
+- Text: `text-slate-900` (light) / `text-slate-100` (dark)
+- Padding: `px-1.5`, `py-0.5`
+- Font: `font-mono`, `text-sm`
+- Border radius: `rounded`
+
+**Code Blocks**:
+- Background: `bg-slate-900` (light) / `bg-slate-900/50` (dark)
+- Border: `border-slate-800`, `rounded-lg`
+- Shadow: `shadow-lg`
+- Ring (dark): `ring-1`, `ring-slate-300/10`
+
+### Spacing & Layout
+
+**Design Philosophy**: Tightness is a virtue. Balance consistency with compact spacing. Avoid excessive whitespace while maintaining readability.
+
+**Tables**:
+- Cell padding: `px-3 py-2.5` for balanced tight spacing
+- Header padding: `px-3 py-2.5` with `font-semibold`, `tracking-wider`, and `align-middle` for consistent vertical alignment
+- Table container: `rounded-lg` with liquid glass aesthetic (backdrop blur, layered shadows, gradient overlays)
+- Row borders: Subtle `border-slate-100` (light) / `border-slate-800/50` (dark) for separation
+- Line height: `leading-snug` for compact, readable text
+- Footer pagination: Full-width spanning with `colSpan={columns.length}` and `w-full` on container
+- Table header spacing: `pb-3` for consistent spacing between filters/headers and table content
+
+**Navigation Sidebar**:
+- Width: `w-48` (192px) for compact navigation
+- Padding: `px-2.5 py-3` for tight but comfortable spacing
+- Section spacing: `space-y-5` between groups
+- Item padding: `px-2.5 py-1.5` with `gap-2.5` for icons
+- Text size: `text-xs` with `leading-snug` for compact labels
+- Borders: `border-slate-200/80` for subtle separation
+
+**Form Inputs**:
+- Padding: `px-3 py-1.5` for standard inputs and filters (consistent across admin and non-admin)
+- Border radius: `rounded-md` for modern feel
+- Liquid glass aesthetic: `bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm` with layered shadows
+- Borders: `border-slate-300/75 dark:border-slate-700/75` for subtle separation
+- Shadows: Layered shadows with `shadow-[0_1px_2px_0_rgb(0_0_0_/_0.06)] dark:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.3)]`
+- Gradient overlays: Subtle warm/cool tints via `before:` pseudo-element
+- Focus states: Enhanced with `focus:border-blue-500/85`, stronger shadows, and blue gradient overlay
+- Focus ring: `ring-1 ring-blue-500/50` for subtle focus indication
+- Line height: `leading-snug` for compact text
+- Spacing: `gap-2` between label and input, `gap-3` between filter groups
+- Transitions: `transition-all duration-150` for smooth interactions
+
+**Header**:
+- Padding: `px-3 sm:px-4 lg:px-6 py-2.5` for responsive tight spacing
+- Gap: `gap-2.5` between header elements
+- Border: `border-slate-200/80` for subtle separation
+
+**Pagination**:
+- Padding: `px-3 py-2` for compact footer
+- Button size: `h-7 w-7` for tight controls
+- Gap: `gap-0.5` between navigation buttons, `gap-2.5` between elements
+- Text: `text-xs` for compact display
+- Full-width spanning: Pagination footer must span all table columns using `colSpan={columns.length}` and `w-full` on container
+
+**Documentation Content**:
+- Generous whitespace between sections
+- Headings have appropriate top margins (`mt-12` for H2, `mt-8` for H3)
+- Paragraph spacing: `mb-6` for better readability
+- Lists: `my-6` for top/bottom margin
+
+### Interactive Elements
+
+**Links**:
+- No underline by default
+- Underline on hover
+- Smooth color transitions
+- Blue accent color for consistency
+
+**Selection**:
+- Light mode: `bg-blue-100`
+- Dark mode: `bg-blue-900/30`
+- Code selection: `bg-blue-200` (light) / `bg-blue-800/50` (dark)
+
+### Refined Design Patterns
+
+**Spacing Philosophy**:
+- Tightness is a virtue - balance consistency with compact spacing
+- Use `leading-snug` for line heights in UI components (tables, inputs, navigation)
+- Padding follows tight but comfortable pattern: `px-3 py-1.5` for inputs/filters, `px-3 py-2.5` for tables
+- Gaps: `gap-2` for tight (label-input), `gap-3` for standard (filter groups, table headers)
+- Vertical spacing: `space-y-3` for listing pages (between headers and tables), `pt-3` for page top padding
+- Table header spacing: `pb-3` for consistent spacing between filters/headers and table content
+- Alignment: Use `align-middle` on table headers (`<th>`) for consistent vertical alignment
+
+**Visual Hierarchy**:
+- Subtle borders: Use opacity variants (`/80`, `/60`) for softer separation
+- Shadows: `shadow-sm` for default depth, `shadow-md` on focus for interaction feedback
+- Focus states: `ring-2 ring-blue-500/20` for subtle, non-intrusive focus indication
+- Hover states: Use opacity variants (`/80`, `/50`) for subtle background changes
+
+**Liquid Glass Aesthetic** (Apple-inspired, refined application):
+- **Backdrop blur**: Use `backdrop-blur-sm` (4px) for subtle glassmorphism on elevated surfaces
+- **Background opacity**: Increased to `/95` (light) and `/95` (dark) for better contrast and depth
+- **Layered shadows**: Combine multiple shadow layers for depth:
+  - Light mode: `shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08),0_4px_12px_0_rgb(0_0_0_/_0.12)]`
+  - Dark mode: `dark:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.4),0_4px_12px_0_rgb(0_0_0_/_0.5)]`
+- **Subtle borders**: Use `border-slate-300/75` (light) and `border-slate-700/75` (dark) for refined separation
+- **Background layering**: Use `bg-white/95 backdrop-blur-sm` (light) or `bg-slate-900/95 backdrop-blur-sm` (dark) for glass effect
+- **Gradient overlays**: Subtle warm/cool tints via `before:` pseudo-element:
+  - Light mode: `before:from-amber-50/25` for containers, `before:from-amber-50/30` for headers
+  - Dark mode: `before:from-blue-950/18` for containers, `before:from-blue-950/20` for headers
+- **Apply to**: Table containers, navigation sidebar, form inputs, dropdown menus, buttons, modal overlays, elevated cards
+- **Intensity**: Effects are 10-20% more pronounced than initial subtle application for better visual impact
+
+**Subtle Contrast & Hue Enhancement** (Refined):
+- **Increased shade contrast**: Use higher opacity backgrounds (`bg-white/95` light, `bg-slate-900/95` dark) for better contrast
+- **Border opacity**: Increased to `/75` for better definition (`border-slate-300/75` light, `border-slate-700/75` dark)
+- **Subtle hue tints**: Enhanced color hints for increased visual interest (10-20% more pronounced):
+  - **Warm tints**: `bg-gradient-to-br from-amber-50/25 via-transparent to-transparent` for light mode containers
+  - **Warm tints (headers)**: `bg-gradient-to-br from-amber-50/30 via-transparent to-transparent` for light mode table headers
+  - **Cool tints**: `bg-gradient-to-br from-blue-50/18 via-transparent to-transparent` for light mode navigation
+  - **Dark mode**: `bg-gradient-to-br from-blue-950/18 via-transparent to-transparent` for containers, `from-blue-950/20` for headers
+- **Active states**: Enhanced blue tint (`bg-blue-50/55` light, `bg-blue-950/40` dark) with gradient overlay (`from-blue-100/30` light, `from-blue-900/25` dark)
+- **Focus states**: Blue gradient overlay (`from-blue-50/30` light, `from-blue-950/22` dark) for interactive elements
+- **Buttons (creative mode)**: Enhanced liquid glass with mantis color tints (`from-mantis-100/20` light, `from-mantis-950/15` dark)
+- **Visual impact**: Hue additions are perceptible but refined, enhancing contrast and visual interest without being distracting
+
+**Typography**:
+- UI text: `text-xs` for compact labels and filters, `text-sm` for standard content
+- Line heights: `leading-snug` for compact UI, `leading-relaxed` only for longer form content
+- Font weights: `font-medium` for labels, `font-semibold` for headers, `font-light` avoided in favor of tighter spacing
+
+**Color Refinement**:
+- Borders: `border-slate-200/80` (light) / `border-slate-800/80` (dark) for subtle separation
+- Backgrounds: Use opacity variants for layered depth (`bg-slate-50/50`, `bg-slate-800/30`)
+- Text contrast: `text-slate-700` (light) / `text-slate-300` (dark) for secondary text
+- Hover states: Subtle opacity changes (`hover:bg-slate-100/80`) for refined interaction
+
+### Current Patterns
+
+- Theme toggle appears in header navigation (desktop) and mobile menu
+- Icons: Sun (light), Moon (dark), Monitor (system)
+- Smooth transitions between theme states (`transition-all duration-150`)
+- Mobile-friendly touch targets (minimum 44x44px)
+- Inter font family for modern, readable typography
+- Refined, tight design with balanced spacing
+- Blue accent color for interactive elements
+- Consistent color palette using slate grays with opacity variants
+- Subtle shadows and borders for depth without heaviness
+- Liquid glass aesthetic applied consistently across tables, inputs, navigation, buttons, and dropdowns
+- Consistent spacing: `pb-3` for table headers, `space-y-3` for listing pages, `gap-3` for filter groups
+- Table header alignment: `align-middle` for consistent vertical alignment
+- Full-width pagination: Footer spans all columns with proper width constraints
+- Admin sections match non-admin design patterns (liquid glass, spacing, alignment)
+
+---
+
+**Instructions for Contributors**: When making new aesthetic decisions or establishing new patterns related to theming, styling, or visual design, document them in the "Aesthetic Decisions and Patterns" section above. This helps maintain consistency and provides a reference for future development.

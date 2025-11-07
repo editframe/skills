@@ -11,6 +11,16 @@ services:
     depends_on:
       data-connector-agent:
         condition: service_healthy
+    networks:
+      - default
+      - traefik-shared
+    labels:
+      traefik.enable: true
+      traefik.http.routers.graphql-engine.rule: "(Host(`${WORKTREE_DOMAIN:-localhost}`) || Host(`host.docker.internal`)) && PathPrefix(`/v1/graphql`)"
+      traefik.http.routers.graphql-engine.entrypoints: web
+      traefik.http.routers.graphql-engine.service: graphql-engine
+      traefik.http.routers.graphql-engine.priority: 1000
+      traefik.http.services.graphql-engine.loadbalancer.server.port: 8080
   # test-graphql-engine:
   #   image: hasura/graphql-engine:v2.36.0.cli-migrations-v3
   #   volumes:
@@ -38,3 +48,8 @@ services:
       timeout: 10s
       retries: 5
       start_period: 5s
+
+networks:
+  traefik-shared:
+    name: telecine-traefik
+    external: true

@@ -7,7 +7,7 @@ import {
   MenuItem,
   MenuItems,
 } from "@headlessui/react";
-import { ChevronDownIcon, FunnelIcon } from "@heroicons/react/20/solid";
+import { CaretDown, Funnel } from "@phosphor-icons/react";
 import classNames from "classnames";
 import { useSearchParams } from "react-router";
 import type { Dispatch, SetStateAction } from "react";
@@ -65,7 +65,7 @@ export const Filters = ({
         <div className="lg:px-8 flex max-w-7xl space-x-6 divide-x divide-gray-200 px-4 text-sm">
           <div>
             <DisclosureButton className="group flex items-center font-medium text-gray-700">
-              <FunnelIcon
+              <Funnel
                 aria-hidden="true"
                 className="mr-2 h-5 w-5 flex-none text-martinique-400 group-hover:text-martinique-500"
               />
@@ -255,9 +255,10 @@ export const Filters = ({
               <div className="flex">
                 <MenuButton className="group inline-flex justify-center text-sm font-medium text-gray-700 hover:text-gray-900">
                   Sort
-                  <ChevronDownIcon
+                  <CaretDown
                     aria-hidden="true"
                     className="-mr-1 ml-1 h-5 w-5 flex-shrink-0 text-martinique-400 group-hover:text-martinique-500"
+                    weight="fill"
                   />
                 </MenuButton>
               </div>

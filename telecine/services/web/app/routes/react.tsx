@@ -2,7 +2,6 @@ import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 
 import { parseRequestSession } from "@/util/session";
 import "~/styles/marketing.css";
-import { useEffect, useState } from "react";
 import { Layout } from "~/layouts";
 
 export const loader = async (args: LoaderFunctionArgs) => {
@@ -43,28 +42,6 @@ const features = [
 ];
 
 const IndexPage = () => {
-  const [isDarkMode, setIsDarkMode] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    if (
-      localStorage.theme === "dark" ||
-      (!("theme" in localStorage) &&
-        window.matchMedia("(prefers-color-scheme: dark)").matches)
-    ) {
-      document.documentElement.classList.add("dark");
-      localStorage.theme = "dark";
-      setIsDarkMode(true);
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.theme = "light";
-      setIsDarkMode(false);
-    }
-
-    return () => {};
-  }, []);
-  if (isDarkMode === null) {
-    return null;
-  }
   return (
     <Layout
       features={features}

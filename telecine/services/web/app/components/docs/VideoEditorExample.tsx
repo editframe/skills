@@ -1,7 +1,7 @@
 import { Timegroup, Video, ThumbnailStrip, Preview, Scrubber, TimeDisplay, TogglePlay } from "@editframe/react";
 import { useId, useState } from "react";
 import { WithEnv } from "~/components/WithEnv";
-import { PlayIcon, PauseIcon, MagnifyingGlassMinusIcon, MagnifyingGlassPlusIcon } from "@heroicons/react/24/outline";
+import { Play, Pause, MagnifyingGlassMinus, MagnifyingGlassPlus } from "@phosphor-icons/react";
 
 export const VideoEditorExample = () => {
   const id = useId();
@@ -44,14 +44,14 @@ export const VideoEditorExample = () => {
                 disabled={zoomLevel <= 1}
                 className="p-2 text-gray-300 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <MagnifyingGlassMinusIcon className="w-5 h-5" />
+                <MagnifyingGlassMinus className="w-5 h-5" />
               </button>
               <button
                 onClick={handleZoomIn}
                 disabled={zoomLevel >= 4}
                 className="p-2 text-gray-300 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <MagnifyingGlassPlusIcon className="w-5 h-5" />
+                <MagnifyingGlassPlus className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -82,13 +82,13 @@ export const VideoEditorExample = () => {
               slot="pause"
               className="p-3 bg-gray-600 hover:bg-gray-500 text-white rounded-full transition-colors"
             >
-              <PauseIcon className="w-6 h-6" />
+              <Pause className="w-6 h-6" />
             </button>
             <button
               slot="play"
               className="p-3 bg-blue-600 hover:bg-blue-500 text-white rounded-full transition-colors"
             >
-              <PlayIcon className="w-6 h-6" />
+              <Play className="w-6 h-6" />
             </button>
           </TogglePlay>
 

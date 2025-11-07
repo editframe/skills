@@ -1,11 +1,10 @@
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { parseRequestSession } from "@/util/session";
 import "~/styles/marketing.css";
-import { Footer } from "~/components/marketing/Footer";
-import { Header } from "~/components/marketing/Header";
-import { useEffect, useState } from "react";
+import { MarketingLayout } from "~/components/layouts/MarketingLayout";
 import { EditorPreview } from "~/components/marketing/EditorPreview";
 import { Hero } from "~/components/marketing/Hero";
+import { useLoaderData } from "react-router";
 
 const navigation = [
   { name: "Get Started", href: "/welcome", primary: true },
@@ -31,42 +30,19 @@ export const meta: MetaFunction = () => {
   ];
 };
 const IndexPage = () => {
-  const [isDarkMode, setIsDarkMode] = useState<boolean | null>(null);
+  const { isLogged } = useLoaderData<typeof loader>();
 
-  useEffect(() => {
-    if (
-      localStorage.theme === "dark" ||
-      (!("theme" in localStorage) &&
-        window.matchMedia("(prefers-color-scheme: dark)").matches)
-    ) {
-      document.documentElement.classList.add("dark");
-      localStorage.theme = "dark";
-      setIsDarkMode(true);
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.theme = "light";
-      setIsDarkMode(false);
-    }
-
-    return () => {};
-  }, []);
-  if (isDarkMode === null) {
-    return null;
-  }
   return (
-    <div className="dark:bg-[#1b1b1f] bg-white">
-      <Header />
-      <div className="lg:px-[5.5rem] max-w-6xl mx-auto">
-        <div className="px-6 pt-28 pb-8 -mt-14">
-          <div className="mb-8">
-            <Hero
-              navigation={navigation}
-              description={description}
-              header={title}
-            />
-          </div>
-          <div className="lg:mt-14">
-            <EditorPreview
+    <MarketingLayout isLoggedIn={isLogged} containerClassName="pt-20 pb-8">
+      <div className="mb-8">
+        <Hero
+          navigation={navigation}
+          description={description}
+          header={title}
+        />
+      </div>
+      <div className="mt-8 lg:mt-14">
+        <EditorPreview
               code={`import type { EFPreview } from "@editframe/elements";
 import { Preview, Timegroup, Video } from "@editframe/react";
 import React, { useState, useEffect } from "react";
@@ -159,14 +135,12 @@ export const Editor = () => {
                   </p>
               `,
                 }}
-                className="text-xl  text-[#3C3C43] leading-[1.4] text-opacity-[78%] mt-3 ml-1 text-left  dark:text-gray-400 mb-6"
+                className="text-xl text-slate-600 dark:text-slate-300 leading-[1.4] mt-3 ml-1 text-left mb-6"
               />
             </div>
           </div>
         </div>
-      </div>
-      <Footer />
-    </div>
+    </MarketingLayout>
   );
 };
 export default IndexPage;

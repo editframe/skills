@@ -1,6 +1,6 @@
 export function EditframeLogo() {
   return <svg
-    className="my-4 mr-4 h-6 w-auto md:my-0"
+    className="my-4 mr-4 h-6 w-auto md:my-0 text-slate-900 dark:text-white"
     viewBox="0 0 512 512"
     width={24}
     height={24}

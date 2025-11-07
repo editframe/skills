@@ -8,6 +8,7 @@ import { TimelineControls } from "../docs/examples/shared/TimelineControls";
 import { Header } from "~/components/marketing/Header";
 import { Footer } from "~/components/marketing/Footer";
 import { parseRequestSession } from "@/util/session";
+import { useTheme } from "~/hooks/useTheme";
 import "~/styles/marketing.css";
 
 // Declare custom elements for TypeScript
@@ -35,6 +36,7 @@ export const meta: MetaFunction = () => {
 };
 
 export default function AnimeJSPage() {
+  useTheme(); // Initialize theme before rendering
   const { isLoggedIn } = useLoaderData<typeof loader>();
   const [text1, setText1] = useState("Editframe ❤️ AnimeJS");
   const [text3, setText3] = useState("HELLO WAAPI");
@@ -227,7 +229,7 @@ export default function AnimeJSPage() {
 
   if (!mounted) {
     return (
-      <div className="bg-white text-slate-900">
+      <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
         <Header isLoggedIn={isLoggedIn} />
         <div className="min-h-screen" />
         <Footer />
@@ -236,17 +238,17 @@ export default function AnimeJSPage() {
   }
 
   return (
-    <div className="bg-white text-slate-900">
+    <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
       <Header isLoggedIn={isLoggedIn} />
 
       {/* Hero Section */}
-      <section className="relative py-20 bg-gradient-to-b from-white to-gray-50">
+      <section className="relative py-20 bg-gradient-to-b from-white to-gray-50 dark:from-slate-900 dark:to-slate-800">
         <div className="container mx-auto px-6">
           <div className="max-w-5xl mx-auto text-center">
-            <h1 className="text-5xl md:text-6xl font-bold text-slate-900 leading-tight mb-6">
+            <h1 className="text-5xl md:text-6xl font-bold text-slate-900 dark:text-white leading-tight mb-6">
               AnimeJS + Editframe
             </h1>
-            <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto leading-relaxed">
               Create stunning animations in your videos with AnimeJS integration.
               Edit the text and colors below to see the changes in real-time.
             </p>
@@ -255,41 +257,41 @@ export default function AnimeJSPage() {
       </section>
 
       {/* Main Content */}
-      <section className="relative py-20 bg-white border-t border-gray-200">
+      <section className="relative py-20 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800">
         <div className="container mx-auto px-6">
           <div className="max-w-6xl mx-auto">
 
             {/* Getting Started */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-8 mb-16">
-              <h2 className="text-2xl font-bold text-slate-900 mb-3">Get Started</h2>
-              <p className="text-slate-600 mb-4 leading-relaxed">
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-100 dark:border-blue-900/50 rounded-xl p-8 mb-16">
+              <h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-3">Get Started</h2>
+              <p className="text-slate-600 dark:text-slate-300 mb-4 leading-relaxed">
                 Create a new project with the AnimeJS template using our developer sandbox:
               </p>
-              <pre className="!mt-0 bg-gray-900 text-gray-100 px-4 py-3 rounded-lg overflow-x-auto"><code className="language-bash">npm create @editframe@beta -- animejs</code></pre>
+              <pre className="!mt-0 bg-slate-900 dark:bg-slate-900/50 text-gray-100 dark:text-slate-100 px-4 py-3 rounded-lg overflow-x-auto border border-slate-800 dark:border-slate-800 shadow-lg dark:ring-1 dark:ring-slate-300/10"><code className="language-bash">npm create @editframe@beta -- animejs</code></pre>
             </div>
 
             {/* Section 1: SplitText + Stagger */}
             <div ref={section1Ref} className="mb-16">
-              <h3 className="text-3xl font-bold text-slate-900 mb-4">SplitText + Stagger Animation</h3>
+              <h3 className="text-3xl font-semibold text-slate-900 dark:text-white mb-4">SplitText + Stagger Animation</h3>
 
               {/* Section 1 Controls */}
               <div className="mb-4 flex gap-4">
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Text</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Text</label>
                   <input
                     type="text"
                     value={text1}
                     onChange={(e) => setText1(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-1.5 border border-slate-300/75 dark:border-slate-700/75 rounded-md bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500/85 transition-all duration-150"
                   />
                 </div>
                 <div className="w-48">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Color</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Color</label>
                   <input
                     type="color"
                     value={themeColor}
                     onChange={(e) => setThemeColor(e.target.value)}
-                    className="w-full h-10 rounded border border-gray-300 cursor-pointer"
+                    className="w-full h-10 rounded border border-slate-300/75 dark:border-slate-700/75 cursor-pointer"
                   />
                 </div>
               </div>
@@ -306,7 +308,7 @@ export default function AnimeJSPage() {
                   <TimelineControls target="section1-timegroup" />
                 </div>
                 <div className="flex-1">
-                  <pre className="!mt-0 rounded-lg overflow-hidden"><code className="language-javascript">{`const { chars } = splitText("h2", { chars: true });
+                  <pre className="!mt-0 rounded-lg overflow-hidden bg-slate-900 dark:bg-slate-900/50 border border-slate-800 dark:border-slate-800 shadow-lg dark:ring-1 dark:ring-slate-300/10"><code className="language-javascript">{`const { chars } = splitText("h2", { chars: true });
 
 const textAnimation = animate(chars, {
   y: [
@@ -327,16 +329,16 @@ timegroup.addFrameTask(({ ownCurrentTimeMs }) => {
 
             {/* Section 2: Timeline with Pyramid */}
             <div ref={section2Ref} className="mb-16">
-              <h3 className="text-3xl font-bold text-slate-900 mb-4">Timeline with Labels & Relative Positioning</h3>
+              <h3 className="text-3xl font-semibold text-slate-900 dark:text-white mb-4">Timeline with Labels & Relative Positioning</h3>
 
               {/* Section 2 Controls */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Background Color</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Background Color</label>
                 <input
                   type="color"
                   value={themeColor}
                   onChange={(e) => setThemeColor(e.target.value)}
-                  className="w-48 h-10 rounded border border-gray-300 cursor-pointer"
+                  className="w-48 h-10 rounded border border-slate-300/75 dark:border-slate-700/75 cursor-pointer"
                 />
               </div>
 
@@ -371,7 +373,7 @@ timegroup.addFrameTask(({ ownCurrentTimeMs }) => {
                   <TimelineControls target="section2-timegroup" />
                 </div>
                 <div className="flex-1">
-                  <pre className="!mt-0 rounded-lg overflow-hidden"><code className="language-javascript">{`const timeline = createTimeline({ 
+                  <pre className="!mt-0 rounded-lg overflow-hidden bg-slate-900 dark:bg-slate-900/50 border border-slate-800 dark:border-slate-800 shadow-lg dark:ring-1 dark:ring-slate-300/10"><code className="language-javascript">{`const timeline = createTimeline({ 
   defaults: { duration: 750 },
   autoplay: false
 });
@@ -391,26 +393,26 @@ timegroup.addFrameTask(({ ownCurrentTimeMs }) => {
 
             {/* Section 3: WAAPI Demo */}
             <div ref={section3Ref} className="mb-16">
-              <h3 className="text-3xl font-bold text-slate-900 mb-4">Web Animations API (WAAPI)</h3>
+              <h3 className="text-3xl font-semibold text-slate-900 dark:text-white mb-4">Web Animations API (WAAPI)</h3>
 
               {/* Section 3 Controls */}
               <div className="mb-4 flex gap-4">
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Text</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Text</label>
                   <input
                     type="text"
                     value={text3}
                     onChange={(e) => setText3(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-1.5 border border-slate-300/75 dark:border-slate-700/75 rounded-md bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500/85 transition-all duration-150"
                   />
                 </div>
                 <div className="w-48">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Color</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Color</label>
                   <input
                     type="color"
                     value={themeColor}
                     onChange={(e) => setThemeColor(e.target.value)}
-                    className="w-full h-10 rounded border border-gray-300 cursor-pointer"
+                    className="w-full h-10 rounded border border-slate-300/75 dark:border-slate-700/75 cursor-pointer"
                   />
                 </div>
               </div>
@@ -427,7 +429,7 @@ timegroup.addFrameTask(({ ownCurrentTimeMs }) => {
                   <TimelineControls target="section3-timegroup" />
                 </div>
                 <div className="flex-1">
-                  <pre className="!mt-0 rounded-lg overflow-hidden"><code className="language-javascript">{`const { chars } = splitText("h2", { chars: true });
+                  <pre className="!mt-0 rounded-lg overflow-hidden bg-slate-900 dark:bg-slate-900/50 border border-slate-800 dark:border-slate-800 shadow-lg dark:ring-1 dark:ring-slate-300/10"><code className="language-javascript">{`const { chars } = splitText("h2", { chars: true });
 
 waapi.animate(chars, {
   translate: "0 -2rem",
@@ -444,16 +446,16 @@ waapi.animate(chars, {
 
             {/* Section 4: Motion Path + SVG */}
             <div ref={section4Ref} className="mb-16">
-              <h3 className="text-3xl font-bold text-slate-900 mb-4">SVG Motion Path + Line Drawing</h3>
+              <h3 className="text-3xl font-semibold text-slate-900 dark:text-white mb-4">SVG Motion Path + Line Drawing</h3>
 
               {/* Section 4 Controls */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Background Color</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Background Color</label>
                 <input
                   type="color"
                   value={themeColor}
                   onChange={(e) => setThemeColor(e.target.value)}
-                  className="w-48 h-10 rounded border border-gray-300 cursor-pointer"
+                  className="w-48 h-10 rounded border border-slate-300/75 dark:border-slate-700/75 cursor-pointer"
                 />
               </div>
 
@@ -488,7 +490,7 @@ waapi.animate(chars, {
                   <TimelineControls target="section4-timegroup" />
                 </div>
                 <div className="flex-1">
-                  <pre className="!mt-0 rounded-lg overflow-hidden"><code className="language-javascript">{`const carAnimation = animate(".car", {
+                  <pre className="!mt-0 rounded-lg overflow-hidden bg-slate-900 dark:bg-slate-900/50 border border-slate-800 dark:border-slate-800 shadow-lg dark:ring-1 dark:ring-slate-300/10"><code className="language-javascript">{`const carAnimation = animate(".car", {
   ...svg.createMotionPath("#suzuka"),
   ease: "linear",
   duration: 5000,

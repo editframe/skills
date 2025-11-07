@@ -153,11 +153,17 @@ export const ResourceIndexWrapper = ({
   const { TableHeader } = ResourceModules[resourceType].index;
 
   return (
-    <>
-      {TableHeader && <TableHeader orgId={orgId} />}
-      <PaginatedTable {...tableProps} />
+    <div className="space-y-3 pt-3">
+      {TableHeader && (
+        <div>
+          <TableHeader orgId={orgId} />
+        </div>
+      )}
+      <div className="w-full">
+        <PaginatedTable {...tableProps} />
+      </div>
       <Outlet />
-    </>
+    </div>
   );
 };
 
