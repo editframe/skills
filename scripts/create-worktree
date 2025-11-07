@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+# Create a new worktree for a branch
+# Run from main worktree
+
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+PROJECT_ROOT="$SCRIPT_DIR/.."
+
+# Check for branch name argument
+if [ -z "$1" ]; then
+  echo "Error: Branch name required" >&2
+  echo "Usage: $0 <branch-name>" >&2
+  exit 1
+fi
+
+BRANCH_NAME="$1"
+
+# Check if we're in a git repository
+if ! git rev-parse --git-dir > /dev/null 2>&1; then
+  echo "Error: Not in a git repository" >&2
+  exit 1
+fi
+
+# Get current worktree root
+CURRENT_ROOT=$(git rev-parse --show-toplevel)
+
+# Check if we're in main worktree (should be)
+CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || git symbolic-ref --short HEAD 2>/dev/null)
+if [ "$CURRENT_BRANCH" != "main" ] && [ "$CURRENT_BRANCH" != "master" ]; then
+  echo "Warning: Not on main/master branch. Creating worktree from current branch: $CURRENT_BRANCH" >&2
+fi
+
+# Sanitize branch name function (from worktree-config)
+sanitize_branch_name() {
+  local name="$1"
+  name=$(echo "$name" | tr '[:upper:]' '[:lower:]')
+  name=$(echo "$name" | sed 's/[^a-z0-9]/-/g')
+  name=$(echo "$name" | sed 's/^-\+//; s/-\+$//')
+  name=$(echo "$name" | sed 's/-\+/-/g')
+  name=$(echo "$name" | cut -c1-63)
+  name=$(echo "$name" | sed 's/-$//')
+  
+  if [ -z "$name" ] || ! echo "$name" | grep -q '^[a-z0-9]'; then
+    echo "Error: Invalid branch name after sanitization: '$BRANCH_NAME' -> '$name'" >&2
+    exit 1
+  fi
+  
+  echo "$name"
+}
+
+SANITIZED_BRANCH=$(sanitize_branch_name "$BRANCH_NAME")
+
+# Determine worktree parent directory (monorepo parent)
+WORKTREE_PARENT=$(dirname "$CURRENT_ROOT")
+WORKTREE_DIR="$WORKTREE_PARENT/editframe-${BRANCH_NAME}"
+
+# Check if worktree already exists
+if [ -d "$WORKTREE_DIR" ]; then
+  echo "Error: Worktree directory already exists: $WORKTREE_DIR" >&2
+  exit 1
+fi
+
+# Store original branch to restore later
+ORIGINAL_BRANCH="$CURRENT_BRANCH"
+NEED_RESTORE=false
+
+# Check if branch exists
+if git show-ref --verify --quiet "refs/heads/${BRANCH_NAME}"; then
+  echo "📦 Using existing branch: $BRANCH_NAME"
+else
+  echo "📦 Creating new branch: $BRANCH_NAME"
+  NEED_RESTORE=true
+  # Create branch from current branch (or main/master if detached)
+  if [ -z "$CURRENT_BRANCH" ] || [ "$CURRENT_BRANCH" = "HEAD" ]; then
+    # Detached HEAD, use main/master
+    git checkout -b "$BRANCH_NAME" main 2>/dev/null || git checkout -b "$BRANCH_NAME" master 2>/dev/null || {
+      echo "Error: Could not create branch. Ensure main or master branch exists." >&2
+      exit 1
+    }
+    ORIGINAL_BRANCH="main"
+  else
+    git checkout -b "$BRANCH_NAME"
+  fi
+fi
+
+# Create worktree
+echo "🌳 Creating worktree at: $WORKTREE_DIR"
+git worktree add "$WORKTREE_DIR" "$BRANCH_NAME"
+
+# Restore original branch in main worktree if we changed it
+if [ "$NEED_RESTORE" = true ] && [ -n "$ORIGINAL_BRANCH" ] && [ "$ORIGINAL_BRANCH" != "HEAD" ]; then
+  git checkout "$ORIGINAL_BRANCH" > /dev/null 2>&1 || true
+fi
+
+# Verify worktree structure
+if [ ! -d "$WORKTREE_DIR/elements" ] || [ ! -d "$WORKTREE_DIR/telecine" ] || [ ! -d "$WORKTREE_DIR/scripts" ]; then
+  echo "Warning: Worktree structure incomplete. Expected elements/, telecine/, scripts/" >&2
+fi
+
+# Copy native build artifacts
+echo "📦 Copying native build artifacts..."
+if [ -f "$WORKTREE_DIR/telecine/scripts/copy-native-build" ]; then
+  cd "$WORKTREE_DIR/telecine"
+  ./scripts/copy-native-build || {
+    echo "Warning: Failed to copy some build artifacts. You may need to rebuild." >&2
+  }
+  cd "$CURRENT_ROOT"
+else
+  echo "Warning: copy-native-build script not found. Skipping artifact copy." >&2
+fi
+
+# Calculate domain and docker project names
+if [ "$BRANCH_NAME" = "main" ] || [ "$BRANCH_NAME" = "master" ]; then
+  DOMAIN="main.localhost"
+  TELECINE_DOCKER="telecine"
+  ELEMENTS_DOCKER="ef-elements"
+else
+  DOMAIN="${SANITIZED_BRANCH}.localhost"
+  TELECINE_DOCKER="telecine-${SANITIZED_BRANCH}"
+  ELEMENTS_DOCKER="ef-elements-${SANITIZED_BRANCH}"
+fi
+
+# Display summary
+echo ""
+echo "✅ Worktree created successfully!"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "   Branch:        $BRANCH_NAME"
+echo "   Worktree:      $WORKTREE_DIR"
+echo "   Domain:        http://${DOMAIN}:3000 (telecine)"
+echo "   Domain:        http://${DOMAIN}:4321 (elements)"
+echo "   Docker:        $TELECINE_DOCKER (telecine)"
+echo "   Docker:        $ELEMENTS_DOCKER (elements)"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "Next steps:"
+echo "  1. cd $WORKTREE_DIR"
+echo "  2. Make your changes and commit"
+echo "  3. ./scripts/merge-worktree  (when ready to merge)"
+echo "  4. ./scripts/remove-worktree (after merging)"
+

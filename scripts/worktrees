@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+# List all git worktrees with their configuration
+# Run from main worktree
+
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+PROJECT_ROOT="$SCRIPT_DIR/.."
+
+# Check if we're in a git repository
+if ! git rev-parse --git-dir > /dev/null 2>&1; then
+  echo "Error: Not in a git repository" >&2
+  exit 1
+fi
+
+# Find main worktree
+MAIN_WORKTREE=$(git worktree list | grep -E '\[main\]|\[master\]' | awk '{print $1}' | head -1)
+if [ -z "$MAIN_WORKTREE" ]; then
+  # Fallback: use current worktree if it's main/master branch
+  BRANCH=$(git branch --show-current 2>/dev/null || git symbolic-ref --short HEAD 2>/dev/null)
+  if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
+    MAIN_WORKTREE=$(git rev-parse --show-toplevel)
+  fi
+fi
+
+if [ -z "$MAIN_WORKTREE" ]; then
+  echo "Error: Could not find main worktree" >&2
+  exit 1
+fi
+
+# Sanitize branch name function (from worktree-config)
+sanitize_branch_name() {
+  local name="$1"
+  name=$(echo "$name" | tr '[:upper:]' '[:lower:]')
+  name=$(echo "$name" | sed 's/[^a-z0-9]/-/g')
+  name=$(echo "$name" | sed 's/^-\+//; s/-\+$//')
+  name=$(echo "$name" | sed 's/-\+/-/g')
+  name=$(echo "$name" | cut -c1-63)
+  name=$(echo "$name" | sed 's/-$//')
+  echo "$name"
+}
+
+# Check merge status function
+is_merged() {
+  local branch="$1"
+  cd "$MAIN_WORKTREE"
+  git checkout main > /dev/null 2>&1 || git checkout master > /dev/null 2>&1
+  git branch --merged | grep -q "^\s*${branch}$" || git branch --merged | grep -q "^\s*\*.*${branch}$"
+}
+
+echo "📋 Git Worktrees"
+echo ""
+
+# Print header
+printf "%-20s %-50s %-30s %-20s\n" "BRANCH" "PATH" "DOMAIN" "STATUS"
+printf "%-20s %-50s %-30s %-20s\n" "$(printf '%.0s-' {1..20})" "$(printf '%.0s-' {1..50})" "$(printf '%.0s-' {1..30})" "$(printf '%.0s-' {1..20})"
+
+# Process worktree list --porcelain output
+# Use process substitution to avoid subshell issues
+WORKTREE_COUNT=0
+WORKTREE_PATH=""
+
+while IFS= read -r line; do
+  if [[ "$line" =~ ^worktree[[:space:]]+(.+)$ ]]; then
+    WORKTREE_PATH="${BASH_REMATCH[1]}"
+  elif [[ "$line" =~ ^branch[[:space:]]+refs/heads/(.+)$ ]]; then
+    BRANCH_NAME="${BASH_REMATCH[1]}"
+    
+    # Skip main/master branches (they're not worktrees)
+    if [ "$BRANCH_NAME" != "main" ] && [ "$BRANCH_NAME" != "master" ]; then
+      WORKTREE_COUNT=$((WORKTREE_COUNT + 1))
+      
+      # Get domain and docker project name
+      SANITIZED=$(sanitize_branch_name "$BRANCH_NAME")
+      DOMAIN="${SANITIZED}.localhost"
+      DOCKER_PROJECT="telecine-${SANITIZED}"
+      
+      # Check merge status
+      if is_merged "$BRANCH_NAME"; then
+        STATUS="✅ merged"
+      else
+        STATUS="⚠️  not merged"
+      fi
+      
+      # Truncate path if too long
+      DISPLAY_PATH="$WORKTREE_PATH"
+      if [ ${#DISPLAY_PATH} -gt 48 ]; then
+        DISPLAY_PATH="...${DISPLAY_PATH: -45}"
+      fi
+      
+      printf "%-20s %-50s %-30s %-20s\n" "$BRANCH_NAME" "$DISPLAY_PATH" "$DOMAIN" "$STATUS"
+    fi
+    WORKTREE_PATH=""
+  fi
+done < <(git worktree list --porcelain)
+
+if [ "$WORKTREE_COUNT" -eq 0 ]; then
+  echo "No worktrees found (only main/master)"
+fi
+
+echo ""
+echo "💡 To merge a worktree: cd <worktree-path> && ./scripts/merge-worktree"
+echo "💡 To remove a worktree: cd <worktree-path> && ./scripts/remove-worktree"
+

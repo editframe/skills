@@ -181,6 +181,169 @@ cd <worktree-directory>
 curl -H "Host: <branch-name>.localhost" http://localhost:3000
 ```
 
+## Parallel Worktree Management
+
+### Overview
+
+The monorepo supports parallel worktrees for branch-based development. Each worktree is a single directory containing the full monorepo structure (`elements/`, `telecine/`, `scripts/`), allowing you to work on multiple branches simultaneously in separate IDE instances.
+
+### Worktree Structure
+
+Each worktree follows this structure:
+```
+../editframe-<branch-name>/
+  ├── elements/
+  ├── telecine/
+  └── scripts/
+```
+
+### Workflow
+
+#### 1. Create Worktree (from main worktree)
+
+```bash
+# In main worktree
+./scripts/create-worktree feature-name
+```
+
+This will:
+- Create branch `feature-name` if it doesn't exist (from current branch)
+- Create worktree at `../editframe-feature-name`
+- Copy native build artifacts from main worktree for fast startup
+- Display configuration summary
+
+#### 2. List All Worktrees (from main worktree)
+
+```bash
+# In main worktree
+./scripts/worktrees
+```
+
+Shows all worktrees with:
+- Branch name
+- Worktree path
+- Domain name
+- Merge status (merged or not merged)
+
+#### 3. Work in Worktree
+
+```bash
+# Switch to worktree
+cd ../editframe-feature-name
+
+# Open in separate IDE instance (manual)
+# Cursor: File > Open Folder > ../editframe-feature-name
+# VS Code: code ../editframe-feature-name
+
+# Make changes, commit, etc.
+# Services accessible at http://feature-name.localhost:3000
+```
+
+#### 4. Merge Back to Main (from worktree)
+
+```bash
+# In worktree directory
+cd ../editframe-feature-name
+./scripts/merge-worktree
+```
+
+This will:
+- Switch to main worktree
+- Merge `feature-name` into `main` (or `master`)
+- Report conflicts if merge fails (you'll need to resolve manually)
+- Return to worktree directory
+
+#### 5. Remove Worktree (from worktree)
+
+```bash
+# In worktree directory
+cd ../editframe-feature-name
+./scripts/remove-worktree
+```
+
+This will:
+- Verify branch is merged (fails if not merged)
+- Stop Docker containers
+- Remove Docker resources (volumes, networks)
+- Remove git worktree
+- Delete branch from main
+
+**Note**: Removal will fail if the branch hasn't been merged. Merge first using `./scripts/merge-worktree`.
+
+### Opening Worktrees in Separate IDE Instances
+
+Each worktree can be opened in its own IDE instance for parallel development:
+
+**Cursor:**
+1. File > Open Folder
+2. Navigate to `../editframe-<branch-name>`
+3. Open in new window
+
+**VS Code:**
+```bash
+code ../editframe-feature-name
+```
+
+**CLion/IntelliJ:**
+1. File > Open
+2. Select `../editframe-<branch-name>`
+3. Choose "Open in New Window"
+
+### Best Practices
+
+1. **Always merge before removing**: Use `./scripts/merge-worktree` before `./scripts/remove-worktree`
+2. **Keep main worktree clean**: Don't develop in main worktree, use it for merging and management
+3. **One IDE per worktree**: Open each worktree in a separate IDE instance for true parallel development
+4. **Check status regularly**: Use `./scripts/worktrees` to see all worktrees and their merge status
+5. **Traefik runs in main**: Only start Traefik in main worktree, worktrees connect to it automatically
+
+### Example Workflow
+
+```bash
+# 1. Create worktree from main
+cd /path/to/monorepo
+./scripts/create-worktree feature-auth
+# Output: Worktree created at ../editframe-feature-auth
+
+# 2. Open in IDE (separate instance)
+cd ../editframe-feature-auth
+# Open in Cursor/VS Code
+
+# 3. Develop and commit
+git add .
+git commit -m "Add authentication feature"
+
+# 4. Merge back to main
+./scripts/merge-worktree
+# Output: Successfully merged 'feature-auth' into 'main'
+
+# 5. Remove worktree
+./scripts/remove-worktree
+# Output: Worktree removal complete!
+```
+
+### Troubleshooting Parallel Worktrees
+
+**Worktree creation fails:**
+- Ensure you're in main worktree when creating
+- Check that branch name is valid (no special characters that break directory names)
+- Verify parent directory is writable
+
+**Merge conflicts:**
+- Resolve conflicts in main worktree after merge fails
+- Complete merge manually: `cd <main-worktree> && git add . && git commit`
+- Then remove worktree normally
+
+**Cannot remove worktree:**
+- Ensure branch is merged: `./scripts/worktrees` shows merge status
+- Merge first: `./scripts/merge-worktree`
+- If branch is already merged but script fails, check git status manually
+
+**Docker resources not cleaned up:**
+- Manually stop containers: `cd <worktree>/telecine && ./scripts/docker-compose down`
+- Check for orphaned networks: `docker network ls | grep <branch-name>`
+- Remove manually if needed: `docker network rm <network-name>`
+
 ## Troubleshooting
 
 ### Domain Not Resolving
