@@ -164,17 +164,21 @@ for file in $(echo "$compose_files" | awk 'NF && !seen[$0]++'); do
         # Only process if file contains WORKTREE_ID (to avoid unnecessary processing)
         # envsubst doesn't handle ${VAR:-default} syntax, so replace it first
         if grep -q '\${WORKTREE_ID' "$file" 2>/dev/null; then
-            processed_file="$TEMP_DIR/$(basename "$file" | sed 's/[^a-zA-Z0-9]/_/g')"
+            # Create unique temp file name based on relative path to avoid collisions
+            # Replace slashes and special chars with underscores
+            unique_name=$(echo "$rel_file" | sed 's/[^a-zA-Z0-9]/_/g')
+            processed_file="$TEMP_DIR/${unique_name}"
             # Replace ${WORKTREE_ID:-main} with the actual WORKTREE_ID value
             # Use a different delimiter to avoid issues with $ and {} characters
             sed "s|\${WORKTREE_ID:-main}|${WORKTREE_ID}|g" "$file" > "$processed_file"
+            # Use absolute path for processed file to avoid path resolution issues
             if [ -z "$relative_compose_flags" ]; then
                 relative_compose_flags="-f $processed_file"
             else
                 relative_compose_flags="$relative_compose_flags -f $processed_file"
             fi
         else
-            # File doesn't need processing, use original
+            # File doesn't need processing, use original relative path
             if [ -z "$relative_compose_flags" ]; then
                 relative_compose_flags="-f $rel_file"
             else
