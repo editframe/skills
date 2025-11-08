@@ -21,6 +21,6 @@ services:
       - traefik-shared
     labels:
       - traefik.enable=true
-      - traefik.http.routers.playwright.rule=Host(`playwright.${WORKTREE_DOMAIN:-localhost}`)
-      - traefik.http.routers.playwright.entrypoints=web
-      - traefik.http.services.playwright.loadbalancer.server.port=4444
+      - traefik.http.routers.playwright-${WORKTREE_ID:-main}.rule=Host(`playwright.${WORKTREE_DOMAIN:-localhost}`)
+      - traefik.http.routers.playwright-${WORKTREE_ID:-main}.entrypoints=web
+      - traefik.http.services.playwright-${WORKTREE_ID:-main}.loadbalancer.server.port=4444

@@ -15,9 +15,9 @@ services:
       - BUFFER_SIZE=50000
     labels:
       - traefik.enable=true
-      - traefik.http.routers.otel-relay.rule=Host(`otel.${WORKTREE_DOMAIN:-localhost}`)
-      - traefik.http.routers.otel-relay.entrypoints=web
-      - traefik.http.services.otel-relay.loadbalancer.server.port=4319
+      - traefik.http.routers.otel-relay-${WORKTREE_ID:-main}.rule=Host(`otel.${WORKTREE_DOMAIN:-localhost}`)
+      - traefik.http.routers.otel-relay-${WORKTREE_ID:-main}.entrypoints=web
+      - traefik.http.services.otel-relay-${WORKTREE_ID:-main}.loadbalancer.server.port=4319
     networks:
       - default
       - traefik-shared

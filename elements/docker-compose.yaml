@@ -36,10 +36,10 @@ services:
       - traefik-shared
     labels:
       traefik.enable: true
-      traefik.http.routers.elements-dev.rule: "Host(`${WORKTREE_DOMAIN}`)"
-      traefik.http.routers.elements-dev.entrypoints: elements
-      traefik.http.routers.elements-dev.service: elements-dev
-      traefik.http.services.elements-dev.loadbalancer.server.port: 4321
+      traefik.http.routers.elements-dev-${WORKTREE_ID:-main}.rule: "Host(`${WORKTREE_DOMAIN}`)"
+      traefik.http.routers.elements-dev-${WORKTREE_ID:-main}.entrypoints: elements
+      traefik.http.routers.elements-dev-${WORKTREE_ID:-main}.service: elements-dev-${WORKTREE_ID:-main}
+      traefik.http.services.elements-dev-${WORKTREE_ID:-main}.loadbalancer.server.port: 4321
 
   ci-runner:
     build:

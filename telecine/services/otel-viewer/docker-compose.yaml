@@ -14,9 +14,9 @@ services:
       - VITE_OTEL_RELAY_URL=http://localhost:4319
     labels:
       - traefik.enable=true
-      - traefik.http.routers.otel-viewer.rule=Host(`otel-viewer.${WORKTREE_DOMAIN:-localhost}`)
-      - traefik.http.routers.otel-viewer.entrypoints=web
-      - traefik.http.services.otel-viewer.loadbalancer.server.port=4320
+      - traefik.http.routers.otel-viewer-${WORKTREE_ID:-main}.rule=Host(`otel-viewer.${WORKTREE_DOMAIN:-localhost}`)
+      - traefik.http.routers.otel-viewer-${WORKTREE_ID:-main}.entrypoints=web
+      - traefik.http.services.otel-viewer-${WORKTREE_ID:-main}.loadbalancer.server.port=4320
     depends_on:
       - runner
     networks:

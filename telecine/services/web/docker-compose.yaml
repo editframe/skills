@@ -29,21 +29,21 @@ services:
     labels:
       traefik.enable: true
 
-      traefik.http.routers.web-chore-gitignore-cleanup-32jwk.rule: "Host(`${WORKTREE_DOMAIN:-localhost}`) || Host(`host.docker.internal`)"
-      traefik.http.routers.web-chore-gitignore-cleanup-32jwk.entrypoints: web
-      traefik.http.routers.web-chore-gitignore-cleanup-32jwk.service: web-chore-gitignore-cleanup-32jwk
-      traefik.http.routers.web-chore-gitignore-cleanup-32jwk.priority: 1
-      traefik.http.services.web-chore-gitignore-cleanup-32jwk.loadbalancer.server.port: 3000
+      traefik.http.routers.web-${WORKTREE_ID:-main}.rule: "Host(`${WORKTREE_DOMAIN:-localhost}`) || Host(`host.docker.internal`)"
+      traefik.http.routers.web-${WORKTREE_ID:-main}.entrypoints: web
+      traefik.http.routers.web-${WORKTREE_ID:-main}.service: web-${WORKTREE_ID:-main}
+      traefik.http.routers.web-${WORKTREE_ID:-main}.priority: 1
+      traefik.http.services.web-${WORKTREE_ID:-main}.loadbalancer.server.port: 3000
 
-      traefik.http.routers.web24678-chore-gitignore-cleanup-32jwk.rule: Host(`${WORKTREE_DOMAIN:-localhost}`)
-      traefik.http.routers.web24678-chore-gitignore-cleanup-32jwk.entrypoints: port24678
-      traefik.http.routers.web24678-chore-gitignore-cleanup-32jwk.service: web24678-chore-gitignore-cleanup-32jwk
-      traefik.http.services.web24678-chore-gitignore-cleanup-32jwk.loadbalancer.server.port: 24678
+      traefik.http.routers.web24678-${WORKTREE_ID:-main}.rule: Host(`${WORKTREE_DOMAIN:-localhost}`)
+      traefik.http.routers.web24678-${WORKTREE_ID:-main}.entrypoints: port24678
+      traefik.http.routers.web24678-${WORKTREE_ID:-main}.service: web24678-${WORKTREE_ID:-main}
+      traefik.http.services.web24678-${WORKTREE_ID:-main}.loadbalancer.server.port: 24678
 
-      traefik.http.routers.web3001-chore-gitignore-cleanup-32jwk.rule: Host(`${WORKTREE_DOMAIN:-localhost}`)
-      traefik.http.routers.web3001-chore-gitignore-cleanup-32jwk.entrypoints: port3001
-      traefik.http.routers.web3001-chore-gitignore-cleanup-32jwk.service: web3001-chore-gitignore-cleanup-32jwk
-      traefik.http.services.web3001-chore-gitignore-cleanup-32jwk.loadbalancer.server.port: 3001
+      traefik.http.routers.web3001-${WORKTREE_ID:-main}.rule: Host(`${WORKTREE_DOMAIN:-localhost}`)
+      traefik.http.routers.web3001-${WORKTREE_ID:-main}.entrypoints: port3001
+      traefik.http.routers.web3001-${WORKTREE_ID:-main}.service: web3001-${WORKTREE_ID:-main}
+      traefik.http.services.web3001-${WORKTREE_ID:-main}.loadbalancer.server.port: 3001
 
 networks:
   traefik-shared:

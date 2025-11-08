@@ -18,6 +18,6 @@ services:
     labels:
       - traefik.enable=true
       # Web UI via HTTP routing (same port for all worktrees!)
-      - traefik.http.routers.mailhog-web.rule=Host(`mailhog.${WORKTREE_DOMAIN:-localhost}`)
-      - traefik.http.routers.mailhog-web.entrypoints=web
-      - traefik.http.services.mailhog-web.loadbalancer.server.port=8025
+      - traefik.http.routers.mailhog-web-${WORKTREE_ID:-main}.rule=Host(`mailhog.${WORKTREE_DOMAIN:-localhost}`)
+      - traefik.http.routers.mailhog-web-${WORKTREE_ID:-main}.entrypoints=web
+      - traefik.http.services.mailhog-web-${WORKTREE_ID:-main}.loadbalancer.server.port=8025

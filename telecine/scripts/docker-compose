@@ -141,7 +141,15 @@ fi
 # The compose files use ${PWD}/.env which expects to be run from the telecine directory
 cd "$TELECINE_ROOT"
 
-# Rebuild compose_flags with relative paths from TELECINE_ROOT
+# Process compose files with envsubst to substitute WORKTREE_ID in label keys
+# Docker Compose doesn't substitute variables in YAML keys, so we need to do it manually
+TEMP_DIR=$(mktemp -d)
+trap "rm -rf $TEMP_DIR" EXIT
+
+# Export WORKTREE_ID for envsubst (ensure it has a default)
+export WORKTREE_ID="${WORKTREE_ID:-main}"
+
+# Rebuild compose_flags with processed files
 relative_compose_flags=""
 for file in $(echo "$compose_files" | awk 'NF && !seen[$0]++'); do
     if [ -n "$file" ] && [ -f "$file" ]; then
@@ -151,10 +159,27 @@ for file in $(echo "$compose_files" | awk 'NF && !seen[$0]++'); do
         if [ "$rel_file" = "$file" ]; then
             rel_file="$file"
         fi
-        if [ -z "$relative_compose_flags" ]; then
-            relative_compose_flags="-f $rel_file"
+        
+        # Process file with envsubst to substitute WORKTREE_ID in keys
+        # Only process if file contains WORKTREE_ID (to avoid unnecessary processing)
+        # envsubst doesn't handle ${VAR:-default} syntax, so replace it first
+        if grep -q '\${WORKTREE_ID' "$file" 2>/dev/null; then
+            processed_file="$TEMP_DIR/$(basename "$file" | sed 's/[^a-zA-Z0-9]/_/g')"
+            # Replace ${WORKTREE_ID:-main} with the actual WORKTREE_ID value
+            # Use a different delimiter to avoid issues with $ and {} characters
+            sed "s|\${WORKTREE_ID:-main}|${WORKTREE_ID}|g" "$file" > "$processed_file"
+            if [ -z "$relative_compose_flags" ]; then
+                relative_compose_flags="-f $processed_file"
+            else
+                relative_compose_flags="$relative_compose_flags -f $processed_file"
+            fi
         else
-            relative_compose_flags="$relative_compose_flags -f $rel_file"
+            # File doesn't need processing, use original
+            if [ -z "$relative_compose_flags" ]; then
+                relative_compose_flags="-f $rel_file"
+            else
+                relative_compose_flags="$relative_compose_flags -f $rel_file"
+            fi
         fi
     fi
 done
