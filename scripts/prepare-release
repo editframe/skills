@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+PROJECT_ROOT="$SCRIPT_DIR/.."
+
+if [ -z "$1" ]; then
+  echo "Usage: $0 <version>"
+  echo "Example: $0 0.27.0"
+  exit 1
+fi
+
+VERSION="$1"
+TAG_NAME="v${VERSION}"
+
+# Ensure we're in the monorepo root
+cd "$PROJECT_ROOT"
+
+# Check if gh CLI is installed
+if ! command -v gh &> /dev/null; then
+  echo "Error: GitHub CLI (gh) is required but not installed."
+  echo "Install it from: https://cli.github.com/"
+  exit 1
+fi
+
+# Check if gh is authenticated
+if ! gh auth status &> /dev/null; then
+  echo "Error: GitHub CLI is not authenticated."
+  echo "Run: gh auth login"
+  exit 1
+fi
+
+# Get the repository name from git remote (elements remote)
+cd "$PROJECT_ROOT/elements"
+REPO_NAME=$(git remote get-url origin 2>/dev/null | sed -E 's/.*github.com[:/]([^/]+\/[^/]+)(\.git)?$/\1/' || echo "editframe/elements")
+echo "Detected repository: $REPO_NAME"
+cd "$PROJECT_ROOT"
+
+# Step 1: Run prepare-release in elements
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "Step 1: Running prepare-release in elements"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+cd "$PROJECT_ROOT/elements"
+"$PROJECT_ROOT/elements/scripts/prepare-release" "$VERSION"
+
+# Step 2: Wait for GitHub Actions workflow to complete
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "Step 2: Waiting for GitHub Actions workflow to complete"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+cd "$PROJECT_ROOT/elements"
+
+# Wait a moment for the workflow to be triggered
+echo "Waiting for workflow to be triggered..."
+sleep 3
+
+# Wait for the workflow to complete
+# Use the workflow file name which is more reliable than the display name
+echo "Waiting for workflow 'release.yaml' to complete..."
+echo "This may take several minutes..."
+
+# Use gh run watch with the workflow file
+# It will wait for the most recent run of this workflow
+if ! gh run watch --workflow=release.yaml --exit-status --repo="$REPO_NAME"; then
+  echo ""
+  echo "Error: GitHub Actions workflow failed!"
+  echo "Check the workflow status at: https://github.com/$REPO_NAME/actions/workflows/release.yaml"
+  exit 1
+fi
+
+echo "✅ GitHub Actions workflow completed successfully"
+
+# Step 3: Update editframe packages in telecine
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "Step 3: Updating @editframe packages in telecine"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+cd "$PROJECT_ROOT/telecine"
+"$PROJECT_ROOT/telecine/scripts/update-editframe-packages" "$VERSION"
+
+# Step 4: Run tests in telecine
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "Step 4: Running tests in telecine"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+cd "$PROJECT_ROOT/telecine"
+
+# Check if working tree is clean before running tests
+if ! git diff-index --quiet HEAD --; then
+  echo "Warning: Working tree has uncommitted changes. Staging them for commit..."
+  git add package.json package-lock.json
+fi
+
+# Run tests using the telecine test script
+"$PROJECT_ROOT/telecine/scripts/test" --run
+
+if [ $? -ne 0 ]; then
+  echo "Error: Telecine tests failed!"
+  exit 1
+fi
+
+echo "✅ Telecine tests passed"
+
+# Step 5: Commit and push changes to main
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "Step 5: Committing and pushing changes to main"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+cd "$PROJECT_ROOT/telecine"
+
+# Check if there are changes to commit
+if git diff-index --quiet HEAD --; then
+  echo "No changes to commit in telecine"
+else
+  # Ensure we're on main branch
+  CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || git symbolic-ref --short HEAD 2>/dev/null)
+  if [ "$CURRENT_BRANCH" != "main" ] && [ "$CURRENT_BRANCH" != "master" ]; then
+    echo "Warning: Not on main branch (currently on $CURRENT_BRANCH)"
+    echo "Switching to main branch..."
+    git checkout main
+  fi
+
+  git commit -m "Update @editframe packages to v${VERSION}"
+  git push
+  echo "✅ Changes committed and pushed to main"
+fi
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "✅ Release preparation complete!"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "Version: $VERSION"
+echo "Tag: $TAG_NAME"
+echo "Packages published to npm"
+echo "Telecine updated and tested"
+echo "Changes pushed to main"
+
