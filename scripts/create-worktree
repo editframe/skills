@@ -149,6 +149,18 @@ if [ $ENV_COPIED -eq 0 ]; then
   echo "   ℹ️  No .env files found to copy"
 fi
 
+# Copy dev-projects directory (gitignored, needed for dev server)
+if [ -d "$CURRENT_ROOT/elements/dev-projects" ]; then
+  if [ ! -d "$WORKTREE_DIR/elements/dev-projects" ]; then
+    mkdir -p "$WORKTREE_DIR/elements/dev-projects"
+  fi
+  if cp -r "$CURRENT_ROOT/elements/dev-projects"/* "$WORKTREE_DIR/elements/dev-projects/" 2>/dev/null; then
+    echo "   ✅ elements/dev-projects (gitignored files)"
+  else
+    echo "   ⚠️  Failed to copy elements/dev-projects (may be empty)" >&2
+  fi
+fi
+
 echo ""
 
 # Start Docker resources (this creates volumes, then we can copy node_modules)
