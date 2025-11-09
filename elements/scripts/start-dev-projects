@@ -6,23 +6,38 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 # Ensure dev-projects container is running
 "${SCRIPT_DIR}"/docker-compose up -d dev-projects > /dev/null 2>&1
 
-# Wait for container to be ready
-sleep 1
-
-# Get the container ID
-CONTAINER=$("${SCRIPT_DIR}"/docker-compose ps -q dev-projects)
+# Wait for container to be ready and get container ID
+CONTAINER=""
+for i in {1..10}; do
+  CONTAINER=$("${SCRIPT_DIR}"/docker-compose ps -q dev-projects)
+  if [ -n "$CONTAINER" ]; then
+    # Check if container is running
+    if docker inspect "$CONTAINER" --format='{{.State.Status}}' 2>/dev/null | grep -q "running"; then
+      break
+    fi
+  fi
+  sleep 0.5
+done
 
 if [ -z "$CONTAINER" ]; then
   echo "Error: Failed to start dev-projects container" >&2
   exit 1
 fi
 
-# Verify the start.ts file exists in the container
-if ! docker exec "$CONTAINER" test -f /packages/dev-projects/start.ts; then
-  echo "Error: start.ts not found in dev-projects container" >&2
-  echo "   Expected: /packages/dev-projects/start.ts" >&2
-  exit 1
-fi
+# Wait for container to be fully ready and verify the start.ts file exists
+for i in {1..10}; do
+  if docker exec "$CONTAINER" test -f /packages/dev-projects/start.ts 2>/dev/null; then
+    break
+  fi
+  if [ $i -eq 10 ]; then
+    echo "Error: start.ts not found in dev-projects container" >&2
+    echo "   Expected: /packages/dev-projects/start.ts" >&2
+    echo "   Container: $CONTAINER" >&2
+    docker exec "$CONTAINER" ls -la /packages/dev-projects/ 2>&1 | head -10
+    exit 1
+  fi
+  sleep 0.5
+done
 
 # Exec into the running container to start the dev server
 # Note: Port 4321 is exposed via Traefik, not directly
