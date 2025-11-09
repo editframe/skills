@@ -110,6 +110,32 @@ The monorepo acts as the primary working repository. Changes should be:
 
 **Important**: The monorepo structure means that `telecine/` and `elements/` directories are part of the root repository, but they should be synced with their respective remote repositories using the configured remotes.
 
+### Dev Examples and Worktrees
+
+When working in a worktree and creating new dev examples (e.g., in `elements/dev-projects/`), these files should be committed and merged into main along with the feature work:
+
+1. **Create dev examples** in your worktree as needed for development and testing
+2. **Commit dev examples** to your feature branch (use `git add -f` if `dev-projects/` is in `.gitignore`)
+3. **Merge to main** - dev examples are included in the merge along with feature code
+4. **Dev examples stay in main** - they become part of the shared development examples
+
+**Example workflow:**
+```bash
+# In worktree, create a new dev example
+cd elements/dev-projects
+# Create your-example.html
+
+# Force add if dev-projects is ignored
+git add -f elements/dev-projects/your-example.html
+git commit -m "feat: add your-example.html dev example"
+
+# Merge to main (dev example included)
+cd /path/to/main/worktree
+git merge feat/your-feature
+```
+
+**Note**: While `elements/dev-projects/` may be in `.gitignore` for local development, important dev examples that demonstrate features should be force-added and committed to main so they're available to all developers.
+
 ## Scripts Location
 
 - Root scripts: `/workspace/scripts/` - Delegates to telecine/elements scripts
