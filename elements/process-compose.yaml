@@ -3,8 +3,8 @@ processes:
     command: npx tsx scripts/start-host-chrome.ts
     ready_log_line: "Playwright wsEndpoint:"
   compose:
-    command: scripts/docker-compose up runner
-    ready_log_line: "Attaching to runner-1"
+    command: scripts/docker-compose up runner dev-projects
+    ready_log_line: "Attaching to"
     depends_on:
       host-chrome:
         condition: process_log_ready

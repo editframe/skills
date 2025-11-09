@@ -3,18 +3,20 @@ set -e
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-# Check if dev-projects container is already running
+# Ensure dev-projects container is running
+"${SCRIPT_DIR}"/docker-compose up -d dev-projects > /dev/null 2>&1
+
+# Wait for container to be ready
+sleep 1
+
+# Get the container ID
 CONTAINER=$("${SCRIPT_DIR}"/docker-compose ps -q dev-projects)
-if [ -n "$CONTAINER" ] && docker inspect "$CONTAINER" --format='{{.State.Status}}' 2>/dev/null | grep -q "running"; then
-  # Container is running, exec into it
-  docker exec -w /packages/dev-projects -e DEBUG="ef:*" "$CONTAINER" npx tsx start.ts
-else
-  # Container not running, create new one
-  # Note: Port 4321 is exposed via Traefik, not directly
-  "${SCRIPT_DIR}"/docker-compose \
-    run --rm \
-      -w /packages/dev-projects \
-      -e DEBUG="ef:*" \
-      dev-projects \
-        npx tsx start.ts
-fi 
+
+if [ -z "$CONTAINER" ]; then
+  echo "Error: Failed to start dev-projects container" >&2
+  exit 1
+fi
+
+# Exec into the running container to start the dev server
+# Note: Port 4321 is exposed via Traefik, not directly
+docker exec -w /packages/dev-projects -e DEBUG="ef:*" "$CONTAINER" npx tsx start.ts 
