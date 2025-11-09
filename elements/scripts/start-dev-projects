@@ -17,6 +17,13 @@ if [ -z "$CONTAINER" ]; then
   exit 1
 fi
 
+# Verify the start.ts file exists in the container
+if ! docker exec "$CONTAINER" test -f /packages/dev-projects/start.ts; then
+  echo "Error: start.ts not found in dev-projects container" >&2
+  echo "   Expected: /packages/dev-projects/start.ts" >&2
+  exit 1
+fi
+
 # Exec into the running container to start the dev server
 # Note: Port 4321 is exposed via Traefik, not directly
-docker exec -w /packages/dev-projects -e DEBUG="ef:*" "$CONTAINER" npx tsx start.ts 
+docker exec -w /packages/dev-projects -e DEBUG="ef:*" "$CONTAINER" npx tsx ./start.ts 
