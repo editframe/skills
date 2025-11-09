@@ -7,6 +7,7 @@ services:
       - "24678:24678"
       - "3001:3001"
       - "4321:4321"
+      - "4322:4322"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
@@ -21,6 +22,7 @@ services:
       - --entrypoints.port24678.address=:24678
       - --entrypoints.port3001.address=:3001
       - --entrypoints.elements.address=:4321
+      - --entrypoints.elements-test.address=:4322
       - --log.level=INFO
       - --accesslog
       - --entrypoints.web.transport.respondingTimeouts.readTimeout=0s

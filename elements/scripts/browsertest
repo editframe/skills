@@ -9,4 +9,10 @@ if [ -z "${VITEST_BROWSER_MODE}" ] && [ -f "${SCRIPT_DIR}/../.wsEndpoint.json" ]
   export VITEST_BROWSER_MODE=connect
 fi
 
+# Load worktree config to get WORKTREE_DOMAIN
+if [ -f "${SCRIPT_DIR}/worktree-config" ]; then
+  source "${SCRIPT_DIR}/worktree-config"
+  export WORKTREE_DOMAIN
+fi
+
 "${SCRIPT_DIR}"/npx vitest --config vitest.config.browser.ts --configLoader bundle "$@"
