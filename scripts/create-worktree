@@ -53,7 +53,7 @@ SANITIZED_BRANCH=$(sanitize_branch_name "$BRANCH_NAME")
 
 # Determine worktree parent directory (monorepo parent)
 WORKTREE_PARENT=$(dirname "$CURRENT_ROOT")
-WORKTREE_DIR="$WORKTREE_PARENT/editframe-${BRANCH_NAME}"
+WORKTREE_DIR="$WORKTREE_PARENT/editframe-${SANITIZED_BRANCH}"
 
 # Check if worktree already exists
 if [ -d "$WORKTREE_DIR" ]; then
