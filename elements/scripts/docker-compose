@@ -20,7 +20,37 @@ fi
 ELEMENTS_ROOT_HOST="$ELEMENTS_ROOT"
 export ELEMENTS_ROOT_HOST
 
-docker-compose \
-  --project-name "$WORKTREE_DOCKER_PROJECT_NAME" \
-  -f "${SCRIPT_DIR}"/../docker-compose.yaml \
-  "$@"
+# Export WORKTREE_ID for substitution (ensure it has a default)
+export WORKTREE_ID="${WORKTREE_ID:-main}"
+
+# Change to ELEMENTS_ROOT so that ${PWD}/.env resolves correctly in compose files
+# The compose files use ${PWD}/.env which expects to be run from the elements directory
+cd "$ELEMENTS_ROOT"
+
+# Process compose file with sed to substitute WORKTREE_ID in label keys
+# Docker Compose doesn't substitute variables in YAML keys, so we need to do it manually
+COMPOSE_FILE="docker-compose.yaml"
+
+# Check if file contains WORKTREE_ID (to avoid unnecessary processing)
+if grep -q '\${WORKTREE_ID' "$COMPOSE_FILE" 2>/dev/null; then
+    # Create temp file in the same directory so .env file resolution works
+    PROCESSED_FILE="${COMPOSE_FILE}.processed"
+    trap "rm -f $PROCESSED_FILE" EXIT
+    
+    # Replace ${WORKTREE_ID:-main} with the actual WORKTREE_ID value
+    sed "s|\${WORKTREE_ID:-main}|${WORKTREE_ID}|g" "$COMPOSE_FILE" > "$PROCESSED_FILE"
+    
+    docker-compose \
+      --project-name "$WORKTREE_DOCKER_PROJECT_NAME" \
+      -f "$PROCESSED_FILE" \
+      "$@"
+    
+    # Clean up processed file
+    rm -f "$PROCESSED_FILE"
+else
+    # File doesn't need processing, use original
+    docker-compose \
+      --project-name "$WORKTREE_DOCKER_PROJECT_NAME" \
+      -f "$COMPOSE_FILE" \
+      "$@"
+fi
