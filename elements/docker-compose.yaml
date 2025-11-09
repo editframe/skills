@@ -11,10 +11,21 @@ services:
       - ${ELEMENTS_ROOT_HOST:-${PWD}}:/packages
       - node_modules:/packages/node_modules
     stop_grace_period: 1s
-    ports:
-      - "63315:63315"
-      - "8794:8794" # Record-replay proxy server
+    # Don't expose ports directly - only accessible through Traefik
+    expose:
+      - "63315"
+      - "8794"
     command: ["sleep", "infinity"]
+    networks:
+      - default
+      - traefik-shared
+    labels:
+      traefik.enable: true
+      traefik.http.routers.elements-test-${WORKTREE_ID:-main}.rule: "Host(`${WORKTREE_DOMAIN}`)"
+      traefik.http.routers.elements-test-${WORKTREE_ID:-main}.entrypoints: elements
+      traefik.http.routers.elements-test-${WORKTREE_ID:-main}.service: elements-test-${WORKTREE_ID:-main}
+      traefik.http.routers.elements-test-${WORKTREE_ID:-main}.priority: 10
+      traefik.http.services.elements-test-${WORKTREE_ID:-main}.loadbalancer.server.port: 63315
 
   dev-projects:
     build:
@@ -39,6 +50,7 @@ services:
       traefik.http.routers.elements-dev-${WORKTREE_ID:-main}.rule: "Host(`${WORKTREE_DOMAIN}`)"
       traefik.http.routers.elements-dev-${WORKTREE_ID:-main}.entrypoints: elements
       traefik.http.routers.elements-dev-${WORKTREE_ID:-main}.service: elements-dev-${WORKTREE_ID:-main}
+      traefik.http.routers.elements-dev-${WORKTREE_ID:-main}.priority: 1
       traefik.http.services.elements-dev-${WORKTREE_ID:-main}.loadbalancer.server.port: 4321
 
   ci-runner:
@@ -53,6 +65,7 @@ services:
       - ${ELEMENTS_ROOT_HOST:-${PWD}}:/packages
       - node_modules:/packages/node_modules
     stop_grace_period: 1s
+    # CI runner doesn't need Traefik routing - ports exposed directly for CI environments
     ports:
       - "8795:8794" # Record-replay proxy server for CI (mapped to different host port)
       - "63315:63315" # Test server port for browser tests
