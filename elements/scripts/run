@@ -14,8 +14,8 @@ fi
 RUNNER_CONTAINER=$(${SCRIPT_DIR}/docker-compose ps -q runner)
 if [ -n "$RUNNER_CONTAINER" ] && docker inspect "$RUNNER_CONTAINER" --format='{{.State.Status}}' | grep -q "running"; then
     # Service is running, exec into the specific container
-    docker exec --env EF_CACHE_ONLY="$EF_CACHE_ONLY" $INTERACTIVE_FLAGS "$RUNNER_CONTAINER" "$@"
+    docker exec --env EF_CACHE_ONLY="$EF_CACHE_ONLY" --env WORKTREE_DOMAIN="$WORKTREE_DOMAIN" $INTERACTIVE_FLAGS "$RUNNER_CONTAINER" "$@"
 else
     # Service not running, start new ephemeral container
-    "${SCRIPT_DIR}"/docker-compose run --rm $INTERACTIVE_FLAGS -e EF_CACHE_ONLY="$EF_CACHE_ONLY" runner "$@"
+    "${SCRIPT_DIR}"/docker-compose run --rm $INTERACTIVE_FLAGS -e EF_CACHE_ONLY="$EF_CACHE_ONLY" -e WORKTREE_DOMAIN="$WORKTREE_DOMAIN" runner "$@"
 fi

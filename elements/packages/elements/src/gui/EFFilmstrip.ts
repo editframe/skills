@@ -24,6 +24,8 @@ import {
   EFCaptionsActiveWord,
 } from "../elements/EFCaptions.js";
 import { EFImage } from "../elements/EFImage.js";
+import { EFText } from "../elements/EFText.js";
+import { EFTextSegment } from "../elements/EFTextSegment.js";
 import {
   isEFTemporal,
   type TemporalMixinInterface,
@@ -547,6 +549,131 @@ export class EFWaveformFilmstrip extends FilmstripItem {
   }
 }
 
+@customElement("ef-text-filmstrip")
+export class EFTextFilmstrip extends FilmstripItem {
+  render() {
+    const text = this.element as EFText;
+    const segments = Array.from(text.querySelectorAll("ef-text-segment"));
+
+    return html`<div style=${styleMap(this.gutterStyles)}>
+      <div
+        class="bg-slate-300 relative"
+        ?data-focused=${this.isFocused}
+        @mouseenter=${() => {
+          if (this.focusContext) {
+            this.focusContext.focusedElement = this.element;
+          }
+        }}
+        @mouseleave=${() => {
+          if (this.focusContext) {
+            this.focusContext.focusedElement = null;
+          }
+        }}
+      >
+        <div
+          ?data-focused=${this.isFocused}
+          class="border-outset relative mb-[1px] block h-[1.1rem] text-nowrap border border-slate-500 bg-blue-200 text-sm data-[focused]:bg-slate-400 overflow-hidden"
+          style=${styleMap(this.trimPortionStyles)}
+        >
+          📄 ${this.renderTextSegments(segments)}
+        </div>
+      </div>
+      ${this.renderChildren()}
+    </div>`;
+  }
+
+  renderTextSegments(segments: EFTextSegment[]) {
+    if (segments.length === 0) {
+      return html``;
+    }
+
+    // Get current time for highlighting active segments
+    const text = this.element as EFText;
+    const rootTimegroup = text.rootTimegroup;
+    const currentTimeMs = rootTimegroup?.currentTimeMs || 0;
+    const textLocalTimeMs = currentTimeMs - text.startTimeMs;
+
+    return segments.map((segment) => {
+      const isActive =
+        textLocalTimeMs >= segment.segmentStartMs &&
+        textLocalTimeMs < segment.segmentEndMs;
+
+      return html`<div
+        class="absolute border border-slate-600 text-xs overflow-hidden flex items-center ${isActive ? "bg-green-200 border-green-500 font-bold z-[5]" : "bg-slate-100"}"
+        style=${styleMap({
+          left: `${this.pixelsPerMs * segment.segmentStartMs}px`,
+          width: `${this.pixelsPerMs * (segment.segmentEndMs - segment.segmentStartMs)}px`,
+          height: "100%",
+          top: "0px",
+        })}
+        title="Segment: '${segment.segmentText}' (${segment.segmentStartMs}ms - ${segment.segmentEndMs}ms)"
+      >
+        <span class="px-0.5 text-[8px] ${isActive ? "font-bold" : ""}">${segment.segmentText}</span>
+      </div>`;
+    });
+  }
+
+  renderChildren(): Array<TemplateResult<1> | typeof nothing> | typeof nothing {
+    return renderFilmstripChildren(
+      Array.from(this.element.children),
+      this.pixelsPerMs,
+      this.hideSelectors,
+      this.showSelectors,
+    );
+  }
+}
+
+@customElement("ef-text-segment-filmstrip")
+export class EFTextSegmentFilmstrip extends FilmstripItem {
+  get textTrackStyles() {
+    const parentText = this.element.closest("ef-text") as EFText;
+    return {
+      position: "relative",
+      left: `${this.pixelsPerMs * (parentText?.startTimeWithinParentMs || 0)}px`,
+      width: `${this.pixelsPerMs * (parentText?.durationMs || 0)}px`,
+    };
+  }
+
+  render() {
+    const segment = this.element as EFTextSegment;
+    const parentText = segment.closest("ef-text") as EFText;
+
+    if (!parentText) {
+      return html`<div style=${styleMap(this.textTrackStyles)}>
+        <div class="bg-slate-300 border border-slate-500 h-[1.1rem] mb-[1px] text-xs">
+          📄 Text Segment
+        </div>
+      </div>`;
+    }
+
+    // Get current time for highlighting
+    const rootTimegroup = parentText.rootTimegroup;
+    const currentTimeMs = rootTimegroup?.currentTimeMs || 0;
+    const textLocalTimeMs = currentTimeMs - parentText.startTimeMs;
+
+    const isCurrentlyActive =
+      textLocalTimeMs >= segment.segmentStartMs &&
+      textLocalTimeMs < segment.segmentEndMs;
+
+    return html`<div style=${styleMap(this.textTrackStyles)}>
+      <div class="bg-slate-300 relative border border-slate-500 h-[1.1rem] mb-[1px] w-full">
+        <div
+          class="absolute border text-xs overflow-visible flex items-center ${isCurrentlyActive ? "bg-yellow-200 border-yellow-500 font-bold z-[5]" : "bg-blue-50 border-blue-200"}"
+          style=${styleMap({
+            left: `${this.pixelsPerMs * segment.segmentStartMs}px`,
+            width: `${this.pixelsPerMs * (segment.segmentEndMs - segment.segmentStartMs)}px`,
+            height: "100%",
+            top: "0px",
+          })}
+          title="Segment: '${segment.segmentText}' (${segment.segmentStartMs}ms - ${segment.segmentEndMs}ms)"
+        >
+          ${isCurrentlyActive ? html`<span class="px-0.5 text-[8px] font-bold whitespace-nowrap bg-yellow-200">${segment.segmentText}</span>` : ""}
+        </div>
+      </div>
+    </div>`;
+  }
+}
+
 @customElement("ef-image-filmstrip")
 export class EFImageFilmstrip extends FilmstripItem {
   contents() {
@@ -702,6 +829,20 @@ class EFCaptionsActiveWordHierarchyItem extends EFHierarchyItem {
   }
 }
 
+@customElement("ef-text-hierarchy-item")
+class EFTextHierarchyItem extends EFHierarchyItem {
+  get icon() {
+    return "📄 Text";
+  }
+}
+
+@customElement("ef-text-segment-hierarchy-item")
+class EFTextSegmentHierarchyItem extends EFHierarchyItem {
+  get icon() {
+    return "📄 Segment";
+  }
+}
+
 @customElement("ef-waveform-hierarchy-item")
 class EFWaveformHierarchyItem extends EFHierarchyItem {
   get icon() {
@@ -822,6 +963,20 @@ const renderHierarchyChildren = (
         .showSelectors=${showSelectors}
       ></ef-captions-active-word-hierarchy-item>`;
     }
+    if (child instanceof EFText) {
+      return html`<ef-text-hierarchy-item
+        .element=${child}
+        .hideSelectors=${hideSelectors}
+        .showSelectors=${showSelectors}
+      ></ef-text-hierarchy-item>`;
+    }
+    if (child instanceof EFTextSegment) {
+      return html`<ef-text-segment-hierarchy-item
+        .element=${child}
+        .hideSelectors=${hideSelectors}
+        .showSelectors=${showSelectors}
+      ></ef-text-segment-hierarchy-item>`;
+    }
     if (child instanceof EFWaveform) {
       return html`<ef-waveform-hierarchy-item
         .element=${child}
@@ -900,6 +1055,22 @@ const renderFilmstripChildren = (
         .hideSelectors=${hideSelectors}
         .showSelectors=${showSelectors}
       ></ef-captions-active-word-filmstrip>`;
+    }
+    if (child instanceof EFText) {
+      return html`<ef-text-filmstrip
+        .element=${child}
+        .pixelsPerMs=${pixelsPerMs}
+        .hideSelectors=${hideSelectors}
+        .showSelectors=${showSelectors}
+      ></ef-text-filmstrip>`;
+    }
+    if (child instanceof EFTextSegment) {
+      return html`<ef-text-segment-filmstrip
+        .element=${child}
+        .pixelsPerMs=${pixelsPerMs}
+        .hideSelectors=${hideSelectors}
+        .showSelectors=${showSelectors}
+      ></ef-text-segment-filmstrip>`;
     }
     if (child.tagName === "EF-CAPTIONS-SEGMENT") {
       return html`<ef-captions-segment-filmstrip
@@ -1408,6 +1579,10 @@ declare global {
     "ef-captions-segment-filmstrip": EFCaptionsSegmentFilmstrip;
     "ef-captions-before-word-filmstrip": EFCaptionsBeforeWordFilmstrip;
     "ef-captions-after-word-filmstrip": EFCaptionsAfterWordFilmstrip;
+    "ef-text-filmstrip": EFTextFilmstrip;
+    "ef-text-segment-filmstrip": EFTextSegmentFilmstrip;
+    "ef-text-hierarchy-item": EFTextHierarchyItem;
+    "ef-text-segment-hierarchy-item": EFTextSegmentHierarchyItem;
     "ef-waveform-filmstrip": EFWaveformFilmstrip;
     "ef-image-filmstrip": EFImageFilmstrip;
     "ef-html-filmstrip": EFHTMLFilmstrip;

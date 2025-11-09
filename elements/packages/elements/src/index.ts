@@ -28,6 +28,12 @@ export {
   EFCaptionsSegment,
 } from "./elements/EFCaptions.js";
 
+import "./elements/EFText.js";
+import "./elements/EFTextSegment.js";
+
+export { EFText } from "./elements/EFText.js";
+export { EFTextSegment } from "./elements/EFTextSegment.js";
+
 import "./elements/EFWaveform.js";
 
 export { EFWaveform } from "./elements/EFWaveform.js";

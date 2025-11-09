@@ -7,6 +7,7 @@ export {
   CaptionsBeforeActiveWord,
   CaptionsSegment,
 } from "./elements/Captions.js";
+export { Text, TextSegment } from "./elements/Text.js";
 export { Image } from "./elements/Image.js";
 export { Surface } from "./elements/Surface.js";
 export { ThumbnailStrip } from "./elements/ThumbnailStrip.js";

@@ -21,10 +21,10 @@ services:
       - traefik-shared
     labels:
       traefik.enable: true
+      # Test server uses its own Traefik entrypoint (port 4322) to avoid conflict with dev-projects
       traefik.http.routers.elements-test-${WORKTREE_ID:-main}.rule: "Host(`${WORKTREE_DOMAIN}`)"
-      traefik.http.routers.elements-test-${WORKTREE_ID:-main}.entrypoints: elements
+      traefik.http.routers.elements-test-${WORKTREE_ID:-main}.entrypoints: elements-test
       traefik.http.routers.elements-test-${WORKTREE_ID:-main}.service: elements-test-${WORKTREE_ID:-main}
-      traefik.http.routers.elements-test-${WORKTREE_ID:-main}.priority: 10
       traefik.http.services.elements-test-${WORKTREE_ID:-main}.loadbalancer.server.port: 63315
 
   dev-projects:
