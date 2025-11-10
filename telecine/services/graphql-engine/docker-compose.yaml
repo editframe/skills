@@ -8,6 +8,10 @@ services:
       # - "8080:8080"
     env_file:
       - ${PWD}/.env
+    environment:
+      # Override database URLs to use shared PostgreSQL with worktree-specific database
+      HASURA_GRAPHQL_DATABASE_URL: "postgres://postgres:postgrespassword@editframe-postgres:5432/${WORKTREE_DATABASE:-telecine-main}"
+      HASURA_GRAPHQL_METADATA_DATABASE_URL: "postgres://postgres:postgrespassword@editframe-postgres:5432/${WORKTREE_DATABASE:-telecine-main}"
     depends_on:
       data-connector-agent:
         condition: service_healthy
@@ -51,5 +55,5 @@ services:
 
 networks:
   traefik-shared:
-    name: telecine-traefik
+    name: editframe-shared
     external: true

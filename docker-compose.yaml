@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  traefik:
+    image: traefik:latest
+    container_name: editframe-traefik
+    ports:
+      - "7777:7777"    # Traefik dashboard
+      - "3000:3000"    # Telecine web
+      - "24678:24678"  # Telecine port
+      - "3001:3001"    # Telecine additional port
+      - "4321:4321"    # Elements dev server
+      - "4322:4322"    # Elements test server
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - editframe-shared
+    command:
+      - --api.insecure=true
+      - --providers.docker
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=editframe-shared
+      - --entrypoints.web.address=:3000
+      - --entrypoints.traefik.address=:7777
+      - --entrypoints.port24678.address=:24678
+      - --entrypoints.port3001.address=:3001
+      - --entrypoints.elements.address=:4321
+      - --entrypoints.elements-test.address=:4322
+      - --log.level=INFO
+      - --accesslog
+      - --entrypoints.web.transport.respondingTimeouts.readTimeout=0s
+      - --entrypoints.web.transport.respondingTimeouts.writeTimeout=0s
+      - --entrypoints.web.transport.respondingTimeouts.idleTimeout=3600s
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16
+    container_name: editframe-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      # No single POSTGRES_DB - databases created per worktree
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/postgres-init:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - editframe-shared
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  editframe-shared:
+    name: editframe-shared
+    driver: bridge
+
+volumes:
+  postgres-data:
+    name: editframe-postgres-data
+

@@ -29,5 +29,5 @@ services:
 
 networks:
   traefik-shared:
-    name: telecine-traefik
+    name: editframe-shared
     external: true

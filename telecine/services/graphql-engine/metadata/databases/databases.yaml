@@ -1,4 +1,4 @@
-- name: ef-telecine
+- name: telecine-dev
   kind: postgres
   configuration:
     connection_info:
@@ -86,4 +86,4 @@
         where i.invite_token={{invite_token}};
       returns: invite_for_view
       root_field_name: invites_for_display
-  tables: "!include ef-telecine/tables/tables.yaml"
+  tables: "!include telecine-dev/tables/tables.yaml"

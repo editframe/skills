@@ -26,5 +26,5 @@ networks:
   default:
     name: ${WORKTREE_DOCKER_NETWORK_NAME:-telecine_default}
   traefik-shared:
-    name: telecine-traefik
+    name: editframe-shared
     external: true

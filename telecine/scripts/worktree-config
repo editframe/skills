@@ -76,9 +76,14 @@ export WORKTREE_DOCKER_NETWORK_NAME
 # Optional: Export worktree ID for reference (sanitized branch name)
 if [ "$IS_MAIN_WORKTREE" = true ]; then
   export WORKTREE_ID="main"
+  export WORKTREE_DATABASE="telecine-main"
 else
   export WORKTREE_ID="$SANITIZED_BRANCH"
+  export WORKTREE_DATABASE="telecine-${SANITIZED_BRANCH}"
 fi
+
+# Export database name for Docker Compose
+export POSTGRES_DB="$WORKTREE_DATABASE"
 
 # Calculate simple port offset for worktrees based on branch name
 # Uses a hash of branch name to get consistent port offset (0-9) * 1000

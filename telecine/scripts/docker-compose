@@ -6,10 +6,31 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 # Source worktree configuration to get project name and domain
 . "$SCRIPT_DIR/worktree-config"
 
-# Ensure shared Traefik network exists (needed for all worktrees)
-if ! docker network inspect telecine-traefik > /dev/null 2>&1; then
-  echo "Creating shared Traefik network: telecine-traefik"
-  docker network create telecine-traefik
+# Ensure shared infrastructure is running (from monorepo root)
+MONOREPO_ROOT="$SCRIPT_DIR/../.."
+if [ ! -f "$MONOREPO_ROOT/docker-compose.yaml" ]; then
+  echo "⚠️  Warning: Shared infrastructure docker-compose.yaml not found at $MONOREPO_ROOT/docker-compose.yaml" >&2
+fi
+
+# Check if shared network exists
+if ! docker network inspect editframe-shared > /dev/null 2>&1; then
+  echo "📦 Shared infrastructure not detected. Starting shared services..."
+  echo "   (Traefik + PostgreSQL)"
+  cd "$MONOREPO_ROOT"
+  docker compose --project-name editframe up -d
+  cd "$SCRIPT_DIR/.."
+  echo "✅ Shared infrastructure started"
+fi
+
+# Ensure worktree database exists in shared PostgreSQL
+if docker ps --filter "name=editframe-postgres" --format "{{.Names}}" | grep -q editframe-postgres; then
+  # Check if database exists, create if not
+  DB_EXISTS=$(docker exec editframe-postgres psql -U postgres -tAc "SELECT 1 FROM pg_database WHERE datname='${WORKTREE_DATABASE}'")
+  if [ "$DB_EXISTS" != "1" ]; then
+    echo "📊 Creating database: $WORKTREE_DATABASE"
+    docker exec editframe-postgres psql -U postgres -c "CREATE DATABASE \"$WORKTREE_DATABASE\";"
+    echo "✅ Database $WORKTREE_DATABASE created"
+  fi
 fi
 
 # Export absolute path to telecine root for docker-compose volume mounts
@@ -23,28 +44,7 @@ else
     TELECINE_ROOT="$WORKTREE_ROOT"
 fi
 
-# Ensure Traefik is running (needed for worktree routing)
-# Traefik is defined in main worktree but needs to run for all worktrees
-TRAEFIK_RUNNING=$(docker ps --filter "name=traefik" --format "{{.Names}}" | head -1)
-if [ -z "$TRAEFIK_RUNNING" ]; then
-  # Traefik is not running - try to start it
-  # Find main worktree to start Traefik with correct profile
-  MAIN_WORKTREE=$(git worktree list 2>/dev/null | grep -E '\[main\]|\[master\]' | awk '{print $1}' | head -1)
-  if [ -n "$MAIN_WORKTREE" ] && [ -f "$MAIN_WORKTREE/telecine/docker-compose.yaml" ]; then
-    cd "$MAIN_WORKTREE/telecine"
-    # Check if port 4321 is in use by a non-Traefik container
-    PORT_4321_USER=$(docker ps --filter "publish=4321" --format "{{.Names}}" | grep -v traefik | head -1)
-    if [ -n "$PORT_4321_USER" ]; then
-      echo "⚠️  Warning: Port 4321 is in use by $PORT_4321_USER. Traefik may not start." >&2
-      echo "   Stop the conflicting container or restart services to resolve." >&2
-    fi
-    # Try to start Traefik
-    COMPOSE_PROFILES="main-worktree" docker compose up -d traefik > /dev/null 2>&1 || {
-      echo "⚠️  Warning: Failed to start Traefik. Port 4321 may be in use." >&2
-    }
-    cd "$TELECINE_ROOT"
-  fi
-fi
+# Traefik is now managed by shared infrastructure at monorepo root
 
 # Export TELECINE_ROOT_HOST for docker-compose.yaml volume mounts
 TELECINE_ROOT_HOST="$TELECINE_ROOT"
@@ -102,11 +102,6 @@ if [ -n "$root_compose_file" ]; then
     compose_files="$root_compose_file"$'\n'"$compose_files"
 fi
 
-# Handle main worktree vs regular worktree
-if [ "$WORKTREE_DOMAIN" = "main.localhost" ]; then
-    # Main worktree: activate Traefik service via profile
-    export COMPOSE_PROFILES="main-worktree"
-fi
 # Port mappings are handled via environment variables set in worktree-config
 # No override files needed - ports are conditionally exposed based on env vars
 

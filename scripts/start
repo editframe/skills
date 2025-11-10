@@ -3,6 +3,11 @@ set -e
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
+# Start shared infrastructure first (Traefik + PostgreSQL)
+echo "📦 Ensuring shared infrastructure is running..."
+"$SCRIPT_DIR/start-shared"
+echo ""
+
 # Start telecine services
 # It handles npm install, docker-compose, migrations, and seeding
 echo "🚀 Starting telecine services..."

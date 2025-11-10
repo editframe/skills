@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -e
+
+# Stop shared infrastructure
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+MONOREPO_ROOT="$SCRIPT_DIR/.."
+
+echo "🛑 Stopping shared Editframe infrastructure..."
+
+cd "$MONOREPO_ROOT"
+docker compose --project-name editframe down
+
+echo "✅ Shared infrastructure stopped"
+

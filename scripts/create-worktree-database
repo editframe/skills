@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -e
+
+# Source worktree config to get database name
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../telecine/scripts/worktree-config"
+
+echo "Creating database: $WORKTREE_DATABASE"
+
+# Create database in shared PostgreSQL instance
+docker exec -i editframe-postgres psql -U postgres <<-EOSQL
+    SELECT 'CREATE DATABASE "$WORKTREE_DATABASE"'
+    WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '$WORKTREE_DATABASE')\gexec
+    
+    GRANT ALL PRIVILEGES ON DATABASE "$WORKTREE_DATABASE" TO postgres;
+EOSQL
+
+echo "✅ Database $WORKTREE_DATABASE is ready"
+

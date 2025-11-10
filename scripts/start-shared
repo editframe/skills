@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -e
+
+# Start shared infrastructure for all worktrees
+# This includes: Traefik (routing) and PostgreSQL (databases)
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+MONOREPO_ROOT="$SCRIPT_DIR/.."
+
+echo "🚀 Starting shared Editframe infrastructure..."
+echo ""
+
+cd "$MONOREPO_ROOT"
+
+# Start shared services
+docker compose --project-name editframe up -d
+
+echo ""
+echo "✅ Shared infrastructure running:"
+echo "   - Traefik dashboard: http://localhost:7777"
+echo "   - PostgreSQL: localhost:5432"
+echo ""
+echo "📊 Each worktree will have its own database:"
+echo "   - Main worktree: telecine-main"
+echo "   - Feature branches: telecine-<branch-name>"
+echo ""
+
