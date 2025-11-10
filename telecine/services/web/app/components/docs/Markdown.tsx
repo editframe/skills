@@ -64,7 +64,7 @@ export function QuickLink({ title, description, href }: QuickLinkProps) {
 
 export function CustomCode({ children }: QuickLinksProps) {
   return (
-    <code className="dark:bg-editframe-900 dark:text-white rounded-md p-1">
+    <code className="text-slate-900 dark:text-white dark:bg-editframe-900 rounded-md p-1">
       {children}
     </code>
   );

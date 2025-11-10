@@ -220,11 +220,11 @@
     & kbd,
     & pre {
       word-wrap: normal;
-      @apply overflow-auto rounded-lg p-2 text-xs leading-none sm:p-3 sm:text-sm md:p-4;
+      @apply overflow-auto rounded-lg p-3 text-sm leading-relaxed md:p-4;
     }
-  
+
     & pre {
-      @apply my-4 border border-gray-100 leading-relaxed dark:border-gray-800;
+      @apply my-4 leading-relaxed;
       @apply -mx-4 sm:mx-0;
       @apply overflow-x-auto;
     }

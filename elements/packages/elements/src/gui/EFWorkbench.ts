@@ -13,6 +13,18 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         display: block;
         width: 100%;
         height: 100%;
+        
+        /* Light mode colors */
+        --workbench-bg: rgb(30 41 59); /* slate-800 */
+        --workbench-overlay-border: rgb(59 130 246); /* blue-500 */
+        --workbench-overlay-bg: rgb(191 219 254); /* blue-200 */
+      }
+      
+      :host(.dark), :host-context(.dark) {
+        /* Dark mode colors */
+        --workbench-bg: rgb(2 6 23); /* slate-950 */
+        --workbench-overlay-border: rgb(96 165 250); /* blue-400 */
+        --workbench-overlay-bg: rgb(30 58 138); /* blue-900 */
       }
     `,
   ];
@@ -86,8 +98,8 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     }
     return html`
       <div
-        class="grid h-full w-full bg-slate-800"
-        style="grid-template-rows: 1fr 300px; grid-template-columns: 100%;"
+        class="grid h-full w-full"
+        style="grid-template-rows: 1fr 300px; grid-template-columns: 100%; background-color: var(--workbench-bg);"
       >
         <div
           class="relative h-full w-full overflow-hidden"
@@ -97,7 +109,8 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
             <slot name="canvas" class="contents"></slot>
           </ef-fit-scale>
           <div
-            class="border border-blue-500 bg-blue-200 bg-opacity-20 absolute"
+            class="border bg-opacity-20 absolute"
+            style="border-color: var(--workbench-overlay-border); background-color: var(--workbench-overlay-bg);"
             ${ref(this.focusOverlay)}
           ></div>
         </div>

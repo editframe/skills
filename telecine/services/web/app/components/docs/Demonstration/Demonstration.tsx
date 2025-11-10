@@ -10,6 +10,7 @@ import {
 } from "@phosphor-icons/react";
 import { PersistentTab } from "../PersistentTabGroup";
 import { PersistentTabGroup } from "../PersistentTabGroup";
+import { useTheme } from "~/hooks/useTheme";
 
 
 
@@ -81,6 +82,9 @@ export function Demonstration({
   loop = false,
   wrapInPreview = true,
 }: DemonstrationProps) {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
+  
   const htmlVersion = useMemo(() => convertToWebComponents(children), [children]);
   const jsxVersion = useMemo(() => convertToJsx(children), [children]);
   const [editableHtmlVersion, setEditableHtmlVersion] = useState("");
@@ -104,7 +108,7 @@ export function Demonstration({
           "grid-rows-[1.5fr_1fr]": !hideFilmstrip,
           "grid-rows-[1fr]": hideFilmstrip,
         })}>
-          <div className="overflow-hidden bg-slate-300 min-h-0">
+          <div className="overflow-hidden bg-slate-300 dark:bg-slate-700 min-h-0">
             <FitScale>
               <div
                 className="contents"
@@ -119,7 +123,7 @@ export function Demonstration({
             <div className="min-h-0">
               <Filmstrip
                 autoScale
-                className="w-full h-full"
+                className={clsx("w-full h-full", { dark: isDark })}
                 hide={filmstripHide}
                 show={filmstripShow}
               />
@@ -134,7 +138,7 @@ export function Demonstration({
         "grid-rows-[1.5fr_1fr]": !hideFilmstrip,
         "grid-rows-[1fr]": hideFilmstrip,
       })}>
-        <div className="overflow-hidden bg-slate-300 min-h-0">
+        <div className="overflow-hidden bg-slate-300 dark:bg-slate-700 min-h-0">
           <FitScale>
             <div
               className="contents"
@@ -150,7 +154,7 @@ export function Demonstration({
             <Filmstrip
               target={extractedTargetId}
               autoScale
-              className="w-full h-full"
+              className={clsx("w-full h-full", { dark: isDark })}
               hide={filmstripHide}
               show={filmstripShow}
             />
@@ -162,7 +166,7 @@ export function Demonstration({
 
   return (
     <div
-      className={clsx("border-l-4 border-slate-300 pl-2 sm:pl-4", {
+      className={clsx("border-l-4 border-slate-300 dark:border-slate-600 pl-2 sm:pl-4", {
         "grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-4": layout === "horizontal" && !hideSource,
       })}
     >
@@ -175,7 +179,7 @@ export function Demonstration({
           {!alwaysShowSource && (
             <button
               onClick={() => setIsSourceVisible(!isSourceVisible)}
-              className="text-xs font-medium text-gray-600 hover:text-gray-900 flex items-center gap-1 py-2 touch-manipulation"
+              className="text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 flex items-center gap-1 py-2 touch-manipulation"
             >
               {isSourceVisible ? "▼" : "▶"} Show Source
             </button>

@@ -10,6 +10,7 @@ import tailwindcss from "tailwindcss";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const srcDir = join(__dirname, "..", "src");
 const distDir = join(__dirname, "..", "dist");
+const configPath = join(__dirname, "..", "tailwind.config.ts");
 
 // Ensure dist directory exists
 mkdirSync(distDir, { recursive: true });
@@ -22,9 +23,7 @@ const css = readFileSync(cssPath, "utf-8");
 console.log("Processing CSS through Tailwind and PostCSS...");
 
 postcss([
-  tailwindcss({
-    content: [join(srcDir, "**/*.ts")],
-  }),
+  tailwindcss({ config: configPath }),
   autoprefixer(),
 ])
   .process(css, { from: cssPath, to: join(distDir, "style.css") })

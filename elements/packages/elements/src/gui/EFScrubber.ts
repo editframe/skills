@@ -25,6 +25,11 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
       justify-content: center;
     }
     
+    :host(.dark), :host-context(.dark) {
+      --ef-scrubber-background: rgb(75 85 99);
+      --ef-scrubber-progress-color: rgb(96 165 250);
+    }
+    
     .scrubber {
       width: 100%;
       height: var(--ef-scrubber-height);

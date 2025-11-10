@@ -263,13 +263,13 @@ export default function DocsPage() {
                 "prose-base prose-slate",
                 "prose-p:text-slate-600 prose-p:leading-7 dark:prose-p:text-slate-300 dark:prose-p:leading-7",
                 "prose-p:mb-6",
-                // Headings - cleaner, more spacious
+                // Headings - professional, refined hierarchy
                 "prose-headings:scroll-mt-20 sm:prose-headings:scroll-mt-24 lg:prose-headings:scroll-mt-[8.5rem]",
-                "prose-headings:font-display prose-headings:font-semibold prose-headings:tracking-tight",
-                "prose-h1:text-slate-900 prose-h1:text-4xl prose-h1:mb-6 prose-h1:mt-0 dark:prose-h1:text-white",
-                "prose-h2:text-slate-900 prose-h2:text-2xl prose-h2:mt-12 prose-h2:mb-4 prose-h2:font-semibold dark:prose-h2:text-white",
-                "prose-h3:text-slate-900 prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3 prose-h3:font-semibold dark:prose-h3:text-slate-100",
-                "prose-h4:text-slate-900 prose-h4:text-lg prose-h4:mt-6 prose-h4:mb-2 prose-h4:font-semibold dark:prose-h4:text-slate-200",
+                "prose-headings:font-display prose-headings:tracking-tight",
+                "prose-h1:text-slate-900 prose-h1:text-4xl prose-h1:font-bold prose-h1:mb-8 prose-h1:mt-0 prose-h1:leading-tight dark:prose-h1:text-white",
+                "prose-h2:text-slate-900 prose-h2:text-3xl prose-h2:font-bold prose-h2:mt-16 prose-h2:mb-6 prose-h2:leading-tight prose-h2:border-b prose-h2:border-slate-200 prose-h2:pb-3 dark:prose-h2:text-white dark:prose-h2:border-slate-700",
+                "prose-h3:text-slate-900 prose-h3:text-2xl prose-h3:font-semibold prose-h3:mt-12 prose-h3:mb-4 prose-h3:leading-snug dark:prose-h3:text-slate-100",
+                "prose-h4:text-slate-700 prose-h4:text-xl prose-h4:font-semibold prose-h4:mt-8 prose-h4:mb-3 prose-h4:leading-snug dark:prose-h4:text-slate-200",
                 // Lead text
                 "prose-lead:text-slate-600 prose-lead:text-lg prose-lead:leading-7 dark:prose-lead:text-slate-400",
                 // Links - subtle underline on hover
@@ -279,11 +279,10 @@ export default function DocsPage() {
                 "prose-ul:my-6 prose-ol:my-6",
                 "prose-li:text-slate-600 prose-li:leading-7 dark:prose-li:text-slate-300",
                 "prose-li:my-2",
-                // Code blocks - refined styling
-                "prose-pre:bg-slate-900 prose-pre:rounded-lg prose-pre:border prose-pre:border-slate-800 dark:prose-pre:bg-slate-900/50 dark:prose-pre:ring-1 dark:prose-pre:ring-slate-300/10 prose-pre:overflow-hidden",
-                "prose-pre:shadow-lg",
-                "prose-code:text-slate-900 prose-code:bg-slate-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm dark:prose-code:text-slate-100 dark:prose-code:bg-slate-800",
-                "prose-code:font-mono prose-code:font-normal",
+                // Code blocks - consistent styling
+                "prose-pre:bg-slate-50 prose-pre:rounded-lg prose-pre:border prose-pre:border-slate-200 prose-pre:overflow-hidden",
+                "dark:prose-pre:bg-slate-900/50 dark:prose-pre:border-slate-800 dark:prose-pre:ring-1 dark:prose-pre:ring-slate-300/10",
+                "prose-code:text-slate-900 prose-code:font-mono prose-code:font-normal dark:prose-code:text-slate-100",
                 // HR
                 "prose-hr:border-slate-200 dark:prose-hr:border-slate-800 prose-hr:my-8",
                 // Blockquotes

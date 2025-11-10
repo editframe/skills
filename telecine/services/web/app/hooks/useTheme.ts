@@ -118,6 +118,26 @@ export function useTheme() {
     };
   }, [theme, isHydrated]);
 
+  // Listen for theme changes from other components
+  useEffect(() => {
+    if (!isHydrated) return;
+
+    const handleThemeChange = () => {
+      const stored = getStoredTheme();
+      const currentIsDark = document.documentElement.classList.contains("dark");
+      const currentResolved = currentIsDark ? "dark" : "light";
+      
+      setThemeState(stored);
+      setResolvedTheme(currentResolved);
+    };
+
+    window.addEventListener("theme", handleThemeChange);
+
+    return () => {
+      window.removeEventListener("theme", handleThemeChange);
+    };
+  }, [isHydrated]);
+
   return { theme, setTheme, resolvedTheme };
 }
 

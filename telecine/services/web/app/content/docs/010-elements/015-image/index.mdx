@@ -31,7 +31,7 @@ The `<ef-image>` element is a custom HTML element that extends the functionality
   <PropertyDoc name="src" type="string" domReadable domWritable htmlAttribute="src">
     The source URL/path of the image.
 
-    <div className="bg-blue-100 text-blue-900 p-2 mb-2 rounded">
+    <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 p-2 mb-2 rounded border border-blue-200 dark:border-blue-800">
       ⚠️ This property is not yet supported in all circumstances. Providing an arbitrary URL or path will not work unless the server is configured to respond with a precise, not-yet-documented, format.
 
       Demonstration projects with such a server are available via `npm create @editframe@beta`. These are not intended for production use. When complete, a specialized server should not be required, though there will be specific encoding/muxing limitations.
@@ -39,7 +39,7 @@ The `<ef-image>` element is a custom HTML element that extends the functionality
       Instead upload media to Editframe and use the `assetId` property.
     </div>
 
-    <div className="bg-orange-100 text-orange-900 p-2 rounded">
+    <div className="bg-orange-100 dark:bg-orange-900/30 text-orange-900 dark:text-orange-100 p-2 rounded border border-orange-200 dark:border-orange-800">
       🚫 This property should only be used for development, testing, and previewing media to end-users in real-time. When submitting a render job, all media should be uploaded to Editframe and the `assetId` property should be used. Our render servers will render in parallel, and in order to operate efficiently we need to be able to load only the slice of media that is needed to render a small segment of the timeline.
     </div>
   </PropertyDoc>

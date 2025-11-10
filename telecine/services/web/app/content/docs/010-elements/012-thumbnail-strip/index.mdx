@@ -38,7 +38,7 @@ Experiment with different thumbnail strip settings to see how they affect the ap
 
     The thumbnail strip will automatically track the target video element and update thumbnails when the video's properties change.
 
-    <div className="bg-blue-100 text-blue-900 p-2 rounded">
+    <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 p-2 rounded border border-blue-200 dark:border-blue-800">
       💡 Specify the element ID without the # prefix (e.g., "my-video" to target a video with id="my-video").
     </div>
   </PropertyDoc>
@@ -72,7 +72,7 @@ Experiment with different thumbnail strip settings to see how they affect the ap
 
     When true, thumbnails are generated from the entire source video file, ignoring any `trimStart`, `trimEnd`, `sourceIn`, or `sourceOut` properties on the target video element.
 
-    <div className="bg-orange-100 text-orange-900 p-2 rounded">
+    <div className="bg-orange-100 dark:bg-orange-900/30 text-orange-900 dark:text-orange-100 p-2 rounded border border-orange-200 dark:border-orange-800">
       ⚠️ This property is ignored if custom `startTimeMs` or `endTimeMs` values are provided.
     </div>
   </PropertyDoc>

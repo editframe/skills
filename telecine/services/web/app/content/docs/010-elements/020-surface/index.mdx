@@ -56,11 +56,11 @@ Surfaces can each have different CSS filter styles applied efficiently from a si
   <PropertyDoc name="target" type="string" domReadable domWritable htmlAttribute="target">
     The ID of the element to copy content from, typically an `ef-video` element.
 
-    <div className="bg-blue-100 text-blue-900 p-2 mb-2 rounded">
+    <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 p-2 mb-2 rounded border border-blue-200 dark:border-blue-800">
       💡 The target element must have an `id` attribute. The surface will look for an element with that ID and copy its canvas content.
     </div>
 
-    <div className="bg-green-100 text-green-900 p-2 rounded">
+    <div className="bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100 p-2 rounded border border-green-200 dark:border-green-800">
       ✅ **Performance Benefit**: Multiple surfaces targeting the same video element use significantly fewer resources than multiple `ef-video` elements.
     </div>
   </PropertyDoc>
@@ -74,7 +74,7 @@ Surfaces can each have different CSS filter styles applied efficiently from a si
   <PropertyDoc name="startTimeMs" type="number" domReadable>
     The start time of the surface in milliseconds. This time is relative to the timeline described by the root timegroup the surface is contained within.
 
-    <div className="bg-blue-100 text-blue-900 p-2 rounded">
+    <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 p-2 rounded border border-blue-200 dark:border-blue-800">
       💡 Surface elements inherit their timing from their target element and containing timegroup.
     </div>
   </PropertyDoc>
@@ -100,10 +100,10 @@ Surfaces can each have different CSS filter styles applied efficiently from a si
 
 ## Technical Notes
 
-<div className="bg-yellow-100 text-yellow-900 p-4 rounded">
+<div className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-100 p-4 rounded border border-yellow-200 dark:border-yellow-800">
   **Frame Synchronization**: Surfaces automatically wait for their target element to complete frame rendering before copying, ensuring synchronized playback across all surfaces.
 </div>
 
-<div className="bg-blue-100 text-blue-900 p-4 rounded">
+<div className="bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 p-4 rounded border border-blue-200 dark:border-blue-800">
   **Canvas Mirroring**: Surfaces create pixel-perfect copies of the target's canvas content, with CSS handling any layout scaling needed.
 </div>

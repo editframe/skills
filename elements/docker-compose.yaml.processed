@@ -1,0 +1,82 @@
+name: ef-elements
+services:
+  runner:
+    build:
+      context: .
+    init: true
+    env_file:
+      - .env
+    working_dir: /packages
+    volumes:
+      - ${ELEMENTS_ROOT_HOST:-${PWD}}:/packages
+      - node_modules:/packages/node_modules
+    stop_grace_period: 1s
+    # Don't expose ports directly - only accessible through Traefik
+    expose:
+      - "63315"
+      - "8794"
+    command: ["sleep", "infinity"]
+    networks:
+      - default
+      - traefik-shared
+    labels:
+      traefik.enable: true
+      # Test server uses its own Traefik entrypoint (port 4322) to avoid conflict with dev-projects
+      traefik.http.routers.elements-test-main.rule: "Host(`${WORKTREE_DOMAIN}`)"
+      traefik.http.routers.elements-test-main.entrypoints: elements-test
+      traefik.http.routers.elements-test-main.service: elements-test-main
+      traefik.http.services.elements-test-main.loadbalancer.server.port: 63315
+
+  dev-projects:
+    build:
+      context: .
+    init: true
+    env_file:
+      - .env
+    working_dir: /packages
+    volumes:
+      - ${ELEMENTS_ROOT_HOST:-${PWD}}:/packages
+      - node_modules:/packages/node_modules
+    stop_grace_period: 1s
+    # Don't expose port directly - only accessible through Traefik
+    expose:
+      - "4321"
+    command: ["sleep", "infinity"]
+    networks:
+      - default
+      - traefik-shared
+    labels:
+      traefik.enable: true
+      traefik.http.routers.elements-dev-main.rule: "Host(`${WORKTREE_DOMAIN}`)"
+      traefik.http.routers.elements-dev-main.entrypoints: elements
+      traefik.http.routers.elements-dev-main.service: elements-dev-main
+      traefik.http.routers.elements-dev-main.priority: 1
+      traefik.http.services.elements-dev-main.loadbalancer.server.port: 4321
+
+  ci-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.ci-runner
+    init: true
+    env_file:
+      - .env
+    working_dir: /packages
+    volumes:
+      - ${ELEMENTS_ROOT_HOST:-${PWD}}:/packages
+      - node_modules:/packages/node_modules
+    stop_grace_period: 1s
+    # CI runner doesn't need Traefik routing - ports exposed directly for CI environments
+    ports:
+      - "8795:8794" # Record-replay proxy server for CI (mapped to different host port)
+      - "63315:63315" # Test server port for browser tests
+    command: ["sleep", "infinity"]
+
+volumes:
+  node_modules:
+
+networks:
+  traefik-shared:
+    name: telecine-traefik
+    external: true
+  default:
+    name: ${WORKTREE_DOCKER_NETWORK_NAME:-ef-elements_default}

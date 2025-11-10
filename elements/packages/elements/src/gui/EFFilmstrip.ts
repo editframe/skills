@@ -119,7 +119,7 @@ class FilmstripItem extends TWMixin(LitElement) {
   render() {
     return html`<div style=${styleMap(this.gutterStyles)}>
       <div
-        class="bg-slate-300"
+        style="background-color: var(--filmstrip-bg);"
         ?data-focused=${this.isFocused}
         @mouseenter=${() => {
           if (this.focusContext) {
@@ -134,8 +134,12 @@ class FilmstripItem extends TWMixin(LitElement) {
       >
         <div
           ?data-focused=${this.isFocused}
-          class="border-outset relative mb-[1px] block h-[1.1rem] text-nowrap border border-slate-500 bg-blue-200 text-sm data-[focused]:bg-slate-400"
-          style=${styleMap(this.trimPortionStyles)}
+          class="border-outset relative mb-[1px] block h-[1.1rem] text-nowrap border text-sm"
+          style=${styleMap({
+            ...this.trimPortionStyles,
+            backgroundColor: this.isFocused ? 'var(--filmstrip-item-focused)' : 'var(--filmstrip-item-bg)',
+            borderColor: 'var(--filmstrip-border)',
+          })}
         >
           ${this.animations()}
         </div>
@@ -186,21 +190,23 @@ class FilmstripItem extends TWMixin(LitElement) {
       }
 
       return html`<div
-        class="relative h-[5px] bg-blue-500 opacity-50"
+        class="relative h-[5px] opacity-50"
         label="animation"
         style=${styleMap({
           left: `${this.pixelsPerMs * start}px`,
           width: `${this.pixelsPerMs * Number(duration)}px`,
+          backgroundColor: 'var(--filmstrip-animation-bg)',
         })}
       >
         <!-- <div class="text-nowrap">${Array.from(properties).join(" ")}</div> -->
         ${effect.getKeyframes().map((keyframe) => {
           return html`<div
-            class="absolute top-0 h-full w-1 bg-red-500"
+            class="absolute top-0 h-full w-1"
             style=${styleMap({
               left: `${
                 this.pixelsPerMs * keyframe.computedOffset * Number(duration)
               }px`,
+              backgroundColor: 'var(--filmstrip-keyframe-bg)',
             })}
           ></div>`;
         })}
@@ -247,7 +253,8 @@ export class EFCaptionsFilmstrip extends FilmstripItem {
 
     return html`<div style=${styleMap(this.gutterStyles)}>
       <div
-        class="bg-slate-300 relative"
+        class="relative"
+        style="background-color: var(--filmstrip-bg);"
         ?data-focused=${this.isFocused}
         @mouseenter=${() => {
           if (this.focusContext) {
@@ -262,8 +269,12 @@ export class EFCaptionsFilmstrip extends FilmstripItem {
       >
         <div
           ?data-focused=${this.isFocused}
-          class="border-outset relative mb-[1px] block h-[1.1rem] text-nowrap border border-slate-500 bg-blue-200 text-sm data-[focused]:bg-slate-400 overflow-hidden"
-          style=${styleMap(this.trimPortionStyles)}
+          class="border-outset relative mb-[1px] block h-[1.1rem] text-nowrap border text-sm overflow-hidden"
+          style=${styleMap({
+            ...this.trimPortionStyles,
+            backgroundColor: this.isFocused ? 'var(--filmstrip-item-focused)' : 'var(--filmstrip-item-bg)',
+            borderColor: 'var(--filmstrip-border)',
+          })}
         >
           📝 ${this.renderCaptionsData(captionsData)}
         </div>
@@ -291,12 +302,14 @@ export class EFCaptionsFilmstrip extends FilmstripItem {
         captionsLocalTimeSec < segment.end;
 
       return html`<div
-        class="absolute border border-slate-600 text-xs overflow-hidden flex items-center ${isActive ? "bg-green-200 border-green-500 font-bold z-[5]" : "bg-slate-100"}"
+        class="absolute border text-xs overflow-hidden flex items-center ${isActive ? "font-bold z-[5]" : ""}"
         style=${styleMap({
           left: `${this.pixelsPerMs * segment.start * 1000}px`,
           width: `${this.pixelsPerMs * (segment.end - segment.start) * 1000}px`,
           height: "100%",
           top: "0px",
+          backgroundColor: isActive ? 'var(--filmstrip-segment-bg)' : 'var(--filmstrip-item-bg)',
+          borderColor: isActive ? 'var(--filmstrip-segment-border)' : 'var(--filmstrip-border)',
         })}
         title="Segment: '${segment.text}' (${segment.start}s - ${segment.end}s)"
       >
@@ -336,7 +349,7 @@ export class EFCaptionsActiveWordFilmstrip extends FilmstripItem {
 
     if (!captionsData) {
       return html`<div style=${styleMap(this.captionsTrackStyles)}>
-        <div class="bg-slate-300 border border-slate-500 h-[1.1rem] mb-[1px] text-xs">
+        <div class="border h-[1.1rem] mb-[1px] text-xs" style="background-color: var(--filmstrip-bg); border-color: var(--filmstrip-border);">
           🗣️ Active Word
         </div>
       </div>`;
@@ -349,23 +362,25 @@ export class EFCaptionsActiveWordFilmstrip extends FilmstripItem {
     const captionsLocalTimeSec = captionsLocalTimeMs / 1000;
 
     return html`<div style=${styleMap(this.captionsTrackStyles)}>
-      <div class="bg-slate-300 relative border border-slate-500 h-[1.1rem] mb-[1px] w-full">
+      <div class="relative border h-[1.1rem] mb-[1px] w-full" style="background-color: var(--filmstrip-bg); border-color: var(--filmstrip-border);">
         ${captionsData.word_segments.map((word) => {
           const isCurrentlyActive =
             captionsLocalTimeSec >= word.start &&
             captionsLocalTimeSec < word.end;
 
           return html`<div
-            class="absolute border text-xs overflow-visible flex items-center ${isCurrentlyActive ? "bg-yellow-200 border-yellow-500 font-bold z-[5]" : "bg-blue-50 border-blue-200"}"
+            class="absolute border text-xs overflow-visible flex items-center ${isCurrentlyActive ? "font-bold z-[5]" : ""}"
             style=${styleMap({
               left: `${this.pixelsPerMs * word.start * 1000}px`,
               width: `${this.pixelsPerMs * (word.end - word.start) * 1000}px`,
               height: "100%",
               top: "0px",
+              backgroundColor: isCurrentlyActive ? 'var(--filmstrip-caption-bg)' : 'var(--filmstrip-item-bg)',
+              borderColor: isCurrentlyActive ? 'var(--filmstrip-caption-border)' : 'var(--filmstrip-border)',
             })}
             title="Word: '${word.text}' (${word.start}s - ${word.end}s)"
           >
-            ${isCurrentlyActive ? html`<span class="px-0.5 text-[8px] font-bold whitespace-nowrap bg-yellow-200">${word.text.trim()}</span>` : ""}
+            ${isCurrentlyActive ? html`<span class="px-0.5 text-[8px] font-bold whitespace-nowrap" style="background-color: var(--filmstrip-caption-bg);">${word.text.trim()}</span>` : ""}
           </div>`;
         })}
       </div>
@@ -391,7 +406,7 @@ export class EFCaptionsSegmentFilmstrip extends FilmstripItem {
 
     if (!captionsData) {
       return html`<div style=${styleMap(this.captionsTrackStyles)}>
-        <div class="bg-slate-300 border border-slate-500 h-[1.1rem] mb-[1px] text-xs">
+        <div class="border h-[1.1rem] mb-[1px] text-xs" style="background-color: var(--filmstrip-bg); border-color: var(--filmstrip-border);">
           📄 Segment
         </div>
       </div>`;
@@ -404,23 +419,25 @@ export class EFCaptionsSegmentFilmstrip extends FilmstripItem {
     const captionsLocalTimeSec = captionsLocalTimeMs / 1000;
 
     return html`<div style=${styleMap(this.captionsTrackStyles)}>
-      <div class="bg-slate-300 relative border border-slate-500 h-[1.1rem] mb-[1px] w-full">
+      <div class="relative border h-[1.1rem] mb-[1px] w-full" style="background-color: var(--filmstrip-bg); border-color: var(--filmstrip-border);">
         ${captionsData.segments.map((segment) => {
           const isCurrentlyActive =
             captionsLocalTimeSec >= segment.start &&
             captionsLocalTimeSec < segment.end;
 
           return html`<div
-            class="absolute border text-xs overflow-visible flex items-center ${isCurrentlyActive ? "bg-green-200 border-green-500 font-bold z-[5]" : "bg-green-50 border-green-200"}"
+            class="absolute border text-xs overflow-visible flex items-center ${isCurrentlyActive ? "font-bold z-[5]" : ""}"
             style=${styleMap({
               left: `${this.pixelsPerMs * segment.start * 1000}px`,
               width: `${this.pixelsPerMs * (segment.end - segment.start) * 1000}px`,
               height: "100%",
               top: "0px",
+              backgroundColor: isCurrentlyActive ? 'var(--filmstrip-segment-bg)' : 'var(--filmstrip-item-bg)',
+              borderColor: isCurrentlyActive ? 'var(--filmstrip-segment-border)' : 'var(--filmstrip-border)',
             })}
             title="Segment: '${segment.text}' (${segment.start}s - ${segment.end}s)"
           >
-            ${isCurrentlyActive ? html`<span class="px-0.5 text-[8px] font-bold whitespace-nowrap bg-green-200">${segment.text}</span>` : ""}
+            ${isCurrentlyActive ? html`<span class="px-0.5 text-[8px] font-bold whitespace-nowrap" style="background-color: var(--filmstrip-segment-bg);">${segment.text}</span>` : ""}
           </div>`;
         })}
       </div>
@@ -446,7 +463,7 @@ export class EFCaptionsBeforeWordFilmstrip extends FilmstripItem {
 
     if (!captionsData) {
       return html`<div style=${styleMap(this.captionsTrackStyles)}>
-        <div class="bg-slate-300 border border-slate-500 h-[1.1rem] mb-[1px] text-xs">
+        <div class="border h-[1.1rem] mb-[1px] text-xs" style="background-color: var(--filmstrip-bg); border-color: var(--filmstrip-border);">
           ⬅️ Before
         </div>
       </div>`;
@@ -459,19 +476,21 @@ export class EFCaptionsBeforeWordFilmstrip extends FilmstripItem {
     const captionsLocalTimeSec = captionsLocalTimeMs / 1000;
 
     return html`<div style=${styleMap(this.captionsTrackStyles)}>
-      <div class="bg-slate-300 relative border border-slate-500 h-[1.1rem] mb-[1px] w-full">
+      <div class="relative border h-[1.1rem] mb-[1px] w-full" style="background-color: var(--filmstrip-bg); border-color: var(--filmstrip-border);">
         ${captionsData.word_segments.map((word) => {
           const isCurrentlyActive =
             captionsLocalTimeSec >= word.start &&
             captionsLocalTimeSec < word.end;
 
           return html`<div
-            class="absolute border text-xs overflow-visible flex items-center ${isCurrentlyActive ? "bg-yellow-200 border-yellow-500 font-bold z-[5]" : "bg-purple-50 border-purple-200"}"
+            class="absolute border text-xs overflow-visible flex items-center ${isCurrentlyActive ? "font-bold z-[5]" : ""}"
             style=${styleMap({
               left: `${this.pixelsPerMs * word.start * 1000}px`,
               width: `${this.pixelsPerMs * (word.end - word.start) * 1000}px`,
               height: "100%",
               top: "0px",
+              backgroundColor: isCurrentlyActive ? 'var(--filmstrip-caption-bg)' : 'var(--filmstrip-waveform-bg)',
+              borderColor: isCurrentlyActive ? 'var(--filmstrip-caption-border)' : 'var(--filmstrip-waveform-border)',
             })}
             title="Word: '${word.text}' (${word.start}s - ${word.end}s)"
           >
@@ -501,7 +520,7 @@ export class EFCaptionsAfterWordFilmstrip extends FilmstripItem {
 
     if (!captionsData) {
       return html`<div style=${styleMap(this.captionsTrackStyles)}>
-        <div class="bg-slate-300 border border-slate-500 h-[1.1rem] mb-[1px] text-xs">
+        <div class="border h-[1.1rem] mb-[1px] text-xs" style="background-color: var(--filmstrip-bg); border-color: var(--filmstrip-border);">
           ➡️ After
         </div>
       </div>`;
@@ -514,19 +533,21 @@ export class EFCaptionsAfterWordFilmstrip extends FilmstripItem {
     const captionsLocalTimeSec = captionsLocalTimeMs / 1000;
 
     return html`<div style=${styleMap(this.captionsTrackStyles)}>
-      <div class="bg-slate-300 relative border border-slate-500 h-[1.1rem] mb-[1px] w-full">
+      <div class="relative border h-[1.1rem] mb-[1px] w-full" style="background-color: var(--filmstrip-bg); border-color: var(--filmstrip-border);">
         ${captionsData.word_segments.map((word) => {
           const isCurrentlyActive =
             captionsLocalTimeSec >= word.start &&
             captionsLocalTimeSec < word.end;
 
           return html`<div
-            class="absolute border text-xs overflow-visible flex items-center ${isCurrentlyActive ? "bg-yellow-200 border-yellow-500 font-bold z-[5]" : "bg-purple-50 border-purple-200"}"
+            class="absolute border text-xs overflow-visible flex items-center ${isCurrentlyActive ? "font-bold z-[5]" : ""}"
             style=${styleMap({
               left: `${this.pixelsPerMs * word.start * 1000}px`,
               width: `${this.pixelsPerMs * (word.end - word.start) * 1000}px`,
               height: "100%",
               top: "0px",
+              backgroundColor: isCurrentlyActive ? 'var(--filmstrip-caption-bg)' : 'var(--filmstrip-waveform-bg)',
+              borderColor: isCurrentlyActive ? 'var(--filmstrip-caption-border)' : 'var(--filmstrip-waveform-border)',
             })}
             title="Word: '${word.text}' (${word.start}s - ${word.end}s)"
           >
@@ -557,7 +578,8 @@ export class EFTextFilmstrip extends FilmstripItem {
 
     return html`<div style=${styleMap(this.gutterStyles)}>
       <div
-        class="bg-slate-300 relative"
+        class="relative"
+        style="background-color: var(--filmstrip-bg);"
         ?data-focused=${this.isFocused}
         @mouseenter=${() => {
           if (this.focusContext) {
@@ -572,8 +594,12 @@ export class EFTextFilmstrip extends FilmstripItem {
       >
         <div
           ?data-focused=${this.isFocused}
-          class="border-outset relative mb-[1px] block h-[1.1rem] text-nowrap border border-slate-500 bg-blue-200 text-sm data-[focused]:bg-slate-400 overflow-hidden"
-          style=${styleMap(this.trimPortionStyles)}
+          class="border-outset relative mb-[1px] block h-[1.1rem] text-nowrap border text-sm overflow-hidden"
+          style=${styleMap({
+            ...this.trimPortionStyles,
+            backgroundColor: this.isFocused ? 'var(--filmstrip-item-focused)' : 'var(--filmstrip-item-bg)',
+            borderColor: 'var(--filmstrip-border)',
+          })}
         >
           📄 ${this.renderTextSegments(segments)}
         </div>
@@ -599,12 +625,14 @@ export class EFTextFilmstrip extends FilmstripItem {
         textLocalTimeMs < segment.segmentEndMs;
 
       return html`<div
-        class="absolute border border-slate-600 text-xs overflow-hidden flex items-center ${isActive ? "bg-green-200 border-green-500 font-bold z-[5]" : "bg-slate-100"}"
+        class="absolute border text-xs overflow-hidden flex items-center ${isActive ? "font-bold z-[5]" : ""}"
         style=${styleMap({
           left: `${this.pixelsPerMs * segment.segmentStartMs}px`,
           width: `${this.pixelsPerMs * (segment.segmentEndMs - segment.segmentStartMs)}px`,
           height: "100%",
           top: "0px",
+          backgroundColor: isActive ? 'var(--filmstrip-segment-bg)' : 'var(--filmstrip-item-bg)',
+          borderColor: isActive ? 'var(--filmstrip-segment-border)' : 'var(--filmstrip-border)',
         })}
         title="Segment: '${segment.segmentText}' (${segment.segmentStartMs}ms - ${segment.segmentEndMs}ms)"
       >
@@ -640,7 +668,7 @@ export class EFTextSegmentFilmstrip extends FilmstripItem {
 
     if (!parentText) {
       return html`<div style=${styleMap(this.textTrackStyles)}>
-        <div class="bg-slate-300 border border-slate-500 h-[1.1rem] mb-[1px] text-xs">
+        <div class="border h-[1.1rem] mb-[1px] text-xs" style="background-color: var(--filmstrip-bg); border-color: var(--filmstrip-border);">
           📄 Text Segment
         </div>
       </div>`;
@@ -656,18 +684,20 @@ export class EFTextSegmentFilmstrip extends FilmstripItem {
       textLocalTimeMs < segment.segmentEndMs;
 
     return html`<div style=${styleMap(this.textTrackStyles)}>
-      <div class="bg-slate-300 relative border border-slate-500 h-[1.1rem] mb-[1px] w-full">
+      <div class="relative border h-[1.1rem] mb-[1px] w-full" style="background-color: var(--filmstrip-bg); border-color: var(--filmstrip-border);">
         <div
-          class="absolute border text-xs overflow-visible flex items-center ${isCurrentlyActive ? "bg-yellow-200 border-yellow-500 font-bold z-[5]" : "bg-blue-50 border-blue-200"}"
+          class="absolute border text-xs overflow-visible flex items-center ${isCurrentlyActive ? "font-bold z-[5]" : ""}"
           style=${styleMap({
             left: `${this.pixelsPerMs * segment.segmentStartMs}px`,
             width: `${this.pixelsPerMs * (segment.segmentEndMs - segment.segmentStartMs)}px`,
             height: "100%",
             top: "0px",
+            backgroundColor: isCurrentlyActive ? 'var(--filmstrip-caption-bg)' : 'var(--filmstrip-item-bg)',
+            borderColor: isCurrentlyActive ? 'var(--filmstrip-caption-border)' : 'var(--filmstrip-border)',
           })}
           title="Segment: '${segment.segmentText}' (${segment.segmentStartMs}ms - ${segment.segmentEndMs}ms)"
         >
-          ${isCurrentlyActive ? html`<span class="px-0.5 text-[8px] font-bold whitespace-nowrap bg-yellow-200">${segment.segmentText}</span>` : ""}
+          ${isCurrentlyActive ? html`<span class="px-0.5 text-[8px] font-bold whitespace-nowrap" style="background-color: var(--filmstrip-caption-bg);">${segment.segmentText}</span>` : ""}
         </div>
       </div>
     </div>`;
@@ -748,9 +778,11 @@ class EFHierarchyItem<
     return html` 
       <div>
         <div
-          class="peer 
-            flex h-[1.1rem] items-center overflow-hidden text-nowrap  border border-slate-500
-          bg-slate-200 pl-2 text-xs font-mono hover:bg-slate-400 data-[focused]:bg-slate-400"
+          class="peer flex h-[1.1rem] items-center overflow-hidden text-nowrap border pl-2 text-xs font-mono"
+          style=${styleMap({
+            backgroundColor: this.isFocused ? 'var(--filmstrip-timegroup-focused)' : 'var(--filmstrip-timegroup-bg)',
+            borderColor: 'var(--filmstrip-border)',
+          })}
           ?data-focused=${this.isFocused}
           @mouseenter=${() => {
             if (this.focusContext) {
@@ -766,7 +798,10 @@ class EFHierarchyItem<
           ${this.icon} ${this.displayLabel()}
         </div>
         <div
-          class="p-[1px] pb-0 pl-2 pr-0 peer-hover:bg-slate-300 peer-data-[focused]:bg-slate-300 peer-hover:border-slate-400 peer-data-[focused]:border-slate-400""
+          class="p-[1px] pb-0 pl-2 pr-0 peer-hover-container peer-data-container"
+          style=${styleMap({
+            backgroundColor: this.isFocused ? 'var(--filmstrip-bg)' : 'transparent',
+          })}
         >
           ${this.renderChildren()}
         </div>
@@ -1122,6 +1157,48 @@ export class EFFilmstrip extends TWMixin(LitElement) {
         overflow: hidden;
         width: 100%;
         height: 100%;
+        
+        /* Light mode colors */
+        --filmstrip-bg: rgb(203 213 225); /* slate-300 */
+        --filmstrip-border: rgb(100 116 139); /* slate-500 */
+        --filmstrip-item-bg: rgb(191 219 254); /* blue-200 */
+        --filmstrip-item-focused: rgb(148 163 184); /* slate-400 */
+        --filmstrip-animation-bg: rgb(59 130 246); /* blue-500 */
+        --filmstrip-keyframe-bg: rgb(239 68 68); /* red-500 */
+        --filmstrip-caption-bg: rgb(254 240 138); /* yellow-200 */
+        --filmstrip-caption-border: rgb(234 179 8); /* yellow-500 */
+        --filmstrip-segment-bg: rgb(187 247 208); /* green-200 */
+        --filmstrip-segment-border: rgb(34 197 94); /* green-500 */
+        --filmstrip-waveform-bg: rgb(250 245 255); /* purple-50 */
+        --filmstrip-waveform-border: rgb(233 213 255); /* purple-200 */
+        --filmstrip-timegroup-bg: rgb(226 232 240); /* slate-200 */
+        --filmstrip-timegroup-hover: rgb(148 163 184); /* slate-400 */
+        --filmstrip-timegroup-focused: rgb(148 163 184); /* slate-400 */
+        --filmstrip-gutter-bg: rgb(241 245 249); /* slate-100 */
+        --filmstrip-timeline-bg: rgb(226 232 240); /* slate-200 */
+        --filmstrip-playhead: rgb(185 28 28); /* red-700 */
+      }
+      
+      :host(.dark), :host-context(.dark) {
+        /* Dark mode colors */
+        --filmstrip-bg: rgb(71 85 105); /* slate-600 */
+        --filmstrip-border: rgb(148 163 184); /* slate-400 */
+        --filmstrip-item-bg: rgb(30 64 175); /* blue-800 */
+        --filmstrip-item-focused: rgb(100 116 139); /* slate-500 */
+        --filmstrip-animation-bg: rgb(96 165 250); /* blue-400 */
+        --filmstrip-keyframe-bg: rgb(248 113 113); /* red-400 */
+        --filmstrip-caption-bg: rgb(133 77 14); /* yellow-800 */
+        --filmstrip-caption-border: rgb(250 204 21); /* yellow-400 */
+        --filmstrip-segment-bg: rgb(22 101 52); /* green-800 */
+        --filmstrip-segment-border: rgb(74 222 128); /* green-400 */
+        --filmstrip-waveform-bg: rgb(88 28 135); /* purple-900 */
+        --filmstrip-waveform-border: rgb(126 34 206); /* purple-700 */
+        --filmstrip-timegroup-bg: rgb(51 65 85); /* slate-700 */
+        --filmstrip-timegroup-hover: rgb(100 116 139); /* slate-500 */
+        --filmstrip-timegroup-focused: rgb(100 116 139); /* slate-500 */
+        --filmstrip-gutter-bg: rgb(30 41 59); /* slate-800 */
+        --filmstrip-timeline-bg: rgb(51 65 85); /* slate-700 */
+        --filmstrip-playhead: rgb(239 68 68); /* red-500 */
       }
     `,
   ];
@@ -1410,14 +1487,16 @@ export class EFFilmstrip extends TWMixin(LitElement) {
     const target = this.targetTemporal;
 
     return html` <div
-      class="grid h-full bg-slate-100"
+      class="grid h-full"
       style=${styleMap({
         gridTemplateColumns: "200px 1fr",
         gridTemplateRows: "1.5rem 1fr",
+        backgroundColor: 'var(--filmstrip-gutter-bg)',
       })}
     >
       <div
-        class="z-20 col-span-2 border-b-slate-600 bg-slate-100 shadow shadow-slate-300"
+        class="z-20 col-span-2 shadow"
+        style="background-color: var(--filmstrip-gutter-bg); border-bottom-color: var(--filmstrip-border);"
       >
         ${
           !this.autoScale
@@ -1447,7 +1526,7 @@ export class EFFilmstrip extends TWMixin(LitElement) {
         <ef-toggle-loop><button>${this.loop ? "🔁" : html`<span class="opacity-50 line-through">🔁</span>`}</button></ef-toggle-loop>
       </div>
       <div
-        class="z-10 pl-1 pr-1 pt-[8px] shadow shadow-slate-600 overflow-auto"
+        class="z-10 pl-1 pr-1 pt-[8px] shadow overflow-auto"
         ${ref(this.hierarchyRef)}
         @scroll=${this.syncHierarchyScroll}
       >
@@ -1459,7 +1538,8 @@ export class EFFilmstrip extends TWMixin(LitElement) {
         )}
       </div>
       <div
-        class="flex h-full w-full cursor-crosshair overflow-auto bg-slate-200 pt-[8px] touch-pan-x"
+        class="flex h-full w-full cursor-crosshair overflow-auto pt-[8px] touch-pan-x"
+        style="background-color: var(--filmstrip-timeline-bg);"
         id="gutter"
         ${ref(this.gutterRef)}
         @scroll=${this.syncGutterScroll}
@@ -1473,10 +1553,11 @@ export class EFFilmstrip extends TWMixin(LitElement) {
           @contextmenu=${this.handleContextMenu}
         >
           <div
-            class="border-red pointer-events-none absolute z-[20] h-full w-[2px] border-r-2 border-red-700"
+            class="border-red pointer-events-none absolute z-[20] h-full w-[2px] border-r-2"
             style=${styleMap({
               left: `${this.pixelsPerMs * this.currentTimeMs}px`,
               top: `${this.timelineScrolltop}px`,
+              borderColor: 'var(--filmstrip-playhead)',
             })}
             ${ref(this.playheadRef)}
           ></div>
