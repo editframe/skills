@@ -15,7 +15,6 @@ import {
   generateTrackFragmentIndex,
   md5FilePath,
 } from "../../assets/src/index.js";
-import { TEST_SERVER_PORT } from "../../elements/test/constants.js";
 
 // Inlined forbidRelativePaths function
 const forbidRelativePaths = (req: IncomingMessage) => {
@@ -168,14 +167,7 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
             });
 
             req.on("end", async () => {
-              // Determine environment early for error handling
-              const isCI =
-                Boolean(process.env.GITHUB_ACTIONS) ||
-                Boolean(process.env.CI) ||
-                process.env.DOCKER_SERVICE === "ci-runner";
-              const cacheOnlyMode = process.env.EF_CACHE_ONLY === "true";
-
-              // Helper function to return mock response (used for fallbacks)
+              // Helper function to return mock response
               const returnMockResponse = () => {
                 const mockToken =
                   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJodHRwOi8vd2ViOjMwMDAvaGVhZC1tb292LTQ4MHAubXA0IiwiZXhwIjo5OTk5OTk5OTk5fQ.mock-signature";
@@ -184,7 +176,8 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
               };
 
               try {
-                const requestBody = Buffer.concat(requestChunks);
+                // Consume request body (even though we don't use it)
+                Buffer.concat(requestChunks);
 
                 // In CI, there's no signing server, so return mock response directly
                 // In cache-only mode (prepare-release), also return mock directly since we rely on cached HTTP responses
@@ -195,28 +188,13 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
               } catch (error) {
                 const errorMessage =
                   error instanceof Error ? error.message : String(error);
-                log(`Error proxying URL signing request: ${errorMessage}`);
+                log(`Error handling URL signing request: ${errorMessage}`);
                 console.error(
-                  "[Vite Plugin] URL signing proxy error:",
+                  "[Vite Plugin] URL signing error:",
                   errorMessage,
                 );
-
-                // In CI or cache-only mode, fall back to mock response instead of returning 500
-                if (isCI || cacheOnlyMode) {
-                  log(
-                    "Error in CI/cache-only mode, falling back to mock response",
-                  );
-                  returnMockResponse();
-                } else {
-                  // In local dev, return 500 error
-                  res.writeHead(500, { "Content-Type": "application/json" });
-                  res.end(
-                    JSON.stringify({
-                      error: "Failed to proxy URL signing request",
-                      details: errorMessage,
-                    }),
-                  );
-                }
+                // Always fall back to mock response on error
+                returnMockResponse();
               }
             });
             break;
