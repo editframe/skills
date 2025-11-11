@@ -147,7 +147,7 @@ describe("JitMediaEngine", () => {
     mediaEngine,
     expect,
   }) => {
-    const expectedApiHost = (window as any).getApiHost();
+    const expectedApiHost = getApiHost();
     expect(mediaEngine.templates).toEqual({
       initSegment: `${expectedApiHost}/api/v1/transcode/{rendition}/init.m4s?url=http%3A%2F%2Fweb%3A3000%2Fhead-moov-480p.mp4`,
       mediaSegment: `${expectedApiHost}/api/v1/transcode/{rendition}/{segmentId}.m4s?url=http%3A%2F%2Fweb%3A3000%2Fhead-moov-480p.mp4`,
