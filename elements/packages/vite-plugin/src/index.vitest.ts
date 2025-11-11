@@ -186,98 +186,12 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
               try {
                 const requestBody = Buffer.concat(requestChunks);
 
-                // Check if we're in CI cache-only mode - if so, proxy through record-replay proxy
-                // Otherwise, in local dev with MSW, return mock response directly
-
-                if (isCI || cacheOnlyMode) {
-                  // In CI/cache-only mode, proxy through record-replay proxy to serve cached responses
-                  // Wait for server to be ready if needed
-                  if (!server.httpServer?.listening) {
-                    await new Promise<void>((resolve) => {
-                      if (server.httpServer?.listening) {
-                        resolve();
-                      } else {
-                        server.httpServer?.once("listening", () => resolve());
-                      }
-                    });
-                  }
-
-                  const serverAddress = server.httpServer?.address();
-                  const serverPort =
-                    (serverAddress &&
-                    typeof serverAddress === "object" &&
-                    "port" in serverAddress
-                      ? serverAddress.port
-                      : null) || TEST_SERVER_PORT;
-                  const targetUrl = `http://localhost:${serverPort}/api/v1/url-token`;
-
-                  log(`Making internal request to: ${targetUrl}`);
-
-                  let proxyResponse: Response;
-                  try {
-                    proxyResponse = await fetch(targetUrl, {
-                      method: "POST",
-                      headers: {
-                        "Content-Type":
-                          req.headers["content-type"] || "application/json",
-                        ...(req.headers.authorization && {
-                          authorization: req.headers.authorization,
-                        }),
-                      },
-                      body: requestBody.length > 0 ? requestBody : undefined,
-                    });
-                  } catch (fetchError) {
-                    // If fetch fails (network error, etc.), fall back to mock response
-                    log(
-                      `Fetch failed, falling back to mock response: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`,
-                    );
-                    returnMockResponse();
-                    return;
-                  }
-
-                  // In cache-only mode or CI, if proxy returns error status (404, 500, etc.), fall back to mock response
-                  if ((cacheOnlyMode || isCI) && !proxyResponse.ok) {
-                    log(
-                      `Proxy returned ${proxyResponse.status}, falling back to mock response`,
-                    );
-                    returnMockResponse();
-                    return;
-                  }
-
-                  // Only read response body and forward if response is OK
-                  // This prevents errors when reading error response bodies
-                  let responseBody: string;
-                  try {
-                    responseBody = await proxyResponse.text();
-                  } catch (readError) {
-                    // If reading response body fails, fall back to mock response
-                    log(
-                      `Failed to read proxy response body, falling back to mock: ${readError instanceof Error ? readError.message : String(readError)}`,
-                    );
-                    returnMockResponse();
-                    return;
-                  }
-
-                  const responseHeaders: Record<string, string> = {};
-                  proxyResponse.headers.forEach((value, key) => {
-                    responseHeaders[key] = value;
-                  });
-
-                  res.writeHead(proxyResponse.status, responseHeaders);
-                  res.end(responseBody);
-
-                  if (proxyResponse.ok) {
-                    log("✓ URL signing request proxied successfully");
-                  } else {
-                    log(
-                      `✗ URL signing request failed: ${proxyResponse.status} ${proxyResponse.statusText}`,
-                    );
-                  }
-                } else {
-                  // In local dev, return mock response directly (MSW can't intercept server-side fetch)
-                  log("Returning mock token response for local dev");
-                  returnMockResponse();
-                }
+                // In CI, there's no signing server, so return mock response directly
+                // In cache-only mode (prepare-release), also return mock directly since we rely on cached HTTP responses
+                // In local dev, return mock response directly (MSW can't intercept server-side fetch)
+                // The record-replay proxy handles caching for /api/v1/transcode/* requests, not URL signing
+                log("Returning mock token response (no signing server in CI/cache-only mode)");
+                returnMockResponse();
               } catch (error) {
                 const errorMessage =
                   error instanceof Error ? error.message : String(error);
