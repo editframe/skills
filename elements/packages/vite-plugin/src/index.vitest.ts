@@ -203,6 +203,7 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
                 console.log(`[Vite Plugin] Making internal request to: ${targetUrl}`);
                 log(`Making internal request to: ${targetUrl}`);
 
+                console.log(`[Vite Plugin] Fetching ${targetUrl} with body: ${requestBody.toString().substring(0, 100)}...`);
                 const proxyResponse = await fetch(targetUrl, {
                   method: "POST",
                   headers: {
@@ -214,7 +215,9 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
                   body: requestBody.length > 0 ? requestBody : undefined,
                 });
 
+                console.log(`[Vite Plugin] Proxy response status: ${proxyResponse.status} ${proxyResponse.statusText}`);
                 const responseBody = await proxyResponse.text();
+                console.log(`[Vite Plugin] Proxy response body: ${responseBody.substring(0, 200)}...`);
                 const responseHeaders: Record<string, string> = {};
                 proxyResponse.headers.forEach((value, key) => {
                   responseHeaders[key] = value;
