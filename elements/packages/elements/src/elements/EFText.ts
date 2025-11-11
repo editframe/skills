@@ -464,38 +464,41 @@ export class EFText extends EFTemporal(LitElement) {
   }
 
   private splitTextIntoSegments(text: string): string[] {
+    // Trim text before segmenting to remove leading/trailing whitespace
+    const trimmedText = text.trim();
+    if (!trimmedText) {
+      return [];
+    }
+
     switch (this.split) {
       case "line": {
-        // Split on newlines
-        const lines = text.split(/\r?\n/);
-        // Filter out empty lines but keep the structure
-        return lines.filter((line) => line.length > 0);
+        // Split on newlines and trim each line
+        const lines = trimmedText.split(/\r?\n/);
+        return lines
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
       }
       case "word": {
-        // Split on whitespace boundaries, preserving spaces after words
-        const words: string[] = [];
-        // Split by word boundaries, but keep spaces after words
-        const parts = text.split(/(\S+)/);
-        for (const part of parts) {
-          if (part.trim().length > 0) {
-            // This is a word - check if there's a space after it in the original text
-            words.push(part);
-          } else if (part.length > 0) {
-            // This is whitespace - attach it to the previous word if exists, otherwise skip
-            if (words.length > 0) {
-              words[words.length - 1] += part;
-            }
-          }
-        }
-        // If no words found, return original text
-        return words.length > 0 ? words : [text];
+        // Use Intl.Segmenter for locale-aware word segmentation
+        const segmenter = new Intl.Segmenter(undefined, {
+          granularity: "word",
+        });
+        const segments = Array.from(segmenter.segment(trimmedText));
+        // Filter to only include word-like segments (excludes whitespace/punctuation)
+        return segments
+          .filter((seg) => seg.isWordLike)
+          .map((seg) => seg.segment);
       }
       case "char": {
-        // Split every character, preserving whitespace
-        return Array.from(text);
+        // Use Intl.Segmenter for grapheme-aware character segmentation
+        const segmenter = new Intl.Segmenter(undefined, {
+          granularity: "grapheme",
+        });
+        const segments = Array.from(segmenter.segment(trimmedText));
+        return segments.map((seg) => seg.segment);
       }
       default:
-        return [text];
+        return [trimmedText];
     }
   }
 
@@ -513,38 +516,9 @@ export class EFText extends EFTemporal(LitElement) {
       return 0;
     }
 
-    // Default to 1 second per segment (can be overridden with explicit duration)
-    // Use the same splitting logic as splitTextIntoSegments
-    let segmentCount = 1;
-    switch (this.split) {
-      case "line": {
-        const lines = text
-          .split(/\r?\n/)
-          .filter((line) => line.trim().length > 0);
-        segmentCount = lines.length || 1;
-        break;
-      }
-      case "word": {
-        // Use same logic as splitTextIntoSegments for consistency
-        const words: string[] = [];
-        const parts = text.split(/(\S+)/);
-        for (const part of parts) {
-          if (part.trim().length > 0) {
-            words.push(part);
-          } else if (part.length > 0) {
-            if (words.length > 0) {
-              words[words.length - 1] += part;
-            }
-          }
-        }
-        segmentCount = words.length > 0 ? words.length : 1;
-        break;
-      }
-      case "char": {
-        segmentCount = text.length || 1;
-        break;
-      }
-    }
+    // Use the same splitting logic as splitTextIntoSegments for consistency
+    const segments = this.splitTextIntoSegments(text);
+    const segmentCount = segments.length || 1;
 
     return segmentCount * 1000;
   }
