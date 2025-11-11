@@ -11,6 +11,11 @@ import {
 import { globalURLTokenDeduplicator } from "../src/transcoding/cache/URLTokenDeduplicator.js";
 
 /**
+ * Test server port for browser tests
+ */
+export const TEST_SERVER_PORT = 63315;
+
+/**
  * Get the correct API host for the current environment.
  * In local dev with Traefik, returns the Traefik URL (e.g., http://main.localhost:4322).
  * In CI or direct access, returns the current location (e.g., http://localhost:63315).
@@ -27,7 +32,7 @@ export function getApiHost(): string {
     return `${protocol}//${host}`;
   }
 
-  if (host === "localhost:63315") {
+  if (host === `localhost:${TEST_SERVER_PORT}`) {
     // Check if we have a Traefik referrer (local dev)
     const traefikReferrer = document.referrer.match(/\/\/([^:]+):4322/)?.[1];
     if (traefikReferrer) {

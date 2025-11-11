@@ -7,6 +7,7 @@ import type { UserConfig } from "vite";
 import { defineConfig } from "vitest/config";
 import type { BrowserProviderOptions } from "vitest/node";
 import { recordReplayProxyPlugin } from "./packages/elements/test/recordReplayProxyPlugin.js";
+import { TEST_SERVER_PORT } from "./packages/elements/test/setup.js";
 
 type ViteTestBrowserMode = "connect" | "launch";
 
@@ -46,7 +47,7 @@ function createConnectConfig(wsEndpoint: string): TestConfiguration {
 
   return {
     server: {
-      port: 63315,
+      port: TEST_SERVER_PORT,
       host: "0.0.0.0",
       // Allow the worktree hostname so Vite can respond to requests with that Host header
       // This is needed for Traefik routing (not needed in CI)
@@ -66,7 +67,7 @@ function createLaunchConfig(): TestConfiguration {
 
   return {
     server: {
-      port: 63315,
+      port: TEST_SERVER_PORT,
       host: "0.0.0.0",
       // Allow the worktree hostname so Vite can respond to requests with that Host header
       // This is needed for Traefik routing (not needed in CI)
@@ -150,7 +151,7 @@ export default defineConfig(async () => {
       // Ensure the server is configured to listen on the correct port
       // Vitest should start the server automatically, but we ensure it's configured correctly
       if (server.config.server) {
-        server.config.server.port = 63315;
+        server.config.server.port = TEST_SERVER_PORT;
         server.config.server.host = "0.0.0.0";
         if (!server.config.server.allowedHosts) {
           server.config.server.allowedHosts = [];
@@ -295,9 +296,9 @@ export default defineConfig(async () => {
         headless: config.headless,
         // Configure the browser API server port
         // In Vitest browser mode, the /__vitest_test__/ endpoint is served by the Vite dev server
-        // So browser.api.port should match server.port (63315)
+        // So browser.api.port should match server.port
         api: {
-          port: 63315,
+          port: TEST_SERVER_PORT,
           host: "0.0.0.0",
           strictPort: true, // Fail if port is already in use instead of choosing another
         },
