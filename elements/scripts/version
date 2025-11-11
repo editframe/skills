@@ -26,6 +26,8 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 if git -C "$GIT_ROOT" remote | grep -q "^elements$"; then
   # In monorepo: push only elements/ subtree to elements remote
   TAG_NAME="v$@"
+  # Change to git root for subtree operations
+  cd "$GIT_ROOT"
   # Push only the elements/ subtree to the elements remote
   # This creates split commits on the remote that only contain elements/ directory
   git subtree push --prefix=elements elements main
