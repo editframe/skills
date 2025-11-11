@@ -31,8 +31,9 @@ if git -C "$GIT_ROOT" remote | grep -q "^elements$"; then
   # Fetch remote to get latest state
   git fetch elements main
   # Split the elements/ subtree, using elements/main as the base
+  # Use --ignore-joins to avoid cache conflicts
   SPLIT_BRANCH="elements-split-$$"
-  SPLIT_COMMIT=$(git subtree split --prefix=elements --onto=elements/main HEAD)
+  SPLIT_COMMIT=$(git subtree split --prefix=elements --onto=elements/main --ignore-joins HEAD)
   # Create a temporary branch from the split commit
   git branch -f "$SPLIT_BRANCH" "$SPLIT_COMMIT"
   # Force push the split branch to elements/main
