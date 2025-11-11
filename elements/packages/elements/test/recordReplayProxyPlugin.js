@@ -212,7 +212,11 @@ export function recordReplayProxyPlugin() {
     let apiPath;
     if (req.url.startsWith("/transcode")) {
       apiPath = `/api/v1/transcode${req.url}`;
-    } else if (req.url.startsWith("/url-token") || req.url === "" || req.url === "/") {
+    } else if (
+      req.url.startsWith("/url-token") ||
+      req.url === "" ||
+      req.url === "/"
+    ) {
       // Handle empty string or root path for exact /api/v1/url-token match
       // When middleware is registered with "/api/v1/url-token", exact match gives req.url = "" or "/"
       apiPath = `/api/v1/url-token${req.url.replace("/url-token", "")}`;

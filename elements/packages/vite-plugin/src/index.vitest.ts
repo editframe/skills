@@ -170,12 +170,15 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
             req.on("end", async () => {
               try {
                 const requestBody = Buffer.concat(requestChunks);
-                
+
                 // Check if we're in CI cache-only mode - if so, proxy through record-replay proxy
                 // Otherwise, in local dev with MSW, return mock response directly
-                const isCI = Boolean(process.env.GITHUB_ACTIONS) || Boolean(process.env.CI) || process.env.DOCKER_SERVICE === "ci-runner";
+                const isCI =
+                  Boolean(process.env.GITHUB_ACTIONS) ||
+                  Boolean(process.env.CI) ||
+                  process.env.DOCKER_SERVICE === "ci-runner";
                 const cacheOnlyMode = process.env.EF_CACHE_ONLY === "true";
-                
+
                 if (isCI || cacheOnlyMode) {
                   // In CI/cache-only mode, proxy through record-replay proxy to serve cached responses
                   // Wait for server to be ready if needed
@@ -188,7 +191,7 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
                       }
                     });
                   }
-                  
+
                   const serverAddress = server.httpServer?.address();
                   const serverPort =
                     (serverAddress &&
@@ -203,7 +206,8 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
                   const proxyResponse = await fetch(targetUrl, {
                     method: "POST",
                     headers: {
-                      "Content-Type": req.headers["content-type"] || "application/json",
+                      "Content-Type":
+                        req.headers["content-type"] || "application/json",
                       ...(req.headers.authorization && {
                         authorization: req.headers.authorization,
                       }),
