@@ -16,14 +16,18 @@ export const transcodeMSWHandlers = [
     // Return a mock JWT token
     // The token format is: header.payload.signature
     // We create a simple mock token that will pass basic validation
-    const mockToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJodHRwOi8vd2ViOjMwMDAvaGVhZC1tb292LTQ4MHAubXA0IiwiZXhwIjo5OTk5OTk5OTk5fQ.mock-signature";
-    
-    return HttpResponse.json({ token: mockToken }, {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
+    const mockToken =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJodHRwOi8vd2ViOjMwMDAvaGVhZC1tb292LTQ4MHAubXA0IiwiZXhwIjo5OTk5OTk5OTk5fQ.mock-signature";
+
+    return HttpResponse.json(
+      { token: mockToken },
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+        },
       },
-    });
+    );
   }),
 
   // Transcode manifest endpoint handler
@@ -31,11 +35,11 @@ export const transcodeMSWHandlers = [
   http.get("/api/v1/transcode/manifest.json", async ({ request }) => {
     const url = new URL(request.url);
     const sourceUrl = url.searchParams.get("url");
-    
+
     if (!sourceUrl) {
       return HttpResponse.json(
         { error: "url parameter is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -87,16 +91,43 @@ export const transcodeMSWHandlers = [
     // This is a very basic ftyp + moov box structure
     const initSegment = new Uint8Array([
       // ftyp box
-      0x00, 0x00, 0x00, 0x20, // box size
-      0x66, 0x74, 0x79, 0x70, // 'ftyp'
-      0x69, 0x73, 0x6f, 0x6d, // major brand 'isom'
-      0x00, 0x00, 0x02, 0x00, // minor version
-      0x69, 0x73, 0x6f, 0x6d, // compatible brand 'isom'
-      0x69, 0x73, 0x6f, 0x32, // compatible brand 'iso2'
-      0x6d, 0x70, 0x34, 0x31, // compatible brand 'mp41'
+      0x00,
+      0x00,
+      0x00,
+      0x20, // box size
+      0x66,
+      0x74,
+      0x79,
+      0x70, // 'ftyp'
+      0x69,
+      0x73,
+      0x6f,
+      0x6d, // major brand 'isom'
+      0x00,
+      0x00,
+      0x02,
+      0x00, // minor version
+      0x69,
+      0x73,
+      0x6f,
+      0x6d, // compatible brand 'isom'
+      0x69,
+      0x73,
+      0x6f,
+      0x32, // compatible brand 'iso2'
+      0x6d,
+      0x70,
+      0x34,
+      0x31, // compatible brand 'mp41'
       // moov box (minimal)
-      0x00, 0x00, 0x00, 0x08, // box size
-      0x6d, 0x6f, 0x6f, 0x76, // 'moov'
+      0x00,
+      0x00,
+      0x00,
+      0x08, // box size
+      0x6d,
+      0x6f,
+      0x6f,
+      0x76, // 'moov'
     ]);
 
     return HttpResponse.arrayBuffer(initSegment.buffer, {
@@ -113,11 +144,23 @@ export const transcodeMSWHandlers = [
     // This is a very basic moof + mdat box structure
     const mediaSegment = new Uint8Array([
       // moof box (minimal)
-      0x00, 0x00, 0x00, 0x08, // box size
-      0x6d, 0x6f, 0x6f, 0x66, // 'moof'
+      0x00,
+      0x00,
+      0x00,
+      0x08, // box size
+      0x6d,
+      0x6f,
+      0x6f,
+      0x66, // 'moof'
       // mdat box (minimal)
-      0x00, 0x00, 0x00, 0x08, // box size
-      0x6d, 0x64, 0x61, 0x74, // 'mdat'
+      0x00,
+      0x00,
+      0x00,
+      0x08, // box size
+      0x6d,
+      0x64,
+      0x61,
+      0x74, // 'mdat'
     ]);
 
     return HttpResponse.arrayBuffer(mediaSegment.buffer, {
@@ -128,4 +171,3 @@ export const transcodeMSWHandlers = [
     });
   }),
 ];
-
