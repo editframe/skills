@@ -179,43 +179,39 @@ function getStepIcon(status: string, conclusion: string | null): string {
 }
 
 function displayJobs(jobs: Job[], spinnerChar: string, lastJobCount: number): number {
-  if (jobs.length === 0) return lastJobCount;
+  const showSteps = jobs.length === 1; // Only show steps if there's a single job
 
-  // Calculate total lines needed (jobs + steps + headers)
+  // Calculate total lines needed
   let totalLines = 1; // "Jobs:" header
   for (const job of jobs) {
     totalLines += 1; // Job line
-    if (job.steps && job.steps.length > 0) {
+    if (showSteps && job.steps && job.steps.length > 0) {
       totalLines += job.steps.length; // Step lines
     }
   }
 
-  // Move cursor up to overwrite previous jobs display
-  if (lastJobCount > 0) {
-    process.stdout.write(`\x1b[${lastJobCount}A`);
-  }
-
+  // Write jobs section (no clearing needed - caller handles it)
   process.stdout.write("Jobs:\n");
 
   for (const job of jobs) {
     const icon = getJobIcon(job.status, job.conclusion);
     if (job.status === "in_progress" || job.status === "queued") {
-      console.log(`  ${icon} ${spinnerChar} ${job.name}`);
+      process.stdout.write(`  ${icon} ${spinnerChar} ${job.name}\n`);
     } else {
-      console.log(`  ${icon}   ${job.name}`);
+      process.stdout.write(`  ${icon}   ${job.name}\n`);
     }
 
-    // Display steps for this job
-    if (job.steps && job.steps.length > 0) {
+    // Display steps only if there's a single job
+    if (showSteps && job.steps && job.steps.length > 0) {
       // Sort steps by number to show in order
       const sortedSteps = [...job.steps].sort((a, b) => a.number - b.number);
       
       for (const step of sortedSteps) {
         const stepIcon = getStepIcon(step.status, step.conclusion);
         if (step.status === "in_progress" || step.status === "queued") {
-          console.log(`    ${stepIcon} ${spinnerChar} ${step.name}`);
+          process.stdout.write(`    ${stepIcon} ${spinnerChar} ${step.name}\n`);
         } else {
-          console.log(`    ${stepIcon}   ${step.name}`);
+          process.stdout.write(`    ${stepIcon}   ${step.name}\n`);
         }
       }
     }
@@ -329,7 +325,13 @@ async function main() {
         statusText = status.status;
     }
 
-    // Clear previous display and redraw
+    // Always move back to status line first (if we have jobs displayed)
+    if (lastJobCount > 0) {
+      // Move up: lastJobCount lines (jobs section) + 1 line (newline before jobs)
+      process.stdout.write(`\x1b[${lastJobCount + 1}A`);
+    }
+
+    // Clear status line and redraw
     process.stdout.write("\r\x1b[K");
 
     if (status.status === "in_progress" || status.status === "queued") {
@@ -348,18 +350,33 @@ async function main() {
 
     // Display jobs
     if (status.jobs.length > 0) {
-      process.stdout.write("\n");
-      lastJobCount = displayJobs(status.jobs, spinnerChar, lastJobCount);
-    } else {
-      // Clear jobs display if no jobs
-      if (lastJobCount > 0) {
-        // Move up and clear all lines
-        process.stdout.write(`\x1b[${lastJobCount}A`);
-        for (let i = 0; i < lastJobCount; i++) {
-          process.stdout.write("\x1b[K\n");
+      // Calculate how many lines we'll need for the new jobs section
+      const showSteps = status.jobs.length === 1; // Only show steps if single job
+      let newJobCount = 1; // "Jobs:" header
+      for (const job of status.jobs) {
+        newJobCount += 1; // Job line
+        if (showSteps && job.steps && job.steps.length > 0) {
+          newJobCount += job.steps.length; // Step lines
         }
-        // Move back up to overwrite position
-        process.stdout.write(`\x1b[${lastJobCount}A`);
+      }
+      
+      // Move to next line for jobs section
+      process.stdout.write("\n");
+      
+      // Clear everything from cursor to end of screen (simpler and more reliable)
+      process.stdout.write("\x1b[J");
+      
+      // Draw jobs section
+      lastJobCount = displayJobs(status.jobs, spinnerChar, 0);
+    } else {
+      // No jobs - clear jobs section if it exists
+      if (lastJobCount > 0) {
+        // Move to next line (where jobs section starts)
+        process.stdout.write("\n");
+        // Clear from cursor to end of screen
+        process.stdout.write("\x1b[J");
+        // Move back up to status line (1 line up for the newline we just wrote)
+        process.stdout.write("\x1b[A");
         lastJobCount = 0;
       }
     }
