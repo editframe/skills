@@ -209,14 +209,14 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
                   `✗ URL signing request failed: ${proxyResponse.status} ${proxyResponse.statusText}`,
                 );
               }
-            } catch (error) {
-              const errorMessage =
-                error instanceof Error ? error.message : String(error);
-              log(`Error proxying URL signing request: ${errorMessage}`);
-              console.error(
-                "[Vite Plugin] URL signing proxy error:",
-                errorMessage,
-              );
+              } catch (error) {
+                const errorMessage =
+                  error instanceof Error ? error.message : String(error);
+                log(`Error proxying URL signing request: ${errorMessage}`);
+                console.error(
+                  "[Vite Plugin] URL signing proxy error:",
+                  errorMessage,
+                );
                 res.writeHead(500, { "Content-Type": "application/json" });
                 res.end(
                   JSON.stringify({
