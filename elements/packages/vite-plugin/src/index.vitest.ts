@@ -215,6 +215,18 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
                     body: requestBody.length > 0 ? requestBody : undefined,
                   });
 
+                  // In cache-only mode, if proxy returns 404 (no cache), fall back to mock response
+                  if (cacheOnlyMode && proxyResponse.status === 404) {
+                    log(
+                      "Cache-only mode: No cache available, falling back to mock response",
+                    );
+                    const mockToken =
+                      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJodHRwOi8vd2ViOjMwMDAvaGVhZC1tb292LTQ4MHAubXA0IiwiZXhwIjo5OTk5OTk5OTk5fQ.mock-signature";
+                    res.writeHead(200, { "Content-Type": "application/json" });
+                    res.end(JSON.stringify({ token: mockToken }));
+                    return;
+                  }
+
                   const responseBody = await proxyResponse.text();
                   const responseHeaders: Record<string, string> = {};
                   proxyResponse.headers.forEach((value, key) => {
