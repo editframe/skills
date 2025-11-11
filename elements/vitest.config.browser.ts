@@ -7,7 +7,7 @@ import type { UserConfig } from "vite";
 import { defineConfig } from "vitest/config";
 import type { BrowserProviderOptions } from "vitest/node";
 import { recordReplayProxyPlugin } from "./packages/elements/test/recordReplayProxyPlugin.js";
-import { TEST_SERVER_PORT } from "./packages/elements/test/setup.js";
+import { TEST_SERVER_PORT } from "./packages/elements/test/constants.js";
 
 type ViteTestBrowserMode = "connect" | "launch";
 

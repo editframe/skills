@@ -9,11 +9,7 @@ import {
   mediaCache,
 } from "../src/elements/EFMedia/BaseMediaEngine.js";
 import { globalURLTokenDeduplicator } from "../src/transcoding/cache/URLTokenDeduplicator.js";
-
-/**
- * Test server port for browser tests
- */
-export const TEST_SERVER_PORT = 63315;
+import { TEST_SERVER_PORT } from "./constants.js";
 
 /**
  * Get the correct API host for the current environment.
