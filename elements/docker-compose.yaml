@@ -76,7 +76,7 @@ volumes:
 
 networks:
   traefik-shared:
-    name: telecine-traefik
+    name: editframe-shared
     external: true
   default:
     name: ${WORKTREE_DOCKER_NETWORK_NAME:-ef-elements_default}
