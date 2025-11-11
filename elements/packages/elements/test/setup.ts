@@ -25,14 +25,12 @@ export function getApiHost(): string {
     if (traefikReferrer) {
       // Local dev: use Traefik URL
       return `${protocol}//${traefikReferrer}:4322`;
-    } else {
-      // CI mode: use localhost directly
-      return `${protocol}//${host}`;
     }
-  } else {
-    // Already on Traefik URL or other configuration
+    // CI mode: use localhost directly
     return `${protocol}//${host}`;
   }
+  // Already on Traefik URL or other configuration
+  return `${protocol}//${host}`;
 }
 
 // Clear global caches before each test to ensure isolation
