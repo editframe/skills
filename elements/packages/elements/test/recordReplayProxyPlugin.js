@@ -57,7 +57,6 @@ export function recordReplayProxyPlugin() {
 
       // Add middleware to handle /api/v1/url-token requests (for URL signing)
       server.middlewares.use("/api/v1/url-token", async (req, res, next) => {
-        console.log(`[Proxy] /api/v1/url-token middleware called, req.url = "${req.url}"`);
         await handleProxyRequest(req, res, next);
       });
 
