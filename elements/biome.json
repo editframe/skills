@@ -4,6 +4,7 @@
     "includes": [
       "**",
       "!**/package-lock.json",
+      "!**/package.json",
       "!**/dist",
       "!**/vite.config.ts.timestamp-*.mjs",
       "!**/.cache",
@@ -26,8 +27,7 @@
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
-    "indentWidth": 2,
-    "insertFinalNewline": false
+    "indentWidth": 2
   },
   "linter": {
     "enabled": true,
