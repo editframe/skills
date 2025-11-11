@@ -175,63 +175,73 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
                 const requestBody = Buffer.concat(requestChunks);
                 console.log(`[Vite Plugin] Request body length: ${requestBody.length}`);
                 
-                // The vite plugin middleware runs AFTER the record-replay proxy middleware in the stack.
-                // Since the proxy middleware has already been called and didn't match /@ef-sign-url,
-                // we need to make an internal HTTP request to /api/v1/url-token so the proxy can handle it.
-                // This allows cached responses to be served in CI.
-                // Wait for server to be ready if needed
-                if (!server.httpServer?.listening) {
-                  console.log("[Vite Plugin] Waiting for server to be ready...");
-                  await new Promise<void>((resolve) => {
-                    if (server.httpServer?.listening) {
-                      resolve();
-                    } else {
-                      server.httpServer?.once("listening", () => resolve());
-                    }
-                  });
-                }
+                // Check if we're in CI cache-only mode - if so, proxy through record-replay proxy
+                // Otherwise, in local dev with MSW, return mock response directly
+                const isCI = Boolean(process.env.GITHUB_ACTIONS) || Boolean(process.env.CI) || process.env.DOCKER_SERVICE === "ci-runner";
+                const cacheOnlyMode = process.env.EF_CACHE_ONLY === "true";
                 
-                const serverAddress = server.httpServer?.address();
-                const serverPort =
-                  (serverAddress &&
-                    typeof serverAddress === "object" &&
-                    "port" in serverAddress
-                    ? serverAddress.port
-                    : null) || TEST_SERVER_PORT;
-                const targetUrl = `http://localhost:${serverPort}/api/v1/url-token`;
+                if (isCI || cacheOnlyMode) {
+                  // In CI/cache-only mode, proxy through record-replay proxy to serve cached responses
+                  // Wait for server to be ready if needed
+                  if (!server.httpServer?.listening) {
+                    console.log("[Vite Plugin] Waiting for server to be ready...");
+                    await new Promise<void>((resolve) => {
+                      if (server.httpServer?.listening) {
+                        resolve();
+                      } else {
+                        server.httpServer?.once("listening", () => resolve());
+                      }
+                    });
+                  }
+                  
+                  const serverAddress = server.httpServer?.address();
+                  const serverPort =
+                    (serverAddress &&
+                      typeof serverAddress === "object" &&
+                      "port" in serverAddress
+                      ? serverAddress.port
+                      : null) || TEST_SERVER_PORT;
+                  const targetUrl = `http://localhost:${serverPort}/api/v1/url-token`;
 
-                console.log(`[Vite Plugin] Making internal request to: ${targetUrl}`);
-                log(`Making internal request to: ${targetUrl}`);
+                  console.log(`[Vite Plugin] Making internal request to: ${targetUrl}`);
+                  log(`Making internal request to: ${targetUrl}`);
 
-                console.log(`[Vite Plugin] Fetching ${targetUrl} with body: ${requestBody.toString().substring(0, 100)}...`);
-                const proxyResponse = await fetch(targetUrl, {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": req.headers["content-type"] || "application/json",
-                    ...(req.headers.authorization && {
-                      authorization: req.headers.authorization,
-                    }),
-                  },
-                  body: requestBody.length > 0 ? requestBody : undefined,
-                });
+                  const proxyResponse = await fetch(targetUrl, {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": req.headers["content-type"] || "application/json",
+                      ...(req.headers.authorization && {
+                        authorization: req.headers.authorization,
+                      }),
+                    },
+                    body: requestBody.length > 0 ? requestBody : undefined,
+                  });
 
-                console.log(`[Vite Plugin] Proxy response status: ${proxyResponse.status} ${proxyResponse.statusText}`);
-                const responseBody = await proxyResponse.text();
-                console.log(`[Vite Plugin] Proxy response body: ${responseBody.substring(0, 200)}...`);
-                const responseHeaders: Record<string, string> = {};
-                proxyResponse.headers.forEach((value, key) => {
-                  responseHeaders[key] = value;
-                });
+                  const responseBody = await proxyResponse.text();
+                  const responseHeaders: Record<string, string> = {};
+                  proxyResponse.headers.forEach((value, key) => {
+                    responseHeaders[key] = value;
+                  });
 
-                res.writeHead(proxyResponse.status, responseHeaders);
-                res.end(responseBody);
+                  res.writeHead(proxyResponse.status, responseHeaders);
+                  res.end(responseBody);
 
-                if (proxyResponse.ok) {
-                  log("✓ URL signing request proxied successfully");
+                  if (proxyResponse.ok) {
+                    log("✓ URL signing request proxied successfully");
+                  } else {
+                    log(
+                      `✗ URL signing request failed: ${proxyResponse.status} ${proxyResponse.statusText}`,
+                    );
+                  }
                 } else {
-                  log(
-                    `✗ URL signing request failed: ${proxyResponse.status} ${proxyResponse.statusText}`,
-                  );
+                  // In local dev, return mock response directly (MSW can't intercept server-side fetch)
+                  // Use the same mock token as MSW handler
+                  const mockToken =
+                    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJodHRwOi8vd2ViOjMwMDAvaGVhZC1tb292LTQ4MHAubXA0IiwiZXhwIjo5OTk5OTk5OTk5fQ.mock-signature";
+
+                  log("Returning mock token response for local dev");
+                  res.writeHead(200, { "Content-Type": "application/json" });
+                  res.end(JSON.stringify({ token: mockToken }));
                 }
               } catch (error) {
                 const errorMessage =
