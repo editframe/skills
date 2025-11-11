@@ -104,12 +104,12 @@ export function Demonstration({
   const renderPreviewContent = () => {
     if (wrapInPreview) {
       return (
-        <Preview id={id} loop={loop} className={clsx("h-full w-full grid", {
+        <Preview id={id} loop={loop} className={clsx("h-full w-full max-w-full min-w-0 grid", {
           "grid-rows-[1.5fr_1fr]": !hideFilmstrip,
           "grid-rows-[1fr]": hideFilmstrip,
         })}>
-          <div className="overflow-hidden bg-slate-300 dark:bg-slate-700 min-h-0">
-            <FitScale>
+          <div className="overflow-hidden bg-slate-300 dark:bg-slate-700 min-h-0 min-w-0 w-full h-full max-w-full">
+            <FitScale className="w-full h-full max-w-full min-w-0">
               <div
                 className="contents"
                 dangerouslySetInnerHTML={{
@@ -134,12 +134,12 @@ export function Demonstration({
     }
 
     return (
-      <div className={clsx("h-full w-full grid", {
+      <div className={clsx("h-full w-full max-w-full min-w-0 grid", {
         "grid-rows-[1.5fr_1fr]": !hideFilmstrip,
         "grid-rows-[1fr]": hideFilmstrip,
       })}>
-        <div className="overflow-hidden bg-slate-300 dark:bg-slate-700 min-h-0">
-          <FitScale>
+        <div className="overflow-hidden bg-slate-300 dark:bg-slate-700 min-h-0 min-w-0 w-full h-full max-w-full">
+          <FitScale className="w-full h-full max-w-full min-w-0">
             <div
               className="contents"
               dangerouslySetInnerHTML={{
@@ -166,11 +166,11 @@ export function Demonstration({
 
   return (
     <div
-      className={clsx("border-l-4 border-slate-300 dark:border-slate-600 pl-2 sm:pl-4", {
+      className={clsx("border-l-4 border-slate-300 dark:border-slate-600 pl-2 sm:pl-4 w-full max-w-full", {
         "grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-4": layout === "horizontal" && !hideSource,
       })}
     >
-      <div className="h-[calc(50vh-4rem)] sm:h-[calc(60vh-4rem)] min-h-[250px]">
+      <div className="h-[calc(50vh-4rem)] sm:h-[calc(60vh-4rem)] min-h-[250px] w-full min-w-0 max-w-full">
         {renderPreviewContent()}
       </div>
 

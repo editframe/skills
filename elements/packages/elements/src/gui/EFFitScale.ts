@@ -35,9 +35,16 @@ export class EFFitScale extends LitElement {
 
     const isNonContentElement = (element: Element): boolean => {
       const tagName = element.tagName.toLowerCase();
-      const nonContentTags = ["style", "script", "meta", "link", "title", "noscript"];
+      const nonContentTags = [
+        "style",
+        "script",
+        "meta",
+        "link",
+        "title",
+        "noscript",
+      ];
       if (nonContentTags.includes(tagName)) return true;
-      
+
       try {
         const display = window.getComputedStyle(element).display;
         return display === "none" || display === "contents";
@@ -63,7 +70,10 @@ export class EFFitScale extends LitElement {
 
       const children = Array.from(element.children);
       for (let i = 0; i < children.length; i++) {
-        results.push(...findAllContentElements(children[i]!));
+        const child = children[i];
+        if (child) {
+          results.push(...findAllContentElements(child));
+        }
       }
 
       return results;
@@ -72,12 +82,15 @@ export class EFFitScale extends LitElement {
     const children = Array.from(this.children);
     const allContentElements: HTMLElement[] = [];
     for (let i = 0; i < children.length; i++) {
-      allContentElements.push(...findAllContentElements(children[i]!));
+      const child = children[i];
+      if (child) {
+        allContentElements.push(...findAllContentElements(child));
+      }
     }
 
     if (allContentElements.length === 0) return null;
 
-    return allContentElements[0]!;
+    return allContentElements[0] ?? null;
   }
 
   get scaleInfo() {
