@@ -2,6 +2,7 @@ import { html, render } from "lit";
 import { beforeEach, describe } from "vitest";
 
 import { test as baseTest } from "../../test/useMSW.js";
+import { getApiHost } from "../../test/setup.js";
 import "../gui/EFPreview.js";
 import "../gui/EFWorkbench.js";
 import "./EFThumbnailStrip.js";
@@ -32,15 +33,7 @@ const test = baseTest.extend<{
 }>({
   thumbnailStripSetup: async ({}, use) => {
     const container = document.createElement("div");
-    // Use window.location for API host so it works with Traefik routing
-    // If we're on localhost:63315, rewrite to use the Traefik URL (main.localhost:4322)
-    let apiHost = `${window.location.protocol}//${window.location.host}`;
-    if (window.location.host === "localhost:63315") {
-      // Use worktree domain injected by setup.ts
-      const worktreeDomain =
-        (window as any).__WORKTREE_DOMAIN__ || "main.localhost";
-      apiHost = `${window.location.protocol}//${worktreeDomain}:4322`;
-    }
+    const apiHost = getApiHost();
     render(
       html`
       <ef-configuration api-host="${apiHost}" signing-url="/@ef-sign-url">
@@ -80,15 +73,7 @@ const test = baseTest.extend<{
   },
   alternateSetup: async ({}, use) => {
     const container = document.createElement("div");
-    // Use window.location for API host so it works with Traefik routing
-    // If we're on localhost:63315, rewrite to use the Traefik URL (main.localhost:4322)
-    let apiHost = `${window.location.protocol}//${window.location.host}`;
-    if (window.location.host === "localhost:63315") {
-      // Use worktree domain injected by setup.ts
-      const worktreeDomain =
-        (window as any).__WORKTREE_DOMAIN__ || "main.localhost";
-      apiHost = `${window.location.protocol}//${worktreeDomain}:4322`;
-    }
+    const apiHost = getApiHost();
     render(
       html`
       <ef-configuration api-host="${apiHost}" signing-url="/@ef-sign-url">
