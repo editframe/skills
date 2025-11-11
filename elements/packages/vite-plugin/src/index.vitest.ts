@@ -175,10 +175,25 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
                 // Since the proxy middleware has already been called and didn't match /@ef-sign-url,
                 // we need to make an internal HTTP request to /api/v1/url-token so the proxy can handle it.
                 // This allows cached responses to be served in CI.
+                // Wait for server to be ready if needed
+                if (!server.httpServer?.listening) {
+                  await new Promise<void>((resolve) => {
+                    if (server.httpServer?.listening) {
+                      resolve();
+                    } else {
+                      server.httpServer?.once("listening", () => resolve());
+                    }
+                  });
+                }
+                
+                const serverAddress = server.httpServer?.address();
                 const serverPort =
-                  (server.httpServer?.address() as { port: number } | null)
-                    ?.port || TEST_SERVER_PORT;
-                const targetUrl = `http://127.0.0.1:${serverPort}/api/v1/url-token`;
+                  (serverAddress &&
+                    typeof serverAddress === "object" &&
+                    "port" in serverAddress
+                    ? serverAddress.port
+                    : null) || TEST_SERVER_PORT;
+                const targetUrl = `http://localhost:${serverPort}/api/v1/url-token`;
 
                 log(`Making internal request to: ${targetUrl}`);
 
