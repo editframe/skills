@@ -11,7 +11,6 @@ import "../elements/EFTimegroup.js";
 import type { EFTimegroup } from "../elements/EFTimegroup.js";
 import type { EFVideo } from "../elements/EFVideo.js";
 import type { EFTogglePlay } from "./EFTogglePlay.js";
-import type { PlaybackController } from "./PlaybackController.js";
 
 @customElement("test-controllable-wrapper")
 // @ts-expect-error Used via custom element registration

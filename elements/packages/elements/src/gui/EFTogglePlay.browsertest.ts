@@ -6,7 +6,6 @@ import "../elements/EFVideo.js";
 import "./EFPreview.js";
 import "./EFTogglePlay.js";
 import type { EFTimegroup } from "../elements/EFTimegroup.js";
-import type { EFVideo } from "../elements/EFVideo.js";
 import type { EFTogglePlay } from "./EFTogglePlay.js";
 import type { PlaybackController } from "./PlaybackController.js";
 
@@ -66,7 +65,7 @@ describe("EFTogglePlay - AudioContext Resume", () => {
 
       // Verify setPendingAudioContext was called synchronously (within the click handler)
       expect(setPendingSpy).toHaveBeenCalledTimes(1);
-      const pendingContext = setPendingSpy.mock.calls[0][0];
+      const pendingContext = setPendingSpy.mock.calls[0]![0]!;
       expect(pendingContext).toBeInstanceOf(AudioContext);
 
       // Verify the context was resumed (state should be "running" or transitioning to it)
