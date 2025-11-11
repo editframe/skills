@@ -161,13 +161,71 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
 
             log("Proxying /@ef-sign-url to /api/v1/url-token");
 
-            // Rewrite the request URL to /api/v1/url-token so the record-replay proxy middleware handles it
-            // This allows cached responses to be served in CI
-            req.url = "/api/v1/url-token";
-            
-            // Pass the modified request to the next middleware (record-replay proxy)
-            // The proxy middleware will handle the request and response
-            next();
+            // Collect request body
+            const requestChunks: Buffer[] = [];
+            req.on("data", (chunk) => {
+              requestChunks.push(chunk);
+            });
+
+            req.on("end", async () => {
+              try {
+                const requestBody = Buffer.concat(requestChunks);
+                
+                // The vite plugin middleware runs AFTER the record-replay proxy middleware in the stack.
+                // Since the proxy middleware has already been called and didn't match /@ef-sign-url,
+                // we need to make an internal HTTP request to /api/v1/url-token so the proxy can handle it.
+                // This allows cached responses to be served in CI.
+                const serverPort =
+                  (server.httpServer?.address() as { port: number } | null)
+                    ?.port || TEST_SERVER_PORT;
+                const targetUrl = `http://127.0.0.1:${serverPort}/api/v1/url-token`;
+
+                log(`Making internal request to: ${targetUrl}`);
+
+                const proxyResponse = await fetch(targetUrl, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": req.headers["content-type"] || "application/json",
+                    ...(req.headers.authorization && {
+                      authorization: req.headers.authorization,
+                    }),
+                  },
+                  body: requestBody.length > 0 ? requestBody : undefined,
+                });
+
+              const responseBody = await proxyResponse.text();
+              const responseHeaders: Record<string, string> = {};
+              proxyResponse.headers.forEach((value, key) => {
+                responseHeaders[key] = value;
+              });
+
+              res.writeHead(proxyResponse.status, responseHeaders);
+              res.end(responseBody);
+
+              if (proxyResponse.ok) {
+                log("✓ URL signing request proxied successfully");
+              } else {
+                log(
+                  `✗ URL signing request failed: ${proxyResponse.status} ${proxyResponse.statusText}`,
+                );
+              }
+            } catch (error) {
+              const errorMessage =
+                error instanceof Error ? error.message : String(error);
+              log(`Error proxying URL signing request: ${errorMessage}`);
+              console.error(
+                "[Vite Plugin] URL signing proxy error:",
+                errorMessage,
+              );
+                res.writeHead(500, { "Content-Type": "application/json" });
+                res.end(
+                  JSON.stringify({
+                    error: "Failed to proxy URL signing request",
+                    details: errorMessage,
+                  }),
+                );
+              }
+            });
             break;
           }
           default:
