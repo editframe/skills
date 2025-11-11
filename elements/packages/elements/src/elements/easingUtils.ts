@@ -21,20 +21,21 @@ export function evaluateEasing(
       return cubicBezier(0, 0, 0.58, 1, progress);
     case "ease-in-out":
       return cubicBezier(0.42, 0, 0.58, 1, progress);
-    default:
+    default: {
       // Try to parse as cubic-bezier
       const cubicBezierMatch = easing.match(
         /cubic-bezier\s*\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)/i,
       );
-      if (cubicBezierMatch && cubicBezierMatch[1] && cubicBezierMatch[2] && cubicBezierMatch[3] && cubicBezierMatch[4]) {
-        const x1 = parseFloat(cubicBezierMatch[1]);
-        const y1 = parseFloat(cubicBezierMatch[2]);
-        const x2 = parseFloat(cubicBezierMatch[3]);
-        const y2 = parseFloat(cubicBezierMatch[4]);
+      if (cubicBezierMatch?.[1] && cubicBezierMatch[2] && cubicBezierMatch[3] && cubicBezierMatch[4]) {
+        const x1 = Number.parseFloat(cubicBezierMatch[1]);
+        const y1 = Number.parseFloat(cubicBezierMatch[2]);
+        const x2 = Number.parseFloat(cubicBezierMatch[3]);
+        const y2 = Number.parseFloat(cubicBezierMatch[4]);
         return cubicBezier(x1, y1, x2, y2, progress);
       }
       // Default to linear if unknown
       return progress;
+    }
   }
 }
 

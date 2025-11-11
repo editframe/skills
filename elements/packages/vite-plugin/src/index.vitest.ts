@@ -36,7 +36,7 @@ const forbidRelativePaths = (req: IncomingMessage) => {
       console.error("[Vite Plugin] Available env vars:", Object.keys(process.env).filter(k => k.includes('EF') || k.includes('TOKEN')));
       throw new Error(error);
     }
-    console.log("[Vite Plugin] Creating client with token (first 20 chars):", token.substring(0, 20) + "...", "efHost:", efHost);
+    console.log("[Vite Plugin] Creating client with token (first 20 chars):", `${token.substring(0, 20)}...`, "efHost:", efHost);
     return new Client(token, efHost);
   };
 
@@ -201,7 +201,7 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
                 // For transcode URLs with params, we need to sign the source URL (from params.url)
                 // For regular URLs, we sign the URL directly
                 let urlToSign = url;
-                if (params && params.url) {
+                if (params?.url) {
                   // For transcode URLs, sign the source URL from params
                   urlToSign = params.url;
                 } else if (params) {

@@ -150,7 +150,7 @@ const coordinateAnimationsForSingleElement = (
     const timing = effect.getTiming();
     // Duration and delay from getTiming() are already in milliseconds
     // They include CSS animation-duration and animation-delay values
-    let duration = Number(timing.duration) || 0;
+    const duration = Number(timing.duration) || 0;
     let delay = Number(timing.delay) || 0;
     
     // For Web Animations API animations, getTiming().delay is always correct.
@@ -166,8 +166,8 @@ const coordinateAnimationsForSingleElement = (
           return 0;
         }
         const delayMatch = delayStr.match(/^([\d.]+)(s|ms)$/);
-        if (delayMatch && delayMatch[1] && delayMatch[2]) {
-          const value = parseFloat(delayMatch[1]);
+        if (delayMatch?.[1] && delayMatch[2]) {
+          const value = Number.parseFloat(delayMatch[1]);
           const unit = delayMatch[2];
           return unit === "s" ? value * 1000 : value;
         }
@@ -213,7 +213,7 @@ const coordinateAnimationsForSingleElement = (
     }
 
     // Use the element itself as the time source (it's guaranteed to be temporal)
-    let currentTime = element.ownCurrentTimeMs ?? 0;
+    const currentTime = element.ownCurrentTimeMs ?? 0;
 
     // Special case for ef-text-segment: apply stagger offset for animation timing
     // This allows staggered animations while keeping visibility timing unchanged

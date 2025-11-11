@@ -61,7 +61,7 @@ export function recordReplayProxyPlugin() {
   }
 
   // Serve cached response
-  async function serveCachedResponse(res, cacheDir, req) {
+  async function serveCachedResponse(res, cacheDir, _req) {
     try {
       const metadataFile = join(cacheDir, "metadata.json");
       const dataFile = join(cacheDir, "data.bin");

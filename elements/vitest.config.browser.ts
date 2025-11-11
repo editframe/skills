@@ -164,7 +164,7 @@ export default defineConfig(async () => {
           console.log("[Traefik URL Plugin] resolvedUrls accessed, returning:", traefikResolvedUrls);
           return traefikResolvedUrls;
         },
-        set(value) {
+        set(_value) {
           // Ignore any attempts to set it back
           console.log("[Traefik URL Plugin] Attempted to set resolvedUrls, ignoring");
         },

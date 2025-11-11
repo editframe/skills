@@ -65,7 +65,7 @@ export class EFText extends EFTemporal(LitElement) {
   }
 
   @property({ type: String, reflect: true })
-  easing: string = "linear";
+  easing = "linear";
 
   private mutationObserver?: MutationObserver;
   private lastTextContent = "";
@@ -304,7 +304,9 @@ export class EFText extends EFTemporal(LitElement) {
       }
       this.lastTextContent = "";
       // Resolve any waiting promises
-      this._segmentsReadyResolvers.forEach((resolve) => resolve());
+      this._segmentsReadyResolvers.forEach((resolve) => {
+        resolve();
+      });
       this._segmentsReadyResolvers = [];
       return;
     }
@@ -353,10 +355,10 @@ export class EFText extends EFTemporal(LitElement) {
         staggerOffset = easedProgress * totalStaggerDuration;
       }
 
-      if (useTemplate) {
+      if (useTemplate && templateContent) {
         // Clone template content for each text segment
         // This allows multiple ef-text-segment elements per character/word/line
-        const clonedContent = templateContent!.cloneNode(true) as DocumentFragment;
+        const clonedContent = templateContent.cloneNode(true) as DocumentFragment;
         const clonedSegments = Array.from(
           clonedContent.querySelectorAll("ef-text-segment"),
         ) as EFTextSegment[];
@@ -450,7 +452,9 @@ export class EFText extends EFTemporal(LitElement) {
 
     // Resolve any waiting promises after segments are connected
     requestAnimationFrame(() => {
-      this._segmentsReadyResolvers.forEach((resolve) => resolve());
+      this._segmentsReadyResolvers.forEach((resolve) => {
+        resolve();
+      });
       this._segmentsReadyResolvers = [];
     });
   }
