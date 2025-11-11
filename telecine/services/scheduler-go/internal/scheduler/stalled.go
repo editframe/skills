@@ -117,13 +117,26 @@ func (s *StalledJobCleanup) releaseJob(ctx context.Context, job Job) error {
 		return s.failJob(ctx, job)
 	}
 
-	job.Attempts++
-	jobJSON, err := superjson.Stringify(job)
+	// Check if job is still in "claimed" stage before requeuing
+	// This prevents race conditions where a job completes while we're processing it as stalled
+	removed, err := s.client.Commands.RemoveJobFromStage(ctx, job.Queue, job.OrgID, job.WorkflowID, job.Workflow, job.JobID, "claimed")
 	if err != nil {
 		return err
 	}
 
-	if err := s.client.Commands.RemoveJobFromStage(ctx, job.Queue, job.OrgID, job.WorkflowID, job.Workflow, job.JobID, "claimed"); err != nil {
+	// If job wasn't in "claimed" (already completed or moved), skip requeuing
+	if !removed {
+		s.logger.Debug().
+			Str("jobID", job.JobID).
+			Str("queue", job.Queue).
+			Str("workflowID", job.WorkflowID).
+			Msg("job no longer in claimed stage, skipping requeue (likely already completed)")
+		return nil
+	}
+
+	job.Attempts++
+	jobJSON, err := superjson.Stringify(job)
+	if err != nil {
 		return err
 	}
 

@@ -141,9 +141,18 @@ func (c *Commands) MaybeEnqueueFinalizer(ctx context.Context, queue, orgID, work
 	return err
 }
 
-func (c *Commands) RemoveJobFromStage(ctx context.Context, queue, orgID, workflowID, workflowName, jobID, stage string) error {
-	_, err := c.removeJobFromStage.Run(ctx, c.client, []string{}, queue, orgID, workflowID, workflowName, jobID, stage).Result()
-	return err
+func (c *Commands) RemoveJobFromStage(ctx context.Context, queue, orgID, workflowID, workflowName, jobID, stage string) (bool, error) {
+	result, err := c.removeJobFromStage.Run(ctx, c.client, []string{}, queue, orgID, workflowID, workflowName, jobID, stage).Result()
+	if err != nil {
+		return false, err
+	}
+	
+	removed, ok := result.(int64)
+	if !ok {
+		return false, fmt.Errorf("unexpected result type: %T", result)
+	}
+	
+	return removed == 1, nil
 }
 
 func (c *Commands) GetJobs(ctx context.Context, key string, offset, limit int) ([]string, error) {

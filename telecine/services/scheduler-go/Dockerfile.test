@@ -13,7 +13,7 @@ FROM golang:1.23-alpine AS test
 WORKDIR /app
 
 # Install dependencies for testing
-RUN apk --no-cache add ca-certificates postgresql-client redis zsh
+RUN apk --no-cache add ca-certificates postgresql-client redis zsh watchexec
 
 # Copy dependencies from builder
 COPY --from=builder /go/pkg/mod /go/pkg/mod
