@@ -195,8 +195,8 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
                   const serverAddress = server.httpServer?.address();
                   const serverPort =
                     (serverAddress &&
-                      typeof serverAddress === "object" &&
-                      "port" in serverAddress
+                    typeof serverAddress === "object" &&
+                    "port" in serverAddress
                       ? serverAddress.port
                       : null) || TEST_SERVER_PORT;
                   const targetUrl = `http://localhost:${serverPort}/api/v1/url-token`;
