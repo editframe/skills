@@ -18,7 +18,7 @@ import { globalURLTokenDeduplicator } from "../src/transcoding/cache/URLTokenDed
 export function getApiHost(): string {
   const host = window.location.host;
   const protocol = window.location.protocol;
-  
+
   if (host === "localhost:63315") {
     // Check if we have a Traefik referrer (local dev) or not (CI mode)
     const traefikReferrer = document.referrer.match(/\/\/([^:]+):4322/)?.[1];
