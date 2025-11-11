@@ -230,12 +230,47 @@ export default defineConfig(async () => {
     },
   };
 
+  // Plugin to inject CI mode flag into browser
+  const ciModePlugin = {
+    name: "ci-mode-inject",
+    configureServer(server) {
+      // Inject script that sets CI mode flag in browser
+      server.middlewares.use((req, res, next) => {
+        if (req.url?.endsWith(".html") || req.url === "/") {
+          const originalWrite = res.write.bind(res);
+          const originalEnd = res.end.bind(res);
+          let chunks: Buffer[] = [];
+
+          res.write = (chunk: any) => {
+            if (chunk) chunks.push(Buffer.from(chunk));
+            return true;
+          };
+
+          res.end = (chunk?: any) => {
+            if (chunk) chunks.push(Buffer.from(chunk));
+            const body = Buffer.concat(chunks).toString("utf-8");
+            const script = `<script>window.__CI_MODE__ = ${isCI};</script>`;
+            const modifiedBody = body.replace(
+              "</head>",
+              `${script}</head>`,
+            ) || body + script;
+            res.setHeader("Content-Length", Buffer.byteLength(modifiedBody));
+            originalWrite(modifiedBody);
+            originalEnd();
+          };
+        }
+        next();
+      });
+    },
+  };
+
   const plugins = [
     recordReplayProxyPlugin(),
     vitePluginEditframe({
       root: "./test-assets",
       cacheRoot: "./test-assets",
     }),
+    ciModePlugin,
   ];
 
   // Only add Traefik URL plugin in local development (not in CI)

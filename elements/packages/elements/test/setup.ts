@@ -19,14 +19,22 @@ export function getApiHost(): string {
   const host = window.location.host;
   const protocol = window.location.protocol;
 
+  // Check if CI mode was injected by server
+  const isCI = (window as any).__CI_MODE__ === true;
+
+  if (isCI) {
+    // CI mode: always use localhost directly
+    return `${protocol}//${host}`;
+  }
+
   if (host === "localhost:63315") {
-    // Check if we have a Traefik referrer (local dev) or not (CI mode)
+    // Check if we have a Traefik referrer (local dev)
     const traefikReferrer = document.referrer.match(/\/\/([^:]+):4322/)?.[1];
     if (traefikReferrer) {
       // Local dev: use Traefik URL
       return `${protocol}//${traefikReferrer}:4322`;
     }
-    // CI mode: use localhost directly
+    // No Traefik referrer but not explicitly CI: use localhost directly
     return `${protocol}//${host}`;
   }
   // Already on Traefik URL or other configuration
