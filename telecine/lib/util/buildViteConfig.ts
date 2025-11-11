@@ -85,11 +85,11 @@ export const buildViteConfig = () => {
           enforce: 'pre',
           resolveId(id) {
             if (id.endsWith('.css')) {
-              return { id, external: true };
+              return `\0${id}`;
             }
           },
           load(id) {
-            if (id.endsWith('.css')) {
+            if (id.startsWith('\0') && id.endsWith('.css')) {
               return 'export default {}';
             }
           },
