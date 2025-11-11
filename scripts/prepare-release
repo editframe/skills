@@ -75,10 +75,10 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 cd "$PROJECT_ROOT/telecine"
 "$PROJECT_ROOT/telecine/scripts/update-editframe-packages" "$VERSION"
 
-# Step 4: Run tests in telecine
+# Step 4: Run full-render tests in telecine
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "Step 4: Running tests in telecine"
+echo "Step 4: Running full-render tests in telecine"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 cd "$PROJECT_ROOT/telecine"
 
@@ -88,15 +88,15 @@ if ! git diff-index --quiet HEAD --; then
   git add package.json package-lock.json
 fi
 
-# Run tests using the telecine test script
-"$PROJECT_ROOT/telecine/scripts/test" --run
+# Run full-render tests using the telecine test script
+"$PROJECT_ROOT/telecine/scripts/test" --run lib/queues/units-of-work/Render/full-render
 
 if [ $? -ne 0 ]; then
-  echo "Error: Telecine tests failed!"
+  echo "Error: Telecine full-render tests failed!"
   exit 1
 fi
 
-echo "✅ Telecine tests passed"
+echo "✅ Telecine full-render tests passed"
 
 # Step 5: Commit and push changes to main
 echo ""
@@ -131,6 +131,15 @@ else
   echo "✅ Changes committed and pushed to main"
 fi
 
+# Step 6: Wait for GitHub Actions workflow to complete
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "Step 6: Waiting for telecine deployment action to complete"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+cd "$PROJECT_ROOT"
+
+"$PROJECT_ROOT/scripts/wait-for-telecine-action" "deploy.yaml"
+
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "✅ Release preparation complete!"
@@ -141,4 +150,5 @@ echo "Tag: $TAG_NAME"
 echo "Packages published to npm"
 echo "Telecine updated and tested"
 echo "Changes pushed to main"
+echo "Telecine deployment completed"
 
