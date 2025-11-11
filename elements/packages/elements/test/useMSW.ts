@@ -5,6 +5,7 @@
 
 import { setupWorker } from "msw/browser";
 import { test as testBase } from "vitest";
+import { transcodeMSWHandlers } from "./useTranscodeMSW.js";
 
 // Create the worker instance that will be shared across tests
 const worker = setupWorker();
@@ -26,6 +27,8 @@ export const test = testBase.extend<{
         await worker.start({
           onUnhandledRequest: "bypass", // Allow unhandled requests to pass through
         });
+        // Set up default handlers for transcode API endpoints
+        worker.use(...transcodeMSWHandlers);
         workerStarted = true;
       }
 
