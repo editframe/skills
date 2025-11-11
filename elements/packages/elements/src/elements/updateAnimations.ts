@@ -166,7 +166,7 @@ const coordinateAnimationsForSingleElement = (
           return 0;
         }
         const delayMatch = delayStr.match(/^([\d.]+)(s|ms)$/);
-        if (delayMatch) {
+        if (delayMatch && delayMatch[1] && delayMatch[2]) {
           const value = parseFloat(delayMatch[1]);
           const unit = delayMatch[2];
           return unit === "s" ? value * 1000 : value;
@@ -175,7 +175,7 @@ const coordinateAnimationsForSingleElement = (
       };
       
       // If there's only one animation/delay, use it directly
-      if (animationDelays.length === 1) {
+      if (animationDelays.length === 1 && animationDelays[0]) {
         const parsedDelay = parseDelay(animationDelays[0]);
         // Only override if we successfully parsed a value (or if it's explicitly 0)
         if (parsedDelay !== 0 || animationDelays[0] === "0s" || animationDelays[0] === "0ms") {
@@ -185,7 +185,7 @@ const coordinateAnimationsForSingleElement = (
         // Multiple animations: try to match by index
         const allAnimations = Array.from(target.getAnimations());
         const animationIndex = allAnimations.indexOf(animation);
-        if (animationIndex >= 0 && animationIndex < animationDelays.length) {
+        if (animationIndex >= 0 && animationIndex < animationDelays.length && animationDelays[animationIndex]) {
           const parsedDelay = parseDelay(animationDelays[animationIndex]);
           // Only override if we successfully parsed a value (or if it's explicitly 0)
           if (parsedDelay !== 0 || animationDelays[animationIndex] === "0s" || animationDelays[animationIndex] === "0ms") {
@@ -241,9 +241,6 @@ const coordinateAnimationsForSingleElement = (
     if (shouldReverse) {
       currentIterationTime = duration - currentIterationTime;
     }
-
-    // Calculate the total animation timeline length (delay + duration * iterations)
-    const totalAnimationLength = delay + duration * iterations;
 
     if (currentIteration >= iterations) {
       // Animation would be complete - clamp to just before completion

@@ -26,7 +26,7 @@ export function evaluateEasing(
       const cubicBezierMatch = easing.match(
         /cubic-bezier\s*\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)/i,
       );
-      if (cubicBezierMatch) {
+      if (cubicBezierMatch && cubicBezierMatch[1] && cubicBezierMatch[2] && cubicBezierMatch[3] && cubicBezierMatch[4]) {
         const x1 = parseFloat(cubicBezierMatch[1]);
         const y1 = parseFloat(cubicBezierMatch[2]);
         const x2 = parseFloat(cubicBezierMatch[3]);
@@ -91,7 +91,6 @@ function bezierX(t: number, x1: number, x2: number): number {
   const t3 = t2 * t;
   const mt = 1 - t;
   const mt2 = mt * mt;
-  const mt3 = mt2 * mt;
 
   return 3 * mt2 * t * x1 + 3 * mt * t2 * x2 + t3;
 }
@@ -104,7 +103,6 @@ function bezierY(t: number, y1: number, y2: number): number {
   const t3 = t2 * t;
   const mt = 1 - t;
   const mt2 = mt * mt;
-  const mt3 = mt2 * mt;
 
   return 3 * mt2 * t * y1 + 3 * mt * t2 * y2 + t3;
 }

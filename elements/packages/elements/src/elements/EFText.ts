@@ -90,10 +90,10 @@ export class EFText extends EFTemporal(LitElement) {
       }
       
       // Clear any existing text nodes
-      const textNodes: Node[] = [];
+      const textNodes: ChildNode[] = [];
       for (const node of Array.from(this.childNodes)) {
         if (node.nodeType === Node.TEXT_NODE) {
-          textNodes.push(node);
+          textNodes.push(node as ChildNode);
         }
       }
       for (const node of textNodes) {
@@ -162,7 +162,7 @@ export class EFText extends EFTemporal(LitElement) {
     }
 
     // Otherwise, wait for segments to be created (with timeout)
-    return new Promise<EFTextSegment[]>((resolve, reject) => {
+    return new Promise<EFTextSegment[]>((resolve) => {
       let attempts = 0;
       const maxAttempts = 100; // 100 frames = ~1.6 seconds at 60fps
       
@@ -293,10 +293,10 @@ export class EFText extends EFTemporal(LitElement) {
         segment.remove();
       }
       // Clear text nodes
-      const textNodes: Node[] = [];
+      const textNodes: ChildNode[] = [];
       for (const node of Array.from(this.childNodes)) {
         if (node.nodeType === Node.TEXT_NODE) {
-          textNodes.push(node);
+          textNodes.push(node as ChildNode);
         }
       }
       for (const node of textNodes) {

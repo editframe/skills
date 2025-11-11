@@ -52,7 +52,7 @@ describe("EFText", () => {
       const segments = await text.whenSegmentsReady();
 
       expect(segments.length).toBeGreaterThan(0);
-      expect(segments[0].segmentText).toBeTruthy();
+      expect(segments[0]?.segmentText).toBeTruthy();
     });
 
     test("splits text by lines when split='line'", async () => {
@@ -69,9 +69,9 @@ describe("EFText", () => {
       const segments = await text.whenSegmentsReady();
 
       expect(segments.length).toBe(3);
-      expect(segments[0].segmentText.trim()).toBe("Line one");
-      expect(segments[1].segmentText.trim()).toBe("Line two");
-      expect(segments[2].segmentText.trim()).toBe("Line three");
+      expect(segments[0]?.segmentText.trim()).toBe("Line one");
+      expect(segments[1]?.segmentText.trim()).toBe("Line two");
+      expect(segments[2]?.segmentText.trim()).toBe("Line three");
     });
 
     test("splits text by characters when split='char'", async () => {
@@ -88,9 +88,9 @@ describe("EFText", () => {
       const segments = await text.whenSegmentsReady();
 
       expect(segments.length).toBe(3);
-      expect(segments[0].segmentText).toBe("A");
-      expect(segments[1].segmentText).toBe("B");
-      expect(segments[2].segmentText).toBe("C");
+      expect(segments[0]?.segmentText).toBe("A");
+      expect(segments[1]?.segmentText).toBe("B");
+      expect(segments[2]?.segmentText).toBe("C");
     });
 
     test("re-splits when content changes", async () => {
@@ -145,7 +145,7 @@ describe("EFText", () => {
       const segments = await text.whenSegmentsReady();
 
       expect(segments.length).toBe(1);
-      expect(segments[0].segmentText).toBe("Hello");
+      expect(segments[0]?.segmentText).toBe("Hello");
     });
 
     test("handles single character", async () => {
@@ -162,7 +162,7 @@ describe("EFText", () => {
       const segments = await text.whenSegmentsReady();
 
       expect(segments.length).toBe(1);
-      expect(segments[0].segmentText).toBe("A");
+      expect(segments[0]?.segmentText).toBe("A");
     });
 
     test("handles single line", async () => {
@@ -179,7 +179,7 @@ describe("EFText", () => {
       const segments = await text.whenSegmentsReady();
 
       expect(segments.length).toBe(1);
-      expect(segments[0].segmentText.trim()).toBe("Single line");
+      expect(segments[0]?.segmentText.trim()).toBe("Single line");
     });
 
     test("handles whitespace-only text", async () => {
@@ -242,7 +242,7 @@ describe("EFText", () => {
       const segments = await text.whenSegmentsReady();
 
       expect(segments.length).toBe(1);
-      expect(segments[0].segmentText).toBe("Third");
+      expect(segments[0]?.segmentText).toBe("Third");
     });
   });
 
@@ -252,7 +252,7 @@ describe("EFText", () => {
       const text = document.createElement("ef-text");
       text.split = "word";
       text.textContent = "One two three";
-      text.stagger = "50ms";
+      text.setAttribute("stagger", "50ms");
       text.duration = "3s";
       timegroup.appendChild(text);
       document.body.appendChild(timegroup);
@@ -270,7 +270,7 @@ describe("EFText", () => {
       // Test observable behavior: segments should be created and rendered
       // The actual stagger behavior is tested via animation timing, not internal properties
       expect(segments.length).toBeGreaterThan(0);
-      expect(segments[0].textContent || segments[0].segmentText).toBeTruthy();
+      expect(segments[0]?.textContent || segments[0]?.segmentText).toBeTruthy();
     });
 
     test("sets CSS variable --ef-stagger-offset on segments", async () => {
@@ -278,7 +278,7 @@ describe("EFText", () => {
       const text = document.createElement("ef-text");
       text.split = "char";
       text.textContent = "ABC";
-      text.stagger = "100ms";
+      text.setAttribute("stagger", "100ms");
       text.duration = "3s";
       timegroup.appendChild(text);
       document.body.appendChild(timegroup);
@@ -294,17 +294,12 @@ describe("EFText", () => {
       await new Promise((resolve) => requestAnimationFrame(resolve));
       await new Promise((resolve) => requestAnimationFrame(resolve));
 
-      // CSS variables are set via inline styles in render()
-      const style0 = segments[0].style.getPropertyValue("--ef-stagger-offset");
-      const style1 = segments[1].style.getPropertyValue("--ef-stagger-offset");
-      const style2 = segments[2].style.getPropertyValue("--ef-stagger-offset");
-
       // Test observable behavior: segments should be created and rendered correctly
       // CSS variables are implementation details - what matters is that segments render
       expect(segments.length).toBe(3);
-      expect(segments[0].textContent || segments[0].segmentText).toBe("A");
-      expect(segments[1].textContent || segments[1].segmentText).toBe("B");
-      expect(segments[2].textContent || segments[2].segmentText).toBe("C");
+      expect(segments[0]?.textContent || segments[0]?.segmentText).toBe("A");
+      expect(segments[1]?.textContent || segments[1]?.segmentText).toBe("B");
+      expect(segments[2]?.textContent || segments[2]?.segmentText).toBe("C");
     });
 
     test("handles empty text with stagger", async () => {
@@ -312,7 +307,7 @@ describe("EFText", () => {
       const text = document.createElement("ef-text");
       text.split = "word";
       text.textContent = "";
-      text.stagger = "50ms";
+      text.setAttribute("stagger", "50ms");
       text.duration = "2s";
       timegroup.appendChild(text);
       document.body.appendChild(timegroup);
@@ -329,7 +324,7 @@ describe("EFText", () => {
       const text = document.createElement("ef-text");
       text.split = "word";
       text.textContent = "One";
-      text.stagger = "50ms";
+      text.setAttribute("stagger", "50ms");
       text.duration = "2s";
       timegroup.appendChild(text);
       document.body.appendChild(timegroup);
@@ -340,11 +335,11 @@ describe("EFText", () => {
 
       expect(segments.length).toBe(1);
       // Wait for segment to render CSS variables
-      await segments[0].updateComplete;
+      await segments[0]?.updateComplete;
       await new Promise((resolve) => requestAnimationFrame(resolve));
       
       // Test observable behavior: segment should be created and rendered
-      expect(segments[0].textContent || segments[0].segmentText).toBe("One");
+      expect(segments[0]?.textContent || segments[0]?.segmentText).toBe("One");
     });
   });
 
@@ -400,9 +395,9 @@ describe("EFText", () => {
 
       // Test observable behavior: segments should have correct indices
       // Index is used for ordering - test via segmentIndex property
-      expect(segments[0].segmentIndex).toBe(0);
-      expect(segments[1].segmentIndex).toBe(1);
-      expect(segments[2].segmentIndex).toBe(2);
+      expect(segments[0]?.segmentIndex).toBe(0);
+      expect(segments[1]?.segmentIndex).toBe(1);
+      expect(segments[2]?.segmentIndex).toBe(2);
     });
   });
 
@@ -425,8 +420,8 @@ describe("EFText", () => {
       // All segments should be visible for the full duration
       // Only animations are staggered, not visibility
       for (let i = 0; i < segments.length; i++) {
-        expect(segments[i].segmentStartMs).toBe(0);
-        expect(segments[i].segmentEndMs).toBe(2000);
+        expect(segments[i]?.segmentStartMs).toBe(0);
+        expect(segments[i]?.segmentEndMs).toBe(2000);
       }
     });
 
@@ -461,14 +456,14 @@ describe("EFText", () => {
       
       // Test observable behavior: segment should have correct timing relative to parent
       // Allow tolerance for timing calculations
-      const startTime = segment.startTimeMs;
+      const startTime = segment?.startTimeMs;
       // startTimeMs might be undefined if parent timing isn't calculated yet
       if (startTime !== undefined) {
         expect(startTime).toBeGreaterThanOrEqual(1000);
         expect(startTime).toBeLessThanOrEqual(1001);
       } else {
         // If undefined, that's okay - timing will be calculated when needed
-        expect(segment.segmentStartMs).toBe(0);
+        expect(segment?.segmentStartMs).toBe(0);
       }
     });
   });
@@ -490,18 +485,18 @@ describe("EFText", () => {
       // Test at t=0 - first segment should be visible
       timegroup.currentTimeMs = 0;
       await timegroup.seekTask.taskComplete;
-      await segments[0].updateComplete;
+      await segments[0]?.updateComplete;
 
       // First segment should be visible (not hidden)
-      expect(segments[0].hidden).toBe(false);
+      expect(segments[0]?.hidden).toBe(false);
 
       // Test at t=1.5s - should be in second segment
       if (segments.length > 1) {
         timegroup.currentTimeMs = 1500;
         await timegroup.seekTask.taskComplete;
-        await segments[1].updateComplete;
+        await segments[1]?.updateComplete;
 
-        expect(segments[1].hidden).toBe(false);
+        expect(segments[1]?.hidden).toBe(false);
       }
     });
   });
@@ -560,7 +555,7 @@ describe("EFText", () => {
       const text = document.createElement("ef-text");
       text.split = "char";
       text.textContent = "ABC";
-      text.stagger = "100ms";
+      text.setAttribute("stagger", "100ms");
       text.duration = "3s";
       timegroup.appendChild(text);
       document.body.appendChild(timegroup);
@@ -574,12 +569,12 @@ describe("EFText", () => {
       await new Promise((resolve) => requestAnimationFrame(resolve));
 
       // All segments should have same visibility timing (full duration)
-      expect(segments[0].segmentStartMs).toBe(0);
-      expect(segments[0].segmentEndMs).toBe(3000);
-      expect(segments[1].segmentStartMs).toBe(0);
-      expect(segments[1].segmentEndMs).toBe(3000);
-      expect(segments[2].segmentStartMs).toBe(0);
-      expect(segments[2].segmentEndMs).toBe(3000);
+      expect(segments[0]?.segmentStartMs).toBe(0);
+      expect(segments[0]?.segmentEndMs).toBe(3000);
+      expect(segments[1]?.segmentStartMs).toBe(0);
+      expect(segments[1]?.segmentEndMs).toBe(3000);
+      expect(segments[2]?.segmentStartMs).toBe(0);
+      expect(segments[2]?.segmentEndMs).toBe(3000);
 
       // Test observable behavior: segments should be created and have correct timing
       // Stagger behavior is tested via animation timing in other tests
@@ -624,14 +619,15 @@ describe("EFText", () => {
 
       // Check that animations are found
       const segment = segments[0];
+      if (!segment) throw new Error("Segment not found");
       const animations = segment.getAnimations();
       expect(animations.length).toBeGreaterThan(0);
 
       // Set timeline to different times and verify animations are coordinated
       timegroup.currentTimeMs = 0;
       await timegroup.seekTask.taskComplete;
-      if (segment.frameTask) {
-        await segment.frameTask.taskComplete;
+      if (segment?.frameTask) {
+        await segment?.frameTask.taskComplete;
       }
 
       // Animation should be paused and controlled (may be running initially, then paused)
@@ -650,7 +646,7 @@ describe("EFText", () => {
       const text = document.createElement("ef-text");
       text.split = "char";
       text.textContent = "ABC";
-      text.stagger = "100ms";
+      text.setAttribute("stagger", "100ms");
       text.duration = "3s";
       timegroup.appendChild(text);
       document.body.appendChild(timegroup);
@@ -675,7 +671,7 @@ describe("EFText", () => {
       const text = document.createElement("ef-text");
       text.split = "char";
       text.textContent = "ABC";
-      text.stagger = "100ms";
+      text.setAttribute("stagger", "100ms");
       text.easing = "ease-out";
       text.duration = "3s";
       timegroup.appendChild(text);
@@ -701,7 +697,7 @@ describe("EFText", () => {
       const text = document.createElement("ef-text");
       text.split = "char";
       text.textContent = "ABC";
-      text.stagger = "100ms";
+      text.setAttribute("stagger", "100ms");
       text.easing = "ease-in";
       text.duration = "3s";
       timegroup.appendChild(text);
@@ -727,7 +723,7 @@ describe("EFText", () => {
       const text = document.createElement("ef-text");
       text.split = "char";
       text.textContent = "ABC";
-      text.stagger = "100ms";
+      text.setAttribute("stagger", "100ms");
       text.easing = "cubic-bezier(0.68, -0.55, 0.265, 1.55)";
       text.duration = "3s";
       timegroup.appendChild(text);
@@ -777,29 +773,30 @@ describe("EFText", () => {
       expect(segments.length).toBe(3);
 
       // Add the delayed animation class to the first segment
-      segments[0].classList.add("delayed-animation");
+      segments[0]?.classList.add("delayed-animation");
 
       // Wait for animations to be created and paused
       await new Promise((resolve) => requestAnimationFrame(resolve));
       await new Promise((resolve) => requestAnimationFrame(resolve));
 
       // Wait for segment to be fully updated
-      await segments[0].updateComplete;
+      await segments[0]?.updateComplete;
 
       // Verify segment is visible from the start
-      expect(segments[0].segmentStartMs).toBe(0);
-      expect(segments[0].segmentEndMs).toBe(5000);
+      expect(segments[0]?.segmentStartMs).toBe(0);
+      expect(segments[0]?.segmentEndMs).toBe(5000);
 
       // Get the animation
-      const animations = segments[0].getAnimations();
-      expect(animations.length).toBeGreaterThan(0);
-      const animation = animations[0];
+      const animations = segments[0]?.getAnimations();
+      expect(animations?.length).toBeGreaterThan(0);
+      const animation = animations?.[0];
+      if (!animation) throw new Error("Animation not found");
 
       // At t=0 (before delay), animation should be at initial state (currentTime = 0)
       timegroup.currentTimeMs = 0;
       await timegroup.seekTask.taskComplete;
-      if (segments[0].frameTask) {
-        await segments[0].frameTask.taskComplete;
+      if (segments[0]?.frameTask) {
+        await segments[0]?.frameTask.taskComplete;
       }
 
       // Animation should be paused and at initial state
@@ -813,8 +810,8 @@ describe("EFText", () => {
       // At t=1000ms (before delay), animation should still be at initial state
       timegroup.currentTimeMs = 1000;
       await timegroup.seekTask.taskComplete;
-      if (segments[0].frameTask) {
-        await segments[0].frameTask.taskComplete;
+      if (segments[0]?.frameTask) {
+        await segments[0]?.frameTask.taskComplete;
       }
 
       // Animation state may vary - what matters is timing control
@@ -826,8 +823,8 @@ describe("EFText", () => {
       // At t=2000ms (at delay start), animation should start
       timegroup.currentTimeMs = 2000;
       await timegroup.seekTask.taskComplete;
-      if (segments[0].frameTask) {
-        await segments[0].frameTask.taskComplete;
+      if (segments[0]?.frameTask) {
+        await segments[0]?.frameTask.taskComplete;
       }
 
       // Animation state may vary - what matters is timing control
@@ -839,8 +836,8 @@ describe("EFText", () => {
       // At t=2100ms (100ms after delay start), animation should be progressing
       timegroup.currentTimeMs = 2100;
       await timegroup.seekTask.taskComplete;
-      if (segments[0].frameTask) {
-        await segments[0].frameTask.taskComplete;
+      if (segments[0]?.frameTask) {
+        await segments[0]?.frameTask.taskComplete;
       }
 
       // Animation state may vary - what matters is timing control
@@ -866,7 +863,7 @@ describe("EFText", () => {
       const text = document.createElement("ef-text");
       text.split = "char";
       text.textContent = "ABC";
-      text.stagger = "200ms";
+      text.setAttribute("stagger", "200ms");
       text.duration = "5s";
       timegroup.appendChild(text);
       document.body.appendChild(timegroup);
@@ -887,76 +884,77 @@ describe("EFText", () => {
       await new Promise((resolve) => requestAnimationFrame(resolve));
 
       // Get animations for each segment
-      const segment0Animations = segments[0].getAnimations();
-      const segment1Animations = segments[1].getAnimations();
-      const segment2Animations = segments[2].getAnimations();
+      const segment0Animations = segments[0]?.getAnimations();
+      const segment1Animations = segments[1]?.getAnimations();
+      const segment2Animations = segments[2]?.getAnimations();
 
-      expect(segment0Animations.length).toBeGreaterThan(0);
-      expect(segment1Animations.length).toBeGreaterThan(0);
-      expect(segment2Animations.length).toBeGreaterThan(0);
+      expect(segment0Animations?.length).toBeGreaterThan(0);
+      expect(segment1Animations?.length).toBeGreaterThan(0);
+      expect(segment2Animations?.length).toBeGreaterThan(0);
 
-      const anim0 = segment0Animations[0];
-      const anim1 = segment1Animations[0];
-      const anim2 = segment2Animations[0];
+      const anim0 = segment0Animations?.[0];
+      const anim1 = segment1Animations?.[0];
+      const anim2 = segment2Animations?.[0];
+      if (!anim0 || !anim1 || !anim2) throw new Error("Animations not found");
 
       // At t=0, all animations should be at initial state
       timegroup.currentTimeMs = 0;
       await timegroup.seekTask.taskComplete;
       await Promise.all(
         segments
-          .map((seg) => seg.frameTask?.taskComplete)
+          .map((seg) => seg?.frameTask?.taskComplete)
           .filter((p) => p !== undefined),
       );
 
       // Animations might have started slightly due to timing - this is expected
       // What matters is that animations are controlled, not exact timing at t=0
       // Allow tolerance for animation timing (animations may start before being paused)
-      expect(anim0.currentTime).toBeLessThan(100);
-      expect(anim1.currentTime).toBeLessThan(100);
-      expect(anim2.currentTime).toBeLessThan(100);
+      expect(anim0?.currentTime).toBeLessThan(100);
+      expect(anim1?.currentTime).toBeLessThan(100);
+      expect(anim2?.currentTime).toBeLessThan(100);
 
       // At t=500ms, all should still be at initial state (before delay + stagger)
       timegroup.currentTimeMs = 500;
       await timegroup.seekTask.taskComplete;
       await Promise.all(
         segments
-          .map((seg) => seg.frameTask?.taskComplete)
+          .map((seg) => seg?.frameTask?.taskComplete)
           .filter((p) => p !== undefined),
       );
 
       // Animations may have started slightly - allow tolerance
-      expect(anim0.currentTime).toBeLessThan(100);
-      expect(anim1.currentTime).toBeLessThan(100);
-      expect(anim2.currentTime).toBeLessThan(100);
+      expect(anim0?.currentTime).toBeLessThan(100);
+      expect(anim1?.currentTime).toBeLessThan(100);
+      expect(anim2?.currentTime).toBeLessThan(100);
 
       // At t=1000ms, first segment should start (delay = 1s, stagger = 0)
       timegroup.currentTimeMs = 1000;
       await timegroup.seekTask.taskComplete;
       await Promise.all(
         segments
-          .map((seg) => seg.frameTask?.taskComplete)
+          .map((seg) => seg?.frameTask?.taskComplete)
           .filter((p) => p !== undefined),
       );
 
-      expect(anim0.currentTime).toBeGreaterThan(0); // Should have started
+      expect(anim0?.currentTime).toBeGreaterThan(0); // Should have started
       // Animations may have started slightly - allow tolerance
-      expect(anim1.currentTime).toBeLessThan(100); // Still waiting (delay 1s + stagger 200ms = 1200ms)
-      expect(anim2.currentTime).toBeLessThan(100); // Still waiting (delay 1s + stagger 400ms = 1400ms)
+      expect(anim1?.currentTime).toBeLessThan(100); // Still waiting (delay 1s + stagger 200ms = 1200ms)
+      expect(anim2?.currentTime).toBeLessThan(100); // Still waiting (delay 1s + stagger 400ms = 1400ms)
 
       // At t=1200ms, second segment should start (delay 1s + stagger 200ms)
       timegroup.currentTimeMs = 1200;
       await timegroup.seekTask.taskComplete;
       await Promise.all(
         segments
-          .map((seg) => seg.frameTask?.taskComplete)
+          .map((seg) => seg?.frameTask?.taskComplete)
           .filter((p) => p !== undefined),
       );
 
       // Animations should be progressing - allow tolerance for timing
-      expect(anim0.currentTime).toBeGreaterThan(0); // Should be progressing
-      expect(anim1.currentTime).toBeGreaterThan(0); // Should have started
+      expect(anim0?.currentTime).toBeGreaterThan(0); // Should be progressing
+      expect(anim1?.currentTime).toBeGreaterThan(0); // Should have started
       // Animation may have started slightly - allow tolerance
-      expect(anim2.currentTime).toBeLessThan(100); // Still waiting
+      expect(anim2?.currentTime).toBeLessThan(100); // Still waiting
     });
   });
 
@@ -1031,7 +1029,7 @@ describe("EFText", () => {
       const text = document.createElement("ef-text");
       text.split = "char";
       text.textContent = "ABC";
-      text.stagger = "100ms";
+      text.setAttribute("stagger", "100ms");
       text.easing = "invalid-easing";
       text.duration = "3s";
       timegroup.appendChild(text);
@@ -1057,7 +1055,7 @@ describe("EFText", () => {
       const text = document.createElement("ef-text");
       text.split = "char";
       text.textContent = "ABC";
-      text.stagger = "100ms";
+      text.setAttribute("stagger", "100ms");
       text.easing = "cubic-bezier(1,2,3)"; // Invalid - needs 4 values
       text.duration = "3s";
       timegroup.appendChild(text);
