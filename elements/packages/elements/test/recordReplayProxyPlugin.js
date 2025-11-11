@@ -91,6 +91,7 @@ export function recordReplayProxyPlugin() {
             proxyHost,
           );
           // Always replace localhost:63315 (cached responses may contain it)
+          // Note: Using hardcoded port here for regex matching cached responses
           rewrittenText = rewrittenText.replace(
             /http:\/\/localhost:63315/g,
             proxyHost,
