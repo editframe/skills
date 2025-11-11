@@ -50,7 +50,7 @@ export const transcodeMSWHandlers = [
       duration: 10,
       durationMs: 10000,
       segmentDuration: 2000,
-      baseUrl: url.origin + "/api/v1/transcode",
+      baseUrl: `${url.origin}/api/v1/transcode`,
       sourceUrl: sourceUrl,
       audioRenditions: [
         {

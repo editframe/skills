@@ -173,9 +173,8 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
                 // Proxy to the same Vite dev server's /api/v1/url-token endpoint
                 // This allows the record-replay proxy middleware to intercept and serve cached responses
                 const serverPort =
-                  (server.httpServer?.address() as
-                    | { port: number }
-                    | null)?.port || TEST_SERVER_PORT;
+                  (server.httpServer?.address() as { port: number } | null)
+                    ?.port || TEST_SERVER_PORT;
                 const targetUrl = `http://localhost:${serverPort}/api/v1/url-token`;
 
                 log(`Proxying to: ${targetUrl}`);
