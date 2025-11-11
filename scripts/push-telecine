@@ -7,7 +7,27 @@ PROJECT_ROOT="$SCRIPT_DIR/.."
 
 cd "$PROJECT_ROOT"
 
-BRANCH="${1:-main}"
+WAIT_FOR_ACTION=false
+BRANCH="main"
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --wait)
+      WAIT_FOR_ACTION=true
+      shift
+      ;;
+    --branch)
+      BRANCH="$2"
+      shift 2
+      ;;
+    *)
+      BRANCH="$1"
+      shift
+      ;;
+  esac
+done
+
 TEMP_BRANCH="telecine-split-${BRANCH}"
 
 echo "Splitting telecine subtree to temporary branch..."
@@ -20,4 +40,10 @@ echo "Cleaning up temporary branch..."
 git branch -D "$TEMP_BRANCH"
 
 echo "✅ Successfully pushed telecine/ directory to telecine remote ($BRANCH branch)"
+
+if [ "$WAIT_FOR_ACTION" = "true" ]; then
+  echo ""
+  echo "Waiting for deployment action to complete..."
+  "$SCRIPT_DIR/wait-for-telecine-action" "deploy.yaml"
+fi
 
