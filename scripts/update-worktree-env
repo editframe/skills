@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -e
+
+# Script to update .env files in all worktrees to use shared infrastructure
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+MONOREPO_ROOT="$SCRIPT_DIR/.."
+
+echo "🔧 Updating .env files in all worktrees..."
+echo ""
+
+# Get list of all worktrees
+git worktree list --porcelain | awk '/^worktree/ {print $2}' | while read -r worktree_path; do
+  env_file="$worktree_path/telecine/.env"
+  
+  if [ ! -f "$env_file" ]; then
+    echo "⚠️  Skipping $worktree_path - no .env file found"
+    continue
+  fi
+  
+  echo "📝 Updating $env_file"
+  
+  # Update POSTGRES_HOST to use shared postgres
+  if grep -q "^POSTGRES_HOST=postgres$" "$env_file"; then
+    sed -i '' 's/^POSTGRES_HOST=postgres$/POSTGRES_HOST=editframe-postgres/' "$env_file"
+    echo "   ✅ Updated POSTGRES_HOST to editframe-postgres"
+  elif grep -q "^POSTGRES_HOST=editframe-postgres$" "$env_file"; then
+    echo "   ✅ POSTGRES_HOST already correct"
+  else
+    echo "   ⚠️  POSTGRES_HOST not found or has unexpected value"
+  fi
+  
+  echo ""
+done
+
+echo "✅ Done! Please restart your worktree services to apply changes."
+

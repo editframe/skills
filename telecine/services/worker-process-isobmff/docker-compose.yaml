@@ -17,8 +17,16 @@ services:
     init: true
     command:
       ["tsx", "--watch", "/app/services/worker-process-isobmff/server.ts"]
+    networks:
+      - default
+      - editframe-shared
     deploy:
       resources:
         limits:
           cpus: ${WORKER_PROCESS_ISOBMFF_CPUS:-2}
           memory: ${WORKER_PROCESS_ISOBMFF_MEMORY:-4G}
+
+networks:
+  editframe-shared:
+    name: editframe-shared
+    external: true

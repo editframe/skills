@@ -222,7 +222,7 @@
       word-wrap: normal;
       @apply overflow-auto rounded-lg p-3 text-sm leading-relaxed md:p-4;
     }
-
+  
     & pre {
       @apply my-4 leading-relaxed;
       @apply -mx-4 sm:mx-0;

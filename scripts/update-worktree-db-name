@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -e
+
+# Script to update DB_NAME in all worktree .env files to use "default"
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+MONOREPO_ROOT="$SCRIPT_DIR/.."
+
+echo "🔧 Updating DB_NAME in all worktree .env files to 'default'..."
+echo ""
+
+# Get list of all worktrees
+git worktree list --porcelain | awk '/^worktree/ {print $2}' | while read -r worktree_path; do
+  env_file="$worktree_path/telecine/.env"
+  
+  if [ ! -f "$env_file" ]; then
+    echo "⚠️  Skipping $worktree_path - no .env file found"
+    continue
+  fi
+  
+  echo "📝 Updating $env_file"
+  
+  # Update DB_NAME to "default"
+  if grep -q "^DB_NAME=" "$env_file"; then
+    sed -i '' 's/^DB_NAME=.*/DB_NAME=default/' "$env_file"
+    echo "   ✅ Updated DB_NAME to default"
+  else
+    echo "   ⚠️  DB_NAME not found"
+  fi
+  
+  echo ""
+done
+
+echo "✅ Done! DB_NAME in all worktrees now set to 'default'"
+echo "   This matches the Hasura metadata database name."
+

@@ -8,7 +8,7 @@ export const action = async ({ params: { id }, request }: Route.ActionArgs) => {
 
   // First get the current invitation details
   const invite = await requireQueryAs(
-    session,
+    { uid: session.uid, cid: session.cid ?? null },
     "org-admin",
     graphql(`
         query GetInvite($id: uuid!) {
@@ -24,7 +24,7 @@ export const action = async ({ params: { id }, request }: Route.ActionArgs) => {
   );
 
   await requireMutateAs(
-    session,
+    { uid: session.uid, cid: session.cid ?? null },
     "org-admin",
     graphql(`
         mutation ResendInvitation(

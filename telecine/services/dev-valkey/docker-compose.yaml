@@ -17,3 +17,8 @@ services:
     labels:
       - traefik.enable=false
 
+networks:
+  traefik-shared:
+    name: editframe-shared
+    external: true
+

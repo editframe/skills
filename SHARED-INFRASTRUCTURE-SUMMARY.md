@@ -54,7 +54,7 @@ Each Telecine worktree (telecine, telecine-*)
 ### 1. Worktree Database Names
 
 **Old:**
-- All worktrees used: `telecine-dev` or `ef-telecine`
+- All worktrees used: `telecine-dev` or `telecine-main`
 - Conflicted when running multiple worktrees
 
 **New:**

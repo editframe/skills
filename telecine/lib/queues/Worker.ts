@@ -68,15 +68,17 @@ export class Worker<Payload = unknown> {
         jobId: job.jobId,
       });
       await this.execute(job);
+      // Only complete the job if execution succeeds
+      // If this.execute throws, completeJob will not be called
+      await completeJob(
+        this.storage,
+        this.queue.name,
+        job.orgId,
+        job.workflow.name,
+        job.workflowId,
+        job.jobId,
+      );
     });
-    await completeJob(
-      this.storage,
-      this.queue.name,
-      job.orgId,
-      job.workflow.name,
-      job.workflowId,
-      job.jobId,
-    );
   }
 
   async publishJobStarted(job: MaterializedJob<Payload>) {

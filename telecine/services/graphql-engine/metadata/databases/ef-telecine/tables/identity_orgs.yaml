@@ -164,7 +164,7 @@ select_permissions:
                   - admin
                   - editor
             - user_id:
-                _eq: X-Hasura-User-Id
+                _eq: X-Hasura-user-id
       allow_aggregations: true
     comment: ""
   - role: org-primary
@@ -178,7 +178,7 @@ select_permissions:
       filter:
         primary_user:
           id:
-            _eq: X-Hasura-User-Id
+            _eq: X-Hasura-user-id
     comment: ""
   - role: org-reader
     permission:
@@ -192,7 +192,7 @@ select_permissions:
       filter:
         memberships:
           user_id:
-            _eq: X-Hasura-User-Id
+            _eq: X-Hasura-user-id
       allow_aggregations: true
     comment: ""
   - role: user
@@ -228,7 +228,7 @@ update_permissions:
                   - admin
                   - editor
             - user_id:
-                _eq: X-Hasura-User-Id
+                _eq: X-Hasura-user-id
       check: null
     comment: ""
   - role: org-primary
@@ -237,7 +237,7 @@ update_permissions:
         - display_name
       filter:
         primary_user_id:
-          _eq: X-Hasura-User-Id
+          _eq: X-Hasura-user-id
       check: null
     comment: ""
 delete_permissions:
@@ -245,5 +245,5 @@ delete_permissions:
     permission:
       filter:
         primary_user_id:
-          _eq: X-Hasura-User-Id
+          _eq: X-Hasura-user-id
     comment: ""

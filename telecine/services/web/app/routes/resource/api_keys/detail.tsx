@@ -48,7 +48,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const { session, sessionCookie } = await requireSession(request);
 
   const [key] = await requireQueryAs(
-    session,
+    { uid: session.uid, cid: session.cid ?? null },
     "org-admin",
     graphql(`
         query GetApiKey($id: uuid!) {
@@ -456,7 +456,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 
   try {
     await requireMutateAs(
-      session,
+      { uid: session.uid, cid: session.cid ?? null },
       "org-editor",
       graphql(`
           mutation UpdateApiKey($id: uuid!, $changes: identity_api_keys_set_input!) {

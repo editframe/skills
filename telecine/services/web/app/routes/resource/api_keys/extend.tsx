@@ -25,7 +25,7 @@ const schema = z.object({
 export const action = async ({ request, params }: Route.ActionArgs) => {
   const { session, sessionCookie } = await requireSession(request);
   const apiKey = await requireQueryAs(
-    session,
+    { uid: session.uid, cid: session.cid ?? null },
     "org-admin",
     graphql(`query APIKey($id: uuid!) {
         result: identity_api_keys_by_pk(id: $id) {

@@ -16,7 +16,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
   const { id } = schema.parse(await request.json());
 
   const org = await requireQueryAs(
-    session,
+    { uid: session.uid, cid: session.cid ?? null },
     "org-reader",
     graphql(`
       query Org($id: uuid!) {

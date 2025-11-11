@@ -21,8 +21,16 @@ services:
         "--watch",
         "/app/services/worker-process-html-initializer/server.ts",
       ]
+    networks:
+      - default
+      - editframe-shared
     deploy:
       resources:
         limits:
           cpus: ${WORKER_HTML_INITIALIZER_CPUS:-1}
           memory: ${WORKER_HTML_INITIALIZER_MEMORY:-1G}
+
+networks:
+  editframe-shared:
+    name: editframe-shared
+    external: true

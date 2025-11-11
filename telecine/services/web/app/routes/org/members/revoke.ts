@@ -7,7 +7,7 @@ import { requireSession } from "@/util/requireSession.server";
 export const action = async ({ request, params }: Route.LoaderArgs) => {
   const { session } = await requireSession(request)
   await requireMutateAs(
-    session,
+    { uid: session.uid, cid: session.cid ?? null },
     "org-admin",
     graphql(`
         mutation RevokeMembership($id: uuid!) {

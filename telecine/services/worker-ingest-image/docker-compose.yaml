@@ -16,8 +16,16 @@ services:
     stop_grace_period: 1s
     init: true
     command: ["tsx", "--watch", "/app/services/worker-ingest-image/server.ts"]
+    networks:
+      - default
+      - editframe-shared
     deploy:
       resources:
         limits:
           cpus: ${WORKER_INGEST_IMAGE_CPUS:-1}
           memory: ${WORKER_INGEST_IMAGE_MEMORY:-1G}
+
+networks:
+  editframe-shared:
+    name: editframe-shared
+    external: true

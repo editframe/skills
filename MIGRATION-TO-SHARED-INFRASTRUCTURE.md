@@ -84,7 +84,7 @@ Each worktree's `.env` file needs to be updated:
 **Main worktree** (`telecine/.env`):
 ```bash
 # Change this:
-DB_NAME=ef-telecine
+DB_NAME=telecine-main
 
 # To this:
 DB_NAME=telecine-main
@@ -93,7 +93,7 @@ DB_NAME=telecine-main
 **Other worktrees** (e.g., `../telecine-payments/.env`):
 ```bash
 # Change this:
-DB_NAME=ef-telecine
+DB_NAME=telecine-main
 
 # To this:
 DB_NAME=telecine-payments  # Match the worktree name

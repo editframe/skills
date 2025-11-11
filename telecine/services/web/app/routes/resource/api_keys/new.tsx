@@ -28,7 +28,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   const { session } = await requireSession(request);
 
   const [org] = await requireQueryAs(
-    session,
+    { uid: session.uid, cid: session.cid ?? null },
     "org-editor",
     graphql(`
       query GetOrg ($orgId: uuid!) {
@@ -108,7 +108,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
   const generatedSecret = `ef_webhook_${v4().replaceAll("-", "")}`;
 
   const [org] = await requireQueryAs(
-    session,
+    { uid: session.uid, cid: session.cid ?? null },
     "org-editor",
     graphql(`
     query GetOrg ($orgId: uuid!) {

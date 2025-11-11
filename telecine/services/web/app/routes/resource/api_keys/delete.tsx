@@ -10,7 +10,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
   const { session, sessionCookie } = await requireSession(request);
 
   const deleted = await requireMutateAs(
-    session,
+    { uid: session.uid, cid: session.cid ?? null },
     "org-admin",
     graphql(`mutation DeleteAPIKey($id: uuid!) {
         result: delete_identity_api_keys_by_pk(id: $id) {

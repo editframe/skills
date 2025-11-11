@@ -34,6 +34,9 @@ services:
     privileged: true
     stop_grace_period: 1s
     command: ["sleep", "infinity"]
+    networks:
+      - default
+      - traefik-shared
     labels:
       - traefik.enable=false
 

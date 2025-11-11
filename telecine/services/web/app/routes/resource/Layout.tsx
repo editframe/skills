@@ -8,13 +8,47 @@ import { trace } from "@opentelemetry/api";
 import { Header } from "~/components/Header";
 import clsx from "clsx";
 import { useState } from "react";
+import { logger } from "@/logging";
+import { db } from "@/sql-client.server";
 
 import type { Route } from "./+types/Layout";
 import { requireSession } from "@/util/requireSession.server";
 
 const getUserOrgs = (session: SessionInfo) => {
+  const activeSpan = trace.getActiveSpan();
+  
+  if (!session.uid || typeof session.uid !== "string") {
+    logger.error("getUserOrgs called with invalid session", {
+      sessionType: session.type,
+      uid: session.uid,
+      uidType: typeof session.uid,
+      sessionKeys: Object.keys(session),
+    });
+    activeSpan?.setStatus({
+      code: SpanStatusCode.ERROR,
+      message: `Invalid session: uid is ${session.uid} (${typeof session.uid})`,
+    });
+    throw new Error(
+      `Cannot query organizations: session has invalid uid (${session.uid})`,
+    );
+  }
+  
+  const sessionInfo = { uid: session.uid, cid: session.cid ?? null };
+  
+  logger.info("getUserOrgs called", {
+    sessionType: session.type,
+    uid: sessionInfo.uid,
+    cid: sessionInfo.cid,
+  });
+  
+  activeSpan?.setAttributes({
+    "session.type": session.type,
+    "session.uid": sessionInfo.uid,
+    "session.cid": sessionInfo.cid ?? "null",
+  });
+  
   return requireQueryAs(
-    session,
+    sessionInfo,
     "org-reader",
     graphql(`
         query OrgPicker {
@@ -41,10 +75,30 @@ const maybeRedirectToOrg = async (
   const activeSpan = trace.getActiveSpan();
 
   if (orgs.length === 0) {
+    const url = new URL(request.url);
+    const searchParams = url.searchParams;
+    const urlOrgId = searchParams.get("org");
+    const readableSession = await getSession(request.headers.get("cookie"));
+    const sessionOrgId = readableSession.get("oid");
+    
+    logger.error("No organizations found in account", {
+      url: request.url,
+      urlOrgId,
+      sessionOrgId,
+      sessionData: readableSession.data,
+      requestHeaders: Object.fromEntries(request.headers.entries()),
+    });
+    
     activeSpan?.setStatus({
       code: SpanStatusCode.ERROR,
       message: "No organizations found in account",
     });
+    activeSpan?.setAttributes({
+      "error.url": request.url,
+      "error.urlOrgId": urlOrgId ?? "null",
+      "error.sessionOrgId": sessionOrgId ?? "null",
+    });
+    
     throw new Error(
       "No organizations found in account. Please contact support.",
     );
@@ -107,8 +161,35 @@ const maybeRedirectToOrg = async (
   activeSpan?.addEvent("no org redirect needed");
 };
 export const loader = async ({ request }: Route.LoaderArgs) => {
+  const activeSpan = trace.getActiveSpan();
   const { session } = await requireSession(request);
+  
+  logger.info("ResourceLayout loader", {
+    sessionType: session.type,
+    uid: session.uid,
+    cid: session.cid,
+    url: request.url,
+  });
+  
+  activeSpan?.setAttributes({
+    "loader.session.type": session.type,
+    "loader.session.uid": session.uid,
+    "loader.url": request.url,
+  });
+  
   const orgs = await getUserOrgs(session);
+  
+  logger.info("getUserOrgs result", {
+    orgCount: orgs.length,
+    orgIds: orgs.map((o) => o.id),
+    uid: session.uid,
+  });
+  
+  activeSpan?.setAttributes({
+    "orgs.count": orgs.length,
+    "orgs.ids": orgs.map((o) => o.id).join(","),
+  });
+  
   await maybeRedirectToOrg(orgs, request);
   return {
     orgs,

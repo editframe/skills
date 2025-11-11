@@ -24,8 +24,16 @@ services:
     # prettier-ignore
     command: ["tsx", "--watch", "/app/services/worker-render-initializer/server.ts"]
     restart: unless-stopped
+    networks:
+      - default
+      - editframe-shared
     deploy:
       resources:
         limits:
           cpus: ${WORKER_RENDER_INITIALIZER_CPUS:-2}
           memory: ${WORKER_RENDER_INITIALIZER_MEMORY:-4G}
+
+networks:
+  editframe-shared:
+    name: editframe-shared
+    external: true

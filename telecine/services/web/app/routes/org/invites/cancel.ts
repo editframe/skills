@@ -8,7 +8,7 @@ export const action = async ({ params: { id }, request }: Route.ActionArgs) => {
   const { session } = await requireSession(request);
 
   await requireMutateAs(
-    session,
+    { uid: session.uid, cid: session.cid ?? null },
     "org-admin",
     graphql(`
       mutation CancelInvite($id: uuid!) {

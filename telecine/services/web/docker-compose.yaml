@@ -9,6 +9,10 @@ services:
       - VITE_HMR_HOST=${WORKTREE_DOMAIN:-localhost}
       - VITE_WEB_HOST=http://${WORKTREE_DOMAIN:-localhost}:3000
       - WEB_HOST=http://${WORKTREE_DOMAIN:-localhost}:3000
+      # Use worktree domain in URL - custom fetch will rewrite to Traefik service
+      # Traefik routes based on Host header, which we set via custom fetch
+      - HASURA_SERVER_URL=http://${WORKTREE_DOMAIN:-localhost}:3000/v1/graphql
+      - HASURA_SERVER_HOST=${WORKTREE_DOMAIN:-localhost}
     working_dir: /app
     volumes_from:
       - runner
@@ -24,7 +28,6 @@ services:
     command: ["node", "/app/services/web/server.js"]
     depends_on:
       - runner
-      - postgres
       - graphql-engine
     labels:
       traefik.enable: true

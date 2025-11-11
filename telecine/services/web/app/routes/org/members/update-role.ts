@@ -15,7 +15,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
   const { id, role } = schema.parse(await request.json());
 
   await requireMutateAs(
-    session,
+    { uid: session.uid, cid: session.cid ?? null },
     "org-admin",
     graphql(`
       mutation UpdateOrganizationMemberRole($id: uuid!, $role: String!) {

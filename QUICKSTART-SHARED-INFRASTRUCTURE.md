@@ -22,7 +22,7 @@ docker exec telecine-motion-designer-postgres-1 pg_dump -U postgres telecine-dev
 Open `telecine/.env` and change:
 ```bash
 # Old
-DB_NAME=ef-telecine
+DB_NAME=telecine-main
 
 # New
 DB_NAME=telecine-main
@@ -178,7 +178,7 @@ If you need to rollback:
 ./scripts/stop-shared
 
 # Revert .env change
-# Change DB_NAME back to ef-telecine in telecine/.env
+# Change DB_NAME back to telecine-main in telecine/.env
 
 # Start old way (requires code revert)
 cd telecine

@@ -29,7 +29,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   const { session } = await requireSession(request);
 
   const organization = await requireQueryAs(
-    session,
+    { uid: session.uid, cid: session.cid ?? null },
     "org-reader",
     graphql(`
         query GetOrgSettings ($id: uuid!, $userId: uuid!) {
@@ -64,7 +64,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
   }
 
   await requireMutateAs(
-    session,
+    { uid: session.uid, cid: session.cid ?? null },
     "org-admin",
     graphql(`
     mutation UpdateOrgSettings($id: uuid!, $display_name: String!, $website: String) {

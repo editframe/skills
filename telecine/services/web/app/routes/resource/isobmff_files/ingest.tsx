@@ -25,7 +25,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
   }
 
   await requireQueryAs(
-    session,
+    { uid: session.uid, cid: session.cid ?? null },
     "org-editor",
     graphql(`
       query GetOrg ($id: uuid!) {

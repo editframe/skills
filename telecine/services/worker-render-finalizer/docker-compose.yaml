@@ -17,8 +17,16 @@ services:
     init: true
     command:
       ["tsx", "--watch", "/app/services/worker-render-finalizer/server.ts"]
+    networks:
+      - default
+      - editframe-shared
     deploy:
       resources:
         limits:
           cpus: ${WORKER_RENDER_FINALIZER_CPUS:-1}
           memory: ${WORKER_RENDER_FINALIZER_MEMORY:-2G}
+
+networks:
+  editframe-shared:
+    name: editframe-shared
+    external: true

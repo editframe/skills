@@ -33,6 +33,17 @@ export type HasuraSessionInfo = {
 };
 
 export const signHasuraJwtForSession = (sessionInfo: HasuraSessionInfo) => {
+  if (!sessionInfo.uid || typeof sessionInfo.uid !== "string") {
+    logger.error("signHasuraJwtForSession called with invalid uid", {
+      uid: sessionInfo.uid,
+      uidType: typeof sessionInfo.uid,
+      cid: sessionInfo.cid,
+    });
+    throw new Error(
+      `Cannot sign JWT: uid must be a non-empty string, got ${sessionInfo.uid} (${typeof sessionInfo.uid})`,
+    );
+  }
+
   const claims: Claims = {
     "X-Hasura-user-id": sessionInfo.uid,
     "X-Hasura-default-role": "user",

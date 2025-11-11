@@ -32,7 +32,7 @@ export async function action({ request }: Route.ActionArgs) {
   }
 
   await requireMutateAs(
-    session,
+    { uid: session.uid, cid: session.cid ?? null },
     "user",
     graphql(`
         mutation UpdateUser(

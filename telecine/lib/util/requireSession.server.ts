@@ -6,6 +6,7 @@ import {
   parseRequestSession,
 } from "./session";
 import { requireAPIToken } from "./requireAPIToken";
+import { logger } from "@/logging";
 
 export type LoaderFunctionArgsWithSession = LoaderFunctionArgs & {
   session: SessionInfo;
@@ -80,6 +81,22 @@ export const requireSession = async (request: Request) => {
   if (!session) {
     throw redirect("/auth/login");
   }
+  
+  // AnonymousURLSession has uid: null and should not be allowed for authenticated routes
+  if (session.type === "anonymous_url") {
+    throw redirect("/auth/login");
+  }
+  
+  // Ensure session has a valid uid (all non-anonymous sessions should have uid)
+  if (!session.uid || typeof session.uid !== "string") {
+    logger.error("requireSession: session missing valid uid", {
+      sessionType: session.type,
+      uid: session.uid,
+      uidType: typeof session.uid,
+    });
+    throw redirect("/auth/login");
+  }
+  
   const sessionCookie = await getSession(
     request.headers.get("Cookie") ?? "",
   );
