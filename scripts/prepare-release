@@ -63,37 +63,9 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "Step 2: Waiting for GitHub Actions workflow to complete"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-cd "$PROJECT_ROOT/elements"
+cd "$PROJECT_ROOT"
 
-# Wait a moment for the workflow to be triggered
-echo "Waiting for workflow to be triggered..."
-sleep 3
-
-# Wait for the workflow to complete
-# Use the workflow file name which is more reliable than the display name
-echo "Waiting for workflow 'release.yaml' to complete..."
-echo "This may take several minutes..."
-
-# Get the most recent run ID for the workflow
-RUN_ID=$(gh run list --workflow=release.yaml --limit=1 --json databaseId --jq '.[0].databaseId' --repo="$REPO_NAME")
-
-if [ -z "$RUN_ID" ] || [ "$RUN_ID" = "null" ]; then
-  echo "Error: Could not find workflow run for release.yaml"
-  echo "Check the workflow status at: https://github.com/$REPO_NAME/actions/workflows/release.yaml"
-  exit 1
-fi
-
-echo "Watching run ID: $RUN_ID"
-
-# Watch the specific run until it completes
-if ! gh run watch "$RUN_ID" --exit-status --repo="$REPO_NAME"; then
-  echo ""
-  echo "Error: GitHub Actions workflow failed!"
-  echo "Check the workflow status at: https://github.com/$REPO_NAME/actions/workflows/release.yaml"
-  exit 1
-fi
-
-echo "✅ GitHub Actions workflow completed successfully"
+"$PROJECT_ROOT/scripts/wait-for-elements-action" "release.yaml"
 
 # Step 3: Update editframe packages in telecine
 echo ""
