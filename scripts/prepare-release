@@ -32,10 +32,16 @@ if ! gh auth status &> /dev/null; then
 fi
 
 # Get the repository name from git remote (elements remote)
-cd "$PROJECT_ROOT/elements"
-REPO_NAME=$(git remote get-url origin 2>/dev/null | sed -E 's/.*github.com[:/]([^/]+\/[^/]+)(\.git)?$/\1/' || echo "editframe/elements")
-echo "Detected repository: $REPO_NAME"
+# In monorepo, check for elements remote; otherwise use origin
 cd "$PROJECT_ROOT"
+if git remote | grep -q "^elements$"; then
+  REPO_NAME=$(git remote get-url elements 2>/dev/null | sed -E 's/.*github.com[:/]([^/]+\/[^/]+)(\.git)?$/\1/' || echo "editframe/elements")
+else
+  cd "$PROJECT_ROOT/elements"
+  REPO_NAME=$(git remote get-url origin 2>/dev/null | sed -E 's/.*github.com[:/]([^/]+\/[^/]+)(\.git)?$/\1/' || echo "editframe/elements")
+  cd "$PROJECT_ROOT"
+fi
+echo "Detected repository: $REPO_NAME"
 
 # Step 1: Run prepare-release in elements
 echo ""
