@@ -31,27 +31,53 @@ export class EFFitScale extends LitElement {
   private animationFrameId?: number;
 
   get contentChild() {
-    const firstElement = this.children[0];
-    if (!firstElement) return null;
+    if (!this.children.length) return null;
 
-    let current: Element = firstElement;
-    while (current) {
-      if (current instanceof HTMLSlotElement) {
-        const assigned = current.assignedElements()[0];
-        if (!assigned) break;
-        current = assigned;
-        continue;
+    const isNonContentElement = (element: Element): boolean => {
+      const tagName = element.tagName.toLowerCase();
+      const nonContentTags = ["style", "script", "meta", "link", "title", "noscript"];
+      if (nonContentTags.includes(tagName)) return true;
+      
+      try {
+        const display = window.getComputedStyle(element).display;
+        return display === "none" || display === "contents";
+      } catch {
+        return false;
+      }
+    };
+
+    const findAllContentElements = (element: Element): HTMLElement[] => {
+      const results: HTMLElement[] = [];
+
+      if (element instanceof HTMLSlotElement) {
+        const assigned = element.assignedElements()[0];
+        if (assigned) {
+          results.push(...findAllContentElements(assigned));
+        }
+        return results;
       }
 
-      const display = window.getComputedStyle(current).display;
-      if (display !== "contents" && display !== "none") {
-        return current as HTMLElement;
+      if (!isNonContentElement(element)) {
+        results.push(element as HTMLElement);
       }
-      const firstChild = current.children[0];
-      if (!firstChild) break;
-      current = firstChild;
+
+      const children = Array.from(element.children);
+      for (let i = 0; i < children.length; i++) {
+        results.push(...findAllContentElements(children[i]!));
+      }
+
+      return results;
+    };
+
+    const children = Array.from(this.children);
+    const allContentElements: HTMLElement[] = [];
+    for (let i = 0; i < children.length; i++) {
+      allContentElements.push(...findAllContentElements(children[i]!));
     }
-    return firstElement as HTMLElement; // Fallback to first element if no non-contents found
+
+    if (allContentElements.length === 0) return null;
+
+    return allContentElements[0]!;
   }
 
   get scaleInfo() {
