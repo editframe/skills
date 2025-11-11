@@ -209,13 +209,13 @@ export function recordReplayProxyPlugin() {
   // Handle proxy request as middleware
   async function handleProxyRequest(req, res, next) {
     // Determine the API path prefix based on the request URL
-    // req.url will be like "/transcode/manifest.json" or "/url-token" or "" (empty for exact match)
+    // req.url will be like "/transcode/manifest.json" or "/url-token" or "" (empty) or "/" (root for exact match)
     let apiPath;
     if (req.url.startsWith("/transcode")) {
       apiPath = `/api/v1/transcode${req.url}`;
-    } else if (req.url.startsWith("/url-token") || req.url === "") {
-      // Handle empty string for exact /api/v1/url-token match
-      // When middleware is registered with "/api/v1/url-token", exact match gives req.url = ""
+    } else if (req.url.startsWith("/url-token") || req.url === "" || req.url === "/") {
+      // Handle empty string or root path for exact /api/v1/url-token match
+      // When middleware is registered with "/api/v1/url-token", exact match gives req.url = "" or "/"
       apiPath = `/api/v1/url-token${req.url.replace("/url-token", "")}`;
     } else {
       // Fallback: assume transcode if path doesn't match
