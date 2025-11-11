@@ -35,11 +35,18 @@ fi
 # In monorepo, check for elements remote; otherwise use origin
 cd "$PROJECT_ROOT"
 if git remote | grep -q "^elements$"; then
-  REPO_NAME=$(git remote get-url elements 2>/dev/null | sed -E 's/.*github.com[:/]([^/]+\/[^/]+)\.git$/\1/' | sed -E 's/.*github.com[:/]([^/]+\/[^/]+)$/\1/' || echo "editframe/elements")
+  REMOTE_URL=$(git remote get-url elements 2>/dev/null || echo "")
 else
   cd "$PROJECT_ROOT/elements"
-  REPO_NAME=$(git remote get-url origin 2>/dev/null | sed -E 's/.*github.com[:/]([^/]+\/[^/]+)\.git$/\1/' | sed -E 's/.*github.com[:/]([^/]+\/[^/]+)$/\1/' || echo "editframe/elements")
+  REMOTE_URL=$(git remote get-url origin 2>/dev/null || echo "")
   cd "$PROJECT_ROOT"
+fi
+
+if [ -n "$REMOTE_URL" ]; then
+  # Extract repo name and remove .git suffix if present
+  REPO_NAME=$(echo "$REMOTE_URL" | sed -E 's/.*github.com[:/]([^/]+\/[^/]+)\.git$/\1/' | sed -E 's/.*github.com[:/]([^/]+\/[^/]+)$/\1/')
+else
+  REPO_NAME="editframe/elements"
 fi
 echo "Detected repository: $REPO_NAME"
 
