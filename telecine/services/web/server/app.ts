@@ -4,20 +4,8 @@ initializeInstrumentation({ serviceName: "web" });
 // Patch CustomElementRegistry.define to handle duplicate registrations gracefully
 // This is needed because SSR can cause modules to be loaded multiple times,
 // leading to duplicate custom element registrations
-if (typeof globalThis !== "undefined" && globalThis.customElements) {
-  const originalDefine = globalThis.customElements.define.bind(globalThis.customElements);
-  globalThis.customElements.define = function(name: string, constructor: CustomElementConstructor, options?: ElementDefinitionOptions) {
-    try {
-      return originalDefine(name, constructor, options);
-    } catch (error: unknown) {
-      // Ignore errors about duplicate registrations
-      if (error instanceof Error && error.message?.includes("has already been used with this registry")) {
-        return;
-      }
-      throw error;
-    }
-  };
-}
+// The actual patching happens in patchCustomElementsDefine() which is called
+// before and after importing the server build
 
 import { createReadStream } from "node:fs";
 import path from "node:path";
@@ -151,12 +139,43 @@ if (UPLOAD_TO_BUCKET) {
 }
 
 let serverBuild: Promise<any> | undefined;
+const patchCustomElementsDefine = () => {
+  if (typeof globalThis !== "undefined" && globalThis.customElements && globalThis.customElements.define) {
+    const originalDefine = globalThis.customElements.define.bind(globalThis.customElements);
+    // Only patch if not already patched
+    if (!(globalThis.customElements.define as any).__patched) {
+      globalThis.customElements.define = function(name: string, constructor: CustomElementConstructor, options?: ElementDefinitionOptions) {
+        try {
+          return originalDefine(name, constructor, options);
+        } catch (error: unknown) {
+          // Ignore errors about duplicate registrations
+          // This shouldn't happen with proper ESM caching, but we handle it gracefully
+          if (error instanceof Error && error.message?.includes("has already been used with this registry")) {
+            console.warn(`[SSR] Duplicate custom element registration attempted for "${name}" - this suggests a module loading issue`);
+            return;
+          }
+          throw error;
+        }
+      };
+      (globalThis.customElements.define as any).__patched = true;
+    }
+  }
+};
+
 app.use(
   createRequestHandler({
     // @ts-expect-error - virtual module provided by React Router at build time
     build: () => {
+      // Always patch before returning the build to ensure it's patched on every request
+      patchCustomElementsDefine();
       if (!serverBuild) {
-        serverBuild = import("virtual:react-router/server-build");
+        // Patch customElements before and after importing the server build
+        patchCustomElementsDefine();
+        serverBuild = import("virtual:react-router/server-build").then((mod) => {
+          // Patch again after import in case customElements was created during import
+          patchCustomElementsDefine();
+          return mod;
+        });
       }
       return serverBuild;
     },
