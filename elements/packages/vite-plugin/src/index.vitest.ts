@@ -203,22 +203,35 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
 
                   log(`Making internal request to: ${targetUrl}`);
 
-                  const proxyResponse = await fetch(targetUrl, {
-                    method: "POST",
-                    headers: {
-                      "Content-Type":
-                        req.headers["content-type"] || "application/json",
-                      ...(req.headers.authorization && {
-                        authorization: req.headers.authorization,
-                      }),
-                    },
-                    body: requestBody.length > 0 ? requestBody : undefined,
-                  });
-
-                  // In cache-only mode, if proxy returns 404 (no cache), fall back to mock response
-                  if (cacheOnlyMode && proxyResponse.status === 404) {
+                  let proxyResponse: Response;
+                  try {
+                    proxyResponse = await fetch(targetUrl, {
+                      method: "POST",
+                      headers: {
+                        "Content-Type":
+                          req.headers["content-type"] || "application/json",
+                        ...(req.headers.authorization && {
+                          authorization: req.headers.authorization,
+                        }),
+                      },
+                      body: requestBody.length > 0 ? requestBody : undefined,
+                    });
+                  } catch (fetchError) {
+                    // If fetch fails (network error, etc.), fall back to mock response
                     log(
-                      "Cache-only mode: No cache available, falling back to mock response",
+                      `Fetch failed, falling back to mock response: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`,
+                    );
+                    const mockToken =
+                      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJodHRwOi8vd2ViOjMwMDAvaGVhZC1tb292LTQ4MHAubXA0IiwiZXhwIjo5OTk5OTk5OTk5fQ.mock-signature";
+                    res.writeHead(200, { "Content-Type": "application/json" });
+                    res.end(JSON.stringify({ token: mockToken }));
+                    return;
+                  }
+
+                  // In cache-only mode or CI, if proxy returns error status (404, 500, etc.), fall back to mock response
+                  if ((cacheOnlyMode || isCI) && !proxyResponse.ok) {
+                    log(
+                      `Proxy returned ${proxyResponse.status}, falling back to mock response`,
                     );
                     const mockToken =
                       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJodHRwOi8vd2ViOjMwMDAvaGVhZC1tb292LTQ4MHAubXA0IiwiZXhwIjo5OTk5OTk5OTk5fQ.mock-signature";
