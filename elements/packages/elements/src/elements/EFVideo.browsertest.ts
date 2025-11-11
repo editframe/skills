@@ -50,7 +50,14 @@ const test = baseTest.extend<{
   },
   configuration: async ({}, use) => {
     const configuration = document.createElement("ef-configuration");
-    const apiHost = "http://localhost:63315";
+    // Use window.location for API host so it works with Traefik routing
+    // If we're on localhost:63315, rewrite to use the Traefik URL (main.localhost:4322)
+    let apiHost = `${window.location.protocol}//${window.location.host}`;
+    if (window.location.host === "localhost:63315") {
+      // Use worktree domain injected by setup.ts
+      const worktreeDomain = (window as any).__WORKTREE_DOMAIN__ || "main.localhost";
+      apiHost = `${window.location.protocol}//${worktreeDomain}:4322`;
+    }
     configuration.setAttribute("api-host", apiHost);
     configuration.apiHost = apiHost;
     configuration.signingURL = ""; // Disable URL signing for tests
@@ -77,9 +84,17 @@ const test = baseTest.extend<{
     localStorage.removeItem("ef-timegroup-barsNtoneTimegroup");
 
     const container = document.createElement("div");
+    // Use window.location for API host so it works with Traefik routing
+    // If we're on localhost:63315, rewrite to use the Traefik URL (main.localhost:4322)
+    let apiHost = `${window.location.protocol}//${window.location.host}`;
+    if (window.location.host === "localhost:63315") {
+      // Use worktree domain injected by setup.ts
+      const worktreeDomain = (window as any).__WORKTREE_DOMAIN__ || "main.localhost";
+      apiHost = `${window.location.protocol}//${worktreeDomain}:4322`;
+    }
     render(
       html`
-      <ef-configuration api-host="http://localhost:63315" signing-url="">
+      <ef-configuration api-host="${apiHost}" signing-url="">
        <ef-preview>
          <ef-timegroup mode="sequence" id="barsNtoneTimegroup"
             class="relative h-[500px] w-[1000px] overflow-hidden bg-slate-500">
@@ -100,9 +115,17 @@ const test = baseTest.extend<{
   },
   sequenceTimegroup: async ({}, use) => {
     const container = document.createElement("div");
+    // Use window.location for API host so it works with Traefik routing
+    // If we're on localhost:63315, rewrite to use the Traefik URL (main.localhost:4322)
+    let apiHost = `${window.location.protocol}//${window.location.host}`;
+    if (window.location.host === "localhost:63315") {
+      // Use worktree domain injected by setup.ts
+      const worktreeDomain = (window as any).__WORKTREE_DOMAIN__ || "main.localhost";
+      apiHost = `${window.location.protocol}//${worktreeDomain}:4322`;
+    }
     render(
       html`
-      <ef-configuration api-host="http://localhost:63315" signing-url="">
+      <ef-configuration api-host="${apiHost}" signing-url="">
        <ef-preview>
           <ef-timegroup mode="sequence"
             class="relative h-[500px] w-[1000px] overflow-hidden bg-slate-500">
@@ -566,9 +589,17 @@ describe("EFVideo", () => {
       expect,
     }) => {
       const container = document.createElement("div");
+      // Use window.location for API host so it works with Traefik routing
+      // If we're on localhost:63315, rewrite to use the Traefik URL (main.localhost:4322)
+      let apiHost = `${window.location.protocol}//${window.location.host}`;
+      if (window.location.host === "localhost:63315") {
+        // Use worktree domain injected by setup.ts
+        const worktreeDomain = (window as any).__WORKTREE_DOMAIN__ || "main.localhost";
+        apiHost = `${window.location.protocol}//${worktreeDomain}:4322`;
+      }
       render(
         html`
-        <ef-configuration api-host="http://localhost:63315" signing-url="">
+        <ef-configuration api-host="${apiHost}" signing-url="">
           <ef-preview id="test-preview">
             <ef-video src="bars-n-tone.mp4" mode="asset" id="standalone-video"></ef-video>
           </ef-preview>
