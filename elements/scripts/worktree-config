@@ -15,11 +15,35 @@ fi
 WORKTREE_ROOT=$(git rev-parse --show-toplevel)
 
 # Detect branch name
-BRANCH_NAME=$(git branch --show-current 2>/dev/null || git symbolic-ref --short HEAD 2>/dev/null)
-
-if [ -z "$BRANCH_NAME" ]; then
-  echo "Error: Could not detect git branch name. Ensure you are on a valid branch." >&2
-  exit 1
+# In GitHub Actions, check if we're checking out a tag (for releases)
+if [ -n "$GITHUB_ACTIONS" ]; then
+  if [ -n "$GITHUB_REF" ] && echo "$GITHUB_REF" | grep -q "^refs/tags/"; then
+    # Tag checkout in CI - use "main" for worktree configuration
+    BRANCH_NAME="main"
+  elif [ -n "$GITHUB_REF_NAME" ]; then
+    # Branch checkout - use the branch name
+    BRANCH_NAME="$GITHUB_REF_NAME"
+  elif [ -n "$GITHUB_REF" ]; then
+    # Extract branch name from GITHUB_REF (format: refs/heads/main)
+    BRANCH_NAME=$(echo "$GITHUB_REF" | sed 's|refs/heads/||')
+  else
+    # Fallback to main in CI
+    BRANCH_NAME="main"
+  fi
+else
+  # Local development: try git commands
+  BRANCH_NAME=$(git branch --show-current 2>/dev/null || git symbolic-ref --short HEAD 2>/dev/null)
+  
+  # If still no branch name (detached HEAD), check if we're in CI
+  if [ -z "$BRANCH_NAME" ]; then
+    if [ -n "$CI" ]; then
+      # In CI environment, default to main for worktree configuration
+      BRANCH_NAME="main"
+    else
+      echo "Error: Could not detect git branch name. Ensure you are on a valid branch." >&2
+      exit 1
+    fi
+  fi
 fi
 
 # Check if this is the main worktree (branch is main/master)
