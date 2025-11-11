@@ -15,6 +15,7 @@ import {
   generateTrackFragmentIndex,
   md5FilePath,
 } from "../../assets/src/index.js";
+import { TEST_SERVER_PORT } from "../../elements/test/constants.js";
 
 // Inlined forbidRelativePaths function
 const forbidRelativePaths = (req: IncomingMessage) => {
@@ -185,54 +186,56 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
               break;
             }
 
-            log("Signing URL token");
+            log("Proxying URL signing request to /api/v1/url-token");
 
-            // Parse request body
-            let body = "";
+            // Collect request body
+            const requestChunks: Buffer[] = [];
             req.on("data", (chunk) => {
-              body += chunk.toString();
+              requestChunks.push(chunk);
             });
 
             req.on("end", async () => {
               try {
-                const payload = JSON.parse(body);
-                log("Token signing request payload:", payload);
+                const requestBody = Buffer.concat(requestChunks);
+                // Proxy to the same Vite dev server's /api/v1/url-token endpoint
+                // This allows the record-replay proxy middleware to intercept and serve cached responses
+                const serverPort =
+                  (server.httpServer?.address() as
+                    | { port: number }
+                    | null)?.port || TEST_SERVER_PORT;
+                const targetUrl = `http://localhost:${serverPort}/api/v1/url-token`;
 
-                // Handle both formats: { url } and { url, params }
-                const { url, params } = payload;
-                if (!url) {
-                  res.writeHead(400, { "Content-Type": "application/json" });
-                  res.end(JSON.stringify({ error: "URL is required" }));
-                  return;
+                log(`Proxying to: ${targetUrl}`);
+
+                // Forward request to /api/v1/url-token (which will be handled by record-replay proxy)
+                const proxyResponse = await fetch(targetUrl, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    ...(req.headers.authorization && {
+                      authorization: req.headers.authorization,
+                    }),
+                  },
+                  body: requestBody.length > 0 ? requestBody : undefined,
+                });
+
+                const responseBody = await proxyResponse.text();
+                const responseHeaders: Record<string, string> = {};
+                proxyResponse.headers.forEach((value, key) => {
+                  responseHeaders[key] = value;
+                });
+
+                // Forward the response status and headers
+                res.writeHead(proxyResponse.status, responseHeaders);
+                res.end(responseBody);
+
+                if (proxyResponse.ok) {
+                  log("✓ URL signing request proxied successfully");
+                } else {
+                  log(
+                    `✗ URL signing request failed: ${proxyResponse.status} ${proxyResponse.statusText}`,
+                  );
                 }
-
-                const client = getEditframeClient();
-
-                // For transcode URLs with params, we need to sign the source URL (from params.url)
-                // For regular URLs, we sign the URL directly
-                let urlToSign = url;
-                if (params?.url) {
-                  // For transcode URLs, sign the source URL from params
-                  urlToSign = params.url;
-                } else if (params) {
-                  // If there are other params, reconstruct the full URL
-                  const urlObj = new URL(url);
-                  Object.entries(params).forEach(([key, value]) => {
-                    urlObj.searchParams.set(key, String(value));
-                  });
-                  urlToSign = urlObj.toString();
-                }
-
-                log("Creating token for URL:", urlToSign);
-                log("Using EF_HOST:", process.env.EF_HOST);
-                log(
-                  "Using token (first 20 chars):",
-                  process.env.EF_TOKEN?.substring(0, 20),
-                );
-                const token = await createURLToken(client, urlToSign);
-
-                res.writeHead(200, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({ token }));
               } catch (error) {
                 const errorMessage =
                   error instanceof Error ? error.message : String(error);
@@ -240,14 +243,17 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
                   error instanceof Error && error.stack
                     ? error.stack
                     : errorMessage;
-                log(`Error signing URL token: ${errorMessage}`);
+                log(`Error proxying URL signing request: ${errorMessage}`);
                 log(`Error details: ${errorDetails}`);
-                console.error("[Vite Plugin] URL signing error:", errorMessage);
+                console.error(
+                  "[Vite Plugin] URL signing proxy error:",
+                  errorMessage,
+                );
                 console.error("[Vite Plugin] Error stack:", errorDetails);
                 res.writeHead(500, { "Content-Type": "application/json" });
                 res.end(
                   JSON.stringify({
-                    error: "Failed to sign URL token",
+                    error: "Failed to proxy URL signing request",
                     details: errorMessage,
                   }),
                 );
