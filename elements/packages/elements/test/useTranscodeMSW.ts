@@ -12,9 +12,7 @@ import { HttpResponse, http } from "msw";
 export const transcodeMSWHandlers = [
   // URL signing endpoint handler
   // This mocks the /@ef-sign-url endpoint used by the Vite plugin
-  http.post("/@ef-sign-url", async ({ request }) => {
-    const body = await request.json() as { url: string; params?: Record<string, string> };
-    
+  http.post("/@ef-sign-url", async () => {
     // Return a mock JWT token
     // The token format is: header.payload.signature
     // We create a simple mock token that will pass basic validation
@@ -84,7 +82,7 @@ export const transcodeMSWHandlers = [
   }),
 
   // Transcode init segment endpoint handler
-  http.get("/api/v1/transcode/:rendition/init.m4s", async ({ request }) => {
+  http.get("/api/v1/transcode/:rendition/init.m4s", async () => {
     // Return a minimal valid MP4 init segment
     // This is a very basic ftyp + moov box structure
     const initSegment = new Uint8Array([
@@ -110,7 +108,7 @@ export const transcodeMSWHandlers = [
   }),
 
   // Transcode media segment endpoint handler
-  http.get("/api/v1/transcode/:rendition/:segmentId.m4s", async ({ request }) => {
+  http.get("/api/v1/transcode/:rendition/:segmentId.m4s", async () => {
     // Return a minimal valid MP4 media segment
     // This is a very basic moof + mdat box structure
     const mediaSegment = new Uint8Array([
