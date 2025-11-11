@@ -31,22 +31,31 @@ cd "$ELEMENTS_ROOT"
 # Docker Compose doesn't substitute variables in YAML keys, so we need to do it manually
 COMPOSE_FILE="docker-compose.yaml"
 
-# Check if file contains WORKTREE_ID (to avoid unnecessary processing)
-if grep -q '\${WORKTREE_ID' "$COMPOSE_FILE" 2>/dev/null; then
+# Check if file contains WORKTREE_ID or WORKTREE_DOMAIN (to avoid unnecessary processing)
+if grep -qE '\${WORKTREE_ID|\${WORKTREE_DOMAIN' "$COMPOSE_FILE" 2>/dev/null; then
     # Create temp file in the same directory so .env file resolution works
-    PROCESSED_FILE="${COMPOSE_FILE}.processed"
+    # Use process ID to make it unique and avoid conflicts
+    PROCESSED_FILE="${COMPOSE_FILE}.processed.$$"
     trap "rm -f $PROCESSED_FILE" EXIT
     
-    # Replace ${WORKTREE_ID:-main} with the actual WORKTREE_ID value
-    sed "s|\${WORKTREE_ID:-main}|${WORKTREE_ID}|g" "$COMPOSE_FILE" > "$PROCESSED_FILE"
+    # Replace ${WORKTREE_ID:-main} with the actual WORKTREE_ID value (in both keys and values)
+    # Replace ${WORKTREE_DOMAIN} with the actual WORKTREE_DOMAIN value
+    sed -e "s|\${WORKTREE_ID:-main}|${WORKTREE_ID}|g" \
+        -e "s|\${WORKTREE_DOMAIN}|${WORKTREE_DOMAIN}|g" \
+        "$COMPOSE_FILE" > "$PROCESSED_FILE"
     
+    # Execute docker-compose with processed file
     docker-compose \
       --project-name "$WORKTREE_DOCKER_PROJECT_NAME" \
       -f "$PROCESSED_FILE" \
       "$@"
+    EXIT_CODE=$?
     
-    # Clean up processed file
+    # Clean up processed file after docker-compose completes
     rm -f "$PROCESSED_FILE"
+    
+    # Exit with the same code as docker-compose
+    exit $EXIT_CODE
 else
     # File doesn't need processing, use original
     docker-compose \

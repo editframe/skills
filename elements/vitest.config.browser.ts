@@ -2,7 +2,7 @@
 
 // import "tsconfig-paths/register";
 import { existsSync, readFileSync } from "node:fs";
-import path from "node:path";
+import * as path from "node:path";
 import type { UserConfig } from "vite";
 import { defineConfig } from "vitest/config";
 import type { BrowserProviderOptions } from "vitest/node";
@@ -53,7 +53,17 @@ function createConnectConfig(wsEndpoint: string): TestConfiguration {
 }
 
 function createLaunchConfig(): TestConfiguration {
+  // Get worktree domain from environment
+  const worktreeDomain = process.env.WORKTREE_DOMAIN || "main.localhost";
+  
   return {
+    server: {
+      port: 63315,
+      host: "0.0.0.0",
+      // Allow the worktree hostname so Vite can respond to requests with that Host header
+      // This is needed for Traefik routing
+      allowedHosts: [worktreeDomain],
+    },
     headless: true,
     browserProvider: {
       launch: {
@@ -120,7 +130,22 @@ export default defineConfig(async () => {
       // So we'll do it in configureServer
     },
     configureServer(server) {
+      console.log("[Traefik URL Plugin] Configuring server, original port:", server.config.server?.port);
       console.log("[Traefik URL Plugin] Overriding server URLs to:", traefikUrl);
+      
+      // Ensure the server is configured to listen on the correct port
+      // Vitest should start the server automatically, but we ensure it's configured correctly
+      if (server.config.server) {
+        server.config.server.port = 63315;
+        server.config.server.host = "0.0.0.0";
+        if (!server.config.server.allowedHosts) {
+          server.config.server.allowedHosts = [];
+        }
+        if (!server.config.server.allowedHosts.includes(worktreeDomain)) {
+          server.config.server.allowedHosts.push(worktreeDomain);
+        }
+      }
+      
       // Override resolvedUrls to use Traefik URL
       // Vitest uses: resolvedUrls?.local[0] ?? resolvedUrls?.network[0]
       // We need to ensure both are set to the Traefik URL
@@ -155,6 +180,29 @@ export default defineConfig(async () => {
         configurable: true,
         enumerable: true,
       });
+      
+      // Log when server is actually listening
+      server.httpServer?.once("listening", () => {
+        const address = server.httpServer?.address();
+        console.log("[Traefik URL Plugin] Server is listening on:", address);
+        console.log("[Traefik URL Plugin] Server URL:", server.resolvedUrls);
+        console.log("[Traefik URL Plugin] Server middleware count:", server.middlewares.stack?.length || 0);
+      });
+      
+      // Ensure server actually starts listening
+      // Vitest browser mode should start the server automatically, but we ensure it's ready
+      if (!server.httpServer?.listening) {
+        console.log("[Traefik URL Plugin] Server not yet listening, waiting for Vitest to start it...");
+      } else {
+        console.log("[Traefik URL Plugin] Server is already listening");
+      }
+      
+      // Add a test endpoint to verify the server is working
+      server.middlewares.use("/__test__", (req, res) => {
+        console.log("[Traefik URL Plugin] Test endpoint hit:", req.url);
+        res.writeHead(200, { "Content-Type": "text/plain" });
+        res.end("Server is working");
+      });
     },
   };
 
@@ -183,7 +231,10 @@ export default defineConfig(async () => {
     },
     // Use single test-assets directory for all test media
     publicDir: "test-assets",
-    server: config.server,
+    server: {
+      ...config.server,
+      strictPort: true, // Fail if port is already in use instead of choosing another
+    },
     test: {
       watch: false,
       include: ["**/*.browsertest.ts", "**/*.browsertest.tsx"],
@@ -199,6 +250,14 @@ export default defineConfig(async () => {
         enabled: true,
         provider: "playwright",
         headless: config.headless,
+        // Configure the browser API server port
+        // In Vitest browser mode, the /__vitest_test__/ endpoint is served by the Vite dev server
+        // So browser.api.port should match server.port (63315)
+        api: {
+          port: 63315,
+          host: "0.0.0.0",
+          strictPort: true, // Fail if port is already in use instead of choosing another
+        },
         instances: [
           {
             browser: "chromium",

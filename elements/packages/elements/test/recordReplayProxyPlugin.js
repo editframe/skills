@@ -8,6 +8,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = join(__dirname, "__cache__");
 const TARGET_HOST = "host.docker.internal";
 const TARGET_PORT = 3000;
+// Get worktree domain from environment (set by worktree-config)
+const WORKTREE_DOMAIN = process.env.WORKTREE_DOMAIN || "main.localhost";
 
 // Check if we should run in cache-only mode (for CI/prepare-release)
 const CACHE_ONLY_MODE = process.env.EF_CACHE_ONLY === "true";
@@ -31,6 +33,11 @@ export function recordReplayProxyPlugin() {
 
       // Add middleware to handle /api/v1/transcode/* requests
       server.middlewares.use("/api/v1/transcode", async (req, res, next) => {
+        await handleProxyRequest(req, res, next);
+      });
+
+      // Add middleware to handle /api/v1/url-token requests (for URL signing)
+      server.middlewares.use("/api/v1/url-token", async (req, res, next) => {
         await handleProxyRequest(req, res, next);
       });
 
@@ -71,10 +78,18 @@ export function recordReplayProxyPlugin() {
       ) {
         try {
           const originalHost = `http://${TARGET_HOST}:${TARGET_PORT}`;
-          const proxyHost = `${req.headers["x-forwarded-proto"] || "http"}://${req.headers.host}`;
+          // Determine the correct proxy host to use
+          // Always use the Traefik URL for rewriting, as cached responses may contain localhost:63315
+          const proxyHost = `http://${WORKTREE_DOMAIN}:4322`;
           const bodyText = body.toString("utf-8");
-          const rewrittenText = bodyText.replace(
-            new RegExp(originalHost, "g"),
+          // Replace both the original host and localhost:63315 with the Traefik URL
+          let rewrittenText = bodyText.replace(
+            new RegExp(originalHost.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"),
+            proxyHost,
+          );
+          // Always replace localhost:63315 (cached responses may contain it)
+          rewrittenText = rewrittenText.replace(
+            /http:\/\/localhost:63315/g,
             proxyHost,
           );
           body = Buffer.from(rewrittenText, "utf-8");
@@ -169,7 +184,19 @@ export function recordReplayProxyPlugin() {
 
   // Handle proxy request as middleware
   async function handleProxyRequest(req, res, next) {
-    const fullPath = `/api/v1/transcode${req.url}`;
+    // Determine the API path prefix based on the request URL
+    // req.url will be like "/transcode/manifest.json" or "/url-token"
+    let apiPath;
+    if (req.url.startsWith("/transcode")) {
+      apiPath = `/api/v1/transcode${req.url}`;
+    } else if (req.url.startsWith("/url-token")) {
+      apiPath = `/api/v1/url-token${req.url.replace("/url-token", "")}`;
+    } else {
+      // Fallback: assume transcode if path doesn't match
+      apiPath = `/api/v1/transcode${req.url}`;
+    }
+    
+    const fullPath = apiPath;
     console.log(`[Proxy] → ${req.method} ${fullPath}`);
     if (req.headers.range) {
       console.log(`[Proxy] Range: ${req.headers.range}`);
@@ -234,8 +261,7 @@ export function recordReplayProxyPlugin() {
       req.on("end", async () => {
         try {
           const requestBody = Buffer.concat(requestChunks);
-          // Reconstruct the full path since middleware strips the prefix
-          const fullPath = `/api/v1/transcode${req.url}`;
+          // Use the full path we determined earlier
           const targetUrl = `http://${TARGET_HOST}:${TARGET_PORT}${fullPath}`;
 
           const fetchOptions = {
@@ -260,10 +286,18 @@ export function recordReplayProxyPlugin() {
           ) {
             try {
               const originalHost = `http://${TARGET_HOST}:${TARGET_PORT}`;
-              const proxyHost = `${req.headers["x-forwarded-proto"] || "http"}://${req.headers.host}`;
+              // Determine the correct proxy host to use
+              // Always use the Traefik URL for rewriting, as responses may contain localhost:63315
+              const proxyHost = `http://${WORKTREE_DOMAIN}:4322`;
               const bodyText = body.toString("utf-8");
-              const rewrittenText = bodyText.replace(
-                new RegExp(originalHost, "g"),
+              // Replace both the original host and localhost:63315 with the Traefik URL
+              let rewrittenText = bodyText.replace(
+                new RegExp(originalHost.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"),
+                proxyHost,
+              );
+              // Always replace localhost:63315 (responses may contain it from previous rewrites or cache)
+              rewrittenText = rewrittenText.replace(
+                /http:\/\/localhost:63315/g,
                 proxyHost,
               );
               body = Buffer.from(rewrittenText, "utf-8");

@@ -24,14 +24,21 @@ const forbidRelativePaths = (req: IncomingMessage) => {
 };
 
 // Create editframe client instance
-const getEditframeClient = () => {
-  const token = process.env.EF_TOKEN;
-  const efHost = process.env.EF_HOST;
-  if (!token) {
-    throw new Error("EF_TOKEN environment variable must be set");
-  }
-  return new Client(token, efHost);
-};
+  const getEditframeClient = () => {
+    // Trim whitespace and carriage returns from token (docker-compose .env files may have CRLF)
+    const token = process.env.EF_TOKEN?.trim().replace(/\r$/, "") || "";
+    // In test environment, use host.docker.internal to access telecine from test server container
+    // The proxy plugin handles routing /api/v1/* requests to telecine
+    const efHost = process.env.EF_HOST || "http://host.docker.internal:3000";
+    if (!token) {
+      const error = "EF_TOKEN environment variable must be set";
+      console.error("[Vite Plugin] Error:", error);
+      console.error("[Vite Plugin] Available env vars:", Object.keys(process.env).filter(k => k.includes('EF') || k.includes('TOKEN')));
+      throw new Error(error);
+    }
+    console.log("[Vite Plugin] Creating client with token (first 20 chars):", token.substring(0, 20) + "...", "efHost:", efHost);
+    return new Client(token, efHost);
+  };
 
 // Import sendTaskResult from relative path (type imports are stripped at compile time)
 import { sendTaskResult } from "./sendTaskResult.js";
@@ -191,27 +198,40 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
 
                 const client = getEditframeClient();
 
-                // createURLToken expects just a string URL
-                // For transcode URLs with params, we need to reconstruct the full URL
-                let fullUrl = url;
-                if (params) {
+                // For transcode URLs with params, we need to sign the source URL (from params.url)
+                // For regular URLs, we sign the URL directly
+                let urlToSign = url;
+                if (params && params.url) {
+                  // For transcode URLs, sign the source URL from params
+                  urlToSign = params.url;
+                } else if (params) {
+                  // If there are other params, reconstruct the full URL
                   const urlObj = new URL(url);
-                  // Add params as query parameters
                   Object.entries(params).forEach(([key, value]) => {
                     urlObj.searchParams.set(key, String(value));
                   });
-                  fullUrl = urlObj.toString();
+                  urlToSign = urlObj.toString();
                 }
 
-                log("Creating token for full URL:", fullUrl);
-                const token = await createURLToken(client, fullUrl);
+                log("Creating token for URL:", urlToSign);
+                log("Using EF_HOST:", process.env.EF_HOST);
+                log("Using token (first 20 chars):", process.env.EF_TOKEN?.substring(0, 20));
+                const token = await createURLToken(client, urlToSign);
 
                 res.writeHead(200, { "Content-Type": "application/json" });
                 res.end(JSON.stringify({ token }));
               } catch (error) {
-                log(`Error signing URL token: ${error}`);
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                const errorDetails = error instanceof Error && error.stack ? error.stack : errorMessage;
+                log(`Error signing URL token: ${errorMessage}`);
+                log(`Error details: ${errorDetails}`);
+                console.error("[Vite Plugin] URL signing error:", errorMessage);
+                console.error("[Vite Plugin] Error stack:", errorDetails);
                 res.writeHead(500, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({ error: "Failed to sign URL token" }));
+                res.end(JSON.stringify({ 
+                  error: "Failed to sign URL token",
+                  details: errorMessage 
+                }));
               }
             });
 
