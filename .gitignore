@@ -1,3 +1,4 @@
 .DS_Store
 telecine/services/scheduler-go/scheduler
 node_modules/*
+node_modules/.package-lock.json
