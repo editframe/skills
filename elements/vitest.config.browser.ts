@@ -16,6 +16,9 @@ interface TestConfiguration {
   browserProvider: BrowserProviderOptions;
 }
 
+// Detect CI environment (GitHub Actions)
+const isCI = Boolean(process.env.GITHUB_ACTIONS);
+
 function loadWebSocketEndpoint(): string | null {
   const wsEndpointPath = path.resolve(__dirname, ".wsEndpoint.json");
   if (!existsSync(wsEndpointPath)) {
@@ -41,8 +44,8 @@ function createConnectConfig(wsEndpoint: string): TestConfiguration {
       port: 63315,
       host: "0.0.0.0",
       // Allow the worktree hostname so Vite can respond to requests with that Host header
-      // This is needed for Traefik routing
-      allowedHosts: [worktreeDomain],
+      // This is needed for Traefik routing (not needed in CI)
+      ...(isCI ? {} : { allowedHosts: [worktreeDomain] }),
     },
     browserProvider: {
       connect: {
@@ -61,8 +64,8 @@ function createLaunchConfig(): TestConfiguration {
       port: 63315,
       host: "0.0.0.0",
       // Allow the worktree hostname so Vite can respond to requests with that Host header
-      // This is needed for Traefik routing
-      allowedHosts: [worktreeDomain],
+      // This is needed for Traefik routing (not needed in CI)
+      ...(isCI ? {} : { allowedHosts: [worktreeDomain] }),
     },
     headless: true,
     browserProvider: {
@@ -222,15 +225,21 @@ export default defineConfig(async () => {
     },
   };
 
+  const plugins = [
+    recordReplayProxyPlugin(),
+    vitePluginEditframe({
+      root: "./test-assets",
+      cacheRoot: "./test-assets",
+    }),
+  ];
+
+  // Only add Traefik URL plugin in local development (not in CI)
+  if (!isCI) {
+    plugins.push(traefikUrlPlugin);
+  }
+
   return {
-    plugins: [
-      recordReplayProxyPlugin(),
-      vitePluginEditframe({
-        root: "./test-assets",
-        cacheRoot: "./test-assets",
-      }),
-      traefikUrlPlugin,
-    ],
+    plugins,
     resolve: {
       alias: {
         "@editframe/assets": path.resolve(__dirname, "packages/assets/src"),
