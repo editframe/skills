@@ -1,6 +1,24 @@
 import { initializeInstrumentation } from "@/tracing/instrumentation";
 initializeInstrumentation({ serviceName: "web" });
 
+// Patch CustomElementRegistry.define to handle duplicate registrations gracefully
+// This is needed because SSR can cause modules to be loaded multiple times,
+// leading to duplicate custom element registrations
+if (typeof globalThis !== "undefined" && globalThis.customElements) {
+  const originalDefine = globalThis.customElements.define.bind(globalThis.customElements);
+  globalThis.customElements.define = function(name: string, constructor: CustomElementConstructor, options?: ElementDefinitionOptions) {
+    try {
+      return originalDefine(name, constructor, options);
+    } catch (error: unknown) {
+      // Ignore errors about duplicate registrations
+      if (error instanceof Error && error.message?.includes("has already been used with this registry")) {
+        return;
+      }
+      throw error;
+    }
+  };
+}
+
 import { createReadStream } from "node:fs";
 import path from "node:path";
 
@@ -132,10 +150,16 @@ if (UPLOAD_TO_BUCKET) {
   });
 }
 
+let serverBuild: Promise<any> | undefined;
 app.use(
   createRequestHandler({
     // @ts-expect-error - virtual module provided by React Router at build time
-    build: () => import("virtual:react-router/server-build"),
+    build: () => {
+      if (!serverBuild) {
+        serverBuild = import("virtual:react-router/server-build");
+      }
+      return serverBuild;
+    },
     getLoadContext() {
       return {};
     },
