@@ -11,9 +11,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@editframe/cli": "0.30.0-beta.1",
-    "@editframe/elements": "0.30.0-beta.1",
-    "@editframe/vite-plugin": "0.30.0-beta.1",
+    "@editframe/cli": "0.30.0-beta.9",
+    "@editframe/elements": "0.30.0-beta.9",
+    "@editframe/vite-plugin": "0.30.0-beta.9",
     "animejs": "^4.2.2",
     "prismjs": "^1.30.0",
     "tailwindcss": "^3.4.3",
