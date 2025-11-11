@@ -16,8 +16,13 @@ interface TestConfiguration {
   browserProvider: BrowserProviderOptions;
 }
 
-// Detect CI environment (GitHub Actions)
-const isCI = Boolean(process.env.GITHUB_ACTIONS);
+// Detect CI environment - check multiple indicators
+// GITHUB_ACTIONS is set by GitHub Actions, CI is a common CI indicator
+// Also check if we're running in ci-runner service (no Traefik)
+const isCI =
+  Boolean(process.env.GITHUB_ACTIONS) ||
+  Boolean(process.env.CI) ||
+  process.env.DOCKER_SERVICE === "ci-runner";
 
 function loadWebSocketEndpoint(): string | null {
   const wsEndpointPath = path.resolve(__dirname, ".wsEndpoint.json");

@@ -60,6 +60,11 @@ services:
     init: true
     env_file:
       - .env
+    environment:
+      # Pass through CI environment variables for detection
+      - GITHUB_ACTIONS=${GITHUB_ACTIONS:-}
+      - CI=${CI:-}
+      - DOCKER_SERVICE=ci-runner
     working_dir: /packages
     volumes:
       - ${ELEMENTS_ROOT_HOST:-${PWD}}:/packages
