@@ -23,6 +23,13 @@ export ELEMENTS_ROOT_HOST
 # Export WORKTREE_ID for substitution (ensure it has a default)
 export WORKTREE_ID="${WORKTREE_ID:-main}"
 
+# Check if shared network exists, create if not (needed for CI where shared infrastructure isn't set up)
+if ! docker network inspect editframe-shared > /dev/null 2>&1; then
+  echo "📦 Creating editframe-shared network..."
+  docker network create editframe-shared --driver bridge || true
+  echo "✅ Network created"
+fi
+
 # Change to ELEMENTS_ROOT so that ${PWD}/.env resolves correctly in compose files
 # The compose files use ${PWD}/.env which expects to be run from the elements directory
 cd "$ELEMENTS_ROOT"
