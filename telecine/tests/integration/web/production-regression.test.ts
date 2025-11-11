@@ -49,9 +49,57 @@ describe("Production Regression Tests", () => {
       );
     }
 
-    // Start the production container
+    // Start the production container with required environment variables
+    // These are minimal test values needed for routes to return 200 responses
+    const envVars = [
+      `POSTGRES_HOST=graphql-engine`,
+      `POSTGRES_PORT=5432`,
+      `POSTGRES_DB=hasura`,
+      `POSTGRES_USER=postgres`,
+      `POSTGRES_PASSWORD=postgres`,
+      `NODE_ENV=production`,
+      `PORT=3000`,
+      `STORAGE_BUCKET=test-bucket`,
+      `PUBLIC_STORAGE_BUCKET=test-bucket`,
+      // Required JWT secrets (using test values)
+      `HASURA_JWT_SECRET=test-hasura-jwt-secret-for-regression-testing`,
+      `APPLICATION_JWT_SECRET=test-application-jwt-secret-for-regression-testing`,
+      `APPLICATION_SECRET=test-application-secret-for-regression-testing`,
+      `ACTION_SECRET=test-action-secret-for-regression-testing`,
+      // GraphQL URLs
+      `HASURA_SERVER_URL=http://localhost:3000/v1/graphql`,
+      `VITE_HASURA_CLIENT_URL=http://localhost:3000/v1/graphql`,
+      `VITE_WEB_HOST=http://localhost:3000`,
+      `WEB_HOST=http://localhost:3000`,
+      // Other required vars
+      `VALKEY_HOST=valkey`,
+      `VALKEY_PORT=6379`,
+      // Worker websocket hosts (required but not used in test)
+      `RENDER_INITIALIZER_WEBSOCKET_HOST=ws://localhost:3000`,
+      `RENDER_INITIALIZER_MAX_WORKER_COUNT=1`,
+      `RENDER_INITIALIZER_WORKER_CONCURRENCY=1`,
+      `RENDER_FINALIZER_WEBSOCKET_HOST=ws://localhost:3000`,
+      `RENDER_FINALIZER_MAX_WORKER_COUNT=1`,
+      `RENDER_FINALIZER_WORKER_CONCURRENCY=1`,
+      `PROCESS_HTML_FINALIZER_WEBSOCKET_HOST=ws://localhost:3000`,
+      `PROCESS_HTML_FINALIZER_MAX_WORKER_COUNT=1`,
+      `PROCESS_HTML_FINALIZER_WORKER_CONCURRENCY=1`,
+      `INGEST_IMAGE_WEBSOCKET_HOST=ws://localhost:3000`,
+      `INGEST_IMAGE_MAX_WORKER_COUNT=1`,
+      `INGEST_IMAGE_WORKER_CONCURRENCY=1`,
+      `PROCESS_ISOBMFF_WEBSOCKET_HOST=ws://localhost:3000`,
+      `PROCESS_ISOBMFF_MAX_WORKER_COUNT=1`,
+      `PROCESS_ISOBMFF_WORKER_CONCURRENCY=1`,
+      `PROCESS_HTML_INITIALIZER_WEBSOCKET_HOST=ws://localhost:3000`,
+      `PROCESS_HTML_INITIALIZER_MAX_WORKER_COUNT=1`,
+      `PROCESS_HTML_INITIALIZER_WORKER_CONCURRENCY=1`,
+      `RENDER_FRAGMENT_WEBSOCKET_HOST=ws://localhost:3000`,
+      `RENDER_FRAGMENT_MAX_WORKER_COUNT=1`,
+      `RENDER_FRAGMENT_WORKER_CONCURRENCY=1`,
+    ].join(" -e ");
+
     const { stdout } = await execAsync(
-      `docker run -d --name ${containerName} -p ${port}:3000 --network ${networkName} -e POSTGRES_HOST=graphql-engine -e POSTGRES_PORT=5432 -e POSTGRES_DB=hasura -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e NODE_ENV=production -e PORT=3000 -e STORAGE_BUCKET=test-bucket -e PUBLIC_STORAGE_BUCKET=test-bucket telecine-web-prod-debug --loader /app/loader.js /app/services/web/server.js`
+      `docker run -d --name ${containerName} -p ${port}:3000 --network ${networkName} -e ${envVars} telecine-web-prod-debug --loader /app/loader.js /app/services/web/server.js`
     );
     containerId = stdout.trim();
 
@@ -86,7 +134,7 @@ describe("Production Regression Tests", () => {
     }
   });
 
-  it("should not have getLocalContent 'Not found' errors for valid doc paths", async () => {
+  it("should return 200 responses for valid doc paths without 'Not found' errors", async () => {
     if (!dockerIsAvailable) {
       return;
     }
@@ -103,13 +151,21 @@ describe("Production Regression Tests", () => {
         redirect: "manual",
       });
 
-      // Should not be a 500 error
+      // Should return 200 (or valid redirect) - not 500
       expect(response.status).not.toBe(500);
+      
+      // For the specific problematic path, we expect 200 or 404 (if content doesn't exist)
+      // but NOT 500 with "Not found" error
+      if (testPath === "/docs/video-composition/create-a-composition/overview/") {
+        // This should be 200 if the path resolution fix works
+        expect([200, 404]).toContain(response.status);
+      }
 
       if (response.status === 200) {
         const text = await response.text();
         // Should not contain error messages
         expect(text).not.toContain("Not found");
+        expect(text).not.toContain("Error: Not found");
       }
     }
 
@@ -131,7 +187,7 @@ describe("Production Regression Tests", () => {
     expect(notFoundErrors.length).toBe(0);
   });
 
-  it("should not have duplicate custom element registration errors", async () => {
+  it("should return 200 responses without duplicate custom element registration errors", async () => {
     if (!dockerIsAvailable) {
       return;
     }
@@ -141,8 +197,17 @@ describe("Production Regression Tests", () => {
       fetch(`http://localhost:${port}/`).catch(() => null)
     );
 
-    await Promise.all(requests);
+    const responses = await Promise.all(requests);
     await setTimeout(2000); // Wait for logs to flush
+    
+    // Verify we got successful responses
+    const statusCodes = responses
+      .filter((r) => r !== null)
+      .map((r) => r!.status);
+    
+    // Should return 200 - not 500
+    const error500s = statusCodes.filter((code) => code === 500);
+    expect(error500s.length).toBe(0);
 
     // Check logs for duplicate registration errors
     const { stdout: logs } = await execAsync(
@@ -160,12 +225,12 @@ describe("Production Regression Tests", () => {
     expect(duplicateRegistrationErrors.length).toBe(0);
   });
 
-  it("should handle multiple concurrent requests without errors", async () => {
+  it("should return 200 responses for root route without errors", async () => {
     if (!dockerIsAvailable) {
       return;
     }
 
-    // Make many concurrent requests
+    // Make many concurrent requests to root route
     const requests = Array.from({ length: 20 }, (_, i) =>
       fetch(`http://localhost:${port}/`, {
         headers: { "X-Request-ID": `test-${i}` },
@@ -175,14 +240,18 @@ describe("Production Regression Tests", () => {
     const responses = await Promise.all(requests);
     await setTimeout(2000); // Wait for logs to flush
 
-    // Check that we got responses (even if some are errors, they shouldn't be 500s from duplicate registration)
+    // Check that we got responses
     const statusCodes = responses
       .filter((r) => r !== null)
       .map((r) => r!.status);
 
-    // Should not have 500 errors
+    // Should return 200 (or valid redirect) - not 500
     const error500s = statusCodes.filter((code) => code === 500);
     expect(error500s.length).toBe(0);
+    
+    // At least some requests should return 200
+    const success200s = statusCodes.filter((code) => code === 200);
+    expect(success200s.length).toBeGreaterThan(0);
 
     // Check logs for the specific errors
     const { stdout: logs } = await execAsync(
