@@ -1,6 +1,6 @@
 {
   "name": "@editframe/react",
-  "version": "0.29.0-beta.7",
+  "version": "0.29.0-beta.8",
   "description": "",
   "exports": {
     ".": {
@@ -22,7 +22,7 @@
   "author": "",
   "license": "UNLICENSED",
   "dependencies": {
-    "@editframe/elements": "0.29.0-beta.7",
+    "@editframe/elements": "0.29.0-beta.8",
     "@lit/task": "^1.0.1",
     "lit": "^3.3.1",
     "react": "^18.3.0"
