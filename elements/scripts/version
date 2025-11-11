@@ -46,6 +46,18 @@ if git -C "$GIT_ROOT" remote | grep -q "^elements$"; then
   git tag -f "${TAG_NAME}" elements/main -m "$@"
   # Push the tag to the elements remote
   git push elements "${TAG_NAME}" --force
+  
+  # Also tag telecine if telecine remote exists
+  if git -C "$GIT_ROOT" remote | grep -q "^telecine$"; then
+    git fetch telecine main
+    # Tag the latest commit on telecine/main
+    git tag -f "${TAG_NAME}" telecine/main -m "$@"
+    # Push the tag to the telecine remote
+    git push telecine "${TAG_NAME}" --force
+  fi
+  
+  # Also tag the monorepo root at current HEAD
+  git tag -f "${TAG_NAME}" HEAD -m "$@"
 else
   # Standalone repo: use original behavior
   git push
