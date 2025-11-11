@@ -44,21 +44,21 @@ if grep -qE '\${WORKTREE_ID|\${WORKTREE_DOMAIN' "$COMPOSE_FILE" 2>/dev/null; the
         -e "s|\${WORKTREE_DOMAIN}|${WORKTREE_DOMAIN}|g" \
         "$COMPOSE_FILE" > "$PROCESSED_FILE"
     
-    # Execute docker-compose with processed file
-    docker-compose \
+    # Execute docker compose with processed file
+    docker compose \
       --project-name "$WORKTREE_DOCKER_PROJECT_NAME" \
       -f "$PROCESSED_FILE" \
       "$@"
     EXIT_CODE=$?
     
-    # Clean up processed file after docker-compose completes
+    # Clean up processed file after docker compose completes
     rm -f "$PROCESSED_FILE"
     
-    # Exit with the same code as docker-compose
+    # Exit with the same code as docker compose
     exit $EXIT_CODE
 else
     # File doesn't need processing, use original
-    docker-compose \
+    docker compose \
       --project-name "$WORKTREE_DOCKER_PROJECT_NAME" \
       -f "$COMPOSE_FILE" \
       "$@"
