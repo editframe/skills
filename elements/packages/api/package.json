@@ -1,6 +1,6 @@
 {
   "name": "@editframe/api",
-  "version": "0.29.0-beta.8",
+  "version": "0.30.0-beta",
   "description": "API functions for EditFrame",
   "type": "module",
   "scripts": {
@@ -19,7 +19,7 @@
     "typescript": "^5.5.4"
   },
   "dependencies": {
-    "@editframe/assets": "0.29.0-beta.8",
+    "@editframe/assets": "0.30.0-beta",
     "@vitejs/plugin-react": "^4.3.4",
     "debug": "^4.3.5",
     "eventsource-parser": "^3.0.0",
