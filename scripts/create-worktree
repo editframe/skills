@@ -120,7 +120,7 @@ fi
 
 echo ""
 
-# Copy .env files
+# Copy .env files and ensure EF_TOKEN is set
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "Copying Configuration Files"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -136,17 +136,106 @@ if [ -f "$CURRENT_ROOT/telecine/.env" ]; then
   fi
 fi
 
+# Handle elements/.env - copy if exists, then ensure EF_TOKEN and EF_HOST are set
 if [ -f "$CURRENT_ROOT/elements/.env" ]; then
   if cp "$CURRENT_ROOT/elements/.env" "$WORKTREE_DIR/elements/.env" 2>/dev/null; then
-    echo "   ✅ elements/.env"
+    echo "   ✅ elements/.env (copied)"
     ENV_COPIED=$((ENV_COPIED + 1))
   else
     echo "   ⚠️  Failed to copy elements/.env" >&2
+    # Create empty file if copy failed
+    touch "$WORKTREE_DIR/elements/.env"
   fi
+else
+  # Create elements/.env if it doesn't exist
+  touch "$WORKTREE_DIR/elements/.env"
 fi
 
-if [ $ENV_COPIED -eq 0 ]; then
-  echo "   ℹ️  No .env files found to copy"
+# Generate EF_TOKEN for the new worktree from its own database
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "Configuring EF_TOKEN"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+NEW_ELEMENTS_ENV="$WORKTREE_DIR/elements/.env"
+
+# Check if new worktree already has EF_TOKEN
+EF_TOKEN=""
+if [ -f "$NEW_ELEMENTS_ENV" ]; then
+  EF_TOKEN=$(grep -E "^EF_TOKEN=" "$NEW_ELEMENTS_ENV" | cut -d'=' -f2- | sed 's/^"//;s/"$//' | sed "s/^'//;s/'$//")
+fi
+
+# If no EF_TOKEN found, generate one from the new worktree's database
+if [ -z "$EF_TOKEN" ]; then
+  echo "   Generating forever token for collin@editframe.com (from worktree database)..."
+  cd "$WORKTREE_DIR/telecine"
+  
+  # Source worktree config to get docker project name and database
+  . scripts/worktree-config > /dev/null 2>&1 || true
+  
+  # Start runner if not already running (needed for database access)
+  NEW_RUNNER_NAME="${WORKTREE_DOCKER_PROJECT_NAME:-telecine}-runner"
+  
+  if ! docker ps --format '{{.Names}}' | grep -q "^${NEW_RUNNER_NAME}$"; then
+    ./scripts/docker-compose up -d runner > /dev/null 2>&1 || true
+    sleep 2
+  fi
+  
+  # Generate token (will use POSTGRES_DB from worktree-config)
+  EF_TOKEN=$(./scripts/run node --import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("./loader.js", pathToFileURL("./"));' scripts/generate-forever-token.ts 2>&1 | tail -n1)
+  
+  if [ -z "$EF_TOKEN" ] || echo "$EF_TOKEN" | grep -q "Error"; then
+    echo "   ⚠️  Failed to generate token. You may need to set EF_TOKEN manually." >&2
+    EF_TOKEN=""
+  else
+    echo "   ✅ Token generated"
+  fi
+  cd "$CURRENT_ROOT"
+else
+  echo "   ✅ Using existing EF_TOKEN from worktree"
+fi
+
+# Update new worktree's elements/.env with EF_TOKEN, EF_HOST, and VITEST_BROWSER_MODE
+if [ -n "$EF_TOKEN" ]; then
+  # Create elements/.env if it doesn't exist
+  if [ ! -f "$NEW_ELEMENTS_ENV" ]; then
+    touch "$NEW_ELEMENTS_ENV"
+  fi
+  
+  # Determine telecine web container name for EF_HOST
+  # Pattern: {telecine-project-name}-web-1
+  TELECINE_WEB_HOST="http://telecine-web-1:3000"
+  
+  # Check telecine worktree config to determine container name
+  if [ -d "$WORKTREE_DIR/telecine" ] && [ -f "$WORKTREE_DIR/telecine/scripts/worktree-config" ]; then
+    cd "$WORKTREE_DIR/telecine"
+    if . scripts/worktree-config > /dev/null 2>&1; then
+      # Use the telecine worktree's docker project name to construct container name
+      # Docker Compose creates containers as {project-name}-{service}-{instance}
+      if [ "$WORKTREE_ID" != "main" ]; then
+        TELECINE_WEB_HOST="http://telecine-${WORKTREE_ID}-web-1:3000"
+      fi
+    fi
+    cd "$CURRENT_ROOT"
+  fi
+  
+  # Remove existing lines if present
+  grep -v "^EF_TOKEN=" "$NEW_ELEMENTS_ENV" > "$NEW_ELEMENTS_ENV.tmp" 2>/dev/null || true
+  grep -v "^EF_HOST=" "$NEW_ELEMENTS_ENV.tmp" > "$NEW_ELEMENTS_ENV.tmp2" 2>/dev/null || true
+  grep -v "^VITEST_BROWSER_MODE=" "$NEW_ELEMENTS_ENV.tmp2" > "$NEW_ELEMENTS_ENV.tmp" 2>/dev/null || true
+  mv "$NEW_ELEMENTS_ENV.tmp" "$NEW_ELEMENTS_ENV"
+  
+  # Add required variables
+  echo "EF_TOKEN=\"$EF_TOKEN\"" >> "$NEW_ELEMENTS_ENV"
+  echo "EF_HOST=\"$TELECINE_WEB_HOST\"" >> "$NEW_ELEMENTS_ENV"
+  echo "VITEST_BROWSER_MODE=\"connect\"" >> "$NEW_ELEMENTS_ENV"
+  
+  echo "   ✅ Updated elements/.env with EF_TOKEN, EF_HOST, and VITEST_BROWSER_MODE"
+fi
+
+if [ $ENV_COPIED -eq 0 ] && [ -z "$EF_TOKEN" ]; then
+  echo "   ℹ️  No .env files found to copy and token generation failed"
 fi
 
 # Copy dev-projects directory (gitignored, needed for dev server)

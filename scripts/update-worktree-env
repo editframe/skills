@@ -1,37 +1,164 @@
 #!/usr/bin/env bash
+# Update EF_TOKEN, EF_HOST, and VITEST_BROWSER_MODE in existing worktrees
+# Each worktree gets its own token generated from its own database
+# Run from any worktree
+
 set -e
 
-# Script to update .env files in all worktrees to use shared infrastructure
-
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-MONOREPO_ROOT="$SCRIPT_DIR/.."
+PROJECT_ROOT="$SCRIPT_DIR/.."
 
-echo "🔧 Updating .env files in all worktrees..."
+# Check if we're in a git repository
+if ! git rev-parse --git-dir > /dev/null 2>&1; then
+  echo "Error: Not in a git repository" >&2
+  exit 1
+fi
+
+# Get current worktree root
+CURRENT_ROOT=$(git rev-parse --show-toplevel)
+
+# Get worktree parent directory
+WORKTREE_PARENT=$(dirname "$CURRENT_ROOT")
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "Updating Worktrees"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-# Get list of all worktrees
-git worktree list --porcelain | awk '/^worktree/ {print $2}' | while read -r worktree_path; do
-  env_file="$worktree_path/telecine/.env"
+WORKTREES_UPDATED=0
+WORKTREES_FAILED=0
+
+# Function to generate/update token for a worktree
+update_worktree_token() {
+  local worktree_dir="$1"
+  local worktree_name="$2"
+  local elements_env="$worktree_dir/elements/.env"
   
-  if [ ! -f "$env_file" ]; then
-    echo "⚠️  Skipping $worktree_path - no .env file found"
-    continue
-  fi
+  echo -n "   $worktree_name ... "
   
-  echo "📝 Updating $env_file"
+  # Always try to generate a new token from this worktree's database
+  local existing_token=""
   
-  # Update POSTGRES_HOST to use shared postgres
-  if grep -q "^POSTGRES_HOST=postgres$" "$env_file"; then
-    sed -i '' 's/^POSTGRES_HOST=postgres$/POSTGRES_HOST=editframe-postgres/' "$env_file"
-    echo "   ✅ Updated POSTGRES_HOST to editframe-postgres"
-  elif grep -q "^POSTGRES_HOST=editframe-postgres$" "$env_file"; then
-    echo "   ✅ POSTGRES_HOST already correct"
+  # Check if telecine directory exists
+  if [ -d "$worktree_dir/telecine" ] && [ -f "$worktree_dir/telecine/scripts/worktree-config" ]; then
+    cd "$worktree_dir/telecine"
+    
+    # Source worktree config to get docker project name and database
+    if . scripts/worktree-config > /dev/null 2>&1; then
+      # Start runner if not already running (needed for database access)
+      local runner_name="${WORKTREE_DOCKER_PROJECT_NAME:-telecine}-runner"
+      
+      if ! docker ps --format '{{.Names}}' | grep -q "^${runner_name}$"; then
+        ./scripts/docker-compose up -d runner > /dev/null 2>&1 || true
+        sleep 2
+      fi
+      
+      # Delete existing token if it exists (so we can generate a fresh one)
+      ./scripts/run node --import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("./loader.js", pathToFileURL("./"));' scripts/delete-forever-token.ts > /dev/null 2>&1 || true
+      
+        # Generate token (will use POSTGRES_DB from worktree-config)
+        local generated_token=$(./scripts/run node --import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("./loader.js", pathToFileURL("./"));' scripts/generate-forever-token.ts 2>&1 | tail -n1 | tr -d '\r\n')
+        
+        if [ -n "$generated_token" ] && ! echo "$generated_token" | grep -q "Error"; then
+          existing_token="$generated_token"
+        else
+          # Token generation failed - try to read existing token from .env as fallback
+          if [ -f "$elements_env" ]; then
+            existing_token=$(grep -E "^EF_TOKEN=" "$elements_env" | cut -d'=' -f2- | sed 's/^"//;s/"$//' | sed "s/^'//;s/'$//" | tr -d '\r\n')
+            if [ -n "$existing_token" ]; then
+              echo -n "(generation failed, keeping existing) "
+            fi
+          fi
+        fi
+    fi
+    
+    cd "$CURRENT_ROOT"
   else
-    echo "   ⚠️  POSTGRES_HOST not found or has unexpected value"
+    # No telecine directory or worktree-config - can't generate token
+    # Try to read existing token from .env as fallback
+    if [ -f "$elements_env" ]; then
+      existing_token=$(grep -E "^EF_TOKEN=" "$elements_env" | cut -d'=' -f2- | sed 's/^"//;s/"$//' | sed "s/^'//;s/'$//" | tr -d '\r\n')
+      if [ -n "$existing_token" ]; then
+        echo -n "(no telecine - keeping existing token) "
+      else
+        echo -n "(no telecine - skipping token generation) "
+      fi
+    else
+      echo -n "(no telecine - skipping token generation) "
+    fi
   fi
   
-  echo ""
-done
+  # Create elements directory and .env file if they don't exist
+  local elements_dir=$(dirname "$elements_env")
+  if [ ! -d "$elements_dir" ]; then
+    mkdir -p "$elements_dir"
+  fi
+  if [ ! -f "$elements_env" ]; then
+    touch "$elements_env"
+  fi
+  
+  # Remove existing lines if present
+  grep -v "^EF_TOKEN=" "$elements_env" > "$elements_env.tmp" 2>/dev/null || true
+  grep -v "^EF_HOST=" "$elements_env.tmp" > "$elements_env.tmp2" 2>/dev/null || true
+  grep -v "^VITEST_BROWSER_MODE=" "$elements_env.tmp2" > "$elements_env.tmp" 2>/dev/null || true
+  mv "$elements_env.tmp" "$elements_env"
+  
+  # Determine telecine web container name for EF_HOST
+  # Pattern: {telecine-project-name}-web-1
+  local telecine_web_host="http://telecine-web-1:3000"
+  
+  # Check if this is a worktree (not main) - if so, try to determine telecine worktree name
+  if [ -d "$worktree_dir/telecine" ] && [ -f "$worktree_dir/telecine/scripts/worktree-config" ]; then
+    cd "$worktree_dir/telecine"
+    if . scripts/worktree-config > /dev/null 2>&1; then
+      # Use the telecine worktree's docker project name to construct container name
+      # Docker Compose creates containers as {project-name}-{service}-{instance}
+      if [ "$WORKTREE_ID" != "main" ]; then
+        telecine_web_host="http://telecine-${WORKTREE_ID}-web-1:3000"
+      fi
+    fi
+    cd "$CURRENT_ROOT"
+  fi
+  
+  # Add required variables (only add EF_TOKEN if we have one)
+  # Use printf instead of echo to avoid adding extra newlines
+  if [ -n "$existing_token" ]; then
+    printf 'EF_TOKEN="%s"\n' "$existing_token" >> "$elements_env"
+  fi
+  printf 'EF_HOST="%s"\n' "$telecine_web_host" >> "$elements_env"
+  printf 'VITEST_BROWSER_MODE="connect"\n' >> "$elements_env"
+  
+  echo "✅"
+  return 0
+}
 
-echo "✅ Done! Please restart your worktree services to apply changes."
+# Update main worktree
+MAIN_ELEMENTS_ENV="$CURRENT_ROOT/elements/.env"
+if update_worktree_token "$CURRENT_ROOT" "main worktree"; then
+  WORKTREES_UPDATED=$((WORKTREES_UPDATED + 1))
+else
+  WORKTREES_FAILED=$((WORKTREES_FAILED + 1))
+fi
 
+# Update all other worktrees
+while IFS= read -r -d '' worktree_dir; do
+  worktree_name=$(basename "$worktree_dir")
+  elements_env="$worktree_dir/elements/.env"
+  
+  if update_worktree_token "$worktree_dir" "$worktree_name"; then
+    WORKTREES_UPDATED=$((WORKTREES_UPDATED + 1))
+  else
+    WORKTREES_FAILED=$((WORKTREES_FAILED + 1))
+  fi
+done < <(find "$WORKTREE_PARENT" -maxdepth 1 -type d -name "editframe-*" -print0 2>/dev/null || true)
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "✅ Update Complete"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "   Updated $WORKTREES_UPDATED worktree(s)"
+if [ $WORKTREES_FAILED -gt 0 ]; then
+  echo "   ⚠️  $WORKTREES_FAILED worktree(s) failed to update" >&2
+fi
+echo ""
