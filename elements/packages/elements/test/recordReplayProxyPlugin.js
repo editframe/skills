@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { TEST_SERVER_PORT } from "./constants.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = join(__dirname, "__cache__");
@@ -11,8 +12,26 @@ const TARGET_PORT = 3000;
 // Get worktree domain from environment (set by worktree-config)
 const WORKTREE_DOMAIN = process.env.WORKTREE_DOMAIN || "main.localhost";
 
+// Detect CI environment - check multiple indicators
+// GITHUB_ACTIONS is set by GitHub Actions, CI is a common CI indicator
+// Also check if we're running in ci-runner service (no Traefik)
+const isCI =
+  Boolean(process.env.GITHUB_ACTIONS) ||
+  Boolean(process.env.CI) ||
+  process.env.DOCKER_SERVICE === "ci-runner";
+
 // Check if we should run in cache-only mode (for CI/prepare-release)
 const CACHE_ONLY_MODE = process.env.EF_CACHE_ONLY === "true";
+
+// Determine the proxy host to use for URL rewriting
+// In CI, use localhost:TEST_SERVER_PORT (no Traefik)
+// In local dev, use WORKTREE_DOMAIN:4322 (Traefik routing)
+function getProxyHost() {
+  if (isCI) {
+    return `http://localhost:${TEST_SERVER_PORT}`;
+  }
+  return `http://${WORKTREE_DOMAIN}:4322`;
+}
 
 /**
  * Vite plugin that adds record-and-replay proxy middleware
@@ -79,10 +98,10 @@ export function recordReplayProxyPlugin() {
         try {
           const originalHost = `http://${TARGET_HOST}:${TARGET_PORT}`;
           // Determine the correct proxy host to use
-          // Always use the Traefik URL for rewriting, as cached responses may contain localhost:63315
-          const proxyHost = `http://${WORKTREE_DOMAIN}:4322`;
+          // In CI, use localhost:TEST_SERVER_PORT; in local dev, use Traefik URL
+          const proxyHost = getProxyHost();
           const bodyText = body.toString("utf-8");
-          // Replace both the original host and localhost:63315 with the Traefik URL
+          // Replace both the original host and localhost:63315 with the proxy host
           let rewrittenText = bodyText.replace(
             new RegExp(
               originalHost.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
@@ -291,10 +310,10 @@ export function recordReplayProxyPlugin() {
             try {
               const originalHost = `http://${TARGET_HOST}:${TARGET_PORT}`;
               // Determine the correct proxy host to use
-              // Always use the Traefik URL for rewriting, as responses may contain localhost:63315
-              const proxyHost = `http://${WORKTREE_DOMAIN}:4322`;
+              // In CI, use localhost:TEST_SERVER_PORT; in local dev, use Traefik URL
+              const proxyHost = getProxyHost();
               const bodyText = body.toString("utf-8");
-              // Replace both the original host and localhost:63315 with the Traefik URL
+              // Replace both the original host and localhost:63315 with the proxy host
               let rewrittenText = bodyText.replace(
                 new RegExp(
                   originalHost.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
