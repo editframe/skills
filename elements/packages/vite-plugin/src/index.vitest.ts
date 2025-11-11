@@ -183,16 +183,15 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
                 // In cache-only mode (prepare-release), also return mock directly since we rely on cached HTTP responses
                 // In local dev, return mock response directly (MSW can't intercept server-side fetch)
                 // The record-replay proxy handles caching for /api/v1/transcode/* requests, not URL signing
-                log("Returning mock token response (no signing server in CI/cache-only mode)");
+                log(
+                  "Returning mock token response (no signing server in CI/cache-only mode)",
+                );
                 returnMockResponse();
               } catch (error) {
                 const errorMessage =
                   error instanceof Error ? error.message : String(error);
                 log(`Error handling URL signing request: ${errorMessage}`);
-                console.error(
-                  "[Vite Plugin] URL signing error:",
-                  errorMessage,
-                );
+                console.error("[Vite Plugin] URL signing error:", errorMessage);
                 // Always fall back to mock response on error
                 returnMockResponse();
               }
