@@ -1,3 +1,69 @@
+// Patch CustomElementRegistry.define before any imports to catch SSR shim registries
+// This must run before ANY modules are imported, including express
+if (typeof globalThis !== "undefined") {
+  // Store original defineProperty to intercept ALL customElements creation
+  const originalDefineProperty = Object.defineProperty;
+  
+  // Patch function that will be applied to any CustomElementRegistry
+  const patchRegistry = (registry) => {
+    if (registry && registry.define && !registry.define.__patched) {
+      const originalDefine = registry.define.bind(registry);
+      registry.define = function(name, constructor, options) {
+        try {
+          const existing = registry.get(name);
+          if (existing) {
+            return; // Already registered, skip
+          }
+        } catch {
+          // Element doesn't exist, proceed
+        }
+        try {
+          return originalDefine(name, constructor, options);
+        } catch (error) {
+          // Ignore duplicate registration errors - this is expected in SSR
+          if (error instanceof Error && error.message?.includes("has already been used")) {
+            return;
+          }
+          throw error;
+        }
+      };
+      registry.define.__patched = true;
+    }
+  };
+  
+  // Intercept when customElements is created via defineProperty (SSR shim does this)
+  Object.defineProperty = function(obj, prop, descriptor) {
+    const result = originalDefineProperty.call(this, obj, prop, descriptor);
+    if (obj === globalThis && prop === "customElements" && descriptor.value) {
+      patchRegistry(descriptor.value);
+    }
+    return result;
+  };
+  
+  // Patch existing customElements if it already exists
+  if (globalThis.customElements) {
+    patchRegistry(globalThis.customElements);
+  }
+  
+  // Also set up a proxy to catch future customElements access
+  // This ensures we patch any registry created by the SSR shim
+  let customElementsProxy = globalThis.customElements;
+  try {
+    Object.defineProperty(globalThis, "customElements", {
+      get() {
+        return customElementsProxy;
+      },
+      set(value) {
+        patchRegistry(value);
+        customElementsProxy = value;
+      },
+      configurable: true,
+    });
+  } catch {
+    // If we can't proxy it, that's okay - the defineProperty interceptor will catch it
+  }
+}
+
 import express from "express";
 import morgan from "morgan";
 import path from "node:path";

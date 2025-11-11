@@ -20,15 +20,24 @@ if (typeof globalThis !== "undefined") {
           // Check if already registered - if so, skip registration
           try {
             const existing = customElements.get(name);
-            if (existing === constructor) {
-              // Already registered with same constructor - safe to skip
+            if (existing) {
+              // Already registered - safe to skip (even if constructor is different, 
+              // this is SSR and modules can be loaded multiple times)
               return;
             }
-            // Different constructor - this is an actual error, let it throw
           } catch {
             // get() can throw if element doesn't exist - that's fine, proceed with define
           }
-          return originalDefine(name, constructor, options);
+          // Try to define, but catch duplicate registration errors
+          try {
+            return originalDefine(name, constructor, options);
+          } catch (error) {
+            // Ignore duplicate registration errors in SSR
+            if (error instanceof Error && error.message?.includes("has already been used")) {
+              return;
+            }
+            throw error;
+          }
         };
       }
     }
@@ -43,15 +52,24 @@ if (typeof globalThis !== "undefined") {
       // Check if already registered - if so, skip registration
       try {
         const existing = globalThis.customElements.get(name);
-        if (existing === constructor) {
-          // Already registered with same constructor - safe to skip
+        if (existing) {
+          // Already registered - safe to skip (even if constructor is different,
+          // this is SSR and modules can be loaded multiple times)
           return;
         }
-        // Different constructor - this is an actual error, let it throw
       } catch {
         // get() can throw if element doesn't exist - that's fine, proceed with define
       }
-      return originalDefine(name, constructor, options);
+      // Try to define, but catch duplicate registration errors
+      try {
+        return originalDefine(name, constructor, options);
+      } catch (error) {
+        // Ignore duplicate registration errors in SSR
+        if (error instanceof Error && error.message?.includes("has already been used")) {
+          return;
+        }
+        throw error;
+      }
     };
   }
 }
