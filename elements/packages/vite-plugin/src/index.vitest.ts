@@ -46,11 +46,12 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
         // Forbid relative paths in any request
         if (req.url?.startsWith("/@ef")) {
           forbidRelativePaths(req);
+          log(`[Vite Plugin] Handling @ef request: ${req.url}`);
         } else {
           return next();
         }
 
-        log(`Handling ${req.url}`);
+        log(`[Vite Plugin] Processing ${req.url}`);
 
         const requestPath = req.url.replace(/^\/@ef-[^/]+\//, "");
         const assetPath = requestPath.replace(/\?.*$/, "");
@@ -159,6 +160,7 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
               break;
             }
 
+            console.log("[Vite Plugin] @ef-sign-url handler called");
             log("Proxying /@ef-sign-url to /api/v1/url-token");
 
             // Collect request body
@@ -168,8 +170,10 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
             });
 
             req.on("end", async () => {
+              console.log("[Vite Plugin] Request body received, processing...");
               try {
                 const requestBody = Buffer.concat(requestChunks);
+                console.log(`[Vite Plugin] Request body length: ${requestBody.length}`);
                 
                 // The vite plugin middleware runs AFTER the record-replay proxy middleware in the stack.
                 // Since the proxy middleware has already been called and didn't match /@ef-sign-url,
@@ -177,6 +181,7 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
                 // This allows cached responses to be served in CI.
                 // Wait for server to be ready if needed
                 if (!server.httpServer?.listening) {
+                  console.log("[Vite Plugin] Waiting for server to be ready...");
                   await new Promise<void>((resolve) => {
                     if (server.httpServer?.listening) {
                       resolve();
@@ -195,6 +200,7 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
                     : null) || TEST_SERVER_PORT;
                 const targetUrl = `http://localhost:${serverPort}/api/v1/url-token`;
 
+                console.log(`[Vite Plugin] Making internal request to: ${targetUrl}`);
                 log(`Making internal request to: ${targetUrl}`);
 
                 const proxyResponse = await fetch(targetUrl, {
