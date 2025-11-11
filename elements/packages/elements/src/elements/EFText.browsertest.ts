@@ -93,6 +93,37 @@ describe("EFText", () => {
       expect(segments[2]?.segmentText).toBe("C");
     });
 
+    test("does not create blank character segments from leading/trailing whitespace", async () => {
+      const timegroup = document.createElement("ef-timegroup");
+      const text = document.createElement("ef-text");
+      text.split = "char";
+      text.textContent = "\n\n  TYPEWRITER\n\n";
+      text.duration = "3s";
+      timegroup.appendChild(text);
+      document.body.appendChild(timegroup);
+      testElements.push(timegroup);
+
+      await text.updateComplete;
+      const segments = await text.whenSegmentsReady();
+
+      // Should only have segments for "TYPEWRITER" (10 characters), no whitespace segments
+      expect(segments.length).toBe(10);
+      expect(segments[0]?.segmentText).toBe("T");
+      expect(segments[1]?.segmentText).toBe("Y");
+      expect(segments[2]?.segmentText).toBe("P");
+      expect(segments[3]?.segmentText).toBe("E");
+      expect(segments[4]?.segmentText).toBe("W");
+      expect(segments[5]?.segmentText).toBe("R");
+      expect(segments[6]?.segmentText).toBe("I");
+      expect(segments[7]?.segmentText).toBe("T");
+      expect(segments[8]?.segmentText).toBe("E");
+      expect(segments[9]?.segmentText).toBe("R");
+      // Verify no whitespace-only segments
+      for (const segment of segments) {
+        expect(segment.segmentText.trim().length).toBeGreaterThan(0);
+      }
+    });
+
     test("re-splits when content changes", async () => {
       const timegroup = document.createElement("ef-timegroup");
       const text = document.createElement("ef-text");
