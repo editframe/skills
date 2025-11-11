@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+PROJECT_ROOT="$SCRIPT_DIR/.."
+
+cd "$PROJECT_ROOT"
+
+BRANCH="${1:-main}"
+TEMP_BRANCH="telecine-split-${BRANCH}"
+
+echo "Splitting telecine subtree to temporary branch..."
+git subtree split --prefix=telecine -b "$TEMP_BRANCH"
+
+echo "Pushing to telecine remote..."
+git push telecine "$TEMP_BRANCH:$BRANCH" --force
+
+echo "Cleaning up temporary branch..."
+git branch -D "$TEMP_BRANCH"
+
+echo "✅ Successfully pushed telecine/ directory to telecine remote ($BRANCH branch)"
+
