@@ -221,10 +221,33 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
       }
 
       try {
-        return fetch(url, init);
+        const fetchPromise = fetch(url, init);
+        // Wrap the promise to catch rejections and log the URL
+        // Return the promise chain so errors are logged but still propagate
+        return fetchPromise.catch((error) => {
+          console.error(
+            "ContextMixin fetch error",
+            url,
+            error,
+            window.location.href,
+          );
+          // Create a new error with the URL in the message, preserving the original error type
+          const ErrorConstructor = error instanceof Error ? error.constructor : Error;
+          const enhancedError = new (ErrorConstructor as typeof Error)(
+            `Failed to fetch: ${url}. Original error: ${error instanceof Error ? error.message : String(error)}`,
+          );
+          // Preserve the original error's properties
+          if (error instanceof Error) {
+            enhancedError.name = error.name;
+            enhancedError.stack = error.stack;
+            // Copy any additional properties from the original error
+            Object.assign(enhancedError, error);
+          }
+          throw enhancedError;
+        });
       } catch (error) {
         console.error(
-          "ContextMixin fetch error",
+          "ContextMixin fetch error (synchronous)",
           url,
           error,
           window.location.href,
