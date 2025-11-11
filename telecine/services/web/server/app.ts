@@ -140,39 +140,43 @@ if (UPLOAD_TO_BUCKET) {
 
 let serverBuild: Promise<any> | undefined;
 const patchCustomElementsDefine = () => {
-  if (typeof globalThis !== "undefined" && globalThis.customElements && globalThis.customElements.define) {
+  if (typeof globalThis !== "undefined" && globalThis.customElements) {
     const originalDefine = globalThis.customElements.define.bind(globalThis.customElements);
-    // Only patch if not already patched
-    if (!(globalThis.customElements.define as any).__patched) {
-      globalThis.customElements.define = function(name: string, constructor: CustomElementConstructor, options?: ElementDefinitionOptions) {
-        try {
-          return originalDefine(name, constructor, options);
-        } catch (error: unknown) {
-          // Ignore errors about duplicate registrations
-          // This shouldn't happen with proper ESM caching, but we handle it gracefully
-          if (error instanceof Error && error.message?.includes("has already been used with this registry")) {
-            console.warn(`[SSR] Duplicate custom element registration attempted for "${name}" - this suggests a module loading issue`);
-            return;
-          }
-          throw error;
+    // Check if element is already registered before defining to prevent duplicate registration errors
+    // This is necessary because SSR can cause modules to be loaded multiple times
+    globalThis.customElements.define = function(name: string, constructor: CustomElementConstructor, options?: ElementDefinitionOptions) {
+      // Check if already registered - if so, skip registration
+      try {
+        const existing = globalThis.customElements.get(name);
+        if (existing === constructor) {
+          // Already registered with same constructor - safe to skip
+          return;
         }
-      };
-      (globalThis.customElements.define as any).__patched = true;
-    }
+        // Different constructor - this is an actual error, let it throw
+      } catch {
+        // get() can throw if element doesn't exist - that's fine, proceed with define
+      }
+      return originalDefine(name, constructor, options);
+    };
   }
 };
+
+// Patch immediately when this module loads, before any other imports
+// This ensures the patch is in place before the SSR shim creates its registry
+patchCustomElementsDefine();
 
 app.use(
   createRequestHandler({
     // @ts-expect-error - virtual module provided by React Router at build time
     build: () => {
       // Always patch before returning the build to ensure it's patched on every request
+      // This is critical because the SSR shim might create new registries per request
       patchCustomElementsDefine();
       if (!serverBuild) {
         // Patch customElements before and after importing the server build
         patchCustomElementsDefine();
         serverBuild = import("virtual:react-router/server-build").then((mod) => {
-          // Patch again after import in case customElements was created during import
+          // Patch again after import in case customElements was created/recreated during import
           patchCustomElementsDefine();
           return mod;
         });

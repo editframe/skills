@@ -2,7 +2,7 @@ import { resolve as resolveTs } from "ts-node/esm";
 import * as tsConfigPaths from "tsconfig-paths";
 import { pathToFileURL } from "node:url";
 
-// Patch CustomElementRegistry.define to handle duplicate registrations gracefully
+// Patch CustomElementRegistry.define to prevent duplicate registrations
 // This runs before any modules are loaded, so we can intercept customElements creation
 if (typeof globalThis !== "undefined") {
   // Store original defineProperty to intercept customElements
@@ -17,15 +17,18 @@ if (typeof globalThis !== "undefined") {
       if (customElements && customElements.define) {
         const originalDefine = customElements.define.bind(customElements);
         customElements.define = function(name, constructor, options) {
+          // Check if already registered - if so, skip registration
           try {
-            return originalDefine(name, constructor, options);
-          } catch (error) {
-            // Ignore errors about duplicate registrations
-            if (error instanceof Error && error.message?.includes("has already been used with this registry")) {
+            const existing = customElements.get(name);
+            if (existing === constructor) {
+              // Already registered with same constructor - safe to skip
               return;
             }
-            throw error;
+            // Different constructor - this is an actual error, let it throw
+          } catch {
+            // get() can throw if element doesn't exist - that's fine, proceed with define
           }
+          return originalDefine(name, constructor, options);
         };
       }
     }
@@ -37,14 +40,18 @@ if (typeof globalThis !== "undefined") {
   if (globalThis.customElements && globalThis.customElements.define) {
     const originalDefine = globalThis.customElements.define.bind(globalThis.customElements);
     globalThis.customElements.define = function(name, constructor, options) {
+      // Check if already registered - if so, skip registration
       try {
-        return originalDefine(name, constructor, options);
-      } catch (error) {
-        if (error instanceof Error && error.message?.includes("has already been used with this registry")) {
+        const existing = globalThis.customElements.get(name);
+        if (existing === constructor) {
+          // Already registered with same constructor - safe to skip
           return;
         }
-        throw error;
+        // Different constructor - this is an actual error, let it throw
+      } catch {
+        // get() can throw if element doesn't exist - that's fine, proceed with define
       }
+      return originalDefine(name, constructor, options);
     };
   }
 }

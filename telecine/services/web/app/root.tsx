@@ -11,7 +11,7 @@ import { FlashMessages } from "./components/flash/FlashMessage";
 
 import { maybeSession } from "@/util/requireSession.server";
 import { commitSession } from "@/util/session";
-import { Configuration as EFConfiguration } from "@editframe/react";
+import { ClientConfiguration } from "./components/ClientConfiguration";
 
 import type { Route } from "./+types/root";
 
@@ -134,9 +134,9 @@ export default function App({
       </head>
       <body>
         <FlashMessages flashMessages={flashMessages} />
-        <EFConfiguration api-host={WEB_HOST} signing-url={`${WEB_HOST}/ef-sign-url`}>
+        <ClientConfiguration apiHost={WEB_HOST} signingUrl={`${WEB_HOST}/ef-sign-url`}>
           <Outlet />
-        </EFConfiguration>
+        </ClientConfiguration>
         <Scripts />
         <ScrollRestoration />
         <script

@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import fs, { readdir } from "node:fs/promises";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import fm from "front-matter";
 import { logger } from "@/logging";
 import { formatDate } from "~/ui/formatDate";
@@ -13,16 +13,20 @@ type Attributes = {
   };
 };
 
-const __dirname = "./services/web/app/";
+// Content directory is always at services/web/app/content relative to project root
+// In production container: process.cwd() is /app, so path is /app/services/web/app
+// In development: process.cwd() is monorepo root, so path is <root>/services/web/app
+// This is the same location regardless of where this file is bundled
+const appDir = resolve(process.cwd(), "services/web/app");
 const contentPath = "content";
-const blogBasePath = join(__dirname, "content/blogs");
-const guidesBasePath = join(__dirname, "content/guides");
-const changelogsBasePath = join(__dirname, "content/changelogs");
-const docsBasePath = join(__dirname, "content/docs");
+const blogBasePath = join(appDir, contentPath, "blogs");
+const guidesBasePath = join(appDir, contentPath, "guides");
+const changelogsBasePath = join(appDir, contentPath, "changelogs");
+const docsBasePath = join(appDir, contentPath, "docs");
 
 export const getLocalFile = async (path: string): Promise<string> => {
-  const jsonDirectory = `${__dirname}/../${contentPath}`;
-  const data = await fs.readFile(`${jsonDirectory}/${path}`, "utf8");
+  const jsonDirectory = join(appDir, contentPath);
+  const data = await fs.readFile(join(jsonDirectory, path), "utf8");
   return data.toString();
 };
 
@@ -218,10 +222,15 @@ export const getAllChangelogsFiles = async () => {
 
 export const getLocalContent = async (path: string) => {
   try {
-    const mdxPath = join(__dirname, contentPath, `${path}.mdx`);
-    logger.info({ mdxPath }, "getLocalContent");
-    if (existsSync(join(mdxPath))) {
-      const data = readFileSync(join(mdxPath), {
+    const basePath = join(appDir, contentPath, path);
+    const mdxFile = `${basePath}.mdx`;
+    const mdxDir = basePath;
+    
+    logger.info({ mdxFile, mdxDir }, "getLocalContent");
+    
+    // Check if it's a file with .mdx extension
+    if (existsSync(mdxFile)) {
+      const data = readFileSync(mdxFile, {
         encoding: "utf-8",
       });
       return {
@@ -229,20 +238,26 @@ export const getLocalContent = async (path: string) => {
         content: data.toString(),
       };
     }
-    if (statSync(join(mdxPath, path)).isDirectory()) {
-      if (path.slice(-1) !== "/") path += "/";
-      const file = `${path}index.mdx`;
-      const data = readFileSync(join(mdxPath, file), { encoding: "utf-8" });
-      const { attributes } = fm<any>(data);
-      return {
-        path: file,
-        content: data.toString(),
-        author: attributes.author,
-        publishedDate: attributes.published_date ? formatDate(attributes.published_date) : "",
-      };
+    
+    // Check if it's a directory with index.mdx
+    if (existsSync(mdxDir) && statSync(mdxDir).isDirectory()) {
+      const indexPath = join(mdxDir, "index.mdx");
+      if (existsSync(indexPath)) {
+        const data = readFileSync(indexPath, { encoding: "utf-8" });
+        const { attributes } = fm<any>(data);
+        return {
+          path: path.endsWith("/") ? `${path}index.mdx` : `${path}/index.mdx`,
+          content: data.toString(),
+          author: attributes.author,
+          publishedDate: attributes.published_date ? formatDate(attributes.published_date) : "",
+        };
+      }
     }
+    
+    // If we get here, the file doesn't exist
+    throw new Error("Not found");
   } catch (error: any) {
-    if (error.code?.includes("ENOENT")) {
+    if (error.message === "Not found" || error.code?.includes("ENOENT")) {
       throw new Error("Not found");
     }
 
