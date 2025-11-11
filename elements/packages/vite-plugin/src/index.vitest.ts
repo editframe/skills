@@ -168,16 +168,26 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
             });
 
             req.on("end", async () => {
+              // Determine environment early for error handling
+              const isCI =
+                Boolean(process.env.GITHUB_ACTIONS) ||
+                Boolean(process.env.CI) ||
+                process.env.DOCKER_SERVICE === "ci-runner";
+              const cacheOnlyMode = process.env.EF_CACHE_ONLY === "true";
+
+              // Helper function to return mock response (used for fallbacks)
+              const returnMockResponse = () => {
+                const mockToken =
+                  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJodHRwOi8vd2ViOjMwMDAvaGVhZC1tb292LTQ4MHAubXA0IiwiZXhwIjo5OTk5OTk5OTk5fQ.mock-signature";
+                res.writeHead(200, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ token: mockToken }));
+              };
+
               try {
                 const requestBody = Buffer.concat(requestChunks);
 
                 // Check if we're in CI cache-only mode - if so, proxy through record-replay proxy
                 // Otherwise, in local dev with MSW, return mock response directly
-                const isCI =
-                  Boolean(process.env.GITHUB_ACTIONS) ||
-                  Boolean(process.env.CI) ||
-                  process.env.DOCKER_SERVICE === "ci-runner";
-                const cacheOnlyMode = process.env.EF_CACHE_ONLY === "true";
 
                 if (isCI || cacheOnlyMode) {
                   // In CI/cache-only mode, proxy through record-replay proxy to serve cached responses
@@ -221,10 +231,7 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
                     log(
                       `Fetch failed, falling back to mock response: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`,
                     );
-                    const mockToken =
-                      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJodHRwOi8vd2ViOjMwMDAvaGVhZC1tb292LTQ4MHAubXA0IiwiZXhwIjo5OTk5OTk5OTk5fQ.mock-signature";
-                    res.writeHead(200, { "Content-Type": "application/json" });
-                    res.end(JSON.stringify({ token: mockToken }));
+                    returnMockResponse();
                     return;
                   }
 
@@ -233,10 +240,7 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
                     log(
                       `Proxy returned ${proxyResponse.status}, falling back to mock response`,
                     );
-                    const mockToken =
-                      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJodHRwOi8vd2ViOjMwMDAvaGVhZC1tb292LTQ4MHAubXA0IiwiZXhwIjo5OTk5OTk5OTk5fQ.mock-signature";
-                    res.writeHead(200, { "Content-Type": "application/json" });
-                    res.end(JSON.stringify({ token: mockToken }));
+                    returnMockResponse();
                     return;
                   }
 
@@ -250,10 +254,7 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
                     log(
                       `Failed to read proxy response body, falling back to mock: ${readError instanceof Error ? readError.message : String(readError)}`,
                     );
-                    const mockToken =
-                      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJodHRwOi8vd2ViOjMwMDAvaGVhZC1tb292LTQ4MHAubXA0IiwiZXhwIjo5OTk5OTk5OTk5fQ.mock-signature";
-                    res.writeHead(200, { "Content-Type": "application/json" });
-                    res.end(JSON.stringify({ token: mockToken }));
+                    returnMockResponse();
                     return;
                   }
 
@@ -274,13 +275,8 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
                   }
                 } else {
                   // In local dev, return mock response directly (MSW can't intercept server-side fetch)
-                  // Use the same mock token as MSW handler
-                  const mockToken =
-                    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJodHRwOi8vd2ViOjMwMDAvaGVhZC1tb292LTQ4MHAubXA0IiwiZXhwIjo5OTk5OTk5OTk5fQ.mock-signature";
-
                   log("Returning mock token response for local dev");
-                  res.writeHead(200, { "Content-Type": "application/json" });
-                  res.end(JSON.stringify({ token: mockToken }));
+                  returnMockResponse();
                 }
               } catch (error) {
                 const errorMessage =
@@ -290,13 +286,23 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
                   "[Vite Plugin] URL signing proxy error:",
                   errorMessage,
                 );
-                res.writeHead(500, { "Content-Type": "application/json" });
-                res.end(
-                  JSON.stringify({
-                    error: "Failed to proxy URL signing request",
-                    details: errorMessage,
-                  }),
-                );
+
+                // In CI or cache-only mode, fall back to mock response instead of returning 500
+                if (isCI || cacheOnlyMode) {
+                  log(
+                    "Error in CI/cache-only mode, falling back to mock response",
+                  );
+                  returnMockResponse();
+                } else {
+                  // In local dev, return 500 error
+                  res.writeHead(500, { "Content-Type": "application/json" });
+                  res.end(
+                    JSON.stringify({
+                      error: "Failed to proxy URL signing request",
+                      details: errorMessage,
+                    }),
+                  );
+                }
               }
             });
             break;
