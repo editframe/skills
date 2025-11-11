@@ -58,6 +58,7 @@ export class PlaybackController implements ReactiveController {
   #MS_PER_FRAME = 1000 / this.#FPS;
   #playbackAudioContext: AudioContext | null = null;
   #playbackAnimationFrameRequest: number | null = null;
+  #pendingAudioContext: AudioContext | null = null;
   #AUDIO_PLAYBACK_SLICE_MS = ((47 * 1024) / 48000) * 1000;
 
   #frameTaskInProgress = false;
@@ -313,6 +314,10 @@ export class PlaybackController implements ReactiveController {
     this.#host.removeController(this);
   }
 
+  setPendingAudioContext(context: AudioContext): void {
+    this.#pendingAudioContext = context;
+  }
+
   #syncPlayheadToAudioContext(startMs: number) {
     const audioContextTime = this.#playbackAudioContext?.currentTime ?? 0;
     const endMs = this.#host.endTimeMs;
@@ -384,6 +389,7 @@ export class PlaybackController implements ReactiveController {
     }
     this.#playbackAudioContext = null;
     this.#playbackAnimationFrameRequest = null;
+    this.#pendingAudioContext = null;
   }
 
   private async startPlayback() {
@@ -407,9 +413,15 @@ export class PlaybackController implements ReactiveController {
     }
 
     let bufferCount = 0;
-    this.#playbackAudioContext = new AudioContext({
-      latencyHint: "playback",
-    });
+    // Check for pre-resumed AudioContext from synchronous user interaction
+    if (this.#pendingAudioContext) {
+      this.#playbackAudioContext = this.#pendingAudioContext;
+      this.#pendingAudioContext = null;
+    } else {
+      this.#playbackAudioContext = new AudioContext({
+        latencyHint: "playback",
+      });
+    }
     this.#loopingPlayback = this.#loop; // Remember if we're in a looping session
     this.#playbackWrapTimeSeconds = 0; // Reset wrap time
 
@@ -418,12 +430,31 @@ export class PlaybackController implements ReactiveController {
     }
     this.#syncPlayheadToAudioContext(currentMs);
     const playbackContext = this.#playbackAudioContext;
+    
+    // Check if context is suspended (fallback for newly-created contexts)
     if (playbackContext.state === "suspended") {
-      console.warn(
-        "AudioContext is suspended, media playback will not work until user has interacted with page.",
-      );
-      this.setPlaying(false);
-      return;
+      // Attempt to resume (may not work on mobile if user interaction context is lost)
+      try {
+        await playbackContext.resume();
+        // Check state again after resume attempt
+        if (playbackContext.state === "suspended") {
+          console.warn(
+            "AudioContext is suspended and resume() failed. " +
+              "On mobile devices, AudioContext.resume() must be called synchronously within a user interaction handler. " +
+              "Media playback will not work until user has interacted with page.",
+          );
+          this.setPlaying(false);
+          return;
+        }
+      } catch (error) {
+        console.warn(
+          "Failed to resume AudioContext:",
+          error,
+          "On mobile devices, AudioContext.resume() must be called synchronously within a user interaction handler.",
+        );
+        this.setPlaying(false);
+        return;
+      }
     }
     await playbackContext.suspend();
 
