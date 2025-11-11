@@ -52,10 +52,14 @@ describe("EFTogglePlay - AudioContext Resume", () => {
       });
 
       expect(timegroup.playbackController).toBeTruthy();
-      const playbackController = timegroup.playbackController as PlaybackController;
+      const playbackController =
+        timegroup.playbackController as PlaybackController;
 
       // Spy on setPendingAudioContext to verify it's called
-      const setPendingSpy = vi.spyOn(playbackController, "setPendingAudioContext");
+      const setPendingSpy = vi.spyOn(
+        playbackController,
+        "setPendingAudioContext",
+      );
 
       // Initially should not be playing
       expect(toggle.playing).toBe(false);
@@ -112,7 +116,8 @@ describe("EFTogglePlay - AudioContext Resume", () => {
         timeout: 1000,
       });
 
-      const playbackController = timegroup.playbackController as PlaybackController;
+      const playbackController =
+        timegroup.playbackController as PlaybackController;
 
       // Create a test AudioContext and set it as pending
       const testContext = new AudioContext({ latencyHint: "playback" });
@@ -245,4 +250,3 @@ describe("EFTogglePlay - AudioContext Resume", () => {
     },
   );
 });
-

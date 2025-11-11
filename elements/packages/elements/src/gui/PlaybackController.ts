@@ -430,7 +430,7 @@ export class PlaybackController implements ReactiveController {
     }
     this.#syncPlayheadToAudioContext(currentMs);
     const playbackContext = this.#playbackAudioContext;
-    
+
     // Check if context is suspended (fallback for newly-created contexts)
     if (playbackContext.state === "suspended") {
       // Attempt to resume (may not work on mobile if user interaction context is lost)
