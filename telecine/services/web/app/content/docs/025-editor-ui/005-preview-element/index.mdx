@@ -11,6 +11,24 @@ headers:
 
 The `<ef-preview>` element is a lightweight container for video preview interfaces. It provides context management for playback controls and includes built-in focus tracking for interactive editing experiences.
 
+## Live Example
+
+<Demonstration layout="horizontal" defaultSourceVisible alwaysShowSource>
+  <Preview className="w-full">
+    <Timegroup mode="contain" className="w-[500px] h-[300px] bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+      <p className="text-white text-3xl font-bold">Preview Example</p>
+    </Timegroup>
+    <div className="mt-4 flex items-center gap-4 justify-center">
+      <TogglePlay>
+        <button className="px-4 py-2 bg-blue-600 text-white rounded" slot="play">Play</button>
+        <button className="px-4 py-2 bg-blue-600 text-white rounded" slot="pause">Pause</button>
+      </TogglePlay>
+      <Scrubber className="flex-1 max-w-md" />
+      <TimeDisplay className="text-sm" />
+    </div>
+  </Preview>
+</Demonstration>
+
 ## Basic Usage
 
 ```html

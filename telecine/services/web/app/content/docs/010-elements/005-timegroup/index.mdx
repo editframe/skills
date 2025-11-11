@@ -38,7 +38,9 @@ The most simple timegroup is a fixed duration timegroup. While it doesn't make f
 ### Mode: `sequence`
 
 The sequence timegroup plays its children in sequence.
-Here we have three items that each play for a fixed duration of 5, 8, and 3 seconds. The duration of the sequence timegroup is the sum of the durations of its children. It's kind of like flexbox, but for time.
+Here we have three items that each play for a fixed duration of 2, 3, and 1 seconds. The duration of the sequence timegroup is the sum of the durations of its children. It's kind of like flexbox, but for time.
+
+**Note:** When using `mode="sequence"` on a parent timegroup, child timegroups should typically use `mode="fixed"` to specify their individual durations.
 
 <Demonstration layout="horizontal" alwaysShowSource>
   <Timegroup
@@ -48,21 +50,21 @@ Here we have three items that each play for a fixed duration of 5, 8, and 3 seco
   >
     <Timegroup 
       mode="fixed" 
-      duration="5s" 
+      duration="2s" 
       className="font-mono bg-red-300 text-red-800 text-3xl flex items-center justify-center"
     >
       <p>{"Sequence Item 1"}</p>
     </Timegroup>
     <Timegroup 
       mode="fixed" 
-      duration="8s" 
+      duration="3s" 
       className="font-mono bg-green-300 text-green-800 text-3xl flex items-center justify-center"
     >
       <p>{"Sequence Item 2"}</p>
     </Timegroup>
     <Timegroup 
       mode="fixed" 
-      duration="3s" 
+      duration="1s" 
       className="font-mono bg-blue-300 text-blue-800 text-3xl flex items-center justify-center"
     >
       <p>{"Sequence Item 3"}</p>

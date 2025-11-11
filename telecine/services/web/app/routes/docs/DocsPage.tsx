@@ -1,5 +1,5 @@
 import type { MetaFunction } from "react-router";
-import { useLoaderData, Link, useMatches } from "react-router";
+import { useLoaderData, Link, useMatches, useLocation } from "react-router";
 import * as React from "react";
 import { getMDXComponent } from "mdx-bundler/client";
 import {
@@ -49,6 +49,7 @@ import {
   ToggleLoop,
   Scrubber,
   TimeDisplay,
+  FitScale,
 } from "@editframe/react";
 import clsx from "clsx";
 import { Demonstration } from "~/components/docs/Demonstration/Demonstration.tsx";
@@ -120,10 +121,16 @@ export default function DocsPage() {
   const { headings, code } = post;
   const MDXAsComponent = React.useMemo(() => getMDXComponent(code), [code]);
   const matches = useMatches();
+  const location = useLocation();
   const isDocsIndex = matches.some((match) => match.id.endsWith("index"));
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [isMobileTocOpen, setIsMobileTocOpen] = React.useState(false);
   const tocButtonRef = React.useRef<HTMLButtonElement>(null);
+
+  // Scroll to top when navigating between doc pages
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   React.useEffect(() => {
     if (!isMobileTocOpen) return;
@@ -324,6 +331,7 @@ export default function DocsPage() {
                   ThumbnailStrip: (props) => <ThumbnailStrip {...props} />,
                   Filmstrip: (props) => <Filmstrip {...props} />,
                   FocusOverlay: (props) => <FocusOverlay {...props} />,
+                  FitScale: (props) => <FitScale {...props} />,
                   Playground: (props) => <Playground {...props} />,
                   EFPlayer: (props) => <EFPlayer {...props} />,
                   EditableWaveform: (props) => <EditableWaveform {...props} />,

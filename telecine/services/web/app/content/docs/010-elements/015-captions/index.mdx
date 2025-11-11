@@ -237,57 +237,9 @@ Progressive word highlighting with smooth fill animations, like karaoke:
   `}</style>
 </Demonstration>
 
-## Attributes
-
-<PropertyDocList>
-  <PropertyDoc name="captions-src" type="string" htmlAttribute="captions-src">
-    URL or path to an external JSON file containing captions data.
-
-    ```html
-    <ef-captions captions-src="/path/to/captions.json">
-      <ef-captions-segment />
-    </ef-captions>
-    ```
-
-    See [Captions Data Format](#captions-data-format) for the required JSON structure.
-  </PropertyDoc>
-
-  <PropertyDoc name="captions-script" type="string" htmlAttribute="captions-script">
-    ID of a `<script type="application/json">` element containing captions data. Do not include the # character.
-
-    ```html
-    <script type="application/json" id="my-captions">
-      { "segments": [...], "word_segments": [...] }
-    </script>
-    <ef-captions captions-script="my-captions">
-      <ef-captions-segment />
-    </ef-captions>
-    ```
-
-    See [Captions Data Format](#captions-data-format) for the required JSON structure.
-  </PropertyDoc>
-
-  <PropertyDoc name="target" type="string" htmlAttribute="target">
-    The ID of a video or audio element to synchronize with. Do not include the # character.
-
-    When omitted, captions run on their own timeline within the parent timegroup.
-
-    ```html
-    <ef-video id="my-video" src="video.mp4" />
-    <ef-captions target="my-video">
-      <ef-captions-active-word />
-    </ef-captions>
-    ```
-  </PropertyDoc>
-
-  <PropertyDoc name="durationMs" type="number" domReadable>
-    Duration of the captions in milliseconds, calculated from the maximum end time of all segments.
-  </PropertyDoc>
-</PropertyDocList>
-
 ## Captions Data Format
 
-Captions in Editframe use a structured JSON format with two main arrays:
+Captions in Editframe use a structured JSON format with two main arrays: `segments` and `word_segments`. Understanding this format is essential for creating captions.
 
 ### Basic Structure
 
@@ -329,9 +281,52 @@ Captions in Editframe use a structured JSON format with two main arrays:
 
 Both arrays are required but can be empty. Times must be in seconds as floating-point numbers.
 
+### Creating Captions Data
+
+There are several ways to create captions data:
+
+#### Option 1: Use Editframe Transcription Service (Recommended)
+
+The easiest way to generate captions is to use Editframe's transcription service. After uploading and processing a video or audio file, you can request a transcription that automatically generates both `segments` and `word_segments` arrays.
+
+See the [Transcriptions documentation](/docs/processing-files/transcriptions) for details on how to generate transcriptions.
+
+When using the `<ef-captions>` component with a video or audio element that has a transcription, the captions will automatically connect to the transcription data:
+
+```html
+<ef-video id="my-video" src="video.mp4" />
+<ef-captions target="my-video">
+  <ef-captions-segment />
+</ef-captions>
+```
+
+#### Option 2: Manual Creation
+
+You can manually create the captions data structure. This is useful when you have existing caption files or need precise control over timing:
+
+```javascript
+const captionsData = {
+  segments: [
+    { start: 0, end: 3, text: "Welcome to our video." },
+    { start: 3, end: 6, text: "Today we'll explore features." }
+  ],
+  word_segments: [
+    { start: 0, end: 0.5, text: "Welcome" },
+    { start: 0.5, end: 0.8, text: "to" },
+    { start: 0.8, end: 1.0, text: "our" },
+    { start: 1.0, end: 1.5, text: "video." },
+    // ... more words
+  ]
+};
+```
+
+#### Option 3: Convert from Other Formats
+
+You can convert captions from other formats (like SRT, VTT, or WebVTT) into Editframe's format. The key is mapping the timing and text data into the `segments` and `word_segments` structure.
+
 ### Loading Captions Data
 
-There are three ways to provide captions data, listed in order of priority:
+There are three ways to provide captions data to the `<ef-captions>` element, listed in order of priority:
 
 #### 1. Direct Data (Programmatic)
 
@@ -396,6 +391,54 @@ Load captions from an external file using the `captions-src` attribute:
   ]
 }
 ```
+
+## Attributes
+
+<PropertyDocList>
+  <PropertyDoc name="captions-src" type="string" htmlAttribute="captions-src">
+    URL or path to an external JSON file containing captions data.
+
+    ```html
+    <ef-captions captions-src="/path/to/captions.json">
+      <ef-captions-segment />
+    </ef-captions>
+    ```
+
+    See [Captions Data Format](#captions-data-format) for the required JSON structure.
+  </PropertyDoc>
+
+  <PropertyDoc name="captions-script" type="string" htmlAttribute="captions-script">
+    ID of a `<script type="application/json">` element containing captions data. Do not include the # character.
+
+    ```html
+    <script type="application/json" id="my-captions">
+      { "segments": [...], "word_segments": [...] }
+    </script>
+    <ef-captions captions-script="my-captions">
+      <ef-captions-segment />
+    </ef-captions>
+    ```
+
+    See [Captions Data Format](#captions-data-format) for the required JSON structure.
+  </PropertyDoc>
+
+  <PropertyDoc name="target" type="string" htmlAttribute="target">
+    The ID of a video or audio element to synchronize with. Do not include the # character.
+
+    When omitted, captions run on their own timeline within the parent timegroup.
+
+    ```html
+    <ef-video id="my-video" src="video.mp4" />
+    <ef-captions target="my-video">
+      <ef-captions-active-word />
+    </ef-captions>
+    ```
+  </PropertyDoc>
+
+  <PropertyDoc name="durationMs" type="number" domReadable>
+    Duration of the captions in milliseconds, calculated from the maximum end time of all segments.
+  </PropertyDoc>
+</PropertyDocList>
 
 ## CSS Animation Variables
 

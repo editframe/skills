@@ -49,7 +49,7 @@ export default function Page() {
                   View Docs
                 </Button>
               </Link>
-              <Link to="/">
+              <Link to="/resource/renders/new">
                 <Button mode="secondary">
                   Try the Demo
                 </Button>

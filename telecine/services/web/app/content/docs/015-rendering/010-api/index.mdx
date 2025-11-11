@@ -25,6 +25,49 @@ Audio, Video, Image, and other media types MUST be uploaded and processed separa
 
 This bundle SHOULD be bundled/optimized as though it were a static site. Load performance of these assets will impact overall performance time and costs as each worker will need to download and boot the index.html file before it can start rendering frames.
 
+## Understanding bundleRender
+
+The `bundleRender` function prepares your HTML, CSS, and JavaScript for rendering. Here's what it does:
+
+1. **Creates a directory structure locally** on your machine containing your `index.html` file and all bundled assets
+2. **Bundles dependencies** - Includes Editframe JavaScript libraries and any other dependencies your project uses
+3. **Injects renderData** - The `renderData` parameter allows you to inject dynamic data into your bundle (accessible via `RENDER_DATA` global variable in your HTML/JS)
+4. **Creates a tarfile** - Packages the directory into a gzipped tarfile that can be uploaded to Editframe's servers
+
+The `renderData` object is serialized as JSON and made available in your bundled code. This is useful for passing dynamic values (like user data, API responses, etc.) that should be available at render time.
+
+## Rendering: Sync vs Async
+
+**Important:** While the API uses `await` syntax, rendering itself is **asynchronous**. The `await` in the examples shows the API call pattern, but the actual video rendering happens asynchronously on Editframe's servers.
+
+### Synchronous API Pattern (Polling)
+
+The examples below show a synchronous-style API pattern where you poll for progress:
+
+```tsx
+// Create render and upload
+const render = await api.createRender(client, { fps: 30 });
+await api.uploadRender(client, render.id, tarStream);
+
+// Poll for completion
+for await (const progressUpdate of api.getRenderProgress(client, render.id)) {
+  console.log(progressUpdate.progress); // 0 to 1
+}
+```
+
+This approach works well for simple scripts, but keeps your process running until completion.
+
+### Asynchronous Pattern (Webhooks)
+
+For production applications, use webhooks to be notified when rendering completes:
+
+1. Create a render with a webhook URL
+2. Upload your bundle
+3. Your server receives a webhook notification when rendering completes
+4. Download the completed video
+
+This allows your application to continue processing other requests while rendering happens in the background.
+
 ## Bundling and Rendering
 
 <PersistentTabGroup stateKey="language-implementation">
@@ -47,13 +90,23 @@ This bundle SHOULD be bundled/optimized as though it were a static site. Load pe
 
       <CodeStep>
         <CodeStepLabel title="Bundle your render">
-          Bundle your render with the `bundleRender` function.
+          Bundle your render with the `bundleRender` function. The `renderData` object will be injected into your bundle and available as `RENDER_DATA` in your HTML/JavaScript.
         </CodeStepLabel>
         <CodeStepCode>
         ```tsx
-        const renderData = {};
+        // renderData can contain any data you want available in your bundle
+        const renderData = {
+          userId: "123",
+          userName: "John Doe",
+          // ... any other dynamic data
+        };
 
-        const tarStream = await bundleRender(client, renderData);
+        // bundleRender creates a directory structure, bundles dependencies,
+        // injects renderData, and packages everything into a tarfile
+        const tarStream = await bundleRender({
+          root: "./my-video-project", // Path to your project root
+          renderData: renderData
+        });
         ```
         </CodeStepCode>
       </CodeStep>

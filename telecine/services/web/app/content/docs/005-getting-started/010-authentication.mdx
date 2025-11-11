@@ -41,16 +41,43 @@ const client = new Editframe(EF_API_TOKEN);
 
 You can sign URLs to allow them to be used in the browser. This is useful for allowing users to upload files to your Editframe account or take other actions that you don't want to run through your server.
 
+**Important:** URL signing must happen on your server, not in the client. Here's the flow:
+
+1. **Server-side:** Your server uses your `EF_API_TOKEN` to create a signed token for a specific URL
+2. **Server-to-client:** Your server passes this signed token to your client application
+3. **Client-side:** The client uses the signed token in the browser to make authenticated requests
+
+Here's how to implement URL signing on your server:
+
 ```ts
 "use server";
 
 import { createURLToken, Client } from "@editframe/api";
 
-const EF_TOKEN = "/* load your EF_API_TOKEN here. */";
+// This runs on your server - keep EF_API_TOKEN secret!
+const EF_TOKEN = process.env.EF_API_TOKEN;
 const client = new Client(EF_TOKEN);
 
 const url = "https://editframe.com/api/v1/unprocessed_files";
 const token = await createURLToken(client, url);
+
+// Pass this token to your client (e.g., via API response)
+return { token };
+```
+
+On the client side, you would then use this token:
+
+```ts
+// Client-side code
+const response = await fetch('/api/get-signed-token'); // Your server endpoint
+const { token } = await response.json();
+
+// Use the token to make authenticated requests
+await fetch("https://editframe.com/api/v1/unprocessed_files", {
+  headers: {
+    Authorization: `Bearer ${token}`
+  }
+});
 ```
 
 The returned Bearer token can be used to access the URL for up to 1 hour.

@@ -20,6 +20,19 @@ The `<ef-audio>` is a custom HTML element that extends the functionality of the 
   </Timegroup>
 </Demonstration>
 
+## Using with Waveform
+
+Audio elements can be paired with waveform elements to create visual representations of the audio. The waveform will automatically synchronize with the audio playback.
+
+<Demonstration layout="horizontal" defaultSourceVisible alwaysShowSource>
+  <Timegroup mode="contain" className="aspect-[1/1] w-[500px] h-[500px] bg-black flex flex-col items-center justify-center">
+    <Audio src="https://assets.editframe.com/card-joker.mp3" id="audio-with-waveform" />
+    <Waveform target="audio-with-waveform" mode="wave" className="w-full h-[200px] block" />
+  </Timegroup>
+</Demonstration>
+
+For more information about waveforms, see the [Waveform documentation](/docs/elements/waveform).
+
 ## Attributes
 
 <PropertyDocList>
