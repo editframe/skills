@@ -10,14 +10,12 @@ services:
       - OTEL_SERVICE_NAME=scheduler-go
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://tracing:4318
       - PORT=3000
-      - POSTGRES_HOST=editframe-postgres
       - VALKEY_HOST=valkey
       - VALKEY_PORT=6379
       - PINO_LOG_LEVEL=debug
       - GOMEMLIMIT=${WORKER_SCHEDULER_GOMEMLIMIT:-115MiB}
     networks:
       - telecine_default
-      - editframe-shared
     labels:
       - traefik.enable=false
     deploy:
@@ -32,13 +30,13 @@ services:
       dockerfile: services/scheduler-go/Dockerfile.test
     working_dir: /app
     volumes:
-      - ${TELECINE_ROOT_HOST:-${PWD}}/services/scheduler-go:/app
+      - ./services/scheduler-go:/app
     env_file:
       - ${PWD}/.env
     environment:
       - OTEL_SERVICE_NAME=scheduler-go-tests
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://tracing:4318
-      - POSTGRES_HOST=editframe-postgres
+      - POSTGRES_HOST=postgres
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgrespassword
       - POSTGRES_DB=scheduler-go-tests
@@ -48,8 +46,8 @@ services:
       - MEMORY_TEST_TOLERANCE=10
     networks:
       - telecine_default
-      - editframe-shared
     depends_on:
+      - postgres
       - valkey
     labels:
       - traefik.enable=false
@@ -58,7 +56,4 @@ services:
 
 networks:
   telecine_default:
-    external: true
-  editframe-shared:
-    name: editframe-shared
     external: true

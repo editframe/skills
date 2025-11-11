@@ -182,10 +182,6 @@ func (w *WorkerConnection) readLoop() {
 		return
 	}
 
-	// Set a read deadline to prevent indefinite blocking
-	// This allows the goroutine to periodically check ctx.Done() and exit
-	const readDeadlineInterval = 5 * time.Second
-
 	for {
 		select {
 		case <-w.ctx.Done():
@@ -197,18 +193,6 @@ func (w *WorkerConnection) readLoop() {
 					Str("queue", w.Queue.Name).
 					Str("url", w.URL).
 					Msg("websocket connection is nil, exiting read loop")
-				return
-			}
-
-			// Set read deadline to prevent indefinite blocking
-			// This ensures ReadMessage() will timeout periodically, allowing us to check ctx.Done()
-			deadline := w.timeProvider.Now().Add(readDeadlineInterval)
-			if err := w.conn.SetReadDeadline(deadline); err != nil {
-				w.logger.Warn().
-					Str("connectionID", w.ID).
-					Str("queue", w.Queue.Name).
-					Err(err).
-					Msg("failed to set read deadline")
 				return
 			}
 
@@ -376,18 +360,11 @@ func (w *WorkerConnection) Disconnect() error {
 
 func (w *WorkerConnection) Terminate() {
 	w.logger.Debug().Str("connectionID", w.ID).Msg("terminating worker connection")
-	
-	// Close connection first to unblock any blocked ReadMessage() calls
-	// This ensures readLoop and pingLoop goroutines can exit promptly
+	w.cancel()
 	if w.conn != nil {
 		w.conn.Close()
 		w.conn = nil // Set to nil to prevent further reads
 	}
-	
-	// Cancel context to signal goroutines to exit
-	w.cancel()
-	
-	// Close disconnectedCh if not already closed
 	select {
 	case <-w.disconnectedCh:
 	default:

@@ -36,6 +36,12 @@ func (h traceHook) Run(e *zerolog.Event, level zerolog.Level, msg string) {
 	}
 }
 
+// SetContext sets the current context for logging
+// This should be called at the start of each operation that has trace context
+func SetContext(ctx context.Context) {
+	currentContext = ctx
+}
+
 func Init(serviceName string) {
 	ctx := context.Background()
 
@@ -124,4 +130,14 @@ func Error() *zerolog.Event {
 
 func Fatal() *zerolog.Event {
 	return Logger().Fatal()
+}
+
+func WithContext(key string, value interface{}) *zerolog.Logger {
+	logger := Logger().With().Interface(key, value).Logger()
+	return &logger
+}
+
+func WithComponent(component string) *zerolog.Logger {
+	logger := Logger().With().Str("component", component).Logger()
+	return &logger
 }

@@ -3,6 +3,7 @@ package connection
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -12,38 +13,6 @@ import (
 	"github.com/editframe/telecine/scheduler/internal/connection/transitions"
 	"github.com/editframe/telecine/scheduler/internal/queue"
 	"github.com/editframe/telecine/scheduler/internal/redis"
-)
-
-// Context Usage Strategy:
-//
-// This package uses context.Background() for state transitions triggered by
-// asynchronous events (HANGUP, TIMEOUT, NO_PONG, DISCONNECT_SUCCESS, CONNECT_SUCCESS)
-// because these events are not tied to the lifecycle of the parent context that
-// initiated the connection. They represent independent state changes triggered by
-// network events, timeouts, or completion of async operations.
-//
-// The parent context (from CreateConnection or external callers) is used for:
-// - Redis operations during state entry (updateRedisState, removeFromRedisState)
-// - Cancellation of in-progress operations when the parent is cancelled
-//
-// This separation ensures that:
-// 1. Network-driven state changes complete even if the caller's context is cancelled
-// 2. Redis operations respect the caller's cancellation/timeout requirements
-// 3. Goroutines can safely trigger transitions without coupling to parent lifecycle
-
-// Constants for timeouts and retry logic
-const (
-	// PingCheckInterval is the interval between ping checks for connected workers
-	PingCheckInterval = 5 * time.Second
-
-	// DisconnectTimeout is the maximum time to wait for graceful disconnect
-	DisconnectTimeout = 30 * time.Second
-
-	// RedisRetryMaxAttempts is the maximum number of retry attempts for Redis operations
-	RedisRetryMaxAttempts = 3
-
-	// RedisRetryBaseBackoff is the base backoff duration for Redis retry (exponential backoff)
-	RedisRetryBaseBackoff = 100 * time.Millisecond
 )
 
 type ConnectionState string
@@ -86,9 +55,12 @@ type StateMachine struct {
 	client      *redis.Client
 	logger      *zerolog.Logger
 
-	// Connection metadata - single source of truth for connection state
-	// This replaces the separate connectingConnections, connectedConnections,
-	// and disconnectingConnections maps to eliminate duplicate state tracking
+	// Store maps for each connection state (like TypeScript implementation)
+	connectingConnections    map[string]*WorkerConnection
+	connectedConnections     map[string]*WorkerConnection
+	disconnectingConnections map[string]*WorkerConnection
+
+	// Connection metadata
 	connectionMetadata map[*WorkerConnection]*ConnectionMetadata
 
 	// State machine definition
@@ -97,6 +69,10 @@ type StateMachine struct {
 	// Shutdown control
 	shutdown     chan struct{}
 	shutdownOnce sync.Once
+
+	// Track all active goroutines for deterministic cleanup
+	activeGoroutines map[string]chan struct{} // goroutine ID -> stop channel
+	goroutineMu      sync.RWMutex
 
 	// Injected dependencies
 	dialer       NetworkDialer
@@ -132,11 +108,15 @@ func WithGoroutineManager(g GoroutineManager) StateMachineOption {
 
 func NewStateMachine(schedulerID string, client *redis.Client, logger *zerolog.Logger, opts ...StateMachineOption) *StateMachine {
 	sm := &StateMachine{
-		schedulerID:        schedulerID,
-		client:             client,
-		logger:             logger,
-		connectionMetadata: make(map[*WorkerConnection]*ConnectionMetadata),
-		shutdown:           make(chan struct{}),
+		schedulerID:              schedulerID,
+		client:                   client,
+		logger:                   logger,
+		connectingConnections:    make(map[string]*WorkerConnection),
+		connectedConnections:     make(map[string]*WorkerConnection),
+		disconnectingConnections: make(map[string]*WorkerConnection),
+		connectionMetadata:       make(map[*WorkerConnection]*ConnectionMetadata),
+		shutdown:                 make(chan struct{}),
+		activeGoroutines:         make(map[string]chan struct{}),
 		// Default to real implementations
 		dialer:       NewRealNetworkDialer(20 * time.Second),
 		timeProvider: NewRealTimeProvider(),
@@ -223,46 +203,137 @@ func (sm *StateMachine) IsShutdown() bool {
 	}
 }
 
+// trackGoroutine registers a goroutine for deterministic cleanup
+func (sm *StateMachine) trackGoroutine(id string) chan struct{} {
+	sm.goroutineMu.Lock()
+	defer sm.goroutineMu.Unlock()
+
+	stopCh := make(chan struct{})
+	sm.activeGoroutines[id] = stopCh
+	sm.logger.Debug().Str("goroutineID", id).Msgf("tracking goroutine [id=%s]", id)
+	return stopCh
+}
+
+// untrackGoroutine removes a goroutine from tracking
+func (sm *StateMachine) untrackGoroutine(id string) {
+	sm.goroutineMu.Lock()
+	defer sm.goroutineMu.Unlock()
+
+	if _, exists := sm.activeGoroutines[id]; exists {
+		delete(sm.activeGoroutines, id)
+		sm.logger.Debug().Str("goroutineID", id).Msgf("untracked goroutine [id=%s]", id)
+	}
+}
+
+// stopAllGoroutines deterministically stops all tracked goroutines
+func (sm *StateMachine) stopAllGoroutines() {
+	sm.goroutineMu.Lock()
+	initialCount := len(sm.activeGoroutines)
+	sm.logger.Info().Int("count", initialCount).Msg("stopping all tracked goroutines")
+
+	// Send stop signals to all goroutines
+	for id, stopCh := range sm.activeGoroutines {
+		sm.logger.Debug().Str("goroutineID", id).Msg("stopping goroutine")
+		close(stopCh)
+	}
+	sm.goroutineMu.Unlock()
+
+	// Wait for all goroutines to exit and untrack themselves
+	// Use a timeout to prevent hanging indefinitely
+	timeout := time.After(5 * time.Second)
+	ticker := time.NewTicker(10 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		sm.goroutineMu.RLock()
+		remaining := len(sm.activeGoroutines)
+		sm.goroutineMu.RUnlock()
+
+		if remaining == 0 {
+			sm.logger.Info().Int("initialCount", initialCount).Msg("all goroutines stopped successfully")
+			return
+		}
+
+		select {
+		case <-timeout:
+			sm.goroutineMu.Lock()
+			remaining := len(sm.activeGoroutines)
+			if remaining > 0 {
+				sm.logger.Warn().Int("remaining", remaining).Msg("timeout waiting for goroutines to stop, forcing cleanup")
+				// Force clear the map as a last resort
+				sm.activeGoroutines = make(map[string]chan struct{})
+			}
+			sm.goroutineMu.Unlock()
+			return
+		case <-ticker.C:
+			// Continue waiting
+		}
+	}
+}
+
 // cleanupConnectionGoroutines removes all goroutines associated with a connection
 func (sm *StateMachine) cleanupConnectionGoroutines(conn *WorkerConnection) {
-	// Stop all goroutines that match this connection's ID patterns
-	// The goroutine manager handles all tracking and cleanup
-	// Note: WorkerConnection spawns read-%s and ping-%s goroutines that must be cleaned up
-	patterns := []string{
-		fmt.Sprintf("connect-%s", conn.ID),
-		fmt.Sprintf("connect-shutdown-monitor-%s", conn.ID),
-		fmt.Sprintf("ping-%s", conn.ID),          // StateMachine ping check
-		fmt.Sprintf("ping-monitor-%s", conn.ID),  // StateMachine ping monitor
-		fmt.Sprintf("read-%s", conn.ID),          // WorkerConnection readLoop
-		fmt.Sprintf("disconnect-%s", conn.ID),
-		fmt.Sprintf("disconnect-worker-%s", conn.ID),
+	connectionGoroutineID := fmt.Sprintf("connection-%s", conn.ID)
+	sm.untrackGoroutine(connectionGoroutineID)
+
+	// Also clean up any specific goroutines for this connection
+	sm.goroutineMu.Lock()
+	defer sm.goroutineMu.Unlock()
+
+	// Remove all goroutines that start with this connection ID
+	toRemove := []string{}
+	for id := range sm.activeGoroutines {
+		if strings.HasPrefix(id, conn.ID+"-") || strings.HasPrefix(id, "connect-"+conn.ID) ||
+			strings.HasPrefix(id, "ping-"+conn.ID) || strings.HasPrefix(id, "disconnect-"+conn.ID) ||
+			strings.HasPrefix(id, "monitor-"+conn.ID) || strings.HasPrefix(id, "connect-attempt-"+conn.ID) ||
+			strings.HasPrefix(id, "wait-"+conn.ID) || strings.HasPrefix(id, "ping-monitor-"+conn.ID) ||
+			strings.HasPrefix(id, "ping-start-"+conn.ID) || strings.HasPrefix(id, "disconnect-attempt-"+conn.ID) {
+			toRemove = append(toRemove, id)
+		}
 	}
 
-	for _, pattern := range patterns {
-		sm.goroutineMgr.Stop(pattern)
+	for _, id := range toRemove {
+		// Stop the goroutine via the manager
+		sm.goroutineMgr.Stop(id)
+
+		// Also clean up internal tracking
+		if stopCh, exists := sm.activeGoroutines[id]; exists {
+			close(stopCh)
+			delete(sm.activeGoroutines, id)
+		}
 	}
 }
 
 // WaitForConnectionCleanup waits for all goroutines associated with a connection to finish
 func (sm *StateMachine) WaitForConnectionCleanup(conn *WorkerConnection, timeout time.Duration) bool {
-	patterns := []string{
-		fmt.Sprintf("connect-%s", conn.ID),
-		fmt.Sprintf("connect-shutdown-monitor-%s", conn.ID),
-		fmt.Sprintf("ping-%s", conn.ID),          // StateMachine ping check
-		fmt.Sprintf("ping-monitor-%s", conn.ID),  // StateMachine ping monitor
-		fmt.Sprintf("read-%s", conn.ID),          // WorkerConnection readLoop
-		fmt.Sprintf("disconnect-%s", conn.ID),
-		fmt.Sprintf("disconnect-worker-%s", conn.ID),
-	}
+	deadline := time.Now().Add(timeout)
+	ticker := time.NewTicker(10 * time.Millisecond)
+	defer ticker.Stop()
 
-	// Wait for each goroutine pattern to complete
-	for _, pattern := range patterns {
-		if !sm.goroutineMgr.Wait(pattern, timeout) {
-			return false
+	for time.Now().Before(deadline) {
+		sm.goroutineMu.RLock()
+		hasGoroutines := false
+		for id := range sm.activeGoroutines {
+			if strings.HasPrefix(id, conn.ID+"-") || strings.HasPrefix(id, "connect-"+conn.ID) ||
+				strings.HasPrefix(id, "ping-"+conn.ID) || strings.HasPrefix(id, "disconnect-"+conn.ID) ||
+				strings.HasPrefix(id, "monitor-"+conn.ID) || strings.HasPrefix(id, "connect-attempt-"+conn.ID) ||
+				strings.HasPrefix(id, "wait-"+conn.ID) || strings.HasPrefix(id, "ping-monitor-"+conn.ID) ||
+				strings.HasPrefix(id, "ping-start-"+conn.ID) || strings.HasPrefix(id, "disconnect-attempt-"+conn.ID) ||
+				strings.HasPrefix(id, "connection-"+conn.ID) {
+				hasGoroutines = true
+				break
+			}
 		}
+		sm.goroutineMu.RUnlock()
+
+		if !hasGoroutines {
+			return true
+		}
+
+		<-ticker.C
 	}
 
-	return true
+	return false
 }
 
 func (sm *StateMachine) CreateConnection(ctx context.Context, q queue.Queue) (*WorkerConnection, error) {
@@ -278,6 +349,10 @@ func (sm *StateMachine) CreateConnection(ctx context.Context, q queue.Queue) (*W
 		return nil, err
 	}
 
+	// Track this connection's goroutines immediately
+	connectionGoroutineID := fmt.Sprintf("connection-%s", conn.ID)
+	sm.trackGoroutine(connectionGoroutineID)
+
 	sm.mu.Lock()
 	// Initialize with undefined state, matching TypeScript approach
 	sm.connectionMetadata[conn] = &ConnectionMetadata{
@@ -291,6 +366,7 @@ func (sm *StateMachine) CreateConnection(ctx context.Context, q queue.Queue) (*W
 		sm.mu.Lock()
 		delete(sm.connectionMetadata, conn)
 		sm.mu.Unlock()
+		sm.untrackGoroutine(connectionGoroutineID)
 		return nil, err
 	}
 
@@ -301,12 +377,14 @@ func (sm *StateMachine) Transition(ctx context.Context, conn *WorkerConnection, 
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 
-	// Get metadata - it must exist for valid connections
-	// If metadata doesn't exist, it indicates a programming error (e.g., transition
-	// attempted on a connection that was already cleaned up or never initialized)
+	// Get or create metadata (matches TypeScript behavior)
 	metadata, ok := sm.connectionMetadata[conn]
 	if !ok {
-		return fmt.Errorf("transition attempted on connection without metadata (conn=%s, event=%s) - connection may have been cleaned up or never initialized", conn.ID, event)
+		metadata = &ConnectionMetadata{
+			State:         "undefined",
+			StopPingCheck: make(chan struct{}),
+		}
+		sm.connectionMetadata[conn] = metadata
 	}
 
 	currentState := metadata.State
@@ -343,53 +421,84 @@ func (sm *StateMachine) Transition(ctx context.Context, conn *WorkerConnection, 
 		Str("event", string(event)).
 		Msgf("connection state transition [conn=%s queue=%s %s->%s event=%s]", conn.ID, conn.Queue.Name, string(currentState), string(newState), string(event))
 
+	// Remove from old state store
+	sm.removeFromStateStore(conn, ConnectionState(currentState))
+
 	// Call exit callback for current state
-	// If exit callback fails, we should not proceed with the transition
-	// This prevents leaving stale state in Redis
 	if metadata.ExitCallback != nil {
 		if err := metadata.ExitCallback(); err != nil {
 			sm.logger.Error().
 				Err(err).
 				Str("connectionID", conn.ID).
-				Msg("error in exit callback, aborting transition")
-			return fmt.Errorf("exit callback failed: %w", err)
+				Msg("error in exit callback")
 		}
 		metadata.ExitCallback = nil
 	}
 
-	// Store old state in case we need to roll back
-	oldState := metadata.State
+	// Add to new state store (if not terminal)
+	if newState != StateTerminal {
+		sm.addToStateStore(conn, newState)
+	}
 
-	// Call enter function for new state BEFORE updating state
-	// This ensures that if enter function fails, we haven't updated state yet
-	// preventing inconsistent state between in-memory and Redis
-	var exitCallback func() error
+	// Update metadata
+	metadata.State = newState
+
+	// Call enter function for new state and store exit callback
 	if newStateHandler, exists := sm.stateMachine[newState]; exists && newStateHandler.Enter != nil {
-		var err error
-		exitCallback, err = newStateHandler.Enter(ctx, conn, sm)
-		if err != nil {
-			sm.logger.Error().
-				Err(err).
-				Str("connectionID", conn.ID).
-				Str("currentState", string(oldState)).
-				Str("newState", string(newState)).
-				Msg("error in enter function, aborting transition")
-			// State was not updated, so we can safely return error
-			return fmt.Errorf("enter function failed: %w", err)
+		// Terminal state cleanup should be synchronous to avoid deadlocks
+		if newState == StateTerminal {
+			exitCallback, err := newStateHandler.Enter(ctx, conn, sm)
+			if err != nil {
+				sm.logger.Error().
+					Err(err).
+					Str("connectionID", conn.ID).
+					Str("newState", string(newState)).
+					Msg("error in enter function")
+			}
+			metadata.ExitCallback = exitCallback
+		} else {
+			// Non-terminal states can be asynchronous
+			exitCallback, err := newStateHandler.Enter(ctx, conn, sm)
+			if err != nil {
+				sm.logger.Error().
+					Err(err).
+					Str("connectionID", conn.ID).
+					Str("newState", string(newState)).
+					Msg("error in enter function")
+			}
+			metadata.ExitCallback = exitCallback
 		}
 	}
 
-	// Only update state after enter function succeeds
-	// This ensures state consistency between in-memory and Redis
-	metadata.State = newState
-	metadata.ExitCallback = exitCallback
-
-	// Clean up terminal connections after enter function completes and state is updated
+	// Clean up terminal connections after enter function completes
 	if newState == StateTerminal {
 		delete(sm.connectionMetadata, conn)
 	}
 
 	return nil
+}
+
+// Helper methods for state store management
+func (sm *StateMachine) removeFromStateStore(conn *WorkerConnection, state ConnectionState) {
+	switch state {
+	case StateConnecting:
+		delete(sm.connectingConnections, conn.ID)
+	case StateConnected:
+		delete(sm.connectedConnections, conn.ID)
+	case StateDisconnecting:
+		delete(sm.disconnectingConnections, conn.ID)
+	}
+}
+
+func (sm *StateMachine) addToStateStore(conn *WorkerConnection, state ConnectionState) {
+	switch state {
+	case StateConnecting:
+		sm.connectingConnections[conn.ID] = conn
+	case StateConnected:
+		sm.connectedConnections[conn.ID] = conn
+	case StateDisconnecting:
+		sm.disconnectingConnections[conn.ID] = conn
+	}
 }
 
 // State enter functions (matching TypeScript pattern)
@@ -409,61 +518,75 @@ func (sm *StateMachine) enterConnecting(ctx context.Context, conn *WorkerConnect
 	goroutineID := fmt.Sprintf("connect-%s", conn.ID)
 
 	sm.goroutineMgr.Spawn(goroutineID, func() {
+
 		sm.logger.Debug().
 			Str("connectionID", conn.ID).
 			Str("queue", conn.Queue.Name).
 			Msgf("starting connection attempt [conn=%s queue=%s]", conn.ID, conn.Queue.Name)
 
-		// Create a context that cancels on shutdown
-		// This eliminates the need for a separate monitor goroutine
+		// Create a context that cancels on shutdown or stop signal
 		connectCtx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
-	// Monitor shutdown signal and cancel context if triggered
-	shutdownMonitorID := fmt.Sprintf("connect-shutdown-monitor-%s", conn.ID)
-	sm.goroutineMgr.Spawn(shutdownMonitorID, func() {
-		select {
-		case <-sm.shutdown:
-			cancel()
-		case <-connectCtx.Done():
-		}
-	})
-
-		// Connect directly (no separate goroutine needed - conn.Connect respects context)
-		if err := conn.Connect(connectCtx); err != nil {
+		// Monitor both shutdown and stop signal
+		monitorGoroutineID := fmt.Sprintf("monitor-%s", conn.ID)
+		sm.goroutineMgr.Spawn(monitorGoroutineID, func() {
 			select {
+			case <-sm.shutdown:
+				cancel()
 			case <-connectCtx.Done():
-				sm.logger.Debug().
-					Str("connectionID", conn.ID).
-					Str("queue", conn.Queue.Name).
-					Msg("connection attempt cancelled due to shutdown")
-			default:
+			}
+		})
+
+		// Try to connect with timeout
+		connectGoroutineID := fmt.Sprintf("connect-attempt-%s", conn.ID)
+		connectDone := make(chan error, 1)
+		sm.goroutineMgr.Spawn(connectGoroutineID, func() {
+			connectDone <- conn.Connect(connectCtx)
+		})
+
+		select {
+		case err := <-connectDone:
+			if err != nil {
 				sm.logger.Error().
 					Err(err).
 					Str("connectionID", conn.ID).
 					Str("queue", conn.Queue.Name).
 					Msg("failed to connect")
 				sm.Transition(context.Background(), conn, EventTimeout)
+				return
 			}
+		case <-connectCtx.Done():
+			sm.logger.Debug().
+				Str("connectionID", conn.ID).
+				Str("queue", conn.Queue.Name).
+				Msg("connection attempt cancelled due to shutdown")
 			return
 		}
 
-		// Wait for connection directly (no separate goroutine needed)
-		if err := conn.WaitForConnection(); err != nil {
-			select {
-			case <-connectCtx.Done():
-				sm.logger.Debug().
-					Str("connectionID", conn.ID).
-					Str("queue", conn.Queue.Name).
-					Msg("connection wait cancelled due to shutdown")
-			default:
+		// Wait for connection with timeout
+		waitGoroutineID := fmt.Sprintf("wait-%s", conn.ID)
+		waitDone := make(chan error, 1)
+		sm.goroutineMgr.Spawn(waitGoroutineID, func() {
+			waitDone <- conn.WaitForConnection()
+		})
+
+		select {
+		case err := <-waitDone:
+			if err != nil {
 				sm.logger.Error().
 					Err(err).
 					Str("connectionID", conn.ID).
 					Str("queue", conn.Queue.Name).
 					Msg("wait for connection failed")
 				sm.Transition(context.Background(), conn, EventTimeout)
+				return
 			}
+		case <-connectCtx.Done():
+			sm.logger.Debug().
+				Str("connectionID", conn.ID).
+				Str("queue", conn.Queue.Name).
+				Msg("connection wait cancelled due to shutdown")
 			return
 		}
 
@@ -472,18 +595,7 @@ func (sm *StateMachine) enterConnecting(ctx context.Context, conn *WorkerConnect
 			Str("queue", conn.Queue.Name).
 			Msg("connection established, transitioning to connected")
 
-		// Check if connection is still valid before transitioning.
-		// This prevents a race where HANGUP/TIMEOUT transitions the connection to TERMINAL
-		// before this goroutine runs. The goroutine executes asynchronously after the
-		// parent Transition() releases sm.mu, so this RLock is safe (no deadlock risk).
-		sm.mu.RLock()
-		metadata, exists := sm.connectionMetadata[conn]
-		isTerminal := !exists || metadata.State == StateTerminal
-		sm.mu.RUnlock()
-
-		if !isTerminal {
-			sm.Transition(context.Background(), conn, EventConnectSuccess)
-		}
+		sm.Transition(context.Background(), conn, EventConnectSuccess)
 	})
 
 	// Return exit callback that removes from Redis
@@ -512,17 +624,13 @@ func (sm *StateMachine) enterConnected(ctx context.Context, conn *WorkerConnecti
 	}
 
 	// Get metadata for ping check setup
-	// Note: This is called from Transition() which holds sm.mu.Lock(),
-	// so accessing connectionMetadata is safe. However, we should still check
-	// that metadata exists since it could theoretically be deleted by another
-	// transition in the same call stack (though unlikely due to lock).
 	metadata := sm.connectionMetadata[conn]
 	if metadata == nil {
 		return nil, fmt.Errorf("metadata not found for connection")
 	}
 
 	// Start ping check
-	pingGoroutineID := fmt.Sprintf("ping-%s", conn.ID)
+	pingGoroutineID := fmt.Sprintf("ping-start-%s", conn.ID)
 	sm.goroutineMgr.Spawn(pingGoroutineID, func() {
 		sm.startPingCheck(ctx, conn, metadata)
 	})
@@ -570,54 +678,38 @@ func (sm *StateMachine) enterDisconnecting(ctx context.Context, conn *WorkerConn
 	goroutineID := fmt.Sprintf("disconnect-%s", conn.ID)
 
 	sm.goroutineMgr.Spawn(goroutineID, func() {
+
 		sm.logger.Debug().
 			Str("connectionID", conn.ID).
 			Str("queue", conn.Queue.Name).
 			Msg("starting graceful disconnect")
 
 		// Create a context with timeout for disconnect
-		disconnectCtx, cancel := context.WithTimeout(context.Background(), DisconnectTimeout)
+		disconnectCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
-		// Disconnect directly with timeout
-		// Use a goroutine to allow timeout, but keep it simple since Disconnect() may block
-		done := make(chan error, 1)
-		disconnectGoroutineID := fmt.Sprintf("disconnect-worker-%s", conn.ID)
+		// Use a channel to ensure we don't leak this goroutine
+		disconnectGoroutineID := fmt.Sprintf("disconnect-attempt-%s", conn.ID)
+		done := make(chan struct{})
 		sm.goroutineMgr.Spawn(disconnectGoroutineID, func() {
-			done <- conn.Disconnect()
-		})
-
-		select {
-		case err := <-done:
-			if err != nil {
+			defer close(done)
+			if err := conn.Disconnect(); err != nil {
 				sm.logger.Error().
 					Err(err).
 					Str("connectionID", conn.ID).
 					Msg("failed to disconnect gracefully")
 			}
-			// Disconnect completed (with or without error)
-			sm.mu.RLock()
-			metadata, exists := sm.connectionMetadata[conn]
-			isTerminal := !exists || metadata.State == StateTerminal
-			sm.mu.RUnlock()
+		})
 
-			if !isTerminal {
-				sm.Transition(context.Background(), conn, EventDisconnectSuccess)
-			}
+		select {
+		case <-done:
+			sm.Transition(context.Background(), conn, EventDisconnectSuccess)
 		case <-disconnectCtx.Done():
-			// Disconnect timed out
-			sm.mu.RLock()
-			metadata, exists := sm.connectionMetadata[conn]
-			isTerminal := !exists || metadata.State == StateTerminal
-			sm.mu.RUnlock()
-
-			if !isTerminal {
-				sm.logger.Warn().
-					Str("connectionID", conn.ID).
-					Str("queue", conn.Queue.Name).
-					Msg("disconnect timeout, forcing transition")
-				sm.Transition(context.Background(), conn, EventDisconnectSuccess)
-			}
+			sm.logger.Warn().
+				Str("connectionID", conn.ID).
+				Str("queue", conn.Queue.Name).
+				Msg("disconnect timeout, forcing transition")
+			sm.Transition(context.Background(), conn, EventDisconnectSuccess)
 		}
 	})
 
@@ -640,20 +732,7 @@ func (sm *StateMachine) enterTerminal(ctx context.Context, conn *WorkerConnectio
 		Str("queue", conn.Queue.Name).
 		Msgf("entering terminal state [conn=%s queue=%s]", conn.ID, conn.Queue.Name)
 
-	// Note: This function is called from Transition() which already holds sm.mu.Lock()
-	// So we can access connectionMetadata directly without acquiring another lock
-	// Ensure StopPingCheck channel is closed if metadata still exists
-	metadata, exists := sm.connectionMetadata[conn]
-	if exists && metadata != nil {
-		select {
-		case <-metadata.StopPingCheck:
-			// Already closed
-		default:
-			close(metadata.StopPingCheck)
-		}
-	}
-
-	// Terminate the connection (this cancels context and closes websocket)
+	// Terminate the connection
 	conn.Terminate()
 
 	// Clean up all goroutines associated with this connection
@@ -691,7 +770,7 @@ func (sm *StateMachine) HandlePong(ctx context.Context, conn *WorkerConnection) 
 }
 
 func (sm *StateMachine) startPingCheck(ctx context.Context, conn *WorkerConnection, metadata *ConnectionMetadata) {
-	ticker := time.NewTicker(PingCheckInterval)
+	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 
 	// Create a context that cancels when the connection is no longer connected
@@ -765,42 +844,29 @@ func (sm *StateMachine) updateRedisState(ctx context.Context, conn *WorkerConnec
 
 func (sm *StateMachine) removeFromRedisState(ctx context.Context, conn *WorkerConnection, state ConnectionState) error {
 	key := fmt.Sprintf("scheduler:%s:%s:%s", sm.schedulerID, conn.Queue.Name, state)
-
-	// Retry up to RedisRetryMaxAttempts times with exponential backoff to handle transient Redis failures
-	for attempt := 0; attempt < RedisRetryMaxAttempts; attempt++ {
-		err := sm.client.ZRem(ctx, key, conn.ID).Err()
-		if err == nil {
-			return nil
-		}
-
-		if attempt < RedisRetryMaxAttempts-1 {
-			backoff := RedisRetryBaseBackoff * time.Duration(1<<attempt) // 100ms, 200ms, 400ms
-			sm.logger.Warn().
-				Err(err).
-				Str("connectionID", conn.ID).
-				Str("state", string(state)).
-				Int("attempt", attempt+1).
-				Dur("backoff", backoff).
-				Msg("Redis remove failed, retrying")
-			time.Sleep(backoff)
-		} else {
-			return fmt.Errorf("failed to remove from Redis after %d attempts: %w", RedisRetryMaxAttempts, err)
-		}
-	}
-
-	return nil
+	return sm.client.ZRem(ctx, key, conn.ID).Err()
 }
 
 func (sm *StateMachine) GetConnections(q *queue.Queue, state ConnectionState) []*WorkerConnection {
 	sm.mu.RLock()
 	defer sm.mu.RUnlock()
 
+	var storeMap map[string]*WorkerConnection
+	switch state {
+	case StateConnecting:
+		storeMap = sm.connectingConnections
+	case StateConnected:
+		storeMap = sm.connectedConnections
+	case StateDisconnecting:
+		storeMap = sm.disconnectingConnections
+	default:
+		return []*WorkerConnection{}
+	}
+
 	var conns []*WorkerConnection
-	for conn, metadata := range sm.connectionMetadata {
-		if metadata.State == state {
-			if q == nil || conn.Queue.Name == q.Name {
-				conns = append(conns, conn)
-			}
+	for _, conn := range storeMap {
+		if q == nil || conn.Queue.Name == q.Name {
+			conns = append(conns, conn)
 		}
 	}
 	return conns
@@ -811,11 +877,18 @@ func (sm *StateMachine) GetWorkingConnections(q queue.Queue) int {
 	defer sm.mu.RUnlock()
 
 	count := 0
-	for conn, metadata := range sm.connectionMetadata {
+
+	// Count connecting connections
+	for _, conn := range sm.connectingConnections {
 		if conn.Queue.Name == q.Name {
-			if metadata.State == StateConnecting || metadata.State == StateConnected {
-				count++
-			}
+			count++
+		}
+	}
+
+	// Count connected connections
+	for _, conn := range sm.connectedConnections {
+		if conn.Queue.Name == q.Name {
+			count++
 		}
 	}
 
@@ -827,12 +900,23 @@ func (sm *StateMachine) GetAllConnections(q queue.Queue) int {
 	defer sm.mu.RUnlock()
 
 	count := 0
-	for conn, metadata := range sm.connectionMetadata {
+
+	// Count all non-terminal connections
+	for _, conn := range sm.connectingConnections {
 		if conn.Queue.Name == q.Name {
-			// Count all non-terminal connections
-			if metadata.State != StateTerminal {
-				count++
-			}
+			count++
+		}
+	}
+
+	for _, conn := range sm.connectedConnections {
+		if conn.Queue.Name == q.Name {
+			count++
+		}
+	}
+
+	for _, conn := range sm.disconnectingConnections {
+		if conn.Queue.Name == q.Name {
+			count++
 		}
 	}
 

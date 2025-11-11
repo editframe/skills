@@ -13,13 +13,16 @@ func TestLoad(t *testing.T) {
 	_ = testutil.WithTestSpan(t)
 	// Save original env vars
 	originalEnvVars := map[string]string{
-		"PORT":              os.Getenv("PORT"),
-		"POSTGRES_HOST":     os.Getenv("POSTGRES_HOST"),
-		"POSTGRES_USER":     os.Getenv("POSTGRES_USER"),
-		"POSTGRES_PASSWORD": os.Getenv("POSTGRES_PASSWORD"),
-		"POSTGRES_DB":       os.Getenv("POSTGRES_DB"),
-		"VALKEY_HOST":       os.Getenv("VALKEY_HOST"),
-		"VALKEY_PORT":       os.Getenv("VALKEY_PORT"),
+		"PORT":                  os.Getenv("PORT"),
+		"POSTGRES_HOST":         os.Getenv("POSTGRES_HOST"),
+		"POSTGRES_USER":         os.Getenv("POSTGRES_USER"),
+		"POSTGRES_PASSWORD":     os.Getenv("POSTGRES_PASSWORD"),
+		"POSTGRES_DB":           os.Getenv("POSTGRES_DB"),
+		"VALKEY_HOST":           os.Getenv("VALKEY_HOST"),
+		"VALKEY_PORT":           os.Getenv("VALKEY_PORT"),
+		"HASURA_SERVER_URL":     os.Getenv("HASURA_SERVER_URL"),
+		"STORAGE_BUCKET":        os.Getenv("STORAGE_BUCKET"),
+		"PUBLIC_STORAGE_BUCKET": os.Getenv("PUBLIC_STORAGE_BUCKET"),
 	}
 
 	// Clean up after test
@@ -49,6 +52,9 @@ func TestLoad(t *testing.T) {
 		assert.Equal(t, "", config.PostgresDB)
 		assert.Equal(t, "valkey", config.ValkeyHost)
 		assert.Equal(t, 6379, config.ValkeyPort)
+		assert.Equal(t, "", config.HasuraServerURL)
+		assert.Equal(t, "", config.StorageBucket)
+		assert.Equal(t, "", config.PublicStorageBucket)
 	})
 
 	t.Run("custom values", func(t *testing.T) {
@@ -59,6 +65,9 @@ func TestLoad(t *testing.T) {
 		os.Setenv("POSTGRES_DB", "test-db")
 		os.Setenv("VALKEY_HOST", "test-valkey")
 		os.Setenv("VALKEY_PORT", "6380")
+		os.Setenv("HASURA_SERVER_URL", "http://test-hasura")
+		os.Setenv("STORAGE_BUCKET", "test-bucket")
+		os.Setenv("PUBLIC_STORAGE_BUCKET", "test-public-bucket")
 
 		config, err := Load()
 		require.NoError(t, err)
@@ -70,6 +79,9 @@ func TestLoad(t *testing.T) {
 		assert.Equal(t, "test-db", config.PostgresDB)
 		assert.Equal(t, "test-valkey", config.ValkeyHost)
 		assert.Equal(t, 6380, config.ValkeyPort)
+		assert.Equal(t, "http://test-hasura", config.HasuraServerURL)
+		assert.Equal(t, "test-bucket", config.StorageBucket)
+		assert.Equal(t, "test-public-bucket", config.PublicStorageBucket)
 	})
 
 	t.Run("invalid port", func(t *testing.T) {

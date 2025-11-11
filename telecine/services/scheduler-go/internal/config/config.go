@@ -14,7 +14,11 @@ type Config struct {
 	PostgresDB                   string
 	ValkeyHost                   string
 	ValkeyPort                   int
+	HasuraServerURL              string
+	StorageBucket                string
+	PublicStorageBucket          string
 	SchedulerTickMS              int
+	SchedulerMinConnAgeMS        int
 	SchedulerScaleDownSmoothing  float64
 	SchedulerPingIntervalMS      int
 	SchedulerDisconnectTimeoutMS int
@@ -47,7 +51,11 @@ func Load() (*Config, error) {
 		PostgresDB:                   getEnv("POSTGRES_DB", ""),
 		ValkeyHost:                   getEnv("VALKEY_HOST", "valkey"),
 		ValkeyPort:                   valkeyPort,
+		HasuraServerURL:              getEnv("HASURA_SERVER_URL", ""),
+		StorageBucket:                getEnv("STORAGE_BUCKET", ""),
+		PublicStorageBucket:          getEnv("PUBLIC_STORAGE_BUCKET", ""),
 		SchedulerTickMS:              getEnvInt("SCHEDULER_TICK_MS", 2000),
+		SchedulerMinConnAgeMS:        getEnvInt("SCHEDULER_MIN_CONN_AGE_MS", 30000),
 		SchedulerScaleDownSmoothing:  getEnvFloat("SCHEDULER_SCALE_DOWN_SMOOTHING", 0.9),
 		SchedulerPingIntervalMS:      getEnvInt("SCHEDULER_PING_INTERVAL_MS", 5000),
 		SchedulerDisconnectTimeoutMS: getEnvInt("SCHEDULER_DISCONNECT_TIMEOUT_MS", 30000),

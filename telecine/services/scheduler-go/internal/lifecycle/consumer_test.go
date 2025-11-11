@@ -131,7 +131,6 @@ func testProcessISOBMFFJobStarted(t *testing.T, db *sql.DB, redisClient *rediscl
 	testJobID := fmt.Sprintf("test-job-%d", time.Now().UnixNano())
 
 	// Clean up before and after
-	cleanupRedis(t, redisClient, ctx)
 	defer cleanupRedis(t, redisClient, ctx)
 	defer cleanupDB(t, db, "video2.process_isobmff", testJobID)
 
@@ -179,7 +178,6 @@ func testProcessISOBMFFJobCompleted(t *testing.T, db *sql.DB, redisClient *redis
 	testJobID := fmt.Sprintf("test-job-%d", time.Now().UnixNano())
 
 	// Clean up before and after
-	cleanupRedis(t, redisClient, ctx)
 	defer cleanupRedis(t, redisClient, ctx)
 	defer cleanupDB(t, db, "video2.process_isobmff", testJobID)
 
@@ -227,7 +225,6 @@ func testProcessISOBMFFJobFailed(t *testing.T, db *sql.DB, redisClient *rediscli
 	testJobID := fmt.Sprintf("test-job-%d", time.Now().UnixNano())
 
 	// Clean up before and after
-	cleanupRedis(t, redisClient, ctx)
 	defer cleanupRedis(t, redisClient, ctx)
 	defer cleanupDB(t, db, "video2.process_isobmff", testJobID)
 
@@ -275,7 +272,6 @@ func testRenderJobStarted(t *testing.T, db *sql.DB, redisClient *redisclient.Cli
 	testJobID := fmt.Sprintf("test-job-%d", time.Now().UnixNano())
 
 	// Clean up before and after
-	cleanupRedis(t, redisClient, ctx)
 	defer cleanupRedis(t, redisClient, ctx)
 	defer cleanupDB(t, db, "video2.renders", testJobID)
 
@@ -325,7 +321,6 @@ func testProcessHTMLJobStarted(t *testing.T, db *sql.DB, redisClient *redisclien
 	testJobID := fmt.Sprintf("test-job-%d", time.Now().UnixNano())
 
 	// Clean up before and after
-	cleanupRedis(t, redisClient, ctx)
 	defer cleanupRedis(t, redisClient, ctx)
 	defer cleanupDB(t, db, "video2.process_html", testJobID)
 
@@ -373,7 +368,6 @@ func testRenderWorkflowFailure(t *testing.T, db *sql.DB, redisClient *redisclien
 	testWorkflowID := fmt.Sprintf("test-workflow-%d", time.Now().UnixNano())
 
 	// Clean up before and after
-	cleanupRedis(t, redisClient, ctx)
 	defer cleanupRedis(t, redisClient, ctx)
 	defer cleanupDB(t, db, "video2.renders", testWorkflowID)
 
@@ -440,7 +434,6 @@ func testProcessHTMLWorkflowFailure(t *testing.T, db *sql.DB, redisClient *redis
 	testRenderID := fmt.Sprintf("test-render-%d", time.Now().UnixNano())
 
 	// Clean up before and after
-	cleanupRedis(t, redisClient, ctx)
 	defer cleanupRedis(t, redisClient, ctx)
 	defer cleanupDB(t, db, "video2.process_html", testProcessHTMLID)
 	defer cleanupDB(t, db, "video2.renders", testRenderID)
@@ -526,7 +519,6 @@ func testRenderFinalizerJobCompleted(t *testing.T, db *sql.DB, redisClient *redi
 	testJobID := fmt.Sprintf("test-job-%d", time.Now().UnixNano())
 
 	// Clean up before and after
-	cleanupRedis(t, redisClient, ctx)
 	defer cleanupRedis(t, redisClient, ctx)
 	defer cleanupDB(t, db, "video2.renders", testJobID)
 
@@ -578,7 +570,6 @@ func testProcessHTMLFinalizerJobCompleted(t *testing.T, db *sql.DB, redisClient 
 	testJobID := fmt.Sprintf("test-job-%d", time.Now().UnixNano())
 
 	// Clean up before and after
-	cleanupRedis(t, redisClient, ctx)
 	defer cleanupRedis(t, redisClient, ctx)
 	defer cleanupDB(t, db, "video2.process_html", testJobID)
 

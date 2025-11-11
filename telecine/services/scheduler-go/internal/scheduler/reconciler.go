@@ -154,7 +154,7 @@ func (r *Reconciler) getOrCreateScalingState(queueName string) *QueueScalingStat
 }
 
 func (r *Reconciler) updateSmoothedTarget(ctx context.Context, state *QueueScalingState, currentTarget int) int {
-	_, span := tracing.StartSpan(ctx, "updateSmoothedTarget")
+	ctx, span := tracing.StartSpan(ctx, "updateSmoothedTarget")
 	defer span.End()
 
 	r.scalingStateMu.Lock()
@@ -287,14 +287,11 @@ func (r *Reconciler) reconcile(ctx context.Context) error {
 		decision := scaling.CalculateScalingDecision(q, scalingStats, connections, history, rank, total)
 
 		// Update mutable state based on decision
-		// If there are no connections, ensure stored values reflect that to prevent stale state
 		r.scalingStateMu.Lock()
 		scalingState.smoothedTarget = decision.NewSmoothedTarget
 		scalingState.lastRawTarget = decision.RawFairShare
 		scalingState.lastActualTarget = decision.TargetConnections
-		// Always use the actual current connection counts to prevent stale state
-		// This ensures that when all workers shut down, the stored value is 0
-		scalingState.lastWorkingConnections = workingConnections
+		scalingState.lastWorkingConnections = decision.WorkingConnections
 		scalingState.lastNaturalQueueDepth = decision.NaturalQueueDepth
 		r.scalingStateMu.Unlock()
 

@@ -122,6 +122,42 @@ func TestLogMethods(t *testing.T) {
 	assert.Contains(t, output, "error message")
 }
 
+func TestWithContext(t *testing.T) {
+	// Reset global logger and set up test output
+	globalLogger = nil
+	var buf bytes.Buffer
+	logger := zerolog.New(&buf).Level(zerolog.InfoLevel).With().Logger()
+	globalLogger = &logger
+
+	contextLogger := WithContext("user_id", "12345")
+	assert.NotNil(t, contextLogger)
+
+	contextLogger.Info().Msg("test with context")
+	output := buf.String()
+
+	assert.Contains(t, output, "test with context")
+	assert.Contains(t, output, "user_id")
+	assert.Contains(t, output, "12345")
+}
+
+func TestWithComponent(t *testing.T) {
+	// Reset global logger and set up test output
+	globalLogger = nil
+	var buf bytes.Buffer
+	logger := zerolog.New(&buf).Level(zerolog.InfoLevel).With().Logger()
+	globalLogger = &logger
+
+	componentLogger := WithComponent("database")
+	assert.NotNil(t, componentLogger)
+
+	componentLogger.Info().Msg("test with component")
+	output := buf.String()
+
+	assert.Contains(t, output, "test with component")
+	assert.Contains(t, output, "component")
+	assert.Contains(t, output, "database")
+}
+
 func TestLoggerIntegration(t *testing.T) {
 	// Reset global logger
 	globalLogger = nil
@@ -139,10 +175,12 @@ func TestLoggerIntegration(t *testing.T) {
 	Logger().Info().Str("key", "value").Msg("integration test")
 	logger2 := With().Str("context", "test").Logger()
 	logger2.Info().Msg("context test")
+	(*WithComponent("test-component")).Info().Msg("component test")
+	(*WithContext("request_id", "abc123")).Info().Msg("context test")
 
 	output := buf.String()
 	lines := strings.Split(strings.TrimSpace(output), "\n")
-	assert.Len(t, lines, 2, "Should have 2 log lines")
+	assert.Len(t, lines, 4, "Should have 4 log lines")
 
 	// Parse and verify JSON structure
 	for _, line := range lines {
