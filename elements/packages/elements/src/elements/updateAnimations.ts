@@ -44,7 +44,8 @@ export const evaluateTemporalState = (
   const isLastElementInComposition =
     element.endTimeMs === element.rootTimegroup?.endTimeMs;
   const isTextSegment = element.tagName === "EF-TEXT-SEGMENT";
-  const useInclusiveEnd = isRootElement || isLastElementInComposition || isTextSegment;
+  const useInclusiveEnd =
+    isRootElement || isLastElementInComposition || isTextSegment;
 
   const isVisible =
     element.startTimeMs <= timelineTimeMs &&
@@ -152,14 +153,16 @@ const coordinateAnimationsForSingleElement = (
     // They include CSS animation-duration and animation-delay values
     const duration = Number(timing.duration) || 0;
     let delay = Number(timing.delay) || 0;
-    
+
     // For Web Animations API animations, getTiming().delay is always correct.
     // For CSS animations, we may need to read from computed styles.
     // Try to read delay from computed styles as a fallback/override for CSS animations
     if (target instanceof HTMLElement) {
       const computedStyle = window.getComputedStyle(target);
-      const animationDelays = computedStyle.animationDelay.split(", ").map(s => s.trim());
-      
+      const animationDelays = computedStyle.animationDelay
+        .split(", ")
+        .map((s) => s.trim());
+
       // Parse CSS delay value
       const parseDelay = (delayStr: string): number => {
         if (delayStr === "0s" || delayStr === "0ms") {
@@ -173,7 +176,7 @@ const coordinateAnimationsForSingleElement = (
         }
         return 0;
       };
-      
+
       // Only override delay from computed styles if:
       // 1. We have a valid parsed delay value, OR
       // 2. The computed style explicitly says "0s" or "0ms" (meaning no CSS delay)
@@ -184,7 +187,10 @@ const coordinateAnimationsForSingleElement = (
         // OR if it's explicitly "0s"/"0ms" and getTiming().delay is also 0 (CSS animation with no delay)
         if (parsedDelay > 0) {
           delay = parsedDelay;
-        } else if ((animationDelays[0] === "0s" || animationDelays[0] === "0ms") && delay === 0) {
+        } else if (
+          (animationDelays[0] === "0s" || animationDelays[0] === "0ms") &&
+          delay === 0
+        ) {
           // Both are 0, so keep 0
           delay = 0;
         }
@@ -193,7 +199,11 @@ const coordinateAnimationsForSingleElement = (
         // Multiple animations: try to match by index
         const allAnimations = Array.from(target.getAnimations());
         const animationIndex = allAnimations.indexOf(animation);
-        if (animationIndex >= 0 && animationIndex < animationDelays.length && animationDelays[animationIndex]) {
+        if (
+          animationIndex >= 0 &&
+          animationIndex < animationDelays.length &&
+          animationDelays[animationIndex]
+        ) {
           const parsedDelay = parseDelay(animationDelays[animationIndex]);
           if (parsedDelay > 0) {
             delay = parsedDelay;
@@ -203,7 +213,7 @@ const coordinateAnimationsForSingleElement = (
       }
       // If no computed styles match, keep getTiming().delay (for WAAPI animations)
     }
-    
+
     const iterations =
       Number(timing.iterations) || DEFAULT_ANIMATION_ITERATIONS;
 
@@ -242,7 +252,8 @@ const coordinateAnimationsForSingleElement = (
 
     // Handle animation-direction
     const direction = timing.direction || "normal";
-    const isAlternate = direction === "alternate" || direction === "alternate-reverse";
+    const isAlternate =
+      direction === "alternate" || direction === "alternate-reverse";
     const shouldReverse =
       direction === "reverse" ||
       (direction === "alternate" && currentIteration % 2 === 1) ||
@@ -256,18 +267,22 @@ const coordinateAnimationsForSingleElement = (
       // Animation would be complete - clamp to just before completion
       // This prevents the animation from being removed from the element
       // animation.currentTime is the time within the animation (not including delay)
-      const maxSafeAnimationTime = duration * iterations - ANIMATION_PRECISION_OFFSET;
-      
+      const maxSafeAnimationTime =
+        duration * iterations - ANIMATION_PRECISION_OFFSET;
+
       // For alternate directions at completion, we need to set currentTime based on the final iteration
       // The final iteration for alternate is iteration (iterations - 1), which is forward if iterations is odd
       if (isAlternate) {
         const finalIteration = iterations - 1;
-        const isFinalIterationReversed = 
+        const isFinalIterationReversed =
           (direction === "alternate" && finalIteration % 2 === 1) ||
           (direction === "alternate-reverse" && finalIteration % 2 === 0);
         if (isFinalIterationReversed) {
           // At end of reversed iteration, currentTime should be near 0 (but clamped)
-          animation.currentTime = Math.min(duration - ANIMATION_PRECISION_OFFSET, maxSafeAnimationTime);
+          animation.currentTime = Math.min(
+            duration - ANIMATION_PRECISION_OFFSET,
+            maxSafeAnimationTime,
+          );
         } else {
           // At end of forward iteration, currentTime should be near duration (but clamped)
           animation.currentTime = maxSafeAnimationTime;
@@ -292,8 +307,12 @@ const coordinateAnimationsForSingleElement = (
             animation.currentTime = currentTime;
           } else {
             // With delay and iteration > 0, use cumulative time
-            const maxSafeAnimationTime = duration * iterations - ANIMATION_PRECISION_OFFSET;
-            animation.currentTime = Math.min(adjustedTime, maxSafeAnimationTime);
+            const maxSafeAnimationTime =
+              duration * iterations - ANIMATION_PRECISION_OFFSET;
+            animation.currentTime = Math.min(
+              adjustedTime,
+              maxSafeAnimationTime,
+            );
           }
         } else {
           // Without delay: use iteration time (after direction applied)
@@ -301,9 +320,14 @@ const coordinateAnimationsForSingleElement = (
         }
       } else {
         // For normal/reverse directions, use cumulative time
-        const timeWithinAnimation = currentIteration * duration + currentIterationTime;
-        const maxSafeAnimationTime = duration * iterations - ANIMATION_PRECISION_OFFSET;
-        animation.currentTime = Math.min(timeWithinAnimation, maxSafeAnimationTime);
+        const timeWithinAnimation =
+          currentIteration * duration + currentIterationTime;
+        const maxSafeAnimationTime =
+          duration * iterations - ANIMATION_PRECISION_OFFSET;
+        animation.currentTime = Math.min(
+          timeWithinAnimation,
+          maxSafeAnimationTime,
+        );
       }
     }
   }

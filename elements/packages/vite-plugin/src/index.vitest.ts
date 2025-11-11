@@ -24,21 +24,31 @@ const forbidRelativePaths = (req: IncomingMessage) => {
 };
 
 // Create editframe client instance
-  const getEditframeClient = () => {
-    // Trim whitespace and carriage returns from token (docker-compose .env files may have CRLF)
-    const token = process.env.EF_TOKEN?.trim().replace(/\r$/, "") || "";
-    // In test environment, use host.docker.internal to access telecine from test server container
-    // The proxy plugin handles routing /api/v1/* requests to telecine
-    const efHost = process.env.EF_HOST || "http://host.docker.internal:3000";
-    if (!token) {
-      const error = "EF_TOKEN environment variable must be set";
-      console.error("[Vite Plugin] Error:", error);
-      console.error("[Vite Plugin] Available env vars:", Object.keys(process.env).filter(k => k.includes('EF') || k.includes('TOKEN')));
-      throw new Error(error);
-    }
-    console.log("[Vite Plugin] Creating client with token (first 20 chars):", `${token.substring(0, 20)}...`, "efHost:", efHost);
-    return new Client(token, efHost);
-  };
+const getEditframeClient = () => {
+  // Trim whitespace and carriage returns from token (docker-compose .env files may have CRLF)
+  const token = process.env.EF_TOKEN?.trim().replace(/\r$/, "") || "";
+  // In test environment, use host.docker.internal to access telecine from test server container
+  // The proxy plugin handles routing /api/v1/* requests to telecine
+  const efHost = process.env.EF_HOST || "http://host.docker.internal:3000";
+  if (!token) {
+    const error = "EF_TOKEN environment variable must be set";
+    console.error("[Vite Plugin] Error:", error);
+    console.error(
+      "[Vite Plugin] Available env vars:",
+      Object.keys(process.env).filter(
+        (k) => k.includes("EF") || k.includes("TOKEN"),
+      ),
+    );
+    throw new Error(error);
+  }
+  console.log(
+    "[Vite Plugin] Creating client with token (first 20 chars):",
+    `${token.substring(0, 20)}...`,
+    "efHost:",
+    efHost,
+  );
+  return new Client(token, efHost);
+};
 
 // Import sendTaskResult from relative path (type imports are stripped at compile time)
 import { sendTaskResult } from "./sendTaskResult.js";
@@ -215,23 +225,32 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
 
                 log("Creating token for URL:", urlToSign);
                 log("Using EF_HOST:", process.env.EF_HOST);
-                log("Using token (first 20 chars):", process.env.EF_TOKEN?.substring(0, 20));
+                log(
+                  "Using token (first 20 chars):",
+                  process.env.EF_TOKEN?.substring(0, 20),
+                );
                 const token = await createURLToken(client, urlToSign);
 
                 res.writeHead(200, { "Content-Type": "application/json" });
                 res.end(JSON.stringify({ token }));
               } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : String(error);
-                const errorDetails = error instanceof Error && error.stack ? error.stack : errorMessage;
+                const errorMessage =
+                  error instanceof Error ? error.message : String(error);
+                const errorDetails =
+                  error instanceof Error && error.stack
+                    ? error.stack
+                    : errorMessage;
                 log(`Error signing URL token: ${errorMessage}`);
                 log(`Error details: ${errorDetails}`);
                 console.error("[Vite Plugin] URL signing error:", errorMessage);
                 console.error("[Vite Plugin] Error stack:", errorDetails);
                 res.writeHead(500, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({ 
-                  error: "Failed to sign URL token",
-                  details: errorMessage 
-                }));
+                res.end(
+                  JSON.stringify({
+                    error: "Failed to sign URL token",
+                    details: errorMessage,
+                  }),
+                );
               }
             });
 

@@ -28,7 +28,10 @@ const inlineCssPlugin = (): Plugin => ({
       // Process through Tailwind if it contains @tailwind directives
       if (css.includes("@tailwind")) {
         const _srcDir = path.resolve(path.dirname(filePath));
-        const configPath = path.resolve(path.dirname(filePath), "../../tailwind.config.ts");
+        const configPath = path.resolve(
+          path.dirname(filePath),
+          "../../tailwind.config.ts",
+        );
         const result = await postcss([
           tailwindcss({ config: configPath }),
           autoprefixer(),

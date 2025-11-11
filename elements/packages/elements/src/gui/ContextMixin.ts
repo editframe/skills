@@ -232,7 +232,8 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
             window.location.href,
           );
           // Create a new error with the URL in the message, preserving the original error type
-          const ErrorConstructor = error instanceof Error ? error.constructor : Error;
+          const ErrorConstructor =
+            error instanceof Error ? error.constructor : Error;
           const enhancedError = new (ErrorConstructor as typeof Error)(
             `Failed to fetch: ${url}. Original error: ${error instanceof Error ? error.message : String(error)}`,
           );

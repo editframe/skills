@@ -16,4 +16,3 @@ export const TextSegment = createComponent({
   elementClass: EFTextSegmentElement,
   react: React,
 });
-

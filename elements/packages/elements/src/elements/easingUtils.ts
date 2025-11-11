@@ -2,10 +2,7 @@
  * Evaluates a CSS easing function at a given progress (0-1)
  * Supports standard CSS easing functions and cubic-bezier
  */
-export function evaluateEasing(
-  easing: string,
-  progress: number,
-): number {
+export function evaluateEasing(easing: string, progress: number): number {
   // Clamp progress to 0-1
   progress = Math.max(0, Math.min(1, progress));
 
@@ -26,7 +23,12 @@ export function evaluateEasing(
       const cubicBezierMatch = easing.match(
         /cubic-bezier\s*\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)/i,
       );
-      if (cubicBezierMatch?.[1] && cubicBezierMatch[2] && cubicBezierMatch[3] && cubicBezierMatch[4]) {
+      if (
+        cubicBezierMatch?.[1] &&
+        cubicBezierMatch[2] &&
+        cubicBezierMatch[3] &&
+        cubicBezierMatch[4]
+      ) {
         const x1 = Number.parseFloat(cubicBezierMatch[1]);
         const y1 = Number.parseFloat(cubicBezierMatch[2]);
         const x2 = Number.parseFloat(cubicBezierMatch[3]);
@@ -107,4 +109,3 @@ function bezierY(t: number, y1: number, y2: number): number {
 
   return 3 * mt2 * t * y1 + 3 * mt * t2 * y2 + t3;
 }
-

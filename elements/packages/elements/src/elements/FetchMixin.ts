@@ -10,7 +10,7 @@ export function FetchMixin<T extends Constructor<LitElement>>(superClass: T) {
     fetch = (url: string, init?: RequestInit): Promise<Response> => {
       try {
         let fetchPromise: Promise<Response>;
-        
+
         // Look for context providers up the DOM tree
         const workbench = this.closest("ef-workbench") as any;
         if (workbench?.fetch) {
@@ -40,7 +40,8 @@ export function FetchMixin<T extends Constructor<LitElement>>(superClass: T) {
             window.location.href,
           );
           // Create a new error with the URL in the message, preserving the original error type
-          const ErrorConstructor = error instanceof Error ? error.constructor : Error;
+          const ErrorConstructor =
+            error instanceof Error ? error.constructor : Error;
           const enhancedError = new (ErrorConstructor as typeof Error)(
             `Failed to fetch: ${url}. Original error: ${error instanceof Error ? error.message : String(error)}`,
           );

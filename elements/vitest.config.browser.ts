@@ -35,7 +35,7 @@ function createConnectConfig(wsEndpoint: string): TestConfiguration {
   // Get worktree domain from environment
   // This should be set by the browsertest script via worktree-config
   const worktreeDomain = process.env.WORKTREE_DOMAIN || "main.localhost";
-  
+
   return {
     server: {
       port: 63315,
@@ -55,7 +55,7 @@ function createConnectConfig(wsEndpoint: string): TestConfiguration {
 function createLaunchConfig(): TestConfiguration {
   // Get worktree domain from environment
   const worktreeDomain = process.env.WORKTREE_DOMAIN || "main.localhost";
-  
+
   return {
     server: {
       port: 63315,
@@ -130,9 +130,15 @@ export default defineConfig(async () => {
       // So we'll do it in configureServer
     },
     configureServer(server) {
-      console.log("[Traefik URL Plugin] Configuring server, original port:", server.config.server?.port);
-      console.log("[Traefik URL Plugin] Overriding server URLs to:", traefikUrl);
-      
+      console.log(
+        "[Traefik URL Plugin] Configuring server, original port:",
+        server.config.server?.port,
+      );
+      console.log(
+        "[Traefik URL Plugin] Overriding server URLs to:",
+        traefikUrl,
+      );
+
       // Ensure the server is configured to listen on the correct port
       // Vitest should start the server automatically, but we ensure it's configured correctly
       if (server.config.server) {
@@ -145,7 +151,7 @@ export default defineConfig(async () => {
           server.config.server.allowedHosts.push(worktreeDomain);
         }
       }
-      
+
       // Override resolvedUrls to use Traefik URL
       // Vitest uses: resolvedUrls?.local[0] ?? resolvedUrls?.network[0]
       // We need to ensure both are set to the Traefik URL
@@ -153,25 +159,30 @@ export default defineConfig(async () => {
         local: [traefikUrl],
         network: [traefikUrl],
       };
-      
+
       // Set resolvedUrls directly (not just override getter)
       // This ensures vitest gets the Traefik URL even if it accesses it synchronously
       (server as any).resolvedUrls = traefikResolvedUrls;
-      
+
       // Also override the getter in case Vite tries to recompute it
       Object.defineProperty(server, "resolvedUrls", {
         get() {
-          console.log("[Traefik URL Plugin] resolvedUrls accessed, returning:", traefikResolvedUrls);
+          console.log(
+            "[Traefik URL Plugin] resolvedUrls accessed, returning:",
+            traefikResolvedUrls,
+          );
           return traefikResolvedUrls;
         },
         set(_value) {
           // Ignore any attempts to set it back
-          console.log("[Traefik URL Plugin] Attempted to set resolvedUrls, ignoring");
+          console.log(
+            "[Traefik URL Plugin] Attempted to set resolvedUrls, ignoring",
+          );
         },
         configurable: true,
         enumerable: true,
       });
-      
+
       // Also override server.url for consistency
       Object.defineProperty(server, "url", {
         get() {
@@ -180,23 +191,28 @@ export default defineConfig(async () => {
         configurable: true,
         enumerable: true,
       });
-      
+
       // Log when server is actually listening
       server.httpServer?.once("listening", () => {
         const address = server.httpServer?.address();
         console.log("[Traefik URL Plugin] Server is listening on:", address);
         console.log("[Traefik URL Plugin] Server URL:", server.resolvedUrls);
-        console.log("[Traefik URL Plugin] Server middleware count:", server.middlewares.stack?.length || 0);
+        console.log(
+          "[Traefik URL Plugin] Server middleware count:",
+          server.middlewares.stack?.length || 0,
+        );
       });
-      
+
       // Ensure server actually starts listening
       // Vitest browser mode should start the server automatically, but we ensure it's ready
       if (!server.httpServer?.listening) {
-        console.log("[Traefik URL Plugin] Server not yet listening, waiting for Vitest to start it...");
+        console.log(
+          "[Traefik URL Plugin] Server not yet listening, waiting for Vitest to start it...",
+        );
       } else {
         console.log("[Traefik URL Plugin] Server is already listening");
       }
-      
+
       // Add a test endpoint to verify the server is working
       server.middlewares.use("/__test__", (req, res) => {
         console.log("[Traefik URL Plugin] Test endpoint hit:", req.url);

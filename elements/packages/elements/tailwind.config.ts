@@ -2,7 +2,7 @@ import type { Config } from "tailwindcss";
 
 module.exports = {
   content: ["./src/**/*.ts"],
-  darkMode: 'selector',
+  darkMode: "selector",
   theme: {
     extend: {},
   },

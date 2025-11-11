@@ -37,7 +37,8 @@ const test = baseTest.extend<{
     let apiHost = `${window.location.protocol}//${window.location.host}`;
     if (window.location.host === "localhost:63315") {
       // Use worktree domain injected by setup.ts
-      const worktreeDomain = (window as any).__WORKTREE_DOMAIN__ || "main.localhost";
+      const worktreeDomain =
+        (window as any).__WORKTREE_DOMAIN__ || "main.localhost";
       apiHost = `${window.location.protocol}//${worktreeDomain}:4322`;
     }
     render(
@@ -84,7 +85,8 @@ const test = baseTest.extend<{
     let apiHost = `${window.location.protocol}//${window.location.host}`;
     if (window.location.host === "localhost:63315") {
       // Use worktree domain injected by setup.ts
-      const worktreeDomain = (window as any).__WORKTREE_DOMAIN__ || "main.localhost";
+      const worktreeDomain =
+        (window as any).__WORKTREE_DOMAIN__ || "main.localhost";
       apiHost = `${window.location.protocol}//${worktreeDomain}:4322`;
     }
     render(

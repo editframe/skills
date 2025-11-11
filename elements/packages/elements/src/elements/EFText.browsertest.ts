@@ -266,7 +266,7 @@ describe("EFText", () => {
       await Promise.all(segments.map((seg) => seg.updateComplete));
       await new Promise((resolve) => requestAnimationFrame(resolve));
       await new Promise((resolve) => requestAnimationFrame(resolve));
-      
+
       // Test observable behavior: segments should be created and rendered
       // The actual stagger behavior is tested via animation timing, not internal properties
       expect(segments.length).toBeGreaterThan(0);
@@ -337,7 +337,7 @@ describe("EFText", () => {
       // Wait for segment to render CSS variables
       await segments[0]?.updateComplete;
       await new Promise((resolve) => requestAnimationFrame(resolve));
-      
+
       // Test observable behavior: segment should be created and rendered
       expect(segments[0]?.textContent || segments[0]?.segmentText).toBe("One");
     });
@@ -453,7 +453,7 @@ describe("EFText", () => {
       // Note: startTimeMs is a getter that calculates from parent
       await timegroup.updateComplete;
       await new Promise((resolve) => requestAnimationFrame(resolve));
-      
+
       // Test observable behavior: segment should have correct timing relative to parent
       // Allow tolerance for timing calculations
       const startTime = segment?.startTimeMs;
@@ -1044,7 +1044,7 @@ describe("EFText", () => {
       // Wait for segments to render CSS variables
       await Promise.all(segments.map((seg) => seg.updateComplete));
       await new Promise((resolve) => requestAnimationFrame(resolve));
-      
+
       // Test observable behavior: segments should be created
       // Invalid easing falls back to linear - actual behavior tested via animation tests
       expect(segments.length).toBe(3);
@@ -1070,7 +1070,7 @@ describe("EFText", () => {
       // Wait for segments to render CSS variables
       await Promise.all(segments.map((seg) => seg.updateComplete));
       await new Promise((resolve) => requestAnimationFrame(resolve));
-      
+
       // Test observable behavior: segments should be created
       // Invalid easing falls back to linear - actual behavior tested via animation tests
       expect(segments.length).toBe(3);
@@ -1083,9 +1083,10 @@ describe("EFText", () => {
       const text = document.createElement("ef-text");
       text.split = "word";
       // Create text with 1000 words
-      text.textContent = Array.from({ length: 1000 }, (_, i) => `word${i}`).join(
-        " ",
-      );
+      text.textContent = Array.from(
+        { length: 1000 },
+        (_, i) => `word${i}`,
+      ).join(" ");
       text.duration = "2s";
       timegroup.appendChild(text);
       document.body.appendChild(timegroup);

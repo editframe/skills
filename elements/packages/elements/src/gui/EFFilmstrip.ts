@@ -137,8 +137,10 @@ class FilmstripItem extends TWMixin(LitElement) {
           class="border-outset relative mb-[1px] block h-[1.1rem] text-nowrap border text-sm"
           style=${styleMap({
             ...this.trimPortionStyles,
-            backgroundColor: this.isFocused ? 'var(--filmstrip-item-focused)' : 'var(--filmstrip-item-bg)',
-            borderColor: 'var(--filmstrip-border)',
+            backgroundColor: this.isFocused
+              ? "var(--filmstrip-item-focused)"
+              : "var(--filmstrip-item-bg)",
+            borderColor: "var(--filmstrip-border)",
           })}
         >
           ${this.animations()}
@@ -195,7 +197,7 @@ class FilmstripItem extends TWMixin(LitElement) {
         style=${styleMap({
           left: `${this.pixelsPerMs * start}px`,
           width: `${this.pixelsPerMs * Number(duration)}px`,
-          backgroundColor: 'var(--filmstrip-animation-bg)',
+          backgroundColor: "var(--filmstrip-animation-bg)",
         })}
       >
         <!-- <div class="text-nowrap">${Array.from(properties).join(" ")}</div> -->
@@ -206,7 +208,7 @@ class FilmstripItem extends TWMixin(LitElement) {
               left: `${
                 this.pixelsPerMs * keyframe.computedOffset * Number(duration)
               }px`,
-              backgroundColor: 'var(--filmstrip-keyframe-bg)',
+              backgroundColor: "var(--filmstrip-keyframe-bg)",
             })}
           ></div>`;
         })}
@@ -272,8 +274,10 @@ export class EFCaptionsFilmstrip extends FilmstripItem {
           class="border-outset relative mb-[1px] block h-[1.1rem] text-nowrap border text-sm overflow-hidden"
           style=${styleMap({
             ...this.trimPortionStyles,
-            backgroundColor: this.isFocused ? 'var(--filmstrip-item-focused)' : 'var(--filmstrip-item-bg)',
-            borderColor: 'var(--filmstrip-border)',
+            backgroundColor: this.isFocused
+              ? "var(--filmstrip-item-focused)"
+              : "var(--filmstrip-item-bg)",
+            borderColor: "var(--filmstrip-border)",
           })}
         >
           📝 ${this.renderCaptionsData(captionsData)}
@@ -308,8 +312,12 @@ export class EFCaptionsFilmstrip extends FilmstripItem {
           width: `${this.pixelsPerMs * (segment.end - segment.start) * 1000}px`,
           height: "100%",
           top: "0px",
-          backgroundColor: isActive ? 'var(--filmstrip-segment-bg)' : 'var(--filmstrip-item-bg)',
-          borderColor: isActive ? 'var(--filmstrip-segment-border)' : 'var(--filmstrip-border)',
+          backgroundColor: isActive
+            ? "var(--filmstrip-segment-bg)"
+            : "var(--filmstrip-item-bg)",
+          borderColor: isActive
+            ? "var(--filmstrip-segment-border)"
+            : "var(--filmstrip-border)",
         })}
         title="Segment: '${segment.text}' (${segment.start}s - ${segment.end}s)"
       >
@@ -375,8 +383,12 @@ export class EFCaptionsActiveWordFilmstrip extends FilmstripItem {
               width: `${this.pixelsPerMs * (word.end - word.start) * 1000}px`,
               height: "100%",
               top: "0px",
-              backgroundColor: isCurrentlyActive ? 'var(--filmstrip-caption-bg)' : 'var(--filmstrip-item-bg)',
-              borderColor: isCurrentlyActive ? 'var(--filmstrip-caption-border)' : 'var(--filmstrip-border)',
+              backgroundColor: isCurrentlyActive
+                ? "var(--filmstrip-caption-bg)"
+                : "var(--filmstrip-item-bg)",
+              borderColor: isCurrentlyActive
+                ? "var(--filmstrip-caption-border)"
+                : "var(--filmstrip-border)",
             })}
             title="Word: '${word.text}' (${word.start}s - ${word.end}s)"
           >
@@ -432,8 +444,12 @@ export class EFCaptionsSegmentFilmstrip extends FilmstripItem {
               width: `${this.pixelsPerMs * (segment.end - segment.start) * 1000}px`,
               height: "100%",
               top: "0px",
-              backgroundColor: isCurrentlyActive ? 'var(--filmstrip-segment-bg)' : 'var(--filmstrip-item-bg)',
-              borderColor: isCurrentlyActive ? 'var(--filmstrip-segment-border)' : 'var(--filmstrip-border)',
+              backgroundColor: isCurrentlyActive
+                ? "var(--filmstrip-segment-bg)"
+                : "var(--filmstrip-item-bg)",
+              borderColor: isCurrentlyActive
+                ? "var(--filmstrip-segment-border)"
+                : "var(--filmstrip-border)",
             })}
             title="Segment: '${segment.text}' (${segment.start}s - ${segment.end}s)"
           >
@@ -489,8 +505,12 @@ export class EFCaptionsBeforeWordFilmstrip extends FilmstripItem {
               width: `${this.pixelsPerMs * (word.end - word.start) * 1000}px`,
               height: "100%",
               top: "0px",
-              backgroundColor: isCurrentlyActive ? 'var(--filmstrip-caption-bg)' : 'var(--filmstrip-waveform-bg)',
-              borderColor: isCurrentlyActive ? 'var(--filmstrip-caption-border)' : 'var(--filmstrip-waveform-border)',
+              backgroundColor: isCurrentlyActive
+                ? "var(--filmstrip-caption-bg)"
+                : "var(--filmstrip-waveform-bg)",
+              borderColor: isCurrentlyActive
+                ? "var(--filmstrip-caption-border)"
+                : "var(--filmstrip-waveform-border)",
             })}
             title="Word: '${word.text}' (${word.start}s - ${word.end}s)"
           >
@@ -546,8 +566,12 @@ export class EFCaptionsAfterWordFilmstrip extends FilmstripItem {
               width: `${this.pixelsPerMs * (word.end - word.start) * 1000}px`,
               height: "100%",
               top: "0px",
-              backgroundColor: isCurrentlyActive ? 'var(--filmstrip-caption-bg)' : 'var(--filmstrip-waveform-bg)',
-              borderColor: isCurrentlyActive ? 'var(--filmstrip-caption-border)' : 'var(--filmstrip-waveform-border)',
+              backgroundColor: isCurrentlyActive
+                ? "var(--filmstrip-caption-bg)"
+                : "var(--filmstrip-waveform-bg)",
+              borderColor: isCurrentlyActive
+                ? "var(--filmstrip-caption-border)"
+                : "var(--filmstrip-waveform-border)",
             })}
             title="Word: '${word.text}' (${word.start}s - ${word.end}s)"
           >
@@ -597,8 +621,10 @@ export class EFTextFilmstrip extends FilmstripItem {
           class="border-outset relative mb-[1px] block h-[1.1rem] text-nowrap border text-sm overflow-hidden"
           style=${styleMap({
             ...this.trimPortionStyles,
-            backgroundColor: this.isFocused ? 'var(--filmstrip-item-focused)' : 'var(--filmstrip-item-bg)',
-            borderColor: 'var(--filmstrip-border)',
+            backgroundColor: this.isFocused
+              ? "var(--filmstrip-item-focused)"
+              : "var(--filmstrip-item-bg)",
+            borderColor: "var(--filmstrip-border)",
           })}
         >
           📄 ${this.renderTextSegments(segments)}
@@ -631,8 +657,12 @@ export class EFTextFilmstrip extends FilmstripItem {
           width: `${this.pixelsPerMs * (segment.segmentEndMs - segment.segmentStartMs)}px`,
           height: "100%",
           top: "0px",
-          backgroundColor: isActive ? 'var(--filmstrip-segment-bg)' : 'var(--filmstrip-item-bg)',
-          borderColor: isActive ? 'var(--filmstrip-segment-border)' : 'var(--filmstrip-border)',
+          backgroundColor: isActive
+            ? "var(--filmstrip-segment-bg)"
+            : "var(--filmstrip-item-bg)",
+          borderColor: isActive
+            ? "var(--filmstrip-segment-border)"
+            : "var(--filmstrip-border)",
         })}
         title="Segment: '${segment.segmentText}' (${segment.segmentStartMs}ms - ${segment.segmentEndMs}ms)"
       >
@@ -692,8 +722,12 @@ export class EFTextSegmentFilmstrip extends FilmstripItem {
             width: `${this.pixelsPerMs * (segment.segmentEndMs - segment.segmentStartMs)}px`,
             height: "100%",
             top: "0px",
-            backgroundColor: isCurrentlyActive ? 'var(--filmstrip-caption-bg)' : 'var(--filmstrip-item-bg)',
-            borderColor: isCurrentlyActive ? 'var(--filmstrip-caption-border)' : 'var(--filmstrip-border)',
+            backgroundColor: isCurrentlyActive
+              ? "var(--filmstrip-caption-bg)"
+              : "var(--filmstrip-item-bg)",
+            borderColor: isCurrentlyActive
+              ? "var(--filmstrip-caption-border)"
+              : "var(--filmstrip-border)",
           })}
           title="Segment: '${segment.segmentText}' (${segment.segmentStartMs}ms - ${segment.segmentEndMs}ms)"
         >
@@ -780,8 +814,10 @@ class EFHierarchyItem<
         <div
           class="peer flex h-[1.1rem] items-center overflow-hidden text-nowrap border pl-2 text-xs font-mono"
           style=${styleMap({
-            backgroundColor: this.isFocused ? 'var(--filmstrip-timegroup-focused)' : 'var(--filmstrip-timegroup-bg)',
-            borderColor: 'var(--filmstrip-border)',
+            backgroundColor: this.isFocused
+              ? "var(--filmstrip-timegroup-focused)"
+              : "var(--filmstrip-timegroup-bg)",
+            borderColor: "var(--filmstrip-border)",
           })}
           ?data-focused=${this.isFocused}
           @mouseenter=${() => {
@@ -800,7 +836,9 @@ class EFHierarchyItem<
         <div
           class="p-[1px] pb-0 pl-2 pr-0 peer-hover-container peer-data-container"
           style=${styleMap({
-            backgroundColor: this.isFocused ? 'var(--filmstrip-bg)' : 'transparent',
+            backgroundColor: this.isFocused
+              ? "var(--filmstrip-bg)"
+              : "transparent",
           })}
         >
           ${this.renderChildren()}
@@ -1491,7 +1529,7 @@ export class EFFilmstrip extends TWMixin(LitElement) {
       style=${styleMap({
         gridTemplateColumns: "200px 1fr",
         gridTemplateRows: "1.5rem 1fr",
-        backgroundColor: 'var(--filmstrip-gutter-bg)',
+        backgroundColor: "var(--filmstrip-gutter-bg)",
       })}
     >
       <div
@@ -1557,7 +1595,7 @@ export class EFFilmstrip extends TWMixin(LitElement) {
             style=${styleMap({
               left: `${this.pixelsPerMs * this.currentTimeMs}px`,
               top: `${this.timelineScrolltop}px`,
-              borderColor: 'var(--filmstrip-playhead)',
+              borderColor: "var(--filmstrip-playhead)",
             })}
             ${ref(this.playheadRef)}
           ></div>

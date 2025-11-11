@@ -22,10 +22,7 @@ const css = readFileSync(cssPath, "utf-8");
 // Process through PostCSS
 console.log("Processing CSS through Tailwind and PostCSS...");
 
-postcss([
-  tailwindcss({ config: configPath }),
-  autoprefixer(),
-])
+postcss([tailwindcss({ config: configPath }), autoprefixer()])
   .process(css, { from: cssPath, to: join(distDir, "style.css") })
   .then((result) => {
     writeFileSync(join(distDir, "style.css"), result.css);

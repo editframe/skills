@@ -56,9 +56,7 @@ export class EFText extends EFTemporal(LitElement) {
   private validateStagger(value: number | undefined): number | undefined {
     if (value === undefined) return undefined;
     if (value < 0) {
-      console.warn(
-        `Invalid stagger value ${value}ms. Must be >= 0. Using 0.`,
-      );
+      console.warn(`Invalid stagger value ${value}ms. Must be >= 0. Using 0.`);
       return 0;
     }
     return value;
@@ -83,12 +81,12 @@ export class EFText extends EFTemporal(LitElement) {
     // Only update if value actually changed
     if (this._textContent !== newValue) {
       this._textContent = newValue;
-      
+
       // Find template element if not already stored
       if (!this._templateElement && this.isConnected) {
         this._templateElement = this.querySelector("template");
       }
-      
+
       // Clear any existing text nodes
       const textNodes: ChildNode[] = [];
       for (const node of Array.from(this.childNodes)) {
@@ -138,17 +136,18 @@ export class EFText extends EFTemporal(LitElement) {
   async whenSegmentsReady(): Promise<EFTextSegment[]> {
     // Wait for text element to be updated first
     await this.updateComplete;
-    
+
     // If no text content, segments will be empty - return immediately
     // Use same logic as splitText to read text content
-    const text = this._textContent !== null ? this._textContent : this.getTextContent();
+    const text =
+      this._textContent !== null ? this._textContent : this.getTextContent();
     if (!text || text.trim().length === 0) {
       return [];
     }
 
     // Wait a frame for splitText to run
     await new Promise((resolve) => requestAnimationFrame(resolve));
-    
+
     // If segments already exist and are connected, wait for updates
     let segments = this.segments;
     if (segments.length > 0) {
@@ -165,7 +164,7 @@ export class EFText extends EFTemporal(LitElement) {
     return new Promise<EFTextSegment[]>((resolve) => {
       let attempts = 0;
       const maxAttempts = 100; // 100 frames = ~1.6 seconds at 60fps
-      
+
       const checkSegments = () => {
         segments = this.segments;
         if (segments.length > 0) {
@@ -190,18 +189,17 @@ export class EFText extends EFTemporal(LitElement) {
     });
   }
 
-
   connectedCallback() {
     super.connectedCallback();
     // Find and store template element before any modifications
     this._templateElement = this.querySelector("template");
-    
+
     // Initialize _textContent from DOM if not already set (for declarative usage)
     if (this._textContent === null) {
       this._textContent = this.getTextContent();
       this.lastTextContent = this._textContent;
     }
-    
+
     // Use requestAnimationFrame to ensure DOM is ready
     requestAnimationFrame(() => {
       this.setupMutationObserver();
@@ -217,14 +215,14 @@ export class EFText extends EFTemporal(LitElement) {
   protected updated(
     changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>,
   ): void {
-          if (
-            changedProperties.has("split") ||
-            changedProperties.has("staggerMs") ||
-            changedProperties.has("easing") ||
-            changedProperties.has("durationMs")
-          ) {
-            this.splitText();
-          }
+    if (
+      changedProperties.has("split") ||
+      changedProperties.has("staggerMs") ||
+      changedProperties.has("easing") ||
+      changedProperties.has("durationMs")
+    ) {
+      this.splitText();
+    }
   }
 
   private setupMutationObserver() {
@@ -283,7 +281,8 @@ export class EFText extends EFTemporal(LitElement) {
     }
 
     // Read text content - use stored _textContent if set, otherwise read from DOM
-    const text = this._textContent !== null ? this._textContent : this.getTextContent();
+    const text =
+      this._textContent !== null ? this._textContent : this.getTextContent();
     if (!text || text.trim().length === 0) {
       // Clear segments if no text
       const existingSegments = Array.from(
@@ -310,14 +309,14 @@ export class EFText extends EFTemporal(LitElement) {
       this._segmentsReadyResolvers = [];
       return;
     }
-    
+
     const segments = this.splitTextIntoSegments(text);
     const durationMs = this.durationMs || 1000; // Default 1 second if no duration
 
     // Clear ALL child nodes (text nodes and segments) by replacing innerHTML
     // This ensures we don't have any leftover text nodes
     const fragment = document.createDocumentFragment();
-    
+
     // Find template element if not already stored
     if (!this._templateElement) {
       this._templateElement = this.querySelector("template");
@@ -329,7 +328,7 @@ export class EFText extends EFTemporal(LitElement) {
     const templateSegments = templateContent
       ? Array.from(templateContent.querySelectorAll("ef-text-segment"))
       : [];
-    
+
     // If no template segments found, we'll create a default one
     const useTemplate = templateSegments.length > 0;
     const segmentsPerTextSegment = useTemplate ? templateSegments.length : 1;
@@ -344,13 +343,13 @@ export class EFText extends EFTemporal(LitElement) {
         const totalSegments = segments.length;
         const normalizedProgress =
           totalSegments > 1 ? textIndex / (totalSegments - 1) : 0;
-        
+
         // Apply easing function to get eased progress
         const easedProgress = evaluateEasing(this.easing, normalizedProgress);
-        
+
         // Calculate total stagger duration (last segment gets full stagger)
         const totalStaggerDuration = (totalSegments - 1) * this.staggerMs;
-        
+
         // Apply eased progress to total stagger duration
         staggerOffset = easedProgress * totalStaggerDuration;
       }
@@ -358,7 +357,9 @@ export class EFText extends EFTemporal(LitElement) {
       if (useTemplate && templateContent) {
         // Clone template content for each text segment
         // This allows multiple ef-text-segment elements per character/word/line
-        const clonedContent = templateContent.cloneNode(true) as DocumentFragment;
+        const clonedContent = templateContent.cloneNode(
+          true,
+        ) as DocumentFragment;
         const clonedSegments = Array.from(
           clonedContent.querySelectorAll("ef-text-segment"),
         ) as EFTextSegment[];
@@ -367,7 +368,8 @@ export class EFText extends EFTemporal(LitElement) {
           // Set properties - Lit will process these when element is connected
           segment.segmentText = segmentText;
           // Calculate segment index accounting for multiple segments per text segment
-          segment.segmentIndex = textIndex * segmentsPerTextSegment + templateIndex;
+          segment.segmentIndex =
+            textIndex * segmentsPerTextSegment + templateIndex;
           segment.segmentStartMs = 0;
           segment.segmentEndMs = durationMs;
           segment.staggerOffsetMs = staggerOffset ?? 0;
@@ -384,8 +386,10 @@ export class EFText extends EFTemporal(LitElement) {
         });
       } else {
         // No template - create default ef-text-segment
-        const segment = document.createElement("ef-text-segment") as EFTextSegment;
-        
+        const segment = document.createElement(
+          "ef-text-segment",
+        ) as EFTextSegment;
+
         segment.segmentText = segmentText;
         segment.segmentIndex = textIndex;
         segment.segmentStartMs = 0;
@@ -403,7 +407,7 @@ export class EFText extends EFTemporal(LitElement) {
         fragment.appendChild(segment);
       }
     });
-    
+
     // Ensure segments are connected to DOM before checking for animations
     // Append fragment first, then trigger updates
 
@@ -500,20 +504,23 @@ export class EFText extends EFTemporal(LitElement) {
     if (this.hasExplicitDuration) {
       return undefined; // Let explicit duration take precedence
     }
-    
+
     // Otherwise, calculate from content
     // Use _textContent if set, otherwise read from DOM
-    const text = this._textContent !== null ? this._textContent : this.getTextContent();
+    const text =
+      this._textContent !== null ? this._textContent : this.getTextContent();
     if (!text || text.trim().length === 0) {
       return 0;
     }
-    
+
     // Default to 1 second per segment (can be overridden with explicit duration)
     // Use the same splitting logic as splitTextIntoSegments
     let segmentCount = 1;
     switch (this.split) {
       case "line": {
-        const lines = text.split(/\r?\n/).filter((line) => line.trim().length > 0);
+        const lines = text
+          .split(/\r?\n/)
+          .filter((line) => line.trim().length > 0);
         segmentCount = lines.length || 1;
         break;
       }
@@ -538,7 +545,7 @@ export class EFText extends EFTemporal(LitElement) {
         break;
       }
     }
-    
+
     return segmentCount * 1000;
   }
 }
@@ -548,4 +555,3 @@ declare global {
     "ef-text": EFText;
   }
 }
-

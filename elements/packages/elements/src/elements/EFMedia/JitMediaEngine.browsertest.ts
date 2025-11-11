@@ -56,7 +56,8 @@ const test = baseTest.extend<{
     let apiHost = `${window.location.protocol}//${window.location.host}`;
     if (window.location.host === "localhost:63315") {
       // Use worktree domain injected by setup.ts
-      const worktreeDomain = (window as any).__WORKTREE_DOMAIN__ || "main.localhost";
+      const worktreeDomain =
+        (window as any).__WORKTREE_DOMAIN__ || "main.localhost";
       apiHost = `${window.location.protocol}//${worktreeDomain}:4322`;
     }
     configuration.setAttribute("api-host", apiHost);
@@ -75,7 +76,8 @@ const test = baseTest.extend<{
     let apiHost = `${window.location.protocol}//${window.location.host}`;
     if (window.location.host === "localhost:63315") {
       // Use worktree domain injected by setup.ts
-      const worktreeDomain = (window as any).__WORKTREE_DOMAIN__ || "main.localhost";
+      const worktreeDomain =
+        (window as any).__WORKTREE_DOMAIN__ || "main.localhost";
       apiHost = `${window.location.protocol}//${worktreeDomain}:4322`;
     }
     const generator = new UrlGenerator(() => apiHost);
@@ -163,14 +165,13 @@ describe("JitMediaEngine", () => {
     // Determine expected API host (Traefik URL when on localhost:63315)
     let expectedApiHost = `${window.location.protocol}//${window.location.host}`;
     if (window.location.host === "localhost:63315") {
-      const worktreeDomain = (window as any).__WORKTREE_DOMAIN__ || "main.localhost";
+      const worktreeDomain =
+        (window as any).__WORKTREE_DOMAIN__ || "main.localhost";
       expectedApiHost = `${window.location.protocol}//${worktreeDomain}:4322`;
     }
     expect(mediaEngine.templates).toEqual({
-      initSegment:
-        `${expectedApiHost}/api/v1/transcode/{rendition}/init.m4s?url=http%3A%2F%2Fweb%3A3000%2Fhead-moov-480p.mp4`,
-      mediaSegment:
-        `${expectedApiHost}/api/v1/transcode/{rendition}/{segmentId}.m4s?url=http%3A%2F%2Fweb%3A3000%2Fhead-moov-480p.mp4`,
+      initSegment: `${expectedApiHost}/api/v1/transcode/{rendition}/init.m4s?url=http%3A%2F%2Fweb%3A3000%2Fhead-moov-480p.mp4`,
+      mediaSegment: `${expectedApiHost}/api/v1/transcode/{rendition}/{segmentId}.m4s?url=http%3A%2F%2Fweb%3A3000%2Fhead-moov-480p.mp4`,
     });
   });
 

@@ -18,7 +18,8 @@ if (typeof window !== "undefined") {
   const host = window.location.host;
   if (host === "localhost:63315") {
     // Try to extract from referrer, or use default
-    const worktreeDomain = document.referrer.match(/\/\/([^:]+):4322/)?.[1] || "main.localhost";
+    const worktreeDomain =
+      document.referrer.match(/\/\/([^:]+):4322/)?.[1] || "main.localhost";
     (window as any).__WORKTREE_DOMAIN__ = worktreeDomain;
   } else {
     // Extract from current host (e.g., main.localhost:4322 -> main.localhost)

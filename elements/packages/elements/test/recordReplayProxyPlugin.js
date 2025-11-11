@@ -84,7 +84,10 @@ export function recordReplayProxyPlugin() {
           const bodyText = body.toString("utf-8");
           // Replace both the original host and localhost:63315 with the Traefik URL
           let rewrittenText = bodyText.replace(
-            new RegExp(originalHost.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"),
+            new RegExp(
+              originalHost.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+              "g",
+            ),
             proxyHost,
           );
           // Always replace localhost:63315 (cached responses may contain it)
@@ -195,7 +198,7 @@ export function recordReplayProxyPlugin() {
       // Fallback: assume transcode if path doesn't match
       apiPath = `/api/v1/transcode${req.url}`;
     }
-    
+
     const fullPath = apiPath;
     console.log(`[Proxy] → ${req.method} ${fullPath}`);
     if (req.headers.range) {
@@ -292,7 +295,10 @@ export function recordReplayProxyPlugin() {
               const bodyText = body.toString("utf-8");
               // Replace both the original host and localhost:63315 with the Traefik URL
               let rewrittenText = bodyText.replace(
-                new RegExp(originalHost.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"),
+                new RegExp(
+                  originalHost.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+                  "g",
+                ),
                 proxyHost,
               );
               // Always replace localhost:63315 (responses may contain it from previous rewrites or cache)

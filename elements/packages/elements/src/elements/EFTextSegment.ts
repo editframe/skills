@@ -115,4 +115,3 @@ declare global {
     "ef-text-segment": EFTextSegment;
   }
 }
-
