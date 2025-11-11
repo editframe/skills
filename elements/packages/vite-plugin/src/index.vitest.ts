@@ -240,7 +240,23 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
                     return;
                   }
 
-                  const responseBody = await proxyResponse.text();
+                  // Only read response body and forward if response is OK
+                  // This prevents errors when reading error response bodies
+                  let responseBody: string;
+                  try {
+                    responseBody = await proxyResponse.text();
+                  } catch (readError) {
+                    // If reading response body fails, fall back to mock response
+                    log(
+                      `Failed to read proxy response body, falling back to mock: ${readError instanceof Error ? readError.message : String(readError)}`,
+                    );
+                    const mockToken =
+                      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJodHRwOi8vd2ViOjMwMDAvaGVhZC1tb292LTQ4MHAubXA0IiwiZXhwIjo5OTk5OTk5OTk5fQ.mock-signature";
+                    res.writeHead(200, { "Content-Type": "application/json" });
+                    res.end(JSON.stringify({ token: mockToken }));
+                    return;
+                  }
+
                   const responseHeaders: Record<string, string> = {};
                   proxyResponse.headers.forEach((value, key) => {
                     responseHeaders[key] = value;
