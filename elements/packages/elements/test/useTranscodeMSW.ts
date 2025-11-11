@@ -30,6 +30,24 @@ export const transcodeMSWHandlers = [
     );
   }),
 
+  // URL token endpoint handler (for proxied requests from vite plugin)
+  // The vite plugin proxies /@ef-sign-url to /api/v1/url-token
+  http.post("/api/v1/url-token", async () => {
+    // Return the same mock JWT token as /@ef-sign-url
+    const mockToken =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJodHRwOi8vd2ViOjMwMDAvaGVhZC1tb292LTQ4MHAubXA0IiwiZXhwIjo5OTk5OTk5OTk5fQ.mock-signature";
+
+    return HttpResponse.json(
+      { token: mockToken },
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      },
+    );
+  }),
+
   // Transcode manifest endpoint handler
   // This mocks the manifest.json endpoint used by JitMediaEngine
   http.get("/api/v1/transcode/manifest.json", async ({ request }) => {
