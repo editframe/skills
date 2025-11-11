@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+
+# Wait for a GitHub Actions workflow to complete
+# Usage: wait-for-github-action <repo> <workflow-file> [timeout-seconds]
+
+set -e
+
+if [ $# -lt 2 ]; then
+  echo "Usage: $0 <repo> <workflow-file> [timeout-seconds]"
+  echo "Example: $0 editframe/elements release.yaml"
+  echo "Example: $0 editframe/telecine deploy.yaml 1800"
+  exit 1
+fi
+
+REPO="$1"
+WORKFLOW_FILE="$2"
+TIMEOUT="${3:-3600}"  # Default 1 hour timeout
+
+# Check if gh CLI is installed
+if ! command -v gh &> /dev/null; then
+  echo "Error: GitHub CLI (gh) is required but not installed."
+  echo "Install it from: https://cli.github.com/"
+  exit 1
+fi
+
+# Check if gh is authenticated
+if ! gh auth status &> /dev/null; then
+  echo "Error: GitHub CLI is not authenticated."
+  echo "Run: gh auth login"
+  exit 1
+fi
+
+echo "Waiting for workflow '$WORKFLOW_FILE' to be triggered in $REPO..."
+sleep 3
+
+# Get the most recent run ID for the workflow
+RUN_ID=$(gh run list --workflow="$WORKFLOW_FILE" --limit=1 --json databaseId --jq '.[0].databaseId' --repo="$REPO")
+
+if [ -z "$RUN_ID" ] || [ "$RUN_ID" = "null" ]; then
+  echo "Error: Could not find workflow run for $WORKFLOW_FILE"
+  echo "Check the workflow status at: https://github.com/$REPO/actions/workflows/$WORKFLOW_FILE"
+  exit 1
+fi
+
+echo "Watching run ID: $RUN_ID"
+echo "Workflow URL: https://github.com/$REPO/actions/runs/$RUN_ID"
+echo "This may take several minutes..."
+
+# Watch the specific run until it completes (with timeout)
+START_TIME=$(date +%s)
+if timeout "$TIMEOUT" gh run watch "$RUN_ID" --exit-status --repo="$REPO" 2>&1; then
+  echo "✅ GitHub Actions workflow completed successfully"
+  exit 0
+else
+  EXIT_CODE=$?
+  ELAPSED=$(($(date +%s) - START_TIME))
+  if [ $EXIT_CODE -eq 124 ]; then
+    echo ""
+    echo "Error: Workflow watch timed out after ${ELAPSED}s (${TIMEOUT}s limit)"
+  else
+    echo ""
+    echo "Error: GitHub Actions workflow failed!"
+  fi
+  echo "Check the workflow status at: https://github.com/$REPO/actions/runs/$RUN_ID"
+  exit $EXIT_CODE
+fi
+
