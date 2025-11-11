@@ -182,34 +182,35 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
 
                 log(`Making internal request to: ${targetUrl}`);
 
-                const proxyResponse = await fetch(targetUrl, {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": req.headers["content-type"] || "application/json",
-                    ...(req.headers.authorization && {
-                      authorization: req.headers.authorization,
-                    }),
-                  },
-                  body: requestBody.length > 0 ? requestBody : undefined,
-                });
+                try {
+                  const proxyResponse = await fetch(targetUrl, {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": req.headers["content-type"] || "application/json",
+                      ...(req.headers.authorization && {
+                        authorization: req.headers.authorization,
+                      }),
+                    },
+                    body: requestBody.length > 0 ? requestBody : undefined,
+                  });
 
-              const responseBody = await proxyResponse.text();
-              const responseHeaders: Record<string, string> = {};
-              proxyResponse.headers.forEach((value, key) => {
-                responseHeaders[key] = value;
-              });
+                  const responseBody = await proxyResponse.text();
+                  const responseHeaders: Record<string, string> = {};
+                  proxyResponse.headers.forEach((value, key) => {
+                    responseHeaders[key] = value;
+                  });
 
-              res.writeHead(proxyResponse.status, responseHeaders);
-              res.end(responseBody);
+                  res.writeHead(proxyResponse.status, responseHeaders);
+                  res.end(responseBody);
 
-              if (proxyResponse.ok) {
-                log("✓ URL signing request proxied successfully");
-              } else {
-                log(
-                  `✗ URL signing request failed: ${proxyResponse.status} ${proxyResponse.statusText}`,
-                );
-              }
-              } catch (error) {
+                  if (proxyResponse.ok) {
+                    log("✓ URL signing request proxied successfully");
+                  } else {
+                    log(
+                      `✗ URL signing request failed: ${proxyResponse.status} ${proxyResponse.statusText}`,
+                    );
+                  }
+                } catch (error) {
                 const errorMessage =
                   error instanceof Error ? error.message : String(error);
                 log(`Error proxying URL signing request: ${errorMessage}`);
