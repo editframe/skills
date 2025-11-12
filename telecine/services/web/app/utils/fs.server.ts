@@ -124,37 +124,76 @@ const buildDocMenuItem = async (
   directory: string,
   prefix: string,
 ): Promise<DocsMenuItem> => {
-  const data = await fs.readFile(join(directory, "index.mdx"), "utf8");
-  const { attributes } = fm<any>(data);
+  const indexPath = join(directory, "index.mdx");
+  const hasIndex = existsSync(indexPath);
+  
+  let title = "";
+  if (hasIndex) {
+    const data = await fs.readFile(indexPath, "utf8");
+    const { attributes } = fm<any>(data);
+    title = attributes.meta.find((attr: any) => attr.title)?.title || "";
+  }
+  
   const entries = (await readdir(directory)).filter(
     (entry) => entry !== "index.mdx" && !entry.endsWith(".tsx")
   );
+  
+  const children = await Promise.all(
+    entries.map(async (entry) => {
+      if (entry.endsWith(".mdx")) {
+        const data = await fs.readFile(join(directory, entry), "utf8");
+        const { attributes } = fm<any>(data);
+        return {
+          attrs: {
+            title: attributes.meta.find((attr: any) => attr.title).title,
+          },
+          slug: `/docs/${join(prefix, entry.replace(".mdx", ""))
+            .replace(/(\/?\d+-)/g, "/")
+            .replace(/^\//, "")}`,
+          hasContent: true,
+          children: [],
+        } as DocsMenuItem;
+      }
+      return await buildDocMenuItem(
+        join(directory, entry),
+        join(prefix, entry),
+      );
+    }),
+  );
+  
+  if (!hasIndex) {
+    // If no index.mdx, derive title from directory name and link to first child
+    const dirName = prefix.split("/").pop() || "";
+    // Remove numeric prefix (e.g., "010-elements" -> "elements")
+    const cleanDirName = dirName.replace(/^\d+-/, "");
+    // Convert kebab-case to Title Case (e.g., "editor-ui" -> "Editor UI")
+    const derivedTitle = cleanDirName
+      .split("-")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+    
+    // Find first child with a slug (first page in section)
+    // This will be the first actual page, whether it's a .mdx file or a directory's first page
+    const firstChildWithSlug = children.find((child) => child.slug);
+    const sectionSlug = firstChildWithSlug?.slug;
+    
+    return {
+      hasContent: true, // Mark as having content so it shows as a clickable header
+      attrs: {
+        title: title || derivedTitle || dirName,
+      },
+      slug: sectionSlug, // Link to first child page
+      children,
+    } as DocsMenuItem;
+  }
+  
   return {
     hasContent: true,
     attrs: {
-      title: attributes.meta.find((attr: any) => attr.title).title,
+      title,
     },
     slug: `/docs/${prefix.replace(/(\/?\d+-)/g, "/").replace(/^\//, "")}`,
-    children: await Promise.all(
-      entries.map(async (entry) => {
-        if (entry.endsWith(".mdx")) {
-          const data = await fs.readFile(join(directory, entry), "utf8");
-          const { attributes } = fm<any>(data);
-          return {
-            attrs: {
-              title: attributes.meta.find((attr: any) => attr.title).title,
-            },
-            slug: `/docs/${join(prefix, entry.replace(".mdx", ""))
-              .replace(/(\/?\d+-)/g, "/")
-              .replace(/^\//, "")}`,
-          } as DocsMenuItem;
-        }
-        return await buildDocMenuItem(
-          join(directory, entry),
-          join(prefix, entry),
-        );
-      }),
-    ),
+    children,
   } as DocsMenuItem;
 };
 
