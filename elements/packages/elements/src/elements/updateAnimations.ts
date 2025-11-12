@@ -410,22 +410,21 @@ const mapAlternateDirectionTime = (
     const currentIteration = Math.floor(adjustedTime / duration);
     if (currentIteration === 0) {
       return Math.min(elementTime, maxSafeTime);
-    } else {
-      return Math.min(adjustedTime, maxSafeTime);
     }
-  } else {
-    // Without delay: use iteration time (after direction applied) since animation
-    // naturally resets each iteration
-    const currentIteration = Math.floor(elementTime / duration);
-    const rawIterationTime = elementTime % duration;
-    const iterationTime = applyDirectionToIterationTime(
-      rawIterationTime,
-      duration,
-      direction,
-      currentIteration,
-    );
-    return Math.min(iterationTime, maxSafeTime);
+    return Math.min(adjustedTime, maxSafeTime);
   }
+
+  // Without delay: use iteration time (after direction applied) since animation
+  // naturally resets each iteration
+  const currentIteration = Math.floor(elementTime / duration);
+  const rawIterationTime = elementTime % duration;
+  const iterationTime = applyDirectionToIterationTime(
+    rawIterationTime,
+    duration,
+    direction,
+    currentIteration,
+  );
+  return Math.min(iterationTime, maxSafeTime);
 };
 
 /**
@@ -699,9 +698,8 @@ const applyVisualState = (
   if (!state.isVisible) {
     element.style.setProperty("display", "none");
     return;
-  } else {
-    element.style.removeProperty("display");
   }
+  element.style.removeProperty("display");
 
   // Set other CSS properties for visible elements only
   element.style.setProperty(DURATION_PROPERTY, `${element.durationMs}ms`);
