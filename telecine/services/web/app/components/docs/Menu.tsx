@@ -224,6 +224,17 @@ export const Menu: FC<{ menu: DocsMenuItem[]; className?: string }> = ({
         })),
       };
     }
+    if (menuCategoryType === "details") {
+      // When hasContent is false (no index.mdx), show children without a parent link
+      return {
+        title: category.attrs.title,
+        slug: category.slug,
+        links: category.children.map((child) => ({
+          title: child.attrs.title,
+          href: child.slug,
+        })),
+      };
+    }
     return {
       title: category.attrs.title,
       slug: category.slug,
@@ -233,7 +244,7 @@ export const Menu: FC<{ menu: DocsMenuItem[]; className?: string }> = ({
 
   return menu ? (
     <nav className={clsx("text-xs", className)}>
-      <ul className="space-y-6">
+      <ul className="space-y-3">
         {navigation.map((section) => {
           const SectionIcon = getIconForTitle(section.title || "");
           return (
@@ -243,14 +254,14 @@ export const Menu: FC<{ menu: DocsMenuItem[]; className?: string }> = ({
                   to={section.slug as string}
                   className={({ isActive }) =>
                     clsx(
-                      "flex items-center gap-2 px-2 py-1.5 rounded-md font-display font-medium text-xs uppercase tracking-wider transition-all",
+                      "sticky top-0 z-10 flex items-center gap-2 px-2 py-1 rounded-md text-xs font-semibold transition-all",
                       isActive
                         ? "text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800"
-                        : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900/50",
+                        : "text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-900/50 bg-white dark:bg-gray-900",
                     )
                   }
                 >
-                  <SectionIcon className="h-4 w-4 flex-shrink-0" />
+                  <SectionIcon className="h-3.5 w-3.5 flex-shrink-0" />
                   <span>{section.title}</span>
                 </NavLink>
               )}
