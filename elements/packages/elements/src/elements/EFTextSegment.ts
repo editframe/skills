@@ -45,7 +45,7 @@ export class EFTextSegment extends EFTemporal(LitElement) {
   connectedCallback() {
     super.connectedCallback();
     // CRITICAL: Pause all animations once when segment is first connected
-    // CSS animations start automatically and must be paused so updateAnimations can control them
+    // Animations (both CSS and WAAPI) start automatically and must be paused so updateAnimations can control them
     // Only do this once on initial load
     if (!this._animationsPaused) {
       // Wait for segment to be fully updated before pausing animations
