@@ -24,7 +24,7 @@ import { renderTemporalAudio } from "./renderTemporalAudio.js";
 import { EFTargetable } from "./TargetController.js";
 import { TimegroupController } from "./TimegroupController.js";
 import {
-  evaluateTemporalStateForAnimation,
+  evaluateAnimationVisibilityState,
   updateAnimations,
 } from "./updateAnimations.ts";
 
@@ -261,7 +261,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     // updated properties. Elements like EFVideo provide waitForFrameReady() for this pattern.
     const temporalElements = deepGetElementsWithFrameTasks(this);
     const visibleElements = temporalElements.filter((element) => {
-      const animationState = evaluateTemporalStateForAnimation(element);
+      const animationState = evaluateAnimationVisibilityState(element);
       return animationState.isVisible;
     });
 
@@ -553,7 +553,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
         // Filter to only include temporally visible elements for frame processing
         // Use animation-friendly visibility to prevent animation jumps at exact boundaries
         const visibleElements = temporalElements.filter((element) => {
-          const animationState = evaluateTemporalStateForAnimation(element);
+          const animationState = evaluateAnimationVisibilityState(element);
           return animationState.isVisible;
         });
         if (isTracingEnabled()) {
