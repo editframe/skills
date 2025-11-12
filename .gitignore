@@ -2,3 +2,5 @@
 telecine/services/scheduler-go/scheduler
 node_modules/*
 node_modules/.package-lock.json
+elements/docker-compose.yaml.processed.*
+
