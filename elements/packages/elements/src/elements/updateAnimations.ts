@@ -78,17 +78,17 @@ interface StaggerableElement extends AnimatableElement {
 
 /**
  * Determines what phase an element is in relative to the timeline.
- * 
+ *
  * WHY: Phase is the primary concept that drives all decisions. By explicitly
  * enumerating phases, we make the code's logic clear: phase determines visibility,
  * animation coordination, and visual state.
- * 
+ *
  * Phases:
  * - before-start: Timeline is before element's start time
  * - active: Timeline is within element's active range (start to end, exclusive of end)
  * - at-end-boundary: Timeline is exactly at element's end time
  * - after-end: Timeline is after element's end time
- * 
+ *
  * Note: We detect "at-end-boundary" by checking if timeline equals end time.
  * The boundary policy will then determine if this should be treated as visible/active
  * or not based on element characteristics.
@@ -100,14 +100,14 @@ const determineElementPhase = (
   // Read endTimeMs once to avoid recalculation issues
   const endTimeMs = element.endTimeMs;
   const startTimeMs = element.startTimeMs;
-  
+
   if (timelineTimeMs < startTimeMs) {
     return "before-start";
   }
   // Use epsilon to handle floating point precision issues
   const epsilon = 0.001;
   const diff = timelineTimeMs - endTimeMs;
-  
+
   // If clearly after end (difference > epsilon), return 'after-end'
   if (diff > epsilon) {
     return "after-end";
@@ -139,7 +139,7 @@ interface BoundaryPolicy {
 
 /**
  * Visibility policy: determines when elements should be visible for display purposes.
- * 
+ *
  * WHY: Root elements, elements aligned with composition end, and text segments
  * should remain visible at exact end time to prevent flicker and show final frames.
  * Other elements use exclusive end for clean transitions between elements.
@@ -179,7 +179,7 @@ class VisibilityPolicy implements BoundaryPolicy {
 
 /**
  * Animation policy: determines when animations should be coordinated.
- * 
+ *
  * WHY: When an animation reaches exactly the end time of an element, using exclusive
  * end would make the element invisible, causing the animation to be removed from the
  * DOM and creating a visual jump. By using inclusive end, we ensure animations remain
@@ -235,7 +235,7 @@ const shouldCoordinateAnimations = (
 
 /**
  * Evaluates what the element's state should be based on the timeline.
- * 
+ *
  * WHY: This function determines the complete temporal state including phase,
  * which becomes the primary driver for all subsequent decisions.
  */
@@ -244,7 +244,6 @@ export const evaluateTemporalState = (
 ): TemporalState => {
   // Get timeline time from root timegroup, or use element's own time if it IS a timegroup
   const timelineTimeMs = (element.rootTimegroup ?? element).currentTimeMs;
-
 
   const progress =
     element.durationMs <= 0
@@ -260,7 +259,7 @@ export const evaluateTemporalState = (
 /**
  * Evaluates element visibility state specifically for animation coordination.
  * Uses inclusive end boundaries to prevent animation jumps at exact boundaries.
- * 
+ *
  * This is exported for external use cases that need animation-specific visibility
  * evaluation without the full ElementUpdateContext.
  */
@@ -290,7 +289,7 @@ const supportsStaggerOffset = (
 
 /**
  * Calculates effective delay including stagger offset if applicable.
- * 
+ *
  * Stagger offset allows elements (like text segments) to have their animations
  * start at different times while keeping their visibility timing unchanged.
  * This enables staggered animation effects within a single timegroup.
@@ -309,7 +308,7 @@ const calculateEffectiveDelay = (
 
 /**
  * Calculates maximum safe animation time to prevent completion.
- * 
+ *
  * WHY: Once an animation reaches "finished" state, it can no longer be manually controlled
  * via currentTime. By clamping to just before completion (using ANIMATION_PRECISION_OFFSET),
  * we ensure the animation remains in a controllable state, allowing us to synchronize it
@@ -386,7 +385,7 @@ const mapReverseDirectionTime = (
 
 /**
  * Maps element time to animation time for alternate/alternate-reverse directions.
- * 
+ *
  * WHY SPECIAL HANDLING: Alternate directions oscillate between forward and reverse iterations.
  * Without delay, we use iteration time (0 to duration) because the animation naturally
  * resets each iteration. However, with delay, iteration 0 needs to account for the delay
@@ -402,7 +401,6 @@ const mapAlternateDirectionTime = (
   maxSafeTime: number,
 ): number => {
   const adjustedTime = elementTime - effectiveDelay;
-
 
   if (effectiveDelay > 0) {
     // With delay: iteration 0 uses elementTime to include delay offset,
@@ -429,7 +427,7 @@ const mapAlternateDirectionTime = (
 
 /**
  * Maps element time to animation time based on direction.
- * 
+ *
  * WHY: This function explicitly transforms element time to animation time, making
  * the time mapping concept clear. Different directions require different transformations
  * to achieve the desired visual effect.
@@ -506,7 +504,7 @@ const validateAnimationEffect = (
  */
 const extractAnimationTiming = (effect: KeyframeEffect): AnimationTiming => {
   const timing = effect.getTiming();
-  
+
   return {
     duration: Number(timing.duration) || 0,
     delay: Number(timing.delay) || 0,
@@ -551,7 +549,7 @@ const prepareAnimation = (animation: Animation): void => {
 
 /**
  * Maps element time to animation currentTime and sets it on the animation.
- * 
+ *
  * WHY: This function explicitly performs the time mapping transformation,
  * making it clear that we're transforming element time to animation time.
  */
@@ -576,7 +574,7 @@ const mapAndSetAnimationTime = (
 
   // Calculate adjusted time (element time minus delay)
   const adjustedTime = elementTime - effectiveDelay;
-  
+
   // If before delay, show initial keyframe state (0% of animation)
   // Use strict < 0 so that at exactly the delay time (adjustedTime = 0), we start animating
   if (adjustedTime < 0) {
@@ -585,7 +583,7 @@ const mapAndSetAnimationTime = (
     animation.currentTime = elementTime;
     return;
   }
-  
+
   // At delay time (adjustedTime = 0) or after, the animation should be active
   const { duration, iterations } = timing;
   const currentIteration = Math.floor(adjustedTime / duration);
@@ -593,8 +591,11 @@ const mapAndSetAnimationTime = (
   if (currentIteration >= iterations) {
     // Animation is completed - use completed time mapping
     const maxSafeTime = calculateMaxSafeAnimationTime(duration, iterations);
-    const completedAnimationTime = getCompletedAnimationTime(timing, maxSafeTime);
-    
+    const completedAnimationTime = getCompletedAnimationTime(
+      timing,
+      maxSafeTime,
+    );
+
     // Completed: currentTime should be delay + completed animation time (absolute timeline time)
     animation.currentTime = effectiveDelay + completedAnimationTime;
   } else {
@@ -604,12 +605,14 @@ const mapAndSetAnimationTime = (
       timing,
       effectiveDelay,
     );
-    
+
     // For alternate direction with delay in iteration 0, mapAlternateDirectionTime returns elementTime directly
     // For other cases, currentTime should be delay + animation time (absolute timeline time)
     // Check if this is alternate direction with delay in iteration 0
     const { direction } = timing;
-    const isAlternateWithDelay = (direction === "alternate" || direction === "alternate-reverse") && effectiveDelay > 0;
+    const isAlternateWithDelay =
+      (direction === "alternate" || direction === "alternate-reverse") &&
+      effectiveDelay > 0;
     if (isAlternateWithDelay && currentIteration === 0) {
       // For alternate direction iteration 0 with delay, use elementTime directly
       animation.currentTime = elementTime;
@@ -622,7 +625,7 @@ const mapAndSetAnimationTime = (
 
 /**
  * Synchronizes a single animation with the timeline using the element as the time source.
- * 
+ *
  * For animations in this element's subtree, always use this element as the time source.
  * This handles both animations directly on the temporal element and on its non-temporal children.
  */
@@ -647,7 +650,7 @@ const synchronizeAnimation = (
   // the timegroup's timeline as the time source.
   const target = effect.target;
   let timeSource: AnimatableElement = element;
-  
+
   if (target && target instanceof HTMLElement) {
     // Find the nearest timegroup in the DOM tree
     const nearestTimegroup = target.closest("ef-timegroup");
@@ -662,13 +665,11 @@ const synchronizeAnimation = (
 
 /**
  * Coordinates animations for a single element and its subtree, using the element as the time source.
- * 
+ *
  * Gets animations on the element itself and its subtree.
  * Both CSS animations (created via the 'animation' property) and WAAPI animations are included.
  */
-const coordinateElementAnimations = (
-  element: AnimatableElement,
-): void => {
+const coordinateElementAnimations = (element: AnimatableElement): void => {
   const animations = element.getAnimations({ subtree: true });
 
   for (const animation of animations) {
@@ -683,7 +684,7 @@ const coordinateElementAnimations = (
 
 /**
  * Applies visual state (CSS + display) to match temporal state.
- * 
+ *
  * WHY: This function applies visual state based on the element's phase and state.
  * Phase determines what should be visible, and this function applies that decision.
  */
@@ -715,7 +716,7 @@ const applyVisualState = (
 
 /**
  * Applies animation coordination if the element phase requires it.
- * 
+ *
  * WHY: Animation coordination is driven by phase. If the element is in a phase
  * where animations should be coordinated, we coordinate them.
  */
@@ -747,9 +748,9 @@ const evaluateElementState = (
 
 /**
  * Main function: synchronizes DOM element with timeline.
- * 
+ *
  * Orchestrates clear flow: Phase → Policy → Time Mapping → State Application
- * 
+ *
  * WHY: This function makes the conceptual flow explicit:
  * 1. Determine phase (what phase is the element in?)
  * 2. Apply policies (should it be visible/coordinated based on phase?)
@@ -759,8 +760,8 @@ const evaluateElementState = (
 export const updateAnimations = (element: AnimatableElement): void => {
   // Evaluate all states
   const rootContext = evaluateElementState(element);
-  const childContexts = deepGetTemporalElements(element).map((temporalElement) =>
-    evaluateElementState(temporalElement),
+  const childContexts = deepGetTemporalElements(element).map(
+    (temporalElement) => evaluateElementState(temporalElement),
   );
 
   // Apply visual state and animation coordination for root element

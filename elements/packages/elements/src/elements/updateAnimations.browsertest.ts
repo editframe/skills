@@ -56,23 +56,23 @@ function createTestTimegroup(
   } = {},
 ): EFTimegroup {
   const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
-  
+
   if (props.mode) {
     timegroup.setAttribute("mode", props.mode);
   }
-  
+
   if (props.duration) {
     timegroup.setAttribute("duration", props.duration);
   }
-  
+
   if (props.currentTimeMs !== undefined) {
     timegroup.currentTimeMs = props.currentTimeMs;
   }
-  
+
   if (props.overlapMs !== undefined) {
     timegroup.overlapMs = props.overlapMs;
   }
-  
+
   document.body.appendChild(timegroup);
   return timegroup;
 }
@@ -80,7 +80,7 @@ function createTestTimegroup(
 /**
  * Creates a test temporal element using real TestTemporalElement.
  * For elements with timegroups, use createTestTimegroup and append children.
- * 
+ *
  * Note: For elements with rootTimegroup, currentTimeMs is computed from the
  * rootTimegroup's timeline position, not set directly. Use the timegroup's
  * seek() method to change timeline position.
@@ -91,14 +91,14 @@ function createTestElement(
   const element = document.createElement(
     "test-temporal-element",
   ) as TestTemporalElement;
-  
+
   // Set duration before adding to timegroup to ensure it's respected
   if (props.durationMs !== undefined) {
     element.setDuration(props.durationMs);
     // Also set as attribute for explicit duration
     element.setAttribute("duration", `${props.durationMs}ms`);
   }
-  
+
   // If there's a rootTimegroup or parentTimegroup, append to it first
   // so that temporal properties are computed correctly
   if (props.rootTimegroup) {
@@ -112,10 +112,10 @@ function createTestElement(
       element.currentTimeMs = props.currentTimeMs;
     }
   }
-  
+
   // For elements with rootTimegroup, currentTimeMs is computed from timeline position
   // Use rootTimegroup.seek() to change timeline position
-  
+
   return element as AnimatableElement;
 }
 
@@ -131,22 +131,22 @@ function createTestTextSegment(
   } = {},
 ): AnimatableElement {
   const segment = document.createElement("ef-text-segment") as any;
-  
+
   if (props.durationMs !== undefined) {
     segment.setAttribute("duration", `${props.durationMs}ms`);
   }
-  
+
   // Set segment properties needed for proper initialization
   segment.segmentText = "A";
   segment.segmentIndex = 0;
   segment.segmentStartMs = 0;
   segment.segmentEndMs = props.durationMs ?? 1000;
-  
+
   // Set staggerOffsetMs as a property (not attribute) so it's accessible
   if (props.staggerOffsetMs !== undefined) {
     segment.staggerOffsetMs = props.staggerOffsetMs;
   }
-  
+
   if (props.rootTimegroup) {
     props.rootTimegroup.appendChild(segment);
   } else if (props.parentTimegroup) {
@@ -154,7 +154,7 @@ function createTestTextSegment(
   } else {
     document.body.appendChild(segment);
   }
-  
+
   return segment as AnimatableElement;
 }
 
@@ -196,7 +196,7 @@ describe("updateAnimations", () => {
       await rootTimegroup.updateComplete;
 
       const state = evaluateTemporalState(element);
-      
+
       // Phase is before-start, so visibility must be false
       assert.equal(state.phase, "before-start");
       assert.equal(state.isVisible, false, "Phase determines visibility");
@@ -219,7 +219,11 @@ describe("updateAnimations", () => {
       await rootTimegroup.waitForMediaDurations();
 
       // Verify element has correct duration
-      assert.equal(element.durationMs, 1000, "Element should have duration 1000ms");
+      assert.equal(
+        element.durationMs,
+        1000,
+        "Element should have duration 1000ms",
+      );
       assert.equal(element.endTimeMs, 1000, "Element should end at 1000ms");
 
       // Set timeline to element's end time
@@ -235,7 +239,7 @@ describe("updateAnimations", () => {
       updateAnimations(element);
 
       const state = evaluateTemporalState(element);
-      
+
       // Phase is at-end-boundary, so animation must be coordinated
       assert.equal(state.phase, "at-end-boundary");
       assert.approximately(
@@ -256,7 +260,7 @@ describe("updateAnimations", () => {
       updateAnimations(element);
 
       const state = evaluateTemporalState(element);
-      
+
       // Visual state must match temporal state
       assert.equal(
         element.style.getPropertyValue("--ef-progress"),
@@ -345,7 +349,11 @@ describe("updateAnimations", () => {
       await rootTimegroup.waitForMediaDurations();
 
       // Verify element has correct duration
-      assert.equal(element.durationMs, 600, "Element should have duration 600ms");
+      assert.equal(
+        element.durationMs,
+        600,
+        "Element should have duration 600ms",
+      );
       assert.equal(element.endTimeMs, 600, "Element should end at 600ms");
 
       // Set timeline to element's end time
@@ -370,7 +378,7 @@ describe("updateAnimations", () => {
         rootTimegroup,
       });
       await element.updateComplete;
-      
+
       // Add a placeholder element to ensure timegroup duration exceeds element.endTimeMs + 100
       // This allows us to set currentTimeMs beyond element.endTimeMs without clamping
       const placeholder = createTestElement({
@@ -381,10 +389,18 @@ describe("updateAnimations", () => {
       await rootTimegroup.waitForMediaDurations();
 
       // Verify element has correct duration
-      assert.equal(element.durationMs, 600, "Element should have duration 600ms");
+      assert.equal(
+        element.durationMs,
+        600,
+        "Element should have duration 600ms",
+      );
       assert.equal(element.endTimeMs, 600, "Element should end at 600ms");
       // Verify timegroup duration is large enough
-      assert.isAtLeast(rootTimegroup.durationMs, 700, "Timegroup duration should be at least 700ms");
+      assert.isAtLeast(
+        rootTimegroup.durationMs,
+        700,
+        "Timegroup duration should be at least 700ms",
+      );
 
       // Set timeline to after element's end time
       rootTimegroup.currentTimeMs = element.endTimeMs + 100;
@@ -415,7 +431,11 @@ describe("updateAnimations", () => {
 
         const state = evaluateTemporalState(element);
         assert.equal(state.phase, "at-end-boundary");
-        assert.equal(state.isVisible, true, "Root element should be visible at end boundary");
+        assert.equal(
+          state.isVisible,
+          true,
+          "Root element should be visible at end boundary",
+        );
       });
 
       test("elements aligned with composition end are visible at end boundary", async () => {
@@ -440,7 +460,11 @@ describe("updateAnimations", () => {
 
         const state = evaluateTemporalState(element);
         assert.equal(state.phase, "at-end-boundary");
-        assert.equal(state.isVisible, true, "Element aligned with composition end should be visible");
+        assert.equal(
+          state.isVisible,
+          true,
+          "Element aligned with composition end should be visible",
+        );
       });
 
       test("mid-composition elements are hidden at end boundary", async () => {
@@ -472,7 +496,11 @@ describe("updateAnimations", () => {
 
         const state = evaluateTemporalState(element);
         assert.equal(state.phase, "at-end-boundary");
-        assert.equal(state.isVisible, false, "Mid-composition element should be hidden at end boundary");
+        assert.equal(
+          state.isVisible,
+          false,
+          "Mid-composition element should be hidden at end boundary",
+        );
       });
 
       test("elements are always hidden before-start and after-end", async () => {
@@ -497,7 +525,7 @@ describe("updateAnimations", () => {
           rootTimegroup,
         });
         await element.updateComplete;
-        
+
         // Add another placeholder to ensure timegroup duration exceeds element.endTimeMs + 100
         // This allows us to set currentTimeMs beyond element.endTimeMs without clamping
         const placeholder2 = createTestElement({
@@ -511,7 +539,11 @@ describe("updateAnimations", () => {
         assert.equal(element.startTimeMs, 500, "Element should start at 500ms");
         assert.equal(element.endTimeMs, 1100, "Element should end at 1100ms");
         // Verify timegroup duration is large enough
-        assert.isAtLeast(rootTimegroup.durationMs, 1200, "Timegroup duration should be at least 1200ms");
+        assert.isAtLeast(
+          rootTimegroup.durationMs,
+          1200,
+          "Timegroup duration should be at least 1200ms",
+        );
 
         // Test before-start: timeline is before element start
         rootTimegroup.currentTimeMs = element.startTimeMs - 100;
@@ -715,7 +747,7 @@ describe("updateAnimations", () => {
         });
         animation.pause();
         animation.currentTime = 0;
-        
+
         // Set currentTimeMs to a frame-aligned value (frame 8 at 30fps = 266.67ms)
         // This accounts for FPS quantization in timegroups
         element.currentTimeMs = 266.6666666666667;
@@ -739,7 +771,7 @@ describe("updateAnimations", () => {
         });
         animation.pause();
         animation.currentTime = 0;
-        
+
         // Set to frame-aligned value (frame 38 at 30fps = 1266.67ms)
         element.currentTimeMs = 1266.6666666666665;
         await element.updateComplete;
@@ -768,7 +800,7 @@ describe("updateAnimations", () => {
         });
         animation.pause();
         animation.currentTime = 0;
-        
+
         // Set to frame-aligned value (frame 23 at 30fps = 766.67ms)
         element.currentTimeMs = 766.6666666666666;
         await element.updateComplete;
@@ -793,7 +825,7 @@ describe("updateAnimations", () => {
         });
         animation.pause();
         animation.currentTime = 0;
-        
+
         // Set to frame-aligned value (frame 8 at 30fps = 266.67ms)
         element.currentTimeMs = 266.6666666666667;
         await element.updateComplete;
@@ -819,7 +851,7 @@ describe("updateAnimations", () => {
         });
         animation.pause();
         animation.currentTime = 0;
-        
+
         // Set to frame-aligned value (frame 38 at 30fps = 1266.67ms)
         element.currentTimeMs = 1266.6666666666665;
         await element.updateComplete;
@@ -845,7 +877,7 @@ describe("updateAnimations", () => {
         });
         animation.pause();
         animation.currentTime = 0;
-        
+
         // Set to frame-aligned value just before completion (frame 89 at 30fps = 2966.67ms)
         // This is at the end of iteration 2 (final iteration) but before completion
         element.currentTimeMs = 2966.6666666666665;
@@ -995,10 +1027,22 @@ describe("updateAnimations", () => {
       });
       await element.updateComplete;
       // Verify parentTimegroup is set correctly
-      assert.equal(element.parentTimegroup, parentTimegroup, "Element should have parentTimegroup set");
-      assert.equal(element.parentTimegroup?.overlapMs, 200, "ParentTimegroup should have overlapMs of 200");
+      assert.equal(
+        element.parentTimegroup,
+        parentTimegroup,
+        "Element should have parentTimegroup set",
+      );
+      assert.equal(
+        element.parentTimegroup?.overlapMs,
+        200,
+        "ParentTimegroup should have overlapMs of 200",
+      );
       // Verify rootTimegroup is also set
-      assert.equal(element.rootTimegroup, rootTimegroup, "Element should have rootTimegroup set");
+      assert.equal(
+        element.rootTimegroup,
+        rootTimegroup,
+        "Element should have rootTimegroup set",
+      );
 
       updateAnimations(element);
 
@@ -1061,7 +1105,7 @@ describe("updateAnimations", () => {
         rootTimegroup,
       });
       await element.updateComplete;
-      
+
       // Add placeholder to ensure timegroup duration exceeds element.endTimeMs + 100
       const placeholder = createTestElement({
         durationMs: 200,
@@ -1382,8 +1426,16 @@ describe("updateAnimations", () => {
       await element.updateComplete;
 
       // Verify staggerOffsetMs is set and accessible
-      assert.equal((element as any).staggerOffsetMs, 100, "staggerOffsetMs should be 100");
-      assert.equal(element.tagName, "EF-TEXT-SEGMENT", "Element should be EF-TEXT-SEGMENT");
+      assert.equal(
+        (element as any).staggerOffsetMs,
+        100,
+        "staggerOffsetMs should be 100",
+      );
+      assert.equal(
+        element.tagName,
+        "EF-TEXT-SEGMENT",
+        "Element should be EF-TEXT-SEGMENT",
+      );
 
       updateAnimations(element);
 
@@ -1414,7 +1466,7 @@ describe("updateAnimations", () => {
         rootTimegroup,
       });
       await element.updateComplete;
-      
+
       // Ensure rootTimegroup's currentTimeMs is still set after appending child
       rootTimegroup.currentTimeMs = 500;
       await rootTimegroup.updateComplete;
@@ -1649,7 +1701,7 @@ describe("updateAnimations", () => {
       // Wait for CSS animations to be created and ensure they're paused
       await new Promise((resolve) => requestAnimationFrame(resolve));
       await new Promise((resolve) => requestAnimationFrame(resolve));
-      
+
       // Pause all animations (CSS animations start automatically)
       const initialAnimations = element.getAnimations();
       for (const anim of initialAnimations) {
@@ -1664,9 +1716,15 @@ describe("updateAnimations", () => {
 
       // Check computed style for animation delays
       const computedStyle = window.getComputedStyle(element);
-      const animationDelays = computedStyle.animationDelay.split(", ").map((s) => s.trim());
-      assert.equal(animationDelays.length, 2, "Should have 2 animation delays in computed style");
-      
+      const animationDelays = computedStyle.animationDelay
+        .split(", ")
+        .map((s) => s.trim());
+      assert.equal(
+        animationDelays.length,
+        2,
+        "Should have 2 animation delays in computed style",
+      );
+
       // Parse delays from computed style (they might be "1s" and "3s")
       const parseDelay = (delayStr: string): number => {
         if (delayStr === "0s" || delayStr === "0ms") {
@@ -1685,11 +1743,23 @@ describe("updateAnimations", () => {
       // CSS animations from 'animation' property might have getTiming().delay === 0,
       // so we need to match by index with computedStyle.animationDelay
       const allAnimations = Array.from(animations);
-      const fadeInAnimationIndex = animationDelays.findIndex((delay) => parseDelay(delay) === 1000);
-      const fadeOutAnimationIndex = animationDelays.findIndex((delay) => parseDelay(delay) === 3000);
+      const fadeInAnimationIndex = animationDelays.findIndex(
+        (delay) => parseDelay(delay) === 1000,
+      );
+      const fadeOutAnimationIndex = animationDelays.findIndex(
+        (delay) => parseDelay(delay) === 3000,
+      );
 
-      assert.isAtLeast(fadeInAnimationIndex, 0, "fade-in delay (1s) should be found in computed style");
-      assert.isAtLeast(fadeOutAnimationIndex, 0, "fade-out delay (3s) should be found in computed style");
+      assert.isAtLeast(
+        fadeInAnimationIndex,
+        0,
+        "fade-in delay (1s) should be found in computed style",
+      );
+      assert.isAtLeast(
+        fadeOutAnimationIndex,
+        0,
+        "fade-out delay (3s) should be found in computed style",
+      );
 
       const fadeInAnimation = allAnimations[fadeInAnimationIndex];
       const fadeOutAnimation = allAnimations[fadeOutAnimationIndex];
@@ -1699,17 +1769,24 @@ describe("updateAnimations", () => {
 
       // Verify that getTiming().delay might be 0 for CSS animations (this is the bug scenario)
       // The actual delays are in computedStyle.animationDelay, not getTiming().delay
-      const fadeInTiming = fadeInAnimation.effect && (fadeInAnimation.effect as KeyframeEffect).getTiming();
-      const fadeOutTiming = fadeOutAnimation.effect && (fadeOutAnimation.effect as KeyframeEffect).getTiming();
-      
+      const fadeInTiming =
+        fadeInAnimation.effect &&
+        (fadeInAnimation.effect as KeyframeEffect).getTiming();
+      const fadeOutTiming =
+        fadeOutAnimation.effect &&
+        (fadeOutAnimation.effect as KeyframeEffect).getTiming();
+
       // Log for debugging
       console.log("fadeInAnimation getTiming().delay:", fadeInTiming?.delay);
       console.log("fadeOutAnimation getTiming().delay:", fadeOutTiming?.delay);
-      console.log("computedStyle.animationDelay:", computedStyle.animationDelay);
+      console.log(
+        "computedStyle.animationDelay:",
+        computedStyle.animationDelay,
+      );
 
       // For CSS animations created via the 'animation' property, currentTime includes the delay.
       // So currentTime should be set to the absolute timeline time, not the adjusted time.
-      
+
       // Test at 0.5s: Both animations should be at absolute timeline time (before their delays)
       element.currentTimeMs = 500;
       await element.updateComplete;
@@ -2364,4 +2441,3 @@ describe("updateAnimations", () => {
     });
   });
 });
-
