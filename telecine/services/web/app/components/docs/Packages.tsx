@@ -19,8 +19,8 @@ const packages = [
 
 export const Packages = () => {
     return (
-        <div className="my-4 xl:max-w-none">
-            <div className="not-prose border-zinc-900/5 grid grid-cols-1 gap-x-6 gap-y-10 border-t  sm:grid-cols-2 xl:max-w-none xl:grid-cols-2 dark:border-white/5">
+        <div className="not-prose my-4 xl:max-w-none">
+            <div className="border-zinc-900/5 grid grid-cols-1 gap-x-6 gap-y-10 border-t  sm:grid-cols-2 xl:max-w-none xl:grid-cols-2 dark:border-white/5">
                 {packages.map((library) => (
                     <Link to={library.href} key={library.name}>
                         <div

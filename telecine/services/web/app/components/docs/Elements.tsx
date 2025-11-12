@@ -6,7 +6,7 @@ export const Elements = ({
   elements: { name: string; href: string; gradient: string }[];
 }) => {
   return (
-    <div className="mt-8 grid grid-cols-1 gap-2 justify-center overflow-hidden rounded-2xl text-center sm:grid-cols-2 lg:grid-cols-3">
+    <div className="not-prose mt-8 grid grid-cols-1 gap-2 justify-center overflow-hidden rounded-2xl text-center sm:grid-cols-2 lg:grid-cols-3">
       {elements.map((element) => (
         <Link to={element.href} key={element.name}>
           <div
