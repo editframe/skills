@@ -88,6 +88,12 @@ app.get("/healthz", (_req, res) => {
 app.use((req, res, next) => {
   const host = req.get("host") || "";
   const protocol = req.protocol || "https";
+  const path = req.originalUrl || req.url || "";
+
+  // Skip redirect for API routes (routes handled by other services never reach this middleware)
+  if (path.startsWith("/api")) {
+    return next();
+  }
 
   let shouldRedirect = false;
   let redirectHost = "";
@@ -101,7 +107,7 @@ app.use((req, res, next) => {
   }
 
   if (shouldRedirect) {
-    const redirectUrl = `${protocol}://${redirectHost}${req.originalUrl || req.url}`;
+    const redirectUrl = `${protocol}://${redirectHost}${path}`;
     return res.redirect(301, redirectUrl);
   }
 
