@@ -6,313 +6,188 @@ alwaysApply: true
 
 ## Overview
 
-This is a monorepo containing two main projects:
-- **telecine**: Located at `/workspace/telecine/`
-- **elements**: Located at `/workspace/elements/`
+Monorepo containing two projects:
+- **telecine**: `/workspace/telecine/`
+- **elements**: `/workspace/elements/`
 
-Both projects are maintained as git worktrees with separate remotes configured in the root repository.
-
-## Git Remotes Configuration
-
-The root repository has two remotes configured:
-- `telecine`: Points to `git@github.com:editframe/telecine.git`
-- `elements`: Points to `git@github.com:editframe/elements.git`
-
-These remotes are used for syncing changes to/from the separate repositories.
+Both projects use git worktrees with separate remotes:
+- `telecine`: `git@github.com:editframe/telecine.git`
+- `elements`: `git@github.com:editframe/elements.git`
 
 ## Worktree Setup
 
 ### Telecine Worktrees
 
-The telecine project uses git worktrees for branch isolation. Each worktree:
+Each worktree:
 - Has its own directory (e.g., `../telecine-feature-auth` for branch `feature-auth`)
-- Gets a unique domain based on branch name (e.g., `feature-auth.localhost`)
-- Uses isolated Docker Compose project names (e.g., `telecine-feature-auth`)
-- Shares a common Traefik instance for routing
+- Gets unique domain: `feature-auth.localhost`
+- Uses isolated Docker Compose project names: `telecine-feature-auth`
+- Shares common Traefik instance for routing
 
-**Worktree Configuration Script**: `telecine/scripts/worktree-config`
+**Worktree Configuration**: `telecine/scripts/worktree-config`
 - Detects current branch and worktree context
-- Exports environment variables: `WORKTREE_BRANCH`, `WORKTREE_DOMAIN`, `WORKTREE_DOCKER_PROJECT_NAME`, `WORKTREE_DOCKER_NETWORK_NAME`
+- Exports: `WORKTREE_BRANCH`, `WORKTREE_DOMAIN`, `WORKTREE_DOCKER_PROJECT_NAME`, `WORKTREE_DOCKER_NETWORK_NAME`
 - Must be sourced: `. scripts/worktree-config`
 
-**Documentation**: See `telecine/WORKTREE_SETUP.md` for detailed worktree setup and Docker environment configuration.
+See `telecine/WORKTREE_SETUP.md` for detailed Docker setup.
 
 ### Elements Worktrees
 
-The elements project also uses git worktrees with similar structure:
-- Worktrees get isolated Docker environments
+Similar structure:
 - Docker project names: `ef-elements` (main) or `ef-elements-<branch-name>` (worktrees)
 - Unique domains: `main.localhost` or `<branch-name>.localhost`
-- Dev servers are routed through shared Traefik instance on port 4321
 - Accessible at `http://<branch-name>.localhost:4321`
 
-**Worktree Configuration Script**: `elements/scripts/worktree-config`
-- Same structure as telecine's worktree-config
-- Exports similar environment variables for elements-specific configuration
+**Worktree Configuration**: `elements/scripts/worktree-config` (same structure as telecine)
 
-**Elements Services**: Managed via `process-compose`:
-- `compose`: Docker Compose runner service for tests
+**Elements Services** (via `process-compose`):
+- `compose`: Docker Compose runner for tests
 - `dev-projects`: Development server (routed through Traefik)
-- `host-chrome`: Playwright browser server (must run on macOS host, shared across all worktrees)
+- `host-chrome`: Playwright browser server (macOS host, shared across worktrees)
 
 ## Push/Pull Workflows
 
-### Pushing Changes to Remotes
+### Pushing to Remotes
 
-The recommended way to push changes from the monorepo to the telecine or elements remotes is using the dedicated push scripts. These scripts use `git subtree split` to extract only the relevant project directory and push it to the appropriate remote.
-
-#### Using Push Scripts (Recommended)
+Use push scripts (recommended) - they use `git subtree split` to extract only the project directory:
 
 ```bash
-# Push telecine/ directory to telecine remote (defaults to main branch)
+# Push telecine/ to telecine remote (defaults to main)
 ./scripts/push-telecine
-
-# Push telecine/ directory to a specific branch
 ./scripts/push-telecine <branch-name>
-# or
-./scripts/push-telecine --branch <branch-name>
+./scripts/push-telecine --wait  # Wait for deployment
 
-# Push telecine/ directory and wait for deployment action to complete
-./scripts/push-telecine --wait
-
-# Push elements/ directory to elements remote (defaults to main branch)
+# Push elements/ to elements remote (defaults to main)
 ./scripts/push-elements
-
-# Push elements/ directory to a specific branch
 ./scripts/push-elements <branch-name>
-# or
-./scripts/push-elements --branch <branch-name>
-
-# Push elements/ directory and wait for release action to complete
-./scripts/push-elements --wait
+./scripts/push-elements --wait  # Wait for release
 ```
 
-**How the push scripts work:**
-1. Creates a temporary branch using `git subtree split` to extract only the project directory (`telecine/` or `elements/`)
-2. Pushes the split branch to the appropriate remote with `--force`
-3. Cleans up the temporary branch
-4. Optionally waits for GitHub Actions to complete (with `--wait` flag)
+**How it works**: Creates temporary branch via `git subtree split`, pushes with `--force`, cleans up. Safe because subtree branches don't conflict with monorepo structure.
 
-**Note**: The push scripts use `--force` when pushing, which is safe because they're pushing to isolated subtree branches that don't conflict with the monorepo structure.
-
-#### Direct Git Push (Alternative)
-
-You can also push directly using git, though this pushes the entire monorepo structure:
-
+**Alternative** (direct git push - pushes entire monorepo):
 ```bash
-# Push current branch to telecine remote
 git push telecine <branch-name>:<branch-name>
-
-# Push current branch to elements remote  
 git push elements <branch-name>:<branch-name>
-
-# Push all branches (example)
-git push telecine --all
-git push elements --all
 ```
 
-### Pulling Changes from Remotes
-
-To pull changes from the remotes into the monorepo:
+### Pulling from Remotes
 
 ```bash
-# Fetch from telecine remote
 git fetch telecine
-
-# Fetch from elements remote
 git fetch elements
-
-# Merge specific branch from remote
 git merge telecine/<branch-name>
 git merge elements/<branch-name>
 ```
 
 ### Creating Worktrees
 
-When creating worktrees for telecine or elements:
-
 ```bash
-# Create worktree for telecine branch
 git worktree add ../telecine-<branch-name> <branch-name>
-
-# Create worktree for elements branch  
 git worktree add ../elements-<branch-name> <branch-name>
 ```
 
-### Syncing Between Monorepo and Remotes
+### Syncing Strategy
 
-The monorepo acts as the primary working repository. Changes should be:
-1. Committed in the monorepo
-2. Pushed to the appropriate remote using the push scripts (`./scripts/push-telecine` or `./scripts/push-elements`) when ready
-3. Pulled from remotes when syncing upstream changes
+Monorepo is primary working repository:
+1. Commit in monorepo
+2. Push to remote using push scripts when ready
+3. Pull from remotes when syncing upstream changes
 
-**Important**: The monorepo structure means that `telecine/` and `elements/` directories are part of the root repository, but they should be synced with their respective remote repositories using the push scripts. The push scripts use `git subtree split` to extract only the relevant project directory, ensuring clean separation between the monorepo and the individual project repositories.
+**Important**: Push scripts use `git subtree split` to extract only the project directory, ensuring clean separation between monorepo and individual project repositories.
 
-### Dev Examples and Worktrees
+### Dev Examples in Worktrees
 
-When working in a worktree and creating new dev examples (e.g., in `elements/dev-projects/`), these files should be committed and merged into main along with the feature work:
+When creating dev examples (e.g., `elements/dev-projects/`):
+1. Create in worktree as needed
+2. Commit to feature branch (use `git add -f` if `dev-projects/` is ignored)
+3. Merge to main (dev examples included)
+4. Dev examples stay in main as shared development examples
 
-1. **Create dev examples** in your worktree as needed for development and testing
-2. **Commit dev examples** to your feature branch (use `git add -f` if `dev-projects/` is in `.gitignore`)
-3. **Merge to main** - dev examples are included in the merge along with feature code
-4. **Dev examples stay in main** - they become part of the shared development examples
-
-**Example workflow:**
 ```bash
-# In worktree, create a new dev example
 cd elements/dev-projects
 # Create your-example.html
-
-# Force add if dev-projects is ignored
 git add -f elements/dev-projects/your-example.html
 git commit -m "feat: add your-example.html dev example"
-
-# Merge to main (dev example included)
-cd /path/to/main/worktree
-git merge feat/your-feature
 ```
 
-**Note**: While `elements/dev-projects/` may be in `.gitignore` for local development, important dev examples that demonstrate features should be force-added and committed to main so they're available to all developers.
+**Note**: Important dev examples should be force-added and committed to main so they're available to all developers.
 
-## Scripts Location
+## Scripts
 
-- Root scripts: `/workspace/scripts/` - Delegates to telecine/elements scripts
-- Telecine scripts: `/workspace/telecine/scripts/`
-- Elements scripts: `/workspace/elements/scripts/`
-
-Both telecine and elements have `worktree-config` scripts that handle worktree detection and Docker environment configuration.
-
-## Wrapped Script Runners
-
-The root `/workspace/scripts/` directory contains wrapper scripts that delegate to project-specific implementations. These wrappers ensure consistent behavior across the monorepo while allowing each project to have its own implementation.
-
-### `scripts/docker-compose`
-
-The root `scripts/docker-compose` wrapper always delegates to telecine's docker-compose script (`telecine/scripts/docker-compose`). This ensures:
-- Consistent docker-compose behavior across the monorepo
-- Worktree-aware configuration is automatically applied
-- All docker-compose files are discovered and included
-- Proper project names and profiles are set based on worktree context
-
-**Usage**: Run `scripts/docker-compose` from anywhere in the monorepo to execute docker-compose commands with proper worktree configuration.
-
-### `scripts/docker`
-
-The root `scripts/docker` wrapper delegates to telecine's docker script (`telecine/scripts/docker`). This provides:
-- Project-specific docker command customization
-- Consistent entry point for docker commands across the monorepo
-
-**Usage**: Run `scripts/docker` from anywhere in the monorepo to execute docker commands with project-specific enhancements.
-
-### `scripts/start`
-
-The root `scripts/start` script starts both telecine and elements services:
-- Starts telecine services (npm install, build, docker-compose, migrations, seeding)
-- Starts elements services via process-compose (runs in background)
-- Displays worktree-specific URLs for both services
-
-**Usage**: Run `./scripts/start` from the monorepo root to start all services.
-
-### `scripts/start-host`
-
-The root `scripts/start-host` script starts host-level services that must run on the macOS host (not in containers):
-- **Host Chrome**: Playwright browser server for tests
-- All worktrees share the same host-chrome instance
-- Must be run on macOS host (outside dev container) to access system Chrome
-
-**Usage**: Run `./scripts/start-host` from the monorepo root on the macOS host.
-
-**Note**: When running from a dev container, start host services manually on the macOS host before starting elements services.
-
-### `scripts/npm` (Telecine)
-
-The `telecine/scripts/npm` script wraps npm commands to ensure they run in the correct context:
-- Executes npm commands in the telecine project directory
-- Handles worktree-aware configuration
-- Ensures dependencies are installed in the correct location
-
-**Usage**: Always use `telecine/scripts/npm` instead of direct `npm` commands when working with the telecine project:
-
-```bash
-# Install a package
-cd /workspace/telecine && ./scripts/npm install <package-name>
-
-# Run npm scripts
-cd /workspace/telecine && ./scripts/npm run <script-name>
-```
-
-**Important**: When installing packages or running npm commands for telecine, use `telecine/scripts/npm` to ensure proper worktree context and dependency management.
-
-### Other Script Runners
-
-Project-specific scripts (like `npm`, `node`, `npx`, etc.) are located in their respective project directories:
+### Script Locations
+- Root: `/workspace/scripts/` - Delegates to telecine/elements scripts
 - Telecine: `/workspace/telecine/scripts/`
 - Elements: `/workspace/elements/scripts/`
 
-These scripts handle worktree-aware configuration and should be run from within their respective project directories or referenced with their full paths.
+### Root Script Wrappers
+
+**`scripts/docker-compose`**: Delegates to `telecine/scripts/docker-compose`
+- Consistent docker-compose behavior across monorepo
+- Worktree-aware configuration automatically applied
+- All docker-compose files discovered and included
+
+**`scripts/docker`**: Delegates to `telecine/scripts/docker`
+- Project-specific docker command customization
+- Consistent entry point across monorepo
+
+**`scripts/start`**: Starts both telecine and elements services
+- Telecine: npm install, build, docker-compose, migrations, seeding
+- Elements: via process-compose (background)
+- Displays worktree-specific URLs
+
+**`scripts/start-host`**: Starts host-level services (macOS host only)
+- **Host Chrome**: Playwright browser server for tests
+- Shared across all worktrees
+- Must run on macOS host (outside dev container)
+
+**`scripts/npm` (Telecine)**: `telecine/scripts/npm` wraps npm commands
+- Executes in telecine project directory
+- Handles worktree-aware configuration
+- **Always use this instead of direct npm** for telecine
+
+```bash
+cd /workspace/telecine && ./scripts/npm install <package-name>
+cd /workspace/telecine && ./scripts/npm run <script-name>
+```
+
+**Other Script Runners**: Project-specific scripts (`npm`, `node`, `npx`, etc.) in respective project directories. Handle worktree-aware configuration.
 
 ### `scripts/browsertest`
 
-Both telecine and elements projects have `browsertest` scripts that run browser-based tests using Vitest. These scripts handle browser server management, environment variable configuration, and worktree-aware setup.
+**Important**: **ALWAYS use `browsertest` scripts for browser tests. Do NOT run vitest directly.**
 
-**Important**: **ALWAYS use the `browsertest` scripts to run browser tests. Do NOT run vitest directly for browser tests.**
-
-The browsertest scripts:
-- Automatically start the browser server if it's not running
-- Set up required environment variables (`MONOREPO_ROOT`, `WS_ENDPOINT`, `VITEST_BROWSER_MODE`)
-- Load worktree configuration for proper domain routing
-- Use the correct vitest browser configuration (`vitest.config.browser.ts`)
+Both projects have `browsertest` scripts that:
+- Automatically start browser server if not running
+- Set up environment variables (`MONOREPO_ROOT`, `WS_ENDPOINT`, `VITEST_BROWSER_MODE`)
+- Load worktree configuration for domain routing
+- Use correct vitest browser config (`vitest.config.browser.ts`)
 - Handle monorepo root detection across worktrees
 
-#### Telecine Browsertest
-
-**Usage**: Run `telecine/scripts/browsertest` from the telecine directory:
-
+**Telecine**:
 ```bash
-# Run all browser tests
 cd /workspace/telecine && ./scripts/browsertest
-
-# Run specific test file
-cd /workspace/telecine && ./scripts/browsertest services/web/app/components/motion-designer/rendering/ElementRenderer.browsertest.tsx
-
-# Run tests matching a pattern
-cd /workspace/telecine && ./scripts/browsertest --grep "ElementRenderer"
-
-# Run in watch mode
+cd /workspace/telecine && ./scripts/browsertest <test-file>
+cd /workspace/telecine && ./scripts/browsertest --grep "pattern"
 cd /workspace/telecine && ./scripts/browsertest --watch
 ```
 
-**Test File Naming**: Browser test files must be named `*.browsertest.ts` or `*.browsertest.tsx`.
-
-#### Elements Browsertest
-
-**Usage**: Run `elements/scripts/browsertest` from the elements directory:
-
+**Elements**:
 ```bash
-# Run all browser tests
 cd /workspace/elements && ./scripts/browsertest
-
-# Run specific test file
-cd /workspace/elements && ./scripts/browsertest packages/elements/src/elements/EFVideo.browsertest.ts
-
-# Run tests matching a pattern
-cd /workspace/elements && ./scripts/browsertest --grep "EFVideo"
-
-# Run in watch mode
+cd /workspace/elements && ./scripts/browsertest <test-file>
+cd /workspace/elements && ./scripts/browsertest --grep "pattern"
 cd /workspace/elements && ./scripts/browsertest --watch
 ```
 
-**Test File Naming**: Browser test files must be named `*.browsertest.ts` or `*.browsertest.tsx`.
+**Test File Naming**: Must be `*.browsertest.ts` or `*.browsertest.tsx`
 
-#### Browser Server
-
-The browsertest scripts automatically manage the browser server:
-- If `.wsEndpoint.json` doesn't exist at the monorepo root, the script starts the browser server
-- The browser server is shared across all worktrees
-- The server must run on the macOS host (not in containers) to access system Chrome
-- You can manually start the browser server using `./scripts/start-host-chrome` from the monorepo root
-
-**Note**: The browser server is the same instance used by both telecine and elements tests, managed via the shared `.wsEndpoint.json` file at the monorepo root.
+**Browser Server**: Managed automatically by browsertest scripts
+- If `.wsEndpoint.json` doesn't exist at monorepo root, script starts browser server
+- Shared across all worktrees
+- Must run on macOS host (not in containers)
+- Manual start: `./scripts/start-host-chrome` from monorepo root
+- Managed via shared `.wsEndpoint.json` at monorepo root
 
 ## Docker Environment
 
@@ -323,23 +198,22 @@ Both projects use Docker Compose with worktree-aware configuration:
 
 ### Traefik Routing
 
-The shared Traefik instance routes traffic for both projects:
 - **Telecine**: `http://<branch-name>.localhost:3000`
 - **Elements**: `http://<branch-name>.localhost:4321`
-- Traefik dashboard: `http://localhost:7777`
+- **Traefik dashboard**: `http://localhost:7777`
 
-Elements dev servers connect to the shared `telecine-traefik` network and are routed via the `elements` entrypoint (port 4321).
+Elements dev servers connect to shared `telecine-traefik` network, routed via `elements` entrypoint (port 4321).
 
 ### Process Compose
 
-Elements services are orchestrated using `process-compose`:
+Elements services orchestrated via `process-compose`:
 - Configuration: `elements/process-compose.yaml`
-- Manages: Docker Compose runner, dev-projects server, and host-chrome (optional)
-- Host-chrome dependency is optional (`required: false`) to allow manual startup on macOS host
-- Process-compose is installed in the dev container and should be available on macOS host for full functionality
+- Manages: Docker Compose runner, dev-projects server, host-chrome (optional)
+- Host-chrome dependency optional (`required: false`) for manual macOS host startup
+- Installed in dev container, should be available on macOS host
 
-See `telecine/WORKTREE_SETUP.md` for detailed Docker setup documentation.
-
+See `telecine/WORKTREE_SETUP.md` for detailed Docker setup.
 
 # Fallbacks
+
 It is tempting to make something work by creating a fallback. However, this is a bad idea. It is better to fix the root cause of the problem. It's better to CRASH and burn than to create a fallback.
