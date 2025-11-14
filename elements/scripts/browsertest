@@ -124,5 +124,9 @@ if [ -f "${SCRIPT_DIR}/worktree-config" ]; then
 fi
 
 # Explicitly pass MONOREPO_ROOT, WS_ENDPOINT, and VITEST_BROWSER_MODE to vitest command
-# Use --run to ensure non-watch mode (consistent behavior across environments)
-MONOREPO_ROOT="$MONOREPO_ROOT" WS_ENDPOINT="$WS_ENDPOINT" VITEST_BROWSER_MODE="$VITEST_BROWSER_MODE" "${SCRIPT_DIR}"/run npx vitest --run --config vitest.config.browser.ts --configLoader bundle "$@"
+# Use --run to ensure non-watch mode by default, unless --watch is explicitly passed
+VITEST_ARGS=()
+if [[ ! " $* " =~ " --watch " ]]; then
+  VITEST_ARGS+=(--run)
+fi
+MONOREPO_ROOT="$MONOREPO_ROOT" WS_ENDPOINT="$WS_ENDPOINT" VITEST_BROWSER_MODE="$VITEST_BROWSER_MODE" "${SCRIPT_DIR}"/run npx vitest "${VITEST_ARGS[@]}" --config vitest.config.browser.ts --configLoader bundle "$@"
