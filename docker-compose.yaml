@@ -9,6 +9,7 @@ services:
       - "3001:3001"    # Telecine additional port
       - "4321:4321"    # Elements dev server
       - "4322:4322"    # Elements test server
+      - "4323:4323"    # Telecine test server
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
@@ -24,6 +25,7 @@ services:
       - --entrypoints.port3001.address=:3001
       - --entrypoints.elements.address=:4321
       - --entrypoints.elements-test.address=:4322
+      - --entrypoints.telecine-test.address=:4323
       - --log.level=INFO
       - --accesslog
       - --entrypoints.web.transport.respondingTimeouts.readTimeout=0s
