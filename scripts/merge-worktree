@@ -1,7 +1,29 @@
 #!/usr/bin/env bash
 # Merge worktree branch back into main
-# Can be run from within worktree directory or from main with branch name argument
-# Usage: ./scripts/merge-worktree [branch-name]
+#
+# This script merges changes from a worktree branch into main/master.
+# Use this when you're done with a feature and want to merge it back to main.
+#
+# Direction: worktree branch → main
+#
+# Can be run from:
+#   1. Within the worktree directory (auto-detects branch)
+#   2. From main worktree with branch name argument
+#
+# Usage:
+#   # From within worktree:
+#   cd /path/to/worktree
+#   ./scripts/merge-worktree
+#
+#   # From main with branch name:
+#   ./scripts/merge-worktree <branch-name>
+#
+# Example:
+#   ./scripts/merge-worktree feature-auth
+#   # Merges feature-auth branch into main
+#
+# After successful merge, you can remove the worktree:
+#   cd /path/to/worktree && ./scripts/remove-worktree
 
 set -e
 
