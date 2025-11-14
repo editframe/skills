@@ -113,6 +113,62 @@ describe("EFText", () => {
       expect(segments[2]?.segmentText).toBe("C");
     });
 
+    test("wraps characters within words to prevent line breaks when splitting by char", async () => {
+      const timegroup = document.createElement("ef-timegroup");
+      const text = document.createElement("ef-text");
+      text.split = "char";
+      text.textContent = "Hello world";
+      text.duration = "3s";
+      timegroup.appendChild(text);
+      document.body.appendChild(timegroup);
+      testElements.push(timegroup);
+
+      await text.updateComplete;
+      const segments = await text.whenSegmentsReady();
+
+      // All segments should exist (11 characters: H-e-l-l-o-space-w-o-r-l-d)
+      expect(segments.length).toBe(11);
+
+      // Check that characters within words are wrapped in spans
+      const wordWrappers = text.querySelectorAll(".ef-word-wrapper");
+      // Should have 2 word wrappers: one for "Hello" and one for "world"
+      expect(wordWrappers.length).toBe(2);
+
+      // Verify wrapper structure - characters within a word should be siblings in a wrapper
+      const firstWrapper = wordWrappers[0];
+      const secondWrapper = wordWrappers[1];
+      
+      if (firstWrapper) {
+        const wrapperSegments = Array.from(
+          firstWrapper.querySelectorAll("ef-text-segment"),
+        );
+        expect(wrapperSegments.length).toBe(5); // H, e, l, l, o
+        const wrapperText = wrapperSegments
+          .map((seg) => seg.segmentText)
+          .join("");
+        expect(wrapperText).toBe("Hello");
+      }
+
+      if (secondWrapper) {
+        const wrapperSegments = Array.from(
+          secondWrapper.querySelectorAll("ef-text-segment"),
+        );
+        expect(wrapperSegments.length).toBe(5); // w, o, r, l, d
+        const wrapperText = wrapperSegments
+          .map((seg) => seg.segmentText)
+          .join("");
+        expect(wrapperText).toBe("world");
+      }
+
+      // Verify space is not wrapped (should be a direct child segment)
+      const spaceSegment = Array.from(segments).find(
+        (seg) => seg.segmentText === " ",
+      );
+      expect(spaceSegment).toBeTruthy();
+      // Space should not be inside a word wrapper
+      expect(spaceSegment?.closest(".ef-word-wrapper")).toBeNull();
+    });
+
     test("does not create blank character segments from leading/trailing whitespace", async () => {
       const timegroup = document.createElement("ef-timegroup");
       const text = document.createElement("ef-text");

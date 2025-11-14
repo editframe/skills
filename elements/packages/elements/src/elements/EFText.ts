@@ -30,6 +30,10 @@ export class EFText extends EFTemporal(LitElement) {
         margin: 0;
         padding: 0;
       }
+      .ef-word-wrapper {
+        display: inline-block;
+        white-space: nowrap;
+      }
     `,
   ];
 
@@ -283,7 +287,9 @@ export class EFText extends EFTemporal(LitElement) {
     // Read text content - use stored _textContent if set, otherwise read from DOM
     const text =
       this._textContent !== null ? this._textContent : this.getTextContent();
-    if (!text || text.trim().length === 0) {
+    const trimmedText = text.trim();
+    const textStartOffset = text.indexOf(trimmedText);
+    if (!text || trimmedText.length === 0) {
       // Clear segments if no text
       const existingSegments = Array.from(
         this.querySelectorAll("ef-text-segment"),
@@ -313,6 +319,12 @@ export class EFText extends EFTemporal(LitElement) {
     const segments = this.splitTextIntoSegments(text);
     const durationMs = this.durationMs || 1000; // Default 1 second if no duration
 
+    // For character mode, detect word boundaries to wrap characters within words
+    let wordBoundaries: Map<number, number> | null = null;
+    if (this.split === "char") {
+      wordBoundaries = this.detectWordBoundaries(text);
+    }
+
     // Clear ALL child nodes (text nodes and segments) by replacing innerHTML
     // This ensures we don't have any leftover text nodes
     const fragment = document.createDocumentFragment();
@@ -332,6 +344,11 @@ export class EFText extends EFTemporal(LitElement) {
     // If no template segments found, we'll create a default one
     const useTemplate = templateSegments.length > 0;
     const segmentsPerTextSegment = useTemplate ? templateSegments.length : 1;
+
+    // For character mode with word wrapping, track current word and wrap segments
+    let currentWordIndex: number | null = null;
+    let currentWordSpan: HTMLSpanElement | null = null;
+    let charIndex = 0; // Track position in original text for character mode
 
     // Create new segments in a fragment first
     segments.forEach((segmentText, textIndex) => {
@@ -382,7 +399,36 @@ export class EFText extends EFTemporal(LitElement) {
           // Mark as created to avoid being picked up as template
           segment.setAttribute("data-segment-created", "true");
 
-          fragment.appendChild(segment);
+          // For character mode with templates, also wrap in word spans
+          if (this.split === "char" && wordBoundaries) {
+            const originalCharIndex = textStartOffset + charIndex;
+            const wordIndex = wordBoundaries.get(originalCharIndex);
+            if (wordIndex !== undefined) {
+              if (wordIndex !== currentWordIndex) {
+                if (currentWordSpan) {
+                  fragment.appendChild(currentWordSpan);
+                }
+                currentWordIndex = wordIndex;
+                currentWordSpan = document.createElement("span");
+                currentWordSpan.className = "ef-word-wrapper";
+              }
+              if (currentWordSpan) {
+                currentWordSpan.appendChild(segment);
+              } else {
+                fragment.appendChild(segment);
+              }
+            } else {
+              if (currentWordSpan) {
+                fragment.appendChild(currentWordSpan);
+                currentWordSpan = null;
+                currentWordIndex = null;
+              }
+              fragment.appendChild(segment);
+            }
+            charIndex += segmentText.length;
+          } else {
+            fragment.appendChild(segment);
+          }
         });
       } else {
         // No template - create default ef-text-segment
@@ -404,9 +450,52 @@ export class EFText extends EFTemporal(LitElement) {
         // Mark as created to avoid being picked up as template
         segment.setAttribute("data-segment-created", "true");
 
-        fragment.appendChild(segment);
+        // For character mode, wrap segments within words to prevent line breaks
+        if (this.split === "char" && wordBoundaries) {
+          // Map character index in trimmed text to original text position
+          const originalCharIndex = textStartOffset + charIndex;
+          const wordIndex = wordBoundaries.get(originalCharIndex);
+          if (wordIndex !== undefined) {
+            // Check if we're starting a new word
+            if (wordIndex !== currentWordIndex) {
+              // Close previous word span if it exists
+              if (currentWordSpan) {
+                fragment.appendChild(currentWordSpan);
+              }
+              // Start new word span
+              currentWordIndex = wordIndex;
+              currentWordSpan = document.createElement("span");
+              currentWordSpan.className = "ef-word-wrapper";
+            }
+            // Append segment to current word span
+            if (currentWordSpan) {
+              currentWordSpan.appendChild(segment);
+            } else {
+              fragment.appendChild(segment);
+            }
+          } else {
+            // Not part of a word (whitespace/punctuation) - append directly
+            // Close current word span if it exists
+            if (currentWordSpan) {
+              fragment.appendChild(currentWordSpan);
+              currentWordSpan = null;
+              currentWordIndex = null;
+            }
+            fragment.appendChild(segment);
+          }
+          // Update character index for next iteration (in trimmed text)
+          charIndex += segmentText.length;
+        } else {
+          // Not character mode or no word boundaries - append directly
+          fragment.appendChild(segment);
+        }
       }
     });
+
+    // Close any remaining word span
+    if (this.split === "char" && currentWordSpan) {
+      fragment.appendChild(currentWordSpan);
+    }
 
     // Ensure segments are connected to DOM before checking for animations
     // Append fragment first, then trigger updates
@@ -461,6 +550,39 @@ export class EFText extends EFTemporal(LitElement) {
       });
       this._segmentsReadyResolvers = [];
     });
+  }
+
+  private detectWordBoundaries(text: string): Map<number, number> {
+    // Create a map from character index to word index
+    // Characters within the same word will have the same word index
+    const boundaries = new Map<number, number>();
+    const trimmedText = text.trim();
+    if (!trimmedText) {
+      return boundaries;
+    }
+
+    // Use Intl.Segmenter to detect word boundaries
+    const segmenter = new Intl.Segmenter(undefined, {
+      granularity: "word",
+    });
+    const segments = Array.from(segmenter.segment(trimmedText));
+
+    // Find the offset of trimmedText within the original text
+    const textStart = text.indexOf(trimmedText);
+
+    let wordIndex = 0;
+    for (const seg of segments) {
+      if (seg.isWordLike) {
+        // Map all character positions in this word to the same word index
+        for (let i = 0; i < seg.segment.length; i++) {
+          const charPos = textStart + seg.index + i;
+          boundaries.set(charPos, wordIndex);
+        }
+        wordIndex++;
+      }
+    }
+
+    return boundaries;
   }
 
   private splitTextIntoSegments(text: string): string[] {
