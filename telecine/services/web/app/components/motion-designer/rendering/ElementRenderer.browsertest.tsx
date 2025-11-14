@@ -337,6 +337,62 @@ describe("ElementRenderer", () => {
       expect(rendered.style.color).toBe("blue");
       expect(rendered.style.padding).toBe("10px");
     });
+
+    test("timegroup with display flex receives flex layout styles", () => {
+      const element = createMockElementNode({
+        type: "timegroup",
+        props: { display: "flex", flexDirection: "row", justifyContent: "center" },
+      });
+      const state = createMockMotionDesignerState({
+        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+      });
+
+      mockUseElementStyles.mockReturnValue({
+        styles: {
+          display: "flex",
+          flexDirection: "row",
+          justifyContent: "center",
+        },
+      });
+      mockUseElementProps.mockReturnValue({
+        props: {},
+        textContent: null,
+      });
+
+      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+
+      const rendered = document.querySelector(`[data-element-id="${element.id}"]`) as HTMLElement;
+      expect(rendered).toBeTruthy();
+      expect(rendered.style.display).toBe("flex");
+      expect(rendered.style.flexDirection).toBe("row");
+      expect(rendered.style.justifyContent).toBe("center");
+    });
+
+    test("timegroup flex styles override props.style when present", () => {
+      const element = createMockElementNode({
+        type: "timegroup",
+        props: { display: "flex" },
+      });
+      const state = createMockMotionDesignerState({
+        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+      });
+
+      mockUseElementStyles.mockReturnValue({
+        styles: { display: "flex", flexDirection: "column" },
+      });
+      mockUseElementProps.mockReturnValue({
+        props: { style: { display: "block" } },
+        textContent: null,
+      });
+
+      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+
+      const rendered = document.querySelector(`[data-element-id="${element.id}"]`) as HTMLElement;
+      expect(rendered).toBeTruthy();
+      // designStyles should override props.style
+      expect(rendered.style.display).toBe("flex");
+      expect(rendered.style.flexDirection).toBe("column");
+    });
   });
 
   describe("Test Animation CSS Generation and Injection", () => {

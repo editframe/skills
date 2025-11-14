@@ -1,4 +1,4 @@
-import React, { type MouseEvent } from "react";
+import React, { type MouseEvent, useEffect } from "react";
 import type { MotionDesignerState, ElementNode } from "~/lib/motion-designer/types";
 import { elementRegistry, TextSegment } from "./elementRegistry";
 import { generateAnimationStyles } from "../animations/generateStyles";
@@ -113,8 +113,11 @@ const buildInteractionProps = (
   mergedStyle: React.CSSProperties,
   handleClick: (e: MouseEvent) => void,
 ): Record<string, any> => {
+  // Explicitly exclude style from finalProps to ensure mergedStyle takes precedence
+  const { style: _, ...finalPropsWithoutStyle } = finalProps;
+  
   const baseProps = {
-    ...finalProps,
+    ...finalPropsWithoutStyle,
     style: mergedStyle,
     "data-element-id": element.id,
   };
@@ -243,9 +246,76 @@ export function ElementRenderer({
   // Generate component key
   const componentKey = generateComponentKey(element, textContent);
 
+  // For timegroup elements, inject layout styles via CSS style element with !important
+  // This ensures styles persist even when the web component's :host styles try to override them
+  const layoutStyleCSS = React.useMemo(() => {
+    if (element.type !== "timegroup" || !mergedStyle.display) {
+      return "";
+    }
+
+    const selector = `ef-timegroup[data-element-id="${element.id}"]`;
+    const cssRules: string[] = [];
+
+    if (mergedStyle.display) {
+      cssRules.push(`  display: ${mergedStyle.display} !important;`);
+    }
+    if (mergedStyle.flexDirection) {
+      cssRules.push(`  flex-direction: ${mergedStyle.flexDirection} !important;`);
+    }
+    if (mergedStyle.justifyContent) {
+      cssRules.push(`  justify-content: ${mergedStyle.justifyContent} !important;`);
+    }
+    if (mergedStyle.alignItems) {
+      cssRules.push(`  align-items: ${mergedStyle.alignItems} !important;`);
+    }
+    if (mergedStyle.gap) {
+      cssRules.push(`  gap: ${mergedStyle.gap} !important;`);
+    }
+
+    if (cssRules.length === 0) {
+      return "";
+    }
+
+    return `\n${selector} {\n${cssRules.join("\n")}\n}`;
+  }, [
+    element.id,
+    element.type,
+    mergedStyle.display,
+    mergedStyle.flexDirection,
+    mergedStyle.justifyContent,
+    mergedStyle.alignItems,
+    mergedStyle.gap,
+  ]);
+
+  // Inject layout CSS via style element (similar to animation styles)
+  useEffect(() => {
+    if (!layoutStyleCSS) return;
+
+    const styleId = `layout-styles-${element.id}`;
+    let styleElement = document.getElementById(styleId) as HTMLStyleElement;
+
+    if (!styleElement) {
+      styleElement = document.createElement("style");
+      styleElement.id = styleId;
+      document.head.appendChild(styleElement);
+    }
+
+    styleElement.textContent = layoutStyleCSS;
+
+    return () => {
+      const existingStyle = document.getElementById(styleId);
+      if (existingStyle && existingStyle.parentNode) {
+        existingStyle.parentNode.removeChild(existingStyle);
+      }
+    };
+  }, [element.id, layoutStyleCSS]);
+
   // Render element with children
   return (
-    <Component key={componentKey} {...interactiveProps}>
+    <Component 
+      key={componentKey} 
+      {...interactiveProps}
+    >
       {element.type === "text" && textContent ? (
         <>
           <TextSegment />

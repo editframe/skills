@@ -21,6 +21,7 @@ const routes = [
   route("/docs/examples/trim", "routes/docs/examples/trim.tsx"),
   route("/docs/examples/watermark", "routes/docs/examples/watermark.tsx"),
   route("/docs/*", "routes/docs/DocsPage.tsx"),
+  route("/demos/motion-designer", "routes/demos/motion-designer.tsx"),
   route("/with/animejs", "routes/with/animejs.tsx"),
   route("/guides/*", "routes/guides-redirect.ts"),
   route("/blog/*", "routes/blog-redirect.ts"),
