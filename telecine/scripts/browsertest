@@ -4,7 +4,7 @@ set -e
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-# Find monorepo root or use elements root
+# Find monorepo root or use telecine root
 find_monorepo_root() {
   local current_dir="$1"
   
@@ -27,7 +27,7 @@ find_monorepo_root() {
     dir=$(dirname "$dir")
   done
   
-  # Fallback to elements root
+  # Fallback to telecine root
   echo "$SCRIPT_DIR/.."
 }
 
@@ -38,8 +38,20 @@ WS_ENDPOINT_PATH="$MONOREPO_ROOT/.wsEndpoint.json"
 if [ ! -f "$WS_ENDPOINT_PATH" ]; then
   echo "Browser server not running. Starting browser server..."
   
+  # Determine path to start-host-chrome.ts
+  if [ -f "$MONOREPO_ROOT/elements/scripts/start-host-chrome.ts" ]; then
+    # Use elements script from monorepo
+    START_CHROME_SCRIPT="$MONOREPO_ROOT/elements/scripts/start-host-chrome.ts"
+  elif [ -f "$SCRIPT_DIR/../elements/scripts/start-host-chrome.ts" ]; then
+    # Try relative path
+    START_CHROME_SCRIPT="$SCRIPT_DIR/../elements/scripts/start-host-chrome.ts"
+  else
+    echo "Error: Could not find start-host-chrome.ts script" >&2
+    exit 1
+  fi
+  
   # Start browser server in background
-  npx tsx "$SCRIPT_DIR/start-host-chrome.ts" &
+  npx tsx "$START_CHROME_SCRIPT" &
   BROWSER_PID=$!
   
   # Wait for .wsEndpoint.json to be created (poll with timeout)
@@ -73,3 +85,4 @@ if [ -f "${SCRIPT_DIR}/worktree-config" ]; then
 fi
 
 "${SCRIPT_DIR}"/npx vitest --config vitest.config.browser.ts --configLoader bundle "$@"
+

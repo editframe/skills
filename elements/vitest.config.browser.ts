@@ -25,7 +25,49 @@ const isCI =
   Boolean(process.env.CI) ||
   process.env.DOCKER_SERVICE === "ci-runner";
 
+function findMonorepoRoot(): string | null {
+  try {
+    const { execSync } = require("node:child_process");
+    const gitRoot = execSync("git rev-parse --show-toplevel", {
+      encoding: "utf-8",
+      stdio: "pipe",
+    }).trim();
+    
+    if (existsSync(path.join(gitRoot, "elements")) && existsSync(path.join(gitRoot, "telecine"))) {
+      return gitRoot;
+    }
+  } catch {
+    // Not in git repo or git command failed
+  }
+  
+  let currentDir = __dirname;
+  while (currentDir !== path.dirname(currentDir)) {
+    if (existsSync(path.join(currentDir, "elements")) && existsSync(path.join(currentDir, "telecine"))) {
+      return currentDir;
+    }
+    currentDir = path.dirname(currentDir);
+  }
+  
+  return null;
+}
+
 function loadWebSocketEndpoint(): string | null {
+  // Try monorepo root first
+  const monorepoRoot = findMonorepoRoot();
+  if (monorepoRoot) {
+    const wsEndpointPath = path.join(monorepoRoot, ".wsEndpoint.json");
+    if (existsSync(wsEndpointPath)) {
+      try {
+        const content = readFileSync(wsEndpointPath, "utf-8");
+        const parsed = JSON.parse(content);
+        return typeof parsed.wsEndpoint === "string" ? parsed.wsEndpoint : null;
+      } catch {
+        // Continue to fallback
+      }
+    }
+  }
+  
+  // Fallback to project root
   const wsEndpointPath = path.resolve(__dirname, ".wsEndpoint.json");
   if (!existsSync(wsEndpointPath)) {
     return null;
