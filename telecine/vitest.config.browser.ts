@@ -330,8 +330,8 @@ export default defineConfig(async () => {
     },
     test: {
       watch: false,
-      include: ["**/*.test.tsx", "**/*.browsertest.ts"],
-      exclude: ["**/node_modules/**", "**/generated/**"],
+      include: ["**/*.browsertest.ts", "**/*.browsertest.tsx"],
+      exclude: ["**/node_modules/**", "**/generated/**", "**/lib/packages/**", "**/.archive/**"],
       /* Globals MUST be enabled for testing library to automatically cleanup between tests */
       globals: true,
       browser: {
