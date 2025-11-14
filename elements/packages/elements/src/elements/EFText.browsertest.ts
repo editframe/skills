@@ -55,6 +55,26 @@ describe("EFText", () => {
       expect(segments[0]?.segmentText).toBeTruthy();
     });
 
+    test("preserves whitespace between words when splitting by word", async () => {
+      const timegroup = document.createElement("ef-timegroup");
+      const text = document.createElement("ef-text");
+      text.split = "word";
+      text.textContent = "Hello world";
+      text.duration = "3s";
+      timegroup.appendChild(text);
+      document.body.appendChild(timegroup);
+      testElements.push(timegroup);
+
+      await text.updateComplete;
+      const segments = await text.whenSegmentsReady();
+
+      // Should have 3 segments: "Hello", " ", "world"
+      expect(segments.length).toBe(3);
+      expect(segments[0]?.segmentText).toBe("Hello");
+      expect(segments[1]?.segmentText).toBe(" ");
+      expect(segments[2]?.segmentText).toBe("world");
+    });
+
     test("splits text by lines when split='line'", async () => {
       const timegroup = document.createElement("ef-timegroup");
       const text = document.createElement("ef-text");

@@ -484,9 +484,11 @@ export class EFText extends EFTemporal(LitElement) {
           granularity: "word",
         });
         const segments = Array.from(segmenter.segment(trimmedText));
-        // Filter to only include word-like segments (excludes whitespace/punctuation)
+        // Include word-like segments and whitespace segments (preserve spaces between words)
         return segments
-          .filter((seg) => seg.isWordLike)
+          .filter(
+            (seg) => seg.isWordLike || /^\s+$/.test(seg.segment),
+          )
           .map((seg) => seg.segment);
       }
       case "char": {
