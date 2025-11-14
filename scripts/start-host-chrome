@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+# Run the TypeScript version
+exec npx tsx "${SCRIPT_DIR}/start-host-chrome.ts" "$@"
+

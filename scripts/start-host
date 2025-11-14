@@ -8,6 +8,5 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 # Start host Chrome browser server for Playwright tests
 # All worktrees will share the same host-chrome instance
 echo "🚀 Starting host Chrome browser server..."
-cd "${SCRIPT_DIR}/../elements"
-npx tsx scripts/start-host-chrome.ts "$@"
+"${SCRIPT_DIR}/start-host-chrome" "$@"
 
