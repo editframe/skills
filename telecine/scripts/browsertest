@@ -4,11 +4,21 @@ set -e
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-# Find monorepo root or use telecine root
+# Find monorepo root, prioritizing main worktree checkout
 find_monorepo_root() {
   local current_dir="$1"
   
-  # Try git rev-parse first
+  # First, try to find the main worktree explicitly
+  # This ensures we always use the main monorepo checkout, not individual worktrees
+  if git rev-parse --git-dir > /dev/null 2>&1; then
+    local main_worktree=$(git worktree list | grep -E '\[main\]|\[master\]' | awk '{print $1}' | head -1)
+    if [ -n "$main_worktree" ] && [ -d "$main_worktree/elements" ] && [ -d "$main_worktree/telecine" ]; then
+      echo "$main_worktree"
+      return 0
+    fi
+  fi
+  
+  # Fallback: Try git rev-parse (works if we're in main worktree)
   if git rev-parse --git-dir > /dev/null 2>&1; then
     local git_root=$(git rev-parse --show-toplevel 2>/dev/null || echo "")
     if [ -n "$git_root" ] && [ -d "$git_root/elements" ] && [ -d "$git_root/telecine" ]; then
