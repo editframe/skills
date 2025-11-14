@@ -139,14 +139,14 @@ describe("ElementRenderer", () => {
     vi.mocked(animationCSSModule.createAnimationKey).mockImplementation(mockCreateAnimationKey);
   });
 
-  describe("1.0 Test Setup and Infrastructure", () => {
-    test("1.1 test file exists and imports necessary dependencies", async () => {
+  describe("Test Setup and Infrastructure", () => {
+    test("test file exists and imports necessary dependencies", async () => {
       expect(ElementRenderer).toBeDefined();
       const { elementRegistry } = await import("./elementRegistry");
       expect(elementRegistry).toBeDefined();
     });
 
-    test("1.2 utilities create valid test data structures", () => {
+    test("utilities create valid test data structures", () => {
       const element = createMockElementNode();
       expect(element.id).toBe("test-element-1");
       expect(element.type).toBe("div");
@@ -159,7 +159,7 @@ describe("ElementRenderer", () => {
       expect(state.ui).toBeDefined();
     });
 
-    test("1.3 mocks return expected data structures", () => {
+    test("mocks return expected data structures", () => {
       const element = createMockElementNode();
       const state = createMockMotionDesignerState();
 
@@ -175,8 +175,8 @@ describe("ElementRenderer", () => {
     });
   });
 
-  describe("2.0 Test Basic Element Rendering", () => {
-    test("2.1 renders div element type", () => {
+  describe("Test Basic Element Rendering", () => {
+    test("renders div element type", () => {
       const element = createMockElementNode({ type: "div" });
       const state = createMockMotionDesignerState({
         composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
@@ -188,7 +188,7 @@ describe("ElementRenderer", () => {
       expect(rendered).toBeTruthy();
     });
 
-    test("2.2 renders text element type", () => {
+    test("renders text element type", () => {
       const element = createMockElementNode({ type: "text" });
       const state = createMockMotionDesignerState({
         composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
@@ -201,7 +201,7 @@ describe("ElementRenderer", () => {
       expect(rendered).toBeTruthy();
     });
 
-    test("2.3 renders image element type", () => {
+    test("renders image element type", () => {
       const element = createMockElementNode({ type: "image" });
       const state = createMockMotionDesignerState({
         composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
@@ -213,7 +213,7 @@ describe("ElementRenderer", () => {
       expect(rendered).toBeTruthy();
     });
 
-    test("2.4 renders video element type", () => {
+    test("renders video element type", () => {
       const element = createMockElementNode({ type: "video" });
       const state = createMockMotionDesignerState({
         composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
@@ -225,7 +225,7 @@ describe("ElementRenderer", () => {
       expect(rendered).toBeTruthy();
     });
 
-    test("2.5 renders timegroup element type", () => {
+    test("renders timegroup element type", () => {
       const element = createMockElementNode({ type: "timegroup" });
       const state = createMockMotionDesignerState({
         composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
@@ -237,7 +237,7 @@ describe("ElementRenderer", () => {
       expect(rendered).toBeTruthy();
     });
 
-    test("2.6 invalid element type returns null", () => {
+    test("invalid element type returns null", () => {
       const element = createMockElementNode({ type: "invalid-type" as any });
       const state = createMockMotionDesignerState({
         composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
@@ -249,7 +249,7 @@ describe("ElementRenderer", () => {
       expect(rendered).toBeNull();
     });
 
-    test("2.7 element renders with data-element-id attribute", () => {
+    test("element renders with data-element-id attribute", () => {
       const element = createMockElementNode({ id: "test-id-123" });
       const state = createMockMotionDesignerState({
         composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
@@ -263,8 +263,8 @@ describe("ElementRenderer", () => {
     });
   });
 
-  describe("3.0 Test Style Merging and Application", () => {
-    test("3.1 designStyles are merged with existing props.style", () => {
+  describe("Test Style Merging and Application", () => {
+    test("designStyles are merged with existing props.style", () => {
       const element = createMockElementNode();
       const state = createMockMotionDesignerState({
         composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
@@ -285,7 +285,7 @@ describe("ElementRenderer", () => {
       expect(rendered.style.backgroundColor).toBe("red");
     });
 
-    test("3.2 timegroup elements don't receive cursor pointer style", () => {
+    test("timegroup elements don't receive cursor pointer style", () => {
       const element = createMockElementNode({ type: "timegroup" });
       const state = createMockMotionDesignerState({
         composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
@@ -301,7 +301,7 @@ describe("ElementRenderer", () => {
       expect(rendered.style.cursor).not.toBe("pointer");
     });
 
-    test("3.3 non-timegroup elements receive cursor pointer style", () => {
+    test("non-timegroup elements receive cursor pointer style", () => {
       const element = createMockElementNode({ type: "div" });
       const state = createMockMotionDesignerState({
         composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
@@ -317,7 +317,7 @@ describe("ElementRenderer", () => {
       expect(rendered.style.cursor).toBe("pointer");
     });
 
-    test("3.4 style merging preserves existing style properties", () => {
+    test("style merging preserves existing style properties", () => {
       const element = createMockElementNode();
       const state = createMockMotionDesignerState({
         composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
@@ -339,8 +339,8 @@ describe("ElementRenderer", () => {
     });
   });
 
-  describe("4.0 Test Animation CSS Generation and Injection", () => {
-    test("4.1 keyframeStyles are included in fullCSS", () => {
+  describe("Test Animation CSS Generation and Injection", () => {
+    test("keyframeStyles are included in fullCSS", () => {
       const element = createMockElementNode();
       const state = createMockMotionDesignerState({
         composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
@@ -356,7 +356,7 @@ describe("ElementRenderer", () => {
       expect(styleElement.textContent).toContain("@keyframes fade");
     });
 
-    test("4.2 text elements with split use generateTextSplitAnimationCSS", () => {
+    test("text elements with split use generateTextSplitAnimationCSS", () => {
       const element = createMockElementNode({
         type: "text",
         props: { split: "word" },
@@ -376,7 +376,7 @@ describe("ElementRenderer", () => {
       expect(styleElement.textContent).toContain("animation: test-anim");
     });
 
-    test("4.3 non-text elements use generateAnimationStyle for inline animation", () => {
+    test("non-text elements use generateAnimationStyle for inline animation", () => {
       const element = createMockElementNode({
         type: "div",
         animations: [createMockAnimation()],
@@ -395,7 +395,7 @@ describe("ElementRenderer", () => {
       expect(styleElement.textContent).toContain("animation: fade 1s ease 0s both paused");
     });
 
-    test("4.4 animation none is set when animationStyle.animation === 'none'", () => {
+    test("animation none is set when animationStyle.animation === 'none'", () => {
       const element = createMockElementNode({
         animations: [createMockAnimation()],
       });
@@ -412,7 +412,7 @@ describe("ElementRenderer", () => {
       expect(styleElement.textContent).toContain("animation: none");
     });
 
-    test("4.5 style element exists with correct ID and CSS", () => {
+    test("style element exists with correct ID and CSS", () => {
       const element = createMockElementNode({ id: "test-id-456" });
       const state = createMockMotionDesignerState({
         composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
@@ -430,8 +430,8 @@ describe("ElementRenderer", () => {
     });
   });
 
-  describe("5.0 Test Click Handling and Selection", () => {
-    test("5.1 clicking non-timegroup element calls actions.selectElement", async () => {
+  describe("Test Click Handling and Selection", () => {
+    test("clicking non-timegroup element calls actions.selectElement", async () => {
       const user = userEvent.setup();
       const element = createMockElementNode({ type: "div", id: "clickable-element" });
       const state = createMockMotionDesignerState({
@@ -446,7 +446,7 @@ describe("ElementRenderer", () => {
       expect(mockSelectElement).toHaveBeenCalledWith("clickable-element");
     });
 
-    test("5.2 clicking non-timegroup element stops event propagation", async () => {
+    test("clicking non-timegroup element stops event propagation", async () => {
       const element = createMockElementNode({ type: "div" });
       const state = createMockMotionDesignerState({
         composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
@@ -470,7 +470,7 @@ describe("ElementRenderer", () => {
       // by verifying the element's click handler executes and calls selectElement
     });
 
-    test("5.3 clicking timegroup element does not trigger selection", async () => {
+    test("clicking timegroup element does not trigger selection", async () => {
       const user = userEvent.setup();
       const element = createMockElementNode({ type: "timegroup", id: "timegroup-element" });
       const state = createMockMotionDesignerState({
@@ -485,7 +485,7 @@ describe("ElementRenderer", () => {
       expect(mockSelectElement).not.toHaveBeenCalled();
     });
 
-    test("5.4 clicking timegroup element does not stop propagation", async () => {
+    test("clicking timegroup element does not stop propagation", async () => {
       const user = userEvent.setup();
       const element = createMockElementNode({ type: "timegroup" });
       const state = createMockMotionDesignerState({
@@ -508,8 +508,8 @@ describe("ElementRenderer", () => {
     });
   });
 
-  describe("6.0 Test Component Key Generation", () => {
-    test("6.1 text elements generate composite key", () => {
+  describe("Test Component Key Generation", () => {
+    test("text elements generate composite key", () => {
       const element = createMockElementNode({
         type: "text",
         id: "text-1",
@@ -528,7 +528,7 @@ describe("ElementRenderer", () => {
       expect(rendered).toBeTruthy();
     });
 
-    test("6.2 non-text elements use element.id as component key", () => {
+    test("non-text elements use element.id as component key", () => {
       const element = createMockElementNode({ type: "div", id: "div-123" });
       const state = createMockMotionDesignerState({
         composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
@@ -541,8 +541,8 @@ describe("ElementRenderer", () => {
     });
   });
 
-  describe("7.0 Test Text Content Rendering", () => {
-    test("7.1 text elements render TextSegment component and textContent", () => {
+  describe("Test Text Content Rendering", () => {
+    test("text elements render TextSegment component and textContent", () => {
       const element = createMockElementNode({ type: "text" });
       const state = createMockMotionDesignerState({
         composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
@@ -557,7 +557,7 @@ describe("ElementRenderer", () => {
       expect(rendered?.textContent).toContain("Test Content");
     });
 
-    test("7.2 non-text elements render only textContent when present", () => {
+    test("non-text elements render only textContent when present", () => {
       const element = createMockElementNode({ type: "div" });
       const state = createMockMotionDesignerState({
         composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
@@ -573,8 +573,8 @@ describe("ElementRenderer", () => {
     });
   });
 
-  describe("8.0 Test Recursive Child Rendering", () => {
-    test("8.1 element with childIds renders child ElementRenderer components", () => {
+  describe("Test Recursive Child Rendering", () => {
+    test("element with childIds renders child ElementRenderer components", () => {
       const childElement = createMockElementNode({ id: "child-1", type: "div" });
       const parentElement = createMockElementNode({
         id: "parent-1",
@@ -599,7 +599,7 @@ describe("ElementRenderer", () => {
       expect(child).toBeTruthy();
     });
 
-    test("8.2 missing child element returns null", () => {
+    test("missing child element returns null", () => {
       const parentElement = createMockElementNode({
         id: "parent-1",
         childIds: ["non-existent-child"],
@@ -622,7 +622,7 @@ describe("ElementRenderer", () => {
       expect(missingChild).toBeNull();
     });
 
-    test("8.3 nested child structure renders correctly", () => {
+    test("nested child structure renders correctly", () => {
       const grandchildElement = createMockElementNode({ id: "grandchild-1", type: "div" });
       const childElement = createMockElementNode({
         id: "child-1",
@@ -655,7 +655,7 @@ describe("ElementRenderer", () => {
       expect(grandchild).toBeTruthy();
     });
 
-    test("8.4 child elements receive correct props", () => {
+    test("child elements receive correct props", () => {
       const childElement = createMockElementNode({ id: "child-1" });
       const parentElement = createMockElementNode({
         id: "parent-1",
@@ -679,8 +679,8 @@ describe("ElementRenderer", () => {
     });
   });
 
-  describe("9.0 Test Edge Cases and Error Handling", () => {
-    test("9.1 element with empty childIds array renders without children", () => {
+  describe("Test Edge Cases and Error Handling", () => {
+    test("element with empty childIds array renders without children", () => {
       const element = createMockElementNode({ childIds: [] });
       const state = createMockMotionDesignerState({
         composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
@@ -693,7 +693,7 @@ describe("ElementRenderer", () => {
       // Should not throw or error
     });
 
-    test("9.2 element with null textContent handles gracefully", () => {
+    test("element with null textContent handles gracefully", () => {
       const element = createMockElementNode({ type: "text" });
       const state = createMockMotionDesignerState({
         composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
@@ -707,7 +707,7 @@ describe("ElementRenderer", () => {
       expect(rendered).toBeTruthy();
     });
 
-    test("9.3 element with no animations generates minimal CSS", () => {
+    test("element with no animations generates minimal CSS", () => {
       const element = createMockElementNode({ animations: [] });
       const state = createMockMotionDesignerState({
         composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
@@ -723,7 +723,7 @@ describe("ElementRenderer", () => {
       expect(styleElement.textContent).toBe("");
     });
 
-    test("9.4 element with multiple animations combines all CSS correctly", () => {
+    test("element with multiple animations combines all CSS correctly", () => {
       const element = createMockElementNode({
         animations: [createMockAnimation({ id: "anim-1" }), createMockAnimation({ id: "anim-2" })],
       });
@@ -744,8 +744,8 @@ describe("ElementRenderer", () => {
     });
   });
 
-  describe("10.0 Test Integration with Real Dependencies", () => {
-    test("10.1 renders with actual elementRegistry components", async () => {
+  describe("Test Integration with Real Dependencies", () => {
+    test("renders with actual elementRegistry components", async () => {
       const element = createMockElementNode({ type: "div" });
       const state = createMockMotionDesignerState({
         composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
@@ -760,7 +760,7 @@ describe("ElementRenderer", () => {
       expect(elementRegistry[element.type as keyof typeof elementRegistry]).toBeDefined();
     });
 
-    test("10.2 CSS injection creates actual style element in DOM", () => {
+    test("CSS injection creates actual style element in DOM", () => {
       const element = createMockElementNode({
         animations: [createMockAnimation()],
       });
@@ -779,7 +779,7 @@ describe("ElementRenderer", () => {
       expect(styleElement.textContent).toContain("animation: test 1s");
     });
 
-    test("10.3 animation key stability", () => {
+    test("animation key stability", () => {
       const element = createMockElementNode({
         animations: [createMockAnimation({ id: "anim-1", delay: 0, duration: 1000 })],
       });
