@@ -34,28 +34,59 @@ find_monorepo_root() {
 MONOREPO_ROOT=$(find_monorepo_root "$SCRIPT_DIR/..")
 WS_ENDPOINT_PATH="$MONOREPO_ROOT/.wsEndpoint.json"
 
+# Export monorepo root so vitest config can find it even when bundled
+export MONOREPO_ROOT
+
 # Check if .wsEndpoint.json exists, if not start browser server
 if [ ! -f "$WS_ENDPOINT_PATH" ]; then
   echo "Browser server not running. Starting browser server..."
   
-  # Start browser server in background
-  npx tsx "$SCRIPT_DIR/start-host-chrome.ts" &
+  # Start browser server in background using the root script
+  # Redirect stderr to capture any errors
+  LOG_FILE=$(mktemp)
+  "$MONOREPO_ROOT/scripts/start-host-chrome" > "$LOG_FILE" 2>&1 &
   BROWSER_PID=$!
   
   # Wait for .wsEndpoint.json to be created (poll with timeout)
-  TIMEOUT=10
+  TIMEOUT=20
   ELAPSED=0
   while [ $ELAPSED -lt $TIMEOUT ]; do
+    # Check if process is still running
+    if ! kill -0 $BROWSER_PID 2>/dev/null; then
+      # Process died, check for errors
+      if [ ! -f "$WS_ENDPOINT_PATH" ]; then
+        echo "Error: Browser server process exited unexpectedly" >&2
+        echo "Output:" >&2
+        cat "$LOG_FILE" >&2
+        rm -f "$LOG_FILE"
+        exit 1
+      fi
+    fi
+    
     if [ -f "$WS_ENDPOINT_PATH" ]; then
-      echo "Browser server started successfully"
-      break
+      # Give it a moment to ensure the file is fully written and readable
+      sleep 0.5
+      if [ -f "$WS_ENDPOINT_PATH" ] && [ -r "$WS_ENDPOINT_PATH" ]; then
+        echo "Browser server started successfully"
+        rm -f "$LOG_FILE"
+        break
+      fi
     fi
     sleep 0.5
     ELAPSED=$((ELAPSED + 1))
   done
   
-  if [ ! -f "$WS_ENDPOINT_PATH" ]; then
+  rm -f "$LOG_FILE"
+  
+  if [ ! -f "$WS_ENDPOINT_PATH" ] || [ ! -r "$WS_ENDPOINT_PATH" ]; then
     echo "Error: Browser server failed to start within ${TIMEOUT}s" >&2
+    kill $BROWSER_PID 2>/dev/null || true
+    exit 1
+  fi
+  
+  # Additional verification: ensure file is valid JSON
+  if ! python3 -m json.tool "$WS_ENDPOINT_PATH" > /dev/null 2>&1; then
+    echo "Error: .wsEndpoint.json exists but is not valid JSON" >&2
     kill $BROWSER_PID 2>/dev/null || true
     exit 1
   fi
@@ -66,10 +97,22 @@ if [ -z "${VITEST_BROWSER_MODE}" ] && [ -f "$WS_ENDPOINT_PATH" ]; then
   export VITEST_BROWSER_MODE=connect
 fi
 
+# Read wsEndpoint from file and pass as environment variable
+# This is necessary because Docker only mounts the elements directory, not the monorepo root
+# So the file at the monorepo root isn't accessible inside Docker
+if [ -f "$WS_ENDPOINT_PATH" ]; then
+  WS_ENDPOINT=$(python3 -c "import json, sys; print(json.load(sys.stdin)['wsEndpoint'])" < "$WS_ENDPOINT_PATH" 2>/dev/null || echo "")
+  if [ -n "$WS_ENDPOINT" ]; then
+    export WS_ENDPOINT
+  fi
+fi
+
 # Load worktree config to get WORKTREE_DOMAIN
 if [ -f "${SCRIPT_DIR}/worktree-config" ]; then
   source "${SCRIPT_DIR}/worktree-config"
   export WORKTREE_DOMAIN
 fi
 
-"${SCRIPT_DIR}"/npx vitest --config vitest.config.browser.ts --configLoader bundle "$@"
+# Explicitly pass MONOREPO_ROOT, WS_ENDPOINT, and VITEST_BROWSER_MODE to vitest command
+# Use --run to ensure non-watch mode (consistent behavior across environments)
+MONOREPO_ROOT="$MONOREPO_ROOT" WS_ENDPOINT="$WS_ENDPOINT" VITEST_BROWSER_MODE="$VITEST_BROWSER_MODE" "${SCRIPT_DIR}"/run npx vitest --run --config vitest.config.browser.ts --configLoader bundle "$@"
