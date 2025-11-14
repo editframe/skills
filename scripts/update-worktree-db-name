@@ -35,3 +35,4 @@ echo "✅ Done! DB_NAME in all worktrees now set to 'default'"
 echo "   This matches the Hasura metadata database name."
 
 
+
