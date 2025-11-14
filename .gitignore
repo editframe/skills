@@ -5,3 +5,4 @@ node_modules/.package-lock.json
 elements/docker-compose.yaml.processed.*
 
 node_modules/
+.wsEndpoint.json
