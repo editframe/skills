@@ -34,11 +34,19 @@ services:
     privileged: true
     stop_grace_period: 1s
     command: ["sleep", "infinity"]
+    # Expose port 4323 for test server (vitest browser tests)
+    expose:
+      - "4323"
     networks:
       - default
       - traefik-shared
     labels:
-      - traefik.enable=false
+      traefik.enable: true
+      # Test server uses its own Traefik entrypoint (port 4323) to avoid conflict with other services
+      traefik.http.routers.telecine-test-${WORKTREE_ID:-main}.rule: "Host(`${WORKTREE_DOMAIN}`)"
+      traefik.http.routers.telecine-test-${WORKTREE_ID:-main}.entrypoints: telecine-test
+      traefik.http.routers.telecine-test-${WORKTREE_ID:-main}.service: telecine-test-${WORKTREE_ID:-main}
+      traefik.http.services.telecine-test-${WORKTREE_ID:-main}.loadbalancer.server.port: 4323
 
   # playwright-runner:
   #   build:
