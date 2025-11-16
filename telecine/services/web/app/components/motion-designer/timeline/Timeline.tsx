@@ -285,7 +285,6 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
       <div className="flex-1 flex flex-col relative">
           {/* Ruler area */}
           <div className="flex h-8 border-b border-gray-700/70 bg-gray-850">
-            <div className="w-48"></div>
             <div 
               ref={timelineContainerRef}
               className="flex-1 relative cursor-pointer" 
@@ -307,7 +306,6 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
           
           {/* Playhead spans both ruler and tracks */}
           <div className="absolute inset-0 pointer-events-none flex">
-            <div className="w-48"></div>
             <div className="flex-1 relative">
               <TimelinePlayhead
                 currentTime={scrubberCurrentTime}

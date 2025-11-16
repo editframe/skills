@@ -205,7 +205,7 @@ export function AnimationTrack({
 
   return (
     <div className="flex items-center border-b border-gray-700/50 h-8 hover:bg-gray-800/30">
-      <div className="w-48 text-xs text-gray-400 truncate px-4 flex items-center gap-1">
+      <div className="text-xs text-gray-400 truncate px-2 flex items-center gap-1 min-w-[60px]">
         <span className="text-gray-500 text-[10px]">›</span>
         <span className="truncate font-light">{animation.name}</span>
       </div>
