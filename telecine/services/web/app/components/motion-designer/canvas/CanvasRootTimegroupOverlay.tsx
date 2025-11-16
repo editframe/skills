@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
-import { TogglePlay } from "@editframe/react";
 import type { MotionDesignerState, ElementNode } from "~/lib/motion-designer/types";
 import { getActiveRootTimegroupId } from "~/lib/motion-designer/utils";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
+import { PlayLoopButton } from "../controls/PlayLoopButton";
+import { PlayPauseButton } from "../controls/PlayPauseButton";
 
 interface CanvasRootTimegroupOverlayProps {
   element: ElementNode;
@@ -368,20 +369,18 @@ export function CanvasRootTimegroupOverlay({
     >
       {isActive && (
         <div className="absolute bottom-full mb-1 left-0 flex items-center gap-2 text-xs text-gray-400 bg-gray-900 px-2 py-1 rounded z-10 pointer-events-auto">
-          <TogglePlay target={element.id}>
-            <button
-              slot="play"
-              className="w-4 h-4 flex items-center justify-center hover:text-white"
-            >
-              <span className="text-xs">▶</span>
-            </button>
-            <button
-              slot="pause"
-              className="w-4 h-4 flex items-center justify-center hover:text-white"
-            >
-              <span className="text-xs">⏸</span>
-            </button>
-          </TogglePlay>
+          <PlayPauseButton
+            targetId={element.id}
+            playButtonClassName="w-4 h-4 flex items-center justify-center hover:text-white"
+            pauseButtonClassName="w-4 h-4 flex items-center justify-center hover:text-white"
+            iconSize={12}
+          />
+          <PlayLoopButton
+            targetId={element.id}
+            className="w-4 h-4 flex items-center justify-center rounded transition-colors hover:text-white"
+            activeClassName="bg-blue-500/20 text-blue-400 border border-blue-500/50"
+            iconSize={12}
+          />
           <span>
             Timegroup · {duration} · {Math.round(elementSize.width)}×{Math.round(elementSize.height)}
           </span>
