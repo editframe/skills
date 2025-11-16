@@ -6,3 +6,4 @@ elements/docker-compose.yaml.processed.*
 
 node_modules/
 .wsEndpoint.json
+.cursor/plans

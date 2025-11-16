@@ -6,10 +6,12 @@ import { timegroupProperties } from "./timegroupProperties";
 import { mediaProperties } from "./mediaProperties";
 
 export const propertySections: PropertySectionConfig[] = [
-  ...layoutProperties,
-  ...visualProperties,
+  // Element-specific properties first
   ...textProperties,
   ...timegroupProperties,
   ...mediaProperties,
+  // Common properties after
+  ...layoutProperties,
+  ...visualProperties,
 ];
 
