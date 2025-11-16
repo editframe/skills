@@ -6,7 +6,40 @@ import { EF_INTERACTIVE } from "../EF_INTERACTIVE.js";
 import { PlaybackController } from "../gui/PlaybackController.js";
 import { durationConverter } from "./durationConverter.js";
 import type { EFTimegroup } from "./EFTimegroup.js";
-import { isTimegroupCalculatingDuration } from "./EFTimegroup.js";
+// Lazy import to break circular dependency: EFTemporal -> EFTimegroup -> EFMedia -> EFTemporal
+// isTimegroupCalculatingDuration is only used at runtime in a getter, so we can import it lazily
+// Use a module-level variable that gets set when EFTimegroup module loads
+let isTimegroupCalculatingDurationFn: ((timegroup: EFTimegroup | undefined) => boolean) | null = null;
+
+// This function will be called by EFTimegroup when it loads to register the function
+export const registerIsTimegroupCalculatingDuration = (
+  fn: (timegroup: EFTimegroup | undefined) => boolean,
+) => {
+  isTimegroupCalculatingDurationFn = fn;
+};
+
+const getIsTimegroupCalculatingDuration = (): (timegroup: EFTimegroup | undefined) => boolean => {
+  if (!isTimegroupCalculatingDurationFn) {
+    // If not registered yet, try to import synchronously (only works if module is already loaded)
+    // This is a fallback for cases where EFTimegroup hasn't called registerIsTimegroupCalculatingDuration
+    // In practice, EFTimegroup will call registerIsTimegroupCalculatingDuration when it loads
+    try {
+      // Access the function via a global or try to get it from the module cache
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const efTimegroupModule = (globalThis as any).__EFTimegroupModule;
+      if (efTimegroupModule?.isTimegroupCalculatingDuration) {
+        isTimegroupCalculatingDurationFn = efTimegroupModule.isTimegroupCalculatingDuration;
+      } else {
+        // Last resort: return a function that always returns false
+        // This prevents infinite loops but might miss some edge cases
+        isTimegroupCalculatingDurationFn = () => false;
+      }
+    } catch {
+      isTimegroupCalculatingDurationFn = () => false;
+    }
+  }
+  return isTimegroupCalculatingDurationFn;
+};
 
 export const timegroupContext = createContext<EFTimegroup>(
   Symbol("timeGroupContext"),
@@ -619,6 +652,12 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
         this.playbackController.remove();
         this.playbackController = undefined;
       }
+
+      // Clean up tracked animations to prevent memory leaks
+      // Use dynamic import to avoid circular dependency with updateAnimations
+      import("./updateAnimations.js").then(({ cleanupTrackedAnimations }) => {
+        cleanupTrackedAnimations(this);
+      });
     }
 
     connectedCallback() {
@@ -828,6 +867,8 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
 
     get durationMs() {
       // Prevent infinite loops: don't call parent.durationMs if parent is currently calculating
+      // Lazy import to break circular dependency: EFTemporal -> EFTimegroup -> EFMedia -> EFTemporal
+      const isTimegroupCalculatingDuration = getIsTimegroupCalculatingDuration();
       const parentDurationMs = isTimegroupCalculatingDuration(this.parentTimegroup)
         ? undefined
         : this.parentTimegroup?.durationMs;

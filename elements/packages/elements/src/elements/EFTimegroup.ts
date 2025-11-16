@@ -87,6 +87,11 @@ export const isTimegroupCalculatingDuration = (
   return timegroup !== undefined && durationCalculationInProgress.has(timegroup);
 };
 
+// Register this function with EFTemporal to break circular dependency
+// EFTemporal needs this function but can't import it directly due to circular dependency
+import { registerIsTimegroupCalculatingDuration } from "./EFTemporal.js";
+registerIsTimegroupCalculatingDuration(isTimegroupCalculatingDuration);
+
 /**
  * Determines if a timegroup has its own duration based on its mode.
  * This is the semantic rule: which modes produce independent durations.
