@@ -84,6 +84,13 @@ export class EFTextSegment extends EFTemporal(LitElement) {
   }
 
   render() {
+    // Set CSS variables in render() to ensure they're always set
+    // This is necessary because Lit may clear inline styles during updates
+    this.setCSSVariables();
+    return html`${this.segmentText}`;
+  }
+
+  private setCSSVariables(): void {
     // Set deterministic --ef-seed value based on segment index
     const seed = (this.segmentIndex * 9007) % 233; // Prime numbers for better distribution
     const seedValue = seed / 233; // Normalize to 0-1 range
@@ -96,8 +103,14 @@ export class EFTextSegment extends EFTemporal(LitElement) {
 
     // Set index CSS variable
     this.style.setProperty("--ef-index", this.segmentIndex.toString());
+  }
 
-    return html`${this.segmentText}`;
+  protected firstUpdated(): void {
+    this.setCSSVariables();
+  }
+
+  protected updated(): void {
+    this.setCSSVariables();
   }
 
 
