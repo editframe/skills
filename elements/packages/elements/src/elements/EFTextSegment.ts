@@ -1,7 +1,6 @@
 import { css, html, LitElement } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { EFTemporal } from "./EFTemporal.js";
-import type { EFText } from "./EFText.js";
+import { EFTemporal, type TemporalMixinInterface } from "./EFTemporal.ts";
 
 @customElement("ef-text-segment")
 export class EFTextSegment extends EFTemporal(LitElement) {
@@ -23,6 +22,67 @@ export class EFTextSegment extends EFTemporal(LitElement) {
     `,
   ];
 
+  /**
+   * Registers animation styles that should be shared across all text segments.
+   * This is the correct way to inject animation styles for segments - not via innerHTML.
+   * 
+   * @param id Unique identifier for this stylesheet (e.g., "my-animations")
+   * @param cssText The CSS rules to inject
+   * 
+   * @example
+   * EFTextSegment.registerAnimations("bounceIn", `
+   *   @keyframes bounceIn {
+   *     from { transform: scale(0); }
+   *     to { transform: scale(1); }
+   *   }
+   *   .bounce-in {
+   *     animation: bounceIn 0.5s ease-out;
+   *   }
+   * `);
+   */
+  static registerAnimations(id: string, cssText: string): void {
+    if (globalAnimationSheets.has(id)) {
+      // Already registered
+      return;
+    }
+
+    const sheet = new CSSStyleSheet();
+    sheet.replaceSync(cssText);
+    globalAnimationSheets.set(id, sheet);
+
+    // Apply to all existing instances
+    document.querySelectorAll("ef-text-segment").forEach((segment) => {
+      if (segment.shadowRoot) {
+        const adoptedSheets = segment.shadowRoot.adoptedStyleSheets;
+        if (!adoptedSheets.includes(sheet)) {
+          segment.shadowRoot.adoptedStyleSheets = [...adoptedSheets, sheet];
+        }
+      }
+    });
+  }
+
+  /**
+   * Unregisters previously registered animation styles.
+   * 
+   * @param id The identifier of the stylesheet to remove
+   */
+  static unregisterAnimations(id: string): void {
+    const sheet = globalAnimationSheets.get(id);
+    if (!sheet) {
+      return;
+    }
+
+    globalAnimationSheets.delete(id);
+
+    // Remove from all existing instances
+    document.querySelectorAll("ef-text-segment").forEach((segment) => {
+      if (segment.shadowRoot) {
+        segment.shadowRoot.adoptedStyleSheets =
+          segment.shadowRoot.adoptedStyleSheets.filter((s) => s !== sheet);
+      }
+    });
+  }
+
   render() {
     // Set deterministic --ef-seed value based on segment index
     const seed = (this.segmentIndex * 9007) % 233; // Prime numbers for better distribution
@@ -40,39 +100,6 @@ export class EFTextSegment extends EFTemporal(LitElement) {
     return html`${this.segmentText}`;
   }
 
-  private _animationsPaused = false;
-
-  connectedCallback() {
-    super.connectedCallback();
-    // CRITICAL: Pause all animations once when segment is first connected
-    // Animations (both CSS and WAAPI) start automatically and must be paused so updateAnimations can control them
-    // Only do this once on initial load
-    if (!this._animationsPaused) {
-      // Wait for segment to be fully updated before pausing animations
-      this.updateComplete.then(() => {
-        requestAnimationFrame(() => {
-          const animations = this.getAnimations();
-          for (const animation of animations) {
-            // Ensure animation is in a playable state
-            // If it's finished, reset it
-            if (animation.playState === "finished") {
-              animation.cancel();
-              animation.play();
-              animation.pause();
-            } else if (animation.playState === "running") {
-              // Pause if running, preserving current visual state
-              animation.pause();
-            }
-            // Don't reset currentTime here - let updateAnimations set it based on timeline
-            // This preserves any visual state that was already applied
-          }
-          this._animationsPaused = true;
-          // Note: updateAnimations is called from parent EFText after all segments are created
-          // This avoids calling it multiple times (once per segment)
-        });
-      });
-    }
-  }
 
   @property({ type: String, attribute: false })
   segmentText = "";

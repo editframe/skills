@@ -298,10 +298,40 @@ const calculateEffectiveDelay = (
   delay: number,
   element: AnimatableElement,
 ): number => {
-  if (supportsStaggerOffset(element) && element.staggerOffsetMs !== undefined) {
-    // Apply stagger offset for animation timing
-    // We ADD the stagger offset to the delay, so animations start later for later segments
-    return delay + element.staggerOffsetMs;
+  if (supportsStaggerOffset(element)) {
+    // Read stagger offset from CSS variable --ef-stagger-offset
+    // This is the source of truth - the CSS variable is always set on text segments
+    // Try inline style first (set via style.setProperty in render()), then computed style
+    let cssValue = (element as HTMLElement).style.getPropertyValue(
+      "--ef-stagger-offset",
+    ).trim();
+    
+    if (!cssValue) {
+      cssValue = window.getComputedStyle(element).getPropertyValue(
+        "--ef-stagger-offset",
+      ).trim();
+    }
+    
+    if (cssValue) {
+      // Parse "100ms" format to milliseconds
+      // Handle both "100ms" and "100" formats
+      const match = cssValue.match(/(\d+(?:\.\d+)?)\s*ms?/);
+      if (match) {
+        const staggerOffset = parseFloat(match[1]!);
+        if (!isNaN(staggerOffset)) {
+          // Apply stagger offset for animation timing
+          // We ADD the stagger offset to the delay, so animations start later for later segments
+          // Note: staggerOffset can be 0 for the first segment, which is correct
+          return delay + staggerOffset;
+        }
+      } else {
+        // Try parsing as just a number
+        const numValue = parseFloat(cssValue);
+        if (!isNaN(numValue)) {
+          return delay + numValue;
+        }
+      }
+    }
   }
   return delay;
 };
@@ -578,9 +608,9 @@ const mapAndSetAnimationTime = (
   // If before delay, show initial keyframe state (0% of animation)
   // Use strict < 0 so that at exactly the delay time (adjustedTime = 0), we start animating
   if (adjustedTime < 0) {
-    // Before delay: currentTime should be at the absolute timeline time
-    // This ensures the animation is "caught up" with the delay
-    animation.currentTime = elementTime;
+    // Before delay: show initial keyframe state (currentTime = 0)
+    // This ensures animations that haven't started yet show their initial state
+    animation.currentTime = 0;
     return;
   }
 
@@ -659,7 +689,19 @@ const synchronizeAnimation = (
     }
   }
 
-  const effectiveDelay = calculateEffectiveDelay(timing.delay, timeSource);
+  // For stagger offset, check the actual animation target (e.g., text segment),
+  // not the time source (timegroup). The target element has the stagger offset.
+  // We need to check if the target supports stagger offset (is a text segment).
+  let staggerElement: AnimatableElement = timeSource;
+  if (target && target instanceof HTMLElement) {
+    // Check if target is a text segment - if so, use it for stagger calculation
+    // Use supportsStaggerOffset to properly identify staggerable elements
+    const targetAsAnimatable = target as AnimatableElement;
+    if (supportsStaggerOffset(targetAsAnimatable)) {
+      staggerElement = targetAsAnimatable;
+    }
+  }
+  const effectiveDelay = calculateEffectiveDelay(timing.delay, staggerElement);
   mapAndSetAnimationTime(animation, timeSource, timing, effectiveDelay);
 };
 
@@ -668,6 +710,11 @@ const synchronizeAnimation = (
  *
  * Gets animations on the element itself and its subtree.
  * Both CSS animations (created via the 'animation' property) and WAAPI animations are included.
+ *
+ * CRITICAL: CSS animations are created asynchronously when classes are added. This function
+ * gets a snapshot of animations at the time of the call. If animations haven't been created
+ * yet (e.g., CSS animations on elements that were just connected), they won't be found.
+ * This is why it's important to ensure animations are created before calling updateAnimations.
  */
 const coordinateElementAnimations = (element: AnimatableElement): void => {
   const animations = element.getAnimations({ subtree: true });
