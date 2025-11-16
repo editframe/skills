@@ -75,6 +75,22 @@ describe("EFText", () => {
       expect(segments[2]?.segmentText).toBe("world");
     });
 
+    test("attaches punctuation marks to preceding word when splitting by word", async () => {
+      const timegroup = document.createElement("ef-timegroup");
+      const text = document.createElement("ef-text");
+      text.split = "word";
+      text.textContent = "WHAT??? ARE";
+      text.duration = "3s";
+      timegroup.appendChild(text);
+      document.body.appendChild(timegroup);
+      testElements.push(timegroup);
+
+      await text.updateComplete;
+      const segments = await text.whenSegmentsReady();
+
+      expect(segments[0]?.segmentText).toBe("WHAT???");
+    });
+
     test("splits text by lines when split='line'", async () => {
       const timegroup = document.createElement("ef-timegroup");
       const text = document.createElement("ef-text");

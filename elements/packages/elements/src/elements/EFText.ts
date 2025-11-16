@@ -631,12 +631,27 @@ export class EFText extends EFTemporal(LitElement) {
           granularity: "word",
         });
         const segments = Array.from(segmenter.segment(trimmedText));
-        // Include word-like segments and whitespace segments (preserve spaces between words)
-        return segments
-          .filter(
-            (seg) => seg.isWordLike || /^\s+$/.test(seg.segment),
-          )
-          .map((seg) => seg.segment);
+        const result: string[] = [];
+        
+        for (const seg of segments) {
+          if (seg.isWordLike) {
+            // Word-like segment - add it
+            result.push(seg.segment);
+          } else if (/^\s+$/.test(seg.segment)) {
+            // Whitespace segment - add it as-is
+            result.push(seg.segment);
+          } else {
+            // Punctuation segment - attach to preceding word if it exists
+            if (result.length > 0 && !/^\s+$/.test(result[result.length - 1])) {
+              result[result.length - 1] += seg.segment;
+            } else {
+              // No preceding word, add punctuation as its own segment
+              result.push(seg.segment);
+            }
+          }
+        }
+        
+        return result;
       }
       case "char": {
         // Use Intl.Segmenter for grapheme-aware character segmentation
