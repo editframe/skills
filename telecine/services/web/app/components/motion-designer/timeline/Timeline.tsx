@@ -13,10 +13,18 @@ import { useMotionDesignerActions } from "../context/MotionDesignerContext";
 import { useTimeManager } from "./useTimeManager";
 import { useTimelineScrubbing } from "./useTimelineScrubbing";
 
+// Track data structure for separate label/strip rendering
+interface TrackData {
+  element: ElementNode;
+  animation: Animation;
+  isSelected: boolean;
+}
+
 // Core concept: Timeline layout data structure
 interface TimelineLayout {
   snapPoints: number[];
-  trackElements: React.ReactNode[];
+  trackData: TrackData[];
+  trackStrips: React.ReactNode[];
 }
 
 // Core concept: Track rendering context
@@ -56,11 +64,39 @@ function collectSnapPoints(element: ElementNode, state: MotionDesignerState): nu
   return snapPoints;
 }
 
+// Mechanism: Collect track data for element tree
+function collectTrackData(
+  element: ElementNode,
+  state: MotionDesignerState,
+): TrackData[] {
+  const tracks: TrackData[] = [];
+
+  // Add one track per animation
+  for (const animation of element.animations) {
+    tracks.push({
+      element,
+      animation,
+      isSelected: state.ui.selectedAnimationId === animation.id,
+    });
+  }
+
+  // Recursively collect from children
+  for (const childId of element.childIds) {
+    const child = state.composition.elements[childId];
+    if (child) {
+      tracks.push(...collectTrackData(child, state));
+    }
+  }
+
+  return tracks;
+}
+
 // Mechanism: Render track elements for element tree
 function renderAnimationTracks(
   element: ElementNode,
   state: MotionDesignerState,
   context: TimelineTrackContext,
+  showLabel: boolean = true,
 ): React.ReactNode[] {
   const tracks: React.ReactNode[] = [];
 
@@ -76,6 +112,7 @@ function renderAnimationTracks(
         snapPoints={context.snapPoints}
         currentTime={context.currentTime}
         isSelected={state.ui.selectedAnimationId === animation.id}
+        showLabel={showLabel}
       />,
     );
   }
@@ -84,7 +121,7 @@ function renderAnimationTracks(
   for (const childId of element.childIds) {
     const child = state.composition.elements[childId];
     if (child) {
-      tracks.push(...renderAnimationTracks(child, state, context));
+      tracks.push(...renderAnimationTracks(child, state, context, showLabel));
     }
   }
 
@@ -101,16 +138,20 @@ function calculateTimelineLayout(
   const rawSnapPoints = collectSnapPoints(element, state);
   const snapPoints = Array.from(new Set(rawSnapPoints)).sort((a, b) => a - b);
   
-  // Step 2: Create track elements with final snap points
+  // Step 2: Collect track data for labels
+  const trackData = collectTrackData(element, state);
+  
+  // Step 3: Create track strips (without labels) with final snap points
   const trackContextWithSnapPoints: TimelineTrackContext = {
     ...context,
     snapPoints,
   };
-  const trackElements = renderAnimationTracks(element, state, trackContextWithSnapPoints);
+  const trackStrips = renderAnimationTracks(element, state, trackContextWithSnapPoints, false);
 
   return {
     snapPoints,
-    trackElements,
+    trackData,
+    trackStrips,
   };
 }
 
@@ -159,12 +200,41 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
     : null;
   const timelineContainerRef = useRef<HTMLDivElement>(null);
   const tracksContainerRef = useRef<HTMLDivElement>(null);
+  const labelsContainerRef = useRef<HTMLDivElement>(null);
   
   const { currentTime: scrubberCurrentTime, duration: durationMs, isScrubbingRef: timeManagerScrubbingRef } = useTimeManager(activeRootTimegroupId, state);
 
   // Synchronization: Sync time and refs
   useTimeSync(scrubberCurrentTime, actions.setCurrentTime);
   useRefSync(timeManagerScrubbingRef, isScrubbingRef);
+
+  // Synchronize scrolling between labels and tracks
+  useEffect(() => {
+    const tracksContainer = tracksContainerRef.current;
+    const labelsContainer = labelsContainerRef.current;
+    
+    if (!tracksContainer || !labelsContainer) return;
+
+    const handleTracksScroll = () => {
+      if (labelsContainer.scrollTop !== tracksContainer.scrollTop) {
+        labelsContainer.scrollTop = tracksContainer.scrollTop;
+      }
+    };
+
+    const handleLabelsScroll = () => {
+      if (tracksContainer.scrollTop !== labelsContainer.scrollTop) {
+        tracksContainer.scrollTop = labelsContainer.scrollTop;
+      }
+    };
+
+    tracksContainer.addEventListener('scroll', handleTracksScroll);
+    labelsContainer.addEventListener('scroll', handleLabelsScroll);
+
+    return () => {
+      tracksContainer.removeEventListener('scroll', handleTracksScroll);
+      labelsContainer.removeEventListener('scroll', handleLabelsScroll);
+    };
+  }, []);
 
   // Handle seek from playhead - update current time immediately and seek timegroup element
   const handleSeek = (time: number) => {
@@ -283,30 +353,47 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
         onRestart={() => actions.setCurrentTime(0)}
       />
       <div className="flex-1 flex flex-col relative">
-          {/* Ruler area */}
-          <div className="flex h-8 border-b border-gray-700/70 bg-gray-850">
+        {/* Two-column layout: labels column (fixed) + content column (flex) */}
+        <div className="flex flex-1 relative">
+          {/* Labels column - fixed width, contains all layer labels */}
+          <div className="w-[60px] flex flex-col border-r border-gray-700/70">
+            {/* Label spacer for ruler row */}
+            <div className="h-8 border-b border-gray-700/70 bg-gray-850" />
+            {/* Labels container - scrolls in sync with tracks */}
+            <div ref={labelsContainerRef} className="flex-1 overflow-y-auto">
+              {layout.trackData.map((track, index) => (
+                <div key={`${track.element.id}-${track.animation.id}`} className="h-8 border-b border-gray-700/50 flex items-center px-2">
+                  <div className="text-xs text-gray-400 truncate flex items-center gap-1">
+                    <span className="text-gray-500 text-[10px]">›</span>
+                    <span className="truncate font-light">{track.animation.name}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Content column - ruler and track strips share this space */}
+          <div className="flex-1 flex flex-col relative" style={{ minWidth: 0 }}>
+            {/* Ruler area - spans full content column width */}
             <div 
               ref={timelineContainerRef}
-              className="flex-1 relative cursor-pointer" 
-              style={{ minWidth: 0 }}
+              className="h-8 border-b border-gray-700/70 bg-gray-850 relative cursor-pointer"
               onMouseDown={rulerScrubbing.handleMouseDown}
             >
               <TimelineRuler durationMs={durationMs} />
             </div>
-          </div>
-          
-          {/* Tracks area - uses same width as ruler via flex-1 */}
-          <div 
-            ref={tracksContainerRef}
-            className="flex-1 overflow-y-auto relative cursor-pointer"
-            onMouseDown={handleTracksMouseDown}
-          >
-            {layout.trackElements}
-          </div>
-          
-          {/* Playhead spans both ruler and tracks */}
-          <div className="absolute inset-0 pointer-events-none flex">
-            <div className="flex-1 relative">
+            
+            {/* Tracks area - strips only, no labels */}
+            <div 
+              ref={tracksContainerRef}
+              className="flex-1 overflow-y-auto relative cursor-pointer"
+              onMouseDown={handleTracksMouseDown}
+            >
+              {layout.trackStrips}
+            </div>
+            
+            {/* Playhead spans full content column */}
+            <div className="absolute inset-0 pointer-events-none">
               <TimelinePlayhead
                 currentTime={scrubberCurrentTime}
                 durationMs={durationMs}
@@ -317,6 +404,7 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
               />
             </div>
           </div>
+        </div>
       </div>
     </div>
   );

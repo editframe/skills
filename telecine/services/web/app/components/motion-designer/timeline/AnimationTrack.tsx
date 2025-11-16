@@ -10,6 +10,7 @@ interface AnimationTrackProps {
   snapPoints: number[];
   currentTime: number;
   isSelected: boolean;
+  showLabel?: boolean; // If false, only render the strip (no label)
 }
 
 interface AnimationBarProps {
@@ -199,9 +200,36 @@ export function AnimationTrack({
   snapPoints,
   currentTime,
   isSelected,
+  showLabel = true,
 }: AnimationTrackProps) {
   const actions = useMotionDesignerActions();
   const elementName = `${element.type} ${element.id.slice(0, 4)}`;
+
+  const stripContent = (
+    <div className="relative h-full bg-gray-900/20">
+      <AnimationBar
+        animation={animation}
+        element={element}
+        durationMs={durationMs}
+        trackContainerRef={timelineContainerRef}
+        onUpdate={(updates) => {
+          actions.updateAnimation(element.id, animation.id, updates);
+        }}
+        snapPoints={snapPoints}
+        currentTime={currentTime}
+        onSelect={() => actions.selectAnimation(animation.id, element.id)}
+        isSelected={isSelected}
+      />
+    </div>
+  );
+
+  if (!showLabel) {
+    return (
+      <div className="border-b border-gray-700/50 h-8 hover:bg-gray-800/30">
+        {stripContent}
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center border-b border-gray-700/50 h-8 hover:bg-gray-800/30">
@@ -210,19 +238,7 @@ export function AnimationTrack({
         <span className="truncate font-light">{animation.name}</span>
       </div>
       <div className="flex-1 relative h-full bg-gray-900/20">
-        <AnimationBar
-          animation={animation}
-          element={element}
-          durationMs={durationMs}
-          trackContainerRef={timelineContainerRef}
-          onUpdate={(updates) => {
-            actions.updateAnimation(element.id, animation.id, updates);
-          }}
-          snapPoints={snapPoints}
-          currentTime={currentTime}
-          onSelect={() => actions.selectAnimation(animation.id, element.id)}
-          isSelected={isSelected}
-        />
+        {stripContent}
       </div>
     </div>
   );
