@@ -118,7 +118,7 @@ Split text by lines for paragraph-by-paragraph reveals:
 
 <Demonstration layout="horizontal" defaultSourceVisible alwaysShowSource>
   <style>{`
-    @keyframes fadeIn {
+    @keyframes fadeInLine {
       from {
         opacity: 0;
         transform: translateY(20px);
@@ -128,14 +128,14 @@ Split text by lines for paragraph-by-paragraph reveals:
         transform: translateY(0);
       }
     }
-    .fade-in {
-      animation: fadeIn 0.5s ease-out;
+    .fade-in-line {
+      animation: fadeInLine 0.5s ease-out paused;
     }
   `}</style>
   <Timegroup mode="contain" className="w-[720px] h-[405px] flex items-center justify-center bg-gradient-to-r from-indigo-900 to-teal-900 relative">
     <Text split="line" stagger="100ms" easing="ease-in-out" duration="8s" className="text-center text-white text-xl bg-black bg-opacity-70 px-6 py-4 rounded-lg">
       <template>
-        <TextSegment className="fade-in" />
+        <TextSegment className="fade-in-line" />
       </template>
       First line of text
 Second line continues
