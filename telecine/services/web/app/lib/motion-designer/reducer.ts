@@ -2,6 +2,11 @@ import type { MotionDesignerState } from "./types.js";
 import type { MotionDesignerAction } from "./actions.js";
 import { shallowClone, merge } from "./immutability.js";
 import { validateAllInvariants } from "./invariants.js";
+import { behaviorRegistry } from "./behaviors.js";
+import { registerCoreBehaviors } from "./coreBehaviors.js";
+
+// Register core behaviors on module load
+registerCoreBehaviors();
 
 function validateAndReturn(
   newState: MotionDesignerState,
@@ -210,6 +215,14 @@ export function motionDesignerReducer(
       const element = state.composition.elements[id];
       if (!element) return state;
 
+      // Check if move is allowed by registered behaviors
+      if (!behaviorRegistry.canMove(id, newParentId, newIndex, state)) {
+        console.warn(
+          `Move operation rejected by behavior system: element ${id} cannot move to parent ${newParentId ?? "root"} at index ${newIndex ?? "end"}`,
+        );
+        return state;
+      }
+
       const newState = shallowClone(state);
       newState.composition = shallowClone(state.composition);
       const newElements = { ...newState.composition.elements };
@@ -266,7 +279,16 @@ export function motionDesignerReducer(
       newState.composition.elements = newElements;
       newState.composition.rootTimegroupIds = newRootTimegroupIds;
 
-      return validateAndReturn(newState);
+      const validatedState = validateAndReturn(newState);
+
+      // Call onMove callbacks for registered behaviors
+      behaviorRegistry.onMove(id, newParentId, newIndex, validatedState).catch(
+        (error) => {
+          console.error("Error in behavior onMove callbacks:", error);
+        },
+      );
+
+      return validatedState;
     }
 
     case "ADD_ANIMATION": {

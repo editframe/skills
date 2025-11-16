@@ -1,8 +1,10 @@
-import { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { getElementIcon } from "~/lib/motion-designer/elementTypes";
 import type { MotionDesignerState, ElementNode } from "~/lib/motion-designer/types";
 import { getActiveRootTimegroupId } from "~/lib/motion-designer/utils";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
+import { useDragContext } from "./DragContext";
+import { behaviorRegistry } from "~/lib/motion-designer/behaviors";
 
 interface HierarchyItemProps {
   element: ElementNode;
@@ -10,22 +12,32 @@ interface HierarchyItemProps {
   depth: number;
 }
 
+type DropPosition = "before" | "after" | "inside" | null;
+
 export function HierarchyItem({
   element,
   state,
   depth,
 }: HierarchyItemProps) {
   const actions = useMotionDesignerActions();
+  const { dragState, startDrag, setDropTarget } = useDragContext();
   const [isExpanded, setIsExpanded] = useState(true);
-  const [dragOver, setDragOver] = useState(false);
-  const dragOverTimeoutRef = useRef<number | null>(null);
+  const itemRef = useRef<HTMLDivElement>(null);
   const isSelected = state.ui.selectedElementId === element.id;
   const activeRootTimegroupId = getActiveRootTimegroupId(state);
   const isRoot = state.composition.rootTimegroupIds.includes(element.id);
   const isActiveRoot = activeRootTimegroupId === element.id && isRoot;
+  const hasChildren = element.childIds && element.childIds.length > 0;
+
+  const isDragging = dragState.draggedElementId === element.id;
+  const isDragTarget = dragState.draggedElementId !== null && dragState.draggedElementId !== element.id;
+  const isCurrentDropTarget = dragState.dropTarget?.elementId === element.id;
+  const dropPosition: DropPosition = isCurrentDropTarget ? dragState.dropTarget.position : null;
 
   const handleClick = () => {
-    actions.selectElement(element.id);
+    if (!dragState.draggedElementId) {
+      actions.selectElement(element.id);
+    }
   };
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -36,125 +48,138 @@ export function HierarchyItem({
     }
   };
 
-  const handleDragStart = (e: React.DragEvent) => {
-    e.stopPropagation();
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", element.id);
-    e.dataTransfer.setData("application/element-type", element.type);
-  };
-
-  const isDescendant = (ancestorId: string, descendantId: string): boolean => {
-    const ancestor = state.composition.elements[ancestorId];
-    if (!ancestor) return false;
-    
-    if (ancestor.childIds.includes(descendantId)) return true;
-    
-    for (const childId of ancestor.childIds) {
-      if (isDescendant(childId, descendantId)) return true;
+  const findParentId = (elementId: string, state: MotionDesignerState): string | null => {
+    for (const element of Object.values(state.composition.elements)) {
+      if (element.childIds.includes(elementId)) {
+        return element.id;
+      }
     }
-    
-    return false;
+    return null;
   };
 
+  const calculateDropPosition = (
+    clientY: number,
+    elementRect: DOMRect,
+  ): DropPosition => {
+    const relativeY = clientY - elementRect.top;
+    const elementHeight = elementRect.height;
+    const threshold = elementHeight / 3;
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const draggedElementId = e.dataTransfer.getData("text/plain");
+    if (relativeY < threshold) {
+      return "before";
+    } else if (relativeY > elementHeight - threshold) {
+      return "after";
+    } else {
+      return "inside";
+    }
+  };
+
+  const canDropAt = (
+    draggedElementId: string,
+    targetElementId: string,
+    position: DropPosition,
+  ): boolean => {
+    if (!position) return false;
+
     const draggedElement = state.composition.elements[draggedElementId];
-    
-    if (!draggedElement) {
-      e.dataTransfer.dropEffect = "none";
+    if (!draggedElement) return false;
+
+    if (position === "inside") {
+      const targetElement = state.composition.elements[targetElementId];
+      if (!targetElement) return false;
+      return behaviorRegistry.canMove(draggedElementId, targetElementId, undefined, state);
+    } else {
+      const targetElement = state.composition.elements[targetElementId];
+      if (!targetElement) return false;
+
+      const parentId = findParentId(targetElementId, state);
+      const siblings = parentId
+        ? state.composition.elements[parentId]?.childIds || []
+        : state.composition.rootTimegroupIds;
+
+      const targetIndex = siblings.indexOf(targetElementId);
+      const newIndex = position === "before" ? targetIndex : targetIndex + 1;
+
+      return behaviorRegistry.canMove(draggedElementId, parentId, newIndex, state);
+    }
+  };
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+
+    const isDraggable = element.type !== "timegroup" || !isRoot;
+    if (!isDraggable) return;
+
+    e.currentTarget.setPointerCapture(e.pointerId);
+    startDrag(element.id, { x: e.clientX, y: e.clientY });
+  };
+
+  useEffect(() => {
+    if (!dragState.draggedElementId || !dragState.dragPosition || !itemRef.current) {
+      if (isCurrentDropTarget) {
+        setDropTarget(null);
+      }
       return;
     }
-    
-    const canDrop = 
-      draggedElementId !== element.id &&
-      !isDescendant(draggedElementId, element.id) &&
-      draggedElement.type !== "timegroup" &&
-      element.type === "timegroup" &&
-      isRoot;
-    
-    if (canDrop) {
-      e.dataTransfer.dropEffect = "move";
-      setDragOver(true);
-      
-      if (dragOverTimeoutRef.current) {
-        clearTimeout(dragOverTimeoutRef.current);
-      }
-      
-      dragOverTimeoutRef.current = window.setTimeout(() => {
-        if (!isExpanded && hasChildren) {
-          setIsExpanded(true);
+
+    if (dragState.draggedElementId === element.id) {
+      return;
+    }
+
+    const elementRect = itemRef.current.getBoundingClientRect();
+    const isOverElement =
+      dragState.dragPosition.x >= elementRect.left &&
+      dragState.dragPosition.x <= elementRect.right &&
+      dragState.dragPosition.y >= elementRect.top &&
+      dragState.dragPosition.y <= elementRect.bottom;
+
+    if (isOverElement) {
+      const position = calculateDropPosition(dragState.dragPosition.y, elementRect);
+
+      if (position && canDropAt(dragState.draggedElementId, element.id, position)) {
+        setDropTarget({
+          elementId: element.id,
+          position,
+        });
+      } else {
+        if (isCurrentDropTarget) {
+          setDropTarget(null);
         }
-      }, 500);
+      }
     } else {
-      e.dataTransfer.dropEffect = "none";
-      setDragOver(false);
+      if (isCurrentDropTarget) {
+        setDropTarget(null);
+      }
     }
-  };
+  }, [dragState.dragPosition, dragState.draggedElementId, element.id, state, setDropTarget, isCurrentDropTarget]);
 
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.stopPropagation();
-    setDragOver(false);
-    if (dragOverTimeoutRef.current) {
-      clearTimeout(dragOverTimeoutRef.current);
-      dragOverTimeoutRef.current = null;
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragOver(false);
-    
-    if (dragOverTimeoutRef.current) {
-      clearTimeout(dragOverTimeoutRef.current);
-      dragOverTimeoutRef.current = null;
-    }
-    
-    const draggedElementId = e.dataTransfer.getData("text/plain");
-    const draggedElement = state.composition.elements[draggedElementId];
-    
-    if (!draggedElement) return;
-    
-    const canDrop = 
-      draggedElementId !== element.id &&
-      !isDescendant(draggedElementId, element.id) &&
-      draggedElement.type !== "timegroup" &&
-      element.type === "timegroup" &&
-      isRoot;
-    
-    if (canDrop) {
-      actions.moveElement(draggedElementId, element.id);
-    }
-  };
-
-  const hasChildren = element.childIds && element.childIds.length > 0;
-  const canDelete = true;
-  const IconComponent = getElementIcon(element.type);
-  
   const isDraggable = element.type !== "timegroup" || !isRoot;
+  const IconComponent = getElementIcon(element.type);
 
   return (
     <div>
+      {dropPosition === "before" && (
+        <div 
+          className="h-1.5 bg-blue-500 my-0.5 rounded-full shadow-lg" 
+          style={{ marginLeft: `${depth * 16 + 8}px`, marginRight: "8px" }} 
+        />
+      )}
       <div
-        draggable={isDraggable}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        className={`group flex items-center gap-1 px-2 py-1 rounded ${
+        ref={itemRef}
+        onPointerDown={handlePointerDown}
+        className={`group flex items-center gap-1 px-2 py-1 rounded transition-colors ${
           isDraggable ? "cursor-move" : "cursor-pointer"
         } ${
-          dragOver
-            ? "bg-blue-500 border-2 border-blue-300"
-            : isSelected
-              ? "bg-blue-600"
-              : isActiveRoot
-                ? "bg-gray-700"
-                : "hover:bg-gray-700"
+          isDragging
+            ? "opacity-50 cursor-grabbing"
+            : dropPosition === "inside"
+              ? "bg-blue-500/40 border-2 border-blue-400"
+              : isSelected
+                ? "bg-blue-600"
+                : isActiveRoot
+                  ? "bg-gray-700"
+                  : "hover:bg-gray-700"
         }`}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
         onClick={handleClick}
@@ -179,7 +204,7 @@ export function HierarchyItem({
             ? "Root Timegroup"
             : element.type}
         </span>
-        {canDelete && (
+        {!isDragging && (
           <button
             onClick={handleDelete}
             className={`w-4 h-4 flex items-center justify-center hover:bg-red-600 rounded transition-opacity ${
@@ -206,6 +231,12 @@ export function HierarchyItem({
             );
           })}
         </div>
+      )}
+      {dropPosition === "after" && (
+        <div 
+          className="h-1.5 bg-blue-500 my-0.5 rounded-full shadow-lg" 
+          style={{ marginLeft: `${depth * 16 + 8}px`, marginRight: "8px" }} 
+        />
       )}
     </div>
   );
