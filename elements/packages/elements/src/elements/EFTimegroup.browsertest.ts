@@ -280,6 +280,24 @@ describe(`<ef-timegroup mode="contain">`, () => {
     );
     assert.equal(timegroup.durationMs, 10_000);
   });
+
+  test("nested contain mode timegroups do not cause infinite loop", async () => {
+    const timegroup = renderTimegroup(
+      html`
+        <ef-timegroup mode="contain">
+          <ef-timegroup mode="contain">
+            <ef-timegroup mode="fixed" duration="5s"></ef-timegroup>
+            <ef-timegroup mode="fixed" duration="3s"></ef-timegroup>
+          </ef-timegroup>
+          <ef-timegroup mode="contain">
+            <ef-timegroup mode="fixed" duration="7s"></ef-timegroup>
+            <ef-timegroup mode="fixed" duration="2s"></ef-timegroup>
+          </ef-timegroup>
+        </ef-timegroup>
+      `,
+    );
+    assert.equal(timegroup.durationMs, 7_000);
+  });
 });
 
 describe("startTimeMs", () => {

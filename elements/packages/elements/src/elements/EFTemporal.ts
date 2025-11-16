@@ -6,6 +6,7 @@ import { EF_INTERACTIVE } from "../EF_INTERACTIVE.js";
 import { PlaybackController } from "../gui/PlaybackController.js";
 import { durationConverter } from "./durationConverter.js";
 import type { EFTimegroup } from "./EFTimegroup.js";
+import { isTimegroupCalculatingDuration } from "./EFTimegroup.js";
 
 export const timegroupContext = createContext<EFTimegroup>(
   Symbol("timeGroupContext"),
@@ -826,10 +827,14 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
     }
 
     get durationMs() {
+      // Prevent infinite loops: don't call parent.durationMs if parent is currently calculating
+      const parentDurationMs = isTimegroupCalculatingDuration(this.parentTimegroup)
+        ? undefined
+        : this.parentTimegroup?.durationMs;
       const durationSource = determineDurationSource(
         this.intrinsicDurationMs,
         this._durationMs,
-        this.parentTimegroup?.durationMs,
+        parentDurationMs,
       );
 
       const modification = determineDurationModificationStrategy(

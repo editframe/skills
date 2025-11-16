@@ -76,6 +76,17 @@ export const flushSequenceDurationCache = () => {
   sequenceDurationCache = new WeakMap();
 };
 
+// Track timegroups currently calculating duration to prevent infinite loops
+const durationCalculationInProgress = new WeakSet<EFTimegroup>();
+
+// Export function to check if a timegroup is currently calculating duration
+// This is used by EFTemporal to prevent calling parent.durationMs during calculation
+export const isTimegroupCalculatingDuration = (
+  timegroup: EFTimegroup | undefined,
+): boolean => {
+  return timegroup !== undefined && durationCalculationInProgress.has(timegroup);
+};
+
 /**
  * Determines if a timegroup has its own duration based on its mode.
  * This is the semantic rule: which modes produce independent durations.
@@ -169,11 +180,21 @@ function evaluateSequenceDuration(
  * Fit-mode children and children without own duration are excluded.
  */
 function evaluateContainDuration(
+  timegroup: EFTimegroup,
   childTemporals: Array<TemporalMixinInterface & HTMLElement>,
 ): number {
   let maxDuration = 0;
   for (const child of childTemporals) {
     if (!shouldParticipateInDurationCalculation(child)) {
+      continue;
+    }
+    // Prevent infinite loops: if child is a contain mode timegroup that's already
+    // calculating its duration, skip it to avoid circular dependency
+    if (
+      child instanceof EFTimegroup &&
+      child.mode === "contain" &&
+      durationCalculationInProgress.has(child)
+    ) {
       continue;
     }
     maxDuration = Math.max(maxDuration, child.durationMs);
@@ -197,14 +218,30 @@ function evaluateDurationForMode(
   switch (mode) {
     case "fit":
       return evaluateFitDuration(timegroup.parentTimegroup);
-    case "sequence":
-      return evaluateSequenceDuration(
-        timegroup,
-        childTemporals,
-        timegroup.overlapMs,
-      );
-    case "contain":
-      return evaluateContainDuration(childTemporals);
+    case "sequence": {
+      // Mark this timegroup as calculating duration to prevent infinite loops
+      durationCalculationInProgress.add(timegroup);
+      try {
+        return evaluateSequenceDuration(
+          timegroup,
+          childTemporals,
+          timegroup.overlapMs,
+        );
+      } finally {
+        // Always remove the marker, even if an error occurs
+        durationCalculationInProgress.delete(timegroup);
+      }
+    }
+    case "contain": {
+      // Mark this timegroup as calculating duration to prevent infinite loops
+      durationCalculationInProgress.add(timegroup);
+      try {
+        return evaluateContainDuration(timegroup, childTemporals);
+      } finally {
+        // Always remove the marker, even if an error occurs
+        durationCalculationInProgress.delete(timegroup);
+      }
+    }
     default:
       throw new Error(`Invalid time mode: ${mode}`);
   }
