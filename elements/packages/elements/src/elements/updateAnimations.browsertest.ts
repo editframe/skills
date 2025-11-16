@@ -1,16 +1,27 @@
 import { LitElement } from "lit";
 import { customElement } from "lit/decorators.js";
 import { assert, beforeEach, describe, test } from "vitest";
+
+// CRITICAL: Import order matters to break circular dependency
+// The cycle: updateAnimations -> EFTemporal -> EFTimegroup (type) -> EFMedia -> EFTemporal
+// Solution: Import EFTemporal and force evaluation, then import others
+
+// 1. Import EFTemporal first - this must complete before EFMedia tries to use it
 import { EFTemporal } from "./EFTemporal.js";
-import type { EFTimegroup } from "./EFTimegroup.js";
+
+// 2. Import updateAnimations (also imports EFTemporal, but re-imports are safe)
 import {
   type AnimatableElement,
   evaluateTemporalState,
   updateAnimations,
 } from "./updateAnimations.js";
 
-import "./EFTimegroup.js";
+// 3. Import EFTextSegment
 import "./EFTextSegment.js";
+
+// 4. Import EFTimegroup last - this triggers EFMedia import, but EFTemporal is now fully loaded
+import type { EFTimegroup } from "./EFTimegroup.js";
+import "./EFTimegroup.js";
 
 // Create proper temporal test elements
 @customElement("test-temporal-element")
@@ -1658,6 +1669,95 @@ describe("updateAnimations", () => {
       // Animation time should be 50ms
       // currentTime should be absolute timeline time: effectiveDelay (350) + animationTime (50) = 400ms
       assert.approximately(animation.currentTime as number, 400, 1);
+    });
+
+    test("stagger offset with CSS animation delay=0 uses animation progress, not absolute timeline time", async () => {
+      // Create CSS animation with delay=0
+      const style = document.createElement("style");
+      style.textContent = `
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .fade-in {
+          animation: fadeIn 1000ms;
+        }
+      `;
+      document.head.appendChild(style);
+
+      const element = createTestTextSegment({
+        staggerOffsetMs: 500,
+        durationMs: 3000,
+      });
+      await element.updateComplete;
+
+      // Apply CSS animation (delay=0 in CSS)
+      element.classList.add("fade-in");
+
+      // Wait for CSS animation to be created
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      const animations = element.getAnimations();
+      assert.equal(animations.length, 1, "Should have 1 animation");
+      const animation = animations[0];
+      assert.isDefined(animation, "Animation should be defined");
+      if (animation.playState === "running") {
+        animation.pause();
+      }
+
+      // Verify animation has delay=0
+      const timing = (animation.effect as KeyframeEffect).getTiming();
+      assert.equal(
+        timing.delay,
+        0,
+        "CSS animation should have delay=0 (stagger is handled separately)",
+      );
+
+      // Test at 300ms (before stagger delay)
+      // effectiveDelay = 0 + 500 = 500ms
+      // adjustedTime = 300 - 500 = -200ms (before delay)
+      element.currentTimeMs = 300;
+      await element.updateComplete;
+
+      updateAnimations(element);
+
+      // Before stagger delay: currentTime should be 0 (initial state)
+      // For CSS animations with delay=0, currentTime is animation progress, not absolute timeline time
+      assert.equal(
+        animation.currentTime,
+        0,
+        "Before stagger delay: currentTime should be 0 (animation progress), not absolute timeline time",
+      );
+
+      // Test at 800ms (after stagger delay, 300ms into animation)
+      // effectiveDelay = 0 + 500 = 500ms
+      // adjustedTime = 800 - 500 = 300ms
+      // animationTime = 300ms (animation progress)
+      element.currentTimeMs = 800;
+      await element.updateComplete;
+
+      updateAnimations(element);
+
+      // After stagger delay: currentTime should be animation progress (300ms), not absolute timeline time (800ms)
+      // This is the critical test - without the fix, currentTime would be 800ms (effectiveDelay + animationTime)
+      // With the fix, currentTime should be 300ms (just animationTime)
+      assert.approximately(
+        animation.currentTime as number,
+        300,
+        1,
+        "After stagger delay: currentTime should be animation progress (300ms), not absolute timeline time (800ms)",
+      );
+
+      // Verify it's NOT the absolute timeline time
+      assert.notEqual(
+        animation.currentTime,
+        800,
+        "currentTime should NOT be absolute timeline time for CSS animations with delay=0",
+      );
+
+      // Cleanup
+      document.head.removeChild(style);
     });
   });
 
