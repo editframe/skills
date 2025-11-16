@@ -5,6 +5,7 @@ import { EFTemporal } from "./EFTemporal.js";
 import { evaluateEasing } from "./easingUtils.js";
 import type { EFTextSegment } from "./EFTextSegment.js";
 import { updateAnimations } from "./updateAnimations.js";
+import type { AnimatableElement } from "./updateAnimations.js";
 
 export type SplitMode = "line" | "word" | "char";
 
@@ -350,22 +351,54 @@ export class EFText extends EFTemporal(LitElement) {
     let currentWordSpan: HTMLSpanElement | null = null;
     let charIndex = 0; // Track position in original text for character mode
 
+    // For word splitting, count only word segments (not whitespace) for stagger calculation
+    const wordOnlySegments =
+      this.split === "word"
+        ? segments.filter((seg) => !/^\s+$/.test(seg))
+        : segments;
+    const wordSegmentCount = wordOnlySegments.length;
+
     // Create new segments in a fragment first
     segments.forEach((segmentText, textIndex) => {
       // Calculate stagger offset if stagger is set
       let staggerOffset: number | undefined;
       if (this.staggerMs !== undefined) {
+        // For word splitting, whitespace segments should inherit stagger from preceding word
+        const isWhitespace = /^\s+$/.test(segmentText);
+        let wordIndexForStagger: number;
+
+        if (this.split === "word" && isWhitespace) {
+          // Find the index of the preceding word segment
+          let precedingWordIndex = -1;
+          for (let i = textIndex - 1; i >= 0; i--) {
+            if (!/^\s+$/.test(segments[i])) {
+              // Count how many word segments come before this one
+              precedingWordIndex = wordOnlySegments.indexOf(segments[i]);
+              break;
+            }
+          }
+          // Use preceding word's index, or 0 if no preceding word
+          wordIndexForStagger = Math.max(0, precedingWordIndex);
+        } else if (this.split === "word") {
+          // For word mode, find the index in word-only segments
+          wordIndexForStagger = wordOnlySegments.indexOf(segmentText);
+        } else {
+          // For char/line mode, use the actual position in segments array
+          wordIndexForStagger = textIndex;
+        }
+
         // Apply easing to the stagger offset
         // Normalize index to 0-1 range (0 for first segment, 1 for last segment)
-        const totalSegments = segments.length;
         const normalizedProgress =
-          totalSegments > 1 ? textIndex / (totalSegments - 1) : 0;
+          wordSegmentCount > 1
+            ? wordIndexForStagger / (wordSegmentCount - 1)
+            : 0;
 
         // Apply easing function to get eased progress
         const easedProgress = evaluateEasing(this.easing, normalizedProgress);
 
         // Calculate total stagger duration (last segment gets full stagger)
-        const totalStaggerDuration = (totalSegments - 1) * this.staggerMs;
+        const totalStaggerDuration = (wordSegmentCount - 1) * this.staggerMs;
 
         // Apply eased progress to total stagger duration
         staggerOffset = easedProgress * totalStaggerDuration;
@@ -398,6 +431,7 @@ export class EFText extends EFTemporal(LitElement) {
 
           // Mark as created to avoid being picked up as template
           segment.setAttribute("data-segment-created", "true");
+
 
           // For character mode with templates, also wrap in word spans
           if (this.split === "char" && wordBoundaries) {
@@ -526,17 +560,8 @@ export class EFText extends EFTemporal(LitElement) {
     requestAnimationFrame(() => {
       const segmentElements = this.segments;
       Promise.all(segmentElements.map((seg) => seg.updateComplete)).then(() => {
-        // Wait an additional frame to ensure animations are paused in connectedCallback
-        // Then trigger updateAnimations to set correct state
-        // This ensures animations are positioned correctly on first load
-        requestAnimationFrame(() => {
-          const rootTimegroup = this.rootTimegroup;
-          if (rootTimegroup) {
-            updateAnimations(rootTimegroup);
-          } else {
-            updateAnimations(this);
-          }
-        });
+        const rootTimegroup = this.rootTimegroup || this;
+        updateAnimations(rootTimegroup as AnimatableElement);
       });
     });
 
@@ -642,7 +667,11 @@ export class EFText extends EFTemporal(LitElement) {
 
     // Use the same splitting logic as splitTextIntoSegments for consistency
     const segments = this.splitTextIntoSegments(text);
-    const segmentCount = segments.length || 1;
+    // For word splitting, only count word segments (not whitespace) for intrinsic duration
+    const segmentCount =
+      this.split === "word"
+        ? segments.filter((seg) => !/^\s+$/.test(seg)).length || 1
+        : segments.length || 1;
 
     return segmentCount * 1000;
   }

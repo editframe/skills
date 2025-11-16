@@ -5,16 +5,15 @@
   <meta charset="UTF-8" />
   <script type="module" src="./src/simple-demo.ts"></script>
   <link rel="stylesheet" href="./src/simple-demo.css" />
+  
   <style>
     @keyframes bounceIn {
       0% {
         transform: scale(calc(0.6 + var(--ef-seed, 0.5) * 0.3)) rotate(calc(-10deg + var(--ef-seed, 0.5) * 20deg));
       }
-
       50% {
         transform: scale(calc(1.05 + var(--ef-seed, 0.5) * 0.2)) rotate(calc(-3deg + var(--ef-seed, 0.5) * 6deg));
       }
-
       100% {
         transform: scale(1) rotate(0deg);
       }
@@ -29,18 +28,12 @@
     }
 
     @keyframes typewriter {
-      from {
-        opacity: 0;
-      }
-
-      to {
-        opacity: 1;
-      }
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
 
     .typewriter {
       opacity: 0;
-      /* Start hidden */
       animation:
         typewriter 0.1s ease-out,
         bounceIn 0.3s ease-out 0s 1 normal none running;
@@ -51,7 +44,6 @@
         opacity: 0;
         transform: translateY(20px);
       }
-
       to {
         opacity: 1;
         transform: translateY(0);
@@ -60,61 +52,22 @@
 
     .fade-in {
       animation: fadeIn 0.5s ease-out;
-      /* Stagger is handled by JavaScript animation coordination, not CSS delay */
     }
 
     @keyframes animejsBounce {
-      0% {
-        /* Start at normal position */
-        transform: translateY(0) rotate(0deg);
-      }
-
-      30% {
-        /* Bounce up (outExpo ease) */
-        transform: translateY(-2.75rem) rotate(0deg);
-      }
-
-      40% {
-        /* Stay at top, halfway through spin */
-        transform: translateY(-2.75rem) rotate(-180deg);
-      }
-
-      50% {
-        /* Complete full rotation while at top */
-        transform: translateY(-2.75rem) rotate(-360deg);
-      }
-
-      60% {
-        /* Hold at top position for brief moment */
-        transform: translateY(-2.75rem) rotate(-360deg);
-      }
-
-      70% {
-        /* Bounce down with overshoot (outBounce ease) */
-        transform: translateY(0.4rem) rotate(-360deg);
-      }
-
-      80% {
-        /* Bounce back up slightly */
-        transform: translateY(-0.15rem) rotate(-360deg);
-      }
-
-      90% {
-        /* Small bounce down */
-        transform: translateY(0.1rem) rotate(-360deg);
-      }
-
-      100% {
-        /* Final settle at normal position */
-        transform: translateY(0) rotate(-360deg);
-      }
+      0% { transform: translateY(0) rotate(0deg); }
+      30% { transform: translateY(-2.75rem) rotate(0deg); }
+      40% { transform: translateY(-2.75rem) rotate(-180deg); }
+      50% { transform: translateY(-2.75rem) rotate(-360deg); }
+      60% { transform: translateY(-2.75rem) rotate(-360deg); }
+      70% { transform: translateY(0.4rem) rotate(-360deg); }
+      80% { transform: translateY(-0.15rem) rotate(-360deg); }
+      90% { transform: translateY(0.1rem) rotate(-360deg); }
+      100% { transform: translateY(0) rotate(-360deg); }
     }
 
     .animejs-bounce {
       animation: animejsBounce 5s cubic-bezier(0.785, 0.135, 0.15, 0.86) .25s;
-      /* Stagger is handled by JavaScript animation coordination via staggerOffsetMs */
-      /* Sequence: bounce up → spin while up → hold at top → bounce down with overshoot */
-      /* Timing: ~500ms up+spin, ~100ms hold, ~400ms bounce down */
     }
   </style>
 </head>
@@ -251,15 +204,6 @@
     </ef-timegroup>
   </ef-configuration>
 
-  <script type="module">
-    // Wait for elements to be ready
-    await customElements.whenDefined("ef-text");
-    await customElements.whenDefined("ef-text-segment");
-    await customElements.whenDefined("ef-timegroup");
-
-    // Text content is now set declaratively in HTML - no JavaScript needed!
-    // The ef-text elements read their text content from text nodes in the DOM
-  </script>
 </body>
 
 </html>

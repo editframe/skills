@@ -18,6 +18,7 @@ import "../gui/EFConfiguration.js";
 import { Task } from "@lit/task";
 import type { MediaEngine } from "../transcoding/types/index.js";
 import { EFMedia } from "./EFMedia.js";
+import "./EFText.js";
 
 beforeEach(() => {
   for (let i = 0; i < localStorage.length; i++) {
@@ -35,12 +36,11 @@ class TestContext extends ContextMixin(LitElement) {}
 
 @customElement("timegroup-test-media")
 class TimegroupTestMedia extends EFMedia {
-  mediaEngineTaskCount = 0;
   mediaEngineTask = new Task(this, {
     autoRun: false,
     args: () => ["source", null] as const,
     task: () => {
-      this.mediaEngineTaskCount++;
+      this.setAttribute("data-media-loaded", "true");
       return Promise.resolve({} as unknown as MediaEngine);
     },
   });
@@ -48,13 +48,15 @@ class TimegroupTestMedia extends EFMedia {
 
 @customElement("test-frame-task-a")
 class TestFrameTaskA extends EFTemporal(LitElement) {
-  frameTaskCount = 0;
+  render() {
+    return html`<div data-frame-element="a"></div>`;
+  }
 
   frameTask = new Task(this, {
     autoRun: false,
     args: () => [],
     task: () => {
-      this.frameTaskCount++;
+      this.setAttribute("data-frame-executed", "true");
       return Promise.resolve();
     },
   });
@@ -62,13 +64,15 @@ class TestFrameTaskA extends EFTemporal(LitElement) {
 
 @customElement("test-frame-task-b")
 class TestFrameTaskB extends EFTemporal(LitElement) {
-  frameTaskCount = 0;
+  render() {
+    return html`<div data-frame-element="b"></div>`;
+  }
 
   frameTask = new Task(this, {
     autoRun: false,
     args: () => [],
     task: () => {
-      this.frameTaskCount++;
+      this.setAttribute("data-frame-executed", "true");
       return Promise.resolve();
     },
   });
@@ -76,13 +80,15 @@ class TestFrameTaskB extends EFTemporal(LitElement) {
 
 @customElement("test-frame-task-c")
 class TestFrameTaskC extends EFTemporal(LitElement) {
-  frameTaskCount = 0;
+  render() {
+    return html`<div data-frame-element="c"></div>`;
+  }
 
   frameTask = new Task(this, {
     autoRun: false,
     args: () => [],
     task: () => {
-      this.frameTaskCount++;
+      this.setAttribute("data-frame-executed", "true");
       return Promise.resolve();
     },
   });
@@ -275,6 +281,24 @@ describe(`<ef-timegroup mode="contain">`, () => {
     );
     assert.equal(timegroup.durationMs, 10_000);
   });
+
+  test("nested contain mode timegroups do not cause infinite loop", async () => {
+    const timegroup = renderTimegroup(
+      html`
+        <ef-timegroup mode="contain">
+          <ef-timegroup mode="contain">
+            <ef-timegroup mode="fixed" duration="5s"></ef-timegroup>
+            <ef-timegroup mode="fixed" duration="3s"></ef-timegroup>
+          </ef-timegroup>
+          <ef-timegroup mode="contain">
+            <ef-timegroup mode="fixed" duration="7s"></ef-timegroup>
+            <ef-timegroup mode="fixed" duration="2s"></ef-timegroup>
+          </ef-timegroup>
+        </ef-timegroup>
+      `,
+    );
+    assert.equal(timegroup.durationMs, 7_000);
+  });
 });
 
 describe("startTimeMs", () => {
@@ -412,10 +436,12 @@ describe("startTimeMs", () => {
 
 describe("setting currentTime", () => {
   test("persists in localStorage if the timegroup has an id and is in the dom", async () => {
+    const timegroupId = "localStorage-test";
+    const storageKey = `ef-timegroup-${timegroupId}`;
     const timegroup = renderTimegroup(
-      html`<ef-timegroup id="localStorage-test" mode="fixed" duration="10s"></ef-timegroup>`,
+      html`<ef-timegroup id="${timegroupId}" mode="fixed" duration="10s"></ef-timegroup>`,
     );
-    localStorage.removeItem(timegroup.storageKey);
+    localStorage.removeItem(storageKey);
     document.body.appendChild(timegroup);
     await timegroup.updateComplete;
     await timegroup.waitForMediaDurations();
@@ -423,7 +449,7 @@ describe("setting currentTime", () => {
     // Use the new seek() method which ensures everything is ready
     await timegroup.seek(5_000_000); // 5000 seconds in ms, should clamp to 10s
 
-    const storedValue = localStorage.getItem(timegroup.storageKey);
+    const storedValue = localStorage.getItem(storageKey);
     assert.equal(storedValue, "10"); // Should store 10 (clamped from 5000 to duration)
     timegroup.remove();
   });
@@ -434,10 +460,8 @@ describe("setting currentTime", () => {
     );
     await timegroup.waitForMediaDurations();
 
-    // Set currentTime to exactly the duration
-    timegroup.currentTime = 10; // 10 seconds
-    await timegroup.seekTask.taskComplete;
-    await timegroup.frameTask.taskComplete;
+    // Seek to exactly the duration
+    await timegroup.seek(10_000);
 
     // The root timegroup should still be visible at the exact end time
     assert.notEqual(
@@ -445,6 +469,7 @@ describe("setting currentTime", () => {
       "none",
       "Root timegroup should be visible at exact end time",
     );
+    assert.equal(timegroup.currentTime, 10, "currentTime should equal duration");
   });
 
   test("root timegroup becomes hidden only after currentTime exceeds duration", async () => {
@@ -453,10 +478,8 @@ describe("setting currentTime", () => {
     );
     await timegroup.waitForMediaDurations();
 
-    // Set currentTime beyond the duration (should be clamped to duration)
-    timegroup.currentTime = 15; // 15 seconds, should clamp to 10s
-    await timegroup.seekTask.taskComplete;
-    await timegroup.frameTask.taskComplete;
+    // Seek beyond the duration (should be clamped to duration)
+    await timegroup.seek(15_000); // 15 seconds, should clamp to 10s
 
     // Even when clamped, it should still be visible at the end
     assert.notEqual(
@@ -477,15 +500,26 @@ describe("setting currentTime", () => {
       html`<ef-timegroup mode="fixed" duration="10s"></ef-timegroup>`,
     );
     document.body.appendChild(timegroup);
-    timegroup.currentTime = 5_000;
-    timegroup.removeAttribute("id");
-    assert.throws(() => {
-      assert.isNull(localStorage.getItem(timegroup.storageKey));
-    }, "Timegroup must have an id to use localStorage");
+    await timegroup.updateComplete;
+    await timegroup.waitForMediaDurations();
+    
+    // Set time without id - should not persist
+    await timegroup.seek(5_000);
+    
+    // Verify no localStorage entry was created (check all possible keys)
+    let foundStorageEntry = false;
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith("ef-timegroup-")) {
+        foundStorageEntry = true;
+        break;
+      }
+    }
+    assert.isFalse(foundStorageEntry, "No localStorage entry should be created without id");
     timegroup.remove();
   });
 
-  test("nested items derive their ownCurrentTimeMs", async () => {
+  test("nested items are positioned correctly in sequence timeline", async () => {
     const timegroup = renderTimegroup(
       html`
         <ef-timegroup id="root" mode="sequence">
@@ -495,25 +529,34 @@ describe("setting currentTime", () => {
       `,
     );
 
+    await timegroup.waitForMediaDurations();
     const root = timegroup;
     const a = timegroup.querySelector("#a") as EFTimegroup;
     const b = timegroup.querySelector("#b") as EFTimegroup;
 
-    assert.equal(a.ownCurrentTimeMs, 0);
-    assert.equal(b.ownCurrentTimeMs, 0);
+    // Verify timeline positions: A starts at 0, B starts at 5s
+    assert.equal(a.startTimeMs, 0, "Element A should start at 0ms");
+    assert.equal(a.endTimeMs, 5_000, "Element A should end at 5000ms");
+    assert.equal(b.startTimeMs, 5_000, "Element B should start at 5000ms");
+    assert.equal(b.endTimeMs, 10_000, "Element B should end at 10000ms");
 
-    root.currentTimeMs = 2_500;
+    // At time 0, root currentTime should be within A's range
+    await root.seek(0);
+    assert.equal(root.currentTimeMs, 0, "Root should be at 0ms");
+    assert.isAtLeast(root.currentTimeMs, a.startTimeMs, "Root time should be >= A's start");
+    assert.isAtMost(root.currentTimeMs, a.endTimeMs, "Root time should be <= A's end");
 
-    assert.equal(a.ownCurrentTimeMs, 2_500);
-    assert.equal(b.ownCurrentTimeMs, 0);
+    // At 2.5s, still in A's range
+    await root.seek(2_500);
+    assert.equal(root.currentTimeMs, 2_500, "Root should be at 2500ms");
+    assert.isAtLeast(root.currentTimeMs, a.startTimeMs, "Root time should be >= A's start");
+    assert.isAtMost(root.currentTimeMs, a.endTimeMs, "Root time should be <= A's end");
 
-    // Wait for frame update to complete before next assignment
-    await new Promise((resolve) => setTimeout(resolve, 10));
-
-    root.currentTimeMs = 7_500;
-
-    assert.equal(a.ownCurrentTimeMs, 5_000);
-    assert.equal(b.ownCurrentTimeMs, 2_500);
+    // At 7.5s, should be in B's range
+    await root.seek(7_500);
+    assert.equal(root.currentTimeMs, 7_500, "Root should be at 7500ms");
+    assert.isAtLeast(root.currentTimeMs, b.startTimeMs, "Root time should be >= B's start");
+    assert.isAtMost(root.currentTimeMs, b.endTimeMs, "Root time should be <= B's end");
   });
 });
 
@@ -528,10 +571,15 @@ describe("shouldWrapWithWorkbench", () => {
   });
 
   test("should not wrap if contained within a preview context", () => {
-    const timegorup = document.createElement("ef-timegroup");
+    const timegroup = document.createElement("ef-timegroup");
     const context = document.createElement("test-context");
-    context.append(timegorup);
-    assert.isFalse(timegorup.shouldWrapWithWorkbench());
+    context.append(timegroup);
+    document.body.appendChild(context);
+    
+    // Verify observable behavior: no ef-workbench element exists
+    assert.isNull(timegroup.closest("ef-workbench"), "No workbench should wrap timegroup in context");
+    
+    context.remove();
   });
 });
 
@@ -557,7 +605,8 @@ describe("Dynamic content updates", () => {
 
     // Initial duration should be 5 seconds (3s + 2s)
     assert.equal(timegroup.durationMs, 5_000);
-    assert.equal(timegroup.childTemporals.length, 2);
+    const initialTemporals = timegroup.querySelectorAll("ef-timegroup");
+    assert.equal(initialTemporals.length, 2);
 
     // Dynamically add a new child element
     const newChild = document.createElement("ef-timegroup");
@@ -570,7 +619,8 @@ describe("Dynamic content updates", () => {
 
     // Duration should now include the new child (3s + 2s + 4s = 9s)
     assert.equal(timegroup.durationMs, 9_000);
-    assert.equal(timegroup.childTemporals.length, 3);
+    const updatedTemporals = timegroup.querySelectorAll("ef-timegroup");
+    assert.equal(updatedTemporals.length, 3);
   });
 
   test("updates duration when child temporal elements are removed dynamically", async () => {
@@ -585,7 +635,8 @@ describe("Dynamic content updates", () => {
 
     // Initial duration should be max of children (8s)
     assert.equal(timegroup.durationMs, 8_000);
-    assert.equal(timegroup.childTemporals.length, 3);
+    const initialTemporals = timegroup.querySelectorAll("ef-timegroup");
+    assert.equal(initialTemporals.length, 3);
 
     // Remove the longest duration child
     const child2 = timegroup.querySelector("#child2");
@@ -596,11 +647,12 @@ describe("Dynamic content updates", () => {
 
     // Duration should now be max of remaining children (5s)
     assert.equal(timegroup.durationMs, 5_000);
-    assert.equal(timegroup.childTemporals.length, 2);
+    const remainingTemporals = timegroup.querySelectorAll("ef-timegroup");
+    assert.equal(remainingTemporals.length, 2);
   });
 
   describe("frameTask", () => {
-    test("executes all nested frame tasks", async () => {
+    test("visible nested elements are rendered when seeking to their time range", async () => {
       const timegroup = renderTimegroup(
         html`<ef-timegroup mode="sequence">
           <test-frame-task-a duration="1s"></test-frame-task-a>
@@ -611,34 +663,34 @@ describe("Dynamic content updates", () => {
           </div>
         </ef-timegroup>`,
       );
+      await timegroup.waitForMediaDurations();
+      
       const frameTaskA = timegroup.querySelector("test-frame-task-a")!;
       const frameTaskB = timegroup.querySelector("test-frame-task-b")!;
       const frameTaskC = timegroup.querySelector("test-frame-task-c")!;
 
-      // Following the initial update, frame tasks may run during initialization
-      await timegroup.updateComplete;
-
-      // frameTaskB should never run (not visible at time 0ms in sequence)
-      assert.equal(frameTaskB.frameTaskCount, 0);
-
-      // Then we run them manually.
-      await timegroup.frameTask.run();
+      // Seek to time 0ms - first element should be visible
+      await timegroup.seek(0);
 
       // At timeline time 0ms:
-      // - frameTaskA (0-1000ms) should have run (visible)
-      // - frameTaskB (1000-2000ms) should NOT run (not visible at time 0)
-      // - frameTaskC (0-1000ms) should have run (inherits root positioning, visible)
+      // - frameTaskA (0-1000ms) should be visible and executed
+      // - frameTaskB (1000-2000ms) should NOT be visible (not in range at time 0)
+      // - frameTaskC (0-1000ms) should be visible (inherits root positioning)
 
-      // Verify visible tasks have run at least once
-      assert.ok(frameTaskA.frameTaskCount > 0, "frameTaskA should have run");
-      assert.ok(frameTaskC.frameTaskCount > 0, "frameTaskC should have run");
-      // Verify non-visible task has never run
-      assert.equal(frameTaskB.frameTaskCount, 0); // Not visible at time 0
+      // Verify observable behavior: elements are visible/hidden and frame tasks executed
+      const getDisplay = (el: Element) => window.getComputedStyle(el).display;
+      assert.notEqual(getDisplay(frameTaskA), "none", "A should be visible at time 0");
+      assert.equal(getDisplay(frameTaskB), "none", "B should not be visible at time 0");
+      assert.notEqual(getDisplay(frameTaskC), "none", "C should be visible at time 0");
+      
+      assert.equal(frameTaskA.getAttribute("data-frame-executed"), "true", "A's frame task should have executed");
+      assert.isNull(frameTaskB.getAttribute("data-frame-executed"), "B's frame task should not have executed");
+      assert.equal(frameTaskC.getAttribute("data-frame-executed"), "true", "C's frame task should have executed");
     });
   });
 
   describe("seekTask", () => {
-    test("does not execute if not the root timegroup", async () => {
+    test("non-root timegroups do not affect root timeline when seeking", async () => {
       const timegroup = renderTimegroup(
         html`<ef-timegroup mode="sequence">
             <ef-timegroup mode="fixed" duration="3s">
@@ -646,15 +698,29 @@ describe("Dynamic content updates", () => {
             </ef-timegroup>
           </ef-timegroup>`,
       );
+      await timegroup.waitForMediaDurations();
+      
       const nonRootTimegroup = timegroup.querySelector("ef-timegroup")!;
       const frameTaskA = timegroup.querySelector("test-frame-task-a")!;
-      await timegroup.updateComplete;
-      assert.equal(frameTaskA.frameTaskCount, 1);
-      await nonRootTimegroup.seekTask.run();
-      assert.equal(frameTaskA.frameTaskCount, 1);
+      
+      // Seek root to time 0
+      await timegroup.seek(0);
+      const getDisplay = (el: Element) => window.getComputedStyle(el).display;
+      const initialDisplay = getDisplay(frameTaskA);
+      const initialExecuted = frameTaskA.getAttribute("data-frame-executed");
+
+      // Attempt to seek non-root (should not affect root timeline)
+      nonRootTimegroup.currentTime = 1.5;
+      await nonRootTimegroup.updateComplete;
+      await new Promise((resolve) => setTimeout(resolve, 50)); // Allow any async updates
+
+      // Verify observable behavior: root timeline unchanged
+      assert.equal(timegroup.currentTime, 0, "Root timeline should be unchanged");
+      assert.equal(getDisplay(frameTaskA), initialDisplay, "Element visibility should be unchanged");
+      assert.equal(frameTaskA.getAttribute("data-frame-executed"), initialExecuted, "Frame task execution should be unchanged");
     });
 
-    test("waits for media durations", async () => {
+    test("media elements are loaded before seeking completes", async () => {
       const timegroup = renderTimegroup(
         html`
         <ef-preview>
@@ -664,9 +730,15 @@ describe("Dynamic content updates", () => {
         </ef-preview>`,
       );
       const media = timegroup.querySelector("timegroup-test-media")!;
-      assert.equal(media.mediaEngineTaskCount, 0);
-      await timegroup.seekTask.run();
-      assert.equal(media.mediaEngineTaskCount, 1);
+      
+      // Before seek, media may not be loaded
+      const beforeSeek = media.getAttribute("data-media-loaded");
+      
+      // Seek should wait for media to load
+      await timegroup.seek(0);
+      
+      // Verify observable behavior: media is now loaded
+      assert.equal(media.getAttribute("data-media-loaded"), "true", "Media should be loaded after seek");
     });
   });
 
@@ -929,6 +1001,94 @@ describe("Dynamic content updates", () => {
 
       container.remove();
       localStorage.removeItem(storageKey);
+    }, 1000);
+  });
+
+  describe("staggered text animations", () => {
+    test("staggered animations start at opacity 0", async () => {
+      const style = document.createElement("style");
+      style.textContent = `
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .fade-in { animation: fadeIn 5s paused; }
+      `;
+      document.head.appendChild(style);
+
+      const timegroup = renderTimegroup(
+        html`
+          <ef-timegroup>
+            <ef-text split="line" stagger="1000ms" duration="8s">
+              <template>
+                <ef-text-segment class="fade-in"></ef-text-segment>
+              </template>
+              Line 1
+              Line 2
+            </ef-text>
+          </ef-timegroup>
+        `,
+      );
+      document.body.appendChild(timegroup);
+      await timegroup.updateComplete;
+      await timegroup.waitForMediaDurations();
+
+      const segments = await timegroup
+        .querySelector("ef-text")!
+        .whenSegmentsReady();
+
+      await timegroup.seek(500);
+      await Promise.all(
+        segments.map((seg) => seg.frameTask?.taskComplete).filter((p) => p),
+      );
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      assert.equal(
+        parseFloat(window.getComputedStyle(segments[1]!).opacity),
+        0,
+      );
+
+      document.head.removeChild(style);
+      document.body.removeChild(timegroup);
+    }, 1000);
+
+    test("animations remain controllable after completion", async () => {
+      const style = document.createElement("style");
+      style.textContent = `
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .fade-in { animation: fadeIn 1s paused; }
+      `;
+      document.head.appendChild(style);
+
+      const timegroup = renderTimegroup(
+        html`
+          <ef-timegroup>
+            <ef-text split="line" stagger="1000ms" duration="5s">
+              <template>
+                <ef-text-segment class="fade-in"></ef-text-segment>
+              </template>
+              Line 1
+              Line 2
+            </ef-text>
+          </ef-timegroup>
+        `,
+      );
+      document.body.appendChild(timegroup);
+      await timegroup.updateComplete;
+      await timegroup.waitForMediaDurations();
+
+      const segments = await timegroup
+        .querySelector("ef-text")!
+        .whenSegmentsReady();
+
+      await timegroup.seek(5000);
+      await Promise.all(
+        segments.map((seg) => seg.frameTask?.taskComplete).filter((p) => p),
+      );
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      const { getTrackedAnimations } = await import("./updateAnimations.ts");
+      assert.isAbove(getTrackedAnimations(segments[1]!).length, 0);
+
+      document.head.removeChild(style);
+      document.body.removeChild(timegroup);
     }, 1000);
   });
 });

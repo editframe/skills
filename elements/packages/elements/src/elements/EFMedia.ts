@@ -18,7 +18,6 @@ import { makeAudioTimeDomainAnalysisTask } from "./EFMedia/audioTasks/makeAudioT
 import { fetchAudioSpanningTime } from "./EFMedia/shared/AudioSpanUtils.ts";
 import { makeMediaEngineTask } from "./EFMedia/tasks/makeMediaEngineTask.ts";
 import { EFSourceMixin } from "./EFSourceMixin.js";
-import { EFTemporal } from "./EFTemporal.js";
 import { FetchMixin } from "./FetchMixin.js";
 import { renderTemporalAudio } from "./renderTemporalAudio.js";
 import { EFTargetable } from "./TargetController.ts";
@@ -45,6 +44,10 @@ export const deepGetMediaElements = (
   }
   return medias;
 };
+
+// Import EFTemporal - use a function wrapper to defer evaluation until class definition
+// This breaks the circular dependency: EFTimegroup -> EFMedia -> EFTemporal
+import { EFTemporal } from "./EFTemporal.js";
 
 export class EFMedia extends EFTargetable(
   EFSourceMixin(EFTemporal(FetchMixin(LitElement)), {

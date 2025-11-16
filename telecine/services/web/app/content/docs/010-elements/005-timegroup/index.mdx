@@ -9,18 +9,116 @@ headers:
 
 # Timegroup
 
-The timegroup element is the fundamental organizing unit of an Editframe video.
+The timegroup element is the fundamental organizing unit of an Editframe video. It is used to declare temporal relationships between elements in a video timeline.
 
-The timegroup element is used to declare several kinds of video timelines. Timegroups can be nested to create rich timelines.
+The outer-most timegroup is the root timegroup. It is the parent of all other timegroups. The pixel dimensions of the root timegroup determine the aspect ratio of the video, and the computed duration of the root timegroup determines the video duration.
 
-The outer-most timegroup is the root timegroup. It is the parent of all other timegroups. The pixel dimensions of the root timegroup are used to determine the aspect ratio of the video. And the computed duration of the root timegroup is used to determine the duration of the video.
+## Concept
+
+The timegroup element implements **temporal composition**: a declarative system where:
+- Parent timegroups define **composition rules** (how children relate in time)
+- Child timegroups declare **durations** (fixed, computed, or derived)
+- The system computes a **timeline tree** with precise start/end times for every element
+
+**Core invariant**: Every timegroup has exactly one duration value at any moment, computed from either explicit specification (fixed mode) or child relationships (sequence/contain/fit modes).
+
+## Temporal Relationships
+
+Timegroups form a tree where each node's duration is determined by:
+
+**Fixed mode**: `duration = explicit value` (base case)
+
+**Sequence mode**: `duration = Σ(child.duration) - (n-1) × overlap` where n = number of children
+
+**Contain mode**: `duration = max(child.duration)` across all children
+
+**Fit mode**: `duration = parent.duration` (inheritance)
+
+**Time coordinate systems**:
+- `currentTime` = root timeline coordinate (global, only set on root)
+- `ownCurrentTime` = element's local time coordinate (computed, resets per element)
+
+**Propagation rules**:
+- Sequence: Each child's `ownCurrentTime` progresses within its time-shifted window
+- Contain: All children share the same `ownCurrentTime` as parent
+- Fit: Child `ownCurrentTime` = parent `ownCurrentTime` (identity mapping)
+
+## Invariants
+
+1. **Root-only time writes**: Only the root timegroup's `currentTime` should be written. Child times are computed from parent state.
+
+2. **Time quantization**: All time values snap to frame boundaries based on `fps`:
+   ```
+   quantized_time = round(time × fps) / fps
+   ```
+   During rendering, uses render options FPS; otherwise uses element's `fps` property (default: 30).
+
+3. **Duration immutability per mode**: 
+   - Fixed: Duration can be set via `duration` attribute
+   - Sequence/Contain: Duration is computed from children (read-only)
+   - Fit: Duration equals parent's duration (read-only)
+
+4. **Own time coordinate system**: Each element has its own `ownCurrentTime` that:
+   - Resets to 0 at element's start time
+   - Progresses independently of siblings (in sequence mode)
+   - Tracks parent time (in contain/fit modes)
+
+5. **CSS variable scope**: `--ef-duration`, `--ef-progress`, `--ef-transition-*` are set per-element, not inherited via CSS cascade
+
+6. **Overlap semantics**: In sequence mode, overlap creates **temporal intersection**, not visual crossfade. Visual transitions require explicit CSS animations.
+
+7. **Fit vs mode distinction**: 
+   - `fit` attribute controls **visual scaling** (CSS-like: none/contain/cover)
+   - `mode` controls **temporal composition** (timeline behavior)
+
+8. **Frame quantization consistency**: All time updates respect frame boundaries. Setting `currentTime = 1.234` with `fps=30` becomes `1.233...` (37th frame).
+
+## Mental Model
+
+```
+Root Timegroup (mode=sequence, 10s total)
+├─ Child A (mode=fixed, 5s)
+│   └─ global window: [0s, 5s)
+│   └─ ownCurrentTime: [0s, 5s)
+├─ Child B (mode=fixed, 3s) 
+│   └─ global window: [5s, 8s)
+│   └─ ownCurrentTime: [0s, 3s)  ← RESETS to 0
+└─ Child C (mode=fit)
+    └─ global window: [0s, 10s)
+    └─ ownCurrentTime: [0s, 10s)  ← INHERITS parent
+```
+
+When root's `currentTime = 6s`:
+- Child A: inactive (6s is outside its [0s, 5s) global window)
+- Child B: **active** with `ownCurrentTimeMs = 1000` (1s into its own 3s coordinate system)
+- Child C: active with `ownCurrentTimeMs = 6000` (fit mode inherits full parent time)
+
+**Key distinction**: 
+- `currentTime` = position in root timeline (global coordinate)
+- `ownCurrentTime` = position in element's local timeline (local coordinate, resets per element)
+
+## Behavioral Consequences
+
+From the composition rules above:
+
+1. **Sequence items are serial in global time, independent in local time**: Changing Child A's duration shifts Child B's global window but Child B's `ownCurrentTime` still runs [0s, 3s)
+
+2. **Contain items are parallel in both coordinates**: All children share same global and local time
+
+3. **Fit items are duration-transparent**: They never affect parent duration calculation
+
+4. **Overlap reduces global duration**: Each overlap subtracts from total: `duration = Σ(child) - (n-1) × overlap`
+
+5. **CSS variables are local**: `--ef-progress = ownCurrentTime / duration` for each element
+
+6. **Frame quantization is universal**: All time writes snap to frame grid, ensuring consistent seek/render behavior
 
 ## Examples
 
 
-### Mode: `fixed`
- 
-The most simple timegroup is a fixed duration timegroup. While it doesn't make for a very compelling video, we can use the fixed time group to create static content.
+### Fixed Mode
+
+A fixed duration timegroup has an explicit, unchanging duration.
 
 <Demonstration layout="horizontal" alwaysShowSource>
   <Timegroup
@@ -35,12 +133,11 @@ The most simple timegroup is a fixed duration timegroup. While it doesn't make f
 </Demonstration>
 
 
-### Mode: `sequence`
+### Sequence Mode
 
-The sequence timegroup plays its children in sequence.
-Here we have three items that each play for a fixed duration of 2, 3, and 1 seconds. The duration of the sequence timegroup is the sum of the durations of its children. It's kind of like flexbox, but for time.
+Children play sequentially. Total duration = sum of child durations (minus overlaps).
 
-**Note:** When using `mode="sequence"` on a parent timegroup, child timegroups should typically use `mode="fixed"` to specify their individual durations.
+**Consequence**: Changing Item 2's duration from 3s to 5s would make total duration = 8s (2s + 5s + 1s).
 
 <Demonstration layout="horizontal" alwaysShowSource>
   <Timegroup
@@ -73,9 +170,11 @@ Here we have three items that each play for a fixed duration of 2, 3, and 1 seco
 </Demonstration>
 
 
-### Mode: `contain`
+### Contain Mode
 
-The contain timegroup plays its children simultaneously. The duration of the contain timegroup is the maximum duration of its children. Here, we have three items that each play for a fixed duration of 5, 8, and 3 seconds. The duration of the contain timegroup is the maximum duration of its children, which is 8 seconds. As you scrub the timeline, you'll see that the last item plays for the entire duration of the timegroup.
+Children play simultaneously (parallel). Total duration = max of child durations.
+
+**Consequence**: Item 2 (8s) determines total duration. Items 1 and 3 end early.
 
 <Demonstration layout="horizontal" alwaysShowSource>
   <Timegroup 
@@ -107,13 +206,11 @@ The contain timegroup plays its children simultaneously. The duration of the con
   </Timegroup>
 </Demonstration>
 
-These three timegroup modes can be combined to create rich timelines of all kinds.
+### Fit Mode
 
-### Mode: `fit`
+Duration inherits from parent. Used for backgrounds that span the entire composition.
 
-Fit timegroups expand their duration to fit the duration of their parent timegroup. This can be used create background elements that play for the duration of the video.
-
-In this example, you can change the duration of the sequence items to see how the fit element will maintain the duration of the timegroup containing it.
+**Consequence**: If sequence changes from 7.5s to 10s, fit element automatically becomes 10s.
 
 <Demonstration layout="horizontal" alwaysShowSource>
   <Timegroup
@@ -137,27 +234,9 @@ In this example, you can change the duration of the sequence items to see how th
 
 ### CSS Variable: `--ef-duration`
 
-The timegroup element supports animation control. This is useful for creating complex animations that are timed to the video.
+Animations can reference the timegroup's duration for timing calculations.
 
-In this example, we have specified a fade-in and fade-out animation that will run on the titlecard and subtitle.
-
-To apply the animation, we use the `style` attribute to set the animation on the titlecard and subtitle.
-
-```html
-<p
-  class="text-3xl"
-  style="
-    animation: fade-in 2s ease-in-out paused,
-               fade-out 2s ease-in-out calc(var(--ef-duration) - 2s) paused
-  "
->
-  Five Second Titlecard
-</p>
-```
-
-The `var(--ef-duration)` variable is a special variable that is set by the timegroup element. It is the duration of the nearest parent timegroup. By using this variable we can ensure that the fadeout will always start at the same time relative to the end of the timegroup.
-
-This is great for creating templates where you don't know exactly how long the final media will be. Either because it might change during production, or because it will be filled with dynamic during templated rendering.
+**Consequence**: `animation-delay: calc(var(--ef-duration) - 2s)` creates a fade-out that starts 2s before the end, regardless of actual duration.
 
 
 <Demonstration layout="horizontal" alwaysShowSource>
@@ -198,20 +277,9 @@ This is great for creating templates where you don't know exactly how long the f
 
 ### CSS Variable: `--ef-progress`
 
-The timegroup element also supports progress control. This is useful for creating interactive media.
+Progress value (0 to 1) tracks timegroup playback for animations.
 
-In this example, we have specified a progress animation that will run on the titlecard and subtitle. The progress animation is a simple scale animation that will run from 0 to 100% based on the progress of the timegroup.
-
-
-```html
-<!-- We can use the --ef-progress variable to create a scale animation that runs from 0 to 100% based on the progress of the timegroup. -->
-<p class="text-3xl" style="scale(var(--ef-progress))">Five Second Titlecard</p>
-
-<!-- We can also use the --ef-progress variable to create a progress bar that fills up from 0 to 100% based on the progress of the timegroup. -->
-<div class="h-2 w-1/2 bg-slate-400">
-  <div class="bg-blue-400 h-full" style={{width: `var(--ef-progress)`}}></div>
-</div>
-```
+**Consequence**: `width: calc(var(--ef-progress) * 100%)` creates a progress bar that fills as the timegroup plays.
 
 <Demonstration layout="horizontal" alwaysShowSource>
   <Timegroup
@@ -232,44 +300,11 @@ In this example, we have specified a progress animation that will run on the tit
   </Timegroup>
 </Demonstration>
 
-### Mode: `sequence` with `overlap` and transitions
-
-<Demonstration layout="horizontal" alwaysShowSource>
-  <Timegroup 
-    id="sequence-overlap"
-    mode="sequence" 
-    overlap="2s"
-    className="w-[500px] h-[300px] bg-slate-500"
-  >
-    <Timegroup 
-      mode="fixed" 
-      duration="5s" 
-      className="font-mono absolute top-0 left-0 w-full h-1/3 bg-red-300 text-red-800 text-3xl flex items-center justify-center"
-    >
-      <p>{"Sequence Item 1"}</p>
-    </Timegroup>
-    <Timegroup 
-      mode="fixed" 
-      duration="8s" 
-      className="font-mono absolute top-1/3 left-0 w-full h-1/3 bg-green-300 text-green-800 text-3xl flex items-center justify-center"
-    >
-      <p>{"Sequence Item 2"}</p>
-    </Timegroup>
-    <Timegroup 
-      mode="fixed" 
-      duration="3s" 
-      className="font-mono absolute top-2/3 left-0 w-full h-1/3 bg-blue-300 text-blue-800 text-3xl flex items-center justify-center"
-    >
-      <p>{"Sequence Item 3"}</p>
-    </Timegroup>
-  </Timegroup>
-</Demonstration>
-
 ### CSS Variables: `--ef-transition-duration` and `--ef-transition-out-start`
 
-When using an overlap, the timegroup element will automatically calculate the `--ef-transition-duration` and `--ef-transition-out-start` variables. These variables are useful for creating transitions between sequence items. Again, they help us create templates that are dynamic and can be reused with different content.
+With `overlap`, these variables time transitions between sequence items.
 
-Repeating the same example, we can see the `--ef-transition-duration` and `--ef-transition-out-start` variables in action.
+**Consequence**: `animation-delay: var(--ef-transition-out-start)` starts fade-out automatically at the correct time when items overlap.
 
 <Demonstration layout="horizontal" alwaysShowSource>
   <style>{`@keyframes fade-in {
@@ -343,7 +378,56 @@ Repeating the same example, we can see the `--ef-transition-duration` and `--ef-
   </Timegroup>
 </Demonstration>
 
-Controlling transitions with CSS is a powerful way to create complex animations and interactive media. You might be surprised how much you can do with just a few lines of CSS and SVG. Checkout the [CSS Animation Control](/docs/010-elements/005-timegroup#css-animation-control) section for more examples. 
+## Common Misconceptions
+
+### Writing currentTime to non-root timegroups
+**Wrong**: `childTimegroup.currentTime = 5`
+
+**Why**: Only root controls timeline; children compute their time from parent
+
+**Right**: `rootTimegroup.currentTime = 5` (write to root only)
+
+### Confusing currentTime vs ownCurrentTime
+**Wrong**: Expecting Child B in sequence to have `currentTime = 1` when it's 1s into playback
+
+**Why**: `currentTime` is global (6s), `ownCurrentTime` is local (1s)
+
+**Right**: Read `ownCurrentTime` for element-relative time
+
+### Confusing fit attribute vs fit mode
+**Wrong**: `fit="contain"` expecting duration to change
+
+**Why**: `fit` is visual scaling (CSS-like), `mode` is temporal behavior
+
+**Right**: `mode="fit"` for duration inheritance, `fit="contain"` for visual scaling
+
+### Expecting overlap to create visual crossfade
+**Wrong**: `overlap="2s"` alone creates smooth visual transition
+
+**Why**: Overlap only affects timing; CSS handles visuals
+
+**Right**: Combine `overlap` with CSS animations using `--ef-transition-duration`
+
+### Hard-coding animation timing
+**Wrong**: `animation-delay: 3s` for fade-out
+
+**Why**: Breaks when parent duration changes
+
+**Right**: `animation-delay: var(--ef-transition-out-start)`
+
+### Mixing FPS values in nested timegroups
+**Wrong**: Setting different `fps` on parent (30) and children (60)
+
+**Why**: Creates quantization mismatches and frame alignment issues
+
+**Right**: Set `fps` once on root timegroup (propagates to all descendants)
+
+### Using currentTime for programmatic control without seeking
+**Wrong**: Setting `currentTime` and immediately reading frame state
+
+**Why**: Frame updates are async; state may not be ready
+
+**Right**: Use `await timegroup.seek(timeMs)` which waits for completion
 
 ## Frame Rate and Time Quantization
 
@@ -412,15 +496,21 @@ When you set the `currentTime` on a timegroup, the value is automatically rounde
     type="number"
     defaultValue="0"
   >
-    Explicitly set the current time of the timegroup.
+    **Type**: `number` (seconds)
 
-    This is useful for creating editors and other interactive applications with the editframe elements.
+    **Read/Write**: Both
 
-    For example, a custom scrubber element could be used to set the `currentTime` property of the timegroup.
+    **Conceptual role**: Sets the playback position in the root timeline (global coordinate)
 
-    When nesting timegroups, only set this property on the root-most timegroup. The value will be propagated to all child timegroups.
+    **Side effects**: 
+    - Triggers frame updates across all child timegroups
+    - Value is quantized to frame boundaries based on `fps`
+    - Updates `currentTimeMs` automatically
+    - If element has `id`, saves to localStorage on next seek
 
-    Writes to this property will be reflected in the `currentTimeMs` property.
+    **Constraints**: Should only be written on root timegroup. Child timegroups compute their time from parent state.
+
+    **Example**: `timegroup.currentTime = 5.5` (sets to 5.5 seconds, quantized to nearest frame)
   </PropertyDoc>
   <PropertyDoc
     name="currentTimeMs"
@@ -430,9 +520,34 @@ When you set the `currentTime` on a timegroup, the value is automatically rounde
     type="number"
     defaultValue="0"
   >
-    The current time of the timegroup in milliseconds.
+    **Type**: `number` (milliseconds)
 
-    Writes to this property will be reflected in the `currentTime` property.
+    **Read/Write**: Both
+
+    **Conceptual role**: Same as `currentTime` but in milliseconds
+
+    **Side effects**: Same as `currentTime`
+
+    **Relationship**: `currentTimeMs = currentTime × 1000`
+  </PropertyDoc>
+  <PropertyDoc
+    name="ownCurrentTimeMs"
+    domReadable
+    type="number"
+    defaultValue="0"
+  >
+    **Type**: `number` (milliseconds, read-only)
+
+    **Conceptual role**: The current time within this element's local timeline (local coordinate)
+
+    **Behavior**:
+    - Sequence mode: Resets to 0 at this element's start time, progresses independently
+    - Contain mode: Tracks parent's `ownCurrentTimeMs`
+    - Fit mode: Tracks parent's `ownCurrentTimeMs` (identity mapping)
+
+    **Use case**: Used in `addFrameTask` callbacks to get element-relative time
+
+    **Key distinction**: `currentTimeMs` is global (root timeline), `ownCurrentTimeMs` is local (element timeline)
   </PropertyDoc>
   <PropertyDoc
     name="fit"
@@ -460,7 +575,35 @@ When you set the `currentTime` on a timegroup, the value is automatically rounde
     type="number"
     defaultValue="30"
   >
-    Sets the frames per second for the timegroup. This value is used to quantize all time updates to frame boundaries, ensuring predictable seeking and synchronization. This is especially important during rendering to produce a smooth video output.
+    **Type**: `number` (frames per second)
+
+    **Read/Write**: Both
+
+    **Conceptual role**: Controls frame quantization for time updates
+
+    **Side effects**:
+    - All time values snap to frame boundaries: `quantized_time = round(time × fps) / fps`
+    - During rendering, `effectiveFps` uses render options FPS instead
+    - Ensures consistent seek/render behavior and synchronization
+
+    **Constraints**: Should be set on root timegroup to avoid quantization mismatches
+
+    **Related property**: `effectiveFps` (read-only) - Returns actual FPS being used (render options FPS during rendering, otherwise this property)
+  </PropertyDoc>
+  <PropertyDoc
+    name="effectiveFps"
+    domReadable
+    type="number"
+  >
+    **Type**: `number` (frames per second, read-only)
+
+    **Conceptual role**: Returns the actual FPS being used for frame quantization
+
+    **Behavior**:
+    - During rendering: Returns FPS from render options
+    - Otherwise: Returns the `fps` property value
+
+    **Use case**: Internal - used by frame quantization logic to determine frame boundaries
   </PropertyDoc>
 </PropertyDocList>
 
@@ -521,4 +664,167 @@ Programmatic control of `ef-timegroup` elements is available through JavaScript 
   -   **`callback`**: `(info: FrameTaskInfo) => void | Promise<void>`
       The same callback function that was passed to `addFrameTask`.
 </PropertyDoc>
+<PropertyDoc
+  name="seek(timeMs)"
+  type="async function"
+>
+  **Type**: `async (timeMs: number) => Promise<void>`
+
+  **Semantic responsibility**: Asynchronously seek to a specific time and wait for all visible frames to be ready
+
+  **Parameters**:
+  - `timeMs`: Time in milliseconds to seek to (will be quantized to frame boundary)
+
+  **Behavior**:
+  1. Sets `currentTime` (quantized)
+  2. Waits for seek task completion
+  3. Waits for all visible elements' frame tasks to complete
+  4. Saves time to localStorage (if element has `id`)
+
+  **Difference from currentTime setter**: 
+  - `currentTime = 5` triggers async update but returns immediately
+  - `await seek(5000)` waits until frames are ready for that time
+
+  **Use cases**: 
+  - Tests requiring frame-perfect assertions
+  - Programmatic rendering
+  - External timeline scrubbing
+
+  **Example**:
+  ```javascript
+  await timegroup.seek(5000); // Seek to 5 seconds and wait for frames
+  ```
+</PropertyDoc>
+<PropertyDoc
+  name="isRootTimegroup"
+  type="boolean"
+>
+  **Type**: `boolean` (read-only property)
+
+  **Semantic responsibility**: Indicates whether this timegroup is the root (has no parent timegroups)
+
+  **Returns**: `true` if no parent timegroup exists, `false` otherwise
+
+  **Usage**: Internal logic uses this to determine time propagation rules
+</PropertyDoc>
+<PropertyDoc
+  name="waitForMediaDurations()"
+  type="async function"
+>
+  **Type**: `async () => Promise<void>`
+
+  **Semantic responsibility**: Wait for all nested media elements (ef-video, ef-audio) to load their durations
+
+  **Behavior**:
+  1. Waits for all child media elements to connect
+  2. Loads fragment index for each media element
+  3. Flushes caches and updates timeline calculations
+
+  **Use case**: Called automatically during initialization; can be called manually when dynamically adding media
+</PropertyDoc>
+<PropertyDoc
+  name="renderAudio(fromMs, toMs)"
+  type="async function"
+>
+  **Type**: `async (fromMs: number, toMs: number) => Promise<AudioBuffer>`
+
+  **Semantic responsibility**: Render audio buffer for a time range (used by playback controller)
+
+  **Parameters**:
+  - `fromMs`: Start time in milliseconds
+  - `toMs`: End time in milliseconds
+
+  **Returns**: AudioBuffer containing mixed audio from all active media elements in range
+
+  **Use case**: Called internally during live playback; can be used for audio preview/export
+</PropertyDoc>
+<PropertyDoc
+  name="testPlayAudio(fromMs, toMs)"
+  type="async function"
+>
+  **Type**: `async (fromMs: number, toMs: number) => Promise<void>`
+
+  **Semantic responsibility**: Render and immediately play back audio (debugging utility)
+
+  **Parameters**:
+  - `fromMs`: Start time in milliseconds
+  - `toMs`: End time in milliseconds
+
+  **Returns**: Promise that resolves when playback completes
+
+  **Example**:
+  ```javascript
+  await timegroup.testPlayAudio(0, 5000); // Play first 5 seconds
+  ```
+</PropertyDoc>
+<PropertyDoc
+  name="getMediaElements()"
+  type="function"
+>
+  **Type**: `() => EFMedia[]`
+
+  **Semantic responsibility**: Returns all media elements (ef-video, ef-audio) within this timegroup
+
+  **Returns**: Array of media elements for audio rendering/playback
+
+  **Use case**: Used internally by renderAudio() to collect media sources
+</PropertyDoc>
 </PropertyDocList>
+
+## Storage Persistence
+
+Timegroups with an `id` attribute automatically persist `currentTime` to `localStorage`:
+
+**Storage key**: `ef-timegroup-${id}`
+
+**Automatic behavior**:
+- Saves `currentTime` after each seek
+- Restores `currentTime` on page load (if key exists)
+- Works only for root timegroups with `id` attribute
+
+**Example**:
+```html
+<ef-timegroup id="my-video" mode="fixed" duration="60s">
+  <!-- Will remember playback position across page reloads -->
+</ef-timegroup>
+```
+
+**Methods**:
+- `loadTimeFromLocalStorage()` - Manual load (called automatically on connect)
+- `saveTimeToLocalStorage(time)` - Manual save (called automatically after seek)
+
+## Advanced Composition Patterns
+
+### Nested Sequences with Transitions
+
+```html
+<ef-timegroup mode="sequence" overlap="1s">
+  <ef-timegroup mode="sequence">
+    <ef-timegroup mode="fixed" duration="3s">Sub A1</ef-timegroup>
+    <ef-timegroup mode="fixed" duration="2s">Sub A2</ef-timegroup>
+  </ef-timegroup>
+  <ef-timegroup mode="fixed" duration="4s">B</ef-timegroup>
+</ef-timegroup>
+```
+
+**Timing analysis**:
+- Inner sequence: 5s total (3s + 2s)
+- Outer sequence: 8s total (5s + 4s - 1s overlap)
+- B starts at 4s global time (5s - 1s overlap), runs until 8s
+
+### Background Track Pattern (Fit Mode)
+
+```html
+<ef-timegroup mode="contain">
+  <ef-timegroup mode="sequence" class="foreground">
+    <ef-timegroup mode="fixed" duration="3s">Intro</ef-timegroup>
+    <ef-timegroup mode="fixed" duration="10s">Main</ef-timegroup>
+    <ef-timegroup mode="fixed" duration="2s">Outro</ef-timegroup>
+  </ef-timegroup>
+  <ef-timegroup mode="fit" class="background">
+    <!-- Automatically spans full 15s duration -->
+  </ef-timegroup>
+</ef-timegroup>
+```
+
+**Consequence**: Background duration = max(foreground) = 15s (fit mode inherits)

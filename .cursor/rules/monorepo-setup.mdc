@@ -212,8 +212,16 @@ Elements services orchestrated via `process-compose`:
 - Host-chrome dependency optional (`required: false`) for manual macOS host startup
 - Installed in dev container, should be available on macOS host
 
+<<<<<<< HEAD
 See `telecine/WORKTREE_SETUP.md` for detailed Docker setup.
 
 # Fallbacks
 
 It is tempting to make something work by creating a fallback. However, this is a bad idea. It is better to fix the root cause of the problem. It's better to CRASH and burn than to create a fallback.
+=======
+# Fallbacks
+It is tempting to make something work by creating a fallback. However, this is a bad idea. It is better to fix the root cause of the problem. It's better to CRASH and burn than to create a fallback.
+
+# TESTING
+When the user describes an issue to fix, always first write a test that reproduces the issue so the fix can be verified. Get the user to verify the test makes sense before starting to work on the fix.
+>>>>>>> main

@@ -18,6 +18,7 @@ import {
   resetTemporalCache,
   shallowGetTemporalElements,
   timegroupContext,
+  type TemporalMixinInterface,
 } from "./EFTemporal.js";
 import { parseTimeToMs } from "./parseTimeToMs.js";
 import { renderTemporalAudio } from "./renderTemporalAudio.js";
@@ -43,12 +44,213 @@ export type FrameTaskCallback = (info: {
   element: EFTimegroup;
 }) => void | Promise<void>;
 
+// ============================================================================
+// Purpose 1: Composition Rules - How Duration is Determined
+// ============================================================================
+//
+// A timegroup's duration is determined by its mode:
+// - "fixed": Uses explicit duration attribute (base case)
+// - "sequence": Sum of child durations minus overlaps
+// - "contain": Maximum of child durations
+// - "fit": Inherits duration from parent timegroup
+//
+// Core invariant: Every timegroup has exactly one duration value at any moment,
+// computed from either explicit specification (fixed mode) or child relationships
+// (sequence/contain/fit modes).
+//
+// ============================================================================
+
+/**
+ * The four timegroup modes define how duration is calculated:
+ * - "fit": Inherits duration from parent timegroup
+ * - "fixed": Uses explicit duration attribute
+ * - "sequence": Sum of child durations minus overlaps
+ * - "contain": Maximum of child durations
+ */
+export type TimeMode = "fit" | "fixed" | "sequence" | "contain";
+
 // Cache for sequence mode duration calculations to avoid O(n) recalculation
 let sequenceDurationCache: WeakMap<EFTimegroup, number> = new WeakMap();
 
 export const flushSequenceDurationCache = () => {
   sequenceDurationCache = new WeakMap();
 };
+
+// Track timegroups currently calculating duration to prevent infinite loops
+const durationCalculationInProgress = new WeakSet<EFTimegroup>();
+
+// Export function to check if a timegroup is currently calculating duration
+// This is used by EFTemporal to prevent calling parent.durationMs during calculation
+export const isTimegroupCalculatingDuration = (
+  timegroup: EFTimegroup | undefined,
+): boolean => {
+  return timegroup !== undefined && durationCalculationInProgress.has(timegroup);
+};
+
+// Register this function with EFTemporal to break circular dependency
+// EFTemporal needs this function but can't import it directly due to circular dependency
+import { registerIsTimegroupCalculatingDuration } from "./EFTemporal.js";
+registerIsTimegroupCalculatingDuration(isTimegroupCalculatingDuration);
+
+/**
+ * Determines if a timegroup has its own duration based on its mode.
+ * This is the semantic rule: which modes produce independent durations.
+ */
+function hasOwnDurationForMode(
+  mode: TimeMode,
+  hasExplicitDuration: boolean,
+): boolean {
+  return (
+    mode === "contain" ||
+    mode === "sequence" ||
+    (mode === "fixed" && hasExplicitDuration)
+  );
+}
+
+/**
+ * Determines if a child temporal element should participate in parent duration calculation.
+ * 
+ * Semantic rule: Fit-mode children inherit from parent, so they don't contribute to parent's
+ * duration calculation (to avoid circular dependencies). Children without own duration
+ * also don't contribute.
+ */
+function shouldParticipateInDurationCalculation(
+  child: TemporalMixinInterface & HTMLElement,
+): boolean {
+  // Fit timegroups look "up" to their parent for duration, so skip to avoid infinite loop
+  if (child instanceof EFTimegroup && child.mode === "fit") {
+    return false;
+  }
+  // Only children with their own duration contribute
+  if (!child.hasOwnDuration) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Evaluates duration for "fit" mode: inherits from parent.
+ * Semantic rule: fit mode always matches parent duration, or 0 if no parent.
+ */
+function evaluateFitDuration(
+  parentTimegroup: EFTimegroup | undefined,
+): number {
+  if (!parentTimegroup) {
+    return 0;
+  }
+  return parentTimegroup.durationMs;
+}
+
+/**
+ * Evaluates duration for "sequence" mode: sum of children minus overlaps.
+ * Semantic rule: sequence mode sums child durations, subtracting overlap between consecutive items.
+ * Fit-mode children are excluded to avoid circular dependencies.
+ */
+function evaluateSequenceDuration(
+  timegroup: EFTimegroup,
+  childTemporals: Array<TemporalMixinInterface & HTMLElement>,
+  overlapMs: number,
+): number {
+  // Check cache first to avoid expensive O(n) recalculation
+  const cachedDuration = sequenceDurationCache.get(timegroup);
+  if (cachedDuration !== undefined) {
+    return cachedDuration;
+  }
+
+  let duration = 0;
+  let participatingIndex = 0;
+  childTemporals.forEach((child) => {
+    if (!shouldParticipateInDurationCalculation(child)) {
+      return;
+    }
+    // Subtract overlap for all items after the first
+    if (participatingIndex > 0) {
+      duration -= overlapMs;
+    }
+    duration += child.durationMs;
+    participatingIndex++;
+  });
+
+  // Ensure non-negative duration (invariant)
+  duration = Math.max(0, duration);
+
+  // Cache the calculated duration
+  sequenceDurationCache.set(timegroup, duration);
+  return duration;
+}
+
+/**
+ * Evaluates duration for "contain" mode: maximum of children.
+ * Semantic rule: contain mode takes the maximum child duration.
+ * Fit-mode children and children without own duration are excluded.
+ */
+function evaluateContainDuration(
+  timegroup: EFTimegroup,
+  childTemporals: Array<TemporalMixinInterface & HTMLElement>,
+): number {
+  let maxDuration = 0;
+  for (const child of childTemporals) {
+    if (!shouldParticipateInDurationCalculation(child)) {
+      continue;
+    }
+    // Prevent infinite loops: if child is a contain mode timegroup that's already
+    // calculating its duration, skip it to avoid circular dependency
+    if (
+      child instanceof EFTimegroup &&
+      child.mode === "contain" &&
+      durationCalculationInProgress.has(child)
+    ) {
+      continue;
+    }
+    maxDuration = Math.max(maxDuration, child.durationMs);
+  }
+  // Ensure non-negative duration (invariant)
+  return Math.max(0, maxDuration);
+}
+
+/**
+ * Evaluates duration based on timegroup mode.
+ * This is the semantic evaluation function - it determines what duration should be.
+ * 
+ * Note: Fixed mode is handled inline in the getter because it needs to call super.durationMs
+ * which requires the class context. The other modes are extracted for clarity.
+ */
+function evaluateDurationForMode(
+  timegroup: EFTimegroup,
+  mode: TimeMode,
+  childTemporals: Array<TemporalMixinInterface & HTMLElement>,
+): number {
+  switch (mode) {
+    case "fit":
+      return evaluateFitDuration(timegroup.parentTimegroup);
+    case "sequence": {
+      // Mark this timegroup as calculating duration to prevent infinite loops
+      durationCalculationInProgress.add(timegroup);
+      try {
+        return evaluateSequenceDuration(
+          timegroup,
+          childTemporals,
+          timegroup.overlapMs,
+        );
+      } finally {
+        // Always remove the marker, even if an error occurs
+        durationCalculationInProgress.delete(timegroup);
+      }
+    }
+    case "contain": {
+      // Mark this timegroup as calculating duration to prevent infinite loops
+      durationCalculationInProgress.add(timegroup);
+      try {
+        return evaluateContainDuration(timegroup, childTemporals);
+      } finally {
+        // Always remove the marker, even if an error occurs
+        durationCalculationInProgress.delete(timegroup);
+      }
+    }
+    default:
+      throw new Error(`Invalid time mode: ${mode}`);
+  }
+}
 
 export const shallowGetTimegroups = (
   element: Element,
@@ -63,6 +265,73 @@ export const shallowGetTimegroups = (
   }
   return groups;
 };
+
+// ============================================================================
+// Purpose 2: Time Propagation - How currentTime Flows Root to Children
+// ============================================================================
+//
+// Time propagation determines how the root timegroup's currentTime flows to child
+// temporal elements, computing each child's ownCurrentTime based on:
+// - The root's currentTime (global coordinate)
+// - The child's startTimeMs (determined by parent's composition mode)
+// - The parent's mode (sequence/contain/fit/fixed)
+//
+// Propagation rules by mode:
+// - Sequence: Each child's ownCurrentTime progresses within its time-shifted window
+// - Contain: All children share the same ownCurrentTime as parent
+// - Fit: Child ownCurrentTime = parent ownCurrentTime (identity mapping)
+//
+// Core invariant: Only root timegroup's currentTime should be written.
+// Child times are computed from parent state via ownCurrentTimeMs.
+//
+// Note: Time propagation logic is primarily implemented in EFTemporal.ts
+// (ownCurrentTimeMs getter and startTimeMs calculation). The timegroup's
+// currentTime setter triggers propagation by updating root time.
+//
+// ============================================================================
+
+// ============================================================================
+// Purpose 3: Seeking - Moving to a Specific Time
+// ============================================================================
+//
+// Seeking moves the timeline to a specific time position. This involves:
+// 1. Quantizing the requested time to frame boundaries (based on fps)
+// 2. Clamping to valid range [0, duration]
+// 3. Updating root timegroup's currentTime (which triggers time propagation)
+// 4. Waiting for all media and frame tasks to complete
+//
+// Core invariant: All time values snap to frame boundaries when FPS is set.
+// This ensures consistent seek/render behavior.
+//
+// ============================================================================
+
+/**
+ * Quantizes a time value to the nearest frame boundary based on FPS.
+ * This ensures time values align with frame boundaries for consistent rendering.
+ * 
+ * Semantic rule: Time values should snap to frame boundaries when FPS is set.
+ */
+function quantizeToFrameTime(timeSeconds: number, fps: number): number {
+  if (!fps || fps <= 0) return timeSeconds;
+  const frameDurationS = 1 / fps;
+  return Math.round(timeSeconds / frameDurationS) * frameDurationS;
+}
+
+/**
+ * Evaluates the target time for a seek operation.
+ * Applies quantization and clamping to determine the valid seek target.
+ */
+function evaluateSeekTarget(
+  requestedTime: number,
+  durationMs: number,
+  fps: number,
+): number {
+  // Quantize to frame boundaries
+  const quantizedTime = quantizeToFrameTime(requestedTime, fps);
+  // Clamp to valid range [0, duration]
+  return Math.max(0, Math.min(quantizedTime, durationMs / 1000));
+}
+
 
 @customElement("ef-timegroup")
 export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
@@ -96,15 +365,20 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     }
   `;
 
+  /** @internal */
   @provide({ context: timegroupContext })
   _timeGroupContext = this;
 
+  /** @internal */
   @provide({ context: efContext })
   efContext = this;
 
-  mode: "fit" | "fixed" | "sequence" | "contain" = "contain";
+  /** @public */
+  mode: TimeMode = "contain";
+  /** @public */
   overlapMs = 0;
 
+  /** @public */
   @property({ type: Number })
   fps = 30;
 
@@ -125,6 +399,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     super.attributeChangedCallback(name, old, value);
   }
 
+  /** @public */
   @property({ type: String })
   fit: "none" | "contain" | "cover" = "none";
 
@@ -140,6 +415,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
    * Get the effective FPS for this timegroup.
    * During rendering, uses the render options FPS if available.
    * Otherwise uses the configured fps property.
+   * @public
    */
   get effectiveFps(): number {
     // During rendering, prefer the render options FPS
@@ -149,63 +425,66 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     return this.fps;
   }
 
-  /**
-   * Quantize a time value to the nearest frame boundary based on effectiveFps.
-   * @param timeSeconds - Time in seconds
-   * @returns Time quantized to frame boundaries in seconds
-   */
-  private quantizeToFrameTime(timeSeconds: number): number {
-    const fps = this.effectiveFps;
-    if (!fps || fps <= 0) return timeSeconds;
-    const frameDurationS = 1 / fps;
-    return Math.round(timeSeconds / frameDurationS) * frameDurationS;
-  }
 
-  private async runThrottledFrameTask(): Promise<void> {
+  async #runThrottledFrameTask(): Promise<void> {
     if (this.playbackController) {
       return this.playbackController.runThrottledFrameTask();
     }
     await this.frameTask.run();
   }
 
+  // ============================================================================
+  // Purpose 3: Seeking Implementation
+  // ============================================================================
+
+  /** @public */
   @property({ type: Number, attribute: "currenttime" })
   set currentTime(time: number) {
-    // Quantize time to frame boundaries based on fps
-    // Do this BEFORE delegating to playbackController to ensure consistency
-    time = this.quantizeToFrameTime(time);
+    // Evaluate seek target (quantization and clamping)
+    const seekTarget = evaluateSeekTarget(time, this.durationMs, this.effectiveFps);
 
+    // Delegate to playbackController if available
     if (this.playbackController) {
-      this.playbackController.currentTime = time;
+      this.playbackController.currentTime = seekTarget;
       return;
     }
 
-    time = Math.max(0, Math.min(this.durationMs / 1000, time));
+    // Only root timegroups can have their currentTime set directly
     if (!this.isRootTimegroup) {
       return;
     }
-    if (Number.isNaN(time)) {
-      return;
-    }
-    if (time === this.#currentTime && !this.#processingPendingSeek) {
-      return;
-    }
-    if (this.#pendingSeekTime === time) {
+
+    // Validate seek target
+    if (Number.isNaN(seekTarget)) {
       return;
     }
 
+    // Skip if already at target time (unless processing pending seek)
+    if (seekTarget === this.#currentTime && !this.#processingPendingSeek) {
+      return;
+    }
+
+    // Skip if this is the same as pending seek
+    if (this.#pendingSeekTime === seekTarget) {
+      return;
+    }
+
+    // Handle concurrent seeks by queuing pending seek
     if (this.#seekInProgress) {
-      this.#pendingSeekTime = time;
-      this.#currentTime = time;
+      this.#pendingSeekTime = seekTarget;
+      this.#currentTime = seekTarget;
       return;
     }
 
-    this.#currentTime = time;
+    // Execute seek
+    this.#currentTime = seekTarget;
     this.#seekInProgress = true;
 
     this.seekTask.run().finally(() => {
+      // Process pending seek if it differs from completed seek
       if (
         this.#pendingSeekTime !== undefined &&
-        this.#pendingSeekTime !== time
+        this.#pendingSeekTime !== seekTarget
       ) {
         const pendingTime = this.#pendingSeekTime;
         this.#pendingSeekTime = undefined;
@@ -221,6 +500,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     });
   }
 
+  /** @public */
   get currentTime() {
     if (this.playbackController) {
       return this.playbackController.currentTime;
@@ -228,10 +508,12 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     return this.#currentTime ?? 0;
   }
 
+  /** @public */
   set currentTimeMs(ms: number) {
     this.currentTime = ms / 1000;
   }
 
+  /** @public */
   get currentTimeMs() {
     return this.currentTime * 1000;
   }
@@ -240,10 +522,15 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
    * Seek to a specific time and wait for all frames to be ready.
    * This is the recommended way to seek in tests and programmatic control.
    *
+   * Combines seeking (Purpose 3) with frame rendering (Purpose 4) to ensure
+   * all visible elements are ready after the seek completes.
+   *
    * @param timeMs - Time in milliseconds to seek to
    * @returns Promise that resolves when the seek is complete and all visible children are ready
+   * @public
    */
   async seek(timeMs: number): Promise<void> {
+    // Execute seek (Purpose 3)
     this.currentTimeMs = timeMs;
     await this.seekTask.taskComplete;
 
@@ -252,6 +539,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
       this.saveTimeToLocalStorage(this.currentTime);
     }
 
+    // Wait for frame rendering (Purpose 4)
     await this.frameTask.taskComplete;
 
     // Ensure all visible elements have completed their reactive update cycles AND frame rendering
@@ -259,11 +547,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     // elements have processed property changes from requestUpdate(). To ensure frame data is
     // accurate, we wait for updateComplete first, then ensure the frameTask has run with the
     // updated properties. Elements like EFVideo provide waitForFrameReady() for this pattern.
-    const temporalElements = deepGetElementsWithFrameTasks(this);
-    const visibleElements = temporalElements.filter((element) => {
-      const animationState = evaluateAnimationVisibilityState(element);
-      return animationState.isVisible;
-    });
+    const visibleElements = this.#evaluateVisibleElementsForFrame();
 
     await Promise.all(
       visibleElements.map(async (element) => {
@@ -281,6 +565,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
 
   /**
    * Determines if this is a root timegroup (no parent timegroups)
+   * @public
    */
   get isRootTimegroup(): boolean {
     return !this.parentTimegroup;
@@ -293,6 +578,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
    *
    * @param callback - Function to execute on each frame
    * @returns A cleanup function that removes the callback when called
+   * @public
    */
   addFrameTask(callback: FrameTaskCallback): () => void {
     if (typeof callback !== "function") {
@@ -308,11 +594,13 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
    * Remove a previously registered custom frame task callback.
    *
    * @param callback - The callback function to remove
+   * @public
    */
   removeFrameTask(callback: FrameTaskCallback): void {
     this.#customFrameTasks.delete(callback);
   }
 
+  /** @internal */
   saveTimeToLocalStorage(time: number) {
     try {
       if (this.id && this.isConnected && !Number.isNaN(time)) {
@@ -337,6 +625,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     this.requestUpdate();
   };
 
+  /** @internal */
   loadTimeFromLocalStorage(): number | undefined {
     if (this.id) {
       try {
@@ -393,7 +682,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
 
     if (this.#previousDurationMs !== this.durationMs) {
       this.#previousDurationMs = this.durationMs;
-      this.runThrottledFrameTask();
+      this.#runThrottledFrameTask();
     }
   }
 
@@ -402,6 +691,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     this.#resizeObserver?.disconnect();
   }
 
+  /** @internal */
   get storageKey() {
     if (!this.id) {
       throw new Error("Timegroup must have an id to use localStorage.");
@@ -409,6 +699,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     return `ef-timegroup-${this.id}`;
   }
 
+  /** @internal */
   get intrinsicDurationMs() {
     if (this.hasExplicitDuration) {
       return this.explicitDurationMs;
@@ -416,124 +707,53 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     return undefined;
   }
 
+  /** @internal */
   get hasOwnDuration() {
-    return (
-      this.mode === "contain" ||
-      this.mode === "sequence" ||
-      (this.mode === "fixed" && this.hasExplicitDuration)
+    return hasOwnDurationForMode(this.mode, this.hasExplicitDuration);
+  }
+
+  // ============================================================================
+  // Purpose 1: Composition Rules Implementation
+  // ============================================================================
+
+  /** @public */
+  get durationMs(): number {
+    // Fixed mode delegates to parent class durationMs which handles trimming, source in/out, etc.
+    if (this.mode === "fixed") {
+      return super.durationMs;
+    }
+    
+    // Evaluate duration semantics based on mode (Purpose 1)
+    // childTemporals returns TemporalMixinInterface[], but we need HTMLElement intersection
+    const childTemporalsAsElements = this.childTemporals as Array<
+      TemporalMixinInterface & HTMLElement
+    >;
+    return evaluateDurationForMode(
+      this,
+      this.mode,
+      childTemporalsAsElements,
     );
   }
 
-  get durationMs(): number {
-    switch (this.mode) {
-      case "fit": {
-        if (!this.parentTimegroup) {
-          return 0;
-        }
-        return this.parentTimegroup.durationMs;
-      }
-      case "fixed":
-        return super.durationMs;
-      case "sequence": {
-        // Check cache first to avoid expensive O(n) recalculation
-        const cachedDuration = sequenceDurationCache.get(this);
-        if (cachedDuration !== undefined) {
-          return cachedDuration;
-        }
 
-        let duration = 0;
-        this.childTemporals.forEach((child, index) => {
-          if (child instanceof EFTimegroup && child.mode === "fit") {
-            return;
-          }
-          if (index > 0) {
-            duration -= this.overlapMs;
-          }
-          duration += child.durationMs;
-        });
+  // ============================================================================
+  // Purpose 4: Frame Rendering - What Happens Each Frame
+  // ============================================================================
 
-        // Cache the calculated duration
-        sequenceDurationCache.set(this, duration);
-        return duration;
-      }
-      case "contain": {
-        let maxDuration = 0;
-        for (const child of this.childTemporals) {
-          // fit timegroups look "up" to their parent timegroup for their duration
-          // so we need to skip them to avoid an infinite loop
-          if (child instanceof EFTimegroup && child.mode === "fit") {
-            continue;
-          }
-          if (!child.hasOwnDuration) {
-            continue;
-          }
-          maxDuration = Math.max(maxDuration, child.durationMs);
-        }
-        return maxDuration;
-      }
-      default:
-        throw new Error(`Invalid time mode: ${this.mode}`);
-    }
-  }
-
-  async getPendingFrameTasks(signal?: AbortSignal) {
-    await this.waitForNestedUpdates(signal);
-    signal?.throwIfAborted();
-    const temporals = deepGetElementsWithFrameTasks(this);
-
-    // Filter to only include temporally visible elements for frame processing
-    // (but keep all elements for duration calculations)
-    // Use the target timeline time if we're in the middle of seeking
-    const timelineTimeMs =
-      (this.#pendingSeekTime ?? this.#currentTime ?? 0) * 1000;
-    const activeTemporals = temporals.filter((temporal) => {
-      // Skip timeline filtering if temporal doesn't have timeline position info
-      if (!("startTimeMs" in temporal) || !("endTimeMs" in temporal)) {
-        return true; // Keep non-temporal elements
-      }
-
-      // Only process frame tasks for elements that overlap the current timeline
-      // Use same epsilon logic as seek task for consistency
-      const epsilon = 0.001; // 1µs offset to break ties at boundaries
-      const startTimeMs = (temporal as any).startTimeMs as number;
-      const endTimeMs = (temporal as any).endTimeMs as number;
-      const elementStartsBeforeEnd = startTimeMs <= timelineTimeMs + epsilon;
-      // Root timegroups should remain visible at exact end time, but other elements use exclusive end for clean transitions
-      const isRootTimegroup =
-        temporal.tagName.toLowerCase() === "ef-timegroup" &&
-        !(temporal as any).parentTimegroup;
-      const useInclusiveEnd = isRootTimegroup;
-      const elementEndsAfterStart = useInclusiveEnd
-        ? endTimeMs >= timelineTimeMs
-        : endTimeMs > timelineTimeMs;
-      return elementStartsBeforeEnd && elementEndsAfterStart;
+  /**
+   * Evaluates which elements should be rendered in the current frame.
+   * Filters to only include temporally visible elements for frame processing.
+   * Uses animation-friendly visibility to prevent animation jumps at exact boundaries.
+   */
+  #evaluateVisibleElementsForFrame(): Array<TemporalMixinInterface & HTMLElement> {
+    const temporalElements = deepGetElementsWithFrameTasks(this);
+    return temporalElements.filter((element) => {
+      const animationState = evaluateAnimationVisibilityState(element);
+      return animationState.isVisible;
     });
-
-    const frameTasks = activeTemporals.map((temporal) => temporal.frameTask);
-    frameTasks.forEach((task) => {
-      task.run();
-    });
-
-    return frameTasks.filter((task) => task.status < TaskStatus.COMPLETE);
   }
 
-  async waitForNestedUpdates(signal?: AbortSignal) {
-    const limit = 10;
-    let steps = 0;
-    let isComplete = true;
-    while (true) {
-      steps++;
-      if (steps > limit) {
-        throw new Error("Reached update depth limit.");
-      }
-      isComplete = await this.updateComplete;
-      signal?.throwIfAborted();
-      if (isComplete) {
-        break;
-      }
-    }
-  }
-
+  /** @internal */
   async waitForFrameTasks() {
     const result = await withSpan(
       "timegroup.waitForFrameTasks",
@@ -550,18 +770,15 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
           span.setAttribute("temporalElementsCount", temporalElements.length);
         }
 
-        // Filter to only include temporally visible elements for frame processing
-        // Use animation-friendly visibility to prevent animation jumps at exact boundaries
-        const visibleElements = temporalElements.filter((element) => {
-          const animationState = evaluateAnimationVisibilityState(element);
-          return animationState.isVisible;
-        });
+        // Evaluate which elements should be rendered
+        const visibleElements = this.#evaluateVisibleElementsForFrame();
         if (isTracingEnabled()) {
           span.setAttribute("visibleElementsCount", visibleElements.length);
         }
 
         const promiseStart = performance.now();
 
+        // Execute frame tasks for all visible elements
         await Promise.all(
           visibleElements.map((element) => element.frameTask.run()),
         );
@@ -578,13 +795,14 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     return result;
   }
 
-  mediaDurationsPromise: Promise<void> | undefined = undefined;
+  #mediaDurationsPromise: Promise<void> | undefined = undefined;
 
+  /** @internal */
   async waitForMediaDurations() {
-    if (!this.mediaDurationsPromise) {
-      this.mediaDurationsPromise = this.#waitForMediaDurations();
+    if (!this.#mediaDurationsPromise) {
+      this.#mediaDurationsPromise = this.#waitForMediaDurations();
     }
-    return this.mediaDurationsPromise;
+    return this.#mediaDurationsPromise;
   }
 
   /**
@@ -643,11 +861,12 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     );
   }
 
+  /** @internal */
   get childTemporals() {
     return shallowGetTemporalElements(this);
   }
 
-  get contextProvider() {
+  get #contextProvider() {
     let parent = this.parentNode;
     while (parent) {
       if (isContextMixin(parent)) {
@@ -667,6 +886,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
    *
    * If the timegroup is already wrapped in a context provider like ef-preview,
    * it should NOT be wrapped in a workbench.
+   * @internal
    */
   shouldWrapWithWorkbench() {
     const isRendering = EF_RENDERING?.() === true;
@@ -695,6 +915,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     );
   }
 
+  /** @internal */
   wrapWithWorkbench() {
     const workbench = document.createElement("ef-workbench");
     this.parentElement?.append(workbench);
@@ -710,7 +931,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     workbench.append(filmstrip);
   }
 
-  get efElements() {
+  get #efElements() {
     return Array.from(
       this.querySelectorAll(
         "ef-audio, ef-video, ef-image, ef-captions, ef-waveform",
@@ -722,6 +943,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
    * Returns media elements for playback audio rendering
    * For standalone media, returns [this]; for timegroups, returns all descendants
    * Used by PlaybackController for audio-driven playback
+   * @internal
    */
   getMediaElements(): EFMedia[] {
     return deepGetMediaElements(this);
@@ -731,6 +953,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
    * Render audio buffer for playback
    * Called by PlaybackController during live playback
    * Delegates to shared renderTemporalAudio utility for consistent behavior
+   * @internal
    */
   async renderAudio(fromMs: number, toMs: number): Promise<AudioBuffer> {
     return renderTemporalAudio(this, fromMs, toMs);
@@ -740,7 +963,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
    * TEMPORARY TEST METHOD: Renders audio and immediately plays it back
    * Usage: timegroup.testPlayAudio(0, 5000) // Play first 5 seconds
    */
-  async testPlayAudio(fromMs: number, toMs: number) {
+  async #testPlayAudio(fromMs: number, toMs: number) {
     // Render the audio using the existing renderAudio method
     const renderedBuffer = await this.renderAudio(fromMs, toMs);
 
@@ -764,8 +987,8 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     });
   }
 
-  async loadMd5Sums() {
-    const efElements = this.efElements;
+  async #loadMd5Sums() {
+    const efElements = this.#efElements;
     const loaderTasks: Promise<any>[] = [];
     for (const el of efElements) {
       const md5SumLoader = (el as any).md5SumLoader;
@@ -784,12 +1007,14 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     });
   }
 
+  /** @internal */
   frameTask = new Task(this, {
     // autoRun: EF_INTERACTIVE,
     autoRun: false,
     args: () => [this.ownCurrentTimeMs, this.currentTimeMs] as const,
     task: async ([ownCurrentTimeMs, currentTimeMs]) => {
       if (this.isRootTimegroup) {
+        // Root timegroup orchestrates frame rendering for entire tree
         await withSpan(
           "timegroup.frameTask",
           {
@@ -799,8 +1024,11 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
           },
           undefined,
           async () => {
+            // Wait for all child frame tasks to complete (Purpose 4)
             await this.waitForFrameTasks();
+            // Execute custom frame tasks registered on this timegroup
             await this.#executeCustomFrameTasks();
+            // Update animations based on current time
             updateAnimations(this);
           },
         );
@@ -831,19 +1059,23 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     }
   }
 
+  /** @internal */
   seekTask = new Task(this, {
     autoRun: false,
     args: () => [this.#pendingSeekTime ?? this.#currentTime] as const,
     onComplete: () => {},
     task: async ([targetTime]) => {
+      // Delegate to playbackController if available
       if (this.playbackController) {
         await this.playbackController.seekTask.taskComplete;
         return this.currentTime;
       }
 
+      // Only root timegroups execute seek tasks
       if (!this.isRootTimegroup) {
         return;
       }
+
       return withSpan(
         "timegroup.seekTask",
         {
@@ -853,19 +1085,27 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
         },
         undefined,
         async (span) => {
+          // Wait for media durations to be loaded (needed for accurate duration calculations)
           await this.waitForMediaDurations();
-          const newTime = Math.max(
-            0,
-            Math.min(targetTime ?? 0, this.durationMs / 1000),
+
+          // Evaluate and apply seek target
+          const newTime = evaluateSeekTarget(
+            targetTime ?? 0,
+            this.durationMs,
+            this.effectiveFps,
           );
           if (isTracingEnabled()) {
             span.setAttribute("newTime", newTime);
           }
-          // Apply the clamped time back to currentTime
 
+          // Apply the seek target (triggers time propagation to children)
           this.#currentTime = newTime;
           this.requestUpdate("currentTime");
-          await this.runThrottledFrameTask();
+
+          // Trigger frame rendering for the new time position
+          await this.#runThrottledFrameTask();
+
+          // Save to localStorage for persistence
           this.saveTimeToLocalStorage(this.#currentTime);
           this.#seekInProgress = false;
           return newTime;

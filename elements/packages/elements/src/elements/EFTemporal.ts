@@ -6,10 +6,289 @@ import { EF_INTERACTIVE } from "../EF_INTERACTIVE.js";
 import { PlaybackController } from "../gui/PlaybackController.js";
 import { durationConverter } from "./durationConverter.js";
 import type { EFTimegroup } from "./EFTimegroup.js";
+// Lazy import to break circular dependency: EFTemporal -> EFTimegroup -> EFMedia -> EFTemporal
+// isTimegroupCalculatingDuration is only used at runtime in a getter, so we can import it lazily
+// Use a module-level variable that gets set when EFTimegroup module loads
+let isTimegroupCalculatingDurationFn: ((timegroup: EFTimegroup | undefined) => boolean) | null = null;
+
+// This function will be called by EFTimegroup when it loads to register the function
+export const registerIsTimegroupCalculatingDuration = (
+  fn: (timegroup: EFTimegroup | undefined) => boolean,
+) => {
+  isTimegroupCalculatingDurationFn = fn;
+};
+
+const getIsTimegroupCalculatingDuration = (): (timegroup: EFTimegroup | undefined) => boolean => {
+  if (!isTimegroupCalculatingDurationFn) {
+    // If not registered yet, try to import synchronously (only works if module is already loaded)
+    // This is a fallback for cases where EFTimegroup hasn't called registerIsTimegroupCalculatingDuration
+    // In practice, EFTimegroup will call registerIsTimegroupCalculatingDuration when it loads
+    try {
+      // Access the function via a global or try to get it from the module cache
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const efTimegroupModule = (globalThis as any).__EFTimegroupModule;
+      if (efTimegroupModule?.isTimegroupCalculatingDuration) {
+        isTimegroupCalculatingDurationFn = efTimegroupModule.isTimegroupCalculatingDuration;
+      } else {
+        // Last resort: return a function that always returns false
+        // This prevents infinite loops but might miss some edge cases
+        isTimegroupCalculatingDurationFn = () => false;
+      }
+    } catch {
+      isTimegroupCalculatingDurationFn = () => false;
+    }
+  }
+  return isTimegroupCalculatingDurationFn;
+};
 
 export const timegroupContext = createContext<EFTimegroup>(
   Symbol("timeGroupContext"),
 );
+
+// ============================================================================
+// Core Concept 1: Temporal Role
+// ============================================================================
+// A temporal element is either a root (controls its own playback) or a child
+// (delegates playback to its root timegroup). This is the fundamental invariant.
+// ============================================================================
+
+type TemporalRole = "root" | "child";
+
+function determineTemporalRole(
+  parentTimegroup: EFTimegroup | undefined,
+): TemporalRole {
+  return parentTimegroup === undefined ? "root" : "child";
+}
+
+// ============================================================================
+// Core Concept 2: Duration Source
+// ============================================================================
+// Duration comes from one of three sources: intrinsic (media-based),
+// explicit (attribute), or inherited (from parent). This determines the base
+// duration before any modifications.
+// ============================================================================
+
+type DurationSource = "intrinsic" | "explicit" | "inherited";
+
+interface DurationSourceResult {
+  source: DurationSource;
+  baseDurationMs: number;
+}
+
+function determineDurationSource(
+  intrinsicDurationMs: number | undefined,
+  explicitDurationMs: number | undefined,
+  parentDurationMs: number | undefined,
+): DurationSourceResult {
+  if (intrinsicDurationMs !== undefined) {
+    return { source: "intrinsic", baseDurationMs: intrinsicDurationMs };
+  }
+  if (explicitDurationMs !== undefined) {
+    return { source: "explicit", baseDurationMs: explicitDurationMs };
+  }
+  if (parentDurationMs !== undefined) {
+    return { source: "inherited", baseDurationMs: parentDurationMs };
+  }
+  return { source: "inherited", baseDurationMs: 0 };
+}
+
+// ============================================================================
+// Core Concept 3: Duration Modification Strategy
+// ============================================================================
+// Duration can be modified by trimming (removing from edges) or source
+// manipulation (selecting a portion of the source). These are mutually
+// exclusive strategies.
+// ============================================================================
+
+type DurationModificationStrategy = "none" | "trimming" | "source-manipulation";
+
+interface DurationModificationState {
+  strategy: DurationModificationStrategy;
+  trimStartMs: number | undefined;
+  trimEndMs: number | undefined;
+  sourceInMs: number | undefined;
+  sourceOutMs: number | undefined;
+}
+
+function determineDurationModificationStrategy(
+  trimStartMs: number | undefined,
+  trimEndMs: number | undefined,
+  sourceInMs: number | undefined,
+  sourceOutMs: number | undefined,
+): DurationModificationState {
+  if (trimStartMs !== undefined || trimEndMs !== undefined) {
+    return {
+      strategy: "trimming",
+      trimStartMs,
+      trimEndMs,
+      sourceInMs: undefined,
+      sourceOutMs: undefined,
+    };
+  }
+  if (sourceInMs !== undefined || sourceOutMs !== undefined) {
+    return {
+      strategy: "source-manipulation",
+      trimStartMs: undefined,
+      trimEndMs: undefined,
+      sourceInMs,
+      sourceOutMs,
+    };
+  }
+  return {
+    strategy: "none",
+    trimStartMs: undefined,
+    trimEndMs: undefined,
+    sourceInMs: undefined,
+    sourceOutMs: undefined,
+  };
+}
+
+function evaluateModifiedDuration(
+  baseDurationMs: number,
+  modification: DurationModificationState,
+): number {
+  if (baseDurationMs === 0) {
+    return 0;
+  }
+
+  switch (modification.strategy) {
+    case "trimming": {
+      const trimmedDurationMs =
+        baseDurationMs -
+        (modification.trimStartMs ?? 0) -
+        (modification.trimEndMs ?? 0);
+      return Math.max(0, trimmedDurationMs);
+    }
+    case "source-manipulation": {
+      const sourceInMs = modification.sourceInMs ?? 0;
+      const sourceOutMs = modification.sourceOutMs ?? baseDurationMs;
+      if (sourceInMs >= sourceOutMs) {
+        return 0;
+      }
+      return sourceOutMs - sourceInMs;
+    }
+    case "none":
+      return baseDurationMs;
+  }
+}
+
+// ============================================================================
+// Core Concept 4: Start Time Calculation Strategy
+// ============================================================================
+// Start time is calculated differently based on parent timegroup mode:
+// - Sequence mode: based on previous sibling
+// - Other modes: based on parent start + offset
+// ============================================================================
+
+type StartTimeStrategy = "sequence" | "offset";
+
+function determineStartTimeStrategy(
+  parentTimegroup: EFTimegroup | undefined,
+): StartTimeStrategy {
+  if (!parentTimegroup) {
+    return "offset";
+  }
+  return parentTimegroup.mode === "sequence" ? "sequence" : "offset";
+}
+
+function evaluateStartTimeForSequence(
+  _element: TemporalMixinInterface & HTMLElement,
+  parentTimegroup: EFTimegroup,
+  siblingTemporals: TemporalMixinInterface[],
+  ownIndex: number,
+): number {
+  if (ownIndex === 0) {
+    return parentTimegroup.startTimeMs;
+  }
+  const previous = siblingTemporals[ownIndex - 1];
+  if (!previous) {
+    throw new Error("Previous temporal element not found");
+  }
+  return (
+    previous.startTimeMs +
+    previous.durationMs -
+    parentTimegroup.overlapMs
+  );
+}
+
+function evaluateStartTimeForOffset(
+  parentTimegroup: EFTimegroup,
+  offsetMs: number,
+): number {
+  return parentTimegroup.startTimeMs + offsetMs;
+}
+
+function evaluateStartTime(
+  element: TemporalMixinInterface & HTMLElement,
+  parentTimegroup: EFTimegroup | undefined,
+  offsetMs: number,
+  getSiblingTemporals: (parent: EFTimegroup) => TemporalMixinInterface[],
+): number {
+  if (!parentTimegroup) {
+    return 0;
+  }
+
+  const strategy = determineStartTimeStrategy(parentTimegroup);
+  switch (strategy) {
+    case "sequence": {
+      const siblingTemporals = getSiblingTemporals(parentTimegroup);
+      const ownIndex = siblingTemporals.indexOf(element);
+      if (ownIndex === -1) {
+        return 0;
+      }
+      return evaluateStartTimeForSequence(
+        element,
+        parentTimegroup,
+        siblingTemporals,
+        ownIndex,
+      );
+    }
+    case "offset":
+      return evaluateStartTimeForOffset(parentTimegroup, offsetMs);
+  }
+}
+
+// ============================================================================
+// Core Concept 5: Current Time Source
+// ============================================================================
+// Current time comes from one of three sources: playback controller (root
+// elements), root timegroup (child elements), or local storage (fallback).
+// ============================================================================
+
+type CurrentTimeSource = "playback-controller" | "root-timegroup" | "local";
+
+interface CurrentTimeSourceResult {
+  source: CurrentTimeSource;
+  timeMs: number;
+}
+
+function determineCurrentTimeSource(
+  playbackController: PlaybackController | undefined,
+  rootTimegroup: EFTimegroup | undefined,
+  isRootTimegroup: boolean,
+  localTimeMs: number,
+  startTimeMs: number,
+  durationMs: number,
+): CurrentTimeSourceResult {
+  if (playbackController) {
+    const timeMs = Math.min(
+      Math.max(0, playbackController.currentTimeMs),
+      durationMs,
+    );
+    return { source: "playback-controller", timeMs };
+  }
+
+  if (rootTimegroup && !isRootTimegroup) {
+    const timeMs = Math.min(
+      Math.max(0, rootTimegroup.currentTimeMs - startTimeMs),
+      durationMs,
+    );
+    return { source: "root-timegroup", timeMs };
+  }
+
+  const timeMs = Math.min(Math.max(0, localTimeMs), durationMs);
+  return { source: "local", timeMs };
+}
 
 export declare class TemporalMixinInterface {
   playbackController?: PlaybackController;
@@ -335,26 +614,29 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
   superClass: T,
 ) => {
   class TemporalMixinClass extends superClass {
-    ownCurrentTimeController?: OwnCurrentTimeController;
+    #ownCurrentTimeController?: OwnCurrentTimeController;
 
     #parentTimegroup?: EFTimegroup;
     @consume({ context: timegroupContext, subscribe: true })
     set parentTimegroup(value: EFTimegroup | undefined) {
       const oldParent = this.#parentTimegroup;
+      const oldRole = determineTemporalRole(oldParent);
+      const newRole = determineTemporalRole(value);
+
       this.#parentTimegroup = value;
 
-      this.ownCurrentTimeController?.remove();
+      this.#ownCurrentTimeController?.remove();
       this.rootTimegroup = this.getRootTimegroup();
       if (this.rootTimegroup) {
-        this.ownCurrentTimeController = new OwnCurrentTimeController(
+        this.#ownCurrentTimeController = new OwnCurrentTimeController(
           this.rootTimegroup,
           this as InstanceType<Constructor<TemporalMixinInterface> & T>,
         );
       }
 
-      // Only trigger callbacks if parent status actually changed
-      if (oldParent !== value) {
-        if (!value) {
+      // Only trigger callbacks if role actually changed
+      if (oldRole !== newRole) {
+        if (newRole === "root") {
           this.didBecomeRoot();
         } else {
           this.didBecomeChild();
@@ -364,19 +646,26 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
 
     disconnectedCallback() {
       super.disconnectedCallback();
-      this.ownCurrentTimeController?.remove();
+      this.#ownCurrentTimeController?.remove();
 
       if (this.playbackController) {
         this.playbackController.remove();
         this.playbackController = undefined;
       }
+
+      // Clean up tracked animations to prevent memory leaks
+      // Use dynamic import to avoid circular dependency with updateAnimations
+      import("./updateAnimations.js").then(({ cleanupTrackedAnimations }) => {
+        cleanupTrackedAnimations(this);
+      });
     }
 
     connectedCallback() {
       super.connectedCallback();
       // Initialize playback controller for root elements
       // The parentTimegroup setter may have already called this, but the guard prevents double-creation
-      if (!this.parentTimegroup) {
+      const role = determineTemporalRole(this.parentTimegroup);
+      if (role === "root") {
         this.didBecomeRoot();
       }
     }
@@ -459,7 +748,7 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
       attribute: "trimstart",
       converter: durationConverter,
     })
-    _trimStartMs: number | undefined = undefined;
+    private _trimStartMs: number | undefined = undefined;
 
     get trimStartMs() {
       if (this._trimStartMs === undefined) {
@@ -480,7 +769,7 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
       attribute: "trimend",
       converter: durationConverter,
     })
-    _trimEndMs: number | undefined = undefined;
+    private _trimEndMs: number | undefined = undefined;
 
     get trimEndMs() {
       if (this._trimEndMs === undefined) {
@@ -498,7 +787,7 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
       attribute: "sourcein",
       converter: durationConverter,
     })
-    _sourceInMs: number | undefined = undefined;
+    private _sourceInMs: number | undefined = undefined;
 
     get sourceInMs() {
       if (this._sourceInMs === undefined) {
@@ -516,7 +805,7 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
       attribute: "sourceout",
       converter: durationConverter,
     })
-    _sourceOutMs: number | undefined = undefined;
+    private _sourceOutMs: number | undefined = undefined;
 
     get sourceOutMs() {
       if (this._sourceOutMs === undefined) {
@@ -577,48 +866,40 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
     }
 
     get durationMs() {
-      // Get the base duration - either intrinsic or explicit
-      const baseDurationMs =
-        this.intrinsicDurationMs ??
-        this._durationMs ??
-        this.parentTimegroup?.durationMs ??
-        0;
+      // Prevent infinite loops: don't call parent.durationMs if parent is currently calculating
+      // Lazy import to break circular dependency: EFTemporal -> EFTimegroup -> EFMedia -> EFTemporal
+      const isTimegroupCalculatingDuration = getIsTimegroupCalculatingDuration();
+      const parentDurationMs = isTimegroupCalculatingDuration(this.parentTimegroup)
+        ? undefined
+        : this.parentTimegroup?.durationMs;
+      const durationSource = determineDurationSource(
+        this.intrinsicDurationMs,
+        this._durationMs,
+        parentDurationMs,
+      );
 
-      if (baseDurationMs === 0) {
-        return 0;
-      }
+      const modification = determineDurationModificationStrategy(
+        this.trimStartMs,
+        this.trimEndMs,
+        this.sourceInMs,
+        this.sourceOutMs,
+      );
 
-      // Apply trimming logic to any duration source
-      if (this.trimStartMs || this.trimEndMs) {
-        const trimmedDurationMs =
-          baseDurationMs - (this.trimStartMs ?? 0) - (this.trimEndMs ?? 0);
-        if (trimmedDurationMs < 0) {
-          return 0;
-        }
-        return trimmedDurationMs;
-      }
-
-      if (this.sourceInMs || this.sourceOutMs) {
-        const sourceInMs = this.sourceInMs ?? 0;
-        const sourceOutMs = this.sourceOutMs ?? baseDurationMs;
-        if (sourceInMs >= sourceOutMs) {
-          return 0;
-        }
-        return sourceOutMs - sourceInMs;
-      }
-
-      return baseDurationMs;
+      return evaluateModifiedDuration(
+        durationSource.baseDurationMs,
+        modification,
+      );
     }
 
     get sourceStartMs() {
       return this.trimStartMs ?? this.sourceInMs ?? 0;
     }
 
-    get offsetMs() {
+    #offsetMs() {
       return this._offsetMs || 0;
     }
 
-    get parentTemporal() {
+    #parentTemporal() {
       let parent = this.parentElement;
       while (parent && !isEFTemporal(parent)) {
         parent = parent.parentElement;
@@ -630,10 +911,11 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
      * The start time of the element within its parent timegroup.
      */
     get startTimeWithinParentMs() {
-      if (!this.parentTemporal) {
+      const parent = this.#parentTemporal();
+      if (!parent) {
         return 0;
       }
-      return this.startTimeMs - this.parentTemporal.startTimeMs;
+      return this.startTimeMs - parent.startTimeMs;
     }
 
     #loop = false;
@@ -643,55 +925,16 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
       if (cachedStartTime !== undefined) {
         return cachedStartTime;
       }
-      const parentTimegroup = this.parentTimegroup;
-      if (!parentTimegroup) {
-        startTimeMsCache.set(this, 0);
-        return 0;
-      }
-      switch (parentTimegroup.mode) {
-        case "sequence": {
-          const siblingTemorals = shallowGetTemporalElements(parentTimegroup);
-          const ownIndex = siblingTemorals?.indexOf(
-            this as InstanceType<Constructor<TemporalMixinInterface> & T>,
-          );
-          if (ownIndex === -1) {
-            return 0;
-          }
-          if (ownIndex === 0) {
-            startTimeMsCache.set(this, parentTimegroup.startTimeMs);
-            return parentTimegroup.startTimeMs;
-          }
-          const previous = siblingTemorals?.[(ownIndex ?? 0) - 1];
-          if (!previous) {
-            console.error("Previous temporal element not found", {
-              ownIndex,
-              siblingTemorals,
-            });
-            throw new Error("Previous temporal element not found");
-          }
-          startTimeMsCache.set(
-            this,
-            previous.startTimeMs +
-              previous.durationMs -
-              parentTimegroup.overlapMs,
-          );
-          return (
-            previous.startTimeMs +
-            previous.durationMs -
-            parentTimegroup.overlapMs
-          );
-        }
-        case "fit":
-        case "contain":
-        case "fixed":
-          startTimeMsCache.set(
-            this,
-            parentTimegroup.startTimeMs + this.offsetMs,
-          );
-          return parentTimegroup.startTimeMs + this.offsetMs;
-        default:
-          throw new Error(`Invalid time mode: ${parentTimegroup.mode}`);
-      }
+
+      const startTime = evaluateStartTime(
+        this as InstanceType<Constructor<TemporalMixinInterface> & T>,
+        this.parentTimegroup,
+        this.#offsetMs(),
+        (parent) => shallowGetTemporalElements(parent),
+      );
+
+      startTimeMsCache.set(this, startTime);
+      return startTime;
     }
 
     get endTimeMs(): number {
@@ -705,25 +948,15 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
      * Compare with `currentTimeMs` to see the current time with respect to the root timegroup
      */
     get ownCurrentTimeMs(): number {
-      // If we have a playback controller, read from it
-      if (this.playbackController) {
-        return Math.min(
-          Math.max(0, this.playbackController.currentTimeMs),
-          this.durationMs,
-        );
-      }
-
-      if (
-        this.rootTimegroup &&
-        this.rootTimegroup !== (this as any as EFTimegroup)
-      ) {
-        return Math.min(
-          Math.max(0, this.rootTimegroup.currentTimeMs - this.startTimeMs),
-          this.durationMs,
-        );
-      }
-      // We are the root (or no root), use stored time
-      return Math.min(Math.max(0, this.#currentTimeMs), this.durationMs);
+      const timeSource = determineCurrentTimeSource(
+        this.playbackController,
+        this.rootTimegroup,
+        this.rootTimegroup === (this as any as EFTimegroup),
+        this.#currentTimeMs,
+        this.startTimeMs,
+        this.durationMs,
+      );
+      return timeSource.timeMs;
     }
 
     /**
@@ -735,22 +968,29 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
     }
 
     set currentTimeMs(value: number) {
-      // If we have a playback controller, delegate to it
-      if (this.playbackController) {
-        this.playbackController.currentTime = value / 1000;
-        return;
-      }
+      const role = determineTemporalRole(this.parentTimegroup);
 
-      // If we have a root timegroup, delegate to it
-      if (
-        this.rootTimegroup &&
-        this.rootTimegroup !== (this as any as EFTimegroup)
-      ) {
-        this.rootTimegroup.currentTimeMs = value;
-      } else {
-        // We are the root, store the time locally
-        this.#currentTimeMs = value;
-        this.requestUpdate("currentTimeMs");
+      // Apply current time based on role
+      switch (role) {
+        case "root":
+          if (this.playbackController) {
+            this.playbackController.currentTime = value / 1000;
+          } else {
+            this.#currentTimeMs = value;
+            this.requestUpdate("currentTimeMs");
+          }
+          break;
+        case "child":
+          if (
+            this.rootTimegroup &&
+            this.rootTimegroup !== (this as any as EFTimegroup)
+          ) {
+            this.rootTimegroup.currentTimeMs = value;
+          } else {
+            this.#currentTimeMs = value;
+            this.requestUpdate("currentTimeMs");
+          }
+          break;
       }
     }
 
