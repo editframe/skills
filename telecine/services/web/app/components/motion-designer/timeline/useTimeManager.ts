@@ -1,5 +1,6 @@
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useState, useEffect } from "react";
 import type { MotionDesignerState } from "~/lib/motion-designer/types";
+import { TimeManager } from "./TimeManager";
 
 /**
  * Parses duration string (e.g., "5s", "1.5s", "500ms") to milliseconds
@@ -31,6 +32,59 @@ export function useTimeManager(
   state: MotionDesignerState | undefined,
 ) {
   const isScrubbingRef = useRef(false);
+  const timeManagerRef = useRef<TimeManager | null>(null);
+  const [currentTime, setCurrentTime] = useState(state?.ui?.currentTime ?? 0);
+  
+  // Initialize TimeManager instance
+  useEffect(() => {
+    if (!timeManagerRef.current) {
+      timeManagerRef.current = new TimeManager();
+    }
+    
+    const timeManager = timeManagerRef.current;
+    
+    // Subscribe to time updates
+    const unsubscribe = timeManager.subscribe((time: number) => {
+      setCurrentTime(time);
+    });
+    
+    // Set active timegroup
+    timeManager.setActiveTimegroup(activeTimegroupId);
+    
+    // Sync scrubbing state
+    timeManager.setIsScrubbing(isScrubbingRef.current);
+    
+    return () => {
+      unsubscribe();
+    };
+  }, [activeTimegroupId]);
+  
+  // Sync scrubbing state - use a polling approach since refs don't trigger re-renders
+  useEffect(() => {
+    if (!timeManagerRef.current) return;
+    
+    const intervalId = setInterval(() => {
+      if (timeManagerRef.current) {
+        timeManagerRef.current.setIsScrubbing(isScrubbingRef.current);
+      }
+    }, 100); // Poll every 100ms
+    
+    return () => clearInterval(intervalId);
+  }, []);
+  
+  // Sync time from state to TimeManager only when scrubbing (user-initiated changes)
+  // During playback, TimeManager is the source of truth, so we don't sync back
+  useEffect(() => {
+    if (timeManagerRef.current && state?.ui?.currentTime !== undefined && isScrubbingRef.current) {
+      const stateTime = state.ui.currentTime;
+      const managerTime = timeManagerRef.current.getCurrentTime();
+      
+      // Only sync if there's a significant difference (user scrubbed)
+      if (Math.abs(stateTime - managerTime) > 16) {
+        timeManagerRef.current.setCurrentTime(stateTime);
+      }
+    }
+  }, [state?.ui?.currentTime, isScrubbingRef]);
   
   // Get duration from timegroup element props
   const duration = useMemo(() => {
@@ -45,15 +99,24 @@ export function useTimeManager(
     return parseDurationToMs(durationString);
   }, [activeTimegroupId, state?.composition?.elements]);
   
-  // TODO: Implement actual time management with TimeManager class
-  // For now, return implementation that uses state
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (timeManagerRef.current) {
+        timeManagerRef.current.cleanup();
+        timeManagerRef.current = null;
+      }
+    };
+  }, []);
+  
   return {
-    currentTime: state?.ui?.currentTime ?? 0,
+    currentTime,
     duration,
     isScrubbingRef,
     seek: (time: number) => {
-      // Seek updates will be handled via actions.setCurrentTime in Timeline component
-      // This is a placeholder - actual implementation will integrate with TimeManager class
+      if (timeManagerRef.current) {
+        timeManagerRef.current.seek(time);
+      }
     },
   };
 }

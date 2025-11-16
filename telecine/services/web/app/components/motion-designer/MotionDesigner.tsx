@@ -9,7 +9,6 @@ import { TopBar } from "./TopBar";
 import { HelpButton } from "./HelpButton";
 import { MotionDesignerProvider } from "./context/MotionDesignerContext";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
-import { useTimeSync } from "./hooks/useTimeSync";
 import { useBodyScrollLock } from "./hooks/useBodyScrollLock";
 import { useInitialization } from "./hooks/useInitialization";
 
@@ -23,13 +22,8 @@ export function MotionDesigner() {
     onSelectElement: actions.selectElement,
   });
 
-  useTimeSync({
-    activeRootTimegroupId: getActiveRootTimegroupId(state),
-    currentTime: state.ui.currentTime,
-    onSetCurrentTime: actions.setCurrentTime,
-    isScrubbingRef,
-    state,
-  });
+  // Time synchronization is handled by Timeline component via useTimeManager
+  // No need to sync here as Timeline already syncs TimeManager → React state
 
   useBodyScrollLock();
 

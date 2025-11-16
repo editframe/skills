@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import { useTimeManager } from "../timeline/useTimeManager";
 import type { MotionDesignerState } from "~/lib/motion-designer/types";
 
 interface UseTimeSyncProps {
@@ -17,16 +16,10 @@ export function useTimeSync({
   isScrubbingRef,
   state,
 }: UseTimeSyncProps) {
-  const { currentTime: timeManagerTime, isScrubbingRef: timeManagerScrubbingRef } = useTimeManager(activeRootTimegroupId, state);
-
+  // Sync currentTime from TimeManager to React state
+  // currentTime comes from useTimeManager hook in Timeline component
   useEffect(() => {
-    onSetCurrentTime(timeManagerTime);
-  }, [timeManagerTime, onSetCurrentTime]);
-
-  useEffect(() => {
-    if (isScrubbingRef) {
-      isScrubbingRef.current = timeManagerScrubbingRef.current;
-    }
-  }, [timeManagerScrubbingRef, isScrubbingRef]);
+    onSetCurrentTime(currentTime);
+  }, [currentTime, onSetCurrentTime]);
 }
 
