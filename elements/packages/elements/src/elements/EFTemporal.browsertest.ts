@@ -1,8 +1,9 @@
 import { LitElement } from "lit";
 import { customElement } from "lit/decorators/custom-element.js";
-import { describe, expect, test, vi } from "vitest";
+import { describe, expect, test } from "vitest";
 import { EFTemporal } from "./EFTemporal.js";
 import "./EFTimegroup.js";
+import "./EFVideo.js";
 import { state } from "lit/decorators.js";
 
 @customElement("ten-seconds")
@@ -42,46 +43,36 @@ describe("sourcein and sourceout", () => {
     expect(element.durationMs).toBe(10_000);
   });
 
-  describe("only srcin is set", () => {
-    test("duration is calculated", () => {
-      const element = document.createElement("ten-seconds");
-      element.sourceInMs = 1_000;
-      expect(element.durationMs).toBe(9_000);
-    });
+  test("duration is calculated from sourcein when only sourcein is set", () => {
+    const element = document.createElement("ten-seconds");
+    element.sourceInMs = 1_000;
+    expect(element.durationMs).toBe(9_000);
   });
 
-  describe("only srcout is set", () => {
-    test("duration is calculated", () => {
-      const element = document.createElement("ten-seconds");
-      element.sourceOutMs = 5_000;
-      expect(element.durationMs).toBe(5_000);
-    });
+  test("duration is calculated from sourceout when only sourceout is set", () => {
+    const element = document.createElement("ten-seconds");
+    element.sourceOutMs = 5_000;
+    expect(element.durationMs).toBe(5_000);
   });
 
-  describe("srcout is before srcin", () => {
-    test("duration is zero", () => {
-      const element = document.createElement("ten-seconds");
-      element.sourceInMs = 5_000;
-      element.sourceOutMs = 1_000;
-      expect(element.durationMs).toBe(0);
-    });
+  test("duration is zero when sourceout precedes sourcein", () => {
+    const element = document.createElement("ten-seconds");
+    element.sourceInMs = 5_000;
+    element.sourceOutMs = 1_000;
+    expect(element.durationMs).toBe(0);
   });
 
-  describe("srcin is negative", () => {
-    test("srcin is normalized to 0 ", () => {
-      const element = document.createElement("ten-seconds");
-      element.sourceInMs = -1_000;
-      expect(element.sourceInMs).toBe(0);
-      expect(element.durationMs).toBe(10_000);
-    });
+  test("negative sourcein is normalized to zero", () => {
+    const element = document.createElement("ten-seconds");
+    element.sourceInMs = -1_000;
+    expect(element.sourceInMs).toBe(0);
+    expect(element.durationMs).toBe(10_000);
   });
 
-  describe("srcout is beyond the intrinsic duration", () => {
-    test("srcout is normalized to the intrinsic duration", () => {
-      const element = document.createElement("ten-seconds");
-      element.sourceOutMs = 15_000;
-      expect(element.sourceOutMs).toBe(10_000);
-    });
+  test("sourceout beyond intrinsic duration is clamped to intrinsic duration", () => {
+    const element = document.createElement("ten-seconds");
+    element.sourceOutMs = 15_000;
+    expect(element.sourceOutMs).toBe(10_000);
   });
 });
 
@@ -95,20 +86,16 @@ describe("trimstart and trimend", () => {
     expect(element.durationMs).toBe(4_000);
   });
 
-  describe("trimstart is beyond the intrinsic duration", () => {
-    test("trimstart is normalized to the intrinsic duration", () => {
-      const element = document.createElement("ten-seconds");
-      element.trimStartMs = 15_000;
-      expect(element.trimStartMs).toBe(10_000);
-    });
+  test("trimstart beyond intrinsic duration is clamped to intrinsic duration", () => {
+    const element = document.createElement("ten-seconds");
+    element.trimStartMs = 15_000;
+    expect(element.trimStartMs).toBe(10_000);
   });
 
-  describe("trimend is beyond the intrinsic duration", () => {
-    test("trimend is normalized to the intrinsic duration", () => {
-      const element = document.createElement("ten-seconds");
-      element.trimEndMs = 15_000;
-      expect(element.trimEndMs).toBe(10_000);
-    });
+  test("trimend beyond intrinsic duration is clamped to intrinsic duration", () => {
+    const element = document.createElement("ten-seconds");
+    element.trimEndMs = 15_000;
+    expect(element.trimEndMs).toBe(10_000);
   });
 });
 
@@ -127,33 +114,25 @@ describe("duration", () => {
 });
 
 describe("EFVideo sourcein attribute", () => {
-  test("EFVideo with sourcein='0s' should parse correctly", () => {
+  test("sourcein='0s' attribute is parsed to sourceInMs property", async () => {
     const element = document.createElement("ef-video");
+    document.body.append(element);
     element.setAttribute("sourcein", "0s");
-
-    // The sourcein attribute should be set correctly
+    await element.updateComplete;
     expect(element.getAttribute("sourcein")).toBe("0s");
-
-    // Note: In the test environment, the property system may not be fully initialized
-    // but the attribute is set correctly, which is what we're testing
+    expect(element.sourceInMs).toBe(0);
+    element.remove();
   });
 
-  test("Multiple EFVideo elements can be created without conflicts", () => {
-    // This test verifies that our fix for the abort signal deduplication issue works
-    // Multiple elements should be able to exist without signal conflicts
-
+  test("multiple EFVideo elements can be created with independent properties", () => {
     const element1 = document.createElement("ef-video");
     const element2 = document.createElement("ef-video");
 
-    // Set different sources
     element1.src = "test-video-1.mp4";
     element2.src = "test-video-2.mp4";
 
-    // Both elements should have their attributes set correctly
     expect(element1.src).toBe("test-video-1.mp4");
     expect(element2.src).toBe("test-video-2.mp4");
-
-    // Both elements should be valid DOM elements
     expect(element1.tagName).toBe("EF-VIDEO");
     expect(element2.tagName).toBe("EF-VIDEO");
   });
@@ -179,37 +158,47 @@ declare global {
 }
 
 describe("Temporal Lifecycle", () => {
-  test("a standalone temporal element becomes a root", async () => {
+  test("standalone temporal element has root role and playback control", async () => {
     const root = document.createElement("test-root-lifecycle");
     document.body.append(root);
+    await root.updateComplete;
+
     expect(root.role).toBe("root");
+    expect(root.parentTimegroup).toBeUndefined();
+    expect(root.playing).toBe(false);
+    expect(() => root.play()).not.toThrow();
+    expect(() => root.pause()).not.toThrow();
   });
 
-  test("temporal element in a timegroup becomes a child", async () => {
+  test("temporal element in timegroup has child role and parent timegroup reference", async () => {
     const timegroup = document.createElement("ef-timegroup");
-    vi.spyOn(timegroup as any, "didBecomeRoot");
-    vi.spyOn(timegroup as any, "didBecomeChild");
     const child = document.createElement("test-root-lifecycle");
-    vi.spyOn(child as any, "didBecomeRoot");
-    vi.spyOn(child as any, "didBecomeChild");
     timegroup.append(child);
     document.body.append(timegroup);
-    expect((timegroup as any).didBecomeRoot).toHaveBeenCalledOnce();
-    expect((timegroup as any).didBecomeChild).not.toHaveBeenCalled();
-    expect((child as any).didBecomeChild).toHaveBeenCalledOnce();
+    await Promise.all([timegroup.updateComplete, child.updateComplete]);
+
+    expect(timegroup.isRootTimegroup).toBe(true);
+    expect(timegroup.parentTimegroup).toBeUndefined();
+    expect(child.role).toBe("child");
+    expect(child.parentTimegroup).toBe(timegroup);
+    expect(child.playing).toBe(false);
   });
 
-  test("timegroup nested in a timegroup becomes a child", async () => {
-    const timegroup = document.createElement("ef-timegroup");
-    const child = document.createElement("ef-timegroup");
-    vi.spyOn(timegroup as any, "didBecomeRoot");
-    vi.spyOn(timegroup as any, "didBecomeChild");
-    vi.spyOn(child as any, "didBecomeRoot");
-    vi.spyOn(child as any, "didBecomeChild");
-    timegroup.append(child);
-    document.body.append(timegroup);
-    expect((timegroup as any).didBecomeRoot).toHaveBeenCalledOnce();
-    expect((timegroup as any).didBecomeChild).not.toHaveBeenCalled();
-    expect((child as any).didBecomeChild).toHaveBeenCalledOnce();
+  test("nested timegroup has parent timegroup reference and root timegroup", async () => {
+    const parentTimegroup = document.createElement("ef-timegroup");
+    const childTimegroup = document.createElement("ef-timegroup");
+    parentTimegroup.append(childTimegroup);
+    document.body.append(parentTimegroup);
+    await Promise.all([
+      parentTimegroup.updateComplete,
+      childTimegroup.updateComplete,
+    ]);
+
+    expect(parentTimegroup.isRootTimegroup).toBe(true);
+    expect(parentTimegroup.parentTimegroup).toBeUndefined();
+    expect(parentTimegroup.rootTimegroup).toBe(parentTimegroup);
+    expect(childTimegroup.isRootTimegroup).toBe(false);
+    expect(childTimegroup.parentTimegroup).toBe(parentTimegroup);
+    expect(childTimegroup.rootTimegroup).toBe(parentTimegroup);
   });
 });
