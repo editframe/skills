@@ -1,5 +1,6 @@
 import type { ElementNode } from "~/lib/motion-designer/types";
 import type { CSSProperties } from "react";
+import { hasRotateAnimations } from "./rotationUtils";
 
 export function generateVisualStyles(
   element: ElementNode,
@@ -38,7 +39,10 @@ export function generateVisualStyles(
     styles.filter = `blur(${element.props.blur.amount}px)`;
   }
 
-  if (element.props.rotation && !hasTransformAnimations) {
+  // Only suppress design rotation when rotate animations exist (not all transform animations)
+  // Other transform animations (translateX, scale) don't conflict with rotation
+  const hasRotateAnims = hasRotateAnimations(element);
+  if (element.props.rotation && !hasRotateAnims) {
     styles.transform = `rotate(${element.props.rotation}deg)`;
     styles.transformOrigin = "center";
   }
