@@ -141,7 +141,6 @@ export function CanvasRootTimegroupOverlay({
           },
           element.id,
         );
-        actions.setPlacementMode(null);
       }
     }
     hasDraggedRef.current = false;

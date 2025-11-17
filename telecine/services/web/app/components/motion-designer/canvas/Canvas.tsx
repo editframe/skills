@@ -5,6 +5,8 @@ import { usePanZoom } from "./usePanZoom";
 import { CanvasRootTimegroup } from "./CanvasRootTimegroup";
 import { CanvasRootTimegroupOverlay } from "./CanvasRootTimegroupOverlay";
 import { ChildElementOverlays } from "./ChildElementOverlays";
+import { DragCreationPreview } from "./DragCreationPreview";
+import { CanvasContextMenu } from "./CanvasContextMenu";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
 
 interface CanvasProps {
@@ -15,6 +17,10 @@ export function Canvas({ state }: CanvasProps) {
   const actions = useMotionDesignerActions();
   const clickStartRef = React.useRef<{ x: number; y: number; time: number } | null>(null);
   const hasDraggedRef = React.useRef(false);
+  const [dragStart, setDragStart] = React.useState<{ canvasX: number; canvasY: number } | null>(null);
+  const [dragCurrent, setDragCurrent] = React.useState<{ canvasX: number; canvasY: number } | null>(null);
+  const [canvasContextMenu, setCanvasContextMenu] = React.useState<{ x: number; y: number } | null>(null);
+  const lastClickTimeRef = React.useRef<number>(0);
 
   const { transform, containerRef, handlers } = usePanZoom(
     state.ui.canvasTransform,
@@ -25,13 +31,44 @@ export function Canvas({ state }: CanvasProps) {
     // Only handle pan if clicking directly on canvas background
     // Don't interfere with child element interactions
     if (e.target === e.currentTarget) {
-      clickStartRef.current = { x: e.clientX, y: e.clientY, time: Date.now() };
+      const now = Date.now();
+      const isDoubleClick = now - lastClickTimeRef.current < 300;
+      lastClickTimeRef.current = now;
+      
+      clickStartRef.current = { x: e.clientX, y: e.clientY, time: now };
       hasDraggedRef.current = false;
+      
+      // If in placement mode (and not text), start drag-to-create
+      if (state.ui.placementMode && state.ui.placementMode !== "text") {
+        e.preventDefault();
+        e.stopPropagation();
+        const rect = containerRef.current?.getBoundingClientRect();
+        if (rect) {
+          const canvasX = (e.clientX - rect.left - transform.x) / transform.scale;
+          const canvasY = (e.clientY - rect.top - transform.y) / transform.scale;
+          setDragStart({ canvasX, canvasY });
+          setDragCurrent({ canvasX, canvasY });
+        }
+        return; // Don't start panning when creating element
+      }
+      
       handlers.onMouseDown(e);
     }
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
+    // Handle drag-to-create (only if we're dragging to create)
+    if (dragStart) {
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (rect) {
+        const canvasX = (e.clientX - rect.left - transform.x) / transform.scale;
+        const canvasY = (e.clientY - rect.top - transform.y) / transform.scale;
+        setDragCurrent({ canvasX, canvasY });
+        hasDraggedRef.current = true;
+      }
+      return; // Don't pan when dragging to create
+    }
+    
     // Only handle pan if we started on canvas background
     if (clickStartRef.current && e.target === e.currentTarget) {
       const distance = Math.sqrt(
@@ -46,28 +83,103 @@ export function Canvas({ state }: CanvasProps) {
   };
 
   const handleMouseUp = (e: React.MouseEvent) => {
+    // Handle drag-to-create completion
+    if (dragStart && dragCurrent && state.ui.placementMode && state.ui.placementMode !== "text") {
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (rect) {
+        const canvasX = (e.clientX - rect.left - transform.x) / transform.scale;
+        const canvasY = (e.clientY - rect.top - transform.y) / transform.scale;
+        
+        const finalX = Math.min(dragStart.canvasX, canvasX);
+        const finalY = Math.min(dragStart.canvasY, canvasY);
+        const finalWidth = Math.abs(canvasX - dragStart.canvasX);
+        const finalHeight = Math.abs(canvasY - dragStart.canvasY);
+        
+        // Only create if drag was significant (or if it's a timegroup, allow any size)
+        if (finalWidth > 10 && finalHeight > 10 || state.ui.placementMode === "timegroup") {
+          const elementType = state.ui.placementMode as import("~/lib/motion-designer/types").ElementNode["type"];
+          
+          // Timegroups can ONLY be placed at the root level
+          if (elementType === "timegroup") {
+            // Use minimum size if drag was too small
+            const width = finalWidth > 10 ? finalWidth : 960;
+            const height = finalHeight > 10 ? finalHeight : 540;
+            actions.addElement(
+              {
+                type: "timegroup",
+                parentId: null,
+                childIds: [],
+                props: {
+                  mode: "fixed",
+                  duration: "5s",
+                  canvasPosition: { x: finalX, y: finalY },
+                  size: { width, height },
+                },
+                animations: [],
+              },
+              null,
+            );
+          } else {
+            // Other elements go inside the active root timegroup
+            const activeRootTimegroupId = getActiveRootTimegroupId(state);
+            if (activeRootTimegroupId) {
+              const defaultProps: any = {
+                position: { x: finalX, y: finalY },
+                size: { width: finalWidth, height: finalHeight },
+                fill: { enabled: true, color: "#FFFFFF" },
+              };
+
+              if (elementType === "div") {
+                defaultProps.fill = { enabled: true, color: "#9333EA" };
+              }
+              
+              actions.addElement(
+                {
+                  type: elementType,
+                  parentId: activeRootTimegroupId,
+                  childIds: [],
+                  props: defaultProps,
+                  animations: [],
+                },
+                activeRootTimegroupId,
+              );
+            }
+          }
+        }
+      }
+      
+      setDragStart(null);
+      setDragCurrent(null);
+      hasDraggedRef.current = false;
+      clickStartRef.current = null;
+      return;
+    }
+    
     handlers.onMouseUp(e);
     // Don't reset hasDraggedRef here - we need it for the click handler
     // It will be reset on the next mousedown
   };
 
-  const handleCanvasClick = (e: React.MouseEvent) => {
-    // Only handle clicks on the canvas background, not on elements
-    // Don't handle if we've dragged or if it's been too long since mousedown
+  const handleCanvasDoubleClick = (e: React.MouseEvent) => {
+    // Handle double-click to create element with default size
     if (
       e.target === e.currentTarget &&
       state.ui.placementMode &&
-      !hasDraggedRef.current &&
-      clickStartRef.current &&
-      Date.now() - clickStartRef.current.time < 300
+      state.ui.placementMode !== "text"
     ) {
-      // Get click position in canvas coordinates
-      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      
       const canvasX = (e.clientX - rect.left - transform.x) / transform.scale;
       const canvasY = (e.clientY - rect.top - transform.y) / transform.scale;
 
+      const elementType = state.ui.placementMode as import("~/lib/motion-designer/types").ElementNode["type"];
+
       // Timegroups can ONLY be placed at the root level
-      if (state.ui.placementMode === "timegroup") {
+      if (elementType === "timegroup") {
         actions.addElement(
           {
             type: "timegroup",
@@ -81,32 +193,19 @@ export function Canvas({ state }: CanvasProps) {
             },
             animations: [],
           },
-          null, // parentId = null for root timegroups
+          null,
         );
-        actions.setPlacementMode(null);
-      }
-      // Other elements go inside the active root timegroup
-      else {
+      } else {
+        // Other elements go inside the active root timegroup
         const activeRootTimegroupId = getActiveRootTimegroupId(state);
         if (activeRootTimegroupId) {
-          const elementType = state.ui.placementMode as import("~/lib/motion-designer/types").ElementNode["type"];
-          
-          // Set default props based on element type
           const defaultProps: any = {
             position: { x: canvasX, y: canvasY },
             size: { width: 200, height: 100 },
             fill: { enabled: true, color: "#FFFFFF" },
           };
 
-          if (elementType === "text") {
-            defaultProps.content = "Text";
-            defaultProps.fontSize = 32;
-            defaultProps.textAlign = "left";
-            defaultProps.fill = { enabled: true, color: "#000000" };
-            defaultProps.split = "word";
-            defaultProps.stagger = "0ms";
-            defaultProps.easing = "linear";
-          } else if (elementType === "div") {
+          if (elementType === "div") {
             defaultProps.fill = { enabled: true, color: "#9333EA" };
           } else if (elementType === "image" || elementType === "video") {
             defaultProps.size = { width: 400, height: 300 };
@@ -122,7 +221,58 @@ export function Canvas({ state }: CanvasProps) {
             },
             activeRootTimegroupId,
           );
-          actions.setPlacementMode(null);
+        }
+      }
+    }
+  };
+
+  const handleCanvasClick = (e: React.MouseEvent) => {
+    // Don't handle click if we're in drag-to-create mode (non-text elements)
+    if (dragStart || (state.ui.placementMode && state.ui.placementMode !== "text")) {
+      return;
+    }
+    
+    // Only handle clicks on the canvas background, not on elements
+    // Don't handle if we've dragged or if it's been too long since mousedown
+    if (
+      e.target === e.currentTarget &&
+      state.ui.placementMode &&
+      !hasDraggedRef.current &&
+      clickStartRef.current &&
+      Date.now() - clickStartRef.current.time < 300
+    ) {
+      // Get click position in canvas coordinates
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      
+      const canvasX = (e.clientX - rect.left - transform.x) / transform.scale;
+      const canvasY = (e.clientY - rect.top - transform.y) / transform.scale;
+
+      // Only handle text elements via click (others use drag-to-create)
+      if (state.ui.placementMode === "text") {
+        const activeRootTimegroupId = getActiveRootTimegroupId(state);
+        if (activeRootTimegroupId) {
+          const defaultProps: any = {
+            position: { x: canvasX, y: canvasY },
+            content: "Text",
+            fontSize: 32,
+            textAlign: "left",
+            fill: { enabled: true, color: "#000000" },
+            split: "word",
+            stagger: "0ms",
+            easing: "linear",
+          };
+          
+          actions.addElement(
+            {
+              type: "text",
+              parentId: activeRootTimegroupId,
+              childIds: [],
+              props: defaultProps,
+              animations: [],
+            },
+            activeRootTimegroupId,
+          );
         }
       }
     }
@@ -147,6 +297,123 @@ export function Canvas({ state }: CanvasProps) {
     };
   }, [handlers]);
 
+  // Handle global mouse events for drag-to-create
+  React.useEffect(() => {
+    if (!dragStart) return;
+
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      e.preventDefault();
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (rect) {
+        const canvasX = (e.clientX - rect.left - transform.x) / transform.scale;
+        const canvasY = (e.clientY - rect.top - transform.y) / transform.scale;
+        setDragCurrent({ canvasX, canvasY });
+        hasDraggedRef.current = true;
+      }
+    };
+
+    const handleGlobalMouseUp = (e: MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      if (dragStart && state.ui.placementMode && state.ui.placementMode !== "text") {
+        const rect = containerRef.current?.getBoundingClientRect();
+        if (rect && dragCurrent) {
+          const canvasX = (e.clientX - rect.left - transform.x) / transform.scale;
+          const canvasY = (e.clientY - rect.top - transform.y) / transform.scale;
+          
+          const finalX = Math.min(dragStart.canvasX, canvasX);
+          const finalY = Math.min(dragStart.canvasY, canvasY);
+          const finalWidth = Math.abs(canvasX - dragStart.canvasX);
+          const finalHeight = Math.abs(canvasY - dragStart.canvasY);
+          
+          // Create element (use minimum size if drag was too small)
+          const elementType = state.ui.placementMode as import("~/lib/motion-designer/types").ElementNode["type"];
+          
+          // Timegroups can ONLY be placed at the root level
+          if (elementType === "timegroup") {
+            // Use minimum size if drag was too small
+            const width = finalWidth > 10 ? finalWidth : 960;
+            const height = finalHeight > 10 ? finalHeight : 540;
+            actions.addElement(
+              {
+                type: "timegroup",
+                parentId: null,
+                childIds: [],
+                props: {
+                  mode: "fixed",
+                  duration: "5s",
+                  canvasPosition: { x: finalX, y: finalY },
+                  size: { width, height },
+                },
+                animations: [],
+              },
+              null,
+            );
+          } else {
+            // Other elements go inside the active root timegroup
+            const activeRootTimegroupId = getActiveRootTimegroupId(state);
+            if (activeRootTimegroupId) {
+              // Only create if drag was significant
+              if (finalWidth > 10 && finalHeight > 10) {
+                const defaultProps: any = {
+                  position: { x: finalX, y: finalY },
+                  size: { width: finalWidth, height: finalHeight },
+                  fill: { enabled: true, color: "#FFFFFF" },
+                };
+
+                if (elementType === "div") {
+                  defaultProps.fill = { enabled: true, color: "#9333EA" };
+                }
+                
+                actions.addElement(
+                  {
+                    type: elementType,
+                    parentId: activeRootTimegroupId,
+                    childIds: [],
+                    props: defaultProps,
+                    animations: [],
+                  },
+                  activeRootTimegroupId,
+                );
+              }
+            }
+          }
+        }
+      }
+      
+      setDragStart(null);
+      setDragCurrent(null);
+      hasDraggedRef.current = false;
+      clickStartRef.current = null;
+    };
+
+    document.addEventListener("mousemove", handleGlobalMouseMove, { passive: false });
+    document.addEventListener("mouseup", handleGlobalMouseUp, { passive: false });
+
+    return () => {
+      document.removeEventListener("mousemove", handleGlobalMouseMove);
+      document.removeEventListener("mouseup", handleGlobalMouseUp);
+    };
+  }, [dragStart, dragCurrent, state.ui.placementMode, transform, actions]);
+
+  // Determine cursor based on placement mode
+  const getCursor = () => {
+    if (state.ui.placementMode) {
+      // Text uses text cursor, others use crosshair
+      return state.ui.placementMode === "text" ? "text" : "crosshair";
+    }
+    return "default";
+  };
+
+  const handleCanvasContextMenu = (e: React.MouseEvent) => {
+    // Only show context menu if clicking on canvas background
+    if (e.target === e.currentTarget) {
+      e.preventDefault();
+      setCanvasContextMenu({ x: e.clientX, y: e.clientY });
+    }
+  };
+
   return (
     <div
       ref={containerRef}
@@ -156,6 +423,8 @@ export function Canvas({ state }: CanvasProps) {
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
       onClick={handleCanvasClick}
+      onDoubleClick={handleCanvasDoubleClick}
+      onContextMenu={handleCanvasContextMenu}
       style={{
         touchAction: "none",
         overscrollBehavior: "none",
@@ -165,6 +434,7 @@ export function Canvas({ state }: CanvasProps) {
         WebkitTouchCallout: "none",
         WebkitUserSelect: "none",
         userSelect: "none",
+        cursor: getCursor(),
         // Extra protection against browser navigation
         position: "relative",
         isolation: "isolate",
@@ -223,7 +493,33 @@ export function Canvas({ state }: CanvasProps) {
             </React.Fragment>
           );
         })}
+        
+        {/* Drag creation preview */}
+        {dragStart && dragCurrent && state.ui.placementMode && state.ui.placementMode !== "text" && (
+          <DragCreationPreview
+            startX={dragStart.canvasX}
+            startY={dragStart.canvasY}
+            currentX={dragCurrent.canvasX}
+            currentY={dragCurrent.canvasY}
+            canvasScale={transform.scale}
+            canvasTranslateX={transform.x}
+            canvasTranslateY={transform.y}
+            elementType={state.ui.placementMode}
+          />
+        )}
       </div>
+      
+      {/* Canvas context menu */}
+      {canvasContextMenu && (
+        <CanvasContextMenu
+          x={canvasContextMenu.x}
+          y={canvasContextMenu.y}
+          onSelectTool={(tool) => {
+            actions.setPlacementMode(tool);
+          }}
+          onClose={() => setCanvasContextMenu(null)}
+        />
+      )}
     </div>
   );
 }

@@ -45,10 +45,16 @@ export function HierarchyItem({
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     actions.deleteElement(element.id);
     if (isSelected) {
       actions.selectElement(null);
     }
+  };
+
+  const handleDeletePointerDown = (e: React.PointerEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
   };
 
   useEffect(() => {
@@ -127,6 +133,7 @@ export function HierarchyItem({
         {!isDragging && (
           <button
             onClick={handleDelete}
+            onPointerDown={handleDeletePointerDown}
             className={`w-4 h-4 flex items-center justify-center hover:bg-red-600 rounded transition-opacity ${
               isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
             }`}

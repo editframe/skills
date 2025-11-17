@@ -20,6 +20,7 @@ export function MotionDesigner() {
     state,
     onDeleteElement: actions.deleteElement,
     onSelectElement: actions.selectElement,
+    onSetPlacementMode: actions.setPlacementMode,
   });
 
   // Time synchronization is handled by Timeline component via useTimeManager

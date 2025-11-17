@@ -1,4 +1,3 @@
-import { CursorText, Square, Clock, Panorama, VideoCamera, SpeakerHigh } from "@phosphor-icons/react";
 import type { MotionDesignerState } from "~/lib/motion-designer/types";
 import { PlacementModeSelector } from "./placement/PlacementModeSelector";
 import { exportState, importState } from "~/lib/motion-designer/persistence";
@@ -6,25 +5,6 @@ import { useMotionDesignerActions } from "./context/MotionDesignerContext";
 
 interface TopBarProps {
   state: MotionDesignerState;
-}
-
-function getElementIcon(type: string): React.ReactElement {
-  switch (type) {
-    case "text":
-      return <CursorText size={16} />;
-    case "div":
-      return <Square size={16} />;
-    case "timegroup":
-      return <Clock size={16} />;
-    case "image":
-      return <Panorama size={16} />;
-    case "video":
-      return <VideoCamera size={16} />;
-    case "audio":
-      return <SpeakerHigh size={16} />;
-    default:
-      return <Square size={16} />;
-  }
 }
 
 export function TopBar({ state }: TopBarProps) {

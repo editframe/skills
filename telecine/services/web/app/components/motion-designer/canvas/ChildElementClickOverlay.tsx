@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from "react";
 import type { ElementNode, MotionDesignerState } from "~/lib/motion-designer/types";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
 import { hasRotateAnimations, parseRotationFromTransform } from "../rendering/styleGenerators/rotationUtils";
+import { ElementContextMenu } from "./ElementContextMenu";
 
 interface ChildElementClickOverlayProps {
   element: ElementNode;
@@ -34,6 +35,7 @@ export function ChildElementClickOverlay({
   const computedRotationRef = useRef<number | null>(null);
   const [, forceUpdate] = useState({});
   const hasRotateAnims = hasRotateAnimations(element);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
 
   // Continuously measure element using RAF to get actual DOM position
   // This matches the positioning logic from TransformHandles
@@ -215,13 +217,37 @@ export function ChildElementClickOverlay({
           },
           element.id,
         );
-        actions.setPlacementMode(null);
         return;
       }
     }
     
     // Otherwise, select the element
     actions.selectElement(element.id);
+  };
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleDuplicate = () => {
+    const parentId = element.parentId;
+    actions.addElement(
+      {
+        type: element.type,
+        parentId,
+        childIds: [],
+        props: { ...element.props },
+        animations: [...element.animations],
+      },
+      parentId,
+    );
+  };
+
+  const handleCopy = () => {
+    // For now, copy is the same as duplicate
+    handleDuplicate();
   };
 
   // Only render overlay for unselected elements
@@ -244,22 +270,39 @@ export function ChildElementClickOverlay({
   const screenHeight = overlayHeight * canvasScale;
 
   return (
-    <div
-      ref={overlayRef}
-      className="absolute pointer-events-auto cursor-pointer"
-      style={{
-        left: `${screenX}px`,
-        top: `${screenY}px`,
-        width: `${screenWidth}px`,
-        height: `${screenHeight}px`,
-        transform: `rotate(${currentRotation}deg)`,
-        transformOrigin: "center",
-        zIndex: 5, // Lower than TransformHandles (z-index: 10) so handles take precedence when selected
-        // Invisible but clickable
-        background: "transparent",
-      }}
-      onClick={handleClick}
-    />
+    <>
+      <div
+        ref={overlayRef}
+        className="absolute pointer-events-auto cursor-pointer"
+        style={{
+          left: `${screenX}px`,
+          top: `${screenY}px`,
+          width: `${screenWidth}px`,
+          height: `${screenHeight}px`,
+          transform: `rotate(${currentRotation}deg)`,
+          transformOrigin: "center",
+          zIndex: 5, // Lower than TransformHandles (z-index: 10) so handles take precedence when selected
+          // Invisible but clickable
+          background: "transparent",
+        }}
+        onClick={handleClick}
+        onContextMenu={handleContextMenu}
+      />
+      {contextMenu && (
+        <ElementContextMenu
+          element={element}
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onDelete={() => {
+            actions.deleteElement(element.id);
+            actions.selectElement(null);
+          }}
+          onDuplicate={handleDuplicate}
+          onCopy={handleCopy}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
+    </>
   );
 }
 
