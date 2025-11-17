@@ -238,8 +238,15 @@ export function HierarchyTree({ state }: HierarchyTreeProps) {
     elementRefsRef.current.delete(elementId);
   }, []);
 
+  const handleTreeClick = (e: React.MouseEvent) => {
+    // If clicking directly on the tree container (not on any element), deselect
+    if (e.target === e.currentTarget) {
+      actions.selectElement(null);
+    }
+  };
+
   return (
-    <div ref={rootContainerRef}>
+    <div ref={rootContainerRef} onClick={handleTreeClick}>
       {state.composition.rootTimegroupIds.map((id, index) => {
         const element = state.composition.elements[id];
         if (!element) return null;

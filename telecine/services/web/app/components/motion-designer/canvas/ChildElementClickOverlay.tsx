@@ -218,6 +218,13 @@ export function ChildElementClickOverlay({
           defaultProps.size = createDefaultSize("text", 0, 0);
         } else if (elementType === "div") {
           defaultProps.fill = { enabled: true, color: "#9333EA" };
+        } else if (elementType === "captions") {
+          defaultProps.showBefore = true;
+          defaultProps.showAfter = true;
+          defaultProps.showActive = true;
+          defaultProps.showSegment = true;
+        } else if (elementType === "waveform") {
+          defaultProps.mode = "bars";
         }
         
         // Add element as child of the clicked container
@@ -235,8 +242,12 @@ export function ChildElementClickOverlay({
       }
     }
     
-    // Otherwise, select the element
-    actions.selectElement(element.id);
+    // Otherwise, toggle selection: if already selected, deselect; otherwise select
+    if (isSelected) {
+      actions.selectElement(null);
+    } else {
+      actions.selectElement(element.id);
+    }
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {

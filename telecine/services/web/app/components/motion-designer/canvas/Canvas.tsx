@@ -230,6 +230,13 @@ export function Canvas({ state }: CanvasProps) {
 
           if (elementType === "div") {
             defaultProps.fill = { enabled: true, color: "#9333EA" };
+          } else if (elementType === "captions") {
+            defaultProps.showBefore = true;
+            defaultProps.showAfter = true;
+            defaultProps.showActive = true;
+            defaultProps.showSegment = true;
+          } else if (elementType === "waveform") {
+            defaultProps.mode = "bars";
           }
           
           actions.addElement(
@@ -254,14 +261,16 @@ export function Canvas({ state }: CanvasProps) {
     }
     
     // Only handle clicks on the canvas background, not on elements
-    // Don't handle if we've dragged or if it's been too long since mousedown
-    if (
-      e.target === e.currentTarget &&
-      state.ui.placementMode &&
-      !hasDraggedRef.current &&
-      clickStartRef.current &&
-      Date.now() - clickStartRef.current.time < 300
-    ) {
+    if (e.target === e.currentTarget && !hasDraggedRef.current && clickStartRef.current && Date.now() - clickStartRef.current.time < 300) {
+      // If not in placement mode, deselect any selected element
+      if (!state.ui.placementMode) {
+        actions.selectElement(null);
+        clickStartRef.current = null;
+        hasDraggedRef.current = false;
+        return;
+      }
+      
+      // Handle placement mode (text elements)
       // Get click position in canvas coordinates
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) return;

@@ -39,7 +39,12 @@ export function HierarchyItem({
 
   const handleClick = () => {
     if (!dragState.draggedElementId) {
-      actions.selectElement(element.id);
+      // Toggle selection: if already selected, deselect; otherwise select
+      if (isSelected) {
+        actions.selectElement(null);
+      } else {
+        actions.selectElement(element.id);
+      }
     }
   };
 
