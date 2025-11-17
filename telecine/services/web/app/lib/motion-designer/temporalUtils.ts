@@ -10,6 +10,9 @@ import type { ElementNode } from "./types.js";
  * - image (EFImage)
  * - video (EFVideo)
  * - audio (EFAudio)
+ * - captions (EFCaptions)
+ * - waveform (EFWaveform)
+ * - surface (EFSurface)
  * 
  * Non-temporal elements:
  * - div (regular div element)
@@ -18,7 +21,7 @@ import type { ElementNode } from "./types.js";
  * @returns true if the element is temporal, false otherwise
  */
 export function isTemporalElement(element: ElementNode): boolean {
-  const temporalTypes = ["timegroup", "text", "image", "video", "audio"];
+  const temporalTypes = ["timegroup", "text", "image", "video", "audio", "captions", "waveform", "surface"];
   return temporalTypes.includes(element.type);
 }
 

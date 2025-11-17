@@ -113,7 +113,7 @@ const TemporalCanMoveToRoot: MoveBehavior = {
 };
 
 type ParentType = "div" | "timegroup" | "root";
-type ChildType = "div" | "text" | "image" | "video" | "audio" | "timegroup";
+type ChildType = "div" | "text" | "image" | "video" | "audio" | "timegroup" | "captions" | "waveform" | "surface";
 
 interface NestingRule {
   parent: ParentType;
@@ -128,18 +128,27 @@ const NESTING_RULES: NestingRule[] = [
   { parent: "root", child: "image", allowed: true },
   { parent: "root", child: "video", allowed: true },
   { parent: "root", child: "audio", allowed: true },
+  { parent: "root", child: "captions", allowed: true },
+  { parent: "root", child: "waveform", allowed: true },
+  { parent: "root", child: "surface", allowed: true },
   { parent: "div", child: "timegroup", allowed: false },
   { parent: "div", child: "div", allowed: true },
   { parent: "div", child: "text", allowed: true },
   { parent: "div", child: "image", allowed: true },
   { parent: "div", child: "video", allowed: true },
   { parent: "div", child: "audio", allowed: true },
+  { parent: "div", child: "captions", allowed: true },
+  { parent: "div", child: "waveform", allowed: true },
+  { parent: "div", child: "surface", allowed: true },
   { parent: "timegroup", child: "timegroup", allowed: false },
   { parent: "timegroup", child: "div", allowed: true },
   { parent: "timegroup", child: "text", allowed: true },
   { parent: "timegroup", child: "image", allowed: true },
   { parent: "timegroup", child: "video", allowed: true },
   { parent: "timegroup", child: "audio", allowed: true },
+  { parent: "timegroup", child: "captions", allowed: true },
+  { parent: "timegroup", child: "waveform", allowed: true },
+  { parent: "timegroup", child: "surface", allowed: true },
 ];
 
 function getParentType(parentId: string | null, state: MotionDesignerState): ParentType {
@@ -157,7 +166,7 @@ function getChildType(elementId: string, state: MotionDesignerState): ChildType 
   const element = state.composition.elements[elementId];
   if (!element) return null;
   const type = element.type;
-  if (type === "div" || type === "text" || type === "image" || type === "video" || type === "audio" || type === "timegroup") {
+  if (type === "div" || type === "text" || type === "image" || type === "video" || type === "audio" || type === "timegroup" || type === "captions" || type === "waveform" || type === "surface") {
     return type;
   }
   return null;

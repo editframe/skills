@@ -8,6 +8,12 @@ import { useElementProps } from "./hooks/useElementProps";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
 import { generateTextSplitAnimationCSS, createAnimationKey } from "./animationCSS";
 import { useAnimationStyleElement } from "./hooks/useAnimationStyleElement";
+import {
+  CaptionsBeforeActiveWord,
+  CaptionsAfterActiveWord,
+  CaptionsActiveWord,
+  CaptionsSegment,
+} from "@editframe/react";
 
 interface ElementRendererProps {
   element: ElementNode;
@@ -320,6 +326,13 @@ export function ElementRenderer({
         <>
           <TextSegment />
           {textContent}
+        </>
+      ) : element.type === "captions" ? (
+        <>
+          {element.props.showBefore !== false && <CaptionsBeforeActiveWord />}
+          {element.props.showAfter !== false && <CaptionsAfterActiveWord />}
+          {element.props.showActive !== false && <CaptionsActiveWord />}
+          {element.props.showSegment !== false && <CaptionsSegment />}
         </>
       ) : (
         textContent

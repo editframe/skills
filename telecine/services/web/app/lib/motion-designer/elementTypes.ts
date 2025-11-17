@@ -5,9 +5,12 @@ import {
   Panorama,
   VideoCamera,
   SpeakerHigh,
+  ClosedCaptioning,
+  Waveform,
+  Rectangle,
 } from "@phosphor-icons/react";
 
-export type ElementType = "text" | "div" | "timegroup" | "image" | "video" | "audio";
+export type ElementType = "text" | "div" | "timegroup" | "image" | "video" | "audio" | "captions" | "waveform" | "surface";
 
 export type ToolCategory = "shapes" | "media" | "containers" | "text";
 
@@ -28,6 +31,9 @@ export const ELEMENT_TYPES: ElementTypeConfig[] = [
   { type: "image", label: "Image", icon: Panorama, category: "media", shortcut: "I" },
   { type: "video", label: "Video", icon: VideoCamera, category: "media", shortcut: "M" },
   { type: "audio", label: "Audio", icon: SpeakerHigh, category: "media", shortcut: "A" },
+  { type: "captions", label: "Captions", icon: ClosedCaptioning, category: "media", shortcut: "C" },
+  { type: "waveform", label: "Waveform", icon: Waveform, category: "media", shortcut: "W" },
+  { type: "surface", label: "Surface", icon: Rectangle, category: "shapes", shortcut: "S" },
 ] as const;
 
 export const TOOL_CATEGORIES: { id: ToolCategory; label: string }[] = [
