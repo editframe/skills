@@ -4,23 +4,27 @@ import type { MotionDesignerState, ElementNode } from "~/lib/motion-designer/typ
 import { getActiveRootTimegroupId } from "~/lib/motion-designer/utils";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
 import { useDragContext } from "./DragContext";
-import { behaviorRegistry } from "~/lib/motion-designer/behaviors";
+import type { DropTarget } from "./dropTargetResolver";
 
 interface HierarchyItemProps {
   element: ElementNode;
   state: MotionDesignerState;
   depth: number;
+  dropTarget: DropTarget | null;
+  registerElementRef: (elementId: string, element: HTMLDivElement, depth: number) => void;
+  unregisterElementRef: (elementId: string) => void;
 }
-
-type DropPosition = "before" | "after" | "inside" | null;
 
 export function HierarchyItem({
   element,
   state,
   depth,
+  dropTarget,
+  registerElementRef,
+  unregisterElementRef,
 }: HierarchyItemProps) {
   const actions = useMotionDesignerActions();
-  const { dragState, startDrag, setDropTarget } = useDragContext();
+  const { dragState, startDrag } = useDragContext();
   const [isExpanded, setIsExpanded] = useState(true);
   const itemRef = useRef<HTMLDivElement>(null);
   const isSelected = state.ui.selectedElementId === element.id;
@@ -30,9 +34,8 @@ export function HierarchyItem({
   const hasChildren = element.childIds && element.childIds.length > 0;
 
   const isDragging = dragState.draggedElementId === element.id;
-  const isDragTarget = dragState.draggedElementId !== null && dragState.draggedElementId !== element.id;
-  const isCurrentDropTarget = dragState.dropTarget?.elementId === element.id;
-  const dropPosition: DropPosition = isCurrentDropTarget ? dragState.dropTarget.position : null;
+  const isCurrentDropTarget = dropTarget?.elementId === element.id;
+  const dropPosition = isCurrentDropTarget ? dropTarget.position : null;
 
   const handleClick = () => {
     if (!dragState.draggedElementId) {
@@ -48,61 +51,14 @@ export function HierarchyItem({
     }
   };
 
-  const findParentId = (elementId: string, state: MotionDesignerState): string | null => {
-    for (const element of Object.values(state.composition.elements)) {
-      if (element.childIds.includes(elementId)) {
-        return element.id;
-      }
+  useEffect(() => {
+    if (itemRef.current) {
+      registerElementRef(element.id, itemRef.current, depth);
+      return () => {
+        unregisterElementRef(element.id);
+      };
     }
-    return null;
-  };
-
-  const calculateDropPosition = (
-    clientY: number,
-    elementRect: DOMRect,
-  ): DropPosition => {
-    const relativeY = clientY - elementRect.top;
-    const elementHeight = elementRect.height;
-    const threshold = elementHeight / 3;
-
-    if (relativeY < threshold) {
-      return "before";
-    } else if (relativeY > elementHeight - threshold) {
-      return "after";
-    } else {
-      return "inside";
-    }
-  };
-
-  const canDropAt = (
-    draggedElementId: string,
-    targetElementId: string,
-    position: DropPosition,
-  ): boolean => {
-    if (!position) return false;
-
-    const draggedElement = state.composition.elements[draggedElementId];
-    if (!draggedElement) return false;
-
-    if (position === "inside") {
-      const targetElement = state.composition.elements[targetElementId];
-      if (!targetElement) return false;
-      return behaviorRegistry.canMove(draggedElementId, targetElementId, undefined, state);
-    } else {
-      const targetElement = state.composition.elements[targetElementId];
-      if (!targetElement) return false;
-
-      const parentId = findParentId(targetElementId, state);
-      const siblings = parentId
-        ? state.composition.elements[parentId]?.childIds || []
-        : state.composition.rootTimegroupIds;
-
-      const targetIndex = siblings.indexOf(targetElementId);
-      const newIndex = position === "before" ? targetIndex : targetIndex + 1;
-
-      return behaviorRegistry.canMove(draggedElementId, parentId, newIndex, state);
-    }
-  };
+  }, [element.id, depth, registerElementRef, unregisterElementRef]);
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0) return;
@@ -115,66 +71,22 @@ export function HierarchyItem({
     startDrag(element.id, { x: e.clientX, y: e.clientY });
   };
 
-  useEffect(() => {
-    if (!dragState.draggedElementId || !dragState.dragPosition || !itemRef.current) {
-      if (isCurrentDropTarget) {
-        setDropTarget(null);
-      }
-      return;
-    }
-
-    if (dragState.draggedElementId === element.id) {
-      return;
-    }
-
-    const elementRect = itemRef.current.getBoundingClientRect();
-    const isOverElement =
-      dragState.dragPosition.x >= elementRect.left &&
-      dragState.dragPosition.x <= elementRect.right &&
-      dragState.dragPosition.y >= elementRect.top &&
-      dragState.dragPosition.y <= elementRect.bottom;
-
-    if (isOverElement) {
-      const position = calculateDropPosition(dragState.dragPosition.y, elementRect);
-
-      if (position && canDropAt(dragState.draggedElementId, element.id, position)) {
-        setDropTarget({
-          elementId: element.id,
-          position,
-        });
-      } else {
-        if (isCurrentDropTarget) {
-          setDropTarget(null);
-        }
-      }
-    } else {
-      if (isCurrentDropTarget) {
-        setDropTarget(null);
-      }
-    }
-  }, [dragState.dragPosition, dragState.draggedElementId, element.id, state, setDropTarget, isCurrentDropTarget]);
 
   const isDraggable = element.type !== "timegroup" || !isRoot;
   const IconComponent = getElementIcon(element.type);
 
   return (
-    <div>
-      {dropPosition === "before" && (
-        <div 
-          className="h-1.5 bg-blue-500 my-0.5 rounded-full shadow-lg" 
-          style={{ marginLeft: `${depth * 16 + 8}px`, marginRight: "8px" }} 
-        />
-      )}
+    <div className="relative">
       <div
         ref={itemRef}
         onPointerDown={handlePointerDown}
-        className={`group flex items-center gap-1 px-2 py-1 rounded transition-colors ${
+        className={`group flex items-center gap-1 px-2 py-1 rounded transition-colors relative ${
           isDraggable ? "cursor-move" : "cursor-pointer"
         } ${
           isDragging
             ? "opacity-50 cursor-grabbing"
             : dropPosition === "inside"
-              ? "bg-blue-500/40 border-2 border-blue-400"
+              ? "bg-blue-500/30 border-l-4 border-blue-500"
               : isSelected
                 ? "bg-blue-600"
                 : isActiveRoot
@@ -184,6 +96,14 @@ export function HierarchyItem({
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
         onClick={handleClick}
       >
+        {dropPosition === "before" && (
+          <div className="absolute left-0 right-0 top-0 pointer-events-none z-10" style={{ transform: "translateY(-50%)" }}>
+            <div className="relative mx-2">
+              <div className="h-0.5 bg-blue-500 w-full" />
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-blue-500 rounded-full -ml-1.5" />
+            </div>
+          </div>
+        )}
         {hasChildren && (
           <button
             onClick={(e) => {
@@ -215,6 +135,14 @@ export function HierarchyItem({
             <span className="text-xs">×</span>
           </button>
         )}
+        {dropPosition === "after" && (
+          <div className="absolute left-0 right-0 bottom-0 pointer-events-none z-10" style={{ transform: "translateY(50%)" }}>
+            <div className="relative mx-2">
+              <div className="h-0.5 bg-blue-500 w-full" />
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-blue-500 rounded-full -ml-1.5" />
+            </div>
+          </div>
+        )}
       </div>
       {hasChildren && isExpanded && (
         <div>
@@ -227,16 +155,13 @@ export function HierarchyItem({
                 element={child}
                 state={state}
                 depth={depth + 1}
+                dropTarget={dropTarget}
+                registerElementRef={registerElementRef}
+                unregisterElementRef={unregisterElementRef}
               />
             );
           })}
         </div>
-      )}
-      {dropPosition === "after" && (
-        <div 
-          className="h-1.5 bg-blue-500 my-0.5 rounded-full shadow-lg" 
-          style={{ marginLeft: `${depth * 16 + 8}px`, marginRight: "8px" }} 
-        />
       )}
     </div>
   );
