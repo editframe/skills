@@ -36,6 +36,16 @@ export const timegroupProperties: PropertySectionConfig[] = [
         propPath: "fps",
         placeholder: "30",
       },
+      {
+        type: "video-size-preset",
+        label: "Size Preset",
+        propPath: "size",
+      },
+      {
+        type: "dimensions",
+        label: "Size",
+        propPath: "size",
+      },
     ],
   },
 ];

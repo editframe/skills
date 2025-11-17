@@ -12,6 +12,7 @@ import { IconButtonGroup } from "../controls/IconButtonGroup";
 import { AlignmentGrid } from "../controls/AlignmentGrid";
 import { PositionInput } from "../controls/PositionInput";
 import { DimensionsInput } from "../controls/DimensionsInput";
+import { VideoSizePresetPicker } from "../controls/VideoSizePresetPicker";
 import { InlineInputs } from "../controls/InlineInputs";
 import { getNestedValue, setNestedValue } from "./propertyHelpers";
 
@@ -87,8 +88,14 @@ function PropertyFieldRenderer({
 
   const handleChange = (newValue: any) => {
     if (propPath) {
-      const updates = setNestedValue({}, propPath, newValue);
-      onUpdate(updates);
+      // For "size" prop, we need to replace it completely, not merge
+      // because it can be either legacy format {width, height} or new format {widthMode, widthValue, ...}
+      if (propPath === "size") {
+        onUpdate({ size: newValue });
+      } else {
+        const updates = setNestedValue({}, propPath, newValue);
+        onUpdate(updates);
+      }
     }
   };
 
@@ -259,8 +266,16 @@ function PropertyFieldRenderer({
       return (
         <DimensionsInput
           label={field.label}
-          width={value?.width}
-          height={value?.height}
+          size={value}
+          onChange={handleChange}
+        />
+      );
+
+    case "video-size-preset":
+      return (
+        <VideoSizePresetPicker
+          label={field.label}
+          size={value}
           onChange={handleChange}
         />
       );

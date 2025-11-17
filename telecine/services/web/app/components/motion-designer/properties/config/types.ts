@@ -23,6 +23,7 @@ export type PropertyFieldConfig =
   | AlignmentGridFieldConfig
   | PositionFieldConfig
   | DimensionsFieldConfig
+  | VideoSizePresetFieldConfig
   | InlineInputsFieldConfig;
 
 interface BaseFieldConfig {
@@ -103,6 +104,10 @@ export interface PositionFieldConfig extends BaseFieldConfig {
 
 export interface DimensionsFieldConfig extends BaseFieldConfig {
   type: "dimensions";
+}
+
+export interface VideoSizePresetFieldConfig extends BaseFieldConfig {
+  type: "video-size-preset";
 }
 
 export interface InlineInputsFieldConfig {
