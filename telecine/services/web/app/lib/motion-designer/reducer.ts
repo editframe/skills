@@ -201,9 +201,21 @@ export function motionDesignerReducer(
       const newState = shallowClone(state);
       newState.composition = shallowClone(state.composition);
       const newElements = { ...newState.composition.elements };
+      
+      // For "size" prop, replace completely instead of merging
+      // because it can be either legacy format {width, height} or new format {widthMode, widthValue, ...}
+      let mergedProps;
+      if (updates.size !== undefined) {
+        mergedProps = { ...element.props, size: updates.size };
+        const { size: _, ...restUpdates } = updates;
+        mergedProps = merge(mergedProps, restUpdates);
+      } else {
+        mergedProps = merge(element.props, updates);
+      }
+      
       newElements[id] = {
         ...element,
-        props: merge(element.props, updates),
+        props: mergedProps,
       };
 
       newState.composition.elements = newElements;
