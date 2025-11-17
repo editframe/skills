@@ -1,72 +1,253 @@
 import React, { useState } from "react";
-import { Lock, LockOpen } from "@phosphor-icons/react";
+import { Lock, LockOpen, ArrowsIn, ArrowsOut, Ruler } from "@phosphor-icons/react";
+import type { ElementSize, LegacyElementSize } from "~/lib/motion-designer/sizingTypes";
+import { isLegacySize, normalizeSize } from "~/lib/motion-designer/sizingTypes";
+import type { SizingMode } from "~/lib/motion-designer/sizingTypes";
 
 interface DimensionsInputProps {
   label: string;
-  width: number | undefined;
-  height: number | undefined;
-  onChange: (size: { width: number; height: number }) => void;
+  size: ElementSize | LegacyElementSize | undefined;
+  onChange: (size: ElementSize) => void;
 }
 
-export function DimensionsInput({ label, width, height, onChange }: DimensionsInputProps) {
+export function DimensionsInput({ label, size, onChange }: DimensionsInputProps) {
   const [locked, setLocked] = useState(false);
-  const [aspectRatio, setAspectRatio] = useState<number | null>(null);
+  
+  // Always read from props (source of truth)
+  const normalizedSize = normalizeSize(size) || {
+    widthMode: "fixed" as SizingMode,
+    widthValue: 100,
+    heightMode: "fixed" as SizingMode,
+    heightValue: 100,
+  };
 
-  const handleWidthChange = (newWidth: number) => {
-    if (locked && aspectRatio && height) {
+  // Use normalized size directly - no local state needed for modes/values
+  const widthMode = normalizedSize.widthMode;
+  const widthValue = normalizedSize.widthValue;
+  const heightMode = normalizedSize.heightMode;
+  const heightValue = normalizedSize.heightValue;
+
+  const handleWidthModeChange = (mode: SizingMode) => {
+    // Preserve current value when switching modes (unless switching to hug, then use 0)
+    const newWidthValue = mode === "fixed" ? (widthValue || 100) : (mode === "hug" ? 0 : (widthValue || 100));
+    
+    if (locked && widthMode === "fixed" && heightMode === "fixed" && mode === "fixed") {
+      // Maintain aspect ratio when locked and both are fixed
+      const aspectRatio = widthValue / heightValue;
+      const newHeightValue = Math.round(newWidthValue / aspectRatio);
+      onChange({
+        widthMode: mode,
+        widthValue: newWidthValue,
+        heightMode: "fixed",
+        heightValue: newHeightValue,
+      });
+    } else {
+      onChange({
+        widthMode: mode,
+        widthValue: newWidthValue,
+        heightMode,
+        heightValue,
+      });
+    }
+  };
+
+  const handleHeightModeChange = (mode: SizingMode) => {
+    // Preserve current value when switching modes (unless switching to hug, then use 0)
+    const newHeightValue = mode === "fixed" ? (heightValue || 100) : (mode === "hug" ? 0 : (heightValue || 100));
+    
+    if (locked && widthMode === "fixed" && heightMode === "fixed" && mode === "fixed") {
+      // Maintain aspect ratio when locked and both are fixed
+      const aspectRatio = widthValue / heightValue;
+      const newWidthValue = Math.round(newHeightValue * aspectRatio);
+      onChange({
+        widthMode: "fixed",
+        widthValue: newWidthValue,
+        heightMode: mode,
+        heightValue: newHeightValue,
+      });
+    } else {
+      onChange({
+        widthMode,
+        widthValue,
+        heightMode: mode,
+        heightValue: newHeightValue,
+      });
+    }
+  };
+
+  const handleWidthValueChange = (newWidth: number) => {
+    if (locked && widthMode === "fixed" && heightMode === "fixed") {
+      const aspectRatio = widthValue / heightValue;
       const newHeight = Math.round(newWidth / aspectRatio);
-      onChange({ width: newWidth, height: newHeight });
+      onChange({
+        widthMode,
+        widthValue: newWidth,
+        heightMode,
+        heightValue: newHeight,
+      });
     } else {
-      onChange({ width: newWidth, height: height ?? 100 });
-      if (newWidth && height) {
-        setAspectRatio(newWidth / height);
-      }
+      onChange({
+        widthMode,
+        widthValue: newWidth,
+        heightMode,
+        heightValue,
+      });
     }
   };
 
-  const handleHeightChange = (newHeight: number) => {
-    if (locked && aspectRatio && width) {
+  const handleHeightValueChange = (newHeight: number) => {
+    if (locked && widthMode === "fixed" && heightMode === "fixed") {
+      const aspectRatio = widthValue / heightValue;
       const newWidth = Math.round(newHeight * aspectRatio);
-      onChange({ width: newWidth, height: newHeight });
+      onChange({
+        widthMode,
+        widthValue: newWidth,
+        heightMode,
+        heightValue: newHeight,
+      });
     } else {
-      onChange({ width: width ?? 100, height: newHeight });
-      if (width && newHeight) {
-        setAspectRatio(width / newHeight);
-      }
+      onChange({
+        widthMode,
+        widthValue,
+        heightMode,
+        heightValue: newHeight,
+      });
     }
   };
+
+  const ModeButton = ({ 
+    mode, 
+    icon, 
+    label: modeLabel, 
+    isActive, 
+    onClick 
+  }: { 
+    mode: SizingMode; 
+    icon: React.ReactNode; 
+    label: string; 
+    isActive: boolean; 
+    onClick: () => void;
+  }) => (
+    <button
+      onClick={onClick}
+      className={`
+        flex items-center justify-center gap-1 px-2 py-1 rounded text-[9px] font-medium
+        transition-colors flex-1
+        ${isActive 
+          ? "bg-blue-600 text-white" 
+          : "bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 hover:text-gray-300"
+        }
+      `}
+      title={modeLabel}
+    >
+      {icon}
+      <span className="hidden sm:inline">{modeLabel}</span>
+    </button>
+  );
 
   return (
-    <div className="flex items-center gap-1.5">
-      <label className="text-[10px] text-gray-500 w-11 font-normal flex-shrink-0">{label}</label>
-      <div className="flex flex-1 items-stretch gap-px">
-        <div className="flex-1 flex items-center gap-1 h-5 px-1.5 bg-gray-900/50 border border-gray-700/30 rounded-sm hover:border-gray-600/50 focus-within:border-blue-500/50 focus-within:bg-gray-900 transition-colors">
-          <span className="text-[7px] text-gray-600 font-bold uppercase">W</span>
-          <input
-            type="number"
-            value={width ?? 100}
-            onChange={(e) => handleWidthChange(Number(e.target.value))}
-            className="flex-1 bg-transparent text-[10px] text-white focus:outline-none w-0 min-w-0 p-0 m-0 border-0"
-          />
+    <div className="space-y-2">
+      <label className="text-[10px] text-gray-500 font-normal">{label}</label>
+      
+      {/* Width Controls */}
+      <div className="space-y-1">
+        <div className="flex items-center gap-1">
+          <span className="text-[7px] text-gray-600 font-bold uppercase w-3">W</span>
+          <div className="flex-1 flex gap-1">
+            <ModeButton
+              mode="hug"
+              icon={<ArrowsIn className="w-2.5 h-2.5" />}
+              label="Hug"
+              isActive={widthMode === "hug"}
+              onClick={() => handleWidthModeChange("hug")}
+            />
+            <ModeButton
+              mode="fill"
+              icon={<ArrowsOut className="w-2.5 h-2.5" />}
+              label="Fill"
+              isActive={widthMode === "fill"}
+              onClick={() => handleWidthModeChange("fill")}
+            />
+            <ModeButton
+              mode="fixed"
+              icon={<Ruler className="w-2.5 h-2.5" />}
+              label="Fixed"
+              isActive={widthMode === "fixed"}
+              onClick={() => handleWidthModeChange("fixed")}
+            />
+          </div>
         </div>
+        {widthMode === "fixed" && (
+          <div className="flex items-center gap-1 pl-4">
+            <input
+              type="number"
+              value={widthValue}
+              onChange={(e) => handleWidthValueChange(Number(e.target.value))}
+              className="flex-1 h-5 px-1.5 bg-gray-900/50 border border-gray-700/30 rounded-sm text-[10px] text-white focus:outline-none focus:border-blue-500/50"
+            />
+            <span className="text-[8px] text-gray-500">px</span>
+          </div>
+        )}
+      </div>
+
+      {/* Lock Button */}
+      <div className="flex items-center justify-center">
         <button
           onClick={() => setLocked(!locked)}
-          className="w-4 h-5 flex items-center justify-center text-gray-600 hover:text-gray-400 transition-colors flex-shrink-0"
+          className={`
+            w-5 h-5 flex items-center justify-center rounded
+            transition-colors
+            ${locked 
+              ? "text-blue-500 hover:text-blue-400" 
+              : "text-gray-600 hover:text-gray-400"
+            }
+          `}
           title={locked ? "Unlock aspect ratio" : "Lock aspect ratio"}
         >
-          {locked ? <Lock className="w-2 h-2" /> : <LockOpen className="w-2 h-2" />}
+          {locked ? <Lock className="w-3 h-3" /> : <LockOpen className="w-3 h-3" />}
         </button>
-        <div className="flex-1 flex items-center gap-1 h-5 px-1.5 bg-gray-900/50 border border-gray-700/30 rounded-sm hover:border-gray-600/50 focus-within:border-blue-500/50 focus-within:bg-gray-900 transition-colors">
-          <span className="text-[7px] text-gray-600 font-bold uppercase">H</span>
-          <input
-            type="number"
-            value={height ?? 100}
-            onChange={(e) => handleHeightChange(Number(e.target.value))}
-            className="flex-1 bg-transparent text-[10px] text-white focus:outline-none w-0 min-w-0 p-0 m-0 border-0"
-          />
+      </div>
+
+      {/* Height Controls */}
+      <div className="space-y-1">
+        <div className="flex items-center gap-1">
+          <span className="text-[7px] text-gray-600 font-bold uppercase w-3">H</span>
+          <div className="flex-1 flex gap-1">
+            <ModeButton
+              mode="hug"
+              icon={<ArrowsIn className="w-2.5 h-2.5" />}
+              label="Hug"
+              isActive={heightMode === "hug"}
+              onClick={() => handleHeightModeChange("hug")}
+            />
+            <ModeButton
+              mode="fill"
+              icon={<ArrowsOut className="w-2.5 h-2.5" />}
+              label="Fill"
+              isActive={heightMode === "fill"}
+              onClick={() => handleHeightModeChange("fill")}
+            />
+            <ModeButton
+              mode="fixed"
+              icon={<Ruler className="w-2.5 h-2.5" />}
+              label="Fixed"
+              isActive={heightMode === "fixed"}
+              onClick={() => handleHeightModeChange("fixed")}
+            />
+          </div>
         </div>
+        {heightMode === "fixed" && (
+          <div className="flex items-center gap-1 pl-4">
+            <input
+              type="number"
+              value={heightValue}
+              onChange={(e) => handleHeightValueChange(Number(e.target.value))}
+              className="flex-1 h-5 px-1.5 bg-gray-900/50 border border-gray-700/30 rounded-sm text-[10px] text-white focus:outline-none focus:border-blue-500/50"
+            />
+            <span className="text-[8px] text-gray-500">px</span>
+          </div>
+        )}
       </div>
     </div>
   );
 }
-
