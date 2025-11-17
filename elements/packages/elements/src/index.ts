@@ -38,6 +38,11 @@ import "./elements/EFWaveform.js";
 
 export { EFWaveform } from "./elements/EFWaveform.js";
 
+import "./elements/EFTemporal.js";
+
+export { isEFTemporal } from "./elements/EFTemporal.js";
+export type { TemporalMixinInterface } from "./elements/EFTemporal.js";
+
 import "./gui/EFConfiguration.ts";
 
 export { EFConfiguration } from "./gui/EFConfiguration.ts";
