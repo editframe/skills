@@ -146,107 +146,110 @@ export function DimensionsInput({ label, size, onChange }: DimensionsInputProps)
   );
 
   return (
-    <div className="space-y-2">
-      <label className="text-[10px] text-gray-500 font-normal">{label}</label>
-      
-      {/* Width Controls */}
-      <div className="space-y-1">
-        <div className="flex items-center gap-1">
-          <span className="text-[7px] text-gray-600 font-bold uppercase w-3">W</span>
-          <div className="flex-1 flex gap-1">
-            <ModeButton
-              mode="hug"
-              icon={<ArrowsIn className="w-2.5 h-2.5" />}
-              label="Hug"
-              isActive={widthMode === "hug"}
-              onClick={() => handleWidthModeChange("hug")}
-            />
-            <ModeButton
-              mode="fill"
-              icon={<ArrowsOut className="w-2.5 h-2.5" />}
-              label="Fill"
-              isActive={widthMode === "fill"}
-              onClick={() => handleWidthModeChange("fill")}
-            />
-            <ModeButton
-              mode="fixed"
-              icon={<Ruler className="w-2.5 h-2.5" />}
-              label="Fixed"
-              isActive={widthMode === "fixed"}
-              onClick={() => handleWidthModeChange("fixed")}
-            />
+    <div className="space-y-1">
+      <div className="flex items-center gap-1">
+        <label className="text-[10px] text-gray-500 w-10 font-normal flex-shrink-0">{label}</label>
+        <div className="flex-1 space-y-1">
+          {/* Width Controls */}
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-1">
+              <span className="text-[7px] text-gray-600 font-bold uppercase w-3">W</span>
+              <div className="flex-1 flex gap-1">
+                <ModeButton
+                  mode="hug"
+                  icon={<ArrowsIn className="w-2.5 h-2.5" />}
+                  label="Hug"
+                  isActive={widthMode === "hug"}
+                  onClick={() => handleWidthModeChange("hug")}
+                />
+                <ModeButton
+                  mode="fill"
+                  icon={<ArrowsOut className="w-2.5 h-2.5" />}
+                  label="Fill"
+                  isActive={widthMode === "fill"}
+                  onClick={() => handleWidthModeChange("fill")}
+                />
+                <ModeButton
+                  mode="fixed"
+                  icon={<Ruler className="w-2.5 h-2.5" />}
+                  label="Fixed"
+                  isActive={widthMode === "fixed"}
+                  onClick={() => handleWidthModeChange("fixed")}
+                />
+              </div>
+            </div>
+            {widthMode === "fixed" && (
+              <div className="flex items-center gap-1 pl-4">
+                <input
+                  type="number"
+                  value={widthValue}
+                  onChange={(e) => handleWidthValueChange(Number(e.target.value))}
+                  className="flex-1 h-5 px-1.5 bg-gray-900/50 border border-gray-700/30 rounded-sm text-[10px] text-white focus:outline-none focus:border-blue-500/50"
+                />
+                <span className="text-[8px] text-gray-500">px</span>
+              </div>
+            )}
+          </div>
+
+          {/* Lock Button */}
+          <div className="flex items-center justify-center pl-3">
+            <button
+              onClick={() => setLocked(!locked)}
+              className={`
+                w-4 h-4 flex items-center justify-center rounded
+                transition-colors
+                ${locked 
+                  ? "text-blue-500 hover:text-blue-400" 
+                  : "text-gray-600 hover:text-gray-400"
+                }
+              `}
+              title={locked ? "Unlock aspect ratio" : "Lock aspect ratio"}
+            >
+              {locked ? <Lock className="w-2.5 h-2.5" /> : <LockOpen className="w-2.5 h-2.5" />}
+            </button>
+          </div>
+
+          {/* Height Controls */}
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-1">
+              <span className="text-[7px] text-gray-600 font-bold uppercase w-3">H</span>
+              <div className="flex-1 flex gap-1">
+                <ModeButton
+                  mode="hug"
+                  icon={<ArrowsIn className="w-2.5 h-2.5" />}
+                  label="Hug"
+                  isActive={heightMode === "hug"}
+                  onClick={() => handleHeightModeChange("hug")}
+                />
+                <ModeButton
+                  mode="fill"
+                  icon={<ArrowsOut className="w-2.5 h-2.5" />}
+                  label="Fill"
+                  isActive={heightMode === "fill"}
+                  onClick={() => handleHeightModeChange("fill")}
+                />
+                <ModeButton
+                  mode="fixed"
+                  icon={<Ruler className="w-2.5 h-2.5" />}
+                  label="Fixed"
+                  isActive={heightMode === "fixed"}
+                  onClick={() => handleHeightModeChange("fixed")}
+                />
+              </div>
+            </div>
+            {heightMode === "fixed" && (
+              <div className="flex items-center gap-1 pl-4">
+                <input
+                  type="number"
+                  value={heightValue}
+                  onChange={(e) => handleHeightValueChange(Number(e.target.value))}
+                  className="flex-1 h-5 px-1.5 bg-gray-900/50 border border-gray-700/30 rounded-sm text-[10px] text-white focus:outline-none focus:border-blue-500/50"
+                />
+                <span className="text-[8px] text-gray-500">px</span>
+              </div>
+            )}
           </div>
         </div>
-        {widthMode === "fixed" && (
-          <div className="flex items-center gap-1 pl-4">
-            <input
-              type="number"
-              value={widthValue}
-              onChange={(e) => handleWidthValueChange(Number(e.target.value))}
-              className="flex-1 h-5 px-1.5 bg-gray-900/50 border border-gray-700/30 rounded-sm text-[10px] text-white focus:outline-none focus:border-blue-500/50"
-            />
-            <span className="text-[8px] text-gray-500">px</span>
-          </div>
-        )}
-      </div>
-
-      {/* Lock Button */}
-      <div className="flex items-center justify-center">
-        <button
-          onClick={() => setLocked(!locked)}
-          className={`
-            w-5 h-5 flex items-center justify-center rounded
-            transition-colors
-            ${locked 
-              ? "text-blue-500 hover:text-blue-400" 
-              : "text-gray-600 hover:text-gray-400"
-            }
-          `}
-          title={locked ? "Unlock aspect ratio" : "Lock aspect ratio"}
-        >
-          {locked ? <Lock className="w-3 h-3" /> : <LockOpen className="w-3 h-3" />}
-        </button>
-      </div>
-
-      {/* Height Controls */}
-      <div className="space-y-1">
-        <div className="flex items-center gap-1">
-          <span className="text-[7px] text-gray-600 font-bold uppercase w-3">H</span>
-          <div className="flex-1 flex gap-1">
-            <ModeButton
-              mode="hug"
-              icon={<ArrowsIn className="w-2.5 h-2.5" />}
-              label="Hug"
-              isActive={heightMode === "hug"}
-              onClick={() => handleHeightModeChange("hug")}
-            />
-            <ModeButton
-              mode="fill"
-              icon={<ArrowsOut className="w-2.5 h-2.5" />}
-              label="Fill"
-              isActive={heightMode === "fill"}
-              onClick={() => handleHeightModeChange("fill")}
-            />
-            <ModeButton
-              mode="fixed"
-              icon={<Ruler className="w-2.5 h-2.5" />}
-              label="Fixed"
-              isActive={heightMode === "fixed"}
-              onClick={() => handleHeightModeChange("fixed")}
-            />
-          </div>
-        </div>
-        {heightMode === "fixed" && (
-          <div className="flex items-center gap-1 pl-4">
-            <input
-              type="number"
-              value={heightValue}
-              onChange={(e) => handleHeightValueChange(Number(e.target.value))}
-              className="flex-1 h-5 px-1.5 bg-gray-900/50 border border-gray-700/30 rounded-sm text-[10px] text-white focus:outline-none focus:border-blue-500/50"
-            />
-            <span className="text-[8px] text-gray-500">px</span>
-          </div>
-        )}
       </div>
     </div>
   );

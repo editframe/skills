@@ -20,14 +20,14 @@ interface InlineInputsProps {
 
 export function InlineInputs({ inputs, onChange }: InlineInputsProps) {
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-1">
       {inputs.map((input, idx) => {
         if (input.type === "slider") {
           const defaultValue = input.displayMultiplier === 100 ? 1 : 0;
           const displayValue = Math.round((input.value ?? defaultValue) * (input.displayMultiplier ?? 1));
           return (
-            <div key={input.propPath} className="flex-1 flex items-center gap-1.5">
-              <label className="text-[10px] text-gray-500 whitespace-nowrap font-normal w-11 flex-shrink-0">
+            <div key={input.propPath} className="flex-1 flex items-center gap-1">
+              <label className="text-[10px] text-gray-500 whitespace-nowrap font-normal w-10 flex-shrink-0">
                 {input.label}
               </label>
               <input

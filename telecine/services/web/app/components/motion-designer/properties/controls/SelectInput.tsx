@@ -14,8 +14,8 @@ interface SelectInputProps {
 
 export function SelectInput({ label, value, onChange, options }: SelectInputProps) {
   return (
-    <div className="flex items-center gap-1.5">
-      <label className="text-[10px] text-gray-500 w-11 font-normal flex-shrink-0">
+    <div className="flex items-center gap-1">
+      <label className="text-[10px] text-gray-500 w-10 font-normal flex-shrink-0">
         {label}
       </label>
       <select

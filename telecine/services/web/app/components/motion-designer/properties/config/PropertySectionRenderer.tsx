@@ -153,8 +153,8 @@ function PropertyFieldRenderer({
 
     case "text":
       return (
-        <div className="flex items-center gap-1.5">
-          <label className="text-[10px] text-gray-500 w-11 font-normal flex-shrink-0">
+        <div className="flex items-center gap-1">
+          <label className="text-[10px] text-gray-500 w-10 font-normal flex-shrink-0">
             {field.label}
           </label>
           {field.rows ? (
@@ -179,8 +179,8 @@ function PropertyFieldRenderer({
 
     case "number-grid":
       return (
-        <div className="flex items-center gap-1.5">
-          <label className="text-[10px] text-gray-500 w-11 font-normal flex-shrink-0">
+        <div className="flex items-center gap-1">
+          <label className="text-[10px] text-gray-500 w-10 font-normal flex-shrink-0">
             {field.label}
           </label>
           <div className="flex-1 grid grid-cols-3 gap-px">

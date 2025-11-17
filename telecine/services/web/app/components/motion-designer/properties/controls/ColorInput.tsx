@@ -8,8 +8,8 @@ interface ColorInputProps {
 
 export function ColorInput({ label, value, onChange }: ColorInputProps) {
   return (
-    <div className="flex items-center gap-1.5">
-      <label className="text-[10px] text-gray-500 w-11 font-normal flex-shrink-0">
+    <div className="flex items-center gap-1">
+      <label className="text-[10px] text-gray-500 w-10 font-normal flex-shrink-0">
         {label}
       </label>
       <div className="flex-1 h-5 relative rounded-sm overflow-hidden border border-gray-700/30 hover:border-gray-600/50 transition-colors">
