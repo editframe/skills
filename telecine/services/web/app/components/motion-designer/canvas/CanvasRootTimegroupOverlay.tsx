@@ -80,6 +80,7 @@ export function CanvasRootTimegroupOverlay({
   }, [element.id, canvasScale]);
 
   const dragStartPositionRef = useRef<{ x: number; y: number } | null>(null);
+  const wasSelectedAtMouseDownRef = useRef(false);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -87,7 +88,12 @@ export function CanvasRootTimegroupOverlay({
     setDragStart({ x: e.clientX, y: e.clientY });
     dragStartPositionRef.current = { x: canvasPosition.x, y: canvasPosition.y };
     hasDraggedRef.current = false;
-    actions.selectElement(element.id);
+    // Track if element was already selected before this mousedown
+    wasSelectedAtMouseDownRef.current = isSelected;
+    // Only select if not already selected
+    if (!isSelected) {
+      actions.selectElement(element.id);
+    }
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -118,6 +124,8 @@ export function CanvasRootTimegroupOverlay({
       setDragStart(null);
       hasDraggedRef.current = false;
     }
+    // Reset the ref after mouseup
+    wasSelectedAtMouseDownRef.current = false;
   };
 
   const handleClick = (e: React.MouseEvent) => {
@@ -125,6 +133,13 @@ export function CanvasRootTimegroupOverlay({
     
     // Only handle click if we didn't drag
     if (!hasDraggedRef.current) {
+      // If it was already selected before mousedown and not in placement mode, deselect
+      if (wasSelectedAtMouseDownRef.current && !state.ui.placementMode) {
+        actions.selectElement(null);
+        hasDraggedRef.current = false;
+        return;
+      }
+      
       if (state.ui.placementMode && isActive) {
         // Don't allow placing timegroups inside timegroups
         if (state.ui.placementMode === "timegroup") {
@@ -148,6 +163,15 @@ export function CanvasRootTimegroupOverlay({
           } else {
             defaultProps.size = createDefaultSize(elementType, 200, 100);
           }
+        }
+        
+        if (elementType === "captions") {
+          defaultProps.showBefore = true;
+          defaultProps.showAfter = true;
+          defaultProps.showActive = true;
+          defaultProps.showSegment = true;
+        } else if (elementType === "waveform") {
+          defaultProps.mode = "bars";
         }
         
         actions.addElement(
