@@ -336,5 +336,167 @@ describe("generateAnimationStyles", () => {
       });
     });
   });
+
+  describe("base rotation in rotate animations", () => {
+    test("base rotation is included in rotate animation keyframes", () => {
+      const element = createElementNode({
+        props: { rotation: 45 },
+        animations: [
+          createAnimation({
+            property: "rotate",
+            fromValue: "0deg",
+            toValue: "90deg",
+            duration: 1000,
+            delay: 0,
+            fillMode: "both",
+          }),
+        ],
+      });
+
+      const css = generateAnimationStyles(element);
+      expect(css).toBeTruthy();
+
+      // Base rotation (45deg) should be added to fromValue (0deg) = 45deg
+      expect(css).toMatch(/0%\s*\{\s*transform:\s*rotate\(45deg\)/);
+      // Base rotation (45deg) should be added to toValue (90deg) = 135deg
+      expect(css).toMatch(/100%\s*\{\s*transform:\s*rotate\(135deg\)/);
+    });
+
+    test("base rotation is included in merged rotate animations", () => {
+      const element = createElementNode({
+        props: { rotation: 30 },
+        animations: [
+          createAnimation({
+            id: "anim-1",
+            property: "rotate",
+            fromValue: "0deg",
+            toValue: "90deg",
+            duration: 1000,
+            delay: 0,
+            fillMode: "both",
+          }),
+          createAnimation({
+            id: "anim-2",
+            property: "rotate",
+            fromValue: "90deg",
+            toValue: "180deg",
+            duration: 1000,
+            delay: 1000,
+            fillMode: "both",
+          }),
+        ],
+      });
+
+      const css = generateAnimationStyles(element);
+      expect(css).toBeTruthy();
+
+      // First animation: 0deg + 30deg = 30deg, 90deg + 30deg = 120deg
+      expect(css).toMatch(/rotate\(30deg\)/);
+      expect(css).toMatch(/rotate\(120deg\)/);
+      // Second animation: 90deg + 30deg = 120deg, 180deg + 30deg = 210deg
+      expect(css).toMatch(/rotate\(210deg\)/);
+    });
+
+    test("base rotation is included in rotate animation keyframes array", () => {
+      const element = createElementNode({
+        props: { rotation: 60 },
+        animations: [
+          createAnimation({
+            property: "rotate",
+            fromValue: undefined,
+            toValue: undefined,
+            duration: 1000,
+            delay: 0,
+            fillMode: "both",
+            keyframes: [
+              { time: 0, value: "0deg" },
+              { time: 0.5, value: "45deg" },
+              { time: 1, value: "90deg" },
+            ],
+          }),
+        ],
+      });
+
+      const css = generateAnimationStyles(element);
+      expect(css).toBeTruthy();
+
+      // Base rotation (60deg) added to each keyframe value
+      expect(css).toMatch(/rotate\(60deg\)/); // 0deg + 60deg
+      expect(css).toMatch(/rotate\(105deg\)/); // 45deg + 60deg
+      expect(css).toMatch(/rotate\(150deg\)/); // 90deg + 60deg
+    });
+
+    test("base rotation of 0 does not affect animation values", () => {
+      const element = createElementNode({
+        props: { rotation: 0 },
+        animations: [
+          createAnimation({
+            property: "rotate",
+            fromValue: "0deg",
+            toValue: "90deg",
+            duration: 1000,
+            delay: 0,
+            fillMode: "both",
+          }),
+        ],
+      });
+
+      const css = generateAnimationStyles(element);
+      expect(css).toBeTruthy();
+
+      // Values should remain unchanged
+      expect(css).toMatch(/0%\s*\{\s*transform:\s*rotate\(0deg\)/);
+      expect(css).toMatch(/100%\s*\{\s*transform:\s*rotate\(90deg\)/);
+    });
+
+    test("base rotation is not added to non-rotate animations", () => {
+      const element = createElementNode({
+        props: { rotation: 45 },
+        animations: [
+          createAnimation({
+            property: "translateX",
+            fromValue: "0px",
+            toValue: "100px",
+            duration: 1000,
+            delay: 0,
+            fillMode: "both",
+          }),
+        ],
+      });
+
+      const css = generateAnimationStyles(element);
+      expect(css).toBeTruthy();
+
+      // translateX values should not be affected by base rotation
+      expect(css).toMatch(/0%\s*\{\s*transform:\s*translateX\(0px\)/);
+      expect(css).toMatch(/100%\s*\{\s*transform:\s*translateX\(100px\)/);
+      // Should not have any rotation values
+      expect(css).not.toMatch(/rotate\(/);
+    });
+
+    test("base rotation handles negative values", () => {
+      const element = createElementNode({
+        props: { rotation: -45 },
+        animations: [
+          createAnimation({
+            property: "rotate",
+            fromValue: "0deg",
+            toValue: "90deg",
+            duration: 1000,
+            delay: 0,
+            fillMode: "both",
+          }),
+        ],
+      });
+
+      const css = generateAnimationStyles(element);
+      expect(css).toBeTruthy();
+
+      // Base rotation (-45deg) added to fromValue (0deg) = -45deg
+      expect(css).toMatch(/0%\s*\{\s*transform:\s*rotate\(-45deg\)/);
+      // Base rotation (-45deg) added to toValue (90deg) = 45deg
+      expect(css).toMatch(/100%\s*\{\s*transform:\s*rotate\(45deg\)/);
+    });
+  });
 });
 

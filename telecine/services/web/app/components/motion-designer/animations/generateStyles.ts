@@ -114,12 +114,36 @@ export function getAnimationMetadata(element: ElementNode): AnimationMetadata[] 
   return metadata;
 }
 
-function convertToTransformIfNeeded(property: string, value: string): { prop: string; val: string } {
+/**
+ * Converts animation property/value to CSS property/value, adding base rotation for rotate animations.
+ * This is the single place where base rotation is added to animation values.
+ */
+function convertToTransformIfNeeded(
+  property: string, 
+  value: string, 
+  baseRotation: number = 0
+): { prop: string; val: string } {
+  // Add base rotation to rotate animation values
+  let finalValue = value;
+  if (property === "rotate" && baseRotation !== 0) {
+    const match = value.match(/(-?\d+\.?\d*)(deg|rad)?/);
+    if (match) {
+      const numValue = parseFloat(match[1]);
+      const unit = match[2] || "deg";
+      let valueDegrees = numValue;
+      if (unit === "rad") {
+        valueDegrees = numValue * (180 / Math.PI);
+      }
+      const totalDegrees = valueDegrees + baseRotation;
+      finalValue = `${totalDegrees}deg`;
+    }
+  }
+  
   const transformFn = TRANSFORM_FUNCTIONS[property];
   if (transformFn) {
-    return { prop: "transform", val: transformFn(value) };
+    return { prop: "transform", val: transformFn(finalValue) };
   }
-  return { prop: property, val: value };
+  return { prop: property, val: finalValue };
 }
 
 function generateMergedKeyframes(
@@ -144,6 +168,9 @@ function generateMergedKeyframes(
   // Use the first animation's index for the merged animation name
   const animationName = `animation-${element.id}-${first.index}`;
   
+  // Get base rotation for rotate animations
+  const baseRotation = element.props.rotation ?? 0;
+  
   // Collect all keyframe points across all animations
   const keyframePoints: Array<{ timeMs: number; value: string; property: string }> = [];
   
@@ -153,9 +180,9 @@ function generateMergedKeyframes(
     
     // Get keyframe values for this animation
     if (anim.fromValue !== undefined && anim.toValue !== undefined) {
-      // Simple from/to animation
-      const from = convertToTransformIfNeeded(anim.property, anim.fromValue);
-      const to = convertToTransformIfNeeded(anim.property, anim.toValue);
+      // Simple from/to animation - base rotation added in convertToTransformIfNeeded
+      const from = convertToTransformIfNeeded(anim.property, anim.fromValue, baseRotation);
+      const to = convertToTransformIfNeeded(anim.property, anim.toValue, baseRotation);
       
       keyframePoints.push({
         timeMs: animStart,
@@ -168,10 +195,10 @@ function generateMergedKeyframes(
         property: to.prop,
       });
     } else if (anim.keyframes && anim.keyframes.length > 0) {
-      // Complex keyframes animation
+      // Complex keyframes animation - base rotation added in convertToTransformIfNeeded
       for (const kf of anim.keyframes) {
         const timeMs = animStart + (kf.time * anim.duration);
-        const converted = convertToTransformIfNeeded(anim.property, kf.value);
+        const converted = convertToTransformIfNeeded(anim.property, kf.value, baseRotation);
         keyframePoints.push({
           timeMs,
           value: converted.val,
@@ -179,9 +206,9 @@ function generateMergedKeyframes(
         });
       }
     } else {
-      // Fallback: use fromValue or toValue or default
+      // Fallback: use fromValue or toValue or default - base rotation added in convertToTransformIfNeeded
       const value = anim.fromValue || anim.toValue || "0";
-      const converted = convertToTransformIfNeeded(anim.property, value);
+      const converted = convertToTransformIfNeeded(anim.property, value, baseRotation);
       keyframePoints.push({
         timeMs: animStart,
         value: converted.val,
@@ -240,18 +267,20 @@ function generateMergedKeyframes(
         
         if (timeMs < animStart && (anim.fillMode === "backwards" || anim.fillMode === "both")) {
           const fromValue = anim.fromValue || "0";
-          const transformFn = TRANSFORM_FUNCTIONS[anim.property];
-          if (transformFn) {
-            transformMap.set(anim.property, transformFn(fromValue));
+          const converted = convertToTransformIfNeeded(anim.property, fromValue, baseRotation);
+          if (converted.prop === "transform") {
+            // converted.val already has the transform function applied (e.g., "rotate(45deg)")
+            transformMap.set(anim.property, converted.val);
           }
           if (!controllingAnim) {
             controllingAnim = anim;
           }
         } else if (timeMs > animEnd && (anim.fillMode === "forwards" || anim.fillMode === "both")) {
           const toValue = anim.toValue || "1";
-          const transformFn = TRANSFORM_FUNCTIONS[anim.property];
-          if (transformFn) {
-            transformMap.set(anim.property, transformFn(toValue));
+          const converted = convertToTransformIfNeeded(anim.property, toValue, baseRotation);
+          if (converted.prop === "transform") {
+            // converted.val already has the transform function applied (e.g., "rotate(90deg)")
+            transformMap.set(anim.property, converted.val);
           }
           if (!controllingAnim) {
             controllingAnim = anim;
@@ -284,6 +313,7 @@ function generateMergedKeyframes(
             } else {
               value = progress < 0.5 ? from : to;
             }
+            // Base rotation will be added in convertToTransformIfNeeded below
           } else if (anim.keyframes && anim.keyframes.length > 0) {
             const kfIndex = anim.keyframes.findIndex(
               (kf, idx) => {
@@ -315,14 +345,17 @@ function generateMergedKeyframes(
             } else {
               value = anim.keyframes[anim.keyframes.length - 1]?.value || "0";
             }
+            // Base rotation will be added in convertToTransformIfNeeded below
           } else {
             value = anim.fromValue || anim.toValue || "0";
+            // Base rotation will be added in convertToTransformIfNeeded below
           }
           
-          const transformFn = TRANSFORM_FUNCTIONS[anim.property];
-          if (transformFn) {
+          // Convert to transform and add base rotation if needed
+          const converted = convertToTransformIfNeeded(anim.property, value, baseRotation);
+          if (converted.prop === "transform") {
             // Active animations override fill mode values for the same property
-            transformMap.set(anim.property, transformFn(value));
+            transformMap.set(anim.property, converted.val);
           }
           if (!controllingAnim) {
             controllingAnim = anim;
@@ -574,12 +607,16 @@ function generateKeyframes(
 ): string {
   const animationName = `animation-${element.id}-${index}`;
   
+  // Get base rotation for rotate animations
+  const baseRotation = animation.property === "rotate" ? (element.props.rotation ?? 0) : 0;
+  
   let keyframeRules: string;
   
   // If fromValue/toValue are specified, use simple 0-100% animation
   if (animation.fromValue !== undefined && animation.toValue !== undefined) {
-    const from = convertToTransformIfNeeded(animation.property, animation.fromValue);
-    const to = convertToTransformIfNeeded(animation.property, animation.toValue);
+    // Base rotation added in convertToTransformIfNeeded
+    const from = convertToTransformIfNeeded(animation.property, animation.fromValue, baseRotation);
+    const to = convertToTransformIfNeeded(animation.property, animation.toValue, baseRotation);
     keyframeRules = `  0% { ${from.prop}: ${from.val}; }\n  100% { ${to.prop}: ${to.val}; }`;
   } 
   // Otherwise use the keyframes array for complex animations
@@ -587,7 +624,8 @@ function generateKeyframes(
     keyframeRules = animation.keyframes
       .map((kf) => {
         const percent = Math.round(kf.time * 100);
-        const converted = convertToTransformIfNeeded(animation.property, kf.value);
+        // Base rotation added in convertToTransformIfNeeded
+        const converted = convertToTransformIfNeeded(animation.property, kf.value, baseRotation);
         return `  ${percent}% { ${converted.prop}: ${converted.val}; }`;
       })
       .join("\n");
@@ -595,7 +633,8 @@ function generateKeyframes(
   // Fallback: if neither are specified, create a simple 0-100% with same value
   else {
     const value = animation.fromValue || animation.toValue || "0";
-    const converted = convertToTransformIfNeeded(animation.property, value);
+    // Base rotation added in convertToTransformIfNeeded
+    const converted = convertToTransformIfNeeded(animation.property, value, baseRotation);
     keyframeRules = `  0% { ${converted.prop}: ${converted.val}; }\n  100% { ${converted.prop}: ${converted.val}; }`;
   }
 
