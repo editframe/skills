@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import type { ElementNode, MotionDesignerState } from "~/lib/motion-designer/types";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
+import { hasRotateAnimations, parseRotationFromTransform } from "../rendering/styleGenerators/rotationUtils";
 
 interface ChildElementClickOverlayProps {
   element: ElementNode;
@@ -30,7 +31,9 @@ export function ChildElementClickOverlay({
   const overlayRef = useRef<HTMLDivElement>(null);
   const dimensionsRef = useRef({ width: 0, height: 0 });
   const positionRef = useRef({ x: 0, y: 0 });
+  const computedRotationRef = useRef<number | null>(null);
   const [, forceUpdate] = useState({});
+  const hasRotateAnims = hasRotateAnimations(element);
 
   // Continuously measure element using RAF to get actual DOM position
   // This matches the positioning logic from TransformHandles
@@ -115,6 +118,19 @@ export function ChildElementClickOverlay({
           const overlayX = elementCenterOverlayX - screenWidth / 2;
           const overlayY = elementCenterOverlayY - screenHeight / 2;
           
+          // Read computed rotation from DOM when rotate animations are active
+          if (hasRotateAnims) {
+            const computedStyle = window.getComputedStyle(contentElement);
+            const transform = computedStyle.transform;
+            const computedRot = parseRotationFromTransform(transform);
+            if (computedRot !== computedRotationRef.current) {
+              computedRotationRef.current = computedRot;
+              forceUpdate({});
+            }
+          } else {
+            computedRotationRef.current = null;
+          }
+          
           // Update if position or dimensions changed (with larger threshold to reduce jitter)
           const positionChanged = 
             Math.abs(positionRef.current.x - overlayX) > 1 ||
@@ -143,7 +159,7 @@ export function ChildElementClickOverlay({
     rafId = requestAnimationFrame(updateMeasurements);
     
     return () => cancelAnimationFrame(rafId);
-  }, [element.id, element.props.position, element.props.size, state, canvasScale, canvasTranslateX, canvasTranslateY, isSelected]);
+  }, [element.id, element.props.position, element.props.size, state, canvasScale, canvasTranslateX, canvasTranslateY, isSelected, hasRotateAnims]);
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent canvas pan/zoom and timegroup selection
@@ -215,7 +231,10 @@ export function ChildElementClickOverlay({
   // Use element props for size (source of truth), fallback to measured dimensions if not set
   const overlayWidth = element.props.size?.width ?? dimensionsRef.current.width;
   const overlayHeight = element.props.size?.height ?? dimensionsRef.current.height;
-  const currentRotation = element.props.rotation ?? 0;
+  // Use computed rotation from DOM when rotate animations are active, otherwise use design property
+  const currentRotation = hasRotateAnims && computedRotationRef.current !== null
+    ? computedRotationRef.current
+    : element.props.rotation ?? 0;
   
   // Position overlay using actual DOM measurements
   // positionRef.current contains overlay layer coordinates (already converted from screen coords)

@@ -4,6 +4,7 @@ import { getActiveRootTimegroupId } from "~/lib/motion-designer/utils";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
 import { PlayLoopButton } from "../controls/PlayLoopButton";
 import { PlayPauseButton } from "../controls/PlayPauseButton";
+import { hasRotateAnimations, parseRotationFromTransform } from "../rendering/styleGenerators/rotationUtils";
 
 interface CanvasRootTimegroupOverlayProps {
   element: ElementNode;
@@ -193,7 +194,22 @@ export function CanvasRootTimegroupOverlay({
     // Use element props as source of truth
     const currentSize = element.props?.size || { width: 960, height: 540 };
     const currentPosition = element.props?.canvasPosition || { x: 100, y: 100 };
-    const currentRotation = element.props?.rotation || 0;
+    // Use computed rotation from DOM when rotate animations are active, otherwise use design property
+    const hasRotateAnims = hasRotateAnimations(element);
+    let currentRotation = element.props?.rotation || 0;
+    if (hasRotateAnims) {
+      const contentElement = document.querySelector(
+        `[data-element-id="${element.id}"]`,
+      ) as HTMLElement;
+      if (contentElement) {
+        const computedStyle = window.getComputedStyle(contentElement);
+        const transform = computedStyle.transform;
+        const computedRot = parseRotationFromTransform(transform);
+        if (computedRot !== 0) {
+          currentRotation = computedRot;
+        }
+      }
+    }
     const rotationRadians = (currentRotation * Math.PI) / 180;
     
     // Get opposite corner (the one that should stay fixed)
