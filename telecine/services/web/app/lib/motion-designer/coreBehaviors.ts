@@ -112,28 +112,74 @@ const TemporalCanMoveToRoot: MoveBehavior = {
   },
 };
 
-/**
- * Ensures non-temporal elements can only be children of timegroups (or root if temporal).
- */
-const NonTemporalInTimegroup: MoveBehavior = {
+type ParentType = "div" | "timegroup" | "root";
+type ChildType = "div" | "text" | "image" | "video" | "audio" | "timegroup";
+
+interface NestingRule {
+  parent: ParentType;
+  child: ChildType;
+  allowed: boolean;
+}
+
+const NESTING_RULES: NestingRule[] = [
+  { parent: "root", child: "timegroup", allowed: true },
+  { parent: "root", child: "div", allowed: false },
+  { parent: "root", child: "text", allowed: true },
+  { parent: "root", child: "image", allowed: true },
+  { parent: "root", child: "video", allowed: true },
+  { parent: "root", child: "audio", allowed: true },
+  { parent: "div", child: "timegroup", allowed: false },
+  { parent: "div", child: "div", allowed: true },
+  { parent: "div", child: "text", allowed: true },
+  { parent: "div", child: "image", allowed: true },
+  { parent: "div", child: "video", allowed: true },
+  { parent: "div", child: "audio", allowed: true },
+  { parent: "timegroup", child: "timegroup", allowed: false },
+  { parent: "timegroup", child: "div", allowed: true },
+  { parent: "timegroup", child: "text", allowed: true },
+  { parent: "timegroup", child: "image", allowed: true },
+  { parent: "timegroup", child: "video", allowed: true },
+  { parent: "timegroup", child: "audio", allowed: true },
+];
+
+function getParentType(parentId: string | null, state: MotionDesignerState): ParentType {
+  if (parentId === null) {
+    return "root";
+  }
+  const parent = state.composition.elements[parentId];
+  if (!parent) return "root";
+  if (parent.type === "div") return "div";
+  if (parent.type === "timegroup") return "timegroup";
+  return "root";
+}
+
+function getChildType(elementId: string, state: MotionDesignerState): ChildType | null {
+  const element = state.composition.elements[elementId];
+  if (!element) return null;
+  const type = element.type;
+  if (type === "div" || type === "text" || type === "image" || type === "video" || type === "audio" || type === "timegroup") {
+    return type;
+  }
+  return null;
+}
+
+function isNestingAllowed(
+  parentType: ParentType,
+  childType: ChildType,
+): boolean {
+  const rule = NESTING_RULES.find(
+    (r) => r.parent === parentType && r.child === childType,
+  );
+  return rule?.allowed ?? false;
+}
+
+const NestingRulesBehavior: MoveBehavior = {
   canMove(elementId, newParentId, newIndex, state) {
-    const element = state.composition.elements[elementId];
-    if (!element) return false;
+    const childType = getChildType(elementId, state);
+    if (!childType) return false;
 
-    if (!isTemporalElement(element)) {
-      if (newParentId === null) {
-        return false;
-      }
-
-      const newParent = state.composition.elements[newParentId];
-      if (!newParent) return false;
-
-      if (newParent.type !== "timegroup") {
-        return false;
-      }
-    }
-
-    return true;
+    const parentType = getParentType(newParentId, state);
+    return isNestingAllowed(parentType, childType);
   },
 };
 
@@ -145,6 +191,6 @@ export function registerCoreBehaviors(): void {
   behaviorRegistry.register("TimegroupRootOnly", TimegroupRootOnly);
   behaviorRegistry.register("DivCanHaveChildren", DivCanHaveChildren);
   behaviorRegistry.register("TemporalCanMoveToRoot", TemporalCanMoveToRoot);
-  behaviorRegistry.register("NonTemporalInTimegroup", NonTemporalInTimegroup);
+  behaviorRegistry.register("NestingRules", NestingRulesBehavior);
 }
 
