@@ -37,7 +37,7 @@ export const visualProperties: PropertySectionConfig[] = [
     id: "fill",
     title: "Fill",
     icon: <PaintBucket className="w-3.5 h-3.5" />,
-    defaultExpanded: false,
+    defaultExpanded: true,
     fields: [
       {
         type: "checkbox",
@@ -56,7 +56,7 @@ export const visualProperties: PropertySectionConfig[] = [
     id: "stroke",
     title: "Stroke",
     icon: <Pen className="w-3.5 h-3.5" />,
-    defaultExpanded: false,
+    defaultExpanded: true,
     fields: [
       {
         type: "checkbox",
@@ -83,7 +83,7 @@ export const visualProperties: PropertySectionConfig[] = [
     id: "effects",
     title: "Effects",
     icon: <Sparkle className="w-3.5 h-3.5" />,
-    defaultExpanded: false,
+    defaultExpanded: true,
     fields: [
       {
         type: "checkbox",

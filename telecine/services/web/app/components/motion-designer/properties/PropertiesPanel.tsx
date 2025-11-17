@@ -23,6 +23,13 @@ export function PropertiesPanel({ state }: PropertiesPanelProps) {
     }
   }, [state.ui.selectedAnimationId]);
 
+  // Switch to Design tab when a layer is selected (unless an animation is selected)
+  useEffect(() => {
+    if (state.ui.selectedElementId && !state.ui.selectedAnimationId) {
+      setActiveTab("design");
+    }
+  }, [state.ui.selectedElementId, state.ui.selectedAnimationId]);
+
   if (!selectedElement) {
     return (
       <div className="w-80 bg-gray-800 border-l border-gray-700 flex items-center justify-center text-gray-500">

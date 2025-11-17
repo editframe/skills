@@ -10,7 +10,7 @@ export const timegroupProperties: PropertySectionConfig[] = [
     id: "timegroup",
     title: "Timegroup",
     icon: <FilmStrip className="w-3.5 h-3.5" />,
-    defaultExpanded: false,
+    defaultExpanded: true,
     visible: isTimegroup,
     fields: [
       {
