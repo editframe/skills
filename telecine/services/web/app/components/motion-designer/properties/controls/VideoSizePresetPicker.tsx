@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { CaretDown } from "@phosphor-icons/react";
 import type { ElementSize, LegacyElementSize } from "~/lib/motion-designer/sizingTypes";
 import { normalizeSize } from "~/lib/motion-designer/sizingTypes";
 
@@ -31,6 +32,9 @@ interface VideoSizePresetPickerProps {
 }
 
 export function VideoSizePresetPicker({ label, size, onChange }: VideoSizePresetPickerProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   const handlePresetSelect = (preset: VideoSizePreset) => {
     onChange({
       widthMode: "fixed",
@@ -38,6 +42,7 @@ export function VideoSizePresetPicker({ label, size, onChange }: VideoSizePreset
       heightMode: "fixed",
       heightValue: preset.height,
     });
+    setIsOpen(false);
   };
 
   // Normalize size and check if current size matches any preset
@@ -48,37 +53,72 @@ export function VideoSizePresetPicker({ label, size, onChange }: VideoSizePreset
       )
     : null;
 
-  return (
-    <div className="space-y-2">
-      <label className="text-[10px] text-gray-500 font-normal">{label}</label>
-      <div className="grid grid-cols-2 gap-1.5">
-        {COMMON_VIDEO_SIZES.map((preset) => {
-          const isSelected =
-            currentPreset?.width === preset.width &&
-            currentPreset?.height === preset.height;
+  const displayText = currentPreset
+    ? `${currentPreset.label} (${currentPreset.width}×${currentPreset.height})`
+    : "Select size preset";
 
-          return (
-            <button
-              key={`${preset.width}x${preset.height}`}
-              onClick={() => handlePresetSelect(preset)}
-              className={`
-                px-2 py-1.5 rounded text-[9px] font-medium text-left
-                transition-colors
-                ${
-                  isSelected
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 hover:text-gray-300"
-                }
-              `}
-              title={`${preset.label} (${preset.width}×${preset.height})`}
-            >
-              <div className="font-semibold">{preset.label}</div>
-              <div className="text-[8px] opacity-75">
-                {preset.width}×{preset.height}
-              </div>
-            </button>
-          );
-        })}
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }
+  }, [isOpen]);
+
+  return (
+    <div className="flex items-center gap-1" ref={dropdownRef}>
+      <label className="text-[10px] text-gray-500 w-10 font-normal flex-shrink-0">
+        {label}
+      </label>
+      <div className="flex-1 relative">
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="w-full h-5 px-1.5 text-[10px] bg-gray-900/50 border border-gray-700/30 rounded-sm text-white hover:border-gray-600/50 focus:border-blue-500/50 focus:bg-gray-900 focus:outline-none transition-colors flex items-center justify-between"
+        >
+          <span className="truncate">{displayText}</span>
+          <CaretDown
+            className={`h-3 w-3 text-gray-500 transition-transform flex-shrink-0 ml-1 ${
+              isOpen ? "rotate-180" : "rotate-0"
+            }`}
+          />
+        </button>
+        {isOpen && (
+          <div className="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-700/50 rounded-sm shadow-lg max-h-64 overflow-y-auto">
+            {COMMON_VIDEO_SIZES.map((preset) => {
+              const isSelected =
+                currentPreset?.width === preset.width &&
+                currentPreset?.height === preset.height;
+
+              return (
+                <button
+                  key={`${preset.width}x${preset.height}`}
+                  onClick={() => handlePresetSelect(preset)}
+                  className={`
+                    w-full px-2 py-1.5 text-left text-[10px] transition-colors
+                    ${
+                      isSelected
+                        ? "bg-blue-600 text-white"
+                        : "text-gray-400 hover:bg-gray-700/50 hover:text-gray-300"
+                    }
+                  `}
+                >
+                  <div className="font-semibold">{preset.label}</div>
+                  <div className="text-[9px] opacity-75">
+                    {preset.width}×{preset.height}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
