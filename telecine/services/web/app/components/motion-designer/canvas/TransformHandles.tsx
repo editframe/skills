@@ -1,5 +1,7 @@
 import React, { useRef, useEffect, useLayoutEffect, useState } from "react";
 import type { ElementNode, MotionDesignerState } from "~/lib/motion-designer/types";
+import { getSizeDimensions, convertToFixedSize } from "~/lib/motion-designer/sizingUtils";
+import { normalizeSize, isLegacySize, type ElementSize } from "~/lib/motion-designer/sizingTypes";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
 import { hasRotateAnimations, parseRotationFromTransform } from "../rendering/styleGenerators/rotationUtils";
 
@@ -233,8 +235,9 @@ export function TransformHandles({
 
   const currentX = element.props.position?.x ?? 0;
   const currentY = element.props.position?.y ?? 0;
-  const currentWidth = element.props.size?.width ?? dimensionsRef.current.width;
-  const currentHeight = element.props.size?.height ?? dimensionsRef.current.height;
+  const sizeDimensions = getSizeDimensions(element.props?.size);
+  const currentWidth = sizeDimensions.width || dimensionsRef.current.width;
+  const currentHeight = sizeDimensions.height || dimensionsRef.current.height;
   // Use computed rotation from DOM when rotate animations are active, otherwise use design property
   const currentRotation = hasRotateAnims && computedRotation !== null
     ? computedRotation
@@ -257,21 +260,26 @@ export function TransformHandles({
     setIsResizing(handle);
     setDragStart({ x: e.clientX, y: e.clientY });
     
+    // Convert to fixed mode if currently in hug/fill mode (resize converts to fixed)
+    const fixedSize = convertToFixedSize(element.props?.size, currentWidth, currentHeight);
+    const fixedWidth = fixedSize.widthValue;
+    const fixedHeight = fixedSize.heightValue;
+    
     // Store initial state for corner-based resize (keeps opposite corner fixed)
     const oppositeCorner = getOppositeCorner(handle);
     const rotationRadians = (currentRotation * Math.PI) / 180;
     const initialCorner = getCornerPoint(
       currentX,
       currentY,
-      currentWidth,
-      currentHeight,
+      fixedWidth,
+      fixedHeight,
       rotationRadians,
       oppositeCorner.x,
       oppositeCorner.y,
     );
     
     setResizeStartCorner(initialCorner);
-    setResizeStartSize({ width: currentWidth, height: currentHeight });
+    setResizeStartSize({ width: fixedWidth, height: fixedHeight });
     setResizeStartPosition({ x: currentX, y: currentY });
     hasDraggedRef.current = false;
   };
@@ -312,8 +320,9 @@ export function TransformHandles({
       // Read current values from element props to avoid stale closure values
       const currentElementX = element.props.position?.x ?? 0;
       const currentElementY = element.props.position?.y ?? 0;
-      const currentElementWidth = element.props.size?.width ?? dimensionsRef.current.width;
-      const currentElementHeight = element.props.size?.height ?? dimensionsRef.current.height;
+      const currentElementSizeDimensions = getSizeDimensions(element.props?.size);
+      const currentElementWidth = currentElementSizeDimensions.width || dimensionsRef.current.width;
+      const currentElementHeight = currentElementSizeDimensions.height || dimensionsRef.current.height;
       const currentElementRotation = element.props.rotation ?? 0;
       
       if (isDragging && dragStart) {
@@ -388,9 +397,23 @@ export function TransformHandles({
         // Check if element is in a flex container
         const inFlexContainer = isParentFlexContainer(element, state);
         
-        // Prepare update object
+        // Determine which dimensions are being resized based on the handle
+        const isResizingWidth = isResizing.includes("e") || isResizing.includes("w");
+        const isResizingHeight = isResizing.includes("n") || isResizing.includes("s");
+        
+        // Get current sizing modes to preserve non-resized dimensions
+        const normalizedSize = normalizeSize(element.props?.size);
+        const currentWidthMode = normalizedSize?.widthMode || "fixed";
+        const currentHeightMode = normalizedSize?.heightMode || "fixed";
+        
+        // Only convert resized dimensions to fixed, preserve others
         const updates: Partial<ElementNode["props"]> = {
-          size: { width: newWidth, height: newHeight },
+          size: {
+            widthMode: isResizingWidth ? "fixed" : currentWidthMode,
+            widthValue: newWidth,
+            heightMode: isResizingHeight ? "fixed" : currentHeightMode,
+            heightValue: newHeight,
+          },
         };
 
         // Only adjust position if NOT in a flex container
@@ -506,8 +529,9 @@ export function TransformHandles({
 
   // Use element props for size (source of truth), fallback to measured dimensions if not set
   // This ensures Design panel changes are immediately reflected in the overlay
-  const overlayWidth = element.props.size?.width ?? dimensionsRef.current.width;
-  const overlayHeight = element.props.size?.height ?? dimensionsRef.current.height;
+  const overlaySizeDimensions = getSizeDimensions(element.props?.size);
+  const overlayWidth = overlaySizeDimensions.width || dimensionsRef.current.width;
+  const overlayHeight = overlaySizeDimensions.height || dimensionsRef.current.height;
   
   // Position is set directly on DOM in useLayoutEffect
   // Use state values for initial render (will be updated synchronously in useLayoutEffect)
@@ -542,8 +566,24 @@ export function TransformHandles({
         }}
       />
 
-      {/* Resize handles */}
-      {["nw", "n", "ne", "e", "se", "s", "sw", "w"].map((handle) => {
+      {/* Resize handles - only show for fixed sizing modes */}
+      {(() => {
+        const normalizedSize = normalizeSize(element.props?.size);
+        const canResizeWidth = !normalizedSize || isLegacySize(normalizedSize) || normalizedSize.widthMode === "fixed";
+        const canResizeHeight = !normalizedSize || isLegacySize(normalizedSize) || normalizedSize.heightMode === "fixed";
+        
+        const handles = [
+          { position: "nw" as const, visible: canResizeWidth && canResizeHeight },
+          { position: "n" as const, visible: canResizeHeight },
+          { position: "ne" as const, visible: canResizeWidth && canResizeHeight },
+          { position: "e" as const, visible: canResizeWidth },
+          { position: "se" as const, visible: canResizeWidth && canResizeHeight },
+          { position: "s" as const, visible: canResizeHeight },
+          { position: "sw" as const, visible: canResizeWidth && canResizeHeight },
+          { position: "w" as const, visible: canResizeWidth },
+        ];
+        
+        return handles.filter(h => h.visible).map(({ position: handle }) => {
         const handleStyles: React.CSSProperties = {
           width: "8px",
           height: "8px",
@@ -600,17 +640,18 @@ export function TransformHandles({
             break;
         }
 
-        return (
-          <div
-            key={handle}
-            style={handleStyles}
-            onMouseDown={(e) => {
-              e.stopPropagation(); // Prevent parent overlays from intercepting
-              handleResizeMouseDown(e, handle);
-            }}
-          />
-        );
-      })}
+          return (
+            <div
+              key={handle}
+              style={handleStyles}
+              onMouseDown={(e) => {
+                e.stopPropagation(); // Prevent parent overlays from intercepting
+                handleResizeMouseDown(e, handle);
+              }}
+            />
+          );
+        });
+      })()}
 
       {/* Rotate handle */}
       {showRotateHandle && (

@@ -1,6 +1,7 @@
 import React from "react";
 import type { MotionDesignerState } from "~/lib/motion-designer/types";
 import { getActiveRootTimegroupId } from "~/lib/motion-designer/utils";
+import { createDefaultSize, createDefaultSizeForFlexChild, isFlexChild } from "~/lib/motion-designer/defaultSizes";
 import { usePanZoom } from "./usePanZoom";
 import { CanvasRootTimegroup } from "./CanvasRootTimegroup";
 import { CanvasRootTimegroupOverlay } from "./CanvasRootTimegroupOverlay";
@@ -113,7 +114,7 @@ export function Canvas({ state }: CanvasProps) {
                   mode: "fixed",
                   duration: "5s",
                   canvasPosition: { x: finalX, y: finalY },
-                  size: { width, height },
+                  size: createDefaultSize("timegroup", width, height),
                 },
                 animations: [],
               },
@@ -123,11 +124,20 @@ export function Canvas({ state }: CanvasProps) {
             // Other elements go inside the active root timegroup
             const activeRootTimegroupId = getActiveRootTimegroupId(state);
             if (activeRootTimegroupId) {
+              const parentElement = state.composition.elements[activeRootTimegroupId];
+              const isParentFlex = parentElement?.props.display === "flex";
+              
               const defaultProps: any = {
                 position: { x: finalX, y: finalY },
-                size: { width: finalWidth, height: finalHeight },
                 fill: { enabled: true, color: "#FFFFFF" },
               };
+
+              // Use appropriate default size based on context
+              if (isParentFlex) {
+                defaultProps.size = createDefaultSizeForFlexChild(elementType);
+              } else {
+                defaultProps.size = createDefaultSize(elementType, finalWidth, finalHeight);
+              }
 
               if (elementType === "div") {
                 defaultProps.fill = { enabled: true, color: "#9333EA" };
@@ -189,7 +199,7 @@ export function Canvas({ state }: CanvasProps) {
               mode: "fixed",
               duration: "5s",
               canvasPosition: { x: canvasX, y: canvasY },
-              size: { width: 960, height: 540 },
+              size: createDefaultSize("timegroup", 960, 540),
             },
             animations: [],
           },
@@ -199,16 +209,27 @@ export function Canvas({ state }: CanvasProps) {
         // Other elements go inside the active root timegroup
         const activeRootTimegroupId = getActiveRootTimegroupId(state);
         if (activeRootTimegroupId) {
+          const parentElement = state.composition.elements[activeRootTimegroupId];
+          const isParentFlex = parentElement?.props.display === "flex";
+          
           const defaultProps: any = {
             position: { x: canvasX, y: canvasY },
-            size: { width: 200, height: 100 },
             fill: { enabled: true, color: "#FFFFFF" },
           };
 
+          // Use appropriate default size based on context and element type
+          if (isParentFlex) {
+            defaultProps.size = createDefaultSizeForFlexChild(elementType);
+          } else {
+            if (elementType === "image" || elementType === "video") {
+              defaultProps.size = createDefaultSize(elementType, 400, 300);
+            } else {
+              defaultProps.size = createDefaultSize(elementType, 200, 100);
+            }
+          }
+
           if (elementType === "div") {
             defaultProps.fill = { enabled: true, color: "#9333EA" };
-          } else if (elementType === "image" || elementType === "video") {
-            defaultProps.size = { width: 400, height: 300 };
           }
           
           actions.addElement(
@@ -252,6 +273,9 @@ export function Canvas({ state }: CanvasProps) {
       if (state.ui.placementMode === "text") {
         const activeRootTimegroupId = getActiveRootTimegroupId(state);
         if (activeRootTimegroupId) {
+          const parentElement = state.composition.elements[activeRootTimegroupId];
+          const isParentFlex = parentElement?.props.display === "flex";
+          
           const defaultProps: any = {
             position: { x: canvasX, y: canvasY },
             content: "Text",
@@ -262,6 +286,9 @@ export function Canvas({ state }: CanvasProps) {
             stagger: "0ms",
             easing: "linear",
           };
+
+          // Text elements default to hug mode (size to content)
+          defaultProps.size = createDefaultSize("text", 0, 0);
           
           actions.addElement(
             {
@@ -344,7 +371,7 @@ export function Canvas({ state }: CanvasProps) {
                   mode: "fixed",
                   duration: "5s",
                   canvasPosition: { x: finalX, y: finalY },
-                  size: { width, height },
+                  size: createDefaultSize("timegroup", width, height),
                 },
                 animations: [],
               },
@@ -356,11 +383,20 @@ export function Canvas({ state }: CanvasProps) {
             if (activeRootTimegroupId) {
               // Only create if drag was significant
               if (finalWidth > 10 && finalHeight > 10) {
+                const parentElement = state.composition.elements[activeRootTimegroupId];
+                const isParentFlex = parentElement?.props.display === "flex";
+                
                 const defaultProps: any = {
                   position: { x: finalX, y: finalY },
-                  size: { width: finalWidth, height: finalHeight },
                   fill: { enabled: true, color: "#FFFFFF" },
                 };
+
+                // Use appropriate default size based on context
+                if (isParentFlex) {
+                  defaultProps.size = createDefaultSizeForFlexChild(elementType);
+                } else {
+                  defaultProps.size = createDefaultSize(elementType, finalWidth, finalHeight);
+                }
 
                 if (elementType === "div") {
                   defaultProps.fill = { enabled: true, color: "#9333EA" };

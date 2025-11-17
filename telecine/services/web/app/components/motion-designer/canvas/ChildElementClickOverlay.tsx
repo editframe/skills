@@ -1,5 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import type { ElementNode, MotionDesignerState } from "~/lib/motion-designer/types";
+import { createDefaultSize, createDefaultSizeForFlexChild } from "~/lib/motion-designer/defaultSizes";
+import { getSizeDimensions } from "~/lib/motion-designer/sizingUtils";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
 import { hasRotateAnimations, parseRotationFromTransform } from "../rendering/styleGenerators/rotationUtils";
 import { ElementContextMenu } from "./ElementContextMenu";
@@ -187,11 +189,23 @@ export function ChildElementClickOverlay({
         // Set default props based on element type
         const defaultProps: any = {
           position: { x: elementX, y: elementY },
-          size: { width: 200, height: 100 },
           fill: { enabled: true, color: "#FFFFFF" },
         };
 
         const elementType = state.ui.placementMode as ElementNode["type"];
+        const isParentFlex = element.props.display === "flex";
+        
+        // Use appropriate default size based on context
+        if (isParentFlex) {
+          defaultProps.size = createDefaultSizeForFlexChild(elementType);
+        } else {
+          if (elementType === "image" || elementType === "video") {
+            defaultProps.size = createDefaultSize(elementType, 400, 300);
+          } else {
+            defaultProps.size = createDefaultSize(elementType, 200, 100);
+          }
+        }
+
         if (elementType === "text") {
           defaultProps.content = "Text";
           defaultProps.fontSize = 32;
@@ -200,10 +214,10 @@ export function ChildElementClickOverlay({
           defaultProps.split = "word";
           defaultProps.stagger = "0ms";
           defaultProps.easing = "linear";
+          // Text elements always use hug mode
+          defaultProps.size = createDefaultSize("text", 0, 0);
         } else if (elementType === "div") {
           defaultProps.fill = { enabled: true, color: "#9333EA" };
-        } else if (elementType === "image" || elementType === "video") {
-          defaultProps.size = { width: 400, height: 300 };
         }
         
         // Add element as child of the clicked container
@@ -255,8 +269,9 @@ export function ChildElementClickOverlay({
   if (isSelected) return null;
 
   // Use element props for size (source of truth), fallback to measured dimensions if not set
-  const overlayWidth = element.props.size?.width ?? dimensionsRef.current.width;
-  const overlayHeight = element.props.size?.height ?? dimensionsRef.current.height;
+  const sizeDimensions = getSizeDimensions(element.props?.size);
+  const overlayWidth = sizeDimensions.width || dimensionsRef.current.width;
+  const overlayHeight = sizeDimensions.height || dimensionsRef.current.height;
   // Use computed rotation from DOM when rotate animations are active, otherwise use design property
   const currentRotation = hasRotateAnims && computedRotationRef.current !== null
     ? computedRotationRef.current

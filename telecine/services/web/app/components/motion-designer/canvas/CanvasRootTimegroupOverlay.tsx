@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import type { MotionDesignerState, ElementNode } from "~/lib/motion-designer/types";
 import { getActiveRootTimegroupId } from "~/lib/motion-designer/utils";
+import { createDefaultSize, createDefaultSizeForFlexChild } from "~/lib/motion-designer/defaultSizes";
+import { getSizeDimensions, convertToFixedSize } from "~/lib/motion-designer/sizingUtils";
+import { normalizeSize, isLegacySize, type ElementSize } from "~/lib/motion-designer/sizingTypes";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
 import { PlayLoopButton } from "../controls/PlayLoopButton";
 import { PlayPauseButton } from "../controls/PlayPauseButton";
@@ -131,12 +134,28 @@ export function CanvasRootTimegroupOverlay({
         }
         
         // Create element at click position
+        const elementType = state.ui.placementMode as ElementNode["type"];
+        const isParentFlex = element.props.display === "flex";
+        
+        const defaultProps: any = {};
+        if (isParentFlex) {
+          defaultProps.size = createDefaultSizeForFlexChild(elementType);
+        } else {
+          if (elementType === "image" || elementType === "video") {
+            defaultProps.size = createDefaultSize(elementType, 400, 300);
+          } else if (elementType === "text") {
+            defaultProps.size = createDefaultSize("text", 0, 0);
+          } else {
+            defaultProps.size = createDefaultSize(elementType, 200, 100);
+          }
+        }
+        
         actions.addElement(
           {
-            type: state.ui.placementMode as ElementNode["type"],
+            type: elementType,
             parentId: element.id,
             childIds: [],
-            props: {},
+            props: defaultProps,
             animations: [],
           },
           element.id,
@@ -190,8 +209,15 @@ export function CanvasRootTimegroupOverlay({
     e.stopPropagation();
     e.preventDefault();
     
-    // Use element props as source of truth
-    const currentSize = element.props?.size || { width: 960, height: 540 };
+    // Get current dimensions (handles both legacy and new format)
+    const sizeDimensions = getSizeDimensions(element.props?.size);
+    const currentWidth = sizeDimensions.width || 960;
+    const currentHeight = sizeDimensions.height || 540;
+    
+    // Convert to fixed mode if currently in hug/fill mode (resize converts to fixed)
+    const fixedSize = convertToFixedSize(element.props?.size, currentWidth, currentHeight);
+    
+    const currentSize = { width: fixedSize.widthValue, height: fixedSize.heightValue };
     const currentPosition = element.props?.canvasPosition || { x: 100, y: 100 };
     // Use computed rotation from DOM when rotate animations are active, otherwise use design property
     const hasRotateAnims = hasRotateAnimations(element);
@@ -279,8 +305,23 @@ export function CanvasRootTimegroupOverlay({
       const finalY = startCanvasY + offsetY;
 
       // Update element directly - one-way data flow
+      // Determine which dimensions are being resized based on the handle
+      const isResizingWidth = handle.includes("e") || handle.includes("w");
+      const isResizingHeight = handle.includes("n") || handle.includes("s");
+      
+      // Get current sizing modes to preserve non-resized dimensions
+      const normalizedSize = normalizeSize(element.props?.size);
+      const currentWidthMode = normalizedSize?.widthMode || "fixed";
+      const currentHeightMode = normalizedSize?.heightMode || "fixed";
+      
+      // Only convert resized dimensions to fixed, preserve others
       actions.updateElement(element.id, {
-        size: { width: Math.round(constrainedWidth), height: Math.round(constrainedHeight) },
+        size: {
+          widthMode: isResizingWidth ? "fixed" : currentWidthMode,
+          widthValue: Math.round(constrainedWidth),
+          heightMode: isResizingHeight ? "fixed" : currentHeightMode,
+          heightValue: Math.round(constrainedHeight),
+        },
         canvasPosition: { x: Math.round(finalX), y: Math.round(finalY) },
       });
     };
@@ -344,21 +385,28 @@ export function CanvasRootTimegroupOverlay({
   // Overlay must be positioned and sized in screen coordinates
   // Since overlay parent only translates (no scale), we must apply scale here
   // Use element props as source of truth, fallback to measured dimensions
-  const elementSize = element.props?.size || dimensionsRef.current;
+  const sizeDimensions = getSizeDimensions(element.props?.size);
+  const elementWidth = sizeDimensions.width || dimensionsRef.current.width;
+  const elementHeight = sizeDimensions.height || dimensionsRef.current.height;
   const screenX = canvasPosition.x * canvasScale;
   const screenY = canvasPosition.y * canvasScale;
-  const screenWidth = elementSize.width * canvasScale;
-  const screenHeight = elementSize.height * canvasScale;
+  const screenWidth = elementWidth * canvasScale;
+  const screenHeight = elementHeight * canvasScale;
 
+  // Determine which resize handles should be visible based on sizing mode
+  const normalizedSize = normalizeSize(element.props?.size);
+  const canResizeWidth = !normalizedSize || isLegacySize(normalizedSize) || normalizedSize.widthMode === "fixed";
+  const canResizeHeight = !normalizedSize || isLegacySize(normalizedSize) || normalizedSize.heightMode === "fixed";
+  
   const resizeHandles = [
-    { position: "nw", cursor: "nwse-resize", style: { top: -4, left: -4 } },
-    { position: "n", cursor: "ns-resize", style: { top: -4, left: "50%", transform: "translateX(-50%)" } },
-    { position: "ne", cursor: "nesw-resize", style: { top: -4, right: -4 } },
-    { position: "e", cursor: "ew-resize", style: { top: "50%", right: -4, transform: "translateY(-50%)" } },
-    { position: "se", cursor: "nwse-resize", style: { bottom: -4, right: -4 } },
-    { position: "s", cursor: "ns-resize", style: { bottom: -4, left: "50%", transform: "translateX(-50%)" } },
-    { position: "sw", cursor: "nesw-resize", style: { bottom: -4, left: -4 } },
-    { position: "w", cursor: "ew-resize", style: { top: "50%", left: -4, transform: "translateY(-50%)" } },
+    { position: "nw" as const, cursor: "nwse-resize", style: { top: -4, left: -4 }, visible: canResizeWidth && canResizeHeight },
+    { position: "n" as const, cursor: "ns-resize", style: { top: -4, left: "50%", transform: "translateX(-50%)" }, visible: canResizeHeight },
+    { position: "ne" as const, cursor: "nesw-resize", style: { top: -4, right: -4 }, visible: canResizeWidth && canResizeHeight },
+    { position: "e" as const, cursor: "ew-resize", style: { top: "50%", right: -4, transform: "translateY(-50%)" }, visible: canResizeWidth },
+    { position: "se" as const, cursor: "nwse-resize", style: { bottom: -4, right: -4 }, visible: canResizeWidth && canResizeHeight },
+    { position: "s" as const, cursor: "ns-resize", style: { bottom: -4, left: "50%", transform: "translateX(-50%)" }, visible: canResizeHeight },
+    { position: "sw" as const, cursor: "nesw-resize", style: { bottom: -4, left: -4 }, visible: canResizeWidth && canResizeHeight },
+    { position: "w" as const, cursor: "ew-resize", style: { top: "50%", left: -4, transform: "translateY(-50%)" }, visible: canResizeWidth },
   ];
 
   return (
@@ -397,23 +445,25 @@ export function CanvasRootTimegroupOverlay({
             iconSize={12}
           />
           <span>
-            Timegroup · {duration} · {Math.round(elementSize.width)}×{Math.round(elementSize.height)}
+            Timegroup · {duration} · {Math.round(elementWidth)}×{Math.round(elementHeight)}
           </span>
         </div>
       )}
       
-      {(isActive || isSelected) && resizeHandles.map((handle) => (
-        <div
-          key={handle.position}
-          className="absolute w-3 h-3 bg-white border-2 border-blue-500 rounded-sm z-10"
-          style={{
-            ...handle.style,
-            cursor: handle.cursor,
-            pointerEvents: "auto",
-          }}
-          onMouseDown={(e) => handleResizeStart(e, handle.position)}
-        />
-      ))}
+      {(isActive || isSelected) && resizeHandles
+        .filter((handle) => handle.visible)
+        .map((handle) => (
+          <div
+            key={handle.position}
+            className="absolute w-3 h-3 bg-white border-2 border-blue-500 rounded-sm z-10"
+            style={{
+              ...handle.style,
+              cursor: handle.cursor,
+              pointerEvents: "auto",
+            }}
+            onMouseDown={(e) => handleResizeStart(e, handle.position)}
+          />
+        ))}
     </div>
   );
 }
