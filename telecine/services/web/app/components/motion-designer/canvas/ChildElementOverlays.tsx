@@ -37,13 +37,16 @@ export function ChildElementOverlays({
     <>
       {allChildren.map((child) => {
         const isSelected = state.ui.selectedElementId === child.id;
+        // Hide child overlays when parent is selected/active to avoid blocking parent's drag handles
+        const isParentSelected = child.parentId && state.ui.selectedElementId === child.parentId;
+        const isChildOfSelectedParent = isSelected || isParentSelected;
         return (
           <React.Fragment key={child.id}>
             {/* Click overlay for unselected elements */}
             <ChildElementClickOverlay
               element={child}
               state={state}
-              isSelected={isSelected}
+              isSelected={isChildOfSelectedParent}
               canvasScale={canvasScale}
               canvasTranslateX={canvasTranslateX}
               canvasTranslateY={canvasTranslateY}
