@@ -119,8 +119,18 @@ const buildInteractionProps = (
   mergedStyle: React.CSSProperties,
   handleClick: (e: MouseEvent) => void,
 ): Record<string, any> => {
-  // Explicitly exclude style from finalProps to ensure mergedStyle takes precedence
-  const { style: _, ...finalPropsWithoutStyle } = finalProps;
+  // Explicitly exclude style and CSS-only props from finalProps
+  // These should only be in styles, not as DOM attributes
+  const { 
+    style: _, 
+    alignItems, 
+    justifyItems, 
+    alignSelf, 
+    justifySelf,
+    flexDirection,
+    justifyContent,
+    ...finalPropsWithoutStyle 
+  } = finalProps;
   
   const baseProps = {
     ...finalPropsWithoutStyle,
@@ -254,43 +264,64 @@ export function ElementRenderer({
 
   // For timegroup elements, inject layout styles via CSS style element with !important
   // This ensures styles persist even when the web component's :host styles try to override them
+  // For video elements wrapped in ef-fit-scale, inject CSS to make canvas render at natural size
   const layoutStyleCSS = React.useMemo(() => {
-    if (element.type !== "timegroup" || !mergedStyle.display) {
-      return "";
-    }
+    if (element.type === "timegroup" && mergedStyle.display) {
+      const selector = `ef-timegroup[data-element-id="${element.id}"]`;
+      const cssRules: string[] = [];
 
-    const selector = `ef-timegroup[data-element-id="${element.id}"]`;
-    const cssRules: string[] = [];
+      if (mergedStyle.display) {
+        cssRules.push(`  display: ${mergedStyle.display} !important;`);
+      }
+      if (mergedStyle.flexDirection) {
+        cssRules.push(`  flex-direction: ${mergedStyle.flexDirection} !important;`);
+      }
+      if (mergedStyle.justifyContent) {
+        cssRules.push(`  justify-content: ${mergedStyle.justifyContent} !important;`);
+      }
+      if (mergedStyle.alignItems) {
+        cssRules.push(`  align-items: ${mergedStyle.alignItems} !important;`);
+      }
+      if (mergedStyle.gap) {
+        cssRules.push(`  gap: ${mergedStyle.gap} !important;`);
+      }
 
-    if (mergedStyle.display) {
-      cssRules.push(`  display: ${mergedStyle.display} !important;`);
-    }
-    if (mergedStyle.flexDirection) {
-      cssRules.push(`  flex-direction: ${mergedStyle.flexDirection} !important;`);
-    }
-    if (mergedStyle.justifyContent) {
-      cssRules.push(`  justify-content: ${mergedStyle.justifyContent} !important;`);
-    }
-    if (mergedStyle.alignItems) {
-      cssRules.push(`  align-items: ${mergedStyle.alignItems} !important;`);
-    }
-    if (mergedStyle.gap) {
-      cssRules.push(`  gap: ${mergedStyle.gap} !important;`);
-    }
+      if (cssRules.length === 0) {
+        return "";
+      }
 
-    if (cssRules.length === 0) {
-      return "";
+      return `\n${selector} {\n${cssRules.join("\n")}\n}`;
     }
-
-    return `\n${selector} {\n${cssRules.join("\n")}\n}`;
+    
+    // For video elements wrapped in ef-fit-scale, make canvas render at natural size
+    const isMedia = element.type === "video" || element.type === "image";
+    const isInGridContainer = element.parentId && state.composition.elements[element.parentId] 
+      ? (state.composition.elements[element.parentId].type === "div" || state.composition.elements[element.parentId].type === "timegroup")
+      : false;
+    const needsFitScale = isMedia && isInGridContainer && !mergedStyle.width && !mergedStyle.height;
+    
+    if (needsFitScale && element.type === "video") {
+      // Prevent ef-fit-scale from stretching in grid layout (CSS Grid default is stretch)
+      const fitScaleSelector = `ef-fit-scale:has(ef-video[data-element-id="${element.id}"])`;
+      // Make ef-video size to its canvas's natural dimensions
+      const videoSelector = `ef-video[data-element-id="${element.id}"]`;
+      
+      return `\n${fitScaleSelector} {\n  justify-self: start !important;\n  align-self: start !important;\n}\n\n${videoSelector} {\n  display: inline-block !important;\n  width: auto !important;\n  height: auto !important;\n}`;
+    }
+    
+    return "";
   }, [
     element.id,
     element.type,
+    element.parentId,
+    state.composition.elements,
     mergedStyle.display,
     mergedStyle.flexDirection,
     mergedStyle.justifyContent,
     mergedStyle.alignItems,
     mergedStyle.gap,
+    mergedStyle.width,
+    mergedStyle.height,
   ]);
 
   // Inject layout CSS via style element (similar to animation styles)
@@ -316,11 +347,31 @@ export function ElementRenderer({
     };
   }, [element.id, layoutStyleCSS]);
 
+  // Wrap media elements in ef-fit-scale when in grid containers without explicit size
+  const isMedia = element.type === "video" || element.type === "image";
+  const isInGridContainer = element.parentId && state.composition.elements[element.parentId] 
+    ? (state.composition.elements[element.parentId].type === "div" || state.composition.elements[element.parentId].type === "timegroup")
+    : false;
+  const needsFitScale = isMedia && isInGridContainer && !mergedStyle.width && !mergedStyle.height;
+
+  // When wrapped in ef-fit-scale, the video needs to render at its natural size
+  // Remove width/height constraints so ef-fit-scale can measure the intrinsic dimensions
+  const videoPropsForFitScale = needsFitScale && isMedia
+    ? {
+        ...interactiveProps,
+        style: {
+          ...mergedStyle,
+          width: "auto",
+          height: "auto",
+        },
+      }
+    : interactiveProps;
+
   // Render element with children
-  return (
+  const elementContent = (
     <Component 
       key={componentKey} 
-      {...interactiveProps}
+      {...videoPropsForFitScale}
     >
       {element.type === "text" && textContent ? (
         <>
@@ -340,4 +391,15 @@ export function ElementRenderer({
       {renderChildren(element, state, currentTime)}
     </Component>
   );
+
+  // Wrap in ef-fit-scale if needed
+  if (needsFitScale) {
+    return (
+      <ef-fit-scale key={`fit-scale-${componentKey}`}>
+        {elementContent}
+      </ef-fit-scale>
+    );
+  }
+
+  return elementContent;
 }
