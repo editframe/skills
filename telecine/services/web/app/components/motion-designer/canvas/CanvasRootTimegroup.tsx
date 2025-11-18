@@ -28,6 +28,7 @@ export function CanvasRootTimegroup({
         width: `${size.width}px`,
         height: `${size.height}px`,
         border: state.ui.selectedElementId === element.id ? "2px solid #3b82f6" : "1px solid #374151",
+        containerType: "size",
       }}
     >
       <ElementRenderer
