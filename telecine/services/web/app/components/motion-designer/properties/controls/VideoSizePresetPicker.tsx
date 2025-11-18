@@ -92,14 +92,14 @@ export function VideoSizePresetPicker({ label, size, onChange }: VideoSizePreset
         </button>
         {isOpen && (
           <div className="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-700/50 rounded-sm shadow-lg max-h-64 overflow-y-auto">
-            {COMMON_VIDEO_SIZES.map((preset) => {
+            {COMMON_VIDEO_SIZES.map((preset, index) => {
               const isSelected =
                 currentPreset?.width === preset.width &&
                 currentPreset?.height === preset.height;
 
               return (
                 <button
-                  key={`${preset.width}x${preset.height}`}
+                  key={`${preset.label}-${preset.width}x${preset.height}-${index}`}
                   onClick={() => handlePresetSelect(preset)}
                   className={`
                     w-full px-2 py-1.5 text-left text-[10px] transition-colors
