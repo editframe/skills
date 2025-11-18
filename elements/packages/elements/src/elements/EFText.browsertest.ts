@@ -1338,4 +1338,72 @@ describe("EFText", () => {
       }
     });
   });
+
+  describe("duration inheritance", () => {
+    test("inherits duration from parent timegroup when no duration is set and parent is fixed mode", async () => {
+      const timegroup = document.createElement("ef-timegroup");
+      timegroup.duration = "5s";
+      timegroup.mode = "fixed";
+      
+      const text = document.createElement("ef-text");
+      text.textContent = "Hello world";
+      // explicitly NOT setting duration on text
+      
+      timegroup.appendChild(text);
+      document.body.appendChild(timegroup);
+      testElements.push(timegroup);
+
+      await timegroup.updateComplete;
+      await text.updateComplete;
+      await text.whenSegmentsReady();
+
+      // When text has no explicit duration and parent is fixed mode, it should inherit
+      expect(text.durationMs).toBe(5000);
+    });
+  });
+
+  describe("stagger with duplicate words", () => {
+    test("each occurrence of duplicate words gets unique stagger offset", async () => {
+      const timegroup = document.createElement("ef-timegroup");
+      timegroup.duration = "10s";
+      const text = document.createElement("ef-text");
+      text.split = "word";
+      text.textContent = "AT A TIME AT A TIME AT A TIME";
+      text.setAttribute("stagger", "100ms");
+      text.duration = "5s";
+      timegroup.appendChild(text);
+      document.body.appendChild(timegroup);
+      testElements.push(timegroup);
+
+      await text.updateComplete;
+      const segments = await text.whenSegmentsReady();
+
+      // Wait for segments to render CSS variables
+      await Promise.all(segments.map((seg) => seg.updateComplete));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      // Filter to only word segments (exclude whitespace)
+      const wordSegments = segments.filter((seg) => !/^\s+$/.test(seg.segmentText));
+      
+      // Each occurrence of "AT" should have a different stagger offset
+      // The text is: "AT A TIME AT A TIME AT A TIME" (9 words total)
+      // Word indices should be: 0, 1, 2, 3, 4, 5, 6, 7, 8
+      expect(wordSegments.length).toBe(9);
+      
+      // Check that each segment has a unique stagger offset based on its position
+      // First "AT" should have offset 0
+      expect(wordSegments[0]?.staggerOffsetMs).toBe(0);
+      // Second "AT" (at index 3) should have offset based on index 3, not 0
+      expect(wordSegments[3]?.staggerOffsetMs).toBeGreaterThan(wordSegments[0]?.staggerOffsetMs ?? 0);
+      // Third "AT" (at index 6) should have offset based on index 6, not 0
+      expect(wordSegments[6]?.staggerOffsetMs).toBeGreaterThan(wordSegments[3]?.staggerOffsetMs ?? 0);
+      
+      // Verify all segments have different stagger offsets (except whitespace which inherits)
+      const wordStaggerOffsets = wordSegments.map((seg) => seg.staggerOffsetMs);
+      const uniqueOffsets = new Set(wordStaggerOffsets);
+      // All word segments should have unique offsets (9 words = 9 unique offsets)
+      expect(uniqueOffsets.size).toBe(9);
+    });
+  });
 });
