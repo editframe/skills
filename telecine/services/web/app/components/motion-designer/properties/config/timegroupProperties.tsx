@@ -37,12 +37,7 @@ export const timegroupProperties: PropertySectionConfig[] = [
         placeholder: "30",
       },
       {
-        type: "video-size-preset",
-        label: "Size Preset",
-        propPath: "size",
-      },
-      {
-        type: "dimensions",
+        type: "timegroup-size",
         label: "Size",
         propPath: "size",
       },

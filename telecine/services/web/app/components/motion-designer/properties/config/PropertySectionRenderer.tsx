@@ -14,6 +14,13 @@ import { PositionInput } from "../controls/PositionInput";
 import { DimensionsInput } from "../controls/DimensionsInput";
 import { VideoSizePresetPicker } from "../controls/VideoSizePresetPicker";
 import { InlineInputs } from "../controls/InlineInputs";
+import { LayoutTypeSelector } from "../controls/LayoutTypeSelector";
+import { AspectRatioScalingControl } from "../controls/AspectRatioScalingControl";
+import { GridLayoutControls } from "../controls/GridLayoutControls";
+import { LayoutDirectionSelector } from "../controls/LayoutDirectionSelector";
+import { SizeInput } from "../controls/SizeInput";
+import { TimegroupSizeInput } from "../controls/TimegroupSizeInput";
+import { ContainerAlignmentControl } from "../controls/ContainerAlignmentControl";
 import { getNestedValue, setNestedValue } from "./propertyHelpers";
 
 interface PropertySectionRendererProps {
@@ -293,6 +300,187 @@ function PropertyFieldRenderer({
           }}
         />
       );
+
+    case "layout-type": {
+      const displayValue = element.props.display;
+      const layoutFlexDirection = element.props.flexDirection;
+      return (
+        <LayoutTypeSelector
+          label={field.label}
+          display={displayValue}
+          flexDirection={layoutFlexDirection}
+          onChange={(display, flexDirection) => {
+            const updates: Partial<ElementNode["props"]> = { display };
+            if (flexDirection !== undefined) {
+              updates.flexDirection = flexDirection;
+            } else if (display !== "flex" && display !== "grid") {
+              // Clear flexDirection when switching to block
+              updates.flexDirection = undefined;
+            }
+            onUpdate(updates);
+          }}
+        />
+      );
+    }
+
+    case "aspect-ratio-scaling":
+      return (
+        <AspectRatioScalingControl
+          label={field.label}
+          value={value}
+          onChange={handleChange}
+        />
+      );
+
+    case "grid-layout":
+      const columnsValue = element.props.gridColumns;
+      const rowsValue = element.props.gridRows;
+      const gapValue = element.props.gridGap;
+      return (
+        <GridLayoutControls
+          columns={columnsValue}
+          rows={rowsValue}
+          gap={gapValue}
+          onColumnsChange={(value) => {
+            const updates = setNestedValue({}, "gridColumns", value);
+            onUpdate(updates);
+          }}
+          onRowsChange={(value) => {
+            const updates = setNestedValue({}, "gridRows", value);
+            onUpdate(updates);
+          }}
+          onGapChange={(value) => {
+            const updates = setNestedValue({}, "gridGap", value);
+            onUpdate(updates);
+          }}
+        />
+      );
+
+    case "layout-direction":
+      return (
+        <LayoutDirectionSelector
+          label={field.label}
+          value={value}
+          onChange={handleChange}
+        />
+      );
+
+    case "size": {
+      // Handle both legacy size format and simple width/height props
+      const sizeValue = value;
+      let width: number | undefined;
+      let height: number | undefined;
+      
+      if (sizeValue) {
+        if (typeof sizeValue === "object" && "width" in sizeValue && "height" in sizeValue) {
+          // Legacy format: { width: number, height: number }
+          // Only use if width/height are not 0 (0 means "not set" in our system)
+          if (sizeValue.width !== 0) width = sizeValue.width;
+          if (sizeValue.height !== 0) height = sizeValue.height;
+        } else if (typeof sizeValue === "object" && "widthMode" in sizeValue) {
+          // New format with modes - extract fixed values or default
+          const legacySize = sizeValue as any;
+          if (legacySize.widthMode === "fixed" && typeof legacySize.widthValue === "number" && legacySize.widthValue !== 0) {
+            width = legacySize.widthValue;
+          }
+          if (legacySize.heightMode === "fixed" && typeof legacySize.heightValue === "number" && legacySize.heightValue !== 0) {
+            height = legacySize.heightValue;
+          }
+        }
+      }
+      
+      // Fallback to direct props if size object doesn't have values
+      // Only use if not 0 (0 means "not set")
+      if (width === undefined && element.props.width !== undefined && element.props.width !== 0) {
+        width = element.props.width;
+      }
+      if (height === undefined && element.props.height !== undefined && element.props.height !== 0) {
+        height = element.props.height;
+      }
+      
+      return (
+        <SizeInput
+          label={field.label}
+          width={width}
+          height={height}
+          onChange={(newWidth, newHeight) => {
+            // Update both legacy size format and direct props for compatibility
+            // Use 0 to represent "not set" for backward compatibility, or undefined for new format
+            onUpdate({
+              size: { 
+                width: newWidth ?? 0, 
+                height: newHeight ?? 0 
+              },
+              width: newWidth,
+              height: newHeight,
+            });
+          }}
+        />
+      );
+    }
+
+    case "timegroup-size": {
+      // Handle both legacy size format and simple width/height props
+      const sizeValue = value;
+      let width: number | undefined;
+      let height: number | undefined;
+      
+      if (sizeValue) {
+        if (typeof sizeValue === "object" && "width" in sizeValue && "height" in sizeValue) {
+          // Legacy format: { width: number, height: number }
+          width = sizeValue.width;
+          height = sizeValue.height;
+        } else if (typeof sizeValue === "object" && "widthMode" in sizeValue) {
+          // New format with modes - extract fixed values or default
+          const legacySize = sizeValue as any;
+          if (legacySize.widthMode === "fixed" && typeof legacySize.widthValue === "number") {
+            width = legacySize.widthValue;
+          }
+          if (legacySize.heightMode === "fixed" && typeof legacySize.heightValue === "number") {
+            height = legacySize.heightValue;
+          }
+        }
+      }
+      
+      // Fallback to direct props if size object doesn't have values
+      if (width === undefined) width = element.props.width;
+      if (height === undefined) height = element.props.height;
+      
+      return (
+        <TimegroupSizeInput
+          label={field.label}
+          width={width}
+          height={height}
+          onChange={(newWidth, newHeight) => {
+            // Update both legacy size format and direct props for compatibility
+            onUpdate({
+              size: { width: newWidth, height: newHeight },
+              width: newWidth,
+              height: newHeight,
+            });
+          }}
+        />
+      );
+    }
+
+    case "container-alignment": {
+      const justifyValue = getNestedValue(element.props, field.justifyPropPath);
+      const alignValue = getNestedValue(element.props, field.alignPropPath);
+      return (
+        <ContainerAlignmentControl
+          label={field.label}
+          justifyItems={justifyValue}
+          alignItems={alignValue}
+          onChange={(justifyItems, alignItems) => {
+            const updates = {
+              ...setNestedValue({}, field.justifyPropPath, justifyItems),
+              ...setNestedValue({}, field.alignPropPath, alignItems),
+            };
+            onUpdate(updates);
+          }}
+        />
+      );
+    }
 
     default:
       return null;

@@ -6,6 +6,9 @@ import { Image as ImageIcon } from "@phosphor-icons/react";
 const isMedia = (element: ElementNode) =>
   element.type === "video" || element.type === "image" || element.type === "audio" || element.type === "captions" || element.type === "waveform" || element.type === "surface";
 
+const isVideoOrImage = (element: ElementNode) =>
+  element.type === "video" || element.type === "image";
+
 export const mediaProperties: PropertySectionConfig[] = [
   {
     id: "media",

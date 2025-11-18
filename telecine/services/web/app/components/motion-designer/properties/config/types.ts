@@ -24,7 +24,14 @@ export type PropertyFieldConfig =
   | PositionFieldConfig
   | DimensionsFieldConfig
   | VideoSizePresetFieldConfig
-  | InlineInputsFieldConfig;
+  | InlineInputsFieldConfig
+  | LayoutTypeFieldConfig
+  | AspectRatioScalingFieldConfig
+  | GridLayoutFieldConfig
+  | LayoutDirectionFieldConfig
+  | SizeFieldConfig
+  | TimegroupSizeFieldConfig
+  | ContainerAlignmentFieldConfig;
 
 interface BaseFieldConfig {
   label: string;
@@ -123,6 +130,45 @@ export interface InlineInputsFieldConfig {
     type?: "number" | "slider";
     displayMultiplier?: number;
   }>;
+  visible?: (element: ElementNode, state?: { composition: { rootTimegroupIds: string[] } }) => boolean;
+}
+
+export interface LayoutTypeFieldConfig {
+  type: "layout-type";
+  label: string;
+  visible?: (element: ElementNode, state?: { composition: { rootTimegroupIds: string[] } }) => boolean;
+}
+
+export interface AspectRatioScalingFieldConfig extends BaseFieldConfig {
+  type: "aspect-ratio-scaling";
+}
+
+export interface GridLayoutFieldConfig {
+  type: "grid-layout";
+  label: string;
+  visible?: (element: ElementNode, state?: { composition: { rootTimegroupIds: string[] } }) => boolean;
+}
+
+export interface LayoutDirectionFieldConfig {
+  type: "layout-direction";
+  label: string;
+  propPath: string;
+  visible?: (element: ElementNode, state?: { composition: { rootTimegroupIds: string[] } }) => boolean;
+}
+
+export interface SizeFieldConfig extends BaseFieldConfig {
+  type: "size";
+}
+
+export interface TimegroupSizeFieldConfig extends BaseFieldConfig {
+  type: "timegroup-size";
+}
+
+export interface ContainerAlignmentFieldConfig {
+  type: "container-alignment";
+  label: string;
+  justifyPropPath: string;
+  alignPropPath: string;
   visible?: (element: ElementNode, state?: { composition: { rootTimegroupIds: string[] } }) => boolean;
 }
 
