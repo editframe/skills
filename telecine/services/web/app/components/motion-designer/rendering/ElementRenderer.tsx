@@ -301,12 +301,10 @@ export function ElementRenderer({
     const needsFitScale = isMedia && isInGridContainer && !mergedStyle.width && !mergedStyle.height;
     
     if (needsFitScale && element.type === "video") {
-      // Prevent ef-fit-scale from stretching in grid layout (CSS Grid default is stretch)
-      const fitScaleSelector = `ef-fit-scale:has(ef-video[data-element-id="${element.id}"])`;
       // Make ef-video size to its canvas's natural dimensions
       const videoSelector = `ef-video[data-element-id="${element.id}"]`;
       
-      return `\n${fitScaleSelector} {\n  justify-self: start !important;\n  align-self: start !important;\n}\n\n${videoSelector} {\n  display: inline-block !important;\n  width: auto !important;\n  height: auto !important;\n}`;
+      return `\n${videoSelector} {\n  display: inline-block;\n  width: auto;\n  height: auto;\n}`;
     }
     
     return "";
@@ -395,7 +393,10 @@ export function ElementRenderer({
   // Wrap in ef-fit-scale if needed
   if (needsFitScale) {
     return (
-      <ef-fit-scale key={`fit-scale-${componentKey}`}>
+      <ef-fit-scale 
+        key={`fit-scale-${componentKey}`}
+        style={{ width: "100%", height: "100%", display: "block" }}
+      >
         {elementContent}
       </ef-fit-scale>
     );
