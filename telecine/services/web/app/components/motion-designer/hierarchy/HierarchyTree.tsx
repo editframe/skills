@@ -22,7 +22,16 @@ export function HierarchyTree({ state }: HierarchyTreeProps) {
   const zoneStateMachineRef = useRef<DropZoneStateMachine>(new DropZoneStateMachine());
   const rafIdRef = useRef<number | null>(null);
 
+  // Use a ref to store the latest state so we don't need it in the dependency array
+  // This prevents infinite loops when state changes frequently (e.g., during video scrubbing)
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
   const resolveDropTargetForAllElements = useCallback(() => {
+    const currentState = stateRef.current;
+    
     if (!dragState.draggedElementId || !dragState.dragPosition) {
       setResolvedDropTarget(null);
       setRootDropIndex(null);
@@ -32,7 +41,7 @@ export function HierarchyTree({ state }: HierarchyTreeProps) {
       return;
     }
 
-    const draggedElement = state.composition.elements[dragState.draggedElementId];
+    const draggedElement = currentState.composition.elements[dragState.draggedElementId];
     if (!draggedElement) {
       setResolvedDropTarget(null);
       setRootDropIndex(null);
@@ -63,7 +72,7 @@ export function HierarchyTree({ state }: HierarchyTreeProps) {
 
     const elementRefs: ElementRef[] = [];
     for (const [elementId, ref] of elementRefsRef.current.entries()) {
-      const element = state.composition.elements[elementId];
+      const element = currentState.composition.elements[elementId];
       if (!element) continue;
       const rect = ref.element.getBoundingClientRect();
       elementRefs.push({
@@ -78,7 +87,7 @@ export function HierarchyTree({ state }: HierarchyTreeProps) {
       dragState.dragPosition,
       elementRefs,
       dragState.draggedElementId,
-      state,
+      currentState,
       (elementId, cursorY, rect, canHaveChildren) =>
         zoneStateMachineRef.current.determineZone(elementId, cursorY, rect, canHaveChildren),
       (elementId) => zoneStateMachineRef.current.resetElement(elementId),
@@ -93,12 +102,12 @@ export function HierarchyTree({ state }: HierarchyTreeProps) {
 
     if (isTemporalElement(draggedElement) && !target) {
       const relativeY = dragState.dragPosition.y - containerRect.top;
-      const rootTimegroupIds = state.composition.rootTimegroupIds;
+      const rootTimegroupIds = currentState.composition.rootTimegroupIds;
       let dropIndex: number | null = null;
 
       for (let i = 0; i < rootTimegroupIds.length; i++) {
         const elementId = rootTimegroupIds[i];
-        const element = state.composition.elements[elementId];
+        const element = currentState.composition.elements[elementId];
         if (!element) continue;
 
         const elementTop = containerRect.top + (i * 32);
@@ -115,7 +124,7 @@ export function HierarchyTree({ state }: HierarchyTreeProps) {
         dropIndex = rootTimegroupIds.length;
       }
 
-      if (dropIndex !== null && behaviorRegistry.canMove(dragState.draggedElementId, null, dropIndex, state)) {
+      if (dropIndex !== null && behaviorRegistry.canMove(dragState.draggedElementId, null, dropIndex, currentState)) {
         setRootDropIndex(dropIndex);
         setDropTarget({
           elementId: "__root__",
@@ -127,7 +136,7 @@ export function HierarchyTree({ state }: HierarchyTreeProps) {
     } else {
       setRootDropIndex(null);
     }
-  }, [dragState.dragPosition, dragState.draggedElementId, dragState.dropTarget, state, setDropTarget]);
+  }, [dragState.dragPosition, dragState.draggedElementId, dragState.dropTarget, setDropTarget]);
 
   useEffect(() => {
     if (rafIdRef.current !== null) {
@@ -180,15 +189,16 @@ export function HierarchyTree({ state }: HierarchyTreeProps) {
       if (currentDropTarget?.elementId === "__root__" && currentRootDropIndex !== null) {
         actions.moveElement(draggedElementId, null, currentRootDropIndex);
       } else if (currentDropTarget) {
-        const targetElement = state.composition.elements[currentDropTarget.elementId];
+        const currentState = stateRef.current;
+        const targetElement = currentState.composition.elements[currentDropTarget.elementId];
         if (targetElement) {
           if (currentDropTarget.position === "inside") {
             actions.moveElement(draggedElementId, currentDropTarget.elementId);
           } else {
-            const parentId = findParentId(currentDropTarget.elementId, state);
+            const parentId = findParentId(currentDropTarget.elementId, currentState);
             const siblings = parentId
-              ? state.composition.elements[parentId]?.childIds || []
-              : state.composition.rootTimegroupIds;
+              ? currentState.composition.elements[parentId]?.childIds || []
+              : currentState.composition.rootTimegroupIds;
 
             const targetIndex = siblings.indexOf(currentDropTarget.elementId);
             let newIndex = currentDropTarget.position === "before" ? targetIndex : targetIndex + 1;
@@ -219,7 +229,7 @@ export function HierarchyTree({ state }: HierarchyTreeProps) {
       document.removeEventListener("pointermove", handleGlobalPointerMove);
       document.removeEventListener("pointerup", handleGlobalPointerUp);
     };
-  }, [dragState.draggedElementId, resolvedDropTarget, rootDropIndex, endDrag, updateDrag, actions, state]);
+  }, [dragState.draggedElementId, resolvedDropTarget, rootDropIndex, endDrag, updateDrag, actions]);
 
   const findParentId = (elementId: string, state: MotionDesignerState): string | null => {
     for (const element of Object.values(state.composition.elements)) {
