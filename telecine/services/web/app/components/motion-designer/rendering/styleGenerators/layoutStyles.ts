@@ -1,108 +1,40 @@
 import type { ElementNode, MotionDesignerState } from "~/lib/motion-designer/types";
 import type { CSSProperties } from "react";
-import type { ElementSize, LegacyElementSize } from "~/lib/motion-designer/sizingTypes";
-import { isLegacySize, normalizeSize } from "~/lib/motion-designer/sizingTypes";
 
-// Check if an element's parent is a flex container
-function isParentFlexContainer(
-  element: ElementNode,
-  state: MotionDesignerState,
-): boolean {
+function isContainer(element: ElementNode): boolean {
+  return element.type === "div" || element.type === "timegroup";
+}
+
+function isTimegroup(element: ElementNode): boolean {
+  return element.type === "timegroup";
+}
+
+function isContentElement(element: ElementNode): boolean {
+  return (
+    element.type === "text" ||
+    element.type === "audio" ||
+    element.type === "video" ||
+    element.type === "image" ||
+    element.type === "waveform" ||
+    element.type === "captions"
+  );
+}
+
+function isMediaElement(element: ElementNode): boolean {
+  return element.type === "video" || element.type === "image";
+}
+
+function isRootTimegroup(element: ElementNode, state: MotionDesignerState): boolean {
+  return (
+    element.type === "timegroup" &&
+    state.composition.rootTimegroupIds.includes(element.id)
+  );
+}
+
+function isChildOfContainer(element: ElementNode, state: MotionDesignerState): boolean {
   if (!element.parentId) return false;
-  
   const parent = state.composition.elements[element.parentId];
-  if (!parent) return false;
-  
-  // Check if parent is a container (div or timegroup) with display: flex
-  const isContainer = parent.type === "div" || parent.type === "timegroup";
-  return isContainer && parent.props.display === "flex";
-}
-
-// Check if element is a text element
-function isTextElement(element: ElementNode): boolean {
-  return element.type === "text";
-}
-
-// Convert sizing mode to CSS width/height
-function applySizingMode(
-  widthMode: "hug" | "fill" | "fixed",
-  widthValue: number,
-  heightMode: "hug" | "fill" | "fixed",
-  heightValue: number,
-  element: ElementNode,
-  state: MotionDesignerState,
-  styles: CSSProperties,
-): void {
-  const isFlexChild = isParentFlexContainer(element, state);
-  const isText = isTextElement(element);
-  const parent = element.parentId ? state.composition.elements[element.parentId] : null;
-  const flexDirection = parent?.props.flexDirection || "row";
-
-  // Determine flex property based on flex direction and sizing modes
-  // In flex containers, only one dimension controls flex behavior:
-  // - Row: width controls flex
-  // - Column: height controls flex
-  if (isFlexChild) {
-    if (flexDirection === "row") {
-      // In row flex container, width controls flex behavior
-      if (widthMode === "fill") {
-        styles.flex = "1 1 0%";
-      } else {
-        // Hug or fixed: don't grow/shrink, use natural size
-        styles.flex = "0 0 auto";
-      }
-    } else {
-      // Column flex container, height controls flex behavior
-      if (heightMode === "fill") {
-        styles.flex = "1 1 0%";
-      } else {
-        // Hug or fixed: don't grow/shrink, use natural size
-        styles.flex = "0 0 auto";
-      }
-    }
-  }
-
-  // Handle width
-  if (widthMode === "hug") {
-    // Use fit-content for block elements to shrink-wrap to content
-    // For text elements, min-content is more appropriate
-    styles.width = isText ? "min-content" : "fit-content";
-    // Ensure block elements can shrink-wrap by using inline-block
-    // Only if not in flex, not text, and not already a flex container
-    if (!isFlexChild && !isText && element.props.display !== "flex") {
-      // Mark that we're setting display for hug mode
-      (styles as any)._hugDisplaySet = true;
-      styles.display = "inline-block";
-    }
-  } else if (widthMode === "fill") {
-    if (!isFlexChild || flexDirection !== "row") {
-      // Not in flex or column flex, use percentage
-      styles.width = "100%";
-    }
-    // In row flex, flex property handles sizing
-  } else {
-    // Fixed mode
-    styles.width = `${widthValue}px`;
-  }
-
-  // Handle height
-  if (heightMode === "hug") {
-    // Use fit-content or min-content to shrink-wrap to content
-    styles.height = isText ? "min-content" : "fit-content";
-    // Text elements get minimum height of 1 line height
-    if (isText) {
-      styles.minHeight = "1lh";
-    }
-  } else if (heightMode === "fill") {
-    if (!isFlexChild || flexDirection !== "column") {
-      // Not in flex or row flex, use percentage
-      styles.height = "100%";
-    }
-    // In column flex, flex property handles sizing
-  } else {
-    // Fixed mode
-    styles.height = `${heightValue}px`;
-  }
+  return parent ? isContainer(parent) : false;
 }
 
 export function generateLayoutStyles(
@@ -111,89 +43,159 @@ export function generateLayoutStyles(
 ): CSSProperties {
   const styles: CSSProperties = {};
 
-  // Only apply position styles if parent is NOT a flex container
-  // In flex containers, position is determined by flexbox layout
-  if (element.props.position && !isParentFlexContainer(element, state)) {
-    styles.position = element.props.positionMode || "relative";
+  const isContainerElement = isContainer(element);
+  const isContent = isContentElement(element);
+  const isMedia = isMediaElement(element);
+
+  // Position: Only for root timegroups or elements not in containers
+  if (
+    element.props.position &&
+    (isRootTimegroup(element, state) || !isChildOfContainer(element, state))
+  ) {
+    styles.position = element.props.positionMode || "absolute";
     styles.left = `${element.props.position.x}px`;
     styles.top = `${element.props.position.y}px`;
   }
 
-  // Handle both legacy and new sizing formats
-  const size = normalizeSize(element.props.size);
-  if (size) {
-    if (isLegacySize(size as LegacyElementSize)) {
+  // Size: Fixed pixel dimensions
+  // Handle both legacy size format and direct width/height props
+  let width: number | undefined;
+  let height: number | undefined;
+
+  if (element.props.size) {
+    if (
+      typeof element.props.size === "object" &&
+      "width" in element.props.size &&
+      "height" in element.props.size
+    ) {
       // Legacy format: { width: number, height: number }
-      styles.width = `${(size as LegacyElementSize).width}px`;
-      styles.height = `${(size as LegacyElementSize).height}px`;
+      // Treat 0 as "not set" (undefined)
+      if (element.props.size.width !== 0) {
+        width = element.props.size.width;
+      }
+      if (element.props.size.height !== 0) {
+        height = element.props.size.height;
+      }
+    } else if (
+      typeof element.props.size === "object" &&
+      "widthMode" in element.props.size
+    ) {
+      // New format with modes - extract fixed values if available
+      const sizeObj = element.props.size as any;
+      if (sizeObj.widthMode === "fixed" && typeof sizeObj.widthValue === "number" && sizeObj.widthValue !== 0) {
+        width = sizeObj.widthValue;
+      }
+      if (sizeObj.heightMode === "fixed" && typeof sizeObj.heightValue === "number" && sizeObj.heightValue !== 0) {
+        height = sizeObj.heightValue;
+      }
+    }
+  }
+
+  // Fallback to direct props (but NOT for timegroups - they use size property only)
+  if (!isTimegroup(element)) {
+    if (width === undefined && element.props.width !== undefined && element.props.width !== 0) {
+      width = element.props.width;
+    }
+    if (height === undefined && element.props.height !== undefined && element.props.height !== 0) {
+      height = element.props.height;
+    }
+  }
+
+  // Check if this element is a child of a grid container
+  const isInGridContainer = isChildOfContainer(element, state);
+
+  // Apply size
+  if (isTimegroup(element)) {
+    // Timegroups: Always have fixed pixel size (default to 100px if not set)
+    // Timegroups define the composition size, so they must have explicit dimensions
+    // IMPORTANT: Only use element.props.size for timegroups, never fallback width/height props
+    styles.width = `${width ?? 100}px`;
+    styles.height = `${height ?? 100}px`;
+  } else if (isContainerElement) {
+    // Divs (containers): Set width/height if explicitly provided
+    // If in grid container and no explicit size, fill grid cell
+    if (width !== undefined && width !== 0) {
+      styles.width = `${width}px`;
+    } else if (isInGridContainer) {
+      // Fill grid cell if no explicit width
+      styles.width = "100%";
+    }
+    
+    if (height !== undefined && height !== 0) {
+      styles.height = `${height}px`;
+    } else if (isInGridContainer) {
+      // Fill grid cell if no explicit height
+      styles.height = "100%";
+    }
+  } else if (isContent) {
+    if (width !== undefined && width !== 0) {
+      // Explicit width set
+      styles.width = `${width}px`;
+    } else if (isInGridContainer) {
+      if (isMedia) {
+        // Media elements: Don't set width/height - let ef-fit-scale measure intrinsic size
+        // ef-fit-scale will wrap these and scale them to fit
+      } else {
+        // Non-media content in grid: fill grid cell
+        styles.width = "100%";
+      }
+    }
+    
+    if (height !== undefined && height !== 0) {
+      // Explicit height set
+      styles.height = `${height}px`;
+    } else if (isInGridContainer) {
+      if (isMedia) {
+        // Media elements: Don't set height - let ef-fit-scale measure intrinsic size
+      } else {
+        // Non-media content in grid: fill grid cell
+        styles.height = "100%";
+      }
+    }
+  }
+
+  // Container layout: Grid with horizontal or vertical direction
+  if (isContainerElement) {
+    styles.display = "grid";
+    const layoutDirection = element.props.layoutDirection || "vertical";
+
+    if (layoutDirection === "horizontal") {
+      // Horizontal: children flow in columns (side by side)
+      // Auto-place children in columns, each taking equal space
+      styles.gridAutoFlow = "column";
+      styles.gridAutoColumns = "1fr";
+      styles.gridTemplateRows = "1fr";
     } else {
-      // New format: { widthMode, widthValue, heightMode, heightValue }
-      const newSize = size as ElementSize;
-      applySizingMode(
-        newSize.widthMode,
-        newSize.widthValue,
-        newSize.heightMode,
-        newSize.heightValue,
-        element,
-        state,
-        styles,
-      );
+      // Vertical: children flow in rows (stacked)
+      // Auto-place children in rows, each taking equal space
+      styles.gridAutoFlow = "row";
+      styles.gridAutoRows = "1fr";
+      styles.gridTemplateColumns = "1fr";
     }
+
+    // Gap between children
+    if (element.props.gap !== undefined) {
+      styles.gap = `${element.props.gap}px`;
+    }
+
+    // Alignment: justify-items (horizontal) and align-items (vertical)
+    // These control how children align within their grid cells
+    if (element.props.justifyItems) {
+      styles.justifyItems = element.props.justifyItems;
+    }
+    if (element.props.alignItems) {
+      styles.alignItems = element.props.alignItems;
+    }
+
+    // Containers clip their children (especially media elements that render at intrinsic size)
+    styles.overflow = "hidden";
   }
 
-  // Set display property, but don't override inline-block set for hug mode
-  if (element.props.display) {
-    // Only set display if we didn't already set it for hug mode
-    if (!(styles as any)._hugDisplaySet) {
-      styles.display = element.props.display;
-    }
-    // Clean up the marker
-    delete (styles as any)._hugDisplaySet;
-  }
 
-  if (element.props.flexDirection) {
-    styles.flexDirection = element.props.flexDirection;
-  }
-  if (element.props.justifyContent) {
-    styles.justifyContent = element.props.justifyContent;
-  }
-  if (element.props.alignItems) {
-    styles.alignItems = element.props.alignItems;
-  }
-  if (element.props.gap !== undefined) {
-    styles.gap = `${element.props.gap}px`;
-  }
-
-  if (element.props.padding) {
-    if (element.props.padding.top !== undefined) {
-      styles.paddingTop = `${element.props.padding.top}px`;
-    }
-    if (element.props.padding.right !== undefined) {
-      styles.paddingRight = `${element.props.padding.right}px`;
-    }
-    if (element.props.padding.bottom !== undefined) {
-      styles.paddingBottom = `${element.props.padding.bottom}px`;
-    }
-    if (element.props.padding.left !== undefined) {
-      styles.paddingLeft = `${element.props.padding.left}px`;
-    }
-  }
-
-  if (element.props.margin) {
-    if (element.props.margin.top !== undefined) {
-      styles.marginTop = `${element.props.margin.top}px`;
-    }
-    if (element.props.margin.right !== undefined) {
-      styles.marginRight = `${element.props.margin.right}px`;
-    }
-    if (element.props.margin.bottom !== undefined) {
-      styles.marginBottom = `${element.props.margin.bottom}px`;
-    }
-    if (element.props.margin.left !== undefined) {
-      styles.marginLeft = `${element.props.margin.left}px`;
-    }
+  // Set container-type: size for containers to enable container query units (cqh, cqw)
+  if (isContainerElement) {
+    styles.containerType = "size";
   }
 
   return styles;
 }
-
