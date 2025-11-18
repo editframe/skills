@@ -90,6 +90,11 @@ describe("EFFitScale", () => {
     // Video should have transform applied
     const videoTransform = window.getComputedStyle(video).transform;
     expect(videoTransform).not.toBe("none");
+
+    const rect = video.getBoundingClientRect();
+    // Should be 500 x (500 / (384/216)) = 281.25
+    expect(rect.width).toBeCloseTo(500, 1);
+    expect(rect.height).toBeCloseTo(281.25, 1);
   }, 1000);
 
   test("scales video in tall container (letterboxing)", async ({ expect }) => {

@@ -179,6 +179,8 @@ export class EFFitScale extends LitElement {
         // Use toFixed to avoid floating point precision issues
         // this will update every frame with sub-pixel changes if we don't pin it down
         Object.assign(this.contentChild.style, {
+          width: `${contentWidth}px`,
+          height: `${contentHeight}px`,
           transform: `translate(${translateX.toFixed(4)}px, ${translateY.toFixed(4)}px) scale(${scale.toFixed(4)})`,
           transformOrigin: "top left",
         });
@@ -192,6 +194,8 @@ export class EFFitScale extends LitElement {
   removeScale = () => {
     if (this.scaleLastSetOn) {
       Object.assign(this.scaleLastSetOn.style, {
+        width: "",
+        height: "",
         transform: "",
         transformOrigin: "",
       });
