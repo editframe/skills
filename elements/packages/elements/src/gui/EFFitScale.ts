@@ -106,8 +106,39 @@ export class EFFitScale extends LitElement {
 
     const containerWidth = this.clientWidth;
     const containerHeight = this.clientHeight;
-    const contentWidth = this.contentChild.clientWidth;
-    const contentHeight = this.contentChild.clientHeight;
+    
+    // For ef-video, measure the canvas directly as it has the actual video dimensions
+    let contentWidth = 0;
+    let contentHeight = 0;
+    
+    if (this.contentChild.tagName === "EF-VIDEO") {
+      const canvas = (this.contentChild as any).canvasElement;
+      if (canvas && canvas.width > 0 && canvas.height > 0) {
+        // Use canvas attributes (video's coded dimensions)
+        contentWidth = canvas.width;
+        contentHeight = canvas.height;
+        
+        // ESSENTIAL: Set canvas to explicit pixel dimensions to break 100% circular dependency
+        // Canvas default CSS is width:100%, height:100% which would make ef-video collapse to 0x0
+        // when ef-video is set to width:auto, height:auto by ElementRenderer
+        canvas.style.setProperty("width", `${canvas.width}px`, "important");
+        canvas.style.setProperty("height", `${canvas.height}px`, "important");
+      }
+    } else {
+      // For other elements, use clientWidth/Height
+      contentWidth = this.contentChild.clientWidth;
+      contentHeight = this.contentChild.clientHeight;
+    }
+
+    if (contentWidth === 0 || contentHeight === 0) {
+      return {
+        scale: 1,
+        containerWidth,
+        containerHeight,
+        contentWidth: 0,
+        contentHeight: 0,
+      };
+    }
 
     const containerRatio = containerWidth / containerHeight;
     const contentRatio = contentWidth / contentHeight;
@@ -130,17 +161,15 @@ export class EFFitScale extends LitElement {
 
   setScale = () => {
     if (this.isConnected) {
-      const { scale } = this.scaleInfo;
-      if (this.contentChild) {
-        const containerRect = this.getBoundingClientRect();
-        const contentRect = this.contentChild.getBoundingClientRect();
-
-        const unscaledWidth = contentRect.width / this.scale;
-        const unscaledHeight = contentRect.height / this.scale;
-        const scaledWidth = unscaledWidth * scale;
-        const scaledHeight = unscaledHeight * scale;
-        const translateX = (containerRect.width - scaledWidth) / 2;
-        const translateY = (containerRect.height - scaledHeight) / 2;
+      const scaleInfo = this.scaleInfo;
+      const { scale, containerWidth, containerHeight, contentWidth, contentHeight } = scaleInfo;
+      
+      if (this.contentChild && contentWidth > 0 && contentHeight > 0) {
+        // Calculate scaled dimensions using natural size from scaleInfo
+        const scaledWidth = contentWidth * scale;
+        const scaledHeight = contentHeight * scale;
+        const translateX = (containerWidth - scaledWidth) / 2;
+        const translateY = (containerHeight - scaledHeight) / 2;
 
         // In the rare event that the content child is changed, we need to remove the scale
         // because we don't want to have a scale on the old content child that is somewhere else in the DOM
