@@ -19,9 +19,6 @@ interface UseTimelineZoomReturn {
   setZoom: (scale: number, centerTimeMs?: number) => void;
   handlers: {
     onWheel: (e: WheelEvent) => void;
-    onTouchStart: (e: TouchEvent) => void;
-    onTouchMove: (e: TouchEvent) => void;
-    onTouchEnd: (e: TouchEvent) => void;
   };
 }
 
@@ -31,11 +28,6 @@ export function useTimelineZoom({
   containerRef,
 }: UseTimelineZoomOptions): UseTimelineZoomReturn {
   const [zoomScale, setZoomScale] = useState(DEFAULT_ZOOM);
-  const pinchStartRef = useRef<{
-    distance: number;
-    centerTimeMs: number;
-    scale: number;
-  } | null>(null);
 
   const clampZoom = useCallback((scale: number): number => {
     return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, scale));
@@ -44,6 +36,7 @@ export function useTimelineZoom({
   const setZoomWithCenter = useCallback(
     (newScale: number, centerTimeMs?: number) => {
       const clampedScale = clampZoom(newScale);
+      const BASE_PIXELS_PER_SECOND = 100;
       
       // Use functional update to get current zoom scale
       setZoomScale((currentScale) => {
@@ -51,9 +44,8 @@ export function useTimelineZoom({
         if (centerTimeMs !== undefined && containerRef.current) {
           const container = containerRef.current;
           const scrollLeft = container.scrollLeft;
-          const currentPixelsPerSecond =
-            (containerWidth * currentScale) / durationMs;
-          const newPixelsPerSecond = (containerWidth * clampedScale) / durationMs;
+          const currentPixelsPerSecond = BASE_PIXELS_PER_SECOND * currentScale;
+          const newPixelsPerSecond = BASE_PIXELS_PER_SECOND * clampedScale;
 
           // Calculate center point position in current zoom
           const centerPixelCurrent = (centerTimeMs / 1000) * currentPixelsPerSecond;
@@ -73,7 +65,7 @@ export function useTimelineZoom({
         return clampedScale;
       });
     },
-    [clampZoom, containerRef, containerWidth, durationMs],
+    [clampZoom, containerRef, durationMs],
   );
 
   const zoomIn = useCallback(() => {
@@ -104,6 +96,8 @@ export function useTimelineZoom({
       const container = containerRef.current;
       if (!container || durationMs <= 0) return;
 
+      const BASE_PIXELS_PER_SECOND = 100;
+
       // Get current zoom scale from state using a ref or functional update
       setZoomScale((currentZoomScale) => {
         // Calculate mouse position relative to container
@@ -112,7 +106,7 @@ export function useTimelineZoom({
         const scrollLeft = container.scrollLeft;
 
         // Calculate the time at the mouse position before zoom
-        const currentPixelsPerSecond = (containerWidth * currentZoomScale) / durationMs;
+        const currentPixelsPerSecond = BASE_PIXELS_PER_SECOND * currentZoomScale;
         const mouseTimeMs =
           ((scrollLeft + mouseX) / currentPixelsPerSecond) * 1000;
 
@@ -124,8 +118,8 @@ export function useTimelineZoom({
         if (containerRef.current) {
           const container = containerRef.current;
           const scrollLeft = container.scrollLeft;
-          const currentPixelsPerSecond = (containerWidth * currentZoomScale) / durationMs;
-          const newPixelsPerSecond = (containerWidth * newScale) / durationMs;
+          const currentPixelsPerSecond = BASE_PIXELS_PER_SECOND * currentZoomScale;
+          const newPixelsPerSecond = BASE_PIXELS_PER_SECOND * newScale;
 
           // Calculate center point position in current zoom
           const centerPixelCurrent = (mouseTimeMs / 1000) * currentPixelsPerSecond;
@@ -147,72 +141,9 @@ export function useTimelineZoom({
     [
       containerRef,
       durationMs,
-      containerWidth,
       clampZoom,
     ],
   );
-
-  const getTouchDistance = useCallback((touches: TouchList): number => {
-    if (touches.length < 2) return 0;
-    const dx = touches[0].clientX - touches[1].clientX;
-    const dy = touches[0].clientY - touches[1].clientY;
-    return Math.sqrt(dx * dx + dy * dy);
-  }, []);
-
-  const getTouchCenterTime = useCallback(
-    (touches: TouchList): number => {
-      if (touches.length < 2) return 0;
-      const container = containerRef.current;
-      if (!container || durationMs <= 0) return 0;
-
-      const rect = container.getBoundingClientRect();
-      const centerX =
-        (touches[0].clientX + touches[1].clientX) / 2 - rect.left;
-      const scrollLeft = container.scrollLeft;
-
-      const currentPixelsPerSecond = (containerWidth * zoomScale) / durationMs;
-      return ((scrollLeft + centerX) / currentPixelsPerSecond) * 1000;
-    },
-    [containerRef, durationMs, containerWidth, zoomScale],
-  );
-
-  const onTouchStart = useCallback(
-    (e: TouchEvent) => {
-      if (e.touches.length === 2) {
-        const distance = getTouchDistance(e.touches);
-        const centerTimeMs = getTouchCenterTime(e.touches);
-        pinchStartRef.current = {
-          distance,
-          centerTimeMs,
-          scale: zoomScale,
-        };
-      } else {
-        pinchStartRef.current = null;
-      }
-    },
-    [getTouchDistance, getTouchCenterTime, zoomScale],
-  );
-
-  const onTouchMove = useCallback(
-    (e: TouchEvent) => {
-      if (e.touches.length === 2 && pinchStartRef.current) {
-        e.preventDefault(); // Prevent browser swipe gestures
-
-        const currentDistance = getTouchDistance(e.touches);
-        const scaleDelta = currentDistance / pinchStartRef.current.distance;
-        const newScale = clampZoom(
-          pinchStartRef.current.scale * scaleDelta,
-        );
-
-        setZoomWithCenter(newScale, pinchStartRef.current.centerTimeMs);
-      }
-    },
-    [getTouchDistance, clampZoom, setZoomWithCenter],
-  );
-
-  const onTouchEnd = useCallback(() => {
-    pinchStartRef.current = null;
-  }, []);
 
   return {
     zoomScale,
@@ -222,9 +153,6 @@ export function useTimelineZoom({
     setZoom: setZoomWithCenter,
     handlers: {
       onWheel,
-      onTouchStart,
-      onTouchMove,
-      onTouchEnd,
     },
   };
 }

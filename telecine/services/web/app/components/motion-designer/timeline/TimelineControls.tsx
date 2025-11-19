@@ -6,22 +6,18 @@ interface TimelineControlsProps {
   previewTargetId?: string;
   onRestart: () => void;
   zoomScale: number;
-  onZoomIn: () => void;
-  onZoomOut: () => void;
-  onResetZoom: () => void;
+  onZoomChange: (zoomScale: number) => void;
 }
 
 export function TimelineControls({ 
   previewTargetId, 
   onRestart,
   zoomScale,
-  onZoomIn,
-  onZoomOut,
-  onResetZoom,
+  onZoomChange,
 }: TimelineControlsProps) {
   const MIN_ZOOM = 0.1;
   const MAX_ZOOM = 10;
-
+  
   return (
     <div className="flex flex-col items-center gap-1 px-2 py-1 border-r border-gray-700/70">
       {previewTargetId && (
@@ -40,34 +36,18 @@ export function TimelineControls({
           />
         </>
       )}
-      <div className="border-t border-gray-700/70 pt-1 mt-1 flex flex-col gap-1">
-        <button
-          onClick={onZoomIn}
-          disabled={zoomScale >= MAX_ZOOM}
-          className="w-6 h-6 flex items-center justify-center hover:text-white text-gray-400 rounded disabled:opacity-30 disabled:cursor-not-allowed"
-          title="Zoom in"
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M7 3V11M3 7H11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-          </svg>
-        </button>
-        <button
-          onClick={onZoomOut}
-          disabled={zoomScale <= MIN_ZOOM}
-          className="w-6 h-6 flex items-center justify-center hover:text-white text-gray-400 rounded disabled:opacity-30 disabled:cursor-not-allowed"
-          title="Zoom out"
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M3 7H11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-          </svg>
-        </button>
-        <button
-          onClick={onResetZoom}
-          className="w-6 h-6 flex items-center justify-center hover:text-white text-gray-400 rounded text-xs"
-          title="Reset zoom"
-        >
-          1x
-        </button>
+      <div className="flex flex-col items-center gap-1 mt-2 pt-2 border-t border-gray-700/50">
+        <label className="text-[10px] text-gray-500 font-medium">Zoom</label>
+        <input
+          type="range"
+          min={MIN_ZOOM}
+          max={MAX_ZOOM}
+          step={0.1}
+          value={zoomScale}
+          onChange={(e) => onZoomChange(parseFloat(e.target.value))}
+          className="w-16 h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+        />
+        <span className="text-[10px] text-gray-400">{zoomScale.toFixed(1)}x</span>
       </div>
     </div>
   );
