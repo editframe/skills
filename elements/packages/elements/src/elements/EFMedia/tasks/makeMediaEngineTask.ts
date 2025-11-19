@@ -56,6 +56,20 @@ export const createMediaEngine = (host: EFMedia): Promise<MediaEngine> => {
     return AssetMediaEngine.fetch(host, urlGenerator, src);
   }
 
+  // Check if we're in local dev environment (vite plugin available)
+  // Detect by checking if apiHost is localhost or a local domain
+  const isLocalDev =
+    apiHost &&
+    (apiHost.includes("localhost") ||
+      apiHost.includes(".localhost") ||
+      apiHost.startsWith("http://127.0.0.1") ||
+      apiHost.startsWith("http://0.0.0.0"));
+
+  if (isLocalDev) {
+    // In local dev, use AssetMediaEngine with @ef-track routes for HTTP URLs
+    return AssetMediaEngine.fetch(host, urlGenerator, src);
+  }
+
   // Default: Use JitMediaEngine for remote URLs (transcoding service)
   const url = urlGenerator.generateManifestUrl(src);
   return JitMediaEngine.fetch(host, urlGenerator, url);
