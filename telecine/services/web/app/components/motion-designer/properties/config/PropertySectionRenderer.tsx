@@ -7,6 +7,7 @@ import { SelectInput } from "../controls/SelectInput";
 import { CheckboxInput } from "../controls/CheckboxInput";
 import { ColorInput } from "../controls/ColorInput";
 import { SpacingInput } from "../controls/SpacingInput";
+import { PaddingInput } from "../controls/PaddingInput";
 import { SliderInput } from "../controls/SliderInput";
 import { IconButtonGroup } from "../controls/IconButtonGroup";
 import { AlignmentGrid } from "../controls/AlignmentGrid";
@@ -152,6 +153,15 @@ function PropertyFieldRenderer({
     case "spacing":
       return (
         <SpacingInput
+          label={field.label}
+          value={value}
+          onChange={handleChange}
+        />
+      );
+
+    case "padding":
+      return (
+        <PaddingInput
           label={field.label}
           value={value}
           onChange={handleChange}

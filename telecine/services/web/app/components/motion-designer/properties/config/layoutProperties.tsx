@@ -48,6 +48,11 @@ export const layoutProperties: PropertySectionConfig[] = [
         placeholder: "0",
         visible: isContainer,
       },
+      {
+        type: "padding",
+        label: "Padding",
+        propPath: "padding",
+      },
     ],
   },
 ];

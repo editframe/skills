@@ -37,11 +37,58 @@ function isChildOfContainer(element: ElementNode, state: MotionDesignerState): b
   return parent ? isContainer(parent) : false;
 }
 
+function generatePaddingStyles(padding: { top?: number; right?: number; bottom?: number; left?: number } | undefined): CSSProperties {
+  if (!padding) {
+    return {};
+  }
+
+  // Check if any padding value is explicitly set (not undefined)
+  const hasAnyValue = padding.top !== undefined || padding.right !== undefined || padding.bottom !== undefined || padding.left !== undefined;
+  if (!hasAnyValue) {
+    return {};
+  }
+
+  const top = padding.top ?? 0;
+  const right = padding.right ?? 0;
+  const bottom = padding.bottom ?? 0;
+  const left = padding.left ?? 0;
+
+  // If all sides are equal, use shorthand
+  if (top === right && right === bottom && bottom === left) {
+    return { padding: `${top}px` };
+  }
+
+  // If top/bottom equal and left/right equal, use two-value shorthand
+  if (top === bottom && left === right) {
+    return { padding: `${top}px ${right}px` };
+  }
+
+  // Otherwise use individual properties
+  const styles: CSSProperties = {};
+  if (padding.top !== undefined) {
+    styles.paddingTop = `${top}px`;
+  }
+  if (padding.right !== undefined) {
+    styles.paddingRight = `${right}px`;
+  }
+  if (padding.bottom !== undefined) {
+    styles.paddingBottom = `${bottom}px`;
+  }
+  if (padding.left !== undefined) {
+    styles.paddingLeft = `${left}px`;
+  }
+
+  return styles;
+}
+
 export function generateLayoutStyles(
   element: ElementNode,
   state: MotionDesignerState,
 ): CSSProperties {
   const styles: CSSProperties = {};
+
+  // Apply box-sizing: border-box to all elements for consistent sizing
+  styles.boxSizing = "border-box";
 
   const isContainerElement = isContainer(element);
   const isContent = isContentElement(element);
@@ -196,6 +243,10 @@ export function generateLayoutStyles(
   if (isContainerElement) {
     styles.containerType = "size";
   }
+
+  // Padding: Apply to all elements
+  const paddingStyles = generatePaddingStyles(element.props.padding);
+  Object.assign(styles, paddingStyles);
 
   return styles;
 }

@@ -16,6 +16,7 @@ export type PropertyFieldConfig =
   | CheckboxFieldConfig
   | ColorFieldConfig
   | SpacingFieldConfig
+  | PaddingFieldConfig
   | TextFieldConfig
   | NumberGridFieldConfig
   | SliderFieldConfig
@@ -63,6 +64,10 @@ export interface ColorFieldConfig extends BaseFieldConfig {
 
 export interface SpacingFieldConfig extends BaseFieldConfig {
   type: "spacing";
+}
+
+export interface PaddingFieldConfig extends BaseFieldConfig {
+  type: "padding";
 }
 
 export interface TextFieldConfig extends BaseFieldConfig {
