@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useLayoutEffect } from "react";
 import type { MotionDesignerState, ElementNode } from "~/lib/motion-designer/types";
 import { getActiveRootTimegroupId } from "~/lib/motion-designer/utils";
 import { createDefaultSize, createDefaultSizeForFlexChild } from "~/lib/motion-designer/defaultSizes";
@@ -7,7 +7,8 @@ import { normalizeSize, isLegacySize, type ElementSize } from "~/lib/motion-desi
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
 import { PlayLoopButton } from "../controls/PlayLoopButton";
 import { PlayPauseButton } from "../controls/PlayPauseButton";
-import { hasRotateAnimations, parseRotationFromTransform } from "../rendering/styleGenerators/rotationUtils";
+import { evaluateOverlayPositionForElement } from "./overlayEvaluation";
+import type { OverlayPosition } from "./overlayTypes";
 
 /**
  * Formats duration in milliseconds to human-readable string
@@ -39,49 +40,70 @@ export function CanvasRootTimegroupOverlay({
   const canvasPosition = element.props.canvasPosition || { x: 100, y: 100 };
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
-  const [, forceUpdate] = useState({});
   const hasDraggedRef = useRef(false);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const dimensionsRef = useRef<{ width: number; height: number }>({ width: 400, height: 300 });
   const [durationMs, setDurationMs] = useState(0);
   const durationRef = useRef(0);
+  const [overlayPosition, setOverlayPosition] = useState<OverlayPosition | null>(null);
 
-  // Force re-render on every animation frame to keep overlay in sync
-  // Throttle updates to reduce jitter during zoom
+  // Read overlay position from DOM using centralized function
+  useLayoutEffect(() => {
+    if (!contentRef.current) return;
+    
+    // Find overlay layer
+    const overlayLayer = contentRef.current.parentElement as HTMLElement;
+    if (!overlayLayer) return;
+    
+    const overlayLayerRect = overlayLayer.getBoundingClientRect();
+    
+    // Use centralized position reading function
+    const position = evaluateOverlayPositionForElement(
+      element.id,
+      overlayLayerRect,
+      canvasScale,
+    );
+    
+    if (!position) return;
+    
+    // Update overlay DOM directly
+    contentRef.current.style.left = `${position.x}px`;
+    contentRef.current.style.top = `${position.y}px`;
+    contentRef.current.style.width = `${position.width}px`;
+    contentRef.current.style.height = `${position.height}px`;
+    
+    // Store position for use in render
+    setOverlayPosition(position);
+    
+    // Update dimensions ref
+    const wrapperElement = document.querySelector(`[data-timegroup-id="${element.id}"]`) as HTMLElement;
+    if (wrapperElement) {
+      const timegroupElement = wrapperElement.querySelector(`ef-timegroup#${element.id}`) as any;
+      const measureElement = timegroupElement || wrapperElement;
+      const width = measureElement.offsetWidth;
+      const height = measureElement.offsetHeight;
+      if (width > 0 && height > 0) {
+        dimensionsRef.current = { width, height };
+      }
+    }
+  }, [element.id, element.props.canvasPosition, element.props.size, canvasScale]);
+
+  // Read duration from DOM element
   useEffect(() => {
     let rafId: number;
     let lastUpdateTime = 0;
     const UPDATE_THROTTLE_MS = 16; // ~60fps max update rate
     
-    const updateOverlay = (currentTime: number) => {
-      // Throttle updates to reduce jitter during zoom
+    const updateDuration = (currentTime: number) => {
       if (currentTime - lastUpdateTime < UPDATE_THROTTLE_MS) {
-        rafId = requestAnimationFrame(updateOverlay);
+        rafId = requestAnimationFrame(updateDuration);
         return;
       }
       lastUpdateTime = currentTime;
       
-      // Find the wrapper div first
       const wrapperElement = document.querySelector(`[data-timegroup-id="${element.id}"]`) as HTMLElement;
       if (wrapperElement) {
-        // Then find the actual ef-timegroup element inside it
         const timegroupElement = wrapperElement.querySelector(`ef-timegroup#${element.id}`) as any;
-        const measureElement = timegroupElement || wrapperElement;
-        
-        // Use offsetWidth/offsetHeight which gives us the intrinsic size
-        const width = measureElement.offsetWidth;
-        const height = measureElement.offsetHeight;
-        
-        // Only force update if dimensions actually changed (larger threshold to reduce jitter)
-        if (width > 0 && height > 0) {
-          if (Math.abs(dimensionsRef.current.width - width) > 1 || 
-              Math.abs(dimensionsRef.current.height - height) > 1) {
-            dimensionsRef.current = { width, height };
-            forceUpdate({});
-          }
-        }
-        
-        // Read duration from DOM element once per RAF cycle
         if (timegroupElement && typeof timegroupElement.durationMs === 'number') {
           const newDurationMs = timegroupElement.durationMs;
           if (Math.abs(newDurationMs - durationRef.current) > 1) {
@@ -91,15 +113,15 @@ export function CanvasRootTimegroupOverlay({
         }
       }
       
-      rafId = requestAnimationFrame(updateOverlay);
+      rafId = requestAnimationFrame(updateDuration);
     };
     
-    rafId = requestAnimationFrame(updateOverlay);
+    rafId = requestAnimationFrame(updateDuration);
     
     return () => {
       cancelAnimationFrame(rafId);
     };
-  }, [element.id, canvasScale]);
+  }, [element.id]);
 
   const dragStartPositionRef = useRef<{ x: number; y: number } | null>(null);
   const wasSelectedAtMouseDownRef = useRef(false);
@@ -428,16 +450,14 @@ export function CanvasRootTimegroupOverlay({
     return rotatePoint(centerX, centerY, localCornerX, localCornerY, rotationRadians);
   }
 
-  // Overlay must be positioned and sized in screen coordinates
-  // Since overlay parent only translates (no scale), we must apply scale here
-  // Use element props as source of truth, fallback to measured dimensions
-  const sizeDimensions = getSizeDimensions(element.props?.size);
-  const elementWidth = sizeDimensions.width || dimensionsRef.current.width;
-  const elementHeight = sizeDimensions.height || dimensionsRef.current.height;
-  const screenX = canvasPosition.x * canvasScale;
-  const screenY = canvasPosition.y * canvasScale;
-  const screenWidth = elementWidth * canvasScale;
-  const screenHeight = elementHeight * canvasScale;
+  // Use position from centralized reading function
+  // Fallback to calculated position for initial render
+  const screenX = overlayPosition?.x ?? canvasPosition.x * canvasScale;
+  const screenY = overlayPosition?.y ?? canvasPosition.y * canvasScale;
+  const screenWidth = overlayPosition?.width ?? dimensionsRef.current.width;
+  const screenHeight = overlayPosition?.height ?? dimensionsRef.current.height;
+  const elementWidth = dimensionsRef.current.width;
+  const elementHeight = dimensionsRef.current.height;
 
   // Determine which resize handles should be visible based on sizing mode
   const normalizedSize = normalizeSize(element.props?.size);
@@ -458,6 +478,7 @@ export function CanvasRootTimegroupOverlay({
   return (
     <div
       ref={contentRef}
+      data-overlay-id={element.id}
       className="absolute"
       style={{
         left: `${screenX}px`,
