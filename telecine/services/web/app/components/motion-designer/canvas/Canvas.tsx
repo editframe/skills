@@ -9,6 +9,7 @@ import { ChildElementOverlays } from "./ChildElementOverlays";
 import { DragCreationPreview } from "./DragCreationPreview";
 import { CanvasContextMenu } from "./CanvasContextMenu";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
+import { OverlayUpdateLoop } from "./OverlayUpdateLoop";
 
 interface CanvasProps {
   state: MotionDesignerState;
@@ -22,6 +23,7 @@ export function Canvas({ state }: CanvasProps) {
   const [dragCurrent, setDragCurrent] = React.useState<{ canvasX: number; canvasY: number } | null>(null);
   const [canvasContextMenu, setCanvasContextMenu] = React.useState<{ x: number; y: number } | null>(null);
   const lastClickTimeRef = React.useRef<number>(0);
+  const overlayLayerRef = React.useRef<HTMLDivElement>(null);
 
   const { transform, containerRef, handlers } = usePanZoom(
     state.ui.canvasTransform,
@@ -511,6 +513,7 @@ export function Canvas({ state }: CanvasProps) {
       
       {/* Overlay layer - does NOT scale, only translates */}
       <div
+        ref={overlayLayerRef}
         className="absolute inset-0"
         style={{
           transform: `translate(${transform.x}px, ${transform.y}px)`,
@@ -553,6 +556,13 @@ export function Canvas({ state }: CanvasProps) {
           />
         )}
       </div>
+
+      {/* Overlay update loop */}
+      <OverlayUpdateLoop
+        state={state}
+        canvasTransform={transform}
+        overlayLayerRef={overlayLayerRef}
+      />
       
       {/* Canvas context menu */}
       {canvasContextMenu && (
