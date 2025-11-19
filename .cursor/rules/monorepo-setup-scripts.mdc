@@ -25,6 +25,15 @@ The root `scripts/docker-compose` wrapper always delegates to telecine's docker-
 
 **Usage**: Run `scripts/docker-compose` from anywhere in the monorepo to execute docker-compose commands with proper worktree configuration.
 
+### `scripts/browsertest`
+
+- elements/scripts/browsertest <pathfilter>
+- telecine/scripts/browsertest <pathfilter>
+
+Generally filter tests by a file path or directory path. Otherwise the entire suite will run, which is much slower than running single test files.
+
+This wraps vitest, so other vitest options can be passed through after the path filter.
+
 ### `scripts/docker`
 
 The root `scripts/docker` wrapper delegates to telecine's docker script (`telecine/scripts/docker`). This provides:
