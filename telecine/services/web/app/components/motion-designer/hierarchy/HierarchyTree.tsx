@@ -18,6 +18,8 @@ export function HierarchyTree({ state }: HierarchyTreeProps) {
   const rootContainerRef = useRef<HTMLDivElement>(null);
   const [rootDropIndex, setRootDropIndex] = useState<number | null>(null);
   const [resolvedDropTarget, setResolvedDropTarget] = useState<DropTarget | null>(null);
+  const [highlightedElementId, setHighlightedElementId] = useState<string | null>(null);
+  const [hoveredElementId, setHoveredElementId] = useState<string | null>(null);
   const elementRefsRef = useRef<Map<string, { element: HTMLDivElement; depth: number }>>(new Map());
   const zoneStateMachineRef = useRef<DropZoneStateMachine>(new DropZoneStateMachine());
   const rafIdRef = useRef<number | null>(null);
@@ -260,6 +262,7 @@ export function HierarchyTree({ state }: HierarchyTreeProps) {
       {state.composition.rootTimegroupIds.map((id, index) => {
         const element = state.composition.elements[id];
         if (!element) return null;
+        const isLast = index === state.composition.rootTimegroupIds.length - 1;
         return (
           <HierarchyItem
             key={id}
@@ -269,6 +272,10 @@ export function HierarchyTree({ state }: HierarchyTreeProps) {
             dropTarget={resolvedDropTarget}
             registerElementRef={registerElementRef}
             unregisterElementRef={unregisterElementRef}
+            highlightedElementId={highlightedElementId}
+            onHighlightChange={setHighlightedElementId}
+            hoveredElementId={hoveredElementId}
+            onHoverChange={setHoveredElementId}
           />
         );
       })}
