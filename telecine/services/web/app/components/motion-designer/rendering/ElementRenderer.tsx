@@ -136,6 +136,8 @@ const buildInteractionProps = (
     ...finalPropsWithoutStyle,
     style: mergedStyle,
     "data-element-id": element.id,
+    // Add id attribute for video elements so TargetController can find them
+    ...(element.type === "video" ? { id: element.id } : {}),
   };
 
   if (element.type !== "timegroup") {
