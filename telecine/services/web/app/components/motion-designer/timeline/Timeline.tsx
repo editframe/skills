@@ -6,15 +6,16 @@ import type {
 } from "~/lib/motion-designer/types";
 import { getActiveRootTimegroupId } from "~/lib/motion-designer/utils";
 import { TimelineControls } from "./TimelineControls";
-import { TimelineRuler } from "./TimelineRuler";
+import { TimelineRuler, calculateFrameIntervalMs, calculatePixelsPerFrame, shouldShowFrameMarkers } from "./TimelineRuler";
 import { TimelinePlayhead } from "./TimelinePlayhead";
+import { FrameHighlight } from "./FrameHighlight";
 import { AnimationTrack } from "./AnimationTrack";
 import { VideoThumbnailTrack } from "./VideoThumbnailTrack";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
 import { useTimeManager } from "./useTimeManager";
 import { useTimelineScrubbing } from "./useTimelineScrubbing";
-import { useTimelineZoom } from "./useTimelineZoom";
-import { calculateContentWidth, timeToPixels } from "./timelinePosition";
+import { useTimelineKeyboardNavigation } from "./useTimelineKeyboardNavigation";
+import { timeToPixels, calculateContentWidth } from "./timelinePosition";
 
 // Track data structure for separate label/strip rendering
 interface TrackData {
@@ -38,8 +39,8 @@ interface TimelineTrackContext {
   timelineContainerRef: React.RefObject<HTMLDivElement>;
   snapPoints: number[];
   currentTime: number;
-  zoomScale: number;
   containerWidth: number;
+  zoomScale: number;
   actions: {
     updateAnimation: (
       elementId: string,
@@ -142,7 +143,6 @@ function renderAnimationTracks(
         snapPoints={context.snapPoints}
         currentTime={context.currentTime}
         isSelected={state.ui.selectedAnimationId === animation.id}
-        zoomScale={context.zoomScale}
         containerWidth={context.containerWidth}
         showLabel={showLabel}
       />,
@@ -164,6 +164,7 @@ function renderAnimationTracks(
 function renderVideoTracks(
   videoElements: ElementNode[],
   context: TimelineTrackContext,
+  scrollContainerRef: React.RefObject<HTMLDivElement>,
   showLabel: boolean = true,
 ): React.ReactNode[] {
   return videoElements.map((videoElement) => (
@@ -174,6 +175,7 @@ function renderVideoTracks(
       timelineContainerRef={context.timelineContainerRef}
       zoomScale={context.zoomScale}
       containerWidth={context.containerWidth}
+      scrollContainerRef={scrollContainerRef}
       showLabel={showLabel}
     />
   ));
@@ -184,6 +186,7 @@ function calculateTimelineLayout(
   element: ElementNode,
   state: MotionDesignerState,
   context: TimelineTrackContext,
+  scrollContainerRef: React.RefObject<HTMLDivElement>,
 ): TimelineLayout {
   // Step 1: Collect all snap points
   const rawSnapPoints = collectSnapPoints(element, state);
@@ -203,7 +206,7 @@ function calculateTimelineLayout(
   const trackStrips = renderAnimationTracks(element, state, trackContextWithSnapPoints, false);
   
   // Step 5: Create video thumbnail tracks (without labels)
-  const videoTracks = renderVideoTracks(videoData, trackContextWithSnapPoints, false);
+  const videoTracks = renderVideoTracks(videoData, trackContextWithSnapPoints, scrollContainerRef, false);
 
   return {
     snapPoints,
@@ -264,53 +267,43 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
   const videoLabelsContainerRef = useRef<HTMLDivElement>(null);
   const contentScrollContainerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
+  const [zoomScale, setZoomScale] = useState(1.0);
   
   const { currentTime: scrubberCurrentTime, duration: durationMs, isScrubbingRef: timeManagerScrubbingRef } = useTimeManager(activeRootTimegroupId, state);
 
-  // Measure container width for zoom calculations - use contentScrollContainerRef which is the actual scrollable container
-  // Initialize immediately and also set up ResizeObserver
+  // Calculate if frame markers should be shown (for frame highlight)
+  const fps = activeRootTimegroup?.props?.fps ?? 30;
+  const showFrameMarkers = useMemo(() => {
+    if (fps <= 0) return false;
+    const frameIntervalMs = calculateFrameIntervalMs(fps);
+    const pixelsPerFrame = calculatePixelsPerFrame(frameIntervalMs, zoomScale);
+    return shouldShowFrameMarkers(pixelsPerFrame);
+  }, [fps, zoomScale]);
+
+  // Measure container width
   useEffect(() => {
     const measureWidth = () => {
       if (contentScrollContainerRef.current) {
         const rect = contentScrollContainerRef.current.getBoundingClientRect();
-        if (rect.width > 0) {
-          setContainerWidth(rect.width);
-        }
+        setContainerWidth(rect.width);
       }
     };
 
-    // Measure immediately
     measureWidth();
 
-    // Also measure after a short delay to catch cases where layout hasn't settled
-    const timeoutId = setTimeout(measureWidth, 0);
-
-    if (!contentScrollContainerRef.current) {
-      clearTimeout(timeoutId);
-      return;
-    }
+    if (!contentScrollContainerRef.current) return;
 
     const resizeObserver = new ResizeObserver((entries) => {
       const width = entries[0].contentRect.width;
-      if (width > 0) {
-        setContainerWidth(width);
-      }
+      setContainerWidth(width);
     });
 
     resizeObserver.observe(contentScrollContainerRef.current);
     
     return () => {
-      clearTimeout(timeoutId);
       resizeObserver.disconnect();
     };
   }, []);
-
-  // Initialize zoom hook
-  const zoom = useTimelineZoom({
-    durationMs,
-    containerWidth,
-    containerRef: contentScrollContainerRef,
-  });
 
   // Synchronization: Sync time and refs
   useTimeSync(scrubberCurrentTime, actions.setCurrentTime);
@@ -372,129 +365,27 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
     };
   }, []);
 
-
-
-  // Prevent browser swipe gestures during horizontal scrolling
+  // Handle wheel events for scrolling
   useEffect(() => {
-    const contentContainer = contentScrollContainerRef.current;
-    if (!contentContainer) return;
+    const scrollContainer = contentScrollContainerRef.current;
+    if (!scrollContainer) return;
 
-    let touchStartX = 0;
-    let touchStartY = 0;
-    let isScrollingHorizontally = false;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      if (e.touches.length === 1) {
-        touchStartX = e.touches[0].clientX;
-        touchStartY = e.touches[0].clientY;
-        isScrollingHorizontally = false;
+    const handleWheel = (e: WheelEvent) => {
+      // Only handle horizontal scrolling
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+        e.preventDefault();
+        const scrollDelta = e.deltaX;
+        scrollContainer.scrollLeft += scrollDelta;
       }
     };
 
-    const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches.length === 1 && touchStartX !== 0) {
-        const deltaX = Math.abs(e.touches[0].clientX - touchStartX);
-        const deltaY = Math.abs(e.touches[0].clientY - touchStartY);
-        
-        // If horizontal movement is greater than vertical, prevent default (browser swipe)
-        if (deltaX > deltaY && deltaX > 10) {
-          isScrollingHorizontally = true;
-          e.preventDefault();
-        }
-      }
-    };
-
-    const handleTouchEnd = () => {
-      touchStartX = 0;
-      touchStartY = 0;
-      isScrollingHorizontally = false;
-    };
-
-    // Use passive: false to allow preventDefault
-    contentContainer.addEventListener('touchstart', handleTouchStart, { passive: true });
-    contentContainer.addEventListener('touchmove', handleTouchMove, { passive: false });
-    contentContainer.addEventListener('touchend', handleTouchEnd, { passive: true });
+    scrollContainer.addEventListener('wheel', handleWheel, { passive: false });
 
     return () => {
-      contentContainer.removeEventListener('touchstart', handleTouchStart);
-      contentContainer.removeEventListener('touchmove', handleTouchMove);
-      contentContainer.removeEventListener('touchend', handleTouchEnd);
+      scrollContainer.removeEventListener('wheel', handleWheel);
     };
   }, []);
 
-  // Add wheel and touch handlers for zoom
-  useEffect(() => {
-    const contentContainer = contentScrollContainerRef.current;
-    if (!contentContainer) return;
-
-    contentContainer.addEventListener('wheel', zoom.handlers.onWheel, { passive: false });
-    contentContainer.addEventListener('touchstart', zoom.handlers.onTouchStart, { passive: true });
-    contentContainer.addEventListener('touchmove', zoom.handlers.onTouchMove, { passive: false });
-    contentContainer.addEventListener('touchend', zoom.handlers.onTouchEnd, { passive: true });
-
-    return () => {
-      contentContainer.removeEventListener('wheel', zoom.handlers.onWheel);
-      contentContainer.removeEventListener('touchstart', zoom.handlers.onTouchStart);
-      contentContainer.removeEventListener('touchmove', zoom.handlers.onTouchMove);
-      contentContainer.removeEventListener('touchend', zoom.handlers.onTouchEnd);
-    };
-  }, [zoom.handlers]);
-
-  // Auto-scroll during playback to keep playhead visible
-  useEffect(() => {
-    if (!activeRootTimegroupId || !contentScrollContainerRef.current) return;
-    if (timeManagerScrubbingRef.current) return; // Don't auto-scroll while scrubbing
-
-    let animationFrameId: number | null = null;
-
-    const checkAndScroll = () => {
-      const timegroupElement = document.getElementById(activeRootTimegroupId!) as any;
-      const isPlaying = timegroupElement?.playbackController?.playing;
-
-      if (!isPlaying) {
-        animationFrameId = requestAnimationFrame(checkAndScroll);
-        return;
-      }
-
-      const container = contentScrollContainerRef.current;
-      if (!container || durationMs <= 0 || containerWidth <= 0) {
-        animationFrameId = requestAnimationFrame(checkAndScroll);
-        return;
-      }
-
-      // Calculate playhead position in pixels
-      const playheadPixels = timeToPixels(scrubberCurrentTime, durationMs, containerWidth, zoom.zoomScale);
-      
-      // Get container viewport bounds
-      const scrollLeft = container.scrollLeft;
-      const viewportWidth = container.clientWidth;
-      const margin = viewportWidth * 0.1; // 10% margin
-      
-      // Calculate playhead position relative to viewport
-      const playheadRelativeToViewport = playheadPixels - scrollLeft;
-      
-      // Check if playhead is approaching edges
-      if (playheadRelativeToViewport < margin) {
-        // Playhead approaching left edge - scroll left
-        const targetScroll = Math.max(0, playheadPixels - margin);
-        container.scrollTo({ left: targetScroll, behavior: 'smooth' });
-      } else if (playheadRelativeToViewport > viewportWidth - margin) {
-        // Playhead approaching right edge - scroll right
-        const targetScroll = playheadPixels - viewportWidth + margin;
-        container.scrollTo({ left: targetScroll, behavior: 'smooth' });
-      }
-
-      animationFrameId = requestAnimationFrame(checkAndScroll);
-    };
-
-    animationFrameId = requestAnimationFrame(checkAndScroll);
-
-    return () => {
-      if (animationFrameId !== null) {
-        cancelAnimationFrame(animationFrameId);
-      }
-    };
-  }, [activeRootTimegroupId, scrubberCurrentTime, durationMs, containerWidth, zoom.zoomScale, timeManagerScrubbingRef]);
 
   // Handle seek from playhead - update current time immediately and seek timegroup element
   // Memoized to prevent recreation and ensure stable reference
@@ -547,9 +438,10 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
     durationMs,
     onSeek: handleSeek,
     isScrubbingRef: timeManagerScrubbingRef,
-    zoomScale: zoom.zoomScale,
+    zoomScale,
     containerWidth,
     scrollContainerRef: contentScrollContainerRef,
+    fps: activeRootTimegroup?.props?.fps ?? 30,
   });
 
   // Shared scrubbing hook for tracks area
@@ -559,9 +451,19 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
     durationMs,
     onSeek: handleSeek,
     isScrubbingRef: timeManagerScrubbingRef,
-    zoomScale: zoom.zoomScale,
+    zoomScale,
     containerWidth,
+    fps: activeRootTimegroup?.props?.fps ?? 30,
     scrollContainerRef: contentScrollContainerRef,
+  });
+
+  // Keyboard navigation hook for arrow keys
+  useTimelineKeyboardNavigation({
+    currentTime: scrubberCurrentTime,
+    durationMs,
+    fps: activeRootTimegroup?.props?.fps ?? 30,
+    onSeek: handleSeek,
+    containerRef: contentScrollContainerRef,
   });
 
   // Check if click target is an animation bar or resize handle
@@ -590,11 +492,11 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
     tracksScrubbing.handleMouseDown(e);
   };
 
-  // Calculate content width based on zoom (must be before early return to follow Rules of Hooks)
+  // Calculate content width (must be before early return to follow Rules of Hooks)
   const contentWidth = useMemo(() => {
-    if (containerWidth <= 0 || durationMs <= 0) return containerWidth;
-    return calculateContentWidth(durationMs, containerWidth, zoom.zoomScale);
-  }, [durationMs, containerWidth, zoom.zoomScale]);
+    if (durationMs <= 0 || containerWidth <= 0) return 0;
+    return calculateContentWidth(durationMs, containerWidth, zoomScale);
+  }, [durationMs, containerWidth, zoomScale]);
 
   if (!activeRootTimegroup) {
     return (
@@ -610,8 +512,8 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
     timelineContainerRef,
     snapPoints: [], // Will be populated by calculateTimelineLayout
     currentTime: scrubberCurrentTime,
-    zoomScale: zoom.zoomScale,
     containerWidth,
+    zoomScale,
     actions: {
       updateAnimation: actions.updateAnimation,
       selectAnimation: actions.selectAnimation,
@@ -619,17 +521,15 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
   };
 
   // Evaluation: Calculate what to render (snap points and track elements)
-  const layout = calculateTimelineLayout(activeRootTimegroup, state, trackContext);
+  const layout = calculateTimelineLayout(activeRootTimegroup, state, trackContext, contentScrollContainerRef);
 
   return (
     <div className="h-48 bg-gray-900 border-t border-gray-700/70 flex">
       <TimelineControls
         previewTargetId={activeRootTimegroupId || undefined}
         onRestart={() => actions.setCurrentTime(0)}
-        zoomScale={zoom.zoomScale}
-        onZoomIn={zoom.zoomIn}
-        onZoomOut={zoom.zoomOut}
-        onResetZoom={zoom.resetZoom}
+        zoomScale={zoomScale}
+        onZoomChange={setZoomScale}
       />
       <div className="flex-1 flex flex-col relative">
         {/* Two-column layout: labels column (fixed) + content column (flex) */}
@@ -667,24 +567,30 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
           {/* Content column - ruler and track strips share this space with horizontal scrolling */}
           <div 
             ref={contentScrollContainerRef}
-            className="flex-1 flex flex-col relative overflow-x-auto overflow-y-hidden"
+            tabIndex={0}
+            className="flex-1 flex flex-col relative overflow-x-auto overflow-y-hidden focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
             style={{ minWidth: 0 }}
           >
-            {/* Inner container with calculated width based on zoom */}
+            {/* Inner container with calculated width */}
             <div 
               className="flex flex-col relative"
-              style={{ width: `${contentWidth}px`, minWidth: '100%' }}
+              style={{ 
+                width: contentWidth > 0 ? `${contentWidth}px` : '100%',
+                minWidth: '100%' 
+              }}
             >
               {/* Ruler area - spans full content width */}
               <div 
                 ref={timelineContainerRef}
-                className="h-8 border-b border-gray-700/70 bg-gray-850 relative cursor-pointer"
+                className="h-8 border-b border-gray-700/70 bg-gray-850/80 relative cursor-pointer"
                 onMouseDown={rulerScrubbing.handleMouseDown}
               >
                 <TimelineRuler 
-                  durationMs={durationMs} 
-                  zoomScale={zoom.zoomScale}
+                  durationMs={durationMs}
+                  zoomScale={zoomScale}
                   containerWidth={containerWidth}
+                  fps={activeRootTimegroup?.props?.fps ?? 30}
+                  scrollContainerRef={contentScrollContainerRef}
                 />
               </div>
               
@@ -711,8 +617,18 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
                 {layout.trackStrips}
               </div>
               
-              {/* Playhead spans full content column */}
+              {/* Frame highlight and playhead span full content column */}
               <div className="absolute inset-0 pointer-events-none">
+                {/* Frame highlight - shows current frame as a rectangle */}
+                <FrameHighlight
+                  currentTime={scrubberCurrentTime}
+                  durationMs={durationMs}
+                  zoomScale={zoomScale}
+                  containerWidth={containerWidth}
+                  fps={fps}
+                  showFrameMarkers={showFrameMarkers}
+                />
+                {/* Playhead */}
                 <TimelinePlayhead
                   currentTime={scrubberCurrentTime}
                   durationMs={durationMs}
@@ -720,9 +636,11 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
                   onSeek={handleSeek}
                   isScrubbingRef={timeManagerScrubbingRef}
                   activeTimegroupId={activeRootTimegroupId}
-                  zoomScale={zoom.zoomScale}
+                  zoomScale={zoomScale}
                   containerWidth={containerWidth}
                   scrollContainerRef={contentScrollContainerRef}
+                  rawScrubTime={rulerScrubbing.rawScrubTime ?? tracksScrubbing.rawScrubTime ?? null}
+                  fps={activeRootTimegroup?.props?.fps ?? 30}
                 />
               </div>
             </div>
