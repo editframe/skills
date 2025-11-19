@@ -163,6 +163,37 @@ function evaluateSequenceDuration(
     if (!shouldParticipateInDurationCalculation(child)) {
       return;
     }
+    // Prevent infinite loops: skip children that are already calculating their duration
+    if (
+      child instanceof EFTimegroup &&
+      durationCalculationInProgress.has(child)
+    ) {
+      return;
+    }
+    
+    // Additional safety: if child is a timegroup, check if any of its ancestors
+    // (including the current timegroup if it's in the parent chain) are calculating
+    // This prevents cycles where a child's descendant eventually calls back to an ancestor
+    if (child instanceof EFTimegroup) {
+      let ancestor: Node | null = child.parentNode;
+      let shouldSkip = false;
+      while (ancestor) {
+        if (ancestor instanceof EFTimegroup && durationCalculationInProgress.has(ancestor)) {
+          // Found a calculating ancestor - skip this child to prevent cycle
+          shouldSkip = true;
+          break;
+        }
+        // Stop if we've reached the current timegroup (it's always calculating at this point)
+        if (ancestor === timegroup) {
+          break;
+        }
+        ancestor = ancestor.parentNode;
+      }
+      if (shouldSkip) {
+        return;
+      }
+    }
+    
     // Subtract overlap for all items after the first
     if (participatingIndex > 0) {
       duration -= overlapMs;
@@ -193,15 +224,40 @@ function evaluateContainDuration(
     if (!shouldParticipateInDurationCalculation(child)) {
       continue;
     }
-    // Prevent infinite loops: if child is a contain mode timegroup that's already
-    // calculating its duration, skip it to avoid circular dependency
+    // Prevent infinite loops: skip children that are already calculating their duration
+    // This check applies to all timegroup children, not just contain mode, because
+    // a sequence-mode child could contain a contain-mode grandchild that
+    // eventually references back to the parent through the parent chain
     if (
       child instanceof EFTimegroup &&
-      child.mode === "contain" &&
       durationCalculationInProgress.has(child)
     ) {
       continue;
     }
+    
+    // Additional safety: if child is a timegroup, check if any of its ancestors
+    // (including the current timegroup if it's in the parent chain) are calculating
+    // This prevents cycles where a child's descendant eventually calls back to an ancestor
+    if (child instanceof EFTimegroup) {
+      let ancestor: Node | null = child.parentNode;
+      let shouldSkip = false;
+      while (ancestor) {
+        if (ancestor instanceof EFTimegroup && durationCalculationInProgress.has(ancestor)) {
+          // Found a calculating ancestor - skip this child to prevent cycle
+          shouldSkip = true;
+          break;
+        }
+        // Stop if we've reached the current timegroup (it's always calculating at this point)
+        if (ancestor === timegroup) {
+          break;
+        }
+        ancestor = ancestor.parentNode;
+      }
+      if (shouldSkip) {
+        continue;
+      }
+    }
+    
     maxDuration = Math.max(maxDuration, child.durationMs);
   }
   // Ensure non-negative duration (invariant)
