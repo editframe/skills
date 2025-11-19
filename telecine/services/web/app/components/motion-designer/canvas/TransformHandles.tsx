@@ -3,7 +3,9 @@ import type { ElementNode, MotionDesignerState } from "~/lib/motion-designer/typ
 import { getSizeDimensions, convertToFixedSize } from "~/lib/motion-designer/sizingUtils";
 import { normalizeSize, isLegacySize, type ElementSize } from "~/lib/motion-designer/sizingTypes";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
-import { hasRotateAnimations, parseRotationFromTransform } from "../rendering/styleGenerators/rotationUtils";
+import { hasRotateAnimations } from "../rendering/styleGenerators/rotationUtils";
+import { evaluateOverlayPositionForElement } from "./overlayEvaluation";
+import type { OverlayPosition } from "./overlayTypes";
 
 interface TransformHandlesProps {
   element: ElementNode;
@@ -90,7 +92,7 @@ export function TransformHandles({
   const actions = useMotionDesignerActions();
   const overlayRef = useRef<HTMLDivElement>(null);
   const dimensionsRef = useRef({ width: 0, height: 0 });
-  const [overlayPosition, setOverlayPosition] = useState({ x: 0, y: 0 });
+  const [overlayPosition, setOverlayPosition] = useState<OverlayPosition | null>(null);
   const [computedRotation, setComputedRotation] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState<string | null>(null);
@@ -108,67 +110,58 @@ export function TransformHandles({
   const showRotateHandle = !isRootTimegroup;
   const hasRotateAnims = hasRotateAnimations(element);
 
-  // Always read overlay position from DOM in useLayoutEffect - this handles parent hierarchy,
-  // scaling, and animations correctly. Runs synchronously before paint, same frame as element render.
+  // Read overlay position from DOM using centralized function
+  // This handles parent hierarchy, scaling, and animations correctly
   useLayoutEffect(() => {
     if (!overlayRef.current) return;
-    
-    const contentElement = document.querySelector(
-      `[data-element-id="${element.id}"]`,
-    ) as HTMLElement;
-    
-    if (!contentElement) return;
     
     // Find overlay layer
     const overlayLayer = overlayRef.current.parentElement as HTMLElement;
     if (!overlayLayer) return;
     
-    // Get actual DOM positions - this naturally handles parent hierarchy and scaling
-    const elementRect = contentElement.getBoundingClientRect();
     const overlayLayerRect = overlayLayer.getBoundingClientRect();
-    const intrinsicWidth = contentElement.offsetWidth;
-    const intrinsicHeight = contentElement.offsetHeight;
     
-    // Calculate element's center point (in screen coordinates)
-    const elementCenterX = elementRect.left + elementRect.width / 2;
-    const elementCenterY = elementRect.top + elementRect.height / 2;
+    // Use centralized position reading function
+    const position = evaluateOverlayPositionForElement(
+      element.id,
+      overlayLayerRect,
+      canvasScale,
+    );
     
-    // Convert to overlay layer coordinates
-    const elementCenterOverlayX = elementCenterX - overlayLayerRect.left;
-    const elementCenterOverlayY = elementCenterY - overlayLayerRect.top;
-    
-    // Calculate overlay size in screen coordinates
-    const screenWidth = intrinsicWidth * canvasScale;
-    const screenHeight = intrinsicHeight * canvasScale;
-    
-    // Position overlay center to match element center
-    const overlayX = elementCenterOverlayX - screenWidth / 2;
-    const overlayY = elementCenterOverlayY - screenHeight / 2;
+    if (!position) return;
     
     // Update overlay DOM directly - no React re-render needed
-    overlayRef.current.style.left = `${overlayX}px`;
-    overlayRef.current.style.top = `${overlayY}px`;
-    
-    // Read computed rotation from DOM (handles both design rotation and animation rotation)
-    const computedStyle = window.getComputedStyle(contentElement);
-    const transform = computedStyle.transform;
-    const computedRot = parseRotationFromTransform(transform);
-    overlayRef.current.style.transform = `rotate(${computedRot}deg)`;
+    overlayRef.current.style.left = `${position.x}px`;
+    overlayRef.current.style.top = `${position.y}px`;
+    overlayRef.current.style.width = `${position.width}px`;
+    overlayRef.current.style.height = `${position.height}px`;
+    overlayRef.current.style.transform = `rotate(${position.rotation}deg)`;
     
     // Update state for rotation handle calculations
     if (hasRotateAnims) {
-      setComputedRotation(computedRot);
+      setComputedRotation(position.rotation);
     } else {
       setComputedRotation(null);
     }
     
     // Update dimensions ref for size calculations
-    if (intrinsicWidth > 0 && intrinsicHeight > 0) {
-      dimensionsRef.current = { 
-        width: intrinsicWidth, 
-        height: intrinsicHeight,
-      };
+    // Get intrinsic size from DOM element
+    const contentElement = document.querySelector(
+      `[data-element-id="${element.id}"]`,
+    ) as HTMLElement;
+    if (contentElement) {
+      const intrinsicWidth = contentElement.offsetWidth;
+      const intrinsicHeight = contentElement.offsetHeight;
+      if (intrinsicWidth > 0 && intrinsicHeight > 0) {
+        dimensionsRef.current = { 
+          width: intrinsicWidth, 
+          height: intrinsicHeight,
+        };
+      }
     }
+    
+    // Store position for use in render
+    setOverlayPosition(position);
   }, [element.id, element.props.position, element.props.size, state, canvasScale, canvasTranslateX, canvasTranslateY, hasRotateAnims]);
 
   // Use RAF only for continuous updates during interactions (dragging, resizing, rotating)
@@ -179,53 +172,58 @@ export function TransformHandles({
     let rafId: number;
     
     const updateMeasurements = () => {
-      const contentElement = document.querySelector(
-        `[data-element-id="${element.id}"]`,
-      ) as HTMLElement;
-      
-      if (!contentElement) {
+      if (!overlayRef.current) {
         rafId = requestAnimationFrame(updateMeasurements);
         return;
       }
       
       // Find overlay layer
-      let overlayLayer: HTMLElement | null = null;
-      if (overlayRef.current) {
-        overlayLayer = overlayRef.current.parentElement as HTMLElement;
-      }
-      
+      const overlayLayer = overlayRef.current.parentElement as HTMLElement;
       if (!overlayLayer) {
         rafId = requestAnimationFrame(updateMeasurements);
         return;
       }
       
-      const elementRect = contentElement.getBoundingClientRect();
       const overlayLayerRect = overlayLayer.getBoundingClientRect();
-      const intrinsicWidth = contentElement.offsetWidth;
-      const intrinsicHeight = contentElement.offsetHeight;
       
-      const elementCenterX = elementRect.left + elementRect.width / 2;
-      const elementCenterY = elementRect.top + elementRect.height / 2;
-      const elementCenterOverlayX = elementCenterX - overlayLayerRect.left;
-      const elementCenterOverlayY = elementCenterY - overlayLayerRect.top;
+      // Use centralized position reading function
+      const position = evaluateOverlayPositionForElement(
+        element.id,
+        overlayLayerRect,
+        canvasScale,
+      );
       
-      const screenWidth = intrinsicWidth * canvasScale;
-      const screenHeight = intrinsicHeight * canvasScale;
-      const overlayX = elementCenterOverlayX - screenWidth / 2;
-      const overlayY = elementCenterOverlayY - screenHeight / 2;
+      if (!position) {
+        rafId = requestAnimationFrame(updateMeasurements);
+        return;
+      }
+      
+      // Update overlay DOM directly
+      overlayRef.current.style.left = `${position.x}px`;
+      overlayRef.current.style.top = `${position.y}px`;
+      overlayRef.current.style.width = `${position.width}px`;
+      overlayRef.current.style.height = `${position.height}px`;
+      overlayRef.current.style.transform = `rotate(${position.rotation}deg)`;
       
       // Read computed rotation during interactions
       if (hasRotateAnims) {
-        const computedStyle = window.getComputedStyle(contentElement);
-        const transform = computedStyle.transform;
-        const computedRot = parseRotationFromTransform(transform);
-        setComputedRotation(computedRot);
+        setComputedRotation(position.rotation);
       }
       
-      setOverlayPosition({ x: overlayX, y: overlayY });
-      if (intrinsicWidth > 0 && intrinsicHeight > 0) {
-        dimensionsRef.current = { width: intrinsicWidth, height: intrinsicHeight };
+      setOverlayPosition(position);
+      
+      // Update dimensions ref
+      const contentElement = document.querySelector(
+        `[data-element-id="${element.id}"]`,
+      ) as HTMLElement;
+      if (contentElement) {
+        const intrinsicWidth = contentElement.offsetWidth;
+        const intrinsicHeight = contentElement.offsetHeight;
+        if (intrinsicWidth > 0 && intrinsicHeight > 0) {
+          dimensionsRef.current = { width: intrinsicWidth, height: intrinsicHeight };
+        }
       }
+      
       rafId = requestAnimationFrame(updateMeasurements);
     };
     
@@ -527,22 +525,17 @@ export function TransformHandles({
 
   if (!isSelected) return null;
 
-  // Use element props for size (source of truth), fallback to measured dimensions if not set
-  // This ensures Design panel changes are immediately reflected in the overlay
-  const overlaySizeDimensions = getSizeDimensions(element.props?.size);
-  const overlayWidth = overlaySizeDimensions.width || dimensionsRef.current.width;
-  const overlayHeight = overlaySizeDimensions.height || dimensionsRef.current.height;
-  
   // Position is set directly on DOM in useLayoutEffect
   // Use state values for initial render (will be updated synchronously in useLayoutEffect)
-  const screenX = overlayPosition.x;
-  const screenY = overlayPosition.y;
-  const screenWidth = overlayWidth * canvasScale;
-  const screenHeight = overlayHeight * canvasScale;
+  const screenX = overlayPosition?.x ?? 0;
+  const screenY = overlayPosition?.y ?? 0;
+  const screenWidth = overlayPosition?.width ?? 0;
+  const screenHeight = overlayPosition?.height ?? 0;
 
   return (
     <div
       ref={overlayRef}
+      data-overlay-id={element.id}
       className="absolute pointer-events-none"
       style={{
         left: `${screenX}px`,
