@@ -6,12 +6,21 @@ export class TimeManager {
   private currentTimeRef = 0;
   private isScrubbing = false;
   private listeners: Set<(time: number) => void> = new Set();
+  private durationRef = 5000;
+  private lastReadDuration = 5000;
+  private durationListeners: Set<(duration: number) => void> = new Set();
 
   setActiveTimegroup(timegroupId: string | null): void {
     this.stopPolling();
     this.activeTimegroupId = timegroupId;
     if (timegroupId) {
       this.timegroupElement = document.getElementById(timegroupId);
+      // Initialize duration from DOM element
+      if (this.timegroupElement) {
+        const initialDuration = this.timegroupElement.durationMs || 5000;
+        this.durationRef = initialDuration;
+        this.lastReadDuration = initialDuration;
+      }
       this.startPolling();
     } else {
       this.timegroupElement = null;
@@ -34,13 +43,21 @@ export class TimeManager {
     };
   }
 
+  subscribeDuration(listener: (duration: number) => void): () => void {
+    this.durationListeners.add(listener);
+    return () => {
+      this.durationListeners.delete(listener);
+    };
+  }
+
   getCurrentTime(): number {
     return this.currentTimeRef;
   }
 
   getDuration(): number {
-    if (!this.timegroupElement) return 5000;
-    return this.timegroupElement.durationMs || 5000;
+    if (!this.timegroupElement) return this.durationRef;
+    // Always read from DOM element getter (single source of truth)
+    return this.timegroupElement.durationMs || this.durationRef;
   }
 
   seek(timeMs: number): void {
@@ -72,6 +89,14 @@ export class TimeManager {
         }
       }
 
+      // Poll duration once per RAF cycle
+      const durationMs = this.timegroupElement.durationMs || 5000;
+      if (Math.abs(durationMs - this.lastReadDuration) > 1) {
+        this.lastReadDuration = durationMs;
+        this.durationRef = durationMs;
+        this.notifyDurationListeners(durationMs);
+      }
+
       this.animationFrameId = requestAnimationFrame(pollCurrentTime);
     };
 
@@ -89,9 +114,14 @@ export class TimeManager {
     this.listeners.forEach((listener) => listener(time));
   }
 
+  private notifyDurationListeners(duration: number): void {
+    this.durationListeners.forEach((listener) => listener(duration));
+  }
+
   cleanup(): void {
     this.stopPolling();
     this.listeners.clear();
+    this.durationListeners.clear();
     this.activeTimegroupId = null;
     this.timegroupElement = null;
   }

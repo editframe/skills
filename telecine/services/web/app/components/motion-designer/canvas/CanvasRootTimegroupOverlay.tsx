@@ -9,6 +9,18 @@ import { PlayLoopButton } from "../controls/PlayLoopButton";
 import { PlayPauseButton } from "../controls/PlayPauseButton";
 import { hasRotateAnimations, parseRotationFromTransform } from "../rendering/styleGenerators/rotationUtils";
 
+/**
+ * Formats duration in milliseconds to human-readable string
+ * - If >= 1000ms: format as seconds with 1 decimal (e.g., "5.0s", "1.5s")
+ * - If < 1000ms: format as milliseconds (e.g., "500ms")
+ */
+function formatDuration(durationMs: number): string {
+  if (durationMs >= 1000) {
+    return `${(durationMs / 1000).toFixed(1)}s`;
+  }
+  return `${Math.round(durationMs)}ms`;
+}
+
 interface CanvasRootTimegroupOverlayProps {
   element: ElementNode;
   state: MotionDesignerState;
@@ -25,13 +37,14 @@ export function CanvasRootTimegroupOverlay({
   const isActive = activeRootTimegroupId === element.id;
   const isSelected = state.ui.selectedElementId === element.id;
   const canvasPosition = element.props.canvasPosition || { x: 100, y: 100 };
-  const duration = element.props.duration || "0s";
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
   const [, forceUpdate] = useState({});
   const hasDraggedRef = useRef(false);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const dimensionsRef = useRef<{ width: number; height: number }>({ width: 400, height: 300 });
+  const [durationMs, setDurationMs] = useState(0);
+  const durationRef = useRef(0);
 
   // Force re-render on every animation frame to keep overlay in sync
   // Throttle updates to reduce jitter during zoom
@@ -52,7 +65,7 @@ export function CanvasRootTimegroupOverlay({
       const wrapperElement = document.querySelector(`[data-timegroup-id="${element.id}"]`) as HTMLElement;
       if (wrapperElement) {
         // Then find the actual ef-timegroup element inside it
-        const timegroupElement = wrapperElement.querySelector(`ef-timegroup#${element.id}`) as HTMLElement;
+        const timegroupElement = wrapperElement.querySelector(`ef-timegroup#${element.id}`) as any;
         const measureElement = timegroupElement || wrapperElement;
         
         // Use offsetWidth/offsetHeight which gives us the intrinsic size
@@ -65,6 +78,15 @@ export function CanvasRootTimegroupOverlay({
               Math.abs(dimensionsRef.current.height - height) > 1) {
             dimensionsRef.current = { width, height };
             forceUpdate({});
+          }
+        }
+        
+        // Read duration from DOM element once per RAF cycle
+        if (timegroupElement && typeof timegroupElement.durationMs === 'number') {
+          const newDurationMs = timegroupElement.durationMs;
+          if (Math.abs(newDurationMs - durationRef.current) > 1) {
+            durationRef.current = newDurationMs;
+            setDurationMs(newDurationMs);
           }
         }
       }
@@ -469,7 +491,7 @@ export function CanvasRootTimegroupOverlay({
             iconSize={12}
           />
           <span>
-            Timegroup · {duration} · {Math.round(elementWidth)}×{Math.round(elementHeight)}
+            Timegroup · {formatDuration(durationMs)} · {Math.round(elementWidth)}×{Math.round(elementHeight)}
           </span>
         </div>
       )}
