@@ -1,7 +1,10 @@
 import { useRef, useState, useEffect, useMemo } from "react";
+import { timeToPixels } from "./timelinePosition";
 
 interface TimelineRulerProps {
   durationMs: number;
+  zoomScale: number;
+  containerWidth: number;
 }
 
 const MIN_SPACING_PX = 100;
@@ -26,15 +29,15 @@ export function calculateOptimalInterval(
   return minIntervalMs;
 }
 
-export function TimelineRuler({ durationMs }: TimelineRulerProps) {
+export function TimelineRuler({ durationMs, zoomScale, containerWidth }: TimelineRulerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState(0);
+  const [measuredWidth, setMeasuredWidth] = useState(0);
 
   // Initialize width from getBoundingClientRect on mount
   useEffect(() => {
     if (containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
-      setContainerWidth(rect.width);
+      setMeasuredWidth(rect.width);
     }
   }, []);
 
@@ -44,21 +47,26 @@ export function TimelineRuler({ durationMs }: TimelineRulerProps) {
 
     const resizeObserver = new ResizeObserver((entries) => {
       const width = entries[0].contentRect.width;
-      setContainerWidth(width);
+      setMeasuredWidth(width);
     });
 
     resizeObserver.observe(containerRef.current);
     return () => resizeObserver.disconnect();
   }, []);
 
-  // Calculate optimal interval based on width and duration
+  // Calculate optimal interval based on zoomed width and duration
+  const effectiveWidth = useMemo(() => {
+    // Use zoomed width for interval calculation
+    return containerWidth * zoomScale;
+  }, [containerWidth, zoomScale]);
+
   const intervalMs = useMemo(() => {
-    if (containerWidth <= 0) {
+    if (effectiveWidth <= 0) {
       // Fallback to current logic when width not yet measured
       return durationMs < 5000 ? 500 : 1000;
     }
-    return calculateOptimalInterval(containerWidth, durationMs, MIN_SPACING_PX);
-  }, [containerWidth, durationMs]);
+    return calculateOptimalInterval(effectiveWidth, durationMs, MIN_SPACING_PX);
+  }, [effectiveWidth, durationMs]);
 
   if (durationMs <= 0) {
     return null;
@@ -73,7 +81,8 @@ export function TimelineRuler({ durationMs }: TimelineRulerProps) {
   return (
     <div ref={containerRef} className="absolute inset-0 flex pointer-events-none">
       {markers.map((timeMs) => {
-        const positionPercent = (timeMs / durationMs) * 100;
+        // Use pixel-based positioning with zoom
+        const positionPixels = timeToPixels(timeMs, durationMs, containerWidth, zoomScale);
         const timeSeconds = timeMs / 1000;
         const displayTime = timeSeconds % 1 === 0 ? `${timeSeconds}s` : `${timeSeconds.toFixed(1)}s`;
         
@@ -81,7 +90,7 @@ export function TimelineRuler({ durationMs }: TimelineRulerProps) {
           <div
             key={timeMs}
             className="absolute top-0 bottom-0 flex flex-col items-start"
-            style={{ left: `${positionPercent}%` }}
+            style={{ left: `${positionPixels}px` }}
           >
             {/* Tick mark */}
             <div className="w-px h-full bg-gray-600" />

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import type { MotionDesignerState, ElementNode, Animation } from "~/lib/motion-designer/types";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
+import { timeToPixels, pixelsToTime } from "./timelinePosition";
 
 interface AnimationTrackProps {
   element: ElementNode;
@@ -10,6 +11,8 @@ interface AnimationTrackProps {
   snapPoints: number[];
   currentTime: number;
   isSelected: boolean;
+  zoomScale: number;
+  containerWidth: number;
   showLabel?: boolean; // If false, only render the strip (no label)
 }
 
@@ -23,6 +26,8 @@ interface AnimationBarProps {
   currentTime: number;
   onSelect: () => void;
   isSelected: boolean;
+  zoomScale: number;
+  containerWidth: number;
 }
 
 function AnimationBar({
@@ -35,6 +40,8 @@ function AnimationBar({
   currentTime,
   onSelect,
   isSelected,
+  zoomScale,
+  containerWidth,
 }: AnimationBarProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isResizingLeft, setIsResizingLeft] = useState(false);
@@ -42,8 +49,13 @@ function AnimationBar({
   const [dragStart, setDragStart] = useState<{ x: number; time: number } | null>(null);
   const barRef = useRef<HTMLDivElement>(null);
 
-  const leftPercent = durationMs > 0 ? (animation.delay / durationMs) * 100 : 0;
-  const widthPercent = durationMs > 0 ? (animation.duration / durationMs) * 100 : 0;
+  // Calculate pixel positions with zoom
+  const leftPixels = durationMs > 0 
+    ? timeToPixels(animation.delay, durationMs, containerWidth, zoomScale)
+    : 0;
+  const widthPixels = durationMs > 0
+    ? timeToPixels(animation.duration, durationMs, containerWidth, zoomScale)
+    : 0;
 
   // Helper to snap a time value to nearby snap points (snaps by default, shift disables)
   const snapToNearestPoint = (timeMs: number, shiftPressed: boolean): number => {
@@ -78,8 +90,11 @@ function AnimationBar({
     if (!trackContainerRef.current) return;
 
     const rect = trackContainerRef.current.getBoundingClientRect();
+    const scrollLeft = trackContainerRef.current.scrollLeft || 0;
     const x = e.clientX - rect.left;
-    const currentTimeMs = (x / rect.width) * durationMs;
+    // Account for scroll position: actual pixel position = scrollLeft + x
+    const pixelPosition = scrollLeft + x;
+    const currentTimeMs = pixelsToTime(pixelPosition, durationMs, containerWidth, zoomScale);
 
     if (resizeType === "left") {
       setIsResizingLeft(true);
@@ -101,9 +116,13 @@ function AnimationBar({
       if (!trackContainerRef.current) return;
 
       const rect = trackContainerRef.current.getBoundingClientRect();
+      const scrollLeft = trackContainerRef.current.scrollLeft || 0;
       const x = e.clientX - rect.left;
-      const deltaX = x - dragStart.x;
-      const deltaTime = (deltaX / rect.width) * durationMs;
+      // Account for scroll position: actual pixel position = scrollLeft + x
+      const currentPixelPosition = scrollLeft + x;
+      const startPixelPosition = scrollLeft + dragStart.x;
+      const deltaPixels = currentPixelPosition - startPixelPosition;
+      const deltaTime = pixelsToTime(deltaPixels, durationMs, containerWidth, zoomScale);
 
       if (isResizingLeft) {
         // Resize from left - change delay and duration
@@ -139,7 +158,7 @@ function AnimationBar({
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isDragging, isResizingLeft, isResizingRight, dragStart, durationMs, animation, onUpdate]);
+  }, [isDragging, isResizingLeft, isResizingRight, dragStart, durationMs, animation, onUpdate, containerWidth, zoomScale]);
 
   const elementName = `${element.type} ${element.id.slice(0, 4)}`;
 
@@ -156,8 +175,8 @@ function AnimationBar({
       ref={barRef}
       className={`group absolute top-0 bottom-0 rounded-sm cursor-move z-20 ${isSelected ? 'ring-2 ring-white ring-inset' : ''}`}
       style={{
-        left: `${leftPercent}%`,
-        width: `${widthPercent}%`,
+        left: `${leftPixels}px`,
+        width: `${widthPixels}px`,
         minWidth: "40px",
         backgroundColor: isSelected ? "rgb(160, 150, 255)" : "rgb(180, 170, 255)",
       }}
@@ -200,6 +219,8 @@ export function AnimationTrack({
   snapPoints,
   currentTime,
   isSelected,
+  zoomScale,
+  containerWidth,
   showLabel = true,
 }: AnimationTrackProps) {
   const actions = useMotionDesignerActions();
@@ -219,6 +240,8 @@ export function AnimationTrack({
         currentTime={currentTime}
         onSelect={() => actions.selectAnimation(animation.id, element.id)}
         isSelected={isSelected}
+        zoomScale={zoomScale}
+        containerWidth={containerWidth}
       />
     </div>
   );
