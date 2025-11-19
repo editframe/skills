@@ -1,5 +1,5 @@
 import {
-  CursorText,
+  TextAa,
   Square,
   Clock,
   Panorama,
@@ -14,7 +14,7 @@ export type ElementType = "text" | "div" | "timegroup" | "image" | "video" | "au
 
 export type ToolCategory = "shapes" | "media" | "containers" | "text";
 
-type IconComponent = typeof CursorText;
+type IconComponent = typeof TextAa;
 
 export interface ElementTypeConfig {
   type: ElementType;
@@ -25,7 +25,7 @@ export interface ElementTypeConfig {
 }
 
 export const ELEMENT_TYPES: ElementTypeConfig[] = [
-  { type: "text", label: "Text", icon: CursorText, category: "text", shortcut: "T" },
+  { type: "text", label: "Text", icon: TextAa, category: "text", shortcut: "T" },
   { type: "div", label: "Div", icon: Square, category: "shapes", shortcut: "D" },
   { type: "timegroup", label: "Timegroup", icon: Clock, category: "containers", shortcut: "G" },
   { type: "image", label: "Image", icon: Panorama, category: "media", shortcut: "I" },
