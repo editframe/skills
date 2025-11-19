@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { pixelsToTime } from "./timelinePosition";
+import { quantizeToFrameTimeMs } from "./TimelineRuler";
 
 interface UseTimelineScrubbingOptions {
   timelineContainerRef: React.RefObject<HTMLDivElement>;
@@ -10,6 +11,7 @@ interface UseTimelineScrubbingOptions {
   containerWidth?: number;
   scrollContainerRef?: React.RefObject<HTMLDivElement>; // The actual scrolling container
   enabled?: boolean;
+  fps?: number; // FPS for frame quantization during scrubbing
 }
 
 /**
@@ -25,31 +27,44 @@ export function useTimelineScrubbing({
   containerWidth = 0,
   scrollContainerRef,
   enabled = true,
+  fps,
 }: UseTimelineScrubbingOptions) {
   const [isDragging, setIsDragging] = useState(false);
+  const [rawScrubTime, setRawScrubTime] = useState<number | null>(null);
+
+  // Calculate raw (unquantized) time from mouse position
+  const calculateRawTimeFromMouse = useCallback((clientX: number): number => {
+    if (durationMs <= 0) return 0;
+    
+    const scrollContainer = scrollContainerRef?.current || timelineContainerRef.current;
+    if (!scrollContainer) return 0;
+    
+    const scrollContainerRect = scrollContainer.getBoundingClientRect();
+    const scrollLeft = scrollContainer.scrollLeft || 0;
+    const x = clientX - scrollContainerRect.left;
+    const pixelPosition = scrollLeft + x;
+    const effectiveWidth = containerWidth > 0 ? containerWidth : scrollContainerRect.width;
+    if (effectiveWidth <= 0) return 0;
+    
+    const rawTime = pixelsToTime(pixelPosition, durationMs, effectiveWidth, zoomScale);
+    return Math.max(0, Math.min(rawTime, durationMs));
+  }, [scrollContainerRef, timelineContainerRef, durationMs, zoomScale, containerWidth]);
 
   // Calculate time from mouse X position relative to container bounds, accounting for zoom and scroll
   const calculateTimeFromMouse = useCallback((clientX: number): number => {
-    if (!timelineContainerRef.current || durationMs <= 0) return 0;
+    const rawTime = calculateRawTimeFromMouse(clientX);
     
-    const rect = timelineContainerRef.current.getBoundingClientRect();
-    // Use scrollContainerRef if provided (the actual scrolling container), otherwise fall back to timelineContainerRef
-    const scrollContainer = scrollContainerRef?.current || timelineContainerRef.current;
-    const scrollLeft = scrollContainer.scrollLeft || 0;
-    const x = clientX - rect.left;
+    // Store raw time for visual feedback during scrubbing
+    setRawScrubTime(rawTime);
     
-    // Account for scroll position: actual pixel position = scrollLeft + x
-    const pixelPosition = scrollLeft + x;
+    // Quantize to frame boundaries if FPS is provided
+    // This ensures the playhead snaps to frame markers during scrubbing
+    if (fps && fps > 0) {
+      return quantizeToFrameTimeMs(rawTime, fps);
+    }
     
-    // Convert pixels to time using zoom-aware calculation
-    // Use containerWidth if available, otherwise fall back to rect.width
-    const effectiveWidth = containerWidth > 0 ? containerWidth : rect.width;
-    if (effectiveWidth <= 0) return 0; // Guard against zero width
-    
-    const newTime = pixelsToTime(pixelPosition, durationMs, effectiveWidth, zoomScale);
-    
-    return Math.max(0, Math.min(newTime, durationMs));
-  }, [timelineContainerRef, scrollContainerRef, durationMs, zoomScale, containerWidth]);
+    return rawTime;
+  }, [calculateRawTimeFromMouse, fps]);
 
   // Handle mouse down to start scrubbing - memoized to prevent recreation
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -76,6 +91,7 @@ export function useTimelineScrubbing({
     const handleMouseUp = () => {
       setIsDragging(false);
       isScrubbingRef.current = false;
+      setRawScrubTime(null); // Clear raw scrub time when done
     };
 
     document.addEventListener("mousemove", handleMouseMove);
@@ -90,6 +106,7 @@ export function useTimelineScrubbing({
   return {
     handleMouseDown,
     isDragging,
+    rawScrubTime: isDragging ? rawScrubTime : null, // Only return raw time while dragging
   };
 }
 
