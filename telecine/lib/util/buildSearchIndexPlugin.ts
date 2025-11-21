@@ -15,8 +15,10 @@ export function buildSearchIndexPlugin(): Plugin {
           "../../services/web/app/utils/search-index.server"
         );
 
-        // Build the search index
-        const documents = await buildSearchIndex();
+        // Build the search index with vectors (only in production builds)
+        // In development, vectors are computed lazily on-demand
+        const isProduction = process.env.NODE_ENV === "production";
+        const { documents, metadata } = await buildSearchIndex(isProduction);
 
         // Determine output path (client build directory)
         const outputPath = resolve(
@@ -25,7 +27,7 @@ export function buildSearchIndexPlugin(): Plugin {
         );
 
         // Write the index
-        await writeSearchIndex(outputPath, documents);
+        await writeSearchIndex(outputPath, documents, metadata);
 
         console.log(
           `✓ Generated search index with ${documents.length} documents`
