@@ -1,13 +1,15 @@
 ---
 meta:
-  - title: Captions
+  - title: Captions Element
   - name: description
-    content: Documentation for the Editframe Captions Element
+    content: Learn about the Editframe Captions Element - from basic usage to advanced techniques, including temporal synchronization and CSS animation variables
 headers:
     Cache-Control: no-cache
 ---
 
-## Demonstration
+<ElementIndex />
+
+## Demonstrations
 
 ### Basic Segment Display
 
@@ -43,10 +45,9 @@ Display complete caption segments as they play:
   })}</script>
 </Demonstration>
 
-
 ### Word-by-Word Display
 
-Display individual words as they would be spoken:
+Display individual words as they're spoken:
 
 <Demonstration layout="horizontal" defaultSourceVisible alwaysShowSource>
   <Timegroup mode="contain" className="w-[720px] h-[405px] flex items-center justify-center bg-gradient-to-r from-green-900 to-blue-900 relative">
@@ -107,7 +108,7 @@ Show the current word with surrounding context:
 
 ### CSS Variables in Action
 
-This example demonstrates the `--ef-word-seed` variable from the [CSS Animation Variables](#css-animation-variables) section:
+Demonstrates the `--ef-word-seed` variable for varied animations:
 
 <Demonstration layout="horizontal" defaultSourceVisible alwaysShowSource>
   <Timegroup id="animated-captions-demo" mode="contain" className="w-[720px] h-[405px] flex items-center justify-center bg-gradient-to-r from-indigo-900 to-teal-900 relative">
@@ -157,7 +158,7 @@ This example demonstrates the `--ef-word-seed` variable from the [CSS Animation 
 
 ### Karaoke Style
 
-Progressive word highlighting with smooth fill animations, like karaoke:
+Progressive word highlighting with smooth fill animations:
 
 <Demonstration layout="horizontal" defaultSourceVisible alwaysShowSource>
   <Timegroup id="karaoke-captions-demo" mode="contain" className="w-[720px] h-[405px] flex items-center justify-center bg-gradient-to-r from-purple-900 via-blue-900 to-indigo-900 relative">
@@ -201,8 +202,8 @@ Progressive word highlighting with smooth fill animations, like karaoke:
       background: linear-gradient(
         90deg,
         #fbbf24 0%,
-        #f59e0b var(--ef-progress, 0%),
-        #ffffff var(--ef-progress, 0%),
+        #f59e0b calc(var(--ef-progress) * 100%),
+        #ffffff calc(var(--ef-progress) * 100%),
         #ffffff 100%
       );
       background-clip: text;
@@ -225,8 +226,8 @@ Progressive word highlighting with smooth fill animations, like karaoke:
       background: linear-gradient(
         90deg,
         #fbbf24 0%,
-        #fbbf24 var(--ef-progress, 0%),
-        #ffffff var(--ef-progress, 0%),
+        #fbbf24 calc(var(--ef-progress) * 100%),
+        #ffffff calc(var(--ef-progress) * 100%),
         #ffffff 100%
       );
       background-clip: text;
@@ -236,238 +237,3 @@ Progressive word highlighting with smooth fill animations, like karaoke:
     }
   `}</style>
 </Demonstration>
-
-## Captions Data Format
-
-Captions in Editframe use a structured JSON format with two main arrays: `segments` and `word_segments`. Understanding this format is essential for creating captions.
-
-### Basic Structure
-
-```json
-{
-  "segments": [
-    {
-      "start": 0,
-      "end": 3,
-      "text": "Complete phrases or sentences"
-    }
-  ],
-  "word_segments": [
-    {
-      "start": 0,
-      "end": 0.8,
-      "text": "Individual"
-    },
-    {
-      "start": 0.8,
-      "end": 1.2,
-      "text": "words"
-    }
-  ]
-}
-```
-
-### Field Definitions
-
-- **`segments`**: Array of complete caption segments (sentences, phrases)
-  - `start`: Start time in seconds
-  - `end`: End time in seconds  
-  - `text`: The complete text content
-  
-- **`word_segments`**: Array of individual word timings
-  - `start`: Start time in seconds
-  - `end`: End time in seconds
-  - `text`: Individual word or punctuation
-
-Both arrays are required but can be empty. Times must be in seconds as floating-point numbers.
-
-### Creating Captions Data
-
-There are several ways to create captions data:
-
-#### Option 1: Use Editframe Transcription Service (Recommended)
-
-The easiest way to generate captions is to use Editframe's transcription service. After uploading and processing a video or audio file, you can request a transcription that automatically generates both `segments` and `word_segments` arrays.
-
-See the [Transcriptions documentation](/docs/processing-files/transcriptions) for details on how to generate transcriptions.
-
-When using the `<ef-captions>` component with a video or audio element that has a transcription, the captions will automatically connect to the transcription data:
-
-```html
-<ef-video id="my-video" src="video.mp4" />
-<ef-captions target="my-video">
-  <ef-captions-segment />
-</ef-captions>
-```
-
-#### Option 2: Manual Creation
-
-You can manually create the captions data structure. This is useful when you have existing caption files or need precise control over timing:
-
-```javascript
-const captionsData = {
-  segments: [
-    { start: 0, end: 3, text: "Welcome to our video." },
-    { start: 3, end: 6, text: "Today we'll explore features." }
-  ],
-  word_segments: [
-    { start: 0, end: 0.5, text: "Welcome" },
-    { start: 0.5, end: 0.8, text: "to" },
-    { start: 0.8, end: 1.0, text: "our" },
-    { start: 1.0, end: 1.5, text: "video." },
-    // ... more words
-  ]
-};
-```
-
-#### Option 3: Convert from Other Formats
-
-You can convert captions from other formats (like SRT, VTT, or WebVTT) into Editframe's format. The key is mapping the timing and text data into the `segments` and `word_segments` structure.
-
-### Loading Captions Data
-
-There are three ways to provide captions data to the `<ef-captions>` element, listed in order of priority:
-
-#### 1. Direct Data (Programmatic)
-
-Set the `captionsData` property directly via JavaScript. This takes highest priority.
-
-```js
-const captions = document.querySelector('ef-captions');
-captions.captionsData = {
-  segments: [
-    { start: 0, end: 3, text: "First caption" }
-  ],
-  word_segments: [
-    { start: 0, end: 0.5, text: "First" },
-    { start: 0.5, end: 1.0, text: "caption" }
-  ]
-};
-```
-
-#### 2. Inline Script Element
-
-Reference a `<script type="application/json">` element by its ID using the `captions-script` attribute:
-
-```html
-<script type="application/json" id="my-captions">
-{
-  "segments": [
-    { "start": 0, "end": 3, "text": "First caption" }
-  ],
-  "word_segments": [
-    { "start": 0, "end": 0.5, "text": "First" },
-    { "start": 0.5, "end": 1.0, "text": "caption" }
-  ]
-}
-</script>
-
-<ef-captions captions-script="my-captions">
-  <ef-captions-segment />
-</ef-captions>
-```
-
-#### 3. External JSON File
-
-Load captions from an external file using the `captions-src` attribute:
-
-```html
-<ef-captions captions-src="/path/to/captions.json">
-  <ef-captions-segment />
-</ef-captions>
-```
-
-```json
-// captions.json
-{
-  "segments": [
-    { "start": 0, "end": 3, "text": "First caption segment" },
-    { "start": 3, "end": 6, "text": "Second caption segment" }
-  ],
-  "word_segments": [
-    { "start": 0, "end": 0.5, "text": "First" },
-    { "start": 0.5, "end": 1.0, "text": "caption" },
-    { "start": 1.0, "end": 1.5, "text": "segment" }
-  ]
-}
-```
-
-## Attributes
-
-<PropertyDocList>
-  <PropertyDoc name="captions-src" type="string" htmlAttribute="captions-src">
-    URL or path to an external JSON file containing captions data.
-
-    ```html
-    <ef-captions captions-src="/path/to/captions.json">
-      <ef-captions-segment />
-    </ef-captions>
-    ```
-
-    See [Captions Data Format](#captions-data-format) for the required JSON structure.
-  </PropertyDoc>
-
-  <PropertyDoc name="captions-script" type="string" htmlAttribute="captions-script">
-    ID of a `<script type="application/json">` element containing captions data. Do not include the # character.
-
-    ```html
-    <script type="application/json" id="my-captions">
-      { "segments": [...], "word_segments": [...] }
-    </script>
-    <ef-captions captions-script="my-captions">
-      <ef-captions-segment />
-    </ef-captions>
-    ```
-
-    See [Captions Data Format](#captions-data-format) for the required JSON structure.
-  </PropertyDoc>
-
-  <PropertyDoc name="target" type="string" htmlAttribute="target">
-    The ID of a video or audio element to synchronize with. Do not include the # character.
-
-    When omitted, captions run on their own timeline within the parent timegroup.
-
-    ```html
-    <ef-video id="my-video" src="video.mp4" />
-    <ef-captions target="my-video">
-      <ef-captions-active-word />
-    </ef-captions>
-    ```
-  </PropertyDoc>
-
-  <PropertyDoc name="durationMs" type="number" domReadable>
-    Duration of the captions in milliseconds, calculated from the maximum end time of all segments.
-  </PropertyDoc>
-</PropertyDocList>
-
-## CSS Animation Variables
-
-Captions elements provide powerful CSS variables for creating dynamic animations and styling:
-
-### Timeline Variables
-Available on all caption elements:
-- `--ef-duration`: Duration of the parent timegroup in milliseconds
-- `--ef-progress`: Current progress (0-1) of the parent timegroup
-
-### Word-Specific Variables
-Available on `<CaptionsActiveWord>`:
-- `--ef-word-seed`: A deterministic pseudo-random value (0-1) based on the word's position in the transcript
-
-### Creating Non-Repetitive Word Animations
-
-The `--ef-word-seed` variable allows you to create varied animations where each word gets its own unique style, preventing repetitive-looking animations:
-
-```css
-ef-captions-active-word {
-  /* Each word gets a different color based on its position */
-  color: hsl(calc(360 * var(--ef-word-seed)), 70%, 60%);
-  
-  /* Each word scales differently */
-  transform: scale(calc(1 + 0.3 * var(--ef-word-seed)));
-  
-  /* Each word rotates by a different amount */
-  transform: rotate(calc(var(--ef-word-seed) * 20deg - 10deg));
-}
-```
-
-The seed value is **deterministic but pseudo-random** - the same word at the same position will always get the same seed value (ensuring consistency), but the values are distributed in a way that creates visual variety and prevents animations from looking repetitive or mechanical.

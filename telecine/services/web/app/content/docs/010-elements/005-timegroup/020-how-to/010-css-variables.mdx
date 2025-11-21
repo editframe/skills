@@ -1,0 +1,47 @@
+---
+meta:
+  - title: Use CSS Variables
+  - name: description
+    content: Use CSS variables to create dynamic animations that adapt to timegroup duration
+headers:
+    Cache-Control: no-cache
+---
+
+## Use CSS Variables
+
+### Problem
+
+Create animations that work regardless of timegroup duration. Hard-coding animation delays breaks when durations change.
+
+### Solution
+
+Use CSS variables: `--ef-duration`, `--ef-progress`, `--ef-transition-duration`, `--ef-transition-out-start`.
+
+```css
+animation-delay: calc(var(--ef-duration) - 2s);
+width: calc(var(--ef-progress) * 100%);
+animation: fade-out var(--ef-transition-duration) ease-in-out var(--ef-transition-out-start) paused;
+```
+
+**Note:** `--ef-progress` is stored as a number (0-1), not a CSS percentage. This allows it to work correctly in CSS calculations like `calc(var(--ef-progress) * 100%)` without being converted to pixel values based on element dimensions. When you need a percentage value, multiply by 100% in your CSS.
+
+<Demonstration layout="horizontal" alwaysShowSource>
+  <Timegroup
+    id="css-variables-example"
+    mode="fixed"
+    duration="5s"
+    className="w-[500px] h-[300px] bg-slate-500 text-white flex flex-col items-center justify-center"
+  >
+    <p 
+      className="text-3xl" 
+      style={{transform: `scale(var(--ef-progress))`}}
+    >
+      {"Scaling with Progress"}
+    </p>
+    <div className="h-2 w-1/2 bg-slate-400">
+      <div className="bg-blue-400 h-full" style={{width: `calc(var(--ef-progress) * 100%)`}}></div>
+    </div>
+  </Timegroup>
+</Demonstration>
+
+See [Temporal Composition](/docs/elements/timegroup/explanation/temporal-composition).
