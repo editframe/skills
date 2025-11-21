@@ -14,6 +14,7 @@ export { ThumbnailStrip } from "./elements/ThumbnailStrip.js";
 export { Timegroup } from "./elements/Timegroup.js";
 export { Video } from "./elements/Video.js";
 export { Waveform } from "./elements/Waveform.js";
+export { PanZoom } from "./elements/PanZoom.js";
 export { Configuration } from "./gui/Configuration.js";
 export { Controls } from "./gui/Controls.js";
 export { Dial } from "./gui/EFDial.js";

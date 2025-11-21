@@ -119,6 +119,11 @@ import "./elements/EFThumbnailStrip.ts";
 
 export { EFThumbnailStrip } from "./elements/EFThumbnailStrip.ts";
 
+import "./elements/EFPanZoom.js";
+
+export { EFPanZoom } from "./elements/EFPanZoom.js";
+export type { PanZoomTransform } from "./elements/EFPanZoom.js";
+
 if (typeof window !== "undefined") {
   // @ts-expect-error
   window.EF_REGISTERED = true;
