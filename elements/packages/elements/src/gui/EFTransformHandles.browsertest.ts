@@ -32,7 +32,7 @@ describe("EFTransformHandles", () => {
     container.style.width = "500px";
     container.style.height = "500px";
     document.body.appendChild(container);
-    const bounds = { x: 50, y: 50, width: 200, height: 150, rotation: 45 };
+    const bounds = { x: 50, y: 50, width: 200, height: 150 };
     render(
       html`<ef-transform-handles .bounds=${bounds}></ef-transform-handles>`,
       container,
@@ -45,6 +45,23 @@ describe("EFTransformHandles", () => {
     expect(overlay.style.top).to.equal("50px");
     expect(overlay.style.width).to.equal("200px");
     expect(overlay.style.height).to.equal("150px");
+  });
+
+  test("should render with rotation when enabled", async () => {
+    const container = document.createElement("div");
+    container.style.position = "relative";
+    container.style.width = "500px";
+    container.style.height = "500px";
+    document.body.appendChild(container);
+    const bounds = { x: 50, y: 50, width: 200, height: 150, rotation: 45 };
+    render(
+      html`<ef-transform-handles .bounds=${bounds} .enableRotation=${true}></ef-transform-handles>`,
+      container,
+    );
+    const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
+    await el.updateComplete;
+
+    const overlay = el.shadowRoot!.querySelector(".overlay") as HTMLDivElement;
     expect(overlay.style.transform).to.include("rotate(45deg)");
   });
 
@@ -107,7 +124,7 @@ describe("EFTransformHandles", () => {
     
     const bounds = { x: 100, y: 100, width: 200, height: 150, rotation: 0 };
     render(
-      html`<ef-transform-handles .bounds=${bounds} .target=${"#test-target"}></ef-transform-handles>`,
+      html`<ef-transform-handles .bounds=${bounds} .target=${"#test-target"} .enableRotation=${true}></ef-transform-handles>`,
       container,
     );
     const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
@@ -140,7 +157,7 @@ describe("EFTransformHandles", () => {
     expect(rotationChangeEvent!.detail.rotation).to.exist;
   });
 
-  test("should show rotate handle by default", async () => {
+  test("should hide rotate handle by default", async () => {
     const container = document.createElement("div");
     container.style.position = "relative";
     container.style.width = "500px";
@@ -151,24 +168,58 @@ describe("EFTransformHandles", () => {
     await el.updateComplete;
 
     const rotateHandle = el.shadowRoot!.querySelector(".rotate-handle");
-    expect(rotateHandle).to.exist;
+    expect(rotateHandle).to.not.exist;
   });
 
-  test("should hide rotate handle when showRotateHandle is false", async () => {
+  test("should show rotate handle when enableRotation is true", async () => {
     const container = document.createElement("div");
     container.style.position = "relative";
     container.style.width = "500px";
     container.style.height = "500px";
     document.body.appendChild(container);
     render(
-      html`<ef-transform-handles .showRotateHandle=${false}></ef-transform-handles>`,
+      html`<ef-transform-handles .enableRotation=${true}></ef-transform-handles>`,
       container,
     );
     const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
     await el.updateComplete;
 
     const rotateHandle = el.shadowRoot!.querySelector(".rotate-handle");
-    expect(rotateHandle).to.not.exist;
+    expect(rotateHandle).to.exist;
+  });
+
+  test("should disable resize handles when enableResize is false", async () => {
+    const container = document.createElement("div");
+    container.style.position = "relative";
+    container.style.width = "500px";
+    container.style.height = "500px";
+    document.body.appendChild(container);
+    render(
+      html`<ef-transform-handles .enableResize=${false}></ef-transform-handles>`,
+      container,
+    );
+    const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
+    await el.updateComplete;
+
+    const handles = el.shadowRoot!.querySelectorAll(".handle");
+    expect(handles.length).to.equal(0);
+  });
+
+  test("should disable drag area when enableDrag is false", async () => {
+    const container = document.createElement("div");
+    container.style.position = "relative";
+    container.style.width = "500px";
+    container.style.height = "500px";
+    document.body.appendChild(container);
+    render(
+      html`<ef-transform-handles .enableDrag=${false}></ef-transform-handles>`,
+      container,
+    );
+    const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
+    await el.updateComplete;
+
+    const dragArea = el.shadowRoot!.querySelector(".drag-area");
+    expect(dragArea).to.not.exist;
   });
 });
 
