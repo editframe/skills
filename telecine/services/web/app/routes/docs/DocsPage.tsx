@@ -58,8 +58,11 @@ import { EditableWaveform } from "~/components/docs/EditableWaveform";
 import { EditableThumbnailStrip } from "~/components/docs/EditableThumbnailStrip";
 import { VideoEditorExample } from "~/components/docs/VideoEditorExample";
 import { PropertyDoc, PropertyDocList } from "~/components/docs/PropertyDoc";
+import { PropertyReferenceTable } from "~/components/docs/PropertyReference";
+import { VideoPropertyReference } from "~/components/docs/VideoPropertyReference";
 import { ShowDocItemByName } from "~/components/docs/typedoc";
 import { WithEnv } from "~/components/WithEnv";
+import { DocSectionIndex, DocLinkList, DocNavSection } from "~/components/docs/DocNavigation";
 import Rotation from "./examples/rotation.tsx";
 import Crop from "./examples/crop.tsx";
 import { MobileMenuDrawer } from "~/components/docs/MobileMenuDrawer";
@@ -354,7 +357,12 @@ export default function DocsPage() {
                   ),
                   PropertyDoc: (props) => <PropertyDoc {...props} />,
                   PropertyDocList: (props) => <PropertyDocList {...props} />,
+                  PropertyReferenceTable: (props) => <PropertyReferenceTable {...props} />,
+                  VideoPropertyReference: () => <VideoPropertyReference />,
                   Demonstration: (props) => <Demonstration {...props} />,
+                  DocSectionIndex: (props) => <DocSectionIndex {...props} />,
+                  DocLinkList: (props) => <DocLinkList {...props} />,
+                  DocNavSection: (props) => <DocNavSection {...props} />,
                   Preview: (props) => <Preview {...props} />,
                   PreviewVideo: (props) => <PreviewVideo {...props} />,
                   Elements: (props) => <Elements {...props} />,

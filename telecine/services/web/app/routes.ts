@@ -17,6 +17,7 @@ const routes = [
   route("/docs/examples/filters", "routes/docs/examples/filters.tsx"),
   route("/docs/examples/keyframes", "routes/docs/examples/keyframes.tsx"),
   route("/docs/examples/motion", "routes/docs/examples/motion.tsx"),
+  route("/docs/examples/motion-path", "routes/docs/examples/motion-path.tsx"),
   route("/docs/examples/portrait-fill", "routes/docs/examples/portrait-fill.tsx"),
   route("/docs/examples/trim", "routes/docs/examples/trim.tsx"),
   route("/docs/examples/watermark", "routes/docs/examples/watermark.tsx"),
