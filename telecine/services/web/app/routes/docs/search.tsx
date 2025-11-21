@@ -4,7 +4,7 @@ import { Header } from "~/components/marketing/Header";
 import { Footer } from "~/components/Footer";
 import { SearchResult } from "~/components/docs/SearchResult";
 import { useSearch } from "~/hooks/useSearch";
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import clsx from "clsx";
 import { themeClasses } from "~/utils/theme-classes";
 
@@ -18,8 +18,19 @@ export const meta: MetaFunction = () => {
 export default function DocsSearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get("q") || "";
+  const inputRef = useRef<HTMLInputElement>(null);
   const { results, loading, error, search, isInitialized } = useSearch();
 
+  // Sync input value from URL on mount or external navigation (but not during typing)
+  useEffect(() => {
+    const input = inputRef.current;
+    if (input && input.value !== query && document.activeElement !== input) {
+      // Only sync if input is not focused (external navigation)
+      input.value = query;
+    }
+  }, [query]);
+
+  // Perform search when query changes
   useEffect(() => {
     if (isInitialized && query) {
       search(query);
@@ -47,10 +58,13 @@ export default function DocsSearchPage() {
               />
             </svg>
             <input
+              ref={inputRef}
               type="text"
-              value={query}
+              defaultValue={query}
               onChange={(e) => {
-                setSearchParams({ q: e.target.value });
+                // Update URL params immediately (one-way data flow)
+                // Input manages its own cursor position naturally
+                setSearchParams({ q: e.target.value }, { preventScrollReset: true });
               }}
               placeholder="Search documentation..."
               className={clsx(
