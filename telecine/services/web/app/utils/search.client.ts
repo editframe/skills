@@ -1,4 +1,8 @@
 import MiniSearch from "minisearch";
+import {
+  cosineSimilarity,
+  computeQueryVector as computeQueryVectorClient,
+} from "./vector-search.client";
 
 export interface SearchDocument {
   id: string;           // Unique identifier (slug-based)
@@ -8,6 +12,12 @@ export interface SearchDocument {
   content: string;      // Full text content (plain text, no markdown)
   headings: string[];   // Array of heading texts for context
   category?: string;    // Section category (e.g., "elements", "getting-started")
+  vector?: number[];    // TF-IDF vector for semantic search (optional)
+}
+
+export interface SearchIndexMetadata {
+  vocabulary: string[];
+  idf: Record<string, number>;
 }
 
 export interface SearchResult extends SearchDocument {
@@ -19,6 +29,7 @@ export interface SearchResult extends SearchDocument {
 
 let searchIndex: MiniSearch<SearchDocument> | null = null;
 let documents: SearchDocument[] | null = null;
+let searchMetadata: SearchIndexMetadata | null = null;
 
 /**
  * Initializes the search index by loading documents from the API
@@ -34,7 +45,18 @@ export async function initializeSearch(): Promise<void> {
       throw new Error(`Failed to load search index: ${response.statusText}`);
     }
 
-    documents = (await response.json()) as SearchDocument[];
+    const indexData = (await response.json()) as
+      | SearchDocument[]
+      | { documents: SearchDocument[]; metadata: SearchIndexMetadata | null };
+
+    // Handle both old format (array) and new format (object with metadata)
+    if (Array.isArray(indexData)) {
+      documents = indexData;
+      searchMetadata = null;
+    } else {
+      documents = indexData.documents;
+      searchMetadata = indexData.metadata;
+    }
 
     // Create MiniSearch instance
     searchIndex = new MiniSearch<SearchDocument>({
@@ -56,9 +78,12 @@ export async function initializeSearch(): Promise<void> {
 }
 
 /**
- * Performs a search query and returns ranked results
+ * Performs a hybrid search (keyword + semantic) and returns ranked results
  */
-export function search(query: string): SearchResult[] {
+export function search(
+  query: string,
+  options?: { useVectorSearch?: boolean; vectorWeight?: number },
+): SearchResult[] {
   if (!searchIndex) {
     throw new Error("Search not initialized. Call initializeSearch() first.");
   }
@@ -67,29 +92,92 @@ export function search(query: string): SearchResult[] {
     return [];
   }
 
-  // Perform search with limit
-  const results = searchIndex.search(query, {
+  const useVectorSearch = options?.useVectorSearch ?? true;
+  const vectorWeight = options?.vectorWeight ?? 0.4; // 40% vector, 60% keyword
+
+  // Perform keyword search with minisearch
+  const keywordResults = searchIndex.search(query, {
     boost: { title: 3, description: 2, headings: 1.5, content: 1 },
     fuzzy: 0.2,
     prefix: true,
   });
 
-  // Limit to top 20 results
-  const limitedResults = results.slice(0, 20);
+  // Create keyword score map
+  const keywordScores = new Map<string, number>();
+  const maxKeywordScore = keywordResults[0]?.score || 1;
+  for (const result of keywordResults) {
+    // Normalize keyword scores to 0-1 range
+    keywordScores.set(result.id, result.score / maxKeywordScore);
+  }
 
-  // Map to SearchResult format with full document data
-  return limitedResults.map((result) => {
-    const doc = documents?.find((d) => d.id === result.id);
-    if (!doc) {
-      throw new Error(`Document ${result.id} not found`);
+  // Perform vector search if metadata is available
+  let vectorScores = new Map<string, number>();
+  if (
+    useVectorSearch &&
+    searchMetadata &&
+    documents &&
+    documents.some((d) => d.vector)
+  ) {
+    const queryVector = computeQueryVectorClient(
+      query,
+      searchMetadata.vocabulary,
+      searchMetadata.idf,
+    );
+
+    // Compute cosine similarity for all documents
+    for (const doc of documents) {
+      if (doc.vector) {
+        const similarity = cosineSimilarity(queryVector, doc.vector);
+        vectorScores.set(doc.id, Math.max(0, similarity)); // Ensure non-negative
+      }
     }
 
-    return {
-      ...doc,
-      score: result.score,
-      match: result.match,
-    } as SearchResult;
-  });
+    // Normalize vector scores to 0-1 range
+    const maxVectorScore = Math.max(...Array.from(vectorScores.values()), 1);
+    if (maxVectorScore > 0) {
+      for (const [id, score] of vectorScores.entries()) {
+        vectorScores.set(id, score / maxVectorScore);
+      }
+    }
+  }
+
+  // Combine scores: hybrid approach
+  const combinedScores = new Map<string, number>();
+  const allDocIds = new Set([
+    ...keywordScores.keys(),
+    ...vectorScores.keys(),
+  ]);
+
+  for (const docId of allDocIds) {
+    const keywordScore = keywordScores.get(docId) || 0;
+    const vectorScore = vectorScores.get(docId) || 0;
+
+    // Weighted combination
+    const combinedScore =
+      keywordScore * (1 - vectorWeight) + vectorScore * vectorWeight;
+    combinedScores.set(docId, combinedScore);
+  }
+
+  // Sort by combined score
+  const sortedResults = Array.from(combinedScores.entries())
+    .map(([id, score]) => {
+      const doc = documents?.find((d) => d.id === id);
+      const keywordResult = keywordResults.find((r) => r.id === id);
+      if (!doc) {
+        return null;
+      }
+
+      return {
+        ...doc,
+        score,
+        match: keywordResult?.match,
+      } as SearchResult;
+    })
+    .filter((r): r is SearchResult => r !== null)
+    .sort((a, b) => b.score - a.score);
+
+  // Limit to top 20 results
+  return sortedResults.slice(0, 20);
 }
 
 /**
