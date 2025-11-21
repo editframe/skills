@@ -1,6 +1,6 @@
 import React from "react";
 import type { ElementNode, MotionDesignerState } from "~/lib/motion-designer/types";
-import { TransformHandles } from "./TransformHandles";
+import { TransformHandlesWrapper } from "./TransformHandlesWrapper";
 import { ChildElementClickOverlay } from "./ChildElementClickOverlay";
 
 interface ChildElementOverlaysProps {
@@ -52,7 +52,7 @@ export function ChildElementOverlays({
               canvasTranslateY={canvasTranslateY}
             />
             {/* Transform handles for selected elements */}
-            <TransformHandles
+            <TransformHandlesWrapper
               element={child}
               state={state}
               isSelected={isSelected}

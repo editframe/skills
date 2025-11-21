@@ -97,6 +97,8 @@ export { EFFocusOverlay } from "./gui/EFFocusOverlay.js";
 
 import "./gui/transformUtils.js";
 
+export { getCornerPoint, getOppositeCorner, rotatePoint } from "./gui/transformUtils.js";
+
 import "./gui/EFTransformHandles.ts";
 
 export { type TransformBounds, EFTransformHandles } from "./gui/EFTransformHandles.ts";
