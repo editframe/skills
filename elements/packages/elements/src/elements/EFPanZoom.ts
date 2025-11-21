@@ -18,6 +18,10 @@ export class EFPanZoom extends LitElement {
         touch-action: none;
       }
       .content-wrapper {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
         transform-origin: 0 0;
       }
     `,
@@ -146,9 +150,9 @@ export class EFPanZoom extends LitElement {
     const isZoom = e.metaKey || e.ctrlKey;
 
     if (isZoom) {
-      const rect = this.getBoundingClientRect();
-      const pointerX = e.clientX - rect.left;
-      const pointerY = e.clientY - rect.top;
+      const containerRect = this.getBoundingClientRect();
+      const pointerX = e.clientX - containerRect.left;
+      const pointerY = e.clientY - containerRect.top;
 
       const currentX = this.x;
       const currentY = this.y;
