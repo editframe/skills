@@ -1,0 +1,207 @@
+---
+meta:
+  - title: Video Element Reference
+  - name: description
+    content: Complete technical reference for all video element properties and attributes
+headers:
+    Cache-Control: no-cache
+---
+
+## Reference
+
+Complete technical reference for all video element properties.
+
+**New to video elements?** Start with the [Tutorial](/docs/elements/video/tutorial) to learn the basics, or explore [How-To Guides](/docs/elements/video/how-to/) for specific tasks.
+
+### Quick Reference Table
+
+<VideoPropertyReference />
+
+### Grouped Attributes
+
+#### Media Source
+
+<PropertyDocList>
+  <PropertyDoc name="assetId" type="string" domReadable domWritable htmlAttribute="asset-id">
+    The asset ID of the video.
+
+    An asset ID is a unique identifier for a media file that has been uploaded to Editframe. This is documented in the [Processing Files](/docs/processing-files/audio-video-files) section.
+  </PropertyDoc>
+
+  <PropertyDoc name="src" type="string" domReadable domWritable htmlAttribute="src">
+    The source URL/path of the video.
+
+    <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 p-2 mb-2 rounded border border-blue-200 dark:border-blue-800">
+      ⚠️ This property is not yet supported in all circumstances. Providing an arbitrary URL or path will not work unless the server is configured to respond with a precise, not-yet-documented, format.
+
+      Demonstration projects with such a server are available via `npm create @editframe@beta`. These are not intended for production use. When complete, a specialized server should not be required, though there will be specific encoding/muxing limitations.
+
+      Instead upload media to Editframe and use the `assetId` property.
+    </div>
+
+    <div className="bg-orange-100 dark:bg-orange-900/30 text-orange-900 dark:text-orange-100 p-2 rounded border border-orange-200 dark:border-orange-800">
+      🚫 This property should only be used for development, testing, and previewing media to end-users in real-time. When submitting a render job, all media should be uploaded to Editframe and the `assetId` property should be used. Our render servers will render in parallel, and in order to operate efficiently we need to be able to load only the slice of media that is needed to render a small segment of the timeline.
+    </div>
+  </PropertyDoc>
+</PropertyDocList>
+
+#### Time Coordinates
+
+<PropertyDocList>
+  <PropertyDoc name="startTimeMs" type="number" domReadable>
+    The start time of the video in milliseconds. This time is relative to the timeline described by the root timegroup the video is contained within, or 0 if the video is standalone (no timegroup).
+  </PropertyDoc>
+
+  <PropertyDoc name="endTimeMs" type="number" domReadable>
+    The end time of the video in milliseconds. This time is relative to the timeline described by the root timegroup the video is contained within, or the video's duration if standalone (no timegroup).
+  </PropertyDoc>
+
+  <PropertyDoc name="durationMs" type="number" domReadable>
+    The duration of the video in milliseconds. This is equivalent to the difference between `endTimeMs` and `startTimeMs`.
+  </PropertyDoc>
+
+  <PropertyDoc name="currentTimeMs" type="number" domReadable>
+    The current time of the video in milliseconds. This time is the time within the timeline of the root timegroup the video is contained within, or the video's own timeline if standalone (no timegroup).
+  </PropertyDoc>
+
+  <PropertyDoc name="ownCurrentTimeMs" type="number" domReadable>
+    The current time of the video in milliseconds. This time is scoped directly to the video element itself.
+  </PropertyDoc>
+
+  <PropertyDoc name="currentSourceTimeMs" type="number" domReadable>
+    This property is the current time of the video in milliseconds scoped to the source media. If no `trimStart` or `sourceIn` are set, this property is equivalent to `ownCurrentTimeMs`.
+
+    <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 p-2 mb-2 rounded border border-blue-200 dark:border-blue-800">
+      💡 If you want to associate data to a video clip, but it's important that the data is not affected by trimming, use this property. For example, if you were tracking an object in the video, you should use this time, so that tracking would hold true even if a `trimStart` value is set later.
+    </div>
+  </PropertyDoc>
+</PropertyDocList>
+
+#### Trimming & Editing
+
+<PropertyDocList>
+  <PropertyDoc name="trimStart" type="timestring" domReadable domWritable htmlAttribute="trimstart">
+    A duration of time to trim off from the start of the video.
+
+    This time is relative to the start of the video.
+
+    Setting trimStart to 10s will result in the video starting 10 seconds into the source media.
+
+    This property is intended to be used with the `trimEnd` property.
+  </PropertyDoc>
+
+  <PropertyDoc name="trimEnd" type="timestring" domReadable domWritable htmlAttribute="trimend">
+    A duration of time to trim off from the end of the video.
+
+    This time is relative to the end of the video.
+
+    Setting trimEnd to 10s will result in the video ending 10 seconds into the source media.
+
+    This property is intended to be used with the `trimStart`.
+
+  </PropertyDoc>
+
+  <PropertyDoc name="sourceIn" type="timestring" domReadable domWritable htmlAttribute="sourcein">
+    A duration of time to trim off from the start of the video.
+
+    This time is an absolute value in the timeline of the source media.
+
+    Setting sourceIn to 10s will result in the video starting 10 seconds into the source media.
+
+    This property is intended to be used with the `sourceOut` property.
+  </PropertyDoc>
+  <PropertyDoc name="sourceOut" type="timestring" domReadable domWritable htmlAttribute="sourceout">
+    A duration of time to trim off from the end of the video.
+
+    This time is an absolute value in the timeline of the source media.
+
+    Setting sourceOut to 10s will result in the video ending 10 seconds into the source media.
+
+    This property is intended to be used with the `sourceIn` property.
+  </PropertyDoc>
+</PropertyDocList>
+
+#### Hierarchy
+
+<PropertyDocList>
+  <PropertyDoc name="parentTimegroup" type="<ef-timegroup> | null" domReadable>
+    The closest timegroup element that contains the video, or `null` if the video is not contained within any timegroup (standalone video).
+  </PropertyDoc>
+
+  <PropertyDoc name="rootTimegroup" type="<ef-timegroup> | null" domReadable>
+    The outermost timegroup element that contains the video, or `null` if the video is standalone and not part of any composition.
+  </PropertyDoc>
+</PropertyDocList>
+
+#### Performance & Buffering
+
+<PropertyDocList>
+  <PropertyDoc name="videoBufferDurationMs" type="number" domReadable domWritable htmlAttribute="video-buffer-duration">
+    Duration in milliseconds for video buffering ahead of current time.
+    
+    Default: 10000 (10 seconds)
+    
+    Higher values provide more buffer against network issues but use more bandwidth and memory.
+  </PropertyDoc>
+
+  <PropertyDoc name="maxVideoBufferFetches" type="number" domReadable domWritable htmlAttribute="max-video-buffer-fetches">
+    Maximum number of concurrent video segment fetches for buffering.
+    
+    Default: 2
+    
+    Higher values enable faster buffering but may impact other network requests.
+  </PropertyDoc>
+
+  <PropertyDoc name="enableVideoBuffering" type="boolean" domReadable domWritable htmlAttribute="enable-video-buffering">
+    Enable or disable the video buffering system.
+    
+    Default: true
+    
+    Disabling buffering reduces memory usage but may cause playback interruptions.
+  </PropertyDoc>
+</PropertyDocList>
+
+#### Audio Analysis
+
+<PropertyDocList>
+  <PropertyDoc name="fftSize" type="number" domReadable domWritable htmlAttribute="fft-size" defaultValue="512">
+    The size of the FFT (Fast Fourier Transform) to use for audio analysis.
+
+    This property is used when associated the video with a waveform or other audio analysis.
+
+    The value MUST be a power of 2. Higher values will result in more granular waveforms. Though this is not always more aesthetically pleasing.
+  </PropertyDoc>
+
+  <PropertyDoc name="fftDecay" type="number" domReadable domWritable htmlAttribute="fft-decay" defaultValue="8">
+    The decay of the FFT (Fast Fourier Transform) to use for audio analysis.
+
+    To create a smoother waveform animation, we average together several frames worth of audio data. This property controls the number of frames to average.
+
+    Higher values will result in a smoother animation. Extremely high values will increase computational cost.
+  </PropertyDoc>
+
+  <PropertyDoc name="fftGain" type="number" domReadable domWritable htmlAttribute="fft-gain" defaultValue="3">
+    The gain of the FFT (Fast Fourier Transform) to use for audio analysis.
+
+    This property is used when associated the audio with a waveform or other audio analysis.
+
+    Higher values will result in a more pronounced waveform.
+  </PropertyDoc>
+
+  <PropertyDoc name="interpolateFrequencies" type="boolean" htmlAttribute="interpolate-frequencies" defaultValue="false">
+    Some input audio may have been fed through a highpass, resulting in waveform visualizations that appear to be missing data.
+
+    For example, if audio was recorded through a telephone network, which typically cuts out frequencies above ~4khz, the waveform will appear to be missing data above this frequency.
+
+    Setting this property will ignore zero values on the high end of the frequency spectrum, and interpolate the data to fill in the missing values.
+
+    This will result in a more aesthetically pleasing waveform, but it may also result in a loss of precision.
+  </PropertyDoc>
+
+  <PropertyDoc name="mute" type="boolean" domReadable domWritable htmlAttribute="mute" defaultValue="false">
+    Mutes the audio track of the video.
+
+    When set to true, the video will play without sound. Note that any waveforms connected to the media will continue to produce visual output, as mute only affects audio output via speakers.
+  </PropertyDoc>
+</PropertyDocList>
+

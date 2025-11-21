@@ -1,0 +1,23 @@
+---
+meta:
+  - title: How to Apply Visual Effects
+  - name: description
+    content: Apply CSS filters and visual effects to video elements
+headers:
+    Cache-Control: no-cache
+---
+
+## How to Apply Visual Effects
+
+**Problem:** You need to apply visual effects to a video using CSS filters.
+
+**Solution:** Use standard CSS filter properties directly on the video element. Editframe videos are rendered to canvas elements, so all CSS filters work as expected.
+
+<Demonstration layout="horizontal" defaultSourceVisible alwaysShowSource>
+  <Timegroup mode="contain" className="w-[720px] h-[480px] flex items-center justify-center bg-black overflow-hidden">
+    <Video src="https://assets.editframe.com/bars-n-tone.mp4" className="blur-sm saturate-200 brightness-150 contrast-150 size-full object-contain" />
+  </Timegroup>
+</Demonstration>
+
+**Available filters:** `blur`, `brightness`, `contrast`, `saturate`, `grayscale`, `sepia`, `hue-rotate`, `invert`, and `opacity`.
+

@@ -1,0 +1,75 @@
+---
+meta:
+  - title: Production vs Development Workflows
+  - name: description
+    content: Understanding when to use src versus assetId for video elements
+headers:
+    Cache-Control: no-cache
+---
+
+## Production vs Development Workflows
+
+The `src` and `assetId` properties serve different architectural needs: real-time preview requires flexibility, while production rendering requires parallel processing capabilities.
+
+### The Challenge: Different Requirements for Different Contexts
+
+Video playback has fundamentally different requirements in development vs production:
+
+**Development/Preview needs:**
+- Work with arbitrary video URLs (user uploads, external sources)
+- Immediate feedback without preprocessing
+- Flexibility to test with any video source
+
+**Production rendering needs:**
+- Parallel processing across worker fleet
+- Precise segment-level access for efficiency
+- Guaranteed availability and consistency
+
+A single approach can't satisfy both needs without compromising one or the other.
+
+### Development and Preview: src Property
+
+The `src` property enables instant playback of arbitrary video URLs through JIT transcoding:
+
+```jsx
+<Video src="https://example.com/video.mp4" />
+```
+
+**Architectural advantage:** No preprocessing required - provide any video URL and it works immediately. Perfect for development, testing, and real-time preview interfaces where users need instant feedback.
+
+**How it works:**
+1. Fetches `manifest.json` from transcoding server (metadata only, ~1KB)
+2. Requests segments on-demand as needed
+3. Uses browser caching for performance
+
+**Limitation:** Requires a JIT transcoding server endpoint. Not suitable for production rendering due to parallel processing requirements.
+
+### Production Rendering: assetId Property
+
+The `assetId` property enables parallel rendering across a worker fleet:
+
+```jsx
+<Video assetId="upload-123abc" />
+```
+
+**Architectural advantage:** Enables true parallel rendering where each worker renders a small slice of the timeline independently. This requires precise segment-level access that only works with pre-processed, uploaded assets.
+
+**Why parallel rendering matters:**
+- **Speed:** Multiple workers render simultaneously instead of sequentially
+- **Efficiency:** Each worker loads only the exact segment needed for its slice
+- **Scalability:** Add more workers to reduce render time linearly
+
+**Why src can't work for production:**
+Production rendering splits the timeline across multiple workers. Each worker needs to:
+- Load only the exact segment of video needed for its slice
+- Avoid downloading entire video files
+- Work independently without coordination overhead
+
+This segment-level precision requires assets that have been processed and segmented by Editframe's infrastructure, which `src` URLs don't provide.
+
+**When to use each:**
+- `src`: Development, testing, real-time preview interfaces
+- `assetId`: Production rendering jobs, final output generation
+
+For complete property details, see the [Video Element Reference](/docs/elements/video/reference#media-source).
+
