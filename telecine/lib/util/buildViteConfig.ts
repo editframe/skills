@@ -9,6 +9,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 // @ts-ignore
 import { viteAliases } from "./viteAliases";
 import { copyLuaScripts } from "./viteCopyLuaScripts.js";
+import { buildSearchIndexPlugin } from "./buildSearchIndexPlugin";
 
 export const buildViteConfig = () => {
   return defineConfig(({ isSsrBuild }) => {
@@ -78,6 +79,8 @@ export const buildViteConfig = () => {
           path.resolve(process.cwd(), 'lib/queues/lua'),
           path.resolve(process.cwd(), 'services/web/build/server/assets/lua')
         ),
+        // Generate search index after client build completes
+        ...(!isSsrBuild ? [buildSearchIndexPlugin()] : []),
         // Plugin to handle CSS imports during SSR only
         // CSS should be processed normally for client builds
         ...(isSsrBuild ? [{

@@ -19,6 +19,7 @@ import type { Heading } from "~/types";
 import { Menu } from "~/components/docs/Menu";
 import { Libraries } from "~/components/docs/Libraries";
 import { buildDocSlugMap, buildDocsMenu } from "~/utils/fs.server";
+import { processDocIndexComponents } from "~/utils/process-doc-index.server";
 import "~/styles/md.css";
 import { CodeBlock } from "~/components/CodeBlock";
 import { Playground } from "~/components/docs/Playground";
@@ -60,9 +61,20 @@ import { VideoEditorExample } from "~/components/docs/VideoEditorExample";
 import { PropertyDoc, PropertyDocList } from "~/components/docs/PropertyDoc";
 import { PropertyReferenceTable } from "~/components/docs/PropertyReference";
 import { VideoPropertyReference } from "~/components/docs/VideoPropertyReference";
+import { AudioPropertyReference } from "~/components/docs/AudioPropertyReference";
+import { TimegroupPropertyReference } from "~/components/docs/TimegroupPropertyReference";
+import { CaptionsPropertyReference } from "~/components/docs/CaptionsPropertyReference";
+import { WaveformPropertyReference } from "~/components/docs/WaveformPropertyReference";
+import { ImagePropertyReference } from "~/components/docs/ImagePropertyReference";
+import { TextPropertyReference } from "~/components/docs/TextPropertyReference";
+import { ThumbnailStripPropertyReference } from "~/components/docs/ThumbnailStripPropertyReference";
+import { SurfacePropertyReference } from "~/components/docs/SurfacePropertyReference";
 import { ShowDocItemByName } from "~/components/docs/typedoc";
 import { WithEnv } from "~/components/WithEnv";
 import { DocSectionIndex, DocLinkList, DocNavSection } from "~/components/docs/DocNavigation";
+import { AutoDocIndex } from "~/components/docs/AutoDocIndex";
+import { HowToIndex } from "~/components/docs/HowToIndex";
+import { ExplanationIndex } from "~/components/docs/ExplanationIndex";
 import Rotation from "./examples/rotation.tsx";
 import Crop from "./examples/crop.tsx";
 import { MobileMenuDrawer } from "~/components/docs/MobileMenuDrawer";
@@ -95,7 +107,14 @@ export const loader = async ({ params }: Route.LoaderArgs) => {
     throw new Response("Not Found", { status: 404 });
   }
 
-  const post = await parseMdx(file.content);
+  // Process MDX content to inject pre-computed data into AutoDocIndex components
+  // Use file.path which includes the .mdx extension and is relative to docs base
+  const processedContent = await processDocIndexComponents(
+    file.content,
+    file.path || "",
+  );
+
+  const post = await parseMdx(processedContent);
 
   if (!post) {
     throw new Response("Not Found", { status: 404 });
@@ -359,10 +378,21 @@ export default function DocsPage() {
                   PropertyDocList: (props) => <PropertyDocList {...props} />,
                   PropertyReferenceTable: (props) => <PropertyReferenceTable {...props} />,
                   VideoPropertyReference: () => <VideoPropertyReference />,
+                  AudioPropertyReference: () => <AudioPropertyReference />,
+                  TimegroupPropertyReference: () => <TimegroupPropertyReference />,
+                  CaptionsPropertyReference: () => <CaptionsPropertyReference />,
+                  WaveformPropertyReference: () => <WaveformPropertyReference />,
+                  ImagePropertyReference: () => <ImagePropertyReference />,
+                  TextPropertyReference: () => <TextPropertyReference />,
+                  SurfacePropertyReference: () => <SurfacePropertyReference />,
+                  ThumbnailStripPropertyReference: () => <ThumbnailStripPropertyReference />,
                   Demonstration: (props) => <Demonstration {...props} />,
                   DocSectionIndex: (props) => <DocSectionIndex {...props} />,
                   DocLinkList: (props) => <DocLinkList {...props} />,
                   DocNavSection: (props) => <DocNavSection {...props} />,
+                  AutoDocIndex: (props) => <AutoDocIndex {...props} />,
+                  HowToIndex: (props) => <HowToIndex {...props} />,
+                  ExplanationIndex: (props) => <ExplanationIndex {...props} />,
                   Preview: (props) => <Preview {...props} />,
                   PreviewVideo: (props) => <PreviewVideo {...props} />,
                   Elements: (props) => <Elements {...props} />,

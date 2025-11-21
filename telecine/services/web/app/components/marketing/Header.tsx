@@ -1,8 +1,9 @@
-import { Link, NavLink } from "react-router";
+import { Link, NavLink, useLocation } from "react-router";
 import clsx from "clsx";
 import { useEffect, useState } from "react";
 import { ThemeToggle } from "~/components/ThemeToggle";
 import { themeClasses } from "~/utils/theme-classes";
+import { SearchInput } from "~/components/docs/SearchInput";
 
 const navigation = [
   // {
@@ -36,8 +37,10 @@ export const Header = ({
   className?: string;
   hideMobileMenu?: boolean;
 }) => {
+  const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const isDocsPage = location.pathname.startsWith("/docs");
 
   useEffect(() => {
     function onScroll() {
@@ -90,6 +93,8 @@ export const Header = ({
           </div>
           <div className={`hidden lg:-ml-24 ${hideMobileMenu ? 'lg:flex' : 'md:flex'} items-center space-x-4`}>
             <nav className="flex space-x-4 text-sm font-medium items-center">
+              {/* Search Input - only show on docs pages */}
+              {isDocsPage && <SearchInput />}
               {isLoggedIn ? (
                 <Link
                   to="/welcome"
