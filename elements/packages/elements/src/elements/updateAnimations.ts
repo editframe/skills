@@ -911,7 +911,7 @@ const applyVisualState = (
   state: TemporalState,
 ): void => {
   // Always set progress (needed for many use cases)
-  element.style.setProperty(PROGRESS_PROPERTY, `${state.progress * 100}%`);
+  element.style.setProperty(PROGRESS_PROPERTY, `${state.progress}`);
 
   // Handle visibility based on phase
   if (!state.isVisible) {

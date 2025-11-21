@@ -275,7 +275,7 @@ describe("updateAnimations", () => {
       // Visual state must match temporal state
       assert.equal(
         element.style.getPropertyValue("--ef-progress"),
-        `${state.progress * 100}%`,
+        `${state.progress}`,
         "CSS progress reflects temporal progress",
       );
       assert.equal(
@@ -1058,7 +1058,7 @@ describe("updateAnimations", () => {
       updateAnimations(element);
 
       // Element's ownCurrentTimeMs should be 500 (timeline 500 - start 0)
-      assert.equal(element.style.getPropertyValue("--ef-progress"), "50%");
+      assert.equal(element.style.getPropertyValue("--ef-progress"), "0.5");
       assert.equal(element.style.getPropertyValue("--ef-duration"), "1000ms");
       assert.equal(
         element.style.getPropertyValue("--ef-transition-duration"),
@@ -1171,8 +1171,8 @@ describe("updateAnimations", () => {
       updateAnimations(element1);
       updateAnimations(element2);
 
-      assert.equal(element1.style.getPropertyValue("--ef-progress"), "0%");
-      assert.equal(element2.style.getPropertyValue("--ef-progress"), "100%");
+      assert.equal(element1.style.getPropertyValue("--ef-progress"), "0");
+      assert.equal(element2.style.getPropertyValue("--ef-progress"), "1");
     });
 
     test("sets transition duration to 0ms when no parentTimegroup", () => {
@@ -1235,7 +1235,7 @@ describe("updateAnimations", () => {
 
       // Application: visual state applied
       assert.equal(element.style.display, "");
-      assert.equal(element.style.getPropertyValue("--ef-progress"), "100%");
+      assert.equal(element.style.getPropertyValue("--ef-progress"), "1");
     });
 
     test("coordinates animations on child elements", async () => {
@@ -1329,7 +1329,7 @@ describe("updateAnimations", () => {
 
       updateAnimations(element);
 
-      assert.equal(element.style.getPropertyValue("--ef-progress"), "100%");
+      assert.equal(element.style.getPropertyValue("--ef-progress"), "1");
     });
 
     test("handles negative currentTimeMs", () => {
@@ -1340,7 +1340,7 @@ describe("updateAnimations", () => {
 
       updateAnimations(element);
 
-      assert.equal(element.style.getPropertyValue("--ef-progress"), "0%");
+      assert.equal(element.style.getPropertyValue("--ef-progress"), "0");
     });
 
     test("handles large duration values", () => {
@@ -1351,7 +1351,7 @@ describe("updateAnimations", () => {
 
       updateAnimations(element);
 
-      assert.equal(element.style.getPropertyValue("--ef-progress"), "0.5%");
+      assert.equal(element.style.getPropertyValue("--ef-progress"), "0.005");
     });
 
     test("handles very small time values", async () => {
@@ -1367,8 +1367,8 @@ describe("updateAnimations", () => {
 
       updateAnimations(element);
 
-      // At 0ms with duration 10ms, progress should be 0%
-      assert.equal(element.style.getPropertyValue("--ef-progress"), "0%");
+      // At 0ms with duration 10ms, progress should be 0
+      assert.equal(element.style.getPropertyValue("--ef-progress"), "0");
     });
 
     test("handles missing parentTimegroup overlapMs", async () => {
@@ -2454,7 +2454,7 @@ describe("updateAnimations", () => {
       // Should not throw and should still set CSS properties
       updateAnimations(element);
 
-      assert.equal(element.style.getPropertyValue("--ef-progress"), "0%");
+      assert.equal(element.style.getPropertyValue("--ef-progress"), "0");
     });
 
     test("ignores animations without KeyframeEffect", async () => {
