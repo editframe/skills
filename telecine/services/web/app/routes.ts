@@ -21,6 +21,7 @@ const routes = [
   route("/docs/examples/portrait-fill", "routes/docs/examples/portrait-fill.tsx"),
   route("/docs/examples/trim", "routes/docs/examples/trim.tsx"),
   route("/docs/examples/watermark", "routes/docs/examples/watermark.tsx"),
+  route("/docs/search", "routes/docs/search.tsx"),
   route("/docs/*", "routes/docs/DocsPage.tsx"),
   route("/with/animejs", "routes/with/animejs.tsx"),
   route("/guides/*", "routes/guides-redirect.ts"),
@@ -221,6 +222,10 @@ const routes = [
     ...v1.prefix("/transcription", [
       v1.route("/:id/progress", "transcription/progress.ts"),
       v1.route("/:id/fragment/:number", "transcription/fragment.ts"),
+    ]),
+
+    ...v1.prefix("/docs", [
+      v1.route("/search", "docs/search.ts"),
     ]),
 
     v1.route("/url-token", "url-token.ts"),
