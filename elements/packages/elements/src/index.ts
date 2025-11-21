@@ -95,6 +95,12 @@ import "./gui/EFFocusOverlay.js";
 
 export { EFFocusOverlay } from "./gui/EFFocusOverlay.js";
 
+import "./gui/transformUtils.js";
+
+import "./gui/EFTransformHandles.ts";
+
+export { type TransformBounds, EFTransformHandles } from "./gui/EFTransformHandles.ts";
+
 import "./gui/EFResizableBox.ts";
 
 export { type BoxBounds, EFResizableBox } from "./gui/EFResizableBox.ts";

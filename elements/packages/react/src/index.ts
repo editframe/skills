@@ -18,6 +18,7 @@ export { Configuration } from "./gui/Configuration.js";
 export { Controls } from "./gui/Controls.js";
 export { Dial } from "./gui/EFDial.js";
 export { ResizableBox } from "./gui/EFResizableBox.js";
+export { TransformHandles } from "./gui/EFTransformHandles.js";
 export { Filmstrip } from "./gui/Filmstrip.js";
 export { FitScale } from "./gui/FitScale.js";
 export { FocusOverlay } from "./gui/FocusOverlay.js";
