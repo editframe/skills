@@ -21,7 +21,7 @@ if (typeof globalThis !== "undefined") {
           return originalDefine(name, constructor, options);
         } catch (error) {
           // Ignore duplicate registration errors - this is expected in SSR
-          if (error instanceof Error && error.message?.includes("has already been used")) {
+          if (error && typeof error === "object" && "message" in error && typeof error.message === "string" && error.message.includes("has already been used")) {
             return;
           }
           throw error;
@@ -118,7 +118,7 @@ if (DEVELOPMENT) {
       const source = await viteDevServer.ssrLoadModule("/app/services/web/server/app.ts");
       return await source.app(req, res, next);
     } catch (error) {
-      if (typeof error === "object" && error instanceof Error) {
+      if (error && typeof error === "object" && "message" in error) {
         viteDevServer.ssrFixStacktrace(error);
       }
       next(error);
