@@ -19,7 +19,8 @@ export class EFPanZoom extends LitElement {
       }
       .content-wrapper {
         position: absolute;
-        inset: 0;
+        top: 0;
+        left: 0;
         width: 100%;
         height: 100%;
         transform-origin: 0 0;
@@ -43,6 +44,13 @@ export class EFPanZoom extends LitElement {
 
   connectedCallback() {
     super.connectedCallback();
+  }
+
+  firstUpdated(): void {
+    this.addEventListener("pointerdown", this._onPointerDown);
+    this.addEventListener("pointermove", this._onPointerMove);
+    this.addEventListener("pointerup", this._onPointerUp);
+    this.addEventListener("pointercancel", this._onPointerUp);
     this.addEventListener("wheel", this._onWheel, { passive: false });
   }
 
@@ -68,7 +76,7 @@ export class EFPanZoom extends LitElement {
       y: updates.y !== undefined ? updates.y : this.y,
       scale:
         updates.scale !== undefined
-          ? Math.max(0.1, Math.min(5, updates.scale))
+          ? Math.max(0.1, Math.min(50, updates.scale))
           : this.scale,
     };
 
@@ -147,29 +155,28 @@ export class EFPanZoom extends LitElement {
   private _onWheel = (e: WheelEvent) => {
     e.preventDefault();
 
+    const container = this;
+    if (!container) return;
+
     const isZoom = e.metaKey || e.ctrlKey;
 
     if (isZoom) {
-      const containerRect = this.getBoundingClientRect();
-      const pointerX = e.clientX - containerRect.left;
-      const pointerY = e.clientY - containerRect.top;
-
-      const currentX = this.x;
-      const currentY = this.y;
-      const currentScale = this.scale;
-
-      const canvasX = (pointerX - currentX) / currentScale;
-      const canvasY = (pointerY - currentY) / currentScale;
-
-      const delta = e.deltaY > 0 ? 0.95 : 1.05;
-      const newScale = Math.max(0.1, Math.min(5, currentScale * delta));
-
-      const newX = pointerX - canvasX * newScale;
-      const newY = pointerY - canvasY * newScale;
+      const rect = container.getBoundingClientRect();
+      const w = container.clientWidth || 1;
+      const h = container.clientHeight || 1;
+      const parentScale = ((rect.width / w) + (rect.height / h)) / 2;
+      
+      const mouseX = (e.clientX - rect.left) / parentScale;
+      const mouseY = (e.clientY - rect.top) / parentScale;
+      const canvasX = (mouseX - this.x) / this.scale;
+      const canvasY = (mouseY - this.y) / this.scale;
+      
+      const delta = e.deltaY > 0 ? 0.9 : 1.1;
+      const newScale = Math.max(0.1, Math.min(50, this.scale * delta));
 
       this._updateTransform({
-        x: newX,
-        y: newY,
+        x: mouseX - canvasX * newScale,
+        y: mouseY - canvasY * newScale,
         scale: newScale,
       });
     } else {
@@ -183,13 +190,7 @@ export class EFPanZoom extends LitElement {
     }
   };
 
-  firstUpdated() {
-    super.firstUpdated();
-    this.addEventListener("pointerdown", this._onPointerDown);
-    this.addEventListener("pointermove", this._onPointerMove);
-    this.addEventListener("pointerup", this._onPointerUp);
-    this.addEventListener("pointercancel", this._onPointerUp);
-  }
+
 
   render() {
     return html`
