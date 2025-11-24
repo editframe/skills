@@ -117,6 +117,17 @@ import "./elements/EFPanZoom.js";
 export { EFPanZoom } from "./elements/EFPanZoom.js";
 export type { PanZoomTransform } from "./elements/EFPanZoom.js";
 
+import "./gui/EFTimelineRuler.ts";
+
+export { EFTimelineRuler } from "./gui/EFTimelineRuler.ts";
+export {
+  calculateOptimalInterval,
+  calculateFrameIntervalMs,
+  calculatePixelsPerFrame,
+  shouldShowFrameMarkers,
+  quantizeToFrameTimeMs,
+} from "./gui/EFTimelineRuler.ts";
+
 if (typeof window !== "undefined") {
   // @ts-expect-error
   window.EF_REGISTERED = true;
