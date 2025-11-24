@@ -4,83 +4,54 @@ import { CodeEditor } from "../../CodeEditor";
 import clsx from "clsx";
 import { convertToWebComponents } from "./convertToWebComponents";
 import { convertToJsx } from "./convertToJsx";
-import {
-  CheckCircle,
-  ClipboardText,
-} from "@phosphor-icons/react";
 import { PersistentTab } from "../PersistentTabGroup";
 import { PersistentTabGroup } from "../PersistentTabGroup";
 import { useTheme } from "~/hooks/useTheme";
 
-
-
 interface DemonstrationProps {
   children: React.ReactNode;
-  showSource?: boolean;
-  id?: string;
-  defaultSourceVisible?: boolean;
+  
+  // Layout
   layout?: "horizontal" | "vertical";
-  alwaysShowSource?: boolean;
-  hideSource?: boolean;
-  hideFilmstrip?: boolean;
+  className?: string;
+  
+  // Source code visibility
+  sourceVisible?: boolean;        // Initial visibility state
+  alwaysShowSource?: boolean;     // Keep source always visible
+  hideSource?: boolean;           // Completely hide source
+  
+  // Video features (all opt-in)
+  enablePreview?: boolean;        // Wrap in Preview component
+  enableFilmstrip?: boolean;      // Show filmstrip
+  enableFocusOverlay?: boolean;   // Show focus overlay
+  enableFitScale?: boolean;       // Wrap content in FitScale
+  checkerboard?: boolean;         // Add checkerboard background pattern
+  
+  // Preview-specific props
+  id?: string;                    // Preview id
+  loop?: boolean;                 // Enable loop for Preview
+  
+  // Filmstrip-specific props
   filmstripHide?: string;
   filmstripShow?: string;
-  hideFocusOverlay?: boolean;
-  loop?: boolean;
-  wrapInPreview?: boolean;
-}
-
-interface CopyButtonProps {
-  text: string;
-}
-
-// @ts-expect-error CopyButton is not currently used, but should be re-instated into the design
-function CopyButton({ text }: CopyButtonProps) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      console.error("Failed to copy to clipboard", error);
-    }
-  };
-
-  return (
-    <button
-      onClick={handleCopy}
-      className="absolute top-2 right-2 px-2 py-1 text-xs font-medium rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors"
-    >
-      {copied ? (
-        <span className="flex items-center gap-1">
-          Copied!{" "}
-          <CheckCircle className="w-4 h-4 fill-mantis-300 text-mantis-500" />
-        </span>
-      ) : (
-        <span className="flex items-center gap-1">
-          Copy{" "}
-          <ClipboardText className="w-4 h-4 fill-mantis-300 text-mantis-500" />
-        </span>
-      )}
-    </button>
-  );
 }
 
 export function Demonstration({
   children,
+  layout,
+  className,
+  sourceVisible,
+  alwaysShowSource,
+  hideSource,
+  enablePreview,
+  enableFilmstrip,
+  enableFocusOverlay,
+  enableFitScale,
+  checkerboard,
   id,
-  defaultSourceVisible = false,
-  layout = "vertical",
-  alwaysShowSource = false,
-  hideSource = false,
-  hideFilmstrip = false,
+  loop,
   filmstripHide,
   filmstripShow,
-  hideFocusOverlay = false,
-  loop = false,
-  wrapInPreview = true,
 }: DemonstrationProps) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
@@ -92,83 +63,119 @@ export function Demonstration({
   React.useEffect(() => {
     setEditableHtmlVersion(htmlVersion);
   }, [htmlVersion]);
-  const [isSourceVisible, setIsSourceVisible] = useState(defaultSourceVisible);
+  
+  const [isSourceVisible, setIsSourceVisible] = useState(sourceVisible ?? false);
 
   const extractedTargetId = useMemo(() => {
-    if (wrapInPreview || !editableHtmlVersion) return null;
+    if (enablePreview || !enableFilmstrip || !editableHtmlVersion) return null;
 
     const match = editableHtmlVersion.match(/\sid="([^"]+)"/);
     return match?.[1] || null;
-  }, [editableHtmlVersion, wrapInPreview]);
+  }, [editableHtmlVersion, enablePreview, enableFilmstrip]);
 
   const renderPreviewContent = () => {
-    if (wrapInPreview) {
+    // Render React children directly
+    const content = (
+      <div className="contents">
+        {children}
+      </div>
+    );
+
+    const wrappedContent = enableFitScale ? (
+      <FitScale className="w-full h-full max-w-full min-w-0">
+        {content}
+      </FitScale>
+    ) : content;
+
+    const contentWithOverlay = (
+      <>
+        {wrappedContent}
+        {enableFocusOverlay && <FocusOverlay />}
+      </>
+    );
+
+    const checkerboardStyle = checkerboard ? {
+      backgroundImage: isDark 
+        ? `
+            linear-gradient(45deg, rgba(148, 163, 184, 0.3) 25%, transparent 25%),
+            linear-gradient(-45deg, rgba(148, 163, 184, 0.3) 25%, transparent 25%),
+            linear-gradient(45deg, transparent 75%, rgba(148, 163, 184, 0.3) 75%),
+            linear-gradient(-45deg, transparent 75%, rgba(148, 163, 184, 0.3) 75%)
+          `
+        : `
+            linear-gradient(45deg, #e5e7eb 25%, transparent 25%),
+            linear-gradient(-45deg, #e5e7eb 25%, transparent 25%),
+            linear-gradient(45deg, transparent 75%, #e5e7eb 75%),
+            linear-gradient(-45deg, transparent 75%, #e5e7eb 75%)
+          `,
+      backgroundSize: '20px 20px',
+      backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px'
+    } : undefined;
+
+    const mainContent = (
+      <div 
+        className="overflow-hidden bg-slate-300 dark:bg-slate-700 min-h-0 min-w-0 w-full h-full max-w-full"
+        style={checkerboardStyle}
+      >
+        {contentWithOverlay}
+      </div>
+    );
+
+    const filmstripContent = enableFilmstrip && (
+      <div className="min-h-0">
+        <Filmstrip
+          target={extractedTargetId ?? undefined}
+          autoScale
+          className={clsx("w-full h-full", { dark: isDark })}
+          hide={filmstripHide}
+          show={filmstripShow}
+        />
+      </div>
+    );
+
+    if (enablePreview) {
       return (
-        <Preview id={id} loop={loop} className={clsx("h-full w-full max-w-full min-w-0 grid", {
-          "grid-rows-[1.5fr_1fr]": !hideFilmstrip,
-          "grid-rows-[1fr]": hideFilmstrip,
-        })}>
-          <div className="overflow-hidden bg-slate-300 dark:bg-slate-700 min-h-0 min-w-0 w-full h-full max-w-full">
-            <FitScale className="w-full h-full max-w-full min-w-0">
-              <div
-                className="contents"
-                dangerouslySetInnerHTML={{
-                  __html: editableHtmlVersion,
-                }}
-              />
-            </FitScale>
-            {!hideFocusOverlay && <FocusOverlay />}
-          </div>
-          {!hideFilmstrip && (
-            <div className="min-h-0">
-              <Filmstrip
-                autoScale
-                className={clsx("w-full h-full", { dark: isDark })}
-                hide={filmstripHide}
-                show={filmstripShow}
-              />
-            </div>
-          )}
+        <Preview 
+          id={id} 
+          loop={loop} 
+          className={clsx("h-full w-full max-w-full min-w-0 grid", {
+            "grid-rows-[1.5fr_1fr]": enableFilmstrip,
+            "grid-rows-[1fr]": !enableFilmstrip,
+          })}
+        >
+          {mainContent}
+          {filmstripContent}
         </Preview>
       );
     }
 
-    return (
-      <div className={clsx("h-full w-full max-w-full min-w-0 grid", {
-        "grid-rows-[1.5fr_1fr]": !hideFilmstrip,
-        "grid-rows-[1fr]": hideFilmstrip,
-      })}>
-        <div className="overflow-hidden bg-slate-300 dark:bg-slate-700 min-h-0 min-w-0 w-full h-full max-w-full">
-          <FitScale className="w-full h-full max-w-full min-w-0">
-            <div
-              className="contents"
-              dangerouslySetInnerHTML={{
-                __html: editableHtmlVersion,
-              }}
-            />
-          </FitScale>
-          {!hideFocusOverlay && <FocusOverlay />}
+    if (enableFilmstrip) {
+      return (
+        <div className={clsx("h-full w-full max-w-full min-w-0 grid", {
+          "grid-rows-[1.5fr_1fr]": true,
+        })}>
+          {mainContent}
+          {filmstripContent}
         </div>
-        {!hideFilmstrip && extractedTargetId && (
-          <div className="min-h-0">
-            <Filmstrip
-              target={extractedTargetId}
-              autoScale
-              className={clsx("w-full h-full", { dark: isDark })}
-              hide={filmstripHide}
-              show={filmstripShow}
-            />
-          </div>
-        )}
+      );
+    }
+
+    return (
+      <div className="h-full w-full max-w-full min-w-0">
+        {mainContent}
       </div>
     );
   };
 
   return (
     <div
-      className={clsx("border-l-4 border-slate-300 dark:border-slate-600 pl-2 sm:pl-4 w-full max-w-full", {
-        "grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-4": layout === "horizontal" && !hideSource,
-      })}
+      className={clsx(
+        "border-l-4 border-slate-300 dark:border-slate-600 pl-2 sm:pl-4 w-full max-w-full",
+        className,
+        {
+          "grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-4": layout === "horizontal" && !hideSource,
+        }
+      )}
     >
       <div className="h-[calc(50vh-4rem)] sm:h-[calc(60vh-4rem)] min-h-[250px] w-full min-w-0 max-w-full">
         {renderPreviewContent()}
