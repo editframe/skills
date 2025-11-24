@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, test, expect, beforeEach, vi } from "vitest";
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
 import { Timeline } from "./Timeline";
 import type { MotionDesignerState, ElementNode, Animation } from "~/lib/motion-designer/types";
 import { MotionDesignerProvider } from "../context/MotionDesignerContext";
@@ -766,16 +766,20 @@ describe("Timeline", () => {
 
       const { container } = renderTimeline(state);
 
-      // Wait for component to render
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      // Wait for ef-scrubber to be rendered and updated
+      const scrubber = await waitFor(() => {
+        const el = container.querySelector("ef-scrubber");
+        if (!el) throw new Error("ef-scrubber not found");
+        return el;
+      }, { timeout: 1000 });
 
-      // Find playhead and animation bar
-      const scrubber = container.querySelector("ef-scrubber");
-      expect(scrubber).toBeTruthy();
-      if (scrubber && "updateComplete" in scrubber) {
+      // Wait for LitElement to finish updating
+      if ("updateComplete" in scrubber) {
         await (scrubber as any).updateComplete;
       }
-      const playhead = scrubber?.shadowRoot?.querySelector('[part="playhead"]') as HTMLElement;
+
+      // Find playhead and animation bar
+      const playhead = scrubber.shadowRoot?.querySelector('[part="playhead"]') as HTMLElement;
       const animationBar = container.querySelector(".z-20") as HTMLElement;
 
       expect(playhead).toBeTruthy();
