@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { timeToPixels, calculateContentWidth } from "./timelinePosition";
-import { quantizeToFrameTimeMs } from "./TimelineRuler";
+import { quantizeToFrameTimeMs } from "@editframe/elements";
 
 interface FrameHighlightProps {
   currentTime: number;

@@ -6,7 +6,7 @@ import type {
 } from "~/lib/motion-designer/types";
 import { getActiveRootTimegroupId } from "~/lib/motion-designer/utils";
 import { TimelineControls } from "./TimelineControls";
-import { TimelineRuler, calculateFrameIntervalMs, calculatePixelsPerFrame, shouldShowFrameMarkers } from "./TimelineRuler";
+import { TimelineRuler, calculateFrameIntervalMs, calculatePixelsPerFrame, shouldShowFrameMarkers } from "@editframe/react";
 import { TimelinePlayhead } from "./TimelinePlayhead";
 import { FrameHighlight } from "./FrameHighlight";
 import { AnimationTrack } from "./AnimationTrack";

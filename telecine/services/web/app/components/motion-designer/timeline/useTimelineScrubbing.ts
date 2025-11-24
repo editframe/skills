@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { pixelsToTime } from "./timelinePosition";
-import { quantizeToFrameTimeMs } from "./TimelineRuler";
+import { quantizeToFrameTimeMs } from "@editframe/elements";
 
 interface UseTimelineScrubbingOptions {
   timelineContainerRef: React.RefObject<HTMLDivElement>;

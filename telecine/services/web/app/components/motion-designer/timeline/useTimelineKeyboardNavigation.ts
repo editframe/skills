@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { quantizeToFrameTimeMs } from "./TimelineRuler";
+import { quantizeToFrameTimeMs } from "@editframe/elements";
 
 interface UseTimelineKeyboardNavigationOptions {
   currentTime: number;
