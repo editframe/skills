@@ -1,14 +1,39 @@
 import { consume } from "@lit/context";
 import { css, html, LitElement } from "lit";
-import { customElement, eventOptions, state } from "lit/decorators.js";
+import { customElement, eventOptions, property, state } from "lit/decorators.js";
 
-import { ref } from "lit/directives/ref.js";
+import { createRef, ref } from "lit/directives/ref.js";
 import type { ControllableInterface } from "./Controllable.js";
 import { currentTimeContext } from "./currentTimeContext.js";
 import { durationContext } from "./durationContext.js";
 import { efContext } from "./efContext.js";
 import { playingContext } from "./playingContext.js";
 import { TargetOrContextMixin } from "./TargetOrContextMixin.js";
+import { quantizeToFrameTimeMs } from "./EFTimelineRuler.js";
+
+const BASE_PIXELS_PER_SECOND = 100;
+
+function timeToPixels(
+  timeMs: number,
+  durationMs: number,
+  containerWidth: number,
+  zoomScale: number,
+): number {
+  if (durationMs <= 0) return 0;
+  const pixelsPerSecond = BASE_PIXELS_PER_SECOND * zoomScale;
+  return (timeMs / 1000) * pixelsPerSecond;
+}
+
+function pixelsToTime(
+  pixels: number,
+  durationMs: number,
+  containerWidth: number,
+  zoomScale: number,
+): number {
+  if (durationMs <= 0) return 0;
+  const pixelsPerSecond = BASE_PIXELS_PER_SECOND * zoomScale;
+  return (pixels / pixelsPerSecond) * 1000;
+}
 
 @customElement("ef-scrubber")
 export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
@@ -30,6 +55,13 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
       --ef-scrubber-progress-color: rgb(96 165 250);
     }
     
+    :host([orientation="vertical"]) {
+      width: auto;
+      height: 100%;
+      position: absolute;
+      inset: 0;
+    }
+
     .scrubber {
       width: 100%;
       height: var(--ef-scrubber-height);
@@ -41,11 +73,22 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
       user-select: none;
     }
 
+    :host([orientation="vertical"]) .scrubber {
+      width: var(--ef-scrubber-height);
+      height: 100%;
+      background: transparent;
+      cursor: ew-resize;
+    }
+
     .progress {
       position: absolute;
       height: 100%;
       background: var(--ef-scrubber-progress-color);
       border-radius: 2px;
+    }
+
+    :host([orientation="vertical"]) .progress {
+      display: none;
     }
 
     .handle {
@@ -59,6 +102,46 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
       cursor: grab;
     }
 
+    :host([orientation="vertical"]) .handle {
+      display: none;
+    }
+
+    .playhead {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--ef-scrubber-progress-color);
+      pointer-events: auto;
+      cursor: ew-resize;
+      z-index: 30;
+    }
+
+    ::part(playhead) {
+      z-index: 30;
+    }
+
+    .playhead-handle {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 12px;
+      height: 12px;
+      background: var(--ef-scrubber-progress-color);
+      border-radius: 50%;
+    }
+
+    .raw-preview {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: rgba(37, 99, 235, 0.2);
+      pointer-events: none;
+      z-index: 20;
+    }
+
     /* Add CSS Shadow Parts */
     ::part(scrubber) { }
     ::part(progress) { }
@@ -70,13 +153,55 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
   playing = false;
 
   @consume({ context: currentTimeContext, subscribe: true })
-  currentTimeMs = Number.NaN;
+  contextCurrentTimeMs = Number.NaN;
 
   @consume({ context: durationContext, subscribe: true })
+  contextDurationMs = 0;
+
+  @property({ type: String, attribute: "orientation" })
+  orientation: "horizontal" | "vertical" = "horizontal";
+
+  @property({ type: Number, attribute: "current-time-ms" })
+  currentTimeMs = Number.NaN;
+
+  @property({ type: Number, attribute: "duration-ms" })
   durationMs = 0;
+
+  @property({ type: Number, attribute: "zoom-scale" })
+  zoomScale = 1.0;
+
+  @property({ type: Number, attribute: "container-width" })
+  containerWidth = 0;
+
+  @property({ type: Number, attribute: "fps" })
+  fps?: number;
+
+  @property({ type: Number, attribute: "raw-scrub-time-ms" })
+  rawScrubTimeMs?: number | null;
+
+  @property({ attribute: false })
+  scrollContainerRef?: { current: HTMLElement | null };
+
+  @property({ attribute: false })
+  onSeek?: (time: number) => void;
+
+  @property({ attribute: false })
+  isScrubbingRef?: { current: boolean };
 
   get context(): ControllableInterface | null {
     return this.effectiveContext;
+  }
+
+  get effectiveCurrentTimeMs(): number {
+    return this.currentTimeMs ?? this.contextCurrentTimeMs ?? 0;
+  }
+
+  get effectiveDurationMs(): number {
+    return this.durationMs || this.contextDurationMs || 0;
+  }
+
+  get isTimelineMode(): boolean {
+    return this.orientation === "vertical" && this.zoomScale > 0;
   }
 
   @state()
@@ -85,30 +210,85 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
   @state()
   private isMoving = false;
 
-  private scrubberRef?: HTMLElement;
+  private scrubberRef = createRef<HTMLElement>();
+  private _scrubberElement?: HTMLElement;
   private capturedPointerId: number | null = null;
 
   private updateProgress(e: PointerEvent) {
-    if (!this.context || !this.scrubberRef) return;
+    const scrubberEl = this.scrubberRef.value || this._scrubberElement;
+    if (!scrubberEl) return;
 
-    const rect = this.scrubberRef.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const progress = Math.max(0, Math.min(1, x / rect.width));
+    const duration = this.effectiveDurationMs;
+    if (duration <= 0) return;
 
-    this.scrubProgress = progress;
-    this.context.currentTimeMs = progress * this.durationMs;
+    if (this.isTimelineMode) {
+      // Timeline mode: use pixel-based positioning with zoom
+      const scrollContainer =
+        this.scrollContainerRef?.current || scrubberEl.parentElement;
+      if (!scrollContainer) return;
+
+      const scrollContainerRect = scrollContainer.getBoundingClientRect();
+      const scrollLeft = scrollContainer.scrollLeft || 0;
+      const x = e.clientX - scrollContainerRect.left;
+      const pixelPosition = scrollLeft + x;
+      const effectiveWidth =
+        this.containerWidth > 0
+          ? this.containerWidth
+          : scrollContainerRect.width;
+      if (effectiveWidth <= 0) return;
+
+      let rawTime = pixelsToTime(
+        pixelPosition,
+        duration,
+        effectiveWidth,
+        this.zoomScale,
+      );
+      rawTime = Math.max(0, Math.min(rawTime, duration));
+
+      // Quantize to frame boundaries if FPS is provided
+      const quantizedTime =
+        this.fps && this.fps > 0
+          ? quantizeToFrameTimeMs(rawTime, this.fps)
+          : rawTime;
+
+      this.scrubProgress = quantizedTime / duration;
+
+      if (this.onSeek) {
+        this.onSeek(quantizedTime);
+      } else if (this.context) {
+        this.context.currentTimeMs = quantizedTime;
+      }
+    } else {
+      // Horizontal mode: simple progress calculation
+      const rect = scrubberEl.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const progress = Math.max(0, Math.min(1, x / rect.width));
+
+      this.scrubProgress = progress;
+      const timeMs = progress * duration;
+
+      if (this.onSeek) {
+        this.onSeek(timeMs);
+      } else if (this.context) {
+        this.context.currentTimeMs = timeMs;
+      }
+    }
   }
 
   @eventOptions({ passive: false, capture: false })
   private handlePointerDown(e: PointerEvent) {
-    if (!this.scrubberRef) return;
+    const scrubberEl = this.scrubberRef.value || this._scrubberElement;
+    if (!scrubberEl) return;
 
     this.isMoving = true;
+    if (this.isScrubbingRef) {
+      this.isScrubbingRef.current = true;
+    }
     e.preventDefault();
     e.stopPropagation();
     this.capturedPointerId = e.pointerId;
     try {
-      this.scrubberRef.setPointerCapture(e.pointerId);
+      scrubberEl.setPointerCapture(e.pointerId);
     } catch (err) {
       // setPointerCapture may fail in some cases, continue anyway
       console.warn("Failed to set pointer capture:", err);
@@ -125,28 +305,36 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
   };
 
   private boundHandlePointerUp = (e: PointerEvent) => {
-    if (e.pointerId === this.capturedPointerId && this.scrubberRef) {
+    const scrubberEl = this.scrubberRef.value || this._scrubberElement;
+    if (e.pointerId === this.capturedPointerId && scrubberEl) {
       e.preventDefault();
       e.stopPropagation();
       try {
-        this.scrubberRef.releasePointerCapture(e.pointerId);
+        scrubberEl.releasePointerCapture(e.pointerId);
       } catch (_err) {
         // releasePointerCapture may fail if capture was already lost
       }
       this.capturedPointerId = null;
       this.isMoving = false;
+      if (this.isScrubbingRef) {
+        this.isScrubbingRef.current = false;
+      }
     }
   };
 
   private boundHandlePointerCancel = (e: PointerEvent) => {
-    if (e.pointerId === this.capturedPointerId && this.scrubberRef) {
+    const scrubberEl = this.scrubberRef.value || this._scrubberElement;
+    if (e.pointerId === this.capturedPointerId && scrubberEl) {
       try {
-        this.scrubberRef.releasePointerCapture(e.pointerId);
+        scrubberEl.releasePointerCapture(e.pointerId);
       } catch (_err) {
         // releasePointerCapture may fail if capture was already lost
       }
       this.capturedPointerId = null;
       this.isMoving = false;
+      if (this.isScrubbingRef) {
+        this.isScrubbingRef.current = false;
+      }
     }
   };
 
@@ -158,28 +346,83 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
   };
 
   render() {
-    // Calculate progress from currentTimeMs and duration
-    const currentProgress =
-      this.durationMs > 0 ? (this.currentTimeMs ?? 0) / this.durationMs : 0;
+    const duration = this.effectiveDurationMs;
+    const currentTime = this.effectiveCurrentTimeMs;
 
-    const displayProgress = this.isMoving
-      ? this.scrubProgress
-      : currentProgress;
+    if (duration <= 0) {
+      return html``;
+    }
 
-    return html`
-      <div 
-        ${ref((el) => {
-          this.scrubberRef = el as HTMLElement;
-        })}
-        part="scrubber"
-        class="scrubber"
-        @pointerdown=${this.handlePointerDown}
-        @contextmenu=${this.boundHandleContextMenu}
-      >
-        <div class="progress" style="width: ${displayProgress * 100}%"></div>
-        <div class="handle" style="left: ${displayProgress * 100}%"></div>
-      </div>
-    `;
+    if (this.isTimelineMode) {
+      // Vertical timeline mode: render playhead line
+      const scrubberEl = this.scrubberRef.value || this._scrubberElement;
+      const effectiveWidth =
+        this.containerWidth > 0
+          ? this.containerWidth
+          : scrubberEl?.parentElement?.getBoundingClientRect().width || 0;
+
+      const positionPixels =
+        effectiveWidth > 0
+          ? timeToPixels(currentTime, duration, effectiveWidth, this.zoomScale)
+          : 0;
+
+      const rawScrubPositionPixels =
+        this.rawScrubTimeMs !== null &&
+        this.rawScrubTimeMs !== undefined &&
+        effectiveWidth > 0
+          ? timeToPixels(
+              this.rawScrubTimeMs,
+              duration,
+              effectiveWidth,
+              this.zoomScale,
+            )
+          : null;
+
+      return html`
+        ${rawScrubPositionPixels !== null &&
+        rawScrubPositionPixels !== positionPixels
+          ? html`<div
+              class="raw-preview"
+              style="left: ${rawScrubPositionPixels}px"
+            ></div>`
+          : html``}
+        <div
+          ${ref(this.scrubberRef)}
+          part="scrubber"
+          class="scrubber"
+          @pointerdown=${this.handlePointerDown}
+          @contextmenu=${this.boundHandleContextMenu}
+        >
+          <div
+            part="playhead"
+            class="playhead"
+            style="left: ${positionPixels}px"
+            @pointerdown=${this.handlePointerDown}
+          >
+            <div class="playhead-handle"></div>
+          </div>
+        </div>
+      `;
+    } else {
+      // Horizontal mode: render progress bar
+      const currentProgress = duration > 0 ? currentTime / duration : 0;
+      const displayProgress = this.isMoving
+        ? this.scrubProgress
+        : currentProgress;
+
+      return html`
+        <div
+          ${ref(this.scrubberRef)}
+          part="scrubber"
+          class="scrubber"
+          @pointerdown=${this.handlePointerDown}
+          @contextmenu=${this.boundHandleContextMenu}
+        >
+          <div class="progress" style="width: ${displayProgress * 100}%"></div>
+          <div class="handle" style="left: ${displayProgress * 100}%"></div>
+        </div>
+      `;
+    }
   }
 
   connectedCallback() {
