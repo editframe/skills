@@ -21,7 +21,8 @@ if (typeof globalThis !== "undefined") {
           return originalDefine(name, constructor, options);
         } catch (error) {
           // Ignore duplicate registration errors - this is expected in SSR
-          if (error instanceof Error && error.message?.includes("has already been used")) {
+          // Use type guard instead of instanceof to avoid Symbol.hasInstance recursion
+          if (error && typeof error === "object" && "message" in error && typeof error.message === "string" && error.message.includes("has already been used")) {
             return;
           }
           throw error;

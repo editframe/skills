@@ -6,8 +6,9 @@ import type {
 } from "~/lib/motion-designer/types";
 import { getActiveRootTimegroupId } from "~/lib/motion-designer/utils";
 import { TimelineControls } from "./TimelineControls";
-import { TimelineRuler, calculateFrameIntervalMs, calculatePixelsPerFrame, shouldShowFrameMarkers } from "@editframe/react";
-import { TimelinePlayhead } from "./TimelinePlayhead";
+import { TimelineRuler } from "@editframe/react";
+import { calculateFrameIntervalMs, calculatePixelsPerFrame, shouldShowFrameMarkers } from "@editframe/elements";
+import { Scrubber } from "@editframe/react";
 import { FrameHighlight } from "./FrameHighlight";
 import { AnimationTrack } from "./AnimationTrack";
 import { VideoThumbnailTrack } from "./VideoThumbnailTrack";
@@ -247,6 +248,11 @@ function useRefSync(
   sourceRef: React.MutableRefObject<boolean>,
   targetRef?: React.MutableRefObject<boolean>,
 ): void {
+  // Sync on every render to catch ref changes
+  if (targetRef) {
+    targetRef.current = sourceRef.current;
+  }
+  
   useEffect(() => {
     if (targetRef) {
       targetRef.current = sourceRef.current;
@@ -629,18 +635,17 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
                   showFrameMarkers={showFrameMarkers}
                 />
                 {/* Playhead */}
-                <TimelinePlayhead
-                  currentTime={scrubberCurrentTime}
+                <Scrubber
+                  orientation="vertical"
+                  currentTimeMs={scrubberCurrentTime}
                   durationMs={durationMs}
-                  timelineContainerRef={timelineContainerRef}
-                  onSeek={handleSeek}
-                  isScrubbingRef={timeManagerScrubbingRef}
-                  activeTimegroupId={activeRootTimegroupId}
                   zoomScale={zoomScale}
                   containerWidth={containerWidth}
                   scrollContainerRef={contentScrollContainerRef}
-                  rawScrubTime={rulerScrubbing.rawScrubTime ?? tracksScrubbing.rawScrubTime ?? null}
+                  rawScrubTimeMs={rulerScrubbing.rawScrubTime ?? tracksScrubbing.rawScrubTime ?? null}
                   fps={activeRootTimegroup?.props?.fps ?? 30}
+                  isScrubbingRef={timeManagerScrubbingRef}
+                  onSeek={handleSeek}
                 />
               </div>
             </div>

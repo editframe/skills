@@ -167,7 +167,8 @@ const patchCustomElementsDefine = () => {
         return originalDefine(name, constructor, options);
       } catch (error: unknown) {
         // Ignore duplicate registration errors in SSR
-        if (error instanceof Error && error.message?.includes("has already been used")) {
+        // Use type guard instead of instanceof to avoid Symbol.hasInstance recursion
+        if (error && typeof error === "object" && "message" in error && typeof error.message === "string" && error.message.includes("has already been used")) {
           return;
         }
         throw error;
