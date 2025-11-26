@@ -1,22 +1,16 @@
-import React, { useRef, useLayoutEffect, useState, useCallback } from "react";
-import { TransformHandles as EFTransformHandles } from "@editframe/react";
-import type { TransformBounds } from "@editframe/elements";
+import React, { useState, useCallback } from "react";
+import {
+  TransformHandles as EFTransformHandles,
+  OverlayItem,
+} from "@editframe/react";
+import type { TransformBounds, OverlayItemPosition } from "@editframe/elements";
 import type {
   ElementNode,
   MotionDesignerState,
 } from "~/lib/motion-designer/types";
-import {
-  getSizeDimensions,
-  convertToFixedSize,
-} from "~/lib/motion-designer/sizingUtils";
-import {
-  normalizeSize,
-  type ElementSize,
-} from "~/lib/motion-designer/sizingTypes";
-import { evaluateOverlayPositionForElement } from "./overlayEvaluation";
-import type { OverlayPosition } from "./overlayTypes";
+import { getSizeDimensions } from "~/lib/motion-designer/sizingUtils";
+import { normalizeSize } from "~/lib/motion-designer/sizingTypes";
 import { hasRotateAnimations } from "../rendering/styleGenerators/rotationUtils";
-import { getCornerPoint, getOppositeCorner } from "@editframe/elements";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
 
 interface TransformHandlesWrapperProps {
@@ -50,11 +44,7 @@ export function TransformHandlesWrapper({
   canvasTranslateY,
 }: TransformHandlesWrapperProps) {
   const actions = useMotionDesignerActions();
-  const overlayRef = useRef<HTMLElement | null>(null);
-  const dimensionsRef = useRef({ width: 0, height: 0 });
-  const [overlayPosition, setOverlayPosition] =
-    useState<OverlayPosition | null>(null);
-  const [computedRotation, setComputedRotation] = useState<number | null>(null);
+  const dimensionsRef = React.useRef({ width: 0, height: 0 });
   const [bounds, setBounds] = useState<TransformBounds>({
     x: 0,
     y: 0,
@@ -67,31 +57,8 @@ export function TransformHandlesWrapper({
   const showRotateHandle = !isRootTimegroup;
   const hasRotateAnims = hasRotateAnimations(element);
 
-  // Read overlay position from DOM using centralized function
-  useLayoutEffect(() => {
-    if (!overlayRef.current) return;
-
-    const overlayLayer = overlayRef.current.parentElement as HTMLElement;
-    if (!overlayLayer) return;
-
-    const overlayLayerRect = overlayLayer.getBoundingClientRect();
-
-    const position = evaluateOverlayPositionForElement(
-      element.id,
-      overlayLayerRect,
-      canvasScale,
-    );
-
-    if (!position) return;
-
-    setOverlayPosition(position);
-
-    if (hasRotateAnims) {
-      setComputedRotation(position.rotation);
-    } else {
-      setComputedRotation(null);
-    }
-
+  // Update dimensions ref when element changes
+  React.useEffect(() => {
     const contentElement = document.querySelector(
       `[data-element-id="${element.id}"]`,
     ) as HTMLElement;
@@ -105,7 +72,12 @@ export function TransformHandlesWrapper({
         };
       }
     }
+  }, [element.id, element.props.size]);
 
+  // Handle position updates from OverlayItem
+  // Event handler receives the Event object, extract detail from CustomEvent
+  const handlePositionChanged = useCallback((e: Event) => {
+    const position = (e as CustomEvent<OverlayItemPosition>).detail;
     // Update bounds for the LitElement
     // Bounds are in overlay coordinates (screen pixels relative to overlay layer)
     setBounds({
@@ -115,29 +87,7 @@ export function TransformHandlesWrapper({
       height: position.height,
       rotation: position.rotation,
     });
-  }, [
-    element.id,
-    element.props.position,
-    element.props.size,
-    state,
-    canvasScale,
-    canvasTranslateX,
-    canvasTranslateY,
-    hasRotateAnims,
-  ]);
-
-  // Update bounds when element props change (for reactive updates)
-  React.useEffect(() => {
-    if (overlayPosition) {
-      setBounds({
-        x: overlayPosition.x,
-        y: overlayPosition.y,
-        width: overlayPosition.width,
-        height: overlayPosition.height,
-        rotation: overlayPosition.rotation,
-      });
-    }
-  }, [overlayPosition]);
+  }, []);
 
   // Handle bounds change from LitElement
   // The EFTransformHandles works in overlay coordinates, but we need to convert to canvas coordinates
@@ -228,20 +178,27 @@ export function TransformHandlesWrapper({
   if (!isSelected) return null;
 
   return (
-    <EFTransformHandles
-      ref={overlayRef}
-      bounds={bounds}
-      canvasScale={canvasScale}
-      enableRotation={showRotateHandle}
-      enableResize={true}
-      enableDrag={true}
-      onBoundsChange={handleBoundsChange}
-      onRotationChange={handleRotationChange}
+    <OverlayItem
+      elementId={element.id}
+      onPositionChanged={handlePositionChanged}
       style={{
-        position: "absolute",
         pointerEvents: "none",
         zIndex: 10,
       }}
-    />
+    >
+      <EFTransformHandles
+        bounds={bounds}
+        canvasScale={canvasScale}
+        enableRotation={showRotateHandle}
+        enableResize={true}
+        enableDrag={true}
+        onBoundsChange={handleBoundsChange}
+        onRotationChange={handleRotationChange}
+        style={{
+          width: "100%",
+          height: "100%",
+        }}
+      />
+    </OverlayItem>
   );
 }

@@ -4,16 +4,15 @@ import { getActiveRootTimegroupId } from "~/lib/motion-designer/utils";
 import {
   createDefaultSize,
   createDefaultSizeForFlexChild,
-  isFlexChild,
 } from "~/lib/motion-designer/defaultSizes";
-import { usePanZoom } from "./usePanZoom";
+import { PanZoom, OverlayLayer } from "@editframe/react";
+import type { PanZoomTransform } from "@editframe/elements";
 import { CanvasRootTimegroup } from "./CanvasRootTimegroup";
 import { CanvasRootTimegroupOverlay } from "./CanvasRootTimegroupOverlay";
 import { ChildElementOverlays } from "./ChildElementOverlays";
 import { DragCreationPreview } from "./DragCreationPreview";
 import { CanvasContextMenu } from "./CanvasContextMenu";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
-import { OverlayUpdateLoop } from "./OverlayUpdateLoop";
 
 interface CanvasProps {
   state: MotionDesignerState;
@@ -41,18 +40,82 @@ export function Canvas({ state }: CanvasProps) {
   } | null>(null);
   const lastClickTimeRef = React.useRef<number>(0);
   const overlayLayerRef = React.useRef<HTMLDivElement>(null);
+  const panZoomRef = React.useRef<any>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
 
-  const { transform, containerRef, handlers } = usePanZoom(
-    state.ui.canvasTransform,
-    actions.updateCanvasTransform,
+  // Stable key for PanZoom to prevent remounting - only used for initial props
+  const initialTransformKey = React.useRef(
+    `${state.ui.canvasTransform.x}-${state.ui.canvasTransform.y}-${state.ui.canvasTransform.scale}`,
   );
 
+  // Helper to read transform values for child components that still need them
+  // TODO: These child components should be refactored to not need manual transform values
+  const getTransformValues = () => {
+    if (panZoomRef.current) {
+      return {
+        scale: panZoomRef.current.scale ?? 1,
+        x: panZoomRef.current.x ?? 0,
+        y: panZoomRef.current.y ?? 0,
+      };
+    }
+    return { scale: 1, x: 0, y: 0 };
+  };
+
+  // Handle transform changes from PanZoom
+  const handleTransformChanged = React.useCallback(
+    (e: CustomEvent<PanZoomTransform>) => {
+      const newTransform = e.detail;
+
+      // Update application state for persistence
+      // Note: OverlayLayer reads directly from PanZoom element via DOM query
+      actions.updateCanvasTransform(newTransform);
+    },
+    [actions],
+  );
+
+  // Sync state changes to PanZoom (e.g., from reset button or loading a project)
+  // This allows external updates to PanZoom while still letting PanZoom control transforms during user interaction
+  React.useEffect(() => {
+    const panZoomElement = panZoomRef.current;
+    if (!panZoomElement) return;
+
+    // Only update if PanZoom's current values differ from state (external change)
+    const currentX = panZoomElement.x ?? 0;
+    const currentY = panZoomElement.y ?? 0;
+    const currentScale = panZoomElement.scale ?? 1;
+
+    const stateX = state.ui.canvasTransform.x;
+    const stateY = state.ui.canvasTransform.y;
+    const stateScale = state.ui.canvasTransform.scale;
+
+    // If state differs from PanZoom, update PanZoom (external change like reset button)
+    // OverlayLayer will automatically discover the new transform via its RAF loop
+    if (
+      Math.abs(currentX - stateX) > 0.01 ||
+      Math.abs(currentY - stateY) > 0.01 ||
+      Math.abs(currentScale - stateScale) > 0.01
+    ) {
+      panZoomElement.x = stateX;
+      panZoomElement.y = stateY;
+      panZoomElement.scale = stateScale;
+    }
+  }, [
+    state.ui.canvasTransform.x,
+    state.ui.canvasTransform.y,
+    state.ui.canvasTransform.scale,
+  ]);
+
   const handleMouseDown = (e: React.MouseEvent) => {
-    // Only handle pan if clicking directly on canvas background
-    // Don't interfere with child element interactions
-    if (e.target === e.currentTarget) {
+    // Only handle drag-to-create if clicking directly on canvas background (not on PanZoom or its children)
+    // PanZoom uses pointer events, so mouse events on PanZoom should be ignored here
+    const target = e.target as HTMLElement;
+    if (target === e.currentTarget || target.closest("ef-pan-zoom")) {
+      // If clicking on PanZoom, let it handle pointer events - don't interfere
+      if (target.closest("ef-pan-zoom")) {
+        return;
+      }
+
       const now = Date.now();
-      const isDoubleClick = now - lastClickTimeRef.current < 300;
       lastClickTimeRef.current = now;
 
       clickStartRef.current = { x: e.clientX, y: e.clientY, time: now };
@@ -62,37 +125,31 @@ export function Canvas({ state }: CanvasProps) {
       if (state.ui.placementMode && state.ui.placementMode !== "text") {
         e.preventDefault();
         e.stopPropagation();
-        const rect = containerRef.current?.getBoundingClientRect();
-        if (rect) {
-          const canvasX =
-            (e.clientX - rect.left - transform.x) / transform.scale;
-          const canvasY =
-            (e.clientY - rect.top - transform.y) / transform.scale;
-          setDragStart({ canvasX, canvasY });
-          setDragCurrent({ canvasX, canvasY });
+        if (panZoomRef.current) {
+          const canvasPos = panZoomRef.current.screenToCanvas(
+            e.clientX,
+            e.clientY,
+          );
+          setDragStart({ canvasX: canvasPos.x, canvasY: canvasPos.y });
+          setDragCurrent({ canvasX: canvasPos.x, canvasY: canvasPos.y });
         }
         return; // Don't start panning when creating element
       }
-
-      handlers.onMouseDown(e);
+      // Otherwise, let PanZoom handle panning via pointer events
     }
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
     // Handle drag-to-create (only if we're dragging to create)
-    if (dragStart) {
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (rect) {
-        const canvasX = (e.clientX - rect.left - transform.x) / transform.scale;
-        const canvasY = (e.clientY - rect.top - transform.y) / transform.scale;
-        setDragCurrent({ canvasX, canvasY });
-        hasDraggedRef.current = true;
-      }
+    if (dragStart && panZoomRef.current) {
+      const canvasPos = panZoomRef.current.screenToCanvas(e.clientX, e.clientY);
+      setDragCurrent({ canvasX: canvasPos.x, canvasY: canvasPos.y });
+      hasDraggedRef.current = true;
       return; // Don't pan when dragging to create
     }
 
-    // Only handle pan if we started on canvas background
-    if (clickStartRef.current && e.target === e.currentTarget) {
+    // Track if we've dragged (for click detection)
+    if (clickStartRef.current) {
       const distance = Math.sqrt(
         Math.pow(e.clientX - clickStartRef.current.x, 2) +
           Math.pow(e.clientY - clickStartRef.current.y, 2),
@@ -100,7 +157,6 @@ export function Canvas({ state }: CanvasProps) {
       if (distance > 5) {
         hasDraggedRef.current = true;
       }
-      handlers.onMouseMove(e);
     }
   };
 
@@ -110,85 +166,84 @@ export function Canvas({ state }: CanvasProps) {
       dragStart &&
       dragCurrent &&
       state.ui.placementMode &&
-      state.ui.placementMode !== "text"
+      state.ui.placementMode !== "text" &&
+      panZoomRef.current
     ) {
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (rect) {
-        const canvasX = (e.clientX - rect.left - transform.x) / transform.scale;
-        const canvasY = (e.clientY - rect.top - transform.y) / transform.scale;
+      const canvasPos = panZoomRef.current.screenToCanvas(e.clientX, e.clientY);
+      const canvasX = canvasPos.x;
+      const canvasY = canvasPos.y;
 
-        const finalX = Math.min(dragStart.canvasX, canvasX);
-        const finalY = Math.min(dragStart.canvasY, canvasY);
-        const finalWidth = Math.abs(canvasX - dragStart.canvasX);
-        const finalHeight = Math.abs(canvasY - dragStart.canvasY);
+      const finalX = Math.min(dragStart.canvasX, canvasX);
+      const finalY = Math.min(dragStart.canvasY, canvasY);
+      const finalWidth = Math.abs(canvasX - dragStart.canvasX);
+      const finalHeight = Math.abs(canvasY - dragStart.canvasY);
 
-        // Only create if drag was significant (or if it's a timegroup, allow any size)
-        if (
-          (finalWidth > 10 && finalHeight > 10) ||
-          state.ui.placementMode === "timegroup"
-        ) {
-          const elementType = state.ui
-            .placementMode as import("~/lib/motion-designer/types").ElementNode["type"];
+      // Only create if drag was significant (or if it's a timegroup, allow any size)
+      if (
+        (finalWidth > 10 && finalHeight > 10) ||
+        state.ui.placementMode === "timegroup"
+      ) {
+        const elementType = state.ui
+          .placementMode as import("~/lib/motion-designer/types").ElementNode["type"];
 
-          // Timegroups can ONLY be placed at the root level
-          if (elementType === "timegroup") {
-            // Use minimum size if drag was too small
-            const width = finalWidth > 10 ? finalWidth : 960;
-            const height = finalHeight > 10 ? finalHeight : 540;
-            actions.addElement(
-              {
-                type: "timegroup",
-                parentId: null,
-                childIds: [],
-                props: {
-                  mode: "fixed",
-                  duration: "5s",
-                  canvasPosition: { x: finalX, y: finalY },
-                  size: createDefaultSize("timegroup", width, height),
-                },
-                animations: [],
+        // Timegroups can ONLY be placed at the root level
+        if (elementType === "timegroup") {
+          // Use minimum size if drag was too small
+          const width = finalWidth > 10 ? finalWidth : 960;
+          const height = finalHeight > 10 ? finalHeight : 540;
+          actions.addElement(
+            {
+              type: "timegroup",
+              parentId: null,
+              childIds: [],
+              props: {
+                mode: "fixed",
+                duration: "5s",
+                canvasPosition: { x: finalX, y: finalY },
+                size: createDefaultSize("timegroup", width, height),
               },
-              null,
-            );
-          } else {
-            // Other elements go inside the active root timegroup
-            const activeRootTimegroupId = getActiveRootTimegroupId(state);
-            if (activeRootTimegroupId) {
-              const parentElement =
-                state.composition.elements[activeRootTimegroupId];
-              const isParentFlex = parentElement?.props.display === "flex";
+              animations: [],
+            },
+            null,
+          );
+        } else {
+          // Other elements go inside the active root timegroup
+          const activeRootTimegroupId = getActiveRootTimegroupId(state);
+          if (activeRootTimegroupId) {
+            const parentElement =
+              state.composition.elements[activeRootTimegroupId];
+            const isParentFlex = parentElement?.props.display === "flex";
 
-              const defaultProps: any = {
-                position: { x: finalX, y: finalY },
-                fill: { enabled: true, color: "#FFFFFF" },
-              };
+            const defaultProps: any = {
+              position: { x: finalX, y: finalY },
+              fill: { enabled: true, color: "#FFFFFF" },
+            };
 
-              // Use appropriate default size based on context
-              if (isParentFlex) {
-                defaultProps.size = createDefaultSizeForFlexChild(elementType);
-              } else {
-                defaultProps.size = createDefaultSize(
-                  elementType,
-                  finalWidth,
-                  finalHeight,
-                );
-              }
-
-              if (elementType === "div") {
-                defaultProps.fill = { enabled: true, color: "#9333EA" };
-              }
-
-              actions.addElement(
-                {
-                  type: elementType,
-                  parentId: activeRootTimegroupId,
-                  childIds: [],
-                  props: defaultProps,
-                  animations: [],
-                },
-                activeRootTimegroupId,
+            // Use appropriate default size based on context
+            if (isParentFlex) {
+              defaultProps.size = createDefaultSizeForFlexChild(elementType);
+            } else {
+              defaultProps.size = createDefaultSize(
+                elementType,
+                finalWidth,
+                finalHeight,
               );
             }
+
+            if (elementType === "div") {
+              defaultProps.fill = { enabled: true, color: "#9333EA" };
+            }
+
+            actions.addElement(
+              {
+                type: elementType,
+                parentId: activeRootTimegroupId,
+                childIds: [],
+                props: defaultProps,
+                animations: [],
+              },
+              activeRootTimegroupId,
+            );
           }
         }
       }
@@ -200,7 +255,6 @@ export function Canvas({ state }: CanvasProps) {
       return;
     }
 
-    handlers.onMouseUp(e);
     // Don't reset hasDraggedRef here - we need it for the click handler
     // It will be reset on the next mousedown
   };
@@ -216,10 +270,11 @@ export function Canvas({ state }: CanvasProps) {
       e.stopPropagation();
 
       const rect = containerRef.current?.getBoundingClientRect();
-      if (!rect) return;
+      if (!rect || !panZoomRef.current) return;
 
-      const canvasX = (e.clientX - rect.left - transform.x) / transform.scale;
-      const canvasY = (e.clientY - rect.top - transform.y) / transform.scale;
+      const canvasPos = panZoomRef.current.screenToCanvas(e.clientX, e.clientY);
+      const canvasX = canvasPos.x;
+      const canvasY = canvasPos.y;
 
       const elementType = state.ui
         .placementMode as import("~/lib/motion-designer/types").ElementNode["type"];
@@ -318,19 +373,16 @@ export function Canvas({ state }: CanvasProps) {
       // Handle placement mode (text elements)
       // Get click position in canvas coordinates
       const rect = containerRef.current?.getBoundingClientRect();
-      if (!rect) return;
+      if (!rect || !panZoomRef.current) return;
 
-      const canvasX = (e.clientX - rect.left - transform.x) / transform.scale;
-      const canvasY = (e.clientY - rect.top - transform.y) / transform.scale;
+      const canvasPos = panZoomRef.current.screenToCanvas(e.clientX, e.clientY);
+      const canvasX = canvasPos.x;
+      const canvasY = canvasPos.y;
 
       // Only handle text elements via click (others use drag-to-create)
       if (state.ui.placementMode === "text") {
         const activeRootTimegroupId = getActiveRootTimegroupId(state);
         if (activeRootTimegroupId) {
-          const parentElement =
-            state.composition.elements[activeRootTimegroupId];
-          const isParentFlex = parentElement?.props.display === "flex";
-
           const defaultProps: any = {
             position: { x: canvasX, y: canvasY },
             content: "Text",
@@ -363,13 +415,45 @@ export function Canvas({ state }: CanvasProps) {
     hasDraggedRef.current = false;
   };
 
-  // Add wheel event listener with passive: false
+  // Forward wheel events to PanZoom so it can handle pan/zoom
+  // PanZoom handles wheel events internally, we just need to ensure they reach it
   React.useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
+    const panZoomElement = panZoomRef.current;
+    if (!container || !panZoomElement) return;
 
     const wheelHandler = (e: WheelEvent) => {
-      handlers.onWheel(e as any);
+      // If event is already from PanZoom or its children, let it bubble naturally
+      const target = e.target as HTMLElement;
+      if (target.closest("ef-pan-zoom")) {
+        return; // PanZoom will handle it
+      }
+
+      // If in placement mode, allow browser to handle wheel events
+      if (state.ui.placementMode && state.ui.placementMode !== "text") {
+        return;
+      }
+
+      // Prevent default browser zoom/scroll
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Forward the wheel event to PanZoom so it can handle pan/zoom
+      // Create a new event to dispatch to PanZoom (don't bubble to avoid loop)
+      const panZoomWheelEvent = new WheelEvent("wheel", {
+        deltaX: e.deltaX,
+        deltaY: e.deltaY,
+        clientX: e.clientX,
+        clientY: e.clientY,
+        ctrlKey: e.ctrlKey,
+        metaKey: e.metaKey,
+        shiftKey: e.shiftKey,
+        altKey: e.altKey,
+        bubbles: false, // Don't bubble to prevent infinite loop
+        cancelable: true,
+      });
+
+      panZoomElement.dispatchEvent(panZoomWheelEvent);
     };
 
     container.addEventListener("wheel", wheelHandler, { passive: false });
@@ -377,7 +461,7 @@ export function Canvas({ state }: CanvasProps) {
     return () => {
       container.removeEventListener("wheel", wheelHandler);
     };
-  }, [handlers]);
+  }, [state.ui.placementMode]);
 
   // Handle global mouse events for drag-to-create
   React.useEffect(() => {
@@ -385,11 +469,12 @@ export function Canvas({ state }: CanvasProps) {
 
     const handleGlobalMouseMove = (e: MouseEvent) => {
       e.preventDefault();
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (rect) {
-        const canvasX = (e.clientX - rect.left - transform.x) / transform.scale;
-        const canvasY = (e.clientY - rect.top - transform.y) / transform.scale;
-        setDragCurrent({ canvasX, canvasY });
+      if (panZoomRef.current) {
+        const canvasPos = panZoomRef.current.screenToCanvas(
+          e.clientX,
+          e.clientY,
+        );
+        setDragCurrent({ canvasX: canvasPos.x, canvasY: canvasPos.y });
         hasDraggedRef.current = true;
       }
     };
@@ -403,12 +488,13 @@ export function Canvas({ state }: CanvasProps) {
         state.ui.placementMode &&
         state.ui.placementMode !== "text"
       ) {
-        const rect = containerRef.current?.getBoundingClientRect();
-        if (rect && dragCurrent) {
-          const canvasX =
-            (e.clientX - rect.left - transform.x) / transform.scale;
-          const canvasY =
-            (e.clientY - rect.top - transform.y) / transform.scale;
+        if (dragCurrent && panZoomRef.current) {
+          const canvasPos = panZoomRef.current.screenToCanvas(
+            e.clientX,
+            e.clientY,
+          );
+          const canvasX = canvasPos.x;
+          const canvasY = canvasPos.y;
 
           const finalX = Math.min(dragStart.canvasX, canvasX);
           const finalY = Math.min(dragStart.canvasY, canvasY);
@@ -503,7 +589,7 @@ export function Canvas({ state }: CanvasProps) {
       document.removeEventListener("mousemove", handleGlobalMouseMove);
       document.removeEventListener("mouseup", handleGlobalMouseUp);
     };
-  }, [dragStart, dragCurrent, state.ui.placementMode, transform, actions]);
+  }, [dragStart, dragCurrent, state.ui.placementMode, actions]);
 
   // Determine cursor based on placement mode
   const getCursor = () => {
@@ -548,13 +634,24 @@ export function Canvas({ state }: CanvasProps) {
         isolation: "isolate",
       }}
     >
-      {/* Content layer - scales with zoom */}
-      <div
-        className="absolute inset-0"
+      {/* Content layer - scales with zoom, wrapped in PanZoom */}
+      {/* PanZoom handles all transforms internally - we pass initial props, then PanZoom controls everything */}
+      <PanZoom
+        key={initialTransformKey.current}
+        ref={panZoomRef}
+        x={state.ui.canvasTransform.x}
+        y={state.ui.canvasTransform.y}
+        scale={state.ui.canvasTransform.scale}
+        onTransformChanged={handleTransformChanged}
         style={{
-          transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
-          transformOrigin: "0 0",
-          touchAction: "none",
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          pointerEvents:
+            state.ui.placementMode && state.ui.placementMode !== "text"
+              ? "none"
+              : "auto",
         }}
       >
         {state.composition.rootTimegroupIds.map((id) => {
@@ -565,21 +662,20 @@ export function Canvas({ state }: CanvasProps) {
               key={id}
               element={element}
               state={state}
-              canvasScale={transform.scale}
+              canvasScale={getTransformValues().scale}
               showOverlay={false}
             />
           );
         })}
-      </div>
+      </PanZoom>
 
       {/* Overlay layer - does NOT scale, only translates */}
-      <div
+      {/* OverlayLayer reads transform directly from PanZoom element - no React coordination needed */}
+      <OverlayLayer
         ref={overlayLayerRef}
-        className="absolute inset-0"
         style={{
-          transform: `translate(${transform.x}px, ${transform.y}px)`,
-          transformOrigin: "0 0",
-          pointerEvents: "auto",
+          position: "absolute",
+          inset: 0,
         }}
       >
         {state.composition.rootTimegroupIds.map((id) => {
@@ -590,14 +686,14 @@ export function Canvas({ state }: CanvasProps) {
               <CanvasRootTimegroupOverlay
                 element={element}
                 state={state}
-                canvasScale={transform.scale}
+                canvasScale={getTransformValues().scale}
               />
               <ChildElementOverlays
                 rootTimegroup={element}
                 state={state}
-                canvasScale={transform.scale}
-                canvasTranslateX={transform.x}
-                canvasTranslateY={transform.y}
+                canvasScale={getTransformValues().scale}
+                canvasTranslateX={getTransformValues().x}
+                canvasTranslateY={getTransformValues().y}
               />
             </React.Fragment>
           );
@@ -613,20 +709,13 @@ export function Canvas({ state }: CanvasProps) {
               startY={dragStart.canvasY}
               currentX={dragCurrent.canvasX}
               currentY={dragCurrent.canvasY}
-              canvasScale={transform.scale}
-              canvasTranslateX={transform.x}
-              canvasTranslateY={transform.y}
+              canvasScale={getTransformValues().scale}
+              canvasTranslateX={getTransformValues().x}
+              canvasTranslateY={getTransformValues().y}
               elementType={state.ui.placementMode}
             />
           )}
-      </div>
-
-      {/* Overlay update loop */}
-      <OverlayUpdateLoop
-        state={state}
-        canvasTransform={transform}
-        overlayLayerRef={overlayLayerRef}
-      />
+      </OverlayLayer>
 
       {/* Canvas context menu */}
       {canvasContextMenu && (

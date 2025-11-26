@@ -131,6 +131,15 @@ import "./elements/EFPanZoom.js";
 export { EFPanZoom } from "./elements/EFPanZoom.js";
 export type { PanZoomTransform } from "./elements/EFPanZoom.js";
 
+import "./gui/EFOverlayLayer.ts";
+
+export { EFOverlayLayer } from "./gui/EFOverlayLayer.ts";
+
+import "./gui/EFOverlayItem.ts";
+
+export { EFOverlayItem } from "./gui/EFOverlayItem.ts";
+export type { OverlayItemPosition } from "./gui/EFOverlayItem.ts";
+
 import "./gui/EFTimelineRuler.ts";
 
 export { EFTimelineRuler } from "./gui/EFTimelineRuler.ts";

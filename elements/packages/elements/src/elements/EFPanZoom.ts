@@ -1,5 +1,7 @@
 import { css, html, LitElement } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { provide } from "@lit/context";
+import { panZoomTransformContext } from "../gui/panZoomTransformContext.js";
 
 export interface PanZoomTransform {
   x: number;
@@ -35,6 +37,9 @@ export class EFPanZoom extends LitElement {
 
   @property({ type: Number, reflect: true })
   scale = 1;
+
+  @provide({ context: panZoomTransformContext })
+  panZoomTransform: PanZoomTransform = { x: 0, y: 0, scale: 1 };
 
   private _isDragging = false;
   private _dragStartPointerPos: { x: number; y: number } | null = null;
@@ -81,6 +86,9 @@ export class EFPanZoom extends LitElement {
       this.x = newTransform.x;
       this.y = newTransform.y;
       this.scale = newTransform.scale;
+
+      // Update context for overlay components
+      this.panZoomTransform = { ...newTransform };
 
       this.dispatchEvent(
         new CustomEvent<PanZoomTransform>("transform-changed", {
@@ -189,6 +197,52 @@ export class EFPanZoom extends LitElement {
     this.addEventListener("pointermove", this._onPointerMove);
     this.addEventListener("pointerup", this._onPointerUp);
     this.addEventListener("pointercancel", this._onPointerUp);
+
+    // Initialize context with current transform
+    this.panZoomTransform = { x: this.x, y: this.y, scale: this.scale };
+  }
+
+  /**
+   * Convert screen coordinates (e.g., mouse event clientX/clientY) to canvas coordinates.
+   * This handles all pan/zoom transformations automatically.
+   *
+   * @param screenX - X coordinate in screen space (e.g., event.clientX)
+   * @param screenY - Y coordinate in screen space (e.g., event.clientY)
+   * @returns Object with x, y in canvas coordinate space
+   *
+   * @example
+   * handleClick(e: MouseEvent) {
+   *   const canvasPos = panZoom.screenToCanvas(e.clientX, e.clientY);
+   *   console.log(`Clicked at canvas position: ${canvasPos.x}, ${canvasPos.y}`);
+   * }
+   */
+  screenToCanvas(screenX: number, screenY: number): { x: number; y: number } {
+    const rect = this.getBoundingClientRect();
+    return {
+      x: (screenX - rect.left - this.x) / this.scale,
+      y: (screenY - rect.top - this.y) / this.scale,
+    };
+  }
+
+  /**
+   * Convert canvas coordinates to screen coordinates.
+   * Useful for positioning overlays or tooltips relative to canvas elements.
+   *
+   * @param canvasX - X coordinate in canvas space
+   * @param canvasY - Y coordinate in canvas space
+   * @returns Object with x, y in screen coordinate space
+   *
+   * @example
+   * const screenPos = panZoom.canvasToScreen(element.x, element.y);
+   * tooltip.style.left = `${screenPos.x}px`;
+   * tooltip.style.top = `${screenPos.y}px`;
+   */
+  canvasToScreen(canvasX: number, canvasY: number): { x: number; y: number } {
+    const rect = this.getBoundingClientRect();
+    return {
+      x: rect.left + canvasX * this.scale + this.x,
+      y: rect.top + canvasY * this.scale + this.y,
+    };
   }
 
   render() {

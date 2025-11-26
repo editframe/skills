@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useLayoutEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import type {
   MotionDesignerState,
   ElementNode,
@@ -20,8 +20,9 @@ import {
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
 import { PlayLoopButton } from "../controls/PlayLoopButton";
 import { PlayPauseButton } from "../controls/PlayPauseButton";
-import { evaluateOverlayPositionForElement } from "./overlayEvaluation";
-import type { OverlayPosition } from "./overlayTypes";
+import { OverlayItem } from "@editframe/react";
+import { hasRotateAnimations } from "../rendering/styleGenerators/rotationUtils";
+import { parseRotationFromTransform } from "../rendering/styleGenerators/rotationUtils";
 
 /**
  * Formats duration in milliseconds to human-readable string
@@ -63,38 +64,9 @@ export function CanvasRootTimegroupOverlay({
   });
   const [durationMs, setDurationMs] = useState(0);
   const durationRef = useRef(0);
-  const [overlayPosition, setOverlayPosition] =
-    useState<OverlayPosition | null>(null);
 
-  // Read overlay position from DOM using centralized function
-  useLayoutEffect(() => {
-    if (!contentRef.current) return;
-
-    // Find overlay layer
-    const overlayLayer = contentRef.current.parentElement as HTMLElement;
-    if (!overlayLayer) return;
-
-    const overlayLayerRect = overlayLayer.getBoundingClientRect();
-
-    // Use centralized position reading function
-    const position = evaluateOverlayPositionForElement(
-      element.id,
-      overlayLayerRect,
-      canvasScale,
-    );
-
-    if (!position) return;
-
-    // Update overlay DOM directly
-    contentRef.current.style.left = `${position.x}px`;
-    contentRef.current.style.top = `${position.y}px`;
-    contentRef.current.style.width = `${position.width}px`;
-    contentRef.current.style.height = `${position.height}px`;
-
-    // Store position for use in render
-    setOverlayPosition(position);
-
-    // Update dimensions ref
+  // Update dimensions ref when element changes
+  useEffect(() => {
     const wrapperElement = document.querySelector(
       `[data-timegroup-id="${element.id}"]`,
     ) as HTMLElement;
@@ -109,12 +81,7 @@ export function CanvasRootTimegroupOverlay({
         dimensionsRef.current = { width, height };
       }
     }
-  }, [
-    element.id,
-    element.props.canvasPosition,
-    element.props.size,
-    canvasScale,
-  ]);
+  }, [element.id, element.props.size]);
 
   // Read duration from DOM element
   useEffect(() => {
@@ -509,12 +476,6 @@ export function CanvasRootTimegroupOverlay({
     );
   }
 
-  // Use position from centralized reading function
-  // Fallback to calculated position for initial render
-  const screenX = overlayPosition?.x ?? canvasPosition.x * canvasScale;
-  const screenY = overlayPosition?.y ?? canvasPosition.y * canvasScale;
-  const screenWidth = overlayPosition?.width ?? dimensionsRef.current.width;
-  const screenHeight = overlayPosition?.height ?? dimensionsRef.current.height;
   const elementWidth = dimensionsRef.current.width;
   const elementHeight = dimensionsRef.current.height;
 
@@ -581,67 +542,69 @@ export function CanvasRootTimegroupOverlay({
   ];
 
   return (
-    <div
-      ref={contentRef}
-      data-overlay-id={element.id}
-      className="absolute"
+    <OverlayItem
+      elementId={element.id}
       style={{
-        left: `${screenX}px`,
-        top: `${screenY}px`,
-        width: `${screenWidth}px`,
-        height: `${screenHeight}px`,
-        border: "1px solid",
-        borderColor: isActive
-          ? "rgb(59, 130, 246)"
-          : isSelected
-            ? "rgb(96, 165, 250)"
-            : "rgb(75, 85, 99)",
         pointerEvents: "auto",
-        userSelect: "none",
-        cursor: isDragging ? "grabbing" : "move",
-        zIndex: 5, // Lower than child element handles (zIndex 10)
       }}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onClick={handleClick}
     >
-      {isActive && (
-        <div className="absolute bottom-full mb-1 left-0 flex items-center gap-2 text-xs text-gray-400 bg-gray-900 px-2 py-1 rounded z-10 pointer-events-auto">
-          <PlayPauseButton
-            targetId={element.id}
-            playButtonClassName="w-4 h-4 flex items-center justify-center hover:text-white"
-            pauseButtonClassName="w-4 h-4 flex items-center justify-center hover:text-white"
-            iconSize={12}
-          />
-          <PlayLoopButton
-            targetId={element.id}
-            className="w-4 h-4 flex items-center justify-center rounded transition-colors hover:text-white"
-            activeClassName="bg-blue-500/20 text-blue-400 border border-blue-500/50"
-            iconSize={12}
-          />
-          <span>
-            Timegroup · {formatDuration(durationMs)} ·{" "}
-            {Math.round(elementWidth)}×{Math.round(elementHeight)}
-          </span>
-        </div>
-      )}
-
-      {(isActive || isSelected) &&
-        resizeHandles
-          .filter((handle) => handle.visible)
-          .map((handle) => (
-            <div
-              key={handle.position}
-              className="absolute w-3 h-3 bg-white border-2 border-blue-500 rounded-sm z-10"
-              style={{
-                ...handle.style,
-                cursor: handle.cursor,
-                pointerEvents: "auto",
-              }}
-              onMouseDown={(e) => handleResizeStart(e, handle.position)}
+      <div
+        ref={contentRef}
+        className="w-full h-full"
+        style={{
+          border: "1px solid",
+          borderColor: isActive
+            ? "rgb(59, 130, 246)"
+            : isSelected
+              ? "rgb(96, 165, 250)"
+              : "rgb(75, 85, 99)",
+          pointerEvents: "auto",
+          userSelect: "none",
+          cursor: isDragging ? "grabbing" : "move",
+          zIndex: 5, // Lower than child element handles (zIndex 10)
+        }}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onClick={handleClick}
+      >
+        {isActive && (
+          <div className="absolute bottom-full mb-1 left-0 flex items-center gap-2 text-xs text-gray-400 bg-gray-900 px-2 py-1 rounded z-10 pointer-events-auto">
+            <PlayPauseButton
+              targetId={element.id}
+              playButtonClassName="w-4 h-4 flex items-center justify-center hover:text-white"
+              pauseButtonClassName="w-4 h-4 flex items-center justify-center hover:text-white"
+              iconSize={12}
             />
-          ))}
-    </div>
+            <PlayLoopButton
+              targetId={element.id}
+              className="w-4 h-4 flex items-center justify-center rounded transition-colors hover:text-white"
+              activeClassName="bg-blue-500/20 text-blue-400 border border-blue-500/50"
+              iconSize={12}
+            />
+            <span>
+              Timegroup · {formatDuration(durationMs)} ·{" "}
+              {Math.round(elementWidth)}×{Math.round(elementHeight)}
+            </span>
+          </div>
+        )}
+
+        {(isActive || isSelected) &&
+          resizeHandles
+            .filter((handle) => handle.visible)
+            .map((handle) => (
+              <div
+                key={handle.position}
+                className="absolute w-3 h-3 bg-white border-2 border-blue-500 rounded-sm z-10"
+                style={{
+                  ...handle.style,
+                  cursor: handle.cursor,
+                  pointerEvents: "auto",
+                }}
+                onMouseDown={(e) => handleResizeStart(e, handle.position)}
+              />
+            ))}
+      </div>
+    </OverlayItem>
   );
 }

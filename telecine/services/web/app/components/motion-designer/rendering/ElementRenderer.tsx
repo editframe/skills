@@ -411,6 +411,9 @@ export function ElementRenderer({
   );
 
   // Wrap in ef-fit-scale if needed
+  // Keep data-element-id on the actual element (like the old system)
+  // getBoundingClientRect() returns the visual bounding box after all transforms are applied
+  // So even if the element is transformed by ef-fit-scale, getBoundingClientRect() is correct
   if (needsFitScale) {
     return (
       <ef-fit-scale

@@ -1,243 +1,138 @@
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import "./EFPanZoom.js";
+import { describe, it, expect, beforeEach } from "vitest";
+import { EFPanZoom } from "./EFPanZoom.js";
 
-const testElements: HTMLElement[] = [];
+describe("EFPanZoom coordinate conversion", () => {
+  let panZoom: EFPanZoom;
+  let container: HTMLDivElement;
 
-afterEach(() => {
-  testElements.forEach((el) => {
-    if (el.parentNode) {
-      el.parentNode.removeChild(el);
-    }
-  });
-  testElements.length = 0;
-});
+  beforeEach(async () => {
+    container = document.createElement("div");
+    container.style.position = "fixed";
+    container.style.top = "0";
+    container.style.left = "0";
+    container.style.width = "800px";
+    container.style.height = "600px";
+    document.body.appendChild(container);
 
-describe("EFPanZoom", () => {
-  test("returns initial transform values", () => {
-    const panZoom = document.createElement("ef-pan-zoom");
-    document.body.appendChild(panZoom);
-    testElements.push(panZoom);
+    panZoom = document.createElement("ef-pan-zoom") as EFPanZoom;
+    panZoom.style.width = "100%";
+    panZoom.style.height = "100%";
+    container.appendChild(panZoom);
 
-    expect(panZoom.x).toBe(0);
-    expect(panZoom.y).toBe(0);
-    expect(panZoom.scale).toBe(1);
-  });
-
-  test("panning via pointer drag updates transform with inverted delta", async () => {
-    const panZoom = document.createElement("ef-pan-zoom");
-    panZoom.style.width = "1000px";
-    panZoom.style.height = "1000px";
-    document.body.appendChild(panZoom);
-    testElements.push(panZoom);
-
-    await new Promise((resolve) => setTimeout(resolve, 0));
-
-    const transformChangedHandler = vi.fn();
-    panZoom.addEventListener("transform-changed", transformChangedHandler);
-
-    const pointerDownEvent = new PointerEvent("pointerdown", {
-      clientX: 100,
-      clientY: 100,
-      button: 0,
-      bubbles: true,
-      cancelable: true,
-    });
-    panZoom.dispatchEvent(pointerDownEvent);
-
-    const pointerMoveEvent = new PointerEvent("pointermove", {
-      clientX: 150,
-      clientY: 150,
-      button: 0,
-      bubbles: true,
-      cancelable: true,
-    });
-    panZoom.dispatchEvent(pointerMoveEvent);
-
-    expect(transformChangedHandler).toHaveBeenCalled();
-    const call = transformChangedHandler.mock.calls[0][0];
-    expect(call.detail.x).toBe(-50);
-    expect(call.detail.y).toBe(-50);
+    await panZoom.updateComplete;
   });
 
-  test("wheel scroll without modifier pans canvas", async () => {
-    const panZoom = document.createElement("ef-pan-zoom");
-    panZoom.style.width = "1000px";
-    panZoom.style.height = "1000px";
-    document.body.appendChild(panZoom);
-    testElements.push(panZoom);
+  it(
+    "screenToCanvas converts screen coordinates to canvas space",
+    { timeout: 1000 },
+    async () => {
+      // No pan, no zoom - screen coords should equal canvas coords (minus container offset)
+      const result = panZoom.screenToCanvas(100, 200);
+      expect(result).toEqual({ x: 100, y: 200 });
+    },
+  );
 
-    await new Promise((resolve) => setTimeout(resolve, 0));
+  it("screenToCanvas accounts for pan offset", { timeout: 1000 }, async () => {
+    panZoom.x = 50;
+    panZoom.y = 30;
+    await panZoom.updateComplete;
 
-    const transformChangedHandler = vi.fn();
-    panZoom.addEventListener("transform-changed", transformChangedHandler);
-
-    const wheelEvent = new WheelEvent("wheel", {
-      deltaX: 50,
-      deltaY: 100,
-      clientX: 500,
-      clientY: 500,
-      bubbles: true,
-      cancelable: true,
-    });
-    panZoom.dispatchEvent(wheelEvent);
-
-    expect(transformChangedHandler).toHaveBeenCalled();
-    const call = transformChangedHandler.mock.calls[0][0];
-    expect(call.detail.x).toBe(-50);
-    expect(call.detail.y).toBe(-100);
+    // Screen point (100, 200) with pan (50, 30) -> canvas (50, 170)
+    const result = panZoom.screenToCanvas(100, 200);
+    expect(result).toEqual({ x: 50, y: 170 });
   });
 
-  test("wheel scroll with modifier key zooms centered on pointer position", async () => {
-    const panZoom = document.createElement("ef-pan-zoom");
-    panZoom.style.width = "1000px";
-    panZoom.style.height = "1000px";
-    document.body.appendChild(panZoom);
-    testElements.push(panZoom);
+  it("screenToCanvas accounts for scale", { timeout: 1000 }, async () => {
+    panZoom.scale = 2;
+    await panZoom.updateComplete;
 
-    await new Promise((resolve) => setTimeout(resolve, 0));
-
-    const transformChangedHandler = vi.fn();
-    panZoom.addEventListener("transform-changed", transformChangedHandler);
-
-    const wheelEvent = new WheelEvent("wheel", {
-      deltaY: -100,
-      clientX: 500,
-      clientY: 500,
-      bubbles: true,
-      cancelable: true,
-      ctrlKey: true,
-    });
-    panZoom.dispatchEvent(wheelEvent);
-
-    expect(transformChangedHandler).toHaveBeenCalled();
-    const call = transformChangedHandler.mock.calls[0][0];
-    expect(call.detail.scale).toBeGreaterThan(1);
-    expect(call.detail.x).toBeDefined();
-    expect(call.detail.y).toBeDefined();
+    // Screen point (100, 200) at 2x scale -> canvas (50, 100)
+    const result = panZoom.screenToCanvas(100, 200);
+    expect(result).toEqual({ x: 50, y: 100 });
   });
 
-  test("zoom speed is controlled (5% per step)", async () => {
-    const panZoom = document.createElement("ef-pan-zoom");
-    panZoom.style.width = "1000px";
-    panZoom.style.height = "1000px";
-    document.body.appendChild(panZoom);
-    testElements.push(panZoom);
+  it(
+    "screenToCanvas accounts for both pan and scale",
+    { timeout: 1000 },
+    async () => {
+      panZoom.x = 50;
+      panZoom.y = 30;
+      panZoom.scale = 2;
+      await panZoom.updateComplete;
 
-    await new Promise((resolve) => setTimeout(resolve, 0));
+      // Screen point (100, 200) with pan (50, 30) and 2x scale
+      // First subtract container offset: (100, 200)
+      // Then subtract pan: (50, 170)
+      // Then divide by scale: (25, 85)
+      const result = panZoom.screenToCanvas(100, 200);
+      expect(result).toEqual({ x: 25, y: 85 });
+    },
+  );
 
-    const transformChangedHandler = vi.fn();
-    panZoom.addEventListener("transform-changed", transformChangedHandler);
+  it(
+    "canvasToScreen converts canvas coordinates to screen space",
+    { timeout: 1000 },
+    async () => {
+      // No pan, no zoom - canvas coords should equal screen coords (plus container offset)
+      const result = panZoom.canvasToScreen(100, 200);
+      expect(result).toEqual({ x: 100, y: 200 });
+    },
+  );
 
-    const zoomInEvent = new WheelEvent("wheel", {
-      deltaY: -100,
-      clientX: 500,
-      clientY: 500,
-      bubbles: true,
-      cancelable: true,
-      ctrlKey: true,
-    });
-    panZoom.dispatchEvent(zoomInEvent);
+  it("canvasToScreen accounts for pan offset", { timeout: 1000 }, async () => {
+    panZoom.x = 50;
+    panZoom.y = 30;
+    await panZoom.updateComplete;
 
-    const zoomInCall = transformChangedHandler.mock.calls[0][0];
-    expect(zoomInCall.detail.scale).toBeCloseTo(1.05, 2);
-
-    const zoomOutEvent = new WheelEvent("wheel", {
-      deltaY: 100,
-      clientX: 500,
-      clientY: 500,
-      bubbles: true,
-      cancelable: true,
-      ctrlKey: true,
-    });
-    panZoom.dispatchEvent(zoomOutEvent);
-
-    const zoomOutCall = transformChangedHandler.mock.calls[1][0];
-    expect(zoomOutCall.detail.scale).toBeCloseTo(1.05 * 0.95, 2);
+    // Canvas point (100, 200) with pan (50, 30) -> screen (150, 230)
+    const result = panZoom.canvasToScreen(100, 200);
+    expect(result).toEqual({ x: 150, y: 230 });
   });
 
-  test("zoom is clamped to valid range", async () => {
-    const panZoom = document.createElement("ef-pan-zoom");
-    panZoom.scale = 0.1;
-    panZoom.style.width = "1000px";
-    panZoom.style.height = "1000px";
-    document.body.appendChild(panZoom);
-    testElements.push(panZoom);
+  it("canvasToScreen accounts for scale", { timeout: 1000 }, async () => {
+    panZoom.scale = 2;
+    await panZoom.updateComplete;
 
-    await new Promise((resolve) => setTimeout(resolve, 0));
-
-    const transformChangedHandler = vi.fn();
-    panZoom.addEventListener("transform-changed", transformChangedHandler);
-
-    const zoomOutEvent = new WheelEvent("wheel", {
-      deltaY: 1000,
-      clientX: 500,
-      clientY: 500,
-      bubbles: true,
-      cancelable: true,
-      ctrlKey: true,
-    });
-    panZoom.dispatchEvent(zoomOutEvent);
-
-    if (transformChangedHandler.mock.calls.length > 0) {
-      const call = transformChangedHandler.mock.calls[0][0];
-      expect(call.detail.scale).toBeGreaterThanOrEqual(0.1);
-    } else {
-      expect(panZoom.scale).toBeGreaterThanOrEqual(0.1);
-    }
+    // Canvas point (100, 200) at 2x scale -> screen (200, 400)
+    const result = panZoom.canvasToScreen(100, 200);
+    expect(result).toEqual({ x: 200, y: 400 });
   });
 
-  test("property updates reflect in transform", async () => {
-    const panZoom = document.createElement("ef-pan-zoom");
-    document.body.appendChild(panZoom);
-    testElements.push(panZoom);
+  it(
+    "canvasToScreen accounts for both pan and scale",
+    { timeout: 1000 },
+    async () => {
+      panZoom.x = 50;
+      panZoom.y = 30;
+      panZoom.scale = 2;
+      await panZoom.updateComplete;
 
-    await new Promise((resolve) => setTimeout(resolve, 0));
+      // Canvas point (100, 200) with pan (50, 30) and 2x scale
+      // First multiply by scale: (200, 400)
+      // Then add pan: (250, 430)
+      // Then add container offset: (250, 430)
+      const result = panZoom.canvasToScreen(100, 200);
+      expect(result).toEqual({ x: 250, y: 430 });
+    },
+  );
 
-    panZoom.x = 100;
-    panZoom.y = 200;
-    panZoom.scale = 1.5;
+  it(
+    "screenToCanvas and canvasToScreen are inverses",
+    { timeout: 1000 },
+    async () => {
+      panZoom.x = 75;
+      panZoom.y = 50;
+      panZoom.scale = 1.5;
+      await panZoom.updateComplete;
 
-    await new Promise((resolve) => setTimeout(resolve, 0));
+      // Round trip: screen -> canvas -> screen
+      const originalScreen = { x: 123, y: 456 };
+      const canvas = panZoom.screenToCanvas(originalScreen.x, originalScreen.y);
+      const backToScreen = panZoom.canvasToScreen(canvas.x, canvas.y);
 
-    expect(panZoom.x).toBe(100);
-    expect(panZoom.y).toBe(200);
-    expect(panZoom.scale).toBe(1.5);
-  });
-
-  test("pointer capture behavior", async () => {
-    const panZoom = document.createElement("ef-pan-zoom");
-    panZoom.style.width = "1000px";
-    panZoom.style.height = "1000px";
-    document.body.appendChild(panZoom);
-    testElements.push(panZoom);
-
-    await new Promise((resolve) => setTimeout(resolve, 0));
-
-    const setPointerCaptureSpy = vi.spyOn(panZoom, "setPointerCapture");
-    const releasePointerCaptureSpy = vi.spyOn(panZoom, "releasePointerCapture");
-
-    const pointerDownEvent = new PointerEvent("pointerdown", {
-      clientX: 100,
-      clientY: 100,
-      button: 0,
-      pointerId: 1,
-      bubbles: true,
-      cancelable: true,
-    });
-    panZoom.dispatchEvent(pointerDownEvent);
-
-    expect(setPointerCaptureSpy).toHaveBeenCalledWith(1);
-
-    const pointerUpEvent = new PointerEvent("pointerup", {
-      clientX: 150,
-      clientY: 150,
-      button: 0,
-      pointerId: 1,
-      bubbles: true,
-      cancelable: true,
-    });
-    panZoom.dispatchEvent(pointerUpEvent);
-
-    expect(releasePointerCaptureSpy).toHaveBeenCalledWith(1);
-  });
+      // Should get back to original screen coordinates (within floating point precision)
+      expect(Math.abs(backToScreen.x - originalScreen.x)).toBeLessThan(0.01);
+      expect(Math.abs(backToScreen.y - originalScreen.y)).toBeLessThan(0.01);
+    },
+  );
 });

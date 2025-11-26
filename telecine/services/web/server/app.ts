@@ -152,21 +152,39 @@ if (UPLOAD_TO_BUCKET) {
 }
 
 let serverBuild: Promise<any> | undefined;
+const originalDefineFunctions = new WeakMap<
+  CustomElementRegistry,
+  typeof CustomElementRegistry.prototype.define
+>();
 const patchCustomElementsDefine = () => {
   if (typeof globalThis !== "undefined" && globalThis.customElements) {
-    const originalDefine = globalThis.customElements.define.bind(
-      globalThis.customElements,
-    );
-    // Check if element is already registered before defining to prevent duplicate registration errors
-    // This is necessary because SSR can cause modules to be loaded multiple times
-    globalThis.customElements.define = function (
+    const registry = globalThis.customElements;
+
+    // Check if this registry has already been patched by checking if define is our wrapper
+    const currentDefine = registry.define;
+    if ((currentDefine as any).__isPatchedWrapper) {
+      // Already patched, nothing to do
+      return;
+    }
+
+    // Get or store the original define function for this registry
+    // This must happen AFTER checking if patched, but BEFORE we replace define
+    let originalDefine = originalDefineFunctions.get(registry);
+    if (!originalDefine) {
+      // First time seeing this registry - capture the original before any patching
+      originalDefine = registry.define.bind(registry);
+      originalDefineFunctions.set(registry, originalDefine);
+    }
+
+    // Create wrapper that always gets the original from the WeakMap (not from closure)
+    const wrappedDefine = function (
       name: string,
       constructor: CustomElementConstructor,
       options?: ElementDefinitionOptions,
     ) {
       // Check if already registered - if so, skip registration
       try {
-        const existing = globalThis.customElements.get(name);
+        const existing = registry.get(name);
         if (existing) {
           // Already registered - safe to skip (even if constructor is different,
           // this is SSR and modules can be loaded multiple times)
@@ -176,8 +194,13 @@ const patchCustomElementsDefine = () => {
         // get() can throw if element doesn't exist - that's fine, proceed with define
       }
       // Try to define, but catch duplicate registration errors
+      // Always get the original from WeakMap to avoid closure issues
+      const storedOriginal = originalDefineFunctions.get(registry);
+      if (!storedOriginal) {
+        throw new Error("Original define function not found for registry");
+      }
       try {
-        return originalDefine(name, constructor, options);
+        return storedOriginal(name, constructor, options);
       } catch (error: unknown) {
         // Ignore duplicate registration errors in SSR
         // Use type guard instead of instanceof to avoid Symbol.hasInstance recursion
@@ -193,6 +216,8 @@ const patchCustomElementsDefine = () => {
         throw error;
       }
     };
+    (wrappedDefine as any).__isPatchedWrapper = true;
+    registry.define = wrappedDefine;
   }
 };
 

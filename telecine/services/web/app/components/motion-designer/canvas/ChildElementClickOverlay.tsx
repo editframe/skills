@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useState } from "react";
 import type {
   ElementNode,
   MotionDesignerState,
@@ -7,12 +7,9 @@ import {
   createDefaultSize,
   createDefaultSizeForFlexChild,
 } from "~/lib/motion-designer/defaultSizes";
-import { getSizeDimensions } from "~/lib/motion-designer/sizingUtils";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
-import { hasRotateAnimations } from "../rendering/styleGenerators/rotationUtils";
 import { ElementContextMenu } from "./ElementContextMenu";
-import { evaluateOverlayPositionForElement } from "./overlayEvaluation";
-import type { OverlayPosition } from "./overlayTypes";
+import { OverlayItem } from "@editframe/react";
 
 interface ChildElementClickOverlayProps {
   element: ElementNode;
@@ -39,112 +36,10 @@ export function ChildElementClickOverlay({
   canvasTranslateY,
 }: ChildElementClickOverlayProps) {
   const actions = useMotionDesignerActions();
-  const overlayRef = useRef<HTMLDivElement>(null);
-  const dimensionsRef = useRef({ width: 0, height: 0 });
-  const [overlayPosition, setOverlayPosition] =
-    useState<OverlayPosition | null>(null);
-  const hasRotateAnims = hasRotateAnimations(element);
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
   } | null>(null);
-
-  // Continuously measure element using RAF to get actual DOM position
-  // Uses centralized position reading function
-  useEffect(() => {
-    // Early return if selected - don't measure for selected elements
-    if (isSelected) return;
-    let rafId: number;
-    let lastUpdateTime = 0;
-    const UPDATE_THROTTLE_MS = 16; // ~60fps max update rate
-
-    const updateMeasurements = (currentTime: number) => {
-      // Throttle updates to reduce jitter during zoom
-      if (currentTime - lastUpdateTime < UPDATE_THROTTLE_MS) {
-        rafId = requestAnimationFrame(updateMeasurements);
-        return;
-      }
-      lastUpdateTime = currentTime;
-
-      if (!overlayRef.current) {
-        rafId = requestAnimationFrame(updateMeasurements);
-        return;
-      }
-
-      // Find overlay layer
-      const overlayLayer = overlayRef.current.parentElement as HTMLElement;
-      if (!overlayLayer) {
-        rafId = requestAnimationFrame(updateMeasurements);
-        return;
-      }
-
-      const overlayLayerRect = overlayLayer.getBoundingClientRect();
-
-      // Use centralized position reading function
-      const position = evaluateOverlayPositionForElement(
-        element.id,
-        overlayLayerRect,
-        canvasScale,
-      );
-
-      if (!position) {
-        rafId = requestAnimationFrame(updateMeasurements);
-        return;
-      }
-
-      // Update overlay DOM directly
-      overlayRef.current.style.left = `${position.x}px`;
-      overlayRef.current.style.top = `${position.y}px`;
-      overlayRef.current.style.width = `${position.width}px`;
-      overlayRef.current.style.height = `${position.height}px`;
-      overlayRef.current.style.transform = `rotate(${position.rotation}deg)`;
-
-      // Update dimensions ref
-      const contentElement = document.querySelector(
-        `[data-element-id="${element.id}"]`,
-      ) as HTMLElement;
-      if (contentElement) {
-        const intrinsicWidth = contentElement.offsetWidth;
-        const intrinsicHeight = contentElement.offsetHeight;
-        if (intrinsicWidth > 0 && intrinsicHeight > 0) {
-          dimensionsRef.current = {
-            width: intrinsicWidth,
-            height: intrinsicHeight,
-          };
-        }
-      }
-
-      // Update state if position changed significantly
-      const threshold = 0.5; // pixels
-      if (
-        !overlayPosition ||
-        Math.abs(overlayPosition.x - position.x) > threshold ||
-        Math.abs(overlayPosition.y - position.y) > threshold ||
-        Math.abs(overlayPosition.width - position.width) > threshold ||
-        Math.abs(overlayPosition.height - position.height) > threshold ||
-        Math.abs(overlayPosition.rotation - position.rotation) > 0.1
-      ) {
-        setOverlayPosition(position);
-      }
-
-      rafId = requestAnimationFrame(updateMeasurements);
-    };
-
-    rafId = requestAnimationFrame(updateMeasurements);
-
-    return () => cancelAnimationFrame(rafId);
-  }, [
-    element.id,
-    element.props.position,
-    element.props.size,
-    state,
-    canvasScale,
-    canvasTranslateX,
-    canvasTranslateY,
-    isSelected,
-    hasRotateAnims,
-    overlayPosition,
-  ]);
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent canvas pan/zoom and timegroup selection
@@ -266,34 +161,24 @@ export function ChildElementClickOverlay({
   // Selected elements are handled by TransformHandles
   if (isSelected) return null;
 
-  // Use position from centralized reading function
-  const screenX = overlayPosition?.x ?? 0;
-  const screenY = overlayPosition?.y ?? 0;
-  const screenWidth = overlayPosition?.width ?? 0;
-  const screenHeight = overlayPosition?.height ?? 0;
-  const currentRotation =
-    overlayPosition?.rotation ?? element.props.rotation ?? 0;
-
+  // Use OverlayItem to track element position automatically
   return (
     <>
-      <div
-        ref={overlayRef}
-        data-overlay-id={element.id}
-        className="absolute pointer-events-auto cursor-pointer"
+      <OverlayItem
+        elementId={element.id}
         style={{
-          left: `${screenX}px`,
-          top: `${screenY}px`,
-          width: `${screenWidth}px`,
-          height: `${screenHeight}px`,
-          transform: `rotate(${currentRotation}deg)`,
-          transformOrigin: "center",
+          pointerEvents: "auto",
+          cursor: "pointer",
           zIndex: 5, // Lower than TransformHandles (z-index: 10) so handles take precedence when selected
-          // Invisible but clickable
           background: "transparent",
         }}
-        onClick={handleClick}
-        onContextMenu={handleContextMenu}
-      />
+      >
+        <div
+          className="w-full h-full"
+          onClick={handleClick}
+          onContextMenu={handleContextMenu}
+        />
+      </OverlayItem>
       {contextMenu && (
         <ElementContextMenu
           element={element}
