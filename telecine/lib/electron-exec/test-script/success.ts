@@ -8,4 +8,4 @@ span.setAttribute("test.name", "success");
 console.log("✅ Test script executed successfully");
 span.end();
 
-export { };
+export {};

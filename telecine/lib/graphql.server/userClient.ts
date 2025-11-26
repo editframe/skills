@@ -34,24 +34,35 @@ const createFetchWithHost = (hostHeader?: string) => {
   if (!hostHeader) {
     return fetch;
   }
-  
-  return async (url: string | URL | Request, init?: RequestInit): Promise<Response> => {
+
+  return async (
+    url: string | URL | Request,
+    init?: RequestInit,
+  ): Promise<Response> => {
     try {
       logger.info("Custom fetch called", {
-        url: typeof url === "string" ? url : url instanceof URL ? url.toString() : url instanceof Request ? url.url : "unknown",
+        url:
+          typeof url === "string"
+            ? url
+            : url instanceof URL
+              ? url.toString()
+              : url instanceof Request
+                ? url.url
+                : "unknown",
         hostHeader,
         hasInit: !!init,
       });
-      
+
       // Convert to Request if needed
       const request = url instanceof Request ? url : new Request(url, init);
       const requestUrl = new URL(request.url);
-      
+
       // If URL uses a .localhost domain, replace hostname with Traefik service name
       // This is needed because .localhost resolves to 127.0.0.1 inside containers
       let hostname = requestUrl.hostname;
-      let port = requestUrl.port || (requestUrl.protocol === "https:" ? 443 : 80);
-      
+      let port =
+        requestUrl.port || (requestUrl.protocol === "https:" ? 443 : 80);
+
       if (hostname.endsWith(".localhost") || hostname === "localhost") {
         hostname = "editframe-traefik";
         // Port should already be correct (3000), but ensure it's set
@@ -59,18 +70,18 @@ const createFetchWithHost = (hostHeader?: string) => {
           port = 3000;
         }
       }
-      
+
       logger.info("Custom fetch rewriting hostname", {
         originalHostname: requestUrl.hostname,
         newHostname: hostname,
         port,
         hostHeader,
       });
-      
+
       // Create headers with Host header set to worktree domain
       const headers = new Headers(request.headers);
       headers.set("Host", hostHeader);
-      
+
       // Get body if present
       let body: string | undefined;
       if (request.body) {
@@ -90,11 +101,14 @@ const createFetchWithHost = (hostHeader?: string) => {
           body = await request.text();
         }
       }
-      
+
       // Use http/https modules to make request
-      const protocol = requestUrl.protocol === "https:" ? await import("https") : await import("http");
+      const protocol =
+        requestUrl.protocol === "https:"
+          ? await import("https")
+          : await import("http");
       const httpModule = protocol.default;
-      
+
       return new Promise((resolve, reject) => {
         const options = {
           hostname,
@@ -103,7 +117,7 @@ const createFetchWithHost = (hostHeader?: string) => {
           method: request.method,
           headers: Object.fromEntries(headers.entries()),
         };
-        
+
         const req = httpModule.request(options, (res) => {
           const chunks: Buffer[] = [];
           res.on("data", (chunk) => chunks.push(chunk));
@@ -113,11 +127,11 @@ const createFetchWithHost = (hostHeader?: string) => {
                 status: res.statusCode || 200,
                 statusText: res.statusMessage || "OK",
                 headers: res.headers as HeadersInit,
-              })
+              }),
             );
           });
         });
-        
+
         req.on("error", (error) => {
           logger.error("Custom fetch network error", {
             error: error.message,
@@ -130,7 +144,7 @@ const createFetchWithHost = (hostHeader?: string) => {
           });
           reject(error);
         });
-        
+
         if (body) {
           req.write(body);
         }
@@ -140,7 +154,14 @@ const createFetchWithHost = (hostHeader?: string) => {
       logger.error("Custom fetch error", {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
-        url: typeof url === "string" ? url : url instanceof URL ? url.toString() : url instanceof Request ? url.url : "unknown",
+        url:
+          typeof url === "string"
+            ? url
+            : url instanceof URL
+              ? url.toString()
+              : url instanceof Request
+                ? url.url
+                : "unknown",
         hostHeader,
       });
       throw error;
@@ -172,13 +193,13 @@ export const queryAs = <
       hasServerHost: !!HASURA_SERVER_HOST,
       serverHost: HASURA_SERVER_HOST,
     });
-    
+
     const customFetch = createFetchWithHost(HASURA_SERVER_HOST);
     logger.info("queryAs: Custom fetch created", {
       fetchType: typeof customFetch,
       isFunction: typeof customFetch === "function",
     });
-    
+
     const userClient = new Client({
       url: GRAPHQL_URL,
       fetch: customFetch,
@@ -191,13 +212,20 @@ export const queryAs = <
       variables: JSON.stringify(variables),
     });
     const jwtToken = signHasuraJwtForSession(sessionInfo);
-    
+
     // Decode JWT to verify claims (without verification, just for logging)
     try {
       const jwt = require("jsonwebtoken");
       const decoded = jwt.decode(jwtToken);
-      if (decoded && typeof decoded === "object" && decoded["https://hasura.io/jwt/claims"]) {
-        const claims = decoded["https://hasura.io/jwt/claims"] as Record<string, unknown>;
+      if (
+        decoded &&
+        typeof decoded === "object" &&
+        decoded["https://hasura.io/jwt/claims"]
+      ) {
+        const claims = decoded["https://hasura.io/jwt/claims"] as Record<
+          string,
+          unknown
+        >;
         logger.info("JWT claims being sent to Hasura", {
           role,
           uid: sessionInfo.uid,
@@ -208,20 +236,24 @@ export const queryAs = <
           allClaimKeys: Object.keys(claims),
         });
         span.setAttributes({
-          "jwt.user-id": String(claims["X-Hasura-user-id"] ?? claims["X-Hasura-User-Id"] ?? "missing"),
+          "jwt.user-id": String(
+            claims["X-Hasura-user-id"] ??
+              claims["X-Hasura-User-Id"] ??
+              "missing",
+          ),
           "jwt.claim-keys": Object.keys(claims).join(","),
         });
       }
     } catch (e) {
       // Ignore decode errors
     }
-    
+
     const headers: Record<string, string> = {
       connection: "keep-alive",
       "X-Hasura-Role": role,
       Authorization: `Bearer ${jwtToken}`,
     };
-    
+
     const result = await userClient
       .query(query, variables, {
         fetchOptions: {
@@ -263,9 +295,9 @@ export const requireQueryAs = async <
     cid: sessionInfo.cid,
     queryName: print(query).split("{")[0]?.trim(),
   });
-  
+
   const response = await queryAs(sessionInfo, role, query, variables);
-  
+
   if (response.error) {
     logger.error("Failed to query required query", {
       error: response.error.message,
@@ -273,7 +305,10 @@ export const requireQueryAs = async <
       errorStatusText: response.error.response?.statusText,
       errorNetworkError: response.error.networkError,
       errorGraphQLErrors: response.error.graphQLErrors,
-      errorDetails: JSON.stringify(response.error, Object.getOwnPropertyNames(response.error)),
+      errorDetails: JSON.stringify(
+        response.error,
+        Object.getOwnPropertyNames(response.error),
+      ),
       role,
       uid: sessionInfo.uid,
       cid: sessionInfo.cid,
@@ -285,7 +320,7 @@ export const requireQueryAs = async <
       statusText: response.error.message,
     });
   }
-  
+
   logger.info("requireQueryAs response", {
     role,
     uid: sessionInfo.uid,
@@ -293,9 +328,11 @@ export const requireQueryAs = async <
     hasResult: !!response.data?.result,
     resultType: typeof response.data?.result,
     resultIsArray: Array.isArray(response.data?.result),
-    resultLength: Array.isArray(response.data?.result) ? response.data.result.length : "N/A",
+    resultLength: Array.isArray(response.data?.result)
+      ? response.data.result.length
+      : "N/A",
   });
-  
+
   if (!response.data?.result) {
     logger.error("Failed to query required query. Result is empty.", {
       data: response.data,
@@ -307,9 +344,9 @@ export const requireQueryAs = async <
     });
     throw new Response(null, { status: 404, statusText: "Server error" });
   }
-  
+
   const result = response.data.result;
-  
+
   if (Array.isArray(result) && result.length === 0) {
     logger.warn("requireQueryAs returned empty array", {
       role,
@@ -319,7 +356,7 @@ export const requireQueryAs = async <
       variables: JSON.stringify(variables),
     });
   }
-  
+
   return result;
 };
 
@@ -490,39 +527,37 @@ export const subscribeAs = <
             const input = { ...request, query: request.query || "" };
             return {
               subscribe(sink) {
-                const unsubscribe = wsClient.subscribe(
-                  input,
-                  {
-                    ...sink,
-                    next: (result) => {
-                      span.setAttributes({
-                        result: JSON.stringify(result.data),
-                        error: JSON.stringify(result.errors),
-                      });
-                      if (result.errors) {
-                        span.setStatus({
-                          code: SpanStatusCode.ERROR,
-                          message: result.errors.map((e) => e.message).join(", "),
-                        });
-                      }
-                      sink.next(result as ExecutionResult);
-                    },
-                    error: (error: unknown) => {
+                const unsubscribe = wsClient.subscribe(input, {
+                  ...sink,
+                  next: (result) => {
+                    span.setAttributes({
+                      result: JSON.stringify(result.data),
+                      error: JSON.stringify(result.errors),
+                    });
+                    if (result.errors) {
                       span.setStatus({
                         code: SpanStatusCode.ERROR,
-                        message: error instanceof Error ? error.message : String(error),
+                        message: result.errors.map((e) => e.message).join(", "),
                       });
-                      span.setAttributes({
-                        error: JSON.stringify(error),
-                      });
-                      sink.error(error);
-                    },
-                    complete: () => {
-                      span.end();
-                      sink.complete();
-                    },
-                  }
-                );
+                    }
+                    sink.next(result as ExecutionResult);
+                  },
+                  error: (error: unknown) => {
+                    span.setStatus({
+                      code: SpanStatusCode.ERROR,
+                      message:
+                        error instanceof Error ? error.message : String(error),
+                    });
+                    span.setAttributes({
+                      error: JSON.stringify(error),
+                    });
+                    sink.error(error);
+                  },
+                  complete: () => {
+                    span.end();
+                    sink.complete();
+                  },
+                });
                 return { unsubscribe };
               },
             };

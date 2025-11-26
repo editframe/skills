@@ -1,0 +1,79 @@
+---
+meta:
+  - title: Use Multiple Thumbnail Strips
+  - name: description
+    content: Display multiple thumbnail strips for different videos or time ranges
+headers:
+    Cache-Control: no-cache
+---
+
+## Use Multiple Thumbnail Strips
+
+**Problem:** You need to display multiple thumbnail strips, either for different videos or different time ranges of the same video.
+
+**Solution:** Create multiple `<ThumbnailStrip>` elements, each with its own `target` and optional time range configuration.
+
+**Multiple videos:**
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <div className="flex flex-col gap-4">
+    <div>
+      <Video 
+        id="howto-multi-video-1"
+        src="https://assets.editframe.com/bars-n-tone.mp4" 
+        className="aspect-[16/9]" 
+      />
+      <ThumbnailStrip 
+        target="howto-multi-video-1" 
+        thumbnailWidth={80}
+        className="h-16 rounded border border-gray-600 mt-2"
+      />
+    </div>
+    <div>
+      <Video 
+        id="howto-multi-video-2"
+        src="https://assets.editframe.com/bars-n-tone.mp4" 
+        className="aspect-[16/9]" 
+      />
+      <ThumbnailStrip 
+        target="howto-multi-video-2" 
+        thumbnailWidth={80}
+        className="h-16 rounded border border-gray-600 mt-2"
+      />
+    </div>
+  </div>
+</Demonstration>
+
+**Different time ranges:**
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <div className="flex flex-col gap-4">
+    <Video 
+      id="howto-multi-range-video"
+      src="https://assets.editframe.com/bars-n-tone.mp4" 
+      className="aspect-[16/9]" 
+    />
+    <div>
+      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">First 5 seconds:</p>
+      <ThumbnailStrip 
+        target="howto-multi-range-video" 
+        thumbnailWidth={80}
+        startTimeMs={0}
+        endTimeMs={5000}
+        className="h-16 rounded border border-gray-600"
+      />
+    </div>
+    <div>
+      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Last 5 seconds:</p>
+      <ThumbnailStrip 
+        target="howto-multi-range-video" 
+        thumbnailWidth={80}
+        startTimeMs={5000}
+        endTimeMs={10000}
+        className="h-16 rounded border border-gray-600"
+      />
+    </div>
+  </div>
+</Demonstration>
+
+**Performance note:** All thumbnail strips share a global cache, so thumbnails generated for one strip are immediately available to others targeting the same video and time ranges.

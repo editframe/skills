@@ -26,7 +26,7 @@ const env = {
 };
 
 // Set up environment context for SSR immediately
-if (typeof globalThis !== 'undefined') {
+if (typeof globalThis !== "undefined") {
   (globalThis as any).__ENV_CONTEXT__ = env;
 }
 
@@ -36,7 +36,9 @@ declare global {
   }
 }
 
-function parseThemeCookie(cookieHeader: string | null): "light" | "dark" | "system" {
+function parseThemeCookie(
+  cookieHeader: string | null,
+): "light" | "dark" | "system" {
   if (!cookieHeader) return "system";
   const match = cookieHeader.match(/(?:^|;\s*)theme=([^;]+)/);
   if (match) {
@@ -48,7 +50,10 @@ function parseThemeCookie(cookieHeader: string | null): "light" | "dark" | "syst
   return "system";
 }
 
-function getResolvedTheme(theme: "light" | "dark" | "system", prefersDark: boolean): "light" | "dark" {
+function getResolvedTheme(
+  theme: "light" | "dark" | "system",
+  prefersDark: boolean,
+): "light" | "dark" {
   if (theme === "dark") return "dark";
   if (theme === "light") return "light";
   return prefersDark ? "dark" : "light";
@@ -58,7 +63,7 @@ export const loader = async (args: Route.LoaderArgs) => {
   const { sessionCookie } = await maybeSession(args.request);
   const cookieHeader = args.request.headers.get("cookie");
   const theme = parseThemeCookie(cookieHeader);
-  
+
   return data(
     {
       newFlash: extractNewFlash(sessionCookie),
@@ -74,12 +79,11 @@ export const loader = async (args: Route.LoaderArgs) => {
 
 export const shouldRevalidate = () => true;
 
-
 export default function App({
   loaderData: { newFlash, theme },
 }: Route.ComponentProps) {
   const flashMessages = useFlashMessages(newFlash);
-  
+
   const htmlClassName = theme === "dark" ? "dark" : "";
 
   return (
@@ -127,14 +131,24 @@ export default function App({
           }}
         />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
         <link rel="icon" type="image/png" href="/images/favicon.png" />
         <Links />
       </head>
       <body>
         <FlashMessages flashMessages={flashMessages} />
-        <ClientConfiguration apiHost={WEB_HOST} signingUrl={`${WEB_HOST}/ef-sign-url`}>
+        <ClientConfiguration
+          apiHost={WEB_HOST}
+          signingUrl={`${WEB_HOST}/ef-sign-url`}
+        >
           <Outlet />
         </ClientConfiguration>
         <Scripts />

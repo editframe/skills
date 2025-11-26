@@ -1,0 +1,89 @@
+---
+meta:
+  - title: Tutorial
+  - name: description
+    content: Step-by-step tutorial for creating your first pan-zoom composition with Editframe Pan Zoom Element
+headers:
+    Cache-Control: no-cache
+---
+
+## Tutorial: Your First Pan-Zoom Composition
+
+This tutorial will guide you through the essential concepts of working with pan-zoom elements in Editframe. Each step builds on the previous one, teaching you how to create interactive panning and zooming experiences.
+
+### Step 1: Basic Pan and Zoom
+
+Let's start with the simplest pan-zoom - wrapping content in a pan-zoom container to enable interactive exploration.
+
+**What you'll learn:** How to create a pan-zoom container that enables mouse/touch panning and wheel zooming.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview checkerboard>
+  <PanZoom className="size-full">
+    <div className="bg-gradient-to-br from-blue-400 to-purple-500 p-8 inline-flex items-center justify-cente text-4xl">
+      {"Pan & Zoom"}
+    </div>
+  </PanZoom>
+</Demonstration>
+
+**Try it yourself:** Drag to pan and use Ctrl+Wheel (Cmd+Wheel on Mac) to zoom. Try scrolling the wheel without modifiers to pan vertically.
+
+### Step 2: Programmatic Control
+
+Now let's control the pan-zoom transform programmatically by setting properties directly.
+
+**What you'll learn:** How to set initial pan position and zoom level using properties.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview>
+  <PanZoom x={200} y={150} scale={1.5} className="w-[720px] h-[480px] border-2 border-gray-300 overflow-hidden bg-gray-100">
+    <div className="w-[1200px] h-[800px] bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white text-4xl">
+      {"Pan & Zoom"}
+    </div>
+  </PanZoom>
+</Demonstration>
+
+**Try it yourself:** Modify the `x`, `y`, and `scale` values in the code to see how they affect the initial view.
+
+### Step 3: Listening to Transform Changes
+
+Pan-zoom elements dispatch events when the transform changes, allowing you to track user interactions.
+
+**What you'll learn:** How to listen to `transform-changed` events to react to pan and zoom actions.
+
+```jsx
+<PanZoom
+  onTransformChanged={(e) => {
+    console.log('Transform:', e.detail);
+    // e.detail contains { x, y, scale }
+  }}
+  className="w-[720px] h-[480px] border-2 border-gray-300 overflow-hidden bg-gray-100"
+>
+  <div className="w-[1200px] h-[800px] bg-gradient-to-br from-red-400 to-pink-500 flex items-center justify-center text-white text-4xl">
+    {"Track Transform Changes"}
+  </div>
+</PanZoom>
+```
+
+**Try it yourself:** Open the browser console and interact with the pan-zoom to see transform events logged.
+
+### Step 4: Pan-Zoom with Video Content
+
+Pan-zoom works with any content, including video elements. This enables creating interactive video viewers.
+
+**What you'll learn:** How to combine pan-zoom with video elements for explorable video content.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview>
+  <PanZoom className="w-[720px] h-[480px] border-2 border-gray-300 overflow-hidden bg-black">
+    <Video src="https://assets.editframe.com/bars-n-tone.mp4" className="w-[1440px] h-[1080px] object-contain" />
+  </PanZoom>
+</Demonstration>
+
+**Try it yourself:** Pan around the video and zoom in to explore details. The video continues playing while you interact with the pan-zoom.
+
+### Next Steps
+
+Now that you understand the basics, explore:
+- [How-To Guides](/docs/elements/pan-zoom/how-to/) for specific tasks like programmatic control and constraint handling
+- [Explanations](/docs/elements/pan-zoom/explanation/) for architectural concepts and deeper knowledge
+- [Reference](/docs/elements/pan-zoom/reference) for complete attribute documentation
+
+

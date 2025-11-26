@@ -1,0 +1,79 @@
+---
+meta:
+  - title: Trimming Semantics
+  - name: description
+    content: Understanding the two approaches to trimming audio - relative (trimStart/trimEnd) and absolute (sourceIn/sourceOut)
+headers:
+    Cache-Control: no-cache
+---
+
+## Trimming Semantics: Two Approaches
+
+Editframe supports two different mental models for trimming audio, each serving different use cases. This dual approach solves a fundamental problem: different workflows need different ways of thinking about time.
+
+### Why Two Approaches?
+
+Using a single trimming model creates friction across different workflows:
+
+- **UI builders** need relative trimming (drag handles inward from edges)
+- **Professional workflows** need absolute timecode (precise frame references)
+- **Data tracking** needs trimming that doesn't break source-time alignment
+
+By supporting both models, Editframe enables the right mental model for each workflow without forcing compromises.
+
+### Relative Trimming: trimStart / trimEnd
+
+**Mental model:** "Remove X seconds from the start/end of the clip"
+
+This matches the interface of consumer audio editors where you drag handles inward from the edges.
+
+```jsx
+<Audio src="..." trimstart="2s" trimend="2s" />
+// 10s source → 6s clip (remove 2s from each end)
+```
+
+**How it works:**
+- `trimStart`: Offset from the beginning of the source
+- `trimEnd`: Offset from the end of the source
+- Duration: `sourceDuration - trimStart - trimEnd`
+
+**Effect on currentSourceTimeMs:**
+```
+currentSourceTimeMs = trimStart + ownCurrentTimeMs
+```
+
+### Absolute Trimming: sourceIn / sourceOut
+
+**Mental model:** "Show audio from timestamp A to timestamp B"
+
+This matches professional audio editors that use absolute source timecode.
+
+```jsx
+<Audio src="..." sourcein="2s" sourceout="4s" />
+// Show exactly 2s to 4s from source (2s clip)
+```
+
+**How it works:**
+- `sourceIn`: Absolute start time in source audio
+- `sourceOut`: Absolute end time in source audio
+- Duration: `sourceOut - sourceIn`
+
+**Effect on currentSourceTimeMs:**
+```
+currentSourceTimeMs = sourceIn + ownCurrentTimeMs
+```
+
+### When to Use Each
+
+**Use trimStart/trimEnd when:**
+- Building UI with drag handles or sliders that adjust trim length
+- Thinking in terms of "how much to cut off"
+- Working with durations rather than absolute times
+
+**Use sourceIn/sourceOut when:**
+- Working with timecode from audio editing software
+- Referencing specific moments by timestamp
+- Need frame-perfect accuracy with known time positions
+
+For complete property details, see the [Audio Element Reference](/docs/elements/audio/reference#trimming--editing).
+

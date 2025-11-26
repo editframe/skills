@@ -1,9 +1,4 @@
-import {
-  GraduationCap,
-  At,
-  List,
-  Code,
-} from "@phosphor-icons/react";
+import { GraduationCap, At, List, Code } from "@phosphor-icons/react";
 const items = [
   {
     title: "Check out our docs",
@@ -32,9 +27,7 @@ const items = [
 ];
 function QuickActions() {
   return (
-    <ul
-      className="mt-6 grid grid-cols-1 gap-6 border-b border-t border-gray-200 py-6 sm:grid-cols-2"
-    >
+    <ul className="mt-6 grid grid-cols-1 gap-6 border-b border-t border-gray-200 py-6 sm:grid-cols-2">
       {items.map((item, itemIdx) => (
         <li key={itemIdx} className="flow-root">
           <div className="relative -m-2 flex items-center space-x-4 rounded-xl p-2 focus-within:ring-2 focus-within:ring-editframe-500 hover:bg-gray-50">

@@ -14,7 +14,9 @@ export function TraceDetailsPanel({ trace }: TraceDetailsPanelProps) {
   }
 
   const errors = trace.allSpans.filter((s) => s.isError);
-  const services = Array.from(new Set(trace.allSpans.map((s) => s.serviceName))).sort();
+  const services = Array.from(
+    new Set(trace.allSpans.map((s) => s.serviceName)),
+  ).sort();
   const startTime = new Date(Number(trace.minTime / 1_000_000n));
 
   return (
@@ -31,7 +33,9 @@ export function TraceDetailsPanel({ trace }: TraceDetailsPanelProps) {
         </div>
         <div className="detail-row">
           <span className="detail-key">Duration</span>
-          <span className="detail-val">{formatDuration(Number(trace.duration))}</span>
+          <span className="detail-val">
+            {formatDuration(Number(trace.duration))}
+          </span>
         </div>
         <div className="detail-row">
           <span className="detail-key">Spans</span>
@@ -53,19 +57,20 @@ export function TraceDetailsPanel({ trace }: TraceDetailsPanelProps) {
           <div className="detail-title">Errors ({errors.length})</div>
           {errors.map((span) => {
             const isExpanded = expandedErrors.has(span.spanId);
-            const exceptionEvents = span.events.filter((evt) => evt.name === "exception");
+            const exceptionEvents = span.events.filter(
+              (evt) => evt.name === "exception",
+            );
             const errorAttrs = span.attributes.filter(
               (attr) =>
-                attr.key.includes("error") ||
-                attr.key.includes("exception")
+                attr.key.includes("error") || attr.key.includes("exception"),
             );
 
             return (
               <div
                 key={span.spanId}
-                className={`error-item ${isExpanded ? 'expanded' : ''}`}
+                className={`error-item ${isExpanded ? "expanded" : ""}`}
                 onClick={() => {
-                  setExpandedErrors(prev => {
+                  setExpandedErrors((prev) => {
                     const next = new Set(prev);
                     if (next.has(span.spanId)) {
                       next.delete(span.spanId);
@@ -82,12 +87,18 @@ export function TraceDetailsPanel({ trace }: TraceDetailsPanelProps) {
                   <div className="error-time">
                     {formatDuration(Number(span.duration))}
                   </div>
-                  <div className="error-toggle">{isExpanded ? '−' : '+'}</div>
+                  <div className="error-toggle">{isExpanded ? "−" : "+"}</div>
                 </div>
                 {exceptionEvents.map((evt, i) => {
-                  const exceptionType = evt.attributes.find((a) => a.key === "exception.type")?.value;
-                  const exceptionMessage = evt.attributes.find((a) => a.key === "exception.message")?.value;
-                  const exceptionStacktrace = evt.attributes.find((a) => a.key === "exception.stacktrace")?.value;
+                  const exceptionType = evt.attributes.find(
+                    (a) => a.key === "exception.type",
+                  )?.value;
+                  const exceptionMessage = evt.attributes.find(
+                    (a) => a.key === "exception.message",
+                  )?.value;
+                  const exceptionStacktrace = evt.attributes.find(
+                    (a) => a.key === "exception.stacktrace",
+                  )?.value;
 
                   return (
                     <div key={i} className="exception-details">
@@ -134,4 +145,3 @@ export function TraceDetailsPanel({ trace }: TraceDetailsPanelProps) {
     </div>
   );
 }
-

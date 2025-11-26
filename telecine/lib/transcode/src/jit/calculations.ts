@@ -1,10 +1,10 @@
-import * as path from 'node:path';
-import { mkdir } from 'node:fs/promises';
+import * as path from "node:path";
+import { mkdir } from "node:fs/promises";
 
-const SAMPLE_RATE = Number.parseFloat(process.env.SAMPLE_RATE || '48000.0');
+const SAMPLE_RATE = Number.parseFloat(process.env.SAMPLE_RATE || "48000.0");
 
 export function frameDuration(): number {
-  return 1024.0 / SAMPLE_RATE * 1000000.0;
+  return (1024.0 / SAMPLE_RATE) * 1000000.0;
 }
 
 export function getClosestAlignedTime(targetTime: number): number {
@@ -14,12 +14,18 @@ export function getClosestAlignedTime(targetTime: number): number {
 }
 
 // IMPLEMENTATION GUIDELINES: Video-specific timing functions to avoid AAC alignment issues
-export function videoFrameDuration(frameRate: { num: number; den: number }): number {
+export function videoFrameDuration(frameRate: {
+  num: number;
+  den: number;
+}): number {
   // Calculate video frame duration in microseconds
   return (frameRate.den / frameRate.num) * 1000000.0;
 }
 
-export function getClosestVideoAlignedTime(targetTime: number, frameRate: { num: number; den: number }): number {
+export function getClosestVideoAlignedTime(
+  targetTime: number,
+  frameRate: { num: number; den: number },
+): number {
   const frameDur = videoFrameDuration(frameRate);
   const decimalFramesToTargetTime = targetTime / frameDur;
   const nearestFrameIndexForTargetTime = Math.round(decimalFramesToTargetTime);
@@ -33,27 +39,31 @@ export function generateCommandAndDirectivesForSegment(
   segmentIndex: number,
   startTime: number,
   endTime: number,
-  isLast: boolean
+  isLast: boolean,
 ): [string, string];
 
 // New signature for the async version with explicit paths
 export function generateCommandAndDirectivesForSegment(
   inputFile: string,
   segmentInfo: { actualStartTimeUs: number; actualDurationUs: number },
-  aacFilePath: string
+  aacFilePath: string,
 ): Promise<[string, string]>;
 
 // Implementation that handles both signatures
 export function generateCommandAndDirectivesForSegment(
   inputFile: string,
-  segmentIndexOrInfo: number | { actualStartTimeUs: number; actualDurationUs: number },
+  segmentIndexOrInfo:
+    | number
+    | { actualStartTimeUs: number; actualDurationUs: number },
   startTimeOrPath: number | string,
   endTime?: number,
-  isLast?: boolean
+  isLast?: boolean,
 ): [string, string] | Promise<[string, string]> {
-
   // Handle old signature (synchronous)
-  if (typeof segmentIndexOrInfo === 'number' && typeof startTimeOrPath === 'number') {
+  if (
+    typeof segmentIndexOrInfo === "number" &&
+    typeof startTimeOrPath === "number"
+  ) {
     const segmentIndex = segmentIndexOrInfo;
     const startTime = startTimeOrPath;
     const alignedStartTime = getClosestAlignedTime(startTime);
@@ -61,7 +71,10 @@ export function generateCommandAndDirectivesForSegment(
 
     // We're subtracting two frames from the start time because ffmpeg always internally
     // adds 2 frames of priming to the start of the stream.
-    let startTimeWithPadding = Math.max(alignedStartTime - frameDuration() * 2, 0);
+    let startTimeWithPadding = Math.max(
+      alignedStartTime - frameDuration() * 2,
+      0,
+    );
 
     // We add extra padding at the end, too, because ffmpeg tapers the last few frames
     // to avoid a pop when audio stops. We don't want tapering--we just want the signal.
@@ -69,7 +82,7 @@ export function generateCommandAndDirectivesForSegment(
     // chop off this tapered part using outpoint later.
     const endTimeWithPadding = alignedEndTime + frameDuration() * 2;
 
-    let inpoint = frameDuration() * 2;  // Account for FFmpeg's internal priming
+    let inpoint = frameDuration() * 2; // Account for FFmpeg's internal priming
 
     // We ask to also encode two frames before the start of our segment because
     // the AAC format is interframe. That is, the encoding of each frame depends
@@ -80,13 +93,13 @@ export function generateCommandAndDirectivesForSegment(
     const extraTimeAtBeginning = frameDuration() * 2;
 
     // BOUNDARY ISSUE EXPLANATION: First vs Second Segment Asymmetry
-    // 
+    //
     // First segment (index 0):
     //   - Can't add extra padding at start (can't go back in time from byte zero)
     //   - inpoint = 2 frames (only FFmpeg priming)
     //   - outpoint = inpoint + duration - 1 frame (boundary subtraction)
     //
-    // Second segment (index 1):  
+    // Second segment (index 1):
     //   - Gets full 2 frames of extra padding at start for AAC interframe context
     //   - inpoint = 4 frames (FFmpeg priming + extra time)
     //   - outpoint = inpoint + duration - 1 frame (boundary subtraction)
@@ -103,7 +116,10 @@ export function generateCommandAndDirectivesForSegment(
     } else {
       // For subsequent segments, add extra time for AAC interframe context
       // This creates the asymmetry that can cause boundary artifacts
-      startTimeWithPadding = Math.max(startTimeWithPadding - extraTimeAtBeginning, 0);
+      startTimeWithPadding = Math.max(
+        startTimeWithPadding - extraTimeAtBeginning,
+        0,
+      );
       inpoint += extraTimeAtBeginning;
     }
 
@@ -111,11 +127,11 @@ export function generateCommandAndDirectivesForSegment(
 
     // Create AAC segment command
     const aacCmd = [
-      'ffmpeg -hide_banner -loglevel error -nostats -y',
+      "ffmpeg -hide_banner -loglevel error -nostats -y",
       `-ss ${startTimeWithPadding}us -t ${paddedDuration}us -i "${inputFile}"`,
-      `-c:a aac -ac 2 -ar ${SAMPLE_RATE} -f adts`,  // Force stereo output with -ac 2
-      `out/seg${segmentIndex + 1}.aac`
-    ].join(' ');
+      `-c:a aac -ac 2 -ar ${SAMPLE_RATE} -f adts`, // Force stereo output with -ac 2
+      `out/seg${segmentIndex + 1}.aac`,
+    ].join(" ");
 
     // Calculate outpoint with frame subtraction for segment boundaries
     // inpoint is inclusive and outpoint is exclusive. To avoid overlap, we subtract
@@ -137,17 +153,20 @@ export function generateCommandAndDirectivesForSegment(
 
     // Create concat directive file content
     const directives = [
-      'ffconcat version 1.0',
+      "ffconcat version 1.0",
       `file seg${segmentIndex + 1}.aac`,
       `inpoint ${inpoint}us`,
-      `outpoint ${outpointUs}us`
-    ].join('\n');
+      `outpoint ${outpointUs}us`,
+    ].join("\n");
 
     return [aacCmd, directives];
   }
 
   // Handle new signature (asynchronous)
-  if (typeof segmentIndexOrInfo === 'object' && typeof startTimeOrPath === 'string') {
+  if (
+    typeof segmentIndexOrInfo === "object" &&
+    typeof startTimeOrPath === "string"
+  ) {
     const segmentInfo = segmentIndexOrInfo;
     const aacFilePath = startTimeOrPath;
 
@@ -157,7 +176,9 @@ export function generateCommandAndDirectivesForSegment(
       await mkdir(outputDir, { recursive: true });
 
       const startTime = getClosestAlignedTime(segmentInfo.actualStartTimeUs);
-      const endTime = getClosestAlignedTime(segmentInfo.actualStartTimeUs + segmentInfo.actualDurationUs);
+      const endTime = getClosestAlignedTime(
+        segmentInfo.actualStartTimeUs + segmentInfo.actualDurationUs,
+      );
 
       // We're subtracting two frames from the start time because ffmpeg always internally
       // adds 2 frames of priming to the start of the stream.
@@ -169,7 +190,7 @@ export function generateCommandAndDirectivesForSegment(
       // chop off this tapered part using outpoint later.
       const endTimeWithPadding = endTime + frameDuration() * 2;
 
-      let inpoint = frameDuration() * 2;  // Account for FFmpeg's internal priming
+      let inpoint = frameDuration() * 2; // Account for FFmpeg's internal priming
 
       // We ask to also encode two frames before the start of our segment because
       // the AAC format is interframe. That is, the encoding of each frame depends
@@ -177,30 +198,35 @@ export function generateCommandAndDirectivesForSegment(
       // By adding some extra padding ourselves, we ensure that the "real" data we
       // want will have been encoded as if the correct data preceded it.
       const extraTimeAtBeginning = frameDuration() * 2;
-      startTimeWithPadding = Math.max(startTimeWithPadding - extraTimeAtBeginning, 0);
+      startTimeWithPadding = Math.max(
+        startTimeWithPadding - extraTimeAtBeginning,
+        0,
+      );
       inpoint += extraTimeAtBeginning;
 
       const paddedDuration = endTimeWithPadding - startTimeWithPadding;
 
       // Create AAC segment
       const aacCmd = [
-        'ffmpeg -hide_banner -loglevel error -nostats -y',
+        "ffmpeg -hide_banner -loglevel error -nostats -y",
         `-ss ${startTimeWithPadding}us -t ${paddedDuration}us -i "${inputFile}"`,
-        `-c:a aac -ac 2 -ar ${SAMPLE_RATE} -f adts`,  // Force stereo output with -ac 2
-        `"${aacFilePath}"`
-      ].join(' ');
+        `-c:a aac -ac 2 -ar ${SAMPLE_RATE} -f adts`, // Force stereo output with -ac 2
+        `"${aacFilePath}"`,
+      ].join(" ");
 
       // Create concat directive file content
       const directives = [
-        'ffconcat version 1.0',
+        "ffconcat version 1.0",
         `file ${path.basename(aacFilePath)}`,
         `inpoint ${inpoint}us`,
-        `outpoint ${inpoint + segmentInfo.actualDurationUs}us`
-      ].join('\n');
+        `outpoint ${inpoint + segmentInfo.actualDurationUs}us`,
+      ].join("\n");
 
       return [aacCmd, directives];
     })();
   }
 
-  throw new Error('Invalid arguments to generateCommandAndDirectivesForSegment');
-} 
+  throw new Error(
+    "Invalid arguments to generateCommandAndDirectivesForSegment",
+  );
+}

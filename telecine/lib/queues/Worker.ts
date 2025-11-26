@@ -265,10 +265,10 @@ export class Worker<Payload = unknown> {
               job.workflow,
               job.jobId,
             );
-            await this.publishJobFailed(
-              materializedJob,
-              { error: errorToErrorInfo(error), payload: job.payload }
-            );
+            await this.publishJobFailed(materializedJob, {
+              error: errorToErrorInfo(error),
+              payload: job.payload,
+            });
             await this.publishWorkflowFailed(
               job.workflowId,
               job.workflow,
@@ -276,8 +276,8 @@ export class Worker<Payload = unknown> {
               {
                 error: errorToErrorInfo(error),
                 payload: job.payload,
-                workflow: await workflow.getRawWorkflowData(job.workflowId)
-              }
+                workflow: await workflow.getRawWorkflowData(job.workflowId),
+              },
             );
           }
         }

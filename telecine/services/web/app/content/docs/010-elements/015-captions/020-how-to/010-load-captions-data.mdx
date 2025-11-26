@@ -1,0 +1,44 @@
+---
+meta:
+  - title: Load Captions Data
+  - name: description
+    content: Learn how to load captions data from different sources - direct data, script elements, or external files
+headers:
+    Cache-Control: no-cache
+---
+
+## Load Captions Data
+
+Load captions from direct data, script elements, or external files. Priority: `captionsData` > `captionsScript` > `captionsSrc`.
+
+### Solution
+
+**Direct data:**
+```javascript
+captions.captionsData = {
+  segments: [{ start: 0, end: 3, text: "First caption" }],
+  word_segments: [{ start: 0, end: 0.5, text: "First" }, { start: 0.5, end: 1.0, text: "caption" }]
+};
+```
+
+**Script element:**
+```html
+<script type="application/json" id="my-captions">
+{"segments": [{"start": 0, "end": 3, "text": "First caption"}], "word_segments": [{"start": 0, "end": 0.5, "text": "First"}, {"start": 0.5, "end": 1.0, "text": "caption"}]}
+</script>
+<ef-captions captions-script="my-captions">
+  <ef-captions-segment />
+</ef-captions>
+```
+
+**External file:**
+```html
+<ef-captions captions-src="/path/to/captions.json">
+  <ef-captions-segment />
+</ef-captions>
+```
+
+### Related Documentation
+
+- [Captions Data Format explanation](/docs/elements/captions/explanation/captions-data-format) - Understand the data structure
+- [Reference](/docs/elements/captions/reference) - Complete property documentation

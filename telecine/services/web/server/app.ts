@@ -24,7 +24,7 @@ import {
 import { createRequestHandler } from "@react-router/express";
 
 declare module "react-router" {
-  interface AppLoadContext { }
+  interface AppLoadContext {}
 }
 
 const ALLOWED_ORIGINS = [
@@ -38,33 +38,40 @@ const ALLOWED_ORIGINS = [
 
 export const app = express();
 
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin) {
-      // Allow requests with no origin (e.g., mobile apps, Postman)
-      callback(null, true);
-      return;
-    }
-    
-    // Check exact matches
-    if (ALLOWED_ORIGINS.includes(origin)) {
-      callback(null, true);
-      return;
-    }
-    
-    // In development, allow any *.localhost domain
-    if (process.env.NODE_ENV === "development" && origin.match(/^https?:\/\/[^:]+\.localhost(:\d+)?$/)) {
-      callback(null, true);
-      return;
-    }
-    
-    callback(new Error("Not allowed by CORS"));
-  },
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) {
+        // Allow requests with no origin (e.g., mobile apps, Postman)
+        callback(null, true);
+        return;
+      }
+
+      // Check exact matches
+      if (ALLOWED_ORIGINS.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      // In development, allow any *.localhost domain
+      if (
+        process.env.NODE_ENV === "development" &&
+        origin.match(/^https?:\/\/[^:]+\.localhost(:\d+)?$/)
+      ) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+  }),
+);
 
 morgan.token("host", (req) => req.get("host") || "");
-app.use(morgan(":method :url :status :res[content-length] - :response-time ms :host"));
+app.use(
+  morgan(":method :url :status :res[content-length] - :response-time ms :host"),
+);
 
 app.use((req, res, next) => {
   const host = req.get("host") || "";
@@ -145,15 +152,39 @@ if (UPLOAD_TO_BUCKET) {
 }
 
 let serverBuild: Promise<any> | undefined;
+const originalDefineFunctions = new WeakMap<
+  CustomElementRegistry,
+  typeof CustomElementRegistry.prototype.define
+>();
 const patchCustomElementsDefine = () => {
   if (typeof globalThis !== "undefined" && globalThis.customElements) {
-    const originalDefine = globalThis.customElements.define.bind(globalThis.customElements);
-    // Check if element is already registered before defining to prevent duplicate registration errors
-    // This is necessary because SSR can cause modules to be loaded multiple times
-    globalThis.customElements.define = function(name: string, constructor: CustomElementConstructor, options?: ElementDefinitionOptions) {
+    const registry = globalThis.customElements;
+
+    // Check if this registry has already been patched by checking if define is our wrapper
+    const currentDefine = registry.define;
+    if ((currentDefine as any).__isPatchedWrapper) {
+      // Already patched, nothing to do
+      return;
+    }
+
+    // Get or store the original define function for this registry
+    // This must happen AFTER checking if patched, but BEFORE we replace define
+    let originalDefine = originalDefineFunctions.get(registry);
+    if (!originalDefine) {
+      // First time seeing this registry - capture the original before any patching
+      originalDefine = registry.define.bind(registry);
+      originalDefineFunctions.set(registry, originalDefine);
+    }
+
+    // Create wrapper that always gets the original from the WeakMap (not from closure)
+    const wrappedDefine = function (
+      name: string,
+      constructor: CustomElementConstructor,
+      options?: ElementDefinitionOptions,
+    ) {
       // Check if already registered - if so, skip registration
       try {
-        const existing = globalThis.customElements.get(name);
+        const existing = registry.get(name);
         if (existing) {
           // Already registered - safe to skip (even if constructor is different,
           // this is SSR and modules can be loaded multiple times)
@@ -163,20 +194,30 @@ const patchCustomElementsDefine = () => {
         // get() can throw if element doesn't exist - that's fine, proceed with define
       }
       // Try to define, but catch duplicate registration errors
+      // Always get the original from WeakMap to avoid closure issues
+      const storedOriginal = originalDefineFunctions.get(registry);
+      if (!storedOriginal) {
+        throw new Error("Original define function not found for registry");
+      }
       try {
-        return originalDefine(name, constructor, options);
+        return storedOriginal(name, constructor, options);
       } catch (error: unknown) {
         // Ignore duplicate registration errors in SSR
-<<<<<<< HEAD
-=======
         // Use type guard instead of instanceof to avoid Symbol.hasInstance recursion
->>>>>>> 2487d262 (feat: unify TimelinePlayhead with EFScrubber)
-        if (error && typeof error === "object" && "message" in error && typeof error.message === "string" && error.message.includes("has already been used")) {
+        if (
+          error &&
+          typeof error === "object" &&
+          "message" in error &&
+          typeof error.message === "string" &&
+          error.message.includes("has already been used")
+        ) {
           return;
         }
         throw error;
       }
     };
+    (wrappedDefine as any).__isPatchedWrapper = true;
+    registry.define = wrappedDefine;
   }
 };
 
@@ -194,11 +235,13 @@ app.use(
       if (!serverBuild) {
         // Patch customElements before and after importing the server build
         patchCustomElementsDefine();
-        serverBuild = import("virtual:react-router/server-build").then((mod) => {
-          // Patch again after import in case customElements was created/recreated during import
-          patchCustomElementsDefine();
-          return mod;
-        });
+        serverBuild = import("virtual:react-router/server-build").then(
+          (mod) => {
+            // Patch again after import in case customElements was created/recreated during import
+            patchCustomElementsDefine();
+            return mod;
+          },
+        );
       }
       return serverBuild;
     },

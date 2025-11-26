@@ -8,4 +8,4 @@ export const requireOrgId = (request: Request) => {
   }
 
   return orgId;
-}
+};

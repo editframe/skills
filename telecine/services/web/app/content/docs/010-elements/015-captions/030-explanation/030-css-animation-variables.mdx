@@ -1,0 +1,125 @@
+---
+meta:
+  - title: CSS Animation Variables Architecture
+  - name: description
+    content: How --ef-word-seed enables deterministic but varied animations, and the architectural benefits of this approach
+headers:
+    Cache-Control: no-cache
+---
+
+## CSS Animation Variables: Deterministic Variation Architecture
+
+Editframe captions provide CSS variables, particularly `--ef-word-seed`, that enable creating varied, non-repetitive animations while maintaining deterministic behavior. This architecture solves the problem of creating visually interesting animations without randomness or inconsistency.
+
+### The Problem: Animation Variation Challenges
+
+Creating varied animations using standard CSS approaches presents these constraints:
+
+**Random variation:**
+- Using `Math.random()` creates different styles on each render
+- Inconsistent appearance across replays
+- Difficult to debug and reproduce issues
+- Poor user experience with flickering or changing styles
+
+**Manual variation:**
+- Developers must manually assign different styles to each word
+- Tedious and error-prone for long transcripts
+- Difficult to maintain consistency
+- Doesn't scale to dynamic content
+
+**Repetitive patterns:**
+- Simple sequential patterns (every 3rd word, etc.) are predictable
+- Creates mechanical, robotic appearance
+- Users notice the pattern quickly
+- Lacks visual interest
+
+**Performance overhead:**
+- Complex calculations for each word on every frame
+- Recalculating styles repeatedly
+- Impact on rendering performance
+- Battery drain on mobile devices
+
+### The Solution: Deterministic Seed-Based Variation
+
+Editframe provides `--ef-word-seed`, a CSS variable that gives each word a deterministic but pseudo-random value:
+
+**Deterministic calculation:**
+- Seed value calculated from word's position in transcript
+- Uses prime number multiplication for good distribution
+- Normalized to 0-1 range for easy CSS usage
+- Same word at same position always gets same seed
+
+**Pseudo-random distribution:**
+- Prime numbers create good value distribution
+- Values appear random but are reproducible
+- No clustering or obvious patterns
+- Visually varied without being truly random
+
+**CSS variable access:**
+- Available as `var(--ef-word-seed)` on `<ef-captions-active-word>`
+- Can be used in any CSS property
+- Works with CSS calc() for mathematical operations
+- No JavaScript required for variation
+
+### Architectural Advantages
+
+**Consistency:**
+- Same word always gets same style across replays
+- Predictable behavior for debugging
+- Consistent user experience
+- No flickering or changing styles
+
+**Variety:**
+- Each word gets unique seed value
+- Creates visually interesting, non-repetitive animations
+- Appears random without being random
+- Maintains visual interest throughout long transcripts
+
+**Performance:**
+- Seed calculated once per word, not per frame
+- CSS handles all styling calculations
+- No JavaScript overhead for variation
+- Efficient rendering with GPU-accelerated CSS
+
+**Developer experience:**
+- Simple API: use `var(--ef-word-seed)` in CSS
+- Works with any CSS property
+- Easy to create complex variations
+- No manual assignment needed
+
+**Flexibility:**
+- Can be used for color, scale, rotation, opacity, etc.
+- Supports complex mathematical operations
+- Works with CSS animations and transitions
+- Enables creative animation patterns
+
+### Code Examples
+
+**Color variation:**
+```css
+ef-captions-active-word {
+  color: hsl(calc(360 * var(--ef-word-seed)), 70%, 60%);
+}
+```
+
+**Scale and rotation:**
+```css
+ef-captions-active-word {
+  transform: scale(calc(1 + 0.3 * var(--ef-word-seed))) 
+             rotate(calc(var(--ef-word-seed) * 20deg - 10deg));
+}
+```
+
+**Combined effects:**
+```css
+ef-captions-active-word {
+  color: hsl(calc(360 * var(--ef-word-seed)), 70%, 60%);
+  transform: scale(calc(1 + 0.2 * var(--ef-word-seed)));
+  opacity: calc(0.7 + 0.3 * var(--ef-word-seed));
+}
+```
+
+### Related Documentation
+
+- [How to Animate Words with CSS Variables](/docs/elements/captions/how-to/animate-words) - Practical animation examples
+- [Reference](/docs/elements/captions/reference) - Complete CSS variables documentation

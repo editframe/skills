@@ -1,0 +1,52 @@
+---
+meta:
+  - title: Create Line-by-Line Reveals
+  - name: description
+    content: Animate multi-line text paragraph by paragraph with sequential reveals
+headers:
+    Cache-Control: no-cache
+---
+
+## Create Line-by-Line Reveals
+
+**Problem:** You want to animate multi-line text so each line appears sequentially.
+
+**Solution:** Use `split="line"` with newlines in your text and stagger timing.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource>
+  <style>{`
+    @keyframes fadeInLine {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .fade-in-line {
+      animation: fadeInLine 0.5s ease-out paused;
+    }
+  `}</style>
+  <Timegroup mode="contain" className="w-[720px] h-[405px] flex items-center justify-center bg-gradient-to-r from-indigo-900 to-teal-900">
+    <Text split="line" stagger="1000ms" easing="ease-in-out" duration="8s" className="text-center text-white text-xl">
+      <template>
+        <TextSegment className="fade-in-line" />
+      </template>
+      First line of text
+Second line continues
+Third line completes
+    </Text>
+  </Timegroup>
+</Demonstration>
+
+**Key points:**
+- Set `split="line"` to split on newlines
+- Use newlines (`\n`) or line breaks in your text content
+- Larger stagger values (e.g., `"1000ms"`) work well for line reveals
+- Each line becomes a block-level segment
+
+For understanding how line splitting works, see the [Text Splitting explanation](/docs/elements/text/explanation/text-splitting).
+
+

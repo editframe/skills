@@ -4,7 +4,8 @@ import { TestFastWorkflow } from "@/queues/units-of-work/TestFast/Workflow";
 import { TestFastInitializerQueue } from "@/queues/units-of-work/TestFast/Initializer";
 import { randomUUID } from "node:crypto";
 
-const SCHEDULER_URL = process.env.SCHEDULER_GO_URL || "http://scheduler-go:3000";
+const SCHEDULER_URL =
+  process.env.SCHEDULER_GO_URL || "http://scheduler-go:3000";
 
 async function getStatus() {
   const response = await fetch(`${SCHEDULER_URL}/api/status`);
@@ -46,7 +47,9 @@ describe("scheduler-go disconnect behavior", { timeout: 60000 }, () => {
       .poll(
         async () => {
           const status = await getStatus();
-          const mainQueue = status.connections.find((c: any) => c.queueName === "test-fast-main");
+          const mainQueue = status.connections.find(
+            (c: any) => c.queueName === "test-fast-main",
+          );
           return mainQueue && mainQueue.totalConnections > 0;
         },
         { timeout: 20000, interval: 500 },
@@ -55,9 +58,11 @@ describe("scheduler-go disconnect behavior", { timeout: 60000 }, () => {
 
     const statusDuringWork = await getStatus();
     const mainQueueDuringWork = statusDuringWork.connections.find(
-      (c: any) => c.queueName === "test-fast-main"
+      (c: any) => c.queueName === "test-fast-main",
     );
-    console.log(`Connections during work: ${mainQueueDuringWork.totalConnections}`);
+    console.log(
+      `Connections during work: ${mainQueueDuringWork.totalConnections}`,
+    );
 
     console.log("Waiting for jobs to complete...");
 
@@ -80,7 +85,9 @@ describe("scheduler-go disconnect behavior", { timeout: 60000 }, () => {
       .poll(
         async () => {
           const status = await getStatus();
-          const mainQueue = status.connections.find((c: any) => c.queueName === "test-fast-main");
+          const mainQueue = status.connections.find(
+            (c: any) => c.queueName === "test-fast-main",
+          );
           return !mainQueue || mainQueue.totalConnections === 0;
         },
         { timeout: 15000, interval: 300 },
@@ -99,16 +106,19 @@ describe("scheduler-go disconnect behavior", { timeout: 60000 }, () => {
     for (const conn of status.connections) {
       expect(conn.totalConnections).toBeGreaterThanOrEqual(0);
       expect(conn.workingConnections).toBeGreaterThanOrEqual(0);
-      expect(conn.totalConnections).toBeGreaterThanOrEqual(conn.workingConnections);
+      expect(conn.totalConnections).toBeGreaterThanOrEqual(
+        conn.workingConnections,
+      );
     }
 
     const scalingInfo = status.scaling;
     for (const scaling of scalingInfo) {
-      const conn = status.connections.find((c: any) => c.queueName === scaling.queueName);
+      const conn = status.connections.find(
+        (c: any) => c.queueName === scaling.queueName,
+      );
       if (conn) {
         expect(scaling.workingConnections).toBe(conn.workingConnections);
       }
     }
   });
 });
-

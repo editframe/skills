@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router';
-import type { MetaFunction } from 'react-router';
-import { useExternalScript } from '~/hooks/useExternalScript';
-import type { Route } from './+types/jit-preview';
+import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router";
+import type { MetaFunction } from "react-router";
+import { useExternalScript } from "~/hooks/useExternalScript";
+import type { Route } from "./+types/jit-preview";
 
 export const meta: MetaFunction = () => {
   return [{ title: "JIT Video Preview | Editframe" }];
@@ -44,19 +44,23 @@ declare global {
 
 export default function JitPreview() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [urlInput, setUrlInput] = useState('');
-  const [hlsStats, setHlsStats] = useState('Ready to load...');
-  const [dashStats, setDashStats] = useState('Ready to load...');
+  const [urlInput, setUrlInput] = useState("");
+  const [hlsStats, setHlsStats] = useState("Ready to load...");
+  const [dashStats, setDashStats] = useState("Ready to load...");
 
   const hlsVideoRef = useRef<HTMLVideoElement>(null);
   const dashVideoRef = useRef<HTMLVideoElement>(null);
   const hlsPlayerRef = useRef<HlsPlayer | null>(null);
   const dashPlayerRef = useRef<DashPlayer | null>(null);
 
-  const hlsLoader = useExternalScript('https://cdn.jsdelivr.net/npm/hls.js@1.4.12/dist/hls.min.js');
-  const dashLoader = useExternalScript('https://cdn.dashjs.org/latest/dash.all.min.js');
+  const hlsLoader = useExternalScript(
+    "https://cdn.jsdelivr.net/npm/hls.js@1.4.12/dist/hls.min.js",
+  );
+  const dashLoader = useExternalScript(
+    "https://cdn.dashjs.org/latest/dash.all.min.js",
+  );
 
-  const currentUrl = searchParams.get('url') || '';
+  const currentUrl = searchParams.get("url") || "";
 
   useEffect(() => {
     setUrlInput(currentUrl);
@@ -68,7 +72,9 @@ export default function JitPreview() {
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">🎬 JIT Video Preview: HLS vs DASH</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-8">
+              🎬 JIT Video Preview: HLS vs DASH
+            </h1>
             <div className="bg-red-50 p-4 rounded-md max-w-md mx-auto">
               <div className="text-red-700 text-sm">
                 <p className="font-medium">Failed to load video libraries</p>
@@ -86,7 +92,9 @@ export default function JitPreview() {
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">🎬 JIT Video Preview: HLS vs DASH</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-8">
+              🎬 JIT Video Preview: HLS vs DASH
+            </h1>
             <div className="flex flex-col items-center justify-center space-y-4">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
               <p className="text-gray-600">Loading video libraries...</p>
@@ -117,33 +125,33 @@ export default function JitPreview() {
 
       hlsPlayerRef.current = new (window.Hls as any)({
         debug: false,
-        enableWorker: true
+        enableWorker: true,
       });
 
       hlsPlayerRef.current!.loadSource(hlsManifestUrl);
       hlsPlayerRef.current!.attachMedia(video);
 
-      hlsPlayerRef.current!.on('hlsManifestParsed', () => {
-        setHlsStats('HLS manifest loaded');
-        console.log('HLS: Manifest parsed');
+      hlsPlayerRef.current!.on("hlsManifestParsed", () => {
+        setHlsStats("HLS manifest loaded");
+        console.log("HLS: Manifest parsed");
       });
 
-      hlsPlayerRef.current!.on('hlsError', (event: any, data: any) => {
-        console.error('HLS Error:', data);
+      hlsPlayerRef.current!.on("hlsError", (event: any, data: any) => {
+        console.error("HLS Error:", data);
         setHlsStats(`HLS Error: ${data.details}`);
       });
 
-      hlsPlayerRef.current!.on('hlsLevelSwitched', (event: any, data: any) => {
-        console.log('HLS: Level switched to', data.level);
+      hlsPlayerRef.current!.on("hlsLevelSwitched", (event: any, data: any) => {
+        console.log("HLS: Level switched to", data.level);
         setHlsStats(`HLS: Quality level ${data.level}`);
       });
 
-      setHlsStats('HLS manifest loading...');
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      setHlsStats("HLS manifest loading...");
+    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = hlsManifestUrl;
-      setHlsStats('Using native HLS support');
+      setHlsStats("Using native HLS support");
     } else {
-      setHlsStats('HLS not supported in this browser');
+      setHlsStats("HLS not supported in this browser");
     }
   };
 
@@ -158,44 +166,46 @@ export default function JitPreview() {
     }
 
     if (!window.dashjs) {
-      setDashStats('DASH library not available');
+      setDashStats("DASH library not available");
       return;
     }
 
     dashPlayerRef.current = window.dashjs.MediaPlayer().create();
 
-    dashPlayerRef.current.on('streamInitialized', () => {
-      setDashStats('DASH stream initialized');
-      console.log('DASH: Stream initialized');
+    dashPlayerRef.current.on("streamInitialized", () => {
+      setDashStats("DASH stream initialized");
+      console.log("DASH: Stream initialized");
     });
 
-    dashPlayerRef.current.on('error', (e: any) => {
-      console.error('DASH Error:', e);
-      setDashStats(`DASH Error: ${e.error?.message || 'Unknown error'}`);
+    dashPlayerRef.current.on("error", (e: any) => {
+      console.error("DASH Error:", e);
+      setDashStats(`DASH Error: ${e.error?.message || "Unknown error"}`);
     });
 
-    dashPlayerRef.current.on('qualityChangeRendered', (e: any) => {
-      console.log('DASH: Quality changed to', e.newQuality);
+    dashPlayerRef.current.on("qualityChangeRendered", (e: any) => {
+      console.log("DASH: Quality changed to", e.newQuality);
       setDashStats(`DASH: Quality level ${e.newQuality}`);
     });
 
     dashPlayerRef.current.initialize(video, dashManifestUrl, false);
-    setDashStats('DASH manifest loading...');
+    setDashStats("DASH manifest loading...");
   };
 
   const dashManifestUrl = currentUrl
     ? `/api/v1/transcode/manifest.mpd?url=${encodeURIComponent(currentUrl)}`
-    : '';
+    : "";
 
   const hlsManifestUrl = currentUrl
     ? `/api/v1/transcode/manifest.m3u8?url=${encodeURIComponent(currentUrl)}`
-    : '';
+    : "";
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">🎬 JIT Video Preview: Custom vs HLS vs DASH</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            🎬 JIT Video Preview: Custom vs HLS vs DASH
+          </h1>
 
           <form onSubmit={handleUrlSubmit} className="max-w-2xl mx-auto">
             <div className="flex gap-2">
@@ -227,7 +237,9 @@ export default function JitPreview() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* HLS Player */}
             <div className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold text-blue-600 mb-4">📺 HLS Player (hls.js)</h2>
+              <h2 className="text-xl font-semibold text-blue-600 mb-4">
+                📺 HLS Player (hls.js)
+              </h2>
 
               <video
                 ref={hlsVideoRef}
@@ -242,9 +254,7 @@ export default function JitPreview() {
                 <strong>Manifest:</strong> {hlsManifestUrl}
               </div>
 
-              <div className="mt-2 text-xs text-gray-600">
-                {hlsStats}
-              </div>
+              <div className="mt-2 text-xs text-gray-600">{hlsStats}</div>
 
               <div className="mt-4 flex gap-2 flex-wrap">
                 <button
@@ -270,7 +280,9 @@ export default function JitPreview() {
 
             {/* DASH Player */}
             <div className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold text-green-600 mb-4">📺 DASH Player (dash.js)</h2>
+              <h2 className="text-xl font-semibold text-green-600 mb-4">
+                📺 DASH Player (dash.js)
+              </h2>
 
               <video
                 ref={dashVideoRef}
@@ -285,9 +297,7 @@ export default function JitPreview() {
                 <strong>Manifest:</strong> {dashManifestUrl}
               </div>
 
-              <div className="mt-2 text-xs text-gray-600">
-                {dashStats}
-              </div>
+              <div className="mt-2 text-xs text-gray-600">{dashStats}</div>
 
               <div className="mt-4 flex gap-2 flex-wrap">
                 <button
@@ -315,4 +325,4 @@ export default function JitPreview() {
       </div>
     </div>
   );
-} 
+}

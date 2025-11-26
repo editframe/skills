@@ -83,7 +83,10 @@ export const schedulerGo = new gcp.cloudrunv2.Service(
             envFromValue("GCLOUD_TRACE_EXPORT", "true"),
             envFromValue("WEB_HOST", `https://${DEPLOYED_DOMAIN}`),
             envFromValue("RENDER_HOST", `https://${DEPLOYED_DOMAIN}`),
-            envFromValue("SCHEDULER_QUEUES", "process-html-initializer,process-html-finalizer,process-isobmff,render-initializer,render-fragment,render-finalizer,ingest-image"),
+            envFromValue(
+              "SCHEDULER_QUEUES",
+              "process-html-initializer,process-html-finalizer,process-isobmff,render-initializer,render-fragment,render-finalizer,ingest-image",
+            ),
             ...externalQueueEnvVars(),
             envFromValue("PINO_LOG_LEVEL", "debug"),
             envFromValue("GOMEMLIMIT", toGoMemLimit(workerResources.scheduler)),
@@ -149,6 +152,3 @@ export const schedulerGo = new gcp.cloudrunv2.Service(
     ],
   },
 );
-
-
-

@@ -36,9 +36,12 @@ async function fetchBinary(url: string): Promise<Buffer> {
 
 async function runFFprobe(filePath: string): Promise<any> {
   try {
-    const output = execSync(`ffprobe -v quiet -print_format json -show_format -show_streams "${filePath}"`, {
-      encoding: "utf8",
-    });
+    const output = execSync(
+      `ffprobe -v quiet -print_format json -show_format -show_streams "${filePath}"`,
+      {
+        encoding: "utf8",
+      },
+    );
     return JSON.parse(output);
   } catch (error) {
     return { error: error instanceof Error ? error.message : String(error) };
@@ -66,7 +69,9 @@ function extractBoxStructure(mp4dump: any): string[] {
     } else if (typeof obj === "object" && obj !== null) {
       if (obj.type) {
         const indent = "  ".repeat(depth);
-        boxes.push(`${indent}${obj.type}${obj.size ? ` (${obj.size} bytes)` : ""}`);
+        boxes.push(
+          `${indent}${obj.type}${obj.size ? ` (${obj.size} bytes)` : ""}`,
+        );
       }
       Object.values(obj).forEach((value) => traverse(value, depth + 1));
     }
@@ -80,7 +85,7 @@ async function analyzeSegment(
   service: string,
   serviceUrl: string,
   rendition: string,
-  segmentId: string
+  segmentId: string,
 ): Promise<SegmentAnalysis> {
   const analysis: SegmentAnalysis = {
     service,
@@ -116,7 +121,9 @@ async function analyzeSegment(
       console.log(`   🎬 Streams: ${streams.length}`);
 
       streams.forEach((stream: any, i: number) => {
-        console.log(`      Stream ${i}: ${stream.codec_type} (${stream.codec_name})`);
+        console.log(
+          `      Stream ${i}: ${stream.codec_type} (${stream.codec_name})`,
+        );
         if (stream.codec_type === "video") {
           console.log(`         Resolution: ${stream.width}x${stream.height}`);
           console.log(`         Frame rate: ${stream.r_frame_rate}`);
@@ -132,20 +139,30 @@ async function analyzeSegment(
     } else {
       analysis.boxStructure = extractBoxStructure(analysis.mp4dumpOutput);
       console.log(`   📦 Box structure:`);
-      analysis.boxStructure.slice(0, 10).forEach((box) => console.log(`      ${box}`));
+      analysis.boxStructure
+        .slice(0, 10)
+        .forEach((box) => console.log(`      ${box}`));
       if (analysis.boxStructure.length > 10) {
-        console.log(`      ... and ${analysis.boxStructure.length - 10} more boxes`);
+        console.log(
+          `      ... and ${analysis.boxStructure.length - 10} more boxes`,
+        );
       }
     }
 
     await fs.writeFile(
-      path.join(OUTPUT_DIR, `${service}-${rendition}-${segmentId}-ffprobe.json`),
-      JSON.stringify(analysis.ffprobeOutput, null, 2)
+      path.join(
+        OUTPUT_DIR,
+        `${service}-${rendition}-${segmentId}-ffprobe.json`,
+      ),
+      JSON.stringify(analysis.ffprobeOutput, null, 2),
     );
 
     await fs.writeFile(
-      path.join(OUTPUT_DIR, `${service}-${rendition}-${segmentId}-mp4dump.json`),
-      JSON.stringify(analysis.mp4dumpOutput, null, 2)
+      path.join(
+        OUTPUT_DIR,
+        `${service}-${rendition}-${segmentId}-mp4dump.json`,
+      ),
+      JSON.stringify(analysis.mp4dumpOutput, null, 2),
     );
   } catch (error) {
     analysis.error = error instanceof Error ? error.message : String(error);
@@ -157,11 +174,15 @@ async function analyzeSegment(
 
 async function compareSegments(
   tsAnalysis: SegmentAnalysis,
-  goAnalysis: SegmentAnalysis
+  goAnalysis: SegmentAnalysis,
 ): Promise<void> {
-  console.log(`\n═══════════════════════════════════════════════════════════════`);
+  console.log(
+    `\n═══════════════════════════════════════════════════════════════`,
+  );
   console.log(`  Comparing ${tsAnalysis.rendition}/${tsAnalysis.segmentId}`);
-  console.log(`═══════════════════════════════════════════════════════════════`);
+  console.log(
+    `═══════════════════════════════════════════════════════════════`,
+  );
 
   if (tsAnalysis.error || goAnalysis.error) {
     console.log(`❌ Cannot compare - one or both services failed`);
@@ -173,23 +194,40 @@ async function compareSegments(
   console.log(`\n📏 File Size:`);
   console.log(`   TypeScript: ${tsAnalysis.fileSize.toLocaleString()} bytes`);
   console.log(`   Go:         ${goAnalysis.fileSize.toLocaleString()} bytes`);
-  console.log(`   Difference: ${Math.abs(tsAnalysis.fileSize - goAnalysis.fileSize).toLocaleString()} bytes`);
+  console.log(
+    `   Difference: ${Math.abs(tsAnalysis.fileSize - goAnalysis.fileSize).toLocaleString()} bytes`,
+  );
 
-  if (tsAnalysis.ffprobeOutput && goAnalysis.ffprobeOutput && !tsAnalysis.ffprobeOutput.error && !goAnalysis.ffprobeOutput.error) {
+  if (
+    tsAnalysis.ffprobeOutput &&
+    goAnalysis.ffprobeOutput &&
+    !tsAnalysis.ffprobeOutput.error &&
+    !goAnalysis.ffprobeOutput.error
+  ) {
     console.log(`\n⏱️  Duration:`);
-    console.log(`   TypeScript: ${tsAnalysis.ffprobeOutput.format?.duration || "N/A"}s`);
-    console.log(`   Go:         ${goAnalysis.ffprobeOutput.format?.duration || "N/A"}s`);
+    console.log(
+      `   TypeScript: ${tsAnalysis.ffprobeOutput.format?.duration || "N/A"}s`,
+    );
+    console.log(
+      `   Go:         ${goAnalysis.ffprobeOutput.format?.duration || "N/A"}s`,
+    );
 
     console.log(`\n🎬 Codec Info:`);
     const tsStream = tsAnalysis.ffprobeOutput.streams?.[0];
     const goStream = goAnalysis.ffprobeOutput.streams?.[0];
 
     if (tsStream && goStream) {
-      console.log(`   TypeScript: ${tsStream.codec_name} ${tsStream.width || ""}x${tsStream.height || ""}`);
-      console.log(`   Go:         ${goStream.codec_name} ${goStream.width || ""}x${goStream.height || ""}`);
+      console.log(
+        `   TypeScript: ${tsStream.codec_name} ${tsStream.width || ""}x${tsStream.height || ""}`,
+      );
+      console.log(
+        `   Go:         ${goStream.codec_name} ${goStream.width || ""}x${goStream.height || ""}`,
+      );
 
       if (tsStream.codec_type === "video" && goStream.codec_type === "video") {
-        console.log(`\n📐 Resolution Match: ${tsStream.width === goStream.width && tsStream.height === goStream.height ? "✅" : "❌"}`);
+        console.log(
+          `\n📐 Resolution Match: ${tsStream.width === goStream.width && tsStream.height === goStream.height ? "✅" : "❌"}`,
+        );
         console.log(`   TS: ${tsStream.width}x${tsStream.height}`);
         console.log(`   Go: ${goStream.width}x${goStream.height}`);
       }
@@ -201,26 +239,40 @@ async function compareSegments(
     console.log(`   TypeScript boxes: ${tsAnalysis.boxStructure.length}`);
     console.log(`   Go boxes:         ${goAnalysis.boxStructure.length}`);
 
-    const tsBoxTypes = tsAnalysis.boxStructure.map((b) => b.trim().split(" ")[0]).filter(Boolean);
-    const goBoxTypes = goAnalysis.boxStructure.map((b) => b.trim().split(" ")[0]).filter(Boolean);
+    const tsBoxTypes = tsAnalysis.boxStructure
+      .map((b) => b.trim().split(" ")[0])
+      .filter(Boolean);
+    const goBoxTypes = goAnalysis.boxStructure
+      .map((b) => b.trim().split(" ")[0])
+      .filter(Boolean);
 
-    console.log(`   TS box types: ${tsBoxTypes.slice(0, 5).join(", ")}${tsBoxTypes.length > 5 ? "..." : ""}`);
-    console.log(`   Go box types: ${goBoxTypes.slice(0, 5).join(", ")}${goBoxTypes.length > 5 ? "..." : ""}`);
+    console.log(
+      `   TS box types: ${tsBoxTypes.slice(0, 5).join(", ")}${tsBoxTypes.length > 5 ? "..." : ""}`,
+    );
+    console.log(
+      `   Go box types: ${goBoxTypes.slice(0, 5).join(", ")}${goBoxTypes.length > 5 ? "..." : ""}`,
+    );
 
     const tsRootBoxes = tsBoxTypes.filter((t) => !t.startsWith(" "));
     const goRootBoxes = goBoxTypes.filter((t) => !t.startsWith(" "));
 
-    console.log(`   Root boxes match: ${JSON.stringify(tsRootBoxes) === JSON.stringify(goRootBoxes) ? "✅" : "❌"}`);
+    console.log(
+      `   Root boxes match: ${JSON.stringify(tsRootBoxes) === JSON.stringify(goRootBoxes) ? "✅" : "❌"}`,
+    );
     console.log(`   TS root: [${tsRootBoxes.join(", ")}]`);
     console.log(`   Go root: [${goRootBoxes.join(", ")}]`);
   }
 }
 
 async function main() {
-  console.log("═══════════════════════════════════════════════════════════════");
+  console.log(
+    "═══════════════════════════════════════════════════════════════",
+  );
   console.log("  JIT Transcoding Segment Validation");
   console.log("  Detailed Binary Analysis with ffprobe & mp4dump");
-  console.log("═══════════════════════════════════════════════════════════════");
+  console.log(
+    "═══════════════════════════════════════════════════════════════",
+  );
 
   await ensureOutputDir();
 
@@ -242,8 +294,18 @@ async function main() {
     console.log(`Testing ${testCase.rendition}/${testCase.segmentId}`);
     console.log("=".repeat(67));
 
-    const tsAnalysis = await analyzeSegment("ts", TS_SERVICE_URL, testCase.rendition, testCase.segmentId);
-    const goAnalysis = await analyzeSegment("go", GO_SERVICE_URL, testCase.rendition, testCase.segmentId);
+    const tsAnalysis = await analyzeSegment(
+      "ts",
+      TS_SERVICE_URL,
+      testCase.rendition,
+      testCase.segmentId,
+    );
+    const goAnalysis = await analyzeSegment(
+      "go",
+      GO_SERVICE_URL,
+      testCase.rendition,
+      testCase.segmentId,
+    );
 
     results.push({ ts: tsAnalysis, go: goAnalysis });
 
@@ -264,8 +326,12 @@ async function main() {
     if (!ts.error && !go.error) bothSuccess++;
   });
 
-  console.log(`\nTypeScript Service: ${tsSuccesses}/${results.length} successful`);
-  console.log(`Go Service:         ${goSuccesses}/${results.length} successful`);
+  console.log(
+    `\nTypeScript Service: ${tsSuccesses}/${results.length} successful`,
+  );
+  console.log(
+    `Go Service:         ${goSuccesses}/${results.length} successful`,
+  );
   console.log(`Both Successful:    ${bothSuccess}/${results.length}`);
 
   console.log(`\n📁 All output files saved to: ${OUTPUT_DIR}`);
@@ -284,4 +350,3 @@ main().catch((error) => {
   console.error("Fatal error:", error);
   process.exit(1);
 });
-

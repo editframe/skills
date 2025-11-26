@@ -1,0 +1,84 @@
+---
+meta:
+  - title: Use Seed-Based Variation
+  - name: description
+    content: Create pseudo-random effects per segment that are deterministic at render time using the --ef-seed CSS variable
+headers:
+    Cache-Control: no-cache
+---
+
+## Use Seed-Based Variation
+
+**Problem:** You want each segment to have unique, varied properties (colors, scales, rotations) that look random but are deterministic and consistent across renders.
+
+**Solution:** Use the `--ef-seed` CSS variable, which provides a deterministic pseudo-random value (0-1) based on each segment's index.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource>
+  <style>{`
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .seed-variation {
+      animation: fadeIn 0.5s ease-out;
+    }
+  `}</style>
+  <Timegroup mode="contain" className="w-[720px] h-[405px] flex items-center justify-center bg-gradient-to-r from-purple-900 to-pink-900">
+    <Text split="char" stagger="50ms" easing="ease-out" duration="3s" className="text-center">
+      <template>
+        <TextSegment 
+          className="text-4xl font-bold seed-variation"
+          style={{
+            color: "hsl(calc(360 * var(--ef-seed)), 80%, 70%)",
+            transform: "scale(calc(1 + 0.2 * var(--ef-seed))) rotate(calc(var(--ef-seed) * 20deg - 10deg))",
+          }}
+        />
+      </template>
+      VARIATION
+    </Text>
+  </Timegroup>
+</Demonstration>
+
+**Key points:**
+- `--ef-seed` is a CSS variable available on each `<ef-text-segment>` element
+- Value ranges from 0 to 1, based on the segment's index
+- Same segment index always produces the same seed value (deterministic)
+- Use `calc()` to map seed values to your desired ranges
+
+**Common patterns:**
+
+**Color variation:**
+```css
+color: hsl(calc(360 * var(--ef-seed)), 80%, 70%);
+/* Maps seed (0-1) to hue (0-360°) for rainbow effect */
+```
+
+**Scale variation:**
+```css
+transform: scale(calc(1 + 0.3 * var(--ef-seed)));
+/* Maps seed (0-1) to scale (1.0-1.3) */
+```
+
+**Rotation variation:**
+```css
+transform: rotate(calc(var(--ef-seed) * 20deg - 10deg));
+/* Maps seed (0-1) to rotation (-10deg to 10deg) */
+```
+
+**Combined effects:**
+```css
+color: hsl(calc(360 * var(--ef-seed)), 80%, 70%);
+transform: scale(calc(1 + 0.2 * var(--ef-seed))) 
+           rotate(calc(var(--ef-seed) * 20deg - 10deg));
+/* Each segment gets unique color, scale, and rotation */
+```
+
+For understanding how seed values are generated and why deterministic randomness matters, see the [Deterministic Randomness explanation](/docs/elements/text/explanation/deterministic-randomness).
+
+

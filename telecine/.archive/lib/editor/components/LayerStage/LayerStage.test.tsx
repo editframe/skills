@@ -55,7 +55,7 @@ describe("<StageContents>", () => {
     assert.isTrue(container.contains(imageLayer.stageRef));
     assert.equal(
       imageLayer.stageRef?.getAttribute("src"),
-      "https://example.com/"
+      "https://example.com/",
     );
     assert.isTrue(imageLayer.stageRef?.matches("img"));
     assert.include(imageLayer.stageRef?.getBoundingClientRect(), {
@@ -83,7 +83,7 @@ describe("<StageContents>", () => {
     assert.isTrue(container.contains(videoLayer.stageRef));
     assert.equal(
       videoLayer.stageRef?.getAttribute("src"),
-      "https://example.com/"
+      "https://example.com/",
     );
     assert.isTrue(videoLayer.stageRef?.matches("video"));
     assert.include(videoLayer.stageRef?.getBoundingClientRect(), {

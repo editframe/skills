@@ -17,7 +17,7 @@ export default function ApiExpiredReminder({
   keyName,
   orgName,
 }: EmailConfirmationProps) {
-  const previewText =`[Editframe] Your API key "${keyName}" is about to expire`;
+  const previewText = `[Editframe] Your API key "${keyName}" is about to expire`;
   return (
     <Html>
       <Head />
@@ -28,8 +28,8 @@ export default function ApiExpiredReminder({
           <Section>
             <Text style={text}>Hey,</Text>
             <Text style={text}>
-              Your API key   <strong>{keyName}</strong> is about to expire for your organization:{" "}
-              <strong>{orgName}</strong>
+              Your API key <strong>{keyName}</strong> is about to expire for
+              your organization: <strong>{orgName}</strong>
             </Text>
             <Text style={text}>
               Please regenerate your API key to avoid any service interruptions.

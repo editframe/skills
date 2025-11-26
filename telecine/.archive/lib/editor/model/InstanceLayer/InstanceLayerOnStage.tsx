@@ -10,5 +10,5 @@ export const InstanceLayerOnStage = observer(
     }
 
     <StageComponent layer={layer} />;
-  }
+  },
 );

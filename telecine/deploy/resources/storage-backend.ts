@@ -11,4 +11,3 @@ export const assetsBackendBucket = new gcp.compute.BackendBucket(
     project: GCP_PROJECT,
   },
 );
-

@@ -1,5 +1,9 @@
 import type { Readable } from "node:stream";
-import { storageProvider, type PersistentStorage, type StorageStreamOptions } from "@/util/storageProvider.server";
+import {
+  storageProvider,
+  type PersistentStorage,
+  type StorageStreamOptions,
+} from "@/util/storageProvider.server";
 
 export interface AssetProvider {
   createReadStream(key: string, opts?: StorageStreamOptions): Promise<Readable>;
@@ -7,9 +11,12 @@ export interface AssetProvider {
 }
 
 export class StorageAssetProvider implements AssetProvider {
-  constructor(private storage: PersistentStorage = storageProvider) { }
+  constructor(private storage: PersistentStorage = storageProvider) {}
 
-  async createReadStream(key: string, opts?: StorageStreamOptions): Promise<Readable> {
+  async createReadStream(
+    key: string,
+    opts?: StorageStreamOptions,
+  ): Promise<Readable> {
     return this.storage.createReadStream(key, opts);
   }
 
@@ -19,9 +26,12 @@ export class StorageAssetProvider implements AssetProvider {
 }
 
 export class BundledAssetProvider implements AssetProvider {
-  constructor(private basePath: string) { }
+  constructor(private basePath: string) {}
 
-  async createReadStream(key: string, opts?: StorageStreamOptions): Promise<Readable> {
+  async createReadStream(
+    key: string,
+    opts?: StorageStreamOptions,
+  ): Promise<Readable> {
     const { createReadStream } = await import("node:fs");
     const path = `${this.basePath}/${key}`;
     return createReadStream(path, opts);
@@ -35,4 +45,3 @@ export class BundledAssetProvider implements AssetProvider {
 }
 
 export const defaultAssetProvider = new StorageAssetProvider();
-

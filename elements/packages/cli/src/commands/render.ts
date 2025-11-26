@@ -67,9 +67,13 @@ program
             "npx",
             // biome-ignore format: Grouping CLI arguments
             [
-              "vite", "build", directory,
-              "--clearScreen", "false",
-              "--logLevel", "debug",
+              "vite",
+              "build",
+              directory,
+              "--clearScreen",
+              "false",
+              "--logLevel",
+              "debug",
             ],
             {
               stdio: "inherit",

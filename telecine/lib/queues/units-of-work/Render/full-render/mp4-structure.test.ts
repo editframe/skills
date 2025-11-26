@@ -5,11 +5,18 @@ import { tmpdir } from "node:os";
 import { writeFile, unlink } from "node:fs/promises";
 
 import { isValidMP4Buffer } from "../test-utils";
-import { Mp4Dump, extractMP4Metadata, verifyDurationConsistency } from "@/util/mp4-box-analysis";
+import {
+  Mp4Dump,
+  extractMP4Metadata,
+  verifyDurationConsistency,
+} from "@/util/mp4-box-analysis";
 import { test } from "./fixtures";
 
 describe("Segment Assembly Quality", () => {
-  test("assembles segments without gaps or corruption", ({ renderOutput, expect }) => {
+  test("assembles segments without gaps or corruption", ({
+    renderOutput,
+    expect,
+  }) => {
     const { segmentBytes } = renderOutput;
 
     // Validate segment structure - we get 1 init + 4 data segments = 5 total
@@ -22,11 +29,17 @@ describe("Segment Assembly Quality", () => {
     });
 
     // Validate total size consistency
-    const totalSegmentSize = segmentBytes.reduce((sum, bytes) => sum + bytes.length, 0);
+    const totalSegmentSize = segmentBytes.reduce(
+      (sum, bytes) => sum + bytes.length,
+      0,
+    );
     expect(renderOutput.finalVideoBuffer.length).toBe(totalSegmentSize);
   }, 30000); // Extended timeout for first test that initializes renderOutput fixture
 
-  test("maintains consistent video properties across segments", async ({ renderOutput, expect }) => {
+  test("maintains consistent video properties across segments", async ({
+    renderOutput,
+    expect,
+  }) => {
     const { segmentBytes } = renderOutput;
 
     // Check each segment for basic validity
@@ -36,7 +49,8 @@ describe("Segment Assembly Quality", () => {
       expect(isValidMP4Buffer(buffer)).toBe(true); // Valid MP4 structure
 
       // Each segment should have valid MP4 structure (more flexible check)
-      const hasMP4Header = buffer.subarray(4, 8).toString() === "ftyp" ||
+      const hasMP4Header =
+        buffer.subarray(4, 8).toString() === "ftyp" ||
         buffer.includes(Buffer.from("moof")) ||
         buffer.includes(Buffer.from("mdat")) ||
         buffer.includes(Buffer.from("moov"));
@@ -44,7 +58,10 @@ describe("Segment Assembly Quality", () => {
     }
   });
 
-  test("produces segments with reasonable timing", ({ renderOutput, expect }) => {
+  test("produces segments with reasonable timing", ({
+    renderOutput,
+    expect,
+  }) => {
     const { segmentBytes, renderInfo } = renderOutput;
 
     const expectedSegmentDuration = renderInfo.durationMs / 4; // 4 data segments (excluding init)
@@ -54,14 +71,15 @@ describe("Segment Assembly Quality", () => {
 
     // Separate init segment from data segments for size analysis
     // Init segment is typically much smaller
-    const segmentSizes = segmentBytes.map(bytes => bytes.length);
+    const segmentSizes = segmentBytes.map((bytes) => bytes.length);
     const [firstSegment, ...dataSegments] = segmentSizes;
 
     if (dataSegments.length > 0) {
-      const avgDataSegmentSize = dataSegments.reduce((sum, size) => sum + size, 0) / dataSegments.length;
+      const avgDataSegmentSize =
+        dataSegments.reduce((sum, size) => sum + size, 0) / dataSegments.length;
 
       // Data segments should have roughly similar sizes
-      dataSegments.forEach(size => {
+      dataSegments.forEach((size) => {
         expect(size).toBeGreaterThan(avgDataSegmentSize * 0.2); // No data segment too small
         expect(size).toBeLessThan(avgDataSegmentSize * 5); // No data segment too large
       });
@@ -71,20 +89,23 @@ describe("Segment Assembly Quality", () => {
     expect(firstSegment).toBeGreaterThan(100); // Just needs to exist
   });
 
-  test("validates base media decode times match cumulative sample durations", async ({ renderOutput, expect }) => {
+  test("validates base media decode times match cumulative sample durations", async ({
+    renderOutput,
+    expect,
+  }) => {
     const { videoPath } = renderOutput;
 
     // Get mp4dump output for precise timing analysis
     const mp4Output = execSync(`mp4dump "${videoPath}"`, { encoding: "utf8" });
 
     // Parse timescales from mp4dump output
-    // Structure: mvhd has movie timescale (1000), then track timescales follow in order  
-    const lines = mp4Output.split('\n');
+    // Structure: mvhd has movie timescale (1000), then track timescales follow in order
+    const lines = mp4Output.split("\n");
     const timescales: number[] = [];
 
     for (const line of lines) {
-      if (line.includes('timescale =')) {
-        const parts = line.split('=');
+      if (line.includes("timescale =")) {
+        const parts = line.split("=");
         if (parts[1]) {
           const timescale = parseInt(parts[1].trim());
           timescales.push(timescale);
@@ -96,9 +117,9 @@ describe("Segment Assembly Quality", () => {
     // From observation: [1000, 15360, 48000]
     expect(timescales.length).toBeGreaterThanOrEqual(3);
 
-    const movieTimescale = timescales[0] ?? 1000;     // 1000 (mvhd)
-    const videoTimescale = timescales[1] ?? 15360;     // 15360 (video track mdhd) 
-    const audioTimescale = timescales[2] ?? 48000;     // 48000 (audio track mdhd)
+    const movieTimescale = timescales[0] ?? 1000; // 1000 (mvhd)
+    const videoTimescale = timescales[1] ?? 15360; // 15360 (video track mdhd)
+    const audioTimescale = timescales[2] ?? 48000; // 48000 (audio track mdhd)
 
     console.log(`Movie timescale: ${movieTimescale}`);
     console.log(`Video timescale: ${videoTimescale}`);
@@ -106,12 +127,18 @@ describe("Segment Assembly Quality", () => {
 
     // Create track mapping based on observed structure
     // Track 1 = video (vide), Track 2 = audio (soun)
-    const trackInfo = new Map<number, { timescale: number, handlerType: string }>();
-    trackInfo.set(1, { timescale: videoTimescale, handlerType: 'vide' });
-    trackInfo.set(2, { timescale: audioTimescale, handlerType: 'soun' });
+    const trackInfo = new Map<
+      number,
+      { timescale: number; handlerType: string }
+    >();
+    trackInfo.set(1, { timescale: videoTimescale, handlerType: "vide" });
+    trackInfo.set(2, { timescale: audioTimescale, handlerType: "soun" });
 
     // Second pass: extract timing data for each track
-    const trackSegments = new Map<number, Array<{ sequence: number, baseTime: number, sampleCount: number }>>();
+    const trackSegments = new Map<
+      number,
+      Array<{ sequence: number; baseTime: number; sampleCount: number }>
+    >();
     let currentSequence = 0;
     let currentTrackId: number | null = null;
 
@@ -121,8 +148,8 @@ describe("Segment Assembly Quality", () => {
       const line = lineRaw.trim();
 
       // Look for sequence numbers
-      if (line.includes('sequence number =')) {
-        const parts = line.split('=');
+      if (line.includes("sequence number =")) {
+        const parts = line.split("=");
         if (parts[1]) {
           currentSequence = parseInt(parts[1].trim());
           continue;
@@ -130,16 +157,19 @@ describe("Segment Assembly Quality", () => {
       }
 
       // Look for track ID in tfhd boxes
-      if (line.includes('track ID =')) {
-        const parts = line.split('=');
+      if (line.includes("track ID =")) {
+        const parts = line.split("=");
         if (parts[1]) {
           currentTrackId = parseInt(parts[1].trim());
         }
       }
 
       // Look for base media decode time and sample count pairs
-      if (line.includes('base media decode time =') && currentTrackId !== null) {
-        const parts = line.split('=');
+      if (
+        line.includes("base media decode time =") &&
+        currentTrackId !== null
+      ) {
+        const parts = line.split("=");
         if (parts[1]) {
           const baseTime = parseInt(parts[1].trim());
 
@@ -148,8 +178,8 @@ describe("Segment Assembly Quality", () => {
             const searchLineRaw = lines[j];
             if (!searchLineRaw) continue;
             const searchLine = searchLineRaw.trim();
-            if (searchLine.includes('sample count =')) {
-              const sampleParts = searchLine.split('=');
+            if (searchLine.includes("sample count =")) {
+              const sampleParts = searchLine.split("=");
               if (sampleParts[1]) {
                 const sampleCount = parseInt(sampleParts[1].trim());
 
@@ -162,7 +192,7 @@ describe("Segment Assembly Quality", () => {
                   segments.push({
                     sequence: currentSequence,
                     baseTime,
-                    sampleCount
+                    sampleCount,
                   });
                 }
 
@@ -189,7 +219,9 @@ describe("Segment Assembly Quality", () => {
 
       let expectedCumulativeTime = 0;
 
-      console.log(`\n🔍 Validating Track ${trackId} (${info!.handlerType}) with timescale ${info!.timescale}`);
+      console.log(
+        `\n🔍 Validating Track ${trackId} (${info!.handlerType}) with timescale ${info!.timescale}`,
+      );
 
       for (let i = 0; i < segments.length; i++) {
         const segment = segments[i];
@@ -198,49 +230,70 @@ describe("Segment Assembly Quality", () => {
         // For synchronized tracks, both video and audio should have the same decode time in milliseconds
         // Convert to milliseconds for comparison across different timescales
 
-        if (info!.handlerType === 'soun') {
+        if (info!.handlerType === "soun") {
           // Audio track: verify against actual AAC frame pattern (23/25/24/25...)
           expect(segment.baseTime).toBe(expectedCumulativeTime);
 
           // Calculate next expected time based on actual AAC pattern
           let sampleDuration = 1024; // AAC frame is 1024 samples
           expectedCumulativeTime += segment.sampleCount * sampleDuration;
-        } else if (info!.handlerType === 'vide') {
+        } else if (info!.handlerType === "vide") {
           // Video track: should be synchronized with audio (same time in milliseconds)
           // Calculate what the audio time would be for this segment
           const audioSegments = trackSegments.get(2); // Audio is track 2
           if (audioSegments) {
-            const correspondingAudioSegment = audioSegments.find(s => s.sequence === segment.sequence);
+            const correspondingAudioSegment = audioSegments.find(
+              (s) => s.sequence === segment.sequence,
+            );
             if (correspondingAudioSegment) {
-              const audioTimeMs = (correspondingAudioSegment.baseTime / 48000) * 1000;
+              const audioTimeMs =
+                (correspondingAudioSegment.baseTime / 48000) * 1000;
               const videoTimeMs = (segment.baseTime / 15360) * 1000;
 
-              // Video and audio timing will have small differences due to frame alignment 
+              // Video and audio timing will have small differences due to frame alignment
               // Video: 33.33ms frames (30fps), Audio: 21.33ms frames (AAC), tolerance ~15ms
-              expect(Math.abs(videoTimeMs - audioTimeMs)).toBeLessThanOrEqual(15);
-              console.log(`✅ Segment ${segment.sequence}: Video (${videoTimeMs.toFixed(2)}ms) synced with Audio (${audioTimeMs.toFixed(2)}ms)`);
+              expect(Math.abs(videoTimeMs - audioTimeMs)).toBeLessThanOrEqual(
+                15,
+              );
+              console.log(
+                `✅ Segment ${segment.sequence}: Video (${videoTimeMs.toFixed(2)}ms) synced with Audio (${audioTimeMs.toFixed(2)}ms)`,
+              );
             }
           }
 
           // For expectedCumulativeTime calculation, use the synchronized time
-          expectedCumulativeTime = segment.baseTime + (segment.sampleCount * Math.round(info!.timescale / 30));
+          expectedCumulativeTime =
+            segment.baseTime +
+            segment.sampleCount * Math.round(info!.timescale / 30);
         } else {
           throw new Error(`Unknown handler type: ${info!.handlerType}`);
         }
 
-        const sampleDuration = info!.handlerType === 'soun' ? 1024 : Math.round(info!.timescale / 30);
-        console.log(`✅ Segment ${segment.sequence}: ${segment.baseTime} decode time, ${segment.sampleCount} samples (${sampleDuration} units per sample)`);
+        const sampleDuration =
+          info!.handlerType === "soun"
+            ? 1024
+            : Math.round(info!.timescale / 30);
+        console.log(
+          `✅ Segment ${segment.sequence}: ${segment.baseTime} decode time, ${segment.sampleCount} samples (${sampleDuration} units per sample)`,
+        );
       }
 
-      console.log(`✅ Track ${trackId} (${info!.handlerType}): All ${segments.length} segments have correct base media decode times`);
+      console.log(
+        `✅ Track ${trackId} (${info!.handlerType}): All ${segments.length} segments have correct base media decode times`,
+      );
     }
 
-    console.log(`\n✅ All tracks validated: Base media decode times perfectly match cumulative sample durations`);
+    console.log(
+      `\n✅ All tracks validated: Base media decode times perfectly match cumulative sample durations`,
+    );
   });
 });
 
 describe("Fragmented MP4 Metadata Validation", () => {
-  test("produces fragmented MP4 with correct duration metadata", async ({ renderOutput, expect }) => {
+  test("produces fragmented MP4 with correct duration metadata", async ({
+    renderOutput,
+    expect,
+  }) => {
     const { videoPath, renderInfo } = renderOutput;
 
     // Extract comprehensive metadata
@@ -275,7 +328,10 @@ describe("Fragmented MP4 Metadata Validation", () => {
     }
   });
 
-  test("maintains duration consistency across all metadata sources", async ({ renderOutput, expect }) => {
+  test("maintains duration consistency across all metadata sources", async ({
+    renderOutput,
+    expect,
+  }) => {
     const { videoPath } = renderOutput;
 
     const metadata = await extractMP4Metadata(videoPath);
@@ -289,7 +345,10 @@ describe("Fragmented MP4 Metadata Validation", () => {
     expect(consistency.issues).toHaveLength(0);
   });
 
-  test("includes proper mvex structure without mehd for Chrome compatibility", async ({ renderOutput, expect }) => {
+  test("includes proper mvex structure without mehd for Chrome compatibility", async ({
+    renderOutput,
+    expect,
+  }) => {
     const { videoPath } = renderOutput;
 
     const dump = await Mp4Dump.dump(videoPath);
@@ -307,7 +366,10 @@ describe("Fragmented MP4 Metadata Validation", () => {
     expect(trex.length).toBeGreaterThan(0);
   });
 
-  test("avoids duplicate duration metadata that confuses QuickTime", async ({ renderOutput, expect }) => {
+  test("avoids duplicate duration metadata that confuses QuickTime", async ({
+    renderOutput,
+    expect,
+  }) => {
     const { videoPath, renderInfo } = renderOutput;
 
     const dump = await Mp4Dump.dump(videoPath);
@@ -336,11 +398,17 @@ describe("Fragmented MP4 Metadata Validation", () => {
     const mvhd = mvhds[0];
     if (mvhd && mvhd.timescale) {
       const mvhdDurationSeconds = mvhd.duration / mvhd.timescale;
-      expect(mvhdDurationSeconds).toBeCloseTo(renderInfo.durationMs / 1000, 0.1);
+      expect(mvhdDurationSeconds).toBeCloseTo(
+        renderInfo.durationMs / 1000,
+        0.1,
+      );
     }
   });
 
-  test("produces correct sequence numbers for fragments", async ({ renderOutput, expect }) => {
+  test("produces correct sequence numbers for fragments", async ({
+    renderOutput,
+    expect,
+  }) => {
     const { videoPath } = renderOutput;
 
     const metadata = await extractMP4Metadata(videoPath);
@@ -355,18 +423,21 @@ describe("Fragmented MP4 Metadata Validation", () => {
     }
   });
 
-  test("verifies init segment contains all necessary metadata boxes", async ({ renderOutput, expect }) => {
+  test("verifies init segment contains all necessary metadata boxes", async ({
+    renderOutput,
+    expect,
+  }) => {
     const { segmentBytes } = renderOutput;
 
     // First segment should be the init segment
     expect(segmentBytes.length).toBeGreaterThan(0);
     const firstSegment = segmentBytes[0];
-    if (!firstSegment) throw new Error('No init segment found');
+    if (!firstSegment) throw new Error("No init segment found");
     const initSegmentBuffer = Buffer.from(firstSegment);
 
     // Write to temp file for analysis
 
-    const tmpFile = join(tmpdir(), 'init-segment-analysis.m4s');
+    const tmpFile = join(tmpdir(), "init-segment-analysis.m4s");
     await writeFile(tmpFile, initSegmentBuffer);
 
     const dump = await Mp4Dump.dump(tmpFile);
@@ -387,30 +458,35 @@ describe("Fragmented MP4 Metadata Validation", () => {
     await unlink(tmpFile);
   });
 
-  test("analyzes complete MP4 box structure for player compatibility", async ({ renderOutput, expect }) => {
+  test("analyzes complete MP4 box structure for player compatibility", async ({
+    renderOutput,
+    expect,
+  }) => {
     const { videoPath } = renderOutput;
 
     // Get detailed mp4dump output
-    const mp4dumpText = execSync(`mp4dump "${videoPath}"`, { encoding: "utf8" });
+    const mp4dumpText = execSync(`mp4dump "${videoPath}"`, {
+      encoding: "utf8",
+    });
 
     // Verify critical boxes for player compatibility
     const criticalBoxes = [
-      'ftyp',    // File type box
-      'moov',    // Movie box
-      'mvhd',    // Movie header
-      'mvex',    // Movie extends (for fragmented)
+      "ftyp", // File type box
+      "moov", // Movie box
+      "mvhd", // Movie header
+      "mvex", // Movie extends (for fragmented)
       // Note: mehd not included - working files don't have it
-      'trak',    // Track boxes
-      'tkhd',    // Track header
-      'mdia',    // Media box
-      'mdhd',    // Media header
-      'moof',    // Movie fragment
-      'mfhd',    // Movie fragment header
-      'traf',    // Track fragment
-      'tfhd',    // Track fragment header
-      'tfdt',    // Track fragment decode time
-      'trun',    // Track fragment run
-      'mdat'     // Media data
+      "trak", // Track boxes
+      "tkhd", // Track header
+      "mdia", // Media box
+      "mdhd", // Media header
+      "moof", // Movie fragment
+      "mfhd", // Movie fragment header
+      "traf", // Track fragment
+      "tfhd", // Track fragment header
+      "tfdt", // Track fragment decode time
+      "trun", // Track fragment run
+      "mdat", // Media data
     ];
 
     for (const boxType of criticalBoxes) {
@@ -421,9 +497,8 @@ describe("Fragmented MP4 Metadata Validation", () => {
     }
 
     // Check for any error indicators
-    expect(mp4dumpText).not.toContain('error');
-    expect(mp4dumpText).not.toContain('invalid');
-    expect(mp4dumpText).not.toContain('unknown');
+    expect(mp4dumpText).not.toContain("error");
+    expect(mp4dumpText).not.toContain("invalid");
+    expect(mp4dumpText).not.toContain("unknown");
   });
 });
-

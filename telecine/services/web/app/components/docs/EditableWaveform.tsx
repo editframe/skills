@@ -76,9 +76,10 @@ export const EditableWaveform = () => {
                 key={option.value}
                 value={option.value}
                 className={({ checked }) =>
-                  `${checked
-                    ? "bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800"
-                    : "bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-600"
+                  `${
+                    checked
+                      ? "bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800"
+                      : "bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-600"
                   } border rounded px-2 py-1 cursor-pointer transition-colors`
                 }
               >
@@ -96,7 +97,9 @@ export const EditableWaveform = () => {
 
         <div className="grid grid-cols-1 gap-4">
           <label className="space-y-1">
-            <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Color</span>
+            <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
+              Color
+            </span>
             <input
               type="color"
               value={color}
@@ -124,7 +127,9 @@ export const EditableWaveform = () => {
               <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
                 Bar Spacing
               </span>
-              <span className="text-xs ml-2 text-gray-500 dark:text-gray-400">{barSpacing}</span>
+              <span className="text-xs ml-2 text-gray-500 dark:text-gray-400">
+                {barSpacing}
+              </span>
             </div>
             <input
               type="range"
@@ -142,7 +147,9 @@ export const EditableWaveform = () => {
               <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
                 FFT Size
               </span>
-              <span className="text-xs ml-2 text-gray-500 dark:text-gray-400">{fftSize}</span>
+              <span className="text-xs ml-2 text-gray-500 dark:text-gray-400">
+                {fftSize}
+              </span>
             </div>
             <input
               type="range"
@@ -159,7 +166,9 @@ export const EditableWaveform = () => {
               <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
                 Decay Steps
               </span>
-              <span className="text-xs ml-2 text-gray-500 dark:text-gray-400">{decaySteps}</span>
+              <span className="text-xs ml-2 text-gray-500 dark:text-gray-400">
+                {decaySteps}
+              </span>
             </div>
             <input
               type="range"
@@ -176,7 +185,9 @@ export const EditableWaveform = () => {
               <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
                 FFT Gain
               </span>
-              <span className="text-xs ml-2 text-gray-500 dark:text-gray-400">{fftGain}</span>
+              <span className="text-xs ml-2 text-gray-500 dark:text-gray-400">
+                {fftGain}
+              </span>
             </div>
             <input
               type="range"

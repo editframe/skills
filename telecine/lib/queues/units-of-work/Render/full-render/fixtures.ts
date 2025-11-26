@@ -29,50 +29,68 @@ export const test = baseTest.extend<{
   remoteVideo: Selectable<Video2IsobmffFiles>;
   remoteAudio: Selectable<Video2IsobmffFiles>;
   renderOutput: RenderOutput;
-  getRenderInfo: (html: string, testTitle?: string) => Promise<GetRenderInfoResult>;
+  getRenderInfo: (
+    html: string,
+    testTitle?: string,
+  ) => Promise<GetRenderInfoResult>;
   audioRenderOutput: RenderOutput;
   wavRenderInfo: GetRenderInfoResult;
   wavRenderOutput: RenderOutput;
   videoOnlyRenderOutput: RenderOutput;
-  videoOnlyStillOutput: { imageBuffer: Uint8Array; imagePath: string; renderInfo: GetRenderInfoResult; templateHash: string };
+  videoOnlyStillOutput: {
+    imageBuffer: Uint8Array;
+    imagePath: string;
+    renderInfo: GetRenderInfoResult;
+    templateHash: string;
+  };
   complexFilterRenderOutput: RenderOutput;
-  render: (html: string, renderOptions?: ElectronRenderOptionsInput, testTitle?: string) => Promise<RenderOutput>;
+  render: (
+    html: string,
+    renderOptions?: ElectronRenderOptionsInput,
+    testTitle?: string,
+  ) => Promise<RenderOutput>;
 }>({
   // Worker-scoped: Created once per worker, shared across all tests
   electronRPC: [
-    async ({ }, use) => {
+    async ({}, use) => {
       const electronRPC = await createElectronRPC();
       await use(electronRPC);
-      await electronRPC.rpc.call('terminate');
+      await electronRPC.rpc.call("terminate");
     },
-    { scope: 'worker' }
+    { scope: "worker" },
   ],
 
   // Worker-scoped: Created once per worker
   testAgent: [
-    async ({ }, use) => {
+    async ({}, use) => {
       const testAgent = await makeTestAgent("render-test@example.org");
       await use(testAgent);
     },
-    { scope: 'worker' }
+    { scope: "worker" },
   ],
 
   // Worker-scoped: Expensive video processing, safe to reuse
   barsNTone: [
     async ({ testAgent }, use) => {
-      const barsNTone = await processTestVideoAsset("bars-n-tone.mp4", testAgent);
+      const barsNTone = await processTestVideoAsset(
+        "bars-n-tone.mp4",
+        testAgent,
+      );
       await use(barsNTone);
     },
-    { scope: 'worker' }
+    { scope: "worker" },
   ],
 
   // Worker-scoped: Expensive audio processing, safe to reuse
   cardJoker: [
     async ({ testAgent }, use) => {
-      const cardJoker = await processTestVideoAsset("card-joker.mp3", testAgent);
+      const cardJoker = await processTestVideoAsset(
+        "card-joker.mp3",
+        testAgent,
+      );
       await use(cardJoker);
     },
-    { scope: 'worker' }
+    { scope: "worker" },
   ],
 
   // Worker-scoped: WAV file processing to test conforming stream system
@@ -81,16 +99,19 @@ export const test = baseTest.extend<{
       const testWav = await processTestVideoAsset("test-sample.wav", testAgent);
       await use(testWav);
     },
-    { scope: 'worker' }
+    { scope: "worker" },
   ],
 
   // Worker-scoped: Video-only asset for still rendering tests
   videoOnly: [
     async ({ testAgent }, use) => {
-      const videoOnly = await processTestVideoAsset("video-only-test.mp4", testAgent);
+      const videoOnly = await processTestVideoAsset(
+        "video-only-test.mp4",
+        testAgent,
+      );
       await use(videoOnly);
     },
-    { scope: 'worker' }
+    { scope: "worker" },
   ],
 
   // Worker-scoped: Remote video asset for complex rendering tests
@@ -98,11 +119,11 @@ export const test = baseTest.extend<{
     async ({ testAgent }, use) => {
       const remoteVideo = await processTestVideoAsset(
         "https://nftrrevvuwkedwrbrqce.supabase.co/storage/v1/object/public/user-templates/6d6167f0-6040-4ff0-a03b-a2c41dd6c30e/templates/5d8b8ba2-126d-4e47-b850-4529ce25a2ab.mp4",
-        testAgent
+        testAgent,
       );
       await use(remoteVideo);
     },
-    { scope: 'worker' }
+    { scope: "worker" },
   ],
 
   // Worker-scoped: Remote audio asset for complex rendering tests
@@ -110,127 +131,152 @@ export const test = baseTest.extend<{
     async ({ testAgent }, use) => {
       const remoteAudio = await processTestVideoAsset(
         "https://nftrrevvuwkedwrbrqce.supabase.co/storage/v1/object/public/user-templates/6d6167f0-6040-4ff0-a03b-a2c41dd6c30e/sounds/70c0f129-f261-48fc-832b-eb467130b4ec.mp3",
-        testAgent
+        testAgent,
       );
       await use(remoteAudio);
     },
-    { scope: 'worker' }
+    { scope: "worker" },
   ],
-
 
   // Worker-scoped: Just a function wrapper
   render: [
     async ({ electronRPC, testAgent }, use) => {
-      const render = (html: string, renderOptions?: ElectronRenderOptionsInput, testTitle?: string) => renderWithElectronRPC({
-        html,
-        electronRpc: electronRPC,
-        renderOptions: renderOptions ?? {},
-        testAgent,
-        testTitle,
-      });
+      const render = (
+        html: string,
+        renderOptions?: ElectronRenderOptionsInput,
+        testTitle?: string,
+      ) =>
+        renderWithElectronRPC({
+          html,
+          electronRpc: electronRPC,
+          renderOptions: renderOptions ?? {},
+          testAgent,
+          testTitle,
+        });
       await use(render);
     },
-    { scope: 'worker' }
+    { scope: "worker" },
   ],
 
   getRenderInfo: [
     async ({ electronRPC, testAgent }, use) => {
-      const getRenderInfo = (html: string, testTitle?: string) => getRenderInfoWithElectronRPC({
-        html,
-        electronRpc: electronRPC,
-        testAgent: testAgent,
-        testTitle,
-      });
+      const getRenderInfo = (html: string, testTitle?: string) =>
+        getRenderInfoWithElectronRPC({
+          html,
+          electronRpc: electronRPC,
+          testAgent: testAgent,
+          testTitle,
+        });
       await use(getRenderInfo);
     },
-    { scope: 'worker' }
+    { scope: "worker" },
   ],
 
   // Worker-scoped: These render outputs can be reused since they're deterministic
   renderOutput: [
     async ({ barsNTone, render }, use) => {
-      const renderOutput = await render(/* HTML */`
+      const renderOutput = await render(
+        /* HTML */ `
         <ef-timegroup class="w-[480px] h-[270px]" mode="contain">
           <ef-video asset-id="${barsNTone.id}" class="w-full" sourceOut="2s"></ef-video>
         </ef-timegroup>
-      `, { renderSliceMs: 500 }, 'bars-n-tone-video');
+      `,
+        { renderSliceMs: 500 },
+        "bars-n-tone-video",
+      );
       await use(renderOutput);
     },
-    { scope: 'worker' }
+    { scope: "worker" },
   ],
 
   audioRenderOutput: [
     async ({ cardJoker, render }, use) => {
-      const audioRenderOutput = await render(/* HTML */`
+      const audioRenderOutput = await render(
+        /* HTML */ `
         <ef-timegroup class="w-[480px] h-[270px] relative" mode="fixed" duration="2s">
           <ef-audio asset-id="${cardJoker.id}" id="test-audio"></ef-audio>
           <ef-waveform target="test-audio" mode="bars" class="color-red-500 bg-yellow-100 absolute top-0 left-0 w-full h-full"></ef-waveform>
         </ef-timegroup>
-      `, {}, 'audio-waveform');
+      `,
+        {},
+        "audio-waveform",
+      );
       await use(audioRenderOutput);
     },
-    { scope: 'worker' }
+    { scope: "worker" },
   ],
 
   wavRenderOutput: [
     async ({ testWav, render }, use) => {
-      const wavRenderOutput = await render(/* HTML */`
+      const wavRenderOutput = await render(
+        /* HTML */ `
         <ef-timegroup class="w-[480px] h-[270px] relative" mode="fixed" duration="2s">
           <ef-audio asset-id="${testWav.id}" id="wav-audio"></ef-audio>
           <ef-waveform target="wav-audio" mode="bars" class="color-blue-500 bg-gray-100 absolute top-0 left-0 w-full h-full"></ef-waveform>
         </ef-timegroup>
-      `, {}, 'wav-audio-waveform');
+      `,
+        {},
+        "wav-audio-waveform",
+      );
       await use(wavRenderOutput);
     },
-    { scope: 'worker' }
+    { scope: "worker" },
   ],
 
   wavRenderInfo: [
     async ({ testWav, getRenderInfo }, use) => {
-      const wavRenderInfo = await getRenderInfo(/* HTML */`
+      const wavRenderInfo = await getRenderInfo(
+        /* HTML */ `
         <ef-timegroup class="w-[480px] h-[270px] relative" mode="fixed" duration="2s">
           <ef-audio asset-id="${testWav.id}" id="wav-audio"></ef-audio>
           <ef-waveform target="wav-audio" mode="bars" class="color-blue-500 bg-gray-100 absolute top-0 left-0 w-full h-full"></ef-waveform>
         </ef-timegroup>
-      `, 'wav-render-info');
+      `,
+        "wav-render-info",
+      );
       await use(wavRenderInfo);
     },
-    { scope: 'worker' }
+    { scope: "worker" },
   ],
 
   videoOnlyRenderOutput: [
     async ({ videoOnly, render }, use) => {
-      const videoOnlyRenderOutput = await render(/* HTML */`
+      const videoOnlyRenderOutput = await render(
+        /* HTML */ `
         <ef-timegroup class="w-[480px] h-[270px]" mode="contain">
           <ef-video asset-id="${videoOnly.id}" class="w-full" sourceOut="2s"></ef-video>
         </ef-timegroup>
-      `, { renderSliceMs: 500 }, 'video-only-no-audio');
+      `,
+        { renderSliceMs: 500 },
+        "video-only-no-audio",
+      );
       await use(videoOnlyRenderOutput);
     },
-    { scope: 'worker' }
+    { scope: "worker" },
   ],
 
   videoOnlyStillOutput: [
     async ({ videoOnly, testAgent, electronRPC }, use) => {
       const videoOnlyStillOutput = await renderStillWithElectronRPC({
-        html: /* HTML */`
+        html: /* HTML */ `
           <ef-timegroup class="w-[480px] h-[270px]" mode="contain">
             <ef-video asset-id="${videoOnly.id}" class="w-full"></ef-video>
           </ef-timegroup>
         `,
         testAgent,
         electronRpc: electronRPC,
-        outputFormat: 'webp',
-        testTitle: 'still-video-only-asset'
+        outputFormat: "webp",
+        testTitle: "still-video-only-asset",
       });
       await use(videoOnlyStillOutput);
     },
-    { scope: 'worker' }
+    { scope: "worker" },
   ],
 
   complexFilterRenderOutput: [
     async ({ remoteVideo, remoteAudio, render }, use) => {
-      const complexFilterRenderOutput = await render(/* HTML */`
+      const complexFilterRenderOutput = await render(
+        /* HTML */ `
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
         <svg width="0" height="0">
           <filter id="5px-outline-black" x="-50%" y="-50%" width="200%" height="200%">
@@ -270,10 +316,12 @@ export const test = baseTest.extend<{
             </ef-timegroup>
           </ef-timegroup>
         </ef-timegroup>
-      `, { renderSliceMs: 4000 }, 'complex-svg-filter-remote-video');
+      `,
+        { renderSliceMs: 4000 },
+        "complex-svg-filter-remote-video",
+      );
       await use(complexFilterRenderOutput);
     },
-    { scope: 'worker' }
+    { scope: "worker" },
   ],
 });
-

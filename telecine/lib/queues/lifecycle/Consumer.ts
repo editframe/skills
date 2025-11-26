@@ -47,12 +47,18 @@ export class Consumer {
   async readNewMessages() {
     // biome-ignore format: control over line size
     return this.parseMessages(
-      await this.storage.xreadgroup(
-        "GROUP", this.groupName, this.consumerId,
-        "COUNT", this.batchSize,
-        "BLOCK", this.blockTime,
-        "STREAMS", this.streamKey, ">",
-      ) as ReadResult | null
+      (await this.storage.xreadgroup(
+        "GROUP",
+        this.groupName,
+        this.consumerId,
+        "COUNT",
+        this.batchSize,
+        "BLOCK",
+        this.blockTime,
+        "STREAMS",
+        this.streamKey,
+        ">",
+      )) as ReadResult | null,
     );
   }
 

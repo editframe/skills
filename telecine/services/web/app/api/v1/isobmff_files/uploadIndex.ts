@@ -8,10 +8,7 @@ import { db } from "@/sql-client.server";
 import type { Route } from "./+types/uploadIndex";
 import { requireCookieOrTokenSession } from "@/util/requireSession.server";
 
-export const action = async ({
-  params: { id },
-  request,
-}: Route.ActionArgs) => {
+export const action = async ({ params: { id }, request }: Route.ActionArgs) => {
   if (!request.body) {
     throw new Response("Request MUST have body content", { status: 400 });
   }

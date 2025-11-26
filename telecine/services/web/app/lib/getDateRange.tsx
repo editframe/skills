@@ -52,7 +52,9 @@ export const getDateRange = (range: DateRange) => {
   return { startDate, endDate };
 };
 
-export const getPreviousDateRange = (range: DateRange): {
+export const getPreviousDateRange = (
+  range: DateRange,
+): {
   startDate: Date;
   endDate: Date;
 } => {

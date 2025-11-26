@@ -1,0 +1,75 @@
+---
+meta:
+  - title: Event-Driven Updates
+  - name: description
+    content: How transform handles use events to decouple UI from application state
+headers:
+    Cache-Control: no-cache
+---
+
+## Event-Driven Updates
+
+Building editor interfaces requires separating visual transform controls from application state management. Tightly coupling handles to specific state systems creates maintenance burden and limits flexibility.
+
+### The Challenge
+
+Using direct state binding for transform handles presents these engineering challenges:
+
+1. **State system coupling**: Different applications use different state management (React, Vue, vanilla JS, etc.)
+2. **Update coordination**: Multiple systems may need to respond to transform changes (undo/redo, validation, persistence)
+3. **Performance**: Frequent updates during dragging require efficient update mechanisms
+4. **Flexibility**: Applications need control over when and how transforms are applied
+
+These constraints arise from the need to support diverse application architectures while maintaining responsive interaction.
+
+### The Solution
+
+Transform handles use a decoupled event system that:
+
+- **Dispatches custom events**: Emits `bounds-change` and `rotation-change` events with transform data
+- **Separates concerns**: Handles manage visual interaction, applications manage state
+- **Enables composition**: Multiple listeners can respond to the same transform events
+- **Provides detail objects**: Events include complete transform state for easy consumption
+
+```html
+<ef-transform-handles target="#element" enable-rotation></ef-transform-handles>
+
+<script>
+  const handles = document.querySelector('ef-transform-handles');
+  
+  // Update visual element
+  handles.addEventListener('bounds-change', (e) => {
+    updateElementStyles(e.detail.bounds);
+  });
+  
+  // Update application state
+  handles.addEventListener('bounds-change', (e) => {
+    saveToState(e.detail.bounds);
+  });
+  
+  // Track for undo/redo
+  handles.addEventListener('bounds-change', (e) => {
+    addToHistory(e.detail.bounds);
+  });
+</script>
+```
+
+This approach enables applications to integrate transform handles with any state system while maintaining clean separation of concerns.
+
+### Benefits
+
+The event-driven architecture provides:
+
+- **Framework agnostic**: Works with any JavaScript framework or vanilla JS
+- **Composable updates**: Multiple systems can respond to transforms independently
+- **Performance**: Event batching and efficient dispatch minimize overhead
+- **Flexibility**: Applications control update timing and validation
+
+Developers can integrate transform handles into existing architectures without refactoring, while users experience responsive, professional transform interactions.
+
+See the [reference documentation](/docs/editor-ui/transform-handles/reference) for complete event details.
+
+
+
+
+

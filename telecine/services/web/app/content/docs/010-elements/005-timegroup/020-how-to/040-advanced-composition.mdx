@@ -1,0 +1,41 @@
+---
+meta:
+  - title: Create Advanced Compositions
+  - name: description
+    content: Advanced patterns for combining timegroup modes to create complex timelines
+headers:
+    Cache-Control: no-cache
+---
+
+## Create Advanced Compositions
+
+### Nested Sequences
+
+Create sequences within sequences:
+
+```html
+<ef-timegroup mode="sequence" overlap="1s">
+  <ef-timegroup mode="sequence">
+    <ef-timegroup mode="fixed" duration="3s">Sub A1</ef-timegroup>
+    <ef-timegroup mode="fixed" duration="2s">Sub A2</ef-timegroup>
+  </ef-timegroup>
+  <ef-timegroup mode="fixed" duration="4s">B</ef-timegroup>
+</ef-timegroup>
+```
+
+### Background Track with Sequence
+
+Layer a background track spanning the full sequence duration:
+
+```html
+<ef-timegroup mode="contain">
+  <ef-timegroup mode="sequence">
+    <ef-timegroup mode="fixed" duration="3s">Intro</ef-timegroup>
+    <ef-timegroup mode="fixed" duration="10s">Main</ef-timegroup>
+    <ef-timegroup mode="fixed" duration="2s">Outro</ef-timegroup>
+  </ef-timegroup>
+  <ef-timegroup mode="fit"><!-- Spans full duration --></ef-timegroup>
+</ef-timegroup>
+```
+
+See [Temporal Composition](/docs/elements/timegroup/explanation/temporal-composition).

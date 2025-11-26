@@ -1,4 +1,9 @@
-import { type LoaderFunction, type LoaderFunctionArgs, redirect, type Session } from "react-router";
+import {
+  type LoaderFunction,
+  type LoaderFunctionArgs,
+  redirect,
+  type Session,
+} from "react-router";
 import {
   type SessionInfo,
   type TokenLikeSessionInfo,
@@ -28,11 +33,9 @@ export type LoaderWithMaybeSession = (
 
 export const maybeSession = async (request: Request) => {
   const session = await parseRequestSession(request);
-  const sessionCookie = await getSession(
-    request.headers.get("Cookie") ?? "",
-  );
+  const sessionCookie = await getSession(request.headers.get("Cookie") ?? "");
   return { session, sessionCookie };
-}
+};
 
 export function requireSessionAndRedirectBack<
   LoaderType extends LoaderWithSession,
@@ -53,7 +56,9 @@ export function requireSessionAndRedirectBack<
   };
 }
 
-export const requireCookieOrTokenSession = async (request: Request): Promise<TokenLikeSessionInfo> => {
+export const requireCookieOrTokenSession = async (
+  request: Request,
+): Promise<TokenLikeSessionInfo> => {
   try {
     const hasCookie = request.headers.has("cookie");
     if (hasCookie) {
@@ -81,12 +86,12 @@ export const requireSession = async (request: Request) => {
   if (!session) {
     throw redirect("/auth/login");
   }
-  
+
   // AnonymousURLSession has uid: null and should not be allowed for authenticated routes
   if (session.type === "anonymous_url") {
     throw redirect("/auth/login");
   }
-  
+
   // Ensure session has a valid uid (all non-anonymous sessions should have uid)
   if (!session.uid || typeof session.uid !== "string") {
     logger.error("requireSession: session missing valid uid", {
@@ -96,10 +101,8 @@ export const requireSession = async (request: Request) => {
     });
     throw redirect("/auth/login");
   }
-  
-  const sessionCookie = await getSession(
-    request.headers.get("Cookie") ?? "",
-  );
+
+  const sessionCookie = await getSession(request.headers.get("Cookie") ?? "");
   return { session, sessionCookie };
 };
 
@@ -108,8 +111,6 @@ export const requireNoSession = async (request: Request) => {
   if (session) {
     throw redirect("/welcome");
   }
-  const sessionCookie = await getSession(
-    request.headers.get("Cookie") ?? "",
-  );
+  const sessionCookie = await getSession(request.headers.get("Cookie") ?? "");
   return { sessionCookie };
 };

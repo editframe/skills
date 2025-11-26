@@ -1,0 +1,42 @@
+---
+meta:
+  - title: Control Pan-Zoom Programmatically
+  - name: description
+    content: Set and update pan-zoom transform values programmatically
+headers:
+    Cache-Control: no-cache
+---
+
+## Control Pan-Zoom Programmatically
+
+**Problem:** You need to programmatically set or update the pan position and zoom level.
+
+**Solution:** Set the `x`, `y`, and `scale` properties directly on the pan-zoom element.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <PanZoom x={300} y={200} scale={2} className="w-[720px] h-[480px] border-2 border-gray-300 overflow-hidden bg-gray-100">
+    <div className="w-[1200px] h-[800px] bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-4xl">
+      Programmatically Positioned
+    </div>
+  </PanZoom>
+</Demonstration>
+
+```jsx
+// Set initial transform
+<PanZoom x={100} y={50} scale={1.5}>
+  <YourContent />
+</PanZoom>
+
+// Update transform via ref
+const panZoomRef = useRef(null);
+panZoomRef.current.x = 200;
+panZoomRef.current.y = 150;
+panZoomRef.current.scale = 2;
+```
+
+Properties are reactive - updating them immediately updates the visual transform. Scale is automatically clamped between 0.1 and 5.
+
+
+
+
+

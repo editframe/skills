@@ -1,0 +1,61 @@
+---
+meta:
+  - title: Scroll Optimization
+  - name: description
+    content: How timeline ruler optimizes rendering for smooth scrolling performance
+headers:
+    Cache-Control: no-cache
+---
+
+## Scroll Optimization: Efficient Timeline Rendering
+
+Timeline editors often contain long timelines with thousands of markers. Rendering all markers simultaneously causes performance issues during scrolling. The ruler optimizes rendering by only drawing markers visible in the viewport and using efficient update mechanisms.
+
+### Engineering Challenges
+
+Rendering timeline markers presents these constraints: long timelines may contain thousands of markers, scrolling must remain smooth (60fps), and marker positions must update in sync with scroll position. Rendering all markers causes layout thrashing and scroll jank, while manual viewport culling requires complex scroll tracking logic.
+
+The core challenge is maintaining smooth scrolling performance while keeping markers synchronized with scroll position, especially for long timelines with many markers.
+
+### The Solution: Viewport-Based Rendering
+
+The ruler tracks scroll position using requestAnimationFrame and calculates which markers are visible in the viewport. Only visible markers are rendered, and frame markers use canvas rendering for efficient updates. Scroll synchronization happens via passive event listeners to avoid blocking scroll performance.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource>
+  <div>
+    <div style={{ position: 'relative', width: '500px', height: '32px', borderBottom: '1px solid #e5e7eb' }}>
+      <ef-timeline-ruler
+        duration-ms="300000"
+        zoom-scale="1.0"
+        container-width="30000"
+        scroll-container-selector="#optimization-demo"
+      ></ef-timeline-ruler>
+    </div>
+    <div id="optimization-demo" style={{ overflowX: 'auto', width: '500px', height: '200px' }}>
+      <div style={{ width: '30000px', height: '200px', background: '#f3f4f6' }}></div>
+    </div>
+  </div>
+</Demonstration>
+
+**Architectural advantages:**
+- **Viewport culling:** Only visible markers are rendered, reducing DOM complexity
+- **Smooth scrolling:** requestAnimationFrame updates prevent scroll blocking
+- **Efficient updates:** Canvas rendering for frame markers minimizes repaints
+- **Passive listeners:** Scroll event listeners don't block scroll performance
+
+### Benefits for Your Workflow
+
+**Smooth performance:** Long timelines scroll smoothly without jank or lag. Viewport-based rendering ensures consistent performance regardless of timeline length.
+
+**Automatic optimization:** No manual viewport culling or performance tuning required. The ruler handles optimization automatically.
+
+**Responsive updates:** Markers update smoothly as users scroll, maintaining visual synchronization with timeline content.
+
+**Scalability:** Handles timelines of any length efficiently. Performance remains consistent whether the timeline is 10 seconds or 10 minutes.
+
+### Example: Scroll Synchronization
+
+The ruler automatically syncs with scroll containers. As users scroll, the ruler updates marker positions efficiently using requestAnimationFrame. Only markers in the visible viewport are rendered, ensuring smooth performance even with thousands of markers.
+
+The ruler uses passive scroll listeners and efficient rendering strategies to maintain 60fps scrolling performance while keeping markers perfectly synchronized with timeline content.
+

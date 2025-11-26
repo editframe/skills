@@ -1,0 +1,34 @@
+---
+meta:
+  - title: Listen to Transform Changes
+  - name: description
+    content: React to pan and zoom interactions by listening to transform-changed events
+headers:
+    Cache-Control: no-cache
+---
+
+## Listen to Transform Changes
+
+**Problem:** You need to track when users pan or zoom to save state, update UI, or sync with other components.
+
+**Solution:** Listen to the `transform-changed` event which fires whenever the transform updates.
+
+```jsx
+<PanZoom
+  onTransformChanged={(e) => {
+    const { x, y, scale } = e.detail;
+    // Save to state, localStorage, or sync with other components
+    console.log(`Pan: (${x}, ${y}), Zoom: ${scale}`);
+  }}
+  className="w-[720px] h-[480px] border-2 border-gray-300 overflow-hidden"
+>
+  <YourContent />
+</PanZoom>
+```
+
+The event detail contains `{ x, y, scale }` representing the current transform. This fires for both user interactions and programmatic property updates.
+
+
+
+
+

@@ -49,7 +49,10 @@ export const RenderFinalizerWorker = new Worker({
   queue: RenderFinalizerQueue,
   execute: async ({ payload: render }) => {
     const outputConfig = OutputConfiguration.parse(render.output_config);
-    const isStill = outputConfig.container === "jpeg" || outputConfig.container === "png" || outputConfig.container === "webp";
+    const isStill =
+      outputConfig.container === "jpeg" ||
+      outputConfig.container === "png" ||
+      outputConfig.container === "webp";
 
     if (isStill) {
       console.log("is still. Skipping finalizer", render.id);

@@ -81,7 +81,7 @@ describe("Work controller with retries", () => {
     const slice3 = { id: 3, fail: 1, permanentlyFail: true };
 
     const controller = new WorkController<
-      WorkSlice & { id: Number; fail: number; permanentlyFail: boolean }
+      WorkSlice & { id: number; fail: number; permanentlyFail: boolean }
     >({
       system,
       failureLimit: Number.POSITIVE_INFINITY,
@@ -119,7 +119,7 @@ describe("Work controller with retries", () => {
     const slice1 = { id: 1, aborted: false };
     const slice2 = { id: 2, aborted: false };
     const controller = new WorkController<
-      WorkSlice & { id: Number; aborted: boolean }
+      WorkSlice & { id: number; aborted: boolean }
     >({
       system,
       failureLimit: Number.POSITIVE_INFINITY,

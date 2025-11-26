@@ -1,13 +1,15 @@
 export const getHours = (date: Date, withTimeZone = false) => {
   const hours = new Date(date).getHours();
-  if(!withTimeZone) {
+  if (!withTimeZone) {
     return `${hours}:00`;
   }
   const offset = -date.getTimezoneOffset();
-  const offsetHours = Math.floor(Math.abs(offset) / 60).toString().padStart(2, '0');
-  const offsetMinutes = (Math.abs(offset) % 60).toString().padStart(2, '0');
-  const offsetSign = offset >= 0 ? '+' : '-';
-  
+  const offsetHours = Math.floor(Math.abs(offset) / 60)
+    .toString()
+    .padStart(2, "0");
+  const offsetMinutes = (Math.abs(offset) % 60).toString().padStart(2, "0");
+  const offsetSign = offset >= 0 ? "+" : "-";
+
   return `${hours}:00 GMT${offsetSign}${offsetHours}:${offsetMinutes}`;
 };
 export const getDay = (date: Date) => {

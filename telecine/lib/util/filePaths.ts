@@ -39,12 +39,12 @@ export const renderFilePath = ({
 export const renderStillFilePath = ({
   org_id,
   id,
-  fileType
+  fileType,
 }: Pick<PathDescriptor, "org_id" | "id"> & {
   fileType: "mp4" | "jpeg" | "png" | "webp";
 }) => {
   return `video2/renders/${org_id}/${id}/output.${fileType}`;
-}
+};
 
 export const renderAssetsMetadataFilePath = ({
   org_id,
@@ -94,18 +94,14 @@ export const renderFragmentComposePrefixPath = ({
  * Uses deterministic hashing to create filesystem-safe paths.
  * Format: cache/{hashedUrl}/metadata/synthetic.mp4
  */
-export const cacheMetadataFilePath = ({
-  url,
-}: {
-  url: string;
-}) => {
+export const cacheMetadataFilePath = ({ url }: { url: string }) => {
   // Normalize URL for consistent cache keys
   const normalizedUrl = normalizeUrl(url);
 
   // Create hash of the URL for directory structure
-  const urlHash = createHash('sha256')
+  const urlHash = createHash("sha256")
     .update(normalizedUrl)
-    .digest('hex')
+    .digest("hex")
     .substring(0, 16); // Use first 16 chars for shorter paths
 
   return `cache/${urlHash}/metadata/synthetic.mp4`;
@@ -120,26 +116,26 @@ export const cacheTranscodedSegmentFilePath = ({
   url,
   preset,
   startTimeMs,
-  extension = 'mp4',
+  extension = "mp4",
 }: {
   url: string;
   preset: string;
   startTimeMs: number;
-  extension?: 'mp4' | 'm4s';
+  extension?: "mp4" | "m4s";
 }) => {
   // Normalize URL for consistent cache keys
   const normalizedUrl = normalizeUrl(url);
 
   // Create hash of the URL for directory structure
-  const urlHash = createHash('sha256')
+  const urlHash = createHash("sha256")
     .update(normalizedUrl)
-    .digest('hex')
+    .digest("hex")
     .substring(0, 16); // Use first 16 chars for shorter paths
 
   // Hash the start time to avoid sequential file names in cloud storage
-  const startTimeHash = createHash('sha256')
+  const startTimeHash = createHash("sha256")
     .update(startTimeMs.toString())
-    .digest('hex')
+    .digest("hex")
     .substring(0, 8); // Use first 8 chars for start time hash
 
   return `cache/${urlHash}/transcoded/${preset}/${startTimeHash}-${startTimeMs}.${extension}`;
@@ -153,19 +149,19 @@ export const cacheTranscodedSegmentFilePath = ({
 export const cacheTranscodedInitSegmentFilePath = ({
   url,
   preset,
-  extension = 'mp4',
+  extension = "mp4",
 }: {
   url: string;
   preset: string;
-  extension?: 'mp4' | 'm4s';
+  extension?: "mp4" | "m4s";
 }) => {
   // Normalize URL for consistent cache keys
   const normalizedUrl = normalizeUrl(url);
 
   // Create hash of the URL for directory structure
-  const urlHash = createHash('sha256')
+  const urlHash = createHash("sha256")
     .update(normalizedUrl)
-    .digest('hex')
+    .digest("hex")
     .substring(0, 16); // Use first 16 chars for shorter paths
 
   return `cache/${urlHash}/transcoded/${preset}/init.${extension}`;
@@ -175,7 +171,10 @@ export const cacheTranscodedInitSegmentFilePath = ({
  * Check if a given path is a cache path.
  */
 export const isCachePath = (path: string): boolean => {
-  return path.startsWith('cache/') && (path.includes('/transcoded/') || path.includes('/metadata/'));
+  return (
+    path.startsWith("cache/") &&
+    (path.includes("/transcoded/") || path.includes("/metadata/"))
+  );
 };
 
 /**
@@ -184,9 +183,9 @@ export const isCachePath = (path: string): boolean => {
  */
 export const getCacheBaseDirectory = (url: string): string => {
   const normalizedUrl = normalizeUrl(url);
-  const urlHash = createHash('sha256')
+  const urlHash = createHash("sha256")
     .update(normalizedUrl)
-    .digest('hex')
+    .digest("hex")
     .substring(0, 16);
   return `cache/${urlHash}`;
 };
@@ -196,8 +195,8 @@ export const getCacheBaseDirectory = (url: string): string => {
  * Works with both metadata and transcoded cache paths.
  */
 export const getCacheDirectory = (cacheFilePath: string): string => {
-  const parts = cacheFilePath.split('/');
-  return parts.slice(0, -1).join('/');
+  const parts = cacheFilePath.split("/");
+  return parts.slice(0, -1).join("/");
 };
 
 /**
@@ -209,8 +208,14 @@ function normalizeUrl(url: string): string {
     const urlObj = new URL(url);
 
     // Remove common tracking/session parameters that don't affect video content
-    const excludeParams = ['utm_source', 'utm_medium', 'utm_campaign', 'session', 'token'];
-    excludeParams.forEach(param => urlObj.searchParams.delete(param));
+    const excludeParams = [
+      "utm_source",
+      "utm_medium",
+      "utm_campaign",
+      "session",
+      "token",
+    ];
+    excludeParams.forEach((param) => urlObj.searchParams.delete(param));
 
     // Sort search params for consistency
     urlObj.searchParams.sort();

@@ -84,7 +84,9 @@ const durationCalculationInProgress = new WeakSet<EFTimegroup>();
 export const isTimegroupCalculatingDuration = (
   timegroup: EFTimegroup | undefined,
 ): boolean => {
-  return timegroup !== undefined && durationCalculationInProgress.has(timegroup);
+  return (
+    timegroup !== undefined && durationCalculationInProgress.has(timegroup)
+  );
 };
 
 // Register this function with EFTemporal to break circular dependency
@@ -109,7 +111,7 @@ function hasOwnDurationForMode(
 
 /**
  * Determines if a child temporal element should participate in parent duration calculation.
- * 
+ *
  * Semantic rule: Fit-mode children inherit from parent, so they don't contribute to parent's
  * duration calculation (to avoid circular dependencies). Children without own duration
  * also don't contribute.
@@ -132,9 +134,7 @@ function shouldParticipateInDurationCalculation(
  * Evaluates duration for "fit" mode: inherits from parent.
  * Semantic rule: fit mode always matches parent duration, or 0 if no parent.
  */
-function evaluateFitDuration(
-  parentTimegroup: EFTimegroup | undefined,
-): number {
+function evaluateFitDuration(parentTimegroup: EFTimegroup | undefined): number {
   if (!parentTimegroup) {
     return 0;
   }
@@ -163,6 +163,40 @@ function evaluateSequenceDuration(
     if (!shouldParticipateInDurationCalculation(child)) {
       return;
     }
+    // Prevent infinite loops: skip children that are already calculating their duration
+    if (
+      child instanceof EFTimegroup &&
+      durationCalculationInProgress.has(child)
+    ) {
+      return;
+    }
+
+    // Additional safety: if child is a timegroup, check if any of its ancestors
+    // (including the current timegroup if it's in the parent chain) are calculating
+    // This prevents cycles where a child's descendant eventually calls back to an ancestor
+    if (child instanceof EFTimegroup) {
+      let ancestor: Node | null = child.parentNode;
+      let shouldSkip = false;
+      while (ancestor) {
+        if (
+          ancestor instanceof EFTimegroup &&
+          durationCalculationInProgress.has(ancestor)
+        ) {
+          // Found a calculating ancestor - skip this child to prevent cycle
+          shouldSkip = true;
+          break;
+        }
+        // Stop if we've reached the current timegroup (it's always calculating at this point)
+        if (ancestor === timegroup) {
+          break;
+        }
+        ancestor = ancestor.parentNode;
+      }
+      if (shouldSkip) {
+        return;
+      }
+    }
+
     // Subtract overlap for all items after the first
     if (participatingIndex > 0) {
       duration -= overlapMs;
@@ -193,15 +227,43 @@ function evaluateContainDuration(
     if (!shouldParticipateInDurationCalculation(child)) {
       continue;
     }
-    // Prevent infinite loops: if child is a contain mode timegroup that's already
-    // calculating its duration, skip it to avoid circular dependency
+    // Prevent infinite loops: skip children that are already calculating their duration
+    // This check applies to all timegroup children, not just contain mode, because
+    // a sequence-mode child could contain a contain-mode grandchild that
+    // eventually references back to the parent through the parent chain
     if (
       child instanceof EFTimegroup &&
-      child.mode === "contain" &&
       durationCalculationInProgress.has(child)
     ) {
       continue;
     }
+
+    // Additional safety: if child is a timegroup, check if any of its ancestors
+    // (including the current timegroup if it's in the parent chain) are calculating
+    // This prevents cycles where a child's descendant eventually calls back to an ancestor
+    if (child instanceof EFTimegroup) {
+      let ancestor: Node | null = child.parentNode;
+      let shouldSkip = false;
+      while (ancestor) {
+        if (
+          ancestor instanceof EFTimegroup &&
+          durationCalculationInProgress.has(ancestor)
+        ) {
+          // Found a calculating ancestor - skip this child to prevent cycle
+          shouldSkip = true;
+          break;
+        }
+        // Stop if we've reached the current timegroup (it's always calculating at this point)
+        if (ancestor === timegroup) {
+          break;
+        }
+        ancestor = ancestor.parentNode;
+      }
+      if (shouldSkip) {
+        continue;
+      }
+    }
+
     maxDuration = Math.max(maxDuration, child.durationMs);
   }
   // Ensure non-negative duration (invariant)
@@ -211,7 +273,7 @@ function evaluateContainDuration(
 /**
  * Evaluates duration based on timegroup mode.
  * This is the semantic evaluation function - it determines what duration should be.
- * 
+ *
  * Note: Fixed mode is handled inline in the getter because it needs to call super.durationMs
  * which requires the class context. The other modes are extracted for clarity.
  */
@@ -308,7 +370,7 @@ export const shallowGetTimegroups = (
 /**
  * Quantizes a time value to the nearest frame boundary based on FPS.
  * This ensures time values align with frame boundaries for consistent rendering.
- * 
+ *
  * Semantic rule: Time values should snap to frame boundaries when FPS is set.
  */
 function quantizeToFrameTime(timeSeconds: number, fps: number): number {
@@ -331,7 +393,6 @@ function evaluateSeekTarget(
   // Clamp to valid range [0, duration]
   return Math.max(0, Math.min(quantizedTime, durationMs / 1000));
 }
-
 
 @customElement("ef-timegroup")
 export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
@@ -425,7 +486,6 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     return this.fps;
   }
 
-
   async #runThrottledFrameTask(): Promise<void> {
     if (this.playbackController) {
       return this.playbackController.runThrottledFrameTask();
@@ -441,7 +501,11 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
   @property({ type: Number, attribute: "currenttime" })
   set currentTime(time: number) {
     // Evaluate seek target (quantization and clamping)
-    const seekTarget = evaluateSeekTarget(time, this.durationMs, this.effectiveFps);
+    const seekTarget = evaluateSeekTarget(
+      time,
+      this.durationMs,
+      this.effectiveFps,
+    );
 
     // Delegate to playbackController if available
     if (this.playbackController) {
@@ -722,19 +786,14 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     if (this.mode === "fixed") {
       return super.durationMs;
     }
-    
+
     // Evaluate duration semantics based on mode (Purpose 1)
     // childTemporals returns TemporalMixinInterface[], but we need HTMLElement intersection
     const childTemporalsAsElements = this.childTemporals as Array<
       TemporalMixinInterface & HTMLElement
     >;
-    return evaluateDurationForMode(
-      this,
-      this.mode,
-      childTemporalsAsElements,
-    );
+    return evaluateDurationForMode(this, this.mode, childTemporalsAsElements);
   }
-
 
   // ============================================================================
   // Purpose 4: Frame Rendering - What Happens Each Frame
@@ -745,7 +804,9 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
    * Filters to only include temporally visible elements for frame processing.
    * Uses animation-friendly visibility to prevent animation jumps at exact boundaries.
    */
-  #evaluateVisibleElementsForFrame(): Array<TemporalMixinInterface & HTMLElement> {
+  #evaluateVisibleElementsForFrame(): Array<
+    TemporalMixinInterface & HTMLElement
+  > {
     const temporalElements = deepGetElementsWithFrameTasks(this);
     return temporalElements.filter((element) => {
       const animationState = evaluateAnimationVisibilityState(element);

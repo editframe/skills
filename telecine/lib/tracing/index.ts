@@ -3,9 +3,11 @@ import opentelemetry, { SpanStatusCode, type Span } from "@opentelemetry/api";
 
 import { logger } from "@/logging";
 
-
-export const setDottedObjectAttributes = (span: Span, object: Record<string, any>) => {
-  const flattenObject = (obj: any, prefix = ''): Record<string, any> => {
+export const setDottedObjectAttributes = (
+  span: Span,
+  object: Record<string, any>,
+) => {
+  const flattenObject = (obj: any, prefix = ""): Record<string, any> => {
     const flattened: Record<string, any> = {};
 
     for (const [key, value] of Object.entries(obj)) {
@@ -15,7 +17,7 @@ export const setDottedObjectAttributes = (span: Span, object: Record<string, any
         flattened[newKey] = `Buffer(${value.length})`;
       } else if (Array.isArray(value)) {
         flattened[newKey] = value;
-      } else if (value !== null && typeof value === 'object') {
+      } else if (value !== null && typeof value === "object") {
         Object.assign(flattened, flattenObject(value, newKey));
       } else {
         flattened[newKey] = value;

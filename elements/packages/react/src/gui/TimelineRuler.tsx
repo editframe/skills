@@ -63,4 +63,3 @@ export const TimelineRuler = React.forwardRef<
 });
 
 TimelineRuler.displayName = "TimelineRuler";
-

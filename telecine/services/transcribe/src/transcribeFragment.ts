@@ -82,16 +82,25 @@ export const transcribeFragment = async (
     );
     // Process with ffmpeg using stdin
     // biome-ignore format: keep args on same line
-    const ffmpegProcess = spawn("ffmpeg", [
-      "-i", "pipe:0",
-      "-t", `${durationMs}ms`,
-      "-codec", "pcm_s16le",
-      "-ac", "1",
-      "-ar", "16000",
-      tempOutputFile,
-    ], {
-      stdio: ["pipe", "inherit", "inherit"],
-    });
+    const ffmpegProcess = spawn(
+      "ffmpeg",
+      [
+        "-i",
+        "pipe:0",
+        "-t",
+        `${durationMs}ms`,
+        "-codec",
+        "pcm_s16le",
+        "-ac",
+        "1",
+        "-ar",
+        "16000",
+        tempOutputFile,
+      ],
+      {
+        stdio: ["pipe", "inherit", "inherit"],
+      },
+    );
     segmentStream.pipe(ffmpegProcess.stdin);
 
     await new Promise((resolve, reject) => {

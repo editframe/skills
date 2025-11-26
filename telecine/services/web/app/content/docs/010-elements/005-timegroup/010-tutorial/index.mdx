@@ -1,0 +1,105 @@
+---
+meta:
+  - title: Tutorial
+  - name: description
+    content: Step-by-step tutorial for creating video timelines with Editframe Timegroup Element
+headers:
+    Cache-Control: no-cache
+---
+
+## Tutorial: Building Video Timelines with Timegroups
+
+Learn to create video timelines using timegroups.
+
+### Step 1: Create a Fixed Duration Timegroup
+
+**What you'll learn:** How to create a timegroup with a specific duration.
+
+<Demonstration layout="horizontal" alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup
+    id="fixed-timegroup"
+    mode="fixed"
+    duration="5s"
+    className="w-[960px] h-[540px] bg-slate-500 text-white flex flex-col items-center justify-center"
+  >
+    <p className="text-4xl">{"Five Second Titlecard"}</p>
+    <p className="text-3xl">{"example sub-title"}</p>
+  </Timegroup>
+</Demonstration>
+
+**Try it yourself:** Change `duration` to `"10s"` and see playback adjust.
+
+### Step 2: Sequence Multiple Items
+
+**What you'll learn:** How to use `mode="sequence"` for sequential playback.
+
+<Demonstration layout="horizontal" alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup
+    id="sequence-timegroup"
+    mode="sequence" 
+    className="w-[500px] h-[300px] bg-slate-500"
+  >
+    <Timegroup 
+      mode="fixed" 
+      duration="2s" 
+      className="font-mono bg-red-300 text-red-800 text-3xl flex items-center justify-center"
+    >
+      <p>{"Sequence Item 1"}</p>
+    </Timegroup>
+    <Timegroup 
+      mode="fixed" 
+      duration="3s" 
+      className="font-mono bg-green-300 text-green-800 text-3xl flex items-center justify-center"
+    >
+      <p>{"Sequence Item 2"}</p>
+    </Timegroup>
+    <Timegroup 
+      mode="fixed" 
+      duration="1s" 
+      className="font-mono bg-blue-300 text-blue-800 text-3xl flex items-center justify-center"
+    >
+      <p>{"Sequence Item 3"}</p>
+    </Timegroup>
+  </Timegroup>
+</Demonstration>
+
+**Try it yourself:** Change Item 2's duration to `"5s"` and see the total duration become 8s.
+
+### Step 3: Layer Content and Backgrounds
+
+**What you'll learn:** How to use `mode="contain"` for parallel layers and `mode="fit"` for backgrounds.
+
+<Demonstration layout="horizontal" alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup 
+    id="contain-timegroup"
+    mode="contain" 
+    className="w-[500px] h-[300px] bg-slate-500"
+  >
+    <Timegroup 
+      mode="fixed" 
+      duration="5s" 
+      className="font-mono absolute top-0 left-0 w-full h-1/3 bg-red-300 text-red-800 text-3xl flex items-center justify-center"
+    >
+      <p>{"Contain Item 1"}</p>
+    </Timegroup>
+    <Timegroup 
+      mode="fixed" 
+      duration="8s" 
+      className="font-mono absolute top-1/3 left-0 w-full h-1/3 bg-green-300 text-green-800 text-3xl flex items-center justify-center"
+    >
+      <p>{"Contain Item 2"}</p>
+    </Timegroup>
+    <Timegroup 
+      mode="fit" 
+      className="absolute top-2/3 left-0 w-full h-1/3 bg-blue-500 text-white text-3xl flex items-center justify-center"
+    >
+      <p>{"Fit Background"}</p>
+    </Timegroup>
+  </Timegroup>
+</Demonstration>
+
+**Try it yourself:** Notice how Item 2 (8s) determines the total duration, and the fit element spans it automatically.
+
+### Next Steps
+
+Explore [How-To Guides](/docs/elements/timegroup/how-to/), [Explanations](/docs/elements/timegroup/explanation/), and [Reference](/docs/elements/timegroup/reference).

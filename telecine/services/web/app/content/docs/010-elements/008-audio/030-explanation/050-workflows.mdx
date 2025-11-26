@@ -1,0 +1,70 @@
+---
+meta:
+  - title: Production vs Development Workflows
+  - name: description
+    content: Understanding when to use src versus assetId for audio elements
+headers:
+    Cache-Control: no-cache
+---
+
+## Production vs Development Workflows
+
+The `src` and `assetId` properties serve different architectural needs: real-time preview requires flexibility, while production rendering requires parallel processing capabilities.
+
+### The Challenge: Different Requirements for Different Contexts
+
+Audio playback has fundamentally different requirements in development vs production:
+
+**Development/Preview needs:**
+- Work with arbitrary audio URLs (user uploads, external sources)
+- Immediate feedback without preprocessing
+- Flexibility to test with any audio source
+
+**Production rendering needs:**
+- Parallel processing across worker fleet
+- Precise segment-level access for efficiency
+- Guaranteed availability and consistency
+
+A single approach can't satisfy both needs without compromising one or the other.
+
+### Development and Preview: src Property
+
+The `src` property enables instant playback of arbitrary audio URLs through JIT transcoding:
+
+```jsx
+<Audio src="https://example.com/audio.mp3" />
+```
+
+**Architectural advantage:** No preprocessing required - provide any audio URL and it works typically within seconds. Perfect for development, testing, and real-time preview interfaces where users need instant feedback.
+
+Playback begins immediately with minimal metadata fetch, then requests audio data on-demand as needed. This approach is not suitable for production rendering due to parallel processing requirements.
+
+### Production Rendering: assetId Property
+
+The `assetId` property enables parallel rendering across a worker fleet:
+
+```jsx
+<Audio assetId="upload-123abc" />
+```
+
+**Architectural advantage:** Enables true parallel rendering where each worker renders a small slice of the timeline independently. This requires precise segment-level access that only works with pre-processed, uploaded assets.
+
+**Why parallel rendering matters:**
+- **Speed:** Multiple workers render simultaneously instead of sequentially
+- **Efficiency:** Each worker loads only the exact segment needed for its slice
+- **Scalability:** Add more workers to reduce render time linearly
+
+**Why src can't work for production:**
+Production rendering splits the timeline across multiple workers. Each worker needs to:
+- Load only the exact segment of audio needed for its slice
+- Avoid downloading entire audio files
+- Work independently without coordination overhead
+
+This segment-level precision requires assets that have been processed and segmented by Editframe's infrastructure, which `src` URLs don't provide.
+
+**When to use each:**
+- `src`: Development, testing, real-time preview interfaces
+- `assetId`: Production rendering jobs, final output generation
+
+For complete property details, see the [Audio Element Reference](/docs/elements/audio/reference#media-source).
+

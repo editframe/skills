@@ -105,7 +105,8 @@ const Filter = () => {
   const [search, setSearch] = useDebouncedSearchParams("search");
 
   // Get end date from URL params, default to today
-  const endDate = searchParams.get("end_date") ?? new Date().toISOString().split('T')[0];
+  const endDate =
+    searchParams.get("end_date") ?? new Date().toISOString().split("T")[0];
 
   const handleDateChange = (newDate: string) => {
     setSearchParams(
@@ -119,14 +120,18 @@ const Filter = () => {
   };
 
   return (
-    <div className={clsx(
-      "flex flex-col sm:flex-row items-start sm:items-center gap-3 pb-3 text-xs transition-colors"
-    )}>
+    <div
+      className={clsx(
+        "flex flex-col sm:flex-row items-start sm:items-center gap-3 pb-3 text-xs transition-colors",
+      )}
+    >
       <div className="flex items-center gap-2">
-        <span className={clsx(
-          "font-medium transition-colors",
-          "text-slate-600 dark:text-slate-400"
-        )}>
+        <span
+          className={clsx(
+            "font-medium transition-colors",
+            "text-slate-600 dark:text-slate-400",
+          )}
+        >
           Search:
         </span>
         <input
@@ -147,16 +152,18 @@ const Filter = () => {
             "focus:border-blue-500/85 dark:focus:border-blue-400/85",
             "focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08),0_2px_4px_0_rgb(59_130_246_/_0.15)]",
             "dark:focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.35),0_2px_4px_0_rgb(59_130_246_/_0.2)]",
-            "focus:before:from-blue-50/30 dark:focus:before:from-blue-950/22"
+            "focus:before:from-blue-50/30 dark:focus:before:from-blue-950/22",
           )}
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
       <div className="flex items-center gap-2">
-        <span className={clsx(
-          "font-medium transition-colors",
-          "text-slate-600 dark:text-slate-400"
-        )}>
+        <span
+          className={clsx(
+            "font-medium transition-colors",
+            "text-slate-600 dark:text-slate-400",
+          )}
+        >
           Analytics End Date:
         </span>
         <input
@@ -175,14 +182,16 @@ const Filter = () => {
             "focus:border-blue-500/85 dark:focus:border-blue-400/85",
             "focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08),0_2px_4px_0_rgb(59_130_246_/_0.15)]",
             "dark:focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.35),0_2px_4px_0_rgb(59_130_246_/_0.2)]",
-            "focus:before:from-blue-50/30 dark:focus:before:from-blue-950/22"
+            "focus:before:from-blue-50/30 dark:focus:before:from-blue-950/22",
           )}
           onChange={(e) => handleDateChange(e.target.value)}
         />
-        <span className={clsx(
-          "text-xs transition-colors",
-          "text-slate-500 dark:text-slate-400"
-        )}>
+        <span
+          className={clsx(
+            "text-xs transition-colors",
+            "text-slate-500 dark:text-slate-400",
+          )}
+        >
           (30 days ending on this date)
         </span>
       </div>
@@ -199,13 +208,15 @@ function buildWhereClause(searchParams: URLSearchParams) {
     _or: [
       { display_name: { _ilike: `%${search}%` } },
       { website: { _ilike: `%${search}%` } },
-      { primary_user: { 
-        _or: [
-          { first_name: { _ilike: `%${search}%` } },
-          { last_name: { _ilike: `%${search}%` } },
-          { email_passwords: { email_address: { _ilike: `%${search}%` } } }
-        ]
-      }},
+      {
+        primary_user: {
+          _or: [
+            { first_name: { _ilike: `%${search}%` } },
+            { last_name: { _ilike: `%${search}%` } },
+            { email_passwords: { email_address: { _ilike: `%${search}%` } } },
+          ],
+        },
+      },
     ],
   };
 }

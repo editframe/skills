@@ -1,0 +1,92 @@
+---
+meta:
+  - title: Audio Analysis in Video Elements
+  - name: description
+    content: Understanding FFT properties and audio frequency analysis for waveform visualizations
+headers:
+    Cache-Control: no-cache
+---
+
+## Audio Analysis in Video Elements
+
+Video elements expose real-time audio frequency data, enabling waveform visualizations and audio-reactive effects without requiring separate audio processing pipelines.
+
+### Why Real-Time Audio Analysis Matters
+
+Extracting audio frequency data typically requires separate audio analysis tools or preprocessing steps. This presents these engineering challenges:
+
+- **Preprocessing overhead:** Audio analysis must happen before visualization, requiring additional build steps
+- **Static data:** Pre-computed waveforms can't respond to real-time playback changes
+- **Pipeline complexity:** Separate tools and formats for audio vs video data
+
+Editframe's approach integrates audio analysis directly into the video element, providing:
+
+- **Real-time frequency data:** Frequency magnitude data updates continuously during playback, enabling dynamic visualizations
+- **Unified API:** Audio data accessed through the same element that handles video playback
+- **No preprocessing:** Waveforms and audio-reactive effects work immediately without build steps
+
+### Architectural Advantages
+
+The video element provides real-time frequency magnitude data through properties that update continuously during playback. This enables visualizations to respond to audio content as it plays, without requiring separate processing pipelines or preprocessing steps.
+
+**Use cases:**
+- Waveform visualizations that match the audio content
+- Audio-reactive effects that respond to frequency changes
+- Real-time audio visualization without separate processing
+
+### Example: Real-Time Audio Analysis
+
+Here's how audio analysis works in practice - the video element provides real-time frequency data:
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup mode="contain" className="w-[720px] h-[480px] flex flex-col items-center justify-center bg-black gap-4">
+    <Video 
+      id="audio-demo-video"
+      src="https://assets.editframe.com/bars-n-tone.mp4" 
+      className="w-full h-3/4 object-contain"
+    />
+    <div className="text-white text-sm">
+      Audio frequency data available in real-time via FFT properties
+    </div>
+  </Timegroup>
+</Demonstration>
+
+**Accessing audio data:**
+```jsx
+<Video 
+  id="video-with-audio"
+  src="video-with-audio.mp4"
+  fftSize={2048}
+  fftSmoothingTimeConstant={0.8}
+/>
+
+// Access frequency data via DOM properties
+const video = document.getElementById('video-with-audio');
+// video.fftData provides real-time frequency magnitude array
+// Updates continuously during playback
+```
+
+**Creating waveform visualization:**
+```jsx
+function WaveformVisualization({ videoId }) {
+  const video = document.getElementById(videoId);
+  const fftData = video?.fftData || [];
+  
+  return (
+    <div className="flex items-end gap-1 h-32">
+      {fftData.map((magnitude, index) => (
+        <div 
+          key={index}
+          className="bg-blue-500 w-2"
+          style={{ height: `${magnitude * 100}%` }}
+        />
+      ))}
+    </div>
+  );
+}
+```
+
+Frequency data updates automatically during playback, enabling dynamic visualizations that respond to the audio content without preprocessing or separate processing pipelines.
+
+For property configuration details and technical specifications, see the [Video Element Reference](/docs/elements/video/reference#audio-analysis).
+

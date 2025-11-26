@@ -1,0 +1,107 @@
+---
+meta:
+  - title: Reference
+  - name: description
+    content: Complete technical reference for all image element properties and attributes
+headers:
+    Cache-Control: no-cache
+---
+
+## Reference
+
+Complete technical reference for all image element properties.
+
+**New to image elements?** Start with the [Tutorial](/docs/elements/image/tutorial) to learn the basics, or explore [How-To Guides](/docs/elements/image/how-to/) for specific tasks.
+
+### Quick Reference Table
+
+<ImagePropertyReference />
+
+### Grouped Attributes
+
+#### Media Source
+
+<PropertyDocList>
+  <PropertyDoc name="assetId" type="string" domReadable domWritable htmlAttribute="asset-id">
+    The asset ID of the image.
+
+    An asset ID is a unique identifier for a media file that has been uploaded to Editframe. This is documented in the [Processing Files](/docs/processing-files/image-files) section.
+
+    Use `assetId` for production rendering. When you upload an image to Editframe, you receive an asset ID that can be used to reference the image in render jobs.
+  </PropertyDoc>
+
+  <PropertyDoc name="src" type="string" domReadable domWritable htmlAttribute="src">
+    The source URL/path of the image.
+
+    <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 p-2 mb-2 rounded border border-blue-200 dark:border-blue-800">
+      ⚠️ This property is not yet supported in all circumstances. Providing an arbitrary URL or path will not work unless the server is configured to respond with a precise, not-yet-documented, format.
+
+      Demonstration projects with such a server are available via `npm create @editframe@beta`. These are not intended for production use. When complete, a specialized server should not be required, though there will be specific encoding/muxing limitations.
+
+      Instead upload media to Editframe and use the `assetId` property.
+    </div>
+
+    <div className="bg-orange-100 dark:bg-orange-900/30 text-orange-900 dark:text-orange-100 p-2 rounded border border-orange-200 dark:border-orange-800">
+      🚫 This property should only be used for development, testing, and previewing media to end-users in real-time. When submitting a render job, all media should be uploaded to Editframe and the `assetId` property should be used. Our render servers will render in parallel, and in order to operate efficiently we need to be able to load only the slice of media that is needed to render a small segment of the timeline.
+    </div>
+
+    For direct HTTP/HTTPS URLs, the image is rendered using a standard `<img>` element. For local files or asset IDs, the image is rendered to a canvas element. See the [Canvas Rendering Architecture](/docs/elements/image/explanation/canvas-rendering) explanation for details.
+  </PropertyDoc>
+</PropertyDocList>
+
+#### Temporal Composition
+
+<PropertyDocList>
+  <PropertyDoc
+    name="duration"
+    domReadable
+    domWritable
+    htmlAttribute
+    type="timestring"
+    defaultValue=""
+  >
+    A fixed duration for the image. Typically, an image will expand to fill the duration of its parent timegroup. However, sometimes you may want to display an image for a fixed duration, such as in a simple slideshow inside a timegroup.
+
+    When `duration` is not set (empty string), the image will expand temporally to fill its parent timegroup's duration. When set to a specific timestring (e.g., `"5s"`), the image will have that exact duration regardless of its parent.
+
+    See the [Temporal Behavior](/docs/elements/image/explanation/temporal-behavior) explanation for details on how image duration interacts with timegroup composition.
+  </PropertyDoc>
+</PropertyDocList>
+
+#### Time Coordinates
+
+<PropertyDocList>
+  <PropertyDoc name="startTimeMs" type="number" domReadable>
+    The start time of the image in milliseconds. This time is relative to the timeline described by the root timegroup the image is contained within, or 0 if the image is standalone (no timegroup).
+  </PropertyDoc>
+
+  <PropertyDoc name="endTimeMs" type="number" domReadable>
+    The end time of the image in milliseconds. This time is relative to the timeline described by the root timegroup the image is contained within, or the image's duration if standalone (no timegroup).
+  </PropertyDoc>
+
+  <PropertyDoc name="durationMs" type="number" domReadable>
+    The duration of the image in milliseconds. This is equivalent to the difference between `endTimeMs` and `startTimeMs`.
+  </PropertyDoc>
+
+  <PropertyDoc name="currentTimeMs" type="number" domReadable>
+    The current time of the image in milliseconds. This time is the time within the timeline of the root timegroup the image is contained within, or the image's own timeline if standalone (no timegroup).
+  </PropertyDoc>
+
+  <PropertyDoc name="ownCurrentTimeMs" type="number" domReadable>
+    The current time of the image in milliseconds. This time is scoped directly to the image element itself.
+  </PropertyDoc>
+</PropertyDocList>
+
+#### Hierarchy
+
+<PropertyDocList>
+  <PropertyDoc name="parentTimegroup" type="<ef-timegroup> | null" domReadable>
+    The closest timegroup element that contains the image, or `null` if the image is not contained within any timegroup (standalone image).
+  </PropertyDoc>
+
+  <PropertyDoc name="rootTimegroup" type="<ef-timegroup> | null" domReadable>
+    The outermost timegroup element that contains the image, or `null` if the image is standalone and not part of any composition.
+  </PropertyDoc>
+</PropertyDocList>
+
+

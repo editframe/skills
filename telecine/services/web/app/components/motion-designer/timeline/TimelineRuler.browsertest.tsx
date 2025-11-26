@@ -248,4 +248,3 @@ describe("TimelineRuler", () => {
     expect(firstTick.classList.contains("tick")).toBe(true);
   });
 });
-

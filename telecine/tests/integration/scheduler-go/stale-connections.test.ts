@@ -52,7 +52,9 @@ describe("scheduler-go stale connection detection", { timeout: 120000 }, () => {
     const workflowId = `stale-test-${testId}`;
     const orgId = "test-org";
 
-    console.log(`Starting stale connection test with workflowId: ${workflowId}`);
+    console.log(
+      `Starting stale connection test with workflowId: ${workflowId}`,
+    );
 
     await TestFastWorkflow.setWorkflowData(workflowId, {
       testId,
@@ -93,7 +95,9 @@ describe("scheduler-go stale connection detection", { timeout: 120000 }, () => {
       `Connections established: ${mainQueueDuringWork?.totalConnections}`,
     );
 
-    console.log("Simulating worker crash by clearing Redis connection state...");
+    console.log(
+      "Simulating worker crash by clearing Redis connection state...",
+    );
 
     const connectionKeys = await valkey.keys("scheduler:*:connections:*");
     console.log(`Found ${connectionKeys.length} connection keys in Redis`);
@@ -105,7 +109,9 @@ describe("scheduler-go stale connection detection", { timeout: 120000 }, () => {
       }
     }
 
-    console.log("Worker state cleared, checking if scheduler detects stale connections...");
+    console.log(
+      "Worker state cleared, checking if scheduler detects stale connections...",
+    );
 
     const statusAfterCrash = await getStatus();
     const mainQueueAfterCrash = statusAfterCrash.connections.find(
@@ -115,7 +121,9 @@ describe("scheduler-go stale connection detection", { timeout: 120000 }, () => {
       `Connections after simulated crash: ${mainQueueAfterCrash?.totalConnections}`,
     );
 
-    console.log("Waiting for scheduler to detect and clean up stale connections...");
+    console.log(
+      "Waiting for scheduler to detect and clean up stale connections...",
+    );
 
     await expect
       .poll(
@@ -266,9 +274,7 @@ describe("scheduler-go stale connection detection", { timeout: 120000 }, () => {
     );
 
     if (hasStaleConnections) {
-      console.log(
-        "\n⚠️  Found stale connections. Waiting for cleanup...",
-      );
+      console.log("\n⚠️  Found stale connections. Waiting for cleanup...");
 
       await expect
         .poll(
@@ -299,4 +305,3 @@ describe("scheduler-go stale connection detection", { timeout: 120000 }, () => {
     }
   });
 });
-

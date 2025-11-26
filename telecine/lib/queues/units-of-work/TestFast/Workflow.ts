@@ -12,4 +12,3 @@ export const TestFastWorkflow = new Workflow<TestFastWorkflowData>({
   storage: valkey,
   finalizerQueue: TestFastFinalizerQueue,
 });
-

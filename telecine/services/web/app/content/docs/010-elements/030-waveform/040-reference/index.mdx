@@ -1,0 +1,85 @@
+---
+meta:
+  - title: Waveform Element Reference
+  - name: description
+    content: Complete technical reference for all waveform element properties and attributes
+headers:
+    Cache-Control: no-cache
+---
+
+## Reference
+
+Complete technical reference for all waveform element properties.
+
+**New to waveform elements?** Start with the [Tutorial](/docs/elements/waveform/tutorial) to learn the basics, or explore [How-To Guides](/docs/elements/waveform/how-to) for specific tasks.
+
+### Quick Reference Table
+
+<WaveformPropertyReference />
+
+### Grouped Attributes
+
+#### Connection
+
+<PropertyDocList>
+  <PropertyDoc name="target" type="string" domReadable domWritable htmlAttribute="target">
+    The ID of an `<ef-audio>` or `<ef-video>` element to use as the source for the waveform visualization.
+
+    The waveform synchronizes with the target element's playback and receives real-time audio frequency data. Multiple waveforms can connect to the same target element.
+
+    See the [Real-Time Visualization explanation](/docs/elements/waveform/explanation/real-time-visualization) for details.
+  </PropertyDoc>
+</PropertyDocList>
+
+#### Visual Style
+
+<PropertyDocList>
+  <PropertyDoc name="mode" type="string" domReadable domWritable htmlAttribute="mode" defaultValue="bars">
+    The visualization mode that determines how the waveform is rendered.
+
+    Available modes:
+    - `bars` - Classic vertical bars (default)
+    - `roundBars` - Rounded bars with softer appearance
+    - `bricks` - Stacked rectangular blocks
+    - `line` - Sharp line graph
+    - `curve` - Smooth curved line
+    - `pixel` - Pixelated bars extending from center
+    - `wave` - Filled waveform shape
+    - `spikes` - Symmetrical spikes
+
+    See the [Choose a Visualization Mode guide](/docs/elements/waveform/how-to/choose-mode) for mode selection help.
+
+    See the [Canvas Rendering explanation](/docs/elements/waveform/explanation/canvas-rendering) for rendering details.
+  </PropertyDoc>
+
+  <PropertyDoc name="color" type="string" domReadable domWritable htmlAttribute="color" defaultValue="currentColor">
+    The color of the waveform visualization.
+
+    Accepts any valid CSS color value (hex, rgb, hsl, named colors, etc.). Default value `currentColor` uses the computed text color from CSS.
+
+    Examples:
+    - `color="#ff6b6b"`
+    - `color="rgb(100, 200, 255)"`
+    - `color="currentColor"` (default)
+
+    Controls stroke color for `line` and `curve` modes, fill color for filled modes (`bars`, `wave`, etc.).
+  </PropertyDoc>
+
+  <PropertyDoc name="barSpacing" type="number" domReadable domWritable htmlAttribute="bar-spacing" defaultValue="0.5">
+    The spacing between bars in `bars` and `roundBars` modes.
+
+    Higher values create more spacing (narrower bars), lower values create less spacing (wider bars). Default is `0.5`.
+
+    Only affects `bars` and `roundBars` modes. Bar width also depends on the `fftSize` setting on the target audio element.
+  </PropertyDoc>
+
+  <PropertyDoc name="lineWidth" type="number" domReadable domWritable htmlAttribute="line-width" defaultValue="4">
+    The width of the line in `line` and `curve` modes.
+
+    Controls stroke width for line-based visualizations. Higher values create thicker lines, lower values create thinner lines. Default is `4`.
+
+    Only affects `line` and `curve` modes. Scaled by device pixel ratio for high-DPI displays.
+  </PropertyDoc>
+</PropertyDocList>
+
+

@@ -1,0 +1,129 @@
+---
+meta:
+  - title: Timegroup Hierarchy
+  - name: description
+    content: Understanding how video elements relate to timegroups and when timegroups are required
+headers:
+    Cache-Control: no-cache
+---
+
+## Timegroup Hierarchy
+
+Video elements can exist within a hierarchy of timegroups that affects how time coordinates work. However, **timegroups are not required** - a standalone video element can be played directly without any timegroup wrapper.
+
+### The Problem: Flexible Composition Without Forced Complexity
+
+Using a single composition model presents these engineering challenges: Requiring everything to be in a timeline adds complexity for simple cases, while making everything standalone prevents multi-element compositions. This creates friction when you need flexibility—simple videos shouldn't require complex setup, but complex compositions need precise timing coordination.
+
+### The Solution: Optional Hierarchy with Precise Coordination
+
+Editframe's architecture provides optional timegroup hierarchy that enables both simple standalone videos and complex multi-element compositions. Standalone videos work immediately without any wrapper, while timegroups enable precise timing coordination when needed.
+
+**Architectural advantages:**
+- **Simplicity for simple cases:** Standalone videos work without any wrapper or setup
+- **Precision for complex cases:** Timegroups enable frame-perfect timing coordination across multiple elements
+- **Flexible composition:** Mix standalone videos and timegroup compositions as needed
+- **Clear time scoping:** `parentTimegroup` and `rootTimegroup` properties provide explicit time coordinate context
+
+### When Timegroups Are Required
+
+Timegroups are needed when:
+- Combining multiple elements (videos, text, graphics) in a composition
+- Creating sequences of videos that play one after another
+- Layering content with precise timing relationships
+- Coordinating multiple elements on a shared timeline
+
+### When Timegroups Are Optional
+
+A standalone video can be used directly without a timegroup:
+```jsx
+<Video src="https://assets.editframe.com/video.mp4" />
+```
+
+In this case, `parentTimegroup` and `rootTimegroup` will both be `null`, and the video plays as a temporal element with its own timeline.
+
+### parentTimegroup
+
+The `parentTimegroup` property references the closest containing timegroup, or `null` if the video is not contained within any timegroup. This is important for:
+- Understanding immediate containment
+- Positioning relative to parent container
+- Local timing context
+
+### rootTimegroup
+
+The `rootTimegroup` property references the outermost timegroup that defines the main timeline, or `null` if the video is standalone. This is important for:
+- Global timeline positioning
+- Understanding when your video appears in the overall composition
+- Coordinating with other elements on the main timeline
+
+**Example with timegroups:**
+```jsx
+<Timegroup>                          {/* Root timegroup */}
+  <Timegroup mode="sequence">        {/* Parent timegroup */}
+    <Video src="..." />              {/* Video element */}
+    {/* parentTimegroup → sequence timegroup */}
+    {/* rootTimegroup → root timegroup */}
+  </Timegroup>
+</Timegroup>
+```
+
+**Example without timegroups:**
+```jsx
+<Video src="https://assets.editframe.com/video.mp4" />
+{/* parentTimegroup → null */}
+{/* rootTimegroup → null */}
+```
+
+**Why this matters:**
+- `startTimeMs` is relative to `rootTimegroup` when present, otherwise relative to the video's own timeline
+- Nested sequences create local timelines that are then composed into the root timeline
+- Understanding the hierarchy helps debug timing issues
+- Standalone videos are simpler to use but don't support multi-element compositions
+
+### Example: Video Within Timegroup
+
+Here's how video elements work within timegroup hierarchies:
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup mode="contain" className="w-[720px] h-[480px] bg-black">
+    <Video 
+      src="https://assets.editframe.com/bars-n-tone.mp4" 
+      startTimeMs={1000}
+      className="size-full object-contain"
+    />
+  </Timegroup>
+</Demonstration>
+
+**Standalone video (no timegroup):**
+```jsx
+<Video src="video.mp4" />
+// parentTimegroup: null
+// rootTimegroup: null
+// Video plays independently with its own timeline
+```
+
+**Video within timegroup:**
+```jsx
+<Timegroup duration="10s">
+  <Video src="video.mp4" startTimeMs={2000} />
+  {/* parentTimegroup: references the Timegroup */}
+  {/* rootTimegroup: references the same Timegroup (it's the root) */}
+  {/* Video starts at 2s on the timegroup's timeline */}
+</Timegroup>
+```
+
+**Nested timegroups:**
+```jsx
+<Timegroup duration="20s">                    {/* Root timegroup */}
+  <Timegroup mode="sequence" duration="5s">   {/* Parent timegroup */}
+    <Video src="video1.mp4" />                {/* Video element */}
+    {/* parentTimegroup: references sequence timegroup */}
+    {/* rootTimegroup: references root timegroup */}
+  </Timegroup>
+</Timegroup>
+```
+
+The hierarchy enables precise timing coordination while allowing standalone videos for simple use cases.
+
+For more details on timegroups, see the [Timegroup documentation](/docs/elements/timegroup). For property details, see the [Video Element Reference](/docs/elements/video/reference#hierarchy).
+

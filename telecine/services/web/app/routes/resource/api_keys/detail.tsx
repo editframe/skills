@@ -14,11 +14,7 @@ import { SuccessMessage } from "~/components/SuccessMessage";
 import z from "zod";
 import { formFor } from "~/formFor";
 import { webhookTopics } from "~/constants/webhookTopics";
-import {
-  ArrowLeft,
-  Clipboard,
-  EyeSlash,
-} from "@phosphor-icons/react";
+import { ArrowLeft, Clipboard, EyeSlash } from "@phosphor-icons/react";
 import { TimeAgoInWords } from "~/ui/timeAgoInWords";
 import { requireMutateAs, requireQueryAs } from "@/graphql.server/userClient";
 import { Clock, Key, Trash } from "@phosphor-icons/react";

@@ -2,6 +2,7 @@ import { css, html, LitElement, type PropertyValueMap } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { durationConverter } from "./durationConverter.js";
 import { EFTemporal } from "./EFTemporal.js";
+import type { EFTimegroup } from "./EFTimegroup.js";
 import { evaluateEasing } from "./easingUtils.js";
 import type { EFTextSegment } from "./EFTextSegment.js";
 import { updateAnimations } from "./updateAnimations.js";
@@ -358,6 +359,10 @@ export class EFText extends EFTemporal(LitElement) {
         : segments;
     const wordSegmentCount = wordOnlySegments.length;
 
+    // Track word index as we iterate (for word mode with duplicate words)
+    // This ensures each occurrence of duplicate words gets a unique stagger index
+    let wordStaggerIndex = 0;
+
     // Create new segments in a fragment first
     segments.forEach((segmentText, textIndex) => {
       // Calculate stagger offset if stagger is set
@@ -368,20 +373,14 @@ export class EFText extends EFTemporal(LitElement) {
         let wordIndexForStagger: number;
 
         if (this.split === "word" && isWhitespace) {
-          // Find the index of the preceding word segment
-          let precedingWordIndex = -1;
-          for (let i = textIndex - 1; i >= 0; i--) {
-            if (!/^\s+$/.test(segments[i])) {
-              // Count how many word segments come before this one
-              precedingWordIndex = wordOnlySegments.indexOf(segments[i]);
-              break;
-            }
-          }
-          // Use preceding word's index, or 0 if no preceding word
-          wordIndexForStagger = Math.max(0, precedingWordIndex);
+          // Whitespace inherits from the preceding word's index
+          // Use the word stagger index (which is the index of the word before this whitespace)
+          wordIndexForStagger = Math.max(0, wordStaggerIndex - 1);
         } else if (this.split === "word") {
-          // For word mode, find the index in word-only segments
-          wordIndexForStagger = wordOnlySegments.indexOf(segmentText);
+          // For word mode, use the current word stagger index (incremented for each word encountered)
+          // This ensures duplicate words get unique indices based on their position
+          wordIndexForStagger = wordStaggerIndex;
+          wordStaggerIndex++;
         } else {
           // For char/line mode, use the actual position in segments array
           wordIndexForStagger = textIndex;
@@ -431,7 +430,6 @@ export class EFText extends EFTemporal(LitElement) {
 
           // Mark as created to avoid being picked up as template
           segment.setAttribute("data-segment-created", "true");
-
 
           // For character mode with templates, also wrap in word spans
           if (this.split === "char" && wordBoundaries) {
@@ -632,7 +630,7 @@ export class EFText extends EFTemporal(LitElement) {
         });
         const segments = Array.from(segmenter.segment(trimmedText));
         const result: string[] = [];
-        
+
         for (const seg of segments) {
           if (seg.isWordLike) {
             // Word-like segment - add it
@@ -650,7 +648,7 @@ export class EFText extends EFTemporal(LitElement) {
             }
           }
         }
-        
+
         return result;
       }
       case "char": {
@@ -670,6 +668,17 @@ export class EFText extends EFTemporal(LitElement) {
     // If explicit duration is set, use it
     if (this.hasExplicitDuration) {
       return undefined; // Let explicit duration take precedence
+    }
+
+    // If we have a parent timegroup that dictates duration (fixed) or inherits it (fit),
+    // we should inherit from it instead of using our intrinsic duration.
+    // For 'sequence' and 'contain' modes, the parent relies on our intrinsic duration,
+    // so we must provide it.
+    if (this.parentTimegroup) {
+      const mode = this.parentTimegroup.mode;
+      if (mode === "fixed" || mode === "fit") {
+        return undefined;
+      }
     }
 
     // Otherwise, calculate from content

@@ -37,7 +37,7 @@ export const loader = async ({ params: { id }, request }: Route.LoaderArgs) => {
       disposition: "inline",
       downloadAs: `${renderRecord.id}.mp4`,
       mimeType: "video/mp4",
-      ...(rangeHeader && { range: rangeHeader })
+      ...(rangeHeader && { range: rangeHeader }),
     },
   );
 };

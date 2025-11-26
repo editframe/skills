@@ -56,7 +56,7 @@ for (const [name, pkg] of Object.entries(packages)) {
   const allDeps = {
     // We only count dependencies, not dev/peer dependencies because those are not
     // always installed downstream.
-    ...(pkg.packageJson.dependencies || {}),
+    ...pkg.packageJson.dependencies,
   };
 
   const pkgDir = join("packages", name.replace("@editframe/", ""), "src");

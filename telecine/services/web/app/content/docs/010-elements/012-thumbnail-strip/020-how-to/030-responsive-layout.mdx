@@ -1,0 +1,49 @@
+---
+meta:
+  - title: Create Responsive Thumbnail Strips
+  - name: description
+    content: Build thumbnail strips that adapt to different container sizes
+headers:
+    Cache-Control: no-cache
+---
+
+## Create Responsive Thumbnail Strips
+
+**Problem:** You need thumbnail strips that work well across different screen sizes and container widths.
+
+**Solution:** Thumbnail strips automatically calculate the optimal number of thumbnails based on available width. Use CSS to control the container size.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <div className="flex flex-col gap-4 w-full">
+    <Video 
+      id="howto-responsive-video"
+      src="https://assets.editframe.com/bars-n-tone.mp4" 
+      className="aspect-[16/9]" 
+    />
+    <div className="w-full">
+      <ThumbnailStrip 
+        target="howto-responsive-video" 
+        thumbnailWidth={80}
+        className="h-16 rounded border border-gray-600 w-full"
+      />
+    </div>
+    <div className="w-1/2">
+      <ThumbnailStrip 
+        target="howto-responsive-video" 
+        thumbnailWidth={80}
+        className="h-16 rounded border border-gray-600 w-full"
+      />
+    </div>
+  </div>
+</Demonstration>
+
+**How it works:**
+1. The thumbnail strip uses a `ResizeObserver` to track its container width
+2. It calculates how many thumbnails fit: `count = floor(width / (thumbnailWidth + gap)) + 1`
+3. Thumbnails are evenly distributed across the time range
+4. When the container resizes, the layout automatically updates
+
+**Tips:**
+- Set a fixed `thumbnailWidth` for consistent thumbnail size
+- Use CSS width constraints (e.g., `w-full`, `max-w-4xl`) to control the strip width
+- The strip height is controlled by CSS (default: 48px)

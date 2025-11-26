@@ -1,0 +1,96 @@
+---
+meta:
+  - title: Waveform Element Tutorial
+  - name: description
+    content: Step-by-step tutorial for creating your first waveform visualization with Editframe Waveform Element
+headers:
+    Cache-Control: no-cache
+---
+
+## Tutorial: Your First Waveform Visualization
+
+This tutorial will guide you through the essential concepts of working with waveform elements in Editframe. Each step builds on the previous one, teaching you the fundamental skills needed for audio visualization.
+
+### Step 1: Connect Waveform to Audio
+
+Let's start by connecting a waveform element to an audio element to visualize its audio content.
+
+**What you'll learn:** How to use the `target` attribute to connect a waveform to an audio or video element.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup mode="contain" className="aspect-[1/1] w-[500px] h-[500px] bg-black flex flex-col items-center justify-center">
+    <Audio src="https://assets.editframe.com/card-joker.mp3" id="tutorial-audio" />
+    <Waveform target="tutorial-audio" mode="bars" className="w-full h-[200px] block" />
+  </Timegroup>
+</Demonstration>
+
+**Try it yourself:** Change the `target` attribute to point to a different audio element ID to see how waveforms connect to their source.
+
+### Step 2: Explore Visualization Modes
+
+Now let's experiment with different visualization styles to see how they represent audio differently.
+
+**What you'll learn:** How different `mode` values create distinct visual styles for the same audio.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup mode="contain" className="aspect-[1/1] w-[500px] h-[500px] bg-black flex flex-col items-center justify-center gap-4">
+    <Audio src="https://assets.editframe.com/card-joker.mp3" id="mode-audio" />
+    <Waveform target="mode-audio" mode="wave" className="w-full h-[150px] block" />
+  </Timegroup>
+</Demonstration>
+
+**Try it yourself:** Change the `mode` attribute to `bars`, `roundBars`, `bricks`, `line`, `curve`, `pixel`, `wave`, or `spikes` to see different visualization styles. For help choosing a mode, see [Choose a Visualization Mode](/docs/elements/waveform/how-to/choose-mode).
+
+### Step 3: Customize Appearance
+
+Let's customize the waveform's visual appearance using color and spacing properties.
+
+**What you'll learn:** How to use `color` and `barSpacing` properties to customize the waveform's look.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup mode="contain" className="aspect-[1/1] w-[500px] h-[500px] bg-black flex flex-col items-center justify-center">
+    <Audio src="https://assets.editframe.com/card-joker.mp3" id="custom-audio" />
+    <Waveform target="custom-audio" mode="bars" color="#ff6b6b" barSpacing="0.8" className="w-full h-[200px] block" />
+  </Timegroup>
+</Demonstration>
+
+**Try it yourself:** Experiment with different `color` values (try `#00ff00`, `rgb(255, 0, 255)`, or `currentColor`) and `barSpacing` values (try `0.2` or `1.0`) to see how they affect the visualization.
+
+### Step 4: Configure Audio Analysis
+
+The waveform's detail level depends on audio analysis settings on the target audio element. Let's adjust these for different visualization needs.
+
+**What you'll learn:** How audio analysis properties on the audio element affect waveform granularity and smoothness.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup mode="contain" className="aspect-[1/1] w-[500px] h-[500px] bg-black flex flex-col items-center justify-center">
+    <Audio src="https://assets.editframe.com/card-joker.mp3" id="fft-audio" fftSize="1024" fftGain="5" />
+    <Waveform target="fft-audio" mode="bars" className="w-full h-[200px] block" />
+  </Timegroup>
+</Demonstration>
+
+**Try it yourself:** Modify the `fftSize` (must be power of 2: 256, 512, 1024, 2048), `fftGain` (try values from 1 to 10), and `fftDecay` (try 4, 8, 16) on the audio element to see how they affect the waveform visualization. For deeper understanding of how audio analysis works, see the [Real-Time Visualization explanation](/docs/elements/waveform/explanation/real-time-visualization).
+
+### Step 5: Combine with Timegroups
+
+Waveforms work seamlessly within timegroup compositions, allowing you to create complex layouts with synchronized audio visualization.
+
+**What you'll learn:** How waveforms integrate into composition layouts and respond to timeline playback.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup mode="contain" className="aspect-[1/1] w-[500px] h-[500px] bg-black flex flex-col items-center justify-center">
+    <Audio src="https://assets.editframe.com/card-joker.mp3" id="composition-audio" />
+    <Waveform target="composition-audio" mode="wave" color="#4ecdc4" className="w-full h-[250px] block" />
+  </Timegroup>
+</Demonstration>
+
+**Try it yourself:** Add multiple waveform elements with different modes and colors to create layered visualizations, or combine waveforms with other elements in your composition.
+
+### Next Steps
+
+Now that you understand the basics, explore:
+- [How-To Guides](/docs/elements/waveform/how-to) for specific tasks like connecting to audio and choosing modes
+- [Explanations](/docs/elements/waveform/explanation) for architectural concepts and deeper knowledge
+- [Reference](/docs/elements/waveform/reference) for complete property documentation
+
+

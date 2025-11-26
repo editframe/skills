@@ -1,0 +1,42 @@
+---
+meta:
+  - title: Choose a Visualization Mode
+  - name: description
+    content: Select the appropriate visualization mode for different visual styles and use cases
+headers:
+    Cache-Control: no-cache
+---
+
+## Choose a Visualization Mode
+
+**Problem:** You need to select the right visualization mode for your waveform's visual style.
+
+**Solution:** Choose a mode based on your aesthetic goals and the type of audio content you're visualizing.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup mode="contain" className="aspect-[1/1] w-[500px] h-[500px] bg-black flex flex-col items-center justify-center gap-4">
+    <Audio src="https://assets.editframe.com/card-joker.mp3" id="mode-select-audio" />
+    <Waveform target="mode-select-audio" mode="bars" className="w-full h-[150px] block" />
+  </Timegroup>
+</Demonstration>
+
+**Mode Selection:**
+
+- **`bars`** - Classic vertical bars, general-purpose visualization
+- **`roundBars`** - Rounded bars with softer appearance
+- **`bricks`** - Stacked rectangular blocks, retro aesthetic
+- **`line`** - Sharp line graph, emphasizes frequency changes
+- **`curve`** - Smooth curved line, softer than line mode
+- **`pixel`** - Pixelated bars extending from center, retro aesthetic
+- **`wave`** - Filled waveform shape, classic audio visualization
+- **`spikes`** - Symmetrical spikes, dramatic visual impact
+
+**Decision criteria:**
+
+- Use `bars` or `roundBars` for general-purpose music and speech
+- Use `bricks` for retro or vintage aesthetic
+- Use `line` or `curve` to emphasize frequency changes
+- Use `wave` for classic audio player visualization
+- Use `spikes` for energetic music or sound effects
+
+For technical details on rendering, see the [Canvas Rendering explanation](/docs/elements/waveform/explanation/canvas-rendering).

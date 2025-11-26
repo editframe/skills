@@ -122,9 +122,8 @@ export function makeAudioFrequencyAnalysisTask(element: EFMedia) {
         return cachedSmoothedData;
       }
 
-      const { fetchAudioSpanningTime: fetchAudioSpan } = await import(
-        "../shared/AudioSpanUtils.ts"
-      );
+      const { fetchAudioSpanningTime: fetchAudioSpan } =
+        await import("../shared/AudioSpanUtils.ts");
       const audioSpan = await fetchAudioSpan(element, fromMs, toMs, signal);
 
       if (!audioSpan || !audioSpan.blob) {

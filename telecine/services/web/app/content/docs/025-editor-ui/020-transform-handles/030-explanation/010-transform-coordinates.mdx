@@ -1,0 +1,60 @@
+---
+meta:
+  - title: Transform Coordinate System
+  - name: description
+    content: How transform handles handle coordinate transformations for rotated elements
+headers:
+    Cache-Control: no-cache
+---
+
+## Transform Coordinate System
+
+Building interactive editors requires handling element transformations—position, size, and rotation—in a way that feels natural to users. When elements are rotated, resizing becomes complex because mouse movements occur in screen space while element dimensions exist in element-local space.
+
+### The Challenge
+
+Using native DOM APIs for transform handles presents these engineering challenges:
+
+1. **Coordinate space mismatch**: Mouse events provide screen coordinates, but rotated elements have their own coordinate space
+2. **Rotation-aware resizing**: Resizing a rotated element requires converting screen deltas to element-local deltas
+3. **Anchor point preservation**: When resizing from a corner, the opposite corner must remain fixed in screen space
+4. **Canvas scaling**: Zoomed editors need coordinate conversion between screen and canvas space
+
+These constraints arise from the fundamental difference between screen-space mouse events and element-space transformations.
+
+### The Solution
+
+Transform handles solve these challenges by maintaining a coordinate transformation system that:
+
+- **Tracks opposite corners**: When resizing, calculates the fixed anchor point (opposite corner) in screen coordinates
+- **Rotates deltas**: Converts screen-space mouse movements to element-local space using rotation matrices
+- **Preserves anchors**: Ensures the opposite corner stays fixed during resize operations
+- **Scales coordinates**: Applies canvas scale factor to convert between screen and canvas coordinates
+
+```html
+<ef-transform-handles 
+  target="#element" 
+  enable-rotation
+  canvas-scale="1">
+</ef-transform-handles>
+```
+
+This approach enables intuitive resizing regardless of rotation angle—users can resize from any handle, and the opposite corner remains anchored correctly.
+
+### Benefits
+
+The coordinate transformation system provides:
+
+- **Intuitive interaction**: Resizing works naturally at any rotation angle, matching user expectations from professional design tools
+- **Accurate positioning**: Anchor points remain fixed during resize, preventing element drift
+- **Zoom support**: Canvas scaling works seamlessly with transform operations
+- **Performance**: Coordinate calculations happen efficiently without layout thrashing
+
+Users experience smooth, predictable transform behavior that matches professional editor interfaces, while developers get a component that handles complex coordinate math automatically.
+
+See the [reference documentation](/docs/editor-ui/transform-handles/reference) for complete property details.
+
+
+
+
+

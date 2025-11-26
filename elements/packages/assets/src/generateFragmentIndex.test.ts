@@ -11,10 +11,12 @@ const createTestStreamFromFile = async (filePath: string) => {
 };
 
 describe("generateFragmentIndex", () => {
-  // NOTE: Test expectations updated to match improved processing after audio seeking fixes  
+  // NOTE: Test expectations updated to match improved processing after audio seeking fixes
   // Key improvements: better startTimeOffsetMs calculation, more efficient segmentation, consistent timing
   test("frame-count.mp4 should generate expected TrackFragmentIndex structure", async () => {
-    const testStream = await createTestStreamFromFile("test-assets/frame-count.mp4");
+    const testStream = await createTestStreamFromFile(
+      "test-assets/frame-count.mp4",
+    );
     const result = await generateFragmentIndex(testStream);
 
     // Validate structure and key improvements from parser fixes
@@ -33,20 +35,43 @@ describe("generateFragmentIndex", () => {
     assert.equal(track1.duration, 101376, "Duration should be 101376");
 
     // Key improvement: startTimeOffsetMs is now correctly calculated
-    assert.isNumber(track1.startTimeOffsetMs, "Should have calculated startTimeOffsetMs");
-    assert.equal(track1.startTimeOffsetMs, 200, "Should have correct offset of 200ms");
+    assert.isNumber(
+      track1.startTimeOffsetMs,
+      "Should have calculated startTimeOffsetMs",
+    );
+    assert.equal(
+      track1.startTimeOffsetMs,
+      200,
+      "Should have correct offset of 200ms",
+    );
 
     // Validate improved segmentation efficiency (fewer samples, same content)
-    assert.equal(track1.sample_count, 10, "Should have 10 samples (improved efficiency)");
+    assert.equal(
+      track1.sample_count,
+      10,
+      "Should have 10 samples (improved efficiency)",
+    );
 
     // Validate init segment
     assert.isObject(track1.initSegment, "Should have init segment");
-    assert.equal(track1.initSegment.offset, 0, "Init segment should start at 0");
-    assert.equal(track1.initSegment.size, 919, "Init segment should have improved size");
+    assert.equal(
+      track1.initSegment.offset,
+      0,
+      "Init segment should start at 0",
+    );
+    assert.equal(
+      track1.initSegment.size,
+      919,
+      "Init segment should have improved size",
+    );
 
     // Validate segments structure
     assert.isArray(track1.segments, "Should have segments array");
-    assert.equal(track1.segments.length, 9, "Should have 9 segments (improved efficiency)");
+    assert.equal(
+      track1.segments.length,
+      9,
+      "Should have 9 segments (improved efficiency)",
+    );
 
     // Validate segments have proper structure
     for (const segment of track1.segments) {
@@ -57,7 +82,9 @@ describe("generateFragmentIndex", () => {
   }, 15000);
 
   test.skip("10s-bars.mp4 should generate expected multi-track structure", async () => {
-    const testStream = await createTestStreamFromFile("test-assets/10s-bars.mp4");
+    const testStream = await createTestStreamFromFile(
+      "test-assets/10s-bars.mp4",
+    );
     const result = await generateFragmentIndex(testStream);
 
     const expected: Record<number, TrackFragmentIndex> = {
@@ -171,7 +198,9 @@ describe("generateFragmentIndex", () => {
   }, 20000);
 
   test.skip("10s-bars.frag.mp4 should generate expected fragmented structure", async () => {
-    const testStream = await createTestStreamFromFile("test-assets/10s-bars.frag.mp4");
+    const testStream = await createTestStreamFromFile(
+      "test-assets/10s-bars.frag.mp4",
+    );
     const result = await generateFragmentIndex(testStream);
 
     const expected: Record<number, TrackFragmentIndex> = {
@@ -285,7 +314,9 @@ describe("generateFragmentIndex", () => {
   }, 20000);
 
   test("bars-n-tone.mp4 should generate expected structure", async () => {
-    const testStream = await createTestStreamFromFile("test-assets/bars-n-tone.mp4");
+    const testStream = await createTestStreamFromFile(
+      "test-assets/bars-n-tone.mp4",
+    );
     const result = await generateFragmentIndex(testStream);
 
     const expected: Record<number, TrackFragmentIndex> = {
@@ -404,7 +435,7 @@ describe("generateFragmentIndex", () => {
           }
         };
         pushSmallChunk();
-      }
+      },
     });
 
     sourceStream.pipe(chunkedStream);
@@ -508,7 +539,7 @@ describe("generateFragmentIndex", () => {
     const emptyStream = new Readable({
       read() {
         this.push(null);
-      }
+      },
     });
 
     const result = await generateFragmentIndex(emptyStream);
@@ -521,16 +552,16 @@ describe("generateFragmentIndex", () => {
   test("should handle stream errors gracefully", async () => {
     const errorStream = new Readable({
       read() {
-        this.emit('error', new Error('Stream processing error'));
-      }
+        this.emit("error", new Error("Stream processing error"));
+      },
     });
 
     try {
       await generateFragmentIndex(errorStream);
-      assert.fail('Expected function to throw');
+      assert.fail("Expected function to throw");
     } catch (error) {
       assert.instanceOf(error, Error);
-      assert.include(error.message, 'Stream processing error');
+      assert.include(error.message, "Stream processing error");
     }
   });
 });

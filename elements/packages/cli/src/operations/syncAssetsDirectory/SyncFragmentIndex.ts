@@ -15,9 +15,7 @@ import { getClient } from "../../utils/index.js";
 import type { SubAssetSync } from "./SubAssetSync.js";
 import { SyncStatus } from "./SyncStatus.js";
 
-export class SyncFragmentIndex
-  implements SubAssetSync<CreateISOBMFFFileResult>
-{
+export class SyncFragmentIndex implements SubAssetSync<CreateISOBMFFFileResult> {
   icon = "📋";
   label = "fragment index";
   syncStatus = new SyncStatus(this.path);

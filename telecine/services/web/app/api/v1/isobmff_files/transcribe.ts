@@ -43,8 +43,8 @@ export const action = async ({
   const track =
     typeof payload.trackId === "number"
       ? audioTracks.find(
-        (audioTrack) => audioTrack.track_id === payload.trackId,
-      )
+          (audioTrack) => audioTrack.track_id === payload.trackId,
+        )
       : audioTracks[0];
 
   if (!track) {

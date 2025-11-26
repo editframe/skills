@@ -1,0 +1,43 @@
+---
+meta:
+  - title: Use Scrubber
+  - name: description
+    content: Add timeline scrubbing with ef-scrubber
+headers:
+    Cache-Control: no-cache
+---
+
+## Use Scrubber
+
+**Problem:** You need a timeline control for seeking through video.
+
+**Solution:** Use `ef-scrubber` element for click-to-seek and drag-to-scrub functionality.
+
+```html
+<ef-scrubber></ef-scrubber>
+```
+
+**Custom styling:**
+
+```html
+<ef-scrubber className="custom-scrubber"></ef-scrubber>
+
+<style>
+  .custom-scrubber {
+    --ef-scrubber-height: 8px;
+    --ef-scrubber-background: #1f2937;
+    --ef-scrubber-progress-color: #10b981;
+    --ef-scrubber-handle-size: 18px;
+    width: 100%;
+  }
+</style>
+```
+
+Click anywhere on the track to jump, or drag the handle to scrub. The scrubber automatically syncs with playback state.
+
+**Reference:** See [Scrubber Reference](/docs/controls/reference/scrubber) for CSS custom properties.
+
+
+
+
+

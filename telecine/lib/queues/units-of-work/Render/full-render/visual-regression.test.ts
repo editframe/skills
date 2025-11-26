@@ -11,7 +11,10 @@ import {
 import { test } from "./fixtures";
 
 describe("Visual Content Regression", () => {
-  test("maintains visual consistency with expected frame count", ({ expect, renderOutput }) => {
+  test("maintains visual consistency with expected frame count", ({
+    expect,
+    renderOutput,
+  }) => {
     const { finalVideoBuffer, renderInfo } = renderOutput;
 
     // Frame count validation using inline FFprobe calls
@@ -22,16 +25,22 @@ describe("Visual Content Regression", () => {
     expect(actualFrameCount).toBeGreaterThan(0);
     if (actualFrameCount > 0) {
       // Allow for larger tolerance since segmented video can have padding frames
-      // 60 frames for ~2 seconds is reasonable (2.0 seconds at 30fps) 
+      // 60 frames for ~2 seconds is reasonable (2.0 seconds at 30fps)
       // Use range check instead of toBeCloseTo for integer frame counts
       const tolerance = 6; // ±6 frames tolerance
-      expect(actualFrameCount).toBeGreaterThanOrEqual(expectedFrameCount - tolerance);
-      expect(actualFrameCount).toBeLessThanOrEqual(expectedFrameCount + tolerance);
+      expect(actualFrameCount).toBeGreaterThanOrEqual(
+        expectedFrameCount - tolerance,
+      );
+      expect(actualFrameCount).toBeLessThanOrEqual(
+        expectedFrameCount + tolerance,
+      );
     }
     expect(renderInfo.durationMs).toBeCloseTo(2000, 100); // ~2 seconds
   }, 30000); // Extended timeout for first test that initializes renderOutput fixture
 
-  test("passes pixel perfect visual regression test against baseline", async ({ renderOutput }) => {
+  test("passes pixel perfect visual regression test against baseline", async ({
+    renderOutput,
+  }) => {
     const { videoPath, templateHash, testTitle } = renderOutput;
 
     // Perform visual regression test using simplified single function
@@ -39,7 +48,10 @@ describe("Visual Content Regression", () => {
     await performVisualRegressionTest(videoPath, templateHash, testTitle);
   });
 
-  test("renders bars pattern in video frames", async ({ renderOutput, expect }) => {
+  test("renders bars pattern in video frames", async ({
+    renderOutput,
+    expect,
+  }) => {
     const { videoPath, templateHash } = renderOutput;
 
     // Extract specific frames and validate bars pattern
@@ -59,7 +71,10 @@ describe("Visual Content Regression", () => {
     expect(renderInfo.width / renderInfo.height).toBeCloseTo(16 / 9, 0.1); // Aspect ratio
   });
 
-  test("renders video-only asset without audio track", async ({ videoOnlyRenderOutput, expect }) => {
+  test("renders video-only asset without audio track", async ({
+    videoOnlyRenderOutput,
+    expect,
+  }) => {
     const { videoPath, finalVideoBuffer, renderInfo } = videoOnlyRenderOutput;
 
     expect(finalVideoBuffer.length).toBeGreaterThan(0);
@@ -68,7 +83,10 @@ describe("Visual Content Regression", () => {
 
     const playbackTest = await testVideoPlayback(videoPath);
     expect(playbackTest.canPlay).toBe(true);
-    expect(playbackTest.duration).toBeCloseTo(renderInfo.durationMs / 1000, 0.2);
+    expect(playbackTest.duration).toBeCloseTo(
+      renderInfo.durationMs / 1000,
+      0.2,
+    );
 
     const structureValidation = await validateMP4Structure(videoPath);
     expect(structureValidation.isValid).toBe(true);
@@ -79,8 +97,12 @@ describe("Visual Content Regression", () => {
 });
 
 describe("Complex SVG Filter and Remote Video Rendering", () => {
-  test("renders remote video with SVG filter and custom fonts", async ({ complexFilterRenderOutput, expect }) => {
-    const { finalVideoBuffer, renderInfo, videoPath } = complexFilterRenderOutput;
+  test("renders remote video with SVG filter and custom fonts", async ({
+    complexFilterRenderOutput,
+    expect,
+  }) => {
+    const { finalVideoBuffer, renderInfo, videoPath } =
+      complexFilterRenderOutput;
 
     expect(finalVideoBuffer.length).toBeGreaterThan(0);
     expect(renderInfo.width).toBe(1080);
@@ -97,13 +119,18 @@ describe("Complex SVG Filter and Remote Video Rendering", () => {
     expect(structureValidation.hasAudioTrack).toBe(true);
   }, 30000);
 
-  test("passes visual regression test for SVG filtered text", async ({ complexFilterRenderOutput }) => {
+  test("passes visual regression test for SVG filtered text", async ({
+    complexFilterRenderOutput,
+  }) => {
     const { videoPath, templateHash, testTitle } = complexFilterRenderOutput;
 
     await performVisualRegressionTest(videoPath, templateHash, testTitle);
   }, 10000);
 
-  test("maintains expected portrait dimensions", ({ complexFilterRenderOutput, expect }) => {
+  test("maintains expected portrait dimensions", ({
+    complexFilterRenderOutput,
+    expect,
+  }) => {
     const { renderInfo } = complexFilterRenderOutput;
 
     expect(renderInfo.width).toBe(1080);
@@ -111,4 +138,3 @@ describe("Complex SVG Filter and Remote Video Rendering", () => {
     expect(renderInfo.height / renderInfo.width).toBeCloseTo(16 / 9, 0.1);
   });
 });
-

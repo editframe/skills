@@ -1,0 +1,35 @@
+---
+meta:
+  - title: Set Minimum Size
+  - name: description
+    content: Prevent elements from being resized below a minimum size
+headers:
+    Cache-Control: no-cache
+---
+
+## Set Minimum Size
+
+**Problem:** You need to prevent elements from being resized too small.
+
+**Solution:** Use the `min-size` attribute to set the minimum width and height.
+
+```html
+<!-- Prevent resizing below 50px -->
+<ef-transform-handles 
+  target="#element" 
+  min-size="50">
+</ef-transform-handles>
+
+<!-- Very small minimum for fine-grained control -->
+<ef-transform-handles 
+  target="#element" 
+  min-size="10">
+</ef-transform-handles>
+```
+
+The `min-size` value applies to both width and height. When resizing, if either dimension would go below `min-size`, it's clamped to the minimum value. Default is 10px.
+
+
+
+
+

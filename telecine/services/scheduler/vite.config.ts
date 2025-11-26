@@ -16,8 +16,8 @@ export default defineConfig({
   plugins: [
     tsconfigPaths(),
     copyLuaScripts(
-      path.resolve(__dirname, '../../lib/queues/lua'),
-      path.resolve(__dirname, './dist/lua')
+      path.resolve(__dirname, "../../lib/queues/lua"),
+      path.resolve(__dirname, "./dist/lua"),
     ),
   ],
   appType: "custom",

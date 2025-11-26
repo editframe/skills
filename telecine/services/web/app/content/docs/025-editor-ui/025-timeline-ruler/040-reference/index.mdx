@@ -1,0 +1,119 @@
+---
+meta:
+  - title: Reference
+  - name: description
+    content: Complete technical reference for all timeline ruler properties
+headers:
+    Cache-Control: no-cache
+---
+
+## Reference
+
+Complete technical reference for all timeline ruler properties.
+
+**New to timeline ruler?** Start with the [Tutorial](/docs/editor-ui/timeline-ruler/tutorial) to learn the basics, or explore [How-To Guides](/docs/editor-ui/timeline-ruler/how-to/) for specific tasks.
+
+### Quick Reference Table
+
+<TimelineRulerPropertyReference />
+
+### Grouped Attributes
+
+#### Configuration
+
+<PropertyDocList>
+  <PropertyDoc name="durationMs" type="number" domReadable domWritable htmlAttribute="duration-ms">
+    Timeline duration in milliseconds. Determines the total time span displayed by the ruler.
+    
+    Example: `10000` for 10 seconds, `60000` for 1 minute.
+    
+    If not set, the ruler falls back to `contextDurationMs` from duration context if available.
+  </PropertyDoc>
+
+  <PropertyDoc name="zoomScale" type="number" domReadable domWritable htmlAttribute="zoom-scale" defaultValue="1.0">
+    Zoom multiplier for the timeline. Affects marker spacing and determines when frame markers appear.
+    
+    Default: `1.0` (normal zoom)
+    
+    Example: `2.0` for 2x zoom, `0.5` for zoomed out, `10.0` for high zoom with frame markers.
+    
+    Higher zoom values increase marker density and enable frame-accurate markers when sufficient.
+  </PropertyDoc>
+
+  <PropertyDoc name="containerWidth" type="number" domReadable domWritable htmlAttribute="container-width">
+    Content width in pixels. Should match the width of your timeline content container.
+    
+    Example: `1000` for 1000px wide timeline, `2000` for 2000px wide timeline.
+    
+    Used together with `durationMs` and `zoomScale` to calculate marker positions and intervals.
+  </PropertyDoc>
+
+  <PropertyDoc name="fps" type="number" domReadable domWritable htmlAttribute="fps" defaultValue="30">
+    Frames per second for frame marker calculation. Used when frame markers are displayed at high zoom levels.
+    
+    Default: `30`
+    
+    Example: `24` for 24fps film, `30` for 30fps video, `60` for 60fps high frame rate.
+    
+    Frame markers appear automatically when zoomed in enough (typically when pixels per frame >= 5px).
+  </PropertyDoc>
+</PropertyDocList>
+
+#### Scroll
+
+<PropertyDocList>
+  <PropertyDoc name="scrollContainerSelector" type="string" domReadable domWritable htmlAttribute="scroll-container-selector">
+    CSS selector string identifying the scrollable container element. The ruler syncs marker positions with this container's scroll position.
+    
+    Example: `"#timeline-scroll"` or `".timeline-container"`
+    
+    Use this for HTML-based setups. For React applications, prefer `scrollContainerRef` instead.
+  </PropertyDoc>
+
+  <PropertyDoc name="scrollContainerElement" type="HTMLElement | null" domReadable domWritable>
+    Direct reference to the scrollable container element. Provides direct element access for scroll synchronization.
+    
+    Example: Set via React ref: `ruler.scrollContainerElement = scrollContainerRef.current`
+    
+    Use this for React applications or when you have direct element references. More performant than selector-based approach.
+    
+    This property has no HTML attribute equivalent—set it programmatically via JavaScript/TypeScript.
+  </PropertyDoc>
+</PropertyDocList>
+
+### Usage Examples
+
+**HTML:**
+
+```html
+<ef-timeline-ruler
+  duration-ms="10000"
+  zoom-scale="2.0"
+  container-width="2000"
+  fps="30"
+  scroll-container-selector="#timeline-scroll"
+></ef-timeline-ruler>
+```
+
+**React:**
+
+```jsx
+import { TimelineRuler } from "@editframe/react";
+
+<TimelineRuler
+  durationMs={10000}
+  zoomScale={2.0}
+  containerWidth={2000}
+  fps={30}
+  scrollContainerRef={scrollContainerRef}
+/>
+```
+
+### Related Documentation
+
+- [Marker Interval Calculation](/docs/editor-ui/timeline-ruler/explanation/marker-interval-calculation) - How optimal intervals are calculated
+- [Frame Quantization](/docs/editor-ui/timeline-ruler/explanation/frame-quantization) - Frame-based marker system
+- [Scroll Optimization](/docs/editor-ui/timeline-ruler/explanation/scroll-optimization) - Performance optimizations
+- [Basic Setup](/docs/editor-ui/timeline-ruler/how-to/basic-setup) - Getting started guide
+- [Scroll Synchronization](/docs/editor-ui/timeline-ruler/how-to/scroll-synchronization) - Connecting to scroll containers
+

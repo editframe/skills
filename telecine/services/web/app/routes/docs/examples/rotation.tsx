@@ -1,10 +1,10 @@
-import type { Route } from "./+types/rotation"
-import { useState } from "react"
+import type { Route } from "./+types/rotation";
+import { useState } from "react";
 import { Timegroup, Preview, Video, Dial } from "@editframe/react";
-import { TimelineControls } from "./shared"
+import { TimelineControls } from "./shared";
 
 export default function Rotation(_props: Route.ComponentProps) {
-  const [rotation, setRotation] = useState(0)
+  const [rotation, setRotation] = useState(0);
 
   return (
     <div className="p-8">
@@ -40,7 +40,7 @@ export default function Rotation(_props: Route.ComponentProps) {
                   className="w-full h-full"
                   style={{
                     transform: `rotate(${rotation}deg)`,
-                    transformOrigin: 'center'
+                    transformOrigin: "center",
                   }}
                 >
                   <Video
@@ -56,5 +56,5 @@ export default function Rotation(_props: Route.ComponentProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -20,22 +20,22 @@ interface PointerDragOptions {
   onDragStart?: (
     pointerDown: Point2D,
     pointerLatest: Point2D,
-    event: React.PointerEvent<HTMLElement>
+    event: React.PointerEvent<HTMLElement>,
   ) => void;
   onDrag?: (
     pointerDown: Point2D,
     pointerLatest: Point2D,
     movement: Point2D,
-    event: React.PointerEvent<HTMLElement>
+    event: React.PointerEvent<HTMLElement>,
   ) => void;
   onDragEnd?: (
     pointerDown: Point2D,
     pointerLatest: Point2D,
-    event: React.PointerEvent<HTMLElement>
+    event: React.PointerEvent<HTMLElement>,
   ) => void;
   onPointerUp?: (
     pointerDown: Point2D,
-    event: React.PointerEvent<HTMLElement>
+    event: React.PointerEvent<HTMLElement>,
   ) => void;
   onPointerDown?: (event: React.PointerEvent<HTMLElement>) => void;
   onPointerMove?: (event: React.PointerEvent<HTMLElement>) => void;
@@ -44,7 +44,7 @@ interface PointerDragOptions {
 
 const DRAG_START_THRESHOLD = 10;
 export const usePointerDrag = (
-  dragConfig: PointerDragOptions = {}
+  dragConfig: PointerDragOptions = {},
 ): PointerDragConfig => {
   const [pointerDown, setPointerDown] = useState<Maybe<Point2D>>();
   const [pointerLatest, setPointerLatest] = useState<Maybe<Point2D>>();
@@ -80,7 +80,7 @@ export const usePointerDrag = (
         if (!dragging) {
           const distance = Math.hypot(
             event.clientX - pointerDown.x,
-            event.clientY - pointerDown.y
+            event.clientY - pointerDown.y,
           );
           if (
             distance > (dragConfig.dragStartThreshold ?? DRAG_START_THRESHOLD)
@@ -95,7 +95,7 @@ export const usePointerDrag = (
                 x: event.clientX,
                 y: event.clientY,
               },
-              event
+              event,
             );
             dragConfig.onDrag?.(
               pointerDown,
@@ -107,7 +107,7 @@ export const usePointerDrag = (
                 x: event.clientX - pointerDown.x,
                 y: event.clientY - pointerDown.y,
               },
-              event
+              event,
             );
           }
         } else {
@@ -125,7 +125,7 @@ export const usePointerDrag = (
               y: event.clientY,
             },
             movement,
-            event
+            event,
           );
         }
       },

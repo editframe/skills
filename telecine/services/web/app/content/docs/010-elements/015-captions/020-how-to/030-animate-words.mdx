@@ -1,0 +1,37 @@
+---
+meta:
+  - title: Animate Words with CSS Variables
+  - name: description
+    content: Learn how to create varied word animations using the --ef-word-seed CSS variable
+headers:
+    Cache-Control: no-cache
+---
+
+## Animate Words with CSS Variables
+
+Create unique animations for each word using `--ef-word-seed` on `<ef-captions-active-word>`.
+
+### Solution
+
+Use `var(--ef-word-seed)` in CSS:
+
+```html
+<ef-captions captions-script="my-captions">
+  <ef-captions-active-word 
+    style={{
+      color: "hsl(calc(360 * var(--ef-word-seed)), 80%, 70%)",
+      transform: "scale(calc(1 + 0.3 * var(--ef-word-seed)))"
+    }}
+  />
+</ef-captions>
+```
+
+**Common patterns:**
+- Color: `color: hsl(calc(360 * var(--ef-word-seed)), 70%, 60%);`
+- Scale: `transform: scale(calc(1 + 0.3 * var(--ef-word-seed)));`
+- Rotation: `transform: rotate(calc(var(--ef-word-seed) * 20deg - 10deg));`
+
+### Related Documentation
+
+- [CSS Animation Variables explanation](/docs/elements/captions/explanation/css-animation-variables) - Understand deterministic variation
+- [Reference](/docs/elements/captions/reference) - Complete CSS variables documentation

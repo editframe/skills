@@ -79,7 +79,13 @@ export class Workflow<WorkflowData> {
   async setWorkflowData(workflowId: string, data: WorkflowData) {
     await this.storage
       .multi()
-      .del(`workflows:${workflowId}:queued`, `workflows:${workflowId}:claimed`, `workflows:${workflowId}:failed`, `workflows:${workflowId}:completed`, `workflows:${workflowId}:status`)
+      .del(
+        `workflows:${workflowId}:queued`,
+        `workflows:${workflowId}:claimed`,
+        `workflows:${workflowId}:failed`,
+        `workflows:${workflowId}:completed`,
+        `workflows:${workflowId}:status`,
+      )
       .set(`workflows:${workflowId}:data`, SuperJSON.stringify(data))
       .exec();
   }

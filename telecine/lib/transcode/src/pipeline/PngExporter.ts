@@ -21,7 +21,11 @@ export interface PngExporter {
    * @param targetHeight Optional target height (0 = keep original)
    * @returns Promise that resolves to PNG data as Buffer
    */
-  exportFrameToPng(framePtr: number, targetWidth?: number, targetHeight?: number): Promise<Buffer>;
+  exportFrameToPng(
+    framePtr: number,
+    targetWidth?: number,
+    targetHeight?: number,
+  ): Promise<Buffer>;
 
   /**
    * Export a frame to PNG format using options object
@@ -39,23 +43,23 @@ export interface PngExporter {
 /**
  * Factory function to create a PngExporter instance
  * The returned PngExporter can be used with 'using' declaration for automatic cleanup
- * 
+ *
  * @example
  * ```typescript
  * using pngExporter = await createPngExporter();
- * 
+ *
  * // Export frame with original dimensions
  * const pngData = await pngExporter.exportFrameToPng(framePtr);
- * 
+ *
  * // Export frame with custom dimensions
  * const scaledPngData = await pngExporter.exportFrameToPng(framePtr, 640, 480);
- * 
+ *
  * // Save to file
  * await fs.writeFile('frame.png', pngData);
  * ```
  */
 export async function createPngExporter(): Promise<PngExporter> {
-  const { createPngExporterNative } = await import('../playback.js');
+  const { createPngExporterNative } = await import("../playback.js");
 
   const nativePngExporter = createPngExporterNative();
 
@@ -63,13 +67,13 @@ export async function createPngExporter(): Promise<PngExporter> {
     async exportFrameToPng(
       framePtrOrOptions: number | PngExportOptions,
       targetWidth?: number,
-      targetHeight?: number
+      targetHeight?: number,
     ): Promise<Buffer> {
       let framePtr: number;
       let width: number | undefined;
       let height: number | undefined;
 
-      if (typeof framePtrOrOptions === 'object') {
+      if (typeof framePtrOrOptions === "object") {
         framePtr = framePtrOrOptions.framePtr;
         width = framePtrOrOptions.targetWidth;
         height = framePtrOrOptions.targetHeight;
@@ -81,7 +85,11 @@ export async function createPngExporter(): Promise<PngExporter> {
 
       return new Promise<Buffer>((resolve, reject) => {
         try {
-          const result = nativePngExporter.exportFrameToPng(framePtr, width || 0, height || 0);
+          const result = nativePngExporter.exportFrameToPng(
+            framePtr,
+            width || 0,
+            height || 0,
+          );
           resolve(result);
         } catch (error) {
           reject(error);
@@ -91,6 +99,6 @@ export async function createPngExporter(): Promise<PngExporter> {
 
     [Symbol.dispose](): void {
       nativePngExporter.dispose();
-    }
+    },
   };
-} 
+}

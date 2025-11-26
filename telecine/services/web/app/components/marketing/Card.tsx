@@ -14,7 +14,14 @@ function ChevronRightIcon(props: React.ComponentProps<"svg">) {
   );
 }
 
-export function Card({  href , Component = "div", children, className,}: React.ComponentProps<"div" | "a"> & { Component?: React.ElementType } & { href: string }) {
+export function Card({
+  href,
+  Component = "div",
+  children,
+  className,
+}: React.ComponentProps<"div" | "a"> & { Component?: React.ElementType } & {
+  href: string;
+}) {
   return (
     <Component
       className={clsx(className, "group relative flex flex-col items-start")}
@@ -27,7 +34,13 @@ export function Card({  href , Component = "div", children, className,}: React.C
   );
 }
 
-Card.Title = function CardTitle({ as: Component = "h3", children }: { as?: React.ElementType, children: React.ReactNode }) {
+Card.Title = function CardTitle({
+  as: Component = "h3",
+  children,
+}: {
+  as?: React.ElementType;
+  children: React.ReactNode;
+}) {
   return (
     <Component className="text-base font-semibold tracking-tight text-zinc-800 dark:text-zinc-200">
       {children}
@@ -35,8 +48,17 @@ Card.Title = function CardTitle({ as: Component = "h3", children }: { as?: React
   );
 };
 
-Card.Description = function CardDescription({ children }: { children: React.ReactNode, href?: string }) {
-  return <p className="relative z-10 mt-2 text-sm text-zinc-600 dark:text-zinc-300">{children}</p>;
+Card.Description = function CardDescription({
+  children,
+}: {
+  children: React.ReactNode;
+  href?: string;
+}) {
+  return (
+    <p className="relative z-10 mt-2 text-sm text-zinc-600 dark:text-zinc-300">
+      {children}
+    </p>
+  );
 };
 
 Card.Cta = function CardCta({ children }: { children: React.ReactNode }) {
@@ -58,10 +80,10 @@ Card.Eyebrow = function CardEyebrow({
   decorate = false,
   ...props
 }: {
-  as?: React.ElementType,
-  children: React.ReactNode,
-  className?: string,
-  decorate?: boolean,
+  as?: React.ElementType;
+  children: React.ReactNode;
+  className?: string;
+  decorate?: boolean;
 }) {
   return (
     <Component
@@ -83,4 +105,4 @@ Card.Eyebrow = function CardEyebrow({
       {children}
     </Component>
   );
-}
+};

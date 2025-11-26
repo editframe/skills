@@ -1,13 +1,16 @@
 /**
  * Local File Byte Range Fetcher
- * 
+ *
  * Provides byte range fetching capabilities for local files,
  * compatible with the HttpByteRangeFetcher interface.
  */
 
-import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
-import type { ByteRangeRequest, ByteRangeResponse } from './HttpByteRangeFetcher.js';
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
+import type {
+  ByteRangeRequest,
+  ByteRangeResponse,
+} from "./HttpByteRangeFetcher.js";
 
 export class LocalFileByteRangeFetcher {
   async fetchByteRange(request: ByteRangeRequest): Promise<ByteRangeResponse> {
@@ -27,20 +30,29 @@ export class LocalFileByteRangeFetcher {
 
       // Validate byte range
       if (startByte < 0 || endByte >= fileSize || startByte > endByte) {
-        throw new Error(`Invalid byte range: ${startByte}-${endByte} for file size ${fileSize}`);
+        throw new Error(
+          `Invalid byte range: ${startByte}-${endByte} for file size ${fileSize}`,
+        );
       }
 
       // Calculate read size
       const readSize = endByte - startByte + 1;
 
       // Open file and read the byte range
-      const fileHandle = await fs.open(filePath, 'r');
+      const fileHandle = await fs.open(filePath, "r");
       try {
         const buffer = Buffer.allocUnsafe(readSize);
-        const { bytesRead } = await fileHandle.read(buffer, 0, readSize, startByte);
+        const { bytesRead } = await fileHandle.read(
+          buffer,
+          0,
+          readSize,
+          startByte,
+        );
 
         if (bytesRead !== readSize) {
-          throw new Error(`Expected to read ${readSize} bytes, but read ${bytesRead}`);
+          throw new Error(
+            `Expected to read ${readSize} bytes, but read ${bytesRead}`,
+          );
         }
 
         const data = new Uint8Array(buffer);
@@ -51,22 +63,20 @@ export class LocalFileByteRangeFetcher {
           actualStartByte: startByte,
           actualEndByte: endByte,
           totalSize: fileSize,
-          statusCode: 200 // Simulate HTTP 200 OK for local files
+          statusCode: 200, // Simulate HTTP 200 OK for local files
         };
-
       } finally {
         await fileHandle.close();
       }
-
     } catch (error) {
-      console.error('[LocalFileByteRangeFetcher] Read failed:', error);
+      console.error("[LocalFileByteRangeFetcher] Read failed:", error);
       return {
         success: false,
         data: new Uint8Array(0),
         actualStartByte: startByte,
         actualEndByte: endByte,
         statusCode: 0,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -74,8 +84,10 @@ export class LocalFileByteRangeFetcher {
   /**
    * Fetch multiple byte ranges from the same file
    */
-  async fetchMultipleRanges(requests: ByteRangeRequest[]): Promise<ByteRangeResponse[]> {
-    const promises = requests.map(request => this.fetchByteRange(request));
+  async fetchMultipleRanges(
+    requests: ByteRangeRequest[],
+  ): Promise<ByteRangeResponse[]> {
+    const promises = requests.map((request) => this.fetchByteRange(request));
     const results = await Promise.all(promises);
 
     return results;
@@ -95,9 +107,11 @@ export class LocalFileByteRangeFetcher {
 
       const size = stats.size;
       return size;
-
     } catch (error) {
-      console.error('[LocalFileByteRangeFetcher] Failed to get file size:', error);
+      console.error(
+        "[LocalFileByteRangeFetcher] Failed to get file size:",
+        error,
+      );
       return null;
     }
   }
@@ -112,9 +126,8 @@ export class LocalFileByteRangeFetcher {
       const isFile = stats.isFile();
 
       return isFile;
-
     } catch (error) {
-      console.error('[LocalFileByteRangeFetcher] File check failed:', error);
+      console.error("[LocalFileByteRangeFetcher] File check failed:", error);
       return false;
     }
   }
@@ -123,7 +136,7 @@ export class LocalFileByteRangeFetcher {
    * Convert file:// URL or local path to file system path
    */
   private urlToPath(url: string): string {
-    if (url.startsWith('file://')) {
+    if (url.startsWith("file://")) {
       // Convert file:// URL to local path
       // Handle both file:///path and file://host/path formats
       let urlObj: URL;
@@ -133,7 +146,7 @@ export class LocalFileByteRangeFetcher {
         throw new Error(`Invalid file URL: ${url}`);
       }
 
-      if (urlObj.protocol !== 'file:') {
+      if (urlObj.protocol !== "file:") {
         throw new Error(`Expected file:// protocol, got: ${urlObj.protocol}`);
       }
 
@@ -152,7 +165,7 @@ export class LocalFileByteRangeFetcher {
 export async function fetchLocalFileByteRange(
   url: string,
   startByte: number,
-  endByte: number
+  endByte: number,
 ): Promise<ByteRangeResponse> {
   const fetcher = new LocalFileByteRangeFetcher();
   return fetcher.fetchByteRange({ url, startByte, endByte });
@@ -171,18 +184,17 @@ export async function validateLocalFileAccess(url: string): Promise<{
 
     const [supported, totalSize] = await Promise.all([
       fetcher.supportsRangeRequests(url),
-      fetcher.getResourceSize(url)
+      fetcher.getResourceSize(url),
     ]);
 
     return {
       supported,
-      totalSize: totalSize || undefined
+      totalSize: totalSize || undefined,
     };
-
   } catch (error) {
     return {
       supported: false,
-      error: error instanceof Error ? error.message : String(error)
+      error: error instanceof Error ? error.message : String(error),
     };
   }
-} 
+}

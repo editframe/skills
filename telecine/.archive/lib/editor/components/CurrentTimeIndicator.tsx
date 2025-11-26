@@ -9,7 +9,7 @@ export const CurrentTimeIndicator = observer(() => {
       className={styles.currentTimeIndicator}
       style={{
         left: editor.msToPixels(
-          editor.selectedTemporalRoot?.currentTimeMs ?? 0
+          editor.selectedTemporalRoot?.currentTimeMs ?? 0,
         ),
       }}
     />

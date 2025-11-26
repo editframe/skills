@@ -1,0 +1,51 @@
+---
+meta:
+  - title: Customize Waveform Appearance
+  - name: description
+    content: Adjust waveform color, spacing, and line width for different visual styles
+headers:
+    Cache-Control: no-cache
+---
+
+## Customize Waveform Appearance
+
+**Problem:** You want to customize the waveform's color, spacing, or line width to match your design.
+
+**Solution:** Use the `color`, `barSpacing`, and `lineWidth` properties to control visual appearance.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup mode="contain" className="aspect-[1/1] w-[500px] h-[500px] bg-black flex flex-col items-center justify-center">
+    <Audio src="https://assets.editframe.com/card-joker.mp3" id="custom-appearance-audio" />
+    <Waveform target="custom-appearance-audio" mode="bars" color="#ff6b6b" barSpacing="0.8" className="w-full h-[200px] block" />
+  </Timegroup>
+</Demonstration>
+
+**Color:**
+
+Set `color` to any valid CSS color value. Use `currentColor` (default) to inherit the text color from CSS.
+
+```html
+<ef-waveform target="my-audio" color="#ff6b6b" />
+<ef-waveform target="my-audio" color="rgb(100, 200, 255)" />
+<ef-waveform target="my-audio" color="currentColor" />
+```
+
+**Bar Spacing:**
+
+Adjust `barSpacing` to control spacing between bars in `bars` and `roundBars` modes. Higher values create more spacing (narrower bars), lower values create less spacing (wider bars). Default is `0.5`.
+
+```html
+<ef-waveform target="my-audio" mode="bars" barSpacing="0.2" />
+<ef-waveform target="my-audio" mode="bars" barSpacing="1.0" />
+```
+
+**Line Width:**
+
+Set `lineWidth` for `line` and `curve` modes to control stroke thickness. Default is `4`.
+
+```html
+<ef-waveform target="my-audio" mode="line" lineWidth="2" />
+<ef-waveform target="my-audio" mode="curve" lineWidth="8" />
+```
+
+**Note:** `barSpacing` only affects `bars` and `roundBars` modes. `lineWidth` only affects `line` and `curve` modes. Other modes use their own internal spacing calculations.

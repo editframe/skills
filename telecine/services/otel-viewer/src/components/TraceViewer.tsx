@@ -8,7 +8,12 @@ import { FlameChart } from "./FlameChart";
 import { DetailsPanel } from "./DetailsPanel";
 import { TraceDetailsPanel } from "./TraceDetailsPanel";
 import { Minimap } from "./Minimap";
-import { FilterSidebar, parseAttributeFiltersFromUrl, updateUrlWithAttributeFilters, type AttributeFilter } from "./FilterSidebar";
+import {
+  FilterSidebar,
+  parseAttributeFiltersFromUrl,
+  updateUrlWithAttributeFilters,
+  type AttributeFilter,
+} from "./FilterSidebar";
 import { AttributeFilterBar } from "./AttributeFilterBar";
 import { PageTabs } from "./PageTabs";
 import { LogsPanel } from "./LogsPanel";
@@ -18,12 +23,20 @@ import "./TraceViewer.css";
 export function TraceViewer() {
   const { status, spans, totalSpanCount, traces, clearData } = useTraceData();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { pages, currentPage, selectPage, createPage, renamePage, deletePage, updateCurrentPageFilters } = usePages(searchParams, setSearchParams);
+  const {
+    pages,
+    currentPage,
+    selectPage,
+    createPage,
+    renamePage,
+    deletePage,
+    updateCurrentPageFilters,
+  } = usePages(searchParams, setSearchParams);
   const [zoomStart, setZoomStart] = useState(0);
   const [zoomEnd, setZoomEnd] = useState(100);
   const [filteredTraces, setFilteredTraces] = useState<Trace[]>([]);
-  const [attributeFilters, setAttributeFilters] = useState<AttributeFilter[]>(() =>
-    parseAttributeFiltersFromUrl(searchParams)
+  const [attributeFilters, setAttributeFilters] = useState<AttributeFilter[]>(
+    () => parseAttributeFiltersFromUrl(searchParams),
   );
   const [hoveredLogIndex, setHoveredLogIndex] = useState<number | null>(null);
   const [expandedLogs, setExpandedLogs] = useState<Set<number>>(new Set());
@@ -31,7 +44,9 @@ export function TraceViewer() {
   const [rightPanelWidth, setRightPanelWidth] = useState(300);
   const [logsPanelHeight, setLogsPanelHeight] = useState(200);
   const [logSearchText, setLogSearchText] = useState("");
-  const [logSearchMode, setLogSearchMode] = useState<'highlight' | 'filter'>('highlight');
+  const [logSearchMode, setLogSearchMode] = useState<"highlight" | "filter">(
+    "highlight",
+  );
   const [spanFilters, setSpanFilters] = useState<SpanFilter[]>(() => {
     try {
       return JSON.parse(searchParams.get("spanFilters") || "[]");
@@ -39,8 +54,8 @@ export function TraceViewer() {
       return [];
     }
   });
-  const [spanFiltersActive, setSpanFiltersActive] = useState(() =>
-    searchParams.get("spanFiltersActive") === "true"
+  const [spanFiltersActive, setSpanFiltersActive] = useState(
+    () => searchParams.get("spanFiltersActive") === "true",
   );
   const logSearchInputRef = useRef<HTMLInputElement>(null);
   const autoSelectLatest = searchParams.get("live") === "true";
@@ -51,7 +66,7 @@ export function TraceViewer() {
   }, []);
 
   const handleLogExpand = useCallback((index: number) => {
-    setExpandedLogs(prev => {
+    setExpandedLogs((prev) => {
       const next = new Set(prev);
       if (next.has(index)) {
         next.delete(index);
@@ -62,34 +77,43 @@ export function TraceViewer() {
     });
   }, []);
 
-  const handleAddSpanFilter = useCallback((filter: SpanFilter) => {
-    const newFilters = [...spanFilters, filter];
-    setSpanFilters(newFilters);
-    const params = new URLSearchParams(searchParams);
-    params.set("spanFilters", JSON.stringify(newFilters));
-    setSearchParams(params);
-  }, [spanFilters, searchParams, setSearchParams]);
-
-  const handleRemoveSpanFilter = useCallback((index: number) => {
-    const newFilters = spanFilters.filter((_, i) => i !== index);
-    setSpanFilters(newFilters);
-    const params = new URLSearchParams(searchParams);
-    if (newFilters.length > 0) {
+  const handleAddSpanFilter = useCallback(
+    (filter: SpanFilter) => {
+      const newFilters = [...spanFilters, filter];
+      setSpanFilters(newFilters);
+      const params = new URLSearchParams(searchParams);
       params.set("spanFilters", JSON.stringify(newFilters));
-    } else {
-      params.delete("spanFilters");
-    }
-    setSearchParams(params);
-  }, [spanFilters, searchParams, setSearchParams]);
+      setSearchParams(params);
+    },
+    [spanFilters, searchParams, setSearchParams],
+  );
 
-  const handleUpdateSpanFilter = useCallback((index: number, filter: SpanFilter) => {
-    const newFilters = [...spanFilters];
-    newFilters[index] = filter;
-    setSpanFilters(newFilters);
-    const params = new URLSearchParams(searchParams);
-    params.set("spanFilters", JSON.stringify(newFilters));
-    setSearchParams(params);
-  }, [spanFilters, searchParams, setSearchParams]);
+  const handleRemoveSpanFilter = useCallback(
+    (index: number) => {
+      const newFilters = spanFilters.filter((_, i) => i !== index);
+      setSpanFilters(newFilters);
+      const params = new URLSearchParams(searchParams);
+      if (newFilters.length > 0) {
+        params.set("spanFilters", JSON.stringify(newFilters));
+      } else {
+        params.delete("spanFilters");
+      }
+      setSearchParams(params);
+    },
+    [spanFilters, searchParams, setSearchParams],
+  );
+
+  const handleUpdateSpanFilter = useCallback(
+    (index: number, filter: SpanFilter) => {
+      const newFilters = [...spanFilters];
+      newFilters[index] = filter;
+      setSpanFilters(newFilters);
+      const params = new URLSearchParams(searchParams);
+      params.set("spanFilters", JSON.stringify(newFilters));
+      setSearchParams(params);
+    },
+    [spanFilters, searchParams, setSearchParams],
+  );
 
   const handleToggleSpanFiltersActive = useCallback(() => {
     const newActive = !spanFiltersActive;
@@ -104,8 +128,8 @@ export function TraceViewer() {
   }, [spanFiltersActive, searchParams, setSearchParams]);
 
   const spanFiltersMap = useMemo(() => {
-    const map = new Map<string, 'show' | 'hide'>();
-    spanFilters.forEach(filter => {
+    const map = new Map<string, "show" | "hide">();
+    spanFilters.forEach((filter) => {
       map.set(filter.spanName, filter.mode);
     });
     return map;
@@ -120,27 +144,36 @@ export function TraceViewer() {
     setFilteredTraces(filtered);
   }, []);
 
-  const handleAddAttributeFilter = useCallback((filter: AttributeFilter) => {
-    const newFilters = [...attributeFilters, filter];
-    setAttributeFilters(newFilters);
-    const params = updateUrlWithAttributeFilters(searchParams, newFilters);
-    setSearchParams(params);
-  }, [attributeFilters, searchParams, setSearchParams]);
+  const handleAddAttributeFilter = useCallback(
+    (filter: AttributeFilter) => {
+      const newFilters = [...attributeFilters, filter];
+      setAttributeFilters(newFilters);
+      const params = updateUrlWithAttributeFilters(searchParams, newFilters);
+      setSearchParams(params);
+    },
+    [attributeFilters, searchParams, setSearchParams],
+  );
 
-  const handleRemoveAttributeFilter = useCallback((index: number) => {
-    const newFilters = attributeFilters.filter((_, i) => i !== index);
-    setAttributeFilters(newFilters);
-    const params = updateUrlWithAttributeFilters(searchParams, newFilters);
-    setSearchParams(params);
-  }, [attributeFilters, searchParams, setSearchParams]);
+  const handleRemoveAttributeFilter = useCallback(
+    (index: number) => {
+      const newFilters = attributeFilters.filter((_, i) => i !== index);
+      setAttributeFilters(newFilters);
+      const params = updateUrlWithAttributeFilters(searchParams, newFilters);
+      setSearchParams(params);
+    },
+    [attributeFilters, searchParams, setSearchParams],
+  );
 
-  const handleUpdateAttributeFilter = useCallback((index: number, filter: AttributeFilter) => {
-    const newFilters = [...attributeFilters];
-    newFilters[index] = filter;
-    setAttributeFilters(newFilters);
-    const params = updateUrlWithAttributeFilters(searchParams, newFilters);
-    setSearchParams(params);
-  }, [attributeFilters, searchParams, setSearchParams]);
+  const handleUpdateAttributeFilter = useCallback(
+    (index: number, filter: AttributeFilter) => {
+      const newFilters = [...attributeFilters];
+      newFilters[index] = filter;
+      setAttributeFilters(newFilters);
+      const params = updateUrlWithAttributeFilters(searchParams, newFilters);
+      setSearchParams(params);
+    },
+    [attributeFilters, searchParams, setSearchParams],
+  );
 
   useEffect(() => {
     const newFilters = parseAttributeFiltersFromUrl(searchParams);
@@ -155,21 +188,25 @@ export function TraceViewer() {
       setSpanFilters([]);
     }
     setSpanFiltersActive(searchParams.get("spanFiltersActive") === "true");
-  }, [searchParams.get("pageId"), searchParams.get("spanFilters"), searchParams.get("spanFiltersActive")]);
+  }, [
+    searchParams.get("pageId"),
+    searchParams.get("spanFilters"),
+    searchParams.get("spanFiltersActive"),
+  ]);
 
   const { spanNames, spanAttributeKeys } = useMemo(() => {
     const spanNameSet = new Set<string>();
     const attributeKeysBySpan = new Map<string, Set<string>>();
 
-    traces.forEach(trace => {
-      trace.allSpans.forEach(span => {
+    traces.forEach((trace) => {
+      trace.allSpans.forEach((span) => {
         spanNameSet.add(span.name);
 
         if (!attributeKeysBySpan.has(span.name)) {
           attributeKeysBySpan.set(span.name, new Set());
         }
         const keys = attributeKeysBySpan.get(span.name)!;
-        span.attributes.forEach(attr => {
+        span.attributes.forEach((attr) => {
           keys.add(attr.key);
         });
       });
@@ -182,7 +219,7 @@ export function TraceViewer() {
 
     return {
       spanNames: Array.from(spanNameSet).sort(),
-      spanAttributeKeys: spanAttributeKeysMap
+      spanAttributeKeys: spanAttributeKeysMap,
     };
   }, [traces]);
 
@@ -210,7 +247,13 @@ export function TraceViewer() {
         setSearchParams(params);
       }
     }
-  }, [autoSelectLatest, filteredTraces, traceId, searchParams, setSearchParams]);
+  }, [
+    autoSelectLatest,
+    filteredTraces,
+    traceId,
+    searchParams,
+    setSearchParams,
+  ]);
 
   useEffect(() => {
     setZoomStart(0);
@@ -224,10 +267,10 @@ export function TraceViewer() {
       }
     };
 
-    document.addEventListener('wheel', preventBrowserZoom, { passive: false });
+    document.addEventListener("wheel", preventBrowserZoom, { passive: false });
 
     return () => {
-      document.removeEventListener('wheel', preventBrowserZoom);
+      document.removeEventListener("wheel", preventBrowserZoom);
     };
   }, []);
 
@@ -277,7 +320,7 @@ export function TraceViewer() {
     const params = new URLSearchParams(searchParams);
     params.set("focus", "true");
     const url = `${window.location.pathname}?${params.toString()}`;
-    window.open(url, '_blank');
+    window.open(url, "_blank");
   };
 
   useEffect(() => {
@@ -292,36 +335,36 @@ export function TraceViewer() {
     searchParams.get("attrFilters"),
     searchParams.get("spanFilters"),
     searchParams.get("spanFiltersActive"),
-    updateCurrentPageFilters
+    updateCurrentPageFilters,
   ]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         clearData();
       }
-      if ((e.metaKey || e.ctrlKey) && e.key === 'l') {
+      if ((e.metaKey || e.ctrlKey) && e.key === "l") {
         e.preventDefault();
         if (e.shiftKey) {
           handleToggleAutoSelect();
         }
       }
-      if ((e.metaKey || e.ctrlKey) && e.key === 'h') {
+      if ((e.metaKey || e.ctrlKey) && e.key === "h") {
         e.preventDefault();
-        setLogSearchMode('highlight');
+        setLogSearchMode("highlight");
         logSearchInputRef.current?.focus();
       }
-      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
+      if ((e.metaKey || e.ctrlKey) && e.key === "/") {
         e.preventDefault();
-        setLogSearchMode('filter');
+        setLogSearchMode("filter");
         logSearchInputRef.current?.focus();
       }
-      if ((e.metaKey || e.ctrlKey) && e.key === 'j') {
+      if ((e.metaKey || e.ctrlKey) && e.key === "j") {
         e.preventDefault();
         handleToggleSpanFiltersActive();
       }
-      if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
+      if ((e.metaKey || e.ctrlKey) && e.key === "f") {
         e.preventDefault();
         if (e.shiftKey) {
           handleOpenInNewTab();
@@ -329,21 +372,25 @@ export function TraceViewer() {
           handleToggleFocusMode();
         }
       }
-      if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
+      if ((e.metaKey || e.ctrlKey) && e.key === "n") {
         e.preventDefault();
         createPage();
       }
-      if ((e.metaKey || e.ctrlKey) && e.key === '[') {
+      if ((e.metaKey || e.ctrlKey) && e.key === "[") {
         e.preventDefault();
-        const currentIndex = pages.findIndex((p: any) => p.id === currentPage?.id);
+        const currentIndex = pages.findIndex(
+          (p: any) => p.id === currentPage?.id,
+        );
         if (currentIndex > 0) {
           const prevPage = pages[currentIndex - 1];
           if (prevPage) selectPage(prevPage);
         }
       }
-      if ((e.metaKey || e.ctrlKey) && e.key === ']') {
+      if ((e.metaKey || e.ctrlKey) && e.key === "]") {
         e.preventDefault();
-        const currentIndex = pages.findIndex((p: any) => p.id === currentPage?.id);
+        const currentIndex = pages.findIndex(
+          (p: any) => p.id === currentPage?.id,
+        );
         if (currentIndex < pages.length - 1) {
           const nextPage = pages[currentIndex + 1];
           if (nextPage) selectPage(nextPage);
@@ -351,12 +398,22 @@ export function TraceViewer() {
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [clearData, handleToggleAutoSelect, handleToggleFocusMode, handleOpenInNewTab, createPage, pages, currentPage, selectPage, handleToggleSpanFiltersActive]);
+  }, [
+    clearData,
+    handleToggleAutoSelect,
+    handleToggleFocusMode,
+    handleOpenInNewTab,
+    createPage,
+    pages,
+    currentPage,
+    selectPage,
+    handleToggleSpanFiltersActive,
+  ]);
 
   return (
     <div className="trace-viewer">
@@ -399,9 +456,17 @@ export function TraceViewer() {
           />
         </>
       )}
-      <div className="content" style={{ height: isFocusMode ? '100vh' : 'calc(100vh - 36px - 44px - 44px)' }}>
+      <div
+        className="content"
+        style={{
+          height: isFocusMode ? "100vh" : "calc(100vh - 36px - 44px - 44px)",
+        }}
+      >
         {!isFocusMode && (
-          <div className="filter-sidebar" style={{ width: `${sidebarWidth}px` }}>
+          <div
+            className="filter-sidebar"
+            style={{ width: `${sidebarWidth}px` }}
+          >
             <FilterSidebar
               traces={traces}
               onFilterChange={handleFilterChange}
@@ -411,16 +476,26 @@ export function TraceViewer() {
             />
           </div>
         )}
-        {!isFocusMode && <ResizeHandle
-          direction="horizontal"
-          onResize={(delta) => setSidebarWidth(Math.max(150, Math.min(400, sidebarWidth + delta)))}
-        />}
+        {!isFocusMode && (
+          <ResizeHandle
+            direction="horizontal"
+            onResize={(delta) =>
+              setSidebarWidth(
+                Math.max(150, Math.min(400, sidebarWidth + delta)),
+              )
+            }
+          />
+        )}
         <div className="main-content" style={{ flex: 1 }}>
           {isFocusMode ? (
             <div className="focus-toolbar">
               <div className="focus-toolbar-left">
-                <span className="focus-trace-name">{currentTrace?.allSpans[0]?.name || 'Trace'}</span>
-                <span className="focus-trace-id">{currentTrace?.traceId.substring(0, 16)}</span>
+                <span className="focus-trace-name">
+                  {currentTrace?.allSpans[0]?.name || "Trace"}
+                </span>
+                <span className="focus-trace-id">
+                  {currentTrace?.traceId.substring(0, 16)}
+                </span>
               </div>
               <button onClick={handleToggleFocusMode} title="Exit focus mode">
                 <span>Exit Focus</span>
@@ -435,7 +510,10 @@ export function TraceViewer() {
                 onSelectTrace={handleSelectTrace}
               />
               <div className="trace-toolbar">
-                <button onClick={handleToggleFocusMode} title="Focus on this trace">
+                <button
+                  onClick={handleToggleFocusMode}
+                  title="Focus on this trace"
+                >
                   <span>Focus</span>
                   <kbd className="kbd-shortcut">⌘F</kbd>
                 </button>
@@ -468,31 +546,46 @@ export function TraceViewer() {
               spanFiltersActive={spanFiltersActive}
             />
           </div>
-          {currentTrace && currentTrace.logs && currentTrace.logs.length > 0 && (<>
-            <ResizeHandle
-              direction="vertical"
-              onResize={(delta) => setLogsPanelHeight(Math.max(100, Math.min(500, logsPanelHeight - delta)))}
-            />
-            <LogsPanel
-              logs={currentTrace.logs}
-              hoveredLogIndex={hoveredLogIndex}
-              expandedLogs={expandedLogs}
-              onLogHover={throttledSetHoveredLogIndex}
-              onLogExpand={handleLogExpand}
-              panelHeight={logsPanelHeight}
-              searchText={logSearchText}
-              searchMode={logSearchMode}
-              onSearchTextChange={setLogSearchText}
-              onSearchModeChange={setLogSearchMode}
-              searchInputRef={logSearchInputRef}
-            />
-          </>)}
+          {currentTrace &&
+            currentTrace.logs &&
+            currentTrace.logs.length > 0 && (
+              <>
+                <ResizeHandle
+                  direction="vertical"
+                  onResize={(delta) =>
+                    setLogsPanelHeight(
+                      Math.max(100, Math.min(500, logsPanelHeight - delta)),
+                    )
+                  }
+                />
+                <LogsPanel
+                  logs={currentTrace.logs}
+                  hoveredLogIndex={hoveredLogIndex}
+                  expandedLogs={expandedLogs}
+                  onLogHover={throttledSetHoveredLogIndex}
+                  onLogExpand={handleLogExpand}
+                  panelHeight={logsPanelHeight}
+                  searchText={logSearchText}
+                  searchMode={logSearchMode}
+                  onSearchTextChange={setLogSearchText}
+                  onSearchModeChange={setLogSearchMode}
+                  searchInputRef={logSearchInputRef}
+                />
+              </>
+            )}
         </div>
         <ResizeHandle
           direction="horizontal"
-          onResize={(delta) => setRightPanelWidth(Math.max(250, Math.min(500, rightPanelWidth - delta)))}
+          onResize={(delta) =>
+            setRightPanelWidth(
+              Math.max(250, Math.min(500, rightPanelWidth - delta)),
+            )
+          }
         />
-        <div className="right-panels" style={{ width: isFocusMode ? '400px' : `${rightPanelWidth}px` }}>
+        <div
+          className="right-panels"
+          style={{ width: isFocusMode ? "400px" : `${rightPanelWidth}px` }}
+        >
           <TraceDetailsPanel trace={currentTrace} />
           <DetailsPanel
             span={spanId ? spans.get(spanId) : null}
@@ -506,7 +599,7 @@ export function TraceViewer() {
 }
 
 interface ResizeHandleProps {
-  direction: 'horizontal' | 'vertical';
+  direction: "horizontal" | "vertical";
   onResize: (delta: number) => void;
 }
 
@@ -517,7 +610,7 @@ function ResizeHandle({ direction, onResize }: ResizeHandleProps) {
     if (!isDragging) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      const delta = direction === 'horizontal' ? e.movementX : e.movementY;
+      const delta = direction === "horizontal" ? e.movementX : e.movementY;
       onResize(delta);
     };
 
@@ -525,18 +618,18 @@ function ResizeHandle({ direction, onResize }: ResizeHandleProps) {
       setIsDragging(false);
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
     };
   }, [isDragging, direction, onResize]);
 
   return (
     <div
-      className={`resize-handle resize-handle-${direction} ${isDragging ? 'dragging' : ''}`}
+      className={`resize-handle resize-handle-${direction} ${isDragging ? "dragging" : ""}`}
       onMouseDown={() => setIsDragging(true)}
     />
   );

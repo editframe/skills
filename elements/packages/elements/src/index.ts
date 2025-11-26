@@ -38,6 +38,11 @@ import "./elements/EFWaveform.js";
 
 export { EFWaveform } from "./elements/EFWaveform.js";
 
+import "./elements/EFTemporal.js";
+
+export { isEFTemporal } from "./elements/EFTemporal.js";
+export type { TemporalMixinInterface } from "./elements/EFTemporal.js";
+
 import "./gui/EFConfiguration.ts";
 
 export { EFConfiguration } from "./gui/EFConfiguration.ts";
@@ -92,9 +97,18 @@ export { EFFocusOverlay } from "./gui/EFFocusOverlay.js";
 
 import "./gui/transformUtils.js";
 
+export {
+  getCornerPoint,
+  getOppositeCorner,
+  rotatePoint,
+} from "./gui/transformUtils.js";
+
 import "./gui/EFTransformHandles.ts";
 
-export { type TransformBounds, EFTransformHandles } from "./gui/EFTransformHandles.ts";
+export {
+  type TransformBounds,
+  EFTransformHandles,
+} from "./gui/EFTransformHandles.ts";
 
 import "./gui/EFResizableBox.ts";
 
@@ -116,6 +130,15 @@ import "./elements/EFPanZoom.js";
 
 export { EFPanZoom } from "./elements/EFPanZoom.js";
 export type { PanZoomTransform } from "./elements/EFPanZoom.js";
+
+import "./gui/EFOverlayLayer.ts";
+
+export { EFOverlayLayer } from "./gui/EFOverlayLayer.ts";
+
+import "./gui/EFOverlayItem.ts";
+
+export { EFOverlayItem } from "./gui/EFOverlayItem.ts";
+export type { OverlayItemPosition } from "./gui/EFOverlayItem.ts";
 
 import "./gui/EFTimelineRuler.ts";
 

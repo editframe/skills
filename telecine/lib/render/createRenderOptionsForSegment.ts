@@ -80,10 +80,10 @@ export function createVideoRenderOptionsForSegment(
   const segmentOptions = isInitSegment
     ? createInitSegmentOptions()
     : createMediaSegmentOptions(
-      options.segmentIndex,
-      options.durationMs,
-      options.segmentDurationMs,
-    );
+        options.segmentIndex,
+        options.durationMs,
+        options.segmentDurationMs,
+      );
 
   const shouldPadStart = !segmentOptions.isFirstSegment;
   const shouldPadEnd = !segmentOptions.isLastSegment;

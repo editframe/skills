@@ -7,7 +7,8 @@ export const PreviewVideo = () => {
   const [color, setColor] = useState("#ffffff");
   const [font, setFont] = useState("sans-serif");
 
-  const { percentComplete, durationMs, ownCurrentTimeMs, ref } = useTimingInfo();
+  const { percentComplete, durationMs, ownCurrentTimeMs, ref } =
+    useTimingInfo();
 
   return (
     <div
@@ -79,7 +80,12 @@ export const PreviewVideo = () => {
           duration="5s"
           className="w-[400px] h-[400px] bg-black relative overflow-hidden"
         >
-          <p className="text-white text-2xl font-bold" style={{ color: color, fontFamily: font }}>{text}</p>
+          <p
+            className="text-white text-2xl font-bold"
+            style={{ color: color, fontFamily: font }}
+          >
+            {text}
+          </p>
           <p>{ownCurrentTimeMs}</p>
           <p>{durationMs}</p>
           <p>{percentComplete}</p>

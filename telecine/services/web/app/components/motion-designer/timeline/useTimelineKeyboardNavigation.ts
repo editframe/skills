@@ -23,7 +23,7 @@ export function useTimelineKeyboardNavigation({
   containerRef,
 }: UseTimelineKeyboardNavigationOptions) {
   const currentTimeRef = useRef(currentTime);
-  
+
   // Keep ref in sync with current time
   useEffect(() => {
     currentTimeRef.current = currentTime;
@@ -58,7 +58,7 @@ export function useTimelineKeyboardNavigation({
 
       const isShiftPressed = e.shiftKey;
       const isRightArrow = e.key === "ArrowRight";
-      
+
       let newTime: number;
 
       if (isShiftPressed) {
@@ -70,7 +70,7 @@ export function useTimelineKeyboardNavigation({
         const frameIntervalMs = fps > 0 ? 1000 / fps : 1000 / 30;
         const deltaMs = isRightArrow ? frameIntervalMs : -frameIntervalMs;
         newTime = currentTimeRef.current + deltaMs;
-        
+
         // Quantize to frame boundaries
         newTime = quantizeToFrameTimeMs(newTime, fps);
       }
@@ -89,5 +89,3 @@ export function useTimelineKeyboardNavigation({
     };
   }, [containerRef, durationMs, fps, onSeek]);
 }
-
-

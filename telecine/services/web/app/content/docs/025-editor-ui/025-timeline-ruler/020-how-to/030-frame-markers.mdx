@@ -1,0 +1,35 @@
+---
+meta:
+  - title: Frame Markers
+  - name: description
+    content: Enable frame-accurate markers when zoomed in for precise editing
+headers:
+    Cache-Control: no-cache
+---
+
+## Frame Markers
+
+**Problem:** You need frame-accurate markers when zoomed in for precise video editing.
+
+**Solution:** Set the `fps` property and zoom in enough. Frame markers appear automatically when pixels per frame exceeds the threshold.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource>
+  <div style={{ position: 'relative', width: '1000px', height: '32px', border: '1px solid #e5e7eb' }}>
+    <ef-timeline-ruler
+      duration-ms="5000"
+      zoom-scale="10.0"
+      container-width="10000"
+      fps="30"
+    ></ef-timeline-ruler>
+  </div>
+</Demonstration>
+
+**Frame marker behavior:**
+- Frame markers appear when zoomed in enough (typically zoom-scale > 3-5x for 30fps)
+- Each frame is precisely positioned on a canvas layer
+- Time-based markers switch to frame-based markers automatically
+- Frame markers use the `fps` value for accurate frame intervals
+
+**Threshold calculation:**
+Frame markers appear when `pixelsPerFrame >= 5px`. This ensures markers are readable and useful. See [Frame Quantization](/docs/editor-ui/timeline-ruler/explanation/frame-quantization) for how this works.
+

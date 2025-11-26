@@ -1,6 +1,4 @@
-export const Preview = ({ code }: {
-  code: string;
-}) => {
+export const Preview = ({ code }: { code: string }) => {
   return (
     <div className="xl:max-w-none">
       <div className="px-2">
@@ -11,10 +9,10 @@ export const Preview = ({ code }: {
                 title="Editframe Playground"
                 srcDoc={code}
                 sandbox="allow-same-origin allow-scripts allow-top-navigation allow-popups allow-pointer-lock allow-forms"
-                style={{ 
+                style={{
                   height: "500px",
                   width: "100%",
-                 }}
+                }}
               />
             </div>
           </div>
@@ -22,4 +20,4 @@ export const Preview = ({ code }: {
       </div>
     </div>
   );
-}
+};

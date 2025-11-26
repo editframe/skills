@@ -2,7 +2,10 @@ import { db } from "@/sql-client.server";
 import { requireCookieOrTokenSession } from "@/util/requireSession.server";
 import type { Route } from "./+types/md5";
 
-export const loader = async ({ request, params: { md5 } }: Route.LoaderArgs) => {
+export const loader = async ({
+  request,
+  params: { md5 },
+}: Route.LoaderArgs) => {
   const session = await requireCookieOrTokenSession(request);
 
   const isobmffFile = await db

@@ -1,6 +1,7 @@
 import workerResourcesModule from "../deploy/worker-resources.config";
 
-const { workerResources, toDockerCompose, toGoMemLimit } = workerResourcesModule;
+const { workerResources, toDockerCompose, toGoMemLimit } =
+  workerResourcesModule;
 
 for (const [workerName, resources] of Object.entries(workerResources)) {
   const envPrefix = workerName
@@ -13,8 +14,9 @@ for (const [workerName, resources] of Object.entries(workerResources)) {
   console.log(`export WORKER_${envPrefix}_CPUS="${dockerResources.cpus}"`);
   console.log(`export WORKER_${envPrefix}_MEMORY="${dockerResources.memory}"`);
 
-  if (workerName === 'scheduler') {
-    console.log(`export WORKER_${envPrefix}_GOMEMLIMIT="${toGoMemLimit(resources)}"`);
+  if (workerName === "scheduler") {
+    console.log(
+      `export WORKER_${envPrefix}_GOMEMLIMIT="${toGoMemLimit(resources)}"`,
+    );
   }
 }
-

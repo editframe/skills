@@ -3,9 +3,9 @@
  * Creates both head-moov (faststart) and tail-moov files with known characteristics
  */
 
-import { spawn } from 'child_process';
-import path from 'path';
-import fs from 'fs/promises';
+import { spawn } from "child_process";
+import path from "path";
+import fs from "fs/promises";
 
 interface TestFileConfig {
   name: string;
@@ -21,68 +21,72 @@ interface TestFileConfig {
 // Configuration for our test files - all 10 seconds for fast generation
 const TEST_FILES: TestFileConfig[] = [
   {
-    name: 'head-moov-720p',
-    duration: '10',
-    resolution: '1280x720',
+    name: "head-moov-720p",
+    duration: "10",
+    resolution: "1280x720",
     frameRate: 25,
-    pattern: 'testsrc2',
+    pattern: "testsrc2",
     audioFreq: 440, // A4 note
     isHeadMoov: true,
-    description: 'Head-moov 720p file with frame number overlay for basic transcoding tests'
+    description:
+      "Head-moov 720p file with frame number overlay for basic transcoding tests",
   },
   {
-    name: 'tail-moov-720p',
-    duration: '10',
-    resolution: '1280x720',
+    name: "tail-moov-720p",
+    duration: "10",
+    resolution: "1280x720",
     frameRate: 25,
-    pattern: 'testsrc2',
+    pattern: "testsrc2",
     audioFreq: 440, // Same audio for consistency
     isHeadMoov: false,
-    description: 'Tail-moov 720p file with frame number overlay for synthetic MP4 testing'
+    description:
+      "Tail-moov 720p file with frame number overlay for synthetic MP4 testing",
   },
   {
-    name: 'head-moov-1080p',
-    duration: '10',
-    resolution: '1920x1080',
+    name: "head-moov-1080p",
+    duration: "10",
+    resolution: "1920x1080",
     frameRate: 25,
-    pattern: 'testsrc2',
+    pattern: "testsrc2",
     audioFreq: 880, // A5 note
     isHeadMoov: true,
-    description: 'Head-moov 1080p file with frame number overlay and animated pattern'
+    description:
+      "Head-moov 1080p file with frame number overlay and animated pattern",
   },
   {
-    name: 'tail-moov-1080p',
-    duration: '10',
-    resolution: '1920x1080',
+    name: "tail-moov-1080p",
+    duration: "10",
+    resolution: "1920x1080",
     frameRate: 24,
-    pattern: 'testsrc2',
+    pattern: "testsrc2",
     audioFreq: 880,
     isHeadMoov: false,
-    description: 'Tail-moov 1080p file with frame number overlay and animated pattern'
+    description:
+      "Tail-moov 1080p file with frame number overlay and animated pattern",
   },
   {
-    name: 'head-moov-480p',
-    duration: '10',
-    resolution: '854x480',
+    name: "head-moov-480p",
+    duration: "10",
+    resolution: "854x480",
     frameRate: 25,
-    pattern: 'testsrc2',
+    pattern: "testsrc2",
     audioFreq: 1000, // 1kHz test tone
     isHeadMoov: true,
-    description: 'Head-moov 480p file with frame number overlay and SMPTE bars'
+    description: "Head-moov 480p file with frame number overlay and SMPTE bars",
   },
   {
-    name: 'tail-moov-480p',
-    duration: '10',
-    resolution: '854x480',
+    name: "tail-moov-480p",
+    duration: "10",
+    resolution: "854x480",
     frameRate: 25,
-    pattern: 'testsrc2',
+    pattern: "testsrc2",
     audioFreq: 1000,
     isHeadMoov: false,
-    description: 'Tail-moov 480p file with frame number overlay and SMPTE bars'
-  }
+    description: "Tail-moov 480p file with frame number overlay and SMPTE bars",
+  },
 ];
 
-const OUTPUT_DIR = path.join(process.cwd(), 'test-assets', 'transcode');
+const OUTPUT_DIR = path.join(process.cwd(), "test-assets", "transcode");
 
 /**
  * Generate a single test file
@@ -91,87 +95,103 @@ async function generateTestFile(config: TestFileConfig): Promise<void> {
   const outputPath = path.join(OUTPUT_DIR, `${config.name}.mp4`);
 
   // Parse resolution to calculate appropriate font size for ~1/4 width readability
-  const [width, height] = config.resolution.split('x').map(Number);
+  const [width, height] = config.resolution.split("x").map(Number);
   const fontSize = Math.floor(width / 20); // Adjust for good readability at 1/4 width
 
   // Build FFmpeg command
   const ffmpegArgs = [
-    '-y', // Overwrite output files
+    "-y", // Overwrite output files
 
     // Video input: Generate test pattern
-    '-f', 'lavfi',
-    '-i', `${config.pattern}=size=${config.resolution}:rate=${config.frameRate}`,
+    "-f",
+    "lavfi",
+    "-i",
+    `${config.pattern}=size=${config.resolution}:rate=${config.frameRate}`,
 
     // Audio input: Generate sine wave
-    '-f', 'lavfi',
-    '-i', `sine=frequency=${config.audioFreq}:sample_rate=48000`,
+    "-f",
+    "lavfi",
+    "-i",
+    `sine=frequency=${config.audioFreq}:sample_rate=48000`,
 
     // Duration
-    '-t', config.duration,
+    "-t",
+    config.duration,
 
     // Video filter: Add frame number overlay with white background
-    '-vf', `drawtext=text='Frame\\: %{frame_num}\n%{pts\\:hms}':fontsize=${fontSize}:fontcolor=black:box=1:boxcolor=white@0.9:boxborderw=${Math.floor(fontSize / 4)}:x=(w-text_w)/2:y=(h-text_h)/2:text_align=right`,
+    "-vf",
+    `drawtext=text='Frame\\: %{frame_num}\n%{pts\\:hms}':fontsize=${fontSize}:fontcolor=black:box=1:boxcolor=white@0.9:boxborderw=${Math.floor(fontSize / 4)}:x=(w-text_w)/2:y=(h-text_h)/2:text_align=right`,
 
     // Video encoding
-    '-c:v', 'libx264',
-    '-preset', 'medium',
-    '-crf', '23',
-    '-g', '25',
-    '-r', config.frameRate.toString(),
+    "-c:v",
+    "libx264",
+    "-preset",
+    "medium",
+    "-crf",
+    "23",
+    "-g",
+    "25",
+    "-r",
+    config.frameRate.toString(),
 
-    '-pix_fmt', 'yuv420p', // Ensure compatibility
+    "-pix_fmt",
+    "yuv420p", // Ensure compatibility
 
     // Audio encoding
-    '-c:a', 'aac',
-    '-b:a', '128k',
-    '-ar', '48000',
+    "-c:a",
+    "aac",
+    "-b:a",
+    "128k",
+    "-ar",
+    "48000",
 
     // Container options - KEY DIFFERENCE for head vs tail moov
     ...(config.isHeadMoov
-      ? ['-movflags', '+faststart'] // Head-moov (faststart)
-      : [] // Tail-moov (default)
-    ),
+      ? ["-movflags", "+faststart"] // Head-moov (faststart)
+      : []), // Tail-moov (default)
 
-    outputPath
+    outputPath,
   ];
 
   console.log(`\n🎬 Generating: ${config.name}.mp4`);
   console.log(`   ${config.description}`);
   console.log(`   Resolution: ${config.resolution} @ ${config.frameRate}fps`);
   console.log(`   Duration: ${config.duration}s`);
-  console.log(`   Moov location: ${config.isHeadMoov ? 'HEAD (faststart)' : 'TAIL (default)'}`);
+  console.log(
+    `   Moov location: ${config.isHeadMoov ? "HEAD (faststart)" : "TAIL (default)"}`,
+  );
   console.log(`   Audio: ${config.audioFreq}Hz sine wave`);
-  console.log(`   Frame overlay: ${fontSize}px font with frame number and timestamp`);
+  console.log(
+    `   Frame overlay: ${fontSize}px font with frame number and timestamp`,
+  );
 
   // Execute FFmpeg
-  const ffmpeg = spawn('ffmpeg', ffmpegArgs);
+  const ffmpeg = spawn("ffmpeg", ffmpegArgs);
 
-  let progressOutput = '';
+  let progressOutput = "";
 
   // Capture progress
-  ffmpeg.stderr.on('data', (data: Buffer) => {
+  ffmpeg.stderr.on("data", (data: Buffer) => {
     const output = data.toString();
 
     // Show only frame/time progress for cleaner output
-    if (output.includes('frame=') && output.includes('time=')) {
-      const lines = output.split('\n');
-      const progressLine = lines.find(line =>
-        line.includes('frame=') && line.includes('time=')
+    if (output.includes("frame=") && output.includes("time=")) {
+      const lines = output.split("\n");
+      const progressLine = lines.find(
+        (line) => line.includes("frame=") && line.includes("time="),
       );
       if (progressLine) {
         // Clear previous progress line and show new one
         process.stdout.write(`\r   Progress: ${progressLine.trim()}`);
         progressOutput = progressLine.trim();
-      }
-      else {
-
+      } else {
       }
     }
   });
 
   // Wait for completion
   return new Promise((resolve, reject) => {
-    ffmpeg.on('close', (code: number) => {
+    ffmpeg.on("close", (code: number) => {
       if (code === 0) {
         console.log(`\n   ✅ Complete: ${config.name}.mp4`);
         resolve();
@@ -181,7 +201,7 @@ async function generateTestFile(config: TestFileConfig): Promise<void> {
       }
     });
 
-    ffmpeg.on('error', (err: Error) => {
+    ffmpeg.on("error", (err: Error) => {
       console.error(`\n   ❌ Error: ${err.message}`);
       reject(err);
     });
@@ -191,23 +211,27 @@ async function generateTestFile(config: TestFileConfig): Promise<void> {
 /**
  * Verify moov atom location in generated files
  */
-async function verifyMoovLocation(fileName: string, expectedHeadMoov: boolean): Promise<boolean> {
+async function verifyMoovLocation(
+  fileName: string,
+  expectedHeadMoov: boolean,
+): Promise<boolean> {
   const filePath = path.join(OUTPUT_DIR, fileName);
 
   return new Promise((resolve) => {
     // Use ffprobe to check moov location
-    const ffprobe = spawn('ffprobe', [
-      '-print_format', 'json',
-      '-show_format',
-      filePath
+    const ffprobe = spawn("ffprobe", [
+      "-print_format",
+      "json",
+      "-show_format",
+      filePath,
     ]);
 
-    let output = '';
-    ffprobe.stdout.on('data', (data: Buffer) => {
+    let output = "";
+    ffprobe.stdout.on("data", (data: Buffer) => {
       output += data.toString();
     });
 
-    ffprobe.on('close', (code: number) => {
+    ffprobe.on("close", (code: number) => {
       if (code !== 0) {
         console.log(`   ⚠️  Could not verify moov location for ${fileName}`);
         resolve(false);
@@ -219,15 +243,19 @@ async function verifyMoovLocation(fileName: string, expectedHeadMoov: boolean): 
         const format = info.format;
 
         // Check for faststart in format tags
-        const hasFaststart = format.tags &&
-          (format.tags.major_brand === 'isom' || format.tags.compatible_brands?.includes('mp41'));
+        const hasFaststart =
+          format.tags &&
+          (format.tags.major_brand === "isom" ||
+            format.tags.compatible_brands?.includes("mp41"));
 
         // For our purposes, if faststart was requested, assume it worked
         // More sophisticated verification would require parsing the actual MP4 structure
         const isHeadMoov = expectedHeadMoov; // Simplified for now
 
         if (isHeadMoov === expectedHeadMoov) {
-          console.log(`   ✅ Moov location verified: ${isHeadMoov ? 'HEAD' : 'TAIL'}`);
+          console.log(
+            `   ✅ Moov location verified: ${isHeadMoov ? "HEAD" : "TAIL"}`,
+          );
           resolve(true);
         } else {
           console.log(`   ⚠️  Moov location mismatch for ${fileName}`);
@@ -245,7 +273,7 @@ async function verifyMoovLocation(fileName: string, expectedHeadMoov: boolean): 
  * Generate file info summary
  */
 async function generateFileInfo(): Promise<void> {
-  const infoPath = path.join(OUTPUT_DIR, 'README.md');
+  const infoPath = path.join(OUTPUT_DIR, "README.md");
 
   let content = `# JIT Transcoding Test Files\n\n`;
   content += `Generated on: ${new Date().toISOString()}\n\n`;
@@ -258,14 +286,14 @@ async function generateFileInfo(): Promise<void> {
     try {
       const stats = await fs.stat(filePath);
       const sizeMB = (stats.size / (1024 * 1024)).toFixed(2);
-      const [width] = config.resolution.split('x').map(Number);
+      const [width] = config.resolution.split("x").map(Number);
       const fontSize = Math.floor(width / 20);
 
       content += `### ${config.name}.mp4\n`;
       content += `- **Description**: ${config.description}\n`;
       content += `- **Resolution**: ${config.resolution} @ ${config.frameRate}fps\n`;
       content += `- **Duration**: ${config.duration} seconds\n`;
-      content += `- **Moov Location**: ${config.isHeadMoov ? 'HEAD (faststart)' : 'TAIL (default)'}\n`;
+      content += `- **Moov Location**: ${config.isHeadMoov ? "HEAD (faststart)" : "TAIL (default)"}\n`;
       content += `- **Audio**: ${config.audioFreq}Hz sine wave\n`;
       content += `- **Frame Overlay**: ${fontSize}px font showing frame number and timestamp (ms)\n`;
       content += `- **File Size**: ${sizeMB} MB\n`;
@@ -296,15 +324,15 @@ async function generateFileInfo(): Promise<void> {
  * Main function to generate all test files
  */
 async function main(): Promise<void> {
-  console.log('🎬 JIT Transcoding Test File Generator');
-  console.log('=====================================');
+  console.log("🎬 JIT Transcoding Test File Generator");
+  console.log("=====================================");
 
   // Create output directory
   try {
     await fs.mkdir(OUTPUT_DIR, { recursive: true });
     console.log(`📁 Output directory: ${OUTPUT_DIR}`);
   } catch (error) {
-    console.error('❌ Failed to create output directory:', error);
+    console.error("❌ Failed to create output directory:", error);
     process.exit(1);
   }
 
@@ -329,16 +357,18 @@ async function main(): Promise<void> {
   await generateFileInfo();
 
   // Summary
-  console.log('\n' + '='.repeat(50));
+  console.log("\n" + "=".repeat(50));
   console.log(`📊 Generation Summary:`);
   console.log(`   Success: ${successCount}/${totalCount} files`);
   console.log(`   Output directory: ${OUTPUT_DIR}`);
 
   if (successCount === totalCount) {
-    console.log('✅ All test files generated successfully!');
-    console.log('\n💡 To use in tests, update TEST_URLS in StreamTranscode.test.ts');
+    console.log("✅ All test files generated successfully!");
+    console.log(
+      "\n💡 To use in tests, update TEST_URLS in StreamTranscode.test.ts",
+    );
   } else {
-    console.log('⚠️  Some files failed to generate. Check errors above.');
+    console.log("⚠️  Some files failed to generate. Check errors above.");
     process.exit(1);
   }
 }
@@ -346,10 +376,10 @@ async function main(): Promise<void> {
 // Run if this file is executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch((error) => {
-    console.error('💥 Fatal error:', error);
+    console.error("💥 Fatal error:", error);
     process.exit(1);
   });
 }
 
 export { generateTestFile, TEST_FILES, OUTPUT_DIR };
-export type { TestFileConfig }; 
+export type { TestFileConfig };

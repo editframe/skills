@@ -1,0 +1,95 @@
+---
+meta:
+  - title: Tutorial
+  - name: description
+    content: Step-by-step tutorial for creating your first surface composition with Editframe Surface Element
+headers:
+    Cache-Control: no-cache
+---
+
+## Tutorial: Your First Surface Composition
+
+This tutorial will guide you through the essential concepts of working with surface elements in Editframe. Each step builds on the previous one, teaching you how to efficiently display video content multiple times.
+
+### Step 1: Display a Basic Surface
+
+Let's start with the simplest possible surface - displaying a single surface that mirrors a video element.
+
+**What you'll learn:** How to create a surface that copies content from a target video element.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup mode="contain" className="w-[720px] h-[480px] flex items-center justify-center bg-black">
+    <Video id="source-video" src="https://assets.editframe.com/bars-n-tone.mp4" className="w-1/2 h-full object-contain" />
+    <Surface target="source-video" className="w-1/2" />
+  </Timegroup>
+</Demonstration>
+
+**Try it yourself:** Change the surface's `className` to use different sizing or positioning. Notice how the surface mirrors the video content exactly, regardless of its own styling.
+
+### Step 2: Create Multiple Surfaces from Single Source
+
+Now let's create multiple surfaces that all mirror the same video source. This demonstrates the efficiency of surfaces.
+
+**What you'll learn:** How to display the same video multiple times using surfaces instead of multiple video elements.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup mode="contain" className="w-[720px] h-[480px] flex items-center justify-center bg-black">
+    <Video id="main-video" src="https://assets.editframe.com/bars-n-tone.mp4" className="w-1/3 h-full object-contain" />
+    <Surface target="main-video" className="w-1/3" />
+    <Surface target="main-video" className="w-1/3" />
+  </Timegroup>
+</Demonstration>
+
+**Try it yourself:** Add a fourth surface targeting the same video. Notice how all surfaces stay perfectly synchronized - they all show the same frame at the same time.
+
+### Step 3: Apply Different CSS Filters to Surfaces
+
+Surfaces can each have different CSS filter styles applied, creating varied visual effects from a single video source.
+
+**What you'll learn:** How to apply CSS filters to surfaces to create different visual styles.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup mode="contain" className="w-[720px] h-[480px] grid grid-cols-3 gap-2 p-2 bg-black">
+    <Video id="filter-video" src="https://assets.editframe.com/bars-n-tone.mp4" className="w-full h-full object-cover" />
+    <Surface target="filter-video" className="w-full h-full object-cover grayscale" />
+    <Surface target="filter-video" className="w-full h-full object-cover sepia" />
+    <Surface target="filter-video" className="w-full h-full object-cover blur-sm" />
+    <Surface target="filter-video" className="w-full h-full object-cover saturate-200" />
+    <Surface target="filter-video" className="w-full h-full object-cover hue-rotate-90" />
+    <Surface target="filter-video" className="w-full h-full object-cover brightness-150" />
+    <Surface target="filter-video" className="w-full h-full object-cover contrast-200" />
+    <Surface target="filter-video" className="w-full h-full object-cover invert" />
+  </Timegroup>
+</Demonstration>
+
+**Try it yourself:** Experiment with different CSS filter combinations. Try combining multiple filters like `grayscale brightness-150` or `sepia blur-sm`.
+
+### Step 4: Use Surfaces in Timegroup Compositions
+
+Add surfaces to timegroup sequences to create picture-in-picture effects and overlays.
+
+**What you'll learn:** How to use surfaces within timegroup sequences.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup mode="sequence" className="w-[720px] h-[480px] flex items-center justify-center bg-black">
+    <Timegroup className="flex items-center justify-center">
+      <Video id="seq-video-1" src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="0s" sourceout="2s" className="w-full h-full object-contain" />
+      <Surface target="seq-video-1" className="absolute top-0 right-0 w-1/4 h-1/4 opacity-75" />
+    </Timegroup>
+    <Timegroup className="flex items-center justify-center">
+      <Video id="seq-video-2" src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="2s" sourceout="4s" className="w-full h-full object-contain" />
+      <Surface target="seq-video-2" className="absolute top-0 right-0 w-1/4 h-1/4 opacity-75" />
+    </Timegroup>
+  </Timegroup>
+</Demonstration>
+
+**Try it yourself:** Create a sequence with multiple videos, each with a surface overlay. Experiment with different positions and sizes for the surface overlays.
+
+### Next Steps
+
+Now that you understand the basics, explore:
+- [How-To Guides](/docs/elements/surface/how-to/) for specific tasks like applying filters and creating multiple surfaces
+- [Explanations](/docs/elements/surface/explanation/) for architectural concepts and deeper knowledge
+- [Reference](/docs/elements/surface/reference) for complete attribute documentation
+
+

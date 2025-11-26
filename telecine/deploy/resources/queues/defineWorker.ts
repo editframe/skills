@@ -21,7 +21,7 @@ import { publicBucketName } from "../constants";
 import { getGitSha } from "../../util/getGitSha";
 import { valkeyInternalIp } from "../valkey";
 import { BASE_QUEUE_CONFIGS } from "./BASE_QUEUE_CONFIGS";
-import { type QueueConfig, workerConfigs, } from "./workers";
+import { type QueueConfig, workerConfigs } from "./workers";
 
 const repo = infra.artifactRepository;
 

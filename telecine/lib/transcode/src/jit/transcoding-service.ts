@@ -1,11 +1,17 @@
-
-import { createVideoSource } from '../pipeline/VideoSource';
-import { transcodeAudioSegment } from './audio-transcoder';
-import { transcodeVideoSegment } from './video-transcoder';
-import { type TranscodeOptions, isAudioRendition, isVideoRendition } from './transcoder-types';
-import { cacheMetadataFilePath } from '@/util/filePaths';
-import { storageProvider } from '@/util/storageProvider.server';
-import { buildFakeMp4WithPreservedStructure, fetchMoovAndFtypUnified } from '../moovScanner';
+import { createVideoSource } from "../pipeline/VideoSource";
+import { transcodeAudioSegment } from "./audio-transcoder";
+import { transcodeVideoSegment } from "./video-transcoder";
+import {
+  type TranscodeOptions,
+  isAudioRendition,
+  isVideoRendition,
+} from "./transcoder-types";
+import { cacheMetadataFilePath } from "@/util/filePaths";
+import { storageProvider } from "@/util/storageProvider.server";
+import {
+  buildFakeMp4WithPreservedStructure,
+  fetchMoovAndFtypUnified,
+} from "../moovScanner";
 
 export interface QualityConfig {
   name: string;
@@ -19,50 +25,50 @@ export interface QualityConfig {
 
 export const RENDITION_CONFIGS: Record<string, QualityConfig> = {
   high: {
-    name: 'high',
+    name: "high",
     width: 1920,
     height: 1080,
-    videoBitrate: '4000k',
-    audioBitrate: '128k',
-    videoCodec: 'libx264',
-    audioCodec: 'aac'
+    videoBitrate: "4000k",
+    audioBitrate: "128k",
+    videoCodec: "libx264",
+    audioCodec: "aac",
   },
   medium: {
-    name: 'medium',
+    name: "medium",
     width: 1280,
     height: 720,
-    videoBitrate: '2000k',
-    audioBitrate: '96k',
-    videoCodec: 'libx264',
-    audioCodec: 'aac'
+    videoBitrate: "2000k",
+    audioBitrate: "96k",
+    videoCodec: "libx264",
+    audioCodec: "aac",
   },
   low: {
-    name: 'low',
+    name: "low",
     width: 854,
     height: 480,
-    videoBitrate: '800k',
-    audioBitrate: '64k',
-    videoCodec: 'libx264',
-    audioCodec: 'aac'
+    videoBitrate: "800k",
+    audioBitrate: "64k",
+    videoCodec: "libx264",
+    audioCodec: "aac",
   },
   scrub: {
-    name: 'scrub',
+    name: "scrub",
     width: 320,
     height: 180,
-    videoBitrate: '100k',
-    audioBitrate: '0k',
-    videoCodec: 'libx264',
-    audioCodec: ''
+    videoBitrate: "100k",
+    audioBitrate: "0k",
+    videoCodec: "libx264",
+    audioCodec: "",
   },
   audio: {
-    name: 'audio',
+    name: "audio",
     width: 0,
     height: 0,
-    videoBitrate: '0k',
-    audioBitrate: '128k',
-    videoCodec: '',
-    audioCodec: 'aac'
-  }
+    videoBitrate: "0k",
+    audioBitrate: "128k",
+    videoCodec: "",
+    audioCodec: "aac",
+  },
 };
 
 /**
@@ -72,7 +78,7 @@ export const RENDITION_CONFIGS: Record<string, QualityConfig> = {
 export function calculateAspectRatioDimensions(
   sourceWidth: number,
   sourceHeight: number,
-  rendition: string
+  rendition: string,
 ): { width: number; height: number } {
   const config = RENDITION_CONFIGS[rendition];
   if (!config || config.width === 0 || config.height === 0) {
@@ -108,15 +114,15 @@ async function streamToBuffer(stream: NodeJS.ReadableStream): Promise<Buffer> {
   const chunks: Uint8Array[] = [];
 
   return new Promise((resolve, reject) => {
-    stream.on('data', (chunk) => {
+    stream.on("data", (chunk) => {
       chunks.push(chunk);
     });
 
-    stream.on('end', () => {
+    stream.on("end", () => {
       resolve(Buffer.concat(chunks));
     });
 
-    stream.on('error', (error) => {
+    stream.on("error", (error) => {
       reject(error);
     });
   });
@@ -159,26 +165,26 @@ async function getOrFetchMetadata(url: string): Promise<ArrayBuffer> {
   // Use intervening boxes to preserve exact file structure
   const interveningBoxes = moovResult.interveningBoxes || new Uint8Array(0);
 
-  console.log(`[Metadata] Building synthetic MP4 with preserved structure. Intervening boxes: ${interveningBoxes.length} bytes`);
+  console.log(
+    `[Metadata] Building synthetic MP4 with preserved structure. Intervening boxes: ${interveningBoxes.length} bytes`,
+  );
 
   const syntheticMp4 = buildFakeMp4WithPreservedStructure(
     moovResult.ftyp,
     moovResult.moov,
-    interveningBoxes
+    interveningBoxes,
   );
 
   // Cache the synthetic MP4 for future use
   try {
     await storageProvider.writeFile(cacheKey, Buffer.from(syntheticMp4), {
-      contentType: 'video/mp4'
+      contentType: "video/mp4",
     });
     console.log(`Cached metadata for: ${url} at ${cacheKey}`);
   } catch (cacheError) {
     console.warn(`Error caching metadata for ${url}:`, cacheError);
     // Continue even if caching fails
   }
-
-
 
   // Ensure we return ArrayBuffer, not ArrayBufferLike
   const result = new ArrayBuffer(syntheticMp4.byteLength);
@@ -204,7 +210,7 @@ export async function getFileDurationWithCaching(url: string): Promise<number> {
   // Create video source using cached metadata
   const videoSource = await createVideoSource({
     url,
-    syntheticMp4
+    syntheticMp4,
   });
 
   return videoSource.durationMs / 1000;
@@ -223,17 +229,26 @@ export async function detectAvailableTracks(url: string): Promise<{
   // Create video source using cached metadata
   using videoSource = await createVideoSource({
     url,
-    syntheticMp4
+    syntheticMp4,
   });
 
-  const hasAudio = videoSource.streams.some(s => s.codecType === 'audio');
-  const hasVideo = videoSource.streams.some(s => s.codecType === 'video');
+  const hasAudio = videoSource.streams.some((s) => s.codecType === "audio");
+  const hasVideo = videoSource.streams.some((s) => s.codecType === "video");
 
   return { hasAudio, hasVideo };
 }
 
-export async function transcodeSegment(options: TranscodeOptions): Promise<string> {
-  const { inputUrl, rendition, segmentDurationMs, outputDir, segmentId, isFragmented } = options;
+export async function transcodeSegment(
+  options: TranscodeOptions,
+): Promise<string> {
+  const {
+    inputUrl,
+    rendition,
+    segmentDurationMs,
+    outputDir,
+    segmentId,
+    isFragmented,
+  } = options;
   const renditionConfig = RENDITION_CONFIGS[rendition];
 
   if (!renditionConfig) {
@@ -248,9 +263,9 @@ export async function transcodeSegment(options: TranscodeOptions): Promise<strin
       segmentId,
       segmentDurationMs,
       outputDir,
-      rendition: 'audio',
+      rendition: "audio",
       syntheticMp4,
-      isFragmented
+      isFragmented,
     });
   }
 
@@ -261,9 +276,9 @@ export async function transcodeSegment(options: TranscodeOptions): Promise<strin
       segmentDurationMs,
       outputDir,
       rendition,
-      isScrubTrack: rendition === 'scrub',
+      isScrubTrack: rendition === "scrub",
       syntheticMp4,
-      isFragmented
+      isFragmented,
     });
   }
 

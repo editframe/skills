@@ -1,0 +1,43 @@
+---
+meta:
+  - title: Use Time Display
+  - name: description
+    content: Display current time and duration with ef-time-display
+headers:
+    Cache-Control: no-cache
+---
+
+## Use Time Display
+
+**Problem:** You need to display the current playback time and total duration.
+
+**Solution:** Use `ef-time-display` element for automatic time formatting.
+
+```html
+<ef-time-display></ef-time-display>
+```
+
+Displays format: `M:SS / M:SS` (e.g., `1:23 / 5:47`).
+
+**Custom styling:**
+
+```html
+<ef-time-display className="custom-time"></ef-time-display>
+
+<style>
+  .custom-time {
+    --ef-font-family: 'SF Mono', monospace;
+    --ef-font-size-xs: 1rem;
+    --ef-text-color: white;
+  }
+</style>
+```
+
+The display updates automatically as video plays.
+
+**Reference:** See [Time Display Reference](/docs/controls/reference/time-display) for CSS custom properties.
+
+
+
+
+

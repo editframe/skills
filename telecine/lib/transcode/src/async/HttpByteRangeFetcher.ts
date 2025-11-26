@@ -26,23 +26,22 @@ export class HttpByteRangeFetcher {
       const headers: HeadersInit = {};
       const useByteRange = startByte !== undefined && endByte !== undefined;
       if (useByteRange) {
-        headers['Range'] = `bytes=${startByte}-${endByte}`;
+        headers["Range"] = `bytes=${startByte}-${endByte}`;
         const response = await fetch(url, { headers });
         if (!response.ok && response.status !== 206) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-  
+
         const data = new Uint8Array(await response.arrayBuffer());
-  
+
         return {
           success: true,
           data,
           actualStartByte: startByte,
           actualEndByte: endByte,
-          statusCode: response.status
+          statusCode: response.status,
         };
-      }
-      else {
+      } else {
         const response = await fetch(url, { headers });
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -53,20 +52,18 @@ export class HttpByteRangeFetcher {
           data,
           actualStartByte: 0,
           actualEndByte: -1,
-          statusCode: response.status
+          statusCode: response.status,
         };
       }
-
-
     } catch (error) {
-      console.error('[HttpByteRangeFetcher] Fetch failed:', error);
+      console.error("[HttpByteRangeFetcher] Fetch failed:", error);
       return {
         success: false,
         data: new Uint8Array(0),
         actualStartByte: startByte,
         actualEndByte: endByte,
         statusCode: 0,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -74,8 +71,10 @@ export class HttpByteRangeFetcher {
   /**
    * Fetch multiple byte ranges concurrently
    */
-  async fetchMultipleRanges(requests: ByteRangeRequest[]): Promise<ByteRangeResponse[]> {
-    const promises = requests.map(request => this.fetchByteRange(request));
+  async fetchMultipleRanges(
+    requests: ByteRangeRequest[],
+  ): Promise<ByteRangeResponse[]> {
+    const promises = requests.map((request) => this.fetchByteRange(request));
     const results = await Promise.all(promises);
 
     return results;
@@ -87,26 +86,28 @@ export class HttpByteRangeFetcher {
   async getResourceSize(url: string): Promise<number | null> {
     try {
       const response = await fetch(url, {
-        method: 'HEAD',
+        method: "HEAD",
         headers: {
-          'User-Agent': 'JitTranscoder/1.0'
-        }
+          "User-Agent": "JitTranscoder/1.0",
+        },
       });
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const contentLength = response.headers.get('content-length');
+      const contentLength = response.headers.get("content-length");
       if (contentLength) {
         const size = Number.parseInt(contentLength, 10);
         return size;
       }
 
       return null;
-
     } catch (error) {
-      console.error('[HttpByteRangeFetcher] Failed to get resource size:', error);
+      console.error(
+        "[HttpByteRangeFetcher] Failed to get resource size:",
+        error,
+      );
       return null;
     }
   }
@@ -117,23 +118,25 @@ export class HttpByteRangeFetcher {
   async supportsRangeRequests(url: string): Promise<boolean> {
     try {
       const response = await fetch(url, {
-        method: 'HEAD',
+        method: "HEAD",
         headers: {
-          'User-Agent': 'JitTranscoder/1.0'
-        }
+          "User-Agent": "JitTranscoder/1.0",
+        },
       });
 
       if (!response.ok) {
         return false;
       }
 
-      const acceptRanges = response.headers.get('accept-ranges');
-      const supportsRanges = acceptRanges === 'bytes';
+      const acceptRanges = response.headers.get("accept-ranges");
+      const supportsRanges = acceptRanges === "bytes";
 
       return supportsRanges;
-
     } catch (error) {
-      console.error('[HttpByteRangeFetcher] Failed to check range support:', error);
+      console.error(
+        "[HttpByteRangeFetcher] Failed to check range support:",
+        error,
+      );
       return false;
     }
   }
@@ -145,7 +148,7 @@ export class HttpByteRangeFetcher {
 export async function fetchByteRange(
   url: string,
   startByte: number,
-  endByte: number
+  endByte: number,
 ): Promise<ByteRangeResponse> {
   const fetcher = new HttpByteRangeFetcher();
   return fetcher.fetchByteRange({ url, startByte, endByte });
@@ -164,18 +167,17 @@ export async function validateByteRangeSupport(url: string): Promise<{
 
     const [supported, totalSize] = await Promise.all([
       fetcher.supportsRangeRequests(url),
-      fetcher.getResourceSize(url)
+      fetcher.getResourceSize(url),
     ]);
 
     return {
       supported,
-      totalSize: totalSize || undefined
+      totalSize: totalSize || undefined,
     };
-
   } catch (error) {
     return {
       supported: false,
-      error: error instanceof Error ? error.message : String(error)
+      error: error instanceof Error ? error.message : String(error),
     };
   }
-} 
+}

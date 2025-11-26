@@ -1,0 +1,71 @@
+import type { PropertyDefinition } from "./video-properties";
+
+export const textElementProperties: PropertyDefinition[] = [
+  {
+    name: "split",
+    type: "string",
+    access: "R/W",
+    useCase: "How to split text: 'line', 'word', or 'char'",
+    category: "Text Splitting",
+    domReadable: true,
+    domWritable: true,
+    htmlAttribute: "split",
+    defaultValue: "word",
+  },
+  {
+    name: "stagger",
+    type: "timestring",
+    access: "R/W",
+    useCase: "Stagger delay for sequential segment animations",
+    category: "Animation Timing",
+    domReadable: true,
+    domWritable: true,
+    htmlAttribute: "stagger",
+  },
+  {
+    name: "easing",
+    type: "string",
+    access: "R/W",
+    useCase: "Easing function for stagger distribution",
+    category: "Animation Timing",
+    domReadable: true,
+    domWritable: true,
+    htmlAttribute: "easing",
+    defaultValue: "linear",
+  },
+  {
+    name: "durationMs",
+    type: "number",
+    access: "R",
+    useCase: "Duration in milliseconds (calculated from content if not explicit)",
+    category: "Animation Timing",
+    domReadable: true,
+  },
+  {
+    name: "textContent",
+    type: "string",
+    access: "R/W",
+    useCase: "Get or set the text content",
+    category: "Content Management",
+    domReadable: true,
+    domWritable: true,
+  },
+  {
+    name: "segments",
+    type: "EFTextSegment[]",
+    access: "R",
+    useCase: "Get all created text segment elements",
+    category: "Segment Access",
+    domReadable: true,
+  },
+  {
+    name: "whenSegmentsReady",
+    type: "Promise<EFTextSegment[]>",
+    access: "R",
+    useCase: "Wait for segments to be created and initialized",
+    category: "Segment Access",
+    domReadable: true,
+  },
+];
+
+

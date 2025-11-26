@@ -1,6 +1,11 @@
 import { consume } from "@lit/context";
 import { css, html, LitElement } from "lit";
-import { customElement, eventOptions, property, state } from "lit/decorators.js";
+import {
+  customElement,
+  eventOptions,
+  property,
+  state,
+} from "lit/decorators.js";
 
 import { createRef, ref } from "lit/directives/ref.js";
 import type { ControllableInterface } from "./Controllable.js";
@@ -379,13 +384,15 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
           : null;
 
       return html`
-        ${rawScrubPositionPixels !== null &&
-        rawScrubPositionPixels !== positionPixels
-          ? html`<div
+        ${
+          rawScrubPositionPixels !== null &&
+          rawScrubPositionPixels !== positionPixels
+            ? html`<div
               class="raw-preview"
               style="left: ${rawScrubPositionPixels}px"
             ></div>`
-          : html``}
+            : html``
+        }
         <div
           ${ref(this.scrubberRef)}
           part="scrubber"

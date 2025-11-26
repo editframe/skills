@@ -1,0 +1,31 @@
+---
+meta:
+  - title: Create Waveform Visualizations
+  - name: description
+    content: Pair audio elements with waveform elements and configure FFT properties for different visualization styles
+headers:
+    Cache-Control: no-cache
+---
+
+## Create Waveform Visualizations
+
+**Problem:** You want to visualize audio with a waveform that synchronizes with playback.
+
+**Solution:** Pair an audio element with a waveform element using the `target` attribute.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup mode="contain" className="aspect-[1/1] w-[500px] h-[500px] bg-black flex flex-col items-center justify-center">
+    <Audio src="https://assets.editframe.com/card-joker.mp3" id="waveform-audio" />
+    <Waveform target="waveform-audio" mode="wave" className="w-full h-[200px] block" />
+  </Timegroup>
+</Demonstration>
+
+**Configure FFT properties for different styles:**
+
+- **Higher granularity:** Increase `fftSize` (must be power of 2, e.g., 1024, 2048)
+- **Smoother animation:** Increase `fftDecay` (more frames averaged)
+- **More pronounced waveform:** Increase `fftGain` (amplitude multiplier)
+- **Fill missing frequencies:** Set `interpolateFrequencies` to `true` for telephone-quality audio
+
+For deeper understanding of how audio analysis works, see the [Audio Analysis explanation](/docs/elements/audio/explanation/audio-analysis).
+

@@ -1,0 +1,51 @@
+---
+meta:
+  - title: Add Fade Transitions
+  - name: description
+    content: Create smooth entry and exit fades for video elements using CSS animations
+headers:
+    Cache-Control: no-cache
+---
+
+## Add Fade Transitions
+
+**Problem:** You need smooth entry and exit fades for your video.
+
+**Solution:** Use CSS animations with the `--ef-duration` CSS variable to time fade-out relative to the video's end.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup mode="contain" className="w-[720px] h-[480px] flex items-center justify-center bg-black overflow-hidden">
+    <Video
+      src="https://assets.editframe.com/bars-n-tone.mp4"
+      className="size-full object-contain"
+      style={{
+        animation: "2s fade-in, 2s fade-out calc(var(--ef-duration) - 2s)"
+      }}
+    />
+  </Timegroup>
+  <style>{`@keyframes fade-in {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  @keyframes fade-out {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+  }`}</style>
+</Demonstration>
+
+```jsx
+// Fade in only
+<style>{`@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }`}</style>
+<Video src="video.mp4" style={{ animation: "fadeIn 2s" }} />
+
+// Fade out only (starts near end)
+<style>{`@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }`}</style>
+<Video src="video.mp4" style={{ animation: "2s fadeOut calc(var(--ef-duration) - 2s)" }} />
+
+// Fade in and out
+<Video src="video.mp4" style={{ animation: "2s fadeIn, 2s fadeOut calc(var(--ef-duration) - 2s)" }} />
+```
+
+The `--ef-duration` variable contains the video's duration in seconds (e.g., `10s`), so fade-out animations start at the right time without hardcoding.
+
+

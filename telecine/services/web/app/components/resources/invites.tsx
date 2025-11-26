@@ -157,10 +157,12 @@ const Filter = () => {
 
   return (
     <div className="flex items-center gap-2">
-      <span className={clsx(
-        "text-xs font-medium whitespace-nowrap transition-colors",
-        "text-slate-700 dark:text-slate-300"
-      )}>
+      <span
+        className={clsx(
+          "text-xs font-medium whitespace-nowrap transition-colors",
+          "text-slate-700 dark:text-slate-300",
+        )}
+      >
         Search:
       </span>
       <input
@@ -181,7 +183,7 @@ const Filter = () => {
           "focus:border-blue-500/85 dark:focus:border-blue-400/85",
           "focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08),0_4px_12px_0_rgb(59_130_246_/_0.22)] dark:focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.4),0_4px_12px_0_rgb(59_130_246_/_0.35)]",
           "focus:before:from-blue-50/30 focus:before:via-transparent focus:before:to-transparent",
-          "dark:focus:before:from-blue-950/22 dark:focus:before:via-transparent dark:focus:before:to-transparent"
+          "dark:focus:before:from-blue-950/22 dark:focus:before:via-transparent dark:focus:before:to-transparent",
         )}
         onChange={(e) => setSearch(e.target.value)}
       />

@@ -1,0 +1,56 @@
+---
+meta:
+  - title: JIT Transcoding Architecture
+  - name: description
+    content: Deep dive into Editframe's Just-In-Time transcoding architecture and its engineering advantages
+headers:
+    Cache-Control: no-cache
+---
+
+## JIT Transcoding: Instant Video Playback Without Preprocessing
+
+Editframe's Just-In-Time (JIT) transcoding enables playback of video URLs without downloading or preprocessing the entire file. This architecture addresses engineering challenges inherent to native video playback while reducing latency and bandwidth costs.
+
+### Engineering Challenges with Native Video Playback
+
+Using native video playback with original files presents these engineering challenges: Native playback requires full file download before seeking, making previews slow. Supporting multiple quality levels typically requires preprocessing infrastructure to transcode and store variants upfront. Seeking is often slow and unresponsive, which can discourage exploration in video editing workflows.
+
+### The Solution: On-Demand Video Generation
+
+Instead of preprocessing entire videos, Editframe generates video data on-demand as users need it. Playback begins typically within seconds—users see video quickly without waiting for full file downloads. Only the portions users actually watch are fetched, significantly reducing bandwidth costs. Seeking to any position is typically very fast with immediate visual feedback, making scrubbing responsive and encouraging exploration.
+
+**Architectural advantages:**
+- **Fast startup:** Playback begins typically within seconds without downloading entire files
+- **Efficient bandwidth:** Only watched portions are fetched, reducing costs by orders of magnitude
+- **Fast seeking:** Very fast seeking with immediate visual feedback
+- **No preprocessing:** Works with most standard video URLs typically within seconds, minimal infrastructure setup required
+- **Automatic optimization:** Quality levels are selected automatically for optimal playback
+
+### Benefits for Your Workflow
+
+**Development speed:** Test video changes typically within seconds without preprocessing delays. Iterate quickly and preview videos typically within seconds after upload.
+
+**Cost efficiency:** Pay only for video data users actually watch. No storage costs for unused quality levels, reduced bandwidth costs through efficient delivery.
+
+**User experience:** Videos start playing typically within seconds, rather than after long loading times. Smooth, responsive seeking encourages exploration and can lead to higher engagement.
+
+**Simplified architecture:** Minimal preprocessing infrastructure to build or maintain. Works with standard video URLs without special setup. Focus on your application logic, not video infrastructure.
+
+### Example: Instant Playback
+
+Simply provide a video URL with the `src` attribute—no preprocessing required:
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup mode="contain" className="w-[720px] h-[480px] flex items-center justify-center bg-black">
+    <Video src="https://assets.editframe.com/bars-n-tone.mp4" className="size-full object-contain" />
+  </Timegroup>
+</Demonstration>
+
+The video starts playing typically within seconds. Try scrubbing through the timeline—seeking is very fast.
+
+```jsx
+<Video src="https://example.com/video.mp4" />
+```
+
+Using native video playback with original files typically requires downloading entire files (100MB+), waiting for transcoding, storing multiple quality versions, and setting up preprocessing infrastructure. With JIT transcoding, playback begins typically within seconds with minimal preprocessing overhead.
+

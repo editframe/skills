@@ -105,7 +105,11 @@ export class EFResizableBox extends LitElement {
     this.cleanup();
   }
 
-  private handlePointerDown = (e: PointerEvent, mode: "move" | "resize", handle?: ResizeHandle) => {
+  private handlePointerDown = (
+    e: PointerEvent,
+    mode: "move" | "resize",
+    handle?: ResizeHandle,
+  ) => {
     e.preventDefault();
     e.stopPropagation();
     this.isDragging = true;
@@ -127,12 +131,19 @@ export class EFResizableBox extends LitElement {
         oppositeCorner.y,
       );
       this.resizeStartCorner = initialCorner;
-      this.resizeStartSize = { width: this.bounds.width, height: this.bounds.height };
+      this.resizeStartSize = {
+        width: this.bounds.width,
+        height: this.bounds.height,
+      };
       this.resizeStartPosition = { x: this.bounds.x, y: this.bounds.y };
     }
 
-    document.addEventListener("pointermove", this.handlePointerMove, { passive: false });
-    document.addEventListener("pointerup", this.handlePointerUp, { passive: false });
+    document.addEventListener("pointermove", this.handlePointerMove, {
+      passive: false,
+    });
+    document.addEventListener("pointerup", this.handlePointerUp, {
+      passive: false,
+    });
   };
 
   private handlePointerMove = (e: PointerEvent) => {
@@ -143,7 +154,12 @@ export class EFResizableBox extends LitElement {
     const deltaX = e.clientX - this.dragStart.x;
     const deltaY = e.clientY - this.dragStart.y;
 
-    if (this.isResizing && this.resizeStartCorner && this.resizeStartSize && this.resizeStartPosition) {
+    if (
+      this.isResizing &&
+      this.resizeStartCorner &&
+      this.resizeStartSize &&
+      this.resizeStartPosition
+    ) {
       const oppositeCorner = getOppositeCorner(this.isResizing);
       const rotationRadians = 0;
 
@@ -162,8 +178,14 @@ export class EFResizableBox extends LitElement {
         newHeight = this.resizeStartSize.height - deltaY;
       }
 
-      newWidth = Math.max(this.minSize, Math.min(this.containerWidth - this.bounds.x, newWidth));
-      newHeight = Math.max(this.minSize, Math.min(this.containerHeight - this.bounds.y, newHeight));
+      newWidth = Math.max(
+        this.minSize,
+        Math.min(this.containerWidth - this.bounds.x, newWidth),
+      );
+      newHeight = Math.max(
+        this.minSize,
+        Math.min(this.containerHeight - this.bounds.y, newHeight),
+      );
 
       const newOppositeCorner = getCornerPoint(
         this.resizeStartPosition.x,
@@ -178,8 +200,20 @@ export class EFResizableBox extends LitElement {
       const offsetX = this.resizeStartCorner.x - newOppositeCorner.x;
       const offsetY = this.resizeStartCorner.y - newOppositeCorner.y;
 
-      const newX = Math.max(0, Math.min(this.containerWidth - newWidth, this.resizeStartPosition.x + offsetX));
-      const newY = Math.max(0, Math.min(this.containerHeight - newHeight, this.resizeStartPosition.y + offsetY));
+      const newX = Math.max(
+        0,
+        Math.min(
+          this.containerWidth - newWidth,
+          this.resizeStartPosition.x + offsetX,
+        ),
+      );
+      const newY = Math.max(
+        0,
+        Math.min(
+          this.containerHeight - newHeight,
+          this.resizeStartPosition.y + offsetY,
+        ),
+      );
 
       this.bounds = {
         x: newX,
@@ -188,8 +222,20 @@ export class EFResizableBox extends LitElement {
         height: newHeight,
       };
     } else {
-      const constrainedX = Math.max(0, Math.min(this.containerWidth - this.bounds.width, this.dragStartPosition.x + deltaX));
-      const constrainedY = Math.max(0, Math.min(this.containerHeight - this.bounds.height, this.dragStartPosition.y + deltaY));
+      const constrainedX = Math.max(
+        0,
+        Math.min(
+          this.containerWidth - this.bounds.width,
+          this.dragStartPosition.x + deltaX,
+        ),
+      );
+      const constrainedY = Math.max(
+        0,
+        Math.min(
+          this.containerHeight - this.bounds.height,
+          this.dragStartPosition.y + deltaY,
+        ),
+      );
 
       this.bounds = {
         ...this.bounds,
@@ -236,7 +282,16 @@ export class EFResizableBox extends LitElement {
       height: `${this.bounds.height}px`,
     };
 
-    const handles: ResizeHandle[] = ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
+    const handles: ResizeHandle[] = [
+      "nw",
+      "n",
+      "ne",
+      "e",
+      "se",
+      "s",
+      "sw",
+      "w",
+    ];
 
     return html`
       <div

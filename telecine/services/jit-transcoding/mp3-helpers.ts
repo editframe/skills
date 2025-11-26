@@ -10,7 +10,7 @@ import { calculateSegmentDurations } from "@/transcode/src/jit/calculateSegmentD
 
 // Helper to generate cache key for MP3 → MP4 conversion
 export function generateMp3ConversionCacheKey(originalMp3Url: string): string {
-  const urlHash = crypto.createHash('md5').update(originalMp3Url).digest('hex');
+  const urlHash = crypto.createHash("md5").update(originalMp3Url).digest("hex");
   return `mp3-conversions/${urlHash}.mp4`;
 }
 
@@ -34,12 +34,11 @@ export async function convertMp3ToMp4AndCache(mp3Url: string): Promise<string> {
 
     // Store in storage provider instead of local disk
     await storageProvider.writeFile(cacheKey, mp4Buffer, {
-      contentType: 'video/mp4'
+      contentType: "video/mp4",
     });
 
     console.log(`Cached MP3 conversion: ${cacheKey}`);
     return cacheKey;
-
   } catch (error) {
     console.error(`Failed to convert MP3 to MP4: ${mp3Url}`, error);
     throw error;
@@ -49,7 +48,9 @@ export async function convertMp3ToMp4AndCache(mp3Url: string): Promise<string> {
 // Helper to resolve the effective URL for transcoding
 // For MP3 URLs: downloads cached MP4 to temp file and returns file path
 // For other URLs: returns original URL unchanged
-export async function resolveEffectiveTranscodingUrl(originalUrl: string): Promise<string> {
+export async function resolveEffectiveTranscodingUrl(
+  originalUrl: string,
+): Promise<string> {
   if (!isMP3Url(originalUrl)) {
     return originalUrl;
   }
@@ -60,21 +61,24 @@ export async function resolveEffectiveTranscodingUrl(originalUrl: string): Promi
   const cacheExists = await storageProvider.pathExists(cacheKey);
 
   if (!cacheExists) {
-    throw new Error(`MP3 conversion not found. Call manifest endpoint first: ${originalUrl}`);
+    throw new Error(
+      `MP3 conversion not found. Call manifest endpoint first: ${originalUrl}`,
+    );
   }
 
   // Download cached MP4 to temporary file for transcoding
-  const tempDir = path.join(os.tmpdir(), 'mp3-transcoding');
+  const tempDir = path.join(os.tmpdir(), "mp3-transcoding");
   await fs.mkdir(tempDir, { recursive: true });
 
-  const urlHash = crypto.createHash('md5').update(originalUrl).digest('hex');
+  const urlHash = crypto.createHash("md5").update(originalUrl).digest("hex");
   const tempFilePath = path.join(tempDir, `${urlHash}.mp4`);
 
   // Check if temp file already exists and is recent (avoid re-downloading)
   try {
     const stats = await fs.stat(tempFilePath);
     const ageMinutes = (Date.now() - stats.mtime.getTime()) / (1000 * 60);
-    if (ageMinutes < 60) { // Reuse temp file if less than 1 hour old
+    if (ageMinutes < 60) {
+      // Reuse temp file if less than 1 hour old
       console.log(`Reusing cached MP4 temp file: ${tempFilePath}`);
       return tempFilePath;
     }
@@ -82,7 +86,9 @@ export async function resolveEffectiveTranscodingUrl(originalUrl: string): Promi
     // File doesn't exist, continue with download
   }
 
-  console.log(`Downloading cached MP4 for transcoding: ${cacheKey} -> ${tempFilePath}`);
+  console.log(
+    `Downloading cached MP4 for transcoding: ${cacheKey} -> ${tempFilePath}`,
+  );
 
   try {
     // Download from storage provider to temp file
@@ -91,16 +97,17 @@ export async function resolveEffectiveTranscodingUrl(originalUrl: string): Promi
 
     await new Promise<void>((resolve, reject) => {
       cachedStream.pipe(writeStream);
-      writeStream.on('finish', resolve);
-      writeStream.on('error', reject);
-      cachedStream.on('error', reject);
+      writeStream.on("finish", resolve);
+      writeStream.on("error", reject);
+      cachedStream.on("error", reject);
     });
 
     return tempFilePath;
-
   } catch (error) {
     console.error(`Failed to download cached MP4: ${cacheKey}`, error);
-    throw new Error(`Failed to access cached MP4 for transcoding: ${originalUrl}`);
+    throw new Error(
+      `Failed to access cached MP4 for transcoding: ${originalUrl}`,
+    );
   }
 }
 
@@ -118,7 +125,11 @@ export async function generateMp3Manifest(mp3Url: string, baseUrl: string) {
 
   // Calculate AAC frame-aligned segment durations (returns milliseconds)
   const targetSegmentDurationMs = 15000; // 15 seconds target
-  const audioSegmentDurations = calculateSegmentDurations(durationMs, targetSegmentDurationMs, { mediaType: 'audio' });
+  const audioSegmentDurations = calculateSegmentDurations(
+    durationMs,
+    targetSegmentDurationMs,
+    { mediaType: "audio" },
+  );
 
   return {
     version: "1.0",
@@ -142,42 +153,44 @@ export async function generateMp3Manifest(mp3Url: string, baseUrl: string) {
         segmentDuration: 15, // 15 seconds target
         segmentDurationMs: targetSegmentDurationMs,
         segmentDurationsMs: audioSegmentDurations,
-        language: "en"
-      }
+        language: "en",
+      },
     ],
 
     // Segment URL templates use ORIGINAL MP3 URL - no internal paths exposed
     endpoints: {
       initSegment: `${baseUrl}/api/v1/transcode/{rendition}/init.m4s?url=${encodeURIComponent(mp3Url)}`,
-      mediaSegment: `${baseUrl}/api/v1/transcode/{rendition}/{segmentId}.m4s?url=${encodeURIComponent(mp3Url)}`
+      mediaSegment: `${baseUrl}/api/v1/transcode/{rendition}/{segmentId}.m4s?url=${encodeURIComponent(mp3Url)}`,
     },
 
     jitInfo: {
       parallelTranscodingSupported: true,
       expectedTranscodeLatency: 100, // Faster for pre-converted MP3s
-      segmentCount: audioSegmentDurations.length
-    }
+      segmentCount: audioSegmentDurations.length,
+    },
   };
 }
 
 // Helper to detect if a URL is an MP3 file
 export function isMP3Url(url: string): boolean {
-  return url.toLowerCase().endsWith('.mp3');
+  return url.toLowerCase().endsWith(".mp3");
 }
 
 // Helper to validate MP3 rendition
 export function validateMp3Rendition(rendition: string): boolean {
-  return rendition === 'audio';
+  return rendition === "audio";
 }
 
 // Helper to validate 15s time alignment for MP3
-export function validateMp3TimeAlignment(startTimeMs: number): { isValid: boolean; nearestValidTime?: number } {
+export function validateMp3TimeAlignment(startTimeMs: number): {
+  isValid: boolean;
+  nearestValidTime?: number;
+} {
   const isValid = startTimeMs % 15000 === 0;
   const nearestValidTime = Math.round(startTimeMs / 15000) * 15000;
 
   return {
     isValid,
-    nearestValidTime: isValid ? undefined : nearestValidTime
+    nearestValidTime: isValid ? undefined : nearestValidTime,
   };
 }
-

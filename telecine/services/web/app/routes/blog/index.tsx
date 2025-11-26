@@ -41,11 +41,11 @@ export default function BlogIndex() {
       <div className="border-zinc-100 mt-12 pb-16 md:border-l md:ml-6 md:pl-6">
         <div className="flex max-w-3xl flex-col space-y-16">
           {posts.map((blog) => (
-            <article className="md:grid md:grid-cols-4 md:items-baseline" key={blog.slug}>
-              <Card
-                className="cursor-pointer md:col-span-3"
-                href={blog.slug}
-              >
+            <article
+              className="md:grid md:grid-cols-4 md:items-baseline"
+              key={blog.slug}
+            >
+              <Card className="cursor-pointer md:col-span-3" href={blog.slug}>
                 <Card.Title>{blog.title}</Card.Title>
                 <Card.Eyebrow as="time" className="mt-2 md:hidden" decorate>
                   {blog.publishedDate}

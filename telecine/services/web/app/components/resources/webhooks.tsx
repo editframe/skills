@@ -166,7 +166,9 @@ const Filter = () => {
           <td colSpan={5}>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 p-2 text-xs">
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
-                <span className="font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">Status:</span>
+                <span className="font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                  Status:
+                </span>
                 <Listbox
                   value={status}
                   onChange={(newStatus) => {
@@ -176,13 +178,15 @@ const Filter = () => {
                     });
                   }}
                 >
-                  <ListboxButton className={clsx(
-                    "w-full sm:w-auto rounded border px-2 py-1 text-xs transition-colors",
-                    "bg-white dark:bg-slate-800",
-                    "text-slate-900 dark:text-white",
-                    "border-slate-300 dark:border-slate-600",
-                    "hover:bg-slate-50 dark:hover:bg-slate-700"
-                  )}>
+                  <ListboxButton
+                    className={clsx(
+                      "w-full sm:w-auto rounded border px-2 py-1 text-xs transition-colors",
+                      "bg-white dark:bg-slate-800",
+                      "text-slate-900 dark:text-white",
+                      "border-slate-300 dark:border-slate-600",
+                      "hover:bg-slate-50 dark:hover:bg-slate-700",
+                    )}
+                  >
                     {availableStatuses.find((s) => s.id === status)?.label ??
                       "All"}
                   </ListboxButton>
@@ -192,7 +196,7 @@ const Filter = () => {
                       "absolute z-10 mt-1 max-h-60 w-48 overflow-auto rounded border py-1 text-xs shadow-lg",
                       "bg-white dark:bg-slate-800",
                       "border-slate-300 dark:border-slate-700",
-                      "ring-slate-200 dark:ring-slate-700"
+                      "ring-slate-200 dark:ring-slate-700",
                     )}
                   >
                     {availableStatuses.map((statusOption) => (
@@ -211,12 +215,16 @@ const Filter = () => {
                             <span
                               className={clsx(
                                 "mr-2",
-                                selected ? "text-blue-600 dark:text-blue-400" : "text-slate-400 dark:text-slate-500",
+                                selected
+                                  ? "text-blue-600 dark:text-blue-400"
+                                  : "text-slate-400 dark:text-slate-500",
                               )}
                             >
                               {selected ? "✓" : "○"}
                             </span>
-                            <span className="text-slate-900 dark:text-white">{statusOption.label}</span>
+                            <span className="text-slate-900 dark:text-white">
+                              {statusOption.label}
+                            </span>
                           </div>
                         )}
                       </ListboxOption>
@@ -225,7 +233,9 @@ const Filter = () => {
                 </Listbox>
               </div>
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
-                <span className="font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">Topics:</span>
+                <span className="font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                  Topics:
+                </span>
                 <Listbox
                   multiple
                   value={topics}
@@ -236,13 +246,15 @@ const Filter = () => {
                     });
                   }}
                 >
-                  <ListboxButton className={clsx(
-                    "w-full sm:w-auto rounded border px-2 py-1 text-xs transition-colors",
-                    "bg-white dark:bg-slate-800",
-                    "text-slate-900 dark:text-white",
-                    "border-slate-300 dark:border-slate-600",
-                    "hover:bg-slate-50 dark:hover:bg-slate-700"
-                  )}>
+                  <ListboxButton
+                    className={clsx(
+                      "w-full sm:w-auto rounded border px-2 py-1 text-xs transition-colors",
+                      "bg-white dark:bg-slate-800",
+                      "text-slate-900 dark:text-white",
+                      "border-slate-300 dark:border-slate-600",
+                      "hover:bg-slate-50 dark:hover:bg-slate-700",
+                    )}
+                  >
                     {topics.length === 0 ||
                     topics.length === availableTopics.length
                       ? "All topics"
@@ -254,7 +266,7 @@ const Filter = () => {
                       "absolute z-10 mt-1 max-h-60 w-48 overflow-auto rounded border py-1 text-xs shadow-lg",
                       "bg-white dark:bg-slate-800",
                       "border-slate-300 dark:border-slate-700",
-                      "ring-slate-200 dark:ring-slate-700"
+                      "ring-slate-200 dark:ring-slate-700",
                     )}
                   >
                     {availableTopics.map((topic) => (
@@ -270,12 +282,16 @@ const Filter = () => {
                             <span
                               className={clsx(
                                 "mr-2",
-                                selected ? "text-blue-600 dark:text-blue-400" : "text-slate-400 dark:text-slate-500",
+                                selected
+                                  ? "text-blue-600 dark:text-blue-400"
+                                  : "text-slate-400 dark:text-slate-500",
                               )}
                             >
                               {selected ? "✓" : "○"}
                             </span>
-                            <span className="text-slate-900 dark:text-white">{topic}</span>
+                            <span className="text-slate-900 dark:text-white">
+                              {topic}
+                            </span>
                           </div>
                         )}
                       </ListboxOption>

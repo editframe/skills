@@ -7,21 +7,35 @@ describe("OrgVideoCount", () => {
     const mockRecord = {
       analytics: {
         aggregate: {
-          video_count: 25
-        }
-      }
+          video_count: 25,
+        },
+      },
     };
 
-    render(<OrgVideoCount record={mockRecord} id="test-id" resourceType="orgs" resourceId="test-id" />);
+    render(
+      <OrgVideoCount
+        record={mockRecord}
+        id="test-id"
+        resourceType="orgs"
+        resourceId="test-id"
+      />,
+    );
     expect(screen.getByText("25")).toBeDefined();
   });
 
   test("displays 0 when no analytics data", () => {
     const mockRecord = {
-      analytics: null
+      analytics: null,
     };
 
-    render(<OrgVideoCount record={mockRecord} id="test-id" resourceType="orgs" resourceId="test-id" />);
+    render(
+      <OrgVideoCount
+        record={mockRecord}
+        id="test-id"
+        resourceType="orgs"
+        resourceId="test-id"
+      />,
+    );
     expect(screen.getByText("0")).toBeDefined();
   });
 
@@ -29,12 +43,19 @@ describe("OrgVideoCount", () => {
     const mockRecord = {
       analytics: {
         aggregate: {
-          video_count: null
-        }
-      }
+          video_count: null,
+        },
+      },
     };
 
-    render(<OrgVideoCount record={mockRecord} id="test-id" resourceType="orgs" resourceId="test-id" />);
+    render(
+      <OrgVideoCount
+        record={mockRecord}
+        id="test-id"
+        resourceType="orgs"
+        resourceId="test-id"
+      />,
+    );
     expect(screen.getByText("0")).toBeDefined();
   });
 });
@@ -45,22 +66,36 @@ describe("OrgVideoMinutes", () => {
       analytics: {
         aggregate: {
           total_duration_ms: {
-            duration_ms: 1800000 // 30 minutes in milliseconds
-          }
-        }
-      }
+            duration_ms: 1800000, // 30 minutes in milliseconds
+          },
+        },
+      },
     };
 
-    render(<OrgVideoMinutes record={mockRecord} id="test-id" resourceType="orgs" resourceId="test-id" />);
+    render(
+      <OrgVideoMinutes
+        record={mockRecord}
+        id="test-id"
+        resourceType="orgs"
+        resourceId="test-id"
+      />,
+    );
     expect(screen.getByText("30.0")).toBeDefined();
   });
 
   test("displays 0.0 when no analytics data", () => {
     const mockRecord = {
-      analytics: null
+      analytics: null,
     };
 
-    render(<OrgVideoMinutes record={mockRecord} id="test-id" resourceType="orgs" resourceId="test-id" />);
+    render(
+      <OrgVideoMinutes
+        record={mockRecord}
+        id="test-id"
+        resourceType="orgs"
+        resourceId="test-id"
+      />,
+    );
     expect(screen.getByText("0.0")).toBeDefined();
   });
 
@@ -69,13 +104,20 @@ describe("OrgVideoMinutes", () => {
       analytics: {
         aggregate: {
           total_duration_ms: {
-            duration_ms: null
-          }
-        }
-      }
+            duration_ms: null,
+          },
+        },
+      },
     };
 
-    render(<OrgVideoMinutes record={mockRecord} id="test-id" resourceType="orgs" resourceId="test-id" />);
+    render(
+      <OrgVideoMinutes
+        record={mockRecord}
+        id="test-id"
+        resourceType="orgs"
+        resourceId="test-id"
+      />,
+    );
     expect(screen.getByText("0.0")).toBeDefined();
   });
 
@@ -84,13 +126,20 @@ describe("OrgVideoMinutes", () => {
       analytics: {
         aggregate: {
           total_duration_ms: {
-            duration_ms: 95000 // 1.583 minutes
-          }
-        }
-      }
+            duration_ms: 95000, // 1.583 minutes
+          },
+        },
+      },
     };
 
-    render(<OrgVideoMinutes record={mockRecord} id="test-id" resourceType="orgs" resourceId="test-id" />);
+    render(
+      <OrgVideoMinutes
+        record={mockRecord}
+        id="test-id"
+        resourceType="orgs"
+        resourceId="test-id"
+      />,
+    );
     expect(screen.getByText("1.6")).toBeDefined();
   });
 
@@ -99,13 +148,20 @@ describe("OrgVideoMinutes", () => {
       analytics: {
         aggregate: {
           total_duration_ms: {
-            duration_ms: 7200000 // 120 minutes
-          }
-        }
-      }
+            duration_ms: 7200000, // 120 minutes
+          },
+        },
+      },
     };
 
-    render(<OrgVideoMinutes record={mockRecord} id="test-id" resourceType="orgs" resourceId="test-id" />);
+    render(
+      <OrgVideoMinutes
+        record={mockRecord}
+        id="test-id"
+        resourceType="orgs"
+        resourceId="test-id"
+      />,
+    );
     expect(screen.getByText("120.0")).toBeDefined();
   });
-}); 
+});

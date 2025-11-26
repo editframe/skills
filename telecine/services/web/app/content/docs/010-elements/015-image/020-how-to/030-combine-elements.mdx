@@ -1,0 +1,34 @@
+---
+meta:
+  - title: Combine Images with Other Elements
+  - name: description
+    content: Create rich compositions by combining images with text, shapes, and other content
+headers:
+    Cache-Control: no-cache
+---
+
+## Combine Images with Other Elements
+
+**Problem:** You want to create slideshows or compositions where each image appears alongside text, shapes, or other elements.
+
+**Solution:** Wrap each image in its own timegroup. This allows you to compose multiple elements together while still sequencing them.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup id="rich-slideshow" mode="sequence" className="w-[540px] h-[540px] bg-black overflow-hidden">
+    <Timegroup mode="fixed" duration="5s" className="w-full h-full bg-black">
+      <Image className="w-full h-full object-contain object-center absolute top-0 left-0" src="https://assets.editframe.com/dog.jpg"/>
+      <h1 className="bg-blue-900 text-white text-center absolute p-2 bottom-0 left-0 w-full z-10">Breaking news: Handsome boy!</h1>
+    </Timegroup>
+    <Timegroup mode="fixed" duration="5s" className="w-full h-full bg-black grid grid-cols-[1fr_1fr] grid-rows-[1fr_1fr]">
+      <Image className="w-full h-full object-contain object-center absolute top-0 left-0" src="https://assets.editframe.com/meme.jpg"/>
+      <h1 className="text-black col-start-2 row-start-1 w-1/4 self-center pl-8 z-10">Image Sequence</h1>
+      <h1 className="text-black col-start-2 row-start-2 w-1/4 self-center pl-8 z-10">Timegroup Sequence w/Images</h1>
+    </Timegroup>
+  </Timegroup>
+</Demonstration>
+
+Each inner timegroup contains both the image and additional content. The outer timegroup sequences these compositions. Use CSS positioning and layout (absolute positioning, grid, flexbox) to arrange elements within each slide.
+
+This pattern is essential for creating professional slideshows with captions, overlays, or complex layouts.
+
+

@@ -1,0 +1,159 @@
+---
+meta:
+  - title: Reference
+  - name: description
+    content: Complete technical reference for all video element properties and attributes
+headers:
+    Cache-Control: no-cache
+---
+
+## Reference
+
+Complete technical reference for all video element properties.
+
+**New to video elements?** Start with the [Tutorial](/docs/elements/video/tutorial) to learn the basics, or explore [How-To Guides](/docs/elements/video/how-to/) for specific tasks.
+
+### Quick Reference Table
+
+<VideoPropertyReference />
+
+### Grouped Attributes
+
+#### Media Source
+
+<PropertyDocList>
+  <PropertyDoc name="assetId" type="string" domReadable domWritable htmlAttribute="asset-id">
+    The asset ID of the video. Unique identifier for a media file uploaded to Editframe. See [Processing Files](/docs/processing-files/audio-video-files).
+  </PropertyDoc>
+
+  <PropertyDoc name="src" type="string" domReadable domWritable htmlAttribute="src">
+    The source URL/path of the video.
+
+    <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 p-2 mb-2 rounded border border-blue-200 dark:border-blue-800">
+      ⚠️ This property is not yet supported in all circumstances. Providing an arbitrary URL or path will not work unless the server is configured to respond with a precise, not-yet-documented, format.
+
+      Demonstration projects with such a server are available via `npm create @editframe@beta`. These are not intended for production use. When complete, a specialized server should not be required, though there will be specific encoding/muxing limitations.
+
+      Instead upload media to Editframe and use the `assetId` property.
+    </div>
+
+    <div className="bg-orange-100 dark:bg-orange-900/30 text-orange-900 dark:text-orange-100 p-2 rounded border border-orange-200 dark:border-orange-800">
+      🚫 This property should only be used for development, testing, and previewing media to end-users in real-time. When submitting a render job, all media should be uploaded to Editframe and the `assetId` property should be used. Our render servers will render in parallel, and in order to operate efficiently we need to be able to load only the slice of media that is needed to render a small segment of the timeline.
+    </div>
+  </PropertyDoc>
+</PropertyDocList>
+
+#### Time Coordinates
+
+<PropertyDocList>
+  <PropertyDoc name="startTimeMs" type="number" domReadable>
+    The start time of the video in milliseconds. This time is relative to the timeline described by the root timegroup the video is contained within, or 0 if the video is standalone (no timegroup).
+  </PropertyDoc>
+
+  <PropertyDoc name="endTimeMs" type="number" domReadable>
+    The end time of the video in milliseconds. This time is relative to the timeline described by the root timegroup the video is contained within, or the video's duration if standalone (no timegroup).
+  </PropertyDoc>
+
+  <PropertyDoc name="durationMs" type="number" domReadable>
+    The duration of the video in milliseconds. This is equivalent to the difference between `endTimeMs` and `startTimeMs`.
+  </PropertyDoc>
+
+  <PropertyDoc name="currentTimeMs" type="number" domReadable>
+    The current time of the video in milliseconds. This time is the time within the timeline of the root timegroup the video is contained within, or the video's own timeline if standalone (no timegroup).
+  </PropertyDoc>
+
+  <PropertyDoc name="ownCurrentTimeMs" type="number" domReadable>
+    The current time of the video in milliseconds. This time is scoped directly to the video element itself.
+  </PropertyDoc>
+
+  <PropertyDoc name="currentSourceTimeMs" type="number" domReadable>
+    Current time in milliseconds scoped to the source media. If no `trimStart` or `sourceIn` are set, equivalent to `ownCurrentTimeMs`.
+  </PropertyDoc>
+</PropertyDocList>
+
+#### Trimming & Editing
+
+<PropertyDocList>
+  <PropertyDoc name="trimStart" type="timestring" domReadable domWritable htmlAttribute="trimstart">
+    Duration to trim from the start of the video. Relative to the start of the video. Use with `trimEnd`.
+  </PropertyDoc>
+
+  <PropertyDoc name="trimEnd" type="timestring" domReadable domWritable htmlAttribute="trimend">
+    Duration to trim from the end of the video. Relative to the end of the video. Use with `trimStart`.
+
+  </PropertyDoc>
+
+  <PropertyDoc name="sourceIn" type="timestring" domReadable domWritable htmlAttribute="sourcein">
+    Absolute start time in the source media timeline. Use with `sourceOut`.
+  </PropertyDoc>
+  <PropertyDoc name="sourceOut" type="timestring" domReadable domWritable htmlAttribute="sourceout">
+    Absolute end time in the source media timeline. Use with `sourceIn`.
+  </PropertyDoc>
+</PropertyDocList>
+
+#### Hierarchy
+
+<PropertyDocList>
+  <PropertyDoc name="parentTimegroup" type="<ef-timegroup> | null" domReadable>
+    The closest timegroup element that contains the video, or `null` if the video is not contained within any timegroup (standalone video).
+  </PropertyDoc>
+
+  <PropertyDoc name="rootTimegroup" type="<ef-timegroup> | null" domReadable>
+    The outermost timegroup element that contains the video, or `null` if the video is standalone and not part of any composition.
+  </PropertyDoc>
+</PropertyDocList>
+
+#### Performance & Buffering
+
+<PropertyDocList>
+  <PropertyDoc name="videoBufferDurationMs" type="number" domReadable domWritable htmlAttribute="video-buffer-duration">
+    Duration in milliseconds for video buffering ahead of current time.
+    
+    Default: 10000 (10 seconds)
+    
+    Higher values provide more buffer against network issues but use more bandwidth and memory.
+  </PropertyDoc>
+
+  <PropertyDoc name="maxVideoBufferFetches" type="number" domReadable domWritable htmlAttribute="max-video-buffer-fetches">
+    Maximum number of concurrent video segment fetches for buffering.
+    
+    Default: 2
+    
+    Higher values enable faster buffering but may impact other network requests.
+  </PropertyDoc>
+
+  <PropertyDoc name="enableVideoBuffering" type="boolean" domReadable domWritable htmlAttribute="enable-video-buffering">
+    Enable or disable the video buffering system.
+    
+    Default: true
+    
+    Disabling buffering reduces memory usage but may cause playback interruptions.
+  </PropertyDoc>
+</PropertyDocList>
+
+#### Audio Analysis
+
+<PropertyDocList>
+  <PropertyDoc name="fftSize" type="number" domReadable domWritable htmlAttribute="fft-size" defaultValue="512">
+    FFT size for audio analysis. Must be a power of 2. Higher values result in more granular waveforms.
+  </PropertyDoc>
+
+  <PropertyDoc name="fftDecay" type="number" domReadable domWritable htmlAttribute="fft-decay" defaultValue="8">
+    FFT decay for audio analysis. Number of frames to average for smoother waveform animation. Higher values result in smoother animation.
+  </PropertyDoc>
+
+  <PropertyDoc name="fftGain" type="number" domReadable domWritable htmlAttribute="fft-gain" defaultValue="3">
+    FFT gain for audio analysis. Higher values result in more pronounced waveforms.
+  </PropertyDoc>
+
+  <PropertyDoc name="interpolateFrequencies" type="boolean" htmlAttribute="interpolate-frequencies" defaultValue="false">
+    Interpolate missing frequency data in waveform visualizations. Ignores zero values on the high end of the frequency spectrum and fills in missing values.
+  </PropertyDoc>
+
+  <PropertyDoc name="mute" type="boolean" domReadable domWritable htmlAttribute="mute" defaultValue="false">
+    Mutes the audio track of the video.
+
+    When set to true, the video will play without sound. Note that any waveforms connected to the media will continue to produce visual output, as mute only affects audio output via speakers.
+  </PropertyDoc>
+</PropertyDocList>
+

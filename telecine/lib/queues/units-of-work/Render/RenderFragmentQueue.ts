@@ -26,4 +26,4 @@ export const RenderFragmentQueue = new Queue<{
   workerConcurrency: WORKER_CONCURRENCY,
 });
 
-ConnectionURLMap.set(RenderFragmentQueue, QUEUE_URL); 
+ConnectionURLMap.set(RenderFragmentQueue, QUEUE_URL);

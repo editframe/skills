@@ -1,5 +1,7 @@
 import { css, html, LitElement } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { provide } from "@lit/context";
+import { panZoomTransformContext } from "../gui/panZoomTransformContext.js";
 
 export interface PanZoomTransform {
   x: number;
@@ -19,8 +21,7 @@ export class EFPanZoom extends LitElement {
       }
       .content-wrapper {
         position: absolute;
-        top: 0;
-        left: 0;
+        inset: 0;
         width: 100%;
         height: 100%;
         transform-origin: 0 0;
@@ -37,6 +38,9 @@ export class EFPanZoom extends LitElement {
   @property({ type: Number, reflect: true })
   scale = 1;
 
+  @provide({ context: panZoomTransformContext })
+  panZoomTransform: PanZoomTransform = { x: 0, y: 0, scale: 1 };
+
   private _isDragging = false;
   private _dragStartPointerPos: { x: number; y: number } | null = null;
   private _dragStartTransform: PanZoomTransform | null = null;
@@ -44,13 +48,6 @@ export class EFPanZoom extends LitElement {
 
   connectedCallback() {
     super.connectedCallback();
-  }
-
-  firstUpdated(): void {
-    this.addEventListener("pointerdown", this._onPointerDown);
-    this.addEventListener("pointermove", this._onPointerMove);
-    this.addEventListener("pointerup", this._onPointerUp);
-    this.addEventListener("pointercancel", this._onPointerUp);
     this.addEventListener("wheel", this._onWheel, { passive: false });
   }
 
@@ -76,7 +73,7 @@ export class EFPanZoom extends LitElement {
       y: updates.y !== undefined ? updates.y : this.y,
       scale:
         updates.scale !== undefined
-          ? Math.max(0.1, Math.min(50, updates.scale))
+          ? Math.max(0.1, Math.min(5, updates.scale))
           : this.scale,
     };
 
@@ -89,6 +86,9 @@ export class EFPanZoom extends LitElement {
       this.x = newTransform.x;
       this.y = newTransform.y;
       this.scale = newTransform.scale;
+
+      // Update context for overlay components
+      this.panZoomTransform = { ...newTransform };
 
       this.dispatchEvent(
         new CustomEvent<PanZoomTransform>("transform-changed", {
@@ -155,28 +155,29 @@ export class EFPanZoom extends LitElement {
   private _onWheel = (e: WheelEvent) => {
     e.preventDefault();
 
-    const container = this;
-    if (!container) return;
-
     const isZoom = e.metaKey || e.ctrlKey;
 
     if (isZoom) {
-      const rect = container.getBoundingClientRect();
-      const w = container.clientWidth || 1;
-      const h = container.clientHeight || 1;
-      const parentScale = ((rect.width / w) + (rect.height / h)) / 2;
-      
-      const mouseX = (e.clientX - rect.left) / parentScale;
-      const mouseY = (e.clientY - rect.top) / parentScale;
-      const canvasX = (mouseX - this.x) / this.scale;
-      const canvasY = (mouseY - this.y) / this.scale;
-      
-      const delta = e.deltaY > 0 ? 0.9 : 1.1;
-      const newScale = Math.max(0.1, Math.min(50, this.scale * delta));
+      const containerRect = this.getBoundingClientRect();
+      const pointerX = e.clientX - containerRect.left;
+      const pointerY = e.clientY - containerRect.top;
+
+      const currentX = this.x;
+      const currentY = this.y;
+      const currentScale = this.scale;
+
+      const canvasX = (pointerX - currentX) / currentScale;
+      const canvasY = (pointerY - currentY) / currentScale;
+
+      const delta = e.deltaY > 0 ? 0.95 : 1.05;
+      const newScale = Math.max(0.1, Math.min(5, currentScale * delta));
+
+      const newX = pointerX - canvasX * newScale;
+      const newY = pointerY - canvasY * newScale;
 
       this._updateTransform({
-        x: mouseX - canvasX * newScale,
-        y: mouseY - canvasY * newScale,
+        x: newX,
+        y: newY,
         scale: newScale,
       });
     } else {
@@ -190,7 +191,59 @@ export class EFPanZoom extends LitElement {
     }
   };
 
+  firstUpdated() {
+    super.firstUpdated();
+    this.addEventListener("pointerdown", this._onPointerDown);
+    this.addEventListener("pointermove", this._onPointerMove);
+    this.addEventListener("pointerup", this._onPointerUp);
+    this.addEventListener("pointercancel", this._onPointerUp);
 
+    // Initialize context with current transform
+    this.panZoomTransform = { x: this.x, y: this.y, scale: this.scale };
+  }
+
+  /**
+   * Convert screen coordinates (e.g., mouse event clientX/clientY) to canvas coordinates.
+   * This handles all pan/zoom transformations automatically.
+   *
+   * @param screenX - X coordinate in screen space (e.g., event.clientX)
+   * @param screenY - Y coordinate in screen space (e.g., event.clientY)
+   * @returns Object with x, y in canvas coordinate space
+   *
+   * @example
+   * handleClick(e: MouseEvent) {
+   *   const canvasPos = panZoom.screenToCanvas(e.clientX, e.clientY);
+   *   console.log(`Clicked at canvas position: ${canvasPos.x}, ${canvasPos.y}`);
+   * }
+   */
+  screenToCanvas(screenX: number, screenY: number): { x: number; y: number } {
+    const rect = this.getBoundingClientRect();
+    return {
+      x: (screenX - rect.left - this.x) / this.scale,
+      y: (screenY - rect.top - this.y) / this.scale,
+    };
+  }
+
+  /**
+   * Convert canvas coordinates to screen coordinates.
+   * Useful for positioning overlays or tooltips relative to canvas elements.
+   *
+   * @param canvasX - X coordinate in canvas space
+   * @param canvasY - Y coordinate in canvas space
+   * @returns Object with x, y in screen coordinate space
+   *
+   * @example
+   * const screenPos = panZoom.canvasToScreen(element.x, element.y);
+   * tooltip.style.left = `${screenPos.x}px`;
+   * tooltip.style.top = `${screenPos.y}px`;
+   */
+  canvasToScreen(canvasX: number, canvasY: number): { x: number; y: number } {
+    const rect = this.getBoundingClientRect();
+    return {
+      x: rect.left + canvasX * this.scale + this.x,
+      y: rect.top + canvasY * this.scale + this.y,
+    };
+  }
 
   render() {
     return html`
@@ -203,4 +256,3 @@ export class EFPanZoom extends LitElement {
     `;
   }
 }
-

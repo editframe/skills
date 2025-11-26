@@ -25,10 +25,10 @@ export class EFTextSegment extends EFTemporal(LitElement) {
   /**
    * Registers animation styles that should be shared across all text segments.
    * This is the correct way to inject animation styles for segments - not via innerHTML.
-   * 
+   *
    * @param id Unique identifier for this stylesheet (e.g., "my-animations")
    * @param cssText The CSS rules to inject
-   * 
+   *
    * @example
    * EFTextSegment.registerAnimations("bounceIn", `
    *   @keyframes bounceIn {
@@ -63,7 +63,7 @@ export class EFTextSegment extends EFTemporal(LitElement) {
 
   /**
    * Unregisters previously registered animation styles.
-   * 
+   *
    * @param id The identifier of the stylesheet to remove
    */
   static unregisterAnimations(id: string): void {
@@ -112,7 +112,6 @@ export class EFTextSegment extends EFTemporal(LitElement) {
   protected updated(): void {
     this.setCSSVariables();
   }
-
 
   @property({ type: String, attribute: false })
   segmentText = "";

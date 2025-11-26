@@ -1,0 +1,108 @@
+---
+meta:
+  - title: Deterministic Randomness with --ef-seed
+  - name: description
+    content: How the --ef-seed CSS variable provides deterministic pseudo-random values for consistent render-time variation
+headers:
+    Cache-Control: no-cache
+---
+
+## Deterministic Randomness: Consistent Variation Across Renders
+
+The `--ef-seed` CSS variable provides each text segment with a deterministic pseudo-random value (0-1) based on its index. This enables varied, organic-looking animations while ensuring consistent rendering across page loads and video frames.
+
+### The Problem: Platform Constraints in Random Variation
+
+Using native random number generation for visual variation presents these engineering challenges:
+
+**Randomness constraints:**
+- Each page load produces different random values
+- Video rendering produces different frames on each render
+- Animations look different every time they're viewed
+- Impossible to create reproducible video content
+
+**Example:** Using `Math.random()` for colors:
+```javascript
+// Different every time - breaks video rendering
+color: `hsl(${Math.random() * 360}, 80%, 70%)`;
+```
+
+This creates beautiful variation, but the same text renders differently each time - breaking video rendering workflows where frames must be identical.
+
+### The Solution: Deterministic Seed-Based Variation
+
+The text element provides `--ef-seed`, a CSS variable that maps segment index to a deterministic value:
+
+**How it works:**
+- Each segment gets a seed value based on its index position
+- Seed values range from 0 to 1
+- Same segment index always produces the same seed value
+- Values are distributed pseudo-randomly across segments
+
+**Seed generation:**
+- Seed is calculated from segment index using a deterministic algorithm
+- No external randomness source (no `Math.random()`)
+- Consistent across renders, page loads, and video frames
+- Works identically in browser preview and server-side rendering
+
+**CSS usage:**
+```css
+ef-text-segment {
+  /* Map seed (0-1) to hue (0-360°) */
+  color: hsl(calc(360 * var(--ef-seed)), 80%, 70%);
+  
+  /* Map seed (0-1) to scale (1.0-1.3) */
+  transform: scale(calc(1 + 0.3 * var(--ef-seed)));
+  
+  /* Map seed (0-1) to rotation (-10deg to 10deg) */
+  transform: rotate(calc(var(--ef-seed) * 20deg - 10deg));
+}
+```
+
+### Benefits
+
+**Consistent rendering:**
+- Same text always produces the same visual result
+- Critical for video rendering where frames must match
+- Reliable across different browsers and rendering contexts
+- No surprises during production renders
+
+**Varied appearance:**
+- Each segment gets unique properties (color, scale, rotation)
+- Creates organic, natural-looking variation
+- More interesting than uniform animations
+- Matches the visual appeal of true randomness
+
+**Performance:**
+- Seed calculation is fast and deterministic
+- No random number generation overhead
+- Works efficiently with CSS `calc()` functions
+- Scales well with many segments
+
+**Developer experience:**
+- Simple CSS variable usage (no JavaScript needed)
+- Easy to map seed values to desired ranges
+- Works with any CSS property that accepts numeric values
+- Familiar `calc()` syntax for value mapping
+
+**Render-time safety:**
+- Values are calculated at render time, not animation time
+- Ensures consistency across video frames
+- No timing-dependent randomness
+- Reliable for server-side rendering
+
+**Code example:**
+```css
+ef-text-segment {
+  /* Each segment gets unique color based on position */
+  color: hsl(calc(360 * var(--ef-seed)), 80%, 70%);
+  transform: scale(calc(1 + 0.2 * var(--ef-seed))) 
+             rotate(calc(var(--ef-seed) * 20deg - 10deg));
+}
+```
+
+The same text always produces the same visual result, enabling reproducible video rendering while maintaining organic variation.
+
+For usage examples, see [Use Seed-Based Variation](/docs/elements/text/how-to/seed-variation). For property details, see the [Reference](/docs/elements/text/reference#css-animation-variables).
+
+

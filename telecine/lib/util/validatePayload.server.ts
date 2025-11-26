@@ -47,7 +47,11 @@ export const validateParams = <Output, Input>(
   return async (args: ActionFunctionArgs) => {
     const result = schema.safeParse(args.params);
     if (result.success) {
-      return fn({ ...args, params: result.data, rawParams: args.params as Input });
+      return fn({
+        ...args,
+        params: result.data,
+        rawParams: args.params as Input,
+      });
     }
     return new Response(result.error.message, { status: 400 });
   };

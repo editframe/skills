@@ -17,12 +17,14 @@ const routes = [
   route("/docs/examples/filters", "routes/docs/examples/filters.tsx"),
   route("/docs/examples/keyframes", "routes/docs/examples/keyframes.tsx"),
   route("/docs/examples/motion", "routes/docs/examples/motion.tsx"),
-  route("/docs/examples/motion-path", "routes/docs/examples/motion-path.tsx"),
-  route("/docs/examples/portrait-fill", "routes/docs/examples/portrait-fill.tsx"),
+  route(
+    "/docs/examples/portrait-fill",
+    "routes/docs/examples/portrait-fill.tsx",
+  ),
   route("/docs/examples/trim", "routes/docs/examples/trim.tsx"),
   route("/docs/examples/watermark", "routes/docs/examples/watermark.tsx"),
-  route("/docs/search", "routes/docs/search.tsx"),
   route("/docs/*", "routes/docs/DocsPage.tsx"),
+  route("/demos/motion-designer", "routes/demos/motion-designer.tsx"),
   route("/with/animejs", "routes/with/animejs.tsx"),
   route("/guides/*", "routes/guides-redirect.ts"),
   route("/blog/*", "routes/blog-redirect.ts"),
@@ -36,7 +38,6 @@ const routes = [
     "/reference/@editframe/:package/:symbol",
     "routes/docs/SymbolReference.tsx",
   ),
-
 
   layout("routes/resource/Layout.tsx", [
     route("/welcome", "routes/welcome.tsx"),
@@ -122,7 +123,10 @@ const routes = [
       ),
       route("jobs/delete-all-stalled", "routes/admin/deleteAllStalledJobs.ts"),
       route("jobs/delete-all-failed", "routes/admin/deleteAllFailedJobs.ts"),
-      route("jobs/delete-all-completed", "routes/admin/deleteAllCompletedJobs.ts"),
+      route(
+        "jobs/delete-all-completed",
+        "routes/admin/deleteAllCompletedJobs.ts",
+      ),
       route("jobs/retry-all", "routes/admin/retryAllJobs.ts"),
       route(":stage/jobs/:id/delete", "routes/admin/deleteJob.ts"),
     ]),
@@ -222,10 +226,6 @@ const routes = [
     ...v1.prefix("/transcription", [
       v1.route("/:id/progress", "transcription/progress.ts"),
       v1.route("/:id/fragment/:number", "transcription/fragment.ts"),
-    ]),
-
-    ...v1.prefix("/docs", [
-      v1.route("/search", "docs/search.ts"),
     ]),
 
     v1.route("/url-token", "url-token.ts"),

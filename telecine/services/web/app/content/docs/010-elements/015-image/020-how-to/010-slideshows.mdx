@@ -1,0 +1,29 @@
+---
+meta:
+  - title: Create Image Slideshows
+  - name: description
+    content: Create sequential image displays using timegroup sequence mode
+headers:
+    Cache-Control: no-cache
+---
+
+## Create Image Slideshows
+
+**Problem:** You want to display multiple images in sequence, creating a slideshow effect.
+
+**Solution:** Use a timegroup with `mode="sequence"` and give each image a fixed `duration`. The timegroup will automatically arrange the images sequentially.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup mode="sequence" className="w-[540px] h-[540px] bg-black overflow-hidden">
+    <Image duration="5s" className="w-full h-full object-contain object-center absolute top-0 left-0" src="https://assets.editframe.com/dog.jpg"/>
+    <Image duration="5s" className="w-full h-full object-contain object-center absolute top-0 left-0" src="https://assets.editframe.com/meme.jpg"/>
+  </Timegroup>
+</Demonstration>
+
+Each image in the sequence needs a `duration` attribute. The timegroup calculates its total duration by summing all child durations. You can use different durations for each image to create varied pacing.
+
+For more complex slideshows with text overlays or multiple elements per slide, wrap each image in its own timegroup. See [Combine Images with Other Elements](/docs/elements/image/how-to/combine-elements) for details.
+
+**Related:** Learn about temporal behavior in the [Temporal Behavior](/docs/elements/image/explanation/temporal-behavior) explanation.
+
+

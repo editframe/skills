@@ -5,10 +5,7 @@ import { progressEventStream } from "@/progress-tracking/progressEventStream";
 import type { Route } from "./+types/progress";
 import { requireCookieOrTokenSession } from "@/util/requireSession.server";
 
-export const loader = async ({
-  request,
-  params: { id },
-}: Route.LoaderArgs) => {
+export const loader = async ({ request, params: { id } }: Route.LoaderArgs) => {
   const session = await requireCookieOrTokenSession(request);
   const process = await requireQueryAs(
     session,

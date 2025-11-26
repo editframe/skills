@@ -88,7 +88,9 @@ const getChildIdsForGroup = (
 
 const ShowClass = ({
   declaration,
-}: { declaration: JSONOutput.DeclarationReflection }) => {
+}: {
+  declaration: JSONOutput.DeclarationReflection;
+}) => {
   const constructors = filterChildren(
     declaration.children,
     getChildIdsForGroup("Constructors", declaration.groups),
@@ -128,7 +130,9 @@ const ShowClass = ({
 
 const ShowProperties = ({
   properties,
-}: { properties: JSONOutput.DeclarationReflection[] }) => {
+}: {
+  properties: JSONOutput.DeclarationReflection[];
+}) => {
   return properties.map((child) => {
     const isOptional = child.flags.isOptional;
     return (
@@ -377,11 +381,7 @@ const ShowSummary = ({
   );
 };
 
-const ShowType = ({
-  type,
-}: {
-  type: JSONOutput.SomeType;
-}) => {
+const ShowType = ({ type }: { type: JSONOutput.SomeType }) => {
   if (!type) {
     return null;
   }

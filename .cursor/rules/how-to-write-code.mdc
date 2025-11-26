@@ -1,0 +1,310 @@
+---
+alwaysApply: false
+---
+10 Cognitive Design Seeds (Beyond Code Constructs)
+
+Enumerate the Core Concept, Then Code It
+
+Name the one idea the system embodies — the invariant that stays true as everything else changes. Code should enumerate that concept directly, not simulate it through procedural scaffolding.
+
+**Good**: Name the core concept as an explicit type or enum. Create a single function that determines which state the concept is in.
+
+```typescript
+type CoreConceptState = "state-a" | "state-b" | "state-c" | "state-d";
+
+function determineState(context: Context): CoreConceptState {
+  if (meetsConditionA(context)) return "state-a";
+  if (meetsConditionB(context)) return "state-b";
+  if (meetsConditionC(context)) return "state-c";
+  return "state-d";
+}
+```
+
+**Bad**: Scatter logic throughout the codebase with boolean checks that simulate the concept without naming it.
+
+```typescript
+function process(context: Context) {
+  if (context.value > threshold && context.flag === true) {
+    // do something
+  } else if (context.value <= threshold && context.other > 0) {
+    // do something else
+  }
+  // ... scattered checks throughout codebase
+}
+```
+
+**Why**: Explicit enumeration makes the mental model clear. The code structure directly reflects the concept rather than simulating it through conditionals.
+
+Minimize Concept Count
+
+Every new abstraction adds a mental model. Collapse, merge, or generalize until the system's conceptual graph fits in one mind. If your team can't whiteboard the architecture from memory, it's too large conceptually.
+
+**Good**: Organize code around a clear conceptual flow where each step has a single responsibility. The main function orchestrates the flow explicitly.
+
+```typescript
+function processMain(entity: Entity): void {
+  const state = evaluateState(entity);
+  const childStates = getChildren(entity).map(evaluateState);
+  
+  applyPolicy(entity, state);
+  childStates.forEach(child => applyPolicy(child.entity, child.state));
+  
+  const transformed = transformData(state);
+  applyEffects(entity, transformed);
+}
+```
+
+**Bad**: Mix multiple concerns in a single function with nested conditionals. Hide the conceptual flow in implementation details.
+
+```typescript
+function process(entity: Entity): void {
+  if (entity.value > threshold) {
+    entity.flag = true;
+    if (entity.children.length > 0) {
+      entity.children.forEach(child => {
+        if (child.value > threshold) {
+          child.flag = true;
+          transform(child);
+          apply(child);
+        }
+      });
+    }
+    transform(entity);
+    apply(entity);
+  }
+}
+```
+
+**Why**: A small conceptual graph makes the system understandable. If you can't whiteboard the architecture from memory, it's too complex.
+
+One Direction of Truth
+
+Each piece of knowledge should live in exactly one place — conceptually, not just physically. This avoids epistemic drift between code and intention.
+
+**Good**: Each concept lives in exactly one function or class. Related concepts are grouped together, but each distinct piece of knowledge has a single home.
+
+```typescript
+function determineConceptState(entity: Entity, context: Context): ConceptState {
+  if (meetsConditionA(entity, context)) return "state-a";
+  if (meetsConditionB(entity, context)) return "state-b";
+  return "state-c";
+}
+
+class PolicyA {
+  shouldApply(entity: Entity): boolean { /* ... */ }
+}
+
+class PolicyB {
+  shouldApply(entity: Entity): boolean { /* ... */ }
+}
+```
+
+**Bad**: Duplicate logic for the same concept in multiple places, or calculate it implicitly through scattered checks.
+
+```typescript
+function processA(entity: Entity) {
+  if (entity.value > threshold && entity.flag) {
+    // Concept logic here
+  }
+}
+
+function processB(entity: Entity) {
+  if (entity.value > threshold && entity.flag) {
+    // Same concept logic duplicated
+  }
+}
+
+function processC(entity: Entity) {
+  const result = entity.value > threshold ? checkFlag(entity) : false;
+}
+```
+
+**Why**: Single source of truth prevents epistemic drift. When the concept changes, you only update one place.
+
+Encode Relationships, Not Just Structures
+
+Systems are defined as much by relations as by entities. Make relationships explicit in the code's architecture, not implicit in control flow.
+
+**Good**: Make relationships between concepts explicit through function signatures and clear naming. The connection between concepts should be obvious from the code structure.
+
+```typescript
+function shouldApplyAction(state: ConceptState, entity: Entity): boolean {
+  if (state === "state-a" || state === "state-b") return false;
+  if (state === "state-c") return true;
+  return policy.shouldIncludeBoundary(entity);
+}
+
+function coordinateBehavior(state: ConceptState, entity: Entity): void {
+  if (shouldApplyAction(state, entity)) {
+    performAction(entity);
+  }
+}
+```
+
+**Bad**: Hide relationships in nested conditionals or implicit control flow where the connection between concepts isn't clear.
+
+```typescript
+function process(entity: Entity) {
+  if (entity.value > threshold) {
+    if (entity.flag) {
+      if (entity.other > 0) {
+        performAction(entity);
+      }
+    }
+  }
+}
+```
+
+**Why**: Explicit relationships make the system's structure clear. You can see how concepts connect rather than inferring it from control flow.
+
+Separate Semantics from Mechanism
+
+Define what's true (semantics) apart from how it happens (mechanism). Separate evaluation (what should the state be?) from application (how to apply that state).
+
+**Good**: Functions that determine truth are separate from functions that perform side effects.
+
+```typescript
+function evaluateState(entity: Entity, context: Context): State {
+  const conceptState = determineConceptState(entity, context);
+  const shouldAct = shouldApplyAction(conceptState, entity);
+  const value = calculateValue(entity, context);
+  return { conceptState, shouldAct, value };
+}
+
+function applyState(entity: Entity, state: State): void {
+  if (!state.shouldAct) {
+    entity.hide();
+    return;
+  }
+  entity.show();
+  entity.setValue(state.value);
+  entity.updateProperties(state);
+}
+```
+
+**Bad**: Mix evaluation logic with side effects in a single function, making it unclear what the system believes vs. how it applies that belief.
+
+```typescript
+function process(entity: Entity, context: Context): void {
+  const conceptState = determineConceptState(entity, context);
+  if (conceptState === "state-a") {
+    entity.hide();
+    entity.setValue(0);
+  } else {
+    entity.show();
+    const value = calculateValue(entity, context);
+    entity.setValue(value);
+    entity.updateProperties(value);
+  }
+}
+```
+
+**Why**: Separating semantics from mechanism allows you to reason about what's true independently of how it's implemented. You can test evaluation logic without side effects.
+
+System as Thought Artifact
+
+Treat the software as an executable model of understanding, not just an executable artifact. Complexity grows from idea drift — when the code diverges from the original mental model. Continuous simplification is a process of reconverging on the core concept.
+
+Make the Invariants Obvious
+
+Every system has a few truths that must always hold. Surface them explicitly in tests, data types, or domain models. A design that makes invariants obvious resists entropy.
+
+**Good**: Make invariants explicit in types, interfaces, or data structures. Group related invariants together.
+
+```typescript
+interface SystemState {
+  conceptState: ConceptState;
+  shouldAct: boolean;
+  value: number; // Invariant: value must be between 0 and 1 when shouldAct is true
+}
+
+interface Policy {
+  shouldApply(entity: Entity): boolean; // Invariant: consistent result for same entity state
+}
+
+interface Rule {
+  determineState(entity: Entity): ConceptState; // Invariant: always returns valid ConceptState
+}
+```
+
+**Bad**: Hide invariants in comments or scattered conditionals where they're not obvious from the code structure.
+
+```typescript
+function process(entity: Entity) {
+  const value = calculate(entity);
+  if (value > 1) value = 1; // Invariant enforced implicitly
+  if (entity.flag && value > 0) {
+    // ...
+  }
+}
+```
+
+**Why**: Obvious invariants resist entropy. When someone adds code, they can see what must remain true.
+
+Shape Interfaces by Human Cognition
+
+The real interface is the mental interface: what someone needs to know to operate or extend the system. Optimize for human conceptual flow, not API consistency alone.
+
+**Good**: Function names reflect the mental model and conceptual flow. The main function orchestrates a clear sequence of concepts.
+
+```typescript
+function processMain(entity: Entity): void {
+  const state = evaluateState(entity);
+  const policyResult = applyPolicies(state, entity);
+  const transformed = transformData(state, policyResult);
+  applyEffects(entity, transformed);
+}
+```
+
+**Bad**: Use technical names that don't reflect the mental model. Hide the conceptual flow in implementation details.
+
+```typescript
+function process(entity: Entity): void {
+  const temp1 = doThing(entity);
+  const temp2 = processThing(temp1);
+  const result = finalize(temp2);
+  update(entity, result);
+}
+```
+
+**Why**: Interfaces that match human thinking are easier to understand and extend. The code reads like a model of understanding.
+
+Design for Evolution, Not Completion
+
+Good abstractions survive change; great ones anticipate new concepts emerging. A system's design should allow new ideas to be naturally absorbed without violating old ones.
+
+**Good**: Use patterns that allow extension without modification. Encapsulate feature detection or capability checks in dedicated functions or interfaces.
+
+```typescript
+interface CapableEntity extends Entity {
+  specialFeature?: Feature;
+}
+
+function supportsFeature(entity: Entity): entity is CapableEntity {
+  return entity.type === "special-type";
+}
+
+function processFeature(entity: Entity): void {
+  if (supportsFeature(entity)) {
+    useFeature(entity.specialFeature);
+  }
+}
+```
+
+**Bad**: Hard-code feature checks or capabilities throughout the codebase. When new concepts emerge, require changes in multiple places.
+
+```typescript
+function process(entity: Entity): void {
+  if (entity.type === "special-type") {
+    useFeature(entity);
+  }
+}
+
+function processOther(entity: Entity): void {
+  if (entity.type === "special-type") {
+    useFeature(entity);
+  }
+}
+```
+
+**Why**: Abstractions that anticipate evolution reduce the cost of change. New concepts can be added without breaking existing ones.

@@ -40,7 +40,10 @@ export const action = async ({ params: { id }, request }: Route.ActionArgs) => {
   }
 
   const writeStream = await storageProvider.createWriteStream(filePath);
-  const byteSize = await writeReadableStreamToWritable(request.body, writeStream);
+  const byteSize = await writeReadableStreamToWritable(
+    request.body,
+    writeStream,
+  );
   await new Promise((resolve, reject) => {
     writeStream.on("finalized", resolve);
     writeStream.on("error", reject);
@@ -60,7 +63,10 @@ export const action = async ({ params: { id }, request }: Route.ActionArgs) => {
     // Only enqueue RenderInitializer if this is a tarfile upload (no HTML field)
     // HTML renders are handled by ProcessHTMLFinalizer
     if (!render.html) {
-      logger.debug({ renderId: render.id }, "Enqueueing RenderInitializer for tarfile upload");
+      logger.debug(
+        { renderId: render.id },
+        "Enqueueing RenderInitializer for tarfile upload",
+      );
       await RenderWorkflow.enqueueJob({
         queue: RenderInitializerQueue,
         orgId: session.oid,
@@ -69,7 +75,10 @@ export const action = async ({ params: { id }, request }: Route.ActionArgs) => {
         payload: render,
       });
     } else {
-      logger.debug({ renderId: render.id }, "Skipping RenderInitializer enqueue - HTML render handled by ProcessHTML workflow");
+      logger.debug(
+        { renderId: render.id },
+        "Skipping RenderInitializer enqueue - HTML render handled by ProcessHTML workflow",
+      );
     }
   } catch (error) {
     await storageProvider.deletePath(filePath);

@@ -16,7 +16,7 @@ import { requireSession } from "@/util/requireSession.server";
 
 const getUserOrgs = (session: SessionInfo) => {
   const activeSpan = trace.getActiveSpan();
-  
+
   if (!session.uid || typeof session.uid !== "string") {
     logger.error("getUserOrgs called with invalid session", {
       sessionType: session.type,
@@ -32,21 +32,21 @@ const getUserOrgs = (session: SessionInfo) => {
       `Cannot query organizations: session has invalid uid (${session.uid})`,
     );
   }
-  
+
   const sessionInfo = { uid: session.uid, cid: session.cid ?? null };
-  
+
   logger.info("getUserOrgs called", {
     sessionType: session.type,
     uid: sessionInfo.uid,
     cid: sessionInfo.cid,
   });
-  
+
   activeSpan?.setAttributes({
     "session.type": session.type,
     "session.uid": sessionInfo.uid,
     "session.cid": sessionInfo.cid ?? "null",
   });
-  
+
   return requireQueryAs(
     sessionInfo,
     "org-reader",
@@ -80,7 +80,7 @@ const maybeRedirectToOrg = async (
     const urlOrgId = searchParams.get("org");
     const readableSession = await getSession(request.headers.get("cookie"));
     const sessionOrgId = readableSession.get("oid");
-    
+
     logger.error("No organizations found in account", {
       url: request.url,
       urlOrgId,
@@ -88,7 +88,7 @@ const maybeRedirectToOrg = async (
       sessionData: readableSession.data,
       requestHeaders: Object.fromEntries(request.headers.entries()),
     });
-    
+
     activeSpan?.setStatus({
       code: SpanStatusCode.ERROR,
       message: "No organizations found in account",
@@ -98,7 +98,7 @@ const maybeRedirectToOrg = async (
       "error.urlOrgId": urlOrgId ?? "null",
       "error.sessionOrgId": sessionOrgId ?? "null",
     });
-    
+
     throw new Error(
       "No organizations found in account. Please contact support.",
     );
@@ -163,33 +163,33 @@ const maybeRedirectToOrg = async (
 export const loader = async ({ request }: Route.LoaderArgs) => {
   const activeSpan = trace.getActiveSpan();
   const { session } = await requireSession(request);
-  
+
   logger.info("ResourceLayout loader", {
     sessionType: session.type,
     uid: session.uid,
     cid: session.cid,
     url: request.url,
   });
-  
+
   activeSpan?.setAttributes({
     "loader.session.type": session.type,
     "loader.session.uid": session.uid,
     "loader.url": request.url,
   });
-  
+
   const orgs = await getUserOrgs(session);
-  
+
   logger.info("getUserOrgs result", {
     orgCount: orgs.length,
     orgIds: orgs.map((o) => o.id),
     uid: session.uid,
   });
-  
+
   activeSpan?.setAttributes({
     "orgs.count": orgs.length,
     "orgs.ids": orgs.map((o) => o.id).join(","),
   });
-  
+
   await maybeRedirectToOrg(orgs, request);
   return {
     orgs,
@@ -201,10 +201,12 @@ export default function ResourceLayout({ loaderData }: Route.ComponentProps) {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   return (
-    <div className={clsx(
-      "grid h-screen w-full grid-rows-[auto_0_1fr] lg:grid-rows-[auto_1fr] grid-cols-1 lg:grid-cols-[auto_1fr] transition-colors",
-      "bg-white dark:bg-slate-900"
-    )}>
+    <div
+      className={clsx(
+        "grid h-screen w-full grid-rows-[auto_0_1fr] lg:grid-rows-[auto_1fr] grid-cols-1 lg:grid-cols-[auto_1fr] transition-colors",
+        "bg-white dark:bg-slate-900",
+      )}
+    >
       <Header
         className="col-span-1 lg:col-span-2"
         orgs={loaderData.orgs}
@@ -213,8 +215,8 @@ export default function ResourceLayout({ loaderData }: Route.ComponentProps) {
       />
       {/* Navigation - always rendered, handles its own mobile visibility */}
       <div className="lg:h-full lg:overflow-y-auto">
-        <UserNavigation 
-          isMobileOpen={isMobileNavOpen} 
+        <UserNavigation
+          isMobileOpen={isMobileNavOpen}
           setIsMobileOpen={setIsMobileNavOpen}
         />
       </div>

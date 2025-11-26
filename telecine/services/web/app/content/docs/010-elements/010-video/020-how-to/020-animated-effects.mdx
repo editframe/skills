@@ -1,0 +1,45 @@
+---
+meta:
+  - title: Create Animated Effects
+  - name: description
+    content: Create time-based visual changes using CSS animations on video elements
+headers:
+    Cache-Control: no-cache
+---
+
+## Create Animated Effects
+
+**Problem:** You need time-based visual changes using CSS animations.
+
+**Solution:** Define `@keyframes` animations and apply them using the `style` prop. You can animate any CSS property including filters, transforms, and opacity.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup mode="contain" className="w-[720px] h-[480px] flex items-center justify-center bg-black overflow-hidden">
+    <Video src="https://assets.editframe.com/bars-n-tone.mp4" className="size-full object-contain" style={{ animation: "10s trippy"}}/>
+    <style>{`@keyframes trippy {
+      0% {
+        filter: saturate(200) brightness(150) contrast(150) blur(10px);
+      }
+      100% {
+        filter: saturate(1) brightness(1) contrast(1) blur(0);
+      }
+    }`}</style>
+  </Timegroup>
+</Demonstration>
+
+```jsx
+// Fade in
+<style>{`@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }`}</style>
+<Video src="video.mp4" style={{ animation: "fadeIn 2s ease-in" }} />
+
+// Zoom and fade
+<style>{`@keyframes zoomFade {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}`}</style>
+<Video src="video.mp4" style={{ animation: "zoomFade 3s ease-out" }} />
+```
+
+Animations run relative to the video's timeline. Define keyframes once and reuse by referencing the animation name.
+
+

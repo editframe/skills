@@ -155,9 +155,8 @@ describe("JitMediaEngine", () => {
   });
 
   test("calculatePlayheadDistance utility function", async ({ expect }) => {
-    const { calculatePlayheadDistance } = await import(
-      "./shared/BufferUtils.js"
-    );
+    const { calculatePlayheadDistance } =
+      await import("./shared/BufferUtils.js");
 
     // Element is currently active (playhead within element bounds)
     expect(

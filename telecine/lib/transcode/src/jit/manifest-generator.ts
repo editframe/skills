@@ -1,5 +1,5 @@
-import { RENDITION_CONFIGS } from './transcoding-service';
-import { calculateSegmentDurations } from './calculateSegmentDurations';
+import { RENDITION_CONFIGS } from "./transcoding-service";
+import { calculateSegmentDurations } from "./calculateSegmentDurations";
 
 export interface ManifestOptions {
   baseUrl: string;
@@ -12,31 +12,51 @@ export interface ManifestOptions {
 
 export class ManifestGenerator {
   static generateDashManifest(options: ManifestOptions): string {
-    const { baseUrl, duration, segmentDuration, videoRenditions, audioRenditions, sourceUrl } = options;
-    const encodedUrl = sourceUrl ? encodeURIComponent(sourceUrl) : '';
+    const {
+      baseUrl,
+      duration,
+      segmentDuration,
+      videoRenditions,
+      audioRenditions,
+      sourceUrl,
+    } = options;
+    const encodedUrl = sourceUrl ? encodeURIComponent(sourceUrl) : "";
 
     // Calculate actual segment durations for video (in milliseconds)
-    const videoActualDurationsMs = calculateSegmentDurations(duration * 1000, segmentDuration * 1000, { mediaType: 'video' });
-    const videoActualDurations = videoActualDurationsMs.map(d => d / 1000); // Convert to seconds for manifest
+    const videoActualDurationsMs = calculateSegmentDurations(
+      duration * 1000,
+      segmentDuration * 1000,
+      { mediaType: "video" },
+    );
+    const videoActualDurations = videoActualDurationsMs.map((d) => d / 1000); // Convert to seconds for manifest
 
-    // Calculate actual segment durations for audio (in milliseconds) 
-    const audioActualDurationsMs = calculateSegmentDurations(duration * 1000, segmentDuration * 1000, { mediaType: 'audio' });
-    const audioActualDurations = audioActualDurationsMs.map(d => d / 1000); // Convert to seconds for manifest
+    // Calculate actual segment durations for audio (in milliseconds)
+    const audioActualDurationsMs = calculateSegmentDurations(
+      duration * 1000,
+      segmentDuration * 1000,
+      { mediaType: "audio" },
+    );
+    const audioActualDurations = audioActualDurationsMs.map((d) => d / 1000); // Convert to seconds for manifest
 
     // Create video AdaptationSet with multiple Representations
-    const videoRepresentations = videoRenditions.map(rendition => {
-      const config = RENDITION_CONFIGS[rendition];
-      if (!config) {
-        throw new Error(`Invalid video rendition: ${rendition}`);
-      }
-      const bandwidth = Number.parseInt(config.videoBitrate.replace('k', '')) * 1000;
+    const videoRepresentations = videoRenditions
+      .map((rendition) => {
+        const config = RENDITION_CONFIGS[rendition];
+        if (!config) {
+          throw new Error(`Invalid video rendition: ${rendition}`);
+        }
+        const bandwidth =
+          Number.parseInt(config.videoBitrate.replace("k", "")) * 1000;
 
-      // Create SegmentTimeline with actual durations
-      const segmentTimeline = videoActualDurations.map((actualDuration, i) =>
-        `<S t="${videoActualDurations.slice(0, i).reduce((sum, d) => sum + d * 1000, 0)}" d="${Math.round(actualDuration * 1000)}"/>`
-      ).join('\n            ');
+        // Create SegmentTimeline with actual durations
+        const segmentTimeline = videoActualDurations
+          .map(
+            (actualDuration, i) =>
+              `<S t="${videoActualDurations.slice(0, i).reduce((sum, d) => sum + d * 1000, 0)}" d="${Math.round(actualDuration * 1000)}"/>`,
+          )
+          .join("\n            ");
 
-      return `      <Representation 
+        return `      <Representation 
         id="${rendition}" 
         bandwidth="${bandwidth}" 
         width="${config.width}" 
@@ -53,22 +73,28 @@ export class ManifestGenerator {
           </SegmentTimeline>
         </SegmentTemplate>
       </Representation>`;
-    }).join('\n');
+      })
+      .join("\n");
 
     // Create audio AdaptationSet with actual durations
-    const audioRepresentations = audioRenditions.map(rendition => {
-      const config = RENDITION_CONFIGS[rendition];
-      if (!config) {
-        throw new Error(`Invalid audio rendition: ${rendition}`);
-      }
-      const bandwidth = Number.parseInt(config.audioBitrate.replace('k', '')) * 1000;
+    const audioRepresentations = audioRenditions
+      .map((rendition) => {
+        const config = RENDITION_CONFIGS[rendition];
+        if (!config) {
+          throw new Error(`Invalid audio rendition: ${rendition}`);
+        }
+        const bandwidth =
+          Number.parseInt(config.audioBitrate.replace("k", "")) * 1000;
 
-      // Create SegmentTimeline with actual durations
-      const segmentTimeline = audioActualDurations.map((actualDuration, i) =>
-        `<S t="${audioActualDurations.slice(0, i).reduce((sum, d) => sum + d * 1000, 0)}" d="${Math.round(actualDuration * 1000)}"/>`
-      ).join('\n            ');
+        // Create SegmentTimeline with actual durations
+        const segmentTimeline = audioActualDurations
+          .map(
+            (actualDuration, i) =>
+              `<S t="${audioActualDurations.slice(0, i).reduce((sum, d) => sum + d * 1000, 0)}" d="${Math.round(actualDuration * 1000)}"/>`,
+          )
+          .join("\n            ");
 
-      return `      <Representation 
+        return `      <Representation 
         id="${rendition}" 
         bandwidth="${bandwidth}" 
         audioSamplingRate="48000"
@@ -83,17 +109,24 @@ export class ManifestGenerator {
           </SegmentTimeline>
         </SegmentTemplate>
       </Representation>`;
-    }).join('\n');
+      })
+      .join("\n");
 
-    const videoAdaptationSet = videoRenditions.length > 0 ? `
+    const videoAdaptationSet =
+      videoRenditions.length > 0
+        ? `
     <AdaptationSet mimeType="video/mp4" segmentAlignment="true" startWithSAP="1" codecs="avc1.640029">
 ${videoRepresentations}
-    </AdaptationSet>` : '';
+    </AdaptationSet>`
+        : "";
 
-    const audioAdaptationSet = audioRenditions.length > 0 ? `
+    const audioAdaptationSet =
+      audioRenditions.length > 0
+        ? `
     <AdaptationSet mimeType="audio/mp4" segmentAlignment="true" startWithSAP="1" codecs="mp4a.40.2">
 ${audioRepresentations}
-    </AdaptationSet>` : '';
+    </AdaptationSet>`
+        : "";
 
     return `<?xml version="1.0" encoding="UTF-8"?>
 <MPD xmlns="urn:mpeg:dash:schema:mpd:2011" 
@@ -110,56 +143,70 @@ ${audioAdaptationSet}
 
   static generateHlsManifest(options: ManifestOptions): string {
     const { baseUrl, videoRenditions, audioRenditions, sourceUrl } = options;
-    const encodedUrl = sourceUrl ? encodeURIComponent(sourceUrl) : '';
+    const encodedUrl = sourceUrl ? encodeURIComponent(sourceUrl) : "";
 
-    const videoPlaylists = videoRenditions.map(rendition => {
-      const config = RENDITION_CONFIGS[rendition];
-      if (!config) {
-        throw new Error(`Invalid video rendition: ${rendition}`);
-      }
-      const bandwidth = Number.parseInt(config.videoBitrate.replace('k', '')) * 1000;
+    const videoPlaylists = videoRenditions
+      .map((rendition) => {
+        const config = RENDITION_CONFIGS[rendition];
+        if (!config) {
+          throw new Error(`Invalid video rendition: ${rendition}`);
+        }
+        const bandwidth =
+          Number.parseInt(config.videoBitrate.replace("k", "")) * 1000;
 
-      return `#EXT-X-STREAM-INF:BANDWIDTH=${bandwidth},RESOLUTION=${config.width}x${config.height},CODECS="avc1.640029,mp4a.40.2"
+        return `#EXT-X-STREAM-INF:BANDWIDTH=${bandwidth},RESOLUTION=${config.width}x${config.height},CODECS="avc1.640029,mp4a.40.2"
 ${baseUrl}/api/v1/transcode/${rendition}.m3u8?url=${encodedUrl}`;
-    }).join('\n');
+      })
+      .join("\n");
 
-    const audioPlaylists = audioRenditions.map(rendition => {
-      const config = RENDITION_CONFIGS[rendition];
-      if (!config) {
-        throw new Error(`Invalid audio rendition: ${rendition}`);
-      }
-      const bandwidth = Number.parseInt(config.audioBitrate.replace('k', '')) * 1000;
+    const audioPlaylists = audioRenditions
+      .map((rendition) => {
+        const config = RENDITION_CONFIGS[rendition];
+        if (!config) {
+          throw new Error(`Invalid audio rendition: ${rendition}`);
+        }
+        const bandwidth =
+          Number.parseInt(config.audioBitrate.replace("k", "")) * 1000;
 
-      return `#EXT-X-STREAM-INF:BANDWIDTH=${bandwidth},CODECS="mp4a.40.2"
+        return `#EXT-X-STREAM-INF:BANDWIDTH=${bandwidth},CODECS="mp4a.40.2"
 ${baseUrl}/api/v1/transcode/${rendition}.m3u8?url=${encodedUrl}`;
-    }).join('\n');
+      })
+      .join("\n");
 
-    const playlists = [videoPlaylists, audioPlaylists].filter(p => p.length > 0).join('\n');
+    const playlists = [videoPlaylists, audioPlaylists]
+      .filter((p) => p.length > 0)
+      .join("\n");
 
     return `#EXTM3U
 #EXT-X-VERSION:6
 ${playlists}`;
   }
 
-  static generateHlsQualityPlaylist(options: ManifestOptions & { rendition: string }): string {
-    const { baseUrl, duration, segmentDuration, rendition, sourceUrl } = options;
-    const encodedUrl = sourceUrl ? encodeURIComponent(sourceUrl) : '';
+  static generateHlsQualityPlaylist(
+    options: ManifestOptions & { rendition: string },
+  ): string {
+    const { baseUrl, duration, segmentDuration, rendition, sourceUrl } =
+      options;
+    const encodedUrl = sourceUrl ? encodeURIComponent(sourceUrl) : "";
 
     // Calculate actual segment durations for HLS
     // Use video frame alignment for video renditions, AAC alignment for audio renditions
-    const isVideoRendition = RENDITION_CONFIGS[rendition]?.videoBitrate !== undefined;
+    const isVideoRendition =
+      RENDITION_CONFIGS[rendition]?.videoBitrate !== undefined;
     const actualDurationsMs = calculateSegmentDurations(
       duration * 1000,
       segmentDuration * 1000,
-      { mediaType: isVideoRendition ? 'video' : 'audio' }
+      { mediaType: isVideoRendition ? "video" : "audio" },
     );
-    const actualDurations = actualDurationsMs.map(d => d / 1000); // Convert to seconds for manifest
+    const actualDurations = actualDurationsMs.map((d) => d / 1000); // Convert to seconds for manifest
 
-    const segments = actualDurations.map((actualDuration, i) => {
-      const segmentId = String(i + 1).padStart(5, '0');
-      return `#EXTINF:${actualDuration.toFixed(6)},
+    const segments = actualDurations
+      .map((actualDuration, i) => {
+        const segmentId = String(i + 1).padStart(5, "0");
+        return `#EXTINF:${actualDuration.toFixed(6)},
 ${baseUrl}/api/v1/transcode/${rendition}/${segmentId}.m4s?url=${encodedUrl}`;
-    }).join('\n');
+      })
+      .join("\n");
 
     // Use the maximum actual duration for target duration (HLS requirement)
     const maxDuration = Math.max(...actualDurations);
@@ -172,4 +219,4 @@ ${baseUrl}/api/v1/transcode/${rendition}/${segmentId}.m4s?url=${encodedUrl}`;
 ${segments}
 #EXT-X-ENDLIST`;
   }
-} 
+}

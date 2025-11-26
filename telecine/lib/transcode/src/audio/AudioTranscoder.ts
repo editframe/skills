@@ -1,9 +1,9 @@
-import { UnifiedByteRangeFetcher } from '../async/UnifiedByteRangeFetcher.js';
-import * as crypto from 'node:crypto';
-import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
-import * as os from 'node:os';
-import { spawn } from 'node:child_process';
+import { UnifiedByteRangeFetcher } from "../async/UnifiedByteRangeFetcher.js";
+import * as crypto from "node:crypto";
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
+import * as os from "node:os";
+import { spawn } from "node:child_process";
 
 /**
  * Audio transcoding result
@@ -40,8 +40,11 @@ export interface AudioMetadata {
 class TempFile {
   private _path: string;
 
-  constructor(prefix = 'transcode/audio', extension = '.tmp') {
-    this._path = path.join(os.tmpdir(), `${prefix}-${crypto.randomUUID()}${extension}`);
+  constructor(prefix = "transcode/audio", extension = ".tmp") {
+    this._path = path.join(
+      os.tmpdir(),
+      `${prefix}-${crypto.randomUUID()}${extension}`,
+    );
   }
 
   get path(): string {
@@ -70,12 +73,12 @@ class TempFile {
 
 /**
  * Simplified audio transcoder using FFmpeg subprocess
- * 
+ *
  * This approach avoids the complexity of the JitTranscoder pipeline
  * and provides a clean solution specifically for MP3-to-MP4 transcoding.
  */
 export class AudioTranscoder {
-  private constructor() { }
+  private constructor() {}
 
   /**
    * Extract metadata from an audio file using FFmpeg
@@ -88,7 +91,7 @@ export class AudioTranscoder {
     const fetchResult = await fetcher.fetchByteRange({
       url,
       startByte: 0,
-      endByte: -1 // Full file
+      endByte: -1, // Full file
     });
 
     if (!fetchResult.success) {
@@ -96,32 +99,33 @@ export class AudioTranscoder {
     }
 
     // Write to temporary file
-    using tempFile = new TempFile('metadata', '.mp3');
+    using tempFile = new TempFile("metadata", ".mp3");
     await fs.writeFile(tempFile.path, fetchResult.data);
 
     // Use FFprobe to extract metadata
     // This is a load-bearing await. If we return the promise before awaiting it, the tempfile will be deleted before the promise is resolved.
     // this is because we're using `using` to declare the tempfile, which is a scoped variable.
     return await new Promise((resolve, reject) => {
-      const ffprobe = spawn('ffprobe', [
-        '-print_format', 'json',
-        '-show_streams',
-        '-show_format',
-        tempFile.path
+      const ffprobe = spawn("ffprobe", [
+        "-print_format",
+        "json",
+        "-show_streams",
+        "-show_format",
+        tempFile.path,
       ]);
 
-      let stdout = '';
-      let stderr = '';
+      let stdout = "";
+      let stderr = "";
 
-      ffprobe.stdout.on('data', (data) => {
+      ffprobe.stdout.on("data", (data) => {
         stdout += data.toString();
       });
 
-      ffprobe.stderr.on('data', (data) => {
+      ffprobe.stderr.on("data", (data) => {
         stderr += data.toString();
       });
 
-      ffprobe.on('close', (code) => {
+      ffprobe.on("close", (code) => {
         if (code !== 0) {
           console.error("FFprobe failed:", stderr);
           reject(new Error("Failed to extract metadata for audio file."));
@@ -130,24 +134,35 @@ export class AudioTranscoder {
 
         try {
           const info = JSON.parse(stdout);
-          const audioStream = info.streams?.find((s: any) => s.codec_type === 'audio');
+          const audioStream = info.streams?.find(
+            (s: any) => s.codec_type === "audio",
+          );
 
           if (!audioStream) {
-            reject(new Error('No audio stream found'));
+            reject(new Error("No audio stream found"));
             return;
           }
 
-          const durationSeconds = Number.parseFloat(info.format?.duration || audioStream.duration || '0');
+          const durationSeconds = Number.parseFloat(
+            info.format?.duration || audioStream.duration || "0",
+          );
 
           resolve({
             durationMs: Math.round(durationSeconds * 1000),
-            codec: audioStream.codec_name || 'unknown',
-            channels: Number.parseInt(audioStream.channels || '2', 10),
-            sampleRate: Number.parseInt(audioStream.sample_rate || '48000', 10),
-            bitrate: Number.parseInt(audioStream.bit_rate || info.format?.bit_rate || '0', 10)
+            codec: audioStream.codec_name || "unknown",
+            channels: Number.parseInt(audioStream.channels || "2", 10),
+            sampleRate: Number.parseInt(audioStream.sample_rate || "48000", 10),
+            bitrate: Number.parseInt(
+              audioStream.bit_rate || info.format?.bit_rate || "0",
+              10,
+            ),
           });
         } catch (parseError) {
-          reject(new Error(`Failed to parse FFprobe output: ${parseError instanceof Error ? parseError.message : String(parseError)}`));
+          reject(
+            new Error(
+              `Failed to parse FFprobe output: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
+            ),
+          );
         }
       });
     });
@@ -162,13 +177,13 @@ export class AudioTranscoder {
     durationMs: number,
     targetBitrate = 128000,
     targetChannels = 2,
-    targetSampleRate = 48000
+    targetSampleRate = 48000,
   ): Promise<AudioTranscodeResult> {
     const result: AudioTranscodeResult = {
       success: false,
       outputData: new Uint8Array(0),
       actualStartTimeMs: startTimeMs,
-      actualDurationMs: durationMs
+      actualDurationMs: durationMs,
     };
 
     try {
@@ -177,7 +192,7 @@ export class AudioTranscoder {
       const fetchResult = await fetcher.fetchByteRange({
         url,
         startByte: 0,
-        endByte: -1
+        endByte: -1,
       });
 
       if (!fetchResult.success) {
@@ -185,8 +200,8 @@ export class AudioTranscoder {
       }
 
       // Step 2: Create temporary files
-      using inputFile = new TempFile('input', '.mp3');
-      using outputFile = new TempFile('output', '.mp4');
+      using inputFile = new TempFile("input", ".mp3");
+      using outputFile = new TempFile("output", ".mp4");
 
       await fs.writeFile(inputFile.path, fetchResult.data);
 
@@ -195,26 +210,34 @@ export class AudioTranscoder {
       const durationSeconds = durationMs / 1000;
 
       await new Promise<void>((resolve, reject) => {
-        const ffmpeg = spawn('ffmpeg', [
-          '-i', inputFile.path,
-          '-ss', startSeconds.toString(),
-          '-t', durationSeconds.toString(),
-          '-c:a', 'aac',
-          '-b:a', `${targetBitrate}`,
-          '-ac', targetChannels.toString(),
-          '-ar', targetSampleRate.toString(),
-          '-movflags', '+faststart',
-          '-y', // Overwrite output file
-          outputFile.path
+        const ffmpeg = spawn("ffmpeg", [
+          "-i",
+          inputFile.path,
+          "-ss",
+          startSeconds.toString(),
+          "-t",
+          durationSeconds.toString(),
+          "-c:a",
+          "aac",
+          "-b:a",
+          `${targetBitrate}`,
+          "-ac",
+          targetChannels.toString(),
+          "-ar",
+          targetSampleRate.toString(),
+          "-movflags",
+          "+faststart",
+          "-y", // Overwrite output file
+          outputFile.path,
         ]);
 
-        let stderr = '';
+        let stderr = "";
 
-        ffmpeg.stderr.on('data', (data) => {
+        ffmpeg.stderr.on("data", (data) => {
           stderr += data.toString();
         });
 
-        ffmpeg.on('close', (code) => {
+        ffmpeg.on("close", (code) => {
           if (code !== 0) {
             reject(new Error(`FFmpeg failed: ${stderr}`));
           } else {
@@ -227,15 +250,14 @@ export class AudioTranscoder {
       result.outputData = await outputFile.readAsUint8Array();
       result.success = true;
       result.audioInfo = {
-        sourceCodec: 'mp3',
-        targetCodec: 'aac',
+        sourceCodec: "mp3",
+        targetCodec: "aac",
         channels: targetChannels,
         sampleRate: targetSampleRate,
-        bitrate: targetBitrate
+        bitrate: targetBitrate,
       };
 
       return result;
-
     } catch (error) {
       result.error = error instanceof Error ? error.message : String(error);
       return result;
@@ -249,15 +271,15 @@ export class AudioTranscoder {
     url: string,
     startTimeMs: number,
     durationMs = 15000,
-    quality: 'medium' = 'medium'
+    quality: "medium" = "medium",
   ): Promise<AudioTranscodeResult> {
     // Quality presets
     const qualityPresets = {
       medium: {
         bitrate: 128000,
         channels: 2,
-        sampleRate: 48000
-      }
+        sampleRate: 48000,
+      },
     };
 
     const preset = qualityPresets[quality];
@@ -268,7 +290,7 @@ export class AudioTranscoder {
       durationMs,
       preset.bitrate,
       preset.channels,
-      preset.sampleRate
+      preset.sampleRate,
     );
   }
-} 
+}

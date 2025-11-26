@@ -5,7 +5,9 @@
   "scripts": {
     "test": "vitest --run",
     "test:watch": "vitest",
-    "build": "cmake-js build --directory lib/transcode"
+    "build": "cmake-js build --directory lib/transcode",
+    "lint": "oxlint .",
+    "format": "oxfmt ."
   },
   "private": true,
   "type": "module",
@@ -14,7 +16,6 @@
   },
   "devDependencies": {
     "@0no-co/graphqlsp": "^1.14.0",
-    "@biomejs/biome": "^1.8.3",
     "@editframe/vite-plugin": "^0.10.0-beta.6",
     "@parcel/watcher": "^2.4.0",
     "@playwright/test": "^1.56.1",
@@ -56,6 +57,8 @@
     "node-addon-api": "^8.3.1",
     "odiff": "^1.5.0",
     "odiff-bin": "^3.0.0",
+    "oxfmt": "^0.15.0",
+    "oxlint": "^1.30.0",
     "pino-seq": "^1.2.0",
     "postcss-lit": "^1.1.1",
     "prettier": "^3.2.5",

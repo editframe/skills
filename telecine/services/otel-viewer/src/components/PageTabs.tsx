@@ -78,7 +78,7 @@ export function PageTabs({
           return (
             <div
               key={page.id}
-              className={`page-tab ${isActive ? 'active' : ''}`}
+              className={`page-tab ${isActive ? "active" : ""}`}
               onClick={() => !isEditing && onPageSelect(page)}
             >
               {isEditing ? (
@@ -88,8 +88,8 @@ export function PageTabs({
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSaveEdit();
-                    if (e.key === 'Escape') handleCancelEdit();
+                    if (e.key === "Enter") handleSaveEdit();
+                    if (e.key === "Escape") handleCancelEdit();
                   }}
                   onBlur={handleSaveEdit}
                   className="page-tab-edit-input"
@@ -117,7 +117,11 @@ export function PageTabs({
             </div>
           );
         })}
-        <button className="page-tab-new" onClick={onPageCreate} title="New page">
+        <button
+          className="page-tab-new"
+          onClick={onPageCreate}
+          title="New page"
+        >
           +
         </button>
       </div>

@@ -1,0 +1,168 @@
+---
+meta:
+  - title: Tutorial
+  - name: description
+    content: Step-by-step tutorial for using ef-transform-handles to add interactive transform controls to elements
+headers:
+    Cache-Control: no-cache
+---
+
+## Tutorial: Adding Transform Controls to Elements
+
+This tutorial will guide you through using ef-transform-handles to add interactive drag, resize, and rotation controls to elements. Each step builds on the previous one, teaching you how to create professional editor interfaces.
+
+### Step 1: Basic Drag and Resize
+
+Let's start with the simplest use case - adding drag and resize handles to an element.
+
+**What you'll learn:** How to attach transform handles to an element and enable basic dragging and resizing.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enableFitScale>
+  <div style={{ position: 'relative', width: '100%', height: '400px', background: '#f3f4f6', border: '2px solid #e5e7eb' }}>
+    <div id="target" style={{ position: 'absolute', left: '100px', top: '100px', width: '200px', height: '150px', background: '#3b82f6', borderRadius: '8px' }}></div>
+    <TransformHandles target="#target" />
+  </div>
+</Demonstration>
+
+**Try it yourself:** Drag the blue border to move the element, or drag the corner and edge handles to resize it. Notice how the handles automatically track the element's position and size.
+
+### Step 2: Handling Transform Events
+
+Now let's learn how to respond to transform changes and update your element accordingly.
+
+**What you'll learn:** How to listen for bounds-change events and update element styles.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enableFitScale>
+  <div style={{ position: 'relative', width: '100%', height: '400px', background: '#f3f4f6', border: '2px solid #e5e7eb' }}>
+    <div id="target-step2" style={{ position: 'absolute', left: '100px', top: '100px', width: '200px', height: '150px', background: '#3b82f6', borderRadius: '8px' }}></div>
+    <TransformHandles target="#target-step2" />
+  </div>
+</Demonstration>
+
+The element above responds to transform changes automatically. To wire this up yourself, listen for the `bounds-change` event:
+
+```html
+<script>
+  const handles = document.querySelector('ef-transform-handles');
+  handles.addEventListener('bounds-change', (e) => {
+    const { bounds } = e.detail;
+    const target = document.querySelector('#target');
+    target.style.left = bounds.x + 'px';
+    target.style.top = bounds.y + 'px';
+    target.style.width = bounds.width + 'px';
+    target.style.height = bounds.height + 'px';
+  });
+</script>
+```
+
+**Try it yourself:** Drag and resize the element. The element updates its position and size in real-time as you interact with the handles.
+
+### Step 3: Enabling Rotation
+
+Let's add rotation controls to enable rotating elements.
+
+**What you'll learn:** How to enable rotation and handle rotation changes.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enableFitScale>
+  <div style={{ position: 'relative', width: '100%', height: '400px', background: '#f3f4f6', border: '2px solid #e5e7eb' }}>
+    <div id="target-step3" style={{ position: 'absolute', left: '100px', top: '100px', width: '200px', height: '150px', background: '#3b82f6', borderRadius: '8px', transformOrigin: 'center' }}></div>
+    <TransformHandles target="#target-step3" enableRotation />
+  </div>
+</Demonstration>
+
+To handle both position/size and rotation changes, listen for both events:
+
+```html
+<script>
+  const handles = document.querySelector('ef-transform-handles');
+  const target = document.querySelector('#target');
+  
+  handles.addEventListener('bounds-change', (e) => {
+    const { bounds } = e.detail;
+    target.style.left = bounds.x + 'px';
+    target.style.top = bounds.y + 'px';
+    target.style.width = bounds.width + 'px';
+    target.style.height = bounds.height + 'px';
+  });
+  
+  handles.addEventListener('rotation-change', (e) => {
+    const { rotation } = e.detail;
+    target.style.transform = 'rotate(' + rotation + 'deg)';
+  });
+</script>
+```
+
+**Try it yourself:** Drag the green rotation handle above the element to rotate it. Notice how resizing works correctly even when rotated.
+
+### Step 4: Canvas Scaling
+
+When working with scaled canvases, you need to account for the scale factor.
+
+**What you'll learn:** How to use canvas-scale to handle zoomed or scaled viewports.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enableFitScale>
+  <div style={{ transform: 'scale(0.5)', transformOrigin: 'top left', position: 'relative', width: '200%', height: '200%' }}>
+    <div id="target-step4" style={{ position: 'absolute', left: '100px', top: '100px', width: '200px', height: '150px', background: '#3b82f6', borderRadius: '8px' }}></div>
+    <TransformHandles target="#target-step4" canvasScale={0.5} />
+  </div>
+</Demonstration>
+
+**Try it yourself:** Drag and resize the element. Notice how the handles correctly account for the 50% scale factor. This is essential for zoomed editor interfaces.
+
+### Step 5: Complete Editor Integration
+
+Let's combine everything into a complete editor setup with proper state management.
+
+**What you'll learn:** How to integrate transform handles into a full editor interface with state persistence.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enableFitScale>
+  <div id="editor-step5" style={{ position: 'relative', width: '100%', height: '500px', background: '#f3f4f6', border: '2px solid #e5e7eb' }}>
+    <div id="target-step5" style={{ position: 'absolute', left: '100px', top: '100px', width: '200px', height: '150px', background: '#3b82f6', borderRadius: '8px', transformOrigin: 'center' }}></div>
+    <TransformHandles 
+      target="#target-step5" 
+      enableRotation 
+      canvasScale={1}
+      minSize={50}
+    />
+  </div>
+</Demonstration>
+
+For a complete editor setup, maintain element state and update on all transform events:
+
+```html
+<script>
+  const handles = document.querySelector('ef-transform-handles');
+  const target = document.querySelector('#target');
+  let elementState = { x: 100, y: 100, width: 200, height: 150, rotation: 0 };
+  
+  function updateElement() {
+    target.style.left = elementState.x + 'px';
+    target.style.top = elementState.y + 'px';
+    target.style.width = elementState.width + 'px';
+    target.style.height = elementState.height + 'px';
+    target.style.transform = 'rotate(' + elementState.rotation + 'deg)';
+    target.style.transformOrigin = 'center';
+  }
+  
+  handles.addEventListener('bounds-change', (e) => {
+    elementState = { ...elementState, ...e.detail.bounds };
+    updateElement();
+  });
+  
+  handles.addEventListener('rotation-change', (e) => {
+    elementState.rotation = e.detail.rotation;
+    updateElement();
+  });
+  
+  updateElement();
+</script>
+```
+
+**Try it yourself:** Drag, resize, and rotate the element. All transforms are tracked in state and applied to the element. This pattern works for full editor interfaces.
+
+## Next Steps
+
+- Learn how to [customize handle appearance](/docs/editor-ui/transform-handles/how-to/customize-styling) with CSS variables
+- Understand [how transform handles work](/docs/editor-ui/transform-handles/explanation/transform-coordinates) with rotated elements
+- Explore the [complete reference](/docs/editor-ui/transform-handles/reference) for all properties and events
+

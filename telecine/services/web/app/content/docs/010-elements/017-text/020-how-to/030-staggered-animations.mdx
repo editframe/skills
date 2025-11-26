@@ -1,0 +1,55 @@
+---
+meta:
+  - title: Use Staggered Animations
+  - name: description
+    content: Control animation timing with stagger delays and easing functions
+headers:
+    Cache-Control: no-cache
+---
+
+## Use Staggered Animations
+
+**Problem:** You want to control how segments appear over time, with non-linear timing patterns.
+
+**Solution:** Use the `stagger` attribute for delays and `easing` for distribution patterns.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource>
+  <style>{`
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .fade-in {
+      animation: fadeIn 0.5s ease-out;
+    }
+  `}</style>
+  <Timegroup mode="contain" className="w-[720px] h-[405px] flex items-center justify-center bg-gradient-to-r from-purple-900 to-pink-900">
+    <Text split="char" stagger="50ms" easing="ease-out" duration="3s" className="text-center">
+      <template>
+        <TextSegment 
+          className="text-4xl font-bold fade-in"
+          style={{
+            color: "hsl(calc(360 * var(--ef-seed)), 80%, 70%)",
+          }}
+        />
+      </template>
+      STAGGER
+    </Text>
+  </Timegroup>
+</Demonstration>
+
+**Key points:**
+- `stagger` sets the delay between segments (e.g., `"50ms"`)
+- `easing` controls how delays are distributed: `"linear"`, `"ease-out"`, `"ease-in"`, `"ease-in-out"`, or custom bezier
+- With `ease-out`, segments cluster at the start and spread at the end
+- Use CSS variable `--ef-stagger-offset` for custom animation delays
+- Combine with `--ef-seed` for varied visual properties (colors, scales, rotations) per segment
+
+For understanding how stagger and easing work together, see the [Stagger and Easing explanation](/docs/elements/text/explanation/stagger-easing). For creating varied effects per segment, see [Use Seed-Based Variation](/docs/elements/text/how-to/seed-variation).
+

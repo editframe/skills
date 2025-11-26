@@ -12,10 +12,10 @@ declare module "mp4box" {
 
   type SegmentOptions =
     | {
-      rapAlignement: boolean;
-    }
+        rapAlignement: boolean;
+      }
     | { nbSamples: number };
-  export class ISOFile { }
+  export class ISOFile {}
 
   export class DataStream {
     static readonly BIG_ENDIAN = false;

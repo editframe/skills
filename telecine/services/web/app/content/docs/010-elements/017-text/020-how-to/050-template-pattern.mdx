@@ -1,0 +1,37 @@
+---
+meta:
+  - title: Use the Template Pattern
+  - name: description
+    content: Create multiple segments per character, word, or line for layered effects
+headers:
+    Cache-Control: no-cache
+---
+
+## Use the Template Pattern
+
+**Problem:** You want to create layered effects like shadows or outlines where each character has multiple visual elements.
+
+**Solution:** Place multiple `TextSegment` elements inside a `<template>` tag.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup mode="contain" className="w-[720px] h-[405px] flex items-center justify-center bg-gradient-to-r from-pink-900 to-rose-900">
+    <Text split="char" stagger="20ms" duration="4s" className="text-center text-white text-4xl font-bold">
+      <template>
+        <TextSegment className="text-pink-300/30 blur-sm" style={{ position: "absolute", transform: "translate(2px, 2px)" }} />
+        <TextSegment className="text-white relative" />
+      </template>
+      SHADOW
+    </Text>
+  </Timegroup>
+</Demonstration>
+
+**Key points:**
+- Place `<template>` inside `<Text>` element
+- Add multiple `<TextSegment>` elements in the template
+- Each character/word/line gets all segments from the template
+- Segments share the same stagger offset and timing
+- Works declaratively with HTML text nodes
+
+For understanding the architectural advantages of the template pattern, see the [Template Pattern explanation](/docs/elements/text/explanation/template-pattern).
+
+

@@ -11,7 +11,9 @@ import { v4 } from "uuid";
 import type { Route } from "./+types/index";
 import { requireCookieOrTokenSession } from "@/util/requireSession.server";
 
-export const action = async ({ request }: Route.ActionArgs): Promise<CreateUnprocessedFileResult> => {
+export const action = async ({
+  request,
+}: Route.ActionArgs): Promise<CreateUnprocessedFileResult> => {
   const payload = CreateUnprocessedFilePayload.parse(await request.json());
   const session = await requireCookieOrTokenSession(request);
   const id = v4();
@@ -34,14 +36,7 @@ export const action = async ({ request }: Route.ActionArgs): Promise<CreateUnpro
       byte_size: payload.byte_size,
       remote_uri: remoteUri,
     })
-    .returning([
-      "id",
-      "md5",
-      "byte_size",
-      "next_byte",
-      "complete",
-      "filename",
-    ])
+    .returning(["id", "md5", "byte_size", "next_byte", "complete", "filename"])
     .executeTakeFirst();
 
   if (!created) {
@@ -54,5 +49,5 @@ export const action = async ({ request }: Route.ActionArgs): Promise<CreateUnpro
     complete: created.complete,
     byte_size: created.byte_size,
     next_byte: created.next_byte,
-  }
+  };
 };

@@ -142,11 +142,16 @@ export const transcribe = async (audioPath: string, offsetSeconds: number) => {
       // biome-ignore format: keep cli args tidy
       const ffmpeg = spawn("ffmpeg", [
         "-y",
-        "-i", audioPath,
-        "-ar", "16000",
-        "-ac", "1",
-        "-c:a", "pcm_s16le",
-        "-af", "apad=pad_dur=0.1",
+        "-i",
+        audioPath,
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-c:a",
+        "pcm_s16le",
+        "-af",
+        "apad=pad_dur=0.1",
         wavPath,
       ]);
 
@@ -164,20 +169,29 @@ export const transcribe = async (audioPath: string, offsetSeconds: number) => {
 
     // Updated transcription arguments with speed optimizations
     // biome-ignore format: keep cli args tidy
-    const transcriptionProcess = spawn(process.env.WHISPER_PATH!, [
-      "-m", process.env.GGML_MODEL_PATH!,
-      "-f", wavPath,
-      "-ml", "1",
-      "-sow",
-      "-wt", "0.01",
-      "-oj",
-      "-np",
-      ...(process.env.BEAM_SIZE ? ["-bs", process.env.BEAM_SIZE!] : []),
-      "-of", tempJsonPath.replace('.json', ''), // Remove .json extension since whisper.cpp adds it
-    ], {
-      stdio: ["inherit", "inherit", "inherit"],
-      env,
-    });
+    const transcriptionProcess = spawn(
+      process.env.WHISPER_PATH!,
+      [
+        "-m",
+        process.env.GGML_MODEL_PATH!,
+        "-f",
+        wavPath,
+        "-ml",
+        "1",
+        "-sow",
+        "-wt",
+        "0.01",
+        "-oj",
+        "-np",
+        ...(process.env.BEAM_SIZE ? ["-bs", process.env.BEAM_SIZE!] : []),
+        "-of",
+        tempJsonPath.replace(".json", ""), // Remove .json extension since whisper.cpp adds it
+      ],
+      {
+        stdio: ["inherit", "inherit", "inherit"],
+        env,
+      },
+    );
 
     try {
       // Wait for process to complete

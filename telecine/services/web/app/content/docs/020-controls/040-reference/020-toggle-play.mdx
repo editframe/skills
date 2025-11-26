@@ -1,0 +1,57 @@
+---
+meta:
+  - title: Toggle Play Reference
+  - name: description
+    content: Complete property reference for ef-toggle-play element
+headers:
+    Cache-Control: no-cache
+---
+
+## Toggle Play Reference
+
+### Quick Reference Table
+
+<TogglePlayPropertyReference />
+
+### Properties
+
+<PropertyDocList>
+  <PropertyDoc name="target" type="string" domReadable domWritable htmlAttribute="target" defaultValue='""'>
+    Optional ID of a temporal element to control. If not provided, uses context from nearest ancestor.
+
+    ```html
+    <ef-toggle-play target="my-video">...</ef-toggle-play>
+    ```
+  </PropertyDoc>
+</PropertyDocList>
+
+### Slots
+
+<PropertyDocList>
+  <PropertyDoc name="play" type="slot">
+    Content displayed when video is paused. Clicking toggles playback.
+
+    ```html
+    <ef-toggle-play>
+      <button slot="play">Play</button>
+    </ef-toggle-play>
+    ```
+  </PropertyDoc>
+
+  <PropertyDoc name="pause" type="slot">
+    Content displayed when video is playing. Clicking toggles playback.
+
+    ```html
+    <ef-toggle-play>
+      <button slot="pause">Pause</button>
+    </ef-toggle-play>
+    ```
+  </PropertyDoc>
+</PropertyDocList>
+
+**How-to:** See [Use Play/Pause Button](/docs/controls/how-to/use-play-pause-button).
+
+
+
+
+

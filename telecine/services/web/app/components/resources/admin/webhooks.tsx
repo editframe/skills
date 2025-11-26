@@ -151,14 +151,18 @@ const Filter = () => {
       <thead>
         <tr>
           <td colSpan={5}>
-            <div className={clsx(
-              "flex flex-col sm:flex-row items-start sm:items-center gap-3 pb-3 text-xs transition-colors"
-            )}>
+            <div
+              className={clsx(
+                "flex flex-col sm:flex-row items-start sm:items-center gap-3 pb-3 text-xs transition-colors",
+              )}
+            >
               <div className="flex items-center gap-2">
-                <span className={clsx(
-                  "font-medium transition-colors",
-                  "text-slate-600 dark:text-slate-400"
-                )}>
+                <span
+                  className={clsx(
+                    "font-medium transition-colors",
+                    "text-slate-600 dark:text-slate-400",
+                  )}
+                >
                   Status:
                 </span>
                 <Listbox
@@ -170,24 +174,26 @@ const Filter = () => {
                     });
                   }}
                 >
-                  <ListboxButton className={clsx(
-                    "rounded-md border px-3 py-1.5 text-xs transition-all duration-150 relative backdrop-blur-sm",
-                    "bg-white/95 dark:bg-slate-800/95",
-                    "text-slate-900 dark:text-white",
-                    "border-slate-300/75 dark:border-slate-700/75",
-                    "shadow-[0_1px_2px_0_rgb(0_0_0_/_0.06)] dark:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.3)]",
-                    "before:absolute before:inset-0 before:bg-gradient-to-br before:from-amber-50/18 before:via-transparent before:to-transparent",
-                    "dark:before:from-blue-950/15 dark:before:via-transparent dark:before:to-transparent",
-                    "before:pointer-events-none before:rounded-md",
-                    "hover:bg-white dark:hover:bg-slate-800/90",
-                    "hover:border-slate-300/85 dark:hover:border-slate-700/85",
-                    "hover:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08)] dark:hover:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.35)]",
-                    "focus:outline-none focus:ring-1 focus:ring-blue-500/50 dark:focus:ring-blue-400/50",
-                    "focus:border-blue-500/85 dark:focus:border-blue-400/85",
-                    "focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08),0_2px_4px_0_rgb(59_130_246_/_0.15)]",
-                    "dark:focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.35),0_2px_4px_0_rgb(59_130_246_/_0.2)]",
-                    "focus:before:from-blue-50/30 dark:focus:before:from-blue-950/22"
-                  )}>
+                  <ListboxButton
+                    className={clsx(
+                      "rounded-md border px-3 py-1.5 text-xs transition-all duration-150 relative backdrop-blur-sm",
+                      "bg-white/95 dark:bg-slate-800/95",
+                      "text-slate-900 dark:text-white",
+                      "border-slate-300/75 dark:border-slate-700/75",
+                      "shadow-[0_1px_2px_0_rgb(0_0_0_/_0.06)] dark:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.3)]",
+                      "before:absolute before:inset-0 before:bg-gradient-to-br before:from-amber-50/18 before:via-transparent before:to-transparent",
+                      "dark:before:from-blue-950/15 dark:before:via-transparent dark:before:to-transparent",
+                      "before:pointer-events-none before:rounded-md",
+                      "hover:bg-white dark:hover:bg-slate-800/90",
+                      "hover:border-slate-300/85 dark:hover:border-slate-700/85",
+                      "hover:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08)] dark:hover:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.35)]",
+                      "focus:outline-none focus:ring-1 focus:ring-blue-500/50 dark:focus:ring-blue-400/50",
+                      "focus:border-blue-500/85 dark:focus:border-blue-400/85",
+                      "focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08),0_2px_4px_0_rgb(59_130_246_/_0.15)]",
+                      "dark:focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.35),0_2px_4px_0_rgb(59_130_246_/_0.2)]",
+                      "focus:before:from-blue-50/30 dark:focus:before:from-blue-950/22",
+                    )}
+                  >
                     {availableStatuses.find((s) => s.id === status)?.label ??
                       "All"}
                   </ListboxButton>
@@ -198,7 +204,7 @@ const Filter = () => {
                       "bg-white/90 dark:bg-slate-800/90",
                       "border-slate-300/60 dark:border-slate-700/60",
                       "shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08),0_4px_12px_0_rgb(0_0_0_/_0.12)]",
-                      "dark:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.4),0_4px_12px_0_rgb(0_0_0_/_0.5)]"
+                      "dark:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.4),0_4px_12px_0_rgb(0_0_0_/_0.5)]",
                     )}
                   >
                     {availableStatuses.map((statusOption) => (
@@ -212,13 +218,15 @@ const Filter = () => {
                               "flex items-center px-2 py-1 cursor-pointer transition-colors",
                               active && "bg-blue-50 dark:bg-blue-900/30",
                               selected && "font-medium",
-                              "text-slate-900 dark:text-white"
+                              "text-slate-900 dark:text-white",
                             )}
                           >
                             <span
                               className={clsx(
                                 "mr-2 transition-colors",
-                                selected ? "text-blue-500 dark:text-blue-400" : "text-slate-400 dark:text-slate-500",
+                                selected
+                                  ? "text-blue-500 dark:text-blue-400"
+                                  : "text-slate-400 dark:text-slate-500",
                               )}
                             >
                               {selected ? "✓" : "○"}
@@ -232,10 +240,12 @@ const Filter = () => {
                 </Listbox>
               </div>
               <div className="flex items-center gap-2">
-                <span className={clsx(
-                  "font-medium transition-colors",
-                  "text-slate-600 dark:text-slate-400"
-                )}>
+                <span
+                  className={clsx(
+                    "font-medium transition-colors",
+                    "text-slate-600 dark:text-slate-400",
+                  )}
+                >
                   Topics:
                 </span>
                 <Listbox
@@ -248,24 +258,26 @@ const Filter = () => {
                     });
                   }}
                 >
-                  <ListboxButton className={clsx(
-                    "rounded-md border px-3 py-1.5 text-xs transition-all duration-150 relative backdrop-blur-sm",
-                    "bg-white/95 dark:bg-slate-800/95",
-                    "text-slate-900 dark:text-white",
-                    "border-slate-300/75 dark:border-slate-700/75",
-                    "shadow-[0_1px_2px_0_rgb(0_0_0_/_0.06)] dark:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.3)]",
-                    "before:absolute before:inset-0 before:bg-gradient-to-br before:from-amber-50/18 before:via-transparent before:to-transparent",
-                    "dark:before:from-blue-950/15 dark:before:via-transparent dark:before:to-transparent",
-                    "before:pointer-events-none before:rounded-md",
-                    "hover:bg-white dark:hover:bg-slate-800/90",
-                    "hover:border-slate-300/85 dark:hover:border-slate-700/85",
-                    "hover:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08)] dark:hover:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.35)]",
-                    "focus:outline-none focus:ring-1 focus:ring-blue-500/50 dark:focus:ring-blue-400/50",
-                    "focus:border-blue-500/85 dark:focus:border-blue-400/85",
-                    "focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08),0_2px_4px_0_rgb(59_130_246_/_0.15)]",
-                    "dark:focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.35),0_2px_4px_0_rgb(59_130_246_/_0.2)]",
-                    "focus:before:from-blue-50/30 dark:focus:before:from-blue-950/22"
-                  )}>
+                  <ListboxButton
+                    className={clsx(
+                      "rounded-md border px-3 py-1.5 text-xs transition-all duration-150 relative backdrop-blur-sm",
+                      "bg-white/95 dark:bg-slate-800/95",
+                      "text-slate-900 dark:text-white",
+                      "border-slate-300/75 dark:border-slate-700/75",
+                      "shadow-[0_1px_2px_0_rgb(0_0_0_/_0.06)] dark:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.3)]",
+                      "before:absolute before:inset-0 before:bg-gradient-to-br before:from-amber-50/18 before:via-transparent before:to-transparent",
+                      "dark:before:from-blue-950/15 dark:before:via-transparent dark:before:to-transparent",
+                      "before:pointer-events-none before:rounded-md",
+                      "hover:bg-white dark:hover:bg-slate-800/90",
+                      "hover:border-slate-300/85 dark:hover:border-slate-700/85",
+                      "hover:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08)] dark:hover:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.35)]",
+                      "focus:outline-none focus:ring-1 focus:ring-blue-500/50 dark:focus:ring-blue-400/50",
+                      "focus:border-blue-500/85 dark:focus:border-blue-400/85",
+                      "focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08),0_2px_4px_0_rgb(59_130_246_/_0.15)]",
+                      "dark:focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.35),0_2px_4px_0_rgb(59_130_246_/_0.2)]",
+                      "focus:before:from-blue-50/30 dark:focus:before:from-blue-950/22",
+                    )}
+                  >
                     {topics.length === 0 ||
                     topics.length === availableTopics.length
                       ? "All topics"
@@ -278,7 +290,7 @@ const Filter = () => {
                       "bg-white/90 dark:bg-slate-800/90",
                       "border-slate-300/60 dark:border-slate-700/60",
                       "shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08),0_4px_12px_0_rgb(0_0_0_/_0.12)]",
-                      "dark:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.4),0_4px_12px_0_rgb(0_0_0_/_0.5)]"
+                      "dark:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.4),0_4px_12px_0_rgb(0_0_0_/_0.5)]",
                     )}
                   >
                     {availableTopics.map((topic) => (
@@ -289,13 +301,15 @@ const Filter = () => {
                               "flex items-center px-2 py-1 cursor-pointer transition-colors",
                               active && "bg-blue-50 dark:bg-blue-900/30",
                               selected && "font-medium",
-                              "text-slate-900 dark:text-white"
+                              "text-slate-900 dark:text-white",
                             )}
                           >
                             <span
                               className={clsx(
                                 "mr-2 transition-colors",
-                                selected ? "text-blue-500 dark:text-blue-400" : "text-slate-400 dark:text-slate-500",
+                                selected
+                                  ? "text-blue-500 dark:text-blue-400"
+                                  : "text-slate-400 dark:text-slate-500",
                               )}
                             >
                               {selected ? "✓" : "○"}

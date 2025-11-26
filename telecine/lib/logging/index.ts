@@ -11,15 +11,24 @@ const defaultLogLevel = isProduction ? "info" : "debug";
 
 const serviceName = process.env.SERVICE_NAME ?? "unknown-service";
 
-const pinoLevelToSeverity = (levelLabel: string | undefined): SeverityNumber => {
+const pinoLevelToSeverity = (
+  levelLabel: string | undefined,
+): SeverityNumber => {
   switch (levelLabel) {
-    case "trace": return SeverityNumber.TRACE;
-    case "debug": return SeverityNumber.DEBUG;
-    case "info": return SeverityNumber.INFO;
-    case "warn": return SeverityNumber.WARN;
-    case "error": return SeverityNumber.ERROR;
-    case "fatal": return SeverityNumber.FATAL;
-    default: return SeverityNumber.UNSPECIFIED;
+    case "trace":
+      return SeverityNumber.TRACE;
+    case "debug":
+      return SeverityNumber.DEBUG;
+    case "info":
+      return SeverityNumber.INFO;
+    case "warn":
+      return SeverityNumber.WARN;
+    case "error":
+      return SeverityNumber.ERROR;
+    case "fatal":
+      return SeverityNumber.FATAL;
+    default:
+      return SeverityNumber.UNSPECIFIED;
   }
 };
 
@@ -29,15 +38,15 @@ const useOtelLogs = !exportToGoogleCloud;
 const transport = isProduction
   ? undefined
   : {
-    target: "pino-pretty",
-    options: {
-      colorize: true,
-      translateTime: "SYS:standard",
-    },
-  };
+      target: "pino-pretty",
+      options: {
+        colorize: true,
+        translateTime: "SYS:standard",
+      },
+    };
 
 const isObject = (value: unknown): value is Record<string, unknown> => {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 };
 
 export const logger = pino({
@@ -56,7 +65,8 @@ export const logger = pino({
       if (isObject(args[0]) && activeSpan && isProduction) {
         const spanContext = activeSpan.spanContext();
         args[0]["logging.googleapis.com/spanId"] = spanContext.spanId;
-        args[0]["logging.googleapis.com/trace"] = `projects/editframe/traces/${spanContext.traceId}`;
+        args[0]["logging.googleapis.com/trace"] =
+          `projects/editframe/traces/${spanContext.traceId}`;
       }
 
       if (useOtelLogs) {
@@ -64,7 +74,7 @@ export const logger = pino({
           const otelLogger = logs.getLogger(serviceName);
           const levelLabel = this.levels.labels[level];
           const attributes: Record<string, any> = {
-            'service.name': serviceName,
+            "service.name": serviceName,
           };
 
           if (isObject(args[0])) {
@@ -73,11 +83,12 @@ export const logger = pino({
             }
           }
 
-          const logBody = typeof args[1] === 'string' ? args[1] : JSON.stringify(args[1]);
+          const logBody =
+            typeof args[1] === "string" ? args[1] : JSON.stringify(args[1]);
 
           otelLogger.emit({
             severityNumber: pinoLevelToSeverity(levelLabel),
-            severityText: levelLabel || 'UNSPECIFIED',
+            severityText: levelLabel || "UNSPECIFIED",
             body: logBody,
             attributes,
             context: context.active(),
@@ -89,7 +100,7 @@ export const logger = pino({
 
       return method.apply(this, args);
     },
-  }
+  },
 });
 
 export const makeLogger = () => {

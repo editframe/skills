@@ -4,7 +4,7 @@
  */
 
 export interface FilterOptions {
-  mediaType: 'video' | 'audio';
+  mediaType: "video" | "audio";
   filterDescription: string; // FFmpeg filter description (e.g., "scale=1280:720", "aresample=44100")
 
   // Input format specification
@@ -30,11 +30,11 @@ export interface FilterOptions {
 }
 
 export interface FilteredFrame {
-  readonly framePtr: number;  // Frame pointer for accessing actual frame data
+  readonly framePtr: number; // Frame pointer for accessing actual frame data
   readonly pts: number;
   readonly dts: number;
   readonly format: number;
-  readonly mediaType: 'video' | 'audio';
+  readonly mediaType: "video" | "audio";
 
   // Video properties
   readonly width?: number;
@@ -56,7 +56,7 @@ export interface FilteredFrame {
  * Automatically manages filter graphs and frame processing
  */
 export interface Filter {
-  readonly mediaType: 'video' | 'audio';
+  readonly mediaType: "video" | "audio";
   readonly filterDescription: string;
   readonly isInitialized: boolean;
 
@@ -107,7 +107,7 @@ export const PixelFormat = {
   RGBA: 26,
   BGRA: 27,
   NV12: 23,
-  NV21: 24
+  NV21: 24,
 } as const;
 
 // Common sample formats (subset of AVSampleFormat)
@@ -122,13 +122,13 @@ export const SampleFormat = {
   S16P: 6,
   S32P: 7,
   FLTP: 8,
-  DBLP: 9
+  DBLP: 9,
 } as const;
 
 /**
  * Factory function to create a Filter instance
  * The returned Filter can be used with 'using' declaration for automatic cleanup
- * 
+ *
  * @example
  * ```typescript
  * // Video scaling filter
@@ -140,21 +140,21 @@ export const SampleFormat = {
  *   inputPixelFormat: PixelFormat.YUV420P,
  *   outputPixelFormat: PixelFormat.YUV420P
  * });
- * 
+ *
  * // Audio resampling filter
  * using audioFilter = await createFilter({
- *   mediaType: 'audio', 
+ *   mediaType: 'audio',
  *   filterDescription: 'aresample=44100',
  *   inputSampleRate: 48000,
  *   inputChannels: 2,
  *   outputSampleRate: 44100
  * });
- * 
+ *
  * const filteredFrames = await videoFilter.filter(inputFrame);
  * ```
  */
 export async function createFilter(options: FilterOptions): Promise<Filter> {
-  const { createFilterNative } = await import('../playback.js');
+  const { createFilterNative } = await import("../playback.js");
 
   const nativeFilter = createFilterNative(options);
 
@@ -162,13 +162,21 @@ export async function createFilter(options: FilterOptions): Promise<Filter> {
   const success = await nativeFilter.initialize();
   if (!success) {
     nativeFilter.dispose();
-    throw new Error(`Failed to initialize Filter: ${options.filterDescription}`);
+    throw new Error(
+      `Failed to initialize Filter: ${options.filterDescription}`,
+    );
   }
 
   return {
-    get mediaType() { return nativeFilter.mediaType; },
-    get filterDescription() { return nativeFilter.filterDescription; },
-    get isInitialized() { return nativeFilter.isInitialized; },
+    get mediaType() {
+      return nativeFilter.mediaType;
+    },
+    get filterDescription() {
+      return nativeFilter.filterDescription;
+    },
+    get isInitialized() {
+      return nativeFilter.isInitialized;
+    },
 
     async filter(frame: FilterFrame): Promise<FilteredFrame[]> {
       return nativeFilter.filter(frame);
@@ -184,7 +192,7 @@ export async function createFilter(options: FilterOptions): Promise<Filter> {
 
     [Symbol.dispose](): void {
       nativeFilter.dispose();
-    }
+    },
   };
 }
 
@@ -204,12 +212,12 @@ export async function validateFilter(options: FilterOptions): Promise<{
     return {
       valid: true,
       mediaType: filter.mediaType,
-      filterDescription: filter.filterDescription
+      filterDescription: filter.filterDescription,
     };
   } catch (error) {
     return {
       valid: false,
-      error: error instanceof Error ? error.message : String(error)
+      error: error instanceof Error ? error.message : String(error),
     };
   }
-} 
+}

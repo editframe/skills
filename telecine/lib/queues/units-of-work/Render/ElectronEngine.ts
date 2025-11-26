@@ -27,7 +27,6 @@ interface ContextConfig {
   traceContext?: Record<string, unknown>;
 }
 
-
 export class ElectronEngine {
   static async create() {
     // This method creates the engine but doesn't create contexts yet
@@ -35,7 +34,7 @@ export class ElectronEngine {
     return new ElectronEngine();
   }
 
-  constructor() { }
+  constructor() {}
 
   close = async () => {
     // Nothing to close at the engine level since contexts manage their own BrowserWindows
@@ -60,7 +59,11 @@ export class ElectronEngine {
           offscreen: true,
           preload:
             "/app/lib/render/engines/ElectronEngine/preload_FRAMEGEN.cjs",
-          session: await createOrgSession(config.orgId, config.assetsBundle, config.assetProvider),
+          session: await createOrgSession(
+            config.orgId,
+            config.assetsBundle,
+            config.assetProvider,
+          ),
         },
       });
 
@@ -72,10 +75,19 @@ export class ElectronEngine {
         this.setupApiRouting(renderer, config.orgId, logger);
 
         console.log("🔧 [ElectronEngine] About to load page:", config.location);
-        await this.initializePage(renderer, config.location, config.loadTimeoutMs ?? 5000, logger);
+        await this.initializePage(
+          renderer,
+          config.location,
+          config.loadTimeoutMs ?? 5000,
+          logger,
+        );
         console.log("🔧 [ElectronEngine] Page loaded successfully");
 
-        const engineContext = new ElectronEngineContext(renderer, config, logger);
+        const engineContext = new ElectronEngineContext(
+          renderer,
+          config,
+          logger,
+        );
 
         return engineContext;
       } catch (error) {
@@ -87,84 +99,110 @@ export class ElectronEngine {
     });
   }
 
-  private setupRendererHandlers(renderer: BrowserWindowType, logger: typeof logging.logger) {
+  private setupRendererHandlers(
+    renderer: BrowserWindowType,
+    logger: typeof logging.logger,
+  ) {
     renderer.on("unresponsive", () => {
       logger.error("Renderer unresponsive");
     });
     renderer.webContents.on("destroyed", () => {
       logger.debug("Renderer destroyed");
     });
-    renderer.webContents.on("render-process-gone", (_event: any, details: any) => {
-      logger.error({ details }, "Renderer render-process-gone");
-    });
-
-    renderer.webContents.ipc.on("exportSpans", async (_event: any, endpoint: string, spansPayload: string) => {
-      logger.debug({ endpoint, payloadLength: spansPayload.length }, "Received spans from renderer");
-      try {
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: spansPayload,
-        });
-
-        if (response.ok) {
-          logger.debug("Successfully forwarded renderer spans to OTLP endpoint");
-        } else {
-          const errorText = await response.text();
-          logger.error({
-            status: response.status,
-            statusText: response.statusText,
-            body: errorText
-          }, "Failed to forward renderer spans");
-        }
-      } catch (error) {
-        logger.error({
-          error: error instanceof Error ? error.message : String(error),
-          stack: error instanceof Error ? error.stack : undefined
-        }, "Error forwarding renderer spans");
-      }
-    });
-
     renderer.webContents.on(
-      "console-message",
-      (event) => {
-        const { level, message } = event;
-        if (
-          message.includes("Electron Security Warning") ||
-          message.includes("Element ef-video scheduled an update") ||
-          message.includes("Element ef-audio scheduled an update") ||
-          message.includes("Element ef-waveform scheduled an update") ||
-          message.includes("Element ef-timegroup scheduled an update") ||
-          message.includes("Lit is in dev mode") ||
-          message.startsWith("[vite]")
-        ) {
-          return;
-        }
+      "render-process-gone",
+      (_event: any, details: any) => {
+        logger.error({ details }, "Renderer render-process-gone");
+      },
+    );
 
-        console.log({ level, message });
-        if (level === "info") {
-          logger.info({ level, message }, "renderer console message");
-        } else if (level === "debug") {
-          logger.debug({ level, message }, "renderer console message");
-        } else if (level === "warning") {
-          logger.warn({ level, message }, "renderer console message");
-        } else if (level === "error") {
-          logger.error({ level, message }, "renderer console message");
-        } else {
-          console.log("renderer console message", { level, message });
-          logger.info({ level, message }, "renderer console message");
+    renderer.webContents.ipc.on(
+      "exportSpans",
+      async (_event: any, endpoint: string, spansPayload: string) => {
+        logger.debug(
+          { endpoint, payloadLength: spansPayload.length },
+          "Received spans from renderer",
+        );
+        try {
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: spansPayload,
+          });
+
+          if (response.ok) {
+            logger.debug(
+              "Successfully forwarded renderer spans to OTLP endpoint",
+            );
+          } else {
+            const errorText = await response.text();
+            logger.error(
+              {
+                status: response.status,
+                statusText: response.statusText,
+                body: errorText,
+              },
+              "Failed to forward renderer spans",
+            );
+          }
+        } catch (error) {
+          logger.error(
+            {
+              error: error instanceof Error ? error.message : String(error),
+              stack: error instanceof Error ? error.stack : undefined,
+            },
+            "Error forwarding renderer spans",
+          );
         }
       },
     );
+
+    renderer.webContents.on("console-message", (event) => {
+      const { level, message } = event;
+      if (
+        message.includes("Electron Security Warning") ||
+        message.includes("Element ef-video scheduled an update") ||
+        message.includes("Element ef-audio scheduled an update") ||
+        message.includes("Element ef-waveform scheduled an update") ||
+        message.includes("Element ef-timegroup scheduled an update") ||
+        message.includes("Lit is in dev mode") ||
+        message.startsWith("[vite]")
+      ) {
+        return;
+      }
+
+      console.log({ level, message });
+      if (level === "info") {
+        logger.info({ level, message }, "renderer console message");
+      } else if (level === "debug") {
+        logger.debug({ level, message }, "renderer console message");
+      } else if (level === "warning") {
+        logger.warn({ level, message }, "renderer console message");
+      } else if (level === "error") {
+        logger.error({ level, message }, "renderer console message");
+      } else {
+        console.log("renderer console message", { level, message });
+        logger.info({ level, message }, "renderer console message");
+      }
+    });
   }
 
-  private setupApiRouting(_renderer: BrowserWindowType, _orgId: string, _logger: typeof logging.logger) {
+  private setupApiRouting(
+    _renderer: BrowserWindowType,
+    _orgId: string,
+    _logger: typeof logging.logger,
+  ) {
     // no-op: api routing is handled by createOrgSession and eletron protocol handling (allows using fetch/streaming)
   }
 
-  private async initializePage(renderer: BrowserWindowType, location: string, loadTimeoutMs: number, logger: typeof logging.logger) {
+  private async initializePage(
+    renderer: BrowserWindowType,
+    location: string,
+    loadTimeoutMs: number,
+    logger: typeof logging.logger,
+  ) {
     return executeSpan("ElectronEngine.initializePage", async (span) => {
       span.setAttribute("location", location);
       span.setAttribute("loadTimeoutMs", loadTimeoutMs);
@@ -202,7 +240,7 @@ export class ElectronEngineContext implements FramegenEngine {
     private renderer: BrowserWindowType,
     private config: ContextConfig,
     private logger: typeof logging.logger,
-  ) { }
+  ) {}
 
   private isInitialized = false;
   eventEmitter = new EventEmitter();
@@ -257,12 +295,18 @@ export class ElectronEngineContext implements FramegenEngine {
         durationMs: renderOptions.durationMs,
       });
 
-      const otelEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT || "http://tracing:4318";
+      const otelEndpoint =
+        process.env.OTEL_EXPORTER_OTLP_ENDPOINT || "http://tracing:4318";
 
       const carrier = {};
       propagation.inject(context.active(), carrier);
 
-      this.webContents.send("initialize", renderOptions, carrier, `${otelEndpoint}/v1/traces`);
+      this.webContents.send(
+        "initialize",
+        renderOptions,
+        carrier,
+        `${otelEndpoint}/v1/traces`,
+      );
 
       return raceTimeout(
         3000,
@@ -334,13 +378,19 @@ export class ElectronEngineContext implements FramegenEngine {
               reject(new Error("Paint event timeout"));
             }, 5000);
 
-            this.webContents.once("paint", (_event: any, _dirtyRect: any, image: any) => {
-              clearTimeout(timeout);
-              if (image.getSize().width === 0 || image.getSize().height === 0) {
-                reject(new Error("Image is empty"));
-              }
-              resolve(image);
-            });
+            this.webContents.once(
+              "paint",
+              (_event: any, _dirtyRect: any, image: any) => {
+                clearTimeout(timeout);
+                if (
+                  image.getSize().width === 0 ||
+                  image.getSize().height === 0
+                ) {
+                  reject(new Error("Image is empty"));
+                }
+                resolve(image);
+              },
+            );
 
             this.webContents.send("triggerCanvas", carrier);
           });
@@ -354,23 +404,30 @@ export class ElectronEngineContext implements FramegenEngine {
           if (isContentValid) {
             return bitmap;
           } else {
-            await sleep(10)
+            await sleep(10);
             this.logger.warn(
               { frameNumber, attempt },
               "Frame verification failed, retrying",
             );
             if (attempt >= maxRetries) {
-              throw new Error(`Frame verification failed after ${maxRetries} attempts`);
+              throw new Error(
+                `Frame verification failed after ${maxRetries} attempts`,
+              );
             }
           }
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
           this.logger.warn(
             { frameNumber, attempt, error: errorMessage },
             "Frame capture attempt failed",
           );
           if (attempt >= maxRetries) {
-            if (image?.getSize().width === 0 || image?.getSize().height === 0 || !bitmap) {
+            if (
+              image?.getSize().width === 0 ||
+              image?.getSize().height === 0 ||
+              !bitmap
+            ) {
               this.logger.error(
                 { frameNumber, maxRetries },
                 "Frame capture failed after all retries, using blank frame",
@@ -389,7 +446,10 @@ export class ElectronEngineContext implements FramegenEngine {
   }
 
   // Verify frame content from bitmap by sampling verification strip
-  private verifyBitmapContent(bitmap: Buffer, expectedFrameNumber: number): boolean {
+  private verifyBitmapContent(
+    bitmap: Buffer,
+    expectedFrameNumber: number,
+  ): boolean {
     try {
       // Sample the verification strip pixel at the bottom row of the bitmap
       // Verification strip is at y = contentHeight (the last row)
@@ -417,11 +477,9 @@ export class ElectronEngineContext implements FramegenEngine {
 
       return false;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      this.logger.warn(
-        { error: errorMessage },
-        "Bitmap verification failed",
-      );
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      this.logger.warn({ error: errorMessage }, "Bitmap verification failed");
       return false;
     }
   }
@@ -440,7 +498,11 @@ export class ElectronEngineContext implements FramegenEngine {
     // possibilities with timeouts.
     this.renderer.webContents.close();
     this.renderer.destroy();
-    await raceTimeout(2000, "Timeout waiting for renderer to close", closePromise);
+    await raceTimeout(
+      2000,
+      "Timeout waiting for renderer to close",
+      closePromise,
+    );
   };
 
   async getRenderInfo() {
@@ -546,7 +608,9 @@ export class ElectronEngineContext implements FramegenEngine {
         height: renderInfo.height,
         durationMs: renderInfo.durationMs,
         fps: renderInfo.fps,
-        assetCount: renderInfo.assets.efMediaSrcs.length + renderInfo.assets.efImageSrcs.length,
+        assetCount:
+          renderInfo.assets.efMediaSrcs.length +
+          renderInfo.assets.efImageSrcs.length,
       });
 
       return renderInfo as {

@@ -1,0 +1,76 @@
+---
+meta:
+  - title: Marker Interval Calculation
+  - name: description
+    content: How timeline ruler calculates optimal marker intervals for readability
+headers:
+    Cache-Control: no-cache
+---
+
+## Marker Interval Calculation: Adaptive Time Markers
+
+Timeline rulers need to display time markers at intervals that balance readability with information density. Too many markers create visual clutter, while too few markers reduce precision. The ruler automatically calculates optimal intervals based on available space and timeline duration.
+
+### Engineering Challenges
+
+Displaying time markers on timelines presents these constraints: marker spacing must be readable (typically 100px minimum), marker count must fit within viewport width, and intervals should use round numbers (1s, 0.5s, 0.25s) for clarity. Manual configuration requires developers to recalculate intervals whenever duration or zoom changes.
+
+The core challenge is determining marker intervals that maximize information density while maintaining readability across different durations and zoom levels.
+
+### The Solution: Automatic Interval Calculation
+
+The ruler calculates optimal intervals by dividing timeline duration by the maximum number of markers that fit in the available width. It ensures markers maintain minimum spacing (100px) and selects intervals that provide useful time references.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource>
+  <div style={{ position: 'relative', width: '1000px', height: '32px', border: '1px solid #e5e7eb' }}>
+    <ef-timeline-ruler
+      duration-ms="10000"
+      zoom-scale="1.0"
+      container-width="1000"
+    ></ef-timeline-ruler>
+  </div>
+</Demonstration>
+
+**Architectural advantages:**
+- **Adaptive spacing:** Markers automatically adjust to container width and duration
+- **No manual configuration:** Developers don't need to calculate intervals manually
+- **Consistent readability:** Minimum spacing ensures markers remain readable across zoom levels
+- **Zoom-aware:** Intervals recalculate as zoom changes, maintaining optimal density
+
+### Benefits for Your Workflow
+
+**Automatic adaptation:** Markers adjust automatically when timeline duration or container width changes. No manual recalculation needed when users zoom or when timeline content updates.
+
+**Consistent appearance:** Minimum spacing ensures markers remain readable across all zoom levels and durations. Users typically see appropriately spaced time references.
+
+**Simplified development:** No need to write interval calculation logic or handle edge cases. The ruler handles all calculations automatically.
+
+**Performance:** Interval calculation happens efficiently during render, with minimal overhead even for long timelines.
+
+### Example: Adaptive Markers
+
+Markers automatically adjust based on available space:
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource>
+  <div>
+    <div style={{ position: 'relative', width: '1000px', height: '32px', border: '1px solid #e5e7eb', marginBottom: '16px' }}>
+      <ef-timeline-ruler
+        duration-ms="30000"
+        zoom-scale="1.0"
+        container-width="1000"
+      ></ef-timeline-ruler>
+    </div>
+    <div style={{ position: 'relative', width: '2000px', height: '32px', border: '1px solid #e5e7eb' }}>
+      <ef-timeline-ruler
+        duration-ms="30000"
+        zoom-scale="2.0"
+        container-width="2000"
+      ></ef-timeline-ruler>
+    </div>
+  </div>
+</Demonstration>
+
+As zoom increases, marker intervals decrease automatically to maintain optimal density. This enables precise editing at high zoom levels while keeping overview clarity at normal zoom.
+
+The ruler ensures markers provide useful time references without manual configuration, adapting to any timeline duration or zoom level.
+

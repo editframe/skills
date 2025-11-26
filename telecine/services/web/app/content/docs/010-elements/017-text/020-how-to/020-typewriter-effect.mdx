@@ -1,0 +1,45 @@
+---
+meta:
+  - title: Create Typewriter Effects
+  - name: description
+    content: Create character-by-character typewriter animations with proper word wrapping
+headers:
+    Cache-Control: no-cache
+---
+
+## Create Typewriter Effects
+
+**Problem:** You want to create a typewriter effect where characters appear one by one.
+
+**Solution:** Use `split="char"` with a small `stagger` value and fade-in animations.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <style>{`
+    @keyframes typewriter {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .typewriter {
+      opacity: 0;
+      animation: typewriter 0.1s ease-out;
+    }
+  `}</style>
+  <Timegroup mode="contain" className="w-[720px] h-[405px] flex items-center justify-center bg-gradient-to-r from-green-900 to-blue-900">
+    <Text split="char" stagger="50ms" duration="6s" className="text-center text-white text-3xl font-mono">
+      <template>
+        <TextSegment className="typewriter" />
+      </template>
+      TYPEWRITER EFFECT
+    </Text>
+  </Timegroup>
+</Demonstration>
+
+**Key points:**
+- Set `split="char"` to split text by characters
+- Use a small stagger value (e.g., `"50ms"`) for rapid character reveals
+- Characters within words are automatically wrapped to prevent line breaks
+- Works with emoji and complex characters correctly
+
+For understanding how character splitting preserves word boundaries, see the [Word Boundaries explanation](/docs/elements/text/explanation/word-boundaries).
+
+

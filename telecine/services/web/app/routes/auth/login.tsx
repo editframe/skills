@@ -81,7 +81,10 @@ export default function Login() {
         <div className="sm:mx-auto sm:w-full sm:max-w-sm">
           <span className="sr-only"> Editframe</span>
           <svg
-            className={clsx("mx-auto my-4 h-9 w-9 md:my-0", themeClasses.pageText)}
+            className={clsx(
+              "mx-auto my-4 h-9 w-9 md:my-0",
+              themeClasses.pageText,
+            )}
             viewBox="0 0 512 512"
             height={36}
             width={36}
@@ -104,17 +107,19 @@ export default function Login() {
               strokeWidth="32"
             />
           </svg>
-          <h1 className={clsx(
-            "mt-10 text-center text-2xl font-bold leading-9 tracking-tight",
-            themeClasses.pageText
-          )}>
+          <h1
+            className={clsx(
+              "mt-10 text-center text-2xl font-bold leading-9 tracking-tight",
+              themeClasses.pageText,
+            )}
+          >
             Login
           </h1>
           <Link
             to="/auth/magic-link"
             className={clsx(
               "mt-4 block text-center text-sm font-semibold leading-6 transition-colors",
-              "text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+              "text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300",
             )}
           >
             Login with magic link
@@ -155,7 +160,7 @@ export default function Login() {
                     to="/auth/reset-password"
                     className={clsx(
                       "font-semibold transition-colors",
-                      "text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                      "text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300",
                     )}
                   >
                     Forgot password?
@@ -188,16 +193,18 @@ export default function Login() {
             </div>
           </login.Form>
 
-          <p className={clsx(
-            "mt-10 text-center text-sm",
-            themeClasses.pageTextSecondary
-          )}>
+          <p
+            className={clsx(
+              "mt-10 text-center text-sm",
+              themeClasses.pageTextSecondary,
+            )}
+          >
             Not a member?{" "}
             <Link
               to="/auth/register"
               className={clsx(
                 "font-semibold leading-6 transition-colors",
-                "text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                "text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300",
               )}
             >
               Create an account

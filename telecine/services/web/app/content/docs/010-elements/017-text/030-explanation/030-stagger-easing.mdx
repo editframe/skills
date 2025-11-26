@@ -1,0 +1,84 @@
+---
+meta:
+  - title: Stagger and Easing Architecture
+  - name: description
+    content: How stagger delays and easing functions create non-linear timing patterns for text animations
+headers:
+    Cache-Control: no-cache
+---
+
+## Stagger and Easing: Non-Linear Timing Patterns
+
+The text element combines stagger delays with easing functions to create sophisticated timing patterns where segments can cluster together or spread out unevenly, rather than appearing at fixed intervals.
+
+### The Problem: Platform Constraints in Stagger Timing
+
+Using fixed delays between segments presents these engineering challenges:
+
+**Fixed delay limitations:**
+- Each segment gets `index * delay` milliseconds offset
+- Creates uniform, mechanical timing
+- No way to create accelerating or decelerating patterns
+- Difficult to achieve natural, organic-feeling animations
+
+**Example:** With `stagger="50ms"`, segments appear at 0ms, 50ms, 100ms, 150ms - perfectly uniform but often unnatural.
+
+### The Solution: Eased Stagger Distribution
+
+The text element applies easing functions to stagger offsets, creating non-linear timing patterns:
+
+**Normalized progress:**
+- Each segment's index is normalized to 0-1 range (first segment = 0, last segment = 1)
+- Easing function is applied to this normalized progress
+- Eased progress is multiplied by total stagger duration
+
+**Easing functions:**
+- `"linear"`: Even distribution (default)
+- `"ease-out"`: Fast start, slow end (segments cluster early, spread later)
+- `"ease-in"`: Slow start, fast end (segments spread early, cluster later)
+- `"ease-in-out"`: Slow start and end, fast middle
+- Custom bezier: `"cubic-bezier(x1, y1, x2, y2)"` for precise control
+
+**Example with `ease-out`:**
+- 10 segments with `stagger="50ms"` = 450ms total duration
+- First segment: eased(0) * 450ms = 0ms
+- Middle segment: eased(0.5) * 450ms ≈ 300ms (clustered early)
+- Last segment: eased(1) * 450ms = 450ms
+
+**Code example:**
+```html
+<ef-text split="char" stagger="50ms" easing="ease-out">
+  <template>
+    <ef-text-segment />
+  </template>
+  Hello
+</ef-text>
+```
+
+With `ease-out`, characters appear quickly at first, then slow down toward the end, creating a natural acceleration pattern.
+
+### Benefits
+
+**Natural timing:**
+- `ease-out` creates accelerating reveals (common in UI animations)
+- `ease-in` creates decelerating reveals (less common but useful)
+- Matches timing patterns users expect from modern interfaces
+
+**Visual variety:**
+- Different easing functions create distinct animation feels
+- Can match the emotional tone of content
+- More expressive than uniform timing
+
+**Precise control:**
+- Custom bezier curves allow exact timing control
+- Can match existing design system timing curves
+- Enables complex, choreographed animations
+
+**Consistent with CSS:**
+- Uses same easing functions as CSS animations
+- Familiar to developers already using CSS timing functions
+- Easy to match timing with other animated elements
+
+For property details, see the [Reference](/docs/elements/text/reference#attr-stagger) and [Reference](/docs/elements/text/reference#attr-easing).
+
+

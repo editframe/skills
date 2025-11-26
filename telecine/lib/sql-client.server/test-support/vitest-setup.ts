@@ -21,4 +21,3 @@ beforeEach(async () => {
   // TODO: Not sure how to do this in kysely. Leaving as sql for now.
   await sql(/* SQL */ "SELECT truncate_test_data()");
 });
-

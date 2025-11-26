@@ -15,12 +15,14 @@ export const deleteEmailsForAddress = async (address: string) => {
     const messagesUrl = `${MAILHOG_URL}/api/v2/search?kind=to&query=${address}&limit=100&start=0`;
     const response = await fetch(messagesUrl);
     const messages = await response.json();
-    
+
     // Delete each message individually
-    const deletePromises = messages.items.map((message: any) => 
-      fetch(`${MAILHOG_URL}/api/v1/messages/${message.ID}`, { method: "DELETE" })
+    const deletePromises = messages.items.map((message: any) =>
+      fetch(`${MAILHOG_URL}/api/v1/messages/${message.ID}`, {
+        method: "DELETE",
+      }),
     );
-    
+
     await Promise.all(deletePromises);
   } catch (error) {
     console.log("Fetch error", error);

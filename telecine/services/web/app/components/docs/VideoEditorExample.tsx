@@ -1,7 +1,20 @@
-import { Timegroup, Video, ThumbnailStrip, Preview, Scrubber, TimeDisplay, TogglePlay } from "@editframe/react";
+import {
+  Timegroup,
+  Video,
+  ThumbnailStrip,
+  Preview,
+  Scrubber,
+  TimeDisplay,
+  TogglePlay,
+} from "@editframe/react";
 import { useId, useState } from "react";
 import { WithEnv } from "~/components/WithEnv";
-import { Play, Pause, MagnifyingGlassMinus, MagnifyingGlassPlus } from "@phosphor-icons/react";
+import {
+  Play,
+  Pause,
+  MagnifyingGlassMinus,
+  MagnifyingGlassPlus,
+} from "@phosphor-icons/react";
 
 export const VideoEditorExample = () => {
   const id = useId();
@@ -17,11 +30,11 @@ export const VideoEditorExample = () => {
   const totalStripWidth = baseStripWidth * zoomLevel;
 
   const handleZoomIn = () => {
-    setZoomLevel(prev => Math.min(4, prev + 0.5));
+    setZoomLevel((prev) => Math.min(4, prev + 0.5));
   };
 
   const handleZoomOut = () => {
-    setZoomLevel(prev => Math.max(1, prev - 0.5));
+    setZoomLevel((prev) => Math.max(1, prev - 0.5));
   };
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -33,7 +46,9 @@ export const VideoEditorExample = () => {
       {/* Editor Header */}
       <div className="bg-gray-800 p-4 border-b border-gray-700">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-white">Video Editor Interface</h3>
+          <h3 className="text-lg font-semibold text-white">
+            Video Editor Interface
+          </h3>
           <div className="flex items-center space-x-4">
             <div className="text-sm text-gray-300">
               Zoom: {zoomLevel.toFixed(1)}x
@@ -114,15 +129,15 @@ export const VideoEditorExample = () => {
           <div
             className="overflow-x-auto bg-gray-700 rounded-lg p-4"
             onScroll={handleScroll}
-            style={{ maxWidth: '100%' }}
+            style={{ maxWidth: "100%" }}
           >
-            <div style={{ width: `${totalStripWidth}px`, minWidth: '100%' }}>
+            <div style={{ width: `${totalStripWidth}px`, minWidth: "100%" }}>
               <ThumbnailStrip
                 target={`${id}-editor-video`}
                 thumbnail-width={thumbnailWidth}
                 style={{
-                  width: '100%',
-                  height: '64px'
+                  width: "100%",
+                  height: "64px",
                 }}
               />
             </div>
@@ -131,18 +146,34 @@ export const VideoEditorExample = () => {
           {/* Timeline Info */}
           <div className="flex justify-between text-xs text-gray-400 px-2">
             <span>Each thumbnail: {thumbnailWidth}px wide</span>
-            <span>Total thumbnails: ~{Math.floor(totalStripWidth / (thumbnailWidth + 1))}</span>
+            <span>
+              Total thumbnails: ~
+              {Math.floor(totalStripWidth / (thumbnailWidth + 1))}
+            </span>
           </div>
         </div>
 
         {/* Usage Tips */}
         <div className="bg-gray-700 p-4 rounded-lg">
-          <h5 className="text-sm font-semibold text-gray-200 mb-2">Editor Usage Tips</h5>
+          <h5 className="text-sm font-semibold text-gray-200 mb-2">
+            Editor Usage Tips
+          </h5>
           <ul className="text-xs text-gray-300 space-y-1">
-            <li>• <strong>Zoom In:</strong> See frame-by-frame detail for precise editing</li>
-            <li>• <strong>Zoom Out:</strong> Get overview of entire video timeline</li>
-            <li>• <strong>Scroll:</strong> Navigate through long videos efficiently</li>
-            <li>• <strong>Thumbnail Width:</strong> Controls both detail level and total strip width</li>
+            <li>
+              • <strong>Zoom In:</strong> See frame-by-frame detail for precise
+              editing
+            </li>
+            <li>
+              • <strong>Zoom Out:</strong> Get overview of entire video timeline
+            </li>
+            <li>
+              • <strong>Scroll:</strong> Navigate through long videos
+              efficiently
+            </li>
+            <li>
+              • <strong>Thumbnail Width:</strong> Controls both detail level and
+              total strip width
+            </li>
           </ul>
         </div>
       </div>

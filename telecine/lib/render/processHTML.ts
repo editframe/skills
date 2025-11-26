@@ -31,21 +31,28 @@ import { envString } from "@/util/env";
 import { ProcessHTMLWorkflow } from "@/queues/units-of-work/ProcessHtml/Workflow";
 import { executeSpan } from "@/tracing";
 
-
-import { execFile, ExecFileOptions, ExecFileOptionsWithBufferEncoding } from "node:child_process";
+import {
+  execFile,
+  ExecFileOptions,
+  ExecFileOptionsWithBufferEncoding,
+} from "node:child_process";
 import { promisify } from "node:util";
 
 const _execFileAsync = promisify(execFile);
 
-const execFileAsync = (file: string, args: readonly string[] | null | undefined, options: ExecFileOptions) => executeSpan("execFileAsync", async (span) => {
-  span.setAttributes({
-    file,
-    args,
-    options,
+const execFileAsync = (
+  file: string,
+  args: readonly string[] | null | undefined,
+  options: ExecFileOptions,
+) =>
+  executeSpan("execFileAsync", async (span) => {
+    span.setAttributes({
+      file,
+      args,
+      options,
+    });
+    return _execFileAsync(file, args, options);
   });
-  return _execFileAsync(file, args, options);
-});
-
 
 // TODO: publish this check in @editframe/api and use it here
 // import { ImageFileMimeTypes } from "@editframe/api";
@@ -78,16 +85,17 @@ const writeIntoDirectory = async (
 
 const WEB_HOST = envString("WEB_HOST", "http://localhost:3000");
 
-export async function createBundledHTMLDirectory(directory: string, html: string): Promise<string> {
-  return executeSpan(
-    "createBundledHTMLDirectory",
-    async () => {
-      await writeIntoDirectory(directory, {
-        "index.ts": /* TS */ `
+export async function createBundledHTMLDirectory(
+  directory: string,
+  html: string,
+): Promise<string> {
+  return executeSpan("createBundledHTMLDirectory", async () => {
+    await writeIntoDirectory(directory, {
+      "index.ts": /* TS */ `
           import "@editframe/elements";
           import "@editframe/elements/styles.css";
         `,
-        "index.html": /* HTML */ `
+      "index.html": /* HTML */ `
           <!DOCTYPE html>
           <html>
           <head>
@@ -101,13 +109,13 @@ export async function createBundledHTMLDirectory(directory: string, html: string
           </body>
           </html>
         `,
-        "styles.css": /* CSS */ `
+      "styles.css": /* CSS */ `
           @tailwind base;
           @tailwind components;
           @tailwind utilities;
         `,
-        "package.json": "{}",
-        "vite.config.js": /* JS */ `
+      "package.json": "{}",
+      "vite.config.js": /* JS */ `
           import { viteSingleFile } from "vite-plugin-singlefile";
 
           export default {
@@ -117,14 +125,14 @@ export async function createBundledHTMLDirectory(directory: string, html: string
             }
           };
         `,
-        "postcss.config.cjs": /* JS */ `
+      "postcss.config.cjs": /* JS */ `
           module.exports = {
             plugins: {
               tailwindcss: {},
             },
           };
         `,
-        "tailwind.config.js": /* JS */ `
+      "tailwind.config.js": /* JS */ `
           module.exports = {
             content: [
               "./index.html",${process.env.NODE_ENV === "production" ? "" : `"/app/lib/packages/packages/elements/src/**/*.ts"`}
@@ -135,20 +143,29 @@ export async function createBundledHTMLDirectory(directory: string, html: string
             plugins: [],
           };
         `,
-      });
-
-      const { stdout, stderr } = await execFileAsync(
-        "node",
-        [path.join(process.cwd(), "node_modules", "rolldown-vite", "bin", "vite.js"), "build"],
-        {
-          cwd: directory,
-        },
-      );
-
-      console.log(stdout);
-      console.log(stderr);
-      return path.join(directory, "dist");
     });
+
+    const { stdout, stderr } = await execFileAsync(
+      "node",
+      [
+        path.join(
+          process.cwd(),
+          "node_modules",
+          "rolldown-vite",
+          "bin",
+          "vite.js",
+        ),
+        "build",
+      ],
+      {
+        cwd: directory,
+      },
+    );
+
+    console.log(stdout);
+    console.log(stderr);
+    return path.join(directory, "dist");
+  });
 }
 
 async function bundleHTMLRender(html: string) {

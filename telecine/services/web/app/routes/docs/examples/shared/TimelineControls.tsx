@@ -1,11 +1,11 @@
-import type { CSSProperties } from "react"
-import { Scrubber, TimeDisplay, TogglePlay, Controls } from "@editframe/react"
-import { Pause, Play } from "@phosphor-icons/react"
+import type { CSSProperties } from "react";
+import { Scrubber, TimeDisplay, TogglePlay, Controls } from "@editframe/react";
+import { Pause, Play } from "@phosphor-icons/react";
 
 export interface TimelineControlsProps {
-  className?: string
-  style?: CSSProperties
-  target?: string
+  className?: string;
+  style?: CSSProperties;
+  target?: string;
 }
 
 export function TimelineControls({
@@ -13,7 +13,6 @@ export function TimelineControls({
   style = {},
   target,
 }: TimelineControlsProps) {
-
   const controls = (
     <div
       className={`flex items-center gap-4 bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden ${className}`}
@@ -37,15 +36,11 @@ export function TimelineControls({
       <Scrubber />
       <TimeDisplay className="text-sm font-mono text-gray-600 pr-2" />
     </div>
-  )
+  );
 
   if (target) {
-    return (
-      <Controls target={target}>
-        {controls}
-      </Controls>
-    )
+    return <Controls target={target}>{controls}</Controls>;
   }
 
-  return controls
+  return controls;
 }

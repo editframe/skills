@@ -1,4 +1,4 @@
-import { execPromise } from '@/util/execPromise';
+import { execPromise } from "@/util/execPromise";
 
 interface Mp4DumpBox {
   name: string;
@@ -22,9 +22,12 @@ export class Mp4Dump {
     return new Mp4Dump(parsed as Mp4DumpBox[]);
   }
 
-  constructor(private readonly boxes: Mp4DumpBox[]) { }
+  constructor(private readonly boxes: Mp4DumpBox[]) {}
 
-  fetchAll<T extends keyof Mp4DumpBoxes>(name: T, boxes?: Mp4DumpBox[]): Mp4DumpBoxes[T][];
+  fetchAll<T extends keyof Mp4DumpBoxes>(
+    name: T,
+    boxes?: Mp4DumpBox[],
+  ): Mp4DumpBoxes[T][];
   fetchAll(name: string, boxes?: Mp4DumpBox[]): Mp4DumpBox[];
   fetchAll(name: string, boxes: Mp4DumpBox[] = this.boxes): Mp4DumpBox[] {
     const found: Mp4DumpBox[] = [];
@@ -79,7 +82,10 @@ export class Mp4Dump {
   }
 
   get totalSampleCount() {
-    return this.fetchAll("trun").reduce((acc, trun) => acc + trun["sample count"], 0);
+    return this.fetchAll("trun").reduce(
+      (acc, trun) => acc + trun["sample count"],
+      0,
+    );
   }
 
   /**
@@ -116,7 +122,7 @@ export class Mp4Dump {
       if (tkhd.duration !== undefined) {
         tracks.push({
           trackId: tkhd["track ID"] || 0,
-          duration: tkhd.duration / mvhd.timescale
+          duration: tkhd.duration / mvhd.timescale,
         });
       }
     }
@@ -135,7 +141,7 @@ export class Mp4Dump {
       if (mdhd.duration !== undefined && mdhd.timescale !== undefined) {
         durations.push({
           duration: mdhd.duration / mdhd.timescale,
-          timescale: mdhd.timescale
+          timescale: mdhd.timescale,
         });
       }
     }
@@ -157,7 +163,7 @@ export class Mp4Dump {
    */
   get sequenceNumbers(): number[] {
     const mfhds = this.fetchAll("mfhd");
-    return mfhds.map(mfhd => mfhd["sequence number"] || 0);
+    return mfhds.map((mfhd) => mfhd["sequence number"] || 0);
   }
 }
 
@@ -175,7 +181,7 @@ export async function extractMP4Metadata(filePath: string): Promise<{
 }> {
   // Get ffprobe duration
   const { stdout: ffprobeOutput } = await execPromise(
-    `ffprobe -v quiet -select_streams v:0 -show_entries format=duration -of csv=p=0 "${filePath}"`
+    `ffprobe -v quiet -select_streams v:0 -show_entries format=duration -of csv=p=0 "${filePath}"`,
   );
   const ffprobeDuration = parseFloat(ffprobeOutput.trim()) || 0;
 
@@ -189,20 +195,23 @@ export async function extractMP4Metadata(filePath: string): Promise<{
     trackDurations: dump.trackDurations,
     mediaDurations: dump.mediaDurations,
     isFragmented: dump.isFragmented,
-    sequenceNumbers: dump.sequenceNumbers
+    sequenceNumbers: dump.sequenceNumbers,
   };
 }
 
 /**
  * Verify duration consistency across different metadata sources
  */
-export function verifyDurationConsistency(metadata: {
-  ffprobeDuration: number;
-  movieDuration?: number;
-  fragmentDuration?: number;
-  trackDurations: { trackId: number; duration: number }[];
-  mediaDurations: { duration: number; timescale: number }[];
-}, tolerance: number = 0.1): {
+export function verifyDurationConsistency(
+  metadata: {
+    ffprobeDuration: number;
+    movieDuration?: number;
+    fragmentDuration?: number;
+    trackDurations: { trackId: number; duration: number }[];
+    mediaDurations: { duration: number; timescale: number }[];
+  },
+  tolerance: number = 0.1,
+): {
   isConsistent: boolean;
   issues: string[];
 } {
@@ -213,7 +222,9 @@ export function verifyDurationConsistency(metadata: {
   if (metadata.movieDuration !== undefined) {
     const diff = Math.abs(metadata.movieDuration - expectedDuration);
     if (diff > tolerance) {
-      issues.push(`Movie duration (${metadata.movieDuration}s) differs from expected (${expectedDuration}s) by ${diff}s`);
+      issues.push(
+        `Movie duration (${metadata.movieDuration}s) differs from expected (${expectedDuration}s) by ${diff}s`,
+      );
     }
   }
 
@@ -221,7 +232,9 @@ export function verifyDurationConsistency(metadata: {
   if (metadata.fragmentDuration !== undefined) {
     const diff = Math.abs(metadata.fragmentDuration - expectedDuration);
     if (diff > tolerance) {
-      issues.push(`Fragment duration (${metadata.fragmentDuration}s) differs from expected (${expectedDuration}s) by ${diff}s`);
+      issues.push(
+        `Fragment duration (${metadata.fragmentDuration}s) differs from expected (${expectedDuration}s) by ${diff}s`,
+      );
     }
   }
 
@@ -229,7 +242,9 @@ export function verifyDurationConsistency(metadata: {
   // Only mvhd.duration should have the full duration
   for (const track of metadata.trackDurations) {
     if (track.duration !== 0) {
-      issues.push(`Track ${track.trackId} duration should be 0 for fragmented MP4, but is ${track.duration}s`);
+      issues.push(
+        `Track ${track.trackId} duration should be 0 for fragmented MP4, but is ${track.duration}s`,
+      );
     }
   }
 
@@ -237,12 +252,14 @@ export function verifyDurationConsistency(metadata: {
   for (let i = 0; i < metadata.mediaDurations.length; i++) {
     const media = metadata.mediaDurations[i];
     if (media && media.duration !== 0) {
-      issues.push(`Media ${i} duration should be 0 for fragmented MP4, but is ${media.duration}s`);
+      issues.push(
+        `Media ${i} duration should be 0 for fragmented MP4, but is ${media.duration}s`,
+      );
     }
   }
 
   return {
     isConsistent: issues.length === 0,
-    issues
+    issues,
   };
 }

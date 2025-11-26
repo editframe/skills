@@ -1,0 +1,68 @@
+---
+meta:
+  - title: Reference
+  - name: description
+    content: Complete technical reference for all surface element properties and attributes
+headers:
+    Cache-Control: no-cache
+---
+
+## Reference
+
+Complete technical reference for all surface element properties.
+
+**New to surface elements?** Start with the [Tutorial](/docs/elements/surface/tutorial) to learn the basics, or explore [How-To Guides](/docs/elements/surface/how-to/) for specific tasks.
+
+### Quick Reference Table
+
+<SurfacePropertyReference />
+
+### Grouped Attributes
+
+#### Target
+
+<PropertyDocList>
+  <PropertyDoc name="target" type="string" domReadable domWritable htmlAttribute="target">
+    The ID of the element to copy content from, typically an `ef-video` element. The target element must have an `id` attribute.
+  </PropertyDoc>
+
+  <PropertyDoc name="targetElement" type="Element | null" domReadable>
+    The resolved target element that this surface is copying from.
+
+    This property is automatically set when the `target` attribute is resolved to an actual DOM element. It is read-only and managed internally by the `TargetController`.
+  </PropertyDoc>
+</PropertyDocList>
+
+#### Time Coordinates
+
+<PropertyDocList>
+  <PropertyDoc name="startTimeMs" type="number" domReadable>
+    The start time of the surface in milliseconds. This time is relative to the timeline described by the root timegroup the surface is contained within.
+  </PropertyDoc>
+
+  <PropertyDoc name="endTimeMs" type="number" domReadable>
+    The end time of the surface in milliseconds. This time is relative to the timeline described by the root timegroup the surface is contained within.
+
+    This is equivalent to `startTimeMs + durationMs`.
+  </PropertyDoc>
+
+  <PropertyDoc name="durationMs" type="number" domReadable>
+    The duration of the surface in milliseconds. This is equivalent to the difference between `endTimeMs` and `startTimeMs`.
+
+    The duration matches the target element's duration when the surface is contained within the same timegroup context.
+  </PropertyDoc>
+
+  <PropertyDoc name="currentTimeMs" type="number" domReadable>
+    The current time of the surface in milliseconds. This time is the time within the timeline of the root timegroup the surface is contained within.
+  </PropertyDoc>
+</PropertyDocList>
+
+#### Hierarchy
+
+<PropertyDocList>
+  <PropertyDoc name="rootTimegroup" type="<ef-timegroup> | null" domReadable>
+    The outermost timegroup element that contains the surface. The surface will prefer to use the target element's root timegroup if available, falling back to its own containing timegroup.
+  </PropertyDoc>
+</PropertyDocList>
+
+

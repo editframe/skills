@@ -24,4 +24,3 @@ if (existsSync(contentDir)) {
   console.error("❌ Path resolution failed - content directory not found");
   process.exit(1);
 }
-

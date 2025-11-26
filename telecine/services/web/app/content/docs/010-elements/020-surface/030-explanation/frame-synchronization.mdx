@@ -1,0 +1,70 @@
+---
+meta:
+  - title: Frame Synchronization
+  - name: description
+    content: How surface elements ensure perfect frame synchronization with their target elements
+headers:
+    Cache-Control: no-cache
+---
+
+## Frame Synchronization: Perfect Timing Guarantees
+
+Surface elements ensure perfect synchronization with their target video elements by waiting for frame rendering completion before copying canvas content. This architecture eliminates frame tearing, timing drift, and visual artifacts.
+
+### The Problem: Ensuring Correct Frame Display
+
+When copying canvas content from a video element, timing is critical:
+- Copy too early: Surface shows a partially rendered frame
+- Copy too late: Surface shows a stale frame from the previous render cycle
+- No coordination: Multiple surfaces copy at different times, causing visual inconsistencies
+
+Using polling or event listeners presents these engineering challenges: timing uncertainty, potential race conditions, and difficulty coordinating multiple surfaces copying from the same target.
+
+### The Solution: Frame Task Synchronization
+
+Surface elements integrate with Editframe's frame scheduling system to guarantee perfect synchronization. Each surface waits for its target video's frame rendering to complete before copying canvas content. This ensures all surfaces copy the same, complete frame at the same time.
+
+**Frame task coordination:**
+- Surfaces wait for target video's frame rendering to complete
+- Canvas copying happens only after the target has fully rendered its frame
+- All surfaces copy the same, complete frame simultaneously
+- Multiple surfaces can safely wait on the same target without conflicts
+
+**Automatic updates:**
+- Surfaces also copy frames when the target element updates
+- This handles cases where frame tasks aren't actively running
+- Ensures surfaces stay current even during initialization or manual updates
+
+### Benefits
+
+**Perfect synchronization:**
+- All surfaces display identical frames at identical times
+- No frame tearing or partial frame displays
+- Deterministic frame updates eliminate visual artifacts
+
+**No race conditions:**
+- Frame task coordination eliminates timing uncertainty
+- Surfaces can't copy frames before they're ready
+- Synchronization is guaranteed, not probabilistic
+
+**Efficient operation:**
+- Frame task system is lightweight and integrated with Editframe's rendering pipeline
+- No polling overhead or event listener management
+- Synchronization happens as part of the natural frame rendering cycle
+
+**Reliable behavior:**
+- Works consistently across different browsers and performance conditions
+- Handles edge cases like rapid seeking or playback state changes
+- Surfaces automatically recover if target video updates outside normal frame cycle
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup mode="contain" className="w-[720px] h-[480px] flex items-center justify-center bg-black">
+    <Video id="sync-video" src="https://assets.editframe.com/bars-n-tone.mp4" className="w-1/3 h-full object-contain" />
+    <Surface target="sync-video" className="w-1/3" />
+    <Surface target="sync-video" className="w-1/3" />
+  </Timegroup>
+</Demonstration>
+
+This approach leverages Editframe's existing frame scheduling infrastructure, ensuring surfaces work seamlessly with timegroups, sequences, and other temporal composition features.
+
+For architectural details on canvas mirroring, see the [Canvas Mirroring Architecture explanation](/docs/elements/surface/explanation/canvas-mirroring-architecture). For property details, see the [Reference documentation](/docs/elements/surface/reference).

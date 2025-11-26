@@ -29,7 +29,9 @@ export const Playground = ({
       <div className="flex flex-col space-y-4 sm:space-y-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 h-auto lg:h-[600px]">
           <div className="relative min-h-[300px] lg:min-h-0">
-            <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Preview</h2>
+            <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">
+              Preview
+            </h2>
             <div className="h-full flex flex-col">
               <div className="flex-grow relative min-h-[250px] sm:min-h-[300px]">
                 <EFPlayer
@@ -44,7 +46,9 @@ export const Playground = ({
             {typeof window !== "undefined" && (
               <div className="h-full flex flex-col">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 mb-3 sm:mb-4">
-                  <h2 className="text-lg sm:text-xl font-semibold">Playground</h2>
+                  <h2 className="text-lg sm:text-xl font-semibold">
+                    Playground
+                  </h2>
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}

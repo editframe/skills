@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-
 // TODO: these are duplicated in lib/packages/packages/assets/src/VideoRenderOptions.ts
 // with subtle differences, we should unify them.
 export const VideoRenderOptions = z.object({

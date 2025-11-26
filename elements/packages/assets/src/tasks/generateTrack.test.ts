@@ -5,7 +5,10 @@ import { pipeline } from "node:stream/promises";
 
 describe("generateTrack", () => {
   test("should generate video track", async () => {
-    const trackStream = await generateTrackFromPath("test-assets/10s-bars.mp4", 1);
+    const trackStream = await generateTrackFromPath(
+      "test-assets/10s-bars.mp4",
+      1,
+    );
 
     // Collect the generated track data
     const chunks: Buffer[] = [];
@@ -13,7 +16,7 @@ describe("generateTrack", () => {
       write(chunk, _encoding, callback) {
         chunks.push(chunk);
         callback();
-      }
+      },
     });
 
     await pipeline(trackStream, dest);
@@ -25,14 +28,17 @@ describe("generateTrack", () => {
 
     // Verify it's valid MP4 by checking for ftyp box
     const allData = Buffer.concat(chunks);
-    const ftypIndex = allData.indexOf('ftyp');
+    const ftypIndex = allData.indexOf("ftyp");
     assert.isAbove(ftypIndex, -1, "Should contain ftyp box (valid MP4)");
 
     console.log(`Generated ${totalSize} bytes for video track`);
   }, 15000);
 
   test("should generate audio track", async () => {
-    const trackStream = await generateTrackFromPath("test-assets/10s-bars.mp4", 2);
+    const trackStream = await generateTrackFromPath(
+      "test-assets/10s-bars.mp4",
+      2,
+    );
 
     // Collect the generated track data
     const chunks: Buffer[] = [];
@@ -40,7 +46,7 @@ describe("generateTrack", () => {
       write(chunk, _encoding, callback) {
         chunks.push(chunk);
         callback();
-      }
+      },
     });
 
     await pipeline(trackStream, dest);
@@ -52,7 +58,7 @@ describe("generateTrack", () => {
 
     // Verify it's valid MP4 by checking for ftyp box
     const allData = Buffer.concat(chunks);
-    const ftypIndex = allData.indexOf('ftyp');
+    const ftypIndex = allData.indexOf("ftyp");
     assert.isAbove(ftypIndex, -1, "Should contain ftyp box (valid MP4)");
 
     console.log(`Generated ${totalSize} bytes for audio track`);
@@ -69,22 +75,28 @@ describe("generateTrack", () => {
   });
 
   test("should work with single track files", async () => {
-    const trackStream = await generateTrackFromPath("test-assets/frame-count.mp4", 1);
+    const trackStream = await generateTrackFromPath(
+      "test-assets/frame-count.mp4",
+      1,
+    );
 
     const chunks: Buffer[] = [];
     const dest = new Writable({
       write(chunk, _encoding, callback) {
         chunks.push(chunk);
         callback();
-      }
+      },
     });
 
     await pipeline(trackStream, dest);
 
     const totalSize = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
-    assert.isAbove(totalSize, 1000, "Should generate data for single track file");
+    assert.isAbove(
+      totalSize,
+      1000,
+      "Should generate data for single track file",
+    );
 
     console.log(`Generated ${totalSize} bytes for single track file`);
   }, 15000);
 });
-

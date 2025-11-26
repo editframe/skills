@@ -58,7 +58,7 @@ export function useTraceData() {
       for (const resourceSpan of traceData.resourceSpans) {
         const serviceName =
           resourceSpan.resource?.attributes?.find(
-            (a: any) => a.key === "service.name"
+            (a: any) => a.key === "service.name",
           )?.value?.stringValue || "unknown";
 
         for (const scopeSpan of resourceSpan.scopeSpans || []) {
@@ -107,13 +107,19 @@ export function useTraceData() {
     setLogs((prev) => {
       const newLogs: LogRecord[] = [];
       const existingKeys = new Set(
-        prev.map(log => `${log.timeUnixNano}-${log.traceId}-${log.spanId}-${log.body}`)
+        prev.map(
+          (log) =>
+            `${log.timeUnixNano}-${log.traceId}-${log.spanId}-${log.body}`,
+        ),
       );
 
       for (const resourceLog of logData.resourceLogs) {
         for (const scopeLog of resourceLog.scopeLogs || []) {
           for (const logRecord of scopeLog.logRecords || []) {
-            const body = logRecord.body?.stringValue || logRecord.body?.value?.stringValue || "";
+            const body =
+              logRecord.body?.stringValue ||
+              logRecord.body?.value?.stringValue ||
+              "";
             const timeUnixNano = BigInt(logRecord.timeUnixNano || 0);
             const severityText = logRecord.severityText || "UNSPECIFIED";
             const severityNumber = logRecord.severityNumber || 0;
@@ -220,7 +226,7 @@ function buildTraceTree(spans: Map<string, Span>, logs: LogRecord[]): Trace[] {
   const result: Trace[] = [];
   for (const [traceId, trace] of traces.entries()) {
     const rootSpans = trace.allSpans.filter(
-      (s) => !s.parentSpanId || !spans.has(s.parentSpanId)
+      (s) => !s.parentSpanId || !spans.has(s.parentSpanId),
     );
     result.push({
       traceId,

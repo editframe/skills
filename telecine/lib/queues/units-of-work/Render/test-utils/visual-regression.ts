@@ -17,20 +17,23 @@ export interface VisualRegressionResult {
 const extractFramesToDirectory = async (
   videoPath: string,
   outputDir: string,
-  filenamePrefix: string
+  filenamePrefix: string,
 ): Promise<string[]> => {
   const framePaths: string[] = [];
 
   try {
     // Get video duration to determine how many frames to extract
-    const durationOutput = execSync(`ffprobe -v quiet -show_entries format=duration -of csv=p=0 "${videoPath}"`, {
-      encoding: 'utf8',
-      stdio: 'pipe'
-    });
+    const durationOutput = execSync(
+      `ffprobe -v quiet -show_entries format=duration -of csv=p=0 "${videoPath}"`,
+      {
+        encoding: "utf8",
+        stdio: "pipe",
+      },
+    );
     const duration = parseFloat(durationOutput.trim());
 
     if (isNaN(duration) || duration <= 0) {
-      throw new Error('Could not determine video duration');
+      throw new Error("Could not determine video duration");
     }
 
     // Create output directory
@@ -40,20 +43,27 @@ const extractFramesToDirectory = async (
     const frameCount = Math.floor(duration);
     for (let i = 1; i <= frameCount; i++) {
       const timestamp = i; // Extract at exactly i seconds
-      const framePath = path.join(outputDir, `${filenamePrefix}-${i.toString().padStart(3, '0')}.png`);
-      
+      const framePath = path.join(
+        outputDir,
+        `${filenamePrefix}-${i.toString().padStart(3, "0")}.png`,
+      );
+
       // Extract frame at specific timestamp using -ss (seek) and -vframes 1
-      execSync(`ffmpeg -y -i "${videoPath}" -ss ${timestamp} -vframes 1 "${framePath}"`, {
-        stdio: 'pipe'
-      });
+      execSync(
+        `ffmpeg -y -i "${videoPath}" -ss ${timestamp} -vframes 1 "${framePath}"`,
+        {
+          stdio: "pipe",
+        },
+      );
 
       if (existsSync(framePath)) {
         framePaths.push(framePath);
       }
     }
-
   } catch (error) {
-    console.warn(`Frame extraction failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.warn(
+      `Frame extraction failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
   }
 
   return framePaths;
@@ -63,9 +73,19 @@ const extractFramesToDirectory = async (
  * Extract multiple frames from video for comprehensive visual comparison
  * Extracts one frame per second at exact timestamps
  */
-export const extractFramesForComparison = async (videoPath: string, templateHash: string, testTitle?: string): Promise<string[]> => {
-  const titleSlug = testTitle ? `${testTitle.toLowerCase().replace(/\s+/g, '-')}-` : '';
-  const testRenderDir = path.join(process.cwd(), "temp", `test-render-${titleSlug}${templateHash}`);
+export const extractFramesForComparison = async (
+  videoPath: string,
+  templateHash: string,
+  testTitle?: string,
+): Promise<string[]> => {
+  const titleSlug = testTitle
+    ? `${testTitle.toLowerCase().replace(/\s+/g, "-")}-`
+    : "";
+  const testRenderDir = path.join(
+    process.cwd(),
+    "temp",
+    `test-render-${titleSlug}${templateHash}`,
+  );
   const artifactsDir = path.join(testRenderDir, "artifacts");
 
   return extractFramesToDirectory(videoPath, artifactsDir, "regression-frame");
@@ -75,26 +95,46 @@ export const extractFramesForComparison = async (videoPath: string, templateHash
  * Get baseline frame paths, creating them if they don't exist using identical extraction logic
  * Extracts one frame per second at exact timestamps
  */
-export const getOrCreateBaseline = async (videoPath: string, templateHash: string, testTitle?: string): Promise<string[]> => {
-  const titleSlug = testTitle ? `${testTitle.toLowerCase().replace(/\s+/g, '-')}-` : '';
-  const testRenderDir = path.join(process.cwd(), "temp", `test-render-${titleSlug}${templateHash}`);
+export const getOrCreateBaseline = async (
+  videoPath: string,
+  templateHash: string,
+  testTitle?: string,
+): Promise<string[]> => {
+  const titleSlug = testTitle
+    ? `${testTitle.toLowerCase().replace(/\s+/g, "-")}-`
+    : "";
+  const testRenderDir = path.join(
+    process.cwd(),
+    "temp",
+    `test-render-${titleSlug}${templateHash}`,
+  );
   const baselineDir = path.join(testRenderDir, "baselines");
 
   // Get video duration to determine expected frame count
-  const durationOutput = execSync(`ffprobe -v quiet -show_entries format=duration -of csv=p=0 "${videoPath}"`, {
-    encoding: 'utf8',
-    stdio: 'pipe'
-  });
+  const durationOutput = execSync(
+    `ffprobe -v quiet -show_entries format=duration -of csv=p=0 "${videoPath}"`,
+    {
+      encoding: "utf8",
+      stdio: "pipe",
+    },
+  );
   const duration = parseFloat(durationOutput.trim());
   const frameCount = Math.floor(duration);
 
   // Check if all baseline frames already exist
   const expectedBaselinePaths: string[] = [];
   for (let i = 1; i <= frameCount; i++) {
-    expectedBaselinePaths.push(path.join(baselineDir, `baseline-frame-${i.toString().padStart(3, '0')}.png`));
+    expectedBaselinePaths.push(
+      path.join(
+        baselineDir,
+        `baseline-frame-${i.toString().padStart(3, "0")}.png`,
+      ),
+    );
   }
 
-  const allBaselinesExist = expectedBaselinePaths.every(path => existsSync(path));
+  const allBaselinesExist = expectedBaselinePaths.every((path) =>
+    existsSync(path),
+  );
 
   if (!allBaselinesExist) {
     console.log(`Creating baselines with template hash ${templateHash}`);
@@ -118,32 +158,45 @@ export const compareFramesWithOdiff = async (
     antialiasing?: boolean;
     diffColor?: string;
     testTitle?: string;
-  } = {}
+  } = {},
 ): Promise<VisualRegressionResult> => {
   try {
     // Validate inputs
     if (!baselineFramePath || !testFramePath) {
-      throw new Error('Frame paths cannot be empty');
+      throw new Error("Frame paths cannot be empty");
     }
 
     if (!existsSync(baselineFramePath) || !existsSync(testFramePath)) {
-      throw new Error('Frame files must exist');
+      throw new Error("Frame files must exist");
     }
 
     // Generate diff output path in the same directory structure as baselines/artifacts
-    const titleSlug = options.testTitle ? `${options.testTitle.toLowerCase().replace(/\s+/g, '-')}-` : '';
-    const testRenderDir = path.join(process.cwd(), "temp", `test-render-${titleSlug}${templateHash}`);
+    const titleSlug = options.testTitle
+      ? `${options.testTitle.toLowerCase().replace(/\s+/g, "-")}-`
+      : "";
+    const testRenderDir = path.join(
+      process.cwd(),
+      "temp",
+      `test-render-${titleSlug}${templateHash}`,
+    );
     const diffsDir = path.join(testRenderDir, "diffs");
     await mkdir(diffsDir, { recursive: true });
-    const diffOutputPath = path.join(diffsDir, `diff-frame-${frameIndex.toString().padStart(3, '0')}.png`);
+    const diffOutputPath = path.join(
+      diffsDir,
+      `diff-frame-${frameIndex.toString().padStart(3, "0")}.png`,
+    );
 
     // Use ImageMagick compare instead of odiff for Linux container compatibility
-    let compareResult: { match: boolean; diffCount?: number; diffPercentage?: number };
+    let compareResult: {
+      match: boolean;
+      diffCount?: number;
+      diffPercentage?: number;
+    };
 
     const command = `compare -metric AE -fuzz ${(options.threshold || 0.1) * 100}% "${baselineFramePath}" "${testFramePath}" "${diffOutputPath}"`;
     try {
       execSync(command, {
-        stdio: 'pipe'
+        stdio: "pipe",
       });
 
       // If compare succeeds without throwing, images are similar enough
@@ -151,7 +204,7 @@ export const compareFramesWithOdiff = async (
     } catch (error: any) {
       // ImageMagick compare exits with non-zero when differences found
       // Extract the difference count from stderr
-      const stderr = error.stderr?.toString() || '';
+      const stderr = error.stderr?.toString() || "";
       const diffCount = parseInt(stderr.trim()) || 0;
 
       // IMPLEMENTATION GUIDELINES: The diff percentage calculation assumes a typical HD frame
@@ -163,21 +216,26 @@ export const compareFramesWithOdiff = async (
         match: false,
         diffCount,
         // Calculate percentage based on typical frame size
-        diffPercentage: diffCount > 0 ? Math.min(100, (diffCount / typicalPixelCount) * 100) : undefined
+        diffPercentage:
+          diffCount > 0
+            ? Math.min(100, (diffCount / typicalPixelCount) * 100)
+            : undefined,
       };
     }
 
     return {
       match: compareResult.match,
-      reason: compareResult.match ? undefined : 'imagemagick-diff-detected',
+      reason: compareResult.match ? undefined : "imagemagick-diff-detected",
       diffCount: compareResult.diffCount,
-      diffPercentage: compareResult.diffPercentage
+      diffPercentage: compareResult.diffPercentage,
     };
   } catch (error) {
-    console.error(`Odiff comparison failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error(
+      `Odiff comparison failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
     return {
       match: false,
-      reason: 'comparison-error'
+      reason: "comparison-error",
     };
   }
 };
@@ -187,14 +245,16 @@ export const compareFramesWithOdiff = async (
  */
 export const performStillImageRegressionTest = async (
   imagePath: string,
-  templateHash: string
+  templateHash: string,
 ): Promise<void> => {
   const testRenderDir = path.dirname(path.dirname(imagePath));
   const baselineDir = path.join(testRenderDir, "baselines");
   const baselinePath = path.join(baselineDir, `baseline-still.png`);
 
   if (!existsSync(baselinePath)) {
-    console.log(`Creating baseline for still image with template hash ${templateHash}`);
+    console.log(
+      `Creating baseline for still image with template hash ${templateHash}`,
+    );
     await mkdir(baselineDir, { recursive: true });
     await copyFile(imagePath, baselinePath);
     console.log(`✅ Baseline created at ${baselinePath}`);
@@ -209,21 +269,25 @@ export const performStillImageRegressionTest = async (
     {
       threshold: 0.15,
       antialiasing: true,
-      diffColor: '#ff0000'
-    }
+      diffColor: "#ff0000",
+    },
   );
 
-  const isAcceptableDifference = comparison.diffPercentage !== undefined && comparison.diffPercentage < 1.0;
+  const isAcceptableDifference =
+    comparison.diffPercentage !== undefined && comparison.diffPercentage < 1.0;
 
   if (!comparison.match && !isAcceptableDifference) {
-    const diffInfo = comparison.diffPercentage !== undefined
-      ? `${comparison.diffPercentage}% different`
-      : `comparison failed: ${comparison.reason || 'unknown error'}`;
+    const diffInfo =
+      comparison.diffPercentage !== undefined
+        ? `${comparison.diffPercentage}% different`
+        : `comparison failed: ${comparison.reason || "unknown error"}`;
     throw new Error(`Still image visual regression detected: ${diffInfo}`);
   }
 
   if (isAcceptableDifference) {
-    console.log(`Still image: Acceptable difference of ${comparison.diffPercentage}% (below 1% threshold)`);
+    console.log(
+      `Still image: Acceptable difference of ${comparison.diffPercentage}% (below 1% threshold)`,
+    );
   } else {
     console.log(`✅ Still image matches baseline`);
   }
@@ -236,18 +300,31 @@ export const performStillImageRegressionTest = async (
 export const performVisualRegressionTest = async (
   videoPath: string,
   templateHash: string,
-  testTitle?: string
+  testTitle?: string,
 ): Promise<void> => {
   // Extract test and baseline frames using identical logic (one frame per second)
-  const testFrames = await extractFramesForComparison(videoPath, templateHash, testTitle);
-  const baselineFrames = await getOrCreateBaseline(videoPath, templateHash, testTitle);
-
+  const testFrames = await extractFramesForComparison(
+    videoPath,
+    templateHash,
+    testTitle,
+  );
+  const baselineFrames = await getOrCreateBaseline(
+    videoPath,
+    templateHash,
+    testTitle,
+  );
 
   if (testFrames.length !== baselineFrames.length) {
-    throw new Error(`Frame count mismatch: ${testFrames.length} test frames vs ${baselineFrames.length} baseline frames`);
+    throw new Error(
+      `Frame count mismatch: ${testFrames.length} test frames vs ${baselineFrames.length} baseline frames`,
+    );
   }
 
-  const failedFrames: { frameIndex: number; diffPercentage?: number; reason?: string }[] = [];
+  const failedFrames: {
+    frameIndex: number;
+    diffPercentage?: number;
+    reason?: string;
+  }[] = [];
   let passedFrames = 0;
 
   // Compare each frame
@@ -258,58 +335,73 @@ export const performVisualRegressionTest = async (
     // Skip if frame extraction failed
     if (!testFramePath || !existsSync(testFramePath)) {
       console.warn(`Skipping frame ${i}: test frame not found`);
-      failedFrames.push({ frameIndex: i, reason: 'test-frame-missing' });
+      failedFrames.push({ frameIndex: i, reason: "test-frame-missing" });
       continue;
     }
 
     if (!baselineFramePath || !existsSync(baselineFramePath)) {
       console.warn(`Skipping frame ${i}: baseline frame not found`);
-      failedFrames.push({ frameIndex: i, reason: 'baseline-frame-missing' });
+      failedFrames.push({ frameIndex: i, reason: "baseline-frame-missing" });
       continue;
     }
 
     // Compare frames with consistent settings
-    const comparison = await compareFramesWithOdiff(baselineFramePath, testFramePath, templateHash, i, {
-      threshold: 0.15, // 15% tolerance for compression artifacts and minor differences
-      antialiasing: true,
-      diffColor: '#ff0000',
-      testTitle,
-    });
+    const comparison = await compareFramesWithOdiff(
+      baselineFramePath,
+      testFramePath,
+      templateHash,
+      i,
+      {
+        threshold: 0.15, // 15% tolerance for compression artifacts and minor differences
+        antialiasing: true,
+        diffColor: "#ff0000",
+        testTitle,
+      },
+    );
 
     // IMPLEMENTATION GUIDELINES: For encoder-level differences, we allow up to 1% pixel difference
     // even if ImageMagick detects some changes. This prevents false positives from minor
     // compression artifacts or encoder variations.
-    const isAcceptableDifference = comparison.diffPercentage !== undefined && comparison.diffPercentage < 1.0;
+    const isAcceptableDifference =
+      comparison.diffPercentage !== undefined &&
+      comparison.diffPercentage < 1.0;
 
     if (comparison.match || isAcceptableDifference) {
       passedFrames++;
       if (isAcceptableDifference) {
-        console.log(`Frame ${i}: Acceptable difference of ${comparison.diffPercentage}% (below 1% threshold)`);
+        console.log(
+          `Frame ${i}: Acceptable difference of ${comparison.diffPercentage}% (below 1% threshold)`,
+        );
       }
     } else {
-      const diffInfo = comparison.diffPercentage !== undefined
-        ? `${comparison.diffPercentage}% different`
-        : `comparison failed: ${comparison.reason || 'unknown error'}`;
+      const diffInfo =
+        comparison.diffPercentage !== undefined
+          ? `${comparison.diffPercentage}% different`
+          : `comparison failed: ${comparison.reason || "unknown error"}`;
       console.log(`Visual regression detected in frame ${i}: ${diffInfo}`);
       failedFrames.push({
         frameIndex: i,
         diffPercentage: comparison.diffPercentage,
-        reason: comparison.reason || 'comparison-failed'
+        reason: comparison.reason || "comparison-failed",
       });
     }
   }
 
   // Only throw if there are failed frames
   if (failedFrames.length > 0) {
-    const frameDetails = failedFrames.map(f => {
-      const diffInfo = f.diffPercentage !== undefined
-        ? `${f.diffPercentage}%`
-        : f.reason || 'comparison-failed';
-      return `frame ${f.frameIndex} (${diffInfo})`;
-    }).join(", ");
-    throw new Error(`${failedFrames.length} frames failed visual regression test: ${frameDetails}`);
+    const frameDetails = failedFrames
+      .map((f) => {
+        const diffInfo =
+          f.diffPercentage !== undefined
+            ? `${f.diffPercentage}%`
+            : f.reason || "comparison-failed";
+        return `frame ${f.frameIndex} (${diffInfo})`;
+      })
+      .join(", ");
+    throw new Error(
+      `${failedFrames.length} frames failed visual regression test: ${frameDetails}`,
+    );
   }
 
   // All frames passed - success!
-
-}; 
+};

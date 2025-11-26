@@ -103,7 +103,7 @@ export const inlineImages = async (node: HTMLElement): Promise<void> => {
  */
 export async function htmlToImage(
   source: string,
-  _requestedFonts: string[]
+  _requestedFonts: string[],
 ): Promise<HTMLImageElement> {
   const xmlSerializer = new XMLSerializer();
   // Part 1: Measure the browser-reported dimensions of the html string.
@@ -182,7 +182,7 @@ export async function htmlToImage(
  * @returns {Promise<OffscreenCanvas>} Offscreen Canvas containing the image data
  */
 export async function htmlToOffscreenCanvas(
-  source: string
+  source: string,
 ): Promise<OffscreenCanvas> {
   const image = await htmlToImage(source, []);
 
@@ -190,7 +190,7 @@ export async function htmlToOffscreenCanvas(
     // Multiplying image width by devicePixelRatio
     // creates enough canvas surface to draw a non-blurry image.
     image.width * devicePixelRatio,
-    image.height * devicePixelRatio
+    image.height * devicePixelRatio,
   );
 
   const ctx = canvas.getContext("2d");

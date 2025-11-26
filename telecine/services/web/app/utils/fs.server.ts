@@ -4,7 +4,6 @@ import { join, resolve } from "node:path";
 import fm from "front-matter";
 import { logger } from "@/logging";
 import { formatDate } from "~/ui/formatDate";
-import { generateIndexPage } from "./doc-index-generator";
 
 type Attributes = {
   date: number;
@@ -94,36 +93,30 @@ export const buildDocSlugMap = async (
   prefix = "",
   map: Record<string, string> = {},
 ): Promise<Record<string, string>> => {
-  const entries = await readdir(directory, { withFileTypes: true });
-  
-  // Process directories first to ensure nested structures are handled
-  await Promise.all(
-    entries.map(async (entry) => {
-      if (entry.isDirectory() && !entry.name.endsWith(".tsx")) {
-        return await buildDocSlugMap(
-          join(directory, entry.name),
-          join(prefix, entry.name),
-          map,
-        );
-      }
-    }),
-  );
-  
-  // Then process files in current directory
+  const entries = await readdir(directory);
   entries.forEach((entry) => {
-    if (entry.isFile()) {
-      if (entry.name === "index.mdx") {
-        const slug = prefix.replace(/(\/?\d+-)/g, "/").replace(/^\//, "");
-        const path = join(prefix, entry.name).replace(".mdx", "");
-        map[slug] = path;
-      } else if (entry.name.endsWith(".mdx")) {
-        const path = join(prefix, entry.name).replace(".mdx", "");
-        const slug = path.replace(/(\/?\d+-)/g, "/").replace(/^\//, "");
-        map[slug] = path;
-      }
+    if (entry === "index.mdx") {
+      const slug = prefix.replace(/(\/?\d+-)/g, "/").replace(/^\//, "");
+      const path = join(prefix, entry).replace(".mdx", "");
+      map[slug] = path;
+    } else if (entry.endsWith(".mdx")) {
+      const path = join(prefix, entry).replace(".mdx", "");
+      const slug = path.replace(/(\/?\d+-)/g, "/").replace(/^\//, "");
+      map[slug] = path;
     }
   });
-  
+  await Promise.all(
+    entries.map(async (entry) => {
+      if (entry.endsWith(".mdx") || entry.endsWith(".tsx")) {
+        return;
+      }
+      return await buildDocSlugMap(
+        join(directory, entry),
+        join(prefix, entry),
+        map,
+      );
+    }),
+  );
   return map;
 };
 
@@ -133,49 +126,41 @@ const buildDocMenuItem = async (
 ): Promise<DocsMenuItem> => {
   const indexPath = join(directory, "index.mdx");
   const hasIndex = existsSync(indexPath);
-  
+
   let title = "";
   if (hasIndex) {
     const data = await fs.readFile(indexPath, "utf8");
     const { attributes } = fm<any>(data);
     title = attributes.meta.find((attr: any) => attr.title)?.title || "";
   }
-  
-  const entries = await readdir(directory, { withFileTypes: true });
-  const filteredEntries = entries.filter(
-    (entry) => entry.name !== "index.mdx" && !entry.name.endsWith(".tsx")
+
+  const entries = (await readdir(directory)).filter(
+    (entry) => entry !== "index.mdx" && !entry.endsWith(".tsx"),
   );
-  
+
   const children = await Promise.all(
-    filteredEntries.map(async (entry) => {
-      if (entry.isFile() && entry.name.endsWith(".mdx")) {
-        const data = await fs.readFile(join(directory, entry.name), "utf8");
+    entries.map(async (entry) => {
+      if (entry.endsWith(".mdx")) {
+        const data = await fs.readFile(join(directory, entry), "utf8");
         const { attributes } = fm<any>(data);
-        const titleAttr = attributes.meta.find((attr: any) => attr.title);
         return {
           attrs: {
-            title: (titleAttr?.title as string) || entry.name.replace(".mdx", ""),
-            new: attributes.new || false,
+            title: attributes.meta.find((attr: any) => attr.title).title,
           },
-          slug: `/docs/${join(prefix, entry.name.replace(".mdx", ""))
+          slug: `/docs/${join(prefix, entry.replace(".mdx", ""))
             .replace(/(\/?\d+-)/g, "/")
             .replace(/^\//, "")}`,
           hasContent: true,
           children: [],
         } as DocsMenuItem;
       }
-      if (entry.isDirectory()) {
-        return await buildDocMenuItem(
-          join(directory, entry.name),
-          join(prefix, entry.name),
-        );
-      }
-      return null;
+      return await buildDocMenuItem(
+        join(directory, entry),
+        join(prefix, entry),
+      );
     }),
   );
-  
-  const validChildren = children.filter((child): child is DocsMenuItem => child !== null);
-  
+
   if (!hasIndex) {
     // If no index.mdx, derive title from directory name and link to first child
     const dirName = prefix.split("/").pop() || "";
@@ -186,31 +171,29 @@ const buildDocMenuItem = async (
       .split("-")
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
-    
+
     // Find first child with a slug (first page in section)
     // This will be the first actual page, whether it's a .mdx file or a directory's first page
-    const firstChildWithSlug = validChildren.find((child) => child.slug);
+    const firstChildWithSlug = children.find((child) => child.slug);
     const sectionSlug = firstChildWithSlug?.slug;
-    
+
     return {
       hasContent: true, // Mark as having content so it shows as a clickable header
       attrs: {
         title: title || derivedTitle || dirName,
-        new: false,
       },
       slug: sectionSlug, // Link to first child page
-      children: validChildren,
+      children,
     } as DocsMenuItem;
   }
-  
+
   return {
     hasContent: true,
     attrs: {
       title,
-      new: false,
     },
     slug: `/docs/${prefix.replace(/(\/?\d+-)/g, "/").replace(/^\//, "")}`,
-    children: validChildren,
+    children,
   } as DocsMenuItem;
 };
 
@@ -239,10 +222,14 @@ export const getAllGuideFiles = async () => {
       slug: `/guides/${file.replace(".mdx", "")}`,
       featured: attributes.featured || false,
       featuredImage: attributes.featured_image || "",
-      publishedDate: attributes.published_date ? formatDate(attributes.published_date) : "",
+      publishedDate: attributes.published_date
+        ? formatDate(attributes.published_date)
+        : "",
       author: attributes.author,
       featuredInDashboard: attributes.featured_in_dashboard || false,
-      lastUpdated: attributes.last_updated ? formatDate(attributes.last_updated) : "",
+      lastUpdated: attributes.last_updated
+        ? formatDate(attributes.last_updated)
+        : "",
     };
   });
   return guides.sort((a, b) => {
@@ -281,9 +268,9 @@ export const getLocalContent = async (path: string) => {
     const basePath = join(appDir, contentPath, path);
     const mdxFile = `${basePath}.mdx`;
     const mdxDir = basePath;
-    
+
     logger.info({ mdxFile, mdxDir }, "getLocalContent");
-    
+
     // Check if it's a file with .mdx extension
     if (existsSync(mdxFile)) {
       const data = readFileSync(mdxFile, {
@@ -294,40 +281,24 @@ export const getLocalContent = async (path: string) => {
         content: data.toString(),
       };
     }
-    
+
     // Check if it's a directory with index.mdx
     if (existsSync(mdxDir) && statSync(mdxDir).isDirectory()) {
       const indexPath = join(mdxDir, "index.mdx");
       if (existsSync(indexPath)) {
-        // Manual index.mdx exists, use it (allows overrides)
         const data = readFileSync(indexPath, { encoding: "utf-8" });
         const { attributes } = fm<any>(data);
         return {
           path: path.endsWith("/") ? `${path}index.mdx` : `${path}/index.mdx`,
           content: data.toString(),
           author: attributes.author,
-          publishedDate: attributes.published_date ? formatDate(attributes.published_date) : "",
-        };
-      }
-      
-      // No manual index.mdx, try to auto-generate one
-      // Extract base slug from path (e.g., "010-elements/010-video/how-to" -> "/docs/elements/video/how-to")
-      // The path parameter is relative to docsBasePath, so we need to convert it to a URL slug
-      const slugPath = path
-        .replace(/(\/?\d+-)/g, "/")
-        .replace(/^\//, "")
-        .replace(/\/$/, ""); // Remove trailing slash
-      const baseSlug = `/docs/${slugPath}`;
-      
-      const generatedContent = await generateIndexPage(mdxDir, baseSlug);
-      if (generatedContent) {
-        return {
-          path: path.endsWith("/") ? `${path}index.mdx` : `${path}/index.mdx`,
-          content: generatedContent,
+          publishedDate: attributes.published_date
+            ? formatDate(attributes.published_date)
+            : "",
         };
       }
     }
-    
+
     // If we get here, the file doesn't exist
     throw new Error("Not found");
   } catch (error: any) {

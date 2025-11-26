@@ -7,7 +7,11 @@ const TOKEN_NAME = "Forever Token (Worktree Scripts)";
 async function deleteForeverToken() {
   const user = await db
     .selectFrom("identity.email_passwords")
-    .innerJoin("identity.users", "identity.email_passwords.user_id", "identity.users.id")
+    .innerJoin(
+      "identity.users",
+      "identity.email_passwords.user_id",
+      "identity.users.id",
+    )
     .where("identity.email_passwords.email_address", "=", EMAIL)
     .select(["identity.users.id as user_id"])
     .executeTakeFirst();
@@ -31,6 +35,3 @@ deleteForeverToken().catch((error) => {
   console.error("Error deleting forever token:", error);
   process.exit(1);
 });
-
-
-

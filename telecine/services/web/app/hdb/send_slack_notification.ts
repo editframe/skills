@@ -3,7 +3,6 @@ import { requireActionSecretOrThrow } from "@/http/requireActionSecret";
 import { logger } from "@/logging";
 import type { Route } from "./+types/send_slack_notification";
 
-
 export const action = async ({ request }: Route.ActionArgs) => {
   requireActionSecretOrThrow(request);
   if (!process.env.SLACK_WEBHOOK_URL) {
@@ -57,4 +56,4 @@ export const action = async ({ request }: Route.ActionArgs) => {
     logger.error(error, "Error sending slack notification");
     throw new Response("Failed to send slack notification", { status: 500 });
   }
-}
+};

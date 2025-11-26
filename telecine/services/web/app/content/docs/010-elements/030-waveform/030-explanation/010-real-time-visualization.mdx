@@ -1,0 +1,62 @@
+---
+meta:
+  - title: Real-Time Waveform Visualization
+  - name: description
+    content: Understanding how waveforms synchronize with audio playback using real-time audio analysis
+headers:
+    Cache-Control: no-cache
+---
+
+## Real-Time Waveform Visualization
+
+Waveform elements provide synchronized audio visualization that responds dynamically to playback changes, without requiring preprocessing or static waveform data.
+
+### Why Real-Time Visualization Matters
+
+Using native audio playback with waveform visualization presents these engineering challenges:
+
+- **Preprocessing overhead:** Waveform data must be computed before visualization, requiring additional build steps or server processing
+- **Static data limitations:** Pre-computed waveforms can't respond to real-time playback changes, trimming, or effects
+- **Pipeline complexity:** Separate tools and formats for audio analysis versus playback create maintenance burden
+- **Storage overhead:** Pre-computed waveform data files consume additional storage space
+
+Editframe's approach integrates waveform visualization directly with audio playback, providing:
+
+- **Synchronized visualization:** Waveforms update in real-time as audio plays, pauses, or seeks
+- **Dynamic response:** Visualizations automatically reflect trimming, effects, and playback state changes
+- **Unified API:** Waveform data accessed through the same target element that handles audio playback
+- **No preprocessing:** Waveforms work without build steps or separate processing pipelines
+
+### How It Works
+
+The waveform element connects to an audio or video element using the `target` attribute. The target element performs audio analysis on its audio track in real-time, exposing frequency data through its internal properties. The waveform element subscribes to this data and renders it continuously during playback.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup mode="contain" className="aspect-[1/1] w-[500px] h-[500px] bg-black flex flex-col items-center justify-center">
+    <Audio src="https://assets.editframe.com/card-joker.mp3" id="realtime-demo-audio" />
+    <Waveform target="realtime-demo-audio" mode="wave" className="w-full h-[250px] block" />
+  </Timegroup>
+</Demonstration>
+
+**Architectural advantages:**
+
+- **Direct connection:** Waveform receives frequency data directly from the target element's audio analysis, eliminating intermediate processing steps
+- **Frame-by-frame updates:** The waveform's rendering runs on each frame, ensuring smooth 60fps visualization synchronized with audio playback
+- **Automatic synchronization:** When the target element's playback state changes (play, pause, seek), the waveform automatically updates
+- **Efficient data flow:** Frequency data is computed once by the target element and shared with all connected waveforms, avoiding redundant analysis
+
+**Use cases:**
+
+- Audio players with synchronized waveform visualization
+- Video editing interfaces showing audio waveforms alongside video
+- Real-time audio-reactive effects that respond to frequency changes
+- Dynamic visualizations that adapt to trimming and playback changes
+
+**Concrete benefits:**
+
+- **No preprocessing delays:** Waveforms appear when audio loads, typically within seconds
+- **Dynamic updates:** Visualizations respond to playback changes, trimming, and effects
+- **Reduced complexity:** Single unified API removes need for separate waveform data files or processing pipelines
+- **Lower storage costs:** No need to store pre-computed waveform data files
+
+For property configuration details and technical specifications, see the [Waveform Element Reference](/docs/elements/waveform/reference).

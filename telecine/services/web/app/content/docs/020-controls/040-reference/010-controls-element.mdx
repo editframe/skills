@@ -1,0 +1,48 @@
+---
+meta:
+  - title: Controls Element Reference
+  - name: description
+    content: Complete property reference for ef-controls element
+headers:
+    Cache-Control: no-cache
+---
+
+## Controls Element Reference
+
+### Quick Reference Table
+
+<ControlsPropertyReference />
+
+### Properties
+
+<PropertyDocList>
+  <PropertyDoc name="target" type="string" domReadable domWritable htmlAttribute="target" defaultValue='""'>
+    ID of the preview or workbench element to control. The controls element bridges context from the target to its children.
+
+    ```html
+    <ef-preview id="my-preview">...</ef-preview>
+    <ef-controls target="my-preview">...</ef-controls>
+    ```
+  </PropertyDoc>
+</PropertyDocList>
+
+### Proxied Contexts
+
+The `ef-controls` element bridges these contexts from the target element:
+
+| Context | Type | Description |
+|---------|------|-------------|
+| **playing** | `boolean` | Whether the video is currently playing |
+| **loop** | `boolean` | Whether the video should loop on completion |
+| **currentTimeMs** | `number` | Current playback time in milliseconds |
+| **durationMs** | `number` | Total duration in milliseconds |
+| **targetTimegroup** | `EFTimegroup` | Reference to the root timegroup |
+| **focusedElement** | `HTMLElement` | Currently focused element for editing |
+| **focusContext** | `FocusContext` | Focus management context |
+
+**Learn more:** See [Context Bridging](/docs/controls/explanation/context-bridging) for architectural details.
+
+
+
+
+

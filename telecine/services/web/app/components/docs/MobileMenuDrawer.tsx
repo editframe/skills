@@ -61,12 +61,14 @@ export function MobileMenuDrawer({
       <div
         className={clsx(
           "fixed inset-y-0 left-0 z-[1003] w-80 max-w-[85vw] transform bg-white shadow-xl transition-transform duration-300 ease-in-out dark:bg-gray-900 md:hidden",
-          isOpen ? "translate-x-0" : "-translate-x-full"
+          isOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-800">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Documentation</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Documentation
+            </h2>
             <button
               onClick={onClose}
               className="rounded-md p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200 transition-colors"

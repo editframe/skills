@@ -12,7 +12,7 @@ describe("yjsAdapterStructure", () => {
         left.nestedParent.setTitle("Parent Title");
         const child = appendTestChild(
           left.nestedParent,
-          new TestChild({ id: "child", title: "Child" })
+          new TestChild({ id: "child", title: "Child" }),
         );
         appendTestChild(child, new TestChild({ id: "grandchild" }));
 
@@ -132,7 +132,7 @@ describe("yjsAdapterStructure", () => {
             },
           }
         `);
-      }
+      },
     );
   });
 });

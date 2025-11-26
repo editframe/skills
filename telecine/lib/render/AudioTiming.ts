@@ -19,7 +19,6 @@ export const STANDARD_SAMPLE_RATE = 48000;
  */
 export const AAC_FRAME_SIZE_SAMPLES = 1024;
 
-
 export function getClosestAlignedAACFrameIndex(targetTimeUs: number): number {
   const framesToTarget = targetTimeUs / AUDIO_FRAME_DURATION_US;
   const nearestFrameIndex = Math.round(framesToTarget);
@@ -53,8 +52,16 @@ export interface AlignedTiming {
   paddedEnd: boolean;
 }
 
-export function calculateAlignedTiming(options: SegmentTimingOptions): AlignedTiming {
-  const { segmentStartMs, segmentEndMs, sequenceNumber, isInitSegment, isLastSegment = false } = options;
+export function calculateAlignedTiming(
+  options: SegmentTimingOptions,
+): AlignedTiming {
+  const {
+    segmentStartMs,
+    segmentEndMs,
+    sequenceNumber,
+    isInitSegment,
+    isLastSegment = false,
+  } = options;
 
   const paddedStart = !isInitSegment && sequenceNumber > 0;
   const paddedEnd = !isInitSegment && !isLastSegment;
@@ -63,11 +70,10 @@ export function calculateAlignedTiming(options: SegmentTimingOptions): AlignedTi
   // This ensures audio rendering scales properly with arbitrary segment durations
   // instead of using hardcoded values that only work for specific segment sizes
 
-
   // SYMMETRIC PADDING: Add 4 AAC frames before and after segment boundaries
   // Exception: no padding before first segment, no padding after last segment
-  let startPaddingFrames = paddedStart ? 4 : 0;  // 4 frames before (except first)
-  let endPaddingFrames = paddedEnd ? 4 : 0;      // 4 frames after (except last)
+  let startPaddingFrames = paddedStart ? 4 : 0; // 4 frames before (except first)
+  let endPaddingFrames = paddedEnd ? 4 : 0; // 4 frames after (except last)
 
   // Calculate aligned timing for audio rendering (AAC-aligned first, then padding)
   // 1. Find nearest AAC boundaries to segment boundaries
@@ -75,8 +81,10 @@ export function calculateAlignedTiming(options: SegmentTimingOptions): AlignedTi
   const segmentEndAlignedUs = getClosestAlignedTimeUs(segmentEndMs * 1000);
 
   // 2. Add/subtract exact frame counts for padding
-  const alignedFromUs = segmentStartAlignedUs - (startPaddingFrames * AUDIO_FRAME_DURATION_US);
-  const alignedToUs = segmentEndAlignedUs + (endPaddingFrames * AUDIO_FRAME_DURATION_US);
+  const alignedFromUs =
+    segmentStartAlignedUs - startPaddingFrames * AUDIO_FRAME_DURATION_US;
+  const alignedToUs =
+    segmentEndAlignedUs + endPaddingFrames * AUDIO_FRAME_DURATION_US;
 
   return {
     alignedFromUs,

@@ -13,7 +13,10 @@ import {
 import { RenderInitializerQueue } from "./RenderInitializerQueue";
 import { ElectronRPCManager } from "./shared/ElectronRPCManager";
 import { createAssetsMetadataBundle } from "./shared/assetMetadata";
-import { renderAssetsMetadataFilePath, renderStillFilePath } from "@/util/filePaths";
+import {
+  renderAssetsMetadataFilePath,
+  renderStillFilePath,
+} from "@/util/filePaths";
 import { storageProvider } from "@/util/storageProvider.server";
 
 export const RenderInitializerWorker = new Worker({
@@ -31,7 +34,7 @@ export const RenderInitializerWorker = new Worker({
 
     logger.debug("Executing initializer via Electron controller");
     const electronRpc = await ElectronRPCManager.getRPCClient();
-    const renderInfo = await electronRpc.rpc.call('getRenderInfo', {
+    const renderInfo = await electronRpc.rpc.call("getRenderInfo", {
       location: `file://${renderSource.indexPath}`,
       orgId: render.org_id,
     });
@@ -47,22 +50,28 @@ export const RenderInitializerWorker = new Worker({
 
     // Create fragment index bundle for parallel workers
     logger.debug("Creating fragment index bundle");
-    const assetsMetadata = await createAssetsMetadataBundle(renderInfo.assets, render.org_id);
+    const assetsMetadata = await createAssetsMetadataBundle(
+      renderInfo.assets,
+      render.org_id,
+    );
     const metadataFilePath = renderAssetsMetadataFilePath({
       org_id: render.org_id,
-      id: render.id
+      id: render.id,
     });
 
     await storageProvider.writeFile(
       metadataFilePath,
       Buffer.from(JSON.stringify(assetsMetadata, null, 2)),
-      { contentType: 'application/json' }
+      { contentType: "application/json" },
     );
 
-    logger.debug({
-      metadataFilePath,
-      fragmentIndexCount: Object.keys(assetsMetadata.fragmentIndexes).length
-    }, "Created fragment index bundle");
+    logger.debug(
+      {
+        metadataFilePath,
+        fragmentIndexCount: Object.keys(assetsMetadata.fragmentIndexes).length,
+      },
+      "Created fragment index bundle",
+    );
 
     logger.debug({ render: updatedRender }, "Updating render info");
     await db
@@ -83,7 +92,7 @@ export const RenderInitializerWorker = new Worker({
     if (outputConfig.isStill) {
       logger.debug("Rendering still image via Electron controller");
 
-      const imageBuffer = await electronRpc.rpc.call('renderStill', {
+      const imageBuffer = await electronRpc.rpc.call("renderStill", {
         width: updatedRender.width,
         height: updatedRender.height,
         location: `file://${renderSource.indexPath}`,

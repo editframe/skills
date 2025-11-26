@@ -18,9 +18,9 @@ const promiseWithResolvers = <T>() => {
   return { promise, resolve, reject };
 };
 
-abstract class BaseEventIterator<T extends CompleteEvent | any>
-  implements AsyncIterable<T>
-{
+abstract class BaseEventIterator<
+  T extends CompleteEvent | any,
+> implements AsyncIterable<T> {
   protected eventSource: StreamEventSource;
   protected queue: T[] = [];
   protected index = 0;

@@ -17,8 +17,11 @@ interface UploadChunkOptions {
 /**
  * @internal
  */
-export interface IteratorWithPromise<T>
-  extends AsyncGenerator<T, void, unknown> {
+export interface IteratorWithPromise<T> extends AsyncGenerator<
+  T,
+  void,
+  unknown
+> {
   whenUploaded: () => Promise<T[]>;
 }
 

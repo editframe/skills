@@ -1,0 +1,107 @@
+---
+meta:
+  - title: Time Coordinates in Editframe
+  - name: description
+    content: Understanding the three time coordinate systems in Editframe video elements
+headers:
+    Cache-Control: no-cache
+---
+
+## Time Coordinates in Editframe
+
+Editframe provides three different time coordinate systems to solve a fundamental problem: different use cases need different perspectives on time, and a single coordinate system forces compromises.
+
+### The Problem with Single Time Systems
+
+Using a single time coordinate system (e.g., "playback time" or "source time") presents these engineering challenges:
+
+- **Trimming breaks tracking:** If you track an object using playback time, adding a trim offset breaks the tracking data
+- **Composition complexity:** When videos are combined in sequences, local timing gets lost
+- **Effect scoping:** Animations tied to playback time can't be reused across different compositions
+
+### Three Coordinate Systems
+
+Editframe's multi-coordinate architecture solves these problems by providing the right time perspective for each use case:
+
+**Timeline Time (Root Timegroup Relative):**
+- `startTimeMs`, `endTimeMs`, `currentTimeMs`, `durationMs`
+- **Purpose:** Understand when your video appears in the overall composition
+- **Architectural advantage:** Enables precise coordination between multiple elements on a shared timeline
+- **Use case:** "When does this video play relative to other elements?"
+
+**Element Time (Element-Scoped):**
+- `ownCurrentTimeMs`
+- **Purpose:** Control animations or effects scoped to the video itself
+- **Architectural advantage:** Enables reusable effects that work regardless of composition context
+- **Use case:** "Animate this video's opacity from 0 to 1 over its duration, regardless of when it appears in the timeline"
+
+**Source Time (Trimming-Agnostic):**
+- `currentSourceTimeMs`
+- **Purpose:** Track data aligned with the source file, unaffected by trimming
+- **Architectural advantage:** Enables robust tracking and data association that survives trim changes
+- **Use case:** "Track an object at source time 5.2s - this tracking remains valid even if I trim the video later"
+
+### Why This Architecture Matters
+
+By providing three coordinate systems, Editframe enables:
+- **Robust tracking:** Object tracking survives trim operations
+- **Reusable effects:** Animations work across different compositions
+- **Precise coordination:** Multiple elements synchronize on shared timelines
+
+Without this architecture, developers must manually calculate offsets or maintain separate tracking systems, increasing complexity and error-prone code.
+
+### Example: Three Time Systems in Action
+
+Here's how each time system works in practice:
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup mode="contain" className="w-[720px] h-[480px] flex flex-col items-center justify-center bg-black gap-4 p-4">
+    <Video 
+      id="time-demo-video"
+      src="https://assets.editframe.com/bars-n-tone.mp4" 
+      startTimeMs={2000}
+      className="w-full h-3/4 object-contain"
+    />
+    <div className="text-white text-sm font-mono space-y-1">
+      <div>Timeline Time: <span id="timeline-time">0</span>ms</div>
+      <div>Element Time: <span id="element-time">0</span>ms</div>
+      <div>Source Time: <span id="source-time">0</span>ms</div>
+    </div>
+  </Timegroup>
+</Demonstration>
+
+**Timeline Time (`currentTimeMs`):**
+```jsx
+<Video 
+  src="video.mp4" 
+  startTimeMs={2000}  // Starts at 2s on timeline
+/>
+// When timeline is at 3s, currentTimeMs = 3000
+// Video has been playing for 1s in the composition
+```
+
+**Element Time (`ownCurrentTimeMs`):**
+```jsx
+<Video 
+  src="video.mp4" 
+  startTimeMs={2000}
+  style={{ opacity: ownCurrentTimeMs / 1000 }}  // Fade in over first second
+/>
+// ownCurrentTimeMs starts at 0 when video begins
+// Independent of when video appears on timeline
+```
+
+**Source Time (`currentSourceTimeMs`):**
+```jsx
+<Video 
+  src="video.mp4" 
+  trimStart="2s"  // Trim first 2s
+/>
+// When ownCurrentTimeMs = 1000, currentSourceTimeMs = 3000
+// Always references original source file, unaffected by trimming
+```
+
+This multi-coordinate system enables robust tracking, reusable effects, and precise coordination that single-coordinate systems cannot provide.
+
+For complete property details, see the [Video Element Reference](/docs/elements/video/reference#time-coordinates).
+

@@ -30,8 +30,12 @@ describe("SSR Custom Element Registration", () => {
     // Find docker network
     let networkName = "telecine_default";
     try {
-      const { stdout: networks } = await execAsync("docker network ls --format '{{.Name}}'");
-      const networkMatch = networks.split("\n").find((n) => n.match(/^(telecine|editframe)/));
+      const { stdout: networks } = await execAsync(
+        "docker network ls --format '{{.Name}}'",
+      );
+      const networkMatch = networks
+        .split("\n")
+        .find((n) => n.match(/^(telecine|editframe)/));
       if (networkMatch) {
         networkName = networkMatch;
       }
@@ -41,7 +45,7 @@ describe("SSR Custom Element Registration", () => {
 
     // Start the production container
     const { stdout } = await execAsync(
-      `docker run -d --name ${containerName} -p ${port}:3000 --network ${networkName} -e POSTGRES_HOST=graphql-engine -e POSTGRES_PORT=5432 -e POSTGRES_DB=hasura -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e NODE_ENV=production -e PORT=3000 -e STORAGE_BUCKET=test-bucket -e PUBLIC_STORAGE_BUCKET=test-bucket telecine-web-prod-debug --loader /app/loader.js /app/services/web/server.js`
+      `docker run -d --name ${containerName} -p ${port}:3000 --network ${networkName} -e POSTGRES_HOST=graphql-engine -e POSTGRES_PORT=5432 -e POSTGRES_DB=hasura -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e NODE_ENV=production -e PORT=3000 -e STORAGE_BUCKET=test-bucket -e PUBLIC_STORAGE_BUCKET=test-bucket telecine-web-prod-debug --loader /app/loader.js /app/services/web/server.js`,
     );
     containerId = stdout.trim();
 
@@ -67,7 +71,7 @@ describe("SSR Custom Element Registration", () => {
 
   afterAll(async () => {
     if (!dockerIsAvailable || !containerId) return;
-    
+
     try {
       await execAsync(`docker stop ${containerName}`);
       await execAsync(`docker rm ${containerName}`);
@@ -82,7 +86,7 @@ describe("SSR Custom Element Registration", () => {
     }
     // Make multiple requests to trigger SSR
     const requests = Array.from({ length: 10 }, () =>
-      fetch(`http://localhost:${port}/`).catch(() => null)
+      fetch(`http://localhost:${port}/`).catch(() => null),
     );
 
     await Promise.all(requests);
@@ -90,15 +94,15 @@ describe("SSR Custom Element Registration", () => {
 
     // Check logs for duplicate registration errors
     const { stdout: logs } = await execAsync(
-      `docker logs ${containerName} 2>&1`
+      `docker logs ${containerName} 2>&1`,
     );
 
     const duplicateRegistrationErrors = logs
       .split("\n")
       .filter((line) =>
         line.includes(
-          "Failed to execute 'define' on 'CustomElementRegistry': the name \"ef-configuration\" has already been used"
-        )
+          "Failed to execute 'define' on 'CustomElementRegistry': the name \"ef-configuration\" has already been used",
+        ),
       );
 
     expect(duplicateRegistrationErrors.length).toBe(0);
@@ -112,7 +116,7 @@ describe("SSR Custom Element Registration", () => {
     const requests = Array.from({ length: 20 }, (_, i) =>
       fetch(`http://localhost:${port}/`, {
         headers: { "X-Request-ID": `test-${i}` },
-      }).catch(() => null)
+      }).catch(() => null),
     );
 
     const responses = await Promise.all(requests);
@@ -125,18 +129,17 @@ describe("SSR Custom Element Registration", () => {
 
     // Check logs for the specific error
     const { stdout: logs } = await execAsync(
-      `docker logs ${containerName} 2>&1 | tail -100`
+      `docker logs ${containerName} 2>&1 | tail -100`,
     );
 
     const duplicateRegistrationErrors = logs
       .split("\n")
       .filter((line) =>
         line.includes(
-          "Failed to execute 'define' on 'CustomElementRegistry': the name \"ef-configuration\" has already been used"
-        )
+          "Failed to execute 'define' on 'CustomElementRegistry': the name \"ef-configuration\" has already been used",
+        ),
       );
 
     expect(duplicateRegistrationErrors.length).toBe(0);
   });
 });
-

@@ -12,14 +12,10 @@ export class DisposableEncoder {
     // biome-ignore format: strict command line format
     this.process = spawn(
       "ffmpeg",
-      [
-        ...FFMPEG_ARGS,
-        ...FFMPEG_ANALYZE_ARGS,
-        ...this.encoderArgs,
-      ],
+      [...FFMPEG_ARGS, ...FFMPEG_ANALYZE_ARGS, ...this.encoderArgs],
       {
         stdio: ["pipe", "inherit", "inherit"],
-      }
+      },
     );
   }
 
@@ -35,8 +31,8 @@ export class DisposableEncoder {
           } else {
             reject(
               new Error(
-                `${this.process.spawnfile} exited with code ${code} ${this.process.spawnargs.join(" ")}`
-              )
+                `${this.process.spawnfile} exited with code ${code} ${this.process.spawnargs.join(" ")}`,
+              ),
             );
           }
         });
@@ -57,7 +53,7 @@ export class DisposableEncoder {
           resolve();
         });
         this.process.kill(9);
-      })
+      }),
     );
   };
 }

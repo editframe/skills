@@ -55,7 +55,7 @@ const PlayPauseButton = observer(() => {
   const editor = useEditor();
   return (
     <>
-      {editor.selectedTemporalRoot?.isPlaying ?? false ? (
+      {(editor.selectedTemporalRoot?.isPlaying ?? false) ? (
         <button
           className={style.playButton}
           onClick={() => editor.selectedTemporalLayer?.pause()}

@@ -12,7 +12,7 @@ export const AUDIO_CONSTANTS = {
   /** AAC frame size in samples */
   FRAME_SIZE: 1024,
   /** Frame padding multiplier for AAC context */
-  FRAME_PADDING_MULTIPLIER: 2
+  FRAME_PADDING_MULTIPLIER: 2,
 } as const;
 
 export const VIDEO_CONSTANTS = {
@@ -23,7 +23,7 @@ export const VIDEO_CONSTANTS = {
   /** Default frame rate for video */
   DEFAULT_FRAME_RATE: { num: 25, den: 1 },
   /** Frame padding multiplier for video context */
-  FRAME_PADDING_MULTIPLIER: 2
+  FRAME_PADDING_MULTIPLIER: 2,
 } as const;
 
 export const TIME_CONSTANTS = {
@@ -32,10 +32,10 @@ export const TIME_CONSTANTS = {
   /** Milliseconds per second */
   MILLISECONDS_PER_SECOND: 1000,
   /** Microseconds per millisecond */
-  MICROSECONDS_PER_MILLISECOND: 1000
+  MICROSECONDS_PER_MILLISECOND: 1000,
 } as const;
 
 export const STREAMING_CONSTANTS = {
   /** Duration for init segments in streaming scenarios */
-  INIT_SEGMENT_DURATION_MS: 0
-} as const; 
+  INIT_SEGMENT_DURATION_MS: 0,
+} as const;

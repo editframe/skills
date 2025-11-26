@@ -14,7 +14,8 @@ export function ClientConfiguration({
   apiHost: string;
   signingUrl: string;
 }) {
-  const [Configuration, setConfiguration] = useState<React.ComponentType<any> | null>(null);
+  const [Configuration, setConfiguration] =
+    useState<React.ComponentType<any> | null>(null);
 
   useEffect(() => {
     // Only import Configuration on the client side
@@ -30,6 +31,9 @@ export function ClientConfiguration({
     return <>{children}</>;
   }
 
-  return <Configuration api-host={apiHost} signing-url={signingUrl}>{children}</Configuration>;
+  return (
+    <Configuration api-host={apiHost} signing-url={signingUrl}>
+      {children}
+    </Configuration>
+  );
 }
-

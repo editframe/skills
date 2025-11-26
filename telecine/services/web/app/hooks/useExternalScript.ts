@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 interface ExternalScriptLoader {
   loaded: boolean;
@@ -18,7 +18,7 @@ const scriptRegistry = new Map<string, ScriptState>();
 /**
  * Hook to load external scripts with deduplication and error handling.
  * Multiple components can use the same script URL and share the loading state.
- * 
+ *
  * @param src - The script URL to load
  * @returns {loaded: boolean, error: string | null} - Loading state and any error
  */
@@ -46,14 +46,16 @@ export function useExternalScript(src: string): ExternalScriptLoader {
       scriptRegistry.set(src, scriptState);
 
       // Check if script already exists in DOM (loaded by another method)
-      const existingScript = document.querySelector(`script[src="${src}"]`) as HTMLScriptElement;
+      const existingScript = document.querySelector(
+        `script[src="${src}"]`,
+      ) as HTMLScriptElement;
 
       if (existingScript) {
         scriptState.loaded = true;
         scriptState.element = existingScript;
       } else {
         // Create and append new script
-        const script = document.createElement('script');
+        const script = document.createElement("script");
         script.src = src;
         script.async = true;
         scriptState.element = script;
@@ -61,17 +63,17 @@ export function useExternalScript(src: string): ExternalScriptLoader {
         const handleLoad = () => {
           scriptState!.loaded = true;
           // Notify all subscribers
-          scriptState!.callbacks.forEach(callback => callback(scriptState!));
+          scriptState!.callbacks.forEach((callback) => callback(scriptState!));
         };
 
         const handleError = () => {
           scriptState!.error = `Failed to load script: ${src}`;
           // Notify all subscribers
-          scriptState!.callbacks.forEach(callback => callback(scriptState!));
+          scriptState!.callbacks.forEach((callback) => callback(scriptState!));
         };
 
-        script.addEventListener('load', handleLoad);
-        script.addEventListener('error', handleError);
+        script.addEventListener("load", handleLoad);
+        script.addEventListener("error", handleError);
 
         document.head.appendChild(script);
       }
@@ -102,4 +104,4 @@ export function useExternalScript(src: string): ExternalScriptLoader {
   }, [src]);
 
   return state;
-} 
+}

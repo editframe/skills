@@ -15,7 +15,9 @@ describe("EFTransformHandles", () => {
     container.style.height = "500px";
     document.body.appendChild(container);
     render(html`<ef-transform-handles></ef-transform-handles>`, container);
-    const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
+    const el = container.querySelector<EFTransformHandles>(
+      "ef-transform-handles",
+    )!;
     await el.updateComplete;
 
     const overlay = el.shadowRoot!.querySelector(".overlay") as HTMLDivElement;
@@ -37,7 +39,9 @@ describe("EFTransformHandles", () => {
       html`<ef-transform-handles .bounds=${bounds}></ef-transform-handles>`,
       container,
     );
-    const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
+    const el = container.querySelector<EFTransformHandles>(
+      "ef-transform-handles",
+    )!;
     await el.updateComplete;
 
     const overlay = el.shadowRoot!.querySelector(".overlay") as HTMLDivElement;
@@ -58,7 +62,9 @@ describe("EFTransformHandles", () => {
       html`<ef-transform-handles .bounds=${bounds} .enableRotation=${true}></ef-transform-handles>`,
       container,
     );
-    const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
+    const el = container.querySelector<EFTransformHandles>(
+      "ef-transform-handles",
+    )!;
     await el.updateComplete;
 
     const overlay = el.shadowRoot!.querySelector(".overlay") as HTMLDivElement;
@@ -76,7 +82,9 @@ describe("EFTransformHandles", () => {
       html`<ef-transform-handles .bounds=${bounds}></ef-transform-handles>`,
       container,
     );
-    const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
+    const el = container.querySelector<EFTransformHandles>(
+      "ef-transform-handles",
+    )!;
     await el.updateComplete;
 
     let boundsChangeEvent: CustomEvent | null = null;
@@ -84,7 +92,9 @@ describe("EFTransformHandles", () => {
       boundsChangeEvent = e as CustomEvent;
     });
 
-    const dragArea = el.shadowRoot!.querySelector(".drag-area") as HTMLDivElement;
+    const dragArea = el.shadowRoot!.querySelector(
+      ".drag-area",
+    ) as HTMLDivElement;
     const downEvent = new MouseEvent("mousedown", {
       clientX: 100,
       clientY: 100,
@@ -112,7 +122,7 @@ describe("EFTransformHandles", () => {
     container.style.width = "500px";
     container.style.height = "500px";
     document.body.appendChild(container);
-    
+
     const targetElement = document.createElement("div");
     targetElement.id = "test-target";
     targetElement.style.position = "absolute";
@@ -121,13 +131,15 @@ describe("EFTransformHandles", () => {
     targetElement.style.width = "200px";
     targetElement.style.height = "150px";
     container.appendChild(targetElement);
-    
+
     const bounds = { x: 100, y: 100, width: 200, height: 150, rotation: 0 };
     render(
       html`<ef-transform-handles .bounds=${bounds} .target=${"#test-target"} .enableRotation=${true}></ef-transform-handles>`,
       container,
     );
-    const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
+    const el = container.querySelector<EFTransformHandles>(
+      "ef-transform-handles",
+    )!;
     await el.updateComplete;
 
     let rotationChangeEvent: CustomEvent | null = null;
@@ -135,7 +147,9 @@ describe("EFTransformHandles", () => {
       rotationChangeEvent = e as CustomEvent;
     });
 
-    const rotateHandle = el.shadowRoot!.querySelector(".rotate-handle") as HTMLDivElement;
+    const rotateHandle = el.shadowRoot!.querySelector(
+      ".rotate-handle",
+    ) as HTMLDivElement;
     const downEvent = new MouseEvent("mousedown", {
       clientX: 200,
       clientY: 50,
@@ -164,7 +178,9 @@ describe("EFTransformHandles", () => {
     container.style.height = "500px";
     document.body.appendChild(container);
     render(html`<ef-transform-handles></ef-transform-handles>`, container);
-    const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
+    const el = container.querySelector<EFTransformHandles>(
+      "ef-transform-handles",
+    )!;
     await el.updateComplete;
 
     const rotateHandle = el.shadowRoot!.querySelector(".rotate-handle");
@@ -181,7 +197,9 @@ describe("EFTransformHandles", () => {
       html`<ef-transform-handles .enableRotation=${true}></ef-transform-handles>`,
       container,
     );
-    const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
+    const el = container.querySelector<EFTransformHandles>(
+      "ef-transform-handles",
+    )!;
     await el.updateComplete;
 
     const rotateHandle = el.shadowRoot!.querySelector(".rotate-handle");
@@ -198,7 +216,9 @@ describe("EFTransformHandles", () => {
       html`<ef-transform-handles .enableResize=${false}></ef-transform-handles>`,
       container,
     );
-    const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
+    const el = container.querySelector<EFTransformHandles>(
+      "ef-transform-handles",
+    )!;
     await el.updateComplete;
 
     const handles = el.shadowRoot!.querySelectorAll(".handle");
@@ -215,11 +235,12 @@ describe("EFTransformHandles", () => {
       html`<ef-transform-handles .enableDrag=${false}></ef-transform-handles>`,
       container,
     );
-    const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
+    const el = container.querySelector<EFTransformHandles>(
+      "ef-transform-handles",
+    )!;
     await el.updateComplete;
 
     const dragArea = el.shadowRoot!.querySelector(".drag-area");
     expect(dragArea).to.not.exist;
   });
 });
-

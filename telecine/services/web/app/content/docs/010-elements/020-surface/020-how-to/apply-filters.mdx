@@ -1,0 +1,34 @@
+---
+meta:
+  - title: Apply CSS Filters to Surfaces
+  - name: description
+    content: Create varied visual effects from one video source using CSS filters
+headers:
+    Cache-Control: no-cache
+---
+
+## Apply CSS Filters to Surfaces
+
+**Problem:** You need to apply different visual effects to the same video source, creating multiple styled variations.
+
+**Solution:** Use multiple surface elements targeting the same video, each with different CSS filter classes applied. Surfaces efficiently apply filters without re-decoding the video.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup mode="contain" className="w-[720px] h-[480px] grid grid-cols-3 gap-2 p-2 bg-black">
+    <Video id="filter-video" src="https://assets.editframe.com/bars-n-tone.mp4" className="w-full h-full object-cover" />
+    <Surface target="filter-video" className="w-full h-full object-cover grayscale" />
+    <Surface target="filter-video" className="w-full h-full object-cover sepia" />
+    <Surface target="filter-video" className="w-full h-full object-cover blur-sm" />
+    <Surface target="filter-video" className="w-full h-full object-cover saturate-200" />
+    <Surface target="filter-video" className="w-full h-full object-cover hue-rotate-90" />
+    <Surface target="filter-video" className="w-full h-full object-cover brightness-150" />
+    <Surface target="filter-video" className="w-full h-full object-cover contrast-200" />
+    <Surface target="filter-video" className="w-full h-full object-cover invert" />
+  </Timegroup>
+</Demonstration>
+
+**Available filters:** `blur`, `brightness`, `contrast`, `saturate`, `grayscale`, `sepia`, `hue-rotate`, `invert`, and `opacity`. You can combine multiple filters in a single `className`.
+
+For details on why surfaces are efficient for this use case, see the [Canvas Mirroring Architecture explanation](/docs/elements/surface/explanation/canvas-mirroring-architecture).
+
+

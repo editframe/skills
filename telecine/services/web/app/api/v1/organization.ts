@@ -1,18 +1,14 @@
 import { db } from "@/sql-client.server";
 
-import type { Route } from "./+types/organization"
+import type { Route } from "./+types/organization";
 import { requireCookieOrTokenSession } from "@/util/requireSession.server";
 
 export const loader = async (args: Route.LoaderArgs) => {
-  const session = await requireCookieOrTokenSession(args.request)
+  const session = await requireCookieOrTokenSession(args.request);
 
   const result = await db
     .selectFrom("identity.api_keys")
-    .innerJoin(
-      "identity.orgs",
-      "identity.api_keys.org_id",
-      "identity.orgs.id",
-    )
+    .innerJoin("identity.orgs", "identity.api_keys.org_id", "identity.orgs.id")
     .where("identity.api_keys.id", "=", session.cid)
     .select([
       "identity.orgs.id",
@@ -29,4 +25,4 @@ export const loader = async (args: Route.LoaderArgs) => {
   }
 
   return result;
-}
+};

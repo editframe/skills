@@ -29,7 +29,9 @@ export const TestFastFinalizerWorker = new Worker({
 
     const { testId, jobCount } = job.payload;
 
-    logger.info({ testId, jobCount }, "TestFastFinalizerWorker completed workflow");
+    logger.info(
+      { testId, jobCount },
+      "TestFastFinalizerWorker completed workflow",
+    );
   },
 });
-

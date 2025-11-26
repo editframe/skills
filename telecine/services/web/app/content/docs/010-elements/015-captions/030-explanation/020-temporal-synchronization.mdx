@@ -1,0 +1,129 @@
+---
+meta:
+  - title: Temporal Synchronization Architecture
+  - name: description
+    content: How captions synchronize with media elements and timegroups, and the architectural advantages of this approach
+headers:
+    Cache-Control: no-cache
+---
+
+## Temporal Synchronization: Unified Timeline Architecture
+
+Editframe captions integrate seamlessly with the temporal composition system, synchronizing with media elements and timegroups through a unified timeline architecture. This design enables precise caption timing while maintaining flexibility for standalone caption displays.
+
+### The Problem: Fragmented Synchronization Approaches
+
+Using native caption systems with separate timelines presents these constraints:
+
+**Tight coupling:**
+- Captions must be bound to specific media files
+- Cannot reuse captions across different media
+- Difficult to create standalone caption displays
+- Limited flexibility for creative compositions
+
+**Manual synchronization:**
+- Developers must manually sync caption timing with media playback
+- Error-prone timing calculations
+- Difficult to maintain sync when media is trimmed or edited
+- Complex code to handle edge cases
+
+**Separate timeline systems:**
+- Captions use their own timeline separate from media
+- Difficult to coordinate multiple synchronized elements
+- Complex state management for keeping everything in sync
+- Performance overhead from multiple timeline systems
+
+**Limited composition support:**
+- Cannot easily combine captions with other temporal elements
+- Difficult to create sequences or overlays
+- No support for caption timing relative to other elements
+
+### The Solution: Unified Temporal Architecture
+
+Editframe captions integrate directly into the temporal composition system:
+
+**Temporal properties:**
+- `startTimeMs`, `endTimeMs`, `durationMs` - Timeline positioning
+- `currentTimeMs`, `ownCurrentTimeMs` - Synchronized time tracking
+- `parentTimegroup`, `rootTimegroup` - Hierarchy awareness
+- Trimming and offset support
+
+**Automatic synchronization:**
+- When `target` is set, captions automatically sync with media element
+- Bidirectional sync maintains consistency
+- No manual timing calculations required
+- Handles edge cases automatically
+
+**Standalone operation:**
+- Captions can run independently without a target element
+- Use `ownCurrentTimeMs` synchronized with parent timegroup
+- Support custom captions data with intrinsic duration
+- Flexible for creative compositions
+
+**Fragment loading:**
+- When connected to media with transcription, loads fragments on-demand
+- Only loads caption data for current playback position
+- Efficient bandwidth usage similar to JIT transcoding
+- Automatic fragment switching as playback progresses
+
+### Architectural Advantages
+
+**Unified timeline:**
+- Captions share the same timeline system as all other elements
+- Consistent time coordinates across the composition
+- Easy to coordinate multiple synchronized elements
+- Single source of truth for timing
+
+**Automatic synchronization:**
+- Bidirectional updates between captions and target
+- Handles playback state changes transparently
+- No manual sync code required
+
+**Flexible composition:**
+- Captions can be positioned relative to other elements
+- Support for sequences, overlays, and complex compositions
+- Trimming and offset work consistently with other elements
+- Easy to create sophisticated caption displays
+
+**Performance:**
+- Fragment loading reduces initial load time
+- Only loads caption data for current playback position
+- Efficient updates when crossing timing boundaries
+- Minimal overhead compared to loading entire caption files
+
+**Developer experience:**
+- Simple API: set `target` attribute for automatic sync
+- Omit `target` for standalone operation
+- Consistent with other temporal elements
+- No special synchronization code needed
+
+### Code Examples
+
+**Synchronized with media:**
+```html
+<ef-video id="my-video" src="video.mp4" />
+<ef-captions target="my-video">
+  <ef-captions-segment />
+</ef-captions>
+```
+
+**Standalone within timegroup:**
+```html
+<ef-timegroup mode="contain">
+  <ef-captions captions-script="my-captions">
+    <ef-captions-active-word />
+  </ef-captions>
+</ef-timegroup>
+```
+
+**With trimming and offset:**
+```html
+<ef-captions target="my-video" trimstart="10s" trimend="5s" offset="2s">
+  <ef-captions-segment />
+</ef-captions>
+```
+
+### Related Documentation
+
+- [How to Connect Captions to Media Elements](/docs/elements/captions/how-to/connect-to-media) - Practical synchronization examples
+- [Reference](/docs/elements/captions/reference) - Complete property documentation

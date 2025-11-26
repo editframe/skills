@@ -1,0 +1,359 @@
+import React from "react";
+import type { PropertySectionConfig } from "./types";
+import type { ElementNode } from "~/lib/motion-designer/types";
+import {
+  ArrowsOutSimple,
+  Eye,
+  PaintBucket,
+  Pen,
+  Sparkle,
+  FrameCorners,
+  TextAa,
+  FilmStrip,
+  Image as ImageIcon,
+  Rows,
+  Columns,
+  GridFour,
+} from "@phosphor-icons/react";
+
+const isContainer = (element: ElementNode) =>
+  element.type === "div" || element.type === "timegroup";
+
+const isNotRootTimegroup = (element: ElementNode) =>
+  !(element.type === "timegroup" && element.parentId === null);
+
+const isText = (element: ElementNode) => element.type === "text";
+
+const isTimegroup = (element: ElementNode) => element.type === "timegroup";
+
+const isMedia = (element: ElementNode) =>
+  element.type === "video" || element.type === "image" || element.type === "audio";
+
+const hasCornerRadius = (element: ElementNode) =>
+  element.type === "div" ||
+  element.type === "image" ||
+  element.type === "video" ||
+  element.type === "timegroup";
+
+const isFlex = (element: ElementNode) =>
+  isContainer(element) && element.props.display === "flex";
+
+export const propertySections: PropertySectionConfig[] = [
+  {
+    id: "layout",
+    title: "Layout",
+    icon: <FrameCorners className="w-3.5 h-3.5" />,
+    defaultExpanded: true,
+    fields: [
+      {
+        type: "position",
+        label: "Position",
+        propPath: "position",
+      },
+      {
+        type: "dimensions",
+        label: "Size",
+        propPath: "size",
+      },
+      {
+        type: "number",
+        label: "Rotation",
+        propPath: "rotation",
+        unit: "°",
+        placeholder: "0",
+        visible: isNotRootTimegroup,
+      },
+    ],
+  },
+  {
+    id: "auto-layout",
+    title: "Auto Layout",
+    icon: <GridFour className="w-3.5 h-3.5" />,
+    defaultExpanded: true,
+    visible: isContainer,
+    fields: [
+      {
+        type: "icon-button-group",
+        label: "Layout",
+        propPath: "display",
+        options: [
+          {
+            value: "block",
+            icon: <div className="w-3.5 h-3.5 border border-current rounded" />,
+            title: "Block",
+          },
+          {
+            value: "flex",
+            icon: <GridFour className="w-3.5 h-3.5" />,
+            title: "Flex",
+          },
+        ],
+      },
+      {
+        type: "icon-button-group",
+        label: "Direction",
+        propPath: "flexDirection",
+        options: [
+          {
+            value: "row",
+            icon: <Rows className="w-3.5 h-3.5" />,
+            title: "Horizontal",
+          },
+          {
+            value: "column",
+            icon: <Columns className="w-3.5 h-3.5" />,
+            title: "Vertical",
+          },
+        ],
+        visible: isFlex,
+      },
+      {
+        type: "alignment-grid",
+        label: "Align",
+        justifyPropPath: "justifyContent",
+        alignPropPath: "alignItems",
+        visible: isFlex,
+      },
+      {
+        type: "number",
+        label: "Gap",
+        propPath: "gap",
+        unit: "px",
+        placeholder: "0",
+        visible: isFlex,
+      },
+      {
+        type: "spacing",
+        label: "Padding",
+        propPath: "padding",
+      },
+    ],
+  },
+  {
+    id: "appearance",
+    title: "Appearance",
+    icon: <Eye className="w-3.5 h-3.5" />,
+    defaultExpanded: true,
+    fields: [
+      {
+        type: "inline-inputs",
+        inputs: [
+          {
+            label: "Opacity",
+            propPath: "opacity",
+            type: "slider",
+            min: 0,
+            max: 100,
+            step: 1,
+            displayMultiplier: 100,
+            unit: "%",
+          },
+          {
+            label: "Radius",
+            propPath: "cornerRadius",
+            type: "number",
+            unit: "px",
+            placeholder: "0",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "fill",
+    title: "Fill",
+    icon: <PaintBucket className="w-3.5 h-3.5" />,
+    defaultExpanded: false,
+    fields: [
+      {
+        type: "checkbox",
+        label: "Fill",
+        propPath: "fill.enabled",
+      },
+      {
+        type: "color",
+        label: "Color",
+        propPath: "fill.color",
+        visible: (element) => element.props.fill?.enabled ?? false,
+      },
+    ],
+  },
+  {
+    id: "stroke",
+    title: "Stroke",
+    icon: <Pen className="w-3.5 h-3.5" />,
+    defaultExpanded: false,
+    fields: [
+      {
+        type: "checkbox",
+        label: "Stroke",
+        propPath: "stroke.enabled",
+      },
+      {
+        type: "color",
+        label: "Color",
+        propPath: "stroke.color",
+        visible: (element) => element.props.stroke?.enabled ?? false,
+      },
+      {
+        type: "number",
+        label: "Width",
+        propPath: "stroke.width",
+        unit: "px",
+        placeholder: "1",
+        visible: (element) => element.props.stroke?.enabled ?? false,
+      },
+    ],
+  },
+  {
+    id: "effects",
+    title: "Effects",
+    icon: <Sparkle className="w-3.5 h-3.5" />,
+    defaultExpanded: false,
+    fields: [
+      {
+        type: "checkbox",
+        label: "Shadow",
+        propPath: "shadow.enabled",
+      },
+      {
+        type: "color",
+        label: "Color",
+        propPath: "shadow.color",
+        visible: (element) => element.props.shadow?.enabled ?? false,
+      },
+      {
+        type: "number-grid",
+        label: "X / Y / Blur",
+        propPath: "shadow",
+        fields: [
+          { key: "x", placeholder: "X" },
+          { key: "y", placeholder: "Y" },
+          { key: "blur", placeholder: "Blur" },
+        ],
+        visible: (element) => element.props.shadow?.enabled ?? false,
+      },
+      {
+        type: "checkbox",
+        label: "Blur",
+        propPath: "blur.enabled",
+      },
+      {
+        type: "number",
+        label: "Amount",
+        propPath: "blur.amount",
+        unit: "px",
+        placeholder: "5",
+        visible: (element) => element.props.blur?.enabled ?? false,
+      },
+    ],
+  },
+  {
+    id: "text",
+    title: "Text",
+    icon: <TextAa className="w-3.5 h-3.5" />,
+    defaultExpanded: true,
+    visible: isText,
+    fields: [
+      {
+        type: "text",
+        label: "Content",
+        propPath: "content",
+        rows: 2,
+      },
+      {
+        type: "text",
+        label: "Font",
+        propPath: "fontFamily",
+        placeholder: "Inter",
+      },
+      {
+        type: "number",
+        label: "Size",
+        propPath: "fontSize",
+        unit: "px",
+        placeholder: "16",
+      },
+      {
+        type: "select",
+        label: "Align",
+        propPath: "textAlign",
+        options: [
+          { value: "left", label: "Left" },
+          { value: "center", label: "Center" },
+          { value: "right", label: "Right" },
+        ],
+      },
+      {
+        type: "text",
+        label: "Line Height",
+        propPath: "lineHeight",
+        placeholder: "120%",
+      },
+      {
+        type: "text",
+        label: "Spacing",
+        propPath: "letterSpacing",
+        placeholder: "0%",
+      },
+      {
+        type: "select",
+        label: "Transform",
+        propPath: "textTransform",
+        options: [
+          { value: "none", label: "None" },
+          { value: "uppercase", label: "Uppercase" },
+          { value: "lowercase", label: "Lowercase" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "timegroup",
+    title: "Timegroup",
+    icon: <FilmStrip className="w-3.5 h-3.5" />,
+    defaultExpanded: false,
+    visible: isTimegroup,
+    fields: [
+      {
+        type: "select",
+        label: "Mode",
+        propPath: "mode",
+        options: [
+          { value: "fixed", label: "Fixed" },
+          { value: "sequence", label: "Sequence" },
+          { value: "contain", label: "Contain" },
+          { value: "fit", label: "Fit" },
+        ],
+      },
+      {
+        type: "text",
+        label: "Duration",
+        propPath: "duration",
+        placeholder: "5s",
+      },
+      {
+        type: "number",
+        label: "FPS",
+        propPath: "fps",
+        placeholder: "30",
+      },
+    ],
+  },
+  {
+    id: "media",
+    title: "Media",
+    icon: <ImageIcon className="w-3.5 h-3.5" />,
+    defaultExpanded: false,
+    visible: isMedia,
+    fields: [
+      {
+        type: "text",
+        label: "URL",
+        propPath: "src",
+        placeholder: "https://...",
+      },
+    ],
+  },
+];
+

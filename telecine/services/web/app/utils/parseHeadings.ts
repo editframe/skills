@@ -5,15 +5,16 @@ const rehypeHeadings = (options: Options) => {
     const { visit } = await import("unist-util-visit");
 
     const getNodeText = (node: any): string => {
-      if (typeof node === 'string') return node;
+      if (typeof node === "string") return node;
       if (node.value) return node.value;
       if (node.children) {
-        return node.children.map(getNodeText).join('');
+        return node.children.map(getNodeText).join("");
       }
-      return '';
+      return "";
     };
 
-    visit(tree,
+    visit(
+      tree,
       // @ts-ignore
       (node) => {
         return (
@@ -35,7 +36,9 @@ const rehypeHeadings = (options: Options) => {
           }
         } else if (node.type === "mdxJsxFlowElement") {
           // @ts-ignore
-          const nameAttr = node.attributes?.find(attr => attr.name === "name");
+          const nameAttr = node.attributes?.find(
+            (attr) => attr.name === "name",
+          );
           if (nameAttr?.value) {
             options.exportRef.push({
               id: `attr-${nameAttr.value}`,
@@ -44,7 +47,7 @@ const rehypeHeadings = (options: Options) => {
             });
           }
         }
-      }
+      },
     );
   };
 };

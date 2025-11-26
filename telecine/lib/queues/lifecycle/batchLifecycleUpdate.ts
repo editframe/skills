@@ -81,17 +81,25 @@ export async function processBatchedJobMessages(
   }
   for (const [workflow, messages] of workflowMessages.entries()) {
     if (workflow.processFailures) {
-      logger.info({ workflow: workflow.name, messages }, "Processing workflow failures");
+      logger.info(
+        { workflow: workflow.name, messages },
+        "Processing workflow failures",
+      );
       promises.push(workflow.processFailures(messages, db));
-    }
-    else {
-      logger.info({ workflow: workflow.name, messages }, "No processFailures for workflow");
+    } else {
+      logger.info(
+        { workflow: workflow.name, messages },
+        "No processFailures for workflow",
+      );
     }
   }
   await Promise.allSettled(promises).then((results) => {
     for (const result of results) {
       if (result.status === "rejected") {
-        logger.error({ error: result.reason }, "Error processing lifecycle update");
+        logger.error(
+          { error: result.reason },
+          "Error processing lifecycle update",
+        );
       }
     }
   });

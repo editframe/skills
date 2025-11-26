@@ -5,9 +5,7 @@ export default defineConfig({
   plugins: [tsconfigPaths()],
   server: {
     watch: {
-      ignored: [
-        "**/temp/**/*",
-      ],
+      ignored: ["**/temp/**/*"],
     },
   },
   test: {

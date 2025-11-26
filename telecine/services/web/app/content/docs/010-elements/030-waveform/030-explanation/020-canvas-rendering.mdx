@@ -1,0 +1,56 @@
+---
+meta:
+  - title: Canvas Rendering Architecture
+  - name: description
+    content: Understanding the high-performance canvas-based rendering system for waveform visualization
+headers:
+    Cache-Control: no-cache
+---
+
+## Canvas Rendering Architecture
+
+Waveform elements use a high-performance canvas-based rendering system optimized for real-time audio visualization at 60 frames per second.
+
+### Why Canvas Rendering Matters
+
+Using DOM-based or SVG-based rendering for audio visualization presents these engineering challenges:
+
+- **DOM performance:** Manipulating many DOM elements (hundreds of bars or path segments) causes layout thrashing and poor performance
+- **SVG memory overhead:** Complex SVG paths consume significant memory, especially for high-resolution visualizations
+- **Pre-rendering limitations:** Static images can't respond to real-time playback changes or dynamic styling
+- **Scaling issues:** DOM and SVG approaches struggle with high-DPI displays and responsive sizing
+
+Editframe's canvas-based approach provides:
+
+- **High-performance rendering:** Canvas API enables efficient drawing operations, achieving smooth 60fps even with complex visualizations
+- **Memory efficiency:** Canvas rendering uses less memory than equivalent SVG or DOM-based approaches
+- **Automatic high-DPI support:** Device pixel ratio scaling ensures crisp rendering on retina displays
+- **Responsive updates:** Canvas automatically adjusts size when the element dimensions change
+
+### How It Works
+
+The waveform element renders to a single `<canvas>` element that fills the waveform's container. The rendering system uses several optimizations:
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup mode="contain" className="aspect-[1/1] w-[500px] h-[500px] bg-black flex flex-col items-center justify-center">
+    <Audio src="https://assets.editframe.com/card-joker.mp3" id="canvas-demo-audio" />
+    <Waveform target="canvas-demo-audio" mode="bars" className="w-full h-[200px] block" />
+  </Timegroup>
+</Demonstration>
+
+**Architectural advantages:**
+
+- **Batch drawing operations:** Each visualization mode batches drawing operations, reducing canvas API calls from hundreds (one per bar/segment) to just one or two per frame
+- **Device pixel ratio scaling:** The canvas automatically scales its internal resolution based on device pixel ratio, ensuring crisp rendering on high-DPI displays
+- **Responsive resizing:** Canvas automatically adapts to container size changes, maintaining proper aspect ratio and pixel density
+- **Frame-based updates:** The waveform's rendering runs on each animation frame, checking for new frequency data and redrawing when available
+- **Mode-specific optimization:** Each visualization mode has its own optimized drawing function designed to minimize canvas operations while producing the desired visual style
+
+**Concrete benefits:**
+
+- **60fps performance:** Canvas rendering maintains smooth frame rates even with complex visualizations
+- **Low memory footprint:** Single canvas element with efficient drawing uses less memory than DOM or SVG alternatives
+- **Automatic scaling:** High-DPI displays automatically get higher resolution rendering without manual configuration
+- **Responsive design:** Canvas automatically adapts to container size changes without manual intervention
+
+For property configuration details and rendering options, see the [Waveform Element Reference](/docs/elements/waveform/reference).

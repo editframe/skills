@@ -19,7 +19,7 @@ export const testChildRef: RefConstructor<TestChild> = customRef<TestChild>(
       }
       const parent = findParent<TestParent>(
         ref,
-        (parent) => parent instanceof TestParent
+        (parent) => parent instanceof TestParent,
       );
       if (!parent) {
         throw new Error("Could not find parent");
@@ -31,5 +31,5 @@ export const testChildRef: RefConstructor<TestChild> = customRef<TestChild>(
         detach(ref);
       }
     },
-  }
+  },
 );

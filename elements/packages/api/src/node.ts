@@ -62,9 +62,8 @@ export const uploadUnprocessedFile = async (
   const { createReadStream } = await import("node:fs");
   const readStream = createReadStream(path);
 
-  const { createReadableStreamFromReadable } = await import(
-    "./utils/createReadableStreamFromReadable.ts"
-  );
+  const { createReadableStreamFromReadable } =
+    await import("./utils/createReadableStreamFromReadable.ts");
 
   return uploadUnprocessedReadableStream(
     client,

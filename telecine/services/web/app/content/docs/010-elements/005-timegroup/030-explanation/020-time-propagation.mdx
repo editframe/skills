@@ -1,0 +1,79 @@
+---
+meta:
+  - title: Time Propagation Architecture
+  - name: description
+    content: How time flows from root to children in Editframe's timegroup system
+headers:
+    Cache-Control: no-cache
+---
+
+## Time Propagation: Single Source of Truth for Timeline State
+
+Timegroups use a single source of truth architecture where only the root timegroup's `currentTime` is written, and all child times are computed from parent state. This prevents synchronization issues and race conditions that arise when maintaining separate timeline states.
+
+### Engineering Challenges with Separate Timeline States
+
+Using separate timeline states for different elements presents these engineering challenges:
+
+**Multiple timeline states:** Each element has its own independent timeline position with no guarantee of synchronization, causing race conditions when updating multiple timelines simultaneously.
+
+**Manual synchronization:** All timelines must be manually kept in sync, making it easy to introduce bugs where timelines drift apart and requiring complex code for edge cases.
+
+**No single source of truth:** Multiple places where time state is stored make it difficult to reason about playback state and implement features like seeking consistently.
+
+### The Solution: Root-Only Writes with Computed Child Times
+
+Timegroups use a single source of truth: only the root timegroup's `currentTime` is written. All child times are computed from parent state via `ownCurrentTimeMs`, providing synchronization and automatic propagation.
+
+### Benefits for Your Workflow
+
+**Synchronization:** Setting root `currentTime` automatically updates all children, preventing timelines from desynchronizing. No manual synchronization code needed.
+
+**Simplified seeking:** Set root `currentTime` once and everything updates atomically. Single place where time is set makes debugging straightforward.
+
+### How Users Experience These Benefits
+
+Setting the root timegroup's `currentTime` automatically updates all children:
+
+```javascript
+const rootTimegroup = document.getElementById('my-video');
+rootTimegroup.currentTime = 5.5; // All children automatically update
+```
+
+In sequence mode, each child computes its local time (`ownCurrentTimeMs`) from the root position, resetting to 0 when it starts. This means you can seek the entire timeline by setting one property:
+
+```javascript
+// Seek to 10 seconds - all children update automatically
+rootTimegroup.currentTime = 10;
+
+// Each child computes its own local time
+const child1 = rootTimegroup.querySelector('[data-timegroup-child]');
+console.log(child1.ownCurrentTimeMs); // Local time relative to child's start
+```
+
+<Demonstration layout="horizontal" alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup
+    id="time-propagation-example"
+    mode="sequence"
+    className="w-[500px] h-[300px] bg-slate-500"
+  >
+    <Timegroup 
+      mode="fixed" 
+      duration="2s" 
+      className="font-mono bg-red-300 text-red-800 text-3xl flex items-center justify-center"
+    >
+      <p>{"Item 1"}</p>
+    </Timegroup>
+    <Timegroup 
+      mode="fixed" 
+      duration="3s" 
+      className="font-mono bg-green-300 text-green-800 text-3xl flex items-center justify-center"
+    >
+      <p>{"Item 2"}</p>
+    </Timegroup>
+  </Timegroup>
+</Demonstration>
+
+**Key distinction**: `currentTime` is the position in the root timeline (global coordinate), while `ownCurrentTime` is the position in the element's local timeline (local coordinate, resets per element).
+
+See the [Reference](/docs/elements/timegroup/reference) for property documentation and [Temporal Composition](/docs/elements/timegroup/explanation/temporal-composition) for duration calculation details.

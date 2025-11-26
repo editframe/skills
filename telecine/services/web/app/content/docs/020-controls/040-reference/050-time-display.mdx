@@ -1,0 +1,61 @@
+---
+meta:
+  - title: Time Display Reference
+  - name: description
+    content: Complete property reference for ef-time-display element
+headers:
+    Cache-Control: no-cache
+---
+
+## Time Display Reference
+
+### Quick Reference Table
+
+<TimeDisplayPropertyReference />
+
+### Properties
+
+<PropertyDocList>
+  <PropertyDoc name="target" type="string" domReadable domWritable htmlAttribute="target" defaultValue='""'>
+    Optional ID of a temporal element to display time for. If not provided, uses context from nearest ancestor.
+
+    ```html
+    <ef-time-display target="my-video"></ef-time-display>
+    ```
+  </PropertyDoc>
+</PropertyDocList>
+
+### CSS Custom Properties
+
+<PropertyDocList>
+  <PropertyDoc name="--ef-font-family" type="CSS custom property" defaultValue="system-ui">
+    Font family for the time text. Monospace fonts work well for stable width.
+  </PropertyDoc>
+
+  <PropertyDoc name="--ef-font-size-xs" type="CSS custom property" defaultValue="0.75rem">
+    Font size for the time display.
+  </PropertyDoc>
+
+  <PropertyDoc name="--ef-text-color" type="CSS custom property" defaultValue="rgb(75 85 99)">
+    Text color for the time display.
+  </PropertyDoc>
+</PropertyDocList>
+
+### CSS Parts
+
+- `time` - Time text element
+
+### Format
+
+Displays `M:SS / M:SS` where:
+- First time: Current playback position
+- Second time: Total duration
+- Minutes without leading zeros
+- Seconds with leading zeros
+
+**How-to:** See [Use Time Display](/docs/controls/how-to/use-time-display).
+
+
+
+
+

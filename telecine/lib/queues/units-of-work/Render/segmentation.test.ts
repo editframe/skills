@@ -11,7 +11,7 @@ import {
   createColorChangingTemplate,
   writeTemplateToAssets,
   TestArtifactManager,
-  type ValidationResult
+  type ValidationResult,
 } from "./test-utils";
 
 // IMPLEMENTATION GUIDELINES: Segment-Specific Testing
@@ -26,9 +26,15 @@ describe("Video Segment-Specific Validation", () => {
   let artifactManager: TestArtifactManager;
 
   beforeAll(async () => {
-    testArtifactsDir = join(process.cwd(), "temp", "segmentation-test-artifacts");
+    testArtifactsDir = join(
+      process.cwd(),
+      "temp",
+      "segmentation-test-artifacts",
+    );
     await mkdir(testArtifactsDir, { recursive: true });
-    artifactManager = new TestArtifactManager(testArtifactsDir, { verbose: true });
+    artifactManager = new TestArtifactManager(testArtifactsDir, {
+      verbose: true,
+    });
   });
 
   afterAll(async () => {
@@ -45,8 +51,14 @@ describe("Video Segment-Specific Validation", () => {
 
       expect(validation.success).toBe(true);
       expect(validation.details).toHaveProperty("initMetadata");
-      expect(validation.details?.initMetadata).toHaveProperty("hasVideoTrack", true);
-      expect(validation.details?.initMetadata).toHaveProperty("isFragmented", true);
+      expect(validation.details?.initMetadata).toHaveProperty(
+        "hasVideoTrack",
+        true,
+      );
+      expect(validation.details?.initMetadata).toHaveProperty(
+        "isFragmented",
+        true,
+      );
     });
 
     test("should_reject_init_segment_without_video_track", async () => {
@@ -77,7 +89,11 @@ describe("Video Segment-Specific Validation", () => {
       const mockFragments = createMockFragmentSequence(3, 1000); // 3 fragments, 1 second each
       const expectedWorkSliceMs = 1000;
 
-      const validation = await validateFragmentTiming(mockFragments, expectedWorkSliceMs, 50);
+      const validation = await validateFragmentTiming(
+        mockFragments,
+        expectedWorkSliceMs,
+        50,
+      );
 
       expect(validation.success).toBe(true);
       expect(validation.details?.fragmentTimings).toHaveLength(3);
@@ -123,7 +139,8 @@ describe("Video Segment-Specific Validation", () => {
       // TODO: Implement boundary integrity validation
       const mockFragments = createMockFragmentSequence(3, 1000);
 
-      const boundaryIntegrity = await validateSegmentBoundaryIntegrity(mockFragments);
+      const boundaryIntegrity =
+        await validateSegmentBoundaryIntegrity(mockFragments);
 
       expect(boundaryIntegrity.success).toBe(true);
       expect(boundaryIntegrity.details).toHaveProperty("frameDrops", 0);
@@ -134,7 +151,8 @@ describe("Video Segment-Specific Validation", () => {
       // TODO: Implement boundary integrity validation
       const corruptedFragments = createMockCorruptedFragmentSequence();
 
-      const boundaryIntegrity = await validateSegmentBoundaryIntegrity(corruptedFragments);
+      const boundaryIntegrity =
+        await validateSegmentBoundaryIntegrity(corruptedFragments);
 
       expect(boundaryIntegrity.success).toBe(false);
       expect(boundaryIntegrity.message).toContain("frame drops detected");
@@ -162,7 +180,10 @@ describe("Video Segment-Specific Validation", () => {
 
       expect(audioContinuity.success).toBe(true);
       expect(audioContinuity.details).toHaveProperty("audioGaps", 0);
-      expect(audioContinuity.details).toHaveProperty("waveformContinuity", true);
+      expect(audioContinuity.details).toHaveProperty(
+        "waveformContinuity",
+        true,
+      );
     });
 
     test.skip("should_detect_audio_gaps_between_segments", async () => {
@@ -180,10 +201,14 @@ describe("Video Segment-Specific Validation", () => {
       // TODO: Implement audio sample rate validation
       const audioFragments = createMockAudioFragmentSequence(3, 1000);
 
-      const sampleRateValidation = await validateAudioSampleRateConsistency(audioFragments);
+      const sampleRateValidation =
+        await validateAudioSampleRateConsistency(audioFragments);
 
       expect(sampleRateValidation.success).toBe(true);
-      expect(sampleRateValidation.details).toHaveProperty("consistentSampleRate", true);
+      expect(sampleRateValidation.details).toHaveProperty(
+        "consistentSampleRate",
+        true,
+      );
       expect(sampleRateValidation.details?.sampleRate).toBe(48000);
     });
   });
@@ -195,7 +220,11 @@ describe("Video Segment-Specific Validation", () => {
       const expectedWorkSliceMs = 800;
       const strictTolerance = 25; // Very strict tolerance
 
-      const validation = await validateFragmentTiming(mockFragments, expectedWorkSliceMs, strictTolerance);
+      const validation = await validateFragmentTiming(
+        mockFragments,
+        expectedWorkSliceMs,
+        strictTolerance,
+      );
 
       expect(validation.success).toBe(true);
 
@@ -245,7 +274,10 @@ function createMockInvalidInitSegment(): Buffer {
 /**
  * Create sequence of mock fragment buffers
  */
-function createMockFragmentSequence(count: number, durationMs: number): Buffer[] {
+function createMockFragmentSequence(
+  count: number,
+  durationMs: number,
+): Buffer[] {
   const fragments: Buffer[] = [];
   for (let i = 0; i < count; i++) {
     fragments.push(createMockFragment(durationMs));
@@ -269,7 +301,7 @@ function createMockCorruptedFragmentSequence(): Buffer[] {
   return [
     createMockFragment(1000),
     createMockFragment(800), // Missing frames
-    createMockFragment(1000)
+    createMockFragment(1000),
   ];
 }
 
@@ -280,14 +312,17 @@ function createMockFragmentSequenceWithShortFinal(): Buffer[] {
   return [
     createMockFragment(1000),
     createMockFragment(1000),
-    createMockFragment(500) // Final fragment is shorter
+    createMockFragment(500), // Final fragment is shorter
   ];
 }
 
 /**
  * Create mock audio fragments
  */
-function createMockAudioFragmentSequence(count: number, durationMs: number): Buffer[] {
+function createMockAudioFragmentSequence(
+  count: number,
+  durationMs: number,
+): Buffer[] {
   // TODO: Create audio fragment mocks
   return createMockFragmentSequence(count, durationMs);
 }
@@ -305,7 +340,9 @@ function createMockAudioFragmentsWithGaps(): Buffer[] {
 /**
  * Validate segment boundary integrity
  */
-async function validateSegmentBoundaryIntegrity(segments: Buffer[]): Promise<ValidationResult> {
+async function validateSegmentBoundaryIntegrity(
+  segments: Buffer[],
+): Promise<ValidationResult> {
   // TODO: Implement boundary integrity validation
   throw new Error("Segment boundary integrity validation not yet implemented");
 }
@@ -313,7 +350,9 @@ async function validateSegmentBoundaryIntegrity(segments: Buffer[]): Promise<Val
 /**
  * Validate temporal continuity across segments
  */
-async function validateTemporalContinuity(segments: Buffer[]): Promise<ValidationResult> {
+async function validateTemporalContinuity(
+  segments: Buffer[],
+): Promise<ValidationResult> {
   // TODO: Implement temporal continuity validation
   throw new Error("Temporal continuity validation not yet implemented");
 }
@@ -321,7 +360,9 @@ async function validateTemporalContinuity(segments: Buffer[]): Promise<Validatio
 /**
  * Validate audio continuity across segments
  */
-async function validateAudioContinuity(audioSegments: Buffer[]): Promise<ValidationResult> {
+async function validateAudioContinuity(
+  audioSegments: Buffer[],
+): Promise<ValidationResult> {
   // TODO: Implement audio continuity validation
   throw new Error("Audio continuity validation not yet implemented");
 }
@@ -329,7 +370,11 @@ async function validateAudioContinuity(audioSegments: Buffer[]): Promise<Validat
 /**
  * Validate audio sample rate consistency
  */
-async function validateAudioSampleRateConsistency(audioSegments: Buffer[]): Promise<ValidationResult> {
+async function validateAudioSampleRateConsistency(
+  audioSegments: Buffer[],
+): Promise<ValidationResult> {
   // TODO: Implement audio sample rate validation
-  throw new Error("Audio sample rate consistency validation not yet implemented");
-} 
+  throw new Error(
+    "Audio sample rate consistency validation not yet implemented",
+  );
+}

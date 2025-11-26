@@ -1,0 +1,31 @@
+---
+meta:
+  - title: Connect Waveform to Audio or Video
+  - name: description
+    content: Link waveform elements to audio or video sources using the target attribute
+headers:
+    Cache-Control: no-cache
+---
+
+## Connect Waveform to Audio or Video
+
+**Problem:** You want to visualize audio from an audio or video element with a waveform.
+
+**Solution:** Use the `target` attribute on the waveform element, referencing the `id` of the audio or video element.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup mode="contain" className="aspect-[1/1] w-[500px] h-[500px] bg-black flex flex-col items-center justify-center">
+    <Audio src="https://assets.editframe.com/card-joker.mp3" id="connect-audio" />
+    <Waveform target="connect-audio" mode="bars" className="w-full h-[200px] block" />
+  </Timegroup>
+</Demonstration>
+
+**Steps:**
+
+1. Add an `id` attribute to your `<ef-audio>` or `<ef-video>` element
+2. Set the `target` attribute on `<ef-waveform>` to match the `id` value
+3. The waveform will automatically synchronize with the target element's playback
+
+The waveform receives real-time audio frequency data from the target element and visualizes it during playback. For deeper understanding of how this connection works, see the [Real-Time Visualization explanation](/docs/elements/waveform/explanation/real-time-visualization).
+
+

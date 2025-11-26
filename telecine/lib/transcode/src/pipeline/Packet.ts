@@ -81,7 +81,7 @@ export interface Packet {
 /**
  * Factory function to create a Packet instance from raw sample data
  * The returned Packet can be used with 'using' declaration for automatic cleanup
- * 
+ *
  * @example
  * ```typescript
  * const sampleData = new Uint8Array([]);
@@ -91,13 +91,13 @@ export interface Packet {
  *   dts: 1000,
  *   isKeyFrame: true
  * });
- * 
+ *
  * // Use packet with decoder
  * const frames = await decoder.decode(packet);
  * ```
  */
 export async function createPacket(options: PacketOptions): Promise<Packet> {
-  const { createPacketNative } = await import('../playback.js');
+  const { createPacketNative } = await import("../playback.js");
 
   const nativePacket = createPacketNative({
     data: options.data,
@@ -106,19 +106,37 @@ export async function createPacket(options: PacketOptions): Promise<Packet> {
     duration: options.duration ?? 0,
     streamIndex: options.streamIndex ?? 0,
     isKeyFrame: options.isKeyFrame ?? false,
-    pos: options.pos ?? -1
+    pos: options.pos ?? -1,
   });
 
   return {
-    get data() { return nativePacket.data; },
-    get size() { return nativePacket.size; },
-    get pts() { return nativePacket.pts; },
-    get dts() { return nativePacket.dts; },
-    get duration() { return nativePacket.duration; },
-    get streamIndex() { return nativePacket.streamIndex; },
-    get isKeyFrame() { return nativePacket.isKeyFrame; },
-    get pos() { return nativePacket.pos; },
-    get isValid() { return nativePacket.isValid; },
+    get data() {
+      return nativePacket.data;
+    },
+    get size() {
+      return nativePacket.size;
+    },
+    get pts() {
+      return nativePacket.pts;
+    },
+    get dts() {
+      return nativePacket.dts;
+    },
+    get duration() {
+      return nativePacket.duration;
+    },
+    get streamIndex() {
+      return nativePacket.streamIndex;
+    },
+    get isKeyFrame() {
+      return nativePacket.isKeyFrame;
+    },
+    get pos() {
+      return nativePacket.pos;
+    },
+    get isValid() {
+      return nativePacket.isValid;
+    },
 
     setTimestamps(pts: number, dts?: number): void {
       nativePacket.setPts(pts);
@@ -157,19 +175,19 @@ export async function createPacket(options: PacketOptions): Promise<Packet> {
         duration: clonedNative.duration,
         streamIndex: clonedNative.streamIndex,
         isKeyFrame: clonedNative.isKeyFrame,
-        pos: clonedNative.pos
+        pos: clonedNative.pos,
       });
     },
 
     [Symbol.dispose](): void {
       nativePacket.dispose();
-    }
+    },
   };
 }
 
 /**
  * Convenience function to create a packet from raw sample data with minimal options
- * 
+ *
  * @example
  * ```typescript
  * const sampleData = new Uint8Array([]);
@@ -180,13 +198,13 @@ export async function createPacketFromSample(
   data: Uint8Array,
   pts: number = -1,
   dts: number = -1,
-  isKeyFrame: boolean = false
+  isKeyFrame: boolean = false,
 ): Promise<Packet> {
   return createPacket({
     data,
     pts,
     dts,
-    isKeyFrame
+    isKeyFrame,
   });
 }
 
@@ -204,12 +222,12 @@ export async function validatePacket(options: PacketOptions): Promise<{
 
     return {
       valid: packet.isValid,
-      size: packet.size
+      size: packet.size,
     };
   } catch (error) {
     return {
       valid: false,
-      error: error instanceof Error ? error.message : String(error)
+      error: error instanceof Error ? error.message : String(error),
     };
   }
-} 
+}

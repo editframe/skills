@@ -6,12 +6,12 @@ import fm from "front-matter";
 /**
  * Vite plugin to generate content index at build time
  * This eliminates runtime file I/O and provides a clean API for content access
- * 
+ *
  * Generates: services/web/build/content-index.json
  */
 export function viteContentIndexPlugin(): Plugin {
   const contentDir = resolve(process.cwd(), "services/web/app/content");
-  
+
   return {
     name: "vite-content-index",
     buildStart() {
@@ -34,7 +34,7 @@ export function viteContentIndexPlugin(): Plugin {
           const indexDocs = (dir: string, prefix = ""): Record<string, any> => {
             const entries = readdirSync(dir);
             const result: Record<string, any> = {};
-            
+
             for (const entry of entries) {
               const fullPath = join(dir, entry);
               if (statSync(fullPath).isDirectory()) {
@@ -42,11 +42,17 @@ export function viteContentIndexPlugin(): Plugin {
               } else if (entry.endsWith(".mdx")) {
                 const content = readFileSync(fullPath, "utf-8");
                 const { attributes } = fm(content);
-                const slug = join(prefix, entry.replace(".mdx", "")).replace(/\\/g, "/");
+                const slug = join(prefix, entry.replace(".mdx", "")).replace(
+                  /\\/g,
+                  "/",
+                );
                 result[slug] = {
                   path: slug,
-                  title: attributes.meta?.find((m: any) => m.title)?.title || "",
-                  description: attributes.meta?.find((m: any) => m.name === "description")?.content || "",
+                  title:
+                    attributes.meta?.find((m: any) => m.title)?.title || "",
+                  description:
+                    attributes.meta?.find((m: any) => m.name === "description")
+                      ?.content || "",
                   publishedDate: attributes.published_date || "",
                 };
               }
@@ -59,14 +65,18 @@ export function viteContentIndexPlugin(): Plugin {
         // Index guides
         const guidesDir = join(contentDir, "guides");
         if (statSync(guidesDir).isDirectory()) {
-          const guideFiles = readdirSync(guidesDir).filter(f => f.endsWith(".mdx"));
-          index.guides = guideFiles.map(file => {
+          const guideFiles = readdirSync(guidesDir).filter((f) =>
+            f.endsWith(".mdx"),
+          );
+          index.guides = guideFiles.map((file) => {
             const content = readFileSync(join(guidesDir, file), "utf-8");
             const { attributes } = fm(content);
             return {
               slug: `/guides/${file.replace(".mdx", "")}`,
               title: attributes.meta?.find((m: any) => m.title)?.title || "",
-              description: attributes.meta?.find((m: any) => m.name === "description")?.content || "",
+              description:
+                attributes.meta?.find((m: any) => m.name === "description")
+                  ?.content || "",
               featured: attributes.featured || false,
               publishedDate: attributes.published_date || "",
             };
@@ -76,8 +86,10 @@ export function viteContentIndexPlugin(): Plugin {
         // Index blogs
         const blogsDir = join(contentDir, "blogs");
         if (statSync(blogsDir).isDirectory()) {
-          const blogFiles = readdirSync(blogsDir).filter(f => f.endsWith(".mdx"));
-          index.blogs = blogFiles.map(file => {
+          const blogFiles = readdirSync(blogsDir).filter((f) =>
+            f.endsWith(".mdx"),
+          );
+          index.blogs = blogFiles.map((file) => {
             const content = readFileSync(join(blogsDir, file), "utf-8");
             const { attributes } = fm(content);
             return {
@@ -92,14 +104,18 @@ export function viteContentIndexPlugin(): Plugin {
         // Index changelogs
         const changelogsDir = join(contentDir, "changelogs");
         if (statSync(changelogsDir).isDirectory()) {
-          const changelogFiles = readdirSync(changelogsDir).filter(f => f.endsWith(".mdx"));
-          index.changelogs = changelogFiles.map(file => {
+          const changelogFiles = readdirSync(changelogsDir).filter((f) =>
+            f.endsWith(".mdx"),
+          );
+          index.changelogs = changelogFiles.map((file) => {
             const content = readFileSync(join(changelogsDir, file), "utf-8");
             const { attributes } = fm(content);
             return {
               slug: `/changelogs/${file.replace(".mdx", "")}`,
               title: attributes.meta?.find((m: any) => m.title)?.title || "",
-              description: attributes.meta?.find((m: any) => m.name === "description")?.content || "",
+              description:
+                attributes.meta?.find((m: any) => m.name === "description")
+                  ?.content || "",
               publishedDate: attributes.published_date || "",
             };
           });
@@ -117,4 +133,3 @@ export function viteContentIndexPlugin(): Plugin {
     },
   };
 }
-

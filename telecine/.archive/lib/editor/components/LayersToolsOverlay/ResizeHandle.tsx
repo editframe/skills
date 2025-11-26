@@ -54,7 +54,7 @@ export const ResizeHandle = observer(
           onDrag(_pointerDown, _pointerLatest, movement) {
             const initialCorner = layer.cornerPoint(
               ADJACENT_HANDLES[x],
-              ADJACENT_HANDLES[y]
+              ADJACENT_HANDLES[y],
             );
 
             const rotatedDelta = rotatePoint(
@@ -62,7 +62,7 @@ export const ResizeHandle = observer(
               0,
               movement.x / editor.panAndZoom.zoom,
               movement.y / editor.panAndZoom.zoom,
-              -layer.zRadians
+              -layer.zRadians,
             );
 
             if (x === Handle.START) {
@@ -81,18 +81,18 @@ export const ResizeHandle = observer(
 
             const newCorner = layer.cornerPoint(
               ADJACENT_HANDLES[x],
-              ADJACENT_HANDLES[y]
+              ADJACENT_HANDLES[y],
             );
 
             layer.setTranslateX(
-              layer.translateX + (initialCorner.x - newCorner.x)
+              layer.translateX + (initialCorner.x - newCorner.x),
             );
             layer.setTranslateY(
-              layer.translateY + (initialCorner.y - newCorner.y)
+              layer.translateY + (initialCorner.y - newCorner.y),
             );
           },
         }).eventHandlers}
       />
     );
-  }
+  },
 );

@@ -41,7 +41,7 @@ services:
     # Don't expose port directly - only accessible through Traefik
     expose:
       - "4321"
-    command: ["sleep", "infinity"]
+    command: ["npx", "tsx", "./dev-projects/start.ts"]
     networks:
       - default
       - traefik-shared

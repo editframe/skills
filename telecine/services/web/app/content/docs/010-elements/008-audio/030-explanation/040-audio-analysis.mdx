@@ -1,0 +1,54 @@
+---
+meta:
+  - title: Audio Analysis in Audio Elements
+  - name: description
+    content: Understanding FFT properties and audio frequency analysis for waveform visualizations
+headers:
+    Cache-Control: no-cache
+---
+
+## Audio Analysis in Audio Elements
+
+Audio elements expose real-time audio frequency data through FFT (Fast Fourier Transform) analysis, enabling waveform visualizations and audio-reactive effects without requiring separate audio processing pipelines.
+
+### Why Real-Time Audio Analysis Matters
+
+Using separate audio analysis tools or preprocessing steps to extract frequency data presents these engineering challenges:
+
+- **Preprocessing overhead:** Audio analysis must happen before visualization, requiring additional build steps
+- **Static data:** Pre-computed waveforms can't respond to real-time playback changes
+- **Pipeline complexity:** Separate tools and formats for audio analysis vs playback
+
+Editframe's approach integrates audio analysis directly into the audio element, providing:
+
+- **Real-time frequency data:** FFT analysis happens during playback, enabling dynamic visualizations
+- **Unified API:** Audio data accessed through the same element that handles audio playback
+- **No preprocessing:** Waveforms and audio-reactive effects work immediately without build steps
+
+### How It Works
+
+The audio element performs FFT analysis in real-time during playback, exposing frequency magnitude data that updates continuously. This enables waveform visualizations and audio-reactive effects without separate processing.
+
+### FFT Configuration
+
+The system provides configurable FFT parameters to optimize for different visualization needs:
+
+```jsx
+<Audio 
+  src="..." 
+  fftSize={1024}        // Higher = more granular (must be power of 2)
+  fftDecay={16}         // Higher = smoother animation (more frames averaged)
+  fftGain={5}           // Higher = more pronounced waveform (amplitude multiplier)
+  interpolateFrequencies={true}  // Fill missing frequencies (e.g., telephone-quality audio)
+/>
+<Waveform target="audio-id" mode="wave" />
+```
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup mode="contain" className="aspect-[1/1] w-[500px] h-[500px] bg-black flex flex-col items-center justify-center">
+    <Audio src="https://assets.editframe.com/card-joker.mp3" id="analysis-audio" fftSize={1024} />
+    <Waveform target="analysis-audio" mode="wave" className="w-full h-[200px] block" />
+  </Timegroup>
+</Demonstration>
+
+For property configuration details and technical specifications, see the [Audio Element Reference](/docs/elements/audio/reference#audio-analysis).

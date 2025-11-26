@@ -9,7 +9,10 @@ import { RangeHeader } from "@/util/RangeHeader.server";
 import type { Route } from "./+types/trackData";
 import { requireCookieOrTokenSession } from "@/util/requireSession.server";
 
-export const loader = async ({ request, params: { file_id, track_id } }: Route.LoaderArgs) => {
+export const loader = async ({
+  request,
+  params: { file_id, track_id },
+}: Route.LoaderArgs) => {
   const session = await requireCookieOrTokenSession(request);
   const track = await requireQueryAs(
     session,
@@ -44,10 +47,7 @@ export const loader = async ({ request, params: { file_id, track_id } }: Route.L
   const rangeHeader = request.headers.get("Range");
   if (rangeHeader) {
     const range = RangeHeader.parse(rangeHeader, track.byte_size);
-    const readStream = await storageProvider.createReadStream(
-      filePath,
-      range,
-    );
+    const readStream = await storageProvider.createReadStream(filePath, range);
     return new Response(createReadableStreamFromReadable(readStream), {
       status: 206,
       headers: {

@@ -1,0 +1,41 @@
+---
+meta:
+  - title: Create Karaoke-Style Captions
+  - name: description
+    content: Learn how to create progressive word highlighting with karaoke-style fill animations
+headers:
+    Cache-Control: no-cache
+---
+
+## Create Karaoke-Style Captions
+
+Create progressive word highlighting with fill animations using context elements and CSS gradients.
+
+### Solution
+
+Combine context elements with gradient fill:
+
+```html
+<ef-captions captions-script="karaoke-captions" className="text-center">
+  <ef-captions-before-active-word className="text-yellow-300 text-2xl font-bold" />
+  <ef-captions-active-word className="text-white text-2xl font-bold karaoke-word" />
+  <ef-captions-after-active-word className="text-gray-400 text-2xl font-bold" />
+</ef-captions>
+```
+
+```css
+.karaoke-word {
+  background: linear-gradient(90deg, #fbbf24 0%, #f59e0b calc(var(--ef-progress) * 100%), #ffffff calc(var(--ef-progress) * 100%), #ffffff 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: karaoke-fill calc(var(--ef-duration) * 1ms) linear;
+}
+```
+
+Use `calc(var(--ef-progress) * 100%)` in gradient stops. `--ef-progress` is a number (0-1), not a percentage.
+
+### Related Documentation
+
+- [CSS Animation Variables explanation](/docs/elements/captions/explanation/css-animation-variables) - Understand CSS variables
+- [Reference](/docs/elements/captions/reference) - Complete child element documentation

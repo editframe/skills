@@ -1,0 +1,144 @@
+---
+meta:
+  - title: Production vs Development Workflows
+  - name: description
+    content: Understanding when to use src versus assetId for video elements
+headers:
+    Cache-Control: no-cache
+---
+
+## Production vs Development Workflows
+
+The `src` and `assetId` properties serve different architectural needs: real-time preview requires flexibility, while production rendering requires parallel processing capabilities.
+
+### The Challenge: Different Requirements for Different Contexts
+
+Video playback has fundamentally different requirements in development vs production:
+
+**Development/Preview needs:**
+- Work with arbitrary video URLs (user uploads, external sources)
+- Immediate feedback without preprocessing
+- Flexibility to test with any video source
+
+**Production rendering needs:**
+- Parallel processing across worker fleet
+- Precise segment-level access for efficiency
+- Guaranteed availability and consistency
+
+A single approach can't satisfy both needs without compromising one or the other.
+
+### Development and Preview: src Property
+
+The `src` property enables instant playback of arbitrary video URLs through JIT transcoding:
+
+```jsx
+<Video src="https://example.com/video.mp4" />
+```
+
+**Architectural advantage:** No preprocessing required - provide any video URL and it works immediately. Perfect for development, testing, and real-time preview interfaces where users need instant feedback.
+
+**Limitation:** Not suitable for production rendering due to parallel processing requirements.
+
+### Production Rendering: assetId Property
+
+The `assetId` property enables parallel rendering across a worker fleet:
+
+```jsx
+<Video assetId="upload-123abc" />
+```
+
+**Architectural advantage:** Enables parallel rendering where multiple workers render different timeline slices simultaneously. This typically reduces render time significantly and scales largely linearly as you add more workers.
+
+**Why parallel rendering matters:**
+- **Speed:** Multiple workers render simultaneously instead of sequentially
+- **Efficiency:** Each worker processes only the portion it needs
+- **Scalability:** Add more workers to reduce render time linearly
+
+**Why src can't work for production:**
+Production rendering requires parallel processing capabilities that only work with pre-processed, uploaded assets. The `src` property provides instant playback flexibility but doesn't support the parallel rendering architecture needed for production.
+
+**When to use each:**
+- `src`: Development, testing, real-time preview interfaces
+- `assetId`: Production rendering jobs, final output generation
+
+### Example: Comparing src vs assetId
+
+Here's how each approach works in practice:
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <div className="flex flex-col gap-4 w-[720px]">
+    <div>
+      <h3 className="text-white mb-2">Development: Using src</h3>
+      <Timegroup mode="contain" className="w-full h-[200px] bg-black">
+        <Video 
+          src="https://assets.editframe.com/bars-n-tone.mp4" 
+          className="size-full object-contain"
+        />
+      </Timegroup>
+      <code className="text-xs text-gray-400 block mt-2">
+        src="https://assets.editframe.com/bars-n-tone.mp4"
+      </code>
+      <p className="text-xs text-gray-400 mt-1">
+        Instant playback, works with any video URL, perfect for preview
+      </p>
+    </div>
+    <div>
+      <h3 className="text-white mb-2">Production: Using assetId</h3>
+      <Timegroup mode="contain" className="w-full h-[200px] bg-black flex items-center justify-center">
+        <div className="text-gray-500 text-sm">
+          Production rendering uses assetId for parallel processing
+        </div>
+      </Timegroup>
+      <code className="text-xs text-gray-400 block mt-2">
+        assetId="upload-123abc"
+      </code>
+      <p className="text-xs text-gray-400 mt-1">
+        Enables parallel rendering across worker fleet
+      </p>
+    </div>
+  </div>
+</Demonstration>
+
+**Development workflow with src:**
+```jsx
+// Perfect for preview interfaces and testing
+<Video src="https://user-uploaded-video.com/video.mp4" />
+// ✅ Works immediately with any URL
+// ✅ No preprocessing required
+// ✅ Instant feedback for users
+// ❌ Not suitable for production rendering
+```
+
+**Production workflow with assetId:**
+```jsx
+// Required for production rendering
+<Video assetId="upload-abc123def456" />
+// ✅ Enables parallel rendering
+// ✅ Precise segment-level access
+// ✅ Optimized for worker fleet
+// ❌ Requires asset upload and processing first
+```
+
+**Complete workflow example:**
+```jsx
+// 1. Development: Preview with src
+function PreviewEditor({ videoUrl }) {
+  return <Video src={videoUrl} />;  // Instant preview
+}
+
+// 2. Production: Render with assetId
+async function renderComposition(composition) {
+  // Upload video first
+  const asset = await uploadVideo(composition.videoFile);
+  
+  // Then render with assetId
+  return render({
+    video: <Video assetId={asset.id} />
+  });
+}
+```
+
+The dual approach provides the right tool for each context: flexibility for development, efficiency for production.
+
+For complete property details, see the [Video Element Reference](/docs/elements/video/reference#media-source).
+

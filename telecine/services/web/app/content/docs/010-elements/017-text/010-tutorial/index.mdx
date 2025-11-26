@@ -1,0 +1,169 @@
+---
+meta:
+  - title: Text Element Tutorial
+  - name: description
+    content: Step-by-step tutorial for creating animated text with Editframe Text Element
+headers:
+    Cache-Control: no-cache
+---
+
+## Tutorial: Your First Text Animation
+
+This tutorial will guide you through creating animated text effects with the Editframe text element. Each step builds on the previous one, teaching you the fundamental skills needed for text animations.
+
+### Step 1: Basic Word-by-Word Animation
+
+Let's start with the simplest text animation - splitting text into words.
+
+**What you'll learn:** How to split text by words and display each word as a separate segment.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <style>{`
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .fade-in {
+      animation: fadeIn 0.3s ease-out;
+    }
+  `}</style>
+  <Timegroup mode="contain" className="w-[720px] h-[405px] flex items-center justify-center bg-gradient-to-r from-blue-900 to-purple-900">
+    <Text split="word" duration="3s" className="text-center text-white text-2xl">
+      <template>
+        <TextSegment className="fade-in" />
+      </template>
+      Hello world this is animated text
+    </Text>
+  </Timegroup>
+</Demonstration>
+
+**Try it yourself:** Change `split="word"` to see how the text splits differently. Try adding your own CSS animation to the TextSegment.
+
+### Step 2: Add Stagger Timing
+
+Now let's add sequential timing so words appear one after another.
+
+**What you'll learn:** How to use the `stagger` attribute to create sequential reveals.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <style>{`
+    @keyframes bounceIn {
+      0% {
+        transform: scale(0.6) rotate(-10deg);
+      }
+      50% {
+        transform: scale(1.05) rotate(3deg);
+      }
+      100% {
+        transform: scale(1) rotate(0deg);
+      }
+    }
+    .bounce-in {
+      animation: bounceIn 0.3s ease-out;
+    }
+  `}</style>
+  <Timegroup mode="contain" className="w-[720px] h-[405px] flex items-center justify-center bg-gradient-to-r from-blue-900 to-purple-900">
+    <Text split="word" stagger="50ms" duration="4s" className="text-center text-white text-2xl">
+      <template>
+        <TextSegment className="bounce-in" />
+      </template>
+      Hello world this is a staggered animation
+    </Text>
+  </Timegroup>
+</Demonstration>
+
+**Try it yourself:** Adjust the `stagger` value to make words appear faster or slower. Try different values like `"100ms"` or `"25ms"`.
+
+### Step 3: Character-by-Character Typewriter
+
+Switch to character splitting for a typewriter effect.
+
+**What you'll learn:** How to split text by characters for letter-by-letter animations.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <style>{`
+    @keyframes typewriter {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .typewriter {
+      opacity: 0;
+      animation: typewriter 0.1s ease-out;
+    }
+  `}</style>
+  <Timegroup mode="contain" className="w-[720px] h-[405px] flex items-center justify-center bg-gradient-to-r from-green-900 to-blue-900">
+    <Text split="char" stagger="50ms" duration="6s" className="text-center text-white text-3xl font-mono">
+      <template>
+        <TextSegment className="typewriter" />
+      </template>
+      TYPEWRITER
+    </Text>
+  </Timegroup>
+</Demonstration>
+
+**Try it yourself:** Experiment with different stagger values for character mode. Notice how characters within words stay together on the same line.
+
+### Step 4: Customize with Templates
+
+Use the template pattern to style segments and create layered effects.
+
+**What you'll learn:** How to use templates to customize segment appearance and create multiple segments per character.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup mode="contain" className="w-[720px] h-[405px] flex items-center justify-center bg-gradient-to-r from-pink-900 to-rose-900">
+    <Text split="char" stagger="20ms" duration="4s" className="text-center text-white text-4xl font-bold">
+      <template>
+        <TextSegment className="text-pink-300/30 blur-sm" style={{ position: "absolute", transform: "translate(2px, 2px)" }} />
+        <TextSegment className="text-white relative" />
+      </template>
+      SHADOW
+    </Text>
+  </Timegroup>
+</Demonstration>
+
+**Try it yourself:** Add more segments to the template to create additional layers. Each character will get all segments from the template.
+
+### Step 5: Line-by-Line Reveals
+
+Split text by lines for paragraph-by-paragraph reveals.
+
+**What you'll learn:** How to split text by newlines for multi-line animations.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <style>{`
+    @keyframes fadeInLine {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .fade-in-line {
+      animation: fadeInLine 0.5s ease-out paused;
+    }
+  `}</style>
+  <Timegroup mode="contain" className="w-[720px] h-[405px] flex items-center justify-center bg-gradient-to-r from-indigo-900 to-teal-900">
+    <Text split="line" stagger="1000ms" easing="ease-in-out" duration="8s" className="text-center text-white text-xl">
+      <template>
+        <TextSegment className="fade-in-line" />
+      </template>
+      First line of text
+Second line continues
+Third line completes
+    </Text>
+  </Timegroup>
+</Demonstration>
+
+**Try it yourself:** Add more lines to your text and adjust the stagger timing. Try different easing functions like `"ease-out"` or `"ease-in"`.
+
+### Next Steps
+
+Now that you understand the basics, explore:
+- [How-To Guides](/docs/elements/text/how-to/) for specific tasks like typewriter effects and staggered animations
+- [Explanations](/docs/elements/text/explanation/) for architectural concepts and deeper understanding
+- [Reference](/docs/elements/text/reference) for complete property documentation
+
+

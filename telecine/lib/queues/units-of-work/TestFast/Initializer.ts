@@ -12,7 +12,10 @@ const QUEUE_URL = envString(
   "ws://localhost:3000",
 );
 const MAX_WORKER_COUNT = envInt("TEST_FAST_INITIALIZER_MAX_WORKER_COUNT", 1);
-const WORKER_CONCURRENCY = envInt("TEST_FAST_INITIALIZER_WORKER_CONCURRENCY", 1);
+const WORKER_CONCURRENCY = envInt(
+  "TEST_FAST_INITIALIZER_WORKER_CONCURRENCY",
+  1,
+);
 
 export interface TestFastInitializerPayload {
   testId: string;
@@ -56,7 +59,9 @@ export const TestFastInitializerWorker = new Worker({
 
     await TestFastWorkflow.enqueueJobs(...mainJobs);
 
-    logger.debug({ testId, jobCount }, "TestFastInitializerWorker enqueued main jobs");
+    logger.debug(
+      { testId, jobCount },
+      "TestFastInitializerWorker enqueued main jobs",
+    );
   },
 });
-

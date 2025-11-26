@@ -1,0 +1,43 @@
+---
+meta:
+  - title: Use Play/Pause Button
+  - name: description
+    content: Add play/pause functionality with ef-toggle-play
+headers:
+    Cache-Control: no-cache
+---
+
+## Use Play/Pause Button
+
+**Problem:** You need play/pause functionality for video playback.
+
+**Solution:** Use `ef-toggle-play` with `play` and `pause` slots.
+
+```html
+<ef-toggle-play>
+  <button slot="play">▶ Play</button>
+  <button slot="pause">⏸ Pause</button>
+</ef-toggle-play>
+```
+
+The element automatically shows the `play` slot when paused and the `pause` slot when playing. Clicking either slot toggles playback.
+
+**Custom styling:**
+
+```html
+<ef-toggle-play>
+  <button slot="play" className="px-4 py-2 bg-blue-600 text-white rounded">
+    Play
+  </button>
+  <button slot="pause" className="px-4 py-2 bg-orange-600 text-white rounded">
+    Pause
+  </button>
+</ef-toggle-play>
+```
+
+**Reference:** See [Toggle Play Reference](/docs/controls/reference/toggle-play) for all properties.
+
+
+
+
+

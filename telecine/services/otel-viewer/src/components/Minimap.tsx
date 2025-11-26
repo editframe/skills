@@ -12,7 +12,14 @@ interface MinimapProps {
 
 type DragMode = "none" | "selection" | "move" | "resize-start" | "resize-end";
 
-export function Minimap({ trace, zoomStart, zoomEnd, onZoomChange, hoveredLogIndex, onLogHover }: MinimapProps) {
+export function Minimap({
+  trace,
+  zoomStart,
+  zoomEnd,
+  onZoomChange,
+  hoveredLogIndex,
+  onLogHover,
+}: MinimapProps) {
   const [dragMode, setDragMode] = useState<DragMode>("none");
   const [dragStartX, setDragStartX] = useState(0);
   const [initialZoomStart, setInitialZoomStart] = useState(0);
@@ -39,7 +46,10 @@ export function Minimap({ trace, zoomStart, zoomEnd, onZoomChange, hoveredLogInd
 
         const zoomFactor = e.deltaY > 0 ? 1.1 : 0.9;
         const currentWidth = currEnd - currStart;
-        const newWidth = Math.min(100, Math.max(0.5, currentWidth * zoomFactor));
+        const newWidth = Math.min(
+          100,
+          Math.max(0.5, currentWidth * zoomFactor),
+        );
 
         if (Math.abs(newWidth - currentWidth) < 0.01) {
           return;
@@ -48,8 +58,8 @@ export function Minimap({ trace, zoomStart, zoomEnd, onZoomChange, hoveredLogInd
         const leftRatio = (mousePercent - currStart) / currentWidth;
         const rightRatio = (currEnd - mousePercent) / currentWidth;
 
-        let newStart = mousePercent - (newWidth * leftRatio);
-        let newEnd = mousePercent + (newWidth * rightRatio);
+        let newStart = mousePercent - newWidth * leftRatio;
+        let newEnd = mousePercent + newWidth * rightRatio;
 
         if (newStart < 0) {
           newEnd = newEnd - newStart;
@@ -68,7 +78,7 @@ export function Minimap({ trace, zoomStart, zoomEnd, onZoomChange, hoveredLogInd
         const { start: currStart, end: currEnd } = currentZoomRef.current;
         const currentWidth = currEnd - currStart;
         const delta = e.shiftKey ? e.deltaY : e.deltaX;
-        const panAmount = (delta / 10);
+        const panAmount = delta / 10;
 
         let newStart = currStart + panAmount;
         let newEnd = currEnd + panAmount;
@@ -86,10 +96,10 @@ export function Minimap({ trace, zoomStart, zoomEnd, onZoomChange, hoveredLogInd
       }
     };
 
-    minimap.addEventListener('wheel', handleWheelNative, { passive: false });
+    minimap.addEventListener("wheel", handleWheelNative, { passive: false });
 
     return () => {
-      minimap.removeEventListener('wheel', handleWheelNative);
+      minimap.removeEventListener("wheel", handleWheelNative);
     };
   }, [onZoomChange]);
 
@@ -174,16 +184,19 @@ export function Minimap({ trace, zoomStart, zoomEnd, onZoomChange, hoveredLogInd
   const rootSpans = useMemo(() => {
     if (!trace) return [];
     return trace.allSpans.filter(
-      (s) => !s.parentSpanId || !trace.allSpans.find((p) => p.spanId === s.parentSpanId)
+      (s) =>
+        !s.parentSpanId ||
+        !trace.allSpans.find((p) => p.spanId === s.parentSpanId),
     );
   }, [trace]);
 
   const flattenSpans = useMemo(() => {
     if (!trace || rootSpans.length === 0) return [];
 
-    const result: Array<{ span: typeof trace.allSpans[0]; level: number }> = [];
+    const result: Array<{ span: (typeof trace.allSpans)[0]; level: number }> =
+      [];
 
-    const processSpan = (span: typeof trace.allSpans[0], level: number) => {
+    const processSpan = (span: (typeof trace.allSpans)[0], level: number) => {
       result.push({ span, level });
       const children = trace.allSpans
         .filter((s) => s.parentSpanId === span.spanId)
@@ -216,34 +229,40 @@ export function Minimap({ trace, zoomStart, zoomEnd, onZoomChange, hoveredLogInd
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, rect.width, rect.height);
 
     const levelColors = [
-      '#3b82f6',
-      '#8b5cf6',
-      '#ec4899',
-      '#f59e0b',
-      '#10b981',
-      '#06b6d4',
+      "#3b82f6",
+      "#8b5cf6",
+      "#ec4899",
+      "#f59e0b",
+      "#10b981",
+      "#06b6d4",
     ];
-    const errorColor = '#ef4444';
+    const errorColor = "#ef4444";
 
     flattenSpans.forEach(({ span, level }) => {
-      const relativeStart = (Number(span.startTime - trace.minTime) / Number(trace.duration));
-      const relativeWidth = Math.max(0.0005, (Number(span.duration) / Number(trace.duration)));
-      const topOffset = 10 + (level * rowHeight);
+      const relativeStart =
+        Number(span.startTime - trace.minTime) / Number(trace.duration);
+      const relativeWidth = Math.max(
+        0.0005,
+        Number(span.duration) / Number(trace.duration),
+      );
+      const topOffset = 10 + level * rowHeight;
       const colorIndex = level % 6;
 
-      ctx.fillStyle = span.isError ? errorColor : (levelColors[colorIndex] || levelColors[0]);
+      ctx.fillStyle = span.isError
+        ? errorColor
+        : levelColors[colorIndex] || levelColors[0];
       ctx.fillRect(
         relativeStart * rect.width,
         topOffset,
         Math.max(1, relativeWidth * rect.width),
-        Math.max(1, rowHeight - 0.5)
+        Math.max(1, rowHeight - 0.5),
       );
     });
   }, [flattenSpans, trace, rowHeight]);
@@ -260,14 +279,17 @@ export function Minimap({ trace, zoomStart, zoomEnd, onZoomChange, hoveredLogInd
     <div className="minimap" ref={minimapRef} onMouseDown={handleMouseDown}>
       <div className="log-markers">
         {logsInTrace.map((log, i) => {
-          const logTime = (Number(log.timeUnixNano - trace.minTime) / Number(trace.duration)) * 100;
+          const logTime =
+            (Number(log.timeUnixNano - trace.minTime) /
+              Number(trace.duration)) *
+            100;
           const severityClass = log.severityText.toLowerCase();
           const isHovered = hoveredLogIndex === i;
 
           return (
             <div
               key={i}
-              className={`log-marker log-${severityClass} ${isHovered ? 'hovered' : ''}`}
+              className={`log-marker log-${severityClass} ${isHovered ? "hovered" : ""}`}
               style={{ left: `${logTime}%` }}
               title={`[${log.severityText}] ${log.body}`}
               onMouseEnter={() => onLogHover(i)}
@@ -276,9 +298,19 @@ export function Minimap({ trace, zoomStart, zoomEnd, onZoomChange, hoveredLogInd
           );
         })}
       </div>
-      <canvas ref={canvasRef} className="minimap-bars" style={{ width: '100%', height: '100%', position: 'absolute' }} />
-      <div className="minimap-overlay-left" style={{ width: `${selectionLeft}%` }} />
-      <div className="minimap-overlay-right" style={{ left: `${zoomEnd}%`, width: `${100 - zoomEnd}%` }} />
+      <canvas
+        ref={canvasRef}
+        className="minimap-bars"
+        style={{ width: "100%", height: "100%", position: "absolute" }}
+      />
+      <div
+        className="minimap-overlay-left"
+        style={{ width: `${selectionLeft}%` }}
+      />
+      <div
+        className="minimap-overlay-right"
+        style={{ left: `${zoomEnd}%`, width: `${100 - zoomEnd}%` }}
+      />
       <div
         className="minimap-selection"
         style={{

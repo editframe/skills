@@ -16,7 +16,7 @@ interface CodeBlockProps extends PropsWithChildren {
 }
 
 const removeCommonIndentation = (code: string) => {
-  const lines = code.split('\n');
+  const lines = code.split("\n");
   let mindent: null | number = null;
 
   for (const line of lines) {
@@ -39,7 +39,7 @@ const removeCommonIndentation = (code: string) => {
         const leadingWhitespace = line.match(/^(\s*)/)?.[1]?.length ?? 0;
         return leadingWhitespace >= m ? line.slice(m) : line;
       })
-      .join('\n');
+      .join("\n");
   }
 
   return code;
@@ -50,18 +50,18 @@ export const CodeBlock: FC<CodeBlockProps> = ({ children, className = "" }) => {
 
   useEffect(() => {
     const updateTheme = () => {
-      const isDark = document.documentElement.classList.contains('dark');
+      const isDark = document.documentElement.classList.contains("dark");
       setIsDarkMode(isDark);
     };
 
     updateTheme();
 
     window.addEventListener("theme", updateTheme);
-    
+
     const observer = new MutationObserver(updateTheme);
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['class'],
+      attributeFilter: ["class"],
     });
 
     return () => {
@@ -82,9 +82,9 @@ export const CodeBlock: FC<CodeBlockProps> = ({ children, className = "" }) => {
       style={isDarkMode ? nightOwl : github}
       className={`overflow-scroll ${className}`}
       customStyle={{
-        fontSize: '0.875rem', // text-sm (14px)
-        lineHeight: '1.625', // leading-relaxed
-        padding: '0.75rem', // p-3
+        fontSize: "0.875rem", // text-sm (14px)
+        lineHeight: "1.625", // leading-relaxed
+        padding: "0.75rem", // p-3
         margin: 0,
       }}
     >

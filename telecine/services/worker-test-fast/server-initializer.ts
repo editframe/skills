@@ -7,4 +7,3 @@ import { TestFastInitializerWorker } from "@/queues/units-of-work/TestFast/Initi
 import "@/queues/units-of-work/TestFast/Workflow";
 
 createWorkerServer(TestFastInitializerWorker);
-

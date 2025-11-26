@@ -1,0 +1,79 @@
+---
+meta:
+  - title: Frame Quantization
+  - name: description
+    content: How timeline ruler switches to frame-accurate markers for precise editing
+headers:
+    Cache-Control: no-cache
+---
+
+## Frame Quantization: Frame-Accurate Timeline Markers
+
+Video editing requires frame-accurate positioning for precise cuts and timing. When zoomed in enough, time-based markers become insufficient—editors need to see individual frames. The ruler automatically switches to frame-based markers when zoom level provides sufficient pixel density.
+
+### Engineering Challenges
+
+Displaying frame markers presents these constraints: frame markers require sufficient pixel density (typically 5px per frame minimum), frame intervals must align with video frame rate, and switching between time-based and frame-based markers must be seamless. Manual frame marker implementation requires calculating frame positions, handling different frame rates, and managing marker type transitions.
+
+The core challenge is providing frame-accurate markers when needed while maintaining time-based markers for overview, with automatic switching based on zoom level.
+
+### The Solution: Automatic Frame Marker System
+
+The ruler calculates pixels per frame based on zoom scale and frame rate. When pixels per frame exceeds the threshold (5px), it switches from time-based markers to frame-based markers rendered on a canvas layer. Frame positions are quantized to exact frame boundaries using the configured fps value.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource>
+  <div style={{ position: 'relative', width: '1000px', height: '32px', border: '1px solid #e5e7eb' }}>
+    <ef-timeline-ruler
+      duration-ms="5000"
+      zoom-scale="10.0"
+      container-width="10000"
+      fps="30"
+    ></ef-timeline-ruler>
+  </div>
+</Demonstration>
+
+**Architectural advantages:**
+- **Automatic switching:** Seamlessly transitions between time and frame markers based on zoom
+- **Frame-accurate positioning:** Each frame marker aligns precisely with frame boundaries
+- **Performance optimized:** Frame markers rendered on canvas for efficient updates
+- **Viewport-based rendering:** Only visible frame markers are drawn, improving performance
+
+### Benefits for Your Workflow
+
+**Precise editing:** Frame markers enable frame-accurate cuts and timing adjustments. Editors can position elements with single-frame precision when zoomed in.
+
+**Seamless zoom experience:** Automatic switching between time and frame markers provides appropriate detail at each zoom level. No manual mode switching required.
+
+**Performance:** Canvas-based frame rendering and viewport culling ensure smooth performance even with thousands of frames. Only visible markers are rendered.
+
+**Frame rate flexibility:** Supports any frame rate (24, 30, 60 fps, etc.) with accurate frame positioning. Frame intervals adjust automatically based on fps value.
+
+### Example: Frame Marker Behavior
+
+Frame markers appear automatically when zoomed in:
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource>
+  <div>
+    <div style={{ position: 'relative', width: '1000px', height: '32px', border: '1px solid #e5e7eb', marginBottom: '16px' }}>
+      <ef-timeline-ruler
+        duration-ms="10000"
+        zoom-scale="1.0"
+        container-width="1000"
+        fps="30"
+      ></ef-timeline-ruler>
+    </div>
+    <div style={{ position: 'relative', width: '1000px', height: '32px', border: '1px solid #e5e7eb' }}>
+      <ef-timeline-ruler
+        duration-ms="10000"
+        zoom-scale="10.0"
+        container-width="10000"
+        fps="30"
+      ></ef-timeline-ruler>
+    </div>
+  </div>
+</Demonstration>
+
+At high zoom levels, frame markers provide precise visual reference for each frame. The transition happens automatically—no configuration needed beyond setting fps.
+
+The ruler quantizes all time positions to frame boundaries using the fps value, ensuring markers align with actual video frames for accurate editing.
+

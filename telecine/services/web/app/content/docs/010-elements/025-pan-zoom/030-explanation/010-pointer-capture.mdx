@@ -1,0 +1,55 @@
+---
+meta:
+  - title: Pointer Capture and Transform Coordination
+  - name: description
+    content: How pan-zoom elements handle pointer events efficiently for smooth panning interactions
+headers:
+    Cache-Control: no-cache
+---
+
+## Pointer Capture and Transform Coordination
+
+Pan-zoom elements use pointer capture to ensure smooth, reliable panning interactions across different input devices and scenarios.
+
+### The Challenge
+
+When implementing pan interactions, pointer events can be lost if the pointer moves outside the element boundaries during dragging. This creates a poor user experience where panning stops unexpectedly when the cursor leaves the element area. Additionally, coordinating transform updates with pointer movements requires careful state management to prevent jitter and ensure consistent behavior.
+
+### The Solution
+
+Pan-zoom elements use pointer capture to maintain control of pointer events even when the pointer moves outside the element. When a pointer down event occurs, the element captures the pointer, ensuring all subsequent move and up events are delivered to the element regardless of pointer position. This enables smooth panning that continues even when the cursor moves outside the viewport.
+
+The transform is calculated by tracking the delta between the initial pointer position and current position, then applying that delta inversely to the transform. This approach provides predictable, smooth panning behavior.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <PanZoom className="w-[720px] h-[480px] border-2 border-gray-300 overflow-hidden bg-gray-100">
+    <div className="w-[1200px] h-[800px] bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-4xl">
+      Drag and move cursor outside - panning continues
+    </div>
+  </PanZoom>
+</Demonstration>
+
+```jsx
+// Pointer capture ensures smooth panning
+<PanZoom
+  onTransformChanged={(e) => {
+    // Transform updates smoothly even when pointer leaves element
+    const { x, y, scale } = e.detail;
+  }}
+>
+  <YourContent />
+</PanZoom>
+```
+
+### Benefits
+
+Pointer capture provides reliable panning that works consistently across mouse, touch, and stylus inputs. Users can drag content smoothly without losing control when the pointer temporarily leaves the element area. The transform coordination ensures that pan movements feel natural and responsive, with updates happening immediately as the pointer moves.
+
+This approach eliminates the common problem of panning stopping unexpectedly, creating a more polished and professional interaction experience. The element handles pointer lifecycle management automatically, including cleanup on pointer up or cancel events.
+
+See the [Reference](/docs/elements/pan-zoom/reference) for complete property documentation.
+
+
+
+
+

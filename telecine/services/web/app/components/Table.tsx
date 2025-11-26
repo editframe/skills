@@ -11,15 +11,17 @@ export const TableHead = (
 ) => {
   return (
     <thead className={props.className}>
-      <tr className={clsx(
-        "border-b transition-colors relative",
-        "border-slate-300/75 dark:border-slate-700/75",
-        "bg-gradient-to-br from-slate-50/95 via-slate-50/85 to-slate-50/95",
-        "dark:from-slate-800/95 dark:via-slate-800/85 dark:to-slate-800/95",
-        "before:absolute before:inset-0 before:bg-gradient-to-br before:from-amber-50/30 before:via-transparent before:to-transparent",
-        "dark:before:from-blue-950/20 dark:before:via-transparent dark:before:to-transparent",
-        "before:pointer-events-none"
-      )}>
+      <tr
+        className={clsx(
+          "border-b transition-colors relative",
+          "border-slate-300/75 dark:border-slate-700/75",
+          "bg-gradient-to-br from-slate-50/95 via-slate-50/85 to-slate-50/95",
+          "dark:from-slate-800/95 dark:via-slate-800/85 dark:to-slate-800/95",
+          "before:absolute before:inset-0 before:bg-gradient-to-br before:from-amber-50/30 before:via-transparent before:to-transparent",
+          "dark:before:from-blue-950/20 dark:before:via-transparent dark:before:to-transparent",
+          "before:pointer-events-none",
+        )}
+      >
         {props.children}
       </tr>
     </thead>
@@ -30,11 +32,13 @@ export const ColumnHead = (
   props: React.PropsWithChildren & { className?: string },
 ) => {
   return (
-    <th className={clsx(
-      "px-3 py-2.5 text-xs font-semibold text-left tracking-wider transition-colors align-middle whitespace-nowrap",
-      "text-slate-700 dark:text-slate-300",
-      props.className
-    )}>
+    <th
+      className={clsx(
+        "px-3 py-2.5 text-xs font-semibold text-left tracking-wider transition-colors align-middle whitespace-nowrap",
+        "text-slate-700 dark:text-slate-300",
+        props.className,
+      )}
+    >
       {props.children}
     </th>
   );
@@ -54,13 +58,15 @@ export const TableRow = (
         "border-b transition-all duration-150 relative",
         "border-slate-200/60 dark:border-slate-800/60",
         "bg-white dark:bg-slate-900",
-        !props.noHighlight && !props.selected && "hover:bg-slate-50/60 dark:hover:bg-slate-800/40",
+        !props.noHighlight &&
+          !props.selected &&
+          "hover:bg-slate-50/60 dark:hover:bg-slate-800/40",
         props.selected && [
           "bg-blue-50/80 dark:bg-blue-950/50",
           "border-blue-300/70 dark:border-blue-900/70",
           "before:absolute before:inset-0 before:bg-gradient-to-r before:from-blue-50/40 before:via-transparent before:to-transparent",
           "dark:before:from-blue-950/30 dark:before:via-transparent dark:before:to-transparent",
-          "before:pointer-events-none"
+          "before:pointer-events-none",
         ],
         props.className,
       )}
@@ -80,7 +86,7 @@ export const TableCell = (
         "px-3 py-2.5 text-sm align-middle transition-colors",
         "text-slate-900 dark:text-slate-100",
         "leading-snug",
-        props.className
+        props.className,
       )}
       colSpan={props.colSpan}
     >
@@ -129,16 +135,18 @@ export const Table = <
   const navigate = useNavigateWithSearch();
 
   return (
-    <div className={clsx(
-      "overflow-hidden rounded-lg border backdrop-blur-sm transition-all relative w-full",
-      "bg-white/95 dark:bg-slate-900/95",
-      "border-slate-300/75 dark:border-slate-700/75",
-      "shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08),0_4px_12px_0_rgb(0_0_0_/_0.12)]",
-      "dark:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.4),0_4px_12px_0_rgb(0_0_0_/_0.5)]",
-      "before:absolute before:inset-0 before:bg-gradient-to-br before:from-amber-50/25 before:via-transparent before:to-transparent",
-      "dark:before:from-blue-950/18 dark:before:via-transparent dark:before:to-transparent",
-      "before:pointer-events-none before:rounded-lg"
-    )}>
+    <div
+      className={clsx(
+        "overflow-hidden rounded-lg border backdrop-blur-sm transition-all relative w-full",
+        "bg-white/95 dark:bg-slate-900/95",
+        "border-slate-300/75 dark:border-slate-700/75",
+        "shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08),0_4px_12px_0_rgb(0_0_0_/_0.12)]",
+        "dark:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.4),0_4px_12px_0_rgb(0_0_0_/_0.5)]",
+        "before:absolute before:inset-0 before:bg-gradient-to-br before:from-amber-50/25 before:via-transparent before:to-transparent",
+        "dark:before:from-blue-950/18 dark:before:via-transparent dark:before:to-transparent",
+        "before:pointer-events-none before:rounded-lg",
+      )}
+    >
       <table className="w-full border-collapse">
         <TableHead>
           {columns.map((column) => (
@@ -157,7 +165,9 @@ export const Table = <
           )}
           {rows.map((row) => {
             const url = buildRowURL?.(row);
-            const customClassName = rowClassName ? rowClassName(row) : undefined;
+            const customClassName = rowClassName
+              ? rowClassName(row)
+              : undefined;
 
             return (
               <TableRow
@@ -179,10 +189,7 @@ export const Table = <
                       }
                     : undefined
                 }
-                className={clsx(
-                  url && "cursor-pointer",
-                  customClassName,
-                )}
+                className={clsx(url && "cursor-pointer", customClassName)}
               >
                 {columns.map((column) => (
                   <TableCell key={column.name}>
@@ -196,7 +203,13 @@ export const Table = <
         {footerContent && (
           <tfoot>
             <tr>
-              <td className="p-0 w-full" colSpan={columns.length} style={{ width: '100%' }}>{footerContent}</td>
+              <td
+                className="p-0 w-full"
+                colSpan={columns.length}
+                style={{ width: "100%" }}
+              >
+                {footerContent}
+              </td>
             </tr>
           </tfoot>
         )}

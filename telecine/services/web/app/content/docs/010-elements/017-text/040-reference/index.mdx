@@ -1,0 +1,269 @@
+---
+meta:
+  - title: Text Element Reference
+  - name: description
+    content: Complete technical reference for all text element properties and attributes
+headers:
+    Cache-Control: no-cache
+---
+
+## Reference
+
+Complete technical reference for all text element properties.
+
+**New to text elements?** Start with the [Tutorial](/docs/elements/text/tutorial) to learn the basics, or explore [How-To Guides](/docs/elements/text/how-to/) for specific tasks.
+
+### Quick Reference Table
+
+<TextPropertyReference />
+
+### Grouped Attributes
+
+#### Text Splitting
+
+<PropertyDocList>
+  <PropertyDoc name="split" type="string" domReadable domWritable htmlAttribute="split">
+    How to split the text content. Options: `"line"`, `"word"`, or `"char"`.
+
+    - `"line"`: Split on newlines (`\n`) or `<br>` tags
+    - `"word"`: Split on whitespace boundaries using locale-aware segmentation
+    - `"char"`: Split every character using grapheme-aware segmentation
+
+    Default: `"word"`
+
+    ```html
+    <ef-text split="word">
+      <template>
+        <ef-text-segment />
+      </template>
+      Hello world
+    </ef-text>
+    ```
+
+    For understanding how text splitting works across languages, see the [Text Splitting explanation](/docs/elements/text/explanation/text-splitting).
+  </PropertyDoc>
+</PropertyDocList>
+
+#### Animation Timing
+
+<PropertyDocList>
+  <PropertyDoc name="stagger" type="timestring" domReadable domWritable htmlAttribute="stagger">
+    Stagger delay for animations. Each segment gets an offset based on its index and the easing function.
+
+    This affects animation timing (via `updateAnimations`) but not visibility timing. All segments remain visible for equal durations.
+
+    ```html
+    <ef-text split="char" stagger="50ms">
+      <template>
+        <ef-text-segment />
+      </template>
+      Hello
+    </ef-text>
+    ```
+
+    The stagger value can be specified in milliseconds (`50ms`) or seconds (`0.05s`).
+
+    The stagger offset is distributed across segments using the `easing` function. By default, offsets are linear (evenly distributed). With easing, you can create non-linear stagger patterns (e.g., `ease-out` for faster initial stagger, `ease-in` for slower initial stagger).
+
+    For understanding how stagger and easing work together, see the [Stagger and Easing explanation](/docs/elements/text/explanation/stagger-easing).
+  </PropertyDoc>
+
+  <PropertyDoc name="easing" type="string" domReadable domWritable htmlAttribute="easing">
+    Easing function to apply to stagger offsets. Controls how stagger delays are distributed across segments.
+
+    Supported values:
+    - `"linear"` (default): Evenly distributed offsets
+    - `"ease"`: Standard ease curve
+    - `"ease-in"`: Slow start, fast end
+    - `"ease-out"`: Fast start, slow end
+    - `"ease-in-out"`: Slow start and end, fast middle
+    - `"cubic-bezier(x1, y1, x2, y2)"`: Custom cubic bezier curve
+
+    ```html
+    <ef-text split="word" stagger="50ms" easing="ease-out">
+      <template>
+        <ef-text-segment />
+      </template>
+      Hello world
+    </ef-text>
+    ```
+
+    The easing function is applied to the normalized progress (0-1) across all segments, then multiplied by the total stagger duration. This allows for non-linear stagger patterns where segments can cluster together or spread out unevenly.
+
+    For understanding how easing affects stagger distribution, see the [Stagger and Easing explanation](/docs/elements/text/explanation/stagger-easing).
+  </PropertyDoc>
+
+  <PropertyDoc name="durationMs" type="number" domReadable>
+    Duration of the text element in milliseconds. If not explicitly set, calculated from content (1 second per segment).
+
+    For word splitting, only word segments (not whitespace) are counted for intrinsic duration calculation.
+  </PropertyDoc>
+</PropertyDocList>
+
+#### Content Management
+
+<PropertyDocList>
+  <PropertyDoc name="textContent" type="string" domReadable domWritable>
+    Get or set the text content. Setting this property triggers re-splitting and segment creation.
+
+    ```javascript
+    const text = document.querySelector('ef-text');
+    text.textContent = "New text content";
+    ```
+
+    The text content can also be set declaratively as text nodes inside the element. The template element is ignored when reading text content.
+  </PropertyDoc>
+</PropertyDocList>
+
+#### Segment Access
+
+<PropertyDocList>
+  <PropertyDoc name="segments" type="EFTextSegment[]" domReadable>
+    Getter that returns all created `<ef-text-segment>` elements. Useful for programmatic access to segments.
+
+    ```javascript
+    const text = document.querySelector('ef-text');
+    const segments = text.segments;
+    console.log(`Created ${segments.length} segments`);
+    ```
+
+    Segments are only available after the element has been connected to the DOM and text has been split. Use `whenSegmentsReady()` to wait for segments to be ready.
+  </PropertyDoc>
+
+  <PropertyDoc name="whenSegmentsReady" type="Promise&lt;EFTextSegment[]&gt;" domReadable>
+    Returns a promise that resolves when segments are created, connected, and fully updated. Use this to wait for segments after setting `textContent` or changing properties.
+
+    ```javascript
+    const text = document.querySelector('ef-text');
+    text.textContent = "New text content";
+    const segments = await text.whenSegmentsReady();
+    console.log(`Ready: ${segments.length} segments`);
+    ```
+
+    This method handles the asynchronous nature of segment creation and ensures all segments are fully initialized before proceeding.
+  </PropertyDoc>
+</PropertyDocList>
+
+## CSS Animation Variables
+
+Text segment elements provide powerful CSS variables for creating dynamic animations:
+
+### Timeline Variables
+Available on all text segment elements:
+- `--ef-duration`: Duration of the parent timegroup in milliseconds
+- `--ef-progress`: Current progress as a number (0-1), not a CSS percentage. Stored as a number (not a percentage string) so it works correctly in CSS calculations like `calc(var(--ef-progress) * 100%)` without being converted to pixel values based on element dimensions.
+
+### Segment-Specific Variables
+Available on `<ef-text-segment>`:
+- `--ef-seed`: A deterministic pseudo-random value (0-1) based on the segment's index. Same segment index always produces the same seed value, ensuring consistent rendering across page loads and video frames.
+- `--ef-stagger-offset`: Stagger offset in milliseconds (only set when `stagger` attribute is present)
+- `--ef-index`: The segment's index (positional order)
+
+### Creating Varied Animations with --ef-seed
+
+The `--ef-seed` variable allows you to create varied animations where each segment gets its own unique style. The seed value is deterministic - the same segment index always produces the same seed value, ensuring consistent rendering across page loads and video frames.
+
+```css
+ef-text-segment {
+  /* Each segment gets a different color based on its position */
+  /* Maps seed (0-1) to hue (0-360°) for rainbow effect */
+  color: hsl(calc(360 * var(--ef-seed)), 70%, 60%);
+  
+  /* Each segment scales differently */
+  /* Maps seed (0-1) to scale (1.0-1.3) */
+  transform: scale(calc(1 + 0.3 * var(--ef-seed)));
+  
+  /* Each segment rotates by a different amount */
+  /* Maps seed (0-1) to rotation (-10deg to 10deg) */
+  transform: rotate(calc(var(--ef-seed) * 20deg - 10deg));
+}
+```
+
+**Common patterns:**
+
+**Color variation:**
+```css
+color: hsl(calc(360 * var(--ef-seed)), 80%, 70%);
+/* Creates rainbow effect where each segment has unique hue */
+```
+
+**Scale variation:**
+```css
+transform: scale(calc(1 + 0.2 * var(--ef-seed)));
+/* Each segment scales from 1.0 to 1.2 */
+```
+
+**Combined effects:**
+```css
+color: hsl(calc(360 * var(--ef-seed)), 80%, 70%);
+transform: scale(calc(1 + 0.2 * var(--ef-seed))) 
+           rotate(calc(var(--ef-seed) * 20deg - 10deg));
+/* Each segment gets unique color, scale, and rotation */
+```
+
+For detailed usage examples, see [Use Seed-Based Variation](/docs/elements/text/how-to/seed-variation). For understanding deterministic randomness, see the [Deterministic Randomness explanation](/docs/elements/text/explanation/deterministic-randomness).
+
+### Staggered CSS Animations
+
+Use `--ef-stagger-offset` for CSS animation delays:
+
+```css
+ef-text-segment {
+  animation: fadeIn 0.5s ease-out;
+  animation-delay: var(--ef-stagger-offset, 0ms);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+```
+
+## React Usage
+
+```tsx
+import { Timegroup, Text, TextSegment } from '@editframe/react';
+
+function MyTextAnimation() {
+  return (
+    <Timegroup mode="contain" className="w-[1920px] h-[1080px]">
+      <Text split="word" stagger="50ms" duration="3s">
+        <TextSegment className="text-2xl bounce-in" />
+        Hello world this is animated text
+      </Text>
+    </Timegroup>
+  );
+}
+```
+
+### Using Templates in React
+
+The React components automatically handle the template pattern:
+
+```tsx
+import { Timegroup, Text, TextSegment } from '@editframe/react';
+
+function ShadowText() {
+  return (
+    <Timegroup mode="contain" className="w-[1920px] h-[1080px]">
+      <Text split="char" stagger="20ms" duration="4s">
+        <TextSegment 
+          className="text-gray-400 blur-sm" 
+          style={{ position: "absolute", transform: "translate(2px, 2px)" }}
+        />
+        <TextSegment className="text-white relative" />
+        SHADOW
+      </Text>
+    </Timegroup>
+  );
+}
+```
+
+Multiple `<TextSegment>` components inside `<Text>` are automatically wrapped in a template.
+
+## Related Documentation
+
+- [Tutorial](/docs/elements/text/tutorial) - Step-by-step learning path
+- [How-To Guides](/docs/elements/text/how-to) - Task-oriented guides
+- [Explanations](/docs/elements/text/explanation) - Architectural concepts
+

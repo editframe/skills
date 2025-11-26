@@ -123,6 +123,8 @@ describe("createAnonymousURLToken", () => {
     const validation = validateUrlToken(session, requestUrl);
 
     expect(validation.isValid).toBe(false);
-    expect(validation.errorDetails?.message).toContain("Parameter value mismatch");
+    expect(validation.errorDetails?.message).toContain(
+      "Parameter value mismatch",
+    );
   });
 });

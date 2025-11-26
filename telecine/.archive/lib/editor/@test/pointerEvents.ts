@@ -3,7 +3,7 @@ import { fireEvent } from "@testing-library/react";
 export const pointerEvent = (
   target: Element,
   event: "pointerdown" | "pointermove" | "pointerup",
-  options: PointerEventInit | Point2DTuple
+  options: PointerEventInit | Point2DTuple,
 ): boolean => {
   if (Array.isArray(options)) {
     return fireEvent(
@@ -13,7 +13,7 @@ export const pointerEvent = (
         cancelable: true,
         clientX: options[0],
         clientY: options[1],
-      })
+      }),
     );
   } else {
     return fireEvent(
@@ -22,14 +22,14 @@ export const pointerEvent = (
         bubbles: true,
         cancelable: true,
         ...options,
-      })
+      }),
     );
   }
 };
 
 export const tap = (
   element: Element,
-  eventOptions: PointerEventInit | Point2DTuple
+  eventOptions: PointerEventInit | Point2DTuple,
 ): void => {
   pointerEvents(element, eventOptions, eventOptions);
 };

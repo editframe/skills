@@ -24,7 +24,7 @@ export function DocsLayout({
       <div
         className={clsx(
           "px-4 sm:px-6 lg:px-[7.2rem] mx-auto w-full",
-          containerClassName
+          containerClassName,
         )}
       >
         {children}
@@ -33,4 +33,3 @@ export function DocsLayout({
     </PageLayout>
   );
 }
-

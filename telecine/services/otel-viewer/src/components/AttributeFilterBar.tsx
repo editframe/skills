@@ -16,40 +16,40 @@ export function AttributeFilterBar({
   onRemoveFilter,
   onUpdateFilter,
   spanNames,
-  spanAttributeKeys
+  spanAttributeKeys,
 }: AttributeFilterBarProps) {
   const [newFilter, setNewFilter] = useState({
-    spanName: '',
-    attributeKey: '',
-    condition: 'exists' as AttributeFilter['condition'],
-    value: '',
-    mode: 'show' as AttributeFilter['mode']
+    spanName: "",
+    attributeKey: "",
+    condition: "exists" as AttributeFilter["condition"],
+    value: "",
+    mode: "show" as AttributeFilter["mode"],
   });
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [showSpanDropdown, setShowSpanDropdown] = useState(false);
-  const [spanSearchText, setSpanSearchText] = useState('');
+  const [spanSearchText, setSpanSearchText] = useState("");
   const [selectedDropdownIndex, setSelectedDropdownIndex] = useState(-1);
   const spanInputRef = useRef<HTMLInputElement>(null);
   const spanDropdownRef = useRef<HTMLDivElement>(null);
   const dropdownItemRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
   const [showAttrKeyDropdown, setShowAttrKeyDropdown] = useState(false);
-  const [attrKeySearchText, setAttrKeySearchText] = useState('');
+  const [attrKeySearchText, setAttrKeySearchText] = useState("");
   const [selectedAttrKeyIndex, setSelectedAttrKeyIndex] = useState(-1);
   const attrKeyInputRef = useRef<HTMLInputElement>(null);
   const attrKeyDropdownRef = useRef<HTMLDivElement>(null);
   const attrKeyItemRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
-  const filteredSpanNames = spanNames.filter(name =>
-    name.toLowerCase().includes(spanSearchText.toLowerCase())
+  const filteredSpanNames = spanNames.filter((name) =>
+    name.toLowerCase().includes(spanSearchText.toLowerCase()),
   );
 
   const availableAttributeKeys = newFilter.spanName
     ? spanAttributeKeys.get(newFilter.spanName) || []
     : [];
 
-  const filteredAttrKeys = availableAttributeKeys.filter(key =>
-    key.toLowerCase().includes(attrKeySearchText.toLowerCase())
+  const filteredAttrKeys = availableAttributeKeys.filter((key) =>
+    key.toLowerCase().includes(attrKeySearchText.toLowerCase()),
   );
 
   useEffect(() => {
@@ -63,8 +63,8 @@ export function AttributeFilterBar({
   useEffect(() => {
     if (selectedDropdownIndex >= 0 && showSpanDropdown) {
       dropdownItemRefs.current.get(selectedDropdownIndex)?.scrollIntoView({
-        block: 'nearest',
-        behavior: 'smooth'
+        block: "nearest",
+        behavior: "smooth",
       });
     }
   }, [selectedDropdownIndex, showSpanDropdown]);
@@ -72,8 +72,8 @@ export function AttributeFilterBar({
   useEffect(() => {
     if (selectedAttrKeyIndex >= 0 && showAttrKeyDropdown) {
       attrKeyItemRefs.current.get(selectedAttrKeyIndex)?.scrollIntoView({
-        block: 'nearest',
-        behavior: 'smooth'
+        block: "nearest",
+        behavior: "smooth",
       });
     }
   }, [selectedAttrKeyIndex, showAttrKeyDropdown]);
@@ -91,8 +91,9 @@ export function AttributeFilterBar({
     };
 
     if (showSpanDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [showSpanDropdown]);
 
@@ -109,8 +110,9 @@ export function AttributeFilterBar({
     };
 
     if (showAttrKeyDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [showAttrKeyDropdown]);
 
@@ -122,24 +124,24 @@ export function AttributeFilterBar({
       attributeKey: newFilter.attributeKey,
       condition: newFilter.condition,
       value: newFilter.value,
-      mode: newFilter.mode
+      mode: newFilter.mode,
     });
 
     setNewFilter({
-      spanName: '',
-      attributeKey: '',
-      condition: 'exists',
-      value: '',
-      mode: 'show'
+      spanName: "",
+      attributeKey: "",
+      condition: "exists",
+      value: "",
+      mode: "show",
     });
-    setSpanSearchText('');
-    setAttrKeySearchText('');
+    setSpanSearchText("");
+    setAttrKeySearchText("");
   };
 
   const handleSpanSelect = (name: string) => {
-    setNewFilter({ ...newFilter, spanName: name, attributeKey: '' });
+    setNewFilter({ ...newFilter, spanName: name, attributeKey: "" });
     setSpanSearchText(name);
-    setAttrKeySearchText('');
+    setAttrKeySearchText("");
     setShowSpanDropdown(false);
   };
 
@@ -152,23 +154,23 @@ export function AttributeFilterBar({
   const handleSpanInputKeyDown = (e: React.KeyboardEvent) => {
     if (!showSpanDropdown || filteredSpanNames.length === 0) return;
 
-    if (e.key === 'ArrowDown') {
+    if (e.key === "ArrowDown") {
       e.preventDefault();
-      setSelectedDropdownIndex(prev =>
-        prev < filteredSpanNames.length - 1 ? prev + 1 : 0
+      setSelectedDropdownIndex((prev) =>
+        prev < filteredSpanNames.length - 1 ? prev + 1 : 0,
       );
-    } else if (e.key === 'ArrowUp') {
+    } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setSelectedDropdownIndex(prev =>
-        prev > 0 ? prev - 1 : filteredSpanNames.length - 1
+      setSelectedDropdownIndex((prev) =>
+        prev > 0 ? prev - 1 : filteredSpanNames.length - 1,
       );
-    } else if (e.key === 'Enter' && selectedDropdownIndex >= 0) {
+    } else if (e.key === "Enter" && selectedDropdownIndex >= 0) {
       e.preventDefault();
       const selectedName = filteredSpanNames[selectedDropdownIndex];
       if (selectedName) {
         handleSpanSelect(selectedName);
       }
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       setShowSpanDropdown(false);
       setSelectedDropdownIndex(-1);
     }
@@ -191,23 +193,23 @@ export function AttributeFilterBar({
   const handleAttrKeyInputKeyDown = (e: React.KeyboardEvent) => {
     if (!showAttrKeyDropdown || filteredAttrKeys.length === 0) return;
 
-    if (e.key === 'ArrowDown') {
+    if (e.key === "ArrowDown") {
       e.preventDefault();
-      setSelectedAttrKeyIndex(prev =>
-        prev < filteredAttrKeys.length - 1 ? prev + 1 : 0
+      setSelectedAttrKeyIndex((prev) =>
+        prev < filteredAttrKeys.length - 1 ? prev + 1 : 0,
       );
-    } else if (e.key === 'ArrowUp') {
+    } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setSelectedAttrKeyIndex(prev =>
-        prev > 0 ? prev - 1 : filteredAttrKeys.length - 1
+      setSelectedAttrKeyIndex((prev) =>
+        prev > 0 ? prev - 1 : filteredAttrKeys.length - 1,
       );
-    } else if (e.key === 'Enter' && selectedAttrKeyIndex >= 0) {
+    } else if (e.key === "Enter" && selectedAttrKeyIndex >= 0) {
       e.preventDefault();
       const selectedKey = filteredAttrKeys[selectedAttrKeyIndex];
       if (selectedKey) {
         handleAttrKeySelect(selectedKey);
       }
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       setShowAttrKeyDropdown(false);
       setSelectedAttrKeyIndex(-1);
     }
@@ -218,7 +220,7 @@ export function AttributeFilterBar({
     if (filter) {
       onUpdateFilter(index, {
         ...filter,
-        mode: filter.mode === 'show' ? 'hide' : 'show'
+        mode: filter.mode === "show" ? "hide" : "show",
       });
     }
   };
@@ -232,7 +234,7 @@ export function AttributeFilterBar({
     if (filter) {
       onUpdateFilter(index, {
         ...filter,
-        ...updates
+        ...updates,
       });
     }
     setEditingIndex(null);
@@ -252,11 +254,14 @@ export function AttributeFilterBar({
             onKeyDown={handleSpanInputKeyDown}
             onFocus={() => setShowSpanDropdown(true)}
             className="attr-filter-bar-input"
-            style={{ anchorName: '--span-input' } as React.CSSProperties}
+            style={{ anchorName: "--span-input" } as React.CSSProperties}
             autoComplete="off"
           />
           {showSpanDropdown && filteredSpanNames.length > 0 && (
-            <div ref={spanDropdownRef} className="attr-filter-dropdown attr-filter-dropdown-span">
+            <div
+              ref={spanDropdownRef}
+              className="attr-filter-dropdown attr-filter-dropdown-span"
+            >
               {filteredSpanNames.map((name, index) => (
                 <div
                   key={name}
@@ -264,7 +269,7 @@ export function AttributeFilterBar({
                     if (el) dropdownItemRefs.current.set(index, el);
                     else dropdownItemRefs.current.delete(index);
                   }}
-                  className={`attr-filter-dropdown-item ${index === selectedDropdownIndex ? 'selected' : ''}`}
+                  className={`attr-filter-dropdown-item ${index === selectedDropdownIndex ? "selected" : ""}`}
                   onClick={() => handleSpanSelect(name)}
                 >
                   {name}
@@ -282,13 +287,18 @@ export function AttributeFilterBar({
             value={attrKeySearchText}
             onChange={(e) => handleAttrKeyInputChange(e.target.value)}
             onKeyDown={handleAttrKeyInputKeyDown}
-            onFocus={() => availableAttributeKeys.length > 0 && setShowAttrKeyDropdown(true)}
+            onFocus={() =>
+              availableAttributeKeys.length > 0 && setShowAttrKeyDropdown(true)
+            }
             className="attr-filter-bar-input"
-            style={{ anchorName: '--attr-key-input' } as React.CSSProperties}
+            style={{ anchorName: "--attr-key-input" } as React.CSSProperties}
             autoComplete="off"
           />
           {showAttrKeyDropdown && filteredAttrKeys.length > 0 && (
-            <div ref={attrKeyDropdownRef} className="attr-filter-dropdown attr-filter-dropdown-attr-key">
+            <div
+              ref={attrKeyDropdownRef}
+              className="attr-filter-dropdown attr-filter-dropdown-attr-key"
+            >
               {filteredAttrKeys.map((key, index) => (
                 <div
                   key={key}
@@ -296,7 +306,7 @@ export function AttributeFilterBar({
                     if (el) attrKeyItemRefs.current.set(index, el);
                     else attrKeyItemRefs.current.delete(index);
                   }}
-                  className={`attr-filter-dropdown-item ${index === selectedAttrKeyIndex ? 'selected' : ''}`}
+                  className={`attr-filter-dropdown-item ${index === selectedAttrKeyIndex ? "selected" : ""}`}
                   onClick={() => handleAttrKeySelect(key)}
                 >
                   {key}
@@ -308,7 +318,12 @@ export function AttributeFilterBar({
 
         <select
           value={newFilter.condition}
-          onChange={(e) => setNewFilter({ ...newFilter, condition: e.target.value as AttributeFilter['condition'] })}
+          onChange={(e) =>
+            setNewFilter({
+              ...newFilter,
+              condition: e.target.value as AttributeFilter["condition"],
+            })
+          }
           className="attr-filter-bar-input"
         >
           <option value="exists">Has value</option>
@@ -317,26 +332,29 @@ export function AttributeFilterBar({
           <option value="notEquals">Not equals</option>
         </select>
 
-        {(newFilter.condition === 'equals' || newFilter.condition === 'notEquals') && (
+        {(newFilter.condition === "equals" ||
+          newFilter.condition === "notEquals") && (
           <input
             type="text"
             placeholder="Value"
             value={newFilter.value}
-            onChange={(e) => setNewFilter({ ...newFilter, value: e.target.value })}
+            onChange={(e) =>
+              setNewFilter({ ...newFilter, value: e.target.value })
+            }
             className="attr-filter-bar-input"
           />
         )}
 
         <div className="attr-filter-bar-mode-toggle">
           <button
-            className={`attr-filter-bar-mode-btn ${newFilter.mode === 'show' ? 'active show' : ''}`}
-            onClick={() => setNewFilter({ ...newFilter, mode: 'show' })}
+            className={`attr-filter-bar-mode-btn ${newFilter.mode === "show" ? "active show" : ""}`}
+            onClick={() => setNewFilter({ ...newFilter, mode: "show" })}
           >
             Show
           </button>
           <button
-            className={`attr-filter-bar-mode-btn ${newFilter.mode === 'hide' ? 'active hide' : ''}`}
-            onClick={() => setNewFilter({ ...newFilter, mode: 'hide' })}
+            className={`attr-filter-bar-mode-btn ${newFilter.mode === "hide" ? "active hide" : ""}`}
+            onClick={() => setNewFilter({ ...newFilter, mode: "hide" })}
           >
             Hide
           </button>
@@ -361,7 +379,12 @@ export function AttributeFilterBar({
                 <div key={index} className="attr-filter-chip-editor">
                   <select
                     value={filter.condition}
-                    onChange={(e) => saveEdit(index, { condition: e.target.value as AttributeFilter['condition'] })}
+                    onChange={(e) =>
+                      saveEdit(index, {
+                        condition: e.target
+                          .value as AttributeFilter["condition"],
+                      })
+                    }
                     className="attr-filter-chip-edit-input"
                     autoFocus
                   >
@@ -370,11 +393,14 @@ export function AttributeFilterBar({
                     <option value="equals">Equals</option>
                     <option value="notEquals">Not equals</option>
                   </select>
-                  {(filter.condition === 'equals' || filter.condition === 'notEquals') && (
+                  {(filter.condition === "equals" ||
+                    filter.condition === "notEquals") && (
                     <input
                       type="text"
-                      value={filter.value || ''}
-                      onChange={(e) => saveEdit(index, { value: e.target.value })}
+                      value={filter.value || ""}
+                      onChange={(e) =>
+                        saveEdit(index, { value: e.target.value })
+                      }
                       placeholder="Value"
                       className="attr-filter-chip-edit-input"
                     />
@@ -390,23 +416,21 @@ export function AttributeFilterBar({
             }
 
             return (
-              <div
-                key={index}
-                className={`attr-filter-chip ${filter.mode}`}
-              >
+              <div key={index} className={`attr-filter-chip ${filter.mode}`}>
                 <button
                   className="attr-filter-chip-mode-btn"
                   onClick={() => toggleFilterMode(index)}
-                  title={`Click to ${filter.mode === 'show' ? 'hide' : 'show'} instead`}
+                  title={`Click to ${filter.mode === "show" ? "hide" : "show"} instead`}
                 >
-                  {filter.mode === 'show' ? '✓' : '✕'}
+                  {filter.mode === "show" ? "✓" : "✕"}
                 </button>
                 <span
                   className="attr-filter-chip-text"
                   onClick={() => startEditing(index)}
                   title="Click to edit"
                 >
-                  <strong>{filter.spanName}</strong> · {filter.attributeKey} {filter.condition}
+                  <strong>{filter.spanName}</strong> · {filter.attributeKey}{" "}
+                  {filter.condition}
                   {filter.value && ` "${filter.value}"`}
                 </span>
                 <button

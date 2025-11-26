@@ -8,10 +8,7 @@ export const loader = appFunction(
     requireCookieOrTokenSession: true,
     params: z.object({ md5: z.string() }),
   },
-  async ({
-    session,
-    params,
-  }): Promise<LookupCaptionFileByMd5Result> => {
+  async ({ session, params }): Promise<LookupCaptionFileByMd5Result> => {
     const captionFile = await db
       .selectFrom("video2.caption_files")
       .where("md5", "=", params.md5)

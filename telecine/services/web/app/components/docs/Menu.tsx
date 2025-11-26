@@ -46,12 +46,19 @@ import {
 const getIconForTitle = (title: string, href?: string): React.ElementType => {
   const lowerTitle = title.toLowerCase();
   const lowerHref = href?.toLowerCase() || "";
-  
+
   // Getting Started section
-  if (lowerTitle.includes("getting started") || lowerTitle === "getting started") {
+  if (
+    lowerTitle.includes("getting started") ||
+    lowerTitle === "getting started"
+  ) {
     return Rocket;
   }
-  if (lowerTitle.includes("authentication") || lowerTitle.includes("auth") || lowerHref.includes("authentication")) {
+  if (
+    lowerTitle.includes("authentication") ||
+    lowerTitle.includes("auth") ||
+    lowerHref.includes("authentication")
+  ) {
     return Key;
   }
   if (lowerTitle.includes("packages") || lowerHref.includes("packages")) {
@@ -66,15 +73,21 @@ const getIconForTitle = (title: string, href?: string): React.ElementType => {
   if (lowerTitle.includes("temporal") || lowerHref.includes("temporal")) {
     return Clock;
   }
-  
+
   // Elements section
-  if (lowerTitle === "elements" || lowerHref.includes("/elements") && !lowerHref.includes("/elements/")) {
+  if (
+    lowerTitle === "elements" ||
+    (lowerHref.includes("/elements") && !lowerHref.includes("/elements/"))
+  ) {
     return PuzzlePiece;
   }
   if (lowerTitle.includes("timegroup") || lowerHref.includes("timegroup")) {
     return SquaresFour;
   }
-  if (lowerTitle.includes("audio") && !lowerTitle.includes("video") || lowerHref.includes("/audio") && !lowerHref.includes("video")) {
+  if (
+    (lowerTitle.includes("audio") && !lowerTitle.includes("video")) ||
+    (lowerHref.includes("/audio") && !lowerHref.includes("video"))
+  ) {
     return SpeakerHigh;
   }
   if (lowerTitle.includes("video") || lowerHref.includes("/video")) {
@@ -98,17 +111,23 @@ const getIconForTitle = (title: string, href?: string): React.ElementType => {
   if (lowerTitle.includes("example") || lowerHref.includes("example")) {
     return Sparkle;
   }
-  
+
   // Rendering section
   if (lowerTitle.includes("rendering") || lowerHref.includes("rendering")) {
     return FilmReel;
   }
-  if (lowerTitle.includes("api") && (lowerTitle.includes("rendering") || lowerHref.includes("rendering"))) {
+  if (
+    lowerTitle.includes("api") &&
+    (lowerTitle.includes("rendering") || lowerHref.includes("rendering"))
+  ) {
     return Terminal;
   }
-  
+
   // React section
-  if (lowerTitle === "react" || lowerHref.includes("/react") && !lowerHref.includes("/react/")) {
+  if (
+    lowerTitle === "react" ||
+    (lowerHref.includes("/react") && !lowerHref.includes("/react/"))
+  ) {
     return Code;
   }
   if (lowerTitle.includes("component") || lowerHref.includes("component")) {
@@ -117,26 +136,41 @@ const getIconForTitle = (title: string, href?: string): React.ElementType => {
   if (lowerTitle.includes("hook") || lowerHref.includes("hook")) {
     return Code;
   }
-  
+
   // Controls section
-  if (lowerTitle === "controls" || lowerHref.includes("/controls") && !lowerHref.includes("/controls/")) {
+  if (
+    lowerTitle === "controls" ||
+    (lowerHref.includes("/controls") && !lowerHref.includes("/controls/"))
+  ) {
     return Sliders;
   }
-  if (lowerTitle.includes("toggle") && lowerTitle.includes("play") || lowerHref.includes("toggle-play")) {
+  if (
+    (lowerTitle.includes("toggle") && lowerTitle.includes("play")) ||
+    lowerHref.includes("toggle-play")
+  ) {
     return Play;
   }
-  if (lowerTitle.includes("toggle") && lowerTitle.includes("loop") || lowerHref.includes("toggle-loop")) {
+  if (
+    (lowerTitle.includes("toggle") && lowerTitle.includes("loop")) ||
+    lowerHref.includes("toggle-loop")
+  ) {
     return ArrowClockwise;
   }
   if (lowerTitle.includes("scrubber") || lowerHref.includes("scrubber")) {
     return FastForward;
   }
-  if (lowerTitle.includes("time display") || lowerHref.includes("time-display")) {
+  if (
+    lowerTitle.includes("time display") ||
+    lowerHref.includes("time-display")
+  ) {
     return Clock;
   }
-  
+
   // Resources section
-  if (lowerTitle === "resources" || lowerHref.includes("/resources") && !lowerHref.includes("/resources/")) {
+  if (
+    lowerTitle === "resources" ||
+    (lowerHref.includes("/resources") && !lowerHref.includes("/resources/"))
+  ) {
     return Stack;
   }
   if (lowerTitle.includes("image file") || lowerHref.includes("image-file")) {
@@ -151,16 +185,22 @@ const getIconForTitle = (title: string, href?: string): React.ElementType => {
   if (lowerTitle.includes("isobmff") || lowerHref.includes("isobmff")) {
     return FilmReel;
   }
-  if (lowerTitle.includes("transcription") || lowerHref.includes("transcription")) {
+  if (
+    lowerTitle.includes("transcription") ||
+    lowerHref.includes("transcription")
+  ) {
     return Microphone;
   }
-  if (lowerTitle.includes("render") && !lowerTitle.includes("rendering") || (lowerHref.includes("render") && !lowerHref.includes("rendering"))) {
+  if (
+    (lowerTitle.includes("render") && !lowerTitle.includes("rendering")) ||
+    (lowerHref.includes("render") && !lowerHref.includes("rendering"))
+  ) {
     return FilmReel;
   }
   if (lowerTitle.includes("url token") || lowerHref.includes("url-token")) {
     return Key;
   }
-  
+
   // Editor UI section
   if (lowerTitle.includes("editor") || lowerHref.includes("editor-ui")) {
     return Eye;
@@ -168,18 +208,25 @@ const getIconForTitle = (title: string, href?: string): React.ElementType => {
   if (lowerTitle.includes("preview") || lowerHref.includes("preview")) {
     return PlayCircle;
   }
-  if (lowerTitle.includes("configuration") || lowerTitle.includes("config") || lowerHref.includes("configuration")) {
+  if (
+    lowerTitle.includes("configuration") ||
+    lowerTitle.includes("config") ||
+    lowerHref.includes("configuration")
+  ) {
     return Gear;
   }
-  
+
   // Processing Files section
   if (lowerTitle.includes("processing") || lowerHref.includes("processing")) {
     return Cpu;
   }
-  if (lowerTitle.includes("audio") && lowerTitle.includes("video") || lowerHref.includes("audio-video")) {
+  if (
+    (lowerTitle.includes("audio") && lowerTitle.includes("video")) ||
+    lowerHref.includes("audio-video")
+  ) {
     return VideoCamera;
   }
-  
+
   // Fallback for common patterns
   if (lowerTitle.includes("api") || lowerTitle.includes("endpoint")) {
     return Terminal;
@@ -202,7 +249,7 @@ const getIconForTitle = (title: string, href?: string): React.ElementType => {
   if (lowerTitle.includes("snippet") || lowerTitle.includes("reusable")) {
     return Sparkle;
   }
-  
+
   // Default icon
   return FileText;
 };

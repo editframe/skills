@@ -33,9 +33,8 @@ app.get("/_/transcriptions/:id/fragment/:segmentId", async (req, res) => {
     const z = await import("zod");
     const { db } = await import("@/sql-client.server");
     const { parseRequestSession } = await import("@/util/session");
-    const { isobmffIndexFilePath, transcribeFragmentFilePath } = await import(
-      "@/util/filePaths"
-    );
+    const { isobmffIndexFilePath, transcribeFragmentFilePath } =
+      await import("@/util/filePaths");
 
     const { storageProvider } = await import("@/util/storageProvider.server");
     const { readIntoBuffer } = await import("@/util/readIntoBuffer");

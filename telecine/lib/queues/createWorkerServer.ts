@@ -36,7 +36,7 @@ export const createWorkerServer = <Payload>(
         logger.info("Cleaning up worker WebSocket server...");
         await workerWebSocketServer.abort();
       }
-    }
+    },
   });
 
   return {

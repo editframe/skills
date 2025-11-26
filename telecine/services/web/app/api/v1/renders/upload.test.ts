@@ -115,4 +115,3 @@ describe("renders.upload", () => {
     });
   });
 });
-

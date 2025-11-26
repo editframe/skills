@@ -15,7 +15,7 @@ export const LinkWithSearch = ({
 
   Array.from(new Set(searchParams.entries())).forEach(([key, value]) => {
     if (mergedParams.has(key)) {
-      return
+      return;
     }
     mergedParams.append(key, value);
   });

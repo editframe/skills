@@ -7,7 +7,7 @@ export function extractFragmentCompletionInfo(
     duration_ms: number;
     work_slice_ms: number;
   },
-  fragments: Selectable<Video2RenderFragments>[]
+  fragments: Selectable<Video2RenderFragments>[],
 ) {
   const completeFragmentIds = new Set<string>();
   const incompleteFragmentIds = new Set<string>();
@@ -20,7 +20,8 @@ export function extractFragmentCompletionInfo(
   });
 
   // +1 for the init fragment
-  const totalFragmentCount = 1 + Math.ceil(render.duration_ms / render.work_slice_ms);
+  const totalFragmentCount =
+    1 + Math.ceil(render.duration_ms / render.work_slice_ms);
   const incompleteFragmentCount = totalFragmentCount - completeFragmentIds.size;
 
   return {

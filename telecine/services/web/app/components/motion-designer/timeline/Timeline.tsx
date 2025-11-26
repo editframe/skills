@@ -7,7 +7,11 @@ import type {
 import { getActiveRootTimegroupId } from "~/lib/motion-designer/utils";
 import { TimelineControls } from "./TimelineControls";
 import { TimelineRuler } from "@editframe/react";
-import { calculateFrameIntervalMs, calculatePixelsPerFrame, shouldShowFrameMarkers } from "@editframe/elements";
+import {
+  calculateFrameIntervalMs,
+  calculatePixelsPerFrame,
+  shouldShowFrameMarkers,
+} from "@editframe/elements";
 import { Scrubber } from "@editframe/react";
 import { FrameHighlight } from "./FrameHighlight";
 import { AnimationTrack } from "./AnimationTrack";
@@ -48,12 +52,18 @@ interface TimelineTrackContext {
       animationId: string,
       updates: Partial<Animation>,
     ) => void;
-    selectAnimation: (animationId: string | null, elementId: string | null) => void;
+    selectAnimation: (
+      animationId: string | null,
+      elementId: string | null,
+    ) => void;
   };
 }
 
 // Evaluation: Collect snap points from element tree
-function collectSnapPoints(element: ElementNode, state: MotionDesignerState): number[] {
+function collectSnapPoints(
+  element: ElementNode,
+  state: MotionDesignerState,
+): number[] {
   const snapPoints: number[] = [];
 
   // Add start and end times of all animations
@@ -123,7 +133,7 @@ function collectVideoElements(
   return videos;
 }
 
-  // Mechanism: Render track elements for element tree
+// Mechanism: Render track elements for element tree
 function renderAnimationTracks(
   element: ElementNode,
   state: MotionDesignerState,
@@ -192,22 +202,32 @@ function calculateTimelineLayout(
   // Step 1: Collect all snap points
   const rawSnapPoints = collectSnapPoints(element, state);
   const snapPoints = Array.from(new Set(rawSnapPoints)).sort((a, b) => a - b);
-  
+
   // Step 2: Collect track data for labels
   const trackData = collectTrackData(element, state);
-  
+
   // Step 3: Collect video elements
   const videoData = collectVideoElements(element, state);
-  
+
   // Step 4: Create track strips (without labels) with final snap points
   const trackContextWithSnapPoints: TimelineTrackContext = {
     ...context,
     snapPoints,
   };
-  const trackStrips = renderAnimationTracks(element, state, trackContextWithSnapPoints, false);
-  
+  const trackStrips = renderAnimationTracks(
+    element,
+    state,
+    trackContextWithSnapPoints,
+    false,
+  );
+
   // Step 5: Create video thumbnail tracks (without labels)
-  const videoTracks = renderVideoTracks(videoData, trackContextWithSnapPoints, scrollContainerRef, false);
+  const videoTracks = renderVideoTracks(
+    videoData,
+    trackContextWithSnapPoints,
+    scrollContainerRef,
+    false,
+  );
 
   return {
     snapPoints,
@@ -230,7 +250,10 @@ interface TimelineActions {
     animationId: string,
     updates: Partial<Animation>,
   ) => void;
-  selectAnimation: (animationId: string | null, elementId: string | null) => void;
+  selectAnimation: (
+    animationId: string | null,
+    elementId: string | null,
+  ) => void;
 }
 
 // Mechanism: Synchronize current time from time manager to actions
@@ -252,7 +275,7 @@ function useRefSync(
   if (targetRef) {
     targetRef.current = sourceRef.current;
   }
-  
+
   useEffect(() => {
     if (targetRef) {
       targetRef.current = sourceRef.current;
@@ -274,8 +297,12 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
   const contentScrollContainerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const [zoomScale, setZoomScale] = useState(1.0);
-  
-  const { currentTime: scrubberCurrentTime, duration: durationMs, isScrubbingRef: timeManagerScrubbingRef } = useTimeManager(activeRootTimegroupId, state);
+
+  const {
+    currentTime: scrubberCurrentTime,
+    duration: durationMs,
+    isScrubbingRef: timeManagerScrubbingRef,
+  } = useTimeManager(activeRootTimegroupId, state);
 
   // Calculate if frame markers should be shown (for frame highlight)
   const fps = activeRootTimegroup?.props?.fps ?? 30;
@@ -305,7 +332,7 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
     });
 
     resizeObserver.observe(contentScrollContainerRef.current);
-    
+
     return () => {
       resizeObserver.disconnect();
     };
@@ -319,7 +346,7 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
   useEffect(() => {
     const tracksContainer = tracksContainerRef.current;
     const labelsContainer = labelsContainerRef.current;
-    
+
     if (!tracksContainer || !labelsContainer) return;
 
     const handleTracksScroll = () => {
@@ -334,12 +361,12 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
       }
     };
 
-    tracksContainer.addEventListener('scroll', handleTracksScroll);
-    labelsContainer.addEventListener('scroll', handleLabelsScroll);
+    tracksContainer.addEventListener("scroll", handleTracksScroll);
+    labelsContainer.addEventListener("scroll", handleLabelsScroll);
 
     return () => {
-      tracksContainer.removeEventListener('scroll', handleTracksScroll);
-      labelsContainer.removeEventListener('scroll', handleLabelsScroll);
+      tracksContainer.removeEventListener("scroll", handleTracksScroll);
+      labelsContainer.removeEventListener("scroll", handleLabelsScroll);
     };
   }, []);
 
@@ -347,7 +374,7 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
   useEffect(() => {
     const videoTracksContainer = videoTracksContainerRef.current;
     const videoLabelsContainer = videoLabelsContainerRef.current;
-    
+
     if (!videoTracksContainer || !videoLabelsContainer) return;
 
     const handleVideoTracksScroll = () => {
@@ -362,12 +389,18 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
       }
     };
 
-    videoTracksContainer.addEventListener('scroll', handleVideoTracksScroll);
-    videoLabelsContainer.addEventListener('scroll', handleVideoLabelsScroll);
+    videoTracksContainer.addEventListener("scroll", handleVideoTracksScroll);
+    videoLabelsContainer.addEventListener("scroll", handleVideoLabelsScroll);
 
     return () => {
-      videoTracksContainer.removeEventListener('scroll', handleVideoTracksScroll);
-      videoLabelsContainer.removeEventListener('scroll', handleVideoLabelsScroll);
+      videoTracksContainer.removeEventListener(
+        "scroll",
+        handleVideoTracksScroll,
+      );
+      videoLabelsContainer.removeEventListener(
+        "scroll",
+        handleVideoLabelsScroll,
+      );
     };
   }, []);
 
@@ -385,58 +418,66 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
       }
     };
 
-    scrollContainer.addEventListener('wheel', handleWheel, { passive: false });
+    scrollContainer.addEventListener("wheel", handleWheel, { passive: false });
 
     return () => {
-      scrollContainer.removeEventListener('wheel', handleWheel);
+      scrollContainer.removeEventListener("wheel", handleWheel);
     };
   }, []);
 
-
   // Handle seek from playhead - update current time immediately and seek timegroup element
   // Memoized to prevent recreation and ensure stable reference
-  const handleSeek = useCallback((time: number) => {
-    // Update React state
-    actions.setCurrentTime(time);
-    
-    // Seek the actual timegroup element in the DOM
-    if (activeRootTimegroupId) {
-      let timegroupElement: any = null;
-      
-      // Strategy 1: Find by ID directly
-      timegroupElement = document.getElementById(activeRootTimegroupId) as any;
-      
-      // Strategy 2: Find via wrapper div
-      if (!timegroupElement) {
-        const wrapper = document.querySelector(`[data-timegroup-id="${activeRootTimegroupId}"]`);
-        if (wrapper) {
-          // Try with ID first
-          timegroupElement = wrapper.querySelector(`ef-timegroup#${activeRootTimegroupId}`) as any;
-          // Fallback to any ef-timegroup in wrapper
-          if (!timegroupElement) {
-            timegroupElement = wrapper.querySelector('ef-timegroup') as any;
+  const handleSeek = useCallback(
+    (time: number) => {
+      // Update React state
+      actions.setCurrentTime(time);
+
+      // Seek the actual timegroup element in the DOM
+      if (activeRootTimegroupId) {
+        let timegroupElement: any = null;
+
+        // Strategy 1: Find by ID directly
+        timegroupElement = document.getElementById(
+          activeRootTimegroupId,
+        ) as any;
+
+        // Strategy 2: Find via wrapper div
+        if (!timegroupElement) {
+          const wrapper = document.querySelector(
+            `[data-timegroup-id="${activeRootTimegroupId}"]`,
+          );
+          if (wrapper) {
+            // Try with ID first
+            timegroupElement = wrapper.querySelector(
+              `ef-timegroup#${activeRootTimegroupId}`,
+            ) as any;
+            // Fallback to any ef-timegroup in wrapper
+            if (!timegroupElement) {
+              timegroupElement = wrapper.querySelector("ef-timegroup") as any;
+            }
           }
         }
-      }
-      
-      // Strategy 3: Fallback to querySelector by tag (if only one active timegroup)
-      if (!timegroupElement) {
-        const allTimegroups = document.querySelectorAll('ef-timegroup');
-        if (allTimegroups.length === 1) {
-          timegroupElement = allTimegroups[0] as any;
+
+        // Strategy 3: Fallback to querySelector by tag (if only one active timegroup)
+        if (!timegroupElement) {
+          const allTimegroups = document.querySelectorAll("ef-timegroup");
+          if (allTimegroups.length === 1) {
+            timegroupElement = allTimegroups[0] as any;
+          }
+        }
+
+        if (timegroupElement && typeof timegroupElement.seek === "function") {
+          // Pause if playing
+          if (timegroupElement.playbackController?.playing) {
+            timegroupElement.playbackController.pause();
+          }
+          // Seek to the new time
+          timegroupElement.seek(time);
         }
       }
-      
-      if (timegroupElement && typeof timegroupElement.seek === 'function') {
-        // Pause if playing
-        if (timegroupElement.playbackController?.playing) {
-          timegroupElement.playbackController.pause();
-        }
-        // Seek to the new time
-        timegroupElement.seek(time);
-      }
-    }
-  }, [actions, activeRootTimegroupId]);
+    },
+    [actions, activeRootTimegroupId],
+  );
 
   // Shared scrubbing hook for ruler area
   const rulerScrubbing = useTimelineScrubbing({
@@ -475,15 +516,15 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
   // Check if click target is an animation bar or resize handle
   const isAnimationBarClick = (target: EventTarget | null): boolean => {
     if (!target || !(target instanceof Element)) return false;
-    
+
     // Check if clicked element is or is inside an animation bar
-    const animationBar = target.closest('.absolute.rounded-sm.cursor-move');
+    const animationBar = target.closest(".absolute.rounded-sm.cursor-move");
     if (animationBar) return true;
-    
+
     // Check if clicked element is a resize handle
-    const resizeHandle = target.closest('.cursor-col-resize');
+    const resizeHandle = target.closest(".cursor-col-resize");
     if (resizeHandle) return true;
-    
+
     return false;
   };
 
@@ -493,7 +534,7 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
     if (isAnimationBarClick(e.target)) {
       return;
     }
-    
+
     // Use the shared scrubbing handler
     tracksScrubbing.handleMouseDown(e);
   };
@@ -527,7 +568,12 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
   };
 
   // Evaluation: Calculate what to render (snap points and track elements)
-  const layout = calculateTimelineLayout(activeRootTimegroup, state, trackContext, contentScrollContainerRef);
+  const layout = calculateTimelineLayout(
+    activeRootTimegroup,
+    state,
+    trackContext,
+    contentScrollContainerRef,
+  );
 
   return (
     <div className="h-48 bg-gray-900 border-t border-gray-700/70 flex">
@@ -546,12 +592,20 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
             <div className="h-8 border-b border-gray-700/70 bg-gray-850" />
             {/* Video labels container - scrolls in sync with video tracks */}
             {layout.videoData.length > 0 && (
-              <div ref={videoLabelsContainerRef} className="overflow-y-auto border-b border-gray-700/70">
+              <div
+                ref={videoLabelsContainerRef}
+                className="overflow-y-auto border-b border-gray-700/70"
+              >
                 {layout.videoData.map((video) => (
-                  <div key={video.id} className="h-12 border-b border-gray-700/50 flex items-center px-2">
+                  <div
+                    key={video.id}
+                    className="h-12 border-b border-gray-700/50 flex items-center px-2"
+                  >
                     <div className="text-xs text-gray-400 truncate flex items-center gap-1">
                       <span className="text-gray-500 text-[10px]">›</span>
-                      <span className="truncate font-light">video {video.id.slice(0, 4)}</span>
+                      <span className="truncate font-light">
+                        video {video.id.slice(0, 4)}
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -560,38 +614,43 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
             {/* Animation labels container - scrolls in sync with tracks */}
             <div ref={labelsContainerRef} className="flex-1 overflow-y-auto">
               {layout.trackData.map((track, index) => (
-                <div key={`${track.element.id}-${track.animation.id}`} className="h-8 border-b border-gray-700/50 flex items-center px-2">
+                <div
+                  key={`${track.element.id}-${track.animation.id}`}
+                  className="h-8 border-b border-gray-700/50 flex items-center px-2"
+                >
                   <div className="text-xs text-gray-400 truncate flex items-center gap-1">
                     <span className="text-gray-500 text-[10px]">›</span>
-                    <span className="truncate font-light">{track.animation.name}</span>
+                    <span className="truncate font-light">
+                      {track.animation.name}
+                    </span>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-          
+
           {/* Content column - ruler and track strips share this space with horizontal scrolling */}
-          <div 
+          <div
             ref={contentScrollContainerRef}
             tabIndex={0}
             className="flex-1 flex flex-col relative overflow-x-auto overflow-y-hidden focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
             style={{ minWidth: 0 }}
           >
             {/* Inner container with calculated width */}
-            <div 
+            <div
               className="flex flex-col relative"
-              style={{ 
-                width: contentWidth > 0 ? `${contentWidth}px` : '100%',
-                minWidth: '100%' 
+              style={{
+                width: contentWidth > 0 ? `${contentWidth}px` : "100%",
+                minWidth: "100%",
               }}
             >
               {/* Ruler area - spans full content width */}
-              <div 
+              <div
                 ref={timelineContainerRef}
                 className="h-8 border-b border-gray-700/70 bg-gray-850/80 relative cursor-pointer"
                 onMouseDown={rulerScrubbing.handleMouseDown}
               >
-                <TimelineRuler 
+                <TimelineRuler
                   durationMs={durationMs}
                   zoomScale={zoomScale}
                   containerWidth={containerWidth}
@@ -599,30 +658,30 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
                   scrollContainerRef={contentScrollContainerRef}
                 />
               </div>
-              
+
               {/* Video tracks area - strips only, no labels */}
               {layout.videoTracks.length > 0 && (
-                <div 
+                <div
                   ref={videoTracksContainerRef}
                   className="overflow-y-auto border-b border-gray-700/70 relative cursor-pointer"
-                  style={{ 
-                    maxHeight: `${layout.videoTracks.length * 48}px`
+                  style={{
+                    maxHeight: `${layout.videoTracks.length * 48}px`,
                   }}
                   onMouseDown={handleTracksMouseDown}
                 >
                   {layout.videoTracks}
                 </div>
               )}
-              
+
               {/* Animation tracks area - strips only, no labels */}
-              <div 
+              <div
                 ref={tracksContainerRef}
                 className="flex-1 overflow-y-auto relative cursor-pointer"
                 onMouseDown={handleTracksMouseDown}
               >
                 {layout.trackStrips}
               </div>
-              
+
               {/* Frame highlight and playhead span full content column */}
               <div className="absolute inset-0 pointer-events-none">
                 {/* Frame highlight - shows current frame as a rectangle */}
@@ -642,7 +701,11 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
                   zoomScale={zoomScale}
                   containerWidth={containerWidth}
                   scrollContainerRef={contentScrollContainerRef}
-                  rawScrubTimeMs={rulerScrubbing.rawScrubTime ?? tracksScrubbing.rawScrubTime ?? null}
+                  rawScrubTimeMs={
+                    rulerScrubbing.rawScrubTime ??
+                    tracksScrubbing.rawScrubTime ??
+                    null
+                  }
                   fps={activeRootTimegroup?.props?.fps ?? 30}
                   isScrubbingRef={timeManagerScrubbingRef}
                   onSeek={handleSeek}
@@ -655,6 +718,3 @@ export function Timeline({ state, isScrubbingRef }: TimelineProps) {
     </div>
   );
 }
-
-
-

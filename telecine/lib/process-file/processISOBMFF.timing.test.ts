@@ -52,15 +52,21 @@ describe("processISOBMFF - timing offset detection", () => {
       id: result.id,
     });
     const indexContent = await storageProvider.readFile(indexPath);
-    const fragmentIndex: Record<number, TrackFragmentIndex> = JSON.parse(indexContent);
+    const fragmentIndex: Record<number, TrackFragmentIndex> =
+      JSON.parse(indexContent);
 
     // Verify that startTimeOffsetMs is captured in the index
-    const videoTrack = Object.values(fragmentIndex).find(track => track.type === "video");
+    const videoTrack = Object.values(fragmentIndex).find(
+      (track) => track.type === "video",
+    );
     expect(videoTrack).toBeDefined();
 
     // The actual offset value depends on the test file
     // For now, we verify the field exists and is a number or undefined
-    expect(videoTrack!.startTimeOffsetMs === undefined || typeof videoTrack!.startTimeOffsetMs === 'number').toBe(true);
+    expect(
+      videoTrack!.startTimeOffsetMs === undefined ||
+        typeof videoTrack!.startTimeOffsetMs === "number",
+    ).toBe(true);
   });
 
   test("detects and preserves stream-level start_time offset", async () => {
@@ -90,12 +96,18 @@ describe("processISOBMFF - timing offset detection", () => {
       id: result.id,
     });
     const indexContent = await storageProvider.readFile(indexPath);
-    const fragmentIndex: Record<number, TrackFragmentIndex> = JSON.parse(indexContent);
+    const fragmentIndex: Record<number, TrackFragmentIndex> =
+      JSON.parse(indexContent);
 
     // Verify that startTimeOffsetMs is captured for video track
-    const videoTrack = Object.values(fragmentIndex).find(track => track.type === "video");
+    const videoTrack = Object.values(fragmentIndex).find(
+      (track) => track.type === "video",
+    );
     expect(videoTrack).toBeDefined();
-    expect(videoTrack!.startTimeOffsetMs === undefined || typeof videoTrack!.startTimeOffsetMs === 'number').toBe(true);
+    expect(
+      videoTrack!.startTimeOffsetMs === undefined ||
+        typeof videoTrack!.startTimeOffsetMs === "number",
+    ).toBe(true);
   });
 
   test("detects composition time offset from first video segment when CTS > DTS", async () => {
@@ -126,20 +138,26 @@ describe("processISOBMFF - timing offset detection", () => {
       id: result.id,
     });
     const indexContent = await storageProvider.readFile(indexPath);
-    const fragmentIndex: Record<number, TrackFragmentIndex> = JSON.parse(indexContent);
+    const fragmentIndex: Record<number, TrackFragmentIndex> =
+      JSON.parse(indexContent);
 
     // Verify that startTimeOffsetMs is captured for video track
-    const videoTrack = Object.values(fragmentIndex).find(track => track.type === "video");
+    const videoTrack = Object.values(fragmentIndex).find(
+      (track) => track.type === "video",
+    );
     expect(videoTrack).toBeDefined();
 
     // If CTS > DTS was detected, startTimeOffsetMs should be set
-    expect(videoTrack!.startTimeOffsetMs === undefined || typeof videoTrack!.startTimeOffsetMs === 'number').toBe(true);
+    expect(
+      videoTrack!.startTimeOffsetMs === undefined ||
+        typeof videoTrack!.startTimeOffsetMs === "number",
+    ).toBe(true);
 
     // Verify first segment has valid CTS/DTS values
     if (videoTrack!.segments.length > 0) {
       const firstSegment = videoTrack!.segments[0]!;
-      expect(typeof firstSegment.cts).toBe('number');
-      expect(typeof firstSegment.dts).toBe('number');
+      expect(typeof firstSegment.cts).toBe("number");
+      expect(typeof firstSegment.dts).toBe("number");
       expect(firstSegment.cts).toBeGreaterThanOrEqual(firstSegment.dts);
     }
   });
@@ -171,16 +189,22 @@ describe("processISOBMFF - timing offset detection", () => {
       id: result.id,
     });
     const indexContent = await storageProvider.readFile(indexPath);
-    const fragmentIndex: Record<number, TrackFragmentIndex> = JSON.parse(indexContent);
+    const fragmentIndex: Record<number, TrackFragmentIndex> =
+      JSON.parse(indexContent);
 
     // Verify that tracks are processed correctly even without offset
     expect(Object.keys(fragmentIndex).length).toBeGreaterThan(0);
 
-    const videoTrack = Object.values(fragmentIndex).find(track => track.type === "video");
+    const videoTrack = Object.values(fragmentIndex).find(
+      (track) => track.type === "video",
+    );
     expect(videoTrack).toBeDefined();
 
     // startTimeOffsetMs can be undefined if no offset is detected
-    expect(videoTrack!.startTimeOffsetMs === undefined || typeof videoTrack!.startTimeOffsetMs === 'number').toBe(true);
+    expect(
+      videoTrack!.startTimeOffsetMs === undefined ||
+        typeof videoTrack!.startTimeOffsetMs === "number",
+    ).toBe(true);
   });
 
   test("preserves timing offset in both fragment index and track records", async () => {
@@ -209,7 +233,8 @@ describe("processISOBMFF - timing offset detection", () => {
       id: result.id,
     });
     const indexContent = await storageProvider.readFile(indexPath);
-    const fragmentIndex: Record<number, TrackFragmentIndex> = JSON.parse(indexContent);
+    const fragmentIndex: Record<number, TrackFragmentIndex> =
+      JSON.parse(indexContent);
 
     // Get track records from database
     const tracks = await db
@@ -227,7 +252,9 @@ describe("processISOBMFF - timing offset detection", () => {
       expect(indexTrack).toBeDefined();
 
       // Duration should match between DB and index
-      const indexDurationMs = Math.round((indexTrack!.duration / indexTrack!.timescale) * 1000);
+      const indexDurationMs = Math.round(
+        (indexTrack!.duration / indexTrack!.timescale) * 1000,
+      );
       expect(track.duration_ms).toBe(indexDurationMs);
 
       // Type and codec should match

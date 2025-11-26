@@ -1,0 +1,86 @@
+---
+meta:
+  - title: Text Splitting Architecture
+  - name: description
+    content: How locale-aware and grapheme-aware text splitting works across languages and complex characters
+headers:
+    Cache-Control: no-cache
+---
+
+## Text Splitting: Locale-Aware and Grapheme-Aware Segmentation
+
+The text element uses the browser's `Intl.Segmenter` API to split text intelligently across languages and complex characters. This architecture addresses platform constraints that arise when splitting text for animations.
+
+### The Problem: Platform Constraints in Text Splitting
+
+Using native string operations for text splitting presents these engineering challenges:
+
+**Platform constraints:**
+- Splitting on spaces breaks languages without spaces (Chinese, Japanese, Thai)
+- Splitting by character index breaks with emoji, combining characters, and multi-byte characters
+- Manual regex patterns don't handle edge cases across languages
+- Results in broken words, incorrect character counts, and visual glitches
+
+**Example challenges:**
+- `"Hello 👋 world".split("")` creates 13 "characters" instead of 12 (emoji is multiple code points)
+- `"你好世界".split(" ")` doesn't split Chinese text (no spaces)
+- Manual word detection misses contractions, hyphenated words, and punctuation
+
+### The Solution: Intl.Segmenter API
+
+The text element uses the browser's `Intl.Segmenter` API, which provides locale-aware segmentation:
+
+**Word splitting (`split="word"`):**
+- Uses `Intl.Segmenter` with `granularity: "word"` for proper word boundary detection
+- Handles languages without spaces correctly (Chinese, Japanese, Thai)
+- Properly identifies word-like segments vs. punctuation and whitespace
+- Preserves whitespace segments for proper spacing
+
+**Character splitting (`split="char"`):**
+- Uses `Intl.Segmenter` with `granularity: "grapheme"` for grapheme cluster awareness
+- Correctly handles emoji (single grapheme cluster, not multiple code points)
+- Handles combining characters (e.g., "é" as one character, not "e" + combining mark)
+- Works with complex scripts (Arabic, Indic scripts, etc.)
+
+**Line splitting (`split="line"`):**
+- Splits on newline characters (`\r?\n`)
+- Trims whitespace from each line
+- Filters out empty lines
+
+### Benefits
+
+**Cross-language support:**
+- Works correctly with any language the browser supports
+- No manual language detection or special cases needed
+- Handles mixed-language text seamlessly
+
+**Emoji and complex character support:**
+- Emoji are treated as single characters (not multiple code points)
+- Combining characters work correctly
+- Visual character count matches actual display
+
+**Consistent behavior:**
+- Same segmentation logic across all browsers that support `Intl.Segmenter`
+- No edge cases or manual handling required
+- Reliable word boundary detection
+
+**Performance:**
+- Browser-native implementation is highly optimized
+- No manual regex or string manipulation overhead
+- Efficient grapheme cluster detection
+
+**Example usage:**
+```html
+<ef-text split="word">
+  <template>
+    <ef-text-segment />
+  </template>
+  Hello world 你好世界
+</ef-text>
+```
+
+The element automatically handles mixed-language text, splitting English words by spaces and Chinese characters by word boundaries.
+
+For property details, see the [Reference](/docs/elements/text/reference#attr-split).
+
+

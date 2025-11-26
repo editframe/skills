@@ -79,4 +79,3 @@ export const Scrubber = React.forwardRef<EFScrubber, ScrubberProps>(
 );
 
 Scrubber.displayName = "Scrubber";
-

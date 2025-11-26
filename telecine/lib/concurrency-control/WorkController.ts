@@ -78,7 +78,6 @@ export class WorkController<Slice extends WorkSlice> {
       const tracer = opentelemetry.trace.getTracer("default");
       const span = tracer.startSpan("WorkController claim loop tick");
       try {
-
         span.setAttributes({
           startInfo: JSON.stringify({
             slicesToDo: this.slicesToDo.length,

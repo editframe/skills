@@ -1,0 +1,51 @@
+---
+meta:
+  - title: Optimize Video Playback
+  - name: description
+    content: Configure buffering and optimize video playback performance
+headers:
+    Cache-Control: no-cache
+---
+
+## Optimize Video Playback
+
+**Problem:** You're concerned about performance, bandwidth usage, or loading times.
+
+**Solution:** Configure buffering properties to control how much video is preloaded.
+
+```jsx
+<Video 
+  src="video.mp4"
+  videoBufferDurationMs={10000}  // Buffer 10s ahead (default)
+  maxVideoBufferFetches={2}      // Parallel fetches (default)
+  enableVideoBuffering={true}    // Enable buffering (default)
+/>
+```
+
+**Adjustments:**
+- Increase `videoBufferDurationMs` for smoother playback on slow connections (uses more bandwidth)
+- Decrease for lower memory usage and faster initial load
+- Increase `maxVideoBufferFetches` for faster buffering (may impact other network requests)
+- Defaults work well for most cases
+
+**Production rendering:** Use `assetId` instead of `src` for parallel rendering. See [Production vs Development Workflows](/docs/elements/video/explanation/workflows) for details.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <Timegroup mode="contain" className="w-[720px] h-[480px] flex items-center justify-center bg-black">
+    <Video src="https://assets.editframe.com/bars-n-tone.mp4" videoBufferDurationMs={10000} maxVideoBufferFetches={2} className="size-full object-contain" />
+  </Timegroup>
+</Demonstration>
+
+```jsx
+// Slow connections: buffer more
+<Video src="video.mp4" videoBufferDurationMs={20000} maxVideoBufferFetches={3} />
+
+// Low memory: buffer less
+<Video src="video.mp4" videoBufferDurationMs={5000} maxVideoBufferFetches={1} />
+
+// Production: use assetId
+<Video assetId="upload-abc123" />
+```
+
+See [JIT Transcoding Architecture](/docs/elements/video/explanation/jit-transcoding) for how buffering works.
+

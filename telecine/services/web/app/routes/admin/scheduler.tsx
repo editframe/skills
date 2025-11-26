@@ -116,10 +116,12 @@ function SchedulersTable({ schedulers }: { schedulers: any[] }) {
                 return <span className="font-medium">{row.id}</span>;
               }
               return (
-                <span className={clsx(
-                  "pl-6 text-xs transition-colors",
-                  "text-slate-600 dark:text-slate-400"
-                )}>
+                <span
+                  className={clsx(
+                    "pl-6 text-xs transition-colors",
+                    "text-slate-600 dark:text-slate-400",
+                  )}
+                >
                   {row.queueName}
                 </span>
               );
@@ -196,7 +198,9 @@ function SchedulersTable({ schedulers }: { schedulers: any[] }) {
             name: "Demand",
             content: (row: SchedulerRowData) => {
               if (row.isQueueRow && row.queueStat?.scalingInfo) {
-                return <code>{row.queueStat.scalingInfo.naturalQueueDepth}</code>;
+                return (
+                  <code>{row.queueStat.scalingInfo.naturalQueueDepth}</code>
+                );
               }
               return null;
             },
@@ -207,7 +211,11 @@ function SchedulersTable({ schedulers }: { schedulers: any[] }) {
               if (row.isQueueRow && row.queueStat?.scalingInfo) {
                 const { rawTarget, actualTarget } = row.queueStat.scalingInfo;
                 if (rawTarget !== actualTarget) {
-                  return <code>{actualTarget} ({rawTarget})</code>;
+                  return (
+                    <code>
+                      {actualTarget} ({rawTarget})
+                    </code>
+                  );
                 }
                 return <code>{actualTarget}</code>;
               }
@@ -223,7 +231,10 @@ function SchedulersTable({ schedulers }: { schedulers: any[] }) {
 function QueuesTable({
   queues,
   schedulers,
-}: { queues: [string, any][]; schedulers: any[] }) {
+}: {
+  queues: [string, any][];
+  schedulers: any[];
+}) {
   const queueRows = queues.map(([queueName, queueInfo]) => ({
     id: queueName,
     name: queueName,
@@ -249,11 +260,13 @@ function QueuesTable({
           {
             name: "Queue",
             content: ({ name }: QueueRowData) => (
-              <span className={clsx(
-                "text-xs px-2 py-1 rounded-lg inline-block transition-colors",
-                "bg-blue-50 dark:bg-blue-900/30",
-                "text-blue-900 dark:text-blue-100"
-              )}>
+              <span
+                className={clsx(
+                  "text-xs px-2 py-1 rounded-lg inline-block transition-colors",
+                  "bg-blue-50 dark:bg-blue-900/30",
+                  "text-blue-900 dark:text-blue-100",
+                )}
+              >
                 {name}
               </span>
             ),
@@ -292,7 +305,9 @@ function QueuesTable({
 
 function WorkLoopsTable({
   workLoops,
-}: { workLoops: Awaited<ReturnType<typeof Worker.getWorkLoops>> }) {
+}: {
+  workLoops: Awaited<ReturnType<typeof Worker.getWorkLoops>>;
+}) {
   return (
     <div>
       <h1 className="text-lg font-medium mb-2">WorkLoops</h1>

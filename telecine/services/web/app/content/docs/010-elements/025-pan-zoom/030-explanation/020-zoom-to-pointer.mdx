@@ -1,0 +1,55 @@
+---
+meta:
+  - title: Zoom-to-Pointer Behavior
+  - name: description
+    content: How pan-zoom elements zoom centered on the pointer position for intuitive exploration
+headers:
+    Cache-Control: no-cache
+---
+
+## Zoom-to-Pointer Behavior
+
+Pan-zoom elements zoom centered on the pointer position, creating an intuitive exploration experience where the content under the cursor remains stable during zoom operations.
+
+### The Challenge
+
+When zooming content, the zoom center point determines what part of the content remains visible. Zooming from a fixed center (like the viewport center) creates a disorienting experience where the content under the cursor moves away during zoom. Users expect the content they're pointing at to stay in place, with surrounding content expanding or contracting around that point.
+
+### The Solution
+
+Pan-zoom elements calculate zoom operations relative to the pointer position. When a zoom gesture occurs (wheel with modifier key), the element identifies the point under the pointer in both viewport coordinates and content coordinates. It then adjusts both the scale and pan position so that the content point under the pointer remains visually stable, while the rest of the content scales around it.
+
+This requires converting between coordinate spaces: from viewport coordinates (where the pointer is) to content coordinates (what content is at that point), then back to viewport coordinates after applying the new scale.
+
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+  <PanZoom className="w-[720px] h-[480px] border-2 border-gray-300 overflow-hidden bg-gray-100">
+    <div className="w-[1200px] h-[800px] bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white text-4xl">
+      Hover over a point and zoom - it stays centered
+    </div>
+  </PanZoom>
+</Demonstration>
+
+```jsx
+// Zoom centers on pointer position automatically
+<PanZoom
+  onTransformChanged={(e) => {
+    // Scale and position update together to keep pointer position stable
+    const { x, y, scale } = e.detail;
+  }}
+>
+  <YourContent />
+</PanZoom>
+```
+
+### Benefits
+
+Zoom-to-pointer behavior creates an intuitive exploration experience that matches user expectations. The content under the cursor remains visually stable during zoom, making it easy to zoom into specific areas of interest. This behavior is consistent with common graphics applications and mapping interfaces, reducing the learning curve for users.
+
+The coordinate space conversion happens automatically, so developers don't need to manually calculate zoom centers or adjust pan positions. The element handles the mathematical complexity, providing a simple API that "just works" for users.
+
+See the [Reference](/docs/elements/pan-zoom/reference) for complete property documentation.
+
+
+
+
+

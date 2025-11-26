@@ -203,82 +203,92 @@ export default function DocsPage() {
         menu={menu}
       />
 
-        {/* Mobile Table of Contents Toggle */}
-        {!isDocsIndex && headings.length >= 2 && (
-          <>
-            <button
-              ref={tocButtonRef}
-              onClick={() => setIsMobileTocOpen(!isMobileTocOpen)}
-              className="md:hidden fixed bottom-4 right-4 z-30 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full p-3 shadow-lg hover:shadow-xl transition-shadow touch-manipulation"
-              aria-label="Toggle table of contents"
+      {/* Mobile Table of Contents Toggle */}
+      {!isDocsIndex && headings.length >= 2 && (
+        <>
+          <button
+            ref={tocButtonRef}
+            onClick={() => setIsMobileTocOpen(!isMobileTocOpen)}
+            className="md:hidden fixed bottom-4 right-4 z-30 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full p-3 shadow-lg hover:shadow-xl transition-shadow touch-manipulation"
+            aria-label="Toggle table of contents"
+          >
+            <svg
+              className="h-5 w-5 text-gray-600 dark:text-gray-300"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              <svg
-                className="h-5 w-5 text-gray-600 dark:text-gray-300"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
-            </button>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
 
-            {/* Mobile Table of Contents Popover */}
-            {isMobileTocOpen && (
-              <>
-                <div
-                  className="md:hidden fixed inset-0 z-40"
-                  onClick={() => setIsMobileTocOpen(false)}
-                  aria-hidden="true"
-                />
-                <div
-                  className={clsx(
-                    "md:hidden fixed z-50 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 w-64 max-h-[60vh] overflow-hidden transition-all duration-200",
-                    isMobileTocOpen ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-2"
-                  )}
-                  style={{
-                    bottom: 'calc(4rem + 0.75rem)',
-                    right: '1rem',
-                  }}
-                >
-                  <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 px-4 py-3">
-                    <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">On this page</h2>
-                    <button
-                      onClick={() => setIsMobileTocOpen(false)}
-                      className="rounded-md p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200 touch-manipulation"
-                      aria-label="Close"
+          {/* Mobile Table of Contents Popover */}
+          {isMobileTocOpen && (
+            <>
+              <div
+                className="md:hidden fixed inset-0 z-40"
+                onClick={() => setIsMobileTocOpen(false)}
+                aria-hidden="true"
+              />
+              <div
+                className={clsx(
+                  "md:hidden fixed z-50 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 w-64 max-h-[60vh] overflow-hidden transition-all duration-200",
+                  isMobileTocOpen
+                    ? "opacity-100 scale-100 translate-y-0"
+                    : "opacity-0 scale-95 translate-y-2",
+                )}
+                style={{
+                  bottom: "calc(4rem + 0.75rem)",
+                  right: "1rem",
+                }}
+              >
+                <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 px-4 py-3">
+                  <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    On this page
+                  </h2>
+                  <button
+                    onClick={() => setIsMobileTocOpen(false)}
+                    className="rounded-md p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200 touch-manipulation"
+                    aria-label="Close"
+                  >
+                    <svg
+                      className="h-5 w-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
                     >
-                      <svg
-                        className="h-5 w-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                  <div className="overflow-y-auto max-h-[calc(60vh-3.5rem)] px-4 py-3">
-                    <MobileOnThisPage headings={headings} onLinkClick={() => setIsMobileTocOpen(false)} />
-                  </div>
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
                 </div>
-              </>
-            )}
-          </>
-        )}
+                <div className="overflow-y-auto max-h-[calc(60vh-3.5rem)] px-4 py-3">
+                  <MobileOnThisPage
+                    headings={headings}
+                    onLinkClick={() => setIsMobileTocOpen(false)}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+        </>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-[auto_1fr_auto] overflow-hidden">
         {/* Left sidebar - Menu */}
-        <Menu menu={menu} className="hidden md:block overflow-auto pl-4 pr-8 pb-20" />
+        <Menu
+          menu={menu}
+          className="hidden md:block overflow-auto pl-4 pr-8 pb-20"
+        />
 
         {/* Main content */}
         <main className="overflow-auto relative">
@@ -327,15 +337,25 @@ export default function DocsPage() {
             >
               <MDXAsComponent
                 components={{
-                  TableOfContents: () => <TableOfContents headings={headings} />,
+                  TableOfContents: () => (
+                    <TableOfContents headings={headings} />
+                  ),
                   a: CustomLink,
-                  h1: ({ children, ...props }) => <h1 {...props}>{children}</h1>,
+                  h1: ({ children, ...props }) => (
+                    <h1 {...props}>{children}</h1>
+                  ),
                   Libraries,
                   Configuration: (props) => <Configuration {...props} />,
                   Captions: (props) => <Captions {...props} />,
-                  CaptionsActiveWord: (props) => <CaptionsActiveWord {...props} />,
-                  CaptionsBeforeActiveWord: (props) => <CaptionsBeforeActiveWord {...props} />,
-                  CaptionsAfterActiveWord: (props) => <CaptionsAfterActiveWord {...props} />,
+                  CaptionsActiveWord: (props) => (
+                    <CaptionsActiveWord {...props} />
+                  ),
+                  CaptionsBeforeActiveWord: (props) => (
+                    <CaptionsBeforeActiveWord {...props} />
+                  ),
+                  CaptionsAfterActiveWord: (props) => (
+                    <CaptionsAfterActiveWord {...props} />
+                  ),
                   CaptionsSegment: (props) => <CaptionsSegment {...props} />,
                   Text: (props) => <Text {...props} />,
                   TextSegment: (props) => <TextSegment {...props} />,
@@ -357,16 +377,24 @@ export default function DocsPage() {
                   Playground: (props) => <Playground {...props} />,
                   EFPlayer: (props) => <EFPlayer {...props} />,
                   EditableWaveform: (props) => <EditableWaveform {...props} />,
-                  EditableThumbnailStrip: (props) => <EditableThumbnailStrip {...props} />,
-                  VideoEditorExample: (props) => <VideoEditorExample {...props} />,
+                  EditableThumbnailStrip: (props) => (
+                    <EditableThumbnailStrip {...props} />
+                  ),
+                  VideoEditorExample: (props) => (
+                    <VideoEditorExample {...props} />
+                  ),
                   pre: ({ children, ...props }) => (
                     <CodeBlock {...props}>{children}</CodeBlock>
                   ),
-                  ShowDocItemByName: (props) => <ShowDocItemByName {...props} />,
+                  ShowDocItemByName: (props) => (
+                    <ShowDocItemByName {...props} />
+                  ),
                   HTTPEndpoint: (props) => <HTTPEndpoint {...props} />,
                   HTTPPayload: (props) => <HTTPPayload {...props} />,
                   HTTPResponse: (props) => <HTTPResponse {...props} />,
-                  ResourceOperation: (props) => <ResourceOperation {...props} />,
+                  ResourceOperation: (props) => (
+                    <ResourceOperation {...props} />
+                  ),
                   ResourceOperationMethod: (props) => (
                     <ResourceOperationMethod {...props} />
                   ),
@@ -422,8 +450,13 @@ export default function DocsPage() {
   );
 }
 
-
-function MobileOnThisPage({ headings, onLinkClick }: { headings: Heading[]; onLinkClick: () => void }) {
+function MobileOnThisPage({
+  headings,
+  onLinkClick,
+}: {
+  headings: Heading[];
+  onLinkClick: () => void;
+}) {
   return (
     <ul className="md-toc flex flex-col gap-0.5">
       {headings.map((heading, i) => (
@@ -444,7 +477,6 @@ function MobileOnThisPage({ headings, onLinkClick }: { headings: Heading[]; onLi
     </ul>
   );
 }
-
 
 function LargeOnThisPage({ headings }: { headings: Heading[] }) {
   const [activeId, setActiveId] = React.useState<string | null>(null);

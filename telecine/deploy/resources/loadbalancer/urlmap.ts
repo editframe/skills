@@ -14,7 +14,12 @@ export const urlMap = new gcp.compute.URLMap(
     defaultService: telecineWeb.backendService.id,
     hostRules: [
       {
-        hosts: ["editframe.dev", "www.editframe.dev", "editframe.com", "www.editframe.com"],
+        hosts: [
+          "editframe.dev",
+          "www.editframe.dev",
+          "editframe.com",
+          "www.editframe.com",
+        ],
         pathMatcher: "path-matcher-1",
       },
       {

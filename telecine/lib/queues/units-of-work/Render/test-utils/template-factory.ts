@@ -51,7 +51,10 @@ export function createColorChangingTemplate(): string {
 /**
  * Write template to test assets directory
  */
-export async function writeTemplateToAssets(template: string, filename: string): Promise<string> {
+export async function writeTemplateToAssets(
+  template: string,
+  filename: string,
+): Promise<string> {
   const { writeFile } = await import("node:fs/promises");
   const { join } = await import("node:path");
 

@@ -150,7 +150,9 @@ describe("EFScrubber", () => {
 
     await scrubber.updateComplete;
 
-    const playhead = scrubber.shadowRoot?.querySelector(".playhead") as HTMLElement;
+    const playhead = scrubber.shadowRoot?.querySelector(
+      ".playhead",
+    ) as HTMLElement;
     expect(playhead).toBeTruthy();
     const leftValue = playhead.style.left;
     expect(leftValue).toMatch(/^\d+px$/);
@@ -181,4 +183,3 @@ describe("EFScrubber", () => {
     expect(rawPreview).toBeTruthy();
   });
 });
-

@@ -26,7 +26,10 @@ export interface TestBundleInfo {
   templateHash: string;
 }
 
-export const renderToStillToBuffer = async (indexPath: string, testAgent: TestAgent): Promise<{ buffers: Buffer[], renderInfo: any }> => {
+export const renderToStillToBuffer = async (
+  indexPath: string,
+  testAgent: TestAgent,
+): Promise<{ buffers: Buffer[]; renderInfo: any }> => {
   return PlaywrightEngineManager.withEngine(async (playwrightEngine) => {
     await using infoContext = await playwrightEngine.createContext({
       width: 200, // this width/height is arbitrary, we use it to extract the real width/height of the video
@@ -69,20 +72,30 @@ export const renderToStillToBuffer = async (indexPath: string, testAgent: TestAg
   });
 };
 
-export const renderToStill = async (html: string, testAgent: TestAgent, testTitle?: string) => {
-  const { indexPath, bundleDir, templateHash } = await bundleTestTemplate(html, testTitle);
+export const renderToStill = async (
+  html: string,
+  testAgent: TestAgent,
+  testTitle?: string,
+) => {
+  const { indexPath, bundleDir, templateHash } = await bundleTestTemplate(
+    html,
+    testTitle,
+  );
   const { buffers } = await renderToStillToBuffer(indexPath, testAgent);
 
   const testRenderDir = path.dirname(bundleDir);
   const outputDir = path.join(testRenderDir, "artifacts");
   await mkdir(outputDir, { recursive: true });
   await writeBuffersToFile(buffers, outputDir, "still.jpeg");
-}
+};
 
 /**
  * Render HTML to video segment buffers
  */
-export const renderToBuffers = async (indexPath: string, testAgent: TestAgent): Promise<{ buffers: Buffer[], renderInfo: any }> => {
+export const renderToBuffers = async (
+  indexPath: string,
+  testAgent: TestAgent,
+): Promise<{ buffers: Buffer[]; renderInfo: any }> => {
   return ElectronEngineManager.withEngine(async (playwrightEngine) => {
     await using infoContext = await playwrightEngine.createContext({
       width: 200, // this width/height is arbitrary, we use it to extract the real width/height of the video
@@ -91,7 +104,6 @@ export const renderToBuffers = async (indexPath: string, testAgent: TestAgent): 
       orgId: testAgent.org.id,
     });
     const renderInfo = await infoContext.getRenderInfo();
-
 
     const SEGMENT_COUNT = 3;
 
@@ -137,8 +149,15 @@ export const renderToBuffers = async (indexPath: string, testAgent: TestAgent): 
 /**
  * Complete render process from HTML to output files
  */
-export const renderToBuffersWithMetadata = async (html: string, testAgent: TestAgent, testTitle?: string): Promise<RenderOutput> => {
-  const { indexPath, bundleDir, templateHash } = await bundleTestTemplate(html, testTitle);
+export const renderToBuffersWithMetadata = async (
+  html: string,
+  testAgent: TestAgent,
+  testTitle?: string,
+): Promise<RenderOutput> => {
+  const { indexPath, bundleDir, templateHash } = await bundleTestTemplate(
+    html,
+    testTitle,
+  );
   const { buffers, renderInfo } = await renderToBuffers(indexPath, testAgent);
 
   // Assemble final video buffer
