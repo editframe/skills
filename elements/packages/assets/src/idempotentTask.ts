@@ -25,7 +25,10 @@ export const idempotentTask = <T extends unknown[]>({
   const downloadTasks: Record<string, Promise<string>> = {};
 
   // Helper function to validate cache file completeness
-  const isValidCacheFile = async (filePath: string, allowEmpty = false): Promise<boolean> => {
+  const isValidCacheFile = async (
+    filePath: string,
+    allowEmpty = false,
+  ): Promise<boolean> => {
     try {
       const stats = await stat(filePath);
       // File must exist and either have content or be explicitly allowed to be empty
@@ -49,10 +52,17 @@ export const idempotentTask = <T extends unknown[]>({
     // Handle HTTP downloads with proper race condition protection
     if (absolutePath.includes("http")) {
       const safePath = absolutePath.replace(/[^a-zA-Z0-9]/g, "_");
-      const downloadCachePath = path.join(rootDir, ".cache", `${safePath}.file`);
+      const downloadCachePath = path.join(
+        rootDir,
+        ".cache",
+        `${safePath}.file`,
+      );
 
       // Check if already downloaded and valid (allow empty downloads)
-      if (existsSync(downloadCachePath) && await isValidCacheFile(downloadCachePath, true)) {
+      if (
+        existsSync(downloadCachePath) &&
+        (await isValidCacheFile(downloadCachePath, true))
+      ) {
         log(`Already cached ${absolutePath}`);
         absolutePath = downloadCachePath;
       } else {
@@ -64,7 +74,9 @@ export const idempotentTask = <T extends unknown[]>({
             try {
               const response = await fetch(absolutePath);
               if (!response.ok) {
-                throw new Error(`Failed to fetch file from URL ${absolutePath}: ${response.status} ${response.statusText}`);
+                throw new Error(
+                  `Failed to fetch file from URL ${absolutePath}: ${response.status} ${response.statusText}`,
+                );
               }
 
               const stream = response.body;
@@ -116,7 +128,7 @@ export const idempotentTask = <T extends unknown[]>({
     const key = cachePath;
 
     // Check if cache exists and is valid (not zero-byte)
-    if (existsSync(cachePath) && await isValidCacheFile(cachePath)) {
+    if (existsSync(cachePath) && (await isValidCacheFile(cachePath))) {
       log(`Returning cached ef:${label} task for ${key}`);
       return { cachePath, md5Sum: md5 };
     }

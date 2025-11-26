@@ -22,7 +22,7 @@ function useLoopState(timegroupId: string | null) {
       if (timegroupElement) {
         const loopAttr = timegroupElement.getAttribute("loop");
         const loopProp = timegroupElement.loop;
-        
+
         if (loopAttr !== null) {
           setIsLoopEnabled(loopAttr === "true" || loopAttr === "");
         } else {
@@ -55,11 +55,11 @@ function useLoopState(timegroupId: string | null) {
   return isLoopEnabled;
 }
 
-export function PlayLoopButton({ 
-  targetId, 
-  className = "", 
+export function PlayLoopButton({
+  targetId,
+  className = "",
   activeClassName = "",
-  iconSize = 14 
+  iconSize = 14,
 }: PlayLoopButtonProps) {
   const isLoopEnabled = useLoopState(targetId);
 
@@ -70,16 +70,18 @@ export function PlayLoopButton({
     // Toggle loop state only - don't touch play/pause
     // Loop is independent: it just controls whether playback loops when it reaches the end
     const currentLoop = timegroupElement.getAttribute("loop");
-    const newLoopState = currentLoop === "true" || currentLoop === "" ? "false" : "true";
+    const newLoopState =
+      currentLoop === "true" || currentLoop === "" ? "false" : "true";
     timegroupElement.setAttribute("loop", newLoopState);
-    
+
     // Also set property for immediate effect
     timegroupElement.loop = newLoopState === "true" || newLoopState === "";
   };
 
-  const finalClassName = isLoopEnabled && activeClassName 
-    ? `${className} ${activeClassName}`.trim()
-    : className;
+  const finalClassName =
+    isLoopEnabled && activeClassName
+      ? `${className} ${activeClassName}`.trim()
+      : className;
 
   return (
     <>
@@ -94,4 +96,3 @@ export function PlayLoopButton({
     </>
   );
 }
-

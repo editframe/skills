@@ -18,10 +18,9 @@ export function ColorInput({ label, value, onChange }: ColorInputProps) {
           value={value ?? "#FFFFFF"}
           onChange={(e) => onChange(e.target.value)}
           className="absolute inset-0 w-full h-full cursor-pointer"
-          style={{ margin: 0, padding: 0, border: 'none' }}
+          style={{ margin: 0, padding: 0, border: "none" }}
         />
       </div>
     </div>
   );
 }
-

@@ -53,7 +53,9 @@ export function useTheme() {
   });
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => {
     if (typeof window === "undefined") return "light";
-    const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
+    const isDark =
+      typeof document !== "undefined" &&
+      document.documentElement.classList.contains("dark");
     return isDark ? "dark" : "light";
   });
   const [isHydrated, setIsHydrated] = useState(false);
@@ -61,7 +63,7 @@ export function useTheme() {
   const setTheme = useCallback((newTheme: Theme) => {
     setThemeState(newTheme);
     setCookie(THEME_COOKIE_NAME, newTheme);
-    
+
     if (typeof window !== "undefined") {
       if (newTheme === "system") {
         const systemPref = getSystemPreference();
@@ -77,11 +79,11 @@ export function useTheme() {
 
   useEffect(() => {
     setIsHydrated(true);
-    
+
     const stored = getStoredTheme();
     const currentIsDark = document.documentElement.classList.contains("dark");
     const currentResolved = currentIsDark ? "dark" : "light";
-    
+
     setThemeState(stored);
     setResolvedTheme(currentResolved);
   }, []);
@@ -96,7 +98,7 @@ export function useTheme() {
       const systemPref = getSystemPreference();
       const currentIsDark = document.documentElement.classList.contains("dark");
       const shouldBeDark = systemPref === "dark";
-      
+
       if (currentIsDark !== shouldBeDark) {
         applyTheme(systemPref);
       }
@@ -126,7 +128,7 @@ export function useTheme() {
       const stored = getStoredTheme();
       const currentIsDark = document.documentElement.classList.contains("dark");
       const currentResolved = currentIsDark ? "dark" : "light";
-      
+
       setThemeState(stored);
       setResolvedTheme(currentResolved);
     };
@@ -140,4 +142,3 @@ export function useTheme() {
 
   return { theme, setTheme, resolvedTheme };
 }
-

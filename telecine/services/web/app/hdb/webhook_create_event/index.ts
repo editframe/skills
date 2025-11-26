@@ -14,7 +14,9 @@ export const action = async ({ request }: Route.ActionArgs) => {
   return executeSpan("webhook_create_event", async (span) => {
     logger.info("webhook_create_event");
 
-    const payload = await request.json() as HasuraEvent<Selectable<Video2Renders>>;
+    const payload = (await request.json()) as HasuraEvent<
+      Selectable<Video2Renders>
+    >;
     const NEW = payload.event.data.new;
     const OLD = payload.event.data.old;
 

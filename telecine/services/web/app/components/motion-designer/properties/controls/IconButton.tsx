@@ -8,7 +8,13 @@ interface IconButtonProps {
   title?: string;
 }
 
-export function IconButton({ icon, onClick, active = false, disabled = false, title }: IconButtonProps) {
+export function IconButton({
+  icon,
+  onClick,
+  active = false,
+  disabled = false,
+  title,
+}: IconButtonProps) {
   return (
     <button
       onClick={onClick}
@@ -24,4 +30,3 @@ export function IconButton({ icon, onClick, active = false, disabled = false, ti
     </button>
   );
 }
-

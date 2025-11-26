@@ -15,9 +15,7 @@ function validateAndReturn(
   const validation = validateAllInvariants(newState, { strict });
   if (!validation.isValid) {
     if (strict) {
-      throw new Error(
-        `Invariant violation: ${validation.errors.join("; ")}`,
-      );
+      throw new Error(`Invariant violation: ${validation.errors.join("; ")}`);
     }
     console.warn("State validation errors:", validation.errors);
   }
@@ -57,23 +55,26 @@ function findRootTimegroupId(
   };
 
   // If element is a root timegroup, use it directly
-  const isRootTimegroup = element.type === "timegroup" && 
+  const isRootTimegroup =
+    element.type === "timegroup" &&
     state.composition.rootTimegroupIds.includes(element.id);
-  
+
   if (isRootTimegroup) {
     return element.id;
   }
 
   // Otherwise, find the root timegroup ancestor by traversing up the tree
   let currentElement: ElementNode | null = element;
-  
+
   while (currentElement) {
     // Check if current element is a root timegroup
-    if (currentElement.type === "timegroup" && 
-        state.composition.rootTimegroupIds.includes(currentElement.id)) {
+    if (
+      currentElement.type === "timegroup" &&
+      state.composition.rootTimegroupIds.includes(currentElement.id)
+    ) {
       return currentElement.id;
     }
-    
+
     // Find parent
     const parent = findParent(currentElement.id);
     if (!parent) {
@@ -82,7 +83,7 @@ function findRootTimegroupId(
     }
     currentElement = parent;
   }
-  
+
   return null;
 }
 
@@ -98,7 +99,10 @@ export function motionDesignerReducer(
 
       // Automatically set active root timegroup based on selected element
       if (action.payload.id) {
-        newState.ui.activeRootTimegroupId = findRootTimegroupId(action.payload.id, state);
+        newState.ui.activeRootTimegroupId = findRootTimegroupId(
+          action.payload.id,
+          state,
+        );
       } else {
         newState.ui.activeRootTimegroupId = null;
       }
@@ -114,7 +118,10 @@ export function motionDesignerReducer(
       if (action.payload.elementId !== null) {
         newState.ui.selectedElementId = action.payload.elementId;
         // Also set active root timegroup for the selected element
-        newState.ui.activeRootTimegroupId = findRootTimegroupId(action.payload.elementId, state);
+        newState.ui.activeRootTimegroupId = findRootTimegroupId(
+          action.payload.elementId,
+          state,
+        );
       }
 
       return newState;
@@ -201,7 +208,7 @@ export function motionDesignerReducer(
       const newState = shallowClone(state);
       newState.composition = shallowClone(state.composition);
       const newElements = { ...newState.composition.elements };
-      
+
       // For "size" prop, replace completely instead of merging
       // because it can be either legacy format {width, height} or new format {widthMode, widthValue, ...}
       let mergedProps;
@@ -212,7 +219,7 @@ export function motionDesignerReducer(
       } else {
         mergedProps = merge(element.props, updates);
       }
-      
+
       newElements[id] = {
         ...element,
         props: mergedProps,
@@ -294,11 +301,11 @@ export function motionDesignerReducer(
       const validatedState = validateAndReturn(newState);
 
       // Call onMove callbacks for registered behaviors
-      behaviorRegistry.onMove(id, newParentId, newIndex, validatedState).catch(
-        (error) => {
+      behaviorRegistry
+        .onMove(id, newParentId, newIndex, validatedState)
+        .catch((error) => {
           console.error("Error in behavior onMove callbacks:", error);
-        },
-      );
+        });
 
       return validatedState;
     }
@@ -436,4 +443,3 @@ export function motionDesignerReducer(
     }
   }
 }
-

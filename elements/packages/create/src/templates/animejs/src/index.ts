@@ -1,6 +1,13 @@
 import "@editframe/elements";
 import "@editframe/elements/styles.css";
-import { animate, svg, splitText, stagger, createTimeline, waapi } from "animejs";
+import {
+  animate,
+  svg,
+  splitText,
+  stagger,
+  createTimeline,
+  waapi,
+} from "animejs";
 import Prism from "prismjs";
 import "prismjs/themes/prism-tomorrow.css";
 import "prismjs/components/prism-javascript";
@@ -51,7 +58,10 @@ pyramidTimegroup.addFrameTask(({ ownCurrentTimeMs }) => {
 // ============================================================================
 // Section 3: WAAPI animation
 // ============================================================================
-const { chars: waapiChars } = splitText("#waapi-demo h2", { words: false, chars: true });
+const { chars: waapiChars } = splitText("#waapi-demo h2", {
+  words: false,
+  chars: true,
+});
 
 const waapiAnimation = waapi.animate(waapiChars, {
   translate: `0 -2rem`,
@@ -97,45 +107,61 @@ racetrackTimegroup.addFrameTask(({ ownCurrentTimeMs }) => {
 const transitionsTimeline = createTimeline({
   autoplay: false,
   defaults: {
-    ease: "linear"
-  }
+    ease: "linear",
+  },
 });
 
 // Add all transitions to the timeline with proper timing
 // text-intro: starts at 0, stays until 2750ms, slides out
 transitionsTimeline
-  .add("#text-intro", {
-    keyframes: [
-      { x: "0%", duration: 2750 },
-      { x: "-100%", duration: 250 }
-    ]
-  }, 0)
+  .add(
+    "#text-intro",
+    {
+      keyframes: [
+        { x: "0%", duration: 2750 },
+        { x: "-100%", duration: 250 },
+      ],
+    },
+    0,
+  )
   // pyramid: starts at 2500ms (0.5s overlap), slides in, stays, slides out
-  .add("#pyramid", {
-    keyframes: [
-      { x: "100%", duration: 0 },
-      { x: "0%", duration: 250 },
-      { x: "0%", duration: 2500 },
-      { x: "-100%", duration: 250 }
-    ]
-  }, 2500)
+  .add(
+    "#pyramid",
+    {
+      keyframes: [
+        { x: "100%", duration: 0 },
+        { x: "0%", duration: 250 },
+        { x: "0%", duration: 2500 },
+        { x: "-100%", duration: 250 },
+      ],
+    },
+    2500,
+  )
   // waapi-demo: starts at 5000ms, slides in, stays, slides out
-  .add("#waapi-demo", {
-    keyframes: [
-      { x: "100%", duration: 0 },
-      { x: "0%", duration: 250 },
-      { x: "0%", duration: 2500 },
-      { x: "-100%", duration: 250 }
-    ]
-  }, 5000)
+  .add(
+    "#waapi-demo",
+    {
+      keyframes: [
+        { x: "100%", duration: 0 },
+        { x: "0%", duration: 250 },
+        { x: "0%", duration: 2500 },
+        { x: "-100%", duration: 250 },
+      ],
+    },
+    5000,
+  )
   // racetrack: starts at 7500ms, slides in, stays
-  .add("#racetrack", {
-    keyframes: [
-      { x: "100%", duration: 0 },
-      { x: "0%", duration: 250 },
-      { x: "0%", duration: 5750 }
-    ]
-  }, 7500);
+  .add(
+    "#racetrack",
+    {
+      keyframes: [
+        { x: "100%", duration: 0 },
+        { x: "0%", duration: 250 },
+        { x: "0%", duration: 5750 },
+      ],
+    },
+    7500,
+  );
 
 const rootTimegroup = document.querySelector('ef-timegroup[mode="sequence"]')!;
 rootTimegroup.addFrameTask(({ currentTimeMs }) => {

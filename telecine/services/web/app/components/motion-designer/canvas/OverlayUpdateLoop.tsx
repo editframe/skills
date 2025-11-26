@@ -1,6 +1,6 @@
 /**
  * Overlay Update Loop - Single RAF loop that updates all overlays every frame.
- * 
+ *
  * Simpler approach: Update everything every frame. DOM reads are fast when batched,
  * and the overhead of tracking dirty state is comparable to just updating everything.
  */
@@ -50,8 +50,10 @@ function processAllOverlayUpdates(
   canvasScale: number,
 ): void {
   // Batch DOM reads first
-  const updates: Array<{ elementId: string; position: OverlayPosition | null }> =
-    [];
+  const updates: Array<{
+    elementId: string;
+    position: OverlayPosition | null;
+  }> = [];
 
   for (const elementId of elementIds) {
     const position = evaluateOverlayPositionForElement(
@@ -63,9 +65,10 @@ function processAllOverlayUpdates(
   }
 
   // Then batch DOM writes
-  const validUpdates = updates.filter(
-    (u) => u.position !== null,
-  ) as Array<{ elementId: string; position: OverlayPosition }>;
+  const validUpdates = updates.filter((u) => u.position !== null) as Array<{
+    elementId: string;
+    position: OverlayPosition;
+  }>;
   batchOverlayUpdates(validUpdates, (element, position) => {
     element.style.left = `${position.x}px`;
     element.style.top = `${position.y}px`;
@@ -119,4 +122,3 @@ export function OverlayUpdateLoop({
   // This component doesn't render anything
   return null;
 }
-

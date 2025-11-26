@@ -3,8 +3,8 @@
  * Multiplexes encoded video and audio packets into container formats like MP4, WebM, MKV, etc.
  */
 
-import { createMuxerNative } from '../playback.js';
-import type { CodecParameters } from './Encoder.js';
+import { createMuxerNative } from "../playback.js";
+import type { CodecParameters } from "./Encoder.js";
 
 // Time base rational number
 export interface Rational {
@@ -14,21 +14,22 @@ export interface Rational {
 
 // Container format constants
 export const ContainerFormat = {
-  MP4: 'mp4',
-  MOV: 'mov',
-  WEBM: 'webm',
-  MKV: 'matroska',  // Correct FFmpeg format name for MKV
-  AVI: 'avi',
-  FLV: 'flv',
-  M4V: 'm4v',
-  _3GP: '3gp',
-  TS: 'mpegts',
-  MXF: 'mxf',
-  ADTS: 'adts',     // ADTS AAC format for precise audio timing
-  WAV: 'wav'        // WAV format for uncompressed audio
+  MP4: "mp4",
+  MOV: "mov",
+  WEBM: "webm",
+  MKV: "matroska", // Correct FFmpeg format name for MKV
+  AVI: "avi",
+  FLV: "flv",
+  M4V: "m4v",
+  _3GP: "3gp",
+  TS: "mpegts",
+  MXF: "mxf",
+  ADTS: "adts", // ADTS AAC format for precise audio timing
+  WAV: "wav", // WAV format for uncompressed audio
 } as const;
 
-export type ContainerFormatType = typeof ContainerFormat[keyof typeof ContainerFormat];
+export type ContainerFormatType =
+  (typeof ContainerFormat)[keyof typeof ContainerFormat];
 
 // Codec ID constants (reused from Encoder)
 export const CodecId = {
@@ -48,7 +49,7 @@ export const CodecId = {
   VORBIS: 86021,
   AC3: 86019,
   FLAC: 86028,
-  PCM: 65536
+  PCM: 65536,
 } as const;
 
 // Pixel format constants (reused from Encoder)
@@ -67,7 +68,7 @@ export const PixelFormat = {
   ARGB: 25,
   RGBA: 26,
   ABGR: 27,
-  BGRA: 28
+  BGRA: 28,
 } as const;
 
 // Sample format constants (reused from Encoder)
@@ -81,7 +82,7 @@ export const SampleFormat = {
   S16P: 7,
   S32P: 10,
   FLTP: 8,
-  DBLP: 9
+  DBLP: 9,
 } as const;
 
 // Muxer configuration options
@@ -108,9 +109,9 @@ export interface MuxerOptions {
   audioBitrate?: number;
 
   // Container-specific options
-  fastStart?: boolean;         // Move moov atom to beginning (MP4)
-  fragmentDuration?: number;   // Fragment duration in microseconds (fragmented MP4)
-  movFlags?: string;          // MP4 muxer flags
+  fastStart?: boolean; // Move moov atom to beginning (MP4)
+  fragmentDuration?: number; // Fragment duration in microseconds (fragmented MP4)
+  movFlags?: string; // MP4 muxer flags
 
   // Metadata
   title?: string;
@@ -130,7 +131,7 @@ export interface VideoStreamConfig {
   timeBase: Rational;
   bitrate?: number;
   pixelFormat?: number;
-  extradata?: Uint8Array;     // Codec-specific data (e.g., SPS/PPS for H.264)
+  extradata?: Uint8Array; // Codec-specific data (e.g., SPS/PPS for H.264)
 }
 
 // Audio stream configuration
@@ -141,7 +142,7 @@ export interface AudioStreamConfig {
   timeBase: Rational;
   bitrate?: number;
   sampleFormat?: number;
-  extradata?: Uint8Array;     // Codec-specific data for preserving metadata like AAC profile
+  extradata?: Uint8Array; // Codec-specific data for preserving metadata like AAC profile
 }
 
 // Input packet for muxing
@@ -149,10 +150,10 @@ export interface InputPacket {
   data: Uint8Array;
   pts: number;
   dts?: number;
-  streamIndex: number;        // 0 for video, 1 for audio
+  streamIndex: number; // 0 for video, 1 for audio
   duration?: number;
-  flags?: number;             // Packet flags (keyframe, etc.)
-  sourceTimeBase?: Rational;  // Timebase of the source (encoder) for proper rescaling
+  flags?: number; // Packet flags (keyframe, etc.)
+  sourceTimeBase?: Rational; // Timebase of the source (encoder) for proper rescaling
 }
 
 // Muxer statistics
@@ -160,8 +161,8 @@ export interface MuxerStats {
   videoPacketsWritten: number;
   audioPacketsWritten: number;
   totalBytesWritten: number;
-  videoDuration: number;      // in seconds
-  audioDuration: number;      // in seconds
+  videoDuration: number; // in seconds
+  audioDuration: number; // in seconds
   isFinalized: boolean;
 }
 
@@ -180,10 +181,17 @@ interface MuxerNative {
   initialize(options: MuxerOptions): boolean;
   addVideoStream(config: VideoStreamConfig): boolean;
   addAudioStream(config: AudioStreamConfig): boolean;
-  addVideoStreamFromEncoder(codecParams: any, timeBase: Rational, frameRate: Rational): boolean;
+  addVideoStreamFromEncoder(
+    codecParams: any,
+    timeBase: Rational,
+    frameRate: Rational,
+  ): boolean;
   addAudioStreamFromEncoder(codecParams: any, timeBase: Rational): boolean;
   writeHeader(): boolean;
-  writePacketAsync(packet: InputPacket, callback: (error: Error | null, success: boolean) => void): void;
+  writePacketAsync(
+    packet: InputPacket,
+    callback: (error: Error | null, success: boolean) => void,
+  ): void;
   finalize(): boolean;
   dispose(): void;
 
@@ -207,8 +215,15 @@ export interface Muxer {
   // Stream management
   addVideoStream(config: VideoStreamConfig): Promise<boolean>;
   addAudioStream(config: AudioStreamConfig): Promise<boolean>;
-  addVideoStreamFromEncoder(codecParams: CodecParameters, timeBase: Rational, frameRate: Rational): Promise<boolean>;
-  addAudioStreamFromEncoder(codecParams: CodecParameters, timeBase: Rational): Promise<boolean>;
+  addVideoStreamFromEncoder(
+    codecParams: CodecParameters,
+    timeBase: Rational,
+    frameRate: Rational,
+  ): Promise<boolean>;
+  addAudioStreamFromEncoder(
+    codecParams: CodecParameters,
+    timeBase: Rational,
+  ): Promise<boolean>;
   writeHeader(): Promise<boolean>;
 
   // Packet writing
@@ -256,57 +271,71 @@ class MuxerImpl implements Muxer {
 
   async addVideoStream(config: VideoStreamConfig): Promise<boolean> {
     if (this.disposed) {
-      throw new Error('Muxer has been disposed');
+      throw new Error("Muxer has been disposed");
     }
     return this.native.addVideoStream(config);
   }
 
   async addAudioStream(config: AudioStreamConfig): Promise<boolean> {
     if (this.disposed) {
-      throw new Error('Muxer has been disposed');
+      throw new Error("Muxer has been disposed");
     }
     return this.native.addAudioStream(config);
   }
 
-  async addVideoStreamFromEncoder(codecParams: CodecParameters, timeBase: Rational, frameRate: Rational): Promise<boolean> {
+  async addVideoStreamFromEncoder(
+    codecParams: CodecParameters,
+    timeBase: Rational,
+    frameRate: Rational,
+  ): Promise<boolean> {
     if (this.disposed) {
-      throw new Error('Muxer has been disposed');
+      throw new Error("Muxer has been disposed");
     }
-    return this.native.addVideoStreamFromEncoder(codecParams, timeBase, frameRate);
+    return this.native.addVideoStreamFromEncoder(
+      codecParams,
+      timeBase,
+      frameRate,
+    );
   }
 
-  async addAudioStreamFromEncoder(codecParams: CodecParameters, timeBase: Rational): Promise<boolean> {
+  async addAudioStreamFromEncoder(
+    codecParams: CodecParameters,
+    timeBase: Rational,
+  ): Promise<boolean> {
     if (this.disposed) {
-      throw new Error('Muxer has been disposed');
+      throw new Error("Muxer has been disposed");
     }
     return this.native.addAudioStreamFromEncoder(codecParams, timeBase);
   }
 
   async writeHeader(): Promise<boolean> {
     if (this.disposed) {
-      throw new Error('Muxer has been disposed');
+      throw new Error("Muxer has been disposed");
     }
     return this.native.writeHeader();
   }
 
   async writePacket(packet: InputPacket): Promise<boolean> {
     if (this.disposed) {
-      throw new Error('Muxer has been disposed');
+      throw new Error("Muxer has been disposed");
     }
     return new Promise<boolean>((resolve, reject) => {
-      this.native.writePacketAsync(packet, (error: Error | null, success: boolean) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve(success);
-        }
-      });
+      this.native.writePacketAsync(
+        packet,
+        (error: Error | null, success: boolean) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve(success);
+          }
+        },
+      );
     });
   }
 
   async finalize(): Promise<boolean> {
     if (this.disposed) {
-      throw new Error('Muxer has been disposed');
+      throw new Error("Muxer has been disposed");
     }
     return this.native.finalize();
   }
@@ -321,10 +350,10 @@ class MuxerImpl implements Muxer {
 
 /**
  * Create a new Muxer instance
- * 
+ *
  * @param options - Muxer configuration options
  * @returns Promise resolving to a Muxer instance
- * 
+ *
  * @example
  * ```typescript
  * // MP4 with H.264 video and AAC audio
@@ -333,7 +362,7 @@ class MuxerImpl implements Muxer {
  *   filename: 'output.mp4',
  *   fastStart: true
  * });
- * 
+ *
  * // Add video stream
  * await muxer.addVideoStream({
  *   codecId: CodecId.H264,
@@ -343,7 +372,7 @@ class MuxerImpl implements Muxer {
  *   timeBase: { num: 1, den: 30 },
  *   bitrate: 2000000
  * });
- * 
+ *
  * // Add audio stream
  * await muxer.addAudioStream({
  *   codecId: CodecId.AAC,
@@ -352,10 +381,10 @@ class MuxerImpl implements Muxer {
  *   timeBase: { num: 1, den: 44100 },
  *   bitrate: 128000
  * });
- * 
+ *
  * // Write header
  * await muxer.writeHeader();
- * 
+ *
  * // Write packets...
  * await muxer.writePacket({
  *   data: encodedVideoData,
@@ -363,7 +392,7 @@ class MuxerImpl implements Muxer {
  *   streamIndex: 0, // video
  *   flags: 1 // keyframe
  * });
- * 
+ *
  * // Finalize
  * await muxer.finalize();
  * ```
@@ -374,7 +403,7 @@ export async function createMuxer(options: MuxerOptions): Promise<Muxer> {
   const success = native.initialize(options);
   if (!success) {
     native.dispose();
-    throw new Error('Failed to initialize Muxer');
+    throw new Error("Failed to initialize Muxer");
   }
 
   return new MuxerImpl(native);
@@ -382,11 +411,13 @@ export async function createMuxer(options: MuxerOptions): Promise<Muxer> {
 
 /**
  * Validate muxer configuration without creating a muxer
- * 
+ *
  * @param options - Muxer options to validate
  * @returns Promise resolving to validation result
  */
-export async function validateMuxer(options: MuxerOptions): Promise<MuxerValidationResult> {
+export async function validateMuxer(
+  options: MuxerOptions,
+): Promise<MuxerValidationResult> {
   try {
     using muxer = await createMuxer(options);
 
@@ -395,19 +426,19 @@ export async function validateMuxer(options: MuxerOptions): Promise<MuxerValidat
       format: muxer.format,
       filename: muxer.filename,
       hasVideoStream: muxer.hasVideoStream,
-      hasAudioStream: muxer.hasAudioStream
+      hasAudioStream: muxer.hasAudioStream,
     };
   } catch (error) {
     return {
       valid: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 }
 
 /**
  * Get supported container formats
- * 
+ *
  * @returns Object mapping format names to format strings
  */
 export function getSupportedFormats(): Record<string, string> {
@@ -416,7 +447,7 @@ export function getSupportedFormats(): Record<string, string> {
 
 /**
  * Create rational number for frame rates and time bases
- * 
+ *
  * @param num - Numerator
  * @param den - Denominator
  * @returns Rational number
@@ -427,7 +458,7 @@ export function createRational(num: number, den: number): Rational {
 
 /**
  * Convert frame rate to rational
- * 
+ *
  * @param fps - Frames per second
  * @returns Rational representation
  */
@@ -445,7 +476,7 @@ export function fpsToRational(fps: number): Rational {
   // For decimal frame rates, multiply by 1000 and simplify
   const num = Math.round(fps * 1000);
   const den = 1000;
-  const gcd = (a: number, b: number): number => b === 0 ? a : gcd(b, a % b);
+  const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
   const divisor = gcd(num, den);
 
   return { num: num / divisor, den: den / divisor };
@@ -453,10 +484,10 @@ export function fpsToRational(fps: number): Rational {
 
 /**
  * Create time base for given sample rate
- * 
+ *
  * @param sampleRate - Audio sample rate in Hz
  * @returns Time base rational
  */
 export function sampleRateToTimeBase(sampleRate: number): Rational {
   return { num: 1, den: sampleRate };
-} 
+}

@@ -126,4 +126,3 @@ export class TimeManager {
     this.timegroupElement = null;
   }
 }
-

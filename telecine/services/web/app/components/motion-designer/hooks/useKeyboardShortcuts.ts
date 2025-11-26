@@ -31,7 +31,9 @@ export function useKeyboardShortcuts({
             return;
           case "t":
             e.preventDefault();
-            onSetPlacementMode(state.ui.placementMode === "text" ? null : "text");
+            onSetPlacementMode(
+              state.ui.placementMode === "text" ? null : "text",
+            );
             return;
           case "d":
             e.preventDefault();
@@ -39,19 +41,27 @@ export function useKeyboardShortcuts({
             return;
           case "g":
             e.preventDefault();
-            onSetPlacementMode(state.ui.placementMode === "timegroup" ? null : "timegroup");
+            onSetPlacementMode(
+              state.ui.placementMode === "timegroup" ? null : "timegroup",
+            );
             return;
           case "i":
             e.preventDefault();
-            onSetPlacementMode(state.ui.placementMode === "image" ? null : "image");
+            onSetPlacementMode(
+              state.ui.placementMode === "image" ? null : "image",
+            );
             return;
           case "m":
             e.preventDefault();
-            onSetPlacementMode(state.ui.placementMode === "video" ? null : "video");
+            onSetPlacementMode(
+              state.ui.placementMode === "video" ? null : "video",
+            );
             return;
           case "a":
             e.preventDefault();
-            onSetPlacementMode(state.ui.placementMode === "audio" ? null : "audio");
+            onSetPlacementMode(
+              state.ui.placementMode === "audio" ? null : "audio",
+            );
             return;
           case "escape":
             e.preventDefault();
@@ -67,7 +77,8 @@ export function useKeyboardShortcuts({
         }
 
         if (state.ui.selectedElementId) {
-          const selectedElement = state.composition.elements[state.ui.selectedElementId];
+          const selectedElement =
+            state.composition.elements[state.ui.selectedElementId];
           if (selectedElement) {
             e.preventDefault();
             onDeleteElement(selectedElement.id);
@@ -90,4 +101,3 @@ export function useKeyboardShortcuts({
     onSetPlacementMode,
   ]);
 }
-

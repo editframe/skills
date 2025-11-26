@@ -44,7 +44,10 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
 const ReleaseButton = ({
   id,
   queueName,
-}: { id: string; queueName: string }) => {
+}: {
+  id: string;
+  queueName: string;
+}) => {
   const fetcher = useFetcher<{ success: boolean }>({
     key: `release-job-${id}`,
   });

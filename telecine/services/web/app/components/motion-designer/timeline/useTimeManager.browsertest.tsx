@@ -16,18 +16,18 @@ function createTimegroupElement(id: string, duration: string = "5s") {
     pause: vi.fn(),
   };
   (timegroupElement as any).seek = vi.fn();
-  
+
   // Provide durationMs getter that reads from attribute (works with real elements too)
   // This ensures the test works whether the custom element is fully defined or not
   const originalDurationMs = Object.getOwnPropertyDescriptor(
     Object.getPrototypeOf(timegroupElement),
-    "durationMs"
+    "durationMs",
   );
-  
+
   // Only override if the element doesn't already have a working durationMs getter
   if (!originalDurationMs || typeof originalDurationMs.get !== "function") {
     Object.defineProperty(timegroupElement, "durationMs", {
-      get: function() {
+      get: function () {
         const dur = this.getAttribute("duration") || "5s";
         if (dur.endsWith("ms")) {
           return parseFloat(dur.slice(0, -2)) || 5000;
@@ -40,12 +40,14 @@ function createTimegroupElement(id: string, duration: string = "5s") {
       configurable: true,
     });
   }
-  
+
   document.body.appendChild(timegroupElement);
   return timegroupElement;
 }
 
-function createMockMotionDesignerState(overrides: Partial<MotionDesignerState> = {}): MotionDesignerState {
+function createMockMotionDesignerState(
+  overrides: Partial<MotionDesignerState> = {},
+): MotionDesignerState {
   return {
     composition: {
       elements: {},
@@ -89,7 +91,7 @@ function renderUseTimeManager(
   state?: MotionDesignerState,
 ) {
   const actions = createMockActions();
-  
+
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <MotionDesignerProvider actions={actions}>
       {children}
@@ -97,12 +99,14 @@ function renderUseTimeManager(
   );
 
   const hookResult = renderHook(
-    (props: { activeTimegroupId: string | null; state?: MotionDesignerState }) => 
-      useTimeManager(props.activeTimegroupId, props.state),
-    { 
+    (props: {
+      activeTimegroupId: string | null;
+      state?: MotionDesignerState;
+    }) => useTimeManager(props.activeTimegroupId, props.state),
+    {
       wrapper,
       initialProps: { activeTimegroupId, state },
-    }
+    },
   );
 
   return {
@@ -120,7 +124,7 @@ describe("useTimeManager", () => {
   describe("duration from DOM element", () => {
     test("reads duration from DOM element, not React state", async () => {
       const timegroupElement = createTimegroupElement("test-tg", "7.5s");
-      
+
       const state = createMockMotionDesignerState({
         composition: {
           elements: {
@@ -148,7 +152,7 @@ describe("useTimeManager", () => {
 
     test("updates duration reactively when DOM element duration changes", async () => {
       const timegroupElement = createTimegroupElement("test-tg", "5s");
-      
+
       const state = createMockMotionDesignerState({
         composition: {
           elements: {
@@ -173,21 +177,24 @@ describe("useTimeManager", () => {
       // Change duration on DOM element by updating attribute
       timegroupElement.setAttribute("duration", "10s");
 
-      await waitFor(() => {
-        // Duration should update reactively (10s = 10000ms)
-        expect(result.current.duration).toBe(10000);
-      }, { timeout: 2000 });
+      await waitFor(
+        () => {
+          // Duration should update reactively (10s = 10000ms)
+          expect(result.current.duration).toBe(10000);
+        },
+        { timeout: 2000 },
+      );
     });
 
     test("returns default duration when no active timegroup", () => {
       const { result } = renderUseTimeManager(null, undefined);
-      
+
       expect(result.current.duration).toBe(5000);
     });
 
     test("initializes duration from TimeManager on mount", async () => {
       const timegroupElement = createTimegroupElement("test-tg", "8s");
-      
+
       const state = createMockMotionDesignerState({
         composition: {
           elements: {
@@ -214,7 +221,7 @@ describe("useTimeManager", () => {
   describe("duration subscription", () => {
     test("subscribes to duration changes from TimeManager", async () => {
       const timegroupElement = createTimegroupElement("test-tg", "5s");
-      
+
       const state = createMockMotionDesignerState({
         composition: {
           elements: {
@@ -239,14 +246,17 @@ describe("useTimeManager", () => {
       // Change duration by updating attribute
       timegroupElement.setAttribute("duration", "12s");
 
-      await waitFor(() => {
-        expect(result.current.duration).toBe(12000);
-      }, { timeout: 2000 });
+      await waitFor(
+        () => {
+          expect(result.current.duration).toBe(12000);
+        },
+        { timeout: 2000 },
+      );
     });
 
     test("unsubscribes on unmount", async () => {
       const timegroupElement = createTimegroupElement("test-tg", "5s");
-      
+
       const state = createMockMotionDesignerState({
         composition: {
           elements: {
@@ -274,7 +284,7 @@ describe("useTimeManager", () => {
       timegroupElement.setAttribute("duration", "15s");
 
       // Wait a bit to ensure no updates happen
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Duration should still be 5000 (no update after unmount)
       expect(result.current.duration).toBe(5000);
@@ -285,7 +295,7 @@ describe("useTimeManager", () => {
     test("updates duration when active timegroup changes", async () => {
       const timegroup1 = createTimegroupElement("tg-1", "5s");
       const timegroup2 = createTimegroupElement("tg-2", "8s");
-      
+
       const state = createMockMotionDesignerState({
         composition: {
           elements: {
@@ -317,10 +327,12 @@ describe("useTimeManager", () => {
       // Change active timegroup by rerendering with new activeTimegroupId
       rerender({ activeTimegroupId: "tg-2", state });
 
-      await waitFor(() => {
-        expect(result.current.duration).toBe(8000);
-      }, { timeout: 2000 });
+      await waitFor(
+        () => {
+          expect(result.current.duration).toBe(8000);
+        },
+        { timeout: 2000 },
+      );
     });
   });
 });
-

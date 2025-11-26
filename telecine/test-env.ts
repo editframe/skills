@@ -7,7 +7,8 @@ import { SEMRESATTRS_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
 process.env.CHUNK_SIZE_BYTES = "20";
 
 // Initialize OpenTelemetry for test runner
-const otelEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT || "http://localhost:4318";
+const otelEndpoint =
+  process.env.OTEL_EXPORTER_OTLP_ENDPOINT || "http://localhost:4318";
 
 const sdk = new NodeSDK({
   resource: new Resource({
@@ -17,7 +18,7 @@ const sdk = new NodeSDK({
     new SimpleSpanProcessor(
       new OTLPTraceExporter({
         url: `${otelEndpoint}/v1/traces`,
-      })
+      }),
     ),
   ],
 });

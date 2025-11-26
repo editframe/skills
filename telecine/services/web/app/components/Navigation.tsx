@@ -47,7 +47,7 @@ const SidebarItem = ({ to, children, Icon }: SidebarItemProps) => {
               "shadow-sm dark:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.3)]",
               "before:absolute before:inset-0 before:bg-gradient-to-r before:from-blue-200/30 before:via-blue-100/10 before:to-blue-100/5",
               "dark:before:from-blue-900/25 dark:before:via-blue-950/10 dark:before:to-blue-950/5",
-              "before:pointer-events-none before:rounded-md"
+              "before:pointer-events-none before:rounded-md",
             ],
           )
         }
@@ -71,10 +71,10 @@ interface NavGroup {
   title: string;
   items: Array<
     | {
-      to: string;
-      label: string;
-      Icon: React.ElementType;
-    }
+        to: string;
+        label: string;
+        Icon: React.ElementType;
+      }
     | false
   >;
 }
@@ -209,8 +209,8 @@ const adminNavGroups: NavGroup[] = [
     title: "Operations",
     items: [
       { to: "/admin/reprocess-html", Icon: FileText, label: "Reprocess HTML" },
-    ]
-  }
+    ],
+  },
 ];
 
 interface NavigationProps {
@@ -218,15 +218,53 @@ interface NavigationProps {
   className?: string;
 }
 
-export const UserNavigation = ({ className, isMobileOpen, setIsMobileOpen }: { className?: string; isMobileOpen?: boolean; setIsMobileOpen?: (open: boolean) => void }) => {
-  return <Navigation navGroups={userNavGroups} className={className} isMobileOpen={isMobileOpen} setIsMobileOpen={setIsMobileOpen} />;
+export const UserNavigation = ({
+  className,
+  isMobileOpen,
+  setIsMobileOpen,
+}: {
+  className?: string;
+  isMobileOpen?: boolean;
+  setIsMobileOpen?: (open: boolean) => void;
+}) => {
+  return (
+    <Navigation
+      navGroups={userNavGroups}
+      className={className}
+      isMobileOpen={isMobileOpen}
+      setIsMobileOpen={setIsMobileOpen}
+    />
+  );
 };
 
-export const AdminNavigation = ({ className, isMobileOpen, setIsMobileOpen }: { className?: string; isMobileOpen?: boolean; setIsMobileOpen?: (open: boolean) => void }) => {
-  return <Navigation navGroups={adminNavGroups} className={className} isMobileOpen={isMobileOpen} setIsMobileOpen={setIsMobileOpen} />;
+export const AdminNavigation = ({
+  className,
+  isMobileOpen,
+  setIsMobileOpen,
+}: {
+  className?: string;
+  isMobileOpen?: boolean;
+  setIsMobileOpen?: (open: boolean) => void;
+}) => {
+  return (
+    <Navigation
+      navGroups={adminNavGroups}
+      className={className}
+      isMobileOpen={isMobileOpen}
+      setIsMobileOpen={setIsMobileOpen}
+    />
+  );
 };
 
-export const Navigation = ({ navGroups, className = "", isMobileOpen, setIsMobileOpen }: NavigationProps & { isMobileOpen?: boolean; setIsMobileOpen?: (open: boolean) => void }) => {
+export const Navigation = ({
+  navGroups,
+  className = "",
+  isMobileOpen,
+  setIsMobileOpen,
+}: NavigationProps & {
+  isMobileOpen?: boolean;
+  setIsMobileOpen?: (open: boolean) => void;
+}) => {
   useTheme();
   const [internalMobileOpen, setInternalMobileOpen] = useState(false);
   const mobileOpen = isMobileOpen ?? internalMobileOpen;
@@ -269,16 +307,18 @@ export const Navigation = ({ navGroups, className = "", isMobileOpen, setIsMobil
           "dark:before:from-blue-950/15 before:via-transparent dark:before:to-transparent",
           "before:pointer-events-none",
           className,
-          mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
       >
         <ul className="px-2.5 py-3 space-y-5">
           {navGroups.map((group) => (
             <li key={group.title} className="space-y-1">
-              <h3 className={clsx(
-                "text-[10px] font-semibold uppercase tracking-widest px-2.5 py-1.5 transition-colors",
-                "text-slate-500 dark:text-slate-400"
-              )}>
+              <h3
+                className={clsx(
+                  "text-[10px] font-semibold uppercase tracking-widest px-2.5 py-1.5 transition-colors",
+                  "text-slate-500 dark:text-slate-400",
+                )}
+              >
                 {group.title}
               </h3>
               <ul className="space-y-0.5">

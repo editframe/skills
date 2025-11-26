@@ -1,9 +1,18 @@
 import React, { useRef, useLayoutEffect, useState, useCallback } from "react";
 import { TransformHandles as EFTransformHandles } from "@editframe/react";
 import type { TransformBounds } from "@editframe/elements";
-import type { ElementNode, MotionDesignerState } from "~/lib/motion-designer/types";
-import { getSizeDimensions, convertToFixedSize } from "~/lib/motion-designer/sizingUtils";
-import { normalizeSize, type ElementSize } from "~/lib/motion-designer/sizingTypes";
+import type {
+  ElementNode,
+  MotionDesignerState,
+} from "~/lib/motion-designer/types";
+import {
+  getSizeDimensions,
+  convertToFixedSize,
+} from "~/lib/motion-designer/sizingUtils";
+import {
+  normalizeSize,
+  type ElementSize,
+} from "~/lib/motion-designer/sizingTypes";
 import { evaluateOverlayPositionForElement } from "./overlayEvaluation";
 import type { OverlayPosition } from "./overlayTypes";
 import { hasRotateAnimations } from "../rendering/styleGenerators/rotationUtils";
@@ -24,10 +33,10 @@ function isParentFlexContainer(
   state: MotionDesignerState,
 ): boolean {
   if (!element.parentId) return false;
-  
+
   const parent = state.composition.elements[element.parentId];
   if (!parent) return false;
-  
+
   const isContainer = parent.type === "div" || parent.type === "timegroup";
   return isContainer && parent.props.display === "flex";
 }
@@ -43,7 +52,8 @@ export function TransformHandlesWrapper({
   const actions = useMotionDesignerActions();
   const overlayRef = useRef<HTMLElement | null>(null);
   const dimensionsRef = useRef({ width: 0, height: 0 });
-  const [overlayPosition, setOverlayPosition] = useState<OverlayPosition | null>(null);
+  const [overlayPosition, setOverlayPosition] =
+    useState<OverlayPosition | null>(null);
   const [computedRotation, setComputedRotation] = useState<number | null>(null);
   const [bounds, setBounds] = useState<TransformBounds>({
     x: 0,
@@ -52,35 +62,36 @@ export function TransformHandlesWrapper({
     height: 100,
   });
 
-  const isRootTimegroup = element.type === "timegroup" && element.parentId === null;
+  const isRootTimegroup =
+    element.type === "timegroup" && element.parentId === null;
   const showRotateHandle = !isRootTimegroup;
   const hasRotateAnims = hasRotateAnimations(element);
 
   // Read overlay position from DOM using centralized function
   useLayoutEffect(() => {
     if (!overlayRef.current) return;
-    
+
     const overlayLayer = overlayRef.current.parentElement as HTMLElement;
     if (!overlayLayer) return;
-    
+
     const overlayLayerRect = overlayLayer.getBoundingClientRect();
-    
+
     const position = evaluateOverlayPositionForElement(
       element.id,
       overlayLayerRect,
       canvasScale,
     );
-    
+
     if (!position) return;
-    
+
     setOverlayPosition(position);
-    
+
     if (hasRotateAnims) {
       setComputedRotation(position.rotation);
     } else {
       setComputedRotation(null);
     }
-    
+
     const contentElement = document.querySelector(
       `[data-element-id="${element.id}"]`,
     ) as HTMLElement;
@@ -88,13 +99,13 @@ export function TransformHandlesWrapper({
       const intrinsicWidth = contentElement.offsetWidth;
       const intrinsicHeight = contentElement.offsetHeight;
       if (intrinsicWidth > 0 && intrinsicHeight > 0) {
-        dimensionsRef.current = { 
-          width: intrinsicWidth, 
+        dimensionsRef.current = {
+          width: intrinsicWidth,
           height: intrinsicHeight,
         };
       }
     }
-    
+
     // Update bounds for the LitElement
     // Bounds are in overlay coordinates (screen pixels relative to overlay layer)
     setBounds({
@@ -104,7 +115,16 @@ export function TransformHandlesWrapper({
       height: position.height,
       rotation: position.rotation,
     });
-  }, [element.id, element.props.position, element.props.size, state, canvasScale, canvasTranslateX, canvasTranslateY, hasRotateAnims]);
+  }, [
+    element.id,
+    element.props.position,
+    element.props.size,
+    state,
+    canvasScale,
+    canvasTranslateX,
+    canvasTranslateY,
+    hasRotateAnims,
+  ]);
 
   // Update bounds when element props change (for reactive updates)
   React.useEffect(() => {
@@ -123,74 +143,87 @@ export function TransformHandlesWrapper({
   // The EFTransformHandles works in overlay coordinates, but we need to convert to canvas coordinates
   // Overlay coordinates are screen pixels relative to overlay layer
   // Canvas coordinates = (overlay coordinates) / canvasScale (since overlay doesn't scale)
-  const handleBoundsChange = useCallback((e: CustomEvent<{ bounds: TransformBounds }>) => {
-    const newBounds = e.detail.bounds;
-    
-    // Convert overlay coordinates to canvas coordinates
-    const newCanvasX = newBounds.x / canvasScale;
-    const newCanvasY = newBounds.y / canvasScale;
-    const newCanvasWidth = newBounds.width / canvasScale;
-    const newCanvasHeight = newBounds.height / canvasScale;
-    
-    const currentX = element.props.position?.x ?? 0;
-    const currentY = element.props.position?.y ?? 0;
-    const sizeDimensions = getSizeDimensions(element.props?.size);
-    const currentWidth = sizeDimensions.width || dimensionsRef.current.width / canvasScale;
-    const currentHeight = sizeDimensions.height || dimensionsRef.current.height / canvasScale;
-    
-    const updates: Partial<ElementNode["props"]> = {};
-    
-    // Update position if it changed
-    const positionChanged = Math.abs(newCanvasX - currentX) > 0.1 || Math.abs(newCanvasY - currentY) > 0.1;
-    if (positionChanged) {
-      updates.position = {
-        x: newCanvasX,
-        y: newCanvasY,
-      };
-    }
-    
-    // Update size if it changed (resize)
-    const sizeChanged = Math.abs(newCanvasWidth - currentWidth) > 0.1 || Math.abs(newCanvasHeight - currentHeight) > 0.1;
-    if (sizeChanged) {
-      const normalizedSize = normalizeSize(element.props?.size);
-      const currentWidthMode = normalizedSize?.widthMode || "fixed";
-      const currentHeightMode = normalizedSize?.heightMode || "fixed";
-      
-      const inFlexContainer = isParentFlexContainer(element, state);
-      const isResizingWidth = Math.abs(newCanvasWidth - currentWidth) > 0.1;
-      const isResizingHeight = Math.abs(newCanvasHeight - currentHeight) > 0.1;
-      
-      updates.size = {
-        widthMode: isResizingWidth ? "fixed" : currentWidthMode,
-        widthValue: newCanvasWidth,
-        heightMode: isResizingHeight ? "fixed" : currentHeightMode,
-        heightValue: newCanvasHeight,
-      };
-      
-      // Position adjustment for resize is already handled by EFTransformHandles
-      // It keeps the opposite corner fixed, so we just need to use the new position
-      if (!inFlexContainer && !positionChanged) {
-        // The EFTransformHandles already calculated the correct position to keep opposite corner fixed
-        // We just need to convert it to canvas coordinates
+  const handleBoundsChange = useCallback(
+    (e: CustomEvent<{ bounds: TransformBounds }>) => {
+      const newBounds = e.detail.bounds;
+
+      // Convert overlay coordinates to canvas coordinates
+      const newCanvasX = newBounds.x / canvasScale;
+      const newCanvasY = newBounds.y / canvasScale;
+      const newCanvasWidth = newBounds.width / canvasScale;
+      const newCanvasHeight = newBounds.height / canvasScale;
+
+      const currentX = element.props.position?.x ?? 0;
+      const currentY = element.props.position?.y ?? 0;
+      const sizeDimensions = getSizeDimensions(element.props?.size);
+      const currentWidth =
+        sizeDimensions.width || dimensionsRef.current.width / canvasScale;
+      const currentHeight =
+        sizeDimensions.height || dimensionsRef.current.height / canvasScale;
+
+      const updates: Partial<ElementNode["props"]> = {};
+
+      // Update position if it changed
+      const positionChanged =
+        Math.abs(newCanvasX - currentX) > 0.1 ||
+        Math.abs(newCanvasY - currentY) > 0.1;
+      if (positionChanged) {
         updates.position = {
           x: newCanvasX,
           y: newCanvasY,
         };
       }
-    }
-    
-    if (Object.keys(updates).length > 0) {
-      actions.updateElement(element.id, updates);
-    }
-  }, [bounds, element, state, canvasScale, actions]);
+
+      // Update size if it changed (resize)
+      const sizeChanged =
+        Math.abs(newCanvasWidth - currentWidth) > 0.1 ||
+        Math.abs(newCanvasHeight - currentHeight) > 0.1;
+      if (sizeChanged) {
+        const normalizedSize = normalizeSize(element.props?.size);
+        const currentWidthMode = normalizedSize?.widthMode || "fixed";
+        const currentHeightMode = normalizedSize?.heightMode || "fixed";
+
+        const inFlexContainer = isParentFlexContainer(element, state);
+        const isResizingWidth = Math.abs(newCanvasWidth - currentWidth) > 0.1;
+        const isResizingHeight =
+          Math.abs(newCanvasHeight - currentHeight) > 0.1;
+
+        updates.size = {
+          widthMode: isResizingWidth ? "fixed" : currentWidthMode,
+          widthValue: newCanvasWidth,
+          heightMode: isResizingHeight ? "fixed" : currentHeightMode,
+          heightValue: newCanvasHeight,
+        };
+
+        // Position adjustment for resize is already handled by EFTransformHandles
+        // It keeps the opposite corner fixed, so we just need to use the new position
+        if (!inFlexContainer && !positionChanged) {
+          // The EFTransformHandles already calculated the correct position to keep opposite corner fixed
+          // We just need to convert it to canvas coordinates
+          updates.position = {
+            x: newCanvasX,
+            y: newCanvasY,
+          };
+        }
+      }
+
+      if (Object.keys(updates).length > 0) {
+        actions.updateElement(element.id, updates);
+      }
+    },
+    [bounds, element, state, canvasScale, actions],
+  );
 
   // Handle rotation change from LitElement
-  const handleRotationChange = useCallback((e: CustomEvent<{ rotation: number }>) => {
-    const newRotation = e.detail.rotation;
-    actions.updateElement(element.id, {
-      rotation: newRotation,
-    });
-  }, [element.id, actions]);
+  const handleRotationChange = useCallback(
+    (e: CustomEvent<{ rotation: number }>) => {
+      const newRotation = e.detail.rotation;
+      actions.updateElement(element.id, {
+        rotation: newRotation,
+      });
+    },
+    [element.id, actions],
+  );
 
   if (!isSelected) return null;
 
@@ -212,4 +245,3 @@ export function TransformHandlesWrapper({
     />
   );
 }
-

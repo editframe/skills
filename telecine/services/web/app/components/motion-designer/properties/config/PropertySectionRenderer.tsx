@@ -38,7 +38,7 @@ export function PropertySectionRenderer({
   onUpdate,
 }: PropertySectionRendererProps) {
   const visibleSections = sections.filter(
-    (section) => !section.visible || section.visible(element, state)
+    (section) => !section.visible || section.visible(element, state),
   );
 
   return (
@@ -52,15 +52,20 @@ export function PropertySectionRenderer({
         >
           {section.fields
             .filter((field) => {
-              if (field.type === "alignment-grid" || field.type === "inline-inputs") {
+              if (
+                field.type === "alignment-grid" ||
+                field.type === "inline-inputs"
+              ) {
                 return !field.visible || field.visible(element, state);
               }
               return !field.visible || field.visible(element, state);
             })
             .map((field, index) => {
-              const key = field.type === "alignment-grid" || field.type === "inline-inputs"
-                ? `${section.id}-${field.type}-${index}`
-                : `${section.id}-${field.propPath}-${index}`;
+              const key =
+                field.type === "alignment-grid" ||
+                field.type === "inline-inputs"
+                  ? `${section.id}-${field.type}-${index}`
+                  : `${section.id}-${field.propPath}-${index}`;
               return (
                 <PropertyFieldRenderer
                   key={key}
@@ -87,11 +92,12 @@ function PropertyFieldRenderer({
   element,
   onUpdate,
 }: PropertyFieldRendererProps) {
-  const propPath = field.type === "alignment-grid" 
-    ? field.justifyPropPath 
-    : field.type === "inline-inputs"
-    ? ""
-    : field.propPath;
+  const propPath =
+    field.type === "alignment-grid"
+      ? field.justifyPropPath
+      : field.type === "inline-inputs"
+        ? ""
+        : field.propPath;
   const value = propPath ? getNestedValue(element.props, propPath) : undefined;
 
   const handleChange = (newValue: any) => {
@@ -143,11 +149,7 @@ function PropertyFieldRenderer({
 
     case "color":
       return (
-        <ColorInput
-          label={field.label}
-          value={value}
-          onChange={handleChange}
-        />
+        <ColorInput label={field.label} value={value} onChange={handleChange} />
       );
 
     case "spacing":
@@ -380,9 +382,13 @@ function PropertyFieldRenderer({
       const sizeValue = value;
       let width: number | undefined;
       let height: number | undefined;
-      
+
       if (sizeValue) {
-        if (typeof sizeValue === "object" && "width" in sizeValue && "height" in sizeValue) {
+        if (
+          typeof sizeValue === "object" &&
+          "width" in sizeValue &&
+          "height" in sizeValue
+        ) {
           // Legacy format: { width: number, height: number }
           // Only use if width/height are not 0 (0 means "not set" in our system)
           if (sizeValue.width !== 0) width = sizeValue.width;
@@ -390,24 +396,40 @@ function PropertyFieldRenderer({
         } else if (typeof sizeValue === "object" && "widthMode" in sizeValue) {
           // New format with modes - extract fixed values or default
           const legacySize = sizeValue as any;
-          if (legacySize.widthMode === "fixed" && typeof legacySize.widthValue === "number" && legacySize.widthValue !== 0) {
+          if (
+            legacySize.widthMode === "fixed" &&
+            typeof legacySize.widthValue === "number" &&
+            legacySize.widthValue !== 0
+          ) {
             width = legacySize.widthValue;
           }
-          if (legacySize.heightMode === "fixed" && typeof legacySize.heightValue === "number" && legacySize.heightValue !== 0) {
+          if (
+            legacySize.heightMode === "fixed" &&
+            typeof legacySize.heightValue === "number" &&
+            legacySize.heightValue !== 0
+          ) {
             height = legacySize.heightValue;
           }
         }
       }
-      
+
       // Fallback to direct props if size object doesn't have values
       // Only use if not 0 (0 means "not set")
-      if (width === undefined && element.props.width !== undefined && element.props.width !== 0) {
+      if (
+        width === undefined &&
+        element.props.width !== undefined &&
+        element.props.width !== 0
+      ) {
         width = element.props.width;
       }
-      if (height === undefined && element.props.height !== undefined && element.props.height !== 0) {
+      if (
+        height === undefined &&
+        element.props.height !== undefined &&
+        element.props.height !== 0
+      ) {
         height = element.props.height;
       }
-      
+
       return (
         <SizeInput
           label={field.label}
@@ -417,9 +439,9 @@ function PropertyFieldRenderer({
             // Update both legacy size format and direct props for compatibility
             // Use 0 to represent "not set" for backward compatibility, or undefined for new format
             onUpdate({
-              size: { 
-                width: newWidth ?? 0, 
-                height: newHeight ?? 0 
+              size: {
+                width: newWidth ?? 0,
+                height: newHeight ?? 0,
               },
               width: newWidth,
               height: newHeight,
@@ -434,28 +456,38 @@ function PropertyFieldRenderer({
       const sizeValue = value;
       let width: number | undefined;
       let height: number | undefined;
-      
+
       if (sizeValue) {
-        if (typeof sizeValue === "object" && "width" in sizeValue && "height" in sizeValue) {
+        if (
+          typeof sizeValue === "object" &&
+          "width" in sizeValue &&
+          "height" in sizeValue
+        ) {
           // Legacy format: { width: number, height: number }
           width = sizeValue.width;
           height = sizeValue.height;
         } else if (typeof sizeValue === "object" && "widthMode" in sizeValue) {
           // New format with modes - extract fixed values or default
           const legacySize = sizeValue as any;
-          if (legacySize.widthMode === "fixed" && typeof legacySize.widthValue === "number") {
+          if (
+            legacySize.widthMode === "fixed" &&
+            typeof legacySize.widthValue === "number"
+          ) {
             width = legacySize.widthValue;
           }
-          if (legacySize.heightMode === "fixed" && typeof legacySize.heightValue === "number") {
+          if (
+            legacySize.heightMode === "fixed" &&
+            typeof legacySize.heightValue === "number"
+          ) {
             height = legacySize.heightValue;
           }
         }
       }
-      
+
       // Fallback to direct props if size object doesn't have values
       if (width === undefined) width = element.props.width;
       if (height === undefined) height = element.props.height;
-      
+
       return (
         <TimegroupSizeInput
           label={field.label}
@@ -496,4 +528,3 @@ function PropertyFieldRenderer({
       return null;
   }
 }
-

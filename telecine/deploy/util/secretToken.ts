@@ -16,12 +16,12 @@ interface SecretToken {
 
 /**
  * Creates a new secret token in GCP Secret Manager with automatic replication
- * 
+ *
  * Creates a pulumi random password resource and uses it to create a secret in GCP Secret Manager.
- * 
+ *
  * @param prefix - A unique identifier used to name the secret resources
  * @returns An object containing the created secret, version, and token resources
- * 
+ *
  * @example
  * ```typescript
  * const apiKey = secretToken('api-key');

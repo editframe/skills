@@ -17,8 +17,15 @@ export interface LegacyElementSize {
   height: number;
 }
 
-export function isLegacySize(size: ElementSize | LegacyElementSize): size is LegacyElementSize {
-  return "width" in size && typeof size.width === "number" && "height" in size && typeof size.height === "number";
+export function isLegacySize(
+  size: ElementSize | LegacyElementSize,
+): size is LegacyElementSize {
+  return (
+    "width" in size &&
+    typeof size.width === "number" &&
+    "height" in size &&
+    typeof size.height === "number"
+  );
 }
 
 export function migrateSize(legacySize: LegacyElementSize): ElementSize {
@@ -30,7 +37,9 @@ export function migrateSize(legacySize: LegacyElementSize): ElementSize {
   };
 }
 
-export function normalizeSize(size: ElementSize | LegacyElementSize | undefined): ElementSize | undefined {
+export function normalizeSize(
+  size: ElementSize | LegacyElementSize | undefined,
+): ElementSize | undefined {
   if (!size) return undefined;
   if (isLegacySize(size)) {
     return migrateSize(size);
@@ -60,8 +69,12 @@ export function fractionToString(fraction: FractionRatio): string {
   return `${fraction.numerator}/${fraction.denominator}`;
 }
 
-export function isFractionRatio(value: number | FractionRatio): value is FractionRatio {
-  return typeof value === "object" && "numerator" in value && "denominator" in value;
+export function isFractionRatio(
+  value: number | FractionRatio,
+): value is FractionRatio {
+  return (
+    typeof value === "object" && "numerator" in value && "denominator" in value
+  );
 }
 
 export const SIZING_MODE_LABELS: Record<SizingMode, string> = {
@@ -76,4 +89,3 @@ export function fractionToDisplayString(fraction: FractionRatio): string {
   const roundedPercentage = Math.round(percentage * 1000) / 1000;
   return `${roundedPercentage}%`;
 }
-

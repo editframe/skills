@@ -1,6 +1,12 @@
 import React, { useRef, useEffect, useState } from "react";
-import type { ElementNode, MotionDesignerState } from "~/lib/motion-designer/types";
-import { createDefaultSize, createDefaultSizeForFlexChild } from "~/lib/motion-designer/defaultSizes";
+import type {
+  ElementNode,
+  MotionDesignerState,
+} from "~/lib/motion-designer/types";
+import {
+  createDefaultSize,
+  createDefaultSizeForFlexChild,
+} from "~/lib/motion-designer/defaultSizes";
 import { getSizeDimensions } from "~/lib/motion-designer/sizingUtils";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
 import { hasRotateAnimations } from "../rendering/styleGenerators/rotationUtils";
@@ -20,7 +26,7 @@ interface ChildElementClickOverlayProps {
 /**
  * Renders an invisible clickable overlay for unselected child elements.
  * This allows users to click on elements in the canvas to select them.
- * 
+ *
  * When the element is selected, TransformHandles will render on top with higher z-index,
  * so this overlay only needs to handle unselected elements.
  */
@@ -35,9 +41,13 @@ export function ChildElementClickOverlay({
   const actions = useMotionDesignerActions();
   const overlayRef = useRef<HTMLDivElement>(null);
   const dimensionsRef = useRef({ width: 0, height: 0 });
-  const [overlayPosition, setOverlayPosition] = useState<OverlayPosition | null>(null);
+  const [overlayPosition, setOverlayPosition] =
+    useState<OverlayPosition | null>(null);
   const hasRotateAnims = hasRotateAnimations(element);
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
 
   // Continuously measure element using RAF to get actual DOM position
   // Uses centralized position reading function
@@ -47,7 +57,7 @@ export function ChildElementClickOverlay({
     let rafId: number;
     let lastUpdateTime = 0;
     const UPDATE_THROTTLE_MS = 16; // ~60fps max update rate
-    
+
     const updateMeasurements = (currentTime: number) => {
       // Throttle updates to reduce jitter during zoom
       if (currentTime - lastUpdateTime < UPDATE_THROTTLE_MS) {
@@ -55,40 +65,40 @@ export function ChildElementClickOverlay({
         return;
       }
       lastUpdateTime = currentTime;
-      
+
       if (!overlayRef.current) {
         rafId = requestAnimationFrame(updateMeasurements);
         return;
       }
-      
+
       // Find overlay layer
       const overlayLayer = overlayRef.current.parentElement as HTMLElement;
       if (!overlayLayer) {
         rafId = requestAnimationFrame(updateMeasurements);
         return;
       }
-      
+
       const overlayLayerRect = overlayLayer.getBoundingClientRect();
-      
+
       // Use centralized position reading function
       const position = evaluateOverlayPositionForElement(
         element.id,
         overlayLayerRect,
         canvasScale,
       );
-      
+
       if (!position) {
         rafId = requestAnimationFrame(updateMeasurements);
         return;
       }
-      
+
       // Update overlay DOM directly
       overlayRef.current.style.left = `${position.x}px`;
       overlayRef.current.style.top = `${position.y}px`;
       overlayRef.current.style.width = `${position.width}px`;
       overlayRef.current.style.height = `${position.height}px`;
       overlayRef.current.style.transform = `rotate(${position.rotation}deg)`;
-      
+
       // Update dimensions ref
       const contentElement = document.querySelector(
         `[data-element-id="${element.id}"]`,
@@ -97,13 +107,13 @@ export function ChildElementClickOverlay({
         const intrinsicWidth = contentElement.offsetWidth;
         const intrinsicHeight = contentElement.offsetHeight;
         if (intrinsicWidth > 0 && intrinsicHeight > 0) {
-          dimensionsRef.current = { 
-            width: intrinsicWidth, 
+          dimensionsRef.current = {
+            width: intrinsicWidth,
             height: intrinsicHeight,
           };
         }
       }
-      
+
       // Update state if position changed significantly
       const threshold = 0.5; // pixels
       if (
@@ -116,36 +126,53 @@ export function ChildElementClickOverlay({
       ) {
         setOverlayPosition(position);
       }
-      
+
       rafId = requestAnimationFrame(updateMeasurements);
     };
-    
+
     rafId = requestAnimationFrame(updateMeasurements);
-    
+
     return () => cancelAnimationFrame(rafId);
-  }, [element.id, element.props.position, element.props.size, state, canvasScale, canvasTranslateX, canvasTranslateY, isSelected, hasRotateAnims, overlayPosition]);
+  }, [
+    element.id,
+    element.props.position,
+    element.props.size,
+    state,
+    canvasScale,
+    canvasTranslateX,
+    canvasTranslateY,
+    isSelected,
+    hasRotateAnims,
+    overlayPosition,
+  ]);
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent canvas pan/zoom and timegroup selection
-    
+
     // If placement mode is active and this element can contain children, place the new element inside
     if (state.ui.placementMode) {
       // Only timegroups and divs can contain children
-      const canContainChildren = element.type === "timegroup" || element.type === "div";
-      
+      const canContainChildren =
+        element.type === "timegroup" || element.type === "div";
+
       if (canContainChildren) {
         // Don't allow placing timegroups inside other timegroups (only at root level)
-        if (state.ui.placementMode === "timegroup" && element.type === "timegroup") {
-          console.warn("Cannot place nested timegroups. Timegroups must be at root level.");
+        if (
+          state.ui.placementMode === "timegroup" &&
+          element.type === "timegroup"
+        ) {
+          console.warn(
+            "Cannot place nested timegroups. Timegroups must be at root level.",
+          );
           actions.setPlacementMode(null);
           return;
         }
-        
+
         // Get click position relative to the element for positioning
         const rect = e.currentTarget.getBoundingClientRect();
         const elementX = (e.clientX - rect.left) / canvasScale;
         const elementY = (e.clientY - rect.top) / canvasScale;
-        
+
         // Set default props based on element type
         const defaultProps: any = {
           position: { x: elementX, y: elementY },
@@ -154,7 +181,7 @@ export function ChildElementClickOverlay({
 
         const elementType = state.ui.placementMode as ElementNode["type"];
         const isParentFlex = element.props.display === "flex";
-        
+
         // Use appropriate default size based on context
         if (isParentFlex) {
           defaultProps.size = createDefaultSizeForFlexChild(elementType);
@@ -186,7 +213,7 @@ export function ChildElementClickOverlay({
         } else if (elementType === "waveform") {
           defaultProps.mode = "bars";
         }
-        
+
         // Add element as child of the clicked container
         actions.addElement(
           {
@@ -201,7 +228,7 @@ export function ChildElementClickOverlay({
         return;
       }
     }
-    
+
     // Otherwise, toggle selection: if already selected, deselect; otherwise select
     if (isSelected) {
       actions.selectElement(null);
@@ -244,7 +271,8 @@ export function ChildElementClickOverlay({
   const screenY = overlayPosition?.y ?? 0;
   const screenWidth = overlayPosition?.width ?? 0;
   const screenHeight = overlayPosition?.height ?? 0;
-  const currentRotation = overlayPosition?.rotation ?? element.props.rotation ?? 0;
+  const currentRotation =
+    overlayPosition?.rotation ?? element.props.rotation ?? 0;
 
   return (
     <>
@@ -283,4 +311,3 @@ export function ChildElementClickOverlay({
     </>
   );
 }
-

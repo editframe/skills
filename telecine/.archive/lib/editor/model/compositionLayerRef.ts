@@ -17,7 +17,7 @@ export const compositionLayerRef: RefConstructor<Layer> = customRef<Layer>(
       }
       const composition = findParent<LayerComposition>(
         ref,
-        (parent) => parent instanceof LayerComposition
+        (parent) => parent instanceof LayerComposition,
       );
       return composition?.layers[ref.id];
     },
@@ -26,7 +26,7 @@ export const compositionLayerRef: RefConstructor<Layer> = customRef<Layer>(
         detach(ref);
       }
     },
-  }
+  },
 );
 
 export const componentRef: RefConstructor<Layer> = customRef<Layer>(
@@ -35,7 +35,7 @@ export const componentRef: RefConstructor<Layer> = customRef<Layer>(
     resolve(ref) {
       const composition = findParent<LayerComposition>(
         ref,
-        (parent) => parent instanceof LayerComposition
+        (parent) => parent instanceof LayerComposition,
       );
       return composition?.layers[ref.id];
     },
@@ -44,7 +44,7 @@ export const componentRef: RefConstructor<Layer> = customRef<Layer>(
         detach(ref);
       }
     },
-  }
+  },
 );
 
 export const compositionRef: RefConstructor<LayerComposition> =
@@ -52,7 +52,7 @@ export const compositionRef: RefConstructor<LayerComposition> =
     resolve(ref) {
       return findParent<LayerComposition>(
         ref,
-        (parent) => parent instanceof LayerComposition
+        (parent) => parent instanceof LayerComposition,
       );
     },
     onResolvedValueChange(ref, newComposition, oldComposition) {

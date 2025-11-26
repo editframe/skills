@@ -25,7 +25,7 @@ export function ElementContextMenu({
     const handleClickOutside = () => {
       onClose();
     };
-    
+
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         onClose();
@@ -91,4 +91,3 @@ export function ElementContextMenu({
     </div>
   );
 }
-

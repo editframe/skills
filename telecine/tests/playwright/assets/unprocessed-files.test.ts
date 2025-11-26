@@ -2,7 +2,11 @@ import { v4 } from "uuid";
 import { setupServer } from "msw/node";
 import { http, passthrough } from "msw";
 
-import { Client, createUnprocessedFile, uploadUnprocessedReadableStream } from "@editframe/api";
+import {
+  Client,
+  createUnprocessedFile,
+  uploadUnprocessedReadableStream,
+} from "@editframe/api";
 
 import { test, expect, type Locator } from "../../util/test";
 import { webReadableFromBuffers } from "../../util/readableFromBuffers";

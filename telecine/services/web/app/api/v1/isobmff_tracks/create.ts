@@ -12,7 +12,7 @@ import type { Route } from "./+types/create";
 import { requireCookieOrTokenSession } from "@/util/requireSession.server";
 
 export const action = async ({
-  request
+  request,
 }: Route.ActionArgs): Promise<CreateISOBMFFTrackResult> => {
   const session = await requireCookieOrTokenSession(request);
   const payload = CreateISOBMFFTrackPayload.parse(await request.json());

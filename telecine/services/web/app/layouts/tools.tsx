@@ -29,10 +29,7 @@ export const Layout = ({
         />
       </div>
       <div className="mt-8 lg:mt-14">
-        <Playground
-          presetCode={playground.presetCode}
-          code={playground.code}
-        />
+        <Playground presetCode={playground.presetCode} code={playground.code} />
       </div>
       <div className="mt-4">
         <div
@@ -42,7 +39,7 @@ export const Layout = ({
           }}
           className={clsx(
             "text-xl flex flex-col gap-y-8 leading-[1.4] mt-3 ml-1 text-left mb-6",
-            themeClasses.pageTextSecondary
+            themeClasses.pageTextSecondary,
           )}
         ></div>
       </div>

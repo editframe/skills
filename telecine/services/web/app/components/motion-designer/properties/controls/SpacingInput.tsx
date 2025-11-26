@@ -65,4 +65,3 @@ export function SpacingInput({ label, value, onChange }: SpacingInputProps) {
     </div>
   );
 }
-

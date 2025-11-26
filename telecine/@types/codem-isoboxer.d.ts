@@ -121,7 +121,11 @@ declare module "codem-isoboxer" {
 
   const codemIsoboxer: {
     parseBuffer: ParseBuffer;
-    createBox<T extends AnyBox["type"]>(type: T, parent: ISOBox, pos?: number): FilterBoxByType<AnyBox, T>;
+    createBox<T extends AnyBox["type"]>(
+      type: T,
+      parent: ISOBox,
+      pos?: number,
+    ): FilterBoxByType<AnyBox, T>;
   };
 
   export default codemIsoboxer;

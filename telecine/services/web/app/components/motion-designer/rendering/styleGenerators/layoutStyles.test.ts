@@ -1,6 +1,9 @@
 import { describe, test, expect } from "vitest";
 import { generateLayoutStyles } from "./layoutStyles";
-import type { ElementNode, MotionDesignerState } from "~/lib/motion-designer/types";
+import type {
+  ElementNode,
+  MotionDesignerState,
+} from "~/lib/motion-designer/types";
 import type { ElementSize } from "~/lib/motion-designer/sizingTypes";
 
 function createMockState(): MotionDesignerState {
@@ -477,4 +480,3 @@ describe("generateLayoutStyles", () => {
     });
   });
 });
-

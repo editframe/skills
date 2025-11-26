@@ -37,7 +37,7 @@ export function useTimelineZoom({
     (newScale: number, centerTimeMs?: number) => {
       const clampedScale = clampZoom(newScale);
       const BASE_PIXELS_PER_SECOND = 100;
-      
+
       // Use functional update to get current zoom scale
       setZoomScale((currentScale) => {
         // If center point provided, maintain it during zoom
@@ -48,7 +48,8 @@ export function useTimelineZoom({
           const newPixelsPerSecond = BASE_PIXELS_PER_SECOND * clampedScale;
 
           // Calculate center point position in current zoom
-          const centerPixelCurrent = (centerTimeMs / 1000) * currentPixelsPerSecond;
+          const centerPixelCurrent =
+            (centerTimeMs / 1000) * currentPixelsPerSecond;
           // Calculate where center point should be in new zoom
           const centerPixelNew = (centerTimeMs / 1000) * newPixelsPerSecond;
 
@@ -61,7 +62,7 @@ export function useTimelineZoom({
             }
           });
         }
-        
+
         return clampedScale;
       });
     },
@@ -106,7 +107,8 @@ export function useTimelineZoom({
         const scrollLeft = container.scrollLeft;
 
         // Calculate the time at the mouse position before zoom
-        const currentPixelsPerSecond = BASE_PIXELS_PER_SECOND * currentZoomScale;
+        const currentPixelsPerSecond =
+          BASE_PIXELS_PER_SECOND * currentZoomScale;
         const mouseTimeMs =
           ((scrollLeft + mouseX) / currentPixelsPerSecond) * 1000;
 
@@ -118,11 +120,13 @@ export function useTimelineZoom({
         if (containerRef.current) {
           const container = containerRef.current;
           const scrollLeft = container.scrollLeft;
-          const currentPixelsPerSecond = BASE_PIXELS_PER_SECOND * currentZoomScale;
+          const currentPixelsPerSecond =
+            BASE_PIXELS_PER_SECOND * currentZoomScale;
           const newPixelsPerSecond = BASE_PIXELS_PER_SECOND * newScale;
 
           // Calculate center point position in current zoom
-          const centerPixelCurrent = (mouseTimeMs / 1000) * currentPixelsPerSecond;
+          const centerPixelCurrent =
+            (mouseTimeMs / 1000) * currentPixelsPerSecond;
           // Calculate where center point should be in new zoom
           const centerPixelNew = (mouseTimeMs / 1000) * newPixelsPerSecond;
 
@@ -138,11 +142,7 @@ export function useTimelineZoom({
         return newScale;
       });
     },
-    [
-      containerRef,
-      durationMs,
-      clampZoom,
-    ],
+    [containerRef, durationMs, clampZoom],
   );
 
   return {
@@ -156,4 +156,3 @@ export function useTimelineZoom({
     },
   };
 }
-

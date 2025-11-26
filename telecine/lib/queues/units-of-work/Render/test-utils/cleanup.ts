@@ -14,8 +14,8 @@ export class TestArtifactManager {
 
   constructor(
     private baseDir: string,
-    private options: ArtifactManagerOptions = {}
-  ) { }
+    private options: ArtifactManagerOptions = {},
+  ) {}
 
   /**
    * Register an artifact for cleanup
@@ -31,7 +31,7 @@ export class TestArtifactManager {
    * Register multiple artifacts
    */
   registerArtifacts(paths: string[]): void {
-    paths.forEach(path => this.registerArtifact(path));
+    paths.forEach((path) => this.registerArtifact(path));
   }
 
   /**
@@ -90,4 +90,4 @@ export class TestArtifactManager {
   async [Symbol.asyncDispose](): Promise<void> {
     await this.cleanup();
   }
-} 
+}

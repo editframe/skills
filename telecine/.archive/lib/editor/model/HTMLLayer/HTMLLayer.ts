@@ -11,7 +11,7 @@ export class HTMLLayer extends ExtendedModel(
   {
     html: tProp(types.string, ""),
   },
-  yjsAdapterSnapshotProcessor
+  yjsAdapterSnapshotProcessor,
 ) {
   iconName = "code";
   @modelAction

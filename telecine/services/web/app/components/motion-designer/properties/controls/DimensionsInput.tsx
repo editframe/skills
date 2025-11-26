@@ -1,7 +1,25 @@
 import React, { useState } from "react";
-import { Lock, LockOpen, ArrowsIn, ArrowsOut, Ruler } from "@phosphor-icons/react";
-import type { ElementSize, LegacyElementSize, FractionRatio } from "~/lib/motion-designer/sizingTypes";
-import { isLegacySize, normalizeSize, FRACTION_RATIOS, fractionToString, isFractionRatio, SIZING_MODE_LABELS, fractionToDisplayString } from "~/lib/motion-designer/sizingTypes";
+import {
+  Lock,
+  LockOpen,
+  ArrowsIn,
+  ArrowsOut,
+  Ruler,
+} from "@phosphor-icons/react";
+import type {
+  ElementSize,
+  LegacyElementSize,
+  FractionRatio,
+} from "~/lib/motion-designer/sizingTypes";
+import {
+  isLegacySize,
+  normalizeSize,
+  FRACTION_RATIOS,
+  fractionToString,
+  isFractionRatio,
+  SIZING_MODE_LABELS,
+  fractionToDisplayString,
+} from "~/lib/motion-designer/sizingTypes";
 import type { SizingMode } from "~/lib/motion-designer/sizingTypes";
 
 interface DimensionsInputProps {
@@ -10,9 +28,13 @@ interface DimensionsInputProps {
   onChange: (size: ElementSize) => void;
 }
 
-export function DimensionsInput({ label, size, onChange }: DimensionsInputProps) {
+export function DimensionsInput({
+  label,
+  size,
+  onChange,
+}: DimensionsInputProps) {
   const [locked, setLocked] = useState(false);
-  
+
   // Always read from props (source of truth)
   // Default to responsive (fraction) mode for responsive-first design
   const normalizedSize = normalizeSize(size) || {
@@ -30,7 +52,7 @@ export function DimensionsInput({ label, size, onChange }: DimensionsInputProps)
 
   const handleWidthModeChange = (mode: SizingMode) => {
     let newWidthValue: number | FractionRatio;
-    
+
     if (mode === "fraction") {
       // Default to 1/2 when switching to fraction
       newWidthValue = { numerator: 1, denominator: 2 };
@@ -47,13 +69,20 @@ export function DimensionsInput({ label, size, onChange }: DimensionsInputProps)
       // fill mode
       newWidthValue = typeof widthValue === "number" ? widthValue : 100;
     }
-    
-    if (locked && widthMode === "fixed" && heightMode === "fixed" && mode === "fixed") {
+
+    if (
+      locked &&
+      widthMode === "fixed" &&
+      heightMode === "fixed" &&
+      mode === "fixed"
+    ) {
       // Maintain aspect ratio when locked and both are fixed
       const currentWidth = typeof widthValue === "number" ? widthValue : 100;
       const currentHeight = typeof heightValue === "number" ? heightValue : 100;
       const aspectRatio = currentWidth / currentHeight;
-      const newHeightValue = Math.round((typeof newWidthValue === "number" ? newWidthValue : 100) / aspectRatio);
+      const newHeightValue = Math.round(
+        (typeof newWidthValue === "number" ? newWidthValue : 100) / aspectRatio,
+      );
       onChange({
         widthMode: mode,
         widthValue: newWidthValue,
@@ -72,7 +101,7 @@ export function DimensionsInput({ label, size, onChange }: DimensionsInputProps)
 
   const handleHeightModeChange = (mode: SizingMode) => {
     let newHeightValue: number | FractionRatio;
-    
+
     if (mode === "fraction") {
       // Default to 1/2 when switching to fraction
       newHeightValue = { numerator: 1, denominator: 2 };
@@ -89,13 +118,21 @@ export function DimensionsInput({ label, size, onChange }: DimensionsInputProps)
       // fill mode
       newHeightValue = typeof heightValue === "number" ? heightValue : 100;
     }
-    
-    if (locked && widthMode === "fixed" && heightMode === "fixed" && mode === "fixed") {
+
+    if (
+      locked &&
+      widthMode === "fixed" &&
+      heightMode === "fixed" &&
+      mode === "fixed"
+    ) {
       // Maintain aspect ratio when locked and both are fixed
       const currentWidth = typeof widthValue === "number" ? widthValue : 100;
       const currentHeight = typeof heightValue === "number" ? heightValue : 100;
       const aspectRatio = currentWidth / currentHeight;
-      const newWidthValue = Math.round((typeof newHeightValue === "number" ? newHeightValue : 100) * aspectRatio);
+      const newWidthValue = Math.round(
+        (typeof newHeightValue === "number" ? newHeightValue : 100) *
+          aspectRatio,
+      );
       onChange({
         widthMode: "fixed",
         widthValue: newWidthValue,
@@ -174,16 +211,16 @@ export function DimensionsInput({ label, size, onChange }: DimensionsInputProps)
     });
   };
 
-  const ModeButton = ({ 
-    mode, 
-    icon, 
-    isActive, 
+  const ModeButton = ({
+    mode,
+    icon,
+    isActive,
     onClick,
     isProminent = false,
-  }: { 
-    mode: SizingMode; 
-    icon: React.ReactNode; 
-    isActive: boolean; 
+  }: {
+    mode: SizingMode;
+    icon: React.ReactNode;
+    isActive: boolean;
     onClick: () => void;
     isProminent?: boolean;
   }) => {
@@ -195,9 +232,10 @@ export function DimensionsInput({ label, size, onChange }: DimensionsInputProps)
           flex items-center justify-center gap-1 px-2 py-1 rounded text-[9px] font-medium
           transition-colors
           ${isProminent ? "flex-[1.2]" : "flex-1"}
-          ${isActive 
-            ? "bg-blue-600 text-white" 
-            : "bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 hover:text-gray-300"
+          ${
+            isActive
+              ? "bg-blue-600 text-white"
+              : "bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 hover:text-gray-300"
           }
           ${isProminent && !isActive ? "ring-1 ring-gray-600/50" : ""}
         `}
@@ -212,16 +250,26 @@ export function DimensionsInput({ label, size, onChange }: DimensionsInputProps)
   return (
     <div className="space-y-1">
       <div className="flex items-center gap-1">
-        <label className="text-[10px] text-gray-500 w-10 font-normal flex-shrink-0">{label}</label>
+        <label className="text-[10px] text-gray-500 w-10 font-normal flex-shrink-0">
+          {label}
+        </label>
         <div className="flex-1 space-y-1">
           {/* Width Controls */}
           <div className="space-y-0.5">
             <div className="flex items-center gap-1">
-              <span className="text-[7px] text-gray-600 font-bold uppercase w-3">W</span>
+              <span className="text-[7px] text-gray-600 font-bold uppercase w-3">
+                W
+              </span>
               <div className="flex-1 flex gap-1">
                 <ModeButton
                   mode="fraction"
-                  icon={<div className="w-2.5 h-2.5 flex flex-col items-center justify-center text-[8px] leading-none"><span>1</span><span className="border-t border-current w-full"></span><span>2</span></div>}
+                  icon={
+                    <div className="w-2.5 h-2.5 flex flex-col items-center justify-center text-[8px] leading-none">
+                      <span>1</span>
+                      <span className="border-t border-current w-full"></span>
+                      <span>2</span>
+                    </div>
+                  }
                   isActive={widthMode === "fraction"}
                   onClick={() => handleWidthModeChange("fraction")}
                   isProminent={true}
@@ -251,7 +299,9 @@ export function DimensionsInput({ label, size, onChange }: DimensionsInputProps)
                 <input
                   type="number"
                   value={typeof widthValue === "number" ? widthValue : 0}
-                  onChange={(e) => handleWidthValueChange(Number(e.target.value))}
+                  onChange={(e) =>
+                    handleWidthValueChange(Number(e.target.value))
+                  }
                   className="flex-1 h-5 px-1.5 bg-gray-900/50 border border-gray-700/30 rounded-sm text-[10px] text-white focus:outline-none focus:border-blue-500/50"
                 />
                 <span className="text-[8px] text-gray-500">px</span>
@@ -260,16 +310,27 @@ export function DimensionsInput({ label, size, onChange }: DimensionsInputProps)
             {widthMode === "fraction" && (
               <div className="flex items-center gap-1 pl-4">
                 <select
-                  value={isFractionRatio(widthValue) ? fractionToString(widthValue) : "1/2"}
+                  value={
+                    isFractionRatio(widthValue)
+                      ? fractionToString(widthValue)
+                      : "1/2"
+                  }
                   onChange={(e) => {
                     const [num, den] = e.target.value.split("/").map(Number);
-                    handleWidthFractionChange({ numerator: num, denominator: den });
+                    handleWidthFractionChange({
+                      numerator: num,
+                      denominator: den,
+                    });
                   }}
                   className="flex-1 h-5 px-1.5 bg-gray-900/50 border border-gray-700/30 rounded-sm text-[10px] text-white focus:outline-none focus:border-blue-500/50"
                 >
                   {FRACTION_RATIOS.map((ratio) => (
-                    <option key={fractionToString(ratio)} value={fractionToString(ratio)}>
-                      {fractionToString(ratio)} ({fractionToDisplayString(ratio)})
+                    <option
+                      key={fractionToString(ratio)}
+                      value={fractionToString(ratio)}
+                    >
+                      {fractionToString(ratio)} (
+                      {fractionToDisplayString(ratio)})
                     </option>
                   ))}
                 </select>
@@ -289,25 +350,38 @@ export function DimensionsInput({ label, size, onChange }: DimensionsInputProps)
               className={`
                 w-4 h-4 flex items-center justify-center rounded
                 transition-colors
-                ${locked 
-                  ? "text-blue-500 hover:text-blue-400 bg-blue-500/10" 
-                  : "text-gray-600 hover:text-gray-400"
+                ${
+                  locked
+                    ? "text-blue-500 hover:text-blue-400 bg-blue-500/10"
+                    : "text-gray-600 hover:text-gray-400"
                 }
               `}
               title={locked ? "Unlock aspect ratio" : "Lock aspect ratio"}
             >
-              {locked ? <Lock className="w-2.5 h-2.5" /> : <LockOpen className="w-2.5 h-2.5" />}
+              {locked ? (
+                <Lock className="w-2.5 h-2.5" />
+              ) : (
+                <LockOpen className="w-2.5 h-2.5" />
+              )}
             </button>
           </div>
 
           {/* Height Controls */}
           <div className="space-y-0.5">
             <div className="flex items-center gap-1">
-              <span className="text-[7px] text-gray-600 font-bold uppercase w-3">H</span>
+              <span className="text-[7px] text-gray-600 font-bold uppercase w-3">
+                H
+              </span>
               <div className="flex-1 flex gap-1">
                 <ModeButton
                   mode="fraction"
-                  icon={<div className="w-2.5 h-2.5 flex flex-col items-center justify-center text-[8px] leading-none"><span>1</span><span className="border-t border-current w-full"></span><span>2</span></div>}
+                  icon={
+                    <div className="w-2.5 h-2.5 flex flex-col items-center justify-center text-[8px] leading-none">
+                      <span>1</span>
+                      <span className="border-t border-current w-full"></span>
+                      <span>2</span>
+                    </div>
+                  }
                   isActive={heightMode === "fraction"}
                   onClick={() => handleHeightModeChange("fraction")}
                   isProminent={true}
@@ -337,7 +411,9 @@ export function DimensionsInput({ label, size, onChange }: DimensionsInputProps)
                 <input
                   type="number"
                   value={typeof heightValue === "number" ? heightValue : 0}
-                  onChange={(e) => handleHeightValueChange(Number(e.target.value))}
+                  onChange={(e) =>
+                    handleHeightValueChange(Number(e.target.value))
+                  }
                   className="flex-1 h-5 px-1.5 bg-gray-900/50 border border-gray-700/30 rounded-sm text-[10px] text-white focus:outline-none focus:border-blue-500/50"
                 />
                 <span className="text-[8px] text-gray-500">px</span>
@@ -346,16 +422,27 @@ export function DimensionsInput({ label, size, onChange }: DimensionsInputProps)
             {heightMode === "fraction" && (
               <div className="flex items-center gap-1 pl-4">
                 <select
-                  value={isFractionRatio(heightValue) ? fractionToString(heightValue) : "1/2"}
+                  value={
+                    isFractionRatio(heightValue)
+                      ? fractionToString(heightValue)
+                      : "1/2"
+                  }
                   onChange={(e) => {
                     const [num, den] = e.target.value.split("/").map(Number);
-                    handleHeightFractionChange({ numerator: num, denominator: den });
+                    handleHeightFractionChange({
+                      numerator: num,
+                      denominator: den,
+                    });
                   }}
                   className="flex-1 h-5 px-1.5 bg-gray-900/50 border border-gray-700/30 rounded-sm text-[10px] text-white focus:outline-none focus:border-blue-500/50"
                 >
                   {FRACTION_RATIOS.map((ratio) => (
-                    <option key={fractionToString(ratio)} value={fractionToString(ratio)}>
-                      {fractionToString(ratio)} ({fractionToDisplayString(ratio)})
+                    <option
+                      key={fractionToString(ratio)}
+                      value={fractionToString(ratio)}
+                    >
+                      {fractionToString(ratio)} (
+                      {fractionToDisplayString(ratio)})
                     </option>
                   ))}
                 </select>

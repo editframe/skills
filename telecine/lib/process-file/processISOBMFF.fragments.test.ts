@@ -49,7 +49,8 @@ describe("processISOBMFF - fragment boundary validation", () => {
       id: result.id,
     });
     const indexContent = await storageProvider.readFile(indexPath);
-    const fragmentIndex: Record<number, TrackFragmentIndex> = JSON.parse(indexContent);
+    const fragmentIndex: Record<number, TrackFragmentIndex> =
+      JSON.parse(indexContent);
 
     // Verify each track has an init segment
     for (const [trackId, track] of Object.entries(fragmentIndex)) {
@@ -87,7 +88,8 @@ describe("processISOBMFF - fragment boundary validation", () => {
       id: result.id,
     });
     const indexContent = await storageProvider.readFile(indexPath);
-    const fragmentIndex: Record<number, TrackFragmentIndex> = JSON.parse(indexContent);
+    const fragmentIndex: Record<number, TrackFragmentIndex> =
+      JSON.parse(indexContent);
 
     // For each track, verify segments are sequential
     for (const [trackId, track] of Object.entries(fragmentIndex)) {
@@ -97,7 +99,9 @@ describe("processISOBMFF - fragment boundary validation", () => {
           const currSegment = track.segments[i]!;
 
           // Current segment should start where previous ended
-          expect(currSegment.offset).toBe(prevSegment.offset + prevSegment.size);
+          expect(currSegment.offset).toBe(
+            prevSegment.offset + prevSegment.size,
+          );
         }
       }
     }
@@ -128,7 +132,8 @@ describe("processISOBMFF - fragment boundary validation", () => {
       id: result.id,
     });
     const indexContent = await storageProvider.readFile(indexPath);
-    const fragmentIndex: Record<number, TrackFragmentIndex> = JSON.parse(indexContent);
+    const fragmentIndex: Record<number, TrackFragmentIndex> =
+      JSON.parse(indexContent);
 
     // Get track records from database
     const tracks = await db
@@ -143,7 +148,8 @@ describe("processISOBMFF - fragment boundary validation", () => {
       expect(trackIndex).toBeDefined();
 
       if (trackIndex!.segments.length > 0) {
-        const lastSegment = trackIndex!.segments[trackIndex!.segments.length - 1]!;
+        const lastSegment =
+          trackIndex!.segments[trackIndex!.segments.length - 1]!;
         const totalSizeFromFragments = lastSegment.offset + lastSegment.size;
 
         // The track byte_size in DB should match the total from fragments
@@ -177,7 +183,8 @@ describe("processISOBMFF - fragment boundary validation", () => {
       id: result.id,
     });
     const indexContent = await storageProvider.readFile(indexPath);
-    const fragmentIndex: Record<number, TrackFragmentIndex> = JSON.parse(indexContent);
+    const fragmentIndex: Record<number, TrackFragmentIndex> =
+      JSON.parse(indexContent);
 
     // Verify timing information for each segment
     for (const [trackId, track] of Object.entries(fragmentIndex)) {
@@ -185,8 +192,8 @@ describe("processISOBMFF - fragment boundary validation", () => {
 
       for (const segment of track.segments) {
         // CTS and DTS should be valid numbers
-        expect(typeof segment.cts).toBe('number');
-        expect(typeof segment.dts).toBe('number');
+        expect(typeof segment.cts).toBe("number");
+        expect(typeof segment.dts).toBe("number");
         expect(segment.cts).toBeGreaterThanOrEqual(0);
         expect(segment.dts).toBeGreaterThanOrEqual(0);
 
@@ -229,28 +236,31 @@ describe("processISOBMFF - fragment boundary validation", () => {
       id: result.id,
     });
     const indexContent = await storageProvider.readFile(indexPath);
-    const fragmentIndex: Record<number, TrackFragmentIndex> = JSON.parse(indexContent);
+    const fragmentIndex: Record<number, TrackFragmentIndex> =
+      JSON.parse(indexContent);
 
     // Analyze fragment sizes
     for (const [trackId, track] of Object.entries(fragmentIndex)) {
-      const segmentSizes = track.segments.map(s => s.size);
+      const segmentSizes = track.segments.map((s) => s.size);
 
       if (segmentSizes.length > 0) {
         // All segments should have positive size
-        segmentSizes.forEach(size => {
+        segmentSizes.forEach((size) => {
           expect(size).toBeGreaterThan(0);
         });
 
         // For video tracks, segments are typically 100KB - 10MB
-        if (track.type === 'video') {
-          const avgSize = segmentSizes.reduce((a, b) => a + b, 0) / segmentSizes.length;
+        if (track.type === "video") {
+          const avgSize =
+            segmentSizes.reduce((a, b) => a + b, 0) / segmentSizes.length;
           expect(avgSize).toBeGreaterThan(1000); // At least 1KB
           expect(avgSize).toBeLessThan(50 * 1024 * 1024); // Less than 50MB
         }
 
         // For audio tracks, segments are typically smaller
-        if (track.type === 'audio') {
-          const avgSize = segmentSizes.reduce((a, b) => a + b, 0) / segmentSizes.length;
+        if (track.type === "audio") {
+          const avgSize =
+            segmentSizes.reduce((a, b) => a + b, 0) / segmentSizes.length;
           expect(avgSize).toBeGreaterThan(100); // At least 100 bytes
           expect(avgSize).toBeLessThan(10 * 1024 * 1024); // Less than 10MB
         }
@@ -283,10 +293,13 @@ describe("processISOBMFF - fragment boundary validation", () => {
       id: result.id,
     });
     const indexContent = await storageProvider.readFile(indexPath);
-    const fragmentIndex: Record<number, TrackFragmentIndex> = JSON.parse(indexContent);
+    const fragmentIndex: Record<number, TrackFragmentIndex> =
+      JSON.parse(indexContent);
 
     // Verify video track metadata
-    const videoTrack = Object.values(fragmentIndex).find(t => t.type === 'video');
+    const videoTrack = Object.values(fragmentIndex).find(
+      (t) => t.type === "video",
+    );
     if (videoTrack) {
       expect(videoTrack.width).toBeGreaterThan(0);
       expect(videoTrack.height).toBeGreaterThan(0);
@@ -296,7 +309,9 @@ describe("processISOBMFF - fragment boundary validation", () => {
     }
 
     // Verify audio track metadata
-    const audioTrack = Object.values(fragmentIndex).find(t => t.type === 'audio');
+    const audioTrack = Object.values(fragmentIndex).find(
+      (t) => t.type === "audio",
+    );
     if (audioTrack) {
       expect(audioTrack.channel_count).toBeGreaterThan(0);
       expect(audioTrack.sample_rate).toBeGreaterThan(0);

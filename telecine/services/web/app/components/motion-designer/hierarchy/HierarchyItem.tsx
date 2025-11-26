@@ -1,7 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import { SneakerMove, CaretDown, CaretRight } from "@phosphor-icons/react";
 import { getElementIcon } from "~/lib/motion-designer/elementTypes";
-import type { MotionDesignerState, ElementNode } from "~/lib/motion-designer/types";
+import type {
+  MotionDesignerState,
+  ElementNode,
+} from "~/lib/motion-designer/types";
 import { getActiveRootTimegroupId } from "~/lib/motion-designer/utils";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
 import { useDragContext } from "./DragContext";
@@ -12,7 +15,11 @@ interface HierarchyItemProps {
   state: MotionDesignerState;
   depth: number;
   dropTarget: DropTarget | null;
-  registerElementRef: (elementId: string, element: HTMLDivElement, depth: number) => void;
+  registerElementRef: (
+    elementId: string,
+    element: HTMLDivElement,
+    depth: number,
+  ) => void;
   unregisterElementRef: (elementId: string) => void;
   highlightedElementId?: string | null;
   onHighlightChange?: (elementId: string | null) => void;
@@ -34,29 +41,36 @@ function extractFilename(url: string | undefined): string | null {
   }
 }
 
-function getTargetElementName(targetId: string | undefined, state: MotionDesignerState): string | null {
+function getTargetElementName(
+  targetId: string | undefined,
+  state: MotionDesignerState,
+): string | null {
   if (!targetId) return null;
   const targetElement = state.composition.elements[targetId];
   if (!targetElement) return null;
-  
+
   if (targetElement.type === "text") {
     return targetElement.props.content || targetId;
   }
-  
+
   return targetElement.props.name || targetId;
 }
 
-function isDescendantOf(elementId: string, ancestorId: string, state: MotionDesignerState): boolean {
+function isDescendantOf(
+  elementId: string,
+  ancestorId: string,
+  state: MotionDesignerState,
+): boolean {
   if (elementId === ancestorId) return false;
-  
+
   const ancestor = state.composition.elements[ancestorId];
   if (!ancestor) return false;
-  
+
   for (const childId of ancestor.childIds) {
     if (childId === elementId) return true;
     if (isDescendantOf(elementId, childId, state)) return true;
   }
-  
+
   return false;
 }
 
@@ -87,7 +101,10 @@ export function HierarchyItem({
   const hasAnimations = element.animations.length > 0;
   const isHighlighted = highlightedElementId === element.id;
   const isHovered = hoveredElementId === element.id;
-  const isChildOfHovered = hoveredElementId && hoveredElementId !== element.id && isDescendantOf(hoveredElementId, element.id, state);
+  const isChildOfHovered =
+    hoveredElementId &&
+    hoveredElementId !== element.id &&
+    isDescendantOf(hoveredElementId, element.id, state);
 
   const isDragging = dragState.draggedElementId === element.id;
   const isCurrentDropTarget = dropTarget?.elementId === element.id;
@@ -109,10 +126,18 @@ export function HierarchyItem({
     if (dragState.draggedElementId) return;
     e.stopPropagation();
     setIsRenaming(true);
-    const mediaFilename = (element.type === "video" || element.type === "image" || element.type === "audio") 
-      ? extractFilename(element.props.src) 
-      : null;
-    const currentName = element.props.name || mediaFilename || (element.type === "timegroup" && isRoot ? "Root Timegroup" : element.type);
+    const mediaFilename =
+      element.type === "video" ||
+      element.type === "image" ||
+      element.type === "audio"
+        ? extractFilename(element.props.src)
+        : null;
+    const currentName =
+      element.props.name ||
+      mediaFilename ||
+      (element.type === "timegroup" && isRoot
+        ? "Root Timegroup"
+        : element.type);
     setRenameValue(currentName);
   };
 
@@ -204,7 +229,6 @@ export function HierarchyItem({
     }
   };
 
-
   const isDraggable = element.type !== "timegroup" || !isRoot;
   const IconComponent = getElementIcon(element.type);
 
@@ -212,15 +236,18 @@ export function HierarchyItem({
     if (element.type === "text") {
       return element.props.content || "text";
     }
-    
-    const mediaFilename = (element.type === "video" || element.type === "image" || element.type === "audio") 
-      ? extractFilename(element.props.src) 
-      : null;
-    
+
+    const mediaFilename =
+      element.type === "video" ||
+      element.type === "image" ||
+      element.type === "audio"
+        ? extractFilename(element.props.src)
+        : null;
+
     if (mediaFilename) {
       return mediaFilename;
     }
-    
+
     if (element.props.name) {
       return element.props.name;
     }
@@ -231,12 +258,18 @@ export function HierarchyItem({
   };
 
   const displayName = getDisplayName();
-  const mediaFilename = (element.type === "video" || element.type === "image" || element.type === "audio") 
-    ? extractFilename(element.props.src) 
-    : null;
-  const targetName = (element.type === "waveform" || element.type === "captions" || element.type === "surface")
-    ? getTargetElementName(element.props.target, state)
-    : null;
+  const mediaFilename =
+    element.type === "video" ||
+    element.type === "image" ||
+    element.type === "audio"
+      ? extractFilename(element.props.src)
+      : null;
+  const targetName =
+    element.type === "waveform" ||
+    element.type === "captions" ||
+    element.type === "surface"
+      ? getTargetElementName(element.props.target, state)
+      : null;
 
   const indentPerLevel = 10;
   const baseIndent = 8;
@@ -271,7 +304,10 @@ export function HierarchyItem({
         onClick={handleClick}
       >
         {dropPosition === "before" && (
-          <div className="absolute left-0 right-0 top-0 pointer-events-none z-10" style={{ transform: "translateY(-50%)" }}>
+          <div
+            className="absolute left-0 right-0 top-0 pointer-events-none z-10"
+            style={{ transform: "translateY(-50%)" }}
+          >
             <div className="relative mx-2">
               <div className="h-0.5 bg-blue-500 w-full" />
               <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-blue-500 rounded-full -ml-1.5" />
@@ -298,7 +334,10 @@ export function HierarchyItem({
           <IconComponent size={16} />
         </span>
         {hasAnimations && (
-          <span className="text-xs text-yellow-400/70" title={`${element.animations.length} animation${element.animations.length > 1 ? "s" : ""}`}>
+          <span
+            className="text-xs text-yellow-400/70"
+            title={`${element.animations.length} animation${element.animations.length > 1 ? "s" : ""}`}
+          >
             <SneakerMove size={12} weight="fill" />
           </span>
         )}
@@ -339,7 +378,10 @@ export function HierarchyItem({
           </button>
         )}
         {dropPosition === "after" && (
-          <div className="absolute left-0 right-0 bottom-0 pointer-events-none z-10" style={{ transform: "translateY(50%)" }}>
+          <div
+            className="absolute left-0 right-0 bottom-0 pointer-events-none z-10"
+            style={{ transform: "translateY(50%)" }}
+          >
             <div className="relative mx-2">
               <div className="h-0.5 bg-blue-500 w-full" />
               <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-blue-500 rounded-full -ml-1.5" />

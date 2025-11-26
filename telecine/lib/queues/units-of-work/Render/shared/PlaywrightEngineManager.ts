@@ -23,7 +23,7 @@ export class PlaywrightEngineManager {
   }
 
   static async withEngine<T>(
-    operation: (engine: PlaywrightEngine) => Promise<T>
+    operation: (engine: PlaywrightEngine) => Promise<T>,
   ): Promise<T> {
     const engine = await PlaywrightEngineManager.getOrCreateEngine();
     try {
@@ -34,4 +34,4 @@ export class PlaywrightEngineManager {
       throw error;
     }
   }
-} 
+}

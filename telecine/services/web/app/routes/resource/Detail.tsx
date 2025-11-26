@@ -106,17 +106,21 @@ export default function ResourceDetail({
 
   // Otherwise render as overlay
   return (
-    <div className={clsx(
-      "fixed right-0 top-0 h-full w-full sm:w-1/2 overflow-y-auto shadow-lg z-50 transition-colors",
-      "bg-white dark:bg-slate-900",
-      "border-l-4 border-slate-300 dark:border-slate-700",
-      "shadow-slate-700/50 dark:shadow-slate-900/50"
-    )}>
-      <div className={clsx(
-        "flex justify-between items-center p-2 border-b sticky top-0 z-10 transition-colors",
+    <div
+      className={clsx(
+        "fixed right-0 top-0 h-full w-full sm:w-1/2 overflow-y-auto shadow-lg z-50 transition-colors",
         "bg-white dark:bg-slate-900",
-        "border-slate-300 dark:border-slate-700"
-      )}>
+        "border-l-4 border-slate-300 dark:border-slate-700",
+        "shadow-slate-700/50 dark:shadow-slate-900/50",
+      )}
+    >
+      <div
+        className={clsx(
+          "flex justify-between items-center p-2 border-b sticky top-0 z-10 transition-colors",
+          "bg-white dark:bg-slate-900",
+          "border-slate-300 dark:border-slate-700",
+        )}
+      >
         <LinkWithSearch
           preventScrollReset
           className={clsx(
@@ -124,7 +128,7 @@ export default function ResourceDetail({
             "text-slate-600 dark:text-slate-400",
             "hover:text-slate-800 dark:hover:text-slate-200",
             "decoration-slate-300 dark:decoration-slate-600",
-            "hover:decoration-slate-600 dark:hover:decoration-slate-400"
+            "hover:decoration-slate-600 dark:hover:decoration-slate-400",
           )}
           to={`/resource/${resourceType}`}
           title="Close"
@@ -134,7 +138,7 @@ export default function ResourceDetail({
             className={clsx(
               "h-4 w-4 stroke-1 transition-colors",
               "stroke-slate-500 dark:stroke-slate-400 fill-slate-300 dark:fill-slate-600",
-              "hover:stroke-slate-800 dark:hover:stroke-slate-200 hover:fill-slate-400 dark:hover:fill-slate-500"
+              "hover:stroke-slate-800 dark:hover:stroke-slate-200 hover:fill-slate-400 dark:hover:fill-slate-500",
             )}
             title="Close"
           />

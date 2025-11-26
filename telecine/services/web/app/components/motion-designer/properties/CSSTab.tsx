@@ -28,7 +28,7 @@ export function CSSTab({ element }: CSSTabProps) {
       const selector = `[data-element-id="${element.id}"]`;
       const animationProperty = `animation: ${animationStyle.animation};`;
       const properties = [animationProperty, `animation-play-state: paused;`];
-      
+
       parts.push(`${selector} {\n  ${properties.join("\n  ")}\n}`);
     }
 

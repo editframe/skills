@@ -47,4 +47,3 @@ export function calculateContentWidth(
 ): number {
   return timeToPixels(durationMs, durationMs, containerWidth, zoomScale);
 }
-

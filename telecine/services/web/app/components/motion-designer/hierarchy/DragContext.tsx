@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useCallback, useRef } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useRef,
+} from "react";
 
 interface DropTarget {
   elementId: string;
@@ -17,7 +23,11 @@ interface DragContextValue {
   updateDrag: (position: { x: number; y: number }) => void;
   setDropTarget: (target: DropTarget | null) => void;
   endDrag: () => void;
-  performDrop: () => { elementId: string; parentId: string | null; index: number | undefined } | null;
+  performDrop: () => {
+    elementId: string;
+    parentId: string | null;
+    index: number | undefined;
+  } | null;
 }
 
 const DragContext = createContext<DragContextValue | null>(null);
@@ -30,14 +40,17 @@ export function DragProvider({ children }: { children: React.ReactNode }) {
   });
   const dropExecutedRef = useRef(false);
 
-  const startDrag = useCallback((elementId: string, position: { x: number; y: number }) => {
-    dropExecutedRef.current = false;
-    setDragState({
-      draggedElementId: elementId,
-      dragPosition: position,
-      dropTarget: null,
-    });
-  }, []);
+  const startDrag = useCallback(
+    (elementId: string, position: { x: number; y: number }) => {
+      dropExecutedRef.current = false;
+      setDragState({
+        draggedElementId: elementId,
+        dragPosition: position,
+        dropTarget: null,
+      });
+    },
+    [],
+  );
 
   const updateDrag = useCallback((position: { x: number; y: number }) => {
     setDragState((prev: DragState) => {
@@ -59,15 +72,26 @@ export function DragProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const performDrop = useCallback((): { elementId: string; parentId: string | null; index: number | undefined } | null => {
-    if (dropExecutedRef.current || !dragState.draggedElementId || !dragState.dropTarget) {
+  const performDrop = useCallback((): {
+    elementId: string;
+    parentId: string | null;
+    index: number | undefined;
+  } | null => {
+    if (
+      dropExecutedRef.current ||
+      !dragState.draggedElementId ||
+      !dragState.dropTarget
+    ) {
       return null;
     }
 
     dropExecutedRef.current = true;
     return {
       elementId: dragState.draggedElementId,
-      parentId: dragState.dropTarget.elementId === "__root__" ? null : dragState.dropTarget.elementId,
+      parentId:
+        dragState.dropTarget.elementId === "__root__"
+          ? null
+          : dragState.dropTarget.elementId,
       index: dragState.dropTarget.position === "inside" ? undefined : undefined,
     };
   }, [dragState]);

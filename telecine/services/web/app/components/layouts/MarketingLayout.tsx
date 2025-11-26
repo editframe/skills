@@ -26,7 +26,7 @@ export function MarketingLayout({
       <div
         className={clsx(
           "px-4 sm:px-6 lg:px-[5.5rem] max-w-6xl mx-auto w-full",
-          containerClassName
+          containerClassName,
         )}
       >
         {children}
@@ -35,4 +35,3 @@ export function MarketingLayout({
     </PageLayout>
   );
 }
-

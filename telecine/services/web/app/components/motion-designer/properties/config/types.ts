@@ -6,7 +6,10 @@ export interface PropertySectionConfig {
   title: string;
   defaultExpanded?: boolean;
   icon?: React.ReactNode;
-  visible?: (element: ElementNode, state?: { composition: { rootTimegroupIds: string[] } }) => boolean;
+  visible?: (
+    element: ElementNode,
+    state?: { composition: { rootTimegroupIds: string[] } },
+  ) => boolean;
   fields: PropertyFieldConfig[];
 }
 
@@ -37,7 +40,10 @@ export type PropertyFieldConfig =
 interface BaseFieldConfig {
   label: string;
   propPath: string;
-  visible?: (element: ElementNode, state?: { composition: { rootTimegroupIds: string[] } }) => boolean;
+  visible?: (
+    element: ElementNode,
+    state?: { composition: { rootTimegroupIds: string[] } },
+  ) => boolean;
 }
 
 export interface NumberFieldConfig extends BaseFieldConfig {
@@ -107,7 +113,10 @@ export interface AlignmentGridFieldConfig {
   label: string;
   justifyPropPath: string;
   alignPropPath: string;
-  visible?: (element: ElementNode, state?: { composition: { rootTimegroupIds: string[] } }) => boolean;
+  visible?: (
+    element: ElementNode,
+    state?: { composition: { rootTimegroupIds: string[] } },
+  ) => boolean;
 }
 
 export interface PositionFieldConfig extends BaseFieldConfig {
@@ -135,13 +144,19 @@ export interface InlineInputsFieldConfig {
     type?: "number" | "slider";
     displayMultiplier?: number;
   }>;
-  visible?: (element: ElementNode, state?: { composition: { rootTimegroupIds: string[] } }) => boolean;
+  visible?: (
+    element: ElementNode,
+    state?: { composition: { rootTimegroupIds: string[] } },
+  ) => boolean;
 }
 
 export interface LayoutTypeFieldConfig {
   type: "layout-type";
   label: string;
-  visible?: (element: ElementNode, state?: { composition: { rootTimegroupIds: string[] } }) => boolean;
+  visible?: (
+    element: ElementNode,
+    state?: { composition: { rootTimegroupIds: string[] } },
+  ) => boolean;
 }
 
 export interface AspectRatioScalingFieldConfig extends BaseFieldConfig {
@@ -151,14 +166,20 @@ export interface AspectRatioScalingFieldConfig extends BaseFieldConfig {
 export interface GridLayoutFieldConfig {
   type: "grid-layout";
   label: string;
-  visible?: (element: ElementNode, state?: { composition: { rootTimegroupIds: string[] } }) => boolean;
+  visible?: (
+    element: ElementNode,
+    state?: { composition: { rootTimegroupIds: string[] } },
+  ) => boolean;
 }
 
 export interface LayoutDirectionFieldConfig {
   type: "layout-direction";
   label: string;
   propPath: string;
-  visible?: (element: ElementNode, state?: { composition: { rootTimegroupIds: string[] } }) => boolean;
+  visible?: (
+    element: ElementNode,
+    state?: { composition: { rootTimegroupIds: string[] } },
+  ) => boolean;
 }
 
 export interface SizeFieldConfig extends BaseFieldConfig {
@@ -174,6 +195,8 @@ export interface ContainerAlignmentFieldConfig {
   label: string;
   justifyPropPath: string;
   alignPropPath: string;
-  visible?: (element: ElementNode, state?: { composition: { rootTimegroupIds: string[] } }) => boolean;
+  visible?: (
+    element: ElementNode,
+    state?: { composition: { rootTimegroupIds: string[] } },
+  ) => boolean;
 }
-

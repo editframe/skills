@@ -6,7 +6,7 @@ import type { MotionDesignerState } from "./types.js";
 export interface MoveBehavior {
   /**
    * Determines if a move operation is allowed.
-   * 
+   *
    * @param elementId The ID of the element being moved
    * @param newParentId The ID of the new parent (null for root)
    * @param newIndex The new index within the parent's children (undefined to append)
@@ -23,7 +23,7 @@ export interface MoveBehavior {
   /**
    * Called after a move operation has been successfully executed.
    * Can be used for side effects like logging, validation, or cleanup.
-   * 
+   *
    * @param elementId The ID of the element that was moved
    * @param newParentId The ID of the new parent (null for root)
    * @param newIndex The new index within the parent's children
@@ -39,7 +39,7 @@ export interface MoveBehavior {
 
 /**
  * Registry for move behaviors.
- * 
+ *
  * Behaviors are checked in registration order. If any behavior returns false
  * from canMove(), the move is rejected.
  */
@@ -48,7 +48,7 @@ export class BehaviorRegistry {
 
   /**
    * Registers a behavior with a name.
-   * 
+   *
    * @param name Unique name for the behavior
    * @param behavior The behavior to register
    */
@@ -61,7 +61,7 @@ export class BehaviorRegistry {
 
   /**
    * Unregisters a behavior by name.
-   * 
+   *
    * @param name The name of the behavior to unregister
    */
   unregister(name: string): void {
@@ -70,7 +70,7 @@ export class BehaviorRegistry {
 
   /**
    * Checks if a move operation is allowed by all registered behaviors.
-   * 
+   *
    * @param elementId The ID of the element being moved
    * @param newParentId The ID of the new parent (null for root)
    * @param newIndex The new index within the parent's children (undefined to append)
@@ -85,7 +85,12 @@ export class BehaviorRegistry {
   ): boolean {
     for (const [name, behavior] of this.behaviors) {
       try {
-        const allowed = behavior.canMove(elementId, newParentId, newIndex, state);
+        const allowed = behavior.canMove(
+          elementId,
+          newParentId,
+          newIndex,
+          state,
+        );
         if (!allowed) {
           return false;
         }
@@ -99,7 +104,7 @@ export class BehaviorRegistry {
 
   /**
    * Executes onMove callbacks for all registered behaviors.
-   * 
+   *
    * @param elementId The ID of the element that was moved
    * @param newParentId The ID of the new parent (null for root)
    * @param newIndex The new index within the parent's children
@@ -141,6 +146,3 @@ export class BehaviorRegistry {
  * Default behavior registry instance.
  */
 export const behaviorRegistry = new BehaviorRegistry();
-
-
-

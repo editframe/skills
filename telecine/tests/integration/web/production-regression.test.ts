@@ -30,8 +30,12 @@ describe("Production Regression Tests", () => {
     // Find docker network
     let networkName = "telecine_default";
     try {
-      const { stdout: networks } = await execAsync("docker network ls --format '{{.Name}}'");
-      const networkMatch = networks.split("\n").find((n) => n.match(/^(telecine|editframe)/));
+      const { stdout: networks } = await execAsync(
+        "docker network ls --format '{{.Name}}'",
+      );
+      const networkMatch = networks
+        .split("\n")
+        .find((n) => n.match(/^(telecine|editframe)/));
       if (networkMatch) {
         networkName = networkMatch;
       }
@@ -45,7 +49,7 @@ describe("Production Regression Tests", () => {
     } catch {
       console.log("Building production image...");
       await execAsync(
-        "cd telecine && ./scripts/debug-prod-web --rebuild 2>&1 | head -20"
+        "cd telecine && ./scripts/debug-prod-web --rebuild 2>&1 | head -20",
       );
     }
 
@@ -99,7 +103,7 @@ describe("Production Regression Tests", () => {
     ].join(" -e ");
 
     const { stdout } = await execAsync(
-      `docker run -d --name ${containerName} -p ${port}:3000 --network ${networkName} -e ${envVars} telecine-web-prod-debug --loader /app/loader.js /app/services/web/server.js`
+      `docker run -d --name ${containerName} -p ${port}:3000 --network ${networkName} -e ${envVars} telecine-web-prod-debug --loader /app/loader.js /app/services/web/server.js`,
     );
     containerId = stdout.trim();
 
@@ -153,10 +157,12 @@ describe("Production Regression Tests", () => {
 
       // Should return 200 (or valid redirect) - not 500
       expect(response.status).not.toBe(500);
-      
+
       // For the specific problematic path, we expect 200 or 404 (if content doesn't exist)
       // but NOT 500 with "Not found" error
-      if (testPath === "/docs/video-composition/create-a-composition/overview/") {
+      if (
+        testPath === "/docs/video-composition/create-a-composition/overview/"
+      ) {
         // This should be 200 if the path resolution fix works
         expect([200, 404]).toContain(response.status);
       }
@@ -173,15 +179,14 @@ describe("Production Regression Tests", () => {
     await setTimeout(2000); // Wait for logs to flush
 
     const { stdout: logs } = await execAsync(
-      `docker logs ${containerName} 2>&1 | tail -200`
+      `docker logs ${containerName} 2>&1 | tail -200`,
     );
 
     const notFoundErrors = logs
       .split("\n")
       .filter(
         (line) =>
-          line.includes("Error: Not found") &&
-          line.includes("getLocalContent")
+          line.includes("Error: Not found") && line.includes("getLocalContent"),
       );
 
     expect(notFoundErrors.length).toBe(0);
@@ -194,32 +199,32 @@ describe("Production Regression Tests", () => {
 
     // Make multiple concurrent requests to trigger SSR
     const requests = Array.from({ length: 10 }, () =>
-      fetch(`http://localhost:${port}/`).catch(() => null)
+      fetch(`http://localhost:${port}/`).catch(() => null),
     );
 
     const responses = await Promise.all(requests);
     await setTimeout(2000); // Wait for logs to flush
-    
+
     // Verify we got successful responses
     const statusCodes = responses
       .filter((r) => r !== null)
       .map((r) => r!.status);
-    
+
     // Should return 200 - not 500
     const error500s = statusCodes.filter((code) => code === 500);
     expect(error500s.length).toBe(0);
 
     // Check logs for duplicate registration errors
     const { stdout: logs } = await execAsync(
-      `docker logs ${containerName} 2>&1 | tail -200`
+      `docker logs ${containerName} 2>&1 | tail -200`,
     );
 
     const duplicateRegistrationErrors = logs
       .split("\n")
       .filter((line) =>
         line.includes(
-          'Failed to execute \'define\' on \'CustomElementRegistry\': the name "ef-configuration" has already been used'
-        )
+          "Failed to execute 'define' on 'CustomElementRegistry': the name \"ef-configuration\" has already been used",
+        ),
       );
 
     expect(duplicateRegistrationErrors.length).toBe(0);
@@ -234,7 +239,7 @@ describe("Production Regression Tests", () => {
     const requests = Array.from({ length: 20 }, (_, i) =>
       fetch(`http://localhost:${port}/`, {
         headers: { "X-Request-ID": `test-${i}` },
-      }).catch(() => null)
+      }).catch(() => null),
     );
 
     const responses = await Promise.all(requests);
@@ -248,25 +253,24 @@ describe("Production Regression Tests", () => {
     // Should return 200 (or valid redirect) - not 500
     const error500s = statusCodes.filter((code) => code === 500);
     expect(error500s.length).toBe(0);
-    
+
     // At least some requests should return 200
     const success200s = statusCodes.filter((code) => code === 200);
     expect(success200s.length).toBeGreaterThan(0);
 
     // Check logs for the specific errors
     const { stdout: logs } = await execAsync(
-      `docker logs ${containerName} 2>&1 | tail -200`
+      `docker logs ${containerName} 2>&1 | tail -200`,
     );
 
     const duplicateRegistrationErrors = logs
       .split("\n")
       .filter((line) =>
         line.includes(
-          'Failed to execute \'define\' on \'CustomElementRegistry\': the name "ef-configuration" has already been used'
-        )
+          "Failed to execute 'define' on 'CustomElementRegistry': the name \"ef-configuration\" has already been used",
+        ),
       );
 
     expect(duplicateRegistrationErrors.length).toBe(0);
   });
 });
-

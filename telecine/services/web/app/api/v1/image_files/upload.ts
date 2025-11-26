@@ -26,7 +26,7 @@ export const loader = async ({ request, params: { id } }: Route.LoaderArgs) => {
     return Response.json({}, { status: 200 });
   }
 
-  return Response.json({}, { status: 202 })
+  return Response.json({}, { status: 202 });
 };
 
 export const action = async ({ params, request }: Route.ActionArgs) => {

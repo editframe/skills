@@ -38,4 +38,3 @@ export interface MotionDesignerState {
     compositionName?: string;
   };
 }
-

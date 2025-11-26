@@ -26,24 +26,29 @@ function Field(
     <div
       className={clsx(
         "rounded-sm",
-        props.error && "border-l-2 border-red-400 dark:border-red-500 pl-4 bg-red-50/50 dark:bg-red-950/30",
+        props.error &&
+          "border-l-2 border-red-400 dark:border-red-500 pl-4 bg-red-50/50 dark:bg-red-950/30",
       )}
       onClick={props.onClick}
     >
       <div className="flex items-baseline justify-between gap-4 mb-1">
         {props.label && (
-          <label className={clsx(
-            "block font-medium text-sm leading-snug transition-colors",
-            "text-slate-900 dark:text-white"
-          )}>
+          <label
+            className={clsx(
+              "block font-medium text-sm leading-snug transition-colors",
+              "text-slate-900 dark:text-white",
+            )}
+          >
             {props.label}
           </label>
         )}
         {props.error && (
-          <span className={clsx(
-            "text-xs font-medium leading-snug transition-colors",
-            "text-red-600 dark:text-red-400"
-          )}>
+          <span
+            className={clsx(
+              "text-xs font-medium leading-snug transition-colors",
+              "text-red-600 dark:text-red-400",
+            )}
+          >
             {props.error}
           </span>
         )}
@@ -133,17 +138,21 @@ export function formFor<Output, Input>(
             "disabled:bg-slate-50/70 dark:disabled:bg-slate-900/70",
             "disabled:text-slate-500 dark:disabled:text-slate-400",
             "disabled:border-slate-200/70 dark:disabled:border-slate-800/70",
-            error ? "border-red-300/85 dark:border-red-700/85 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20 dark:focus:ring-red-400/20" : "",
+            error
+              ? "border-red-300/85 dark:border-red-700/85 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20 dark:focus:ring-red-400/20"
+              : "",
             props.className,
           )}
           aria-invalid={error ? "true" : undefined}
           {...props}
         />
         {description && (
-          <p className={clsx(
-            "mt-1 text-xs leading-snug transition-colors",
-            "text-slate-500 dark:text-slate-400"
-          )}>
+          <p
+            className={clsx(
+              "mt-1 text-xs leading-snug transition-colors",
+              "text-slate-500 dark:text-slate-400",
+            )}
+          >
             {description}
           </p>
         )}
@@ -197,12 +206,15 @@ export function formFor<Output, Input>(
               "border-slate-300 dark:border-slate-600",
               "bg-white dark:bg-slate-800",
               "disabled:bg-slate-100 dark:disabled:bg-slate-900 disabled:text-slate-400 dark:disabled:text-slate-500 disabled:cursor-not-allowed",
-              error && "border-red-300 dark:border-red-600 focus:ring-red-500 dark:focus:ring-red-400",
+              error &&
+                "border-red-300 dark:border-red-600 focus:ring-red-500 dark:focus:ring-red-400",
             )}
             {...props}
           />
           {description && (
-            <p className="text-slate-600 dark:text-slate-400 text-xs">{description}</p>
+            <p className="text-slate-600 dark:text-slate-400 text-xs">
+              {description}
+            </p>
           )}
         </div>
       </Field>
@@ -314,7 +326,9 @@ export function formFor<Output, Input>(
             "ring-slate-300 dark:ring-slate-700",
             "focus:ring-blue-500 dark:focus:ring-blue-400",
             "placeholder:text-slate-400 dark:placeholder:text-slate-500",
-            hasError ? "ring-red-300 dark:ring-red-600 focus:ring-red-500 dark:focus:ring-red-400" : "",
+            hasError
+              ? "ring-red-300 dark:ring-red-600 focus:ring-red-500 dark:focus:ring-red-400"
+              : "",
           )}
           aria-invalid={hasError ? "true" : undefined}
           {...props}

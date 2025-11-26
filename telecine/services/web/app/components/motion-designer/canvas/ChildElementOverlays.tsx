@@ -1,5 +1,8 @@
 import React from "react";
-import type { ElementNode, MotionDesignerState } from "~/lib/motion-designer/types";
+import type {
+  ElementNode,
+  MotionDesignerState,
+} from "~/lib/motion-designer/types";
 import { TransformHandlesWrapper } from "./TransformHandlesWrapper";
 import { ChildElementClickOverlay } from "./ChildElementClickOverlay";
 
@@ -38,7 +41,8 @@ export function ChildElementOverlays({
       {allChildren.map((child) => {
         const isSelected = state.ui.selectedElementId === child.id;
         // Hide child overlays when parent is selected/active to avoid blocking parent's drag handles
-        const isParentSelected = child.parentId && state.ui.selectedElementId === child.parentId;
+        const isParentSelected =
+          child.parentId && state.ui.selectedElementId === child.parentId;
         const isChildOfSelectedParent = isSelected || isParentSelected;
         return (
           <React.Fragment key={child.id}>

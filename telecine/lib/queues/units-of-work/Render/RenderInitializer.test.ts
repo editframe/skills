@@ -3,7 +3,6 @@ import { RenderInitializerQueue } from "./RenderInitializerQueue";
 import { RenderInitializerWorker } from "./RenderInitializer";
 
 describe("RenderInitializer", () => {
-
   describe("Queue Configuration", () => {
     test("initializes queue with correct settings", () => {
       expect(RenderInitializerQueue.name).toBe("render-initializer");
@@ -27,4 +26,4 @@ describe("RenderInitializer", () => {
       expect(typeof RenderInitializerWorker.execute).toBe("function");
     });
   });
-}); 
+});

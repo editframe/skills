@@ -5,7 +5,6 @@ import { db } from "@/sql-client.server";
 import { logger } from "@/logging";
 import { requireCookieOrTokenSession } from "@/util/requireSession.server";
 
-
 import type { Route } from "./+types/detail.json";
 
 export const loader = async ({

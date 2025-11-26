@@ -18,11 +18,7 @@ export function PlayPauseButton({
   return (
     <>
       <TogglePlay target={targetId}>
-        <button
-          slot="play"
-          className={playButtonClassName}
-          aria-label="Play"
-        >
+        <button slot="play" className={playButtonClassName} aria-label="Play">
           <Play size={iconSize} weight="fill" />
         </button>
         <button
@@ -36,4 +32,3 @@ export function PlayPauseButton({
     </>
   );
 }
-

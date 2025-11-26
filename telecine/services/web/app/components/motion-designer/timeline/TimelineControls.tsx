@@ -9,15 +9,15 @@ interface TimelineControlsProps {
   onZoomChange: (zoomScale: number) => void;
 }
 
-export function TimelineControls({ 
-  previewTargetId, 
+export function TimelineControls({
+  previewTargetId,
   onRestart,
   zoomScale,
   onZoomChange,
 }: TimelineControlsProps) {
   const MIN_ZOOM = 0.1;
   const MAX_ZOOM = 10;
-  
+
   return (
     <div className="flex flex-col items-center gap-1 px-2 py-1 border-r border-gray-700/70">
       {previewTargetId && (
@@ -47,9 +47,10 @@ export function TimelineControls({
           onChange={(e) => onZoomChange(parseFloat(e.target.value))}
           className="w-16 h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
         />
-        <span className="text-[10px] text-gray-400">{zoomScale.toFixed(1)}x</span>
+        <span className="text-[10px] text-gray-400">
+          {zoomScale.toFixed(1)}x
+        </span>
       </div>
     </div>
   );
 }
-

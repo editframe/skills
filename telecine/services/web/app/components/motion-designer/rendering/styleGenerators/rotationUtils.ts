@@ -15,10 +15,12 @@ export function hasRotateAnimations(element: ElementNode): boolean {
  * - "rotate(45deg) translateX(10px)" (extracts rotate value)
  * - "matrix(...)" (extracts rotation from matrix)
  * - "none"
- * 
+ *
  * Returns rotation in degrees, or 0 if no rotation found.
  */
-export function parseRotationFromTransform(transformString: string | null | undefined): number {
+export function parseRotationFromTransform(
+  transformString: string | null | undefined,
+): number {
   if (!transformString || transformString === "none") {
     return 0;
   }
@@ -73,10 +75,9 @@ export function parseRotationFromTransform(transformString: string | null | unde
  * Gets the base rotation from design property.
  * When rotate animations exist, this is the base that animations add to.
  * When no rotate animations exist, this is the effective rotation.
- * 
+ *
  * For animated rotation, use parseRotationFromTransform() on computed DOM style.
  */
 export function getBaseRotation(element: ElementNode): number {
   return element.props.rotation ?? 0;
 }
-

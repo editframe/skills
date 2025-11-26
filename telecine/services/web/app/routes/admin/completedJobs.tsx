@@ -67,7 +67,6 @@ const ReplayButton = ({ id, queueName }: { id: string; queueName: string }) => {
   );
 };
 
-
 const DeleteButton = ({ id, queueName }: { id: string; queueName: string }) => {
   const fetcher = useFetcher<{ success: boolean }>({
     key: `delete-job-${id}`,
@@ -165,7 +164,10 @@ export default function QueueComponent({
             name: "workflowId",
             content: ({ workflowId }) => <div>{workflowId}</div>,
           },
-          { name: "workflow", content: ({ workflow }) => <div>{workflow}</div> },
+          {
+            name: "workflow",
+            content: ({ workflow }) => <div>{workflow}</div>,
+          },
         ]}
       />
     </>

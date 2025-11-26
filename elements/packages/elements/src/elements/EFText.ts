@@ -431,7 +431,6 @@ export class EFText extends EFTemporal(LitElement) {
           // Mark as created to avoid being picked up as template
           segment.setAttribute("data-segment-created", "true");
 
-
           // For character mode with templates, also wrap in word spans
           if (this.split === "char" && wordBoundaries) {
             const originalCharIndex = textStartOffset + charIndex;
@@ -631,7 +630,7 @@ export class EFText extends EFTemporal(LitElement) {
         });
         const segments = Array.from(segmenter.segment(trimmedText));
         const result: string[] = [];
-        
+
         for (const seg of segments) {
           if (seg.isWordLike) {
             // Word-like segment - add it
@@ -649,7 +648,7 @@ export class EFText extends EFTemporal(LitElement) {
             }
           }
         }
-        
+
         return result;
       }
       case "char": {

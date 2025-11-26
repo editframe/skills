@@ -69,7 +69,7 @@ export class ProgressTracker {
     private readonly key: string,
     private readonly maxlen = 10_000,
     private readonly blockMs = 1000,
-  ) { }
+  ) {}
 
   private parseEntries(id: string, entries: string[]): ProgressItem {
     const entryObject: Partial<ProgressItem> = {
@@ -102,9 +102,15 @@ export class ProgressTracker {
     try {
       while (true) {
         // biome-ignore format: keep this on one line
-        logger.info(`Reading progress updates for: ${this.key} lastId: ${lastId}`);
+        logger.info(
+          `Reading progress updates for: ${this.key} lastId: ${lastId}`,
+        );
         const result = await this.readClient.xread(
-          "BLOCK", this.blockMs, "STREAMS", this.key, lastId,
+          "BLOCK",
+          this.blockMs,
+          "STREAMS",
+          this.key,
+          lastId,
         );
 
         if (result) {
@@ -165,7 +171,8 @@ export class ProgressTracker {
   }
 
   async whenCompleted(): Promise<void> {
-    for await (const _item of this.iterator()) { }
+    for await (const _item of this.iterator()) {
+    }
   }
 
   async getLastItem(): Promise<ProgressItem | undefined> {
@@ -180,27 +187,49 @@ export class ProgressTracker {
   async getAllItems(): Promise<ProgressItem[]> {
     // biome-ignore format: keep this on one line
     const items = await valkey.xrange(
-      this.key, "-", "+", "COUNT", this.maxlen.toString(),
+      this.key,
+      "-",
+      "+",
+      "COUNT",
+      this.maxlen.toString(),
     );
     return items.map(([id, entries]) => this.parseEntries(id, entries));
   }
 
   async writeSize(size: number) {
     // biome-ignore format: keep this on one line
-    await valkey.multi()
-      .xadd(this.key, "MAXLEN", "~", this.maxlen.toString(), "*",
-        "type", "size",
-        "size", size.toString())
+    await valkey
+      .multi()
+      .xadd(
+        this.key,
+        "MAXLEN",
+        "~",
+        this.maxlen.toString(),
+        "*",
+        "type",
+        "size",
+        "size",
+        size.toString(),
+      )
       .expire(this.key, 1000, "GT")
       .exec();
   }
 
   async incrementCompletion(count: number) {
     // biome-ignore format: keep this on one line
-    await valkey.multi()
-      .xadd(this.key, "MAXLEN", "~", this.maxlen.toString(), "*",
-        "type", "completion",
-        "count", count.toString())
+    await valkey
+      .multi()
+      .xadd(
+        this.key,
+        "MAXLEN",
+        "~",
+        this.maxlen.toString(),
+        "*",
+        "type",
+        "completion",
+        "count",
+        count.toString(),
+      )
       .expire(this.key, 1000, "GT")
       .exec();
   }
@@ -211,14 +240,26 @@ export class ProgressTracker {
     const roundedProgress = Math.round(progress * 100) / 100;
 
     // Only write if this is a new progress value (different when rounded)
-    if (this.lastWrittenProgress === undefined || roundedProgress !== this.lastWrittenProgress) {
+    if (
+      this.lastWrittenProgress === undefined ||
+      roundedProgress !== this.lastWrittenProgress
+    ) {
       this.lastWrittenProgress = roundedProgress;
 
       // biome-ignore format: keep this on one line
-      await valkey.multi()
-        .xadd(this.key, "MAXLEN", "~", this.maxlen.toString(), "*",
-          "type", "progress",
-          "progress", roundedProgress.toString())
+      await valkey
+        .multi()
+        .xadd(
+          this.key,
+          "MAXLEN",
+          "~",
+          this.maxlen.toString(),
+          "*",
+          "type",
+          "progress",
+          "progress",
+          roundedProgress.toString(),
+        )
         .expire(this.key, 1000, "GT")
         .exec();
     }
@@ -226,10 +267,19 @@ export class ProgressTracker {
 
   async writeFailure(message: string) {
     // biome-ignore format: keep this on one line
-    await valkey.multi()
-      .xadd(this.key, "MAXLEN", "~", this.maxlen.toString(), "*",
-        "type", "failure",
-        "message", message)
+    await valkey
+      .multi()
+      .xadd(
+        this.key,
+        "MAXLEN",
+        "~",
+        this.maxlen.toString(),
+        "*",
+        "type",
+        "failure",
+        "message",
+        message,
+      )
       .expire(this.key, 1000, "GT")
       .exec();
   }
@@ -247,10 +297,19 @@ export class ProgressTracker {
   }
 
   async writeHeartbeat() {
-    await valkey.multi()
-      .xadd(this.key, "MAXLEN", "~", this.maxlen.toString(), "*",
-        "type", "heartbeat",
-        "timestamp", Date.now().toString())
+    await valkey
+      .multi()
+      .xadd(
+        this.key,
+        "MAXLEN",
+        "~",
+        this.maxlen.toString(),
+        "*",
+        "type",
+        "heartbeat",
+        "timestamp",
+        Date.now().toString(),
+      )
       .expire(this.key, 1000, "GT")
       .exec();
   }
@@ -281,5 +340,5 @@ export class TestProgressTracker extends ProgressTracker {
     super("test", 10_000, 1000);
   }
 
-  async writeProgress() { }
+  async writeProgress() {}
 }

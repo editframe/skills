@@ -214,10 +214,7 @@ describe("EFPanZoom", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     const setPointerCaptureSpy = vi.spyOn(panZoom, "setPointerCapture");
-    const releasePointerCaptureSpy = vi.spyOn(
-      panZoom,
-      "releasePointerCapture",
-    );
+    const releasePointerCaptureSpy = vi.spyOn(panZoom, "releasePointerCapture");
 
     const pointerDownEvent = new PointerEvent("pointerdown", {
       clientX: 100,
@@ -244,4 +241,3 @@ describe("EFPanZoom", () => {
     expect(releasePointerCaptureSpy).toHaveBeenCalledWith(1);
   });
 });
-

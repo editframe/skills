@@ -14,9 +14,7 @@ emailConfirmationTest(
     await waitForEmail(uniqueUser.email_address, "Confirm your email address");
     await confirmationLink.click();
     await expect(page).toHaveURL("/auth/login");
-    await expect(
-      page.getByText("Email confirmed!"),
-    ).toBeVisible();
+    await expect(page.getByText("Email confirmed!")).toBeVisible();
   },
 );
 

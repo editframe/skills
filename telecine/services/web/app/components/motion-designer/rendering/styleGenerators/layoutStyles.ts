@@ -1,4 +1,7 @@
-import type { ElementNode, MotionDesignerState } from "~/lib/motion-designer/types";
+import type {
+  ElementNode,
+  MotionDesignerState,
+} from "~/lib/motion-designer/types";
 import type { CSSProperties } from "react";
 
 function isContainer(element: ElementNode): boolean {
@@ -24,26 +27,40 @@ function isMediaElement(element: ElementNode): boolean {
   return element.type === "video" || element.type === "image";
 }
 
-function isRootTimegroup(element: ElementNode, state: MotionDesignerState): boolean {
+function isRootTimegroup(
+  element: ElementNode,
+  state: MotionDesignerState,
+): boolean {
   return (
     element.type === "timegroup" &&
     state.composition.rootTimegroupIds.includes(element.id)
   );
 }
 
-function isChildOfContainer(element: ElementNode, state: MotionDesignerState): boolean {
+function isChildOfContainer(
+  element: ElementNode,
+  state: MotionDesignerState,
+): boolean {
   if (!element.parentId) return false;
   const parent = state.composition.elements[element.parentId];
   return parent ? isContainer(parent) : false;
 }
 
-function generatePaddingStyles(padding: { top?: number; right?: number; bottom?: number; left?: number } | undefined): CSSProperties {
+function generatePaddingStyles(
+  padding:
+    | { top?: number; right?: number; bottom?: number; left?: number }
+    | undefined,
+): CSSProperties {
   if (!padding) {
     return {};
   }
 
   // Check if any padding value is explicitly set (not undefined)
-  const hasAnyValue = padding.top !== undefined || padding.right !== undefined || padding.bottom !== undefined || padding.left !== undefined;
+  const hasAnyValue =
+    padding.top !== undefined ||
+    padding.right !== undefined ||
+    padding.bottom !== undefined ||
+    padding.left !== undefined;
   if (!hasAnyValue) {
     return {};
   }
@@ -129,10 +146,18 @@ export function generateLayoutStyles(
     ) {
       // New format with modes - extract fixed values if available
       const sizeObj = element.props.size as any;
-      if (sizeObj.widthMode === "fixed" && typeof sizeObj.widthValue === "number" && sizeObj.widthValue !== 0) {
+      if (
+        sizeObj.widthMode === "fixed" &&
+        typeof sizeObj.widthValue === "number" &&
+        sizeObj.widthValue !== 0
+      ) {
         width = sizeObj.widthValue;
       }
-      if (sizeObj.heightMode === "fixed" && typeof sizeObj.heightValue === "number" && sizeObj.heightValue !== 0) {
+      if (
+        sizeObj.heightMode === "fixed" &&
+        typeof sizeObj.heightValue === "number" &&
+        sizeObj.heightValue !== 0
+      ) {
         height = sizeObj.heightValue;
       }
     }
@@ -140,10 +165,18 @@ export function generateLayoutStyles(
 
   // Fallback to direct props (but NOT for timegroups - they use size property only)
   if (!isTimegroup(element)) {
-    if (width === undefined && element.props.width !== undefined && element.props.width !== 0) {
+    if (
+      width === undefined &&
+      element.props.width !== undefined &&
+      element.props.width !== 0
+    ) {
       width = element.props.width;
     }
-    if (height === undefined && element.props.height !== undefined && element.props.height !== 0) {
+    if (
+      height === undefined &&
+      element.props.height !== undefined &&
+      element.props.height !== 0
+    ) {
       height = element.props.height;
     }
   }
@@ -167,7 +200,7 @@ export function generateLayoutStyles(
       // Fill grid cell if no explicit width
       styles.width = "100%";
     }
-    
+
     if (height !== undefined && height !== 0) {
       styles.height = `${height}px`;
     } else if (isInGridContainer) {
@@ -187,7 +220,7 @@ export function generateLayoutStyles(
         styles.width = "100%";
       }
     }
-    
+
     if (height !== undefined && height !== 0) {
       // Explicit height set
       styles.height = `${height}px`;
@@ -237,7 +270,6 @@ export function generateLayoutStyles(
     // Containers clip their children (especially media elements that render at intrinsic size)
     styles.overflow = "hidden";
   }
-
 
   // Set container-type: size for containers to enable container query units (cqh, cqw)
   if (isContainerElement) {

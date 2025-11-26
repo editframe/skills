@@ -33,7 +33,7 @@ function findMonorepoRoot(): string | null {
   if (process.env.MONOREPO_ROOT) {
     return process.env.MONOREPO_ROOT;
   }
-  
+
   // Strategy 2: Try git rev-parse from multiple possible locations
   // When config is bundled, we might be in a temp directory, so try from
   // current working directory and also try to find the actual telecine directory
@@ -43,7 +43,7 @@ function findMonorepoRoot(): string | null {
     // Try to find telecine directory by looking for known files
     ...(process.env.PWD ? [process.env.PWD] : []),
   ];
-  
+
   for (const cwd of possibleCwds) {
     try {
       const { execSync } = require("node:child_process");
@@ -52,28 +52,34 @@ function findMonorepoRoot(): string | null {
         stdio: "pipe",
         cwd: cwd,
       }).trim();
-      
-      if (existsSync(path.join(gitRoot, "elements")) && existsSync(path.join(gitRoot, "telecine"))) {
+
+      if (
+        existsSync(path.join(gitRoot, "elements")) &&
+        existsSync(path.join(gitRoot, "telecine"))
+      ) {
         return gitRoot;
       }
     } catch {
       // Continue to next location
     }
   }
-  
+
   // Strategy 3: Traverse up from multiple starting points
   const startingDirs = [process.cwd(), __dirname];
   if (process.env.PWD) {
     startingDirs.push(process.env.PWD);
   }
-  
+
   for (const startDir of startingDirs) {
     try {
       let currentDir = startDir;
       const rootDir = path.parse(currentDir).root;
-      
+
       while (currentDir !== rootDir) {
-        if (existsSync(path.join(currentDir, "elements")) && existsSync(path.join(currentDir, "telecine"))) {
+        if (
+          existsSync(path.join(currentDir, "elements")) &&
+          existsSync(path.join(currentDir, "telecine"))
+        ) {
           return currentDir;
         }
         const parentDir = path.dirname(currentDir);
@@ -86,7 +92,7 @@ function findMonorepoRoot(): string | null {
       // Continue to next starting directory
     }
   }
-  
+
   // Strategy 4: Look for the .wsEndpoint.json file itself and use its directory
   // This is a last resort - if the file exists, we know where the monorepo root is
   // Try many possible locations since we might be in a bundled temp directory
@@ -100,7 +106,16 @@ function findMonorepoRoot(): string | null {
     path.join(process.cwd(), "..", "..", "..", ".wsEndpoint.json"),
     path.join(process.cwd(), "..", "..", "..", "..", ".wsEndpoint.json"),
     path.join(process.cwd(), "..", "..", "..", "..", "..", ".wsEndpoint.json"),
-    path.join(process.cwd(), "..", "..", "..", "..", "..", "..", ".wsEndpoint.json"),
+    path.join(
+      process.cwd(),
+      "..",
+      "..",
+      "..",
+      "..",
+      "..",
+      "..",
+      ".wsEndpoint.json",
+    ),
     // Also try from __dirname
     path.join(__dirname, "..", ".wsEndpoint.json"),
     path.join(__dirname, "..", "..", ".wsEndpoint.json"),
@@ -108,13 +123,16 @@ function findMonorepoRoot(): string | null {
     path.join(__dirname, "..", "..", "..", "..", ".wsEndpoint.json"),
     path.join(__dirname, "..", "..", "..", "..", "..", ".wsEndpoint.json"),
   ];
-  
+
   for (const wsPath of possibleWsPaths) {
     try {
       if (existsSync(wsPath)) {
         const dir = path.dirname(wsPath);
         // Verify it's actually the monorepo root
-        if (existsSync(path.join(dir, "elements")) && existsSync(path.join(dir, "telecine"))) {
+        if (
+          existsSync(path.join(dir, "elements")) &&
+          existsSync(path.join(dir, "telecine"))
+        ) {
           return dir;
         }
       }
@@ -122,7 +140,7 @@ function findMonorepoRoot(): string | null {
       // Continue to next path
     }
   }
-  
+
   return null;
 }
 
@@ -132,32 +150,32 @@ async function loadWebSocketEndpoint(): Promise<string | null> {
   if (process.env.WS_ENDPOINT) {
     return process.env.WS_ENDPOINT;
   }
-  
+
   // Strategy 2: Try to read from file (for cases where we're not in Docker)
   const monorepoRoot = findMonorepoRoot();
   let wsEndpointPath: string | null = null;
-  
+
   if (monorepoRoot) {
     wsEndpointPath = path.join(monorepoRoot, ".wsEndpoint.json");
   } else {
     // Fallback to project root
     wsEndpointPath = path.resolve(__dirname, ".wsEndpoint.json");
   }
-  
+
   if (!wsEndpointPath) {
     console.error("[vitest.config.browser] No wsEndpointPath determined");
     return null;
   }
-  
-  
+
   // Retry mechanism: wait up to 2 seconds for file to appear
   // This handles race conditions where vitest starts loading config
   // before the browsertest script finishes starting the browser server
   const maxRetries = 20;
   const retryDelay = 100; // ms
-  
-  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-  
+
+  const sleep = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
+
   for (let i = 0; i < maxRetries; i++) {
     if (existsSync(wsEndpointPath)) {
       try {
@@ -168,21 +186,28 @@ async function loadWebSocketEndpoint(): Promise<string | null> {
         }
       } catch (error) {
         // File exists but is invalid, wait a bit and retry
-        console.error("[vitest.config.browser] Error reading wsEndpoint file:", error);
+        console.error(
+          "[vitest.config.browser] Error reading wsEndpoint file:",
+          error,
+        );
         if (i < maxRetries - 1) {
           await sleep(retryDelay);
           continue;
         }
       }
     }
-    
+
     // Wait before retrying (except on last iteration)
     if (i < maxRetries - 1) {
       await sleep(retryDelay);
     }
   }
-  
-  console.error("[vitest.config.browser] Failed to find wsEndpoint after", maxRetries, "retries");
+
+  console.error(
+    "[vitest.config.browser] Failed to find wsEndpoint after",
+    maxRetries,
+    "retries",
+  );
   return null;
 }
 
@@ -266,7 +291,6 @@ export default defineConfig(async () => {
   const traefikUrlPlugin = {
     name: "traefik-url-override",
     configureServer(server) {
-
       // Ensure the server is configured to listen on the correct port
       if (server.config.server) {
         server.config.server.port = TEST_SERVER_PORT;
@@ -311,7 +335,6 @@ export default defineConfig(async () => {
         configurable: true,
         enumerable: true,
       });
-
     },
   };
 
@@ -331,7 +354,12 @@ export default defineConfig(async () => {
     test: {
       watch: false,
       include: ["**/*.browsertest.ts", "**/*.browsertest.tsx"],
-      exclude: ["**/node_modules/**", "**/generated/**", "**/lib/packages/**", "**/.archive/**"],
+      exclude: [
+        "**/node_modules/**",
+        "**/generated/**",
+        "**/lib/packages/**",
+        "**/.archive/**",
+      ],
       /* Globals MUST be enabled for testing library to automatically cleanup between tests */
       globals: true,
       browser: {

@@ -35,4 +35,4 @@ export const RenderInitializerQueue = new Queue<Selectable<Video2Renders>>({
   },
 });
 
-ConnectionURLMap.set(RenderInitializerQueue, QUEUE_URL); 
+ConnectionURLMap.set(RenderInitializerQueue, QUEUE_URL);

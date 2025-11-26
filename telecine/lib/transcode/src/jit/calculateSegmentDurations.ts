@@ -1,8 +1,11 @@
-import { getClosestAlignedTimeUs, AUDIO_FRAME_DURATION_US } from "@/render/AudioTiming";
+import {
+  getClosestAlignedTimeUs,
+  AUDIO_FRAME_DURATION_US,
+} from "@/render/AudioTiming";
 import { truncateDecimal } from "@/util/truncateDecimal";
 
 export interface SegmentDurationOptions {
-  mediaType?: 'audio' | 'video';
+  mediaType?: "audio" | "video";
 }
 
 // Calculate actual segment durations matching transcoder behavior
@@ -10,19 +13,28 @@ export interface SegmentDurationOptions {
 export function calculateSegmentDurations(
   totalDurationMs: number,
   targetSegmentDurationMs: number,
-  options: SegmentDurationOptions = {}
+  options: SegmentDurationOptions = {},
 ): number[] {
-  const { mediaType = 'audio' } = options;
+  const { mediaType = "audio" } = options;
 
-  if (mediaType === 'video') {
-    return calculateVideoSegmentDurationsInternal(totalDurationMs, targetSegmentDurationMs);
+  if (mediaType === "video") {
+    return calculateVideoSegmentDurationsInternal(
+      totalDurationMs,
+      targetSegmentDurationMs,
+    );
   }
 
-  return calculateAudioSegmentDurationsInternal(totalDurationMs, targetSegmentDurationMs);
+  return calculateAudioSegmentDurationsInternal(
+    totalDurationMs,
+    targetSegmentDurationMs,
+  );
 }
 
 // Internal function for audio segment duration calculation
-function calculateAudioSegmentDurationsInternal(totalDurationMs: number, targetSegmentDurationMs: number): number[] {
+function calculateAudioSegmentDurationsInternal(
+  totalDurationMs: number,
+  targetSegmentDurationMs: number,
+): number[] {
   const segmentDurations: number[] = [];
 
   let segmentIndex = 0;
@@ -43,7 +55,8 @@ function calculateAudioSegmentDurationsInternal(totalDurationMs: number, targetS
     // IMPLEMENTATION GUIDELINES: Account for frame padding in transcoding
     // When transcoding, partial final frames get padded to full 1024-sample frames
     // This adds extra duration only when the last segment extends beyond the expected end
-    const isLastSegment = (segmentIndex + 1) * targetSegmentDurationMs >= totalDurationMs;
+    const isLastSegment =
+      (segmentIndex + 1) * targetSegmentDurationMs >= totalDurationMs;
     if (isLastSegment && targetSegmentDurationMs >= 2000) {
       // Only add frame padding for longer segments (2000ms+) that extend beyond file boundary
       // For shorter segments (500ms), the transcoding doesn't add padding to the final segment
@@ -61,7 +74,10 @@ function calculateAudioSegmentDurationsInternal(totalDurationMs: number, targetS
 }
 
 // Internal function for video segment duration calculation
-function calculateVideoSegmentDurationsInternal(totalDurationMs: number, segmentDurationMs: number): number[] {
+function calculateVideoSegmentDurationsInternal(
+  totalDurationMs: number,
+  segmentDurationMs: number,
+): number[] {
   // Video uses 25fps frame rate (from the test video file)
   const frameMs = 1000 / 25; // 40ms per frame at 25fps
 

@@ -140,9 +140,10 @@ export class EFTransformHandles extends LitElement {
 
   private updateDimensions() {
     if (this.target) {
-      const element = typeof this.target === "string"
-        ? document.querySelector(this.target) as HTMLElement
-        : this.target;
+      const element =
+        typeof this.target === "string"
+          ? (document.querySelector(this.target) as HTMLElement)
+          : this.target;
       if (element) {
         this.dimensionsRef.width = element.offsetWidth;
         this.dimensionsRef.height = element.offsetHeight;
@@ -152,25 +153,29 @@ export class EFTransformHandles extends LitElement {
 
   private getCurrentBounds(): TransformBounds {
     if (this.target) {
-      const element = typeof this.target === "string"
-        ? document.querySelector(this.target) as HTMLElement
-        : null;
+      const element =
+        typeof this.target === "string"
+          ? (document.querySelector(this.target) as HTMLElement)
+          : null;
       if (element) {
         const rect = element.getBoundingClientRect();
-        const parentRect = this.offsetParent?.getBoundingClientRect() || { left: 0, top: 0 };
+        const parentRect = this.offsetParent?.getBoundingClientRect() || {
+          left: 0,
+          top: 0,
+        };
         const bounds: TransformBounds = {
           x: rect.left - parentRect.left,
           y: rect.top - parentRect.top,
           width: rect.width,
           height: rect.height,
         };
-        
+
         if (this.enableRotation) {
           const computedStyle = window.getComputedStyle(element);
           const transform = computedStyle.transform;
           bounds.rotation = this.parseRotationFromTransform(transform);
         }
-        
+
         return bounds;
       }
     }
@@ -185,7 +190,7 @@ export class EFTransformHandles extends LitElement {
     if (!transform || transform === "none") return 0;
     const matrix = transform.match(/matrix\(([^)]+)\)/);
     if (!matrix) return 0;
-    const values = matrix[1].split(",").map(v => parseFloat(v.trim()));
+    const values = matrix[1].split(",").map((v) => parseFloat(v.trim()));
     if (values.length < 4) return 0;
     const a = values[0];
     const b = values[1];
@@ -208,12 +213,14 @@ export class EFTransformHandles extends LitElement {
     e.stopPropagation();
     this.isResizing = handle;
     this.dragStart = { x: e.clientX, y: e.clientY };
-    
+
     const currentBounds = this.getCurrentBounds();
     const currentWidth = currentBounds.width || this.dimensionsRef.width;
     const currentHeight = currentBounds.height || this.dimensionsRef.height;
-    const currentRotation = this.enableRotation ? (currentBounds.rotation ?? 0) : 0;
-    
+    const currentRotation = this.enableRotation
+      ? (currentBounds.rotation ?? 0)
+      : 0;
+
     const oppositeCorner = getOppositeCorner(handle);
     const rotationRadians = (currentRotation * Math.PI) / 180;
     const initialCorner = getCornerPoint(
@@ -225,11 +232,11 @@ export class EFTransformHandles extends LitElement {
       oppositeCorner.x,
       oppositeCorner.y,
     );
-    
+
     this.resizeStartCorner = initialCorner;
     this.resizeStartSize = { width: currentWidth, height: currentHeight };
     this.resizeStartPosition = { x: currentBounds.x, y: currentBounds.y };
-    
+
     document.addEventListener("mousemove", this.handleMouseMove);
     document.addEventListener("mouseup", this.handleMouseUp);
   };
@@ -239,13 +246,13 @@ export class EFTransformHandles extends LitElement {
     e.stopPropagation();
     this.isRotating = true;
     this.dragStart = { x: e.clientX, y: e.clientY };
-    
+
     const targetElement = this.target
-      ? (typeof this.target === "string"
-          ? document.querySelector(this.target) as HTMLElement
-          : this.target)
+      ? typeof this.target === "string"
+        ? (document.querySelector(this.target) as HTMLElement)
+        : this.target
       : null;
-    
+
     if (targetElement) {
       const rect = targetElement.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
@@ -258,41 +265,48 @@ export class EFTransformHandles extends LitElement {
       const currentBounds = this.getCurrentBounds();
       this.rotationStartRotation = currentBounds.rotation ?? 0;
     }
-    
+
     document.addEventListener("mousemove", this.handleMouseMove);
     document.addEventListener("mouseup", this.handleMouseUp);
   };
 
   private handleMouseMove = (e: MouseEvent) => {
     if (!this.dragStart) return;
-    
+
     const currentBounds = this.getCurrentBounds();
     const currentX = currentBounds.x;
     const currentY = currentBounds.y;
     const currentWidth = currentBounds.width || this.dimensionsRef.width;
     const currentHeight = currentBounds.height || this.dimensionsRef.height;
-    const currentRotation = this.enableRotation ? (currentBounds.rotation ?? 0) : 0;
-    
+    const currentRotation = this.enableRotation
+      ? (currentBounds.rotation ?? 0)
+      : 0;
+
     if (this.isDragging) {
       const screenDeltaX = e.clientX - this.dragStart.x;
       const screenDeltaY = e.clientY - this.dragStart.y;
       const canvasDeltaX = screenDeltaX / this.canvasScale;
       const canvasDeltaY = screenDeltaY / this.canvasScale;
-      
+
       const newX = this.dragStartPosition.x + canvasDeltaX;
       const newY = this.dragStartPosition.y + canvasDeltaY;
-      
+
       this.bounds = {
         ...this.bounds,
         x: newX,
         y: newY,
       };
-      
+
       this.dragStart = { x: e.clientX, y: e.clientY };
       this.dragStartPosition = { x: newX, y: newY };
-      
+
       this.dispatchBoundsChange();
-    } else if (this.isResizing && this.resizeStartCorner && this.resizeStartSize && this.resizeStartPosition) {
+    } else if (
+      this.isResizing &&
+      this.resizeStartCorner &&
+      this.resizeStartSize &&
+      this.resizeStartPosition
+    ) {
       const screenDeltaX = e.clientX - this.dragStart.x;
       const screenDeltaY = e.clientY - this.dragStart.y;
       const canvasDeltaX = screenDeltaX / this.canvasScale;
@@ -350,31 +364,32 @@ export class EFTransformHandles extends LitElement {
       };
 
       this.dragStart = { x: e.clientX, y: e.clientY };
-      
+
       this.dispatchBoundsChange();
     } else if (this.isRotating && this.rotationStartAngle !== null) {
       const targetElement = this.target
-        ? (typeof this.target === "string"
-            ? document.querySelector(this.target) as HTMLElement
-            : this.target)
+        ? typeof this.target === "string"
+          ? (document.querySelector(this.target) as HTMLElement)
+          : this.target
         : null;
-      
+
       if (!targetElement) return;
-      
+
       const rect = targetElement.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
-      
+
       const dx = e.clientX - centerX;
       const dy = e.clientY - centerY;
       const radians = Math.atan2(dy, dx);
       const currentAngle = radians * (180 / Math.PI) + 90;
-      
+
       const deltaAngle = currentAngle - this.rotationStartAngle;
       let newRotation = this.rotationStartRotation + deltaAngle;
 
       if (this.rotationStep !== undefined) {
-        newRotation = Math.round(newRotation / this.rotationStep) * this.rotationStep;
+        newRotation =
+          Math.round(newRotation / this.rotationStep) * this.rotationStep;
       }
 
       this.bounds = {
@@ -383,7 +398,7 @@ export class EFTransformHandles extends LitElement {
       };
 
       this.dragStart = { x: e.clientX, y: e.clientY };
-      
+
       this.dispatchRotationChange();
     }
   };
@@ -430,7 +445,7 @@ export class EFTransformHandles extends LitElement {
   render() {
     const currentBounds = this.getCurrentBounds();
     const rotation = this.enableRotation ? (currentBounds.rotation ?? 0) : 0;
-    
+
     const overlayStyles: Record<string, string> = {
       left: `${currentBounds.x}px`,
       top: `${currentBounds.y}px`,
@@ -443,40 +458,55 @@ export class EFTransformHandles extends LitElement {
       overlayStyles.transformOrigin = "center";
     }
 
-    const handles: ResizeHandle[] = ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
+    const handles: ResizeHandle[] = [
+      "nw",
+      "n",
+      "ne",
+      "e",
+      "se",
+      "s",
+      "sw",
+      "w",
+    ];
 
     return html`
       <div
         class="overlay ${this.isDragging ? "dragging" : ""}"
         style=${styleMap(overlayStyles)}
       >
-        ${this.enableDrag
-          ? html`
+        ${
+          this.enableDrag
+            ? html`
               <div
                 class="drag-area"
                 @mousedown=${this.handleMouseDown}
               ></div>
             `
-          : ""}
-        ${this.enableResize
-          ? handles.map(
-              (handle) => html`
+            : ""
+        }
+        ${
+          this.enableResize
+            ? handles.map(
+                (handle) => html`
                 <div
                   class="handle ${handle}"
                   @mousedown=${(e: MouseEvent) => this.handleResizeMouseDown(e, handle)}
                 ></div>
               `,
-            )
-          : ""}
-        ${this.enableRotation
-          ? html`
+              )
+            : ""
+        }
+        ${
+          this.enableRotation
+            ? html`
               <div class="rotate-handle" @mousedown=${this.handleRotateMouseDown}>
                 <div class="rotate-handle-circle">
                   <span>↻</span>
                 </div>
               </div>
             `
-          : ""}
+            : ""
+        }
       </div>
     `;
   }
@@ -487,4 +517,3 @@ declare global {
     "ef-transform-handles": EFTransformHandles;
   }
 }
-

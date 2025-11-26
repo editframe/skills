@@ -86,7 +86,9 @@ export function TopBar({ state }: TopBarProps) {
                   actions.replaceState(importedState);
                 } catch (error) {
                   console.error("Failed to import:", error);
-                  alert("Failed to import composition. Please check the file format.");
+                  alert(
+                    "Failed to import composition. Please check the file format.",
+                  );
                 }
               };
               reader.readAsText(file);
@@ -105,4 +107,3 @@ export function TopBar({ state }: TopBarProps) {
     </div>
   );
 }
-

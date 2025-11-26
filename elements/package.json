@@ -8,8 +8,8 @@
     "test:watch": "npx vitest --config vitest.config.ts --configLoader bundle --watch",
     "browsertest": "npx vitest --config vitest.config.browser.ts --configLoader bundle --run",
     "browsertest:watch": "npx vitest --config vitest.config.browser.ts --configLoader bundle --watch",
-    "lint": "biome lint",
-    "format": "biome format",
+    "lint": "oxlint .",
+    "format": "oxfmt .",
     "start": "scripts/start",
     "build:all": "node scripts/deps.js sorted 2>/dev/null | xargs -I {} npm run build --workspace {}",
     "typedoc": "typedoc --out docs/packages/ packages/api/src"
@@ -21,7 +21,6 @@
     "packages/*"
   ],
   "devDependencies": {
-    "@biomejs/biome": "^2.0.0",
     "@lit/context": "^1.1.6",
     "@lit/react": "^1.0.5",
     "@types/connect": "^3.4.38",
@@ -39,6 +38,8 @@
     "lefthook": "^1.7.14",
     "lit": "^3.3.1",
     "msw": "^2.10.2",
+    "oxfmt": "^0.15.0",
+    "oxlint": "^1.30.0",
     "playwright": "^1.53.0",
     "prettier": "^3.3.2",
     "prettier-plugin-tailwindcss": "^0.6.5",

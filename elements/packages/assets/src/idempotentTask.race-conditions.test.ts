@@ -9,27 +9,27 @@ import type { Server } from "node:http";
 
 /**
  * Race condition regression tests for idempotentTask
- * 
+ *
  * ⚠️ CRITICAL: DO NOT DELETE THESE TESTS ⚠️
- * 
+ *
  * These tests protect against race conditions that were causing production issues:
  * - Zero-byte files from concurrent downloads of the same URL
  * - Cache corruption from incomplete writes being read by other processes
  * - Task deduplication failures leading to duplicate work
  * - Incomplete file reads from non-atomic operations
  * - Memory leaks from uncleaned task references
- * 
+ *
  * The fixes implemented include:
  * - Download deduplication with atomic file operations
  * - Temporary file writes with atomic moves
  * - Cache validation that checks file completeness
  * - Proper cleanup of task references on success/failure
- * 
+ *
  * If any of these tests fail, it indicates a regression that could cause:
  * - Silent data corruption in production
  * - Race conditions under load
  * - Incomplete cache files
- * 
+ *
  * @see packages/assets/src/idempotentTask.ts for the implementation
  */
 describe("idempotentTask Race Condition Protection", () => {
@@ -55,7 +55,7 @@ describe("idempotentTask Race Condition Protection", () => {
         const data = Buffer.from("test video data");
         res.writeHead(200, {
           "Content-Type": "video/mp4",
-          "Content-Length": data.length.toString()
+          "Content-Length": data.length.toString(),
         });
 
         // Write data in small chunks with delays
@@ -75,7 +75,7 @@ describe("idempotentTask Race Condition Protection", () => {
         // Test zero-byte file handling
         res.writeHead(200, {
           "Content-Type": "video/mp4",
-          "Content-Length": "0"
+          "Content-Length": "0",
         });
         res.end();
       } else {
@@ -88,7 +88,7 @@ describe("idempotentTask Race Condition Protection", () => {
     await new Promise<void>((resolve) => {
       httpServer.listen(0, () => {
         const address = httpServer.address();
-        if (address && typeof address === 'object') {
+        if (address && typeof address === "object") {
           serverPort = address.port;
           serverUrl = `http://localhost:${serverPort}`;
           resolve();
@@ -118,13 +118,13 @@ describe("idempotentTask Race Condition Protection", () => {
 
       // Start multiple concurrent downloads of the same file
       const downloadPromises = Array.from({ length: 5 }, () =>
-        testTask(testDir, downloadUrl)
+        testTask(testDir, downloadUrl),
       );
 
       const results = await Promise.all(downloadPromises);
 
       // All should return the same cache path (deduplication)
-      const cachePaths = results.map(r => r.cachePath);
+      const cachePaths = results.map((r) => r.cachePath);
       const uniquePaths = new Set(cachePaths);
       expect(uniquePaths.size).toBe(1);
 
@@ -194,20 +194,20 @@ describe("idempotentTask Race Condition Protection", () => {
         runner: async (absolutePath: string) => {
           taskExecutionCount++;
           // Add delay to expose potential races
-          await new Promise(resolve => setTimeout(resolve, 10));
+          await new Promise((resolve) => setTimeout(resolve, 10));
           return `task execution ${taskExecutionCount}`;
         },
       });
 
       // Start multiple concurrent tasks for the same cache key
       const taskPromises = Array.from({ length: 10 }, () =>
-        testTask(testDir, testFilePath)
+        testTask(testDir, testFilePath),
       );
 
       const results = await Promise.all(taskPromises);
 
       // All should return the same cache path
-      const cachePaths = results.map(r => r.cachePath);
+      const cachePaths = results.map((r) => r.cachePath);
       const uniquePaths = new Set(cachePaths);
       expect(uniquePaths.size).toBe(1);
 
@@ -224,7 +224,8 @@ describe("idempotentTask Race Condition Protection", () => {
     test("handles concurrent stream tasks safely", async () => {
       const streamTask = idempotentTask({
         label: "stream-safety",
-        filename: (absolutePath: string, suffix: string) => `stream-${suffix}.data`,
+        filename: (absolutePath: string, suffix: string) =>
+          `stream-${suffix}.data`,
         runner: async (absolutePath: string, suffix: string) => {
           const data = `stream data for ${suffix}`;
           return Readable.from([data]);
@@ -233,7 +234,7 @@ describe("idempotentTask Race Condition Protection", () => {
 
       // Start multiple concurrent stream tasks with different cache keys
       const streamPromises = Array.from({ length: 3 }, (_, i) =>
-        streamTask(testDir, testFilePath, `suffix-${i}`)
+        streamTask(testDir, testFilePath, `suffix-${i}`),
       );
 
       const results = await Promise.all(streamPromises);
@@ -261,11 +262,13 @@ describe("idempotentTask Race Condition Protection", () => {
       await testTask(testDir, testFilePath);
 
       // Verify no temporary files left behind
-      const cacheFiles = await import("node:fs").then(fs =>
-        fs.readdirSync(join(testDir, ".cache"), { recursive: true })
+      const cacheFiles = await import("node:fs").then((fs) =>
+        fs.readdirSync(join(testDir, ".cache"), { recursive: true }),
       );
 
-      const tempFiles = cacheFiles.filter(file => file.toString().includes(".tmp"));
+      const tempFiles = cacheFiles.filter((file) =>
+        file.toString().includes(".tmp"),
+      );
       expect(tempFiles.length).toBe(0);
     });
 
@@ -279,14 +282,18 @@ describe("idempotentTask Race Condition Protection", () => {
       });
 
       // Task should fail
-      await expect(failingTask(testDir, testFilePath)).rejects.toThrow("Simulated task failure");
-
-      // Verify no temporary files left behind even after failure
-      const cacheFiles = await import("node:fs").then(fs =>
-        fs.readdirSync(join(testDir, ".cache"), { recursive: true })
+      await expect(failingTask(testDir, testFilePath)).rejects.toThrow(
+        "Simulated task failure",
       );
 
-      const tempFiles = cacheFiles.filter(file => file.toString().includes(".tmp"));
+      // Verify no temporary files left behind even after failure
+      const cacheFiles = await import("node:fs").then((fs) =>
+        fs.readdirSync(join(testDir, ".cache"), { recursive: true }),
+      );
+
+      const tempFiles = cacheFiles.filter((file) =>
+        file.toString().includes(".tmp"),
+      );
       expect(tempFiles.length).toBe(0);
     });
   });

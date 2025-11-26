@@ -27,8 +27,8 @@ export const CodeEditor = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [css, setCss] = useState("");
   const { resolvedTheme } = useTheme();
-  const monacoTheme = resolvedTheme === 'dark' ? 'vs-dark' : 'vs';
-  
+  const monacoTheme = resolvedTheme === "dark" ? "vs-dark" : "vs";
+
   // Update Monaco editor theme when app theme changes
   useEffect(() => {
     const updateEditorTheme = (themeToUse?: string) => {
@@ -36,7 +36,11 @@ export const CodeEditor = ({
       const monaco = monacoRef.current;
       if (editor && monaco) {
         // If theme is not provided, determine it from DOM
-        const theme = themeToUse || (document.documentElement.classList.contains('dark') ? 'vs-dark' : 'vs');
+        const theme =
+          themeToUse ||
+          (document.documentElement.classList.contains("dark")
+            ? "vs-dark"
+            : "vs");
         monaco.editor.setTheme(theme);
       }
     };
@@ -47,22 +51,22 @@ export const CodeEditor = ({
     // Listen for theme change events and read directly from DOM
     const handleThemeChange = () => {
       // Read theme directly from DOM to avoid React state lag
-      const isDark = document.documentElement.classList.contains('dark');
-      const theme = isDark ? 'vs-dark' : 'vs';
+      const isDark = document.documentElement.classList.contains("dark");
+      const theme = isDark ? "vs-dark" : "vs";
       updateEditorTheme(theme);
     };
 
-    if (typeof window !== 'undefined') {
-      window.addEventListener('theme', handleThemeChange);
+    if (typeof window !== "undefined") {
+      window.addEventListener("theme", handleThemeChange);
     }
 
     return () => {
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('theme', handleThemeChange);
+      if (typeof window !== "undefined") {
+        window.removeEventListener("theme", handleThemeChange);
       }
     };
   }, [monacoTheme]);
-  
+
   const updateHeight = useCallback(() => {
     const editor = editorRef.current;
     const container = containerRef.current;

@@ -1,6 +1,7 @@
 import { describe, test, expect } from "vitest";
 
-const SCHEDULER_URL = process.env.SCHEDULER_GO_URL || "http://scheduler-go:3000";
+const SCHEDULER_URL =
+  process.env.SCHEDULER_GO_URL || "http://scheduler-go:3000";
 
 describe("scheduler-go /api/status endpoint", () => {
   test("should return status with correct structure", async () => {
@@ -49,7 +50,9 @@ describe("scheduler-go /api/status endpoint", () => {
       expect(conn).toHaveProperty("workingConnections");
       expect(typeof conn.totalConnections).toBe("number");
       expect(typeof conn.workingConnections).toBe("number");
-      expect(conn.totalConnections).toBeGreaterThanOrEqual(conn.workingConnections);
+      expect(conn.totalConnections).toBeGreaterThanOrEqual(
+        conn.workingConnections,
+      );
     }
   });
 
@@ -73,4 +76,3 @@ describe("scheduler-go /api/status endpoint", () => {
     }
   });
 });
-

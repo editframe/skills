@@ -28,13 +28,16 @@ export function PaddingInput({ label, value, onChange }: PaddingInputProps) {
 
   // Sync lock states with actual values when value prop changes externally
   useEffect(() => {
-    const hasValues = currentValue.top !== undefined || currentValue.right !== undefined || 
-                      currentValue.bottom !== undefined || currentValue.left !== undefined;
+    const hasValues =
+      currentValue.top !== undefined ||
+      currentValue.right !== undefined ||
+      currentValue.bottom !== undefined ||
+      currentValue.left !== undefined;
     if (hasValues) {
       const allEqual = top === right && right === bottom && bottom === left;
       const verticalEqual = top === bottom;
       const horizontalEqual = left === right;
-      
+
       // Only update if values suggest locks should be on (all equal means likely locked)
       if (allEqual) {
         setAllLocked(true);
@@ -46,7 +49,12 @@ export function PaddingInput({ label, value, onChange }: PaddingInputProps) {
         setHorizontalLocked(true);
       }
     }
-  }, [currentValue.top, currentValue.right, currentValue.bottom, currentValue.left]);
+  }, [
+    currentValue.top,
+    currentValue.right,
+    currentValue.bottom,
+    currentValue.left,
+  ]);
 
   const handleChange = (side: keyof PaddingValue, newValue: number) => {
     const clampedValue = Math.max(0, newValue);
@@ -80,7 +88,7 @@ export function PaddingInput({ label, value, onChange }: PaddingInputProps) {
   const toggleAllLock = () => {
     const newAllLocked = !allLocked;
     setAllLocked(newAllLocked);
-    
+
     if (newAllLocked) {
       // When locking all, sync all values to the first non-zero value or top
       const syncValue = top || right || bottom || left || 0;
@@ -96,7 +104,7 @@ export function PaddingInput({ label, value, onChange }: PaddingInputProps) {
   const toggleVerticalLock = () => {
     const newVerticalLocked = !verticalLocked;
     setVerticalLocked(newVerticalLocked);
-    
+
     if (newVerticalLocked) {
       // When locking vertical, sync bottom to top
       onChange({
@@ -109,7 +117,7 @@ export function PaddingInput({ label, value, onChange }: PaddingInputProps) {
   const toggleHorizontalLock = () => {
     const newHorizontalLocked = !horizontalLocked;
     setHorizontalLocked(newHorizontalLocked);
-    
+
     if (newHorizontalLocked) {
       // When locking horizontal, sync right to left
       onChange({
@@ -129,7 +137,9 @@ export function PaddingInput({ label, value, onChange }: PaddingInputProps) {
         <div className="relative" style={{ width: "140px", height: "100px" }}>
           {/* Top input - centered at top */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 flex items-center gap-0.5">
-            <span className="text-[7px] text-gray-600 font-bold uppercase">T</span>
+            <span className="text-[7px] text-gray-600 font-bold uppercase">
+              T
+            </span>
             <input
               type="number"
               min="0"
@@ -160,12 +170,16 @@ export function PaddingInput({ label, value, onChange }: PaddingInputProps) {
               placeholder="0"
               title="Right padding"
             />
-            <span className="text-[7px] text-gray-600 font-bold uppercase">R</span>
+            <span className="text-[7px] text-gray-600 font-bold uppercase">
+              R
+            </span>
           </div>
 
           {/* Bottom input - centered at bottom */}
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex items-center gap-0.5">
-            <span className="text-[7px] text-gray-600 font-bold uppercase">B</span>
+            <span className="text-[7px] text-gray-600 font-bold uppercase">
+              B
+            </span>
             <input
               type="number"
               min="0"
@@ -183,7 +197,9 @@ export function PaddingInput({ label, value, onChange }: PaddingInputProps) {
 
           {/* Left input - centered on left side */}
           <div className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
-            <span className="text-[7px] text-gray-600 font-bold uppercase">L</span>
+            <span className="text-[7px] text-gray-600 font-bold uppercase">
+              L
+            </span>
             <input
               type="number"
               min="0"
@@ -203,16 +219,28 @@ export function PaddingInput({ label, value, onChange }: PaddingInputProps) {
           {allLocked && (
             <>
               {/* Vertical line connecting top and bottom */}
-              <div className="absolute left-1/2 top-0 bottom-0 w-px bg-blue-500/20" style={{ transform: "translateX(-50%)" }} />
+              <div
+                className="absolute left-1/2 top-0 bottom-0 w-px bg-blue-500/20"
+                style={{ transform: "translateX(-50%)" }}
+              />
               {/* Horizontal line connecting left and right */}
-              <div className="absolute top-1/2 left-0 right-0 h-px bg-blue-500/20" style={{ transform: "translateY(-50%)" }} />
+              <div
+                className="absolute top-1/2 left-0 right-0 h-px bg-blue-500/20"
+                style={{ transform: "translateY(-50%)" }}
+              />
             </>
           )}
           {!allLocked && verticalLocked && (
-            <div className="absolute left-1/2 top-0 bottom-0 w-px bg-blue-500/20" style={{ transform: "translateX(-50%)" }} />
+            <div
+              className="absolute left-1/2 top-0 bottom-0 w-px bg-blue-500/20"
+              style={{ transform: "translateX(-50%)" }}
+            />
           )}
           {!allLocked && horizontalLocked && (
-            <div className="absolute top-1/2 left-0 right-0 h-px bg-blue-500/20" style={{ transform: "translateY(-50%)" }} />
+            <div
+              className="absolute top-1/2 left-0 right-0 h-px bg-blue-500/20"
+              style={{ transform: "translateY(-50%)" }}
+            />
           )}
 
           {/* All-sides lock button - always shown, larger when locked */}
@@ -221,58 +249,79 @@ export function PaddingInput({ label, value, onChange }: PaddingInputProps) {
               onClick={toggleAllLock}
               className={`
                 flex items-center justify-center rounded-md border-2 transition-all
-                ${allLocked
-                  ? "w-7 h-7 border-blue-500/50 bg-blue-500/15 text-blue-500 hover:bg-blue-500/25 hover:border-blue-500 shadow-sm"
-                  : "w-5 h-5 border-gray-700/30 bg-gray-800/30 text-gray-500 hover:border-gray-600/50 hover:text-gray-400 hover:bg-gray-800/50"
+                ${
+                  allLocked
+                    ? "w-7 h-7 border-blue-500/50 bg-blue-500/15 text-blue-500 hover:bg-blue-500/25 hover:border-blue-500 shadow-sm"
+                    : "w-5 h-5 border-gray-700/30 bg-gray-800/30 text-gray-500 hover:border-gray-600/50 hover:text-gray-400 hover:bg-gray-800/50"
                 }
               `}
               title={allLocked ? "Unlock all sides" : "Lock all sides"}
             >
-              {allLocked ? <Lock className="w-4 h-4" weight="bold" /> : <LockOpen className="w-3 h-3" />}
+              {allLocked ? (
+                <Lock className="w-4 h-4" weight="bold" />
+              ) : (
+                <LockOpen className="w-3 h-3" />
+              )}
             </button>
           </div>
 
           {/* Vertical lock button - only shown when all-sides is unlocked */}
           {!allLocked && (
-            <div className="absolute left-1/2 top-1/2 flex items-center justify-center" style={{ transform: "translate(-50%, calc(-50% - 32px))" }}>
+            <div
+              className="absolute left-1/2 top-1/2 flex items-center justify-center"
+              style={{ transform: "translate(-50%, calc(-50% - 32px))" }}
+            >
               <button
                 onClick={toggleVerticalLock}
                 className={`
                   w-6 h-6 flex items-center justify-center rounded-md border-2 transition-all
-                  ${verticalLocked
-                    ? "border-blue-500/50 bg-blue-500/15 text-blue-500 hover:bg-blue-500/25 hover:border-blue-500" 
-                    : "border-gray-700/40 bg-gray-800/40 text-gray-500 hover:border-gray-600/60 hover:text-gray-400 hover:bg-gray-800/60"
+                  ${
+                    verticalLocked
+                      ? "border-blue-500/50 bg-blue-500/15 text-blue-500 hover:bg-blue-500/25 hover:border-blue-500"
+                      : "border-gray-700/40 bg-gray-800/40 text-gray-500 hover:border-gray-600/60 hover:text-gray-400 hover:bg-gray-800/60"
                   }
                 `}
                 title={verticalLocked ? "Unlock top/bottom" : "Lock top/bottom"}
               >
-                {verticalLocked ? <Lock className="w-3.5 h-3.5" weight="bold" /> : <LockOpen className="w-3.5 h-3.5" />}
+                {verticalLocked ? (
+                  <Lock className="w-3.5 h-3.5" weight="bold" />
+                ) : (
+                  <LockOpen className="w-3.5 h-3.5" />
+                )}
               </button>
             </div>
           )}
 
           {/* Horizontal lock button - only shown when all-sides is unlocked */}
           {!allLocked && (
-            <div className="absolute left-1/2 top-1/2 flex items-center justify-center" style={{ transform: "translate(calc(-50% - 32px), -50%)" }}>
+            <div
+              className="absolute left-1/2 top-1/2 flex items-center justify-center"
+              style={{ transform: "translate(calc(-50% - 32px), -50%)" }}
+            >
               <button
                 onClick={toggleHorizontalLock}
                 className={`
                   w-6 h-6 flex items-center justify-center rounded-md border-2 transition-all rotate-90
-                  ${horizontalLocked
-                    ? "border-blue-500/50 bg-blue-500/15 text-blue-500 hover:bg-blue-500/25 hover:border-blue-500" 
-                    : "border-gray-700/40 bg-gray-800/40 text-gray-500 hover:border-gray-600/60 hover:text-gray-400 hover:bg-gray-800/60"
+                  ${
+                    horizontalLocked
+                      ? "border-blue-500/50 bg-blue-500/15 text-blue-500 hover:bg-blue-500/25 hover:border-blue-500"
+                      : "border-gray-700/40 bg-gray-800/40 text-gray-500 hover:border-gray-600/60 hover:text-gray-400 hover:bg-gray-800/60"
                   }
                 `}
-                title={horizontalLocked ? "Unlock left/right" : "Lock left/right"}
+                title={
+                  horizontalLocked ? "Unlock left/right" : "Lock left/right"
+                }
               >
-                {horizontalLocked ? <Lock className="w-3.5 h-3.5" weight="bold" /> : <LockOpen className="w-3.5 h-3.5" />}
+                {horizontalLocked ? (
+                  <Lock className="w-3.5 h-3.5" weight="bold" />
+                ) : (
+                  <LockOpen className="w-3.5 h-3.5" />
+                )}
               </button>
             </div>
           )}
-
         </div>
       </div>
     </div>
   );
 }
-

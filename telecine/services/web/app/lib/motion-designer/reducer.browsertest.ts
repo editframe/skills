@@ -21,7 +21,10 @@ function createInitialState(): MotionDesignerState {
   };
 }
 
-function createTimegroup(id: string, parentId: string | null = null): ElementNode {
+function createTimegroup(
+  id: string,
+  parentId: string | null = null,
+): ElementNode {
   return {
     id,
     type: "timegroup",
@@ -182,7 +185,9 @@ describe("motionDesignerReducer", () => {
 
       expect(newState).not.toBe(state);
       expect(newState.composition).not.toBe(state.composition);
-      expect(newState.composition.elements).not.toBe(state.composition.elements);
+      expect(newState.composition.elements).not.toBe(
+        state.composition.elements,
+      );
     });
   });
 
@@ -201,7 +206,9 @@ describe("motionDesignerReducer", () => {
       );
 
       expect(newState.composition.elements["text1"]).toBeUndefined();
-      expect(newState.composition.elements["tg1"].childIds).not.toContain("text1");
+      expect(newState.composition.elements["tg1"].childIds).not.toContain(
+        "text1",
+      );
     });
 
     test("deletes root timegroup", () => {
@@ -305,7 +312,9 @@ describe("motionDesignerReducer", () => {
       );
 
       expect(newState.composition.elements["text1"].parentId).toBe("tg2");
-      expect(newState.composition.elements["tg1"].childIds).not.toContain("text1");
+      expect(newState.composition.elements["tg1"].childIds).not.toContain(
+        "text1",
+      );
       expect(newState.composition.elements["tg2"].childIds).toContain("text1");
     });
 
@@ -348,7 +357,9 @@ describe("motionDesignerReducer", () => {
         actionCreators.addAnimation("tg1", animation),
       );
 
-      expect(newState.composition.elements["tg1"].animations).toContain(animation);
+      expect(newState.composition.elements["tg1"].animations).toContain(
+        animation,
+      );
       expect(newState.composition.elements["tg1"].animations.length).toBe(1);
     });
   });
@@ -375,8 +386,12 @@ describe("motionDesignerReducer", () => {
         actionCreators.updateAnimation("tg1", "anim1", { duration: 2000 }),
       );
 
-      expect(newState.composition.elements["tg1"].animations[0].duration).toBe(2000);
-      expect(newState.composition.elements["tg1"].animations[0].name).toBe("Fade in");
+      expect(newState.composition.elements["tg1"].animations[0].duration).toBe(
+        2000,
+      );
+      expect(newState.composition.elements["tg1"].animations[0].name).toBe(
+        "Fade in",
+      );
     });
   });
 
@@ -437,8 +452,12 @@ describe("motionDesignerReducer", () => {
         actionCreators.reorderAnimation("tg1", "anim2", 0),
       );
 
-      expect(newState.composition.elements["tg1"].animations[0].id).toBe("anim2");
-      expect(newState.composition.elements["tg1"].animations[1].id).toBe("anim1");
+      expect(newState.composition.elements["tg1"].animations[0].id).toBe(
+        "anim2",
+      );
+      expect(newState.composition.elements["tg1"].animations[1].id).toBe(
+        "anim1",
+      );
     });
   });
 
@@ -574,4 +593,3 @@ describe("motionDesignerReducer", () => {
     });
   });
 });
-

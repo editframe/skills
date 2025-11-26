@@ -13,7 +13,7 @@ const EditorContext = createContext<Editor>();
 export const useEditor = (): Editor => useContext(EditorContext);
 
 export const EditorProvider = (
-  props: PropsWithChildren<{ editor: Editor }>
+  props: PropsWithChildren<{ editor: Editor }>,
 ): ReactNode => (
   <EditorContext.Provider value={props.editor}>
     {props.children}

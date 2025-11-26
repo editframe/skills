@@ -2,7 +2,10 @@ import React from "react";
 import { describe, test, expect, beforeEach, vi } from "vitest";
 import { render, waitFor } from "@testing-library/react";
 import { TransformHandles } from "./TransformHandles";
-import type { ElementNode, MotionDesignerState } from "~/lib/motion-designer/types";
+import type {
+  ElementNode,
+  MotionDesignerState,
+} from "~/lib/motion-designer/types";
 import { MotionDesignerProvider } from "../context/MotionDesignerContext";
 import * as storeModule from "~/lib/motion-designer/store";
 
@@ -11,7 +14,9 @@ vi.mock("~/lib/motion-designer/store", () => ({
 }));
 
 vi.mock("../context/MotionDesignerContext", () => ({
-  MotionDesignerProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  MotionDesignerProvider: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
   useMotionDesignerActions: () => ({
     selectElement: vi.fn(),
     updateElement: vi.fn(),
@@ -29,7 +34,9 @@ function createElement(overrides: Partial<ElementNode> = {}): ElementNode {
   };
 }
 
-function createState(overrides: Partial<MotionDesignerState> = {}): MotionDesignerState {
+function createState(
+  overrides: Partial<MotionDesignerState> = {},
+): MotionDesignerState {
   return {
     composition: {
       elements: {},
@@ -52,7 +59,7 @@ function createState(overrides: Partial<MotionDesignerState> = {}): MotionDesign
 describe("TransformHandles", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Mock useMotionDesigner to return state and actions
     vi.mocked(storeModule.useMotionDesigner).mockReturnValue([
       createState(),
@@ -95,10 +102,12 @@ describe("TransformHandles", () => {
           canvasTranslateX={0}
           canvasTranslateY={0}
         />
-      </MotionDesignerProvider>
+      </MotionDesignerProvider>,
     );
 
-    const overlay = container.querySelector('[style*="transform"]') as HTMLElement;
+    const overlay = container.querySelector(
+      '[style*="transform"]',
+    ) as HTMLElement;
     expect(overlay).toBeTruthy();
     expect(overlay.style.transform).toContain("rotate(45deg)");
   });
@@ -123,7 +132,9 @@ describe("TransformHandles", () => {
     const state = createState();
 
     // Set computed transform on the DOM element
-    const contentElement = document.querySelector('[data-element-id="test-element"]') as HTMLElement;
+    const contentElement = document.querySelector(
+      '[data-element-id="test-element"]',
+    ) as HTMLElement;
     contentElement.style.transform = "rotate(60deg)";
 
     const { container } = render(
@@ -136,16 +147,21 @@ describe("TransformHandles", () => {
           canvasTranslateX={0}
           canvasTranslateY={0}
         />
-      </MotionDesignerProvider>
+      </MotionDesignerProvider>,
     );
 
     // Wait for RAF to update computed rotation
-    await waitFor(() => {
-      const overlay = container.querySelector('[style*="transform"]') as HTMLElement;
-      expect(overlay).toBeTruthy();
-      // Overlay should read computed rotation (60deg) not design property (45deg)
-      expect(overlay.style.transform).toContain("rotate(60deg)");
-    }, { timeout: 100 });
+    await waitFor(
+      () => {
+        const overlay = container.querySelector(
+          '[style*="transform"]',
+        ) as HTMLElement;
+        expect(overlay).toBeTruthy();
+        // Overlay should read computed rotation (60deg) not design property (45deg)
+        expect(overlay.style.transform).toContain("rotate(60deg)");
+      },
+      { timeout: 100 },
+    );
   });
 
   test("overlay rotation falls back to design property when computed rotation is 0", async () => {
@@ -168,7 +184,9 @@ describe("TransformHandles", () => {
     const state = createState();
 
     // Set computed transform to 0 (or no rotation)
-    const contentElement = document.querySelector('[data-element-id="test-element"]') as HTMLElement;
+    const contentElement = document.querySelector(
+      '[data-element-id="test-element"]',
+    ) as HTMLElement;
     contentElement.style.transform = "none";
 
     const { container } = render(
@@ -181,16 +199,21 @@ describe("TransformHandles", () => {
           canvasTranslateX={0}
           canvasTranslateY={0}
         />
-      </MotionDesignerProvider>
+      </MotionDesignerProvider>,
     );
 
     // Should fall back to design property
-    await waitFor(() => {
-      const overlay = container.querySelector('[style*="transform"]') as HTMLElement;
-      expect(overlay).toBeTruthy();
-      // When computed is 0/none, should use design property
-      expect(overlay.style.transform).toContain("rotate(45deg)");
-    }, { timeout: 100 });
+    await waitFor(
+      () => {
+        const overlay = container.querySelector(
+          '[style*="transform"]',
+        ) as HTMLElement;
+        expect(overlay).toBeTruthy();
+        // When computed is 0/none, should use design property
+        expect(overlay.style.transform).toContain("rotate(45deg)");
+      },
+      { timeout: 100 },
+    );
   });
 
   test("does not render when element is not selected", () => {
@@ -207,11 +230,10 @@ describe("TransformHandles", () => {
           canvasTranslateX={0}
           canvasTranslateY={0}
         />
-      </MotionDesignerProvider>
+      </MotionDesignerProvider>,
     );
 
     const overlay = container.querySelector('[style*="transform"]');
     expect(overlay).toBeFalsy();
   });
 });
-

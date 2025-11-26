@@ -57,14 +57,16 @@ const Filter = () => {
   const [search, setSearch] = useDebouncedSearchParams("search");
 
   return (
-    <div className={clsx(
-      "flex items-center gap-4 pb-3 text-xs transition-colors"
-    )}>
+    <div
+      className={clsx("flex items-center gap-4 pb-3 text-xs transition-colors")}
+    >
       <div className="flex items-center gap-2">
-        <span className={clsx(
-          "font-medium transition-colors",
-          "text-slate-600 dark:text-slate-400"
-        )}>
+        <span
+          className={clsx(
+            "font-medium transition-colors",
+            "text-slate-600 dark:text-slate-400",
+          )}
+        >
           Search:
         </span>
         <input
@@ -85,7 +87,7 @@ const Filter = () => {
             "focus:border-blue-500/85 dark:focus:border-blue-400/85",
             "focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08),0_2px_4px_0_rgb(59_130_246_/_0.15)]",
             "dark:focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.35),0_2px_4px_0_rgb(59_130_246_/_0.2)]",
-            "focus:before:from-blue-50/30 dark:focus:before:from-blue-950/22"
+            "focus:before:from-blue-50/30 dark:focus:before:from-blue-950/22",
           )}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -104,11 +106,13 @@ function buildWhereClause(searchParams: URLSearchParams) {
       { email_passwords: { email_address: { _ilike: `%${search}%` } } },
       { first_name: { _ilike: `%${search}%` } },
       { last_name: { _ilike: `%${search}%` } },
-      { memberships: { 
-        org: { 
-          display_name: { _ilike: `%${search}%` } 
-        } 
-      }},
+      {
+        memberships: {
+          org: {
+            display_name: { _ilike: `%${search}%` },
+          },
+        },
+      },
     ],
   };
 }

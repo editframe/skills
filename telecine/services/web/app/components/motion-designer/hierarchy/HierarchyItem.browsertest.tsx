@@ -3,7 +3,10 @@ import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HierarchyItem } from "./HierarchyItem";
-import type { MotionDesignerState, ElementNode } from "~/lib/motion-designer/types";
+import type {
+  MotionDesignerState,
+  ElementNode,
+} from "~/lib/motion-designer/types";
 import { DragProvider } from "./DragContext";
 import { MotionDesignerProvider } from "../context/MotionDesignerContext";
 import type { DropTarget } from "./dropTargetResolver";
@@ -222,7 +225,9 @@ describe("HierarchyItem drop indicators", () => {
       </MotionDesignerProvider>,
     );
 
-    const childElement = container.querySelector('[style*="padding-left: 24px"]');
+    const childElement = container.querySelector(
+      '[style*="padding-left: 24px"]',
+    );
     expect(childElement).toBeTruthy();
     const classes = childElement?.className || "";
     expect(classes).toContain("bg-blue-500/30");
@@ -235,7 +240,9 @@ describe("HierarchyItem display and renaming", () => {
   });
 
   test("text nodes display content", () => {
-    const textElement = createElement("text1", "text", [], { content: "Hello World" });
+    const textElement = createElement("text1", "text", [], {
+      content: "Hello World",
+    });
     const state = createState([textElement], ["tg1"]);
 
     render(
@@ -279,7 +286,9 @@ describe("HierarchyItem display and renaming", () => {
   });
 
   test("non-text nodes display name when set", () => {
-    const divElement = createElement("div1", "div", [], { name: "My Container" });
+    const divElement = createElement("div1", "div", [], {
+      name: "My Container",
+    });
     const state = createState([divElement], ["tg1"]);
 
     render(
@@ -346,7 +355,9 @@ describe("HierarchyItem display and renaming", () => {
 
   test("double-click enters rename mode", async () => {
     const user = userEvent.setup();
-    const divElement = createElement("div1", "div", [], { name: "Original Name" });
+    const divElement = createElement("div1", "div", [], {
+      name: "Original Name",
+    });
     const state = createState([divElement], ["tg1"]);
 
     const { container } = render(
@@ -366,9 +377,9 @@ describe("HierarchyItem display and renaming", () => {
 
     const item = container.querySelector('[style*="padding-left"]');
     expect(item).toBeTruthy();
-    
+
     await user.dblClick(item!);
-    
+
     const input = container.querySelector('input[type="text"]');
     expect(input).toBeTruthy();
     expect((input as HTMLInputElement).value).toBe("Original Name");
@@ -376,7 +387,9 @@ describe("HierarchyItem display and renaming", () => {
 
   test("text nodes cannot be renamed", async () => {
     const user = userEvent.setup();
-    const textElement = createElement("text1", "text", [], { content: "Hello" });
+    const textElement = createElement("text1", "text", [], {
+      content: "Hello",
+    });
     const state = createState([textElement], ["tg1"]);
 
     const { container } = render(
@@ -396,9 +409,9 @@ describe("HierarchyItem display and renaming", () => {
 
     const item = container.querySelector('[style*="padding-left"]');
     expect(item).toBeTruthy();
-    
+
     await user.dblClick(item!);
-    
+
     const input = container.querySelector('input[type="text"]');
     expect(input).toBeFalsy();
   });
@@ -425,14 +438,18 @@ describe("HierarchyItem display and renaming", () => {
 
     const item = container.querySelector('[style*="padding-left"]');
     await user.dblClick(item!);
-    
-    const input = container.querySelector('input[type="text"]') as HTMLInputElement;
+
+    const input = container.querySelector(
+      'input[type="text"]',
+    ) as HTMLInputElement;
     await user.clear(input);
     await user.type(input, "New Name");
     await user.keyboard("{Enter}");
 
     await waitFor(() => {
-      expect(mockActions.updateElement).toHaveBeenCalledWith("div1", { name: "New Name" });
+      expect(mockActions.updateElement).toHaveBeenCalledWith("div1", {
+        name: "New Name",
+      });
     });
   });
 
@@ -458,8 +475,10 @@ describe("HierarchyItem display and renaming", () => {
 
     const item = container.querySelector('[style*="padding-left"]');
     await user.dblClick(item!);
-    
-    const input = container.querySelector('input[type="text"]') as HTMLInputElement;
+
+    const input = container.querySelector(
+      'input[type="text"]',
+    ) as HTMLInputElement;
     await user.clear(input);
     await user.type(input, "Changed");
     await user.keyboard("{Escape}");
@@ -468,12 +487,24 @@ describe("HierarchyItem display and renaming", () => {
       const inputAfter = container.querySelector('input[type="text"]');
       expect(inputAfter).toBeFalsy();
     });
-    
+
     expect(mockActions.updateElement).not.toHaveBeenCalled();
   });
 
   test("animation indicator appears when animations exist", () => {
-    const divElement = createElement("div1", "div", [], {}, [{ id: "anim1", property: "opacity", fromValue: "0", toValue: "1", duration: 1000, delay: 0, easing: "linear", fillMode: "forwards", name: "Fade" }]);
+    const divElement = createElement("div1", "div", [], {}, [
+      {
+        id: "anim1",
+        property: "opacity",
+        fromValue: "0",
+        toValue: "1",
+        duration: 1000,
+        delay: 0,
+        easing: "linear",
+        fillMode: "forwards",
+        name: "Fade",
+      },
+    ]);
     const state = createState([divElement], ["tg1"]);
 
     const { container } = render(
@@ -491,7 +522,9 @@ describe("HierarchyItem display and renaming", () => {
       </MotionDesignerProvider>,
     );
 
-    const animationIcon = container.querySelector('svg[class*="text-yellow-400"]');
+    const animationIcon = container.querySelector(
+      'svg[class*="text-yellow-400"]',
+    );
     expect(animationIcon).toBeTruthy();
   });
 
@@ -514,12 +547,16 @@ describe("HierarchyItem display and renaming", () => {
       </MotionDesignerProvider>,
     );
 
-    const sparkleIcons = container.querySelectorAll('svg[class*="text-yellow-400"]');
+    const sparkleIcons = container.querySelectorAll(
+      'svg[class*="text-yellow-400"]',
+    );
     expect(sparkleIcons.length).toBe(0);
   });
 
   test("media elements display filename from URL as primary text", () => {
-    const videoElement = createElement("video1", "video", [], { src: "https://example.com/video.mp4" });
+    const videoElement = createElement("video1", "video", [], {
+      src: "https://example.com/video.mp4",
+    });
     const state = createState([videoElement], ["tg1"]);
 
     render(
@@ -565,8 +602,12 @@ describe("HierarchyItem display and renaming", () => {
   });
 
   test("targeted elements display target reference", () => {
-    const targetElement = createElement("audio1", "audio", [], { name: "Background Music" });
-    const waveformElement = createElement("waveform1", "waveform", [], { target: "audio1" });
+    const targetElement = createElement("audio1", "audio", [], {
+      name: "Background Music",
+    });
+    const waveformElement = createElement("waveform1", "waveform", [], {
+      target: "audio1",
+    });
     const state = createState([targetElement, waveformElement], ["tg1"]);
 
     render(
@@ -589,7 +630,9 @@ describe("HierarchyItem display and renaming", () => {
 
   test("targeted elements display target ID when target has no name", () => {
     const targetElement = createElement("audio1", "audio", [], {});
-    const waveformElement = createElement("waveform1", "waveform", [], { target: "audio1" });
+    const waveformElement = createElement("waveform1", "waveform", [], {
+      target: "audio1",
+    });
     const state = createState([targetElement, waveformElement], ["tg1"]);
 
     render(
@@ -611,8 +654,12 @@ describe("HierarchyItem display and renaming", () => {
   });
 
   test("targeted elements with text target display target content", () => {
-    const targetElement = createElement("text1", "text", [], { content: "Hello" });
-    const waveformElement = createElement("waveform1", "waveform", [], { target: "text1" });
+    const targetElement = createElement("text1", "text", [], {
+      content: "Hello",
+    });
+    const waveformElement = createElement("waveform1", "waveform", [], {
+      target: "text1",
+    });
     const state = createState([targetElement, waveformElement], ["tg1"]);
 
     render(
@@ -635,7 +682,9 @@ describe("HierarchyItem display and renaming", () => {
 
   test("cross-highlight triggers on hover for targeted elements", () => {
     const targetElement = createElement("audio1", "audio", [], {});
-    const waveformElement = createElement("waveform1", "waveform", [], { target: "audio1" });
+    const waveformElement = createElement("waveform1", "waveform", [], {
+      target: "audio1",
+    });
     const state = createState([targetElement, waveformElement], ["tg1"]);
     const onHighlightChange = vi.fn();
 
@@ -663,7 +712,9 @@ describe("HierarchyItem display and renaming", () => {
 
   test("cross-highlight clears on mouse leave", () => {
     const targetElement = createElement("audio1", "audio", [], {});
-    const waveformElement = createElement("waveform1", "waveform", [], { target: "audio1" });
+    const waveformElement = createElement("waveform1", "waveform", [], {
+      target: "audio1",
+    });
     const state = createState([targetElement, waveformElement], ["tg1"]);
     const onHighlightChange = vi.fn();
 
@@ -716,4 +767,3 @@ describe("HierarchyItem display and renaming", () => {
     expect(classes).toContain("border-l-2");
   });
 });
-

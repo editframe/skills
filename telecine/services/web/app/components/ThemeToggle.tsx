@@ -86,7 +86,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
       <button
         className={clsx(
           "h-10 w-10 grid place-items-center rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-50 dark:hover:bg-gray-800 transition-colors touch-manipulation",
-          className
+          className,
         )}
         aria-label="Theme toggle"
         title="Theme toggle"
@@ -103,7 +103,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
       onClick={cycleTheme}
       className={clsx(
         "h-10 w-10 grid place-items-center rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-50 dark:hover:bg-gray-800 transition-colors touch-manipulation",
-        className
+        className,
       )}
       aria-label={getLabel()}
       title={getLabel()}
@@ -113,4 +113,3 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
     </button>
   );
 }
-

@@ -5,7 +5,11 @@ import { useDragContext } from "./DragContext";
 import { behaviorRegistry } from "~/lib/motion-designer/behaviors";
 import { isTemporalElement } from "~/lib/motion-designer/temporalUtils";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
-import { evaluateDropTarget, type DropTarget, type ElementRef } from "./dropTargetResolver";
+import {
+  evaluateDropTarget,
+  type DropTarget,
+  type ElementRef,
+} from "./dropTargetResolver";
 import { DropZoneStateMachine } from "./dropZone";
 
 interface HierarchyTreeProps {
@@ -17,11 +21,18 @@ export function HierarchyTree({ state }: HierarchyTreeProps) {
   const actions = useMotionDesignerActions();
   const rootContainerRef = useRef<HTMLDivElement>(null);
   const [rootDropIndex, setRootDropIndex] = useState<number | null>(null);
-  const [resolvedDropTarget, setResolvedDropTarget] = useState<DropTarget | null>(null);
-  const [highlightedElementId, setHighlightedElementId] = useState<string | null>(null);
+  const [resolvedDropTarget, setResolvedDropTarget] =
+    useState<DropTarget | null>(null);
+  const [highlightedElementId, setHighlightedElementId] = useState<
+    string | null
+  >(null);
   const [hoveredElementId, setHoveredElementId] = useState<string | null>(null);
-  const elementRefsRef = useRef<Map<string, { element: HTMLDivElement; depth: number }>>(new Map());
-  const zoneStateMachineRef = useRef<DropZoneStateMachine>(new DropZoneStateMachine());
+  const elementRefsRef = useRef<
+    Map<string, { element: HTMLDivElement; depth: number }>
+  >(new Map());
+  const zoneStateMachineRef = useRef<DropZoneStateMachine>(
+    new DropZoneStateMachine(),
+  );
   const rafIdRef = useRef<number | null>(null);
 
   // Use a ref to store the latest state so we don't need it in the dependency array
@@ -33,7 +44,7 @@ export function HierarchyTree({ state }: HierarchyTreeProps) {
 
   const resolveDropTargetForAllElements = useCallback(() => {
     const currentState = stateRef.current;
-    
+
     if (!dragState.draggedElementId || !dragState.dragPosition) {
       setResolvedDropTarget(null);
       setRootDropIndex(null);
@@ -43,7 +54,8 @@ export function HierarchyTree({ state }: HierarchyTreeProps) {
       return;
     }
 
-    const draggedElement = currentState.composition.elements[dragState.draggedElementId];
+    const draggedElement =
+      currentState.composition.elements[dragState.draggedElementId];
     if (!draggedElement) {
       setResolvedDropTarget(null);
       setRootDropIndex(null);
@@ -91,7 +103,12 @@ export function HierarchyTree({ state }: HierarchyTreeProps) {
       dragState.draggedElementId,
       currentState,
       (elementId, cursorY, rect, canHaveChildren) =>
-        zoneStateMachineRef.current.determineZone(elementId, cursorY, rect, canHaveChildren),
+        zoneStateMachineRef.current.determineZone(
+          elementId,
+          cursorY,
+          rect,
+          canHaveChildren,
+        ),
       (elementId) => zoneStateMachineRef.current.resetElement(elementId),
     );
 
@@ -112,7 +129,7 @@ export function HierarchyTree({ state }: HierarchyTreeProps) {
         const element = currentState.composition.elements[elementId];
         if (!element) continue;
 
-        const elementTop = containerRect.top + (i * 32);
+        const elementTop = containerRect.top + i * 32;
         const elementBottom = elementTop + 32;
 
         if (relativeY >= elementTop && relativeY <= elementBottom) {
@@ -126,7 +143,15 @@ export function HierarchyTree({ state }: HierarchyTreeProps) {
         dropIndex = rootTimegroupIds.length;
       }
 
-      if (dropIndex !== null && behaviorRegistry.canMove(dragState.draggedElementId, null, dropIndex, currentState)) {
+      if (
+        dropIndex !== null &&
+        behaviorRegistry.canMove(
+          dragState.draggedElementId,
+          null,
+          dropIndex,
+          currentState,
+        )
+      ) {
         setRootDropIndex(dropIndex);
         setDropTarget({
           elementId: "__root__",
@@ -138,7 +163,12 @@ export function HierarchyTree({ state }: HierarchyTreeProps) {
     } else {
       setRootDropIndex(null);
     }
-  }, [dragState.dragPosition, dragState.draggedElementId, dragState.dropTarget, setDropTarget]);
+  }, [
+    dragState.dragPosition,
+    dragState.draggedElementId,
+    dragState.dropTarget,
+    setDropTarget,
+  ]);
 
   useEffect(() => {
     if (rafIdRef.current !== null) {
@@ -188,29 +218,45 @@ export function HierarchyTree({ state }: HierarchyTreeProps) {
         return;
       }
 
-      if (currentDropTarget?.elementId === "__root__" && currentRootDropIndex !== null) {
+      if (
+        currentDropTarget?.elementId === "__root__" &&
+        currentRootDropIndex !== null
+      ) {
         actions.moveElement(draggedElementId, null, currentRootDropIndex);
       } else if (currentDropTarget) {
         const currentState = stateRef.current;
-        const targetElement = currentState.composition.elements[currentDropTarget.elementId];
+        const targetElement =
+          currentState.composition.elements[currentDropTarget.elementId];
         if (targetElement) {
           if (currentDropTarget.position === "inside") {
             actions.moveElement(draggedElementId, currentDropTarget.elementId);
           } else {
-            const parentId = findParentId(currentDropTarget.elementId, currentState);
+            const parentId = findParentId(
+              currentDropTarget.elementId,
+              currentState,
+            );
             const siblings = parentId
               ? currentState.composition.elements[parentId]?.childIds || []
               : currentState.composition.rootTimegroupIds;
 
             const targetIndex = siblings.indexOf(currentDropTarget.elementId);
-            let newIndex = currentDropTarget.position === "before" ? targetIndex : targetIndex + 1;
+            let newIndex =
+              currentDropTarget.position === "before"
+                ? targetIndex
+                : targetIndex + 1;
 
             const draggedIndex = siblings.indexOf(draggedElementId);
             if (draggedIndex !== -1) {
               if (draggedIndex < targetIndex) {
-                newIndex = currentDropTarget.position === "before" ? targetIndex - 1 : targetIndex;
+                newIndex =
+                  currentDropTarget.position === "before"
+                    ? targetIndex - 1
+                    : targetIndex;
               } else if (draggedIndex > targetIndex) {
-                newIndex = currentDropTarget.position === "before" ? targetIndex : targetIndex + 1;
+                newIndex =
+                  currentDropTarget.position === "before"
+                    ? targetIndex
+                    : targetIndex + 1;
               } else {
                 return;
               }
@@ -231,9 +277,19 @@ export function HierarchyTree({ state }: HierarchyTreeProps) {
       document.removeEventListener("pointermove", handleGlobalPointerMove);
       document.removeEventListener("pointerup", handleGlobalPointerUp);
     };
-  }, [dragState.draggedElementId, resolvedDropTarget, rootDropIndex, endDrag, updateDrag, actions]);
+  }, [
+    dragState.draggedElementId,
+    resolvedDropTarget,
+    rootDropIndex,
+    endDrag,
+    updateDrag,
+    actions,
+  ]);
 
-  const findParentId = (elementId: string, state: MotionDesignerState): string | null => {
+  const findParentId = (
+    elementId: string,
+    state: MotionDesignerState,
+  ): string | null => {
     for (const element of Object.values(state.composition.elements)) {
       if (element.childIds.includes(elementId)) {
         return element.id;
@@ -242,9 +298,12 @@ export function HierarchyTree({ state }: HierarchyTreeProps) {
     return null;
   };
 
-  const registerElementRef = useCallback((elementId: string, element: HTMLDivElement, depth: number) => {
-    elementRefsRef.current.set(elementId, { element, depth });
-  }, []);
+  const registerElementRef = useCallback(
+    (elementId: string, element: HTMLDivElement, depth: number) => {
+      elementRefsRef.current.set(elementId, { element, depth });
+    },
+    [],
+  );
 
   const unregisterElementRef = useCallback((elementId: string) => {
     elementRefsRef.current.delete(elementId);

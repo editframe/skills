@@ -36,26 +36,32 @@ export const Hero = ({
     <div className="flex flex-col text-left">
       <div className="w-full xl:w-1/2 lg:w-[70%]">
         {header && (
-          <h1 className={clsx(
-            "text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-tight mb-2",
-            "text-blue-600 dark:text-blue-400"
-          )}>
+          <h1
+            className={clsx(
+              "text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-tight mb-2",
+              "text-blue-600 dark:text-blue-400",
+            )}
+          >
             {header}
           </h1>
         )}
         {subheader && (
-          <p className={clsx(
-            "text-3xl sm:text-4xl lg:text-5xl mb-2 tracking-tighter leading-[1] my-0 font-bold text-left lg:m-0",
-            themeClasses.pageText
-          )}>
+          <p
+            className={clsx(
+              "text-3xl sm:text-4xl lg:text-5xl mb-2 tracking-tighter leading-[1] my-0 font-bold text-left lg:m-0",
+              themeClasses.pageText,
+            )}
+          >
             {subheader}
           </p>
         )}
         {description && (
-          <p className={clsx(
-            "text-lg sm:text-xl leading-[1.4] mt-3 ml-1 text-left",
-            themeClasses.pageTextSecondary
-          )}>
+          <p
+            className={clsx(
+              "text-lg sm:text-xl leading-[1.4] mt-3 ml-1 text-left",
+              themeClasses.pageTextSecondary,
+            )}
+          >
             {description}
           </p>
         )}

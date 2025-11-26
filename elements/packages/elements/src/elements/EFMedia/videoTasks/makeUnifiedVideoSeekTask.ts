@@ -173,9 +173,8 @@ async function tryGetScrubSample(
             if (!initSegment || !mediaSegment || signal.aborted)
               return undefined;
 
-            const { BufferedSeekingInput } = await import(
-              "../BufferedSeekingInput.js"
-            );
+            const { BufferedSeekingInput } =
+              await import("../BufferedSeekingInput.js");
             const { EFMedia } = await import("../../EFMedia.js");
 
             return new BufferedSeekingInput(

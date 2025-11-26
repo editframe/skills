@@ -1,4 +1,6 @@
-export const FormatStatusCode: React.FC<{ statusCode: number }> = ({ statusCode }) => {
+export const FormatStatusCode: React.FC<{ statusCode: number }> = ({
+  statusCode,
+}) => {
   if (statusCode >= 200 && statusCode < 300) {
     return (
       <span className="inline-flex items-center rounded-md bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
@@ -31,6 +33,9 @@ export const FormatStatusCode: React.FC<{ statusCode: number }> = ({ statusCode 
     );
   }
 
-
-  return <span className="inline-flex items-center rounded-md bg-waikawa-gray-100 px-2 py-1 text-xs font-medium text-waikawa-gray-700">⦰</span>;
+  return (
+    <span className="inline-flex items-center rounded-md bg-waikawa-gray-100 px-2 py-1 text-xs font-medium text-waikawa-gray-700">
+      ⦰
+    </span>
+  );
 };

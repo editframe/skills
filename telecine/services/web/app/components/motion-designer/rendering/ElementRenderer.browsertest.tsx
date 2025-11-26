@@ -3,7 +3,11 @@ import { describe, test, expect, beforeEach, vi } from "vitest";
 import { render } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ElementRenderer } from "./ElementRenderer";
-import type { MotionDesignerState, ElementNode, Animation } from "~/lib/motion-designer/types";
+import type {
+  MotionDesignerState,
+  ElementNode,
+  Animation,
+} from "~/lib/motion-designer/types";
 import * as generateStylesModule from "../animations/generateStyles";
 import * as animationStylesModule from "./styleGenerators/animationStyles";
 import * as animationCSSModule from "./animationCSS";
@@ -17,13 +21,38 @@ vi.mock("./elementRegistry", async () => {
   const React = await import("react");
   return {
     elementRegistry: {
-      text: ({ children, ...props }: any) => React.createElement("div", { "data-testid": "text-element", ...props }, children),
-      div: ({ children, ...props }: any) => React.createElement("div", { "data-testid": "div-element", ...props }, children),
-      image: ({ children, ...props }: any) => React.createElement("img", { "data-testid": "image-element", ...props }),
-      video: ({ children, ...props }: any) => React.createElement("video", { "data-testid": "video-element", ...props }, children),
-      timegroup: ({ children, ...props }: any) => React.createElement("div", { "data-testid": "timegroup-element", ...props }, children),
+      text: ({ children, ...props }: any) =>
+        React.createElement(
+          "div",
+          { "data-testid": "text-element", ...props },
+          children,
+        ),
+      div: ({ children, ...props }: any) =>
+        React.createElement(
+          "div",
+          { "data-testid": "div-element", ...props },
+          children,
+        ),
+      image: ({ children, ...props }: any) =>
+        React.createElement("img", {
+          "data-testid": "image-element",
+          ...props,
+        }),
+      video: ({ children, ...props }: any) =>
+        React.createElement(
+          "video",
+          { "data-testid": "video-element", ...props },
+          children,
+        ),
+      timegroup: ({ children, ...props }: any) =>
+        React.createElement(
+          "div",
+          { "data-testid": "timegroup-element", ...props },
+          children,
+        ),
     },
-    TextSegment: () => React.createElement("span", { "data-testid": "text-segment" }),
+    TextSegment: () =>
+      React.createElement("span", { "data-testid": "text-segment" }),
   };
 });
 
@@ -43,7 +72,9 @@ vi.mock("./styleGenerators/animationStyles");
 vi.mock("./animationCSS");
 
 // Test utilities
-function createMockElementNode(overrides: Partial<ElementNode> = {}): ElementNode {
+function createMockElementNode(
+  overrides: Partial<ElementNode> = {},
+): ElementNode {
   return {
     id: "test-element-1",
     type: "div",
@@ -54,7 +85,9 @@ function createMockElementNode(overrides: Partial<ElementNode> = {}): ElementNod
   };
 }
 
-function createMockMotionDesignerState(overrides: Partial<MotionDesignerState> = {}): MotionDesignerState {
+function createMockMotionDesignerState(
+  overrides: Partial<MotionDesignerState> = {},
+): MotionDesignerState {
   return {
     composition: {
       elements: {},
@@ -107,14 +140,18 @@ describe("ElementRenderer", () => {
     // Setup default mock implementations
     mockSelectElement = vi.fn();
     mockUseElementStyles = vi.fn().mockReturnValue({ styles: {} });
-    mockUseElementProps = vi.fn().mockReturnValue({ props: {}, textContent: null });
+    mockUseElementProps = vi
+      .fn()
+      .mockReturnValue({ props: {}, textContent: null });
     mockGenerateAnimationStyles = vi.fn().mockReturnValue(null);
     mockGenerateAnimationStyle = vi.fn().mockReturnValue(null);
     mockGenerateTextSplitAnimationCSS = vi.fn().mockReturnValue("");
     mockCreateAnimationKey = vi.fn().mockReturnValue("test-key");
 
     // Apply mocks
-    vi.mocked(useMotionDesignerActionsModule.useMotionDesignerActions).mockReturnValue({
+    vi.mocked(
+      useMotionDesignerActionsModule.useMotionDesignerActions,
+    ).mockReturnValue({
       selectElement: mockSelectElement,
       selectAnimation: vi.fn(),
       addElement: vi.fn(),
@@ -132,12 +169,24 @@ describe("ElementRenderer", () => {
       replaceState: vi.fn(),
     } as any);
 
-    vi.mocked(useElementStylesModule.useElementStyles).mockImplementation(mockUseElementStyles);
-    vi.mocked(useElementPropsModule.useElementProps).mockImplementation(mockUseElementProps);
-    vi.mocked(generateStylesModule.generateAnimationStyles).mockImplementation(mockGenerateAnimationStyles);
-    vi.mocked(animationStylesModule.generateAnimationStyle).mockImplementation(mockGenerateAnimationStyle);
-    vi.mocked(animationCSSModule.generateTextSplitAnimationCSS).mockImplementation(mockGenerateTextSplitAnimationCSS);
-    vi.mocked(animationCSSModule.createAnimationKey).mockImplementation(mockCreateAnimationKey);
+    vi.mocked(useElementStylesModule.useElementStyles).mockImplementation(
+      mockUseElementStyles,
+    );
+    vi.mocked(useElementPropsModule.useElementProps).mockImplementation(
+      mockUseElementProps,
+    );
+    vi.mocked(generateStylesModule.generateAnimationStyles).mockImplementation(
+      mockGenerateAnimationStyles,
+    );
+    vi.mocked(animationStylesModule.generateAnimationStyle).mockImplementation(
+      mockGenerateAnimationStyle,
+    );
+    vi.mocked(
+      animationCSSModule.generateTextSplitAnimationCSS,
+    ).mockImplementation(mockGenerateTextSplitAnimationCSS);
+    vi.mocked(animationCSSModule.createAnimationKey).mockImplementation(
+      mockCreateAnimationKey,
+    );
   });
 
   describe("Test Setup and Infrastructure", () => {
@@ -165,7 +214,10 @@ describe("ElementRenderer", () => {
       const state = createMockMotionDesignerState();
 
       mockUseElementStyles.mockReturnValue({ styles: { color: "red" } });
-      mockUseElementProps.mockReturnValue({ props: { className: "test" }, textContent: "Hello" });
+      mockUseElementProps.mockReturnValue({
+        props: { className: "test" },
+        textContent: "Hello",
+      });
 
       const stylesResult = mockUseElementStyles(element, state);
       const propsResult = mockUseElementProps(element);
@@ -180,85 +232,137 @@ describe("ElementRenderer", () => {
     test("renders div element type", () => {
       const element = createMockElementNode({ type: "div" });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
-      const rendered = document.querySelector(`[data-element-id="${element.id}"]`);
+      const rendered = document.querySelector(
+        `[data-element-id="${element.id}"]`,
+      );
       expect(rendered).toBeTruthy();
     });
 
     test("renders text element type", () => {
       const element = createMockElementNode({ type: "text" });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
-      mockUseElementProps.mockReturnValue({ props: {}, textContent: "Test Text" });
+      mockUseElementProps.mockReturnValue({
+        props: {},
+        textContent: "Test Text",
+      });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
-      const rendered = document.querySelector(`[data-element-id="${element.id}"]`);
+      const rendered = document.querySelector(
+        `[data-element-id="${element.id}"]`,
+      );
       expect(rendered).toBeTruthy();
     });
 
     test("renders image element type", () => {
       const element = createMockElementNode({ type: "image" });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
-      const rendered = document.querySelector(`[data-element-id="${element.id}"]`);
+      const rendered = document.querySelector(
+        `[data-element-id="${element.id}"]`,
+      );
       expect(rendered).toBeTruthy();
     });
 
     test("renders video element type", () => {
       const element = createMockElementNode({ type: "video" });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
-      const rendered = document.querySelector(`[data-element-id="${element.id}"]`);
+      const rendered = document.querySelector(
+        `[data-element-id="${element.id}"]`,
+      );
       expect(rendered).toBeTruthy();
     });
 
     test("renders timegroup element type", () => {
       const element = createMockElementNode({ type: "timegroup" });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
-      const rendered = document.querySelector(`[data-element-id="${element.id}"]`);
+      const rendered = document.querySelector(
+        `[data-element-id="${element.id}"]`,
+      );
       expect(rendered).toBeTruthy();
     });
 
     test("invalid element type returns null", () => {
       const element = createMockElementNode({ type: "invalid-type" as any });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
-      const rendered = document.querySelector(`[data-element-id="${element.id}"]`);
+      const rendered = document.querySelector(
+        `[data-element-id="${element.id}"]`,
+      );
       expect(rendered).toBeNull();
     });
 
     test("element renders with data-element-id attribute", () => {
       const element = createMockElementNode({ id: "test-id-123" });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
-      const rendered = document.querySelector(`[data-element-id="test-id-123"]`);
+      const rendered = document.querySelector(
+        `[data-element-id="test-id-123"]`,
+      );
       expect(rendered).toBeTruthy();
       expect(rendered?.getAttribute("data-element-id")).toBe("test-id-123");
     });
@@ -268,18 +372,27 @@ describe("ElementRenderer", () => {
     test("designStyles are merged with existing props.style", () => {
       const element = createMockElementNode();
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
-      mockUseElementStyles.mockReturnValue({ styles: { color: "blue", fontSize: "16px" } });
+      mockUseElementStyles.mockReturnValue({
+        styles: { color: "blue", fontSize: "16px" },
+      });
       mockUseElementProps.mockReturnValue({
         props: { style: { backgroundColor: "red" } },
         textContent: null,
       });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
-      const rendered = document.querySelector(`[data-element-id="${element.id}"]`) as HTMLElement;
+      const rendered = document.querySelector(
+        `[data-element-id="${element.id}"]`,
+      ) as HTMLElement;
       expect(rendered).toBeTruthy();
       expect(rendered.style.color).toBe("blue");
       expect(rendered.style.fontSize).toBe("16px");
@@ -289,15 +402,22 @@ describe("ElementRenderer", () => {
     test("timegroup elements don't receive cursor pointer style", () => {
       const element = createMockElementNode({ type: "timegroup" });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
       mockUseElementStyles.mockReturnValue({ styles: { color: "red" } });
       mockUseElementProps.mockReturnValue({ props: {}, textContent: null });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
-      const rendered = document.querySelector(`[data-element-id="${element.id}"]`) as HTMLElement;
+      const rendered = document.querySelector(
+        `[data-element-id="${element.id}"]`,
+      ) as HTMLElement;
       expect(rendered).toBeTruthy();
       expect(rendered.style.cursor).not.toBe("pointer");
     });
@@ -305,15 +425,22 @@ describe("ElementRenderer", () => {
     test("non-timegroup elements receive cursor pointer style", () => {
       const element = createMockElementNode({ type: "div" });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
       mockUseElementStyles.mockReturnValue({ styles: {} });
       mockUseElementProps.mockReturnValue({ props: {}, textContent: null });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
-      const rendered = document.querySelector(`[data-element-id="${element.id}"]`) as HTMLElement;
+      const rendered = document.querySelector(
+        `[data-element-id="${element.id}"]`,
+      ) as HTMLElement;
       expect(rendered).toBeTruthy();
       expect(rendered.style.cursor).toBe("pointer");
     });
@@ -321,7 +448,10 @@ describe("ElementRenderer", () => {
     test("style merging preserves existing style properties", () => {
       const element = createMockElementNode();
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
       mockUseElementStyles.mockReturnValue({ styles: { color: "blue" } });
@@ -330,9 +460,13 @@ describe("ElementRenderer", () => {
         textContent: null,
       });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
-      const rendered = document.querySelector(`[data-element-id="${element.id}"]`) as HTMLElement;
+      const rendered = document.querySelector(
+        `[data-element-id="${element.id}"]`,
+      ) as HTMLElement;
       expect(rendered).toBeTruthy();
       // designStyles should override existing styles
       expect(rendered.style.color).toBe("blue");
@@ -342,10 +476,17 @@ describe("ElementRenderer", () => {
     test("timegroup with display flex receives flex layout styles", () => {
       const element = createMockElementNode({
         type: "timegroup",
-        props: { display: "flex", flexDirection: "row", justifyContent: "center" },
+        props: {
+          display: "flex",
+          flexDirection: "row",
+          justifyContent: "center",
+        },
       });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
       mockUseElementStyles.mockReturnValue({
@@ -360,9 +501,13 @@ describe("ElementRenderer", () => {
         textContent: null,
       });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
-      const rendered = document.querySelector(`[data-element-id="${element.id}"]`) as HTMLElement;
+      const rendered = document.querySelector(
+        `[data-element-id="${element.id}"]`,
+      ) as HTMLElement;
       expect(rendered).toBeTruthy();
       expect(rendered.style.display).toBe("flex");
       expect(rendered.style.flexDirection).toBe("row");
@@ -375,7 +520,10 @@ describe("ElementRenderer", () => {
         props: { display: "flex" },
       });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
       mockUseElementStyles.mockReturnValue({
@@ -386,9 +534,13 @@ describe("ElementRenderer", () => {
         textContent: null,
       });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
-      const rendered = document.querySelector(`[data-element-id="${element.id}"]`) as HTMLElement;
+      const rendered = document.querySelector(
+        `[data-element-id="${element.id}"]`,
+      ) as HTMLElement;
       expect(rendered).toBeTruthy();
       // designStyles should override props.style
       expect(rendered.style.display).toBe("flex");
@@ -407,7 +559,10 @@ describe("ElementRenderer", () => {
         },
       });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
       mockUseElementStyles.mockReturnValue({
@@ -418,9 +573,13 @@ describe("ElementRenderer", () => {
         textContent: null,
       });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
-      const rendered = document.querySelector(`[data-element-id="${element.id}"]`) as HTMLElement;
+      const rendered = document.querySelector(
+        `[data-element-id="${element.id}"]`,
+      ) as HTMLElement;
       expect(rendered).toBeTruthy();
       expect(rendered.style.width).toBe("50%");
     });
@@ -468,12 +627,20 @@ describe("ElementRenderer", () => {
       parent.style.width = "200px";
       document.body.appendChild(parent);
 
-      render(<ElementRenderer element={childElement} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer
+          element={childElement}
+          state={state}
+          currentTime={0}
+        />,
+      );
 
-      const rendered = document.querySelector(`[data-element-id="${childElement.id}"]`) as HTMLElement;
+      const rendered = document.querySelector(
+        `[data-element-id="${childElement.id}"]`,
+      ) as HTMLElement;
       expect(rendered).toBeTruthy();
       expect(rendered.style.width).toBe("50%");
-      
+
       document.body.removeChild(parent);
     });
   });
@@ -482,15 +649,26 @@ describe("ElementRenderer", () => {
     test("keyframeStyles are included in fullCSS", () => {
       const element = createMockElementNode();
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
-      mockGenerateAnimationStyles.mockReturnValue("@keyframes fade { from { opacity: 0; } }");
-      mockGenerateAnimationStyle.mockReturnValue({ animation: "fade 1s ease 0s both paused" });
+      mockGenerateAnimationStyles.mockReturnValue(
+        "@keyframes fade { from { opacity: 0; } }",
+      );
+      mockGenerateAnimationStyle.mockReturnValue({
+        animation: "fade 1s ease 0s both paused",
+      });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
-      const styleElement = document.getElementById(`animation-styles-${element.id}`) as HTMLStyleElement;
+      const styleElement = document.getElementById(
+        `animation-styles-${element.id}`,
+      ) as HTMLStyleElement;
       expect(styleElement).toBeTruthy();
       expect(styleElement.textContent).toContain("@keyframes fade");
     });
@@ -502,14 +680,23 @@ describe("ElementRenderer", () => {
         animations: [createMockAnimation()],
       });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
-      mockGenerateTextSplitAnimationCSS.mockReturnValue("\n[data-element-id=\"test-element-1\"] ef-text-segment {\n  animation: test-anim;\n}");
+      mockGenerateTextSplitAnimationCSS.mockReturnValue(
+        '\n[data-element-id="test-element-1"] ef-text-segment {\n  animation: test-anim;\n}',
+      );
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
-      const styleElement = document.getElementById(`animation-styles-${element.id}`) as HTMLStyleElement;
+      const styleElement = document.getElementById(
+        `animation-styles-${element.id}`,
+      ) as HTMLStyleElement;
       expect(styleElement).toBeTruthy();
       expect(styleElement.textContent).toContain("ef-text-segment");
       expect(styleElement.textContent).toContain("animation: test-anim");
@@ -521,17 +708,30 @@ describe("ElementRenderer", () => {
         animations: [createMockAnimation()],
       });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
-      mockGenerateAnimationStyle.mockReturnValue({ animation: "fade 1s ease 0s both paused" });
+      mockGenerateAnimationStyle.mockReturnValue({
+        animation: "fade 1s ease 0s both paused",
+      });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
-      const styleElement = document.getElementById(`animation-styles-${element.id}`) as HTMLStyleElement;
+      const styleElement = document.getElementById(
+        `animation-styles-${element.id}`,
+      ) as HTMLStyleElement;
       expect(styleElement).toBeTruthy();
-      expect(styleElement.textContent).toContain(`[data-element-id="${element.id}"]`);
-      expect(styleElement.textContent).toContain("animation: fade 1s ease 0s both paused");
+      expect(styleElement.textContent).toContain(
+        `[data-element-id="${element.id}"]`,
+      );
+      expect(styleElement.textContent).toContain(
+        "animation: fade 1s ease 0s both paused",
+      );
     });
 
     test("animation none is set when animationStyle.animation === 'none'", () => {
@@ -539,14 +739,21 @@ describe("ElementRenderer", () => {
         animations: [createMockAnimation()],
       });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
       mockGenerateAnimationStyle.mockReturnValue({ animation: "none" });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
-      const styleElement = document.getElementById(`animation-styles-${element.id}`) as HTMLStyleElement;
+      const styleElement = document.getElementById(
+        `animation-styles-${element.id}`,
+      ) as HTMLStyleElement;
       expect(styleElement).toBeTruthy();
       expect(styleElement.textContent).toContain("animation: none");
     });
@@ -554,15 +761,22 @@ describe("ElementRenderer", () => {
     test("style element exists with correct ID and CSS", () => {
       const element = createMockElementNode({ id: "test-id-456" });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
       mockCreateAnimationKey.mockReturnValue("anim-key-123");
       mockGenerateAnimationStyle.mockReturnValue({ animation: "fade 1s" });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
-      const styleElement = document.getElementById(`animation-styles-test-id-456`) as HTMLStyleElement;
+      const styleElement = document.getElementById(
+        `animation-styles-test-id-456`,
+      ) as HTMLStyleElement;
       expect(styleElement).toBeTruthy();
       expect(styleElement.id).toBe("animation-styles-test-id-456");
       expect(styleElement.textContent).toContain("animation: fade 1s");
@@ -572,14 +786,24 @@ describe("ElementRenderer", () => {
   describe("Test Click Handling and Selection", () => {
     test("clicking non-timegroup element calls actions.selectElement", async () => {
       const user = userEvent.setup();
-      const element = createMockElementNode({ type: "div", id: "clickable-element" });
+      const element = createMockElementNode({
+        type: "div",
+        id: "clickable-element",
+      });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
-      const rendered = document.querySelector(`[data-element-id="${element.id}"]`) as HTMLElement;
+      const rendered = document.querySelector(
+        `[data-element-id="${element.id}"]`,
+      ) as HTMLElement;
       await user.click(rendered);
 
       expect(mockSelectElement).toHaveBeenCalledWith("clickable-element");
@@ -588,7 +812,10 @@ describe("ElementRenderer", () => {
     test("clicking non-timegroup element stops event propagation", async () => {
       const element = createMockElementNode({ type: "div" });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
       const parentHandler = vi.fn();
@@ -596,10 +823,12 @@ describe("ElementRenderer", () => {
       render(
         <div onClick={parentHandler}>
           <ElementRenderer element={element} state={state} currentTime={0} />
-        </div>
+        </div>,
       );
 
-      const rendered = document.querySelector(`[data-element-id="${element.id}"]`) as HTMLElement;
+      const rendered = document.querySelector(
+        `[data-element-id="${element.id}"]`,
+      ) as HTMLElement;
       await userEvent.click(rendered);
 
       // Verify selectElement was called (which means stopPropagation prevented parent handler)
@@ -611,14 +840,24 @@ describe("ElementRenderer", () => {
 
     test("clicking timegroup element does not trigger selection", async () => {
       const user = userEvent.setup();
-      const element = createMockElementNode({ type: "timegroup", id: "timegroup-element" });
+      const element = createMockElementNode({
+        type: "timegroup",
+        id: "timegroup-element",
+      });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
-      const rendered = document.querySelector(`[data-element-id="${element.id}"]`) as HTMLElement;
+      const rendered = document.querySelector(
+        `[data-element-id="${element.id}"]`,
+      ) as HTMLElement;
       await user.click(rendered);
 
       expect(mockSelectElement).not.toHaveBeenCalled();
@@ -628,7 +867,10 @@ describe("ElementRenderer", () => {
       const user = userEvent.setup();
       const element = createMockElementNode({ type: "timegroup" });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
       const parentHandler = vi.fn();
@@ -636,10 +878,12 @@ describe("ElementRenderer", () => {
       render(
         <div onClick={parentHandler}>
           <ElementRenderer element={element} state={state} currentTime={0} />
-        </div>
+        </div>,
       );
 
-      const rendered = document.querySelector(`[data-element-id="${element.id}"]`) as HTMLElement;
+      const rendered = document.querySelector(
+        `[data-element-id="${element.id}"]`,
+      ) as HTMLElement;
       await user.click(rendered);
 
       // Parent handler should be called if propagation wasn't stopped
@@ -655,25 +899,40 @@ describe("ElementRenderer", () => {
         props: { fontSize: "32px", fontFamily: "Arial", textAlign: "center" },
       });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
-      mockUseElementProps.mockReturnValue({ props: {}, textContent: "Hello World" });
+      mockUseElementProps.mockReturnValue({
+        props: {},
+        textContent: "Hello World",
+      });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
       // Component key affects React reconciliation, verify element renders
-      const rendered = document.querySelector(`[data-element-id="${element.id}"]`);
+      const rendered = document.querySelector(
+        `[data-element-id="${element.id}"]`,
+      );
       expect(rendered).toBeTruthy();
     });
 
     test("non-text elements use element.id as component key", () => {
       const element = createMockElementNode({ type: "div", id: "div-123" });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
       const rendered = document.querySelector(`[data-element-id="div-123"]`);
       expect(rendered).toBeTruthy();
@@ -684,14 +943,24 @@ describe("ElementRenderer", () => {
     test("text elements render TextSegment component and textContent", () => {
       const element = createMockElementNode({ type: "text" });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
-      mockUseElementProps.mockReturnValue({ props: {}, textContent: "Test Content" });
+      mockUseElementProps.mockReturnValue({
+        props: {},
+        textContent: "Test Content",
+      });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
-      const rendered = document.querySelector(`[data-element-id="${element.id}"]`);
+      const rendered = document.querySelector(
+        `[data-element-id="${element.id}"]`,
+      );
       expect(rendered).toBeTruthy();
       expect(rendered?.textContent).toContain("Test Content");
     });
@@ -699,14 +968,24 @@ describe("ElementRenderer", () => {
     test("non-text elements render only textContent when present", () => {
       const element = createMockElementNode({ type: "div" });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
-      mockUseElementProps.mockReturnValue({ props: {}, textContent: "Div Content" });
+      mockUseElementProps.mockReturnValue({
+        props: {},
+        textContent: "Div Content",
+      });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
-      const rendered = document.querySelector(`[data-element-id="${element.id}"]`);
+      const rendered = document.querySelector(
+        `[data-element-id="${element.id}"]`,
+      );
       expect(rendered).toBeTruthy();
       expect(rendered?.textContent).toBe("Div Content");
     });
@@ -714,7 +993,10 @@ describe("ElementRenderer", () => {
 
   describe("Test Recursive Child Rendering", () => {
     test("element with childIds renders child ElementRenderer components", () => {
-      const childElement = createMockElementNode({ id: "child-1", type: "div" });
+      const childElement = createMockElementNode({
+        id: "child-1",
+        type: "div",
+      });
       const parentElement = createMockElementNode({
         id: "parent-1",
         childIds: ["child-1"],
@@ -729,10 +1011,20 @@ describe("ElementRenderer", () => {
         },
       });
 
-      render(<ElementRenderer element={parentElement} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer
+          element={parentElement}
+          state={state}
+          currentTime={0}
+        />,
+      );
 
-      const parent = document.querySelector(`[data-element-id="${parentElement.id}"]`);
-      const child = document.querySelector(`[data-element-id="${childElement.id}"]`);
+      const parent = document.querySelector(
+        `[data-element-id="${parentElement.id}"]`,
+      );
+      const child = document.querySelector(
+        `[data-element-id="${childElement.id}"]`,
+      );
 
       expect(parent).toBeTruthy();
       expect(child).toBeTruthy();
@@ -752,17 +1044,30 @@ describe("ElementRenderer", () => {
         },
       });
 
-      render(<ElementRenderer element={parentElement} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer
+          element={parentElement}
+          state={state}
+          currentTime={0}
+        />,
+      );
 
-      const parent = document.querySelector(`[data-element-id="${parentElement.id}"]`);
-      const missingChild = document.querySelector(`[data-element-id="non-existent-child"]`);
+      const parent = document.querySelector(
+        `[data-element-id="${parentElement.id}"]`,
+      );
+      const missingChild = document.querySelector(
+        `[data-element-id="non-existent-child"]`,
+      );
 
       expect(parent).toBeTruthy();
       expect(missingChild).toBeNull();
     });
 
     test("nested child structure renders correctly", () => {
-      const grandchildElement = createMockElementNode({ id: "grandchild-1", type: "div" });
+      const grandchildElement = createMockElementNode({
+        id: "grandchild-1",
+        type: "div",
+      });
       const childElement = createMockElementNode({
         id: "child-1",
         type: "div",
@@ -783,11 +1088,23 @@ describe("ElementRenderer", () => {
         },
       });
 
-      render(<ElementRenderer element={parentElement} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer
+          element={parentElement}
+          state={state}
+          currentTime={0}
+        />,
+      );
 
-      const parent = document.querySelector(`[data-element-id="${parentElement.id}"]`);
-      const child = document.querySelector(`[data-element-id="${childElement.id}"]`);
-      const grandchild = document.querySelector(`[data-element-id="${grandchildElement.id}"]`);
+      const parent = document.querySelector(
+        `[data-element-id="${parentElement.id}"]`,
+      );
+      const child = document.querySelector(
+        `[data-element-id="${childElement.id}"]`,
+      );
+      const grandchild = document.querySelector(
+        `[data-element-id="${grandchildElement.id}"]`,
+      );
 
       expect(parent).toBeTruthy();
       expect(child).toBeTruthy();
@@ -810,7 +1127,13 @@ describe("ElementRenderer", () => {
         },
       });
 
-      render(<ElementRenderer element={parentElement} state={state} currentTime={5000} />);
+      render(
+        <ElementRenderer
+          element={parentElement}
+          state={state}
+          currentTime={5000}
+        />,
+      );
 
       // Verify hooks were called for child element
       expect(mockUseElementStyles).toHaveBeenCalledWith(childElement, state);
@@ -822,12 +1145,19 @@ describe("ElementRenderer", () => {
     test("element with empty childIds array renders without children", () => {
       const element = createMockElementNode({ childIds: [] });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
-      const rendered = document.querySelector(`[data-element-id="${element.id}"]`);
+      const rendered = document.querySelector(
+        `[data-element-id="${element.id}"]`,
+      );
       expect(rendered).toBeTruthy();
       // Should not throw or error
     });
@@ -835,51 +1165,81 @@ describe("ElementRenderer", () => {
     test("element with null textContent handles gracefully", () => {
       const element = createMockElementNode({ type: "text" });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
       mockUseElementProps.mockReturnValue({ props: {}, textContent: null });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
-      const rendered = document.querySelector(`[data-element-id="${element.id}"]`);
+      const rendered = document.querySelector(
+        `[data-element-id="${element.id}"]`,
+      );
       expect(rendered).toBeTruthy();
     });
 
     test("element with no animations generates minimal CSS", () => {
       const element = createMockElementNode({ animations: [] });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
       mockGenerateAnimationStyles.mockReturnValue(null);
       mockGenerateAnimationStyle.mockReturnValue(null);
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
-      const styleElement = document.getElementById(`animation-styles-${element.id}`) as HTMLStyleElement;
+      const styleElement = document.getElementById(
+        `animation-styles-${element.id}`,
+      ) as HTMLStyleElement;
       expect(styleElement).toBeTruthy();
       expect(styleElement.textContent).toBe("");
     });
 
     test("element with multiple animations combines all CSS correctly", () => {
       const element = createMockElementNode({
-        animations: [createMockAnimation({ id: "anim-1" }), createMockAnimation({ id: "anim-2" })],
+        animations: [
+          createMockAnimation({ id: "anim-1" }),
+          createMockAnimation({ id: "anim-2" }),
+        ],
       });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
-      mockGenerateAnimationStyles.mockReturnValue("@keyframes anim1 {} @keyframes anim2 {}");
-      mockGenerateAnimationStyle.mockReturnValue({ animation: "anim1 1s, anim2 1s" });
+      mockGenerateAnimationStyles.mockReturnValue(
+        "@keyframes anim1 {} @keyframes anim2 {}",
+      );
+      mockGenerateAnimationStyle.mockReturnValue({
+        animation: "anim1 1s, anim2 1s",
+      });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
-      const styleElement = document.getElementById(`animation-styles-${element.id}`) as HTMLStyleElement;
+      const styleElement = document.getElementById(
+        `animation-styles-${element.id}`,
+      ) as HTMLStyleElement;
       expect(styleElement).toBeTruthy();
       expect(styleElement.textContent).toContain("@keyframes anim1");
       expect(styleElement.textContent).toContain("@keyframes anim2");
-      expect(styleElement.textContent).toContain("animation: anim1 1s, anim2 1s");
+      expect(styleElement.textContent).toContain(
+        "animation: anim1 1s, anim2 1s",
+      );
     });
   });
 
@@ -887,16 +1247,25 @@ describe("ElementRenderer", () => {
     test("renders with actual elementRegistry components", async () => {
       const element = createMockElementNode({ type: "div" });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
-      const rendered = document.querySelector(`[data-element-id="${element.id}"]`);
+      const rendered = document.querySelector(
+        `[data-element-id="${element.id}"]`,
+      );
       expect(rendered).toBeTruthy();
       // Verify it's actually rendered using mocked elementRegistry
       const { elementRegistry } = await import("./elementRegistry");
-      expect(elementRegistry[element.type as keyof typeof elementRegistry]).toBeDefined();
+      expect(
+        elementRegistry[element.type as keyof typeof elementRegistry],
+      ).toBeDefined();
     });
 
     test("CSS injection creates actual style element in DOM", () => {
@@ -904,15 +1273,24 @@ describe("ElementRenderer", () => {
         animations: [createMockAnimation()],
       });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
-      mockGenerateAnimationStyles.mockReturnValue("@keyframes test { from { opacity: 0; } }");
+      mockGenerateAnimationStyles.mockReturnValue(
+        "@keyframes test { from { opacity: 0; } }",
+      );
       mockGenerateAnimationStyle.mockReturnValue({ animation: "test 1s" });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
-      const styleElement = document.getElementById(`animation-styles-${element.id}`) as HTMLStyleElement;
+      const styleElement = document.getElementById(
+        `animation-styles-${element.id}`,
+      ) as HTMLStyleElement;
       expect(styleElement).toBeTruthy();
       expect(styleElement.textContent).toContain("@keyframes test");
       expect(styleElement.textContent).toContain("animation: test 1s");
@@ -920,19 +1298,28 @@ describe("ElementRenderer", () => {
 
     test("animation key stability", () => {
       const element = createMockElementNode({
-        animations: [createMockAnimation({ id: "anim-1", delay: 0, duration: 1000 })],
+        animations: [
+          createMockAnimation({ id: "anim-1", delay: 0, duration: 1000 }),
+        ],
       });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
       mockCreateAnimationKey.mockReturnValue("stable-key-123");
       mockGenerateAnimationStyle.mockReturnValue({ animation: "test 1s" });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
       expect(mockCreateAnimationKey).toHaveBeenCalledWith(element);
-      const styleElement = document.getElementById(`animation-styles-${element.id}`) as HTMLStyleElement;
+      const styleElement = document.getElementById(
+        `animation-styles-${element.id}`,
+      ) as HTMLStyleElement;
       expect(styleElement).toBeTruthy();
     });
   });
@@ -951,7 +1338,10 @@ describe("ElementRenderer", () => {
         },
       });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
       const styles = generateLayoutStyles(element, state);
@@ -977,7 +1367,10 @@ describe("ElementRenderer", () => {
         },
       });
       const state = createMockMotionDesignerState({
-        composition: { elements: { [element.id]: element }, rootTimegroupIds: [] },
+        composition: {
+          elements: { [element.id]: element },
+          rootTimegroupIds: [],
+        },
       });
 
       // Mock useElementStyles to return styles without width/height
@@ -992,11 +1385,15 @@ describe("ElementRenderer", () => {
         textContent: null,
       });
 
-      render(<ElementRenderer element={element} state={state} currentTime={0} />);
+      render(
+        <ElementRenderer element={element} state={state} currentTime={0} />,
+      );
 
-      const rendered = document.querySelector(`[data-element-id="${element.id}"]`) as HTMLElement;
+      const rendered = document.querySelector(
+        `[data-element-id="${element.id}"]`,
+      ) as HTMLElement;
       expect(rendered).toBeTruthy();
-      
+
       // The rendered element should not have width/height set
       // This allows the ef-video web component to size itself based on its canvas
       expect(rendered.style.width).toBe("");
@@ -1133,7 +1530,11 @@ describe("ElementRenderer", () => {
       });
 
       const { container } = render(
-        <ElementRenderer element={videoElement} state={state} currentTime={0} />,
+        <ElementRenderer
+          element={videoElement}
+          state={state}
+          currentTime={0}
+        />,
       );
 
       // Check that ef-fit-scale wrapper exists
@@ -1189,7 +1590,11 @@ describe("ElementRenderer", () => {
       });
 
       const { container } = render(
-        <ElementRenderer element={videoElement} state={state} currentTime={0} />,
+        <ElementRenderer
+          element={videoElement}
+          state={state}
+          currentTime={0}
+        />,
       );
 
       // Check that ef-fit-scale wrapper does NOT exist
@@ -1234,7 +1639,11 @@ describe("ElementRenderer", () => {
       });
 
       const { container } = render(
-        <ElementRenderer element={videoElement} state={state} currentTime={0} />,
+        <ElementRenderer
+          element={videoElement}
+          state={state}
+          currentTime={0}
+        />,
       );
 
       // Check that ef-fit-scale wrapper does NOT exist
@@ -1289,7 +1698,11 @@ describe("ElementRenderer", () => {
       });
 
       const { container } = render(
-        <ElementRenderer element={videoElement} state={state} currentTime={0} />,
+        <ElementRenderer
+          element={videoElement}
+          state={state}
+          currentTime={0}
+        />,
       );
 
       // Check that ef-fit-scale wrapper exists
@@ -1300,9 +1713,11 @@ describe("ElementRenderer", () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Check that video element has transform applied by ef-fit-scale
-      const video = container.querySelector('[data-element-id="video-1"]') as HTMLElement;
+      const video = container.querySelector(
+        '[data-element-id="video-1"]',
+      ) as HTMLElement;
       expect(video).toBeTruthy();
-      
+
       // ef-fit-scale applies transform to the content child
       // The transform should include scale() and translate()
       const transform = video.style.transform;
@@ -1313,4 +1728,3 @@ describe("ElementRenderer", () => {
     });
   });
 });
-

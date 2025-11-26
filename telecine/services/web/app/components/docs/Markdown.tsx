@@ -91,7 +91,10 @@ export function CodeStep({ children }: { children: React.ReactNode }) {
 export function CodeStepLabel({
   children,
   title,
-}: { children: React.ReactNode; title: string }) {
+}: {
+  children: React.ReactNode;
+  title: string;
+}) {
   return (
     <div className="flex-none w-56 p-2 text-slate-700">
       <p className="p-0 m-0 font-medium [counter-increment:step-counter] before:content-[counter(step-counter)] before:mr-2">

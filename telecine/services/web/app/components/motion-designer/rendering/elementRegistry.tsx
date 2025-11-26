@@ -12,13 +12,13 @@ export const elementRegistry = {
   image: ({ ...props }: React.ImgHTMLAttributes<HTMLImageElement>) => (
     <img {...props} />
   ),
-  video: ({ children, ...props }: React.VideoHTMLAttributes<HTMLVideoElement>) => (
+  video: ({
+    children,
+    ...props
+  }: React.VideoHTMLAttributes<HTMLVideoElement>) => (
     <video {...props}>{children}</video>
   ),
   timegroup: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
     <div {...props}>{children}</div>
   ),
 } as const;
-
-
-

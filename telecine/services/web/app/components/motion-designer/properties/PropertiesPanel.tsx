@@ -11,7 +11,9 @@ interface PropertiesPanelProps {
 
 export function PropertiesPanel({ state }: PropertiesPanelProps) {
   const actions = useMotionDesignerActions();
-  const [activeTab, setActiveTab] = useState<"design" | "animate" | "css">("design");
+  const [activeTab, setActiveTab] = useState<"design" | "animate" | "css">(
+    "design",
+  );
   const selectedElement = state.ui.selectedElementId
     ? state.composition.elements[state.ui.selectedElementId]
     : null;
@@ -84,14 +86,12 @@ export function PropertiesPanel({ state }: PropertiesPanelProps) {
           <DesignTab element={selectedElement} state={state} />
         )}
         {activeTab === "animate" && (
-          <AnimateTab 
-            element={selectedElement} 
+          <AnimateTab
+            element={selectedElement}
             selectedAnimationId={state.ui.selectedAnimationId}
           />
         )}
-        {activeTab === "css" && (
-          <CSSTab element={selectedElement} />
-        )}
+        {activeTab === "css" && <CSSTab element={selectedElement} />}
       </div>
       <div className="border-t border-gray-700/30 p-2.5 bg-gray-850">
         <button
@@ -104,4 +104,3 @@ export function PropertiesPanel({ state }: PropertiesPanelProps) {
     </div>
   );
 }
-

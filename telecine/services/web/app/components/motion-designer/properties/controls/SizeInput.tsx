@@ -32,16 +32,19 @@ export function SizeInput({ label, width, height, onChange }: SizeInputProps) {
               }}
               className={`
                 w-4 h-4 flex items-center justify-center rounded border transition-colors
-                ${widthEnabled
-                  ? "bg-blue-600 border-blue-600 text-white"
-                  : "bg-gray-800/50 border-gray-700/30 text-gray-600 hover:border-gray-600/50"
+                ${
+                  widthEnabled
+                    ? "bg-blue-600 border-blue-600 text-white"
+                    : "bg-gray-800/50 border-gray-700/30 text-gray-600 hover:border-gray-600/50"
                 }
               `}
               title={widthEnabled ? "Disable width" : "Enable width"}
             >
               {widthEnabled && <Check className="w-2.5 h-2.5" />}
             </button>
-            <span className="text-[7px] text-gray-600 font-bold uppercase w-3">W</span>
+            <span className="text-[7px] text-gray-600 font-bold uppercase w-3">
+              W
+            </span>
             <input
               type="number"
               value={currentWidth}
@@ -64,16 +67,19 @@ export function SizeInput({ label, width, height, onChange }: SizeInputProps) {
               }}
               className={`
                 w-4 h-4 flex items-center justify-center rounded border transition-colors
-                ${heightEnabled
-                  ? "bg-blue-600 border-blue-600 text-white"
-                  : "bg-gray-800/50 border-gray-700/30 text-gray-600 hover:border-gray-600/50"
+                ${
+                  heightEnabled
+                    ? "bg-blue-600 border-blue-600 text-white"
+                    : "bg-gray-800/50 border-gray-700/30 text-gray-600 hover:border-gray-600/50"
                 }
               `}
               title={heightEnabled ? "Disable height" : "Enable height"}
             >
               {heightEnabled && <Check className="w-2.5 h-2.5" />}
             </button>
-            <span className="text-[7px] text-gray-600 font-bold uppercase w-3">H</span>
+            <span className="text-[7px] text-gray-600 font-bold uppercase w-3">
+              H
+            </span>
             <input
               type="number"
               value={currentHeight}

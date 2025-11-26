@@ -12,6 +12,9 @@ export interface ProgressiveQueryDescriptor<
 export function progressiveQuery<
   Data = any,
   Variables extends AnyVariables = AnyVariables,
->(role: QueryRole, query: TypedDocumentNode<Data, Variables>): ProgressiveQueryDescriptor<Data, Variables> {
+>(
+  role: QueryRole,
+  query: TypedDocumentNode<Data, Variables>,
+): ProgressiveQueryDescriptor<Data, Variables> {
   return { role, query };
 }

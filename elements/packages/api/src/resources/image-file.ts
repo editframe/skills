@@ -116,8 +116,7 @@ export interface LookupImageFileByMd5Result {
   width: number | null;
 }
 
-export interface GetImageFileMetadataResult
-  extends LookupImageFileByMd5Result {}
+export interface GetImageFileMetadataResult extends LookupImageFileByMd5Result {}
 
 export const createImageFile = async (
   client: Client,

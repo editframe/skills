@@ -13,4 +13,3 @@ export function buildHierarchy(
   }
   return result;
 }
-

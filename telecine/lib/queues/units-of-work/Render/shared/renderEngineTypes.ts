@@ -10,4 +10,4 @@ export interface RenderEngineContext extends FramegenEngine {
     assets: { efMediaSrcs: string[]; efImageSrcs: string[] };
   }>;
   resize(width: number, height: number): Promise<void>;
-} 
+}

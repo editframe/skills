@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import Editor, { type Monaco } from "@monaco-editor/react";
-import type { editor as MonacoEditor } from 'monaco-editor';
+import type { editor as MonacoEditor } from "monaco-editor";
 import { Preview, Timegroup, Video } from "@editframe/react";
 import type { EFPreview } from "@editframe/elements";
 import { Link } from "react-router";
@@ -9,7 +9,7 @@ export const EditorPreview = ({
   code,
 }: {
   code: string;
-  presetCode: string
+  presetCode: string;
 }) => {
   const editor = useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
   const previewRef = useRef<EFPreview | null>(null);
@@ -62,12 +62,12 @@ export const EditorPreview = ({
   };
 
   const updateTheme = () => {
-    const isDarkMode = localStorage.theme === 'dark';
+    const isDarkMode = localStorage.theme === "dark";
     setDarkMode(isDarkMode);
 
     if (editor.current && monacoRef.current) {
       editor.current.updateOptions({
-        theme: isDarkMode ? 'tokyo-night' : 'vs-light'
+        theme: isDarkMode ? "tokyo-night" : "vs-light",
       });
     }
   };
@@ -77,45 +77,46 @@ export const EditorPreview = ({
       updateTheme();
     };
 
-    window.addEventListener('theme', themeChangeHandler);
+    window.addEventListener("theme", themeChangeHandler);
 
     return () => {
-      window.removeEventListener('theme', themeChangeHandler);
+      window.removeEventListener("theme", themeChangeHandler);
     };
   }, []);
 
   useEffect(() => {
     if (editor.current) {
       editor.current.onDidChangeModelDecorations(() => {
-        updateEditorHeight()
-        requestAnimationFrame(updateEditorHeight)
-      })
-      let prevHeight = 0
+        updateEditorHeight();
+        requestAnimationFrame(updateEditorHeight);
+      });
+      let prevHeight = 0;
 
       const updateEditorHeight = () => {
         if (!editor.current) {
-          return
+          return;
         }
-        const editorElement = editor.current.getDomNode()
+        const editorElement = editor.current.getDomNode();
 
         if (!editorElement) {
-          return
+          return;
         }
 
         const lineHeight = 10;
-        const lineCount = editor.current.getModel()?.getLineCount() || 1
-        const height = editor.current.getTopForLineNumber(lineCount + 1) + lineHeight
+        const lineCount = editor.current.getModel()?.getLineCount() || 1;
+        const height =
+          editor.current.getTopForLineNumber(lineCount + 1) + lineHeight;
 
         if (prevHeight !== height) {
-          prevHeight = height
-          editorElement.style.height = `${height}px`
-          editor.current.layout()
+          prevHeight = height;
+          editorElement.style.height = `${height}px`;
+          editor.current.layout();
         }
-      }
+      };
     }
 
-    return () => { };
-  }, [])
+    return () => {};
+  }, []);
   const [videoChunks, setVideoChunks] = useState([
     { src: "assets/video.mp4", sourceIn: "0s", sourceOut: "5s" },
   ]);
@@ -160,24 +161,36 @@ export const EditorPreview = ({
       <div className="px-2 w-full">
         <div className="lg:w-1/2">
           <p className="pt-4 text-[#67676C] dark:text-gray-300 my-0 mx-auto text-md leading-7 text-left whitespace-pre-wrap break-words sm:pt-3 sm:text-lg sm:leading-8 lg:m-0 lg:text-xl lg:leading-9 scroll-auto w-full">
-            Update the code using <span className="text-[#646cff]  dark:text-[#646cff] ">HTML</span> and <span className="text-[#646cff]  dark:text-[#646cff] ">CSS</span> watch the video change.
+            Update the code using{" "}
+            <span className="text-[#646cff]  dark:text-[#646cff] ">HTML</span>{" "}
+            and{" "}
+            <span className="text-[#646cff]  dark:text-[#646cff] ">CSS</span>{" "}
+            watch the video change.
           </p>
         </div>
         <div className="flow-root mt-8 w-full">
           <div className="flex flex-col w-full">
             <div className="w-full">
-              <div className="grid lg:grid-cols-2 grid-cols-1 gap-x-4 gap-y-4 w-full"
+              <div
+                className="grid lg:grid-cols-2 grid-cols-1 gap-x-4 gap-y-4 w-full"
                 style={{
                   minHeight: "500px",
                   width: "100%",
-                }}>
+                }}
+              >
                 <div className="w-full h-full min-h-[500px]">
                   {typeof window !== "undefined" && (
                     <div ref={ref} className="w-full h-full">
                       <Editor
                         height="100%"
                         language="typescript"
-                        theme={isThemeLoaded ? (darkMode ? "tokyo-night" : "light") : "vs-dark"}
+                        theme={
+                          isThemeLoaded
+                            ? darkMode
+                              ? "tokyo-night"
+                              : "light"
+                            : "vs-dark"
+                        }
                         value={code}
                         beforeMount={setEditorTheme}
                         onMount={(_editor, monaco) => {
@@ -188,15 +201,15 @@ export const EditorPreview = ({
                         }}
                         keepCurrentModel={true}
                         options={{
-                          fontFamily: 'iaw-mono-var',
+                          fontFamily: "iaw-mono-var",
                           fontSize: 14,
-                          wordWrap: 'on',
+                          wordWrap: "on",
                           tabSize: 2,
                           minimap: {
                             enabled: false,
                           },
                           smoothScrolling: true,
-                          cursorSmoothCaretAnimation: 'on',
+                          cursorSmoothCaretAnimation: "on",
                           contextmenu: false,
                           automaticLayout: true,
                         }}
@@ -212,9 +225,7 @@ export const EditorPreview = ({
                         mode="sequence"
                       >
                         {videoChunks.map((chunk) => (
-                          <Timegroup
-                            className="w-full h-full flex items-center justify-center"
-                          >
+                          <Timegroup className="w-full h-full flex items-center justify-center">
                             <Video
                               src={chunk.src}
                               className="w-full"
@@ -224,32 +235,44 @@ export const EditorPreview = ({
                           </Timegroup>
                         ))}
                       </Timegroup>
-                    </Preview >
+                    </Preview>
                     <button type="button" onClick={togglePlay}>
-                      {
-
-                        previewRef.current?.playing ?
-
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24" className="text-black"
-                          ><path d="M8 5v14l11-7z" />
-                          </svg> :
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24" className="text-black">
-                            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-                          </svg>
-                      }
-
+                      {previewRef.current?.playing ? (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          width="24"
+                          height="24"
+                          className="text-black"
+                        >
+                          <path d="M8 5v14l11-7z" />
+                        </svg>
+                      ) : (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          width="24"
+                          height="24"
+                          className="text-black"
+                        >
+                          <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                        </svg>
+                      )}
                     </button>
                     <button type="button" onClick={handleSplit}>
                       Split Video
                     </button>
                     <div>Current Time: {currentTime}ms</div>
-                  </div >
+                  </div>
                 </div>
               </div>
               <div className="w-full lg:w-1/2">
                 <Link
                   className="block mb-4 py-2 lg:mb-0 max-w-full w-max  mx-auto text-center rounded-sm mt-8 px-5 text-sm font-semibold cursor-pointer m-1 transition-colors duration-250 text-white bg-[#646CFF]  hover:bg-[#646CFF]  dark:bg-[#646CFF]  dark:hover:bg-[#646cff]-700"
-                  to="/docs">
+                  to="/docs"
+                >
                   Edit this example in the Editframe Playground
                 </Link>
               </div>
@@ -259,4 +282,4 @@ export const EditorPreview = ({
       </div>
     </div>
   );
-}
+};

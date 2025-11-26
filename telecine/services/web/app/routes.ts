@@ -17,7 +17,10 @@ const routes = [
   route("/docs/examples/filters", "routes/docs/examples/filters.tsx"),
   route("/docs/examples/keyframes", "routes/docs/examples/keyframes.tsx"),
   route("/docs/examples/motion", "routes/docs/examples/motion.tsx"),
-  route("/docs/examples/portrait-fill", "routes/docs/examples/portrait-fill.tsx"),
+  route(
+    "/docs/examples/portrait-fill",
+    "routes/docs/examples/portrait-fill.tsx",
+  ),
   route("/docs/examples/trim", "routes/docs/examples/trim.tsx"),
   route("/docs/examples/watermark", "routes/docs/examples/watermark.tsx"),
   route("/docs/*", "routes/docs/DocsPage.tsx"),
@@ -35,7 +38,6 @@ const routes = [
     "/reference/@editframe/:package/:symbol",
     "routes/docs/SymbolReference.tsx",
   ),
-
 
   layout("routes/resource/Layout.tsx", [
     route("/welcome", "routes/welcome.tsx"),
@@ -121,7 +123,10 @@ const routes = [
       ),
       route("jobs/delete-all-stalled", "routes/admin/deleteAllStalledJobs.ts"),
       route("jobs/delete-all-failed", "routes/admin/deleteAllFailedJobs.ts"),
-      route("jobs/delete-all-completed", "routes/admin/deleteAllCompletedJobs.ts"),
+      route(
+        "jobs/delete-all-completed",
+        "routes/admin/deleteAllCompletedJobs.ts",
+      ),
       route("jobs/retry-all", "routes/admin/retryAllJobs.ts"),
       route(":stage/jobs/:id/delete", "routes/admin/deleteJob.ts"),
     ]),

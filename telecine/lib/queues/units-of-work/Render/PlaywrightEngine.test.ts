@@ -25,4 +25,4 @@ describe("PlaywrightEngine", () => {
       // Note: close is an arrow function, so it's not on the prototype
     });
   });
-}); 
+});

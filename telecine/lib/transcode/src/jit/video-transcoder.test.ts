@@ -16,9 +16,9 @@ const concatPaths = async (paths: string[]) => {
         this.push(readable);
       }
       this.push(null);
-    }
+    },
   });
-}
+};
 
 describe("video-transcoder", () => {
   test("produces predictable segment durations", async ({ expect }) => {
@@ -41,12 +41,18 @@ describe("video-transcoder", () => {
         rendition: "low",
       });
       const combinedStream = await concatPaths([initSegmentPath, segmentPath]);
-      probes.push(await PacketProbeClass.probeStream(combinedStream))
+      probes.push(await PacketProbeClass.probeStream(combinedStream));
     }
     const segmentDurations = probes.map((probe) => probe.videoPacketDuration);
 
-    const calculatedDurationsMs = calculateSegmentDurations(segmentIds.length * SEGMENT_DURATION, SEGMENT_DURATION, { mediaType: 'video' });
-    const calculatedDurations = calculatedDurationsMs.map(d => truncateDecimal(d / 1000, 4));
+    const calculatedDurationsMs = calculateSegmentDurations(
+      segmentIds.length * SEGMENT_DURATION,
+      SEGMENT_DURATION,
+      { mediaType: "video" },
+    );
+    const calculatedDurations = calculatedDurationsMs.map((d) =>
+      truncateDecimal(d / 1000, 4),
+    );
 
     expect(segmentDurations).toEqual(calculatedDurations);
   });

@@ -50,16 +50,20 @@ export const TablePagination = ({
   updateSearchParams,
 }: TablePaginationProps) => {
   return (
-    <div className={clsx(
-      "flex flex-wrap justify-between items-center gap-3 px-3 py-2 text-xs transition-colors",
-      "bg-slate-50/50 dark:bg-slate-800/30",
-      "border-t border-slate-200/80 dark:border-slate-800/80",
-      "w-full"
-    )}>
-      <label className={clsx(
-        "flex items-center gap-2 transition-colors",
-        "text-slate-600 dark:text-slate-400"
-      )}>
+    <div
+      className={clsx(
+        "flex flex-wrap justify-between items-center gap-3 px-3 py-2 text-xs transition-colors",
+        "bg-slate-50/50 dark:bg-slate-800/30",
+        "border-t border-slate-200/80 dark:border-slate-800/80",
+        "w-full",
+      )}
+    >
+      <label
+        className={clsx(
+          "flex items-center gap-2 transition-colors",
+          "text-slate-600 dark:text-slate-400",
+        )}
+      >
         <span>Rows per page</span>
         <select
           name="limit"
@@ -76,7 +80,7 @@ export const TablePagination = ({
             "focus:border-blue-500/85 dark:focus:border-blue-400/85 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20",
             "focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08),0_4px_12px_0_rgb(59_130_246_/_0.22)] dark:focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.4),0_4px_12px_0_rgb(59_130_246_/_0.35)]",
             "focus:before:from-blue-50/30 focus:before:via-transparent focus:before:to-transparent",
-            "dark:focus:before:from-blue-950/22 dark:focus:before:via-transparent dark:focus:before:to-transparent"
+            "dark:focus:before:from-blue-950/22 dark:focus:before:via-transparent dark:focus:before:to-transparent",
           )}
           value={limit.toString()}
           onChange={(event) => {
@@ -93,14 +97,17 @@ export const TablePagination = ({
           <option value="50">50</option>
         </select>
       </label>
-      <div className={clsx(
-        "flex items-center gap-2.5 transition-colors",
-        "text-slate-600 dark:text-slate-400"
-      )}>
+      <div
+        className={clsx(
+          "flex items-center gap-2.5 transition-colors",
+          "text-slate-600 dark:text-slate-400",
+        )}
+      >
         <span className="text-xs">
           {count !== undefined ? (
             <>
-              {page * limit + 1} - {Math.min((page + 1) * limit, count)} of {count}
+              {page * limit + 1} - {Math.min((page + 1) * limit, count)} of{" "}
+              {count}
             </>
           ) : (
             <>
@@ -116,7 +123,7 @@ export const TablePagination = ({
               "hover:bg-slate-100 dark:hover:bg-slate-700/50",
               "hover:text-slate-900 dark:hover:text-slate-100",
               "disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent",
-              page === 0 && "opacity-40 cursor-not-allowed"
+              page === 0 && "opacity-40 cursor-not-allowed",
             )}
             disabled={page === 0}
             title={page === 0 ? "No previous page" : "Go to previous page"}
@@ -131,7 +138,9 @@ export const TablePagination = ({
               "hover:bg-slate-100 dark:hover:bg-slate-700/50",
               "hover:text-slate-900 dark:hover:text-slate-100",
               "disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent",
-              count !== undefined && page * limit + limit >= count && "opacity-40 cursor-not-allowed"
+              count !== undefined &&
+                page * limit + limit >= count &&
+                "opacity-40 cursor-not-allowed",
             )}
             disabled={count !== undefined && page * limit + limit >= count}
             title={

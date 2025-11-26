@@ -207,4 +207,3 @@ describe("EFTimelineRuler", () => {
     expect(firstTick.classList.contains("tick")).toBe(true);
   });
 });
-

@@ -101,7 +101,11 @@ function renderFrameMarkers(
   ctx.lineWidth = 1;
 
   const frameDurationS = 1 / fps;
-  for (let frameIndex = firstFrameIndex; frameIndex <= lastFrameIndex; frameIndex++) {
+  for (
+    let frameIndex = firstFrameIndex;
+    frameIndex <= lastFrameIndex;
+    frameIndex++
+  ) {
     const frameTimeSeconds = frameIndex * frameDurationS;
     const quantizedSeconds =
       Math.round(frameTimeSeconds / frameDurationS) * frameDurationS;
@@ -384,7 +388,8 @@ export class EFTimelineRuler extends LitElement {
 
     const viewportWidth =
       this.scrollContainer?.clientWidth ?? container.clientWidth;
-    const currentScrollLeft = this.scrollContainer?.scrollLeft ?? this.scrollLeft;
+    const currentScrollLeft =
+      this.scrollContainer?.scrollLeft ?? this.scrollLeft;
 
     renderFrameMarkers(
       canvas,
@@ -414,9 +419,11 @@ export class EFTimelineRuler extends LitElement {
 
     return html`
       <div ${ref(this.containerRef)} class="ruler-container">
-        ${showFrameMarkers
-          ? html`<canvas ${ref(this.canvasRef)}></canvas>`
-          : html``}
+        ${
+          showFrameMarkers
+            ? html`<canvas ${ref(this.canvasRef)}></canvas>`
+            : html``
+        }
         <div class="markers-container">
           ${markers.map((timeMs) => {
             const positionPixels = timeToPixels(
@@ -449,4 +456,3 @@ declare global {
     "ef-timeline-ruler": EFTimelineRuler;
   }
 }
-

@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { CaretDown } from "@phosphor-icons/react";
-import type { ElementSize, LegacyElementSize } from "~/lib/motion-designer/sizingTypes";
+import type {
+  ElementSize,
+  LegacyElementSize,
+} from "~/lib/motion-designer/sizingTypes";
 import { normalizeSize } from "~/lib/motion-designer/sizingTypes";
 
 interface VideoSizePreset {
@@ -31,7 +34,11 @@ interface VideoSizePresetPickerProps {
   onChange: (size: ElementSize) => void;
 }
 
-export function VideoSizePresetPicker({ label, size, onChange }: VideoSizePresetPickerProps) {
+export function VideoSizePresetPicker({
+  label,
+  size,
+  onChange,
+}: VideoSizePresetPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -47,11 +54,16 @@ export function VideoSizePresetPicker({ label, size, onChange }: VideoSizePreset
 
   // Normalize size and check if current size matches any preset
   const normalizedSize = normalizeSize(size);
-  const currentPreset = normalizedSize && normalizedSize.widthMode === "fixed" && normalizedSize.heightMode === "fixed"
-    ? COMMON_VIDEO_SIZES.find(
-        (p) => p.width === normalizedSize.widthValue && p.height === normalizedSize.heightValue
-      )
-    : null;
+  const currentPreset =
+    normalizedSize &&
+    normalizedSize.widthMode === "fixed" &&
+    normalizedSize.heightMode === "fixed"
+      ? COMMON_VIDEO_SIZES.find(
+          (p) =>
+            p.width === normalizedSize.widthValue &&
+            p.height === normalizedSize.heightValue,
+        )
+      : null;
 
   const displayText = currentPreset
     ? `${currentPreset.label} (${currentPreset.width}×${currentPreset.height})`
@@ -60,7 +72,10 @@ export function VideoSizePresetPicker({ label, size, onChange }: VideoSizePreset
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -123,4 +138,3 @@ export function VideoSizePresetPicker({ label, size, onChange }: VideoSizePreset
     </div>
   );
 }
-

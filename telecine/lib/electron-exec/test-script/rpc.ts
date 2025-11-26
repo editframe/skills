@@ -20,11 +20,11 @@ registerRcpHandler("longRunningTask", async (params, ctx) => {
 
   try {
     // Simulate long-running work
-    await new Promise(resolve => setTimeout(resolve, durationMs));
+    await new Promise((resolve) => setTimeout(resolve, durationMs));
 
     return {
       completedAt: new Date().toISOString(),
-      duration: Date.now() - startTime
+      duration: Date.now() - startTime,
     };
   } finally {
     clearInterval(keepaliveTimer);

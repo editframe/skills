@@ -14,7 +14,12 @@ interface IconButtonGroupProps {
   onChange: (value: string) => void;
 }
 
-export function IconButtonGroup({ label, options, value, onChange }: IconButtonGroupProps) {
+export function IconButtonGroup({
+  label,
+  options,
+  value,
+  onChange,
+}: IconButtonGroupProps) {
   return (
     <div className="flex items-center gap-1">
       <label className="text-[10px] text-gray-500 w-10 font-normal flex-shrink-0">
@@ -34,4 +39,3 @@ export function IconButtonGroup({ label, options, value, onChange }: IconButtonG
     </div>
   );
 }
-

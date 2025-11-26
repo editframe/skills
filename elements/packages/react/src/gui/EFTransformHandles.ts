@@ -11,4 +11,3 @@ export const TransformHandles = createComponent({
     onRotationChange: "rotation-change",
   },
 });
-

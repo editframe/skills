@@ -345,7 +345,7 @@ describe("Queue", async () => {
         });
       });
 
-      test("workflow should register as failed", async () => { });
+      test("workflow should register as failed", async () => {});
 
       test("second job should not be claimable", async () => {
         const claimedJob = await claimJob(queues.TestQueue.storage, {
@@ -392,7 +392,7 @@ describe("Queue", async () => {
         });
       });
 
-      test("workflow should register as failed", async () => { });
+      test("workflow should register as failed", async () => {});
     });
   });
 

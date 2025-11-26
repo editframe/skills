@@ -89,4 +89,3 @@ export function toGoMemLimit(resources: WorkerResources): string {
 
   throw new Error(`Invalid memory format: ${resources.memory}`);
 }
-

@@ -4,7 +4,9 @@ import { render, waitFor } from "@testing-library/react";
 import { OverlayUpdateLoop } from "./OverlayUpdateLoop";
 import type { MotionDesignerState } from "~/lib/motion-designer/types";
 
-function createState(overrides: Partial<MotionDesignerState> = {}): MotionDesignerState {
+function createState(
+  overrides: Partial<MotionDesignerState> = {},
+): MotionDesignerState {
   return {
     composition: {
       elements: {
@@ -19,7 +21,19 @@ function createState(overrides: Partial<MotionDesignerState> = {}): MotionDesign
           id: "element-2",
           type: "div",
           props: { position: { x: 300, y: 400 } },
-          animations: [{ id: "anim-1", property: "opacity", fromValue: "0", toValue: "1", duration: 1000, delay: 0, easing: "linear", fillMode: "both", name: "Fade" }],
+          animations: [
+            {
+              id: "anim-1",
+              property: "opacity",
+              fromValue: "0",
+              toValue: "1",
+              duration: 1000,
+              delay: 0,
+              easing: "linear",
+              fillMode: "both",
+              name: "Fade",
+            },
+          ],
           childIds: [],
         },
       },
@@ -96,7 +110,7 @@ describe("OverlayUpdateLoop", () => {
         state={state}
         canvasTransform={{ x: 0, y: 0, scale: 1 }}
         overlayLayerRef={{ current: mockOverlayLayer }}
-      />
+      />,
     );
 
     // Component doesn't render anything visible
@@ -111,21 +125,28 @@ describe("OverlayUpdateLoop", () => {
         state={state}
         canvasTransform={{ x: 0, y: 0, scale: 1 }}
         overlayLayerRef={{ current: mockOverlayLayer }}
-      />
+      />,
     );
 
     // Wait for RAF to process updates
-    await waitFor(() => {
-      const overlay1 = mockOverlayLayer.querySelector('[data-overlay-id="element-1"]') as HTMLElement;
-      const overlay2 = mockOverlayLayer.querySelector('[data-overlay-id="element-2"]') as HTMLElement;
-      expect(overlay1).toBeTruthy();
-      expect(overlay2).toBeTruthy();
-      // Positions should be updated (exact values depend on getBoundingClientRect)
-      expect(overlay1.style.left).toBeTruthy();
-      expect(overlay1.style.top).toBeTruthy();
-      expect(overlay2.style.left).toBeTruthy();
-      expect(overlay2.style.top).toBeTruthy();
-    }, { timeout: 100 });
+    await waitFor(
+      () => {
+        const overlay1 = mockOverlayLayer.querySelector(
+          '[data-overlay-id="element-1"]',
+        ) as HTMLElement;
+        const overlay2 = mockOverlayLayer.querySelector(
+          '[data-overlay-id="element-2"]',
+        ) as HTMLElement;
+        expect(overlay1).toBeTruthy();
+        expect(overlay2).toBeTruthy();
+        // Positions should be updated (exact values depend on getBoundingClientRect)
+        expect(overlay1.style.left).toBeTruthy();
+        expect(overlay1.style.top).toBeTruthy();
+        expect(overlay2.style.left).toBeTruthy();
+        expect(overlay2.style.top).toBeTruthy();
+      },
+      { timeout: 100 },
+    );
   });
 
   test("updates overlay positions when canvas transform changes", async () => {
@@ -136,17 +157,22 @@ describe("OverlayUpdateLoop", () => {
         state={state}
         canvasTransform={{ x: 10, y: 20, scale: 1.5 }}
         overlayLayerRef={{ current: mockOverlayLayer }}
-      />
+      />,
     );
 
     // Wait for RAF to process updates
-    await waitFor(() => {
-      const overlay1 = mockOverlayLayer.querySelector('[data-overlay-id="element-1"]') as HTMLElement;
-      expect(overlay1).toBeTruthy();
-      // Position should be updated (exact values depend on getBoundingClientRect)
-      expect(overlay1.style.left).toBeTruthy();
-      expect(overlay1.style.top).toBeTruthy();
-    }, { timeout: 100 });
+    await waitFor(
+      () => {
+        const overlay1 = mockOverlayLayer.querySelector(
+          '[data-overlay-id="element-1"]',
+        ) as HTMLElement;
+        expect(overlay1).toBeTruthy();
+        // Position should be updated (exact values depend on getBoundingClientRect)
+        expect(overlay1.style.left).toBeTruthy();
+        expect(overlay1.style.top).toBeTruthy();
+      },
+      { timeout: 100 },
+    );
   });
 
   test("handles missing overlay layer gracefully", () => {
@@ -158,7 +184,7 @@ describe("OverlayUpdateLoop", () => {
         state={state}
         canvasTransform={{ x: 0, y: 0, scale: 1 }}
         overlayLayerRef={{ current: null }}
-      />
+      />,
     );
   });
 
@@ -173,15 +199,19 @@ describe("OverlayUpdateLoop", () => {
         state={state}
         canvasTransform={{ x: 0, y: 0, scale: 1 }}
         overlayLayerRef={{ current: mockOverlayLayer }}
-      />
+      />,
     );
 
-    await waitFor(() => {
-      const overlay1 = mockOverlayLayer.querySelector('[data-overlay-id="element-1"]') as HTMLElement;
-      expect(overlay1).toBeTruthy();
-      // Rotation should be applied
-      expect(overlay1.style.transform).toContain("rotate");
-    }, { timeout: 100 });
+    await waitFor(
+      () => {
+        const overlay1 = mockOverlayLayer.querySelector(
+          '[data-overlay-id="element-1"]',
+        ) as HTMLElement;
+        expect(overlay1).toBeTruthy();
+        // Rotation should be applied
+        expect(overlay1.style.transform).toContain("rotate");
+      },
+      { timeout: 100 },
+    );
   });
 });
-

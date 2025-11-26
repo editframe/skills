@@ -1,12 +1,18 @@
 import React, { type MouseEvent, useEffect } from "react";
-import type { MotionDesignerState, ElementNode } from "~/lib/motion-designer/types";
+import type {
+  MotionDesignerState,
+  ElementNode,
+} from "~/lib/motion-designer/types";
 import { elementRegistry, TextSegment } from "./elementRegistry";
 import { generateAnimationStyles } from "../animations/generateStyles";
 import { generateAnimationStyle } from "./styleGenerators/animationStyles";
 import { useElementStyles } from "./hooks/useElementStyles";
 import { useElementProps } from "./hooks/useElementProps";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
-import { generateTextSplitAnimationCSS, createAnimationKey } from "./animationCSS";
+import {
+  generateTextSplitAnimationCSS,
+  createAnimationKey,
+} from "./animationCSS";
 import { useAnimationStyleElement } from "./hooks/useAnimationStyleElement";
 import {
   CaptionsBeforeActiveWord,
@@ -121,17 +127,17 @@ const buildInteractionProps = (
 ): Record<string, any> => {
   // Explicitly exclude style and CSS-only props from finalProps
   // These should only be in styles, not as DOM attributes
-  const { 
-    style: _, 
-    alignItems, 
-    justifyItems, 
-    alignSelf, 
+  const {
+    style: _,
+    alignItems,
+    justifyItems,
+    alignSelf,
     justifySelf,
     flexDirection,
     justifyContent,
-    ...finalPropsWithoutStyle 
+    ...finalPropsWithoutStyle
   } = finalProps;
-  
+
   const baseProps = {
     ...finalPropsWithoutStyle,
     style: mergedStyle,
@@ -242,7 +248,11 @@ export function ElementRenderer({
   const animationKey = createAnimationKey(element);
 
   // Inject CSS via style element (mechanism separated from CSS generation)
-  useAnimationStyleElement(element.id, fullCSS, `${animationKey}-${isTextWithSplit}`);
+  useAnimationStyleElement(
+    element.id,
+    fullCSS,
+    `${animationKey}-${isTextWithSplit}`,
+  );
 
   // Build interaction props
   const handleClick = (e: MouseEvent) => {
@@ -276,10 +286,14 @@ export function ElementRenderer({
         cssRules.push(`  display: ${mergedStyle.display} !important;`);
       }
       if (mergedStyle.flexDirection) {
-        cssRules.push(`  flex-direction: ${mergedStyle.flexDirection} !important;`);
+        cssRules.push(
+          `  flex-direction: ${mergedStyle.flexDirection} !important;`,
+        );
       }
       if (mergedStyle.justifyContent) {
-        cssRules.push(`  justify-content: ${mergedStyle.justifyContent} !important;`);
+        cssRules.push(
+          `  justify-content: ${mergedStyle.justifyContent} !important;`,
+        );
       }
       if (mergedStyle.alignItems) {
         cssRules.push(`  align-items: ${mergedStyle.alignItems} !important;`);
@@ -294,21 +308,24 @@ export function ElementRenderer({
 
       return `\n${selector} {\n${cssRules.join("\n")}\n}`;
     }
-    
+
     // For video elements wrapped in ef-fit-scale, make canvas render at natural size
     const isMedia = element.type === "video" || element.type === "image";
-    const isInGridContainer = element.parentId && state.composition.elements[element.parentId] 
-      ? (state.composition.elements[element.parentId].type === "div" || state.composition.elements[element.parentId].type === "timegroup")
-      : false;
-    const needsFitScale = isMedia && isInGridContainer && !mergedStyle.width && !mergedStyle.height;
-    
+    const isInGridContainer =
+      element.parentId && state.composition.elements[element.parentId]
+        ? state.composition.elements[element.parentId].type === "div" ||
+          state.composition.elements[element.parentId].type === "timegroup"
+        : false;
+    const needsFitScale =
+      isMedia && isInGridContainer && !mergedStyle.width && !mergedStyle.height;
+
     if (needsFitScale && element.type === "video") {
       // Make ef-video size to its canvas's natural dimensions
       const videoSelector = `ef-video[data-element-id="${element.id}"]`;
-      
+
       return `\n${videoSelector} {\n  display: inline-block;\n  width: auto;\n  height: auto;\n}`;
     }
-    
+
     return "";
   }, [
     element.id,
@@ -349,30 +366,31 @@ export function ElementRenderer({
 
   // Wrap media elements in ef-fit-scale when in grid containers without explicit size
   const isMedia = element.type === "video" || element.type === "image";
-  const isInGridContainer = element.parentId && state.composition.elements[element.parentId] 
-    ? (state.composition.elements[element.parentId].type === "div" || state.composition.elements[element.parentId].type === "timegroup")
-    : false;
-  const needsFitScale = isMedia && isInGridContainer && !mergedStyle.width && !mergedStyle.height;
+  const isInGridContainer =
+    element.parentId && state.composition.elements[element.parentId]
+      ? state.composition.elements[element.parentId].type === "div" ||
+        state.composition.elements[element.parentId].type === "timegroup"
+      : false;
+  const needsFitScale =
+    isMedia && isInGridContainer && !mergedStyle.width && !mergedStyle.height;
 
   // When wrapped in ef-fit-scale, the video needs to render at its natural size
   // Remove width/height constraints so ef-fit-scale can measure the intrinsic dimensions
-  const videoPropsForFitScale = needsFitScale && isMedia
-    ? {
-        ...interactiveProps,
-        style: {
-          ...mergedStyle,
-          width: "auto",
-          height: "auto",
-        },
-      }
-    : interactiveProps;
+  const videoPropsForFitScale =
+    needsFitScale && isMedia
+      ? {
+          ...interactiveProps,
+          style: {
+            ...mergedStyle,
+            width: "auto",
+            height: "auto",
+          },
+        }
+      : interactiveProps;
 
   // Render element with children
   const elementContent = (
-    <Component 
-      key={componentKey} 
-      {...videoPropsForFitScale}
-    >
+    <Component key={componentKey} {...videoPropsForFitScale}>
       {element.type === "text" && textContent ? (
         <>
           <TextSegment />
@@ -395,7 +413,7 @@ export function ElementRenderer({
   // Wrap in ef-fit-scale if needed
   if (needsFitScale) {
     return (
-      <ef-fit-scale 
+      <ef-fit-scale
         key={`fit-scale-${componentKey}`}
         style={{ width: "100%", height: "100%", display: "block" }}
       >

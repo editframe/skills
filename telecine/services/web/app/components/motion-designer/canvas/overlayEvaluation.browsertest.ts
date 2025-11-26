@@ -55,6 +55,4 @@ describe("overlayEvaluation", () => {
       expect(position).toBeNull();
     });
   });
-
 });
-

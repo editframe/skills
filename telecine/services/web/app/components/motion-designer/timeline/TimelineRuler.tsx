@@ -27,7 +27,7 @@ export function calculateOptimalInterval(
   }
 
   const minIntervalMs = durationMs / maxMarkers;
-  
+
   // Use the calculated interval directly (prioritize visual clarity over round numbers)
   return minIntervalMs;
 }
@@ -37,19 +37,25 @@ export function calculateFrameIntervalMs(fps: number): number {
   return 1000 / fps;
 }
 
-export function calculatePixelsPerFrame(frameIntervalMs: number, zoomScale: number): number {
+export function calculatePixelsPerFrame(
+  frameIntervalMs: number,
+  zoomScale: number,
+): number {
   const BASE_PIXELS_PER_SECOND = 100;
   return (frameIntervalMs / 1000) * BASE_PIXELS_PER_SECOND * zoomScale;
 }
 
-export function shouldShowFrameMarkers(pixelsPerFrame: number, minSpacing: number = MIN_FRAME_SPACING_PX): boolean {
+export function shouldShowFrameMarkers(
+  pixelsPerFrame: number,
+  minSpacing: number = MIN_FRAME_SPACING_PX,
+): boolean {
   return pixelsPerFrame >= minSpacing;
 }
 
 /**
  * Quantize a time value to the nearest frame boundary using the same logic as PlaybackController.
  * This ensures frame markers align perfectly with playhead position.
- * 
+ *
  * Matches: PlaybackController.currentTime getter quantization logic
  * - Quantizes in seconds: Math.round(timeSeconds / frameDurationS) * frameDurationS
  * - Then converts to milliseconds: frameTimeSeconds * 1000
@@ -58,7 +64,8 @@ export function quantizeToFrameTimeMs(timeMs: number, fps: number): number {
   if (!fps || fps <= 0) return timeMs;
   const frameDurationS = 1 / fps;
   const timeSeconds = timeMs / 1000;
-  const quantizedSeconds = Math.round(timeSeconds / frameDurationS) * frameDurationS;
+  const quantizedSeconds =
+    Math.round(timeSeconds / frameDurationS) * frameDurationS;
   return quantizedSeconds * 1000;
 }
 
@@ -85,10 +92,16 @@ function renderFrameMarkers(
   // Calculate which frames are visible
   const BASE_PIXELS_PER_SECOND = 100;
   const pixelsPerSecond = BASE_PIXELS_PER_SECOND * zoomScale;
-  
+
   // Convert visible pixel range to time range
-  const visibleStartTimeMs = Math.max(0, (visibleStartPx / pixelsPerSecond) * 1000 - frameIntervalMs);
-  const visibleEndTimeMs = Math.min(durationMs, (visibleEndPx / pixelsPerSecond) * 1000 + frameIntervalMs);
+  const visibleStartTimeMs = Math.max(
+    0,
+    (visibleStartPx / pixelsPerSecond) * 1000 - frameIntervalMs,
+  );
+  const visibleEndTimeMs = Math.min(
+    durationMs,
+    (visibleEndPx / pixelsPerSecond) * 1000 + frameIntervalMs,
+  );
 
   // Find first frame in visible range
   const firstFrameIndex = Math.floor(visibleStartTimeMs / frameIntervalMs);
@@ -104,19 +117,24 @@ function renderFrameMarkers(
   // PlaybackController: quantizes in seconds, then converts to ms
   // We do the same: frameTimeSeconds = frameIndex / fps, then * 1000
   const frameDurationS = 1 / fps;
-  for (let frameIndex = firstFrameIndex; frameIndex <= lastFrameIndex; frameIndex++) {
+  for (
+    let frameIndex = firstFrameIndex;
+    frameIndex <= lastFrameIndex;
+    frameIndex++
+  ) {
     // Calculate frame time in seconds (same as playhead quantization would produce)
     const frameTimeSeconds = frameIndex * frameDurationS;
     // Quantize using same logic as PlaybackController.currentTime getter
     // For integer frameIndex, this is a no-op but ensures same calculation path
-    const quantizedSeconds = Math.round(frameTimeSeconds / frameDurationS) * frameDurationS;
+    const quantizedSeconds =
+      Math.round(frameTimeSeconds / frameDurationS) * frameDurationS;
     // Convert to milliseconds using same method as EFTimegroup.currentTimeMs getter
     const frameTimeMs = quantizedSeconds * 1000;
-    
+
     if (frameTimeMs < 0 || frameTimeMs > durationMs) continue;
 
     const x = timeToPixels(frameTimeMs, durationMs, containerWidth, zoomScale);
-    
+
     // Only draw if within visible range
     if (x >= visibleStartPx - 1 && x <= visibleEndPx + 1) {
       // Draw shorter line (50% of container height, which is 8 * 4 = 32px, so 16px)
@@ -129,7 +147,13 @@ function renderFrameMarkers(
   }
 }
 
-export function TimelineRuler({ durationMs, zoomScale, containerWidth, fps = 30, scrollContainerRef }: TimelineRulerProps) {
+export function TimelineRuler({
+  durationMs,
+  zoomScale,
+  containerWidth,
+  fps = 30,
+  scrollContainerRef,
+}: TimelineRulerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [measuredWidth, setMeasuredWidth] = useState(0);
@@ -175,9 +199,14 @@ export function TimelineRuler({ durationMs, zoomScale, containerWidth, fps = 30,
     };
 
     updateScrollLeft();
-    scrollContainerRef.current.addEventListener("scroll", updateScrollLeft, { passive: true });
+    scrollContainerRef.current.addEventListener("scroll", updateScrollLeft, {
+      passive: true,
+    });
     return () => {
-      scrollContainerRef.current?.removeEventListener("scroll", updateScrollLeft);
+      scrollContainerRef.current?.removeEventListener(
+        "scroll",
+        updateScrollLeft,
+      );
       if (rafId !== null) {
         cancelAnimationFrame(rafId);
       }
@@ -202,8 +231,14 @@ export function TimelineRuler({ durationMs, zoomScale, containerWidth, fps = 30,
 
   // Calculate frame marker visibility
   const frameIntervalMs = useMemo(() => calculateFrameIntervalMs(fps), [fps]);
-  const pixelsPerFrame = useMemo(() => calculatePixelsPerFrame(frameIntervalMs, zoomScale), [frameIntervalMs, zoomScale]);
-  const showFrameMarkers = useMemo(() => shouldShowFrameMarkers(pixelsPerFrame), [pixelsPerFrame]);
+  const pixelsPerFrame = useMemo(
+    () => calculatePixelsPerFrame(frameIntervalMs, zoomScale),
+    [frameIntervalMs, zoomScale],
+  );
+  const showFrameMarkers = useMemo(
+    () => shouldShowFrameMarkers(pixelsPerFrame),
+    [pixelsPerFrame],
+  );
 
   // Render frame markers on canvas
   useEffect(() => {
@@ -219,8 +254,10 @@ export function TimelineRuler({ durationMs, zoomScale, containerWidth, fps = 30,
     canvas.height = rect.height;
 
     // Get viewport width from scroll container or container
-    const viewportWidth = scrollContainerRef?.current?.clientWidth ?? container.clientWidth;
-    const currentScrollLeft = scrollContainerRef?.current?.scrollLeft ?? scrollLeft;
+    const viewportWidth =
+      scrollContainerRef?.current?.clientWidth ?? container.clientWidth;
+    const currentScrollLeft =
+      scrollContainerRef?.current?.scrollLeft ?? scrollLeft;
 
     renderFrameMarkers(
       canvas,
@@ -232,7 +269,16 @@ export function TimelineRuler({ durationMs, zoomScale, containerWidth, fps = 30,
       containerWidth,
       fps,
     );
-  }, [showFrameMarkers, scrollLeft, frameIntervalMs, durationMs, zoomScale, containerWidth, scrollContainerRef, contentWidth]);
+  }, [
+    showFrameMarkers,
+    scrollLeft,
+    frameIntervalMs,
+    durationMs,
+    zoomScale,
+    containerWidth,
+    scrollContainerRef,
+    contentWidth,
+  ]);
 
   if (durationMs <= 0) {
     return null;
@@ -245,12 +291,12 @@ export function TimelineRuler({ durationMs, zoomScale, containerWidth, fps = 30,
       // Find frame boundaries that align with nice time intervals
       // We want to show time markers at frame boundaries that correspond to round seconds
       const frameDurationS = 1 / fps;
-      
+
       // Find a nice interval in frames (e.g., every N frames = round seconds)
       // Try to find frames that align with whole seconds, half seconds, quarter seconds, etc.
       const niceIntervals = [1, 0.5, 0.25, 0.1, 0.05]; // seconds
       let selectedIntervalS = niceIntervals[0];
-      
+
       // Find the largest nice interval that gives us at least MIN_SPACING_PX spacing
       const BASE_PIXELS_PER_SECOND = 100;
       const pixelsPerSecond = BASE_PIXELS_PER_SECOND * zoomScale;
@@ -261,22 +307,26 @@ export function TimelineRuler({ durationMs, zoomScale, containerWidth, fps = 30,
           break;
         }
       }
-      
+
       // Calculate how many frames equal the selected interval
-      const framesPerInterval = Math.max(1, Math.round(selectedIntervalS / frameDurationS));
-      
+      const framesPerInterval = Math.max(
+        1,
+        Math.round(selectedIntervalS / frameDurationS),
+      );
+
       // Generate markers at frame boundaries using same quantization logic as frame markers
       const frameMarkers: number[] = [];
       for (let frameIndex = 0; ; frameIndex += framesPerInterval) {
         const frameTimeSeconds = frameIndex * frameDurationS;
         // Quantize using same logic as PlaybackController and frame markers
-        const quantizedSeconds = Math.round(frameTimeSeconds / frameDurationS) * frameDurationS;
+        const quantizedSeconds =
+          Math.round(frameTimeSeconds / frameDurationS) * frameDurationS;
         const frameTimeMs = quantizedSeconds * 1000;
-        
+
         if (frameTimeMs > durationMs) break;
         frameMarkers.push(frameTimeMs);
       }
-      
+
       return frameMarkers;
     } else {
       // Normal time markers when frame markers are not visible
@@ -289,7 +339,10 @@ export function TimelineRuler({ durationMs, zoomScale, containerWidth, fps = 30,
   }, [showFrameMarkers, fps, intervalMs, durationMs, zoomScale]);
 
   return (
-    <div ref={containerRef} className="absolute inset-0 flex pointer-events-none">
+    <div
+      ref={containerRef}
+      className="absolute inset-0 flex pointer-events-none"
+    >
       {/* Canvas for frame markers - positioned behind time markers */}
       {showFrameMarkers && (
         <canvas
@@ -302,10 +355,18 @@ export function TimelineRuler({ durationMs, zoomScale, containerWidth, fps = 30,
       <div className="relative" style={{ zIndex: 1 }}>
         {markers.map((timeMs) => {
           // Use pixel-based positioning with zoom
-          const positionPixels = timeToPixels(timeMs, durationMs, containerWidth, zoomScale);
+          const positionPixels = timeToPixels(
+            timeMs,
+            durationMs,
+            containerWidth,
+            zoomScale,
+          );
           const timeSeconds = timeMs / 1000;
-          const displayTime = timeSeconds % 1 === 0 ? `${timeSeconds}s` : `${timeSeconds.toFixed(1)}s`;
-          
+          const displayTime =
+            timeSeconds % 1 === 0
+              ? `${timeSeconds}s`
+              : `${timeSeconds.toFixed(1)}s`;
+
           return (
             <div
               key={timeMs}
@@ -325,4 +386,3 @@ export function TimelineRuler({ durationMs, zoomScale, containerWidth, fps = 30,
     </div>
   );
 }
-

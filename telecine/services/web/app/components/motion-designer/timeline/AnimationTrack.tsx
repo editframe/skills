@@ -1,5 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
-import type { MotionDesignerState, ElementNode, Animation } from "~/lib/motion-designer/types";
+import type {
+  MotionDesignerState,
+  ElementNode,
+  Animation,
+} from "~/lib/motion-designer/types";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
 import { timeToPixels, pixelsToTime } from "./timelinePosition";
 
@@ -46,32 +50,40 @@ function AnimationBar({
   const [isDragging, setIsDragging] = useState(false);
   const [isResizingLeft, setIsResizingLeft] = useState(false);
   const [isResizingRight, setIsResizingRight] = useState(false);
-  const [dragStart, setDragStart] = useState<{ x: number; time: number } | null>(null);
+  const [dragStart, setDragStart] = useState<{
+    x: number;
+    time: number;
+  } | null>(null);
   const barRef = useRef<HTMLDivElement>(null);
 
   // Calculate pixel positions with zoom
-  const leftPixels = durationMs > 0 
-    ? timeToPixels(animation.delay, durationMs, containerWidth, zoomScale)
-    : 0;
-  const widthPixels = durationMs > 0
-    ? timeToPixels(animation.duration, durationMs, containerWidth, zoomScale)
-    : 0;
+  const leftPixels =
+    durationMs > 0
+      ? timeToPixels(animation.delay, durationMs, containerWidth, zoomScale)
+      : 0;
+  const widthPixels =
+    durationMs > 0
+      ? timeToPixels(animation.duration, durationMs, containerWidth, zoomScale)
+      : 0;
 
   // Helper to snap a time value to nearby snap points (snaps by default, shift disables)
-  const snapToNearestPoint = (timeMs: number, shiftPressed: boolean): number => {
+  const snapToNearestPoint = (
+    timeMs: number,
+    shiftPressed: boolean,
+  ): number => {
     // If shift is pressed, disable snapping for arbitrary precision
     if (shiftPressed) return timeMs;
-    
+
     // Include playhead as a snap point
     const allSnapPoints = [...snapPoints, currentTime];
     // Use a small threshold so snapping only happens when very close to a snap point
     // This allows precise placement at exact times like 0, 1000, 2000ms
     const snapThresholdMs = 5;
-    
+
     // Find the nearest snap point within threshold
     let nearestSnapPoint: number | null = null;
     let minDistance = snapThresholdMs;
-    
+
     for (const snapPoint of allSnapPoints) {
       const distance = Math.abs(timeMs - snapPoint);
       if (distance < minDistance) {
@@ -79,14 +91,17 @@ function AnimationBar({
         nearestSnapPoint = snapPoint;
       }
     }
-    
+
     return nearestSnapPoint ?? timeMs;
   };
 
-  const handleMouseDown = (e: React.MouseEvent, resizeType: "left" | "right" | "move") => {
+  const handleMouseDown = (
+    e: React.MouseEvent,
+    resizeType: "left" | "right" | "move",
+  ) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (!trackContainerRef.current) return;
 
     const rect = trackContainerRef.current.getBoundingClientRect();
@@ -94,7 +109,12 @@ function AnimationBar({
     const x = e.clientX - rect.left;
     // Account for scroll position: actual pixel position = scrollLeft + x
     const pixelPosition = scrollLeft + x;
-    const currentTimeMs = pixelsToTime(pixelPosition, durationMs, containerWidth, zoomScale);
+    const currentTimeMs = pixelsToTime(
+      pixelPosition,
+      durationMs,
+      containerWidth,
+      zoomScale,
+    );
 
     if (resizeType === "left") {
       setIsResizingLeft(true);
@@ -122,23 +142,40 @@ function AnimationBar({
       const currentPixelPosition = scrollLeft + x;
       const startPixelPosition = scrollLeft + dragStart.x;
       const deltaPixels = currentPixelPosition - startPixelPosition;
-      const deltaTime = pixelsToTime(deltaPixels, durationMs, containerWidth, zoomScale);
+      const deltaTime = pixelsToTime(
+        deltaPixels,
+        durationMs,
+        containerWidth,
+        zoomScale,
+      );
 
       if (isResizingLeft) {
         // Resize from left - change delay and duration
-        let newDelay = Math.max(0, Math.min(dragStart.time + deltaTime, animation.delay + animation.duration - 10));
+        let newDelay = Math.max(
+          0,
+          Math.min(
+            dragStart.time + deltaTime,
+            animation.delay + animation.duration - 10,
+          ),
+        );
         newDelay = snapToNearestPoint(newDelay, e.shiftKey);
-        const newDuration = (animation.delay + animation.duration) - newDelay;
+        const newDuration = animation.delay + animation.duration - newDelay;
         onUpdate({ delay: newDelay, duration: newDuration });
       } else if (isResizingRight) {
         // Resize from right - change duration only
-        let newEndTime = Math.max(animation.delay + 10, Math.min(dragStart.time + deltaTime, durationMs));
+        let newEndTime = Math.max(
+          animation.delay + 10,
+          Math.min(dragStart.time + deltaTime, durationMs),
+        );
         newEndTime = snapToNearestPoint(newEndTime, e.shiftKey);
         const newDuration = newEndTime - animation.delay;
         onUpdate({ duration: newDuration });
       } else if (isDragging) {
         // Move the whole animation - change delay only
-        let newDelay = Math.max(0, Math.min(dragStart.time + deltaTime, durationMs - animation.duration));
+        let newDelay = Math.max(
+          0,
+          Math.min(dragStart.time + deltaTime, durationMs - animation.duration),
+        );
         newDelay = snapToNearestPoint(newDelay, e.shiftKey);
         onUpdate({ delay: newDelay });
       }
@@ -158,7 +195,17 @@ function AnimationBar({
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isDragging, isResizingLeft, isResizingRight, dragStart, durationMs, animation, onUpdate, containerWidth, zoomScale]);
+  }, [
+    isDragging,
+    isResizingLeft,
+    isResizingRight,
+    dragStart,
+    durationMs,
+    animation,
+    onUpdate,
+    containerWidth,
+    zoomScale,
+  ]);
 
   const elementName = `${element.type} ${element.id.slice(0, 4)}`;
 
@@ -173,12 +220,14 @@ function AnimationBar({
   return (
     <div
       ref={barRef}
-      className={`group absolute top-0 bottom-0 rounded-sm cursor-move z-20 ${isSelected ? 'ring-2 ring-white ring-inset' : ''}`}
+      className={`group absolute top-0 bottom-0 rounded-sm cursor-move z-20 ${isSelected ? "ring-2 ring-white ring-inset" : ""}`}
       style={{
         left: `${leftPixels}px`,
         width: `${widthPixels}px`,
         minWidth: "40px",
-        backgroundColor: isSelected ? "rgb(160, 150, 255)" : "rgb(180, 170, 255)",
+        backgroundColor: isSelected
+          ? "rgb(160, 150, 255)"
+          : "rgb(180, 170, 255)",
       }}
       onMouseDown={(e) => handleMouseDown(e, "move")}
       onClick={handleClick}
@@ -191,7 +240,7 @@ function AnimationBar({
           handleMouseDown(e, "left");
         }}
       />
-      
+
       {/* Right resize handle */}
       <div
         className="absolute right-0 top-0 bottom-0 w-0.5 bg-purple-300/60 cursor-col-resize hover:bg-white hover:w-1 transition-all"
@@ -200,7 +249,7 @@ function AnimationBar({
           handleMouseDown(e, "right");
         }}
       />
-      
+
       {/* Animation label */}
       <div className="absolute inset-0 flex items-center gap-1 px-2 pointer-events-none">
         <span className="text-[10px] text-purple-900 font-medium truncate opacity-70">
@@ -266,4 +315,3 @@ export function AnimationTrack({
     </div>
   );
 }
-

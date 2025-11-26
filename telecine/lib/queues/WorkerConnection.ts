@@ -86,8 +86,8 @@ export class WorkerConnection implements Connection {
       }
       // No longer forward pongshangups to the state machine
     }
-    this.onPong = () => { };
-    this.onHangup = () => { };
+    this.onPong = () => {};
+    this.onHangup = () => {};
     return Promise.resolve();
   }
 

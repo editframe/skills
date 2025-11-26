@@ -1,6 +1,6 @@
 /**
  * Overlay position reading and transformation.
- * 
+ *
  * Core concept: Browser's computed position is the source of truth.
  * We read it from the DOM and transform to overlay coordinates.
  */
@@ -20,7 +20,7 @@ export function readElementComputedPosition(
   let element = document.querySelector(
     `[data-element-id="${elementId}"]`,
   ) as HTMLElement;
-  
+
   // If not found, try root timegroup wrapper
   if (!element) {
     const wrapper = document.querySelector(
@@ -28,11 +28,13 @@ export function readElementComputedPosition(
     ) as HTMLElement;
     if (wrapper) {
       // Root timegroup wrapper contains the actual ef-timegroup element
-      const timegroupElement = wrapper.querySelector(`ef-timegroup#${elementId}`) as any;
+      const timegroupElement = wrapper.querySelector(
+        `ef-timegroup#${elementId}`,
+      ) as any;
       element = timegroupElement || wrapper;
     }
   }
-  
+
   if (!element) return null;
 
   const rect = element.getBoundingClientRect();
@@ -50,7 +52,7 @@ export function readElementComputedPosition(
 /**
  * Transform computed position to overlay coordinates.
  * Apply coordinate space transformation invariant.
- * 
+ *
  * Overlay layer only translates (no scale), so we convert screen coordinates
  * to overlay layer coordinates by subtracting the overlay layer's position.
  */
@@ -92,4 +94,3 @@ export function evaluateOverlayPosition(
 
   return transformToOverlayCoordinates(computed, overlayLayerRect, canvasScale);
 }
-

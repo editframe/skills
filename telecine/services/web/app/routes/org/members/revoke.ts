@@ -1,11 +1,11 @@
 import { graphql } from "@/graphql";
 import { requireMutateAs } from "@/graphql.server/userClient";
 
-import type { Route } from "./+types/revoke"
+import type { Route } from "./+types/revoke";
 import { requireSession } from "@/util/requireSession.server";
 
 export const action = async ({ request, params }: Route.LoaderArgs) => {
-  const { session } = await requireSession(request)
+  const { session } = await requireSession(request);
   await requireMutateAs(
     { uid: session.uid, cid: session.cid ?? null },
     "org-admin",
@@ -20,4 +20,4 @@ export const action = async ({ request, params }: Route.LoaderArgs) => {
   );
 
   return { success: true };
-}
+};

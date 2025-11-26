@@ -10,13 +10,13 @@ import {
   dataFilePath,
   captionsFilePath,
   cacheMetadataFilePath,
-  cacheTranscodedSegmentFilePath
+  cacheTranscodedSegmentFilePath,
 } from "./filePaths";
 
 describe("filePaths", () => {
   const mockDescriptor = {
     org_id: "org-123",
-    id: "file-456"
+    id: "file-456",
   };
 
   describe("renderFilePath", () => {
@@ -26,23 +26,40 @@ describe("filePaths", () => {
     });
 
     test("handles different org and file IDs", () => {
-      const path = renderFilePath({ org_id: "different-org", id: "different-file" });
-      expect(path).toBe("video2/renders/different-org/different-file/bundle.tar.gz");
+      const path = renderFilePath({
+        org_id: "different-org",
+        id: "different-file",
+      });
+      expect(path).toBe(
+        "video2/renders/different-org/different-file/bundle.tar.gz",
+      );
     });
   });
 
   describe("renderStillFilePath", () => {
     test("generates correct still image paths for different formats", () => {
-      const jpegPath = renderStillFilePath({ ...mockDescriptor, fileType: "jpeg" });
+      const jpegPath = renderStillFilePath({
+        ...mockDescriptor,
+        fileType: "jpeg",
+      });
       expect(jpegPath).toBe("video2/renders/org-123/file-456/output.jpeg");
 
-      const pngPath = renderStillFilePath({ ...mockDescriptor, fileType: "png" });
+      const pngPath = renderStillFilePath({
+        ...mockDescriptor,
+        fileType: "png",
+      });
       expect(pngPath).toBe("video2/renders/org-123/file-456/output.png");
 
-      const webpPath = renderStillFilePath({ ...mockDescriptor, fileType: "webp" });
+      const webpPath = renderStillFilePath({
+        ...mockDescriptor,
+        fileType: "webp",
+      });
       expect(webpPath).toBe("video2/renders/org-123/file-456/output.webp");
 
-      const mp4Path = renderStillFilePath({ ...mockDescriptor, fileType: "mp4" });
+      const mp4Path = renderStillFilePath({
+        ...mockDescriptor,
+        fileType: "mp4",
+      });
       expect(mp4Path).toBe("video2/renders/org-123/file-456/output.mp4");
     });
   });
@@ -58,15 +75,18 @@ describe("filePaths", () => {
       const metadataPath = renderAssetsMetadataFilePath(mockDescriptor);
 
       // Should be in same directory
-      const renderDir = renderPath.substring(0, renderPath.lastIndexOf('/'));
-      const metadataDir = metadataPath.substring(0, metadataPath.lastIndexOf('/'));
+      const renderDir = renderPath.substring(0, renderPath.lastIndexOf("/"));
+      const metadataDir = metadataPath.substring(
+        0,
+        metadataPath.lastIndexOf("/"),
+      );
 
       expect(metadataDir).toBe(renderDir);
     });
 
     test("uses .json extension", () => {
       const path = renderAssetsMetadataFilePath(mockDescriptor);
-      expect(path.endsWith('.json')).toBe(true);
+      expect(path.endsWith(".json")).toBe(true);
     });
   });
 
@@ -76,9 +96,11 @@ describe("filePaths", () => {
         org_id: "org-123",
         id: "render-456",
         segmentId: 0,
-        fileType: "fragment"
+        fileType: "fragment",
       });
-      expect(fragmentPath).toBe("video2/renders/org-123/render-456/segment/0.m4s");
+      expect(fragmentPath).toBe(
+        "video2/renders/org-123/render-456/segment/0.m4s",
+      );
     });
 
     test("handles init segment", () => {
@@ -86,9 +108,11 @@ describe("filePaths", () => {
         org_id: "org-123",
         id: "render-456",
         segmentId: "init",
-        fileType: "fragment"
+        fileType: "fragment",
       });
-      expect(initPath).toBe("video2/renders/org-123/render-456/segment/init.m4s");
+      expect(initPath).toBe(
+        "video2/renders/org-123/render-456/segment/init.m4s",
+      );
     });
 
     test("handles standalone file type", () => {
@@ -96,9 +120,11 @@ describe("filePaths", () => {
         org_id: "org-123",
         id: "render-456",
         segmentId: 5,
-        fileType: "standalone"
+        fileType: "standalone",
       });
-      expect(standalonePath).toBe("video2/renders/org-123/render-456/segment/5.mp4");
+      expect(standalonePath).toBe(
+        "video2/renders/org-123/render-456/segment/5.mp4",
+      );
     });
 
     test("handles different segment IDs", () => {
@@ -106,7 +132,7 @@ describe("filePaths", () => {
         org_id: "org-123",
         id: "render-456",
         segmentId: 1,
-        fileType: "fragment"
+        fileType: "fragment",
       });
       expect(path1).toBe("video2/renders/org-123/render-456/segment/1.m4s");
 
@@ -114,7 +140,7 @@ describe("filePaths", () => {
         org_id: "org-123",
         id: "render-456",
         segmentId: 999,
-        fileType: "fragment"
+        fileType: "fragment",
       });
       expect(path999).toBe("video2/renders/org-123/render-456/segment/999.m4s");
 
@@ -122,18 +148,22 @@ describe("filePaths", () => {
         org_id: "org-123",
         id: "render-456",
         segmentId: "10000",
-        fileType: "fragment"
+        fileType: "fragment",
       });
-      expect(pathString).toBe("video2/renders/org-123/render-456/segment/10000.m4s");
+      expect(pathString).toBe(
+        "video2/renders/org-123/render-456/segment/10000.m4s",
+      );
     });
 
     test("defaults to fragment file type when not specified", () => {
       const defaultPath = renderFragmentFilePath({
         org_id: "org-123",
         id: "render-456",
-        segmentId: 0
+        segmentId: 0,
       });
-      expect(defaultPath).toBe("video2/renders/org-123/render-456/segment/0.m4s");
+      expect(defaultPath).toBe(
+        "video2/renders/org-123/render-456/segment/0.m4s",
+      );
     });
   });
 
@@ -149,10 +179,16 @@ describe("filePaths", () => {
     });
 
     test("handles different track IDs", () => {
-      const track2Path = isobmffTrackFilePath({ ...mockDescriptor, track_id: 2 });
+      const track2Path = isobmffTrackFilePath({
+        ...mockDescriptor,
+        track_id: 2,
+      });
       expect(track2Path).toBe("video2/org-123/file-456/track-2.mp4");
 
-      const track99Path = isobmffTrackFilePath({ ...mockDescriptor, track_id: 99 });
+      const track99Path = isobmffTrackFilePath({
+        ...mockDescriptor,
+        track_id: 99,
+      });
       expect(track99Path).toBe("video2/org-123/file-456/track-99.mp4");
     });
   });
@@ -192,15 +228,16 @@ describe("filePaths", () => {
       expect(path1).not.toBe(path3);
 
       // Should be under cache directory
-      expect(path1.startsWith('cache/')).toBe(true);
-      expect(path1.endsWith('.mp4')).toBe(true);
+      expect(path1.startsWith("cache/")).toBe(true);
+      expect(path1.endsWith(".mp4")).toBe(true);
     });
 
     test("normalizes URLs for consistent caching", () => {
       const url1 = "https://example.com/video.mp4";
       const url2 = "https://EXAMPLE.COM/video.mp4"; // Different case hostname
       const url3 = "https://example.com/video.mp4?utm_source=test"; // Tracking param (should be removed)
-      const url4 = "https://example.com/video.mp4?utm_medium=email&utm_source=newsletter"; // Multiple tracking params
+      const url4 =
+        "https://example.com/video.mp4?utm_medium=email&utm_source=newsletter"; // Multiple tracking params
 
       const path1 = cacheMetadataFilePath({ url: url1 });
       const path2 = cacheMetadataFilePath({ url: url2 });
@@ -225,12 +262,12 @@ describe("filePaths", () => {
         url: "https://example.com/video.mp4",
         preset: "720p",
         startTimeMs: 5000,
-        extension: "mp4"
+        extension: "mp4",
       });
 
-      expect(path.startsWith('cache/')).toBe(true);
-      expect(path.includes('/transcoded/720p/')).toBe(true);
-      expect(path.includes('-5000.mp4')).toBe(true);
+      expect(path.startsWith("cache/")).toBe(true);
+      expect(path.includes("/transcoded/720p/")).toBe(true);
+      expect(path.includes("-5000.mp4")).toBe(true);
     });
 
     test("handles different extensions for transcoded segments", () => {
@@ -238,22 +275,22 @@ describe("filePaths", () => {
         url: "https://example.com/video.mp4",
         preset: "480p",
         startTimeMs: 1000,
-        extension: "mp4"
+        extension: "mp4",
       });
 
       const m4sPath = cacheTranscodedSegmentFilePath({
         url: "https://example.com/video.mp4",
         preset: "480p",
         startTimeMs: 1000,
-        extension: "m4s"
+        extension: "m4s",
       });
 
-      expect(mp4Path.endsWith('.mp4')).toBe(true);
-      expect(m4sPath.endsWith('.m4s')).toBe(true);
+      expect(mp4Path.endsWith(".mp4")).toBe(true);
+      expect(m4sPath.endsWith(".m4s")).toBe(true);
 
       // Should be in same directory, different extensions
-      const mp4Dir = mp4Path.substring(0, mp4Path.lastIndexOf('.'));
-      const m4sDir = m4sPath.substring(0, m4sPath.lastIndexOf('.'));
+      const mp4Dir = mp4Path.substring(0, mp4Path.lastIndexOf("."));
+      const m4sDir = m4sPath.substring(0, m4sPath.lastIndexOf("."));
       expect(mp4Dir).toBe(m4sDir);
     });
 
@@ -261,7 +298,7 @@ describe("filePaths", () => {
       const params = {
         url: "https://example.com/video.mp4",
         preset: "1080p",
-        startTimeMs: 2500
+        startTimeMs: 2500,
       };
 
       const path1 = cacheTranscodedSegmentFilePath(params);
@@ -275,11 +312,13 @@ describe("filePaths", () => {
     test("handles special characters in IDs safely", () => {
       const specialDescriptor = {
         org_id: "org-with-dashes",
-        id: "file_with_underscores"
+        id: "file_with_underscores",
       };
 
       const path = renderFilePath(specialDescriptor);
-      expect(path).toBe("video2/renders/org-with-dashes/file_with_underscores/bundle.tar.gz");
+      expect(path).toBe(
+        "video2/renders/org-with-dashes/file_with_underscores/bundle.tar.gz",
+      );
     });
 
     test("generates filesystem-safe paths", () => {
@@ -287,16 +326,16 @@ describe("filePaths", () => {
         renderFilePath(mockDescriptor),
         renderAssetsMetadataFilePath(mockDescriptor),
         isobmffIndexFilePath(mockDescriptor),
-        dataFilePath(mockDescriptor)
+        dataFilePath(mockDescriptor),
       ];
 
-      paths.forEach(path => {
+      paths.forEach((path) => {
         // Should not contain dangerous path traversal
-        expect(path).not.toContain('../');
-        expect(path).not.toContain('..\\');
+        expect(path).not.toContain("../");
+        expect(path).not.toContain("..\\");
 
         // Should use forward slashes (Unix-style)
-        expect(path).not.toContain('\\');
+        expect(path).not.toContain("\\");
 
         // Should not have double slashes
         expect(path).not.toMatch(/\/\//);

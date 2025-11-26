@@ -1,14 +1,14 @@
-import React from "react"
+import React from "react";
 
 export interface DemoSliderProps {
-  label: string
-  value: number
-  min: number
-  max: number
-  step?: number
-  unit?: string
-  onChange: (value: number) => void
-  className?: string
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  unit?: string;
+  onChange: (value: number) => void;
+  className?: string;
 }
 
 export function DemoSlider({
@@ -19,13 +19,16 @@ export function DemoSlider({
   step = 1,
   unit = "",
   onChange,
-  className = ""
+  className = "",
 }: DemoSliderProps) {
   return (
     <div className={`space-y-2 ${className}`}>
       <div className="flex justify-between items-center">
         <label className="text-xs font-medium text-gray-700">{label}</label>
-        <span className="text-xs text-gray-600 font-mono">{value}{unit}</span>
+        <span className="text-xs text-gray-600 font-mono">
+          {value}
+          {unit}
+        </span>
       </div>
       <div className="relative">
         <input
@@ -40,12 +43,12 @@ export function DemoSlider({
         <div
           className="absolute top-0 left-0 h-2 bg-gradient-to-r from-blue-400 to-blue-600 rounded-lg pointer-events-none"
           style={{
-            width: `${((value - min) / (max - min)) * 100}%`
+            width: `${((value - min) / (max - min)) * 100}%`,
           }}
         />
       </div>
     </div>
-  )
+  );
 }
 
 // Add global styles for slider thumbs
@@ -73,4 +76,4 @@ export const SliderStyles = () => (
       border: none;
     }
   `}</style>
-)
+);

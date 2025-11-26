@@ -4,7 +4,7 @@ import type { Session } from "react-router";
 export type ExtractedFlash = {
   errorMessage: string | undefined;
   successMessage: string | undefined;
-}
+};
 
 export function extractNewFlash(sessionCookie: Session): ExtractedFlash {
   const errorMessage = sessionCookie.get("error") as string | undefined;
@@ -52,7 +52,8 @@ export function useFlashMessages({ errorMessage, successMessage }: NewFlash) {
   }, [errorMessage, successMessage]);
 
   return flashMessages;
-} interface SuccessFlashMessage {
+}
+interface SuccessFlashMessage {
   id: string;
   message: string;
   type: "success";
@@ -71,4 +72,3 @@ export interface NewFlash {
   errorMessage?: string;
   successMessage?: string;
 }
-

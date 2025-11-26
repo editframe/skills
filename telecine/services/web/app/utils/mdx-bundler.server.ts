@@ -5,7 +5,6 @@ import rehypeHeadings from "./parseHeadings";
 import type { Heading } from "~/types";
 import rehypeReact from "rehype-react";
 
-
 type Frontmatter = {
   meta: {
     name: string;
@@ -14,11 +13,10 @@ type Frontmatter = {
   }[];
   published_date: string;
   last_updated?: string;
-}
+};
 export async function parseMdx(mdx: string) {
-  const { default: rehypeAutolinkHeadings } = await import(
-    "rehype-autolink-headings"
-  );
+  const { default: rehypeAutolinkHeadings } =
+    await import("rehype-autolink-headings");
 
   const { default: rehypeSlug } = await import("rehype-slug");
 

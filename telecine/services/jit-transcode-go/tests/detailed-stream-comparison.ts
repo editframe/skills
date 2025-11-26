@@ -24,7 +24,7 @@ function ffprobeJson(file: string): any {
   try {
     const out = execSync(
       `ffprobe -v error -print_format json -show_format -show_streams -show_packets "${file}"`,
-      { encoding: "utf8", maxBuffer: 50 * 1024 * 1024 }
+      { encoding: "utf8", maxBuffer: 50 * 1024 * 1024 },
     );
     return JSON.parse(out);
   } catch (e) {
@@ -48,9 +48,13 @@ function compareField(
   name: string,
   tsValue: any,
   goValue: any,
-  tolerance?: number
+  tolerance?: number,
 ): ComparisonResult {
-  if (tolerance !== undefined && typeof tsValue === "number" && typeof goValue === "number") {
+  if (
+    tolerance !== undefined &&
+    typeof tsValue === "number" &&
+    typeof goValue === "number"
+  ) {
     const diff = Math.abs(tsValue - goValue);
     if (diff <= tolerance) {
       return {
@@ -76,7 +80,10 @@ function compareField(
   };
 }
 
-async function test(name: string, fn: () => Promise<ComparisonResult>): Promise<boolean> {
+async function test(
+  name: string,
+  fn: () => Promise<ComparisonResult>,
+): Promise<boolean> {
   try {
     const result = await fn();
     const icon = result.pass ? "✅" : "❌";
@@ -101,10 +108,18 @@ async function main() {
 
   console.log("📦 Fetching segments...\n");
 
-  const tsInit = await fetch$(`${TS}/api/v1/transcode/high/init.m4s?url=${encodeURIComponent(TEST_VIDEO)}`);
-  const goInit = await fetch$(`${GO}/api/v1/transcode/high/init.m4s?url=${encodeURIComponent(TEST_VIDEO)}`);
-  const tsSeg1 = await fetch$(`${TS}/api/v1/transcode/high/1.m4s?url=${encodeURIComponent(TEST_VIDEO)}`);
-  const goSeg1 = await fetch$(`${GO}/api/v1/transcode/high/1.m4s?url=${encodeURIComponent(TEST_VIDEO)}`);
+  const tsInit = await fetch$(
+    `${TS}/api/v1/transcode/high/init.m4s?url=${encodeURIComponent(TEST_VIDEO)}`,
+  );
+  const goInit = await fetch$(
+    `${GO}/api/v1/transcode/high/init.m4s?url=${encodeURIComponent(TEST_VIDEO)}`,
+  );
+  const tsSeg1 = await fetch$(
+    `${TS}/api/v1/transcode/high/1.m4s?url=${encodeURIComponent(TEST_VIDEO)}`,
+  );
+  const goSeg1 = await fetch$(
+    `${GO}/api/v1/transcode/high/1.m4s?url=${encodeURIComponent(TEST_VIDEO)}`,
+  );
 
   await fs.writeFile(`${OUT}/ts-init.m4s`, tsInit);
   await fs.writeFile(`${OUT}/go-init.m4s`, goInit);
@@ -131,57 +146,84 @@ async function main() {
   const goStream = goProbe?.streams?.[0];
 
   total++;
-  if (await test("Codec", async () => compareField("codec_name", tsStream?.codec_name, goStream?.codec_name)))
+  if (
+    await test("Codec", async () =>
+      compareField("codec_name", tsStream?.codec_name, goStream?.codec_name))
+  )
     passed++;
 
   total++;
-  if (await test("Width", async () => compareField("width", tsStream?.width, goStream?.width))) passed++;
+  if (
+    await test("Width", async () =>
+      compareField("width", tsStream?.width, goStream?.width))
+  )
+    passed++;
 
   total++;
-  if (await test("Height", async () => compareField("height", tsStream?.height, goStream?.height))) passed++;
+  if (
+    await test("Height", async () =>
+      compareField("height", tsStream?.height, goStream?.height))
+  )
+    passed++;
 
   total++;
   if (
     await test("Frame rate (r_frame_rate)", async () =>
-      compareField("r_frame_rate", tsStream?.r_frame_rate, goStream?.r_frame_rate)
-    )
+      compareField(
+        "r_frame_rate",
+        tsStream?.r_frame_rate,
+        goStream?.r_frame_rate,
+      ))
   )
     passed++;
 
   total++;
   if (
     await test("Average frame rate", async () =>
-      compareField("avg_frame_rate", tsStream?.avg_frame_rate, goStream?.avg_frame_rate)
-    )
+      compareField(
+        "avg_frame_rate",
+        tsStream?.avg_frame_rate,
+        goStream?.avg_frame_rate,
+      ))
   )
     passed++;
 
   total++;
-  if (await test("Time base", async () => compareField("time_base", tsStream?.time_base, goStream?.time_base)))
+  if (
+    await test("Time base", async () =>
+      compareField("time_base", tsStream?.time_base, goStream?.time_base))
+  )
     passed++;
 
   console.log("\n📦 Init Segment Comparison\n");
 
   total++;
-  if (await test("Init segment size", async () => compareField("size", tsInit.length, goInit.length, 100)))
+  if (
+    await test("Init segment size", async () =>
+      compareField("size", tsInit.length, goInit.length, 100))
+  )
     passed++;
 
   console.log("\n📦 Media Segment Comparison\n");
 
   total++;
-  if (await test("Segment size", async () => compareField("size", tsSeg1.length, goSeg1.length, 500000)))
+  if (
+    await test("Segment size", async () =>
+      compareField("size", tsSeg1.length, goSeg1.length, 500000))
+  )
     passed++;
 
   console.log("\n⏱️  Packet Timing Analysis\n");
 
-  const tsPackets = tsProbe?.packets?.filter((p: any) => p.stream_index === 0) || [];
-  const goPackets = goProbe?.packets?.filter((p: any) => p.stream_index === 0) || [];
+  const tsPackets =
+    tsProbe?.packets?.filter((p: any) => p.stream_index === 0) || [];
+  const goPackets =
+    goProbe?.packets?.filter((p: any) => p.stream_index === 0) || [];
 
   total++;
   if (
     await test("Packet count", async () =>
-      compareField("packets", tsPackets.length, goPackets.length, 5)
-    )
+      compareField("packets", tsPackets.length, goPackets.length, 5))
   )
     passed++;
 
@@ -204,16 +246,22 @@ async function main() {
 
         for (let i = 1; i < Math.min(5, tsPackets.length); i++) {
           const tsPtsDiff =
-            Number.parseFloat(tsPackets[i].pts_time) - Number.parseFloat(tsPackets[i - 1].pts_time);
+            Number.parseFloat(tsPackets[i].pts_time) -
+            Number.parseFloat(tsPackets[i - 1].pts_time);
           const goPtsDiff =
-            Number.parseFloat(goPackets[i].pts_time) - Number.parseFloat(goPackets[i - 1].pts_time);
+            Number.parseFloat(goPackets[i].pts_time) -
+            Number.parseFloat(goPackets[i - 1].pts_time);
           tsSpacing.push(tsPtsDiff.toFixed(6));
           goSpacing.push(goPtsDiff.toFixed(6));
         }
 
         const expectedSpacing = (1 / 30).toFixed(6);
-        const tsUniform = tsSpacing.every((s) => Math.abs(Number.parseFloat(s) - 1 / 30) < 0.001);
-        const goUniform = goSpacing.every((s) => Math.abs(Number.parseFloat(s) - 1 / 30) < 0.001);
+        const tsUniform = tsSpacing.every(
+          (s) => Math.abs(Number.parseFloat(s) - 1 / 30) < 0.001,
+        );
+        const goUniform = goSpacing.every(
+          (s) => Math.abs(Number.parseFloat(s) - 1 / 30) < 0.001,
+        );
 
         if (tsUniform && goUniform) {
           return {
@@ -240,8 +288,12 @@ async function main() {
     total++;
     if (
       await test("Last packet PTS", async () => {
-        const tsLast = Number.parseFloat(tsPackets[tsPackets.length - 1].pts_time);
-        const goLast = Number.parseFloat(goPackets[goPackets.length - 1].pts_time);
+        const tsLast = Number.parseFloat(
+          tsPackets[tsPackets.length - 1].pts_time,
+        );
+        const goLast = Number.parseFloat(
+          goPackets[goPackets.length - 1].pts_time,
+        );
         return compareField("last_pts_time", tsLast, goLast, 0.1);
       })
     )
@@ -279,9 +331,8 @@ async function main() {
             "sample_count",
             tsTrun?.["sample count"] || tsTrun?.sample_count,
             goTrun?.["sample count"] || goTrun?.sample_count,
-            2
-          )
-        )
+            2,
+          ))
       )
         passed++;
     }
@@ -289,14 +340,19 @@ async function main() {
 
   console.log("\n📈 Frame Analysis\n");
 
-  const tsFrames = tsProbe?.packets?.filter((p: any) => p.stream_index === 0 && p.flags?.includes("K")) || [];
-  const goFrames = goProbe?.packets?.filter((p: any) => p.stream_index === 0 && p.flags?.includes("K")) || [];
+  const tsFrames =
+    tsProbe?.packets?.filter(
+      (p: any) => p.stream_index === 0 && p.flags?.includes("K"),
+    ) || [];
+  const goFrames =
+    goProbe?.packets?.filter(
+      (p: any) => p.stream_index === 0 && p.flags?.includes("K"),
+    ) || [];
 
   total++;
   if (
     await test("Keyframe count", async () =>
-      compareField("keyframes", tsFrames.length, goFrames.length)
-    )
+      compareField("keyframes", tsFrames.length, goFrames.length))
   )
     passed++;
 
@@ -319,7 +375,9 @@ async function main() {
     console.log("🔍 CRITICAL ISSUES DETECTED:\n");
 
     if (tsStream?.r_frame_rate !== goStream?.r_frame_rate) {
-      console.log(`  ❌ Frame rate mismatch: TS=${tsStream?.r_frame_rate}, Go=${goStream?.r_frame_rate}`);
+      console.log(
+        `  ❌ Frame rate mismatch: TS=${tsStream?.r_frame_rate}, Go=${goStream?.r_frame_rate}`,
+      );
       console.log(`     Impact: Incorrect playback speed\n`);
     }
 
@@ -327,31 +385,49 @@ async function main() {
       const tsFirst = Number.parseFloat(tsPackets[0].pts_time);
       const goFirst = Number.parseFloat(goPackets[0].pts_time);
       if (Math.abs(tsFirst - goFirst) > 0.01) {
-        console.log(`  ❌ Start time offset: TS=${tsFirst.toFixed(6)}s, Go=${goFirst.toFixed(6)}s`);
-        console.log(`     Difference: ${Math.abs(tsFirst - goFirst).toFixed(6)}s`);
-        console.log(`     Impact: ${Math.round(Math.abs(tsFirst - goFirst) * 30)} frame(s) offset\n`);
+        console.log(
+          `  ❌ Start time offset: TS=${tsFirst.toFixed(6)}s, Go=${goFirst.toFixed(6)}s`,
+        );
+        console.log(
+          `     Difference: ${Math.abs(tsFirst - goFirst).toFixed(6)}s`,
+        );
+        console.log(
+          `     Impact: ${Math.round(Math.abs(tsFirst - goFirst) * 30)} frame(s) offset\n`,
+        );
       }
 
       const tsSpacing = [];
       const goSpacing = [];
-      for (let i = 1; i < Math.min(10, tsPackets.length, goPackets.length); i++) {
+      for (
+        let i = 1;
+        i < Math.min(10, tsPackets.length, goPackets.length);
+        i++
+      ) {
         tsSpacing.push(
-          Number.parseFloat(tsPackets[i].pts_time) - Number.parseFloat(tsPackets[i - 1].pts_time)
+          Number.parseFloat(tsPackets[i].pts_time) -
+            Number.parseFloat(tsPackets[i - 1].pts_time),
         );
         goSpacing.push(
-          Number.parseFloat(goPackets[i].pts_time) - Number.parseFloat(goPackets[i - 1].pts_time)
+          Number.parseFloat(goPackets[i].pts_time) -
+            Number.parseFloat(goPackets[i - 1].pts_time),
         );
       }
 
-      const tsAvgSpacing = tsSpacing.reduce((a, b) => a + b, 0) / tsSpacing.length;
-      const goAvgSpacing = goSpacing.reduce((a, b) => a + b, 0) / goSpacing.length;
+      const tsAvgSpacing =
+        tsSpacing.reduce((a, b) => a + b, 0) / tsSpacing.length;
+      const goAvgSpacing =
+        goSpacing.reduce((a, b) => a + b, 0) / goSpacing.length;
       const tsVariance = Math.max(...tsSpacing) - Math.min(...tsSpacing);
       const goVariance = Math.max(...tsSpacing) - Math.min(...goSpacing);
 
       if (goVariance > 0.005) {
         console.log(`  ❌ Irregular frame spacing (Go)`);
-        console.log(`     TS avg: ${(tsAvgSpacing * 1000).toFixed(2)}ms (variance: ${(tsVariance * 1000).toFixed(2)}ms)`);
-        console.log(`     Go avg: ${(goAvgSpacing * 1000).toFixed(2)}ms (variance: ${(goVariance * 1000).toFixed(2)}ms)`);
+        console.log(
+          `     TS avg: ${(tsAvgSpacing * 1000).toFixed(2)}ms (variance: ${(tsVariance * 1000).toFixed(2)}ms)`,
+        );
+        console.log(
+          `     Go avg: ${(goAvgSpacing * 1000).toFixed(2)}ms (variance: ${(goVariance * 1000).toFixed(2)}ms)`,
+        );
         console.log(`     Expected: 33.33ms (30fps CFR)`);
         console.log(`     Impact: Jerky playback\n`);
       }
@@ -362,4 +438,3 @@ async function main() {
 }
 
 main();
-

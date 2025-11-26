@@ -11,7 +11,7 @@ export const StageComponent: FC<{ layer: Layer }> = observer(({ layer }) => {
       LayerRegistry.getControlledStageComponent(layer);
     if (ControlledStageComponent === undefined) {
       throw new Error(
-        `no controlled stage component for ${layer.$modelType}. You need to register it in the LayerRegistry`
+        `no controlled stage component for ${layer.$modelType}. You need to register it in the LayerRegistry`,
       );
     }
     return <ControlledStageComponent layer={layer} />;
@@ -20,7 +20,7 @@ export const StageComponent: FC<{ layer: Layer }> = observer(({ layer }) => {
   const StageComponent = LayerRegistry.getStageComponent(layer);
   if (StageComponent === undefined) {
     throw new Error(
-      `no stage component for ${layer.$modelType}. You need to register it in the LayerRegistry`
+      `no stage component for ${layer.$modelType}. You need to register it in the LayerRegistry`,
     );
   }
   return <StageComponent layer={layer} />;

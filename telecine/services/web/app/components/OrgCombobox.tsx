@@ -44,7 +44,7 @@ export function OrgCombobox({
       setIsLoading(true);
       try {
         const response = await fetch(
-          `/admin/search-orgs?q=${encodeURIComponent(query)}`
+          `/admin/search-orgs?q=${encodeURIComponent(query)}`,
         );
         if (response.ok) {
           const data = await response.json();
@@ -93,13 +93,14 @@ export function OrgCombobox({
             "before:absolute before:inset-0 before:bg-gradient-to-br before:from-amber-50/18 before:via-transparent before:to-transparent",
             "dark:before:from-blue-950/15 before:via-transparent dark:before:to-transparent",
             "before:pointer-events-none before:rounded-md",
-            error 
-              ? "ring-red-300/85 dark:ring-red-600/85 focus:ring-red-500 dark:focus:ring-red-400" 
+            error
+              ? "ring-red-300/85 dark:ring-red-600/85 focus:ring-red-500 dark:focus:ring-red-400"
               : "focus:ring-blue-500/85 dark:focus:ring-blue-400/85",
             "focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08),0_4px_12px_0_rgb(59_130_246_/_0.22)] dark:focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.4),0_4px_12px_0_rgb(59_130_246_/_0.35)]",
             "focus:before:from-blue-50/30 focus:before:via-transparent focus:before:to-transparent",
             "dark:focus:before:from-blue-950/22 dark:focus:before:via-transparent dark:focus:before:to-transparent",
-            disabled && "opacity-50 cursor-not-allowed bg-slate-50/70 dark:bg-slate-900/70"
+            disabled &&
+              "opacity-50 cursor-not-allowed bg-slate-50/70 dark:bg-slate-900/70",
           )}
           displayValue={() => displayValue}
           onChange={(event) => setQuery(event.target.value)}
@@ -110,7 +111,7 @@ export function OrgCombobox({
           <CaretDown
             className={clsx(
               "w-5 h-5 transition-colors",
-              "text-slate-400 dark:text-slate-500"
+              "text-slate-400 dark:text-slate-500",
             )}
             aria-hidden="true"
             weight="fill"
@@ -124,22 +125,26 @@ export function OrgCombobox({
               "bg-white/90 dark:bg-slate-800/90",
               "ring-slate-300/60 dark:ring-slate-700/60",
               "shadow-[0_4px_16px_0_rgb(0_0_0_/_0.1),0_1px_2px_0_rgb(0_0_0_/_0.05)]",
-              "dark:shadow-[0_4px_16px_0_rgb(0_0_0_/_0.5),0_1px_2px_0_rgb(0_0_0_/_0.3)]"
+              "dark:shadow-[0_4px_16px_0_rgb(0_0_0_/_0.5),0_1px_2px_0_rgb(0_0_0_/_0.3)]",
             )}
           >
             {isLoading && (
-              <div className={clsx(
-                "px-4 py-2 transition-colors",
-                "text-slate-500 dark:text-slate-400"
-              )}>
+              <div
+                className={clsx(
+                  "px-4 py-2 transition-colors",
+                  "text-slate-500 dark:text-slate-400",
+                )}
+              >
                 Searching...
               </div>
             )}
             {!isLoading && orgs.length === 0 && (
-              <div className={clsx(
-                "px-4 py-2 transition-colors",
-                "text-slate-500 dark:text-slate-400"
-              )}>
+              <div
+                className={clsx(
+                  "px-4 py-2 transition-colors",
+                  "text-slate-500 dark:text-slate-400",
+                )}
+              >
                 No organizations found
               </div>
             )}
@@ -151,9 +156,9 @@ export function OrgCombobox({
                   className={({ active }) =>
                     clsx(
                       "relative cursor-pointer select-none py-2 pl-10 pr-4 transition-colors",
-                      active 
-                        ? "bg-blue-600 dark:bg-blue-500 text-white" 
-                        : "text-slate-900 dark:text-white"
+                      active
+                        ? "bg-blue-600 dark:bg-blue-500 text-white"
+                        : "text-slate-900 dark:text-white",
                     )
                   }
                 >
@@ -162,7 +167,7 @@ export function OrgCombobox({
                       <span
                         className={clsx(
                           "block truncate",
-                          selected ? "font-medium" : "font-normal"
+                          selected ? "font-medium" : "font-normal",
                         )}
                       >
                         {formatOrgLabel(org)}
@@ -171,10 +176,16 @@ export function OrgCombobox({
                         <span
                           className={clsx(
                             "absolute inset-y-0 left-0 flex items-center pl-3 transition-colors",
-                            active ? "text-white" : "text-blue-600 dark:text-blue-400"
+                            active
+                              ? "text-white"
+                              : "text-blue-600 dark:text-blue-400",
                           )}
                         >
-                          <Check className="w-5 h-5" aria-hidden="true" weight="fill" />
+                          <Check
+                            className="w-5 h-5"
+                            aria-hidden="true"
+                            weight="fill"
+                          />
                         </span>
                       )}
                     </>
@@ -187,4 +198,3 @@ export function OrgCombobox({
     </Combobox>
   );
 }
-

@@ -14,13 +14,16 @@ const webHostUrl = new URL(WEB_HOST);
 export async function createOrgSession(
   orgId: string,
   assetsBundle?: AssetsMetadataBundle,
-  assetProvider: AssetProvider = defaultAssetProvider
+  assetProvider: AssetProvider = defaultAssetProvider,
 ) {
-  logger.debug({ orgId, PROTOCOL, hasBundleData: !!assetsBundle }, "Creating org session");
+  logger.debug(
+    { orgId, PROTOCOL, hasBundleData: !!assetsBundle },
+    "Creating org session",
+  );
   const orgSession = session.fromPartition(orgId);
 
   await orgSession.clearStorageData({
-    storages: ['localstorage']
+    storages: ["localstorage"],
   });
 
   if (orgSession.protocol.isProtocolHandled(PROTOCOL)) {
@@ -40,13 +43,20 @@ export async function createOrgSession(
     }
 
     // Check if this is a fragment index request that can be served from bundle
-    const fragmentIndexMatch = requestUrl.pathname.match(/^\/api\/v1\/isobmff_files\/([^/]+)\/index$/);
+    const fragmentIndexMatch = requestUrl.pathname.match(
+      /^\/api\/v1\/isobmff_files\/([^/]+)\/index$/,
+    );
     if (fragmentIndexMatch && assetsBundle) {
       const assetId = fragmentIndexMatch[1] ?? null;
-      const fragmentIndex = assetId ? assetsBundle.fragmentIndexes[assetId] : null;
+      const fragmentIndex = assetId
+        ? assetsBundle.fragmentIndexes[assetId]
+        : null;
 
       if (fragmentIndex) {
-        logger.debug({ assetId, requestUrl: request.url }, "Serving fragment index from bundle");
+        logger.debug(
+          { assetId, requestUrl: request.url },
+          "Serving fragment index from bundle",
+        );
 
         return new Response(JSON.stringify(fragmentIndex), {
           status: 200,
@@ -59,10 +69,7 @@ export async function createOrgSession(
     }
 
     // Fall back to storage file lookup
-    const filePath = getStorageKeyForPath(
-      requestUrl.pathname,
-      orgId,
-    );
+    const filePath = getStorageKeyForPath(requestUrl.pathname, orgId);
 
     logger.trace(
       { requestUrl: request.url, filePath },
@@ -80,10 +87,7 @@ export async function createOrgSession(
 
     if (rangeHeader) {
       const range = RangeHeader.parse(rangeHeader);
-      const readStream = await assetProvider.createReadStream(
-        filePath,
-        range,
-      );
+      const readStream = await assetProvider.createReadStream(filePath, range);
       return new Response(createReadableStreamFromReadable(readStream), {
         status: 206,
         headers: {

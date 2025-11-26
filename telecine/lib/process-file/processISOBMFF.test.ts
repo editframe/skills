@@ -38,7 +38,7 @@ describe("processISOBMFF", () => {
           byte_size: 100, // fake size
         },
         new TestProgressTracker(),
-      )
+      ),
     ).rejects.toThrow(); // Should fail when no valid tracks are found
 
     // Verify no isobmff_file record was created for failed processing
@@ -96,14 +96,14 @@ describe("processISOBMFF", () => {
     expect(tracks.length).toBeGreaterThan(0);
 
     // bars-n-tone.mp4 should have both video and audio tracks
-    const videoTracks = tracks.filter(track => track.type === "video");
-    const audioTracks = tracks.filter(track => track.type === "audio");
-    
+    const videoTracks = tracks.filter((track) => track.type === "video");
+    const audioTracks = tracks.filter((track) => track.type === "audio");
+
     expect(videoTracks.length).toBeGreaterThan(0); // bars-n-tone definitely has video
     expect(audioTracks.length).toBeGreaterThan(0); // bars-n-tone definitely has audio
 
     // All tracks should be marked as complete
-    tracks.forEach(track => {
+    tracks.forEach((track) => {
       expect(track.complete).toBe(true);
       expect(track.byte_size).toBeGreaterThan(0);
       expect(track.duration_ms).toBeGreaterThan(0);
@@ -199,7 +199,7 @@ describe("processISOBMFF", () => {
 
     // Progress should never exceed 95% during processing
     const processingUpdates = progressUpdates.slice(0, -1); // Exclude final 100%
-    processingUpdates.forEach(progress => {
+    processingUpdates.forEach((progress) => {
       expect(progress).toBeGreaterThanOrEqual(0.2);
       expect(progress).toBeLessThanOrEqual(0.95);
     });
@@ -209,7 +209,9 @@ describe("processISOBMFF", () => {
 
     // Progress should be monotonically increasing
     for (let i = 1; i < progressUpdates.length; i++) {
-      expect(progressUpdates[i]).toBeGreaterThanOrEqual(progressUpdates[i - 1]!);
+      expect(progressUpdates[i]).toBeGreaterThanOrEqual(
+        progressUpdates[i - 1]!,
+      );
     }
   });
 
@@ -222,7 +224,9 @@ describe("processISOBMFF", () => {
     const { storageProvider } = await import("@/util/storageProvider.server");
     const originalCreateWriteStream = storageProvider.createWriteStream;
 
-    storageProvider.createWriteStream = vi.fn().mockRejectedValue(new Error("Storage write failed"));
+    storageProvider.createWriteStream = vi
+      .fn()
+      .mockRejectedValue(new Error("Storage write failed"));
 
     try {
       await expect(
@@ -238,7 +242,7 @@ describe("processISOBMFF", () => {
             byte_size: fixture.stats.size,
           },
           new TestProgressTracker(),
-        )
+        ),
       ).rejects.toThrow("Storage write failed");
 
       // Verify no tracks were created in DB on failure
@@ -282,7 +286,7 @@ describe("processISOBMFF", () => {
           byte_size: 100,
         },
         mockTracker as any,
-      )
+      ),
     ).rejects.toThrow();
 
     // Verify failure was written to tracker
@@ -322,7 +326,7 @@ describe("processISOBMFF", () => {
     // Verify each track has proper metadata
     for (const track of tracks) {
       expect(track.track_id).toBeGreaterThan(0);
-      expect(['video', 'audio']).toContain(track.type);
+      expect(["video", "audio"]).toContain(track.type);
       expect(track.byte_size).toBeGreaterThan(0);
       expect(track.duration_ms).toBeGreaterThan(0);
       expect(track.codec_name).toBeTruthy();

@@ -22,4 +22,3 @@ export function useTimeSync({
     onSetCurrentTime(currentTime);
   }, [currentTime, onSetCurrentTime]);
 }
-

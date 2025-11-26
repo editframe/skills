@@ -56,7 +56,9 @@ describe("DimensionsInput", () => {
 
       render(<DimensionsInput label="Size" size={size} onChange={onChange} />);
 
-      const ratioSelector = screen.getByDisplayValue("1/3") as HTMLSelectElement;
+      const ratioSelector = screen.getByDisplayValue(
+        "1/3",
+      ) as HTMLSelectElement;
       expect(ratioSelector.value).toBe("1/3");
     });
 
@@ -92,19 +94,18 @@ describe("DimensionsInput", () => {
       };
 
       const { rerender } = render(
-        <DimensionsInput label="Size" size={currentSize} onChange={onChange} />
+        <DimensionsInput label="Size" size={currentSize} onChange={onChange} />,
       );
 
       const fractionButton = screen.getByTitle("Fraction");
       await user.click(fractionButton);
 
-      rerender(<DimensionsInput label="Size" size={currentSize} onChange={onChange} />);
+      rerender(
+        <DimensionsInput label="Size" size={currentSize} onChange={onChange} />,
+      );
 
       expect(currentSize.widthMode).toBe("fraction");
       expect(currentSize.widthValue).toEqual({ numerator: 1, denominator: 2 });
     });
   });
 });
-
-
-

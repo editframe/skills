@@ -8,7 +8,9 @@ import { promiseWithResolvers } from "@/util/promiseWithResolvers";
 export interface EagerBootServerOptions {
   port?: number;
   serviceName?: string;
-  createRequestHandler?: () => Promise<(req: IncomingMessage, res: ServerResponse) => void>;
+  createRequestHandler?: () => Promise<
+    (req: IncomingMessage, res: ServerResponse) => void
+  >;
   customHealthCheck?: (req: IncomingMessage, res: ServerResponse) => boolean;
   onClose?: () => void | Promise<void>;
 }
@@ -16,7 +18,7 @@ export interface EagerBootServerOptions {
 /**
  * IMPLEMENTATION GUIDELINES: Creates a server that boots quickly for health checks
  * and then initializes the full application asynchronously.
- * 
+ *
  * This pattern significantly improves cold start times by:
  * 1. Starting HTTP server immediately for health checks
  * 2. Deferring heavy initialization until after server is listening
@@ -28,7 +30,7 @@ export const createEagerBootServer = (options: EagerBootServerOptions = {}) => {
     serviceName = "service",
     createRequestHandler,
     customHealthCheck,
-    onClose
+    onClose,
   } = options;
 
   const serverResolvers = promiseWithResolvers<void>();
@@ -36,7 +38,9 @@ export const createEagerBootServer = (options: EagerBootServerOptions = {}) => {
 
   let isInitialized = false;
   let initializationError: Error | null = null;
-  let requestHandler: ((req: IncomingMessage, res: ServerResponse) => void) | null = null;
+  let requestHandler:
+    | ((req: IncomingMessage, res: ServerResponse) => void)
+    | null = null;
 
   // Create HTTP server immediately - this is the "eager boot" part
   const server = createServer(async (req, res) => {
@@ -52,11 +56,14 @@ export const createEagerBootServer = (options: EagerBootServerOptions = {}) => {
         await initializationResolvers.promise;
       } catch (error) {
         res.statusCode = 503;
-        res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify({
-          error: 'Service initializing',
-          message: initializationError?.message || 'Service is still starting up'
-        }));
+        res.setHeader("Content-Type", "application/json");
+        res.end(
+          JSON.stringify({
+            error: "Service initializing",
+            message:
+              initializationError?.message || "Service is still starting up",
+          }),
+        );
         return;
       }
     }
@@ -75,7 +82,9 @@ export const createEagerBootServer = (options: EagerBootServerOptions = {}) => {
 
   // Start listening immediately - this makes the service "ready" for health checks
   server.listen(port, () => {
-    logger.info(`${serviceName} listening on port ${port} (health checks ready)`);
+    logger.info(
+      `${serviceName} listening on port ${port} (health checks ready)`,
+    );
     serverResolvers.resolve();
 
     // Start async initialization after server is listening

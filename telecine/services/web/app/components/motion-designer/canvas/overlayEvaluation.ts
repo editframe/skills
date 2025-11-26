@@ -1,6 +1,6 @@
 /**
  * Overlay evaluation - determine what overlay position should be.
- * 
+ *
  * Semantics: What should it be? (read from DOM)
  * Separated from mechanism (how to apply it).
  */
@@ -20,4 +20,3 @@ export function evaluateOverlayPositionForElement(
   // Transform to overlay coordinates
   return evaluateOverlayPosition(elementId, overlayLayerRect, canvasScale);
 }
-

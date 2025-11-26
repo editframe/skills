@@ -1,8 +1,4 @@
-import type {
-  MotionDesignerState,
-  ElementNode,
-  Animation,
-} from "./types.js";
+import type { MotionDesignerState, ElementNode, Animation } from "./types.js";
 
 export type MotionDesignerAction =
   | { type: "SELECT_ELEMENT"; payload: { id: string | null } }
@@ -55,7 +51,9 @@ export type MotionDesignerAction =
   | { type: "SET_PLACEMENT_MODE"; payload: { mode: string | null } }
   | {
       type: "UPDATE_CANVAS_TRANSFORM";
-      payload: { transform: Partial<MotionDesignerState["ui"]["canvasTransform"]> };
+      payload: {
+        transform: Partial<MotionDesignerState["ui"]["canvasTransform"]>;
+      };
     }
   | { type: "REPLACE_STATE"; payload: { newState: MotionDesignerState } };
 
@@ -159,4 +157,3 @@ export const actionCreators = {
     payload: { newState },
   }),
 };
-

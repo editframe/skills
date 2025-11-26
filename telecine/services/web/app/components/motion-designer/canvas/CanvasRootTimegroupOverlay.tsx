@@ -1,9 +1,22 @@
 import React, { useState, useRef, useEffect, useLayoutEffect } from "react";
-import type { MotionDesignerState, ElementNode } from "~/lib/motion-designer/types";
+import type {
+  MotionDesignerState,
+  ElementNode,
+} from "~/lib/motion-designer/types";
 import { getActiveRootTimegroupId } from "~/lib/motion-designer/utils";
-import { createDefaultSize, createDefaultSizeForFlexChild } from "~/lib/motion-designer/defaultSizes";
-import { getSizeDimensions, convertToFixedSize } from "~/lib/motion-designer/sizingUtils";
-import { normalizeSize, isLegacySize, type ElementSize } from "~/lib/motion-designer/sizingTypes";
+import {
+  createDefaultSize,
+  createDefaultSizeForFlexChild,
+} from "~/lib/motion-designer/defaultSizes";
+import {
+  getSizeDimensions,
+  convertToFixedSize,
+} from "~/lib/motion-designer/sizingUtils";
+import {
+  normalizeSize,
+  isLegacySize,
+  type ElementSize,
+} from "~/lib/motion-designer/sizingTypes";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
 import { PlayLoopButton } from "../controls/PlayLoopButton";
 import { PlayPauseButton } from "../controls/PlayPauseButton";
@@ -39,46 +52,56 @@ export function CanvasRootTimegroupOverlay({
   const isSelected = state.ui.selectedElementId === element.id;
   const canvasPosition = element.props.canvasPosition || { x: 100, y: 100 };
   const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
+  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(
+    null,
+  );
   const hasDraggedRef = useRef(false);
   const contentRef = useRef<HTMLDivElement | null>(null);
-  const dimensionsRef = useRef<{ width: number; height: number }>({ width: 400, height: 300 });
+  const dimensionsRef = useRef<{ width: number; height: number }>({
+    width: 400,
+    height: 300,
+  });
   const [durationMs, setDurationMs] = useState(0);
   const durationRef = useRef(0);
-  const [overlayPosition, setOverlayPosition] = useState<OverlayPosition | null>(null);
+  const [overlayPosition, setOverlayPosition] =
+    useState<OverlayPosition | null>(null);
 
   // Read overlay position from DOM using centralized function
   useLayoutEffect(() => {
     if (!contentRef.current) return;
-    
+
     // Find overlay layer
     const overlayLayer = contentRef.current.parentElement as HTMLElement;
     if (!overlayLayer) return;
-    
+
     const overlayLayerRect = overlayLayer.getBoundingClientRect();
-    
+
     // Use centralized position reading function
     const position = evaluateOverlayPositionForElement(
       element.id,
       overlayLayerRect,
       canvasScale,
     );
-    
+
     if (!position) return;
-    
+
     // Update overlay DOM directly
     contentRef.current.style.left = `${position.x}px`;
     contentRef.current.style.top = `${position.y}px`;
     contentRef.current.style.width = `${position.width}px`;
     contentRef.current.style.height = `${position.height}px`;
-    
+
     // Store position for use in render
     setOverlayPosition(position);
-    
+
     // Update dimensions ref
-    const wrapperElement = document.querySelector(`[data-timegroup-id="${element.id}"]`) as HTMLElement;
+    const wrapperElement = document.querySelector(
+      `[data-timegroup-id="${element.id}"]`,
+    ) as HTMLElement;
     if (wrapperElement) {
-      const timegroupElement = wrapperElement.querySelector(`ef-timegroup#${element.id}`) as any;
+      const timegroupElement = wrapperElement.querySelector(
+        `ef-timegroup#${element.id}`,
+      ) as any;
       const measureElement = timegroupElement || wrapperElement;
       const width = measureElement.offsetWidth;
       const height = measureElement.offsetHeight;
@@ -86,25 +109,37 @@ export function CanvasRootTimegroupOverlay({
         dimensionsRef.current = { width, height };
       }
     }
-  }, [element.id, element.props.canvasPosition, element.props.size, canvasScale]);
+  }, [
+    element.id,
+    element.props.canvasPosition,
+    element.props.size,
+    canvasScale,
+  ]);
 
   // Read duration from DOM element
   useEffect(() => {
     let rafId: number;
     let lastUpdateTime = 0;
     const UPDATE_THROTTLE_MS = 16; // ~60fps max update rate
-    
+
     const updateDuration = (currentTime: number) => {
       if (currentTime - lastUpdateTime < UPDATE_THROTTLE_MS) {
         rafId = requestAnimationFrame(updateDuration);
         return;
       }
       lastUpdateTime = currentTime;
-      
-      const wrapperElement = document.querySelector(`[data-timegroup-id="${element.id}"]`) as HTMLElement;
+
+      const wrapperElement = document.querySelector(
+        `[data-timegroup-id="${element.id}"]`,
+      ) as HTMLElement;
       if (wrapperElement) {
-        const timegroupElement = wrapperElement.querySelector(`ef-timegroup#${element.id}`) as any;
-        if (timegroupElement && typeof timegroupElement.durationMs === 'number') {
+        const timegroupElement = wrapperElement.querySelector(
+          `ef-timegroup#${element.id}`,
+        ) as any;
+        if (
+          timegroupElement &&
+          typeof timegroupElement.durationMs === "number"
+        ) {
           const newDurationMs = timegroupElement.durationMs;
           if (Math.abs(newDurationMs - durationRef.current) > 1) {
             durationRef.current = newDurationMs;
@@ -112,12 +147,12 @@ export function CanvasRootTimegroupOverlay({
           }
         }
       }
-      
+
       rafId = requestAnimationFrame(updateDuration);
     };
-    
+
     rafId = requestAnimationFrame(updateDuration);
-    
+
     return () => {
       cancelAnimationFrame(rafId);
     };
@@ -151,7 +186,7 @@ export function CanvasRootTimegroupOverlay({
       if (Math.abs(screenDeltaX) > 2 || Math.abs(screenDeltaY) > 2) {
         hasDraggedRef.current = true;
       }
-      
+
       // Update position relative to drag start position (cumulative delta)
       const newX = dragStartPositionRef.current.x + canvasDeltaX;
       const newY = dragStartPositionRef.current.y + canvasDeltaY;
@@ -174,7 +209,7 @@ export function CanvasRootTimegroupOverlay({
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    
+
     // Only handle click if we didn't drag
     if (!hasDraggedRef.current) {
       // If it was already selected before mousedown and not in placement mode, deselect
@@ -183,19 +218,21 @@ export function CanvasRootTimegroupOverlay({
         hasDraggedRef.current = false;
         return;
       }
-      
+
       if (state.ui.placementMode && isActive) {
         // Don't allow placing timegroups inside timegroups
         if (state.ui.placementMode === "timegroup") {
-          console.warn("Cannot place nested timegroups. Timegroups must be at root level.");
+          console.warn(
+            "Cannot place nested timegroups. Timegroups must be at root level.",
+          );
           actions.setPlacementMode(null);
           return;
         }
-        
+
         // Create element at click position
         const elementType = state.ui.placementMode as ElementNode["type"];
         const isParentFlex = element.props.display === "flex";
-        
+
         const defaultProps: any = {};
         if (isParentFlex) {
           defaultProps.size = createDefaultSizeForFlexChild(elementType);
@@ -208,7 +245,7 @@ export function CanvasRootTimegroupOverlay({
             defaultProps.size = createDefaultSize(elementType, 200, 100);
           }
         }
-        
+
         if (elementType === "captions") {
           defaultProps.showBefore = true;
           defaultProps.showAfter = true;
@@ -217,7 +254,7 @@ export function CanvasRootTimegroupOverlay({
         } else if (elementType === "waveform") {
           defaultProps.mode = "bars";
         }
-        
+
         actions.addElement(
           {
             type: elementType,
@@ -247,7 +284,7 @@ export function CanvasRootTimegroupOverlay({
         if (Math.abs(screenDeltaX) > 2 || Math.abs(screenDeltaY) > 2) {
           hasDraggedRef.current = true;
         }
-        
+
         // Update position relative to drag start position (cumulative delta)
         const newX = dragStartPositionRef.current.x + canvasDeltaX;
         const newY = dragStartPositionRef.current.y + canvasDeltaY;
@@ -276,16 +313,23 @@ export function CanvasRootTimegroupOverlay({
   const handleResizeStart = (e: React.MouseEvent, handle: string) => {
     e.stopPropagation();
     e.preventDefault();
-    
+
     // Get current dimensions (handles both legacy and new format)
     const sizeDimensions = getSizeDimensions(element.props?.size);
     const currentWidth = sizeDimensions.width || 960;
     const currentHeight = sizeDimensions.height || 540;
-    
+
     // Convert to fixed mode if currently in hug/fill mode (resize converts to fixed)
-    const fixedSize = convertToFixedSize(element.props?.size, currentWidth, currentHeight);
-    
-    const currentSize = { width: fixedSize.widthValue, height: fixedSize.heightValue };
+    const fixedSize = convertToFixedSize(
+      element.props?.size,
+      currentWidth,
+      currentHeight,
+    );
+
+    const currentSize = {
+      width: fixedSize.widthValue,
+      height: fixedSize.heightValue,
+    };
     const currentPosition = element.props?.canvasPosition || { x: 100, y: 100 };
     // Use computed rotation from DOM when rotate animations are active, otherwise use design property
     const hasRotateAnims = hasRotateAnimations(element);
@@ -304,10 +348,10 @@ export function CanvasRootTimegroupOverlay({
       }
     }
     const rotationRadians = (currentRotation * Math.PI) / 180;
-    
+
     // Get opposite corner (the one that should stay fixed)
     const oppositeCorner = getOppositeCorner(handle);
-    
+
     // Calculate initial opposite corner position in canvas coordinates
     const initialOppositeCorner = getCornerPoint(
       currentPosition.x,
@@ -318,18 +362,18 @@ export function CanvasRootTimegroupOverlay({
       oppositeCorner.x,
       oppositeCorner.y,
     );
-    
+
     const startX = e.clientX;
     const startY = e.clientY;
     const startWidth = currentSize.width;
     const startHeight = currentSize.height;
     const startCanvasX = currentPosition.x;
     const startCanvasY = currentPosition.y;
-    
+
     const handleGlobalMouseMove = (e: MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      
+
       const deltaX = (e.clientX - startX) / canvasScale;
       const deltaY = (e.clientY - startY) / canvasScale;
 
@@ -376,12 +420,12 @@ export function CanvasRootTimegroupOverlay({
       // Determine which dimensions are being resized based on the handle
       const isResizingWidth = handle.includes("e") || handle.includes("w");
       const isResizingHeight = handle.includes("n") || handle.includes("s");
-      
+
       // Get current sizing modes to preserve non-resized dimensions
       const normalizedSize = normalizeSize(element.props?.size);
       const currentWidthMode = normalizedSize?.widthMode || "fixed";
       const currentHeightMode = normalizedSize?.heightMode || "fixed";
-      
+
       // Only convert resized dimensions to fixed, preserve others
       actions.updateElement(element.id, {
         size: {
@@ -406,15 +450,24 @@ export function CanvasRootTimegroupOverlay({
   // Helper function to get opposite corner
   function getOppositeCorner(handle: string): { x: number; y: number } {
     switch (handle) {
-      case "nw": return { x: 1, y: 1 }; // se corner
-      case "n": return { x: 0.5, y: 1 }; // s corner
-      case "ne": return { x: 0, y: 1 }; // sw corner
-      case "e": return { x: 0, y: 0.5 }; // w corner
-      case "se": return { x: 0, y: 0 }; // nw corner
-      case "s": return { x: 0.5, y: 0 }; // n corner
-      case "sw": return { x: 1, y: 0 }; // ne corner
-      case "w": return { x: 1, y: 0.5 }; // e corner
-      default: return { x: 0.5, y: 0.5 };
+      case "nw":
+        return { x: 1, y: 1 }; // se corner
+      case "n":
+        return { x: 0.5, y: 1 }; // s corner
+      case "ne":
+        return { x: 0, y: 1 }; // sw corner
+      case "e":
+        return { x: 0, y: 0.5 }; // w corner
+      case "se":
+        return { x: 0, y: 0 }; // nw corner
+      case "s":
+        return { x: 0.5, y: 0 }; // n corner
+      case "sw":
+        return { x: 1, y: 0 }; // ne corner
+      case "w":
+        return { x: 1, y: 0.5 }; // e corner
+      default:
+        return { x: 0.5, y: 0.5 };
     }
   }
 
@@ -447,7 +500,13 @@ export function CanvasRootTimegroupOverlay({
     const centerY = y + height / 2;
     const localCornerX = x + xMagnitude * width;
     const localCornerY = y + yMagnitude * height;
-    return rotatePoint(centerX, centerY, localCornerX, localCornerY, rotationRadians);
+    return rotatePoint(
+      centerX,
+      centerY,
+      localCornerX,
+      localCornerY,
+      rotationRadians,
+    );
   }
 
   // Use position from centralized reading function
@@ -461,18 +520,64 @@ export function CanvasRootTimegroupOverlay({
 
   // Determine which resize handles should be visible based on sizing mode
   const normalizedSize = normalizeSize(element.props?.size);
-  const canResizeWidth = !normalizedSize || isLegacySize(normalizedSize) || normalizedSize.widthMode === "fixed";
-  const canResizeHeight = !normalizedSize || isLegacySize(normalizedSize) || normalizedSize.heightMode === "fixed";
-  
+  const canResizeWidth =
+    !normalizedSize ||
+    isLegacySize(normalizedSize) ||
+    normalizedSize.widthMode === "fixed";
+  const canResizeHeight =
+    !normalizedSize ||
+    isLegacySize(normalizedSize) ||
+    normalizedSize.heightMode === "fixed";
+
   const resizeHandles = [
-    { position: "nw" as const, cursor: "nwse-resize", style: { top: -4, left: -4 }, visible: canResizeWidth && canResizeHeight },
-    { position: "n" as const, cursor: "ns-resize", style: { top: -4, left: "50%", transform: "translateX(-50%)" }, visible: canResizeHeight },
-    { position: "ne" as const, cursor: "nesw-resize", style: { top: -4, right: -4 }, visible: canResizeWidth && canResizeHeight },
-    { position: "e" as const, cursor: "ew-resize", style: { top: "50%", right: -4, transform: "translateY(-50%)" }, visible: canResizeWidth },
-    { position: "se" as const, cursor: "nwse-resize", style: { bottom: -4, right: -4 }, visible: canResizeWidth && canResizeHeight },
-    { position: "s" as const, cursor: "ns-resize", style: { bottom: -4, left: "50%", transform: "translateX(-50%)" }, visible: canResizeHeight },
-    { position: "sw" as const, cursor: "nesw-resize", style: { bottom: -4, left: -4 }, visible: canResizeWidth && canResizeHeight },
-    { position: "w" as const, cursor: "ew-resize", style: { top: "50%", left: -4, transform: "translateY(-50%)" }, visible: canResizeWidth },
+    {
+      position: "nw" as const,
+      cursor: "nwse-resize",
+      style: { top: -4, left: -4 },
+      visible: canResizeWidth && canResizeHeight,
+    },
+    {
+      position: "n" as const,
+      cursor: "ns-resize",
+      style: { top: -4, left: "50%", transform: "translateX(-50%)" },
+      visible: canResizeHeight,
+    },
+    {
+      position: "ne" as const,
+      cursor: "nesw-resize",
+      style: { top: -4, right: -4 },
+      visible: canResizeWidth && canResizeHeight,
+    },
+    {
+      position: "e" as const,
+      cursor: "ew-resize",
+      style: { top: "50%", right: -4, transform: "translateY(-50%)" },
+      visible: canResizeWidth,
+    },
+    {
+      position: "se" as const,
+      cursor: "nwse-resize",
+      style: { bottom: -4, right: -4 },
+      visible: canResizeWidth && canResizeHeight,
+    },
+    {
+      position: "s" as const,
+      cursor: "ns-resize",
+      style: { bottom: -4, left: "50%", transform: "translateX(-50%)" },
+      visible: canResizeHeight,
+    },
+    {
+      position: "sw" as const,
+      cursor: "nesw-resize",
+      style: { bottom: -4, left: -4 },
+      visible: canResizeWidth && canResizeHeight,
+    },
+    {
+      position: "w" as const,
+      cursor: "ew-resize",
+      style: { top: "50%", left: -4, transform: "translateY(-50%)" },
+      visible: canResizeWidth,
+    },
   ];
 
   return (
@@ -486,7 +591,11 @@ export function CanvasRootTimegroupOverlay({
         width: `${screenWidth}px`,
         height: `${screenHeight}px`,
         border: "1px solid",
-        borderColor: isActive ? "rgb(59, 130, 246)" : isSelected ? "rgb(96, 165, 250)" : "rgb(75, 85, 99)",
+        borderColor: isActive
+          ? "rgb(59, 130, 246)"
+          : isSelected
+            ? "rgb(96, 165, 250)"
+            : "rgb(75, 85, 99)",
         pointerEvents: "auto",
         userSelect: "none",
         cursor: isDragging ? "grabbing" : "move",
@@ -512,25 +621,27 @@ export function CanvasRootTimegroupOverlay({
             iconSize={12}
           />
           <span>
-            Timegroup · {formatDuration(durationMs)} · {Math.round(elementWidth)}×{Math.round(elementHeight)}
+            Timegroup · {formatDuration(durationMs)} ·{" "}
+            {Math.round(elementWidth)}×{Math.round(elementHeight)}
           </span>
         </div>
       )}
-      
-      {(isActive || isSelected) && resizeHandles
-        .filter((handle) => handle.visible)
-        .map((handle) => (
-          <div
-            key={handle.position}
-            className="absolute w-3 h-3 bg-white border-2 border-blue-500 rounded-sm z-10"
-            style={{
-              ...handle.style,
-              cursor: handle.cursor,
-              pointerEvents: "auto",
-            }}
-            onMouseDown={(e) => handleResizeStart(e, handle.position)}
-          />
-        ))}
+
+      {(isActive || isSelected) &&
+        resizeHandles
+          .filter((handle) => handle.visible)
+          .map((handle) => (
+            <div
+              key={handle.position}
+              className="absolute w-3 h-3 bg-white border-2 border-blue-500 rounded-sm z-10"
+              style={{
+                ...handle.style,
+                cursor: handle.cursor,
+                pointerEvents: "auto",
+              }}
+              onMouseDown={(e) => handleResizeStart(e, handle.position)}
+            />
+          ))}
     </div>
   );
 }

@@ -7,10 +7,7 @@ import { requireCookieOrTokenSession } from "@/util/requireSession.server";
 
 import type { Route } from "./+types/indexFile";
 
-export const loader = async ({
-  request,
-  params: { id },
-}: Route.LoaderArgs) => {
+export const loader = async ({ request, params: { id } }: Route.LoaderArgs) => {
   const session = await requireCookieOrTokenSession(request);
   const isobmffFile = await requireQueryAs(
     session,

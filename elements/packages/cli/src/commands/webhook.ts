@@ -57,7 +57,7 @@ const webhookCommand = program
     if (!topic) {
       const answer = await select({
         message: "Select a topic:",
-        choices: [...topics.map((topic) => ({ title: topic, value: topic }))],
+        choices: topics.map((topic) => ({ title: topic, value: topic })),
       });
       topic = answer;
     }

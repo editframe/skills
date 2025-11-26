@@ -2,11 +2,16 @@ import React from "react";
 import { describe, test, expect, beforeEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { Canvas } from "./Canvas";
-import type { MotionDesignerState, ElementNode } from "~/lib/motion-designer/types";
+import type {
+  MotionDesignerState,
+  ElementNode,
+} from "~/lib/motion-designer/types";
 import { MotionDesignerProvider } from "../context/MotionDesignerContext";
 
 // Test utilities
-function createMockElementNode(overrides: Partial<ElementNode> = {}): ElementNode {
+function createMockElementNode(
+  overrides: Partial<ElementNode> = {},
+): ElementNode {
   return {
     id: "test-element-1",
     type: "div",
@@ -17,7 +22,9 @@ function createMockElementNode(overrides: Partial<ElementNode> = {}): ElementNod
   };
 }
 
-function createMockTimegroup(overrides: Partial<ElementNode> = {}): ElementNode {
+function createMockTimegroup(
+  overrides: Partial<ElementNode> = {},
+): ElementNode {
   return createMockElementNode({
     type: "timegroup",
     props: {
@@ -30,7 +37,9 @@ function createMockTimegroup(overrides: Partial<ElementNode> = {}): ElementNode 
   });
 }
 
-function createMockMotionDesignerState(overrides: Partial<MotionDesignerState> = {}): MotionDesignerState {
+function createMockMotionDesignerState(
+  overrides: Partial<MotionDesignerState> = {},
+): MotionDesignerState {
   return {
     composition: {
       elements: {},
@@ -71,12 +80,12 @@ function createMockActions() {
 
 function renderCanvas(state: MotionDesignerState) {
   const actions = createMockActions();
-  
+
   return {
     ...render(
       <MotionDesignerProvider actions={actions}>
         <Canvas state={state} />
-      </MotionDesignerProvider>
+      </MotionDesignerProvider>,
     ),
     actions,
   };
@@ -93,7 +102,9 @@ describe("Canvas", () => {
     const state = createMockMotionDesignerState();
     renderCanvas(state);
 
-    const canvas = document.querySelector(".flex-1.overflow-hidden.relative.bg-gray-950");
+    const canvas = document.querySelector(
+      ".flex-1.overflow-hidden.relative.bg-gray-950",
+    );
     expect(canvas).toBeTruthy();
     expect(canvas).toHaveStyle({ touchAction: "none" });
   });
@@ -129,15 +140,21 @@ describe("Canvas", () => {
     renderCanvas(state);
 
     // Find content layer (has transform with scale)
-    const contentLayers = Array.from(document.querySelectorAll('[style*="transform"]'));
+    const contentLayers = Array.from(
+      document.querySelectorAll('[style*="transform"]'),
+    );
     const contentLayer = contentLayers.find((el) => {
       const style = (el as HTMLElement).style.transform;
       return style?.includes("scale");
     });
 
     expect(contentLayer).toBeTruthy();
-    expect((contentLayer as HTMLElement).style.transform).toContain("translate(100px, 200px)");
-    expect((contentLayer as HTMLElement).style.transform).toContain("scale(1.5)");
+    expect((contentLayer as HTMLElement).style.transform).toContain(
+      "translate(100px, 200px)",
+    );
+    expect((contentLayer as HTMLElement).style.transform).toContain(
+      "scale(1.5)",
+    );
   });
 
   test("applies transform to overlay layer without scale", () => {
@@ -155,15 +172,21 @@ describe("Canvas", () => {
     renderCanvas(state);
 
     // Find overlay layer (has transform without scale)
-    const overlayLayers = Array.from(document.querySelectorAll('[style*="transform"]'));
+    const overlayLayers = Array.from(
+      document.querySelectorAll('[style*="transform"]'),
+    );
     const overlayLayer = overlayLayers.find((el) => {
       const style = (el as HTMLElement).style.transform;
       return style?.includes("translate") && !style?.includes("scale");
     });
 
     expect(overlayLayer).toBeTruthy();
-    expect((overlayLayer as HTMLElement).style.transform).toContain("translate(100px, 200px)");
-    expect((overlayLayer as HTMLElement).style.transform).not.toContain("scale");
+    expect((overlayLayer as HTMLElement).style.transform).toContain(
+      "translate(100px, 200px)",
+    );
+    expect((overlayLayer as HTMLElement).style.transform).not.toContain(
+      "scale",
+    );
   });
 
   test("renders overlay for root timegroup", () => {
@@ -182,7 +205,9 @@ describe("Canvas", () => {
 
     // Overlay should be rendered (check for overlay-specific content)
     // The overlay contains resize handles when active/selected
-    const canvas = document.querySelector(".flex-1.overflow-hidden.relative.bg-gray-950");
+    const canvas = document.querySelector(
+      ".flex-1.overflow-hidden.relative.bg-gray-950",
+    );
     expect(canvas).toBeTruthy();
   });
 
@@ -211,7 +236,9 @@ describe("Canvas", () => {
     renderCanvas(state);
 
     // Child element should be rendered in content layer
-    const childElementInDOM = document.querySelector('[data-element-id="child1"]');
+    const childElementInDOM = document.querySelector(
+      '[data-element-id="child1"]',
+    );
     expect(childElementInDOM).toBeTruthy();
   });
 
@@ -223,7 +250,9 @@ describe("Canvas", () => {
     });
 
     const { actions } = renderCanvas(state);
-    const canvas = document.querySelector(".flex-1.overflow-hidden.relative.bg-gray-950") as HTMLElement;
+    const canvas = document.querySelector(
+      ".flex-1.overflow-hidden.relative.bg-gray-950",
+    ) as HTMLElement;
 
     // Simulate mouse down on canvas background
     const mouseDown = new MouseEvent("mousedown", {
@@ -254,7 +283,9 @@ describe("Canvas", () => {
     });
 
     const { actions } = renderCanvas(state);
-    const canvas = document.querySelector(".flex-1.overflow-hidden.relative.bg-gray-950") as HTMLElement;
+    const canvas = document.querySelector(
+      ".flex-1.overflow-hidden.relative.bg-gray-950",
+    ) as HTMLElement;
 
     // Simulate wheel with modifier (zoom)
     const wheelEvent = new WheelEvent("wheel", {
@@ -280,7 +311,9 @@ describe("Canvas", () => {
     });
 
     const { actions } = renderCanvas(state);
-    const canvas = document.querySelector(".flex-1.overflow-hidden.relative.bg-gray-950") as HTMLElement;
+    const canvas = document.querySelector(
+      ".flex-1.overflow-hidden.relative.bg-gray-950",
+    ) as HTMLElement;
 
     // Simulate wheel without modifier (pan)
     const wheelEvent = new WheelEvent("wheel", {
@@ -297,6 +330,3 @@ describe("Canvas", () => {
     expect(call.y).toBeDefined();
   });
 });
-
-
-

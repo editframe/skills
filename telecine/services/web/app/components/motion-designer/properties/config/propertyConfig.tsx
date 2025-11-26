@@ -20,4 +20,3 @@ export const propertySections: PropertySectionConfig[] = [
   ...layoutProperties,
   ...visualProperties,
 ];
-

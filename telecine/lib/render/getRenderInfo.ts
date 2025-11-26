@@ -28,14 +28,14 @@ program.action(async (options) => {
       links:
         OTEL_TRACE_ID && OTEL_SPAN_ID
           ? [
-            {
-              context: {
-                traceId: OTEL_TRACE_ID,
-                spanId: OTEL_SPAN_ID,
-                traceFlags: OTEL_TRACE_FLAGS ?? 1,
+              {
+                context: {
+                  traceId: OTEL_TRACE_ID,
+                  spanId: OTEL_SPAN_ID,
+                  traceFlags: OTEL_TRACE_FLAGS ?? 1,
+                },
               },
-            },
-          ]
+            ]
           : undefined,
     },
     async (span) => {
@@ -47,9 +47,8 @@ program.action(async (options) => {
         });
 
         logger.info("Starting getRenderInfo");
-        const { electronApp } = await import(
-          "@/electron-exec/electronReExport"
-        );
+        const { electronApp } =
+          await import("@/electron-exec/electronReExport");
         const extractionInfo = ExtractionInfo.parse(
           JSON.parse(options.extractionInfo),
         );

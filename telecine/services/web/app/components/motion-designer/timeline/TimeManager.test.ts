@@ -13,12 +13,12 @@ function createTimegroupElement(id: string, duration: string = "5s") {
     pause: vi.fn(),
   };
   (timegroupElement as any).seek = vi.fn();
-  
+
   // In jsdom, custom elements may not be fully defined, so we need to provide
   // a durationMs getter that reads from the attribute (mimicking real behavior)
   // This is minimal mocking that mirrors the real element's behavior
   Object.defineProperty(timegroupElement, "durationMs", {
-    get: function() {
+    get: function () {
       const dur = this.getAttribute("duration") || "5s";
       if (dur.endsWith("ms")) {
         return parseFloat(dur.slice(0, -2)) || 5000;
@@ -30,7 +30,7 @@ function createTimegroupElement(id: string, duration: string = "5s") {
     },
     configurable: true,
   });
-  
+
   document.body.appendChild(timegroupElement);
   return timegroupElement;
 }
@@ -228,4 +228,3 @@ describe("TimeManager", () => {
     });
   });
 });
-

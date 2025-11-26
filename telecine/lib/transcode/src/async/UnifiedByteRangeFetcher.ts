@@ -1,13 +1,16 @@
 /**
  * Unified Byte Range Fetcher
- * 
+ *
  * Automatically chooses between HTTP and local file fetching
  * based on the URL protocol or path format.
  */
 
-import { HttpByteRangeFetcher } from './HttpByteRangeFetcher.js';
-import { LocalFileByteRangeFetcher } from './LocalFileByteRangeFetcher.js';
-import type { ByteRangeRequest, ByteRangeResponse } from './HttpByteRangeFetcher.js';
+import { HttpByteRangeFetcher } from "./HttpByteRangeFetcher.js";
+import { LocalFileByteRangeFetcher } from "./LocalFileByteRangeFetcher.js";
+import type {
+  ByteRangeRequest,
+  ByteRangeResponse,
+} from "./HttpByteRangeFetcher.js";
 
 export class UnifiedByteRangeFetcher {
   private httpFetcher: HttpByteRangeFetcher;
@@ -23,7 +26,9 @@ export class UnifiedByteRangeFetcher {
     return fetcher.fetchByteRange(request);
   }
 
-  async fetchMultipleRanges(requests: ByteRangeRequest[]): Promise<ByteRangeResponse[]> {
+  async fetchMultipleRanges(
+    requests: ByteRangeRequest[],
+  ): Promise<ByteRangeResponse[]> {
     // Group requests by fetcher type for efficiency
     const httpRequests: ByteRangeRequest[] = [];
     const localRequests: ByteRangeRequest[] = [];
@@ -40,8 +45,12 @@ export class UnifiedByteRangeFetcher {
     const results: ByteRangeResponse[] = [];
 
     const [httpResults, localResults] = await Promise.all([
-      httpRequests.length > 0 ? this.httpFetcher.fetchMultipleRanges(httpRequests) : [],
-      localRequests.length > 0 ? this.localFetcher.fetchMultipleRanges(localRequests) : []
+      httpRequests.length > 0
+        ? this.httpFetcher.fetchMultipleRanges(httpRequests)
+        : [],
+      localRequests.length > 0
+        ? this.localFetcher.fetchMultipleRanges(localRequests)
+        : [],
     ]);
 
     // Merge results back in original order
@@ -78,7 +87,9 @@ export class UnifiedByteRangeFetcher {
   /**
    * Get the appropriate fetcher for a given URL
    */
-  private getFetcher(url: string): HttpByteRangeFetcher | LocalFileByteRangeFetcher {
+  private getFetcher(
+    url: string,
+  ): HttpByteRangeFetcher | LocalFileByteRangeFetcher {
     return this.isLocalFile(url) ? this.localFetcher : this.httpFetcher;
   }
 
@@ -87,12 +98,12 @@ export class UnifiedByteRangeFetcher {
    */
   private isLocalFile(url: string): boolean {
     // Check for file:// protocol
-    if (url.startsWith('file://')) {
+    if (url.startsWith("file://")) {
       return true;
     }
 
     // Check for HTTP/HTTPS protocols (these are definitely remote)
-    if (url.startsWith('http://') || url.startsWith('https://')) {
+    if (url.startsWith("http://") || url.startsWith("https://")) {
       return false;
     }
 
@@ -108,7 +119,7 @@ export class UnifiedByteRangeFetcher {
 export async function fetchByteRange(
   url: string,
   startByte: number,
-  endByte: number
+  endByte: number,
 ): Promise<ByteRangeResponse> {
   const fetcher = new UnifiedByteRangeFetcher();
   return fetcher.fetchByteRange({ url, startByte, endByte });
@@ -121,32 +132,33 @@ export async function validateByteRangeSupport(url: string): Promise<{
   supported: boolean;
   totalSize?: number;
   error?: string;
-  sourceType: 'http' | 'local';
+  sourceType: "http" | "local";
 }> {
   try {
     const fetcher = new UnifiedByteRangeFetcher();
-    const isLocal = url.startsWith('file://') ||
-      (!url.startsWith('http://') && !url.startsWith('https://'));
+    const isLocal =
+      url.startsWith("file://") ||
+      (!url.startsWith("http://") && !url.startsWith("https://"));
 
     const [supported, totalSize] = await Promise.all([
       fetcher.supportsRangeRequests(url),
-      fetcher.getResourceSize(url)
+      fetcher.getResourceSize(url),
     ]);
 
     return {
       supported,
       totalSize: totalSize || undefined,
-      sourceType: isLocal ? 'local' : 'http'
+      sourceType: isLocal ? "local" : "http",
     };
-
   } catch (error) {
-    const isLocal = url.startsWith('file://') ||
-      (!url.startsWith('http://') && !url.startsWith('https://'));
+    const isLocal =
+      url.startsWith("file://") ||
+      (!url.startsWith("http://") && !url.startsWith("https://"));
 
     return {
       supported: false,
       error: error instanceof Error ? error.message : String(error),
-      sourceType: isLocal ? 'local' : 'http'
+      sourceType: isLocal ? "local" : "http",
     };
   }
-} 
+}

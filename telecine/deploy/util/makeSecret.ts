@@ -4,7 +4,7 @@ import { GCP_PROJECT } from "../resources/constants";
 
 /**
  * Creates a new secret in Google Cloud Secret Manager and sets its initial value
- * 
+ *
  * @param prefix - A unique identifier used to name the secret and its version
  * @param value - The secret value to store. Can be either a string or a Pulumi output
  * @param dependsOn - Optional Pulumi resources that this secret depends on

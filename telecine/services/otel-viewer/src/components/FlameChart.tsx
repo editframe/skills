@@ -12,7 +12,7 @@ interface FlameChartProps {
   hoveredLogIndex: number | null;
   onLogHover: (index: number | null) => void;
   isLiveMode?: boolean;
-  spanFilters: Map<string, 'show' | 'hide'>;
+  spanFilters: Map<string, "show" | "hide">;
   spanFiltersActive: boolean;
 }
 
@@ -35,9 +35,13 @@ function flattenSpans(rootSpans: Span[], allSpans: Span[]): FlatSpan[] {
   return result;
 }
 
-function renderTimeline(traceDuration: bigint, zoomStart: number, zoomEnd: number) {
+function renderTimeline(
+  traceDuration: bigint,
+  zoomStart: number,
+  zoomEnd: number,
+) {
   const totalDurationMs = Number(traceDuration) / 1_000_000;
-  const visibleDurationMs = totalDurationMs * (zoomEnd - zoomStart) / 100;
+  const visibleDurationMs = (totalDurationMs * (zoomEnd - zoomStart)) / 100;
   const offsetMs = totalDurationMs * (zoomStart / 100);
 
   const ticks = [];
@@ -61,17 +65,17 @@ function renderTimeline(traceDuration: bigint, zoomStart: number, zoomEnd: numbe
 
   const startTick = Math.floor(offsetMs / tickInterval) * tickInterval;
 
-  for (let t = startTick; t <= offsetMs + visibleDurationMs; t += tickInterval) {
+  for (
+    let t = startTick;
+    t <= offsetMs + visibleDurationMs;
+    t += tickInterval
+  ) {
     if (t < offsetMs) continue;
     const percent = ((t - offsetMs) / visibleDurationMs) * 100;
     ticks.push(
-      <div
-        key={t}
-        className="timeline-tick"
-        style={{ left: `${percent}%` }}
-      >
+      <div key={t} className="timeline-tick" style={{ left: `${percent}%` }}>
         {Math.round(t)}ms
-      </div>
+      </div>,
     );
   }
 
@@ -88,7 +92,7 @@ export function FlameChart({
   onLogHover,
   isLiveMode,
   spanFilters,
-  spanFiltersActive
+  spanFiltersActive,
 }: FlameChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const currentZoomRef = useRef({ start: zoomStart, end: zoomEnd });
@@ -117,17 +121,19 @@ export function FlameChart({
   const filteredSpans = useMemo(() => {
     if (!spanFiltersActive || spanFilters.size === 0) return flatSpans;
 
-    const hasShowFilters = Array.from(spanFilters.values()).some(mode => mode === 'show');
+    const hasShowFilters = Array.from(spanFilters.values()).some(
+      (mode) => mode === "show",
+    );
 
-    return flatSpans.filter(span => {
+    return flatSpans.filter((span) => {
       const filterMode = spanFilters.get(span.name);
 
-      if (filterMode === 'hide') {
+      if (filterMode === "hide") {
         return false;
       }
 
       if (hasShowFilters) {
-        return filterMode === 'show';
+        return filterMode === "show";
       }
 
       return true;
@@ -137,9 +143,11 @@ export function FlameChart({
   const visibleSpans = useMemo(() => {
     if (!trace) return filteredSpans;
 
-    return filteredSpans.filter(span => {
-      const spanStart = (Number(span.startTime - trace.minTime) / Number(trace.duration)) * 100;
-      const spanEnd = spanStart + (Number(span.duration) / Number(trace.duration)) * 100;
+    return filteredSpans.filter((span) => {
+      const spanStart =
+        (Number(span.startTime - trace.minTime) / Number(trace.duration)) * 100;
+      const spanEnd =
+        spanStart + (Number(span.duration) / Number(trace.duration)) * 100;
 
       return !(spanEnd < zoomStart || spanStart > zoomEnd);
     });
@@ -179,11 +187,15 @@ export function FlameChart({
         const mouseX = e.clientX - rect.left - 200;
         const containerWidth = rect.width - 200;
         const mousePercent = (mouseX / containerWidth) * 100;
-        const mousePositionInZoom = currStart + (mousePercent * (currEnd - currStart) / 100);
+        const mousePositionInZoom =
+          currStart + (mousePercent * (currEnd - currStart)) / 100;
 
         const zoomFactor = e.deltaY > 0 ? 1.1 : 0.9;
         const currentWidth = currEnd - currStart;
-        const newWidth = Math.min(100, Math.max(0.5, currentWidth * zoomFactor));
+        const newWidth = Math.min(
+          100,
+          Math.max(0.5, currentWidth * zoomFactor),
+        );
 
         if (Math.abs(newWidth - currentWidth) < 0.01) {
           return;
@@ -192,8 +204,8 @@ export function FlameChart({
         const leftRatio = (mousePositionInZoom - currStart) / currentWidth;
         const rightRatio = (currEnd - mousePositionInZoom) / currentWidth;
 
-        let newStart = mousePositionInZoom - (newWidth * leftRatio);
-        let newEnd = mousePositionInZoom + (newWidth * rightRatio);
+        let newStart = mousePositionInZoom - newWidth * leftRatio;
+        let newEnd = mousePositionInZoom + newWidth * rightRatio;
 
         if (newStart < 0) {
           newEnd = newEnd - newStart;
@@ -211,7 +223,10 @@ export function FlameChart({
         return;
       }
 
-      const isVerticalScroll = !e.shiftKey && Math.abs(e.deltaY) > Math.abs(e.deltaX) && e.deltaX === 0;
+      const isVerticalScroll =
+        !e.shiftKey &&
+        Math.abs(e.deltaY) > Math.abs(e.deltaX) &&
+        e.deltaX === 0;
 
       if (isVerticalScroll) {
         return;
@@ -239,13 +254,12 @@ export function FlameChart({
       }
     };
 
-    container.addEventListener('wheel', handleWheelNative, { passive: false });
+    container.addEventListener("wheel", handleWheelNative, { passive: false });
 
     return () => {
-      container.removeEventListener('wheel', handleWheelNative);
+      container.removeEventListener("wheel", handleWheelNative);
     };
   }, [trace, onZoomChange]);
-
 
   if (!trace) {
     return (
@@ -263,8 +277,8 @@ export function FlameChart({
       <div
         style={{
           height: `${virtualizer.getTotalSize()}px`,
-          width: '100%',
-          position: 'relative',
+          width: "100%",
+          position: "relative",
         }}
       >
         {virtualizer.getVirtualItems().map((virtualItem) => {
@@ -275,10 +289,10 @@ export function FlameChart({
             <div
               key={virtualItem.key}
               style={{
-                position: 'absolute',
+                position: "absolute",
                 top: 0,
                 left: 0,
-                width: '100%',
+                width: "100%",
                 transform: `translateY(${virtualItem.start}px)`,
               }}
             >
@@ -322,16 +336,20 @@ function SpanRow({
   logsInTrace,
   logIndexMap,
   hoveredLogIndex,
-  onLogHover
+  onLogHover,
 }: SpanRowProps) {
-  const spanStart = (Number(span.startTime - trace.minTime) / Number(trace.duration)) * 100;
-  const spanEnd = spanStart + (Number(span.duration) / Number(trace.duration)) * 100;
+  const spanStart =
+    (Number(span.startTime - trace.minTime) / Number(trace.duration)) * 100;
+  const spanEnd =
+    spanStart + (Number(span.duration) / Number(trace.duration)) * 100;
 
   const visibleStart = Math.max(spanStart, zoomStart);
   const visibleEnd = Math.min(spanEnd, zoomEnd);
 
-  const relativeStart = ((visibleStart - zoomStart) / (zoomEnd - zoomStart)) * 100;
-  const relativeWidth = ((visibleEnd - visibleStart) / (zoomEnd - zoomStart)) * 100;
+  const relativeStart =
+    ((visibleStart - zoomStart) / (zoomEnd - zoomStart)) * 100;
+  const relativeWidth =
+    ((visibleEnd - visibleStart) / (zoomEnd - zoomStart)) * 100;
 
   const levelClass = `level-${span.level % 6}`;
   const errorClass = span.isError ? " error" : "";
@@ -342,15 +360,12 @@ function SpanRow({
   const showLabelOutside = relativeWidth < minWidthForLabel;
 
   const spanLogs = useMemo(
-    () => logsInTrace.filter(log => log.spanId === span.spanId),
-    [logsInTrace, span.spanId]
+    () => logsInTrace.filter((log) => log.spanId === span.spanId),
+    [logsInTrace, span.spanId],
   );
 
   return (
-    <div
-      className="span-row"
-      onClick={() => onSelectSpan(span.spanId)}
-    >
+    <div className="span-row" onClick={() => onSelectSpan(span.spanId)}>
       <div className={`span-label ${indentClass}`} title={span.name}>
         {span.name}
       </div>
@@ -361,9 +376,7 @@ function SpanRow({
           title={`${span.name} - ${durationText}`}
         >
           {!showLabelOutside && (
-            <span className="span-text">
-              {durationText}
-            </span>
+            <span className="span-text">{durationText}</span>
           )}
         </div>
         {showLabelOutside && (
@@ -375,13 +388,17 @@ function SpanRow({
           </span>
         )}
         {spanLogs.map((log, logIdx) => {
-          const logTime = (Number(log.timeUnixNano - trace.minTime) / Number(trace.duration)) * 100;
+          const logTime =
+            (Number(log.timeUnixNano - trace.minTime) /
+              Number(trace.duration)) *
+            100;
 
           if (logTime < zoomStart || logTime > zoomEnd) {
             return null;
           }
 
-          const relativePosition = ((logTime - zoomStart) / (zoomEnd - zoomStart)) * 100;
+          const relativePosition =
+            ((logTime - zoomStart) / (zoomEnd - zoomStart)) * 100;
           const severityClass = log.severityText.toLowerCase();
           const logIndex = logIndexMap.get(log) ?? -1;
           const isHovered = hoveredLogIndex === logIndex;
@@ -389,7 +406,7 @@ function SpanRow({
           return (
             <div
               key={logIdx}
-              className={`span-log-marker log-${severityClass} ${isHovered ? 'hovered' : ''}`}
+              className={`span-log-marker log-${severityClass} ${isHovered ? "hovered" : ""}`}
               style={{ left: `${relativePosition}%` }}
               title={`[${log.severityText}] ${log.body}`}
               onMouseEnter={() => onLogHover(logIndex)}

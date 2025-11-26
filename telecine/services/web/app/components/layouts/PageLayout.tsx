@@ -26,7 +26,7 @@ export function PageLayout({
         themeClasses.pageText,
         themeClasses.pageSelection,
         "min-h-screen antialiased",
-        className
+        className,
       )}
     >
       {containerClassName ? (
@@ -37,4 +37,3 @@ export function PageLayout({
     </div>
   );
 }
-

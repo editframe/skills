@@ -1,5 +1,9 @@
 import { describe, test, expect } from "vitest";
-import { hasRotateAnimations, parseRotationFromTransform, getBaseRotation } from "./rotationUtils";
+import {
+  hasRotateAnimations,
+  parseRotationFromTransform,
+  getBaseRotation,
+} from "./rotationUtils";
 import type { ElementNode } from "~/lib/motion-designer/types";
 
 function createElement(overrides: Partial<ElementNode> = {}): ElementNode {
@@ -113,12 +117,19 @@ describe("rotationUtils", () => {
 
     test("parses rotate() function with radians", () => {
       const radians = Math.PI / 4; // 45 degrees
-      expect(parseRotationFromTransform(`rotate(${radians}rad)`)).toBeCloseTo(45, 5);
+      expect(parseRotationFromTransform(`rotate(${radians}rad)`)).toBeCloseTo(
+        45,
+        5,
+      );
     });
 
     test("parses rotate() from complex transform string", () => {
-      expect(parseRotationFromTransform("translateX(10px) rotate(45deg) scale(2)")).toBe(45);
-      expect(parseRotationFromTransform("rotate(90deg) translateY(20px)")).toBe(90);
+      expect(
+        parseRotationFromTransform("translateX(10px) rotate(45deg) scale(2)"),
+      ).toBe(45);
+      expect(parseRotationFromTransform("rotate(90deg) translateY(20px)")).toBe(
+        90,
+      );
     });
 
     test("parses rotation from matrix() transform", () => {
@@ -179,4 +190,3 @@ describe("rotationUtils", () => {
     });
   });
 });
-

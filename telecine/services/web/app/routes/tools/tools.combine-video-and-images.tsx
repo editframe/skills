@@ -5,29 +5,29 @@ import "~/styles/marketing.css";
 import { Layout } from "~/layouts/tools";
 
 export const loader = async (args: LoaderFunctionArgs) => {
-      const session = await parseRequestSession(args.request);
+  const session = await parseRequestSession(args.request);
 
-      return {
-            isLogged: !!session,
-      };
+  return {
+    isLogged: !!session,
+  };
 };
 
 export const meta: MetaFunction = () => {
-      return [
-            {
-                  title: "Combine Video and Images | Editframe",
-                  description:
-                        "Merge your videos and images online, and combine it all. Use any number of images and clips and combine them together.",
-            },
-      ];
+  return [
+    {
+      title: "Combine Video and Images | Editframe",
+      description:
+        "Merge your videos and images online, and combine it all. Use any number of images and clips and combine them together.",
+    },
+  ];
 };
 const IndexPage = () => {
-      return (
-            <Layout
-                  title=" Combine Video and Images"
-                  description="Merge your videos and images online, and combine it all. Use any number of images and clips and combine them together."
-                  playground={{
-                        code: ` <ef-timegroup
+  return (
+    <Layout
+      title=" Combine Video and Images"
+      description="Merge your videos and images online, and combine it all. Use any number of images and clips and combine them together."
+      playground={{
+        code: ` <ef-timegroup
       mode="sequence"
       class="w-[400px] h-[400px] bg-black relative overflow-hidden"
 >
@@ -78,9 +78,9 @@ const IndexPage = () => {
       </ef-timegroup>
 </ef-timegroup>
 `,
-                        presetCode: "{{code}}",
-                  }}
-                  content={`
+        presetCode: "{{code}}",
+      }}
+      content={`
                   <p class="mb-4">
 Leverage Editframe's API to programmatically merge videos and images into seamless compositions. Simply integrate still images into video timelines, with control over duration, transitions, and effects. Perfect for developers creating tools for visual storytelling, product showcases, or dynamic slideshows.
 
@@ -89,7 +89,7 @@ Leverage Editframe's API to programmatically merge videos and images into seamle
 This capability allows for creative mixing of different visual media types. Developers could build systems for automatically generating video product catalogs that combine product photos with demo videos, or create tools for easily producing dynamic photo-video hybrid content for social media.
 </p>   
 `}
-            />
-      );
+    />
+  );
 };
 export default IndexPage;

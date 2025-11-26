@@ -7,7 +7,10 @@ import {
 } from "./invariants.js";
 import type { MotionDesignerState, ElementNode } from "./types.js";
 
-function createTimegroup(id: string, parentId: string | null = null): ElementNode {
+function createTimegroup(
+  id: string,
+  parentId: string | null = null,
+): ElementNode {
   return {
     id,
     type: "timegroup",
@@ -180,9 +183,9 @@ describe("validateTimegroupRootLevel", () => {
 
     const result = validateTimegroupRootLevel(state);
     expect(result.isValid).toBe(false);
-    expect(
-      result.errors.some((e) => e.includes("must be at root level")),
-    ).toBe(true);
+    expect(result.errors.some((e) => e.includes("must be at root level"))).toBe(
+      true,
+    );
   });
 });
 
@@ -232,7 +235,9 @@ describe("validateParentChildConsistency", () => {
     const result = validateParentChildConsistency(state);
     expect(result.isValid).toBe(false);
     expect(
-      result.errors.some((e) => e.includes("parent's childIds doesn't include")),
+      result.errors.some((e) =>
+        e.includes("parent's childIds doesn't include"),
+      ),
     ).toBe(true);
   });
 
@@ -358,4 +363,3 @@ describe("validateAllInvariants", () => {
     }).toThrow();
   });
 });
-

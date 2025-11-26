@@ -53,7 +53,10 @@ describe("deepClone", () => {
   });
 
   test("clones nested arrays", () => {
-    const arr = [[1, 2], [3, 4]];
+    const arr = [
+      [1, 2],
+      [3, 4],
+    ];
     const cloned = deepClone(arr);
 
     expect(cloned).toEqual(arr);
@@ -184,4 +187,3 @@ describe("immutability guarantees", () => {
     expect(target.b).toEqual({ c: 2 });
   });
 });
-

@@ -13,7 +13,11 @@ function createElementNode(overrides: Partial<ElementNode> = {}): ElementNode {
   };
 }
 
-function createAnimation(overrides: Partial<Animation & { keyframes?: Array<{ time: number; value: string }> }> = {}): Animation & { keyframes?: Array<{ time: number; value: string }> } {
+function createAnimation(
+  overrides: Partial<
+    Animation & { keyframes?: Array<{ time: number; value: string }> }
+  > = {},
+): Animation & { keyframes?: Array<{ time: number; value: string }> } {
   return {
     id: "anim-1",
     property: "opacity",
@@ -50,11 +54,11 @@ describe("generateAnimationStyles", () => {
       // Check that each keyframe has only one translateX
       const keyframeMatches = css!.match(/\{\s*transform:\s*([^}]+);/g);
       expect(keyframeMatches).toBeTruthy();
-      
+
       keyframeMatches!.forEach((match) => {
         const transformValue = match.match(/transform:\s*([^;]+)/)?.[1];
         expect(transformValue).toBeTruthy();
-        
+
         // Count translateX occurrences in this keyframe
         const translateXMatches = transformValue!.match(/translateX\([^)]+\)/g);
         expect(translateXMatches?.length).toBeLessThanOrEqual(1);
@@ -80,7 +84,7 @@ describe("generateAnimationStyles", () => {
 
       // Check for 0% keyframe with -200%
       expect(css).toMatch(/0%\s*\{\s*transform:\s*translateX\(-200%\)/);
-      
+
       // Check for 100% keyframe with 200%
       expect(css).toMatch(/100%\s*\{\s*transform:\s*translateX\(200%\)/);
     });
@@ -107,10 +111,10 @@ describe("generateAnimationStyles", () => {
       // Extract all transform values from keyframes
       const transformMatches = css!.match(/transform:\s*([^;]+)/g);
       expect(transformMatches).toBeTruthy();
-      
+
       transformMatches!.forEach((match) => {
         const transformValue = match.replace("transform: ", "");
-        
+
         // Count translateX occurrences - should be exactly 1
         const translateXMatches = transformValue.match(/translateX\([^)]+\)/g);
         expect(translateXMatches?.length).toBe(1);
@@ -149,10 +153,10 @@ describe("generateAnimationStyles", () => {
       // Extract all transform values from keyframes
       const transformMatches = css!.match(/transform:\s*([^;]+)/g);
       expect(transformMatches).toBeTruthy();
-      
+
       transformMatches!.forEach((match) => {
         const transformValue = match.replace("transform: ", "").trim();
-        
+
         // Count translateX occurrences - should be exactly 1 per keyframe
         const translateXMatches = transformValue.match(/translateX\([^)]+\)/g);
         expect(translateXMatches?.length).toBe(1);
@@ -192,11 +196,11 @@ describe("generateAnimationStyles", () => {
       // Check that there are no duplicate translateX values in any keyframe
       const keyframeMatches = css!.match(/\{\s*transform:\s*([^}]+);/g);
       expect(keyframeMatches).toBeTruthy();
-      
+
       keyframeMatches!.forEach((match) => {
         const transformValue = match.match(/transform:\s*([^;]+)/)?.[1];
         expect(transformValue).toBeTruthy();
-        
+
         // Count translateX occurrences - should be exactly 1
         const translateXMatches = transformValue!.match(/translateX\([^)]+\)/g);
         expect(translateXMatches?.length).toBe(1);
@@ -230,7 +234,9 @@ describe("generateAnimationStyles", () => {
       // At 0% (before animation starts), should have backwards fill value
       // At 100% (after animation ends), should NOT have forwards fill value
       const cssLines = css!.split("\n");
-      const zeroPercentLine = cssLines.find((line) => line.includes("0%") && line.includes("transform"));
+      const zeroPercentLine = cssLines.find(
+        (line) => line.includes("0%") && line.includes("transform"),
+      );
       expect(zeroPercentLine).toBeTruthy();
       expect(zeroPercentLine).toMatch(/translateX\(100%\)/);
     });
@@ -277,10 +283,10 @@ describe("generateAnimationStyles", () => {
       // Extract all transform values from keyframes
       const transformMatches = css!.match(/transform:\s*([^;]+)/g);
       expect(transformMatches).toBeTruthy();
-      
+
       transformMatches!.forEach((match) => {
         const transformValue = match.replace("transform: ", "").trim();
-        
+
         // Count translateX occurrences - should be exactly 1
         const translateXMatches = transformValue.match(/translateX\([^)]+\)/g);
         expect(translateXMatches?.length).toBe(1);
@@ -323,14 +329,14 @@ describe("generateAnimationStyles", () => {
       // Each keyframe should have exactly one of each
       const keyframeMatches = css!.match(/\{\s*transform:\s*([^}]+);/g);
       expect(keyframeMatches).toBeTruthy();
-      
+
       keyframeMatches!.forEach((match) => {
         const transformValue = match.match(/transform:\s*([^;]+)/)?.[1];
         expect(transformValue).toBeTruthy();
-        
+
         const translateXMatches = transformValue!.match(/translateX\([^)]+\)/g);
         const translateYMatches = transformValue!.match(/translateY\([^)]+\)/g);
-        
+
         expect(translateXMatches?.length).toBe(1);
         expect(translateYMatches?.length).toBe(1);
       });
@@ -499,4 +505,3 @@ describe("generateAnimationStyles", () => {
     });
   });
 });
-

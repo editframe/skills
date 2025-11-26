@@ -17,19 +17,33 @@ export const generateTrackFragmentIndexFromPath = async (
   // First check format-level start_time
   if (probe.format.start_time && Number(probe.format.start_time) !== 0) {
     startTimeOffsetMs = Number(probe.format.start_time) * 1000;
-    log(`Extracted format start_time offset: ${probe.format.start_time}s (${startTimeOffsetMs}ms)`);
+    log(
+      `Extracted format start_time offset: ${probe.format.start_time}s (${startTimeOffsetMs}ms)`,
+    );
   } else {
     // Check for video stream start_time (more common)
-    const videoStream = probe.streams.find(stream => stream.codec_type === 'video');
-    if (videoStream && videoStream.start_time && Number(videoStream.start_time) !== 0) {
+    const videoStream = probe.streams.find(
+      (stream) => stream.codec_type === "video",
+    );
+    if (
+      videoStream &&
+      videoStream.start_time &&
+      Number(videoStream.start_time) !== 0
+    ) {
       startTimeOffsetMs = Number(videoStream.start_time) * 1000;
-      log(`Extracted video stream start_time offset: ${videoStream.start_time}s (${startTimeOffsetMs}ms)`);
+      log(
+        `Extracted video stream start_time offset: ${videoStream.start_time}s (${startTimeOffsetMs}ms)`,
+      );
     } else {
-      log("No format/stream timing offset found - will detect from composition time");
+      log(
+        "No format/stream timing offset found - will detect from composition time",
+      );
     }
   }
 
-  log(`Generating track fragment index for ${absolutePath} using single-track approach`);
+  log(
+    `Generating track fragment index for ${absolutePath} using single-track approach`,
+  );
 
   // FIXED: Generate fragment indexes from individual single-track files
   // This ensures byte offsets match the actual single-track files that clients will request
@@ -40,7 +54,7 @@ export const generateTrackFragmentIndexFromPath = async (
     const stream = probe.streams[streamIndex]!;
 
     // Only process audio and video streams
-    if (stream.codec_type !== 'audio' && stream.codec_type !== 'video') {
+    if (stream.codec_type !== "audio" && stream.codec_type !== "video") {
       continue;
     }
 
@@ -54,7 +68,7 @@ export const generateTrackFragmentIndexFromPath = async (
     const singleTrackIndexes = await generateFragmentIndex(
       trackStream,
       startTimeOffsetMs,
-      trackIdMapping
+      trackIdMapping,
     );
 
     // Merge the single-track index into the combined result

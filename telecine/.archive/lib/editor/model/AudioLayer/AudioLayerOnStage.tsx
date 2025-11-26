@@ -76,5 +76,5 @@ export const AudioLayerOnStage = observer(
         <audio src={layer.srcUrl} ref={audioRef} />
       </>
     );
-  }
+  },
 );

@@ -40,7 +40,7 @@ interface UpdatedRender extends Selectable<Video2Renders> {
 // This makes the logic easier to test and understand
 export const extractAndUpdateRenderInfo = async (
   render: Selectable<Video2Renders>,
-  context: RenderEngineContext
+  context: RenderEngineContext,
 ): Promise<UpdatedRender> => {
   logger.debug("Getting render info");
   const renderInfo = await context.getRenderInfo();
@@ -73,7 +73,7 @@ export const extractAndUpdateRenderInfo = async (
 // This keeps the initialization logic focused on its primary responsibility
 export const processStillRender = async (
   renderContext: RenderContext,
-  outputConfig: OutputConfiguration
+  outputConfig: OutputConfiguration,
 ): Promise<void> => {
   const { render, context } = renderContext;
 
@@ -118,16 +118,15 @@ export const processStillRender = async (
 // IMPLEMENTATION GUIDELINES: Extract job creation logic to improve readability
 // This separates the complex fragment job creation from initialization logic
 export const createFragmentJobs = (
-  updatedRender: UpdatedRender
+  updatedRender: UpdatedRender,
 ): EnqueableJob<any>[] => {
-  const { allFragmentIds, completeFragmentIds } =
-    extractFragmentCompletionInfo(
-      {
-        duration_ms: updatedRender.duration_ms,
-        work_slice_ms: updatedRender.work_slice_ms!,
-      },
-      [] as Selectable<Video2RenderFragments>[],
-    );
+  const { allFragmentIds, completeFragmentIds } = extractFragmentCompletionInfo(
+    {
+      duration_ms: updatedRender.duration_ms,
+      work_slice_ms: updatedRender.work_slice_ms!,
+    },
+    [] as Selectable<Video2RenderFragments>[],
+  );
 
   const jobs: EnqueableJob<any>[] = [];
 
@@ -161,8 +160,8 @@ export const createFragmentJobs = (
 
 export const setupProgressTracking = (
   renderId: string,
-  jobCount: number
+  jobCount: number,
 ): void => {
   const progressTracker = new ProgressTracker(`render:${renderId}`);
   progressTracker.writeSize(jobCount);
-}; 
+};

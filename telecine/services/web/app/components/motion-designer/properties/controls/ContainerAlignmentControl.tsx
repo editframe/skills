@@ -1,5 +1,12 @@
 import React from "react";
-import { AlignLeft, AlignCenterHorizontal, AlignRight, AlignTop, AlignCenterVertical, AlignBottom } from "@phosphor-icons/react";
+import {
+  AlignLeft,
+  AlignCenterHorizontal,
+  AlignRight,
+  AlignTop,
+  AlignCenterVertical,
+  AlignBottom,
+} from "@phosphor-icons/react";
 
 interface ContainerAlignmentControlProps {
   label: string;
@@ -18,15 +25,39 @@ export function ContainerAlignmentControl({
   const currentAlign = alignItems || "start";
 
   const justifyOptions = [
-    { value: "start", icon: <AlignLeft className="w-3.5 h-3.5" />, title: "Start" },
-    { value: "center", icon: <AlignCenterHorizontal className="w-3.5 h-3.5" />, title: "Center" },
-    { value: "end", icon: <AlignRight className="w-3.5 h-3.5" />, title: "End" },
+    {
+      value: "start",
+      icon: <AlignLeft className="w-3.5 h-3.5" />,
+      title: "Start",
+    },
+    {
+      value: "center",
+      icon: <AlignCenterHorizontal className="w-3.5 h-3.5" />,
+      title: "Center",
+    },
+    {
+      value: "end",
+      icon: <AlignRight className="w-3.5 h-3.5" />,
+      title: "End",
+    },
   ];
 
   const alignOptions = [
-    { value: "start", icon: <AlignTop className="w-3.5 h-3.5" />, title: "Start" },
-    { value: "center", icon: <AlignCenterVertical className="w-3.5 h-3.5" />, title: "Center" },
-    { value: "end", icon: <AlignBottom className="w-3.5 h-3.5" />, title: "End" },
+    {
+      value: "start",
+      icon: <AlignTop className="w-3.5 h-3.5" />,
+      title: "Start",
+    },
+    {
+      value: "center",
+      icon: <AlignCenterVertical className="w-3.5 h-3.5" />,
+      title: "Center",
+    },
+    {
+      value: "end",
+      icon: <AlignBottom className="w-3.5 h-3.5" />,
+      title: "End",
+    },
   ];
 
   return (
@@ -37,7 +68,9 @@ export function ContainerAlignmentControl({
         </label>
         <div className="flex-1 space-y-1">
           <div className="flex items-center gap-1">
-            <span className="text-[7px] text-gray-600 font-bold uppercase w-3">H</span>
+            <span className="text-[7px] text-gray-600 font-bold uppercase w-3">
+              H
+            </span>
             <div className="flex-1 flex gap-1">
               {justifyOptions.map((option) => (
                 <button
@@ -47,9 +80,10 @@ export function ContainerAlignmentControl({
                   className={`
                     flex items-center justify-center px-2 py-1 rounded text-[9px] font-medium
                     transition-colors flex-1
-                    ${currentJustify === option.value
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 hover:text-gray-300"
+                    ${
+                      currentJustify === option.value
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 hover:text-gray-300"
                     }
                   `}
                 >
@@ -59,7 +93,9 @@ export function ContainerAlignmentControl({
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <span className="text-[7px] text-gray-600 font-bold uppercase w-3">V</span>
+            <span className="text-[7px] text-gray-600 font-bold uppercase w-3">
+              V
+            </span>
             <div className="flex-1 flex gap-1">
               {alignOptions.map((option) => (
                 <button
@@ -69,9 +105,10 @@ export function ContainerAlignmentControl({
                   className={`
                     flex items-center justify-center px-2 py-1 rounded text-[9px] font-medium
                     transition-colors flex-1
-                    ${currentAlign === option.value
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 hover:text-gray-300"
+                    ${
+                      currentAlign === option.value
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 hover:text-gray-300"
                     }
                   `}
                 >
@@ -85,6 +122,3 @@ export function ContainerAlignmentControl({
     </div>
   );
 }
-
-
-

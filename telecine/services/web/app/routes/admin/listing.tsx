@@ -40,10 +40,12 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     throw new Response("Not Found", { status: 404 });
   }
 
-  const resourceModule = ResourceModules[params.resourceType as keyof typeof ResourceModules];
+  const resourceModule =
+    ResourceModules[params.resourceType as keyof typeof ResourceModules];
 
   const whereClause = resourceModule.index.buildWhereClause?.(searchParams);
-  const customVariables = resourceModule.index.buildVariables?.(searchParams) || {};
+  const customVariables =
+    resourceModule.index.buildVariables?.(searchParams) || {};
 
   return {
     resourceType: params.resourceType as keyof typeof ResourceModules,
@@ -100,9 +102,11 @@ export const ResourceIndexWrapper = ({
     if (!ResourceModules[resourceType]) {
       throw new Error("No resource module found for resource type");
     }
-    return ResourceModules[resourceType].index.buildVariables?.(
-      debouncedSearchParams,
-    ) || {};
+    return (
+      ResourceModules[resourceType].index.buildVariables?.(
+        debouncedSearchParams,
+      ) || {}
+    );
   }, [debouncedSearchParams, resourceType]);
 
   // Memoize subscription parameters

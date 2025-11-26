@@ -22,15 +22,35 @@ const GRID_POSITIONS_ROW = [
   { justify: "flex-start", align: "flex-end", title: "Bottom Left" },
   { justify: "center", align: "flex-end", title: "Bottom Center" },
   { justify: "flex-end", align: "flex-end", title: "Bottom Right" },
-  { justify: "space-between", align: "flex-start", title: "Space Between - Top" },
+  {
+    justify: "space-between",
+    align: "flex-start",
+    title: "Space Between - Top",
+  },
   { justify: "space-around", align: "flex-start", title: "Space Around - Top" },
   { justify: "space-evenly", align: "flex-start", title: "Space Evenly - Top" },
-  { justify: "space-between", align: "center", title: "Space Between - Center" },
+  {
+    justify: "space-between",
+    align: "center",
+    title: "Space Between - Center",
+  },
   { justify: "space-around", align: "center", title: "Space Around - Center" },
   { justify: "space-evenly", align: "center", title: "Space Evenly - Center" },
-  { justify: "space-between", align: "flex-end", title: "Space Between - Bottom" },
-  { justify: "space-around", align: "flex-end", title: "Space Around - Bottom" },
-  { justify: "space-evenly", align: "flex-end", title: "Space Evenly - Bottom" },
+  {
+    justify: "space-between",
+    align: "flex-end",
+    title: "Space Between - Bottom",
+  },
+  {
+    justify: "space-around",
+    align: "flex-end",
+    title: "Space Around - Bottom",
+  },
+  {
+    justify: "space-evenly",
+    align: "flex-end",
+    title: "Space Evenly - Bottom",
+  },
 ];
 
 // For column, swap justify and align meanings
@@ -44,13 +64,33 @@ const GRID_POSITIONS_COLUMN = [
   { justify: "flex-end", align: "flex-start", title: "Bottom Left" },
   { justify: "flex-end", align: "center", title: "Bottom Center" },
   { justify: "flex-end", align: "flex-end", title: "Bottom Right" },
-  { justify: "flex-start", align: "space-between", title: "Space Between - Left" },
-  { justify: "flex-start", align: "space-around", title: "Space Around - Left" },
-  { justify: "flex-start", align: "space-evenly", title: "Space Evenly - Left" },
-  { justify: "center", align: "space-between", title: "Space Between - Center" },
+  {
+    justify: "flex-start",
+    align: "space-between",
+    title: "Space Between - Left",
+  },
+  {
+    justify: "flex-start",
+    align: "space-around",
+    title: "Space Around - Left",
+  },
+  {
+    justify: "flex-start",
+    align: "space-evenly",
+    title: "Space Evenly - Left",
+  },
+  {
+    justify: "center",
+    align: "space-between",
+    title: "Space Between - Center",
+  },
   { justify: "center", align: "space-around", title: "Space Around - Center" },
   { justify: "center", align: "space-evenly", title: "Space Evenly - Center" },
-  { justify: "flex-end", align: "space-between", title: "Space Between - Right" },
+  {
+    justify: "flex-end",
+    align: "space-between",
+    title: "Space Between - Right",
+  },
   { justify: "flex-end", align: "space-around", title: "Space Around - Right" },
   { justify: "flex-end", align: "space-evenly", title: "Space Evenly - Right" },
 ];
@@ -79,12 +119,12 @@ export function AlignmentGrid({
     // Check if this position matches current values
     const justifyMatches = justifyContent === justify;
     const alignMatches = alignItems === align;
-    
+
     // For spacing values, we need both to match
     if (spacingValues.includes(justify)) {
       return justifyMatches && alignMatches;
     }
-    
+
     // For standard positions, both must match
     return justifyMatches && alignMatches;
   };
@@ -116,7 +156,9 @@ export function AlignmentGrid({
             >
               <div
                 className={`w-0.5 h-0.5 rounded-full ${
-                  isActive(pos.justify, pos.align) ? "bg-blue-400" : "bg-gray-600"
+                  isActive(pos.justify, pos.align)
+                    ? "bg-blue-400"
+                    : "bg-gray-600"
                 }`}
               />
             </button>
@@ -139,12 +181,16 @@ export function AlignmentGrid({
                 <div className="flex items-center gap-0.5">
                   <div
                     className={`w-0.5 h-0.5 rounded-full ${
-                      isActive(pos.justify, pos.align) ? "bg-blue-400" : "bg-gray-600"
+                      isActive(pos.justify, pos.align)
+                        ? "bg-blue-400"
+                        : "bg-gray-600"
                     }`}
                   />
                   <div
                     className={`w-0.5 h-0.5 rounded-full ${
-                      isActive(pos.justify, pos.align) ? "bg-blue-400" : "bg-gray-600"
+                      isActive(pos.justify, pos.align)
+                        ? "bg-blue-400"
+                        : "bg-gray-600"
                     }`}
                   />
                 </div>
@@ -156,4 +202,3 @@ export function AlignmentGrid({
     </div>
   );
 }
-

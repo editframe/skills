@@ -37,8 +37,18 @@ export function FrameHighlight({
   // Calculate pixel positions - timeToPixels doesn't actually use containerWidth,
   // it calculates based on zoomScale and durationMs (pixels per second)
   // This matches how TimelineRuler and TimelinePlayhead calculate positions
-  const startPixels = timeToPixels(frameStartMs, durationMs, containerWidth, zoomScale);
-  const endPixels = timeToPixels(frameEndMs, durationMs, containerWidth, zoomScale);
+  const startPixels = timeToPixels(
+    frameStartMs,
+    durationMs,
+    containerWidth,
+    zoomScale,
+  );
+  const endPixels = timeToPixels(
+    frameEndMs,
+    durationMs,
+    containerWidth,
+    zoomScale,
+  );
   const widthPixels = endPixels - startPixels;
 
   // Don't render if width is too small or invalid
@@ -47,7 +57,7 @@ export function FrameHighlight({
   }
 
   // Debug logging (remove after confirming it works)
-  console.log('FrameHighlight render:', {
+  console.log("FrameHighlight render:", {
     currentTime,
     quantizedTimeMs,
     frameStartMs,
@@ -65,11 +75,10 @@ export function FrameHighlight({
       style={{
         left: `${startPixels}px`,
         width: `${widthPixels}px`,
-        backgroundColor: 'rgba(59, 130, 246, 0.4)', // blue-500 with 40% opacity - very visible for testing
-        borderLeft: '2px solid rgba(59, 130, 246, 0.8)',
+        backgroundColor: "rgba(59, 130, 246, 0.4)", // blue-500 with 40% opacity - very visible for testing
+        borderLeft: "2px solid rgba(59, 130, 246, 0.8)",
         zIndex: 5, // Higher z-index to ensure visibility
       }}
     />
   );
 }
-

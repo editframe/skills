@@ -25,7 +25,7 @@ export const DevTools = observer(() => {
         onClick={async () => {
           try {
             await navigator.clipboard.writeText(
-              JSON.stringify(getSnapshot(editor.composition))
+              JSON.stringify(getSnapshot(editor.composition)),
             );
             console.log("Text copied to clipboard successfully.");
           } catch (err) {

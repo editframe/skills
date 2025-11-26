@@ -145,8 +145,10 @@ class ProcessISOBMFFExecutor {
     }
     const parsedUrl = new URL(this.sourceUrl);
 
-    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
-      throw new Error(`Invalid URL protocol: Only HTTP/HTTPS URLs are allowed, got: ${parsedUrl.protocol}`);
+    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+      throw new Error(
+        `Invalid URL protocol: Only HTTP/HTTPS URLs are allowed, got: ${parsedUrl.protocol}`,
+      );
     }
 
     logger.trace({ payload: this.payload }, "Fetching URL");
@@ -194,7 +196,6 @@ class ProcessISOBMFFExecutor {
         controller.close();
       },
     });
-
 
     await writeReadableStreamToWritable(readableStream, writeStream);
     const md5 = await md5FilePath(unprocessedFilepath);

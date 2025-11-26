@@ -8,7 +8,12 @@ interface PropertySectionProps {
   children: React.ReactNode;
 }
 
-export function PropertySection({ title, defaultExpanded = true, icon, children }: PropertySectionProps) {
+export function PropertySection({
+  title,
+  defaultExpanded = true,
+  icon,
+  children,
+}: PropertySectionProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   return (
@@ -30,11 +35,8 @@ export function PropertySection({ title, defaultExpanded = true, icon, children 
           isExpanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
         }`}
       >
-        <div className="px-2.5 pb-1.5 pt-0.5 space-y-1">
-          {children}
-        </div>
+        <div className="px-2.5 pb-1.5 pt-0.5 space-y-1">{children}</div>
       </div>
     </div>
   );
 }
-

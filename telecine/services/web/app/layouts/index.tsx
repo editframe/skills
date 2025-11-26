@@ -27,10 +27,7 @@ export const Layout = ({
       </div>
       <div className="mt-8 lg:mt-14">
         {playground.jsx ? (
-          <Playground
-            css={playground.css}
-            presetCode={playground.presetCode}
-          >
+          <Playground css={playground.css} presetCode={playground.presetCode}>
             {playground.jsx}
           </Playground>
         ) : (

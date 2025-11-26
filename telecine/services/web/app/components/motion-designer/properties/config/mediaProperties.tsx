@@ -4,7 +4,12 @@ import type { ElementNode } from "~/lib/motion-designer/types";
 import { Image as ImageIcon } from "@phosphor-icons/react";
 
 const isMedia = (element: ElementNode) =>
-  element.type === "video" || element.type === "image" || element.type === "audio" || element.type === "captions" || element.type === "waveform" || element.type === "surface";
+  element.type === "video" ||
+  element.type === "image" ||
+  element.type === "audio" ||
+  element.type === "captions" ||
+  element.type === "waveform" ||
+  element.type === "surface";
 
 const isVideoOrImage = (element: ElementNode) =>
   element.type === "video" || element.type === "image";
@@ -15,7 +20,10 @@ export const mediaProperties: PropertySectionConfig[] = [
     title: "Media",
     icon: <ImageIcon className="w-3.5 h-3.5" />,
     defaultExpanded: true,
-    visible: (element) => element.type === "video" || element.type === "image" || element.type === "audio",
+    visible: (element) =>
+      element.type === "video" ||
+      element.type === "image" ||
+      element.type === "audio",
     fields: [
       {
         type: "text",
@@ -30,7 +38,10 @@ export const mediaProperties: PropertySectionConfig[] = [
     title: "Target",
     icon: <ImageIcon className="w-3.5 h-3.5" />,
     defaultExpanded: false,
-    visible: (element) => element.type === "captions" || element.type === "waveform" || element.type === "surface",
+    visible: (element) =>
+      element.type === "captions" ||
+      element.type === "waveform" ||
+      element.type === "surface",
     fields: [
       {
         type: "text",
@@ -41,4 +52,3 @@ export const mediaProperties: PropertySectionConfig[] = [
     ],
   },
 ];
-

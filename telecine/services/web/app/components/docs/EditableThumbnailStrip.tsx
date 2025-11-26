@@ -15,12 +15,11 @@ export const EditableThumbnailStrip = () => {
   const [videoTrimStartMs, setVideoTrimStartMs] = useState(2000);
   const [videoTrimEndMs, setVideoTrimEndMs] = useState(2000);
 
-  // Constants for time range 
+  // Constants for time range
   const videoDurationMs = 10000;
   const trimmedDurationMs = videoDurationMs - videoTrimStartMs - videoTrimEndMs;
   const effectiveStartMs = startTimeMs ?? 0;
   const effectiveEndMs = endTimeMs ?? trimmedDurationMs;
-
 
   const handleTimeRangeChange = (start: number, end: number) => {
     setStartTimeMs(start === 0 ? undefined : start);
@@ -39,18 +38,24 @@ export const EditableThumbnailStrip = () => {
   const formatTime = (ms: number) => `${(ms / 1000).toFixed(1)}s`;
 
   return (
-
     <div className="max-w-7xl mx-auto">
       <div className="p-8 rounded-t-xl">
         <div className="space-y-6">
           <div className="flex justify-center">
-            <Preview id={`${id}-preview`} className="h-[300px] aspect-[16/9] rounded-xl overflow-hidden shadow-2xl">
+            <Preview
+              id={`${id}-preview`}
+              className="h-[300px] aspect-[16/9] rounded-xl overflow-hidden shadow-2xl"
+            >
               <Timegroup mode="contain" className="w-full h-full bg-black">
                 <Video
                   id={`${id}-video`}
                   src="https://assets.editframe.com/bars-n-tone.mp4"
-                  trimstart={videoTrimStartMs > 0 ? `${videoTrimStartMs}ms` : undefined}
-                  trimend={videoTrimEndMs > 0 ? `${videoTrimEndMs}ms` : undefined}
+                  trimstart={
+                    videoTrimStartMs > 0 ? `${videoTrimStartMs}ms` : undefined
+                  }
+                  trimend={
+                    videoTrimEndMs > 0 ? `${videoTrimEndMs}ms` : undefined
+                  }
                   className="size-full object-contain"
                 />
               </Timegroup>
@@ -65,7 +70,7 @@ export const EditableThumbnailStrip = () => {
                 start-time-ms={useIntrinsicDuration ? undefined : startTimeMs}
                 end-time-ms={useIntrinsicDuration ? undefined : endTimeMs}
                 use-intrinsic-duration={useIntrinsicDuration}
-                style={{ width: '100%', height: `${stripHeight}px` }}
+                style={{ width: "100%", height: `${stripHeight}px` }}
               />
             </div>
           </div>
@@ -77,7 +82,6 @@ export const EditableThumbnailStrip = () => {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
-
         <div className="space-y-6">
           <div className="bg-gray-50 p-6 rounded-xl space-y-6">
             <div className="space-y-2">
@@ -131,17 +135,16 @@ export const EditableThumbnailStrip = () => {
         </div>
 
         <div className="space-y-6">
-
           <div className="bg-orange-50 border border-orange-200 p-6 rounded-xl space-y-4">
-
-
             <DoubleRangeSlider
               min={0}
               max={videoDurationMs}
               step={100}
               startValue={videoTrimStartMs}
               endValue={videoDurationMs - videoTrimEndMs}
-              onChange={(start, end) => handleVideoTrimChange(start, videoDurationMs - end)}
+              onChange={(start, end) =>
+                handleVideoTrimChange(start, videoDurationMs - end)
+              }
               formatLabel={formatTime}
             />
           </div>
@@ -154,7 +157,9 @@ export const EditableThumbnailStrip = () => {
                 onChange={(e) => setUseIntrinsicDuration(e.target.checked)}
                 className="rounded border-gray-300 w-4 h-4"
               />
-              <span className="text-sm font-medium text-blue-800">Override: Show entire source video</span>
+              <span className="text-sm font-medium text-blue-800">
+                Override: Show entire source video
+              </span>
             </label>
 
             <DoubleRangeSlider

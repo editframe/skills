@@ -137,7 +137,11 @@ const getHeader = <Header extends keyof IncomingHttpHeaders>(
 export async function parseRequestSession(
   request: Request | IncomingMessage,
 ): Promise<
-  EmailPasswordSessionInfo | APISessionInfo | URLSessionInfo | AnonymousURLSessionInfo | undefined
+  | EmailPasswordSessionInfo
+  | APISessionInfo
+  | URLSessionInfo
+  | AnonymousURLSessionInfo
+  | undefined
 > {
   const authHeader = getHeader(request, "Authorization");
   if (authHeader) {

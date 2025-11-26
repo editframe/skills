@@ -7,7 +7,6 @@ import { z } from "zod";
 import { readFile } from "node:fs/promises";
 import { logger } from "@/logging";
 
-
 export const ExtractionInfo = z.object({
   id: z.string(),
   orgId: z.string(),
@@ -30,17 +29,17 @@ export type RenderInfo = z.infer<typeof RenderInfo>;
 
 export class RenderInfoExtractor {
   static async create(extractionInfo: ExtractionInfo) {
-    const outputPath = path.join(os.tmpdir(), `render-info-${extractionInfo.id}`);
+    const outputPath = path.join(
+      os.tmpdir(),
+      `render-info-${extractionInfo.id}`,
+    );
     return new RenderInfoExtractor(
-      await spawnElectronExecutor(
-        "/app/lib/render/getRenderInfo.ts",
-        [
-          "--extraction-info",
-          JSON.stringify(extractionInfo),
-          "--output-path",
-          outputPath,
-        ],
-      ),
+      await spawnElectronExecutor("/app/lib/render/getRenderInfo.ts", [
+        "--extraction-info",
+        JSON.stringify(extractionInfo),
+        "--output-path",
+        outputPath,
+      ]),
       outputPath,
     );
   }
@@ -62,11 +61,11 @@ export class RenderInfoExtractor {
     return new Promise<void>((resolve, reject) => {
       const checkFile = async () => {
         try {
-          await readFile(this.outputPath, 'utf-8');
+          await readFile(this.outputPath, "utf-8");
           this.extractorProcess.kill();
           resolve();
         } catch (error) {
-          if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+          if ((error as NodeJS.ErrnoException).code === "ENOENT") {
             setTimeout(checkFile, 100); // Poll every 100ms
           } else {
             this.extractorProcess.kill();

@@ -39,8 +39,12 @@ export const loader = async (request: LoaderFunctionArgs) => {
     );
   }
   const post = await parseMdx(file.content);
-  post.frontmatter.published_date = post.frontmatter.published_date ? formatDate(post.frontmatter.published_date) : "";
-  post.frontmatter.last_updated = post.frontmatter.last_updated ? formatDate(post.frontmatter.last_updated) : "";
+  post.frontmatter.published_date = post.frontmatter.published_date
+    ? formatDate(post.frontmatter.published_date)
+    : "";
+  post.frontmatter.last_updated = post.frontmatter.last_updated
+    ? formatDate(post.frontmatter.last_updated)
+    : "";
 
   if (!post) {
     throw data(

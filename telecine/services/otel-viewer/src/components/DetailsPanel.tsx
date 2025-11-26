@@ -11,7 +11,11 @@ interface DetailsPanelProps {
   onAddAttributeFilter?: (filter: AttributeFilter) => void;
 }
 
-export function DetailsPanel({ span, onClose, onAddAttributeFilter }: DetailsPanelProps) {
+export function DetailsPanel({
+  span,
+  onClose,
+  onAddAttributeFilter,
+}: DetailsPanelProps) {
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
@@ -28,8 +32,8 @@ export function DetailsPanel({ span, onClose, onAddAttributeFilter }: DetailsPan
     };
 
     if (contextMenu) {
-      document.addEventListener('click', handleGlobalClick);
-      return () => document.removeEventListener('click', handleGlobalClick);
+      document.addEventListener("click", handleGlobalClick);
+      return () => document.removeEventListener("click", handleGlobalClick);
     }
   }, [contextMenu]);
 
@@ -37,7 +41,11 @@ export function DetailsPanel({ span, onClose, onAddAttributeFilter }: DetailsPan
     return null;
   }
 
-  const handleAttributeClick = (e: React.MouseEvent, key: string, value: any) => {
+  const handleAttributeClick = (
+    e: React.MouseEvent,
+    key: string,
+    value: any,
+  ) => {
     if (!onAddAttributeFilter) return;
 
     e.stopPropagation();
@@ -46,11 +54,14 @@ export function DetailsPanel({ span, onClose, onAddAttributeFilter }: DetailsPan
       x: e.clientX,
       y: e.clientY,
       attributeKey: key,
-      attributeValue: value
+      attributeValue: value,
     });
   };
 
-  const handleAddFilter = (condition: AttributeFilter['condition'], mode: AttributeFilter['mode']) => {
+  const handleAddFilter = (
+    condition: AttributeFilter["condition"],
+    mode: AttributeFilter["mode"],
+  ) => {
     if (!contextMenu || !onAddAttributeFilter) return;
 
     const valueStr = getAttributeValueAsString(contextMenu.attributeValue);
@@ -59,8 +70,11 @@ export function DetailsPanel({ span, onClose, onAddAttributeFilter }: DetailsPan
       spanName: span.name,
       attributeKey: contextMenu.attributeKey,
       condition,
-      value: condition === 'equals' || condition === 'notEquals' ? valueStr : undefined,
-      mode
+      value:
+        condition === "equals" || condition === "notEquals"
+          ? valueStr
+          : undefined,
+      mode,
     });
 
     setContextMenu(null);
@@ -75,7 +89,9 @@ export function DetailsPanel({ span, onClose, onAddAttributeFilter }: DetailsPan
       <div className="details-panel visible" onClick={handleCloseMenu}>
         <div className="detail-header">
           <div className="detail-title">Span Details</div>
-          <button className="close-button" onClick={onClose}>×</button>
+          <button className="close-button" onClick={onClose}>
+            ×
+          </button>
         </div>
         <div className="detail-section">
           <div className="detail-title">Name</div>
@@ -103,16 +119,22 @@ export function DetailsPanel({ span, onClose, onAddAttributeFilter }: DetailsPan
             {span.events.map((evt, i) => {
               const isExpanded = expandedEvents.has(i);
               const isException = evt.name === "exception";
-              const exceptionType = evt.attributes.find((a) => a.key === "exception.type")?.value;
-              const exceptionMessage = evt.attributes.find((a) => a.key === "exception.message")?.value;
-              const exceptionStacktrace = evt.attributes.find((a) => a.key === "exception.stacktrace")?.value;
+              const exceptionType = evt.attributes.find(
+                (a) => a.key === "exception.type",
+              )?.value;
+              const exceptionMessage = evt.attributes.find(
+                (a) => a.key === "exception.message",
+              )?.value;
+              const exceptionStacktrace = evt.attributes.find(
+                (a) => a.key === "exception.stacktrace",
+              )?.value;
 
               return (
                 <div
                   key={i}
                   className={`event-item ${isException ? "exception-event" : ""} ${isExpanded ? "expanded" : ""}`}
                   onClick={() => {
-                    setExpandedEvents(prev => {
+                    setExpandedEvents((prev) => {
                       const next = new Set(prev);
                       if (next.has(i)) {
                         next.delete(i);
@@ -171,7 +193,9 @@ export function DetailsPanel({ span, onClose, onAddAttributeFilter }: DetailsPan
                   <span className="detail-attr-val">
                     <AttributeValue value={attr.value} />
                   </span>
-                  {onAddAttributeFilter && <span className="filter-hint">⚡</span>}
+                  {onAddAttributeFilter && (
+                    <span className="filter-hint">⚡</span>
+                  )}
                 </div>
               ))}
             </div>
@@ -182,11 +206,13 @@ export function DetailsPanel({ span, onClose, onAddAttributeFilter }: DetailsPan
         <>
           <div
             className="attr-context-menu-anchor"
-            style={{
-              left: contextMenu.x,
-              top: contextMenu.y,
-              anchorName: '--context-menu-anchor'
-            } as React.CSSProperties}
+            style={
+              {
+                left: contextMenu.x,
+                top: contextMenu.y,
+                anchorName: "--context-menu-anchor",
+              } as React.CSSProperties
+            }
           />
           <div
             className="attr-context-menu"
@@ -196,33 +222,39 @@ export function DetailsPanel({ span, onClose, onAddAttributeFilter }: DetailsPan
               Add filter for <strong>{contextMenu.attributeKey}</strong>
             </div>
             <div className="attr-context-menu-section">
-              <div className="attr-context-menu-label">Show traces where...</div>
+              <div className="attr-context-menu-label">
+                Show traces where...
+              </div>
               <button
                 className="attr-context-menu-item show"
-                onClick={() => handleAddFilter('exists', 'show')}
+                onClick={() => handleAddFilter("exists", "show")}
               >
                 ✓ Has value
               </button>
               <button
                 className="attr-context-menu-item show"
-                onClick={() => handleAddFilter('equals', 'show')}
+                onClick={() => handleAddFilter("equals", "show")}
               >
-                ✓ Equals "{getAttributeValueAsString(contextMenu.attributeValue)}"
+                ✓ Equals "
+                {getAttributeValueAsString(contextMenu.attributeValue)}"
               </button>
             </div>
             <div className="attr-context-menu-section">
-              <div className="attr-context-menu-label">Hide traces where...</div>
+              <div className="attr-context-menu-label">
+                Hide traces where...
+              </div>
               <button
                 className="attr-context-menu-item hide"
-                onClick={() => handleAddFilter('missing', 'hide')}
+                onClick={() => handleAddFilter("missing", "hide")}
               >
                 ✕ Missing/null
               </button>
               <button
                 className="attr-context-menu-item hide"
-                onClick={() => handleAddFilter('equals', 'hide')}
+                onClick={() => handleAddFilter("equals", "hide")}
               >
-                ✕ Equals "{getAttributeValueAsString(contextMenu.attributeValue)}"
+                ✕ Equals "
+                {getAttributeValueAsString(contextMenu.attributeValue)}"
               </button>
             </div>
           </div>

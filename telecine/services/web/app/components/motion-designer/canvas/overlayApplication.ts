@@ -1,6 +1,6 @@
 /**
  * Overlay application - how to apply overlay positions.
- * 
+ *
  * Mechanism: How to apply it? (update DOM)
  * Separated from semantics (what should it be).
  */
@@ -42,4 +42,3 @@ export function batchOverlayUpdates(
     }
   });
 }
-

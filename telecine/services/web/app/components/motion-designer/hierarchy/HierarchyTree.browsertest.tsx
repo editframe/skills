@@ -4,7 +4,10 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { HierarchyTree } from "./HierarchyTree";
 import { DragProvider } from "./DragContext";
 import { MotionDesignerProvider } from "../context/MotionDesignerContext";
-import type { MotionDesignerState, ElementNode } from "~/lib/motion-designer/types";
+import type {
+  MotionDesignerState,
+  ElementNode,
+} from "~/lib/motion-designer/types";
 import { registerCoreBehaviors } from "~/lib/motion-designer/coreBehaviors";
 import { behaviorRegistry } from "~/lib/motion-designer/behaviors";
 
@@ -128,4 +131,3 @@ describe("HierarchyTree drop target resolution", () => {
     });
   });
 });
-

@@ -52,7 +52,7 @@ interface AppFixtures {
 export * from "@playwright/test";
 
 export function makeUserFixture(prefix: string) {
-  return async ({ }, use: (r: UserFixture) => Promise<void>) => {
+  return async ({}, use: (r: UserFixture) => Promise<void>) => {
     const uniqueAddress = `${prefix}-${nanoid(10).toLowerCase()}@example.org`;
     const user = await safeRegisterUser(uniqueAddress, "password123");
     const org = await safeCreateOrg({
@@ -65,7 +65,7 @@ export function makeUserFixture(prefix: string) {
 }
 
 export function makeOrgFixture(prefix: string) {
-  return async ({ }, use: (r: OrgFixture) => Promise<void>) => {
+  return async ({}, use: (r: OrgFixture) => Promise<void>) => {
     const uniqueAddress = `${prefix}-${nanoid(10).toLowerCase()}@example.org`;
     const primary = await safeRegisterUser(uniqueAddress, "password123");
     const editor = await safeRegisterUser(
@@ -135,7 +135,7 @@ export const test = playwrightTest.extend<AppFixtures>({
   },
   uniqueUser: makeUserFixture("unique"),
   otherUser: makeUserFixture("other-user"),
-  org: async ({ }, use) => {
+  org: async ({}, use) => {
     const [orgReader, orgEditor, orgAdmin] = await Promise.all([
       safeRegisterUser(
         "org-reader@example.org",
@@ -197,9 +197,9 @@ export async function makeApiKey(
 }
 
 export interface TestAgent {
-  user: Awaited<ReturnType<typeof safeRegisterUser>>,
-  org: Selectable<IdentityOrgs>,
-  apiKey: Selectable<IdentityApiKeys>,
+  user: Awaited<ReturnType<typeof safeRegisterUser>>;
+  org: Selectable<IdentityOrgs>;
+  apiKey: Selectable<IdentityApiKeys>;
 }
 
 export async function makeTestAgent(name: string): Promise<TestAgent> {
@@ -216,7 +216,7 @@ export async function makeTestAgent(name: string): Promise<TestAgent> {
     setSpanAttributes({ org });
 
     const apiKey = await makeApiKey(org, user);
-    setSpanAttributes({ apiKey })
+    setSpanAttributes({ apiKey });
 
     return { user, org, apiKey };
   });

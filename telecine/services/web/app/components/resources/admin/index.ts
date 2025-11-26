@@ -46,20 +46,19 @@ export type ContentBlock<
   resourceId: string;
 }>;
 
-export type RowType<Q> = Q extends ProgressiveQueryDescriptor<infer Data, any>
-  ? Data extends { rows: (infer R)[] }
-  ? NonNullable<R>
-  : never
-  : never;
+export type RowType<Q> =
+  Q extends ProgressiveQueryDescriptor<infer Data, any>
+    ? Data extends { rows: (infer R)[] }
+      ? NonNullable<R>
+      : never
+    : never;
 
-export type DetailRecordType<Q> = Q extends ProgressiveQueryDescriptor<
-  infer Data,
-  any
->
-  ? Data extends { record: (infer R) }
-  ? NonNullable<R>
-  : never
-  : never;
+export type DetailRecordType<Q> =
+  Q extends ProgressiveQueryDescriptor<infer Data, any>
+    ? Data extends { record: infer R }
+      ? NonNullable<R>
+      : never
+    : never;
 
 export interface ResourceView<
   IndexQuery extends ProgressiveQueryDescriptor<any, any>,

@@ -1,5 +1,5 @@
-import net from 'node:net';
-import SuperJSON from 'superjson';
+import net from "node:net";
+import SuperJSON from "superjson";
 import { context, propagation } from "@opentelemetry/api";
 
 let nextId = 1;
@@ -10,13 +10,16 @@ const pending = new Map();
  */
 function encodeMessage(obj: any) {
   const str = SuperJSON.stringify(obj);
-  const buf = Buffer.from(str, 'utf8');
+  const buf = Buffer.from(str, "utf8");
   const lenBuf = Buffer.alloc(4);
   lenBuf.writeUInt32BE(buf.length, 0);
   return Buffer.concat([lenBuf, buf]);
 }
 
-function decodeMessages(buffer: Buffer<ArrayBuffer>, onMessage: (msg: any) => void) {
+function decodeMessages(
+  buffer: Buffer<ArrayBuffer>,
+  onMessage: (msg: any) => void,
+) {
   let offset = 0;
   while (buffer.length - offset >= 4) {
     const len = buffer.readUInt32BE(offset);
@@ -30,48 +33,63 @@ function decodeMessages(buffer: Buffer<ArrayBuffer>, onMessage: (msg: any) => vo
 }
 
 import { promiseWithResolvers } from "@/util/promiseWithResolvers";
-import { executeSpan } from '@/tracing';
-import { logger } from '@/logging';
+import { executeSpan } from "@/tracing";
+import { logger } from "@/logging";
 
 interface HandlerContext {
   sendKeepalive: () => void;
 }
 
-const handlers = new Map<string, (params: unknown, ctx: HandlerContext) => Promise<unknown>>();
-
+const handlers = new Map<
+  string,
+  (params: unknown, ctx: HandlerContext) => Promise<unknown>
+>();
 
 let rcpServer: net.Server;
 export const keepalive = promiseWithResolvers<void>();
 
 export async function registerRcpHandler<Args extends any[], Result>(
   method: string,
-  handler: (params: Args, ctx: HandlerContext) => Promise<Result>
+  handler: (params: Args, ctx: HandlerContext) => Promise<Result>,
 ) {
-  handlers.set(method, handler as (params: unknown, ctx: HandlerContext) => Promise<unknown>);
+  handlers.set(
+    method,
+    handler as (params: unknown, ctx: HandlerContext) => Promise<unknown>,
+  );
   if (!process.env.EF_SOCKET_PATH) {
     throw new Error("EF_SOCKET_PATH is not set");
   }
   if (!rcpServer) {
-    rcpServer = createRpcServer(process.env.EF_SOCKET_PATH, async (method, params, ctx) => {
-      if (method === "terminate") {
-        logger.debug("RPC server terminating");
-        keepalive.resolve();
-        return;
-      }
-      const handler = handlers.get(method);
-      if (!handler) {
-        throw new Error(`Unknown method: ${method}`);
-      }
-      return executeSpan(method, () => handler(params, ctx));
-    });
+    rcpServer = createRpcServer(
+      process.env.EF_SOCKET_PATH,
+      async (method, params, ctx) => {
+        if (method === "terminate") {
+          logger.debug("RPC server terminating");
+          keepalive.resolve();
+          return;
+        }
+        const handler = handlers.get(method);
+        if (!handler) {
+          throw new Error(`Unknown method: ${method}`);
+        }
+        return executeSpan(method, () => handler(params, ctx));
+      },
+    );
   }
 }
 
-function createRpcServer(socketPath: string, onRequest: (method: string, params: any[], ctx: HandlerContext) => Promise<any>) {
+function createRpcServer(
+  socketPath: string,
+  onRequest: (
+    method: string,
+    params: any[],
+    ctx: HandlerContext,
+  ) => Promise<any>,
+) {
   const server = net.createServer((sock) => {
     let buffer = Buffer.alloc(0);
 
-    sock.on('data', (chunk) => {
+    sock.on("data", (chunk) => {
       buffer = Buffer.concat([buffer, chunk]);
       buffer = decodeMessages(buffer, async (msg) => {
         if (!msg.id || !msg.method) return;
@@ -79,7 +97,7 @@ function createRpcServer(socketPath: string, onRequest: (method: string, params:
         const handlerCtx: HandlerContext = {
           sendKeepalive: () => {
             sock.write(encodeMessage({ type: "keepalive", requestId: msg.id }));
-          }
+          },
         };
 
         const activeContext = msg.traceContext
@@ -121,7 +139,7 @@ export function createRpcClient(socketPath: string, options: RpcClientOptions) {
   let buffer = Buffer.alloc(0);
   const { timeoutMs, onKeepalive } = options;
 
-  socket.on('data', (chunk) => {
+  socket.on("data", (chunk) => {
     buffer = Buffer.concat([buffer, chunk]);
     buffer = decodeMessages(buffer, (msg) => {
       // Handle keepalive messages

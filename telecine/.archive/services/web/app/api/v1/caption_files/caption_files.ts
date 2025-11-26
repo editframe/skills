@@ -10,10 +10,7 @@ export const action = appFunction(
     requireCookieOrTokenSession: true,
     validatePayload: CreateCaptionFilePayload,
   },
-  async ({
-    session,
-    payload,
-  }): Promise<CreateCaptionFileResult> => {
+  async ({ session, payload }): Promise<CreateCaptionFileResult> => {
     const created = await db
       .insertInto("video2.caption_files")
       .values({

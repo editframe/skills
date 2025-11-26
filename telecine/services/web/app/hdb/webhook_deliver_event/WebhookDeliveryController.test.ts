@@ -12,7 +12,9 @@ import type {
 } from "@/sql-client.server/kysely-codegen";
 import type { Insertable, Selectable } from "kysely";
 
-function createWebhookEvent(values: Partial<Insertable<"api.webhook_events">> = {}) {
+function createWebhookEvent(
+  values: Partial<Insertable<"api.webhook_events">> = {},
+) {
   return db
     .insertInto("api.webhook_events")
     .values({
@@ -223,7 +225,8 @@ describe("WebhookDeliverController", () => {
     const secret = await controller.getWebhookSecret();
     const signature = await controller.generateSignature();
 
-    const hash = crypto.createHmac('sha256', secret.webhook_secret)
+    const hash = crypto
+      .createHmac("sha256", secret.webhook_secret)
       .update(JSON.stringify(JSON.parse(webhookEvent.json_payload)))
       .digest("hex");
 
@@ -233,7 +236,7 @@ describe("WebhookDeliverController", () => {
   test("records delivery failure when fetch throws an error", async () => {
     server.use(
       http.post("https://example.com", () => {
-        return new Response(null, { status: 0, statusText: "Failed ot fetch" })
+        return new Response(null, { status: 0, statusText: "Failed ot fetch" });
       }),
     );
 
@@ -254,9 +257,7 @@ describe("WebhookDeliverController", () => {
       .selectAll()
       .executeTakeFirstOrThrow();
 
-    expect(
-      event,
-    ).toEqual({
+    expect(event).toEqual({
       ...webhookEvent,
       updated_at: expect.any(Date),
       failed_at: expect.any(Date),
@@ -270,20 +271,18 @@ describe("WebhookDeliverController", () => {
       .selectAll()
       .execute();
 
-    expect(
-      deliveries,
-    ).toEqual([
+    expect(deliveries).toEqual([
       {
         id: expect.any(String),
         created_at: expect.any(Date),
         response_status: 500,
-        response_text: '',
-        response_headers: '{}',
-        request_headers: '{}',
-        status: 'failure',
+        response_text: "",
+        response_headers: "{}",
+        request_headers: "{}",
+        status: "failure",
         webhook_event_id: webhookEvent.id,
-        attempt_number: 1
-      }
+        attempt_number: 1,
+      },
     ]);
   });
 });

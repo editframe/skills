@@ -61,6 +61,3 @@ export const waveformProperties: PropertySectionConfig[] = [
     ],
   },
 ];
-
-
-

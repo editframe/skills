@@ -4,7 +4,9 @@ import { usePanZoom } from "./usePanZoom";
 import type { MotionDesignerState } from "~/lib/motion-designer/types";
 
 // Test utilities
-function createMockState(overrides: Partial<MotionDesignerState["ui"]["canvasTransform"]> = {}): MotionDesignerState["ui"]["canvasTransform"] {
+function createMockState(
+  overrides: Partial<MotionDesignerState["ui"]["canvasTransform"]> = {},
+): MotionDesignerState["ui"]["canvasTransform"] {
   return {
     x: 0,
     y: 0,
@@ -35,10 +37,8 @@ describe("usePanZoom", () => {
 
   test("returns current transform from state", () => {
     const initialTransform = createMockState({ x: 100, y: 200, scale: 1.5 });
-    
-    const { result } = renderHook(() => 
-      usePanZoom(initialTransform, onUpdate)
-    );
+
+    const { result } = renderHook(() => usePanZoom(initialTransform, onUpdate));
 
     expect(result.current.transform).toEqual({
       x: 100,
@@ -49,10 +49,8 @@ describe("usePanZoom", () => {
 
   test("panning updates transform with inverted delta", () => {
     const initialTransform = createMockState({ x: 0, y: 0, scale: 1 });
-    
-    const { result } = renderHook(() => 
-      usePanZoom(initialTransform, onUpdate)
-    );
+
+    const { result } = renderHook(() => usePanZoom(initialTransform, onUpdate));
 
     // Set container ref
     act(() => {
@@ -91,10 +89,8 @@ describe("usePanZoom", () => {
 
   test("wheel scroll without modifier pans canvas", () => {
     const initialTransform = createMockState({ x: 0, y: 0, scale: 1 });
-    
-    const { result } = renderHook(() => 
-      usePanZoom(initialTransform, onUpdate)
-    );
+
+    const { result } = renderHook(() => usePanZoom(initialTransform, onUpdate));
 
     act(() => {
       if (result.current.containerRef.current === null) {
@@ -110,7 +106,7 @@ describe("usePanZoom", () => {
       clientY: 500,
       bubbles: true,
     });
-    
+
     act(() => {
       result.current.handlers.onWheel(wheelEvent);
     });
@@ -124,10 +120,8 @@ describe("usePanZoom", () => {
 
   test("wheel scroll with modifier key zooms centered on mouse position", () => {
     const initialTransform = createMockState({ x: 0, y: 0, scale: 1 });
-    
-    const { result } = renderHook(() => 
-      usePanZoom(initialTransform, onUpdate)
-    );
+
+    const { result } = renderHook(() => usePanZoom(initialTransform, onUpdate));
 
     act(() => {
       if (result.current.containerRef.current === null) {
@@ -148,7 +142,7 @@ describe("usePanZoom", () => {
       bubbles: true,
       ctrlKey: true, // Modifier key
     } as any);
-    
+
     act(() => {
       result.current.handlers.onWheel(wheelEvent);
     });
@@ -163,10 +157,8 @@ describe("usePanZoom", () => {
 
   test("zoom speed is controlled (5% per step)", () => {
     const initialTransform = createMockState({ x: 0, y: 0, scale: 1 });
-    
-    const { result } = renderHook(() => 
-      usePanZoom(initialTransform, onUpdate)
-    );
+
+    const { result } = renderHook(() => usePanZoom(initialTransform, onUpdate));
 
     act(() => {
       if (result.current.containerRef.current === null) {
@@ -182,7 +174,7 @@ describe("usePanZoom", () => {
       bubbles: true,
       ctrlKey: true,
     } as any);
-    
+
     act(() => {
       result.current.handlers.onWheel(zoomInEvent);
     });
@@ -198,7 +190,7 @@ describe("usePanZoom", () => {
       bubbles: true,
       ctrlKey: true,
     } as any);
-    
+
     act(() => {
       result.current.handlers.onWheel(zoomOutEvent);
     });
@@ -209,10 +201,8 @@ describe("usePanZoom", () => {
 
   test("zoom is clamped to valid range", () => {
     const initialTransform = createMockState({ x: 0, y: 0, scale: 0.1 });
-    
-    const { result } = renderHook(() => 
-      usePanZoom(initialTransform, onUpdate)
-    );
+
+    const { result } = renderHook(() => usePanZoom(initialTransform, onUpdate));
 
     act(() => {
       if (result.current.containerRef.current === null) {
@@ -228,7 +218,7 @@ describe("usePanZoom", () => {
       bubbles: true,
       ctrlKey: true,
     } as any);
-    
+
     act(() => {
       result.current.handlers.onWheel(zoomOutEvent);
     });
@@ -239,13 +229,15 @@ describe("usePanZoom", () => {
 
   test("transform updates reflect in returned value", () => {
     let currentTransform = createMockState({ x: 0, y: 0, scale: 1 });
-    
-    const onUpdateWithState = vi.fn((updates: Partial<{ x: number; y: number; scale: number }>) => {
-      currentTransform = { ...currentTransform, ...updates };
-    });
 
-    const { result, rerender } = renderHook(() => 
-      usePanZoom(currentTransform, onUpdateWithState)
+    const onUpdateWithState = vi.fn(
+      (updates: Partial<{ x: number; y: number; scale: number }>) => {
+        currentTransform = { ...currentTransform, ...updates };
+      },
+    );
+
+    const { result, rerender } = renderHook(() =>
+      usePanZoom(currentTransform, onUpdateWithState),
     );
 
     // Initial state
@@ -259,6 +251,3 @@ describe("usePanZoom", () => {
     expect(result.current.transform.scale).toBe(2);
   });
 });
-
-
-

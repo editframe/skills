@@ -1,12 +1,20 @@
-import { type CreateRenderResult, CreateRenderPayload, OutputConfiguration } from "@editframe/api";
+import {
+  type CreateRenderResult,
+  CreateRenderPayload,
+  OutputConfiguration,
+} from "@editframe/api";
 import { db } from "@/sql-client.server";
 import { downloadRenderURL } from "@/util/apiPaths";
 import { requireCookieOrTokenSession } from "@/util/requireSession.server";
 
 import type { Route } from "./+types/index";
 
-export const action = async ({ request }: Route.ActionArgs): Promise<CreateRenderResult> => {
-  const { output: output_config, ...payload } = CreateRenderPayload.parse(await request.json());
+export const action = async ({
+  request,
+}: Route.ActionArgs): Promise<CreateRenderResult> => {
+  const { output: output_config, ...payload } = CreateRenderPayload.parse(
+    await request.json(),
+  );
   const session = await requireCookieOrTokenSession(request);
   const created = await db
     .insertInto("video2.renders")
@@ -27,7 +35,7 @@ export const action = async ({ request }: Route.ActionArgs): Promise<CreateRende
     .returning(["id", "md5", "status", "metadata"])
     .executeTakeFirstOrThrow();
 
-  return created
+  return created;
 };
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
@@ -60,9 +68,13 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   }
 
   return {
-    renders: renders.map(render => {
-      const outputConfiguration = OutputConfiguration.parse(render.output_config);
-      const download_url = render.completed_at ? downloadRenderURL(render.id, outputConfiguration) : null;
+    renders: renders.map((render) => {
+      const outputConfiguration = OutputConfiguration.parse(
+        render.output_config,
+      );
+      const download_url = render.completed_at
+        ? downloadRenderURL(render.id, outputConfiguration)
+        : null;
       return {
         ...render,
         download_url,

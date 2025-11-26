@@ -17,45 +17,52 @@ export interface AssetsMetadataBundle {
  */
 function extractMediaAssetIds(assetSrcs: string[]): string[] {
   return assetSrcs
-    .filter(src => src.startsWith('asset-id='))
-    .map(src => src.replace('asset-id=', ''));
+    .filter((src) => src.startsWith("asset-id="))
+    .map((src) => src.replace("asset-id=", ""));
 }
 
 /**
  * Fetch fragment indexes for ISOBMFF files
  */
-async function fetchFragmentIndexes(assetIds: string[], orgId: string): Promise<Record<string, Record<number, any>>> {
-  return executeSpan(
-    "fetchFragmentIndexes",
-    async () => {
-      if (assetIds.length === 0) {
-        return {};
+async function fetchFragmentIndexes(
+  assetIds: string[],
+  orgId: string,
+): Promise<Record<string, Record<number, any>>> {
+  return executeSpan("fetchFragmentIndexes", async () => {
+    if (assetIds.length === 0) {
+      return {};
+    }
+
+    logger.debug({ assetIds, orgId }, "Fetching fragment indexes");
+
+    const fragmentIndexes: Record<string, Record<number, any>> = {};
+
+    // Fetch each fragment index file
+    for (const assetId of assetIds) {
+      try {
+        const indexPath = isobmffIndexFilePath({ org_id: orgId, id: assetId });
+        const indexBuffer = await storageProvider.readFile(indexPath);
+
+        // Parse the fragment index JSON
+        const fragmentIndex = JSON.parse(indexBuffer.toString("utf-8"));
+        fragmentIndexes[assetId] = fragmentIndex;
+
+        logger.debug(
+          { assetId, trackCount: Object.keys(fragmentIndex).length },
+          "Loaded fragment index",
+        );
+      } catch (error) {
+        logger.warn({ assetId, error }, "Failed to load fragment index");
+        // Continue with other assets if one fails
       }
+    }
 
-      logger.debug({ assetIds, orgId }, "Fetching fragment indexes");
-
-      const fragmentIndexes: Record<string, Record<number, any>> = {};
-
-      // Fetch each fragment index file
-      for (const assetId of assetIds) {
-        try {
-          const indexPath = isobmffIndexFilePath({ org_id: orgId, id: assetId });
-          const indexBuffer = await storageProvider.readFile(indexPath);
-
-          // Parse the fragment index JSON
-          const fragmentIndex = JSON.parse(indexBuffer.toString('utf-8'));
-          fragmentIndexes[assetId] = fragmentIndex;
-
-          logger.debug({ assetId, trackCount: Object.keys(fragmentIndex).length }, "Loaded fragment index");
-        } catch (error) {
-          logger.warn({ assetId, error }, "Failed to load fragment index");
-          // Continue with other assets if one fails
-        }
-      }
-
-      logger.debug({ indexCount: Object.keys(fragmentIndexes).length }, "Fetched fragment indexes");
-      return fragmentIndexes;
-    });
+    logger.debug(
+      { indexCount: Object.keys(fragmentIndexes).length },
+      "Fetched fragment indexes",
+    );
+    return fragmentIndexes;
+  });
 }
 
 /**
@@ -64,29 +71,36 @@ async function fetchFragmentIndexes(assetIds: string[], orgId: string): Promise<
  */
 export async function createAssetsMetadataBundle(
   assets: { efMediaSrcs: string[]; efImageSrcs: string[] },
-  orgId: string
+  orgId: string,
 ): Promise<AssetsMetadataBundle> {
-  return executeSpan(
-    "createAssetsMetadataBundle",
-    async () => {
-      logger.debug({ assets, orgId }, "Creating fragment index bundle for media assets");
+  return executeSpan("createAssetsMetadataBundle", async () => {
+    logger.debug(
+      { assets, orgId },
+      "Creating fragment index bundle for media assets",
+    );
 
-      // Only extract media asset IDs - images don't need fragment indexes
-      const mediaAssetIds = extractMediaAssetIds(assets.efMediaSrcs);
+    // Only extract media asset IDs - images don't need fragment indexes
+    const mediaAssetIds = extractMediaAssetIds(assets.efMediaSrcs);
 
-      logger.debug({ mediaAssetIds }, "Extracted media asset IDs for fragment indexing");
+    logger.debug(
+      { mediaAssetIds },
+      "Extracted media asset IDs for fragment indexing",
+    );
 
-      // Fetch only fragment indexes - these contain all rendering-critical data
-      const fragmentIndexes = await fetchFragmentIndexes(mediaAssetIds, orgId);
+    // Fetch only fragment indexes - these contain all rendering-critical data
+    const fragmentIndexes = await fetchFragmentIndexes(mediaAssetIds, orgId);
 
-      const bundle = {
-        fragmentIndexes
-      };
+    const bundle = {
+      fragmentIndexes,
+    };
 
-      logger.debug({
-        fragmentIndexCount: Object.keys(fragmentIndexes).length
-      }, "Created fragment index bundle");
+    logger.debug(
+      {
+        fragmentIndexCount: Object.keys(fragmentIndexes).length,
+      },
+      "Created fragment index bundle",
+    );
 
-      return bundle;
-    });
+    return bundle;
+  });
 }

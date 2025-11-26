@@ -15,7 +15,9 @@ describe("timing coordination", () => {
     try {
       await access(testFilePath);
     } catch (error) {
-      throw new Error(`Test file not found: ${testFilePath}. Current directory: ${process.cwd()}`);
+      throw new Error(
+        `Test file not found: ${testFilePath}. Current directory: ${process.cwd()}`,
+      );
     }
 
     testDir = join(process.cwd(), "test-assets", ".cache", "timing-test");
@@ -28,7 +30,8 @@ describe("timing coordination", () => {
   });
 
   test("stream should not end until fragment index is complete", async () => {
-    const { generateSingleTrackFromPath } = await import("./generateSingleTrack.js");
+    const { generateSingleTrackFromPath } =
+      await import("./generateSingleTrack.js");
 
     // Track timing of events
     let streamEndTime: number | null = null;
@@ -38,7 +41,7 @@ describe("timing coordination", () => {
     const result = await generateSingleTrackFromPath(testFilePath, 2);
 
     // Track when stream ends
-    result.stream.on('end', () => {
+    result.stream.on("end", () => {
       streamEndTime = Date.now() - startTime;
     });
 
@@ -49,14 +52,14 @@ describe("timing coordination", () => {
 
     // Consume the stream
     const chunks: Buffer[] = [];
-    result.stream.on('data', (chunk) => {
+    result.stream.on("data", (chunk) => {
       chunks.push(chunk);
     });
 
     // Wait for both to complete
     await Promise.all([
-      new Promise<void>((resolve) => result.stream.on('end', resolve)),
-      fragmentIndexPromise
+      new Promise<void>((resolve) => result.stream.on("end", resolve)),
+      fragmentIndexPromise,
     ]);
 
     // Verify both completed
@@ -74,6 +77,8 @@ describe("timing coordination", () => {
 
     console.log(`Fragment index completed at: ${fragmentIndexCompleteTime}ms`);
     console.log(`Stream ended at: ${streamEndTime}ms`);
-    console.log(`Coordination gap: ${streamEndTime! - fragmentIndexCompleteTime!}ms`);
+    console.log(
+      `Coordination gap: ${streamEndTime! - fragmentIndexCompleteTime!}ms`,
+    );
   }, 10000);
 });

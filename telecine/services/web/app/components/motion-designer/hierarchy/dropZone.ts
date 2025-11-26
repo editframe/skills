@@ -41,7 +41,7 @@ function determineRawZone(
   return "inside";
 }
 
-type ZoneTransition = 
+type ZoneTransition =
   | { from: "before"; to: "after" }
   | { from: "after"; to: "before" }
   | { from: "inside"; to: "before" }
@@ -88,7 +88,11 @@ export class DropZoneStateMachine {
     canHaveChildren: boolean,
   ): DropZone {
     const relativeY = cursorY - elementRect.top;
-    const rawZone = determineRawZone(relativeY, elementRect.height, canHaveChildren);
+    const rawZone = determineRawZone(
+      relativeY,
+      elementRect.height,
+      canHaveChildren,
+    );
 
     const state = this.states.get(elementId);
     if (!state || state.elementId !== elementId) {
@@ -125,6 +129,3 @@ export class DropZoneStateMachine {
     this.states.delete(elementId);
   }
 }
-
-
-

@@ -43,9 +43,9 @@ export function SliderInput({
         }}
       />
       <span className="text-[9px] text-gray-500 w-8 text-right font-medium tabular-nums">
-        {displayValue}{unit}
+        {displayValue}
+        {unit}
       </span>
     </div>
   );
 }
-

@@ -1,5 +1,8 @@
 import { describe, test, expect, beforeEach, afterEach } from "vitest";
-import { applyOverlayPosition, batchOverlayUpdates } from "./overlayApplication";
+import {
+  applyOverlayPosition,
+  batchOverlayUpdates,
+} from "./overlayApplication";
 import type { OverlayPosition } from "./overlayTypes";
 
 describe("overlayApplication", () => {
@@ -141,4 +144,3 @@ describe("overlayApplication", () => {
     });
   });
 });
-

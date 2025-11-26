@@ -67,7 +67,10 @@ export class Queue<Payload> {
   }
 
   async getStats() {
-    const stats = await this.storage.getQueueStats(`queues:${this.name}`, 10000);
+    const stats = await this.storage.getQueueStats(
+      `queues:${this.name}`,
+      10000,
+    );
     return JSON.parse(stats) as QueueStats;
   }
 

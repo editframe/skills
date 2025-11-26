@@ -1,27 +1,28 @@
 import React, { createContext, useContext } from "react";
-import type { MotionDesignerState, ElementNode, Animation } from "~/lib/motion-designer/types";
+import type {
+  MotionDesignerState,
+  ElementNode,
+  Animation,
+} from "~/lib/motion-designer/types";
 
 interface MotionDesignerActions {
   selectElement: (id: string | null) => void;
-  selectAnimation: (animationId: string | null, elementId: string | null) => void;
+  selectAnimation: (
+    animationId: string | null,
+    elementId: string | null,
+  ) => void;
   addElement: (
     element: Omit<ElementNode, "id">,
     parentId: string | null,
   ) => void;
   deleteElement: (id: string) => void;
-  updateElement: (
-    id: string,
-    updates: Partial<ElementNode["props"]>,
-  ) => void;
+  updateElement: (id: string, updates: Partial<ElementNode["props"]>) => void;
   moveElement: (
     id: string,
     newParentId: string | null,
     newIndex?: number,
   ) => void;
-  addAnimation: (
-    elementId: string,
-    animation: Omit<Animation, "id">,
-  ) => void;
+  addAnimation: (elementId: string, animation: Omit<Animation, "id">) => void;
   updateAnimation: (
     elementId: string,
     animationId: string,
@@ -42,9 +43,7 @@ interface MotionDesignerActions {
   replaceState: (newState: MotionDesignerState) => void;
 }
 
-const MotionDesignerContext = createContext<MotionDesignerActions | null>(
-  null,
-);
+const MotionDesignerContext = createContext<MotionDesignerActions | null>(null);
 
 export function MotionDesignerProvider({
   children,
@@ -69,4 +68,3 @@ export function useMotionDesignerActions(): MotionDesignerActions {
   }
   return context;
 }
-

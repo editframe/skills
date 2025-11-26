@@ -25,7 +25,9 @@ function getPlaceholder(property: string, direction: "from" | "to"): string {
     transform: { from: "scale(1)", to: "scale(1.5)" },
   };
 
-  return placeholders[property]?.[direction] || (direction === "from" ? "0" : "1");
+  return (
+    placeholders[property]?.[direction] || (direction === "from" ? "0" : "1")
+  );
 }
 
 export function AnimateTab({ element, selectedAnimationId }: AnimateTabProps) {
@@ -74,8 +76,10 @@ export function AnimateTab({ element, selectedAnimationId }: AnimateTabProps) {
           {element.animations.map((animation) => (
             <div
               key={animation.id}
-              ref={(el) => { animationRefs.current[animation.id] = el; }}
-              className={`p-2 bg-gray-700 rounded border ${selectedAnimationId === animation.id ? 'border-blue-500 ring-2 ring-blue-500/50' : 'border-gray-600'}`}
+              ref={(el) => {
+                animationRefs.current[animation.id] = el;
+              }}
+              className={`p-2 bg-gray-700 rounded border ${selectedAnimationId === animation.id ? "border-blue-500 ring-2 ring-blue-500/50" : "border-gray-600"}`}
             >
               <div className="flex items-center justify-between mb-2">
                 <input
@@ -178,14 +182,20 @@ export function AnimateTab({ element, selectedAnimationId }: AnimateTabProps) {
                   >
                     <option value="none">None (no hold)</option>
                     <option value="forwards">Forwards (hold end state)</option>
-                    <option value="backwards">Backwards (hold start state)</option>
+                    <option value="backwards">
+                      Backwards (hold start state)
+                    </option>
                     <option value="both">Both (hold start & end)</option>
                   </select>
                   <p className="text-xs text-gray-500 mt-1">
-                    {animation.fillMode === "backwards" && "Holds start value during delay"}
-                    {animation.fillMode === "forwards" && "Holds end value after animation"}
-                    {animation.fillMode === "both" && "Holds start during delay, end after"}
-                    {animation.fillMode === "none" && "Returns to default state"}
+                    {animation.fillMode === "backwards" &&
+                      "Holds start value during delay"}
+                    {animation.fillMode === "forwards" &&
+                      "Holds end value after animation"}
+                    {animation.fillMode === "both" &&
+                      "Holds start during delay, end after"}
+                    {animation.fillMode === "none" &&
+                      "Returns to default state"}
                   </p>
                 </div>
                 <div>

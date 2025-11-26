@@ -41,16 +41,19 @@ const isAnimationValid = (
   currentAnimations: Animation[],
 ): boolean => {
   // Check if animation has been cancelled
-  if (animation.playState === "idle" && !currentAnimations.includes(animation)) {
+  if (
+    animation.playState === "idle" &&
+    !currentAnimations.includes(animation)
+  ) {
     return false;
   }
-  
+
   // Check if animation effect is still valid
   const effect = animation.effect;
   if (!effect) {
     return false;
   }
-  
+
   // Check if target is still in DOM
   const target = effect.target;
   if (target && target instanceof Element) {
@@ -58,17 +61,17 @@ const isAnimationValid = (
       return false;
     }
   }
-  
+
   return true;
 };
 
 /**
  * Discovers and tracks animations on an element and its subtree.
  * This ensures we have references to animations even after they complete.
- * 
+ *
  * Tracks animations per element where they exist, not just on the root element.
  * This allows us to find animations on any element in the subtree.
- * 
+ *
  * Also cleans up invalid animations (cancelled, removed from DOM, etc.)
  */
 const discoverAndTrackAnimations = (
@@ -76,7 +79,7 @@ const discoverAndTrackAnimations = (
 ): Set<Animation> => {
   // Get current animations from the browser (includes subtree)
   const currentAnimations = element.getAnimations({ subtree: true });
-  
+
   // Track animations on each element where they exist
   for (const animation of currentAnimations) {
     const target = animation.effect?.target;
@@ -89,19 +92,19 @@ const discoverAndTrackAnimations = (
       tracked.add(animation);
     }
   }
-  
+
   // Also maintain a set on the root element for coordination
   let rootTracked = animationTracker.get(element);
   if (!rootTracked) {
     rootTracked = new Set<Animation>();
     animationTracker.set(element, rootTracked);
   }
-  
+
   // Update root set with all current animations
   for (const animation of currentAnimations) {
     rootTracked.add(animation);
   }
-  
+
   // Clean up invalid animations from root set
   // This handles animations that were cancelled, removed from DOM, or had their effects removed
   for (const animation of rootTracked) {
@@ -109,7 +112,7 @@ const discoverAndTrackAnimations = (
       rootTracked.delete(animation);
     }
   }
-  
+
   // Also clean up invalid animations from per-element sets
   // We need to check all elements that might have tracked animations
   const allTargets = new Set<Element>();
@@ -119,7 +122,7 @@ const discoverAndTrackAnimations = (
       allTargets.add(target);
     }
   }
-  
+
   // Check tracked sets for elements that might have invalid animations
   // We can't iterate WeakMap directly, but we can check elements we know about
   // and also check elements in the subtree
@@ -138,7 +141,7 @@ const discoverAndTrackAnimations = (
       }
     }
   }
-  
+
   return rootTracked;
 };
 
@@ -152,9 +155,9 @@ export const getTrackedAnimations = (element: Element): Animation[] => {
   if (!tracked) {
     return [];
   }
-  
+
   const currentAnimations = element.getAnimations();
-  
+
   // Filter out invalid animations
   return Array.from(tracked).filter((animation) =>
     isAnimationValid(animation, currentAnimations),
@@ -453,21 +456,25 @@ const calculateEffectiveDelay = (
     // Read stagger offset - try property first (more reliable), then CSS variable
     // The staggerOffsetMs property is set directly on the element and is always available
     const segment = element as any;
-    if (segment.staggerOffsetMs !== undefined && segment.staggerOffsetMs !== null) {
+    if (
+      segment.staggerOffsetMs !== undefined &&
+      segment.staggerOffsetMs !== null
+    ) {
       return delay + segment.staggerOffsetMs;
     }
-    
+
     // Fallback to CSS variable if property not available
-    let cssValue = (element as HTMLElement).style.getPropertyValue(
-      "--ef-stagger-offset",
-    ).trim();
-    
+    let cssValue = (element as HTMLElement).style
+      .getPropertyValue("--ef-stagger-offset")
+      .trim();
+
     if (!cssValue) {
-      cssValue = window.getComputedStyle(element).getPropertyValue(
-        "--ef-stagger-offset",
-      ).trim();
+      cssValue = window
+        .getComputedStyle(element)
+        .getPropertyValue("--ef-stagger-offset")
+        .trim();
     }
-    
+
     if (cssValue) {
       // Parse "100ms" format to milliseconds
       const match = cssValue.match(/(\d+(?:\.\d+)?)\s*ms?/);
@@ -789,7 +796,7 @@ const mapAndSetAnimationTime = (
     // - If timing.delay === 0: currentTime is just animation progress (0 to duration)
     //   Stagger offset is handled via adjustedTime calculation, but doesn't affect currentTime format
     const { direction, delay } = timing;
-    
+
     if (delay > 0) {
       // CSS animation with delay: currentTime is absolute timeline time
       const isAlternateWithDelay =
@@ -858,12 +865,15 @@ const synchronizeAnimation = (
     } else {
       // Target might be a child element - find the parent text segment
       const parentSegment = target.closest("ef-text-segment");
-      if (parentSegment && supportsStaggerOffset(parentSegment as AnimatableElement)) {
+      if (
+        parentSegment &&
+        supportsStaggerOffset(parentSegment as AnimatableElement)
+      ) {
         staggerElement = parentSegment as AnimatableElement;
       }
     }
   }
-  
+
   const effectiveDelay = calculateEffectiveDelay(timing.delay, staggerElement);
   mapAndSetAnimationTime(animation, timeSource, timing, effectiveDelay);
 };
@@ -882,7 +892,7 @@ const synchronizeAnimation = (
 const coordinateElementAnimations = (element: AnimatableElement): void => {
   // Discover and track animations (includes both current and previously completed ones)
   const trackedAnimations = discoverAndTrackAnimations(element);
-  
+
   const currentAnimations = element.getAnimations({ subtree: true });
 
   for (const animation of trackedAnimations) {
@@ -890,7 +900,7 @@ const coordinateElementAnimations = (element: AnimatableElement): void => {
     if (!isAnimationValid(animation, currentAnimations)) {
       continue;
     }
-    
+
     prepareAnimation(animation);
     synchronizeAnimation(animation, element);
   }

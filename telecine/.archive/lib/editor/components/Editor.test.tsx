@@ -18,7 +18,7 @@ const renderTestEditor = (): RenderResult => {
    */
   const result = testRender(editor, <Editor />);
   const [stageOuter] = result.container.getElementsByClassName(
-    layerStageClasses.stageOuter
+    layerStageClasses.stageOuter,
   );
   // @ts-expect-error - this is known to be a div
   Object.assign(stageOuter.style, {
@@ -49,7 +49,7 @@ describe("<Editor>", () => {
         editor.setLayerSelection(timeGroup);
         const { container } = renderTestEditor();
         const [stageOuter] = container.getElementsByClassName(
-          layerStageClasses.stageOuter
+          layerStageClasses.stageOuter,
         );
 
         pointerEvents(
@@ -63,7 +63,7 @@ describe("<Editor>", () => {
           // And finally far away
           [100, 100],
           // The pointer is released
-          {}
+          {},
         );
 
         assert.lengthOf(editor.composition.childLayers, 1);
@@ -85,7 +85,7 @@ describe("<Editor>", () => {
         editor.composition.pushLayers(timeGroup);
         const { container } = renderTestEditor();
         const [stageOuter] = container.getElementsByClassName(
-          layerStageClasses.stageOuter
+          layerStageClasses.stageOuter,
         );
 
         pointerEvents(
@@ -99,7 +99,7 @@ describe("<Editor>", () => {
           // And finally far away
           [100, 100],
           // The pointer is released
-          {}
+          {},
         );
 
         assert.lengthOf(editor.composition.childLayers, 1);
@@ -122,7 +122,7 @@ describe("<Editor>", () => {
         editor.setLayerSelection(timeGroup);
         const { container } = renderTestEditor();
         const [stageOuter] = container.getElementsByClassName(
-          layerStageClasses.stageOuter
+          layerStageClasses.stageOuter,
         );
 
         pointerEvents(
@@ -136,7 +136,7 @@ describe("<Editor>", () => {
           // And finally far away
           [100, 100],
           // The pointer is released
-          {}
+          {},
         );
 
         pointerEvents(
@@ -150,7 +150,7 @@ describe("<Editor>", () => {
           // And finally far away
           [100, 100],
           // The pointer is released
-          {}
+          {},
         );
 
         assert.lengthOf(editor.composition.childLayers, 1);
@@ -174,7 +174,7 @@ describe("<Editor>", () => {
         editor.setLayerSelection(timeGroup);
         const { container } = renderTestEditor();
         const [stageOuter] = container.getElementsByClassName(
-          layerStageClasses.stageOuter
+          layerStageClasses.stageOuter,
         );
 
         pointerEvents(
@@ -185,7 +185,7 @@ describe("<Editor>", () => {
           [51, 51],
           [48, 48],
           // then releasing
-          {}
+          {},
         );
 
         assert.lengthOf(editor.composition.childLayers, 1);
@@ -207,11 +207,11 @@ describe("<Editor>", () => {
             fixedWidth: 100,
             translateY: 0,
             translateX: 0,
-          })
+          }),
         );
         const { container } = renderTestEditor();
         const [stageOuter] = container.getElementsByClassName(
-          layerStageClasses.stageOuter
+          layerStageClasses.stageOuter,
         );
 
         tap(stageOuter, [50, 50]);
@@ -229,11 +229,11 @@ describe("<Editor>", () => {
             fixedWidth: 100,
             translateY: 0,
             translateX: 0,
-          })
+          }),
         );
         const { container } = renderTestEditor();
         const [stageOuter] = container.getElementsByClassName(
-          layerStageClasses.stageOuter
+          layerStageClasses.stageOuter,
         );
 
         tap(stageOuter, [50, 50]);
@@ -260,11 +260,11 @@ describe("<Editor>", () => {
             fixedWidth: 100,
             translateY: 0,
             translateX: 0,
-          })
+          }),
         );
         const { container } = renderTestEditor();
         const [stageOuter] = container.getElementsByClassName(
-          layerStageClasses.stageOuter
+          layerStageClasses.stageOuter,
         );
 
         tap(stageOuter, [50, 50]);
@@ -322,11 +322,11 @@ describe("<Editor>", () => {
             fixedWidth: 100,
             translateY: 0,
             translateX: 0,
-          })
+          }),
         );
         const { container } = renderTestEditor();
         const [stageOuter] = container.getElementsByClassName(
-          layerStageClasses.stageOuter
+          layerStageClasses.stageOuter,
         );
 
         // first tap, selects outer time group
@@ -405,7 +405,7 @@ describe("<Editor>", () => {
 
         const { container } = renderTestEditor();
         const [stageOuter] = container.getElementsByClassName(
-          layerStageClasses.stageOuter
+          layerStageClasses.stageOuter,
         );
 
         // first tap, selects outer time group
@@ -432,11 +432,11 @@ describe("<Editor>", () => {
             fixedWidth: 100,
             translateY: 0,
             translateX: 0,
-          })
+          }),
         );
         const { container } = renderTestEditor();
         const [stageOuter] = container.getElementsByClassName(
-          layerStageClasses.stageOuter
+          layerStageClasses.stageOuter,
         );
 
         tap(stageOuter, [50, 50]);
@@ -460,14 +460,14 @@ describe("<Editor>", () => {
       editor.setPointerMode(PointerModes.TimeGroup);
       const { container } = renderTestEditor();
       const [stageOuter] = container.getElementsByClassName(
-        layerStageClasses.stageOuter
+        layerStageClasses.stageOuter,
       );
 
       pointerEvents(
         stageOuter, //
         [0, 0],
         [100, 100],
-        [100, 100]
+        [100, 100],
       );
 
       console.log(getSnapshot(editor.composition.layers));
@@ -479,14 +479,14 @@ describe("<Editor>", () => {
       editor.setPointerMode(PointerModes.TimeGroup);
       const { container } = renderTestEditor();
       const [stageOuter] = container.getElementsByClassName(
-        layerStageClasses.stageOuter
+        layerStageClasses.stageOuter,
       );
 
       pointerEvents(
         stageOuter, //
         [0, 100],
         [100, 0],
-        [100, 0]
+        [100, 0],
       );
 
       assert.lengthOf(editor.composition.childLayers, 1);
@@ -497,14 +497,14 @@ describe("<Editor>", () => {
       editor.setPointerMode(PointerModes.TimeGroup);
       const { container } = renderTestEditor();
       const [stageOuter] = container.getElementsByClassName(
-        layerStageClasses.stageOuter
+        layerStageClasses.stageOuter,
       );
 
       pointerEvents(
         stageOuter, //
         [100, 0],
         [0, 100],
-        [0, 100]
+        [0, 100],
       );
 
       assert.lengthOf(editor.composition.childLayers, 1);
@@ -515,14 +515,14 @@ describe("<Editor>", () => {
       editor.setPointerMode(PointerModes.TimeGroup);
       const { container } = renderTestEditor();
       const [stageOuter] = container.getElementsByClassName(
-        layerStageClasses.stageOuter
+        layerStageClasses.stageOuter,
       );
 
       pointerEvents(
         stageOuter, //
         [100, 100],
         [0, 0],
-        [0, 0]
+        [0, 0],
       );
 
       assert.lengthOf(editor.composition.childLayers, 1);

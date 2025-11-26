@@ -7,4 +7,3 @@ import { TestFastMainWorker } from "@/queues/units-of-work/TestFast/Main";
 import "@/queues/units-of-work/TestFast/Workflow";
 
 createWorkerServer(TestFastMainWorker);
-

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/.cache/**",
+    "**/assets/**",
+    "**/dev-projects/**",
+    "**/packages/**/*/types.json",
+    "**/test-assets/mockServiceWorker.js",
+    "packages/create/src/templates/**",
+    "*.wsEndpoint.json",
+    "**/__cache__/**"
+  ],
+  "rules": {}
+}
+

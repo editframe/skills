@@ -51,9 +51,10 @@ export function AspectRatioScalingControl({
             className={`
               flex items-center justify-center gap-1 px-2 py-1 rounded text-[9px] font-medium
               transition-colors flex-1
-              ${currentValue === option.value
-                ? "bg-blue-600 text-white"
-                : "bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 hover:text-gray-300"
+              ${
+                currentValue === option.value
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 hover:text-gray-300"
               }
             `}
           >
@@ -65,6 +66,3 @@ export function AspectRatioScalingControl({
     </div>
   );
 }
-
-
-

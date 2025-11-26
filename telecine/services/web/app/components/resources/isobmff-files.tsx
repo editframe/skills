@@ -5,7 +5,12 @@ import type { ResourceView } from ".";
 import { Link } from "../Link";
 import { useEffect, useState } from "react";
 import { Button } from "~/components/Button";
-import { Trash, Upload, FileText, Link as LinkIcon } from "@phosphor-icons/react";
+import {
+  Trash,
+  Upload,
+  FileText,
+  Link as LinkIcon,
+} from "@phosphor-icons/react";
 import { useFetcher } from "react-router";
 import { useNavigate } from "react-router";
 import clsx from "clsx";
@@ -187,10 +192,12 @@ const Filter = () => {
 
   return (
     <div className="flex items-center gap-2">
-      <span className={clsx(
-        "text-xs font-medium whitespace-nowrap transition-colors",
-        "text-slate-700 dark:text-slate-300"
-      )}>
+      <span
+        className={clsx(
+          "text-xs font-medium whitespace-nowrap transition-colors",
+          "text-slate-700 dark:text-slate-300",
+        )}
+      >
         Search:
       </span>
       <input
@@ -211,7 +218,7 @@ const Filter = () => {
           "focus:border-blue-500/85 dark:focus:border-blue-400/85",
           "focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08),0_4px_12px_0_rgb(59_130_246_/_0.22)] dark:focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.4),0_4px_12px_0_rgb(59_130_246_/_0.35)]",
           "focus:before:from-blue-50/30 focus:before:via-transparent focus:before:to-transparent",
-          "dark:focus:before:from-blue-950/22 dark:focus:before:via-transparent dark:focus:before:to-transparent"
+          "dark:focus:before:from-blue-950/22 dark:focus:before:via-transparent dark:focus:before:to-transparent",
         )}
         onChange={(e) => setSearch(e.target.value)}
       />
@@ -241,7 +248,9 @@ const TableHeader = () => {
 
 export const TranscriptionProgress = ({
   transcriptionId,
-}: { transcriptionId: string }) => {
+}: {
+  transcriptionId: string;
+}) => {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -270,50 +279,50 @@ export const TranscriptionProgress = ({
 };
 
 export const ISOBMFFFiles: ResourceView<typeof IndexQuery, typeof DetailQuery> =
-{
-  index: {
-    query: IndexQuery,
-    buildWhereClause,
-    TableHeader,
-    columns: [
-      { name: "Filename", content: Filename },
-      { name: "Created At", content: CreatedAt },
-      { name: "Expires At", content: ExpiresAt },
-      { name: "Duration", content: DurationColumn },
-      { name: "Video Info", content: VideoInfo },
-      { name: "Audio Info", content: AudioInfo },
-      { name: "Transcription", content: TranscriptionStatusCell },
-      { name: "File Size", content: FileSize },
-      { name: "Fragment Index Complete", content: FragmentIndexComplete },
-      { name: "", content: Actions },
-    ],
-  },
-  detail: {
-    query: DetailQuery,
-    fields: [
-      { name: "Filename", content: Filename },
-      { name: "Created At", content: CreatedAt },
-      { name: "Expires At", content: ExpiresAt },
-      { name: "Duration", content: DurationColumn },
-      { name: "Video Info", content: VideoInfo },
-      { name: "Audio Info", content: AudioInfo },
-      { name: "Transcription", content: TranscriptionStatusDetail },
-      { name: "File Size", content: FileSize },
-      { name: "Fragment Index Complete", content: FragmentIndexComplete },
-      { name: "ID", content: ID },
-      {
-        name: "Preview",
-        content: Preview,
-        vertical: true,
-        noHighlight: true,
-      },
-      {
-        name: "Tracks",
-        content: TracksTable,
-        vertical: true,
-        noHighlight: true,
-      },
-      { name: "", content: Actions, noHighlight: true, vertical: true },
-    ],
-  },
-};
+  {
+    index: {
+      query: IndexQuery,
+      buildWhereClause,
+      TableHeader,
+      columns: [
+        { name: "Filename", content: Filename },
+        { name: "Created At", content: CreatedAt },
+        { name: "Expires At", content: ExpiresAt },
+        { name: "Duration", content: DurationColumn },
+        { name: "Video Info", content: VideoInfo },
+        { name: "Audio Info", content: AudioInfo },
+        { name: "Transcription", content: TranscriptionStatusCell },
+        { name: "File Size", content: FileSize },
+        { name: "Fragment Index Complete", content: FragmentIndexComplete },
+        { name: "", content: Actions },
+      ],
+    },
+    detail: {
+      query: DetailQuery,
+      fields: [
+        { name: "Filename", content: Filename },
+        { name: "Created At", content: CreatedAt },
+        { name: "Expires At", content: ExpiresAt },
+        { name: "Duration", content: DurationColumn },
+        { name: "Video Info", content: VideoInfo },
+        { name: "Audio Info", content: AudioInfo },
+        { name: "Transcription", content: TranscriptionStatusDetail },
+        { name: "File Size", content: FileSize },
+        { name: "Fragment Index Complete", content: FragmentIndexComplete },
+        { name: "ID", content: ID },
+        {
+          name: "Preview",
+          content: Preview,
+          vertical: true,
+          noHighlight: true,
+        },
+        {
+          name: "Tracks",
+          content: TracksTable,
+          vertical: true,
+          noHighlight: true,
+        },
+        { name: "", content: Actions, noHighlight: true, vertical: true },
+      ],
+    },
+  };

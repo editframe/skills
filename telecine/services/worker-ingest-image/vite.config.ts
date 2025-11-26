@@ -16,8 +16,8 @@ export default defineConfig({
   plugins: [
     tsconfigPaths(),
     copyLuaScripts(
-      path.resolve(__dirname, '../../lib/queues/lua'),
-      path.resolve(__dirname, './dist/lua')
+      path.resolve(__dirname, "../../lib/queues/lua"),
+      path.resolve(__dirname, "./dist/lua"),
     ),
   ],
   appType: "custom",
@@ -34,9 +34,9 @@ export default defineConfig({
         // IMPLEMENTATION GUIDELINES: Create single bundle file for easier deployment
         inlineDynamicImports: true,
         preserveModules: false,
-        entryFileNames: 'server.js',
-        chunkFileNames: 'server.js',
-        assetFileNames: 'assets/[name].[ext]'
+        entryFileNames: "server.js",
+        chunkFileNames: "server.js",
+        assetFileNames: "assets/[name].[ext]",
       },
       plugins: [rollupTsConfigPaths({})],
     },

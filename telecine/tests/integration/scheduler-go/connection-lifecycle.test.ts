@@ -147,9 +147,7 @@ describe("scheduler-go connection lifecycle", () => {
 
     console.log("\n=== Cycle Summary ===");
     for (const result of cycleResults) {
-      console.log(
-        `Cycle ${result.cycle}: max=${result.maxConnections}`,
-      );
+      console.log(`Cycle ${result.cycle}: max=${result.maxConnections}`);
     }
 
     const allEstablishedConnections = cycleResults.every(
@@ -158,9 +156,7 @@ describe("scheduler-go connection lifecycle", () => {
     expect(allEstablishedConnections).toBe(true);
 
     console.log("\n✓ All cycles completed successfully");
-    console.log(
-      `✓ Connections established in all ${CYCLES} cycles`,
-    );
+    console.log(`✓ Connections established in all ${CYCLES} cycles`);
     console.log(`✓ Connections scaled down to 0 in all ${CYCLES} cycles`);
   }, 120000);
 
@@ -228,4 +224,3 @@ describe("scheduler-go connection lifecycle", () => {
     expect(goroutineVariance).toBeLessThan(20);
   }, 60000);
 });
-

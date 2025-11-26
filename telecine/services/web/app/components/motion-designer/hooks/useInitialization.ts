@@ -35,4 +35,3 @@ export function useInitialization({
     }
   }, [isHydrated, state.composition.rootTimegroupIds.length, onAddElement]);
 }
-

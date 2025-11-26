@@ -27,7 +27,7 @@ export function setIn<T extends Record<string, any>>(
 
   const [key, ...rest] = path;
   if (!key) return obj;
-  
+
   const newObj = { ...obj };
 
   if (rest.length === 0) {
@@ -56,7 +56,7 @@ export function updateIn<T extends Record<string, any>>(
 
   const [key, ...rest] = path;
   if (!key) return obj;
-  
+
   const newObj = { ...obj };
 
   if (rest.length === 0) {
@@ -156,4 +156,3 @@ export function merge<T extends Record<string, any>>(
   }
   return result;
 }
-

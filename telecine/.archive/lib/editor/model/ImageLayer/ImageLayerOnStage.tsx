@@ -7,5 +7,5 @@ export const ImageLayerOnStage = observer(
     const props = useLayerOnStageProps<HTMLImageElement>(layer);
 
     return <img {...props} src={layer.srcUrl} />;
-  }
+  },
 );

@@ -43,7 +43,13 @@ export function getCornerPoint(
   const centerY = y + height / 2;
   const localCornerX = x + xMagnitude * width;
   const localCornerY = y + yMagnitude * height;
-  return rotatePoint(centerX, centerY, localCornerX, localCornerY, rotationRadians);
+  return rotatePoint(
+    centerX,
+    centerY,
+    localCornerX,
+    localCornerY,
+    rotationRadians,
+  );
 }
 
 /**
@@ -52,15 +58,23 @@ export function getCornerPoint(
  */
 export function getOppositeCorner(handle: string): { x: number; y: number } {
   switch (handle) {
-    case "nw": return { x: 1, y: 1 }; // se corner
-    case "n": return { x: 0.5, y: 1 }; // s corner
-    case "ne": return { x: 0, y: 1 }; // sw corner
-    case "e": return { x: 0, y: 0.5 }; // w corner
-    case "se": return { x: 0, y: 0 }; // nw corner
-    case "s": return { x: 0.5, y: 0 }; // n corner
-    case "sw": return { x: 1, y: 0 }; // ne corner
-    case "w": return { x: 1, y: 0.5 }; // e corner
-    default: return { x: 0.5, y: 0.5 };
+    case "nw":
+      return { x: 1, y: 1 }; // se corner
+    case "n":
+      return { x: 0.5, y: 1 }; // s corner
+    case "ne":
+      return { x: 0, y: 1 }; // sw corner
+    case "e":
+      return { x: 0, y: 0.5 }; // w corner
+    case "se":
+      return { x: 0, y: 0 }; // nw corner
+    case "s":
+      return { x: 0.5, y: 0 }; // n corner
+    case "sw":
+      return { x: 1, y: 0 }; // ne corner
+    case "w":
+      return { x: 1, y: 0.5 }; // e corner
+    default:
+      return { x: 0.5, y: 0.5 };
   }
 }
-

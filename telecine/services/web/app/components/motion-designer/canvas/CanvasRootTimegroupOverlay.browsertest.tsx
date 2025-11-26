@@ -2,10 +2,15 @@ import React from "react";
 import { describe, test, expect, beforeEach, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import { CanvasRootTimegroupOverlay } from "./CanvasRootTimegroupOverlay";
-import type { MotionDesignerState, ElementNode } from "~/lib/motion-designer/types";
+import type {
+  MotionDesignerState,
+  ElementNode,
+} from "~/lib/motion-designer/types";
 import { MotionDesignerProvider } from "../context/MotionDesignerContext";
 
-function createMockElementNode(overrides: Partial<ElementNode> = {}): ElementNode {
+function createMockElementNode(
+  overrides: Partial<ElementNode> = {},
+): ElementNode {
   return {
     id: "test-element-1",
     type: "div",
@@ -16,7 +21,9 @@ function createMockElementNode(overrides: Partial<ElementNode> = {}): ElementNod
   };
 }
 
-function createMockTimegroup(overrides: Partial<ElementNode> = {}): ElementNode {
+function createMockTimegroup(
+  overrides: Partial<ElementNode> = {},
+): ElementNode {
   return createMockElementNode({
     type: "timegroup",
     props: {
@@ -28,7 +35,9 @@ function createMockTimegroup(overrides: Partial<ElementNode> = {}): ElementNode 
   });
 }
 
-function createMockMotionDesignerState(overrides: Partial<MotionDesignerState> = {}): MotionDesignerState {
+function createMockMotionDesignerState(
+  overrides: Partial<MotionDesignerState> = {},
+): MotionDesignerState {
   return {
     composition: {
       elements: {},
@@ -70,21 +79,21 @@ function createMockActions() {
 function createTimegroupElement(id: string, duration: string = "5s") {
   const wrapper = document.createElement("div");
   wrapper.setAttribute("data-timegroup-id", id);
-  
+
   const timegroupElement = document.createElement("ef-timegroup");
   timegroupElement.id = id;
   timegroupElement.setAttribute("duration", duration);
   timegroupElement.setAttribute("mode", "fixed");
-  
+
   // Provide durationMs getter that reads from attribute (works with real elements too)
   const originalDurationMs = Object.getOwnPropertyDescriptor(
     Object.getPrototypeOf(timegroupElement),
-    "durationMs"
+    "durationMs",
   );
-  
+
   if (!originalDurationMs || typeof originalDurationMs.get !== "function") {
     Object.defineProperty(timegroupElement, "durationMs", {
-      get: function() {
+      get: function () {
         const dur = this.getAttribute("duration") || "5s";
         if (dur.endsWith("ms")) {
           return parseFloat(dur.slice(0, -2)) || 5000;
@@ -97,21 +106,21 @@ function createTimegroupElement(id: string, duration: string = "5s") {
       configurable: true,
     });
   }
-  
+
   // Set dimensions for the element
   Object.defineProperty(timegroupElement, "offsetWidth", {
     get: () => 960,
     configurable: true,
   });
-  
+
   Object.defineProperty(timegroupElement, "offsetHeight", {
     get: () => 540,
     configurable: true,
   });
-  
+
   wrapper.appendChild(timegroupElement);
   document.body.appendChild(wrapper);
-  
+
   return { wrapper, timegroupElement };
 }
 
@@ -121,7 +130,7 @@ function renderOverlay(
   canvasScale: number = 1,
 ) {
   const actions = createMockActions();
-  
+
   return {
     ...render(
       <MotionDesignerProvider actions={actions}>
@@ -130,7 +139,7 @@ function renderOverlay(
           state={state}
           canvasScale={canvasScale}
         />
-      </MotionDesignerProvider>
+      </MotionDesignerProvider>,
     ),
     actions,
   };
@@ -169,15 +178,18 @@ describe("CanvasRootTimegroupOverlay", () => {
 
       renderOverlay(element, state);
 
-      await waitFor(() => {
-        const durationText = screen.getByText(/Timegroup ·/);
-        // Should show 7.5s (from DOM element's durationMs getter), not 3.0s (from props)
-        expect(durationText.textContent).toContain("7.5s");
-      }, { timeout: 2000 });
+      await waitFor(
+        () => {
+          const durationText = screen.getByText(/Timegroup ·/);
+          // Should show 7.5s (from DOM element's durationMs getter), not 3.0s (from props)
+          expect(durationText.textContent).toContain("7.5s");
+        },
+        { timeout: 2000 },
+      );
     });
 
     test("formats duration correctly for seconds", async () => {
-      const element = createMockTimegroup({ 
+      const element = createMockTimegroup({
         id: "test-tg",
         props: {
           duration: "5s",
@@ -200,14 +212,17 @@ describe("CanvasRootTimegroupOverlay", () => {
 
       renderOverlay(element, state);
 
-      await waitFor(() => {
-        const durationText = screen.getByText(/Timegroup ·/);
-        expect(durationText.textContent).toContain("5.0s");
-      }, { timeout: 2000 });
+      await waitFor(
+        () => {
+          const durationText = screen.getByText(/Timegroup ·/);
+          expect(durationText.textContent).toContain("5.0s");
+        },
+        { timeout: 2000 },
+      );
     });
 
     test("formats duration correctly for milliseconds", async () => {
-      const element = createMockTimegroup({ 
+      const element = createMockTimegroup({
         id: "test-tg",
         props: {
           duration: "500ms",
@@ -230,14 +245,17 @@ describe("CanvasRootTimegroupOverlay", () => {
 
       renderOverlay(element, state);
 
-      await waitFor(() => {
-        const durationText = screen.getByText(/Timegroup ·/);
-        expect(durationText.textContent).toContain("500ms");
-      }, { timeout: 2000 });
+      await waitFor(
+        () => {
+          const durationText = screen.getByText(/Timegroup ·/);
+          expect(durationText.textContent).toContain("500ms");
+        },
+        { timeout: 2000 },
+      );
     });
 
     test("formats duration with decimal for seconds", async () => {
-      const element = createMockTimegroup({ 
+      const element = createMockTimegroup({
         id: "test-tg",
         props: {
           duration: "1.5s",
@@ -260,16 +278,19 @@ describe("CanvasRootTimegroupOverlay", () => {
 
       renderOverlay(element, state);
 
-      await waitFor(() => {
-        const durationText = screen.getByText(/Timegroup ·/);
-        expect(durationText.textContent).toContain("1.5s");
-      }, { timeout: 2000 });
+      await waitFor(
+        () => {
+          const durationText = screen.getByText(/Timegroup ·/);
+          expect(durationText.textContent).toContain("1.5s");
+        },
+        { timeout: 2000 },
+      );
     });
   });
 
   describe("duration updates reactively", () => {
     test("updates duration display when DOM element duration changes", async () => {
-      const element = createMockTimegroup({ 
+      const element = createMockTimegroup({
         id: "test-tg",
         props: {
           duration: "5s",
@@ -292,22 +313,28 @@ describe("CanvasRootTimegroupOverlay", () => {
 
       renderOverlay(element, state);
 
-      await waitFor(() => {
-        const durationText = screen.getByText(/Timegroup ·/);
-        expect(durationText.textContent).toContain("5.0s");
-      }, { timeout: 2000 });
+      await waitFor(
+        () => {
+          const durationText = screen.getByText(/Timegroup ·/);
+          expect(durationText.textContent).toContain("5.0s");
+        },
+        { timeout: 2000 },
+      );
 
       // Change duration on DOM element by updating attribute
       timegroupElement.setAttribute("duration", "10s");
 
-      await waitFor(() => {
-        const durationText = screen.getByText(/Timegroup ·/);
-        expect(durationText.textContent).toContain("10.0s");
-      }, { timeout: 2000 });
+      await waitFor(
+        () => {
+          const durationText = screen.getByText(/Timegroup ·/);
+          expect(durationText.textContent).toContain("10.0s");
+        },
+        { timeout: 2000 },
+      );
     });
 
     test("reads duration from DOM element in RAF loop", async () => {
-      const element = createMockTimegroup({ 
+      const element = createMockTimegroup({
         id: "test-tg",
         props: {
           duration: "5s",
@@ -331,7 +358,7 @@ describe("CanvasRootTimegroupOverlay", () => {
       renderOverlay(element, state);
 
       // Wait for initial render and a few RAF cycles
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Verify the component is reading from the DOM element by checking the displayed duration
       const durationText = screen.getByText(/Timegroup ·/);
@@ -341,7 +368,7 @@ describe("CanvasRootTimegroupOverlay", () => {
 
   describe("duration not displayed when inactive", () => {
     test("does not show duration overlay when timegroup is not active", () => {
-      const element = createMockTimegroup({ 
+      const element = createMockTimegroup({
         id: "test-tg",
         props: {
           duration: "5s",
@@ -369,4 +396,3 @@ describe("CanvasRootTimegroupOverlay", () => {
     });
   });
 });
-

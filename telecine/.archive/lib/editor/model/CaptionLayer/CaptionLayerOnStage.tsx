@@ -27,5 +27,5 @@ export const CaptionLayerOnStage = observer(
         })}
       </div>
     );
-  }
+  },
 );

@@ -12,7 +12,9 @@ export function HierarchyPanel({ state }: HierarchyPanelProps) {
   const activeRootTimegroup = activeRootTimegroupId
     ? state.composition.elements[activeRootTimegroupId]
     : null;
-  const panelTitle = activeRootTimegroup ? `Timegroup ${activeRootTimegroup.id.slice(0, 4)}` : "Elements";
+  const panelTitle = activeRootTimegroup
+    ? `Timegroup ${activeRootTimegroup.id.slice(0, 4)}`
+    : "Elements";
 
   return (
     <DragProvider>
@@ -40,4 +42,3 @@ export function HierarchyPanel({ state }: HierarchyPanelProps) {
     </DragProvider>
   );
 }
-

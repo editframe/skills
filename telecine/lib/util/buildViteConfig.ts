@@ -30,14 +30,16 @@ export const buildViteConfig = () => {
         allowedHosts: process.env.NODE_ENV === "production" ? undefined : true,
         // HMR server is passed in server.js via hmr.server
         // Client connects via window.location.hostname (main.localhost)
-        hmr: process.env.VITE_HMR_HOST ? {
-          protocol: "ws",
-          clientPort: 3000,
-          host: process.env.VITE_HMR_HOST, // Client-side connection URL only
-        } : {
-          protocol: "ws",
-          clientPort: 3000,
-        },
+        hmr: process.env.VITE_HMR_HOST
+          ? {
+              protocol: "ws",
+              clientPort: 3000,
+              host: process.env.VITE_HMR_HOST, // Client-side connection URL only
+            }
+          : {
+              protocol: "ws",
+              clientPort: 3000,
+            },
         watch: {
           ignored: [
             "**/playwright-report/**/*",
@@ -50,12 +52,20 @@ export const buildViteConfig = () => {
       },
       // Inject environment variables for client-side
       define: {
-        ...(process.env.VITE_HMR_HOST ? {
-          'import.meta.env.VITE_HMR_HOST': JSON.stringify(process.env.VITE_HMR_HOST),
-        } : {}),
-        ...(process.env.VITE_WEB_HOST ? {
-          'import.meta.env.VITE_WEB_HOST': JSON.stringify(process.env.VITE_WEB_HOST),
-        } : {}),
+        ...(process.env.VITE_HMR_HOST
+          ? {
+              "import.meta.env.VITE_HMR_HOST": JSON.stringify(
+                process.env.VITE_HMR_HOST,
+              ),
+            }
+          : {}),
+        ...(process.env.VITE_WEB_HOST
+          ? {
+              "import.meta.env.VITE_WEB_HOST": JSON.stringify(
+                process.env.VITE_WEB_HOST,
+              ),
+            }
+          : {}),
       },
       resolve: { alias: viteAliases },
       esbuild: {
@@ -75,25 +85,29 @@ export const buildViteConfig = () => {
         reactRouter(),
         tsconfigPaths(),
         copyLuaScripts(
-          path.resolve(process.cwd(), 'lib/queues/lua'),
-          path.resolve(process.cwd(), 'services/web/build/server/assets/lua')
+          path.resolve(process.cwd(), "lib/queues/lua"),
+          path.resolve(process.cwd(), "services/web/build/server/assets/lua"),
         ),
         // Plugin to handle CSS imports during SSR only
         // CSS should be processed normally for client builds
-        ...(isSsrBuild ? [{
-          name: 'ssr-css-handler',
-          enforce: 'pre',
-          resolveId(id) {
-            if (id.endsWith('.css')) {
-              return `\0${id}`;
-            }
-          },
-          load(id) {
-            if (id.startsWith('\0') && id.endsWith('.css')) {
-              return 'export default {}';
-            }
-          },
-        }] : []),
+        ...(isSsrBuild
+          ? [
+              {
+                name: "ssr-css-handler",
+                enforce: "pre",
+                resolveId(id) {
+                  if (id.endsWith(".css")) {
+                    return `\0${id}`;
+                  }
+                },
+                load(id) {
+                  if (id.startsWith("\0") && id.endsWith(".css")) {
+                    return "export default {}";
+                  }
+                },
+              },
+            ]
+          : []),
       ],
       build: {
         target: "es2022",

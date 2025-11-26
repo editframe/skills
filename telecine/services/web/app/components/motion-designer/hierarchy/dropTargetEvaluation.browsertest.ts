@@ -1,6 +1,9 @@
 import { describe, test, expect } from "vitest";
 import { evaluateDropTarget, type ElementRef } from "./dropTargetEvaluation";
-import type { MotionDesignerState, ElementNode } from "~/lib/motion-designer/types";
+import type {
+  MotionDesignerState,
+  ElementNode,
+} from "~/lib/motion-designer/types";
 import { registerCoreBehaviors } from "~/lib/motion-designer/coreBehaviors";
 import { behaviorRegistry } from "~/lib/motion-designer/behaviors";
 import type { DropZone } from "./dropZone";
@@ -349,4 +352,3 @@ describe("evaluateDropTarget", () => {
     expect(resetCalls).toContain("div1");
   });
 });
-

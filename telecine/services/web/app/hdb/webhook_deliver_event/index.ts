@@ -6,7 +6,9 @@ import type { Route } from "./+types/index";
 
 export const action = async ({ request }: Route.ActionArgs) => {
   return executeSpan("webhook_deliver_event", async (span) => {
-    const payload = await request.json() as HasuraEvent<Selectable<ApiWebhookEvents>>;
+    const payload = (await request.json()) as HasuraEvent<
+      Selectable<ApiWebhookEvents>
+    >;
     span.setAttributes({
       payload: JSON.stringify(payload),
     });

@@ -18,7 +18,7 @@ export function CanvasContextMenu({
     const handleClickOutside = () => {
       onClose();
     };
-    
+
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         onClose();
@@ -71,4 +71,3 @@ export function CanvasContextMenu({
     </div>
   );
 }
-

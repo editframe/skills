@@ -35,15 +35,21 @@ async function test(name: string, fn: () => Promise<void>) {
     console.log(`✅ ${name}`);
   } catch (error) {
     console.error(`❌ ${name}`);
-    console.error(`   Error: ${error instanceof Error ? error.message : String(error)}`);
+    console.error(
+      `   Error: ${error instanceof Error ? error.message : String(error)}`,
+    );
     throw error;
   }
 }
 
 async function main() {
-  console.log("═══════════════════════════════════════════════════════════════");
+  console.log(
+    "═══════════════════════════════════════════════════════════════",
+  );
   console.log("  JIT Transcoding Service Parity Validation");
-  console.log("═══════════════════════════════════════════════════════════════");
+  console.log(
+    "═══════════════════════════════════════════════════════════════",
+  );
   console.log("");
 
   await ensureOutputDir();
@@ -76,16 +82,20 @@ async function main() {
   try {
     await test("Manifest Structure Comparison", async () => {
       const tsManifest = await fetchJSON(
-        `${TS_SERVICE_URL}/api/v1/transcode/manifest.json?url=${encodeURIComponent(TEST_VIDEO_URL)}`
+        `${TS_SERVICE_URL}/api/v1/transcode/manifest.json?url=${encodeURIComponent(TEST_VIDEO_URL)}`,
       );
       const goManifest = await fetchJSON(
-        `${GO_SERVICE_URL}/api/v1/transcode/manifest.json?url=${encodeURIComponent(TEST_VIDEO_URL)}`
+        `${GO_SERVICE_URL}/api/v1/transcode/manifest.json?url=${encodeURIComponent(TEST_VIDEO_URL)}`,
       );
 
       console.log(`   TS duration: ${tsManifest.duration}s`);
       console.log(`   Go duration: ${goManifest.duration}s`);
-      console.log(`   TS video renditions: ${tsManifest.videoRenditions?.length || 0}`);
-      console.log(`   Go video renditions: ${goManifest.videoRenditions?.length || 0}`);
+      console.log(
+        `   TS video renditions: ${tsManifest.videoRenditions?.length || 0}`,
+      );
+      console.log(
+        `   Go video renditions: ${goManifest.videoRenditions?.length || 0}`,
+      );
 
       if (Math.abs(tsManifest.duration - goManifest.duration) > 0.1) {
         throw new Error("Duration mismatch");
@@ -99,7 +109,7 @@ async function main() {
   try {
     await test("Init Segment MSE Structure - TypeScript", async () => {
       const tsInit = await fetchBinary(
-        `${TS_SERVICE_URL}/api/v1/transcode/high/init.m4s?url=${encodeURIComponent(TEST_VIDEO_URL)}`
+        `${TS_SERVICE_URL}/api/v1/transcode/high/init.m4s?url=${encodeURIComponent(TEST_VIDEO_URL)}`,
       );
 
       await fs.writeFile(path.join(OUTPUT_DIR, "ts-init.m4s"), tsInit);
@@ -110,7 +120,9 @@ async function main() {
       const hasMoof = tsInit.includes(Buffer.from("moof"));
 
       console.log(`   Size: ${tsInit.length} bytes`);
-      console.log(`   Has ftyp: ${hasFtyp}, moov: ${hasMoov}, mdat: ${hasMdat}, moof: ${hasMoof}`);
+      console.log(
+        `   Has ftyp: ${hasFtyp}, moov: ${hasMoov}, mdat: ${hasMdat}, moof: ${hasMoof}`,
+      );
 
       if (!hasFtyp || !hasMoov || hasMdat || hasMoof) {
         throw new Error("Invalid init segment structure");
@@ -124,7 +136,7 @@ async function main() {
   try {
     await test("Init Segment MSE Structure - Go", async () => {
       const goInit = await fetchBinary(
-        `${GO_SERVICE_URL}/api/v1/transcode/high/init.m4s?url=${encodeURIComponent(TEST_VIDEO_URL)}`
+        `${GO_SERVICE_URL}/api/v1/transcode/high/init.m4s?url=${encodeURIComponent(TEST_VIDEO_URL)}`,
       );
 
       await fs.writeFile(path.join(OUTPUT_DIR, "go-init.m4s"), goInit);
@@ -135,7 +147,9 @@ async function main() {
       const hasMoof = goInit.includes(Buffer.from("moof"));
 
       console.log(`   Size: ${goInit.length} bytes`);
-      console.log(`   Has ftyp: ${hasFtyp}, moov: ${hasMoov}, mdat: ${hasMdat}, moof: ${hasMoof}`);
+      console.log(
+        `   Has ftyp: ${hasFtyp}, moov: ${hasMoov}, mdat: ${hasMdat}, moof: ${hasMoof}`,
+      );
 
       if (!hasFtyp || !hasMoov || hasMdat || hasMoof) {
         throw new Error("Invalid init segment structure");
@@ -149,7 +163,7 @@ async function main() {
   try {
     await test("Media Segment MSE Structure - TypeScript", async () => {
       const tsSeg = await fetchBinary(
-        `${TS_SERVICE_URL}/api/v1/transcode/high/1.m4s?url=${encodeURIComponent(TEST_VIDEO_URL)}`
+        `${TS_SERVICE_URL}/api/v1/transcode/high/1.m4s?url=${encodeURIComponent(TEST_VIDEO_URL)}`,
       );
 
       await fs.writeFile(path.join(OUTPUT_DIR, "ts-seg1.m4s"), tsSeg);
@@ -160,7 +174,9 @@ async function main() {
       const hasMoof = tsSeg.includes(Buffer.from("moof"));
 
       console.log(`   Size: ${tsSeg.length} bytes`);
-      console.log(`   Has ftyp: ${hasFtyp}, moov: ${hasMoov}, mdat: ${hasMdat}, moof: ${hasMoof}`);
+      console.log(
+        `   Has ftyp: ${hasFtyp}, moov: ${hasMoov}, mdat: ${hasMdat}, moof: ${hasMoof}`,
+      );
 
       if (hasFtyp || hasMoov || !hasMdat || !hasMoof) {
         throw new Error("Invalid media segment structure");
@@ -174,7 +190,7 @@ async function main() {
   try {
     await test("Media Segment MSE Structure - Go", async () => {
       const goSeg = await fetchBinary(
-        `${GO_SERVICE_URL}/api/v1/transcode/high/1.m4s?url=${encodeURIComponent(TEST_VIDEO_URL)}`
+        `${GO_SERVICE_URL}/api/v1/transcode/high/1.m4s?url=${encodeURIComponent(TEST_VIDEO_URL)}`,
       );
 
       await fs.writeFile(path.join(OUTPUT_DIR, "go-seg1.m4s"), goSeg);
@@ -185,7 +201,9 @@ async function main() {
       const hasMoof = goSeg.includes(Buffer.from("moof"));
 
       console.log(`   Size: ${goSeg.length} bytes`);
-      console.log(`   Has ftyp: ${hasFtyp}, moov: ${hasMoov}, mdat: ${hasMdat}, moof: ${hasMoof}`);
+      console.log(
+        `   Has ftyp: ${hasFtyp}, moov: ${hasMoov}, mdat: ${hasMdat}, moof: ${hasMoof}`,
+      );
 
       if (hasFtyp || hasMoov || !hasMdat || !hasMoof) {
         throw new Error("Invalid media segment structure");
@@ -243,7 +261,7 @@ async function main() {
   try {
     await test("DASH Manifest - TypeScript", async () => {
       const response = await fetch(
-        `${TS_SERVICE_URL}/api/v1/transcode/manifest.mpd?url=${encodeURIComponent(TEST_VIDEO_URL)}`
+        `${TS_SERVICE_URL}/api/v1/transcode/manifest.mpd?url=${encodeURIComponent(TEST_VIDEO_URL)}`,
       );
       const dash = await response.text();
 
@@ -263,7 +281,7 @@ async function main() {
   try {
     await test("DASH Manifest - Go", async () => {
       const response = await fetch(
-        `${GO_SERVICE_URL}/api/v1/transcode/manifest.mpd?url=${encodeURIComponent(TEST_VIDEO_URL)}`
+        `${GO_SERVICE_URL}/api/v1/transcode/manifest.mpd?url=${encodeURIComponent(TEST_VIDEO_URL)}`,
       );
       const dash = await response.text();
 
@@ -283,7 +301,7 @@ async function main() {
   try {
     await test("HLS Master Playlist - TypeScript", async () => {
       const response = await fetch(
-        `${TS_SERVICE_URL}/api/v1/transcode/manifest.m3u8?url=${encodeURIComponent(TEST_VIDEO_URL)}`
+        `${TS_SERVICE_URL}/api/v1/transcode/manifest.m3u8?url=${encodeURIComponent(TEST_VIDEO_URL)}`,
       );
       const hls = await response.text();
 
@@ -303,7 +321,7 @@ async function main() {
   try {
     await test("HLS Master Playlist - Go", async () => {
       const response = await fetch(
-        `${GO_SERVICE_URL}/api/v1/transcode/manifest.m3u8?url=${encodeURIComponent(TEST_VIDEO_URL)}`
+        `${GO_SERVICE_URL}/api/v1/transcode/manifest.m3u8?url=${encodeURIComponent(TEST_VIDEO_URL)}`,
       );
       const hls = await response.text();
 
@@ -321,9 +339,13 @@ async function main() {
   }
 
   console.log("");
-  console.log("═══════════════════════════════════════════════════════════════");
+  console.log(
+    "═══════════════════════════════════════════════════════════════",
+  );
   console.log(`  Results: ${passed} passed, ${failed} failed`);
-  console.log("═══════════════════════════════════════════════════════════════");
+  console.log(
+    "═══════════════════════════════════════════════════════════════",
+  );
   console.log("");
   console.log(`Output files saved to: ${OUTPUT_DIR}`);
 
@@ -336,4 +358,3 @@ main().catch((error) => {
   console.error("Fatal error:", error);
   process.exit(1);
 });
-

@@ -40,4 +40,4 @@ describe("RenderFragment", () => {
       expect(typeof RenderFragmentWorker.execute).toBe("function");
     });
   });
-}); 
+});

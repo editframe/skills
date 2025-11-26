@@ -20,7 +20,10 @@ export const action = async ({ request }: Route.ActionArgs) => {
     .executeTakeFirst();
 
   if (!apiKey) {
-    throw Response.json({ message: "Invalid or expired API token" }, { status: 401 });
+    throw Response.json(
+      { message: "Invalid or expired API token" },
+      { status: 401 },
+    );
   }
 
   const { url, params } = schema.parse(await request.json());
@@ -35,11 +38,10 @@ export const action = async ({ request }: Route.ActionArgs) => {
     uid: session.uid,
   };
 
-  const signedToken = jwt.sign(
-    jwtPayload,
-    apiKey.hash,
-    { algorithm: "HS256", expiresIn: "1hr" },
-  );
+  const signedToken = jwt.sign(jwtPayload, apiKey.hash, {
+    algorithm: "HS256",
+    expiresIn: "1hr",
+  });
 
   return {
     token: signedToken,

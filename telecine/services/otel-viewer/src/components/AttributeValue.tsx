@@ -9,7 +9,9 @@ export function AttributeValue({ value }: AttributeValueProps) {
   const isObject = isJsonObject(displayValue);
 
   if (!isObject) {
-    return <span className="json-primitive">{formatPrimitive(displayValue)}</span>;
+    return (
+      <span className="json-primitive">{formatPrimitive(displayValue)}</span>
+    );
   }
 
   return <JsonViewer data={displayValue} />;
@@ -22,8 +24,10 @@ function JsonViewer({ data, depth = 0 }: { data: any; depth?: number }) {
     return <span className="json-null">null</span>;
   }
 
-  if (typeof data !== 'object') {
-    return <span className={`json-${typeof data}`}>{formatPrimitive(data)}</span>;
+  if (typeof data !== "object") {
+    return (
+      <span className={`json-${typeof data}`}>{formatPrimitive(data)}</span>
+    );
   }
 
   const isArray = Array.isArray(data);
@@ -31,35 +35,39 @@ function JsonViewer({ data, depth = 0 }: { data: any; depth?: number }) {
   const isEmpty = entries.length === 0;
 
   if (isEmpty) {
-    return <span className="json-empty">{isArray ? '[]' : '{}'}</span>;
+    return <span className="json-empty">{isArray ? "[]" : "{}"}</span>;
   }
 
-  const openBracket = isArray ? '[' : '{';
-  const closeBracket = isArray ? ']' : '}';
+  const openBracket = isArray ? "[" : "{";
+  const closeBracket = isArray ? "]" : "}";
 
   return (
     <div className="json-object">
       <span className="json-bracket" onClick={() => setIsExpanded(!isExpanded)}>
-        <span className="json-toggle-icon">{isExpanded ? '▼' : '▶'}</span>
+        <span className="json-toggle-icon">{isExpanded ? "▼" : "▶"}</span>
         {openBracket}
       </span>
       {isExpanded && (
         <div className="json-children">
           {isArray
             ? data.map((item: any, index: number) => (
-              <div key={index} className="json-item">
-                <JsonViewer data={item} depth={depth + 1} />
-                {index < data.length - 1 && <span className="json-comma">,</span>}
-              </div>
-            ))
+                <div key={index} className="json-item">
+                  <JsonViewer data={item} depth={depth + 1} />
+                  {index < data.length - 1 && (
+                    <span className="json-comma">,</span>
+                  )}
+                </div>
+              ))
             : Object.entries(data).map(([key, val], index, arr) => (
-              <div key={key} className="json-item">
-                <span className="json-key">"{key}"</span>
-                <span className="json-colon">: </span>
-                <JsonViewer data={val} depth={depth + 1} />
-                {index < arr.length - 1 && <span className="json-comma">,</span>}
-              </div>
-            ))}
+                <div key={key} className="json-item">
+                  <span className="json-key">"{key}"</span>
+                  <span className="json-colon">: </span>
+                  <JsonViewer data={val} depth={depth + 1} />
+                  {index < arr.length - 1 && (
+                    <span className="json-comma">,</span>
+                  )}
+                </div>
+              ))}
         </div>
       )}
       <span className="json-bracket">{closeBracket}</span>
@@ -68,14 +76,18 @@ function JsonViewer({ data, depth = 0 }: { data: any; depth?: number }) {
 }
 
 function formatPrimitive(value: any): string {
-  if (typeof value === 'string') {
+  if (typeof value === "string") {
     return `"${value}"`;
   }
   return String(value);
 }
 
 function extractValue(attrValue: any): any {
-  if (typeof attrValue === 'string' || typeof attrValue === 'number' || typeof attrValue === 'boolean') {
+  if (
+    typeof attrValue === "string" ||
+    typeof attrValue === "number" ||
+    typeof attrValue === "boolean"
+  ) {
     return attrValue;
   }
 
@@ -98,5 +110,5 @@ function extractValue(attrValue: any): any {
 }
 
 function isJsonObject(value: any): boolean {
-  return typeof value === 'object' && value !== null;
+  return typeof value === "object" && value !== null;
 }

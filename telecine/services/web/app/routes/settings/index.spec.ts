@@ -81,7 +81,7 @@ test("Re-sends verification email", async ({
     name: "Resend verification",
   });
   await resendButton.click();
-  
+
   await expect(page.getByText("Verification email sent")).toBeVisible();
   await waitForEmail(uniqueUser.email_address, "Confirm your email address");
   await followEmailLink("Confirm your email address");

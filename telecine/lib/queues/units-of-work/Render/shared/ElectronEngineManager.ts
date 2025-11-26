@@ -1,7 +1,7 @@
 import { logger } from "@/logging";
 import { ElectronEngine } from "../ElectronEngine";
 
-// IMPLEMENTATION GUIDELINES: 
+// IMPLEMENTATION GUIDELINES:
 // Persistent Electron processes with on-demand context creation for maximum performance
 // - Keep Electron processes alive (40-60x improvement vs spawning)
 // - Create contexts on-demand (no pooling - different renders rarely share dimensions/org)
@@ -28,7 +28,7 @@ export class ElectronEngineManager {
   }
 
   static async withEngine<T>(
-    operation: (engine: ElectronEngine) => Promise<T>
+    operation: (engine: ElectronEngine) => Promise<T>,
   ): Promise<T> {
     const engine = await ElectronEngineManager.getOrCreateEngine();
     try {
@@ -39,4 +39,4 @@ export class ElectronEngineManager {
       throw error;
     }
   }
-} 
+}

@@ -27,5 +27,5 @@ export const ControlledTextLayerOnStage = observer(
         />
       </div>
     );
-  }
+  },
 );

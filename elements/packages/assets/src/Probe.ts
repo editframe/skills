@@ -169,23 +169,29 @@ export type TrackFragmentIndex =
   | VideoTrackFragmentIndex;
 
 const buildProbeArgs = (options: { showPackets?: boolean }) => {
-  const streamEntries = "stream=index,codec_name,codec_long_name,codec_type,codec_tag_string,codec_tag,profile,level,width,height,coded_width,coded_height,r_frame_rate,avg_frame_rate,time_base,start_pts,start_time,duration_ts,duration,bit_rate,sample_fmt,sample_rate,channels,channel_layout,bits_per_sample,initial_padding,disposition";
-  const packetEntries = "packet=stream_index,pts,pts_time,dts,dts_time,duration,pos,flags";
+  const streamEntries =
+    "stream=index,codec_name,codec_long_name,codec_type,codec_tag_string,codec_tag,profile,level,width,height,coded_width,coded_height,r_frame_rate,avg_frame_rate,time_base,start_pts,start_time,duration_ts,duration,bit_rate,sample_fmt,sample_rate,channels,channel_layout,bits_per_sample,initial_padding,disposition";
+  const packetEntries =
+    "packet=stream_index,pts,pts_time,dts,dts_time,duration,pos,flags";
 
   return [
-    "-v", "error",
+    "-v",
+    "error",
     "-show_format",
     "-show_streams",
-    "-of", "json",
+    "-of",
+    "json",
     ...(options.showPackets
       ? ["-show_entries", `${streamEntries}:${packetEntries}`]
-      : ["-show_entries", streamEntries]
-    ),
+      : ["-show_entries", streamEntries]),
   ];
-}
+};
 
 class FFProbeRunner {
-  static async probePath(absolutePath: string, includePackets: boolean): Promise<any> {
+  static async probePath(
+    absolutePath: string,
+    includePackets: boolean,
+  ): Promise<any> {
     const probeCommand = `ffprobe ${buildProbeArgs({ showPackets: includePackets }).join(" ")} ${absolutePath}`;
     log("Probing", probeCommand);
     const probeResult = await execPromise(probeCommand);
@@ -194,14 +200,13 @@ class FFProbeRunner {
     return JSON.parse(probeResult.stdout);
   }
 
-  static async probeStream(stream: Readable, includePackets: boolean): Promise<any> {
+  static async probeStream(
+    stream: Readable,
+    includePackets: boolean,
+  ): Promise<any> {
     const probe = spawn(
       "ffprobe",
-      [
-        "-i",
-        "-",
-        ...buildProbeArgs({ showPackets: includePackets }),
-      ],
+      ["-i", "-", ...buildProbeArgs({ showPackets: includePackets })],
       { stdio: ["pipe", "pipe", "pipe"] },
     );
 
@@ -293,13 +298,19 @@ abstract class ProbeBase {
   }
 
   get mustRemux() {
-    return this.format.format_name !== "mp4" ||
-      this.data.streams.some(stream => stream.codec_type !== "audio" && stream.codec_type !== "video");
+    return (
+      this.format.format_name !== "mp4" ||
+      this.data.streams.some(
+        (stream) =>
+          stream.codec_type !== "audio" && stream.codec_type !== "video",
+      )
+    );
   }
 
   get hasNonAudioOrVideoStreams() {
     return this.data.streams.some(
-      (stream) => stream.codec_type !== "audio" && stream.codec_type !== "video",
+      (stream) =>
+        stream.codec_type !== "audio" && stream.codec_type !== "video",
     );
   }
 
@@ -316,9 +327,7 @@ abstract class ProbeBase {
   }
 
   get isMp3() {
-    return this.audioStreams.some((stream) =>
-      stream.codec_name === "mp3"
-    );
+    return this.audioStreams.some((stream) => stream.codec_name === "mp3");
   }
 
   get isVideoOnly() {
@@ -360,7 +369,7 @@ abstract class ProbeBase {
     if (this.isMp3) {
       return ["-c:a", "mp3"];
     }
-    return []
+    return [];
   }
 
   get ffmpegVideoInputOptions() {
@@ -373,11 +382,7 @@ abstract class ProbeBase {
     }
     if (this.mustReencodeAudio) {
       // biome-ignore format: keep cli argument paired together
-      return [
-        "-c:a", "aac",
-        "-b:a", "192k",
-        "-ar", "48000",
-      ];
+      return ["-c:a", "aac", "-b:a", "192k", "-ar", "48000"];
     }
     return ["-c:a", "copy"];
   }
@@ -389,23 +394,26 @@ abstract class ProbeBase {
     if (this.mustReencodeVideo) {
       // biome-ignore format: keep cli argument paired together
       return [
-        "-c:v", "h264",
+        "-c:v",
+        "h264",
         // Filter out SEI NAL units that aren't supported by the webcodecs decoder
-        "-bsf:v", "filter_units=remove_types=6",
-        "-pix_fmt", "yuv420p",
+        "-bsf:v",
+        "filter_units=remove_types=6",
+        "-pix_fmt",
+        "yuv420p",
       ];
     }
     // biome-ignore format: keep cli argument paired together
     return [
-      "-c:v", "copy",
+      "-c:v",
+      "copy",
       // Filter out SEI NAL units that aren't supported by the webcodecs decoder
-      "-bsf:v", "filter_units=remove_types=6",
+      "-bsf:v",
+      "filter_units=remove_types=6",
     ];
   }
 
-  protected constructor(
-    protected absolutePath: string,
-  ) { }
+  protected constructor(protected absolutePath: string) {}
 
   createConformingReadstream() {
     if (this.absolutePath === "pipe:0") {
@@ -415,26 +423,29 @@ abstract class ProbeBase {
       return createReadStream(this.absolutePath);
     }
 
-    const fragmenterArgs = this.isAudioOnly ? [
-      "-movflags", "frag_keyframe",
-      "-frag_duration", "4000000", // Fragment every 4 seconds (in microseconds)
-    ] : [
-      "-movflags", "frag_keyframe",
-    ]
+    const fragmenterArgs = this.isAudioOnly
+      ? [
+          "-movflags",
+          "frag_keyframe",
+          "-frag_duration",
+          "4000000", // Fragment every 4 seconds (in microseconds)
+        ]
+      : ["-movflags", "frag_keyframe"];
 
     // biome-ignore format: keep cli argument paired together
     const ffmpegConformanceArgs = [
       ...this.ffmpegAudioInputOptions,
       ...this.ffmpegVideoInputOptions,
-      "-i", this.absolutePath,
+      "-i",
+      this.absolutePath,
       ...this.ffmpegAudioOutputOptions,
       ...this.ffmpegVideoOutputOptions,
-      "-f", "mp4",
+      "-f",
+      "mp4",
       "-bitexact", // Ensure deterministic output
       ...fragmenterArgs,
-      "pipe:1"
+      "pipe:1",
     ];
-
 
     log("Running ffmpeg", ffmpegConformanceArgs);
 
@@ -448,12 +459,15 @@ abstract class ProbeBase {
 
     // biome-ignore format: keep cli argument paired together
     const ffmpegFragmentArgs = [
-      "-i", "-",
-      "-c", "copy",
-      "-f", "mp4",
+      "-i",
+      "-",
+      "-c",
+      "copy",
+      "-f",
+      "mp4",
       "-bitexact", // Ensure deterministic output
       ...fragmenterArgs,
-      "pipe:1"
+      "pipe:1",
     ];
 
     log("Running ffmpeg", ffmpegFragmentArgs);
@@ -469,11 +483,11 @@ abstract class ProbeBase {
 
     ffmpegConformer.on("error", (error) => {
       ffmpegFragmenter.stdout.emit("error", error);
-    })
+    });
 
     ffmpegFragmenter.on("error", (error) => {
       ffmpegFragmenter.stdout.emit("error", error);
-    })
+    });
 
     return ffmpegFragmenter.stdout;
   }
@@ -495,29 +509,35 @@ abstract class ProbeBase {
       throw new Error(`Track ${trackIndex} is not audio or video`);
     }
 
-    const fragmenterArgs = isAudioTrack ? [
-      "-movflags", "empty_moov+default_base_moof",
-      "-frag_duration", "4000000", // Fragment every 4 seconds (in microseconds)
-    ] : [
-      "-movflags", "frag_keyframe+empty_moov+default_base_moof",
-    ];
+    const fragmenterArgs = isAudioTrack
+      ? [
+          "-movflags",
+          "empty_moov+default_base_moof",
+          "-frag_duration",
+          "4000000", // Fragment every 4 seconds (in microseconds)
+        ]
+      : ["-movflags", "frag_keyframe+empty_moov+default_base_moof"];
 
     // Create single-track MP4 with proper fragmentation
     // Use conforming stream system to handle codec compatibility
-    const codecOptions = isAudioTrack && this.mustReencodeAudio
-      ? this.ffmpegAudioOutputOptions
-      : ["-c", "copy"];
+    const codecOptions =
+      isAudioTrack && this.mustReencodeAudio
+        ? this.ffmpegAudioOutputOptions
+        : ["-c", "copy"];
 
     const ffmpegArgs = [
       ...this.ffmpegAudioInputOptions,
       ...this.ffmpegVideoInputOptions,
-      "-i", this.absolutePath,
-      "-map", `0:${trackIndex}`, // Select only this track
+      "-i",
+      this.absolutePath,
+      "-map",
+      `0:${trackIndex}`, // Select only this track
       ...codecOptions, // Use conforming stream codec options
-      "-f", "mp4",
+      "-f",
+      "mp4",
       "-bitexact", // Ensure deterministic output
       ...fragmenterArgs,
-      "pipe:1"
+      "pipe:1",
     ];
 
     log("Creating track stream", ffmpegArgs);
@@ -551,10 +571,7 @@ export class Probe extends ProbeBase {
     return new Probe("pipe:0", json);
   }
 
-  constructor(
-    absolutePath: string,
-    rawData: any,
-  ) {
+  constructor(absolutePath: string, rawData: any) {
     super(absolutePath);
     this.data = ProbeSchema.parse(rawData);
   }
@@ -573,10 +590,7 @@ export class PacketProbe extends ProbeBase {
     return new PacketProbe("pipe:0", json);
   }
 
-  constructor(
-    absolutePath: string,
-    rawData: any,
-  ) {
+  constructor(absolutePath: string, rawData: any) {
     super(absolutePath);
     this.data = PacketProbeSchema.parse(rawData);
   }
@@ -590,7 +604,11 @@ export class PacketProbe extends ProbeBase {
     if (!stream) {
       throw new Error("No audio stream found");
     }
-    return truncateDecimal(((stream.duration_ts ?? 0) - (stream.start_pts ?? 0)) / (this.audioTimebase?.den ?? 0), 5);
+    return truncateDecimal(
+      ((stream.duration_ts ?? 0) - (stream.start_pts ?? 0)) /
+        (this.audioTimebase?.den ?? 0),
+      5,
+    );
   }
 
   get videoPacketDuration() {
@@ -598,10 +616,12 @@ export class PacketProbe extends ProbeBase {
     if (!videoStream) {
       return [];
     }
-    const videoPackets = this.packets.filter(packet => packet.stream_index === videoStream.index);
+    const videoPackets = this.packets.filter(
+      (packet) => packet.stream_index === videoStream.index,
+    );
 
     const frameRate = videoStream.r_frame_rate;
-    const [num, den] = frameRate.split('/').map(Number);
+    const [num, den] = frameRate.split("/").map(Number);
     if (!num || !den) {
       return [];
     }
@@ -612,14 +632,11 @@ export class PacketProbe extends ProbeBase {
       return [];
     }
 
-    const ptsTimes = videoPackets.map(p => p.pts_time);
+    const ptsTimes = videoPackets.map((p) => p.pts_time);
     const minPts = Math.min(...ptsTimes);
     const maxPts = Math.max(...ptsTimes);
-    const totalDuration = (maxPts - minPts) + packetDuration;
+    const totalDuration = maxPts - minPts + packetDuration;
 
     return truncateDecimal(Math.round(totalDuration * 10000) / 10000, 5);
   }
 }
-
-
-

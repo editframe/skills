@@ -10,9 +10,13 @@ import { requireActionSecret } from "@/util/requireActionSecret";
 export const action = async ({ request }: Route.ActionArgs) => {
   requireActionSecret(request);
   return executeSpan("delete_caption_files", async (span) => {
-    const payload = await request.json() as HasuraEvent<Selectable<Video2CaptionFiles>>;
+    const payload = (await request.json()) as HasuraEvent<
+      Selectable<Video2CaptionFiles>
+    >;
     if (!payload.event.data.old) {
-      return new Response("No OLD data in payload. Nothing to delete", { status: 400 });
+      return new Response("No OLD data in payload. Nothing to delete", {
+        status: 400,
+      });
     }
     span.setAttributes({
       payload: JSON.stringify(payload),

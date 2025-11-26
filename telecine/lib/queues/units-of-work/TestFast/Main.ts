@@ -36,7 +36,9 @@ export const TestFastMainWorker = new Worker({
       // Busy wait for 10ms to simulate minimal work
     }
 
-    logger.debug({ testId: job.payload.testId, jobIndex: job.payload.jobIndex }, "TestFastMainWorker completed");
+    logger.debug(
+      { testId: job.payload.testId, jobIndex: job.payload.jobIndex },
+      "TestFastMainWorker completed",
+    );
   },
 });
-

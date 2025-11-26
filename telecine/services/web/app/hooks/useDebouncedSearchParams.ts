@@ -4,7 +4,7 @@ import { useSearchParams } from "react-router";
 /**
  * Hook to handle debounced search parameter updates.
  * Fixes race condition issues when typing rapidly in search inputs.
- * 
+ *
  * @param paramName - The search param key to manage
  * @param debounceMs - Debounce delay in milliseconds (default: 300)
  * @returns [localValue, setLocalValue] - Local state for the input value and setter
@@ -39,7 +39,7 @@ export function useDebouncedSearchParams(paramName: string, debounceMs = 300) {
             [paramName]: localValue,
             page: "0", // Reset to first page when searching
           },
-          { preventScrollReset: true }
+          { preventScrollReset: true },
         );
       }
     }, debounceMs);
@@ -48,4 +48,4 @@ export function useDebouncedSearchParams(paramName: string, debounceMs = 300) {
   }, [localValue, searchParams, setSearchParams, paramName, debounceMs]);
 
   return [localValue, setLocalValue] as const;
-} 
+}

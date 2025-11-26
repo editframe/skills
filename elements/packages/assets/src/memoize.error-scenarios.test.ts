@@ -336,19 +336,29 @@ describe("Memoize Error Scenarios", () => {
         }
 
         @memoize
-        get prop1() { return this.createGetter('prop1')(); }
+        get prop1() {
+          return this.createGetter("prop1")();
+        }
 
         @memoize
-        get prop2() { return this.createGetter('prop2')(); }
+        get prop2() {
+          return this.createGetter("prop2")();
+        }
 
         @memoize
-        get prop3() { return this.createGetter('prop3')(); }
+        get prop3() {
+          return this.createGetter("prop3")();
+        }
 
         @memoize
-        get prop4() { return this.createGetter('prop4')(); }
+        get prop4() {
+          return this.createGetter("prop4")();
+        }
 
         @memoize
-        get prop5() { return this.createGetter('prop5')(); }
+        get prop5() {
+          return this.createGetter("prop5")();
+        }
       }
 
       const instance = new TestClass();
@@ -423,7 +433,7 @@ describe("Memoize Error Scenarios", () => {
       function logCalls<T extends object, K extends keyof T>(
         target: T,
         propertyKey: K,
-        descriptor: TypedPropertyDescriptor<T[K]>
+        descriptor: TypedPropertyDescriptor<T[K]>,
       ) {
         const originalGet = descriptor.get;
         if (originalGet) {
@@ -456,4 +466,4 @@ describe("Memoize Error Scenarios", () => {
       expect(instance.callCount).toBe(1);
     });
   });
-}); 
+});

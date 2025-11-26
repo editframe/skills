@@ -45,12 +45,14 @@ export const IngestImageWorker = new Worker({
 
     const parsedUrl = new URL(job.payload.url);
 
-    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
-      throw new Error(`Invalid URL protocol: Only HTTP/HTTPS URLs are allowed, got: ${parsedUrl.protocol}`);
+    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+      throw new Error(
+        `Invalid URL protocol: Only HTTP/HTTPS URLs are allowed, got: ${parsedUrl.protocol}`,
+      );
     }
 
     // Validate content-length header first (for metadata)
-    const response = await fetch(job.payload.url, { method: 'HEAD' });
+    const response = await fetch(job.payload.url, { method: "HEAD" });
     if (!response.ok) {
       throw new Error(`Failed to access image from ${job.payload.url}`);
     }
@@ -63,18 +65,15 @@ export const IngestImageWorker = new Worker({
     const byteSize = Number.parseInt(contentLength, 10);
 
     // processImageFile will use acquireAsset to handle the download
-    await processImageFile(
-      job.payload.url,
-      {
-        id: job.payload.imageId,
-        org_id: job.orgId,
-        creator_id: job.payload.creatorId,
-        api_key_id: job.payload.apiKeyId || null,
-        filename: job.payload.url,
-        byte_size: byteSize,
-        next_byte: byteSize,
-        expires_at: new Date(Date.now() + ONE_HOUR),
-      }
-    );
+    await processImageFile(job.payload.url, {
+      id: job.payload.imageId,
+      org_id: job.orgId,
+      creator_id: job.payload.creatorId,
+      api_key_id: job.payload.apiKeyId || null,
+      filename: job.payload.url,
+      byte_size: byteSize,
+      next_byte: byteSize,
+      expires_at: new Date(Date.now() + ONE_HOUR),
+    });
   },
 });

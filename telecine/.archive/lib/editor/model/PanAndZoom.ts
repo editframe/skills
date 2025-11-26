@@ -23,7 +23,7 @@ export class PanAndZoom extends Model({}) {
       this.setTransform(JSON.parse(loadedString));
     } catch (error) {
       console.info(
-        "Failed to set pan and zoom from local storage. Not a critical error."
+        "Failed to set pan and zoom from local storage. Not a critical error.",
       );
     }
   }
@@ -31,7 +31,7 @@ export class PanAndZoom extends Model({}) {
   @modelAction
   propagateWheelEvent(
     event: WheelEvent,
-    transformedElement: HTMLElement
+    transformedElement: HTMLElement,
   ): void {
     if (event.ctrlKey) {
       const rect = transformedElement.getBoundingClientRect();
@@ -86,7 +86,7 @@ export class PanAndZoom extends Model({}) {
     }
     localStorage.setItem(
       PanAndZoom.LOCAL_STORAGE_KEY,
-      JSON.stringify(transform)
+      JSON.stringify(transform),
     );
   }
 

@@ -1,10 +1,6 @@
 import { useReducer, useCallback, useEffect } from "react";
 import { nanoid } from "nanoid";
-import type {
-  MotionDesignerState,
-  ElementNode,
-  Animation,
-} from "./types.js";
+import type { MotionDesignerState, ElementNode, Animation } from "./types.js";
 import { motionDesignerReducer } from "./reducer.js";
 import { actionCreators } from "./actions.js";
 import { loadState, saveState } from "./persistence.js";
@@ -39,13 +35,17 @@ export function useMotionDesigner() {
       const initialState = getInitialState();
       const mergedState: MotionDesignerState = {
         composition: {
-          elements: saved.composition?.elements ?? initialState.composition.elements,
-          rootTimegroupIds: saved.composition?.rootTimegroupIds ?? initialState.composition.rootTimegroupIds,
+          elements:
+            saved.composition?.elements ?? initialState.composition.elements,
+          rootTimegroupIds:
+            saved.composition?.rootTimegroupIds ??
+            initialState.composition.rootTimegroupIds,
         },
         ui: {
           ...initialState.ui,
           ...saved.ui,
-          canvasTransform: saved.ui?.canvasTransform ?? initialState.ui.canvasTransform,
+          canvasTransform:
+            saved.ui?.canvasTransform ?? initialState.ui.canvasTransform,
         },
       };
       dispatch(actionCreators.replaceState(mergedState));
@@ -75,10 +75,7 @@ export function useMotionDesigner() {
     addElement: useCallback(
       (element: Omit<ElementNode, "id">, parentId: string | null) => {
         dispatch(
-          actionCreators.addElement(
-            { ...element, id: nanoid() },
-            parentId,
-          ),
+          actionCreators.addElement({ ...element, id: nanoid() }, parentId),
         );
       },
       [],
@@ -115,11 +112,7 @@ export function useMotionDesigner() {
     ),
 
     updateAnimation: useCallback(
-      (
-        elementId: string,
-        animationId: string,
-        updates: Partial<Animation>,
-      ) => {
+      (elementId: string, animationId: string, updates: Partial<Animation>) => {
         dispatch(
           actionCreators.updateAnimation(elementId, animationId, updates),
         );
@@ -127,12 +120,9 @@ export function useMotionDesigner() {
       [],
     ),
 
-    deleteAnimation: useCallback(
-      (elementId: string, animationId: string) => {
-        dispatch(actionCreators.deleteAnimation(elementId, animationId));
-      },
-      [],
-    ),
+    deleteAnimation: useCallback((elementId: string, animationId: string) => {
+      dispatch(actionCreators.deleteAnimation(elementId, animationId));
+    }, []),
 
     reorderAnimation: useCallback(
       (elementId: string, animationId: string, newIndex: number) => {
@@ -165,4 +155,3 @@ export function useMotionDesigner() {
 
   return [state, actions, { isHydrated }] as const;
 }
-

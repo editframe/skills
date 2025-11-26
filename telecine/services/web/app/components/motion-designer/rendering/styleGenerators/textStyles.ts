@@ -1,9 +1,7 @@
 import type { ElementNode } from "~/lib/motion-designer/types";
 import type { CSSProperties } from "react";
 
-export function generateTextStyles(
-  element: ElementNode,
-): CSSProperties {
+export function generateTextStyles(element: ElementNode): CSSProperties {
   if (element.type !== "text") {
     return {};
   }
@@ -41,4 +39,3 @@ export function generateTextStyles(
 
   return styles;
 }
-

@@ -1,32 +1,39 @@
 import * as gcp from "@pulumi/gcp";
 import { GCP_REGION, GCP_PROJECT } from "./constants";
 
-export const defaultNetwork = new gcp.compute.Network("default", {
-  autoCreateSubnetworks: true,
-  deleteDefaultRoutesOnCreate: false,
-  description: "Default network for the project",
-  name: "default",
-  networkFirewallPolicyEnforcementOrder: "AFTER_CLASSIC_FIREWALL",
-  project: GCP_PROJECT,
-  routingMode: "REGIONAL",
-}, {
-  protect: true,
-});
+export const defaultNetwork = new gcp.compute.Network(
+  "default",
+  {
+    autoCreateSubnetworks: true,
+    deleteDefaultRoutesOnCreate: false,
+    description: "Default network for the project",
+    name: "default",
+    networkFirewallPolicyEnforcementOrder: "AFTER_CLASSIC_FIREWALL",
+    project: GCP_PROJECT,
+    routingMode: "REGIONAL",
+  },
+  {
+    protect: true,
+  },
+);
 
-export const defaultSubnet = new gcp.compute.Subnetwork("default", {
-  ipCidrRange: "10.128.0.0/20",
-  name: "default",
-  network: defaultNetwork.id,
-  privateIpv6GoogleAccess: "DISABLE_GOOGLE_ACCESS",
-  privateIpGoogleAccess: true,
-  project: GCP_PROJECT,
-  purpose: "PRIVATE",
-  region: GCP_REGION,
-  stackType: "IPV4_ONLY",
-}, {
-  protect: true,
-});
-
+export const defaultSubnet = new gcp.compute.Subnetwork(
+  "default",
+  {
+    ipCidrRange: "10.128.0.0/20",
+    name: "default",
+    network: defaultNetwork.id,
+    privateIpv6GoogleAccess: "DISABLE_GOOGLE_ACCESS",
+    privateIpGoogleAccess: true,
+    project: GCP_PROJECT,
+    purpose: "PRIVATE",
+    region: GCP_REGION,
+    stackType: "IPV4_ONLY",
+  },
+  {
+    protect: true,
+  },
+);
 
 const serverlessVpcConnectorIpCidrRange = "10.8.0.0/28";
 
@@ -68,27 +75,35 @@ export const allowRedisTraffic = new gcp.compute.Firewall(
 );
 
 // Add DNS configuration for routing Cloud Run domains to private Google API IPs
-export const privateDnsZone = new gcp.dns.ManagedZone("private-googleapis-zone", {
-  name: "private-googleapis-zone",
-  dnsName: "googleapis.com.",
-  visibility: "private",
-  privateVisibilityConfig: {
-    networks: [{
-      networkUrl: defaultNetwork.selfLink,
-    }],
+export const privateDnsZone = new gcp.dns.ManagedZone(
+  "private-googleapis-zone",
+  {
+    name: "private-googleapis-zone",
+    dnsName: "googleapis.com.",
+    visibility: "private",
+    privateVisibilityConfig: {
+      networks: [
+        {
+          networkUrl: defaultNetwork.selfLink,
+        },
+      ],
+    },
+    project: GCP_PROJECT,
   },
-  project: GCP_PROJECT,
-});
+);
 
 // Create DNS record sets for private.googleapis.com
-export const privateApiRecordSet = new gcp.dns.RecordSet("private-googleapis-recordset", {
-  name: "private.googleapis.com.",
-  managedZone: privateDnsZone.name,
-  type: "A",
-  ttl: 300,
-  rrdatas: ["199.36.153.8", "199.36.153.9", "199.36.153.10", "199.36.153.11"],
-  project: GCP_PROJECT,
-});
+export const privateApiRecordSet = new gcp.dns.RecordSet(
+  "private-googleapis-recordset",
+  {
+    name: "private.googleapis.com.",
+    managedZone: privateDnsZone.name,
+    type: "A",
+    ttl: 300,
+    rrdatas: ["199.36.153.8", "199.36.153.9", "199.36.153.10", "199.36.153.11"],
+    project: GCP_PROJECT,
+  },
+);
 
 // DNS Zone for run.app domains
 export const runAppDnsZone = new gcp.dns.ManagedZone("run-app-zone", {
@@ -96,9 +111,11 @@ export const runAppDnsZone = new gcp.dns.ManagedZone("run-app-zone", {
   dnsName: "run.app.",
   visibility: "private",
   privateVisibilityConfig: {
-    networks: [{
-      networkUrl: defaultNetwork.selfLink,
-    }],
+    networks: [
+      {
+        networkUrl: defaultNetwork.selfLink,
+      },
+    ],
   },
   project: GCP_PROJECT,
 });
@@ -114,33 +131,44 @@ export const runAppRecordSet = new gcp.dns.RecordSet("run-app-recordset", {
 });
 
 // Additional DNS zone for sqladmin.googleapis.com
-export const sqlAdminDnsZone = new gcp.dns.ManagedZone("sqladmin-googleapis-zone", {
-  name: "sqladmin-googleapis-zone",
-  dnsName: "sqladmin.googleapis.com.",
-  visibility: "private",
-  privateVisibilityConfig: {
-    networks: [{
-      networkUrl: defaultNetwork.selfLink,
-    }],
+export const sqlAdminDnsZone = new gcp.dns.ManagedZone(
+  "sqladmin-googleapis-zone",
+  {
+    name: "sqladmin-googleapis-zone",
+    dnsName: "sqladmin.googleapis.com.",
+    visibility: "private",
+    privateVisibilityConfig: {
+      networks: [
+        {
+          networkUrl: defaultNetwork.selfLink,
+        },
+      ],
+    },
+    project: GCP_PROJECT,
   },
-  project: GCP_PROJECT,
-});
+);
 
-export const sqlAdminRecordSet = new gcp.dns.RecordSet("sqladmin-googleapis-recordset", {
-  name: "sqladmin.googleapis.com.",
-  managedZone: sqlAdminDnsZone.name,
-  type: "A",
-  ttl: 300,
-  rrdatas: ["199.36.153.8", "199.36.153.9", "199.36.153.10", "199.36.153.11"], // Same as private.googleapis.com
-  project: GCP_PROJECT,
-});
+export const sqlAdminRecordSet = new gcp.dns.RecordSet(
+  "sqladmin-googleapis-recordset",
+  {
+    name: "sqladmin.googleapis.com.",
+    managedZone: sqlAdminDnsZone.name,
+    type: "A",
+    ttl: 300,
+    rrdatas: ["199.36.153.8", "199.36.153.9", "199.36.153.10", "199.36.153.11"], // Same as private.googleapis.com
+    project: GCP_PROJECT,
+  },
+);
 
 // Create a wildcard record for *.googleapis.com pointing to private.googleapis.com
-export const wildcardGoogleapisRecordSet = new gcp.dns.RecordSet("wildcard-googleapis-recordset", {
-  name: "*.googleapis.com.",
-  managedZone: privateDnsZone.name,
-  type: "CNAME",
-  ttl: 300,
-  rrdatas: ["private.googleapis.com."],
-  project: GCP_PROJECT,
-});
+export const wildcardGoogleapisRecordSet = new gcp.dns.RecordSet(
+  "wildcard-googleapis-recordset",
+  {
+    name: "*.googleapis.com.",
+    managedZone: privateDnsZone.name,
+    type: "CNAME",
+    ttl: 300,
+    rrdatas: ["private.googleapis.com."],
+    project: GCP_PROJECT,
+  },
+);

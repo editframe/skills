@@ -28,9 +28,14 @@ export function generateAnimationStrings(
   }
 
   // Group animations by CSS property (transform functions map to "transform")
-  const animationsByProperty = new Map<string, Array<{ anim: Animation; index: number }>>();
+  const animationsByProperty = new Map<
+    string,
+    Array<{ anim: Animation; index: number }>
+  >();
   animations.forEach((anim, index) => {
-    const cssProperty = isTransformProperty(anim.property) ? "transform" : anim.property;
+    const cssProperty = isTransformProperty(anim.property)
+      ? "transform"
+      : anim.property;
     const existing = animationsByProperty.get(cssProperty) || [];
     existing.push({ anim, index });
     animationsByProperty.set(cssProperty, existing);
@@ -60,7 +65,7 @@ export function generateAnimationStrings(
       if (first) {
         const firstStart = first.anim.delay;
         const lastEnd = Math.max(
-          ...sorted.map(({ anim }) => anim.delay + anim.duration)
+          ...sorted.map(({ anim }) => anim.delay + anim.duration),
         );
         animationStrings.push({
           name: `animation-${elementId}-${first.index}`,
@@ -83,9 +88,10 @@ export function generateAnimationStrings(
 export function formatAnimationStringForTextSplit(
   animString: AnimationString,
 ): string {
-  const delayExpression = animString.delay > 0 
-    ? `calc(${animString.delay}ms + var(--ef-stagger-offset, 0ms))`
-    : `var(--ef-stagger-offset, 0ms)`;
+  const delayExpression =
+    animString.delay > 0
+      ? `calc(${animString.delay}ms + var(--ef-stagger-offset, 0ms))`
+      : `var(--ef-stagger-offset, 0ms)`;
   return `${animString.name} ${animString.duration}ms ${animString.easing} ${delayExpression} ${animString.fillMode} paused`;
 }
 
@@ -106,9 +112,14 @@ export function generateTextSplitAnimationCSS(element: ElementNode): string {
     return "";
   }
 
-  const animationStrings = generateAnimationStrings(element.animations, element.id);
-  const formattedStrings = animationStrings.map(formatAnimationStringForTextSplit);
-  
+  const animationStrings = generateAnimationStrings(
+    element.animations,
+    element.id,
+  );
+  const formattedStrings = animationStrings.map(
+    formatAnimationStringForTextSplit,
+  );
+
   return `\n[data-element-id="${element.id}"] ef-text-segment {\n  animation: ${formattedStrings.join(", ")};\n}`;
 }
 
@@ -121,12 +132,13 @@ export function createAnimationKey(element: ElementNode): string {
     return "none";
   }
 
-  return element.animations.map(a => {
-    const animKey = `${a.id}-${a.delay}-${a.duration}-${a.property}-${a.fromValue || ""}-${a.toValue || ""}-${a.easing || ""}-${a.fillMode || ""}`;
-    if (a.keyframes && a.keyframes.length > 0) {
-      return `${animKey}-${a.keyframes.map(kf => `${kf.time}-${kf.value}`).join("-")}`;
-    }
-    return animKey;
-  }).join("-");
+  return element.animations
+    .map((a) => {
+      const animKey = `${a.id}-${a.delay}-${a.duration}-${a.property}-${a.fromValue || ""}-${a.toValue || ""}-${a.easing || ""}-${a.fillMode || ""}`;
+      if (a.keyframes && a.keyframes.length > 0) {
+        return `${animKey}-${a.keyframes.map((kf) => `${kf.time}-${kf.value}`).join("-")}`;
+      }
+      return animKey;
+    })
+    .join("-");
 }
-

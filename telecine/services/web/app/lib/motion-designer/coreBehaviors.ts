@@ -113,7 +113,16 @@ const TemporalCanMoveToRoot: MoveBehavior = {
 };
 
 type ParentType = "div" | "timegroup" | "root";
-type ChildType = "div" | "text" | "image" | "video" | "audio" | "timegroup" | "captions" | "waveform" | "surface";
+type ChildType =
+  | "div"
+  | "text"
+  | "image"
+  | "video"
+  | "audio"
+  | "timegroup"
+  | "captions"
+  | "waveform"
+  | "surface";
 
 interface NestingRule {
   parent: ParentType;
@@ -151,7 +160,10 @@ const NESTING_RULES: NestingRule[] = [
   { parent: "timegroup", child: "surface", allowed: true },
 ];
 
-function getParentType(parentId: string | null, state: MotionDesignerState): ParentType {
+function getParentType(
+  parentId: string | null,
+  state: MotionDesignerState,
+): ParentType {
   if (parentId === null) {
     return "root";
   }
@@ -162,11 +174,24 @@ function getParentType(parentId: string | null, state: MotionDesignerState): Par
   return "root";
 }
 
-function getChildType(elementId: string, state: MotionDesignerState): ChildType | null {
+function getChildType(
+  elementId: string,
+  state: MotionDesignerState,
+): ChildType | null {
   const element = state.composition.elements[elementId];
   if (!element) return null;
   const type = element.type;
-  if (type === "div" || type === "text" || type === "image" || type === "video" || type === "audio" || type === "timegroup" || type === "captions" || type === "waveform" || type === "surface") {
+  if (
+    type === "div" ||
+    type === "text" ||
+    type === "image" ||
+    type === "video" ||
+    type === "audio" ||
+    type === "timegroup" ||
+    type === "captions" ||
+    type === "waveform" ||
+    type === "surface"
+  ) {
     return type;
   }
   return null;
@@ -196,10 +221,12 @@ const NestingRulesBehavior: MoveBehavior = {
  * Registers all core behaviors with the default registry.
  */
 export function registerCoreBehaviors(): void {
-  behaviorRegistry.register("PreventCircularReference", PreventCircularReference);
+  behaviorRegistry.register(
+    "PreventCircularReference",
+    PreventCircularReference,
+  );
   behaviorRegistry.register("TimegroupRootOnly", TimegroupRootOnly);
   behaviorRegistry.register("DivCanHaveChildren", DivCanHaveChildren);
   behaviorRegistry.register("TemporalCanMoveToRoot", TemporalCanMoveToRoot);
   behaviorRegistry.register("NestingRules", NestingRulesBehavior);
 }
-

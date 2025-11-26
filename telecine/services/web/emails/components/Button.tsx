@@ -9,8 +9,8 @@ export default function EmailButton({
 }) {
   return (
     <>
-    <style>
-      {`
+      <style>
+        {`
         @media (prefers-color-scheme: dark) {
           .button {
             background-color: #fff;
@@ -18,10 +18,10 @@ export default function EmailButton({
           }
         }
       `}
-    </style>
-    <Link style={button} href={href} target="" className="button">
-      {label}
-    </Link>
+      </style>
+      <Link style={button} href={href} target="" className="button">
+        {label}
+      </Link>
     </>
   );
 }

@@ -7,19 +7,23 @@ import { PacketProbe } from "./Probe.js";
 const log = debug("ef:generateFragmentIndex");
 
 // Helper function to construct H.264 codec string from profile and level
-function constructH264CodecString(codecTagString: string, profile?: string, level?: number): string {
-  if (codecTagString !== 'avc1' || !profile || level === undefined) {
+function constructH264CodecString(
+  codecTagString: string,
+  profile?: string,
+  level?: number,
+): string {
+  if (codecTagString !== "avc1" || !profile || level === undefined) {
     return codecTagString;
   }
 
   // Map H.264 profile names to profile_idc values
   const profileMap: Record<string, number> = {
-    'Baseline': 0x42,
-    'Main': 0x4d,
-    'High': 0x64,
-    'High 10': 0x6e,
-    'High 422': 0x7a,
-    'High 444': 0xf4,
+    Baseline: 0x42,
+    Main: 0x4d,
+    High: 0x64,
+    "High 10": 0x6e,
+    "High 422": 0x7a,
+    "High 444": 0xf4,
   };
 
   const profileIdc = profileMap[profile];
@@ -28,9 +32,9 @@ function constructH264CodecString(codecTagString: string, profile?: string, leve
   }
 
   // Format: avc1.PPCCLL where PP=profile_idc, CC=constraint_flags, LL=level_idc
-  const profileHex = profileIdc.toString(16).padStart(2, '0');
-  const constraintFlags = '00'; // Most common case
-  const levelHex = level.toString(16).padStart(2, '0');
+  const profileHex = profileIdc.toString(16).padStart(2, "0");
+  const constraintFlags = "00"; // Most common case
+  const levelHex = level.toString(16).padStart(2, "0");
 
   return `${codecTagString}.${profileHex}${constraintFlags}${levelHex}`;
 }
@@ -43,7 +47,7 @@ interface MP4BoxHeader {
 }
 
 interface Fragment {
-  type: 'init' | 'media';
+  type: "init" | "media";
   offset: number;
   size: number;
   moofOffset?: number;
@@ -82,7 +86,9 @@ class StreamingBoxParser extends Transform {
 
     while (this.buffer.length - bufferOffset >= 8) {
       const size = this.buffer.readUInt32BE(bufferOffset);
-      const type = this.buffer.subarray(bufferOffset + 4, bufferOffset + 8).toString('ascii');
+      const type = this.buffer
+        .subarray(bufferOffset + 4, bufferOffset + 8)
+        .toString("ascii");
 
       // Invalid or incomplete box
       if (size === 0 || size < 8 || this.buffer.length < bufferOffset + size) {
@@ -93,7 +99,7 @@ class StreamingBoxParser extends Transform {
         type,
         offset: this.globalOffset + bufferOffset,
         size,
-        headerSize: 8
+        headerSize: 8,
       };
 
       log(`Found box: ${box.type} at offset ${box.offset}, size ${box.size}`);
@@ -110,23 +116,26 @@ class StreamingBoxParser extends Transform {
 
   private handleBox(box: MP4BoxHeader) {
     switch (box.type) {
-      case 'ftyp':
-      case 'moov':
+      case "ftyp":
+      case "moov":
         // Part of init segment
-        this.initSegmentEnd = Math.max(this.initSegmentEnd, box.offset + box.size);
+        this.initSegmentEnd = Math.max(
+          this.initSegmentEnd,
+          box.offset + box.size,
+        );
         break;
 
-      case 'moof':
+      case "moof":
         this.currentMoof = box;
         break;
 
-      case 'mdat':
+      case "mdat":
         if (this.currentMoof) {
           // Found a complete fragment (moof + mdat pair) - fragmented MP4
           this.fragments.push({
-            type: 'media',
+            type: "media",
             offset: this.currentMoof.offset,
-            size: (box.offset + box.size) - this.currentMoof.offset,
+            size: box.offset + box.size - this.currentMoof.offset,
             moofOffset: this.currentMoof.offset,
             mdatOffset: box.offset,
           });
@@ -135,7 +144,9 @@ class StreamingBoxParser extends Transform {
           // mdat without moof - this is non-fragmented content, not a fragment
           // Common in mixed MP4 files where initial content is non-fragmented
           // followed by fragmented content. Ignore for fragment indexing.
-          log(`Found non-fragmented mdat at offset ${box.offset}, skipping for fragment index`);
+          log(
+            `Found non-fragmented mdat at offset ${box.offset}, skipping for fragment index`,
+          );
         }
         break;
     }
@@ -148,7 +159,7 @@ class StreamingBoxParser extends Transform {
     // Init segment is ftyp + moov boxes before the first moof
     if (this.initSegmentEnd > 0) {
       this.fragments.unshift({
-        type: 'init',
+        type: "init",
         offset: 0,
         size: this.initSegmentEnd,
       });
@@ -176,7 +187,7 @@ function createFragmentStream(fragmentData: Uint8Array): Readable {
       const chunk = fragmentData.slice(offset, offset + chunkSize);
       offset += chunkSize;
       this.push(Buffer.from(chunk));
-    }
+    },
   });
 }
 
@@ -185,7 +196,7 @@ function createFragmentStream(fragmentData: Uint8Array): Readable {
 export const generateFragmentIndex = async (
   inputStream: Readable,
   startTimeOffsetMs?: number,
-  trackIdMapping?: Record<number, number> // Map from source track ID to desired track ID
+  trackIdMapping?: Record<number, number>, // Map from source track ID to desired track ID
 ): Promise<Record<number, TrackFragmentIndex>> => {
   // Step 1: Create a streaming parser that detects fragment boundaries
   const parser = new StreamingBoxParser();
@@ -199,7 +210,7 @@ export const generateFragmentIndex = async (
       chunks.push(chunk);
       totalSize += chunk.length;
       callback();
-    }
+    },
   });
 
   // Process the stream through both parser and collection
@@ -213,7 +224,13 @@ export const generateFragmentIndex = async (
 
   // Step 3: Use ffprobe to analyze the complete stream for track metadata
   const completeData = Buffer.concat(chunks as readonly Uint8Array[]);
-  const completeStream = createFragmentStream(new Uint8Array(completeData.buffer, completeData.byteOffset, completeData.byteLength));
+  const completeStream = createFragmentStream(
+    new Uint8Array(
+      completeData.buffer,
+      completeData.byteOffset,
+      completeData.byteLength,
+    ),
+  );
 
   let probe: PacketProbe;
   try {
@@ -227,18 +244,27 @@ export const generateFragmentIndex = async (
   const audioStreams = probe.audioStreams;
 
   const trackIndexes: Record<number, TrackFragmentIndex> = {};
-  const initFragment = fragments.find(f => f.type === 'init');
-  const mediaFragments = fragments.filter(f => f.type === 'media');
+  const initFragment = fragments.find((f) => f.type === "init");
+  const mediaFragments = fragments.filter((f) => f.type === "media");
 
   // Map packets to fragments using byte position for moof+mdat boundaries
   // But create contiguous segments based on keyframes
   const fragmentTimingData: Array<{
     fragmentIndex: number;
-    videoPackets: Array<{ pts: number; dts: number; isKeyframe: boolean; duration?: number }>;
+    videoPackets: Array<{
+      pts: number;
+      dts: number;
+      isKeyframe: boolean;
+      duration?: number;
+    }>;
     audioPackets: Array<{ pts: number; dts: number; duration?: number }>;
   }> = [];
 
-  for (let fragmentIndex = 0; fragmentIndex < mediaFragments.length; fragmentIndex++) {
+  for (
+    let fragmentIndex = 0;
+    fragmentIndex < mediaFragments.length;
+    fragmentIndex++
+  ) {
     const fragment = mediaFragments[fragmentIndex]!;
 
     // Find packets that belong to this fragment based on byte position (moof+mdat boundaries)
@@ -246,29 +272,37 @@ export const generateFragmentIndex = async (
     const fragmentEnd = fragment.offset + fragment.size;
 
     const videoPackets = probe.packets
-      .filter(packet => {
-        const stream = videoStreams.find(s => s.index === packet.stream_index);
-        return stream?.codec_type === 'video' &&
+      .filter((packet) => {
+        const stream = videoStreams.find(
+          (s) => s.index === packet.stream_index,
+        );
+        return (
+          stream?.codec_type === "video" &&
           packet.pos !== undefined &&
           packet.pos >= fragmentStart &&
-          packet.pos < fragmentEnd;
+          packet.pos < fragmentEnd
+        );
       })
-      .map(packet => ({
+      .map((packet) => ({
         pts: packet.pts,
         dts: packet.dts,
         duration: packet.duration,
-        isKeyframe: packet.flags?.includes('K') ?? false,
+        isKeyframe: packet.flags?.includes("K") ?? false,
       }));
 
     const audioPackets = probe.packets
-      .filter(packet => {
-        const stream = audioStreams.find(s => s.index === packet.stream_index);
-        return stream?.codec_type === 'audio' &&
+      .filter((packet) => {
+        const stream = audioStreams.find(
+          (s) => s.index === packet.stream_index,
+        );
+        return (
+          stream?.codec_type === "audio" &&
           packet.pos !== undefined &&
           packet.pos >= fragmentStart &&
-          packet.pos < fragmentEnd;
+          packet.pos < fragmentEnd
+        );
       })
-      .map(packet => ({
+      .map((packet) => ({
         pts: packet.pts,
         dts: packet.dts,
         duration: packet.duration,
@@ -286,13 +320,19 @@ export const generateFragmentIndex = async (
     const segments: TrackSegment[] = [];
 
     // Count total samples from complete stream - try counting keyframes for "improved efficiency"
-    const totalVideoPackets = probe.packets.filter(p => p.stream_index === videoStream.index);
-    const keyframePackets = totalVideoPackets.filter(p => p.flags?.includes('K'));
+    const totalVideoPackets = probe.packets.filter(
+      (p) => p.stream_index === videoStream.index,
+    );
+    const keyframePackets = totalVideoPackets.filter((p) =>
+      p.flags?.includes("K"),
+    );
 
     // The test comment mentions "improved efficiency" suggesting we should count keyframes
     const totalSampleCount = keyframePackets.length;
 
-    log(`Complete stream has ${totalVideoPackets.length} video packets, ${keyframePackets.length} keyframes for stream ${videoStream.index}`);
+    log(
+      `Complete stream has ${totalVideoPackets.length} video packets, ${keyframePackets.length} keyframes for stream ${videoStream.index}`,
+    );
 
     // Get timebase for this stream to convert timestamps
     const timebase = probe.videoTimebase;
@@ -306,12 +346,16 @@ export const generateFragmentIndex = async (
 
     // Calculate per-track timing offset from first packet for timeline mapping
     let trackStartTimeOffsetMs: number | undefined;
-    const allVideoPackets = probe.packets.filter(p => p.stream_index === videoStream.index);
+    const allVideoPackets = probe.packets.filter(
+      (p) => p.stream_index === videoStream.index,
+    );
     if (allVideoPackets.length > 0) {
       const firstPacketTime = allVideoPackets[0]!.dts_time;
-      log(`First video packet dts_time: ${firstPacketTime}, pts_time: ${allVideoPackets[0]!.pts_time}`);
+      log(
+        `First video packet dts_time: ${firstPacketTime}, pts_time: ${allVideoPackets[0]!.pts_time}`,
+      );
 
-      // Use PTS time instead of DTS time for offset calculation 
+      // Use PTS time instead of DTS time for offset calculation
       // since PTS represents the presentation timeline
       const presentationTime = allVideoPackets[0]!.pts_time;
       if (Math.abs(presentationTime) > 0.01) {
@@ -323,14 +367,20 @@ export const generateFragmentIndex = async (
     }
 
     // Process each fragment to create segments
-    log(`Processing ${fragmentTimingData.length} fragments for video stream ${videoStream.index}`);
+    log(
+      `Processing ${fragmentTimingData.length} fragments for video stream ${videoStream.index}`,
+    );
     for (const fragmentData of fragmentTimingData) {
       const fragment = mediaFragments[fragmentData.fragmentIndex]!;
       const videoPackets = fragmentData.videoPackets;
 
-      log(`Fragment ${fragmentData.fragmentIndex}: ${videoPackets.length} video packets`);
+      log(
+        `Fragment ${fragmentData.fragmentIndex}: ${videoPackets.length} video packets`,
+      );
       if (videoPackets.length === 0) {
-        log(`Skipping fragment ${fragmentData.fragmentIndex} - no video packets`);
+        log(
+          `Skipping fragment ${fragmentData.fragmentIndex} - no video packets`,
+        );
         continue;
       }
 
@@ -338,36 +388,42 @@ export const generateFragmentIndex = async (
       const firstPacket = videoPackets[0]!;
 
       // Use keyframe as segment start (essential for video streaming)
-      const keyframe = videoPackets.find(p => p.isKeyframe) || firstPacket;
+      const keyframe = videoPackets.find((p) => p.isKeyframe) || firstPacket;
 
       // Convert timestamps from ffprobe timebase to track timescale
-      const segmentCts = Math.round(keyframe.pts * timescale / timebase.den);
-      const segmentDts = Math.round(keyframe.dts * timescale / timebase.den);
+      const segmentCts = Math.round((keyframe.pts * timescale) / timebase.den);
+      const segmentDts = Math.round((keyframe.dts * timescale) / timebase.den);
 
       // Calculate duration to ensure perfect continuity
       // Find the next segment's keyframe
-      const nextFragmentData = fragmentTimingData[fragmentData.fragmentIndex + 1];
-      const nextKeyframe = nextFragmentData?.videoPackets.find(p => p.isKeyframe);
+      const nextFragmentData =
+        fragmentTimingData[fragmentData.fragmentIndex + 1];
+      const nextKeyframe = nextFragmentData?.videoPackets.find(
+        (p) => p.isKeyframe,
+      );
 
       let segmentDuration: number;
       if (nextKeyframe) {
         // Duration to next keyframe (perfectly contiguous)
-        const nextSegmentCts = Math.round(nextKeyframe.pts * timescale / timebase.den);
+        const nextSegmentCts = Math.round(
+          (nextKeyframe.pts * timescale) / timebase.den,
+        );
         segmentDuration = nextSegmentCts - segmentCts;
       } else {
         // Last segment: duration to end of all video packets
         const allVideoPackets = probe.packets
-          .filter(p => {
-            const stream = videoStreams.find(s => s.index === p.stream_index);
-            return stream?.codec_type === 'video';
+          .filter((p) => {
+            const stream = videoStreams.find((s) => s.index === p.stream_index);
+            return stream?.codec_type === "video";
           })
           .sort((a, b) => a.pts - b.pts);
         const lastPacket = allVideoPackets[allVideoPackets.length - 1]!;
-        const streamEnd = Math.round((lastPacket.pts + (lastPacket.duration || 0)) * timescale / timebase.den);
+        const streamEnd = Math.round(
+          ((lastPacket.pts + (lastPacket.duration || 0)) * timescale) /
+            timebase.den,
+        );
         segmentDuration = streamEnd - segmentCts;
       }
-
-
 
       segments.push({
         cts: segmentCts,
@@ -385,14 +441,15 @@ export const generateFragmentIndex = async (
       const firstPacket = totalVideoPackets[0]!;
       const lastPacket = totalVideoPackets[totalVideoPackets.length - 1]!;
 
-      const firstPts = Math.round(firstPacket.pts * timescale / timebase.den);
-      const lastPts = Math.round(lastPacket.pts * timescale / timebase.den);
+      const firstPts = Math.round((firstPacket.pts * timescale) / timebase.den);
+      const lastPts = Math.round((lastPacket.pts * timescale) / timebase.den);
 
       // Calculate duration as the span from first to last packet
       totalDuration = lastPts - firstPts;
     }
 
-    const finalTrackId = trackIdMapping?.[videoStream.index] ?? (videoStream.index + 1);
+    const finalTrackId =
+      trackIdMapping?.[videoStream.index] ?? videoStream.index + 1;
     trackIndexes[finalTrackId] = {
       track: finalTrackId,
       type: "video",
@@ -400,7 +457,11 @@ export const generateFragmentIndex = async (
       height: videoStream.coded_height || videoStream.height,
       timescale: timescale,
       sample_count: totalSampleCount,
-      codec: constructH264CodecString(videoStream.codec_tag_string, videoStream.profile, videoStream.level),
+      codec: constructH264CodecString(
+        videoStream.codec_tag_string,
+        videoStream.profile,
+        videoStream.level,
+      ),
       duration: totalDuration,
       startTimeOffsetMs: trackStartTimeOffsetMs,
       initSegment: {
@@ -411,12 +472,14 @@ export const generateFragmentIndex = async (
     };
   }
 
-  // Step 5: Process audio tracks using ffprobe data  
+  // Step 5: Process audio tracks using ffprobe data
   for (const audioStream of audioStreams) {
     const segments: TrackSegment[] = [];
 
     // Count total samples from complete stream, not individual fragments
-    const totalAudioPackets = probe.packets.filter(p => p.stream_index === audioStream.index);
+    const totalAudioPackets = probe.packets.filter(
+      (p) => p.stream_index === audioStream.index,
+    );
     const totalSampleCount = totalAudioPackets.length;
 
     // Get timebase for this stream to convert timestamps
@@ -431,7 +494,9 @@ export const generateFragmentIndex = async (
 
     // Calculate per-track timing offset from first packet for timeline mapping
     let trackStartTimeOffsetMs: number | undefined;
-    const allAudioPackets = probe.packets.filter(p => p.stream_index === audioStream.index);
+    const allAudioPackets = probe.packets.filter(
+      (p) => p.stream_index === audioStream.index,
+    );
     if (allAudioPackets.length > 0) {
       // Use PTS time for offset calculation since it represents presentation timeline
       const presentationTime = allAudioPackets[0]!.pts_time;
@@ -444,14 +509,20 @@ export const generateFragmentIndex = async (
     }
 
     // Process each fragment to create segments
-    log(`Processing ${fragmentTimingData.length} fragments for audio stream ${audioStream.index}`);
+    log(
+      `Processing ${fragmentTimingData.length} fragments for audio stream ${audioStream.index}`,
+    );
     for (const fragmentData of fragmentTimingData) {
       const fragment = mediaFragments[fragmentData.fragmentIndex]!;
       const audioPackets = fragmentData.audioPackets;
 
-      log(`Fragment ${fragmentData.fragmentIndex}: ${audioPackets.length} audio packets`);
+      log(
+        `Fragment ${fragmentData.fragmentIndex}: ${audioPackets.length} audio packets`,
+      );
       if (audioPackets.length === 0) {
-        log(`Skipping fragment ${fragmentData.fragmentIndex} - no audio packets`);
+        log(
+          `Skipping fragment ${fragmentData.fragmentIndex} - no audio packets`,
+        );
         continue;
       }
 
@@ -460,32 +531,40 @@ export const generateFragmentIndex = async (
 
       // Convert timestamps from ffprobe timebase to track timescale
       // For audio, CTS always equals PTS (no reordering)
-      const segmentCts = Math.round(firstPacket.pts * timescale / timebase.den);
-      const segmentDts = Math.round(firstPacket.dts * timescale / timebase.den);
+      const segmentCts = Math.round(
+        (firstPacket.pts * timescale) / timebase.den,
+      );
+      const segmentDts = Math.round(
+        (firstPacket.dts * timescale) / timebase.den,
+      );
 
       // Calculate duration to ensure perfect continuity with next segment
-      const nextFragmentData = fragmentTimingData[fragmentData.fragmentIndex + 1];
+      const nextFragmentData =
+        fragmentTimingData[fragmentData.fragmentIndex + 1];
       const nextFirstPacket = nextFragmentData?.audioPackets[0];
 
       let segmentDuration: number;
       if (nextFirstPacket) {
         // Duration to next segment start (perfectly contiguous)
-        const nextSegmentCts = Math.round(nextFirstPacket.pts * timescale / timebase.den);
+        const nextSegmentCts = Math.round(
+          (nextFirstPacket.pts * timescale) / timebase.den,
+        );
         segmentDuration = nextSegmentCts - segmentCts;
       } else {
         // Last segment: duration to end of all audio packets
         const allAudioPackets = probe.packets
-          .filter(p => {
-            const stream = audioStreams.find(s => s.index === p.stream_index);
-            return stream?.codec_type === 'audio';
+          .filter((p) => {
+            const stream = audioStreams.find((s) => s.index === p.stream_index);
+            return stream?.codec_type === "audio";
           })
           .sort((a, b) => a.pts - b.pts);
         const lastPacket = allAudioPackets[allAudioPackets.length - 1]!;
-        const streamEnd = Math.round((lastPacket.pts + (lastPacket.duration || 0)) * timescale / timebase.den);
+        const streamEnd = Math.round(
+          ((lastPacket.pts + (lastPacket.duration || 0)) * timescale) /
+            timebase.den,
+        );
         segmentDuration = streamEnd - segmentCts;
       }
-
-
 
       segments.push({
         cts: segmentCts,
@@ -499,7 +578,8 @@ export const generateFragmentIndex = async (
     // Calculate total duration
     const totalDuration = segments.reduce((sum, seg) => sum + seg.duration, 0);
 
-    const finalTrackId = trackIdMapping?.[audioStream.index] ?? (audioStream.index + 1);
+    const finalTrackId =
+      trackIdMapping?.[audioStream.index] ?? audioStream.index + 1;
     trackIndexes[finalTrackId] = {
       track: finalTrackId,
       type: "audio",
@@ -508,7 +588,7 @@ export const generateFragmentIndex = async (
       sample_size: audioStream.bits_per_sample,
       sample_count: totalSampleCount,
       timescale: timescale,
-      codec: audioStream.codec_tag_string || audioStream.codec_name || '',
+      codec: audioStream.codec_tag_string || audioStream.codec_name || "",
       duration: totalDuration,
       startTimeOffsetMs: trackStartTimeOffsetMs,
       initSegment: {

@@ -1,6 +1,9 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { useElementStyles } from "./useElementStyles";
-import type { ElementNode, MotionDesignerState } from "~/lib/motion-designer/types";
+import type {
+  ElementNode,
+  MotionDesignerState,
+} from "~/lib/motion-designer/types";
 import * as generateStylesModule from "../../animations/generateStyles";
 
 vi.mock("../../animations/generateStyles", () => ({
@@ -10,7 +13,11 @@ vi.mock("../../animations/generateStyles", () => ({
 vi.mock("../styleGenerators/visualStyles", () => ({
   generateVisualStyles: vi.fn((element, hasOpacity, hasTransform) => ({
     opacity: hasOpacity ? undefined : element.props.opacity,
-    transform: hasTransform ? undefined : element.props.rotation ? `rotate(${element.props.rotation}deg)` : undefined,
+    transform: hasTransform
+      ? undefined
+      : element.props.rotation
+        ? `rotate(${element.props.rotation}deg)`
+        : undefined,
   })),
 }));
 
@@ -33,7 +40,9 @@ function createElement(overrides: Partial<ElementNode> = {}): ElementNode {
   };
 }
 
-function createState(overrides: Partial<MotionDesignerState> = {}): MotionDesignerState {
+function createState(
+  overrides: Partial<MotionDesignerState> = {},
+): MotionDesignerState {
   return {
     composition: {
       elements: {},
@@ -99,7 +108,9 @@ describe("useElementStyles", () => {
     vi.mocked(generateStylesModule.isTransformProperty).mockReturnValue(true);
 
     const { styles } = useElementStyles(element, createState());
-    expect(generateStylesModule.isTransformProperty).toHaveBeenCalledWith("rotate");
+    expect(generateStylesModule.isTransformProperty).toHaveBeenCalledWith(
+      "rotate",
+    );
     expect(styles.transform).toBeUndefined();
   });
 
@@ -123,7 +134,9 @@ describe("useElementStyles", () => {
     vi.mocked(generateStylesModule.isTransformProperty).mockReturnValue(true);
 
     useElementStyles(element, createState());
-    expect(generateStylesModule.isTransformProperty).toHaveBeenCalledWith("translateX");
+    expect(generateStylesModule.isTransformProperty).toHaveBeenCalledWith(
+      "translateX",
+    );
   });
 
   test("detects scale as transform property", () => {
@@ -146,7 +159,9 @@ describe("useElementStyles", () => {
     vi.mocked(generateStylesModule.isTransformProperty).mockReturnValue(true);
 
     useElementStyles(element, createState());
-    expect(generateStylesModule.isTransformProperty).toHaveBeenCalledWith("scale");
+    expect(generateStylesModule.isTransformProperty).toHaveBeenCalledWith(
+      "scale",
+    );
   });
 
   test("does not detect non-transform animations", () => {
@@ -182,4 +197,3 @@ describe("useElementStyles", () => {
     expect(styles.transform).toBe("rotate(45deg)");
   });
 });
-

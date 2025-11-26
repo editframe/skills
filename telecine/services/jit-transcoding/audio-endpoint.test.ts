@@ -2,16 +2,15 @@ import { describe, test, expect, vi } from "vitest";
 
 // Mock the audio transcoding modules
 vi.mock("@/transcode/src/jit/JitTranscoder", () => ({
-  transcodeVideoSegment: vi.fn()
+  transcodeVideoSegment: vi.fn(),
 }));
 
 // Mock MP3 metadata modules (to be implemented)
 vi.mock("@/transcode/src/mp3Scanner", () => ({
-  extractMp3Metadata: vi.fn()
+  extractMp3Metadata: vi.fn(),
 }));
 
 describe("Audio Transcoding API Endpoint", () => {
-
   describe("Audio Endpoint URL Validation", () => {
     test("should accept /api/v1/transcode/audio endpoint", () => {
       const audioEndpoint = "/api/v1/transcode/audio";
@@ -33,13 +32,13 @@ describe("Audio Transcoding API Endpoint", () => {
       const validRequest = {
         quality: "medium",
         url: "https://example.com/audio.mp3",
-        start: 0
+        start: 0,
       };
 
       const invalidRequest: any = {
         // Missing quality parameter
         url: "https://example.com/audio.mp3",
-        start: 0
+        start: 0,
       };
 
       expect(validRequest.quality).toBe("medium");
@@ -50,11 +49,11 @@ describe("Audio Transcoding API Endpoint", () => {
       const validQualities = ["medium"];
       const invalidQualities = ["low", "high", "best", "worst", "custom"];
 
-      validQualities.forEach(quality => {
+      validQualities.forEach((quality) => {
         expect(quality).toBe("medium");
       });
 
-      invalidQualities.forEach(quality => {
+      invalidQualities.forEach((quality) => {
         expect(quality).not.toBe("medium");
       });
     });
@@ -67,13 +66,15 @@ describe("Audio Transcoding API Endpoint", () => {
           details: {
             providedQuality: "high",
             validQualities: ["medium"],
-            note: "Only 'medium' quality is supported for audio transcoding"
-          }
-        }
+            note: "Only 'medium' quality is supported for audio transcoding",
+          },
+        },
       };
 
       expect(invalidQualityError.error.code).toBe("INVALID_AUDIO_QUALITY");
-      expect(invalidQualityError.error.details.validQualities).toContain("medium");
+      expect(invalidQualityError.error.details.validQualities).toContain(
+        "medium",
+      );
       expect(invalidQualityError.error.details.validQualities).toHaveLength(1);
     });
   });
@@ -82,13 +83,13 @@ describe("Audio Transcoding API Endpoint", () => {
     test("should validate 15s time alignment for audio segments", () => {
       // Valid 15s aligned start times
       const validStartTimes = [0, 15000, 30000, 45000, 60000];
-      validStartTimes.forEach(startTime => {
+      validStartTimes.forEach((startTime) => {
         expect(startTime % 15000).toBe(0);
       });
 
       // Invalid start times (not 15s aligned)
       const invalidStartTimes = [1000, 7500, 22500, 37500, 2000];
-      invalidStartTimes.forEach(startTime => {
+      invalidStartTimes.forEach((startTime) => {
         expect(startTime % 15000).not.toBe(0);
       });
     });
@@ -97,17 +98,20 @@ describe("Audio Transcoding API Endpoint", () => {
       const audioTimeAlignmentError = {
         error: {
           code: "AUDIO_TIME_ALIGNMENT_ERROR",
-          message: "Start time must be aligned to 15s boundaries for audio transcoding",
+          message:
+            "Start time must be aligned to 15s boundaries for audio transcoding",
           details: {
             providedTime: 7500,
             nearestValidTime: 15000,
             segmentDuration: 15000,
-            alignment: "15s"
-          }
-        }
+            alignment: "15s",
+          },
+        },
       };
 
-      expect(audioTimeAlignmentError.error.code).toBe("AUDIO_TIME_ALIGNMENT_ERROR");
+      expect(audioTimeAlignmentError.error.code).toBe(
+        "AUDIO_TIME_ALIGNMENT_ERROR",
+      );
       expect(audioTimeAlignmentError.error.details.segmentDuration).toBe(15000);
       expect(audioTimeAlignmentError.error.details.alignment).toBe("15s");
     });
@@ -117,7 +121,7 @@ describe("Audio Transcoding API Endpoint", () => {
         { input: 7500, expected: 15000 },
         { input: 22500, expected: 30000 },
         { input: 5000, expected: 0 },
-        { input: 38000, expected: 45000 }
+        { input: 38000, expected: 45000 },
       ];
 
       alignmentTests.forEach(({ input, expected }) => {
@@ -132,21 +136,21 @@ describe("Audio Transcoding API Endpoint", () => {
       const validMp3Urls = [
         "https://example.com/audio.mp3",
         "https://cdn.example.com/music/track.mp3",
-        "https://storage.example.com/files/audio-file.mp3"
+        "https://storage.example.com/files/audio-file.mp3",
       ];
 
       const invalidUrls = [
         "not-a-url",
         "https://example.com/video.mp4", // Not MP3
         "https://example.com/audio.wav", // Not MP3
-        "ftp://example.com/audio.mp3"    // Not HTTP(S)
+        "ftp://example.com/audio.mp3", // Not HTTP(S)
       ];
 
-      validMp3Urls.forEach(url => {
+      validMp3Urls.forEach((url) => {
         expect(url).toMatch(/^https?:\/\/.+\.mp3$/);
       });
 
-      invalidUrls.forEach(url => {
+      invalidUrls.forEach((url) => {
         expect(url).not.toMatch(/^https?:\/\/.+\.mp3$/);
       });
     });
@@ -159,9 +163,9 @@ describe("Audio Transcoding API Endpoint", () => {
           details: {
             providedUrl: "https://example.com/video.mp4",
             supportedFormats: ["mp3"],
-            detectedFormat: "mp4"
-          }
-        }
+            detectedFormat: "mp4",
+          },
+        },
       };
 
       expect(nonMp3Error.error.code).toBe("INVALID_AUDIO_FORMAT");
@@ -174,12 +178,12 @@ describe("Audio Transcoding API Endpoint", () => {
     test("should have correct medium quality preset for audio", () => {
       const audioMediumPreset = {
         quality: "medium",
-        audioBitrate: 128000,    // 128 kbps
-        audioChannels: 2,        // Stereo
-        audioSampleRate: 48000,  // 48 kHz
-        audioCodec: "aac",       // AAC codec
-        segmentDuration: 15000,  // 15 second segments
-        containerFormat: "mp4"   // MP4 container for audio
+        audioBitrate: 128000, // 128 kbps
+        audioChannels: 2, // Stereo
+        audioSampleRate: 48000, // 48 kHz
+        audioCodec: "aac", // AAC codec
+        segmentDuration: 15000, // 15 second segments
+        containerFormat: "mp4", // MP4 container for audio
       };
 
       expect(audioMediumPreset.quality).toBe("medium");
@@ -224,8 +228,8 @@ describe("Audio Transcoding API Endpoint", () => {
           targetCodec: "aac",
           passthrough: false,
           channels: 2,
-          sampleRate: 48000
-        }
+          sampleRate: 48000,
+        },
       };
 
       vi.mocked(transcodeVideoSegment).mockResolvedValue(mockResult);
@@ -234,13 +238,13 @@ describe("Audio Transcoding API Endpoint", () => {
         url: "https://example.com/audio.mp3",
         startTimeMs: 0,
         durationMs: 15000,
-        targetWidth: 0,         // Audio-only: no video
-        targetHeight: 0,        // Audio-only: no video
-        videoBitrate: 0,        // Audio-only: no video
+        targetWidth: 0, // Audio-only: no video
+        targetHeight: 0, // Audio-only: no video
+        videoBitrate: 0, // Audio-only: no video
         audioCodec: "aac",
         audioBitrate: 128000,
         audioChannels: 2,
-        audioSampleRate: 48000
+        audioSampleRate: 48000,
       });
 
       expect(result.success).toBe(true);
@@ -257,7 +261,7 @@ describe("Audio Transcoding API Endpoint", () => {
         audioCodec: "aac",
         audioBitrate: 128000,
         audioChannels: 2,
-        audioSampleRate: 48000
+        audioSampleRate: 48000,
       });
     });
 
@@ -269,7 +273,7 @@ describe("Audio Transcoding API Endpoint", () => {
         outputData: new Uint8Array(0),
         actualStartTimeMs: 0,
         actualDurationMs: 0,
-        error: "Failed to decode MP3 stream"
+        error: "Failed to decode MP3 stream",
       };
 
       vi.mocked(transcodeVideoSegment).mockResolvedValue(mockFailureResult);
@@ -284,7 +288,7 @@ describe("Audio Transcoding API Endpoint", () => {
         audioCodec: "aac",
         audioBitrate: 128000,
         audioChannels: 2,
-        audioSampleRate: 48000
+        audioSampleRate: 48000,
       });
 
       expect(result.success).toBe(false);
@@ -308,13 +312,13 @@ describe("Audio Transcoding API Endpoint", () => {
             channels: 2,
             sampleRate: 44100,
             duration: 180,
-            durationMs: 180000
-          }
+            durationMs: 180000,
+          },
         ],
         supportedQualities: ["medium"],
         segmentDuration: 15000,
         alignment: "15s",
-        extractedAt: new Date().toISOString()
+        extractedAt: new Date().toISOString(),
       };
 
       expect(mockMp3Metadata.format).toBe("mp3");
@@ -333,34 +337,38 @@ describe("Audio Transcoding API Endpoint", () => {
           details: {
             url: "https://example.com/invalid.mp3",
             errorType: "InvalidFormatError",
-            errorMessage: "Not a valid MP3 file"
-          }
-        }
+            errorMessage: "Not a valid MP3 file",
+          },
+        },
       };
 
-      expect(mp3MetadataError.error.code).toBe("MP3_METADATA_EXTRACTION_FAILED");
-      expect(mp3MetadataError.error.details.errorType).toBe("InvalidFormatError");
+      expect(mp3MetadataError.error.code).toBe(
+        "MP3_METADATA_EXTRACTION_FAILED",
+      );
+      expect(mp3MetadataError.error.details.errorType).toBe(
+        "InvalidFormatError",
+      );
     });
   });
 
   describe("Audio Response Headers", () => {
     test("should include audio-specific response headers", () => {
       const audioResponseHeaders = {
-        'Content-Type': 'video/mp4', // MP4 container with audio-only
-        'Content-Length': '240000',
-        'Cache-Control': 'public, max-age=3600',
-        'X-Cache': 'MISS',
-        'X-Audio-Quality': 'medium',
-        'X-Audio-Bitrate': '128000',
-        'X-Audio-Channels': '2',
-        'X-Audio-Sample-Rate': '48000',
-        'X-Segment-Duration': '15000'
+        "Content-Type": "video/mp4", // MP4 container with audio-only
+        "Content-Length": "240000",
+        "Cache-Control": "public, max-age=3600",
+        "X-Cache": "MISS",
+        "X-Audio-Quality": "medium",
+        "X-Audio-Bitrate": "128000",
+        "X-Audio-Channels": "2",
+        "X-Audio-Sample-Rate": "48000",
+        "X-Segment-Duration": "15000",
       };
 
-      expect(audioResponseHeaders['Content-Type']).toBe('video/mp4');
-      expect(audioResponseHeaders['X-Audio-Quality']).toBe('medium');
-      expect(audioResponseHeaders['X-Audio-Bitrate']).toBe('128000');
-      expect(audioResponseHeaders['X-Segment-Duration']).toBe('15000');
+      expect(audioResponseHeaders["Content-Type"]).toBe("video/mp4");
+      expect(audioResponseHeaders["X-Audio-Quality"]).toBe("medium");
+      expect(audioResponseHeaders["X-Audio-Bitrate"]).toBe("128000");
+      expect(audioResponseHeaders["X-Segment-Duration"]).toBe("15000");
     });
   });
 
@@ -375,13 +383,13 @@ describe("Audio Transcoding API Endpoint", () => {
         quality: "low",
         audioBitrate: 96000,
         audioChannels: 2,
-        audioSampleRate: 44100
+        audioSampleRate: 44100,
       };
       const futureHighQuality = {
         quality: "high",
         audioBitrate: 192000,
         audioChannels: 2,
-        audioSampleRate: 48000
+        audioSampleRate: 48000,
       };
 
       expect(currentQualities).toHaveLength(1);
@@ -397,10 +405,10 @@ describe("Audio Transcoding API Endpoint", () => {
         return validQualities.includes(quality);
       };
 
-      expect(qualityValidation("medium")).toBe(true);  // Currently supported
-      expect(qualityValidation("low")).toBe(true);     // Future
-      expect(qualityValidation("high")).toBe(true);    // Future  
+      expect(qualityValidation("medium")).toBe(true); // Currently supported
+      expect(qualityValidation("low")).toBe(true); // Future
+      expect(qualityValidation("high")).toBe(true); // Future
       expect(qualityValidation("invalid")).toBe(false); // Invalid
     });
   });
-}); 
+});

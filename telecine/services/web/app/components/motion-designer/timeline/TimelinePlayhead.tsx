@@ -33,33 +33,45 @@ export function TimelinePlayhead({
 
   // Calculate playhead position in pixels with zoom
   // Fallback to timelineContainerRef width if containerWidth is not available
-  const effectiveWidth = containerWidth > 0 
-    ? containerWidth 
-    : (timelineContainerRef.current?.getBoundingClientRect().width || 0);
-  
-  const positionPixels = durationMs > 0 && effectiveWidth > 0
-    ? timeToPixels(currentTime, durationMs, effectiveWidth, zoomScale)
-    : 0;
+  const effectiveWidth =
+    containerWidth > 0
+      ? containerWidth
+      : timelineContainerRef.current?.getBoundingClientRect().width || 0;
+
+  const positionPixels =
+    durationMs > 0 && effectiveWidth > 0
+      ? timeToPixels(currentTime, durationMs, effectiveWidth, zoomScale)
+      : 0;
 
   // Use shared scrubbing hook
-  const { handleMouseDown, rawScrubTime: playheadRawScrubTime } = useTimelineScrubbing({
-    timelineContainerRef,
-    durationMs,
-    onSeek,
-    isScrubbingRef,
-    zoomScale,
-    containerWidth,
-    scrollContainerRef,
-    fps,
-  });
+  const { handleMouseDown, rawScrubTime: playheadRawScrubTime } =
+    useTimelineScrubbing({
+      timelineContainerRef,
+      durationMs,
+      onSeek,
+      isScrubbingRef,
+      zoomScale,
+      containerWidth,
+      scrollContainerRef,
+      fps,
+    });
 
   // Use rawScrubTime from props (from ruler/tracks scrubbing) or from playhead's own scrubbing
   const effectiveRawScrubTime = rawScrubTime ?? playheadRawScrubTime;
 
   // Calculate raw scrub position (faint playhead) if scrubbing
-  const rawScrubPositionPixels = effectiveRawScrubTime !== null && effectiveRawScrubTime !== undefined && durationMs > 0 && effectiveWidth > 0
-    ? timeToPixels(effectiveRawScrubTime, durationMs, effectiveWidth, zoomScale)
-    : null;
+  const rawScrubPositionPixels =
+    effectiveRawScrubTime !== null &&
+    effectiveRawScrubTime !== undefined &&
+    durationMs > 0 &&
+    effectiveWidth > 0
+      ? timeToPixels(
+          effectiveRawScrubTime,
+          durationMs,
+          effectiveWidth,
+          zoomScale,
+        )
+      : null;
 
   // Handle mouse down with stopPropagation to prevent ruler/tracks handlers
   const handlePlayheadMouseDown = (e: React.MouseEvent) => {
@@ -74,15 +86,16 @@ export function TimelinePlayhead({
   return (
     <>
       {/* Faint playhead showing raw mouse position during scrubbing */}
-      {rawScrubPositionPixels !== null && rawScrubPositionPixels !== positionPixels && (
-        <div
-          className="absolute top-0 bottom-0 w-0.5 pointer-events-none z-20"
-          style={{ left: `${rawScrubPositionPixels}px` }}
-        >
-          {/* Faint vertical line */}
-          <div className="w-full h-full bg-blue-500/20" />
-        </div>
-      )}
+      {rawScrubPositionPixels !== null &&
+        rawScrubPositionPixels !== positionPixels && (
+          <div
+            className="absolute top-0 bottom-0 w-0.5 pointer-events-none z-20"
+            style={{ left: `${rawScrubPositionPixels}px` }}
+          >
+            {/* Faint vertical line */}
+            <div className="w-full h-full bg-blue-500/20" />
+          </div>
+        )}
       {/* Main playhead (snapped to frame boundaries) */}
       <div
         ref={playheadRef}
@@ -98,4 +111,3 @@ export function TimelinePlayhead({
     </>
   );
 }
-

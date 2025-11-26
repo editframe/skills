@@ -1,4 +1,7 @@
-import type { MotionDesignerState, ElementNode } from "~/lib/motion-designer/types";
+import type {
+  MotionDesignerState,
+  ElementNode,
+} from "~/lib/motion-designer/types";
 import { behaviorRegistry } from "~/lib/motion-designer/behaviors";
 import type { DropZone } from "./dropZone";
 
@@ -14,7 +17,10 @@ export interface ElementRef {
   depth: number;
 }
 
-function findParentId(elementId: string, state: MotionDesignerState): string | null {
+function findParentId(
+  elementId: string,
+  state: MotionDesignerState,
+): string | null {
   for (const element of Object.values(state.composition.elements)) {
     if (element.childIds.includes(elementId)) {
       return element.id;
@@ -28,7 +34,12 @@ function canDropInside(
   targetElementId: string,
   state: MotionDesignerState,
 ): boolean {
-  return behaviorRegistry.canMove(draggedElementId, targetElementId, undefined, state);
+  return behaviorRegistry.canMove(
+    draggedElementId,
+    targetElementId,
+    undefined,
+    state,
+  );
 }
 
 function canDropBeforeAfter(
@@ -121,7 +132,12 @@ export function evaluateDropTarget(
   elementRefs: ElementRef[],
   draggedElementId: string,
   state: MotionDesignerState,
-  determineZone: (elementId: string, cursorY: number, rect: DOMRect, canHaveChildren: boolean) => DropZone,
+  determineZone: (
+    elementId: string,
+    cursorY: number,
+    rect: DOMRect,
+    canHaveChildren: boolean,
+  ) => DropZone,
   resetElementZone: (elementId: string) => void,
 ): DropTarget | null {
   if (!draggedElementId || elementRefs.length === 0) {
@@ -152,12 +168,7 @@ export function evaluateDropTarget(
     if (zone === "none") continue;
 
     if (
-      !canDropAtPosition(
-        draggedElementId,
-        elementRef.elementId,
-        zone,
-        state,
-      )
+      !canDropAtPosition(draggedElementId, elementRef.elementId, zone, state)
     ) {
       continue;
     }
@@ -167,6 +178,3 @@ export function evaluateDropTarget(
 
   return selectBestTarget(candidates);
 }
-
-
-

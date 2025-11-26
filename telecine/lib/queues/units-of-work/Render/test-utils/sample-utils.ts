@@ -17,20 +17,16 @@ export async function getAudioSampleCount(filePath: string): Promise<number> {
     "csv=p=0",
     filePath,
   ];
-  console.log(`Running ffprobe with args: ${commandArgs.join(' ')}`);
+  console.log(`Running ffprobe with args: ${commandArgs.join(" ")}`);
 
   return new Promise((resolve) => {
-    execFile(
-      "ffprobe",
-      commandArgs,
-      (err, stdout) => {
-        if (err) return resolve(0);
-        const lines = stdout.trim().split('\n');
-        const packetCount = lines.filter(line => line.trim().length > 0).length;
-        console.log(`Packet count: ${packetCount}`);
-        // For AAC, each packet typically contains 1024 samples
-        resolve(packetCount * 1024);
-      },
-    );
+    execFile("ffprobe", commandArgs, (err, stdout) => {
+      if (err) return resolve(0);
+      const lines = stdout.trim().split("\n");
+      const packetCount = lines.filter((line) => line.trim().length > 0).length;
+      console.log(`Packet count: ${packetCount}`);
+      // For AAC, each packet typically contains 1024 samples
+      resolve(packetCount * 1024);
+    });
   });
-} 
+}

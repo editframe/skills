@@ -1,5 +1,8 @@
 import React from "react";
-import type { ElementNode, MotionDesignerState } from "~/lib/motion-designer/types";
+import type {
+  ElementNode,
+  MotionDesignerState,
+} from "~/lib/motion-designer/types";
 import { PropertySectionRenderer } from "./config/PropertySectionRenderer";
 import { propertySections } from "./config/propertyConfig";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";

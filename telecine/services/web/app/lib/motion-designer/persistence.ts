@@ -19,6 +19,3 @@ export function exportState(state: MotionDesignerState): string {
 export function importState(json: string): MotionDesignerState {
   return JSON.parse(json);
 }
-
-
-

@@ -31,19 +31,22 @@ export async function extractVideoMetadata(buffer: Buffer): Promise<any> {
     width: 1920,
     height: 1080,
     fps: 30,
-    codec: "h264"
+    codec: "h264",
   };
 }
 
 /**
  * Validate init segment structure
  */
-export async function validateInitSegment(buffer: Buffer, expectedCodec: string): Promise<ValidationResult> {
+export async function validateInitSegment(
+  buffer: Buffer,
+  expectedCodec: string,
+): Promise<ValidationResult> {
   // Basic validation - check if buffer exists and has content
   if (!buffer || buffer.length === 0) {
     return {
       success: false,
-      message: "Init segment buffer is empty"
+      message: "Init segment buffer is empty",
     };
   }
 
@@ -53,7 +56,7 @@ export async function validateInitSegment(buffer: Buffer, expectedCodec: string)
   if (bufferString.includes("invalid")) {
     return {
       success: false,
-      message: "Init segment missing video track"
+      message: "Init segment missing video track",
     };
   }
 
@@ -63,9 +66,9 @@ export async function validateInitSegment(buffer: Buffer, expectedCodec: string)
       initMetadata: {
         hasVideoTrack: true,
         isFragmented: true,
-        videoCodec: expectedCodec
-      }
-    }
+        videoCodec: expectedCodec,
+      },
+    },
   };
 }
 
@@ -75,12 +78,12 @@ export async function validateInitSegment(buffer: Buffer, expectedCodec: string)
 export async function validateFragmentTiming(
   fragments: Buffer[],
   expectedWorkSliceMs: number,
-  toleranceMs: number = 100
+  toleranceMs: number = 100,
 ): Promise<ValidationResult> {
   if (!fragments || fragments.length === 0) {
     return {
       success: false,
-      message: "No fragments provided"
+      message: "No fragments provided",
     };
   }
 
@@ -88,11 +91,13 @@ export async function validateFragmentTiming(
     // Extract duration from mock fragment (in real implementation would analyze MP4)
     const fragmentString = fragment.toString();
     const durationMatch = fragmentString.match(/(\d+)ms/);
-    const duration = durationMatch ? parseInt(durationMatch[1]) : expectedWorkSliceMs;
+    const duration = durationMatch
+      ? parseInt(durationMatch[1])
+      : expectedWorkSliceMs;
 
     return {
       startTime: index * expectedWorkSliceMs,
-      duration
+      duration,
     };
   });
 
@@ -106,7 +111,7 @@ export async function validateFragmentTiming(
     if (!isFinalFragment && difference > toleranceMs) {
       return {
         success: false,
-        message: `Fragment ${i} duration ${timing.duration}ms differs from expected ${expectedWorkSliceMs}ms by ${difference}ms`
+        message: `Fragment ${i} duration ${timing.duration}ms differs from expected ${expectedWorkSliceMs}ms by ${difference}ms`,
       };
     }
   }
@@ -114,7 +119,7 @@ export async function validateFragmentTiming(
   return {
     success: true,
     details: {
-      fragmentTimings
-    }
+      fragmentTimings,
+    },
   };
-} 
+}

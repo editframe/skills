@@ -153,7 +153,7 @@ describe("EFText", () => {
       // Verify wrapper structure - characters within a word should be siblings in a wrapper
       const firstWrapper = wordWrappers[0];
       const secondWrapper = wordWrappers[1];
-      
+
       if (firstWrapper) {
         const wrapperSegments = Array.from(
           firstWrapper.querySelectorAll("ef-text-segment"),
@@ -531,7 +531,6 @@ describe("EFText", () => {
       // Third character should have full stagger (100ms for 3 chars: (3-1) * 50ms)
       expect(segments[2]?.staggerOffsetMs).toBe(100);
     });
-
   });
 
   describe("CSS variables", () => {
@@ -1344,11 +1343,11 @@ describe("EFText", () => {
       const timegroup = document.createElement("ef-timegroup");
       timegroup.duration = "5s";
       timegroup.mode = "fixed";
-      
+
       const text = document.createElement("ef-text");
       text.textContent = "Hello world";
       // explicitly NOT setting duration on text
-      
+
       timegroup.appendChild(text);
       document.body.appendChild(timegroup);
       testElements.push(timegroup);
@@ -1384,21 +1383,27 @@ describe("EFText", () => {
       await new Promise((resolve) => requestAnimationFrame(resolve));
 
       // Filter to only word segments (exclude whitespace)
-      const wordSegments = segments.filter((seg) => !/^\s+$/.test(seg.segmentText));
-      
+      const wordSegments = segments.filter(
+        (seg) => !/^\s+$/.test(seg.segmentText),
+      );
+
       // Each occurrence of "AT" should have a different stagger offset
       // The text is: "AT A TIME AT A TIME AT A TIME" (9 words total)
       // Word indices should be: 0, 1, 2, 3, 4, 5, 6, 7, 8
       expect(wordSegments.length).toBe(9);
-      
+
       // Check that each segment has a unique stagger offset based on its position
       // First "AT" should have offset 0
       expect(wordSegments[0]?.staggerOffsetMs).toBe(0);
       // Second "AT" (at index 3) should have offset based on index 3, not 0
-      expect(wordSegments[3]?.staggerOffsetMs).toBeGreaterThan(wordSegments[0]?.staggerOffsetMs ?? 0);
+      expect(wordSegments[3]?.staggerOffsetMs).toBeGreaterThan(
+        wordSegments[0]?.staggerOffsetMs ?? 0,
+      );
       // Third "AT" (at index 6) should have offset based on index 6, not 0
-      expect(wordSegments[6]?.staggerOffsetMs).toBeGreaterThan(wordSegments[3]?.staggerOffsetMs ?? 0);
-      
+      expect(wordSegments[6]?.staggerOffsetMs).toBeGreaterThan(
+        wordSegments[3]?.staggerOffsetMs ?? 0,
+      );
+
       // Verify all segments have different stagger offsets (except whitespace which inherits)
       const wordStaggerOffsets = wordSegments.map((seg) => seg.staggerOffsetMs);
       const uniqueOffsets = new Set(wordStaggerOffsets);

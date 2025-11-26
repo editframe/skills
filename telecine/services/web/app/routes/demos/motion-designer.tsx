@@ -15,11 +15,10 @@ export const meta: MetaFunction = () => {
 export default function MotionDesignerPage() {
   // Enable Editframe interactive mode so timegroups initialize playback controllers
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       (window as any).EF_INTERACTIVE = true;
     }
   }, []);
-  
+
   return <MotionDesigner />;
 }
-

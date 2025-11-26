@@ -1,6 +1,11 @@
 import clsx from "clsx";
 
-export function Prose({  Component = "div", children, className, ...props }: React.ComponentProps<"div" | "a"> & { Component?: React.ElementType }) {
+export function Prose({
+  Component = "div",
+  children,
+  className,
+  ...props
+}: React.ComponentProps<"div" | "a"> & { Component?: React.ElementType }) {
   return (
     <Component
       className={clsx(

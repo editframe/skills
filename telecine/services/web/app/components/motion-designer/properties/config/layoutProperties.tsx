@@ -6,8 +6,15 @@ import { FrameCorners } from "@phosphor-icons/react";
 const isContainer = (element: ElementNode) =>
   element.type === "div" || element.type === "timegroup";
 
-const isRootTimegroup = (element: ElementNode, state?: { composition: { rootTimegroupIds: string[] } }) =>
-  !!(element.type === "timegroup" && state && state.composition.rootTimegroupIds.includes(element.id));
+const isRootTimegroup = (
+  element: ElementNode,
+  state?: { composition: { rootTimegroupIds: string[] } },
+) =>
+  !!(
+    element.type === "timegroup" &&
+    state &&
+    state.composition.rootTimegroupIds.includes(element.id)
+  );
 
 export const layoutProperties: PropertySectionConfig[] = [
   {
@@ -56,4 +63,3 @@ export const layoutProperties: PropertySectionConfig[] = [
     ],
   },
 ];
-

@@ -57,10 +57,12 @@ export default function Logtool(_props: Route.ComponentProps) {
   }, [logs, filters]);
 
   return (
-    <div className={clsx(
-      "overflow-y-auto h-full grid grid-rows-[auto_1fr] transition-colors",
-      "bg-white dark:bg-slate-900"
-    )}>
+    <div
+      className={clsx(
+        "overflow-y-auto h-full grid grid-rows-[auto_1fr] transition-colors",
+        "bg-white dark:bg-slate-900",
+      )}
+    >
       <input
         type="text"
         className={clsx(
@@ -69,7 +71,7 @@ export default function Logtool(_props: Route.ComponentProps) {
           "text-slate-900 dark:text-white",
           "border-slate-300 dark:border-slate-600",
           "focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-blue-400",
-          "focus:border-blue-500 dark:focus:border-blue-400"
+          "focus:border-blue-500 dark:focus:border-blue-400",
         )}
         onPasteCapture={(e) => {
           e.preventDefault();
@@ -78,10 +80,12 @@ export default function Logtool(_props: Route.ComponentProps) {
         }}
       />
       <div>
-        <div className={clsx(
-          "flex-1 transition-colors",
-          "text-slate-900 dark:text-white"
-        )}>
+        <div
+          className={clsx(
+            "flex-1 transition-colors",
+            "text-slate-900 dark:text-white",
+          )}
+        >
           {filteredLogs.length} / {logs.length} Logs
         </div>
         {filters.map((filter) => (
@@ -91,7 +95,7 @@ export default function Logtool(_props: Route.ComponentProps) {
               "font-mono text-xs rounded-md inline-block m-1 p-1 transition-colors cursor-pointer",
               "bg-slate-100 dark:bg-slate-800",
               "text-slate-900 dark:text-white",
-              "hover:bg-slate-200 dark:hover:bg-slate-700"
+              "hover:bg-slate-200 dark:hover:bg-slate-700",
             )}
             onClick={(event) => {
               event.stopPropagation();
@@ -105,17 +109,20 @@ export default function Logtool(_props: Route.ComponentProps) {
       </div>
       <div className="overflow-auto">
         {filteredLogs.slice(0, 5_000).map((log, index) => (
-          <div key={index} className={clsx(
-            "whitespace-nowrap font-mono border-b transition-colors",
-            "border-slate-200 dark:border-slate-700",
-            "hover:bg-slate-50 dark:hover:bg-slate-800"
-          )}>
+          <div
+            key={index}
+            className={clsx(
+              "whitespace-nowrap font-mono border-b transition-colors",
+              "border-slate-200 dark:border-slate-700",
+              "hover:bg-slate-50 dark:hover:bg-slate-800",
+            )}
+          >
             {Object.entries(log).map(([key, value]) => (
               <span
                 key={key}
                 className={clsx(
                   "pr-2 inline-block cursor-pointer transition-colors",
-                  "hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                  "hover:bg-blue-100 dark:hover:bg-blue-900/30",
                 )}
                 onClick={(event) => {
                   event.stopPropagation();

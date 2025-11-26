@@ -23,21 +23,19 @@ export const relatedResourceUrl = (
   relId: string,
 ) => `/resource/${resourceType}/${id}/${relatedType}/${relId}`;
 
+export type RowType<Q> =
+  Q extends ProgressiveQueryDescriptor<infer Data, any>
+    ? Data extends { org: { rows: (infer R)[] } | null }
+      ? NonNullable<R>
+      : never
+    : never;
 
-export type RowType<Q> = Q extends ProgressiveQueryDescriptor<infer Data, any>
-  ? Data extends { org: { rows: (infer R)[] } | null }
-  ? NonNullable<R>
-  : never
-  : never;
-
-export type DetailRecordType<Q> = Q extends ProgressiveQueryDescriptor<
-  infer Data,
-  any
->
-  ? Data extends { record: (infer R)[] }
-  ? NonNullable<R>
-  : never
-  : never;
+export type DetailRecordType<Q> =
+  Q extends ProgressiveQueryDescriptor<infer Data, any>
+    ? Data extends { record: (infer R)[] }
+      ? NonNullable<R>
+      : never
+    : never;
 
 export interface ResourceView<
   IndexQuery extends ProgressiveQueryDescriptor<any, any>,

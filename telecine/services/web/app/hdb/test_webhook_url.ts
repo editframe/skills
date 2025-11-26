@@ -78,4 +78,4 @@ export const action = async ({ request }: Route.ActionArgs) => {
     logger.error(e, "Failed to send webhook");
     throw new Response("Failed to send webhook", { status: 500 });
   }
-}
+};

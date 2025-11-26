@@ -136,7 +136,7 @@ export const claimJob = async <Payload>(
 ) => {
   return await executeSpan("Job.claimJob", async (span) => {
     const claim = await storage.claimJob(queue, Date.now().toString());
-    span.setAttribute("job", claim)
+    span.setAttribute("job", claim);
     if (!claim) {
       return null;
     }
@@ -281,7 +281,14 @@ export const stallJob = async (
   storage: ValKey,
   job: SerializedJob<unknown>,
 ) => {
-  logger.info("Stalling job", job.queue, job.orgId, job.workflowId, job.workflow, job.jobId);
+  logger.info(
+    "Stalling job",
+    job.queue,
+    job.orgId,
+    job.workflowId,
+    job.workflow,
+    job.jobId,
+  );
   return await executeSpan("Job.stallJob", async (span) => {
     span.setAttributes({
       queue: job.queue,
@@ -305,7 +312,7 @@ export const getStalledJobs = async <Payload>(
   batchSize = 20,
 ) => {
   // Calculate cutoff time (10 seconds ago)
-  const cutoffTime = Date.now() - (10 * 1000);
+  const cutoffTime = Date.now() - 10 * 1000;
 
   const jobs = await storage.getStalledJobs(
     `queues:${queue}:claimed`,

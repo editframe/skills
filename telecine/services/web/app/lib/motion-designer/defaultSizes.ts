@@ -15,7 +15,7 @@ export function createDefaultSize(
       heightValue: 0,
     };
   }
-  
+
   // Other elements default to fixed
   return {
     widthMode: "fixed",
@@ -37,7 +37,7 @@ export function createDefaultSizeForFlexChild(
       heightValue: 0,
     };
   }
-  
+
   return {
     widthMode: "fill",
     widthValue: 0,
@@ -51,13 +51,10 @@ export function isFlexChild(
   state: MotionDesignerState,
 ): boolean {
   if (!element.parentId) return false;
-  
+
   const parent = state.composition.elements[element.parentId];
   if (!parent) return false;
-  
+
   const isContainer = parent.type === "div" || parent.type === "timegroup";
   return isContainer && parent.props.display === "flex";
 }
-
-
-

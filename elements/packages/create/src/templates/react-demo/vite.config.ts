@@ -6,7 +6,7 @@ import { viteSingleFile } from "vite-plugin-singlefile";
 
 export default defineConfig({
   define: {
-    'globalThis.EF_DEV_WORKBENCH': 'true',
+    "globalThis.EF_DEV_WORKBENCH": "true",
   },
   plugins: [
     vitePluginEditframe({

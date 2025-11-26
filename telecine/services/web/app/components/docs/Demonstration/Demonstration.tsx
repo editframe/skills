@@ -4,15 +4,10 @@ import { CodeEditor } from "../../CodeEditor";
 import clsx from "clsx";
 import { convertToWebComponents } from "./convertToWebComponents";
 import { convertToJsx } from "./convertToJsx";
-import {
-  CheckCircle,
-  ClipboardText,
-} from "@phosphor-icons/react";
+import { CheckCircle, ClipboardText } from "@phosphor-icons/react";
 import { PersistentTab } from "../PersistentTabGroup";
 import { PersistentTabGroup } from "../PersistentTabGroup";
 import { useTheme } from "~/hooks/useTheme";
-
-
 
 interface DemonstrationProps {
   children: React.ReactNode;
@@ -83,9 +78,12 @@ export function Demonstration({
   wrapInPreview = true,
 }: DemonstrationProps) {
   const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === 'dark';
-  
-  const htmlVersion = useMemo(() => convertToWebComponents(children), [children]);
+  const isDark = resolvedTheme === "dark";
+
+  const htmlVersion = useMemo(
+    () => convertToWebComponents(children),
+    [children],
+  );
   const jsxVersion = useMemo(() => convertToJsx(children), [children]);
   const [editableHtmlVersion, setEditableHtmlVersion] = useState("");
 
@@ -104,10 +102,14 @@ export function Demonstration({
   const renderPreviewContent = () => {
     if (wrapInPreview) {
       return (
-        <Preview id={id} loop={loop} className={clsx("h-full w-full max-w-full min-w-0 grid", {
-          "grid-rows-[1.5fr_1fr]": !hideFilmstrip,
-          "grid-rows-[1fr]": hideFilmstrip,
-        })}>
+        <Preview
+          id={id}
+          loop={loop}
+          className={clsx("h-full w-full max-w-full min-w-0 grid", {
+            "grid-rows-[1.5fr_1fr]": !hideFilmstrip,
+            "grid-rows-[1fr]": hideFilmstrip,
+          })}
+        >
           <div className="overflow-hidden bg-slate-300 dark:bg-slate-700 min-h-0 min-w-0 w-full h-full max-w-full">
             <FitScale className="w-full h-full max-w-full min-w-0">
               <div
@@ -134,10 +136,12 @@ export function Demonstration({
     }
 
     return (
-      <div className={clsx("h-full w-full max-w-full min-w-0 grid", {
-        "grid-rows-[1.5fr_1fr]": !hideFilmstrip,
-        "grid-rows-[1fr]": hideFilmstrip,
-      })}>
+      <div
+        className={clsx("h-full w-full max-w-full min-w-0 grid", {
+          "grid-rows-[1.5fr_1fr]": !hideFilmstrip,
+          "grid-rows-[1fr]": hideFilmstrip,
+        })}
+      >
         <div className="overflow-hidden bg-slate-300 dark:bg-slate-700 min-h-0 min-w-0 w-full h-full max-w-full">
           <FitScale className="w-full h-full max-w-full min-w-0">
             <div
@@ -166,9 +170,13 @@ export function Demonstration({
 
   return (
     <div
-      className={clsx("border-l-4 border-slate-300 dark:border-slate-600 pl-2 sm:pl-4 w-full max-w-full", {
-        "grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-4": layout === "horizontal" && !hideSource,
-      })}
+      className={clsx(
+        "border-l-4 border-slate-300 dark:border-slate-600 pl-2 sm:pl-4 w-full max-w-full",
+        {
+          "grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-4":
+            layout === "horizontal" && !hideSource,
+        },
+      )}
     >
       <div className="h-[calc(50vh-4rem)] sm:h-[calc(60vh-4rem)] min-h-[250px] w-full min-w-0 max-w-full">
         {renderPreviewContent()}
@@ -200,7 +208,7 @@ export function Demonstration({
                   readOnly
                   className="my-2 sm:my-4"
                   code={jsxVersion}
-                  onChange={() => { }}
+                  onChange={() => {}}
                   language="javascript"
                 />
               </PersistentTab>

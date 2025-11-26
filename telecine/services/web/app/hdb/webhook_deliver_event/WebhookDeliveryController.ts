@@ -11,7 +11,7 @@ export class WebhookDeliveryController {
       max_retries: number;
     },
     private readonly webhookEvent: Selectable<ApiWebhookEvents>,
-  ) { }
+  ) {}
 
   async generateSignature() {
     const webhookSecret = await this.getWebhookSecret();
@@ -34,7 +34,7 @@ export class WebhookDeliveryController {
       const response = await fetch(this.webhookEvent.url, {
         method: "POST",
         headers,
-        body: this.webhookEvent.json_payload
+        body: this.webhookEvent.json_payload,
       });
       if (!response.ok) {
         throw response;
@@ -47,7 +47,6 @@ export class WebhookDeliveryController {
       );
 
       return { delivered_webhook: true };
-
     } catch (error) {
       if (error instanceof Response) {
         logger.error(
@@ -63,24 +62,29 @@ export class WebhookDeliveryController {
           error,
           this.deliveryInfo.current_retry,
         );
-      }
-      else {
-        const message = error instanceof Error ? error.message : "Unknown error";
+      } else {
+        const message =
+          error instanceof Error ? error.message : "Unknown error";
         logger.error({ error }, "Error sending webhook request");
         await this.recordDeliveryFailure(
           {},
-          new Response(null, { status: 500, statusText: `System error: ${message}` }),
+          new Response(null, {
+            status: 500,
+            statusText: `System error: ${message}`,
+          }),
           this.deliveryInfo.current_retry,
         );
       }
     }
 
     if (this.deliveryInfo.current_retry >= this.deliveryInfo.max_retries) {
-      logger.error({ webhook_event_id: this.webhookEvent.id }, "Webhook delivery failed after max retries");
+      logger.error(
+        { webhook_event_id: this.webhookEvent.id },
+        "Webhook delivery failed after max retries",
+      );
       await this.recordEventFailure();
     }
   }
-
 
   recordEventFailure() {
     return db

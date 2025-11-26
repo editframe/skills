@@ -202,4 +202,3 @@ export class EFPanZoom extends LitElement {
     `;
   }
 }
-

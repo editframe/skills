@@ -469,7 +469,11 @@ describe("setting currentTime", () => {
       "none",
       "Root timegroup should be visible at exact end time",
     );
-    assert.equal(timegroup.currentTime, 10, "currentTime should equal duration");
+    assert.equal(
+      timegroup.currentTime,
+      10,
+      "currentTime should equal duration",
+    );
   });
 
   test("root timegroup becomes hidden only after currentTime exceeds duration", async () => {
@@ -502,10 +506,10 @@ describe("setting currentTime", () => {
     document.body.appendChild(timegroup);
     await timegroup.updateComplete;
     await timegroup.waitForMediaDurations();
-    
+
     // Set time without id - should not persist
     await timegroup.seek(5_000);
-    
+
     // Verify no localStorage entry was created (check all possible keys)
     let foundStorageEntry = false;
     for (let i = 0; i < localStorage.length; i++) {
@@ -515,7 +519,10 @@ describe("setting currentTime", () => {
         break;
       }
     }
-    assert.isFalse(foundStorageEntry, "No localStorage entry should be created without id");
+    assert.isFalse(
+      foundStorageEntry,
+      "No localStorage entry should be created without id",
+    );
     timegroup.remove();
   });
 
@@ -543,20 +550,44 @@ describe("setting currentTime", () => {
     // At time 0, root currentTime should be within A's range
     await root.seek(0);
     assert.equal(root.currentTimeMs, 0, "Root should be at 0ms");
-    assert.isAtLeast(root.currentTimeMs, a.startTimeMs, "Root time should be >= A's start");
-    assert.isAtMost(root.currentTimeMs, a.endTimeMs, "Root time should be <= A's end");
+    assert.isAtLeast(
+      root.currentTimeMs,
+      a.startTimeMs,
+      "Root time should be >= A's start",
+    );
+    assert.isAtMost(
+      root.currentTimeMs,
+      a.endTimeMs,
+      "Root time should be <= A's end",
+    );
 
     // At 2.5s, still in A's range
     await root.seek(2_500);
     assert.equal(root.currentTimeMs, 2_500, "Root should be at 2500ms");
-    assert.isAtLeast(root.currentTimeMs, a.startTimeMs, "Root time should be >= A's start");
-    assert.isAtMost(root.currentTimeMs, a.endTimeMs, "Root time should be <= A's end");
+    assert.isAtLeast(
+      root.currentTimeMs,
+      a.startTimeMs,
+      "Root time should be >= A's start",
+    );
+    assert.isAtMost(
+      root.currentTimeMs,
+      a.endTimeMs,
+      "Root time should be <= A's end",
+    );
 
     // At 7.5s, should be in B's range
     await root.seek(7_500);
     assert.equal(root.currentTimeMs, 7_500, "Root should be at 7500ms");
-    assert.isAtLeast(root.currentTimeMs, b.startTimeMs, "Root time should be >= B's start");
-    assert.isAtMost(root.currentTimeMs, b.endTimeMs, "Root time should be <= B's end");
+    assert.isAtLeast(
+      root.currentTimeMs,
+      b.startTimeMs,
+      "Root time should be >= B's start",
+    );
+    assert.isAtMost(
+      root.currentTimeMs,
+      b.endTimeMs,
+      "Root time should be <= B's end",
+    );
   });
 });
 
@@ -575,10 +606,13 @@ describe("shouldWrapWithWorkbench", () => {
     const context = document.createElement("test-context");
     context.append(timegroup);
     document.body.appendChild(context);
-    
+
     // Verify observable behavior: no ef-workbench element exists
-    assert.isNull(timegroup.closest("ef-workbench"), "No workbench should wrap timegroup in context");
-    
+    assert.isNull(
+      timegroup.closest("ef-workbench"),
+      "No workbench should wrap timegroup in context",
+    );
+
     context.remove();
   });
 });
@@ -664,7 +698,7 @@ describe("Dynamic content updates", () => {
         </ef-timegroup>`,
       );
       await timegroup.waitForMediaDurations();
-      
+
       const frameTaskA = timegroup.querySelector("test-frame-task-a")!;
       const frameTaskB = timegroup.querySelector("test-frame-task-b")!;
       const frameTaskC = timegroup.querySelector("test-frame-task-c")!;
@@ -679,13 +713,36 @@ describe("Dynamic content updates", () => {
 
       // Verify observable behavior: elements are visible/hidden and frame tasks executed
       const getDisplay = (el: Element) => window.getComputedStyle(el).display;
-      assert.notEqual(getDisplay(frameTaskA), "none", "A should be visible at time 0");
-      assert.equal(getDisplay(frameTaskB), "none", "B should not be visible at time 0");
-      assert.notEqual(getDisplay(frameTaskC), "none", "C should be visible at time 0");
-      
-      assert.equal(frameTaskA.getAttribute("data-frame-executed"), "true", "A's frame task should have executed");
-      assert.isNull(frameTaskB.getAttribute("data-frame-executed"), "B's frame task should not have executed");
-      assert.equal(frameTaskC.getAttribute("data-frame-executed"), "true", "C's frame task should have executed");
+      assert.notEqual(
+        getDisplay(frameTaskA),
+        "none",
+        "A should be visible at time 0",
+      );
+      assert.equal(
+        getDisplay(frameTaskB),
+        "none",
+        "B should not be visible at time 0",
+      );
+      assert.notEqual(
+        getDisplay(frameTaskC),
+        "none",
+        "C should be visible at time 0",
+      );
+
+      assert.equal(
+        frameTaskA.getAttribute("data-frame-executed"),
+        "true",
+        "A's frame task should have executed",
+      );
+      assert.isNull(
+        frameTaskB.getAttribute("data-frame-executed"),
+        "B's frame task should not have executed",
+      );
+      assert.equal(
+        frameTaskC.getAttribute("data-frame-executed"),
+        "true",
+        "C's frame task should have executed",
+      );
     });
   });
 
@@ -699,10 +756,10 @@ describe("Dynamic content updates", () => {
           </ef-timegroup>`,
       );
       await timegroup.waitForMediaDurations();
-      
+
       const nonRootTimegroup = timegroup.querySelector("ef-timegroup")!;
       const frameTaskA = timegroup.querySelector("test-frame-task-a")!;
-      
+
       // Seek root to time 0
       await timegroup.seek(0);
       const getDisplay = (el: Element) => window.getComputedStyle(el).display;
@@ -715,9 +772,21 @@ describe("Dynamic content updates", () => {
       await new Promise((resolve) => setTimeout(resolve, 50)); // Allow any async updates
 
       // Verify observable behavior: root timeline unchanged
-      assert.equal(timegroup.currentTime, 0, "Root timeline should be unchanged");
-      assert.equal(getDisplay(frameTaskA), initialDisplay, "Element visibility should be unchanged");
-      assert.equal(frameTaskA.getAttribute("data-frame-executed"), initialExecuted, "Frame task execution should be unchanged");
+      assert.equal(
+        timegroup.currentTime,
+        0,
+        "Root timeline should be unchanged",
+      );
+      assert.equal(
+        getDisplay(frameTaskA),
+        initialDisplay,
+        "Element visibility should be unchanged",
+      );
+      assert.equal(
+        frameTaskA.getAttribute("data-frame-executed"),
+        initialExecuted,
+        "Frame task execution should be unchanged",
+      );
     });
 
     test("media elements are loaded before seeking completes", async () => {
@@ -730,15 +799,19 @@ describe("Dynamic content updates", () => {
         </ef-preview>`,
       );
       const media = timegroup.querySelector("timegroup-test-media")!;
-      
+
       // Before seek, media may not be loaded
       const beforeSeek = media.getAttribute("data-media-loaded");
-      
+
       // Seek should wait for media to load
       await timegroup.seek(0);
-      
+
       // Verify observable behavior: media is now loaded
-      assert.equal(media.getAttribute("data-media-loaded"), "true", "Media should be loaded after seek");
+      assert.equal(
+        media.getAttribute("data-media-loaded"),
+        "true",
+        "Media should be loaded after seek",
+      );
     });
   });
 

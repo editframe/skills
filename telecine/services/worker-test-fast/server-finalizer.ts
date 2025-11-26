@@ -7,4 +7,3 @@ import { TestFastFinalizerWorker } from "@/queues/units-of-work/TestFast/Finaliz
 import "@/queues/units-of-work/TestFast/Workflow";
 
 createWorkerServer(TestFastFinalizerWorker);
-

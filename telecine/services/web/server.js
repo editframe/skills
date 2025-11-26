@@ -3,12 +3,12 @@
 if (typeof globalThis !== "undefined") {
   // Store original defineProperty to intercept ALL customElements creation
   const originalDefineProperty = Object.defineProperty;
-  
+
   // Patch function that will be applied to any CustomElementRegistry
   const patchRegistry = (registry) => {
     if (registry && registry.define && !registry.define.__patched) {
       const originalDefine = registry.define.bind(registry);
-      registry.define = function(name, constructor, options) {
+      registry.define = function (name, constructor, options) {
         try {
           const existing = registry.get(name);
           if (existing) {
@@ -22,7 +22,13 @@ if (typeof globalThis !== "undefined") {
         } catch (error) {
           // Ignore duplicate registration errors - this is expected in SSR
           // Use type guard instead of instanceof to avoid Symbol.hasInstance recursion
-          if (error && typeof error === "object" && "message" in error && typeof error.message === "string" && error.message.includes("has already been used")) {
+          if (
+            error &&
+            typeof error === "object" &&
+            "message" in error &&
+            typeof error.message === "string" &&
+            error.message.includes("has already been used")
+          ) {
             return;
           }
           throw error;
@@ -31,21 +37,21 @@ if (typeof globalThis !== "undefined") {
       registry.define.__patched = true;
     }
   };
-  
+
   // Intercept when customElements is created via defineProperty (SSR shim does this)
-  Object.defineProperty = function(obj, prop, descriptor) {
+  Object.defineProperty = function (obj, prop, descriptor) {
     const result = originalDefineProperty.call(this, obj, prop, descriptor);
     if (obj === globalThis && prop === "customElements" && descriptor.value) {
       patchRegistry(descriptor.value);
     }
     return result;
   };
-  
+
   // Patch existing customElements if it already exists
   if (globalThis.customElements) {
     patchRegistry(globalThis.customElements);
   }
-  
+
   // Also set up a proxy to catch future customElements access
   // This ensures we patch any registry created by the SSR shim
   let customElementsProxy = globalThis.customElements;
@@ -83,7 +89,6 @@ app.disable("x-powered-by");
 console.log("NODE_ENV", process.env.NODE_ENV);
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
-
 const imagesDir = path.resolve(__dirname, "public/images");
 
 app.use("/images", express.static(imagesDir, { maxAge: "1h" }));
@@ -96,27 +101,26 @@ if (DEVELOPMENT) {
   server = app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
   });
-  
+
   // Pass the server to Vite so HMR WebSocket uses the same server
   viteDevServer = await import("vite").then((vite) =>
     vite.createServer({
       configFile: "/app/services/web/vite.config.ts",
-      server: { 
+      server: {
         middlewareMode: true,
         hmr: {
           server: server, // Use the Express server for HMR WebSocket
         },
       },
-    })
+    }),
   );
   app.use(viteDevServer.middlewares);
-  app.use(
-    "/assets",
-    express.static(path.resolve(__dirname, "public/assets"))
-  );
+  app.use("/assets", express.static(path.resolve(__dirname, "public/assets")));
   app.use(async (req, res, next) => {
     try {
-      const source = await viteDevServer.ssrLoadModule("/app/services/web/server/app.ts");
+      const source = await viteDevServer.ssrLoadModule(
+        "/app/services/web/server/app.ts",
+      );
       return await source.app(req, res, next);
     } catch (error) {
       if (typeof error === "object" && error instanceof Error) {
@@ -129,12 +133,11 @@ if (DEVELOPMENT) {
   console.log("Starting production server");
   app.use(
     "/assets",
-    express.static(PROD_BUILD_ASSETS_PATH, { immutable: true, maxAge: "1y" })
+    express.static(PROD_BUILD_ASSETS_PATH, { immutable: true, maxAge: "1y" }),
   );
   app.use(express.static(PROD_BUILD_CLIENT_PATH, { maxAge: "1h" }));
   app.use(await import(PROD_BUILD_PATH).then((mod) => mod.app));
 }
-
 
 app.use(morgan("tiny"));
 

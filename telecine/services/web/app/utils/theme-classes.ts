@@ -60,4 +60,3 @@ export const themeClasses = {
   codeBlock:
     "bg-slate-900 dark:bg-slate-900/50 border-slate-800 rounded-lg shadow-lg",
 } as const;
-

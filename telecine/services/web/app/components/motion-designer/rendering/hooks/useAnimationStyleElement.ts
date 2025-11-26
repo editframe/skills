@@ -2,9 +2,9 @@ import { useEffect } from "react";
 
 /**
  * Manages animation style element lifecycle in document.head.
- * 
+ *
  * Encodes the mechanism relationship: element.id + CSS string → style element lifecycle
- * 
+ *
  * @param elementId - Unique identifier for the element (used for style element ID)
  * @param css - Complete CSS string to inject (keyframes + element rules)
  * @param dependencyKey - Stable key that changes when animations change (triggers re-injection)
@@ -17,7 +17,7 @@ export function useAnimationStyleElement(
   useEffect(() => {
     const styleId = `animation-styles-${elementId}`;
     let styleElement = document.getElementById(styleId) as HTMLStyleElement;
-    
+
     // Create style element if it doesn't exist
     if (!styleElement) {
       styleElement = document.createElement("style");
@@ -37,4 +37,3 @@ export function useAnimationStyleElement(
     };
   }, [elementId, css, dependencyKey]);
 }
-

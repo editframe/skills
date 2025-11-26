@@ -36,56 +36,51 @@ type Operations = z.infer<typeof opSchema>;
 
 export type HookedTable = z.infer<typeof hookedTables>;
 
-interface RenderWebhookPayload
-  extends Pick<
-    Selectable<Video2Renders>,
-    | "id"
-    | "status"
-    | "created_at"
-    | "completed_at"
-    | "failed_at"
-    | "width"
-    | "height"
-    | "fps"
-    | "byte_size"
-    | "duration_ms"
-    | "md5"
-    | "metadata"
-  > {
-  download_url: string | null
+interface RenderWebhookPayload extends Pick<
+  Selectable<Video2Renders>,
+  | "id"
+  | "status"
+  | "created_at"
+  | "completed_at"
+  | "failed_at"
+  | "width"
+  | "height"
+  | "fps"
+  | "byte_size"
+  | "duration_ms"
+  | "md5"
+  | "metadata"
+> {
+  download_url: string | null;
 }
 
-interface ImageFileWebhookPayload
-  extends Pick<
-    Selectable<Video2ImageFiles>,
-    "id" | "width" | "height" | "mime_type" | "byte_size" | "filename"
-  > { }
+interface ImageFileWebhookPayload extends Pick<
+  Selectable<Video2ImageFiles>,
+  "id" | "width" | "height" | "mime_type" | "byte_size" | "filename"
+> {}
 
-interface IsobmffFileWebhookPayload
-  extends Pick<
-    Selectable<Video2IsobmffFiles>,
-    "id" | "filename" | "fragment_index_complete" | "md5"
-  > { }
+interface IsobmffFileWebhookPayload extends Pick<
+  Selectable<Video2IsobmffFiles>,
+  "id" | "filename" | "fragment_index_complete" | "md5"
+> {}
 
-interface IsobmffTrackWebhookPayload
-  extends Pick<
-    Selectable<Video2IsobmffTracks>,
-    | "file_id"
-    | "track_id"
-    | "complete"
-    | "byte_size"
-    | "next_byte"
-    | "codec_name"
-    | "duration_ms"
-    | "type"
-    | "probe_info"
-  > { }
+interface IsobmffTrackWebhookPayload extends Pick<
+  Selectable<Video2IsobmffTracks>,
+  | "file_id"
+  | "track_id"
+  | "complete"
+  | "byte_size"
+  | "next_byte"
+  | "codec_name"
+  | "duration_ms"
+  | "type"
+  | "probe_info"
+> {}
 
-interface UnprocessedFileWebhookPayload
-  extends Pick<
-    Selectable<Video2UnprocessedFiles>,
-    "id" | "byte_size" | "next_byte" | "md5" | "filename" | "completed_at"
-  > { }
+interface UnprocessedFileWebhookPayload extends Pick<
+  Selectable<Video2UnprocessedFiles>,
+  "id" | "byte_size" | "next_byte" | "md5" | "filename" | "completed_at"
+> {}
 
 export interface WebhookPayload<PayloadData, EventData = undefined> {
   topic: string;
@@ -93,8 +88,9 @@ export interface WebhookPayload<PayloadData, EventData = undefined> {
   event?: EventData;
 }
 
-
-const buildRenderPayload = (render: Selectable<Video2Renders>): WebhookPayload<RenderWebhookPayload> => {
+const buildRenderPayload = (
+  render: Selectable<Video2Renders>,
+): WebhookPayload<RenderWebhookPayload> => {
   if (!(render.status in renderStatusTopics)) {
     throw new Error(`Unsupported render status: ${render.status}`);
   }
@@ -119,7 +115,9 @@ const buildRenderPayload = (render: Selectable<Video2Renders>): WebhookPayload<R
       duration_ms: render.duration_ms,
       md5: render.md5,
       metadata: render.metadata,
-      download_url: render.completed_at ? downloadRenderURL(render.id, outputConfiguration) : null,
+      download_url: render.completed_at
+        ? downloadRenderURL(render.id, outputConfiguration)
+        : null,
     },
   };
 };

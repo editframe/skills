@@ -13,7 +13,7 @@ export interface SchedulerArgs {
   storage: ValKey;
   id?: string;
   createdAt?: number;
-  connectionClass: { new(args: ConnectionConstructorArgs): Connection };
+  connectionClass: { new (args: ConnectionConstructorArgs): Connection };
 }
 
 export const SCHEDULER_TIMEOUT_MS = 10_000;
@@ -110,7 +110,7 @@ export class Scheduler {
   connectionMetadata = new Map<Connection, ConnectionMetadata>();
   exitCallbacks = new Map<Connection, () => Promise<void>>();
   stalledCleanupTimeout?: NodeJS.Timeout;
-  connectionClass: { new(args: ConnectionConstructorArgs): Connection };
+  connectionClass: { new (args: ConnectionConstructorArgs): Connection };
   tickTimeout?: NodeJS.Timeout;
   stopped = false;
 
@@ -643,7 +643,7 @@ export class Scheduler {
         const scalingDataRaw = queueResults?.[i * 4 + 3]?.[1];
         let scalingInfo = undefined;
 
-        if (scalingDataRaw && typeof scalingDataRaw === 'string') {
+        if (scalingDataRaw && typeof scalingDataRaw === "string") {
           try {
             scalingInfo = JSON.parse(scalingDataRaw);
           } catch (e) {

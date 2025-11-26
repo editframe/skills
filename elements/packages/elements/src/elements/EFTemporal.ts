@@ -9,7 +9,9 @@ import type { EFTimegroup } from "./EFTimegroup.js";
 // Lazy import to break circular dependency: EFTemporal -> EFTimegroup -> EFMedia -> EFTemporal
 // isTimegroupCalculatingDuration is only used at runtime in a getter, so we can import it lazily
 // Use a module-level variable that gets set when EFTimegroup module loads
-let isTimegroupCalculatingDurationFn: ((timegroup: EFTimegroup | undefined) => boolean) | null = null;
+let isTimegroupCalculatingDurationFn:
+  | ((timegroup: EFTimegroup | undefined) => boolean)
+  | null = null;
 
 // This function will be called by EFTimegroup when it loads to register the function
 export const registerIsTimegroupCalculatingDuration = (
@@ -18,7 +20,9 @@ export const registerIsTimegroupCalculatingDuration = (
   isTimegroupCalculatingDurationFn = fn;
 };
 
-const getIsTimegroupCalculatingDuration = (): (timegroup: EFTimegroup | undefined) => boolean => {
+const getIsTimegroupCalculatingDuration = (): ((
+  timegroup: EFTimegroup | undefined,
+) => boolean) => {
   if (!isTimegroupCalculatingDurationFn) {
     // If not registered yet, try to import synchronously (only works if module is already loaded)
     // This is a fallback for cases where EFTimegroup hasn't called registerIsTimegroupCalculatingDuration
@@ -28,7 +32,8 @@ const getIsTimegroupCalculatingDuration = (): (timegroup: EFTimegroup | undefine
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const efTimegroupModule = (globalThis as any).__EFTimegroupModule;
       if (efTimegroupModule?.isTimegroupCalculatingDuration) {
-        isTimegroupCalculatingDurationFn = efTimegroupModule.isTimegroupCalculatingDuration;
+        isTimegroupCalculatingDurationFn =
+          efTimegroupModule.isTimegroupCalculatingDuration;
       } else {
         // Last resort: return a function that always returns false
         // This prevents infinite loops but might miss some edge cases
@@ -204,11 +209,7 @@ function evaluateStartTimeForSequence(
   if (!previous) {
     throw new Error("Previous temporal element not found");
   }
-  return (
-    previous.startTimeMs +
-    previous.durationMs -
-    parentTimegroup.overlapMs
-  );
+  return previous.startTimeMs + previous.durationMs - parentTimegroup.overlapMs;
 }
 
 function evaluateStartTimeForOffset(
@@ -868,8 +869,11 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
     get durationMs() {
       // Prevent infinite loops: don't call parent.durationMs if parent is currently calculating
       // Lazy import to break circular dependency: EFTemporal -> EFTimegroup -> EFMedia -> EFTemporal
-      const isTimegroupCalculatingDuration = getIsTimegroupCalculatingDuration();
-      const parentDurationMs = isTimegroupCalculatingDuration(this.parentTimegroup)
+      const isTimegroupCalculatingDuration =
+        getIsTimegroupCalculatingDuration();
+      const parentDurationMs = isTimegroupCalculatingDuration(
+        this.parentTimegroup,
+      )
         ? undefined
         : this.parentTimegroup?.durationMs;
       const durationSource = determineDurationSource(

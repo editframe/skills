@@ -27,17 +27,17 @@ export const Framer: React.FC<{
     animate(
       "#progress-bar-fill",
       { scaleX: [0, percentComplete] },
-      { duration: 0.5, ease: "linear" }
+      { duration: 0.5, ease: "linear" },
     );
     animate(
       "#background",
       { backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] },
-      { duration: durationMs / 1000 }
-    )
+      { duration: durationMs / 1000 },
+    );
   }, [animate, scope, durationMs, percentComplete]);
 
   useEffect(() => {
-    (scope as AnimationScope).animations.forEach(animation => {
+    (scope as AnimationScope).animations.forEach((animation) => {
       animation.time = percentComplete * (durationMs / 1000);
     });
   }, [(scope as AnimationScope).animations, percentComplete, durationMs]);
@@ -47,20 +47,18 @@ export const Framer: React.FC<{
       animate(
         "#content",
         { y: [20, 0], opacity: [0, 1], scale: [0.9, 1] },
-        { duration: 0.5, delay: 0.2 }
-      )
+        { duration: 0.5, delay: 0.2 },
+      );
     }
-    return () => { };
+    return () => {};
   }, [currentSlide, animate]);
   useEffect(() => {
     animate;
   });
   return (
-    <div
-      ref={scope}
-      className="w-full h-full"
-    >
-      <div id="background"
+    <div ref={scope} className="w-full h-full">
+      <div
+        id="background"
         style={{
           width: "100%",
           height: "100%",
@@ -74,7 +72,8 @@ export const Framer: React.FC<{
           position: "relative",
           padding: "40px 0",
           fontFamily: "'Circular Std', sans-serif",
-        }}>
+        }}
+      >
         <div
           id="progress-bar"
           style={{
@@ -104,8 +103,20 @@ export const Framer: React.FC<{
               color: "white",
             }}
           >
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-              <div style={{ fontSize: "3em", fontWeight: "bold", marginBottom: "20px", }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "3em",
+                  fontWeight: "bold",
+                  marginBottom: "20px",
+                }}
+              >
                 Your GitHub Year in Review
               </div>
               <div style={{ fontSize: "2em", marginTop: "20px" }}>
@@ -125,7 +136,7 @@ export const Framer: React.FC<{
         >
           {currentSlide === 0 && (
             <div>
-              <h2 style={{ fontSize: "2.5em", marginBottom: "20px", }}>
+              <h2 style={{ fontSize: "2.5em", marginBottom: "20px" }}>
                 You've earned
               </h2>
               <p
@@ -137,12 +148,12 @@ export const Framer: React.FC<{
               >
                 {repoData.stars}
               </p>
-              <h2 style={{ fontSize: "2.5em", }}>stars this year!</h2>
+              <h2 style={{ fontSize: "2.5em" }}>stars this year!</h2>
             </div>
           )}
           {currentSlide === 1 && (
             <div>
-              <h2 style={{ fontSize: "2.5em", marginBottom: "20px", }}>
+              <h2 style={{ fontSize: "2.5em", marginBottom: "20px" }}>
                 Your projects were forked
               </h2>
               <p
@@ -154,12 +165,12 @@ export const Framer: React.FC<{
               >
                 {repoData.forks}
               </p>
-              <h2 style={{ fontSize: "2.5em", }}>times!</h2>
+              <h2 style={{ fontSize: "2.5em" }}>times!</h2>
             </div>
           )}
           {currentSlide === 2 && (
             <div>
-              <h2 style={{ fontSize: "2.5em", marginBottom: "20px", }}>
+              <h2 style={{ fontSize: "2.5em", marginBottom: "20px" }}>
                 You've tackled
               </h2>
               <p
@@ -171,12 +182,12 @@ export const Framer: React.FC<{
               >
                 {repoData.open_issues_count}
               </p>
-              <h2 style={{ fontSize: "2.5em", }}>open issues!</h2>
+              <h2 style={{ fontSize: "2.5em" }}>open issues!</h2>
             </div>
           )}
           {currentSlide === 3 && (
             <div>
-              <h2 style={{ fontSize: "2.5em", marginBottom: "20px", }}>
+              <h2 style={{ fontSize: "2.5em", marginBottom: "20px" }}>
                 Congratulations,
               </h2>
               <p
@@ -188,12 +199,12 @@ export const Framer: React.FC<{
               >
                 {repoData.owner}!
               </p>
-              <h2 style={{ fontSize: "2.5em", }}>You're a GitHub superstar!</h2>
+              <h2 style={{ fontSize: "2.5em" }}>You're a GitHub superstar!</h2>
             </div>
           )}
           {currentSlide === 4 && (
             <div>
-              <h2 style={{ fontSize: "2.5em", marginBottom: "20px", }}>
+              <h2 style={{ fontSize: "2.5em", marginBottom: "20px" }}>
                 This video was made using
               </h2>
               <p

@@ -40,7 +40,7 @@ export function TimegroupSizeInput({
 
   // Check if current size matches any preset
   const currentPreset = COMMON_VIDEO_SIZES.find(
-    (p) => p.width === currentWidth && p.height === currentHeight
+    (p) => p.width === currentWidth && p.height === currentHeight,
   );
 
   const handlePresetSelect = (preset: VideoSizePreset) => {
@@ -55,7 +55,11 @@ export function TimegroupSizeInput({
         </label>
         <div className="flex-1">
           <select
-            value={currentPreset ? `${currentPreset.width}x${currentPreset.height}` : "custom"}
+            value={
+              currentPreset
+                ? `${currentPreset.width}x${currentPreset.height}`
+                : "custom"
+            }
             onChange={(e) => {
               if (e.target.value !== "custom") {
                 const [w, h] = e.target.value.split("x").map(Number);
@@ -66,7 +70,10 @@ export function TimegroupSizeInput({
           >
             <option value="custom">Custom</option>
             {COMMON_VIDEO_SIZES.map((preset, index) => (
-              <option key={`${preset.label}-${preset.width}x${preset.height}-${index}`} value={`${preset.width}x${preset.height}`}>
+              <option
+                key={`${preset.label}-${preset.width}x${preset.height}-${index}`}
+                value={`${preset.width}x${preset.height}`}
+              >
                 {preset.label} ({preset.width}×{preset.height})
               </option>
             ))}
@@ -75,7 +82,9 @@ export function TimegroupSizeInput({
       </div>
       <div className="flex items-center gap-1 pl-11">
         <div className="flex items-center gap-1 flex-1">
-          <span className="text-[7px] text-gray-600 font-bold uppercase w-3">W</span>
+          <span className="text-[7px] text-gray-600 font-bold uppercase w-3">
+            W
+          </span>
           <input
             type="number"
             value={currentWidth}
@@ -85,7 +94,9 @@ export function TimegroupSizeInput({
           <span className="text-[8px] text-gray-500">px</span>
         </div>
         <div className="flex items-center gap-1 flex-1">
-          <span className="text-[7px] text-gray-600 font-bold uppercase w-3">H</span>
+          <span className="text-[7px] text-gray-600 font-bold uppercase w-3">
+            H
+          </span>
           <input
             type="number"
             value={currentHeight}
@@ -98,4 +109,3 @@ export function TimegroupSizeInput({
     </div>
   );
 }
-

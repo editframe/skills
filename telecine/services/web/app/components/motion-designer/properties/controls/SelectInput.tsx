@@ -12,7 +12,12 @@ interface SelectInputProps {
   options: SelectOption[];
 }
 
-export function SelectInput({ label, value, onChange, options }: SelectInputProps) {
+export function SelectInput({
+  label,
+  value,
+  onChange,
+  options,
+}: SelectInputProps) {
   return (
     <div className="flex items-center gap-1">
       <label className="text-[10px] text-gray-500 w-10 font-normal flex-shrink-0">
@@ -32,4 +37,3 @@ export function SelectInput({ label, value, onChange, options }: SelectInputProp
     </div>
   );
 }
-

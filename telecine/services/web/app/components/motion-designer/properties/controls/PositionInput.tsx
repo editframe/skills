@@ -10,10 +10,14 @@ interface PositionInputProps {
 export function PositionInput({ label, x, y, onChange }: PositionInputProps) {
   return (
     <div className="flex items-center gap-1">
-      <label className="text-[10px] text-gray-500 w-10 font-normal flex-shrink-0">{label}</label>
+      <label className="text-[10px] text-gray-500 w-10 font-normal flex-shrink-0">
+        {label}
+      </label>
       <div className="flex flex-1 items-stretch gap-px">
         <div className="flex-1 flex items-center gap-1 h-5 px-1.5 bg-gray-900/50 border border-gray-700/30 rounded-sm hover:border-gray-600/50 focus-within:border-blue-500/50 focus-within:bg-gray-900 transition-colors">
-          <span className="text-[7px] text-gray-600 font-bold uppercase">X</span>
+          <span className="text-[7px] text-gray-600 font-bold uppercase">
+            X
+          </span>
           <input
             type="number"
             value={x ?? 0}
@@ -22,7 +26,9 @@ export function PositionInput({ label, x, y, onChange }: PositionInputProps) {
           />
         </div>
         <div className="flex-1 flex items-center gap-1 h-5 px-1.5 bg-gray-900/50 border border-gray-700/30 rounded-sm hover:border-gray-600/50 focus-within:border-blue-500/50 focus-within:bg-gray-900 transition-colors">
-          <span className="text-[7px] text-gray-600 font-bold uppercase">Y</span>
+          <span className="text-[7px] text-gray-600 font-bold uppercase">
+            Y
+          </span>
           <input
             type="number"
             value={y ?? 0}
@@ -34,4 +40,3 @@ export function PositionInput({ label, x, y, onChange }: PositionInputProps) {
     </div>
   );
 }
-

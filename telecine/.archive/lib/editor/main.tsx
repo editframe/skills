@@ -20,5 +20,5 @@ createRoot(document.getElementById("app")!).render(
   <EditorProvider editor={editor}>
     <Editor />
     <DevTools />
-  </EditorProvider>
+  </EditorProvider>,
 );

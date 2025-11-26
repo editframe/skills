@@ -14,7 +14,10 @@ import type {
 } from "./engines/FramegenEngine";
 import { DisposableMuxer } from "./DisposableMuxer";
 import { DisposableEncoder } from "./DisposableEncoder";
-import { repackageInitSegment, repackageMediaSegment } from "@/muxing/repackageFragements";
+import {
+  repackageInitSegment,
+  repackageMediaSegment,
+} from "@/muxing/repackageFragements";
 import { PADDING_US } from "./createRenderOptionsForSegment.js";
 
 // 1024 samples per audio frame at 48kHz represented in microseconds (μs)
@@ -35,22 +38,22 @@ interface MuxerPaths {
 
 /**
  * This is a server-side class that is used to render and mux video and audio segments.
- * 
+ *
  * The big picture is that we want to render our videos in parallel. We want a high level of paralleism
  * so we split into 2 to 4 second chunks. This means we end up with a lot of small pieces.
- * 
+ *
  * The fundamental design choice is that we want to take advantage of FAST file concatenation operations
- * provided by the cloud storage system. This means we do not have access to any computation or muxing 
+ * provided by the cloud storage system. This means we do not have access to any computation or muxing
  * at the final join step.
- * 
+ *
  * That means our segments must be exactly concatenatable as we write them to disk.
- * 
+ *
  * To this end, we use fragmented mp4 structure, so we can write one file with ftyp+moov, and others with
  * moof+mdat.
- * 
+ *
  * This means we need to be able to predict as much as possible about our files as we can, and put that
  * into the moov.
- * 
+ *
  * It also means we need to construct timestamps and other values based on the segment index number, so
  * when they finally come together, they'll work nicely.
  */
@@ -132,11 +135,14 @@ export class SegmentEncoder extends EventEmitter {
       // For init segments, we need enough frames to generate at least one audio frame
       // At 48kHz, we need 1024 samples per audio frame
       // Calculate minimum frames needed to generate sufficient audio samples
-      const audioSampleRate = this.renderOptions.encoderOptions.audio.sampleRate;
+      const audioSampleRate =
+        this.renderOptions.encoderOptions.audio.sampleRate;
       const videoFrameRate = this.framerate;
       const minAudioSamplesNeeded = 1024; // Standard AAC frame size
       const samplesPerVideoFrame = audioSampleRate / videoFrameRate;
-      const minFramesForAudio = Math.ceil(minAudioSamplesNeeded / samplesPerVideoFrame);
+      const minFramesForAudio = Math.ceil(
+        minAudioSamplesNeeded / samplesPerVideoFrame,
+      );
 
       // Ensure we render at least 2-3 frames to have sufficient audio for muxer
       return Math.max(3, minFramesForAudio);
@@ -149,21 +155,24 @@ export class SegmentEncoder extends EventEmitter {
 
   get bitmapImageInputArgs() {
     // Account for verification strip added by ElectronEngine (+1 pixel height)
-    const bitmapHeight = this.engine.isBitmapEngine ? this.height + 1 : this.height;
+    const bitmapHeight = this.engine.isBitmapEngine
+      ? this.height + 1
+      : this.height;
 
     // biome-ignore format: strict command line format
     return [
-      "-f", "rawvideo",
-      "-pixel_format", "bgra",
-      "-video_size", `${this.width}x${bitmapHeight}`,
+      "-f",
+      "rawvideo",
+      "-pixel_format",
+      "bgra",
+      "-video_size",
+      `${this.width}x${bitmapHeight}`,
     ];
   }
 
   get encodedImageInputArgs() {
     // biome-ignore format: strict command line format
-    return [
-      "-f", "mjpeg",
-    ]
+    return ["-f", "mjpeg"];
   }
 
   get audioBitrate() {
@@ -179,20 +188,12 @@ export class SegmentEncoder extends EventEmitter {
     const tempDir = `/app/temp/${this.renderId}-${uniqueId}`;
     await mkdir(tempDir, { recursive: true });
 
-    const sequenceNumber = this.renderOptions.encoderOptions.sequenceNumber ?? "init";
+    const sequenceNumber =
+      this.renderOptions.encoderOptions.sequenceNumber ?? "init";
 
-    const videoPath = join(
-      tempDir,
-      `n-${sequenceNumber}-${uniqueId}.v.mp4`,
-    );
-    const audioPath = join(
-      tempDir,
-      `n-${sequenceNumber}-${uniqueId}.a.aac`,
-    );
-    const concatPath = join(
-      tempDir,
-      `n-${sequenceNumber}-${uniqueId}.concat`,
-    );
+    const videoPath = join(tempDir, `n-${sequenceNumber}-${uniqueId}.v.mp4`);
+    const audioPath = join(tempDir, `n-${sequenceNumber}-${uniqueId}.a.aac`);
+    const concatPath = join(tempDir, `n-${sequenceNumber}-${uniqueId}.concat`);
     return {
       videoPath,
       audioPath,
@@ -213,17 +214,24 @@ export class SegmentEncoder extends EventEmitter {
     const totalFrameCount = this.totalFrameCount;
     const sequenceNumber = this.renderOptions.encoderOptions.sequenceNumber;
 
-    this.logger.debug({
-      groupSize,
-      totalFrameCount,
-      sequenceNumber,
-      keyframeIntervalMs: this.renderOptions.encoderOptions.keyframeIntervalMs,
-      framerate: this.framerate,
-      isInitSegment: this.renderOptions.encoderOptions.isInitSegment
-    }, "buildVideoEncoder parameters");
+    this.logger.debug(
+      {
+        groupSize,
+        totalFrameCount,
+        sequenceNumber,
+        keyframeIntervalMs:
+          this.renderOptions.encoderOptions.keyframeIntervalMs,
+        framerate: this.framerate,
+        isInitSegment: this.renderOptions.encoderOptions.isInitSegment,
+      },
+      "buildVideoEncoder parameters",
+    );
 
     if (Number.isNaN(groupSize) || groupSize <= 0) {
-      this.logger.error({ groupSize, totalFrameCount, sequenceNumber }, "Invalid groupSize detected");
+      this.logger.error(
+        { groupSize, totalFrameCount, sequenceNumber },
+        "Invalid groupSize detected",
+      );
       throw new Error(`Invalid groupSize: ${groupSize}`);
     }
 
@@ -237,24 +245,41 @@ export class SegmentEncoder extends EventEmitter {
     // biome-ignore format: strict command line format
     return new DisposableEncoder([
       ...imageInputArgs,
-      "-framerate", `${this.framerate}`,
-      "-i", "-",
+      "-framerate",
+      `${this.framerate}`,
+      "-i",
+      "-",
       ...cropFilter,
-      "-c:v", "libx264",
-      "-g", `${groupSize}`,
-      "-preset", "ultrafast",
-      "-tune", "zerolatency",
-      "-profile:v", "high",
-      "-level:v", "4.0",
-      "-pix_fmt", "yuv420p",
-      "-color_range", "tv",
-      "-colorspace", "bt709",
-      "-color_primaries", "bt709",
-      "-color_trc", "bt709",
-      "-flush_packets", "1",
-      "-frag_duration", "1",
-      "-movflags", movflags,
-      "-f", "mp4",
+      "-c:v",
+      "libx264",
+      "-g",
+      `${groupSize}`,
+      "-preset",
+      "ultrafast",
+      "-tune",
+      "zerolatency",
+      "-profile:v",
+      "high",
+      "-level:v",
+      "4.0",
+      "-pix_fmt",
+      "yuv420p",
+      "-color_range",
+      "tv",
+      "-colorspace",
+      "bt709",
+      "-color_primaries",
+      "bt709",
+      "-color_trc",
+      "bt709",
+      "-flush_packets",
+      "1",
+      "-frag_duration",
+      "1",
+      "-movflags",
+      movflags,
+      "-f",
+      "mp4",
       paths.videoPath,
     ]);
   }
@@ -262,17 +287,28 @@ export class SegmentEncoder extends EventEmitter {
   buildAudioEncoder(paths: MuxerPaths) {
     // biome-ignore format: strict command line format
     return new DisposableEncoder([
-      "-ac", "2",
-      "-sample_fmt", "fltp",
-      "-f", "f32le",
-      "-ar", this.audioSamplerate,
-      "-i", "-",
-      "-c:a", "aac",
-      "-f", "adts",
-      "-b:a", this.audioBitrate,
-      "-sample_rate", this.audioSamplerate,
-      "-muxdelay", "0",
-      "-flush_packets", "1",
+      "-ac",
+      "2",
+      "-sample_fmt",
+      "fltp",
+      "-f",
+      "f32le",
+      "-ar",
+      this.audioSamplerate,
+      "-i",
+      "-",
+      "-c:a",
+      "aac",
+      "-f",
+      "adts",
+      "-b:a",
+      this.audioBitrate,
+      "-sample_rate",
+      this.audioSamplerate,
+      "-muxdelay",
+      "0",
+      "-flush_packets",
+      "1",
       paths.audioPath,
     ]);
   }
@@ -291,18 +327,30 @@ export class SegmentEncoder extends EventEmitter {
 
     // biome-ignore format: strict command line format
     return new DisposableMuxer([
-      "-f", "concat",
-      "-safe", "0",
-      "-i", paths.concatPath,
-      "-i", paths.videoPath,
-      "-bsf:a", "aac_adtstoasc",
-      "-c", "copy",
-      "-flush_packets", "1",
-      "-frag_duration", String(fragDurationUs),
-      "-min_frag_duration", String(fragDurationUs),
-      "-movflags", "cmaf+empty_moov+delay_moov",
-      "-pix_fmt", "yuv420p",
-      "-f", "mp4",
+      "-f",
+      "concat",
+      "-safe",
+      "0",
+      "-i",
+      paths.concatPath,
+      "-i",
+      paths.videoPath,
+      "-bsf:a",
+      "aac_adtstoasc",
+      "-c",
+      "copy",
+      "-flush_packets",
+      "1",
+      "-frag_duration",
+      String(fragDurationUs),
+      "-min_frag_duration",
+      String(fragDurationUs),
+      "-movflags",
+      "cmaf+empty_moov+delay_moov",
+      "-pix_fmt",
+      "yuv420p",
+      "-f",
+      "mp4",
       "pipe:1",
     ]);
   }
@@ -312,41 +360,61 @@ export class SegmentEncoder extends EventEmitter {
     // Use audio and video files directly without concat directive
 
     const command = [
-      "-i", paths.audioPath,
-      "-i", paths.videoPath,
-      "-bsf:a", "aac_adtstoasc",
-      "-c", "copy",
-      "-flush_packets", "1",
-      "-movflags", "frag_keyframe+empty_moov+delay_moov",
-      "-pix_fmt", "yuv420p",
-      "-color_range", "tv",
-      "-colorspace", "bt709",
-      "-color_primaries", "bt709",
-      "-color_trc", "bt709",
-      "-f", "mp4",
+      "-i",
+      paths.audioPath,
+      "-i",
+      paths.videoPath,
+      "-bsf:a",
+      "aac_adtstoasc",
+      "-c",
+      "copy",
+      "-flush_packets",
+      "1",
+      "-movflags",
+      "frag_keyframe+empty_moov+delay_moov",
+      "-pix_fmt",
+      "yuv420p",
+      "-color_range",
+      "tv",
+      "-colorspace",
+      "bt709",
+      "-color_primaries",
+      "bt709",
+      "-color_trc",
+      "bt709",
+      "-f",
+      "mp4",
       "pipe:1",
     ];
 
-    this.logger.debug({
-      command,
-      audioPath: paths.audioPath,
-      videoPath: paths.videoPath
-    }, "Building init segment muxer command");
+    this.logger.debug(
+      {
+        command,
+        audioPath: paths.audioPath,
+        videoPath: paths.videoPath,
+      },
+      "Building init segment muxer command",
+    );
 
     // biome-ignore format: strict command line format
-    return new DisposableMuxer(command)
+    return new DisposableMuxer(command);
   }
 
   /**
    * Generate concat directive for ffmpeg to extract specific timing from audio file.
-   * 
+   *
    * @param audioPath Path to the audio file
    * @param shouldTrimStart Whether to add padding at the start
    * @param shouldTrimEnd Whether to add padding at the end
    * @returns Object containing the directive string and timing values for debugging
    */
-  generateConcatDirective(audioPath: string, shouldTrimStart: boolean, shouldTrimEnd: boolean) {
-    const rawInpointUs = AUDIO_FRAME_DURATION_US + (shouldTrimStart ? PADDING_US : 0);
+  generateConcatDirective(
+    audioPath: string,
+    shouldTrimStart: boolean,
+    shouldTrimEnd: boolean,
+  ) {
+    const rawInpointUs =
+      AUDIO_FRAME_DURATION_US + (shouldTrimStart ? PADDING_US : 0);
     const outpointUs = shouldTrimEnd
       ? this.alignedDurationUs - PADDING_US
       : this.alignedDurationUs;
@@ -367,7 +435,7 @@ export class SegmentEncoder extends EventEmitter {
       directive,
       inpointUs,
       outpointUs,
-      durationUs
+      durationUs,
     };
   }
 
@@ -386,7 +454,8 @@ export class SegmentEncoder extends EventEmitter {
     await executeSpan("SegmentEncoder.initialize", async (span) => {
       span.setAttributes({
         renderId: this.renderId,
-        sequenceNumber: this.renderOptions.encoderOptions.sequenceNumber ?? "init",
+        sequenceNumber:
+          this.renderOptions.encoderOptions.sequenceNumber ?? "init",
         width: this.width,
         height: this.height,
         framerate: this.framerate,
@@ -401,7 +470,7 @@ export class SegmentEncoder extends EventEmitter {
     this.logger.trace("Initialized framegen");
 
     // Emit encoding started event
-    this.emit('encodingStarted');
+    this.emit("encodingStarted");
 
     let audioWritesCanGoAhead = true;
     const frameStartTime = performance.now();
@@ -426,7 +495,8 @@ export class SegmentEncoder extends EventEmitter {
       await executeSpan("SegmentEncoder.renderFrame", async (span) => {
         span.setAttributes({
           renderId: this.renderId,
-          sequenceNumber: this.renderOptions.encoderOptions.sequenceNumber ?? "init",
+          sequenceNumber:
+            this.renderOptions.encoderOptions.sequenceNumber ?? "init",
           frameNumber,
           totalFrameCount: this.totalFrameCount,
           width: this.width,
@@ -457,11 +527,16 @@ export class SegmentEncoder extends EventEmitter {
         );
 
         if (imageBuffer.byteLength === 0) {
-          this.logger.error({
-            frameNumber,
-            engineType: this.engine.constructor.name,
-          }, "captureFrame returned empty buffer");
-          throw new Error(`captureFrame returned empty buffer for frame ${frameNumber}`);
+          this.logger.error(
+            {
+              frameNumber,
+              engineType: this.engine.constructor.name,
+            },
+            "captureFrame returned empty buffer",
+          );
+          throw new Error(
+            `captureFrame returned empty buffer for frame ${frameNumber}`,
+          );
         }
 
         span.setAttributes({
@@ -512,9 +587,9 @@ export class SegmentEncoder extends EventEmitter {
         );
 
         // Emit frame rendered event
-        this.emit('frameRendered', {
+        this.emit("frameRendered", {
           frameNumber,
-          totalFrames: this.totalFrameCount
+          totalFrames: this.totalFrameCount,
         });
         if (audioSamples?.byteLength > 0) {
           audioWritesCanGoAhead = audioEncoder.process.stdin.write(
@@ -546,25 +621,34 @@ export class SegmentEncoder extends EventEmitter {
       const shouldTrimStart = this.renderOptions.encoderOptions.shouldPadStart;
       const shouldTrimEnd = this.renderOptions.encoderOptions.shouldPadEnd;
 
-      const concatResult = this.generateConcatDirective(paths.audioPath, shouldTrimStart, shouldTrimEnd);
-
-      this.logger.debug({
-        sequenceNumber: this.renderOptions.encoderOptions.sequenceNumber ?? 0,
+      const concatResult = this.generateConcatDirective(
+        paths.audioPath,
         shouldTrimStart,
         shouldTrimEnd,
-        inpointUs: concatResult.inpointUs.toFixed(10),
-        outpointUs: concatResult.outpointUs.toFixed(10),
-        durationUs: concatResult.durationUs.toFixed(10),
-        paddingFrames: shouldTrimStart ? 2 : 0,
-        alignedDurationUs: this.alignedDurationUs,
-        AUDIO_FRAME_DURATION_US,
-        concatDirective: concatResult.directive,
-      }, "Concat directive with exact timing values");
+      );
+
+      this.logger.debug(
+        {
+          sequenceNumber: this.renderOptions.encoderOptions.sequenceNumber ?? 0,
+          shouldTrimStart,
+          shouldTrimEnd,
+          inpointUs: concatResult.inpointUs.toFixed(10),
+          outpointUs: concatResult.outpointUs.toFixed(10),
+          durationUs: concatResult.durationUs.toFixed(10),
+          paddingFrames: shouldTrimStart ? 2 : 0,
+          alignedDurationUs: this.alignedDurationUs,
+          AUDIO_FRAME_DURATION_US,
+          concatDirective: concatResult.directive,
+        },
+        "Concat directive with exact timing values",
+      );
 
       await writeFile(paths.concatPath, concatResult.directive, "utf-8");
       concatEndTime = performance.now();
     } else {
-      this.logger.debug("Skipping concat directive for init segment - using files directly");
+      this.logger.debug(
+        "Skipping concat directive for init segment - using files directly",
+      );
     }
 
     await using muxer = this.buildMuxer(paths);
@@ -660,10 +744,11 @@ export class SegmentEncoder extends EventEmitter {
 
   @WithSpan()
   async generateInitSegment() {
-    return repackageInitSegment(await this.renderAndMux(), this.renderOptions.durationMs);
+    return repackageInitSegment(
+      await this.renderAndMux(),
+      this.renderOptions.durationMs,
+    );
   }
-
-
 
   @WithSpan()
   async generateMediaSegment() {
@@ -675,7 +760,12 @@ export class SegmentEncoder extends EventEmitter {
     }
 
     const videoBmdtsMs = this.renderOptions.encoderOptions.fromMs;
-    console.log("REPACKAGE MEDIA SEGMENT", audioBmdtsUs, videoBmdtsMs, this.renderOptions);
+    console.log(
+      "REPACKAGE MEDIA SEGMENT",
+      audioBmdtsUs,
+      videoBmdtsMs,
+      this.renderOptions,
+    );
 
     return repackageMediaSegment(
       isoFile,
@@ -686,11 +776,10 @@ export class SegmentEncoder extends EventEmitter {
           // Convert microseconds to samples using integer arithmetic to avoid precision loss
           // audioBmdtsUs * 48000 / 1000000 = audioBmdtsUs * 48 / 1000
           return Math.round((audioBmdtsUs * 48) / 1000);
-        }
-        else {
+        } else {
           return (videoBmdtsMs / 1_000) * timescale;
         }
-      }
+      },
     );
   }
 }

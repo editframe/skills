@@ -9,7 +9,11 @@ const TOKEN_NAME = "Forever Token (Worktree Scripts)";
 async function generateForeverToken() {
   const user = await db
     .selectFrom("identity.email_passwords")
-    .innerJoin("identity.users", "identity.email_passwords.user_id", "identity.users.id")
+    .innerJoin(
+      "identity.users",
+      "identity.email_passwords.user_id",
+      "identity.users.id",
+    )
     .where("identity.email_passwords.email_address", "=", EMAIL)
     .selectAll("identity.email_passwords")
     .select(["identity.users.id as user_id"])
@@ -40,8 +44,8 @@ async function generateForeverToken() {
   if (existingApiKey) {
     throw new Error(
       `A forever token with name "${TOKEN_NAME}" already exists (ID: ${existingApiKey.id}). ` +
-      `Since tokens are hashed, we cannot retrieve the original token. ` +
-      `Please either delete the existing token or use a different name.`
+        `Since tokens are hashed, we cannot retrieve the original token. ` +
+        `Please either delete the existing token or use a different name.`,
     );
   }
 
@@ -60,7 +64,7 @@ async function generateForeverToken() {
   });
 
   const fullToken = `${generatedToken}_${apiKey.id}`;
-  
+
   console.log(fullToken);
   process.exit(0);
 }
@@ -69,4 +73,3 @@ generateForeverToken().catch((error) => {
   console.error("Error generating forever token:", error);
   process.exit(1);
 });
-
