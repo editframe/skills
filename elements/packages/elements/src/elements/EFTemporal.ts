@@ -23,27 +23,26 @@ export const registerIsTimegroupCalculatingDuration = (
 const getIsTimegroupCalculatingDuration = (): ((
   timegroup: EFTimegroup | undefined,
 ) => boolean) => {
-  if (!isTimegroupCalculatingDurationFn) {
-    // If not registered yet, try to import synchronously (only works if module is already loaded)
-    // This is a fallback for cases where EFTimegroup hasn't called registerIsTimegroupCalculatingDuration
-    // In practice, EFTimegroup will call registerIsTimegroupCalculatingDuration when it loads
-    try {
-      // Access the function via a global or try to get it from the module cache
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const efTimegroupModule = (globalThis as any).__EFTimegroupModule;
-      if (efTimegroupModule?.isTimegroupCalculatingDuration) {
-        isTimegroupCalculatingDurationFn =
-          efTimegroupModule.isTimegroupCalculatingDuration;
-      } else {
-        // Last resort: return a function that always returns false
-        // This prevents infinite loops but might miss some edge cases
-        isTimegroupCalculatingDurationFn = () => false;
-      }
-    } catch {
-      isTimegroupCalculatingDurationFn = () => false;
-    }
+  if (isTimegroupCalculatingDurationFn) {
+    return isTimegroupCalculatingDurationFn as (timegroup: EFTimegroup | undefined) => boolean;
   }
-  return isTimegroupCalculatingDurationFn;
+  
+  // If not registered yet, try to import synchronously (only works if module is already loaded)
+  // This is a fallback for cases where EFTimegroup hasn't called registerIsTimegroupCalculatingDuration
+  // In practice, EFTimegroup will call registerIsTimegroupCalculatingDuration when it loads
+  let fallbackFn: (timegroup: EFTimegroup | undefined) => boolean = () => false;
+  try {
+    // Access the function via a global or try to get it from the module cache
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const efTimegroupModule = (globalThis as any).__EFTimegroupModule;
+    if (efTimegroupModule?.isTimegroupCalculatingDuration) {
+      fallbackFn = efTimegroupModule.isTimegroupCalculatingDuration;
+    }
+  } catch {
+    // Use default fallback
+  }
+  isTimegroupCalculatingDurationFn = fallbackFn;
+  return fallbackFn;
 };
 
 export const timegroupContext = createContext<EFTimegroup>(
@@ -663,6 +662,14 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
 
     connectedCallback() {
       super.connectedCallback();
+      this.#ownCurrentTimeController?.remove();
+      
+      // Ensure PlaybackController is created for root elements
+      // This handles case where element is root on initial mount
+      if (!this.parentTimegroup && !this.playbackController) {
+        this.didBecomeRoot();
+      }
+      
       // Initialize playback controller for root elements
       // The parentTimegroup setter may have already called this, but the guard prevents double-creation
       const role = determineTemporalRole(this.parentTimegroup);
