@@ -287,6 +287,13 @@ export class EFTimeline extends TWMixin(LitElement) {
   private targetController?: TargetController;
   private scrollContainerRef: Ref<HTMLDivElement> = createRef();
   private animationFrameId?: number;
+  private scrubberScrollContainerRef = { current: null as HTMLElement | null };
+
+  private get scrollContainerRefForScrubber() {
+    // Update the ref object when the ref value changes
+    this.scrubberScrollContainerRef.current = this.scrollContainerRef.value ?? null;
+    return this.scrubberScrollContainerRef;
+  }
 
   @provide({ context: focusContext })
   @state()
@@ -420,6 +427,21 @@ export class EFTimeline extends TWMixin(LitElement) {
       }
     }
     super.willUpdate(changedProperties);
+  }
+
+  protected updated(changedProperties: PropertyValues): void {
+    super.updated(changedProperties);
+    // Update scrubber's scrollContainerRef when it becomes available
+    if (this.scrollContainerRef.value) {
+      const scrubber = this.shadowRoot?.querySelector('ef-scrubber') as any;
+      if (scrubber) {
+        if (scrubber.scrollContainerRef) {
+          scrubber.scrollContainerRef.current = this.scrollContainerRef.value;
+        }
+        // Request update to ensure scrubber re-renders with new ref
+        scrubber.requestUpdate();
+      }
+    }
   }
 
   private startTimeUpdate(): void {
@@ -629,7 +651,7 @@ export class EFTimeline extends TWMixin(LitElement) {
               duration-ms=${this.durationMs}
               zoom-scale=${this.zoomScale}
               container-width=${contentWidth}
-              .scrollContainerRef=${{ current: this.scrollContainerRef.value }}
+              .scrollContainerRef=${this.scrollContainerRefForScrubber}
               .onSeek=${this.handleSeek.bind(this)}
               @seek=${this.handleSeek}
             ></ef-scrubber>
