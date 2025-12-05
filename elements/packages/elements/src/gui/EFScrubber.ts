@@ -61,10 +61,11 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
     }
     
     :host([orientation="vertical"]) {
-      width: auto;
+      width: 100%;
       height: 100%;
       position: absolute;
       inset: 0;
+      pointer-events: auto;
     }
 
     .scrubber {
@@ -79,7 +80,7 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
     }
 
     :host([orientation="vertical"]) .scrubber {
-      width: var(--ef-scrubber-height);
+      width: 100%;
       height: 100%;
       background: transparent;
       cursor: ew-resize;
@@ -260,8 +261,18 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
 
       if (this.onSeek) {
         this.onSeek(quantizedTime);
-      } else if (this.context) {
-        this.context.currentTimeMs = quantizedTime;
+      } else {
+        // Emit seek event for event listeners
+        this.dispatchEvent(
+          new CustomEvent("seek", {
+            detail: quantizedTime,
+            bubbles: true,
+            composed: true,
+          }),
+        );
+        if (this.context) {
+          this.context.currentTimeMs = quantizedTime;
+        }
       }
     } else {
       // Horizontal mode: simple progress calculation
@@ -274,8 +285,18 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
 
       if (this.onSeek) {
         this.onSeek(timeMs);
-      } else if (this.context) {
-        this.context.currentTimeMs = timeMs;
+      } else {
+        // Emit seek event for event listeners
+        this.dispatchEvent(
+          new CustomEvent("seek", {
+            detail: timeMs,
+            bubbles: true,
+            composed: true,
+          }),
+        );
+        if (this.context) {
+          this.context.currentTimeMs = timeMs;
+        }
       }
     }
   }
