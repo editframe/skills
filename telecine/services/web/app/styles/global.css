@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import "./typography.css";
+
 @layer base {
   :root {
     --glow-primary: 147, 197, 253;

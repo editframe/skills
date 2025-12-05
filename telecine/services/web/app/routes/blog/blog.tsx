@@ -13,6 +13,7 @@ import cx from "classnames";
 import { CustomCode, CustomLink } from "~/components/docs/Markdown";
 import { formatDate } from "~/ui/formatDate";
 import { Prose } from "~/components/docs/Prose";
+import { typographyClasses } from "~/utils/typography";
 
 export const loader = async (request: LoaderFunctionArgs) => {
   const { params } = request;
@@ -99,12 +100,27 @@ export default function BlogPage() {
       <div className={cx("lg:ml-3", "my-4 lg:pl-6 xl:pl-10 2xl:pl-12")}>
         <div className="xl:flex xl:w-full xl:justify-between xl:gap-8 mx-auto ">
           <div className="min-w-0 xl:flex-grow ">
-            <h1 className="py-4 text-4xl font-bold dark:text-white">{title}</h1>
-            <h5 className="text-md my-4 font-semibold dark:text-white">
+            <h1
+              className={
+                typographyClasses.h1NoSpacing + " py-4 dark:text-white"
+              }
+            >
+              {title}
+            </h1>
+            <h5
+              className={
+                typographyClasses.small + " my-4 font-semibold dark:text-white"
+              }
+            >
               Published on {post.frontmatter.published_date}
             </h5>
-            <h3 className="my-4 text-sm dark:text-white">{readTime.text}</h3>
-            <div className="markdown w-full max-w-3xl pb-[10vh]">
+            <h3 className={typographyClasses.small + " my-4 dark:text-white"}>
+              {readTime.text}
+            </h3>
+            <div
+              className="markdown w-full pb-[10vh]"
+              style={{ maxWidth: "65ch" }}
+            >
               <Prose>
                 <Component
                   components={{

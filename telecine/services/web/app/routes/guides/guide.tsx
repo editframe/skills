@@ -20,6 +20,7 @@ import { PreviewVideo } from "~/components/docs/PreviewVideo";
 import { Audio } from "~/components/marketing/Audio";
 import { Libraries } from "~/components/docs/Libraries";
 import { formatDate } from "~/ui/formatDate";
+import { typographyClasses } from "~/utils/typography";
 
 export const loader = async (request: LoaderFunctionArgs) => {
   const { params } = request;
@@ -110,21 +111,43 @@ export default function GuidePage() {
         <div className=" mx-auto">
           <div className="xl:flex xl:w-full xl:justify-between xl:gap-8">
             <div className="min-w-0 xl:flex-grow">
-              <h1 className="py-4 text-4xl font-bold dark:text-white">
+              <h1
+                className={
+                  typographyClasses.h1NoSpacing + " py-4 dark:text-white"
+                }
+              >
                 {title}
               </h1>
-              <h5 className="text-md my-4 font-semibold dark:text-white">
+              <h5
+                className={
+                  typographyClasses.small +
+                  " my-4 font-semibold dark:text-white"
+                }
+              >
                 Published on {post.frontmatter.published_date}
               </h5>
               {post.frontmatter.last_updated && (
-                <h5 className="text-md my-4 font-semibold dark:text-white">
+                <h5
+                  className={
+                    typographyClasses.small +
+                    " my-4 font-semibold dark:text-white"
+                  }
+                >
                   Last updated on {post.frontmatter.last_updated}
                 </h5>
               )}
-              <h3 className="my-4 text-sm dark:text-white">{readTime.text}</h3>
-              <div className="markdown w-full max-w-3xl pb-[10vh]">
+              <h3 className={typographyClasses.small + " my-4 dark:text-white"}>
+                {readTime.text}
+              </h3>
+              <div
+                className="markdown w-full pb-[10vh]"
+                style={{ maxWidth: "65ch" }}
+              >
                 <div className="min-w-0 xl:flex-grow">
-                  <div className="markdown w-full max-w-3xl pb-[33vh]">
+                  <div
+                    className="markdown w-full pb-[33vh]"
+                    style={{ maxWidth: "65ch" }}
+                  >
                     <Prose>
                       <Component
                         components={{

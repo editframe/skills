@@ -31,17 +31,29 @@ const SECTION_CONFIGS: Record<string, IndexPageConfig> = {
   },
   explanation: {
     title: "Explanations",
-    description: "Deep dives into architecture, concepts, and technical advantages",
+    description:
+      "Deep dives into architecture, concepts, and technical advantages",
     sectionTitle: "Explanations",
-    introText: "Conceptual explanations to deepen your understanding of how things work and why the architecture provides superior outcomes.",
+    introText:
+      "Conceptual explanations to deepen your understanding of how things work and why the architecture provides superior outcomes.",
   },
   reference: {
     title: "Reference",
     description: "Complete property and API reference",
     sectionTitle: "Reference",
-    introText: "Complete technical reference for all properties and attributes.",
+    introText:
+      "Complete technical reference for all properties and attributes.",
   },
 };
+
+/**
+ * Extracts numerical prefix from filename (e.g., "010-jit-transcoding.mdx" -> 10)
+ * Returns Infinity if no prefix found, so files without prefixes sort after numbered files
+ */
+function extractNumericalPrefix(filename: string): number {
+  const match = filename.match(/^(\d+)-/);
+  return match ? parseInt(match[1], 10) : Infinity;
+}
 
 export async function scanDirectoryForDocs(
   directory: string,
@@ -51,20 +63,28 @@ export async function scanDirectoryForDocs(
   const docs: DocFileMetadata[] = [];
 
   for (const entry of entries) {
-    if (entry.isFile() && entry.name.endsWith(".mdx") && entry.name !== "index.mdx") {
+    if (
+      entry.isFile() &&
+      entry.name.endsWith(".mdx") &&
+      entry.name !== "index.mdx"
+    ) {
       try {
         const filePath = join(directory, entry.name);
         const { readFileSync } = await import("node:fs");
         const content = readFileSync(filePath, "utf8");
         const { attributes } = fm<any>(content);
 
-        const title = attributes.meta?.find((attr: any) => attr.title)?.title || 
-                     entry.name.replace(".mdx", "").replace(/-/g, " ");
-        const description = attributes.meta?.find(
-          (attr: any) => attr.name === "description"
-        )?.content || "";
+        const title =
+          attributes.meta?.find((attr: any) => attr.title)?.title ||
+          entry.name.replace(".mdx", "").replace(/-/g, " ");
+        const description =
+          attributes.meta?.find((attr: any) => attr.name === "description")
+            ?.content || "";
 
-        const slug = `${baseSlug}/${entry.name.replace(".mdx", "")}`;
+        // Strip numerical prefix from filename for slug (e.g., "010-jit-transcoding" -> "jit-transcoding")
+        const filenameWithoutExt = entry.name.replace(".mdx", "");
+        const filenameWithoutPrefix = filenameWithoutExt.replace(/^\d+-/, "");
+        const slug = `${baseSlug}/${filenameWithoutPrefix}`;
 
         docs.push({
           title,
@@ -79,16 +99,32 @@ export async function scanDirectoryForDocs(
     }
   }
 
-  return docs.sort((a, b) => a.title.localeCompare(b.title));
+  return docs.sort((a, b) => {
+    const prefixA = extractNumericalPrefix(a.filename);
+    const prefixB = extractNumericalPrefix(b.filename);
+
+    // Sort by numerical prefix first
+    if (prefixA !== prefixB) {
+      return prefixA - prefixB;
+    }
+
+    // If prefixes are equal (both Infinity or same number), sort alphabetically by title
+    return a.title.localeCompare(b.title);
+  });
 }
 
 function detectDirectoryType(directoryPath: string): string | null {
   const dirName = directoryPath.split("/").pop()?.toLowerCase() || "";
-  
-  if (dirName === "tutorial" || dirName === "how-to" || dirName === "explanation" || dirName === "reference") {
+
+  if (
+    dirName === "tutorial" ||
+    dirName === "how-to" ||
+    dirName === "explanation" ||
+    dirName === "reference"
+  ) {
     return dirName === "how-to" ? "how-to" : dirName;
   }
-  
+
   return null;
 }
 
@@ -104,11 +140,12 @@ function generateIndexContent(
     { name: "Explanations", slug: `${parentSlug}/explanation` },
     { name: "Reference", slug: `${parentSlug}/reference` },
   ];
-  
+
   // Filter out the current section
   const relatedSections = allSections.filter((section) => {
     const sectionPath = section.slug.split("/").pop() || "";
-    const normalizedCurrent = currentSection === "how-to" ? "how-to" : currentSection;
+    const normalizedCurrent =
+      currentSection === "how-to" ? "how-to" : currentSection;
     const normalizedSection = sectionPath === "how-to" ? "how-to" : sectionPath;
     return normalizedSection !== normalizedCurrent;
   });
@@ -143,7 +180,7 @@ export async function generateIndexPage(
   baseSlug: string,
 ): Promise<string | null> {
   const dirType = detectDirectoryType(directory);
-  
+
   if (!dirType) {
     return null;
   }
@@ -154,11 +191,10 @@ export async function generateIndexPage(
   }
 
   const docs = await scanDirectoryForDocs(directory, baseSlug);
-  
+
   if (docs.length === 0) {
     return null;
   }
 
   return generateIndexContent(config, docs, baseSlug, dirType);
 }
-

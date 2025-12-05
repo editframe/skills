@@ -17,7 +17,7 @@ When creating videos, the root timegroup's dimensions define the output aspect r
 
 ### Fixed Composition, Responsive Display
 
-<Demonstration layout="horizontal" alwaysShowSource>
+<Demonstration layout="horizontal" alwaysShowSource enablePreview enableFilmstrip enableFitScale>
     <FitScale style={{ width: '100%', height: '400px', background: '#f0f0f0' }}>
       <Timegroup mode="contain" className="w-[1920px] h-[1080px] bg-black">
         <Video src="https://assets.editframe.com/bars-n-tone.mp4" className="w-full h-full object-contain" />
@@ -63,7 +63,7 @@ When creating videos, the root timegroup's dimensions define the output aspect r
 
 Use `<ef-fit-scale>` to make any composition responsive:
 
-<Demonstration layout="horizontal" alwaysShowSource>
+<Demonstration layout="horizontal" alwaysShowSource enablePreview enableFilmstrip enableFitScale>
     <div className="w-full" style={{ resize: 'both', overflow: 'hidden', border: '2px dashed #ccc' }}>
       <FitScale style={{ width: '100%', height: '300px' }}>
         <Timegroup mode="contain" className="w-[1920px] h-[1080px] bg-gradient-to-br from-blue-500 to-purple-600">
@@ -114,7 +114,7 @@ Create a player that works well on mobile devices:
 
 Use CSS media queries to adapt content based on screen size:
 
-<Demonstration layout="horizontal" alwaysShowSource>
+<Demonstration layout="horizontal" alwaysShowSource enablePreview enableFilmstrip enableFitScale>
     <FitScale style={{ width: '100%', height: '400px' }}>
       <Timegroup mode="contain" className="w-[1920px] h-[1080px] bg-black relative">
         <Video src="https://assets.editframe.com/bars-n-tone.mp4" className="w-full h-full object-cover" />

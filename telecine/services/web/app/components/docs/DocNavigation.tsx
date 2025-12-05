@@ -27,7 +27,9 @@ export const DocSectionIndex: FC<DocSectionIndexProps> = ({
     <div className={clsx("space-y-6", className)}>
       <div>
         <h2 className="text-2xl font-bold mb-3">{title}</h2>
-        {introText && <p className="text-slate-600 dark:text-slate-400 mb-6">{introText}</p>}
+        {introText && (
+          <p className="text-slate-600 dark:text-slate-400 mb-6">{introText}</p>
+        )}
       </div>
 
       <div>
@@ -127,4 +129,3 @@ export const DocNavSection: FC<DocNavSectionProps> = ({
     </div>
   );
 };
-

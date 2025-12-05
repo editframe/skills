@@ -1,5 +1,6 @@
 import { NavLink } from "./NavLink";
 import { themeClasses } from "~/utils/theme-classes";
+import { typographyClasses } from "~/utils/typography";
 import clsx from "clsx";
 
 const defaultNavigation = [
@@ -38,7 +39,8 @@ export const Hero = ({
         {header && (
           <h1
             className={clsx(
-              "text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-tight mb-2",
+              typographyClasses.h1NoSpacing,
+              "text-3xl sm:text-4xl lg:text-5xl mb-2",
               "text-blue-600 dark:text-blue-400",
             )}
           >
@@ -48,7 +50,8 @@ export const Hero = ({
         {subheader && (
           <p
             className={clsx(
-              "text-3xl sm:text-4xl lg:text-5xl mb-2 tracking-tighter leading-[1] my-0 font-bold text-left lg:m-0",
+              typographyClasses.h1NoSpacing,
+              "text-3xl sm:text-4xl lg:text-5xl mb-2 tracking-tighter leading-[1] my-0 text-left lg:m-0",
               themeClasses.pageText,
             )}
           >
@@ -56,12 +59,7 @@ export const Hero = ({
           </p>
         )}
         {description && (
-          <p
-            className={clsx(
-              "text-lg sm:text-xl leading-[1.4] mt-3 ml-1 text-left",
-              themeClasses.pageTextSecondary,
-            )}
-          >
+          <p className={clsx(typographyClasses.lead, "mt-3 ml-1 text-left")}>
             {description}
           </p>
         )}

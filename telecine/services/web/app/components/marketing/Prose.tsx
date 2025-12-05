@@ -11,11 +11,17 @@ export function Prose({
       className={clsx(
         className,
         "prose prose-invert prose-slate max-w-none text-slate-200",
+        // Base typography using centralized system
+        "prose-base prose-slate",
+        // Paragraphs
+        "prose-p:text-slate-200 prose-p:leading-loose",
+        "prose-p:mb-6",
         // headings
         "prose-headings:font-display prose-headings:scroll-mt-28 prose-headings:font-normal prose-headings:text-slate-100 lg:prose-headings:scroll-mt-[8.5rem]",
+        "prose-headings:tracking-tight",
         // lead
-        " prose-lead:text-slate-200",
-        " prose-strong:text-slate-100",
+        "prose-lead:text-slate-200 prose-lead:leading-loose",
+        "prose-strong:text-slate-100",
         // links
         "prose-a:font-semibold prose-a:text-martinique-400",
         // link underline

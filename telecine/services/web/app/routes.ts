@@ -12,6 +12,10 @@ const hdb = relative("services/web/app/hdb");
 
 const routes = [
   index("routes/index.tsx"),
+  route("/landing-page-2", "routes/landing-page-2.tsx"),
+  route("/landing-page-3", "routes/landing-page-3.tsx"),
+  route("/landing-page-4", "routes/landing-page-4.tsx"),
+  route("/sitemap.xml", "routes/sitemap.tsx"),
   route("/docs/examples/crop", "routes/docs/examples/crop.tsx"),
   route("/docs/examples/rotation", "routes/docs/examples/rotation.tsx"),
   route("/docs/examples/filters", "routes/docs/examples/filters.tsx"),

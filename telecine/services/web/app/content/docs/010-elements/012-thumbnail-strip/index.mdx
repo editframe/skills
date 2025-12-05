@@ -2,10 +2,12 @@
 meta:
   - title: Thumbnail Strip
   - name: description
-    content: Documentation for the Editframe Thumbnail Strip Element
+    content: Learn about the Editframe Thumbnail Strip Element - generate visual previews of video content with intelligent caching and batch processing
 headers:
     Cache-Control: no-cache
 ---
+
+<ElementIndex />
 
 ## Interactive Sandbox
 
@@ -15,7 +17,7 @@ Experiment with different thumbnail strip settings to see how they affect the ap
 
 ## Demonstration
 
-<Demonstration layout="horizontal" defaultSourceVisible alwaysShowSource>
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
   <div className="flex flex-col gap-4">
     <Video 
       id="demo-video"
@@ -29,60 +31,3 @@ Experiment with different thumbnail strip settings to see how they affect the ap
     />
   </div>
 </Demonstration>
-
-## Attributes
-
-<PropertyDocList>
-  <PropertyDoc name="target" type="string" domReadable domWritable htmlAttribute="target">
-    The ID of the video element to generate thumbnails from. Do not include the # character.
-
-    The thumbnail strip will automatically track the target video element and update thumbnails when the video's properties change.
-
-    <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 p-2 rounded border border-blue-200 dark:border-blue-800">
-      💡 Specify the element ID without the # prefix (e.g., "my-video" to target a video with id="my-video").
-    </div>
-  </PropertyDoc>
-
-  <PropertyDoc name="thumbnailWidth" type="number" domReadable domWritable htmlAttribute="thumbnail-width" defaultValue="80">
-    The desired width of individual thumbnails in pixels.
-
-    The thumbnail strip automatically calculates how many thumbnails to display based on the available width and this thumbnail width. Larger values result in fewer, more detailed thumbnails.
-
-    Height is automatically calculated to maintain the video's aspect ratio within the strip's height.
-  </PropertyDoc>
-
-  <PropertyDoc name="startTimeMs" type="number" domReadable domWritable htmlAttribute="start-time-ms">
-    Custom start time in milliseconds for thumbnail generation.
-
-    When specified, overrides the natural start time of the video (including any trimming) to generate thumbnails from this absolute time in the source media.
-
-    This is useful for showing thumbnails from a specific portion of the video regardless of how it's trimmed or positioned in the timeline.
-  </PropertyDoc>
-
-  <PropertyDoc name="endTimeMs" type="number" domReadable domWritable htmlAttribute="end-time-ms">
-    Custom end time in milliseconds for thumbnail generation.
-
-    When specified, overrides the natural end time of the video (including any trimming) to generate thumbnails up to this absolute time in the source media.
-
-    Must be used in conjunction with `startTimeMs` to define a custom time range.
-  </PropertyDoc>
-
-  <PropertyDoc name="useIntrinsicDuration" type="boolean" domReadable domWritable htmlAttribute="use-intrinsic-duration" defaultValue="false">
-    Use the full source media duration instead of the trimmed duration for thumbnail generation.
-
-    When true, thumbnails are generated from the entire source video file, ignoring any `trimStart`, `trimEnd`, `sourceIn`, or `sourceOut` properties on the target video element.
-
-    <div className="bg-orange-100 dark:bg-orange-900/30 text-orange-900 dark:text-orange-100 p-2 rounded border border-orange-200 dark:border-orange-800">
-      ⚠️ This property is ignored if custom `startTimeMs` or `endTimeMs` values are provided.
-    </div>
-  </PropertyDoc>
-</PropertyDocList>
-
-## Performance
-
-The thumbnail strip includes several performance optimizations:
-
-- **Intelligent Caching**: Thumbnails are cached globally across all strip instances
-- **Batch Processing**: Thumbnails are generated efficiently in batches
-- **Responsive Layout**: Automatically adjusts thumbnail count based on available width
-- **Aspect Ratio Preservation**: Thumbnails maintain proper aspect ratios without distortion

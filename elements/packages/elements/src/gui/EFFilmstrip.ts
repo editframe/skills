@@ -35,14 +35,18 @@ import { EFVideo } from "../elements/EFVideo.js";
 import { EFWaveform } from "../elements/EFWaveform.js";
 import { TargetController } from "../elements/TargetController.js";
 import { TimegroupController } from "../elements/TimegroupController.js";
-import { msToTimeCode } from "../msToTimeCode.js";
 import { targetTemporalContext } from "./ContextMixin.ts";
 import type { EFPreview } from "./EFPreview.js";
 import type { EFWorkbench } from "./EFWorkbench.js";
 import { type FocusContext, focusContext } from "./focusContext.js";
 import { focusedElementContext } from "./focusedElementContext.js";
-import { loopContext, playingContext } from "./playingContext.js";
 import { TWMixin } from "./TWMixin.js";
+import {
+  renderHierarchyChildren,
+  shouldRenderElement,
+} from "./hierarchy/EFHierarchyItem.js";
+import "./timeline/TrimHandles.js";
+import type { TrimChangeDetail } from "./timeline/TrimHandles.js";
 
 class ElementFilmstripController implements ReactiveController {
   constructor(
@@ -78,6 +82,9 @@ class FilmstripItem extends TWMixin(LitElement) {
       :host {
         display: block;
       }
+      .trim-container {
+        position: relative;
+      }
     `,
   ];
 
@@ -97,8 +104,9 @@ class FilmstripItem extends TWMixin(LitElement) {
   @property({ type: Number })
   pixelsPerMs = 0.04;
 
-  // Gutter styles represent the entire source media.
-  // If there is no trim, then the gutter and trim portion are the same.
+  @property({ type: Boolean, attribute: "enable-trim" })
+  enableTrim = false;
+
   get gutterStyles() {
     return {
       position: "relative",
@@ -107,8 +115,6 @@ class FilmstripItem extends TWMixin(LitElement) {
     };
   }
 
-  // Trim portion is the section of source that will be placed in the timeline
-  // If there is no trim, then the gutter and trim portion are the same.
   get trimPortionStyles() {
     return {
       width: `${this.pixelsPerMs * this.element.durationMs}px`,
@@ -116,7 +122,34 @@ class FilmstripItem extends TWMixin(LitElement) {
     };
   }
 
+  private handleTrimChange(e: CustomEvent<TrimChangeDetail>): void {
+    const { type, newValueMs } = e.detail;
+    
+    if (type === "start") {
+      this.element.trimStartMs = newValueMs;
+    } else {
+      this.element.trimEndMs = newValueMs;
+    }
+    
+    this.dispatchEvent(
+      new CustomEvent("filmstrip-trim-change", {
+        detail: {
+          elementId: this.element.id || "",
+          type,
+          newValueMs,
+        },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
   render() {
+    const elementId = (this.element as HTMLElement).id || "";
+    const trimStartMs = this.element.trimStartMs ?? 0;
+    const trimEndMs = this.element.trimEndMs ?? 0;
+    const intrinsicDurationMs = this.element.intrinsicDurationMs ?? this.element.durationMs;
+
     return html`<div style=${styleMap(this.gutterStyles)}>
       <div
         style="background-color: var(--filmstrip-bg);"
@@ -134,7 +167,7 @@ class FilmstripItem extends TWMixin(LitElement) {
       >
         <div
           ?data-focused=${this.isFocused}
-          class="border-outset relative mb-[1px] block h-[1.1rem] text-nowrap border text-sm"
+          class="trim-container border-outset relative mb-[1px] block h-[1.1rem] text-nowrap border text-sm"
           style=${styleMap({
             ...this.trimPortionStyles,
             backgroundColor: this.isFocused
@@ -144,6 +177,16 @@ class FilmstripItem extends TWMixin(LitElement) {
           })}
         >
           ${this.animations()}
+          ${this.enableTrim
+            ? html`<ef-trim-handles
+                element-id=${elementId}
+                pixels-per-ms=${this.pixelsPerMs}
+                trim-start-ms=${trimStartMs}
+                trim-end-ms=${trimEndMs}
+                intrinsic-duration-ms=${intrinsicDurationMs}
+                @trim-change=${this.handleTrimChange}
+              ></ef-trim-handles>`
+            : nothing}
         </div>
       </div>
       ${this.renderChildren()}
@@ -776,295 +819,6 @@ export class EFHTMLFilmstrip extends FilmstripItem {
   }
 }
 
-@customElement("ef-hierarchy-item")
-class EFHierarchyItem<
-  ElementType extends HTMLElement = HTMLElement,
-> extends TWMixin(LitElement) {
-  @property({ type: Object, attribute: false })
-  // @ts-expect-error This could be initialzed with any HTMLElement
-  element: ElementType = new EFTimegroup();
-
-  @consume({ context: focusContext })
-  focusContext?: FocusContext;
-
-  @consume({ context: focusedElementContext, subscribe: true })
-  focusedElement?: HTMLElement | null;
-
-  @property({ type: Array, attribute: false })
-  hideSelectors?: string[];
-
-  @property({ type: Array, attribute: false })
-  showSelectors?: string[];
-
-  get icon(): TemplateResult<1> | string {
-    return "📼";
-  }
-
-  get isFocused() {
-    return this.element && this.focusContext?.focusedElement === this.element;
-  }
-
-  displayLabel(): TemplateResult<1> | string | typeof nothing {
-    return nothing;
-  }
-
-  render() {
-    return html` 
-      <div>
-        <div
-          class="peer flex h-[1.1rem] items-center overflow-hidden text-nowrap border pl-2 text-xs font-mono"
-          style=${styleMap({
-            backgroundColor: this.isFocused
-              ? "var(--filmstrip-timegroup-focused)"
-              : "var(--filmstrip-timegroup-bg)",
-            borderColor: "var(--filmstrip-border)",
-          })}
-          ?data-focused=${this.isFocused}
-          @mouseenter=${() => {
-            if (this.focusContext) {
-              this.focusContext.focusedElement = this.element;
-            }
-          }}
-          @mouseleave=${() => {
-            if (this.focusContext) {
-              this.focusContext.focusedElement = null;
-            }
-          }}
-        >
-          ${this.icon} ${this.displayLabel()}
-        </div>
-        <div
-          class="p-[1px] pb-0 pl-2 pr-0 peer-hover-container peer-data-container"
-          style=${styleMap({
-            backgroundColor: this.isFocused
-              ? "var(--filmstrip-bg)"
-              : "transparent",
-          })}
-        >
-          ${this.renderChildren()}
-        </div>
-      </div>`;
-  }
-
-  renderChildren(): Array<TemplateResult<1> | typeof nothing> | typeof nothing {
-    return renderHierarchyChildren(
-      Array.from(this.element.children),
-      this.hideSelectors,
-      this.showSelectors,
-    );
-  }
-}
-
-@customElement("ef-timegroup-hierarchy-item")
-class EFTimegroupHierarchyItem extends EFHierarchyItem<EFTimegroup> {
-  get icon() {
-    return "🕒";
-  }
-
-  displayLabel(): string | TemplateResult<1> | typeof nothing {
-    return this.element.mode ?? "(no mode)";
-  }
-}
-
-@customElement("ef-audio-hierarchy-item")
-class EFAudioHierarchyItem extends EFHierarchyItem<EFAudio> {
-  get icon() {
-    return "🔊";
-  }
-
-  displayLabel() {
-    return this.element.src ?? "(no src)";
-  }
-}
-
-@customElement("ef-video-hierarchy-item")
-class EFVideoHierarchyItem extends EFHierarchyItem<EFVideo> {
-  get icon() {
-    return "📼";
-  }
-
-  displayLabel() {
-    return this.element.src ?? "(no src)";
-  }
-}
-
-@customElement("ef-captions-hierarchy-item")
-class EFCaptionsHierarchyItem extends EFHierarchyItem {
-  get icon() {
-    return "📝 Captions";
-  }
-}
-
-@customElement("ef-captions-active-word-hierarchy-item")
-class EFCaptionsActiveWordHierarchyItem extends EFHierarchyItem {
-  get icon() {
-    return "🗣️ Active Word";
-  }
-}
-
-@customElement("ef-text-hierarchy-item")
-class EFTextHierarchyItem extends EFHierarchyItem {
-  get icon() {
-    return "📄 Text";
-  }
-}
-
-@customElement("ef-text-segment-hierarchy-item")
-class EFTextSegmentHierarchyItem extends EFHierarchyItem {
-  get icon() {
-    return "📄 Segment";
-  }
-}
-
-@customElement("ef-waveform-hierarchy-item")
-class EFWaveformHierarchyItem extends EFHierarchyItem {
-  get icon() {
-    return "🌊";
-  }
-
-  renderChildren(): typeof nothing {
-    return nothing;
-  }
-}
-
-@customElement("ef-image-hierarchy-item")
-class EFImageHierarchyItem extends EFHierarchyItem<EFImage> {
-  get icon() {
-    return "🖼️";
-  }
-
-  displayLabel() {
-    return this.element.src ?? "(no src)";
-  }
-}
-
-@customElement("ef-html-hierarchy-item")
-class EFHTMLHierarchyItem extends EFHierarchyItem {
-  get icon() {
-    return html`<code>${`<${this.element.tagName.toLowerCase()}>`}</code>`;
-  }
-}
-
-const shouldRenderElement = (
-  element: Element,
-  hideSelectors?: string[],
-  showSelectors?: string[],
-): boolean => {
-  if (element instanceof HTMLElement && element.dataset?.efHidden) {
-    return false;
-  }
-
-  // If show selectors are provided (allowlist mode), only render if matches
-  if (showSelectors && showSelectors.length > 0) {
-    return showSelectors.some((selector) => {
-      try {
-        return element.matches(selector);
-      } catch {
-        return false;
-      }
-    });
-  }
-
-  // If hide selectors are provided, don't render if matches
-  if (hideSelectors && hideSelectors.length > 0) {
-    return !hideSelectors.some((selector) => {
-      try {
-        return element.matches(selector);
-      } catch {
-        return false;
-      }
-    });
-  }
-
-  // No filters, render everything
-  return true;
-};
-
-const renderHierarchyChildren = (
-  children: Element[],
-  hideSelectors?: string[],
-  showSelectors?: string[],
-  skipRootFiltering = false,
-): Array<TemplateResult<1> | typeof nothing> => {
-  return children.map((child) => {
-    if (
-      !skipRootFiltering &&
-      !shouldRenderElement(child, hideSelectors, showSelectors)
-    ) {
-      return nothing;
-    }
-
-    if (child instanceof EFTimegroup) {
-      return html`<ef-timegroup-hierarchy-item
-        .element=${child}
-        .hideSelectors=${hideSelectors}
-        .showSelectors=${showSelectors}
-      ></ef-timegroup-hierarchy-item>`;
-    }
-    if (child instanceof EFImage) {
-      return html`<ef-image-hierarchy-item
-        .element=${child}
-        .hideSelectors=${hideSelectors}
-        .showSelectors=${showSelectors}
-      ></ef-image-hierarchy-item>`;
-    }
-    if (child instanceof EFAudio) {
-      return html`<ef-audio-hierarchy-item
-        .element=${child}
-        .hideSelectors=${hideSelectors}
-        .showSelectors=${showSelectors}
-      ></ef-audio-hierarchy-item>`;
-    }
-    if (child instanceof EFVideo) {
-      return html`<ef-video-hierarchy-item
-        .element=${child}
-        .hideSelectors=${hideSelectors}
-        .showSelectors=${showSelectors}
-      ></ef-video-hierarchy-item>`;
-    }
-    if (child instanceof EFCaptions) {
-      return html`<ef-captions-hierarchy-item
-        .element=${child}
-        .hideSelectors=${hideSelectors}
-        .showSelectors=${showSelectors}
-      ></ef-captions-hierarchy-item>`;
-    }
-    if (child instanceof EFCaptionsActiveWord) {
-      return html`<ef-captions-active-word-hierarchy-item
-        .element=${child}
-        .hideSelectors=${hideSelectors}
-        .showSelectors=${showSelectors}
-      ></ef-captions-active-word-hierarchy-item>`;
-    }
-    if (child instanceof EFText) {
-      return html`<ef-text-hierarchy-item
-        .element=${child}
-        .hideSelectors=${hideSelectors}
-        .showSelectors=${showSelectors}
-      ></ef-text-hierarchy-item>`;
-    }
-    if (child instanceof EFTextSegment) {
-      return html`<ef-text-segment-hierarchy-item
-        .element=${child}
-        .hideSelectors=${hideSelectors}
-        .showSelectors=${showSelectors}
-      ></ef-text-segment-hierarchy-item>`;
-    }
-    if (child instanceof EFWaveform) {
-      return html`<ef-waveform-hierarchy-item
-        .element=${child}
-        .hideSelectors=${hideSelectors}
-        .showSelectors=${showSelectors}
-      ></ef-waveform-hierarchy-item>`;
-    }
-    return html`<ef-html-hierarchy-item
-      .element=${child}
-      .hideSelectors=${hideSelectors}
-      .showSelectors=${showSelectors}
-    ></ef-html-hierarchy-item>`;
-  });
-};
-
 const renderFilmstripChildren = (
   children: Element[],
   pixelsPerMs: number,
@@ -1273,34 +1027,15 @@ export class EFFilmstrip extends TWMixin(LitElement) {
   @state()
   timelineScrolltop = 0;
 
-  @consume({ context: playingContext, subscribe: true })
-  @state()
-  playing?: boolean;
-
-  @consume({ context: loopContext, subscribe: true })
-  @state()
-  loop?: boolean;
-
   timegroupController?: TimegroupController;
 
   @state()
   currentTimeMs = 0;
 
-  @property({ type: Boolean, reflect: true, attribute: "auto-scale" })
-  autoScale = false;
-
-  private resizeObserver = new ResizeObserver(() => {
-    if (this.autoScale) {
-      this.updatePixelsPerMs();
-    }
-  });
-
   connectedCallback(): void {
     super.connectedCallback();
     this.#bindToTargetTimegroup();
     window.addEventListener("keypress", this.#handleKeyPress);
-
-    this.resizeObserver.observe(this);
 
     if (this.target) {
       this.#targetController = new TargetController(this);
@@ -1310,15 +1045,6 @@ export class EFFilmstrip extends TWMixin(LitElement) {
   disconnectedCallback(): void {
     super.disconnectedCallback();
     window.removeEventListener("keypress", this.#handleKeyPress);
-    this.resizeObserver.disconnect();
-  }
-
-  updatePixelsPerMs() {
-    const target = this.targetTemporal;
-    const gutter = this.gutterRef.value;
-    if (target && gutter && gutter.clientWidth > 0) {
-      this.pixelsPerMs = gutter.clientWidth / (target.durationMs || 1);
-    }
   }
 
   #bindToTargetTimegroup() {
@@ -1524,92 +1250,60 @@ export class EFFilmstrip extends TWMixin(LitElement) {
   render() {
     const target = this.targetTemporal;
 
-    return html` <div
-      class="grid h-full"
-      style=${styleMap({
+    return html`
+      <div class="grid h-full" style=${styleMap({
         gridTemplateColumns: "200px 1fr",
-        gridTemplateRows: "1.5rem 1fr",
+        gridTemplateRows: "1fr",
         backgroundColor: "var(--filmstrip-gutter-bg)",
-      })}
-    >
-      <div
-        class="z-20 col-span-2 shadow"
-        style="background-color: var(--filmstrip-gutter-bg); border-bottom-color: var(--filmstrip-border);"
-      >
-        ${
-          !this.autoScale
-            ? html`<input
-              type="range"
-              .value=${this.pixelsPerMs}
-              min="0.01"
-              max="0.1"
-              step="0.001"
-              @input=${(e: Event) => {
-                const target = e.target as HTMLInputElement;
-                this.pixelsPerMs = Number.parseFloat(target.value);
-              }}
-            />`
-            : nothing
-        }
-        <code>${msToTimeCode(this.currentTimeMs, true)} </code> /
-        <code>${msToTimeCode(target?.durationMs ?? 0, true)}</code>
-        <ef-toggle-play class="inline-block mx-2">
-          <div slot="pause"> 
-            <button>⏸️</button>
-          </div>
-          <div slot="play">
-            <button>▶️</button>
-          </div>
-        </ef-toggle-play>
-        <ef-toggle-loop><button>${this.loop ? "🔁" : html`<span class="opacity-50 line-through">🔁</span>`}</button></ef-toggle-loop>
-      </div>
-      <div
-        class="z-10 pl-1 pr-1 pt-[8px] shadow overflow-auto"
-        ${ref(this.hierarchyRef)}
-        @scroll=${this.syncHierarchyScroll}
-      >
-        ${renderHierarchyChildren(
-          target ? ([target] as unknown as Element[]) : [],
-          this.hideSelectors,
-          this.showSelectors,
-          true,
-        )}
-      </div>
-      <div
-        class="flex h-full w-full cursor-crosshair overflow-auto pt-[8px] touch-pan-x"
-        style="background-color: var(--filmstrip-timeline-bg);"
-        id="gutter"
-        ${ref(this.gutterRef)}
-        @scroll=${this.syncGutterScroll}
-        @wheel=${this.scrollScrub}
-      >
+      })}>
         <div
-          class="relative h-full w-full touch-none"
-          style="width: ${this.pixelsPerMs * (target?.durationMs ?? 0)}px; touch-action: none; user-select: none;"
-          @pointermove=${this.scrub}
-          @pointerdown=${this.startScrub}
-          @contextmenu=${this.handleContextMenu}
+          class="z-10 pl-1 pr-1 pt-[8px] shadow overflow-auto"
+          ${ref(this.hierarchyRef)}
+          @scroll=${this.syncHierarchyScroll}
         >
-          <div
-            class="border-red pointer-events-none absolute z-[20] h-full w-[2px] border-r-2"
-            style=${styleMap({
-              left: `${this.pixelsPerMs * this.currentTimeMs}px`,
-              top: `${this.timelineScrolltop}px`,
-              borderColor: "var(--filmstrip-playhead)",
-            })}
-            ${ref(this.playheadRef)}
-          ></div>
-
-          ${renderFilmstripChildren(
+          ${renderHierarchyChildren(
             target ? ([target] as unknown as Element[]) : [],
-            this.pixelsPerMs,
             this.hideSelectors,
             this.showSelectors,
             true,
           )}
         </div>
+        <div
+          class="flex h-full w-full cursor-crosshair overflow-auto pt-[8px] touch-pan-x"
+          style="background-color: var(--filmstrip-timeline-bg);"
+          id="gutter"
+          ${ref(this.gutterRef)}
+          @scroll=${this.syncGutterScroll}
+          @wheel=${this.scrollScrub}
+        >
+          <div
+            class="relative h-full w-full touch-none"
+            style="width: ${this.pixelsPerMs * (target?.durationMs ?? 0)}px; touch-action: none; user-select: none;"
+            @pointermove=${this.scrub}
+            @pointerdown=${this.startScrub}
+            @contextmenu=${this.handleContextMenu}
+          >
+            <div
+              class="border-red pointer-events-none absolute z-[20] h-full w-[2px] border-r-2"
+              style=${styleMap({
+                left: `${this.pixelsPerMs * this.currentTimeMs}px`,
+                top: `${this.timelineScrolltop}px`,
+                borderColor: "var(--filmstrip-playhead)",
+              })}
+              ${ref(this.playheadRef)}
+            ></div>
+
+            ${renderFilmstripChildren(
+              target ? ([target] as unknown as Element[]) : [],
+              this.pixelsPerMs,
+              this.hideSelectors,
+              this.showSelectors,
+              true,
+            )}
+          </div>
+        </div>
       </div>
-    </div>`;
+    `;
   }
 
   updated(changes: PropertyValueMap<any> | Map<PropertyKey, unknown>) {
@@ -1672,9 +1366,6 @@ export class EFFilmstrip extends TWMixin(LitElement) {
       this.#lastTargetTemporal = currentTargetTemporal;
     }
 
-    if (this.autoScale) {
-      this.updatePixelsPerMs();
-    }
     super.willUpdate(changedProperties);
   }
 }
@@ -1682,14 +1373,6 @@ export class EFFilmstrip extends TWMixin(LitElement) {
 declare global {
   interface HTMLElementTagNameMap {
     "ef-filmstrip": EFFilmstrip;
-    "ef-timegroup-hierarchy-item": EFTimegroupHierarchyItem;
-    "ef-audio-hierarchy-item": EFAudioHierarchyItem;
-    "ef-video-hierarchy-item": EFVideoHierarchyItem;
-    "ef-captions-hierarchy-item": EFCaptionsHierarchyItem;
-    "ef-captions-active-word-hierarchy-item": EFCaptionsActiveWordHierarchyItem;
-    "ef-waveform-hierarchy-item": EFWaveformHierarchyItem;
-    "ef-image-hierarchy-item": EFImageHierarchyItem;
-    "ef-html-hierarchy-item": EFHTMLHierarchyItem;
     "ef-timegroup-filmstrip": EFTimegroupFilmstrip;
     "ef-audio-filmstrip": EFAudioFilmstrip;
     "ef-video-filmstrip": EFVideoFilmstrip;
@@ -1700,8 +1383,6 @@ declare global {
     "ef-captions-after-word-filmstrip": EFCaptionsAfterWordFilmstrip;
     "ef-text-filmstrip": EFTextFilmstrip;
     "ef-text-segment-filmstrip": EFTextSegmentFilmstrip;
-    "ef-text-hierarchy-item": EFTextHierarchyItem;
-    "ef-text-segment-hierarchy-item": EFTextSegmentHierarchyItem;
     "ef-waveform-filmstrip": EFWaveformFilmstrip;
     "ef-image-filmstrip": EFImageFilmstrip;
     "ef-html-filmstrip": EFHTMLFilmstrip;

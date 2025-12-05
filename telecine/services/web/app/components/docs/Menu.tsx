@@ -47,6 +47,29 @@ const getIconForTitle = (title: string, href?: string): React.ElementType => {
   const lowerTitle = title.toLowerCase();
   const lowerHref = href?.toLowerCase() || "";
 
+  // Section type icons (check before element types)
+  if (lowerTitle === "tutorial" || lowerHref.includes("/tutorial")) {
+    return GraduationCap;
+  }
+  if (
+    lowerTitle.includes("how-to") ||
+    lowerTitle.includes("how to") ||
+    lowerHref.includes("/how-to")
+  ) {
+    return FileText;
+  }
+  if (
+    lowerTitle === "concepts" ||
+    lowerTitle === "concept" ||
+    lowerHref.includes("/explanation") ||
+    lowerHref.includes("/concept")
+  ) {
+    return Brain;
+  }
+  if (lowerTitle === "reference" || lowerHref.includes("/reference")) {
+    return FileText;
+  }
+
   // Getting Started section
   if (
     lowerTitle.includes("getting started") ||
@@ -254,22 +277,30 @@ const getIconForTitle = (title: string, href?: string): React.ElementType => {
   return FileText;
 };
 
-const MenuItem: FC<{ 
-  item: DocsMenuItem; 
+const MenuItem: FC<{
+  item: DocsMenuItem;
   level?: number;
   expandedItems?: Set<string>;
+  collapsedItems?: Set<string>;
   onToggle?: (slug: string) => void;
   isActivePath?: boolean;
-}> = ({ item, level = 0, expandedItems = new Set(), onToggle, isActivePath = false }) => {
+}> = ({
+  item,
+  level = 0,
+  expandedItems = new Set(),
+  collapsedItems = new Set(),
+  onToggle,
+  isActivePath = false,
+}) => {
   const location = useLocation();
   const hasChildren = item.children.length > 0;
   const ItemIcon = getIconForTitle(item.attrs.title, item.slug);
   const isManuallyExpanded = expandedItems.has(item.slug || "");
   const indentLevel = level * 12; // 12px per level for better visual hierarchy
-  
+
   // Check if this item is active
   const isActive = item.slug === location.pathname;
-  
+
   // Check if any child is active (recursively)
   const hasActiveChild = (children: DocsMenuItem[]): boolean => {
     return children.some((child) => {
@@ -277,9 +308,20 @@ const MenuItem: FC<{
       return child.children.length > 0 && hasActiveChild(child.children);
     });
   };
-  
-  // Auto-expand if manually expanded, or if this item or any child is active
-  const shouldBeExpanded = isManuallyExpanded || isActivePath || (hasChildren && (isActive || hasActiveChild(item.children)));
+
+  // Check if manually collapsed
+  const isManuallyCollapsed = collapsedItems.has(item.slug || "");
+
+  // Expand if:
+  // 1. Manually expanded (takes precedence)
+  // 2. OR in active path (need to show active page, even if manually collapsed)
+  // 3. OR (not manually collapsed AND has active child - for auto-expansion)
+  const shouldBeExpanded =
+    isManuallyExpanded ||
+    isActivePath ||
+    (!isManuallyCollapsed &&
+      hasChildren &&
+      (isActive || hasActiveChild(item.children)));
 
   const handleToggle = (e: React.MouseEvent) => {
     if (hasChildren && item.slug) {
@@ -297,7 +339,7 @@ const MenuItem: FC<{
             onClick={handleToggle}
             className={clsx(
               "flex-shrink-0 p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors",
-              "text-slate-400 dark:text-slate-500"
+              "text-slate-400 dark:text-slate-500",
             )}
             aria-label={shouldBeExpanded ? "Collapse" : "Expand"}
           >
@@ -314,10 +356,9 @@ const MenuItem: FC<{
             to={item.slug}
             className={({ isActive }) =>
               clsx(
-                "flex items-center gap-2 px-2 py-1 rounded-md cursor-pointer w-full text-xs leading-5 transition-all flex-1",
-                level === 0
-                  ? "font-semibold"
-                  : "font-normal",
+                "flex items-center px-2 py-1 rounded-md cursor-pointer w-full text-xs leading-5 transition-all flex-1",
+                level <= 2 && "gap-2",
+                level === 0 ? "font-semibold" : "font-normal",
                 isActive
                   ? level === 0
                     ? "text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800"
@@ -329,46 +370,56 @@ const MenuItem: FC<{
             }
             style={level > 0 ? { paddingLeft: `${indentLevel}px` } : undefined}
           >
-            <ItemIcon className="h-3.5 w-3.5 flex-shrink-0" />
+            {level <= 2 && <ItemIcon className="h-3.5 w-3.5 flex-shrink-0" />}
             <span className="truncate">{item.attrs.title}</span>
           </NavLink>
         ) : (
           <div
             className={clsx(
-              "flex items-center gap-2 px-2 py-1 rounded-md text-xs leading-5 flex-1",
-              level === 0 ? "font-semibold text-slate-700 dark:text-slate-300" : "font-normal text-slate-600 dark:text-slate-400"
+              "flex items-center px-2 py-1 rounded-md text-xs leading-5 flex-1",
+              level <= 2 && "gap-2",
+              level === 0
+                ? "font-semibold text-slate-700 dark:text-slate-300"
+                : "font-normal text-slate-600 dark:text-slate-400",
             )}
             style={level > 0 ? { paddingLeft: `${indentLevel}px` } : undefined}
           >
-            <ItemIcon className="h-3.5 w-3.5 flex-shrink-0" />
+            {level <= 2 && <ItemIcon className="h-3.5 w-3.5 flex-shrink-0" />}
             <span className="truncate">{item.attrs.title}</span>
           </div>
         )}
       </div>
       {hasChildren && shouldBeExpanded && (
-        <ul className={clsx(
-          "mt-0.5 space-y-0.5 ml-4",
-          level === 0 ? "border-l border-slate-200 dark:border-slate-800 pl-3" : ""
-        )}>
-          {item.children.map((child) => {
-            // Check if this child or any descendant is active
-            const checkIfActive = (item: DocsMenuItem): boolean => {
-              if (item.slug === location.pathname) return true;
-              return item.children.some(checkIfActive);
-            };
-            const childIsInActivePath = checkIfActive(child);
-            
-            return (
-              <MenuItem 
-                key={child.slug || child.attrs.title} 
-                item={child} 
-                level={level + 1}
-                expandedItems={expandedItems}
-                onToggle={onToggle}
-                isActivePath={childIsInActivePath}
-              />
-            );
-          })}
+        <ul
+          className={clsx(
+            "mt-0.5 space-y-0.5 ml-4",
+            level === 0
+              ? "border-l border-slate-200 dark:border-slate-800 pl-3"
+              : "",
+          )}
+        >
+          {item.children
+            .filter((child) => child.slug || child.children.length > 0)
+            .map((child) => {
+              // Check if this child or any descendant is active
+              const checkIfActive = (item: DocsMenuItem): boolean => {
+                if (item.slug === location.pathname) return true;
+                return item.children.some(checkIfActive);
+              };
+              const childIsInActivePath = checkIfActive(child);
+
+              return (
+                <MenuItem
+                  key={child.slug || child.attrs.title}
+                  item={child}
+                  level={level + 1}
+                  expandedItems={expandedItems}
+                  collapsedItems={collapsedItems}
+                  onToggle={onToggle}
+                  isActivePath={childIsInActivePath}
+                />
+              );
+            })}
         </ul>
       )}
     </li>
@@ -381,13 +432,14 @@ export const Menu: FC<{ menu: DocsMenuItem[]; className?: string }> = ({
 }) => {
   const location = useLocation();
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const [collapsedItems, setCollapsedItems] = useState<Set<string>>(new Set());
 
-  // Auto-expand sections that contain the active page
+  // Auto-expand sections that contain the active page, but respect manually collapsed items
   useEffect(() => {
     const findAndExpandParents = (
       items: DocsMenuItem[],
       targetPath: string,
-      parents: string[] = []
+      parents: string[] = [],
     ): string[] | null => {
       for (const item of items) {
         if (item.slug === targetPath) {
@@ -398,7 +450,7 @@ export const Menu: FC<{ menu: DocsMenuItem[]; className?: string }> = ({
           const found = findAndExpandParents(
             item.children,
             targetPath,
-            item.slug ? [...parents, item.slug] : parents
+            item.slug ? [...parents, item.slug] : parents,
           );
           if (found !== null) {
             return found;
@@ -410,17 +462,38 @@ export const Menu: FC<{ menu: DocsMenuItem[]; className?: string }> = ({
 
     const parentsToExpand = findAndExpandParents(menu, location.pathname);
     if (parentsToExpand) {
-      setExpandedItems(new Set(parentsToExpand));
+      // Auto-expand all parents of the active page (even if manually collapsed)
+      // This ensures the active page is visible, but manual collapse state is preserved
+      // so if user navigates away, it will collapse again
+      setExpandedItems((prev) => {
+        const next = new Set(prev);
+        parentsToExpand.forEach((slug) => next.add(slug));
+        return next;
+      });
     }
   }, [location.pathname, menu]);
 
   const handleToggle = (slug: string) => {
     setExpandedItems((prev) => {
       const next = new Set(prev);
-      if (next.has(slug)) {
+      const isCurrentlyExpanded = next.has(slug);
+
+      if (isCurrentlyExpanded) {
+        // Collapsing: remove from expanded, add to collapsed
         next.delete(slug);
+        setCollapsedItems((prevCollapsed) => {
+          const nextCollapsed = new Set(prevCollapsed);
+          nextCollapsed.add(slug);
+          return nextCollapsed;
+        });
       } else {
+        // Expanding: add to expanded, remove from collapsed
         next.add(slug);
+        setCollapsedItems((prevCollapsed) => {
+          const nextCollapsed = new Set(prevCollapsed);
+          nextCollapsed.delete(slug);
+          return nextCollapsed;
+        });
       }
       return next;
     });
@@ -438,11 +511,12 @@ export const Menu: FC<{ menu: DocsMenuItem[]; className?: string }> = ({
         {menu.map((category) => {
           const isActive = isItemActive(category);
           return (
-            <MenuItem 
-              key={category.slug || category.attrs.title} 
-              item={category} 
+            <MenuItem
+              key={category.slug || category.attrs.title}
+              item={category}
               level={0}
               expandedItems={expandedItems}
+              collapsedItems={collapsedItems}
               onToggle={handleToggle}
               isActivePath={isActive}
             />

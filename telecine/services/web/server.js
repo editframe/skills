@@ -123,7 +123,7 @@ if (DEVELOPMENT) {
       );
       return await source.app(req, res, next);
     } catch (error) {
-      if (typeof error === "object" && error instanceof Error) {
+      if (error && typeof error === "object" && "message" in error) {
         viteDevServer.ssrFixStacktrace(error);
       }
       next(error);

@@ -15,7 +15,7 @@ This guide demonstrates how to create complex multi-track video compositions usi
 
 The fundamental pattern for multi-track compositions is using `contain` mode timegroups with absolute positioning:
 
-<Demonstration layout="horizontal" alwaysShowSource>
+<Demonstration layout="horizontal" alwaysShowSource enablePreview enableFilmstrip enableFitScale>
   <Timegroup mode="contain" className="w-[1280px] h-[720px] bg-black relative overflow-hidden">
     <Video 
       src="https://assets.editframe.com/bars-n-tone.mp4" 
@@ -32,7 +32,7 @@ The fundamental pattern for multi-track compositions is using `contain` mode tim
 
 Create picture-in-picture effects by layering videos:
 
-<Demonstration layout="horizontal" alwaysShowSource>
+<Demonstration layout="horizontal" alwaysShowSource enablePreview enableFilmstrip enableFitScale>
   <Timegroup mode="contain" className="w-[1280px] h-[720px] bg-black relative overflow-hidden">
     <Video 
       src="https://assets.editframe.com/bars-n-tone.mp4" 
@@ -50,7 +50,7 @@ Create picture-in-picture effects by layering videos:
 
 Create split-screen layouts using multiple videos:
 
-<Demonstration layout="horizontal" alwaysShowSource>
+<Demonstration layout="horizontal" alwaysShowSource enablePreview enableFilmstrip enableFitScale>
     <Timegroup mode="contain" className="w-[1280px] h-[720px] bg-black relative grid grid-cols-2 gap-2 p-2">
       <Video 
         src="https://assets.editframe.com/bars-n-tone.mp4" 
@@ -70,7 +70,7 @@ Create split-screen layouts using multiple videos:
 
 Use a video as a background with foreground content:
 
-<Demonstration layout="horizontal" alwaysShowSource>
+<Demonstration layout="horizontal" alwaysShowSource enablePreview enableFilmstrip enableFitScale>
     <Timegroup mode="contain" className="w-[1280px] h-[720px] bg-black relative overflow-hidden">
       <Video 
         src="https://assets.editframe.com/bars-n-tone.mp4" 
@@ -95,7 +95,7 @@ Use a video as a background with foreground content:
 
 Combine sequence mode for video with contain mode for continuous audio:
 
-<Demonstration layout="horizontal" alwaysShowSource>
+<Demonstration layout="horizontal" alwaysShowSource enablePreview enableFilmstrip enableFitScale>
     <Timegroup mode="contain" className="w-[1280px] h-[720px] bg-black relative overflow-hidden">
       <Timegroup mode="sequence" className="absolute inset-0">
         <Video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="0s" sourceout="3s" className="w-full h-full" />
@@ -110,7 +110,7 @@ Combine sequence mode for video with contain mode for continuous audio:
 
 Create complex compositions with multiple visual layers:
 
-<Demonstration layout="horizontal" alwaysShowSource>
+<Demonstration layout="horizontal" alwaysShowSource enablePreview enableFilmstrip enableFitScale>
     <Timegroup mode="contain" className="w-[1280px] h-[720px] bg-gradient-to-br from-purple-900 to-blue-900 relative overflow-hidden">
       <Video 
         src="https://assets.editframe.com/bars-n-tone.mp4" 

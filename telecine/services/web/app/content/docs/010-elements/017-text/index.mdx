@@ -7,13 +7,15 @@ headers:
     Cache-Control: no-cache
 ---
 
+<ElementIndex />
+
 ## Demonstration
 
 ### Word-by-Word Animation
 
 Animate text word by word with declarative content:
 
-<Demonstration layout="horizontal" defaultSourceVisible alwaysShowSource>
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
   <style>{`
     @keyframes bounceIn {
       0% {
@@ -44,7 +46,7 @@ Animate text word by word with declarative content:
 
 Create a typewriter effect with character splitting:
 
-<Demonstration layout="horizontal" defaultSourceVisible alwaysShowSource>
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
   <style>{`
     @keyframes bounceIn {
       0% {
@@ -76,11 +78,11 @@ Create a typewriter effect with character splitting:
   </Timegroup>
 </Demonstration>
 
-### Staggered Animations
+### Seed-Based Variation
 
-Use the `stagger` attribute to create staggered animations with seed-based variation:
+Use the `--ef-seed` CSS variable to create pseudo-random effects per segment that are deterministic at render time. Each segment gets a unique seed value (0-1) based on its index, enabling varied colors, scales, and rotations while ensuring consistent rendering:
 
-<Demonstration layout="horizontal" defaultSourceVisible alwaysShowSource>
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
   <style>{`
     @keyframes fadeIn {
       from {
@@ -92,22 +94,22 @@ Use the `stagger` attribute to create staggered animations with seed-based varia
         transform: translateY(0);
       }
     }
-    .fade-in {
+    .seed-variation {
       animation: fadeIn 0.5s ease-out;
     }
   `}</style>
   <Timegroup mode="contain" className="w-[720px] h-[405px] flex items-center justify-center bg-gradient-to-r from-purple-900 to-pink-900 relative">
-    <Text split="char" stagger="50ms" duration="3s" className="text-center">
+    <Text split="char" stagger="50ms" easing="ease-out" duration="3s" className="text-center">
       <template>
         <TextSegment 
-          className="text-4xl font-bold transition-all duration-500 ease-out fade-in"
+          className="text-4xl font-bold seed-variation"
           style={{
             color: "hsl(calc(360 * var(--ef-seed)), 80%, 70%)",
-            transform: "scale(calc(1 + 0.2 * var(--ef-seed)))",
+            transform: "scale(calc(1 + 0.2 * var(--ef-seed))) rotate(calc(var(--ef-seed) * 20deg - 10deg))",
           }}
         />
       </template>
-      STAGGER
+      VARIATION
     </Text>
   </Timegroup>
 </Demonstration>
@@ -116,7 +118,7 @@ Use the `stagger` attribute to create staggered animations with seed-based varia
 
 Split text by lines for paragraph-by-paragraph reveals:
 
-<Demonstration layout="horizontal" defaultSourceVisible alwaysShowSource>
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
   <style>{`
     @keyframes fadeInLine {
       from {
@@ -148,7 +150,7 @@ Third line completes
 
 Use the template pattern to create multiple segments per character, word, or line. This example shows a shadow effect where each character has both a shadow and main segment:
 
-<Demonstration layout="horizontal" defaultSourceVisible alwaysShowSource>
+<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
   <Timegroup mode="contain" className="w-[720px] h-[405px] flex items-center justify-center bg-gradient-to-r from-pink-900 to-rose-900 relative">
     <Text split="char" stagger="20ms" duration="4s" className="text-center text-white text-4xl font-bold">
       <template>
@@ -159,320 +161,3 @@ Use the template pattern to create multiple segments per character, word, or lin
     </Text>
   </Timegroup>
 </Demonstration>
-
-## Attributes
-
-<PropertyDocList>
-  <PropertyDoc name="split" type="string" htmlAttribute="split">
-    How to split the text content. Options: `"line"`, `"word"`, or `"char"`.
-
-    - `"line"`: Split on newlines (`\n`) or `<br>` tags
-    - `"word"`: Split on whitespace boundaries
-    - `"char"`: Split every character
-
-    ```html
-    <ef-text split="word">
-      <ef-text-segment />
-    </ef-text>
-    ```
-  </PropertyDoc>
-
-  <PropertyDoc name="stagger" type="string" htmlAttribute="stagger">
-    Stagger delay for animations. Each segment gets an offset based on its index and the easing function.
-
-    This affects animation timing (via `updateAnimations`) but not visibility timing. All segments remain visible for equal durations.
-
-    ```html
-    <ef-text split="char" stagger="50ms">
-      <ef-text-segment />
-    </ef-text>
-    ```
-
-    The stagger value can be specified in milliseconds (`50ms`) or seconds (`0.05s`).
-
-    The stagger offset is distributed across segments using the `easing` function. By default, offsets are linear (evenly distributed). With easing, you can create non-linear stagger patterns (e.g., `ease-out` for faster initial stagger, `ease-in` for slower initial stagger).
-  </PropertyDoc>
-
-  <PropertyDoc name="easing" type="string" htmlAttribute="easing">
-    Easing function to apply to stagger offsets. Controls how stagger delays are distributed across segments.
-
-    Supported values:
-    - `"linear"` (default): Evenly distributed offsets
-    - `"ease"`: Standard ease curve
-    - `"ease-in"`: Slow start, fast end
-    - `"ease-out"`: Fast start, slow end
-    - `"ease-in-out"`: Slow start and end, fast middle
-    - `"cubic-bezier(x1, y1, x2, y2)"`: Custom cubic bezier curve
-
-    ```html
-    <ef-text split="word" stagger="50ms" easing="ease-out">
-      <ef-text-segment />
-    </ef-text>
-    ```
-
-    The easing function is applied to the normalized progress (0-1) across all segments, then multiplied by the total stagger duration. This allows for non-linear stagger patterns where segments can cluster together or spread out unevenly.
-  </PropertyDoc>
-
-  <PropertyDoc name="durationMs" type="number" domReadable>
-    Duration of the text element in milliseconds. If not explicitly set, calculated from content (1 second per segment).
-  </PropertyDoc>
-
-  <PropertyDoc name="segments" type="EFTextSegment[]" domReadable>
-    Getter that returns all created `<ef-text-segment>` elements. Useful for programmatic access to segments.
-
-    ```javascript
-    const text = document.querySelector('ef-text');
-    const segments = text.segments;
-    console.log(`Created ${segments.length} segments`);
-    ```
-
-    Segments are only available after the element has been connected to the DOM and text has been split. Use `whenSegmentsReady()` to wait for segments to be ready.
-  </PropertyDoc>
-
-  <PropertyDoc name="whenSegmentsReady" type="Promise&lt;EFTextSegment[]&gt;" domReadable>
-    Returns a promise that resolves when segments are created, connected, and fully updated. Use this to wait for segments after setting `textContent` or changing properties.
-
-    ```javascript
-    const text = document.querySelector('ef-text');
-    text.textContent = "New text content";
-    const segments = await text.whenSegmentsReady();
-    console.log(`Ready: ${segments.length} segments`);
-    ```
-
-    This method handles the asynchronous nature of segment creation and ensures all segments are fully initialized before proceeding.
-  </PropertyDoc>
-</PropertyDocList>
-
-## CSS Animation Variables
-
-Text segment elements provide powerful CSS variables for creating dynamic animations:
-
-### Timeline Variables
-Available on all text segment elements:
-- `--ef-duration`: Duration of the parent timegroup in milliseconds
-- `--ef-progress`: Current progress (0-1) of the parent timegroup
-
-### Segment-Specific Variables
-Available on `<TextSegment>`:
-- `--ef-seed`: A deterministic pseudo-random value (0-1) based on the segment's index
-- `--ef-stagger-offset`: Stagger offset in milliseconds (only set when `stagger` attribute is present)
-- `--ef-index`: The segment's index (positional order)
-
-### Creating Varied Animations
-
-The `--ef-seed` variable allows you to create varied animations where each segment gets its own unique style:
-
-```css
-ef-text-segment {
-  /* Each segment gets a different color based on its position */
-  color: hsl(calc(360 * var(--ef-seed)), 70%, 60%);
-  
-  /* Each segment scales differently */
-  transform: scale(calc(1 + 0.3 * var(--ef-seed)));
-  
-  /* Each segment rotates by a different amount */
-  transform: rotate(calc(var(--ef-seed) * 20deg - 10deg));
-}
-```
-
-### Staggered CSS Animations
-
-Use `--ef-stagger-offset` for CSS animation delays:
-
-```css
-ef-text-segment {
-  animation: fadeIn 0.5s ease-out;
-  animation-delay: var(--ef-stagger-offset, 0ms);
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-```
-
-## Template Pattern
-
-The `<ef-text>` element uses a `<template>` element to define the structure for each segment. This allows you to:
-
-1. **Style segments consistently** - Classes and styles in the template are applied to all segments
-2. **Create multiple segments per character/word/line** - Place multiple `<ef-text-segment>` elements in the template for effects like shadows, outlines, or layered animations
-3. **Work without JavaScript** - Text content can be set declaratively as text nodes inside the element
-
-### Basic Template Usage
-
-```html
-<ef-text split="word" stagger="50ms" duration="4s">
-  <template>
-    <ef-text-segment class="bounce-in" />
-  </template>
-  Hello world this is animated text
-</ef-text>
-```
-
-The template contains one or more `<ef-text-segment>` elements. Each segment in the template is cloned for every character, word, or line (depending on the `split` attribute).
-
-### Multiple Segments Per Character
-
-Create layered effects by placing multiple segments in the template:
-
-```html
-<ef-text split="char" stagger="20ms" duration="4s">
-  <template>
-    <!-- Shadow layer -->
-    <ef-text-segment 
-      class="text-gray-400 blur-sm" 
-      style="position: absolute; transform: translate(2px, 2px);"
-    />
-    <!-- Main text layer -->
-    <ef-text-segment class="text-white relative" />
-  </template>
-  DOUBLED
-</ef-text>
-```
-
-This creates two segments per character: one for the shadow and one for the main text. Each character will have both segments with the same stagger offset.
-
-### Declarative Text Content
-
-Text content can be set directly in HTML without JavaScript:
-
-```html
-<ef-text split="word" stagger="50ms" duration="4s">
-  <template>
-    <ef-text-segment class="fade-in" />
-  </template>
-  This text is set declaratively in HTML
-</ef-text>
-```
-
-The text content is read from text nodes inside the `<ef-text>` element. The `<template>` element is ignored when reading text content.
-
-## Usage Examples
-
-### Basic Word Split
-
-```html
-<ef-timegroup mode="contain" duration="5s">
-  <ef-text split="word" stagger="50ms" duration="5s">
-    <template>
-      <ef-text-segment class="bounce-in" />
-    </template>
-    Hello world this is animated text
-  </ef-text>
-</ef-timegroup>
-```
-
-### Character Animation with Stagger
-
-```html
-<ef-timegroup mode="contain" duration="3s">
-  <ef-text split="char" stagger="50ms" duration="3s">
-    <template>
-      <ef-text-segment 
-        class="text-4xl font-bold fade-in"
-        style="color: hsl(calc(360 * var(--ef-seed)), 80%, 70%)"
-      />
-    </template>
-    STAGGER
-  </ef-text>
-</ef-timegroup>
-```
-
-### Staggered Animation with Easing
-
-```html
-<ef-timegroup mode="contain" duration="4s">
-  <ef-text split="word" stagger="50ms" easing="ease-out" duration="4s">
-    <template>
-      <ef-text-segment class="bounce-in" />
-    </template>
-    Hello world this is animated text
-  </ef-text>
-</ef-timegroup>
-```
-
-With `ease-out`, the stagger offsets are compressed at the beginning (segments appear closer together initially) and spread out at the end, creating a decelerating effect.
-
-### Line-by-Line Paragraph Reveal
-
-```html
-<ef-timegroup mode="sequence">
-  <ef-text split="line" stagger="100ms" easing="ease-in-out" duration="8s">
-    <template>
-      <ef-text-segment className="text-xl fade-in" />
-    </template>
-    First line of text
-Second line continues
-Third line completes
-  </ef-text>
-</ef-timegroup>
-```
-
-### Shadow Effect with Multiple Segments
-
-Create a shadow effect by using multiple segments in the template:
-
-```html
-<ef-text split="char" stagger="20ms" duration="4s">
-  <template>
-    <ef-text-segment 
-      class="text-gray-400 blur-sm" 
-      style="position: absolute; transform: translate(2px, 2px);"
-    />
-    <ef-text-segment class="text-white relative" />
-  </template>
-  SHADOW
-</ef-text>
-```
-
-Each character will have both a shadow segment and a main text segment, creating a layered effect.
-
-## React Usage
-
-```tsx
-import { Timegroup, Text, TextSegment } from '@editframe/react';
-
-function MyTextAnimation() {
-  return (
-    <Timegroup mode="contain" className="w-[1920px] h-[1080px]">
-      <Text split="word" stagger="50ms" duration="3s">
-        <TextSegment className="text-2xl bounce-in" />
-        Hello world this is animated text
-      </Text>
-    </Timegroup>
-  );
-}
-```
-
-### Using Templates in React
-
-The React components automatically handle the template pattern:
-
-```tsx
-import { Timegroup, Text, TextSegment } from '@editframe/react';
-
-function ShadowText() {
-  return (
-    <Timegroup mode="contain" className="w-[1920px] h-[1080px]">
-      <Text split="char" stagger="20ms" duration="4s">
-        <TextSegment 
-          className="text-gray-400 blur-sm" 
-          style={{ position: "absolute", transform: "translate(2px, 2px)" }}
-        />
-        <TextSegment className="text-white relative" />
-        SHADOW
-      </Text>
-    </Timegroup>
-  );
-}
-```
-
-Multiple `<TextSegment>` components inside `<Text>` are automatically wrapped in a template.
-
-## Related Documentation
-
-- [Timegroup](/docs/elements/timegroup) - Container for temporal elements
-- [Captions](/docs/elements/captions) - Similar text animation element for captions
-- [React Components](/docs/react/components) - React wrapper documentation
-

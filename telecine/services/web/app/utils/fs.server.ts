@@ -4,6 +4,7 @@ import { join, resolve } from "node:path";
 import fm from "front-matter";
 import { logger } from "@/logging";
 import { formatDate } from "~/ui/formatDate";
+import { generateIndexPage } from "./doc-index-generator";
 
 type Attributes = {
   date: number;
@@ -93,30 +94,36 @@ export const buildDocSlugMap = async (
   prefix = "",
   map: Record<string, string> = {},
 ): Promise<Record<string, string>> => {
-  const entries = await readdir(directory);
-  entries.forEach((entry) => {
-    if (entry === "index.mdx") {
-      const slug = prefix.replace(/(\/?\d+-)/g, "/").replace(/^\//, "");
-      const path = join(prefix, entry).replace(".mdx", "");
-      map[slug] = path;
-    } else if (entry.endsWith(".mdx")) {
-      const path = join(prefix, entry).replace(".mdx", "");
-      const slug = path.replace(/(\/?\d+-)/g, "/").replace(/^\//, "");
-      map[slug] = path;
-    }
-  });
+  const entries = await readdir(directory, { withFileTypes: true });
+
+  // Process directories first to ensure nested structures are handled
   await Promise.all(
     entries.map(async (entry) => {
-      if (entry.endsWith(".mdx") || entry.endsWith(".tsx")) {
-        return;
+      if (entry.isDirectory() && !entry.name.endsWith(".tsx")) {
+        return await buildDocSlugMap(
+          join(directory, entry.name),
+          join(prefix, entry.name),
+          map,
+        );
       }
-      return await buildDocSlugMap(
-        join(directory, entry),
-        join(prefix, entry),
-        map,
-      );
     }),
   );
+
+  // Then process files in current directory
+  entries.forEach((entry) => {
+    if (entry.isFile()) {
+      if (entry.name === "index.mdx") {
+        const slug = prefix.replace(/(\/?\d+-)/g, "/").replace(/^\//, "");
+        const path = join(prefix, entry.name).replace(".mdx", "");
+        map[slug] = path;
+      } else if (entry.name.endsWith(".mdx")) {
+        const path = join(prefix, entry.name).replace(".mdx", "");
+        const slug = path.replace(/(\/?\d+-)/g, "/").replace(/^\//, "");
+        map[slug] = path;
+      }
+    }
+  });
+
   return map;
 };
 
@@ -134,32 +141,75 @@ const buildDocMenuItem = async (
     title = attributes.meta.find((attr: any) => attr.title)?.title || "";
   }
 
-  const entries = (await readdir(directory)).filter(
-    (entry) => entry !== "index.mdx" && !entry.endsWith(".tsx"),
+  const entries = await readdir(directory, { withFileTypes: true });
+  const filteredEntries = entries.filter(
+    (entry) => entry.name !== "index.mdx" && !entry.name.endsWith(".tsx"),
   );
 
   const children = await Promise.all(
-    entries.map(async (entry) => {
-      if (entry.endsWith(".mdx")) {
-        const data = await fs.readFile(join(directory, entry), "utf8");
+    filteredEntries.map(async (entry) => {
+      if (entry.isFile() && entry.name.endsWith(".mdx")) {
+        const data = await fs.readFile(join(directory, entry.name), "utf8");
         const { attributes } = fm<any>(data);
+        const titleAttr = attributes.meta.find((attr: any) => attr.title);
         return {
           attrs: {
-            title: attributes.meta.find((attr: any) => attr.title).title,
+            title:
+              (titleAttr?.title as string) || entry.name.replace(".mdx", ""),
+            new: attributes.new || false,
           },
-          slug: `/docs/${join(prefix, entry.replace(".mdx", ""))
+          slug: `/docs/${join(prefix, entry.name.replace(".mdx", ""))
             .replace(/(\/?\d+-)/g, "/")
             .replace(/^\//, "")}`,
           hasContent: true,
           children: [],
-        } as DocsMenuItem;
+          _originalName: entry.name, // Store original name for sorting (file or directory)
+        } as DocsMenuItem & { _originalName?: string };
       }
-      return await buildDocMenuItem(
-        join(directory, entry),
-        join(prefix, entry),
-      );
+      if (entry.isDirectory()) {
+        const childItem = await buildDocMenuItem(
+          join(directory, entry.name),
+          join(prefix, entry.name),
+        );
+        // Store original directory name for sorting
+        (childItem as DocsMenuItem & { _originalName?: string })._originalName =
+          entry.name;
+        return childItem;
+      }
+      return null;
     }),
   );
+
+  const validChildren = children.filter(
+    (child): child is DocsMenuItem => child !== null,
+  );
+
+  // Sort children by numerical prefix extracted from original name (file or directory)
+  validChildren.sort((a, b) => {
+    const nameA =
+      (a as DocsMenuItem & { _originalName?: string })._originalName || "";
+    const nameB =
+      (b as DocsMenuItem & { _originalName?: string })._originalName || "";
+
+    // Extract numerical prefix
+    const prefixMatchA = nameA.match(/^(\d+)-/);
+    const prefixMatchB = nameB.match(/^(\d+)-/);
+    const prefixA = prefixMatchA ? parseInt(prefixMatchA[1], 10) : Infinity;
+    const prefixB = prefixMatchB ? parseInt(prefixMatchB[1], 10) : Infinity;
+
+    // Sort by numerical prefix first
+    if (prefixA !== prefixB) {
+      return prefixA - prefixB;
+    }
+
+    // If prefixes are equal, sort alphabetically by title
+    return a.attrs.title.localeCompare(b.attrs.title);
+  });
+
+  // Remove the temporary _originalName property
+  validChildren.forEach((child) => {
+    delete (child as DocsMenuItem & { _originalName?: string })._originalName;
+  });
 
   if (!hasIndex) {
     // If no index.mdx, derive title from directory name and link to first child
@@ -174,16 +224,17 @@ const buildDocMenuItem = async (
 
     // Find first child with a slug (first page in section)
     // This will be the first actual page, whether it's a .mdx file or a directory's first page
-    const firstChildWithSlug = children.find((child) => child.slug);
+    const firstChildWithSlug = validChildren.find((child) => child.slug);
     const sectionSlug = firstChildWithSlug?.slug;
 
     return {
       hasContent: true, // Mark as having content so it shows as a clickable header
       attrs: {
         title: title || derivedTitle || dirName,
+        new: false,
       },
       slug: sectionSlug, // Link to first child page
-      children,
+      children: validChildren,
     } as DocsMenuItem;
   }
 
@@ -191,9 +242,10 @@ const buildDocMenuItem = async (
     hasContent: true,
     attrs: {
       title,
+      new: false,
     },
     slug: `/docs/${prefix.replace(/(\/?\d+-)/g, "/").replace(/^\//, "")}`,
-    children,
+    children: validChildren,
   } as DocsMenuItem;
 };
 
@@ -239,6 +291,9 @@ export const getAllGuideFiles = async () => {
   });
 };
 export const getAllChangelogsFiles = async () => {
+  if (!existsSync(changelogsBasePath)) {
+    return [];
+  }
   const files = readdirSync(changelogsBasePath);
   const changelogs = files.map((file) => {
     const data = readFileSync(join(changelogsBasePath, file), {
@@ -286,6 +341,7 @@ export const getLocalContent = async (path: string) => {
     if (existsSync(mdxDir) && statSync(mdxDir).isDirectory()) {
       const indexPath = join(mdxDir, "index.mdx");
       if (existsSync(indexPath)) {
+        // Manual index.mdx exists, use it (allows overrides)
         const data = readFileSync(indexPath, { encoding: "utf-8" });
         const { attributes } = fm<any>(data);
         return {
@@ -295,6 +351,23 @@ export const getLocalContent = async (path: string) => {
           publishedDate: attributes.published_date
             ? formatDate(attributes.published_date)
             : "",
+        };
+      }
+
+      // No manual index.mdx, try to auto-generate one
+      // Extract base slug from path (e.g., "010-elements/010-video/how-to" -> "/docs/elements/video/how-to")
+      // The path parameter is relative to docsBasePath, so we need to convert it to a URL slug
+      const slugPath = path
+        .replace(/(\/?\d+-)/g, "/")
+        .replace(/^\//, "")
+        .replace(/\/$/, ""); // Remove trailing slash
+      const baseSlug = `/docs/${slugPath}`;
+
+      const generatedContent = await generateIndexPage(mdxDir, baseSlug);
+      if (generatedContent) {
+        return {
+          path: path.endsWith("/") ? `${path}index.mdx` : `${path}/index.mdx`,
+          content: generatedContent,
         };
       }
     }

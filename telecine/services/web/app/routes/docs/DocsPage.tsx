@@ -51,6 +51,9 @@ import {
   Scrubber,
   TimeDisplay,
   FitScale,
+  TransformHandles,
+  PanZoom,
+  TimelineRuler,
 } from "@editframe/react";
 import clsx from "clsx";
 import { Demonstration } from "~/components/docs/Demonstration/Demonstration.tsx";
@@ -58,6 +61,7 @@ import { EFPlayer } from "~/components/EFPlayer";
 import { EditableWaveform } from "~/components/docs/EditableWaveform";
 import { EditableThumbnailStrip } from "~/components/docs/EditableThumbnailStrip";
 import { VideoEditorExample } from "~/components/docs/VideoEditorExample";
+import { ResizableContainer } from "~/components/docs/ResizableContainer";
 import { PropertyDoc, PropertyDocList } from "~/components/docs/PropertyDoc";
 import { PropertyReferenceTable } from "~/components/docs/PropertyReference";
 import { VideoPropertyReference } from "~/components/docs/VideoPropertyReference";
@@ -69,12 +73,25 @@ import { ImagePropertyReference } from "~/components/docs/ImagePropertyReference
 import { TextPropertyReference } from "~/components/docs/TextPropertyReference";
 import { ThumbnailStripPropertyReference } from "~/components/docs/ThumbnailStripPropertyReference";
 import { SurfacePropertyReference } from "~/components/docs/SurfacePropertyReference";
+import { ControlsPropertyReference } from "~/components/docs/ControlsPropertyReference";
+import { TogglePlayPropertyReference } from "~/components/docs/TogglePlayPropertyReference";
+import { ScrubberPropertyReference } from "~/components/docs/ScrubberPropertyReference";
+import { ToggleLoopPropertyReference } from "~/components/docs/ToggleLoopPropertyReference";
+import { TimeDisplayPropertyReference } from "~/components/docs/TimeDisplayPropertyReference";
+import { TransformHandlesPropertyReference } from "~/components/docs/TransformHandlesPropertyReference";
+import { PanZoomPropertyReference } from "~/components/docs/PanZoomPropertyReference";
+import { TimelineRulerPropertyReference } from "~/components/docs/TimelineRulerPropertyReference";
 import { ShowDocItemByName } from "~/components/docs/typedoc";
 import { WithEnv } from "~/components/WithEnv";
-import { DocSectionIndex, DocLinkList, DocNavSection } from "~/components/docs/DocNavigation";
+import {
+  DocSectionIndex,
+  DocLinkList,
+  DocNavSection,
+} from "~/components/docs/DocNavigation";
 import { AutoDocIndex } from "~/components/docs/AutoDocIndex";
 import { HowToIndex } from "~/components/docs/HowToIndex";
 import { ExplanationIndex } from "~/components/docs/ExplanationIndex";
+import { ElementIndex } from "~/components/docs/ElementIndex";
 import Rotation from "./examples/rotation.tsx";
 import Crop from "./examples/crop.tsx";
 import { MobileMenuDrawer } from "~/components/docs/MobileMenuDrawer";
@@ -298,27 +315,28 @@ export default function DocsPage() {
                 "md:pr-6",
                 "markdown",
                 "prose prose-slate max-w-none dark:prose-invert",
-                // Base typography - Mintlify-inspired
+                // Base typography using centralized system
                 "prose-base prose-slate",
-                "prose-p:text-slate-600 prose-p:leading-7 dark:prose-p:text-slate-300 dark:prose-p:leading-7",
+                // Paragraphs - consistent spacing and line height
+                "prose-p:text-slate-700 prose-p:leading-loose dark:prose-p:text-slate-200",
                 "prose-p:mb-6",
-                // Headings - professional, refined hierarchy
+                // Headings - professional hierarchy with centralized spacing
                 "prose-headings:scroll-mt-20 sm:prose-headings:scroll-mt-24 lg:prose-headings:scroll-mt-[8.5rem]",
                 "prose-headings:font-display prose-headings:tracking-tight",
-                "prose-h1:text-slate-900 prose-h1:text-4xl prose-h1:font-bold prose-h1:mb-8 prose-h1:mt-0 prose-h1:leading-tight dark:prose-h1:text-white",
-                "prose-h2:text-slate-900 prose-h2:text-3xl prose-h2:font-bold prose-h2:mt-16 prose-h2:mb-6 prose-h2:leading-tight prose-h2:border-b prose-h2:border-slate-200 prose-h2:pb-3 dark:prose-h2:text-white dark:prose-h2:border-slate-700",
-                "prose-h3:text-slate-900 prose-h3:text-2xl prose-h3:font-semibold prose-h3:mt-12 prose-h3:mb-4 prose-h3:leading-snug dark:prose-h3:text-slate-100",
-                "prose-h4:text-slate-700 prose-h4:text-xl prose-h4:font-semibold prose-h4:mt-8 prose-h4:mb-3 prose-h4:leading-snug dark:prose-h4:text-slate-200",
+                "prose-h1:text-slate-900 prose-h1:text-4xl prose-h1:font-bold prose-h1:mb-4 prose-h1:mt-8 prose-h1:leading-snug dark:prose-h1:text-white",
+                "prose-h2:text-slate-900 prose-h2:text-3xl prose-h2:font-semibold prose-h2:mt-10 prose-h2:mb-4 prose-h2:leading-snug prose-h2:border-b prose-h2:border-slate-200 prose-h2:pb-3 dark:prose-h2:text-white dark:prose-h2:border-slate-700",
+                "prose-h3:text-slate-900 prose-h3:text-2xl prose-h3:font-semibold prose-h3:mt-8 prose-h3:mb-3 prose-h3:leading-snug dark:prose-h3:text-slate-100",
+                "prose-h4:text-slate-700 prose-h4:text-xl prose-h4:font-semibold prose-h4:mt-6 prose-h4:mb-2 prose-h4:leading-snug dark:prose-h4:text-slate-200",
                 // Lead text
-                "prose-lead:text-slate-600 prose-lead:text-lg prose-lead:leading-7 dark:prose-lead:text-slate-400",
-                // Links - subtle underline on hover
+                "prose-lead:text-slate-600 prose-lead:text-lg prose-lead:leading-loose dark:prose-lead:text-slate-400",
+                // Links
                 "prose-a:text-blue-600 prose-a:font-medium prose-a:no-underline hover:prose-a:underline dark:prose-a:text-blue-400",
                 "prose-a:transition-colors",
                 // Lists
                 "prose-ul:my-6 prose-ol:my-6",
-                "prose-li:text-slate-600 prose-li:leading-7 dark:prose-li:text-slate-300",
+                "prose-li:text-slate-700 prose-li:leading-loose dark:prose-li:text-slate-200",
                 "prose-li:my-2",
-                // Code blocks - consistent styling
+                // Code blocks
                 "prose-pre:bg-slate-50 prose-pre:rounded-lg prose-pre:border prose-pre:border-slate-200 prose-pre:overflow-hidden",
                 "dark:prose-pre:bg-slate-900/50 dark:prose-pre:border-slate-800 dark:prose-pre:ring-1 dark:prose-pre:ring-slate-300/10",
                 "prose-code:text-slate-900 prose-code:font-mono prose-code:font-normal dark:prose-code:text-slate-100",
@@ -329,7 +347,7 @@ export default function DocsPage() {
                 // Tables
                 "prose-table:text-sm",
                 "prose-th:text-slate-900 prose-th:font-semibold dark:prose-th:text-slate-100",
-                "prose-td:text-slate-600 dark:prose-td:text-slate-300",
+                "prose-td:text-slate-700 dark:prose-td:text-slate-200",
                 // Selection style
                 "selection:bg-blue-100 dark:selection:bg-blue-900/30",
                 "prose-code:selection:bg-blue-200 dark:prose-code:selection:bg-blue-800/50",
@@ -371,9 +389,15 @@ export default function DocsPage() {
                   Timegroup: (props) => <Timegroup {...props} />,
                   Surface: (props) => <Surface {...props} />,
                   ThumbnailStrip: (props) => <ThumbnailStrip {...props} />,
+                  PanZoom: (props) => <PanZoom {...props} />,
+                  TimelineRuler: (props) => <TimelineRuler {...props} />,
                   Filmstrip: (props) => <Filmstrip {...props} />,
                   FocusOverlay: (props) => <FocusOverlay {...props} />,
                   FitScale: (props) => <FitScale {...props} />,
+                  TransformHandles: (props) => <TransformHandles {...props} />,
+                  ResizableContainer: (props) => (
+                    <ResizableContainer {...props} />
+                  ),
                   Playground: (props) => <Playground {...props} />,
                   EFPlayer: (props) => <EFPlayer {...props} />,
                   EditableWaveform: (props) => <EditableWaveform {...props} />,
@@ -404,16 +428,48 @@ export default function DocsPage() {
                   ),
                   PropertyDoc: (props) => <PropertyDoc {...props} />,
                   PropertyDocList: (props) => <PropertyDocList {...props} />,
-                  PropertyReferenceTable: (props) => <PropertyReferenceTable {...props} />,
+                  PropertyReferenceTable: (props) => (
+                    <PropertyReferenceTable {...props} />
+                  ),
                   VideoPropertyReference: () => <VideoPropertyReference />,
                   AudioPropertyReference: () => <AudioPropertyReference />,
-                  TimegroupPropertyReference: () => <TimegroupPropertyReference />,
-                  CaptionsPropertyReference: () => <CaptionsPropertyReference />,
-                  WaveformPropertyReference: () => <WaveformPropertyReference />,
+                  TimegroupPropertyReference: () => (
+                    <TimegroupPropertyReference />
+                  ),
+                  CaptionsPropertyReference: () => (
+                    <CaptionsPropertyReference />
+                  ),
+                  WaveformPropertyReference: () => (
+                    <WaveformPropertyReference />
+                  ),
                   ImagePropertyReference: () => <ImagePropertyReference />,
                   TextPropertyReference: () => <TextPropertyReference />,
                   SurfacePropertyReference: () => <SurfacePropertyReference />,
-                  ThumbnailStripPropertyReference: () => <ThumbnailStripPropertyReference />,
+                  ThumbnailStripPropertyReference: () => (
+                    <ThumbnailStripPropertyReference />
+                  ),
+                  ControlsPropertyReference: () => (
+                    <ControlsPropertyReference />
+                  ),
+                  TogglePlayPropertyReference: () => (
+                    <TogglePlayPropertyReference />
+                  ),
+                  ScrubberPropertyReference: () => (
+                    <ScrubberPropertyReference />
+                  ),
+                  ToggleLoopPropertyReference: () => (
+                    <ToggleLoopPropertyReference />
+                  ),
+                  TimeDisplayPropertyReference: () => (
+                    <TimeDisplayPropertyReference />
+                  ),
+                  TransformHandlesPropertyReference: () => (
+                    <TransformHandlesPropertyReference />
+                  ),
+                  PanZoomPropertyReference: () => <PanZoomPropertyReference />,
+                  TimelineRulerPropertyReference: () => (
+                    <TimelineRulerPropertyReference />
+                  ),
                   Demonstration: (props) => <Demonstration {...props} />,
                   DocSectionIndex: (props) => <DocSectionIndex {...props} />,
                   DocLinkList: (props) => <DocLinkList {...props} />,
@@ -421,6 +477,7 @@ export default function DocsPage() {
                   AutoDocIndex: (props) => <AutoDocIndex {...props} />,
                   HowToIndex: (props) => <HowToIndex {...props} />,
                   ExplanationIndex: (props) => <ExplanationIndex {...props} />,
+                  ElementIndex: (props) => <ElementIndex {...props} />,
                   Preview: (props) => <Preview {...props} />,
                   PreviewVideo: (props) => <PreviewVideo {...props} />,
                   Elements: (props) => <Elements {...props} />,
