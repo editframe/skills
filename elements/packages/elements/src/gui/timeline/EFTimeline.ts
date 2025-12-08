@@ -336,21 +336,8 @@ export class EFTimeline extends TWMixin(LitElement) {
       if (selectedIds.length > 0 && selectedIds[0]) {
         const element = document.getElementById(selectedIds[0]);
         if (element) {
-          // If selected element is a canvas-item, look inside it for temporal elements
-          // Otherwise, walk up from the selected element to find root temporal
-          let rootTemporal: TemporalMixinInterface | null = null;
-          
-          if (element.tagName === 'EF-CANVAS-ITEM') {
-            // Canvas-item contains temporal elements - find the root temporal inside it
-            const timegroup = element.querySelector('ef-timegroup');
-            if (timegroup && isEFTemporal(timegroup)) {
-              rootTemporal = timegroup as TemporalMixinInterface & HTMLElement;
-            }
-          } else {
-            // For other elements, walk up to find root temporal
-            rootTemporal = findRootTemporal(element);
-          }
-          
+          // Walk up from the selected element to find root temporal
+          const rootTemporal = findRootTemporal(element);
           if (rootTemporal) {
             return rootTemporal;
           }
@@ -372,46 +359,35 @@ export class EFTimeline extends TWMixin(LitElement) {
     return (100 * this.zoomScale) / 1000;
   }
 
-  private selectionPollInterval?: number;
+  private selectionChangeHandler?: (event: CustomEvent) => void;
 
   connectedCallback(): void {
     super.connectedCallback();
     this.startTimeUpdate();
-    this.startSelectionPolling();
+    this.setupSelectionListener();
   }
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
     this.stopTimeUpdate();
-    this.stopSelectionPolling();
+    this.removeSelectionListener();
   }
 
-  private startSelectionPolling(): void {
-    // Poll to check for selection changes (since we can't use Lit context reactivity when sibling of canvas)
-    let lastSelectionIds: string[] = [];
-    const poll = () => {
-      const selectionCtx = this.getCanvasSelectionContext();
-      if (selectionCtx) {
-        const selectedIds = Array.from(selectionCtx.selectedIds).sort();
-        // Check if selection actually changed (by comparing IDs, not just count)
-        const selectionChanged = 
-          selectedIds.length !== lastSelectionIds.length ||
-          selectedIds.some((id, i) => id !== lastSelectionIds[i]);
-        
-        if (selectionChanged) {
-          lastSelectionIds = selectedIds;
-          this.requestUpdate(); // Trigger re-render to update targetTemporal
-        }
-      }
-      this.selectionPollInterval = requestAnimationFrame(poll);
-    };
-    this.selectionPollInterval = requestAnimationFrame(poll);
+  private setupSelectionListener(): void {
+    const selectionCtx = this.getCanvasSelectionContext();
+    if (selectionCtx && "addEventListener" in selectionCtx) {
+      this.selectionChangeHandler = () => {
+        this.requestUpdate(); // Trigger re-render to update targetTemporal
+      };
+      (selectionCtx as any).addEventListener("selectionchange", this.selectionChangeHandler);
+    }
   }
 
-  private stopSelectionPolling(): void {
-    if (this.selectionPollInterval) {
-      cancelAnimationFrame(this.selectionPollInterval);
-      this.selectionPollInterval = undefined;
+  private removeSelectionListener(): void {
+    const selectionCtx = this.getCanvasSelectionContext();
+    if (selectionCtx && "removeEventListener" in selectionCtx && this.selectionChangeHandler) {
+      (selectionCtx as any).removeEventListener("selectionchange", this.selectionChangeHandler);
+      this.selectionChangeHandler = undefined;
     }
   }
 
