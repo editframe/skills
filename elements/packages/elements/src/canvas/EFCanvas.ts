@@ -16,8 +16,80 @@ import type { EFOverlayLayer } from "../gui/EFOverlayLayer.js";
 import type { EFTransformHandles } from "../gui/EFTransformHandles.js";
 import type { TransformBounds } from "../gui/EFTransformHandles.js";
 import type { SelectionOverlay } from "./overlays/SelectionOverlay.js";
-import { getRotatedBoundingBox } from "../gui/transformCalculations.js";
+import { getRotatedBoundingBox, parseRotationFromTransform } from "../gui/transformCalculations.js";
 import { EFTargetable } from "../elements/TargetController.js";
+
+/**
+ * =============================================================================
+ * COORDINATE SYSTEM AND DIMENSION CALCULATION PRINCIPLES
+ * =============================================================================
+ * 
+ * This canvas system uses a unified approach for calculating element positions
+ * and dimensions that works correctly regardless of CSS transforms (rotation,
+ * scale, etc.), zoom level, or nesting depth.
+ * 
+ * TWO KEY DOM APIS WITH DIFFERENT BEHAVIORS:
+ * 
+ * 1. offsetWidth / offsetHeight
+ *    - Returns the element's LAYOUT dimensions (CSS box model)
+ *    - These are the dimensions BEFORE any CSS transforms are applied
+ *    - UNAFFECTED by: rotation, scale, skew, or any other transform
+ *    - UNAFFECTED by: parent transforms (including zoom scale)
+ *    - AFFECTED by: CSS width/height properties, padding, border
+ *    - Units: CSS pixels in the element's own coordinate space
+ *    
+ *    Example: A 200x100px element rotated 45° still has offsetWidth=200, offsetHeight=100
+ *    Example: A 200x100px element in a 2x zoomed canvas still has offsetWidth=200, offsetHeight=100
+ *    
+ *    USE FOR: Getting the actual dimensions of an element in canvas coordinates
+ *    
+ * 2. getBoundingClientRect()
+ *    - Returns the element's visual BOUNDING BOX on screen
+ *    - This is the axis-aligned rectangle that fully contains the transformed element
+ *    - AFFECTED by: rotation (bounding box grows), scale, all transforms
+ *    - AFFECTED by: parent transforms (including zoom scale)
+ *    - Units: Screen pixels (viewport coordinates)
+ *    
+ *    Example: A 200x100px element rotated 45° has bounding box ~212x212px
+ *    Example: A 200x100px element in a 2x zoomed canvas has bounding rect 400x200px
+ *    
+ *    USE FOR: Getting the visual center position (center of bounding box = element center)
+ *    NOT FOR: Getting actual dimensions (bounding box ≠ actual size when rotated)
+ * 
+ * THE UNIFIED CALCULATION METHOD:
+ * 
+ * For ANY element (rotated, scaled, nested, etc.):
+ * 
+ * 1. DIMENSIONS: Use offsetWidth/offsetHeight
+ *    - These give us the true dimensions in canvas coordinates
+ *    - No division by scale needed - they're already in canvas space
+ *    
+ * 2. CENTER POSITION: Use getBoundingClientRect() center
+ *    - screenCenterX = rect.left + rect.width / 2
+ *    - screenCenterY = rect.top + rect.height / 2
+ *    - The center of the bounding box IS the element's center
+ *    - This is true for ANY rotation (rotation around center keeps center fixed)
+ *    
+ * 3. TOP-LEFT POSITION: Calculate from center and dimensions
+ *    - canvasX = canvasCenter.x - width / 2
+ *    - canvasY = canvasCenter.y - height / 2
+ * 
+ * WHY THIS WORKS UNIVERSALLY:
+ * 
+ * - offsetWidth/Height are defined by CSS spec to be unaffected by transforms
+ * - The center of any shape is preserved under rotation around that center
+ * - This mathematical relationship holds for ALL transform combinations
+ * - No special cases needed for rotation, scale, or nesting
+ * 
+ * COMMON MISTAKES TO AVOID:
+ * 
+ * ❌ Using getBoundingClientRect().width for dimensions (wrong when rotated)
+ * ❌ Dividing offsetWidth by scale (offsetWidth is already in canvas coords)
+ * ❌ Using getBoundingClientRect().left/top for position (wrong when rotated)
+ * ❌ Having different code paths for rotated vs non-rotated elements
+ * 
+ * =============================================================================
+ */
 
 /**
  * Main canvas container element.
@@ -263,6 +335,22 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
 
   /**
    * Update element metadata from DOM.
+   * 
+   * UNIFIED APPROACH - works for ALL elements regardless of rotation, scale, or nesting:
+   * 
+   * 1. DIMENSIONS: Always use offsetWidth/offsetHeight
+   *    - These are layout dimensions in the element's coordinate space
+   *    - Unaffected by CSS transforms (rotation, scale, etc.)
+   *    - Already in canvas coordinates (no scale division needed)
+   * 
+   * 2. CENTER POSITION: Always use getBoundingClientRect() center
+   *    - The center of the bounding box IS the element's center (transform-origin: center)
+   *    - Works correctly for rotated elements (center is rotation-invariant)
+   *    - Convert to canvas coordinates using screenToCanvas()
+   * 
+   * 3. TOP-LEFT POSITION: Calculate from center and dimensions
+   *    - x = centerX - width/2
+   *    - y = centerY - height/2
    */
   private updateElementMetadata(elementId: string): void {
     const element = this.elementRegistry.get(elementId);
@@ -270,81 +358,62 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
       return;
     }
     
-    // Try to read position from element.style.left/top first (for direct children we set these)
-    let canvasX: number;
-    let canvasY: number;
-    const styleLeft = element.style.left;
-    const styleTop = element.style.top;
-    if (styleLeft && styleTop && styleLeft !== "" && styleTop !== "") {
-      const leftMatch = styleLeft.match(/([\d.]+)/);
-      const topMatch = styleTop.match(/([\d.]+)/);
-      if (leftMatch?.[1] && topMatch?.[1]) {
-        // style.left/top are in canvas coordinates (we set them directly)
-        canvasX = parseFloat(leftMatch[1]);
-        canvasY = parseFloat(topMatch[1]);
-      } else {
-        // Parse failed - calculate from DOM
-        canvasX = 0;
-        canvasY = 0;
-      }
-    } else {
-      // style.left/top not set - calculate position from DOM relative to .canvas-content
-      const elementRect = getElementBounds(element);
-      // Use .canvas-content as the reference point (elements are positioned relative to it)
-      const shadowRoot = this.shadowRoot;
-      const canvasContent = shadowRoot?.querySelector('.canvas-content') as HTMLElement;
-      if (!canvasContent) {
-        // Fallback: use existing metadata or 0
-        const existingMetadata = this.elementMetadata.get(elementId);
-        canvasX = existingMetadata?.x ?? 0;
-        canvasY = existingMetadata?.y ?? 0;
-      } else {
-        const referenceRect = canvasContent.getBoundingClientRect();
-        // Convert screen coordinates to canvas coordinates
-        // elementRect is in screen/viewport coordinates
-        // referenceRect is .canvas-content's screen position
-        // We need to calculate: (elementScreen - canvasContentScreen) / scale
-        const canvasPos = screenToCanvas(
-          elementRect.left,
-          elementRect.top,
-          referenceRect,
-          this.panZoomTransform,
-        );
-        canvasX = canvasPos.x;
-        canvasY = canvasPos.y;
-      }
-    }
-
-    // Try to read dimensions from element.style.width/height first
-    let actualWidth: number;
-    let actualHeight: number;
-    const styleWidth = element.style.width;
-    const styleHeight = element.style.height;
-    if (styleWidth && styleHeight && styleWidth !== "" && styleHeight !== "") {
-      const widthMatch = styleWidth.match(/([\d.]+)/);
-      const heightMatch = styleHeight.match(/([\d.]+)/);
-      if (widthMatch?.[1] && heightMatch?.[1]) {
-        // style.width/height are in canvas coordinates (parent transform handles scaling)
-        actualWidth = parseFloat(widthMatch[1]);
-        actualHeight = parseFloat(heightMatch[1]);
-      } else {
-        // Parse failed - calculate from DOM
-        const elementRect = getElementBounds(element);
-        const scale = this.panZoomTransform?.scale || 1;
-        actualWidth = elementRect.width / scale;
-        actualHeight = elementRect.height / scale;
-      }
-    } else {
-      // style.width/height not set - calculate from DOM
+    const shadowRoot = this.shadowRoot;
+    const canvasContent = shadowRoot?.querySelector('.canvas-content') as HTMLElement;
+    
+    // STEP 1: Get dimensions from offsetWidth/offsetHeight (unified, no special cases)
+    // These are layout dimensions, unaffected by ANY transforms
+    let actualWidth = element.offsetWidth;
+    let actualHeight = element.offsetHeight;
+    
+    // Fallback for elements where offsetWidth/Height are 0 (e.g., inline elements)
+    if (actualWidth === 0 || actualHeight === 0) {
       const elementRect = getElementBounds(element);
       const scale = this.panZoomTransform?.scale || 1;
       actualWidth = elementRect.width / scale;
       actualHeight = elementRect.height / scale;
     }
-
-    // Preserve rotation if it exists in metadata
+    
+    // STEP 2: Get center position from getBoundingClientRect() (unified, no special cases)
+    // The center is rotation-invariant - it's always correct
+    const elementRect = getElementBounds(element);
+    const screenCenterX = elementRect.left + elementRect.width / 2;
+    const screenCenterY = elementRect.top + elementRect.height / 2;
+    
+    let canvasX: number;
+    let canvasY: number;
+    
+    if (!canvasContent) {
+      const existingMetadata = this.elementMetadata.get(elementId);
+      canvasX = existingMetadata?.x ?? 0;
+      canvasY = existingMetadata?.y ?? 0;
+    } else {
+      const referenceRect = canvasContent.getBoundingClientRect();
+      
+      // Convert center to canvas coordinates
+      const canvasCenter = screenToCanvas(
+        screenCenterX,
+        screenCenterY,
+        referenceRect,
+        this.panZoomTransform,
+      );
+      
+      // STEP 3: Calculate top-left from center and dimensions
+      canvasX = canvasCenter.x - actualWidth / 2;
+      canvasY = canvasCenter.y - actualHeight / 2;
+    }
+    
+    // Parse rotation from element's transform
     const existingMetadata = this.elementMetadata.get(elementId);
-    const existingRotation = existingMetadata?.rotation;
+    let rotation: number | undefined = existingMetadata?.rotation;
+    
+    if (rotation === undefined) {
+      const computedStyle = window.getComputedStyle(element);
+      rotation = parseRotationFromTransform(computedStyle.transform);
+      if (rotation === 0) {
+        rotation = undefined;
+      }
+    }
     
     this.elementMetadata.set(elementId, {
       id: elementId,
@@ -353,7 +422,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
       y: canvasY,
       width: actualWidth,
       height: actualHeight,
-      rotation: existingRotation,
+      rotation,
     });
   }
 
@@ -534,7 +603,10 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
         }
         
         // Calculate drag start position in canvas coordinates once
-        const canvasRect = this.getBoundingClientRect();
+        // Use .canvas-content as reference to match metadata calculation
+        const shadowRoot = this.shadowRoot;
+        const canvasContent = shadowRoot?.querySelector('.canvas-content') as HTMLElement;
+        const canvasRect = canvasContent?.getBoundingClientRect() || this.getBoundingClientRect();
         this.dragStartCanvasPos = screenToCanvas(
           e.clientX,
           e.clientY,
@@ -546,7 +618,10 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
       }
     } else {
       // Clicking on empty space - start box selection by default
-      const canvasRect = this.getBoundingClientRect();
+      // Use .canvas-content as reference to match metadata calculation
+      const shadowRoot = this.shadowRoot;
+      const canvasContent = shadowRoot?.querySelector('.canvas-content') as HTMLElement;
+      const canvasRect = canvasContent?.getBoundingClientRect() || this.getBoundingClientRect();
       const canvasPos = screenToCanvas(
         e.clientX,
         e.clientY,
@@ -606,7 +681,10 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
       return;
     }
 
-    const canvasRect = this.getBoundingClientRect();
+    // Use .canvas-content as reference to match metadata calculation
+    const shadowRoot = this.shadowRoot;
+    const canvasContent = shadowRoot?.querySelector('.canvas-content') as HTMLElement;
+    const canvasRect = canvasContent?.getBoundingClientRect() || this.getBoundingClientRect();
 
     // Check if we're preparing for a drag (pointerdown on element but threshold not crossed)
     if (!this.dragStarted && this.draggedElementId && this.dragStartPos && this.dragStartCanvasPos && this.dragStartElementPositions.size > 0) {
@@ -716,6 +794,11 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
 
   /**
    * Update element position in canvas coordinates.
+   * Unified approach: Always calculate relative to parent (or .canvas-content for direct children).
+   * For direct children, parent position is (0, 0), so relative = absolute (no-op).
+   * 
+   * For nested elements, we read parent's current position from DOM (not metadata) to ensure
+   * we're always calculating relative to the actual current position.
    */
   updateElementPosition(elementId: string, x: number, y: number): void {
     const element = this.elementRegistry.get(elementId);
@@ -732,27 +815,53 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
     metadata.x = x;
     metadata.y = y;
 
-    // Update DOM position
-    // Elements are positioned relative to .canvas-content (inside shadow DOM)
-    // Since .canvas-content is inside panzoom's .content-wrapper which applies scale,
-    // we should position elements directly in canvas coordinates (not screen coordinates)
-    // The parent's transform will handle the scaling
-    const shadowRoot = this.shadowRoot;
-    const canvasContent = shadowRoot?.querySelector('.canvas-content') as HTMLElement;
-    if (canvasContent) {
-      // Position directly in canvas coordinates - the parent transform handles scaling
-      element.style.position = "absolute";
-      element.style.left = `${x}px`;
-      element.style.top = `${y}px`;
-    } else {
-      // Fallback: position relative to canvas (shouldn't happen, but handle it)
-      const canvasRect = this.getBoundingClientRect();
-      const screenPos = canvasToScreen(x, y, canvasRect, this.panZoomTransform);
-      element.style.position = "absolute";
-      element.style.left = `${screenPos.x - canvasRect.left}px`;
-      element.style.top = `${screenPos.y - canvasRect.top}px`;
+    // Unified approach: Find parent and calculate relative position
+    // Uses the same unified method as updateElementMetadata for consistency
+    
+    let parentX = 0;
+    let parentY = 0;
+    let parent: HTMLElement | null = element.parentElement;
+    
+    // Walk up to find registered parent (or canvas itself)
+    while (parent && parent !== this) {
+      const parentId = parent.id || parent.getAttribute(this.elementIdAttribute);
+      if (parentId && this.elementRegistry.has(parentId)) {
+        // Use SAME unified calculation as updateElementMetadata:
+        // 1. Get dimensions from offsetWidth/offsetHeight
+        // 2. Get center from getBoundingClientRect()
+        // 3. Calculate top-left from center - dimensions/2
+        const parentWidth = parent.offsetWidth;
+        const parentHeight = parent.offsetHeight;
+        const parentRect = getElementBounds(parent);
+        const parentScreenCenterX = parentRect.left + parentRect.width / 2;
+        const parentScreenCenterY = parentRect.top + parentRect.height / 2;
+        
+        const shadowRoot = this.shadowRoot;
+        const canvasContent = shadowRoot?.querySelector('.canvas-content') as HTMLElement;
+        if (canvasContent) {
+          const referenceRect = canvasContent.getBoundingClientRect();
+          const parentCanvasCenter = screenToCanvas(
+            parentScreenCenterX,
+            parentScreenCenterY,
+            referenceRect,
+            this.panZoomTransform,
+          );
+          parentX = parentCanvasCenter.x - parentWidth / 2;
+          parentY = parentCanvasCenter.y - parentHeight / 2;
+        }
+        break;
+      }
+      parent = parent.parentElement;
     }
-    // No requestUpdate() needed - we're updating DOM directly for smooth updates
+    
+    // Calculate relative position: absolute position - parent absolute position
+    // For direct children (no registered parent found), parentX/Y remain 0, so relative = absolute
+    const relativeX = x - parentX;
+    const relativeY = y - parentY;
+    
+    element.style.position = "absolute";
+    element.style.left = `${relativeX}px`;
+    element.style.top = `${relativeY}px`;
   }
 
   /**
@@ -1163,7 +1272,13 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
     }
 
     const overlayRect = this.overlayLayer.getBoundingClientRect();
-    const canvasRect = this.getBoundingClientRect();
+    // Use .canvas-content as reference to match metadata calculation
+    const shadowRoot = this.shadowRoot;
+    const canvasContent = shadowRoot?.querySelector('.canvas-content') as HTMLElement;
+    if (!canvasContent) {
+      return;
+    }
+    const canvasRect = canvasContent.getBoundingClientRect();
     const scale = this.panZoomTransform?.scale || 1;
     
     // Calculate element's CENTER in canvas coordinates (center is stable during rotation)

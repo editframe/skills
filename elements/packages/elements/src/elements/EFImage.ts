@@ -104,6 +104,34 @@ export class EFImage extends EFTemporal(
       await this.fetchImage.taskComplete;
     },
   });
+
+  /**
+   * Get the natural dimensions of the image.
+   * Returns null if the image hasn't loaded yet.
+   *
+   * @public
+   */
+  getNaturalDimensions(): { width: number; height: number } | null {
+    // For direct URLs, check img element
+    const img = this.imageRef.value;
+    if (img && img.naturalWidth > 0 && img.naturalHeight > 0) {
+      return {
+        width: img.naturalWidth,
+        height: img.naturalHeight,
+      };
+    }
+
+    // For canvas-based images, check canvas dimensions
+    const canvas = this.canvasRef.value;
+    if (canvas && canvas.width > 0 && canvas.height > 0) {
+      return {
+        width: canvas.width,
+        height: canvas.height,
+      };
+    }
+
+    return null;
+  }
 }
 
 declare global {

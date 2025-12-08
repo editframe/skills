@@ -555,6 +555,23 @@ export class EFVideo extends TWMixin(EFMedia) {
   didBecomeChild() {
     super.didBecomeChild();
   }
+
+  /**
+   * Get the natural dimensions of the video (coded width and height).
+   * Returns null if the video hasn't loaded yet or canvas isn't available.
+   *
+   * @public
+   */
+  getNaturalDimensions(): { width: number; height: number } | null {
+    const canvas = this.canvasElement;
+    if (!canvas || canvas.width === 0 || canvas.height === 0) {
+      return null;
+    }
+    return {
+      width: canvas.width,
+      height: canvas.height,
+    };
+  }
 }
 
 declare global {

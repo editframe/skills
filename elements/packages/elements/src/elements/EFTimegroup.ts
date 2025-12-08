@@ -28,6 +28,14 @@ import {
   evaluateAnimationVisibilityState,
   updateAnimations,
 } from "./updateAnimations.ts";
+import {
+  type ContainerInfo,
+  getContainerInfoFromElement,
+} from "./ContainerInfo.js";
+import {
+  type ElementPositionInfo,
+  getPositionInfoFromElement,
+} from "./ElementPositionInfo.js";
 
 declare global {
   var EF_DEV_WORKBENCH: boolean | undefined;
@@ -952,6 +960,12 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
   shouldWrapWithWorkbench() {
     const isRendering = EF_RENDERING?.() === true;
 
+    // Never wrap with workbench when inside a canvas
+    // Canvas manages its own layout and coordinate system
+    if (this.closest("ef-canvas") !== null) {
+      return false;
+    }
+
     // During rendering, always wrap with workbench (needed by EF_FRAMEGEN)
     if (isRendering) {
       return (
@@ -1174,6 +1188,33 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
       );
     },
   });
+
+  /**
+   * Get container information for this timegroup.
+   * Timegroups are always containers and can contain children.
+   * Display mode is determined from computed styles.
+   *
+   * @public
+   */
+  getContainerInfo(): ContainerInfo {
+    const info = getContainerInfoFromElement(this);
+    // Timegroups are always containers and can contain children
+    return {
+      ...info,
+      isContainer: true,
+      canContainChildren: true,
+    };
+  }
+
+  /**
+   * Get position information for this timegroup.
+   * Returns computed bounds, transform, and rotation.
+   *
+   * @public
+   */
+  getPositionInfo(): ElementPositionInfo | null {
+    return getPositionInfoFromElement(this);
+  }
 }
 
 declare global {
