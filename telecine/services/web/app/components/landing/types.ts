@@ -2,6 +2,8 @@
  * TypeScript interfaces for landing page section components
  */
 
+import type React from "react";
+
 export interface CTAButton {
   label: string;
   href: string;
@@ -24,7 +26,7 @@ export interface FeatureShowcaseProps {
   description: string;
   codeExample?: string;
   codeLanguage?: string;
-  visualPlaceholder?: string;
+  visualComponent?: React.ReactNode;
   links?: Array<{ label: string; href: string }>;
   reversed?: boolean;
 }

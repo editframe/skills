@@ -13,7 +13,7 @@ export function FeatureShowcase({
   description,
   codeExample,
   codeLanguage = "typescript",
-  visualPlaceholder,
+  visualComponent,
   links,
   reversed = false,
 }: FeatureShowcaseProps) {
@@ -76,7 +76,11 @@ export function FeatureShowcase({
               
               {/* Code block or visual placeholder */}
               <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl dark:shadow-slate-900/50">
-                {codeExample ? (
+                {visualComponent ? (
+                  <div className="bg-slate-50 dark:bg-slate-900">
+                    {visualComponent}
+                  </div>
+                ) : codeExample ? (
                   <div className="bg-slate-50 dark:bg-slate-900">
                     {/* Editor header */}
                     <div className="flex items-center gap-2 px-4 py-3 bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
@@ -94,17 +98,6 @@ export function FeatureShowcase({
                       </CodeBlock>
                     </div>
                   </div>
-                ) : visualPlaceholder ? (
-                  <div className="aspect-video bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
-                    <div className="text-center p-8">
-                      <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
-                        <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">{visualPlaceholder}</p>
-                    </div>
-                  </div>
                 ) : (
                   <div className="aspect-video bg-gradient-to-br from-blue-50 to-violet-50 dark:from-blue-950/30 dark:to-violet-950/30" />
                 )}
@@ -116,6 +109,11 @@ export function FeatureShowcase({
     </section>
   );
 }
+
+
+
+
+
 
 
 

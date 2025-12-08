@@ -12,11 +12,9 @@ import {
   FeatureGridSection,
   UseCasesSection,
   DemoSection,
-  TrustedBySection,
-  StatsSection,
-  NewsletterSection,
-  CTASection,
 } from "~/components/landing";
+import { Timegroup, Video, Text } from "@editframe/react";
+import { Demonstration } from "~/components/docs/Demonstration/Demonstration";
 
 export const loader = async (args: LoaderFunctionArgs) => {
   const session = await parseRequestSession(args.request);
@@ -53,7 +51,7 @@ export default function IndexPage() {
       <HeroSection
         headline="Make videos programmatically."
         description="The easiest and fastest way to render videos with code. No backend servers, no complex DevOps, no Lambdas—just a simple HTTP request."
-        installCommand="npx create-editframe@latest"
+        installCommand="npm create @editframe@latest"
         primaryCTA={{ label: "Get Started", href: "/welcome" }}
         secondaryCTA={{ label: "Documentation", href: "/docs" }}
         quickLinks={[
@@ -71,20 +69,16 @@ export default function IndexPage() {
         eyebrow="Developer Experience"
         headline="Compose with code"
         description="Use React, HTML, CSS, and JavaScript to create videos. Leverage any animation library—GSAP, Framer Motion, Three.js—it just works."
-        codeExample={`import { Composition, Video, Audio } from '@editframe/react';
+        codeExample={`import { Timegroup, Video, Audio, Text } from '@editframe/react';
 
 export const MyVideo = () => (
-  <Composition width={1920} height={1080} fps={30}>
-    <Video src="background.mp4" />
+  <Timegroup mode="contain" className="w-[1920px] h-[1080px] bg-black relative">
+    <Video src="background.mp4" className="absolute inset-0 w-full h-full object-cover" />
     <Audio src="music.mp3" />
-    
-    <motion.h1 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-    >
+    <Text className="absolute inset-0 flex items-center justify-center text-white text-6xl font-bold">
       Hello, World!
-    </motion.h1>
-  </Composition>
+    </Text>
+  </Timegroup>
 );`}
         codeLanguage="tsx"
         links={[
@@ -100,7 +94,22 @@ export const MyVideo = () => (
         eyebrow="Real-time Preview"
         headline="Edit dynamically"
         description="See changes instantly with our real-time preview system. Scrub the timeline, adjust properties, and iterate rapidly—all in your browser."
-        visualPlaceholder="Interactive preview component goes here"
+        visualComponent={
+          <Demonstration layout="horizontal" hideSource alwaysShowSource>
+            <Timegroup 
+              mode="contain" 
+              className="w-[720px] h-[480px] bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center relative overflow-hidden"
+            >
+              <Video 
+                src="https://assets.editframe.com/bars-n-tone.mp4" 
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              <Text className="absolute inset-0 flex items-center justify-center text-white text-4xl font-bold z-10">
+                Real-time Preview
+              </Text>
+            </Timegroup>
+          </Demonstration>
+        }
         links={[
           { label: "Preview API", href: "/docs/preview" },
           { label: "Timeline controls", href: "/docs/timeline" },
@@ -238,185 +247,9 @@ const { url } = await response.json();`}
               </svg>
             ),
           },
-          {
-            title: "Asset Management",
-            description:
-              "Upload once, use everywhere. Intelligent caching and delivery optimized for video workflows.",
-            icon: (
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"
-                />
-              </svg>
-            ),
-          },
-          {
-            title: "TypeScript First",
-            description:
-              "Full type safety with excellent IDE support. Catch errors before they reach production.",
-            icon: (
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            ),
-          },
-          {
-            title: "Professional Output",
-            description:
-              "Industry-standard codecs, optimized encoding, and precise timing control for broadcast-quality results.",
-            icon: (
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M7 4V20M17 4V20M3 8H7M17 8H21M3 12H21M3 16H7M17 16H21M7 20H17M7 4H17"
-                />
-              </svg>
-            ),
-          },
         ]}
       />
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          TRUSTED BY
-          ═══════════════════════════════════════════════════════════════════ */}
-      <TrustedBySection
-        logos={[
-          { name: "Company A" },
-          { name: "Company B" },
-          { name: "Company C" },
-          { name: "Company D" },
-          { name: "Company E" },
-        ]}
-      />
-
-      {/* ═══════════════════════════════════════════════════════════════════
-          STATS
-          ═══════════════════════════════════════════════════════════════════ */}
-      <StatsSection
-        stats={[
-          {
-            value: "~30s",
-            label: "20-min 4K render",
-            icon: (
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 10V3L4 14h7v7l9-11h-7z"
-                />
-              </svg>
-            ),
-          },
-          {
-            value: "10k+",
-            label: "videos in parallel",
-            icon: (
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
-                />
-              </svg>
-            ),
-          },
-          {
-            value: "99.9%",
-            label: "uptime SLA",
-            icon: (
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                />
-              </svg>
-            ),
-          },
-          {
-            value: "24/7",
-            label: "support",
-            icon: (
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            ),
-          },
-        ]}
-      />
-
-      {/* ═══════════════════════════════════════════════════════════════════
-          NEWSLETTER
-          ═══════════════════════════════════════════════════════════════════ */}
-      <NewsletterSection
-        headline="Newsletter"
-        description="Stay up to date with new features, tutorials, and releases."
-        placeholder="you@company.com"
-        buttonLabel="Subscribe"
-      />
-
-      {/* ═══════════════════════════════════════════════════════════════════
-          FINAL CTA
-          ═══════════════════════════════════════════════════════════════════ */}
-      <CTASection
-        headline="Ready to build your video product?"
-        description="Join developers who are shipping video features faster with Editframe."
-        primaryCTA={{ label: "Get Started Free", href: "/welcome" }}
-        secondaryCTA={{ label: "Talk to Sales", href: "/contact" }}
-      />
     </MarketingLayout>
   );
 }
