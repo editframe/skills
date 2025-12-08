@@ -9,17 +9,11 @@ import { ChildElementClickOverlay } from "./ChildElementClickOverlay";
 interface ChildElementOverlaysProps {
   rootTimegroup: ElementNode;
   state: MotionDesignerState;
-  canvasScale: number;
-  canvasTranslateX: number;
-  canvasTranslateY: number;
 }
 
 export function ChildElementOverlays({
   rootTimegroup,
   state,
-  canvasScale,
-  canvasTranslateX,
-  canvasTranslateY,
 }: ChildElementOverlaysProps) {
   // Recursively collect all child elements
   const collectChildren = (element: ElementNode): ElementNode[] => {
@@ -51,18 +45,12 @@ export function ChildElementOverlays({
               element={child}
               state={state}
               isSelected={isChildOfSelectedParent}
-              canvasScale={canvasScale}
-              canvasTranslateX={canvasTranslateX}
-              canvasTranslateY={canvasTranslateY}
             />
             {/* Transform handles for selected elements */}
             <TransformHandlesWrapper
               element={child}
               state={state}
               isSelected={isSelected}
-              canvasScale={canvasScale}
-              canvasTranslateX={canvasTranslateX}
-              canvasTranslateY={canvasTranslateY}
             />
           </React.Fragment>
         );

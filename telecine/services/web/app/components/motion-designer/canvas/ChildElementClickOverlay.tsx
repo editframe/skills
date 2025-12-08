@@ -10,14 +10,12 @@ import {
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
 import { ElementContextMenu } from "./ElementContextMenu";
 import { OverlayItem } from "@editframe/react";
+import { usePanZoomScale } from "./usePanZoomScale";
 
 interface ChildElementClickOverlayProps {
   element: ElementNode;
   state: MotionDesignerState;
   isSelected: boolean;
-  canvasScale: number;
-  canvasTranslateX: number;
-  canvasTranslateY: number;
 }
 
 /**
@@ -31,11 +29,9 @@ export function ChildElementClickOverlay({
   element,
   state,
   isSelected,
-  canvasScale,
-  canvasTranslateX,
-  canvasTranslateY,
 }: ChildElementClickOverlayProps) {
   const actions = useMotionDesignerActions();
+  const canvasScale = usePanZoomScale();
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;

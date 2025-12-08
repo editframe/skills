@@ -8,13 +8,16 @@ import { Timeline } from "./timeline/Timeline";
 import { TopBar } from "./TopBar";
 import { HelpButton } from "./HelpButton";
 import { MotionDesignerProvider } from "./context/MotionDesignerContext";
+import { PanZoomProvider } from "./context/PanZoomContext";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useBodyScrollLock } from "./hooks/useBodyScrollLock";
 import { useInitialization } from "./hooks/useInitialization";
+import type { EFPanZoom } from "@editframe/elements";
 
 export function MotionDesigner() {
   const [state, actions, { isHydrated }] = useMotionDesigner();
   const isScrubbingRef = React.useRef(false);
+  const panZoomRef = React.useRef<EFPanZoom | null>(null);
 
   useKeyboardShortcuts({
     state,
@@ -36,7 +39,8 @@ export function MotionDesigner() {
 
   return (
     <MotionDesignerProvider actions={actions}>
-      <style
+      <PanZoomProvider panZoomRef={panZoomRef}>
+        <style
         dangerouslySetInnerHTML={{
           __html: `
           /* Hide number input spinners for cleaner look */
@@ -106,12 +110,13 @@ export function MotionDesigner() {
           style={{ overscrollBehavior: "none" }}
         >
           <HierarchyPanel state={state} />
-          <Canvas state={state} />
+          <Canvas state={state} panZoomRef={panZoomRef} />
           <PropertiesPanel state={state} />
         </div>
         <Timeline state={state} isScrubbingRef={isScrubbingRef} />
         <HelpButton />
       </div>
+      </PanZoomProvider>
     </MotionDesignerProvider>
   );
 }

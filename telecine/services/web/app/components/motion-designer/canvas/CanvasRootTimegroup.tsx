@@ -1,49 +1,37 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useRef, useLayoutEffect, useState } from "react";
 import type {
   ElementNode,
   MotionDesignerState,
 } from "~/lib/motion-designer/types";
 import { ElementRenderer } from "../rendering/ElementRenderer";
+import { getSizeDimensions } from "~/lib/motion-designer/sizingUtils";
 
 interface CanvasRootTimegroupProps {
   element: ElementNode;
   state: MotionDesignerState;
-  canvasScale: number;
   showOverlay: boolean;
 }
 
 export function CanvasRootTimegroup({
   element,
   state,
-  canvasScale,
-  showOverlay,
 }: CanvasRootTimegroupProps) {
   const position = element.props?.canvasPosition || { x: 0, y: 0 };
-  const initialSize = element.props?.size || { width: 960, height: 540 };
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const [actualDimensions, setActualDimensions] = useState<{
+  const [displaySize, setDisplaySize] = useState<{
     width: number;
     height: number;
-  } | null>(null);
+  }>(() => {
+    const sizeDimensions = getSizeDimensions(element.props?.size);
+    return {
+      width: sizeDimensions.width || 960,
+      height: sizeDimensions.height || 540,
+    };
+  });
 
-  // Sync wrapper div dimensions to actual rendered ef-timegroup dimensions
-  useEffect(() => {
-    let rafId: number;
-    let lastUpdateTime = 0;
-    const UPDATE_THROTTLE_MS = 16; // ~60fps max update rate
-
-    const updateDimensions = (currentTime: number) => {
-      // Throttle updates to reduce jitter
-      if (currentTime - lastUpdateTime < UPDATE_THROTTLE_MS) {
-        rafId = requestAnimationFrame(updateDimensions);
-        return;
-      }
-      lastUpdateTime = currentTime;
-
-      if (!wrapperRef.current) {
-        rafId = requestAnimationFrame(updateDimensions);
-        return;
-      }
+  // Read dimensions on-demand when element or size changes
+  useLayoutEffect(() => {
+    if (!wrapperRef.current) return;
 
       // Find the actual ef-timegroup element inside the wrapper
       const timegroupElement = wrapperRef.current.querySelector(
@@ -55,32 +43,11 @@ export function CanvasRootTimegroup({
       const width = measureElement.offsetWidth;
       const height = measureElement.offsetHeight;
 
-      // Only update if dimensions actually changed (larger threshold to reduce jitter)
+    // Update if dimensions are valid
       if (width > 0 && height > 0) {
-        setActualDimensions((prev) => {
-          if (
-            !prev ||
-            Math.abs(prev.width - width) > 1 ||
-            Math.abs(prev.height - height) > 1
-          ) {
-            return { width, height };
-          }
-          return prev;
-        });
+      setDisplaySize({ width, height });
       }
-
-      rafId = requestAnimationFrame(updateDimensions);
-    };
-
-    rafId = requestAnimationFrame(updateDimensions);
-
-    return () => {
-      cancelAnimationFrame(rafId);
-    };
-  }, [element.id, canvasScale]);
-
-  // Use actual dimensions if available, otherwise fall back to initial size
-  const displaySize = actualDimensions || initialSize;
+  }, [element.id, element.props?.size]);
 
   return (
     <div
@@ -102,7 +69,6 @@ export function CanvasRootTimegroup({
       <ElementRenderer
         element={element}
         state={state}
-        currentTime={state.ui.currentTime}
       />
     </div>
   );

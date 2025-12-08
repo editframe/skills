@@ -10,7 +10,6 @@ import {
 import {
   normalizeSize,
   isLegacySize,
-  type ElementSize,
 } from "~/lib/motion-designer/sizingTypes";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
 import { hasRotateAnimations } from "../rendering/styleGenerators/rotationUtils";
@@ -90,14 +89,28 @@ function getOppositeCorner(handle: string): { x: number; y: number } {
   }
 }
 
+// Find parent ID by searching for element in parent's childIds
+function findParentId(
+  elementId: string,
+  state: MotionDesignerState,
+): string | null {
+  for (const [parentId, parent] of Object.entries(state.composition.elements)) {
+    if (parent.childIds.includes(elementId)) {
+      return parentId;
+    }
+  }
+  return null;
+}
+
 // Check if an element's parent is a flex container
 function isParentFlexContainer(
   element: ElementNode,
   state: MotionDesignerState,
 ): boolean {
-  if (!element.parentId) return false;
+  const parentId = findParentId(element.id, state);
+  if (!parentId) return false;
 
-  const parent = state.composition.elements[element.parentId];
+  const parent = state.composition.elements[parentId];
   if (!parent) return false;
 
   // Check if parent is a container (div or timegroup) with display: flex
@@ -144,8 +157,9 @@ export function TransformHandles({
   } | null>(null);
   const hasDraggedRef = useRef(false);
 
+  const parentId = findParentId(element.id, state);
   const isRootTimegroup =
-    element.type === "timegroup" && element.parentId === null;
+    element.type === "timegroup" && parentId === null;
   const showRotateHandle = !isRootTimegroup;
   const hasRotateAnims = hasRotateAnimations(element);
 
@@ -205,87 +219,11 @@ export function TransformHandles({
     element.id,
     element.props.position,
     element.props.size,
+    element.props.rotation,
     state,
     canvasScale,
     canvasTranslateX,
     canvasTranslateY,
-    hasRotateAnims,
-  ]);
-
-  // Use RAF only for continuous updates during interactions (dragging, resizing, rotating)
-  // This ensures smooth updates during user interactions
-  useEffect(() => {
-    if (!isDragging && !isResizing && !isRotating) return;
-
-    let rafId: number;
-
-    const updateMeasurements = () => {
-      if (!overlayRef.current) {
-        rafId = requestAnimationFrame(updateMeasurements);
-        return;
-      }
-
-      // Find overlay layer
-      const overlayLayer = overlayRef.current.parentElement as HTMLElement;
-      if (!overlayLayer) {
-        rafId = requestAnimationFrame(updateMeasurements);
-        return;
-      }
-
-      const overlayLayerRect = overlayLayer.getBoundingClientRect();
-
-      // Use centralized position reading function
-      const position = evaluateOverlayPositionForElement(
-        element.id,
-        overlayLayerRect,
-        canvasScale,
-      );
-
-      if (!position) {
-        rafId = requestAnimationFrame(updateMeasurements);
-        return;
-      }
-
-      // Update overlay DOM directly
-      overlayRef.current.style.left = `${position.x}px`;
-      overlayRef.current.style.top = `${position.y}px`;
-      overlayRef.current.style.width = `${position.width}px`;
-      overlayRef.current.style.height = `${position.height}px`;
-      overlayRef.current.style.transform = `rotate(${position.rotation}deg)`;
-
-      // Read computed rotation during interactions
-      if (hasRotateAnims) {
-        setComputedRotation(position.rotation);
-      }
-
-      setOverlayPosition(position);
-
-      // Update dimensions ref
-      const contentElement = document.querySelector(
-        `[data-element-id="${element.id}"]`,
-      ) as HTMLElement;
-      if (contentElement) {
-        const intrinsicWidth = contentElement.offsetWidth;
-        const intrinsicHeight = contentElement.offsetHeight;
-        if (intrinsicWidth > 0 && intrinsicHeight > 0) {
-          dimensionsRef.current = {
-            width: intrinsicWidth,
-            height: intrinsicHeight,
-          };
-        }
-      }
-
-      rafId = requestAnimationFrame(updateMeasurements);
-    };
-
-    rafId = requestAnimationFrame(updateMeasurements);
-    return () => cancelAnimationFrame(rafId);
-  }, [
-    isDragging,
-    isResizing,
-    isRotating,
-    element.id,
-    canvasScale,
     hasRotateAnims,
   ]);
 
@@ -323,8 +261,10 @@ export function TransformHandles({
       currentWidth,
       currentHeight,
     );
-    const fixedWidth = fixedSize.widthValue;
-    const fixedHeight = fixedSize.heightValue;
+    // Ensure we have numeric values for calculations
+    const fixedDimensions = getSizeDimensions(fixedSize);
+    const fixedWidth = fixedDimensions.width;
+    const fixedHeight = fixedDimensions.height;
 
     // Store initial state for corner-based resize (keeps opposite corner fixed)
     const oppositeCorner = getOppositeCorner(handle);

@@ -15,7 +15,6 @@ import {
 import {
   normalizeSize,
   isLegacySize,
-  type ElementSize,
 } from "~/lib/motion-designer/sizingTypes";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
 import { PlayLoopButton } from "../controls/PlayLoopButton";
@@ -23,6 +22,7 @@ import { PlayPauseButton } from "../controls/PlayPauseButton";
 import { OverlayItem } from "@editframe/react";
 import { hasRotateAnimations } from "../rendering/styleGenerators/rotationUtils";
 import { parseRotationFromTransform } from "../rendering/styleGenerators/rotationUtils";
+import { usePanZoomScale } from "./usePanZoomScale";
 
 /**
  * Formats duration in milliseconds to human-readable string
@@ -39,14 +39,13 @@ function formatDuration(durationMs: number): string {
 interface CanvasRootTimegroupOverlayProps {
   element: ElementNode;
   state: MotionDesignerState;
-  canvasScale: number;
 }
 
 export function CanvasRootTimegroupOverlay({
   element,
   state,
-  canvasScale,
 }: CanvasRootTimegroupOverlayProps) {
+  const canvasScale = usePanZoomScale();
   const actions = useMotionDesignerActions();
   const activeRootTimegroupId = getActiveRootTimegroupId(state);
   const isActive = activeRootTimegroupId === element.id;
@@ -63,7 +62,6 @@ export function CanvasRootTimegroupOverlay({
     height: 300,
   });
   const [durationMs, setDurationMs] = useState(0);
-  const durationRef = useRef(0);
 
   // Update dimensions ref when element changes
   useEffect(() => {
@@ -83,19 +81,11 @@ export function CanvasRootTimegroupOverlay({
     }
   }, [element.id, element.props.size]);
 
-  // Read duration from DOM element
+  // Read duration on-demand when element becomes active or element changes
   useEffect(() => {
-    let rafId: number;
-    let lastUpdateTime = 0;
-    const UPDATE_THROTTLE_MS = 16; // ~60fps max update rate
+    if (!isActive) return;
 
-    const updateDuration = (currentTime: number) => {
-      if (currentTime - lastUpdateTime < UPDATE_THROTTLE_MS) {
-        rafId = requestAnimationFrame(updateDuration);
-        return;
-      }
-      lastUpdateTime = currentTime;
-
+    const readDuration = () => {
       const wrapperElement = document.querySelector(
         `[data-timegroup-id="${element.id}"]`,
       ) as HTMLElement;
@@ -108,22 +98,38 @@ export function CanvasRootTimegroupOverlay({
           typeof timegroupElement.durationMs === "number"
         ) {
           const newDurationMs = timegroupElement.durationMs;
-          if (Math.abs(newDurationMs - durationRef.current) > 1) {
-            durationRef.current = newDurationMs;
             setDurationMs(newDurationMs);
           }
         }
-      }
-
-      rafId = requestAnimationFrame(updateDuration);
     };
 
-    rafId = requestAnimationFrame(updateDuration);
+    // Read immediately
+    readDuration();
+
+    // Set up a MutationObserver to watch for duration changes
+    const wrapperElement = document.querySelector(
+      `[data-timegroup-id="${element.id}"]`,
+    ) as HTMLElement;
+    if (wrapperElement) {
+      const timegroupElement = wrapperElement.querySelector(
+        `ef-timegroup#${element.id}`,
+      ) as any;
+      if (timegroupElement) {
+        // Watch for attribute changes on the timegroup element
+        const observer = new MutationObserver(() => {
+          readDuration();
+        });
+        observer.observe(timegroupElement, {
+          attributes: true,
+          attributeFilter: ["duration"],
+        });
 
     return () => {
-      cancelAnimationFrame(rafId);
+          observer.disconnect();
     };
-  }, [element.id]);
+      }
+    }
+  }, [element.id, isActive]);
 
   const dragStartPositionRef = useRef<{ x: number; y: number } | null>(null);
   const wasSelectedAtMouseDownRef = useRef(false);
@@ -225,7 +231,6 @@ export function CanvasRootTimegroupOverlay({
         actions.addElement(
           {
             type: elementType,
-            parentId: element.id,
             childIds: [],
             props: defaultProps,
             animations: [],
@@ -293,9 +298,11 @@ export function CanvasRootTimegroupOverlay({
       currentHeight,
     );
 
+    // Ensure we have numeric values for calculations
+    const fixedDimensions = getSizeDimensions(fixedSize);
     const currentSize = {
-      width: fixedSize.widthValue,
-      height: fixedSize.heightValue,
+      width: fixedDimensions.width,
+      height: fixedDimensions.height,
     };
     const currentPosition = element.props?.canvasPosition || { x: 100, y: 100 };
     // Use computed rotation from DOM when rotate animations are active, otherwise use design property

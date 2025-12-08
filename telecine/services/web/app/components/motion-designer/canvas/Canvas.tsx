@@ -6,7 +6,6 @@ import {
   createDefaultSizeForFlexChild,
 } from "~/lib/motion-designer/defaultSizes";
 import { PanZoom, OverlayLayer } from "@editframe/react";
-import type { PanZoomTransform } from "@editframe/elements";
 import { CanvasRootTimegroup } from "./CanvasRootTimegroup";
 import { CanvasRootTimegroupOverlay } from "./CanvasRootTimegroupOverlay";
 import { ChildElementOverlays } from "./ChildElementOverlays";
@@ -14,11 +13,14 @@ import { DragCreationPreview } from "./DragCreationPreview";
 import { CanvasContextMenu } from "./CanvasContextMenu";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
 
+type EFPanZoomElement = React.ComponentRef<typeof PanZoom>;
+
 interface CanvasProps {
   state: MotionDesignerState;
+  panZoomRef: React.RefObject<EFPanZoomElement | null>;
 }
 
-export function Canvas({ state }: CanvasProps) {
+export function Canvas({ state, panZoomRef }: CanvasProps) {
   const actions = useMotionDesignerActions();
   const clickStartRef = React.useRef<{
     x: number;
@@ -40,70 +42,7 @@ export function Canvas({ state }: CanvasProps) {
   } | null>(null);
   const lastClickTimeRef = React.useRef<number>(0);
   const overlayLayerRef = React.useRef<HTMLDivElement>(null);
-  const panZoomRef = React.useRef<any>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
-
-  // Stable key for PanZoom to prevent remounting - only used for initial props
-  const initialTransformKey = React.useRef(
-    `${state.ui.canvasTransform.x}-${state.ui.canvasTransform.y}-${state.ui.canvasTransform.scale}`,
-  );
-
-  // Helper to read transform values for child components that still need them
-  // TODO: These child components should be refactored to not need manual transform values
-  const getTransformValues = () => {
-    if (panZoomRef.current) {
-      return {
-        scale: panZoomRef.current.scale ?? 1,
-        x: panZoomRef.current.x ?? 0,
-        y: panZoomRef.current.y ?? 0,
-      };
-    }
-    return { scale: 1, x: 0, y: 0 };
-  };
-
-  // Handle transform changes from PanZoom
-  const handleTransformChanged = React.useCallback(
-    (e: CustomEvent<PanZoomTransform>) => {
-      const newTransform = e.detail;
-
-      // Update application state for persistence
-      // Note: OverlayLayer reads directly from PanZoom element via DOM query
-      actions.updateCanvasTransform(newTransform);
-    },
-    [actions],
-  );
-
-  // Sync state changes to PanZoom (e.g., from reset button or loading a project)
-  // This allows external updates to PanZoom while still letting PanZoom control transforms during user interaction
-  React.useEffect(() => {
-    const panZoomElement = panZoomRef.current;
-    if (!panZoomElement) return;
-
-    // Only update if PanZoom's current values differ from state (external change)
-    const currentX = panZoomElement.x ?? 0;
-    const currentY = panZoomElement.y ?? 0;
-    const currentScale = panZoomElement.scale ?? 1;
-
-    const stateX = state.ui.canvasTransform.x;
-    const stateY = state.ui.canvasTransform.y;
-    const stateScale = state.ui.canvasTransform.scale;
-
-    // If state differs from PanZoom, update PanZoom (external change like reset button)
-    // OverlayLayer will automatically discover the new transform via its RAF loop
-    if (
-      Math.abs(currentX - stateX) > 0.01 ||
-      Math.abs(currentY - stateY) > 0.01 ||
-      Math.abs(currentScale - stateScale) > 0.01
-    ) {
-      panZoomElement.x = stateX;
-      panZoomElement.y = stateY;
-      panZoomElement.scale = stateScale;
-    }
-  }, [
-    state.ui.canvasTransform.x,
-    state.ui.canvasTransform.y,
-    state.ui.canvasTransform.scale,
-  ]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     // Only handle drag-to-create if clicking directly on canvas background (not on PanZoom or its children)
@@ -635,14 +574,12 @@ export function Canvas({ state }: CanvasProps) {
       }}
     >
       {/* Content layer - scales with zoom, wrapped in PanZoom */}
-      {/* PanZoom handles all transforms internally - we pass initial props, then PanZoom controls everything */}
+      {/* PanZoom handles all transforms internally - state is purely internal */}
       <PanZoom
-        key={initialTransformKey.current}
         ref={panZoomRef}
-        x={state.ui.canvasTransform.x}
-        y={state.ui.canvasTransform.y}
-        scale={state.ui.canvasTransform.scale}
-        onTransformChanged={handleTransformChanged}
+        x={0}
+        y={0}
+        scale={1}
         style={{
           position: "absolute",
           inset: 0,
@@ -662,7 +599,6 @@ export function Canvas({ state }: CanvasProps) {
               key={id}
               element={element}
               state={state}
-              canvasScale={getTransformValues().scale}
               showOverlay={false}
             />
           );
@@ -686,14 +622,10 @@ export function Canvas({ state }: CanvasProps) {
               <CanvasRootTimegroupOverlay
                 element={element}
                 state={state}
-                canvasScale={getTransformValues().scale}
               />
               <ChildElementOverlays
                 rootTimegroup={element}
                 state={state}
-                canvasScale={getTransformValues().scale}
-                canvasTranslateX={getTransformValues().x}
-                canvasTranslateY={getTransformValues().y}
               />
             </React.Fragment>
           );
@@ -709,9 +641,6 @@ export function Canvas({ state }: CanvasProps) {
               startY={dragStart.canvasY}
               currentX={dragCurrent.canvasX}
               currentY={dragCurrent.canvasY}
-              canvasScale={getTransformValues().scale}
-              canvasTranslateX={getTransformValues().x}
-              canvasTranslateY={getTransformValues().y}
               elementType={state.ui.placementMode}
             />
           )}

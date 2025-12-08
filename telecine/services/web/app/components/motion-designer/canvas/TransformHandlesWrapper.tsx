@@ -12,14 +12,12 @@ import { getSizeDimensions } from "~/lib/motion-designer/sizingUtils";
 import { normalizeSize } from "~/lib/motion-designer/sizingTypes";
 import { hasRotateAnimations } from "../rendering/styleGenerators/rotationUtils";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
+import { usePanZoomScale } from "./usePanZoomScale";
 
 interface TransformHandlesWrapperProps {
   element: ElementNode;
   state: MotionDesignerState;
   isSelected: boolean;
-  canvasScale: number;
-  canvasTranslateX: number;
-  canvasTranslateY: number;
 }
 
 function isParentFlexContainer(
@@ -39,11 +37,9 @@ export function TransformHandlesWrapper({
   element,
   state,
   isSelected,
-  canvasScale,
-  canvasTranslateX,
-  canvasTranslateY,
 }: TransformHandlesWrapperProps) {
   const actions = useMotionDesignerActions();
+  const canvasScale = usePanZoomScale();
   const dimensionsRef = React.useRef({ width: 0, height: 0 });
   const [bounds, setBounds] = useState<TransformBounds>({
     x: 0,
@@ -188,7 +184,6 @@ export function TransformHandlesWrapper({
     >
       <EFTransformHandles
         bounds={bounds}
-        canvasScale={canvasScale}
         enableRotation={showRotateHandle}
         enableResize={true}
         enableDrag={true}

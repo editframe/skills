@@ -1,13 +1,11 @@
 import React from "react";
+import { usePanZoomScale } from "./usePanZoomScale";
 
 interface DragCreationPreviewProps {
   startX: number;
   startY: number;
   currentX: number;
   currentY: number;
-  canvasScale: number;
-  canvasTranslateX: number;
-  canvasTranslateY: number;
   elementType: string;
 }
 
@@ -16,11 +14,9 @@ export function DragCreationPreview({
   startY,
   currentX,
   currentY,
-  canvasScale,
-  canvasTranslateX,
-  canvasTranslateY,
   elementType,
 }: DragCreationPreviewProps) {
+  const canvasScale = usePanZoomScale();
   // Convert canvas coordinates to screen coordinates for overlay layer
   // The overlay layer already has translate applied, so we just need to scale
   const screenStartX = startX * canvasScale;

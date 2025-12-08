@@ -2,6 +2,7 @@ import type { MotionDesignerState } from "~/lib/motion-designer/types";
 import { PlacementModeSelector } from "./placement/PlacementModeSelector";
 import { exportState, importState } from "~/lib/motion-designer/persistence";
 import { useMotionDesignerActions } from "./context/MotionDesignerContext";
+import { usePanZoom } from "./context/PanZoomContext";
 
 interface TopBarProps {
   state: MotionDesignerState;
@@ -9,7 +10,10 @@ interface TopBarProps {
 
 export function TopBar({ state }: TopBarProps) {
   const actions = useMotionDesignerActions();
-  const zoomPercent = Math.round(state.ui.canvasTransform.scale * 100);
+  const panZoom = usePanZoom();
+  const zoomPercent = panZoom
+    ? Math.round(panZoom.scale * 100)
+    : 100;
 
   return (
     <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
@@ -30,7 +34,7 @@ export function TopBar({ state }: TopBarProps) {
         </button>
         <button
           onClick={() => {
-            actions.updateCanvasTransform({ x: 0, y: 0, scale: 1 });
+            panZoom?.reset();
           }}
           className="px-3 py-1 text-sm bg-gray-700 hover:bg-gray-600 rounded flex items-center gap-1"
           title="Reset pan/zoom"
@@ -54,7 +58,9 @@ export function TopBar({ state }: TopBarProps) {
           value={zoomPercent}
           onChange={(e) => {
             const scale = Number(e.target.value) / 100;
-            actions.updateCanvasTransform({ scale });
+            if (panZoom) {
+              panZoom.scale = scale;
+            }
           }}
           className="px-2 py-1 text-sm bg-gray-700 rounded"
         >
