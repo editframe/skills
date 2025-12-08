@@ -1,6 +1,17 @@
 import "./elements/EFTimegroup.js";
 
 export { EFTimegroup } from "./elements/EFTimegroup.js";
+export type { ContainerInfo } from "./elements/ContainerInfo.js";
+export { getContainerInfoFromElement } from "./elements/ContainerInfo.js";
+export type { ElementPositionInfo } from "./elements/ElementPositionInfo.js";
+export {
+  getPositionInfoFromElement,
+  PositionInfoMixin,
+} from "./elements/ElementPositionInfo.js";
+export {
+  needsFitScale,
+  elementNeedsFitScale,
+} from "./gui/FitScaleHelpers.js";
 
 import "./elements/EFImage.js";
 
@@ -58,6 +69,30 @@ export { EFPreview } from "./gui/EFPreview.js";
 import "./gui/EFFilmstrip.js";
 
 export { EFFilmstrip } from "./gui/EFFilmstrip.js";
+
+import "./gui/hierarchy/EFHierarchy.js";
+import "./gui/hierarchy/EFHierarchyItem.js";
+
+export { EFHierarchy } from "./gui/hierarchy/EFHierarchy.js";
+export {
+  EFHierarchyItem,
+  EFTimegroupHierarchyItem,
+  EFAudioHierarchyItem,
+  EFVideoHierarchyItem,
+  EFCaptionsHierarchyItem,
+  EFCaptionsActiveWordHierarchyItem,
+  EFTextHierarchyItem,
+  EFTextSegmentHierarchyItem,
+  EFWaveformHierarchyItem,
+  EFImageHierarchyItem,
+  EFHTMLHierarchyItem,
+} from "./gui/hierarchy/EFHierarchyItem.js";
+export type {
+  HierarchyState,
+  HierarchyActions,
+  HierarchyContext,
+} from "./gui/hierarchy/hierarchyContext.js";
+export { hierarchyContext } from "./gui/hierarchy/hierarchyContext.js";
 
 import "./gui/EFTogglePlay.js";
 
@@ -131,6 +166,19 @@ import "./elements/EFPanZoom.js";
 export { EFPanZoom } from "./elements/EFPanZoom.js";
 export type { PanZoomTransform } from "./elements/EFPanZoom.js";
 
+import "./canvas/EFCanvas.js";
+import "./canvas/EFCanvasItem.js";
+
+export { EFCanvas } from "./canvas/EFCanvas.js";
+export { EFCanvasItem } from "./canvas/EFCanvasItem.js";
+export { CanvasAPI } from "./canvas/api/CanvasAPI.js";
+export type {
+  CanvasElementData,
+  SelectionState,
+  CanvasElementBounds,
+} from "./canvas/api/types.js";
+export { SelectionModel } from "./canvas/selection/SelectionModel.js";
+
 import "./gui/EFOverlayLayer.ts";
 
 export { EFOverlayLayer } from "./gui/EFOverlayLayer.ts";
@@ -150,6 +198,12 @@ export {
   shouldShowFrameMarkers,
   quantizeToFrameTimeMs,
 } from "./gui/EFTimelineRuler.ts";
+
+import "./gui/timeline/EFTimeline.js";
+import "./gui/timeline/TrimHandles.js";
+
+export { EFTimeline } from "./gui/timeline/EFTimeline.js";
+export { EFTrimHandles, type TrimChangeDetail } from "./gui/timeline/TrimHandles.js";
 
 if (typeof window !== "undefined") {
   // @ts-expect-error

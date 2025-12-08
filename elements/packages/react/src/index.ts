@@ -36,3 +36,5 @@ export { ToggleLoop } from "./gui/ToggleLoop.js";
 export { TogglePlay } from "./gui/TogglePlay.js";
 export { Workbench } from "./gui/Workbench.js";
 export { useTimingInfo } from "./hooks/useTimingInfo.js";
+export { usePanZoomTransform } from "./hooks/usePanZoomTransform.js";
+export { needsFitScale, elementNeedsFitScale } from "@editframe/elements";
