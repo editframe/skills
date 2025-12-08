@@ -46,18 +46,53 @@ export class EFPanZoom extends LitElement {
   private _dragStartTransform: PanZoomTransform | null = null;
   private _capturedPointerId: number | null = null;
 
+  /**
+   * Document-level wheel handler in capture phase to prevent browser navigation.
+   * This prevents back/forward navigation on two-finger swipe gestures.
+   * We use capture phase to catch events before they bubble, but only prevent default
+   * (not stop propagation) so the normal wheel handler can still process them.
+   */
+  private _onDocumentWheelCapture = (e: WheelEvent) => {
+    // Only prevent if the event is over this panzoom element or its children
+    const panZoom =
+      e.target instanceof Element
+        ? e.target.closest("ef-pan-zoom")
+        : null;
+    if (panZoom === this) {
+      // Prevent browser navigation gestures (back/forward on swipe)
+      // Don't stop propagation - let the normal wheel handler process the event
+      e.preventDefault();
+    }
+  };
+
   connectedCallback() {
     super.connectedCallback();
+    // Add document-level capture listener to prevent browser navigation
+    document.addEventListener("wheel", this._onDocumentWheelCapture, {
+      passive: false,
+      capture: true,
+    });
+    // Add element-level event listeners
     this.addEventListener("wheel", this._onWheel, { passive: false });
+    this.addEventListener("pointerdown", this._onPointerDown);
+    this.addEventListener("pointermove", this._onPointerMove);
+    this.addEventListener("pointerup", this._onPointerUp);
+    this.addEventListener("pointercancel", this._onPointerUp);
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
+    // Remove document-level capture listener
+    document.removeEventListener("wheel", this._onDocumentWheelCapture, {
+      capture: true,
+    });
+    // Remove element-level event listeners
     this.removeEventListener("wheel", this._onWheel);
     this.removeEventListener("pointerdown", this._onPointerDown);
     this.removeEventListener("pointermove", this._onPointerMove);
     this.removeEventListener("pointerup", this._onPointerUp);
     this.removeEventListener("pointercancel", this._onPointerUp);
+    // Clean up pointer capture if dragging
     if (this._isDragging && this._capturedPointerId !== null) {
       try {
         this.releasePointerCapture(this._capturedPointerId);
@@ -153,7 +188,10 @@ export class EFPanZoom extends LitElement {
   };
 
   private _onWheel = (e: WheelEvent) => {
+    // Always prevent default to prevent browser navigation (back/forward on swipe)
+    // This is critical for full-page app interfaces
     e.preventDefault();
+    e.stopPropagation();
 
     const isZoom = e.metaKey || e.ctrlKey;
 
@@ -191,13 +229,8 @@ export class EFPanZoom extends LitElement {
     }
   };
 
-  firstUpdated() {
-    super.firstUpdated();
-    this.addEventListener("pointerdown", this._onPointerDown);
-    this.addEventListener("pointermove", this._onPointerMove);
-    this.addEventListener("pointerup", this._onPointerUp);
-    this.addEventListener("pointercancel", this._onPointerUp);
-
+  firstUpdated(changedProperties: Map<PropertyKey, unknown>) {
+    super.firstUpdated(changedProperties);
     // Initialize context with current transform
     this.panZoomTransform = { x: this.x, y: this.y, scale: this.scale };
   }
@@ -243,6 +276,18 @@ export class EFPanZoom extends LitElement {
       x: rect.left + canvasX * this.scale + this.x,
       y: rect.top + canvasY * this.scale + this.y,
     };
+  }
+
+  /**
+   * Reset the pan-zoom transform to its default values (x: 0, y: 0, scale: 1).
+   * This method can be called programmatically to reset the view.
+   *
+   * @example
+   * const panZoomRef = useRef(null);
+   * <button onClick={() => panZoomRef.current.reset()}>Reset View</button>
+   */
+  reset(): void {
+    this._updateTransform({ x: 0, y: 0, scale: 1 });
   }
 
   render() {
