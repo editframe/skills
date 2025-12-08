@@ -19,11 +19,82 @@ export function convertToWebComponents(
     const el = element as React.ReactElement;
     let { type, props } = el;
 
-    if (type instanceof Function) {
-      type = type.name;
+    // Extract component name from various possible formats
+    let typeString: string;
+    if (typeof type === "string") {
+      typeString = type;
+    } else if (type instanceof Function) {
+      // Try multiple ways to get the component name
+      const funcName = type.name || type.displayName;
+      
+      // If we have a name, use it
+      if (funcName && funcName !== "" && funcName !== "Unknown") {
+        typeString = funcName;
+      } else {
+        // Try to extract from function string representation
+        const funcStr = type.toString();
+        const nameMatch = funcStr.match(/(?:function|class)\s+(\w+)/);
+        if (nameMatch && nameMatch[1]) {
+          typeString = nameMatch[1];
+        } else {
+          // Last resort: check constructor name or try to infer from props
+          typeString = (type as any).constructor?.name || "div";
+          
+          // If still not good, try to infer from common Editframe components based on props
+          if (!typeString || typeString === "Function" || typeString === "Object" || typeString === "[object Object]") {
+            // Check if props suggest a specific component type
+            // Timegroup has 'mode' prop
+            if (props.mode !== undefined) {
+              typeString = "Timegroup";
+            } 
+            // Video has 'src' or 'assetId' and no 'split' prop
+            else if ((props.src !== undefined || props.assetId !== undefined) && props.split === undefined) {
+              typeString = "Video";
+            } 
+            // Audio has 'src' or 'assetId' but is audio-related
+            else if ((props.src !== undefined || props.assetId !== undefined) && (props.src?.includes('.mp3') || props.src?.includes('.wav') || props.src?.includes('.aac'))) {
+              typeString = "Audio";
+            }
+            // Text has 'split' prop or is primarily text content
+            else if (props.split !== undefined || (typeof props.children === "string" && props.children.trim().length > 0)) {
+              typeString = "Text";
+            } 
+            // Image has 'src' but is image-related
+            else if (props.src !== undefined && (props.src?.includes('.jpg') || props.src?.includes('.png') || props.src?.includes('.jpeg') || props.src?.includes('.webp'))) {
+              typeString = "Image";
+            }
+            else {
+              typeString = "div";
+            }
+          }
+        }
+      }
+    } else if (typeof type === "symbol") {
+      // React symbols like Fragment, etc.
+      const symbolStr = type.toString();
+      typeString = symbolStr.replace("Symbol(", "").replace(")", "").replace("react.", "") || "div";
+    } else {
+      // Fallback for any other type
+      const typeStr = String(type);
+      // Try to infer from string representation
+      if (typeStr.includes("Timegroup") || typeStr.includes("timegroup")) {
+        typeString = "Timegroup";
+      } else if (typeStr.includes("Video") || typeStr.includes("video")) {
+        typeString = "Video";
+      } else if (typeStr.includes("Text") || typeStr.includes("text")) {
+        typeString = "Text";
+      } else if (typeStr.includes("Audio") || typeStr.includes("audio")) {
+        typeString = "Audio";
+      } else {
+        typeString = "div";
+      }
     }
 
-    const tagName = convertToKebabCase(type as string);
+    // Final safety check - ensure we have a valid string
+    const safeTypeString = typeof typeString === "string" && typeString !== "[object Object]" 
+      ? typeString 
+      : "div";
+    const tagName = convertToKebabCase(safeTypeString);
 
     const { attributes, multiline } = convertProps(props, indent + 1);
     const children = props.children
@@ -114,6 +185,11 @@ function convertProps(
   };
 }
 function convertToKebabCase(str: string): string {
+  // Ensure we have a valid string
+  if (!str || typeof str !== "string") {
+    return "div";
+  }
+
   // Handle React component names (e.g., TimeGroup -> ef-timegroup)
   if (/^[A-Z]/.test(str)) {
     return `ef-${str
