@@ -10,11 +10,10 @@ import {
   Waveform,
   ThumbnailStrip,
 } from "@editframe/react";
-import type { ElementType } from "~/lib/motion-designer/types";
 
 export { TextSegment };
 
-export const elementRegistry: Record<ElementType, React.ComponentType<any>> = {
+export const elementRegistry: Record<string, React.ComponentType<any>> = {
   timegroup: Timegroup,
   div: "div" as any,
   video: Video,

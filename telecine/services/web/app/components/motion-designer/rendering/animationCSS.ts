@@ -1,5 +1,6 @@
 import type { ElementNode, Animation } from "~/lib/motion-designer/types";
 import { isTransformProperty } from "../animations/generateStyles";
+import type { CSSStyleRuleDefinition } from "./cssStructures";
 
 function roundMs(value: number): number {
   return Math.round(value);
@@ -105,11 +106,13 @@ export function formatAnimationStringForElement(
 }
 
 /**
- * Generates CSS rule for text split animations targeting ef-text-segment.
+ * Generates structured CSS rule for text split animations targeting ef-text-segment.
  */
-export function generateTextSplitAnimationCSS(element: ElementNode): string {
+export function generateTextSplitAnimationRule(
+  element: ElementNode,
+): CSSStyleRuleDefinition | null {
   if (element.animations.length === 0) {
-    return "";
+    return null;
   }
 
   const animationStrings = generateAnimationStrings(
@@ -120,7 +123,22 @@ export function generateTextSplitAnimationCSS(element: ElementNode): string {
     formatAnimationStringForTextSplit,
   );
 
-  return `\n[data-element-id="${element.id}"] ef-text-segment {\n  animation: ${formattedStrings.join(", ")};\n}`;
+  return {
+    selector: `[data-element-id="${element.id}"] ef-text-segment`,
+    properties: {
+      animation: formattedStrings.join(", "),
+    },
+  };
+}
+
+/**
+ * Legacy function for backward compatibility.
+ * @deprecated Use generateTextSplitAnimationRule instead
+ */
+export function generateTextSplitAnimationCSS(element: ElementNode): string {
+  const rule = generateTextSplitAnimationRule(element);
+  if (!rule) return "";
+  return `\n${rule.selector} {\n  animation: ${rule.properties.animation};\n}`;
 }
 
 /**

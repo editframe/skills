@@ -239,7 +239,7 @@ describe("ElementRenderer", () => {
       });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const rendered = document.querySelector(
@@ -262,7 +262,7 @@ describe("ElementRenderer", () => {
       });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const rendered = document.querySelector(
@@ -281,7 +281,7 @@ describe("ElementRenderer", () => {
       });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const rendered = document.querySelector(
@@ -300,7 +300,7 @@ describe("ElementRenderer", () => {
       });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const rendered = document.querySelector(
@@ -319,7 +319,7 @@ describe("ElementRenderer", () => {
       });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const rendered = document.querySelector(
@@ -338,7 +338,7 @@ describe("ElementRenderer", () => {
       });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const rendered = document.querySelector(
@@ -357,7 +357,7 @@ describe("ElementRenderer", () => {
       });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const rendered = document.querySelector(
@@ -387,7 +387,7 @@ describe("ElementRenderer", () => {
       });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const rendered = document.querySelector(
@@ -412,7 +412,7 @@ describe("ElementRenderer", () => {
       mockUseElementProps.mockReturnValue({ props: {}, textContent: null });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const rendered = document.querySelector(
@@ -435,7 +435,7 @@ describe("ElementRenderer", () => {
       mockUseElementProps.mockReturnValue({ props: {}, textContent: null });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const rendered = document.querySelector(
@@ -461,7 +461,7 @@ describe("ElementRenderer", () => {
       });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const rendered = document.querySelector(
@@ -502,7 +502,7 @@ describe("ElementRenderer", () => {
       });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const rendered = document.querySelector(
@@ -535,7 +535,7 @@ describe("ElementRenderer", () => {
       });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const rendered = document.querySelector(
@@ -574,7 +574,7 @@ describe("ElementRenderer", () => {
       });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const rendered = document.querySelector(
@@ -631,7 +631,6 @@ describe("ElementRenderer", () => {
         <ElementRenderer
           element={childElement}
           state={state}
-          currentTime={0}
         />,
       );
 
@@ -663,7 +662,7 @@ describe("ElementRenderer", () => {
       });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const styleElement = document.getElementById(
@@ -691,7 +690,7 @@ describe("ElementRenderer", () => {
       );
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const styleElement = document.getElementById(
@@ -719,7 +718,7 @@ describe("ElementRenderer", () => {
       });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const styleElement = document.getElementById(
@@ -748,7 +747,7 @@ describe("ElementRenderer", () => {
       mockGenerateAnimationStyle.mockReturnValue({ animation: "none" });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const styleElement = document.getElementById(
@@ -771,7 +770,7 @@ describe("ElementRenderer", () => {
       mockGenerateAnimationStyle.mockReturnValue({ animation: "fade 1s" });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const styleElement = document.getElementById(
@@ -798,7 +797,7 @@ describe("ElementRenderer", () => {
       });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const rendered = document.querySelector(
@@ -822,7 +821,7 @@ describe("ElementRenderer", () => {
 
       render(
         <div onClick={parentHandler}>
-          <ElementRenderer element={element} state={state} currentTime={0} />
+          <ElementRenderer element={element} state={state}  />
         </div>,
       );
 
@@ -852,7 +851,7 @@ describe("ElementRenderer", () => {
       });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const rendered = document.querySelector(
@@ -877,7 +876,7 @@ describe("ElementRenderer", () => {
 
       render(
         <div onClick={parentHandler}>
-          <ElementRenderer element={element} state={state} currentTime={0} />
+          <ElementRenderer element={element} state={state}  />
         </div>,
       );
 
@@ -911,7 +910,7 @@ describe("ElementRenderer", () => {
       });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       // Component key affects React reconciliation, verify element renders
@@ -931,7 +930,7 @@ describe("ElementRenderer", () => {
       });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const rendered = document.querySelector(`[data-element-id="div-123"]`);
@@ -955,7 +954,7 @@ describe("ElementRenderer", () => {
       });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const rendered = document.querySelector(
@@ -980,7 +979,7 @@ describe("ElementRenderer", () => {
       });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const rendered = document.querySelector(
@@ -1015,7 +1014,6 @@ describe("ElementRenderer", () => {
         <ElementRenderer
           element={parentElement}
           state={state}
-          currentTime={0}
         />,
       );
 
@@ -1048,7 +1046,6 @@ describe("ElementRenderer", () => {
         <ElementRenderer
           element={parentElement}
           state={state}
-          currentTime={0}
         />,
       );
 
@@ -1092,7 +1089,6 @@ describe("ElementRenderer", () => {
         <ElementRenderer
           element={parentElement}
           state={state}
-          currentTime={0}
         />,
       );
 
@@ -1131,7 +1127,6 @@ describe("ElementRenderer", () => {
         <ElementRenderer
           element={parentElement}
           state={state}
-          currentTime={5000}
         />,
       );
 
@@ -1152,7 +1147,7 @@ describe("ElementRenderer", () => {
       });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const rendered = document.querySelector(
@@ -1174,7 +1169,7 @@ describe("ElementRenderer", () => {
       mockUseElementProps.mockReturnValue({ props: {}, textContent: null });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const rendered = document.querySelector(
@@ -1196,7 +1191,7 @@ describe("ElementRenderer", () => {
       mockGenerateAnimationStyle.mockReturnValue(null);
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const styleElement = document.getElementById(
@@ -1228,7 +1223,7 @@ describe("ElementRenderer", () => {
       });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const styleElement = document.getElementById(
@@ -1254,7 +1249,7 @@ describe("ElementRenderer", () => {
       });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const rendered = document.querySelector(
@@ -1285,7 +1280,7 @@ describe("ElementRenderer", () => {
       mockGenerateAnimationStyle.mockReturnValue({ animation: "test 1s" });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const styleElement = document.getElementById(
@@ -1313,7 +1308,7 @@ describe("ElementRenderer", () => {
       mockGenerateAnimationStyle.mockReturnValue({ animation: "test 1s" });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       expect(mockCreateAnimationKey).toHaveBeenCalledWith(element);
@@ -1386,7 +1381,7 @@ describe("ElementRenderer", () => {
       });
 
       render(
-        <ElementRenderer element={element} state={state} currentTime={0} />,
+        <ElementRenderer element={element} state={state} />,
       );
 
       const rendered = document.querySelector(
@@ -1533,7 +1528,6 @@ describe("ElementRenderer", () => {
         <ElementRenderer
           element={videoElement}
           state={state}
-          currentTime={0}
         />,
       );
 
@@ -1593,7 +1587,6 @@ describe("ElementRenderer", () => {
         <ElementRenderer
           element={videoElement}
           state={state}
-          currentTime={0}
         />,
       );
 
@@ -1642,7 +1635,6 @@ describe("ElementRenderer", () => {
         <ElementRenderer
           element={videoElement}
           state={state}
-          currentTime={0}
         />,
       );
 
@@ -1701,7 +1693,6 @@ describe("ElementRenderer", () => {
         <ElementRenderer
           element={videoElement}
           state={state}
-          currentTime={0}
         />,
       );
 
