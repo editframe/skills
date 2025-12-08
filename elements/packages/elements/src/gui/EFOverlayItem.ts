@@ -1,6 +1,7 @@
 import { css, html, LitElement } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import type { EFOverlayLayer } from "./EFOverlayLayer.js";
+import { parseRotationFromTransform } from "./transformCalculations.js";
 
 /**
  * Position changed event detail.
@@ -42,38 +43,6 @@ export class EFOverlayItem extends LitElement {
   target?: HTMLElement | string;
 
   private currentPosition: OverlayItemPosition | null = null;
-
-  private parseRotationFromTransform(transform: string): number {
-    if (!transform || transform === "none") return 0;
-
-    // Try to match rotate() function syntax first
-    const rotateMatch = transform.match(/rotate\(([^)]+)\)/);
-    if (rotateMatch) {
-      const value = rotateMatch[1].trim();
-      const numValue = parseFloat(value);
-      const unit = value.replace(String(numValue), "").trim();
-      if (unit === "rad" || unit === "radians") {
-        return (numValue * 180) / Math.PI;
-      }
-      return numValue;
-    }
-
-    // Handle matrix transform: matrix(a, b, c, d, tx, ty)
-    // For rotation: a = cos(θ), b = sin(θ), c = -sin(θ), d = cos(θ)
-    // So we can extract θ using atan2(b, a)
-    const matrixMatch = transform.match(/matrix\(([^)]+)\)/);
-    if (matrixMatch) {
-      const values = matrixMatch[1].split(",").map((v) => parseFloat(v.trim()));
-      if (values.length >= 2) {
-        const a = values[0]; // cos(θ)
-        const b = values[1]; // sin(θ)
-        const radians = Math.atan2(b, a);
-        return (radians * 180) / Math.PI;
-      }
-    }
-
-    return 0;
-  }
 
   private resolveTarget(): HTMLElement | null {
     if (this.elementId) {
@@ -139,7 +108,7 @@ export class EFOverlayItem extends LitElement {
     if (targetRect.width === 0 && targetRect.height === 0) return;
 
     const computedStyle = window.getComputedStyle(targetElement);
-    const rotation = this.parseRotationFromTransform(computedStyle.transform);
+    const rotation = parseRotationFromTransform(computedStyle.transform);
 
     const overlayPosition = {
       x: targetRect.left - overlayLayerRect.left,
@@ -148,20 +117,6 @@ export class EFOverlayItem extends LitElement {
       height: targetRect.height,
       rotation,
     };
-
-    // DEBUG: Log size changes
-    if (
-      this.currentPosition &&
-      Math.abs(this.currentPosition.width - overlayPosition.width) > 1
-    ) {
-      console.log("EFOverlayItem size change:", {
-        target: this.target,
-        oldWidth: this.currentPosition.width,
-        newWidth: overlayPosition.width,
-        targetRect: { width: targetRect.width, height: targetRect.height },
-        timestamp: performance.now(),
-      });
-    }
 
     if (overlayPosition.width <= 0 || overlayPosition.height <= 0) return;
 

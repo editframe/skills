@@ -69,88 +69,57 @@ export class EFOverlayLayer extends LitElement {
   }
 
   /**
+   * Single source of truth for reading the current transform.
+   * Priority: context > sibling DOM read > prop > default
+   */
+  private readTransform(): PanZoomTransform {
+    // 1. Context (synchronous, preferred)
+    if (this.panZoomTransformFromContext) {
+      return this.panZoomTransformFromContext;
+    }
+
+    // 2. Read directly from sibling PanZoom element
+    const panZoomElement = this.parentElement?.querySelector("ef-pan-zoom") as any;
+    if (panZoomElement && typeof panZoomElement.x === "number") {
+      const contentWrapper = panZoomElement.shadowRoot?.querySelector(".content-wrapper");
+      const computedTransform = contentWrapper && window.getComputedStyle(contentWrapper).transform;
+      
+      // Parse scale from matrix(scaleX, skewY, skewX, scaleY, tx, ty)
+      const matrixMatch = computedTransform?.match(/matrix\(([^)]+)\)/);
+      const scale = matrixMatch ? parseFloat(matrixMatch[1].split(",")[0].trim()) : (panZoomElement.scale ?? 1);
+      
+      return { x: panZoomElement.x ?? 0, y: panZoomElement.y ?? 0, scale };
+    }
+
+    // 3. Prop (for testing)
+    if (this.panZoomTransform) {
+      return this.panZoomTransform;
+    }
+
+    // 4. Default
+    return { x: 0, y: 0, scale: 1 };
+  }
+
+  /**
    * Simple RAF loop: Update everything on every frame.
-   * No change detection, no optimization, no delays.
-   * Just read transform, apply it, update all items.
    */
   private startLoop() {
     const update = () => {
-      // Read transform - prefer direct DOM read to avoid React prop lag
-      let transform: PanZoomTransform;
-
-      if (this.panZoomTransformFromContext) {
-        // Context is synchronous, use it
-        transform = this.panZoomTransformFromContext;
-      } else {
-        // For sibling architecture, read DIRECTLY from PanZoom element
-        const container = this.parentElement;
-        const panZoomElement = container?.querySelector("ef-pan-zoom") as any;
-        if (panZoomElement && typeof panZoomElement.x === "number") {
-          // Read the actual rendered transform from the content wrapper
-          // This ensures we're in sync with what's actually on screen
-          const contentWrapper =
-            panZoomElement.shadowRoot?.querySelector(".content-wrapper");
-          if (contentWrapper) {
-            const computedTransform =
-              window.getComputedStyle(contentWrapper).transform;
-            // Parse transform matrix to get actual scale
-            // Transform matrix format: matrix(scaleX, skewY, skewX, scaleY, translateX, translateY)
-            if (computedTransform && computedTransform !== "none") {
-              const values = computedTransform
-                .match(/matrix\(([^)]+)\)/)?.[1]
-                .split(",")
-                .map((v) => parseFloat(v.trim()));
-              if (values && values.length >= 1) {
-                // Use scaleX (first value) as the scale
-                const computedScale = values[0];
-                transform = {
-                  x: panZoomElement.x ?? 0,
-                  y: panZoomElement.y ?? 0,
-                  scale: computedScale,
-                };
-              } else {
-                transform = {
-                  x: panZoomElement.x ?? 0,
-                  y: panZoomElement.y ?? 0,
-                  scale: panZoomElement.scale ?? 1,
-                };
-              }
-            } else {
-              transform = {
-                x: panZoomElement.x ?? 0,
-                y: panZoomElement.y ?? 0,
-                scale: panZoomElement.scale ?? 1,
-              };
-            }
-          } else {
-            transform = {
-              x: panZoomElement.x ?? 0,
-              y: panZoomElement.y ?? 0,
-              scale: panZoomElement.scale ?? 1,
-            };
-          }
-        } else if (this.panZoomTransform) {
-          // Fallback to prop (for testing and standalone usage)
-          transform = this.panZoomTransform;
-        } else {
-          // Default (no PanZoom found)
-          transform = { x: 0, y: 0, scale: 1 };
-        }
-      }
-
-      // DEBUG: Log scale changes
-      if (Math.abs(transform.scale - (this as any)._lastScale || 0) > 0.01) {
-        console.log("EFOverlayLayer transform:", {
-          scale: transform.scale,
-          x: transform.x,
-          y: transform.y,
-          timestamp: performance.now(),
-        });
-        (this as any)._lastScale = transform.scale;
-      }
+      const transform = this.readTransform();
 
       // Apply transform
-      this.style.transform = `translate(${transform.x}px, ${transform.y}px)`;
+      // If we're a child of panzoom (receiving context), we're inside the scaled content-wrapper
+      // which already applies translate(x, y) scale(s). We should NOT apply our own translate
+      // because the parent transform already handles the pan. Our getBoundingClientRect() will
+      // naturally include the parent's transform.
+      // If we're a sibling of panzoom, we need to apply the translate ourselves to match the pan.
+      if (this.panZoomTransformFromContext) {
+        // Child of panzoom - don't apply any transform, parent handles it
+        this.style.transform = 'none';
+      } else {
+        // Sibling of panzoom - apply translate directly to match panzoom's pan
+        this.style.transform = `translate(${transform.x}px, ${transform.y}px)`;
+      }
 
       // Update all overlay items
       for (const item of this.registeredItems) {

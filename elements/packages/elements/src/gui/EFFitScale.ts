@@ -107,22 +107,34 @@ export class EFFitScale extends LitElement {
     const containerWidth = this.clientWidth;
     const containerHeight = this.clientHeight;
 
-    // For ef-video, measure the canvas directly as it has the actual video dimensions
+    // Try to get natural dimensions from media elements (ef-video, ef-image)
     let contentWidth = 0;
     let contentHeight = 0;
 
-    if (this.contentChild.tagName === "EF-VIDEO") {
-      const canvas = (this.contentChild as any).canvasElement;
-      if (canvas && canvas.width > 0 && canvas.height > 0) {
-        // Use canvas attributes (video's coded dimensions)
-        contentWidth = canvas.width;
-        contentHeight = canvas.height;
+    if (
+      typeof (this.contentChild as any).getNaturalDimensions === "function"
+    ) {
+      const naturalDimensions = (
+        this.contentChild as any
+      ).getNaturalDimensions() as { width: number; height: number } | null;
+      if (naturalDimensions && naturalDimensions.width > 0 && naturalDimensions.height > 0) {
+        contentWidth = naturalDimensions.width;
+        contentHeight = naturalDimensions.height;
 
-        // ESSENTIAL: Set canvas to explicit pixel dimensions to break 100% circular dependency
+        // ESSENTIAL: For ef-video, set canvas to explicit pixel dimensions to break 100% circular dependency
         // Canvas default CSS is width:100%, height:100% which would make ef-video collapse to 0x0
         // when ef-video is set to width:auto, height:auto by ElementRenderer
-        canvas.style.setProperty("width", `${canvas.width}px`, "important");
-        canvas.style.setProperty("height", `${canvas.height}px`, "important");
+        if (this.contentChild.tagName === "EF-VIDEO") {
+          const canvas = (this.contentChild as any).canvasElement;
+          if (canvas) {
+            canvas.style.setProperty("width", `${contentWidth}px`, "important");
+            canvas.style.setProperty("height", `${contentHeight}px`, "important");
+          }
+        }
+      } else {
+        // Natural dimensions not available yet, fall back to client dimensions
+        contentWidth = this.contentChild.clientWidth;
+        contentHeight = this.contentChild.clientHeight;
       }
     } else {
       // For other elements, use clientWidth/Height

@@ -1,6 +1,15 @@
+import { consume } from "@lit/context";
 import { css, html, LitElement } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
+import { panZoomTransformContext } from "./panZoomTransformContext.js";
+import type { PanZoomTransform } from "../elements/EFPanZoom.js";
+import {
+  type ResizeHandle,
+  calculateDragBounds,
+  calculateResizeBounds,
+  getResizeHandleCursor,
+} from "./transformCalculations.js";
 import { getCornerPoint, getOppositeCorner } from "./transformUtils.js";
 
 const DEFAULT_MIN_SIZE = 10;
@@ -13,7 +22,12 @@ export interface TransformBounds {
   rotation?: number;
 }
 
-type ResizeHandle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
+/**
+ * Interaction mode enumeration.
+ * Only one mode can be active at a time (invariant).
+ */
+type InteractionMode = "idle" | "dragging" | "resizing" | "rotating";
+
 
 @customElement("ef-transform-handles")
 export class EFTransformHandles extends LitElement {
@@ -26,6 +40,9 @@ export class EFTransformHandles extends LitElement {
   @property({ type: String })
   target?: string;
 
+  @consume({ context: panZoomTransformContext, subscribe: true })
+  panZoomTransformFromContext?: PanZoomTransform;
+
   @property({ type: Number, attribute: "canvas-scale" })
   canvasScale = 1;
 
@@ -35,29 +52,48 @@ export class EFTransformHandles extends LitElement {
   @property({ type: Boolean, attribute: "enable-resize" })
   enableResize = true;
 
+  @property({ type: Boolean, attribute: "corners-only" })
+  cornersOnly = false;
+
+  @property({ type: Boolean, attribute: "lock-aspect-ratio" })
+  lockAspectRatio = false;
+
   @property({ type: Boolean, attribute: "enable-drag" })
   enableDrag = true;
 
   @property({ type: Number, attribute: "rotation-step" })
   rotationStep?: number;
 
+  /**
+   * Current interaction mode.
+   * Invariant: Only one mode active at a time.
+   */
   @state()
-  private isDragging = false;
+  interactionMode: InteractionMode = "idle";
 
-  @state()
-  private isResizing: ResizeHandle | null = null;
+  /**
+   * Active resize handle when in "resizing" mode.
+   * Only valid when interactionMode === "resizing".
+   */
+  private activeResizeHandle: ResizeHandle | null = null;
 
-  @state()
-  private isRotating = false;
+  /**
+   * Mouse start position for calculating deltas.
+   * Only valid during active interaction.
+   */
+  private mouseStart: { x: number; y: number } | null = null;
 
-  private dragStart: { x: number; y: number } | null = null;
-  private dragStartPosition: { x: number; y: number } = { x: 0, y: 0 };
-  private rotationStartAngle: number | null = null;
-  private rotationStartRotation = 0;
-  private resizeStartCorner: { x: number; y: number } | null = null;
-  private resizeStartSize: { width: number; height: number } | null = null;
-  private resizeStartPosition: { x: number; y: number } | null = null;
-  private dimensionsRef = { width: 0, height: 0 };
+  /**
+   * Initial bounds at interaction start - NEVER mutated during interaction.
+   * All calculations derive from this + mouse deltas.
+   * Note: Not a @state() property to avoid re-renders during interaction.
+   */
+  private initialBounds: TransformBounds | null = null;
+
+
+
+
+
 
   static styles = css`
     :host {
@@ -77,6 +113,10 @@ export class EFTransformHandles extends LitElement {
       position: absolute;
       inset: 0;
       cursor: move;
+      pointer-events: none;
+    }
+    /* Only enable pointer events when actively dragging */
+    .drag-area:active {
       pointer-events: auto;
     }
     .handle {
@@ -86,15 +126,17 @@ export class EFTransformHandles extends LitElement {
       background: var(--ef-transform-handles-handle-color, white);
       border: 1px solid var(--ef-transform-handles-handle-border-color, #3b82f6);
       pointer-events: auto;
+      /* Only capture pointer events, allow wheel events to pass through */
+      touch-action: none;
     }
-    .handle.nw { top: -4px; left: -4px; cursor: nw-resize; }
-    .handle.n { top: -4px; left: 50%; transform: translateX(-50%); cursor: n-resize; }
-    .handle.ne { top: -4px; right: -4px; cursor: ne-resize; }
-    .handle.e { top: 50%; right: -4px; transform: translateY(-50%); cursor: e-resize; }
-    .handle.se { bottom: -4px; right: -4px; cursor: se-resize; }
-    .handle.s { bottom: -4px; left: 50%; transform: translateX(-50%); cursor: s-resize; }
-    .handle.sw { bottom: -4px; left: -4px; cursor: sw-resize; }
-    .handle.w { top: 50%; left: -4px; transform: translateY(-50%); cursor: w-resize; }
+    .handle.nw { top: -4px; left: -4px; }
+    .handle.n { top: -4px; left: 50%; transform: translateX(-50%); }
+    .handle.ne { top: -4px; right: -4px; }
+    .handle.e { top: 50%; right: -4px; transform: translateY(-50%); }
+    .handle.se { bottom: -4px; right: -4px; }
+    .handle.s { bottom: -4px; left: 50%; transform: translateX(-50%); }
+    .handle.sw { bottom: -4px; left: -4px; }
+    .handle.w { top: 50%; left: -4px; transform: translateY(-50%); }
     .rotate-handle {
       position: absolute;
       top: -30px;
@@ -102,6 +144,8 @@ export class EFTransformHandles extends LitElement {
       transform: translateX(-50%);
       cursor: grab;
       pointer-events: auto;
+      /* Only capture pointer events, allow wheel events to pass through */
+      touch-action: none;
     }
     .rotate-handle-circle {
       width: 24px;
@@ -121,15 +165,63 @@ export class EFTransformHandles extends LitElement {
 
   private resizeObserver?: ResizeObserver;
 
+  /**
+   * Single source of truth for zoom scale.
+   * Priority: context > prop > 1.0
+   */
+  private getZoomScale(): number {
+    return this.panZoomTransformFromContext?.scale ?? this.canvasScale ?? 1;
+  }
+
+  /**
+   * Convert screen pixel bounds to canvas coordinates.
+   */
+  private screenToCanvas(bounds: TransformBounds): TransformBounds {
+    const scale = this.getZoomScale();
+    return {
+      x: bounds.x / scale,
+      y: bounds.y / scale,
+      width: bounds.width / scale,
+      height: bounds.height / scale,
+      rotation: bounds.rotation,
+    };
+  }
+
   connectedCallback() {
     super.connectedCallback();
-    this.updateDimensions();
     this.resizeObserver = new ResizeObserver(() => {
-      this.updateDimensions();
+      // Dimensions are read directly when needed
     });
     if (this.offsetParent) {
       this.resizeObserver.observe(this.offsetParent);
     }
+    // Forward wheel events to parent panzoom so zoom works even when pointer is over handles
+    // Wheel events should pass through, but we'll forward them to ensure panzoom receives them
+    this.addEventListener("wheel", (e: WheelEvent) => {
+      // Only forward if not actively interacting with handles
+      if (this.interactionMode === "idle") {
+        // Find parent panzoom and forward the event
+        const panZoom = this.closest("ef-pan-zoom");
+        if (panZoom) {
+          // Create a new wheel event and dispatch it on panzoom
+          const wheelEvent = new WheelEvent("wheel", {
+            bubbles: true,
+            cancelable: true,
+            clientX: e.clientX,
+            clientY: e.clientY,
+            deltaX: e.deltaX,
+            deltaY: e.deltaY,
+            deltaZ: e.deltaZ,
+            deltaMode: e.deltaMode,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            shiftKey: e.shiftKey,
+            altKey: e.altKey,
+          });
+          panZoom.dispatchEvent(wheelEvent);
+        }
+      }
+    }, { passive: true });
   }
 
   disconnectedCallback() {
@@ -138,72 +230,38 @@ export class EFTransformHandles extends LitElement {
     this.cleanup();
   }
 
-  private updateDimensions() {
-    if (this.target) {
-      const element =
-        typeof this.target === "string"
-          ? (document.querySelector(this.target) as HTMLElement)
-          : this.target;
-      if (element) {
-        this.dimensionsRef.width = element.offsetWidth;
-        this.dimensionsRef.height = element.offsetHeight;
-      }
+  /**
+   * Transition interaction mode state machine.
+   * Ensures only one mode is active at a time (invariant).
+   */
+  private transitionInteractionMode(
+    event: "mousedown-drag" | "mousedown-resize" | "mousedown-rotate" | "mouseup",
+  ): InteractionMode {
+    if (event === "mouseup") {
+      return "idle";
     }
-  }
-
-  private getCurrentBounds(): TransformBounds {
-    if (this.target) {
-      const element =
-        typeof this.target === "string"
-          ? (document.querySelector(this.target) as HTMLElement)
-          : null;
-      if (element) {
-        const rect = element.getBoundingClientRect();
-        const parentRect = this.offsetParent?.getBoundingClientRect() || {
-          left: 0,
-          top: 0,
-        };
-        const bounds: TransformBounds = {
-          x: rect.left - parentRect.left,
-          y: rect.top - parentRect.top,
-          width: rect.width,
-          height: rect.height,
-        };
-
-        if (this.enableRotation) {
-          const computedStyle = window.getComputedStyle(element);
-          const transform = computedStyle.transform;
-          bounds.rotation = this.parseRotationFromTransform(transform);
-        }
-
-        return bounds;
-      }
+    // Only allow transition from idle
+    if (this.interactionMode !== "idle") {
+      return this.interactionMode;
     }
-    const bounds = { ...this.bounds };
-    if (!this.enableRotation) {
-      delete bounds.rotation;
+    switch (event) {
+      case "mousedown-drag":
+        return "dragging";
+      case "mousedown-resize":
+        return "resizing";
+      case "mousedown-rotate":
+        return "rotating";
+      default:
+        return "idle";
     }
-    return bounds;
-  }
-
-  private parseRotationFromTransform(transform: string): number {
-    if (!transform || transform === "none") return 0;
-    const matrix = transform.match(/matrix\(([^)]+)\)/);
-    if (!matrix) return 0;
-    const values = matrix[1].split(",").map((v) => parseFloat(v.trim()));
-    if (values.length < 4) return 0;
-    const a = values[0];
-    const b = values[1];
-    return Math.atan2(b, a) * (180 / Math.PI);
   }
 
   private handleMouseDown = (e: MouseEvent) => {
     if (!this.enableDrag) return;
     e.stopPropagation();
-    this.isDragging = true;
-    this.dragStart = { x: e.clientX, y: e.clientY };
-    const currentBounds = this.getCurrentBounds();
-    this.dragStartPosition = { x: currentBounds.x, y: currentBounds.y };
+    this.interactionMode = this.transitionInteractionMode("mousedown-drag");
+    this.mouseStart = { x: e.clientX, y: e.clientY };
+    this.initialBounds = { ...this.bounds };
     document.addEventListener("mousemove", this.handleMouseMove);
     document.addEventListener("mouseup", this.handleMouseUp);
   };
@@ -211,32 +269,12 @@ export class EFTransformHandles extends LitElement {
   private handleResizeMouseDown = (e: MouseEvent, handle: ResizeHandle) => {
     if (!this.enableResize) return;
     e.stopPropagation();
-    this.isResizing = handle;
-    this.dragStart = { x: e.clientX, y: e.clientY };
-
-    const currentBounds = this.getCurrentBounds();
-    const currentWidth = currentBounds.width || this.dimensionsRef.width;
-    const currentHeight = currentBounds.height || this.dimensionsRef.height;
-    const currentRotation = this.enableRotation
-      ? (currentBounds.rotation ?? 0)
-      : 0;
-
-    const oppositeCorner = getOppositeCorner(handle);
-    const rotationRadians = (currentRotation * Math.PI) / 180;
-    const initialCorner = getCornerPoint(
-      currentBounds.x,
-      currentBounds.y,
-      currentWidth,
-      currentHeight,
-      rotationRadians,
-      oppositeCorner.x,
-      oppositeCorner.y,
-    );
-
-    this.resizeStartCorner = initialCorner;
-    this.resizeStartSize = { width: currentWidth, height: currentHeight };
-    this.resizeStartPosition = { x: currentBounds.x, y: currentBounds.y };
-
+    e.preventDefault();
+    this.interactionMode = this.transitionInteractionMode("mousedown-resize");
+    this.activeResizeHandle = handle;
+    this.mouseStart = { x: e.clientX, y: e.clientY };
+    // Store initial bounds as-is (in screen pixels) - we'll convert to canvas when calculating
+    this.initialBounds = { ...this.bounds };
     document.addEventListener("mousemove", this.handleMouseMove);
     document.addEventListener("mouseup", this.handleMouseUp);
   };
@@ -244,162 +282,129 @@ export class EFTransformHandles extends LitElement {
   private handleRotateMouseDown = (e: MouseEvent) => {
     if (!this.enableRotation) return;
     e.stopPropagation();
-    this.isRotating = true;
-    this.dragStart = { x: e.clientX, y: e.clientY };
-
-    const targetElement = this.target
-      ? typeof this.target === "string"
-        ? (document.querySelector(this.target) as HTMLElement)
-        : this.target
-      : null;
-
-    if (targetElement) {
-      const rect = targetElement.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-      const dx = e.clientX - centerX;
-      const dy = e.clientY - centerY;
-      const radians = Math.atan2(dy, dx);
-      const degrees = radians * (180 / Math.PI) + 90;
-      this.rotationStartAngle = degrees;
-      const currentBounds = this.getCurrentBounds();
-      this.rotationStartRotation = currentBounds.rotation ?? 0;
-    }
-
+    this.interactionMode = this.transitionInteractionMode("mousedown-rotate");
+    this.mouseStart = { x: e.clientX, y: e.clientY };
+    this.initialBounds = { ...this.bounds };
     document.addEventListener("mousemove", this.handleMouseMove);
     document.addEventListener("mouseup", this.handleMouseUp);
   };
 
+  /**
+   * Dispatch bounds change event (one-way data flow).
+   * Parent updates element, then reads element and updates handle bounds prop.
+   * We don't modify this.bounds directly - always render from prop.
+   */
+  private dispatchBoundsChange(bounds: TransformBounds): void {
+    this.dispatchEvent(
+      new CustomEvent("bounds-change", {
+        detail: { bounds },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+
   private handleMouseMove = (e: MouseEvent) => {
-    if (!this.dragStart) return;
+    if (!this.mouseStart || !this.initialBounds) return;
 
-    const currentBounds = this.getCurrentBounds();
-    const currentX = currentBounds.x;
-    const currentY = currentBounds.y;
-    const currentWidth = currentBounds.width || this.dimensionsRef.width;
-    const currentHeight = currentBounds.height || this.dimensionsRef.height;
-    const currentRotation = this.enableRotation
-      ? (currentBounds.rotation ?? 0)
-      : 0;
+    // Calculate mouse deltas in viewport coordinates
+    const screenDeltaX = e.clientX - this.mouseStart.x;
+    const screenDeltaY = e.clientY - this.mouseStart.y;
 
-    if (this.isDragging) {
-      const screenDeltaX = e.clientX - this.dragStart.x;
-      const screenDeltaY = e.clientY - this.dragStart.y;
-      const canvasDeltaX = screenDeltaX / this.canvasScale;
-      const canvasDeltaY = screenDeltaY / this.canvasScale;
+    switch (this.interactionMode) {
+      case "dragging": {
+        const zoomScale = this.getZoomScale();
+        const initialCanvas = this.screenToCanvas(this.initialBounds);
 
-      const newX = this.dragStartPosition.x + canvasDeltaX;
-      const newY = this.dragStartPosition.y + canvasDeltaY;
+        const newPosition = calculateDragBounds(
+          { x: initialCanvas.x, y: initialCanvas.y },
+          screenDeltaX,
+          screenDeltaY,
+          zoomScale,
+        );
 
-      this.bounds = {
-        ...this.bounds,
-        x: newX,
-        y: newY,
-      };
-
-      this.dragStart = { x: e.clientX, y: e.clientY };
-      this.dragStartPosition = { x: newX, y: newY };
-
-      this.dispatchBoundsChange();
-    } else if (
-      this.isResizing &&
-      this.resizeStartCorner &&
-      this.resizeStartSize &&
-      this.resizeStartPosition
-    ) {
-      const screenDeltaX = e.clientX - this.dragStart.x;
-      const screenDeltaY = e.clientY - this.dragStart.y;
-      const canvasDeltaX = screenDeltaX / this.canvasScale;
-      const canvasDeltaY = screenDeltaY / this.canvasScale;
-
-      const rotationRadians = (currentRotation * Math.PI) / 180;
-      const oppositeCorner = getOppositeCorner(this.isResizing);
-      const initialCorner = this.resizeStartCorner;
-
-      const cos = Math.cos(-rotationRadians);
-      const sin = Math.sin(-rotationRadians);
-      const rotatedDeltaX = cos * canvasDeltaX - sin * canvasDeltaY;
-      const rotatedDeltaY = sin * canvasDeltaX + cos * canvasDeltaY;
-
-      let newWidth = currentWidth;
-      let newHeight = currentHeight;
-
-      if (this.isResizing.includes("e")) {
-        newWidth = currentWidth + rotatedDeltaX;
-      } else if (this.isResizing.includes("w")) {
-        newWidth = currentWidth - rotatedDeltaX;
+        this.dispatchBoundsChange({
+          ...newPosition,
+          width: initialCanvas.width,
+          height: initialCanvas.height,
+          rotation: this.initialBounds.rotation,
+        });
+        break;
       }
 
-      if (this.isResizing.includes("s")) {
-        newHeight = currentHeight + rotatedDeltaY;
-      } else if (this.isResizing.includes("n")) {
-        newHeight = currentHeight - rotatedDeltaY;
+      case "resizing": {
+        if (!this.activeResizeHandle) return;
+
+        const zoomScale = this.getZoomScale();
+        const initialCanvas = this.screenToCanvas(this.initialBounds);
+        const rotation = this.enableRotation ? (this.initialBounds.rotation ?? 0) : 0;
+
+        // Calculate the fixed corner (opposite to handle being dragged)
+        const oppositeCorner = getOppositeCorner(this.activeResizeHandle);
+        const rotationRadians = (rotation * Math.PI) / 180;
+        const fixedCorner = getCornerPoint(
+          initialCanvas.x,
+          initialCanvas.y,
+          initialCanvas.width,
+          initialCanvas.height,
+          rotationRadians,
+          oppositeCorner.x,
+          oppositeCorner.y,
+        );
+
+        const newCanvasBounds = calculateResizeBounds(
+          { width: initialCanvas.width, height: initialCanvas.height },
+          { x: initialCanvas.x, y: initialCanvas.y },
+          fixedCorner,
+          this.activeResizeHandle,
+          screenDeltaX,
+          screenDeltaY,
+          rotation,
+          this.minSize / zoomScale,
+          zoomScale,
+          { lockAspectRatio: this.lockAspectRatio || e.shiftKey, resizeFromCenter: e.ctrlKey || e.metaKey },
+        );
+
+        // Preserve rotation
+        newCanvasBounds.rotation = this.initialBounds.rotation;
+        this.dispatchBoundsChange(newCanvasBounds);
+        break;
       }
 
-      newWidth = Math.max(this.minSize, newWidth);
-      newHeight = Math.max(this.minSize, newHeight);
+      case "rotating": {
+        // Calculate center in screen coordinates (bounds are overlay-relative)
+        const overlayRect = this.offsetParent?.getBoundingClientRect() ?? { left: 0, top: 0 };
+        const centerX = overlayRect.left + this.initialBounds.x + this.initialBounds.width / 2;
+        const centerY = overlayRect.top + this.initialBounds.y + this.initialBounds.height / 2;
 
-      const newOppositeCorner = getCornerPoint(
-        currentX,
-        currentY,
-        newWidth,
-        newHeight,
-        rotationRadians,
-        oppositeCorner.x,
-        oppositeCorner.y,
-      );
+        // Calculate angle from mouse start to current position
+        const startAngle = Math.atan2(this.mouseStart.y - centerY, this.mouseStart.x - centerX) * (180 / Math.PI) + 90;
+        const currentAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI) + 90;
 
-      const offsetX = initialCorner.x - newOppositeCorner.x;
-      const offsetY = initialCorner.y - newOppositeCorner.y;
+        // Normalize angle difference to [-180, 180] to avoid wrapping issues
+        let deltaAngle = currentAngle - startAngle;
+        while (deltaAngle > 180) deltaAngle -= 360;
+        while (deltaAngle < -180) deltaAngle += 360;
 
-      const newX = currentX + offsetX;
-      const newY = currentY + offsetY;
+        let newRotation = (this.initialBounds.rotation ?? 0) + deltaAngle;
+        if (this.rotationStep !== undefined && this.rotationStep > 0) {
+          newRotation = Math.round(newRotation / this.rotationStep) * this.rotationStep;
+        }
 
-      this.bounds = {
-        ...this.bounds,
-        x: newX,
-        y: newY,
-        width: newWidth,
-        height: newHeight,
-      };
-
-      this.dragStart = { x: e.clientX, y: e.clientY };
-
-      this.dispatchBoundsChange();
-    } else if (this.isRotating && this.rotationStartAngle !== null) {
-      const targetElement = this.target
-        ? typeof this.target === "string"
-          ? (document.querySelector(this.target) as HTMLElement)
-          : this.target
-        : null;
-
-      if (!targetElement) return;
-
-      const rect = targetElement.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-
-      const dx = e.clientX - centerX;
-      const dy = e.clientY - centerY;
-      const radians = Math.atan2(dy, dx);
-      const currentAngle = radians * (180 / Math.PI) + 90;
-
-      const deltaAngle = currentAngle - this.rotationStartAngle;
-      let newRotation = this.rotationStartRotation + deltaAngle;
-
-      if (this.rotationStep !== undefined) {
-        newRotation =
-          Math.round(newRotation / this.rotationStep) * this.rotationStep;
+        this.dispatchEvent(
+          new CustomEvent("rotation-change", {
+            detail: { rotation: newRotation },
+            bubbles: true,
+            composed: true,
+          }),
+        );
+        break;
       }
 
-      this.bounds = {
-        ...this.bounds,
-        rotation: newRotation,
-      };
-
-      this.dragStart = { x: e.clientX, y: e.clientY };
-
-      this.dispatchRotationChange();
+      case "idle":
+        // No action needed
+        break;
     }
   };
 
@@ -408,42 +413,18 @@ export class EFTransformHandles extends LitElement {
   };
 
   private cleanup() {
-    this.isDragging = false;
-    this.isResizing = null;
-    this.isRotating = false;
-    this.dragStart = null;
-    this.dragStartPosition = { x: 0, y: 0 };
-    this.rotationStartAngle = null;
-    this.rotationStartRotation = 0;
-    this.resizeStartCorner = null;
-    this.resizeStartSize = null;
-    this.resizeStartPosition = null;
+    this.interactionMode = this.transitionInteractionMode("mouseup");
+    this.activeResizeHandle = null;
+    this.mouseStart = null;
+    this.initialBounds = null;
     document.removeEventListener("mousemove", this.handleMouseMove);
     document.removeEventListener("mouseup", this.handleMouseUp);
   }
 
-  private dispatchBoundsChange() {
-    this.dispatchEvent(
-      new CustomEvent("bounds-change", {
-        detail: { bounds: this.bounds },
-        bubbles: true,
-        composed: true,
-      }),
-    );
-  }
-
-  private dispatchRotationChange() {
-    this.dispatchEvent(
-      new CustomEvent("rotation-change", {
-        detail: { rotation: this.bounds.rotation },
-        bubbles: true,
-        composed: true,
-      }),
-    );
-  }
-
   render() {
-    const currentBounds = this.getCurrentBounds();
+    // Always render from bounds prop (one-way data flow)
+    // During interaction: dispatch events, parent updates element, parent updates handle bounds prop
+    const currentBounds = this.bounds;
     const rotation = this.enableRotation ? (currentBounds.rotation ?? 0) : 0;
 
     const overlayStyles: Record<string, string> = {
@@ -458,7 +439,7 @@ export class EFTransformHandles extends LitElement {
       overlayStyles.transformOrigin = "center";
     }
 
-    const handles: ResizeHandle[] = [
+    const allHandles: ResizeHandle[] = [
       "nw",
       "n",
       "ne",
@@ -468,10 +449,12 @@ export class EFTransformHandles extends LitElement {
       "sw",
       "w",
     ];
+    const cornerHandles: ResizeHandle[] = ["nw", "ne", "se", "sw"];
+    const handles = this.cornersOnly ? cornerHandles : allHandles;
 
     return html`
       <div
-        class="overlay ${this.isDragging ? "dragging" : ""}"
+        class="overlay ${this.interactionMode === "dragging" ? "dragging" : ""}"
         style=${styleMap(overlayStyles)}
       >
         ${
@@ -487,12 +470,17 @@ export class EFTransformHandles extends LitElement {
         ${
           this.enableResize
             ? handles.map(
-                (handle) => html`
+                (handle) => {
+                  const rotation = this.enableRotation ? (currentBounds.rotation ?? 0) : 0;
+                  const cursor = getResizeHandleCursor(handle, rotation);
+                  return html`
                 <div
                   class="handle ${handle}"
+                      style=${styleMap({ cursor })}
                   @mousedown=${(e: MouseEvent) => this.handleResizeMouseDown(e, handle)}
                 ></div>
-              `,
+                  `;
+                },
               )
             : ""
         }
