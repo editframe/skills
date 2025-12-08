@@ -40,3 +40,8 @@ export const panZoomElementProperties: PropertyDefinition[] = [
 
 
 
+
+
+
+
+
