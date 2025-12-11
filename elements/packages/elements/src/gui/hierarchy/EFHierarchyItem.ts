@@ -86,6 +86,7 @@ export function renderHierarchyChildren(
   hideSelectors?: string[],
   showSelectors?: string[],
   skipRootFiltering = false,
+  temporalOnly = false,
 ): Array<TemplateResult<1> | typeof nothing> {
   return children.flatMap((child) => {
     if (
@@ -100,6 +101,7 @@ export function renderHierarchyChildren(
         .element=${child}
         .hideSelectors=${hideSelectors}
         .showSelectors=${showSelectors}
+        .temporalOnly=${temporalOnly}
       ></ef-timegroup-hierarchy-item>`;
     }
     if (child instanceof EFImage) {
@@ -107,6 +109,7 @@ export function renderHierarchyChildren(
         .element=${child}
         .hideSelectors=${hideSelectors}
         .showSelectors=${showSelectors}
+        .temporalOnly=${temporalOnly}
       ></ef-image-hierarchy-item>`;
     }
     if (child instanceof EFAudio) {
@@ -114,6 +117,7 @@ export function renderHierarchyChildren(
         .element=${child}
         .hideSelectors=${hideSelectors}
         .showSelectors=${showSelectors}
+        .temporalOnly=${temporalOnly}
       ></ef-audio-hierarchy-item>`;
     }
     if (child instanceof EFVideo) {
@@ -121,6 +125,7 @@ export function renderHierarchyChildren(
         .element=${child}
         .hideSelectors=${hideSelectors}
         .showSelectors=${showSelectors}
+        .temporalOnly=${temporalOnly}
       ></ef-video-hierarchy-item>`;
     }
     if (child instanceof EFCaptions) {
@@ -128,6 +133,7 @@ export function renderHierarchyChildren(
         .element=${child}
         .hideSelectors=${hideSelectors}
         .showSelectors=${showSelectors}
+        .temporalOnly=${temporalOnly}
       ></ef-captions-hierarchy-item>`;
     }
     if (child instanceof EFCaptionsActiveWord) {
@@ -135,6 +141,7 @@ export function renderHierarchyChildren(
         .element=${child}
         .hideSelectors=${hideSelectors}
         .showSelectors=${showSelectors}
+        .temporalOnly=${temporalOnly}
       ></ef-captions-active-word-hierarchy-item>`;
     }
     if (child instanceof EFText) {
@@ -142,6 +149,7 @@ export function renderHierarchyChildren(
         .element=${child}
         .hideSelectors=${hideSelectors}
         .showSelectors=${showSelectors}
+        .temporalOnly=${temporalOnly}
       ></ef-text-hierarchy-item>`;
     }
     if (child instanceof EFTextSegment) {
@@ -149,6 +157,7 @@ export function renderHierarchyChildren(
         .element=${child}
         .hideSelectors=${hideSelectors}
         .showSelectors=${showSelectors}
+        .temporalOnly=${temporalOnly}
       ></ef-text-segment-hierarchy-item>`;
     }
     if (child instanceof EFWaveform) {
@@ -156,7 +165,13 @@ export function renderHierarchyChildren(
         .element=${child}
         .hideSelectors=${hideSelectors}
         .showSelectors=${showSelectors}
+        .temporalOnly=${temporalOnly}
       ></ef-waveform-hierarchy-item>`;
+    }
+    
+    // Skip non-temporal HTML elements when temporalOnly is true
+    if (temporalOnly) {
+      return nothing;
     }
     
     // Handle all other HTML elements (plain DOM nodes, custom elements, etc.)
@@ -272,6 +287,9 @@ export class EFHierarchyItem<
 
   @property({ type: Array, attribute: false })
   showSelectors?: string[];
+
+  @property({ type: Boolean, attribute: false })
+  temporalOnly = false;
 
   @state()
   private localExpanded = true;
@@ -523,6 +541,8 @@ export class EFHierarchyItem<
       Array.from(this.element.children),
       this.hideSelectors,
       this.showSelectors,
+      false,
+      this.temporalOnly,
     );
   }
 }

@@ -188,6 +188,13 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
   @property({ attribute: false })
   scrollContainerRef?: { current: HTMLElement | null };
 
+  /**
+   * Reference to the element that represents the actual track content area.
+   * Used to calculate the offset between the scroll container and where tracks begin.
+   */
+  @property({ attribute: false })
+  trackContentRef?: { current: HTMLElement | null };
+
   @property({ attribute: false })
   onSeek?: (time: number) => void;
 
@@ -235,7 +242,16 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
 
       const scrollContainerRect = scrollContainer.getBoundingClientRect();
       const scrollLeft = scrollContainer.scrollLeft || 0;
-      const x = e.clientX - scrollContainerRect.left;
+      
+      // Calculate pixel offset dynamically from the track content element
+      // This accounts for any hierarchy panel or other elements before the tracks
+      let pixelOffset = 0;
+      if (this.trackContentRef?.current) {
+        const trackRect = this.trackContentRef.current.getBoundingClientRect();
+        pixelOffset = trackRect.left - scrollContainerRect.left + scrollContainer.scrollLeft;
+      }
+      
+      const x = e.clientX - scrollContainerRect.left - pixelOffset;
       const pixelPosition = scrollLeft + x;
       const effectiveWidth =
         this.containerWidth > 0
@@ -251,11 +267,12 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
       );
       rawTime = Math.max(0, Math.min(rawTime, duration));
 
-      // Quantize to frame boundaries if FPS is provided
-      const quantizedTime =
+      // Quantize to frame boundaries if FPS is provided, then clamp to duration
+      let quantizedTime =
         this.fps && this.fps > 0
           ? quantizeToFrameTimeMs(rawTime, this.fps)
           : rawTime;
+      quantizedTime = Math.max(0, Math.min(quantizedTime, duration));
 
       this.scrubProgress = quantizedTime / duration;
 

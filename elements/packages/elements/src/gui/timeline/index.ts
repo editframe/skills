@@ -7,4 +7,13 @@ export {
   determineEditingState,
 } from "./timelineEditingContext.js";
 export { getTrimConstraints, type TrimConstraints } from "./TrimConstraints.js";
+export {
+  type TimelineState,
+  timelineStateContext,
+  timeToPx,
+  pxToTime,
+  DEFAULT_PIXELS_PER_MS,
+  zoomToPixelsPerMs,
+  pixelsPerMsToZoom,
+} from "./timelineStateContext.js";
 

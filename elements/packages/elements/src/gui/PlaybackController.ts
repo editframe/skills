@@ -126,7 +126,10 @@ export class PlaybackController implements ReactiveController {
     const fps = (this.#host as any).fps ?? 30;
     if (!fps || fps <= 0) return rawTime;
     const frameDurationS = 1 / fps;
-    return Math.round(rawTime / frameDurationS) * frameDurationS;
+    const quantizedTime = Math.round(rawTime / frameDurationS) * frameDurationS;
+    // Clamp to valid range after quantization to prevent exceeding duration
+    const durationS = this.#host.durationMs / 1000;
+    return Math.max(0, Math.min(quantizedTime, durationS));
   }
 
   set currentTime(time: number) {
@@ -210,16 +213,19 @@ export class PlaybackController implements ReactiveController {
   // Update time during playback without triggering a seek
   // Used by #syncPlayheadToAudioContext to avoid frame drops
   #updatePlaybackTime(timeMs: number): void {
-    const timeSec = timeMs / 1000;
+    // Clamp to valid range to prevent time exceeding duration
+    const durationMs = this.#host.durationMs;
+    const clampedTimeMs = Math.max(0, Math.min(timeMs, durationMs));
+    const timeSec = clampedTimeMs / 1000;
     if (this.#currentTime === timeSec) {
       return;
     }
     this.#currentTime = timeSec;
     this.#host.requestUpdate("currentTime");
-    this.#currentTimeMsProvider.setValue(timeMs);
+    this.#currentTimeMsProvider.setValue(clampedTimeMs);
     this.#notifyListeners({
       property: "currentTimeMs",
-      value: timeMs,
+      value: clampedTimeMs,
     });
     // Trigger frame rendering without the async seek mechanism
     this.runThrottledFrameTask();

@@ -34,6 +34,7 @@ import { EFTimegroup } from "../elements/EFTimegroup.js";
 import { EFVideo } from "../elements/EFVideo.js";
 import { EFWaveform } from "../elements/EFWaveform.js";
 import { TargetController } from "../elements/TargetController.js";
+import "../elements/EFThumbnailStrip.js";
 import { TimegroupController } from "../elements/TimegroupController.js";
 import { targetTemporalContext } from "./ContextMixin.ts";
 import type { EFPreview } from "./EFPreview.js";
@@ -285,8 +286,69 @@ export class EFAudioFilmstrip extends FilmstripItem {
 
 @customElement("ef-video-filmstrip")
 export class EFVideoFilmstrip extends FilmstripItem {
-  contents() {
-    return html` 📼 `;
+  static styles = [
+    FilmstripItem.styles,
+    css`
+      ef-thumbnail-strip {
+        height: 100%;
+        border: none;
+        border-radius: 0;
+        background: transparent;
+      }
+    `,
+  ];
+
+  render() {
+    const video = this.element as EFVideo;
+    const elementId = (this.element as HTMLElement).id || "";
+    const trimStartMs = this.element.trimStartMs ?? 0;
+    const trimEndMs = this.element.trimEndMs ?? 0;
+    const intrinsicDurationMs = this.element.intrinsicDurationMs ?? this.element.durationMs;
+
+    return html`<div style=${styleMap(this.gutterStyles)}>
+      <div
+        style="background-color: var(--filmstrip-bg);"
+        ?data-focused=${this.isFocused}
+        @mouseenter=${() => {
+          if (this.focusContext) {
+            this.focusContext.focusedElement = this.element;
+          }
+        }}
+        @mouseleave=${() => {
+          if (this.focusContext) {
+            this.focusContext.focusedElement = null;
+          }
+        }}
+      >
+        <div
+          ?data-focused=${this.isFocused}
+          class="trim-container border-outset relative mb-[1px] block h-[48px] text-nowrap border text-sm"
+          style=${styleMap({
+            ...this.trimPortionStyles,
+            backgroundColor: this.isFocused
+              ? "var(--filmstrip-item-focused)"
+              : "var(--filmstrip-item-bg)",
+            borderColor: "var(--filmstrip-border)",
+          })}
+        >
+          <ef-thumbnail-strip
+            .targetElement=${video}
+            .useIntrinsicDuration=${true}
+          ></ef-thumbnail-strip>
+          ${this.enableTrim
+            ? html`<ef-trim-handles
+                element-id=${elementId}
+                pixels-per-ms=${this.pixelsPerMs}
+                trim-start-ms=${trimStartMs}
+                trim-end-ms=${trimEndMs}
+                intrinsic-duration-ms=${intrinsicDurationMs}
+                @trim-change=${this.handleTrimChange}
+              ></ef-trim-handles>`
+            : nothing}
+        </div>
+      </div>
+      ${this.renderChildren()}
+    </div>`;
   }
 }
 
@@ -931,12 +993,9 @@ const renderFilmstripChildren = (
         .showSelectors=${showSelectors}
       ></ef-waveform-filmstrip>`;
     }
-    return html`<ef-html-filmstrip
-      .element=${child}
-      .pixelsPerMs=${pixelsPerMs}
-      .hideSelectors=${hideSelectors}
-      .showSelectors=${showSelectors}
-    ></ef-html-filmstrip>`;
+    // Skip non-temporal HTML elements (divs, spans, etc.) in the filmstrip
+    // They don't have temporal properties and shouldn't appear in the timeline
+    return nothing;
   });
 };
 
@@ -996,6 +1055,16 @@ export class EFFilmstrip extends TWMixin(LitElement) {
   ];
   @property({ type: Number })
   pixelsPerMs = 0.04;
+
+  @property({ type: Boolean, attribute: "hide-playhead" })
+  hidePlayhead = false;
+
+  /**
+   * When true, disables internal horizontal scrolling on the gutter.
+   * Used when filmstrip is embedded in EFTimeline which handles scrolling externally.
+   */
+  @property({ type: Boolean, attribute: "disable-internal-scroll" })
+  disableInternalScroll = false;
 
   @property({ type: String })
   hide = "";
@@ -1257,24 +1326,25 @@ export class EFFilmstrip extends TWMixin(LitElement) {
         backgroundColor: "var(--filmstrip-gutter-bg)",
       })}>
         <div
-          class="z-10 pl-1 pr-1 pt-[8px] shadow overflow-auto"
+          class="z-10 pl-1 pr-1 pt-[8px] shadow ${this.disableInternalScroll ? 'overflow-visible' : 'overflow-auto'}"
           ${ref(this.hierarchyRef)}
-          @scroll=${this.syncHierarchyScroll}
+          @scroll=${this.disableInternalScroll ? nothing : this.syncHierarchyScroll}
         >
           ${renderHierarchyChildren(
             target ? ([target] as unknown as Element[]) : [],
             this.hideSelectors,
             this.showSelectors,
             true,
+            true,
           )}
         </div>
         <div
-          class="flex h-full w-full cursor-crosshair overflow-auto pt-[8px] touch-pan-x"
+          class="flex h-full w-full cursor-crosshair pt-[8px] touch-pan-x ${this.disableInternalScroll ? 'overflow-visible' : 'overflow-auto'}"
           style="background-color: var(--filmstrip-timeline-bg);"
           id="gutter"
           ${ref(this.gutterRef)}
-          @scroll=${this.syncGutterScroll}
-          @wheel=${this.scrollScrub}
+          @scroll=${this.disableInternalScroll ? nothing : this.syncGutterScroll}
+          @wheel=${this.disableInternalScroll ? nothing : this.scrollScrub}
         >
           <div
             class="relative h-full w-full touch-none"
@@ -1283,7 +1353,7 @@ export class EFFilmstrip extends TWMixin(LitElement) {
             @pointerdown=${this.startScrub}
             @contextmenu=${this.handleContextMenu}
           >
-            <div
+            ${this.hidePlayhead ? nothing : html`<div
               class="border-red pointer-events-none absolute z-[20] h-full w-[2px] border-r-2"
               style=${styleMap({
                 left: `${this.pixelsPerMs * this.currentTimeMs}px`,
@@ -1291,7 +1361,7 @@ export class EFFilmstrip extends TWMixin(LitElement) {
                 borderColor: "var(--filmstrip-playhead)",
               })}
               ${ref(this.playheadRef)}
-            ></div>
+            ></div>`}
 
             ${renderFilmstripChildren(
               target ? ([target] as unknown as Element[]) : [],

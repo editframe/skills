@@ -190,13 +190,12 @@ export type { OverlayItemPosition } from "./gui/EFOverlayItem.ts";
 
 import "./gui/EFTimelineRuler.ts";
 
-export { EFTimelineRuler } from "./gui/EFTimelineRuler.ts";
-export {
-  calculateOptimalInterval,
+export { 
+  EFTimelineRuler, 
+  quantizeToFrameTimeMs,
   calculateFrameIntervalMs,
   calculatePixelsPerFrame,
   shouldShowFrameMarkers,
-  quantizeToFrameTimeMs,
 } from "./gui/EFTimelineRuler.ts";
 
 import "./gui/timeline/EFTimeline.js";

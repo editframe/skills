@@ -1,9 +1,15 @@
 import { consume, provide } from "@lit/context";
-import { css, html, LitElement, nothing, type PropertyValues } from "lit";
+import { css, html, LitElement, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, eventOptions, property, state } from "lit/decorators.js";
 import { createRef, ref, type Ref } from "lit/directives/ref.js";
+import { styleMap } from "lit/directives/style-map.js";
 
+import { EFAudio } from "../../elements/EFAudio.js";
+import { EFImage } from "../../elements/EFImage.js";
+import { EFText } from "../../elements/EFText.js";
 import { isEFTemporal, type TemporalMixinInterface } from "../../elements/EFTemporal.js";
+import { EFTimegroup } from "../../elements/EFTimegroup.js";
+import { EFVideo } from "../../elements/EFVideo.js";
 import { findRootTemporal } from "../../elements/findRootTemporal.js";
 import { TargetController } from "../../elements/TargetController.js";
 import { selectionContext } from "../../canvas/selection/selectionContext.js";
@@ -14,10 +20,33 @@ import { type FocusContext, focusContext } from "../focusContext.js";
 import { focusedElementContext } from "../focusedElementContext.js";
 import { loopContext, playingContext } from "../playingContext.js";
 import { TWMixin } from "../TWMixin.js";
+import { 
+  timelineStateContext, 
+  type TimelineState, 
+  timeToPx, 
+  pxToTime,
+  DEFAULT_PIXELS_PER_MS,
+  pixelsPerMsToZoom,
+} from "./timelineStateContext.js";
 import "../EFTimelineRuler.js";
-import "../EFScrubber.js";
-import "../EFFilmstrip.js";
+import { 
+  quantizeToFrameTimeMs,
+  calculateFrameIntervalMs,
+  calculatePixelsPerFrame,
+  shouldShowFrameMarkers,
+} from "../EFTimelineRuler.js";
+import "../../elements/EFThumbnailStrip.js";
 
+// ============================================================================
+// TIMELINE STATE CONTEXT
+// ============================================================================
+
+/**
+ * EFTimeline - Unified timeline component
+ * 
+ * Core invariant: pixelsPerMs determines all positioning.
+ * Everything else (ruler, tracks, playhead) derives from this single value.
+ */
 @customElement("ef-timeline")
 export class EFTimeline extends TWMixin(LitElement) {
   static styles = [
@@ -28,11 +57,18 @@ export class EFTimeline extends TWMixin(LitElement) {
         height: 100%;
         min-height: 100px;
         
+        /* Layout coordination via CSS custom property */
+        --timeline-hierarchy-width: 200px;
+        
+        /* Theme */
         --timeline-bg: rgb(30 41 59);
         --timeline-border: rgb(71 85 105);
         --timeline-header-bg: rgb(51 65 85);
         --timeline-text: rgb(226 232 240);
         --timeline-ruler-bg: rgb(51 65 85);
+        --timeline-track-bg: rgb(51 65 85);
+        --timeline-track-hover: rgb(71 85 105);
+        --timeline-playhead: rgb(239 68 68);
       }
       
       :host(.light) {
@@ -41,19 +77,22 @@ export class EFTimeline extends TWMixin(LitElement) {
         --timeline-header-bg: rgb(226 232 240);
         --timeline-text: rgb(30 41 59);
         --timeline-ruler-bg: rgb(226 232 240);
+        --timeline-track-bg: rgb(226 232 240);
+        --timeline-track-hover: rgb(203 213 225);
+        --timeline-playhead: rgb(185 28 28);
       }
       
       .container {
         display: flex;
         flex-direction: column;
         width: 100%;
-        max-width: none;
         height: 100%;
         background: var(--timeline-bg);
         color: var(--timeline-text);
         overflow: hidden;
       }
       
+      /* === HEADER / CONTROLS === */
       .header {
         display: flex;
         align-items: center;
@@ -158,9 +197,9 @@ export class EFTimeline extends TWMixin(LitElement) {
         min-width: 48px;
         text-align: center;
         font-weight: 500;
-        color: var(--timeline-text);
       }
       
+      /* === TIMELINE LAYOUT === */
       .timeline-area {
         flex: 1;
         display: flex;
@@ -169,29 +208,54 @@ export class EFTimeline extends TWMixin(LitElement) {
         overflow: hidden;
       }
       
-      .ruler-container {
-        position: relative;
+      .ruler-row {
+        display: flex;
         height: 24px;
         background: var(--timeline-ruler-bg);
         border-bottom: 1px solid var(--timeline-border);
         flex-shrink: 0;
+      }
+      
+      .ruler-spacer {
+        width: var(--timeline-hierarchy-width);
+        flex-shrink: 0;
+        background: var(--timeline-header-bg);
+        border-right: 1px solid var(--timeline-border);
+      }
+      
+      .ruler-content {
+        flex: 1;
+        position: relative;
         overflow: hidden;
-        pointer-events: auto;
         cursor: ew-resize;
       }
       
-      .content {
+      .ruler-content ef-timeline-ruler {
+        width: 100%;
+        height: 100%;
+      }
+      
+      .tracks-viewport {
         flex: 1;
         display: flex;
-        flex-direction: column;
-        position: relative;
         overflow: hidden;
+        position: relative;
+      }
+      
+      .hierarchy-panel {
+        width: var(--timeline-hierarchy-width);
+        flex-shrink: 0;
+        background: var(--timeline-header-bg);
+        border-right: 1px solid var(--timeline-border);
+        overflow-y: auto;
+        overflow-x: hidden;
       }
       
       .tracks-scroll {
         flex: 1;
         overflow: auto;
         position: relative;
+        background: var(--timeline-track-bg);
       }
       
       .tracks-content {
@@ -199,19 +263,100 @@ export class EFTimeline extends TWMixin(LitElement) {
         min-height: 100%;
       }
       
-      .playhead-container {
+      /* === PLAYHEAD === */
+      .playhead {
         position: absolute;
         top: 0;
-        left: 0;
-        right: 0;
         bottom: 0;
+        width: 2px;
+        background: var(--timeline-playhead);
         pointer-events: none;
         z-index: 100;
       }
       
-      .playhead-container ::slotted(*),
-      .playhead-container * {
+      .playhead-handle {
+        position: absolute;
+        top: -4px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 12px;
+        height: 12px;
+        background: var(--timeline-playhead);
+        border-radius: 50%;
         pointer-events: auto;
+        cursor: ew-resize;
+      }
+      
+      /* === FRAME HIGHLIGHT === */
+      .frame-highlight {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        background: rgba(59, 130, 246, 0.3);
+        border-left: 2px solid rgba(59, 130, 246, 0.7);
+        pointer-events: none;
+        z-index: 99;
+      }
+      
+      /* === TRACK ITEMS === */
+      .track-row {
+        display: flex;
+        align-items: center;
+        height: 28px;
+        border-bottom: 1px solid var(--timeline-border);
+      }
+      
+      .track-label {
+        padding: 0 8px;
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      
+      .track-bar {
+        position: absolute;
+        height: 22px;
+        background: rgba(59, 130, 246, 0.4);
+        border: 1px solid rgba(59, 130, 246, 0.6);
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+      }
+      
+      .track-bar:hover {
+        background: rgba(59, 130, 246, 0.5);
+      }
+      
+      .track-bar[data-focused="true"] {
+        background: rgba(59, 130, 246, 0.6);
+        border-color: rgba(59, 130, 246, 0.8);
+      }
+      
+      .track-bar.video {
+        background: rgba(147, 51, 234, 0.4);
+        border-color: rgba(147, 51, 234, 0.6);
+      }
+      
+      .track-bar.audio {
+        background: rgba(34, 197, 94, 0.4);
+        border-color: rgba(34, 197, 94, 0.6);
+      }
+      
+      .track-bar.image {
+        background: rgba(234, 179, 8, 0.4);
+        border-color: rgba(234, 179, 8, 0.6);
+      }
+      
+      .track-bar.text {
+        background: rgba(236, 72, 153, 0.4);
+        border-color: rgba(236, 72, 153, 0.6);
+      }
+      
+      .track-bar.timegroup {
+        background: rgba(100, 116, 139, 0.4);
+        border-color: rgba(100, 116, 139, 0.6);
       }
       
       .empty-state {
@@ -225,31 +370,19 @@ export class EFTimeline extends TWMixin(LitElement) {
     `,
   ];
 
+  // ============================================================================
+  // PROPERTIES
+  // ============================================================================
+
   @property({ type: String })
   target = "";
 
-  @consume({ context: selectionContext, subscribe: true })
-  selectionContext?: import("../../canvas/selection/selectionContext.js").SelectionContext;
-
-  /**
-   * Get canvas selection context by finding the canvas element.
-   * Used when timeline is a sibling of canvas (can't access via Lit context).
+  /** 
+   * The core zoom value - pixels per millisecond.
+   * All positioning derives from this single value.
    */
-  private getCanvasSelectionContext(): import("../../canvas/selection/selectionContext.js").SelectionContext | undefined {
-    // First try Lit context (works when timeline is inside canvas)
-    if (this.selectionContext) {
-      return this.selectionContext;
-    }
-    // Fallback: find canvas element and access its selectionContext property
-    const canvas = document.querySelector('ef-canvas') as any;
-    if (canvas && canvas.selectionContext) {
-      return canvas.selectionContext;
-    }
-    return undefined;
-  }
-
-  @property({ type: Number, attribute: "zoom-scale" })
-  zoomScale = 1.0;
+  @property({ type: Number, attribute: "pixels-per-ms" })
+  pixelsPerMs = DEFAULT_PIXELS_PER_MS;
 
   @property({ type: Number, attribute: "min-zoom" })
   minZoom = 0.1;
@@ -263,6 +396,15 @@ export class EFTimeline extends TWMixin(LitElement) {
   @property({ type: Boolean, attribute: "show-controls" })
   showControls = true;
 
+  @property({ type: Boolean, attribute: "show-ruler" })
+  showRuler = true;
+
+  @property({ type: Boolean, attribute: "show-hierarchy" })
+  showHierarchy = true;
+
+  @property({ type: Boolean, attribute: "show-playhead" })
+  showPlayhead = true;
+
   @property({ type: Boolean, attribute: "show-playback-controls" })
   showPlaybackControls = true;
 
@@ -271,6 +413,10 @@ export class EFTimeline extends TWMixin(LitElement) {
 
   @property({ type: Boolean, attribute: "show-time-display" })
   showTimeDisplay = true;
+
+  // ============================================================================
+  // STATE
+  // ============================================================================
 
   @state()
   private targetElement: HTMLElement | null = null;
@@ -284,24 +430,49 @@ export class EFTimeline extends TWMixin(LitElement) {
   @state()
   private isLooping = false;
 
-  private targetController?: TargetController;
-  private scrollContainerRef: Ref<HTMLDivElement> = createRef();
-  private animationFrameId?: number;
-  private scrubberScrollContainerRef = { current: null as HTMLElement | null };
+  @state()
+  private focusedElement: HTMLElement | null = null;
 
-  private get scrollContainerRefForScrubber() {
-    // Update the ref object when the ref value changes
-    this.scrubberScrollContainerRef.current = this.scrollContainerRef.value ?? null;
-    return this.scrubberScrollContainerRef;
-  }
+  @state()
+  private viewportScrollLeft = 0;
+
+  @provide({ context: timelineStateContext })
+  @state()
+  private _timelineState: TimelineState = {
+    pixelsPerMs: DEFAULT_PIXELS_PER_MS,
+    currentTimeMs: 0,
+    durationMs: 0,
+    viewportScrollLeft: 0,
+    seek: () => {},
+    zoomIn: () => {},
+    zoomOut: () => {},
+  };
+
+  private targetController?: TargetController;
+  private tracksScrollRef: Ref<HTMLDivElement> = createRef();
+  private hierarchyScrollRef: Ref<HTMLDivElement> = createRef();
+  private containerRef: Ref<HTMLDivElement> = createRef();
+  private animationFrameId?: number;
+  private selectionChangeHandler?: () => void;
+  private scrollHandler?: () => void;
+  private keydownHandler?: (e: KeyboardEvent) => void;
+  private isDraggingPlayhead = false;
+
+  // ============================================================================
+  // CONTEXT PROVIDERS
+  // ============================================================================
+
+  @consume({ context: selectionContext, subscribe: true })
+  selectionContext?: import("../../canvas/selection/selectionContext.js").SelectionContext;
 
   @provide({ context: focusContext })
   @state()
   private _focusContextValue: FocusContext = { focusedElement: null };
 
   @provide({ context: focusedElementContext })
-  @state()
-  private _focusedElement: HTMLElement | null = null;
+  get _focusedElement(): HTMLElement | null {
+    return this.focusedElement;
+  }
 
   @provide({ context: playingContext })
   get providedPlaying(): boolean {
@@ -328,23 +499,56 @@ export class EFTimeline extends TWMixin(LitElement) {
     return this.targetTemporal;
   }
 
+  /** Get timeline state (for external access) */
+  get timelineState(): TimelineState {
+    return this._timelineState;
+  }
+
+  /** Update timeline state when any constituent value changes */
+  private updateTimelineState(): void {
+    const newState: TimelineState = {
+      pixelsPerMs: this.pixelsPerMs,
+      currentTimeMs: this.currentTimeMs,
+      durationMs: this.durationMs,
+      viewportScrollLeft: this.viewportScrollLeft,
+      seek: (ms: number) => this.handleSeek(ms),
+      zoomIn: () => this.handleZoomIn(),
+      zoomOut: () => this.handleZoomOut(),
+    };
+    
+    // Only update if values changed to avoid infinite loops
+    if (
+      this._timelineState.pixelsPerMs !== newState.pixelsPerMs ||
+      this._timelineState.currentTimeMs !== newState.currentTimeMs ||
+      this._timelineState.durationMs !== newState.durationMs ||
+      this._timelineState.viewportScrollLeft !== newState.viewportScrollLeft
+    ) {
+      this._timelineState = newState;
+    }
+  }
+
+  // ============================================================================
+  // DERIVED STATE
+  // ============================================================================
+
+  private getCanvasSelectionContext(): import("../../canvas/selection/selectionContext.js").SelectionContext | undefined {
+    if (this.selectionContext) return this.selectionContext;
+    const canvas = document.querySelector('ef-canvas') as any;
+    return canvas?.selectionContext;
+  }
+
   get targetTemporal(): TemporalMixinInterface | null {
-    // If selection context exists and has selections, derive from selection
     const selectionCtx = this.getCanvasSelectionContext();
     if (selectionCtx) {
       const selectedIds = Array.from(selectionCtx.selectedIds);
       if (selectedIds.length > 0 && selectedIds[0]) {
         const element = document.getElementById(selectedIds[0]);
         if (element) {
-          // Walk up from the selected element to find root temporal
           const rootTemporal = findRootTemporal(element);
-          if (rootTemporal) {
-            return rootTemporal;
-          }
+          if (rootTemporal) return rootTemporal;
         }
       }
     }
-    // Fall back to explicit target property
     if (this.targetElement && isEFTemporal(this.targetElement)) {
       return this.targetElement as TemporalMixinInterface & HTMLElement;
     }
@@ -355,30 +559,80 @@ export class EFTimeline extends TWMixin(LitElement) {
     return this.targetTemporal?.durationMs ?? 0;
   }
 
-  get pixelsPerMs(): number {
-    return (100 * this.zoomScale) / 1000;
+  /** Content width in pixels (derived from duration and pixelsPerMs) */
+  get contentWidthPx(): number {
+    return timeToPx(this.durationMs, this.pixelsPerMs);
   }
 
-  private selectionChangeHandler?: (event: CustomEvent) => void;
+  /** Current zoom as percentage (for display) */
+  get zoomPercent(): number {
+    return Math.round(pixelsPerMsToZoom(this.pixelsPerMs) * 100);
+  }
+
+  /** Derive fps from target temporal (defaults to 30) */
+  get fps(): number {
+    const target = this.targetTemporal;
+    if (target && 'fps' in target) {
+      return (target as any).fps ?? 30;
+    }
+    return 30;
+  }
+
+  /** Whether frame markers should be visible at current zoom */
+  get showFrameMarkers(): boolean {
+    const frameIntervalMs = calculateFrameIntervalMs(this.fps);
+    const pixelsPerFrame = calculatePixelsPerFrame(frameIntervalMs, this.pixelsPerMs);
+    return shouldShowFrameMarkers(pixelsPerFrame);
+  }
+
+  // ============================================================================
+  // LIFECYCLE
+  // ============================================================================
 
   connectedCallback(): void {
     super.connectedCallback();
     this.startTimeUpdate();
     this.setupSelectionListener();
+    this.setupKeyboardListener();
+    this.updateTimelineState();
   }
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
     this.stopTimeUpdate();
     this.removeSelectionListener();
+    this.removeScrollListener();
+    this.removeKeyboardListener();
+  }
+
+  protected willUpdate(changedProperties: PropertyValues): void {
+    if (changedProperties.has("target") && this.target) {
+      const selectionCtx = this.getCanvasSelectionContext();
+      const hasSelection = selectionCtx && Array.from(selectionCtx.selectedIds).length > 0;
+      if (!hasSelection && !this.targetController) {
+        this.targetController = new TargetController(this as any);
+      }
+    }
+    
+    // Always update timeline state - values may come from getters
+    this.updateTimelineState();
+    
+    super.willUpdate(changedProperties);
+  }
+
+  protected updated(changedProperties: PropertyValues): void {
+    super.updated(changedProperties);
+    if (this.tracksScrollRef.value && !this.scrollHandler) {
+      this.setupScrollListener();
+    } else if (!this.tracksScrollRef.value && this.scrollHandler) {
+      this.removeScrollListener();
+    }
   }
 
   private setupSelectionListener(): void {
     const selectionCtx = this.getCanvasSelectionContext();
     if (selectionCtx && "addEventListener" in selectionCtx) {
-      this.selectionChangeHandler = () => {
-        this.requestUpdate(); // Trigger re-render to update targetTemporal
-      };
+      this.selectionChangeHandler = () => this.requestUpdate();
       (selectionCtx as any).addEventListener("selectionchange", this.selectionChangeHandler);
     }
   }
@@ -387,43 +641,45 @@ export class EFTimeline extends TWMixin(LitElement) {
     const selectionCtx = this.getCanvasSelectionContext();
     if (selectionCtx && "removeEventListener" in selectionCtx && this.selectionChangeHandler) {
       (selectionCtx as any).removeEventListener("selectionchange", this.selectionChangeHandler);
-      this.selectionChangeHandler = undefined;
     }
   }
 
-  protected willUpdate(changedProperties: PropertyValues): void {
-    if (changedProperties.has("target")) {
-      // Only use TargetController if we have an explicit target and no selection context
-      // (or selection context has no selections)
-      const selectionCtx = this.getCanvasSelectionContext();
-      const hasSelection = selectionCtx && 
-        Array.from(selectionCtx.selectedIds).length > 0;
-      if (this.target && !hasSelection && !this.targetController) {
-        this.targetController = new TargetController(this as any);
-      }
-    }
-    super.willUpdate(changedProperties);
-  }
-
-  protected updated(changedProperties: PropertyValues): void {
-    super.updated(changedProperties);
-    // Update scrubber's scrollContainerRef when it becomes available
-    if (this.scrollContainerRef.value) {
-      const scrubber = this.shadowRoot?.querySelector('ef-scrubber') as any;
-      if (scrubber) {
-        if (scrubber.scrollContainerRef) {
-          scrubber.scrollContainerRef.current = this.scrollContainerRef.value;
+  private setupScrollListener(): void {
+    if (this.tracksScrollRef.value) {
+      this.scrollHandler = () => {
+        if (this.tracksScrollRef.value) {
+          this.viewportScrollLeft = this.tracksScrollRef.value.scrollLeft;
         }
-        // Request update to ensure scrubber re-renders with new ref
-        scrubber.requestUpdate();
-      }
+      };
+      this.tracksScrollRef.value.addEventListener("scroll", this.scrollHandler, { passive: true });
+      this.scrollHandler();
+    }
+  }
+
+  private removeScrollListener(): void {
+    if (this.tracksScrollRef.value && this.scrollHandler) {
+      this.tracksScrollRef.value.removeEventListener("scroll", this.scrollHandler);
+    }
+  }
+
+  private setupKeyboardListener(): void {
+    this.keydownHandler = (e: KeyboardEvent) => this.handleKeyDown(e);
+    this.addEventListener("keydown", this.keydownHandler);
+  }
+
+  private removeKeyboardListener(): void {
+    if (this.keydownHandler) {
+      this.removeEventListener("keydown", this.keydownHandler);
     }
   }
 
   private startTimeUpdate(): void {
     const update = () => {
       if (this.targetTemporal) {
-        this.currentTimeMs = this.targetTemporal.currentTimeMs ?? 0;
+        const rawTime = this.targetTemporal.currentTimeMs ?? 0;
+        const duration = this.targetTemporal.durationMs ?? 0;
+        // Clamp time to valid range to prevent display issues
+        this.currentTimeMs = Math.max(0, Math.min(rawTime, duration));
         this.isPlaying = this.targetTemporal.playing ?? false;
         this.isLooping = this.targetTemporal.loop ?? false;
       }
@@ -437,6 +693,10 @@ export class EFTimeline extends TWMixin(LitElement) {
       cancelAnimationFrame(this.animationFrameId);
     }
   }
+
+  // ============================================================================
+  // EVENT HANDLERS
+  // ============================================================================
 
   private handlePlay(): void {
     this.targetTemporal?.play();
@@ -454,63 +714,155 @@ export class EFTimeline extends TWMixin(LitElement) {
   }
 
   private handleZoomIn(): void {
-    this.zoomScale = Math.min(this.maxZoom, this.zoomScale * 1.25);
+    const currentZoom = pixelsPerMsToZoom(this.pixelsPerMs);
+    const newZoom = Math.min(this.maxZoom, currentZoom * 1.25);
+    this.pixelsPerMs = newZoom * DEFAULT_PIXELS_PER_MS;
   }
 
   private handleZoomOut(): void {
-    this.zoomScale = Math.max(this.minZoom, this.zoomScale / 1.25);
+    const currentZoom = pixelsPerMsToZoom(this.pixelsPerMs);
+    const newZoom = Math.max(this.minZoom, currentZoom / 1.25);
+    this.pixelsPerMs = newZoom * DEFAULT_PIXELS_PER_MS;
   }
 
-  private handleSeek(e: CustomEvent | number): void {
-    const timeMs = typeof e === 'number' ? e : (e.detail as number);
+  /**
+   * Seek to a specific time, optionally quantizing to frame boundaries.
+   * @param timeMs The raw time to seek to
+   * @param snapToFrame Whether to quantize to the nearest frame boundary (default: true when frame markers visible)
+   */
+  private handleSeek(timeMs: number, snapToFrame: boolean = this.showFrameMarkers): void {
+    let seekTime = timeMs;
+    
+    // Quantize to frame boundaries when snapping is enabled
+    if (snapToFrame && this.fps > 0) {
+      seekTime = quantizeToFrameTimeMs(seekTime, this.fps);
+    }
+    
+    // Clamp to valid range
+    const clampedTime = Math.max(0, Math.min(seekTime, this.durationMs));
+    
     if (this.targetTemporal) {
-      this.targetTemporal.currentTimeMs = timeMs;
-      this.currentTimeMs = timeMs;
+      this.targetTemporal.currentTimeMs = clampedTime;
+      this.currentTimeMs = clampedTime;
     }
   }
 
-  @eventOptions({ passive: false, capture: false })
+  /**
+   * Handle keyboard navigation for frame-by-frame or second-by-second movement.
+   * - Arrow Left/Right: move by one frame
+   * - Shift+Arrow Left/Right: move by one second
+   */
+  private handleKeyDown(e: KeyboardEvent): void {
+    // Only handle arrow keys
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") {
+      return;
+    }
+
+    // Don't handle if user is typing in an input/textarea
+    const activeElement = document.activeElement;
+    if (
+      activeElement?.tagName === "INPUT" ||
+      activeElement?.tagName === "TEXTAREA" ||
+      (activeElement as HTMLElement)?.isContentEditable
+    ) {
+      return;
+    }
+
+    e.preventDefault();
+
+    const isShiftPressed = e.shiftKey;
+    const isRightArrow = e.key === "ArrowRight";
+    const fps = this.fps;
+    const durationMs = this.durationMs;
+
+    let newTime: number;
+
+    if (isShiftPressed) {
+      // Shift+arrow: move by 1 second (1000ms)
+      const deltaMs = isRightArrow ? 1000 : -1000;
+      newTime = this.currentTimeMs + deltaMs;
+    } else {
+      // Arrow: move by one frame
+      const frameIntervalMs = fps > 0 ? 1000 / fps : 1000 / 30;
+      const deltaMs = isRightArrow ? frameIntervalMs : -frameIntervalMs;
+      newTime = this.currentTimeMs + deltaMs;
+
+      // Quantize to frame boundaries
+      newTime = quantizeToFrameTimeMs(newTime, fps);
+    }
+
+    // Clamp to bounds
+    newTime = Math.max(0, Math.min(newTime, durationMs));
+
+    // Seek to new time
+    this.handleSeek(newTime);
+  }
+
+  @eventOptions({ passive: false })
   private handleRulerPointerDown(e: PointerEvent): void {
-    // Forward pointer events from ruler to scrubber
-    const scrubber = this.shadowRoot?.querySelector('ef-scrubber');
-    if (scrubber) {
-      // Calculate the time based on the click position
-      const rulerRect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-      const scrollContainer = this.scrollContainerRef.value;
-      const scrollLeft = scrollContainer?.scrollLeft || 0;
-      const x = e.clientX - rulerRect.left;
-      const pixelPosition = scrollLeft + x;
-      const contentWidth = (this.durationMs / 1000) * 100 * this.zoomScale;
-      const duration = this.durationMs;
-      
-      if (contentWidth > 0 && duration > 0) {
-        const pixelsPerSecond = 100 * this.zoomScale;
-        const timeMs = Math.max(0, Math.min((pixelPosition / pixelsPerSecond) * 1000, duration));
-        
-        // Trigger seek directly
-        this.handleSeek(timeMs);
-        
-        // Also forward the event to scrubber for dragging
-        const scrubberRect = scrubber.getBoundingClientRect();
-        const syntheticEvent = new PointerEvent('pointerdown', {
-          pointerId: e.pointerId,
-          bubbles: true,
-          cancelable: true,
-          clientX: e.clientX,
-          clientY: scrubberRect.top + scrubberRect.height / 2,
-          button: e.button,
-          buttons: e.buttons,
-          ctrlKey: e.ctrlKey,
-          shiftKey: e.shiftKey,
-          altKey: e.altKey,
-          metaKey: e.metaKey,
-        });
-        scrubber.dispatchEvent(syntheticEvent);
-      }
+    const target = e.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    const scrollLeft = this.tracksScrollRef.value?.scrollLeft ?? 0;
+    const x = e.clientX - rect.left + scrollLeft;
+    const timeMs = pxToTime(x, this.pixelsPerMs);
+    this.handleSeek(timeMs);
+    this.startPlayheadDrag(e);
+    e.preventDefault();
+  }
+
+  @eventOptions({ passive: false })
+  private handleTracksPointerDown(e: PointerEvent): void {
+    // Only seek on direct clicks (not on track items)
+    if (e.target === e.currentTarget || (e.target as HTMLElement).classList.contains('tracks-content')) {
+      const target = e.currentTarget as HTMLElement;
+      const rect = target.getBoundingClientRect();
+      const scrollLeft = target.scrollLeft;
+      const x = e.clientX - rect.left + scrollLeft;
+      const timeMs = pxToTime(x, this.pixelsPerMs);
+      this.handleSeek(timeMs);
+      this.startPlayheadDrag(e);
       e.preventDefault();
-      e.stopPropagation();
     }
   }
+
+  private startPlayheadDrag(e: PointerEvent): void {
+    this.isDraggingPlayhead = true;
+    const onMove = (moveEvent: PointerEvent) => {
+      if (!this.isDraggingPlayhead) return;
+      const tracksScroll = this.tracksScrollRef.value;
+      if (!tracksScroll) return;
+      const rect = tracksScroll.getBoundingClientRect();
+      const scrollLeft = tracksScroll.scrollLeft;
+      const x = moveEvent.clientX - rect.left + scrollLeft;
+      const timeMs = pxToTime(x, this.pixelsPerMs);
+      this.handleSeek(timeMs);
+    };
+    const onUp = () => {
+      this.isDraggingPlayhead = false;
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  }
+
+  @eventOptions({ passive: true })
+  private syncHierarchyScroll(): void {
+    if (this.hierarchyScrollRef.value && this.tracksScrollRef.value) {
+      this.tracksScrollRef.value.scrollTop = this.hierarchyScrollRef.value.scrollTop;
+    }
+  }
+
+  @eventOptions({ passive: true })
+  private syncTracksScroll(): void {
+    if (this.hierarchyScrollRef.value && this.tracksScrollRef.value) {
+      this.hierarchyScrollRef.value.scrollTop = this.tracksScrollRef.value.scrollTop;
+    }
+  }
+
+  // ============================================================================
+  // RENDERING - CONTROLS
+  // ============================================================================
 
   private formatTime(ms: number): string {
     const seconds = Math.floor(ms / 1000);
@@ -522,51 +874,78 @@ export class EFTimeline extends TWMixin(LitElement) {
 
   private renderPlaybackControls() {
     if (!this.showPlaybackControls) return nothing;
-
     return html`
       <div class="playback-controls">
         ${this.isPlaying
-          ? html`<button class="control-btn" @click=${this.handlePause} 
-                  title="Pause">⏸</button>`
-          : html`<button class="control-btn" @click=${this.handlePlay}
-                  title="Play">▶</button>`}
-        <button
-          class="control-btn ${this.isLooping ? "active" : ""}"
-          @click=${this.handleToggleLoop}
-          title="Loop">
-          🔁
-        </button>
+          ? html`<button class="control-btn" @click=${this.handlePause} title="Pause">⏸</button>`
+          : html`<button class="control-btn" @click=${this.handlePlay} title="Play">▶</button>`}
+        <button class="control-btn ${this.isLooping ? "active" : ""}" @click=${this.handleToggleLoop} title="Loop">🔁</button>
       </div>
     `;
   }
 
   private renderTimeDisplay() {
     if (!this.showTimeDisplay) return nothing;
-
-    return html`
-      <span class="time-display">
-        ${this.formatTime(this.currentTimeMs)} / ${this.formatTime(this.durationMs)}
-      </span>
-    `;
+    return html`<span class="time-display">${this.formatTime(this.currentTimeMs)} / ${this.formatTime(this.durationMs)}</span>`;
   }
 
   private renderZoomControls() {
     if (!this.showZoomControls) return nothing;
-
     return html`
       <div class="zoom-controls">
-        <button class="zoom-btn" @click=${this.handleZoomOut} 
-                title="Zoom out">−</button>
-        <span class="zoom-label">${Math.round(this.zoomScale * 100)}%</span>
-        <button class="zoom-btn" @click=${this.handleZoomIn}
-                title="Zoom in">+</button>
+        <button class="zoom-btn" @click=${this.handleZoomOut} title="Zoom out">−</button>
+        <span class="zoom-label">${this.zoomPercent}%</span>
+        <button class="zoom-btn" @click=${this.handleZoomIn} title="Zoom in">+</button>
       </div>
+    `;
+  }
+
+  /**
+   * Calculate frame highlight bounds (semantics).
+   * Returns null if frame markers aren't visible or duration is invalid.
+   */
+  private calculateFrameHighlightBounds(): { startPx: number; widthPx: number } | null {
+    if (!this.showFrameMarkers || this.durationMs <= 0) {
+      return null;
+    }
+
+    const fps = this.fps;
+    const frameDurationMs = 1000 / fps;
+    const frameStartMs = quantizeToFrameTimeMs(this.currentTimeMs, fps);
+    const frameEndMs = Math.min(frameStartMs + frameDurationMs, this.durationMs);
+
+    const startPx = timeToPx(frameStartMs, this.pixelsPerMs);
+    const endPx = timeToPx(frameEndMs, this.pixelsPerMs);
+    const widthPx = endPx - startPx;
+
+    if (widthPx <= 0 || startPx < 0) {
+      return null;
+    }
+
+    return { startPx, widthPx };
+  }
+
+  /**
+   * Render frame highlight (mechanism).
+   * Shows the current frame as a rectangle to indicate frames have duration.
+   */
+  private renderFrameHighlight() {
+    const bounds = this.calculateFrameHighlightBounds();
+    if (!bounds) return nothing;
+
+    return html`
+      <div 
+        class="frame-highlight" 
+        style=${styleMap({
+          left: `${bounds.startPx}px`,
+          width: `${bounds.widthPx}px`,
+        })}
+      ></div>
     `;
   }
 
   private renderControls() {
     if (!this.showControls) return nothing;
-
     return html`
       <div class="header">
         <div class="controls">
@@ -578,11 +957,100 @@ export class EFTimeline extends TWMixin(LitElement) {
     `;
   }
 
-  render() {
-    const contentWidth = (this.durationMs / 1000) * 100 * this.zoomScale;
-    const targetTemporal = this.targetTemporal;
+  // ============================================================================
+  // RENDERING - TRACKS
+  // ============================================================================
 
-    if (!targetTemporal) {
+  private getElementType(element: Element): string {
+    if (element instanceof EFVideo) return "video";
+    if (element instanceof EFAudio) return "audio";
+    if (element instanceof EFImage) return "image";
+    if (element instanceof EFText) return "text";
+    if (element instanceof EFTimegroup) return "timegroup";
+    return "unknown";
+  }
+
+  private getElementLabel(element: Element): string {
+    const id = element.id || "";
+    const type = this.getElementType(element);
+    return id || type;
+  }
+
+  private renderTrackItem(element: TemporalMixinInterface & Element, depth: number = 0): TemplateResult | typeof nothing {
+    if (!isEFTemporal(element)) return nothing;
+
+    const type = this.getElementType(element);
+    const label = this.getElementLabel(element);
+    const leftPx = timeToPx(element.startTimeWithinParentMs, this.pixelsPerMs);
+    const widthPx = timeToPx(element.durationMs, this.pixelsPerMs);
+    const isFocused = this.focusedElement === element;
+
+    // Render children for timegroups
+    const children = element instanceof EFTimegroup 
+      ? Array.from(element.children).filter(isEFTemporal)
+      : [];
+
+    return html`
+      <div class="track-row" style="padding-left: ${depth * 16}px">
+        <div class="track-label">${label}</div>
+      </div>
+      ${children.map(child => this.renderTrackItem(child as TemporalMixinInterface & Element, depth + 1))}
+    `;
+  }
+
+  private renderTrackBar(element: TemporalMixinInterface & Element, depth: number = 0): TemplateResult | typeof nothing {
+    if (!isEFTemporal(element)) return nothing;
+
+    const type = this.getElementType(element);
+    const leftPx = timeToPx(element.startTimeWithinParentMs, this.pixelsPerMs);
+    const widthPx = timeToPx(element.durationMs, this.pixelsPerMs);
+    const isFocused = this.focusedElement === element;
+    const topPx = depth * 28 + 3;  // 28px per row + 3px padding
+
+    // For videos, render thumbnail strip inside
+    const content = element instanceof EFVideo
+      ? html`<ef-thumbnail-strip target="${(element as HTMLElement).id}" use-intrinsic-duration style="width: 100%; height: 100%;"></ef-thumbnail-strip>`
+      : nothing;
+
+    // Render children for timegroups
+    const children = element instanceof EFTimegroup 
+      ? Array.from(element.children).filter(isEFTemporal)
+      : [];
+
+    return html`
+      <div 
+        class="track-bar ${type}"
+        data-focused="${isFocused}"
+        style=${styleMap({
+          left: `${leftPx}px`,
+          width: `${widthPx}px`,
+          top: `${topPx}px`,
+        })}
+        @mouseenter=${() => { this.focusedElement = element as HTMLElement; this._focusContextValue = { focusedElement: element as HTMLElement }; }}
+        @mouseleave=${() => { this.focusedElement = null; this._focusContextValue = { focusedElement: null }; }}
+      >
+        ${content}
+      </div>
+      ${children.map((child, i) => this.renderTrackBar(child as TemporalMixinInterface & Element, depth + 1 + i))}
+    `;
+  }
+
+  private countTracks(element: TemporalMixinInterface & Element): number {
+    if (!isEFTemporal(element)) return 0;
+    const children = element instanceof EFTimegroup 
+      ? Array.from(element.children).filter(isEFTemporal)
+      : [];
+    return 1 + children.reduce((sum, child) => sum + this.countTracks(child as TemporalMixinInterface & Element), 0);
+  }
+
+  // ============================================================================
+  // MAIN RENDER
+  // ============================================================================
+
+  render() {
+    const target = this.targetTemporal;
+
+    if (!target) {
       return html`
         <div class="container">
           ${this.renderControls()}
@@ -591,46 +1059,61 @@ export class EFTimeline extends TWMixin(LitElement) {
       `;
     }
 
-    // If deriving from selection, filmstrip will use context (providedTargetTemporal)
-    // Otherwise, pass the target ID explicitly
-    const hasSelection = this.selectionContext && 
-      Array.from(this.selectionContext.selectedIds).length > 0;
-    const filmstripTarget = hasSelection ? "" : this.target;
+    const playheadPx = timeToPx(this.currentTimeMs, this.pixelsPerMs);
+    const trackCount = this.countTracks(target as TemporalMixinInterface & Element);
+    const tracksHeightPx = trackCount * 28;
+    const zoomScale = pixelsPerMsToZoom(this.pixelsPerMs);
 
     return html`
-      <div class="container">
+      <div class="container" tabindex="0" ${ref(this.containerRef)}>
         ${this.renderControls()}
         <div class="timeline-area">
-          <div class="ruler-container" @pointerdown=${this.handleRulerPointerDown}>
-            <ef-timeline-ruler
-              duration-ms=${this.durationMs}
-              zoom-scale=${this.zoomScale}
-              container-width=${contentWidth}
-              .scrollContainerElement=${this.scrollContainerRef.value ?? null}
-            ></ef-timeline-ruler>
-          </div>
-          <div class="content">
-            <div class="tracks-scroll" ${ref(this.scrollContainerRef)}>
-              <div class="tracks-content" style="width: ${contentWidth}px;">
-                <ef-filmstrip
-                  target=${filmstripTarget}
-                  pixels-per-ms=${this.pixelsPerMs}
-                  ?enable-trim=${this.enableTrim}
-                ></ef-filmstrip>
+          <!-- Ruler Row -->
+          ${this.showRuler ? html`
+            <div class="ruler-row">
+              ${this.showHierarchy ? html`<div class="ruler-spacer"></div>` : nothing}
+              <div 
+                class="ruler-content" 
+                @pointerdown=${this.handleRulerPointerDown}
+              >
+                <ef-timeline-ruler
+                  duration-ms=${this.durationMs}
+                  fps=${this.fps}
+                ></ef-timeline-ruler>
               </div>
             </div>
-          </div>
-          <div class="playhead-container">
-            <ef-scrubber
-              orientation="vertical"
-              current-time-ms=${this.currentTimeMs}
-              duration-ms=${this.durationMs}
-              zoom-scale=${this.zoomScale}
-              container-width=${contentWidth}
-              .scrollContainerRef=${this.scrollContainerRefForScrubber}
-              .onSeek=${this.handleSeek.bind(this)}
-              @seek=${this.handleSeek}
-            ></ef-scrubber>
+          ` : nothing}
+          
+          <!-- Tracks Viewport -->
+          <div class="tracks-viewport">
+            <!-- Hierarchy Panel -->
+            ${this.showHierarchy ? html`
+              <div class="hierarchy-panel" ${ref(this.hierarchyScrollRef)} @scroll=${this.syncHierarchyScroll}>
+                ${this.renderTrackItem(target as TemporalMixinInterface & Element)}
+              </div>
+            ` : nothing}
+            
+            <!-- Tracks Area -->
+            <div 
+              class="tracks-scroll" 
+              ${ref(this.tracksScrollRef)} 
+              @scroll=${this.syncTracksScroll}
+              @pointerdown=${this.handleTracksPointerDown}
+            >
+              <div class="tracks-content" style="width: ${this.contentWidthPx}px; height: ${tracksHeightPx}px;">
+                ${this.renderTrackBar(target as TemporalMixinInterface & Element)}
+                
+                <!-- Frame Highlight (shows current frame has duration) -->
+                ${this.renderFrameHighlight()}
+                
+                <!-- Playhead -->
+                ${this.showPlayhead ? html`
+                  <div class="playhead" style="left: ${playheadPx}px;">
+                    <div class="playhead-handle"></div>
+                  </div>
+                ` : nothing}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -643,4 +1126,3 @@ declare global {
     "ef-timeline": EFTimeline;
   }
 }
-
