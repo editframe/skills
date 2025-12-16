@@ -15,10 +15,11 @@ describe("coordinateTransform", () => {
     test("converts with PanZoom transform", () => {
       const transform: PanZoomTransform = { x: 10, y: 20, scale: 2 };
       const result = screenToCanvas(150, 250, canvasRect, transform);
-      // (150 - 100 - 10) / 2 = 20
-      // (250 - 200 - 20) / 2 = 15
-      expect(result.x).toBe(20);
-      expect(result.y).toBe(15);
+      // canvasRect already includes pan transform, so we only divide by scale
+      // (150 - 100) / 2 = 25
+      // (250 - 200) / 2 = 25
+      expect(result.x).toBe(25);
+      expect(result.y).toBe(25);
     });
   });
 
@@ -32,10 +33,11 @@ describe("coordinateTransform", () => {
     test("converts with PanZoom transform", () => {
       const transform: PanZoomTransform = { x: 10, y: 20, scale: 2 };
       const result = canvasToScreen(50, 50, canvasRect, transform);
-      // 100 + 50 * 2 + 10 = 210
-      // 200 + 50 * 2 + 20 = 320
-      expect(result.x).toBe(210);
-      expect(result.y).toBe(320);
+      // canvasRect already includes pan transform, so we only multiply by scale
+      // 100 + 50 * 2 = 200
+      // 200 + 50 * 2 = 300
+      expect(result.x).toBe(200);
+      expect(result.y).toBe(300);
     });
   });
 
