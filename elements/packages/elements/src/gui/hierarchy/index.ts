@@ -20,7 +20,3 @@ export {
   type HierarchyContext,
   hierarchyContext,
 } from "./hierarchyContext.js";
-
-
-
-

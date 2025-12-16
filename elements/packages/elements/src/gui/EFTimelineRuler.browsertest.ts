@@ -43,7 +43,9 @@ describe("EFTimelineRuler", () => {
     await timegroup.updateComplete;
     await timeline.updateComplete;
 
-    const ruler = timeline.shadowRoot?.querySelector("ef-timeline-ruler") as EFTimelineRuler;
+    const ruler = timeline.shadowRoot?.querySelector(
+      "ef-timeline-ruler",
+    ) as EFTimelineRuler;
     expect(ruler).toBeTruthy();
     await ruler.updateComplete;
 
@@ -74,7 +76,9 @@ describe("EFTimelineRuler", () => {
     await timegroup.updateComplete;
     await timeline.updateComplete;
 
-    const ruler = timeline.shadowRoot?.querySelector("ef-timeline-ruler") as EFTimelineRuler;
+    const ruler = timeline.shadowRoot?.querySelector(
+      "ef-timeline-ruler",
+    ) as EFTimelineRuler;
     await ruler.updateComplete;
 
     const labels = Array.from(
@@ -104,7 +108,9 @@ describe("EFTimelineRuler", () => {
     await timegroup.updateComplete;
     await timeline.updateComplete;
 
-    const ruler = timeline.shadowRoot?.querySelector("ef-timeline-ruler") as EFTimelineRuler;
+    const ruler = timeline.shadowRoot?.querySelector(
+      "ef-timeline-ruler",
+    ) as EFTimelineRuler;
     await ruler.updateComplete;
 
     const canvas = ruler.shadowRoot?.querySelector("canvas");
@@ -129,7 +135,9 @@ describe("EFTimelineRuler", () => {
     await timegroup.updateComplete;
     await timeline.updateComplete;
 
-    const ruler = timeline.shadowRoot?.querySelector("ef-timeline-ruler") as EFTimelineRuler;
+    const ruler = timeline.shadowRoot?.querySelector(
+      "ef-timeline-ruler",
+    ) as EFTimelineRuler;
     await ruler.updateComplete;
 
     // Ruler should show labels to fill the viewport regardless of content duration
@@ -156,7 +164,9 @@ describe("EFTimelineRuler", () => {
     await timegroup.updateComplete;
     await timeline.updateComplete;
 
-    const ruler = timeline.shadowRoot?.querySelector("ef-timeline-ruler") as EFTimelineRuler;
+    const ruler = timeline.shadowRoot?.querySelector(
+      "ef-timeline-ruler",
+    ) as EFTimelineRuler;
     await ruler.updateComplete;
 
     const labels = Array.from(
@@ -195,32 +205,42 @@ describe("EFTimelineRuler", () => {
     await timegroup.updateComplete;
     await timeline.updateComplete;
 
-    const tracksScroll = timeline.shadowRoot?.querySelector(".tracks-scroll") as HTMLElement;
+    const tracksScroll = timeline.shadowRoot?.querySelector(
+      ".tracks-scroll",
+    ) as HTMLElement;
     expect(tracksScroll).toBeTruthy();
 
-    const ruler = timeline.shadowRoot?.querySelector("ef-timeline-ruler") as EFTimelineRuler;
+    const ruler = timeline.shadowRoot?.querySelector(
+      "ef-timeline-ruler",
+    ) as EFTimelineRuler;
     await ruler.updateComplete;
 
-    const initialLabels = Array.from(ruler.shadowRoot?.querySelectorAll(".label") || []);
+    const initialLabels = Array.from(
+      ruler.shadowRoot?.querySelectorAll(".label") || [],
+    );
     expect(initialLabels.length).toBeGreaterThan(0);
 
     const scrollPosition = 1000;
     tracksScroll.scrollLeft = scrollPosition;
-    tracksScroll.dispatchEvent(new Event('scroll'));
+    tracksScroll.dispatchEvent(new Event("scroll"));
     await timeline.updateComplete;
     await ruler.updateComplete;
 
-    const scrolledLabels = Array.from(ruler.shadowRoot?.querySelectorAll(".label") || []);
-    const labelPositions = scrolledLabels.map((m) => {
-      const viewportX = parseTransformX(m as HTMLElement);
-      return { element: m, viewportX };
-    }).filter((m) => !isNaN(m.viewportX));
+    const scrolledLabels = Array.from(
+      ruler.shadowRoot?.querySelectorAll(".label") || [],
+    );
+    const labelPositions = scrolledLabels
+      .map((m) => {
+        const viewportX = parseTransformX(m as HTMLElement);
+        return { element: m, viewportX };
+      })
+      .filter((m) => !isNaN(m.viewportX));
 
     expect(labelPositions.length).toBeGreaterThan(0);
-    
+
     const viewportWidth = tracksScroll.clientWidth;
-    const someLabelsInViewport = labelPositions.some((label) => 
-      label.viewportX >= 0 && label.viewportX <= viewportWidth
+    const someLabelsInViewport = labelPositions.some(
+      (label) => label.viewportX >= 0 && label.viewportX <= viewportWidth,
     );
     expect(someLabelsInViewport).toBe(true);
   });
@@ -244,36 +264,48 @@ describe("EFTimelineRuler", () => {
     await timegroup.updateComplete;
     await timeline.updateComplete;
 
-    const tracksScroll = timeline.shadowRoot?.querySelector(".tracks-scroll") as HTMLElement;
-    const ruler = timeline.shadowRoot?.querySelector("ef-timeline-ruler") as EFTimelineRuler;
+    const tracksScroll = timeline.shadowRoot?.querySelector(
+      ".tracks-scroll",
+    ) as HTMLElement;
+    const ruler = timeline.shadowRoot?.querySelector(
+      "ef-timeline-ruler",
+    ) as EFTimelineRuler;
     await ruler.updateComplete;
 
     const pixelsPerMs = timeline.pixelsPerMs;
-    
+
     tracksScroll.scrollLeft = 0;
-    tracksScroll.dispatchEvent(new Event('scroll'));
+    tracksScroll.dispatchEvent(new Event("scroll"));
     await timeline.updateComplete;
     await ruler.updateComplete;
 
-    const initialLabels = Array.from(ruler.shadowRoot?.querySelectorAll(".label") || []);
-    const initialTimes = initialLabels.map((m) => {
-      const viewportX = parseTransformX(m as HTMLElement);
-      const absoluteX = viewportX + 0;
-      return absoluteX / pixelsPerMs;
-    }).filter((t) => !isNaN(t));
+    const initialLabels = Array.from(
+      ruler.shadowRoot?.querySelectorAll(".label") || [],
+    );
+    const initialTimes = initialLabels
+      .map((m) => {
+        const viewportX = parseTransformX(m as HTMLElement);
+        const absoluteX = viewportX + 0;
+        return absoluteX / pixelsPerMs;
+      })
+      .filter((t) => !isNaN(t));
 
     const scrollPosition = 1500;
     tracksScroll.scrollLeft = scrollPosition;
-    tracksScroll.dispatchEvent(new Event('scroll'));
+    tracksScroll.dispatchEvent(new Event("scroll"));
     await timeline.updateComplete;
     await ruler.updateComplete;
 
-    const scrolledLabels = Array.from(ruler.shadowRoot?.querySelectorAll(".label") || []);
-    const scrolledTimes = scrolledLabels.map((m) => {
-      const viewportX = parseTransformX(m as HTMLElement);
-      const absoluteX = viewportX + scrollPosition;
-      return absoluteX / pixelsPerMs;
-    }).filter((t) => !isNaN(t));
+    const scrolledLabels = Array.from(
+      ruler.shadowRoot?.querySelectorAll(".label") || [],
+    );
+    const scrolledTimes = scrolledLabels
+      .map((m) => {
+        const viewportX = parseTransformX(m as HTMLElement);
+        const absoluteX = viewportX + scrollPosition;
+        return absoluteX / pixelsPerMs;
+      })
+      .filter((t) => !isNaN(t));
 
     expect(scrolledTimes.length).toBeGreaterThan(0);
     expect(initialTimes.length).toBeGreaterThan(0);
@@ -301,29 +333,37 @@ describe("EFTimelineRuler", () => {
     await timegroup.updateComplete;
     await timeline.updateComplete;
 
-    const tracksScroll = timeline.shadowRoot?.querySelector(".tracks-scroll") as HTMLElement;
-    const ruler = timeline.shadowRoot?.querySelector("ef-timeline-ruler") as EFTimelineRuler;
+    const tracksScroll = timeline.shadowRoot?.querySelector(
+      ".tracks-scroll",
+    ) as HTMLElement;
+    const ruler = timeline.shadowRoot?.querySelector(
+      "ef-timeline-ruler",
+    ) as EFTimelineRuler;
     await ruler.updateComplete;
 
     const pixelsPerMs = timeline.pixelsPerMs;
     const scrollToSeconds10 = 10000 * pixelsPerMs;
-    
+
     tracksScroll.scrollLeft = scrollToSeconds10;
-    tracksScroll.dispatchEvent(new Event('scroll'));
+    tracksScroll.dispatchEvent(new Event("scroll"));
     await timeline.updateComplete;
     await ruler.updateComplete;
 
-    const labels = Array.from(ruler.shadowRoot?.querySelectorAll(".label") || []);
-    const labelTimes = labels.map((m) => {
-      const viewportX = parseTransformX(m as HTMLElement);
-      const absoluteX = viewportX + scrollToSeconds10;
-      const timeMs = absoluteX / pixelsPerMs;
-      return timeMs;
-    }).filter((t) => !isNaN(t));
+    const labels = Array.from(
+      ruler.shadowRoot?.querySelectorAll(".label") || [],
+    );
+    const labelTimes = labels
+      .map((m) => {
+        const viewportX = parseTransformX(m as HTMLElement);
+        const absoluteX = viewportX + scrollToSeconds10;
+        const timeMs = absoluteX / pixelsPerMs;
+        return timeMs;
+      })
+      .filter((t) => !isNaN(t));
 
     expect(labelTimes.length).toBeGreaterThan(0);
     const minTime = Math.min(...labelTimes) / 1000;
-    
+
     // Labels should start near the scroll position (around 10s)
     // and extend to fill the viewport (regardless of content duration)
     expect(minTime).toBeGreaterThanOrEqual(8);
@@ -348,20 +388,32 @@ describe("EFTimelineRuler", () => {
     await timegroup.updateComplete;
     await timeline.updateComplete;
 
-    const ruler = timeline.shadowRoot?.querySelector("ef-timeline-ruler") as EFTimelineRuler;
+    const ruler = timeline.shadowRoot?.querySelector(
+      "ef-timeline-ruler",
+    ) as EFTimelineRuler;
     await ruler.updateComplete;
 
-    const initialLabels = Array.from(ruler.shadowRoot?.querySelectorAll(".label") || []);
+    const initialLabels = Array.from(
+      ruler.shadowRoot?.querySelectorAll(".label") || [],
+    );
 
     timeline.pixelsPerMs = DEFAULT_PIXELS_PER_MS * 3;
     await timeline.updateComplete;
     await ruler.updateComplete;
 
-    const zoomedLabels = Array.from(ruler.shadowRoot?.querySelectorAll(".label") || []);
+    const zoomedLabels = Array.from(
+      ruler.shadowRoot?.querySelectorAll(".label") || [],
+    );
     expect(zoomedLabels.length).toBeGreaterThan(0);
 
-    const initialPositions = initialLabels.map((m) => parseTransformX(m as HTMLElement)).filter((p) => !isNaN(p)).sort((a, b) => a - b);
-    const zoomedPositions = zoomedLabels.map((m) => parseTransformX(m as HTMLElement)).filter((p) => !isNaN(p)).sort((a, b) => a - b);
+    const initialPositions = initialLabels
+      .map((m) => parseTransformX(m as HTMLElement))
+      .filter((p) => !isNaN(p))
+      .sort((a, b) => a - b);
+    const zoomedPositions = zoomedLabels
+      .map((m) => parseTransformX(m as HTMLElement))
+      .filter((p) => !isNaN(p))
+      .sort((a, b) => a - b);
 
     if (initialPositions.length > 1 && zoomedPositions.length > 1) {
       const initialSpacing = initialPositions[1] - initialPositions[0];

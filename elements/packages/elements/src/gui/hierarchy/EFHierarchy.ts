@@ -97,7 +97,9 @@ export class EFHierarchy extends TWMixin(LitElement) {
    * Get canvas selection context from the target canvas element.
    * Used when hierarchy is a sibling of canvas (can't access via Lit context).
    */
-  private getCanvasSelectionContext(): import("../../canvas/selection/selectionContext.js").SelectionContext | undefined {
+  private getCanvasSelectionContext():
+    | import("../../canvas/selection/selectionContext.js").SelectionContext
+    | undefined {
     // First try Lit context (works when hierarchy is inside canvas)
     if (this.canvasSelectionContext) {
       return this.canvasSelectionContext;
@@ -130,13 +132,13 @@ export class EFHierarchy extends TWMixin(LitElement) {
           const element = document.getElementById(elementId);
           if (element) {
             // Find the canvas element
-            const canvas = element.closest('ef-canvas') as any;
+            const canvas = element.closest("ef-canvas") as any;
             if (canvas && canvas.tryRegisterElement) {
               // Try to register if not already registered
               canvas.tryRegisterElement(element);
             }
           }
-          
+
           // Select the element directly by its ID
           selectionCtx.select(elementId);
         } else {
@@ -259,7 +261,6 @@ export class EFHierarchy extends TWMixin(LitElement) {
     return Array.from(target.children);
   }
 
-
   private initializeExpandedState(): void {
     const roots = this.getRootElements();
     const newExpanded = new Set<string>();
@@ -310,14 +311,15 @@ export class EFHierarchy extends TWMixin(LitElement) {
 
     // Retry setting up selection listener if not yet connected
     this.setupSelectionListener();
-    
+
     // Check for selection changes from canvas (via context or direct access)
     const selectionCtx = this.getCanvasSelectionContext();
     if (selectionCtx) {
       const selectedIds = Array.from(selectionCtx.selectedIds);
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const selectedId: string | null = selectedIds.length === 0 ? null : selectedIds[0]!;
-      
+      const selectedId: string | null =
+        selectedIds.length === 0 ? null : selectedIds[0]!;
+
       if (this.hierarchyState.selectedElementId !== selectedId) {
         this.hierarchyState = {
           ...this.hierarchyState,
@@ -327,7 +329,10 @@ export class EFHierarchy extends TWMixin(LitElement) {
     }
 
     // Update provided context when state or targetElement changes
-    if (changedProperties.has("hierarchyState") || changedProperties.has("targetElement")) {
+    if (
+      changedProperties.has("hierarchyState") ||
+      changedProperties.has("targetElement")
+    ) {
       this.providedContext = {
         state: this.hierarchyState,
         actions: this.hierarchyActions,
@@ -354,20 +359,30 @@ export class EFHierarchy extends TWMixin(LitElement) {
     if (this.selectionChangeHandler) {
       return;
     }
-    
+
     const selectionCtx = this.getCanvasSelectionContext();
     if (selectionCtx && "addEventListener" in selectionCtx) {
       this.selectionChangeHandler = () => {
         this.requestUpdate(); // Trigger re-render to update hierarchy items
       };
-      (selectionCtx as any).addEventListener("selectionchange", this.selectionChangeHandler);
+      (selectionCtx as any).addEventListener(
+        "selectionchange",
+        this.selectionChangeHandler,
+      );
     }
   }
 
   private removeSelectionListener(): void {
     const selectionCtx = this.getCanvasSelectionContext();
-    if (selectionCtx && "removeEventListener" in selectionCtx && this.selectionChangeHandler) {
-      (selectionCtx as any).removeEventListener("selectionchange", this.selectionChangeHandler);
+    if (
+      selectionCtx &&
+      "removeEventListener" in selectionCtx &&
+      this.selectionChangeHandler
+    ) {
+      (selectionCtx as any).removeEventListener(
+        "selectionchange",
+        this.selectionChangeHandler,
+      );
       this.selectionChangeHandler = undefined;
     }
   }
@@ -378,9 +393,16 @@ export class EFHierarchy extends TWMixin(LitElement) {
     return html`
       <div class="container">
         ${this.showHeader ? html`<div class="header">${this.header}</div>` : nothing}
-        ${roots.length > 0
-          ? renderHierarchyChildren(roots, this.hideSelectors, this.showSelectors, true)
-          : html`<div class="empty">No elements</div>`}
+        ${
+          roots.length > 0
+            ? renderHierarchyChildren(
+                roots,
+                this.hideSelectors,
+                this.showSelectors,
+                true,
+              )
+            : html`<div class="empty">No elements</div>`
+        }
       </div>
     `;
   }
@@ -391,4 +413,3 @@ declare global {
     "ef-hierarchy": EFHierarchy;
   }
 }
-

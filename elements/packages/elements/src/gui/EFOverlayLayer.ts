@@ -79,15 +79,21 @@ export class EFOverlayLayer extends LitElement {
     }
 
     // 2. Read directly from sibling PanZoom element
-    const panZoomElement = this.parentElement?.querySelector("ef-pan-zoom") as any;
+    const panZoomElement = this.parentElement?.querySelector(
+      "ef-pan-zoom",
+    ) as any;
     if (panZoomElement && typeof panZoomElement.x === "number") {
-      const contentWrapper = panZoomElement.shadowRoot?.querySelector(".content-wrapper");
-      const computedTransform = contentWrapper && window.getComputedStyle(contentWrapper).transform;
-      
+      const contentWrapper =
+        panZoomElement.shadowRoot?.querySelector(".content-wrapper");
+      const computedTransform =
+        contentWrapper && window.getComputedStyle(contentWrapper).transform;
+
       // Parse scale from matrix(scaleX, skewY, skewX, scaleY, tx, ty)
       const matrixMatch = computedTransform?.match(/matrix\(([^)]+)\)/);
-      const scale = matrixMatch ? parseFloat(matrixMatch[1].split(",")[0].trim()) : (panZoomElement.scale ?? 1);
-      
+      const scale = matrixMatch
+        ? parseFloat(matrixMatch[1].split(",")[0].trim())
+        : (panZoomElement.scale ?? 1);
+
       return { x: panZoomElement.x ?? 0, y: panZoomElement.y ?? 0, scale };
     }
 
@@ -115,7 +121,7 @@ export class EFOverlayLayer extends LitElement {
       // If we're a sibling of panzoom, we need to apply the translate ourselves to match the pan.
       if (this.panZoomTransformFromContext) {
         // Child of panzoom - don't apply any transform, parent handles it
-        this.style.transform = 'none';
+        this.style.transform = "none";
       } else {
         // Sibling of panzoom - apply translate directly to match panzoom's pan
         this.style.transform = `translate(${transform.x}px, ${transform.y}px)`;

@@ -168,12 +168,12 @@ export function renderHierarchyChildren(
         .temporalOnly=${temporalOnly}
       ></ef-waveform-hierarchy-item>`;
     }
-    
+
     // Skip non-temporal HTML elements when temporalOnly is true
     if (temporalOnly) {
       return nothing;
     }
-    
+
     // Handle all other HTML elements (plain DOM nodes, custom elements, etc.)
     if (child instanceof HTMLElement) {
       return html`<ef-html-hierarchy-item
@@ -182,7 +182,7 @@ export function renderHierarchyChildren(
         .showSelectors=${showSelectors}
       ></ef-html-hierarchy-item>`;
     }
-    
+
     // Skip non-HTML elements
     return nothing;
   });
@@ -310,9 +310,10 @@ export class EFHierarchyItem<
 
   get isSelected(): boolean {
     // Try to get selection context from hierarchy parent (which can access canvas)
-    const selectionCtx = this.canvasSelectionContext || 
+    const selectionCtx =
+      this.canvasSelectionContext ||
       this.hierarchyContext?.getCanvasSelectionContext?.();
-    
+
     if (selectionCtx && this.elementId) {
       // Check if this element's ID is in the selected IDs
       return selectionCtx.selectedIds.has(this.elementId);
@@ -324,13 +325,18 @@ export class EFHierarchyItem<
 
   get isAncestorSelected(): boolean {
     // Check if this element contains any selected element
-    const selectionCtx = this.canvasSelectionContext || 
+    const selectionCtx =
+      this.canvasSelectionContext ||
       this.hierarchyContext?.getCanvasSelectionContext?.();
-    
+
     if (selectionCtx && this.element) {
       for (const selectedId of selectionCtx.selectedIds) {
         const selectedElement = document.getElementById(selectedId);
-        if (selectedElement && this.element.contains(selectedElement) && selectedElement !== this.element) {
+        if (
+          selectedElement &&
+          this.element.contains(selectedElement) &&
+          selectedElement !== this.element
+        ) {
           return true;
         }
       }
@@ -400,11 +406,11 @@ export class EFHierarchyItem<
   private handleDragOver(e: DragEvent): void {
     e.preventDefault();
     if (!this.hierarchyContext || !this.elementId) return;
-    
+
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const y = e.clientY - rect.top;
     const height = rect.height;
-    
+
     let position: "before" | "after" | "inside";
     if (y < height * 0.25) {
       position = "before";
@@ -413,7 +419,7 @@ export class EFHierarchyItem<
     } else {
       position = "inside";
     }
-    
+
     this.hierarchyContext.actions.updateDropTarget(this.elementId, position);
   }
 
@@ -426,10 +432,14 @@ export class EFHierarchyItem<
   private handleDrop(e: DragEvent): void {
     e.preventDefault();
     if (!this.hierarchyContext || !this.elementId) return;
-    
+
     const sourceId = e.dataTransfer?.getData("text/plain");
     if (sourceId && this.dropPosition) {
-      this.hierarchyContext.actions.reorder(sourceId, this.elementId, this.dropPosition);
+      this.hierarchyContext.actions.reorder(
+        sourceId,
+        this.elementId,
+        this.dropPosition,
+      );
     }
     this.hierarchyContext.actions.endDrag();
   }
@@ -468,29 +478,41 @@ export class EFHierarchyItem<
     if (this.selectionChangeHandler) {
       return;
     }
-    
-    const selectionCtx = this.canvasSelectionContext || 
+
+    const selectionCtx =
+      this.canvasSelectionContext ||
       this.hierarchyContext?.getCanvasSelectionContext?.();
     if (selectionCtx && "addEventListener" in selectionCtx) {
       this.selectionChangeHandler = () => {
         this.requestUpdate(); // Trigger re-render to update selected state
       };
-      (selectionCtx as any).addEventListener("selectionchange", this.selectionChangeHandler);
+      (selectionCtx as any).addEventListener(
+        "selectionchange",
+        this.selectionChangeHandler,
+      );
     }
   }
 
   private removeSelectionListener(): void {
-    const selectionCtx = this.canvasSelectionContext || 
+    const selectionCtx =
+      this.canvasSelectionContext ||
       this.hierarchyContext?.getCanvasSelectionContext?.();
-    if (selectionCtx && "removeEventListener" in selectionCtx && this.selectionChangeHandler) {
-      (selectionCtx as any).removeEventListener("selectionchange", this.selectionChangeHandler);
+    if (
+      selectionCtx &&
+      "removeEventListener" in selectionCtx &&
+      this.selectionChangeHandler
+    ) {
+      (selectionCtx as any).removeEventListener(
+        "selectionchange",
+        this.selectionChangeHandler,
+      );
       this.selectionChangeHandler = undefined;
     }
   }
 
   render() {
     const expanded = this.isExpanded;
-    
+
     return html`
       ${this.dropPosition === "before" ? html`<div class="drop-indicator"></div>` : nothing}
       <div
@@ -509,8 +531,9 @@ export class EFHierarchyItem<
         @mouseenter=${this.handleMouseEnter}
         @mouseleave=${this.handleMouseLeave}
       >
-        ${this.hasChildren
-          ? html`
+        ${
+          this.hasChildren
+            ? html`
               <span
                 class="expand-icon"
                 ?data-expanded=${expanded}
@@ -521,17 +544,20 @@ export class EFHierarchyItem<
                 </svg>
               </span>
             `
-          : html`<span class="expand-icon"></span>`}
+            : html`<span class="expand-icon"></span>`
+        }
         <span class="icon">${this.icon}</span>
         <span class="label">${this.displayLabel()}</span>
       </div>
-      ${this.hasChildren
-        ? html`
+      ${
+        this.hasChildren
+          ? html`
             <div class="children" ?data-collapsed=${!expanded}>
               ${this.renderChildren()}
             </div>
           `
-        : nothing}
+          : nothing
+      }
       ${this.dropPosition === "after" ? html`<div class="drop-indicator"></div>` : nothing}
     `;
   }
@@ -668,4 +694,3 @@ declare global {
     "ef-html-hierarchy-item": EFHTMLHierarchyItem;
   }
 }
-

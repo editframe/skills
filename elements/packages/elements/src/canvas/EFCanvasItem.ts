@@ -5,10 +5,10 @@ import { CanvasAPI } from "./api/CanvasAPI.js";
 
 /**
  * Canvas item wrapper component.
- * 
+ *
  * @deprecated This component is deprecated. All DOM nodes in ef-canvas are now automatically
  * treated as canvas elements. Use plain HTML elements (div, etc.) instead.
- * 
+ *
  * @example
  * ```html
  * <!-- Old way (deprecated) -->
@@ -17,7 +17,7 @@ import { CanvasAPI } from "./api/CanvasAPI.js";
  *     <div>My content</div>
  *   </ef-canvas-item>
  * </ef-canvas>
- * 
+ *
  * <!-- New way -->
  * <ef-canvas>
  *   <div id="item-1" style="left: 100px; top: 100px;">
@@ -106,4 +106,3 @@ declare global {
     "ef-canvas-item": EFCanvasItem;
   }
 }
-

@@ -55,9 +55,7 @@ export class EFPanZoom extends LitElement {
   private _onDocumentWheelCapture = (e: WheelEvent) => {
     // Only prevent if the event is over this panzoom element or its children
     const panZoom =
-      e.target instanceof Element
-        ? e.target.closest("ef-pan-zoom")
-        : null;
+      e.target instanceof Element ? e.target.closest("ef-pan-zoom") : null;
     if (panZoom === this) {
       // Prevent browser navigation gestures (back/forward on swipe)
       // Don't stop propagation - let the normal wheel handler process the event

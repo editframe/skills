@@ -17,7 +17,8 @@ describe("getElementBounds", () => {
   });
 
   test("uses custom getCanvasBounds when available", () => {
-    const element = document.createElement("div") as HTMLElement & CanvasElementBounds;
+    const element = document.createElement("div") as HTMLElement &
+      CanvasElementBounds;
     element.getCanvasBounds = () => {
       return new DOMRect(10, 20, 200, 100);
     };
@@ -32,4 +33,3 @@ describe("getElementBounds", () => {
     element.remove();
   });
 });
-

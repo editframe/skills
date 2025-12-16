@@ -125,13 +125,13 @@ class FilmstripItem extends TWMixin(LitElement) {
 
   private handleTrimChange(e: CustomEvent<TrimChangeDetail>): void {
     const { type, newValueMs } = e.detail;
-    
+
     if (type === "start") {
       this.element.trimStartMs = newValueMs;
     } else {
       this.element.trimEndMs = newValueMs;
     }
-    
+
     this.dispatchEvent(
       new CustomEvent("filmstrip-trim-change", {
         detail: {
@@ -149,7 +149,8 @@ class FilmstripItem extends TWMixin(LitElement) {
     const elementId = (this.element as HTMLElement).id || "";
     const trimStartMs = this.element.trimStartMs ?? 0;
     const trimEndMs = this.element.trimEndMs ?? 0;
-    const intrinsicDurationMs = this.element.intrinsicDurationMs ?? this.element.durationMs;
+    const intrinsicDurationMs =
+      this.element.intrinsicDurationMs ?? this.element.durationMs;
 
     return html`<div style=${styleMap(this.gutterStyles)}>
       <div
@@ -178,8 +179,9 @@ class FilmstripItem extends TWMixin(LitElement) {
           })}
         >
           ${this.animations()}
-          ${this.enableTrim
-            ? html`<ef-trim-handles
+          ${
+            this.enableTrim
+              ? html`<ef-trim-handles
                 element-id=${elementId}
                 pixels-per-ms=${this.pixelsPerMs}
                 trim-start-ms=${trimStartMs}
@@ -187,7 +189,8 @@ class FilmstripItem extends TWMixin(LitElement) {
                 intrinsic-duration-ms=${intrinsicDurationMs}
                 @trim-change=${this.handleTrimChange}
               ></ef-trim-handles>`
-            : nothing}
+              : nothing
+          }
         </div>
       </div>
       ${this.renderChildren()}
@@ -303,7 +306,8 @@ export class EFVideoFilmstrip extends FilmstripItem {
     const elementId = (this.element as HTMLElement).id || "";
     const trimStartMs = this.element.trimStartMs ?? 0;
     const trimEndMs = this.element.trimEndMs ?? 0;
-    const intrinsicDurationMs = this.element.intrinsicDurationMs ?? this.element.durationMs;
+    const intrinsicDurationMs =
+      this.element.intrinsicDurationMs ?? this.element.durationMs;
 
     return html`<div style=${styleMap(this.gutterStyles)}>
       <div
@@ -335,8 +339,9 @@ export class EFVideoFilmstrip extends FilmstripItem {
             .targetElement=${video}
             .useIntrinsicDuration=${true}
           ></ef-thumbnail-strip>
-          ${this.enableTrim
-            ? html`<ef-trim-handles
+          ${
+            this.enableTrim
+              ? html`<ef-trim-handles
                 element-id=${elementId}
                 pixels-per-ms=${this.pixelsPerMs}
                 trim-start-ms=${trimStartMs}
@@ -344,7 +349,8 @@ export class EFVideoFilmstrip extends FilmstripItem {
                 intrinsic-duration-ms=${intrinsicDurationMs}
                 @trim-change=${this.handleTrimChange}
               ></ef-trim-handles>`
-            : nothing}
+              : nothing
+          }
         </div>
       </div>
       ${this.renderChildren()}
@@ -1326,7 +1332,7 @@ export class EFFilmstrip extends TWMixin(LitElement) {
         backgroundColor: "var(--filmstrip-gutter-bg)",
       })}>
         <div
-          class="z-10 pl-1 pr-1 pt-[8px] shadow ${this.disableInternalScroll ? 'overflow-visible' : 'overflow-auto'}"
+          class="z-10 pl-1 pr-1 pt-[8px] shadow ${this.disableInternalScroll ? "overflow-visible" : "overflow-auto"}"
           ${ref(this.hierarchyRef)}
           @scroll=${this.disableInternalScroll ? nothing : this.syncHierarchyScroll}
         >
@@ -1339,7 +1345,7 @@ export class EFFilmstrip extends TWMixin(LitElement) {
           )}
         </div>
         <div
-          class="flex h-full w-full cursor-crosshair pt-[8px] touch-pan-x ${this.disableInternalScroll ? 'overflow-visible' : 'overflow-auto'}"
+          class="flex h-full w-full cursor-crosshair pt-[8px] touch-pan-x ${this.disableInternalScroll ? "overflow-visible" : "overflow-auto"}"
           style="background-color: var(--filmstrip-timeline-bg);"
           id="gutter"
           ${ref(this.gutterRef)}
@@ -1353,7 +1359,10 @@ export class EFFilmstrip extends TWMixin(LitElement) {
             @pointerdown=${this.startScrub}
             @contextmenu=${this.handleContextMenu}
           >
-            ${this.hidePlayhead ? nothing : html`<div
+            ${
+              this.hidePlayhead
+                ? nothing
+                : html`<div
               class="border-red pointer-events-none absolute z-[20] h-full w-[2px] border-r-2"
               style=${styleMap({
                 left: `${this.pixelsPerMs * this.currentTimeMs}px`,
@@ -1361,7 +1370,8 @@ export class EFFilmstrip extends TWMixin(LitElement) {
                 borderColor: "var(--filmstrip-playhead)",
               })}
               ${ref(this.playheadRef)}
-            ></div>`}
+            ></div>`
+            }
 
             ${renderFilmstripChildren(
               target ? ([target] as unknown as Element[]) : [],

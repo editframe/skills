@@ -2,14 +2,14 @@ import { isEFTemporal, type TemporalMixinInterface } from "./EFTemporal.js";
 
 /**
  * Finds the outermost temporal element in the DOM ancestry of the given element.
- * 
+ *
  * Walks up from the element toward the document root, collecting all temporal
  * elements (ef-timegroup, ef-video, ef-audio) in the ancestry, and returns
  * the outermost one (closest to document root).
- * 
+ *
  * This is a pure function - no caching, no stored state. Called fresh whenever
  * the root temporal is needed.
- * 
+ *
  * @param element - The element to start searching from
  * @returns The outermost temporal element, or null if none found
  */
@@ -34,7 +34,3 @@ export function findRootTemporal(
 
   return outermostTemporal;
 }
-
-
-
-

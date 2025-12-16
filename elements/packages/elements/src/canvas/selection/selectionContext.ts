@@ -16,14 +16,23 @@ export interface SelectionContext {
   clear: () => void;
   startBoxSelect: (x: number, y: number) => void;
   updateBoxSelect: (x: number, y: number) => void;
-  endBoxSelect: (hitTest: (bounds: DOMRect) => string[], addToSelection?: boolean) => void;
+  endBoxSelect: (
+    hitTest: (bounds: DOMRect) => string[],
+    addToSelection?: boolean,
+  ) => void;
   createGroup: (ids: string[]) => string;
   ungroup: (groupId: string) => void;
   selectGroup: (groupId: string) => void;
   getGroupId: (elementId: string) => string | undefined;
   getGroupElements: (groupId: string) => string[];
-  addEventListener: (type: "selectionchange", listener: (event: CustomEvent) => void) => void;
-  removeEventListener: (type: "selectionchange", listener: (event: CustomEvent) => void) => void;
+  addEventListener: (
+    type: "selectionchange",
+    listener: (event: CustomEvent) => void,
+  ) => void;
+  removeEventListener: (
+    type: "selectionchange",
+    listener: (event: CustomEvent) => void,
+  ) => void;
 }
 
 /**
@@ -33,4 +42,3 @@ export interface SelectionContext {
 export const selectionContext = createContext<SelectionContext>(
   Symbol("selectionContext"),
 );
-

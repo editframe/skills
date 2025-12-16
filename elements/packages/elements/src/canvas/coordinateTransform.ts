@@ -4,47 +4,47 @@ import type { PanZoomTransform } from "../elements/EFPanZoom.js";
  * =============================================================================
  * COORDINATE SPACES
  * =============================================================================
- * 
+ *
  * This module provides utilities for converting between two coordinate spaces:
- * 
+ *
  * 1. SCREEN SPACE (viewport coordinates)
  *    - Origin: Top-left of browser viewport
  *    - Units: Physical screen pixels
  *    - Used by: getBoundingClientRect(), mouse events (clientX/clientY)
  *    - AFFECTED by: zoom/scale transforms
- *    
+ *
  * 2. CANVAS SPACE (logical coordinates)
  *    - Origin: Top-left of the canvas content area
  *    - Units: CSS pixels at 1:1 scale (unaffected by zoom)
  *    - Used by: Element positioning (style.left/top), metadata storage
  *    - NOT AFFECTED by: zoom/scale transforms
- * 
+ *
  * KEY RELATIONSHIP:
  *   screenPosition = canvasRect.origin + (canvasPosition * scale)
  *   canvasPosition = (screenPosition - canvasRect.origin) / scale
- * 
+ *
  * IMPORTANT: These functions convert POSITIONS, not DIMENSIONS.
- * 
+ *
  * For positions (like element center or mouse coordinates):
  *   - Use screenToCanvas() / canvasToScreen() for conversion
- * 
+ *
  * For dimensions (like element width/height):
  *   - Screen dimensions = canvas dimensions * scale
  *   - Canvas dimensions = screen dimensions / scale
  *   - OR better: use offsetWidth/offsetHeight which are already in canvas space
- * 
+ *
  * =============================================================================
  */
 
 /**
  * Convert screen coordinates to canvas coordinates.
- * 
+ *
  * Use this for converting POSITIONS from screen space (getBoundingClientRect,
  * mouse events) to canvas space (element positioning, metadata).
- * 
+ *
  * Example: Converting a click position to canvas coordinates for hit testing.
  * Example: Converting element center from screen to canvas for metadata.
- * 
+ *
  * @param screenX - X coordinate in screen space (e.g., event.clientX, rect.left)
  * @param screenY - Y coordinate in screen space (e.g., event.clientY, rect.top)
  * @param canvasRect - Canvas content element's bounding rect (.canvas-content, not <ef-canvas>)
@@ -76,13 +76,13 @@ export function screenToCanvas(
 
 /**
  * Convert canvas coordinates to screen coordinates.
- * 
+ *
  * Use this for converting POSITIONS from canvas space (element positioning,
  * metadata) to screen space (overlay positioning, visual display).
- * 
+ *
  * Example: Converting element top-left from metadata to screen position for overlays.
  * Example: Converting a canvas point to screen coordinates for rendering guides.
- * 
+ *
  * @param canvasX - X coordinate in canvas space (from metadata or style.left)
  * @param canvasY - Y coordinate in canvas space (from metadata or style.top)
  * @param canvasRect - Canvas content element's bounding rect (.canvas-content, not <ef-canvas>)
@@ -111,4 +111,3 @@ export function canvasToScreen(
     y: canvasRect.top + canvasY * panZoomTransform.scale,
   };
 }
-

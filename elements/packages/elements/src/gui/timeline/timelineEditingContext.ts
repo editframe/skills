@@ -20,7 +20,3 @@ export function determineEditingState(
 ): TimelineEditingState {
   return context.state;
 }
-
-
-
-

@@ -65,11 +65,15 @@ describe("Canvas-Hierarchy-Timeline Integration", () => {
     expect(timeline.target).toBe(timegroupId1);
     expect(timeline.durationMs).toBe(5000);
 
-    const hierarchyItems = hierarchy.shadowRoot?.querySelectorAll("ef-timegroup-hierarchy-item");
+    const hierarchyItems = hierarchy.shadowRoot?.querySelectorAll(
+      "ef-timegroup-hierarchy-item",
+    );
     expect(hierarchyItems?.length).toBe(2);
 
     const secondItem = hierarchyItems?.[1];
-    const itemRow = secondItem?.shadowRoot?.querySelector(".item-row") as HTMLElement;
+    const itemRow = secondItem?.shadowRoot?.querySelector(
+      ".item-row",
+    ) as HTMLElement;
     expect(itemRow).toBeTruthy();
 
     itemRow.click();
@@ -122,14 +126,21 @@ describe("Canvas-Hierarchy-Timeline Integration", () => {
     await hierarchy.updateComplete;
     await timeline.updateComplete;
 
-    let activeTimegroupChangeDetail: { timegroupId: string | null; previousTimegroupId: string | null } | null = null;
+    let activeTimegroupChangeDetail: {
+      timegroupId: string | null;
+      previousTimegroupId: string | null;
+    } | null = null;
     canvas.addEventListener("activeTimegroupChange", ((e: CustomEvent) => {
       activeTimegroupChangeDetail = e.detail;
     }) as EventListener);
 
-    const hierarchyItems = hierarchy.shadowRoot?.querySelectorAll("ef-timegroup-hierarchy-item");
+    const hierarchyItems = hierarchy.shadowRoot?.querySelectorAll(
+      "ef-timegroup-hierarchy-item",
+    );
     const firstItem = hierarchyItems?.[0];
-    const firstItemRow = firstItem?.shadowRoot?.querySelector(".item-row") as HTMLElement;
+    const firstItemRow = firstItem?.shadowRoot?.querySelector(
+      ".item-row",
+    ) as HTMLElement;
 
     firstItemRow.click();
     await hierarchy.updateComplete;
@@ -139,7 +150,9 @@ describe("Canvas-Hierarchy-Timeline Integration", () => {
     expect(activeTimegroupChangeDetail?.previousTimegroupId).toBe(null);
 
     const secondItem = hierarchyItems?.[1];
-    const secondItemRow = secondItem?.shadowRoot?.querySelector(".item-row") as HTMLElement;
+    const secondItemRow = secondItem?.shadowRoot?.querySelector(
+      ".item-row",
+    ) as HTMLElement;
 
     secondItemRow.click();
     await hierarchy.updateComplete;
@@ -234,12 +247,14 @@ describe("Canvas-Hierarchy-Timeline Integration", () => {
 
     await (filmstrip as any)?.updateComplete;
 
-    const videoFilmstrip = filmstrip?.shadowRoot?.querySelector("ef-video-filmstrip");
+    const videoFilmstrip =
+      filmstrip?.shadowRoot?.querySelector("ef-video-filmstrip");
     expect(videoFilmstrip).toBeTruthy();
 
     await (videoFilmstrip as any)?.updateComplete;
 
-    const trimHandles = videoFilmstrip?.shadowRoot?.querySelector("ef-trim-handles");
+    const trimHandles =
+      videoFilmstrip?.shadowRoot?.querySelector("ef-trim-handles");
     expect(trimHandles).toBeTruthy();
 
     const initialTrimStart = video.trimStartMs ?? 0;
@@ -250,7 +265,9 @@ describe("Canvas-Hierarchy-Timeline Integration", () => {
       trimChangeDetail = e.detail;
     }) as EventListener);
 
-    const startHandle = trimHandles?.shadowRoot?.querySelector(".handle-start") as HTMLElement;
+    const startHandle = trimHandles?.shadowRoot?.querySelector(
+      ".handle-start",
+    ) as HTMLElement;
     expect(startHandle).toBeTruthy();
 
     const rect = container.getBoundingClientRect();
@@ -280,6 +297,3 @@ describe("Canvas-Hierarchy-Timeline Integration", () => {
     expect(trimChangeDetail?.type).toBe("start");
   }, 1000);
 });
-
-
-

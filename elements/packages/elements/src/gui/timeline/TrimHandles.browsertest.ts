@@ -20,7 +20,9 @@ describe("EFTrimHandles", () => {
     container.style.height = "100px";
     document.body.appendChild(container);
 
-    const trimHandles = document.createElement("ef-trim-handles") as EFTrimHandles;
+    const trimHandles = document.createElement(
+      "ef-trim-handles",
+    ) as EFTrimHandles;
     trimHandles.elementId = nextId();
     trimHandles.pixelsPerMs = 0.1;
     trimHandles.trimStartMs = 0;
@@ -31,11 +33,15 @@ describe("EFTrimHandles", () => {
     await trimHandles.updateComplete;
 
     let trimChangeDetail: TrimChangeDetail | null = null;
-    trimHandles.addEventListener("trim-change", ((e: CustomEvent<TrimChangeDetail>) => {
+    trimHandles.addEventListener("trim-change", ((
+      e: CustomEvent<TrimChangeDetail>,
+    ) => {
       trimChangeDetail = e.detail;
     }) as EventListener);
 
-    const startHandle = trimHandles.shadowRoot?.querySelector(".handle-start") as HTMLElement;
+    const startHandle = trimHandles.shadowRoot?.querySelector(
+      ".handle-start",
+    ) as HTMLElement;
     expect(startHandle).toBeTruthy();
 
     const rect = container.getBoundingClientRect();
@@ -74,7 +80,9 @@ describe("EFTrimHandles", () => {
     container.style.height = "100px";
     document.body.appendChild(container);
 
-    const trimHandles = document.createElement("ef-trim-handles") as EFTrimHandles;
+    const trimHandles = document.createElement(
+      "ef-trim-handles",
+    ) as EFTrimHandles;
     trimHandles.elementId = nextId();
     trimHandles.pixelsPerMs = 0.1;
     trimHandles.trimStartMs = 0;
@@ -85,11 +93,15 @@ describe("EFTrimHandles", () => {
     await trimHandles.updateComplete;
 
     let trimChangeDetail: TrimChangeDetail | null = null;
-    trimHandles.addEventListener("trim-change", ((e: CustomEvent<TrimChangeDetail>) => {
+    trimHandles.addEventListener("trim-change", ((
+      e: CustomEvent<TrimChangeDetail>,
+    ) => {
       trimChangeDetail = e.detail;
     }) as EventListener);
 
-    const endHandle = trimHandles.shadowRoot?.querySelector(".handle-end") as HTMLElement;
+    const endHandle = trimHandles.shadowRoot?.querySelector(
+      ".handle-end",
+    ) as HTMLElement;
     expect(endHandle).toBeTruthy();
 
     const rect = container.getBoundingClientRect();
@@ -129,7 +141,9 @@ describe("EFTrimHandles", () => {
     container.style.height = "100px";
     document.body.appendChild(container);
 
-    const trimHandles = document.createElement("ef-trim-handles") as EFTrimHandles;
+    const trimHandles = document.createElement(
+      "ef-trim-handles",
+    ) as EFTrimHandles;
     trimHandles.elementId = nextId();
     trimHandles.pixelsPerMs = 0.1;
     trimHandles.trimStartMs = 0;
@@ -140,11 +154,15 @@ describe("EFTrimHandles", () => {
     await trimHandles.updateComplete;
 
     const trimChanges: TrimChangeDetail[] = [];
-    trimHandles.addEventListener("trim-change", ((e: CustomEvent<TrimChangeDetail>) => {
+    trimHandles.addEventListener("trim-change", ((
+      e: CustomEvent<TrimChangeDetail>,
+    ) => {
       trimChanges.push(e.detail);
     }) as EventListener);
 
-    const startHandle = trimHandles.shadowRoot?.querySelector(".handle-start") as HTMLElement;
+    const startHandle = trimHandles.shadowRoot?.querySelector(
+      ".handle-start",
+    ) as HTMLElement;
     const rect = container.getBoundingClientRect();
 
     const pointerDownEvent = new PointerEvent("pointerdown", {
@@ -171,7 +189,9 @@ describe("EFTrimHandles", () => {
 
     expect(trimChanges.length).toBeGreaterThan(0);
     const lastChange = trimChanges[trimChanges.length - 1];
-    expect(lastChange.newValueMs).toBeLessThanOrEqual(trimHandles.intrinsicDurationMs - trimHandles.trimEndMs);
+    expect(lastChange.newValueMs).toBeLessThanOrEqual(
+      trimHandles.intrinsicDurationMs - trimHandles.trimEndMs,
+    );
   }, 1000);
 
   test("should constrain trimEndMs to not exceed duration minus trimStartMs", async () => {
@@ -181,7 +201,9 @@ describe("EFTrimHandles", () => {
     container.style.height = "100px";
     document.body.appendChild(container);
 
-    const trimHandles = document.createElement("ef-trim-handles") as EFTrimHandles;
+    const trimHandles = document.createElement(
+      "ef-trim-handles",
+    ) as EFTrimHandles;
     trimHandles.elementId = nextId();
     trimHandles.pixelsPerMs = 0.1;
     trimHandles.trimStartMs = 2000;
@@ -192,11 +214,15 @@ describe("EFTrimHandles", () => {
     await trimHandles.updateComplete;
 
     const trimChanges: TrimChangeDetail[] = [];
-    trimHandles.addEventListener("trim-change", ((e: CustomEvent<TrimChangeDetail>) => {
+    trimHandles.addEventListener("trim-change", ((
+      e: CustomEvent<TrimChangeDetail>,
+    ) => {
       trimChanges.push(e.detail);
     }) as EventListener);
 
-    const endHandle = trimHandles.shadowRoot?.querySelector(".handle-end") as HTMLElement;
+    const endHandle = trimHandles.shadowRoot?.querySelector(
+      ".handle-end",
+    ) as HTMLElement;
     const rect = container.getBoundingClientRect();
     const rightEdge = rect.left + rect.width;
 
@@ -224,7 +250,9 @@ describe("EFTrimHandles", () => {
 
     expect(trimChanges.length).toBeGreaterThan(0);
     const lastChange = trimChanges[trimChanges.length - 1];
-    expect(lastChange.newValueMs).toBeLessThanOrEqual(trimHandles.intrinsicDurationMs - trimHandles.trimStartMs);
+    expect(lastChange.newValueMs).toBeLessThanOrEqual(
+      trimHandles.intrinsicDurationMs - trimHandles.trimStartMs,
+    );
   }, 1000);
 
   test("should dispatch trim-change-end event when drag ends", async () => {
@@ -234,7 +262,9 @@ describe("EFTrimHandles", () => {
     container.style.height = "100px";
     document.body.appendChild(container);
 
-    const trimHandles = document.createElement("ef-trim-handles") as EFTrimHandles;
+    const trimHandles = document.createElement(
+      "ef-trim-handles",
+    ) as EFTrimHandles;
     trimHandles.elementId = nextId();
     trimHandles.pixelsPerMs = 0.1;
     trimHandles.trimStartMs = 0;
@@ -244,12 +274,17 @@ describe("EFTrimHandles", () => {
 
     await trimHandles.updateComplete;
 
-    let trimChangeEndDetail: { elementId: string; type: "start" | "end" } | null = null;
+    let trimChangeEndDetail: {
+      elementId: string;
+      type: "start" | "end";
+    } | null = null;
     trimHandles.addEventListener("trim-change-end", ((e: CustomEvent) => {
       trimChangeEndDetail = e.detail;
     }) as EventListener);
 
-    const startHandle = trimHandles.shadowRoot?.querySelector(".handle-start") as HTMLElement;
+    const startHandle = trimHandles.shadowRoot?.querySelector(
+      ".handle-start",
+    ) as HTMLElement;
     const rect = container.getBoundingClientRect();
 
     const pointerDownEvent = new PointerEvent("pointerdown", {
@@ -284,7 +319,9 @@ describe("EFTrimHandles", () => {
     container.style.height = "100px";
     document.body.appendChild(container);
 
-    const trimHandles = document.createElement("ef-trim-handles") as EFTrimHandles;
+    const trimHandles = document.createElement(
+      "ef-trim-handles",
+    ) as EFTrimHandles;
     trimHandles.elementId = nextId();
     trimHandles.pixelsPerMs = 0.1;
     trimHandles.trimStartMs = 1000;
@@ -295,11 +332,15 @@ describe("EFTrimHandles", () => {
     await trimHandles.updateComplete;
 
     const trimChanges: TrimChangeDetail[] = [];
-    trimHandles.addEventListener("trim-change", ((e: CustomEvent<TrimChangeDetail>) => {
+    trimHandles.addEventListener("trim-change", ((
+      e: CustomEvent<TrimChangeDetail>,
+    ) => {
       trimChanges.push(e.detail);
     }) as EventListener);
 
-    const startHandle = trimHandles.shadowRoot?.querySelector(".handle-start") as HTMLElement;
+    const startHandle = trimHandles.shadowRoot?.querySelector(
+      ".handle-start",
+    ) as HTMLElement;
     const rect = container.getBoundingClientRect();
 
     const pointerDownEvent = new PointerEvent("pointerdown", {
@@ -329,7 +370,3 @@ describe("EFTrimHandles", () => {
     expect(lastChange.newValueMs).toBeGreaterThanOrEqual(0);
   }, 1000);
 });
-
-
-
-

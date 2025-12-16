@@ -17,7 +17,7 @@ export class SelectionController implements ReactiveController {
     this.selectionModel = new SelectionModel();
     this.selectionContext = this.createContextProxy();
     host.addController(this);
-    
+
     // Listen to selection change events from the model
     this.selectionModel.addEventListener("selectionchange", () => {
       this.host.requestUpdate();
@@ -93,7 +93,10 @@ export class SelectionController implements ReactiveController {
         controller.selectionModel.updateBoxSelect(x, y);
         controller.host.requestUpdate();
       },
-      endBoxSelect: (hitTest: (bounds: DOMRect) => string[], addToSelection?: boolean) => {
+      endBoxSelect: (
+        hitTest: (bounds: DOMRect) => string[],
+        addToSelection?: boolean,
+      ) => {
         const fn = hitTest || controller.hitTestFn;
         if (fn) {
           controller.selectionModel.endBoxSelect(fn, addToSelection ?? false);
@@ -117,13 +120,18 @@ export class SelectionController implements ReactiveController {
       getGroupElements: (groupId: string) => {
         return controller.selectionModel.getGroupElements(groupId);
       },
-      addEventListener: (type: "selectionchange", listener: (event: CustomEvent) => void) => {
+      addEventListener: (
+        type: "selectionchange",
+        listener: (event: CustomEvent) => void,
+      ) => {
         controller.selectionModel.addEventListener(type, listener);
       },
-      removeEventListener: (type: "selectionchange", listener: (event: CustomEvent) => void) => {
+      removeEventListener: (
+        type: "selectionchange",
+        listener: (event: CustomEvent) => void,
+      ) => {
         controller.selectionModel.removeEventListener(type, listener);
       },
     };
   }
 }
-

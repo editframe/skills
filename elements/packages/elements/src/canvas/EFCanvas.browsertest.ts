@@ -42,10 +42,17 @@ describe("EFCanvas", () => {
     el.remove();
   });
 
-  test("registers elements with data-element-id", async ({ canvas, expect }) => {
+  test("registers elements with data-element-id", async ({
+    canvas,
+    expect,
+  }) => {
     const canvasEl = canvas as any;
-    const element1 = canvas.querySelector('[data-element-id="element-1"]') as HTMLElement;
-    const element2 = canvas.querySelector('[data-element-id="element-2"]') as HTMLElement;
+    const element1 = canvas.querySelector(
+      '[data-element-id="element-1"]',
+    ) as HTMLElement;
+    const element2 = canvas.querySelector(
+      '[data-element-id="element-2"]',
+    ) as HTMLElement;
 
     expect(element1).toBeTruthy();
     expect(element2).toBeTruthy();
@@ -61,7 +68,9 @@ describe("EFCanvas", () => {
 
   test("selects element on click", async ({ canvas, expect }) => {
     const canvasEl = canvas as any;
-    const element1 = canvas.querySelector('[data-element-id="element-1"]') as HTMLElement;
+    const element1 = canvas.querySelector(
+      '[data-element-id="element-1"]',
+    ) as HTMLElement;
 
     const rect = element1.getBoundingClientRect();
     const clickX = rect.left + rect.width / 2;
@@ -77,13 +86,17 @@ describe("EFCanvas", () => {
     canvas.dispatchEvent(clickEvent);
     await canvasEl.updateComplete;
 
-    const selectedIds = Array.from(canvasEl.selectionController.getModel().selectedIds);
+    const selectedIds = Array.from(
+      canvasEl.selectionController.getModel().selectedIds,
+    );
     expect(selectedIds).toContain("element-1");
   });
 
   test("clears selection on empty space click", async ({ canvas, expect }) => {
     const canvasEl = canvas as any;
-    const element1 = canvas.querySelector('[data-element-id="element-1"]') as HTMLElement;
+    const element1 = canvas.querySelector(
+      '[data-element-id="element-1"]',
+    ) as HTMLElement;
 
     // Select element first
     const rect1 = element1.getBoundingClientRect();
@@ -132,14 +145,23 @@ describe("EFCanvas", () => {
     );
     await canvasEl.updateComplete;
 
-    const selectedIds = Array.from(canvasEl.selectionController.getModel().selectedIds);
+    const selectedIds = Array.from(
+      canvasEl.selectionController.getModel().selectedIds,
+    );
     expect(selectedIds.length).toBe(0);
   });
 
-  test("supports multi-select with modifier key", async ({ canvas, expect }) => {
+  test("supports multi-select with modifier key", async ({
+    canvas,
+    expect,
+  }) => {
     const canvasEl = canvas as any;
-    const element1 = canvas.querySelector('[data-element-id="element-1"]') as HTMLElement;
-    const element2 = canvas.querySelector('[data-element-id="element-2"]') as HTMLElement;
+    const element1 = canvas.querySelector(
+      '[data-element-id="element-1"]',
+    ) as HTMLElement;
+    const element2 = canvas.querySelector(
+      '[data-element-id="element-2"]',
+    ) as HTMLElement;
 
     // Click first element
     const rect1 = element1.getBoundingClientRect();
@@ -166,7 +188,9 @@ describe("EFCanvas", () => {
     );
     await canvasEl.updateComplete;
 
-    const selectedIds = Array.from(canvasEl.selectionController.getModel().selectedIds);
+    const selectedIds = Array.from(
+      canvasEl.selectionController.getModel().selectedIds,
+    );
     expect(selectedIds.length).toBe(2);
     expect(selectedIds).toContain("element-1");
     expect(selectedIds).toContain("element-2");
@@ -191,4 +215,3 @@ describe("EFCanvas", () => {
     expect(data!.id).toBe("element-3");
   });
 });
-

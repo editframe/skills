@@ -42,9 +42,14 @@ describe("SelectionOverlay", () => {
     overlay.remove();
   });
 
-  test("renders selection box for selected element", async ({ canvas, expect }) => {
+  test("renders selection box for selected element", async ({
+    canvas,
+    expect,
+  }) => {
     const canvasEl = canvas as any;
-    const element1 = canvas.querySelector('[data-element-id="element-1"]') as HTMLElement;
+    const element1 = canvas.querySelector(
+      '[data-element-id="element-1"]',
+    ) as HTMLElement;
 
     // Select element
     const rect1 = element1.getBoundingClientRect();
@@ -68,17 +73,17 @@ describe("SelectionOverlay", () => {
     expect(canvasContent).toBeTruthy();
     const overlay = canvasContent?.querySelector("ef-canvas-selection-overlay");
     expect(overlay).toBeTruthy();
-    
+
     // Wait for overlay to render selection boxes
     await (overlay as any)?.updateComplete;
     await new Promise((resolve) => setTimeout(resolve, 200));
-    
+
     // SelectionOverlay uses createRenderRoot() returning this, so no shadow DOM
     // Check if selection context is being consumed
     const overlayEl = overlay as any;
     expect(overlayEl.selection).toBeTruthy();
     expect(overlayEl.selection?.selectedIds.size).toBeGreaterThan(0);
-    
+
     const selectionBox = overlay?.querySelector(".selection-box");
     expect(selectionBox).toBeTruthy();
   });
@@ -89,7 +94,7 @@ describe("SelectionOverlay", () => {
     container.style.height = "600px";
     container.style.position = "relative";
     container.style.border = "1px solid black";
-    
+
     render(
       html`
         <ef-pan-zoom style="width: 100%; height: 100%;" x="100" y="50" scale="1">
@@ -101,36 +106,45 @@ describe("SelectionOverlay", () => {
       container,
     );
     document.body.appendChild(container);
-    
+
     const panZoom = container.querySelector("ef-pan-zoom") as any;
     const canvas = container.querySelector("ef-canvas") as any;
-    
+
     await panZoom?.updateComplete;
     await canvas?.updateComplete;
-    
+
     // Wait for overlay to be created
     await new Promise((resolve) => setTimeout(resolve, 100));
-    
+
     const shadowRoot = canvas.shadowRoot;
-    const overlay = shadowRoot?.querySelector("ef-canvas-selection-overlay") as any;
-    
+    const overlay = shadowRoot?.querySelector(
+      "ef-canvas-selection-overlay",
+    ) as any;
+
     // Start box selection at canvas position (50, 50)
     // Screen position should account for pan
     const panZoomRect = panZoom.getBoundingClientRect();
     const canvasRect = canvas.getBoundingClientRect();
-    
+
     console.log("=== DIAGNOSTIC TEST: Box Selection with Pan-Zoom ===");
     console.log("PanZoom rect:", panZoomRect);
     console.log("Canvas rect:", canvasRect);
-    console.log("PanZoom transform:", { x: panZoom.x, y: panZoom.y, scale: panZoom.scale });
-    
+    console.log("PanZoom transform:", {
+      x: panZoom.x,
+      y: panZoom.y,
+      scale: panZoom.scale,
+    });
+
     // Calculate expected screen position for canvas (50, 50)
     // Using EFPanZoom.canvasToScreen formula: rect.left + canvasX * scale + x
     const expectedScreenX = panZoomRect.left + 50 * panZoom.scale + panZoom.x;
     const expectedScreenY = panZoomRect.top + 50 * panZoom.scale + panZoom.y;
-    
-    console.log("Canvas position (50, 50) should map to screen:", { x: expectedScreenX, y: expectedScreenY });
-    
+
+    console.log("Canvas position (50, 50) should map to screen:", {
+      x: expectedScreenX,
+      y: expectedScreenY,
+    });
+
     // Simulate pointer down at the calculated screen position
     canvas.dispatchEvent(
       new PointerEvent("pointerdown", {
@@ -141,14 +155,14 @@ describe("SelectionOverlay", () => {
         pointerId: 1,
       }),
     );
-    
+
     await canvas.updateComplete;
     await new Promise((resolve) => setTimeout(resolve, 100));
-    
+
     // Update box selection to (150, 150) in canvas space
     const expectedEndX = panZoomRect.left + 150 * panZoom.scale + panZoom.x;
     const expectedEndY = panZoomRect.top + 150 * panZoom.scale + panZoom.y;
-    
+
     canvas.dispatchEvent(
       new PointerEvent("pointermove", {
         clientX: expectedEndX,
@@ -158,19 +172,22 @@ describe("SelectionOverlay", () => {
         pointerId: 1,
       }),
     );
-    
+
     await canvas.updateComplete;
     await new Promise((resolve) => setTimeout(resolve, 100));
-    
+
     // Check overlay state
     if (overlay) {
       const boxSelectBounds = overlay.boxSelectBounds;
       const selection = overlay.selection;
-      
+
       console.log("Selection mode:", selection?.selectionMode);
-      console.log("Box select bounds (canvas coords):", selection?.boxSelectBounds);
+      console.log(
+        "Box select bounds (canvas coords):",
+        selection?.boxSelectBounds,
+      );
       console.log("Box select bounds (screen coords):", boxSelectBounds);
-      
+
       // Expected screen bounds for canvas (50, 50) to (150, 150)
       const expectedBounds = new DOMRect(
         expectedScreenX,
@@ -178,9 +195,9 @@ describe("SelectionOverlay", () => {
         expectedEndX - expectedScreenX,
         expectedEndY - expectedScreenY,
       );
-      
+
       console.log("Expected screen bounds:", expectedBounds);
-      
+
       if (boxSelectBounds) {
         console.log("Actual screen bounds:", boxSelectBounds);
         console.log("Difference:", {
@@ -191,7 +208,7 @@ describe("SelectionOverlay", () => {
         });
       }
     }
-    
+
     // Visual check - the box should be visible
     const boxSelectDiv = overlay?.querySelector(".box-select");
     if (boxSelectDiv) {
@@ -203,9 +220,9 @@ describe("SelectionOverlay", () => {
         height: computedStyle.height,
       });
     }
-    
+
     container.remove();
-    
+
     // Don't fail the test - this is diagnostic
     expect(true).toBe(true);
   });
@@ -286,8 +303,10 @@ describe("SelectionOverlay", () => {
       // Calculate screen position accounting for pan-zoom transform
       const canvasStartX = 50;
       const canvasStartY = 50;
-      const screenStartX = panZoomRect.left + canvasStartX * panZoom.scale + panZoom.x;
-      const screenStartY = panZoomRect.top + canvasStartY * panZoom.scale + panZoom.y;
+      const screenStartX =
+        panZoomRect.left + canvasStartX * panZoom.scale + panZoom.x;
+      const screenStartY =
+        panZoomRect.top + canvasStartY * panZoom.scale + panZoom.y;
 
       // Simulate pointer down to start box selection
       canvas.dispatchEvent(
@@ -306,8 +325,10 @@ describe("SelectionOverlay", () => {
       // Update box selection to (150, 150) in canvas space
       const canvasEndX = 150;
       const canvasEndY = 150;
-      const screenEndX = panZoomRect.left + canvasEndX * panZoom.scale + panZoom.x;
-      const screenEndY = panZoomRect.top + canvasEndY * panZoom.scale + panZoom.y;
+      const screenEndX =
+        panZoomRect.left + canvasEndX * panZoom.scale + panZoom.x;
+      const screenEndY =
+        panZoomRect.top + canvasEndY * panZoom.scale + panZoom.y;
 
       canvas.dispatchEvent(
         new PointerEvent("pointermove", {
@@ -353,4 +374,3 @@ describe("SelectionOverlay", () => {
     },
   );
 });
-

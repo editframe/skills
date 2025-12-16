@@ -3,7 +3,11 @@ import { css, html, LitElement, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { createRef, ref } from "lit/directives/ref.js";
 import { durationContext } from "./durationContext.js";
-import { timelineStateContext, type TimelineState, DEFAULT_PIXELS_PER_MS } from "./timeline/timelineStateContext.js";
+import {
+  timelineStateContext,
+  type TimelineState,
+  DEFAULT_PIXELS_PER_MS,
+} from "./timeline/timelineStateContext.js";
 
 const MIN_LABEL_SPACING_PX = 80;
 const MIN_FRAME_SPACING_PX = 5;
@@ -156,16 +160,16 @@ export class EFTimelineRuler extends LitElement {
   private calculateLabelInterval(): number {
     const pixelsPerMs = this.pixelsPerMs;
     const pixelsPerSecond = pixelsPerMs * 1000;
-    
+
     const intervals = [0.1, 0.25, 0.5, 1, 2, 5, 10, 30, 60];
-    
+
     for (const intervalS of intervals) {
       const pixelsPerInterval = intervalS * pixelsPerSecond;
       if (pixelsPerInterval >= MIN_LABEL_SPACING_PX) {
         return intervalS * 1000;
       }
     }
-    
+
     return 60000;
   }
 
@@ -175,35 +179,40 @@ export class EFTimelineRuler extends LitElement {
     const pixelsPerMs = this.pixelsPerMs;
     const scrollLeft = this.scrollLeft;
     const viewportWidth = this.viewportWidth;
-    
+
     const intervalMs = this.calculateLabelInterval();
-    
+
     // Generate labels for the entire viewport, regardless of content duration
-    const visibleStartTimeMs = Math.max(0, (scrollLeft / pixelsPerMs) - intervalMs);
-    const visibleEndTimeMs = ((scrollLeft + viewportWidth) / pixelsPerMs) + intervalMs;
-    
+    const visibleStartTimeMs = Math.max(
+      0,
+      scrollLeft / pixelsPerMs - intervalMs,
+    );
+    const visibleEndTimeMs =
+      (scrollLeft + viewportWidth) / pixelsPerMs + intervalMs;
+
     const firstLabelIndex = Math.floor(visibleStartTimeMs / intervalMs);
     const lastLabelIndex = Math.ceil(visibleEndTimeMs / intervalMs);
-    
+
     const labels: VisibleLabel[] = [];
-    
+
     for (let i = firstLabelIndex; i <= lastLabelIndex; i++) {
       const timeMs = i * intervalMs;
       if (timeMs < 0) continue;
-      
+
       const absoluteX = timeMs * pixelsPerMs;
       const viewportX = absoluteX - scrollLeft;
-      
+
       if (viewportX >= -50 && viewportX <= viewportWidth + 50) {
         const timeSeconds = timeMs / 1000;
-        const text = timeSeconds % 1 === 0
-          ? `${timeSeconds}s`
-          : `${timeSeconds.toFixed(1)}s`;
-        
+        const text =
+          timeSeconds % 1 === 0
+            ? `${timeSeconds}s`
+            : `${timeSeconds.toFixed(1)}s`;
+
         labels.push({ timeMs, viewportX, text });
       }
     }
-    
+
     return labels;
   }
 
@@ -215,7 +224,7 @@ export class EFTimelineRuler extends LitElement {
     const rect = container.getBoundingClientRect();
     const width = rect.width;
     const height = rect.height;
-    
+
     if (width <= 0 || height <= 0) return;
 
     const dpr = window.devicePixelRatio || 1;
@@ -232,26 +241,30 @@ export class EFTimelineRuler extends LitElement {
 
     const pixelsPerMs = this.pixelsPerMs;
     const scrollLeft = this.scrollLeft;
-    
+
     // Time label ticks - more prominent (gray-400)
     ctx.strokeStyle = "rgb(156, 163, 175)";
     ctx.lineWidth = 1;
 
     const labelIntervalMs = this.calculateLabelInterval();
     // Fill the entire viewport with ticks, regardless of content duration
-    const visibleStartTimeMs = Math.max(0, (scrollLeft / pixelsPerMs) - labelIntervalMs);
-    const visibleEndTimeMs = ((scrollLeft + width) / pixelsPerMs) + labelIntervalMs;
-    
+    const visibleStartTimeMs = Math.max(
+      0,
+      scrollLeft / pixelsPerMs - labelIntervalMs,
+    );
+    const visibleEndTimeMs =
+      (scrollLeft + width) / pixelsPerMs + labelIntervalMs;
+
     const firstTickIndex = Math.floor(visibleStartTimeMs / labelIntervalMs);
     const lastTickIndex = Math.ceil(visibleEndTimeMs / labelIntervalMs);
-    
+
     for (let i = firstTickIndex; i <= lastTickIndex; i++) {
       const timeMs = i * labelIntervalMs;
       if (timeMs < 0) continue;
-      
+
       const absoluteX = timeMs * pixelsPerMs;
       const viewportX = absoluteX - scrollLeft;
-      
+
       if (viewportX >= -1 && viewportX <= width + 1) {
         ctx.beginPath();
         ctx.moveTo(viewportX, 0);
@@ -262,24 +275,24 @@ export class EFTimelineRuler extends LitElement {
 
     const frameIntervalMs = 1000 / this.fps;
     const pixelsPerFrame = frameIntervalMs * pixelsPerMs;
-    
+
     if (pixelsPerFrame >= MIN_FRAME_SPACING_PX) {
       // Frame markers should be lighter than background (gray-500) to be visible
       ctx.strokeStyle = "rgb(107, 114, 128)";
       ctx.lineWidth = 1;
-      
+
       const firstFrameIndex = Math.floor(visibleStartTimeMs / frameIntervalMs);
       const lastFrameIndex = Math.ceil(visibleEndTimeMs / frameIntervalMs);
-      
+
       for (let i = firstFrameIndex; i <= lastFrameIndex; i++) {
         const timeMs = i * frameIntervalMs;
         if (timeMs < 0) continue;
-        
+
         if (timeMs % labelIntervalMs === 0) continue;
-        
+
         const absoluteX = timeMs * pixelsPerMs;
         const viewportX = absoluteX - scrollLeft;
-        
+
         if (viewportX >= -1 && viewportX <= width + 1) {
           ctx.beginPath();
           ctx.moveTo(viewportX, 0);
@@ -296,12 +309,14 @@ export class EFTimelineRuler extends LitElement {
     return html`
       <div ${ref(this.containerRef)} class="ruler-container">
         <canvas ${ref(this.canvasRef)}></canvas>
-        ${visibleLabels.map(({ viewportX, text }) => html`
+        ${visibleLabels.map(
+          ({ viewportX, text }) => html`
           <span 
             class="label" 
             style="transform: translateX(${viewportX}px)"
           >${text}</span>
-        `)}
+        `,
+        )}
       </div>
     `;
   }

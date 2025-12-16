@@ -24,9 +24,11 @@ const getIsTimegroupCalculatingDuration = (): ((
   timegroup: EFTimegroup | undefined,
 ) => boolean) => {
   if (isTimegroupCalculatingDurationFn) {
-    return isTimegroupCalculatingDurationFn as (timegroup: EFTimegroup | undefined) => boolean;
+    return isTimegroupCalculatingDurationFn as (
+      timegroup: EFTimegroup | undefined,
+    ) => boolean;
   }
-  
+
   // If not registered yet, try to import synchronously (only works if module is already loaded)
   // This is a fallback for cases where EFTimegroup hasn't called registerIsTimegroupCalculatingDuration
   // In practice, EFTimegroup will call registerIsTimegroupCalculatingDuration when it loads
@@ -663,13 +665,13 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
     connectedCallback() {
       super.connectedCallback();
       this.#ownCurrentTimeController?.remove();
-      
+
       // Ensure PlaybackController is created for root elements
       // This handles case where element is root on initial mount
       if (!this.parentTimegroup && !this.playbackController) {
         this.didBecomeRoot();
       }
-      
+
       // Initialize playback controller for root elements
       // The parentTimegroup setter may have already called this, but the guard prevents double-creation
       const role = determineTemporalRole(this.parentTimegroup);

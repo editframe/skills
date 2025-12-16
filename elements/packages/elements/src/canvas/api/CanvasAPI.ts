@@ -46,7 +46,8 @@ export class CanvasAPI {
     if (updates.width !== undefined || updates.height !== undefined) {
       const element = current.element;
       const width = updates.width !== undefined ? updates.width : current.width;
-      const height = updates.height !== undefined ? updates.height : current.height;
+      const height =
+        updates.height !== undefined ? updates.height : current.height;
       // Set size in canvas coordinates (parent transform handles scaling)
       element.style.width = `${width}px`;
       element.style.height = `${height}px`;
@@ -240,5 +241,3 @@ export class CanvasAPI {
     }
   }
 }
-
-

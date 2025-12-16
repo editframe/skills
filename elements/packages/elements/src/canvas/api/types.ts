@@ -46,9 +46,3 @@ export interface CanvasData {
   elements: CanvasElementData[];
   groups: Array<{ id: string; elementIds: string[] }>;
 }
-
-
-
-
-
-

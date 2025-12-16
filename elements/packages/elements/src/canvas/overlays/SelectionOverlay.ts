@@ -1,7 +1,10 @@
 import { consume } from "@lit/context";
 import { css, html, LitElement } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { selectionContext, type SelectionContext } from "../selection/selectionContext.js";
+import {
+  selectionContext,
+  type SelectionContext,
+} from "../selection/selectionContext.js";
 import { panZoomTransformContext } from "../../gui/panZoomTransformContext.js";
 import type { PanZoomTransform } from "../../elements/EFPanZoom.js";
 import { canvasToScreen, screenToCanvas } from "../coordinateTransform.js";
@@ -46,16 +49,23 @@ export class SelectionOverlay extends LitElement {
     // Lit will inject styles as a <style> element when createRenderRoot returns this
     return this;
   }
-  
-  firstUpdated(changedProperties: Map<string | number | symbol, unknown>): void {
+
+  firstUpdated(
+    changedProperties: Map<string | number | symbol, unknown>,
+  ): void {
     super.firstUpdated?.(changedProperties);
     // When createRenderRoot returns this, Lit injects styles as a <style> element
     // Verify styles are present and log for debugging
-    const styleElement = this.querySelector('style');
+    const styleElement = this.querySelector("style");
     if (!styleElement) {
-      console.warn('[SelectionOverlay] No style element found - styles may not be applied');
+      console.warn(
+        "[SelectionOverlay] No style element found - styles may not be applied",
+      );
     } else {
-      console.log('[SelectionOverlay] Style element found, content length:', styleElement.textContent?.length || 0);
+      console.log(
+        "[SelectionOverlay] Style element found, content length:",
+        styleElement.textContent?.length || 0,
+      );
     }
   }
 
@@ -191,7 +201,10 @@ export class SelectionOverlay extends LitElement {
         current = (current as ShadowRoot).host;
       } else if (current instanceof HTMLElement) {
         // Check if this is the EFCanvas element (case-insensitive check)
-        if (current.tagName === "EF-CANVAS" || current.tagName.toLowerCase() === "ef-canvas") {
+        if (
+          current.tagName === "EF-CANVAS" ||
+          current.tagName.toLowerCase() === "ef-canvas"
+        ) {
           this.canvasElement = current;
           return;
         }
@@ -270,7 +283,7 @@ export class SelectionOverlay extends LitElement {
   private updateOverlayData(): void {
     const selection = this.effectiveSelection;
     if (!selection) {
-      console.warn('[SelectionOverlay] No selection context available');
+      console.warn("[SelectionOverlay] No selection context available");
       const hadSelection = this.selectionBounds !== null;
       const hadBoxSelect = this.boxSelectBounds !== null;
       this.selectionBounds = null;
@@ -280,9 +293,9 @@ export class SelectionOverlay extends LitElement {
       }
       return;
     }
-    
+
     if (!this.canvasElement) {
-      console.warn('[SelectionOverlay] No canvas element found');
+      console.warn("[SelectionOverlay] No canvas element found");
       const hadSelection = this.selectionBounds !== null;
       const hadBoxSelect = this.boxSelectBounds !== null;
       this.selectionBounds = null;
@@ -298,7 +311,9 @@ export class SelectionOverlay extends LitElement {
     // This already includes the pan transform from the parent ef-pan-zoom's .content-wrapper
     let canvasRect = this.canvasElement.getBoundingClientRect();
     if (this.canvasElement.shadowRoot) {
-      const canvasContent = this.canvasElement.shadowRoot.querySelector('.canvas-content') as HTMLElement;
+      const canvasContent = this.canvasElement.shadowRoot.querySelector(
+        ".canvas-content",
+      ) as HTMLElement;
       if (canvasContent) {
         canvasRect = canvasContent.getBoundingClientRect();
       }
@@ -339,10 +354,10 @@ export class SelectionOverlay extends LitElement {
         let canvasY: number;
         let canvasWidth: number;
         let canvasHeight: number;
-        
+
         const canvas = this.canvasElement as any;
         const metadata = canvas?.getElementData?.(elementId);
-        
+
         if (metadata) {
           // Use metadata (already in canvas coordinates)
           canvasX = metadata.x;
@@ -373,14 +388,14 @@ export class SelectionOverlay extends LitElement {
     // Canvas coordinates are relative to .canvas-content
     if (hasElements) {
       const scale = this.effectivePanZoomTransform?.scale || 1;
-      
+
       // Convert canvas coordinates to screen coordinates
       // screenX = canvasRect.left + canvasX * scale
       const screenMinX = canvasRect.left + minX * scale;
       const screenMinY = canvasRect.top + minY * scale;
       const screenMaxX = canvasRect.left + maxX * scale;
       const screenMaxY = canvasRect.top + maxY * scale;
-      
+
       this.selectionBounds = new DOMRect(
         screenMinX,
         screenMinY,
@@ -394,24 +409,33 @@ export class SelectionOverlay extends LitElement {
     // Update box select bounds - read directly from selection context every frame
     const boxSelectBounds = selection?.boxSelectBounds ?? null;
     const panZoomTransform = this.effectivePanZoomTransform;
-    
+
     if (boxSelectBounds && this.canvasElement && panZoomTransform) {
       // Convert canvas coordinates to screen coordinates
       // screenToCanvas uses canvasRect (transformed), but we need to convert back using pan-zoom's base rect
       // to match EFPanZoom.canvasToScreen() which uses: rect.left + canvasX * scale + x
       const panZoomElement = this.canvasElement.closest("ef-pan-zoom") as any;
-      if (panZoomElement && typeof panZoomElement.canvasToScreen === 'function') {
+      if (
+        panZoomElement &&
+        typeof panZoomElement.canvasToScreen === "function"
+      ) {
         // Use EFPanZoom's canvasToScreen method directly
-        const topLeft = panZoomElement.canvasToScreen(boxSelectBounds.left, boxSelectBounds.top);
-        const bottomRight = panZoomElement.canvasToScreen(boxSelectBounds.right, boxSelectBounds.bottom);
-        
+        const topLeft = panZoomElement.canvasToScreen(
+          boxSelectBounds.left,
+          boxSelectBounds.top,
+        );
+        const bottomRight = panZoomElement.canvasToScreen(
+          boxSelectBounds.right,
+          boxSelectBounds.bottom,
+        );
+
         const newBounds = new DOMRect(
           topLeft.x,
           topLeft.y,
           bottomRight.x - topLeft.x,
           bottomRight.y - topLeft.y,
         );
-        
+
         // Always update to new bounds object (Lit will detect the change)
         // Even if values are the same, new object reference ensures update
         this.boxSelectBounds = newBounds;
@@ -420,14 +444,26 @@ export class SelectionOverlay extends LitElement {
         const panZoomRect = panZoomElement?.getBoundingClientRect();
         if (panZoomRect) {
           const topLeft = {
-            x: panZoomRect.left + boxSelectBounds.left * panZoomTransform.scale + panZoomTransform.x,
-            y: panZoomRect.top + boxSelectBounds.top * panZoomTransform.scale + panZoomTransform.y,
+            x:
+              panZoomRect.left +
+              boxSelectBounds.left * panZoomTransform.scale +
+              panZoomTransform.x,
+            y:
+              panZoomRect.top +
+              boxSelectBounds.top * panZoomTransform.scale +
+              panZoomTransform.y,
           };
           const bottomRight = {
-            x: panZoomRect.left + boxSelectBounds.right * panZoomTransform.scale + panZoomTransform.x,
-            y: panZoomRect.top + boxSelectBounds.bottom * panZoomTransform.scale + panZoomTransform.y,
+            x:
+              panZoomRect.left +
+              boxSelectBounds.right * panZoomTransform.scale +
+              panZoomTransform.x,
+            y:
+              panZoomRect.top +
+              boxSelectBounds.bottom * panZoomTransform.scale +
+              panZoomTransform.y,
           };
-          
+
           this.boxSelectBounds = new DOMRect(
             topLeft.x,
             topLeft.y,
@@ -464,38 +500,44 @@ export class SelectionOverlay extends LitElement {
           style="position: fixed; top: 10px; right: 10px; background: red; color: white; padding: 4px; z-index: 10000; font-size: 12px;"
           data-debug="selection-overlay"
         >
-          Debug: selection=${!!selection} canvas=${!!this.canvasElement} mode=${selection?.selectionMode || 'none'}
+          Debug: selection=${!!selection} canvas=${!!this.canvasElement} mode=${selection?.selectionMode || "none"}
         </div>
       `;
     }
 
     const hasBoxSelect = !!this.boxSelectBounds;
     const selectionMode = selection.selectionMode;
-    
+
     return html`
-      ${this.selectionBounds
-        ? html`
+      ${
+        this.selectionBounds
+          ? html`
             <div
               class="selection-box"
               style="left: ${this.selectionBounds.x}px; top: ${this.selectionBounds.y}px; width: ${this.selectionBounds.width}px; height: ${this.selectionBounds.height}px;"
             ></div>
           `
-        : html``}
-      ${this.boxSelectBounds
-        ? html`
+          : html``
+      }
+      ${
+        this.boxSelectBounds
+          ? html`
             <div
               class="box-select"
               style="left: ${this.boxSelectBounds.x}px; top: ${this.boxSelectBounds.y}px; width: ${this.boxSelectBounds.width}px; height: ${this.boxSelectBounds.height}px; position: absolute; border: 2px dashed rgb(59, 130, 246); background: rgba(59, 130, 246, 0.05); pointer-events: none;"
             ></div>
           `
-        : html``}
-      ${selectionMode === "box-selecting" && !hasBoxSelect
-        ? html`
+          : html``
+      }
+      ${
+        selectionMode === "box-selecting" && !hasBoxSelect
+          ? html`
             <div style="position: fixed; top: 50px; right: 10px; background: orange; color: white; padding: 4px; z-index: 10000; font-size: 12px;">
-              Box selecting but no bounds! mode=${selectionMode} bounds=${selection.boxSelectBounds ? 'exists' : 'null'}
+              Box selecting but no bounds! mode=${selectionMode} bounds=${selection.boxSelectBounds ? "exists" : "null"}
             </div>
           `
-        : html``}
+          : html``
+      }
     `;
   }
 }
@@ -505,4 +547,3 @@ declare global {
     "ef-canvas-selection-overlay": SelectionOverlay;
   }
 }
-

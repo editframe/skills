@@ -21,7 +21,8 @@ export interface TimelineState {
   zoomOut: () => void;
 }
 
-export const timelineStateContext = createContext<TimelineState>("timeline-state");
+export const timelineStateContext =
+  createContext<TimelineState>("timeline-state");
 
 /**
  * Convert time to pixel position
@@ -55,5 +56,3 @@ export function zoomToPixelsPerMs(zoomScale: number): number {
 export function pixelsPerMsToZoom(pixelsPerMs: number): number {
   return pixelsPerMs / DEFAULT_PIXELS_PER_MS;
 }
-
-

@@ -22,13 +22,17 @@ describe("Canvas Timeline Synchronization", () => {
 
   describe("findRootTemporal", () => {
     test("returns outermost timegroup when element is nested in timegroups", async () => {
-      const outerTimegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      const outerTimegroup = document.createElement(
+        "ef-timegroup",
+      ) as EFTimegroup;
       outerTimegroup.id = nextId();
       outerTimegroup.setAttribute("mode", "fixed");
       outerTimegroup.setAttribute("duration", "10s");
       document.body.appendChild(outerTimegroup);
 
-      const innerTimegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      const innerTimegroup = document.createElement(
+        "ef-timegroup",
+      ) as EFTimegroup;
       innerTimegroup.id = nextId();
       innerTimegroup.setAttribute("mode", "fixed");
       innerTimegroup.setAttribute("duration", "5s");
@@ -146,7 +150,9 @@ describe("Canvas Timeline Synchronization", () => {
       await canvas.updateComplete;
       await timeline.updateComplete;
 
-      const playButton = timeline.shadowRoot?.querySelector(".control-btn") as HTMLElement;
+      const playButton = timeline.shadowRoot?.querySelector(
+        ".control-btn",
+      ) as HTMLElement;
       expect(playButton).toBeTruthy();
 
       const playSpy = vi.spyOn(timegroup, "play");
@@ -219,7 +225,9 @@ describe("Canvas Timeline Synchronization", () => {
       await timegroup.updateComplete;
       await hierarchy.updateComplete;
 
-      const hierarchyItem = hierarchy.shadowRoot?.querySelector("ef-timegroup-hierarchy-item");
+      const hierarchyItem = hierarchy.shadowRoot?.querySelector(
+        "ef-timegroup-hierarchy-item",
+      );
       expect(hierarchyItem).toBeTruthy();
 
       const itemRow = hierarchyItem?.shadowRoot?.querySelector(".item-row");
@@ -253,7 +261,9 @@ describe("Canvas Timeline Synchronization", () => {
       await timegroup.updateComplete;
       await hierarchy.updateComplete;
 
-      const hierarchyItem = hierarchy.shadowRoot?.querySelector("ef-timegroup-hierarchy-item");
+      const hierarchyItem = hierarchy.shadowRoot?.querySelector(
+        "ef-timegroup-hierarchy-item",
+      );
       const itemRow = hierarchyItem?.shadowRoot?.querySelector(".item-row");
 
       canvas.selectionContext.select(timegroupId);
@@ -268,4 +278,3 @@ describe("Canvas Timeline Synchronization", () => {
     }, 1000);
   });
 });
-

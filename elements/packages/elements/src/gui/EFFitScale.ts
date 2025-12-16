@@ -111,13 +111,15 @@ export class EFFitScale extends LitElement {
     let contentWidth = 0;
     let contentHeight = 0;
 
-    if (
-      typeof (this.contentChild as any).getNaturalDimensions === "function"
-    ) {
+    if (typeof (this.contentChild as any).getNaturalDimensions === "function") {
       const naturalDimensions = (
         this.contentChild as any
       ).getNaturalDimensions() as { width: number; height: number } | null;
-      if (naturalDimensions && naturalDimensions.width > 0 && naturalDimensions.height > 0) {
+      if (
+        naturalDimensions &&
+        naturalDimensions.width > 0 &&
+        naturalDimensions.height > 0
+      ) {
         contentWidth = naturalDimensions.width;
         contentHeight = naturalDimensions.height;
 
@@ -128,7 +130,11 @@ export class EFFitScale extends LitElement {
           const canvas = (this.contentChild as any).canvasElement;
           if (canvas) {
             canvas.style.setProperty("width", `${contentWidth}px`, "important");
-            canvas.style.setProperty("height", `${contentHeight}px`, "important");
+            canvas.style.setProperty(
+              "height",
+              `${contentHeight}px`,
+              "important",
+            );
           }
         }
       } else {

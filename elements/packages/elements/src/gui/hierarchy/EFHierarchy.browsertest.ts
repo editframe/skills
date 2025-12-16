@@ -43,7 +43,9 @@ describe("EFHierarchy", () => {
     await timegroup2.updateComplete;
     await hierarchy.updateComplete;
 
-    const hierarchyItems = hierarchy.shadowRoot?.querySelectorAll("ef-timegroup-hierarchy-item");
+    const hierarchyItems = hierarchy.shadowRoot?.querySelectorAll(
+      "ef-timegroup-hierarchy-item",
+    );
     expect(hierarchyItems?.length).toBe(2);
   }, 1000);
 
@@ -102,13 +104,19 @@ describe("EFHierarchy", () => {
     await video.updateComplete;
     await hierarchy.updateComplete;
 
-    const hierarchyItem = hierarchy.shadowRoot?.querySelector("ef-timegroup-hierarchy-item");
+    const hierarchyItem = hierarchy.shadowRoot?.querySelector(
+      "ef-timegroup-hierarchy-item",
+    );
     expect(hierarchyItem).toBeTruthy();
 
-    const children = hierarchyItem?.shadowRoot?.querySelector(".children") as HTMLElement;
+    const children = hierarchyItem?.shadowRoot?.querySelector(
+      ".children",
+    ) as HTMLElement;
     expect(children).toBeTruthy();
 
-    const expandIcon = hierarchyItem?.shadowRoot?.querySelector(".expand-icon") as HTMLElement;
+    const expandIcon = hierarchyItem?.shadowRoot?.querySelector(
+      ".expand-icon",
+    ) as HTMLElement;
     expect(expandIcon).toBeTruthy();
 
     const initiallyExpanded = !children.hasAttribute("data-collapsed");
@@ -131,11 +139,11 @@ describe("EFHierarchy", () => {
     timegroup.id = timegroupId;
     timegroup.setAttribute("mode", "fixed");
     timegroup.setAttribute("duration", "5s");
-    
+
     const video = document.createElement("ef-video") as EFVideo;
     video.id = nextId();
     timegroup.appendChild(video);
-    
+
     container.appendChild(timegroup);
 
     const hierarchy = document.createElement("ef-hierarchy") as EFHierarchy;
@@ -146,11 +154,17 @@ describe("EFHierarchy", () => {
     await video.updateComplete;
     await hierarchy.updateComplete;
 
-    const hierarchyItem = hierarchy.shadowRoot?.querySelector("ef-timegroup-hierarchy-item") as any;
+    const hierarchyItem = hierarchy.shadowRoot?.querySelector(
+      "ef-timegroup-hierarchy-item",
+    ) as any;
     expect(hierarchyItem).toBeTruthy();
-    
-    const children = hierarchyItem?.shadowRoot?.querySelector(".children") as HTMLElement;
-    const expandIcon = hierarchyItem?.shadowRoot?.querySelector(".expand-icon") as HTMLElement;
+
+    const children = hierarchyItem?.shadowRoot?.querySelector(
+      ".children",
+    ) as HTMLElement;
+    const expandIcon = hierarchyItem?.shadowRoot?.querySelector(
+      ".expand-icon",
+    ) as HTMLElement;
     expect(children).toBeTruthy();
     expect(expandIcon).toBeTruthy();
 
@@ -192,13 +206,19 @@ describe("EFHierarchy", () => {
     await timegroup2.updateComplete;
     await hierarchy.updateComplete;
 
-    let reorderDetail: { sourceId: string; targetId: string; position: "before" | "after" | "inside" } | null = null;
+    let reorderDetail: {
+      sourceId: string;
+      targetId: string;
+      position: "before" | "after" | "inside";
+    } | null = null;
     const eventHandler = ((e: CustomEvent) => {
       reorderDetail = e.detail;
     }) as EventListener;
     hierarchy.addEventListener("hierarchy-reorder", eventHandler);
 
-    const items = hierarchy.shadowRoot?.querySelectorAll("ef-timegroup-hierarchy-item");
+    const items = hierarchy.shadowRoot?.querySelectorAll(
+      "ef-timegroup-hierarchy-item",
+    );
     expect(items?.length).toBe(2);
 
     const sourceItem = items?.[0];
@@ -208,8 +228,12 @@ describe("EFHierarchy", () => {
     await (sourceItem as any)?.updateComplete;
     await (targetItem as any)?.updateComplete;
 
-    const sourceRow = sourceItem?.shadowRoot?.querySelector(".item-row") as HTMLElement;
-    const targetRow = targetItem?.shadowRoot?.querySelector(".item-row") as HTMLElement;
+    const sourceRow = sourceItem?.shadowRoot?.querySelector(
+      ".item-row",
+    ) as HTMLElement;
+    const targetRow = targetItem?.shadowRoot?.querySelector(
+      ".item-row",
+    ) as HTMLElement;
     expect(sourceRow).toBeTruthy();
     expect(targetRow).toBeTruthy();
 
@@ -296,7 +320,9 @@ describe("EFHierarchy", () => {
     await timegroup.updateComplete;
     await hierarchy.updateComplete;
 
-    const hierarchyItems = hierarchy.shadowRoot?.querySelectorAll("ef-timegroup-hierarchy-item");
+    const hierarchyItems = hierarchy.shadowRoot?.querySelectorAll(
+      "ef-timegroup-hierarchy-item",
+    );
     expect(hierarchyItems?.length).toBe(1);
   }, 1000);
 
@@ -391,7 +417,7 @@ describe("EFHierarchy", () => {
     await hierarchy.updateComplete;
 
     const api = new CanvasAPI(canvas);
-    
+
     expect(hierarchy.getSelectedElementId()).toBe(null);
 
     api.select(timegroup1Id);
@@ -431,10 +457,14 @@ describe("EFHierarchy", () => {
     await timegroup1.updateComplete;
     await hierarchy.updateComplete;
 
-    const hierarchyItem = hierarchy.shadowRoot?.querySelector("ef-timegroup-hierarchy-item") as any;
+    const hierarchyItem = hierarchy.shadowRoot?.querySelector(
+      "ef-timegroup-hierarchy-item",
+    ) as any;
     expect(hierarchyItem).toBeTruthy();
 
-    const itemRow = hierarchyItem?.shadowRoot?.querySelector(".item-row") as HTMLElement;
+    const itemRow = hierarchyItem?.shadowRoot?.querySelector(
+      ".item-row",
+    ) as HTMLElement;
     expect(itemRow).toBeTruthy();
     expect(itemRow.hasAttribute("data-selected")).toBe(false);
 
@@ -475,9 +505,13 @@ describe("EFHierarchy", () => {
     const api = new CanvasAPI(canvas);
     expect(api.getSelectedIds()).toEqual([]);
 
-    const hierarchyItem = hierarchy.shadowRoot?.querySelector("ef-timegroup-hierarchy-item") as any;
-    const itemRow = hierarchyItem?.shadowRoot?.querySelector(".item-row") as HTMLElement;
-    
+    const hierarchyItem = hierarchy.shadowRoot?.querySelector(
+      "ef-timegroup-hierarchy-item",
+    ) as any;
+    const itemRow = hierarchyItem?.shadowRoot?.querySelector(
+      ".item-row",
+    ) as HTMLElement;
+
     itemRow.click();
     await hierarchy.updateComplete;
     await canvas.updateComplete;
@@ -485,4 +519,3 @@ describe("EFHierarchy", () => {
     expect(api.getSelectedIds()).toEqual([timegroup1Id]);
   }, 1000);
 });
-

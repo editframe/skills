@@ -35,9 +35,9 @@ export function getRotatedBoundingBox(
   // Four corners relative to center (before rotation)
   const corners = [
     { x: -halfW, y: -halfH }, // top-left
-    { x: halfW, y: -halfH },  // top-right
-    { x: halfW, y: halfH },   // bottom-right
-    { x: -halfW, y: halfH },  // bottom-left
+    { x: halfW, y: -halfH }, // top-right
+    { x: halfW, y: halfH }, // bottom-right
+    { x: -halfW, y: halfH }, // bottom-left
   ];
 
   // Rotate each corner and find bounds
@@ -97,7 +97,8 @@ export function getResizeHandleCursor(
   // Calculate the effective angle after rotation
   const baseAngle = handleAngles[handle];
   const effectiveAngle = (baseAngle + rotationDegrees) % 360;
-  const normalizedAngle = effectiveAngle < 0 ? effectiveAngle + 360 : effectiveAngle;
+  const normalizedAngle =
+    effectiveAngle < 0 ? effectiveAngle + 360 : effectiveAngle;
 
   // Map angle back to cursor
   // Edge handles (n, e, s, w) map to cardinal directions
@@ -288,9 +289,10 @@ export function calculateResizeBounds(
       // For corners: use the dimension with larger change
       const widthScale = newWidth / startSize.width;
       const heightScale = newHeight / startSize.height;
-      const uniformScale = Math.abs(widthScale - 1) > Math.abs(heightScale - 1)
-        ? widthScale
-        : heightScale;
+      const uniformScale =
+        Math.abs(widthScale - 1) > Math.abs(heightScale - 1)
+          ? widthScale
+          : heightScale;
       newWidth = startSize.width * uniformScale;
       newHeight = startSize.height * uniformScale;
     } else if (isHorizontalOnly) {
@@ -419,16 +421,15 @@ export function parseRotationFromTransform(transform: string): number {
   // For rotation: a = cos(θ), b = sin(θ)
   const matrixMatch = transform.match(/matrix\(([^)]+)\)/);
   if (!matrixMatch?.[1]) return 0;
-  
+
   const values = matrixMatch[1].split(",").map((v) => parseFloat(v.trim()));
   if (values.length < 2) return 0;
-  
+
   const a = values[0];
   const b = values[1];
   if (a === undefined || b === undefined || isNaN(a) || isNaN(b)) {
     return 0;
   }
-  
+
   return Math.atan2(b, a) * (180 / Math.PI);
 }
-

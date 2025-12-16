@@ -13,13 +13,16 @@ const test = baseTest.extend<{}>({});
  * Wait for element metadata to be registered and populated.
  * Uses vi.waitUntil() for proper condition-based waiting instead of arbitrary timeouts.
  */
-async function waitForElementMetadata(canvas: EFCanvas, elementId: string): Promise<void> {
+async function waitForElementMetadata(
+  canvas: EFCanvas,
+  elementId: string,
+): Promise<void> {
   await vi.waitUntil(
     () => {
       const metadata = canvas.getElementData(elementId);
       return metadata && metadata.width > 0 && metadata.height > 0;
     },
-    { timeout: 2000, interval: 16 }
+    { timeout: 2000, interval: 16 },
   );
 }
 
@@ -30,18 +33,21 @@ async function waitForElementMetadata(canvas: EFCanvas, elementId: string): Prom
 async function waitForHandlesReady(handles: EFTransformHandles): Promise<void> {
   await handles.updateComplete;
   await vi.waitUntil(
-    () => handles.bounds && handles.bounds.width > 0 && handles.bounds.height > 0,
-    { timeout: 2000, interval: 16 }
+    () =>
+      handles.bounds && handles.bounds.width > 0 && handles.bounds.height > 0,
+    { timeout: 2000, interval: 16 },
   );
 }
 
 /**
  * Wait for transform handles element to exist in DOM.
  */
-async function waitForHandlesElement(container: HTMLElement): Promise<EFTransformHandles> {
+async function waitForHandlesElement(
+  container: HTMLElement,
+): Promise<EFTransformHandles> {
   await vi.waitUntil(
     () => container.querySelector("ef-transform-handles") !== null,
-    { timeout: 2000, interval: 16 }
+    { timeout: 2000, interval: 16 },
   );
   return container.querySelector("ef-transform-handles") as EFTransformHandles;
 }
@@ -51,7 +57,7 @@ async function waitForHandlesElement(container: HTMLElement): Promise<EFTransfor
  * Unlike closed-loop tests that only verify internal consistency,
  * these tests compare the actual screen bounding rects of elements
  * vs their transform handles overlays.
- * 
+ *
  * The invariant being tested:
  * Transform handles overlay MUST visually match the element it represents
  * regardless of nesting, rotation, or zoom level.
@@ -64,7 +70,7 @@ describe("Canvas Nested and Rotated Element Overlays - Visual Verification", () 
   /**
    * Helper to verify transform handles visually match an element.
    * Compares actual screen positions, not internal calculations.
-   * 
+   *
    * NOTE: ef-transform-handles is a zero-sized host element. The actual
    * visual overlay is the .overlay child inside its shadow DOM. We must
    * query that element to get the visual bounding rect.
@@ -76,33 +82,36 @@ describe("Canvas Nested and Rotated Element Overlays - Visual Verification", () 
   ): { matches: boolean; details: string } {
     const elementRect = element.getBoundingClientRect();
     // Get the actual visual overlay element, not the host
-    const overlayElement = handles.shadowRoot?.querySelector('.overlay') as HTMLElement;
-    const handlesRect = overlayElement?.getBoundingClientRect() ?? new DOMRect();
-    
+    const overlayElement = handles.shadowRoot?.querySelector(
+      ".overlay",
+    ) as HTMLElement;
+    const handlesRect =
+      overlayElement?.getBoundingClientRect() ?? new DOMRect();
+
     // For rotated elements, compare centers (centers are stable under rotation)
     const elementCenterX = elementRect.left + elementRect.width / 2;
     const elementCenterY = elementRect.top + elementRect.height / 2;
     const handlesCenterX = handlesRect.left + handlesRect.width / 2;
     const handlesCenterY = handlesRect.top + handlesRect.height / 2;
-    
+
     const centerDiffX = Math.abs(elementCenterX - handlesCenterX);
     const centerDiffY = Math.abs(elementCenterY - handlesCenterY);
     const sizeDiffW = Math.abs(elementRect.width - handlesRect.width);
     const sizeDiffH = Math.abs(elementRect.height - handlesRect.height);
-    
-    const matches = 
-      centerDiffX < tolerance && 
-      centerDiffY < tolerance && 
-      sizeDiffW < tolerance && 
+
+    const matches =
+      centerDiffX < tolerance &&
+      centerDiffY < tolerance &&
+      sizeDiffW < tolerance &&
       sizeDiffH < tolerance;
-    
+
     const details = `
       Element screen rect: (${elementRect.left.toFixed(1)}, ${elementRect.top.toFixed(1)}) ${elementRect.width.toFixed(1)}x${elementRect.height.toFixed(1)}
       Handles screen rect: (${handlesRect.left.toFixed(1)}, ${handlesRect.top.toFixed(1)}) ${handlesRect.width.toFixed(1)}x${handlesRect.height.toFixed(1)}
       Center diff: (${centerDiffX.toFixed(1)}, ${centerDiffY.toFixed(1)})
       Size diff: (${sizeDiffW.toFixed(1)}, ${sizeDiffH.toFixed(1)})
     `;
-    
+
     return { matches, details };
   }
 
@@ -151,9 +160,12 @@ describe("Canvas Nested and Rotated Element Overlays - Visual Verification", () 
 
     const handles = await waitForHandlesElement(document.body);
     await waitForHandlesReady(handles);
-    
+
     const result = verifyHandlesMatchElement(element, handles);
-    expect(result.matches, `Handles should match element visually:\n${result.details}`).toBe(true);
+    expect(
+      result.matches,
+      `Handles should match element visually:\n${result.details}`,
+    ).toBe(true);
   }, 5000);
 
   test("VISUAL: transform handles match element at scale 2x (zoomed in)", async () => {
@@ -199,9 +211,12 @@ describe("Canvas Nested and Rotated Element Overlays - Visual Verification", () 
 
     const handles = await waitForHandlesElement(document.body);
     await waitForHandlesReady(handles);
-    
+
     const result = verifyHandlesMatchElement(element, handles);
-    expect(result.matches, `Handles should match element at 2x zoom:\n${result.details}`).toBe(true);
+    expect(
+      result.matches,
+      `Handles should match element at 2x zoom:\n${result.details}`,
+    ).toBe(true);
   }, 5000);
 
   test("VISUAL: transform handles match rotated element (45deg)", async () => {
@@ -249,19 +264,19 @@ describe("Canvas Nested and Rotated Element Overlays - Visual Verification", () 
 
     const handles = await waitForHandlesElement(document.body);
     await waitForHandlesReady(handles);
-    
+
     // For rotated elements, we check that:
     // 1. Centers match (since rotation is around center)
     // 2. Handles show actual dimensions (not bounding box)
     const elementRect = element.getBoundingClientRect();
     const bounds = handles.bounds;
-      
+
     expect(bounds).toBeTruthy();
     // Handles should show actual dimensions (200x100), not bounding box (~212x212)
     // Allow some tolerance
     expect(Math.abs(bounds.width - 200)).toBeLessThan(10);
     expect(Math.abs(bounds.height - 100)).toBeLessThan(10);
-    
+
     // Rotation should be stored
     expect(bounds.rotation).toBeCloseTo(45, 0);
   }, 5000);
@@ -311,7 +326,7 @@ describe("Canvas Nested and Rotated Element Overlays - Visual Verification", () 
 
     const handles = await waitForHandlesElement(document.body);
     await waitForHandlesReady(handles);
-    
+
     const bounds = handles.bounds;
     expect(bounds).toBeTruthy();
     // At 2x zoom, handles dimensions in screen space should be 400x200 (200*2, 100*2)
@@ -402,7 +417,9 @@ describe("Canvas Nested and Rotated Element Overlays - Visual Verification", () 
     expect(overlayLayer).toBeTruthy();
 
     const overlayRect = overlayLayer!.getBoundingClientRect();
-    const canvasContent = canvas.shadowRoot?.querySelector(".canvas-content") as HTMLElement;
+    const canvasContent = canvas.shadowRoot?.querySelector(
+      ".canvas-content",
+    ) as HTMLElement;
     expect(canvasContent).toBeTruthy();
 
     const canvasContentRect = canvasContent.getBoundingClientRect();
@@ -413,12 +430,16 @@ describe("Canvas Nested and Rotated Element Overlays - Visual Verification", () 
     const elementCenterCanvasY = metadata!.y + metadata!.height / 2;
 
     // Convert to screen coordinates
-    const elementCenterScreenX = canvasContentRect.left + elementCenterCanvasX * scale;
-    const elementCenterScreenY = canvasContentRect.top + elementCenterCanvasY * scale;
+    const elementCenterScreenX =
+      canvasContentRect.left + elementCenterCanvasX * scale;
+    const elementCenterScreenY =
+      canvasContentRect.top + elementCenterCanvasY * scale;
 
     // Expected overlay position (center minus half size, relative to overlay layer)
-    const expectedX = elementCenterScreenX - overlayRect.left - (metadata!.width * scale) / 2;
-    const expectedY = elementCenterScreenY - overlayRect.top - (metadata!.height * scale) / 2;
+    const expectedX =
+      elementCenterScreenX - overlayRect.left - (metadata!.width * scale) / 2;
+    const expectedY =
+      elementCenterScreenY - overlayRect.top - (metadata!.height * scale) / 2;
 
     const bounds = handles.bounds;
     expect(bounds).toBeTruthy();
@@ -588,14 +609,16 @@ describe("Canvas Nested and Rotated Element Overlays - Visual Verification", () 
     // Rotate to 45 degrees
     childElement.style.transform = "rotate(45deg)";
     await canvas.updateComplete;
-    
+
     // Wait for metadata to update with new rotation
     await vi.waitUntil(
       () => {
         const metadata = canvas.getElementData("child-3");
-        return metadata && metadata.rotation !== undefined && metadata.rotation !== 0;
+        return (
+          metadata && metadata.rotation !== undefined && metadata.rotation !== 0
+        );
       },
-      { timeout: 2000, interval: 16 }
+      { timeout: 2000, interval: 16 },
     );
 
     // Get updated handles
@@ -613,4 +636,3 @@ describe("Canvas Nested and Rotated Element Overlays - Visual Verification", () 
     expect(Math.abs(bounds45.height - 80)).toBeLessThan(2);
   }, 5000);
 });
-

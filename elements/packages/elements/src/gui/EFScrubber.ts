@@ -242,15 +242,18 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
 
       const scrollContainerRect = scrollContainer.getBoundingClientRect();
       const scrollLeft = scrollContainer.scrollLeft || 0;
-      
+
       // Calculate pixel offset dynamically from the track content element
       // This accounts for any hierarchy panel or other elements before the tracks
       let pixelOffset = 0;
       if (this.trackContentRef?.current) {
         const trackRect = this.trackContentRef.current.getBoundingClientRect();
-        pixelOffset = trackRect.left - scrollContainerRect.left + scrollContainer.scrollLeft;
+        pixelOffset =
+          trackRect.left -
+          scrollContainerRect.left +
+          scrollContainer.scrollLeft;
       }
-      
+
       const x = e.clientX - scrollContainerRect.left - pixelOffset;
       const pixelPosition = scrollLeft + x;
       const effectiveWidth =

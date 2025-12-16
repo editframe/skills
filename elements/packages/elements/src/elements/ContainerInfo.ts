@@ -62,10 +62,3 @@ export function getContainerInfoFromElement(
     canContainChildren: isContainer,
   };
 }
-
-
-
-
-
-
-

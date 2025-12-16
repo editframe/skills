@@ -53,9 +53,13 @@ describe("coordinateTransform", () => {
     const screenX = 150;
     const screenY = 250;
     const canvas = screenToCanvas(screenX, screenY, canvasRect, transform);
-    const backToScreen = canvasToScreen(canvas.x, canvas.y, canvasRect, transform);
+    const backToScreen = canvasToScreen(
+      canvas.x,
+      canvas.y,
+      canvasRect,
+      transform,
+    );
     expect(backToScreen.x).toBeCloseTo(screenX, 1);
     expect(backToScreen.y).toBeCloseTo(screenY, 1);
   });
 });
-

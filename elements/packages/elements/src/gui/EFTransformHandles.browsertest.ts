@@ -28,7 +28,9 @@ describe("EFTransformHandles", () => {
       )!;
       await el.updateComplete;
 
-      const overlay = el.shadowRoot!.querySelector(".overlay") as HTMLDivElement;
+      const overlay = el.shadowRoot!.querySelector(
+        ".overlay",
+      ) as HTMLDivElement;
       expect(overlay.style.left).toBe("0px");
       expect(overlay.style.top).toBe("0px");
       expect(overlay.style.width).toBe("100px");
@@ -46,7 +48,9 @@ describe("EFTransformHandles", () => {
       )!;
       await el.updateComplete;
 
-      const overlay = el.shadowRoot!.querySelector(".overlay") as HTMLDivElement;
+      const overlay = el.shadowRoot!.querySelector(
+        ".overlay",
+      ) as HTMLDivElement;
       expect(overlay.style.left).toBe("50px");
       expect(overlay.style.top).toBe("75px");
       expect(overlay.style.width).toBe("200px");
@@ -64,7 +68,9 @@ describe("EFTransformHandles", () => {
       )!;
       await el.updateComplete;
 
-      const overlay = el.shadowRoot!.querySelector(".overlay") as HTMLDivElement;
+      const overlay = el.shadowRoot!.querySelector(
+        ".overlay",
+      ) as HTMLDivElement;
       expect(overlay.style.transform).toContain("rotate(45deg)");
       // Browser may normalize "center" to "center center"
       expect(overlay.style.transformOrigin).toContain("center");
@@ -81,7 +87,9 @@ describe("EFTransformHandles", () => {
       )!;
       await el.updateComplete;
 
-      const overlay = el.shadowRoot!.querySelector(".overlay") as HTMLDivElement;
+      const overlay = el.shadowRoot!.querySelector(
+        ".overlay",
+      ) as HTMLDivElement;
       expect(overlay.style.transform).toBeFalsy();
     });
 
@@ -96,7 +104,9 @@ describe("EFTransformHandles", () => {
       )!;
       await el.updateComplete;
 
-      const overlay = el.shadowRoot!.querySelector(".overlay") as HTMLDivElement;
+      const overlay = el.shadowRoot!.querySelector(
+        ".overlay",
+      ) as HTMLDivElement;
       expect(overlay.style.transform).toBeFalsy();
     });
   });
@@ -238,7 +248,7 @@ describe("EFTransformHandles", () => {
       expect(lastEventBounds.y).toBe(130);
       expect(lastEventBounds.width).toBe(200);
       expect(lastEventBounds.height).toBe(150);
-      
+
       // Overlay stays at original position (one-way data flow)
       expect(overlay.style.left).toBe("100px");
       expect(overlay.style.top).toBe("100px");
@@ -1250,23 +1260,55 @@ describe("EFTransformHandles", () => {
       )!;
       await el.updateComplete;
 
-      const nHandle = el.shadowRoot!.querySelector(".handle.n") as HTMLDivElement;
-      const eHandle = el.shadowRoot!.querySelector(".handle.e") as HTMLDivElement;
-      const sHandle = el.shadowRoot!.querySelector(".handle.s") as HTMLDivElement;
-      const wHandle = el.shadowRoot!.querySelector(".handle.w") as HTMLDivElement;
-      const nwHandle = el.shadowRoot!.querySelector(".handle.nw") as HTMLDivElement;
-      const neHandle = el.shadowRoot!.querySelector(".handle.ne") as HTMLDivElement;
-      const seHandle = el.shadowRoot!.querySelector(".handle.se") as HTMLDivElement;
-      const swHandle = el.shadowRoot!.querySelector(".handle.sw") as HTMLDivElement;
+      const nHandle = el.shadowRoot!.querySelector(
+        ".handle.n",
+      ) as HTMLDivElement;
+      const eHandle = el.shadowRoot!.querySelector(
+        ".handle.e",
+      ) as HTMLDivElement;
+      const sHandle = el.shadowRoot!.querySelector(
+        ".handle.s",
+      ) as HTMLDivElement;
+      const wHandle = el.shadowRoot!.querySelector(
+        ".handle.w",
+      ) as HTMLDivElement;
+      const nwHandle = el.shadowRoot!.querySelector(
+        ".handle.nw",
+      ) as HTMLDivElement;
+      const neHandle = el.shadowRoot!.querySelector(
+        ".handle.ne",
+      ) as HTMLDivElement;
+      const seHandle = el.shadowRoot!.querySelector(
+        ".handle.se",
+      ) as HTMLDivElement;
+      const swHandle = el.shadowRoot!.querySelector(
+        ".handle.sw",
+      ) as HTMLDivElement;
 
-      expect(nHandle.style.cursor || getComputedStyle(nHandle).cursor).toContain("n-resize");
-      expect(eHandle.style.cursor || getComputedStyle(eHandle).cursor).toContain("e-resize");
-      expect(sHandle.style.cursor || getComputedStyle(sHandle).cursor).toContain("s-resize");
-      expect(wHandle.style.cursor || getComputedStyle(wHandle).cursor).toContain("w-resize");
-      expect(nwHandle.style.cursor || getComputedStyle(nwHandle).cursor).toContain("nw-resize");
-      expect(neHandle.style.cursor || getComputedStyle(neHandle).cursor).toContain("ne-resize");
-      expect(seHandle.style.cursor || getComputedStyle(seHandle).cursor).toContain("se-resize");
-      expect(swHandle.style.cursor || getComputedStyle(swHandle).cursor).toContain("sw-resize");
+      expect(
+        nHandle.style.cursor || getComputedStyle(nHandle).cursor,
+      ).toContain("n-resize");
+      expect(
+        eHandle.style.cursor || getComputedStyle(eHandle).cursor,
+      ).toContain("e-resize");
+      expect(
+        sHandle.style.cursor || getComputedStyle(sHandle).cursor,
+      ).toContain("s-resize");
+      expect(
+        wHandle.style.cursor || getComputedStyle(wHandle).cursor,
+      ).toContain("w-resize");
+      expect(
+        nwHandle.style.cursor || getComputedStyle(nwHandle).cursor,
+      ).toContain("nw-resize");
+      expect(
+        neHandle.style.cursor || getComputedStyle(neHandle).cursor,
+      ).toContain("ne-resize");
+      expect(
+        seHandle.style.cursor || getComputedStyle(seHandle).cursor,
+      ).toContain("se-resize");
+      expect(
+        swHandle.style.cursor || getComputedStyle(swHandle).cursor,
+      ).toContain("sw-resize");
     });
 
     test("handles show correct cursor at 90° rotation", async () => {
@@ -1280,25 +1322,57 @@ describe("EFTransformHandles", () => {
       )!;
       await el.updateComplete;
 
-      const nHandle = el.shadowRoot!.querySelector(".handle.n") as HTMLDivElement;
-      const eHandle = el.shadowRoot!.querySelector(".handle.e") as HTMLDivElement;
-      const sHandle = el.shadowRoot!.querySelector(".handle.s") as HTMLDivElement;
-      const wHandle = el.shadowRoot!.querySelector(".handle.w") as HTMLDivElement;
-      const nwHandle = el.shadowRoot!.querySelector(".handle.nw") as HTMLDivElement;
-      const neHandle = el.shadowRoot!.querySelector(".handle.ne") as HTMLDivElement;
-      const seHandle = el.shadowRoot!.querySelector(".handle.se") as HTMLDivElement;
-      const swHandle = el.shadowRoot!.querySelector(".handle.sw") as HTMLDivElement;
+      const nHandle = el.shadowRoot!.querySelector(
+        ".handle.n",
+      ) as HTMLDivElement;
+      const eHandle = el.shadowRoot!.querySelector(
+        ".handle.e",
+      ) as HTMLDivElement;
+      const sHandle = el.shadowRoot!.querySelector(
+        ".handle.s",
+      ) as HTMLDivElement;
+      const wHandle = el.shadowRoot!.querySelector(
+        ".handle.w",
+      ) as HTMLDivElement;
+      const nwHandle = el.shadowRoot!.querySelector(
+        ".handle.nw",
+      ) as HTMLDivElement;
+      const neHandle = el.shadowRoot!.querySelector(
+        ".handle.ne",
+      ) as HTMLDivElement;
+      const seHandle = el.shadowRoot!.querySelector(
+        ".handle.se",
+      ) as HTMLDivElement;
+      const swHandle = el.shadowRoot!.querySelector(
+        ".handle.sw",
+      ) as HTMLDivElement;
 
       // At 90° rotation: n→e, e→s, s→w, w→n
-      expect(nHandle.style.cursor || getComputedStyle(nHandle).cursor).toContain("e-resize");
-      expect(eHandle.style.cursor || getComputedStyle(eHandle).cursor).toContain("s-resize");
-      expect(sHandle.style.cursor || getComputedStyle(sHandle).cursor).toContain("w-resize");
-      expect(wHandle.style.cursor || getComputedStyle(wHandle).cursor).toContain("n-resize");
+      expect(
+        nHandle.style.cursor || getComputedStyle(nHandle).cursor,
+      ).toContain("e-resize");
+      expect(
+        eHandle.style.cursor || getComputedStyle(eHandle).cursor,
+      ).toContain("s-resize");
+      expect(
+        sHandle.style.cursor || getComputedStyle(sHandle).cursor,
+      ).toContain("w-resize");
+      expect(
+        wHandle.style.cursor || getComputedStyle(wHandle).cursor,
+      ).toContain("n-resize");
       // Corners: nw→ne, ne→se, se→sw, sw→nw
-      expect(nwHandle.style.cursor || getComputedStyle(nwHandle).cursor).toContain("ne-resize");
-      expect(neHandle.style.cursor || getComputedStyle(neHandle).cursor).toContain("se-resize");
-      expect(seHandle.style.cursor || getComputedStyle(seHandle).cursor).toContain("sw-resize");
-      expect(swHandle.style.cursor || getComputedStyle(swHandle).cursor).toContain("nw-resize");
+      expect(
+        nwHandle.style.cursor || getComputedStyle(nwHandle).cursor,
+      ).toContain("ne-resize");
+      expect(
+        neHandle.style.cursor || getComputedStyle(neHandle).cursor,
+      ).toContain("se-resize");
+      expect(
+        seHandle.style.cursor || getComputedStyle(seHandle).cursor,
+      ).toContain("sw-resize");
+      expect(
+        swHandle.style.cursor || getComputedStyle(swHandle).cursor,
+      ).toContain("nw-resize");
     });
 
     test("handles show correct cursor at 180° rotation", async () => {
@@ -1312,16 +1386,32 @@ describe("EFTransformHandles", () => {
       )!;
       await el.updateComplete;
 
-      const nHandle = el.shadowRoot!.querySelector(".handle.n") as HTMLDivElement;
-      const eHandle = el.shadowRoot!.querySelector(".handle.e") as HTMLDivElement;
-      const sHandle = el.shadowRoot!.querySelector(".handle.s") as HTMLDivElement;
-      const wHandle = el.shadowRoot!.querySelector(".handle.w") as HTMLDivElement;
+      const nHandle = el.shadowRoot!.querySelector(
+        ".handle.n",
+      ) as HTMLDivElement;
+      const eHandle = el.shadowRoot!.querySelector(
+        ".handle.e",
+      ) as HTMLDivElement;
+      const sHandle = el.shadowRoot!.querySelector(
+        ".handle.s",
+      ) as HTMLDivElement;
+      const wHandle = el.shadowRoot!.querySelector(
+        ".handle.w",
+      ) as HTMLDivElement;
 
       // At 180° rotation: n→s, e→w, s→n, w→e
-      expect(nHandle.style.cursor || getComputedStyle(nHandle).cursor).toContain("s-resize");
-      expect(eHandle.style.cursor || getComputedStyle(eHandle).cursor).toContain("w-resize");
-      expect(sHandle.style.cursor || getComputedStyle(sHandle).cursor).toContain("n-resize");
-      expect(wHandle.style.cursor || getComputedStyle(wHandle).cursor).toContain("e-resize");
+      expect(
+        nHandle.style.cursor || getComputedStyle(nHandle).cursor,
+      ).toContain("s-resize");
+      expect(
+        eHandle.style.cursor || getComputedStyle(eHandle).cursor,
+      ).toContain("w-resize");
+      expect(
+        sHandle.style.cursor || getComputedStyle(sHandle).cursor,
+      ).toContain("n-resize");
+      expect(
+        wHandle.style.cursor || getComputedStyle(wHandle).cursor,
+      ).toContain("e-resize");
     });
 
     test("handles show correct cursor at 270° rotation", async () => {
@@ -1335,16 +1425,32 @@ describe("EFTransformHandles", () => {
       )!;
       await el.updateComplete;
 
-      const nHandle = el.shadowRoot!.querySelector(".handle.n") as HTMLDivElement;
-      const eHandle = el.shadowRoot!.querySelector(".handle.e") as HTMLDivElement;
-      const sHandle = el.shadowRoot!.querySelector(".handle.s") as HTMLDivElement;
-      const wHandle = el.shadowRoot!.querySelector(".handle.w") as HTMLDivElement;
+      const nHandle = el.shadowRoot!.querySelector(
+        ".handle.n",
+      ) as HTMLDivElement;
+      const eHandle = el.shadowRoot!.querySelector(
+        ".handle.e",
+      ) as HTMLDivElement;
+      const sHandle = el.shadowRoot!.querySelector(
+        ".handle.s",
+      ) as HTMLDivElement;
+      const wHandle = el.shadowRoot!.querySelector(
+        ".handle.w",
+      ) as HTMLDivElement;
 
       // At 270° rotation: n→w, e→n, s→e, w→s
-      expect(nHandle.style.cursor || getComputedStyle(nHandle).cursor).toContain("w-resize");
-      expect(eHandle.style.cursor || getComputedStyle(eHandle).cursor).toContain("n-resize");
-      expect(sHandle.style.cursor || getComputedStyle(sHandle).cursor).toContain("e-resize");
-      expect(wHandle.style.cursor || getComputedStyle(wHandle).cursor).toContain("s-resize");
+      expect(
+        nHandle.style.cursor || getComputedStyle(nHandle).cursor,
+      ).toContain("w-resize");
+      expect(
+        eHandle.style.cursor || getComputedStyle(eHandle).cursor,
+      ).toContain("n-resize");
+      expect(
+        sHandle.style.cursor || getComputedStyle(sHandle).cursor,
+      ).toContain("e-resize");
+      expect(
+        wHandle.style.cursor || getComputedStyle(wHandle).cursor,
+      ).toContain("s-resize");
     });
 
     test("handles show correct cursor at 45° rotation", async () => {
@@ -1358,33 +1464,57 @@ describe("EFTransformHandles", () => {
       )!;
       await el.updateComplete;
 
-      const nHandle = el.shadowRoot!.querySelector(".handle.n") as HTMLDivElement;
-      const eHandle = el.shadowRoot!.querySelector(".handle.e") as HTMLDivElement;
-      const sHandle = el.shadowRoot!.querySelector(".handle.s") as HTMLDivElement;
-      const wHandle = el.shadowRoot!.querySelector(".handle.w") as HTMLDivElement;
+      const nHandle = el.shadowRoot!.querySelector(
+        ".handle.n",
+      ) as HTMLDivElement;
+      const eHandle = el.shadowRoot!.querySelector(
+        ".handle.e",
+      ) as HTMLDivElement;
+      const sHandle = el.shadowRoot!.querySelector(
+        ".handle.s",
+      ) as HTMLDivElement;
+      const wHandle = el.shadowRoot!.querySelector(
+        ".handle.w",
+      ) as HTMLDivElement;
 
       // At 45° rotation: n→ne, e→se, s→sw, w→nw
-      expect(nHandle.style.cursor || getComputedStyle(nHandle).cursor).toContain("ne-resize");
-      expect(eHandle.style.cursor || getComputedStyle(eHandle).cursor).toContain("se-resize");
-      expect(sHandle.style.cursor || getComputedStyle(sHandle).cursor).toContain("sw-resize");
-      expect(wHandle.style.cursor || getComputedStyle(wHandle).cursor).toContain("nw-resize");
+      expect(
+        nHandle.style.cursor || getComputedStyle(nHandle).cursor,
+      ).toContain("ne-resize");
+      expect(
+        eHandle.style.cursor || getComputedStyle(eHandle).cursor,
+      ).toContain("se-resize");
+      expect(
+        sHandle.style.cursor || getComputedStyle(sHandle).cursor,
+      ).toContain("sw-resize");
+      expect(
+        wHandle.style.cursor || getComputedStyle(wHandle).cursor,
+      ).toContain("nw-resize");
     });
 
     test("cursor updates when rotation changes", async () => {
-      const el = document.createElement("ef-transform-handles") as EFTransformHandles;
+      const el = document.createElement(
+        "ef-transform-handles",
+      ) as EFTransformHandles;
       el.enableRotation = true;
       el.bounds = { x: 100, y: 100, width: 200, height: 150, rotation: 0 };
       container.appendChild(el);
       await el.updateComplete;
 
-      const nHandle = el.shadowRoot!.querySelector(".handle.n") as HTMLDivElement;
-      expect(nHandle.style.cursor || getComputedStyle(nHandle).cursor).toContain("n-resize");
+      const nHandle = el.shadowRoot!.querySelector(
+        ".handle.n",
+      ) as HTMLDivElement;
+      expect(
+        nHandle.style.cursor || getComputedStyle(nHandle).cursor,
+      ).toContain("n-resize");
 
       // Update rotation to 90°
       el.bounds = { x: 100, y: 100, width: 200, height: 150, rotation: 90 };
       await el.updateComplete;
 
-      expect(nHandle.style.cursor || getComputedStyle(nHandle).cursor).toContain("e-resize");
+      expect(
+        nHandle.style.cursor || getComputedStyle(nHandle).cursor,
+      ).toContain("e-resize");
     });
   });
 });

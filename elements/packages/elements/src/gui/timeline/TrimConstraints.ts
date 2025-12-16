@@ -21,7 +21,3 @@ export function getTrimConstraints(
     maxEndMs: Math.max(0, intrinsicDuration - trimStartMs),
   };
 }
-
-
-
-

@@ -61,7 +61,9 @@ describe("CanvasAPI", () => {
   });
 
   test("updates element position", async ({ api, canvas, expect }) => {
-    const element = canvas.querySelector('[data-element-id="element-1"]') as HTMLElement;
+    const element = canvas.querySelector(
+      '[data-element-id="element-1"]',
+    ) as HTMLElement;
     api.updateElement("element-1", { x: 200, y: 300 });
     await (canvas as any).updateComplete;
     const data = api.getElement("element-1");
@@ -129,4 +131,3 @@ describe("CanvasAPI", () => {
     expect(result).toHaveProperty("y");
   });
 });
-

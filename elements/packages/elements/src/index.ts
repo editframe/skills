@@ -8,10 +8,7 @@ export {
   getPositionInfoFromElement,
   PositionInfoMixin,
 } from "./elements/ElementPositionInfo.js";
-export {
-  needsFitScale,
-  elementNeedsFitScale,
-} from "./gui/FitScaleHelpers.js";
+export { needsFitScale, elementNeedsFitScale } from "./gui/FitScaleHelpers.js";
 
 import "./elements/EFImage.js";
 
@@ -190,8 +187,8 @@ export type { OverlayItemPosition } from "./gui/EFOverlayItem.ts";
 
 import "./gui/EFTimelineRuler.ts";
 
-export { 
-  EFTimelineRuler, 
+export {
+  EFTimelineRuler,
   quantizeToFrameTimeMs,
   calculateFrameIntervalMs,
   calculatePixelsPerFrame,
@@ -202,7 +199,10 @@ import "./gui/timeline/EFTimeline.js";
 import "./gui/timeline/TrimHandles.js";
 
 export { EFTimeline } from "./gui/timeline/EFTimeline.js";
-export { EFTrimHandles, type TrimChangeDetail } from "./gui/timeline/TrimHandles.js";
+export {
+  EFTrimHandles,
+  type TrimChangeDetail,
+} from "./gui/timeline/TrimHandles.js";
 
 if (typeof window !== "undefined") {
   // @ts-expect-error

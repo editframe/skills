@@ -44,10 +44,16 @@ export class SelectionModel extends EventTarget {
    */
   private _emitSelectionChange(): void {
     // Convert Set to array with primary first
-    const selectedIdsArray = this._primaryId && this._selectedIds.has(this._primaryId)
-      ? [this._primaryId, ...Array.from(this._selectedIds).filter(id => id !== this._primaryId)]
-      : Array.from(this._selectedIds);
-    
+    const selectedIdsArray =
+      this._primaryId && this._selectedIds.has(this._primaryId)
+        ? [
+            this._primaryId,
+            ...Array.from(this._selectedIds).filter(
+              (id) => id !== this._primaryId,
+            ),
+          ]
+        : Array.from(this._selectedIds);
+
     this.dispatchEvent(
       new CustomEvent("selectionchange", {
         detail: {
@@ -108,7 +114,8 @@ export class SelectionModel extends EventTarget {
       this._selectedIds.add(id);
     }
     this._primaryId = ids.length > 0 ? ids[0] : null;
-    this._selectionMode = ids.length === 0 ? "none" : ids.length === 1 ? "single" : "multiple";
+    this._selectionMode =
+      ids.length === 0 ? "none" : ids.length === 1 ? "single" : "multiple";
     this._emitSelectionChange();
   }
 
@@ -185,8 +192,15 @@ export class SelectionModel extends EventTarget {
    * @param hitTest - Function to find elements within bounds
    * @param addToSelection - If true, add to existing selection; if false, replace selection
    */
-  endBoxSelect(hitTest: (bounds: DOMRect) => string[], addToSelection = false): void {
-    if (this._selectionMode !== "box-selecting" || !this._boxSelectStart || !this._boxSelectCurrent) {
+  endBoxSelect(
+    hitTest: (bounds: DOMRect) => string[],
+    addToSelection = false,
+  ): void {
+    if (
+      this._selectionMode !== "box-selecting" ||
+      !this._boxSelectStart ||
+      !this._boxSelectCurrent
+    ) {
       return;
     }
     const bounds = this.boxSelectBounds;
@@ -278,4 +292,3 @@ export class SelectionModel extends EventTarget {
     }
   }
 }
-

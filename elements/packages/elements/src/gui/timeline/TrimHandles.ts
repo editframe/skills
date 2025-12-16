@@ -144,10 +144,16 @@ export class EFTrimHandles extends TWMixin(LitElement) {
 
     if (this.draggingHandle === "start") {
       newValueMs = Math.max(0, this.dragStartValue + deltaMs);
-      newValueMs = Math.min(newValueMs, this.intrinsicDurationMs - (this.trimEndMs || 0));
+      newValueMs = Math.min(
+        newValueMs,
+        this.intrinsicDurationMs - (this.trimEndMs || 0),
+      );
     } else {
       newValueMs = Math.max(0, this.dragStartValue - deltaMs);
-      newValueMs = Math.min(newValueMs, this.intrinsicDurationMs - this.trimStartMs);
+      newValueMs = Math.min(
+        newValueMs,
+        this.intrinsicDurationMs - this.trimStartMs,
+      );
     }
 
     this.dispatchEvent(
@@ -192,18 +198,22 @@ export class EFTrimHandles extends TWMixin(LitElement) {
     const trimEndWidth = (this.trimEndMs || 0) * this.pixelsPerMs;
 
     return html`
-      ${this.showOverlays && this.trimStartMs > 0
-        ? html`<div
+      ${
+        this.showOverlays && this.trimStartMs > 0
+          ? html`<div
             class="trim-overlay trim-overlay-start"
             style=${styleMap({ width: `${trimStartWidth}px` })}
           ></div>`
-        : nothing}
-      ${this.showOverlays && this.trimEndMs > 0
-        ? html`<div
+          : nothing
+      }
+      ${
+        this.showOverlays && this.trimEndMs > 0
+          ? html`<div
             class="trim-overlay trim-overlay-end"
             style=${styleMap({ width: `${trimEndWidth}px` })}
           ></div>`
-        : nothing}
+          : nothing
+      }
 
       <div
         class="handle handle-start ${this.draggingHandle === "start" ? "dragging" : ""}"
@@ -222,7 +232,3 @@ declare global {
     "ef-trim-handles": EFTrimHandles;
   }
 }
-
-
-
-

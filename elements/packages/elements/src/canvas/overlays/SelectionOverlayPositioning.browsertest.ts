@@ -54,7 +54,9 @@ describe("SelectionOverlay Positioning", () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Find selection overlay
-    const overlay = document.querySelector("ef-canvas-selection-overlay") as SelectionOverlay;
+    const overlay = document.querySelector(
+      "ef-canvas-selection-overlay",
+    ) as SelectionOverlay;
     expect(overlay).toBeTruthy();
 
     await overlay.updateComplete;
@@ -81,8 +83,12 @@ describe("SelectionOverlay Positioning", () => {
       // Allow some tolerance for rounding
       expect(Math.abs(selectionBounds.x - elementRect.left)).toBeLessThan(2);
       expect(Math.abs(selectionBounds.y - elementRect.top)).toBeLessThan(2);
-      expect(Math.abs(selectionBounds.width - elementRect.width)).toBeLessThan(2);
-      expect(Math.abs(selectionBounds.height - elementRect.height)).toBeLessThan(2);
+      expect(Math.abs(selectionBounds.width - elementRect.width)).toBeLessThan(
+        2,
+      );
+      expect(
+        Math.abs(selectionBounds.height - elementRect.height),
+      ).toBeLessThan(2);
     }
   }, 5000);
 
@@ -131,7 +137,9 @@ describe("SelectionOverlay Positioning", () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Find selection overlay
-    const overlay = document.querySelector("ef-canvas-selection-overlay") as SelectionOverlay;
+    const overlay = document.querySelector(
+      "ef-canvas-selection-overlay",
+    ) as SelectionOverlay;
     expect(overlay).toBeTruthy();
 
     await overlay.updateComplete;
@@ -149,8 +157,12 @@ describe("SelectionOverlay Positioning", () => {
       // Allow some tolerance for rounding
       expect(Math.abs(selectionBounds.x - elementRect.left)).toBeLessThan(2);
       expect(Math.abs(selectionBounds.y - elementRect.top)).toBeLessThan(2);
-      expect(Math.abs(selectionBounds.width - elementRect.width)).toBeLessThan(2);
-      expect(Math.abs(selectionBounds.height - elementRect.height)).toBeLessThan(2);
+      expect(Math.abs(selectionBounds.width - elementRect.width)).toBeLessThan(
+        2,
+      );
+      expect(
+        Math.abs(selectionBounds.height - elementRect.height),
+      ).toBeLessThan(2);
 
       // Metadata should match element's canvas position
       expect(Math.abs(metadata.x - 250)).toBeLessThan(1);
@@ -208,7 +220,9 @@ describe("SelectionOverlay Positioning", () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Find selection overlay
-    const overlay = document.querySelector("ef-canvas-selection-overlay") as SelectionOverlay;
+    const overlay = document.querySelector(
+      "ef-canvas-selection-overlay",
+    ) as SelectionOverlay;
     expect(overlay).toBeTruthy();
 
     await overlay.updateComplete;
@@ -220,14 +234,16 @@ describe("SelectionOverlay Positioning", () => {
 
     if (selectionBounds) {
       const elementRect = element.getBoundingClientRect();
-      
+
       // Selection overlay should match element's screen position
       expect(Math.abs(selectionBounds.x - elementRect.left)).toBeLessThan(2);
       expect(Math.abs(selectionBounds.y - elementRect.top)).toBeLessThan(2);
-      expect(Math.abs(selectionBounds.width - elementRect.width)).toBeLessThan(2);
-      expect(Math.abs(selectionBounds.height - elementRect.height)).toBeLessThan(2);
+      expect(Math.abs(selectionBounds.width - elementRect.width)).toBeLessThan(
+        2,
+      );
+      expect(
+        Math.abs(selectionBounds.height - elementRect.height),
+      ).toBeLessThan(2);
     }
   }, 5000);
 });
-
-
