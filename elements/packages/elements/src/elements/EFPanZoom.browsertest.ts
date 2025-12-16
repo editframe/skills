@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { EFPanZoom } from "./EFPanZoom.js";
+import "./EFPanZoom.js";
+import type { EFPanZoom } from "./EFPanZoom.js";
 
 describe("EFPanZoom coordinate conversion", () => {
   let panZoom: EFPanZoom;
