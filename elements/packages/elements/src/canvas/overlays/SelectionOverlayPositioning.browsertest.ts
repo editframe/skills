@@ -6,6 +6,7 @@ import "../EFCanvas.js";
 import "./SelectionOverlay.js";
 import type { EFCanvas } from "../EFCanvas.js";
 import type { SelectionOverlay } from "./SelectionOverlay.js";
+import { CanvasAPI } from "../api/CanvasAPI.js";
 
 describe("SelectionOverlay Positioning", () => {
   afterEach(() => {
@@ -45,7 +46,7 @@ describe("SelectionOverlay Positioning", () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Register element
-    const api = (canvas as any).getAPI();
+    const api = new CanvasAPI(canvas as any);
     api.registerElement(element, "test-element");
 
     // Select element
@@ -213,7 +214,7 @@ describe("SelectionOverlay Positioning", () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Register and select
-    const api = (canvas as any).getAPI();
+    const api = new CanvasAPI(canvas as any);
     api.registerElement(element, "test-element");
     canvas.selectionContext.select("test-element");
     await canvas.updateComplete;
