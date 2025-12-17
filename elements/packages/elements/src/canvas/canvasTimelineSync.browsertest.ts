@@ -14,8 +14,7 @@ import { findRootTemporal } from "../elements/findRootTemporal.js";
 let idCounter = 0;
 const nextId = () => `test-${idCounter++}`;
 
-// TODO: Update these tests for new timeline implementation
-describe.skip("Canvas Timeline Synchronization", () => {
+describe("Canvas Timeline Synchronization", () => {
   afterEach(() => {
     document.body.innerHTML = "";
     idCounter = 0;
@@ -72,24 +71,26 @@ describe.skip("Canvas Timeline Synchronization", () => {
     }, 1000);
 
     test("finds root temporal through div wrapper", async () => {
-      const canvas = document.createElement("ef-canvas") as EFCanvas;
-      canvas.id = "test-canvas";
-      document.body.appendChild(canvas);
-
-      const wrapper = document.createElement("div");
-      wrapper.id = nextId();
-      canvas.appendChild(wrapper);
-
+      // findRootTemporal finds ancestor temporals, not descendants
+      // Test: element inside a div inside a timegroup should find the timegroup
       const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
       timegroup.id = nextId();
       timegroup.setAttribute("mode", "fixed");
       timegroup.setAttribute("duration", "5s");
-      wrapper.appendChild(timegroup);
+      document.body.appendChild(timegroup);
 
-      await canvas.updateComplete;
+      const wrapper = document.createElement("div");
+      wrapper.id = nextId();
+      timegroup.appendChild(wrapper);
+
+      const innerElement = document.createElement("div");
+      innerElement.id = nextId();
+      wrapper.appendChild(innerElement);
+
       await timegroup.updateComplete;
 
-      const root = findRootTemporal(wrapper);
+      // findRootTemporal(innerElement) should walk up through wrapper to find timegroup
+      const root = findRootTemporal(innerElement);
       expect(root).toBe(timegroup);
     }, 1000);
   });
