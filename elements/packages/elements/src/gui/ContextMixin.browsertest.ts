@@ -503,21 +503,89 @@ describe("ContextMixin", () => {
   });
 
   describe("Playback", () => {
-    test.skip("should start playback", () => {
-      // TODO: This test needs to be rewritten. The playing property now requires a targetTemporal
-      // with a playbackController. The test should create a proper context with a timegroup.
+    test("should start playback via playbackController", async () => {
+      const element = document.createElement("test-context-reactivity");
+      document.body.appendChild(element);
+      await element.updateComplete;
+
+      // Create a timegroup which gets its own playbackController
+      const timegroup = document.createElement("ef-timegroup");
+      timegroup.mode = "fixed";
+      timegroup.duration = "5s";
+      element.appendChild(timegroup);
+
+      await element.updateComplete;
+      await timegroup.updateComplete;
+
+      // Observable outcome: playbackController exists and playing is initially false
+      expect(timegroup.playbackController).toBeTruthy();
+      expect(timegroup.playbackController?.playing).toBe(false);
+
+      // Start playback
+      timegroup.playbackController?.setPlaying(true);
+
+      // Observable outcome: playing state changes
+      expect(timegroup.playbackController?.playing).toBe(true);
+
+      // Clean up
+      timegroup.playbackController?.setPlaying(false);
+      element.remove();
     });
 
-    test.skip("playback starts immediately if connected", () => {
-      // TODO: This test needs to be rewritten. startPlayback() method no longer exists.
-      // Playback is now handled through playbackController.setPlaying(). Need to test the
-      // actual behavior of setting playing=true on a connected context with a timegroup.
+    test("playback state changes are observable through context", async () => {
+      const element = document.createElement("test-context-reactivity");
+      document.body.appendChild(element);
+      await element.updateComplete;
+
+      // Create a timegroup as target
+      const timegroup = document.createElement("ef-timegroup");
+      timegroup.mode = "fixed";
+      timegroup.duration = "5s";
+      element.appendChild(timegroup);
+
+      await element.updateComplete;
+      await timegroup.updateComplete;
+
+      // Set playing through context's playing property (which delegates to playbackController)
+      element.playing = true;
+
+      // Observable outcome: playback state propagates through controller
+      expect(element.targetTemporal?.playbackController?.playing).toBe(true);
+
+      // Stop playback
+      element.playing = false;
+      expect(element.targetTemporal?.playbackController?.playing).toBe(false);
+
+      element.remove();
     });
 
-    test.skip("playback stops immediately if disconnected", () => {
-      // TODO: This test needs to be rewritten. stopPlayback() method no longer exists.
-      // Playback is now handled through playbackController.setPlaying(). Need to test the
-      // actual behavior when a playing context is disconnected.
+    test("playback stops when context is disconnected", async () => {
+      const element = document.createElement("test-context-reactivity");
+      document.body.appendChild(element);
+      await element.updateComplete;
+
+      const timegroup = document.createElement("ef-timegroup");
+      timegroup.mode = "fixed";
+      timegroup.duration = "5s";
+      element.appendChild(timegroup);
+
+      await element.updateComplete;
+      await timegroup.updateComplete;
+
+      // Capture the playbackController before disconnect
+      const playbackController = timegroup.playbackController;
+      expect(playbackController).toBeTruthy();
+
+      // Start playback
+      playbackController?.setPlaying(true);
+      expect(playbackController?.playing).toBe(true);
+
+      // Disconnect the element
+      element.remove();
+
+      // Observable outcome: playback should stop when disconnected
+      // The controller stops playback in its disconnectedCallback
+      expect(playbackController?.playing).toBe(false);
     });
   });
 
