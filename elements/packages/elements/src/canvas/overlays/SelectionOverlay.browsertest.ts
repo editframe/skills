@@ -33,8 +33,7 @@ beforeEach(() => {
   localStorage.clear();
 });
 
-// TODO: Update tests for new canvas/selection implementation
-describe.skip("SelectionOverlay", () => {
+describe("SelectionOverlay", () => {
   test("renders overlay element", async ({ expect }) => {
     const overlay = document.createElement("ef-canvas-selection-overlay");
     document.body.appendChild(overlay);
@@ -43,16 +42,40 @@ describe.skip("SelectionOverlay", () => {
     overlay.remove();
   });
 
-  test("renders selection box for selected element", async ({
-    canvas,
-    expect,
-  }) => {
-    const canvasEl = canvas as any;
-    const element1 = canvas.querySelector(
-      '[data-element-id="element-1"]',
-    ) as HTMLElement;
+  test("renders selection box for selected element", async ({ expect }) => {
+    // Create container with pan-zoom wrapper (required for selection overlay)
+    const container = document.createElement("div");
+    container.style.width = "800px";
+    container.style.height = "600px";
+    container.style.position = "relative";
 
-    // Select element
+    render(
+      html`
+        <ef-pan-zoom style="width: 100%; height: 100%;">
+          <ef-canvas style="width: 100%; height: 100%;">
+            <div data-element-id="element-1" style="position: absolute; left: 100px; top: 100px; width: 50px; height: 50px; background: red;"></div>
+          </ef-canvas>
+        </ef-pan-zoom>
+      `,
+      container,
+    );
+    document.body.appendChild(container);
+
+    const panZoom = container.querySelector("ef-pan-zoom") as any;
+    const canvas = container.querySelector("ef-canvas") as any;
+
+    await panZoom?.updateComplete;
+    await canvas?.updateComplete;
+
+    // Wait for overlay to be created (EFCanvas.setupSelectionOverlay)
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Selection overlay is created as sibling of panzoom (not inside canvas)
+    const overlay = container.querySelector("ef-canvas-selection-overlay") as any;
+    expect(overlay).toBeTruthy();
+
+    // Select element by clicking
+    const element1 = canvas.querySelector('[data-element-id="element-1"]') as HTMLElement;
     const rect1 = element1.getBoundingClientRect();
     canvas.dispatchEvent(
       new PointerEvent("pointerdown", {
@@ -62,31 +85,20 @@ describe.skip("SelectionOverlay", () => {
         bubbles: true,
       }),
     );
-    await canvasEl.updateComplete;
+    await canvas.updateComplete;
 
-    // Wait for overlay to update and render
+    // Wait for overlay to update
     await new Promise((resolve) => setTimeout(resolve, 200));
 
-    // The overlay is rendered inside the shadow DOM
-    const shadowRoot = canvasEl.shadowRoot;
-    expect(shadowRoot).toBeTruthy();
-    const canvasContent = shadowRoot?.querySelector(".canvas-content");
-    expect(canvasContent).toBeTruthy();
-    const overlay = canvasContent?.querySelector("ef-canvas-selection-overlay");
-    expect(overlay).toBeTruthy();
-
-    // Wait for overlay to render selection boxes
-    await (overlay as any)?.updateComplete;
-    await new Promise((resolve) => setTimeout(resolve, 200));
-
-    // SelectionOverlay uses createRenderRoot() returning this, so no shadow DOM
     // Check if selection context is being consumed
-    const overlayEl = overlay as any;
-    expect(overlayEl.selection).toBeTruthy();
-    expect(overlayEl.selection?.selectedIds.size).toBeGreaterThan(0);
+    expect(overlay.selection).toBeTruthy();
+    expect(overlay.selection?.selectedIds.size).toBeGreaterThan(0);
 
-    const selectionBox = overlay?.querySelector(".selection-box");
+    // Check for selection box (SelectionOverlay renders directly to light DOM)
+    const selectionBox = overlay.querySelector(".selection-box");
     expect(selectionBox).toBeTruthy();
+
+    container.remove();
   });
 
   test("diagnostic: box selection with pan-zoom", async ({ expect }) => {
