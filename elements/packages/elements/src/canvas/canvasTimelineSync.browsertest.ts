@@ -1,15 +1,15 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import "../../elements/EFTimegroup.js";
-import "../../elements/EFVideo.js";
-import "../../canvas/EFCanvas.js";
-import "../../gui/hierarchy/EFHierarchy.js";
-import "../../gui/timeline/EFTimeline.js";
-import type { EFCanvas } from "../../canvas/EFCanvas.js";
-import type { EFHierarchy } from "../../gui/hierarchy/EFHierarchy.js";
-import type { EFTimeline } from "../../gui/timeline/EFTimeline.js";
-import type { EFTimegroup } from "../../elements/EFTimegroup.js";
-import type { EFVideo } from "../../elements/EFVideo.js";
-import { findRootTemporal } from "../../elements/findRootTemporal.js";
+import "../elements/EFTimegroup.js";
+import "../elements/EFVideo.js";
+import "./EFCanvas.js";
+import "../gui/hierarchy/EFHierarchy.js";
+import "../gui/timeline/EFTimeline.js";
+import type { EFCanvas } from "./EFCanvas.js";
+import type { EFHierarchy } from "../gui/hierarchy/EFHierarchy.js";
+import type { EFTimeline } from "../gui/timeline/EFTimeline.js";
+import type { EFTimegroup } from "../elements/EFTimegroup.js";
+import type { EFVideo } from "../elements/EFVideo.js";
+import { findRootTemporal } from "../elements/findRootTemporal.js";
 
 let idCounter = 0;
 const nextId = () => `test-${idCounter++}`;
