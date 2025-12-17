@@ -97,7 +97,7 @@ export class EFTimeline extends TWMixin(LitElement) {
         --timeline-playhead: rgb(185 28 28);
       }
       
-      .container {
+      .timeline-container {
         display: flex;
         flex-direction: column;
         width: 100%;
@@ -1130,7 +1130,7 @@ export class EFTimeline extends TWMixin(LitElement) {
 
     if (!target) {
       return html`
-        <div class="container">
+        <div class="timeline-container">
           ${this.renderControls()}
           <div class="empty-state">No target element selected</div>
         </div>
@@ -1145,7 +1145,7 @@ export class EFTimeline extends TWMixin(LitElement) {
     const zoomScale = pixelsPerMsToZoom(this.pixelsPerMs);
 
     return html`
-      <div class="container" tabindex="0" ${ref(this.containerRef)}>
+      <div class="timeline-container" tabindex="0" ${ref(this.containerRef)}>
         ${this.renderControls()}
         <div class="timeline-area">
           <!-- Ruler Row -->
