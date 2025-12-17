@@ -62,8 +62,7 @@ function createTarget(options: {
   return target;
 }
 
-// TODO: Update tests for new implementation
-describe.skip("PanZoom + OverlayLayer + OverlayItem Integration", () => {
+describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
   describe("Basic Integration - Sibling Architecture", () => {
     /**
      * This tests the sibling architecture used in motion-designer:
@@ -348,7 +347,9 @@ describe.skip("PanZoom + OverlayLayer + OverlayItem Integration", () => {
 
   describe("Context-based Architecture", () => {
     /**
-     * Tests when OverlayLayer is a child of PanZoom (consumes context)
+     * Tests when OverlayLayer is a child of PanZoom (consumes context).
+     * When overlay is a CHILD of panzoom, it delegates transform to parent
+     * and sets transform: none (parent's content-wrapper handles it).
      */
     test("overlay layer consumes transform from PanZoom context when nested", async () => {
       const panZoom = document.createElement("ef-pan-zoom") as EFPanZoom;
@@ -374,9 +375,20 @@ describe.skip("PanZoom + OverlayLayer + OverlayItem Integration", () => {
 
       await waitForRaf();
 
-      // Verify overlay layer received transform from context and applied it
-      const transform = overlayLayer.style.transform;
-      expect(transform).toContain("translate(100px, 200px)");
+      // When overlay is CHILD of panzoom, it delegates transform to parent
+      // and sets its own transform to 'none'
+      expect(overlayLayer.style.transform).toBe("none");
+
+      // The parent's content-wrapper handles the actual visual transform
+      const contentWrapper = panZoom.shadowRoot?.querySelector(
+        ".content-wrapper",
+      ) as HTMLElement;
+      expect(contentWrapper).toBeTruthy();
+      if (contentWrapper) {
+        const wrapperTransform = contentWrapper.style.transform;
+        expect(wrapperTransform).toContain("translate");
+        expect(wrapperTransform).toContain("scale");
+      }
     });
   });
 
