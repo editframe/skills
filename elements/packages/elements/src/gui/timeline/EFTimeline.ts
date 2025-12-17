@@ -276,6 +276,7 @@ export class EFTimeline extends TWMixin(LitElement) {
       .tracks-content {
         position: relative;
         min-height: 100%;
+        min-width: 100%;
       }
       
       /* === PLAYHEAD === */
