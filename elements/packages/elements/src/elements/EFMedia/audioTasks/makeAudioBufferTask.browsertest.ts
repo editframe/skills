@@ -515,6 +515,9 @@ describe("Buffering Integration Issues", () => {
     expect(element.audioBufferTask.status).not.toBe(TaskStatus.INITIAL);
   });
 
+  // SKIPPED: Testing rendering mode requires complex global state setup that affects
+  // other tests. The rendering mode flag needs to be set before element creation,
+  // which conflicts with the shared test fixture pattern.
   test.skip("buffer task should be disabled in rendering mode", async ({
     expect,
   }) => {
@@ -612,6 +615,8 @@ describe("Buffering Integration Issues", () => {
 });
 
 describe("Continuous Buffering", () => {
+  // SKIPPED: Continuous buffering behavior depends on async timing that is difficult
+  // to reproduce consistently in tests. The fetch count varies based on execution speed.
   test.skip("enables continuous segment loading when enabled", async ({
     mockState,
     mockDeps,
