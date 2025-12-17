@@ -39,7 +39,9 @@ describe("EFOverlayLayer", () => {
     document.body.appendChild(overlayLayer);
     testElements.push(overlayLayer);
 
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    // Wait for RAF loop to apply transform
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await new Promise((resolve) => requestAnimationFrame(resolve));
 
     // Verify overlay layer applies translate-only transform to host element (no scale)
     // Transform is applied directly to host so getBoundingClientRect includes it

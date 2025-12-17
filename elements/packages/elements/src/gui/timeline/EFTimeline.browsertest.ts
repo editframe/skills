@@ -635,7 +635,7 @@ describe("EFTimeline", () => {
 
       // Container should have tabindex for keyboard focus
       const container = timeline.shadowRoot?.querySelector(
-        ".container",
+        ".timeline-container",
       ) as HTMLElement;
       expect(container).toBeTruthy();
       expect(container.getAttribute("tabindex")).toBe("0");
