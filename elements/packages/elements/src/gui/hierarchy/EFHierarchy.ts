@@ -43,7 +43,7 @@ export class EFHierarchy extends TWMixin(LitElement) {
         --hierarchy-focused-bg: rgba(100, 116, 139, 0.25);
       }
       
-      .container {
+      .hierarchy-container {
         background: var(--hierarchy-bg);
         color: var(--hierarchy-text);
         min-height: 100%;
@@ -391,7 +391,7 @@ export class EFHierarchy extends TWMixin(LitElement) {
     const roots = this.getRootElements();
 
     return html`
-      <div class="container">
+      <div class="hierarchy-container">
         ${this.showHeader ? html`<div class="header">${this.header}</div>` : nothing}
         ${
           roots.length > 0
