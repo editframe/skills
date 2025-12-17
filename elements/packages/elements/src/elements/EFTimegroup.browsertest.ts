@@ -5,11 +5,11 @@ import {
   type TemplateResult,
 } from "lit";
 import { assert, beforeEach, describe, test } from "vitest";
-import { EFTimegroup } from "./EFTimegroup.js";
+import { EFTimegroup, flushSequenceDurationCache } from "./EFTimegroup.js";
 import "./EFTimegroup.js";
 import { customElement } from "lit/decorators/custom-element.js";
 import { ContextMixin } from "../gui/ContextMixin.js";
-import { EFTemporal } from "./EFTemporal.js";
+import { EFTemporal, resetTemporalCache } from "./EFTemporal.js";
 // Need workbench to make workbench wrapping occurs
 import "../gui/EFWorkbench.js";
 // Additional imports for sequence boundary test
@@ -126,8 +126,7 @@ const renderTimegroup = (result: TemplateResult) => {
   return firstChild;
 };
 
-// TODO: Update tests for new implementation
-describe.skip(`<ef-timegroup mode='fit'>`, () => {
+describe(`<ef-timegroup mode='fit'>`, () => {
   test("duration is zero when there is no parent to fit into", () => {
     const timegroup = renderTimegroup(
       html`<ef-timegroup mode="fit"></ef-timegroup>`,
@@ -180,9 +179,29 @@ describe.skip(`<ef-timegroup mode='fit'>`, () => {
       `,
     );
 
+    // Wait for all nested timegroups to update their durations
+    await timegroup.updateComplete;
     const foreground = timegroup.querySelector("#foreground") as EFTimegroup;
     const background = timegroup.querySelector("#background") as EFTimegroup;
+    await foreground.updateComplete;
+    await background.updateComplete;
+
+    // Wait for RAF to ensure temporal cache is populated
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+
+    // Clear caches to force recalculation with fresh child data
+    resetTemporalCache();
+    flushSequenceDurationCache();
+
+    // Verify children are correct
+    const child1 = foreground.children[0] as EFTimegroup;
+    const child2 = foreground.children[1] as EFTimegroup;
+    assert.equal(child1.durationMs, 10_000);
+    assert.equal(child2.durationMs, 10_000);
+
+    // Sequence should sum the children's durations
     assert.equal(foreground.durationMs, 20_000);
+    // Fit mode inherits from the contain parent (which takes max of foreground = 20000)
     assert.equal(background.durationMs, 20_000);
   });
 });
@@ -203,8 +222,7 @@ describe(`<ef-timegroup mode="fixed">`, () => {
   });
 });
 
-// TODO: Update tests for new implementation
-describe.skip(`<ef-timegroup mode="sequence">`, () => {
+describe(`<ef-timegroup mode="sequence">`, () => {
   test("fixed duration is ignored", () => {
     const timegroup = renderTimegroup(
       html`<ef-timegroup mode="sequence" duration="10s"></ef-timegroup>`,
@@ -264,8 +282,7 @@ describe.skip(`<ef-timegroup mode="sequence">`, () => {
   });
 });
 
-// TODO: Update tests for new implementation
-describe.skip(`<ef-timegroup mode="contain">`, () => {
+describe(`<ef-timegroup mode="contain">`, () => {
   test("fixed duration is ignored", () => {
     const timegroup = renderTimegroup(
       html`<ef-timegroup mode="contain" duration="10s"></ef-timegroup>`,
@@ -438,7 +455,7 @@ describe("startTimeMs", () => {
 });
 
 // TODO: Update tests for new implementation
-describe.skip("setting currentTime", () => {
+describe("setting currentTime", () => {
   test("persists in localStorage if the timegroup has an id and is in the dom", async () => {
     const timegroupId = "localStorage-test";
     const storageKey = `ef-timegroup-${timegroupId}`;
@@ -632,7 +649,7 @@ describe("DOM nodes", () => {
 });
 
 // TODO: Update tests for new implementation
-describe.skip("Dynamic content updates", () => {
+describe("Dynamic content updates", () => {
   test("updates duration when new child temporal elements are added dynamically", async () => {
     // Create a sequence timegroup with initial children
     const timegroup = renderTimegroup(

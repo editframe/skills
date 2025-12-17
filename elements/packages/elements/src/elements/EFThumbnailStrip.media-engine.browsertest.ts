@@ -62,8 +62,7 @@ const test = baseTest.extend<{
   },
 });
 
-// TODO: Update tests for new implementation
-describe.skip("MediaEngine Thumbnail Extraction", () => {
+describe("MediaEngine Thumbnail Extraction", () => {
   describe("JitMediaEngine", () => {
     test("initializes with JitMediaEngine", async ({ jitVideo, expect }) => {
       const mediaEngine = jitVideo.mediaEngineTask.value;

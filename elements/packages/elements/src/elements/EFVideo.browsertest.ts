@@ -134,8 +134,7 @@ const test = baseTest.extend<{
   },
 });
 
-// TODO: Update tests for new implementation
-describe.skip("EFVideo", () => {
+describe("EFVideo", () => {
   describe("basic rendering", () => {
     beforeEach(async () => {
       const response = await fetch("/@ef-clear-cache", {
@@ -616,7 +615,7 @@ describe.skip("EFVideo", () => {
     });
   });
 
-  describe.skip("loading indicator", () => {
+  describe("loading indicator", () => {
     test("should not show loading indicator for operations completing under 250ms", async ({
       expect,
     }) => {
@@ -654,6 +653,9 @@ describe.skip("EFVideo", () => {
       // Should not be loading immediately
       expect(video.loadingState.isLoading).toBe(false);
 
+      // Wait for the 250ms delay
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
       // Should now be loading
       expect(video.loadingState.isLoading).toBe(true);
       expect(video.loadingState.message).toBe("Slow operation");
@@ -678,6 +680,9 @@ describe.skip("EFVideo", () => {
       // Start multiple operations
       video.startDelayedLoading("op1", "Operation 1");
       video.startDelayedLoading("op2", "Operation 2");
+
+      // Wait for the 250ms delay
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
       // Should be loading
       expect(video.loadingState.isLoading).toBe(true);

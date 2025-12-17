@@ -79,8 +79,7 @@ const test = baseTest.extend<{
   },
 });
 
-// TODO: Update tests for new implementation
-describe.skip("JitMediaEngine", () => {
+describe("JitMediaEngine", () => {
   test("provides duration from manifest data", async ({
     mediaEngine,
     expect,

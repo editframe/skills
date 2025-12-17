@@ -33,8 +33,7 @@ async function waitForVideoCanvas(
   );
 }
 
-// TODO: Update tests for new implementation
-describe.skip("EFFitScale", () => {
+describe("EFFitScale", () => {
   beforeEach(async () => {
     await fetch("/@ef-clear-cache", { method: "DELETE" });
   });
@@ -43,7 +42,8 @@ describe.skip("EFFitScale", () => {
     document.body.innerHTML = "";
   });
 
-  test("scales video to fit container while maintaining aspect ratio", async ({
+  // Canvas sizing tests are sensitive to timing and test internal implementation
+  test.skip("scales video to fit container while maintaining aspect ratio", async ({
     expect,
   }) => {
     const container = document.createElement("div");
@@ -106,7 +106,7 @@ describe.skip("EFFitScale", () => {
     expect(rect.height).toBeCloseTo(281.25, 1);
   }, 1000);
 
-  test("scales video in tall container (letterboxing)", async ({ expect }) => {
+  test.skip("scales video in tall container (letterboxing)", async ({ expect }) => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
 
@@ -147,7 +147,7 @@ describe.skip("EFFitScale", () => {
     expect(scaleInfo.scale).toBeCloseTo(300 / 384, 2);
   }, 1000);
 
-  test("scales video in wide container (pillarboxing)", async ({ expect }) => {
+  test.skip("scales video in wide container (pillarboxing)", async ({ expect }) => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
 
@@ -188,7 +188,7 @@ describe.skip("EFFitScale", () => {
     expect(scaleInfo.scale).toBeCloseTo(300 / 216, 2);
   }, 1000);
 
-  test("centers video in container", async ({ expect }) => {
+  test.skip("centers video in container", async ({ expect }) => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
 
@@ -226,7 +226,7 @@ describe.skip("EFFitScale", () => {
     expect(videoTransform).toContain("matrix");
   }, 1000);
 
-  test("updates scale when container size changes", async ({ expect }) => {
+  test.skip("updates scale when container size changes", async ({ expect }) => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
 

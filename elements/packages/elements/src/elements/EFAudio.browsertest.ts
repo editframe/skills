@@ -600,7 +600,7 @@ describe("EFAudio", () => {
     });
   });
 
-  describe.skip("integration with timegroups", () => {
+  describe("integration with timegroups", () => {
     test("integrates correctly within timegroup structure", async ({
       expect,
     }) => {
@@ -620,6 +620,9 @@ describe("EFAudio", () => {
       const audio = container.querySelector("ef-audio") as EFAudio;
       const timegroup = container.querySelector("ef-timegroup");
       await audio.updateComplete;
+
+      // Wait for media to load
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       expect(timegroup).toBeDefined();
 
@@ -655,7 +658,7 @@ describe("EFAudio", () => {
     });
   });
 
-  describe.skip("audio-specific functionality", () => {
+  describe("audio-specific functionality", () => {
     test("inherits audio analysis capabilities from EFMedia", ({ expect }) => {
       const container = document.createElement("div");
       render(

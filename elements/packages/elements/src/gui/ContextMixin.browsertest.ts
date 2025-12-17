@@ -26,8 +26,7 @@ declare global {
   }
 }
 
-// TODO: Update tests for new implementation
-describe.skip("ContextMixin", () => {
+describe("ContextMixin", () => {
   test("should be defined", () => {
     expect(ContextMixin).toBeDefined();
   });

@@ -26,8 +26,7 @@ class TestContextWrapper extends ContextMixin(LitElement) {
 let idCounter = 0;
 const nextId = () => `test-timegroup-${idCounter++}`;
 
-// TODO: Update tests for new implementation
-describe.skip("EFFilmstrip", () => {
+describe("EFFilmstrip", () => {
   afterEach(() => {
     document.body.innerHTML = "";
     idCounter = 0;
@@ -459,7 +458,8 @@ describe.skip("EFFilmstrip", () => {
       expect(waveformFilmstrip).toBeFalsy();
     }, 1000);
 
-    test("should filter HTML elements by tag name", async () => {
+    // HTML element filmstrips are no longer created for plain HTML elements
+    test.skip("should filter HTML elements by tag name", async () => {
       const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
       timegroup.id = nextId();
       timegroup.setAttribute("mode", "fixed");
@@ -499,7 +499,8 @@ describe.skip("EFFilmstrip", () => {
       expect(htmlFilmstrips?.length).toBe(1);
     }, 1000);
 
-    test("should filter HTML elements by CSS class selector", async () => {
+    // HTML element filmstrips are no longer created for plain HTML elements
+    test.skip("should filter HTML elements by CSS class selector", async () => {
       const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
       timegroup.id = nextId();
       timegroup.setAttribute("mode", "fixed");
@@ -539,7 +540,8 @@ describe.skip("EFFilmstrip", () => {
       expect(htmlFilmstrips?.length).toBe(1);
     }, 1000);
 
-    test("should filter HTML elements by attribute selector", async () => {
+    // HTML element filmstrips are no longer created for plain HTML elements
+    test.skip("should filter HTML elements by attribute selector", async () => {
       const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
       timegroup.id = nextId();
       timegroup.setAttribute("mode", "fixed");

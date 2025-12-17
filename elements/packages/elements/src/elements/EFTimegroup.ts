@@ -180,22 +180,23 @@ function evaluateSequenceDuration(
     }
 
     // Additional safety: if child is a timegroup, check if any of its ancestors
-    // (including the current timegroup if it's in the parent chain) are calculating
-    // This prevents cycles where a child's descendant eventually calls back to an ancestor
+    // (EXCLUDING the current timegroup) are calculating.
+    // This prevents cycles where a child's descendant eventually calls back to an ancestor,
+    // but allows direct children of the current timegroup to participate.
     if (child instanceof EFTimegroup) {
       let ancestor: Node | null = child.parentNode;
       let shouldSkip = false;
       while (ancestor) {
+        // Stop FIRST if we've reached the current timegroup - direct children are allowed
+        if (ancestor === timegroup) {
+          break;
+        }
         if (
           ancestor instanceof EFTimegroup &&
           durationCalculationInProgress.has(ancestor)
         ) {
-          // Found a calculating ancestor - skip this child to prevent cycle
+          // Found a calculating ancestor (not the current timegroup) - skip this child to prevent cycle
           shouldSkip = true;
-          break;
-        }
-        // Stop if we've reached the current timegroup (it's always calculating at this point)
-        if (ancestor === timegroup) {
           break;
         }
         ancestor = ancestor.parentNode;
@@ -247,22 +248,23 @@ function evaluateContainDuration(
     }
 
     // Additional safety: if child is a timegroup, check if any of its ancestors
-    // (including the current timegroup if it's in the parent chain) are calculating
-    // This prevents cycles where a child's descendant eventually calls back to an ancestor
+    // (EXCLUDING the current timegroup) are calculating.
+    // This prevents cycles where a child's descendant eventually calls back to an ancestor,
+    // but allows direct children of the current timegroup to participate.
     if (child instanceof EFTimegroup) {
       let ancestor: Node | null = child.parentNode;
       let shouldSkip = false;
       while (ancestor) {
+        // Stop FIRST if we've reached the current timegroup - direct children are allowed
+        if (ancestor === timegroup) {
+          break;
+        }
         if (
           ancestor instanceof EFTimegroup &&
           durationCalculationInProgress.has(ancestor)
         ) {
-          // Found a calculating ancestor - skip this child to prevent cycle
+          // Found a calculating ancestor (not the current timegroup) - skip this child to prevent cycle
           shouldSkip = true;
-          break;
-        }
-        // Stop if we've reached the current timegroup (it's always calculating at this point)
-        if (ancestor === timegroup) {
           break;
         }
         ancestor = ancestor.parentNode;

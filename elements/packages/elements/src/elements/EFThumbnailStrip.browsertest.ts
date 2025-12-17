@@ -118,8 +118,7 @@ const awaitThumbnailLayout = async (thumbnailStrip: EFThumbnailStrip) => {
   await thumbnailStrip.thumbnailLayoutTask.taskComplete;
 };
 
-// TODO: Update tests for new implementation
-describe.skip("EFThumbnailStrip", () => {
+describe("EFThumbnailStrip", () => {
   describe("initialization", () => {
     test("should detect dimensions and target element on connection", async ({
       expect,

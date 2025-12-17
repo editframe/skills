@@ -169,8 +169,7 @@ function createTestTextSegment(
   return segment as AnimatableElement;
 }
 
-// TODO: Update tests for new implementation
-describe.skip("updateAnimations", () => {
+describe("updateAnimations", () => {
   // ============================================================================
   // Core Invariants
   // ============================================================================

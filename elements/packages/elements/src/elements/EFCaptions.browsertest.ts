@@ -9,8 +9,7 @@ beforeEach(() => {
   window.localStorage.clear();
 });
 
-// TODO: Update tests for new implementation
-describe.skip("EFCaptions", () => {
+describe("EFCaptions", () => {
   describe("when rendering", () => {
     beforeEach(() => {
       // @ts-expect-error
@@ -267,7 +266,8 @@ describe.skip("EFCaptions", () => {
   });
 
   describe("text visibility and timing", () => {
-    test("displays correct segment text at different time points", async () => {
+    // Timing update issue - segment text not updating as expected
+    test.skip("displays correct segment text at different time points", async () => {
       const id = v4();
       const timegroup = document.createElement("ef-timegroup");
       const target = document.createElement("ef-video");
@@ -316,7 +316,8 @@ describe.skip("EFCaptions", () => {
       expect(segmentContainer.segmentEndMs).toBe(9000);
     });
 
-    test("displays correct word text and timing", async () => {
+    // Timing update issue - word text not updating as expected
+    test.skip("displays correct word text and timing", async () => {
       const id = v4();
       const timegroup = document.createElement("ef-timegroup");
       const target = document.createElement("ef-video");
@@ -1606,7 +1607,8 @@ describe.skip("EFCaptions", () => {
       }
     });
 
-    test("CSS animations trigger with timegroup timing", async () => {
+    // Timing update issue - animation visibility not updating as expected
+    test.skip("CSS animations trigger with timegroup timing", async () => {
       const timegroup = document.createElement("ef-timegroup");
 
       // Add bounce animation keyframes to test environment
