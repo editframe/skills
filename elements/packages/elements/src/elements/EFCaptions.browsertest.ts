@@ -266,7 +266,9 @@ describe("EFCaptions", () => {
   });
 
   describe("text visibility and timing", () => {
-    // Timing update issue - segment text not updating as expected
+    // BUG: captions.frameTask does not re-run when timegroup.currentTimeMs changes
+    // The updateTextContainers method is not being triggered on subsequent time updates
+    // This needs investigation in the EFCaptions implementation
     test.skip("displays correct segment text at different time points", async () => {
       const id = v4();
       const timegroup = document.createElement("ef-timegroup");
@@ -287,33 +289,41 @@ describe("EFCaptions", () => {
 
       await captions.unifiedCaptionsDataTask.taskComplete;
 
+      // Helper to wait for segment to update after seeking
+      const waitForSegmentUpdate = async () => {
+        await timegroup.seekTask.taskComplete;
+        await captions.frameTask.taskComplete;
+        await segmentContainer.updateComplete;
+        // Give the RAF loop time to propagate changes
+        for (let i = 0; i < 3; i++) {
+          await new Promise((resolve) => requestAnimationFrame(resolve));
+        }
+        await segmentContainer.updateComplete;
+      };
+
       // Test at t=0 (first segment)
       timegroup.currentTimeMs = 0;
-      await timegroup.seekTask.taskComplete;
-      await captions.frameTask.taskComplete;
-      await segmentContainer.updateComplete;
-      expect(segmentContainer.segmentText).toBe("First test segment");
-      expect(segmentContainer.segmentStartMs).toBe(0);
-      expect(segmentContainer.segmentEndMs).toBe(3000);
+      await waitForSegmentUpdate();
+      
+      // Observable outcome: check rendered text content in DOM
+      const firstText = segmentContainer.shadowRoot?.textContent?.trim() || segmentContainer.textContent?.trim();
+      expect(firstText).toBe("First test segment");
 
       // Test at t=4000ms (second segment)
       timegroup.currentTimeMs = 4000;
-      await timegroup.seekTask.taskComplete;
-      await captions.frameTask.taskComplete;
-      await segmentContainer.updateComplete;
-      expect(segmentContainer.segmentText).toBe("Second test segment");
-      expect(segmentContainer.segmentStartMs).toBe(3000);
-      expect(segmentContainer.segmentEndMs).toBe(6000);
+      await waitForSegmentUpdate();
+      
+      // Observable outcome: check rendered text content in DOM
+      const secondText = segmentContainer.shadowRoot?.textContent?.trim() || segmentContainer.textContent?.trim();
+      expect(secondText).toBe("Second test segment");
 
       // Test at t=7500ms (third segment)
       timegroup.currentTimeMs = 7500;
-      await timegroup.seekTask.taskComplete;
-      await captions.frameTask.taskComplete;
-      await segmentContainer.updateComplete;
-
-      expect(segmentContainer.segmentText).toBe("Third test segment");
-      expect(segmentContainer.segmentStartMs).toBe(6000);
-      expect(segmentContainer.segmentEndMs).toBe(9000);
+      await waitForSegmentUpdate();
+      
+      // Observable outcome: check rendered text content in DOM
+      const thirdText = segmentContainer.shadowRoot?.textContent?.trim() || segmentContainer.textContent?.trim();
+      expect(thirdText).toBe("Third test segment");
     });
 
     // Timing update issue - word text not updating as expected

@@ -12,6 +12,8 @@ import { ContextMixin } from "../gui/ContextMixin.js";
 import { EFTemporal, resetTemporalCache } from "./EFTemporal.js";
 // Need workbench to make workbench wrapping occurs
 import "../gui/EFWorkbench.js";
+// Import EF_INTERACTIVE to allow controlling it in tests
+import { EF_INTERACTIVE, setEFInteractive } from "../EF_INTERACTIVE.js";
 // Additional imports for sequence boundary test
 import "./EFVideo.js";
 import "../gui/EFConfiguration.js";
@@ -613,13 +615,66 @@ describe("setting currentTime", () => {
 });
 
 describe("shouldWrapWithWorkbench", () => {
-  test.skip("should not wrap if EF_INTERACTIVE is false", () => {
-    // TODO: need a way to define EF_INTERACTIVE in a test
+  test("should not wrap if EF_INTERACTIVE is false", () => {
+    // Save original values
+    const originalInteractive = EF_INTERACTIVE;
+    const originalDevWorkbench = globalThis.EF_DEV_WORKBENCH;
+
+    try {
+      // Set EF_INTERACTIVE to false using the setter
+      setEFInteractive(false);
+      globalThis.EF_DEV_WORKBENCH = true;
+
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      document.body.appendChild(timegroup);
+
+      // Observable outcome: no ef-workbench should wrap the timegroup
+      const shouldWrap = timegroup.shouldWrapWithWorkbench();
+      assert.isFalse(
+        shouldWrap,
+        "shouldWrapWithWorkbench should be false when EF_INTERACTIVE is false",
+      );
+      assert.isNull(
+        timegroup.closest("ef-workbench"),
+        "No workbench should wrap timegroup when EF_INTERACTIVE is false",
+      );
+
+      timegroup.remove();
+    } finally {
+      // Restore original values
+      setEFInteractive(originalInteractive);
+      globalThis.EF_DEV_WORKBENCH = originalDevWorkbench;
+    }
   });
 
-  test.skip("should wrap if root-most timegroup", () => {
-    // TODO: This test requires EF_INTERACTIVE to be true, which is a module-level constant
-    // that cannot be modified in tests. Need a way to test this behavior.
+  test("should wrap if root-most timegroup with EF_INTERACTIVE and EF_DEV_WORKBENCH", () => {
+    // Save original values
+    const originalInteractive = EF_INTERACTIVE;
+    const originalDevWorkbench = globalThis.EF_DEV_WORKBENCH;
+
+    try {
+      // Set both flags to true using the setter
+      setEFInteractive(true);
+      globalThis.EF_DEV_WORKBENCH = true;
+
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      document.body.appendChild(timegroup);
+
+      // Observable outcome: timegroup should be wrapped in an ef-workbench
+      // (connectedCallback automatically wraps when conditions are met)
+      const workbench = timegroup.closest("ef-workbench");
+      assert.isNotNull(
+        workbench,
+        "Root timegroup should be wrapped in ef-workbench when EF_INTERACTIVE and EF_DEV_WORKBENCH are true",
+      );
+
+      // Clean up (workbench is the parent now)
+      workbench?.remove();
+    } finally {
+      // Restore original values
+      setEFInteractive(originalInteractive);
+      globalThis.EF_DEV_WORKBENCH = originalDevWorkbench;
+    }
   });
 
   test("should not wrap if contained within a preview context", () => {

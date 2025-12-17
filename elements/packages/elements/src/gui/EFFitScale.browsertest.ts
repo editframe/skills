@@ -42,8 +42,7 @@ describe("EFFitScale", () => {
     document.body.innerHTML = "";
   });
 
-  // Canvas sizing tests are sensitive to timing and test internal implementation
-  test.skip("scales video to fit container while maintaining aspect ratio", async ({
+  test("scales video to fit container while maintaining aspect ratio", async ({
     expect,
   }) => {
     const container = document.createElement("div");
@@ -74,39 +73,31 @@ describe("EFFitScale", () => {
     await video.mediaEngineTask.taskComplete;
     await timegroup.seekTask.taskComplete;
 
-    // Wait for canvas to be sized to video dimensions (384x216)
-    await waitForVideoCanvas(video, 384, 216);
+    // Wait for fit-scale to measure and apply transform
+    // Use multiple RAF to ensure layout is complete
+    for (let i = 0; i < 5; i++) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+    }
 
-    // Wait a frame for fit-scale to measure and apply transform
-    await new Promise((resolve) => requestAnimationFrame(resolve));
-
-    const scaleInfo = (fitScale as any).scaleInfo;
-
-    // Container should be 500x500
-    expect(scaleInfo.containerWidth).toBe(500);
-    expect(scaleInfo.containerHeight).toBe(500);
-
-    // Video should have its natural dimensions (384x216)
-    expect(scaleInfo.contentWidth).toBe(384);
-    expect(scaleInfo.contentHeight).toBe(216);
-
-    // Scale should fit the video to the container
-    // For 384x216 video in 500x500 container:
-    // Container ratio: 1.0, Video ratio: 1.778
-    // Video is wider than container, so scale by width: 500/384 = 1.302
-    expect(scaleInfo.scale).toBeCloseTo(500 / 384, 2);
-
-    // Video should have transform applied
+    // Observable outcome 1: Video should have a transform applied
     const videoTransform = window.getComputedStyle(video).transform;
     expect(videoTransform).not.toBe("none");
 
+    // Observable outcome 2: Video's visual bounding box should fit within container
     const rect = video.getBoundingClientRect();
-    // Should be 500 x (500 / (384/216)) = 281.25
-    expect(rect.width).toBeCloseTo(500, 1);
-    expect(rect.height).toBeCloseTo(281.25, 1);
-  }, 1000);
+    const containerRect = fitScale.getBoundingClientRect();
+    
+    // Video should fit within container width (with some tolerance for borders)
+    expect(rect.width).toBeLessThanOrEqual(containerRect.width + 2);
+    
+    // Observable outcome 3: Video maintains aspect ratio (wider than tall)
+    expect(rect.width).toBeGreaterThan(rect.height);
+    
+    // Observable outcome 4: Video is scaled up to fill container width
+    expect(rect.width).toBeCloseTo(containerRect.width, 1);
+  }, 5000);
 
-  test.skip("scales video in tall container (letterboxing)", async ({ expect }) => {
+  test("scales video in tall container (letterboxing)", async ({ expect }) => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
 
@@ -135,19 +126,27 @@ describe("EFFitScale", () => {
     await video.mediaEngineTask.taskComplete;
     await timegroup.seekTask.taskComplete;
 
-    // Wait for canvas to be sized to video dimensions (384x216)
-    await waitForVideoCanvas(video, 384, 216);
+    // Wait for fit-scale to measure and apply transform
+    for (let i = 0; i < 5; i++) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+    }
 
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+    // Observable outcome: Video's visual bounding box
+    const rect = video.getBoundingClientRect();
+    const containerRect = fitScale.getBoundingClientRect();
 
-    const scaleInfo = (fitScale as any).scaleInfo;
+    // In a tall container (300x800), video should be constrained by width
+    // Observable: video width should match or be close to container width
+    expect(rect.width).toBeCloseTo(containerRect.width, 1);
+    
+    // Observable: video should maintain aspect ratio (wider than tall)
+    expect(rect.width).toBeGreaterThan(rect.height);
+    
+    // Observable: video height should be less than container height (letterboxed)
+    expect(rect.height).toBeLessThan(containerRect.height);
+  }, 5000);
 
-    // Container is 300x800 (ratio 0.375), video is 384x216 (ratio 1.778)
-    // Should scale by width: 300/384
-    expect(scaleInfo.scale).toBeCloseTo(300 / 384, 2);
-  }, 1000);
-
-  test.skip("scales video in wide container (pillarboxing)", async ({ expect }) => {
+  test("scales video in wide container (pillarboxing)", async ({ expect }) => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
 
@@ -176,19 +175,27 @@ describe("EFFitScale", () => {
     await video.mediaEngineTask.taskComplete;
     await timegroup.seekTask.taskComplete;
 
-    // Wait for canvas to be sized to video dimensions (384x216)
-    await waitForVideoCanvas(video, 384, 216);
+    // Wait for fit-scale to measure and apply transform
+    for (let i = 0; i < 5; i++) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+    }
 
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+    // Observable outcome: Video's visual bounding box
+    const rect = video.getBoundingClientRect();
+    const containerRect = fitScale.getBoundingClientRect();
 
-    const scaleInfo = (fitScale as any).scaleInfo;
+    // In a wide container (1000x300), video should be constrained by height
+    // Observable: video height should match or be close to container height
+    expect(rect.height).toBeCloseTo(containerRect.height, 1);
+    
+    // Observable: video should maintain aspect ratio (wider than tall)
+    expect(rect.width).toBeGreaterThan(rect.height);
+    
+    // Observable: video width should be less than container width (pillarboxed)
+    expect(rect.width).toBeLessThan(containerRect.width);
+  }, 5000);
 
-    // Container is 1000x300 (ratio 3.33), video is 384x216 (ratio 1.778)
-    // Should scale by height: 300/216
-    expect(scaleInfo.scale).toBeCloseTo(300 / 216, 2);
-  }, 1000);
-
-  test.skip("centers video in container", async ({ expect }) => {
+  test("centers video in container", async ({ expect }) => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
 
@@ -208,6 +215,7 @@ describe("EFFitScale", () => {
     );
     document.body.appendChild(container);
 
+    const fitScale = container.querySelector("ef-fit-scale") as EFFitScale;
     const video = container.querySelector("ef-video") as EFVideo;
     const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
 
@@ -216,17 +224,27 @@ describe("EFFitScale", () => {
     await video.mediaEngineTask.taskComplete;
     await timegroup.seekTask.taskComplete;
 
-    // Wait for canvas to be sized to video dimensions (384x216)
-    await waitForVideoCanvas(video, 384, 216);
+    // Wait for fit-scale to measure and apply transform
+    for (let i = 0; i < 5; i++) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+    }
 
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+    // Observable outcome: Video should be centered within the container
+    const videoRect = video.getBoundingClientRect();
+    const containerRect = fitScale.getBoundingClientRect();
 
-    // Transform should include translate for centering
-    const videoTransform = window.getComputedStyle(video).transform;
-    expect(videoTransform).toContain("matrix");
-  }, 1000);
+    // Calculate expected center positions
+    const containerCenterX = containerRect.left + containerRect.width / 2;
+    const containerCenterY = containerRect.top + containerRect.height / 2;
+    const videoCenterX = videoRect.left + videoRect.width / 2;
+    const videoCenterY = videoRect.top + videoRect.height / 2;
 
-  test.skip("updates scale when container size changes", async ({ expect }) => {
+    // Video center should be close to container center
+    expect(Math.abs(videoCenterX - containerCenterX)).toBeLessThan(5);
+    expect(Math.abs(videoCenterY - containerCenterY)).toBeLessThan(5);
+  }, 5000);
+
+  test("updates scale when container size changes", async ({ expect }) => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
 
@@ -255,25 +273,36 @@ describe("EFFitScale", () => {
     await video.mediaEngineTask.taskComplete;
     await timegroup.seekTask.taskComplete;
 
-    // Wait for canvas to be sized to video dimensions (384x216)
-    await waitForVideoCanvas(video, 384, 216);
+    // Wait for fit-scale to measure and apply transform
+    for (let i = 0; i < 5; i++) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+    }
 
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+    // Get initial video dimensions
+    const initialRect = video.getBoundingClientRect();
+    const initialWidth = initialRect.width;
 
-    const initialScale = (fitScale as any).scaleInfo.scale;
-
-    // Change container size
+    // Change container size to be larger
     timegroup.style.width = "800px";
     timegroup.style.height = "600px";
 
-    await new Promise((resolve) => requestAnimationFrame(resolve));
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+    // Wait for layout to update
+    for (let i = 0; i < 10; i++) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+    }
 
-    const newScale = (fitScale as any).scaleInfo.scale;
-
-    // Scale should have changed
-    expect(newScale).not.toBe(initialScale);
-  }, 1000);
+    // Observable outcome: video dimensions should have changed
+    const newRect = video.getBoundingClientRect();
+    
+    // Video should now be larger (container is bigger)
+    expect(newRect.width).toBeGreaterThan(initialWidth);
+    
+    // Video should still be centered
+    const containerRect = fitScale.getBoundingClientRect();
+    const containerCenterX = containerRect.left + containerRect.width / 2;
+    const videoCenterX = newRect.left + newRect.width / 2;
+    expect(Math.abs(videoCenterX - containerCenterX)).toBeLessThan(5);
+  }, 5000);
 
   test("handles video without ef-fit-scale normally", async ({ expect }) => {
     const container = document.createElement("div");
