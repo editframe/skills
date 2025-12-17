@@ -14,7 +14,10 @@ import type { EFTimegroup } from "../elements/EFTimegroup.js";
 let idCounter = 0;
 const nextId = () => `test-${idCounter++}`;
 
-// TODO: Update these tests for new timeline implementation
+// TODO: These tests need to be rewritten for the new timeline/hierarchy integration
+// - activeTimegroupChange event no longer exists (replaced by hierarchy-select)
+// - ef-filmstrip is not used in timeline anymore
+// - Timeline target is set via property, not changed by hierarchy clicks
 describe.skip("Canvas-Hierarchy-Timeline Integration", () => {
   afterEach(() => {
     document.body.innerHTML = "";
