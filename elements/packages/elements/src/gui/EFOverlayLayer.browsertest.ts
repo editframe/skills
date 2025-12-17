@@ -19,8 +19,7 @@ afterEach(() => {
   testElements.length = 0;
 });
 
-// TODO: Update tests for new implementation
-describe.skip("EFOverlayLayer", () => {
+describe("EFOverlayLayer", () => {
   test("overlay layer applies translate transform matching PanZoom", async () => {
     const panZoom = document.createElement("ef-pan-zoom") as EFPanZoom;
     panZoom.x = 100;
