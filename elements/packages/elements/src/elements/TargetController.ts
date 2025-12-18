@@ -171,11 +171,17 @@ export class TargetController implements ReactiveController {
   };
 
   private updateTarget() {
+    // Only look up by ID if target string is non-empty
+    // This preserves direct object bindings via .targetElement=${obj}
+    if (!this.host.target) {
+      return;
+    }
+
     // First try the local registry (same root node)
     let newTarget = this.registry.get(this.host.target);
 
     // Fall back to document.getElementById for cross-shadow-root targeting
-    if (!newTarget && this.host.target) {
+    if (!newTarget) {
       newTarget = document.getElementById(this.host.target) as LitElement | undefined;
     }
 
