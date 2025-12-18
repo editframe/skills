@@ -61,6 +61,16 @@ export class EFTimelineRow extends TWMixin(LitElement) {
         );
       }
 
+      /* Selected state */
+      :host(.selected) {
+        background: var(--timeline-row-selected, rgba(59, 130, 246, 0.3));
+      }
+
+      /* Ancestor has selected descendant */
+      :host(.ancestor-selected) {
+        background: var(--timeline-row-ancestor-selected, rgba(59, 130, 246, 0.15));
+      }
+
       .row-label {
         position: sticky;
         left: 0;
@@ -85,6 +95,11 @@ export class EFTimelineRow extends TWMixin(LitElement) {
 
       :host(.hovered) .row-label {
         background: var(--timeline-label-active, rgb(59 130 246));
+        color: white;
+      }
+
+      :host(.selected) .row-label {
+        background: var(--timeline-label-selected, rgb(37 99 235));
         color: white;
       }
 
@@ -124,9 +139,33 @@ export class EFTimelineRow extends TWMixin(LitElement) {
   @property({ type: Object, attribute: false })
   selectedElements: Set<Element> = new Set();
 
+  @property({ type: Object, attribute: false })
+  selectedIds: ReadonlySet<string> = new Set();
+
   // Derived interaction states (computed on-demand)
   private get isHovered(): boolean {
     return this.hoveredElement === this.element;
+  }
+
+  private get isSelected(): boolean {
+    const elementId = (this.element as HTMLElement)?.id;
+    return elementId ? this.selectedIds.has(elementId) : false;
+  }
+
+  private get isAncestorSelected(): boolean {
+    if (!this.element) return false;
+    // Check if this element contains any selected element
+    for (const selectedId of this.selectedIds) {
+      const selectedElement = document.getElementById(selectedId);
+      if (
+        selectedElement &&
+        this.element.contains(selectedElement) &&
+        selectedElement !== this.element
+      ) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private get isAncestorHovered(): boolean {
@@ -159,6 +198,15 @@ export class EFTimelineRow extends TWMixin(LitElement) {
       this.classList.toggle("ancestor-hovered", this.isAncestorHovered);
       this.classList.toggle("descendant-hovered", this.isDescendantHovered);
     }
+
+    // Update selection classes
+    if (
+      changedProperties.has("selectedIds") ||
+      changedProperties.has("element")
+    ) {
+      this.classList.toggle("selected", this.isSelected);
+      this.classList.toggle("ancestor-selected", this.isAncestorSelected);
+    }
   }
 
   private handleMouseEnter = (): void => {
@@ -179,6 +227,20 @@ export class EFTimelineRow extends TWMixin(LitElement) {
         composed: true,
       }),
     );
+  };
+
+  private handleClick = (e: Event): void => {
+    e.stopPropagation();
+    const elementId = (this.element as HTMLElement)?.id;
+    if (elementId) {
+      this.dispatchEvent(
+        new CustomEvent("row-select", {
+          detail: { elementId, element: this.element },
+          bubbles: true,
+          composed: true,
+        }),
+      );
+    }
   };
 
   private getElementType(element: Element): string {
@@ -225,12 +287,14 @@ export class EFTimelineRow extends TWMixin(LitElement) {
     super.connectedCallback();
     this.addEventListener("mouseenter", this.handleMouseEnter);
     this.addEventListener("mouseleave", this.handleMouseLeave);
+    this.addEventListener("click", this.handleClick);
   }
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
     this.removeEventListener("mouseenter", this.handleMouseEnter);
     this.removeEventListener("mouseleave", this.handleMouseLeave);
+    this.removeEventListener("click", this.handleClick);
   }
 
   render() {
