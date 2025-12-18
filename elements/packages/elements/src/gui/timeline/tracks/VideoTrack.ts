@@ -44,9 +44,10 @@ export class EFVideoTrack extends TrackItem {
       >
         <div
           ?data-focused=${this.isFocused}
-          class="trim-container border-outset relative mb-[1px] block h-[48px] text-nowrap border text-sm"
+          class="trim-container border-outset relative mb-[1px] block text-nowrap border text-sm"
           style=${styleMap({
             ...this.trimPortionStyles,
+            height: "48px",
             backgroundColor: this.isFocused
               ? "var(--filmstrip-item-focused)"
               : "var(--filmstrip-item-bg)",

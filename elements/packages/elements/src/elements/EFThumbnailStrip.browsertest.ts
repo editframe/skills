@@ -5,6 +5,7 @@ import { test as baseTest } from "../../test/useMSW.js";
 import { getApiHost } from "../../test/setup.js";
 import "../gui/EFPreview.js";
 import "../gui/EFWorkbench.js";
+import "../gui/timeline/EFTimeline.js";
 import "./EFThumbnailStrip.js";
 import type { EFThumbnailStrip } from "./EFThumbnailStrip.js";
 import "./EFTimegroup.js";
@@ -584,5 +585,225 @@ describe("EFThumbnailStrip", () => {
       expect(finalWidth).toBe(800);
       expect(finalWidth).toBeGreaterThan(initialWidth);
     }, 1000);
+  });
+
+  describe("sequence timegroup with multiple videos", () => {
+    test("both videos in sequence should render thumbnails on first load", async ({
+      expect,
+    }) => {
+      // Reproduce the canvas-demo.html scenario where the second video's
+      // thumbnail strip is blank on first render
+      const container = document.createElement("div");
+      const apiHost = getApiHost();
+      render(
+        html`
+        <ef-configuration api-host="${apiHost}" signing-url="/@ef-sign-url">
+          <div style="width: 800px; height: 600px;">
+            <ef-timegroup id="sequence-group" mode="sequence" style="width: 480px; height: 320px;">
+              <ef-video id="seq-video-1" src="http://web:3000/head-moov-480p.mp4" duration="3s"
+                style="position: absolute; width: 100%; height: 100%; object-fit: cover;">
+              </ef-video>
+              <ef-video id="seq-video-2" src="http://web:3000/head-moov-480p.mp4" duration="3s"
+                style="position: absolute; width: 100%; height: 100%; object-fit: cover;">
+              </ef-video>
+            </ef-timegroup>
+            <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 20px;">
+              <ef-thumbnail-strip 
+                target="seq-video-1" 
+                thumbnail-width="80" 
+                use-intrinsic-duration="true"
+                style="width: 600px; height: 48px;"
+              ></ef-thumbnail-strip>
+              <ef-thumbnail-strip 
+                target="seq-video-2" 
+                thumbnail-width="80" 
+                use-intrinsic-duration="true"
+                style="width: 600px; height: 48px;"
+              ></ef-thumbnail-strip>
+            </div>
+          </div>
+        </ef-configuration>
+      `,
+        container,
+      );
+      document.body.appendChild(container);
+
+      const video1 = container.querySelector("#seq-video-1") as EFVideo;
+      const video2 = container.querySelector("#seq-video-2") as EFVideo;
+      const strips = container.querySelectorAll("ef-thumbnail-strip");
+      const strip1 = strips[0] as EFThumbnailStrip;
+      const strip2 = strips[1] as EFThumbnailStrip;
+
+      // Wait for both videos' media engines to be ready
+      await Promise.all([
+        video1.mediaEngineTask.taskComplete,
+        video2.mediaEngineTask.taskComplete,
+      ]);
+
+      // Wait for both thumbnail strips to complete their layout
+      await Promise.all([
+        awaitThumbnailLayout(strip1),
+        awaitThumbnailLayout(strip2),
+      ]);
+
+      // Both strips should have valid target elements
+      expect(strip1.targetElement).toBe(video1);
+      expect(strip2.targetElement).toBe(video2);
+
+      // Both strips should have non-zero width
+      // @ts-expect-error testing private property
+      expect(strip1.stripWidth).toBeGreaterThan(0);
+      // @ts-expect-error testing private property
+      expect(strip2.stripWidth).toBeGreaterThan(0);
+
+      // Both canvases should have content drawn (non-empty ImageData)
+      const canvas1 = strip1.shadowRoot?.querySelector("canvas");
+      const canvas2 = strip2.shadowRoot?.querySelector("canvas");
+
+      expect(canvas1).toBeTruthy();
+      expect(canvas2).toBeTruthy();
+
+      // Check that both canvases have actual pixel data (not blank)
+      const ctx1 = canvas1?.getContext("2d");
+      const ctx2 = canvas2?.getContext("2d");
+
+      if (ctx1 && canvas1) {
+        const imageData1 = ctx1.getImageData(0, 0, canvas1.width, canvas1.height);
+        const hasContent1 = imageData1.data.some((byte) => byte !== 0);
+        expect(hasContent1).toBe(true);
+      }
+
+      if (ctx2 && canvas2) {
+        const imageData2 = ctx2.getImageData(0, 0, canvas2.width, canvas2.height);
+        const hasContent2 = imageData2.data.some((byte) => byte !== 0);
+        expect(hasContent2).toBe(true);
+      }
+
+      container.remove();
+    }, 5000);
+
+    test("ef-timeline with sequence timegroup should render thumbnails for all videos", async ({
+      expect,
+    }) => {
+      // This test reproduces the canvas-demo.html scenario where
+      // ef-timeline creates ef-video-track which creates ef-thumbnail-strip
+      // The second video's thumbnail strip was blank on first render
+      const container = document.createElement("div");
+      const apiHost = getApiHost();
+      render(
+        html`
+        <ef-configuration api-host="${apiHost}" signing-url="/@ef-sign-url">
+          <div style="width: 1200px; height: 600px;">
+            <ef-timegroup id="timeline-seq-group" mode="sequence" style="width: 480px; height: 320px;">
+              <ef-video id="timeline-video-1" src="http://web:3000/head-moov-480p.mp4" duration="3s"
+                style="position: absolute; width: 100%; height: 100%; object-fit: cover;">
+              </ef-video>
+              <ef-video id="timeline-video-2" src="http://web:3000/head-moov-480p.mp4" duration="3s"
+                style="position: absolute; width: 100%; height: 100%; object-fit: cover;">
+              </ef-video>
+            </ef-timegroup>
+            <ef-timeline 
+              target="timeline-seq-group" 
+              show-hierarchy
+              style="width: 1000px; height: 200px;"
+            ></ef-timeline>
+          </div>
+        </ef-configuration>
+      `,
+        container,
+      );
+      document.body.appendChild(container);
+
+      const video1 = container.querySelector("#timeline-video-1") as EFVideo;
+      const video2 = container.querySelector("#timeline-video-2") as EFVideo;
+      const timeline = container.querySelector("ef-timeline");
+
+      // Wait for both videos' media engines to be ready
+      await Promise.all([
+        video1.mediaEngineTask.taskComplete,
+        video2.mediaEngineTask.taskComplete,
+      ]);
+
+      // Wait for timeline to render
+      await timeline?.updateComplete;
+
+      // Give time for the timeline rows to be created and thumbnail strips to initialize
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Find the thumbnail strips created by ef-video-track inside ef-timeline-row
+      const timelineRows = timeline?.shadowRoot?.querySelectorAll("ef-timeline-row");
+      expect(timelineRows?.length).toBeGreaterThanOrEqual(3); // timegroup + 2 videos
+
+      // Find thumbnail strips in the video tracks
+      const thumbnailStrips: EFThumbnailStrip[] = [];
+      const targetElements: (EFVideo | null)[] = [];
+      timelineRows?.forEach((row) => {
+        const track = row.shadowRoot?.querySelector("ef-video-track");
+        if (track) {
+          const strip = track.shadowRoot?.querySelector("ef-thumbnail-strip");
+          if (strip) {
+            const typedStrip = strip as EFThumbnailStrip;
+            thumbnailStrips.push(typedStrip);
+            targetElements.push(typedStrip.targetElement);
+          }
+        }
+      });
+
+      expect(thumbnailStrips.length).toBe(2);
+
+      // Both strips should have their target element set
+      expect(targetElements[0]).toBe(video1);
+      expect(targetElements[1]).toBe(video2);
+
+      // Wait for all strips to update and the ResizeObserver to fire
+      // Force reflow to ensure dimensions are computed
+      for (const strip of thumbnailStrips) {
+        // Trigger reflow
+        void strip.offsetHeight;
+        await strip.updateComplete;
+      }
+
+      // Wait a frame for ResizeObserver to fire
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      // Wait for both thumbnail strips to complete their layout
+      await Promise.all(
+        thumbnailStrips.map((strip) => awaitThumbnailLayout(strip))
+      );
+
+      // Both strips should have non-zero width
+      for (let i = 0; i < thumbnailStrips.length; i++) {
+        const strip = thumbnailStrips[i];
+        // @ts-expect-error testing private property
+        const stripWidth = strip?.stripWidth;
+        expect(stripWidth, `Strip ${i + 1} should have non-zero width`).toBeGreaterThan(0);
+      }
+
+      // Both canvases should have non-zero dimensions
+      for (let i = 0; i < thumbnailStrips.length; i++) {
+        const strip = thumbnailStrips[i];
+        const canvas = strip?.shadowRoot?.querySelector("canvas");
+        expect(canvas, `Strip ${i + 1} should have a canvas`).toBeTruthy();
+        expect(canvas?.width, `Strip ${i + 1} canvas should have non-zero width`).toBeGreaterThan(0);
+        expect(canvas?.height, `Strip ${i + 1} canvas should have non-zero height`).toBeGreaterThan(0);
+      }
+
+      // Both canvases should have content drawn (non-empty ImageData)
+      for (let i = 0; i < thumbnailStrips.length; i++) {
+        const strip = thumbnailStrips[i];
+        const canvas = strip?.shadowRoot?.querySelector("canvas");
+        if (canvas && canvas.width > 0 && canvas.height > 0) {
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const hasContent = imageData.data.some((byte) => byte !== 0);
+            expect(hasContent, `Strip ${i + 1} canvas should have content`).toBe(true);
+          }
+        }
+      }
+
+      container.remove();
+    }, 10000);
   });
 });
