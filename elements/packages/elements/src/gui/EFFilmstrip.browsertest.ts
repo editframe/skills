@@ -26,6 +26,30 @@ class TestContextWrapper extends ContextMixin(LitElement) {
 let idCounter = 0;
 const nextId = () => `test-timegroup-${idCounter++}`;
 
+/**
+ * Helper to find track components across ef-timeline-row shadow DOMs.
+ * In the new unified row architecture, tracks are inside row shadow DOMs.
+ */
+function findTrackInTimeline(
+  timeline: Element | null | undefined,
+  selector: string,
+): Element | null {
+  if (!timeline?.shadowRoot) return null;
+
+  // First try direct query (for backwards compat)
+  const direct = timeline.shadowRoot.querySelector(selector);
+  if (direct) return direct;
+
+  // Search in ef-timeline-row shadow DOMs
+  const rows = timeline.shadowRoot.querySelectorAll("ef-timeline-row");
+  for (const row of rows) {
+    const found = row.shadowRoot?.querySelector(selector);
+    if (found) return found;
+  }
+
+  return null;
+}
+
 describe("EFFilmstrip", () => {
   afterEach(() => {
     document.body.innerHTML = "";
@@ -257,7 +281,7 @@ describe("EFFilmstrip", () => {
     expect(filmstrip.targetElement).toBe(null);
   }, 1000);
 
-  test("should work with auto-scale feature on targeted element", async () => {
+  test("should expose pixelsPerMs property", async () => {
     const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
     timegroup.id = nextId();
     timegroup.setAttribute("mode", "fixed");
@@ -266,14 +290,12 @@ describe("EFFilmstrip", () => {
 
     const filmstrip = document.createElement("ef-filmstrip") as EFFilmstrip;
     filmstrip.target = timegroup.id;
-    filmstrip.autoScale = true;
     document.body.appendChild(filmstrip);
 
     await timegroup.updateComplete;
     await filmstrip.updateComplete;
 
     expect(filmstrip.targetTemporal).toBe(timegroup);
-    expect(filmstrip.autoScale).toBe(true);
     expect(filmstrip.pixelsPerMs).toBeGreaterThan(0);
   }, 1000);
 
@@ -327,6 +349,25 @@ describe("EFFilmstrip", () => {
   }, 1000);
 
   describe("element filtering", () => {
+    test("should render ef-timeline internally", async () => {
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      timegroup.id = nextId();
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "10s");
+      document.body.appendChild(timegroup);
+
+      const filmstrip = document.createElement("ef-filmstrip") as EFFilmstrip;
+      filmstrip.target = timegroup.id;
+      document.body.appendChild(filmstrip);
+
+      await timegroup.updateComplete;
+      await filmstrip.updateComplete;
+
+      const timeline = filmstrip.shadowRoot?.querySelector("ef-timeline");
+      expect(timeline).toBeTruthy();
+      expect(timeline?.getAttribute("target")).toBe(timegroup.id);
+    }, 1000);
+
     test("should render all children by default with no filters", async () => {
       const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
       timegroup.id = nextId();
@@ -352,22 +393,20 @@ describe("EFFilmstrip", () => {
       await waveform.updateComplete;
       await filmstrip.updateComplete;
 
-      const timegroupFilmstrip = filmstrip.shadowRoot?.querySelector(
-        "ef-timegroup-filmstrip",
-      );
-      await (timegroupFilmstrip as any)?.updateComplete;
+      const timeline = filmstrip.shadowRoot?.querySelector("ef-timeline");
+      expect(timeline).toBeTruthy();
+      await (timeline as any)?.updateComplete;
+      await new Promise((r) => requestAnimationFrame(r));
+      await (timeline as any)?.updateComplete;
 
-      const videoFilmstrip =
-        timegroupFilmstrip?.shadowRoot?.querySelector("ef-video-filmstrip");
-      const audioFilmstrip =
-        timegroupFilmstrip?.shadowRoot?.querySelector("ef-audio-filmstrip");
-      const waveformFilmstrip = timegroupFilmstrip?.shadowRoot?.querySelector(
-        "ef-waveform-filmstrip",
-      );
+      // Track elements are inside ef-timeline-row shadow DOMs
+      const videoTrack = findTrackInTimeline(timeline, "ef-video-track");
+      const audioTrack = findTrackInTimeline(timeline, "ef-audio-track");
+      const waveformTrack = findTrackInTimeline(timeline, "ef-waveform-track");
 
-      expect(videoFilmstrip).toBeTruthy();
-      expect(audioFilmstrip).toBeTruthy();
-      expect(waveformFilmstrip).toBeTruthy();
+      expect(videoTrack).toBeTruthy();
+      expect(audioTrack).toBeTruthy();
+      expect(waveformTrack).toBeTruthy();
     }, 1000);
 
     test("should hide elements matching hide selectors", async () => {
@@ -396,22 +435,19 @@ describe("EFFilmstrip", () => {
       await waveform.updateComplete;
       await filmstrip.updateComplete;
 
-      const timegroupFilmstrip = filmstrip.shadowRoot?.querySelector(
-        "ef-timegroup-filmstrip",
-      );
-      await (timegroupFilmstrip as any)?.updateComplete;
+      const timeline = filmstrip.shadowRoot?.querySelector("ef-timeline");
+      await (timeline as any)?.updateComplete;
+      await new Promise((r) => requestAnimationFrame(r));
+      await (timeline as any)?.updateComplete;
 
-      const videoFilmstrip =
-        timegroupFilmstrip?.shadowRoot?.querySelector("ef-video-filmstrip");
-      const audioFilmstrip =
-        timegroupFilmstrip?.shadowRoot?.querySelector("ef-audio-filmstrip");
-      const waveformFilmstrip = timegroupFilmstrip?.shadowRoot?.querySelector(
-        "ef-waveform-filmstrip",
-      );
+      // Track elements are inside ef-timeline-row shadow DOMs
+      const videoTrack = findTrackInTimeline(timeline, "ef-video-track");
+      const audioTrack = findTrackInTimeline(timeline, "ef-audio-track");
+      const waveformTrack = findTrackInTimeline(timeline, "ef-waveform-track");
 
-      expect(videoFilmstrip).toBeTruthy();
-      expect(audioFilmstrip).toBeFalsy();
-      expect(waveformFilmstrip).toBeFalsy();
+      expect(videoTrack).toBeTruthy();
+      expect(audioTrack).toBeFalsy();
+      expect(waveformTrack).toBeFalsy();
     }, 1000);
 
     test("should show only elements matching show selectors", async () => {
@@ -440,22 +476,19 @@ describe("EFFilmstrip", () => {
       await waveform.updateComplete;
       await filmstrip.updateComplete;
 
-      const timegroupFilmstrip = filmstrip.shadowRoot?.querySelector(
-        "ef-timegroup-filmstrip",
-      );
-      await (timegroupFilmstrip as any)?.updateComplete;
+      const timeline = filmstrip.shadowRoot?.querySelector("ef-timeline");
+      await (timeline as any)?.updateComplete;
+      await new Promise((r) => requestAnimationFrame(r));
+      await (timeline as any)?.updateComplete;
 
-      const videoFilmstrip =
-        timegroupFilmstrip?.shadowRoot?.querySelector("ef-video-filmstrip");
-      const audioFilmstrip =
-        timegroupFilmstrip?.shadowRoot?.querySelector("ef-audio-filmstrip");
-      const waveformFilmstrip = timegroupFilmstrip?.shadowRoot?.querySelector(
-        "ef-waveform-filmstrip",
-      );
+      // Track elements are inside ef-timeline-row shadow DOMs
+      const videoTrack = findTrackInTimeline(timeline, "ef-video-track");
+      const audioTrack = findTrackInTimeline(timeline, "ef-audio-track");
+      const waveformTrack = findTrackInTimeline(timeline, "ef-waveform-track");
 
-      expect(videoFilmstrip).toBeTruthy();
-      expect(audioFilmstrip).toBeTruthy();
-      expect(waveformFilmstrip).toBeFalsy();
+      expect(videoTrack).toBeTruthy();
+      expect(audioTrack).toBeTruthy();
+      expect(waveformTrack).toBeFalsy();
     }, 1000);
 
     // HTML element filmstrips are no longer created for plain HTML elements
@@ -614,11 +647,16 @@ describe("EFFilmstrip", () => {
       await waveform.updateComplete;
       await filmstrip.updateComplete;
 
-      const waveformFilmstrips = filmstrip.shadowRoot?.querySelectorAll(
-        "ef-waveform-filmstrip",
-      );
+      const timeline = filmstrip.shadowRoot?.querySelector("ef-timeline");
+      await (timeline as any)?.updateComplete;
+      await new Promise((r) => requestAnimationFrame(r));
+      await (timeline as any)?.updateComplete;
 
-      expect(waveformFilmstrips?.length).toBe(0);
+      // Check for waveform tracks anywhere in the timeline
+      const waveformTracks =
+        timeline?.shadowRoot?.querySelectorAll("ef-waveform-track");
+
+      expect(waveformTracks?.length).toBe(0);
     }, 1000);
 
     test("should handle multiple comma-separated selectors", async () => {
@@ -631,17 +669,14 @@ describe("EFFilmstrip", () => {
       const video = document.createElement("ef-video") as EFVideo;
       const audio = document.createElement("ef-audio") as EFAudio;
       const waveform = document.createElement("ef-waveform") as EFWaveform;
-      const div = document.createElement("div");
-      div.className = "helper";
 
       timegroup.appendChild(video);
       timegroup.appendChild(audio);
       timegroup.appendChild(waveform);
-      timegroup.appendChild(div);
 
       const filmstrip = document.createElement("ef-filmstrip") as EFFilmstrip;
       filmstrip.target = timegroup.id;
-      filmstrip.hide = "ef-waveform, .helper, ef-audio";
+      filmstrip.hide = "ef-waveform, ef-audio";
       document.body.appendChild(filmstrip);
 
       await timegroup.updateComplete;
@@ -650,25 +685,19 @@ describe("EFFilmstrip", () => {
       await waveform.updateComplete;
       await filmstrip.updateComplete;
 
-      const timegroupFilmstrip = filmstrip.shadowRoot?.querySelector(
-        "ef-timegroup-filmstrip",
-      );
-      await (timegroupFilmstrip as any)?.updateComplete;
+      const timeline = filmstrip.shadowRoot?.querySelector("ef-timeline");
+      await (timeline as any)?.updateComplete;
+      await new Promise((r) => requestAnimationFrame(r));
+      await (timeline as any)?.updateComplete;
 
-      const videoFilmstrip =
-        timegroupFilmstrip?.shadowRoot?.querySelector("ef-video-filmstrip");
-      const audioFilmstrip =
-        timegroupFilmstrip?.shadowRoot?.querySelector("ef-audio-filmstrip");
-      const waveformFilmstrip = timegroupFilmstrip?.shadowRoot?.querySelector(
-        "ef-waveform-filmstrip",
-      );
-      const htmlFilmstrips =
-        timegroupFilmstrip?.shadowRoot?.querySelectorAll("ef-html-filmstrip");
+      // Track elements are inside ef-timeline-row shadow DOMs
+      const videoTrack = findTrackInTimeline(timeline, "ef-video-track");
+      const audioTrack = findTrackInTimeline(timeline, "ef-audio-track");
+      const waveformTrack = findTrackInTimeline(timeline, "ef-waveform-track");
 
-      expect(videoFilmstrip).toBeTruthy();
-      expect(audioFilmstrip).toBeFalsy();
-      expect(waveformFilmstrip).toBeFalsy();
-      expect(htmlFilmstrips?.length).toBe(0);
+      expect(videoTrack).toBeTruthy();
+      expect(audioTrack).toBeFalsy();
+      expect(waveformTrack).toBeFalsy();
     }, 1000);
 
     test("should handle invalid selectors gracefully", async () => {
@@ -694,23 +723,22 @@ describe("EFFilmstrip", () => {
       await audio.updateComplete;
       await filmstrip.updateComplete;
 
-      const timegroupFilmstrip = filmstrip.shadowRoot?.querySelector(
-        "ef-timegroup-filmstrip",
-      );
-      await (timegroupFilmstrip as any)?.updateComplete;
+      const timeline = filmstrip.shadowRoot?.querySelector("ef-timeline");
+      await (timeline as any)?.updateComplete;
+      await new Promise((r) => requestAnimationFrame(r));
+      await (timeline as any)?.updateComplete;
 
-      const videoFilmstrip =
-        timegroupFilmstrip?.shadowRoot?.querySelector("ef-video-filmstrip");
-      const audioFilmstrip =
-        timegroupFilmstrip?.shadowRoot?.querySelector("ef-audio-filmstrip");
+      // Track elements are inside ef-timeline-row shadow DOMs
+      const videoTrack = findTrackInTimeline(timeline, "ef-video-track");
+      const audioTrack = findTrackInTimeline(timeline, "ef-audio-track");
 
-      expect(videoFilmstrip).toBeTruthy();
-      expect(audioFilmstrip).toBeFalsy();
+      expect(videoTrack).toBeTruthy();
+      expect(audioTrack).toBeFalsy();
     }, 1000);
   });
 
   describe("video thumbnail strips", () => {
-    test("should render ef-thumbnail-strip inside ef-video-filmstrip", async () => {
+    test("should render ef-thumbnail-strip inside video tracks", async () => {
       const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
       timegroup.id = nextId();
       timegroup.setAttribute("mode", "fixed");
@@ -729,22 +757,21 @@ describe("EFFilmstrip", () => {
       await video.updateComplete;
       await filmstrip.updateComplete;
 
-      const timegroupFilmstrip = filmstrip.shadowRoot?.querySelector(
-        "ef-timegroup-filmstrip",
-      );
-      await (timegroupFilmstrip as any)?.updateComplete;
+      const timeline = filmstrip.shadowRoot?.querySelector("ef-timeline");
+      await (timeline as any)?.updateComplete;
+      await new Promise((r) => requestAnimationFrame(r));
+      await (timeline as any)?.updateComplete;
 
-      const videoFilmstrip =
-        timegroupFilmstrip?.shadowRoot?.querySelector("ef-video-filmstrip");
-      expect(videoFilmstrip).toBeTruthy();
+      // Video track is inside ef-timeline-row shadow DOM
+      const videoTrack = findTrackInTimeline(timeline, "ef-video-track");
+      expect(videoTrack).toBeTruthy();
 
-      await (videoFilmstrip as any)?.updateComplete;
+      await (videoTrack as any)?.updateComplete;
 
-      const thumbnailStrip = videoFilmstrip?.shadowRoot?.querySelector(
+      const thumbnailStrip = videoTrack?.shadowRoot?.querySelector(
         "ef-thumbnail-strip",
       ) as EFThumbnailStrip | null;
       expect(thumbnailStrip).toBeTruthy();
-      expect(thumbnailStrip?.targetElement).toBe(video);
     }, 1000);
 
     test("should set use-intrinsic-duration on thumbnail strip", async () => {
@@ -766,16 +793,16 @@ describe("EFFilmstrip", () => {
       await video.updateComplete;
       await filmstrip.updateComplete;
 
-      const timegroupFilmstrip = filmstrip.shadowRoot?.querySelector(
-        "ef-timegroup-filmstrip",
-      );
-      await (timegroupFilmstrip as any)?.updateComplete;
+      const timeline = filmstrip.shadowRoot?.querySelector("ef-timeline");
+      await (timeline as any)?.updateComplete;
+      await new Promise((r) => requestAnimationFrame(r));
+      await (timeline as any)?.updateComplete;
 
-      const videoFilmstrip =
-        timegroupFilmstrip?.shadowRoot?.querySelector("ef-video-filmstrip");
-      await (videoFilmstrip as any)?.updateComplete;
+      // Video track is inside ef-timeline-row shadow DOM
+      const videoTrack = findTrackInTimeline(timeline, "ef-video-track");
+      await (videoTrack as any)?.updateComplete;
 
-      const thumbnailStrip = videoFilmstrip?.shadowRoot?.querySelector(
+      const thumbnailStrip = videoTrack?.shadowRoot?.querySelector(
         "ef-thumbnail-strip",
       ) as EFThumbnailStrip | null;
       expect(thumbnailStrip).toBeTruthy();

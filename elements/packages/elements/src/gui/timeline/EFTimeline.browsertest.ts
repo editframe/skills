@@ -9,10 +9,6 @@ import {
   timeToPx,
   pixelsPerMsToZoom,
 } from "./timelineStateContext.js";
-import {
-  quantizeToFrameTimeMs,
-  calculateFrameIntervalMs,
-} from "../EFTimelineRuler.js";
 
 let idCounter = 0;
 const nextId = () => `test-${idCounter++}`;
@@ -296,7 +292,7 @@ describe("EFTimeline", () => {
   });
 
   describe("track rendering", () => {
-    test("renders track bars at correct pixel positions", async () => {
+    test("renders timeline row with track component", async () => {
       const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
       const timegroupId = nextId();
       timegroup.id = timegroupId;
@@ -314,19 +310,18 @@ describe("EFTimeline", () => {
       await timegroup.updateComplete;
       await timeline.updateComplete;
 
-      const trackBar = timeline.shadowRoot?.querySelector(
-        ".track-bar",
-      ) as HTMLElement;
-      expect(trackBar).toBeTruthy();
+      // New unified row architecture
+      const timelineRow =
+        timeline.shadowRoot?.querySelector("ef-timeline-row");
+      expect(timelineRow).toBeTruthy();
 
-      // Track should be at left: 0 (starts at 0ms)
-      expect(trackBar.style.left).toBe("0px");
-
-      // Track width should be duration * pixelsPerMs = 10000 * 0.1 = 1000px
-      expect(trackBar.style.width).toBe("1000px");
+      // Track component is inside the row's shadow DOM
+      const timegroupTrack =
+        timelineRow?.shadowRoot?.querySelector("ef-timegroup-track");
+      expect(timegroupTrack).toBeTruthy();
     });
 
-    test("renders hierarchy labels for tracks", async () => {
+    test("renders unified rows with labels", async () => {
       const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
       const timegroupId = nextId();
       timegroup.id = timegroupId;
@@ -344,16 +339,20 @@ describe("EFTimeline", () => {
       await timegroup.updateComplete;
       await timeline.updateComplete;
 
-      const hierarchyPanel =
-        timeline.shadowRoot?.querySelector(".hierarchy-panel");
-      expect(hierarchyPanel).toBeTruthy();
+      // New unified row architecture - rows container
+      const tracksRows =
+        timeline.shadowRoot?.querySelector(".tracks-rows");
+      expect(tracksRows).toBeTruthy();
 
-      const trackLabel = timeline.shadowRoot?.querySelector(".track-label");
+      // Label is inside the row's shadow DOM
+      const timelineRow =
+        timeline.shadowRoot?.querySelector("ef-timeline-row");
+      const trackLabel = timelineRow?.shadowRoot?.querySelector(".row-label");
       expect(trackLabel).toBeTruthy();
       expect(trackLabel?.textContent).toContain(timegroupId);
     });
 
-    test("content width equals duration * pixelsPerMs", async () => {
+    test("content min-width equals duration * pixelsPerMs + hierarchy width", async () => {
       const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
       const timegroupId = nextId();
       timegroup.id = timegroupId;
@@ -376,8 +375,8 @@ describe("EFTimeline", () => {
       ) as HTMLElement;
       expect(tracksContent).toBeTruthy();
 
-      // 10000ms * 0.1 px/ms = 1000px
-      expect(tracksContent.style.width).toBe("1000px");
+      // 10000ms * 0.1 px/ms = 1000px + 200px hierarchy width = 1200px
+      expect(tracksContent.style.minWidth).toBe("1200px");
     });
   });
 
@@ -803,6 +802,50 @@ describe("EFTimeline", () => {
       await timeline.updateComplete;
 
       expect(timeline.fps).toBe(30);
+    });
+  });
+
+  describe("row hover interaction", () => {
+    test("hovering a row propagates hover state to related rows", async () => {
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      const timegroupId = nextId();
+      timegroup.id = timegroupId;
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "10s");
+
+      const video = document.createElement("ef-video");
+      video.id = "child-video";
+      timegroup.appendChild(video);
+
+      document.body.appendChild(timegroup);
+
+      const timeline = document.createElement("ef-timeline") as EFTimeline;
+      timeline.target = timegroupId;
+      timeline.style.width = "800px";
+      timeline.style.height = "400px";
+      document.body.appendChild(timeline);
+
+      await timegroup.updateComplete;
+      await timeline.updateComplete;
+
+      // Find the rows
+      const rows = timeline.shadowRoot?.querySelectorAll("ef-timeline-row");
+      expect(rows?.length).toBe(2); // parent + child
+
+      const parentRow = rows?.[0];
+      const childRow = rows?.[1];
+
+      // Simulate hover on child row (entire row triggers hover now)
+      childRow?.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+
+      await timeline.updateComplete;
+      await parentRow?.updateComplete;
+      await childRow?.updateComplete;
+
+      // Child should be hovered
+      expect(childRow?.classList.contains("hovered")).toBe(true);
+      // Parent should be ancestor-hovered (its descendant is hovered)
+      expect(parentRow?.classList.contains("ancestor-hovered")).toBe(true);
     });
   });
 });

@@ -321,22 +321,22 @@ describe("MediaEngine Thumbnail Extraction", () => {
       );
     });
 
-    test("documents that AssetMediaEngine is not yet supported", async ({
+    test("extracts thumbnails using main video rendition", async ({
       assetVideo,
       expect,
     }) => {
       const mediaEngine = assetVideo.mediaEngineTask.value as AssetMediaEngine;
       expect(mediaEngine).toBeInstanceOf(AssetMediaEngine);
 
-      // AssetMediaEngine now properly returns nulls for all requests
+      // AssetMediaEngine now supports thumbnail extraction via main video rendition
       const timestamps = [500, 2500, 4500, 6500];
       const thumbnails = await mediaEngine.extractThumbnails(timestamps);
 
       expect(thumbnails).toHaveLength(4);
 
-      // All should be null since AssetMediaEngine is not yet supported
+      // Should extract thumbnails successfully using the main video rendition
       const successfulThumbnails = thumbnails.filter((t) => t !== null);
-      expect(successfulThumbnails.length).toBe(0); // Consistent behavior now
+      expect(successfulThumbnails.length).toBeGreaterThan(0);
     });
 
     test("handles invalid timestamps (reveals current boundary issues)", async ({
@@ -369,30 +369,36 @@ describe("MediaEngine Thumbnail Extraction", () => {
       }
     });
 
-    test("no scrub rendition fallback to main video (documents current behavior)", async ({
+    test("uses scrub rendition when available, falls back to main video", async ({
       assetVideo,
       expect,
     }) => {
       const mediaEngine = assetVideo.mediaEngineTask.value as AssetMediaEngine;
       expect(mediaEngine).toBeInstanceOf(AssetMediaEngine);
 
-      // AssetMediaEngine doesn't have scrub rendition
+      // Check if scrub rendition exists (may or may not depending on asset)
       const scrubRendition = mediaEngine.getScrubVideoRendition();
-      expect(scrubRendition).toBeUndefined();
+      const mainRendition = mediaEngine.videoRendition;
 
-      // Attempt to extract thumbnails using main video rendition
+      // At least one rendition should be available
+      expect(scrubRendition || mainRendition).toBeTruthy();
+
+      // Should extract thumbnails using available rendition
       const timestamps = [2000];
       const thumbnails = await mediaEngine.extractThumbnails(timestamps);
 
       expect(thumbnails).toHaveLength(1);
 
-      // Document current behavior - may return null due to implementation issues
+      // Document current behavior - scrub track (trackId -1) may have segment issues
+      // If extraction fails with scrub track, it should at least not throw
       if (thumbnails[0]) {
         expect(thumbnails[0].timestamp).toBe(2000);
         expect(thumbnails[0].thumbnail).toBeDefined();
       } else {
+        // Scrub track extraction may fail due to segment configuration
+        // This documents current behavior for future improvement
         console.log(
-          "AssetMediaEngine fallback to main video rendition currently returns null",
+          "Note: AssetMediaEngine scrub track extraction returned null - may need segment fixes",
         );
       }
     });
@@ -430,12 +436,12 @@ describe("MediaEngine Thumbnail Extraction", () => {
     });
   });
 
-  describe("AssetMediaEngine Incompatibility Warning", () => {
-    test("logs warning when EFThumbnailStrip targets AssetMediaEngine", async ({
+  describe("AssetMediaEngine Thumbnail Support", () => {
+    test("does NOT log warning when EFThumbnailStrip targets AssetMediaEngine (now supported)", async ({
       assetVideo,
       expect,
     }) => {
-      // Spy on console.warn to capture the warning
+      // Spy on console.warn to ensure no unsupported warning is logged
       const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
       // Create a thumbnail strip and add it to DOM so it gets properly initialized
@@ -450,24 +456,21 @@ describe("MediaEngine Thumbnail Extraction", () => {
       ]);
 
       // Directly set the target element to bypass TargetController complexity in tests
-      assetVideo.id = "asset-video"; // For the warning message
+      assetVideo.id = "asset-video";
       thumbnailStrip.targetElement = assetVideo;
 
       // Trigger the layout task through the normal flow by setting stripWidth
-      // This mimics what ResizeObserver would do and triggers the warning
+      // This mimics what ResizeObserver would do
       (thumbnailStrip as any).stripWidth = 400;
 
-      // Wait for the warning to be logged using vi.waitFor for event-driven testing
-      await vi.waitFor(
-        () => {
-          expect(consoleSpy).toHaveBeenCalledWith(
-            expect.stringContaining(
-              "AssetMediaEngine: extractThumbnails not properly implemented",
-            ),
-          );
-        },
-        { timeout: 2000 },
+      // Wait a bit for any async operations
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Should NOT log the "not properly implemented" warning since we now support it
+      const notImplementedWarnings = consoleSpy.mock.calls.filter((call) =>
+        call[0]?.includes?.("extractThumbnails not properly implemented"),
       );
+      expect(notImplementedWarnings.length).toBe(0);
 
       // Clean up
       thumbnailStrip.remove();
