@@ -231,16 +231,15 @@ export class EFVideo extends TWMixin(EFMedia) {
             return;
           }
 
-          this.paint(this.desiredSeekTimeMs, span);
+          const t4 = performance.now();
+          this.paint(_desiredSeekTimeMs, span);
+          const t5 = performance.now();
+          span.setAttribute("paintMs", t5 - t4);
 
           if (!this.parentTimegroup) {
             updateAnimations(this);
           }
 
-          const t4 = performance.now();
-          this.paint(_desiredSeekTimeMs, span);
-          const t5 = performance.now();
-          span.setAttribute("paintMs", t5 - t4);
           span.setAttribute("totalFrameMs", t5 - t0);
         },
       );
@@ -535,6 +534,13 @@ export class EFVideo extends TWMixin(EFMedia) {
    * @returns Promise that resolves when the frame is ready
    */
   async waitForFrameReady(): Promise<void> {
+    // CRITICAL: Sync desiredSeekTimeMs immediately from currentSourceTimeMs
+    // The update cycle may not have processed yet, but currentSourceTimeMs
+    // is a getter that already reflects the correct time from the parent.
+    const currentTime = this.currentSourceTimeMs;
+    if (this.desiredSeekTimeMs !== currentTime) {
+      this.desiredSeekTimeMs = currentTime;
+    }
     await this.updateComplete;
     await this.frameTask.run();
   }

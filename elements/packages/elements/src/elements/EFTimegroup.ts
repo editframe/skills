@@ -850,8 +850,21 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
         const promiseStart = performance.now();
 
         // Execute frame tasks for all visible elements
+        // CRITICAL: Must wait for updateComplete before running frameTask so that
+        // property changes (like desiredSeekTimeMs) have propagated to the element.
+        // Elements with waitForFrameReady() handle this; others need explicit waiting.
         await Promise.all(
-          visibleElements.map((element) => element.frameTask.run()),
+          visibleElements.map(async (element) => {
+            if (
+              "waitForFrameReady" in element &&
+              typeof element.waitForFrameReady === "function"
+            ) {
+              await (element as any).waitForFrameReady();
+            } else {
+              await element.updateComplete;
+              await element.frameTask.run();
+            }
+          }),
         );
         const promiseEnd = performance.now();
 
@@ -1178,6 +1191,10 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
           // Apply the seek target (triggers time propagation to children)
           this.#currentTime = newTime;
           this.requestUpdate("currentTime");
+          
+          // CRITICAL: Wait for update cycle to complete so children have updated desiredSeekTimeMs
+          // before we run their frame tasks. Without this, children would use stale values.
+          await this.updateComplete;
 
           // Trigger frame rendering for the new time position
           await this.#runThrottledFrameTask();
