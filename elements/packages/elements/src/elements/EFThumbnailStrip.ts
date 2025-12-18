@@ -241,11 +241,21 @@ export class EFThumbnailStrip extends LitElement {
       const videoId = value.id;
       console.log(`[ThumbnailStrip:${videoId}] targetElement: waiting for updateComplete`);
       value.updateComplete.then(() => {
+        // Check if target is still this element (it may have been changed/cleared)
+        if (this._targetElement !== value) {
+          console.log(`[ThumbnailStrip:${videoId}] targetElement: updateComplete but target changed (now ${this._targetElement?.id ?? 'null'}), aborting`);
+          return;
+        }
         console.log(`[ThumbnailStrip:${videoId}] targetElement: updateComplete, hasMediaEngineTask=${!!value.mediaEngineTask}`);
         if (value.mediaEngineTask) {
           console.log(`[ThumbnailStrip:${videoId}] targetElement: waiting for mediaEngineTask`);
           value.mediaEngineTask.taskComplete
             .then(() => {
+              // Check again if target is still this element
+              if (this._targetElement !== value) {
+                console.log(`[ThumbnailStrip:${videoId}] targetElement: mediaEngineTask complete but target changed (now ${this._targetElement?.id ?? 'null'}), aborting`);
+                return;
+              }
               console.log(`[ThumbnailStrip:${videoId}] targetElement: mediaEngineTask complete, stripWidth=${this._stripWidth}`);
               // When media engine is ready, force re-run thumbnails
               // This handles the case where the layout task started before mediaEngine was ready
@@ -717,6 +727,7 @@ export class EFThumbnailStrip extends LitElement {
 
   connectedCallback() {
     super.connectedCallback();
+    console.log(`[ThumbnailStrip:${this._targetElement?.id ?? 'unknown'}] connectedCallback called`);
 
     // Set up ResizeObserver to track element dimensions
     this.resizeObserver = new ResizeObserver((entries) => {
@@ -751,6 +762,7 @@ export class EFThumbnailStrip extends LitElement {
   }
 
   disconnectedCallback() {
+    console.log(`[ThumbnailStrip:${this._targetElement?.id ?? 'unknown'}] disconnectedCallback called`);
     super.disconnectedCallback();
     this.resizeObserver?.disconnect();
     this.resizeObserver = undefined;
