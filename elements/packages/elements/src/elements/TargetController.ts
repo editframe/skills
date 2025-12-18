@@ -171,7 +171,14 @@ export class TargetController implements ReactiveController {
   };
 
   private updateTarget() {
-    const newTarget = this.registry.get(this.host.target);
+    // First try the local registry (same root node)
+    let newTarget = this.registry.get(this.host.target);
+
+    // Fall back to document.getElementById for cross-shadow-root targeting
+    if (!newTarget && this.host.target) {
+      newTarget = document.getElementById(this.host.target) as LitElement | undefined;
+    }
+
     if (this.host.targetElement !== newTarget) {
       this.disconnectFromTarget();
       this.host.targetElement = newTarget ?? (null as Element | null);
