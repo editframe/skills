@@ -22,6 +22,11 @@ export class EFVideoTrack extends TrackItem {
   render() {
     const video = this.element as EFVideo;
     const elementId = (this.element as HTMLElement).id || "";
+
+    // Don't render thumbnail strip until we have a valid EFVideo element
+    if (!(video instanceof EFVideo)) {
+      return nothing;
+    }
     const trimStartMs = this.element.trimStartMs ?? 0;
     const trimEndMs = this.element.trimEndMs ?? 0;
     const intrinsicDurationMs =
@@ -82,4 +87,3 @@ declare global {
     "ef-video-track": EFVideoTrack;
   }
 }
-
