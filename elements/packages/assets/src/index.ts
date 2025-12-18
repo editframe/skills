@@ -20,6 +20,10 @@ export {
 } from "./tasks/generateTrackFragmentIndex.js";
 export { generateTrack, generateTrackFromPath } from "./tasks/generateTrack.js";
 export {
+  generateScrubTrack,
+  generateScrubTrackFromPath,
+} from "./tasks/generateScrubTrack.js";
+export {
   findOrCreateCaptions,
   generateCaptionDataFromPath,
 } from "./tasks/findOrCreateCaptions.js";

@@ -5,6 +5,7 @@ import {
   cacheImage,
   findOrCreateCaptions,
   generateTrack,
+  generateScrubTrack,
   generateTrackFragmentIndex,
   md5FilePath,
 } from "@editframe/assets";
@@ -97,6 +98,13 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
           case "@ef-track": {
             log(`Serving track for ${absolutePath}`);
             generateTrack(options.cacheRoot, absolutePath, req.url)
+              .then((taskResult) => sendTaskResult(req, res, taskResult))
+              .catch(next);
+            break;
+          }
+          case "@ef-scrub-track": {
+            log(`Serving scrub track for ${absolutePath}`);
+            generateScrubTrack(options.cacheRoot, absolutePath)
               .then((taskResult) => sendTaskResult(req, res, taskResult))
               .catch(next);
             break;

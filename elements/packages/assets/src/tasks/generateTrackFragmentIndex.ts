@@ -75,6 +75,31 @@ export const generateTrackFragmentIndexFromPath = async (
     Object.assign(trackFragmentIndexes, singleTrackIndexes);
   }
 
+  // Generate scrub track fragment index if video stream exists
+  if (probe.videoStreams.length > 0) {
+    try {
+      log("Generating scrub track fragment index");
+      // Generate scrub track stream and fragment index directly (don't generate full file)
+      const scrubStream = probe.createScrubTrackReadstream();
+      const scrubTrackId = -1;
+      const trackIdMapping = { 0: scrubTrackId }; // Map single-track stream index 0 to scrub track ID -1
+
+      const scrubFragmentIndex = await generateFragmentIndex(
+        scrubStream,
+        startTimeOffsetMs,
+        trackIdMapping,
+      );
+
+      if (scrubFragmentIndex[scrubTrackId]) {
+        trackFragmentIndexes[scrubTrackId] = scrubFragmentIndex[scrubTrackId]!;
+        log("Scrub track fragment index generated successfully");
+      }
+    } catch (error) {
+      log(`Failed to generate scrub track fragment index: ${error}`);
+      // Don't fail the entire operation if scrub track generation fails
+    }
+  }
+
   return trackFragmentIndexes;
 };
 

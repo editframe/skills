@@ -12,6 +12,7 @@ import {
   cacheImage,
   findOrCreateCaptions,
   generateTrack,
+  generateScrubTrack,
   generateTrackFragmentIndex,
   md5FilePath,
 } from "../../assets/src/index.js";
@@ -111,6 +112,21 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
           case "@ef-track": {
             log(`Serving track for ${absolutePath}`);
             generateTrack(options.cacheRoot, absolutePath, req.url)
+              .then((taskResult) => sendTaskResult(req, res, taskResult))
+              .catch((error) => {
+                if (error.code === "ENOENT") {
+                  log(`File not found: ${absolutePath}`);
+                  res.writeHead(404, { "Content-Type": "text/plain" });
+                  res.end("File not found");
+                } else {
+                  next(error);
+                }
+              });
+            break;
+          }
+          case "@ef-scrub-track": {
+            log(`Serving scrub track for ${absolutePath}`);
+            generateScrubTrack(options.cacheRoot, absolutePath)
               .then((taskResult) => sendTaskResult(req, res, taskResult))
               .catch((error) => {
                 if (error.code === "ENOENT") {

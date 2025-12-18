@@ -556,6 +556,91 @@ abstract class ProbeBase {
 
     return ffmpegProcess.stdout;
   }
+
+  createScrubTrackReadstream() {
+    if (this.absolutePath === "pipe:0") {
+      throw new Error("Cannot create scrub track readstream from pipe");
+    }
+
+    const videoStream = this.videoStreams[0];
+    if (!videoStream) {
+      throw new Error("No video stream found for scrub track generation");
+    }
+
+    // Calculate proportional height for 320px width
+    const targetWidth = 320;
+    const aspectRatio = videoStream.height / videoStream.width;
+    const targetHeight = Math.round(targetWidth * aspectRatio);
+    // Ensure height is even (required for H.264)
+    const scrubHeight = targetHeight % 2 === 0 ? targetHeight : targetHeight + 1;
+
+    // Parse frame rate from r_frame_rate (e.g., "30/1" or "30000/1001")
+    const [fpsNum, fpsDen] = videoStream.r_frame_rate
+      .split("/")
+      .map(Number);
+    const frameRate = fpsNum && fpsDen ? `${fpsNum}/${fpsDen}` : "30/1";
+
+    // Scrub track uses 30-second fragments (30000000 microseconds)
+    const fragmenterArgs = [
+      "-movflags",
+      "frag_keyframe+empty_moov+default_base_moof",
+      "-frag_duration",
+      "30000000", // 30 seconds in microseconds
+    ];
+
+    // Transcode to low-res H.264 with native FPS
+    const ffmpegArgs = [
+      ...this.ffmpegAudioInputOptions,
+      ...this.ffmpegVideoInputOptions,
+      "-i",
+      this.absolutePath,
+      "-map",
+      "0:v:0", // Select first video stream only (no audio for scrub)
+      "-c:v",
+      "libx264", // Encode to H.264
+      "-preset",
+      "ultrafast", // Fast encoding for scrub track
+      "-crf",
+      "28", // Lower quality for smaller file size (~100-200kbps)
+      "-vf",
+      `scale=${targetWidth}:${scrubHeight}`, // Scale to scrub resolution
+      "-r",
+      frameRate, // Maintain native FPS
+      "-g",
+      "30", // GOP size (keyframe every 30 frames, ~1 second at 30fps)
+      "-f",
+      "mp4",
+      "-bitexact", // Ensure deterministic output
+      ...fragmenterArgs,
+      "pipe:1",
+    ];
+
+    log("Creating scrub track stream", ffmpegArgs);
+
+    const ffmpegProcess = spawn("ffmpeg", ffmpegArgs, {
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+
+    ffmpegProcess.stderr.on("data", (data) => {
+      log("SCRUB TRACK: ", data.toString());
+    });
+
+    ffmpegProcess.on("error", (error) => {
+      ffmpegProcess.stdout.emit("error", error);
+    });
+
+    // Handle FFmpeg process exit
+    ffmpegProcess.on("exit", (code, signal) => {
+      if (code !== 0 && code !== null) {
+        const error = new Error(
+          `FFmpeg scrub track process exited with code ${code}${signal ? ` and signal ${signal}` : ""}`,
+        );
+        ffmpegProcess.stdout.emit("error", error);
+      }
+    });
+
+    return ffmpegProcess.stdout;
+  }
 }
 
 export class Probe extends ProbeBase {
