@@ -190,6 +190,9 @@ export class EFThumbnailStrip extends LitElement {
     const oldValue = this._targetElement;
     this._targetElement = value;
 
+    // Reset media engine ready flag when target changes
+    this._mediaEngineReady = false;
+
     // Clean up previous video property observer
     this._videoPropertyObserver?.disconnect();
 
@@ -235,9 +238,17 @@ export class EFThumbnailStrip extends LitElement {
         if (value.mediaEngineTask) {
           value.mediaEngineTask.taskComplete
             .then(() => {
-              // When media engine is ready, retrigger thumbnails if we have width
+              // When media engine is ready, force re-run thumbnails
+              // This handles the case where the layout task started before mediaEngine was ready
+              // and might have returned early or gotten stale data
               if (this._stripWidth > 0) {
-                this.thumbnailLayoutTask.run();
+                // Force a new task run by clearing any in-progress task
+                // and triggering through the stripWidth setter
+                this._thumbnailLayoutTask = undefined;
+                this.stripWidth = this._stripWidth;
+              } else {
+                // Mark that we need to run when width becomes available
+                this._mediaEngineReady = true;
               }
             })
             .catch(() => {
@@ -298,6 +309,7 @@ export class EFThumbnailStrip extends LitElement {
   private _stripHeight = 48; // Default height, updated by ResizeObserver
   private _pendingStripWidth: number | undefined;
   private _thumbnailLayoutTask: Promise<ThumbnailRenderInfo[]> | undefined;
+  private _mediaEngineReady = false;
   @state()
   private set stripWidth(value: number) {
     if (this._thumbnailLayoutTask) {
