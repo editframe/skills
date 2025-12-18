@@ -37,14 +37,6 @@ export class ThumbnailExtractor {
       return timestamps.map(() => null);
     }
 
-    console.log(`[ThumbnailExtractor] extractThumbnails called:`, {
-      requestedTimestamps: timestamps.slice(0, 10),
-      validTimestamps: validTimestamps.slice(0, 10),
-      durationMs,
-      renditionId: rendition.id,
-      startTimeOffsetMs: rendition.startTimeOffsetMs,
-    });
-
     // Group timestamps by segment for batch processing
     const segmentGroups = this.groupTimestampsBySegment(
       validTimestamps,
