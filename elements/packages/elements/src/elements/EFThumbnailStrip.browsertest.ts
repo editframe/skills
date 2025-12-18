@@ -682,12 +682,10 @@ describe("EFThumbnailStrip", () => {
       container.remove();
     }, 5000);
 
-    test("ef-timeline with sequence timegroup should render thumbnails for all videos", async ({
+    test("ef-timeline with sequence timegroup should render thumbnails for all videos (JIT)", async ({
       expect,
     }) => {
-      // This test reproduces the canvas-demo.html scenario where
-      // ef-timeline creates ef-video-track which creates ef-thumbnail-strip
-      // The second video's thumbnail strip was blank on first render
+      // This test uses JitMediaEngine (remote URLs)
       const container = document.createElement("div");
       const apiHost = getApiHost();
       render(
