@@ -1,0 +1,259 @@
+import {
+  css,
+  html,
+  LitElement,
+  nothing,
+  type PropertyValues,
+  type TemplateResult,
+} from "lit";
+import { customElement, property } from "lit/decorators.js";
+import { styleMap } from "lit/directives/style-map.js";
+
+import {
+  isEFTemporal,
+  type TemporalMixinInterface,
+} from "../../elements/EFTemporal.js";
+import { EFTimegroup } from "../../elements/EFTimegroup.js";
+import { EFVideo } from "../../elements/EFVideo.js";
+import { EFAudio } from "../../elements/EFAudio.js";
+import { EFImage } from "../../elements/EFImage.js";
+import { EFText } from "../../elements/EFText.js";
+import { TWMixin } from "../TWMixin.js";
+import { renderTrackChildren } from "./tracks/renderTrackChildren.js";
+import "./tracks/TimegroupTrack.js";
+
+const INDENT_PX = 16;
+
+/**
+ * EFTimelineRow - A unified timeline row containing both label and track
+ *
+ * This component renders a single row in the timeline with:
+ * - A sticky label on the left (stays fixed during horizontal scroll)
+ * - Track content on the right (scrolls horizontally with the timeline)
+ *
+ * Heights are determined by content, not hardcoded.
+ */
+@customElement("ef-timeline-row")
+export class EFTimelineRow extends TWMixin(LitElement) {
+  static styles = [
+    css`
+      :host {
+        display: flex;
+        min-height: var(--timeline-row-height, 28px);
+        border-bottom: 1px solid var(--timeline-border, rgb(71 85 105));
+      }
+
+      /* Hover state - this row is directly hovered */
+      :host(.hovered) {
+        background: var(--timeline-row-hover, rgba(59, 130, 246, 0.15));
+      }
+
+      /* Ancestor hovered - a descendant of this row is hovered */
+      :host(.ancestor-hovered) {
+        background: var(--timeline-row-ancestor-hover, rgba(59, 130, 246, 0.08));
+      }
+
+      /* Descendant hovered - an ancestor of this row is hovered */
+      :host(.descendant-hovered) {
+        background: var(
+          --timeline-row-descendant-hover,
+          rgba(59, 130, 246, 0.05)
+        );
+      }
+
+      .row-label {
+        position: sticky;
+        left: 0;
+        z-index: 10;
+        width: var(--timeline-hierarchy-width, 200px);
+        flex-shrink: 0;
+        background: var(--timeline-header-bg, rgb(51 65 85));
+        border-right: 1px solid var(--timeline-border, rgb(71 85 105));
+        display: flex;
+        align-items: center;
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: var(--timeline-text, rgb(226 232 240));
+        cursor: pointer;
+      }
+
+      .row-label:hover {
+        background: var(--timeline-label-hover, rgb(71 85 105));
+      }
+
+      :host(.hovered) .row-label {
+        background: var(--timeline-label-active, rgb(59 130 246));
+        color: white;
+      }
+
+      .row-track {
+        flex: 1;
+        position: relative;
+        min-width: 0;
+      }
+    `,
+  ];
+
+  @property({ type: Object, attribute: false })
+  element!: TemporalMixinInterface & Element;
+
+  @property({ type: Number })
+  depth = 0;
+
+  @property({ type: Number, attribute: "pixels-per-ms" })
+  pixelsPerMs = 0.04;
+
+  @property({ type: Boolean, attribute: "enable-trim" })
+  enableTrim = false;
+
+  @property({ type: Array, attribute: false })
+  hideSelectors?: string[];
+
+  @property({ type: Array, attribute: false })
+  showSelectors?: string[];
+
+  // Interaction state - passed from parent timeline
+  @property({ type: Object, attribute: false })
+  hoveredElement: Element | null = null;
+
+  @property({ type: Object, attribute: false })
+  focusedElement: Element | null = null;
+
+  @property({ type: Object, attribute: false })
+  selectedElements: Set<Element> = new Set();
+
+  // Derived interaction states (computed on-demand)
+  private get isHovered(): boolean {
+    return this.hoveredElement === this.element;
+  }
+
+  private get isAncestorHovered(): boolean {
+    if (!this.hoveredElement || !this.element) return false;
+    // This row's element contains the hovered element (hovered is a descendant)
+    return (
+      this.element !== this.hoveredElement &&
+      this.element.contains(this.hoveredElement)
+    );
+  }
+
+  private get isDescendantHovered(): boolean {
+    if (!this.hoveredElement || !this.element) return false;
+    // The hovered element contains this row's element (hovered is an ancestor)
+    return (
+      this.element !== this.hoveredElement &&
+      this.hoveredElement.contains(this.element)
+    );
+  }
+
+  protected updated(changedProperties: PropertyValues): void {
+    super.updated(changedProperties);
+
+    // Update host classes based on interaction state
+    if (
+      changedProperties.has("hoveredElement") ||
+      changedProperties.has("element")
+    ) {
+      this.classList.toggle("hovered", this.isHovered);
+      this.classList.toggle("ancestor-hovered", this.isAncestorHovered);
+      this.classList.toggle("descendant-hovered", this.isDescendantHovered);
+    }
+  }
+
+  private handleMouseEnter = (): void => {
+    this.dispatchEvent(
+      new CustomEvent("row-hover", {
+        detail: { element: this.element },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  };
+
+  private handleMouseLeave = (): void => {
+    this.dispatchEvent(
+      new CustomEvent("row-hover", {
+        detail: { element: null },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  };
+
+  private getElementType(element: Element): string {
+    if (element instanceof EFVideo) return "video";
+    if (element instanceof EFAudio) return "audio";
+    if (element instanceof EFImage) return "image";
+    if (element instanceof EFText) return "text";
+    if (element instanceof EFTimegroup) return "timegroup";
+    return "unknown";
+  }
+
+  private getElementLabel(element: Element): string {
+    const id = element.id || "";
+    const type = this.getElementType(element);
+    return id || type;
+  }
+
+  private renderTrack(): TemplateResult | typeof nothing {
+    if (!this.element || !isEFTemporal(this.element)) return nothing;
+
+    // For timegroups, use skip-children since children get their own rows
+    if (this.element instanceof EFTimegroup) {
+      return html`<ef-timegroup-track
+        .element=${this.element}
+        pixels-per-ms=${this.pixelsPerMs}
+        ?enable-trim=${this.enableTrim}
+        ?skip-children=${true}
+        .hideSelectors=${this.hideSelectors}
+        .showSelectors=${this.showSelectors}
+      ></ef-timegroup-track>`;
+    }
+
+    return html`${renderTrackChildren(
+      [this.element as unknown as Element],
+      this.pixelsPerMs,
+      this.hideSelectors,
+      this.showSelectors,
+      true, // skipRootFiltering - the row itself handles filtering
+      this.enableTrim,
+    )}`;
+  }
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    this.addEventListener("mouseenter", this.handleMouseEnter);
+    this.addEventListener("mouseleave", this.handleMouseLeave);
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this.removeEventListener("mouseenter", this.handleMouseEnter);
+    this.removeEventListener("mouseleave", this.handleMouseLeave);
+  }
+
+  render() {
+    if (!this.element) return nothing;
+
+    const label = this.getElementLabel(this.element);
+    const indentPx = this.depth * INDENT_PX;
+
+    return html`
+      <div
+        class="row-label"
+        style=${styleMap({ paddingLeft: `${indentPx}px` })}
+      >
+        ${label}
+      </div>
+      <div class="row-track">${this.renderTrack()}</div>
+    `;
+  }
+}
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "ef-timeline-row": EFTimelineRow;
+  }
+}
+

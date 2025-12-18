@@ -34,7 +34,12 @@ import { durationContext } from "../durationContext.js";
 import { type FocusContext, focusContext } from "../focusContext.js";
 import { focusedElementContext } from "../focusedElementContext.js";
 import { loopContext, playingContext } from "../playingContext.js";
+import { shouldRenderElement } from "../hierarchy/EFHierarchyItem.js";
 import { TWMixin } from "../TWMixin.js";
+import "./tracks/index.js";
+import type { TrimChangeDetail } from "./TrimHandles.js";
+import { flattenHierarchy } from "./flattenHierarchy.js";
+import "./EFTimelineRow.js";
 import {
   timelineStateContext,
   type TimelineState,
@@ -42,6 +47,8 @@ import {
   pxToTime,
   DEFAULT_PIXELS_PER_MS,
   pixelsPerMsToZoom,
+  TIMELINE_ROW_HEIGHT,
+  TIMELINE_ROW_PADDING,
 } from "./timelineStateContext.js";
 import "../EFTimelineRuler.js";
 import {
@@ -72,8 +79,10 @@ export class EFTimeline extends TWMixin(LitElement) {
         height: 100%;
         min-height: 100px;
         
-        /* Layout coordination via CSS custom property */
+        /* Layout coordination via CSS custom properties */
         --timeline-hierarchy-width: 200px;
+        --timeline-row-height: 28px;
+        --timeline-track-height: 22px;
         
         /* Theme */
         --timeline-bg: rgb(30 41 59);
@@ -253,17 +262,9 @@ export class EFTimeline extends TWMixin(LitElement) {
       .tracks-viewport {
         flex: 1;
         display: flex;
+        flex-direction: column;
         overflow: hidden;
         position: relative;
-      }
-      
-      .hierarchy-panel {
-        width: var(--timeline-hierarchy-width);
-        flex-shrink: 0;
-        background: var(--timeline-header-bg);
-        border-right: 1px solid var(--timeline-border);
-        overflow-y: auto;
-        overflow-x: hidden;
       }
       
       .tracks-scroll {
@@ -276,7 +277,29 @@ export class EFTimeline extends TWMixin(LitElement) {
       .tracks-content {
         position: relative;
         min-height: 100%;
-        min-width: 100%;
+      }
+      
+      .tracks-rows {
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .playhead-clip {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: var(--timeline-hierarchy-width, 200px);
+        right: 0;
+        overflow: hidden;
+        pointer-events: none;
+      }
+      
+      .playhead-layer {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
       }
       
       /* === PLAYHEAD === */
@@ -312,67 +335,6 @@ export class EFTimeline extends TWMixin(LitElement) {
         border-left: 2px solid rgba(59, 130, 246, 0.7);
         pointer-events: none;
         z-index: 99;
-      }
-      
-      /* === TRACK ITEMS === */
-      .track-row {
-        display: flex;
-        align-items: center;
-        height: 28px;
-        border-bottom: 1px solid var(--timeline-border);
-      }
-      
-      .track-label {
-        padding: 0 8px;
-        font-size: 12px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      
-      .track-bar {
-        position: absolute;
-        height: 22px;
-        background: rgba(59, 130, 246, 0.4);
-        border: 1px solid rgba(59, 130, 246, 0.6);
-        border-radius: 4px;
-        display: flex;
-        align-items: center;
-        overflow: hidden;
-      }
-      
-      .track-bar:hover {
-        background: rgba(59, 130, 246, 0.5);
-      }
-      
-      .track-bar[data-focused="true"] {
-        background: rgba(59, 130, 246, 0.6);
-        border-color: rgba(59, 130, 246, 0.8);
-      }
-      
-      .track-bar.video {
-        background: rgba(147, 51, 234, 0.4);
-        border-color: rgba(147, 51, 234, 0.6);
-      }
-      
-      .track-bar.audio {
-        background: rgba(34, 197, 94, 0.4);
-        border-color: rgba(34, 197, 94, 0.6);
-      }
-      
-      .track-bar.image {
-        background: rgba(234, 179, 8, 0.4);
-        border-color: rgba(234, 179, 8, 0.6);
-      }
-      
-      .track-bar.text {
-        background: rgba(236, 72, 153, 0.4);
-        border-color: rgba(236, 72, 153, 0.6);
-      }
-      
-      .track-bar.timegroup {
-        background: rgba(100, 116, 139, 0.4);
-        border-color: rgba(100, 116, 139, 0.6);
       }
       
       .empty-state {
@@ -430,6 +392,36 @@ export class EFTimeline extends TWMixin(LitElement) {
   @property({ type: Boolean, attribute: "show-time-display" })
   showTimeDisplay = true;
 
+  /**
+   * CSS selectors for elements to hide in the timeline.
+   * Comma-separated list of selectors (e.g., "ef-waveform, .helper").
+   */
+  @property({ type: String })
+  hide = "";
+
+  /**
+   * CSS selectors for elements to show in the timeline.
+   * When set, only matching elements are shown. Comma-separated list.
+   */
+  @property({ type: String })
+  show = "";
+
+  get hideSelectors(): string[] | undefined {
+    if (!this.hide) return undefined;
+    return this.hide
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+  }
+
+  get showSelectors(): string[] | undefined {
+    if (!this.show) return undefined;
+    return this.show
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+  }
+
   // ============================================================================
   // STATE
   // ============================================================================
@@ -450,6 +442,9 @@ export class EFTimeline extends TWMixin(LitElement) {
   private focusedElement: HTMLElement | null = null;
 
   @state()
+  private hoveredElement: Element | null = null;
+
+  @state()
   private viewportScrollLeft = 0;
 
   @provide({ context: timelineStateContext })
@@ -466,13 +461,13 @@ export class EFTimeline extends TWMixin(LitElement) {
 
   private targetController?: TargetController;
   private tracksScrollRef: Ref<HTMLDivElement> = createRef();
-  private hierarchyScrollRef: Ref<HTMLDivElement> = createRef();
   private containerRef: Ref<HTMLDivElement> = createRef();
   private animationFrameId?: number;
   private selectionChangeHandler?: () => void;
   private scrollHandler?: () => void;
   private keydownHandler?: (e: KeyboardEvent) => void;
   private isDraggingPlayhead = false;
+  private targetObserver?: MutationObserver;
 
   // ============================================================================
   // CONTEXT PROVIDERS
@@ -624,6 +619,26 @@ export class EFTimeline extends TWMixin(LitElement) {
     this.removeSelectionListener();
     this.removeScrollListener();
     this.removeKeyboardListener();
+    this.targetObserver?.disconnect();
+  }
+
+  /**
+   * Setup MutationObserver to watch target element for ANY changes.
+   * Re-registers when target changes.
+   */
+  private setupTargetObserver(): void {
+    // Always disconnect from previous target first
+    this.targetObserver?.disconnect();
+
+    const target = this.targetTemporal;
+    if (target && target instanceof Element) {
+      this.targetObserver = new MutationObserver(() => this.requestUpdate());
+      this.targetObserver.observe(target, {
+        childList: true, // children added/removed
+        subtree: true, // watch entire subtree
+        attributes: true, // attribute changes
+      });
+    }
   }
 
   protected willUpdate(changedProperties: PropertyValues): void {
@@ -644,6 +659,12 @@ export class EFTimeline extends TWMixin(LitElement) {
 
   protected updated(changedProperties: PropertyValues): void {
     super.updated(changedProperties);
+
+    // Re-register observer when target changes
+    if (changedProperties.has("targetElement") || changedProperties.has("target")) {
+      this.setupTargetObserver();
+    }
+
     if (this.tracksScrollRef.value && !this.scrollHandler) {
       this.setupScrollListener();
     } else if (!this.tracksScrollRef.value && this.scrollHandler) {
@@ -712,6 +733,12 @@ export class EFTimeline extends TWMixin(LitElement) {
     }
   }
 
+  /** Margin from edge before auto-scroll kicks in during playback */
+  private static readonly PLAYHEAD_MARGIN = 100;
+
+  private lastPlayheadPx = 0;
+  private isFollowingPlayhead = false;
+
   private startTimeUpdate(): void {
     const update = () => {
       if (this.targetTemporal) {
@@ -721,10 +748,58 @@ export class EFTimeline extends TWMixin(LitElement) {
         this.currentTimeMs = Math.max(0, Math.min(rawTime, duration));
         this.isPlaying = this.targetTemporal.playing ?? false;
         this.isLooping = this.targetTemporal.loop ?? false;
+
+        // Auto-scroll to keep playhead visible (only when playing and not dragging)
+        if (this.isPlaying && !this.isDraggingPlayhead) {
+          this.followPlayhead();
+        } else {
+          this.isFollowingPlayhead = false;
+        }
       }
       this.animationFrameId = requestAnimationFrame(update);
     };
     update();
+  }
+
+  /**
+   * Smooth playhead following - scrolls to keep playhead at a fixed screen position.
+   * This eliminates jitter by scrolling exactly as much as the playhead moves.
+   */
+  private followPlayhead(): void {
+    const tracksScroll = this.tracksScrollRef.value;
+    if (!tracksScroll) return;
+
+    const hierarchyWidth = this.showHierarchy ? EFTimeline.HIERARCHY_WIDTH : 0;
+    const playheadPx = timeToPx(this.currentTimeMs, this.pixelsPerMs);
+    const viewportWidth = tracksScroll.clientWidth - hierarchyWidth;
+    const maxScroll = tracksScroll.scrollWidth - tracksScroll.clientWidth;
+
+    // Calculate where playhead is relative to visible area
+    const playheadInViewport = playheadPx - tracksScroll.scrollLeft;
+    const rightThreshold = viewportWidth - EFTimeline.PLAYHEAD_MARGIN;
+    const leftThreshold = EFTimeline.PLAYHEAD_MARGIN;
+
+    if (this.isFollowingPlayhead) {
+      // Already following - scroll by exactly the delta to keep playhead stationary on screen
+      const delta = playheadPx - this.lastPlayheadPx;
+      if (delta !== 0) {
+        const newScroll = Math.max(0, Math.min(maxScroll, tracksScroll.scrollLeft + delta));
+        tracksScroll.scrollLeft = newScroll;
+        // Immediately sync our state to prevent flicker
+        this.viewportScrollLeft = newScroll;
+      }
+    } else if (playheadInViewport > rightThreshold) {
+      // Playhead reached right threshold - start following from this exact position (no snap)
+      this.isFollowingPlayhead = true;
+      // No scroll change - just start tracking from current position
+    } else if (playheadInViewport < leftThreshold && tracksScroll.scrollLeft > 0) {
+      // Playhead at left edge and we can scroll left - scroll to show more
+      const newScroll = Math.max(0, playheadPx - leftThreshold);
+      tracksScroll.scrollLeft = newScroll;
+      this.viewportScrollLeft = newScroll;
+    }
+
+    this.lastPlayheadPx = playheadPx;
   }
 
   private stopTimeUpdate(): void {
@@ -852,6 +927,9 @@ export class EFTimeline extends TWMixin(LitElement) {
     e.preventDefault();
   }
 
+  /** Hierarchy panel width - must match CSS --timeline-hierarchy-width */
+  private static readonly HIERARCHY_WIDTH = 200;
+
   @eventOptions({ passive: false })
   private handleTracksPointerDown(e: PointerEvent): void {
     // Only seek on direct clicks (not on track items)
@@ -862,50 +940,105 @@ export class EFTimeline extends TWMixin(LitElement) {
       const target = e.currentTarget as HTMLElement;
       const rect = target.getBoundingClientRect();
       const scrollLeft = target.scrollLeft;
-      const x = e.clientX - rect.left + scrollLeft;
-      const timeMs = pxToTime(x, this.pixelsPerMs);
-      this.handleSeek(timeMs);
-      this.startPlayheadDrag(e);
+      const hierarchyWidth = this.showHierarchy ? EFTimeline.HIERARCHY_WIDTH : 0;
+      const x = e.clientX - rect.left + scrollLeft - hierarchyWidth;
+      if (x >= 0) {
+        const timeMs = pxToTime(x, this.pixelsPerMs);
+        this.handleSeek(timeMs);
+        this.startPlayheadDrag(e);
+      }
       e.preventDefault();
     }
   }
 
+  /** Edge scroll zone width in pixels */
+  private static readonly EDGE_SCROLL_ZONE = 50;
+  /** Base scroll speed in pixels per frame */
+  private static readonly EDGE_SCROLL_SPEED = 8;
+
   private startPlayheadDrag(e: PointerEvent): void {
     this.isDraggingPlayhead = true;
-    const onMove = (moveEvent: PointerEvent) => {
-      if (!this.isDraggingPlayhead) return;
+    const hierarchyWidth = this.showHierarchy ? EFTimeline.HIERARCHY_WIDTH : 0;
+    let lastClientX = e.clientX;
+    let edgeScrollAnimationId: number | null = null;
+
+    const updatePlayheadFromMouse = () => {
       const tracksScroll = this.tracksScrollRef.value;
       if (!tracksScroll) return;
       const rect = tracksScroll.getBoundingClientRect();
       const scrollLeft = tracksScroll.scrollLeft;
-      const x = moveEvent.clientX - rect.left + scrollLeft;
-      const timeMs = pxToTime(x, this.pixelsPerMs);
-      this.handleSeek(timeMs);
+      const x = lastClientX - rect.left + scrollLeft - hierarchyWidth;
+      const timeMs = pxToTime(Math.max(0, x), this.pixelsPerMs);
+      this.handleSeek(Math.min(timeMs, this.durationMs));
     };
+
+    const edgeScrollLoop = () => {
+      if (!this.isDraggingPlayhead) return;
+      const tracksScroll = this.tracksScrollRef.value;
+      if (!tracksScroll) return;
+
+      const rect = tracksScroll.getBoundingClientRect();
+      const trackAreaLeft = rect.left + hierarchyWidth;
+      const trackAreaRight = rect.right;
+      const trackAreaWidth = trackAreaRight - trackAreaLeft;
+
+      // Calculate distance from edges (relative to track area, not full scroll container)
+      const distanceFromLeft = lastClientX - trackAreaLeft;
+      const distanceFromRight = trackAreaRight - lastClientX;
+
+      let scrollDelta = 0;
+
+      if (distanceFromLeft < EFTimeline.EDGE_SCROLL_ZONE && distanceFromLeft >= 0) {
+        // Near left edge - scroll left (faster as you get closer to edge)
+        const intensity = 1 - distanceFromLeft / EFTimeline.EDGE_SCROLL_ZONE;
+        scrollDelta = -EFTimeline.EDGE_SCROLL_SPEED * intensity;
+      } else if (distanceFromRight < EFTimeline.EDGE_SCROLL_ZONE && distanceFromRight >= 0) {
+        // Near right edge - scroll right
+        const intensity = 1 - distanceFromRight / EFTimeline.EDGE_SCROLL_ZONE;
+        scrollDelta = EFTimeline.EDGE_SCROLL_SPEED * intensity;
+      } else if (lastClientX < trackAreaLeft) {
+        // Beyond left edge - scroll left at max speed
+        scrollDelta = -EFTimeline.EDGE_SCROLL_SPEED;
+      } else if (lastClientX > trackAreaRight) {
+        // Beyond right edge - scroll right at max speed
+        scrollDelta = EFTimeline.EDGE_SCROLL_SPEED;
+      }
+
+      if (scrollDelta !== 0) {
+        // Clamp scroll to valid range
+        const maxScroll = tracksScroll.scrollWidth - tracksScroll.clientWidth;
+        const newScrollLeft = Math.max(0, Math.min(maxScroll, tracksScroll.scrollLeft + scrollDelta));
+        tracksScroll.scrollLeft = newScrollLeft;
+        
+        // Update playhead position based on current mouse and new scroll
+        updatePlayheadFromMouse();
+      }
+
+      edgeScrollAnimationId = requestAnimationFrame(edgeScrollLoop);
+    };
+
+    const onMove = (moveEvent: PointerEvent) => {
+      if (!this.isDraggingPlayhead) return;
+      lastClientX = moveEvent.clientX;
+      updatePlayheadFromMouse();
+    };
+
     const onUp = () => {
       this.isDraggingPlayhead = false;
+      if (edgeScrollAnimationId) {
+        cancelAnimationFrame(edgeScrollAnimationId);
+      }
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
     };
+
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
+    
+    // Start edge scroll detection loop
+    edgeScrollAnimationId = requestAnimationFrame(edgeScrollLoop);
   }
 
-  @eventOptions({ passive: true })
-  private syncHierarchyScroll(): void {
-    if (this.hierarchyScrollRef.value && this.tracksScrollRef.value) {
-      this.tracksScrollRef.value.scrollTop =
-        this.hierarchyScrollRef.value.scrollTop;
-    }
-  }
-
-  @eventOptions({ passive: true })
-  private syncTracksScroll(): void {
-    if (this.hierarchyScrollRef.value && this.tracksScrollRef.value) {
-      this.hierarchyScrollRef.value.scrollTop =
-        this.tracksScrollRef.value.scrollTop;
-    }
-  }
 
   // ============================================================================
   // RENDERING - CONTROLS
@@ -1016,109 +1149,55 @@ export class EFTimeline extends TWMixin(LitElement) {
   // RENDERING - TRACKS
   // ============================================================================
 
-  private getElementType(element: Element): string {
-    if (element instanceof EFVideo) return "video";
-    if (element instanceof EFAudio) return "audio";
-    if (element instanceof EFImage) return "image";
-    if (element instanceof EFText) return "text";
-    if (element instanceof EFTimegroup) return "timegroup";
-    return "unknown";
+  private handleTrimChange(e: CustomEvent<TrimChangeDetail>): void {
+    const { elementId, type, newValueMs } = e.detail;
+    const element = this.targetElement?.querySelector(`#${elementId}`) as TemporalMixinInterface & HTMLElement;
+    if (element) {
+      if (type === "start") {
+        element.trimStartMs = newValueMs;
+      } else {
+        element.trimEndMs = newValueMs;
+      }
+    }
   }
 
-  private getElementLabel(element: Element): string {
-    const id = element.id || "";
-    const type = this.getElementType(element);
-    return id || type;
+  /**
+   * Handle row hover events - update hoveredElement state.
+   */
+  private handleRowHover(e: CustomEvent<{ element: Element | null }>): void {
+    this.hoveredElement = e.detail.element;
   }
 
-  private renderTrackItem(
-    element: TemporalMixinInterface & Element,
-    depth: number = 0,
-  ): TemplateResult | typeof nothing {
-    if (!isEFTemporal(element)) return nothing;
-
-    const type = this.getElementType(element);
-    const label = this.getElementLabel(element);
-    const leftPx = timeToPx(element.startTimeWithinParentMs, this.pixelsPerMs);
-    const widthPx = timeToPx(element.durationMs, this.pixelsPerMs);
-    const isFocused = this.focusedElement === element;
-
-    // Render children for timegroups
-    const children =
-      element instanceof EFTimegroup
-        ? Array.from(element.children).filter(isEFTemporal)
-        : [];
-
-    return html`
-      <div class="track-row" style="padding-left: ${depth * 16}px">
-        <div class="track-label">${label}</div>
-      </div>
-      ${children.map((child) => this.renderTrackItem(child as TemporalMixinInterface & Element, depth + 1))}
-    `;
-  }
-
-  private renderTrackBar(
-    element: TemporalMixinInterface & Element,
-    depth: number = 0,
-  ): TemplateResult | typeof nothing {
-    if (!isEFTemporal(element)) return nothing;
-
-    const type = this.getElementType(element);
-    const leftPx = timeToPx(element.startTimeWithinParentMs, this.pixelsPerMs);
-    const widthPx = timeToPx(element.durationMs, this.pixelsPerMs);
-    const isFocused = this.focusedElement === element;
-    const topPx = depth * 28 + 3; // 28px per row + 3px padding
-
-    // For videos, render thumbnail strip inside
-    const content =
-      element instanceof EFVideo
-        ? html`<ef-thumbnail-strip target="${(element as HTMLElement).id}" use-intrinsic-duration style="width: 100%; height: 100%;"></ef-thumbnail-strip>`
-        : nothing;
-
-    // Render children for timegroups
-    const children =
-      element instanceof EFTimegroup
-        ? Array.from(element.children).filter(isEFTemporal)
-        : [];
-
-    return html`
-      <div 
-        class="track-bar ${type}"
-        data-focused="${isFocused}"
-        style=${styleMap({
-          left: `${leftPx}px`,
-          width: `${widthPx}px`,
-          top: `${topPx}px`,
-        })}
-        @mouseenter=${() => {
-          this.focusedElement = element as HTMLElement;
-          this._focusContextValue = { focusedElement: element as HTMLElement };
-        }}
-        @mouseleave=${() => {
-          this.focusedElement = null;
-          this._focusContextValue = { focusedElement: null };
-        }}
-      >
-        ${content}
-      </div>
-      ${children.map((child, i) => this.renderTrackBar(child as TemporalMixinInterface & Element, depth + 1 + i))}
-    `;
-  }
-
-  private countTracks(element: TemporalMixinInterface & Element): number {
-    if (!isEFTemporal(element)) return 0;
-    const children =
-      element instanceof EFTimegroup
-        ? Array.from(element.children).filter(isEFTemporal)
-        : [];
-    return (
-      1 +
-      children.reduce(
-        (sum, child) =>
-          sum + this.countTracks(child as TemporalMixinInterface & Element),
-        0,
-      )
+  /**
+   * Render timeline rows using flattened hierarchy.
+   * Each row is a unified component with both label and track.
+   */
+  private renderRows(target: TemporalMixinInterface & Element): TemplateResult {
+    const rows = flattenHierarchy(target).filter((row) =>
+      shouldRenderElement(row.element, this.hideSelectors, this.showSelectors),
     );
+
+    return html`
+      <div
+        class="tracks-rows"
+        @track-trim-change=${this.handleTrimChange}
+        @row-hover=${this.handleRowHover}
+      >
+        ${rows.map(
+          (row) => html`
+            <ef-timeline-row
+              .element=${row.element}
+              depth=${row.depth}
+              pixels-per-ms=${this.pixelsPerMs}
+              ?enable-trim=${this.enableTrim}
+              .hideSelectors=${this.hideSelectors}
+              .showSelectors=${this.showSelectors}
+              .hoveredElement=${this.hoveredElement}
+            ></ef-timeline-row>
+          `,
+        )}
+      </div>
+    `;
   }
 
   // ============================================================================
@@ -1138,11 +1217,6 @@ export class EFTimeline extends TWMixin(LitElement) {
     }
 
     const playheadPx = timeToPx(this.currentTimeMs, this.pixelsPerMs);
-    const trackCount = this.countTracks(
-      target as TemporalMixinInterface & Element,
-    );
-    const tracksHeightPx = trackCount * 28;
-    const zoomScale = pixelsPerMsToZoom(this.pixelsPerMs);
 
     return html`
       <div class="timeline-container" tabindex="0" ${ref(this.containerRef)}>
@@ -1168,42 +1242,28 @@ export class EFTimeline extends TWMixin(LitElement) {
               : nothing
           }
           
-          <!-- Tracks Viewport -->
+          <!-- Tracks Viewport - Single scrollable container -->
           <div class="tracks-viewport">
-            <!-- Hierarchy Panel -->
-            ${
-              this.showHierarchy
-                ? html`
-              <div class="hierarchy-panel" ${ref(this.hierarchyScrollRef)} @scroll=${this.syncHierarchyScroll}>
-                ${this.renderTrackItem(target as TemporalMixinInterface & Element)}
-              </div>
-            `
-                : nothing
-            }
-            
-            <!-- Tracks Area -->
             <div 
               class="tracks-scroll" 
               ${ref(this.tracksScrollRef)} 
-              @scroll=${this.syncTracksScroll}
               @pointerdown=${this.handleTracksPointerDown}
             >
-              <div class="tracks-content" style="width: ${this.contentWidthPx}px; height: ${tracksHeightPx}px;">
-                ${this.renderTrackBar(target as TemporalMixinInterface & Element)}
-                
-                <!-- Frame Highlight (shows current frame has duration) -->
+              <div class="tracks-content" style="min-width: ${this.contentWidthPx + (this.showHierarchy ? EFTimeline.HIERARCHY_WIDTH : 0)}px;">
+                <!-- Unified rows with sticky labels -->
+                ${this.renderRows(target as TemporalMixinInterface & Element)}
+              </div>
+            </div>
+            
+            <!-- Playhead clip container - stays fixed, clips at label boundary -->
+            <div class="playhead-clip" style="left: ${this.showHierarchy ? EFTimeline.HIERARCHY_WIDTH : 0}px;">
+              <div class="playhead-layer" style="left: ${-this.viewportScrollLeft}px;">
                 ${this.renderFrameHighlight()}
-                
-                <!-- Playhead -->
-                ${
-                  this.showPlayhead
-                    ? html`
+                ${this.showPlayhead ? html`
                   <div class="playhead" style="left: ${playheadPx}px;">
                     <div class="playhead-handle"></div>
                   </div>
-                `
-                    : nothing
-                }
+                ` : nothing}
               </div>
             </div>
           </div>

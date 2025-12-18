@@ -44,6 +44,21 @@ export function pxToTime(px: number, pixelsPerMs: number): number {
 export const DEFAULT_PIXELS_PER_MS = 0.1;
 
 /**
+ * Timeline row height in pixels - must match --timeline-row-height CSS variable
+ */
+export const TIMELINE_ROW_HEIGHT = 28;
+
+/**
+ * Timeline track content height in pixels - must match --timeline-track-height CSS variable
+ */
+export const TIMELINE_TRACK_HEIGHT = 22;
+
+/**
+ * Vertical padding within a row (row height - track height) / 2
+ */
+export const TIMELINE_ROW_PADDING = (TIMELINE_ROW_HEIGHT - TIMELINE_TRACK_HEIGHT) / 2;
+
+/**
  * Calculate pixels per ms from a zoom scale
  */
 export function zoomToPixelsPerMs(zoomScale: number): number {
