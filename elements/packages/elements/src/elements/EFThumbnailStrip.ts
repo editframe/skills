@@ -229,19 +229,22 @@ export class EFThumbnailStrip extends LitElement {
         ],
       });
 
-      // Listen for media engine ready
-      if (value.mediaEngineTask) {
-        value.mediaEngineTask.taskComplete
-          .then(() => {
-            // When media engine is ready, retrigger thumbnails if we have width
-            if (this._stripWidth > 0) {
-              this.thumbnailLayoutTask.run();
-            }
-          })
-          .catch(() => {
-            // Ignore media engine errors
-          });
-      }
+      // Listen for media engine ready - wait for element to be ready first
+      // because mediaEngineTask may not exist yet during initial render
+      value.updateComplete.then(() => {
+        if (value.mediaEngineTask) {
+          value.mediaEngineTask.taskComplete
+            .then(() => {
+              // When media engine is ready, retrigger thumbnails if we have width
+              if (this._stripWidth > 0) {
+                this.thumbnailLayoutTask.run();
+              }
+            })
+            .catch(() => {
+              // Ignore media engine errors
+            });
+        }
+      });
     }
 
     this.requestUpdate("targetElement", oldValue);
