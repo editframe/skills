@@ -442,8 +442,12 @@ export class EFTimeline extends TWMixin(LitElement) {
   @state()
   private focusedElement: HTMLElement | null = null;
 
-  @state()
-  private hoveredElement: Element | null = null;
+  /**
+   * The currently hovered element in the timeline.
+   * Can be set externally for cross-view hover sync.
+   */
+  @property({ type: Object, attribute: false })
+  hoveredElement: Element | null = null;
 
   @state()
   private viewportScrollLeft = 0;
@@ -1163,10 +1167,29 @@ export class EFTimeline extends TWMixin(LitElement) {
   }
 
   /**
-   * Handle row hover events - update hoveredElement state.
+   * Handle row hover events - update hoveredElement state and sync with focusContext.
    */
   private handleRowHover(e: CustomEvent<{ element: Element | null }>): void {
     this.hoveredElement = e.detail.element;
+    // Sync with focusContext for cross-view hover highlighting
+    if (this._focusContextValue) {
+      this._focusContextValue = {
+        ...this._focusContextValue,
+        focusedElement: e.detail.element as HTMLElement | null,
+      };
+    }
+  }
+
+  /**
+   * Handle row selection events - update selection context.
+   */
+  private handleRowSelect(
+    e: CustomEvent<{ elementId: string; element: Element }>,
+  ): void {
+    const selectionCtx = this.getCanvasSelectionContext();
+    if (selectionCtx && e.detail.elementId) {
+      selectionCtx.select(e.detail.elementId);
+    }
   }
 
   /**
@@ -1178,11 +1201,15 @@ export class EFTimeline extends TWMixin(LitElement) {
       shouldRenderElement(row.element, this.hideSelectors, this.showSelectors),
     );
 
+    const selectionCtx = this.getCanvasSelectionContext();
+    const selectedIds = selectionCtx?.selectedIds ?? new Set<string>();
+
     return html`
       <div
         class="tracks-rows"
         @track-trim-change=${this.handleTrimChange}
         @row-hover=${this.handleRowHover}
+        @row-select=${this.handleRowSelect}
       >
         ${repeat(
           rows,
@@ -1197,6 +1224,7 @@ export class EFTimeline extends TWMixin(LitElement) {
               .hideSelectors=${this.hideSelectors}
               .showSelectors=${this.showSelectors}
               .hoveredElement=${this.hoveredElement}
+              .selectedIds=${selectedIds}
             ></ef-timeline-row>
           `,
         )}
