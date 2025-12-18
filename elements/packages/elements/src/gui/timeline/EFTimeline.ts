@@ -14,6 +14,7 @@ import {
   state,
 } from "lit/decorators.js";
 import { createRef, ref, type Ref } from "lit/directives/ref.js";
+import { repeat } from "lit/directives/repeat.js";
 import { styleMap } from "lit/directives/style-map.js";
 
 import { EFAudio } from "../../elements/EFAudio.js";
@@ -1183,7 +1184,10 @@ export class EFTimeline extends TWMixin(LitElement) {
         @track-trim-change=${this.handleTrimChange}
         @row-hover=${this.handleRowHover}
       >
-        ${rows.map(
+        ${repeat(
+          rows,
+          // Key function: use element ID or element itself for stable identity
+          (row) => (row.element as HTMLElement).id || row.element,
           (row) => html`
             <ef-timeline-row
               .element=${row.element}
