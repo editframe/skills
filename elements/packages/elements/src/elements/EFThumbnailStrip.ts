@@ -49,8 +49,8 @@ function getThumbnailCacheKey(videoSrc: string, timeMs: number): string {
 }
 
 // Constants for consistent thumbnail layout
-const THUMBNAIL_GAP = 1; // 1px gap between thumbnails
-const STRIP_BORDER_PADDING = 4; // Account for border/padding in available height
+const DEFAULT_GAP = 4; // Default gap between thumbnails
+const DEFAULT_ASPECT_RATIO = 16 / 9; // Default video aspect ratio for width calculation
 
 interface ThumbnailSegment {
   segmentId: number;
@@ -62,6 +62,8 @@ interface ThumbnailSegment {
 interface ThumbnailLayout {
   count: number;
   segments: readonly ThumbnailSegment[];
+  effectiveThumbnailWidth: number; // Actual width used for each thumbnail
+  pitch: number; // Distance from one thumbnail's left edge to the next (for edge-to-edge fill)
 }
 
 // Use the imported MediaEngine type and mediabunny types
@@ -80,23 +82,35 @@ interface ThumbnailRenderInfo {
 /**
  * Calculate optimal thumbnail count and timestamps for the strip
  * Groups thumbnails by scrub segment ID for efficient caching
+ * 
+ * Positioning model:
+ * - First thumbnail's LEFT edge at x=0 (time=startTime)
+ * - Last thumbnail's RIGHT edge at x=stripWidth (time=endTime)
+ * - Thumbnails fill edge-to-edge with calculated pitch
  */
 function calculateThumbnailLayout(
   stripWidth: number,
   thumbnailWidth: number,
+  gap: number,
   startTimeMs: number,
   endTimeMs: number,
   scrubSegmentDurationMs?: number,
 ): ThumbnailLayout {
   // Must have positive width and valid time range
   if (stripWidth <= 0 || thumbnailWidth <= 0 || endTimeMs <= startTimeMs) {
-    return { count: 0, segments: [] };
+    return { count: 0, segments: [], effectiveThumbnailWidth: 0, pitch: 0 };
   }
 
-  // Simple calculation: how many full thumbnails fit, plus one more to fill the width
-  const thumbnailPitch = thumbnailWidth + THUMBNAIL_GAP;
-  const baseFitCount = Math.floor(stripWidth / thumbnailPitch);
-  const count = Math.max(1, baseFitCount + 1); // Always one extra to fill width
+  // Calculate how many thumbnails fit with the desired minimum gap
+  // N thumbnails need: N * thumbnailWidth + (N-1) * gap <= stripWidth
+  // Solving: N <= (stripWidth + gap) / (thumbnailWidth + gap)
+  const count = Math.max(1, Math.floor((stripWidth + gap) / (thumbnailWidth + gap)));
+  
+  // Calculate pitch so thumbnails fill edge-to-edge:
+  // First at x=0, last right edge at x=stripWidth
+  // So last left edge at x=stripWidth-thumbnailWidth
+  // pitch = (stripWidth - thumbnailWidth) / (count - 1) for count > 1
+  const pitch = count > 1 ? (stripWidth - thumbnailWidth) / (count - 1) : 0;
 
   // Generate timestamps evenly distributed across time range
   const timestamps: number[] = [];
@@ -127,7 +141,7 @@ function calculateThumbnailLayout(
     .sort(([a], [b]) => a - b)
     .map(([segmentId, thumbnails]) => ({ segmentId, thumbnails }));
 
-  return { count, segments };
+  return { count, segments, effectiveThumbnailWidth: thumbnailWidth, pitch };
 }
 
 @customElement("ef-thumbnail-strip")
@@ -138,7 +152,7 @@ export class EFThumbnailStrip extends LitElement {
         display: block;
         position: relative;
         width: 100%;
-        height: 48px; /* Default filmstrip height */
+        height: 24px; /* Default filmstrip height */
         background: #2a2a2a;
         border: 2px solid #333;
         border-radius: 6px;
@@ -273,11 +287,17 @@ export class EFThumbnailStrip extends LitElement {
   target = "";
 
   /**
-   * Desired thumbnail width in pixels (height is determined by aspect ratio)
-   * Number of thumbnails is derived from this and available strip width
+   * Thumbnail width in pixels. If not set (0), width is auto-calculated
+   * from strip height using the video's aspect ratio (or 16:9 default).
    */
   @property({ type: Number, attribute: "thumbnail-width" })
-  thumbnailWidth = 80;
+  thumbnailWidth = 0; // 0 = auto (calculate from height)
+
+  /**
+   * Gap between thumbnails in pixels.
+   */
+  @property({ type: Number, attribute: "gap" })
+  gap = DEFAULT_GAP;
 
   /**
    * Custom start time in milliseconds relative to trimmed timeline (0 = start of trimmed portion)
@@ -314,7 +334,7 @@ export class EFThumbnailStrip extends LitElement {
   useIntrinsicDuration = false;
 
   private _stripWidth = 0;
-  private _stripHeight = 48; // Default height, updated by ResizeObserver
+  private _stripHeight = 24; // Default height, updated by ResizeObserver
   private _pendingStripWidth: number | undefined;
   private _thumbnailLayoutTask: Promise<ThumbnailRenderInfo[]> | undefined;
   private _mediaEngineReady = false;
@@ -387,6 +407,7 @@ export class EFThumbnailStrip extends LitElement {
     // IMPLEMENTATION GUIDELINES: Responsive debouncing for thumbnail property changes using EFTimegroup pattern
     if (
       changedProperties.has("thumbnailWidth") ||
+      changedProperties.has("gap") ||
       changedProperties.has("startTimeMs") ||
       changedProperties.has("endTimeMs") ||
       changedProperties.has("useIntrinsicDuration")
@@ -435,13 +456,17 @@ export class EFThumbnailStrip extends LitElement {
     autoRun: false,
     task: async ([
       stripWidth,
+      stripHeight,
       thumbnailWidth,
+      gap,
       targetElement,
       startTimeMs,
       endTimeMs,
       useIntrinsicDuration,
       mediaEngine,
     ]: readonly [
+      number,
+      number,
       number,
       number,
       EFVideo | null,
@@ -451,8 +476,8 @@ export class EFThumbnailStrip extends LitElement {
       ImportedMediaEngine | null | undefined,
     ]) => {
       // Need valid dimensions and target element
-      if (stripWidth <= 0 || !targetElement) {
-        return { count: 0, segments: [] };
+      if (stripWidth <= 0 || stripHeight <= 0 || !targetElement) {
+        return { count: 0, segments: [], effectiveThumbnailWidth: 0, pitch: 0 };
       }
 
       // IMPLEMENTATION GUIDELINES: Wait for media engine to be ready before generating thumbnails
@@ -463,12 +488,14 @@ export class EFThumbnailStrip extends LitElement {
           // Get the media engine after it's ready
           const readyMediaEngine = targetElement.mediaEngineTask.value;
           if (!readyMediaEngine) {
-            return { count: 0, segments: [] };
+            return { count: 0, segments: [], effectiveThumbnailWidth: 0, pitch: 0 };
           }
           // Continue with the ready media engine
           return this.calculateLayoutWithMediaEngine(
             stripWidth,
+            stripHeight,
             thumbnailWidth,
+            gap,
             targetElement,
             startTimeMs,
             endTimeMs,
@@ -476,13 +503,15 @@ export class EFThumbnailStrip extends LitElement {
             readyMediaEngine,
           );
         }
-        return { count: 0, segments: [] };
+        return { count: 0, segments: [], effectiveThumbnailWidth: 0, pitch: 0 };
       }
 
       // Media engine is ready, proceed with layout calculation
       return this.calculateLayoutWithMediaEngine(
         stripWidth,
+        stripHeight,
         thumbnailWidth,
+        gap,
         targetElement,
         startTimeMs,
         endTimeMs,
@@ -493,7 +522,9 @@ export class EFThumbnailStrip extends LitElement {
     args: () =>
       [
         this.stripWidth,
+        this._stripHeight,
         this.thumbnailWidth,
+        this.gap,
         this.targetElement,
         this.startTimeMs,
         this.endTimeMs,
@@ -507,13 +538,27 @@ export class EFThumbnailStrip extends LitElement {
    */
   private calculateLayoutWithMediaEngine(
     stripWidth: number,
+    stripHeight: number,
     thumbnailWidth: number,
+    gap: number,
     targetElement: EFVideo,
     startTimeMs: number | undefined,
     endTimeMs: number | undefined,
     useIntrinsicDuration: boolean,
     mediaEngine: ImportedMediaEngine,
   ) {
+    // Calculate effective thumbnail width
+    // If thumbnailWidth is 0 (auto), calculate from height using video aspect ratio
+    let effectiveWidth = thumbnailWidth;
+    if (effectiveWidth <= 0) {
+      // Try to get video dimensions from media engine
+      const videoWidth = (targetElement as any).videoWidth || 1920;
+      const videoHeight = (targetElement as any).videoHeight || 1080;
+      const aspectRatio = videoWidth / videoHeight || DEFAULT_ASPECT_RATIO;
+      // Calculate width from height to maintain aspect ratio
+      effectiveWidth = Math.round(stripHeight * aspectRatio);
+    }
+
     // Determine time range for thumbnails with correct timeline coordinate handling
     if (useIntrinsicDuration) {
       // INTRINSIC MODE: start-time-ms/end-time-ms are relative to source timeline (0 = source start)
@@ -523,7 +568,8 @@ export class EFThumbnailStrip extends LitElement {
 
       return this.generateLayoutFromTimeRange(
         stripWidth,
-        thumbnailWidth,
+        effectiveWidth,
+        gap,
         effectiveStartMs,
         effectiveEndMs,
         mediaEngine,
@@ -546,7 +592,8 @@ export class EFThumbnailStrip extends LitElement {
 
     return this.generateLayoutFromTimeRange(
       stripWidth,
-      thumbnailWidth,
+      effectiveWidth,
+      gap,
       effectiveStartMs,
       effectiveEndMs,
       mediaEngine,
@@ -559,6 +606,7 @@ export class EFThumbnailStrip extends LitElement {
   private generateLayoutFromTimeRange(
     stripWidth: number,
     thumbnailWidth: number,
+    gap: number,
     effectiveStartMs: number,
     effectiveEndMs: number,
     mediaEngine: ImportedMediaEngine,
@@ -573,6 +621,7 @@ export class EFThumbnailStrip extends LitElement {
     const layout = calculateThumbnailLayout(
       stripWidth,
       thumbnailWidth,
+      gap,
       effectiveStartMs,
       effectiveEndMs,
       scrubSegmentDurationMs,
@@ -617,7 +666,9 @@ export class EFThumbnailStrip extends LitElement {
     }
 
     const videoSrc = targetElement.src;
-    const availableHeight = this._stripHeight - STRIP_BORDER_PADDING; // Account for border/padding
+    const thumbnailHeight = this._stripHeight;
+    const effectiveWidth = layout.effectiveThumbnailWidth;
+    
 
     const allThumbnails: ThumbnailRenderInfo[] = [];
     let thumbnailIndex = 0; // Track ordinal position
@@ -676,15 +727,15 @@ export class EFThumbnailStrip extends LitElement {
           }
         }
 
-        // Fixed integer positioning - no floating point
-        const x = thumbnailIndex * (thumbnailWidth + THUMBNAIL_GAP);
+        // Position thumbnail using pitch from layout (ensures edge-to-edge fill)
+        const x = Math.round(thumbnailIndex * layout.pitch);
 
         allThumbnails.push({
           timeMs: thumbnail.timeMs,
           segmentId: segment.segmentId,
           x,
-          width: thumbnailWidth, // Always exactly 80px
-          height: availableHeight, // Always exactly 44px
+          width: effectiveWidth,
+          height: thumbnailHeight,
           status,
           imageData,
           nearHitKey,
@@ -783,13 +834,13 @@ export class EFThumbnailStrip extends LitElement {
     ctx.fillStyle = "#2a2a2a";
     ctx.fillRect(0, 0, this._stripWidth, this._stripHeight);
 
-    // Draw each thumbnail with proper aspect ratio and centering
+    // Draw each thumbnail using "cover" mode (crop to fill, no gaps)
     for (let i = 0; i < thumbnails.length; i++) {
       const thumb = thumbnails[i];
       if (!thumb) continue;
       
       if (thumb.imageData) {
-        // Draw cached thumbnail with aspect ratio preservation
+        // Draw cached thumbnail with cover mode (crop to fill)
         const tempCanvas = document.createElement("canvas");
         tempCanvas.width = thumb.imageData.width;
         tempCanvas.height = thumb.imageData.height;
@@ -799,33 +850,31 @@ export class EFThumbnailStrip extends LitElement {
         }
         tempCtx.putImageData(thumb.imageData, 0, 0);
 
-        // Preserve aspect ratio within fixed container bounds
+        // Cover mode: crop source to fill destination without gaps
         const sourceAspect = thumb.imageData.width / thumb.imageData.height;
-        const containerAspect = thumb.width / thumb.height;
-
-        // Calculate aspect-ratio-preserving dimensions with integer coordinates
-        let drawWidth: number;
-        let drawHeight: number;
-        let drawX: number;
-        let drawY: number;
-
-        if (sourceAspect > containerAspect) {
-          // Source is wider - fit to container width, letterbox top/bottom
-          drawWidth = thumb.width;
-          drawHeight = Math.round(thumb.width / sourceAspect);
-          drawX = thumb.x;
-          drawY = Math.round((this._stripHeight - drawHeight) / 2);
+        const destAspect = thumb.width / this._stripHeight;
+        
+        let sourceX = 0;
+        let sourceY = 0;
+        let sourceW = thumb.imageData.width;
+        let sourceH = thumb.imageData.height;
+        
+        if (sourceAspect > destAspect) {
+          // Source is wider - crop left/right
+          sourceW = thumb.imageData.height * destAspect;
+          sourceX = (thumb.imageData.width - sourceW) / 2;
         } else {
-          // Source is taller - fit to container height, pillarbox left/right
-          drawWidth = Math.round(thumb.height * sourceAspect);
-          drawHeight = thumb.height;
-          drawX = thumb.x + Math.round((thumb.width - drawWidth) / 2);
-          drawY = Math.round((this._stripHeight - drawHeight) / 2);
+          // Source is taller - crop top/bottom
+          sourceH = thumb.imageData.width / destAspect;
+          sourceY = (thumb.imageData.height - sourceH) / 2;
         }
-
-
-        // Draw with proper aspect ratio preservation
-        ctx.drawImage(tempCanvas, drawX, drawY, drawWidth, drawHeight);
+        
+        // Draw cropped source to fill destination exactly
+        ctx.drawImage(
+          tempCanvas,
+          sourceX, sourceY, sourceW, sourceH,  // Source rectangle (cropped)
+          thumb.x, 0, thumb.width, this._stripHeight  // Destination rectangle (full slot)
+        );
 
         // Add subtle indicator for near hits
         if (thumb.status === "near-hit") {
@@ -833,18 +882,15 @@ export class EFThumbnailStrip extends LitElement {
           ctx.fillRect(thumb.x, 0, thumb.width, 2);
         }
       } else {
-        // Draw placeholder - center vertically in strip with integer positioning
-        const placeholderY = Math.round((this._stripHeight - thumb.height) / 2);
-        
-        
+        // Draw placeholder filling the slot
         ctx.fillStyle = "#404040";
-        ctx.fillRect(thumb.x, placeholderY, thumb.width, thumb.height);
+        ctx.fillRect(thumb.x, 0, thumb.width, this._stripHeight);
 
-        // Add subtle loading indicator with integer positioning
+        // Add subtle loading indicator
         ctx.strokeStyle = "#666";
         ctx.lineWidth = 1;
         ctx.setLineDash([2, 2]);
-        ctx.strokeRect(thumb.x, placeholderY, thumb.width, thumb.height);
+        ctx.strokeRect(thumb.x, 0, thumb.width, this._stripHeight);
         ctx.setLineDash([]);
       }
     }

@@ -203,7 +203,7 @@ export class TrackItem extends TWMixin(LitElement) {
       >
         <div
           ?data-focused=${this.isFocused}
-          class="trim-container border-outset relative mb-[1px] block text-nowrap border text-sm"
+          class="trim-container relative mb-0 block text-nowrap border text-sm"
           style=${styleMap({
             ...this.trimPortionStyles,
             height: "var(--timeline-track-height, 22px)",

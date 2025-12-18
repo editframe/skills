@@ -1,5 +1,5 @@
 import { html, render } from "lit";
-import { beforeEach, describe, expect, test } from "vitest";
+import { beforeEach, describe } from "vitest";
 import { test as baseTest } from "../../test/useMSW.js";
 import "./EFCanvas.js";
 import "./overlays/SelectionOverlay.js";
@@ -213,5 +213,184 @@ describe("EFCanvas", () => {
     const data = canvasEl.getElementData("element-3");
     expect(data).toBeTruthy();
     expect(data!.id).toBe("element-3");
+  });
+
+  describe("selection state attributes", () => {
+    test("adds data-selected attribute to selected element", async ({
+      canvas,
+      expect,
+    }) => {
+      const canvasEl = canvas as any;
+      const element1 = canvas.querySelector(
+        '[data-element-id="element-1"]',
+      ) as HTMLElement;
+
+      canvasEl.selectionContext.select("element-1");
+      await canvasEl.updateComplete;
+
+      expect(element1.getAttribute("data-selected")).toBe("true");
+      expect(element1.hasAttribute("data-selected")).toBe(true);
+    });
+
+    test("removes data-selected attribute when element is deselected", async ({
+      canvas,
+      expect,
+    }) => {
+      const canvasEl = canvas as any;
+      const element1 = canvas.querySelector(
+        '[data-element-id="element-1"]',
+      ) as HTMLElement;
+
+      canvasEl.selectionContext.select("element-1");
+      await canvasEl.updateComplete;
+      expect(element1.getAttribute("data-selected")).toBe("true");
+
+      canvasEl.selectionContext.clear();
+      await canvasEl.updateComplete;
+      expect(element1.hasAttribute("data-selected")).toBe(false);
+    });
+
+    test("updates data-selected attributes for multiple selections", async ({
+      canvas,
+      expect,
+    }) => {
+      const canvasEl = canvas as any;
+      const element1 = canvas.querySelector(
+        '[data-element-id="element-1"]',
+      ) as HTMLElement;
+      const element2 = canvas.querySelector(
+        '[data-element-id="element-2"]',
+      ) as HTMLElement;
+
+      canvasEl.selectionContext.selectMultiple(["element-1", "element-2"]);
+      await canvasEl.updateComplete;
+
+      expect(element1.getAttribute("data-selected")).toBe("true");
+      expect(element2.getAttribute("data-selected")).toBe("true");
+    });
+
+    test("removes data-selected when element is unregistered", async ({
+      canvas,
+      expect,
+    }) => {
+      const canvasEl = canvas as any;
+      const element1 = canvas.querySelector(
+        '[data-element-id="element-1"]',
+      ) as HTMLElement;
+
+      canvasEl.selectionContext.select("element-1");
+      await canvasEl.updateComplete;
+      expect(element1.getAttribute("data-selected")).toBe("true");
+
+      canvasEl.unregisterElement("element-1");
+      await canvasEl.updateComplete;
+      expect(element1.hasAttribute("data-selected")).toBe(false);
+    });
+  });
+
+  describe("active root temporal", () => {
+    test("returns null when no element is selected", async ({ canvas, expect }) => {
+      const canvasEl = canvas as any;
+      expect(canvasEl.activeRootTemporal).toBe(null);
+    });
+
+    test("returns root temporal for selected element", async ({
+      canvas,
+      expect,
+    }) => {
+      const canvasEl = canvas as any;
+      await import("../../elements/EFTimegroup.js");
+      const timegroup = document.createElement("ef-timegroup");
+      const timegroupId = "test-timegroup";
+      timegroup.id = timegroupId;
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "5s");
+      canvas.appendChild(timegroup);
+      await timegroup.updateComplete;
+      await canvasEl.updateComplete;
+
+      const element1 = canvas.querySelector(
+        '[data-element-id="element-1"]',
+      ) as HTMLElement;
+      timegroup.appendChild(element1);
+
+      canvasEl.selectionContext.select("element-1");
+      await canvasEl.updateComplete;
+
+      expect(canvasEl.activeRootTemporal).toBe(timegroup);
+    });
+
+    test("dispatches activeroottemporalchange event when selection changes", async ({
+      canvas,
+      expect,
+    }) => {
+      const canvasEl = canvas as any;
+      await import("../../elements/EFTimegroup.js");
+      const timegroup = document.createElement("ef-timegroup");
+      const timegroupId = "test-timegroup";
+      timegroup.id = timegroupId;
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "5s");
+      canvas.appendChild(timegroup);
+      await timegroup.updateComplete;
+      await canvasEl.updateComplete;
+
+      const element1 = canvas.querySelector(
+        '[data-element-id="element-1"]',
+      ) as HTMLElement;
+      timegroup.appendChild(element1);
+
+      let eventFired = false;
+      let eventDetail: any = null;
+      canvasEl.addEventListener("activeroottemporalchange", (e: CustomEvent) => {
+        eventFired = true;
+        eventDetail = e.detail;
+      });
+
+      canvasEl.selectionContext.select("element-1");
+      await canvasEl.updateComplete;
+
+      expect(eventFired).toBe(true);
+      expect(eventDetail.activeRootTemporal).toBe(timegroup);
+    });
+
+    test("dispatches activeroottemporalchange event when selection clears", async ({
+      canvas,
+      expect,
+    }) => {
+      const canvasEl = canvas as any;
+      await import("../../elements/EFTimegroup.js");
+      const timegroup = document.createElement("ef-timegroup");
+      const timegroupId = "test-timegroup";
+      timegroup.id = timegroupId;
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "5s");
+      canvas.appendChild(timegroup);
+      await timegroup.updateComplete;
+      await canvasEl.updateComplete;
+
+      const element1 = canvas.querySelector(
+        '[data-element-id="element-1"]',
+      ) as HTMLElement;
+      timegroup.appendChild(element1);
+
+      canvasEl.selectionContext.select("element-1");
+      await canvasEl.updateComplete;
+      expect(canvasEl.activeRootTemporal).toBe(timegroup);
+
+      let eventFired = false;
+      let eventDetail: any = null;
+      canvasEl.addEventListener("activeroottemporalchange", (e: CustomEvent) => {
+        eventFired = true;
+        eventDetail = e.detail;
+      });
+
+      canvasEl.selectionContext.clear();
+      await canvasEl.updateComplete;
+
+      expect(eventFired).toBe(true);
+      expect(eventDetail.activeRootTemporal).toBe(null);
+      expect(canvasEl.activeRootTemporal).toBe(null);
+    });
   });
 });

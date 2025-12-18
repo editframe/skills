@@ -1241,4 +1241,100 @@ describe("Dynamic content updates", () => {
       document.body.removeChild(timegroup);
     }, 1000);
   });
+
+  describe("auto-init", () => {
+    test("seeks to frame 0 for root timegroup when auto-init is enabled", async () => {
+      setEFInteractive(true);
+      const timegroup = renderTimegroup(
+        html`<ef-timegroup mode="fixed" duration="10s" auto-init></ef-timegroup>`,
+      );
+      document.body.appendChild(timegroup);
+      await timegroup.updateComplete;
+      await timegroup.waitForMediaDurations();
+
+      assert.equal(
+        timegroup.currentTimeMs,
+        0,
+        "Root timegroup with auto-init should seek to frame 0",
+      );
+      timegroup.remove();
+    });
+
+    test("does not seek when auto-init is disabled", async () => {
+      setEFInteractive(true);
+      const timegroup = renderTimegroup(
+        html`<ef-timegroup mode="fixed" duration="10s"></ef-timegroup>`,
+      );
+      document.body.appendChild(timegroup);
+      await timegroup.updateComplete;
+      await timegroup.waitForMediaDurations();
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      assert.equal(
+        timegroup.currentTimeMs,
+        0,
+        "Timegroup without auto-init may still start at 0, but should not auto-seek",
+      );
+      timegroup.remove();
+    });
+
+    test("does not auto-init nested timegroups", async () => {
+      setEFInteractive(true);
+      const parentTimegroup = renderTimegroup(
+        html`
+          <ef-timegroup mode="fixed" duration="10s" auto-init>
+            <ef-timegroup mode="fixed" duration="5s" auto-init></ef-timegroup>
+          </ef-timegroup>
+        `,
+      );
+      document.body.appendChild(parentTimegroup);
+      await parentTimegroup.updateComplete;
+      await parentTimegroup.waitForMediaDurations();
+
+      const nestedTimegroup = parentTimegroup.querySelector(
+        "ef-timegroup",
+      ) as EFTimegroup;
+      await nestedTimegroup.updateComplete;
+      await nestedTimegroup.waitForMediaDurations();
+
+      assert.equal(
+        parentTimegroup.currentTimeMs,
+        0,
+        "Root timegroup with auto-init should seek to frame 0",
+      );
+
+      assert.notEqual(
+        nestedTimegroup.isRootTimegroup,
+        true,
+        "Nested timegroup should not be root",
+      );
+      parentTimegroup.remove();
+    });
+
+    test("does not auto-init when time is loaded from localStorage", async () => {
+      setEFInteractive(true);
+      const timegroupId = "auto-init-storage-test";
+      const storageKey = `ef-timegroup-${timegroupId}`;
+      localStorage.setItem(storageKey, "5");
+
+      const timegroup = renderTimegroup(
+        html`<ef-timegroup id="${timegroupId}" mode="fixed" duration="10s" auto-init></ef-timegroup>`,
+      );
+      document.body.appendChild(timegroup);
+      await timegroup.updateComplete;
+      await timegroup.waitForMediaDurations();
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      assert.equal(
+        timegroup.currentTimeMs,
+        5000,
+        "Timegroup should use localStorage value instead of auto-init",
+      );
+
+      localStorage.removeItem(storageKey);
+      timegroup.remove();
+    });
+  });
 });

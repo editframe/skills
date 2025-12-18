@@ -416,6 +416,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
       "currenttime",
       "fit",
       "fps",
+      "auto-init",
     ];
   }
 
@@ -453,6 +454,14 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
   @property({ type: Number })
   fps = 30;
 
+  /**
+   * When true, automatically seeks to frame 0 after media durations are loaded.
+   * Only applies to root timegroups (timegroups that are not nested inside another timegroup).
+   * This ensures the first frame is rendered immediately on initialization.
+   */
+  @property({ type: Boolean, attribute: "auto-init" })
+  autoInit = false;
+
   attributeChangedCallback(
     name: string,
     old: string | null,
@@ -463,6 +472,9 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     }
     if (name === "overlap" && value) {
       this.overlapMs = parseTimeToMs(value);
+    }
+    if (name === "auto-init") {
+      this.autoInit = value !== null;
     }
     if (name === "fps" && value) {
       this.fps = Number.parseFloat(value);
@@ -728,7 +740,16 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
             didLoadFromStorage = true;
           }
         }
-        if (EF_INTERACTIVE && this.seekTask.status === TaskStatus.INITIAL) {
+
+        // Auto-init: seek to frame 0 for root timegroups if enabled and not loaded from storage
+        if (
+          this.autoInit &&
+          this.isRootTimegroup &&
+          !didLoadFromStorage &&
+          EF_INTERACTIVE
+        ) {
+          await this.seek(0);
+        } else if (EF_INTERACTIVE && this.seekTask.status === TaskStatus.INITIAL) {
           this.seekTask.run();
         } else if (didLoadFromStorage) {
           await this.seekTask.run();

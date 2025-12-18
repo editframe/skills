@@ -115,6 +115,10 @@ import "./gui/EFTimeDisplay.js";
 
 export { EFTimeDisplay } from "./gui/EFTimeDisplay.js";
 
+import "./gui/EFActiveRootTemporal.js";
+
+export { EFActiveRootTemporal } from "./gui/EFActiveRootTemporal.js";
+
 import "./gui/EFDial.js";
 
 export { type DialChangeDetail, EFDial } from "./gui/EFDial.js";

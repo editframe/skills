@@ -90,6 +90,139 @@ describe("EFTimeline", () => {
 
       expect(timeline.durationMs).toBe(15000);
     });
+
+    test("derives target from canvas selection when target is empty", async () => {
+      await import("../../canvas/EFCanvas.js");
+      const canvas = document.createElement("ef-canvas");
+      canvas.style.width = "800px";
+      canvas.style.height = "600px";
+      document.body.appendChild(canvas);
+      await (canvas as any).updateComplete;
+
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      const timegroupId = nextId();
+      timegroup.id = timegroupId;
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "10s");
+      canvas.appendChild(timegroup);
+      await timegroup.updateComplete;
+
+      const element = document.createElement("div");
+      element.id = "test-element";
+      element.setAttribute("data-element-id", "test-element");
+      element.style.position = "absolute";
+      timegroup.appendChild(element);
+      await (canvas as any).updateComplete;
+
+      const timeline = document.createElement("ef-timeline") as EFTimeline;
+      timeline.target = "";
+      timeline.style.width = "800px";
+      timeline.style.height = "400px";
+      document.body.appendChild(timeline);
+      await timeline.updateComplete;
+
+      expect(timeline.targetTemporal).toBe(null);
+
+      (canvas as any).selectionContext.select("test-element");
+      await timeline.updateComplete;
+
+      expect(timeline.targetTemporal).toBe(timegroup);
+      expect(timeline.durationMs).toBe(10000);
+    });
+
+    test("derives target from canvas selection when target is 'selection'", async () => {
+      await import("../../canvas/EFCanvas.js");
+      const canvas = document.createElement("ef-canvas");
+      canvas.style.width = "800px";
+      canvas.style.height = "600px";
+      document.body.appendChild(canvas);
+      await (canvas as any).updateComplete;
+
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      const timegroupId = nextId();
+      timegroup.id = timegroupId;
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "10s");
+      canvas.appendChild(timegroup);
+      await timegroup.updateComplete;
+
+      const element = document.createElement("div");
+      element.id = "test-element";
+      element.setAttribute("data-element-id", "test-element");
+      element.style.position = "absolute";
+      timegroup.appendChild(element);
+      await (canvas as any).updateComplete;
+
+      const timeline = document.createElement("ef-timeline") as EFTimeline;
+      timeline.target = "selection";
+      timeline.style.width = "800px";
+      timeline.style.height = "400px";
+      document.body.appendChild(timeline);
+      await timeline.updateComplete;
+
+      expect(timeline.targetTemporal).toBe(null);
+
+      (canvas as any).selectionContext.select("test-element");
+      await timeline.updateComplete;
+
+      expect(timeline.targetTemporal).toBe(timegroup);
+      expect(timeline.durationMs).toBe(10000);
+    });
+
+    test("updates target when selection changes", async () => {
+      await import("../../canvas/EFCanvas.js");
+      const canvas = document.createElement("ef-canvas");
+      canvas.style.width = "800px";
+      canvas.style.height = "600px";
+      document.body.appendChild(canvas);
+      await (canvas as any).updateComplete;
+
+      const timegroup1 = document.createElement("ef-timegroup") as EFTimegroup;
+      const timegroupId1 = nextId();
+      timegroup1.id = timegroupId1;
+      timegroup1.setAttribute("mode", "fixed");
+      timegroup1.setAttribute("duration", "5s");
+      canvas.appendChild(timegroup1);
+      await timegroup1.updateComplete;
+
+      const timegroup2 = document.createElement("ef-timegroup") as EFTimegroup;
+      const timegroupId2 = nextId();
+      timegroup2.id = timegroupId2;
+      timegroup2.setAttribute("mode", "fixed");
+      timegroup2.setAttribute("duration", "15s");
+      canvas.appendChild(timegroup2);
+      await timegroup2.updateComplete;
+
+      const element1 = document.createElement("div");
+      element1.id = "element-1";
+      element1.setAttribute("data-element-id", "element-1");
+      element1.style.position = "absolute";
+      timegroup1.appendChild(element1);
+
+      const element2 = document.createElement("div");
+      element2.id = "element-2";
+      element2.setAttribute("data-element-id", "element-2");
+      element2.style.position = "absolute";
+      timegroup2.appendChild(element2);
+      await (canvas as any).updateComplete;
+
+      const timeline = document.createElement("ef-timeline") as EFTimeline;
+      timeline.target = "selection";
+      timeline.style.width = "800px";
+      timeline.style.height = "400px";
+      document.body.appendChild(timeline);
+      await timeline.updateComplete;
+
+      (canvas as any).selectionContext.select("element-1");
+      await timeline.updateComplete;
+      expect(timeline.targetTemporal).toBe(timegroup1);
+      expect(timeline.durationMs).toBe(5000);
+
+      (canvas as any).selectionContext.select("element-2");
+      await timeline.updateComplete;
+      expect(timeline.targetTemporal).toBe(timegroup2);
+      expect(timeline.durationMs).toBe(15000);
+    });
   });
 
   describe("playback controls", () => {

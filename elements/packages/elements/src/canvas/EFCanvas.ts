@@ -21,6 +21,8 @@ import {
   parseRotationFromTransform,
 } from "../gui/transformCalculations.js";
 import { EFTargetable } from "../elements/TargetController.js";
+import { findRootTemporal } from "../elements/findRootTemporal.js";
+import type { TemporalMixinInterface } from "../elements/EFTemporal.js";
 
 /**
  * =============================================================================
@@ -151,6 +153,15 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
   private boxSelectStart: { x: number; y: number } | null = null;
   private boxSelectModifierKeys = false; // Track if modifier keys were pressed when box select started
   private emptySpaceClickPos: { x: number; y: number } | null = null;
+  private selectionChangeHandler?: () => void;
+  private elementHoverHandlers = new Map<string, {
+    mouseenter: (e: MouseEvent) => void;
+    mouseleave: (e: MouseEvent) => void;
+  }>();
+
+  @state()
+  private _activeRootTemporal: (TemporalMixinInterface & HTMLElement) | null =
+    null;
 
   @provide({ context: selectionContext })
   @state()
@@ -169,6 +180,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
     this.setupElementTracking();
     this.setupOverlayLayer();
     this.setupSelectionOverlay();
+    this.setupSelectionListener();
     this.addEventListener("pointerdown", this.handlePointerDown);
     this.addEventListener("pointermove", this.handlePointerMove);
     this.addEventListener("pointerup", this.handlePointerUp);
@@ -182,6 +194,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
     this.cleanupOverlayLayer();
     this.cleanupSelectionOverlay();
     this.cleanupTransformHandles();
+    this.removeSelectionListener();
     this.removeEventListener("pointerdown", this.handlePointerDown);
     this.removeEventListener("pointermove", this.handlePointerMove);
     this.removeEventListener("pointerup", this.handlePointerUp);
@@ -313,6 +326,9 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
 
     this.elementRegistry.set(elementId, element);
 
+    // Setup hover event listeners for cross-view hover sync
+    this.setupElementHoverListeners(element, elementId);
+
     // Ensure direct children have default styling (only for direct children)
     if (element.parentElement === this) {
       if (!element.style.position) {
@@ -339,6 +355,17 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
         : element.getAttribute(this.elementIdAttribute);
 
     if (elementId) {
+      const elementToUnregister =
+        typeof element === "string"
+          ? this.elementRegistry.get(elementId)
+          : element;
+      if (elementToUnregister) {
+        elementToUnregister.removeAttribute("data-selected");
+      }
+      
+      // Remove hover listeners
+      this.removeElementHoverListeners(elementId);
+      
       this.elementRegistry.delete(elementId);
       this.elementMetadata.delete(elementId);
       this.selectionController.selectionContext.deselect(elementId);
@@ -847,6 +874,97 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
       this.emptySpaceClickPos = null;
     }
   };
+
+  /**
+   * Setup listener for selection changes to update data-selected attributes.
+   */
+  private setupSelectionListener(): void {
+    if (this.selectionChangeHandler) {
+      return;
+    }
+
+    this.selectionChangeHandler = () => {
+      this.updateSelectionAttributes();
+    };
+
+    this.selectionContext.addEventListener(
+      "selectionchange",
+      this.selectionChangeHandler,
+    );
+    // Update immediately to set initial state
+    this.updateSelectionAttributes();
+  }
+
+  /**
+   * Remove selection change listener.
+   */
+  private removeSelectionListener(): void {
+    if (this.selectionChangeHandler) {
+      this.selectionContext.removeEventListener(
+        "selectionchange",
+        this.selectionChangeHandler,
+      );
+      this.selectionChangeHandler = undefined;
+    }
+  }
+
+  /**
+   * Get the root temporal element containing the current selection.
+   * Returns null if no element is selected or the selected element has no root temporal.
+   */
+  get activeRootTemporal(): (TemporalMixinInterface & HTMLElement) | null {
+    return this._activeRootTemporal;
+  }
+
+  /**
+   * Update data-selected attributes on elements based on current selection.
+   * This enables pure CSS styling of selected elements.
+   */
+  private updateSelectionAttributes(): void {
+    const selectedIds = Array.from(this.selectionContext.selectedIds);
+    const allRegisteredIds = Array.from(this.elementRegistry.keys());
+
+    // Remove data-selected from all elements
+    for (const id of allRegisteredIds) {
+      const element = this.elementRegistry.get(id);
+      if (element) {
+        element.removeAttribute("data-selected");
+      }
+    }
+
+    // Add data-selected to selected elements
+    for (const id of selectedIds) {
+      const element = this.elementRegistry.get(id);
+      if (element) {
+        element.setAttribute("data-selected", "true");
+      }
+    }
+
+    // Update active root temporal
+    const previousActiveRootTemporal = this._activeRootTemporal;
+    let newActiveRootTemporal: (TemporalMixinInterface & HTMLElement) | null =
+      null;
+
+    if (selectedIds.length > 0) {
+      const selectedElement = document.getElementById(selectedIds[0] || "");
+      if (selectedElement) {
+        newActiveRootTemporal = findRootTemporal(selectedElement);
+      }
+    }
+
+    this._activeRootTemporal = newActiveRootTemporal;
+
+    // Dispatch event if active root temporal changed
+    if (previousActiveRootTemporal !== newActiveRootTemporal) {
+      this.dispatchEvent(
+        new CustomEvent("activeroottemporalchange", {
+          detail: { activeRootTemporal: newActiveRootTemporal },
+          bubbles: true,
+          composed: true,
+        }),
+      );
+    }
+  }
 
   /**
    * Update element position in canvas coordinates.
