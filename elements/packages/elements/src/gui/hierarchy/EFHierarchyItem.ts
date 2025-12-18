@@ -448,12 +448,28 @@ export class EFHierarchyItem<
     if (this.focusContext) {
       this.focusContext.focusedElement = this.element;
     }
+    // Dispatch event for cross-view hover sync
+    this.dispatchEvent(
+      new CustomEvent("hierarchy-hover", {
+        detail: { element: this.element },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   private handleMouseLeave(): void {
     if (this.focusContext) {
       this.focusContext.focusedElement = null;
     }
+    // Dispatch event for cross-view hover sync
+    this.dispatchEvent(
+      new CustomEvent("hierarchy-hover", {
+        detail: { element: null },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   connectedCallback(): void {
