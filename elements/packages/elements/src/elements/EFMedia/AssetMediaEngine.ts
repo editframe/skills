@@ -6,6 +6,7 @@ import type {
   InitSegmentPaths,
   MediaEngine,
   SegmentTimeRange,
+  ThumbnailResult,
   VideoRendition,
 } from "../../transcoding/types";
 import type { UrlGenerator } from "../../transcoding/utils/UrlGenerator";
@@ -16,15 +17,18 @@ import {
   convertToScaledTime,
   roundToMilliseconds,
 } from "./shared/PrecisionUtils";
+import { ThumbnailExtractor } from "./shared/ThumbnailExtractor.js";
 
 export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
   public src: string;
   protected data: Record<number, TrackFragmentIndex> = {};
   durationMs = 0;
+  private thumbnailExtractor: ThumbnailExtractor;
 
   constructor(host: EFMedia, src: string) {
     super(host);
     this.src = src;
+    this.thumbnailExtractor = new ThumbnailExtractor(this);
   }
 
   static async fetch(host: EFMedia, urlGenerator: UrlGenerator, src: string) {
@@ -51,7 +55,14 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
   }
 
   get videoTrackIndex() {
-    return Object.values(this.data).find((track) => track.type === "video");
+    return Object.values(this.data).find(
+      (track) => track.type === "video" && track.track !== undefined && track.track > 0,
+    );
+  }
+
+  get scrubTrackIndex() {
+    // Scrub track uses track ID -1
+    return this.data[-1];
   }
 
   get videoRendition() {
@@ -111,10 +122,18 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
   }
 
   buildInitSegmentUrl(trackId: number) {
+    // Use @ef-scrub-track endpoint for scrub track (trackId -1)
+    if (trackId === -1) {
+      return `/@ef-scrub-track/${this.src}`;
+    }
     return `/@ef-track/${this.src}?trackId=${trackId}`;
   }
 
   buildMediaSegmentUrl(trackId: number, segmentId: number) {
+    // Use @ef-scrub-track endpoint for scrub track (trackId -1)
+    if (trackId === -1) {
+      return `/@ef-scrub-track/${this.src}`;
+    }
     return `/@ef-track/${this.src}?trackId=${trackId}&segmentId=${segmentId}`;
   }
 
@@ -331,8 +350,32 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
   }
 
   getScrubVideoRendition(): VideoRendition | undefined {
-    // AssetMediaEngine does not have a dedicated scrub track
-    return undefined;
+    const scrubTrack = this.scrubTrackIndex;
+
+    if (!scrubTrack || scrubTrack.track === undefined) {
+      return undefined;
+    }
+
+    // Calculate segment duration from scrub track segments
+    // Scrub tracks use 30-second segments
+    const scrubSegmentDurationMs = 30000;
+
+    // Calculate segment durations array if segments exist
+    const segmentDurationsMs: number[] | undefined =
+      scrubTrack.segments.length > 0
+        ? scrubTrack.segments.map((segment) => {
+            // Convert segment duration from timescale units to milliseconds
+            return (segment.duration / scrubTrack.timescale) * 1000;
+          })
+        : undefined;
+
+    return {
+      trackId: scrubTrack.track,
+      src: this.src,
+      segmentDurationMs: scrubSegmentDurationMs,
+      segmentDurationsMs,
+      startTimeOffsetMs: scrubTrack.startTimeOffsetMs,
+    };
   }
 
   /**
@@ -350,36 +393,60 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
     };
   }
 
-  // AssetMediaEngine inherits the default extractThumbnails from BaseMediaEngine
-  // which provides a clear warning that this engine type is not supported
+  /**
+   * Extract thumbnail canvases using main video rendition
+   * Note: We prefer main video over scrub track because scrub track in AssetMediaEngine
+   * may have incomplete segment data that doesn't cover the full video duration.
+   */
+  async extractThumbnails(
+    timestamps: number[],
+  ): Promise<(ThumbnailResult | null)[]> {
+    // Use main video rendition for thumbnails - scrub track may have incomplete segments
+    const rendition = this.videoRendition;
+
+    if (!rendition) {
+      console.warn(
+        "AssetMediaEngine: No video rendition available for thumbnails",
+      );
+      return timestamps.map(() => null);
+    }
+
+    return this.thumbnailExtractor.extractThumbnails(
+      timestamps,
+      rendition,
+      this.durationMs,
+    );
+  }
 
   convertToSegmentRelativeTimestamps(
     globalTimestamps: number[],
     segmentId: number,
     rendition: VideoRendition,
   ): number[] {
-    {
-      // Asset: MediaBunny expects segment-relative timestamps in seconds
-      // This is because Asset segments are independent timeline fragments
+    // Asset: MediaBunny expects segment-relative timestamps in seconds
+    // This is because Asset segments are independent timeline fragments
 
-      if (!rendition.trackId) {
-        throw new Error("Track ID is required for asset metadata");
-      }
-      // For AssetMediaEngine, we need to calculate the actual segment start time
-      // using the precise segment boundaries from the track fragment index
-      const trackData = this.data[rendition.trackId];
-      if (!trackData) {
-        throw new Error("Track not found");
-      }
-      const segment = trackData.segments?.[segmentId];
-      if (!segment) {
-        throw new Error("Segment not found");
-      }
-      const segmentStartMs = (segment.cts / trackData.timescale) * 1000;
-
-      return globalTimestamps.map(
-        (globalMs) => (globalMs - segmentStartMs) / 1000,
-      );
+    if (!rendition.trackId) {
+      throw new Error("Track ID is required for asset metadata");
     }
+    // For AssetMediaEngine, we need to calculate the actual segment start time
+    // using the precise segment boundaries from the track fragment index
+    const trackData = this.data[rendition.trackId];
+    if (!trackData) {
+      throw new Error("Track not found");
+    }
+    const segment = trackData.segments?.[segmentId];
+    if (!segment) {
+      throw new Error("Segment not found");
+    }
+    const segmentStartMs = (segment.cts / trackData.timescale) * 1000;
+    
+    // startTimeOffsetMs maps user timeline (0-based) to media timeline
+    // This is consistent with how BufferedSeekingInput.seek applies the offset
+    const startTimeOffsetMs = rendition.startTimeOffsetMs || 0;
+
+    return globalTimestamps.map(
+      (globalMs) => (globalMs + startTimeOffsetMs - segmentStartMs) / 1000,
+    );
   }
 }

@@ -154,14 +154,18 @@ export class ThumbnailExtractor {
 
       const sink = new CanvasSink(videoTrack);
 
-      // Convert global timestamps to segment-relative (in seconds for mediabunny)
+      // IMPORTANT: Sort timestamps for mediabunny - it expects monotonically sorted timestamps
+      // Create array of {original, sorted} to map back after extraction
+      const sortedTimestamps = [...timestamps].sort((a, b) => a - b);
+
+      // Convert sorted global timestamps to segment-relative (in seconds for mediabunny)
       const relativeTimestamps = this.convertToSegmentRelativeTimestamps(
-        timestamps,
+        sortedTimestamps,
         segmentId,
         rendition,
       );
 
-      // Batch extract all thumbnails for this segment
+      // Batch extract all thumbnails for this segment (in sorted order)
       const timestampResults = [];
       for await (const result of sink.canvasesAtTimestamps(
         relativeTimestamps,
@@ -169,9 +173,9 @@ export class ThumbnailExtractor {
         timestampResults.push(result);
       }
 
-      // Map results back to original timestamps
-      for (let i = 0; i < timestamps.length; i++) {
-        const globalTimestamp = timestamps[i];
+      // Map results back to original (sorted) timestamps
+      for (let i = 0; i < sortedTimestamps.length; i++) {
+        const globalTimestamp = sortedTimestamps[i];
         if (globalTimestamp === undefined) {
           continue;
         }
