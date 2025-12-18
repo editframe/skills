@@ -188,6 +188,10 @@ export class EFThumbnailStrip extends LitElement {
 
   set targetElement(value: EFVideo | null) {
     const oldValue = this._targetElement;
+    const oldId = oldValue?.id ?? 'null';
+    const newId = value?.id ?? 'null';
+    console.log(`[ThumbnailStrip] targetElement changing: ${oldId} -> ${newId}`);
+    
     this._targetElement = value;
 
     // Reset media engine ready flag when target changes
@@ -234,25 +238,32 @@ export class EFThumbnailStrip extends LitElement {
 
       // Listen for media engine ready - wait for element to be ready first
       // because mediaEngineTask may not exist yet during initial render
+      const videoId = value.id;
+      console.log(`[ThumbnailStrip:${videoId}] targetElement: waiting for updateComplete`);
       value.updateComplete.then(() => {
+        console.log(`[ThumbnailStrip:${videoId}] targetElement: updateComplete, hasMediaEngineTask=${!!value.mediaEngineTask}`);
         if (value.mediaEngineTask) {
+          console.log(`[ThumbnailStrip:${videoId}] targetElement: waiting for mediaEngineTask`);
           value.mediaEngineTask.taskComplete
             .then(() => {
+              console.log(`[ThumbnailStrip:${videoId}] targetElement: mediaEngineTask complete, stripWidth=${this._stripWidth}`);
               // When media engine is ready, force re-run thumbnails
               // This handles the case where the layout task started before mediaEngine was ready
               // and might have returned early or gotten stale data
               if (this._stripWidth > 0) {
+                console.log(`[ThumbnailStrip:${videoId}] targetElement: forcing thumbnail re-render`);
                 // Force a new task run by clearing any in-progress task
                 // and triggering through the stripWidth setter
                 this._thumbnailLayoutTask = undefined;
                 this.stripWidth = this._stripWidth;
               } else {
+                console.log(`[ThumbnailStrip:${videoId}] targetElement: stripWidth=0, marking mediaEngineReady`);
                 // Mark that we need to run when width becomes available
                 this._mediaEngineReady = true;
               }
             })
-            .catch(() => {
-              // Ignore media engine errors
+            .catch((err) => {
+              console.log(`[ThumbnailStrip:${videoId}] targetElement: mediaEngineTask error:`, err);
             });
         }
       });
@@ -312,13 +323,18 @@ export class EFThumbnailStrip extends LitElement {
   private _mediaEngineReady = false;
   @state()
   private set stripWidth(value: number) {
+    const videoId = this._targetElement?.id ?? 'unknown';
+    console.log(`[ThumbnailStrip:${videoId}] stripWidth set: ${value}, existingTask=${!!this._thumbnailLayoutTask}, currentHeight=${this._stripHeight}`);
+    
     if (this._thumbnailLayoutTask) {
+      console.log(`[ThumbnailStrip:${videoId}] stripWidth: task in progress, queueing pending width`);
       this._pendingStripWidth = value;
       return;
     }
     this._stripWidth = value;
 
     if (value > 0) {
+      console.log(`[ThumbnailStrip:${videoId}] stripWidth: starting thumbnailLayoutTask`);
       this._thumbnailLayoutTask = this.thumbnailLayoutTask
         .run()
         .then(async () => {
@@ -600,12 +616,17 @@ export class EFThumbnailStrip extends LitElement {
     targetElement: EFVideo,
     thumbnailWidth: number,
   ): Promise<ThumbnailRenderInfo[]> {
+    const videoId = targetElement?.id;
+    console.log(`[ThumbnailStrip:${videoId}] renderThumbnails: called with layout.count=${layout?.count}, thumbnailWidth=${thumbnailWidth}, stripHeight=${this._stripHeight}`);
+    
     if (!layout || !targetElement || layout.count === 0) {
+      console.log(`[ThumbnailStrip:${videoId}] renderThumbnails: early return - layout=${!!layout}, targetElement=${!!targetElement}, count=${layout?.count}`);
       return [];
     }
 
     const videoSrc = targetElement.src;
     const availableHeight = this._stripHeight - STRIP_BORDER_PADDING; // Account for border/padding
+    console.log(`[ThumbnailStrip:${videoId}] renderThumbnails: videoSrc=${videoSrc}, availableHeight=${availableHeight}`);
 
     const allThumbnails: ThumbnailRenderInfo[] = [];
     let thumbnailIndex = 0; // Track ordinal position
@@ -683,11 +704,14 @@ export class EFThumbnailStrip extends LitElement {
     }
 
     // Draw current state (cache hits and placeholders)
+    console.log(`[ThumbnailStrip:${videoId}] renderThumbnails: drawing ${allThumbnails.length} thumbnails (initial)`);
     await this.drawThumbnails(allThumbnails);
 
     // Load missing thumbnails from scrub tracks
+    console.log(`[ThumbnailStrip:${videoId}] renderThumbnails: loading missing thumbnails`);
     await this.loadMissingThumbnails(allThumbnails, targetElement);
 
+    console.log(`[ThumbnailStrip:${videoId}] renderThumbnails: complete, returning ${allThumbnails.length} thumbnails`);
     return allThumbnails;
   }
 
@@ -749,6 +773,7 @@ export class EFThumbnailStrip extends LitElement {
 
     const ctx = canvas.getContext("2d");
     if (!ctx) {
+      console.log(`[ThumbnailStrip:${this._targetElement?.id}] drawThumbnails: no canvas context`);
       return;
     }
 
@@ -766,12 +791,17 @@ export class EFThumbnailStrip extends LitElement {
     // Scale the drawing context to match device pixel ratio
     ctx.scale(dpr, dpr);
 
+    console.log(`[ThumbnailStrip:${this._targetElement?.id}] drawThumbnails: canvas=${this._stripWidth}x${this._stripHeight}, dpr=${dpr}, thumbnailCount=${thumbnails.length}`);
+
     // Clear canvas (use logical pixel dimensions since context is scaled)
     ctx.fillStyle = "#2a2a2a";
     ctx.fillRect(0, 0, this._stripWidth, this._stripHeight);
 
     // Draw each thumbnail with proper aspect ratio and centering
-    for (const thumb of thumbnails) {
+    for (let i = 0; i < thumbnails.length; i++) {
+      const thumb = thumbnails[i];
+      if (!thumb) continue;
+      
       if (thumb.imageData) {
         // Draw cached thumbnail with aspect ratio preservation
         const tempCanvas = document.createElement("canvas");
@@ -779,6 +809,7 @@ export class EFThumbnailStrip extends LitElement {
         tempCanvas.height = thumb.imageData.height;
         const tempCtx = tempCanvas.getContext("2d");
         if (!tempCtx) {
+          console.log(`[ThumbnailStrip:${this._targetElement?.id}] drawThumbnails[${i}]: no temp canvas context`);
           continue;
         }
         tempCtx.putImageData(thumb.imageData, 0, 0);
@@ -807,6 +838,8 @@ export class EFThumbnailStrip extends LitElement {
           drawY = Math.round((this._stripHeight - drawHeight) / 2);
         }
 
+        console.log(`[ThumbnailStrip:${this._targetElement?.id}] drawImage[${i}]: timeMs=${thumb.timeMs}, status=${thumb.status}, imageData=${thumb.imageData.width}x${thumb.imageData.height}, drawPos=(${drawX},${drawY}), drawSize=${drawWidth}x${drawHeight}, thumbPos=(${thumb.x},${thumb.width}x${thumb.height})`);
+
         // Draw with proper aspect ratio preservation
         ctx.drawImage(tempCanvas, drawX, drawY, drawWidth, drawHeight);
 
@@ -818,6 +851,9 @@ export class EFThumbnailStrip extends LitElement {
       } else {
         // Draw placeholder - center vertically in strip with integer positioning
         const placeholderY = Math.round((this._stripHeight - thumb.height) / 2);
+        
+        console.log(`[ThumbnailStrip:${this._targetElement?.id}] placeholder[${i}]: timeMs=${thumb.timeMs}, status=${thumb.status}, pos=(${thumb.x},${placeholderY}), size=${thumb.width}x${thumb.height}`);
+        
         ctx.fillStyle = "#404040";
         ctx.fillRect(thumb.x, placeholderY, thumb.width, thumb.height);
 
@@ -829,6 +865,8 @@ export class EFThumbnailStrip extends LitElement {
         ctx.setLineDash([]);
       }
     }
+    
+    console.log(`[ThumbnailStrip:${this._targetElement?.id}] drawThumbnails: complete`);
   }
 
   /**
@@ -838,13 +876,18 @@ export class EFThumbnailStrip extends LitElement {
     thumbnails: ThumbnailRenderInfo[],
     targetElement: EFVideo,
   ): Promise<void> {
+    const videoId = targetElement.id;
+    console.log(`[ThumbnailStrip:${videoId}] loadMissingThumbnails: called with ${thumbnails.length} thumbnails`);
+    
     // Ensure media engine is ready before attempting extraction
     if (targetElement.mediaEngineTask) {
+      console.log(`[ThumbnailStrip:${videoId}] loadMissingThumbnails: waiting for mediaEngineTask`);
       await targetElement.mediaEngineTask.taskComplete;
     }
     
     const mediaEngine = targetElement.mediaEngineTask?.value;
     if (!mediaEngine) {
+      console.log(`[ThumbnailStrip:${videoId}] loadMissingThumbnails: no mediaEngine, returning early`);
       return;
     }
 
@@ -853,7 +896,10 @@ export class EFThumbnailStrip extends LitElement {
       (t) => t.status === "missing" || t.status === "near-hit",
     );
 
+    console.log(`[ThumbnailStrip:${videoId}] loadMissingThumbnails: ${missingThumbnails.length} missing/near-hit thumbnails`);
+
     if (missingThumbnails.length === 0) {
+      console.log(`[ThumbnailStrip:${videoId}] loadMissingThumbnails: no missing thumbnails, returning`);
       return;
     }
 
@@ -864,10 +910,14 @@ export class EFThumbnailStrip extends LitElement {
 
     // Batch extract all missing thumbnails using MediaEngine
     const timestamps = missingThumbnails.map((t) => t.timeMs);
+    console.log(`[ThumbnailStrip:${videoId}] loadMissingThumbnails: extracting thumbnails at timestamps:`, timestamps.slice(0, 5), timestamps.length > 5 ? `... (${timestamps.length} total)` : '');
 
     const thumbnailResults = await mediaEngine.extractThumbnails(timestamps);
+    console.log(`[ThumbnailStrip:${videoId}] loadMissingThumbnails: got ${thumbnailResults.length} results, non-null: ${thumbnailResults.filter(r => r !== null).length}`);
 
     // Convert canvases to ImageData and update thumbnails
+    let successCount = 0;
+    let failCount = 0;
     for (let i = 0; i < missingThumbnails.length; i++) {
       const thumb = missingThumbnails[i];
       const thumbnailResult = thumbnailResults[i];
@@ -884,12 +934,21 @@ export class EFThumbnailStrip extends LitElement {
           thumbnailImageCache.set(cacheKey, imageData);
           thumb.imageData = imageData;
           thumb.status = "exact-hit";
+          successCount++;
+        } else {
+          failCount++;
         }
+      } else {
+        failCount++;
       }
     }
 
+    console.log(`[ThumbnailStrip:${videoId}] loadMissingThumbnails: converted ${successCount} thumbnails, ${failCount} failed`);
+
     // Redraw with newly loaded thumbnails
+    console.log(`[ThumbnailStrip:${videoId}] loadMissingThumbnails: calling drawThumbnails`);
     await this.drawThumbnails(thumbnails);
+    console.log(`[ThumbnailStrip:${videoId}] loadMissingThumbnails: complete`);
   }
 
   /**
