@@ -823,6 +823,11 @@ export class EFThumbnailStrip extends LitElement {
     thumbnails: ThumbnailRenderInfo[],
     targetElement: EFVideo,
   ): Promise<void> {
+    // Ensure media engine is ready before attempting extraction
+    if (targetElement.mediaEngineTask) {
+      await targetElement.mediaEngineTask.taskComplete;
+    }
+    
     const mediaEngine = targetElement.mediaEngineTask?.value;
     if (!mediaEngine) {
       return;

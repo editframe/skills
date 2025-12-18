@@ -420,33 +420,23 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
 
   convertToSegmentRelativeTimestamps(
     globalTimestamps: number[],
-    segmentId: number,
+    _segmentId: number,
     rendition: VideoRendition,
   ): number[] {
-    // Asset: MediaBunny expects segment-relative timestamps in seconds
-    // This is because Asset segments are independent timeline fragments
-
-    if (!rendition.trackId) {
-      throw new Error("Track ID is required for asset metadata");
-    }
-    // For AssetMediaEngine, we need to calculate the actual segment start time
-    // using the precise segment boundaries from the track fragment index
-    const trackData = this.data[rendition.trackId];
-    if (!trackData) {
-      throw new Error("Track not found");
-    }
-    const segment = trackData.segments?.[segmentId];
-    if (!segment) {
-      throw new Error("Segment not found");
-    }
-    const segmentStartMs = (segment.cts / trackData.timescale) * 1000;
+    // For fragmented MP4 (Asset), when we create a mediabunny Input from init+media segment,
+    // mediabunny sees the samples with their ABSOLUTE timestamps from the container.
+    // This is because the tfdt box contains the baseMediaDecodeTime which is the absolute
+    // position of this segment in the container timeline.
+    //
+    // So we just need to convert user time to container time by adding startTimeOffsetMs,
+    // then pass that to mediabunny (in seconds).
     
-    // startTimeOffsetMs maps user timeline (0-based) to media timeline
-    // This is consistent with how BufferedSeekingInput.seek applies the offset
     const startTimeOffsetMs = rendition.startTimeOffsetMs || 0;
 
-    return globalTimestamps.map(
-      (globalMs) => (globalMs + startTimeOffsetMs - segmentStartMs) / 1000,
-    );
+    return globalTimestamps.map((globalMs) => {
+      // User time -> container time -> seconds for mediabunny
+      const containerTimeMs = globalMs + startTimeOffsetMs;
+      return containerTimeMs / 1000;
+    });
   }
 }
