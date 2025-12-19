@@ -386,4 +386,146 @@ describe("SelectionOverlay", () => {
       container.remove();
     },
   );
+
+  test(
+    "renders highlight box when hovering element",
+    { timeout: 1000 },
+    async ({ expect }) => {
+      const container = document.createElement("div");
+      container.style.width = "800px";
+      container.style.height = "600px";
+      container.style.position = "relative";
+
+      render(
+        html`
+          <ef-pan-zoom style="width: 100%; height: 100%;" x="0" y="0" scale="1">
+            <ef-canvas style="width: 100%; height: 100%;">
+              <div
+                data-element-id="hover-element"
+                id="hover-element"
+                style="position: absolute; left: 100px; top: 100px; width: 50px; height: 50px; background: red;"
+              ></div>
+            </ef-canvas>
+          </ef-pan-zoom>
+        `,
+        container,
+      );
+      document.body.appendChild(container);
+
+      const panZoom = container.querySelector("ef-pan-zoom") as any;
+      const canvas = container.querySelector("ef-canvas") as any;
+
+      await panZoom?.updateComplete;
+      await canvas?.updateComplete;
+
+      // Wait for overlay to be created
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const overlay = container.querySelector(
+        "ef-canvas-selection-overlay",
+      ) as any;
+      expect(overlay).toBeTruthy();
+
+      // Initially no highlight box
+      let highlightBox = overlay.querySelector(".highlight-box");
+      expect(highlightBox).toBeFalsy();
+
+      // Hover over the element
+      const element = canvas.querySelector(
+        '[data-element-id="hover-element"]',
+      ) as HTMLElement;
+      element.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+
+      await canvas.updateComplete;
+      // Wait for RAF loop to update overlay bounds
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Highlight box should now appear
+      highlightBox = overlay.querySelector(".highlight-box");
+      expect(highlightBox).toBeTruthy();
+
+      // Verify highlight box has position styles set
+      const style = window.getComputedStyle(highlightBox!);
+      expect(parseFloat(style.width)).toBeGreaterThan(0);
+      expect(parseFloat(style.height)).toBeGreaterThan(0);
+
+      // Mouseleave should remove highlight box
+      element.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+      await canvas.updateComplete;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      highlightBox = overlay.querySelector(".highlight-box");
+      expect(highlightBox).toBeFalsy();
+
+      container.remove();
+    },
+  );
+
+  test(
+    "highlight box positioned correctly relative to element",
+    { timeout: 1000 },
+    async ({ expect }) => {
+      const container = document.createElement("div");
+      container.style.width = "800px";
+      container.style.height = "600px";
+      container.style.position = "relative";
+
+      render(
+        html`
+          <ef-pan-zoom style="width: 100%; height: 100%;" x="0" y="0" scale="1">
+            <ef-canvas style="width: 100%; height: 100%;">
+              <div
+                data-element-id="positioned-element"
+                id="positioned-element"
+                style="position: absolute; left: 150px; top: 200px; width: 100px; height: 80px; background: blue;"
+              ></div>
+            </ef-canvas>
+          </ef-pan-zoom>
+        `,
+        container,
+      );
+      document.body.appendChild(container);
+
+      const panZoom = container.querySelector("ef-pan-zoom") as any;
+      const canvas = container.querySelector("ef-canvas") as any;
+
+      await panZoom?.updateComplete;
+      await canvas?.updateComplete;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const overlay = container.querySelector(
+        "ef-canvas-selection-overlay",
+      ) as any;
+
+      // Hover over the element
+      const element = canvas.querySelector(
+        '[data-element-id="positioned-element"]',
+      ) as HTMLElement;
+      element.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+
+      await canvas.updateComplete;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const highlightBox = overlay.querySelector(".highlight-box") as HTMLElement;
+      expect(highlightBox).toBeTruthy();
+
+      // Get element's screen position
+      const elementRect = element.getBoundingClientRect();
+
+      // Get highlight box position
+      const boxStyle = window.getComputedStyle(highlightBox);
+      const boxLeft = parseFloat(boxStyle.left);
+      const boxTop = parseFloat(boxStyle.top);
+      const boxWidth = parseFloat(boxStyle.width);
+      const boxHeight = parseFloat(boxStyle.height);
+
+      // Highlight box should match element position (within 2px tolerance)
+      expect(Math.abs(boxLeft - elementRect.left)).toBeLessThan(2);
+      expect(Math.abs(boxTop - elementRect.top)).toBeLessThan(2);
+      expect(Math.abs(boxWidth - elementRect.width)).toBeLessThan(2);
+      expect(Math.abs(boxHeight - elementRect.height)).toBeLessThan(2);
+
+      container.remove();
+    },
+  );
 });
