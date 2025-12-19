@@ -529,3 +529,407 @@ describe("SelectionOverlay", () => {
     },
   );
 });
+
+/**
+ * Behavioral Contract Tests
+ * 
+ * These tests verify the observable behavior that must be maintained through refactoring.
+ * They test WHAT the system produces, not HOW it produces it.
+ * 
+ * Invariants:
+ * 1. Overlay is visible iff it has non-null bounds with positive dimensions
+ * 2. Overlay bounds match the element's screen position
+ * 3. Only one highlight at a time
+ * 4. Overlays update when pan/zoom changes
+ */
+describe("Overlay Behavioral Contracts", () => {
+  /**
+   * Helper to create a standard test setup with canvas, pan-zoom, and elements.
+   */
+  async function createTestSetup(options: {
+    elements: Array<{ id: string; left: number; top: number; width: number; height: number }>;
+    panZoom?: { x: number; y: number; scale: number };
+  }) {
+    const container = document.createElement("div");
+    container.style.width = "800px";
+    container.style.height = "600px";
+    container.style.position = "relative";
+
+    const pz = options.panZoom ?? { x: 0, y: 0, scale: 1 };
+    
+    render(
+      html`
+        <ef-pan-zoom style="width: 100%; height: 100%;" x="${pz.x}" y="${pz.y}" scale="${pz.scale}">
+          <ef-canvas style="width: 100%; height: 100%;">
+            ${options.elements.map(
+              (el) => html`
+                <div
+                  data-element-id="${el.id}"
+                  id="${el.id}"
+                  style="position: absolute; left: ${el.left}px; top: ${el.top}px; width: ${el.width}px; height: ${el.height}px; background: red;"
+                ></div>
+              `,
+            )}
+          </ef-canvas>
+        </ef-pan-zoom>
+      `,
+      container,
+    );
+    document.body.appendChild(container);
+
+    const panZoom = container.querySelector("ef-pan-zoom") as any;
+    const canvas = container.querySelector("ef-canvas") as any;
+
+    await panZoom?.updateComplete;
+    await canvas?.updateComplete;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const overlay = container.querySelector("ef-canvas-selection-overlay") as any;
+
+    return {
+      container,
+      panZoom,
+      canvas,
+      overlay,
+      cleanup: () => container.remove(),
+    };
+  }
+
+  describe("Selection Overlay", () => {
+    test(
+      "INVARIANT: no selection overlay when nothing selected",
+      { timeout: 1000 },
+      async ({ expect }) => {
+        const { canvas, overlay, cleanup } = await createTestSetup({
+          elements: [{ id: "el-1", left: 100, top: 100, width: 50, height: 50 }],
+        });
+
+        // No selection - no box
+        const selectionBox = overlay?.querySelector(".selection-box");
+        expect(selectionBox).toBeFalsy();
+
+        cleanup();
+      },
+    );
+
+    test(
+      "INVARIANT: selection overlay bounds match selected element screen position",
+      { timeout: 1000 },
+      async ({ expect }) => {
+        const { canvas, overlay, cleanup } = await createTestSetup({
+          elements: [{ id: "el-1", left: 100, top: 100, width: 50, height: 50 }],
+        });
+
+        // Select element
+        const element = canvas.querySelector('[data-element-id="el-1"]') as HTMLElement;
+        const rect = element.getBoundingClientRect();
+        canvas.dispatchEvent(
+          new PointerEvent("pointerdown", {
+            clientX: rect.left + rect.width / 2,
+            clientY: rect.top + rect.height / 2,
+            button: 0,
+            bubbles: true,
+          }),
+        );
+        await canvas.updateComplete;
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        const selectionBox = overlay?.querySelector(".selection-box") as HTMLElement;
+        expect(selectionBox).toBeTruthy();
+
+        const boxStyle = window.getComputedStyle(selectionBox);
+        const elementRect = element.getBoundingClientRect();
+
+        // Selection box should match element bounds (within tolerance)
+        expect(Math.abs(parseFloat(boxStyle.left) - elementRect.left)).toBeLessThan(5);
+        expect(Math.abs(parseFloat(boxStyle.top) - elementRect.top)).toBeLessThan(5);
+        expect(Math.abs(parseFloat(boxStyle.width) - elementRect.width)).toBeLessThan(5);
+        expect(Math.abs(parseFloat(boxStyle.height) - elementRect.height)).toBeLessThan(5);
+
+        cleanup();
+      },
+    );
+
+    test(
+      "INVARIANT: selection overlay encompasses all selected elements",
+      { timeout: 1000 },
+      async ({ expect }) => {
+        const { canvas, overlay, cleanup } = await createTestSetup({
+          elements: [
+            { id: "el-1", left: 50, top: 50, width: 40, height: 40 },
+            { id: "el-2", left: 200, top: 150, width: 60, height: 60 },
+          ],
+        });
+
+        // Select first element
+        const el1 = canvas.querySelector('[data-element-id="el-1"]') as HTMLElement;
+        const rect1 = el1.getBoundingClientRect();
+        canvas.dispatchEvent(
+          new PointerEvent("pointerdown", {
+            clientX: rect1.left + 20,
+            clientY: rect1.top + 20,
+            button: 0,
+            bubbles: true,
+          }),
+        );
+        await canvas.updateComplete;
+
+        // Add second element to selection (shift-click)
+        const el2 = canvas.querySelector('[data-element-id="el-2"]') as HTMLElement;
+        const rect2 = el2.getBoundingClientRect();
+        canvas.dispatchEvent(
+          new PointerEvent("pointerdown", {
+            clientX: rect2.left + 30,
+            clientY: rect2.top + 30,
+            button: 0,
+            bubbles: true,
+            shiftKey: true,
+          }),
+        );
+        await canvas.updateComplete;
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        const selectionBox = overlay?.querySelector(".selection-box") as HTMLElement;
+        expect(selectionBox).toBeTruthy();
+
+        const boxStyle = window.getComputedStyle(selectionBox);
+        const boxLeft = parseFloat(boxStyle.left);
+        const boxTop = parseFloat(boxStyle.top);
+        const boxRight = boxLeft + parseFloat(boxStyle.width);
+        const boxBottom = boxTop + parseFloat(boxStyle.height);
+
+        // Selection box should encompass both elements
+        expect(boxLeft).toBeLessThanOrEqual(rect1.left + 2);
+        expect(boxTop).toBeLessThanOrEqual(rect1.top + 2);
+        expect(boxRight).toBeGreaterThanOrEqual(rect2.right - 2);
+        expect(boxBottom).toBeGreaterThanOrEqual(rect2.bottom - 2);
+
+        cleanup();
+      },
+    );
+  });
+
+  describe("Highlight Overlay", () => {
+    test(
+      "INVARIANT: no highlight overlay when nothing hovered",
+      { timeout: 1000 },
+      async ({ expect }) => {
+        const { overlay, cleanup } = await createTestSetup({
+          elements: [{ id: "el-1", left: 100, top: 100, width: 50, height: 50 }],
+        });
+
+        const highlightBox = overlay?.querySelector(".highlight-box");
+        expect(highlightBox).toBeFalsy();
+
+        cleanup();
+      },
+    );
+
+    test(
+      "INVARIANT: highlight overlay appears on mouseenter, disappears on mouseleave",
+      { timeout: 1000 },
+      async ({ expect }) => {
+        const { canvas, overlay, cleanup } = await createTestSetup({
+          elements: [{ id: "el-1", left: 100, top: 100, width: 50, height: 50 }],
+        });
+
+        const element = canvas.querySelector('[data-element-id="el-1"]') as HTMLElement;
+
+        // Initially no highlight
+        expect(overlay?.querySelector(".highlight-box")).toBeFalsy();
+
+        // Mouseenter -> highlight appears
+        element.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+        await canvas.updateComplete;
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        expect(overlay?.querySelector(".highlight-box")).toBeTruthy();
+
+        // Mouseleave -> highlight disappears
+        element.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+        await canvas.updateComplete;
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        expect(overlay?.querySelector(".highlight-box")).toBeFalsy();
+
+        cleanup();
+      },
+    );
+
+    test(
+      "INVARIANT: only one highlight at a time (hovering new element replaces previous)",
+      { timeout: 1000 },
+      async ({ expect }) => {
+        const { canvas, overlay, cleanup } = await createTestSetup({
+          elements: [
+            { id: "el-1", left: 50, top: 50, width: 40, height: 40 },
+            { id: "el-2", left: 200, top: 50, width: 40, height: 40 },
+          ],
+        });
+
+        const el1 = canvas.querySelector('[data-element-id="el-1"]') as HTMLElement;
+        const el2 = canvas.querySelector('[data-element-id="el-2"]') as HTMLElement;
+
+        // Hover el-1
+        el1.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+        await canvas.updateComplete;
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        let highlightBoxes = overlay?.querySelectorAll(".highlight-box");
+        expect(highlightBoxes?.length).toBe(1);
+
+        // Hover el-2 (without leaving el-1 first - simulating fast mouse movement)
+        canvas.setHighlightedElement(el2);
+        await canvas.updateComplete;
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Still only one highlight box
+        highlightBoxes = overlay?.querySelectorAll(".highlight-box");
+        expect(highlightBoxes?.length).toBe(1);
+
+        // And it should be positioned at el-2
+        const highlightBox = highlightBoxes?.[0] as HTMLElement;
+        const boxStyle = window.getComputedStyle(highlightBox);
+        const el2Rect = el2.getBoundingClientRect();
+        expect(Math.abs(parseFloat(boxStyle.left) - el2Rect.left)).toBeLessThan(5);
+
+        cleanup();
+      },
+    );
+
+    test(
+      "INVARIANT: highlight overlay bounds match hovered element screen position",
+      { timeout: 1000 },
+      async ({ expect }) => {
+        const { canvas, overlay, cleanup } = await createTestSetup({
+          elements: [{ id: "el-1", left: 150, top: 120, width: 80, height: 60 }],
+        });
+
+        const element = canvas.querySelector('[data-element-id="el-1"]') as HTMLElement;
+        element.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+        await canvas.updateComplete;
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        const highlightBox = overlay?.querySelector(".highlight-box") as HTMLElement;
+        expect(highlightBox).toBeTruthy();
+
+        const boxStyle = window.getComputedStyle(highlightBox);
+        const elementRect = element.getBoundingClientRect();
+
+        expect(Math.abs(parseFloat(boxStyle.left) - elementRect.left)).toBeLessThan(2);
+        expect(Math.abs(parseFloat(boxStyle.top) - elementRect.top)).toBeLessThan(2);
+        expect(Math.abs(parseFloat(boxStyle.width) - elementRect.width)).toBeLessThan(2);
+        expect(Math.abs(parseFloat(boxStyle.height) - elementRect.height)).toBeLessThan(2);
+
+        cleanup();
+      },
+    );
+  });
+
+  describe("Pan/Zoom Integration", () => {
+    test(
+      "INVARIANT: selection overlay updates position when canvas is panned",
+      { timeout: 1000 },
+      async ({ expect }) => {
+        const { canvas, panZoom, overlay, cleanup } = await createTestSetup({
+          elements: [{ id: "el-1", left: 100, top: 100, width: 50, height: 50 }],
+          panZoom: { x: 0, y: 0, scale: 1 },
+        });
+
+        // Select element
+        const element = canvas.querySelector('[data-element-id="el-1"]') as HTMLElement;
+        const rect = element.getBoundingClientRect();
+        canvas.dispatchEvent(
+          new PointerEvent("pointerdown", {
+            clientX: rect.left + 25,
+            clientY: rect.top + 25,
+            button: 0,
+            bubbles: true,
+          }),
+        );
+        await canvas.updateComplete;
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        const selectionBox = overlay?.querySelector(".selection-box") as HTMLElement;
+        expect(selectionBox).toBeTruthy();
+
+        const initialLeft = parseFloat(window.getComputedStyle(selectionBox).left);
+
+        // Pan the canvas
+        panZoom.x = 50;
+        await panZoom.updateComplete;
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Selection box should have moved
+        const newLeft = parseFloat(window.getComputedStyle(selectionBox).left);
+        expect(Math.abs(newLeft - (initialLeft + 50))).toBeLessThan(5);
+
+        cleanup();
+      },
+    );
+
+    test(
+      "INVARIANT: highlight overlay updates position when canvas is panned",
+      { timeout: 1000 },
+      async ({ expect }) => {
+        const { canvas, panZoom, overlay, cleanup } = await createTestSetup({
+          elements: [{ id: "el-1", left: 100, top: 100, width: 50, height: 50 }],
+          panZoom: { x: 0, y: 0, scale: 1 },
+        });
+
+        // Hover element
+        const element = canvas.querySelector('[data-element-id="el-1"]') as HTMLElement;
+        element.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+        await canvas.updateComplete;
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        const highlightBox = overlay?.querySelector(".highlight-box") as HTMLElement;
+        expect(highlightBox).toBeTruthy();
+
+        const initialLeft = parseFloat(window.getComputedStyle(highlightBox).left);
+
+        // Pan the canvas
+        panZoom.x = 75;
+        await panZoom.updateComplete;
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Highlight box should have moved
+        const newLeft = parseFloat(window.getComputedStyle(highlightBox).left);
+        expect(Math.abs(newLeft - (initialLeft + 75))).toBeLessThan(5);
+
+        cleanup();
+      },
+    );
+
+    test(
+      "INVARIANT: overlay bounds scale correctly when zoomed",
+      { timeout: 1000 },
+      async ({ expect }) => {
+        const { canvas, panZoom, overlay, cleanup } = await createTestSetup({
+          elements: [{ id: "el-1", left: 100, top: 100, width: 50, height: 50 }],
+          panZoom: { x: 0, y: 0, scale: 1 },
+        });
+
+        // Hover element
+        const element = canvas.querySelector('[data-element-id="el-1"]') as HTMLElement;
+        element.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+        await canvas.updateComplete;
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        const highlightBox = overlay?.querySelector(".highlight-box") as HTMLElement;
+        expect(highlightBox).toBeTruthy();
+
+        const initialWidth = parseFloat(window.getComputedStyle(highlightBox).width);
+
+        // Zoom to 2x
+        panZoom.scale = 2;
+        await panZoom.updateComplete;
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Highlight box should be twice as wide
+        const newWidth = parseFloat(window.getComputedStyle(highlightBox).width);
+        expect(Math.abs(newWidth - initialWidth * 2)).toBeLessThan(5);
+
+        cleanup();
+      },
+    );
+  });
+});
