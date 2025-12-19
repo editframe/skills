@@ -71,25 +71,21 @@ describe("SelectionOverlay Positioning", () => {
     expect(metadata?.width).toBe(200);
     expect(metadata?.height).toBe(100);
 
-    // Check selection bounds
-    const selectionBounds = overlay.selectionBounds;
-    expect(selectionBounds).toBeTruthy();
+    // Check selection box in DOM (observable behavior)
+    const selectionBox = overlay.querySelector(".selection-box") as HTMLElement;
+    expect(selectionBox).toBeTruthy();
 
-    if (selectionBounds) {
+    if (selectionBox) {
       // Get element's actual screen position
       const elementRect = element.getBoundingClientRect();
-      const canvasRect = canvas.getBoundingClientRect();
+      const boxStyle = window.getComputedStyle(selectionBox);
 
       // Selection overlay should match element's screen position (accounting for pan/zoom)
       // Allow some tolerance for rounding
-      expect(Math.abs(selectionBounds.x - elementRect.left)).toBeLessThan(2);
-      expect(Math.abs(selectionBounds.y - elementRect.top)).toBeLessThan(2);
-      expect(Math.abs(selectionBounds.width - elementRect.width)).toBeLessThan(
-        2,
-      );
-      expect(
-        Math.abs(selectionBounds.height - elementRect.height),
-      ).toBeLessThan(2);
+      expect(Math.abs(parseFloat(boxStyle.left) - elementRect.left)).toBeLessThan(2);
+      expect(Math.abs(parseFloat(boxStyle.top) - elementRect.top)).toBeLessThan(2);
+      expect(Math.abs(parseFloat(boxStyle.width) - elementRect.width)).toBeLessThan(2);
+      expect(Math.abs(parseFloat(boxStyle.height) - elementRect.height)).toBeLessThan(2);
     }
   }, 5000);
 
@@ -146,24 +142,21 @@ describe("SelectionOverlay Positioning", () => {
     await overlay.updateComplete;
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    // Check selection bounds match element position
-    const selectionBounds = overlay.selectionBounds;
-    expect(selectionBounds).toBeTruthy();
+    // Check selection box in DOM (observable behavior)
+    const selectionBox = overlay.querySelector(".selection-box") as HTMLElement;
+    expect(selectionBox).toBeTruthy();
 
-    if (selectionBounds && metadata) {
+    if (selectionBox && metadata) {
       // Get element's actual screen position
       const elementRect = timegroup.getBoundingClientRect();
+      const boxStyle = window.getComputedStyle(selectionBox);
 
       // Selection overlay should match element's screen position
       // Allow some tolerance for rounding
-      expect(Math.abs(selectionBounds.x - elementRect.left)).toBeLessThan(2);
-      expect(Math.abs(selectionBounds.y - elementRect.top)).toBeLessThan(2);
-      expect(Math.abs(selectionBounds.width - elementRect.width)).toBeLessThan(
-        2,
-      );
-      expect(
-        Math.abs(selectionBounds.height - elementRect.height),
-      ).toBeLessThan(2);
+      expect(Math.abs(parseFloat(boxStyle.left) - elementRect.left)).toBeLessThan(2);
+      expect(Math.abs(parseFloat(boxStyle.top) - elementRect.top)).toBeLessThan(2);
+      expect(Math.abs(parseFloat(boxStyle.width) - elementRect.width)).toBeLessThan(2);
+      expect(Math.abs(parseFloat(boxStyle.height) - elementRect.height)).toBeLessThan(2);
 
       // Metadata should match element's canvas position
       expect(Math.abs(metadata.x - 250)).toBeLessThan(1);
@@ -229,25 +222,25 @@ describe("SelectionOverlay Positioning", () => {
     await overlay.updateComplete;
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    // Check selection bounds match element position (accounting for pan/zoom)
-    const selectionBounds = overlay.selectionBounds;
-    expect(selectionBounds).toBeTruthy();
+    // Check selection box in DOM (observable behavior)
+    const selectionBox = overlay.querySelector(".selection-box") as HTMLElement;
+    expect(selectionBox).toBeTruthy();
 
-    if (selectionBounds) {
-      // Verify selection bounds has reasonable values
+    if (selectionBox) {
+      const boxStyle = window.getComputedStyle(selectionBox);
+
+      // Verify selection box has reasonable values
       // With pan/zoom transform, exact coordinate matching is complex
-      // Core invariant: selection bounds should have positive dimensions
-      expect(selectionBounds.x).toBeGreaterThan(0);
-      expect(selectionBounds.y).toBeGreaterThan(0);
-      expect(selectionBounds.width).toBeGreaterThan(0);
-      expect(selectionBounds.height).toBeGreaterThan(0);
+      // Core invariant: selection box should have positive dimensions
+      expect(parseFloat(boxStyle.left)).toBeGreaterThan(0);
+      expect(parseFloat(boxStyle.top)).toBeGreaterThan(0);
+      expect(parseFloat(boxStyle.width)).toBeGreaterThan(0);
+      expect(parseFloat(boxStyle.height)).toBeGreaterThan(0);
 
       // Verify dimensions are reasonable (scaled element should have larger bounds)
       // Element is 200x100 in canvas coords, with scale 1.5 should be ~300x150 on screen
-      // SelectionBounds may or may not include scale depending on implementation
-      // Just verify it's in a reasonable range
-      expect(selectionBounds.width).toBeGreaterThan(100);
-      expect(selectionBounds.height).toBeGreaterThan(50);
+      expect(parseFloat(boxStyle.width)).toBeGreaterThan(100);
+      expect(parseFloat(boxStyle.height)).toBeGreaterThan(50);
     }
   }, 5000);
 });
