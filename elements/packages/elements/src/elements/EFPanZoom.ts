@@ -53,9 +53,25 @@ export class EFPanZoom extends LitElement {
    * (not stop propagation) so the normal wheel handler can still process them.
    */
   private _onDocumentWheelCapture = (e: WheelEvent) => {
-    // Only prevent if the event is over this panzoom element or its children
-    const panZoom =
-      e.target instanceof Element ? e.target.closest("ef-pan-zoom") : null;
+    // Check if event is over this panzoom element or its children
+    let panZoom: Element | null = null;
+    if (e.target instanceof Element) {
+      panZoom = e.target.closest("ef-pan-zoom");
+      // Also check if target is an overlay sibling (selection overlay, etc.)
+      // Overlays have pointer-events: none but can still be the event target
+      if (!panZoom && e.target.closest("ef-canvas-selection-overlay")) {
+        // Event is over selection overlay - check if it's over this panzoom's area
+        const rect = this.getBoundingClientRect();
+        if (
+          e.clientX >= rect.left &&
+          e.clientX <= rect.right &&
+          e.clientY >= rect.top &&
+          e.clientY <= rect.bottom
+        ) {
+          panZoom = this;
+        }
+      }
+    }
     if (panZoom === this) {
       // Prevent browser navigation gestures (back/forward on swipe)
       // Don't stop propagation - let the normal wheel handler process the event
