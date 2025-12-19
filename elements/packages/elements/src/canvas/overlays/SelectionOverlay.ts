@@ -31,13 +31,6 @@ export class SelectionOverlay extends LitElement {
         pointer-events: none;
         z-index: 1000;
       }
-      .selection-box {
-        position: absolute;
-        border: 3px solid rgb(59, 130, 246);
-        background: rgba(59, 130, 246, 0.1);
-        pointer-events: none;
-        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
-      }
       .box-select {
         position: absolute;
         border: 2px dashed rgb(59, 130, 246);
@@ -356,14 +349,35 @@ export class SelectionOverlay extends LitElement {
       shadowRoot: effectiveCanvas.shadowRoot,
     };
 
+    // Read current transform directly from panzoom element (not stale property/context)
+    // This ensures we always have the current scale/pan values
+    const currentTransform = this.readCurrentTransform(panZoomElement);
+
     // MECHANISM: Calculate screen bounds
     this.overlayState = calculateOverlayState(
       targets,
       canvasWithMetadata,
       canvasRect,
       panZoomElement,
-      this.effectivePanZoomTransform,
+      currentTransform,
     );
+  }
+
+  /**
+   * Read current transform directly from panzoom element.
+   * This ensures we always have fresh values instead of stale property/context.
+   */
+  private readCurrentTransform(panZoomElement: HTMLElement | null): PanZoomTransform | undefined {
+    // Try reading from panzoom element directly (most accurate)
+    if (panZoomElement) {
+      const pz = panZoomElement as any;
+      if (typeof pz.x === "number" && typeof pz.y === "number" && typeof pz.scale === "number") {
+        return { x: pz.x, y: pz.y, scale: pz.scale };
+      }
+    }
+
+    // Fall back to context/property
+    return this.effectivePanZoomTransform;
   }
 
   render() {
@@ -373,20 +387,14 @@ export class SelectionOverlay extends LitElement {
       return html``;
     }
 
-    const { selection, boxSelect, highlight } = this.overlayState;
+    // NOTE: Selection visualization is handled by EFTransformHandles (with rotation support).
+    // This overlay only renders:
+    // - box-select: marquee during drag-to-select
+    // - highlight-box: hover indication for non-selected elements
+    const { boxSelect, highlight } = this.overlayState;
     const selectionMode = this.effectiveSelection?.selectionMode;
 
     return html`
-      ${
-        selection
-          ? html`
-            <div
-              class="selection-box"
-              style="left: ${selection.x}px; top: ${selection.y}px; width: ${selection.width}px; height: ${selection.height}px; position: absolute; border: 3px solid rgb(59, 130, 246); background: rgba(59, 130, 246, 0.1); pointer-events: none;"
-            ></div>
-          `
-          : html``
-      }
       ${
         boxSelect
           ? html`
@@ -402,7 +410,7 @@ export class SelectionOverlay extends LitElement {
           ? html`
             <div
               class="highlight-box"
-              style="left: ${highlight.x}px; top: ${highlight.y}px; width: ${highlight.width}px; height: ${highlight.height}px; position: absolute; border: 2px solid rgb(148, 163, 184); background: rgba(148, 163, 184, 0.1); pointer-events: none; box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.3);"
+              style="left: ${highlight.x}px; top: ${highlight.y}px; width: ${highlight.width}px; height: ${highlight.height}px; position: absolute; border: 2px solid rgb(148, 163, 184); background: rgba(148, 163, 184, 0.1); pointer-events: none; box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.3);${highlight.rotation ? ` transform: rotate(${highlight.rotation}deg); transform-origin: center;` : ""}"
             ></div>
           `
           : html``
