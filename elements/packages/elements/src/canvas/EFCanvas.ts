@@ -369,6 +369,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
           : element;
       if (elementToUnregister) {
         elementToUnregister.removeAttribute("data-selected");
+        elementToUnregister.removeAttribute("data-highlighted");
       }
       
       // Remove hover listeners
@@ -417,7 +418,18 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
    */
   setHighlightedElement(element: HTMLElement | null): void {
     if (this.highlightedElement !== element) {
+      // Remove data-highlighted from previously highlighted element
+      if (this.highlightedElement) {
+        this.highlightedElement.removeAttribute("data-highlighted");
+      }
+
+      // Update state
       this.highlightedElement = element;
+
+      // Add data-highlighted to newly highlighted element
+      if (element) {
+        element.setAttribute("data-highlighted", "true");
+      }
     }
   }
 

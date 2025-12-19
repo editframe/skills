@@ -248,6 +248,45 @@ describe("Canvas-Hierarchy-Timeline Sync", () => {
       expect(canvas.highlightedElement).toBe(null);
     }, 1000);
 
+    test("hovering element in canvas sets data-highlighted attribute", async () => {
+      const canvas = document.createElement("ef-canvas") as EFCanvas;
+      canvas.id = "test-canvas-hover-attr";
+      canvas.style.width = "800px";
+      canvas.style.height = "600px";
+      document.body.appendChild(canvas);
+
+      const timegroup1 = document.createElement("ef-timegroup") as EFTimegroup;
+      const timegroup1Id = nextId();
+      timegroup1.id = timegroup1Id;
+      timegroup1.setAttribute("mode", "fixed");
+      timegroup1.setAttribute("duration", "5s");
+      timegroup1.style.left = "100px";
+      timegroup1.style.top = "100px";
+      timegroup1.style.width = "400px";
+      timegroup1.style.height = "300px";
+      canvas.appendChild(timegroup1);
+
+      await canvas.updateComplete;
+      await timegroup1.updateComplete;
+
+      expect(timegroup1.hasAttribute("data-highlighted")).toBe(false);
+
+      timegroup1.dispatchEvent(
+        new MouseEvent("mouseenter", { bubbles: true }),
+      );
+      await canvas.updateComplete;
+
+      expect(timegroup1.hasAttribute("data-highlighted")).toBe(true);
+      expect(timegroup1.getAttribute("data-highlighted")).toBe("true");
+
+      timegroup1.dispatchEvent(
+        new MouseEvent("mouseleave", { bubbles: true }),
+      );
+      await canvas.updateComplete;
+
+      expect(timegroup1.hasAttribute("data-highlighted")).toBe(false);
+    }, 1000);
+
     test("hovering hierarchy item sets canvas highlightedElement", async () => {
       const canvas = document.createElement("ef-canvas") as EFCanvas;
       canvas.id = "test-canvas-hover-2";

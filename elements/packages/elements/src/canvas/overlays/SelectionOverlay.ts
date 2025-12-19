@@ -40,6 +40,13 @@ export class SelectionOverlay extends LitElement {
         background: rgba(59, 130, 246, 0.05);
         pointer-events: none;
       }
+      .highlight-box {
+        position: absolute;
+        border: 2px solid rgb(148, 163, 184);
+        background: rgba(148, 163, 184, 0.1);
+        pointer-events: none;
+        box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.3);
+      }
     `,
   ];
 
@@ -103,6 +110,9 @@ export class SelectionOverlay extends LitElement {
   private boxSelectBounds: DOMRect | null = null;
 
   @state()
+  private highlightBounds: DOMRect | null = null; // Bounding box for highlighted (hovered) element
+
+  @state()
   private lastSelectionMode: string | null = null;
 
   private animationFrame?: number;
@@ -129,7 +139,10 @@ export class SelectionOverlay extends LitElement {
       } else {
         this.findCanvasElement();
       }
-      this.startRafLoop();
+      // Always start RAF loop if we have a canvas element (needed for highlight updates)
+      if (this.canvasElement) {
+        this.startRafLoop();
+      }
     });
   }
 
@@ -156,6 +169,17 @@ export class SelectionOverlay extends LitElement {
     }
     // Ensure RAF loop is running when box selecting (in case it stopped)
     if (currentMode === "box-selecting" && !this.rafLoopActive) {
+      this.startRafLoop();
+    }
+    // Ensure RAF loop is running when canvas property is set (for highlight updates)
+    if (changedProperties.has("canvas") && this.canvas) {
+      this.canvasElement = this.canvas;
+      if (!this.rafLoopActive) {
+        this.startRafLoop();
+      }
+    }
+    // Ensure RAF loop is always running when we have a canvas (needed for highlight updates)
+    if (this.canvasElement && !this.rafLoopActive) {
       this.startRafLoop();
     }
   }
@@ -281,26 +305,21 @@ export class SelectionOverlay extends LitElement {
    * Update overlay data state, which triggers Lit render.
    */
   private updateOverlayData(): void {
-    const selection = this.effectiveSelection;
-    if (!selection) {
-      console.warn("[SelectionOverlay] No selection context available");
-      const hadSelection = this.selectionBounds !== null;
-      const hadBoxSelect = this.boxSelectBounds !== null;
-      this.selectionBounds = null;
-      this.boxSelectBounds = null;
-      if (hadSelection || hadBoxSelect) {
-        this.requestUpdate();
-      }
-      return;
+    // Ensure canvas element reference is up-to-date
+    if (this.canvas && this.canvas !== this.canvasElement) {
+      this.canvasElement = this.canvas;
     }
 
-    if (!this.canvasElement) {
-      console.warn("[SelectionOverlay] No canvas element found");
+    // Get canvas element - this is required for all overlay calculations
+    const effectiveCanvas = this.canvasElement || this.canvas;
+    if (!effectiveCanvas) {
       const hadSelection = this.selectionBounds !== null;
       const hadBoxSelect = this.boxSelectBounds !== null;
+      const hadHighlight = this.highlightBounds !== null;
       this.selectionBounds = null;
       this.boxSelectBounds = null;
-      if (hadSelection || hadBoxSelect) {
+      this.highlightBounds = null;
+      if (hadSelection || hadBoxSelect || hadHighlight) {
         this.requestUpdate();
       }
       return;
@@ -309,99 +328,107 @@ export class SelectionOverlay extends LitElement {
     // Get the canvas element's bounding rect
     // Try to use .canvas-content as reference (elements are positioned relative to it)
     // This already includes the pan transform from the parent ef-pan-zoom's .content-wrapper
-    let canvasRect = this.canvasElement.getBoundingClientRect();
-    if (this.canvasElement.shadowRoot) {
-      const canvasContent = this.canvasElement.shadowRoot.querySelector(
+    let canvasRect = effectiveCanvas.getBoundingClientRect();
+    if (effectiveCanvas.shadowRoot) {
+      const canvasContent = effectiveCanvas.shadowRoot.querySelector(
         ".canvas-content",
       ) as HTMLElement;
       if (canvasContent) {
         canvasRect = canvasContent.getBoundingClientRect();
       }
     }
-    // Calculate bounding box for all selected elements
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
-    let hasElements = false;
 
-    for (const elementId of selection.selectedIds) {
-      // Find element
-      let element: HTMLElement | null = null;
-      const root = this.getRootNode();
-      if (root instanceof ShadowRoot) {
-        element = root.querySelector(
-          `[data-element-id="${elementId}"]`,
-        ) as HTMLElement | null;
-      }
-      if (!element && this.canvasElement) {
-        if (this.canvasElement.shadowRoot) {
-          element = this.canvasElement.shadowRoot.querySelector(
+    // Selection context is optional - selection/box-select bounds need it, but highlight does not
+    const selection = this.effectiveSelection;
+
+    // Calculate selection bounds (requires selection context)
+    if (selection) {
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+      let hasElements = false;
+
+      for (const elementId of selection.selectedIds) {
+        // Find element
+        let element: HTMLElement | null = null;
+        const root = this.getRootNode();
+        if (root instanceof ShadowRoot) {
+          element = root.querySelector(
             `[data-element-id="${elementId}"]`,
           ) as HTMLElement | null;
         }
-        if (!element) {
-          element = this.canvasElement.querySelector(
-            `[data-element-id="${elementId}"]`,
-          ) as HTMLElement | null;
+        if (!element && this.canvasElement) {
+          if (this.canvasElement.shadowRoot) {
+            element = this.canvasElement.shadowRoot.querySelector(
+              `[data-element-id="${elementId}"]`,
+            ) as HTMLElement | null;
+          }
+          if (!element) {
+            element = this.canvasElement.querySelector(
+              `[data-element-id="${elementId}"]`,
+            ) as HTMLElement | null;
+          }
+        }
+
+        if (element) {
+          // ALWAYS use metadata as source of truth for canvas coordinates
+          // getBoundingClientRect() doesn't work for rotated elements (returns bounding box)
+          let canvasX: number;
+          let canvasY: number;
+          let canvasWidth: number;
+          let canvasHeight: number;
+
+          const canvas = this.canvasElement as any;
+          const metadata = canvas?.getElementData?.(elementId);
+
+          if (metadata) {
+            // Use metadata (already in canvas coordinates)
+            canvasX = metadata.x;
+            canvasY = metadata.y;
+            canvasWidth = metadata.width;
+            canvasHeight = metadata.height;
+          } else {
+            // Fallback: calculate from DOM (only if metadata not available)
+            const bounds = getElementBounds(element);
+            const scale = this.effectivePanZoomTransform?.scale || 1;
+            canvasX = (bounds.left - canvasRect.left) / scale;
+            canvasY = (bounds.top - canvasRect.top) / scale;
+            canvasWidth = bounds.width / scale;
+            canvasHeight = bounds.height / scale;
+          }
+
+          // Update bounding box
+          minX = Math.min(minX, canvasX);
+          minY = Math.min(minY, canvasY);
+          maxX = Math.max(maxX, canvasX + canvasWidth);
+          maxY = Math.max(maxY, canvasY + canvasHeight);
+          hasElements = true;
         }
       }
 
-      if (element) {
-        // ALWAYS use metadata as source of truth for canvas coordinates
-        // getBoundingClientRect() doesn't work for rotated elements (returns bounding box)
-        let canvasX: number;
-        let canvasY: number;
-        let canvasWidth: number;
-        let canvasHeight: number;
+      // Convert bounding box to screen coordinates
+      // canvasRect is .canvas-content's screen position
+      // Canvas coordinates are relative to .canvas-content
+      if (hasElements) {
+        const scale = this.effectivePanZoomTransform?.scale || 1;
 
-        const canvas = this.canvasElement as any;
-        const metadata = canvas?.getElementData?.(elementId);
+        // Convert canvas coordinates to screen coordinates
+        // screenX = canvasRect.left + canvasX * scale
+        const screenMinX = canvasRect.left + minX * scale;
+        const screenMinY = canvasRect.top + minY * scale;
+        const screenMaxX = canvasRect.left + maxX * scale;
+        const screenMaxY = canvasRect.top + maxY * scale;
 
-        if (metadata) {
-          // Use metadata (already in canvas coordinates)
-          canvasX = metadata.x;
-          canvasY = metadata.y;
-          canvasWidth = metadata.width;
-          canvasHeight = metadata.height;
-        } else {
-          // Fallback: calculate from DOM (only if metadata not available)
-          const bounds = getElementBounds(element);
-          const scale = this.effectivePanZoomTransform?.scale || 1;
-          canvasX = (bounds.left - canvasRect.left) / scale;
-          canvasY = (bounds.top - canvasRect.top) / scale;
-          canvasWidth = bounds.width / scale;
-          canvasHeight = bounds.height / scale;
-        }
-
-        // Update bounding box
-        minX = Math.min(minX, canvasX);
-        minY = Math.min(minY, canvasY);
-        maxX = Math.max(maxX, canvasX + canvasWidth);
-        maxY = Math.max(maxY, canvasY + canvasHeight);
-        hasElements = true;
+        this.selectionBounds = new DOMRect(
+          screenMinX,
+          screenMinY,
+          screenMaxX - screenMinX,
+          screenMaxY - screenMinY,
+        );
+      } else {
+        this.selectionBounds = null;
       }
-    }
-
-    // Convert bounding box to screen coordinates
-    // canvasRect is .canvas-content's screen position
-    // Canvas coordinates are relative to .canvas-content
-    if (hasElements) {
-      const scale = this.effectivePanZoomTransform?.scale || 1;
-
-      // Convert canvas coordinates to screen coordinates
-      // screenX = canvasRect.left + canvasX * scale
-      const screenMinX = canvasRect.left + minX * scale;
-      const screenMinY = canvasRect.top + minY * scale;
-      const screenMaxX = canvasRect.left + maxX * scale;
-      const screenMaxY = canvasRect.top + maxY * scale;
-
-      this.selectionBounds = new DOMRect(
-        screenMinX,
-        screenMinY,
-        screenMaxX - screenMinX,
-        screenMaxY - screenMinY,
-      );
     } else {
       this.selectionBounds = null;
     }
@@ -479,6 +506,71 @@ export class SelectionOverlay extends LitElement {
       this.boxSelectBounds = null;
     }
 
+    // Update highlight bounds - read highlightedElement from canvas
+    // Use canvasElement if available, otherwise fall back to canvas property
+    const canvas = (this.canvasElement || this.canvas) as any;
+    const highlightedElement = canvas?.highlightedElement as HTMLElement | null | undefined;
+    
+    // Track if highlight bounds changed to trigger update
+    const hadHighlight = this.highlightBounds !== null;
+
+    if (highlightedElement && canvas) {
+      // Get element ID to find metadata
+      const elementId =
+        highlightedElement.getAttribute("data-element-id") ||
+        highlightedElement.id;
+
+      if (elementId) {
+        // Use metadata as source of truth for canvas coordinates
+        const metadata = canvas?.getElementData?.(elementId);
+
+        if (metadata && metadata.width > 0 && metadata.height > 0) {
+          // Use metadata (already in canvas coordinates)
+          const canvasX = metadata.x;
+          const canvasY = metadata.y;
+          const canvasWidth = metadata.width;
+          const canvasHeight = metadata.height;
+
+          // Convert to screen coordinates
+          const scale = this.effectivePanZoomTransform?.scale || 1;
+          const screenMinX = canvasRect.left + canvasX * scale;
+          const screenMinY = canvasRect.top + canvasY * scale;
+          const screenMaxX = canvasRect.left + (canvasX + canvasWidth) * scale;
+          const screenMaxY = canvasRect.top + (canvasY + canvasHeight) * scale;
+
+          this.highlightBounds = new DOMRect(
+            screenMinX,
+            screenMinY,
+            screenMaxX - screenMinX,
+            screenMaxY - screenMinY,
+          );
+        } else {
+          // Fallback: calculate from DOM (when metadata not available or has zero dimensions)
+          const bounds = getElementBounds(highlightedElement);
+          
+          // Use screen coordinates directly from getBoundingClientRect
+          // This works for elements that don't have proper metadata
+          this.highlightBounds = new DOMRect(
+            bounds.left,
+            bounds.top,
+            bounds.width,
+            bounds.height,
+          );
+        }
+      } else {
+        this.highlightBounds = null;
+      }
+    } else {
+      // Clear highlight bounds
+      this.highlightBounds = null;
+    }
+    
+    // Explicitly trigger update if highlight bounds changed
+    const hasHighlight = this.highlightBounds !== null;
+    if (hadHighlight !== hasHighlight) {
+      this.requestUpdate();
+    }
+
     // Selection bounds already updated above
 
     // Note: We don't need to call requestUpdate() here because:
@@ -490,23 +582,16 @@ export class SelectionOverlay extends LitElement {
   }
 
   render() {
-    // Always render the element (even if empty) so it exists in DOM
-    // This helps with debugging and ensures the element is present
-    const selection = this.effectiveSelection;
-    if (!selection || !this.canvasElement) {
-      // Render a visible debug element to verify the element exists and check context
-      return html`
-        <div 
-          style="position: fixed; top: 10px; right: 10px; background: red; color: white; padding: 4px; z-index: 10000; font-size: 12px;"
-          data-debug="selection-overlay"
-        >
-          Debug: selection=${!!selection} canvas=${!!this.canvasElement} mode=${selection?.selectionMode || "none"}
-        </div>
-      `;
+    // We only need canvasElement to render overlays
+    // Selection context is optional - highlight can work without it
+    const effectiveCanvas = this.canvasElement || this.canvas;
+    if (!effectiveCanvas) {
+      return html``;
     }
 
+    const selection = this.effectiveSelection;
     const hasBoxSelect = !!this.boxSelectBounds;
-    const selectionMode = selection.selectionMode;
+    const selectionMode = selection?.selectionMode;
 
     return html`
       ${
@@ -514,7 +599,7 @@ export class SelectionOverlay extends LitElement {
           ? html`
             <div
               class="selection-box"
-              style="left: ${this.selectionBounds.x}px; top: ${this.selectionBounds.y}px; width: ${this.selectionBounds.width}px; height: ${this.selectionBounds.height}px;"
+              style="left: ${this.selectionBounds.x}px; top: ${this.selectionBounds.y}px; width: ${this.selectionBounds.width}px; height: ${this.selectionBounds.height}px; position: absolute; border: 3px solid rgb(59, 130, 246); background: rgba(59, 130, 246, 0.1); pointer-events: none;"
             ></div>
           `
           : html``
@@ -530,10 +615,20 @@ export class SelectionOverlay extends LitElement {
           : html``
       }
       ${
+        this.highlightBounds
+          ? html`
+            <div
+              class="highlight-box"
+              style="left: ${this.highlightBounds.x}px; top: ${this.highlightBounds.y}px; width: ${this.highlightBounds.width}px; height: ${this.highlightBounds.height}px; position: absolute; border: 2px solid rgb(148, 163, 184); background: rgba(148, 163, 184, 0.1); pointer-events: none; box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.3);"
+            ></div>
+          `
+          : html``
+      }
+      ${
         selectionMode === "box-selecting" && !hasBoxSelect
           ? html`
             <div style="position: fixed; top: 50px; right: 10px; background: orange; color: white; padding: 4px; z-index: 10000; font-size: 12px;">
-              Box selecting but no bounds! mode=${selectionMode} bounds=${selection.boxSelectBounds ? "exists" : "null"}
+              Box selecting but no bounds! mode=${selectionMode} bounds=${selection?.boxSelectBounds ? "exists" : "null"}
             </div>
           `
           : html``
