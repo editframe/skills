@@ -588,6 +588,104 @@ describe("EFTimeline", () => {
       // Playhead should now be at 5000ms * 0.2 px/ms = 1000px
       expect(playhead.style.left).toBe("1000px");
     });
+
+    test("playhead drag position matches cursor when timeline is scrolled", async () => {
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      const timegroupId = nextId();
+      timegroup.id = timegroupId;
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "20s");
+      document.body.appendChild(timegroup);
+
+      const timeline = document.createElement("ef-timeline") as EFTimeline;
+      timeline.controlTarget = timegroupId;
+      timeline.pixelsPerMs = 0.1;
+      timeline.style.width = "600px";
+      timeline.style.height = "400px";
+      document.body.appendChild(timeline);
+
+      await timegroup.updateComplete;
+      await timeline.updateComplete;
+
+      const tracksScroll = timeline.shadowRoot?.querySelector(
+        ".tracks-scroll",
+      ) as HTMLElement;
+      expect(tracksScroll).toBeTruthy();
+
+      const hierarchyWidth = 200;
+      const scrollOffset = 500;
+      
+      tracksScroll.scrollLeft = scrollOffset;
+      // Wait for scroll event to fire and update viewportScrollLeft
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await timeline.updateComplete;
+
+      const rulerContent = timeline.shadowRoot?.querySelector(
+        ".ruler-content",
+      ) as HTMLElement;
+      expect(rulerContent).toBeTruthy();
+
+      const rulerRect = rulerContent.getBoundingClientRect();
+      const clickX = rulerRect.left + 100;
+      const clickY = rulerRect.top + 10;
+
+      const pointerId = 1;
+      const pointerDownEvent = new PointerEvent("pointerdown", {
+        bubbles: true,
+        cancelable: true,
+        clientX: clickX,
+        clientY: clickY,
+        pointerId,
+      });
+
+      rulerContent.dispatchEvent(pointerDownEvent);
+      await timeline.updateComplete;
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      // handleRulerPointerDown calculates: x = e.clientX - rect.left + scrollLeft
+      // where rect is the ruler-content's bounding rect
+      const expectedX = clickX - rulerRect.left + tracksScroll.scrollLeft;
+      const expectedTimeMs = Math.max(0, expectedX / timeline.pixelsPerMs);
+
+      expect(timegroup.currentTimeMs).toBeCloseTo(expectedTimeMs, 0);
+
+      const dragX = clickX + 50;
+      const pointerMoveEvent = new PointerEvent("pointermove", {
+        bubbles: true,
+        cancelable: true,
+        clientX: dragX,
+        clientY: clickY,
+        pointerId,
+      });
+
+      window.dispatchEvent(pointerMoveEvent);
+      await timeline.updateComplete;
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      // updatePlayheadFromMouse calculates: x = lastClientX - rect.left + scrollLeft - hierarchyWidth
+      // where rect is tracksScroll's bounding rect
+      const tracksScrollRect = tracksScroll.getBoundingClientRect();
+      // Use the actual scrollLeft from the DOM, which should match viewportScrollLeft after sync
+      const actualScrollLeft = tracksScroll.scrollLeft;
+      const expectedDragX = dragX - tracksScrollRect.left + actualScrollLeft - hierarchyWidth;
+      const expectedDragTimeMs = Math.max(0, expectedDragX / timeline.pixelsPerMs);
+
+      // The fix ensures viewportScrollLeft is synced, so the playhead should match the cursor
+      // Allow small tolerance for sub-pixel rounding (up to 20ms = 2 pixels at 0.1 px/ms)
+      expect(Math.abs(timegroup.currentTimeMs - expectedDragTimeMs)).toBeLessThanOrEqual(20);
+
+      const pointerUpEvent = new PointerEvent("pointerup", {
+        bubbles: true,
+        cancelable: true,
+        clientX: dragX,
+        clientY: clickY,
+        pointerId,
+      });
+
+      window.dispatchEvent(pointerUpEvent);
+      await timeline.updateComplete;
+    }, 1000);
   });
 
   describe("timeline state context", () => {
