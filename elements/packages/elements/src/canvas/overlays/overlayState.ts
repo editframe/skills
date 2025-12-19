@@ -32,6 +32,7 @@ export interface ScreenBounds {
   y: number;
   width: number;
   height: number;
+  rotation?: number;
 }
 
 /**
@@ -137,11 +138,19 @@ export function calculateElementScreenBounds(
 
   if (metadata && metadata.width > 0 && metadata.height > 0) {
     // Use metadata (already in canvas coordinates)
+    // For rotated elements, we position from the CENTER (stable during rotation)
+    // Then apply CSS transform: rotate() with transform-origin: center
+    const centerCanvasX = metadata.x + metadata.width / 2;
+    const centerCanvasY = metadata.y + metadata.height / 2;
+    const screenWidth = metadata.width * scale;
+    const screenHeight = metadata.height * scale;
+
     return {
-      x: canvasRect.left + metadata.x * scale,
-      y: canvasRect.top + metadata.y * scale,
-      width: metadata.width * scale,
-      height: metadata.height * scale,
+      x: canvasRect.left + centerCanvasX * scale - screenWidth / 2,
+      y: canvasRect.top + centerCanvasY * scale - screenHeight / 2,
+      width: screenWidth,
+      height: screenHeight,
+      rotation: metadata.rotation ?? 0,
     };
   }
 
@@ -155,6 +164,7 @@ export function calculateElementScreenBounds(
     y: bounds.top,
     width: bounds.width,
     height: bounds.height,
+    rotation: 0,
   };
 }
 
@@ -323,6 +333,12 @@ export function calculateOverlayState(
 ): OverlayState {
   const scale = panZoomTransform?.scale ?? 1;
 
+  // INVARIANT: Don't show highlight when element is also selected
+  // This prevents duplicate overlays and visual clutter
+  const shouldShowHighlight =
+    targets.highlightedElementId !== null &&
+    !targets.selectedIds.has(targets.highlightedElementId);
+
   return {
     selection: calculateSelectionBounds(
       targets.selectedIds,
@@ -335,12 +351,14 @@ export function calculateOverlayState(
       panZoomElement,
       panZoomTransform,
     ),
-    highlight: calculateHighlightBounds(
-      targets.highlightedElementId,
-      canvas,
-      canvasRect,
-      scale,
-    ),
+    highlight: shouldShowHighlight
+      ? calculateHighlightBounds(
+          targets.highlightedElementId,
+          canvas,
+          canvasRect,
+          scale,
+        )
+      : null,
   };
 }
 
