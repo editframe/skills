@@ -31,6 +31,14 @@ export interface HierarchyContext {
   getCanvasSelectionContext?: () =>
     | import("../../canvas/selection/selectionContext.js").SelectionContext
     | undefined;
+  /**
+   * Get the currently highlighted element from the canvas.
+   */
+  getHighlightedElement?: () => HTMLElement | null;
+  /**
+   * Set the highlighted element on the canvas.
+   */
+  setHighlightedElement?: (element: HTMLElement | null) => void;
 }
 
 export const hierarchyContext = createContext<HierarchyContext>(

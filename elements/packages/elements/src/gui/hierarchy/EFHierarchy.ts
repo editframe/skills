@@ -13,7 +13,7 @@ import {
   hierarchyContext,
 } from "./hierarchyContext.js";
 import { renderHierarchyChildren } from "./EFHierarchyItem.js";
-import { type FocusContext, focusContext } from "../focusContext.js";
+import type { EFCanvas } from "../../canvas/EFCanvas.js";
 
 @customElement("ef-hierarchy")
 export class EFHierarchy extends TWMixin(LitElement) {
@@ -80,33 +80,6 @@ export class EFHierarchy extends TWMixin(LitElement) {
   @property({ type: Boolean, attribute: "show-header" })
   showHeader = true;
 
-  /**
-   * Component ID or selector to sync hover state with.
-   * When set, the hierarchy will listen to hover events from the specified component
-   * and update its focused element state accordingly.
-   * 
-   * Examples:
-   * - `sync-hover="timeline"` - sync with element with id="timeline"
-   * - `sync-hover="ef-timeline"` - sync with first ef-timeline element
-   * - `sync-hover="#my-timeline"` - sync with element with id="my-timeline"
-   */
-  @property({ type: String, attribute: "sync-hover" })
-  syncHover = "";
-
-  /**
-   * Component ID or selector to sync selection state with.
-   * When set, the hierarchy will listen to selection events from the specified component.
-   * 
-   * Note: Selection is typically synced automatically via selectionContext.
-   * This attribute is for explicit syncing when selectionContext is not available.
-   * 
-   * Examples:
-   * - `sync-selection="timeline"` - sync with element with id="timeline"
-   * - `sync-selection="ef-timeline"` - sync with first ef-timeline element
-   */
-  @property({ type: String, attribute: "sync-selection" })
-  syncSelection = "";
-
   @property({ type: Array, attribute: false })
   hideSelectors?: string[];
 
@@ -117,18 +90,28 @@ export class EFHierarchy extends TWMixin(LitElement) {
   targetElement: Element | null = null;
 
   private targetController?: TargetController;
-  private syncHoverHandler?: (e: Event) => void;
-  private syncSelectionHandler?: (e: Event) => void;
-  private syncedHoverComponent: HTMLElement | null = null;
-  private syncedSelectionComponent: HTMLElement | null = null;
-  private isSyncingHover = false;
-  private isSyncingSelection = false;
 
   @consume({ context: selectionContext, subscribe: true })
   canvasSelectionContext?: import("../../canvas/selection/selectionContext.js").SelectionContext;
 
-  @consume({ context: focusContext, subscribe: true })
-  focusContextValue?: FocusContext;
+  /**
+   * Get the target canvas element.
+   * The canvas is the source of truth for selection and highlight state.
+   */
+  private getCanvas(): EFCanvas | null {
+    // First try TargetController (for registered elements like EFCanvas)
+    if (this.targetElement && (this.targetElement as any).selectionContext) {
+      return this.targetElement as EFCanvas;
+    }
+    // Fall back to direct lookup for any element with matching ID
+    if (this.target) {
+      const target = document.getElementById(this.target);
+      if (target && (target as any).selectionContext) {
+        return target as EFCanvas;
+      }
+    }
+    return null;
+  }
 
   /**
    * Get canvas selection context from the target canvas element.
@@ -141,12 +124,26 @@ export class EFHierarchy extends TWMixin(LitElement) {
     if (this.canvasSelectionContext) {
       return this.canvasSelectionContext;
     }
-    // Use target element (from TargetController or direct lookup)
-    const target = this.getTargetElement();
-    if (target && (target as any).selectionContext) {
-      return (target as any).selectionContext;
-    }
-    return undefined;
+    // Use target canvas
+    const canvas = this.getCanvas();
+    return canvas?.selectionContext;
+  }
+
+  /**
+   * Get the currently highlighted element from the canvas.
+   */
+  getHighlightedElement(): HTMLElement | null {
+    const canvas = this.getCanvas();
+    return canvas?.highlightedElement ?? null;
+  }
+
+  /**
+   * Set the highlighted element on the canvas.
+   * Called when user hovers an item in the hierarchy.
+   */
+  setHighlightedElement(element: HTMLElement | null): void {
+    const canvas = this.getCanvas();
+    canvas?.setHighlightedElement(element);
   }
 
   @state()
@@ -273,6 +270,8 @@ export class EFHierarchy extends TWMixin(LitElement) {
     state: this.hierarchyState,
     actions: this.hierarchyActions,
     getCanvasSelectionContext: () => this.getCanvasSelectionContext(),
+    getHighlightedElement: () => this.getHighlightedElement(),
+    setHighlightedElement: (el) => this.setHighlightedElement(el),
   };
 
   private getTargetElement(): Element | null {
@@ -365,25 +364,14 @@ export class EFHierarchy extends TWMixin(LitElement) {
       }
     }
 
-    // Re-setup sync listeners when sync attributes change
-    if (
-      changedProperties.has("syncHover") ||
-      changedProperties.has("syncSelection")
-    ) {
-      this.setupSyncListeners();
-    }
-
-    // Update provided context when state or targetElement changes
-    if (
-      changedProperties.has("hierarchyState") ||
-      changedProperties.has("targetElement")
-    ) {
-      this.providedContext = {
-        state: this.hierarchyState,
-        actions: this.hierarchyActions,
-        getCanvasSelectionContext: () => this.getCanvasSelectionContext(),
-      };
-    }
+    // Always update provided context to ensure children have fresh getters
+    this.providedContext = {
+      state: this.hierarchyState,
+      actions: this.hierarchyActions,
+      getCanvasSelectionContext: () => this.getCanvasSelectionContext(),
+      getHighlightedElement: () => this.getHighlightedElement(),
+      setHighlightedElement: (el) => this.setHighlightedElement(el),
+    };
 
     super.willUpdate(changedProperties);
   }
@@ -392,13 +380,22 @@ export class EFHierarchy extends TWMixin(LitElement) {
     super.connectedCallback();
     this.initializeExpandedState();
     this.setupSelectionListener();
-    this.setupSyncListeners();
   }
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
     this.removeSelectionListener();
-    this.removeSyncListeners();
+  }
+
+  protected updated(changedProperties: PropertyValues): void {
+    super.updated(changedProperties);
+
+    // Re-setup selection listener when target changes
+    if (changedProperties.has("targetElement") || changedProperties.has("target")) {
+      this.removeSelectionListener();
+      this.selectionChangeHandler = undefined;
+      this.setupSelectionListener();
+    }
   }
 
   private setupSelectionListener(): void {
@@ -431,127 +428,6 @@ export class EFHierarchy extends TWMixin(LitElement) {
         this.selectionChangeHandler,
       );
       this.selectionChangeHandler = undefined;
-    }
-  }
-
-  /**
-   * Find component to sync with based on ID or selector.
-   */
-  private findSyncComponent(selector: string): HTMLElement | null {
-    if (!selector) return null;
-
-    // Try as ID first
-    const byId = document.getElementById(selector);
-    if (byId) return byId;
-
-    // Try as selector (e.g., "ef-timeline", "#my-timeline")
-    try {
-      const bySelector = document.querySelector(selector) as HTMLElement | null;
-      if (bySelector) return bySelector;
-    } catch {
-      // Invalid selector, ignore
-    }
-
-    return null;
-  }
-
-  /**
-   * Setup sync listeners for hover and selection.
-   */
-  private setupSyncListeners(): void {
-    this.removeSyncListeners();
-
-    // Setup hover sync - listen to timeline row-hover and canvas-hover events
-    if (this.syncHover) {
-      const hoverComponent = this.findSyncComponent(this.syncHover);
-      if (hoverComponent) {
-        this.syncedHoverComponent = hoverComponent;
-        this.syncHoverHandler = (e: Event) => {
-          // Check if event originated from or bubbled through the synced component
-          // For row-hover events from timeline, check if they came from within the timeline
-          const target = e.target as Node;
-          const eventPath = e.composedPath();
-          
-          // Check if the synced component is in the event path (for bubbling events)
-          const isFromSyncedComponent = 
-            hoverComponent === target || 
-            hoverComponent.contains(target) ||
-            eventPath.includes(hoverComponent);
-          
-          if (!isFromSyncedComponent) {
-            return;
-          }
-          
-          const customEvent = e as CustomEvent<{ element: HTMLElement | null }>;
-          if (customEvent.detail && this.focusContextValue && !this.isSyncingHover) {
-            this.isSyncingHover = true;
-            try {
-              // Update focused element via focusContext for cross-view hover highlighting
-              this.focusContextValue.focusedElement = customEvent.detail.element;
-            } finally {
-              this.isSyncingHover = false;
-            }
-          }
-        };
-        // Listen on document to catch bubbling events from timeline rows and canvas elements
-        document.addEventListener("row-hover", this.syncHoverHandler);
-        document.addEventListener("canvas-hover", this.syncHoverHandler);
-      }
-    }
-
-    // Setup selection sync - listen to timeline row-select events
-    // Note: Selection is already synced via selectionContext, but this handles
-    // cases where timeline row-select fires before selectionContext updates.
-    if (this.syncSelection) {
-      const selectionComponent = this.findSyncComponent(this.syncSelection);
-      if (selectionComponent) {
-        this.syncedSelectionComponent = selectionComponent;
-        this.syncSelectionHandler = (e: Event) => {
-          // Only handle events that originated from or bubbled through the synced component
-          const target = e.target as Node;
-          if (target && selectionComponent !== target && !selectionComponent.contains(target)) {
-            return;
-          }
-          const customEvent = e as CustomEvent<{
-            elementId: string;
-            element: HTMLElement;
-          }>;
-          if (customEvent.detail && customEvent.detail.elementId && !this.isSyncingSelection) {
-            this.isSyncingSelection = true;
-            try {
-              // Check if already selected to avoid redundant updates
-              const selectionCtx = this.getCanvasSelectionContext();
-              const currentSelection = selectionCtx ? Array.from(selectionCtx.selectedIds) : [];
-              if (!currentSelection.includes(customEvent.detail.elementId)) {
-                // Select via hierarchy actions (which will sync with canvas)
-                this.hierarchyActions.select(customEvent.detail.elementId);
-              }
-            } finally {
-              this.isSyncingSelection = false;
-            }
-          }
-        };
-        // Listen on document to catch bubbling events from timeline rows
-        document.addEventListener("row-select", this.syncSelectionHandler);
-      }
-    }
-  }
-
-  /**
-   * Remove sync listeners.
-   */
-  private removeSyncListeners(): void {
-    if (this.syncHoverHandler) {
-      document.removeEventListener("row-hover", this.syncHoverHandler);
-      document.removeEventListener("canvas-hover", this.syncHoverHandler);
-      this.syncedHoverComponent = null;
-      this.syncHoverHandler = undefined;
-    }
-
-    if (this.syncSelectionHandler) {
-      document.removeEventListener("row-select", this.syncSelectionHandler);
-      this.syncedSelectionComponent = null;
-      this.syncSelectionHandler = undefined;
     }
   }
 

@@ -32,9 +32,8 @@ import { selectionContext } from "../../canvas/selection/selectionContext.js";
 import { targetTemporalContext } from "../ContextMixin.js";
 import { currentTimeContext } from "../currentTimeContext.js";
 import { durationContext } from "../durationContext.js";
-import { type FocusContext, focusContext } from "../focusContext.js";
-import { focusedElementContext } from "../focusedElementContext.js";
 import { loopContext, playingContext } from "../playingContext.js";
+import type { EFCanvas } from "../../canvas/EFCanvas.js";
 import { shouldRenderElement } from "../hierarchy/EFHierarchyItem.js";
 import { TWMixin } from "../TWMixin.js";
 import "./tracks/index.js";
@@ -260,6 +259,19 @@ export class EFTimeline extends TWMixin(LitElement) {
         height: 100%;
       }
       
+      .ruler-playhead-handle {
+        position: absolute;
+        bottom: -6px;
+        transform: translateX(-50%);
+        width: 12px;
+        height: 12px;
+        background: var(--timeline-playhead);
+        border-radius: 50%;
+        pointer-events: auto;
+        cursor: ew-resize;
+        z-index: 101;
+      }
+      
       .tracks-viewport {
         flex: 1;
         display: flex;
@@ -314,17 +326,15 @@ export class EFTimeline extends TWMixin(LitElement) {
         z-index: 100;
       }
       
-      .playhead-handle {
+      .playhead-drag-target {
         position: absolute;
-        top: -4px;
+        top: 0;
+        bottom: 0;
         left: 50%;
         transform: translateX(-50%);
-        width: 12px;
-        height: 12px;
-        background: var(--timeline-playhead);
-        border-radius: 50%;
-        pointer-events: auto;
+        width: 16px;
         cursor: ew-resize;
+        pointer-events: auto;
       }
       
       /* === FRAME HIGHLIGHT === */
@@ -404,31 +414,16 @@ export class EFTimeline extends TWMixin(LitElement) {
   showTimeDisplay = true;
 
   /**
-   * Component ID or selector to sync hover state with.
-   * When set, the timeline will listen to hover events from the specified component
-   * and update its hovered element state accordingly.
+   * Target temporal element ID for playback control.
+   * Use this to specify which temporal element the timeline controls.
+   * If not set and target is a canvas, derives from canvas selection.
    * 
    * Examples:
-   * - `sync-hover="hierarchy"` - sync with element with id="hierarchy"
-   * - `sync-hover="ef-hierarchy"` - sync with first ef-hierarchy element
-   * - `sync-hover="#my-hierarchy"` - sync with element with id="my-hierarchy"
+   * - `control-target="timegroup-1"` - control specific timegroup
+   * - Empty: derive from canvas active selection
    */
-  @property({ type: String, attribute: "sync-hover" })
-  syncHover = "";
-
-  /**
-   * Component ID or selector to sync selection state with.
-   * When set, the timeline will listen to selection events from the specified component.
-   * 
-   * Note: Selection is typically synced automatically via selectionContext.
-   * This attribute is for explicit syncing when selectionContext is not available.
-   * 
-   * Examples:
-   * - `sync-selection="hierarchy"` - sync with element with id="hierarchy"
-   * - `sync-selection="ef-hierarchy"` - sync with first ef-hierarchy element
-   */
-  @property({ type: String, attribute: "sync-selection" })
-  syncSelection = "";
+  @property({ type: String, attribute: "control-target" })
+  controlTarget = "";
 
   /**
    * CSS selectors for elements to hide in the timeline.
@@ -464,8 +459,13 @@ export class EFTimeline extends TWMixin(LitElement) {
   // STATE
   // ============================================================================
 
+  /**
+   * Target element for canvas-wide state (selection, highlight).
+   * This should be set to the canvas element.
+   */
   @state()
   private targetElement: HTMLElement | null = null;
+
 
   @state()
   private currentTimeMs = 0;
@@ -475,16 +475,6 @@ export class EFTimeline extends TWMixin(LitElement) {
 
   @state()
   private isLooping = false;
-
-  @state()
-  private focusedElement: HTMLElement | null = null;
-
-  /**
-   * The currently hovered element in the timeline.
-   * Can be set externally for cross-view hover sync.
-   */
-  @property({ type: Object, attribute: false })
-  hoveredElement: Element | null = null;
 
   @state()
   private viewportScrollLeft = 0;
@@ -510,13 +500,8 @@ export class EFTimeline extends TWMixin(LitElement) {
   private keydownHandler?: (e: KeyboardEvent) => void;
   private isDraggingPlayhead = false;
   private targetObserver?: MutationObserver;
-  private syncHoverHandler?: (e: Event) => void;
-  private syncSelectionHandler?: (e: Event) => void;
-  private syncedHoverComponent: HTMLElement | null = null;
-  private syncedSelectionComponent: HTMLElement | null = null;
-  private isSyncingHover = false;
-  private isSyncingSelection = false;
   private canvasActiveRootTemporalChangeHandler?: () => void;
+  private canvasHighlightChangeHandler?: () => void;
 
   // ============================================================================
   // CONTEXT PROVIDERS
@@ -524,15 +509,6 @@ export class EFTimeline extends TWMixin(LitElement) {
 
   @consume({ context: selectionContext, subscribe: true })
   selectionContext?: import("../../canvas/selection/selectionContext.js").SelectionContext;
-
-  @provide({ context: focusContext })
-  @state()
-  private _focusContextValue: FocusContext = { focusedElement: null };
-
-  @provide({ context: focusedElementContext })
-  get _focusedElement(): HTMLElement | null {
-    return this.focusedElement;
-  }
 
   @provide({ context: playingContext })
   get providedPlaying(): boolean {
@@ -591,37 +567,70 @@ export class EFTimeline extends TWMixin(LitElement) {
   // DERIVED STATE
   // ============================================================================
 
+  /**
+   * Get the target canvas element.
+   * The canvas is the source of truth for selection and highlight state.
+   */
+  private getCanvas(): EFCanvas | null {
+    // Use target element if it's a canvas
+    if (this.targetElement && (this.targetElement as any).selectionContext) {
+      return this.targetElement as EFCanvas;
+    }
+    // Fall back to finding a canvas by ID
+    if (this.target) {
+      const target = document.getElementById(this.target);
+      if (target && (target as any).selectionContext) {
+        return target as EFCanvas;
+      }
+    }
+    // Fall back to first canvas in document
+    return document.querySelector("ef-canvas") as EFCanvas | null;
+  }
+
   private getCanvasSelectionContext():
     | import("../../canvas/selection/selectionContext.js").SelectionContext
     | undefined {
     if (this.selectionContext) return this.selectionContext;
-    const canvas = document.querySelector("ef-canvas") as any;
-    return canvas?.selectionContext;
+    return this.getCanvas()?.selectionContext;
+  }
+
+  /**
+   * Get the currently highlighted element from the canvas.
+   */
+  getHighlightedElement(): HTMLElement | null {
+    return this.getCanvas()?.highlightedElement ?? null;
+  }
+
+  /**
+   * Set the highlighted element on the canvas.
+   * Called when user hovers a row in the timeline.
+   */
+  setHighlightedElement(element: HTMLElement | null): void {
+    this.getCanvas()?.setHighlightedElement(element);
   }
 
   get targetTemporal(): TemporalMixinInterface | null {
-    // If target is "selection" or empty, derive from canvas selection
-    const useSelectionDerived =
-      this.target === "" || this.target === "selection";
+    // If controlTarget is explicitly set, look it up directly
+    if (this.controlTarget && this.controlTarget !== "" && this.controlTarget !== "selection") {
+      const element = document.getElementById(this.controlTarget);
+      if (element && isEFTemporal(element)) {
+        return element as TemporalMixinInterface & HTMLElement;
+      }
+    }
 
-    if (useSelectionDerived) {
-      const selectionCtx = this.getCanvasSelectionContext();
-      if (selectionCtx) {
-        const selectedIds = Array.from(selectionCtx.selectedIds);
-        if (selectedIds.length > 0 && selectedIds[0]) {
-          const element = document.getElementById(selectedIds[0]);
-          if (element) {
-            const rootTemporal = findRootTemporal(element);
-            if (rootTemporal) return rootTemporal;
-          }
+    // If controlTarget is "selection" or empty, derive from canvas selection
+    const selectionCtx = this.getCanvasSelectionContext();
+    if (selectionCtx) {
+      const selectedIds = Array.from(selectionCtx.selectedIds);
+      if (selectedIds.length > 0 && selectedIds[0]) {
+        const element = document.getElementById(selectedIds[0]);
+        if (element) {
+          const rootTemporal = findRootTemporal(element);
+          if (rootTemporal) return rootTemporal;
         }
       }
     }
 
-    // Otherwise, use the explicitly specified target element
-    if (this.targetElement && isEFTemporal(this.targetElement)) {
-      return this.targetElement as TemporalMixinInterface & HTMLElement;
-    }
     return null;
   }
 
@@ -667,7 +676,6 @@ export class EFTimeline extends TWMixin(LitElement) {
     this.startTimeUpdate();
     this.setupSelectionListener();
     this.setupKeyboardListener();
-    this.setupSyncListeners();
     this.updateTimelineState();
   }
 
@@ -677,7 +685,6 @@ export class EFTimeline extends TWMixin(LitElement) {
     this.removeSelectionListener();
     this.removeScrollListener();
     this.removeKeyboardListener();
-    this.removeSyncListeners();
     this.targetObserver?.disconnect();
   }
 
@@ -701,25 +708,13 @@ export class EFTimeline extends TWMixin(LitElement) {
   }
 
   protected willUpdate(changedProperties: PropertyValues): void {
-    // Only use TargetController if target is explicitly set to an element ID (not "selection" or empty)
-    const useExplicitTarget =
-      this.target && this.target !== "" && this.target !== "selection";
-    if (changedProperties.has("target") && useExplicitTarget) {
-      const selectionCtx = this.getCanvasSelectionContext();
-      const hasSelection =
-        selectionCtx && Array.from(selectionCtx.selectedIds).length > 0;
-      if (!hasSelection && !this.targetController) {
-        this.targetController = new TargetController(this as any);
-      }
+    // Setup TargetController for canvas target
+    if (changedProperties.has("target") && this.target && !this.targetController) {
+      this.targetController = new TargetController(this as any);
     }
 
-    // Re-setup sync listeners when sync attributes change
-    if (
-      changedProperties.has("syncHover") ||
-      changedProperties.has("syncSelection")
-    ) {
-      this.setupSyncListeners();
-    }
+    // Retry setting up selection listener if not yet connected
+    this.setupSelectionListener();
 
     // Always update timeline state - values may come from getters
     this.updateTimelineState();
@@ -730,9 +725,13 @@ export class EFTimeline extends TWMixin(LitElement) {
   protected updated(changedProperties: PropertyValues): void {
     super.updated(changedProperties);
 
-    // Re-register observer when target changes
+    // Re-register observer and listeners when target changes
     if (changedProperties.has("targetElement") || changedProperties.has("target")) {
       this.setupTargetObserver();
+      // Reset selection listener to ensure we're listening to the right canvas
+      this.removeSelectionListener();
+      this.selectionChangeHandler = undefined;
+      this.setupSelectionListener();
     }
 
     if (this.tracksScrollRef.value && !this.scrollHandler) {
@@ -743,6 +742,11 @@ export class EFTimeline extends TWMixin(LitElement) {
   }
 
   private setupSelectionListener(): void {
+    // Don't set up if already set up
+    if (this.selectionChangeHandler) {
+      return;
+    }
+
     const selectionCtx = this.getCanvasSelectionContext();
     if (selectionCtx && "addEventListener" in selectionCtx) {
       this.selectionChangeHandler = () => this.requestUpdate();
@@ -755,13 +759,10 @@ export class EFTimeline extends TWMixin(LitElement) {
     }
 
     // Also listen to activeroottemporalchange from canvas for more reliable updates
-    const canvas = document.querySelector("ef-canvas");
+    const canvas = this.getCanvas();
     if (canvas && !this.canvasActiveRootTemporalChangeHandler) {
       this.canvasActiveRootTemporalChangeHandler = () => {
-        // Only update if we're deriving from selection
-        if (this.target === "" || this.target === "selection") {
-          this.requestUpdate();
-        }
+        this.requestUpdate();
       };
       canvas.addEventListener(
         "activeroottemporalchange",
@@ -828,123 +829,6 @@ export class EFTimeline extends TWMixin(LitElement) {
   private removeKeyboardListener(): void {
     if (this.keydownHandler) {
       this.removeEventListener("keydown", this.keydownHandler);
-    }
-  }
-
-  /**
-   * Find component to sync with based on ID or selector.
-   */
-  private findSyncComponent(selector: string): HTMLElement | null {
-    if (!selector) return null;
-
-    // Try as ID first
-    const byId = document.getElementById(selector);
-    if (byId) return byId;
-
-    // Try as selector (e.g., "ef-hierarchy", "#my-hierarchy")
-    try {
-      const bySelector = document.querySelector(selector) as HTMLElement | null;
-      if (bySelector) return bySelector;
-    } catch {
-      // Invalid selector, ignore
-    }
-
-    return null;
-  }
-
-  /**
-   * Setup sync listeners for hover and selection.
-   */
-  private setupSyncListeners(): void {
-    this.removeSyncListeners();
-
-    // Setup hover sync - listen on document to catch bubbling events
-    if (this.syncHover) {
-      const hoverComponent = this.findSyncComponent(this.syncHover);
-      if (hoverComponent) {
-        this.syncedHoverComponent = hoverComponent;
-        this.syncHoverHandler = (e: Event) => {
-          // Only handle events that originated from or bubbled through the synced component
-          const target = e.target as Node;
-          if (target && hoverComponent !== target && !hoverComponent.contains(target)) {
-            return;
-          }
-          const customEvent = e as CustomEvent<{ element: HTMLElement | null }>;
-          if (customEvent.detail && !this.isSyncingHover) {
-            this.isSyncingHover = true;
-            try {
-              this.hoveredElement = customEvent.detail.element;
-              // Update focusContext for cross-view hover highlighting
-              if (this._focusContextValue) {
-                this._focusContextValue = {
-                  ...this._focusContextValue,
-                  focusedElement: customEvent.detail.element,
-                };
-              }
-            } finally {
-              this.isSyncingHover = false;
-            }
-          }
-        };
-        // Listen on document to catch bubbling events from hierarchy items
-        document.addEventListener("hierarchy-hover", this.syncHoverHandler);
-      }
-    }
-
-    // Setup selection sync
-    // Note: Timeline already handles selection internally via handleRowSelect,
-    // so this sync is mainly for hierarchy -> timeline direction.
-    // Timeline -> hierarchy sync happens automatically via selectionContext.
-    if (this.syncSelection) {
-      const selectionComponent = this.findSyncComponent(this.syncSelection);
-      if (selectionComponent) {
-        this.syncedSelectionComponent = selectionComponent;
-        this.syncSelectionHandler = (e: Event) => {
-          // Only handle events that originated from or bubbled through the synced component
-          const target = e.target as Node;
-          if (target && selectionComponent !== target && !selectionComponent.contains(target)) {
-            return;
-          }
-          const customEvent = e as CustomEvent<{ elementId: string | null }>;
-          if (customEvent.detail && !this.isSyncingSelection) {
-            this.isSyncingSelection = true;
-            try {
-              const selectionCtx = this.getCanvasSelectionContext();
-              if (selectionCtx) {
-                // Check if selection is already set to avoid redundant updates
-                const currentSelection = Array.from(selectionCtx.selectedIds);
-                const targetId = customEvent.detail.elementId;
-                if (targetId && !currentSelection.includes(targetId)) {
-                  selectionCtx.select(targetId);
-                } else if (!targetId && currentSelection.length > 0) {
-                  selectionCtx.clear();
-                }
-              }
-            } finally {
-              this.isSyncingSelection = false;
-            }
-          }
-        };
-        // Listen on document to catch bubbling events from hierarchy
-        document.addEventListener("hierarchy-select", this.syncSelectionHandler);
-      }
-    }
-  }
-
-  /**
-   * Remove sync listeners.
-   */
-  private removeSyncListeners(): void {
-    if (this.syncHoverHandler) {
-      document.removeEventListener("hierarchy-hover", this.syncHoverHandler);
-      this.syncedHoverComponent = null;
-      this.syncHoverHandler = undefined;
-    }
-
-    if (this.syncSelectionHandler) {
-      document.removeEventListener("hierarchy-select", this.syncSelectionHandler);
-      this.syncedSelectionComponent = null;
-      this.syncSelectionHandler = undefined;
     }
   }
 
@@ -1140,6 +1024,12 @@ export class EFTimeline extends TWMixin(LitElement) {
     this.handleSeek(timeMs);
     this.startPlayheadDrag(e);
     e.preventDefault();
+  }
+
+  @eventOptions({ passive: false })
+  private handlePlayheadPointerDown(e: PointerEvent): void {
+    e.stopPropagation();
+    this.startPlayheadDrag(e);
   }
 
   /** Hierarchy panel width - must match CSS --timeline-hierarchy-width */
@@ -1377,17 +1267,11 @@ export class EFTimeline extends TWMixin(LitElement) {
   }
 
   /**
-   * Handle row hover events - update hoveredElement state and sync with focusContext.
+   * Handle row hover events - update canvas highlighted element.
    */
   private handleRowHover(e: CustomEvent<{ element: Element | null }>): void {
-    this.hoveredElement = e.detail.element;
-    // Sync with focusContext for cross-view hover highlighting
-    if (this._focusContextValue) {
-      this._focusContextValue = {
-        ...this._focusContextValue,
-        focusedElement: e.detail.element as HTMLElement | null,
-      };
-    }
+    // Update canvas highlight (source of truth)
+    this.setHighlightedElement(e.detail.element as HTMLElement | null);
   }
 
   /**
@@ -1412,7 +1296,9 @@ export class EFTimeline extends TWMixin(LitElement) {
     );
 
     const selectionCtx = this.getCanvasSelectionContext();
-    const selectedIds = selectionCtx?.selectedIds ?? new Set<string>();
+    // Create new Set to break reference equality - ensures Lit detects changes
+    const selectedIds = new Set(selectionCtx?.selectedIds ?? []);
+    const highlightedElement = this.getHighlightedElement();
 
     return html`
       <div
@@ -1433,7 +1319,7 @@ export class EFTimeline extends TWMixin(LitElement) {
               ?enable-trim=${this.enableTrim}
               .hideSelectors=${this.hideSelectors}
               .showSelectors=${this.showSelectors}
-              .hoveredElement=${this.hoveredElement}
+              .highlightedElement=${highlightedElement}
               .selectedIds=${selectedIds}
             ></ef-timeline-row>
           `,
@@ -1478,6 +1364,13 @@ export class EFTimeline extends TWMixin(LitElement) {
                   duration-ms=${this.durationMs}
                   fps=${this.fps}
                 ></ef-timeline-ruler>
+                ${this.showPlayhead ? html`
+                  <div 
+                    class="ruler-playhead-handle" 
+                    style="left: ${playheadPx - this.viewportScrollLeft}px;"
+                    @pointerdown=${this.handlePlayheadPointerDown}
+                  ></div>
+                ` : nothing}
               </div>
             </div>
           `
@@ -1502,8 +1395,8 @@ export class EFTimeline extends TWMixin(LitElement) {
               <div class="playhead-layer" style="left: ${-this.viewportScrollLeft}px;">
                 ${this.renderFrameHighlight()}
                 ${this.showPlayhead ? html`
-                  <div class="playhead" style="left: ${playheadPx}px;">
-                    <div class="playhead-handle"></div>
+                  <div class="playhead" style="left: ${playheadPx - 1}px;">
+                    <div class="playhead-drag-target" @pointerdown=${this.handlePlayheadPointerDown}></div>
                   </div>
                 ` : nothing}
               </div>

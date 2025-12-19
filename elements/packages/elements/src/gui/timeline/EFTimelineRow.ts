@@ -129,22 +129,19 @@ export class EFTimelineRow extends TWMixin(LitElement) {
   @property({ type: Array, attribute: false })
   showSelectors?: string[];
 
-  // Interaction state - passed from parent timeline
+  /**
+   * The currently highlighted element from canvas (source of truth).
+   * Passed from parent timeline which reads it from canvas.
+   */
   @property({ type: Object, attribute: false })
-  hoveredElement: Element | null = null;
-
-  @property({ type: Object, attribute: false })
-  focusedElement: Element | null = null;
-
-  @property({ type: Object, attribute: false })
-  selectedElements: Set<Element> = new Set();
+  highlightedElement: Element | null = null;
 
   @property({ type: Object, attribute: false })
   selectedIds: ReadonlySet<string> = new Set();
 
   // Derived interaction states (computed on-demand)
   private get isHovered(): boolean {
-    return this.hoveredElement === this.element;
+    return this.highlightedElement === this.element;
   }
 
   private get isSelected(): boolean {
@@ -169,20 +166,20 @@ export class EFTimelineRow extends TWMixin(LitElement) {
   }
 
   private get isAncestorHovered(): boolean {
-    if (!this.hoveredElement || !this.element) return false;
-    // This row's element contains the hovered element (hovered is a descendant)
+    if (!this.highlightedElement || !this.element) return false;
+    // This row's element contains the highlighted element (highlighted is a descendant)
     return (
-      this.element !== this.hoveredElement &&
-      this.element.contains(this.hoveredElement)
+      this.element !== this.highlightedElement &&
+      this.element.contains(this.highlightedElement)
     );
   }
 
   private get isDescendantHovered(): boolean {
-    if (!this.hoveredElement || !this.element) return false;
-    // The hovered element contains this row's element (hovered is an ancestor)
+    if (!this.highlightedElement || !this.element) return false;
+    // The highlighted element contains this row's element (highlighted is an ancestor)
     return (
-      this.element !== this.hoveredElement &&
-      this.hoveredElement.contains(this.element)
+      this.element !== this.highlightedElement &&
+      this.highlightedElement.contains(this.element)
     );
   }
 
@@ -191,7 +188,7 @@ export class EFTimelineRow extends TWMixin(LitElement) {
 
     // Update host classes based on interaction state
     if (
-      changedProperties.has("hoveredElement") ||
+      changedProperties.has("highlightedElement") ||
       changedProperties.has("element")
     ) {
       this.classList.toggle("hovered", this.isHovered);

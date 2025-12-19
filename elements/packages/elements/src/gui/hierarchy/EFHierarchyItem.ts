@@ -1,5 +1,5 @@
 import { consume } from "@lit/context";
-import { css, html, LitElement, nothing, type TemplateResult } from "lit";
+import { css, html, LitElement, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
 
@@ -14,8 +14,6 @@ import { EFWaveform } from "../../elements/EFWaveform.js";
 import { selectionContext } from "../../canvas/selection/selectionContext.js";
 import { findRootTemporal } from "../../elements/findRootTemporal.js";
 import { isEFTemporal } from "../../elements/EFTemporal.js";
-import { type FocusContext, focusContext } from "../focusContext.js";
-import { focusedElementContext } from "../focusedElementContext.js";
 import { TWMixin } from "../TWMixin.js";
 import { type HierarchyContext, hierarchyContext } from "./hierarchyContext.js";
 
@@ -267,12 +265,6 @@ export class EFHierarchyItem<
     `,
   ];
 
-  @consume({ context: focusContext })
-  focusContext?: FocusContext;
-
-  @consume({ context: focusedElementContext, subscribe: true })
-  focusedElement?: HTMLElement | null;
-
   @consume({ context: hierarchyContext, subscribe: true })
   hierarchyContext?: HierarchyContext;
 
@@ -305,7 +297,8 @@ export class EFHierarchyItem<
   }
 
   get isFocused(): boolean {
-    return this.element && this.focusContext?.focusedElement === this.element;
+    const highlightedElement = this.hierarchyContext?.getHighlightedElement?.();
+    return this.element && highlightedElement === this.element;
   }
 
   get isSelected(): boolean {
@@ -377,9 +370,8 @@ export class EFHierarchyItem<
     if (this.hierarchyContext && this.elementId) {
       this.hierarchyContext.actions.select(this.elementId);
     }
-    if (this.focusContext) {
-      this.focusContext.focusedElement = this.element;
-    }
+    // Also set highlight on click for visual feedback
+    this.hierarchyContext?.setHighlightedElement?.(this.element);
   }
 
   private handleExpandClick(e: Event): void {
@@ -445,31 +437,16 @@ export class EFHierarchyItem<
   }
 
   private handleMouseEnter(): void {
-    if (this.focusContext) {
-      this.focusContext.focusedElement = this.element;
-    }
-    // Dispatch event for cross-view hover sync
-    this.dispatchEvent(
-      new CustomEvent("hierarchy-hover", {
-        detail: { element: this.element },
-        bubbles: true,
-        composed: true,
-      }),
-    );
+    // Update canvas highlight (source of truth)
+    this.hierarchyContext?.setHighlightedElement?.(this.element);
   }
 
   private handleMouseLeave(): void {
-    if (this.focusContext) {
-      this.focusContext.focusedElement = null;
+    // Clear canvas highlight (source of truth)
+    const currentHighlight = this.hierarchyContext?.getHighlightedElement?.();
+    if (currentHighlight === this.element) {
+      this.hierarchyContext?.setHighlightedElement?.(null);
     }
-    // Dispatch event for cross-view hover sync
-    this.dispatchEvent(
-      new CustomEvent("hierarchy-hover", {
-        detail: { element: null },
-        bubbles: true,
-        composed: true,
-      }),
-    );
   }
 
   connectedCallback(): void {
@@ -482,9 +459,14 @@ export class EFHierarchyItem<
     this.removeSelectionListener();
   }
 
-  protected willUpdate(): void {
-    // Set up listener if context becomes available
-    if (!this.selectionChangeHandler) {
+  protected willUpdate(changedProperties: PropertyValues): void {
+    // Set up listener if context becomes available or context changed
+    if (!this.selectionChangeHandler || changedProperties.has("hierarchyContext")) {
+      // Remove old listener if context changed
+      if (changedProperties.has("hierarchyContext") && this.selectionChangeHandler) {
+        this.removeSelectionListener();
+        this.selectionChangeHandler = undefined;
+      }
       this.setupSelectionListener();
     }
   }

@@ -155,8 +155,8 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
   private emptySpaceClickPos: { x: number; y: number } | null = null;
   private selectionChangeHandler?: () => void;
   private elementHoverHandlers = new Map<string, {
-    mouseenter: (e: MouseEvent) => void;
-    mouseleave: (e: MouseEvent) => void;
+    mouseenter: () => void;
+    mouseleave: () => void;
   }>();
 
   @state()
@@ -166,6 +166,14 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
   @provide({ context: selectionContext })
   @state()
   selectionContext!: import("./selection/selectionContext.js").SelectionContext;
+
+  /**
+   * The currently highlighted (hovered) element.
+   * This is the source of truth for highlight state across all panels
+   * (canvas, hierarchy, timeline).
+   */
+  @state()
+  highlightedElement: HTMLElement | null = null;
 
   constructor() {
     super();
@@ -370,6 +378,63 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
       this.elementMetadata.delete(elementId);
       this.selectionController.selectionContext.deselect(elementId);
     }
+  }
+
+  /**
+   * Setup hover event listeners for an element to update highlightedElement.
+   * The canvas is the source of truth for highlight state.
+   */
+  private setupElementHoverListeners(
+    element: HTMLElement,
+    elementId: string,
+  ): void {
+    // Remove existing listeners if any
+    this.removeElementHoverListeners(elementId);
+
+    const mouseenterHandler = () => {
+      this.setHighlightedElement(element);
+    };
+
+    const mouseleaveHandler = () => {
+      // Only clear if this element is currently highlighted
+      if (this.highlightedElement === element) {
+        this.setHighlightedElement(null);
+      }
+    };
+
+    element.addEventListener("mouseenter", mouseenterHandler);
+    element.addEventListener("mouseleave", mouseleaveHandler);
+
+    this.elementHoverHandlers.set(elementId, {
+      mouseenter: mouseenterHandler,
+      mouseleave: mouseleaveHandler,
+    });
+  }
+
+  /**
+   * Set the highlighted element. Called by canvas hover handlers
+   * and by external panels (hierarchy, timeline) when user hovers items.
+   */
+  setHighlightedElement(element: HTMLElement | null): void {
+    if (this.highlightedElement !== element) {
+      this.highlightedElement = element;
+    }
+  }
+
+  /**
+   * Remove hover event listeners for an element.
+   */
+  private removeElementHoverListeners(elementId: string): void {
+    const handlers = this.elementHoverHandlers.get(elementId);
+    if (!handlers) return;
+
+    const element = this.elementRegistry.get(elementId);
+    if (element) {
+      element.removeEventListener("mouseenter", handlers.mouseenter);
+      element.removeEventListener("mouseleave", handlers.mouseleave);
+    }
+
+    this.elementHoverHandlers.delete(elementId);
   }
 
   /**
