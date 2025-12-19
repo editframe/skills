@@ -1063,6 +1063,11 @@ export class EFTimeline extends TWMixin(LitElement) {
 
   private startPlayheadDrag(e: PointerEvent): void {
     this.isDraggingPlayhead = true;
+    // Sync scroll state immediately to prevent offset
+    const tracksScroll = this.tracksScrollRef.value;
+    if (tracksScroll) {
+      this.viewportScrollLeft = tracksScroll.scrollLeft;
+    }
     const hierarchyWidth = this.showHierarchy ? EFTimeline.HIERARCHY_WIDTH : 0;
     let lastClientX = e.clientX;
     let edgeScrollAnimationId: number | null = null;
@@ -1114,6 +1119,7 @@ export class EFTimeline extends TWMixin(LitElement) {
         const maxScroll = tracksScroll.scrollWidth - tracksScroll.clientWidth;
         const newScrollLeft = Math.max(0, Math.min(maxScroll, tracksScroll.scrollLeft + scrollDelta));
         tracksScroll.scrollLeft = newScrollLeft;
+        this.viewportScrollLeft = newScrollLeft; // Sync immediately
         
         // Update playhead position based on current mouse and new scroll
         updatePlayheadFromMouse();
