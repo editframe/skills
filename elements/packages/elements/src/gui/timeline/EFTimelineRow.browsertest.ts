@@ -115,7 +115,7 @@ describe("EFTimelineRow", () => {
   });
 
   describe("interaction state", () => {
-    test("applies hovered class when hoveredElement matches this row", async () => {
+    test("applies hovered class when highlightedElement matches this row", async () => {
       const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
       timegroup.id = "test-group";
       timegroup.setAttribute("mode", "fixed");
@@ -126,7 +126,7 @@ describe("EFTimelineRow", () => {
       const row = document.createElement("ef-timeline-row") as EFTimelineRow;
       row.element = timegroup;
       row.depth = 0;
-      row.hoveredElement = timegroup;
+      row.highlightedElement = timegroup;
       document.body.appendChild(row);
       await row.updateComplete;
 
@@ -149,11 +149,11 @@ describe("EFTimelineRow", () => {
       const row = document.createElement("ef-timeline-row") as EFTimelineRow;
       row.element = timegroup;
       row.depth = 0;
-      row.hoveredElement = video; // Child is hovered
+      row.highlightedElement = video; // Child is highlighted
       document.body.appendChild(row);
       await row.updateComplete;
 
-      // Parent should have ancestor-hovered class (its descendant is hovered)
+      // Parent should have ancestor-hovered class (its descendant is highlighted)
       expect(row.classList.contains("ancestor-hovered")).toBe(true);
       expect(row.classList.contains("hovered")).toBe(false);
     });
@@ -174,16 +174,16 @@ describe("EFTimelineRow", () => {
       const row = document.createElement("ef-timeline-row") as EFTimelineRow;
       row.element = video;
       row.depth = 1;
-      row.hoveredElement = timegroup; // Parent is hovered
+      row.highlightedElement = timegroup; // Parent is highlighted
       document.body.appendChild(row);
       await row.updateComplete;
 
-      // Child should have descendant-hovered class (its ancestor is hovered)
+      // Child should have descendant-hovered class (its ancestor is highlighted)
       expect(row.classList.contains("descendant-hovered")).toBe(true);
       expect(row.classList.contains("hovered")).toBe(false);
     });
 
-    test("no hover classes when nothing is hovered", async () => {
+    test("no hover classes when nothing is highlighted", async () => {
       const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
       timegroup.id = "test-group";
       timegroup.setAttribute("mode", "fixed");
@@ -194,13 +194,86 @@ describe("EFTimelineRow", () => {
       const row = document.createElement("ef-timeline-row") as EFTimelineRow;
       row.element = timegroup;
       row.depth = 0;
-      row.hoveredElement = null;
+      row.highlightedElement = null;
       document.body.appendChild(row);
       await row.updateComplete;
 
       expect(row.classList.contains("hovered")).toBe(false);
       expect(row.classList.contains("ancestor-hovered")).toBe(false);
       expect(row.classList.contains("descendant-hovered")).toBe(false);
+    });
+  });
+
+  describe("selection state", () => {
+    test("applies selected class when selectedIds contains this element", async () => {
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      timegroup.id = "test-group";
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "10s");
+      document.body.appendChild(timegroup);
+      await timegroup.updateComplete;
+
+      const row = document.createElement("ef-timeline-row") as EFTimelineRow;
+      row.element = timegroup;
+      row.depth = 0;
+      row.selectedIds = new Set(["test-group"]);
+      document.body.appendChild(row);
+      await row.updateComplete;
+
+      expect(row.classList.contains("selected")).toBe(true);
+    });
+
+    test("applies ancestor-selected class when descendant is selected", async () => {
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      timegroup.id = "parent-group";
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "10s");
+
+      const video = document.createElement("ef-video") as EFVideo;
+      video.id = "child-video";
+      timegroup.appendChild(video);
+
+      document.body.appendChild(timegroup);
+      await timegroup.updateComplete;
+
+      const row = document.createElement("ef-timeline-row") as EFTimelineRow;
+      row.element = timegroup;
+      row.depth = 0;
+      row.selectedIds = new Set(["child-video"]); // Child is selected
+      document.body.appendChild(row);
+      await row.updateComplete;
+
+      // Parent should have ancestor-selected class (its descendant is selected)
+      expect(row.classList.contains("ancestor-selected")).toBe(true);
+      expect(row.classList.contains("selected")).toBe(false);
+    });
+
+    test("selection classes update when selectedIds change", async () => {
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      timegroup.id = "test-group";
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "10s");
+      document.body.appendChild(timegroup);
+      await timegroup.updateComplete;
+
+      const row = document.createElement("ef-timeline-row") as EFTimelineRow;
+      row.element = timegroup;
+      row.depth = 0;
+      row.selectedIds = new Set();
+      document.body.appendChild(row);
+      await row.updateComplete;
+
+      expect(row.classList.contains("selected")).toBe(false);
+
+      row.selectedIds = new Set(["test-group"]);
+      await row.updateComplete;
+
+      expect(row.classList.contains("selected")).toBe(true);
+
+      row.selectedIds = new Set();
+      await row.updateComplete;
+
+      expect(row.classList.contains("selected")).toBe(false);
     });
   });
 });

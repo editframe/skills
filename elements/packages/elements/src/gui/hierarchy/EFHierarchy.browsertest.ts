@@ -518,4 +518,58 @@ describe("EFHierarchy", () => {
 
     expect(api.getSelectedIds()).toEqual([timegroup1Id]);
   }, 1000);
+
+  describe("hover sync", () => {
+    test("hovering hierarchy item updates canvas highlightedElement", async () => {
+      const canvas = document.createElement("ef-canvas") as EFCanvas;
+      canvas.id = "test-canvas-events";
+      canvas.style.width = "800px";
+      canvas.style.height = "600px";
+      document.body.appendChild(canvas);
+
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      const timegroupId = nextId();
+      timegroup.id = timegroupId;
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "5s");
+      timegroup.style.left = "100px";
+      timegroup.style.top = "100px";
+      timegroup.style.width = "400px";
+      timegroup.style.height = "300px";
+      canvas.appendChild(timegroup);
+
+      await canvas.updateComplete;
+      await timegroup.updateComplete;
+
+      const hierarchy = document.createElement("ef-hierarchy") as EFHierarchy;
+      hierarchy.target = "test-canvas-events";
+      document.body.appendChild(hierarchy);
+
+      await hierarchy.updateComplete;
+
+      const hierarchyItem = hierarchy.shadowRoot?.querySelector(
+        "ef-timegroup-hierarchy-item",
+      ) as any;
+      const itemRow = hierarchyItem?.shadowRoot?.querySelector(
+        ".item-row",
+      ) as HTMLElement;
+
+      // Canvas should initially have no highlighted element
+      expect(canvas.highlightedElement).toBe(null);
+
+      // Hover on hierarchy item
+      itemRow.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+      await hierarchyItem.updateComplete;
+
+      // Canvas highlightedElement should now be the timegroup
+      expect(canvas.highlightedElement).toBe(timegroup);
+
+      // Leave the hierarchy item
+      itemRow.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+      await hierarchyItem.updateComplete;
+
+      // Canvas highlightedElement should be cleared
+      expect(canvas.highlightedElement).toBe(null);
+    }, 1000);
+  });
 });

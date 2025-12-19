@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, test } from "vitest";
-import { html, render } from "lit";
 import "../elements/EFTimegroup.js";
 import "../elements/EFVideo.js";
 import "../elements/EFPanZoom.js";
@@ -10,294 +9,330 @@ import type { EFCanvas } from "../canvas/EFCanvas.js";
 import type { EFHierarchy } from "../gui/hierarchy/EFHierarchy.js";
 import type { EFTimeline } from "../gui/timeline/EFTimeline.js";
 import type { EFTimegroup } from "../elements/EFTimegroup.js";
+import { CanvasAPI } from "../canvas/api/CanvasAPI.js";
 
 let idCounter = 0;
 const nextId = () => `test-${idCounter++}`;
 
-// TODO: These tests need to be rewritten for the new timeline/hierarchy integration
-// - activeTimegroupChange event no longer exists (replaced by hierarchy-select)
-// - ef-filmstrip is not used in timeline anymore
-// - Timeline target is set via property, not changed by hierarchy clicks
-describe.skip("Canvas-Hierarchy-Timeline Integration", () => {
+describe("Canvas-Hierarchy-Timeline Sync", () => {
   afterEach(() => {
     document.body.innerHTML = "";
     idCounter = 0;
   });
 
-  test("should update timeline target when clicking timegroup in hierarchy", async () => {
-    const container = document.createElement("div");
-    container.style.width = "1200px";
-    container.style.height = "800px";
-    document.body.appendChild(container);
+  describe("selection agreement", () => {
+    test("selecting in canvas shows selected in hierarchy", async () => {
+      const canvas = document.createElement("ef-canvas") as EFCanvas;
+      canvas.id = "test-canvas";
+      canvas.style.width = "800px";
+      canvas.style.height = "600px";
+      document.body.appendChild(canvas);
 
-    const timegroup1 = document.createElement("ef-timegroup") as EFTimegroup;
-    const timegroupId1 = nextId();
-    timegroup1.id = timegroupId1;
-    timegroup1.setAttribute("mode", "fixed");
-    timegroup1.setAttribute("duration", "5s");
+      const timegroup1 = document.createElement("ef-timegroup") as EFTimegroup;
+      const timegroup1Id = nextId();
+      timegroup1.id = timegroup1Id;
+      timegroup1.setAttribute("mode", "fixed");
+      timegroup1.setAttribute("duration", "5s");
+      timegroup1.style.left = "100px";
+      timegroup1.style.top = "100px";
+      timegroup1.style.width = "400px";
+      timegroup1.style.height = "300px";
+      canvas.appendChild(timegroup1);
 
-    const timegroup2 = document.createElement("ef-timegroup") as EFTimegroup;
-    const timegroupId2 = nextId();
-    timegroup2.id = timegroupId2;
-    timegroup2.setAttribute("mode", "fixed");
-    timegroup2.setAttribute("duration", "10s");
+      await canvas.updateComplete;
+      await timegroup1.updateComplete;
 
-    render(
-      html`
-        <ef-pan-zoom>
-          <ef-canvas id="canvas" style="width: 800px; height: 600px;">
-            ${timegroup1}
-            ${timegroup2}
-          </ef-canvas>
-        </ef-pan-zoom>
-        <ef-hierarchy id="hierarchy" target="canvas"></ef-hierarchy>
-        <ef-timeline id="timeline" target=${timegroupId1} style="width: 800px; height: 200px;"></ef-timeline>
-      `,
-      container,
-    );
+      const hierarchy = document.createElement("ef-hierarchy") as EFHierarchy;
+      hierarchy.target = "test-canvas";
+      document.body.appendChild(hierarchy);
 
-    const canvas = container.querySelector("#canvas") as EFCanvas;
-    const hierarchy = container.querySelector("#hierarchy") as EFHierarchy;
-    const timeline = container.querySelector("#timeline") as EFTimeline;
+      await hierarchy.updateComplete;
 
-    await canvas.updateComplete;
-    await timegroup1.updateComplete;
-    await timegroup2.updateComplete;
-    await hierarchy.updateComplete;
-    await timeline.updateComplete;
+      const api = new CanvasAPI(canvas);
+      api.select(timegroup1Id);
+      await canvas.updateComplete;
+      await hierarchy.updateComplete;
 
-    expect(timeline.target).toBe(timegroupId1);
-    expect(timeline.durationMs).toBe(5000);
+      const hierarchyItem = hierarchy.shadowRoot?.querySelector(
+        "ef-timegroup-hierarchy-item",
+      ) as any;
+      await hierarchyItem?.updateComplete;
+      const itemRow = hierarchyItem?.shadowRoot?.querySelector(
+        ".item-row",
+      ) as HTMLElement;
 
-    const hierarchyItems = hierarchy.shadowRoot?.querySelectorAll(
-      "ef-timegroup-hierarchy-item",
-    );
-    expect(hierarchyItems?.length).toBe(2);
+      expect(itemRow.hasAttribute("data-selected")).toBe(true);
+      expect(api.getSelectedIds()).toEqual([timegroup1Id]);
+    }, 1000);
 
-    const secondItem = hierarchyItems?.[1];
-    const itemRow = secondItem?.shadowRoot?.querySelector(
-      ".item-row",
-    ) as HTMLElement;
-    expect(itemRow).toBeTruthy();
+    test("selecting in hierarchy shows selected in canvas", async () => {
+      const canvas = document.createElement("ef-canvas") as EFCanvas;
+      canvas.id = "test-canvas-2";
+      canvas.style.width = "800px";
+      canvas.style.height = "600px";
+      document.body.appendChild(canvas);
 
-    itemRow.click();
-    await hierarchy.updateComplete;
-    await timeline.updateComplete;
+      const timegroup1 = document.createElement("ef-timegroup") as EFTimegroup;
+      const timegroup1Id = nextId();
+      timegroup1.id = timegroup1Id;
+      timegroup1.setAttribute("mode", "fixed");
+      timegroup1.setAttribute("duration", "5s");
+      timegroup1.style.left = "100px";
+      timegroup1.style.top = "100px";
+      timegroup1.style.width = "400px";
+      timegroup1.style.height = "300px";
+      canvas.appendChild(timegroup1);
 
-    expect(timeline.target).toBe(timegroupId2);
-    expect(timeline.durationMs).toBe(10000);
-  }, 1000);
+      await canvas.updateComplete;
+      await timegroup1.updateComplete;
 
-  test("should fire activeTimegroupChange event with correct previous/current IDs", async () => {
-    const container = document.createElement("div");
-    container.style.width = "1200px";
-    container.style.height = "800px";
-    document.body.appendChild(container);
+      const hierarchy = document.createElement("ef-hierarchy") as EFHierarchy;
+      hierarchy.target = "test-canvas-2";
+      document.body.appendChild(hierarchy);
 
-    const timegroup1 = document.createElement("ef-timegroup") as EFTimegroup;
-    const timegroupId1 = nextId();
-    timegroup1.id = timegroupId1;
-    timegroup1.setAttribute("mode", "fixed");
-    timegroup1.setAttribute("duration", "5s");
+      await hierarchy.updateComplete;
 
-    const timegroup2 = document.createElement("ef-timegroup") as EFTimegroup;
-    const timegroupId2 = nextId();
-    timegroup2.id = timegroupId2;
-    timegroup2.setAttribute("mode", "fixed");
-    timegroup2.setAttribute("duration", "10s");
+      const api = new CanvasAPI(canvas);
+      expect(api.getSelectedIds()).toEqual([]);
 
-    render(
-      html`
-        <ef-pan-zoom>
-          <ef-canvas id="canvas" style="width: 800px; height: 600px;">
-            ${timegroup1}
-            ${timegroup2}
-          </ef-canvas>
-        </ef-pan-zoom>
-        <ef-hierarchy id="hierarchy" target="canvas"></ef-hierarchy>
-        <ef-timeline id="timeline" style="width: 800px; height: 200px;"></ef-timeline>
-      `,
-      container,
-    );
+      const hierarchyItem = hierarchy.shadowRoot?.querySelector(
+        "ef-timegroup-hierarchy-item",
+      ) as any;
+      const itemRow = hierarchyItem?.shadowRoot?.querySelector(
+        ".item-row",
+      ) as HTMLElement;
 
-    const canvas = container.querySelector("#canvas") as EFCanvas;
-    const hierarchy = container.querySelector("#hierarchy") as EFHierarchy;
-    const timeline = container.querySelector("#timeline") as EFTimeline;
+      itemRow.click();
+      await hierarchy.updateComplete;
+      await canvas.updateComplete;
 
-    await canvas.updateComplete;
-    await timegroup1.updateComplete;
-    await timegroup2.updateComplete;
-    await hierarchy.updateComplete;
-    await timeline.updateComplete;
+      expect(api.getSelectedIds()).toEqual([timegroup1Id]);
+    }, 1000);
 
-    let activeTimegroupChangeDetail: {
-      timegroupId: string | null;
-      previousTimegroupId: string | null;
-    } | null = null;
-    canvas.addEventListener("activeTimegroupChange", ((e: CustomEvent) => {
-      activeTimegroupChangeDetail = e.detail;
-    }) as EventListener);
+    test("clearing selection in canvas clears hierarchy", async () => {
+      const canvas = document.createElement("ef-canvas") as EFCanvas;
+      canvas.id = "test-canvas-4";
+      canvas.style.width = "800px";
+      canvas.style.height = "600px";
+      document.body.appendChild(canvas);
 
-    const hierarchyItems = hierarchy.shadowRoot?.querySelectorAll(
-      "ef-timegroup-hierarchy-item",
-    );
-    const firstItem = hierarchyItems?.[0];
-    const firstItemRow = firstItem?.shadowRoot?.querySelector(
-      ".item-row",
-    ) as HTMLElement;
+      const timegroup1 = document.createElement("ef-timegroup") as EFTimegroup;
+      const timegroup1Id = nextId();
+      timegroup1.id = timegroup1Id;
+      timegroup1.setAttribute("mode", "fixed");
+      timegroup1.setAttribute("duration", "5s");
+      timegroup1.style.left = "100px";
+      timegroup1.style.top = "100px";
+      timegroup1.style.width = "400px";
+      timegroup1.style.height = "300px";
+      canvas.appendChild(timegroup1);
 
-    firstItemRow.click();
-    await hierarchy.updateComplete;
+      await canvas.updateComplete;
+      await timegroup1.updateComplete;
 
-    expect(activeTimegroupChangeDetail).toBeTruthy();
-    expect(activeTimegroupChangeDetail?.timegroupId).toBe(timegroupId1);
-    expect(activeTimegroupChangeDetail?.previousTimegroupId).toBe(null);
+      const hierarchy = document.createElement("ef-hierarchy") as EFHierarchy;
+      hierarchy.target = "test-canvas-4";
+      document.body.appendChild(hierarchy);
 
-    const secondItem = hierarchyItems?.[1];
-    const secondItemRow = secondItem?.shadowRoot?.querySelector(
-      ".item-row",
-    ) as HTMLElement;
+      await hierarchy.updateComplete;
 
-    secondItemRow.click();
-    await hierarchy.updateComplete;
+      const api = new CanvasAPI(canvas);
+      api.select(timegroup1Id);
+      await canvas.updateComplete;
+      await hierarchy.updateComplete;
 
-    expect(activeTimegroupChangeDetail?.timegroupId).toBe(timegroupId2);
-    expect(activeTimegroupChangeDetail?.previousTimegroupId).toBe(timegroupId1);
-  }, 1000);
+      expect(api.getSelectedIds()).toEqual([timegroup1Id]);
 
-  test("should reflect correct duration when timeline target changes", async () => {
-    const container = document.createElement("div");
-    container.style.width = "1200px";
-    container.style.height = "800px";
-    document.body.appendChild(container);
+      (canvas as any).selectionContext.clear();
+      await canvas.updateComplete;
+      await hierarchy.updateComplete;
 
-    const timegroup1 = document.createElement("ef-timegroup") as EFTimegroup;
-    const timegroupId1 = nextId();
-    timegroup1.id = timegroupId1;
-    timegroup1.setAttribute("mode", "fixed");
-    timegroup1.setAttribute("duration", "3s");
+      const hierarchyItem = hierarchy.shadowRoot?.querySelector(
+        "ef-timegroup-hierarchy-item",
+      ) as any;
+      await hierarchyItem?.updateComplete;
+      const itemRow = hierarchyItem?.shadowRoot?.querySelector(
+        ".item-row",
+      ) as HTMLElement;
 
-    const timegroup2 = document.createElement("ef-timegroup") as EFTimegroup;
-    const timegroupId2 = nextId();
-    timegroup2.id = timegroupId2;
-    timegroup2.setAttribute("mode", "fixed");
-    timegroup2.setAttribute("duration", "7s");
+      expect(api.getSelectedIds()).toEqual([]);
+      expect(itemRow.hasAttribute("data-selected")).toBe(false);
+    }, 1000);
 
-    render(
-      html`
-        <ef-pan-zoom>
-          <ef-canvas id="canvas" style="width: 800px; height: 600px;">
-            ${timegroup1}
-            ${timegroup2}
-          </ef-canvas>
-        </ef-pan-zoom>
-        <ef-hierarchy id="hierarchy" target="canvas"></ef-hierarchy>
-        <ef-timeline id="timeline" target=${timegroupId1} style="width: 800px; height: 200px;"></ef-timeline>
-      `,
-      container,
-    );
+    test("hierarchy dispatches hierarchy-select event on selection", async () => {
+      const canvas = document.createElement("ef-canvas") as EFCanvas;
+      canvas.id = "test-canvas-5";
+      canvas.style.width = "800px";
+      canvas.style.height = "600px";
+      document.body.appendChild(canvas);
 
-    const timeline = container.querySelector("#timeline") as EFTimeline;
+      const timegroup1 = document.createElement("ef-timegroup") as EFTimegroup;
+      const timegroup1Id = nextId();
+      timegroup1.id = timegroup1Id;
+      timegroup1.setAttribute("mode", "fixed");
+      timegroup1.setAttribute("duration", "5s");
+      timegroup1.style.left = "100px";
+      timegroup1.style.top = "100px";
+      timegroup1.style.width = "400px";
+      timegroup1.style.height = "300px";
+      canvas.appendChild(timegroup1);
 
-    await timegroup1.updateComplete;
-    await timegroup2.updateComplete;
-    await timeline.updateComplete;
+      await canvas.updateComplete;
+      await timegroup1.updateComplete;
 
-    expect(timeline.durationMs).toBe(3000);
+      const hierarchy = document.createElement("ef-hierarchy") as EFHierarchy;
+      hierarchy.target = "test-canvas-5";
+      document.body.appendChild(hierarchy);
 
-    timeline.target = timegroupId2;
-    await timeline.updateComplete;
+      await hierarchy.updateComplete;
 
-    expect(timeline.durationMs).toBe(7000);
-  }, 1000);
+      let selectEventDetail: { elementId: string | null } | null = null;
+      document.addEventListener(
+        "hierarchy-select",
+        ((e: CustomEvent) => {
+          selectEventDetail = e.detail;
+        }) as EventListener,
+      );
 
-  test("should update underlying element when trim changes on filmstrip", async () => {
-    const container = document.createElement("div");
-    container.style.width = "1200px";
-    container.style.height = "800px";
-    document.body.appendChild(container);
+      const hierarchyItem = hierarchy.shadowRoot?.querySelector(
+        "ef-timegroup-hierarchy-item",
+      ) as any;
+      const itemRow = hierarchyItem?.shadowRoot?.querySelector(
+        ".item-row",
+      ) as HTMLElement;
 
-    const video = document.createElement("ef-video") as any;
-    video.id = nextId();
-    video.src = "../bars-n-tone2.mp4";
+      itemRow.click();
+      await hierarchy.updateComplete;
 
-    const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
-    const timegroupId = nextId();
-    timegroup.id = timegroupId;
-    timegroup.setAttribute("mode", "fixed");
-    timegroup.setAttribute("duration", "10s");
-    timegroup.appendChild(video);
+      expect(selectEventDetail).toBeTruthy();
+      expect(selectEventDetail?.elementId).toBe(timegroup1Id);
+    }, 1000);
+  });
 
-    render(
-      html`
-        <ef-pan-zoom>
-          <ef-canvas id="canvas" style="width: 800px; height: 600px;">
-            ${timegroup}
-          </ef-canvas>
-        </ef-pan-zoom>
-        <ef-timeline id="timeline" target=${timegroupId} enable-trim style="width: 800px; height: 200px;"></ef-timeline>
-      `,
-      container,
-    );
+  describe("highlight sync (canvas is source of truth)", () => {
+    test("hovering element in canvas sets highlightedElement", async () => {
+      const canvas = document.createElement("ef-canvas") as EFCanvas;
+      canvas.id = "test-canvas-hover";
+      canvas.style.width = "800px";
+      canvas.style.height = "600px";
+      document.body.appendChild(canvas);
 
-    const timeline = container.querySelector("#timeline") as EFTimeline;
+      const timegroup1 = document.createElement("ef-timegroup") as EFTimegroup;
+      const timegroup1Id = nextId();
+      timegroup1.id = timegroup1Id;
+      timegroup1.setAttribute("mode", "fixed");
+      timegroup1.setAttribute("duration", "5s");
+      timegroup1.style.left = "100px";
+      timegroup1.style.top = "100px";
+      timegroup1.style.width = "400px";
+      timegroup1.style.height = "300px";
+      canvas.appendChild(timegroup1);
 
-    await timegroup.updateComplete;
-    await video.updateComplete;
-    await timeline.updateComplete;
+      await canvas.updateComplete;
+      await timegroup1.updateComplete;
 
-    const filmstrip = timeline.shadowRoot?.querySelector("ef-filmstrip");
-    expect(filmstrip).toBeTruthy();
+      expect(canvas.highlightedElement).toBe(null);
 
-    await (filmstrip as any)?.updateComplete;
+      timegroup1.dispatchEvent(
+        new MouseEvent("mouseenter", { bubbles: true }),
+      );
+      await canvas.updateComplete;
 
-    const videoFilmstrip =
-      filmstrip?.shadowRoot?.querySelector("ef-video-filmstrip");
-    expect(videoFilmstrip).toBeTruthy();
+      expect(canvas.highlightedElement).toBe(timegroup1);
 
-    await (videoFilmstrip as any)?.updateComplete;
+      timegroup1.dispatchEvent(
+        new MouseEvent("mouseleave", { bubbles: true }),
+      );
+      await canvas.updateComplete;
 
-    const trimHandles =
-      videoFilmstrip?.shadowRoot?.querySelector("ef-trim-handles");
-    expect(trimHandles).toBeTruthy();
+      expect(canvas.highlightedElement).toBe(null);
+    }, 1000);
 
-    const initialTrimStart = video.trimStartMs ?? 0;
-    expect(initialTrimStart).toBe(0);
+    test("hovering hierarchy item sets canvas highlightedElement", async () => {
+      const canvas = document.createElement("ef-canvas") as EFCanvas;
+      canvas.id = "test-canvas-hover-2";
+      canvas.style.width = "800px";
+      canvas.style.height = "600px";
+      document.body.appendChild(canvas);
 
-    let trimChangeDetail: any = null;
-    trimHandles?.addEventListener("trim-change", ((e: CustomEvent) => {
-      trimChangeDetail = e.detail;
-    }) as EventListener);
+      const timegroup1 = document.createElement("ef-timegroup") as EFTimegroup;
+      const timegroup1Id = nextId();
+      timegroup1.id = timegroup1Id;
+      timegroup1.setAttribute("mode", "fixed");
+      timegroup1.setAttribute("duration", "5s");
+      timegroup1.style.left = "100px";
+      timegroup1.style.top = "100px";
+      timegroup1.style.width = "400px";
+      timegroup1.style.height = "300px";
+      canvas.appendChild(timegroup1);
 
-    const startHandle = trimHandles?.shadowRoot?.querySelector(
-      ".handle-start",
-    ) as HTMLElement;
-    expect(startHandle).toBeTruthy();
+      await canvas.updateComplete;
+      await timegroup1.updateComplete;
 
-    const rect = container.getBoundingClientRect();
-    const pointerDownEvent = new PointerEvent("pointerdown", {
-      bubbles: true,
-      cancelable: true,
-      clientX: rect.left + 10,
-      clientY: rect.top + 50,
-      pointerId: 1,
-    });
+      const hierarchy = document.createElement("ef-hierarchy") as EFHierarchy;
+      hierarchy.target = "test-canvas-hover-2";
+      document.body.appendChild(hierarchy);
 
-    startHandle.dispatchEvent(pointerDownEvent);
-    await timeline.updateComplete;
+      await hierarchy.updateComplete;
 
-    const pointerMoveEvent = new PointerEvent("pointermove", {
-      bubbles: true,
-      cancelable: true,
-      clientX: rect.left + 50,
-      clientY: rect.top + 50,
-      pointerId: 1,
-    });
+      expect(canvas.highlightedElement).toBe(null);
 
-    startHandle.dispatchEvent(pointerMoveEvent);
-    await timeline.updateComplete;
+      const hierarchyItem = hierarchy.shadowRoot?.querySelector(
+        "ef-timegroup-hierarchy-item",
+      ) as any;
+      const itemRow = hierarchyItem?.shadowRoot?.querySelector(
+        ".item-row",
+      ) as HTMLElement;
 
-    expect(trimChangeDetail).toBeTruthy();
-    expect(trimChangeDetail?.type).toBe("start");
-  }, 1000);
+      itemRow.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+      await hierarchyItem.updateComplete;
+
+      expect(canvas.highlightedElement).toBe(timegroup1);
+
+      itemRow.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+      await hierarchyItem.updateComplete;
+
+      expect(canvas.highlightedElement).toBe(null);
+    }, 1000);
+
+    test("hovering timeline row sets canvas highlightedElement", async () => {
+      const canvas = document.createElement("ef-canvas") as EFCanvas;
+      canvas.id = "test-canvas-hover-3";
+      canvas.style.width = "800px";
+      canvas.style.height = "600px";
+      document.body.appendChild(canvas);
+
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      const timegroupId = nextId();
+      timegroup.id = timegroupId;
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "5s");
+      canvas.appendChild(timegroup);
+
+      await canvas.updateComplete;
+      await timegroup.updateComplete;
+
+      const timeline = document.createElement("ef-timeline") as EFTimeline;
+      timeline.target = "test-canvas-hover-3";
+      timeline.controlTarget = timegroupId;
+      timeline.style.width = "800px";
+      timeline.style.height = "400px";
+      document.body.appendChild(timeline);
+
+      await timeline.updateComplete;
+
+      expect(canvas.highlightedElement).toBe(null);
+
+      const timelineRow = timeline.shadowRoot?.querySelector(
+        "ef-timeline-row",
+      ) as any;
+
+      timelineRow?.dispatchEvent(
+        new MouseEvent("mouseenter", { bubbles: true }),
+      );
+      await timeline.updateComplete;
+
+      expect(canvas.highlightedElement).toBe(timegroup);
+    }, 1000);
+  });
 });

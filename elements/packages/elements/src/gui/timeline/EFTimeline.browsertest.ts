@@ -29,7 +29,7 @@ describe("EFTimeline", () => {
       document.body.appendChild(timegroup);
 
       const timeline = document.createElement("ef-timeline") as EFTimeline;
-      timeline.target = timegroupId;
+      timeline.controlTarget = timegroupId;
       timeline.style.width = "800px";
       timeline.style.height = "400px";
       document.body.appendChild(timeline);
@@ -74,7 +74,7 @@ describe("EFTimeline", () => {
       document.body.appendChild(timegroup2);
 
       const timeline = document.createElement("ef-timeline") as EFTimeline;
-      timeline.target = timegroupId1;
+      timeline.controlTarget = timegroupId1;
       timeline.style.width = "800px";
       timeline.style.height = "400px";
       document.body.appendChild(timeline);
@@ -85,7 +85,7 @@ describe("EFTimeline", () => {
 
       expect(timeline.durationMs).toBe(5000);
 
-      timeline.target = timegroupId2;
+      timeline.controlTarget = timegroupId2;
       await timeline.updateComplete;
 
       expect(timeline.durationMs).toBe(15000);
@@ -235,7 +235,7 @@ describe("EFTimeline", () => {
       document.body.appendChild(timegroup);
 
       const timeline = document.createElement("ef-timeline") as EFTimeline;
-      timeline.target = timegroupId;
+      timeline.controlTarget = timegroupId;
       timeline.showControls = true;
       timeline.style.width = "800px";
       timeline.style.height = "400px";
@@ -266,7 +266,7 @@ describe("EFTimeline", () => {
       document.body.appendChild(timegroup);
 
       const timeline = document.createElement("ef-timeline") as EFTimeline;
-      timeline.target = timegroupId;
+      timeline.controlTarget = timegroupId;
       timeline.showControls = true;
       timeline.style.width = "800px";
       timeline.style.height = "400px";
@@ -304,7 +304,7 @@ describe("EFTimeline", () => {
       document.body.appendChild(timegroup);
 
       const timeline = document.createElement("ef-timeline") as EFTimeline;
-      timeline.target = timegroupId;
+      timeline.controlTarget = timegroupId;
       timeline.style.width = "800px";
       timeline.style.height = "400px";
       document.body.appendChild(timeline);
@@ -324,7 +324,7 @@ describe("EFTimeline", () => {
       document.body.appendChild(timegroup);
 
       const timeline = document.createElement("ef-timeline") as EFTimeline;
-      timeline.target = timegroupId;
+      timeline.controlTarget = timegroupId;
       timeline.setAttribute("pixels-per-ms", "0.2");
       timeline.style.width = "800px";
       timeline.style.height = "400px";
@@ -345,7 +345,7 @@ describe("EFTimeline", () => {
       document.body.appendChild(timegroup);
 
       const timeline = document.createElement("ef-timeline") as EFTimeline;
-      timeline.target = timegroupId;
+      timeline.controlTarget = timegroupId;
       timeline.showControls = true;
       timeline.pixelsPerMs = DEFAULT_PIXELS_PER_MS;
       timeline.style.width = "800px";
@@ -384,7 +384,7 @@ describe("EFTimeline", () => {
       document.body.appendChild(timegroup);
 
       const timeline = document.createElement("ef-timeline") as EFTimeline;
-      timeline.target = timegroupId;
+      timeline.controlTarget = timegroupId;
       timeline.minZoom = 0.5;
       timeline.maxZoom = 2.0;
       timeline.pixelsPerMs = DEFAULT_PIXELS_PER_MS;
@@ -434,7 +434,7 @@ describe("EFTimeline", () => {
       document.body.appendChild(timegroup);
 
       const timeline = document.createElement("ef-timeline") as EFTimeline;
-      timeline.target = timegroupId;
+      timeline.controlTarget = timegroupId;
       timeline.pixelsPerMs = 0.1; // 100px per second
       timeline.style.width = "800px";
       timeline.style.height = "400px";
@@ -463,7 +463,7 @@ describe("EFTimeline", () => {
       document.body.appendChild(timegroup);
 
       const timeline = document.createElement("ef-timeline") as EFTimeline;
-      timeline.target = timegroupId;
+      timeline.controlTarget = timegroupId;
       timeline.showHierarchy = true;
       timeline.style.width = "800px";
       timeline.style.height = "400px";
@@ -494,7 +494,7 @@ describe("EFTimeline", () => {
       document.body.appendChild(timegroup);
 
       const timeline = document.createElement("ef-timeline") as EFTimeline;
-      timeline.target = timegroupId;
+      timeline.controlTarget = timegroupId;
       timeline.pixelsPerMs = 0.1;
       timeline.style.width = "800px";
       timeline.style.height = "400px";
@@ -523,7 +523,7 @@ describe("EFTimeline", () => {
       document.body.appendChild(timegroup);
 
       const timeline = document.createElement("ef-timeline") as EFTimeline;
-      timeline.target = timegroupId;
+      timeline.controlTarget = timegroupId;
       timeline.pixelsPerMs = 0.1;
       timeline.style.width = "800px";
       timeline.style.height = "400px";
@@ -561,7 +561,7 @@ describe("EFTimeline", () => {
       document.body.appendChild(timegroup);
 
       const timeline = document.createElement("ef-timeline") as EFTimeline;
-      timeline.target = timegroupId;
+      timeline.controlTarget = timegroupId;
       timeline.pixelsPerMs = 0.1;
       timeline.style.width = "800px";
       timeline.style.height = "400px";
@@ -600,7 +600,7 @@ describe("EFTimeline", () => {
       document.body.appendChild(timegroup);
 
       const timeline = document.createElement("ef-timeline") as EFTimeline;
-      timeline.target = timegroupId;
+      timeline.controlTarget = timegroupId;
       timeline.pixelsPerMs = 0.15;
       timeline.style.width = "800px";
       timeline.style.height = "400px";
@@ -624,7 +624,7 @@ describe("EFTimeline", () => {
       document.body.appendChild(timegroup);
 
       const timeline = document.createElement("ef-timeline") as EFTimeline;
-      timeline.target = timegroupId;
+      timeline.controlTarget = timegroupId;
       timeline.style.width = "800px";
       timeline.style.height = "400px";
       document.body.appendChild(timeline);
@@ -649,7 +649,7 @@ describe("EFTimeline", () => {
       document.body.appendChild(timegroup);
 
       const timeline = document.createElement("ef-timeline") as EFTimeline;
-      timeline.target = timegroupId;
+      timeline.controlTarget = timegroupId;
       timeline.showRuler = true;
       timeline.style.width = "800px";
       timeline.style.height = "400px";
@@ -674,7 +674,7 @@ describe("EFTimeline", () => {
       document.body.appendChild(timegroup);
 
       const timeline = document.createElement("ef-timeline") as EFTimeline;
-      timeline.target = timegroupId;
+      timeline.controlTarget = timegroupId;
       timeline.showRuler = false;
       timeline.style.width = "800px";
       timeline.style.height = "400px";
@@ -696,7 +696,7 @@ describe("EFTimeline", () => {
       document.body.appendChild(timegroup);
 
       const timeline = document.createElement("ef-timeline") as EFTimeline;
-      timeline.target = timegroupId;
+      timeline.controlTarget = timegroupId;
       timeline.showHierarchy = false;
       timeline.style.width = "800px";
       timeline.style.height = "400px";
@@ -719,7 +719,7 @@ describe("EFTimeline", () => {
       document.body.appendChild(timegroup);
 
       const timeline = document.createElement("ef-timeline") as EFTimeline;
-      timeline.target = timegroupId;
+      timeline.controlTarget = timegroupId;
       timeline.showPlayhead = false;
       timeline.style.width = "800px";
       timeline.style.height = "400px";
@@ -757,7 +757,7 @@ describe("EFTimeline", () => {
       document.body.appendChild(timegroup);
 
       const timeline = document.createElement("ef-timeline") as EFTimeline;
-      timeline.target = timegroupId;
+      timeline.controlTarget = timegroupId;
       timeline.style.width = "800px";
       timeline.style.height = "400px";
       document.body.appendChild(timeline);
@@ -783,7 +783,7 @@ describe("EFTimeline", () => {
       document.body.appendChild(timegroup);
 
       const timeline = document.createElement("ef-timeline") as EFTimeline;
-      timeline.target = timegroupId;
+      timeline.controlTarget = timegroupId;
       // High zoom: frames are ~33.3px wide at 1.0 px/ms
       timeline.pixelsPerMs = 1.0;
       timeline.style.width = "800px";
@@ -806,7 +806,7 @@ describe("EFTimeline", () => {
       document.body.appendChild(timegroup);
 
       const timeline = document.createElement("ef-timeline") as EFTimeline;
-      timeline.target = timegroupId;
+      timeline.controlTarget = timegroupId;
       // Low zoom: frames are too small to show
       timeline.pixelsPerMs = 0.01;
       timeline.style.width = "800px";
@@ -831,7 +831,7 @@ describe("EFTimeline", () => {
       document.body.appendChild(timegroup);
 
       const timeline = document.createElement("ef-timeline") as EFTimeline;
-      timeline.target = timegroupId;
+      timeline.controlTarget = timegroupId;
       // High zoom: 1px per ms = 1000px per second, frame is ~33.3px wide
       timeline.pixelsPerMs = 1.0;
       timeline.style.width = "800px";
@@ -856,7 +856,7 @@ describe("EFTimeline", () => {
       document.body.appendChild(timegroup);
 
       const timeline = document.createElement("ef-timeline") as EFTimeline;
-      timeline.target = timegroupId;
+      timeline.controlTarget = timegroupId;
       // Low zoom: frames too small to show
       timeline.pixelsPerMs = 0.01;
       timeline.style.width = "800px";
@@ -881,7 +881,7 @@ describe("EFTimeline", () => {
       document.body.appendChild(timegroup);
 
       const timeline = document.createElement("ef-timeline") as EFTimeline;
-      timeline.target = timegroupId;
+      timeline.controlTarget = timegroupId;
       timeline.pixelsPerMs = 1.0;
       timeline.style.width = "800px";
       timeline.style.height = "400px";
@@ -905,7 +905,7 @@ describe("EFTimeline", () => {
   });
 
   describe("fps derivation", () => {
-    test("fps derives from target timegroup", async () => {
+    test("fps derives from controlTarget timegroup", async () => {
       const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
       const timegroupId = nextId();
       timegroup.id = timegroupId;
@@ -915,7 +915,7 @@ describe("EFTimeline", () => {
       document.body.appendChild(timegroup);
 
       const timeline = document.createElement("ef-timeline") as EFTimeline;
-      timeline.target = timegroupId;
+      timeline.controlTarget = timegroupId;
       timeline.style.width = "800px";
       timeline.style.height = "400px";
       document.body.appendChild(timeline);
@@ -940,6 +940,14 @@ describe("EFTimeline", () => {
 
   describe("row hover interaction", () => {
     test("hovering a row propagates hover state to related rows", async () => {
+      await import("../../canvas/EFCanvas.js");
+      const canvas = document.createElement("ef-canvas") as any;
+      canvas.id = "test-canvas";
+      canvas.style.width = "800px";
+      canvas.style.height = "600px";
+      document.body.appendChild(canvas);
+      await canvas.updateComplete;
+
       const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
       const timegroupId = nextId();
       timegroup.id = timegroupId;
@@ -950,10 +958,11 @@ describe("EFTimeline", () => {
       video.id = "child-video";
       timegroup.appendChild(video);
 
-      document.body.appendChild(timegroup);
+      canvas.appendChild(timegroup);
 
       const timeline = document.createElement("ef-timeline") as EFTimeline;
-      timeline.target = timegroupId;
+      timeline.target = "test-canvas";
+      timeline.controlTarget = timegroupId;
       timeline.style.width = "800px";
       timeline.style.height = "400px";
       document.body.appendChild(timeline);
@@ -979,6 +988,102 @@ describe("EFTimeline", () => {
       expect(childRow?.classList.contains("hovered")).toBe(true);
       // Parent should be ancestor-hovered (its descendant is hovered)
       expect(parentRow?.classList.contains("ancestor-hovered")).toBe(true);
+    });
+  });
+
+  describe("selection sync", () => {
+    test("clicking timeline row dispatches row-select event", async () => {
+      await import("../../canvas/EFCanvas.js");
+      const canvas = document.createElement("ef-canvas") as any;
+      canvas.id = "test-canvas";
+      canvas.style.width = "800px";
+      canvas.style.height = "600px";
+      document.body.appendChild(canvas);
+      await canvas.updateComplete;
+
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      const timegroupId = nextId();
+      timegroup.id = timegroupId;
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "10s");
+      canvas.appendChild(timegroup);
+      await timegroup.updateComplete;
+
+      const timeline = document.createElement("ef-timeline") as EFTimeline;
+      timeline.target = "test-canvas";
+      timeline.controlTarget = timegroupId;
+      timeline.style.width = "800px";
+      timeline.style.height = "400px";
+      document.body.appendChild(timeline);
+      await timeline.updateComplete;
+
+      let selectEventDetail: {
+        elementId: string;
+        element: HTMLElement;
+      } | null = null;
+      document.addEventListener(
+        "row-select",
+        ((e: CustomEvent) => {
+          selectEventDetail = e.detail;
+        }) as EventListener,
+      );
+
+      const timelineRow = timeline.shadowRoot?.querySelector(
+        "ef-timeline-row",
+      ) as any;
+      const rowLabel = timelineRow?.shadowRoot?.querySelector(
+        ".row-label",
+      ) as HTMLElement;
+
+      rowLabel.click();
+      await timeline.updateComplete;
+
+      expect(selectEventDetail).toBeTruthy();
+      expect(selectEventDetail?.elementId).toBe(timegroupId);
+      expect(selectEventDetail?.element).toBe(timegroup);
+    });
+
+    test("clicking timeline row updates canvas selection when canvas present", async () => {
+      await import("../../canvas/EFCanvas.js");
+      const canvas = document.createElement("ef-canvas") as any;
+      canvas.id = "test-canvas-2";
+      canvas.style.width = "800px";
+      canvas.style.height = "600px";
+      document.body.appendChild(canvas);
+      await canvas.updateComplete;
+
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      const timegroupId = nextId();
+      timegroup.id = timegroupId;
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "10s");
+      canvas.appendChild(timegroup);
+      await timegroup.updateComplete;
+
+      const timeline = document.createElement("ef-timeline") as EFTimeline;
+      timeline.target = "test-canvas-2";
+      timeline.controlTarget = timegroupId;
+      timeline.style.width = "800px";
+      timeline.style.height = "400px";
+      document.body.appendChild(timeline);
+      await timeline.updateComplete;
+
+      expect(Array.from(canvas.selectionContext.selectedIds)).toEqual([]);
+
+      const timelineRow = timeline.shadowRoot?.querySelector(
+        "ef-timeline-row",
+      ) as any;
+      const rowLabel = timelineRow?.shadowRoot?.querySelector(
+        ".row-label",
+      ) as HTMLElement;
+
+      rowLabel.click();
+      await timeline.updateComplete;
+      await canvas.updateComplete;
+
+      expect(Array.from(canvas.selectionContext.selectedIds)).toEqual([
+        timegroupId,
+      ]);
     });
   });
 });
