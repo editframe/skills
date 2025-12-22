@@ -38,6 +38,13 @@ export class EFPanZoom extends LitElement {
   @property({ type: Number, reflect: true })
   scale = 1;
 
+  /**
+   * When true, automatically fits content to view on first render.
+   * Centers content and scales it to fit within the container with padding.
+   */
+  @property({ type: Boolean, attribute: "auto-fit" })
+  autoFit = false;
+
   @provide({ context: panZoomTransformContext })
   panZoomTransform: PanZoomTransform = { x: 0, y: 0, scale: 1 };
 
@@ -247,6 +254,13 @@ export class EFPanZoom extends LitElement {
     super.firstUpdated(changedProperties);
     // Initialize context with current transform
     this.panZoomTransform = { x: this.x, y: this.y, scale: this.scale };
+
+    // Auto-fit content if enabled (use RAF to ensure content is rendered)
+    if (this.autoFit) {
+      requestAnimationFrame(() => {
+        this.fitToContent();
+      });
+    }
   }
 
   /**
@@ -302,6 +316,53 @@ export class EFPanZoom extends LitElement {
    */
   reset(): void {
     this._updateTransform({ x: 0, y: 0, scale: 1 });
+  }
+
+  /**
+   * Fit content to the container, centering it and scaling to fit.
+   * Uses a padding factor to leave some margin around the content.
+   *
+   * @param padding - Padding factor (0-1), e.g., 0.1 = 10% padding on each side. Default: 0.05
+   */
+  fitToContent(padding = 0.05): void {
+    const containerRect = this.getBoundingClientRect();
+    if (containerRect.width === 0 || containerRect.height === 0) return;
+
+    // Find the first child element to measure
+    const contentWrapper = this.shadowRoot?.querySelector(".content-wrapper");
+    const slottedContent = contentWrapper
+      ?.querySelector("slot")
+      ?.assignedElements()[0] as HTMLElement | undefined;
+
+    if (!slottedContent) return;
+
+    // Get content dimensions
+    const contentRect = slottedContent.getBoundingClientRect();
+    const contentWidth = contentRect.width / this.scale;
+    const contentHeight = contentRect.height / this.scale;
+
+    if (contentWidth === 0 || contentHeight === 0) return;
+
+    // Calculate available space with padding
+    const availableWidth = containerRect.width * (1 - 2 * padding);
+    const availableHeight = containerRect.height * (1 - 2 * padding);
+
+    // Calculate scale to fit
+    const scaleX = availableWidth / contentWidth;
+    const scaleY = availableHeight / contentHeight;
+    const newScale = Math.min(scaleX, scaleY, 1); // Don't scale up beyond 1:1
+
+    // Calculate position to center
+    const scaledWidth = contentWidth * newScale;
+    const scaledHeight = contentHeight * newScale;
+    const newX = (containerRect.width - scaledWidth) / 2;
+    const newY = (containerRect.height - scaledHeight) / 2;
+
+    this._updateTransform({
+      x: newX,
+      y: newY,
+      scale: newScale,
+    });
   }
 
   render() {
