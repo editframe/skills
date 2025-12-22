@@ -1154,6 +1154,122 @@ describe("Dynamic content updates", () => {
     }, 1000);
   });
 
+  describe("onFrame property", () => {
+    test("onFrame property executes callback on frame update", async () => {
+      const timegroup = renderTimegroup(
+        html`<ef-timegroup mode="fixed" duration="5s"></ef-timegroup>`,
+      );
+
+      let callbackExecuted = false;
+      timegroup.onFrame = () => {
+        callbackExecuted = true;
+      };
+
+      await timegroup.seek(1000);
+
+      assert.equal(callbackExecuted, true);
+    }, 1000);
+
+    test("onFrame property receives correct timing information", async () => {
+      const timegroup = renderTimegroup(
+        html`<ef-timegroup mode="fixed" duration="5000ms"></ef-timegroup>`,
+      );
+
+      let receivedInfo: any = null;
+      timegroup.onFrame = (info) => {
+        receivedInfo = info;
+      };
+
+      await timegroup.seek(2000);
+
+      assert.equal(receivedInfo.ownCurrentTimeMs, 2000);
+      assert.equal(receivedInfo.currentTimeMs, 2000);
+      assert.equal(receivedInfo.durationMs, 5000);
+      assert.equal(receivedInfo.percentComplete, 0.4);
+      assert.equal(receivedInfo.element, timegroup);
+    }, 1000);
+
+    test("setting onFrame to null removes the callback", async () => {
+      const timegroup = renderTimegroup(
+        html`<ef-timegroup mode="fixed" duration="5s"></ef-timegroup>`,
+      );
+
+      let callbackCount = 0;
+      timegroup.onFrame = () => {
+        callbackCount++;
+      };
+
+      await timegroup.seek(1000);
+      assert.equal(callbackCount, 1);
+
+      timegroup.onFrame = null;
+      await timegroup.seek(2000);
+      assert.equal(callbackCount, 1, "callback should not run after set to null");
+    }, 1000);
+
+    test("setting new onFrame replaces previous callback", async () => {
+      const timegroup = renderTimegroup(
+        html`<ef-timegroup mode="fixed" duration="5s"></ef-timegroup>`,
+      );
+
+      let callback1Count = 0;
+      let callback2Count = 0;
+
+      timegroup.onFrame = () => {
+        callback1Count++;
+      };
+
+      await timegroup.seek(1000);
+      assert.equal(callback1Count, 1);
+      assert.equal(callback2Count, 0);
+
+      timegroup.onFrame = () => {
+        callback2Count++;
+      };
+
+      await timegroup.seek(2000);
+      assert.equal(callback1Count, 1, "first callback should not run");
+      assert.equal(callback2Count, 1, "second callback should run");
+    }, 1000);
+
+    test("onFrame getter returns current callback", async () => {
+      const timegroup = renderTimegroup(
+        html`<ef-timegroup mode="fixed" duration="5s"></ef-timegroup>`,
+      );
+
+      assert.equal(timegroup.onFrame, null);
+
+      const callback = () => {};
+      timegroup.onFrame = callback;
+      assert.equal(timegroup.onFrame, callback);
+
+      timegroup.onFrame = null;
+      assert.equal(timegroup.onFrame, null);
+    }, 1000);
+
+    test("onFrame works alongside addFrameTask callbacks", async () => {
+      const timegroup = renderTimegroup(
+        html`<ef-timegroup mode="fixed" duration="5s"></ef-timegroup>`,
+      );
+
+      let onFrameExecuted = false;
+      let addFrameTaskExecuted = false;
+
+      timegroup.onFrame = () => {
+        onFrameExecuted = true;
+      };
+
+      timegroup.addFrameTask(() => {
+        addFrameTaskExecuted = true;
+      });
+
+      await timegroup.seek(1000);
+
+      assert.equal(onFrameExecuted, true);
+      assert.equal(addFrameTaskExecuted, true);
+    }, 1000);
+  });
+
   describe("staggered text animations", () => {
     test("staggered animations start at opacity 0", async () => {
       const style = document.createElement("style");

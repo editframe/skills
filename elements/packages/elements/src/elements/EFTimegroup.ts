@@ -36,6 +36,20 @@ import {
   type ElementPositionInfo,
   getPositionInfoFromElement,
 } from "./ElementPositionInfo.js";
+import {
+  buildCloneStructure,
+  syncAllStyles,
+  type ElementPair,
+} from "../preview/renderTimegroupPreview.js";
+import { renderTimegroupToCanvas } from "../preview/renderTimegroupToCanvas.js";
+
+// Side-effect imports for workbench wrapping
+import "../canvas/EFCanvas.js";
+import "../gui/hierarchy/EFHierarchy.js";
+import "../gui/EFFilmstrip.js";
+import "../gui/EFWorkbench.js";
+import "../gui/EFFitScale.js";
+import "./EFPanZoom.js";
 
 declare global {
   var EF_DEV_WORKBENCH: boolean | undefined;
@@ -486,6 +500,21 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
   @property({ type: String })
   fit: "none" | "contain" | "cover" = "none";
 
+  /**
+   * When true, the timegroup becomes an "image factory":
+   * - Original content is hidden (opacity: 0) but preserves layout
+   * - A DOM clone overlay displays the visual state
+   * - Original can be seeked for thumbnail capture without disrupting display
+   * @public
+   */
+  @property({ type: Boolean, attribute: "proxy-mode" })
+  proxyMode = false;
+
+  // Proxy mode state
+  #proxyContainer: HTMLDivElement | null = null;
+  #proxyPairs: ElementPair[] | null = null;
+  #proxyAnimationFrame: number | null = null;
+
   #resizeObserver?: ResizeObserver;
 
   #currentTime: number | undefined = undefined;
@@ -493,6 +522,8 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
   #pendingSeekTime: number | undefined;
   #processingPendingSeek = false;
   #customFrameTasks: Set<FrameTaskCallback> = new Set();
+  #onFrameCallback: FrameTaskCallback | null = null;
+  #onFrameCleanup: (() => void) | null = null;
 
   /**
    * Get the effective FPS for this timegroup.
@@ -658,6 +689,38 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
   }
 
   /**
+   * Property-based frame task callback for React integration.
+   * When set, automatically registers the callback as a frame task.
+   * Setting a new value automatically cleans up the previous callback.
+   * Set to null or undefined to remove the callback.
+   *
+   * @example
+   * // React usage:
+   * <Timegroup onFrame={({ ownCurrentTimeMs, percentComplete }) => {
+   *   // Per-frame updates
+   * }} />
+   *
+   * @public
+   */
+  get onFrame(): FrameTaskCallback | null {
+    return this.#onFrameCallback;
+  }
+
+  set onFrame(callback: FrameTaskCallback | null | undefined) {
+    // Clean up previous callback if exists
+    if (this.#onFrameCleanup) {
+      this.#onFrameCleanup();
+      this.#onFrameCleanup = null;
+    }
+    this.#onFrameCallback = callback ?? null;
+
+    // Register new callback if provided
+    if (callback) {
+      this.#onFrameCleanup = this.addFrameTask(callback);
+    }
+  }
+
+  /**
    * Register a custom frame task callback that will be executed during frame rendering.
    * The callback receives timing information and can be async or sync.
    * Multiple callbacks can be registered and will execute in parallel.
@@ -761,6 +824,9 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
       new TimegroupController(this.parentTimegroup, this);
     }
 
+    // Proxy mode is now controlled by the workbench UI
+    // Auto-enable is disabled - user selects preview mode via workbench toolbar
+
     if (this.shouldWrapWithWorkbench()) {
       this.wrapWithWorkbench();
     }
@@ -779,11 +845,159 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
       this.#previousDurationMs = this.durationMs;
       this.#runThrottledFrameTask();
     }
+
+    // Handle proxy mode changes
+    if (changedProperties.has("proxyMode")) {
+      if (this.proxyMode) {
+        this.#enableProxyMode();
+      } else {
+        this.#disableProxyMode();
+      }
+    }
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
     this.#resizeObserver?.disconnect();
+    this.#disableProxyMode();
+  }
+
+  // ============================================================================
+  // Proxy Mode Implementation
+  // ============================================================================
+
+  /**
+   * Enable proxy mode: hide original, create sibling overlay clone that syncs styles.
+   * The proxy is inserted as a sibling so it inherits all parent transforms (pan/zoom/etc).
+   */
+  #enableProxyMode(): void {
+    if (this.#proxyContainer) return; // Already enabled
+
+    // Hide the original content (preserve layout)
+    this.style.opacity = "0";
+
+    const width = this.offsetWidth || 1920;
+    const height = this.offsetHeight || 1080;
+
+    // Create proxy container as sibling overlay
+    // Uses position:absolute to overlay the timegroup, inheriting parent transforms
+    this.#proxyContainer = document.createElement("div");
+    this.#proxyContainer.className = "ef-timegroup-proxy";
+    this.#proxyContainer.style.cssText = `
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: ${width}px;
+      height: ${height}px;
+      pointer-events: none;
+      overflow: hidden;
+    `;
+
+    // Build clone structure
+    const { container: innerContainer, pairs } = buildCloneStructure(this);
+    this.#proxyPairs = pairs;
+
+    // Create wrapper with dimensions
+    const wrapper = document.createElement("div");
+    wrapper.style.cssText = `
+      width: ${width}px;
+      height: ${height}px;
+      position: relative;
+      overflow: hidden;
+      background: ${getComputedStyle(this).background || "transparent"};
+    `;
+    wrapper.appendChild(innerContainer);
+    this.#proxyContainer.appendChild(wrapper);
+
+    // Initial style sync
+    syncAllStyles(this.#proxyPairs);
+    
+    // IMPORTANT: Override the root clone's opacity - the source has opacity:0 
+    // to hide it, but we don't want that copied to the visible proxy
+    if (this.#proxyPairs[0]) {
+      this.#proxyPairs[0][1].style.opacity = "1";
+    }
+
+    // Insert as sibling right after this element (inherits parent transforms)
+    this.after(this.#proxyContainer);
+
+    // Start sync loop
+    this.#startProxySync();
+  }
+
+  /**
+   * Disable proxy mode: remove overlay, restore original visibility.
+   */
+  #disableProxyMode(): void {
+    // Stop sync loop
+    if (this.#proxyAnimationFrame !== null) {
+      cancelAnimationFrame(this.#proxyAnimationFrame);
+      this.#proxyAnimationFrame = null;
+    }
+
+    // Remove proxy container
+    if (this.#proxyContainer) {
+      this.#proxyContainer.remove();
+      this.#proxyContainer = null;
+    }
+
+    this.#proxyPairs = null;
+
+    // Restore original visibility
+    this.style.opacity = "";
+  }
+
+  /**
+   * Animation frame loop to sync proxy styles with original.
+   */
+  #startProxySync(): void {
+    const sync = () => {
+      if (!this.#proxyPairs || !this.#proxyContainer) return;
+
+      // Sync styles every frame to keep proxy in sync with original
+      syncAllStyles(this.#proxyPairs);
+      
+      // Override root clone opacity - source has opacity:0 but clone should be visible
+      if (this.#proxyPairs[0]) {
+        this.#proxyPairs[0][1].style.opacity = "1";
+      }
+
+      // Continue loop
+      this.#proxyAnimationFrame = requestAnimationFrame(sync);
+    };
+    this.#proxyAnimationFrame = requestAnimationFrame(sync);
+  }
+
+  /**
+   * Capture the timegroup at a specific timestamp as a canvas.
+   * 
+   * When proxyMode is enabled, this allows capturing thumbnails at arbitrary
+   * timestamps without disrupting the visible display (which shows the proxy clone).
+   * 
+   * @param timeMs - The timestamp to capture (in milliseconds)
+   * @param scale - Scale factor for the output (default 1, use <1 for thumbnails)
+   * @returns Promise resolving to an HTMLCanvasElement with the captured frame
+   * @public
+   */
+  async captureAtTime(timeMs: number, scale = 1): Promise<HTMLCanvasElement> {
+    // Save current time
+    const savedTime = this.currentTimeMs;
+
+    // Seek to target time (original is invisible in proxy mode, won't disrupt display)
+    this.currentTimeMs = timeMs;
+    await this.updateComplete;
+
+    // Wait for animations to settle
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+
+    // Use canvas renderer to capture
+    const { canvas } = renderTimegroupToCanvas(this, scale);
+
+    // Restore original time
+    this.currentTimeMs = savedTime;
+    await this.updateComplete;
+
+    return canvas;
   }
 
   /** @internal */
@@ -996,34 +1210,38 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
   shouldWrapWithWorkbench() {
     const isRendering = EF_RENDERING?.() === true;
 
+    // Only root timegroups should wrap with workbench
+    if (!this.isRootTimegroup) {
+      return false;
+    }
+
     // Never wrap with workbench when inside a canvas
     // Canvas manages its own layout and coordinate system
     if (this.closest("ef-canvas") !== null) {
       return false;
     }
 
-    // During rendering, always wrap with workbench (needed by EF_FRAMEGEN)
-    if (isRendering) {
-      return (
-        this.closest("ef-timegroup") === this &&
-        this.closest("ef-preview") === null &&
-        this.closest("ef-workbench") === null &&
-        this.closest("test-context") === null
-      );
-    }
-
-    // During interactive mode, respect the dev workbench flag
-    if (!globalThis.EF_DEV_WORKBENCH) {
+    // Never wrap if already inside preview, workbench, or preview context
+    if (
+      this.closest("ef-preview") !== null ||
+      this.closest("ef-workbench") !== null ||
+      this.closest("ef-preview-context") !== null
+    ) {
       return false;
     }
 
-    return (
-      EF_INTERACTIVE &&
-      this.closest("ef-timegroup") === this &&
-      this.closest("ef-preview") === null &&
-      this.closest("ef-workbench") === null &&
-      this.closest("test-context") === null
-    );
+    // Skip wrapping in test contexts
+    if (this.closest("test-context") !== null) {
+      return false;
+    }
+
+    // During rendering, always wrap with workbench (needed by EF_FRAMEGEN)
+    if (isRendering) {
+      return true;
+    }
+
+    // During interactive mode, respect the dev workbench flag
+    return EF_INTERACTIVE && globalThis.EF_DEV_WORKBENCH === true;
   }
 
   /** @internal */
@@ -1031,11 +1249,41 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     const workbench = document.createElement("ef-workbench");
     this.parentElement?.append(workbench);
     if (!this.hasAttribute("id")) {
-      this.setAttribute("id", "root-this");
+      this.setAttribute("id", "root-timegroup");
     }
-    this.setAttribute("slot", "canvas");
-    workbench.append(this as unknown as Element);
 
+    // Create pan-zoom for selection overlay support
+    // Must be in light DOM so canvas can find it via closest()
+    const panZoom = document.createElement("ef-pan-zoom");
+    panZoom.id = "workbench-panzoom";
+    panZoom.setAttribute("slot", "canvas");
+    panZoom.setAttribute("auto-fit", ""); // Fit content to view on first render
+    panZoom.style.width = "100%";
+    panZoom.style.height = "100%";
+
+    // Create canvas wrapper for selection/highlighting support
+    // Get dimensions from the timegroup for explicit canvas sizing
+    const rect = this.getBoundingClientRect();
+    const canvas = document.createElement("ef-canvas");
+    canvas.id = "workbench-canvas";
+    // Use explicit dimensions (required for selection bounds calculation)
+    canvas.style.width = `${Math.max(rect.width, 1920)}px`;
+    canvas.style.height = `${Math.max(rect.height, 1080)}px`;
+    canvas.style.display = "block";
+
+    // Move timegroup into canvas, canvas into pan-zoom
+    canvas.append(this as unknown as Element);
+    panZoom.append(canvas);
+    workbench.append(panZoom);
+
+    // Add hierarchy panel - targets canvas for selection support
+    const hierarchy = document.createElement("ef-hierarchy");
+    hierarchy.setAttribute("slot", "hierarchy");
+    hierarchy.setAttribute("target", "workbench-canvas");
+    hierarchy.setAttribute("header", "Scenes");
+    workbench.append(hierarchy);
+
+    // Add filmstrip/timeline - targets timegroup for playback
     const filmstrip = document.createElement("ef-filmstrip");
     filmstrip.setAttribute("slot", "timeline");
     filmstrip.setAttribute("target", this.id);
