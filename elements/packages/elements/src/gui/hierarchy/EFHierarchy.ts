@@ -390,8 +390,9 @@ export class EFHierarchy extends TWMixin(LitElement) {
   protected updated(changedProperties: PropertyValues): void {
     super.updated(changedProperties);
 
-    // Re-setup selection listener when target changes
+    // Re-initialize when target changes
     if (changedProperties.has("targetElement") || changedProperties.has("target")) {
+      this.initializeExpandedState();
       this.removeSelectionListener();
       this.selectionChangeHandler = undefined;
       this.setupSelectionListener();

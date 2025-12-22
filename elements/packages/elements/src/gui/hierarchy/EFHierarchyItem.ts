@@ -15,6 +15,7 @@ import { selectionContext } from "../../canvas/selection/selectionContext.js";
 import { findRootTemporal } from "../../elements/findRootTemporal.js";
 import { isEFTemporal } from "../../elements/EFTemporal.js";
 import { TWMixin } from "../TWMixin.js";
+import { phosphorIcon, ICONS } from "../icons.js";
 import { type HierarchyContext, hierarchyContext } from "./hierarchyContext.js";
 
 const DEFAULT_HIDDEN_TAGS = new Set([
@@ -198,9 +199,12 @@ export class EFHierarchyItem<
       .item-row {
         display: flex;
         align-items: center;
-        height: 1.5rem;
-        padding-left: 0.5rem;
-        font-size: 0.75rem;
+        height: var(--hierarchy-item-height, 1.5rem);
+        padding-left: var(--hierarchy-item-padding-left, 0.5rem);
+        padding-right: var(--hierarchy-item-padding-right, 0.5rem);
+        padding-top: var(--hierarchy-item-padding-top, 0);
+        padding-bottom: var(--hierarchy-item-padding-bottom, 0);
+        font-size: var(--hierarchy-item-font-size, 0.75rem);
         font-family: monospace;
         cursor: pointer;
         user-select: none;
@@ -221,8 +225,8 @@ export class EFHierarchyItem<
         opacity: 0.5;
       }
       .expand-icon {
-        width: 1rem;
-        height: 1rem;
+        width: var(--hierarchy-expand-icon-size, 1rem);
+        height: var(--hierarchy-expand-icon-size, 1rem);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -238,7 +242,7 @@ export class EFHierarchyItem<
         transform: rotate(90deg);
       }
       .icon {
-        margin-right: 0.25rem;
+        margin-right: var(--hierarchy-icon-gap, 0.25rem);
         flex-shrink: 0;
       }
       .label {
@@ -248,7 +252,7 @@ export class EFHierarchyItem<
         flex: 1;
       }
       .children {
-        padding-left: 1rem;
+        padding-left: var(--hierarchy-indent, 1rem);
       }
       .children[data-collapsed] {
         display: none;
@@ -256,7 +260,7 @@ export class EFHierarchyItem<
       .drop-indicator {
         height: 2px;
         background: var(--hierarchy-drop-indicator, #3b82f6);
-        margin-left: 1rem;
+        margin-left: var(--hierarchy-indent, 1rem);
       }
       .drop-inside {
         outline: 2px solid var(--hierarchy-drop-indicator, #3b82f6);
@@ -293,7 +297,7 @@ export class EFHierarchyItem<
   }
 
   get icon(): TemplateResult<1> | string {
-    return "📄";
+    return phosphorIcon(ICONS.code);
   }
 
   get isFocused(): boolean {
@@ -574,7 +578,7 @@ export class EFHierarchyItem<
 @customElement("ef-timegroup-hierarchy-item")
 export class EFTimegroupHierarchyItem extends EFHierarchyItem<EFTimegroup> {
   get icon() {
-    return "🕒";
+    return phosphorIcon(ICONS.clock);
   }
 
   displayLabel(): string | TemplateResult<1> | typeof nothing {
@@ -585,7 +589,7 @@ export class EFTimegroupHierarchyItem extends EFHierarchyItem<EFTimegroup> {
 @customElement("ef-audio-hierarchy-item")
 export class EFAudioHierarchyItem extends EFHierarchyItem<EFAudio> {
   get icon() {
-    return "🔊";
+    return phosphorIcon(ICONS.speakerHigh);
   }
 
   displayLabel() {
@@ -596,7 +600,7 @@ export class EFAudioHierarchyItem extends EFHierarchyItem<EFAudio> {
 @customElement("ef-video-hierarchy-item")
 export class EFVideoHierarchyItem extends EFHierarchyItem<EFVideo> {
   get icon() {
-    return "📼";
+    return phosphorIcon(ICONS.filmSlate);
   }
 
   displayLabel() {
@@ -607,7 +611,7 @@ export class EFVideoHierarchyItem extends EFHierarchyItem<EFVideo> {
 @customElement("ef-captions-hierarchy-item")
 export class EFCaptionsHierarchyItem extends EFHierarchyItem {
   get icon() {
-    return "📝";
+    return phosphorIcon(ICONS.subtitles);
   }
 
   displayLabel() {
@@ -618,7 +622,7 @@ export class EFCaptionsHierarchyItem extends EFHierarchyItem {
 @customElement("ef-captions-active-word-hierarchy-item")
 export class EFCaptionsActiveWordHierarchyItem extends EFHierarchyItem {
   get icon() {
-    return "🗣️";
+    return phosphorIcon(ICONS.microphone);
   }
 
   displayLabel() {
@@ -629,7 +633,7 @@ export class EFCaptionsActiveWordHierarchyItem extends EFHierarchyItem {
 @customElement("ef-text-hierarchy-item")
 export class EFTextHierarchyItem extends EFHierarchyItem {
   get icon() {
-    return "📄";
+    return phosphorIcon(ICONS.textT);
   }
 
   displayLabel() {
@@ -640,7 +644,7 @@ export class EFTextHierarchyItem extends EFHierarchyItem {
 @customElement("ef-text-segment-hierarchy-item")
 export class EFTextSegmentHierarchyItem extends EFHierarchyItem {
   get icon() {
-    return "📄";
+    return phosphorIcon(ICONS.textT);
   }
 
   displayLabel() {
@@ -651,7 +655,7 @@ export class EFTextSegmentHierarchyItem extends EFHierarchyItem {
 @customElement("ef-waveform-hierarchy-item")
 export class EFWaveformHierarchyItem extends EFHierarchyItem {
   get icon() {
-    return "🌊";
+    return phosphorIcon(ICONS.waveform);
   }
 
   renderChildren(): typeof nothing {
@@ -662,7 +666,7 @@ export class EFWaveformHierarchyItem extends EFHierarchyItem {
 @customElement("ef-image-hierarchy-item")
 export class EFImageHierarchyItem extends EFHierarchyItem<EFImage> {
   get icon() {
-    return "🖼️";
+    return phosphorIcon(ICONS.image);
   }
 
   displayLabel() {
