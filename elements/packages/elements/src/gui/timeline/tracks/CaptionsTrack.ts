@@ -6,6 +6,7 @@ import {
   EFCaptions,
   EFCaptionsActiveWord,
 } from "../../../elements/EFCaptions.js";
+import { phosphorIcon, ICONS } from "../../icons.js";
 import { TrackItem } from "./TrackItem.js";
 import { renderTrackChildren } from "./renderTrackChildren.js";
 
@@ -42,7 +43,7 @@ export class EFCaptionsTrack extends TrackItem {
             borderColor: "var(--filmstrip-border)",
           })}
         >
-          📝 ${this.renderCaptionsData(captionsData)}
+          ${phosphorIcon(ICONS.subtitles)} ${this.renderCaptionsData(captionsData)}
         </div>
       </div>
       ${this.renderChildren()}
@@ -118,7 +119,7 @@ export class EFCaptionsActiveWordTrack extends TrackItem {
     if (!captionsData) {
       return html`<div style=${styleMap(this.captionsTrackStyles)}>
         <div class="border h-[1.1rem] mb-[1px] text-xs" style="background-color: var(--filmstrip-bg); border-color: var(--filmstrip-border);">
-          🗣️ Active Word
+          ${phosphorIcon(ICONS.microphone)} Active Word
         </div>
       </div>`;
     }
@@ -177,7 +178,7 @@ export class EFCaptionsSegmentTrack extends TrackItem {
     if (!captionsData) {
       return html`<div style=${styleMap(this.captionsTrackStyles)}>
         <div class="border h-[1.1rem] mb-[1px] text-xs" style="background-color: var(--filmstrip-bg); border-color: var(--filmstrip-border);">
-          📄 Segment
+          ${phosphorIcon(ICONS.textT)} Segment
         </div>
       </div>`;
     }
@@ -236,7 +237,7 @@ export class EFCaptionsBeforeWordTrack extends TrackItem {
     if (!captionsData) {
       return html`<div style=${styleMap(this.captionsTrackStyles)}>
         <div class="border h-[1.1rem] mb-[1px] text-xs" style="background-color: var(--filmstrip-bg); border-color: var(--filmstrip-border);">
-          ⬅️ Before
+          ${phosphorIcon(ICONS.arrowLeft)} Before
         </div>
       </div>`;
     }
@@ -294,7 +295,7 @@ export class EFCaptionsAfterWordTrack extends TrackItem {
     if (!captionsData) {
       return html`<div style=${styleMap(this.captionsTrackStyles)}>
         <div class="border h-[1.1rem] mb-[1px] text-xs" style="background-color: var(--filmstrip-bg); border-color: var(--filmstrip-border);">
-          ➡️ After
+          ${phosphorIcon(ICONS.arrowRight)} After
         </div>
       </div>`;
     }

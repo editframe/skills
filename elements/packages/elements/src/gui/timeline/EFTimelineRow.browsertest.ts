@@ -6,6 +6,7 @@ import "./EFTimelineRow.js";
 import type { EFTimelineRow } from "./EFTimelineRow.js";
 import type { EFTimegroup } from "../../elements/EFTimegroup.js";
 import type { EFVideo } from "../../elements/EFVideo.js";
+import type { EFAudio } from "../../elements/EFAudio.js";
 
 describe("EFTimelineRow", () => {
   afterEach(() => {
@@ -274,6 +275,73 @@ describe("EFTimelineRow", () => {
       await row.updateComplete;
 
       expect(row.classList.contains("selected")).toBe(false);
+    });
+  });
+
+  describe("track positioning", () => {
+    test("audio inside sequence timegroup is positioned at absolute start time", async () => {
+      // Create a root sequence with two child timegroups
+      const rootTimegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      rootTimegroup.id = "root";
+      rootTimegroup.setAttribute("mode", "sequence");
+
+      // First child: a fixed timegroup that takes 5 seconds
+      const firstChild = document.createElement("ef-timegroup") as EFTimegroup;
+      firstChild.id = "first-child";
+      firstChild.setAttribute("mode", "fixed");
+      firstChild.setAttribute("duration", "5s");
+      rootTimegroup.appendChild(firstChild);
+
+      // Second child: a fixed timegroup containing an audio element
+      const secondChild = document.createElement("ef-timegroup") as EFTimegroup;
+      secondChild.id = "second-child";
+      secondChild.setAttribute("mode", "fixed");
+      secondChild.setAttribute("duration", "3s");
+
+      const audio = document.createElement("ef-audio") as EFAudio;
+      audio.id = "test-audio";
+      secondChild.appendChild(audio);
+
+      rootTimegroup.appendChild(secondChild);
+      document.body.appendChild(rootTimegroup);
+
+      await rootTimegroup.updateComplete;
+      await firstChild.updateComplete;
+      await secondChild.updateComplete;
+      await audio.updateComplete;
+
+      // Verify audio's start time is 5000ms (after first child ends)
+      expect(audio.startTimeMs).toBe(5000);
+      // The parent timegroup also starts at 5000ms
+      expect(secondChild.startTimeMs).toBe(5000);
+      // So startTimeWithinParentMs would be 0, but for flat rows we need absolute positioning
+      expect(audio.startTimeWithinParentMs).toBe(0);
+
+      // Create a timeline row for the audio element (flat row architecture)
+      const pixelsPerMs = 0.1;
+      const audioRow = document.createElement("ef-timeline-row") as EFTimelineRow;
+      audioRow.element = audio;
+      audioRow.depth = 2;
+      audioRow.pixelsPerMs = pixelsPerMs;
+      document.body.appendChild(audioRow);
+      await audioRow.updateComplete;
+
+      // Find the track component inside the row
+      const track = audioRow.shadowRoot?.querySelector(".row-track");
+      const audioTrack = track?.querySelector("ef-audio-track");
+      expect(audioTrack).toBeTruthy();
+
+      // Wait for the track to render
+      await (audioTrack as any)?.updateComplete;
+
+      // Get the outer gutter div that positions the track
+      const gutterDiv = audioTrack?.shadowRoot?.firstElementChild as HTMLElement;
+      expect(gutterDiv).toBeTruthy();
+
+      // The track should be positioned at absolute start time (5000ms * 0.1 = 500px)
+      // Not at startTimeWithinParentMs (0ms * 0.1 = 0px)
+      const expectedLeftPx = audio.startTimeMs * pixelsPerMs;
+      expect(gutterDiv.style.left).toBe(`${expectedLeftPx}px`);
     });
   });
 });

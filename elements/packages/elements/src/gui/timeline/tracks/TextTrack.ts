@@ -3,6 +3,7 @@ import { customElement } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { EFText } from "../../../elements/EFText.js";
 import { EFTextSegment } from "../../../elements/EFTextSegment.js";
+import { phosphorIcon, ICONS } from "../../icons.js";
 import { TrackItem } from "./TrackItem.js";
 import { renderTrackChildren } from "./renderTrackChildren.js";
 
@@ -39,7 +40,7 @@ export class EFTextTrack extends TrackItem {
             borderColor: "var(--filmstrip-border)",
           })}
         >
-          📄 ${this.renderTextSegments(segments)}
+          ${phosphorIcon(ICONS.textT)} ${this.renderTextSegments(segments)}
         </div>
       </div>
       ${this.renderChildren()}
@@ -112,7 +113,7 @@ export class EFTextSegmentTrack extends TrackItem {
     if (!parentText) {
       return html`<div style=${styleMap(this.textTrackStyles)}>
         <div class="border h-[1.1rem] mb-[1px] text-xs" style="background-color: var(--filmstrip-bg); border-color: var(--filmstrip-border);">
-          📄 Text Segment
+          ${phosphorIcon(ICONS.textT)} Text Segment
         </div>
       </div>`;
     }

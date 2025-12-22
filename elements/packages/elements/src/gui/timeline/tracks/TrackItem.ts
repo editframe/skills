@@ -88,10 +88,21 @@ export class TrackItem extends TWMixin(LitElement) {
   @property({ type: Array, attribute: false })
   showSelectors?: string[];
 
+  /**
+   * When true, positions the track at the element's absolute start time
+   * (startTimeMs) rather than relative to parent (startTimeWithinParentMs).
+   * Used for flat row architectures where each element gets its own row.
+   */
+  @property({ type: Boolean, attribute: "use-absolute-position" })
+  useAbsolutePosition = false;
+
   get gutterStyles() {
+    const startMs = this.useAbsolutePosition
+      ? this.element.startTimeMs
+      : this.element.startTimeWithinParentMs;
     return {
       position: "relative",
-      left: `${this.pixelsPerMs * (this.element.startTimeWithinParentMs - this.element.sourceStartMs)}px`,
+      left: `${this.pixelsPerMs * (startMs - this.element.sourceStartMs)}px`,
       width: `${this.pixelsPerMs * (this.element.intrinsicDurationMs ?? this.element.durationMs)}px`,
     };
   }

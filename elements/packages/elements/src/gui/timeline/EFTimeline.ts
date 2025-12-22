@@ -272,6 +272,35 @@ export class EFTimeline extends TWMixin(LitElement) {
         z-index: 101;
       }
       
+      /* Thumbnail strip row */
+      .thumbnail-row {
+        display: flex;
+        height: 48px;
+        background: var(--timeline-bg);
+        border-bottom: 1px solid var(--timeline-border);
+        flex-shrink: 0;
+      }
+      
+      .thumbnail-spacer {
+        width: var(--timeline-hierarchy-width);
+        flex-shrink: 0;
+        background: var(--timeline-header-bg);
+        border-right: 1px solid var(--timeline-border);
+      }
+      
+      .thumbnail-content {
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+      }
+      
+      .thumbnail-strip .thumbnail {
+        flex-shrink: 0;
+        border-radius: 2px;
+        overflow: hidden;
+        background: var(--timeline-track-bg);
+      }
+      
       .tracks-viewport {
         flex: 1;
         display: flex;
@@ -495,6 +524,7 @@ export class EFTimeline extends TWMixin(LitElement) {
   private tracksScrollRef: Ref<HTMLDivElement> = createRef();
   private containerRef: Ref<HTMLDivElement> = createRef();
   private animationFrameId?: number;
+  private thumbnailUpdatePending = false;
   private selectionChangeHandler?: () => void;
   private scrollHandler?: () => void;
   private keydownHandler?: (e: KeyboardEvent) => void;
@@ -720,6 +750,10 @@ export class EFTimeline extends TWMixin(LitElement) {
     this.updateTimelineState();
 
     super.willUpdate(changedProperties);
+  }
+
+  protected firstUpdated(): void {
+    // Preview disabled for now - testing
   }
 
   protected updated(changedProperties: PropertyValues): void {
