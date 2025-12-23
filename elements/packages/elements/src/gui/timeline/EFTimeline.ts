@@ -238,6 +238,10 @@ export class EFTimeline extends TWMixin(LitElement) {
         background: var(--timeline-ruler-bg);
         border-bottom: 1px solid var(--timeline-border);
         flex-shrink: 0;
+        /* Sticky positioning for native scroll sync */
+        position: sticky;
+        top: 0;
+        z-index: 10;
       }
       
       .ruler-spacer {
@@ -245,6 +249,10 @@ export class EFTimeline extends TWMixin(LitElement) {
         flex-shrink: 0;
         background: var(--timeline-header-bg);
         border-right: 1px solid var(--timeline-border);
+        /* Sticky positioning to stay fixed during horizontal scroll */
+        position: sticky;
+        left: 0;
+        z-index: 11;
       }
       
       .ruler-content {
@@ -326,25 +334,17 @@ export class EFTimeline extends TWMixin(LitElement) {
         flex-direction: column;
       }
       
-      .playhead-clip {
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        left: var(--timeline-hierarchy-width, 200px);
-        right: 0;
-        overflow: hidden;
-        pointer-events: none;
-      }
-      
-      .playhead-layer {
+      /* === PLAYHEAD (inside scroll container for native sync) === */
+      .playhead-container {
         position: absolute;
         top: 0;
         bottom: 0;
         left: 0;
-        right: 0;
+        pointer-events: none;
+        /* Below sticky labels (z-index 10-11) but above tracks */
+        z-index: 5;
       }
       
-      /* === PLAYHEAD === */
       .playhead {
         position: absolute;
         top: 0;
@@ -352,7 +352,6 @@ export class EFTimeline extends TWMixin(LitElement) {
         width: 2px;
         background: var(--timeline-playhead);
         pointer-events: none;
-        z-index: 100;
       }
       
       .playhead-drag-target {
@@ -374,7 +373,6 @@ export class EFTimeline extends TWMixin(LitElement) {
         background: rgba(59, 130, 246, 0.3);
         border-left: 2px solid rgba(59, 130, 246, 0.7);
         pointer-events: none;
-        z-index: 99;
       }
       
       .empty-state {
@@ -515,6 +513,7 @@ export class EFTimeline extends TWMixin(LitElement) {
     currentTimeMs: 0,
     durationMs: 0,
     viewportScrollLeft: 0,
+    viewportWidth: 800,
     seek: () => {},
     zoomIn: () => {},
     zoomOut: () => {},
@@ -572,11 +571,19 @@ export class EFTimeline extends TWMixin(LitElement) {
 
   /** Update timeline state when any constituent value changes */
   private updateTimelineState(): void {
+    // Get viewport width from scroll container
+    const tracksScroll = this.tracksScrollRef.value;
+    const hierarchyWidth = this.showHierarchy ? EFTimeline.HIERARCHY_WIDTH : 0;
+    const viewportWidth = tracksScroll 
+      ? tracksScroll.clientWidth - hierarchyWidth 
+      : 800; // Fallback default
+    
     const newState: TimelineState = {
       pixelsPerMs: this.pixelsPerMs,
       currentTimeMs: this.currentTimeMs,
       durationMs: this.durationMs,
       viewportScrollLeft: this.viewportScrollLeft,
+      viewportWidth,
       seek: (ms: number) => this.handleSeek(ms),
       zoomIn: () => this.handleZoomIn(),
       zoomOut: () => this.handleZoomOut(),
@@ -587,7 +594,8 @@ export class EFTimeline extends TWMixin(LitElement) {
       this._timelineState.pixelsPerMs !== newState.pixelsPerMs ||
       this._timelineState.currentTimeMs !== newState.currentTimeMs ||
       this._timelineState.durationMs !== newState.durationMs ||
-      this._timelineState.viewportScrollLeft !== newState.viewportScrollLeft
+      this._timelineState.viewportScrollLeft !== newState.viewportScrollLeft ||
+      this._timelineState.viewportWidth !== newState.viewportWidth
     ) {
       this._timelineState = newState;
     }
@@ -875,18 +883,22 @@ export class EFTimeline extends TWMixin(LitElement) {
   private startTimeUpdate(): void {
     const update = () => {
       if (this.targetTemporal) {
-        const rawTime = this.targetTemporal.currentTimeMs ?? 0;
-        const duration = this.targetTemporal.durationMs ?? 0;
-        // Clamp time to valid range to prevent display issues
-        this.currentTimeMs = Math.max(0, Math.min(rawTime, duration));
-        this.isPlaying = this.targetTemporal.playing ?? false;
-        this.isLooping = this.targetTemporal.loop ?? false;
+        // Skip time updates during thumbnail capture to prevent playhead jumping
+        const isCapturing = (this.targetTemporal as EFTimegroup).captureInProgress;
+        if (!isCapturing) {
+          const rawTime = this.targetTemporal.currentTimeMs ?? 0;
+          const duration = this.targetTemporal.durationMs ?? 0;
+          // Clamp time to valid range to prevent display issues
+          this.currentTimeMs = Math.max(0, Math.min(rawTime, duration));
+          this.isPlaying = this.targetTemporal.playing ?? false;
+          this.isLooping = this.targetTemporal.loop ?? false;
 
-        // Auto-scroll to keep playhead visible (only when playing and not dragging)
-        if (this.isPlaying && !this.isDraggingPlayhead) {
-          this.followPlayhead();
-        } else {
-          this.isFollowingPlayhead = false;
+          // Auto-scroll to keep playhead visible (only when playing and not dragging)
+          if (this.isPlaying && !this.isDraggingPlayhead) {
+            this.followPlayhead();
+          } else {
+            this.isFollowingPlayhead = false;
+          }
         }
       }
       this.animationFrameId = requestAnimationFrame(update);
@@ -1052,8 +1064,9 @@ export class EFTimeline extends TWMixin(LitElement) {
   private handleRulerPointerDown(e: PointerEvent): void {
     const target = e.currentTarget as HTMLElement;
     const rect = target.getBoundingClientRect();
-    const scrollLeft = this.tracksScrollRef.value?.scrollLeft ?? 0;
-    const x = e.clientX - rect.left + scrollLeft;
+    // Since ruler-content is inside scroll container and moves with scroll,
+    // rect.left already accounts for scroll position. No need to add scrollLeft.
+    const x = e.clientX - rect.left;
     const timeMs = pxToTime(x, this.pixelsPerMs);
     this.handleSeek(timeMs);
     this.startPlayheadDrag(e);
@@ -1266,11 +1279,14 @@ export class EFTimeline extends TWMixin(LitElement) {
     const bounds = this.calculateFrameHighlightBounds();
     if (!bounds) return nothing;
 
+    // Add hierarchy offset since frame highlight is inside scroll container
+    const hierarchyWidth = this.showHierarchy ? EFTimeline.HIERARCHY_WIDTH : 0;
+
     return html`
       <div 
         class="frame-highlight" 
         style=${styleMap({
-          left: `${bounds.startPx}px`,
+          left: `${hierarchyWidth + bounds.startPx}px`,
           width: `${bounds.widthPx}px`,
         })}
       ></div>
@@ -1386,37 +1402,14 @@ export class EFTimeline extends TWMixin(LitElement) {
 
     const playheadPx = timeToPx(this.currentTimeMs, this.pixelsPerMs);
 
+    const hierarchyWidth = this.showHierarchy ? EFTimeline.HIERARCHY_WIDTH : 0;
+    // Playhead position includes hierarchy offset since it's inside scroll container
+    const playheadLeft = hierarchyWidth + playheadPx;
+
     return html`
       <div class="timeline-container" tabindex="0" ${ref(this.containerRef)}>
         ${this.renderControls()}
         <div class="timeline-area">
-          <!-- Ruler Row -->
-          ${
-            this.showRuler
-              ? html`
-            <div class="ruler-row">
-              ${this.showHierarchy ? html`<div class="ruler-spacer"></div>` : nothing}
-              <div 
-                class="ruler-content" 
-                @pointerdown=${this.handleRulerPointerDown}
-              >
-                <ef-timeline-ruler
-                  duration-ms=${this.durationMs}
-                  fps=${this.fps}
-                ></ef-timeline-ruler>
-                ${this.showPlayhead ? html`
-                  <div 
-                    class="ruler-playhead-handle" 
-                    style="left: ${playheadPx - this.viewportScrollLeft}px;"
-                    @pointerdown=${this.handlePlayheadPointerDown}
-                  ></div>
-                ` : nothing}
-              </div>
-            </div>
-          `
-              : nothing
-          }
-          
           <!-- Tracks Viewport - Single scrollable container -->
           <div class="tracks-viewport">
             <div 
@@ -1424,18 +1417,43 @@ export class EFTimeline extends TWMixin(LitElement) {
               ${ref(this.tracksScrollRef)} 
               @pointerdown=${this.handleTracksPointerDown}
             >
-              <div class="tracks-content" style="min-width: ${this.contentWidthPx + (this.showHierarchy ? EFTimeline.HIERARCHY_WIDTH : 0)}px;">
+              <!-- Ruler Row - Inside scroll container with sticky positioning -->
+              ${
+                this.showRuler
+                  ? html`
+                <div class="ruler-row" style="width: ${this.contentWidthPx + hierarchyWidth}px;">
+                  ${this.showHierarchy ? html`<div class="ruler-spacer"></div>` : nothing}
+                  <div 
+                    class="ruler-content" 
+                    @pointerdown=${this.handleRulerPointerDown}
+                  >
+                    <ef-timeline-ruler
+                      duration-ms=${this.durationMs}
+                      fps=${this.fps}
+                      content-width=${this.contentWidthPx}
+                    ></ef-timeline-ruler>
+                    ${this.showPlayhead ? html`
+                      <div 
+                        class="ruler-playhead-handle" 
+                        style="left: ${playheadPx}px;"
+                        @pointerdown=${this.handlePlayheadPointerDown}
+                      ></div>
+                    ` : nothing}
+                  </div>
+                </div>
+              `
+                  : nothing
+              }
+              <div class="tracks-content" style="min-width: ${this.contentWidthPx + hierarchyWidth}px;">
                 <!-- Unified rows with sticky labels -->
                 ${this.renderRows(target as TemporalMixinInterface & Element)}
               </div>
-            </div>
-            
-            <!-- Playhead clip container - stays fixed, clips at label boundary -->
-            <div class="playhead-clip" style="left: ${this.showHierarchy ? EFTimeline.HIERARCHY_WIDTH : 0}px;">
-              <div class="playhead-layer" style="left: ${-this.viewportScrollLeft}px;">
+              
+              <!-- Playhead container - inside scroll for native sync -->
+              <div class="playhead-container">
                 ${this.renderFrameHighlight()}
                 ${this.showPlayhead ? html`
-                  <div class="playhead" style="left: ${playheadPx - 1}px;">
+                  <div class="playhead" style="left: ${playheadLeft - 1}px;">
                     <div class="playhead-drag-target" @pointerdown=${this.handlePlayheadPointerDown}></div>
                   </div>
                 ` : nothing}

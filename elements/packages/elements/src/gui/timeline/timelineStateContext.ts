@@ -13,6 +13,8 @@ export interface TimelineState {
   durationMs: number;
   /** Viewport scroll position in pixels - single source of truth for visible time range */
   viewportScrollLeft: number;
+  /** Viewport width in pixels - for calculating visible time range */
+  viewportWidth: number;
   /** Seek to a specific time */
   seek: (timeMs: number) => void;
   /** Zoom in */

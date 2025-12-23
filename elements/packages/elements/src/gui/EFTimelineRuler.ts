@@ -2,6 +2,7 @@ import { consume } from "@lit/context";
 import { css, html, LitElement, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { createRef, ref } from "lit/directives/ref.js";
+import { styleMap } from "lit/directives/style-map.js";
 import { durationContext } from "./durationContext.js";
 import {
   timelineStateContext,
@@ -11,6 +12,12 @@ import {
 
 const MIN_LABEL_SPACING_PX = 80;
 const MIN_FRAME_SPACING_PX = 5;
+
+/** Maximum canvas width for ruler virtualization */
+const MAX_RULER_CANVAS_WIDTH = 2000;
+
+/** Buffer pixels on each side of viewport for smooth scrolling */
+const RULER_CANVAS_BUFFER = 200;
 
 /**
  * Quantize a time value to the nearest frame boundary.
@@ -74,14 +81,24 @@ export class EFTimelineRuler extends LitElement {
       }
       
       .ruler-container {
-        position: absolute;
-        inset: 0;
+        position: relative;
+        width: 100%;
+        height: 100%;
         overflow: hidden;
       }
       
-      canvas {
+      .canvas-viewport {
         position: absolute;
-        inset: 0;
+        top: 0;
+        height: 100%;
+        /* left and width set via inline styles for virtualization */
+      }
+      
+      canvas {
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
         pointer-events: none;
       }
       
@@ -110,12 +127,24 @@ export class EFTimelineRuler extends LitElement {
   @property({ type: Number, attribute: "fps" })
   fps = 30;
 
+  /** Full content width in pixels (for virtualization) */
+  @property({ type: Number, attribute: "content-width" })
+  contentWidth = 0;
+
   private containerRef = createRef<HTMLDivElement>();
   private canvasRef = createRef<HTMLCanvasElement>();
   private resizeObserver?: ResizeObserver;
 
   @state()
   private viewportWidth = 0;
+
+  /** Canvas viewport left position for virtualization */
+  @state()
+  private _canvasViewportLeft = 0;
+
+  /** Canvas viewport width for virtualization */
+  @state()
+  private _canvasViewportWidth = 0;
 
   get effectiveDurationMs(): number {
     return this.durationMs || this.contextDurationMs || 0;
@@ -127,6 +156,38 @@ export class EFTimelineRuler extends LitElement {
 
   get scrollLeft(): number {
     return this.timelineState?.viewportScrollLeft ?? 0;
+  }
+
+  /**
+   * Calculate canvas viewport bounds for virtualization.
+   * Returns the left position and width of the canvas viewport.
+   */
+  private calculateCanvasViewport(): { left: number; width: number } {
+    const totalWidth = this.contentWidth || this.viewportWidth;
+    
+    // If content is small enough, no virtualization needed
+    if (totalWidth <= MAX_RULER_CANVAS_WIDTH) {
+      return { left: 0, width: totalWidth };
+    }
+
+    // Get visible region from scroll position
+    const viewportScrollLeft = this.scrollLeft;
+    const viewportWidth = this.timelineState?.viewportWidth ?? this.viewportWidth;
+
+    // Calculate canvas viewport with buffer for smooth scrolling
+    const canvasLeft = Math.max(0, viewportScrollLeft - RULER_CANVAS_BUFFER);
+    const canvasRight = Math.min(
+      totalWidth,
+      viewportScrollLeft + viewportWidth + RULER_CANVAS_BUFFER
+    );
+
+    // Cap canvas width at maximum
+    let canvasWidth = canvasRight - canvasLeft;
+    if (canvasWidth > MAX_RULER_CANVAS_WIDTH) {
+      canvasWidth = MAX_RULER_CANVAS_WIDTH;
+    }
+
+    return { left: canvasLeft, width: canvasWidth };
   }
 
   connectedCallback() {
@@ -174,21 +235,21 @@ export class EFTimelineRuler extends LitElement {
   }
 
   private getVisibleLabels(): VisibleLabel[] {
-    if (this.viewportWidth <= 0) return [];
+    const canvasWidth = this._canvasViewportWidth;
+    if (canvasWidth <= 0) return [];
 
     const pixelsPerMs = this.pixelsPerMs;
-    const scrollLeft = this.scrollLeft;
-    const viewportWidth = this.viewportWidth;
+    const canvasLeft = this._canvasViewportLeft;
 
     const intervalMs = this.calculateLabelInterval();
 
-    // Generate labels for the entire viewport, regardless of content duration
+    // Generate labels for the canvas viewport range
     const visibleStartTimeMs = Math.max(
       0,
-      scrollLeft / pixelsPerMs - intervalMs,
+      canvasLeft / pixelsPerMs - intervalMs,
     );
     const visibleEndTimeMs =
-      (scrollLeft + viewportWidth) / pixelsPerMs + intervalMs;
+      (canvasLeft + canvasWidth) / pixelsPerMs + intervalMs;
 
     const firstLabelIndex = Math.floor(visibleStartTimeMs / intervalMs);
     const lastLabelIndex = Math.ceil(visibleEndTimeMs / intervalMs);
@@ -200,9 +261,10 @@ export class EFTimelineRuler extends LitElement {
       if (timeMs < 0) continue;
 
       const absoluteX = timeMs * pixelsPerMs;
-      const viewportX = absoluteX - scrollLeft;
+      // Position relative to canvas viewport (canvas is positioned at canvasLeft)
+      const viewportX = absoluteX - canvasLeft;
 
-      if (viewportX >= -50 && viewportX <= viewportWidth + 50) {
+      if (viewportX >= -50 && viewportX <= canvasWidth + 50) {
         const timeSeconds = timeMs / 1000;
         const text =
           timeSeconds % 1 === 0
@@ -221,9 +283,13 @@ export class EFTimelineRuler extends LitElement {
     const container = this.containerRef.value;
     if (!canvas || !container) return;
 
-    const rect = container.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
+    // Calculate virtualized canvas viewport
+    const viewport = this.calculateCanvasViewport();
+    this._canvasViewportLeft = viewport.left;
+    this._canvasViewportWidth = viewport.width;
+
+    const width = viewport.width;
+    const height = container.getBoundingClientRect().height;
 
     if (width <= 0 || height <= 0) return;
 
@@ -240,20 +306,20 @@ export class EFTimelineRuler extends LitElement {
     ctx.clearRect(0, 0, width, height);
 
     const pixelsPerMs = this.pixelsPerMs;
-    const scrollLeft = this.scrollLeft;
+    const canvasLeft = viewport.left;
 
     // Time label ticks - more prominent (gray-400)
     ctx.strokeStyle = "rgb(156, 163, 175)";
     ctx.lineWidth = 1;
 
     const labelIntervalMs = this.calculateLabelInterval();
-    // Fill the entire viewport with ticks, regardless of content duration
+    // Fill the canvas viewport with ticks
     const visibleStartTimeMs = Math.max(
       0,
-      scrollLeft / pixelsPerMs - labelIntervalMs,
+      canvasLeft / pixelsPerMs - labelIntervalMs,
     );
     const visibleEndTimeMs =
-      (scrollLeft + width) / pixelsPerMs + labelIntervalMs;
+      (canvasLeft + width) / pixelsPerMs + labelIntervalMs;
 
     const firstTickIndex = Math.floor(visibleStartTimeMs / labelIntervalMs);
     const lastTickIndex = Math.ceil(visibleEndTimeMs / labelIntervalMs);
@@ -263,12 +329,13 @@ export class EFTimelineRuler extends LitElement {
       if (timeMs < 0) continue;
 
       const absoluteX = timeMs * pixelsPerMs;
-      const viewportX = absoluteX - scrollLeft;
+      // Position relative to canvas viewport
+      const canvasX = absoluteX - canvasLeft;
 
-      if (viewportX >= -1 && viewportX <= width + 1) {
+      if (canvasX >= -1 && canvasX <= width + 1) {
         ctx.beginPath();
-        ctx.moveTo(viewportX, 0);
-        ctx.lineTo(viewportX, height * 0.4);
+        ctx.moveTo(canvasX, 0);
+        ctx.lineTo(canvasX, height * 0.4);
         ctx.stroke();
       }
     }
@@ -291,12 +358,13 @@ export class EFTimelineRuler extends LitElement {
         if (timeMs % labelIntervalMs === 0) continue;
 
         const absoluteX = timeMs * pixelsPerMs;
-        const viewportX = absoluteX - scrollLeft;
+        // Position relative to canvas viewport
+        const canvasX = absoluteX - canvasLeft;
 
-        if (viewportX >= -1 && viewportX <= width + 1) {
+        if (canvasX >= -1 && canvasX <= width + 1) {
           ctx.beginPath();
-          ctx.moveTo(viewportX, 0);
-          ctx.lineTo(viewportX, height * 0.25);
+          ctx.moveTo(canvasX, 0);
+          ctx.lineTo(canvasX, height * 0.25);
           ctx.stroke();
         }
       }
@@ -305,18 +373,25 @@ export class EFTimelineRuler extends LitElement {
 
   render() {
     const visibleLabels = this.getVisibleLabels();
+    
+    const canvasViewportStyles = styleMap({
+      left: `${this._canvasViewportLeft}px`,
+      width: `${this._canvasViewportWidth}px`,
+    });
 
     return html`
       <div ${ref(this.containerRef)} class="ruler-container">
-        <canvas ${ref(this.canvasRef)}></canvas>
-        ${visibleLabels.map(
-          ({ viewportX, text }) => html`
-          <span 
-            class="label" 
-            style="transform: translateX(${viewportX}px)"
-          >${text}</span>
-        `,
-        )}
+        <div class="canvas-viewport" style=${canvasViewportStyles}>
+          <canvas ${ref(this.canvasRef)}></canvas>
+          ${visibleLabels.map(
+            ({ viewportX, text }) => html`
+            <span 
+              class="label" 
+              style="transform: translateX(${viewportX}px)"
+            >${text}</span>
+          `,
+          )}
+        </div>
       </div>
     `;
   }
