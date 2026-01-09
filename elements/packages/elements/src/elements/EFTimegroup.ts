@@ -1144,7 +1144,19 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     // which causes time to be loaded from storage during connectedCallback.
     cloneEl.removeAttribute("id");
     
-    container.appendChild(cloneEl);
+    // 3. Preserve ef-configuration context for the clone
+    // Media elements use closest("ef-configuration") to determine settings like media-engine.
+    // Without this, clones would lose configuration and use wrong media engine types.
+    const originalConfig = this.closest("ef-configuration");
+    if (originalConfig) {
+      // Shallow clone the configuration element (just the element, not children)
+      const configClone = originalConfig.cloneNode(false) as HTMLElement;
+      configClone.appendChild(cloneEl);
+      container.appendChild(configClone);
+    } else {
+      container.appendChild(cloneEl);
+    }
+    
     document.body.appendChild(container);
     
     // 3. Wait for custom elements to upgrade
