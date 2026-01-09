@@ -5,6 +5,7 @@ import { css, html, LitElement, type PropertyValues } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 import { EF_INTERACTIVE } from "../EF_INTERACTIVE.js";
+import { quantizeToFrameTimeS } from "../utils/frameTime.js";
 import { EF_RENDERING } from "../EF_RENDERING.js";
 import { isContextMixin } from "../gui/ContextMixin.js";
 import { efContext } from "../gui/efContext.js";
@@ -27,7 +28,7 @@ import { TimegroupController } from "./TimegroupController.js";
 import {
   evaluateAnimationVisibilityState,
   updateAnimations,
-} from "./updateAnimations.ts";
+} from "./updateAnimations.js";
 import {
   type ContainerInfo,
   getContainerInfoFromElement,
@@ -37,11 +38,16 @@ import {
   getPositionInfoFromElement,
 } from "./ElementPositionInfo.js";
 import {
-  buildCloneStructure,
-  syncAllStyles,
-  type ElementPair,
-} from "../preview/renderTimegroupPreview.js";
-import { renderTimegroupToCanvas } from "../preview/renderTimegroupToCanvas.js";
+  captureTimegroupAtTime,
+  captureFromClone,
+  type CaptureOptions,
+  type CaptureBatchOptions,
+} from "../preview/renderTimegroupToCanvas.js";
+import {
+  renderTimegroupToVideo,
+  type RenderToVideoOptions,
+} from "../preview/renderTimegroupToVideo.js";
+import type { PlaybackControllerUpdateEvent } from "../gui/PlaybackController.js";
 
 // Side-effect imports for workbench wrapping
 import "../canvas/EFCanvas.js";
@@ -65,6 +71,33 @@ export type FrameTaskCallback = (info: {
   percentComplete: number;
   element: EFTimegroup;
 }) => void | Promise<void>;
+
+/**
+ * Result of createRenderClone() - contains the clone, its container, and cleanup function.
+ */
+export interface RenderCloneResult {
+  /** The cloned timegroup, fully functional with its own time state */
+  clone: EFTimegroup;
+  /** The offscreen container holding the clone */
+  container: HTMLElement;
+  /** Call this to remove the clone from DOM and clean up */
+  cleanup: () => void;
+}
+
+/**
+ * Initializer function type for setting up JavaScript behavior on timegroup instances.
+ * This function is called on both the prime timeline and each render clone.
+ * 
+ * CONSTRAINTS:
+ * - MUST be synchronous (no async/await, no Promise return)
+ * - MUST complete in <100ms (error) or <10ms (warning)
+ * - Should only register callbacks and set up behavior, not do expensive work
+ */
+export type TimegroupInitializer = (timegroup: EFTimegroup) => void;
+
+// Constants for initializer time budget enforcement
+const INITIALIZER_ERROR_THRESHOLD_MS = 100;
+const INITIALIZER_WARN_THRESHOLD_MS = 10;
 
 // ============================================================================
 // Purpose 1: Composition Rules - How Duration is Determined
@@ -392,18 +425,6 @@ export const shallowGetTimegroups = (
 // ============================================================================
 
 /**
- * Quantizes a time value to the nearest frame boundary based on FPS.
- * This ensures time values align with frame boundaries for consistent rendering.
- *
- * Semantic rule: Time values should snap to frame boundaries when FPS is set.
- */
-function quantizeToFrameTime(timeSeconds: number, fps: number): number {
-  if (!fps || fps <= 0) return timeSeconds;
-  const frameDurationS = 1 / fps;
-  return Math.round(timeSeconds / frameDurationS) * frameDurationS;
-}
-
-/**
  * Evaluates the target time for a seek operation.
  * Applies quantization and clamping to determine the valid seek target.
  */
@@ -413,7 +434,7 @@ function evaluateSeekTarget(
   fps: number,
 ): number {
   // Quantize to frame boundaries
-  const quantizedTime = quantizeToFrameTime(requestedTime, fps);
+  const quantizedTime = quantizeToFrameTimeS(requestedTime, fps);
   // Clamp to valid range [0, duration]
   return Math.max(0, Math.min(quantizedTime, durationMs / 1000));
 }
@@ -464,6 +485,30 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
   /** @public */
   overlapMs = 0;
 
+  /**
+   * Initializer function for setting up JavaScript behavior on this timegroup.
+   * This function is called on both the prime timeline and each render clone.
+   * 
+   * REQUIRED for render operations (captureBatch, renderToVideo, createRenderClone).
+   * 
+   * CONSTRAINTS:
+   * - MUST be synchronous (no async/await, no Promise return)
+   * - MUST complete in <100ms (error thrown) or <10ms (warning logged)
+   * - Should only register callbacks and set up behavior, not do expensive work
+   * 
+   * @example
+   * ```javascript
+   * const tg = document.querySelector('ef-timegroup');
+   * tg.initializer = (instance) => {
+   *   instance.addFrameCallback((time) => {
+   *     // Update content based on time
+   *   });
+   * };
+   * ```
+   * @public
+   */
+  initializer?: TimegroupInitializer;
+
   /** @public */
   @property({ type: Number })
   fps = 30;
@@ -500,30 +545,17 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
   @property({ type: String })
   fit: "none" | "contain" | "cover" = "none";
 
-  /**
-   * When true, the timegroup becomes an "image factory":
-   * - Original content is hidden (opacity: 0) but preserves layout
-   * - A DOM clone overlay displays the visual state
-   * - Original can be seeked for thumbnail capture without disrupting display
-   * @public
-   */
-  @property({ type: Boolean, attribute: "proxy-mode" })
-  proxyMode = false;
-
-  // Proxy mode state
-  #proxyContainer: HTMLDivElement | null = null;
-  #proxyPairs: ElementPair[] | null = null;
-  #proxyAnimationFrame: number | null = null;
-
   #resizeObserver?: ResizeObserver;
 
   #currentTime: number | undefined = undefined;
+  #userTimeMs: number = 0;  // What the user last requested (for preview display)
   #seekInProgress = false;
   #pendingSeekTime: number | undefined;
   #processingPendingSeek = false;
   #customFrameTasks: Set<FrameTaskCallback> = new Set();
   #onFrameCallback: FrameTaskCallback | null = null;
   #onFrameCleanup: (() => void) | null = null;
+  #playbackListener: ((event: PlaybackControllerUpdateEvent) => void) | null = null;
 
   /**
    * Get the effective FPS for this timegroup.
@@ -563,6 +595,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     // Delegate to playbackController if available
     if (this.playbackController) {
       this.playbackController.currentTime = seekTarget;
+      this.#userTimeMs = seekTarget * 1000;  // User-initiated time change
       return;
     }
 
@@ -590,11 +623,13 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     if (this.#seekInProgress) {
       this.#pendingSeekTime = seekTarget;
       this.#currentTime = seekTarget;
+      this.#userTimeMs = seekTarget * 1000;  // User-initiated time change
       return;
     }
 
-    // Execute seek
+    // Execute seek - update both source time and user time
     this.#currentTime = seekTarget;
+    this.#userTimeMs = seekTarget * 1000;  // User-initiated time change
     this.#seekInProgress = true;
 
     this.seekTask.run().finally(() => {
@@ -636,17 +671,32 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
   }
 
   /**
+   * The time the user last requested via seek/scrub.
+   * Preview systems should use this instead of currentTimeMs to avoid
+   * seeing intermediate times during batch operations (thumbnails, export).
+   * @public
+   */
+  get userTimeMs(): number {
+    return this.#userTimeMs;
+  }
+
+  /**
    * Seek to a specific time and wait for all frames to be ready.
    * This is the recommended way to seek in tests and programmatic control.
    *
    * Combines seeking (Purpose 3) with frame rendering (Purpose 4) to ensure
    * all visible elements are ready after the seek completes.
+   * 
+   * Updates both the source time AND userTimeMs (what the preview displays).
    *
    * @param timeMs - Time in milliseconds to seek to
    * @returns Promise that resolves when the seek is complete and all visible children are ready
    * @public
    */
   async seek(timeMs: number): Promise<void> {
+    // Update user time - this is what the preview should display
+    this.#userTimeMs = timeMs;
+    
     // Execute seek (Purpose 3)
     this.currentTimeMs = timeMs;
     await this.seekTask.taskComplete;
@@ -678,6 +728,48 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
         }
       }),
     );
+  }
+
+  /**
+   * Optimized seek for render loops.
+   * Unlike `seek()`, this:
+   * - Skips waitForMediaDurations (already loaded at render setup)
+   * - Skips localStorage persistence
+   * - Consolidates awaits to reduce event loop yields
+   * 
+   * Still waits for all content to be ready (Lit updates, frame tasks, video frames).
+   * 
+   * @param timeMs - Time in milliseconds to seek to
+   * @internal
+   */
+  async seekForRender(timeMs: number): Promise<void> {
+    // Set time directly (skip seekTask overhead)
+    const newTime = timeMs / 1000;
+    this.#userTimeMs = timeMs;
+    this.#currentTime = newTime;
+    this.requestUpdate("currentTime");
+    
+    // First await: let Lit propagate time to children
+    await this.updateComplete;
+    
+    // Now collect all the things we need to wait for and await them together
+    const visibleElements = this.#evaluateVisibleElementsForFrame();
+    
+    // Consolidate waits: frame task + all visible element readiness
+    // This reduces sequential awaits to a single parallel await
+    await Promise.all([
+      this.frameTask.run(),
+      ...visibleElements.map((element) => {
+        if (
+          "waitForFrameReady" in element &&
+          typeof element.waitForFrameReady === "function"
+        ) {
+          return (element as any).waitForFrameReady();
+        } else {
+          return element.updateComplete;
+        }
+      }),
+    ]);
   }
 
   /**
@@ -817,19 +909,52 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
         } else if (didLoadFromStorage) {
           await this.seekTask.run();
         }
+        
+        // Setup playback listener after controller might be created
+        this.#setupPlaybackListener();
       });
+    } else {
+      // PlaybackController already exists, setup listener now
+      this.#setupPlaybackListener();
     }
 
     if (this.parentTimegroup) {
       new TimegroupController(this.parentTimegroup, this);
     }
 
-    // Proxy mode is now controlled by the workbench UI
-    // Auto-enable is disabled - user selects preview mode via workbench toolbar
-
     if (this.shouldWrapWithWorkbench()) {
       this.wrapWithWorkbench();
     }
+  }
+
+  /**
+   * Setup listener on playbackController to sync userTimeMs during playback.
+   */
+  #setupPlaybackListener(): void {
+    // Already setup or no controller
+    if (this.#playbackListener || !this.playbackController) return;
+    
+    this.#playbackListener = (event: PlaybackControllerUpdateEvent) => {
+      // Only update userTimeMs during playback time changes
+      // Clone-timeline: captures use separate clones, so Prime-timeline updates freely
+      if (event.property === "currentTimeMs" && typeof event.value === "number") {
+        if (this.playing) {
+          this.#userTimeMs = event.value;
+        }
+      }
+    };
+    
+    this.playbackController.addListener(this.#playbackListener);
+  }
+  
+  /**
+   * Remove playback listener on disconnect.
+   */
+  #removePlaybackListener(): void {
+    if (this.#playbackListener && this.playbackController) {
+      this.playbackController.removeListener(this.#playbackListener);
+    }
+    this.#playbackListener = null;
   }
 
   #previousDurationMs = 0;
@@ -845,159 +970,251 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
       this.#previousDurationMs = this.durationMs;
       this.#runThrottledFrameTask();
     }
-
-    // Handle proxy mode changes
-    if (changedProperties.has("proxyMode")) {
-      if (this.proxyMode) {
-        this.#enableProxyMode();
-      } else {
-        this.#disableProxyMode();
-      }
-    }
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
     this.#resizeObserver?.disconnect();
-    this.#disableProxyMode();
-  }
-
-  // ============================================================================
-  // Proxy Mode Implementation
-  // ============================================================================
-
-  /**
-   * Enable proxy mode: hide original, create sibling overlay clone that syncs styles.
-   * The proxy is inserted as a sibling so it inherits all parent transforms (pan/zoom/etc).
-   */
-  #enableProxyMode(): void {
-    if (this.#proxyContainer) return; // Already enabled
-
-    // Hide the original content (preserve layout)
-    this.style.opacity = "0";
-
-    const width = this.offsetWidth || 1920;
-    const height = this.offsetHeight || 1080;
-
-    // Create proxy container as sibling overlay
-    // Uses position:absolute to overlay the timegroup, inheriting parent transforms
-    this.#proxyContainer = document.createElement("div");
-    this.#proxyContainer.className = "ef-timegroup-proxy";
-    this.#proxyContainer.style.cssText = `
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: ${width}px;
-      height: ${height}px;
-      pointer-events: none;
-      overflow: hidden;
-    `;
-
-    // Build clone structure
-    const { container: innerContainer, pairs } = buildCloneStructure(this);
-    this.#proxyPairs = pairs;
-
-    // Create wrapper with dimensions
-    const wrapper = document.createElement("div");
-    wrapper.style.cssText = `
-      width: ${width}px;
-      height: ${height}px;
-      position: relative;
-      overflow: hidden;
-      background: ${getComputedStyle(this).background || "transparent"};
-    `;
-    wrapper.appendChild(innerContainer);
-    this.#proxyContainer.appendChild(wrapper);
-
-    // Initial style sync
-    syncAllStyles(this.#proxyPairs);
-    
-    // IMPORTANT: Override the root clone's opacity - the source has opacity:0 
-    // to hide it, but we don't want that copied to the visible proxy
-    if (this.#proxyPairs[0]) {
-      this.#proxyPairs[0][1].style.opacity = "1";
-    }
-
-    // Insert as sibling right after this element (inherits parent transforms)
-    this.after(this.#proxyContainer);
-
-    // Start sync loop
-    this.#startProxySync();
-  }
-
-  /**
-   * Disable proxy mode: remove overlay, restore original visibility.
-   */
-  #disableProxyMode(): void {
-    // Stop sync loop
-    if (this.#proxyAnimationFrame !== null) {
-      cancelAnimationFrame(this.#proxyAnimationFrame);
-      this.#proxyAnimationFrame = null;
-    }
-
-    // Remove proxy container
-    if (this.#proxyContainer) {
-      this.#proxyContainer.remove();
-      this.#proxyContainer = null;
-    }
-
-    this.#proxyPairs = null;
-
-    // Restore original visibility
-    this.style.opacity = "";
-  }
-
-  /**
-   * Animation frame loop to sync proxy styles with original.
-   */
-  #startProxySync(): void {
-    const sync = () => {
-      if (!this.#proxyPairs || !this.#proxyContainer) return;
-
-      // Sync styles every frame to keep proxy in sync with original
-      syncAllStyles(this.#proxyPairs);
-      
-      // Override root clone opacity - source has opacity:0 but clone should be visible
-      if (this.#proxyPairs[0]) {
-        this.#proxyPairs[0][1].style.opacity = "1";
-      }
-
-      // Continue loop
-      this.#proxyAnimationFrame = requestAnimationFrame(sync);
-    };
-    this.#proxyAnimationFrame = requestAnimationFrame(sync);
+    this.#removePlaybackListener();
   }
 
   /**
    * Capture the timegroup at a specific timestamp as a canvas.
+   * Does NOT modify currentTimeMs - captures are rendered independently.
    * 
-   * When proxyMode is enabled, this allows capturing thumbnails at arbitrary
-   * timestamps without disrupting the visible display (which shows the proxy clone).
-   * 
-   * @param timeMs - The timestamp to capture (in milliseconds)
-   * @param scale - Scale factor for the output (default 1, use <1 for thumbnails)
+   * @param options - Capture options including timeMs, scale, contentReadyMode
    * @returns Promise resolving to an HTMLCanvasElement with the captured frame
    * @public
    */
-  async captureAtTime(timeMs: number, scale = 1): Promise<HTMLCanvasElement> {
-    // Save current time
-    const savedTime = this.currentTimeMs;
+  async captureAtTime(options: CaptureOptions): Promise<HTMLCanvasElement> {
+    return captureTimegroupAtTime(this, options);
+  }
 
-    // Seek to target time (original is invisible in proxy mode, won't disrupt display)
-    this.currentTimeMs = timeMs;
-    await this.updateComplete;
+  /**
+   * Capture multiple timestamps as canvas thumbnails in a single batch.
+   * 
+   * CLONE-TIMELINE ARCHITECTURE:
+   * Creates a single render clone and reuses it across all captures.
+   * Prime-timeline is NEVER seeked - user can continue previewing/editing during capture.
+   * 
+   * @param timestamps - Array of timestamps (in milliseconds) to capture
+   * @param options - Capture options (scale, contentReadyMode, blockingTimeoutMs)
+   * @returns Promise resolving to array of HTMLCanvasElements
+   * @public
+   */
+  async captureBatch(
+    timestamps: number[],
+    options: CaptureBatchOptions = {},
+  ): Promise<HTMLCanvasElement[]> {
+    if (timestamps.length === 0) return [];
+    
+    const {
+      scale = 0.25,
+      contentReadyMode = "immediate",
+      blockingTimeoutMs = 5000,
+    } = options;
+    
+    // CLONE-TIMELINE: Create ONE clone and reuse across all captures
+    const { clone: renderClone, container: renderContainer, cleanup: cleanupRenderClone } = 
+      await this.createRenderClone();
+    const canvases: HTMLCanvasElement[] = [];
+    
+    try {
+      for (let i = 0; i < timestamps.length; i++) {
+        const timeMs = timestamps[i]!;
+        
+        // Seek clone to target time (Prime-timeline never touched)
+        await renderClone.seek(timeMs);
+        
+        // Capture from the seeked clone
+        const canvas = await captureFromClone(renderClone, renderContainer, {
+          scale,
+          contentReadyMode,
+          blockingTimeoutMs,
+          originalTimegroup: this,
+        });
+        canvases.push(canvas);
+        
+        // Yield every few captures to let browser paint
+        if (i % 3 === 2) {
+          await new Promise(resolve => setTimeout(resolve, 0));
+        }
+      }
+      
+      return canvases;
+    } finally {
+      // Clean up the render clone
+      cleanupRenderClone();
+    }
+  }
 
-    // Wait for animations to settle
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+  /**
+   * Render the timegroup to an MP4 video file and trigger download.
+   * Captures each frame at the specified fps, encodes using WebCodecs via
+   * MediaBunny, and downloads the resulting video.
+   * 
+   * @param options - Rendering options (fps, codec, bitrate, filename, etc.)
+   * @returns Promise that resolves when video is downloaded
+   * @public
+   */
+  async renderToVideo(options?: RenderToVideoOptions): Promise<void> {
+    return renderTimegroupToVideo(this, options);
+  }
 
-    // Use canvas renderer to capture
-    const { canvas } = renderTimegroupToCanvas(this, scale);
+  /**
+   * Runs the initializer function with validation for synchronous execution and time budget.
+   * @throws Error if no initializer is set
+   * @throws Error if initializer returns a Promise (async not allowed)
+   * @throws Error if initializer takes more than INITIALIZER_ERROR_THRESHOLD_MS
+   * @internal
+   */
+  #runInitializer(cloneEl: EFTimegroup): void {
+    if (!this.initializer) {
+      return;
+    }
+    
+    const startTime = performance.now();
+    const result = this.initializer(cloneEl);
+    const elapsed = performance.now() - startTime;
+    
+    // Check for async (Promise return) - initializers MUST be synchronous
+    if (result && typeof (result as any).then === 'function') {
+      throw new Error(
+        'Timeline initializer must be synchronous. ' +
+        'Do not return a Promise from the initializer function.'
+      );
+    }
+    
+    // Time budget enforcement - initializers run for EVERY clone
+    if (elapsed > INITIALIZER_ERROR_THRESHOLD_MS) {
+      throw new Error(
+        `Timeline initializer took ${elapsed.toFixed(1)}ms, exceeding the ${INITIALIZER_ERROR_THRESHOLD_MS}ms limit. ` +
+        'Initializers must be fast - move expensive work outside the initializer.'
+      );
+    }
+    
+    if (elapsed > INITIALIZER_WARN_THRESHOLD_MS) {
+      console.warn(
+        `[ef-timegroup] Initializer took ${elapsed.toFixed(1)}ms, exceeding ${INITIALIZER_WARN_THRESHOLD_MS}ms. ` +
+        'Consider optimizing for better render performance.'
+      );
+    }
+  }
 
-    // Restore original time
-    this.currentTimeMs = savedTime;
-    await this.updateComplete;
-
-    return canvas;
+  /**
+   * Create an independent clone of this timegroup for rendering.
+   * The clone is a fully functional ef-timegroup with its own animations
+   * and time state, isolated from the original (Prime-timeline).
+   * 
+   * OPTIONAL: An initializer can be set via `timegroup.initializer = (tg) => { ... }`
+   * to re-run JavaScript setup (frame callbacks, React components) on each clone.
+   * 
+   * This enables:
+   * - Rendering without affecting user's preview position
+   * - Concurrent renders with different clones
+   * - Re-running JavaScript setup on each clone (if initializer is provided)
+   * 
+   * @returns Promise resolving to clone, container, and cleanup function
+   * @throws Error if initializer is async or takes too long
+   * @public
+   */
+  async createRenderClone(): Promise<RenderCloneResult> {
+    // 1. Create offscreen container positioned off-screen but in the DOM
+    // The clone needs to be in the DOM for:
+    // - Custom elements to upgrade (connectedCallback)
+    // - CSS to compute correctly
+    // - Animations to work
+    const container = document.createElement("div");
+    container.className = "ef-render-clone-container";
+    container.style.cssText = `
+      position: fixed;
+      left: -9999px;
+      top: 0;
+      width: ${this.offsetWidth || 1920}px;
+      height: ${this.offsetHeight || 1080}px;
+      pointer-events: none;
+      overflow: hidden;
+    `;
+    
+    // 2. Deep clone the DOM - this clones the entire subtree
+    const cloneEl = this.cloneNode(true) as EFTimegroup;
+    
+    // CRITICAL: Clear the clone's id to prevent localStorage conflicts
+    // The original timegroup and clone would share the same localStorage key otherwise,
+    // which causes time to be loaded from storage during connectedCallback.
+    cloneEl.removeAttribute("id");
+    
+    container.appendChild(cloneEl);
+    document.body.appendChild(container);
+    
+    // 3. Wait for custom elements to upgrade
+    await cloneEl.updateComplete;
+    
+    // 4. Run initializer to set up JavaScript behavior on the clone
+    // This re-registers frame callbacks, React components, etc.
+    // MUST be synchronous and fast (enforced by #runInitializer)
+    // NOTE: For React, the initializer may REPLACE cloneEl with a fresh React-rendered tree
+    this.#runInitializer(cloneEl);
+    
+    // 5. Find the actual timegroup after initializer runs
+    // React initializers replace the cloned DOM with a fresh render, so we need to find
+    // the actual ef-timegroup in the container (may be different from cloneEl)
+    let actualClone = container.querySelector('ef-timegroup') as EFTimegroup;
+    if (!actualClone) {
+      throw new Error(
+        'No ef-timegroup found after initializer. ' +
+        'Ensure your initializer renders a Timegroup (React) or does not remove the cloned element (vanilla JS).'
+      );
+    }
+    
+    // 6. Wait for custom elements to upgrade
+    // React renders DOM synchronously via flushSync, but custom elements upgrade asynchronously.
+    // We need to ensure the element has been upgraded to its class before accessing Lit properties.
+    await customElements.whenDefined('ef-timegroup');
+    
+    // Force upgrade of all custom elements in the container (in case they haven't upgraded yet)
+    customElements.upgrade(container);
+    
+    // Re-query in case the element reference changed during upgrade
+    actualClone = container.querySelector('ef-timegroup') as EFTimegroup;
+    if (!actualClone) {
+      throw new Error('ef-timegroup element lost after upgrade');
+    }
+    
+    // 7. Wait for LitElement updates and media durations
+    await actualClone.updateComplete;
+    await actualClone.waitForMediaDurations();
+    
+    // 8. CRITICAL: Remove PlaybackController from clone
+    // Clones get a PlaybackController when they become root (in didBecomeRoot callback).
+    // But render clones need direct seeking without the UI/context machinery.
+    // Remove it to enable direct seekTask execution.
+    if (actualClone.playbackController) {
+      actualClone.playbackController.remove();
+      actualClone.playbackController = undefined;
+    }
+    
+    // 9. Initial seek to frame 0 to ensure animations are at correct state
+    await actualClone.seek(0);
+    
+    return {
+      clone: actualClone,
+      container,
+      cleanup: () => {
+        // Remove container from DOM immediately
+        container.remove();
+        
+        // Unmount React root if present (set by TimelineRoot component)
+        // Defer to next microtask to avoid "unmount during render" warning
+        // when cleanup is called rapidly during batch operations
+        const reactRoot = (actualClone as any)._reactRoot;
+        if (reactRoot) {
+          queueMicrotask(() => {
+            reactRoot.unmount();
+          });
+        }
+      },
+    };
   }
 
   /** @internal */
@@ -1235,6 +1452,11 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
       return false;
     }
 
+    // Never wrap render clones (they're in an offscreen container for capture operations)
+    if (this.closest(".ef-render-clone-container") !== null) {
+      return false;
+    }
+
     // During rendering, always wrap with workbench (needed by EF_FRAMEGEN)
     if (isRendering) {
       return true;
@@ -1388,6 +1610,8 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
             // Execute custom frame tasks registered on this timegroup
             await this.#executeCustomFrameTasks();
             // Update animations based on current time
+            // NOTE: This is needed even during export because it sets CSS animation
+            // times which syncStyles then copies to the clone structure.
             updateAnimations(this);
           },
         );

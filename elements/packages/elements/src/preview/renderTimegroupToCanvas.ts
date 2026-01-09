@@ -1,16 +1,249 @@
 import type { EFTimegroup } from "../elements/EFTimegroup.js";
 import {
   buildCloneStructure,
-  syncAllStyles,
+  syncStyles,
   collectDocumentStyles,
+  type SyncState,
 } from "./renderTimegroupPreview.js";
+import { isNativeCanvasApiEnabled, isNativeCanvasApiAvailable } from "./previewSettings.js";
 
-/** Image cache for inlining external images as data URIs */
-const inlineImageCache: Record<string, string> = {};
+// ============================================================================
+// Constants
+// ============================================================================
+
+/** Number of rows to sample when checking canvas content */
+const CANVAS_SAMPLE_STRIP_HEIGHT = 4;
+
+/** Interval between profiling log outputs (ms) */
+const PROFILING_LOG_INTERVAL_MS = 2000;
+
+/** Default timeout for blocking content readiness mode (ms) */
+const DEFAULT_BLOCKING_TIMEOUT_MS = 5000;
+
+/** Default scale for thumbnail captures */
+const DEFAULT_THUMBNAIL_SCALE = 0.25;
+
+/** Default timegroup dimensions when not measurable */
+const DEFAULT_WIDTH = 1920;
+const DEFAULT_HEIGHT = 1080;
+
+/** Maximum number of cached inline images before eviction */
+const MAX_INLINE_IMAGE_CACHE_SIZE = 100;
+
+// ============================================================================
+// Types
+// ============================================================================
+
+/**
+ * Content readiness strategy for capture operations.
+ * - "immediate": Capture NOW, skip all waits. May have blank video frames.
+ * - "blocking": Wait for video content to be ready. Throws on timeout.
+ */
+export type ContentReadyMode = "immediate" | "blocking";
+
+/**
+ * Element with temporal properties (startTimeMs, endTimeMs).
+ * Used for temporal visibility checks.
+ */
+interface TemporalElement extends Element {
+  startTimeMs?: number;
+  endTimeMs?: number;
+  src?: string;
+}
+
+/**
+ * Extended CanvasRenderingContext2D with HTML-in-Canvas API support.
+ * @see https://github.com/WICG/html-in-canvas
+ */
+interface HtmlInCanvasContext extends CanvasRenderingContext2D {
+  drawElementImage(element: HTMLElement, x: number, y: number): void;
+}
+
+/**
+ * Extended HTMLCanvasElement with layoutSubtree property for HTML-in-Canvas.
+ */
+interface HtmlInCanvasElement extends HTMLCanvasElement {
+  layoutSubtree?: boolean;
+}
+
+/**
+ * Options for capturing a timegroup frame.
+ */
+export interface CaptureOptions {
+  /** Time to capture at in milliseconds (required) */
+  timeMs: number;
+  /** Scale factor (default: 0.25 for captureTimegroupAtTime) */
+  scale?: number;
+  /** Skip restoring original time after capture (for batch operations) */
+  skipRestore?: boolean;
+  /** Content readiness strategy (default: "immediate") */
+  contentReadyMode?: ContentReadyMode;
+  /** Max wait time for blocking mode before throwing (default: 5000ms) */
+  blockingTimeoutMs?: number;
+}
+
+/**
+ * Options for batch capture operations, excluding timeMs which is provided per-timestamp.
+ */
+export interface CaptureBatchOptions {
+  /** Scale factor for thumbnails (default: 0.25) */
+  scale?: number;
+  /** Content readiness strategy (default: "immediate") */
+  contentReadyMode?: ContentReadyMode;
+  /** Max wait time for blocking mode before throwing (default: 5000ms) */
+  blockingTimeoutMs?: number;
+}
+
+/**
+ * Error thrown when video content is not ready within the blocking timeout.
+ */
+export class ContentNotReadyError extends Error {
+  constructor(
+    public readonly timeMs: number,
+    public readonly timeoutMs: number,
+    public readonly blankVideos: string[],
+  ) {
+    super(`Video content not ready at ${timeMs}ms after ${timeoutMs}ms timeout. Blank videos: ${blankVideos.join(', ')}`);
+    this.name = 'ContentNotReadyError';
+  }
+}
+
+// ============================================================================
+// Module State (reset via resetRenderState)
+// ============================================================================
+
+/** Track if we've logged the native API detection message (to avoid spam) */
+let _hasLoggedNativeApiStatus = false;
+
+/** Track which rendering path is being used */
+let _pathLogged = false;
+
+/** Image cache for inlining external images as data URIs (foreignObject path) */
+const _inlineImageCache = new Map<string, string>();
+
+/** Render timing stats (for profiling) */
+let _renderCallCount = 0;
+let _totalSetupMs = 0;
+let _totalDrawMs = 0;
+let _totalDownsampleMs = 0;
+let _lastLogTime = 0;
+
+// Reusable instances for better performance (avoid creating new instances every frame)
+let _xmlSerializer: XMLSerializer | null = null;
+let _textEncoder: TextEncoder | null = null;
+
+/**
+ * Fast base64 encoding directly from Uint8Array.
+ * Avoids the overhead of converting to binary string first.
+ * Uses lookup table for optimal performance.
+ */
+function encodeBase64Fast(bytes: Uint8Array): string {
+  const base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  let result = "";
+  let i = 0;
+  const len = bytes.length;
+  
+  // Process 3 bytes at a time (produces 4 base64 chars)
+  while (i < len - 2) {
+    const byte1 = bytes[i++]!;
+    const byte2 = bytes[i++]!;
+    const byte3 = bytes[i++]!;
+    
+    const bitmap = (byte1 << 16) | (byte2 << 8) | byte3;
+    
+    result += base64Chars.charAt((bitmap >> 18) & 63);
+    result += base64Chars.charAt((bitmap >> 12) & 63);
+    result += base64Chars.charAt((bitmap >> 6) & 63);
+    result += base64Chars.charAt(bitmap & 63);
+  }
+  
+  // Handle remaining bytes (1 or 2)
+  if (i < len) {
+    const byte1 = bytes[i++]!;
+    const bitmap = byte1 << 16;
+    
+    result += base64Chars.charAt((bitmap >> 18) & 63);
+    result += base64Chars.charAt((bitmap >> 12) & 63);
+    
+    if (i < len) {
+      const byte2 = bytes[i++]!;
+      const bitmap2 = (byte1 << 16) | (byte2 << 8);
+      result += base64Chars.charAt((bitmap2 >> 6) & 63);
+      result += "=";
+    } else {
+      result += "==";
+    }
+  }
+  
+  return result;
+}
+
+/**
+ * Reset all module state including profiling counters, caches, and logging flags.
+ * Call at the start of export sessions to ensure clean state.
+ */
+export function resetRenderState(): void {
+  _renderCallCount = 0;
+  _totalSetupMs = 0;
+  _totalDrawMs = 0;
+  _totalDownsampleMs = 0;
+  _lastLogTime = 0;
+  _pathLogged = false;
+  _hasLoggedNativeApiStatus = false;
+  _inlineImageCache.clear();
+}
+
+/**
+ * @deprecated Use resetRenderState() instead for complete state reset
+ */
+export function resetRenderProfiling(): void {
+  resetRenderState();
+}
+
+/**
+ * Clear the inline image cache. Useful for memory management in long-running sessions.
+ */
+export function clearInlineImageCache(): void {
+  _inlineImageCache.clear();
+}
+
+/**
+ * Get current inline image cache size for diagnostics.
+ */
+export function getInlineImageCacheSize(): number {
+  return _inlineImageCache.size;
+}
+
+// ============================================================================
+// Internal Helpers
+// ============================================================================
+
+/**
+ * Check if the native HTML-in-Canvas API should be used.
+ * This checks both browser capability AND user preference.
+ * @see https://github.com/WICG/html-in-canvas
+ */
+function shouldUseNativeHtmlInCanvas(): boolean {
+  const enabled = isNativeCanvasApiEnabled();
+  
+  if (!_hasLoggedNativeApiStatus) {
+    _hasLoggedNativeApiStatus = true;
+    if (isNativeCanvasApiAvailable()) {
+      if (enabled) {
+        console.log("[renderToImage] Native HTML-in-Canvas API detected and enabled - using fast path");
+      } else {
+        console.log("[renderToImage] Native HTML-in-Canvas API detected but disabled by user preference");
+      }
+    }
+  }
+  
+  return enabled;
+}
 
 /**
  * Inline all images in a container as base64 data URIs.
  * SVG foreignObject can't load external images due to security restrictions.
+ * Uses an LRU-style cache with size limits to prevent memory leaks.
  */
 async function inlineImages(container: HTMLElement): Promise<void> {
   const images = container.querySelectorAll("img");
@@ -18,7 +251,7 @@ async function inlineImages(container: HTMLElement): Promise<void> {
     const src = image.getAttribute("src");
     if (!src || src.startsWith("data:")) continue;
 
-    const cached = inlineImageCache[src];
+    const cached = _inlineImageCache.get(src);
     if (cached) {
       image.setAttribute("src", cached);
       continue;
@@ -29,7 +262,13 @@ async function inlineImages(container: HTMLElement): Promise<void> {
       const blob = await response.blob();
       const dataUrl = await blobToDataURL(blob);
       image.setAttribute("src", dataUrl);
-      inlineImageCache[src] = dataUrl;
+      
+      // Evict oldest entries if cache is full (simple FIFO eviction)
+      if (_inlineImageCache.size >= MAX_INLINE_IMAGE_CACHE_SIZE) {
+        const firstKey = _inlineImageCache.keys().next().value;
+        if (firstKey) _inlineImageCache.delete(firstKey);
+      }
+      _inlineImageCache.set(src, dataUrl);
     } catch (e) {
       console.warn("Failed to inline image:", src, e);
     }
@@ -44,23 +283,15 @@ function convertCanvasesToImages(container: HTMLElement): void {
   const canvases = container.querySelectorAll("canvas");
   for (const canvas of canvases) {
     try {
-      // Get canvas content as data URL
       const dataUrl = canvas.toDataURL("image/png");
-      
-      // Create replacement img element
       const img = document.createElement("img");
       img.src = dataUrl;
       img.width = canvas.width;
       img.height = canvas.height;
-      
-      // Copy style attribute if present
       const style = canvas.getAttribute("style");
       if (style) img.setAttribute("style", style);
-      
-      // Replace canvas with img
       canvas.parentNode?.replaceChild(img, canvas);
     } catch (e) {
-      // Canvas may be tainted (cross-origin content)
       console.warn("Failed to convert canvas to image:", e);
     }
   }
@@ -79,22 +310,396 @@ function blobToDataURL(blob: Blob): Promise<string> {
 }
 
 /**
- * Render the clone container to an Image via SVG foreignObject.
- * Styles are already set as attributes by syncStylesForCanvas.
+ * Wait for next animation frame (allows browser to complete layout)
  */
-async function renderToImage(
+function waitForFrame(): Promise<void> {
+  return new Promise(resolve => requestAnimationFrame(() => resolve()));
+}
+
+/**
+ * Wait for multiple animation frames to ensure all paints are flushed.
+ * This is necessary because video frame decoding and canvas painting may
+ * happen asynchronously even after seek() returns.
+ */
+function waitForPaintFlush(): Promise<void> {
+  return new Promise(resolve => {
+    // Double RAF ensures we wait for:
+    // 1. First RAF: Any pending paints are scheduled
+    // 2. Second RAF: Those paints have completed
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => resolve());
+    });
+  });
+}
+
+/**
+ * Check if a canvas has any rendered content (not all transparent/uninitialized).
+ * Returns true if there's ANY non-transparent pixel.
+ */
+function canvasHasContent(canvas: HTMLCanvasElement): boolean {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return false;
+  
+  try {
+    const width = canvas.width;
+    const height = canvas.height;
+    if (width === 0 || height === 0) return false;
+    
+    // Sample a horizontal strip across the middle of the canvas
+    // This catches most video content even if edges are black
+    const stripY = Math.floor(height / 2);
+    const imageData = ctx.getImageData(0, stripY, width, CANVAS_SAMPLE_STRIP_HEIGHT);
+    const data = imageData.data;
+    
+    // Check if ANY pixel has non-zero alpha (is not transparent)
+    // A truly blank/uninitialized canvas has all pixels at [0,0,0,0]
+    // A black video frame would have pixels at [0,0,0,255] (opaque black)
+    for (let i = 3; i < data.length; i += 4) {
+      if (data[i] !== 0) {
+        return true;
+      }
+    }
+    
+    return false;
+  } catch {
+    // Canvas might be tainted, assume it has content
+    return true;
+  }
+}
+
+/**
+ * Override clip-path, opacity, and optionally transform on the root clone element.
+ * The source may have these properties set for proxy mode or workbench scaling.
+ * 
+ * @param syncState - The sync state containing the clone tree
+ * @param fullReset - If true, also resets opacity and transform (for capture operations)
+ */
+function overrideRootCloneStyles(syncState: SyncState, fullReset: boolean = false): void {
+  const rootClone = syncState.tree.root?.clone;
+  if (!rootClone) return;
+  
+  rootClone.style.clipPath = "none";
+  if (fullReset) {
+    rootClone.style.opacity = "1";
+    rootClone.style.transform = "none";
+  }
+}
+
+/**
+ * Check if an element is temporally visible at the given time.
+ */
+function isVisibleAtTime(element: Element, timeMs: number): boolean {
+  const temporal = element as TemporalElement;
+  if (typeof temporal.startTimeMs === 'number' && typeof temporal.endTimeMs === 'number') {
+    if (temporal.endTimeMs <= temporal.startTimeMs) {
+      return true;
+    }
+    return timeMs >= temporal.startTimeMs && timeMs <= temporal.endTimeMs;
+  }
+  return true;
+}
+
+interface WaitForVideoContentResult {
+  ready: boolean;
+  blankVideos: string[];
+}
+
+/**
+ * Wait for video canvases within a timegroup to have content.
+ * Only checks videos that should be visible at the current time.
+ * Returns result with ready status and list of blank video names.
+ */
+async function waitForVideoContent(
+  timegroup: EFTimegroup,
+  timeMs: number,
+  maxWaitMs: number,
+): Promise<WaitForVideoContentResult> {
+  const startTime = performance.now();
+  
+  // Find all video elements in the timegroup (including nested)
+  const allVideos = timegroup.querySelectorAll("ef-video");
+  if (allVideos.length === 0) return { ready: true, blankVideos: [] };
+  
+  // Filter to only videos that should be visible at this time
+  const visibleVideos = Array.from(allVideos).filter(video => {
+    // Check if video itself is in time range
+    if (!isVisibleAtTime(video, timeMs)) return false;
+    
+    // Check if all ancestor timegroups are in time range
+    let parent = video.parentElement;
+    while (parent && parent !== timegroup) {
+      if (parent.tagName === 'EF-TIMEGROUP' && !isVisibleAtTime(parent, timeMs)) {
+        return false;
+      }
+      parent = parent.parentElement;
+    }
+    return true;
+  });
+  
+  if (visibleVideos.length === 0) return { ready: true, blankVideos: [] };
+  
+  const getBlankVideoNames = () => visibleVideos
+    .filter(video => {
+      const shadowCanvas = video.shadowRoot?.querySelector("canvas");
+      return shadowCanvas && !canvasHasContent(shadowCanvas);
+    })
+    .map(v => (v as TemporalElement).src || v.id || 'unnamed');
+  
+  while (performance.now() - startTime < maxWaitMs) {
+    let allHaveContent = true;
+    
+    for (const video of visibleVideos) {
+      const shadowCanvas = video.shadowRoot?.querySelector("canvas");
+      if (shadowCanvas && shadowCanvas.width > 0 && shadowCanvas.height > 0) {
+        if (!canvasHasContent(shadowCanvas)) {
+          allHaveContent = false;
+          break;
+        }
+      }
+    }
+    
+    if (allHaveContent) return { ready: true, blankVideos: [] };
+    
+    // Wait a bit and check again
+    await waitForFrame();
+  }
+  
+  return { ready: false, blankVideos: getBlankVideoNames() };
+}
+
+/**
+ * Options for native rendering.
+ */
+export interface NativeRenderOptions {
+  /**
+   * Wait for RAF before capturing. Only needed if content hasn't been laid out yet.
+   * Default: false (capture immediately - frame tasks should already be complete)
+   * 
+   * Set to true only for edge cases where you're rendering content that was just
+   * added to the DOM and hasn't had a chance to layout yet.
+   */
+  waitForPaint?: boolean;
+  
+  /**
+   * Reuse an existing canvas instead of creating a new one.
+   * The canvas must have layoutsubtree enabled and be in the DOM.
+   */
+  reuseCanvas?: HTMLCanvasElement;
+  
+  /**
+   * Skip device pixel ratio scaling. When true, renders at 1x regardless of display DPR.
+   * Default: false (respects display DPR for crisp rendering)
+   * 
+   * Set to true for video export where retina resolution isn't needed.
+   * This can provide a 4x speedup on 2x DPR displays!
+   */
+  skipDprScaling?: boolean;
+}
+
+/**
+ * Render HTML content to canvas using native HTML-in-Canvas API (drawElementImage).
+ * This is much faster than the foreignObject approach and avoids canvas tainting.
+ * 
+ * Note: The native API renders at device pixel ratio, so we capture at DPR scale
+ * and then downsample to logical pixels to match the foreignObject path's output.
+ * 
+ * @param container - The HTML element to render
+ * @param width - Target width in logical pixels
+ * @param height - Target height in logical pixels
+ * @param options - Rendering options (skipWait for batch mode)
+ * 
+ * @see https://github.com/WICG/html-in-canvas
+ */
+export async function renderToImageNative(
   container: HTMLElement,
   width: number,
   height: number,
-): Promise<HTMLImageElement> {
-  console.time("  renderToImage-clone");
+  options: NativeRenderOptions = {},
+): Promise<HTMLCanvasElement> {
+  const t0 = performance.now();
+  const { waitForPaint = false, reuseCanvas, skipDprScaling = false } = options;
+  // Use 1x DPR when skipDprScaling is true (for video export) - 4x fewer pixels!
+  const dpr = skipDprScaling ? 1 : (window.devicePixelRatio || 1);
+  
+  // Use provided canvas or create new one
+  let captureCanvas: HTMLCanvasElement;
+  let shouldCleanup = false;
+  
+  if (reuseCanvas) {
+    captureCanvas = reuseCanvas;
+    
+    // Ensure canvas has explicit dimensions (required for layout)
+    const dpr = skipDprScaling ? 1 : (window.devicePixelRatio || 1);
+    captureCanvas.width = Math.floor(width * dpr);
+    captureCanvas.height = Math.floor(height * dpr);
+    
+    // Ensure canvas is in DOM (required for drawElementImage layout)
+    if (!captureCanvas.parentNode) {
+      document.body.appendChild(captureCanvas);
+    }
+    
+    // Ensure container is child of canvas
+    if (container.parentElement !== captureCanvas) {
+      captureCanvas.appendChild(container);
+    }
+    
+    // Ensure container is visible (not display: none) for layout
+    // drawElementImage requires the element to be laid out
+    const containerStyle = getComputedStyle(container);
+    if (containerStyle.display === 'none') {
+      container.style.display = 'block';
+    }
+    
+    // Force synchronous layout by reading layout properties
+    // This ensures both canvas and container are laid out (required for drawElementImage)
+    // Reading offsetHeight forces a synchronous layout recalculation
+    void captureCanvas.offsetHeight;
+    void container.offsetHeight;
+    getComputedStyle(captureCanvas).opacity;
+    getComputedStyle(container).opacity;
+  } else {
+    captureCanvas = document.createElement("canvas");
+    captureCanvas.width = Math.floor(width * dpr);
+    captureCanvas.height = Math.floor(height * dpr);
+    
+    // Enable HTML-in-Canvas mode via layoutsubtree attribute/property
+    captureCanvas.setAttribute("layoutsubtree", "");
+    (captureCanvas as HtmlInCanvasElement).layoutSubtree = true;
+    
+    captureCanvas.appendChild(container);
+    
+    captureCanvas.style.cssText = `
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: ${width}px;
+      height: ${height}px;
+      opacity: 0;
+      pointer-events: none;
+      z-index: -9999;
+    `;
+    document.body.appendChild(captureCanvas);
+    shouldCleanup = true;
+  }
+  
+  const t1 = performance.now();
+  _totalSetupMs += t1 - t0;
+  
+  try {
+    // Force style calculation to ensure CSS is computed before capture
+    // This ensures both canvas and container are laid out (required for drawElementImage)
+    getComputedStyle(container).opacity;
+    
+    // When reusing canvas with layoutsubtree, we need to wait for layout to complete
+    // The browser needs a frame to lay out the subtree after layoutsubtree is set
+    if (reuseCanvas && (captureCanvas as any).layoutSubtree) {
+      await waitForFrame();
+      
+      // Canvas may have been detached during async wait (e.g., test cleanup)
+      if (!captureCanvas.parentNode) {
+        return captureCanvas;
+      }
+    }
+    
+    // Only wait for paint in rare edge cases where content was just added to DOM
+    // Normally frame tasks (seek, etc.) are already complete before we get here
+    if (waitForPaint) {
+      await waitForPaintFlush();
+      
+      // Canvas may have been detached during async wait (e.g., test cleanup)
+      if (!captureCanvas.parentNode) {
+        return captureCanvas;
+      }
+    }
+    
+    const ctx = captureCanvas.getContext("2d") as HtmlInCanvasContext;
+    ctx.drawElementImage(container, 0, 0);
+  } finally {
+    // Only clean up if we created the canvas
+    if (shouldCleanup && captureCanvas.parentNode) {
+      captureCanvas.parentNode.removeChild(captureCanvas);
+    }
+  }
+  
+  const t2 = performance.now();
+  _totalDrawMs += t2 - t1;
+  
+  // If DPR is 1, no downsampling needed - return as-is
+  if (dpr === 1) {
+    _renderCallCount++;
+    return captureCanvas;
+  }
+  
+  // Downsample to logical pixel dimensions to match foreignObject path output
+  // This ensures consistent behavior regardless of which rendering path is used
+  const outputCanvas = document.createElement("canvas");
+  outputCanvas.width = width;
+  outputCanvas.height = height;
+  
+  const outputCtx = outputCanvas.getContext("2d")!;
+  // Draw the DPR-scaled capture onto the 1x output canvas
+  outputCtx.drawImage(
+    captureCanvas,
+    0, 0, captureCanvas.width, captureCanvas.height,  // source (full DPR capture)
+    0, 0, width, height  // destination (logical pixels)
+  );
+  
+  const t3 = performance.now();
+  _totalDownsampleMs += t3 - t2;
+  _renderCallCount++;
+  
+  if (t3 - _lastLogTime > PROFILING_LOG_INTERVAL_MS) {
+    _lastLogTime = t3;
+    const avgSetup = _totalSetupMs / _renderCallCount;
+    const avgDraw = _totalDrawMs / _renderCallCount;
+    const avgDownsample = _totalDownsampleMs / _renderCallCount;
+    console.log(`[renderToImageNative] ${_renderCallCount} calls: setup=${avgSetup.toFixed(1)}ms, draw=${avgDraw.toFixed(1)}ms, downsample=${avgDownsample.toFixed(1)}ms (DPR=${dpr})`);
+  }
+  
+  return outputCanvas;
+}
+
+/**
+ * Render HTML content to an image (or canvas) for drawing.
+ * 
+ * Uses native HTML-in-Canvas API (drawElementImage) when available for much faster
+ * rendering. Falls back to SVG foreignObject serialization otherwise.
+ * 
+ * @param container - The HTML element to render
+ * @param width - Target width in logical pixels
+ * @param height - Target height in logical pixels
+ * @param options - Native rendering options (only applies when native API is used)
+ * @returns HTMLCanvasElement when using native API, HTMLImageElement when using foreignObject
+ */
+export async function renderToImage(
+  container: HTMLElement,
+  width: number,
+  height: number,
+  options?: NativeRenderOptions,
+): Promise<HTMLImageElement | HTMLCanvasElement> {
+  // Use native HTML-in-Canvas API if available and enabled (much faster, no tainting issues)
+  if (shouldUseNativeHtmlInCanvas()) {
+    if (!_pathLogged) {
+      _pathLogged = true;
+      const effectiveDpr = options?.skipDprScaling ? 1 : window.devicePixelRatio;
+      console.log(`[renderToImage] Using NATIVE path (${width}x${height}, effectiveDPR=${effectiveDpr}, displayDPR=${window.devicePixelRatio}${options?.skipDprScaling ? ' - SKIP DPR for export' : ''})`);
+    }
+    return renderToImageNative(container, width, height, options);
+  }
+  
+  if (!_pathLogged) {
+    _pathLogged = true;
+    console.log(`[renderToImage] Using FOREIGNOBJECT path (${width}x${height}) - native available: ${isNativeCanvasApiAvailable()}, enabled: ${isNativeCanvasApiEnabled()}`);
+  }
+  
+  // Fallback: SVG foreignObject approach
   // Get all canvases from original BEFORE cloning (cloneNode doesn't copy canvas pixels)
   const originalCanvases = container.querySelectorAll("canvas");
   
   // Clone the container for serialization (don't modify original)
   const clone = container.cloneNode(true) as HTMLElement;
   
-  // Copy canvas content from originals to clones (cloneNode creates empty canvases)
+  // Copy canvas content from originals to clones
   const clonedCanvases = clone.querySelectorAll("canvas");
   for (let i = 0; i < originalCanvases.length; i++) {
     const srcCanvas = originalCanvases[i];
@@ -110,48 +715,511 @@ async function renderToImage(
       }
     }
   }
-  console.timeEnd("  renderToImage-clone");
 
-  console.time("  renderToImage-inline-images");
   // Inline external images
   await inlineImages(clone);
-  // Convert canvas elements to images (canvas content doesn't serialize in SVG)
+  // Convert canvas elements to images
   convertCanvasesToImages(clone);
-  console.timeEnd("  renderToImage-inline-images");
 
-  console.time("  renderToImage-serialize");
-  // Create wrapper with XHTML namespace
+  // Create wrapper with XHTML namespace (reuse serializer for better performance)
   const wrapper = document.createElement("div");
   wrapper.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
   wrapper.setAttribute("style", `width:${width}px;height:${height}px;overflow:hidden;position:relative;`);
   wrapper.appendChild(clone);
 
-  // Serialize to XHTML
-  const xmlSerializer = new XMLSerializer();
-  const serialized = xmlSerializer.serializeToString(wrapper);
-  console.timeEnd("  renderToImage-serialize");
+  // Serialize to XHTML - reuse serializer instance (faster than creating new one each frame)
+  if (!_xmlSerializer) {
+    _xmlSerializer = new XMLSerializer();
+  }
+  const serialized = _xmlSerializer.serializeToString(wrapper);
+  
+  // DEBUG: Log serialized HTML size (first 2 calls only)
+  if (_renderCallCount < 2) {
+    console.log(`[renderToImage] FO serialized: ${serialized.length} chars`);
+  }
 
   // Wrap in SVG foreignObject
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
-    <foreignObject width="100%" height="100%">
-      ${serialized}
-    </foreignObject>
-  </svg>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><foreignObject width="100%" height="100%">${serialized}</foreignObject></svg>`;
 
-  console.time("  renderToImage-load");
-  const svgBlob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
-  const url = URL.createObjectURL(svgBlob);
+  // Optimized base64 encoding: Use TextEncoder for UTF-8 → bytes, then encode directly
+  // Prefer Uint8Array.prototype.toBase64() if available (faster, avoids binary string conversion)
+  // Otherwise use optimized base64 encoder that works directly on Uint8Array
+  if (!_textEncoder) {
+    _textEncoder = new TextEncoder();
+  }
+  const utf8Bytes = _textEncoder.encode(svg);
+  
+  let base64: string;
+  // Check if Uint8Array.prototype.toBase64 is available (newer browsers)
+  if (typeof (Uint8Array.prototype as any).toBase64 === "function") {
+    base64 = (utf8Bytes as any).toBase64();
+  } else {
+    // Fast base64 encoding directly from Uint8Array (avoids binary string conversion)
+    base64 = encodeBase64Fast(utf8Bytes);
+  }
+  const dataUri = `data:image/svg+xml;base64,${base64}`;
   
   const image = await new Promise<HTMLImageElement>((resolve, reject) => {
     const img = new Image();
     img.onload = () => resolve(img);
     img.onerror = reject;
-    img.src = url;
+    img.src = dataUri;
   });
   
-  URL.revokeObjectURL(url);
-  console.timeEnd("  renderToImage-load");
   return image;
+}
+
+
+/**
+ * Render a pre-built clone container to an image WITHOUT cloning it again.
+ * This is the fast path for reusing clone structures across frames.
+ * 
+ * Key difference from renderToImage:
+ * - Does NOT call cloneNode (avoids expensive DOM duplication)
+ * - Converts canvases to images in-place, then restores them after serialization
+ * - Assumes the container already has refreshed canvas content
+ * 
+ * @param container - Pre-built clone container with refreshed canvas content
+ * @param width - Output width
+ * @param height - Output height
+ * @returns Promise resolving to an HTMLImageElement
+ */
+// Timing accumulators for renderToImageDirect breakdown
+let _totalCanvasEncodeMs = 0;
+let _totalInlineMs = 0;
+let _totalSerializeMs = 0;
+let _totalBase64Ms = 0;
+let _totalImageLoadMs = 0;
+let _totalRestoreMs = 0;
+let _timingLoggedAt = 0;
+
+export function logRenderToImageDirectTiming(): void {
+  const total = _totalCanvasEncodeMs + _totalInlineMs + _totalSerializeMs + _totalBase64Ms + _totalImageLoadMs + _totalRestoreMs;
+  console.log(`[renderToVideo] RENDER SUB-TIMING (${_renderCallCount} frames):`);
+  console.log(`[renderToVideo]   canvas→jpeg: ${(_totalCanvasEncodeMs / 1000).toFixed(2)}s (${((_totalCanvasEncodeMs / total) * 100).toFixed(1)}%)`);
+  console.log(`[renderToVideo]   inline img:  ${(_totalInlineMs / 1000).toFixed(2)}s (${((_totalInlineMs / total) * 100).toFixed(1)}%)`);
+  console.log(`[renderToVideo]   serialize:   ${(_totalSerializeMs / 1000).toFixed(2)}s (${((_totalSerializeMs / total) * 100).toFixed(1)}%)`);
+  console.log(`[renderToVideo]   base64:      ${(_totalBase64Ms / 1000).toFixed(2)}s (${((_totalBase64Ms / total) * 100).toFixed(1)}%)`);
+  console.log(`[renderToVideo]   img.onload:  ${(_totalImageLoadMs / 1000).toFixed(2)}s (${((_totalImageLoadMs / total) * 100).toFixed(1)}%)`);
+  console.log(`[renderToVideo]   restore DOM: ${(_totalRestoreMs / 1000).toFixed(2)}s (${((_totalRestoreMs / total) * 100).toFixed(1)}%)`);
+}
+
+export async function renderToImageDirect(
+  container: HTMLElement,
+  width: number,
+  height: number,
+): Promise<HTMLImageElement> {
+  _renderCallCount++;
+  
+  // Store original canvas elements and their parents for restoration
+  const canvasRestoreInfo: Array<{ canvas: HTMLCanvasElement; parent: Node; nextSibling: Node | null; img: HTMLImageElement }> = [];
+  
+  // Convert canvases to images IN-PLACE (we'll restore them after serialization)
+  // Use JPEG encoding (faster than PNG for video frames)
+  const canvasStart = performance.now();
+  const canvases = Array.from(container.querySelectorAll("canvas"));
+  for (const canvas of canvases) {
+    try {
+      // JPEG with quality 0.85 is much faster than PNG for video content
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+      const img = document.createElement("img");
+      img.src = dataUrl;
+      img.width = canvas.width;
+      img.height = canvas.height;
+      const style = canvas.getAttribute("style");
+      if (style) img.setAttribute("style", style);
+      
+      // Store info for restoration
+      const parent = canvas.parentNode;
+      if (parent) {
+        const nextSibling = canvas.nextSibling;
+        parent.replaceChild(img, canvas);
+        canvasRestoreInfo.push({ canvas, parent, nextSibling, img });
+      }
+    } catch (e) {
+      // Cross-origin canvas - leave as-is
+    }
+  }
+  _totalCanvasEncodeMs += performance.now() - canvasStart;
+  
+  // Inline external images (this is idempotent, safe to call multiple times)
+  const inlineStart = performance.now();
+  await inlineImages(container);
+  _totalInlineMs += performance.now() - inlineStart;
+  
+  // Create wrapper with XHTML namespace
+  const serializeStart = performance.now();
+  const wrapper = document.createElement("div");
+  wrapper.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
+  wrapper.setAttribute("style", `width:${width}px;height:${height}px;overflow:hidden;position:relative;`);
+  wrapper.appendChild(container);
+  
+  // Serialize to XHTML
+  if (!_xmlSerializer) {
+    _xmlSerializer = new XMLSerializer();
+  }
+  const serialized = _xmlSerializer.serializeToString(wrapper);
+  _totalSerializeMs += performance.now() - serializeStart;
+  
+  // RESTORE: Put container back (remove from wrapper)
+  const restoreStart = performance.now();
+  wrapper.removeChild(container);
+  
+  // RESTORE: Put canvases back in place of images
+  for (const { canvas, parent, nextSibling, img } of canvasRestoreInfo) {
+    if (img.parentNode === parent) {
+      if (nextSibling) {
+        parent.insertBefore(canvas, nextSibling);
+        parent.removeChild(img);
+      } else {
+        parent.replaceChild(canvas, img);
+      }
+    }
+  }
+  _totalRestoreMs += performance.now() - restoreStart;
+  
+  // DEBUG: Log serialized HTML size
+  if (_renderCallCount < 2) {
+    console.log(`[renderToImageDirect] FO serialized: ${serialized.length} chars`);
+  }
+  
+  // Wrap in SVG foreignObject
+  const base64Start = performance.now();
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><foreignObject width="100%" height="100%">${serialized}</foreignObject></svg>`;
+  
+  // Use data URI (Blob URLs cause cross-origin tainting when drawn to canvas)
+  // Optimized base64 encoding using TextEncoder + fast encoder
+  if (!_textEncoder) {
+    _textEncoder = new TextEncoder();
+  }
+  const utf8Bytes = _textEncoder.encode(svg);
+  
+  let base64: string;
+  if (typeof (Uint8Array.prototype as any).toBase64 === "function") {
+    base64 = (utf8Bytes as any).toBase64();
+  } else {
+    base64 = encodeBase64Fast(utf8Bytes);
+  }
+  const dataUri = `data:image/svg+xml;base64,${base64}`;
+  _totalBase64Ms += performance.now() - base64Start;
+  
+  // Create new Image for each frame (needed for pipelining - can't reuse when overlapping)
+  const img = new Image();
+  
+  const imageLoadStart = performance.now();
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    img.onload = () => {
+      _totalImageLoadMs += performance.now() - imageLoadStart;
+      resolve(img);
+    };
+    img.onerror = reject;
+    img.src = dataUri;
+  });
+  
+  // Log timing breakdown periodically
+  if (_renderCallCount - _timingLoggedAt >= 100) {
+    logRenderToImageDirectTiming();
+    _timingLoggedAt = _renderCallCount;
+  }
+  
+  return image;
+}
+
+/**
+ * Prepare a frame's data URI without waiting for image load.
+ * Returns the data URI synchronously (after serialization) for pipelined loading.
+ * The DOM is restored before this function returns.
+ */
+export function prepareFrameDataUri(
+  container: HTMLElement,
+  width: number,
+  height: number,
+): string {
+  _renderCallCount++;
+  
+  // Store original canvas elements and their parents for restoration
+  const canvasRestoreInfo: Array<{ canvas: HTMLCanvasElement; parent: Node; nextSibling: Node | null; img: HTMLImageElement }> = [];
+  
+  // Convert canvases to images IN-PLACE
+  const canvasStart = performance.now();
+  const canvases = Array.from(container.querySelectorAll("canvas"));
+  for (const canvas of canvases) {
+    try {
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+      const img = document.createElement("img");
+      img.src = dataUrl;
+      img.width = canvas.width;
+      img.height = canvas.height;
+      const style = canvas.getAttribute("style");
+      if (style) img.setAttribute("style", style);
+      
+      const parent = canvas.parentNode;
+      if (parent) {
+        const nextSibling = canvas.nextSibling;
+        parent.replaceChild(img, canvas);
+        canvasRestoreInfo.push({ canvas, parent, nextSibling, img });
+      }
+    } catch (e) {
+      // Cross-origin canvas - leave as-is
+    }
+  }
+  _totalCanvasEncodeMs += performance.now() - canvasStart;
+  
+  // Create wrapper with XHTML namespace
+  const serializeStart = performance.now();
+  const wrapper = document.createElement("div");
+  wrapper.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
+  wrapper.setAttribute("style", `width:${width}px;height:${height}px;overflow:hidden;position:relative;`);
+  wrapper.appendChild(container);
+  
+  // Serialize to XHTML
+  if (!_xmlSerializer) {
+    _xmlSerializer = new XMLSerializer();
+  }
+  const serialized = _xmlSerializer.serializeToString(wrapper);
+  _totalSerializeMs += performance.now() - serializeStart;
+  
+  // RESTORE: Put container back
+  const restoreStart = performance.now();
+  wrapper.removeChild(container);
+  
+  // RESTORE: Put canvases back
+  for (const { canvas, parent, nextSibling, img } of canvasRestoreInfo) {
+    if (img.parentNode === parent) {
+      if (nextSibling) {
+        parent.insertBefore(canvas, nextSibling);
+        parent.removeChild(img);
+      } else {
+        parent.replaceChild(canvas, img);
+      }
+    }
+  }
+  _totalRestoreMs += performance.now() - restoreStart;
+  
+  // Wrap in SVG foreignObject and encode to base64 data URI
+  const base64Start = performance.now();
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><foreignObject width="100%" height="100%">${serialized}</foreignObject></svg>`;
+  
+  if (!_textEncoder) {
+    _textEncoder = new TextEncoder();
+  }
+  const utf8Bytes = _textEncoder.encode(svg);
+  
+  let base64: string;
+  if (typeof (Uint8Array.prototype as any).toBase64 === "function") {
+    base64 = (utf8Bytes as any).toBase64();
+  } else {
+    base64 = encodeBase64Fast(utf8Bytes);
+  }
+  const dataUri = `data:image/svg+xml;base64,${base64}`;
+  _totalBase64Ms += performance.now() - base64Start;
+  
+  return dataUri;
+}
+
+/**
+ * Load an image from a data URI. Returns a Promise that resolves when loaded.
+ */
+export function loadImageFromDataUri(dataUri: string): Promise<HTMLImageElement> {
+  const img = new Image();
+  const imageLoadStart = performance.now();
+  
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    img.onload = () => {
+      _totalImageLoadMs += performance.now() - imageLoadStart;
+      resolve(img);
+    };
+    img.onerror = reject;
+    img.src = dataUri;
+  });
+}
+
+/**
+ * Options for capturing from an existing render clone.
+ */
+export interface CaptureFromCloneOptions {
+  /** Scale factor for the output canvas (default: 0.25) */
+  scale?: number;
+  /** Content readiness strategy (default: "immediate") */
+  contentReadyMode?: ContentReadyMode;
+  /** Max wait time for blocking mode before throwing (default: 5000ms) */
+  blockingTimeoutMs?: number;
+  /** Original timegroup (for dimension and background reference) */
+  originalTimegroup?: EFTimegroup;
+}
+
+/**
+ * Captures a frame from an already-seeked render clone.
+ * Used internally by captureBatch for efficiency (reuses one clone across all captures).
+ * 
+ * @param renderClone - A render clone that has already been seeked to the target time
+ * @param renderContainer - The container holding the render clone (from createRenderClone)
+ * @param options - Capture options
+ * @returns Canvas with the rendered frame
+ */
+export async function captureFromClone(
+  renderClone: EFTimegroup,
+  renderContainer: HTMLElement,
+  options: CaptureFromCloneOptions = {},
+): Promise<HTMLCanvasElement> {
+  const {
+    scale = DEFAULT_THUMBNAIL_SCALE,
+    contentReadyMode = "immediate",
+    blockingTimeoutMs = DEFAULT_BLOCKING_TIMEOUT_MS,
+    originalTimegroup,
+  } = options;
+
+  // Use original timegroup dimensions if available, otherwise clone dimensions
+  const sourceForDimensions = originalTimegroup ?? renderClone;
+  const width = sourceForDimensions.offsetWidth || DEFAULT_WIDTH;
+  const height = sourceForDimensions.offsetHeight || DEFAULT_HEIGHT;
+
+  // Create canvas at scaled size
+  const dpr = window.devicePixelRatio || 1;
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.floor(width * scale * dpr);
+  canvas.height = Math.floor(height * scale * dpr);
+  canvas.style.width = `${Math.floor(width * scale)}px`;
+  canvas.style.height = `${Math.floor(height * scale)}px`;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    throw new Error("Failed to get canvas 2d context");
+  }
+
+  // Handle content readiness based on mode
+  const timeMs = renderClone.currentTimeMs;
+  if (contentReadyMode === "blocking") {
+    const result = await waitForVideoContent(renderClone, timeMs, blockingTimeoutMs);
+    if (!result.ready) {
+      throw new ContentNotReadyError(timeMs, blockingTimeoutMs, result.blankVideos);
+    }
+  }
+
+  let image: HTMLCanvasElement | HTMLImageElement;
+  const useNativePath = shouldUseNativeHtmlInCanvas();
+  
+  if (useNativePath) {
+    // NATIVE PATH: Render the seeked renderClone directly using renderToImageNative
+    // The clone is already at the correct time, so drawElementImage captures its current
+    // visual state including video frames at the correct position.
+    // 
+    // Position render container properly for capture
+    renderContainer.style.cssText = `
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: ${width}px;
+      height: ${height}px;
+      pointer-events: none;
+      overflow: hidden;
+    `;
+    
+    // Use renderToImageNative which handles canvas setup and drawElementImage internally
+    // It expects the container element to be passed, and will append it as canvas child
+    // Note: renderToImageNative will move the container to a temp canvas, but since
+    // each capture creates a new clone, we don't need to restore it.
+    image = await renderToImageNative(renderContainer, width, height);
+  } else {
+    // FOREIGNOBJECT PATH: Build passive structure from the SEEKED render clone
+    // The clone is already at the correct time, so getComputedStyle captures the right values.
+    // Styles are synced during clone building in a single pass.
+    const { container, syncState } = buildCloneStructure(renderClone, timeMs);
+
+    // Create wrapper
+    const bgSource = originalTimegroup ?? renderClone;
+    const previewContainer = document.createElement("div");
+    previewContainer.style.cssText = `
+      width: ${width}px;
+      height: ${height}px;
+      position: relative;
+      overflow: hidden;
+      background: ${getComputedStyle(bgSource).background || "#000"};
+    `;
+    
+    const styleEl = document.createElement("style");
+    styleEl.textContent = collectDocumentStyles();
+    previewContainer.appendChild(styleEl);
+    previewContainer.appendChild(container);
+    
+    // Ensure clone root is visible
+    overrideRootCloneStyles(syncState, true);
+
+    // Render using foreignObject serialization
+    image = await renderToImage(previewContainer, width, height);
+  }
+
+  // Draw to canvas (may need scaling for native path which is at DPR)
+  const srcWidth = image.width;
+  const srcHeight = image.height;
+  ctx.drawImage(
+    image,
+    0, 0, srcWidth, srcHeight,
+    0, 0, canvas.width, canvas.height
+  );
+
+  return canvas;
+}
+
+/**
+ * Captures a single frame from a timegroup at a specific time.
+ * 
+ * CLONE-TIMELINE ARCHITECTURE:
+ * Creates an independent render clone, seeks it to the target time, and captures.
+ * Prime-timeline is NEVER seeked - user can continue previewing/editing during capture.
+ * 
+ * @param timegroup - The source timegroup
+ * @param options - Capture options including timeMs, scale, contentReadyMode
+ * @returns Canvas with the rendered frame
+ * @throws ContentNotReadyError if blocking mode times out waiting for video content
+ */
+export async function captureTimegroupAtTime(
+  timegroup: EFTimegroup,
+  options: CaptureOptions,
+): Promise<HTMLCanvasElement> {
+  const {
+    timeMs,
+    scale = DEFAULT_THUMBNAIL_SCALE,
+    // skipRestore is deprecated with Clone-timeline (Prime is never seeked)
+    contentReadyMode = "immediate",
+    blockingTimeoutMs = DEFAULT_BLOCKING_TIMEOUT_MS,
+  } = options;
+
+  // CLONE-TIMELINE: Create a short-lived render clone for this capture
+  // Prime-timeline is NEVER seeked - clone is fully independent
+  const { clone: renderClone, container: renderContainer, cleanup: cleanupRenderClone } = 
+    await timegroup.createRenderClone();
+  
+  try {
+    // Seek the clone to target time (Prime stays at user position)
+    await renderClone.seek(timeMs);
+    
+    // Use the shared capture helper
+    return await captureFromClone(renderClone, renderContainer, {
+      scale,
+      contentReadyMode,
+      blockingTimeoutMs,
+      originalTimegroup: timegroup,
+    });
+  } finally {
+    // Clean up the render clone
+    cleanupRenderClone();
+  }
+}
+
+/** Epsilon for comparing time values (ms) - times within this are considered equal */
+const TIME_EPSILON_MS = 1;
+
+/** Default scale for preview rendering */
+const DEFAULT_PREVIEW_SCALE = 1;
+
+/**
+ * Convert relative time to absolute time for a timegroup.
+ * Nested timegroup children have ABSOLUTE startTimeMs values,
+ * so relative capture times must be converted for temporal culling.
+ */
+function toAbsoluteTime(timegroup: EFTimegroup, relativeTimeMs: number): number {
+  return relativeTimeMs + (timegroup.startTimeMs ?? 0);
 }
 
 export interface CanvasPreviewResult {
@@ -161,13 +1229,17 @@ export interface CanvasPreviewResult {
    * Returns a promise that resolves when rendering is complete.
    */
   refresh: () => Promise<void>;
+  syncState: SyncState;
 }
 
 /**
  * Renders a timegroup preview to a canvas using SVG foreignObject.
- *
- * Uses the exact same clone structure and style syncing as the DOM preview,
- * then serializes to SVG foreignObject and draws to canvas.
+ * 
+ * Optimized with:
+ * - Persistent clone structure (built once)
+ * - Temporal bucketing for time-based culling
+ * - Property split (static vs animated)
+ * - Parent index for O(1) visibility checks
  *
  * @param timegroup - The source timegroup to preview
  * @param scale - Scale factor (default 1, use <1 for thumbnails)
@@ -175,10 +1247,10 @@ export interface CanvasPreviewResult {
  */
 export function renderTimegroupToCanvas(
   timegroup: EFTimegroup,
-  scale: number = 1,
+  scale: number = DEFAULT_PREVIEW_SCALE,
 ): CanvasPreviewResult {
-  const width = timegroup.offsetWidth || 1920;
-  const height = timegroup.offsetHeight || 1080;
+  const width = timegroup.offsetWidth || DEFAULT_WIDTH;
+  const height = timegroup.offsetHeight || DEFAULT_HEIGHT;
 
   // Create canvas at scaled size (with devicePixelRatio for sharpness)
   const dpr = window.devicePixelRatio || 1;
@@ -193,10 +1265,12 @@ export function renderTimegroupToCanvas(
     throw new Error("Failed to get canvas 2d context");
   }
 
-  // Build clone structure ONCE using the same function as DOM preview
-  const { container, pairs } = buildCloneStructure(timegroup);
+  // Build clone structure ONCE with optimized sync state
+  // Initial sync happens during clone building in a single pass
+  const initialTimeMs = toAbsoluteTime(timegroup, timegroup.currentTimeMs ?? 0);
+  const { container, syncState } = buildCloneStructure(timegroup, initialTimeMs);
 
-  // Create a wrapper div with proper dimensions (like DOM preview)
+  // Create a wrapper div with proper dimensions
   const previewContainer = document.createElement("div");
   previewContainer.style.cssText = `
     width: ${width}px;
@@ -212,49 +1286,36 @@ export function renderTimegroupToCanvas(
   previewContainer.appendChild(styleEl);
   
   previewContainer.appendChild(container);
+  overrideRootCloneStyles(syncState);
 
-  // Initial style sync using shared function
-  syncAllStyles(pairs);
-
-  // Track if a render is in progress and last rendered time
+  // Track render state
   let rendering = false;
-  let lastTimeMs = timegroup.currentTimeMs ?? 0;
+  let lastTimeMs = -1;
 
-  // Refresh function - syncs styles and re-renders to canvas
   const refresh = async (): Promise<void> => {
-    // Skip if already rendering
     if (rendering) return;
+    // Clone-timeline: captures use separate clones, Prime-timeline is never locked
     
-    // Skip if time hasn't changed
-    const currentTimeMs = timegroup.currentTimeMs ?? 0;
-    if (currentTimeMs === lastTimeMs) return;
-    lastTimeMs = currentTimeMs;
+    const sourceTimeMs = timegroup.currentTimeMs ?? 0;
+    const userTimeMs = timegroup.userTimeMs ?? 0;
+    if (Math.abs(sourceTimeMs - userTimeMs) > TIME_EPSILON_MS) return;
+    
+    if (userTimeMs === lastTimeMs) return;
+    lastTimeMs = userTimeMs;
     
     rendering = true;
 
     try {
-      console.time("canvas-preview-total");
-      
-      // Sync current visual state using shared function
-      console.time("canvas-preview-sync-styles");
-      syncAllStyles(pairs);
-      console.timeEnd("canvas-preview-sync-styles");
+      syncStyles(syncState, toAbsoluteTime(timegroup, userTimeMs));
+      overrideRootCloneStyles(syncState);
 
-      // Render to image via SVG foreignObject
-      console.time("canvas-preview-render-to-image");
       const image = await renderToImage(previewContainer, width, height);
-      console.timeEnd("canvas-preview-render-to-image");
 
-      // Clear and draw to canvas
-      console.time("canvas-preview-draw-to-canvas");
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.save();
       ctx.scale(dpr * scale, dpr * scale);
       ctx.drawImage(image, 0, 0);
       ctx.restore();
-      console.timeEnd("canvas-preview-draw-to-canvas");
-      
-      console.timeEnd("canvas-preview-total");
     } catch (e) {
       console.error("Canvas preview render failed:", e);
     } finally {
@@ -265,5 +1326,6 @@ export function renderTimegroupToCanvas(
   // Do initial render
   refresh();
 
-  return { canvas, refresh };
+  return { canvas, refresh, syncState };
 }
+
