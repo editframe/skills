@@ -1,0 +1,12 @@
+{
+  "renderInfo": {
+    "width": 480,
+    "height": 270,
+    "durationMs": 2000
+  },
+  "segmentPaths": [
+    "/app/lib/queues/units-of-work/Render/full-render/fixtures.renders/audio-waveform-3c62d77c/artifacts/segment_init.mp4",
+    "/app/lib/queues/units-of-work/Render/full-render/fixtures.renders/audio-waveform-3c62d77c/artifacts/segment_0.mp4"
+  ],
+  "fragmentCount": 2
+}

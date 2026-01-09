@@ -1,0 +1,12 @@
+{
+  "renderInfo": {
+    "width": 480,
+    "height": 270,
+    "durationMs": 227
+  },
+  "segmentPaths": [
+    "/app/lib/queues/units-of-work/Render/full-render/edge-cases.test.renders/render-to-end-of-source-media-0ddacd49/artifacts/segment_init.mp4",
+    "/app/lib/queues/units-of-work/Render/full-render/edge-cases.test.renders/render-to-end-of-source-media-0ddacd49/artifacts/segment_0.mp4"
+  ],
+  "fragmentCount": 2
+}
