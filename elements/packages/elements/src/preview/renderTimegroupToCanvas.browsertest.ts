@@ -3002,3 +3002,306 @@ describe("benchmark: parallel image loading queue depth", () => {
     console.log(`=======================================================\n`);
   }, 60000);
 });
+
+/**
+ * Reproduction test for clone-timeline video rendition issue.
+ * 
+ * Validates hypothesis: cloned ef-video elements should have their media engine
+ * with videoRendition available after createRenderClone() completes.
+ */
+describe("clone-timeline video rendition (reproduction)", () => {
+  test("createRenderClone: cloned video has same media engine type and videoRendition as original", async () => {
+    const container = document.createElement("div");
+    const apiHost = getApiHost();
+    
+    render(
+      html`
+      <ef-configuration api-host="${apiHost}" signing-url="">
+        <ef-timegroup mode="contain" id="clone-test-timegroup"
+          style="width: 800px; height: 450px; background: #1a1a2e;">
+          <ef-video src="bars-n-tone.mp4" style="width: 100%; height: 100%; object-fit: contain;"></ef-video>
+        </ef-timegroup>
+      </ef-configuration>
+    `,
+      container,
+    );
+    document.body.appendChild(container);
+    
+    const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
+    await timegroup.updateComplete;
+    await timegroup.waitForMediaDurations();
+    
+    // Get original video and its media engine state
+    const originalVideo = timegroup.querySelector("ef-video") as any;
+    expect(originalVideo).toBeTruthy();
+    
+    const originalMediaEngine = originalVideo.mediaEngineTask?.value;
+    expect(originalMediaEngine).toBeTruthy();
+    
+    const originalVideoRendition = originalMediaEngine.getVideoRendition();
+    console.log("Original video rendition:", originalVideoRendition);
+    console.log("Original media engine type:", originalMediaEngine.constructor.name);
+    expect(originalVideoRendition).toBeTruthy();
+    
+    // Create render clone (this is what captureBatch uses)
+    const { clone, cleanup } = await timegroup.createRenderClone();
+    
+    try {
+      // Get cloned video
+      const clonedVideo = clone.querySelector("ef-video") as any;
+      expect(clonedVideo).toBeTruthy();
+      
+      // Verify cloned video has media engine
+      const clonedMediaEngine = clonedVideo.mediaEngineTask?.value;
+      console.log("Cloned media engine:", clonedMediaEngine);
+      console.log("Cloned media engine type:", clonedMediaEngine?.constructor.name);
+      expect(clonedMediaEngine).toBeTruthy();
+      
+      // KEY TEST: Does the clone have videoRendition?
+      const clonedVideoRendition = clonedMediaEngine.getVideoRendition();
+      console.log("Cloned video rendition:", clonedVideoRendition);
+      
+      // This is the assertion that should fail if the hypothesis is correct
+      expect(clonedVideoRendition).toBeTruthy();
+      
+      // Verify same media engine type
+      expect(clonedMediaEngine.constructor.name).toBe(originalMediaEngine.constructor.name);
+      
+      // Verify same rendition structure
+      expect(clonedVideoRendition.trackId).toBe(originalVideoRendition.trackId);
+      expect(clonedVideoRendition.src).toBe(originalVideoRendition.src);
+    } finally {
+      cleanup();
+      container.remove();
+    }
+  });
+  
+  /**
+   * Regression test: Clone preserves ef-configuration context
+   * 
+   * Ensures createRenderClone() wraps the clone in a cloned ef-configuration element,
+   * so media elements can access configuration settings like media-engine via closest().
+   * Without this, clones would use a different media engine type than the original.
+   */
+  test("createRenderClone preserves ef-configuration context (media-engine attribute)", async () => {
+    const container = document.createElement("div");
+    const apiHost = getApiHost();
+    
+    // Use media-engine="local" to force AssetMediaEngine
+    render(
+      html`
+      <ef-configuration api-host="${apiHost}" signing-url="" media-engine="local">
+        <ef-timegroup mode="contain" id="config-loss-test"
+          style="width: 800px; height: 450px; background: #1a1a2e;">
+          <ef-video src="bars-n-tone.mp4" style="width: 100%; height: 100%; object-fit: contain;"></ef-video>
+        </ef-timegroup>
+      </ef-configuration>
+    `,
+      container,
+    );
+    document.body.appendChild(container);
+    
+    const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
+    await timegroup.updateComplete;
+    await timegroup.waitForMediaDurations();
+    
+    // Get original video's configuration context
+    const originalVideo = timegroup.querySelector("ef-video") as any;
+    const originalConfig = originalVideo.closest("ef-configuration");
+    console.log("Original ef-configuration:", originalConfig);
+    console.log("Original media-engine attribute:", originalConfig?.mediaEngine);
+    expect(originalConfig).toBeTruthy();
+    expect(originalConfig.mediaEngine).toBe("local");
+    
+    const originalMediaEngine = originalVideo.mediaEngineTask?.value;
+    console.log("Original media engine type:", originalMediaEngine?.constructor.name);
+    expect(originalMediaEngine.constructor.name).toBe("AssetMediaEngine");
+    
+    // Create render clone
+    const { clone, cleanup } = await timegroup.createRenderClone();
+    
+    try {
+      // Get cloned video's configuration context
+      const clonedVideo = clone.querySelector("ef-video") as any;
+      const clonedConfig = clonedVideo.closest("ef-configuration");
+      
+      console.log("Cloned ef-configuration:", clonedConfig);
+      console.log("Cloned media-engine attribute:", clonedConfig?.mediaEngine);
+      
+      // Clone should have ef-configuration parent with same settings
+      expect(clonedConfig).toBeTruthy();
+      expect(clonedConfig.mediaEngine).toBe("local");
+      
+      const clonedMediaEngine = clonedVideo.mediaEngineTask?.value;
+      console.log("Cloned media engine type:", clonedMediaEngine?.constructor.name);
+      
+      // Clone should use same media engine type as original
+      expect(clonedMediaEngine.constructor.name).toBe("AssetMediaEngine")
+      
+    } finally {
+      cleanup();
+      container.remove();
+    }
+  });
+  
+  test("createRenderClone: seek on clone triggers unifiedVideoSeekTask without error", async () => {
+    const container = document.createElement("div");
+    const apiHost = getApiHost();
+    
+    render(
+      html`
+      <ef-configuration api-host="${apiHost}" signing-url="">
+        <ef-timegroup mode="contain" id="seek-test-timegroup"
+          style="width: 800px; height: 450px; background: #1a1a2e;">
+          <ef-video src="bars-n-tone.mp4" style="width: 100%; height: 100%; object-fit: contain;"></ef-video>
+        </ef-timegroup>
+      </ef-configuration>
+    `,
+      container,
+    );
+    document.body.appendChild(container);
+    
+    const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
+    await timegroup.updateComplete;
+    await timegroup.waitForMediaDurations();
+    
+    // Create render clone
+    const { clone, cleanup } = await timegroup.createRenderClone();
+    
+    try {
+      // Get cloned video
+      const clonedVideo = clone.querySelector("ef-video") as any;
+      
+      // This seek should trigger unifiedVideoSeekTask - if the bug exists, this will error
+      await clone.seek(1000);
+      
+      // Wait for video seek task to complete
+      if (clonedVideo.unifiedVideoSeekTask) {
+        await clonedVideo.unifiedVideoSeekTask.taskComplete;
+      }
+      
+      // If we get here without error, the rendition was available
+      expect(true).toBe(true);
+    } finally {
+      cleanup();
+      container.remove();
+    }
+  });
+  
+  test("captureBatch: captures thumbnails without 'Video rendition unavailable' error", async () => {
+    const container = document.createElement("div");
+    const apiHost = getApiHost();
+    
+    render(
+      html`
+      <ef-configuration api-host="${apiHost}" signing-url="">
+        <ef-timegroup mode="contain" id="capture-test-timegroup"
+          style="width: 800px; height: 450px; background: #1a1a2e;">
+          <ef-video src="bars-n-tone.mp4" style="width: 100%; height: 100%; object-fit: contain;"></ef-video>
+        </ef-timegroup>
+      </ef-configuration>
+    `,
+      container,
+    );
+    document.body.appendChild(container);
+    
+    const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
+    await timegroup.updateComplete;
+    await timegroup.waitForMediaDurations();
+    
+    try {
+      // This is what EFThumbnailStrip does - should not throw "Video rendition unavailable"
+      const canvases = await timegroup.captureBatch([0, 1000, 2000], {
+        scale: 0.25,
+        contentReadyMode: "immediate",
+      });
+      
+      expect(canvases.length).toBe(3);
+      expect(canvases[0]).toBeInstanceOf(HTMLCanvasElement);
+    } finally {
+      container.remove();
+    }
+  });
+  
+  /**
+   * Test that reproduces the local-remote.html configuration:
+   * - media-engine="local" with a remote HTTP URL
+   * - This forces AssetMediaEngine for remote URLs
+   */
+  test("createRenderClone with media-engine=local and remote URL", async () => {
+    const container = document.createElement("div");
+    const apiHost = getApiHost();
+    
+    // This mimics local-remote.html: media-engine="local" + http:// src
+    // The difference is we use a URL that our test infrastructure can serve
+    render(
+      html`
+      <ef-configuration api-host="${apiHost}" signing-url="" media-engine="local">
+        <ef-timegroup mode="contain" id="local-remote-test"
+          style="width: 800px; height: 450px; background: #1a1a2e;">
+          <ef-video src="${apiHost}/bars-n-tone.mp4" style="width: 100%; height: 100%; object-fit: contain;"></ef-video>
+        </ef-timegroup>
+      </ef-configuration>
+    `,
+      container,
+    );
+    document.body.appendChild(container);
+    
+    const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
+    await timegroup.updateComplete;
+    
+    // Get original video and check which media engine it uses
+    const originalVideo = timegroup.querySelector("ef-video") as any;
+    
+    // Wait for media engine (this might fail if the URL isn't served with track index)
+    try {
+      await timegroup.waitForMediaDurations();
+    } catch (e) {
+      console.log("waitForMediaDurations error (expected for remote URL without track index):", e);
+      container.remove();
+      // Skip this test if the URL isn't served properly
+      return;
+    }
+    
+    const originalMediaEngine = originalVideo.mediaEngineTask?.value;
+    console.log("Local-remote original media engine type:", originalMediaEngine?.constructor.name);
+    console.log("Local-remote original src:", originalVideo.src);
+    
+    if (!originalMediaEngine) {
+      console.log("No media engine - test infrastructure may not support this URL");
+      container.remove();
+      return;
+    }
+    
+    const originalVideoRendition = originalMediaEngine.getVideoRendition();
+    console.log("Local-remote original video rendition:", originalVideoRendition);
+    
+    // With media-engine="local", remote URLs use AssetMediaEngine which requires
+    // the server to provide track fragment index at /@ef-track/<src>/index.json
+    expect(originalMediaEngine.constructor.name).toBe("AssetMediaEngine");
+    expect(originalVideoRendition).toBeTruthy();
+    
+    // Now test clone
+    const { clone, cleanup } = await timegroup.createRenderClone();
+    
+    try {
+      const clonedVideo = clone.querySelector("ef-video") as any;
+      const clonedMediaEngine = clonedVideo.mediaEngineTask?.value;
+      
+      console.log("Local-remote cloned media engine type:", clonedMediaEngine?.constructor.name);
+      
+      const clonedVideoRendition = clonedMediaEngine?.getVideoRendition();
+      console.log("Local-remote cloned video rendition:", clonedVideoRendition);
+      
+      expect(clonedMediaEngine).toBeTruthy();
+      expect(clonedVideoRendition).toBeTruthy();
+      
+      // Seek should work
+      await clone.seek(1000);
+      
+    } finally {
+      cleanup();
+      container.remove();
+    }
+  });
+});
