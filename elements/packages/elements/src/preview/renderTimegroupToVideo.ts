@@ -700,8 +700,13 @@ export async function renderTimegroupToVideo(
     foCloneState = null;
   } else {
     // Native path: keep render clone inside canvas for whole export.
+    // CRITICAL: Set layoutsubtree BEFORE adding any content to the canvas!
+    // drawElementImage requires the canvas to have layoutsubtree set from the start.
+    captureCanvas.setAttribute("layoutsubtree", "");
+    (captureCanvas as any).layoutSubtree = true;
+    
     // Use transform to move offscreen during seeks (avoids layout, ~28% faster seeks).
-    // Toggle layoutsubtree per-frame and transform to visible only for capture.
+    // Toggle visibility only for capture.
     renderContainer.style.cssText = `
       position: fixed;
       left: 0;
@@ -825,18 +830,25 @@ export async function renderTimegroupToVideo(
       let image: HTMLCanvasElement | HTMLImageElement;
       
       if (useNativePath) {
-        // NATIVE PATH: Paint clone directly - NO syncStyles needed!
-        // Don't reuse canvas - create fresh one each frame to avoid layout issues
-        // Reusing canvas with layoutsubtree causes "must have been laid out" errors
+        // NATIVE PATH: Reuse captureCanvas to keep renderContainer attached.
+        // Without reuseCanvas, renderToImageNative creates a new canvas each frame,
+        // orphaning renderContainer when the temp canvas is removed - causing black content.
+        
+        // Make both canvas and container visible for layout
+        // drawElementImage requires elements to be laid out (not hidden)
+        const savedCanvasOpacity = captureCanvas.style.opacity;
+        captureCanvas.style.opacity = "1";
         renderContainer.style.transform = "none";
         renderContainer.style.opacity = "1";
         
-        // Pass renderContainer (not renderClone) - drawElementImage requires immediate canvas children
-        // Don't pass reuseCanvas - let renderToImageNative create a fresh canvas
+        // Pass renderContainer with reuseCanvas to keep everything in the DOM
         image = await renderToImageNative(renderContainer, timegroupWidth, timegroupHeight, { 
           skipDprScaling: true, 
+          reuseCanvas: captureCanvas,
         });
         
+        // Restore hidden state
+        captureCanvas.style.opacity = savedCanvasOpacity;
         renderContainer.style.opacity = "0";
         renderContainer.style.transform = "translateX(-9999px)";
       } else {

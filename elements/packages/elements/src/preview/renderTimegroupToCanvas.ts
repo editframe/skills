@@ -128,6 +128,9 @@ let _totalDrawMs = 0;
 let _totalDownsampleMs = 0;
 let _lastLogTime = 0;
 
+/** Track canvases that have been initialized for layoutsubtree (only need to wait once) */
+const _layoutInitializedCanvases = new WeakSet<HTMLCanvasElement>();
+
 // Reusable instances for better performance (avoid creating new instances every frame)
 let _xmlSerializer: XMLSerializer | null = null;
 let _textEncoder: TextEncoder | null = null;
@@ -528,10 +531,28 @@ export async function renderToImageNative(
   if (reuseCanvas) {
     captureCanvas = reuseCanvas;
     
-    // Ensure canvas has explicit dimensions (required for layout)
+    // Ensure canvas dimensions match (both attribute and CSS)
     const dpr = skipDprScaling ? 1 : (window.devicePixelRatio || 1);
-    captureCanvas.width = Math.floor(width * dpr);
-    captureCanvas.height = Math.floor(height * dpr);
+    const targetWidth = Math.floor(width * dpr);
+    const targetHeight = Math.floor(height * dpr);
+    
+    // Set attribute dimensions (pixel buffer size)
+    if (captureCanvas.width !== targetWidth) {
+      captureCanvas.width = targetWidth;
+    }
+    if (captureCanvas.height !== targetHeight) {
+      captureCanvas.height = targetHeight;
+    }
+    
+    // Ensure CSS dimensions match logical size (required for layoutsubtree)
+    captureCanvas.style.width = `${width}px`;
+    captureCanvas.style.height = `${height}px`;
+    
+    // Ensure layoutsubtree is set (required for drawElementImage)
+    if (!captureCanvas.hasAttribute("layoutsubtree")) {
+      captureCanvas.setAttribute("layoutsubtree", "");
+      (captureCanvas as HtmlInCanvasElement).layoutSubtree = true;
+    }
     
     // Ensure canvas is in DOM (required for drawElementImage layout)
     if (!captureCanvas.parentNode) {
@@ -590,10 +611,11 @@ export async function renderToImageNative(
     // This ensures both canvas and container are laid out (required for drawElementImage)
     getComputedStyle(container).opacity;
     
-    // When reusing canvas with layoutsubtree, we need to wait for layout to complete
-    // The browser needs a frame to lay out the subtree after layoutsubtree is set
-    if (reuseCanvas && (captureCanvas as any).layoutSubtree) {
+    // When reusing canvas with layoutsubtree, wait for initial layout (first use only)
+    // Use a WeakSet to track canvases that have been initialized
+    if (reuseCanvas && (captureCanvas as any).layoutSubtree && !_layoutInitializedCanvases.has(captureCanvas)) {
       await waitForFrame();
+      _layoutInitializedCanvases.add(captureCanvas);
       
       // Canvas may have been detached during async wait (e.g., test cleanup)
       if (!captureCanvas.parentNode) {
@@ -602,11 +624,9 @@ export async function renderToImageNative(
     }
     
     // Only wait for paint in rare edge cases where content was just added to DOM
-    // Normally frame tasks (seek, etc.) are already complete before we get here
     if (waitForPaint) {
       await waitForPaintFlush();
       
-      // Canvas may have been detached during async wait (e.g., test cleanup)
       if (!captureCanvas.parentNode) {
         return captureCanvas;
       }
