@@ -96,7 +96,13 @@ export class PlaybackController implements ReactiveController {
           value: this.currentTimeMs,
         });
         await this.runThrottledFrameTask();
-        this.#host.saveTimeToLocalStorage?.(newTime);
+        // Save to localStorage for persistence (only if not restoring to avoid loops)
+        // Check if host has a restoration flag before saving
+        // Use a method to check restoration state to avoid accessing private fields
+        const isRestoring = (this.#host as any).isRestoringFromLocalStorage?.() ?? false;
+        if (!isRestoring) {
+          this.#host.saveTimeToLocalStorage?.(newTime);
+        }
         this.#seekInProgress = false;
         return newTime;
       },
