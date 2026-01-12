@@ -76,8 +76,9 @@ const isAnimationValid = (
  */
 const discoverAndTrackAnimations = (
   element: AnimatableElement,
-): Set<Animation> => {
+): { tracked: Set<Animation>; current: Animation[] } => {
   // Get current animations from the browser (includes subtree)
+  // CRITICAL: This is expensive, so we return it to avoid calling it again
   const currentAnimations = element.getAnimations({ subtree: true });
 
   // Track animations on each element where they exist
@@ -142,7 +143,7 @@ const discoverAndTrackAnimations = (
     }
   }
 
-  return rootTracked;
+  return { tracked: rootTracked, current: currentAnimations };
 };
 
 /**
@@ -891,9 +892,8 @@ const synchronizeAnimation = (
  */
 const coordinateElementAnimations = (element: AnimatableElement): void => {
   // Discover and track animations (includes both current and previously completed ones)
-  const trackedAnimations = discoverAndTrackAnimations(element);
-
-  const currentAnimations = element.getAnimations({ subtree: true });
+  // Reuse the current animations array to avoid calling getAnimations() twice
+  const { tracked: trackedAnimations, current: currentAnimations } = discoverAndTrackAnimations(element);
 
   for (const animation of trackedAnimations) {
     // Skip invalid animations (cancelled, removed from DOM, etc.)

@@ -39,7 +39,10 @@ class ElementTrackController implements ReactiveController {
   }
 
   hostUpdated(): void {
-    this.track.requestUpdate();
+    // TEMPORARILY DISABLED: This causes every TrackItem to re-render on every frame
+    // during playback, even though TrackItem doesn't display currentTimeMs.
+    // TODO: Only request update when relevant properties change (durationMs, startMs, trim values)
+    // this.track.requestUpdate();
   }
 }
 
@@ -141,49 +144,53 @@ export class TrackItem extends TWMixin(LitElement) {
   }
 
   animations() {
-    const animations = this.element.getAnimations();
-    return animations.map((animation) => {
-      const effect = animation.effect;
-      if (!(effect instanceof KeyframeEffect)) {
-        return nothing;
-      }
-      const start = effect.getTiming().delay ?? 0;
-      const duration = effect.getTiming().duration;
-      if (duration === null) {
-        return nothing;
-      }
-      const keyframes = effect.getKeyframes();
-      const firstKeyframe = keyframes[0];
-      if (!firstKeyframe) {
-        return nothing;
-      }
-      const properties = new Set(Object.keys(firstKeyframe));
-      for (const key of CommonEffectKeys) {
-        properties.delete(key);
-      }
+    // TEMPORARILY DISABLED: getAnimations() is expensive and called on every render
+    // TODO: Cache animations or only compute when element structure changes
+    return [];
+    
+    // const animations = this.element.getAnimations();
+    // return animations.map((animation) => {
+    //   const effect = animation.effect;
+    //   if (!(effect instanceof KeyframeEffect)) {
+    //     return nothing;
+    //   }
+    //   const start = effect.getTiming().delay ?? 0;
+    //   const duration = effect.getTiming().duration;
+    //   if (duration === null) {
+    //     return nothing;
+    //   }
+    //   const keyframes = effect.getKeyframes();
+    //   const firstKeyframe = keyframes[0];
+    //   if (!firstKeyframe) {
+    //     return nothing;
+    //   }
+    //   const properties = new Set(Object.keys(firstKeyframe));
+    //   for (const key of CommonEffectKeys) {
+    //     properties.delete(key);
+    //   }
 
-      return html`<div
-        class="relative h-[5px] opacity-50"
-        label="animation"
-        style=${styleMap({
-          left: `${this.pixelsPerMs * start}px`,
-          width: `${this.pixelsPerMs * Number(duration)}px`,
-          backgroundColor: "var(--filmstrip-animation-bg)",
-        })}
-      >
-        ${effect.getKeyframes().map((keyframe) => {
-          return html`<div
-            class="absolute top-0 h-full w-1"
-            style=${styleMap({
-              left: `${
-                this.pixelsPerMs * keyframe.computedOffset * Number(duration)
-              }px`,
-              backgroundColor: "var(--filmstrip-keyframe-bg)",
-            })}
-          ></div>`;
-        })}
-      </div>`;
-    });
+    //   return html`<div
+    //     class="relative h-[5px] opacity-50"
+    //     label="animation"
+    //     style=${styleMap({
+    //       left: `${this.pixelsPerMs * start}px`,
+    //       width: `${this.pixelsPerMs * Number(duration)}px`,
+    //       backgroundColor: "var(--filmstrip-animation-bg)",
+    //     })}
+    //   >
+    //     ${effect.getKeyframes().map((keyframe) => {
+    //       return html`<div
+    //         class="absolute top-0 h-full w-1"
+    //         style=${styleMap({
+    //           left: `${
+    //             this.pixelsPerMs * keyframe.computedOffset * Number(duration)
+    //           }px`,
+    //           backgroundColor: "var(--filmstrip-keyframe-bg)",
+    //         })}
+    //       ></div>`;
+    //     })}
+    //   </div>`;
+    // });
   }
 
   renderChildren(): Array<TemplateResult<1> | typeof nothing> | typeof nothing {

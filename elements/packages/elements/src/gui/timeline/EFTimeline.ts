@@ -531,6 +531,8 @@ export class EFTimeline extends TWMixin(LitElement) {
   private targetObserver?: MutationObserver;
   private canvasActiveRootTemporalChangeHandler?: () => void;
   private canvasHighlightChangeHandler?: () => void;
+  private resizeObserver?: ResizeObserver;
+  private cachedViewportWidth = 800; // Cached to avoid layout thrashing
 
   // ============================================================================
   // CONTEXT PROVIDERS
@@ -571,12 +573,10 @@ export class EFTimeline extends TWMixin(LitElement) {
 
   /** Update timeline state when any constituent value changes */
   private updateTimelineState(): void {
-    // Get viewport width from scroll container
-    const tracksScroll = this.tracksScrollRef.value;
+    // Use cached viewport width to avoid layout thrashing
+    // ResizeObserver updates cachedViewportWidth when container size changes
     const hierarchyWidth = this.showHierarchy ? EFTimeline.HIERARCHY_WIDTH : 0;
-    const viewportWidth = tracksScroll 
-      ? tracksScroll.clientWidth - hierarchyWidth 
-      : 800; // Fallback default
+    const viewportWidth = this.cachedViewportWidth - hierarchyWidth;
     
     const newState: TimelineState = {
       pixelsPerMs: this.pixelsPerMs,
@@ -724,6 +724,7 @@ export class EFTimeline extends TWMixin(LitElement) {
     this.removeScrollListener();
     this.removeKeyboardListener();
     this.targetObserver?.disconnect();
+    this.resizeObserver?.disconnect();
   }
 
   /**
@@ -761,7 +762,26 @@ export class EFTimeline extends TWMixin(LitElement) {
   }
 
   protected firstUpdated(): void {
-    // Preview disabled for now - testing
+    // Set up ResizeObserver to cache viewport width without layout thrashing
+    this.setupResizeObserver();
+  }
+  
+  private setupResizeObserver(): void {
+    const tracksScroll = this.tracksScrollRef.value;
+    if (!tracksScroll) return;
+    
+    // Initial measurement (only happens once on setup)
+    this.cachedViewportWidth = tracksScroll.clientWidth;
+    
+    this.resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        // Use contentRect to avoid triggering layout
+        this.cachedViewportWidth = entry.contentRect.width;
+        // Request update to propagate new viewport width
+        this.requestUpdate();
+      }
+    });
+    this.resizeObserver.observe(tracksScroll);
   }
 
   protected updated(changedProperties: PropertyValues): void {

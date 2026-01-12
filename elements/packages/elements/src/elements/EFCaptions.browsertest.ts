@@ -1968,5 +1968,97 @@ describe("EFCaptions", () => {
         // Cleanup may fail in test environment, ignore
       }
     });
+
+    test("captions remain visible when scrubbing past clip region and back", async () => {
+      // Reproduces bug: when scrubbing past CLIP 2 into CLIP 6, then back to CLIP 2,
+      // CLIP 2's captions should still be visible
+      const sequence = document.createElement("ef-timegroup");
+      sequence.mode = "sequence";
+
+      // CLIP 2: Intro (0s - 5s)
+      const container1 = document.createElement("ef-timegroup");
+      container1.mode = "contain";
+      const captions1 = document.createElement("ef-captions");
+      captions1.captionsData = {
+        segments: [{ start: 0, end: 5, text: "First clip" }],
+        word_segments: [
+          { text: "First", start: 0, end: 2 },
+          { text: " clip", start: 2, end: 5 },
+        ],
+      };
+      const word1 = document.createElement("ef-captions-active-word");
+      captions1.appendChild(word1);
+      container1.appendChild(captions1);
+
+      // CLIP 6: Goffman (starts after CLIP 2 ends, at 5s)
+      const container2 = document.createElement("ef-timegroup");
+      container2.mode = "contain";
+      const captions2 = document.createElement("ef-captions");
+      captions2.captionsData = {
+        segments: [{ start: 0, end: 3, text: "Second clip" }],
+        word_segments: [
+          { text: "Second", start: 0, end: 1.5 },
+          { text: " clip", start: 1.5, end: 3 },
+        ],
+      };
+      const word2 = document.createElement("ef-captions-active-word");
+      captions2.appendChild(word2);
+      container2.appendChild(captions2);
+
+      sequence.appendChild(container1);
+      sequence.appendChild(container2);
+      document.body.appendChild(sequence);
+
+      // Wait for initial setup
+      await sequence.updateComplete;
+      await container1.updateComplete;
+      await container2.updateComplete;
+      await captions1.updateComplete;
+      await captions2.updateComplete;
+
+      // Step 1: Set timeline to be in CLIP 2 (at 1s = 1s into first captions)
+      sequence.currentTimeMs = 1000;
+      await sequence.seekTask.taskComplete;
+      await captions1.frameTask.taskComplete;
+      await word1.updateComplete;
+
+      console.log(
+        `Step 1 - Timeline at 1000ms - CLIP 2 word: "${word1.wordText}", hidden: ${word1.hidden}`,
+      );
+      expect(word1.wordText).toBe("First");
+      expect(word1.hidden).toBe(false);
+
+      // Step 2: Scrub past CLIP 2 into CLIP 6 (at 6s = 1s into second captions)
+      sequence.currentTimeMs = 6000;
+      await sequence.seekTask.taskComplete;
+      await captions2.frameTask.taskComplete;
+      await word2.updateComplete;
+
+      console.log(
+        `Step 2 - Timeline at 6000ms - CLIP 6 word: "${word2.wordText}", hidden: ${word2.hidden}`,
+      );
+      // CLIP 6 captions should be visible
+      expect(word2.wordText).toBe("Second");
+      expect(word2.hidden).toBe(false);
+
+      // Step 3: Scrub back to CLIP 2 (at 1s again)
+      sequence.currentTimeMs = 1000;
+      await sequence.seekTask.taskComplete;
+      await captions1.frameTask.taskComplete;
+      await word1.updateComplete;
+
+      console.log(
+        `Step 3 - Timeline back at 1000ms - CLIP 2 word: "${word1.wordText}", hidden: ${word1.hidden}`,
+      );
+      // CLIP 2 captions should still be visible - THIS IS THE BUG
+      expect(word1.wordText).toBe("First");
+      expect(word1.hidden).toBe(false);
+
+      try {
+        document.body.removeChild(sequence);
+      } catch (_e) {
+        // Cleanup may fail in test environment, ignore
+      }
+    });
   });
 });

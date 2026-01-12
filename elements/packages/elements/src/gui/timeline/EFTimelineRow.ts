@@ -33,6 +33,20 @@ const INDENT_PX = 16;
  *
  * Heights are determined by content, not hardcoded.
  */
+/**
+ * Check if a timegroup is a root timegroup (has no parent timegroup)
+ */
+function isRootTimegroup(element: Element): boolean {
+  let parent = element.parentElement;
+  while (parent) {
+    if (parent.tagName.toLowerCase() === "ef-timegroup") {
+      return false;
+    }
+    parent = parent.parentElement;
+  }
+  return true;
+}
+
 @customElement("ef-timeline-row")
 export class EFTimelineRow extends TWMixin(LitElement) {
   static styles = [
@@ -41,6 +55,12 @@ export class EFTimelineRow extends TWMixin(LitElement) {
         display: flex;
         min-height: var(--timeline-row-height, 28px);
         border-bottom: 1px solid var(--timeline-border, rgb(71 85 105));
+      }
+
+      /* Root timegroup row with filmstrip - taller to show thumbnails */
+      :host(.root-timegroup) {
+        min-height: 52px;
+        height: 52px;
       }
 
       /* Hover state - this row is directly hovered */
@@ -203,6 +223,12 @@ export class EFTimelineRow extends TWMixin(LitElement) {
     ) {
       this.classList.toggle("selected", this.isSelected);
       this.classList.toggle("ancestor-selected", this.isAncestorSelected);
+    }
+
+    // Update root timegroup class for filmstrip rows
+    if (changedProperties.has("element")) {
+      const isRoot = this.element instanceof EFTimegroup && isRootTimegroup(this.element);
+      this.classList.toggle("root-timegroup", isRoot);
     }
   }
 

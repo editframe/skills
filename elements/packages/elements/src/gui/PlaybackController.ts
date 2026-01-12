@@ -240,21 +240,30 @@ export class PlaybackController implements ReactiveController {
   }
 
   hostConnected(): void {
-    if (this.#playing) {
-      this.startPlayback();
-    } else {
-      this.#host.waitForMediaDurations?.().then(() => {
-        const maybeLoadedTime = this.#host.loadTimeFromLocalStorage?.();
-        if (maybeLoadedTime !== undefined) {
-          this.currentTime = maybeLoadedTime;
-        } else if (this.#currentTime === undefined) {
-          this.#currentTime = 0;
-        }
-        if (EF_INTERACTIVE && this.seekTask.status === TaskStatus.INITIAL) {
-          this.seekTask.run();
+    // Defer all operations to avoid blocking during initialization
+    // This prevents deadlocks when many timegroups are initializing simultaneously
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (this.#playing) {
+          this.startPlayback();
+        } else {
+          // Don't await - let it run in background to avoid blocking
+          this.#host.waitForMediaDurations?.().then(() => {
+            const maybeLoadedTime = this.#host.loadTimeFromLocalStorage?.();
+            if (maybeLoadedTime !== undefined) {
+              this.currentTime = maybeLoadedTime;
+            } else if (this.#currentTime === undefined) {
+              this.#currentTime = 0;
+            }
+            if (EF_INTERACTIVE && this.seekTask.status === TaskStatus.INITIAL) {
+              this.seekTask.run();
+            }
+          }).catch(err => {
+            console.error("Error in PlaybackController hostConnected:", err);
+          });
         }
       });
-    }
+    });
   }
 
   hostDisconnected(): void {

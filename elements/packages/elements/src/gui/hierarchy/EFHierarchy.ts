@@ -75,10 +75,10 @@ export class EFHierarchy extends TWMixin(LitElement) {
   target = "";
 
   @property({ type: String })
-  header = "Hierarchy";
+  header = "";
 
   @property({ type: Boolean, attribute: "show-header" })
-  showHeader = true;
+  showHeader = false;
 
   @property({ type: Array, attribute: false })
   hideSelectors?: string[];
@@ -396,6 +396,35 @@ export class EFHierarchy extends TWMixin(LitElement) {
       this.removeSelectionListener();
       this.selectionChangeHandler = undefined;
       this.setupSelectionListener();
+      
+      // Auto-select first root timegroup if nothing is selected
+      this.autoSelectFirstRootTimegroup();
+    }
+  }
+
+  /**
+   * Auto-select the first root timegroup if nothing is currently selected
+   */
+  private autoSelectFirstRootTimegroup(): void {
+    // Only auto-select if nothing is currently selected
+    const currentSelection = this.getSelectedElementId();
+    if (currentSelection) return;
+
+    const roots = this.getRootElements();
+    for (const root of roots) {
+      // Select the first root that is a timegroup (ef-timegroup)
+      if (root.tagName.toLowerCase() === "ef-timegroup" && root.id) {
+        this.hierarchyActions.select(root.id);
+        return;
+      }
+    }
+
+    // Fallback: select first root with an ID
+    for (const root of roots) {
+      if (root.id) {
+        this.hierarchyActions.select(root.id);
+        return;
+      }
     }
   }
 

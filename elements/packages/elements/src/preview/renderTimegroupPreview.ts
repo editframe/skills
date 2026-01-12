@@ -355,10 +355,21 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
     
     // Shadow DOM children
     if (srcEl.shadowRoot) {
+      // For caption elements, ALWAYS create a text node placeholder even if empty.
+      // This allows syncStyles to update the text later when captions change.
+      const isCaptionElement = srcEl.tagName === 'EF-CAPTIONS-ACTIVE-WORD' ||
+                               srcEl.tagName === 'EF-CAPTIONS-BEFORE-ACTIVE-WORD' ||
+                               srcEl.tagName === 'EF-CAPTIONS-AFTER-ACTIVE-WORD' ||
+                               srcEl.tagName === 'EF-CAPTIONS-SEGMENT';
+      let hasTextNode = false;
+      
       for (const child of srcEl.shadowRoot.childNodes) {
         if (child.nodeType === Node.TEXT_NODE) {
           const text = child.textContent?.trim();
-          if (text) clone.appendChild(document.createTextNode(text));
+          if (text || isCaptionElement) {
+            clone.appendChild(document.createTextNode(child.textContent || ""));
+            hasTextNode = true;
+          }
         } else if (child.nodeType === Node.ELEMENT_NODE) {
           const el = child as Element;
           if (el.tagName === "STYLE" || el.tagName === "SLOT") continue;
@@ -368,6 +379,11 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
             clone.appendChild(childNode.clone);
           }
         }
+      }
+      
+      // For caption elements, ensure there's always a text node for syncStyles to update
+      if (isCaptionElement && !hasTextNode) {
+        clone.appendChild(document.createTextNode(""));
       }
     }
     
@@ -597,12 +613,51 @@ function syncNodeStyles(node: CloneNode): void {
   if (cloneStyle.animation !== "none") cloneStyle.animation = "none";
   if (cloneStyle.transition !== "none") cloneStyle.transition = "none";
   
-  // Sync text content
+  // Sync text content from light DOM
   const srcTextNode = source.childNodes[0];
   const cloneTextNode = clone.childNodes[0];
   if (srcTextNode?.nodeType === Node.TEXT_NODE && cloneTextNode?.nodeType === Node.TEXT_NODE) {
     const srcText = srcTextNode.textContent || "";
     if (cloneTextNode.textContent !== srcText) cloneTextNode.textContent = srcText;
+  }
+  
+  // Sync text content from shadow DOM (for caption elements that render text in shadow DOM)
+  // Only check specific caption elements - checking every element's shadowRoot is expensive
+  const tagName = (source as HTMLElement).tagName;
+  if (tagName && (
+    tagName === 'EF-CAPTIONS-ACTIVE-WORD' ||
+    tagName === 'EF-CAPTIONS-BEFORE-ACTIVE-WORD' ||
+    tagName === 'EF-CAPTIONS-AFTER-ACTIVE-WORD' ||
+    tagName === 'EF-CAPTIONS-SEGMENT'
+  )) {
+    const srcShadowRoot = (source as HTMLElement).shadowRoot;
+    if (srcShadowRoot && !srcTextNode) {
+      // Find text node in shadow root (may be at various positions due to Lit rendering)
+      let srcShadowText = "";
+      for (const srcChild of srcShadowRoot.childNodes) {
+        if (srcChild.nodeType === Node.TEXT_NODE) {
+          srcShadowText = srcChild.textContent || "";
+          break;
+        }
+      }
+      
+      // Find or create text node in clone
+      let cloneTextNode: Text | null = null;
+      for (const cloneChild of clone.childNodes) {
+        if (cloneChild.nodeType === Node.TEXT_NODE) {
+          cloneTextNode = cloneChild as Text;
+          break;
+        }
+      }
+      
+      // Create text node if it doesn't exist (shouldn't happen with fixed buildCloneStructure)
+      if (!cloneTextNode) {
+        cloneTextNode = document.createTextNode(srcShadowText);
+        clone.appendChild(cloneTextNode);
+      } else if (cloneTextNode.textContent !== srcShadowText) {
+        cloneTextNode.textContent = srcShadowText;
+      }
+    }
   }
   
   // Sync input value
@@ -830,3 +885,26 @@ export function collectDocumentStyles(): string {
 export const syncStaticStyles = syncStyles;
 export const syncAnimatedStyles = syncStyles;
 
+/**
+ * Create a live preview of a timegroup with a refresh function.
+ * Used by EFWorkbench for the "computed" preview mode.
+ * 
+ * @param source - The source timegroup to preview
+ * @returns Object with preview container and refresh function
+ */
+export function renderTimegroupPreview(source: Element): {
+  container: HTMLDivElement;
+  refresh: (timeMs?: number) => void;
+} {
+  const { container, syncState } = buildCloneStructure(source);
+  
+  // Initial style sync
+  syncStyles(syncState, 0);
+  
+  return {
+    container,
+    refresh: (timeMs?: number) => {
+      syncStyles(syncState, timeMs ?? 0);
+    },
+  };
+}

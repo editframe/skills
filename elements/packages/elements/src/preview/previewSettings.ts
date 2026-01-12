@@ -4,6 +4,15 @@
  */
 
 const STORAGE_KEY_NATIVE_CANVAS_API = "ef-preview-native-canvas-api-enabled";
+const STORAGE_KEY_PRESENTATION_MODE = "ef-preview-presentation-mode";
+
+/**
+ * Preview presentation mode determines how content is rendered in the workbench.
+ * - "original": Show the original DOM content directly
+ * - "computed": Show a clone with computed styles applied
+ * - "canvas": Render to canvas using the active rendering path
+ */
+export type PreviewPresentationMode = "original" | "computed" | "canvas";
 
 /**
  * Cached detection result for native HTML-in-Canvas API availability.
@@ -105,5 +114,39 @@ export function onPreviewSettingsChanged(
  */
 export interface PreviewSettingsChangedDetail {
   nativeCanvasApiEnabled?: boolean;
+  presentationMode?: PreviewPresentationMode;
+}
+
+/**
+ * Get the current preview presentation mode.
+ * Defaults to "original" if not set.
+ */
+export function getPreviewPresentationMode(): PreviewPresentationMode {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY_PRESENTATION_MODE);
+    if (stored === "original" || stored === "computed" || stored === "canvas") {
+      return stored;
+    }
+    return "original";
+  } catch {
+    return "original";
+  }
+}
+
+/**
+ * Set the preview presentation mode.
+ * Persists to localStorage and dispatches a change event.
+ */
+export function setPreviewPresentationMode(mode: PreviewPresentationMode): void {
+  try {
+    localStorage.setItem(STORAGE_KEY_PRESENTATION_MODE, mode);
+  } catch {
+    // localStorage not available
+  }
+  
+  // Dispatch event so components can react to the change
+  window.dispatchEvent(new CustomEvent("ef-preview-settings-changed", {
+    detail: { presentationMode: mode }
+  }));
 }
 

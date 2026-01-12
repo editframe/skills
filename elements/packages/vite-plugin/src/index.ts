@@ -44,6 +44,7 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
           return next();
         }
 
+        console.log(`[ef:vite-plugin] Handling ${req.url} at ${new Date().toISOString()}`);
         log(`Handling ${req.url}`);
 
         const requestPath = req.url.replace(/^\/@ef-[^/]+\//, "");
@@ -89,17 +90,37 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
             break;
           }
           case "@ef-track-fragment-index": {
+            const indexStartTime = Date.now();
+            console.log(`[ef:vite-plugin] Serving track fragment index for ${absolutePath}`);
             log(`Serving track fragment index for ${absolutePath}`);
             generateTrackFragmentIndex(options.cacheRoot, absolutePath)
-              .then((taskResult) => sendTaskResult(req, res, taskResult))
-              .catch(next);
+              .then((taskResult) => {
+                const elapsed = Date.now() - indexStartTime;
+                console.log(`[ef:vite-plugin] Fragment index generated in ${elapsed}ms: ${taskResult.cachePath}`);
+                sendTaskResult(req, res, taskResult);
+              })
+              .catch((error) => {
+                const elapsed = Date.now() - indexStartTime;
+                console.error(`[ef:vite-plugin] Error generating fragment index after ${elapsed}ms:`, error);
+                next(error);
+              });
             break;
           }
           case "@ef-track": {
+            const trackStartTime = Date.now();
+            console.log(`[ef:vite-plugin] Serving track for ${absolutePath} (cacheRoot: ${options.cacheRoot})`);
             log(`Serving track for ${absolutePath}`);
             generateTrack(options.cacheRoot, absolutePath, req.url)
-              .then((taskResult) => sendTaskResult(req, res, taskResult))
-              .catch(next);
+              .then((taskResult) => {
+                const elapsed = Date.now() - trackStartTime;
+                console.log(`[ef:vite-plugin] Track generated in ${elapsed}ms: ${taskResult.cachePath}`);
+                sendTaskResult(req, res, taskResult);
+              })
+              .catch((error) => {
+                const elapsed = Date.now() - trackStartTime;
+                console.error(`[ef:vite-plugin] Error generating track after ${elapsed}ms:`, error);
+                next(error);
+              });
             break;
           }
           case "@ef-scrub-track": {

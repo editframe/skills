@@ -385,27 +385,32 @@ function resolveRenderConfig(
  * Select the canvas encoding strategy based on configuration.
  * Returns the appropriate canvases for the chosen strategy.
  * 
- * CRITICAL: The native drawElementImage API ALWAYS renders at devicePixelRatio.
- * The capture canvas MUST be at DPR-scaled dimensions to hold the full content.
- * We then scale down to video dimensions in a single drawImage step.
+ * For video export, we use skipDprScaling=true in renderToImageNative which sets effectiveDPR=1.
+ * The capture canvas must be sized consistently at 1x (not display DPR) to avoid dimension
+ * mismatches and canvas resizing which clears content.
+ * 
+ * drawElementImage renders the element at its CSS size into the canvas buffer.
+ * When both canvas buffer and CSS are at 1x logical dimensions, we get 1:1 rendering.
+ * Scaling to video dimensions happens in a single drawImage step.
  */
 function selectCanvasStrategy(config: ResolvedRenderConfig): CanvasStrategy {
   const { scale, timegroupWidth, timegroupHeight, videoWidth, videoHeight } = config;
   
-  // drawElementImage ALWAYS renders at devicePixelRatio - canvas must be sized to hold it
-  const dpr = window.devicePixelRatio || 1;
-  const captureWidth = Math.floor(timegroupWidth * dpr);
-  const captureHeight = Math.floor(timegroupHeight * dpr);
+  // For video export, we skip DPR scaling (skipDprScaling=true in renderToImageNative).
+  // This provides 4x speedup on 2x DPR displays and simpler dimension management.
+  // The effective DPR is always 1 for video export.
+  const effectiveDpr = 1;
+  const captureWidth = Math.floor(timegroupWidth * effectiveDpr);
+  const captureHeight = Math.floor(timegroupHeight * effectiveDpr);
   
   // OPTIMIZATION: Check if we can encode directly from capture canvas (no intermediate copy)
-  // Only possible when DPR=1, scale=1 and dimensions match exactly
-  const canEncodeDirectFromCapture = dpr === 1 && scale === 1 && 
-    timegroupWidth === videoWidth && 
-    timegroupHeight === videoHeight;
+  // Possible when effectiveDPR=1, scale=1 and dimensions match exactly
+  const canEncodeDirectFromCapture = scale === 1 && 
+    captureWidth === videoWidth && 
+    captureHeight === videoHeight;
 
-  // Create capture canvas at DPR-scaled dimensions
-  // CSS size is at logical pixels so HTML content renders at correct size
-  // Note: layoutsubtree is toggled per-frame for native path only (reduces seek overhead)
+  // Create capture canvas at 1x dimensions (matching skipDprScaling=true)
+  // CSS size matches buffer size so drawElementImage renders at 1:1
   const captureCanvas = document.createElement("canvas");
   captureCanvas.width = captureWidth;
   captureCanvas.height = captureHeight;
@@ -432,16 +437,16 @@ function selectCanvasStrategy(config: ResolvedRenderConfig): CanvasStrategy {
   }
 
   // Check if we can use fast path (direct 1:1 copy, no scaling needed)
-  // Only possible when DPR=1 and scale=1 (dimensions just needed even adjustment)
-  const canUseFastPath = dpr === 1 && scale === 1 && 
-    Math.floor(timegroupWidth * scale) === videoWidth && 
-    Math.floor(timegroupHeight * scale) === videoHeight;
+  // Possible when scale=1 (dimensions just needed even adjustment)
+  const canUseFastPath = scale === 1 && 
+    captureWidth === videoWidth && 
+    captureHeight === videoHeight;
 
   if (canUseFastPath) {
     return { type: "fast", canvas, captureCanvas };
   }
 
-  // Use scaled path: single drawImage from DPR capture to video dimensions
+  // Use scaled path: single drawImage from capture to video dimensions
   return { type: "scaled", canvas, captureCanvas, scale };
 }
 
@@ -723,6 +728,13 @@ export async function renderTimegroupToVideo(
   
   document.body.appendChild(captureCanvas);
   
+  // CRITICAL: Moving/re-appending renderContainer triggers connectedCallback again, 
+  // which creates a new PlaybackController. Remove it after ALL DOM operations are done.
+  if (renderClone.playbackController) {
+    renderClone.playbackController.remove();
+    renderClone.playbackController = undefined;
+  }
+  
   // For direct strategy, create video source from capture canvas
   if (strategy.type === "direct" && !benchmarkMode && output) {
     const encodingConfig: VideoEncodingConfig = {
@@ -796,9 +808,11 @@ export async function renderTimegroupToVideo(
         totalSeekMs += performance.now() - seekStart;
       }
       
-      // Wait for video content if in blocking mode
-      // NOTE: This is the main bottleneck for video exports - RAF polling until frames decode
-      if (contentReadyMode === "blocking") {
+      // Wait for video content if in blocking mode (NATIVE PATH ONLY)
+      // NOTE: ForeignObject path handles seeking inside its own section - the blocking loop
+      // would check stale video content since FO seeks happen later in the loop.
+      // This RAF-polling loop is the main bottleneck for video exports.
+      if (useNativePath && contentReadyMode === "blocking") {
         // Query videos from the CLONE (not Prime)
         const allVideos = renderClone.querySelectorAll("ef-video");
         if (allVideos.length > 0) {

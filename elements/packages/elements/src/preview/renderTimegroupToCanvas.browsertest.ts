@@ -3305,3 +3305,272 @@ describe("clone-timeline video rendition (reproduction)", () => {
     }
   });
 });
+
+describe("captions rendering in foreignObject path", () => {
+  test("foreignObject: captions data loads in render clone (captions-src)", async () => {
+    // This test verifies that when createRenderClone() is called, it waits for
+    // captions data to load before returning. This is critical for video export
+    // because the foreignObject path needs the captions text to be present when
+    // buildCloneStructure() is called.
+    
+    const container = document.createElement("div");
+    const apiHost = getApiHost();
+    
+    // Import captions elements
+    await import("../elements/EFCaptions.js");
+    
+    render(
+      html`
+      <ef-configuration api-host="${apiHost}" signing-url="">
+        <ef-preview>
+          <ef-timegroup mode="contain" id="captions-src-test"
+            style="width: 800px; height: 450px; background: #1a1a2e;">
+            <ef-captions captions-src="test-captions-simple.json" style="position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); font-size: 32px; color: white;">
+              <ef-captions-active-word></ef-captions-active-word>
+            </ef-captions>
+          </ef-timegroup>
+        </ef-preview>
+      </ef-configuration>
+      `,
+      container,
+    );
+    document.body.appendChild(container);
+    
+    const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
+    await timegroup.updateComplete;
+    await timegroup.waitForMediaDurations();
+    
+    // Wait for original captions to load
+    const originalCaptions = container.querySelector("ef-captions") as any;
+    await originalCaptions.unifiedCaptionsDataTask?.taskComplete;
+    
+    // Create a render clone - this should wait for captions data
+    const { clone, cleanup } = await timegroup.createRenderClone();
+    
+    try {
+      // Verify the clone's captions have data loaded
+      const cloneCaptions = clone.querySelector("ef-captions") as any;
+      expect(cloneCaptions).toBeTruthy();
+      
+      const cloneCaptionsData = cloneCaptions.unifiedCaptionsDataTask?.value;
+      console.log(`Clone captions data loaded: ${!!cloneCaptionsData}`);
+      console.log(`Clone captions segments: ${cloneCaptionsData?.segments?.length || 0}`);
+      
+      // The clone should have captions data
+      expect(cloneCaptionsData).toBeTruthy();
+      expect(cloneCaptionsData.segments?.length).toBeGreaterThan(0);
+      
+      // Seek to a time with caption text and verify text is present
+      await clone.seek(500);
+      const cloneActiveWord = clone.querySelector("ef-captions-active-word") as any;
+      await cloneActiveWord?.updateComplete;
+      
+      const cloneWordText = cloneActiveWord?.shadowRoot?.textContent?.trim();
+      console.log(`Clone caption text at 500ms: "${cloneWordText}"`);
+      expect(cloneWordText).toBeTruthy();
+      
+    } finally {
+      cleanup();
+      container.remove();
+    }
+  });
+
+  test("foreignObject: captions data copies to render clone (captionsData JS property)", async () => {
+    // This test verifies that when captionsData is set via JavaScript property
+    // (not captions-src attribute), it gets copied to the render clone.
+    // cloneNode() only copies attributes, not JS properties, so we must handle this.
+    
+    const container = document.createElement("div");
+    const apiHost = getApiHost();
+    
+    // Import captions elements
+    await import("../elements/EFCaptions.js");
+    
+    render(
+      html`
+      <ef-configuration api-host="${apiHost}" signing-url="">
+        <ef-preview>
+          <ef-timegroup mode="contain" id="captions-js-test"
+            style="width: 800px; height: 450px; background: #1a1a2e;">
+            <ef-captions id="test-captions-js" style="position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); font-size: 32px; color: white;">
+              <ef-captions-active-word></ef-captions-active-word>
+            </ef-captions>
+          </ef-timegroup>
+        </ef-preview>
+      </ef-configuration>
+      `,
+      container,
+    );
+    document.body.appendChild(container);
+    
+    const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
+    await timegroup.updateComplete;
+    
+    // Set captions data via JavaScript property (simulating user code like improv-edit.html)
+    const originalCaptions = container.querySelector("ef-captions") as any;
+    originalCaptions.captionsData = {
+      segments: [
+        { start: 0, end: 1, text: "First segment" },
+        { start: 1, end: 2, text: "Second segment" },
+      ],
+      word_segments: [
+        { start: 0.2, end: 0.8, text: "JSWord1" },
+        { start: 1.2, end: 1.8, text: "JSWord2" },
+      ],
+    };
+    
+    // Wait for the task to process the new data
+    await originalCaptions.updateComplete;
+    if (originalCaptions.unifiedCaptionsDataTask?.status === 0) { // INITIAL
+      originalCaptions.unifiedCaptionsDataTask.run();
+    }
+    await originalCaptions.unifiedCaptionsDataTask?.taskComplete;
+    
+    // Create a render clone - this should copy captionsData
+    const { clone, cleanup } = await timegroup.createRenderClone();
+    
+    try {
+      // Verify the clone's captions have the JS-set data
+      const cloneCaptions = clone.querySelector("ef-captions") as any;
+      expect(cloneCaptions).toBeTruthy();
+      
+      // The key test: captionsData should be copied to the clone
+      expect(cloneCaptions.captionsData).toBeTruthy();
+      console.log(`Clone captionsData copied: ${!!cloneCaptions.captionsData}`);
+      console.log(`Clone captionsData segments: ${cloneCaptions.captionsData?.segments?.length || 0}`);
+      
+      expect(cloneCaptions.captionsData.segments?.length).toBe(2);
+      expect(cloneCaptions.captionsData.word_segments?.length).toBe(2);
+      expect(cloneCaptions.captionsData.word_segments[0].text).toBe("JSWord1");
+      
+      // Wait for unified task to use the copied data
+      if (cloneCaptions.unifiedCaptionsDataTask?.status === 0) {
+        cloneCaptions.unifiedCaptionsDataTask.run();
+      }
+      await cloneCaptions.unifiedCaptionsDataTask?.taskComplete;
+      
+      // Seek to a time with caption text and verify
+      await clone.seek(500);
+      const cloneActiveWord = clone.querySelector("ef-captions-active-word") as any;
+      await cloneActiveWord?.updateComplete;
+      
+      const cloneWordText = cloneActiveWord?.shadowRoot?.textContent?.trim();
+      console.log(`Clone caption text at 500ms (JS data): "${cloneWordText}"`);
+      expect(cloneWordText).toBe("JSWord1");
+      
+    } finally {
+      cleanup();
+      container.remove();
+    }
+  });
+  
+  test("foreignObject: syncs shadow DOM text content for caption elements", async () => {
+    // This test verifies that caption elements (which render text in shadow DOM)
+    // have their text content properly synced when using the foreignObject path.
+    // 
+    // The issue: buildCloneStructure captures initial shadow DOM text, but
+    // syncStyles only syncs light DOM childNodes[0], not shadow DOM text.
+    // When caption text changes (e.g., wordText updates), clones don't get updated.
+    
+    const container = document.createElement("div");
+    const apiHost = getApiHost();
+    
+    // Import captions elements
+    await import("../elements/EFCaptions.js");
+    
+    render(
+      html`
+      <ef-configuration api-host="${apiHost}" signing-url="">
+        <ef-preview>
+          <ef-timegroup mode="contain" id="captions-test-timegroup"
+            style="width: 800px; height: 450px; background: #1a1a2e;">
+            <ef-captions style="position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); font-size: 32px; color: white;">
+              <ef-captions-active-word></ef-captions-active-word>
+            </ef-captions>
+          </ef-timegroup>
+        </ef-preview>
+      </ef-configuration>
+      `,
+      container,
+    );
+    document.body.appendChild(container);
+    
+    const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
+    const captions = container.querySelector("ef-captions") as any;
+    const activeWord = container.querySelector("ef-captions-active-word") as any;
+    
+    await timegroup.updateComplete;
+    
+    // Set captions data with multiple words at different times
+    captions.captionsData = {
+      segments: [{ start: 0, end: 4, text: "Hello World Test" }],
+      word_segments: [
+        { text: "Hello", start: 0, end: 1 },
+        { text: "World", start: 1, end: 2 },
+        { text: "Test", start: 2, end: 4 },
+      ],
+    };
+    
+    await captions.updateComplete;
+    await captions.unifiedCaptionsDataTask?.taskComplete;
+    
+    // Force foreignObject path
+    setNativeCanvasApiEnabled(false);
+    
+    // Helper to properly seek and wait for captions to update (from existing captions tests)
+    const seekAndWait = async (timeMs: number) => {
+      timegroup.currentTimeMs = timeMs;
+      timegroup.seekTask.run();
+      await timegroup.seekTask.taskComplete;
+      captions.frameTask.run();
+      await captions.frameTask.taskComplete;
+      await activeWord.updateComplete;
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await activeWord.updateComplete;
+    };
+    
+    // Seek to time where "Hello" should be visible
+    await seekAndWait(500);
+    
+    // Verify the source element has correct text in shadow DOM
+    const sourceText = activeWord.shadowRoot?.textContent?.trim();
+    console.log(`Source element text at 500ms: "${sourceText}"`);
+    expect(sourceText).toBe("Hello");
+    
+    // Build clone structure at this time
+    const { container: cloneContainer, syncState } = buildCloneStructure(timegroup, 500);
+    
+    // Find the cloned active word element (it becomes a div in the clone)
+    // The clone should have the text "Hello"
+    const cloneText = cloneContainer.textContent?.trim();
+    console.log(`Clone text content at 500ms: "${cloneText}"`);
+    
+    // This should contain "Hello" from the initial clone building
+    expect(cloneText).toContain("Hello");
+    
+    // Now seek to a different time where "World" should be visible
+    await seekAndWait(1500);
+    
+    // Verify source element now has "World"
+    const sourceText2 = activeWord.shadowRoot?.textContent?.trim();
+    console.log(`Source element text at 1500ms: "${sourceText2}"`);
+    expect(sourceText2).toBe("World");
+    
+    // Sync styles to update the clone
+    syncStyles(syncState, 1500);
+    
+    // The clone should now have "World" - THIS IS THE BUG!
+    // Currently syncStyles only syncs light DOM text, not shadow DOM text,
+    // so the clone will still have "Hello"
+    const cloneText2 = cloneContainer.textContent?.trim();
+    console.log(`Clone text content at 1500ms after sync: "${cloneText2}"`);
+    
+    // This assertion will FAIL with the current implementation,
+    // proving the bug exists
+    expect(cloneText2).toContain("World");
+    
+    // Re-enable native for other tests
+    setNativeCanvasApiEnabled(true);
+    container.remove();
+  });
+});

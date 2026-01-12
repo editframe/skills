@@ -1,3 +1,4 @@
+import { consume } from "@lit/context";
 import { Task } from "@lit/task";
 import { css, html, LitElement } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -5,7 +6,30 @@ import { createRef, ref } from "lit/directives/ref.js";
 import type { MediaEngine as ImportedMediaEngine } from "../transcoding/types/index.js";
 import { OrderedLRUCache } from "../utils/LRUCache.js";
 import type { EFVideo } from "./EFVideo.js";
+import type { EFTimegroup } from "./EFTimegroup.js";
 import { TargetController } from "./TargetController.ts";
+import { timelineStateContext, type TimelineState } from "../gui/timeline/timelineStateContext.js";
+
+/** Type guard to check if element is EFVideo */
+function isEFVideo(element: Element | null): element is EFVideo {
+  return element?.tagName.toLowerCase() === "ef-video";
+}
+
+/** Type guard to check if element is EFTimegroup */
+function isEFTimegroup(element: Element | null): element is EFTimegroup {
+  return element?.tagName.toLowerCase() === "ef-timegroup";
+}
+
+/** Get a unique identifier for cache key (src for video, id for timegroup) */
+function getElementCacheId(element: EFVideo | EFTimegroup): string {
+  if (isEFVideo(element)) {
+    return element.src || element.id || "video";
+  }
+  return `timegroup:${element.id || "unknown"}`;
+}
+
+/** Padding in pixels for virtual rendering (render extra thumbnails beyond viewport) */
+const VIRTUAL_RENDER_PADDING_PX = 200;
 
 /**
  * Global thumbnail image cache for smooth resize performance
@@ -150,134 +174,146 @@ export class EFThumbnailStrip extends LitElement {
     css`
       :host {
         display: block;
-        position: relative;
-        width: 100%;
-        height: 24px; /* Default filmstrip height */
-        background: #2a2a2a;
-        border: 2px solid #333;
-        border-radius: 6px;
+        position: absolute;
+        inset: 0;
+        background: #1a1a2e;
         overflow: hidden;
-        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
       }
       canvas {
         display: block;
         position: absolute;
         top: 0;
-        left: 0;
-        image-rendering: pixelated; /* Keep thumbnails crisp */
-        /* Width and height set programmatically to prevent CSS scaling */
-      }
-      .loading-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(42, 42, 42, 0.9);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 11px;
-        color: #ccc;
-        font-weight: 500;
+        image-rendering: auto; /* Smooth thumbnails */
+        height: 100%;
       }
     `,
   ];
 
   canvasRef = createRef<HTMLCanvasElement>();
 
-  // Target video element using the same pattern as EFSurface
+  /** Timeline state context for viewport-aware rendering */
+  @consume({ context: timelineStateContext, subscribe: true })
+  @state()
+  private _timelineState?: TimelineState;
+
+  /** Pixels per millisecond - for converting time to position */
+  @property({ type: Number, attribute: "pixels-per-ms" })
+  pixelsPerMs = 0.1;
+
+  /** Last rendered scroll position - for detecting scroll changes */
+  private _lastRenderedScrollLeft = -1;
+  
+  /** Last rendered viewport width */
+  private _lastRenderedViewportWidth = 0;
+  
+  /** Animation frame ID for scroll-based updates */
+  private _scrollUpdateFrame?: number;
+
+  // Target element using the same pattern as EFSurface
   // @ts-expect-error controller is intentionally not referenced directly to prevent GC
   // biome-ignore lint/correctness/noUnusedPrivateClassMembers: Used for side effects
   private _targetController: TargetController = new TargetController(
     this as any,
   );
 
-  private _targetElement: EFVideo | null = null;
+  private _targetElement: EFVideo | EFTimegroup | null = null;
 
   @state()
-  get targetElement(): EFVideo | null {
+  get targetElement(): EFVideo | EFTimegroup | null {
     return this._targetElement;
   }
 
-  set targetElement(value: EFVideo | null) {
+  set targetElement(value: EFVideo | EFTimegroup | null) {
     const oldValue = this._targetElement;
     this._targetElement = value;
 
-    // Reset media engine ready flag when target changes
-    this._mediaEngineReady = false;
-
-    // Clean up previous video property observer
+    // Clean up previous property observer
     this._videoPropertyObserver?.disconnect();
 
-    // When target element changes, set up property watching and media engine listener
+    // When target element changes, set up property watching
     if (value && value !== oldValue) {
-      // Watch for video property changes that affect thumbnails
-      this._videoPropertyObserver = new MutationObserver((mutations) => {
-        let shouldUpdate = false;
-        for (const mutation of mutations) {
-          if (mutation.type === "attributes" && mutation.attributeName) {
-            const attr = mutation.attributeName;
-            if (
-              attr === "trimstart" ||
-              attr === "trimend" ||
-              attr === "sourcein" ||
-              attr === "sourceout" ||
-              attr === "src"
-            ) {
-              shouldUpdate = true;
-              break;
+      if (isEFVideo(value)) {
+        // Video-specific setup: Watch for video property changes that affect thumbnails
+        this._videoPropertyObserver = new MutationObserver((mutations) => {
+          let shouldUpdate = false;
+          for (const mutation of mutations) {
+            if (mutation.type === "attributes" && mutation.attributeName) {
+              const attr = mutation.attributeName;
+              if (
+                attr === "trimstart" ||
+                attr === "trimend" ||
+                attr === "sourcein" ||
+                attr === "sourceout" ||
+                attr === "src"
+              ) {
+                shouldUpdate = true;
+                break;
+              }
             }
           }
-        }
-        if (shouldUpdate) {
+          if (shouldUpdate) {
+            this.runThumbnailUpdate();
+          }
+        });
+
+        this._videoPropertyObserver.observe(value, {
+          attributes: true,
+          attributeFilter: [
+            "trimstart",
+            "trimend",
+            "sourcein",
+            "sourceout",
+            "src",
+          ],
+        });
+
+        // Listen for media engine ready - wait for element to be ready first
+        // because mediaEngineTask may not exist yet during initial render
+        value.updateComplete.then(() => {
+          // Check if target is still this element (it may have been changed/cleared)
+          if (this._targetElement !== value) {
+            return;
+          }
+          if (value.mediaEngineTask) {
+            value.mediaEngineTask.taskComplete
+              .then(() => {
+                // Check again if target is still this element
+                if (this._targetElement !== value) {
+                  return;
+                }
+                // When media engine is ready, force re-run thumbnails
+                // This handles the case where the layout task started before mediaEngine was ready
+                // and might have returned early or gotten stale data
+                if (this._stripWidth > 0) {
+                  // Force a new task run by clearing any in-progress task
+                  // and triggering through the stripWidth setter
+                  this._thumbnailLayoutTask = undefined;
+                  this.stripWidth = this._stripWidth;
+                }
+                // If width is 0, the ResizeObserver will trigger when width becomes available
+              })
+              .catch(() => {
+                // Ignore errors - media engine failed to load
+              });
+          }
+        });
+      } else if (isEFTimegroup(value)) {
+        // Timegroup-specific setup: Watch for structure changes
+        this._videoPropertyObserver = new MutationObserver(() => {
           this.runThumbnailUpdate();
-        }
-      });
+        });
 
-      this._videoPropertyObserver.observe(value, {
-        attributes: true,
-        attributeFilter: [
-          "trimstart",
-          "trimend",
-          "sourcein",
-          "sourceout",
-          "src",
-        ],
-      });
+        this._videoPropertyObserver.observe(value, {
+          childList: true,
+          subtree: true,
+        });
 
-      // Listen for media engine ready - wait for element to be ready first
-      // because mediaEngineTask may not exist yet during initial render
-      value.updateComplete.then(() => {
-        // Check if target is still this element (it may have been changed/cleared)
-        if (this._targetElement !== value) {
-          return;
+        // Timegroups are immediately ready - trigger update
+        if (this._stripWidth > 0) {
+          this._thumbnailLayoutTask = undefined;
+          this.stripWidth = this._stripWidth;
         }
-        if (value.mediaEngineTask) {
-          value.mediaEngineTask.taskComplete
-            .then(() => {
-              // Check again if target is still this element
-              if (this._targetElement !== value) {
-                return;
-              }
-              // When media engine is ready, force re-run thumbnails
-              // This handles the case where the layout task started before mediaEngine was ready
-              // and might have returned early or gotten stale data
-              if (this._stripWidth > 0) {
-                // Force a new task run by clearing any in-progress task
-                // and triggering through the stripWidth setter
-                this._thumbnailLayoutTask = undefined;
-                this.stripWidth = this._stripWidth;
-              } else {
-                // Mark that we need to run when width becomes available
-                this._mediaEngineReady = true;
-              }
-            })
-            .catch(() => {
-              // Ignore errors - media engine failed to load
-            });
-        }
-      });
+      }
     }
 
     this.requestUpdate("targetElement", oldValue);
@@ -337,11 +373,8 @@ export class EFThumbnailStrip extends LitElement {
   private _stripHeight = 24; // Default height, updated by ResizeObserver
   private _pendingStripWidth: number | undefined;
   private _thumbnailLayoutTask: Promise<ThumbnailRenderInfo[]> | undefined;
-  private _mediaEngineReady = false;
   @state()
   private set stripWidth(value: number) {
-    const videoId = this._targetElement?.id ?? 'unknown';
-    
     if (this._thumbnailLayoutTask) {
       this._pendingStripWidth = value;
       return;
@@ -381,11 +414,7 @@ export class EFThumbnailStrip extends LitElement {
     }
 
     // Run the thumbnail render task logic directly
-    return this.renderThumbnails(
-      layout,
-      this.targetElement,
-      this.thumbnailWidth,
-    );
+    return this.renderThumbnails(layout, this.targetElement);
   }
 
   private resizeObserver?: ResizeObserver;
@@ -410,9 +439,40 @@ export class EFThumbnailStrip extends LitElement {
       changedProperties.has("gap") ||
       changedProperties.has("startTimeMs") ||
       changedProperties.has("endTimeMs") ||
-      changedProperties.has("useIntrinsicDuration")
+      changedProperties.has("useIntrinsicDuration") ||
+      changedProperties.has("pixelsPerMs")
     ) {
       this.runThumbnailUpdate();
+    }
+
+    // Check for scroll changes from timeline context (virtual rendering)
+    if (changedProperties.has("_timelineState")) {
+      this.checkScrollUpdate();
+    }
+  }
+
+  /**
+   * Check if scroll position changed enough to warrant a re-render
+   */
+  private checkScrollUpdate() {
+    if (!this._timelineState) return;
+    
+    const { viewportScrollLeft, viewportWidth } = this._timelineState;
+    const scrollDelta = Math.abs(viewportScrollLeft - this._lastRenderedScrollLeft);
+    const viewportChanged = viewportWidth !== this._lastRenderedViewportWidth;
+    
+    // Re-render if scrolled more than 50px or viewport size changed
+    if (scrollDelta > 50 || viewportChanged || this._lastRenderedScrollLeft < 0) {
+      // Cancel any pending scroll update
+      if (this._scrollUpdateFrame) {
+        cancelAnimationFrame(this._scrollUpdateFrame);
+      }
+      
+      // Schedule update on next frame
+      this._scrollUpdateFrame = requestAnimationFrame(() => {
+        this._scrollUpdateFrame = undefined;
+        this.runThumbnailUpdate();
+      });
     }
   }
 
@@ -469,7 +529,7 @@ export class EFThumbnailStrip extends LitElement {
       number,
       number,
       number,
-      EFVideo | null,
+      EFVideo | EFTimegroup | null,
       number | undefined,
       number | undefined,
       boolean,
@@ -480,7 +540,20 @@ export class EFThumbnailStrip extends LitElement {
         return { count: 0, segments: [], effectiveThumbnailWidth: 0, pitch: 0 };
       }
 
-      // IMPLEMENTATION GUIDELINES: Wait for media engine to be ready before generating thumbnails
+      // Handle timegroup targets (no media engine needed)
+      if (isEFTimegroup(targetElement)) {
+        return this.calculateLayoutForTimegroup(
+          stripWidth,
+          stripHeight,
+          thumbnailWidth,
+          gap,
+          targetElement,
+          startTimeMs,
+          endTimeMs,
+        );
+      }
+
+      // Video targets need media engine
       if (!mediaEngine) {
         // If no media engine yet, wait for it to be ready
         if (targetElement.mediaEngineTask) {
@@ -529,9 +602,48 @@ export class EFThumbnailStrip extends LitElement {
         this.startTimeMs,
         this.endTimeMs,
         this.useIntrinsicDuration,
-        this.targetElement?.mediaEngineTask?.value,
+        isEFVideo(this.targetElement) ? this.targetElement?.mediaEngineTask?.value : null,
       ] as const,
   });
+
+  /**
+   * Calculate layout for a timegroup target
+   */
+  private calculateLayoutForTimegroup(
+    stripWidth: number,
+    stripHeight: number,
+    thumbnailWidth: number,
+    gap: number,
+    targetElement: EFTimegroup,
+    startTimeMs: number | undefined,
+    endTimeMs: number | undefined,
+  ): ThumbnailLayout {
+    // Use actual client height if available, fall back to passed value
+    const actualHeight = this.clientHeight || stripHeight || 48;
+    
+    // Calculate effective thumbnail width using timegroup dimensions
+    let effectiveWidth = thumbnailWidth;
+    if (effectiveWidth <= 0) {
+      const width = targetElement.offsetWidth || 1920;
+      const height = targetElement.offsetHeight || 1080;
+      const aspectRatio = width / height || DEFAULT_ASPECT_RATIO;
+      effectiveWidth = Math.round(actualHeight * aspectRatio);
+    }
+
+    // Determine time range
+    const effectiveStartMs = startTimeMs ?? 0;
+    const effectiveEndMs = endTimeMs ?? targetElement.durationMs ?? 0;
+
+    // Generate layout (no segment alignment for timegroups)
+    return calculateThumbnailLayout(
+      stripWidth,
+      effectiveWidth,
+      gap,
+      effectiveStartMs,
+      effectiveEndMs,
+      undefined, // No scrub segment for timegroups
+    );
+  }
 
   /**
    * Calculate layout with a ready media engine
@@ -632,22 +744,20 @@ export class EFThumbnailStrip extends LitElement {
 
   private thumbnailRenderTask = new Task(this, {
     autoRun: false,
-    task: async ([layout, targetElement, thumbnailWidth]: readonly [
+    task: async ([layout, targetElement]: readonly [
       ThumbnailLayout | null,
-      EFVideo | null,
-      number,
+      EFVideo | EFTimegroup | null,
     ]) => {
       // Simplified task that delegates to renderThumbnails method
       if (!layout || !targetElement) {
         return [];
       }
-      return this.renderThumbnails(layout, targetElement, thumbnailWidth);
+      return this.renderThumbnails(layout, targetElement);
     },
     args: () =>
       [
         this.thumbnailLayoutTask.value || null,
         this.targetElement,
-        this.thumbnailWidth,
       ] as const,
   });
 
@@ -656,19 +766,15 @@ export class EFThumbnailStrip extends LitElement {
    */
   private async renderThumbnails(
     layout: ThumbnailLayout,
-    targetElement: EFVideo,
-    thumbnailWidth: number,
+    targetElement: EFVideo | EFTimegroup,
   ): Promise<ThumbnailRenderInfo[]> {
-    const videoId = targetElement?.id;
-    
     if (!layout || !targetElement || layout.count === 0) {
       return [];
     }
 
-    const videoSrc = targetElement.src;
+    const cacheId = getElementCacheId(targetElement);
     const thumbnailHeight = this._stripHeight;
     const effectiveWidth = layout.effectiveThumbnailWidth;
-    
 
     const allThumbnails: ThumbnailRenderInfo[] = [];
     let thumbnailIndex = 0; // Track ordinal position
@@ -676,7 +782,7 @@ export class EFThumbnailStrip extends LitElement {
     // Process each segment
     for (const segment of layout.segments) {
       for (const thumbnail of segment.thumbnails) {
-        const cacheKey = getThumbnailCacheKey(videoSrc, thumbnail.timeMs);
+        const cacheKey = getThumbnailCacheKey(cacheId, thumbnail.timeMs);
 
         // Try exact cache hit first
         let imageData = thumbnailImageCache.get(cacheKey);
@@ -689,8 +795,8 @@ export class EFThumbnailStrip extends LitElement {
           const timePlus = thumbnail.timeMs + 5000;
 
           // For range bounds, use raw timestamps (don't quantize the search range)
-          const rangeStartKey = `${videoSrc}:${timeMinus}`;
-          const rangeEndKey = `${videoSrc}:${timePlus}`;
+          const rangeStartKey = `${cacheId}:${timeMinus}`;
+          const rangeEndKey = `${cacheId}:${timePlus}`;
 
           // Use findRange to find any cached items in this time window
           const nearHits = thumbnailImageCache.findRange(
@@ -698,14 +804,14 @@ export class EFThumbnailStrip extends LitElement {
             rangeEndKey,
           );
 
-          // Filter to only include the same video source
-          const sameVideoHits = nearHits.filter((hit) =>
-            hit.key.startsWith(`${videoSrc}:`),
+          // Filter to only include the same source
+          const sameSourceHits = nearHits.filter((hit) =>
+            hit.key.startsWith(`${cacheId}:`),
           );
 
-          if (sameVideoHits.length > 0) {
-            // Get the closest match by time from same video
-            const nearestHit = sameVideoHits.reduce((closest, current) => {
+          if (sameSourceHits.length > 0) {
+            // Get the closest match by time from same source
+            const nearestHit = sameSourceHits.reduce((closest, current) => {
               const currentParts = current.key.split(":");
               const closestParts = closest.key.split(":");
               const currentTime = Number.parseFloat(
@@ -748,7 +854,7 @@ export class EFThumbnailStrip extends LitElement {
     // Draw current state (cache hits and placeholders)
     await this.drawThumbnails(allThumbnails);
 
-    // Load missing thumbnails from scrub tracks
+    // Load missing thumbnails
     await this.loadMissingThumbnails(allThumbnails, targetElement);
 
     return allThumbnails;
@@ -797,10 +903,17 @@ export class EFThumbnailStrip extends LitElement {
     // Clean up video property observer
     this._videoPropertyObserver?.disconnect();
     this._videoPropertyObserver = undefined;
+
+    // Clean up scroll update frame
+    if (this._scrollUpdateFrame) {
+      cancelAnimationFrame(this._scrollUpdateFrame);
+      this._scrollUpdateFrame = undefined;
+    }
   }
 
   /**
-   * Draw thumbnails to the canvas with cache hits and placeholders
+   * Draw thumbnails to the canvas with cache hits and placeholders.
+   * Uses virtual rendering - only draws thumbnails visible in the viewport.
    */
   private async drawThumbnails(
     thumbnails: ThumbnailRenderInfo[],
@@ -815,29 +928,66 @@ export class EFThumbnailStrip extends LitElement {
       return;
     }
 
+    // Get actual dimensions from the host element
+    const hostWidth = this.clientWidth || this._stripWidth;
+    const hostHeight = this.clientHeight || this._stripHeight;
+    
+    // Skip if dimensions are invalid
+    if (hostWidth <= 0 || hostHeight <= 0) {
+      return;
+    }
+
+    // Calculate visible range for virtual rendering
+    const viewportScrollLeft = this._timelineState?.viewportScrollLeft ?? 0;
+    const viewportWidth = this._timelineState?.viewportWidth ?? hostWidth;
+    
+    // Canvas width is limited to viewport + padding (virtual rendering)
+    const canvasWidth = Math.min(
+      hostWidth,
+      viewportWidth + VIRTUAL_RENDER_PADDING_PX * 2
+    );
+    
+    // Canvas left position (where to place it relative to strip start)
+    const canvasLeft = Math.max(0, viewportScrollLeft - VIRTUAL_RENDER_PADDING_PX);
+    const canvasRight = canvasLeft + canvasWidth;
+    
+    // Track scroll position for change detection
+    this._lastRenderedScrollLeft = viewportScrollLeft;
+    this._lastRenderedViewportWidth = viewportWidth;
+
     // Set canvas to exact size we're drawing - prevents CSS scaling
     const dpr = window.devicePixelRatio || 1;
 
     // Set canvas buffer size for high DPI rendering
-    canvas.width = this._stripWidth * dpr;
-    canvas.height = this._stripHeight * dpr;
+    canvas.width = canvasWidth * dpr;
+    canvas.height = hostHeight * dpr;
 
-    // Set canvas DOM size to exactly what we're drawing - no CSS scaling
-    canvas.style.width = `${this._stripWidth}px`;
-    canvas.style.height = `${this._stripHeight}px`;
+    // Set canvas DOM size and position
+    canvas.style.width = `${canvasWidth}px`;
+    canvas.style.height = `${hostHeight}px`;
+    canvas.style.left = `${canvasLeft}px`;
 
     // Scale the drawing context to match device pixel ratio
     ctx.scale(dpr, dpr);
 
-
-    // Clear canvas (use logical pixel dimensions since context is scaled)
-    ctx.fillStyle = "#2a2a2a";
-    ctx.fillRect(0, 0, this._stripWidth, this._stripHeight);
+    // Clear canvas with background color
+    ctx.fillStyle = "#1a1a2e";
+    ctx.fillRect(0, 0, canvasWidth, hostHeight);
 
     // Draw each thumbnail using "cover" mode (crop to fill, no gaps)
+    // Only draw thumbnails that are visible in the canvas area (virtual rendering)
     for (let i = 0; i < thumbnails.length; i++) {
       const thumb = thumbnails[i];
       if (!thumb) continue;
+      
+      // Check if thumbnail is within visible canvas area
+      const thumbRight = thumb.x + thumb.width;
+      if (thumbRight < canvasLeft || thumb.x > canvasRight) {
+        continue; // Skip thumbnails outside visible range
+      }
+      
+      // Calculate position relative to canvas (not absolute strip position)
+      const drawX = thumb.x - canvasLeft;
       
       if (thumb.imageData) {
         // Draw cached thumbnail with cover mode (crop to fill)
@@ -852,7 +1002,7 @@ export class EFThumbnailStrip extends LitElement {
 
         // Cover mode: crop source to fill destination without gaps
         const sourceAspect = thumb.imageData.width / thumb.imageData.height;
-        const destAspect = thumb.width / this._stripHeight;
+        const destAspect = thumb.width / hostHeight;
         
         let sourceX = 0;
         let sourceY = 0;
@@ -873,54 +1023,40 @@ export class EFThumbnailStrip extends LitElement {
         ctx.drawImage(
           tempCanvas,
           sourceX, sourceY, sourceW, sourceH,  // Source rectangle (cropped)
-          thumb.x, 0, thumb.width, this._stripHeight  // Destination rectangle (full slot)
+          drawX, 0, thumb.width, hostHeight  // Destination rectangle (relative to canvas)
         );
 
         // Add subtle indicator for near hits
         if (thumb.status === "near-hit") {
           ctx.fillStyle = "rgba(255, 165, 0, 0.3)";
-          ctx.fillRect(thumb.x, 0, thumb.width, 2);
+          ctx.fillRect(drawX, 0, thumb.width, 2);
         }
       } else {
         // Draw placeholder filling the slot
-        ctx.fillStyle = "#404040";
-        ctx.fillRect(thumb.x, 0, thumb.width, this._stripHeight);
+        ctx.fillStyle = "#2d2d44";
+        ctx.fillRect(drawX, 0, thumb.width, hostHeight);
 
         // Add subtle loading indicator
-        ctx.strokeStyle = "#666";
+        ctx.strokeStyle = "#444";
         ctx.lineWidth = 1;
         ctx.setLineDash([2, 2]);
-        ctx.strokeRect(thumb.x, 0, thumb.width, this._stripHeight);
+        ctx.strokeRect(drawX + 0.5, 0.5, thumb.width - 1, hostHeight - 1);
         ctx.setLineDash([]);
       }
     }
-    
   }
 
   /**
-   * Load missing thumbnails using MediaEngine batch extraction
+   * Load missing thumbnails using batch extraction
    */
   private async loadMissingThumbnails(
     thumbnails: ThumbnailRenderInfo[],
-    targetElement: EFVideo,
+    targetElement: EFVideo | EFTimegroup,
   ): Promise<void> {
-    const videoId = targetElement.id;
-    
-    // Ensure media engine is ready before attempting extraction
-    if (targetElement.mediaEngineTask) {
-      await targetElement.mediaEngineTask.taskComplete;
-    }
-    
-    const mediaEngine = targetElement.mediaEngineTask?.value;
-    if (!mediaEngine) {
-      return;
-    }
-
     // Get all missing thumbnails
     const missingThumbnails = thumbnails.filter(
       (t) => t.status === "missing" || t.status === "near-hit",
     );
-
 
     if (missingThumbnails.length === 0) {
       return;
@@ -931,39 +1067,79 @@ export class EFThumbnailStrip extends LitElement {
       thumb.status = "loading";
     }
 
-    // Batch extract all missing thumbnails using MediaEngine
     const timestamps = missingThumbnails.map((t) => t.timeMs);
+    const cacheId = getElementCacheId(targetElement);
 
-    const thumbnailResults = await mediaEngine.extractThumbnails(timestamps);
+    // Handle timegroup targets using captureBatch
+    if (isEFTimegroup(targetElement)) {
+      try {
+        // Calculate scale based on strip height vs timegroup height
+        const timegroupHeight = targetElement.offsetHeight || 1080;
+        const scale = Math.min(1, this._stripHeight / timegroupHeight);
 
-    // Convert canvases to ImageData and update thumbnails
-    let successCount = 0;
-    let failCount = 0;
-    for (let i = 0; i < missingThumbnails.length; i++) {
-      const thumb = missingThumbnails[i];
-      const thumbnailResult = thumbnailResults[i];
+        const canvases = await targetElement.captureBatch(timestamps, {
+          scale,
+          contentReadyMode: "immediate",
+        });
 
-      if (thumb && thumbnailResult) {
-        // Convert canvas to ImageData
-        const imageData = this.canvasToImageData(thumbnailResult.thumbnail);
+        // Convert canvases to ImageData and update thumbnails
+        for (let i = 0; i < missingThumbnails.length; i++) {
+          const thumb = missingThumbnails[i];
+          const canvas = canvases[i];
 
-        if (imageData) {
-          const cacheKey = getThumbnailCacheKey(
-            targetElement.src,
-            thumb.timeMs,
-          );
-          thumbnailImageCache.set(cacheKey, imageData);
-          thumb.imageData = imageData;
-          thumb.status = "exact-hit";
-          successCount++;
-        } else {
-          failCount++;
+          if (thumb && canvas) {
+            const imageData = this.canvasToImageData(canvas);
+
+            if (imageData) {
+              const cacheKey = getThumbnailCacheKey(cacheId, thumb.timeMs);
+              thumbnailImageCache.set(cacheKey, imageData);
+              thumb.imageData = imageData;
+              thumb.status = "exact-hit";
+            }
+          }
         }
-      } else {
-        failCount++;
+      } catch (error) {
+        console.warn("Failed to capture timegroup thumbnails:", error);
       }
+
+      // Redraw with newly loaded thumbnails
+      await this.drawThumbnails(thumbnails);
+      return;
     }
 
+    // Handle video targets using MediaEngine
+    // Ensure media engine is ready before attempting extraction
+    if (targetElement.mediaEngineTask) {
+      await targetElement.mediaEngineTask.taskComplete;
+    }
+    
+    const mediaEngine = targetElement.mediaEngineTask?.value;
+    if (!mediaEngine) {
+      return;
+    }
+
+    try {
+      const thumbnailResults = await mediaEngine.extractThumbnails(timestamps);
+
+      // Convert canvases to ImageData and update thumbnails
+      for (let i = 0; i < missingThumbnails.length; i++) {
+        const thumb = missingThumbnails[i];
+        const thumbnailResult = thumbnailResults[i];
+
+        if (thumb && thumbnailResult) {
+          const imageData = this.canvasToImageData(thumbnailResult.thumbnail);
+
+          if (imageData) {
+            const cacheKey = getThumbnailCacheKey(cacheId, thumb.timeMs);
+            thumbnailImageCache.set(cacheKey, imageData);
+            thumb.imageData = imageData;
+            thumb.status = "exact-hit";
+          }
+        }
+      }
+    } catch (error) {
+      console.warn("Failed to extract video thumbnails:", error);
+    }
 
     // Redraw with newly loaded thumbnails
     await this.drawThumbnails(thumbnails);

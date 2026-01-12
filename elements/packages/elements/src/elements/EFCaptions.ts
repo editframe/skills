@@ -1,13 +1,17 @@
 import { Task, TaskStatus } from "@lit/task";
 import { css, html, LitElement, type PropertyValueMap } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import type { ReactiveController } from "lit";
 import type { GetISOBMFFFileTranscriptionResult } from "../../../api/src/index.js";
 import { EF_INTERACTIVE } from "../EF_INTERACTIVE.js";
 import { CrossUpdateController } from "./CrossUpdateController.js";
 import { EFAudio } from "./EFAudio.js";
 import { EFSourceMixin } from "./EFSourceMixin.js";
 import { EFTemporal, flushStartTimeMsCache } from "./EFTemporal.js";
-import { flushSequenceDurationCache } from "./EFTimegroup.js";
+import {
+  flushSequenceDurationCache,
+  EFTimegroup,
+} from "./EFTimegroup.js";
 import { EFVideo } from "./EFVideo.js";
 import { FetchMixin } from "./FetchMixin.js";
 
@@ -330,6 +334,9 @@ export class EFCaptions extends EFSourceMixin(
     "ef-captions-after-active-word",
   );
 
+  // Cache for intrinsicDurationMs to avoid expensive O(n) recalculation every frame
+  #cachedIntrinsicDurationMs: number | undefined | null = null; // null = not computed, undefined = no duration
+
   render() {
     return html`<slot></slot>`;
   }
@@ -512,6 +519,8 @@ export class EFCaptions extends EFSourceMixin(
     },
   });
 
+  #rootTimegroupUpdateController?: ReactiveController;
+
   connectedCallback() {
     super.connectedCallback();
 
@@ -527,6 +536,29 @@ export class EFCaptions extends EFSourceMixin(
       new CrossUpdateController(this.rootTimegroup, this);
     }
 
+    // Ensure captions update when root timegroup's currentTimeMs changes
+    // This is critical for sequence mode where timegroups become inactive
+    // and then active again when scrubbing
+    if (this.rootTimegroup) {
+      this.#rootTimegroupUpdateController = {
+        hostUpdated: () => {
+          // Always update captions when root timegroup updates
+          // ownCurrentTimeMs is a getter that reads rootTimegroup.currentTimeMs,
+          // so it will always read the latest value when updateTextContainers() is called
+          // This ensures captions update even when ownCurrentTimeMs appears
+          // unchanged due to clamping in inactive timegroups
+          // Use microtask to ensure root timegroup's update completes first
+          Promise.resolve().then(() => {
+            this.updateTextContainers();
+          });
+        },
+        hostDisconnected: () => {
+          this.#rootTimegroupUpdateController = undefined;
+        },
+      };
+      this.rootTimegroup.addController(this.#rootTimegroupUpdateController);
+    }
+
     // Prevent display:none from being set on caption elements
     // This maintains constant width in the parent flex container
     const observer = new MutationObserver(() => {
@@ -535,14 +567,62 @@ export class EFCaptions extends EFSourceMixin(
         this.style.removeProperty("display");
         this.style.opacity = "0";
         this.style.pointerEvents = "none";
+      } else if (!this.style.display || this.style.display === "") {
+        // When display is removed (element becomes visible), reset opacity
+        this.style.removeProperty("opacity");
+        this.style.removeProperty("pointer-events");
       }
     });
     observer.observe(this, { attributes: true, attributeFilter: ["style"] });
   }
 
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    if (this.#rootTimegroupUpdateController && this.rootTimegroup) {
+      this.rootTimegroup.removeController(this.#rootTimegroupUpdateController);
+      this.#rootTimegroupUpdateController = undefined;
+    }
+  }
+
   protected updated(
     changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>,
   ): void {
+    // Set up root timegroup controller if rootTimegroup is now available
+    // (it might not have been available in connectedCallback)
+    if (this.rootTimegroup && !this.#rootTimegroupUpdateController) {
+      this.#rootTimegroupUpdateController = {
+        hostUpdated: () => {
+          // Always update captions when root timegroup updates
+          // ownCurrentTimeMs is a getter that reads rootTimegroup.currentTimeMs,
+          // so it will always read the latest value when updateTextContainers() is called
+          // This ensures captions update even when ownCurrentTimeMs appears
+          // unchanged due to clamping in inactive timegroups
+          // Use microtask to ensure root timegroup's update completes first
+          Promise.resolve().then(() => {
+            this.updateTextContainers();
+          });
+        },
+        hostDisconnected: () => {
+          this.#rootTimegroupUpdateController = undefined;
+        },
+      };
+      this.rootTimegroup.addController(this.#rootTimegroupUpdateController);
+    }
+
+    // Clean up controller if rootTimegroup changed
+    if (
+      changedProperties.has("rootTimegroup") &&
+      this.#rootTimegroupUpdateController
+    ) {
+      const oldRootTimegroup = changedProperties.get("rootTimegroup") as
+        | EFTimegroup
+        | undefined;
+      if (oldRootTimegroup && oldRootTimegroup !== this.rootTimegroup) {
+        oldRootTimegroup.removeController(this.#rootTimegroupUpdateController);
+        this.#rootTimegroupUpdateController = undefined;
+      }
+    }
+
     this.updateTextContainers();
 
     // Force duration recalculation when custom captions data changes
@@ -551,6 +631,8 @@ export class EFCaptions extends EFSourceMixin(
       changedProperties.has("captionsSrc") ||
       changedProperties.has("captionsScript")
     ) {
+      // Invalidate the intrinsicDurationMs cache
+      this.#cachedIntrinsicDurationMs = null;
       this.requestUpdate("intrinsicDurationMs");
 
       // Flush sequence duration cache and notify parent timegroups that child duration has changed
@@ -576,8 +658,24 @@ export class EFCaptions extends EFSourceMixin(
       return;
     }
 
-    // Use ownCurrentTimeMs which is synchronized with the timegroup
-    const currentTimeMs = this.ownCurrentTimeMs;
+    // For captions with custom data, try to use the video's source time
+    // This ensures correct timing when clips don't start at the beginning of the source video
+    let currentTimeMs = this.ownCurrentTimeMs;
+    if (this.hasCustomCaptionsData && this.parentTimegroup) {
+      // Find video element in the same parent timegroup
+      const videoElement = Array.from(this.parentTimegroup.children).find(
+        (child): child is EFVideo => child instanceof EFVideo,
+      );
+      if (videoElement) {
+        const sourceInMs = videoElement.sourceInMs ?? 0;
+        // Use video's source time minus sourceIn to get time relative to clip start
+        // This matches the adjusted captions data timestamps (which are relative to clip.start)
+        currentTimeMs = videoElement.currentSourceTimeMs - sourceInMs;
+        // Clamp to valid range
+        currentTimeMs = Math.max(0, Math.min(currentTimeMs, this.durationMs));
+      }
+    }
+
     const currentTimeSec = currentTimeMs / 1000;
 
     // Find the current word from word_segments
@@ -758,6 +856,11 @@ export class EFCaptions extends EFSourceMixin(
 
   // Follow the exact EFMedia pattern for safe duration integration
   get intrinsicDurationMs(): number | undefined {
+    // Return cached value if available (null means not computed yet)
+    if (this.#cachedIntrinsicDurationMs !== null) {
+      return this.#cachedIntrinsicDurationMs;
+    }
+
     // Direct access to custom captions data - avoiding complex task dependencies
     // Priority: direct data > script reference > external file
     let captionsData: Caption | null = null;
@@ -778,27 +881,44 @@ export class EFCaptions extends EFSourceMixin(
     }
 
     if (!captionsData) {
+      // Don't cache undefined when data hasn't loaded yet - it may load later
+      // Only cache once we have confirmed no data source
+      if (!this.captionsData && !this.captionsScript && !this.captionsSrc) {
+        this.#cachedIntrinsicDurationMs = undefined;
+      }
       return undefined;
     }
 
+    let result: number;
     if (
       captionsData.segments.length === 0 &&
       captionsData.word_segments.length === 0
     ) {
-      return 0;
+      result = 0;
+    } else {
+      // Find the maximum end time from both segments and word_segments
+      // Use reduce instead of Math.max(...array) to avoid creating intermediate arrays
+      const maxSegmentEnd =
+        captionsData.segments.length > 0
+          ? captionsData.segments.reduce(
+              (max, s) => (s.end > max ? s.end : max),
+              0,
+            )
+          : 0;
+      const maxWordEnd =
+        captionsData.word_segments.length > 0
+          ? captionsData.word_segments.reduce(
+              (max, w) => (w.end > max ? w.end : max),
+              0,
+            )
+          : 0;
+
+      result = Math.max(maxSegmentEnd, maxWordEnd) * 1000; // Convert to milliseconds
     }
 
-    // Find the maximum end time from both segments and word_segments
-    const maxSegmentEnd =
-      captionsData.segments.length > 0
-        ? Math.max(...captionsData.segments.map((s) => s.end))
-        : 0;
-    const maxWordEnd =
-      captionsData.word_segments.length > 0
-        ? Math.max(...captionsData.word_segments.map((w) => w.end))
-        : 0;
-
-    return Math.max(maxSegmentEnd, maxWordEnd) * 1000; // Convert to milliseconds
+    // Cache the computed result
+    this.#cachedIntrinsicDurationMs = result;
+    return result;
   }
 
   // Follow the exact EFMedia pattern for safe duration integration

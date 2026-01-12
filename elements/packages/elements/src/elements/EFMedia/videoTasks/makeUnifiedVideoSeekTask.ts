@@ -58,31 +58,32 @@ export const makeUnifiedVideoSeekTask = (
       }
 
       // SECOND: Main not cached, try scrub path (instant if cached)
-      const scrubSample = await tryGetScrubSample(
-        mediaEngine,
-        desiredSeekTimeMs,
-        signal,
-      );
+      // COMMENTED OUT: Scrub track loading system temporarily disabled due to performance issues
+      // const scrubSample = await tryGetScrubSample(
+      //   mediaEngine,
+      //   desiredSeekTimeMs,
+      //   signal,
+      // );
 
-      if (scrubSample || signal.aborted) {
-        if (signal.aborted) {
-          return undefined;
-        }
+      // if (scrubSample || signal.aborted) {
+      //   if (signal.aborted) {
+      //     return undefined;
+      //   }
 
-        // If scrub succeeded, start background main quality upgrade (non-blocking)
-        if (scrubSample) {
-          startMainQualityUpgrade(
-            host,
-            mediaEngine,
-            desiredSeekTimeMs,
-            signal,
-          ).catch(() => {
-            // Main upgrade failed - scrub already succeeded, that's fine
-          });
-        }
+      //   // If scrub succeeded, start background main quality upgrade (non-blocking)
+      //   if (scrubSample) {
+      //     startMainQualityUpgrade(
+      //       host,
+      //       mediaEngine,
+      //       desiredSeekTimeMs,
+      //       signal,
+      //     ).catch(() => {
+      //       // Main upgrade failed - scrub already succeeded, that's fine
+      //     });
+      //   }
 
-        return scrubSample;
-      }
+      //   return scrubSample;
+      // }
 
       // THIRD: Neither are cached, fetch main video path as final fallback
       const result = await getMainVideoSample(

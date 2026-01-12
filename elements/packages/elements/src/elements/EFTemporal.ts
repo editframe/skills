@@ -581,7 +581,11 @@ export class OwnCurrentTimeController implements ReactiveController {
   }
 
   hostUpdated() {
-    this.temporal.requestUpdate("ownCurrentTimeMs");
+    // Defer update to avoid Lit warning about scheduling updates after update completed
+    // This batches updates and prevents cascading update cycles
+    Promise.resolve().then(() => {
+      this.temporal.requestUpdate("ownCurrentTimeMs");
+    });
   }
 
   remove() {
@@ -619,6 +623,8 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
     #ownCurrentTimeController?: OwnCurrentTimeController;
 
     #parentTimegroup?: EFTimegroup;
+    #rootTimegroupLocked = false; // When true, rootTimegroup won't be auto-recalculated
+    
     @consume({ context: timegroupContext, subscribe: true })
     set parentTimegroup(value: EFTimegroup | undefined) {
       const oldParent = this.#parentTimegroup;
@@ -628,7 +634,11 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
       this.#parentTimegroup = value;
 
       this.#ownCurrentTimeController?.remove();
-      this.rootTimegroup = this.getRootTimegroup();
+      // Only auto-calculate rootTimegroup if it hasn't been locked
+      // (locked means it was manually set, e.g., for render clones)
+      if (!this.#rootTimegroupLocked) {
+        this.rootTimegroup = this.getRootTimegroup();
+      }
       if (this.rootTimegroup) {
         this.#ownCurrentTimeController = new OwnCurrentTimeController(
           this.rootTimegroup,
@@ -644,6 +654,15 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
           this.didBecomeChild();
         }
       }
+    }
+    
+    /**
+     * Lock the rootTimegroup to prevent auto-recalculation.
+     * Used for render clones where the root must be fixed.
+     * @internal
+     */
+    lockRootTimegroup() {
+      this.#rootTimegroupLocked = true;
     }
 
     disconnectedCallback() {

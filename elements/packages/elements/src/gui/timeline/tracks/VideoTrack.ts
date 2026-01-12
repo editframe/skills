@@ -59,10 +59,12 @@ export class EFVideoTrack extends TrackItem {
             borderColor: "var(--filmstrip-border)",
           })}
         >
+          <!-- TODO: Re-enable when thumbnail strip performance is improved
           <ef-thumbnail-strip
             .targetElement=${video}
             .useIntrinsicDuration=${true}
           ></ef-thumbnail-strip>
+          -->
           ${
             this.enableTrim
               ? html`<ef-trim-handles

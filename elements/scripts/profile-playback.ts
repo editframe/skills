@@ -1,29 +1,22 @@
 #!/usr/bin/env npx ts-node
 /**
- * CPU Profiling Harness for Video Export
+ * CPU Profiling Harness for Playback Performance
  * 
- * Captures Chrome DevTools CPU profiles during export to identify hotspots.
+ * Captures Chrome DevTools CPU profiles during playback to identify hotspots.
  * 
  * Usage:
- *   npx tsx scripts/profile-export.ts [options]
+ *   npx tsx scripts/profile-playback.ts [options]
  * 
  * Options:
- *   --project <name>   Dev project to profile (default: design-catalog)
- *   --duration <ms>    Max export duration in ms (default: 30000)
- *   --output <path>    Output path for .cpuprofile file (default: ./export-profile.cpuprofile)
- *   --focus <file>     Focus line-level profiling on specific file (e.g., renderTimegroupPreview.ts)
+ *   --project <name>   Dev project to profile (default: improv-edit)
+ *   --duration <ms>    Playback duration in ms (default: 5000)
+ *   --output <path>    Output path for .cpuprofile file (default: ./playback-profile.cpuprofile)
+ *   --focus <file>     Focus line-level profiling on specific file
  *   --headless         Run in headless mode (default: false)
- *   --benchmark        Skip video encoding (measure pure rendering speed)
- *   --no-native        Disable native HTML-in-Canvas API, use foreignObject fallback
  * 
  * Examples:
- *   npx tsx scripts/profile-export.ts --focus renderTimegroupPreview
- *   npx tsx scripts/profile-export.ts --focus syncStyles --duration 5000
- * 
- * Output:
- *   - .cpuprofile file that can be loaded in Chrome DevTools
- *   - Console summary of top hotspots
- *   - Line-level profiling for focused files (shows which lines are hot)
+ *   npx tsx scripts/profile-playback.ts
+ *   npx tsx scripts/profile-playback.ts --duration 10000 --focus EFTimegroup
  */
 
 import { chromium, type Browser, type Page, type CDPSession } from "playwright";
@@ -69,10 +62,10 @@ interface HotspotInfo {
 
 /** Resolved source location after applying source maps */
 interface ResolvedLocation {
-  source: string;      // Original source file path (e.g., "renderTimegroupPreview.ts")
-  line: number;        // Original line number
-  column: number;      // Original column number
-  name: string | null; // Original symbol name (if available)
+  source: string;
+  line: number;
+  column: number;
+  name: string | null;
 }
 
 /** Cache for fetched and parsed source maps */
@@ -85,7 +78,6 @@ class SourceMapResolver {
     this.baseUrl = baseUrl;
   }
   
-  /** Fetch text from URL with caching */
   private async fetchText(url: string): Promise<string | null> {
     if (this.fetchCache.has(url)) {
       return this.fetchCache.get(url)!;
@@ -103,35 +95,29 @@ class SourceMapResolver {
     return promise;
   }
   
-  /** Get or load source map for a script URL */
   async getTraceMap(scriptUrl: string): Promise<TraceMap | null> {
     if (this.traceMaps.has(scriptUrl)) {
       return this.traceMaps.get(scriptUrl)!;
     }
     
-    // Fetch the script to find sourceMappingURL
     const scriptContent = await this.fetchText(scriptUrl);
     if (!scriptContent) {
       this.traceMaps.set(scriptUrl, null);
       return null;
     }
     
-    // Extract sourceMappingURL from the script
     const match = scriptContent.match(/\/\/[#@]\s*sourceMappingURL=([^\s]+)/);
     if (!match) {
       this.traceMaps.set(scriptUrl, null);
       return null;
     }
     
-    // Resolve source map URL (could be relative or absolute)
     let sourceMapUrl = match[1];
     if (!sourceMapUrl.startsWith("http") && !sourceMapUrl.startsWith("data:")) {
-      // Relative URL - resolve against script URL
       const scriptBase = scriptUrl.substring(0, scriptUrl.lastIndexOf("/") + 1);
       sourceMapUrl = scriptBase + sourceMapUrl;
     }
     
-    // Handle data: URLs (inline source maps)
     let sourceMapJson: string | null;
     if (sourceMapUrl.startsWith("data:")) {
       const dataMatch = sourceMapUrl.match(/^data:[^,]*base64,(.*)$/);
@@ -159,13 +145,10 @@ class SourceMapResolver {
     }
   }
   
-  /** Resolve original source location for a bundled position */
   async resolve(scriptUrl: string, line0Based: number, column: number): Promise<ResolvedLocation | null> {
     const traceMap = await this.getTraceMap(scriptUrl);
     if (!traceMap) return null;
     
-    // V8 uses 0-based lines, trace-mapping also uses 0-based internally
-    // but the input line must be >= 0
     if (line0Based < 0) return null;
     
     try {
@@ -173,11 +156,9 @@ class SourceMapResolver {
       
       if (!result.source) return null;
       
-      // Extract just the filename from the source path
       const sourcePath = result.source;
       const sourceFile = sourcePath.split("/").pop() || sourcePath;
       
-      // result.line is 1-based (from the source map)
       return {
         source: sourceFile,
         line: result.line ?? (line0Based + 1),
@@ -190,11 +171,9 @@ class SourceMapResolver {
   }
 }
 
-/** Global source map resolver instance */
 let sourceMapResolver: SourceMapResolver | null = null;
 
 async function main() {
-  // Parse arguments
   const args = process.argv.slice(2);
   const getArg = (name: string, defaultValue: string) => {
     const idx = args.indexOf(`--${name}`);
@@ -202,38 +181,28 @@ async function main() {
   };
   const hasFlag = (name: string) => args.includes(`--${name}`);
 
-  const project = getArg("project", "design-catalog");
-  const maxDuration = parseInt(getArg("duration", "30000"), 10);
-  const outputPath = getArg("output", "./export-profile.cpuprofile");
+  const project = getArg("project", "improv-edit");
+  const duration = parseInt(getArg("duration", "5000"), 10);
+  const outputPath = getArg("output", "./playback-profile.cpuprofile");
   const headless = hasFlag("headless");
   const focusFile = getArg("focus", "");
-  const benchmarkMode = hasFlag("benchmark");
-  const disableNativeApi = hasFlag("no-native");
 
-  console.log(`\n🔬 Export Profiling Harness`);
+  console.log(`\n🔬 Playback Profiling Harness`);
   console.log(`   Project: ${project}`);
-  console.log(`   Max duration: ${maxDuration}ms`);
+  console.log(`   Duration: ${duration}ms`);
   console.log(`   Output: ${outputPath}`);
   console.log(`   Headless: ${headless}`);
   if (focusFile) {
     console.log(`   Focus: ${focusFile}`);
   }
-  if (benchmarkMode) {
-    console.log(`   BENCHMARK MODE: Skipping video encoding`);
-  }
-  if (disableNativeApi) {
-    console.log(`   Native API: DISABLED (using foreignObject fallback)`);
-  }
   console.log();
 
-  // Find monorepo root
   const monorepoRoot = findMonorepoRoot();
   if (!monorepoRoot) {
     console.error("Could not find monorepo root");
     process.exit(1);
   }
 
-  // Check if browser server is running
   const wsEndpointPath = path.join(monorepoRoot, ".wsEndpoint.json");
   let browser: Browser;
   let shouldCloseBrowser = false;
@@ -249,7 +218,6 @@ async function main() {
       channel: "chrome",
       args: [
         "--autoplay-policy=no-user-gesture-required",
-        "--enable-features=CanvasDrawElement",
       ],
     });
     shouldCloseBrowser = true;
@@ -258,156 +226,66 @@ async function main() {
   const context = await browser.newContext();
   const page = await context.newPage();
   
-  // Capture console messages
   page.on("console", (msg) => {
     const text = msg.text();
-    // Only show our debug logs and renderToVideo logs
-    if (text.includes("[renderToVideo]") || text.includes("[renderToImage]") || text.includes("DEBUG")) {
+    if (text.includes("[EFTimegroup]") || text.includes("[PlaybackController]") || text.includes("DEBUG")) {
       console.log(`[browser] ${text}`);
     }
   });
 
-  // Enable CDP for profiling
   const cdp = await context.newCDPSession(page);
 
   try {
-    // Navigate to dev project (no trailing slash!)
     const devUrl = `http://main.localhost:4321/${project}`;
     console.log(`📄 Loading ${devUrl}...`);
     await page.goto(devUrl, { waitUntil: "networkidle", timeout: 60000 });
 
-    // Set native API preference if --no-native flag was passed
-    if (disableNativeApi) {
-      await page.evaluate(() => {
-        localStorage.setItem("ef-preview-native-canvas-api-enabled", "false");
-      });
-      // Reload to apply the setting
-      await page.reload({ waitUntil: "networkidle", timeout: 60000 });
-      console.log(`🔧 Native API disabled, using foreignObject fallback`);
-    }
-
-    // Wait for timegroup to be ready
     console.log(`⏳ Waiting for timegroup...`);
     await page.waitForSelector("ef-timegroup", { timeout: 30000 });
     await page.waitForFunction(() => {
       const tg = document.querySelector("ef-timegroup") as any;
-      return tg && tg.durationMs > 0;
+      return tg && tg.durationMs > 0 && tg.playbackController;
     }, { timeout: 30000 });
 
-    // Get timegroup info
     const timegroupInfo = await page.evaluate(() => {
       const tg = document.querySelector("ef-timegroup") as any;
       return {
         durationMs: tg.durationMs,
         width: tg.offsetWidth,
         height: tg.offsetHeight,
+        currentTimeMs: tg.currentTimeMs,
       };
     });
     console.log(`✅ Timegroup ready: ${timegroupInfo.width}x${timegroupInfo.height}, ${timegroupInfo.durationMs}ms`);
+    console.log(`   Current time: ${timegroupInfo.currentTimeMs}ms`);
 
     // Enable profiler
     await cdp.send("Profiler.enable");
-    await cdp.send("Profiler.setSamplingInterval", { interval: 100 }); // 100µs sampling
+    await cdp.send("Profiler.setSamplingInterval", { interval: 100 });
 
-    // Quick benchmark: VideoFrame creation speed from different canvas types
-    const vfBenchmark = await page.evaluate(async () => {
-      const width = 1920, height = 1080;
-      const iterations = 50;
-      
-      // HTMLCanvasElement
-      const htmlCanvas = document.createElement("canvas");
-      htmlCanvas.width = width;
-      htmlCanvas.height = height;
-      const htmlCtx = htmlCanvas.getContext("2d")!;
-      htmlCtx.fillStyle = "red";
-      htmlCtx.fillRect(0, 0, width, height);
-      
-      // OffscreenCanvas
-      const offscreen = new OffscreenCanvas(width, height);
-      const offCtx = offscreen.getContext("2d")!;
-      offCtx.fillStyle = "blue";
-      offCtx.fillRect(0, 0, width, height);
-      
-      // Benchmark HTMLCanvasElement → VideoFrame
-      const htmlStart = performance.now();
-      for (let i = 0; i < iterations; i++) {
-        const vf = new VideoFrame(htmlCanvas, { timestamp: i * 33333 });
-        vf.close();
-      }
-      const htmlTime = performance.now() - htmlStart;
-      
-      // Benchmark OffscreenCanvas → VideoFrame  
-      const offStart = performance.now();
-      for (let i = 0; i < iterations; i++) {
-        const vf = new VideoFrame(offscreen, { timestamp: i * 33333 });
-        vf.close();
-      }
-      const offTime = performance.now() - offStart;
-      
-      return {
-        html: `${htmlTime.toFixed(1)}ms (${(htmlTime/iterations).toFixed(2)}ms/frame)`,
-        offscreen: `${offTime.toFixed(1)}ms (${(offTime/iterations).toFixed(2)}ms/frame)`,
-      };
-    });
-    console.log(`\n📊 VideoFrame Creation Benchmark (${1920}x${1080}, 50 frames):`);
-    console.log(`   HTMLCanvasElement → VideoFrame: ${vfBenchmark.html}`);
-    console.log(`   OffscreenCanvas → VideoFrame:   ${vfBenchmark.offscreen}`);
-
-    console.log(`\n🎬 Starting CPU profile and export...`);
+    console.log(`\n🎬 Starting playback and CPU profile...`);
     await cdp.send("Profiler.start");
 
-    // Trigger export via workbench
-    const exportStartTime = Date.now();
-    
-    // Mock file picker to avoid dialog
-    await page.evaluate(() => {
-      // @ts-ignore
-      window.showSaveFilePicker = async () => ({
-        createWritable: async () => ({
-          write: async () => {},
-          close: async () => {},
-        }),
-      });
-    });
-
-    // Trigger export directly on timegroup (skip workbench to get buffer back)
-    const exportPromise = page.evaluate(async ({ maxDur, benchmark }) => {
+    // Start playback
+    const playbackStartTime = Date.now();
+    await page.evaluate(async ({ duration }) => {
       const timegroup = document.querySelector("ef-timegroup") as any;
-      if (timegroup?.renderToVideo) {
-        const exportDuration = Math.min(timegroup.durationMs, 6000);
-        const buffer = await timegroup.renderToVideo({
-          toMs: exportDuration,
-          streaming: false,
-          includeAudio: true, // Include audio in export
-          returnBuffer: true, // Return buffer so we can save it
-          benchmarkMode: benchmark,
-          contentReadyMode: "immediate", // Skip blocking check for faster profiling
-        });
-        // Return buffer as array for saving (smaller chunks work better than base64)
-        if (buffer) {
-          return { success: true, videoBuffer: Array.from(new Uint8Array(buffer)) };
-        }
-        return { success: true };
+      if (!timegroup) {
+        throw new Error("Timegroup not found");
       }
       
-      return { success: false, error: "No export method found" };
-    }, { maxDur: maxDuration, benchmark: benchmarkMode });
+      // Start playback
+      timegroup.play();
+      
+      // Wait for the specified duration
+      await new Promise(resolve => setTimeout(resolve, duration));
+      
+      // Pause playback
+      timegroup.pause();
+    }, { duration });
 
-    // Wait for export with timeout (use 10x the max duration to allow for encoding time)
-    const exportTimeout = Math.max(maxDuration * 10, 60000);
-    const result = await Promise.race([
-      exportPromise,
-      new Promise<{ success: false; error: string }>((resolve) =>
-        setTimeout(() => resolve({ success: false, error: "Timeout" }), exportTimeout)
-      ),
-    ]);
-
-    const exportDuration = Date.now() - exportStartTime;
-    console.log(`⏱️  Export completed in ${(exportDuration / 1000).toFixed(2)}s`);
-    console.log(`   Result keys: ${Object.keys(result).join(", ")}`);
-    if ((result as any).videoBuffer) {
-      console.log(`   Video buffer size: ${(result as any).videoBuffer.length} bytes`);
-    }
+    const playbackDuration = Date.now() - playbackStartTime;
+    console.log(`⏱️  Playback completed in ${(playbackDuration / 1000).toFixed(2)}s`);
 
     // Stop profiler and get results
     const { profile } = await cdp.send("Profiler.stop") as { profile: CPUProfile };
@@ -423,11 +301,10 @@ async function main() {
     sourceMapResolver = new SourceMapResolver(devUrl);
     console.log(`\n🗺️  Resolving source maps...`);
     
-    // Pre-fetch source maps for all unique script URLs in the profile
     const scriptUrls = new Set<string>();
     for (const node of profile.nodes) {
       if (node.callFrame.url && node.callFrame.url.startsWith("http")) {
-        scriptUrls.add(node.callFrame.url.split("?")[0]); // Strip query params
+        scriptUrls.add(node.callFrame.url.split("?")[0]);
       }
     }
     
@@ -442,33 +319,20 @@ async function main() {
     console.log(`\n📊 Top Hotspots:`);
     const hotspots = await analyzeProfile(profile);
     
-    // Filter to our code
     const ourCode = hotspots.filter(h => 
       h.url.includes("/elements/") || 
-      h.url.includes("renderTimegroup") ||
+      h.url.includes("EFTimegroup") ||
+      h.url.includes("PlaybackController") ||
       h.url.includes("preview/")
     );
 
     console.log(`\n   === Our Code ===`);
     printHotspots(ourCode.slice(0, 20));
 
-    // Print detailed analysis with actionable items
+    // Print detailed analysis
     await printDetailedAnalysis(profile, focusFile);
 
-    if (!result.success) {
-      console.warn(`\n⚠️  Export may not have completed: ${result.error}`);
-    }
-    
-    // Save video buffer if returned
-    if ((result as any).videoBuffer) {
-      const videoPath = path.join(__dirname, "../profile-export-test.mp4");
-      const videoBuffer = Buffer.from((result as any).videoBuffer);
-      fs.writeFileSync(videoPath, videoBuffer);
-      console.log(`\n🎬 Video saved to: ${videoPath}`);
-    }
-
   } finally {
-    // Close page and context quickly - don't wait for cleanup
     page.close().catch(() => {});
     context.close().catch(() => {});
     if (shouldCloseBrowser) {
@@ -477,8 +341,6 @@ async function main() {
   }
 
   console.log(`\n✅ Profiling complete!`);
-  
-  // Force exit immediately - don't wait for any pending cleanup
   process.exit(0);
 }
 
@@ -498,24 +360,17 @@ function findMonorepoRoot(): string | null {
 
 interface DetailedHotspot {
   functionName: string;
-  file: string;              // Resolved source file (e.g., "renderTimegroupPreview.ts")
-  url: string;               // Original bundled URL
-  line: number;              // Resolved source line
-  column: number;            // Resolved source column
-  bundledLine: number;       // Original bundled line (for debugging)
-  bundledColumn: number;     // Original bundled column
+  file: string;
+  url: string;
+  line: number;
+  column: number;
+  bundledLine: number;
+  bundledColumn: number;
   selfTimeMs: number;
   selfTimePct: number;
   hitCount: number;
   callers: string[];
-  positionTicks: { line: number; ticks: number; resolvedLine?: number }[];  // line is resolved
-}
-
-interface LineTiming {
-  line: number;
-  ticks: number;
-  timeMs: number;
-  timePct: number;
+  positionTicks: { line: number; ticks: number; resolvedLine?: number }[];
 }
 
 async function analyzeProfileDetailed(profile: CPUProfile): Promise<{
@@ -534,7 +389,6 @@ async function analyzeProfileDetailed(profile: CPUProfile): Promise<{
     }
   }
 
-  // Build parent map for call graph
   const parentMap = new Map<number, number>();
   for (const [parentId, children] of nodeChildren) {
     for (const childId of children) {
@@ -542,13 +396,11 @@ async function analyzeProfileDetailed(profile: CPUProfile): Promise<{
     }
   }
 
-  // Calculate hit counts from samples
   const hitCounts = new Map<number, number>();
   for (const sample of profile.samples) {
     hitCounts.set(sample, (hitCounts.get(sample) || 0) + 1);
   }
 
-  // Sample interval in microseconds
   const sampleIntervalUs = profile.timeDeltas.length > 0
     ? profile.timeDeltas.reduce((a, b) => a + b, 0) / profile.timeDeltas.length
     : 1000;
@@ -556,7 +408,6 @@ async function analyzeProfileDetailed(profile: CPUProfile): Promise<{
   const totalSamples = profile.samples.length;
   const totalTimeMs = totalSamples * sampleIntervalUs / 1000;
 
-  // Resolve source locations for all nodes (batch for efficiency)
   const resolvedLocations = new Map<number, ResolvedLocation | null>();
   if (sourceMapResolver) {
     for (const node of profile.nodes) {
@@ -572,7 +423,6 @@ async function analyzeProfileDetailed(profile: CPUProfile): Promise<{
     }
   }
 
-  // Build call graph: caller -> callee -> count
   const callGraph = new Map<string, Map<string, number>>();
   
   const getNodeKey = (node: ProfileNode) => {
@@ -584,7 +434,6 @@ async function analyzeProfileDetailed(profile: CPUProfile): Promise<{
     return `${node.callFrame.functionName || "(anonymous)"} @ ${file}:${node.callFrame.lineNumber + 1}`;
   };
 
-  // Track callers for each node
   const callerMap = new Map<number, Set<string>>();
 
   for (const sample of profile.samples) {
@@ -598,13 +447,11 @@ async function analyzeProfileDetailed(profile: CPUProfile): Promise<{
       const key = getNodeKey(node);
       
       if (childKey) {
-        // Record call edge
         if (!callGraph.has(key)) callGraph.set(key, new Map());
         const edges = callGraph.get(key)!;
         edges.set(childKey, (edges.get(childKey) || 0) + 1);
       }
       
-      // Track callers
       if (!callerMap.has(sample)) callerMap.set(sample, new Set());
       if (nodeId !== sample) {
         callerMap.get(sample)!.add(key);
@@ -615,7 +462,6 @@ async function analyzeProfileDetailed(profile: CPUProfile): Promise<{
     }
   }
 
-  // Build hotspots with caller info
   const hotspots: DetailedHotspot[] = [];
 
   for (const node of profile.nodes) {
@@ -625,25 +471,21 @@ async function analyzeProfileDetailed(profile: CPUProfile): Promise<{
     const selfTimeMs = hitCount * sampleIntervalUs / 1000;
     const selfTimePct = (hitCount / totalSamples) * 100;
     
-    // Use resolved location if available
     const resolved = resolvedLocations.get(node.id);
     const file = resolved?.source || node.callFrame.url?.split("/").slice(-1)[0]?.split("?")[0] || "(native)";
     const line = resolved?.line ?? (node.callFrame.lineNumber + 1);
     const column = resolved?.column ?? (node.callFrame.columnNumber + 1);
     
-    // Get unique callers
     const callers: string[] = [];
     const callerSet = callerMap.get(node.id);
     if (callerSet) {
       callers.push(...Array.from(callerSet).slice(0, 3));
     }
 
-    // Resolve positionTicks line numbers too
     const resolvedPositionTicks: { line: number; ticks: number; resolvedLine?: number }[] = [];
     if (node.positionTicks && sourceMapResolver && node.callFrame.url) {
       const scriptUrl = node.callFrame.url.split("?")[0];
       for (const pt of node.positionTicks) {
-        // positionTicks lines are 1-based in V8, need to convert to 0-based for resolution
         const resolvedPt = await sourceMapResolver.resolve(scriptUrl, pt.line - 1, 0);
         resolvedPositionTicks.push({
           line: resolvedPt?.line ?? pt.line,
@@ -708,16 +550,14 @@ async function printDetailedAnalysis(profile: CPUProfile, focusFile: string = ""
   console.log(`Sample interval: ${sampleIntervalUs.toFixed(0)}µs`);
   console.log(`Total samples: ${profile.samples.length}`);
   
-  // Filter to our code
   const ourCode = hotspots.filter(h => 
     h.file.includes(".ts") && 
     !h.file.includes("node_modules") &&
-    (h.file.includes("render") || h.file.includes("preview") || h.file.includes("element") || h.file.includes("sync"))
+    (h.file.includes("EFTimegroup") || h.file.includes("PlaybackController") || h.file.includes("element") || h.file.includes("update") || h.file.includes("frame"))
   );
   
   const nativeCode = hotspots.filter(h => h.file === "(native)" || !h.file.includes(".ts"));
   
-  // Summary by file
   const byFile = new Map<string, number>();
   for (const h of hotspots) {
     byFile.set(h.file, (byFile.get(h.file) || 0) + h.selfTimeMs);
@@ -730,15 +570,13 @@ async function printDetailedAnalysis(profile: CPUProfile, focusFile: string = ""
     console.log(`  ${time.toFixed(1).padStart(8)}ms (${pct.padStart(5)}%)  ${file}`);
   }
   
-  // LINE-LEVEL PROFILING for focused file or auto-detected hot files
   const focusedFiles = focusFile 
     ? hotspots.filter(h => h.file.includes(focusFile) || h.url.includes(focusFile))
-    : ourCode.filter(h => h.selfTimeMs > 50); // Auto-focus on hot functions
+    : ourCode.filter(h => h.selfTimeMs > 10);
   
   if (focusedFiles.length > 0) {
     console.log(`\n--- LINE-LEVEL PROFILING ---`);
     
-    // Group by file
     const byFileDetailed = new Map<string, DetailedHotspot[]>();
     for (const h of focusedFiles) {
       const key = h.file;
@@ -747,12 +585,10 @@ async function printDetailedAnalysis(profile: CPUProfile, focusFile: string = ""
     }
     
     for (const [file, fileHotspots] of byFileDetailed) {
-      // Aggregate line-level data across all functions in this file
       const lineData = new Map<number, { ticks: number; functions: string[] }>();
       let fileTotalTicks = 0;
       
       for (const h of fileHotspots) {
-        // Add function's own line
         if (h.hitCount > 0) {
           if (!lineData.has(h.line)) lineData.set(h.line, { ticks: 0, functions: [] });
           const ld = lineData.get(h.line)!;
@@ -761,7 +597,6 @@ async function printDetailedAnalysis(profile: CPUProfile, focusFile: string = ""
           fileTotalTicks += h.hitCount;
         }
         
-        // Add positionTicks data (line-level detail within function)
         for (const pt of h.positionTicks) {
           if (!lineData.has(pt.line)) lineData.set(pt.line, { ticks: 0, functions: [] });
           const ld = lineData.get(pt.line)!;
@@ -777,7 +612,6 @@ async function printDetailedAnalysis(profile: CPUProfile, focusFile: string = ""
       const filePct = (fileTimeMs / totalTimeMs * 100).toFixed(1);
       console.log(`\n  📄 ${file} (${fileTimeMs.toFixed(1)}ms, ${filePct}%)`);
       
-      // Sort lines by ticks descending
       const sortedLines = Array.from(lineData.entries())
         .sort((a, b) => b[1].ticks - a[1].ticks)
         .slice(0, 25);
@@ -794,7 +628,6 @@ async function printDetailedAnalysis(profile: CPUProfile, focusFile: string = ""
     }
   }
   
-  // Detailed hotspots with context
   console.log(`\n--- TOP HOTSPOTS IN OUR CODE (with callers) ---`);
   for (const h of ourCode.slice(0, 20)) {
     const pct = h.selfTimePct.toFixed(1);
@@ -803,7 +636,6 @@ async function printDetailedAnalysis(profile: CPUProfile, focusFile: string = ""
     if (h.callers.length > 0) {
       console.log(`    Called by: ${h.callers.slice(0, 2).join(", ")}`);
     }
-    // Show line-level breakdown if available
     if (h.positionTicks.length > 0) {
       const sortedTicks = [...h.positionTicks].sort((a, b) => b.ticks - a.ticks).slice(0, 5);
       console.log(`    Hot lines:`);
@@ -814,7 +646,6 @@ async function printDetailedAnalysis(profile: CPUProfile, focusFile: string = ""
     }
   }
   
-  // Native API breakdown
   console.log(`\n--- NATIVE API TIME ---`);
   const nativeByName = new Map<string, number>();
   for (const h of nativeCode) {
@@ -826,63 +657,6 @@ async function printDetailedAnalysis(profile: CPUProfile, focusFile: string = ""
     console.log(`  ${time.toFixed(1).padStart(8)}ms (${pct.padStart(5)}%)  ${name}`);
   }
   
-  // Actionable summary
-  console.log(`\n--- ACTIONABLE OPTIMIZATION TARGETS ---`);
-  
-  // Find biggest optimization opportunities
-  const opportunities: { description: string; timeMs: number; suggestion: string }[] = [];
-  
-  // Check for expensive native calls
-  const getAnimationsTime = nativeByName.get("getAnimations") || 0;
-  if (getAnimationsTime > 100) {
-    opportunities.push({
-      description: "getAnimations() calls",
-      timeMs: getAnimationsTime,
-      suggestion: "Cache animations or use animation tracking to avoid repeated discovery",
-    });
-  }
-  
-  const appendChildTime = nativeByName.get("appendChild") || 0;
-  const removeChildTime = nativeByName.get("removeChild") || 0;
-  if (appendChildTime + removeChildTime > 50) {
-    opportunities.push({
-      description: "DOM manipulation (appendChild/removeChild)",
-      timeMs: appendChildTime + removeChildTime,
-      suggestion: "Reuse DOM elements instead of creating/destroying per frame",
-    });
-  }
-  
-  const gcTime = nativeByName.get("(garbage collector)") || 0;
-  if (gcTime > 100) {
-    opportunities.push({
-      description: "Garbage collection",
-      timeMs: gcTime,
-      suggestion: "Reduce allocations by reusing objects/arrays",
-    });
-  }
-  
-  // Check for hot functions in our code
-  for (const h of ourCode.slice(0, 5)) {
-    if (h.selfTimeMs > 100) {
-      opportunities.push({
-        description: `${h.functionName} in ${h.file}:${h.line}`,
-        timeMs: h.selfTimeMs,
-        suggestion: `Optimize this function - ${h.selfTimePct.toFixed(1)}% of total time`,
-      });
-    }
-  }
-  
-  opportunities.sort((a, b) => b.timeMs - a.timeMs);
-  
-  for (const opp of opportunities) {
-    console.log(`\n  🎯 ${opp.description}: ${opp.timeMs.toFixed(1)}ms`);
-    console.log(`     → ${opp.suggestion}`);
-  }
-  
-  if (opportunities.length === 0) {
-    console.log(`  ✅ No major optimization opportunities found!`);
-  }
-  
   console.log(`\n${"=".repeat(80)}\n`);
 }
 
@@ -890,4 +664,3 @@ main().catch((error) => {
   console.error("Error:", error);
   process.exit(1);
 });
-

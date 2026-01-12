@@ -12,6 +12,7 @@ export { Image } from "./elements/Image.js";
 export { Surface } from "./elements/Surface.js";
 export { ThumbnailStrip } from "./elements/ThumbnailStrip.js";
 export { Timegroup } from "./elements/Timegroup.js";
+export { TimelineRoot } from "./components/TimelineRoot.js";
 export { Video } from "./elements/Video.js";
 export { Waveform } from "./elements/Waveform.js";
 export { PanZoom } from "./elements/PanZoom.js";

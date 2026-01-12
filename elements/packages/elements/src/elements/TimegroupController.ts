@@ -18,18 +18,22 @@ export class TimegroupController implements ReactiveController {
   }
 
   hostUpdated(): void {
-    // Skip setting currentTimeMs for timegroup children - they compute ownCurrentTimeMs
-    // from the root timegroup via EFTemporal. Setting it directly causes an infinite loop
-    // because the @property decorator on currentTime triggers reactive updates.
-    if ('mode' in this.child && 'isRootTimegroup' in this.child) {
-      // Child is a timegroup - just request update, don't set currentTimeMs
-      this.child.requestUpdate();
-      return;
-    }
+    // Defer update to avoid Lit warning about scheduling updates after update completed
+    // This batches updates and prevents cascading update cycles
+    Promise.resolve().then(() => {
+      // Skip setting currentTimeMs for timegroup children - they compute ownCurrentTimeMs
+      // from the root timegroup via EFTemporal. Setting it directly causes an infinite loop
+      // because the @property decorator on currentTime triggers reactive updates.
+      if ('mode' in this.child && 'isRootTimegroup' in this.child) {
+        // Child is a timegroup - just request update, don't set currentTimeMs
+        this.child.requestUpdate();
+        return;
+      }
 
-    this.child.requestUpdate();
-    const newChildTimeMs =
-      this.host.currentTimeMs - (this.child.startTimeMs ?? 0);
-    this.child.currentTimeMs = newChildTimeMs;
+      this.child.requestUpdate();
+      const newChildTimeMs =
+        this.host.currentTimeMs - (this.child.startTimeMs ?? 0);
+      this.child.currentTimeMs = newChildTimeMs;
+    });
   }
 }
