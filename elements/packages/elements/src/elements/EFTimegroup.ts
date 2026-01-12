@@ -566,6 +566,12 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
   #seekInProgress = false;
   #pendingSeekTime: number | undefined;
   #processingPendingSeek = false;
+  #restoringFromLocalStorage = false;  // Guard to prevent recursive seeks during localStorage restoration
+  
+  /** @internal */
+  isRestoringFromLocalStorage(): boolean {
+    return this.#restoringFromLocalStorage;
+  }
   #customFrameTasks: Set<FrameTaskCallback> = new Set();
   #onFrameCallback: FrameTaskCallback | null = null;
   #onFrameCleanup: (() => void) | null = null;
@@ -623,14 +629,20 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
       return;
     }
 
-    // Skip if already at target time (unless processing pending seek)
-    if (seekTarget === this.#currentTime && !this.#processingPendingSeek) {
+    // Skip if already at target time (unless processing pending seek or restoring from localStorage)
+    if (seekTarget === this.#currentTime && !this.#processingPendingSeek && !this.#restoringFromLocalStorage) {
       return;
     }
 
     // Skip if this is the same as pending seek
     if (this.#pendingSeekTime === seekTarget) {
       return;
+    }
+    
+    // Prevent recursive seeks during localStorage restoration
+    if (this.#restoringFromLocalStorage && seekTarget !== this.#currentTime) {
+      // Allow the restoration seek to proceed, but prevent subsequent seeks
+      // The flag will be cleared after the seek completes
     }
 
     // Handle concurrent seeks by queuing pending seek
@@ -915,14 +927,35 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
       }
       
       let didLoadFromStorage = false;
-      // Commented out: localStorage timestamp restoration
-      // if (this.id) {
-      //   const maybeLoadedTime = this.loadTimeFromLocalStorage();
-      //   if (maybeLoadedTime !== undefined) {
-      //     this.currentTime = maybeLoadedTime;
-      //     didLoadFromStorage = true;
-      //   }
-      // }
+      // localStorage timestamp restoration (with guard to prevent infinite loops)
+      if (this.id && this.isRootTimegroup) {
+        const maybeLoadedTime = this.loadTimeFromLocalStorage();
+        if (maybeLoadedTime !== undefined && maybeLoadedTime !== this.#currentTime) {
+          // Set flag to prevent recursive seeks during restoration
+          this.#restoringFromLocalStorage = true;
+          try {
+            // Use seek() method instead of direct currentTime setter to ensure proper initialization
+            // But only if we're not already seeking (avoid race conditions)
+            if (!this.#seekInProgress) {
+              // Schedule restoration after initial update completes to avoid timing issues
+              this.updateComplete.then(() => {
+                this.currentTime = maybeLoadedTime;
+                this.#restoringFromLocalStorage = false;
+              }).catch(() => {
+                this.#restoringFromLocalStorage = false;
+              });
+              didLoadFromStorage = true;
+            } else {
+              // If seek is already in progress, clear flag and skip restoration
+              // The current seek will complete first, then we can restore
+              this.#restoringFromLocalStorage = false;
+            }
+          } catch (error) {
+            console.warn("[EFTimegroup] Error restoring time from localStorage:", error);
+            this.#restoringFromLocalStorage = false;
+          }
+        }
+      }
 
       // Auto-init: seek to frame 0 for root timegroups if enabled and not loaded from storage
       // waitForMediaDurations was already started above for root timegroups
@@ -1844,8 +1877,9 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
 
   /** @internal */
   frameTask = new Task(this, {
-    // autoRun: EF_INTERACTIVE,
-    autoRun: false,
+    // Re-enabled with EF_INTERACTIVE guard: only auto-runs in interactive mode
+    // During export/rendering, frame tasks are triggered explicitly via seekTask
+    autoRun: EF_INTERACTIVE,
     args: () => [this.ownCurrentTimeMs, this.currentTimeMs] as const,
     task: async ([ownCurrentTimeMs, currentTimeMs]) => {
       if (this.isRootTimegroup) {
@@ -1958,9 +1992,15 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
           // Trigger frame rendering for the new time position
           await this.#runThrottledFrameTask();
 
-          // Save to localStorage for persistence
-          this.saveTimeToLocalStorage(this.#currentTime);
+          // Save to localStorage for persistence (but not during restoration to avoid loops)
+          if (!this.#restoringFromLocalStorage) {
+            this.saveTimeToLocalStorage(this.#currentTime);
+          }
           this.#seekInProgress = false;
+          // Clear restoration flag after seek completes
+          if (this.#restoringFromLocalStorage) {
+            this.#restoringFromLocalStorage = false;
+          }
           return newTime;
         },
       );
