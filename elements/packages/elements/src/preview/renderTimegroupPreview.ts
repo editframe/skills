@@ -632,16 +632,17 @@ function syncNodeStyles(node: CloneNode): void {
   )) {
     const srcShadowRoot = (source as HTMLElement).shadowRoot;
     if (srcShadowRoot && !srcTextNode) {
-      // Find text node in shadow root (may be at various positions due to Lit rendering)
+      // Collect ALL text nodes from shadow root (may be multiple due to Lit rendering)
+      // Concatenate them to get the complete text content
       let srcShadowText = "";
       for (const srcChild of srcShadowRoot.childNodes) {
         if (srcChild.nodeType === Node.TEXT_NODE) {
-          srcShadowText = srcChild.textContent || "";
-          break;
+          srcShadowText += srcChild.textContent || "";
         }
       }
       
       // Find or create text node in clone
+      // For caption elements, there should be exactly one text node (created in buildCloneStructure)
       let cloneTextNode: Text | null = null;
       for (const cloneChild of clone.childNodes) {
         if (cloneChild.nodeType === Node.TEXT_NODE) {
@@ -655,6 +656,7 @@ function syncNodeStyles(node: CloneNode): void {
         cloneTextNode = document.createTextNode(srcShadowText);
         clone.appendChild(cloneTextNode);
       } else if (cloneTextNode.textContent !== srcShadowText) {
+        // Update text content if it has changed
         cloneTextNode.textContent = srcShadowText;
       }
     }
