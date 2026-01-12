@@ -30,6 +30,27 @@ const TRANSITION_OUT_START_PROPERTY = "--ef-transition-out-start";
 const animationTracker = new WeakMap<Element, Set<Animation>>();
 
 /**
+ * Tracks whether DOM structure has changed for an element, requiring animation rediscovery.
+ * For render clones (static DOM), this stays false after initial discovery.
+ * For prime timeline (interactive), this is set to true when mutations occur.
+ */
+const domStructureChanged = new WeakMap<Element, boolean>();
+
+/**
+ * Tracks the last known animation count for an element to detect new animations.
+ * Used as a lightweight check before calling expensive getAnimations().
+ */
+const lastAnimationCount = new WeakMap<Element, number>();
+
+/**
+ * Checks if an element is in a render clone (static DOM context).
+ * Render clones are in containers with class "ef-render-clone-container".
+ */
+const isRenderClone = (element: Element): boolean => {
+  return element.closest(".ef-render-clone-container") !== null;
+};
+
+/**
  * Validates that an animation is still valid and controllable.
  * Animations become invalid when:
  * - They've been cancelled (idle state and not in getAnimations())
@@ -55,10 +76,12 @@ const isAnimationValid = (
   }
 
   // Check if target is still in DOM
-  const target = effect.target;
-  if (target && target instanceof Element) {
-    if (!target.isConnected) {
-      return false;
+  if (effect instanceof KeyframeEffect) {
+    const target = effect.target;
+    if (target && target instanceof Element) {
+      if (!target.isConnected) {
+        return false;
+      }
     }
   }
 
@@ -72,18 +95,57 @@ const isAnimationValid = (
  * Tracks animations per element where they exist, not just on the root element.
  * This allows us to find animations on any element in the subtree.
  *
+ * OPTIMIZATION: For render clones (static DOM), discovery happens once at creation.
+ * For prime timeline (interactive), discovery is responsive to DOM changes.
+ *
  * Also cleans up invalid animations (cancelled, removed from DOM, etc.)
  */
 const discoverAndTrackAnimations = (
   element: AnimatableElement,
 ): { tracked: Set<Animation>; current: Animation[] } => {
-  // Get current animations from the browser (includes subtree)
+  const isClone = isRenderClone(element);
+  const hasTrackedAnimations = animationTracker.has(element);
+  const structureChanged = domStructureChanged.get(element) ?? true;
+  
+  // OPTIMIZATION: For render clones with already-tracked animations and no structure changes,
+  // skip expensive getAnimations() call and reuse tracked animations.
+  // We still need to validate tracked animations are still valid, but we can do that
+  // without calling getAnimations({ subtree: true }) on every frame.
+  if (isClone && hasTrackedAnimations && !structureChanged) {
+    // Use tracked animations directly, but validate them are still valid
+    const rootTracked = animationTracker.get(element)!;
+    const currentAnimations: Animation[] = [];
+    
+    // Quick validation: check if any tracked animations are still in getAnimations()
+    // We only check the root element's direct animations (cheaper than subtree)
+    const rootDirectAnimations = element.getAnimations();
+    for (const animation of rootTracked) {
+      if (isAnimationValid(animation, rootDirectAnimations)) {
+        currentAnimations.push(animation);
+      }
+    }
+    
+    // For render clones, animations don't change, so we can trust tracked set
+    // Just return the tracked set (which should be complete)
+    return { tracked: rootTracked, current: currentAnimations };
+  }
+  
+  // For prime timeline or first discovery: get current animations from the browser (includes subtree)
   // CRITICAL: This is expensive, so we return it to avoid calling it again
   const currentAnimations = element.getAnimations({ subtree: true });
+  
+  // Mark structure as stable after discovery (for render clones, this stays stable)
+  if (isClone) {
+    domStructureChanged.set(element, false);
+  }
+  
+  // Track animation count for lightweight change detection
+  lastAnimationCount.set(element, currentAnimations.length);
 
   // Track animations on each element where they exist
   for (const animation of currentAnimations) {
-    const target = animation.effect?.target;
+    const effect = animation.effect;
+    const target = effect && effect instanceof KeyframeEffect ? effect.target : null;
     if (target && target instanceof Element) {
       let tracked = animationTracker.get(target);
       if (!tracked) {
@@ -93,7 +155,7 @@ const discoverAndTrackAnimations = (
       tracked.add(animation);
     }
   }
-
+  
   // Also maintain a set on the root element for coordination
   let rootTracked = animationTracker.get(element);
   if (!rootTracked) {
@@ -118,7 +180,8 @@ const discoverAndTrackAnimations = (
   // We need to check all elements that might have tracked animations
   const allTargets = new Set<Element>();
   for (const animation of currentAnimations) {
-    const target = animation.effect?.target;
+    const effect = animation.effect;
+    const target = effect && effect instanceof KeyframeEffect ? effect.target : null;
     if (target && target instanceof Element) {
       allTargets.add(target);
     }
@@ -171,6 +234,22 @@ export const getTrackedAnimations = (element: Element): Animation[] => {
  */
 export const cleanupTrackedAnimations = (element: Element): void => {
   animationTracker.delete(element);
+  domStructureChanged.delete(element);
+  lastAnimationCount.delete(element);
+};
+
+/**
+ * Marks that DOM structure has changed for an element, requiring animation rediscovery.
+ * Should be called when elements are added/removed or CSS classes change that affect animations.
+ * 
+ * For render clones, this should never be called (DOM is static).
+ * For prime timeline, call this when mutations occur that might affect animations.
+ */
+export const markDomStructureChanged = (element: Element): void => {
+  // Only mark changes for prime timeline (not render clones)
+  if (!isRenderClone(element)) {
+    domStructureChanged.set(element, true);
+  }
 };
 
 // ============================================================================
