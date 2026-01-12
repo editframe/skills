@@ -1152,6 +1152,72 @@ describe("Dynamic content updates", () => {
       container.remove();
       localStorage.removeItem(storageKey);
     }, 1000);
+
+    test("does not lock up browser when restoring non-zero time from localStorage", async () => {
+      // This test verifies the fix for a critical bug where restoring a non-zero time from localStorage
+      // caused the browser to lock up completely due to seekTask being run twice.
+      const timegroupId = "localStorage-lockup-test";
+      const storageKey = `ef-timegroup-${timegroupId}`;
+
+      // Set a non-zero time in localStorage (this was the trigger for the bug)
+      localStorage.setItem(storageKey, "5.0");
+
+      const container = document.createElement("div");
+      document.body.appendChild(container);
+
+      // Create a timegroup with nested structure similar to improv-edit.html
+      // This structure triggers frame tasks that could cause the lockup if seekTask runs twice
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      timegroup.setAttribute("id", timegroupId);
+      timegroup.setAttribute("mode", "contain");
+      timegroup.setAttribute("duration", "10s");
+
+      // Add nested timegroups to trigger frame task execution
+      const innerTimegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      innerTimegroup.setAttribute("mode", "sequence");
+      timegroup.appendChild(innerTimegroup);
+
+      const childTimegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      childTimegroup.setAttribute("mode", "fixed");
+      childTimegroup.setAttribute("duration", "5s");
+      innerTimegroup.appendChild(childTimegroup);
+
+      // Use a timeout to detect if the browser locks up
+      // If the test doesn't complete within 5 seconds, it's likely locked up
+      container.appendChild(timegroup);
+      
+      // Wait for initial update
+      await timegroup.updateComplete;
+      
+      // Wait a bit for any async operations (including localStorage restoration) to complete
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // The bug manifested as the browser becoming unresponsive
+      // If we get here, the browser is still responsive
+      // Wait for media durations (this was where it could lock up if seekTask ran twice)
+      await Promise.race([
+        timegroup.waitForMediaDurations(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("waitForMediaDurations timeout - possible lockup")), 3000)
+        )
+      ]);
+      
+      // Verify that the time was restored correctly
+      // The time should be restored from localStorage (5.0, clamped to duration if needed)
+      assert.isTrue(
+        timegroup.currentTime > 0,
+        `Time should be restored from localStorage. Got: ${timegroup.currentTime}`
+      );
+      
+      // Verify the time is close to what we stored (allowing for clamping/quantization)
+      assert.isTrue(
+        Math.abs(timegroup.currentTime - 5.0) < 0.1 || timegroup.currentTime === 10.0,
+        `Time should be restored to approximately 5.0 or clamped to duration. Got: ${timegroup.currentTime}`
+      );
+
+      container.remove();
+      localStorage.removeItem(storageKey);
+    }, 10000);
   });
 
   describe("onFrame property", () => {

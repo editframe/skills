@@ -973,11 +973,11 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
         });
       } else if (EF_INTERACTIVE && this.seekTask.status === TaskStatus.INITIAL) {
         this.seekTask.run();
-      } else if (didLoadFromStorage) {
-        this.seekTask.run().catch(err => {
-          console.error("Error running seek task:", err);
-        });
       }
+      // Note: When didLoadFromStorage is true, we don't need to call seekTask.run() here
+      // because the currentTime setter (triggered by the scheduled restoration at line 942)
+      // will automatically trigger seekTask.run() via the setter's logic.
+      // Calling it twice would cause race conditions and potential deadlocks.
       
       // Setup playback listener after controller might be created
       this.#setupPlaybackListener();
@@ -1110,10 +1110,8 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
         });
         canvases.push(canvas);
         
-        // Yield every few captures to let browser paint
-        if (i % 3 === 2) {
-          await new Promise(resolve => setTimeout(resolve, 0));
-        }
+        // Yield to main thread between captures for responsiveness
+        await new Promise(resolve => setTimeout(resolve, 0));
       }
       
       return canvases;
