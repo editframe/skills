@@ -247,6 +247,11 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
         const clone = document.createElement("canvas");
         clone.width = shadowCanvas.width || srcEl.clientWidth;
         clone.height = shadowCanvas.height || srcEl.clientHeight;
+        // Mark ef-image canvases to preserve transparency (use PNG instead of JPEG)
+        // ef-video doesn't need this since videos don't have transparency
+        if (srcEl.tagName === "EF-IMAGE") {
+          clone.dataset.preserveAlpha = "true";
+        }
         const ctx = clone.getContext("2d");
         if (ctx) {
           try { ctx.drawImage(shadowCanvas, 0, 0); } catch {}
@@ -289,6 +294,8 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
         const clone = document.createElement("canvas");
         clone.width = shadowImg.naturalWidth;
         clone.height = shadowImg.naturalHeight;
+        // Mark as image-sourced canvas to preserve transparency (use PNG instead of JPEG)
+        clone.dataset.preserveAlpha = "true";
         const ctx = clone.getContext("2d");
         if (ctx) {
           try { ctx.drawImage(shadowImg, 0, 0); } catch {}
