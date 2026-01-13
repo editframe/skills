@@ -5,7 +5,7 @@ import {
   collectDocumentStyles,
   type SyncState,
 } from "./renderTimegroupPreview.js";
-import { isNativeCanvasApiEnabled, isNativeCanvasApiAvailable } from "./previewSettings.js";
+import { isNativeCanvasApiAvailable, getRenderMode, type RenderMode } from "./previewSettings.js";
 
 // ============================================================================
 // Constants
@@ -222,26 +222,25 @@ export function getInlineImageCacheSize(): number {
 // ============================================================================
 
 /**
- * Check if the native HTML-in-Canvas API should be used.
- * This checks both browser capability AND user preference.
- * @see https://github.com/WICG/html-in-canvas
+ * Get the effective render mode, validating that native is available when selected.
+ * Falls back to foreignObject if native is selected but not available.
  */
-function shouldUseNativeHtmlInCanvas(): boolean {
-  const enabled = isNativeCanvasApiEnabled();
+function getEffectiveRenderMode(): RenderMode {
+  const mode = getRenderMode();
+  
+  // Native mode requires browser support
+  if (mode === "native" && !isNativeCanvasApiAvailable()) {
+    return "foreignObject";
+  }
   
   if (!_hasLoggedNativeApiStatus) {
     _hasLoggedNativeApiStatus = true;
-    if (isNativeCanvasApiAvailable()) {
-      if (enabled) {
-        console.log("[renderToImage] Native HTML-in-Canvas API detected and enabled - using fast path");
-      } else {
-        console.log("[renderToImage] Native HTML-in-Canvas API detected but disabled by user preference");
-      }
-    }
+    console.log(`[renderToImage] Render mode: ${mode}${mode === "native" ? " (drawElementImage API)" : " (SVG foreignObject)"}`);
   }
   
-  return enabled;
+  return mode;
 }
+
 
 /**
  * Inline all images in a container as base64 data URIs.
@@ -286,7 +285,11 @@ function convertCanvasesToImages(container: HTMLElement): void {
   const canvases = container.querySelectorAll("canvas");
   for (const canvas of canvases) {
     try {
-      const dataUrl = canvas.toDataURL("image/png");
+      // Use PNG for image-sourced canvases to preserve transparency
+      const preserveAlpha = canvas.dataset.preserveAlpha === "true";
+      const dataUrl = preserveAlpha
+        ? canvas.toDataURL("image/png")
+        : canvas.toDataURL("image/jpeg", 0.95);
       const img = document.createElement("img");
       img.src = dataUrl;
       img.width = canvas.width;
@@ -680,25 +683,41 @@ export async function renderToImageNative(
 }
 
 /**
+ * Options for foreignObject rendering path.
+ */
+export interface ForeignObjectRenderOptions extends NativeRenderOptions {
+  /**
+   * Scale factor for encoding internal canvases.
+   * When set, canvases are scaled down before encoding to data URLs,
+   * dramatically reducing encoding time for thumbnails.
+   * Default: 1 (no scaling - encode at full resolution)
+   */
+  canvasScale?: number;
+}
+
+/**
  * Render HTML content to an image (or canvas) for drawing.
  * 
- * Uses native HTML-in-Canvas API (drawElementImage) when available for much faster
- * rendering. Falls back to SVG foreignObject serialization otherwise.
+ * Supports two rendering modes (configurable via previewSettings):
+ * - "native": Chrome's experimental drawElementImage API (fastest when available)
+ * - "foreignObject": SVG foreignObject serialization (fallback, works everywhere)
  * 
  * @param container - The HTML element to render
  * @param width - Target width in logical pixels
  * @param height - Target height in logical pixels
- * @param options - Native rendering options (only applies when native API is used)
- * @returns HTMLCanvasElement when using native API, HTMLImageElement when using foreignObject
+ * @param options - Rendering options
+ * @returns HTMLCanvasElement when using native, HTMLImageElement when using foreignObject
  */
 export async function renderToImage(
   container: HTMLElement,
   width: number,
   height: number,
-  options?: NativeRenderOptions,
+  options?: ForeignObjectRenderOptions,
 ): Promise<HTMLImageElement | HTMLCanvasElement> {
-  // Use native HTML-in-Canvas API if available and enabled (much faster, no tainting issues)
-  if (shouldUseNativeHtmlInCanvas()) {
+  const renderMode = getEffectiveRenderMode();
+  
+  // Native HTML-in-Canvas API path (fastest, requires Chrome flag)
+  if (renderMode === "native") {
     if (!_pathLogged) {
       _pathLogged = true;
       const effectiveDpr = options?.skipDprScaling ? 1 : window.devicePixelRatio;
@@ -707,9 +726,10 @@ export async function renderToImage(
     return renderToImageNative(container, width, height, options);
   }
   
+  // Fallback: SVG foreignObject serialization
   if (!_pathLogged) {
     _pathLogged = true;
-    console.log(`[renderToImage] Using FOREIGNOBJECT path (${width}x${height}) - native available: ${isNativeCanvasApiAvailable()}, enabled: ${isNativeCanvasApiEnabled()}`);
+    console.log(`[renderToImage] Using FOREIGNOBJECT path (${width}x${height}) - native available: ${isNativeCanvasApiAvailable()}`);
   }
   
   // Fallback: SVG foreignObject approach
@@ -719,27 +739,58 @@ export async function renderToImage(
   // Clone the container for serialization (don't modify original)
   const clone = container.cloneNode(true) as HTMLElement;
   
-  // Copy canvas content from originals to clones
+  // Convert original canvases directly to images and replace cloned canvases
+  // When canvasScale < 1, we scale down before encoding (MUCH faster for thumbnails)
+  const canvasScale = options?.canvasScale ?? 1;
   const clonedCanvases = clone.querySelectorAll("canvas");
   for (let i = 0; i < originalCanvases.length; i++) {
     const srcCanvas = originalCanvases[i];
     const dstCanvas = clonedCanvases[i];
     if (srcCanvas && dstCanvas && srcCanvas.width > 0 && srcCanvas.height > 0) {
-      dstCanvas.width = srcCanvas.width;
-      dstCanvas.height = srcCanvas.height;
-      const ctx = dstCanvas.getContext("2d");
-      if (ctx) {
-        try {
-          ctx.drawImage(srcCanvas, 0, 0);
-        } catch (e) { /* cross-origin */ }
-      }
+      try {
+        let dataUrl: string;
+        // Use PNG for image-sourced canvases to preserve transparency
+        const preserveAlpha = srcCanvas.dataset.preserveAlpha === "true";
+        
+        if (canvasScale < 1) {
+          // Scale down canvas before encoding - dramatically faster for thumbnails
+          // E.g., 1920x1080 → 480x270 at 0.25 scale reduces encoding from ~37ms to ~3ms
+          const scaledWidth = Math.floor(srcCanvas.width * canvasScale);
+          const scaledHeight = Math.floor(srcCanvas.height * canvasScale);
+          const scaledCanvas = document.createElement("canvas");
+          scaledCanvas.width = scaledWidth;
+          scaledCanvas.height = scaledHeight;
+          const scaledCtx = scaledCanvas.getContext("2d");
+          if (scaledCtx) {
+            scaledCtx.drawImage(srcCanvas, 0, 0, scaledWidth, scaledHeight);
+            dataUrl = preserveAlpha
+              ? scaledCanvas.toDataURL("image/png")
+              : scaledCanvas.toDataURL("image/jpeg", 0.85);
+          } else {
+            dataUrl = preserveAlpha
+              ? srcCanvas.toDataURL("image/png")
+              : srcCanvas.toDataURL("image/jpeg", 0.95);
+          }
+        } else {
+          dataUrl = preserveAlpha
+            ? srcCanvas.toDataURL("image/png")
+            : srcCanvas.toDataURL("image/jpeg", 0.95);
+        }
+        
+        const img = document.createElement("img");
+        img.src = dataUrl;
+        // Keep original dimensions - CSS will handle the visual scaling
+        img.width = srcCanvas.width;
+        img.height = srcCanvas.height;
+        const style = dstCanvas.getAttribute("style");
+        if (style) img.setAttribute("style", style);
+        dstCanvas.parentNode?.replaceChild(img, dstCanvas);
+      } catch (e) { /* cross-origin */ }
     }
   }
 
   // Inline external images
   await inlineImages(clone);
-  // Convert canvas elements to images
-  convertCanvasesToImages(clone);
 
   // Create wrapper with XHTML namespace (reuse serializer for better performance)
   const wrapper = document.createElement("div");
@@ -753,9 +804,9 @@ export async function renderToImage(
   }
   const serialized = _xmlSerializer.serializeToString(wrapper);
   
-  // DEBUG: Log serialized HTML size (first 2 calls only)
-  if (_renderCallCount < 2) {
-    console.log(`[renderToImage] FO serialized: ${serialized.length} chars`);
+  // DEBUG: Log serialized HTML size and dimensions
+  if (_renderCallCount < 5) {
+    console.log(`[renderToImage] FO path: ${width}x${height}, serialized: ${serialized.length} chars, canvasScale: ${canvasScale}`);
   }
 
   // Wrap in SVG foreignObject
@@ -835,13 +886,16 @@ export async function renderToImageDirect(
   const canvasRestoreInfo: Array<{ canvas: HTMLCanvasElement; parent: Node; nextSibling: Node | null; img: HTMLImageElement }> = [];
   
   // Convert canvases to images IN-PLACE (we'll restore them after serialization)
-  // Use JPEG encoding (faster than PNG for video frames)
+  // Use JPEG encoding for video frames (faster), PNG for images (preserves transparency)
   const canvasStart = performance.now();
   const canvases = Array.from(container.querySelectorAll("canvas"));
   for (const canvas of canvases) {
     try {
-      // JPEG with quality 0.85 is much faster than PNG for video content
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+      // Use PNG for image-sourced canvases to preserve transparency
+      const preserveAlpha = canvas.dataset.preserveAlpha === "true";
+      const dataUrl = preserveAlpha
+        ? canvas.toDataURL("image/png")
+        : canvas.toDataURL("image/jpeg", 0.95);
       const img = document.createElement("img");
       img.src = dataUrl;
       img.width = canvas.width;
@@ -965,7 +1019,11 @@ export function prepareFrameDataUri(
   const canvases = Array.from(container.querySelectorAll("canvas"));
   for (const canvas of canvases) {
     try {
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+      // Use PNG for image-sourced canvases to preserve transparency
+      const preserveAlpha = canvas.dataset.preserveAlpha === "true";
+      const dataUrl = preserveAlpha
+        ? canvas.toDataURL("image/png")
+        : canvas.toDataURL("image/jpeg", 0.95);
       const img = document.createElement("img");
       img.src = dataUrl;
       img.width = canvas.width;
@@ -1117,10 +1175,10 @@ export async function captureFromClone(
   }
 
   let image: HTMLCanvasElement | HTMLImageElement;
-  const useNativePath = shouldUseNativeHtmlInCanvas();
+  const renderMode = getEffectiveRenderMode();
   
-  if (useNativePath) {
-    // NATIVE PATH: Render the seeked renderClone directly using renderToImageNative
+  if (renderMode === "native") {
+    // NATIVE PATH: Render the seeked renderClone directly from live DOM
     // The clone is already at the correct time, so drawElementImage captures its current
     // visual state including video frames at the correct position.
     // 
@@ -1136,15 +1194,14 @@ export async function captureFromClone(
     `;
     
     // Use renderToImageNative which handles canvas setup and drawElementImage internally
-    // It expects the container element to be passed, and will append it as canvas child
-    // Note: renderToImageNative will move the container to a temp canvas, but since
-    // each capture creates a new clone, we don't need to restore it.
     image = await renderToImageNative(renderContainer, width, height);
   } else {
     // FOREIGNOBJECT PATH: Build passive structure from the SEEKED render clone
     // The clone is already at the correct time, so getComputedStyle captures the right values.
     // Styles are synced during clone building in a single pass.
+    const t0 = performance.now();
     const { container, syncState } = buildCloneStructure(renderClone, timeMs);
+    const buildTime = performance.now() - t0;
 
     // Create wrapper
     const bgSource = originalTimegroup ?? renderClone;
@@ -1157,8 +1214,10 @@ export async function captureFromClone(
       background: ${getComputedStyle(bgSource).background || "#000"};
     `;
     
+    const t1 = performance.now();
     const styleEl = document.createElement("style");
     styleEl.textContent = collectDocumentStyles();
+    const stylesTime = performance.now() - t1;
     previewContainer.appendChild(styleEl);
     previewContainer.appendChild(container);
     
@@ -1166,7 +1225,12 @@ export async function captureFromClone(
     overrideRootCloneStyles(syncState, true);
 
     // Render using foreignObject serialization
-    image = await renderToImage(previewContainer, width, height);
+    // Pass scale so canvases are encoded at thumbnail size (MUCH faster)
+    const t2 = performance.now();
+    image = await renderToImage(previewContainer, width, height, { canvasScale: scale });
+    const renderTime = performance.now() - t2;
+    
+    console.log(`[captureFromClone] build=${buildTime.toFixed(0)}ms, styles=${stylesTime.toFixed(0)}ms, render=${renderTime.toFixed(0)}ms (canvasScale=${scale})`);
   }
 
   // Draw to canvas (may need scaling for native path which is at DPR)
@@ -1233,6 +1297,9 @@ const TIME_EPSILON_MS = 1;
 /** Default scale for preview rendering */
 const DEFAULT_PREVIEW_SCALE = 1;
 
+/** Default resolution scale (full resolution) */
+const DEFAULT_RESOLUTION_SCALE = 1;
+
 /**
  * Convert relative time to absolute time for a timegroup.
  * Nested timegroup children have ABSOLUTE startTimeMs values,
@@ -1243,6 +1310,11 @@ function toAbsoluteTime(timegroup: EFTimegroup, relativeTimeMs: number): number 
 }
 
 export interface CanvasPreviewResult {
+  /**
+   * Wrapper container holding the canvas and debug label.
+   * Append this to your DOM - the canvas inside will receive transforms.
+   */
+  container: HTMLDivElement;
   canvas: HTMLCanvasElement;
   /**
    * Call this to re-render the timegroup to canvas at current visual state.
@@ -1253,6 +1325,28 @@ export interface CanvasPreviewResult {
 }
 
 /**
+ * Options for canvas preview rendering.
+ */
+export interface CanvasPreviewOptions {
+  /**
+   * Output scale factor (default: 1).
+   * Scales the final canvas size.
+   */
+  scale?: number;
+  
+  /**
+   * Resolution scale for internal rendering (default: 1).
+   * Reduces the internal render resolution for better performance.
+   * The canvas CSS size remains the same (browser upscales).
+   * - 1: Full resolution
+   * - 0.75: 3/4 resolution
+   * - 0.5: Half resolution
+   * - 0.25: Quarter resolution
+   */
+  resolutionScale?: number;
+}
+
+/**
  * Renders a timegroup preview to a canvas using SVG foreignObject.
  * 
  * Optimized with:
@@ -1260,25 +1354,64 @@ export interface CanvasPreviewResult {
  * - Temporal bucketing for time-based culling
  * - Property split (static vs animated)
  * - Parent index for O(1) visibility checks
+ * - Resolution scaling for performance (renders at lower resolution, CSS upscales)
  *
  * @param timegroup - The source timegroup to preview
- * @param scale - Scale factor (default 1, use <1 for thumbnails)
+ * @param scaleOrOptions - Scale factor (default 1) or options object
  * @returns Object with canvas and refresh function
  */
 export function renderTimegroupToCanvas(
   timegroup: EFTimegroup,
-  scale: number = DEFAULT_PREVIEW_SCALE,
+  scaleOrOptions: number | CanvasPreviewOptions = DEFAULT_PREVIEW_SCALE,
 ): CanvasPreviewResult {
+  // Normalize options
+  const options: CanvasPreviewOptions = typeof scaleOrOptions === "number"
+    ? { scale: scaleOrOptions }
+    : scaleOrOptions;
+  
+  const scale = options.scale ?? DEFAULT_PREVIEW_SCALE;
+  const resolutionScale = options.resolutionScale ?? DEFAULT_RESOLUTION_SCALE;
+  
   const width = timegroup.offsetWidth || DEFAULT_WIDTH;
   const height = timegroup.offsetHeight || DEFAULT_HEIGHT;
+  
+  // Calculate effective render dimensions (internal resolution)
+  const renderWidth = Math.floor(width * resolutionScale);
+  const renderHeight = Math.floor(height * resolutionScale);
 
   // Create canvas at scaled size (with devicePixelRatio for sharpness)
+  // Canvas buffer size is based on resolutionScale (internal resolution)
+  // CSS size is based on scale (logical display size)
   const dpr = window.devicePixelRatio || 1;
   const canvas = document.createElement("canvas");
-  canvas.width = Math.floor(width * scale * dpr);
-  canvas.height = Math.floor(height * scale * dpr);
+  // Canvas buffer: render at resolutionScale (effective internal resolution)
+  canvas.width = Math.floor(renderWidth * scale * dpr);
+  canvas.height = Math.floor(renderHeight * scale * dpr);
+  // CSS size: display at full logical size (browser upscales if needed)
   canvas.style.width = `${Math.floor(width * scale)}px`;
   canvas.style.height = `${Math.floor(height * scale)}px`;
+  
+  // Create wrapper container for canvas + debug label
+  const wrapperContainer = document.createElement("div");
+  wrapperContainer.style.cssText = "position: relative; display: inline-block;";
+  
+  // Create debug label (positioned above the canvas, doesn't scale with it)
+  const debugLabel = document.createElement("div");
+  debugLabel.style.cssText = `
+    position: absolute;
+    top: -24px;
+    left: 0;
+    padding: 2px 8px;
+    font: bold 12px monospace;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 3px;
+    white-space: nowrap;
+    z-index: 1000;
+    pointer-events: none;
+  `;
+  
+  wrapperContainer.appendChild(debugLabel);
+  wrapperContainer.appendChild(canvas);
 
   const ctx = canvas.getContext("2d");
   if (!ctx) {
@@ -1290,15 +1423,23 @@ export function renderTimegroupToCanvas(
   const initialTimeMs = toAbsoluteTime(timegroup, timegroup.currentTimeMs ?? 0);
   const { container, syncState } = buildCloneStructure(timegroup, initialTimeMs);
 
-  // Create a wrapper div with proper dimensions
+  // Create a wrapper div with scaled dimensions
+  // When resolutionScale < 1, we render at a smaller size and CSS transform scales the content
   const previewContainer = document.createElement("div");
   previewContainer.style.cssText = `
-    width: ${width}px;
-    height: ${height}px;
+    width: ${renderWidth}px;
+    height: ${renderHeight}px;
     position: relative;
     overflow: hidden;
     background: ${getComputedStyle(timegroup).background || "#000"};
   `;
+  
+  // Apply CSS transform to scale down the content within the container
+  // This makes the clone render at reduced complexity
+  if (resolutionScale < 1) {
+    container.style.transform = `scale(${resolutionScale})`;
+    container.style.transformOrigin = "top left";
+  }
   
   // Inject document styles so CSS rules work in SVG foreignObject
   const styleEl = document.createElement("style");
@@ -1312,6 +1453,9 @@ export function renderTimegroupToCanvas(
   let rendering = false;
   let lastTimeMs = -1;
 
+  // Log resolution scale on first render for debugging
+  let hasLoggedScale = false;
+  
   const refresh = async (): Promise<void> => {
     if (rendering) return;
     // Clone-timeline: captures use separate clones, Prime-timeline is never locked
@@ -1324,18 +1468,47 @@ export function renderTimegroupToCanvas(
     lastTimeMs = userTimeMs;
     
     rendering = true;
+    
+    // Log scale info once per initialization
+    if (!hasLoggedScale) {
+      hasLoggedScale = true;
+      const mode = getEffectiveRenderMode();
+      console.log(`[renderTimegroupToCanvas] Resolution scale: ${resolutionScale} (${width}x${height} → ${renderWidth}x${renderHeight}), canvas buffer: ${canvas.width}x${canvas.height}, CSS size: ${canvas.style.width}x${canvas.style.height}, renderMode: ${mode}`);
+    }
 
     try {
       syncStyles(syncState, toAbsoluteTime(timegroup, userTimeMs));
       overrideRootCloneStyles(syncState);
 
-      const image = await renderToImage(previewContainer, width, height);
+      // Render at scaled dimensions with canvas scaling for internal video frames
+      const t0 = performance.now();
+      const image = await renderToImage(previewContainer, renderWidth, renderHeight, {
+        canvasScale: resolutionScale,
+      });
+      const renderTime = performance.now() - t0;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.save();
       ctx.scale(dpr * scale, dpr * scale);
       ctx.drawImage(image, 0, 0);
       ctx.restore();
+      
+      // Log render time periodically (every 60 frames)
+      _renderCallCount++;
+      if (_renderCallCount % 60 === 0) {
+        console.log(`[renderTimegroupToCanvas] Frame render: ${renderTime.toFixed(1)}ms (resolutionScale=${resolutionScale}, image=${image.width}x${image.height})`);
+      }
+      
+      // Update debug label (outside canvas, doesn't scale)
+      const scaleColors: Record<number, string> = {
+        1: "#00ff00",    // Green = full
+        0.75: "#ffff00", // Yellow = 3/4
+        0.5: "#ff8800",  // Orange = 1/2
+        0.25: "#ff0000", // Red = 1/4
+      };
+      const indicatorColor = scaleColors[resolutionScale] || "#ffffff";
+      debugLabel.style.color = indicatorColor;
+      debugLabel.textContent = `Render: ${renderWidth}x${renderHeight} (${Math.round(resolutionScale * 100)}%)`;
     } catch (e) {
       console.error("Canvas preview render failed:", e);
     } finally {
@@ -1346,6 +1519,6 @@ export function renderTimegroupToCanvas(
   // Do initial render
   refresh();
 
-  return { canvas, refresh, syncState };
+  return { container: wrapperContainer, canvas, refresh, syncState };
 }
 

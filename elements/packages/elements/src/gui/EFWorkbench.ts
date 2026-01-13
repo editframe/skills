@@ -10,12 +10,18 @@ import { renderTimegroupPreview } from "../preview/renderTimegroupPreview.js";
 import { renderTimegroupToVideo, type RenderToVideoOptions, type RenderProgress, RenderCancelledError } from "../preview/renderTimegroupToVideo.js";
 import { 
   isNativeCanvasApiAvailable, 
-  isNativeCanvasApiEnabled, 
-  setNativeCanvasApiEnabled,
   getPreviewPresentationMode,
   setPreviewPresentationMode,
   type PreviewPresentationMode,
+  getRenderMode,
+  setRenderMode,
+  type RenderMode,
+  getPreviewResolutionScale,
+  setPreviewResolutionScale,
+  type PreviewResolutionScale,
 } from "../preview/previewSettings.js";
+import { provide } from "@lit/context";
+import { previewSettingsContext, type PreviewSettings } from "./previewSettingsContext.js";
 import { phosphorIcon, ICONS } from "./icons.js";
 
 // Side-effect import for template usage (pan-zoom is created in light DOM by wrapWithWorkbench)
@@ -268,10 +274,18 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   
   
   @state()
-  private nativeCanvasApiEnabled = isNativeCanvasApiEnabled();
+  private renderMode: RenderMode = getRenderMode();
   
   @state()
   private presentationMode: PreviewPresentationMode = getPreviewPresentationMode();
+  
+  @state()
+  private previewResolutionScale: PreviewResolutionScale = getPreviewResolutionScale();
+  
+  @provide({ context: previewSettingsContext })
+  private previewSettings: PreviewSettings = {
+    resolutionScale: getPreviewResolutionScale(),
+  };
   
   @state()
   private debugThumbnailTimestamps = false;
@@ -360,13 +374,36 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     }
   }
   
+  // Track zoom for detecting changes that need canvas reinit
+  private lastCanvasZoom = 1;
+  private zoomReinitTimeout: number | null = null;
+  
   private handleTransformChanged(e: CustomEvent<{ x: number; y: number; scale: number }>) {
     this.panZoomTransform = e.detail;
+    
     // Update overlay transform based on current mode
     if (this.presentationMode === "clone") {
       this.updateCloneTransform();
     } else if (this.presentationMode === "canvas") {
       this.updateCanvasTransform();
+      
+      // Check if zoom changed enough to warrant re-rendering at new resolution
+      // Only reinit if zoom changed by >25% from last init
+      const zoomRatio = e.detail.scale / this.lastCanvasZoom;
+      if (zoomRatio < 0.75 || zoomRatio > 1.33) {
+        // Debounce to avoid thrashing during zoom gestures
+        if (this.zoomReinitTimeout !== null) {
+          clearTimeout(this.zoomReinitTimeout);
+        }
+        this.zoomReinitTimeout = window.setTimeout(() => {
+          this.zoomReinitTimeout = null;
+          if (this.presentationMode === "canvas") {
+            this.lastCanvasZoom = this.panZoomTransform.scale;
+            this.stopCanvasMode();
+            this.initCanvasMode();
+          }
+        }, 500); // Wait 500ms after zoom stops
+      }
     }
   }
   
@@ -669,6 +706,57 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     }
   }
   
+  /**
+   * Get the resolution scale for canvas rendering.
+   * 
+   * Logic:
+   * - Get actual displayed size from getBoundingClientRect()
+   * - For "Full": render at displayed size (1:1 pixel mapping)
+   * - For other settings: render at that % of displayed size
+   * - Never exceed composition size (100%)
+   */
+  private getResolutionScale(
+    timegroup: EFTimegroup,
+    _canvasContainer: HTMLElement
+  ): number {
+    // Composition size = the native resolution (offsetWidth/Height gives CSS layout size)
+    const compositionWidth = timegroup.offsetWidth || 1920;
+    const compositionHeight = timegroup.offsetHeight || 1080;
+    
+    // Displayed size = actual screen pixels after all transforms
+    const rect = timegroup.getBoundingClientRect();
+    const displayedWidth = rect.width;
+    const displayedHeight = rect.height;
+    
+    // Display scale = displayed / composition (how much the composition is scaled down for display)
+    const displayScale = Math.min(
+      displayedWidth / compositionWidth,
+      displayedHeight / compositionHeight
+    );
+    
+    // For "Full", we want to render at displayed size (displayScale of composition)
+    // For other settings, we want min(displayScale, setting) of composition
+    // But we should never exceed 100% of composition
+    const targetScale = this.previewResolutionScale === 1 
+      ? displayScale  // Full = match display
+      : Math.min(displayScale, this.previewResolutionScale);  // Others = min of display and setting
+    
+    // Clamp to reasonable bounds [10%, 100%]
+    const finalScale = Math.max(0.1, Math.min(1, targetScale));
+    
+    const renderWidth = Math.floor(compositionWidth * finalScale);
+    const renderHeight = Math.floor(compositionHeight * finalScale);
+    
+    console.log(`[EFWorkbench] Resolution scale:
+  Composition (offsetWidth×offsetHeight): ${compositionWidth}×${compositionHeight}
+  Displayed (boundingRect): ${Math.round(displayedWidth)}×${Math.round(displayedHeight)}
+  Display scale: ${(displayScale * 100).toFixed(1)}%
+  Setting: ${this.previewResolutionScale === 1 ? "Full" : `${Math.round(this.previewResolutionScale * 100)}%`}
+  Final: ${(finalScale * 100).toFixed(1)}% → ${renderWidth}×${renderHeight}`);
+    
+    return finalScale;
+  }
+  
   private initCanvasMode() {
     // Don't initialize if we're no longer in canvas mode
     if (this.presentationMode !== "canvas") return;
@@ -692,14 +780,23 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     // Show the canvas container
     canvasContainer.style.display = "block";
     
+    // Get resolution scale based on display size and user setting
+    const resolutionScale = this.getResolutionScale(timegroup, canvasContainer);
+    
+    // Track zoom level for detecting significant changes
+    this.lastCanvasZoom = this.panZoomTransform.scale;
+    
     try {
-      const { canvas, refresh } = renderTimegroupToCanvas(timegroup, 1);
+      const { container, canvas, refresh } = renderTimegroupToCanvas(timegroup, {
+        scale: 1,
+        resolutionScale: resolutionScale,
+      });
       
       this.canvasPreviewElement = canvas;
       canvas.classList.add("clone-content");
       
       canvasContainer.innerHTML = "";
-      canvasContainer.appendChild(canvas);
+      canvasContainer.appendChild(container);
       
       // Apply current transform
       this.updateCanvasTransform();
@@ -730,6 +827,10 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     if (this.canvasAnimationFrame !== null) {
       cancelAnimationFrame(this.canvasAnimationFrame);
       this.canvasAnimationFrame = null;
+    }
+    if (this.zoomReinitTimeout !== null) {
+      clearTimeout(this.zoomReinitTimeout);
+      this.zoomReinitTimeout = null;
     }
     this.canvasPreviewElement = null;
     
@@ -922,9 +1023,24 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     this.cancelExport();
   }
   
-  private handleNativeCanvasApiToggle(enabled: boolean) {
-    setNativeCanvasApiEnabled(enabled);
-    this.nativeCanvasApiEnabled = enabled;
+  private handleRenderModeChange(mode: RenderMode) {
+    setRenderMode(mode);
+    this.renderMode = mode;
+  }
+  
+  private handleResolutionScaleChange(scale: PreviewResolutionScale) {
+    console.log(`[EFWorkbench] Resolution scale changed to ${scale}, presentationMode=${this.presentationMode}`);
+    setPreviewResolutionScale(scale);
+    this.previewResolutionScale = scale;
+    this.previewSettings = { ...this.previewSettings, resolutionScale: scale };
+    
+    // Reinitialize canvas mode if active to apply new resolution
+    // Note: presentationMode at runtime may be "clone" or "dom" (not in TS type but used in UI)
+    if (this.presentationMode === "canvas") {
+      console.log("[EFWorkbench] Reinitializing canvas mode with new resolution scale");
+      this.stopCanvasMode();
+      this.initCanvasMode();
+    }
   }
   
   private handleDebugThumbnailTimestampsToggle(enabled: boolean) {
@@ -939,7 +1055,6 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   
   private renderSettingsPopover() {
     const isAvailable = isNativeCanvasApiAvailable();
-    const isEnabled = this.nativeCanvasApiEnabled;
     
     return html`
       <div 
@@ -1022,73 +1137,156 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
           </div>
         </div>
         
-        <!-- Native Canvas API Setting -->
+        <!-- Render Mode Setting -->
         <div style="
           background: rgba(51, 65, 85, 0.4);
           border-radius: 8px;
           padding: 12px;
         ">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-            <span style="color: #e2e8f0; font-size: 12px; font-weight: 500;">Native Canvas API</span>
-            <div style="display: flex; align-items: center; gap: 5px;">
-              <span style="
-                display: inline-block;
-                width: 7px;
-                height: 7px;
-                border-radius: 50%;
-                background: ${isAvailable ? '#4ade80' : '#64748b'};
-              "></span>
-              <span style="color: ${isAvailable ? '#4ade80' : '#64748b'}; font-size: 10px; font-weight: 500;">
-                ${isAvailable ? 'Available' : 'Not Available'}
-              </span>
-            </div>
+            <span style="color: #e2e8f0; font-size: 12px; font-weight: 500;">Render Mode</span>
+            ${isAvailable ? html`
+              <div style="display: flex; align-items: center; gap: 5px;">
+                <span style="
+                  display: inline-block;
+                  width: 7px;
+                  height: 7px;
+                  border-radius: 50%;
+                  background: #4ade80;
+                "></span>
+                <span style="color: #4ade80; font-size: 10px; font-weight: 500;">
+                  Native Available
+                </span>
+              </div>
+            ` : ''}
           </div>
           
-          <label style="
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: ${isAvailable ? 'pointer' : 'not-allowed'};
-            opacity: ${isAvailable ? '1' : '0.5'};
-          ">
-            <input
-              type="checkbox"
-              ?checked=${isEnabled}
-              ?disabled=${!isAvailable}
-              @change=${(e: Event) => this.handleNativeCanvasApiToggle((e.target as HTMLInputElement).checked)}
+          <div style="display: flex; gap: 4px; background: rgba(30, 41, 59, 0.6); border-radius: 6px; padding: 3px;">
+            <button
+              @click=${() => this.handleRenderModeChange("foreignObject")}
               style="
-                width: 14px;
-                height: 14px;
-                accent-color: #3b82f6;
-                cursor: ${isAvailable ? 'pointer' : 'not-allowed'};
+                flex: 1;
+                padding: 6px 8px;
+                border: none;
+                border-radius: 4px;
+                font-size: 10px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.15s ease;
+                background: ${this.renderMode === "foreignObject" ? "rgba(59, 130, 246, 0.3)" : "transparent"};
+                color: ${this.renderMode === "foreignObject" ? "#60a5fa" : "#94a3b8"};
+                border: 1px solid ${this.renderMode === "foreignObject" ? "rgba(59, 130, 246, 0.4)" : "transparent"};
               "
-            />
-            <span style="color: #cbd5e1; font-size: 11px;">Enable (faster rendering)</span>
-          </label>
+            >foreignObject</button>
+            <button
+              @click=${() => this.handleRenderModeChange("native")}
+              ?disabled=${!isAvailable}
+              style="
+                flex: 1;
+                padding: 6px 8px;
+                border: none;
+                border-radius: 4px;
+                font-size: 10px;
+                font-weight: 500;
+                cursor: ${isAvailable ? 'pointer' : 'not-allowed'};
+                transition: all 0.15s ease;
+                background: ${this.renderMode === "native" ? "rgba(34, 197, 94, 0.3)" : "transparent"};
+                color: ${this.renderMode === "native" ? "#4ade80" : isAvailable ? "#94a3b8" : "#64748b"};
+                border: 1px solid ${this.renderMode === "native" ? "rgba(34, 197, 94, 0.4)" : "transparent"};
+                opacity: ${isAvailable ? '1' : '0.5'};
+              "
+            >native</button>
+          </div>
           
-          ${!isAvailable ? html`
-            <div style="
-              margin-top: 10px;
-              padding: 8px 10px;
-              background: rgba(251, 191, 36, 0.1);
-              border: 1px solid rgba(251, 191, 36, 0.2);
-              border-radius: 6px;
-              color: #fbbf24;
-              font-size: 10px;
-              line-height: 1.4;
-            ">
-              Enable <code style="background: rgba(0,0,0,0.3); padding: 1px 4px; border-radius: 3px; font-size: 9px;">chrome://flags/#canvas-draw-element</code> in Chrome Canary.
-            </div>
-          ` : html`
-            <div style="
-              margin-top: 8px;
-              color: #64748b;
-              font-size: 10px;
-              line-height: 1.4;
-            ">
-              Experimental drawElementImage API for faster HTML-to-canvas rendering.
-            </div>
-          `}
+          <div style="margin-top: 8px; color: #64748b; font-size: 10px; line-height: 1.4;">
+            ${this.renderMode === "foreignObject" 
+              ? "SVG foreignObject serialization. Works everywhere but slower." 
+              : "Chrome's drawElementImage API. Fastest, requires chrome://flags/#canvas-draw-element."}
+          </div>
+        </div>
+        
+        <!-- Preview Resolution Setting -->
+        <div style="
+          background: rgba(51, 65, 85, 0.4);
+          border-radius: 8px;
+          padding: 12px;
+          margin-top: 10px;
+        ">
+          <div style="color: #e2e8f0; font-size: 12px; font-weight: 500; margin-bottom: 10px;">Preview Resolution</div>
+          
+          <div style="display: flex; gap: 4px; background: rgba(30, 41, 59, 0.6); border-radius: 6px; padding: 3px;">
+            <button
+              @click=${() => this.handleResolutionScaleChange(1)}
+              style="
+                flex: 1;
+                padding: 6px 8px;
+                border: none;
+                border-radius: 4px;
+                font-size: 10px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.15s ease;
+                background: ${this.previewResolutionScale === 1 ? "rgba(59, 130, 246, 0.3)" : "transparent"};
+                color: ${this.previewResolutionScale === 1 ? "#60a5fa" : "#94a3b8"};
+                border: 1px solid ${this.previewResolutionScale === 1 ? "rgba(59, 130, 246, 0.4)" : "transparent"};
+              "
+            >Full</button>
+            <button
+              @click=${() => this.handleResolutionScaleChange(0.75)}
+              style="
+                flex: 1;
+                padding: 6px 8px;
+                border: none;
+                border-radius: 4px;
+                font-size: 10px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.15s ease;
+                background: ${this.previewResolutionScale === 0.75 ? "rgba(59, 130, 246, 0.3)" : "transparent"};
+                color: ${this.previewResolutionScale === 0.75 ? "#60a5fa" : "#94a3b8"};
+                border: 1px solid ${this.previewResolutionScale === 0.75 ? "rgba(59, 130, 246, 0.4)" : "transparent"};
+              "
+            >3/4</button>
+            <button
+              @click=${() => this.handleResolutionScaleChange(0.5)}
+              style="
+                flex: 1;
+                padding: 6px 8px;
+                border: none;
+                border-radius: 4px;
+                font-size: 10px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.15s ease;
+                background: ${this.previewResolutionScale === 0.5 ? "rgba(59, 130, 246, 0.3)" : "transparent"};
+                color: ${this.previewResolutionScale === 0.5 ? "#60a5fa" : "#94a3b8"};
+                border: 1px solid ${this.previewResolutionScale === 0.5 ? "rgba(59, 130, 246, 0.4)" : "transparent"};
+              "
+            >1/2</button>
+            <button
+              @click=${() => this.handleResolutionScaleChange(0.25)}
+              style="
+                flex: 1;
+                padding: 6px 8px;
+                border: none;
+                border-radius: 4px;
+                font-size: 10px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.15s ease;
+                background: ${this.previewResolutionScale === 0.25 ? "rgba(59, 130, 246, 0.3)" : "transparent"};
+                color: ${this.previewResolutionScale === 0.25 ? "#60a5fa" : "#94a3b8"};
+                border: 1px solid ${this.previewResolutionScale === 0.25 ? "rgba(59, 130, 246, 0.4)" : "transparent"};
+              "
+            >1/4</button>
+          </div>
+          
+          <div style="margin-top: 8px; color: #64748b; font-size: 10px; line-height: 1.4;">
+            ${this.previewResolutionScale === 1 
+              ? "Full: Matches display resolution (1:1 pixels, adapts to zoom)." 
+              : `${Math.round(this.previewResolutionScale * 100)}%: Reduced quality for faster rendering.`}
+            Canvas mode only.
+          </div>
         </div>
         
         <!-- Debug Thumbnails Setting -->
@@ -1479,12 +1677,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   };
 
   render() {
-    // TODO: this.rendering is not correctly set when using the framegen bridge
-    // so to hack we're checking for the existence of EF_RENDERING on the window
-    if (
-      this.rendering ||
-      (typeof window !== "undefined" && window.EF_RENDERING?.() === true)
-    ) {
+    if (this.rendering) {
       return html`
         <slot class="fixed inset-0 h-full w-full" name="canvas"></slot>
       `;
