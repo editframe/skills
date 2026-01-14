@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Thumbnail Performance Test</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: system-ui;
+    }
+    ef-timegroup {
+      width: 1920px;
+      height: 1080px;
+      background: #000;
+    }
+    #results {
+      margin-top: 20px;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <h1>Thumbnail Capture Performance Test</h1>
+  <p>Testing captureBatch with yield between captures and size limits</p>
+  
+  <ef-timegroup id="test-timegroup" mode="contain" fps="30" duration="10000">
+    <ef-video src="test-assets/bars-n-tone.mp4" start-time="0" duration="10000"></ef-video>
+  </ef-timegroup>
+  
+  <div id="results"></div>
+  
+  <script type="module">
+    import '/packages/elements/src/elements/EFTimegroup.js';
+    import '/packages/elements/src/elements/EFVideo.js';
+    
+    const timegroup = document.querySelector('ef-timegroup');
+    const results = document.getElementById('results');
+    
+    async function runTest() {
+      results.textContent = 'Waiting for timegroup to initialize...\n';
+      
+      // Wait for media to load
+      await timegroup.updateComplete;
+      if (timegroup.waitForMediaDurations) {
+        await timegroup.waitForMediaDurations();
+      }
+      
+      // Generate timestamps for 15 thumbnails
+      const duration = timegroup.durationMs;
+      const timestamps = [];
+      for (let i = 0; i < 15; i++) {
+        timestamps.push((i * duration) / 14);
+      }
+      
+      results.textContent += `Testing captureBatch with ${timestamps.length} thumbnails...\n`;
+      results.textContent += `Duration: ${duration}ms\n`;
+      results.textContent += `Timestamps: ${timestamps.map(t => Math.round(t)).join(', ')}ms\n\n`;
+      
+      // Measure captureBatch performance
+      const startTime = performance.now();
+      const canvases = await timegroup.captureBatch(timestamps, {
+        scale: 0.25,
+        contentReadyMode: 'immediate'
+      });
+      const endTime = performance.now();
+      const elapsed = endTime - startTime;
+      
+      results.textContent += `\n✅ Capture completed!\n`;
+      results.textContent += `Total time: ${elapsed.toFixed(2)}ms\n`;
+      results.textContent += `Average per thumbnail: ${(elapsed / timestamps.length).toFixed(2)}ms\n`;
+      results.textContent += `Canvases captured: ${canvases.length}\n`;
+      
+      // Check canvas dimensions
+      if (canvases.length > 0) {
+        const firstCanvas = canvases[0];
+        results.textContent += `\nCanvas dimensions:\n`;
+        results.textContent += `  Width: ${firstCanvas.width}px (logical: ${firstCanvas.style.width})\n`;
+        results.textContent += `  Height: ${firstCanvas.height}px (logical: ${firstCanvas.style.height})\n`;
+        
+        // Verify max size limit (480px max width)
+        const logicalWidth = parseInt(firstCanvas.style.width);
+        if (logicalWidth <= 480) {
+          results.textContent += `  ✅ Size limit enforced (${logicalWidth}px <= 480px)\n`;
+        } else {
+          results.textContent += `  ⚠️ Size limit NOT enforced (${logicalWidth}px > 480px)\n`;
+        }
+      }
+      
+      // Test responsiveness - try to interact during capture
+      results.textContent += `\nTesting responsiveness during capture...\n`;
+      let interactionCount = 0;
+      const interactionInterval = setInterval(() => {
+        interactionCount++;
+        results.textContent += `  Interaction ${interactionCount} processed\n`;
+      }, 10);
+      
+      const startTime2 = performance.now();
+      const canvases2 = await timegroup.captureBatch(timestamps.slice(0, 5), {
+        scale: 0.25,
+        contentReadyMode: 'immediate'
+      });
+      const endTime2 = performance.now();
+      clearInterval(interactionInterval);
+      
+      results.textContent += `\n✅ Responsiveness test completed!\n`;
+      results.textContent += `Capture time: ${(endTime2 - startTime2).toFixed(2)}ms\n`;
+      results.textContent += `Interactions processed: ${interactionCount}\n`;
+      results.textContent += `  (Higher is better - shows browser stayed responsive)\n`;
+    }
+    
+    // Run test after a short delay to ensure everything is loaded
+    setTimeout(runTest, 1000);
+  </script>
+</body>
+</html>

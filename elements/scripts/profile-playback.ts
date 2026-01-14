@@ -13,10 +13,13 @@
  *   --output <path>    Output path for .cpuprofile file (default: ./playback-profile.cpuprofile)
  *   --focus <file>     Focus line-level profiling on specific file
  *   --headless         Run in headless mode (default: false)
+ *   --scrub            Profile scrubbing instead of playback (default: false)
+ *   --scrub-speed <ms> Time between scrub updates in ms (default: 50)
  * 
  * Examples:
  *   npx tsx scripts/profile-playback.ts
  *   npx tsx scripts/profile-playback.ts --duration 10000 --focus EFTimegroup
+ *   npx tsx scripts/profile-playback.ts --scrub --duration 3000
  */
 
 import { chromium, type Browser, type Page, type CDPSession } from "playwright";
@@ -186,6 +189,8 @@ async function main() {
   const outputPath = getArg("output", "./playback-profile.cpuprofile");
   const headless = hasFlag("headless");
   const focusFile = getArg("focus", "");
+  const scrubMode = hasFlag("scrub");
+  const scrubSpeed = parseInt(getArg("scrub-speed", "50"), 10);
 
   console.log(`\n🔬 Playback Profiling Harness`);
   console.log(`   Project: ${project}`);
@@ -263,26 +268,55 @@ async function main() {
     await cdp.send("Profiler.enable");
     await cdp.send("Profiler.setSamplingInterval", { interval: 100 });
 
-    console.log(`\n🎬 Starting playback and CPU profile...`);
+    if (scrubMode) {
+      console.log(`\n🎬 Starting scrubbing and CPU profile...`);
+      console.log(`   Scrubbing speed: ${scrubSpeed}ms between updates`);
+    } else {
+      console.log(`\n🎬 Starting playback and CPU profile...`);
+    }
     await cdp.send("Profiler.start");
 
-    // Start playback
+    // Start playback or scrubbing
     const playbackStartTime = Date.now();
-    await page.evaluate(async ({ duration }) => {
-      const timegroup = document.querySelector("ef-timegroup") as any;
-      if (!timegroup) {
-        throw new Error("Timegroup not found");
-      }
-      
-      // Start playback
-      timegroup.play();
-      
-      // Wait for the specified duration
-      await new Promise(resolve => setTimeout(resolve, duration));
-      
-      // Pause playback
-      timegroup.pause();
-    }, { duration });
+    if (scrubMode) {
+      await page.evaluate(async ({ duration, scrubSpeed }) => {
+        const timegroup = document.querySelector("ef-timegroup") as any;
+        if (!timegroup) {
+          throw new Error("Timegroup not found");
+        }
+        
+        const totalDuration = timegroup.durationMs;
+        const startTime = Date.now();
+        const endTime = startTime + duration;
+        
+        // Simulate rapid scrubbing by updating currentTimeMs frequently
+        while (Date.now() < endTime) {
+          // Scrub to a random position (simulates user scrubbing)
+          const progress = Math.random();
+          const targetTime = progress * totalDuration;
+          timegroup.currentTimeMs = targetTime;
+          
+          // Wait a bit for the seek to process
+          await new Promise(resolve => setTimeout(resolve, scrubSpeed));
+        }
+      }, { duration, scrubSpeed });
+    } else {
+      await page.evaluate(async ({ duration }) => {
+        const timegroup = document.querySelector("ef-timegroup") as any;
+        if (!timegroup) {
+          throw new Error("Timegroup not found");
+        }
+        
+        // Start playback
+        timegroup.play();
+        
+        // Wait for the specified duration
+        await new Promise(resolve => setTimeout(resolve, duration));
+        
+        // Pause playback
+        timegroup.pause();
+      }, { duration });
+    }
 
     const playbackDuration = Date.now() - playbackStartTime;
     console.log(`⏱️  Playback completed in ${(playbackDuration / 1000).toFixed(2)}s`);
