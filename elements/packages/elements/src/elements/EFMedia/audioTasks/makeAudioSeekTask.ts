@@ -27,8 +27,20 @@ export const makeAudioSeekTask = (host: EFMedia): AudioSeekTask => {
     },
     onComplete: (_value) => {},
     task: async (): Promise<VideoSample | undefined> => {
+      // VALIDATED: This task is NOT used for audio rendering.
+      // It is only awaited in EFAudio.frameTask for synchronization purposes.
+      // The actual audio rendering pipeline uses fetchAudioSpanningTime() which:
+      // - Uses mediaEngineTask.taskComplete
+      // - Uses audioInitSegmentFetchTask.taskComplete
+      // - Uses audioSegmentFetchTask (via MediaEngine.fetchMediaSegment)
+      // - Does NOT use audioSeekTask.value or result
+      // 
+      // This task exists to ensure proper sequencing of audio-related tasks
+      // but its return value is intentionally undefined and never used.
       return undefined;
-      // TODO: validate that the audio seek task is not actually used to render any audio
+      
+      // Previous implementation (commented out) would have returned a VideoSample,
+      // but that was never actually used in the rendering pipeline.
       // CRITICAL FIX: Use the targetSeekTimeMs from args, not host.desiredSeekTimeMs
       // This ensures we use the same seek time that the segment loading tasks used
 

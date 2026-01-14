@@ -8,15 +8,27 @@ import { EFMedia } from "./EFMedia.js";
 
 @customElement("ef-audio")
 export class EFAudio extends TWMixin(EFMedia) {
-  // HACK: This dummy property is needed to activate Lit's property processing system
-  // Without it, inherited properties from EFMedia don't work correctly
-  // TODO: Remove this as soon as we have an audio-specific property that needs @property
-  @property({ type: Boolean, attribute: "dummy-property" })
-  // @ts-expect-error - This is a hack to activate Lit's property processing system
-  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: Used to activate Lit's property processing
-  private _propertyHack = false;
+  /**
+   * Audio volume level (0.0 to 1.0)
+   * @domAttribute "volume"
+   */
+  @property({ type: Number, attribute: "volume", reflect: true })
+  volume = 1.0;
 
   audioElementRef = createRef<HTMLAudioElement>();
+
+  protected updated(
+    changedProperties: Map<PropertyKey, unknown>,
+  ): void {
+    super.updated(changedProperties);
+    
+    // Sync volume property to HTMLAudioElement whenever it changes or element is first rendered
+    if (this.audioElementRef.value) {
+      if (changedProperties.has("volume") || changedProperties.size === 0) {
+        this.audioElementRef.value.volume = this.volume;
+      }
+    }
+  }
 
   render() {
     return html`<audio ${ref(this.audioElementRef)}></audio>`;
