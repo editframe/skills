@@ -905,7 +905,7 @@ export async function renderTimegroupToVideo(
           console.log(`[renderToVideo] ForeignObject: Built clone structure once (${syncState.nodeCount} nodes, will reuse across frames)`);
           
           // First frame: prepare data URI and start loading
-          const dataUri = prepareFrameDataUri(foCloneState.previewContainer, timegroupWidth, timegroupHeight);
+          const dataUri = await prepareFrameDataUri(foCloneState.previewContainer, timegroupWidth, timegroupHeight);
           pendingImagePromise = loadImageFromDataUri(dataUri);
           totalSyncMs += performance.now() - syncStart;
         }
@@ -926,7 +926,8 @@ export async function renderTimegroupToVideo(
           syncStyles(foCloneState.syncState, nextTimeMs);
           
           // Prepare next frame's data URI (serializes DOM, restores it immediately)
-          const nextDataUri = prepareFrameDataUri(foCloneState.previewContainer, timegroupWidth, timegroupHeight);
+          // Canvas encoding happens in parallel via worker pool
+          const nextDataUri = await prepareFrameDataUri(foCloneState.previewContainer, timegroupWidth, timegroupHeight);
           totalSyncMs += performance.now() - syncStart;
           
           // Start loading next frame's image (don't await yet)
