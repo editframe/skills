@@ -580,15 +580,17 @@ abstract class ProbeBase {
       .map(Number);
     const frameRate = fpsNum && fpsDen ? `${fpsNum}/${fpsDen}` : "30/1";
 
-    // Scrub track uses 30-second fragments (30000000 microseconds)
+    // Scrub track uses 30-second fragments with keyframes every 10 frames for fast seeking.
+    // NOTE: Do NOT use frag_keyframe - it would create a fragment at every keyframe.
+    // We want multiple keyframes within a single 30-second fragment (single trun with many samples).
     const fragmenterArgs = [
       "-movflags",
-      "frag_keyframe+empty_moov+default_base_moof",
+      "empty_moov+default_base_moof",
       "-frag_duration",
       "30000000", // 30 seconds in microseconds
     ];
 
-    // Transcode to low-res H.264 with native FPS
+    // Transcode to low-res H.264 with keyframes every 10 frames for fast seeking
     const ffmpegArgs = [
       ...this.ffmpegAudioInputOptions,
       ...this.ffmpegVideoInputOptions,
@@ -601,13 +603,13 @@ abstract class ProbeBase {
       "-preset",
       "ultrafast", // Fast encoding for scrub track
       "-crf",
-      "28", // Lower quality for smaller file size (~100-200kbps)
+      "28", // Lower quality for smaller file size
       "-vf",
       `scale=${targetWidth}:${scrubHeight}`, // Scale to scrub resolution
       "-r",
       frameRate, // Maintain native FPS
       "-g",
-      "30", // GOP size (keyframe every 30 frames, ~1 second at 30fps)
+      "10", // Keyframe every 10 frames for fast seeking within fragments
       "-f",
       "mp4",
       "-bitexact", // Ensure deterministic output

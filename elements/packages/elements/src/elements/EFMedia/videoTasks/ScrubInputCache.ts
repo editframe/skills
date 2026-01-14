@@ -1,22 +1,47 @@
 import type { BufferedSeekingInput } from "../BufferedSeekingInput";
 
 /**
- * Cache for scrub BufferedSeekingInput instances
- * Since scrub segments are 30s long, we can reuse the same input for many seeks
- * within that time range, making scrub seeking very efficient
+ * Cache for scrub BufferedSeekingInput instances.
+ * 
+ * For JIT media (segmented scrub tracks), caches by segment ID.
+ * For Asset media (single-file scrub tracks), caches by URL so all segments
+ * share the same BufferedSeekingInput instance.
  */
 export class ScrubInputCache {
   private cache = new Map<number, BufferedSeekingInput>();
-  private maxCacheSize = 5; // Keep last 5 scrub inputs (covers 2.5 minutes)
+  private urlCache = new Map<string, BufferedSeekingInput>();
+  private maxCacheSize = 5;
 
   /**
-   * Get or create BufferedSeekingInput for a scrub segment
+   * Get or create BufferedSeekingInput for a scrub segment.
+   * 
+   * @param segmentId - The segment ID
+   * @param createInputFn - Factory function to create the input
+   * @param scrubUrl - Optional URL for single-file scrub tracks (all segments share same input)
    */
   async getOrCreateInput(
     segmentId: number,
     createInputFn: () => Promise<BufferedSeekingInput | undefined>,
+    scrubUrl?: string,
   ): Promise<BufferedSeekingInput | undefined> {
-    // Check if we already have this segment cached
+    // For single-file scrub tracks (AssetMediaEngine), use URL-based caching
+    // This ensures all segments share the same BufferedSeekingInput
+    if (scrubUrl) {
+      const cached = this.urlCache.get(scrubUrl);
+      if (cached) {
+        return cached;
+      }
+
+      const input = await createInputFn();
+      if (!input) {
+        return undefined;
+      }
+
+      this.urlCache.set(scrubUrl, input);
+      return input;
+    }
+
+    // For segmented scrub tracks (JIT), use segment-based caching
     const cached = this.cache.get(segmentId);
     if (cached) {
       return cached;

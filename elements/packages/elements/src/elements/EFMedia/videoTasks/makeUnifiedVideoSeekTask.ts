@@ -57,35 +57,12 @@ export const makeUnifiedVideoSeekTask = (
         }
       }
 
-      // SECOND: Main not cached, try scrub path (instant if cached)
-      // COMMENTED OUT: Scrub track loading system temporarily disabled due to performance issues
-      // const scrubSample = await tryGetScrubSample(
-      //   mediaEngine,
-      //   desiredSeekTimeMs,
-      //   signal,
-      // );
+      // SECOND: Scrub track disabled for thumbnail generation
+      // Testing showed scrub track is actually SLOWER than main video for this use case
+      // because the entire 42MB file needs to be parsed vs efficient segment-based seeking.
+      // The scrub track is designed for interactive scrubbing preview, not batch thumbnail gen.
 
-      // if (scrubSample || signal.aborted) {
-      //   if (signal.aborted) {
-      //     return undefined;
-      //   }
-
-      //   // If scrub succeeded, start background main quality upgrade (non-blocking)
-      //   if (scrubSample) {
-      //     startMainQualityUpgrade(
-      //       host,
-      //       mediaEngine,
-      //       desiredSeekTimeMs,
-      //       signal,
-      //     ).catch(() => {
-      //       // Main upgrade failed - scrub already succeeded, that's fine
-      //     });
-      //   }
-
-      //   return scrubSample;
-      // }
-
-      // THIRD: Neither are cached, fetch main video path as final fallback
+      // THIRD: Fetch main video path
       const result = await getMainVideoSample(
         host,
         mediaEngine,
@@ -162,6 +139,12 @@ async function tryGetScrubSample(
           return undefined; // Not cached - let main video handle it
         }
 
+        // For single-file scrub tracks (AssetMediaEngine trackId -1), use URL-based caching
+        // This ensures all segments share the same BufferedSeekingInput instance
+        const scrubUrl = scrubRendition.trackId === -1 
+          ? `/@ef-scrub-track/${mediaEngine.src}`
+          : undefined;
+
         // Get cached scrub input and seek within it
         const scrubInput = await scrubInputCache.getOrCreateInput(
           segmentId,
@@ -187,6 +170,7 @@ async function tryGetScrubSample(
               },
             );
           },
+          scrubUrl,
         );
 
         if (!scrubInput) {

@@ -11,7 +11,7 @@ import type {
 } from "../../transcoding/types";
 import type { UrlGenerator } from "../../transcoding/utils/UrlGenerator";
 import type { EFMedia } from "../EFMedia";
-import { BaseMediaEngine } from "./BaseMediaEngine";
+import { BaseMediaEngine, mediaCache } from "./BaseMediaEngine";
 import type { MediaRendition } from "./shared/MediaTaskUtils";
 import {
   convertToScaledTime,
@@ -137,6 +137,24 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
     return `/@ef-track/${this.src}?trackId=${trackId}&segmentId=${segmentId}`;
   }
 
+  /**
+   * Override isSegmentCached to handle scrub track specially.
+   * The scrub track is served as a single file, not segmented,
+   * so we check if the scrub track file is cached (regardless of segment ID).
+   */
+  override isSegmentCached(
+    segmentId: number,
+    rendition: AudioRendition | VideoRendition,
+  ): boolean {
+    // For scrub track (trackId -1), check if the entire scrub file is cached
+    if (rendition.trackId === -1) {
+      const scrubUrl = `/@ef-scrub-track/${this.src}`;
+      return mediaCache.has(scrubUrl);
+    }
+    // For other tracks, use the default behavior
+    return super.isSegmentCached(segmentId, rendition);
+  }
+
   async fetchInitSegment(
     rendition: { trackId: number | undefined; src: string },
     signal: AbortSignal,
@@ -196,6 +214,14 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
           throw new Error("Segment ID is not available");
         }
         const url = this.buildMediaSegmentUrl(rendition.trackId, segmentId);
+
+        // For scrub track (trackId -1), fetch entire file without Range headers
+        // This ensures a single cache entry for all segments
+        if (rendition.trackId === -1) {
+          span.setAttribute("scrubTrack", true);
+          return this.fetchMedia(url, signal);
+        }
+
         const mediaSegment = this.data[rendition.trackId]?.segments[segmentId];
         if (!mediaSegment) {
           throw new Error("Media segment not found");
