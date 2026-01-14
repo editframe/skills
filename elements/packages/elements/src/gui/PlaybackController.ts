@@ -102,6 +102,9 @@ export class PlaybackController implements ReactiveController {
         const isRestoring = (this.#host as any).isRestoringFromLocalStorage?.() ?? false;
         if (!isRestoring) {
           this.#host.saveTimeToLocalStorage?.(newTime);
+        } else {
+          // Clear restoration flag after seek completes
+          (this.#host as any).setRestoringFromLocalStorage?.(false);
         }
         this.#seekInProgress = false;
         return newTime;
@@ -245,19 +248,35 @@ export class PlaybackController implements ReactiveController {
     this.setPlaying(false);
   }
 
+  #removed = false;
+  
   hostConnected(): void {
     // Defer all operations to avoid blocking during initialization
     // This prevents deadlocks when many timegroups are initializing simultaneously
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
+        // Check if this controller was removed before the RAF callback executed.
+        // This happens when wrapWithWorkbench moves the element, causing disconnect/reconnect.
+        if (this.#removed || this.#host.playbackController !== this) {
+          return;
+        }
+        
         if (this.#playing) {
           this.startPlayback();
         } else {
-          // Don't await - let it run in background to avoid blocking
+          // Wait for media durations then restore from localStorage
           this.#host.waitForMediaDurations?.().then(() => {
+            // Check again after async operation - controller could have been removed
+            if (this.#removed || this.#host.playbackController !== this) {
+              return;
+            }
+            
             const maybeLoadedTime = this.#host.loadTimeFromLocalStorage?.();
             if (maybeLoadedTime !== undefined) {
+              // Set restoration flag to prevent seekTask from saving back to localStorage
+              (this.#host as any).setRestoringFromLocalStorage?.(true);
               this.currentTime = maybeLoadedTime;
+              // Flag is cleared by seekTask after seek finishes
             } else if (this.#currentTime === undefined) {
               this.#currentTime = 0;
             }
@@ -281,10 +300,18 @@ export class PlaybackController implements ReactiveController {
     this.#currentTimeMsProvider.setValue(this.currentTimeMs);
   }
 
+  static readonly THROTTLED_FRAME_TASK_MAX_WAITS = 100;
+  
   async runThrottledFrameTask(): Promise<void> {
     if (this.#frameTaskInProgress) {
       this.#pendingFrameTaskRun = true;
+      let waitLoopCount = 0;
       while (this.#frameTaskInProgress) {
+        waitLoopCount++;
+        if (waitLoopCount > PlaybackController.THROTTLED_FRAME_TASK_MAX_WAITS) {
+          // Safety break to prevent infinite loops
+          break;
+        }
         await this.#host.frameTask.taskComplete;
       }
       return;
@@ -330,6 +357,7 @@ export class PlaybackController implements ReactiveController {
   }
 
   remove(): void {
+    this.#removed = true;  // Mark as removed to abort any pending RAF callbacks
     this.stopPlayback();
     this.#listeners.clear();
     this.#host.removeController(this);
@@ -414,6 +442,11 @@ export class PlaybackController implements ReactiveController {
   }
 
   private async startPlayback() {
+    // Guard against starting playback on a removed controller
+    if (this.#removed) {
+      return;
+    }
+    
     await this.stopPlayback();
     const host = this.#host;
     if (!host) {
@@ -422,6 +455,11 @@ export class PlaybackController implements ReactiveController {
 
     if (host.waitForMediaDurations) {
       await host.waitForMediaDurations();
+    }
+    
+    // Check again after async - controller could have been removed
+    if (this.#removed) {
+      return;
     }
 
     const currentMs = this.currentTimeMs;

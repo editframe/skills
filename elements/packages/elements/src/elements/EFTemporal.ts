@@ -573,6 +573,8 @@ export const shallowGetTemporalElements = (
 };
 
 export class OwnCurrentTimeController implements ReactiveController {
+  #lastKnownTimeMs: number | undefined = undefined;
+  
   constructor(
     private host: EFTimegroup,
     private temporal: TemporalMixinInterface & LitElement,
@@ -581,6 +583,15 @@ export class OwnCurrentTimeController implements ReactiveController {
   }
 
   hostUpdated() {
+    // CRITICAL FIX: Only trigger child updates when root's currentTimeMs actually changes.
+    // Previously, this fired on EVERY root update, causing 40+ child updates per root update.
+    // With nested timegroups, this created cascading updates that locked up the main thread.
+    const currentTimeMs = this.host.currentTimeMs;
+    if (this.#lastKnownTimeMs === currentTimeMs) {
+      return; // Time hasn't changed, no need to update children
+    }
+    this.#lastKnownTimeMs = currentTimeMs;
+    
     // Defer update to avoid Lit warning about scheduling updates after update completed
     // This batches updates and prevents cascading update cycles
     Promise.resolve().then(() => {
@@ -685,18 +696,34 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
       super.connectedCallback();
       this.#ownCurrentTimeController?.remove();
 
-      // Ensure PlaybackController is created for root elements
-      // This handles case where element is root on initial mount
-      if (!this.parentTimegroup && !this.playbackController) {
-        this.didBecomeRoot();
+      // Root detection: Check DOM structure to determine if this is truly a root.
+      // 
+      // We can't rely on Lit Context (parentTimegroup) because context propagates
+      // asynchronously during update cycles. Children may complete their first update
+      // before ancestors have provided context, causing them to incorrectly think
+      // they're roots.
+      //
+      // Instead, we check if there's an ancestor ef-timegroup in the DOM. This is
+      // reliable because DOM structure is established synchronously at connection time.
+      // 
+      // If there's NO ancestor timegroup, this is a true root → create PlaybackController.
+      // If there IS an ancestor, wait for context to propagate (handled by parentTimegroup setter).
+      // Note: closest() includes self, so we check from parentElement to find true ancestors.
+      const hasAncestorTimegroup = this.parentElement?.closest('ef-timegroup') != null;
+      
+      if (!hasAncestorTimegroup && !this.playbackController) {
+        // True root: no ancestor timegroup in DOM
+        // Defer slightly to allow element to fully initialize
+        this.updateComplete.then(() => {
+          if (!this.isConnected) return;
+          if (!this.playbackController) {
+            this.didBecomeRoot();
+          }
+        });
       }
-
-      // Initialize playback controller for root elements
-      // The parentTimegroup setter may have already called this, but the guard prevents double-creation
-      const role = determineTemporalRole(this.parentTimegroup);
-      if (role === "root") {
-        this.didBecomeRoot();
-      }
+      // For elements WITH ancestors, the parentTimegroup setter will be called
+      // when Lit Context propagates, and if the role changes, didBecomeRoot/didBecomeChild
+      // will be called appropriately.
     }
 
     get parentTimegroup() {
@@ -1040,7 +1067,14 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
       args: () => [this.ownCurrentTimeMs] as const,
       task: async ([], { signal: _signal }) => {
         let fullyUpdated = await this.updateComplete;
+        let loopCount = 0;
+        const MAX_LOOP_ITERATIONS = 100;
         while (!fullyUpdated) {
+          loopCount++;
+          if (loopCount > MAX_LOOP_ITERATIONS) {
+            console.error(`[EFTemporal] frameTask while loop exceeded ${MAX_LOOP_ITERATIONS} iterations, breaking. Element:`, this.tagName, this.id || 'unnamed');
+            break; // Break out to prevent infinite loop
+          }
           fullyUpdated = await this.updateComplete;
         }
       },

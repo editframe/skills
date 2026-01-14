@@ -572,6 +572,11 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
   isRestoringFromLocalStorage(): boolean {
     return this.#restoringFromLocalStorage;
   }
+  
+  /** @internal - Used by PlaybackController to set restoration state */
+  setRestoringFromLocalStorage(value: boolean): void {
+    this.#restoringFromLocalStorage = value;
+  }
   #customFrameTasks: Set<FrameTaskCallback> = new Set();
   #onFrameCallback: FrameTaskCallback | null = null;
   #onFrameCleanup: (() => void) | null = null;
@@ -900,7 +905,12 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
         if (storedValue === null) {
           return undefined;
         }
-        return Number.parseFloat(storedValue);
+        const parsedValue = Number.parseFloat(storedValue);
+        // Guard against NaN and Infinity which could cause issues
+        if (Number.isNaN(parsedValue) || !Number.isFinite(parsedValue)) {
+          return undefined;
+        }
+        return parsedValue;
       } catch (error) {
         log("Failed to load time from localStorage", error);
       }
@@ -909,84 +919,24 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
   }
 
   connectedCallback() {
-    console.log(`[EFTimegroup] connectedCallback for ${this.id || 'unnamed'} (root: ${this.isRootTimegroup})`);
     
     // CRITICAL: super.connectedCallback() MUST be synchronous for Lit lifecycle to work correctly.
     // Deferring it breaks render clones because updateComplete resolves before Lit initializes.
+    // 
+    // EFTemporal.connectedCallback() handles root detection after Lit Context propagates:
+    // - Schedules updateComplete.then(didBecomeRoot check)
+    // - Only true roots (no parent after context) create PlaybackController
+    // 
+    // PlaybackController.hostConnected() owns ALL root initialization:
+    // - waitForMediaDurations
+    // - localStorage time restoration  
+    // - initial seek
+    //
+    // This avoids the previous race conditions where both EFTimegroup.connectedCallback
+    // and PlaybackController.hostConnected tried to initialize, causing concurrent seeks.
     super.connectedCallback();
-    
-    if (!this.playbackController) {
-      // Only root timegroups need to wait for media durations - they process all media in the tree
-      // Child timegroups skip this entirely to avoid deadlocks and redundant work
-      // The root will handle all media loading, and children will benefit from that
-      if (this.isRootTimegroup) {
-        // Don't await - let it run in background to avoid blocking
-        this.waitForMediaDurations().catch(err => {
-          console.error("Error waiting for media durations:", err);
-        });
-      }
-      
-      let didLoadFromStorage = false;
-      // localStorage timestamp restoration (with guard to prevent infinite loops)
-      if (this.id && this.isRootTimegroup) {
-        const maybeLoadedTime = this.loadTimeFromLocalStorage();
-        if (maybeLoadedTime !== undefined && maybeLoadedTime !== this.#currentTime) {
-          // Set flag to prevent recursive seeks during restoration
-          this.#restoringFromLocalStorage = true;
-          try {
-            // Use seek() method instead of direct currentTime setter to ensure proper initialization
-            // But only if we're not already seeking (avoid race conditions)
-            if (!this.#seekInProgress) {
-              // Schedule restoration after initial update completes to avoid timing issues
-              this.updateComplete.then(() => {
-                this.currentTime = maybeLoadedTime;
-                this.#restoringFromLocalStorage = false;
-              }).catch(() => {
-                this.#restoringFromLocalStorage = false;
-              });
-              didLoadFromStorage = true;
-            } else {
-              // If seek is already in progress, clear flag and skip restoration
-              // The current seek will complete first, then we can restore
-              this.#restoringFromLocalStorage = false;
-            }
-          } catch (error) {
-            console.warn("[EFTimegroup] Error restoring time from localStorage:", error);
-            this.#restoringFromLocalStorage = false;
-          }
-        }
-      }
 
-      // Auto-init: seek to frame 0 for root timegroups if enabled and not loaded from storage
-      // waitForMediaDurations was already started above for root timegroups
-      // The seek will handle waiting for media if needed
-      if (
-        this.autoInit &&
-        this.isRootTimegroup &&
-        !didLoadFromStorage &&
-        EF_INTERACTIVE
-      ) {
-        // Don't await - let seek handle waiting for media when it actually needs it
-        // This prevents blocking during initialization
-        this.seek(0).catch(err => {
-          console.error("Error during auto-init seek:", err);
-        });
-      } else if (EF_INTERACTIVE && this.seekTask.status === TaskStatus.INITIAL) {
-        this.seekTask.run();
-      }
-      // Note: When didLoadFromStorage is true, we don't need to call seekTask.run() here
-      // because the currentTime setter (triggered by the scheduled restoration at line 942)
-      // will automatically trigger seekTask.run() via the setter's logic.
-      // Calling it twice would cause race conditions and potential deadlocks.
-      
-      // Setup playback listener after controller might be created
-      this.#setupPlaybackListener();
-    } else {
-      // PlaybackController already exists, setup listener now
-      this.#setupPlaybackListener();
-    }
-
-    // Defer controller creation and workbench wrapping to avoid blocking
+    // Defer TimegroupController creation and workbench wrapping to next frame
     // These operations involve DOM queries (closest, getBoundingClientRect) which
     // can be expensive when many elements initialize simultaneously
     requestAnimationFrame(() => {
@@ -1000,6 +950,16 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
         }
       });
     });
+  }
+  
+  /**
+   * Called when this timegroup becomes a root (no parent timegroup).
+   * Sets up the playback listener after PlaybackController is created.
+   * @internal
+   */
+  didBecomeRoot() {
+    super.didBecomeRoot();
+    this.#setupPlaybackListener();
   }
 
   /**
@@ -1896,6 +1856,12 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     });
   }
 
+  // Track frameTask execution count to detect runaway loops
+  #timegroupFrameTaskCount = 0;
+  #timegroupFrameTaskLastReset = Date.now();
+  static readonly TIMEGROUP_FRAME_TASK_THRESHOLD = 100;
+  static readonly TIMEGROUP_FRAME_TASK_RESET_MS = 1000;
+
   /** @internal */
   frameTask = new Task(this, {
     // Re-enabled with EF_INTERACTIVE guard: only auto-runs in interactive mode
@@ -1903,6 +1869,19 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     autoRun: EF_INTERACTIVE,
     args: () => [this.ownCurrentTimeMs, this.currentTimeMs] as const,
     task: async ([ownCurrentTimeMs, currentTimeMs]) => {
+      // Check for runaway loop
+      const now = Date.now();
+      if (now - this.#timegroupFrameTaskLastReset > EFTimegroup.TIMEGROUP_FRAME_TASK_RESET_MS) {
+        this.#timegroupFrameTaskCount = 0;
+        this.#timegroupFrameTaskLastReset = now;
+      }
+      this.#timegroupFrameTaskCount++;
+      
+      if (this.#timegroupFrameTaskCount > EFTimegroup.TIMEGROUP_FRAME_TASK_THRESHOLD) {
+        // Safety break to prevent infinite loops
+        return;
+      }
+      
       if (this.isRootTimegroup) {
         // Root timegroup orchestrates frame rendering for entire tree
         await withSpan(
@@ -1987,7 +1966,6 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
               )
             ]);
           } catch (error) {
-            console.warn(`[EFTimegroup] waitForMediaDurations timeout or error in seek, continuing anyway:`, error);
             // Continue with seek even if durations aren't loaded yet
             // Duration will be 0 or incorrect, but at least the page won't freeze
           }

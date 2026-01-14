@@ -48,7 +48,11 @@ export class EFAudio extends TWMixin(EFMedia) {
       await this.audioSegmentFetchTask.taskComplete;
       await this.audioSeekTask.taskComplete;
       await this.audioBufferTask.taskComplete;
-      this.rootTimegroup?.requestUpdate();
+      // REMOVED: this.rootTimegroup?.requestUpdate() was causing infinite update loops.
+      // When EFAudio's frameTask ran, it would trigger root to update, which triggered
+      // OwnCurrentTimeController.hostUpdated on all children, which triggered more
+      // frameTask runs, creating an infinite cycle.
+      // The root timegroup already updates when currentTime changes - no need to force it here.
     },
   });
 
