@@ -6,6 +6,7 @@ import { session } from "@/electron-exec/electronReExport";
 import { envString } from "@/util/env";
 import type { AssetsMetadataBundle } from "@/queues/units-of-work/Render/shared/assetMetadata";
 import { defaultAssetProvider, type AssetProvider } from "./AssetProvider";
+import { getMimeTypeFromPath } from "./getMimeTypeFromPath.js";
 
 const WEB_HOST = envString("WEB_HOST", "http://localhost:3000");
 const PROTOCOL = WEB_HOST.startsWith("https") ? "https" : "http";
@@ -88,23 +89,23 @@ export async function createOrgSession(
     if (rangeHeader) {
       const range = RangeHeader.parse(rangeHeader);
       const readStream = await assetProvider.createReadStream(filePath, range);
+      const mimeType = getMimeTypeFromPath(filePath) || "application/octet-stream";
       return new Response(createReadableStreamFromReadable(readStream), {
         status: 206,
         headers: {
-          // FIXME: we don't know the mime type here
-          // "Content-Type": "video/mp4",
+          "Content-Type": mimeType,
           "Content-Range": range.toHeader(),
         },
       });
     }
 
     const readStream = await assetProvider.createReadStream(filePath);
+    const mimeType = getMimeTypeFromPath(filePath) || "application/octet-stream";
 
     return new Response(createReadableStreamFromReadable(readStream), {
       status: 200,
       headers: {
-        // FIXME: we don't know the mime type here
-        // "Content-Type": "video/mp4",
+        "Content-Type": mimeType,
       },
     });
   });
