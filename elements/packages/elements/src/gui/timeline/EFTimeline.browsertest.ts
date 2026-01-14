@@ -223,6 +223,107 @@ describe("EFTimeline", () => {
       expect(timeline.targetTemporal).toBe(timegroup2);
       expect(timeline.durationMs).toBe(15000);
     });
+
+    test("reinitializes timeline ruler and thumbnails after clearing and re-selecting", async () => {
+      await import("../../canvas/EFCanvas.js");
+      await import("../EFTimelineRuler.js");
+      await import("../../elements/EFThumbnailStrip.js");
+      
+      const canvas = document.createElement("ef-canvas");
+      canvas.style.width = "800px";
+      canvas.style.height = "600px";
+      document.body.appendChild(canvas);
+      await (canvas as any).updateComplete;
+
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      const timegroupId = nextId();
+      timegroup.id = timegroupId;
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "10s");
+      canvas.appendChild(timegroup);
+      await timegroup.updateComplete;
+
+      const element = document.createElement("div");
+      element.id = "test-element";
+      element.setAttribute("data-element-id", "test-element");
+      element.style.position = "absolute";
+      timegroup.appendChild(element);
+      await (canvas as any).updateComplete;
+
+      const timeline = document.createElement("ef-timeline") as EFTimeline;
+      timeline.target = "selection";
+      timeline.showRuler = true;
+      timeline.style.width = "800px";
+      timeline.style.height = "400px";
+      document.body.appendChild(timeline);
+      await timeline.updateComplete;
+
+      // Initially no selection - timeline should show empty state
+      expect(timeline.targetTemporal).toBe(null);
+      
+      // Select element - timeline should initialize
+      (canvas as any).selectionContext.select("test-element");
+      await timeline.updateComplete;
+      await new Promise((resolve) => setTimeout(resolve, 100)); // Wait for ResizeObserver
+      
+      expect(timeline.targetTemporal).toBe(timegroup);
+      expect(timeline.durationMs).toBe(10000);
+      
+      // Verify initial state is correct
+      const timelinePrivate = timeline as any;
+      const initialViewportWidth = timelinePrivate.cachedViewportWidth;
+      expect(initialViewportWidth).toBeGreaterThan(0);
+      expect(initialViewportWidth).not.toBe(800); // Should not be default value
+      
+      const initialTimelineState = timeline.timelineState;
+      expect(initialTimelineState.viewportWidth).toBeGreaterThan(0);
+      expect(initialTimelineState.viewportWidth).not.toBe(800);
+      
+      // Get ruler and verify it has correct content-width
+      const ruler = timeline.shadowRoot?.querySelector("ef-timeline-ruler");
+      expect(ruler).toBeTruthy();
+      const rulerContentWidth = (ruler as any).contentWidth;
+      expect(rulerContentWidth).toBeGreaterThan(0);
+      
+      // Clear selection - timeline should show empty state
+      (canvas as any).selectionContext.clear();
+      await timeline.updateComplete;
+      expect(timeline.targetTemporal).toBe(null);
+      
+      // Re-select element - timeline should reinitialize properly
+      (canvas as any).selectionContext.select("test-element");
+      await timeline.updateComplete;
+      await new Promise((resolve) => setTimeout(resolve, 100)); // Wait for ResizeObserver
+      
+      expect(timeline.targetTemporal).toBe(timegroup);
+      expect(timeline.durationMs).toBe(10000);
+      
+      // Verify viewport width is correctly set after re-selection (not default 800)
+      const reinitViewportWidth = timelinePrivate.cachedViewportWidth;
+      expect(reinitViewportWidth).toBeGreaterThan(0);
+      expect(reinitViewportWidth).not.toBe(800); // Should not be default value
+      expect(reinitViewportWidth).toBe(initialViewportWidth); // Should match initial value
+      
+      // Verify timeline state has correct viewport width
+      const reinitTimelineState = timeline.timelineState;
+      expect(reinitTimelineState.viewportWidth).toBeGreaterThan(0);
+      expect(reinitTimelineState.viewportWidth).not.toBe(800);
+      expect(reinitTimelineState.viewportWidth).toBe(initialTimelineState.viewportWidth);
+      
+      // Verify ruler has correct content-width after re-selection
+      const reinitRuler = timeline.shadowRoot?.querySelector("ef-timeline-ruler");
+      expect(reinitRuler).toBeTruthy();
+      const reinitRulerContentWidth = (reinitRuler as any).contentWidth;
+      expect(reinitRulerContentWidth).toBeGreaterThan(0);
+      expect(reinitRulerContentWidth).toBe(rulerContentWidth);
+      
+      // Verify thumbnail strip has proper width (if present)
+      const thumbnailStrip = timeline.shadowRoot?.querySelector("ef-thumbnail-strip");
+      if (thumbnailStrip) {
+        const stripWidth = (thumbnailStrip as any).stripWidth || (thumbnailStrip as any)._stripWidth;
+        expect(stripWidth).toBeGreaterThan(0);
+      }
+    });
   });
 
   describe("playback controls", () => {

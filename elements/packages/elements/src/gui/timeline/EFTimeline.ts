@@ -770,15 +770,30 @@ export class EFTimeline extends TWMixin(LitElement) {
     const tracksScroll = this.tracksScrollRef.value;
     if (!tracksScroll) return;
     
+    // Disconnect existing observer if any (shouldn't happen, but be safe)
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+    }
+    
     // Initial measurement (only happens once on setup)
-    this.cachedViewportWidth = tracksScroll.clientWidth;
+    // Use clientWidth for initial measurement as it's more reliable than contentRect
+    // which might be 0 if element hasn't been laid out yet
+    const initialWidth = tracksScroll.clientWidth;
+    if (initialWidth > 0) {
+      this.cachedViewportWidth = initialWidth;
+    }
     
     this.resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         // Use contentRect to avoid triggering layout
-        this.cachedViewportWidth = entry.contentRect.width;
-        // Request update to propagate new viewport width
-        this.requestUpdate();
+        const width = entry.contentRect.width;
+        if (width > 0) {
+          this.cachedViewportWidth = width;
+          // Update timeline state to propagate new viewport width to context consumers
+          this.updateTimelineState();
+          // Request update to trigger re-render with new dimensions
+          this.requestUpdate();
+        }
       }
     });
     this.resizeObserver.observe(tracksScroll);
@@ -800,6 +815,18 @@ export class EFTimeline extends TWMixin(LitElement) {
       this.setupScrollListener();
     } else if (!this.tracksScrollRef.value && this.scrollHandler) {
       this.removeScrollListener();
+    }
+
+    // Set up ResizeObserver when tracks-scroll element becomes available
+    // This handles the case where timeline initially has no target (empty state)
+    // and then gets a target after selection, causing tracks-scroll to be rendered
+    if (this.tracksScrollRef.value && !this.resizeObserver) {
+      this.setupResizeObserver();
+      // Update timeline state to propagate the newly measured viewport width
+      this.updateTimelineState();
+    } else if (!this.tracksScrollRef.value && this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = undefined;
     }
   }
 
