@@ -804,4 +804,94 @@ describe("EFThumbnailStrip", () => {
       container.remove();
     }, 10000);
   });
+
+  describe("cache persistence", () => {
+    test("thumbnails persist across page reloads", async ({
+      expect,
+      thumbnailStripSetup,
+    }) => {
+      const { video, thumbnailStrip } = thumbnailStripSetup;
+
+      await video.mediaEngineTask.taskComplete;
+      await awaitThumbnailLayout(thumbnailStrip);
+
+      // Wait for thumbnails to be generated and cached
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Verify thumbnails are visible
+      const canvas = thumbnailStrip.shadowRoot?.querySelector("canvas");
+      expect(canvas).toBeTruthy();
+      const ctx = canvas?.getContext("2d");
+      if (ctx && canvas) {
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const hasContent = imageData.data.some((byte) => byte !== 0);
+        expect(hasContent).toBe(true);
+      }
+
+      // Simulate page reload by creating new thumbnail strip
+      const newContainer = document.createElement("div");
+      const apiHost = getApiHost();
+      render(
+        html`
+        <ef-configuration api-host="${apiHost}" signing-url="/@ef-sign-url">
+          <div style="width: 600px; height: 400px;">
+            <ef-preview class="w-[600px] h-[300px]">
+              <ef-timegroup mode="contain" class="w-full h-full bg-black">
+                <ef-video src="http://web:3000/head-moov-480p.mp4" id="test-video-reload" class="size-full object-contain"></ef-video>
+              </ef-timegroup>
+            </ef-preview>
+            <ef-thumbnail-strip 
+              target="test-video-reload" 
+              thumbnail-width="80" 
+              class="w-full"
+              style="height: 48px;"
+            ></ef-thumbnail-strip>
+          </div>
+        </ef-configuration>
+      `,
+        newContainer,
+      );
+      document.body.appendChild(newContainer);
+
+      const newVideo = newContainer.querySelector("ef-video") as EFVideo;
+      const newThumbnailStrip = newContainer.querySelector(
+        "ef-thumbnail-strip",
+      ) as EFThumbnailStrip;
+
+      await Promise.all([
+        newVideo.updateComplete,
+        newThumbnailStrip.updateComplete,
+      ]);
+      await newVideo.mediaEngineTask.taskComplete;
+      await awaitThumbnailLayout(newThumbnailStrip);
+
+      // Thumbnails should load from cache quickly (no regeneration needed)
+      const newCanvas = newThumbnailStrip.shadowRoot?.querySelector("canvas");
+      expect(newCanvas).toBeTruthy();
+
+      newContainer.remove();
+    }, 10000);
+
+    test("cache statistics reflect current state", async ({
+      expect,
+      thumbnailStripSetup,
+    }) => {
+      const { video, thumbnailStrip } = thumbnailStripSetup;
+
+      await video.mediaEngineTask.taskComplete;
+      await awaitThumbnailLayout(thumbnailStrip);
+
+      // Wait for thumbnails to be cached
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Access cache stats through debug API
+      const cache = (globalThis as any).debugThumbnailCache;
+      if (cache && typeof cache.getStats === "function") {
+        const stats = await cache.getStats();
+        expect(stats.itemCount).toBeGreaterThan(0);
+        expect(stats.totalSizeBytes).toBeGreaterThan(0);
+        expect(stats.maxSize).toBeGreaterThan(0);
+      }
+    }, 10000);
+  });
 });

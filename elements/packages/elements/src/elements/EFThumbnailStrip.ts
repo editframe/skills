@@ -4,11 +4,11 @@ import { css, html, LitElement } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { createRef, ref } from "lit/directives/ref.js";
 import type { MediaEngine as ImportedMediaEngine } from "../transcoding/types/index.js";
-import { OrderedLRUCache } from "../utils/LRUCache.js";
 import type { EFVideo } from "./EFVideo.js";
 import type { EFTimegroup } from "./EFTimegroup.js";
 import { TargetController } from "./TargetController.ts";
 import { timelineStateContext, type TimelineState } from "../gui/timeline/timelineStateContext.js";
+import { PersistentThumbnailCache } from "./thumbnailCache.js";
 
 /** Type guard to check if element is EFVideo */
 function isEFVideo(element: Element | null): element is EFVideo {
@@ -34,10 +34,9 @@ const VIRTUAL_RENDER_PADDING_PX = 400;
 /**
  * Global thumbnail image cache for smooth resize performance
  * Shared across all thumbnail strip instances
- * Uses OrderedLRUCache for efficient timestamp-based searching
+ * Uses PersistentThumbnailCache for efficient timestamp-based searching with IndexedDB persistence
  */
-const thumbnailImageCache = new OrderedLRUCache<string, ImageData>(
-  200,
+export const thumbnailImageCache = new PersistentThumbnailCache(
   (a, b) => {
     // Extract timestamp from cache key for ordered searching (take last part after splitting on ':')
     const partsA = a.split(":");
@@ -831,7 +830,7 @@ export class EFThumbnailStrip extends LitElement {
         const cacheKey = getThumbnailCacheKey(cacheId, thumbnail.timeMs);
 
         // Try exact cache hit first
-        let imageData = thumbnailImageCache.get(cacheKey);
+        let imageData = await thumbnailImageCache.get(cacheKey);
         let status: ThumbnailRenderInfo["status"] = "exact-hit";
         let nearHitKey: string | undefined;
 
@@ -1356,7 +1355,7 @@ export class EFThumbnailStrip extends LitElement {
 
               if (imageData) {
                 const cacheKey = getThumbnailCacheKey(cacheId, thumb.timeMs);
-                thumbnailImageCache.set(cacheKey, imageData);
+                await thumbnailImageCache.set(cacheKey, imageData);
                 thumb.imageData = imageData;
                 thumb.status = "exact-hit";
               }
@@ -1422,7 +1421,7 @@ export class EFThumbnailStrip extends LitElement {
 
           if (imageData) {
             const cacheKey = getThumbnailCacheKey(cacheId, thumb.timeMs);
-            thumbnailImageCache.set(cacheKey, imageData);
+            await thumbnailImageCache.set(cacheKey, imageData);
             thumb.imageData = imageData;
             thumb.status = "exact-hit";
           }
