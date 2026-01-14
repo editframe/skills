@@ -1322,6 +1322,16 @@ export interface CanvasPreviewResult {
    */
   refresh: () => Promise<void>;
   syncState: SyncState;
+  /**
+   * Dynamically change the resolution scale without rebuilding the clone structure.
+   * This is nearly instant - just updates CSS and internal variables.
+   * The next refresh() call will render at the new resolution.
+   */
+  setResolutionScale: (scale: number) => void;
+  /**
+   * Get the current resolution scale.
+   */
+  getResolutionScale: () => number;
 }
 
 /**
@@ -1370,14 +1380,15 @@ export function renderTimegroupToCanvas(
     : scaleOrOptions;
   
   const scale = options.scale ?? DEFAULT_PREVIEW_SCALE;
-  const resolutionScale = options.resolutionScale ?? DEFAULT_RESOLUTION_SCALE;
+  // These are mutable to support dynamic resolution changes
+  let currentResolutionScale = options.resolutionScale ?? DEFAULT_RESOLUTION_SCALE;
   
   const width = timegroup.offsetWidth || DEFAULT_WIDTH;
   const height = timegroup.offsetHeight || DEFAULT_HEIGHT;
   
-  // Calculate effective render dimensions (internal resolution)
-  const renderWidth = Math.floor(width * resolutionScale);
-  const renderHeight = Math.floor(height * resolutionScale);
+  // Calculate effective render dimensions (internal resolution) - mutable
+  let renderWidth = Math.floor(width * currentResolutionScale);
+  let renderHeight = Math.floor(height * currentResolutionScale);
 
   // Create canvas at scaled size (with devicePixelRatio for sharpness)
   // Canvas buffer size is based on resolutionScale (internal resolution)
@@ -1436,8 +1447,8 @@ export function renderTimegroupToCanvas(
   
   // Apply CSS transform to scale down the content within the container
   // This makes the clone render at reduced complexity
-  if (resolutionScale < 1) {
-    container.style.transform = `scale(${resolutionScale})`;
+  if (currentResolutionScale < 1) {
+    container.style.transform = `scale(${currentResolutionScale})`;
     container.style.transformOrigin = "top left";
   }
   
@@ -1456,6 +1467,60 @@ export function renderTimegroupToCanvas(
   // Log resolution scale on first render for debugging
   let hasLoggedScale = false;
   
+  // Pending resolution change - applied at start of next refresh to avoid blanking
+  let pendingResolutionScale: number | null = null;
+  
+  /**
+   * Apply pending resolution scale changes.
+   * Called at the start of refresh() before rendering, so the old content
+   * stays visible until new content is ready to be drawn.
+   */
+  const applyPendingResolutionChange = (): void => {
+    if (pendingResolutionScale === null) return;
+    
+    const newScale = pendingResolutionScale;
+    pendingResolutionScale = null;
+    
+    currentResolutionScale = newScale;
+    renderWidth = Math.floor(width * currentResolutionScale);
+    renderHeight = Math.floor(height * currentResolutionScale);
+    
+    // Update previewContainer dimensions (affects what renderToImage produces)
+    previewContainer.style.width = `${renderWidth}px`;
+    previewContainer.style.height = `${renderHeight}px`;
+    
+    // Update clone transform
+    if (currentResolutionScale < 1) {
+      container.style.transform = `scale(${currentResolutionScale})`;
+      container.style.transformOrigin = "top left";
+    } else {
+      container.style.transform = "";
+    }
+    
+    // Canvas dimensions will be updated right before drawing (in refresh)
+    // to avoid clearing the canvas until new content is ready
+  };
+  
+  /**
+   * Dynamically change resolution scale without rebuilding clone structure.
+   * The actual change is deferred until next refresh() to avoid blanking -
+   * old content stays visible until new content is ready.
+   */
+  const setResolutionScale = (newScale: number): void => {
+    // Clamp to valid range
+    newScale = Math.max(0.1, Math.min(1, newScale));
+    
+    if (newScale === currentResolutionScale && pendingResolutionScale === null) return;
+    
+    // Queue the change - will be applied at start of next refresh
+    pendingResolutionScale = newScale;
+    
+    // Force re-render on next refresh by invalidating lastTimeMs
+    lastTimeMs = -1;
+  };
+  
+  const getResolutionScale = (): number => pendingResolutionScale ?? currentResolutionScale;
+  
   const refresh = async (): Promise<void> => {
     if (rendering) return;
     // Clone-timeline: captures use separate clones, Prime-timeline is never locked
@@ -1469,11 +1534,15 @@ export function renderTimegroupToCanvas(
     
     rendering = true;
     
+    // Apply any pending resolution changes before rendering
+    // This updates previewContainer and clone transform, but NOT canvas dimensions yet
+    applyPendingResolutionChange();
+    
     // Log scale info once per initialization
     if (!hasLoggedScale) {
       hasLoggedScale = true;
       const mode = getEffectiveRenderMode();
-      console.log(`[renderTimegroupToCanvas] Resolution scale: ${resolutionScale} (${width}x${height} → ${renderWidth}x${renderHeight}), canvas buffer: ${canvas.width}x${canvas.height}, CSS size: ${canvas.style.width}x${canvas.style.height}, renderMode: ${mode}`);
+      console.log(`[renderTimegroupToCanvas] Resolution scale: ${currentResolutionScale} (${width}x${height} → ${renderWidth}x${renderHeight}), canvas buffer: ${canvas.width}x${canvas.height}, CSS size: ${canvas.style.width}x${canvas.style.height}, renderMode: ${mode}`);
     }
 
     try {
@@ -1483,11 +1552,21 @@ export function renderTimegroupToCanvas(
       // Render at scaled dimensions with canvas scaling for internal video frames
       const t0 = performance.now();
       const image = await renderToImage(previewContainer, renderWidth, renderHeight, {
-        canvasScale: resolutionScale,
+        canvasScale: currentResolutionScale,
       });
       const renderTime = performance.now() - t0;
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // Update canvas buffer dimensions NOW, right before drawing
+      // This clears the canvas, but we immediately draw new content
+      const targetWidth = Math.floor(renderWidth * scale * dpr);
+      const targetHeight = Math.floor(renderHeight * scale * dpr);
+      if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+      } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      
       ctx.save();
       ctx.scale(dpr * scale, dpr * scale);
       ctx.drawImage(image, 0, 0);
@@ -1496,7 +1575,7 @@ export function renderTimegroupToCanvas(
       // Log render time periodically (every 60 frames)
       _renderCallCount++;
       if (_renderCallCount % 60 === 0) {
-        console.log(`[renderTimegroupToCanvas] Frame render: ${renderTime.toFixed(1)}ms (resolutionScale=${resolutionScale}, image=${image.width}x${image.height})`);
+        console.log(`[renderTimegroupToCanvas] Frame render: ${renderTime.toFixed(1)}ms (resolutionScale=${currentResolutionScale}, image=${image.width}x${image.height})`);
       }
       
       // Update debug label (outside canvas, doesn't scale)
@@ -1506,9 +1585,9 @@ export function renderTimegroupToCanvas(
         0.5: "#ff8800",  // Orange = 1/2
         0.25: "#ff0000", // Red = 1/4
       };
-      const indicatorColor = scaleColors[resolutionScale] || "#ffffff";
+      const indicatorColor = scaleColors[currentResolutionScale] || "#ffffff";
       debugLabel.style.color = indicatorColor;
-      debugLabel.textContent = `Render: ${renderWidth}x${renderHeight} (${Math.round(resolutionScale * 100)}%)`;
+      debugLabel.textContent = `Render: ${renderWidth}x${renderHeight} (${Math.round(currentResolutionScale * 100)}%)`;
     } catch (e) {
       console.error("Canvas preview render failed:", e);
     } finally {
@@ -1519,6 +1598,6 @@ export function renderTimegroupToCanvas(
   // Do initial render
   refresh();
 
-  return { container: wrapperContainer, canvas, refresh, syncState };
+  return { container: wrapperContainer, canvas, refresh, syncState, setResolutionScale, getResolutionScale };
 }
 

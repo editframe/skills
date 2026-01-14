@@ -22,8 +22,10 @@ export type RenderMode = "foreignObject" | "native";
  * - 0.75: 3/4 resolution
  * - 0.5: Half resolution
  * - 0.25: Quarter resolution
+ * - "auto": Adaptive resolution that scales down during motion to prevent dropped frames,
+ *           and renders at full resolution when at rest
  */
-export type PreviewResolutionScale = 1 | 0.75 | 0.5 | 0.25;
+export type PreviewResolutionScale = 1 | 0.75 | 0.5 | 0.25 | "auto";
 
 /**
  * Preview presentation mode determines how content is rendered in the workbench.
@@ -206,9 +208,9 @@ export function setRenderMode(mode: RenderMode): void {
 }
 
 /**
- * Valid resolution scale values.
+ * Valid numeric resolution scale values.
  */
-const VALID_RESOLUTION_SCALES: PreviewResolutionScale[] = [1, 0.75, 0.5, 0.25];
+const VALID_NUMERIC_SCALES: number[] = [1, 0.75, 0.5, 0.25];
 
 /**
  * Get the current preview resolution scale.
@@ -218,8 +220,13 @@ export function getPreviewResolutionScale(): PreviewResolutionScale {
   try {
     const stored = localStorage.getItem(STORAGE_KEY_RESOLUTION_SCALE);
     if (stored !== null) {
+      // Check for "auto" string first
+      if (stored === "auto") {
+        return "auto";
+      }
+      // Then check numeric values
       const parsed = parseFloat(stored);
-      if (VALID_RESOLUTION_SCALES.includes(parsed as PreviewResolutionScale)) {
+      if (VALID_NUMERIC_SCALES.includes(parsed)) {
         return parsed as PreviewResolutionScale;
       }
     }
