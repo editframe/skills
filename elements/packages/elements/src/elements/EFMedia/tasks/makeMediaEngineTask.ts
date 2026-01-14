@@ -45,14 +45,33 @@ export const createMediaEngine = (host: EFMedia): Promise<MediaEngine> => {
   }
 
   const lowerSrc = src.toLowerCase();
-  if (!lowerSrc.startsWith("http://") && !lowerSrc.startsWith("https://")) {
+  const isRemoteUrl = lowerSrc.startsWith("http://") || lowerSrc.startsWith("https://");
+  
+  // Check configuration for explicit engine preference
+  const configuration = host.closest("ef-configuration");
+  
+  // "jit" mode: Force JitMediaEngine for all sources (including local files)
+  if (configuration?.mediaEngine === "jit") {
+    // For local paths, convert to full URL using apiHost
+    let manifestSrc = src;
+    if (!isRemoteUrl && configuration.apiHost) {
+      // Convert relative path to absolute URL for the JIT manifest
+      // e.g., "./assets/video.mp4" -> "http://main.localhost:4321/src/assets/video.mp4"
+      const baseUrl = configuration.apiHost.replace(/\/$/, "");
+      const normalizedPath = src.replace(/^\.\//, "/src/");
+      manifestSrc = `${baseUrl}${normalizedPath}`;
+    }
+    const url = urlGenerator.generateManifestUrl(manifestSrc);
+    return JitMediaEngine.fetch(host, urlGenerator, url);
+  }
+  
+  // "local" mode: Force AssetMediaEngine for all sources
+  if (configuration?.mediaEngine === "local") {
     return AssetMediaEngine.fetch(host, urlGenerator, src);
   }
-
-  // Remote (http/https) source, now check configuration
-  const configuration = host.closest("ef-configuration");
-  if (configuration?.mediaEngine === "local") {
-    // Only use AssetMediaEngine for remote URLs when explicitly configured
+  
+  // "cloud" mode (default): AssetMediaEngine for local paths, JitMediaEngine for remote URLs
+  if (!isRemoteUrl) {
     return AssetMediaEngine.fetch(host, urlGenerator, src);
   }
 
