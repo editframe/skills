@@ -7,6 +7,7 @@ const STORAGE_KEY_NATIVE_CANVAS_API = "ef-preview-native-canvas-api-enabled";
 const STORAGE_KEY_PRESENTATION_MODE = "ef-preview-presentation-mode";
 const STORAGE_KEY_RENDER_MODE = "ef-preview-render-mode";
 const STORAGE_KEY_RESOLUTION_SCALE = "ef-preview-resolution-scale";
+const STORAGE_KEY_SHOW_STATS = "ef-preview-show-stats";
 
 /**
  * Render mode for HTML-to-canvas capture operations.
@@ -29,11 +30,13 @@ export type PreviewResolutionScale = 1 | 0.75 | 0.5 | 0.25 | "auto";
 
 /**
  * Preview presentation mode determines how content is rendered in the workbench.
+ * - "clone": Show a clone with computed styles applied (alias for "computed")
+ * - "dom": Show the original DOM content directly (alias for "original")
  * - "original": Show the original DOM content directly
  * - "computed": Show a clone with computed styles applied
  * - "canvas": Render to canvas using the active rendering path
  */
-export type PreviewPresentationMode = "original" | "computed" | "canvas";
+export type PreviewPresentationMode = "original" | "computed" | "canvas" | "clone" | "dom";
 
 /**
  * Cached detection result for native HTML-in-Canvas API availability.
@@ -138,6 +141,7 @@ export interface PreviewSettingsChangedDetail {
   presentationMode?: PreviewPresentationMode;
   renderMode?: RenderMode;
   resolutionScale?: PreviewResolutionScale;
+  showStats?: boolean;
 }
 
 /**
@@ -250,6 +254,36 @@ export function setPreviewResolutionScale(scale: PreviewResolutionScale): void {
   // Dispatch event so components can react to the change
   window.dispatchEvent(new CustomEvent("ef-preview-settings-changed", {
     detail: { resolutionScale: scale }
+  }));
+}
+
+/**
+ * Get whether performance stats should be shown.
+ * Defaults to false (stats hidden by default).
+ */
+export function getShowStats(): boolean {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY_SHOW_STATS);
+    return stored === "true";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Set whether performance stats should be shown.
+ * Persists to localStorage and dispatches a change event.
+ */
+export function setShowStats(enabled: boolean): void {
+  try {
+    localStorage.setItem(STORAGE_KEY_SHOW_STATS, String(enabled));
+  } catch {
+    // localStorage not available
+  }
+  
+  // Dispatch event so components can react to the change
+  window.dispatchEvent(new CustomEvent("ef-preview-settings-changed", {
+    detail: { showStats: enabled }
   }));
 }
 
