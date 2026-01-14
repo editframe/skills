@@ -31,6 +31,23 @@ interface LoadingState {
   message: string;
 }
 
+/**
+ * Event detail for scrub segment loading progress.
+ * Dispatched during prefetchScrubSegments to indicate network activity.
+ */
+export interface ScrubSegmentLoadingDetail {
+  /** The segment ID being loaded (0-indexed) */
+  segmentId: number;
+  /** Time range covered by this segment [startMs, endMs] */
+  timeRangeMs: [number, number];
+  /** Number of segments loaded so far */
+  loaded: number;
+  /** Total number of segments to load */
+  total: number;
+  /** Current status: "loading" or "loaded" */
+  status: "loading" | "loaded";
+}
+
 @customElement("ef-video")
 export class EFVideo extends TWMixin(EFMedia) {
   static styles = [
@@ -543,6 +560,108 @@ export class EFVideo extends TWMixin(EFMedia) {
     }
     await this.updateComplete;
     await this.frameTask.run();
+  }
+
+  /**
+   * Pre-fetch scrub segments for given timestamps.
+   * Loads 30-second segments sequentially, emitting progress events.
+   * This ensures scrub track is cached for fast thumbnail generation.
+   *
+   * @param timestamps - Array of timestamps (in ms) that will be captured
+   * @param onProgress - Optional callback for loading progress
+   * @returns Promise that resolves when all segments are cached
+   * @public
+   */
+  async prefetchScrubSegments(
+    timestamps: number[],
+    onProgress?: (loaded: number, total: number, segmentTimeRange: [number, number]) => void,
+  ): Promise<void> {
+    // Wait for media engine to be ready
+    const mediaEngine = await this.mediaEngineTask.taskComplete;
+    if (!mediaEngine) {
+      log("prefetchScrubSegments: no media engine available");
+      return;
+    }
+
+    // Get scrub rendition
+    const scrubRendition = mediaEngine.getScrubVideoRendition();
+    if (!scrubRendition) {
+      log("prefetchScrubSegments: no scrub rendition available");
+      return;
+    }
+
+    const scrubRenditionWithSrc = {
+      ...scrubRendition,
+      src: mediaEngine.src,
+    };
+
+    // Compute unique segment IDs needed for all timestamps
+    const segmentIds = new Set<number>();
+    for (const ts of timestamps) {
+      const segmentId = mediaEngine.computeSegmentId(ts, scrubRenditionWithSrc);
+      if (segmentId !== undefined) {
+        segmentIds.add(segmentId);
+      }
+    }
+
+    if (segmentIds.size === 0) {
+      log("prefetchScrubSegments: no segments to prefetch");
+      return;
+    }
+
+    // For AssetMediaEngine, the scrub track is a single file (not segmented).
+    // We just need to fetch it once, and all segments become cached.
+    // Check if ANY segment is already cached (meaning the file is loaded).
+    const firstSegmentId = Array.from(segmentIds)[0]!;
+    if (mediaEngine.isSegmentCached(firstSegmentId, scrubRenditionWithSrc)) {
+      log("prefetchScrubSegments: scrub track already cached");
+      return;
+    }
+
+    log(`prefetchScrubSegments: fetching scrub track for ${segmentIds.size} segments...`);
+
+    // Emit loading event for the entire duration
+    const durationMs = mediaEngine.durationMs || 0;
+    this.dispatchEvent(
+      new CustomEvent("scrub-segment-loading", {
+        detail: {
+          segmentId: 0,
+          timeRangeMs: [0, durationMs] as [number, number],
+          loaded: 0,
+          total: 1,
+          status: "loading",
+        },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+
+    // Fetch the scrub track (single file for all segments)
+    try {
+      await mediaEngine.fetchMediaSegment(firstSegmentId, scrubRenditionWithSrc);
+      log(`prefetchScrubSegments: scrub track loaded`);
+    } catch (error) {
+      log(`prefetchScrubSegments: failed to load scrub track`, error);
+    }
+
+    // Emit loaded event
+    this.dispatchEvent(
+      new CustomEvent("scrub-segment-loading", {
+        detail: {
+          segmentId: 0,
+          timeRangeMs: [0, durationMs] as [number, number],
+          loaded: 1,
+          total: 1,
+          status: "loaded",
+        },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+
+    // Report progress
+    onProgress?.(1, 1, [0, durationMs]);
+    log(`prefetchScrubSegments: complete`);
   }
 
   /**

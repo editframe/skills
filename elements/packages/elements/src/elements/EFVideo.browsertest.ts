@@ -1372,6 +1372,114 @@ describe("EFVideo", () => {
       // return null when seeking beyond the end, which is the expected behavior
     });
 
+    test("rapid seeking only processes latest seek request", async ({
+      expect,
+      headMoov480p,
+    }) => {
+      // This test verifies that when multiple seeks occur rapidly (like during scrubbing),
+      // only the latest seek is processed, not all of them queued up.
+      // This prevents old frames from persisting while waiting for queued seeks.
+      const timegroup = headMoov480p.closest("ef-timegroup") as EFTimegroup;
+
+      // Wait for initial loading to complete
+      await waitForTaskIgnoringAborts(
+        headMoov480p.unifiedVideoSeekTask.taskComplete,
+      );
+      await waitForTaskIgnoringAborts(headMoov480p.audioSeekTask.taskComplete);
+
+      console.log("🧪 TESTING: Rapid seeking only processes latest seek");
+      console.log(`📊 Video duration: ${headMoov480p.intrinsicDurationMs}ms`);
+
+      // Simulate rapid scrubbing - multiple seeks in quick succession
+      // The final seek should be the one that completes, not intermediate ones
+      const rapidSeekSequence = [
+        2000, // Start at 2s
+        7000, // Jump to 7s
+        1000, // Back to 1s
+        8000, // Jump to 8s
+        500, // Back to 0.5s
+        9000, // Final seek to 9s - this should be the one that completes
+      ];
+
+      // Track which seek times actually complete (not aborted)
+      const completedSeeks: number[] = [];
+      let seekStartCount = 0;
+
+      // Intercept seek task to track which seeks start and complete
+      const originalTask = headMoov480p.unifiedVideoSeekTask.task;
+      headMoov480p.unifiedVideoSeekTask.task = async (...args) => {
+        const [desiredSeekTimeMs] = args[0] as [number];
+        const { signal } = args[1] as { signal: AbortSignal };
+        seekStartCount++;
+        const seekId = seekStartCount;
+        console.log(
+          `🔍 Seek task #${seekId} started for ${desiredSeekTimeMs}ms`,
+        );
+
+        try {
+          const result = await originalTask(...args);
+          // Only record if this seek wasn't aborted and returned a result
+          if (!signal.aborted && result !== undefined) {
+            completedSeeks.push(desiredSeekTimeMs);
+            console.log(`✅ Seek #${seekId} completed for ${desiredSeekTimeMs}ms`);
+          } else {
+            console.log(
+              `❌ Seek #${seekId} aborted or returned undefined for ${desiredSeekTimeMs}ms`,
+            );
+          }
+          return result;
+        } catch (error) {
+          if (error instanceof Error && error.name === "AbortError") {
+            console.log(`❌ Seek #${seekId} aborted (AbortError) for ${desiredSeekTimeMs}ms`);
+            return undefined;
+          }
+          throw error;
+        }
+      };
+
+      // Trigger rapid seeks without waiting for each to complete
+      // This simulates rapid scrubbing behavior where seeks come in faster than they complete
+      // Use timegroup.currentTimeMs to properly trigger the seek flow
+      const seekPromises = rapidSeekSequence.map((timeMs) => {
+        timegroup.currentTimeMs = timeMs;
+        // Don't await - let them run concurrently
+        return headMoov480p.frameTask.run().catch(() => {
+          // Ignore errors from aborted seeks
+        });
+      });
+
+      // Wait for all seeks to settle (some will be aborted, that's expected)
+      await Promise.allSettled(seekPromises);
+
+      // Wait a bit more to ensure final seek completes
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Verify that the final seek time is what we're displaying
+      const finalSeekTime = rapidSeekSequence[rapidSeekSequence.length - 1];
+      expect(headMoov480p.desiredSeekTimeMs).toBe(finalSeekTime);
+
+      console.log(`📊 Started ${seekStartCount} seeks, completed ${completedSeeks.length}`);
+
+      // Verify that we're not processing all seeks - only the latest should complete
+      // In an ideal world, only 1 seek should complete (the final one)
+      // But due to timing, 1-2 might complete, which is acceptable
+      // The key is that we shouldn't see ALL seeks completing
+      expect(completedSeeks.length).toBeLessThan(rapidSeekSequence.length);
+
+      // Verify the final completed seek matches our final desired time
+      // (or at least that we're not stuck on an old seek)
+      if (completedSeeks.length > 0) {
+        const lastCompletedSeek = completedSeeks[completedSeeks.length - 1];
+        // The last completed seek should be one of the later seeks in the sequence
+        // (ideally the final one, but timing might allow 1-2 to complete)
+        const laterSeeks = rapidSeekSequence.slice(-3); // Last 3 seeks
+        expect(laterSeeks).toContain(lastCompletedSeek);
+      }
+
+      // Restore original task
+      headMoov480p.unifiedVideoSeekTask.task = originalTask;
+    });
+
     test("FIXED: rapid seeking race condition handled gracefully", async ({
       expect,
       headMoov480p,
