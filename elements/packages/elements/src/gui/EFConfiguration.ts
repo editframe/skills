@@ -25,8 +25,14 @@ export class EFConfiguration extends LitElement {
   @property({ type: String, attribute: "signing-url" })
   signingURL = "/@ef-sign-url";
 
+  /**
+   * Media engine selection:
+   * - "cloud": Use JitMediaEngine for http/https URLs, AssetMediaEngine for local paths (default)
+   * - "local": Force AssetMediaEngine for all sources (uses @ef-* URLs)
+   * - "jit": Force JitMediaEngine for all sources (uses /api/v1/transcode/* URLs)
+   */
   @property({ type: String, attribute: "media-engine" })
-  mediaEngine?: "cloud" | "local" = "cloud";
+  mediaEngine?: "cloud" | "local" | "jit" = "cloud";
 
   render() {
     return html`<slot></slot>`;

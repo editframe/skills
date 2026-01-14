@@ -190,6 +190,17 @@ export class EFFramegen {
     }
   }
 
+  /**
+   * Helper method to get the workbench and set its rendering state.
+   * This ensures consistent state management across the framegen lifecycle.
+   */
+  private setWorkbenchRendering(isRendering: boolean) {
+    const workbench = document.querySelector("ef-workbench");
+    if (workbench) {
+      workbench.rendering = isRendering;
+    }
+  }
+
   connectToBridge() {
     const BRIDGE = this.BRIDGE;
     if (!BRIDGE) {
@@ -222,13 +233,17 @@ export class EFFramegen {
         },
         parentContext,
         async () => {
-          await this.initialize(renderOptions).catch((error) => {
+          try {
+            await this.initialize(renderOptions);
+          } catch (error) {
+            // If initialization fails, ensure rendering state is cleared
+            this.setWorkbenchRendering(false);
             console.error(
               "[EF_FRAMEGEN.connectToBridge] error initializing",
               error,
             );
             throw error;
-          });
+          }
         },
       );
 
@@ -251,12 +266,18 @@ export class EFFramegen {
 
           try {
             await this.beginFrame(frameNumber, isLast);
+          } catch (error) {
+            // If an error occurs during rendering, ensure rendering state is cleared
+            this.setWorkbenchRendering(false);
+            throw error;
           } finally {
             clearCurrentFrameSpan();
           }
         },
       ).catch((error) => {
         console.error("[EF_FRAMEGEN.beginFrame] error:", error);
+        // Ensure rendering state is cleared on error
+        this.setWorkbenchRendering(false);
         clearCurrentFrameSpan();
         throw error;
       });
@@ -284,7 +305,7 @@ export class EFFramegen {
     if (!workbench) {
       throw new Error("No workbench found");
     }
-    workbench.rendering = true;
+    this.setWorkbenchRendering(true);
     workbench.playing = false;
     const timegroups = shallowGetTimegroups(workbench);
     const firstGroup = timegroups[0];
@@ -330,7 +351,7 @@ export class EFFramegen {
     if (!workbench) {
       throw new Error("No workbench found");
     }
-    workbench.rendering = true;
+    this.setWorkbenchRendering(true);
     const timegroups = shallowGetTimegroups(workbench);
     const firstGroup = timegroups[0];
     if (!firstGroup) {
@@ -388,6 +409,9 @@ export class EFFramegen {
         });
         return fileReader.result;
       }
+      
+      // Rendering is complete after the last frame
+      this.setWorkbenchRendering(false);
     } else {
       if (this.BRIDGE) {
         this.BRIDGE.frameReady(frameNumber, new ArrayBuffer(0));
