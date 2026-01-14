@@ -177,5 +177,124 @@ describe("EFWorkbench", () => {
     expect(canvasSlotAfterRendering).toBeTruthy();
     expect(canvasSlotAfterRendering?.parentElement?.classList.contains('canvas-container')).toBe(true);
   });
+
+  describe("thumbnail cache settings", () => {
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    afterEach(() => {
+      localStorage.clear();
+    });
+
+    test("settings popover displays thumbnail cache section", async ({ expect }) => {
+      await workbench.updateComplete;
+
+      // Open settings popover
+      const settingsButton = workbench.shadowRoot?.querySelector(
+        'button[popovertarget="settings-popover"]',
+      ) as HTMLButtonElement;
+      expect(settingsButton).toBeTruthy();
+
+      settingsButton?.click();
+      await workbench.updateComplete;
+
+      // Wait for popover to open
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const settingsPopover = workbench.shadowRoot?.querySelector(
+        "#settings-popover",
+      ) as HTMLElement;
+      expect(settingsPopover).toBeTruthy();
+      expect(settingsPopover?.hasAttribute("popover")).toBe(true);
+
+      // Check for thumbnail cache section
+      const cacheSection = settingsPopover?.querySelector(
+        '[data-testid="thumbnail-cache-section"]',
+      );
+      expect(cacheSection).toBeTruthy();
+    });
+
+    test("cache size input updates configuration", async ({ expect }) => {
+      await workbench.updateComplete;
+
+      // Open settings popover
+      const settingsButton = workbench.shadowRoot?.querySelector(
+        'button[popovertarget="settings-popover"]',
+      ) as HTMLButtonElement;
+      settingsButton?.click();
+      await workbench.updateComplete;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const cacheSizeInput = workbench.shadowRoot?.querySelector(
+        'input[data-testid="thumbnail-cache-size"]',
+      ) as HTMLInputElement;
+
+      if (cacheSizeInput) {
+        cacheSizeInput.value = "500";
+        cacheSizeInput.dispatchEvent(new Event("change", { bubbles: true }));
+        await workbench.updateComplete;
+
+        // Verify setting was stored
+        const stored = localStorage.getItem("ef-thumbnail-cache-max-size");
+        expect(stored).toBe("500");
+      }
+    });
+
+    test("cache statistics display shows current usage", async ({ expect }) => {
+      await workbench.updateComplete;
+
+      // Open settings popover
+      const settingsButton = workbench.shadowRoot?.querySelector(
+        'button[popovertarget="settings-popover"]',
+      ) as HTMLButtonElement;
+      settingsButton?.click();
+      await workbench.updateComplete;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const statsDisplay = workbench.shadowRoot?.querySelector(
+        '[data-testid="thumbnail-cache-stats"]',
+      );
+
+      if (statsDisplay) {
+        // Should display item count
+        expect(statsDisplay.textContent).toContain("items");
+        // Should display size
+        expect(
+          statsDisplay.textContent?.match(/\d+\.?\d*\s*(KB|MB|bytes)/i),
+        ).toBeTruthy();
+      }
+    });
+
+    test("clear cache button removes all cached thumbnails", async ({ expect }) => {
+      await workbench.updateComplete;
+
+      // Open settings popover
+      const settingsButton = workbench.shadowRoot?.querySelector(
+        'button[popovertarget="settings-popover"]',
+      ) as HTMLButtonElement;
+      settingsButton?.click();
+      await workbench.updateComplete;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const clearButton = workbench.shadowRoot?.querySelector(
+        'button[data-testid="thumbnail-cache-clear"]',
+      ) as HTMLButtonElement;
+
+      if (clearButton) {
+        clearButton.click();
+        await workbench.updateComplete;
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Verify cache was cleared
+        const cache = (globalThis as any).debugThumbnailCache;
+        if (cache && typeof cache.getStats === "function") {
+          const stats = await cache.getStats();
+          expect(stats.itemCount).toBe(0);
+          expect(stats.totalSizeBytes).toBe(0);
+        }
+      }
+    });
+  });
 });
 
