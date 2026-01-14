@@ -344,5 +344,61 @@ describe("EFTimelineRow", () => {
       expect(gutterDiv.style.left).toBe(`${expectedLeftPx}px`);
     });
   });
+
+  describe("root timegroup filmstrip", () => {
+    test("should show filmstrip for root timegroup with id", async () => {
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      timegroup.id = "root-timegroup";
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "10s");
+      document.body.appendChild(timegroup);
+      await timegroup.updateComplete;
+
+      const row = document.createElement("ef-timeline-row") as EFTimelineRow;
+      row.element = timegroup;
+      row.depth = 0;
+      document.body.appendChild(row);
+      await row.updateComplete;
+
+      // Root timegroup row should have root-timegroup class
+      expect(row.classList.contains("root-timegroup")).toBe(true);
+
+      // The timegroup track should have show-filmstrip attribute
+      const timegroupTrack = row.shadowRoot?.querySelector("ef-timegroup-track");
+      expect(timegroupTrack).toBeTruthy();
+      expect(timegroupTrack?.hasAttribute("show-filmstrip")).toBe(true);
+    });
+
+    test("should not show filmstrip for nested timegroup", async () => {
+      const rootTimegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      rootTimegroup.id = "root";
+      rootTimegroup.setAttribute("mode", "sequence");
+      document.body.appendChild(rootTimegroup);
+
+      const nestedTimegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      nestedTimegroup.id = "nested";
+      nestedTimegroup.setAttribute("mode", "fixed");
+      nestedTimegroup.setAttribute("duration", "5s");
+      rootTimegroup.appendChild(nestedTimegroup);
+
+      await rootTimegroup.updateComplete;
+      await nestedTimegroup.updateComplete;
+
+      // Create row for the nested timegroup
+      const row = document.createElement("ef-timeline-row") as EFTimelineRow;
+      row.element = nestedTimegroup;
+      row.depth = 1;
+      document.body.appendChild(row);
+      await row.updateComplete;
+
+      // Nested timegroup row should NOT have root-timegroup class
+      expect(row.classList.contains("root-timegroup")).toBe(false);
+
+      // The timegroup track should NOT have show-filmstrip attribute
+      const timegroupTrack = row.shadowRoot?.querySelector("ef-timegroup-track");
+      expect(timegroupTrack).toBeTruthy();
+      expect(timegroupTrack?.hasAttribute("show-filmstrip")).toBe(false);
+    });
+  });
 });
 

@@ -23,6 +23,9 @@ import "../TrimHandles.js";
 import type { TrimChangeDetail } from "../TrimHandles.js";
 
 class ElementTrackController implements ReactiveController {
+  private lastDuration = 0;
+  private durationCheckFrame?: number;
+
   constructor(
     private host: LitElement,
     private track: TrackItem,
@@ -32,17 +35,41 @@ class ElementTrackController implements ReactiveController {
 
   remove() {
     this.host.removeController(this);
+    if (this.durationCheckFrame) {
+      cancelAnimationFrame(this.durationCheckFrame);
+    }
   }
 
   hostDisconnected() {
     this.host.removeController(this);
+    if (this.durationCheckFrame) {
+      cancelAnimationFrame(this.durationCheckFrame);
+    }
   }
+
+  hostConnected(): void {
+    // Start watching for duration changes
+    this.lastDuration = (this.host as any).durationMs ?? 0;
+    this.checkDuration();
+  }
+
+  private checkDuration = () => {
+    const currentDuration = (this.host as any).durationMs ?? 0;
+    if (currentDuration !== this.lastDuration) {
+      this.lastDuration = currentDuration;
+      // Duration changed - trigger re-render of the track
+      this.track.requestUpdate();
+    }
+    // Keep checking if duration is still 0 (waiting for media to load)
+    if (currentDuration === 0) {
+      this.durationCheckFrame = requestAnimationFrame(this.checkDuration);
+    }
+  };
 
   hostUpdated(): void {
     // TEMPORARILY DISABLED: This causes every TrackItem to re-render on every frame
     // during playback, even though TrackItem doesn't display currentTimeMs.
-    // TODO: Only request update when relevant properties change (durationMs, startMs, trim values)
-    // this.track.requestUpdate();
+    // Duration changes are now handled separately via checkDuration()
   }
 }
 

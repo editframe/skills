@@ -286,11 +286,14 @@ export class EFTimelineRow extends TWMixin(LitElement) {
 
     // For timegroups, use skip-children since children get their own rows
     if (this.element instanceof EFTimegroup) {
+      // Show filmstrip for root timegroups (no parent timegroup)
+      const showFilmstrip = isRootTimegroup(this.element);
       return html`<ef-timegroup-track
         .element=${this.element}
         pixels-per-ms=${this.pixelsPerMs}
         ?enable-trim=${this.enableTrim}
         ?skip-children=${true}
+        ?show-filmstrip=${showFilmstrip}
         .hideSelectors=${this.hideSelectors}
         .showSelectors=${this.showSelectors}
       ></ef-timegroup-track>`;

@@ -39,7 +39,7 @@ export class UrlGenerator {
    * Generate init segment URL
    */
   generateInitSegmentUrl(mediaUrl: string, rendition: string): string {
-    return `${this.baseUrl()}/api/v1/transcode/${rendition}/init.m4s?url=${encodeURIComponent(mediaUrl)}`;
+    return `${this.baseUrl()}/api/v1/transcode/${rendition}/init.mp4?url=${encodeURIComponent(mediaUrl)}`;
   }
 
   /**
