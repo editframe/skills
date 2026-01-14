@@ -6,6 +6,7 @@ import {
   type SyncState,
 } from "./renderTimegroupPreview.js";
 import { isNativeCanvasApiAvailable, getRenderMode, type RenderMode } from "./previewSettings.js";
+import { WorkerPool, encodeCanvasInWorker } from "./workers/WorkerPool.js";
 
 // ============================================================================
 // Constants
@@ -26,6 +27,10 @@ const DEFAULT_THUMBNAIL_SCALE = 0.25;
 /** Default timegroup dimensions when not measurable */
 const DEFAULT_WIDTH = 1920;
 const DEFAULT_HEIGHT = 1080;
+
+/** JPEG quality settings for different canvas scales */
+const JPEG_QUALITY_HIGH = 0.95;
+const JPEG_QUALITY_MEDIUM = 0.85;
 
 /** Maximum number of cached inline images before eviction */
 const MAX_INLINE_IMAGE_CACHE_SIZE = 100;
@@ -134,6 +139,203 @@ const _layoutInitializedCanvases = new WeakSet<HTMLCanvasElement>();
 // Reusable instances for better performance (avoid creating new instances every frame)
 let _xmlSerializer: XMLSerializer | null = null;
 let _textEncoder: TextEncoder | null = null;
+
+// Worker pool for parallel canvas encoding (lazy initialization)
+let _workerPool: WorkerPool | null = null;
+let _workerPoolWarningLogged = false;
+
+/**
+ * Get or create the worker pool for canvas encoding.
+ * Returns null if workers are not available.
+ */
+function getWorkerPool(): WorkerPool | null {
+  if (_workerPool) {
+    return _workerPool;
+  }
+
+  // Check if workers are available
+  if (
+    typeof Worker === "undefined" ||
+    typeof OffscreenCanvas === "undefined" ||
+    typeof createImageBitmap === "undefined"
+  ) {
+    if (!_workerPoolWarningLogged) {
+      _workerPoolWarningLogged = true;
+      console.warn(
+        "[renderTimegroupToCanvas] Web Workers or OffscreenCanvas not available, using main thread fallback",
+      );
+    }
+    return null;
+  }
+
+  try {
+    // Create worker URL - Vite processes worker files when using ?worker_file suffix
+    // In browser environments (Vite), import.meta.url is available at runtime
+    let workerUrl: string;
+    try {
+      // TypeScript may not recognize import.meta in CommonJS mode, but it works at runtime in Vite
+      // Access it dynamically to avoid TypeScript compilation errors
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-expect-error - import.meta.url works at runtime in Vite even if TS doesn't recognize it
+      const metaUrl = import.meta?.url;
+      if (metaUrl) {
+        // Use ?worker_file&type=module - this is what Vite uses internally when processing workers
+        // The ?worker suffix creates a wrapper, but ?worker_file gives us the actual worker
+        workerUrl = new URL("./workers/encoderWorker.ts?worker_file&type=module", metaUrl).href;
+      } else {
+        workerUrl = "./workers/encoderWorker.ts?worker_file&type=module";
+      }
+    } catch {
+      // Fallback: use relative path
+      workerUrl = "./workers/encoderWorker.ts?worker_file&type=module";
+    }
+    
+    _workerPool = new WorkerPool(workerUrl);
+    
+    // Check if workers were actually created
+    if (!_workerPool.isAvailable()) {
+      const reason = _workerPool.workerCount === 0 
+        ? "no workers created (check console for errors)" 
+        : "workers not available";
+      _workerPool = null;
+      if (!_workerPoolWarningLogged) {
+        _workerPoolWarningLogged = true;
+        console.warn(
+          `[renderTimegroupToCanvas] Worker pool initialization failed (${reason}), using main thread fallback`,
+        );
+      }
+    }
+  } catch (error) {
+    _workerPool = null;
+    if (!_workerPoolWarningLogged) {
+      _workerPoolWarningLogged = true;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.warn(
+        `[renderTimegroupToCanvas] Failed to create worker pool: ${errorMessage} - using main thread fallback`,
+      );
+    }
+  }
+
+  return _workerPool;
+}
+
+/**
+ * Encode a single canvas to a data URL (fallback implementation for main thread).
+ */
+function encodeCanvasOnMainThread(
+  canvas: HTMLCanvasElement,
+  canvasScale: number,
+): { dataUrl: string; preserveAlpha: boolean } | null {
+  try {
+    if (canvas.width === 0 || canvas.height === 0) {
+      return null;
+    }
+
+    const preserveAlpha = canvas.dataset.preserveAlpha === "true";
+    let dataUrl: string;
+
+    if (canvasScale < 1) {
+      // Scale down canvas before encoding
+      const scaledWidth = Math.floor(canvas.width * canvasScale);
+      const scaledHeight = Math.floor(canvas.height * canvasScale);
+      const scaledCanvas = document.createElement("canvas");
+      scaledCanvas.width = scaledWidth;
+      scaledCanvas.height = scaledHeight;
+      const scaledCtx = scaledCanvas.getContext("2d");
+      if (scaledCtx) {
+        scaledCtx.drawImage(canvas, 0, 0, scaledWidth, scaledHeight);
+        const quality = canvasScale < 0.5 ? JPEG_QUALITY_MEDIUM : JPEG_QUALITY_HIGH;
+        dataUrl = preserveAlpha
+          ? scaledCanvas.toDataURL("image/png")
+          : scaledCanvas.toDataURL("image/jpeg", quality);
+      } else {
+        dataUrl = preserveAlpha
+          ? canvas.toDataURL("image/png")
+          : canvas.toDataURL("image/jpeg", JPEG_QUALITY_HIGH);
+      }
+    } else {
+      dataUrl = preserveAlpha
+        ? canvas.toDataURL("image/png")
+        : canvas.toDataURL("image/jpeg", JPEG_QUALITY_HIGH);
+    }
+
+    return { dataUrl, preserveAlpha };
+  } catch (e) {
+    // Cross-origin canvas or other error - skip
+    return null;
+  }
+}
+
+/**
+ * Encode canvases to data URLs in parallel using worker pool.
+ * Falls back to main thread encoding if workers are unavailable.
+ */
+async function encodeCanvasesInParallel(
+  canvases: HTMLCanvasElement[],
+  canvasScale: number = 1,
+): Promise<Array<{ canvas: HTMLCanvasElement; dataUrl: string; preserveAlpha: boolean }>> {
+  const workerPool = getWorkerPool();
+
+  // If no worker pool available, fall back to main thread
+  if (!workerPool) {
+    const results: Array<{ canvas: HTMLCanvasElement; dataUrl: string; preserveAlpha: boolean }> = [];
+    for (const canvas of canvases) {
+      const encoded = encodeCanvasOnMainThread(canvas, canvasScale);
+      if (encoded) {
+        results.push({ canvas, ...encoded });
+      }
+    }
+    return results;
+  }
+
+  // Use worker pool for parallel encoding
+  const encodingTasks = canvases.map(async (canvas) => {
+    try {
+      if (canvas.width === 0 || canvas.height === 0) {
+        return null;
+      }
+
+      const preserveAlpha = canvas.dataset.preserveAlpha === "true";
+      let sourceCanvas = canvas;
+
+      // Handle canvas scaling on main thread before encoding
+      if (canvasScale < 1) {
+        const scaledWidth = Math.floor(canvas.width * canvasScale);
+        const scaledHeight = Math.floor(canvas.height * canvasScale);
+        const scaledCanvas = document.createElement("canvas");
+        scaledCanvas.width = scaledWidth;
+        scaledCanvas.height = scaledHeight;
+        const scaledCtx = scaledCanvas.getContext("2d");
+        if (scaledCtx) {
+          scaledCtx.drawImage(canvas, 0, 0, scaledWidth, scaledHeight);
+          sourceCanvas = scaledCanvas;
+        }
+      }
+      
+      // Encode in worker
+      const dataUrl = await workerPool.execute((worker) =>
+        encodeCanvasInWorker(worker, sourceCanvas, preserveAlpha),
+      );
+
+      return { canvas, dataUrl, preserveAlpha };
+    } catch (error) {
+      // Fallback to main thread if worker encoding fails
+      const encoded = encodeCanvasOnMainThread(canvas, canvasScale);
+      if (encoded) {
+        return { canvas, ...encoded };
+      }
+      
+      // Cross-origin canvas or other error - skip
+      return null;
+    }
+  });
+
+  const encodedResults = await Promise.all(encodingTasks);
+  const validResults = encodedResults.filter(
+    (r): r is { canvas: HTMLCanvasElement; dataUrl: string; preserveAlpha: boolean } => r !== null,
+  );
+  return validResults;
+}
 
 /**
  * Fast base64 encoding directly from Uint8Array.
@@ -280,16 +482,20 @@ async function inlineImages(container: HTMLElement): Promise<void> {
 /**
  * Convert all canvas elements to img elements with data URIs.
  * Canvas elements don't serialize their pixel content in SVG foreignObject.
+ * Uses worker pool for parallel encoding when available.
+ * 
+ * @internal - Currently unused but kept for potential future use
  */
-function convertCanvasesToImages(container: HTMLElement): void {
-  const canvases = container.querySelectorAll("canvas");
-  for (const canvas of canvases) {
+async function convertCanvasesToImages(container: HTMLElement): Promise<void> {
+  const canvases = Array.from(container.querySelectorAll("canvas"));
+  if (canvases.length === 0) {
+    return;
+  }
+
+  const encodedResults = await encodeCanvasesInParallel(canvases);
+
+  for (const { canvas, dataUrl } of encodedResults) {
     try {
-      // Use PNG for image-sourced canvases to preserve transparency
-      const preserveAlpha = canvas.dataset.preserveAlpha === "true";
-      const dataUrl = preserveAlpha
-        ? canvas.toDataURL("image/png")
-        : canvas.toDataURL("image/jpeg", 0.95);
       const img = document.createElement("img");
       img.src = dataUrl;
       img.width = canvas.width;
@@ -734,7 +940,7 @@ export async function renderToImage(
   
   // Fallback: SVG foreignObject approach
   // Get all canvases from original BEFORE cloning (cloneNode doesn't copy canvas pixels)
-  const originalCanvases = container.querySelectorAll("canvas");
+  const originalCanvases = Array.from(container.querySelectorAll("canvas"));
   
   // Clone the container for serialization (don't modify original)
   const clone = container.cloneNode(true) as HTMLElement;
@@ -743,49 +949,31 @@ export async function renderToImage(
   // When canvasScale < 1, we scale down before encoding (MUCH faster for thumbnails)
   const canvasScale = options?.canvasScale ?? 1;
   const clonedCanvases = clone.querySelectorAll("canvas");
+  
+  // Encode canvases in parallel using worker pool
+  const encodedResults = await encodeCanvasesInParallel(originalCanvases, canvasScale);
+  
+  // Map encoded results to cloned canvases and replace them
   for (let i = 0; i < originalCanvases.length; i++) {
     const srcCanvas = originalCanvases[i];
     const dstCanvas = clonedCanvases[i];
-    if (srcCanvas && dstCanvas && srcCanvas.width > 0 && srcCanvas.height > 0) {
-      try {
-        let dataUrl: string;
-        // Use PNG for image-sourced canvases to preserve transparency
-        const preserveAlpha = srcCanvas.dataset.preserveAlpha === "true";
-        
-        if (canvasScale < 1) {
-          // Scale down canvas before encoding - dramatically faster for thumbnails
-          // E.g., 1920x1080 → 480x270 at 0.25 scale reduces encoding from ~37ms to ~3ms
-          const scaledWidth = Math.floor(srcCanvas.width * canvasScale);
-          const scaledHeight = Math.floor(srcCanvas.height * canvasScale);
-          const scaledCanvas = document.createElement("canvas");
-          scaledCanvas.width = scaledWidth;
-          scaledCanvas.height = scaledHeight;
-          const scaledCtx = scaledCanvas.getContext("2d");
-          if (scaledCtx) {
-            scaledCtx.drawImage(srcCanvas, 0, 0, scaledWidth, scaledHeight);
-            dataUrl = preserveAlpha
-              ? scaledCanvas.toDataURL("image/png")
-              : scaledCanvas.toDataURL("image/jpeg", 0.85);
-          } else {
-            dataUrl = preserveAlpha
-              ? srcCanvas.toDataURL("image/png")
-              : srcCanvas.toDataURL("image/jpeg", 0.95);
-          }
-        } else {
-          dataUrl = preserveAlpha
-            ? srcCanvas.toDataURL("image/png")
-            : srcCanvas.toDataURL("image/jpeg", 0.95);
-        }
-        
-        const img = document.createElement("img");
-        img.src = dataUrl;
-        // Keep original dimensions - CSS will handle the visual scaling
-        img.width = srcCanvas.width;
-        img.height = srcCanvas.height;
-        const style = dstCanvas.getAttribute("style");
-        if (style) img.setAttribute("style", style);
-        dstCanvas.parentNode?.replaceChild(img, dstCanvas);
-      } catch (e) { /* cross-origin */ }
+    const encoded = encodedResults.find((r) => r.canvas === srcCanvas);
+    
+    if (!srcCanvas || !dstCanvas || !encoded) {
+      continue;
+    }
+    
+    try {
+      const img = document.createElement("img");
+      img.src = encoded.dataUrl;
+      // Keep original dimensions - CSS will handle the visual scaling
+      img.width = srcCanvas.width;
+      img.height = srcCanvas.height;
+      const style = dstCanvas.getAttribute("style");
+      if (style) img.setAttribute("style", style);
+      dstCanvas.parentNode?.replaceChild(img, dstCanvas);
+    } catch (e) {
+      // Cross-origin or other error - skip
     }
   }
 
@@ -889,13 +1077,13 @@ export async function renderToImageDirect(
   // Use JPEG encoding for video frames (faster), PNG for images (preserves transparency)
   const canvasStart = performance.now();
   const canvases = Array.from(container.querySelectorAll("canvas"));
-  for (const canvas of canvases) {
+  
+  // Encode canvases in parallel using worker pool
+  const encodedResults = await encodeCanvasesInParallel(canvases);
+  
+  // Replace canvases with images and store restoration info
+  for (const { canvas, dataUrl } of encodedResults) {
     try {
-      // Use PNG for image-sourced canvases to preserve transparency
-      const preserveAlpha = canvas.dataset.preserveAlpha === "true";
-      const dataUrl = preserveAlpha
-        ? canvas.toDataURL("image/png")
-        : canvas.toDataURL("image/jpeg", 0.95);
       const img = document.createElement("img");
       img.src = dataUrl;
       img.width = canvas.width;
@@ -1001,29 +1189,29 @@ export async function renderToImageDirect(
 
 /**
  * Prepare a frame's data URI without waiting for image load.
- * Returns the data URI synchronously (after serialization) for pipelined loading.
+ * Returns the data URI asynchronously (after parallel canvas encoding and serialization) for pipelined loading.
  * The DOM is restored before this function returns.
  */
-export function prepareFrameDataUri(
+export async function prepareFrameDataUri(
   container: HTMLElement,
   width: number,
   height: number,
-): string {
+): Promise<string> {
   _renderCallCount++;
   
   // Store original canvas elements and their parents for restoration
   const canvasRestoreInfo: Array<{ canvas: HTMLCanvasElement; parent: Node; nextSibling: Node | null; img: HTMLImageElement }> = [];
   
-  // Convert canvases to images IN-PLACE
+  // Convert canvases to images IN-PLACE using worker pool
   const canvasStart = performance.now();
   const canvases = Array.from(container.querySelectorAll("canvas"));
-  for (const canvas of canvases) {
+  
+  // Encode canvases in parallel using worker pool
+  const encodedResults = await encodeCanvasesInParallel(canvases);
+  
+  // Replace canvases with images and store restoration info
+  for (const { canvas, dataUrl } of encodedResults) {
     try {
-      // Use PNG for image-sourced canvases to preserve transparency
-      const preserveAlpha = canvas.dataset.preserveAlpha === "true";
-      const dataUrl = preserveAlpha
-        ? canvas.toDataURL("image/png")
-        : canvas.toDataURL("image/jpeg", 0.95);
       const img = document.createElement("img");
       img.src = dataUrl;
       img.width = canvas.width;
