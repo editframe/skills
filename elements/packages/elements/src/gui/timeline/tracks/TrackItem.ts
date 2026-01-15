@@ -16,9 +16,14 @@ import {
   type TemporalMixinInterface,
 } from "../../../elements/EFTemporal.js";
 import { EFTimegroup } from "../../../elements/EFTimegroup.js";
+import { EFVideo } from "../../../elements/EFVideo.js";
+import { EFAudio } from "../../../elements/EFAudio.js";
+import { EFImage } from "../../../elements/EFImage.js";
+import { EFText } from "../../../elements/EFText.js";
 import { type FocusContext, focusContext } from "../../focusContext.js";
 import { focusedElementContext } from "../../focusedElementContext.js";
 import { TWMixin } from "../../TWMixin.js";
+import { phosphorIcon, ICONS } from "../../icons.js";
 import "../TrimHandles.js";
 import type { TrimChangeDetail } from "../TrimHandles.js";
 
@@ -89,6 +94,73 @@ export class TrackItem extends TWMixin(LitElement) {
       }
       .trim-container {
         position: relative;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        transition: box-shadow 0.2s ease, border-color 0.2s ease;
+      }
+      
+      :host(:hover) .trim-container {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+        border-color: var(--timeline-playhead, rgb(239 68 68));
+      }
+      
+      :host([data-focused]) .trim-container {
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+        border-color: rgb(59, 130, 246);
+      }
+      
+      .element-icon {
+        position: absolute;
+        left: 4px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 14px;
+        height: 14px;
+        opacity: 0.7;
+        z-index: 1;
+        pointer-events: none;
+      }
+      
+      .element-type-indicator {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        border-radius: 2px 0 0 2px;
+      }
+      
+      .duration-label {
+        position: absolute;
+        right: 4px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.6);
+        pointer-events: none;
+        z-index: 2;
+        font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+      }
+      
+      .tooltip {
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        margin-bottom: 4px;
+        padding: 4px 8px;
+        background: rgba(0, 0, 0, 0.9);
+        color: white;
+        font-size: 11px;
+        white-space: nowrap;
+        border-radius: 4px;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        z-index: 1000;
+      }
+      
+      :host(:hover) .tooltip {
+        opacity: 1;
       }
     `,
   ];
@@ -101,6 +173,106 @@ export class TrackItem extends TWMixin(LitElement) {
 
   get isFocused() {
     return this.element && this.focusContext?.focusedElement === this.element;
+  }
+
+  /**
+   * Get element type for styling and icons
+   */
+  protected getElementType(): "video" | "audio" | "image" | "text" | "timegroup" | "captions" | "unknown" {
+    // Check for captions element
+    if ((this.element as any).tagName === "EF-CAPTIONS" || 
+        (this.element as any).tagName?.toLowerCase() === "ef-captions") {
+      return "captions";
+    }
+    if (this.element instanceof EFVideo) return "video";
+    if (this.element instanceof EFAudio) return "audio";
+    if (this.element instanceof EFImage) return "image";
+    if (this.element instanceof EFText) return "text";
+    if (this.element instanceof EFTimegroup) return "timegroup";
+    return "unknown";
+  }
+
+  /**
+   * Get color for element type
+   */
+  protected getElementTypeColor(): string {
+    const type = this.getElementType();
+    switch (type) {
+      case "video":
+        return "rgb(59, 130, 246)"; // Blue
+      case "audio":
+        return "rgb(34, 197, 94)"; // Green
+      case "image":
+        return "rgb(168, 85, 247)"; // Purple
+      case "text":
+        return "rgb(249, 115, 22)"; // Orange
+      case "captions":
+        return "rgb(34, 197, 94)"; // Green (same as audio, but distinct usage)
+      case "timegroup":
+        return "rgb(148, 163, 184)"; // Gray
+      default:
+        return "rgb(148, 163, 184)"; // Gray
+    }
+  }
+
+  /**
+   * Get icon for element type
+   */
+  protected getElementIcon(): TemplateResult | typeof nothing {
+    const type = this.getElementType();
+    switch (type) {
+      case "video":
+        return phosphorIcon(ICONS.filmStrip, 14);
+      case "audio":
+        return phosphorIcon(ICONS.speakerHigh, 14);
+      case "image":
+        return phosphorIcon(ICONS.image, 14);
+      case "text":
+        return phosphorIcon(ICONS.textT, 14);
+      case "captions":
+        return phosphorIcon(ICONS.subtitles, 14);
+      case "timegroup":
+        return phosphorIcon(ICONS.filmSlate, 14);
+      default:
+        return nothing;
+    }
+  }
+
+  /**
+   * Format duration for display
+   */
+  protected formatDuration(ms: number): string {
+    if (ms < 1000) {
+      return `${Math.round(ms)}ms`;
+    }
+    const seconds = (ms / 1000).toFixed(1);
+    return `${seconds}s`;
+  }
+
+  /**
+   * Get tooltip text with element info
+   */
+  protected getTooltipText(): string {
+    const elementId = (this.element as HTMLElement)?.id || "";
+    const type = this.getElementType();
+    const duration = this.formatDuration(this.element.durationMs ?? 0);
+    const startTime = this.formatDuration(this.element.startTimeMs ?? 0);
+    const endTime = this.formatDuration((this.element.startTimeMs ?? 0) + (this.element.durationMs ?? 0));
+    
+    const parts = [];
+    if (elementId) parts.push(elementId);
+    parts.push(`${type} • ${duration}`);
+    if (this.element.startTimeMs > 0) {
+      parts.push(`${startTime} → ${endTime}`);
+    }
+    
+    // Add composition mode for timegroups
+    if (type === "timegroup") {
+      const mode = (this.element as any).mode || "fixed";
+      parts.push(`mode: ${mode}`);
+    }
+    
+    return parts.join(" • ");
   }
 
   @property({ type: Object, attribute: false })
@@ -130,17 +302,30 @@ export class TrackItem extends TWMixin(LitElement) {
     const startMs = this.useAbsolutePosition
       ? this.element.startTimeMs
       : this.element.startTimeWithinParentMs;
+    // When using absolute positioning, don't subtract sourceStartMs - the track container
+    // should be positioned at the element's absolute start time in the timeline.
+    // When using relative positioning, sourceStartMs is already accounted for in startTimeWithinParentMs.
+    const leftOffset = this.useAbsolutePosition
+      ? startMs
+      : startMs - this.element.sourceStartMs;
     return {
       position: "relative",
-      left: `${this.pixelsPerMs * (startMs - this.element.sourceStartMs)}px`,
+      left: `${this.pixelsPerMs * leftOffset}px`,
       width: `${this.pixelsPerMs * (this.element.intrinsicDurationMs ?? this.element.durationMs)}px`,
     };
   }
 
   get trimPortionStyles() {
+    // When using absolute positioning, the trim container should start at 0
+    // relative to the gutter (which is already positioned at startTimeMs).
+    // When using relative positioning, we need to offset by sourceStartMs
+    // to show the trimmed portion correctly.
+    const leftOffset = this.useAbsolutePosition
+      ? 0
+      : this.element.sourceStartMs;
     return {
       width: `${this.pixelsPerMs * this.element.durationMs}px`,
-      left: `${this.pixelsPerMs * this.element.sourceStartMs}px`,
+      left: `${this.pixelsPerMs * leftOffset}px`,
     };
   }
 
@@ -256,8 +441,24 @@ export class TrackItem extends TWMixin(LitElement) {
               ? "var(--filmstrip-item-focused)"
               : "var(--filmstrip-item-bg)",
             borderColor: "var(--filmstrip-border)",
+            borderLeftColor: this.getElementTypeColor(),
+            borderLeftWidth: "3px",
           })}
         >
+          <div class="element-type-indicator" style=${styleMap({
+            backgroundColor: this.getElementTypeColor(),
+          })}></div>
+          <div class="element-icon" style=${styleMap({
+            color: this.getElementTypeColor(),
+          })}>
+            ${this.getElementIcon()}
+          </div>
+          <div class="duration-label">
+            ${this.formatDuration(this.element.durationMs ?? 0)}
+          </div>
+          <div class="tooltip">
+            ${this.getTooltipText()}
+          </div>
           ${this.animations()}
           ${this.contents()}
           ${
