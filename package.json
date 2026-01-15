@@ -14,5 +14,8 @@
     "oxlint": "^1.30.0",
     "playwright": "^1.56.1",
     "tsx": "^4.20.6"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.6.0"
   }
 }

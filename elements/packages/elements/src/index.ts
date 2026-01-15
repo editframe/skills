@@ -1,4 +1,5 @@
 import "./elements/EFTimegroup.js";
+import "./sandbox/index.js";
 
 export { EFTimegroup } from "./elements/EFTimegroup.js";
 export type { ContainerInfo } from "./elements/ContainerInfo.js";
