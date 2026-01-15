@@ -4,6 +4,10 @@ import * as path from "node:path";
 import { discoverSandboxes, loadSandbox } from "./discover.js";
 import type { Sandbox, ScenarioResult } from "../packages/elements/src/sandbox/index.js";
 
+// NOTE: ProfileService and HTTP-based profile routes have been removed.
+// Profiling is now done via exposed functions injected by `ef open`.
+// See: elements/scripts/ef.ts for __startProfiling/__stopProfiling functions.
+
 /**
  * Get all discovered sandboxes
  */
@@ -43,6 +47,7 @@ export async function handleScenarios(
   const sandbox = sandboxes.find((s) => s.name === sandboxName);
 
   if (!sandbox) {
+    res.setHeader("Content-Type", "application/json");
     res.writeHead(404);
     res.end(JSON.stringify({ error: `Sandbox "${sandboxName}" not found` }));
     return;
@@ -74,6 +79,7 @@ export async function handleScenarios(
     res.writeHead(200);
     res.end(JSON.stringify({ scenarios: scenarioNames }));
   } catch (error) {
+    res.setHeader("Content-Type", "application/json");
     res.writeHead(500);
     res.end(
       JSON.stringify({
@@ -92,37 +98,21 @@ export async function handleSandboxConfig(
   elementsRoot: string,
   sandboxName: string,
 ): Promise<void> {
+  console.log(`[sandbox-routes] 📋 handleSandboxConfig called for: ${sandboxName}`);
   const sandboxes = getSandboxes(elementsRoot);
   const sandbox = sandboxes.find((s) => s.name === sandboxName);
 
   if (!sandbox) {
+    console.log(`[sandbox-routes] ❌ Sandbox "${sandboxName}" not found. Available: ${sandboxes.map(s => s.name).join(", ")}`);
+    res.setHeader("Content-Type", "application/json");
     res.writeHead(404);
     res.end(JSON.stringify({ error: `Sandbox "${sandboxName}" not found` }));
     return;
   }
 
+  console.log(`[sandbox-routes] ✅ Found sandbox: ${sandboxName} at ${sandbox.filePath}`);
+
   try {
-    // Use Vite's ssrLoadModule if available (in Vite dev server context)
-    const viteServer = (req as any).viteServer;
-    let config: Sandbox;
-    
-    if (viteServer) {
-      // Convert absolute path to a URL that Vite can resolve
-      // Use the @editframe/elements alias
-      const relativeToElementsSrc = path.relative(
-        path.join(elementsRoot, "packages", "elements", "src"),
-        sandbox.filePath
-      );
-      const modulePath = `@editframe/elements/${relativeToElementsSrc.replace(/\\/g, "/")}`;
-      
-      // Use Vite's SSR module loading to handle TypeScript
-      const module = await viteServer.ssrLoadModule(modulePath);
-      config = (module.default || module) as Sandbox;
-    } else {
-      // Fallback to direct import (requires tsx or compiled JS)
-      config = await loadSandbox(sandbox.filePath) as Sandbox;
-    }
-    
     // Convert absolute file path to a path that Vite can resolve
     // In Docker: elementsRoot is /packages, sandbox.filePath is /packages/packages/elements/src/gui/EFDial.sandbox.ts
     // Use the alias @editframe/elements which maps to /packages/packages/elements/src
@@ -132,22 +122,27 @@ export async function handleSandboxConfig(
     );
     const modulePath = `@editframe/elements/${relativeToElementsSrc.replace(/\\/g, "/")}`;
     
+    console.log(`[sandbox-routes] ✅ Returning config path: ${modulePath}`);
+    
+    // Don't load the module server-side - it contains browser-only code (custom elements)
+    // Just return the path so the browser can load it
     res.setHeader("Content-Type", "application/json");
     res.writeHead(200);
     res.end(JSON.stringify({ 
-      config: {
-        name: config.name,
-        description: config.description,
-        scenarios: Object.keys(config.scenarios || {}),
-      },
       filePath: modulePath,
       absolutePath: sandbox.filePath,
     }));
   } catch (error) {
+    console.error(`[sandbox-routes] ❌ Error loading sandbox config for ${sandboxName}:`, error);
+    if (error instanceof Error) {
+      console.error(`[sandbox-routes] Error stack:`, error.stack);
+    }
+    res.setHeader("Content-Type", "application/json");
     res.writeHead(500);
     res.end(
       JSON.stringify({
         error: `Failed to load sandbox: ${error instanceof Error ? error.message : String(error)}`,
+        details: error instanceof Error ? error.stack : String(error),
       }),
     );
   }
@@ -167,6 +162,7 @@ export async function handleRunScenario(
   const sandbox = sandboxes.find((s) => s.name === sandboxName);
 
   if (!sandbox) {
+    res.setHeader("Content-Type", "application/json");
     res.writeHead(404);
     res.end(JSON.stringify({ error: `Sandbox "${sandboxName}" not found` }));
     return;
@@ -196,6 +192,7 @@ export async function handleRunScenario(
     const scenario = config.scenarios?.[scenarioName];
 
     if (!scenario) {
+      res.setHeader("Content-Type", "application/json");
       res.writeHead(404);
       res.end(JSON.stringify({ error: `Scenario "${scenarioName}" not found` }));
       return;
@@ -207,6 +204,7 @@ export async function handleRunScenario(
     res.writeHead(200);
     res.end(JSON.stringify({ success: true }));
   } catch (error) {
+    res.setHeader("Content-Type", "application/json");
     res.writeHead(500);
     res.end(
       JSON.stringify({
@@ -311,3 +309,7 @@ export function handleIndex(
   res.writeHead(200);
   res.end(html);
 }
+
+// Profile handler functions have been removed.
+// Profiling is now done via exposed functions injected by `ef open`.
+// See: elements/scripts/ef.ts for __startProfiling/__stopProfiling functions.

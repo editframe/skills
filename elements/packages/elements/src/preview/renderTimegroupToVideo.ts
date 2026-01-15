@@ -684,10 +684,29 @@ export async function renderTimegroupToVideo(
   // CLONE-TIMELINE ARCHITECTURE:
   // Create a fully functional render clone that can be seeked independently.
   // This keeps Prime-timeline at userTimeMs (user can preview/edit during render).
-  const { clone: renderClone, container: renderContainer, cleanup: cleanupRenderClone } = 
+  const { clone: renderClone, container: renderContainer, cleanup: cleanupRenderClone } =
     await timegroup.createRenderClone();
   
   console.log(`[renderToVideo] Clone-timeline created`);
+  
+  // Pre-fetch scrub segments for all video elements to ensure fast seeks
+  // This is critical for performance - without prefetching, each seek requires loading segments on-demand
+  const prefetchStartTime = performance.now();
+  const videoElements = renderClone.querySelectorAll("ef-video");
+  if (videoElements.length > 0) {
+    // Generate all timestamps that will be rendered
+    const allTimestamps: number[] = [];
+    for (let frameIndex = 0; frameIndex < totalFrames; frameIndex++) {
+      allTimestamps.push(startMs + frameIndex * frameDurationMs);
+    }
+    
+    await Promise.all(
+      Array.from(videoElements).map((video) =>
+        (video as any).prefetchScrubSegments(allTimestamps),
+      ),
+    );
+    console.log(`[renderToVideo] Prefetched scrub segments for ${videoElements.length} videos in ${(performance.now() - prefetchStartTime).toFixed(0)}ms`);
+  }
   
   // Determine rendering path: native (fast) vs foreignObject (fallback)
   const useNativePath = isNativeCanvasApiEnabled();

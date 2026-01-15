@@ -113,28 +113,47 @@ export function sandboxPlugin(elementsRoot?: string): Plugin {
         // Discovery will happen on first request
       });
 
+      // Create the middleware once, not on every request
+      const sandboxMiddleware = createSandboxMiddleware(elementsPath);
+      
       // Add sandbox middleware before Vite's default middleware
       // Note: We use a catch-all approach since Vite's middleware.use with a path
       // strips the prefix, which would break our path matching
       server.middlewares.use(async (req, res, next) => {
         const url = req.url || "";
+        const method = req.method || "GET";
         
         // Only handle sandbox routes, let everything else pass through
         if (!url.startsWith("/_sandbox")) {
           return next();
         }
 
+        // Log incoming sandbox requests for debugging
+        console.log(`[sandbox-plugin] 📦 Handling sandbox route: ${method} ${url}`);
+
         try {
           // Pass Vite server instance and root to the request so routes can load TypeScript modules
           (req as any).viteServerRoot = server.config.root;
           (req as any).viteServer = server;
-          const middleware = createSandboxMiddleware(elementsPath);
-          await middleware(req, res, next);
+          
+          // Call the middleware - it will handle the request and send a response
+          // If no route matches, it will call next(), but that shouldn't happen for /_sandbox routes
+          await sandboxMiddleware(req, res, () => {
+            // This next() callback should only be called if the middleware doesn't handle the request
+            // For /_sandbox routes, this shouldn't happen, but if it does, log it
+            console.warn(`[sandbox-plugin] ⚠️  Sandbox middleware didn't handle: ${method} ${url}`);
+            if (!res.headersSent) {
+              res.setHeader("Content-Type", "application/json");
+              res.writeHead(404);
+              res.end(JSON.stringify({ error: `Sandbox route not found: ${url}` }));
+            }
+          });
         } catch (error) {
           console.error("[sandbox-plugin] ❌ Error in sandbox middleware:", error);
           if (!res.headersSent) {
+            res.setHeader("Content-Type", "application/json");
             res.writeHead(500);
-            res.end(`Sandbox error: ${error instanceof Error ? error.message : String(error)}`);
+            res.end(JSON.stringify({ error: `Sandbox error: ${error instanceof Error ? error.message : String(error)}` }));
           }
         }
       });

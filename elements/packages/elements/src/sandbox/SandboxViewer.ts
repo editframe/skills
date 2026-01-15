@@ -251,9 +251,19 @@ export class SandboxViewer extends LitElement {
   private async runScenario(scenarioName: string): Promise<void> {
     if (!this.sandboxConfig) return;
 
-    const scenario = this.sandboxConfig.scenarios[scenarioName];
-    if (!scenario) {
+    const scenarioDef = this.sandboxConfig.scenarios[scenarioName];
+    if (!scenarioDef) {
       this.error = `Scenario "${scenarioName}" not found`;
+      return;
+    }
+
+    // Extract scenario function - handle both function and Scenario object formats
+    const scenario = typeof scenarioDef === "function" 
+      ? scenarioDef 
+      : scenarioDef.run;
+
+    if (!scenario) {
+      this.error = `Scenario "${scenarioName}" has no run function`;
       return;
     }
 

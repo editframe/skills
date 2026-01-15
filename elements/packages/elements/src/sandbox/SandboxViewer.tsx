@@ -47,9 +47,19 @@ export function SandboxViewer({ sandboxName, sandboxConfig }: SandboxViewerProps
   const runScenario = async (scenarioName: string) => {
     if (!sandboxConfig) return;
 
-    const scenario = sandboxConfig.scenarios[scenarioName];
-    if (!scenario) {
+    const scenarioDef = sandboxConfig.scenarios[scenarioName];
+    if (!scenarioDef) {
       setError(`Scenario "${scenarioName}" not found`);
+      return;
+    }
+
+    // Extract scenario function - handle both function and Scenario object formats
+    const scenario = typeof scenarioDef === "function" 
+      ? scenarioDef 
+      : scenarioDef.run;
+
+    if (!scenario) {
+      setError(`Scenario "${scenarioName}" has no run function`);
       return;
     }
 

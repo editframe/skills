@@ -10,6 +10,10 @@ import {
   handleScenarios,
 } from "./routes.js";
 
+// NOTE: Profile routes (/_sandbox/api/profile/*) have been removed.
+// Profiling is now done via exposed functions injected by `ef open`.
+// See: elements/scripts/ef.ts for __startProfiling/__stopProfiling functions.
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -42,15 +46,20 @@ export function createSandboxMiddleware(elementsRoot: string) {
   ): Promise<void> => {
     const parsedUrl = url.parse(req.url || "", true);
     const pathname = parsedUrl.pathname || "";
+    const method = req.method || "GET";
 
     // Handle sandbox routes
     if (pathname.startsWith("/_sandbox")) {
+      console.log(`[sandbox-middleware] 🔍 Matching route: ${method} ${pathname}`);
+      
       if (pathname === "/_sandbox/" || pathname === "/_sandbox") {
+        console.log(`[sandbox-middleware] ✅ Matched: index`);
         await handleIndex(req, res, elementsRoot);
         return;
       }
 
       if (pathname === "/_sandbox/api/list") {
+        console.log(`[sandbox-middleware] ✅ Matched: list`);
         await handleList(req, res, elementsRoot);
         return;
       }
@@ -80,9 +89,19 @@ export function createSandboxMiddleware(elementsRoot: string) {
       // Match /_sandbox/:name - redirect to scenario-viewer.html
       const viewerMatch = pathname.match(/^\/_sandbox\/([^/]+)$/);
       if (viewerMatch) {
+        console.log(`[sandbox-middleware] ✅ Matched: viewer for ${viewerMatch[1]}`);
         handleSandboxViewer(req, res, elementsRoot, viewerMatch[1]);
         return;
       }
+      
+      // If we got here, the path starts with /_sandbox but didn't match any route
+      console.warn(`[sandbox-middleware] ⚠️  Unmatched sandbox route: ${method} ${pathname}`);
+      if (!res.headersSent) {
+        res.setHeader("Content-Type", "application/json");
+        res.writeHead(404);
+        res.end(JSON.stringify({ error: `Sandbox route not found: ${pathname}` }));
+      }
+      return;
     }
 
     // If no sandbox route matched, call next middleware
@@ -102,8 +121,9 @@ export function createSandboxServer(port: number = 4321, elementsRoot?: string):
   const server = http.createServer(async (req, res) => {
     const middleware = createSandboxMiddleware(elementsPath);
     await middleware(req, res, () => {
+      res.setHeader("Content-Type", "application/json");
       res.writeHead(404);
-      res.end("Not found");
+      res.end(JSON.stringify({ error: "Not found" }));
     });
   });
 
