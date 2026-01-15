@@ -125,8 +125,9 @@ export function sandboxPlugin(elementsRoot?: string): Plugin {
         }
 
         try {
-          // Pass Vite server root to the request so routes can create HTML files
+          // Pass Vite server instance and root to the request so routes can load TypeScript modules
           (req as any).viteServerRoot = server.config.root;
+          (req as any).viteServer = server;
           const middleware = createSandboxMiddleware(elementsPath);
           await middleware(req, res, next);
         } catch (error) {

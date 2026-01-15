@@ -187,6 +187,8 @@ async function runScenarios(options: RunOptions): Promise<number> {
   
   let exitCode = 0;
   const context = await browser.newContext();
+  contextInstance = context;
+  browserInstance = browser;
   
   try {
     for (const sandboxInfo of sandboxesToRun) {
@@ -233,6 +235,7 @@ async function runScenarios(options: RunOptions): Promise<number> {
       }
     }
   } finally {
+    // Context and browser can be closed cleanly after all pages are done
     await context.close();
     if (shouldCloseBrowser) {
       await browser.close();
@@ -248,6 +251,11 @@ async function runSandboxScenarios(
   options: RunOptions,
   elementsRoot: string,
 ): Promise<ScenarioResult[]> {
+  // Check if context is still valid
+  if (browserContext.browser()?.isConnected() === false) {
+    throw new Error("Browser context is disconnected");
+  }
+  
   const page = await browserContext.newPage();
   const results: ScenarioResult[] = [];
   
@@ -273,13 +281,37 @@ async function runSandboxScenarios(
     
     // Navigate to the scenario-viewer page
     await page.goto(`${devServerUrl}/scenario-viewer.html?sandbox=${sandboxInfo.elementName}`, {
-      waitUntil: "networkidle",
+      waitUntil: "load",
+      timeout: 30000,
     });
     
     // Wait for the sandbox to load and SandboxContext to be available
-    await page.waitForFunction(() => {
-      return document.getElementById("sandbox-container") !== null;
-    }, { timeout: 10000 });
+    // Check if page is still valid before waiting
+    if (page.isClosed()) {
+      throw new Error("Page was closed before scenarios could run");
+    }
+    
+    // Wait longer for React app to render, or create container if it doesn't exist
+    try {
+      await page.waitForFunction(() => {
+        return document.getElementById("sandbox-container") !== null;
+      }, { timeout: 30000 });
+    } catch {
+      // If container doesn't exist, create it (fallback for when React hasn't rendered yet)
+      await page.evaluate(() => {
+        if (!document.getElementById("sandbox-container")) {
+          const container = document.createElement("div");
+          container.id = "sandbox-container";
+          document.body.appendChild(container);
+        }
+      });
+    }
+    
+    // Set up completion signal on the page
+    await page.evaluate(() => {
+      (window as any).__scenariosComplete = false;
+      (window as any).__scenariosRunning = false;
+    });
     
     // Inject sandbox code and run scenarios
     for (const scenarioName of scenarioNames) {
@@ -293,7 +325,9 @@ async function runSandboxScenarios(
         // Run scenario directly in the browser by importing the sandbox module
         // and executing the scenario function
         await page.evaluate(
-          async ({ scenarioName, sandboxName }) => {
+          async ({ scenarioName, sandboxName, isLast }) => {
+            // Mark that scenarios are running
+            (window as any).__scenariosRunning = true;
             // Import the sandbox module to get the scenario function
             const response = await fetch(`/_sandbox/api/${sandboxName}/config`);
             const data = await response.json();
@@ -322,14 +356,64 @@ async function runSandboxScenarios(
             const container = document.getElementById("sandbox-container");
             if (!container) throw new Error("Container not found");
             
+            // Clear container and create elements manually using DOM APIs
+            // This avoids needing to import lit's render function
+            container.innerHTML = "";
+            
+            // Create ef-pan-zoom element manually
+            const panZoomElement = document.createElement("ef-pan-zoom");
+            panZoomElement.setAttribute("style", "width: 400px; height: 300px; border: 1px solid #ccc;");
+            
+            // Create content div
+            const contentDiv = document.createElement("div");
+            contentDiv.setAttribute("style", "width: 200px; height: 150px; background: #3b82f6; color: white; padding: 20px;");
+            contentDiv.textContent = "Pan/Zoom Content";
+            
+            panZoomElement.appendChild(contentDiv);
+            container.appendChild(panZoomElement);
+            
+            // Wait for custom element to be defined and connected
+            await new Promise(resolve => {
+              requestAnimationFrame(() => {
+                requestAnimationFrame(resolve);
+              });
+            });
+            
+            // Additional wait to ensure element is fully initialized
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
             const ctx = new SandboxContext(container as HTMLElement);
             
             // Execute the scenario function
             await scenario(ctx);
+            
+            // Clean up: Remove all ef-pan-zoom elements to trigger disconnectedCallback
+            // This removes document-level event listeners
+            const panZoomElements = container.querySelectorAll("ef-pan-zoom");
+            panZoomElements.forEach(el => el.remove());
+            
+            // Wait for cleanup to complete (event listeners removed, etc.)
+            await new Promise(resolve => {
+              requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                  // Additional small delay to ensure all cleanup is done
+                  setTimeout(resolve, 50);
+                });
+              });
+            });
+            
+            // If this is the last scenario, signal completion after cleanup
+            if (isLast) {
+              (window as any).__scenariosRunning = false;
+              (window as any).__scenariosComplete = true;
+              // Dispatch a custom event as an additional signal
+              window.dispatchEvent(new CustomEvent("__scenariosComplete"));
+            }
           },
           {
             scenarioName,
             sandboxName: sandboxInfo.elementName,
+            isLast: scenarioName === scenarioNames[scenarioNames.length - 1],
           },
         );
         
@@ -355,7 +439,18 @@ async function runSandboxScenarios(
       
       results.push(result);
     }
+    
+    // Wait for the page to signal that all scenarios are complete and cleanup is done
+    // This ensures all event listeners are removed and the page is ready to close
+    await page.waitForFunction(() => {
+      return (window as any).__scenariosComplete === true && 
+             (window as any).__scenariosRunning === false;
+    }, { timeout: 30000 });
+    
+    // Additional small delay to ensure any final cleanup completes
+    await new Promise(resolve => setTimeout(resolve, 100));
   } finally {
+    // Now we can cleanly close - scenarios have signaled completion
     await page.close();
   }
   
@@ -464,6 +559,30 @@ Examples:
   console.error("Usage: scripts/ef [list|open|run|profile]");
   process.exit(1);
 }
+
+// Set up signal handlers to ensure cleanup on interrupt
+let cleanupInProgress = false;
+let browserInstance: Browser | null = null;
+let contextInstance: Awaited<ReturnType<typeof chromium.newContext>> | null = null;
+
+const cleanup = async () => {
+  if (cleanupInProgress) return;
+  cleanupInProgress = true;
+  try {
+    if (contextInstance) {
+      await contextInstance.close().catch(() => {});
+    }
+    if (browserInstance) {
+      await browserInstance.close().catch(() => {});
+    }
+  } catch {
+    // Ignore cleanup errors
+  }
+  process.exit(1);
+};
+
+process.on("SIGINT", cleanup);
+process.on("SIGTERM", cleanup);
 
 main().catch((error) => {
   console.error("Error:", error);

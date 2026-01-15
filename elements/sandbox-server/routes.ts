@@ -49,7 +49,26 @@ export async function handleScenarios(
   }
 
   try {
-    const config = await loadSandbox(sandbox.filePath) as Sandbox;
+    // Use Vite's ssrLoadModule if available (in Vite dev server context)
+    const viteServer = (req as any).viteServer;
+    let config: Sandbox;
+    
+    if (viteServer) {
+      // Convert absolute path to a URL that Vite can resolve
+      const relativeToElementsSrc = path.relative(
+        path.join(elementsRoot, "packages", "elements", "src"),
+        sandbox.filePath
+      );
+      const modulePath = `@editframe/elements/${relativeToElementsSrc.replace(/\\/g, "/")}`;
+      
+      // Use Vite's SSR module loading to handle TypeScript
+      const module = await viteServer.ssrLoadModule(modulePath);
+      config = (module.default || module) as Sandbox;
+    } else {
+      // Fallback to direct import (requires tsx or compiled JS)
+      config = await loadSandbox(sandbox.filePath) as Sandbox;
+    }
+    
     const scenarioNames = Object.keys(config.scenarios || {});
     res.setHeader("Content-Type", "application/json");
     res.writeHead(200);
@@ -83,7 +102,26 @@ export async function handleSandboxConfig(
   }
 
   try {
-    const config = await loadSandbox(sandbox.filePath) as Sandbox;
+    // Use Vite's ssrLoadModule if available (in Vite dev server context)
+    const viteServer = (req as any).viteServer;
+    let config: Sandbox;
+    
+    if (viteServer) {
+      // Convert absolute path to a URL that Vite can resolve
+      // Use the @editframe/elements alias
+      const relativeToElementsSrc = path.relative(
+        path.join(elementsRoot, "packages", "elements", "src"),
+        sandbox.filePath
+      );
+      const modulePath = `@editframe/elements/${relativeToElementsSrc.replace(/\\/g, "/")}`;
+      
+      // Use Vite's SSR module loading to handle TypeScript
+      const module = await viteServer.ssrLoadModule(modulePath);
+      config = (module.default || module) as Sandbox;
+    } else {
+      // Fallback to direct import (requires tsx or compiled JS)
+      config = await loadSandbox(sandbox.filePath) as Sandbox;
+    }
     
     // Convert absolute file path to a path that Vite can resolve
     // In Docker: elementsRoot is /packages, sandbox.filePath is /packages/packages/elements/src/gui/EFDial.sandbox.ts
@@ -135,7 +173,26 @@ export async function handleRunScenario(
   }
 
   try {
-    const config = await loadSandbox(sandbox.filePath) as Sandbox;
+    // Use Vite's ssrLoadModule if available (in Vite dev server context)
+    const viteServer = (req as any).viteServer;
+    let config: Sandbox;
+    
+    if (viteServer) {
+      // Convert absolute path to a URL that Vite can resolve
+      const relativeToElementsSrc = path.relative(
+        path.join(elementsRoot, "packages", "elements", "src"),
+        sandbox.filePath
+      );
+      const modulePath = `@editframe/elements/${relativeToElementsSrc.replace(/\\/g, "/")}`;
+      
+      // Use Vite's SSR module loading to handle TypeScript
+      const module = await viteServer.ssrLoadModule(modulePath);
+      config = (module.default || module) as Sandbox;
+    } else {
+      // Fallback to direct import (requires tsx or compiled JS)
+      config = await loadSandbox(sandbox.filePath) as Sandbox;
+    }
+    
     const scenario = config.scenarios?.[scenarioName];
 
     if (!scenario) {
