@@ -36,7 +36,9 @@ import { loopContext, playingContext } from "../playingContext.js";
 import type { EFCanvas } from "../../canvas/EFCanvas.js";
 import { shouldRenderElement } from "../hierarchy/EFHierarchyItem.js";
 import { TWMixin } from "../TWMixin.js";
-import "./tracks/index.js";
+// NOTE: Track components (ef-audio-track, ef-video-track, etc.) are NOT imported here
+// to avoid circular dependencies with TrackItem. They must be registered before
+// EFTimeline is used. See preloadTracks.ts for the registration sequence.
 import type { TrimChangeDetail } from "./TrimHandles.js";
 import { flattenHierarchy } from "./flattenHierarchy.js";
 import "./EFTimelineRow.js";

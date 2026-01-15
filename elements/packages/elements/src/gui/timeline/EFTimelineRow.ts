@@ -20,7 +20,9 @@ import { EFImage } from "../../elements/EFImage.js";
 import { EFText } from "../../elements/EFText.js";
 import { TWMixin } from "../TWMixin.js";
 import { renderTrackChildren } from "./tracks/renderTrackChildren.js";
-import "./tracks/TimegroupTrack.js";
+// NOTE: Track components (ef-timegroup-track, etc.) are NOT imported here
+// to avoid circular dependencies with TrackItem. They must be registered before
+// EFTimelineRow is used. See preloadTracks.ts for the registration sequence.
 
 const INDENT_PX = 16;
 

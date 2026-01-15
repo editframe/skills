@@ -10,6 +10,8 @@ import {
 } from "../../../elements/EFCaptions.js";
 import { phosphorIcon, ICONS } from "../../icons.js";
 import { currentTimeContext } from "../../currentTimeContext.js";
+// TrackItem must be pre-loaded before this module is imported
+// See preloadTracks.ts for the initialization sequence
 import { TrackItem } from "./TrackItem.js";
 
 // Shared canvas context for text measurement (avoids creating new canvas each time)

@@ -11,14 +11,12 @@ import { EFTimegroup } from "../../../elements/EFTimegroup.js";
 import { EFVideo } from "../../../elements/EFVideo.js";
 import { EFWaveform } from "../../../elements/EFWaveform.js";
 import { shouldRenderElement } from "../../hierarchy/EFHierarchyItem.js";
-import "./AudioTrack.js";
-import "./CaptionsTrack.js";
-import "./HTMLTrack.js";
-import "./ImageTrack.js";
-import "./TextTrack.js";
-import "./TimegroupTrack.js";
-import "./VideoTrack.js";
-import "./WaveformTrack.js";
+
+// NOTE: Track components are NOT imported here to avoid circular dependencies.
+// They must be pre-loaded elsewhere before this module is used.
+// The custom elements (ef-audio-track, ef-video-track, etc.) are rendered
+// via Lit templates which will work as long as the elements are registered.
+// See preloadTracks.ts for the track component initialization.
 
 export function renderTrackChildren(
   children: Element[],

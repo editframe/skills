@@ -3,6 +3,8 @@ import { customElement } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { EFImage } from "../../../elements/EFImage.js";
 import { phosphorIcon, ICONS } from "../../icons.js";
+// TrackItem must be pre-loaded before this module is imported
+// See preloadTracks.ts for the initialization sequence
 import { TrackItem } from "./TrackItem.js";
 
 @customElement("ef-image-track")

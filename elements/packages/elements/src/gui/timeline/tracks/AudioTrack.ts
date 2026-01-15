@@ -2,6 +2,8 @@ import { html, nothing } from "lit";
 import { customElement } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { EFAudio } from "../../../elements/EFAudio.js";
+// TrackItem must be pre-loaded before this module is imported
+// See preloadTracks.ts for the initialization sequence
 import { TrackItem } from "./TrackItem.js";
 
 @customElement("ef-audio-track")

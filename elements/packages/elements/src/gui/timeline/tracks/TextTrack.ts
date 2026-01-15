@@ -4,6 +4,8 @@ import { styleMap } from "lit/directives/style-map.js";
 import { EFText } from "../../../elements/EFText.js";
 import { EFTextSegment } from "../../../elements/EFTextSegment.js";
 import { phosphorIcon, ICONS } from "../../icons.js";
+// TrackItem must be pre-loaded before this module is imported
+// See preloadTracks.ts for the initialization sequence
 import { TrackItem } from "./TrackItem.js";
 import { renderTrackChildren } from "./renderTrackChildren.js";
 
