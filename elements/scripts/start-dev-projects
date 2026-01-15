@@ -3,8 +3,56 @@ set -e
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-# Ensure dev-projects container is running
-"${SCRIPT_DIR}"/docker-compose up -d dev-projects > /dev/null 2>&1
+# Find monorepo root to read .wsEndpoint.json
+find_monorepo_root() {
+  local current_dir="$1"
+  local dir="$current_dir"
+  while [ "$dir" != "/" ]; do
+    if [ -d "$dir/elements" ] && [ -d "$dir/telecine" ]; then
+      echo "$dir"
+      return 0
+    fi
+    dir=$(dirname "$dir")
+  done
+  echo "$SCRIPT_DIR/.."
+}
+
+MONOREPO_ROOT=$(find_monorepo_root "$SCRIPT_DIR/..")
+WS_ENDPOINT_PATH="$MONOREPO_ROOT/.wsEndpoint.json"
+
+# Read wsEndpoint from file and pass as environment variable
+# This is necessary because Docker only mounts the elements directory, not the monorepo root
+# So the file at the monorepo root isn't accessible inside Docker
+WS_ENDPOINT_ENV=""
+if [ -f "$WS_ENDPOINT_PATH" ]; then
+  # Try multiple methods to parse JSON
+  WS_ENDPOINT=""
+  if command -v jq >/dev/null 2>&1; then
+    WS_ENDPOINT=$(jq -r '.wsEndpoint' "$WS_ENDPOINT_PATH" 2>/dev/null || echo "")
+  elif command -v python3 >/dev/null 2>&1; then
+    WS_ENDPOINT=$(python3 -c "import json, sys; print(json.load(sys.stdin)['wsEndpoint'])" < "$WS_ENDPOINT_PATH" 2>/dev/null || echo "")
+  elif command -v node >/dev/null 2>&1; then
+    WS_ENDPOINT=$(node -e "console.log(require('$WS_ENDPOINT_PATH').wsEndpoint)" 2>/dev/null || echo "")
+  fi
+  
+  if [ -n "$WS_ENDPOINT" ]; then
+    WS_ENDPOINT_ENV="-e WS_ENDPOINT=$WS_ENDPOINT"
+    echo "Using browser endpoint from .wsEndpoint.json"
+  fi
+fi
+
+# Export WS_ENDPOINT so docker-compose can pass it to the container
+if [ -n "$WS_ENDPOINT" ]; then
+  export WS_ENDPOINT
+fi
+
+# Stop and remove the existing container if it's running, so we can restart it with the new env var
+"${SCRIPT_DIR}"/docker-compose stop dev-projects > /dev/null 2>&1 || true
+"${SCRIPT_DIR}"/docker-compose rm -f dev-projects > /dev/null 2>&1 || true
+
+# Start the container with WS_ENDPOINT environment variable
+# docker-compose will pass through the WS_ENDPOINT env var if it's set
+"${SCRIPT_DIR}"/docker-compose up -d dev-projects
 
 # Wait for container to be ready and get container ID
 CONTAINER=""
@@ -39,6 +87,6 @@ for i in {1..10}; do
   sleep 0.5
 done
 
-# Exec into the running container to start the dev server
-# Note: Port 4321 is exposed via Traefik, not directly
-docker exec -w /packages/dev-projects -e DEBUG="ef:*" "$CONTAINER" npx tsx ./start.ts 
+# The container is already running the server via docker-compose command
+# Just follow the logs to see the output
+docker logs -f "$CONTAINER" 

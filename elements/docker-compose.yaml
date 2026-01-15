@@ -33,6 +33,9 @@ services:
     init: true
     env_file:
       - .env
+    environment:
+      # Pass through WS_ENDPOINT if set (for profiling support)
+      - WS_ENDPOINT=${WS_ENDPOINT:-}
     working_dir: /packages
     volumes:
       - ${ELEMENTS_ROOT_HOST:-${PWD}}:/packages
