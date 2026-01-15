@@ -58,12 +58,20 @@ export function makeAudioTimeDomainAnalysisTask(element: EFMedia) {
         return cachedData;
       }
 
+      // Check if audio rendition exists before attempting to fetch audio data
+      // This prevents unnecessary HTTP requests and warnings when audio is not available
+      const mediaEngine = await element.mediaEngineTask.taskComplete;
+      if (!mediaEngine?.audioRendition) {
+        // No audio rendition available - skip silently (no warning needed)
+        return null;
+      }
+
       const { fetchAudioSpanningTime: fetchAudioSpan } =
         await import("../shared/AudioSpanUtils.ts");
       const audioSpan = await fetchAudioSpan(element, fromMs, toMs, signal);
 
       if (!audioSpan || !audioSpan.blob) {
-        console.warn("Time domain analysis skipped: no audio data available");
+        // Audio data not available - skip silently (already checked for rendition above)
         return null;
       }
 
