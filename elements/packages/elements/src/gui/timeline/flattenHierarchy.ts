@@ -26,6 +26,17 @@ export function flattenHierarchy(
   if (root instanceof EFTimegroup) {
     for (const child of root.children) {
       if (isEFTemporal(child)) {
+        // Skip captions child elements - they're consolidated into the captions track
+        const tagName = (child as Element).tagName?.toUpperCase();
+        if (
+          tagName === "EF-CAPTIONS-ACTIVE-WORD" ||
+          tagName === "EF-CAPTIONS-SEGMENT" ||
+          tagName === "EF-CAPTIONS-BEFORE-ACTIVE-WORD" ||
+          tagName === "EF-CAPTIONS-AFTER-ACTIVE-WORD"
+        ) {
+          continue;
+        }
+        
         rows.push(
           ...flattenHierarchy(
             child as TemporalMixinInterface & Element,
