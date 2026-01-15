@@ -1,5 +1,5 @@
 import { consume } from "@lit/context";
-import { css, html, LitElement, nothing } from "lit";
+import { css, html, LitElement } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { createRef, ref } from "lit/directives/ref.js";
 import { styleMap } from "lit/directives/style-map.js";
@@ -146,6 +146,12 @@ export class EFTimelineRuler extends LitElement {
   @state()
   private _canvasViewportWidth = 0;
 
+  /** Last rendered scroll position - for detecting scroll changes */
+  private _lastRenderedScrollLeft = -1;
+
+  /** Last rendered viewport width - for detecting viewport changes */
+  private _lastRenderedViewportWidth = 0;
+
   get effectiveDurationMs(): number {
     return this.durationMs || this.contextDurationMs || 0;
   }
@@ -202,20 +208,44 @@ export class EFTimelineRuler extends LitElement {
   }
 
   protected firstUpdated(): void {
-    if (this.containerRef.value) {
+    const container = this.containerRef.value;
+    if (container) {
       this.resizeObserver = new ResizeObserver((entries) => {
-        const width = entries[0].contentRect.width;
-        if (width !== this.viewportWidth) {
-          this.viewportWidth = width;
+        const entry = entries[0];
+        if (entry) {
+          const width = entry.contentRect.width;
+          if (width !== this.viewportWidth) {
+            this.viewportWidth = width;
+          }
         }
       });
-      this.resizeObserver.observe(this.containerRef.value);
-      this.viewportWidth = this.containerRef.value.clientWidth;
+      this.resizeObserver.observe(container);
+      this.viewportWidth = container.clientWidth;
     }
   }
 
-  protected updated(): void {
-    this.renderCanvas();
+  protected updated(changedProperties: Map<string | number | symbol, unknown>): void {
+    // Check if scroll position or viewport changed from context
+    const currentScrollLeft = this.scrollLeft;
+    const currentViewportWidth = this.timelineState?.viewportWidth ?? this.viewportWidth;
+    
+    // Check if scroll changed, viewport changed, or other relevant properties changed
+    const scrollChanged = currentScrollLeft !== this._lastRenderedScrollLeft;
+    const viewportChanged = currentViewportWidth !== this._lastRenderedViewportWidth;
+    const pixelsPerMsChanged = changedProperties.has("timelineState") || 
+                               changedProperties.has("pixelsPerMs");
+    const contentWidthChanged = changedProperties.has("contentWidth");
+    const durationChanged = changedProperties.has("durationMs") || 
+                          changedProperties.has("contextDurationMs");
+    
+    // Only render if something actually changed
+    if (scrollChanged || viewportChanged || pixelsPerMsChanged || 
+        contentWidthChanged || durationChanged || 
+        this._lastRenderedScrollLeft < 0) {
+      this.renderCanvas();
+      this._lastRenderedScrollLeft = currentScrollLeft;
+      this._lastRenderedViewportWidth = currentViewportWidth;
+    }
   }
 
   private calculateLabelInterval(): number {
