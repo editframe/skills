@@ -85,6 +85,10 @@ export class EFTimelineRow extends TWMixin(LitElement) {
       :host(.selected) {
         background: var(--timeline-row-selected, rgba(59, 130, 246, 0.3));
       }
+      
+      :host(.selected) .row-label {
+        font-weight: 600;
+      }
 
       /* Ancestor has selected descendant */
       :host(.ancestor-selected) {
@@ -127,6 +131,40 @@ export class EFTimelineRow extends TWMixin(LitElement) {
         flex: 1;
         position: relative;
         min-width: 0;
+      }
+      
+      /* Visual connector for parent-child relationships */
+      .row-track::before {
+        content: "";
+        position: absolute;
+        left: -8px;
+        top: 50%;
+        width: 8px;
+        height: 1px;
+        background: var(--timeline-border, rgb(71 85 105));
+        opacity: 0.3;
+        z-index: 1;
+      }
+      
+      :host(:first-child) .row-track::before {
+        display: none;
+      }
+      
+      /* Grouping indicator for nested elements */
+      .row-track::after {
+        content: "";
+        position: absolute;
+        left: -12px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--timeline-border, rgb(71 85 105));
+        opacity: 0.2;
+        z-index: 0;
+      }
+      
+      :host(:first-child) .row-track::after {
+        display: none;
       }
     `,
   ];
@@ -306,6 +344,7 @@ export class EFTimelineRow extends TWMixin(LitElement) {
       this.showSelectors,
       true, // skipRootFiltering - the row itself handles filtering
       this.enableTrim,
+      true, // useAbsolutePosition - flat row architecture needs absolute positioning
     )}`;
   }
 
