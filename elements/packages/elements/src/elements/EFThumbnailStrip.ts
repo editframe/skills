@@ -75,7 +75,8 @@ function getThumbnailCacheKey(videoSrc: string, timeMs: number): string {
 const DEFAULT_GAP = 4; // Default gap between thumbnails
 const DEFAULT_ASPECT_RATIO = 16 / 9; // Default video aspect ratio for width calculation
 const MAX_THUMBNAIL_CANVAS_WIDTH = 480; // Maximum width for thumbnail captures
-const MAX_TIMEGROUP_THUMBNAILS_PER_BATCH = 10; // Thumbnails per batch for progressive loading
+const MAX_TIMEGROUP_THUMBNAILS_PER_BATCH = 20; // Thumbnails per batch for progressive loading (increased for faster initial load)
+const SCROLL_UPDATE_THRESHOLD_PX = 5; // Lower threshold for more responsive scrolling
 
 interface ThumbnailSegment {
   segmentId: number;
@@ -504,8 +505,9 @@ export class EFThumbnailStrip extends LitElement {
     const scrollDelta = Math.abs(viewportScrollLeft - this._lastRenderedScrollLeft);
     const viewportChanged = viewportWidth !== this._lastRenderedViewportWidth;
     
-    // Re-render if scrolled more than 25px or viewport size changed (responsive scrolling)
-    if (scrollDelta > 25 || viewportChanged || this._lastRenderedScrollLeft < 0) {
+    // Lower threshold for more responsive scrolling (especially important for cached content)
+    // Re-render if scrolled more than threshold or viewport size changed
+    if (scrollDelta > SCROLL_UPDATE_THRESHOLD_PX || viewportChanged || this._lastRenderedScrollLeft < 0) {
       // Cancel any pending scroll update
       if (this._scrollUpdateFrame) {
         cancelAnimationFrame(this._scrollUpdateFrame);
@@ -821,86 +823,99 @@ export class EFThumbnailStrip extends LitElement {
     const thumbnailHeight = this._stripHeight;
     const effectiveWidth = layout.effectiveThumbnailWidth;
 
-    const allThumbnails: ThumbnailRenderInfo[] = [];
-    let thumbnailIndex = 0; // Track ordinal position
-
-    // Process each segment
+    // Collect all thumbnail timestamps first for parallel cache lookup
+    const thumbnailTimestamps: Array<{ timeMs: number; segmentId: number; index: number }> = [];
+    let thumbnailIndex = 0;
     for (const segment of layout.segments) {
       for (const thumbnail of segment.thumbnails) {
-        const cacheKey = getThumbnailCacheKey(cacheId, thumbnail.timeMs);
-
-        // Try exact cache hit first
-        let imageData = await thumbnailImageCache.get(cacheKey);
-        let status: ThumbnailRenderInfo["status"] = "exact-hit";
-        let nearHitKey: string | undefined;
-
-        if (!imageData) {
-          // Try near cache hit within 5 seconds using proper range search
-          const timeMinus = Math.max(0, thumbnail.timeMs - 5000);
-          const timePlus = thumbnail.timeMs + 5000;
-
-          // For range bounds, use raw timestamps (don't quantize the search range)
-          const rangeStartKey = `${cacheId}:${timeMinus}`;
-          const rangeEndKey = `${cacheId}:${timePlus}`;
-
-          // Use findRange to find any cached items in this time window
-          const nearHits = thumbnailImageCache.findRange(
-            rangeStartKey,
-            rangeEndKey,
-          );
-
-          // Filter to only include the same source
-          const sameSourceHits = nearHits.filter((hit) =>
-            hit.key.startsWith(`${cacheId}:`),
-          );
-
-          if (sameSourceHits.length > 0) {
-            // Get the closest match by time from same source
-            const nearestHit = sameSourceHits.reduce((closest, current) => {
-              const currentParts = current.key.split(":");
-              const closestParts = closest.key.split(":");
-              const currentTime = Number.parseFloat(
-                currentParts[currentParts.length - 1] || "0",
-              );
-              const closestTime = Number.parseFloat(
-                closestParts[closestParts.length - 1] || "0",
-              );
-              const currentDiff = Math.abs(currentTime - thumbnail.timeMs);
-              const closestDiff = Math.abs(closestTime - thumbnail.timeMs);
-              return currentDiff < closestDiff ? current : closest;
-            });
-
-            imageData = nearestHit.value;
-            status = "near-hit";
-            nearHitKey = nearestHit.key;
-          } else {
-            status = "missing";
-          }
-        }
-
-        // Position thumbnail using pitch from layout (ensures edge-to-edge fill)
-        const x = Math.round(thumbnailIndex * layout.pitch);
-
-        allThumbnails.push({
+        thumbnailTimestamps.push({
           timeMs: thumbnail.timeMs,
           segmentId: segment.segmentId,
-          x,
-          width: effectiveWidth,
-          height: thumbnailHeight,
-          status,
-          imageData,
-          nearHitKey,
+          index: thumbnailIndex++,
         });
-
-        thumbnailIndex++; // Increment ordinal position
       }
     }
 
-    // Draw current state (cache hits and placeholders)
+    // Parallel cache lookups for faster performance (especially important for cached content)
+    const cacheLookups = thumbnailTimestamps.map(async ({ timeMs, segmentId, index }) => {
+      const cacheKey = getThumbnailCacheKey(cacheId, timeMs);
+
+      // Try exact cache hit first
+      let imageData = await thumbnailImageCache.get(cacheKey);
+      let status: ThumbnailRenderInfo["status"] = "exact-hit";
+      let nearHitKey: string | undefined;
+
+      if (!imageData) {
+        // Try near cache hit within 5 seconds using proper range search
+        const timeMinus = Math.max(0, timeMs - 5000);
+        const timePlus = timeMs + 5000;
+
+        // For range bounds, use raw timestamps (don't quantize the search range)
+        const rangeStartKey = `${cacheId}:${timeMinus}`;
+        const rangeEndKey = `${cacheId}:${timePlus}`;
+
+        // Use findRange to find any cached items in this time window
+        const nearHits = thumbnailImageCache.findRange(
+          rangeStartKey,
+          rangeEndKey,
+        );
+
+        // Filter to only include the same source
+        const sameSourceHits = nearHits.filter((hit) =>
+          hit.key.startsWith(`${cacheId}:`),
+        );
+
+        if (sameSourceHits.length > 0) {
+          // Get the closest match by time from same source
+          const nearestHit = sameSourceHits.reduce((closest, current) => {
+            const currentParts = current.key.split(":");
+            const closestParts = closest.key.split(":");
+            const currentTime = Number.parseFloat(
+              currentParts[currentParts.length - 1] || "0",
+            );
+            const closestTime = Number.parseFloat(
+              closestParts[closestParts.length - 1] || "0",
+            );
+            const currentDiff = Math.abs(currentTime - timeMs);
+            const closestDiff = Math.abs(closestTime - timeMs);
+            return currentDiff < closestDiff ? current : closest;
+          });
+
+          imageData = nearestHit.value;
+          status = "near-hit";
+          nearHitKey = nearestHit.key;
+        } else {
+          status = "missing";
+        }
+      }
+
+      // Position thumbnail using pitch from layout (ensures edge-to-edge fill)
+      const x = Math.round(index * layout.pitch);
+
+      return {
+        timeMs,
+        segmentId,
+        x,
+        width: effectiveWidth,
+        height: thumbnailHeight,
+        status,
+        imageData,
+        nearHitKey,
+      };
+    });
+
+    // Wait for all cache lookups to complete in parallel
+    const allThumbnails = await Promise.all(cacheLookups);
+
+    // Draw current state (cache hits and placeholders) IMMEDIATELY
+    // This ensures cached thumbnails appear instantly when scrolling
     await this.drawThumbnails(allThumbnails);
 
-    // Load missing thumbnails (wrapped in idle callback for lower priority)
-    await this.scheduleThumbnailCapture(allThumbnails, targetElement);
+    // Load missing thumbnails asynchronously (don't await - let it run in background)
+    // This allows cache hits to be visible immediately while missing thumbnails load
+    this.scheduleThumbnailCapture(allThumbnails, targetElement).catch((error) => {
+      console.warn("Failed to load missing thumbnails:", error);
+    });
 
     return allThumbnails;
   }
@@ -1372,7 +1387,8 @@ export class EFThumbnailStrip extends LitElement {
           console.log(`[ThumbnailStrip] batch ${batchStart}-${batchEnd}: capture=${captureTime.toFixed(0)}ms, convert=${convertTime.toFixed(0)}ms, draw=${drawTime.toFixed(0)}ms, total=${totalTime.toFixed(0)}ms`);
 
           // Yield to main thread between batches for UI responsiveness
-          if (batchEnd < timestamps.length) {
+          // Reduced delay for faster loading - only yield every other batch
+          if (batchEnd < timestamps.length && (batchStart / MAX_TIMEGROUP_THUMBNAILS_PER_BATCH) % 2 === 0) {
             await new Promise((resolve) => requestAnimationFrame(resolve));
           }
         } catch (error) {
