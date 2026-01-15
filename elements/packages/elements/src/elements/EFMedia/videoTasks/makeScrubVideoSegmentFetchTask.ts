@@ -13,14 +13,22 @@ export const makeScrubVideoSegmentFetchTask = (
     args: () =>
       [host.mediaEngineTask.value, host.scrubVideoSegmentIdTask.value] as const,
     onError: (error) => {
-      console.error("scrubVideoSegmentFetchTask error", error);
+      // Only log unexpected errors - missing scrub rendition/segment is handled gracefully above
+      if (
+        error instanceof Error &&
+        error.message !== "Scrub segment ID is not available for video" &&
+        error.message !== "No scrub rendition available"
+      ) {
+        console.error("scrubVideoSegmentFetchTask error", error);
+      }
     },
     onComplete: (_value) => {},
     task: async (_, { signal }) => {
       const mediaEngine = await getLatestMediaEngine(host, signal);
       const segmentId = await host.scrubVideoSegmentIdTask.taskComplete;
       if (segmentId === undefined) {
-        throw new Error("Scrub segment ID is not available for video");
+        // Scrub segment ID not available - scrub is optional, return undefined
+        return undefined as any; // Task expects ArrayBuffer, but undefined indicates unavailable
       }
 
       // Get scrub rendition using the proper interface method
@@ -28,7 +36,8 @@ export const makeScrubVideoSegmentFetchTask = (
 
       if (!scrubRendition) {
         // No scrub rendition available - this is fine, scrub is optional
-        throw new Error("No scrub rendition available");
+        // Return undefined instead of throwing to avoid error noise
+        return undefined as any; // Task expects ArrayBuffer, but undefined indicates unavailable
       }
 
       return mediaEngine.fetchMediaSegment(

@@ -24,7 +24,13 @@ export const makeUnifiedVideoSeekTask = (
     autoRun: false,
     args: () => [host.desiredSeekTimeMs] as const,
     onError: (error) => {
-      console.error("unifiedVideoSeekTask error", error);
+      // Only log unexpected errors - missing video rendition is handled gracefully in getMainVideoSample
+      if (
+        error instanceof Error &&
+        error.message !== "Video rendition unavailable after checking videoRendition exists"
+      ) {
+        console.error("unifiedVideoSeekTask error", error);
+      }
     },
     onComplete: (_value) => {},
     task: async ([desiredSeekTimeMs], { signal }) => {
@@ -241,9 +247,9 @@ async function getMainVideoSample(
         // Use existing main video task chain
         const videoRendition = mediaEngine.getVideoRendition();
         if (!videoRendition) {
-          throw new Error(
-            "Video rendition unavailable after checking videoRendition exists",
-          );
+          // Video rendition not available - return undefined gracefully instead of throwing
+          span.setAttribute("result", "no-video-rendition");
+          return undefined;
         }
 
         const segmentId = mediaEngine.computeSegmentId(

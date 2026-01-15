@@ -218,7 +218,13 @@ export class EFVideo extends TWMixin(EFMedia) {
     autoRun: false,
     args: () => [this.desiredSeekTimeMs] as const,
     onError: (error) => {
-      console.error("frameTask error", error);
+      // Only log unexpected errors - missing video rendition is handled gracefully in unifiedVideoSeekTask
+      if (
+        error instanceof Error &&
+        !error.message.includes("Video rendition unavailable")
+      ) {
+        console.error("frameTask error", error);
+      }
     },
     onComplete: () => {},
     task: async ([_desiredSeekTimeMs], { signal }) => {
@@ -351,11 +357,21 @@ export class EFVideo extends TWMixin(EFMedia) {
 
         // EF_FRAMEGEN-aware rendering mode detection
         if (!isProductionRendering) {
+          // Check if we're in a render clone (used for thumbnails, video export, etc.)
+          // Render clones should ALWAYS render, even at time 0
+          const isInRenderClone = !!this.closest('.ef-render-clone-container');
+          
+          if (isInRenderClone) {
+            span.setAttribute("renderClone", true);
+          }
+          
           // Preview mode: skip rendering during initialization to prevent artifacts
+          // BUT: Always render if we're in a render clone (for thumbnails/export)
           if (
-            !this.rootTimegroup ||
+            !isInRenderClone &&
+            (!this.rootTimegroup ||
             (this.rootTimegroup.currentTimeMs === 0 &&
-              this.desiredSeekTimeMs === 0)
+              this.desiredSeekTimeMs === 0))
           ) {
             span.setAttribute("skipped", "preview-initialization");
             return; // Skip initialization frame in preview mode

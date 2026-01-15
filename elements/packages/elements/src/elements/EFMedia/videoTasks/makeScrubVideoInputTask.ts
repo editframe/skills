@@ -16,7 +16,13 @@ export const makeScrubVideoInputTask = (host: EFVideo): InputTask => {
         host.scrubVideoSegmentFetchTask.value,
       ] as const,
     onError: (error) => {
-      console.error("scrubVideoInputTask error", error);
+      // Only log unexpected errors - missing scrub segments is handled gracefully above
+      if (
+        error instanceof Error &&
+        error.message !== "Scrub init segment or segment is not available"
+      ) {
+        console.error("scrubVideoInputTask error", error);
+      }
     },
     onComplete: (_value) => {},
     task: async (_, { signal }) => {
@@ -28,7 +34,8 @@ export const makeScrubVideoInputTask = (host: EFVideo): InputTask => {
       if (signal.aborted) return undefined;
 
       if (!initSegment || !segment) {
-        throw new Error("Scrub init segment or segment is not available");
+        // Scrub segments not available - scrub is optional, return undefined gracefully
+        return undefined;
       }
 
       // Get startTimeOffsetMs from the scrub rendition if available

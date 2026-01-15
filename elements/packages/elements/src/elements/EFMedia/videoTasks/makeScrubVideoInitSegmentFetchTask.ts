@@ -9,7 +9,10 @@ export const makeScrubVideoInitSegmentFetchTask = (
   return new Task(host, {
     args: () => [host.mediaEngineTask.value] as const,
     onError: (error) => {
-      console.error("scrubVideoInitSegmentFetchTask error", error);
+      // Only log unexpected errors - missing scrub rendition is handled gracefully above
+      if (error instanceof Error && error.message !== "No scrub rendition available") {
+        console.error("scrubVideoInitSegmentFetchTask error", error);
+      }
     },
     onComplete: (_value) => {},
     task: async ([_mediaEngine], { signal }) => {
@@ -20,7 +23,8 @@ export const makeScrubVideoInitSegmentFetchTask = (
 
       if (!scrubRendition) {
         // No scrub rendition available - this is fine, scrub is optional
-        throw new Error("No scrub rendition available");
+        // Return undefined instead of throwing to avoid error noise
+        return undefined as any; // Task expects ArrayBuffer, but undefined indicates unavailable
       }
 
       return mediaEngine.fetchInitSegment(
