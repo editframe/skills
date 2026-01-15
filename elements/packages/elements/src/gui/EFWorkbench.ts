@@ -4,7 +4,8 @@ import { createRef, ref } from "lit/directives/ref.js";
 
 import { ContextMixin } from "./ContextMixin.js";
 import { TWMixin } from "./TWMixin.js";
-import type { EFTimegroup } from "../elements/EFTimegroup.js";
+import { EFTimegroup } from "../elements/EFTimegroup.js";
+import { findRootTemporal } from "../elements/findRootTemporal.js";
 import { renderTimegroupToCanvas, type CanvasPreviewResult } from "../preview/renderTimegroupToCanvas.js";
 import { renderTimegroupPreview } from "../preview/renderTimegroupPreview.js";
 import { renderTimegroupToVideo, type RenderToVideoOptions, type RenderProgress, RenderCancelledError } from "../preview/renderTimegroupToVideo.js";
@@ -465,6 +466,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   private restDebounceTimer: number | null = null;
   private playingCheckInterval: number | null = null;
   private adaptiveTracker: AdaptiveResolutionTracker | null = null;
+  private savePanZoomDebounceTimer: number | null = null;
   
   // Clone overlay (computed styles preview on top of hidden original)
   private cloneOverlayRef = createRef<HTMLDivElement>();
@@ -581,9 +583,22 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       this.adaptiveTracker.dispose();
       this.adaptiveTracker = null;
     }
+    
+    // Save pan/zoom state before disconnecting
+    if (this.savePanZoomDebounceTimer !== null) {
+      clearTimeout(this.savePanZoomDebounceTimer);
+      this.savePanZoomDebounceTimer = null;
+    }
+    this.savePreviewPanZoom();
   }
   
   protected firstUpdated(): void {
+    // Restore preview pan/zoom from localStorage
+    // Wait for timegroup to be available
+    requestAnimationFrame(() => {
+      this.restorePreviewPanZoom();
+    });
+    
     // Initialize based on current presentation mode
     if (this.presentationMode === "clone") {
       this.initCloneOverlay();
@@ -600,6 +615,9 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   
   private handleTransformChanged(e: CustomEvent<{ x: number; y: number; scale: number }>) {
     this.panZoomTransform = e.detail;
+    
+    // Save pan/zoom state to localStorage
+    this.debouncedSavePreviewPanZoom();
     
     // Update overlay transform based on current mode
     if (this.presentationMode === "clone") {
@@ -632,6 +650,110 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     const canvas = this.querySelector("[slot='canvas']");
     if (!canvas) return null;
     return canvas.querySelector("ef-timegroup") as EFTimegroup | null;
+  }
+
+  /**
+   * Get the root timegroup ID for localStorage key generation.
+   * Returns null if no root timegroup is found or it has no ID.
+   */
+  private getRootTimegroupId(): string | null {
+    const timegroup = this.getTimegroup();
+    if (!timegroup) return null;
+    
+    const rootTemporal = findRootTemporal(timegroup);
+    if (rootTemporal instanceof EFTimegroup && rootTemporal.id) {
+      return rootTemporal.id;
+    }
+    
+    return null;
+  }
+
+  /**
+   * Get localStorage key for preview pan/zoom state.
+   */
+  private getPreviewPanZoomStorageKey(): string | null {
+    const rootId = this.getRootTimegroupId();
+    return rootId ? `ef-workbench-panzoom-${rootId}` : null;
+  }
+
+  /**
+   * Save preview pan/zoom to localStorage.
+   */
+  private savePreviewPanZoom(): void {
+    const storageKey = this.getPreviewPanZoomStorageKey();
+    if (!storageKey) return;
+
+    try {
+      const state = {
+        x: this.panZoomTransform.x,
+        y: this.panZoomTransform.y,
+        scale: this.panZoomTransform.scale,
+      };
+      localStorage.setItem(storageKey, JSON.stringify(state));
+    } catch (error) {
+      console.warn("Failed to save preview pan/zoom to localStorage", error);
+    }
+  }
+
+  /**
+   * Restore preview pan/zoom from localStorage.
+   */
+  private restorePreviewPanZoom(): void {
+    const storageKey = this.getPreviewPanZoomStorageKey();
+    if (!storageKey) return;
+
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (!stored) return;
+
+      const state = JSON.parse(stored);
+      if (
+        typeof state.x === "number" &&
+        typeof state.y === "number" &&
+        typeof state.scale === "number" &&
+        state.scale > 0
+      ) {
+        // Clamp scale to valid range [0.1, 5]
+        const clampedScale = Math.max(0.1, Math.min(5, state.scale));
+        this.panZoomTransform = {
+          x: state.x,
+          y: state.y,
+          scale: clampedScale,
+        };
+        
+        // Apply transform to pan-zoom element if it exists
+        requestAnimationFrame(() => {
+          const panZoomElement = this.querySelector("ef-pan-zoom");
+          if (panZoomElement) {
+            (panZoomElement as any).x = this.panZoomTransform.x;
+            (panZoomElement as any).y = this.panZoomTransform.y;
+            (panZoomElement as any).scale = this.panZoomTransform.scale;
+          }
+          
+          // Update transforms based on current mode
+          if (this.presentationMode === "clone") {
+            this.updateCloneTransform();
+          } else if (this.presentationMode === "canvas") {
+            this.updateCanvasTransform();
+          }
+        });
+      }
+    } catch (error) {
+      console.warn("Failed to restore preview pan/zoom from localStorage", error);
+    }
+  }
+
+  /**
+   * Debounced save of preview pan/zoom to avoid excessive localStorage writes.
+   */
+  private debouncedSavePreviewPanZoom(): void {
+    if (this.savePanZoomDebounceTimer !== null) {
+      clearTimeout(this.savePanZoomDebounceTimer);
+    }
+    this.savePanZoomDebounceTimer = window.setTimeout(() => {
+      this.savePanZoomDebounceTimer = null;
+      this.savePreviewPanZoom();
+    }, 200);
   }
   
   // ==================== Motion State Detection ====================
@@ -2344,6 +2466,23 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   
   updated(changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
     super.updated(changedProperties);
+    
+    // Restore preview pan/zoom when timegroup becomes available
+    // Check if timegroup is now available (slot content changed)
+    const timegroup = this.getTimegroup();
+    if (timegroup && !changedProperties.has("panZoomTransform")) {
+      // Only restore if we haven't already restored (avoid overwriting user changes)
+      // Check if panZoomTransform is still at default values
+      if (
+        this.panZoomTransform.x === 0 &&
+        this.panZoomTransform.y === 0 &&
+        this.panZoomTransform.scale === 1
+      ) {
+        requestAnimationFrame(() => {
+          this.restorePreviewPanZoom();
+        });
+      }
+    }
     
     // Apply settings when dependencies become available or settings change
     if (changedProperties.has("previewSettings") || 
