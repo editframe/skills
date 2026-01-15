@@ -9,6 +9,7 @@ import type { EFTimegroup } from "./EFTimegroup.js";
 import { TargetController } from "./TargetController.ts";
 import { timelineStateContext, type TimelineState } from "../gui/timeline/timelineStateContext.js";
 import { PersistentThumbnailCache } from "./thumbnailCache.js";
+import { findRootTemporal } from "./findRootTemporal.js";
 
 /** Type guard to check if element is EFVideo */
 function isEFVideo(element: Element | null): element is EFVideo {
@@ -20,12 +21,34 @@ function isEFTimegroup(element: Element | null): element is EFTimegroup {
   return element?.tagName.toLowerCase() === "ef-timegroup";
 }
 
-/** Get a unique identifier for cache key (src for video, id for timegroup) */
+/** 
+ * Get a unique identifier for cache key (src for video, id for timegroup).
+ * Includes root timegroup id for cache isolation between different projects.
+ */
 function getElementCacheId(element: EFVideo | EFTimegroup): string {
-  if (isEFVideo(element)) {
-    return element.src || element.id || "video";
+  // Get root timegroup for cache isolation
+  const rootTemporal = findRootTemporal(element);
+  const rootTimegroup = rootTemporal && isEFTimegroup(rootTemporal) ? rootTemporal : null;
+  const rootId = rootTimegroup?.id;
+
+  // Warn if root timegroup has no id (cache performance will be degraded)
+  if (rootTimegroup && !rootId) {
+    console.warn(
+      "Thumbnail cache: Root timegroup should have a unique id to improve cache performance and prevent conflicts between projects. " +
+      "Without a stable id, thumbnails may be shared incorrectly between different projects loaded on the same domain."
+    );
   }
-  return `timegroup:${element.id || "unknown"}`;
+
+  // Build cache id with root timegroup id prefix for isolation
+  const rootPrefix = rootId ? `${rootId}:` : "";
+  
+  if (isEFVideo(element)) {
+    const elementId = element.src || element.id || "video";
+    return `${rootPrefix}${elementId}`;
+  }
+  
+  const elementId = element.id || "unknown";
+  return `${rootPrefix}timegroup:${elementId}`;
 }
 
 /** Padding in pixels for virtual rendering (render extra thumbnails beyond viewport) */
@@ -221,6 +244,23 @@ export class EFThumbnailStrip extends LitElement {
   
   /** Cached thumbnail data for quick redraws during scroll */
   private _cachedThumbnails: ThumbnailRenderInfo[] = [];
+  
+  /**
+   * Get the effective viewport width for virtualization.
+   * Priority: timeline context > scroll container > host element
+   */
+  private get _effectiveViewportWidth(): number {
+    // First, check timeline context (integrates with timeline system)
+    if (this._timelineState?.viewportWidth) {
+      return this._timelineState.viewportWidth;
+    }
+    // Second, use scroll container's viewport if we're in one
+    if (this._scrollContainer) {
+      return this._scrollContainer.clientWidth;
+    }
+    // Fallback to host element width
+    return this.clientWidth;
+  }
 
   // Target element using the same pattern as EFSurface
   // @ts-expect-error controller is intentionally not referenced directly to prevent GC
@@ -1050,11 +1090,11 @@ export class EFThumbnailStrip extends LitElement {
     const canvas = this.canvasRef.value;
     if (!canvas) return;
     
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
     
     const hostHeight = this.clientHeight || this._stripHeight;
-    const viewportWidth = this._timelineState?.viewportWidth ?? this.clientWidth;
+    const viewportWidth = this._effectiveViewportWidth;
     const canvasWidth = viewportWidth + VIRTUAL_RENDER_PADDING_PX * 2;
     
     // Scroll offset for drawing (content shifts opposite to scroll)
@@ -1224,7 +1264,7 @@ export class EFThumbnailStrip extends LitElement {
       return;
     }
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) {
       return;
     }
@@ -1239,7 +1279,7 @@ export class EFThumbnailStrip extends LitElement {
 
     // Get scroll position (use direct scroll if available, fall back to context)
     const scrollLeft = this._currentScrollLeft || this._timelineState?.viewportScrollLeft || 0;
-    const viewportWidth = this._timelineState?.viewportWidth ?? this.clientWidth;
+    const viewportWidth = this._effectiveViewportWidth;
     
     // Canvas is viewport + padding (virtual rendering)
     const canvasWidth = viewportWidth + VIRTUAL_RENDER_PADDING_PX * 2;
@@ -1447,9 +1487,9 @@ export class EFThumbnailStrip extends LitElement {
    * Get visible thumbnail range based on viewport (for virtual rendering)
    */
   private getVisibleRange(): { left: number; right: number } {
-    const hostWidth = this.clientWidth || this._stripWidth;
-    const viewportScrollLeft = this._timelineState?.viewportScrollLeft ?? 0;
-    const viewportWidth = this._timelineState?.viewportWidth ?? hostWidth;
+    // Use direct scroll position if available, fall back to timeline context
+    const viewportScrollLeft = this._currentScrollLeft || this._timelineState?.viewportScrollLeft || 0;
+    const viewportWidth = this._effectiveViewportWidth;
     
     const left = Math.max(0, viewportScrollLeft - VIRTUAL_RENDER_PADDING_PX);
     const right = viewportScrollLeft + viewportWidth + VIRTUAL_RENDER_PADDING_PX;
@@ -1467,7 +1507,6 @@ export class EFThumbnailStrip extends LitElement {
   ): Promise<void> {
     // Prevent concurrent capture operations
     if (this._captureInProgress) {
-      console.log("[ThumbnailStrip] Skipping - capture already in progress");
       return;
     }
     
@@ -1480,13 +1519,6 @@ export class EFThumbnailStrip extends LitElement {
       // Check if thumbnail is within visible range
       const thumbRight = t.x + t.width;
       return thumbRight >= visibleRange.left && t.x <= visibleRange.right;
-    });
-
-    console.log("[ThumbnailStrip] loadMissingThumbnails", {
-      total: thumbnails.length,
-      visible: missingThumbnails.length,
-      visibleRange,
-      targetId: (targetElement as HTMLElement)?.id,
     });
 
     if (missingThumbnails.length === 0) {
@@ -1532,6 +1564,7 @@ export class EFThumbnailStrip extends LitElement {
 
           // Convert canvases to ImageData and update thumbnails
           const convertStartTime = performance.now();
+          const cachePromises: Promise<void>[] = [];
           for (let i = 0; i < batchThumbnails.length; i++) {
             const thumb = batchThumbnails[i];
             const canvas = canvases[i];
@@ -1541,12 +1574,15 @@ export class EFThumbnailStrip extends LitElement {
 
               if (imageData) {
                 const cacheKey = getThumbnailCacheKey(cacheId, thumb.timeMs);
-                await thumbnailImageCache.set(cacheKey, imageData);
+                // Batch cache operations - run in parallel for better performance
+                cachePromises.push(thumbnailImageCache.set(cacheKey, imageData));
                 thumb.imageData = imageData;
                 thumb.status = "exact-hit";
               }
             }
           }
+          // Wait for all cache operations to complete in parallel
+          await Promise.all(cachePromises);
           const convertTime = performance.now() - convertStartTime;
 
           // Redraw after each batch for progressive visual feedback
@@ -1554,9 +1590,6 @@ export class EFThumbnailStrip extends LitElement {
           await this.drawThumbnails(thumbnails);
           const drawTime = performance.now() - drawStartTime;
           
-          const totalTime = performance.now() - batchStartTime;
-          console.log(`[ThumbnailStrip] batch ${batchStart}-${batchEnd}: capture=${captureTime.toFixed(0)}ms, convert=${convertTime.toFixed(0)}ms, draw=${drawTime.toFixed(0)}ms, total=${totalTime.toFixed(0)}ms`);
-
           // Yield to main thread between batches for UI responsiveness
           // Reduced delay for faster loading - only yield every other batch
           if (batchEnd < timestamps.length && (batchStart / MAX_TIMEGROUP_THUMBNAILS_PER_BATCH) % 2 === 0) {
@@ -1585,6 +1618,17 @@ export class EFThumbnailStrip extends LitElement {
     
     const mediaEngine = targetElement.mediaEngineTask?.value;
     if (!mediaEngine) {
+      return;
+    }
+
+    // Check if media engine has a video rendition before attempting extraction
+    // This prevents warnings when video hasn't loaded yet
+    const videoRendition = mediaEngine.getVideoRendition();
+    const scrubRendition = mediaEngine.getScrubVideoRendition();
+    if (!videoRendition && !scrubRendition) {
+      // No rendition available yet - skip extraction silently
+      // Thumbnails will be loaded when video becomes available
+      this._captureInProgress = false;
       return;
     }
 
@@ -1631,7 +1675,7 @@ export class EFThumbnailStrip extends LitElement {
     canvas: HTMLCanvasElement | OffscreenCanvas,
   ): ImageData | null {
     // Extract ImageData from canvas
-    const ctx = canvas.getContext("2d") as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true }) as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null;
     if (!ctx) {
       return null;
     }
