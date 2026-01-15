@@ -36,7 +36,7 @@ export class SandboxContext {
   async frame(): Promise<void> {
     return new Promise((resolve) => {
       requestAnimationFrame(() => {
-        requestAnimationFrame(resolve);
+        requestAnimationFrame(() => resolve());
       });
     });
   }
@@ -115,6 +115,39 @@ export class SandboxContext {
   }
 
   /**
+   * Simulate a wheel event on an element
+   */
+  async wheel(
+    element: Element,
+    options: {
+      deltaX?: number;
+      deltaY?: number;
+      ctrlKey?: boolean;
+      metaKey?: boolean;
+      shiftKey?: boolean;
+    },
+  ): Promise<void> {
+    const rect = element.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    const wheelEvent = new WheelEvent("wheel", {
+      deltaX: options.deltaX ?? 0,
+      deltaY: options.deltaY ?? 0,
+      ctrlKey: options.ctrlKey ?? false,
+      metaKey: options.metaKey ?? false,
+      shiftKey: options.shiftKey ?? false,
+      clientX: centerX,
+      clientY: centerY,
+      bubbles: true,
+      cancelable: true,
+    });
+    element.dispatchEvent(wheelEvent);
+
+    await this.frame();
+  }
+
+  /**
    * Log a message (visible in scenario output)
    */
   log(message: string): void {
@@ -142,11 +175,9 @@ export class SandboxContext {
  */
 class ExpectMatcher<T> {
   private actual: T;
-  private ctx: SandboxContext;
 
-  constructor(actual: T, ctx: SandboxContext) {
+  constructor(actual: T, _ctx: SandboxContext) {
     this.actual = actual;
-    this.ctx = ctx;
   }
 
   /**
@@ -270,6 +301,22 @@ class ExpectMatcher<T> {
     if ((this.actual as number) > expected) {
       throw new Error(
         `Expected ${this.actual} to be less than or equal to ${expected}`,
+      );
+    }
+  }
+
+  /**
+   * Assert value is greater than or equal to expected
+   */
+  toBeGreaterThanOrEqual(expected: number): void {
+    if (typeof this.actual !== "number") {
+      throw new Error(
+        `Expected ${this.stringify(this.actual)} to be a number`,
+      );
+    }
+    if ((this.actual as number) < expected) {
+      throw new Error(
+        `Expected ${this.actual} to be greater than or equal to ${expected}`,
       );
     }
   }
