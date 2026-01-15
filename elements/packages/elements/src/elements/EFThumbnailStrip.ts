@@ -76,7 +76,6 @@ const DEFAULT_GAP = 4; // Default gap between thumbnails
 const DEFAULT_ASPECT_RATIO = 16 / 9; // Default video aspect ratio for width calculation
 const MAX_THUMBNAIL_CANVAS_WIDTH = 480; // Maximum width for thumbnail captures
 const MAX_TIMEGROUP_THUMBNAILS_PER_BATCH = 20; // Thumbnails per batch for progressive loading (increased for faster initial load)
-const SCROLL_UPDATE_THRESHOLD_PX = 5; // Lower threshold for more responsive scrolling
 
 interface ThumbnailSegment {
   segmentId: number;
@@ -179,14 +178,16 @@ export class EFThumbnailStrip extends LitElement {
         position: absolute;
         inset: 0;
         background: #1a1a2e;
-        overflow: hidden;
+        overflow: hidden; /* Clip canvas to strip bounds */
       }
       canvas {
         display: block;
-        position: absolute;
+        position: sticky;
+        left: 0;
         top: 0;
         image-rendering: auto; /* Smooth thumbnails */
         height: 100%;
+        /* Canvas stays in viewport, content shifts via drawing offsets */
       }
     `,
   ];
@@ -210,6 +211,16 @@ export class EFThumbnailStrip extends LitElement {
   
   /** Animation frame ID for scroll-based updates */
   private _scrollUpdateFrame?: number;
+  
+  /** Direct scroll listener for immediate redraw */
+  private _scrollContainer?: HTMLElement;
+  private _boundScrollHandler?: () => void;
+  
+  /** Current scroll offset for drawing calculations */
+  private _currentScrollLeft = 0;
+  
+  /** Cached thumbnail data for quick redraws during scroll */
+  private _cachedThumbnails: ThumbnailRenderInfo[] = [];
 
   // Target element using the same pattern as EFSurface
   // @ts-expect-error controller is intentionally not referenced directly to prevent GC
@@ -496,24 +507,27 @@ export class EFThumbnailStrip extends LitElement {
   }
 
   /**
-   * Check if scroll position changed enough to warrant a re-render
+   * Check if timeline context changed enough to warrant a re-render.
+   * Direct scroll handling is done via _onScroll(), this handles context changes.
    */
   private checkScrollUpdate() {
     if (!this._timelineState) return;
     
     const { viewportScrollLeft, viewportWidth } = this._timelineState;
-    const scrollDelta = Math.abs(viewportScrollLeft - this._lastRenderedScrollLeft);
+    
+    // Update current scroll position from context if we don't have direct scroll
+    if (!this._scrollContainer) {
+      this._currentScrollLeft = viewportScrollLeft;
+    }
+    
     const viewportChanged = viewportWidth !== this._lastRenderedViewportWidth;
     
-    // Lower threshold for more responsive scrolling (especially important for cached content)
-    // Re-render if scrolled more than threshold or viewport size changed
-    if (scrollDelta > SCROLL_UPDATE_THRESHOLD_PX || viewportChanged || this._lastRenderedScrollLeft < 0) {
-      // Cancel any pending scroll update
+    // Viewport size change requires full update
+    if (viewportChanged || this._lastRenderedScrollLeft < 0) {
       if (this._scrollUpdateFrame) {
         cancelAnimationFrame(this._scrollUpdateFrame);
       }
       
-      // Schedule update on next frame
       this._scrollUpdateFrame = requestAnimationFrame(() => {
         this._scrollUpdateFrame = undefined;
         this.runThumbnailUpdate();
@@ -840,25 +854,28 @@ export class EFThumbnailStrip extends LitElement {
     const cacheLookups = thumbnailTimestamps.map(async ({ timeMs, segmentId, index }) => {
       const cacheKey = getThumbnailCacheKey(cacheId, timeMs);
 
-      // Try exact cache hit first
-      let imageData = await thumbnailImageCache.get(cacheKey);
-      let status: ThumbnailRenderInfo["status"] = "exact-hit";
+      // Try exact cache hit first (fast check using in-memory key index)
+      let imageData: ImageData | undefined;
+      let status: ThumbnailRenderInfo["status"] = "missing";
       let nearHitKey: string | undefined;
 
+      if (thumbnailImageCache.has(cacheKey)) {
+        imageData = await thumbnailImageCache.get(cacheKey);
+        if (imageData) {
+          status = "exact-hit";
+        }
+      }
+
       if (!imageData) {
-        // Try near cache hit within 5 seconds using proper range search
+        // Try near cache hit within 5 seconds using range search
         const timeMinus = Math.max(0, timeMs - 5000);
         const timePlus = timeMs + 5000;
 
-        // For range bounds, use raw timestamps (don't quantize the search range)
         const rangeStartKey = `${cacheId}:${timeMinus}`;
         const rangeEndKey = `${cacheId}:${timePlus}`;
 
-        // Use findRange to find any cached items in this time window
-        const nearHits = thumbnailImageCache.findRange(
-          rangeStartKey,
-          rangeEndKey,
-        );
+        // findRange returns keys only (with placeholder values)
+        const nearHits = thumbnailImageCache.findRange(rangeStartKey, rangeEndKey);
 
         // Filter to only include the same source
         const sameSourceHits = nearHits.filter((hit) =>
@@ -866,25 +883,29 @@ export class EFThumbnailStrip extends LitElement {
         );
 
         if (sameSourceHits.length > 0) {
-          // Get the closest match by time from same source
-          const nearestHit = sameSourceHits.reduce((closest, current) => {
-            const currentParts = current.key.split(":");
-            const closestParts = closest.key.split(":");
-            const currentTime = Number.parseFloat(
-              currentParts[currentParts.length - 1] || "0",
-            );
-            const closestTime = Number.parseFloat(
-              closestParts[closestParts.length - 1] || "0",
-            );
-            const currentDiff = Math.abs(currentTime - timeMs);
-            const closestDiff = Math.abs(closestTime - timeMs);
-            return currentDiff < closestDiff ? current : closest;
-          });
+          // Find the closest match by time
+          let closestKey = sameSourceHits[0]!.key;
+          let closestDiff = Infinity;
+          
+          for (const hit of sameSourceHits) {
+            const parts = hit.key.split(":");
+            const hitTime = Number.parseFloat(parts[parts.length - 1] || "0");
+            const diff = Math.abs(hitTime - timeMs);
+            if (diff < closestDiff) {
+              closestDiff = diff;
+              closestKey = hit.key;
+            }
+          }
 
-          imageData = nearestHit.value;
-          status = "near-hit";
-          nearHitKey = nearestHit.key;
-        } else {
+          // Load the actual image data for the nearest hit
+          imageData = await thumbnailImageCache.get(closestKey);
+          if (imageData) {
+            status = "near-hit";
+            nearHitKey = closestKey;
+          }
+        }
+        
+        if (!imageData) {
           status = "missing";
         }
       }
@@ -958,7 +979,177 @@ export class EFThumbnailStrip extends LitElement {
           this.stripWidth = width ?? 0;
         }
       }
+      
+      // Find and attach to scroll container for immediate scroll response
+      this._attachScrollListener();
     });
+  }
+  
+  /**
+   * Find the scroll container and attach a direct scroll listener.
+   * This enables immediate redraw during scroll without waiting for context updates.
+   */
+  private _attachScrollListener() {
+    // Find the nearest scrollable ancestor
+    let parent = this.parentElement;
+    while (parent) {
+      const style = getComputedStyle(parent);
+      const overflowX = style.overflowX;
+      if (overflowX === 'auto' || overflowX === 'scroll') {
+        this._scrollContainer = parent;
+        break;
+      }
+      parent = parent.parentElement;
+    }
+    
+    if (this._scrollContainer) {
+      this._boundScrollHandler = () => this._onScroll();
+      this._scrollContainer.addEventListener('scroll', this._boundScrollHandler, { passive: true });
+      // Initialize scroll position
+      this._currentScrollLeft = this._scrollContainer.scrollLeft;
+    }
+  }
+  
+  /**
+   * Handle scroll events - immediately redraw canvas content at new offset.
+   * Canvas stays in place, content shifts via drawing calculations.
+   */
+  private _onScroll() {
+    if (!this._scrollContainer) return;
+    
+    const newScrollLeft = this._scrollContainer.scrollLeft;
+    const scrollDelta = Math.abs(newScrollLeft - this._currentScrollLeft);
+    
+    // Always update current scroll position
+    this._currentScrollLeft = newScrollLeft;
+    
+    // Immediately redraw if we have cached thumbnails (fast path)
+    if (this._cachedThumbnails.length > 0) {
+      this.redrawAtCurrentScroll();
+    }
+    
+    // If scrolled significantly, also schedule full update (to load new thumbnails)
+    if (scrollDelta > VIRTUAL_RENDER_PADDING_PX / 2) {
+      if (this._scrollUpdateFrame) {
+        cancelAnimationFrame(this._scrollUpdateFrame);
+      }
+      this._scrollUpdateFrame = requestAnimationFrame(() => {
+        this._scrollUpdateFrame = undefined;
+        this.runThumbnailUpdate();
+      });
+    }
+  }
+  
+  /**
+   * Fast redraw using cached thumbnail data at current scroll position.
+   * This is called synchronously during scroll for immediate visual feedback.
+   */
+  private redrawAtCurrentScroll() {
+    if (this._cachedThumbnails.length === 0) return;
+    
+    const canvas = this.canvasRef.value;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    
+    const hostHeight = this.clientHeight || this._stripHeight;
+    const viewportWidth = this._timelineState?.viewportWidth ?? this.clientWidth;
+    const canvasWidth = viewportWidth + VIRTUAL_RENDER_PADDING_PX * 2;
+    
+    // Scroll offset for drawing (content shifts opposite to scroll)
+    const scrollOffset = this._currentScrollLeft - VIRTUAL_RENDER_PADDING_PX;
+    
+    // Visible range in absolute coordinates
+    const visibleLeft = this._currentScrollLeft - VIRTUAL_RENDER_PADDING_PX;
+    const visibleRight = this._currentScrollLeft + viewportWidth + VIRTUAL_RENDER_PADDING_PX;
+    
+    const dpr = window.devicePixelRatio || 1;
+    
+    // Reset transform
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    
+    // Clear canvas
+    ctx.fillStyle = "#1a1a2e";
+    ctx.fillRect(0, 0, canvasWidth, hostHeight);
+    
+    // Draw each cached thumbnail at offset position
+    for (const thumb of this._cachedThumbnails) {
+      // Skip if outside visible range
+      const thumbRight = thumb.x + thumb.width;
+      if (thumbRight < visibleLeft || thumb.x > visibleRight) {
+        continue;
+      }
+      
+      // Draw position: absolute position minus scroll offset
+      const drawX = thumb.x - scrollOffset;
+      
+      // Skip if would draw outside canvas bounds
+      if (drawX + thumb.width < 0 || drawX > canvasWidth) {
+        continue;
+      }
+      
+      if (thumb.imageData) {
+        this.drawThumbnailImage(ctx, thumb, drawX, hostHeight);
+      } else {
+        // Draw placeholder
+        ctx.fillStyle = "#2d2d44";
+        ctx.fillRect(drawX, 0, thumb.width, hostHeight);
+        ctx.strokeStyle = "#444";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([2, 2]);
+        ctx.strokeRect(drawX + 0.5, 0.5, thumb.width - 1, hostHeight - 1);
+        ctx.setLineDash([]);
+      }
+    }
+  }
+  
+  /**
+   * Draw a single thumbnail image to the canvas (helper for reuse)
+   */
+  private drawThumbnailImage(
+    ctx: CanvasRenderingContext2D,
+    thumb: ThumbnailRenderInfo,
+    drawX: number,
+    hostHeight: number
+  ) {
+    if (!thumb.imageData) return;
+    
+    // Create temp canvas for ImageData
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = thumb.imageData.width;
+    tempCanvas.height = thumb.imageData.height;
+    const tempCtx = tempCanvas.getContext("2d");
+    if (!tempCtx) return;
+    tempCtx.putImageData(thumb.imageData, 0, 0);
+    
+    // Cover mode calculations
+    const sourceAspect = thumb.imageData.width / thumb.imageData.height;
+    const destAspect = thumb.width / hostHeight;
+    
+    let sourceX = 0, sourceY = 0;
+    let sourceW = thumb.imageData.width;
+    let sourceH = thumb.imageData.height;
+    
+    if (sourceAspect > destAspect) {
+      sourceW = thumb.imageData.height * destAspect;
+      sourceX = (thumb.imageData.width - sourceW) / 2;
+    } else {
+      sourceH = thumb.imageData.width / destAspect;
+      sourceY = (thumb.imageData.height - sourceH) / 2;
+    }
+    
+    ctx.drawImage(
+      tempCanvas,
+      sourceX, sourceY, sourceW, sourceH,
+      drawX, 0, thumb.width, hostHeight
+    );
+    
+    // Near-hit indicator
+    if (thumb.status === "near-hit") {
+      ctx.fillStyle = "rgba(255, 165, 0, 0.3)";
+      ctx.fillRect(drawX, 0, thumb.width, 2);
+    }
   }
 
   disconnectedCallback() {
@@ -980,6 +1171,13 @@ export class EFThumbnailStrip extends LitElement {
     if (this._scrollUpdateFrame) {
       cancelAnimationFrame(this._scrollUpdateFrame);
       this._scrollUpdateFrame = undefined;
+    }
+    
+    // Clean up direct scroll listener
+    if (this._scrollContainer && this._boundScrollHandler) {
+      this._scrollContainer.removeEventListener('scroll', this._boundScrollHandler);
+      this._scrollContainer = undefined;
+      this._boundScrollHandler = undefined;
     }
   }
 
@@ -1013,7 +1211,10 @@ export class EFThumbnailStrip extends LitElement {
 
   /**
    * Draw thumbnails to the canvas with cache hits and placeholders.
-   * Uses virtual rendering - only draws thumbnails visible in the viewport.
+   * 
+   * ARCHITECTURE: Canvas is viewport-sized (virtual rendering) and stays
+   * in a fixed position (sticky). Content shifts via drawing offsets.
+   * This keeps the canvas small while allowing native-feeling scroll.
    */
   private async drawThumbnails(
     thumbnails: ThumbnailRenderInfo[],
@@ -1029,108 +1230,78 @@ export class EFThumbnailStrip extends LitElement {
     }
 
     // Get actual dimensions from the host element
-    const hostWidth = this.clientWidth || this._stripWidth;
     const hostHeight = this.clientHeight || this._stripHeight;
     
     // Skip if dimensions are invalid
-    if (hostWidth <= 0 || hostHeight <= 0) {
+    if (hostHeight <= 0) {
       return;
     }
 
-    // Calculate visible range for virtual rendering
-    const viewportScrollLeft = this._timelineState?.viewportScrollLeft ?? 0;
-    const viewportWidth = this._timelineState?.viewportWidth ?? hostWidth;
+    // Get scroll position (use direct scroll if available, fall back to context)
+    const scrollLeft = this._currentScrollLeft || this._timelineState?.viewportScrollLeft || 0;
+    const viewportWidth = this._timelineState?.viewportWidth ?? this.clientWidth;
     
-    // Canvas width is limited to viewport + padding (virtual rendering)
-    const canvasWidth = Math.min(
-      hostWidth,
-      viewportWidth + VIRTUAL_RENDER_PADDING_PX * 2
-    );
+    // Canvas is viewport + padding (virtual rendering)
+    const canvasWidth = viewportWidth + VIRTUAL_RENDER_PADDING_PX * 2;
     
-    // Canvas left position (where to place it relative to strip start)
-    const canvasLeft = Math.max(0, viewportScrollLeft - VIRTUAL_RENDER_PADDING_PX);
-    const canvasRight = canvasLeft + canvasWidth;
+    // Scroll offset for drawing calculations
+    // Content at scrollOffset should appear at canvas x=0
+    const scrollOffset = Math.max(0, scrollLeft - VIRTUAL_RENDER_PADDING_PX);
     
-    // Track scroll position for change detection
-    this._lastRenderedScrollLeft = viewportScrollLeft;
+    // Visible range in absolute coordinates
+    const visibleLeft = scrollOffset;
+    const visibleRight = scrollOffset + canvasWidth;
+    
+    // Track for change detection
+    this._lastRenderedScrollLeft = scrollLeft;
     this._lastRenderedViewportWidth = viewportWidth;
+    
+    // Cache thumbnails for fast redraws during scroll
+    this._cachedThumbnails = thumbnails;
 
-    // Set canvas to exact size we're drawing - prevents CSS scaling
     const dpr = window.devicePixelRatio || 1;
 
-    // Set canvas buffer size for high DPI rendering
-    canvas.width = canvasWidth * dpr;
-    canvas.height = hostHeight * dpr;
+    // Resize canvas if needed
+    const needsResize = 
+      canvas.width !== Math.ceil(canvasWidth * dpr) || 
+      canvas.height !== Math.ceil(hostHeight * dpr);
+    
+    if (needsResize) {
+      canvas.width = Math.ceil(canvasWidth * dpr);
+      canvas.height = Math.ceil(hostHeight * dpr);
+      canvas.style.width = `${canvasWidth}px`;
+      canvas.style.height = `${hostHeight}px`;
+    }
 
-    // Set canvas DOM size and position
-    canvas.style.width = `${canvasWidth}px`;
-    canvas.style.height = `${hostHeight}px`;
-    canvas.style.left = `${canvasLeft}px`;
-
-    // Scale the drawing context to match device pixel ratio
-    ctx.scale(dpr, dpr);
+    // Reset transform and scale for high DPI
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     // Clear canvas with background color
     ctx.fillStyle = "#1a1a2e";
     ctx.fillRect(0, 0, canvasWidth, hostHeight);
 
-    // Draw each thumbnail using "cover" mode (crop to fill, no gaps)
-    // Only draw thumbnails that are visible in the canvas area (virtual rendering)
+    // Draw each thumbnail at offset position
+    // thumb.x is absolute position, we draw at (thumb.x - scrollOffset)
     for (let i = 0; i < thumbnails.length; i++) {
       const thumb = thumbnails[i];
       if (!thumb) continue;
       
-      // Check if thumbnail is within visible canvas area
+      // Skip thumbnails outside visible range
       const thumbRight = thumb.x + thumb.width;
-      if (thumbRight < canvasLeft || thumb.x > canvasRight) {
-        continue; // Skip thumbnails outside visible range
+      if (thumbRight < visibleLeft || thumb.x > visibleRight) {
+        continue;
       }
       
-      // Calculate position relative to canvas (not absolute strip position)
-      const drawX = thumb.x - canvasLeft;
+      // Draw position: absolute position minus scroll offset
+      const drawX = thumb.x - scrollOffset;
+      
+      // Skip if outside canvas bounds
+      if (drawX + thumb.width < 0 || drawX > canvasWidth) {
+        continue;
+      }
       
       if (thumb.imageData) {
-        // Draw cached thumbnail with cover mode (crop to fill)
-        const tempCanvas = document.createElement("canvas");
-        tempCanvas.width = thumb.imageData.width;
-        tempCanvas.height = thumb.imageData.height;
-        const tempCtx = tempCanvas.getContext("2d");
-        if (!tempCtx) {
-          continue;
-        }
-        tempCtx.putImageData(thumb.imageData, 0, 0);
-
-        // Cover mode: crop source to fill destination without gaps
-        const sourceAspect = thumb.imageData.width / thumb.imageData.height;
-        const destAspect = thumb.width / hostHeight;
-        
-        let sourceX = 0;
-        let sourceY = 0;
-        let sourceW = thumb.imageData.width;
-        let sourceH = thumb.imageData.height;
-        
-        if (sourceAspect > destAspect) {
-          // Source is wider - crop left/right
-          sourceW = thumb.imageData.height * destAspect;
-          sourceX = (thumb.imageData.width - sourceW) / 2;
-        } else {
-          // Source is taller - crop top/bottom
-          sourceH = thumb.imageData.width / destAspect;
-          sourceY = (thumb.imageData.height - sourceH) / 2;
-        }
-        
-        // Draw cropped source to fill destination exactly
-        ctx.drawImage(
-          tempCanvas,
-          sourceX, sourceY, sourceW, sourceH,  // Source rectangle (cropped)
-          drawX, 0, thumb.width, hostHeight  // Destination rectangle (relative to canvas)
-        );
-
-        // Add subtle indicator for near hits
-        if (thumb.status === "near-hit") {
-          ctx.fillStyle = "rgba(255, 165, 0, 0.3)";
-          ctx.fillRect(drawX, 0, thumb.width, 2);
-        }
+        this.drawThumbnailImage(ctx, thumb, drawX, hostHeight);
       } else {
         // Draw placeholder filling the slot
         ctx.fillStyle = "#2d2d44";
@@ -1147,7 +1318,7 @@ export class EFThumbnailStrip extends LitElement {
 
     // Draw loading segment overlays (network activity indicator)
     if (this._loadingSegments.size > 0) {
-      this._drawLoadingSegmentOverlays(ctx, canvasLeft, canvasRight, hostHeight);
+      this._drawLoadingSegmentOverlays(ctx, visibleLeft, visibleRight, hostHeight);
     }
 
     // Draw media engine loading overlay (FFmpeg processing indicator)
@@ -1460,7 +1631,7 @@ export class EFThumbnailStrip extends LitElement {
     canvas: HTMLCanvasElement | OffscreenCanvas,
   ): ImageData | null {
     // Extract ImageData from canvas
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d") as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null;
     if (!ctx) {
       return null;
     }

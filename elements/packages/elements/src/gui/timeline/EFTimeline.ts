@@ -58,6 +58,7 @@ import {
   shouldShowFrameMarkers,
 } from "../EFTimelineRuler.js";
 import "../../elements/EFThumbnailStrip.js";
+import { thumbnailImageCache } from "../../elements/EFThumbnailStrip.js";
 
 // ============================================================================
 // TIMELINE STATE CONTEXT
@@ -517,6 +518,10 @@ export class EFTimeline extends TWMixin(LitElement) {
   private targetController?: TargetController;
   private tracksScrollRef: Ref<HTMLDivElement> = createRef();
   private containerRef: Ref<HTMLDivElement> = createRef();
+  // Refs for direct DOM manipulation of playhead (bypasses Lit render cycle)
+  private playheadRef: Ref<HTMLDivElement> = createRef();
+  private playheadHandleRef: Ref<HTMLDivElement> = createRef();
+  private frameHighlightRef: Ref<HTMLDivElement> = createRef();
   private animationFrameId?: number;
   private thumbnailUpdatePending = false;
   private selectionChangeHandler?: () => void;
@@ -529,6 +534,9 @@ export class EFTimeline extends TWMixin(LitElement) {
   private resizeObserver?: ResizeObserver;
   private cachedViewportWidth = 800; // Cached to avoid layout thrashing
   private saveZoomScrollDebounceTimer: number | null = null;
+  // Throttling for context updates (avoid cascading re-renders)
+  private lastContextUpdateTime = 0;
+  private static readonly CONTEXT_UPDATE_INTERVAL_MS = 100; // 10fps for context updates
 
   // ============================================================================
   // CONTEXT PROVIDERS
@@ -585,19 +593,36 @@ export class EFTimeline extends TWMixin(LitElement) {
       zoomOut: () => this.handleZoomOut(),
     };
 
-    // Only update if values changed to avoid infinite loops
-    const hasChanges = 
-      this._timelineState.pixelsPerMs !== newState.pixelsPerMs ||
-      this._timelineState.currentTimeMs !== newState.currentTimeMs ||
-      this._timelineState.durationMs !== newState.durationMs ||
-      this._timelineState.viewportScrollLeft !== newState.viewportScrollLeft ||
-      this._timelineState.viewportWidth !== newState.viewportWidth;
+    // Check which values changed
+    const pixelsPerMsChanged = this._timelineState.pixelsPerMs !== newState.pixelsPerMs;
+    const currentTimeMsChanged = this._timelineState.currentTimeMs !== newState.currentTimeMs;
+    const durationMsChanged = this._timelineState.durationMs !== newState.durationMs;
+    const viewportScrollLeftChanged = this._timelineState.viewportScrollLeft !== newState.viewportScrollLeft;
+    const viewportWidthChanged = this._timelineState.viewportWidth !== newState.viewportWidth;
     
-    if (hasChanges) {
+    // PERFORMANCE: During playback, scroll changes should NOT trigger context updates.
+    // 
+    // Why this works:
+    // 1. Context consumers (ruler, thumbnails) are INSIDE the scroll container
+    // 2. They scroll natively with the container - no re-render needed for visual correctness
+    // 3. They have pre-rendered buffers (RULER_CANVAS_BUFFER, VIRTUAL_RENDER_PADDING_PX)
+    // 4. Virtualization updates can wait until playback pauses
+    //
+    // This prevents the cascade: scroll → context update → all consumers re-render
+    // which was causing stuttering when playback and auto-scroll happened together.
+    const scrollOnlyChange = viewportScrollLeftChanged && 
+      !pixelsPerMsChanged && !currentTimeMsChanged && !durationMsChanged && !viewportWidthChanged;
+    
+    const shouldSkipScrollUpdate = scrollOnlyChange && this.isPlaying;
+    
+    const hasRelevantChanges = 
+      pixelsPerMsChanged || currentTimeMsChanged || durationMsChanged || 
+      viewportWidthChanged || (viewportScrollLeftChanged && !shouldSkipScrollUpdate);
+    
+    if (hasRelevantChanges) {
       // Update state - this will trigger context updates to consumers
       this._timelineState = newState;
       // Explicitly request update to ensure consumers are notified
-      // (Lit context should handle this, but being explicit ensures it works)
       this.requestUpdate();
     }
   }
@@ -1053,13 +1078,48 @@ export class EFTimeline extends TWMixin(LitElement) {
           const rawTime = this.targetTemporal.currentTimeMs ?? 0;
           const duration = this.targetTemporal.durationMs ?? 0;
           // Clamp time to valid range to prevent display issues
-          this.currentTimeMs = Math.max(0, Math.min(rawTime, duration));
-          this.isPlaying = this.targetTemporal.playing ?? false;
-          this.isLooping = this.targetTemporal.loop ?? false;
+          const newTimeMs = Math.max(0, Math.min(rawTime, duration));
+          
+          // Update playhead position directly via DOM (bypasses Lit render cycle)
+          this.updatePlayheadPositionDirect(newTimeMs);
+          
+          // Track playing state changes (these do need Lit updates)
+          const newIsPlaying = this.targetTemporal.playing ?? false;
+          const newIsLooping = this.targetTemporal.loop ?? false;
+          
+          if (newIsPlaying !== this.isPlaying || newIsLooping !== this.isLooping) {
+            const wasPlaying = this.isPlaying;
+            this.isPlaying = newIsPlaying;
+            this.isLooping = newIsLooping;
+            
+            // PERFORMANCE: Notify thumbnail cache of playback state to defer IndexedDB writes
+            thumbnailImageCache.setPlaybackActive(newIsPlaying);
+            
+            // PERFORMANCE: When playback stops, force context update with current scroll
+            // During playback, scroll-only changes don't trigger context updates (see updateTimelineState).
+            // When stopping, we need to update context so consumers can do any deferred work.
+            if (wasPlaying && !newIsPlaying) {
+              // Force context update by calling updateTimelineState directly
+              // (isPlaying is now false, so scroll changes will propagate)
+              this.updateTimelineState();
+            }
+          }
+          
+          // Update currentTimeMs for context consumers
+          // - When NOT playing: always sync immediately (for seek responsiveness)
+          // - When playing: throttle to 10fps to avoid cascading re-renders
+          const now = performance.now();
+          const shouldUpdateContext = !newIsPlaying || 
+            (now - this.lastContextUpdateTime >= EFTimeline.CONTEXT_UPDATE_INTERVAL_MS);
+          
+          if (shouldUpdateContext && this.currentTimeMs !== newTimeMs) {
+            this.currentTimeMs = newTimeMs;
+            this.lastContextUpdateTime = now;
+          }
 
           // Auto-scroll to keep playhead visible (only when playing and not dragging)
           if (this.isPlaying && !this.isDraggingPlayhead) {
-            this.followPlayhead();
+            this.followPlayhead(newTimeMs);
           } else {
             this.isFollowingPlayhead = false;
           }
@@ -1069,17 +1129,66 @@ export class EFTimeline extends TWMixin(LitElement) {
     };
     update();
   }
+  
+  /**
+   * Update playhead position directly via DOM manipulation.
+   * This bypasses the Lit render cycle for smooth 60fps playhead movement.
+   */
+  private updatePlayheadPositionDirect(timeMs: number): void {
+    const hierarchyWidth = this.showHierarchy ? EFTimeline.HIERARCHY_WIDTH : 0;
+    const playheadPx = timeToPx(timeMs, this.pixelsPerMs);
+    const playheadLeft = hierarchyWidth + playheadPx;
+    
+    // Update main playhead
+    const playhead = this.playheadRef.value;
+    if (playhead) {
+      playhead.style.left = `${playheadLeft - 1}px`;
+    }
+    
+    // Update ruler playhead handle
+    const handle = this.playheadHandleRef.value;
+    if (handle) {
+      handle.style.left = `${playheadPx}px`;
+    }
+    
+    // Update frame highlight if visible
+    if (this.showFrameMarkers && this.durationMs > 0) {
+      const frameHighlight = this.frameHighlightRef.value;
+      if (frameHighlight) {
+        const fps = this.fps;
+        const frameDurationMs = 1000 / fps;
+        const frameStartMs = quantizeToFrameTimeMs(timeMs, fps);
+        const frameEndMs = Math.min(frameStartMs + frameDurationMs, this.durationMs);
+        const startPx = timeToPx(frameStartMs, this.pixelsPerMs);
+        const widthPx = timeToPx(frameEndMs, this.pixelsPerMs) - startPx;
+        
+        if (widthPx > 0 && startPx >= 0) {
+          frameHighlight.style.left = `${hierarchyWidth + startPx}px`;
+          frameHighlight.style.width = `${widthPx}px`;
+          frameHighlight.style.display = 'block';
+        } else {
+          frameHighlight.style.display = 'none';
+        }
+      }
+    }
+  }
 
   /**
    * Smooth playhead following - scrolls to keep playhead at a fixed screen position.
    * This eliminates jitter by scrolling exactly as much as the playhead moves.
+   * 
+   * PERFORMANCE NOTE: We DO update viewportScrollLeft state here, but the context
+   * cascade is prevented in updateTimelineState() during playback. This means:
+   * - State stays in sync (for non-context consumers)
+   * - But context consumers don't re-render during auto-scroll
+   * - Components inside the scroll container scroll natively
    */
-  private followPlayhead(): void {
+  private followPlayhead(currentTimeMs: number): void {
     const tracksScroll = this.tracksScrollRef.value;
     if (!tracksScroll) return;
 
     const hierarchyWidth = this.showHierarchy ? EFTimeline.HIERARCHY_WIDTH : 0;
-    const playheadPx = timeToPx(this.currentTimeMs, this.pixelsPerMs);
+    const playheadPx = timeToPx(currentTimeMs, this.pixelsPerMs);
     const viewportWidth = tracksScroll.clientWidth - hierarchyWidth;
     const maxScroll = tracksScroll.scrollWidth - tracksScroll.clientWidth;
 
@@ -1088,14 +1197,16 @@ export class EFTimeline extends TWMixin(LitElement) {
     const rightThreshold = viewportWidth - EFTimeline.PLAYHEAD_MARGIN;
     const leftThreshold = EFTimeline.PLAYHEAD_MARGIN;
 
+    let newScrollLeft = tracksScroll.scrollLeft;
+    let scrollChanged = false;
+
     if (this.isFollowingPlayhead) {
       // Already following - scroll by exactly the delta to keep playhead stationary on screen
       const delta = playheadPx - this.lastPlayheadPx;
       if (delta !== 0) {
-        const newScroll = Math.max(0, Math.min(maxScroll, tracksScroll.scrollLeft + delta));
-        tracksScroll.scrollLeft = newScroll;
-        // Immediately sync our state to prevent flicker
-        this.viewportScrollLeft = newScroll;
+        newScrollLeft = Math.max(0, Math.min(maxScroll, tracksScroll.scrollLeft + delta));
+        tracksScroll.scrollLeft = newScrollLeft;
+        scrollChanged = true;
       }
     } else if (playheadInViewport > rightThreshold) {
       // Playhead reached right threshold - start following from this exact position (no snap)
@@ -1103,9 +1214,14 @@ export class EFTimeline extends TWMixin(LitElement) {
       // No scroll change - just start tracking from current position
     } else if (playheadInViewport < leftThreshold && tracksScroll.scrollLeft > 0) {
       // Playhead at left edge and we can scroll left - scroll to show more
-      const newScroll = Math.max(0, playheadPx - leftThreshold);
-      tracksScroll.scrollLeft = newScroll;
-      this.viewportScrollLeft = newScroll;
+      newScrollLeft = Math.max(0, playheadPx - leftThreshold);
+      tracksScroll.scrollLeft = newScrollLeft;
+      scrollChanged = true;
+    }
+
+    // Update state (context cascade is prevented during playback in updateTimelineState)
+    if (scrollChanged && this.viewportScrollLeft !== newScrollLeft) {
+      this.viewportScrollLeft = newScrollLeft;
     }
 
     this.lastPlayheadPx = playheadPx;
@@ -1438,16 +1554,22 @@ export class EFTimeline extends TWMixin(LitElement) {
   /**
    * Render frame highlight (mechanism).
    * Shows the current frame as a rectangle to indicate frames have duration.
+   * Only rendered when frame markers are visible (zoom level high enough).
    */
   private renderFrameHighlight() {
+    // Only render when frame markers should be visible
+    if (!this.showFrameMarkers) {
+      return nothing;
+    }
+    
     const bounds = this.calculateFrameHighlightBounds();
     if (!bounds) return nothing;
-
-    // Add hierarchy offset since frame highlight is inside scroll container
+    
     const hierarchyWidth = this.showHierarchy ? EFTimeline.HIERARCHY_WIDTH : 0;
 
     return html`
       <div 
+        ${ref(this.frameHighlightRef)}
         class="frame-highlight" 
         style=${styleMap({
           left: `${hierarchyWidth + bounds.startPx}px`,
@@ -1598,6 +1720,7 @@ export class EFTimeline extends TWMixin(LitElement) {
                     ></ef-timeline-ruler>
                     ${this.showPlayhead ? html`
                       <div 
+                        ${ref(this.playheadHandleRef)}
                         class="ruler-playhead-handle" 
                         style="left: ${playheadPx}px;"
                         @pointerdown=${this.handlePlayheadPointerDown}
@@ -1617,7 +1740,7 @@ export class EFTimeline extends TWMixin(LitElement) {
               <div class="playhead-container">
                 ${this.renderFrameHighlight()}
                 ${this.showPlayhead ? html`
-                  <div class="playhead" style="left: ${playheadLeft - 1}px;">
+                  <div ${ref(this.playheadRef)} class="playhead" style="left: ${playheadLeft - 1}px;">
                     <div class="playhead-drag-target" @pointerdown=${this.handlePlayheadPointerDown}></div>
                   </div>
                 ` : nothing}

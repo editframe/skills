@@ -161,8 +161,15 @@ async function tryGetScrubSample(
               await import("../BufferedSeekingInput.js");
             const { EFMedia } = await import("../../EFMedia.js");
 
+            // Create combined blob - this is expensive, check abort before/after
+            const combinedBlob = new Blob([initSegment, mediaSegment]);
+            if (signal.aborted) return undefined;
+            
+            const arrayBuffer = await combinedBlob.arrayBuffer();
+            if (signal.aborted) return undefined;
+
             return new BufferedSeekingInput(
-              await new Blob([initSegment, mediaSegment]).arrayBuffer(),
+              arrayBuffer,
               {
                 videoBufferSize: EFMedia.VIDEO_SAMPLE_BUFFER_SIZE,
                 audioBufferSize: EFMedia.AUDIO_SAMPLE_BUFFER_SIZE,
@@ -269,8 +276,15 @@ async function getMainVideoSample(
 
             const startTimeOffsetMs = videoRendition?.startTimeOffsetMs;
 
+            // Create combined blob - this is expensive, check abort before/after
+            const combinedBlob = new Blob([initSegment, mediaSegment]);
+            signal.throwIfAborted();
+            
+            const arrayBuffer = await combinedBlob.arrayBuffer();
+            signal.throwIfAborted();
+
             return new BufferedSeekingInput(
-              await new Blob([initSegment, mediaSegment]).arrayBuffer(),
+              arrayBuffer,
               {
                 videoBufferSize: EFMedia.VIDEO_SAMPLE_BUFFER_SIZE,
                 audioBufferSize: EFMedia.AUDIO_SAMPLE_BUFFER_SIZE,

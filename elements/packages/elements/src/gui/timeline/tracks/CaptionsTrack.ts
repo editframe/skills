@@ -12,21 +12,52 @@ import { phosphorIcon, ICONS } from "../../icons.js";
 import { currentTimeContext } from "../../currentTimeContext.js";
 import { TrackItem } from "./TrackItem.js";
 
+// Shared canvas context for text measurement (avoids creating new canvas each time)
+let measurementCanvas: HTMLCanvasElement | null = null;
+let measurementContext: CanvasRenderingContext2D | null = null;
+// Cache for text measurements: key is "text:fontSize:fontWeight"
+const textMeasurementCache = new Map<string, number>();
+const MAX_CACHE_SIZE = 500;
+
 /**
- * Measure text width accurately using canvas
- * Matches the actual font used in word elements (font-weight: 500)
+ * Measure text width accurately using canvas.
+ * Matches the actual font used in word elements (font-weight: 500).
+ * Results are cached to avoid repeated measurements of the same text.
  */
 function measureTextWidth(text: string, fontSize: number, fontWeight: number = 500): number {
-  // Use a canvas to measure text accurately
-  const canvas = document.createElement("canvas");
-  const context = canvas.getContext("2d");
-  if (!context) return text.length * fontSize * 0.6; // Fallback estimate
+  // Check cache first
+  const cacheKey = `${text}:${fontSize}:${fontWeight}`;
+  const cached = textMeasurementCache.get(cacheKey);
+  if (cached !== undefined) {
+    return cached;
+  }
+  
+  // Initialize shared canvas context if needed
+  if (!measurementCanvas || !measurementContext) {
+    measurementCanvas = document.createElement("canvas");
+    measurementContext = measurementCanvas.getContext("2d");
+  }
+  
+  if (!measurementContext) {
+    return text.length * fontSize * 0.6; // Fallback estimate
+  }
   
   // Match the actual font used in word elements
-  // Use the same font stack as the browser default, with font-weight 500
   const fontFamily = getComputedStyle(document.body).fontFamily || "system-ui, sans-serif";
-  context.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
-  return context.measureText(text).width;
+  measurementContext.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+  const width = measurementContext.measureText(text).width;
+  
+  // Cache the result (with size limit to prevent memory leaks)
+  if (textMeasurementCache.size >= MAX_CACHE_SIZE) {
+    // Clear oldest entries (simple strategy: clear half the cache)
+    const keysToDelete = Array.from(textMeasurementCache.keys()).slice(0, MAX_CACHE_SIZE / 2);
+    for (const key of keysToDelete) {
+      textMeasurementCache.delete(key);
+    }
+  }
+  textMeasurementCache.set(cacheKey, width);
+  
+  return width;
 }
 
 /**
@@ -95,11 +126,18 @@ function canWordsFitIndividually(
 }
 
 /**
- * Controller to ensure captions track updates reactively during playback
+ * Controller to ensure captions track updates reactively during playback.
+ * 
+ * Performance optimization: Only requests updates when the visual state actually
+ * needs to change (active word/segment changed), not on every frame.
  */
 class CaptionsTimeController implements ReactiveController {
   private animationFrameId?: number;
   private lastTimeMs = -1;
+  private lastActiveWordIndex = -1;
+  private lastActiveSegmentIndex = -1;
+  // Minimum time change to trigger update when no word change (for segment boundaries)
+  private static readonly MIN_TIME_CHANGE_MS = 100;
   
   constructor(private host: EFCaptionsTrack) {
     this.host.addController(this);
@@ -118,12 +156,43 @@ class CaptionsTimeController implements ReactiveController {
       // Read current time from root timegroup
       const captions = this.host.element as EFCaptions;
       const rootTimegroup = captions.rootTimegroup;
-      const currentTime = rootTimegroup?.currentTimeMs || 0;
+      const currentTimeMs = rootTimegroup?.currentTimeMs || 0;
+      const captionsData = captions?.unifiedCaptionsDataTask?.value;
       
-      // Only request update if time actually changed
-      if (currentTime !== this.lastTimeMs) {
-        this.lastTimeMs = currentTime;
-        // Request update to trigger re-render with new time
+      // Check if we actually need to update
+      let shouldUpdate = false;
+      
+      if (captionsData) {
+        const captionsLocalTimeMs = currentTimeMs - captions.startTimeMs;
+        const captionsLocalTimeSec = captionsLocalTimeMs / 1000;
+        
+        // Find current active word and segment indices
+        const activeWordIndex = captionsData.word_segments.findIndex(
+          (word) => captionsLocalTimeSec >= word.start && captionsLocalTimeSec < word.end
+        );
+        const activeSegmentIndex = captionsData.segments.findIndex(
+          (seg) => captionsLocalTimeSec >= seg.start && captionsLocalTimeSec < seg.end
+        );
+        
+        // Update if active word or segment changed
+        if (activeWordIndex !== this.lastActiveWordIndex) {
+          this.lastActiveWordIndex = activeWordIndex;
+          shouldUpdate = true;
+        }
+        if (activeSegmentIndex !== this.lastActiveSegmentIndex) {
+          this.lastActiveSegmentIndex = activeSegmentIndex;
+          shouldUpdate = true;
+        }
+      }
+      
+      // Also update if time changed significantly (for visual feedback during seek)
+      const timeDelta = Math.abs(currentTimeMs - this.lastTimeMs);
+      if (timeDelta >= CaptionsTimeController.MIN_TIME_CHANGE_MS) {
+        shouldUpdate = true;
+      }
+      
+      if (shouldUpdate) {
+        this.lastTimeMs = currentTimeMs;
         this.host.requestUpdate();
       }
       

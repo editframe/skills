@@ -651,6 +651,9 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     }
 
     // Handle concurrent seeks by queuing pending seek
+    // This ensures we only have ONE seek in flight at a time, avoiding wasted work.
+    // When scrubbing quickly, intermediate positions are skipped entirely - we don't
+    // start work we know will be thrown away.
     if (this.#seekInProgress) {
       this.#pendingSeekTime = seekTarget;
       this.#currentTime = seekTarget;
@@ -664,7 +667,10 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     this.#seekInProgress = true;
 
     this.seekTask.run().finally(() => {
+      this.#seekInProgress = false;
+      
       // Process pending seek if it differs from completed seek
+      // This jumps directly to wherever the user ended up, skipping intermediates
       if (
         this.#pendingSeekTime !== undefined &&
         this.#pendingSeekTime !== seekTarget

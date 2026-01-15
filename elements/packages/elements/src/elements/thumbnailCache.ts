@@ -1,10 +1,17 @@
 /**
  * Persistent thumbnail cache with IndexedDB storage.
- * Wraps OrderedLRUCache with persistence layer for thumbnail ImageData.
+ * 
+ * DESIGN: Stores thumbnails as JPEG blobs directly in IndexedDB.
+ * - No in-memory cache to avoid tab crashes with many thumbnails
+ * - JPEG compression reduces storage ~6-10x vs raw ImageData
+ * - Key index kept in memory for fast has() checks and range queries
+ * - IndexedDB operations run in a Web Worker to avoid main thread blocking
  */
 
-import { OrderedLRUCache } from "../utils/LRUCache.js";
 import { getThumbnailCacheMaxSize } from "../preview/thumbnailCacheSettings.js";
+
+// JPEG quality for thumbnail storage (0-1)
+const JPEG_QUALITY = 0.8;
 
 /**
  * Cache statistics interface
@@ -16,106 +23,361 @@ export interface ThumbnailCacheStats {
 }
 
 /**
- * Convert ImageData to ArrayBuffer for IndexedDB storage
+ * Worker message types
  */
-function imageDataToArrayBuffer(imageData: ImageData): ArrayBuffer {
-  const { width, height, data } = imageData;
-  const header = new ArrayBuffer(16); // width (4) + height (4) + data length (4) + reserved (4)
-  const headerView = new DataView(header);
-  headerView.setUint32(0, width, true);
-  headerView.setUint32(4, height, true);
-  headerView.setUint32(8, data.length, true);
-  
-  const buffer = new ArrayBuffer(16 + data.length);
-  new Uint8Array(buffer).set(new Uint8Array(header), 0);
-  new Uint8Array(buffer).set(data, 16);
-  return buffer;
+interface WorkerCommand {
+  type: "init" | "get" | "put" | "delete" | "clear" | "getKeys";
+  id: string;
+  key?: string;
+  blob?: Blob;
+}
+
+interface WorkerResponse {
+  type: "ready" | "result" | "error";
+  id: string;
+  success?: boolean;
+  blob?: Blob;
+  keys?: string[];
+  error?: string;
 }
 
 /**
- * Convert ArrayBuffer back to ImageData
+ * Singleton worker instance for IndexedDB operations
  */
-function arrayBufferToImageData(buffer: ArrayBuffer): ImageData {
-  const headerView = new DataView(buffer);
-  const width = headerView.getUint32(0, true);
-  const height = headerView.getUint32(4, true);
-  const dataLength = headerView.getUint32(8, true);
-  
-  const data = new Uint8ClampedArray(buffer, 16, dataLength);
-  return new ImageData(data, width, height);
-}
+let thumbnailCacheWorker: Worker | null = null;
+let workerMessageId = 0;
 
 /**
- * IndexedDB database name and version
+ * Create the thumbnail cache worker using inline code
  */
-const DB_NAME = "ef-thumbnail-cache";
+function createThumbnailCacheWorker(): Worker {
+  const workerCode = `
+// IndexedDB configuration
+const DB_NAME = "ef-thumbnail-cache-v2";
 const DB_VERSION = 1;
 const STORE_NAME = "thumbnails";
 
-/**
- * Get or create IndexedDB database
- */
-async function openDatabase(): Promise<IDBDatabase> {
+let db = null;
+
+async function openDatabase() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
     
-    let timeoutId: number | null = null;
-    
-    const cleanup = () => {
-      if (timeoutId !== null) {
-        clearTimeout(timeoutId);
-      }
-    };
-    
-    // Add timeout to prevent hanging
-    timeoutId = window.setTimeout(() => {
-      cleanup();
+    const timeoutId = self.setTimeout(() => {
       reject(new Error("IndexedDB open timeout"));
     }, 5000);
     
     request.onerror = () => {
-      cleanup();
+      clearTimeout(timeoutId);
       reject(request.error);
     };
     
     request.onsuccess = () => {
-      cleanup();
+      clearTimeout(timeoutId);
       resolve(request.result);
     };
     
     request.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME);
+      const database = event.target.result;
+      if (!database.objectStoreNames.contains(STORE_NAME)) {
+        database.createObjectStore(STORE_NAME);
       }
-    };
-    
-    request.onblocked = () => {
-      // Database is blocked (e.g., another tab has it open)
-      // This is just a warning - the request will eventually proceed
-      // The main timeout (5 seconds) will handle if it hangs too long
-      console.warn("IndexedDB blocked - waiting for other connections to close");
     };
   });
 }
 
+async function ensureDb() {
+  if (!db) {
+    db = await openDatabase();
+  }
+  return db;
+}
+
+async function getValue(key) {
+  const database = await ensureDb();
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction([STORE_NAME], "readonly");
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.get(key);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function putValue(key, value) {
+  const database = await ensureDb();
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction([STORE_NAME], "readwrite");
+    const store = transaction.objectStore(STORE_NAME);
+    store.put(value, key);
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+  });
+}
+
+async function deleteValue(key) {
+  const database = await ensureDb();
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction([STORE_NAME], "readwrite");
+    const store = transaction.objectStore(STORE_NAME);
+    store.delete(key);
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+  });
+}
+
+async function clearStore() {
+  const database = await ensureDb();
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction([STORE_NAME], "readwrite");
+    const store = transaction.objectStore(STORE_NAME);
+    store.clear();
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+  });
+}
+
+async function getAllKeys() {
+  const database = await ensureDb();
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction([STORE_NAME], "readonly");
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.getAllKeys();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+addEventListener("message", async (event) => {
+  const { type, id, key, blob } = event.data;
+  
+  try {
+    switch (type) {
+      case "init": {
+        await ensureDb();
+        const keys = await getAllKeys();
+        postMessage({ type: "ready", id, success: true, keys });
+        break;
+      }
+      
+      case "get": {
+        if (!key) {
+          postMessage({ type: "error", id, error: "Missing key" });
+          break;
+        }
+        const storedBlob = await getValue(key);
+        if (storedBlob) {
+          postMessage({ type: "result", id, success: true, blob: storedBlob });
+        } else {
+          postMessage({ type: "result", id, success: true });
+        }
+        break;
+      }
+      
+      case "put": {
+        if (!key || !blob) {
+          postMessage({ type: "error", id, error: "Missing required fields for put" });
+          break;
+        }
+        await putValue(key, blob);
+        postMessage({ type: "result", id, success: true });
+        break;
+      }
+      
+      case "delete": {
+        if (!key) {
+          postMessage({ type: "error", id, error: "Missing key" });
+          break;
+        }
+        await deleteValue(key);
+        postMessage({ type: "result", id, success: true });
+        break;
+      }
+      
+      case "clear": {
+        await clearStore();
+        postMessage({ type: "result", id, success: true });
+        break;
+      }
+      
+      case "getKeys": {
+        const keys = await getAllKeys();
+        postMessage({ type: "result", id, success: true, keys });
+        break;
+      }
+      
+      default:
+        postMessage({ type: "error", id, error: "Unknown command type: " + type });
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    postMessage({ type: "error", id, error: errorMessage });
+  }
+});
+
+postMessage({ type: "ready", id: "startup" });
+`;
+  
+  const blob = new Blob([workerCode], { type: "application/javascript" });
+  const url = URL.createObjectURL(blob);
+  const worker = new Worker(url);
+  
+  // Clean up the blob URL after worker loads
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  
+  return worker;
+}
+
+const pendingWorkerRequests = new Map<string, {
+  resolve: (response: WorkerResponse) => void;
+  reject: (error: Error) => void;
+}>();
+
 /**
- * Persistent thumbnail cache implementation
+ * Get or create the IndexedDB worker
+ */
+function getWorker(): Worker | null {
+  if (thumbnailCacheWorker) {
+    return thumbnailCacheWorker;
+  }
+  
+  try {
+    thumbnailCacheWorker = createThumbnailCacheWorker();
+    
+    thumbnailCacheWorker.addEventListener("message", (event: MessageEvent<WorkerResponse>) => {
+      const response = event.data;
+      const pending = pendingWorkerRequests.get(response.id);
+      
+      if (pending) {
+        pendingWorkerRequests.delete(response.id);
+        if (response.type === "error") {
+          pending.reject(new Error(response.error || "Unknown worker error"));
+        } else {
+          pending.resolve(response);
+        }
+      }
+      
+      // Worker startup ready message - no action needed
+    });
+    
+    thumbnailCacheWorker.addEventListener("error", (event) => {
+      console.error("Thumbnail cache worker error:", event);
+      for (const [id, pending] of pendingWorkerRequests) {
+        pending.reject(new Error("Worker error"));
+        pendingWorkerRequests.delete(id);
+      }
+    });
+    
+    return thumbnailCacheWorker;
+  } catch (error) {
+    console.warn("Failed to create thumbnail cache worker:", error);
+    return null;
+  }
+}
+
+/**
+ * Send a command to the worker and wait for response
+ */
+async function sendWorkerCommand(command: Omit<WorkerCommand, "id">): Promise<WorkerResponse> {
+  const worker = getWorker();
+  if (!worker) {
+    throw new Error("Worker not available");
+  }
+  
+  const id = `cmd-${++workerMessageId}`;
+  const fullCommand: WorkerCommand = { ...command, id };
+  
+  return new Promise((resolve, reject) => {
+    const timeoutId = window.setTimeout(() => {
+      pendingWorkerRequests.delete(id);
+      reject(new Error("Worker command timeout"));
+    }, 10000);
+    
+    pendingWorkerRequests.set(id, {
+      resolve: (response) => {
+        clearTimeout(timeoutId);
+        resolve(response);
+      },
+      reject: (error) => {
+        clearTimeout(timeoutId);
+        reject(error);
+      },
+    });
+    
+    worker.postMessage(fullCommand);
+  });
+}
+
+/**
+ * Convert canvas to JPEG Blob
+ */
+function canvasToJpegBlob(canvas: HTMLCanvasElement | OffscreenCanvas): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    if (canvas instanceof OffscreenCanvas) {
+      canvas.convertToBlob({ type: "image/jpeg", quality: JPEG_QUALITY })
+        .then(resolve)
+        .catch(reject);
+    } else {
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error("Failed to create blob"));
+          }
+        },
+        "image/jpeg",
+        JPEG_QUALITY
+      );
+    }
+  });
+}
+
+/**
+ * Convert ImageData to JPEG Blob via temporary canvas
+ */
+async function imageDataToJpegBlob(imageData: ImageData): Promise<Blob> {
+  const canvas = new OffscreenCanvas(imageData.width, imageData.height);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    throw new Error("Failed to get canvas context");
+  }
+  ctx.putImageData(imageData, 0, 0);
+  return canvasToJpegBlob(canvas);
+}
+
+/**
+ * Decode JPEG Blob to ImageData
+ */
+async function jpegBlobToImageData(blob: Blob): Promise<ImageData> {
+  const bitmap = await createImageBitmap(blob);
+  const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    throw new Error("Failed to get canvas context");
+  }
+  ctx.drawImage(bitmap, 0, 0);
+  bitmap.close();
+  return ctx.getImageData(0, 0, canvas.width, canvas.height);
+}
+
+/**
+ * Persistent thumbnail cache implementation using JPEG storage in IndexedDB.
+ * No in-memory cache - reads go directly to IndexedDB.
  */
 export class PersistentThumbnailCache {
-  private memoryCache: OrderedLRUCache<string, ImageData>;
-  private db: IDBDatabase | null = null;
-  private dbReady: Promise<void>;
-  private pendingWrites = new Map<string, ArrayBuffer>();
-  private writeDebounceTimer: number | null = null;
+  /** In-memory index of keys for fast has() and range queries */
+  private keyIndex: Set<string> = new Set();
+  /** Sorted keys for range queries (lazily updated) */
+  private sortedKeys: string[] | null = null;
+  
+  private workerInitialized = false;
   private readonly compareFn: (a: string, b: string) => number;
-  private totalSizeBytes = 0;
-  private entrySizes = new Map<string, number>();
   private maxSize: number;
   private settingsChangeHandler: (() => void) | null = null;
+  
 
   constructor(compareFn?: (a: string, b: string) => number) {
-    // Extract timestamp from cache key for ordered searching (same as original)
     this.compareFn = compareFn || ((a, b) => {
       const partsA = a.split(":");
       const partsB = b.split(":");
@@ -124,269 +386,219 @@ export class PersistentThumbnailCache {
       return timeA - timeB;
     });
     
-    // Initialize with current max size from settings
     this.maxSize = getThumbnailCacheMaxSize();
-    this.memoryCache = new OrderedLRUCache<string, ImageData>(this.maxSize, this.compareFn);
     
-    // Initialize IndexedDB (may fail in private browsing, that's OK)
-    this.dbReady = this.initDatabase().catch(() => {
-      // IndexedDB not available, continue without persistence
-      console.warn("IndexedDB not available, thumbnail cache will not persist");
-    });
-    
-    // Listen for cache size changes (store handler for cleanup)
+    // Listen for cache size changes
     this.settingsChangeHandler = () => {
-      const newMaxSize = getThumbnailCacheMaxSize();
-      this.setMaxSize(newMaxSize);
+      this.maxSize = getThumbnailCacheMaxSize();
     };
     window.addEventListener("ef-thumbnail-cache-settings-changed", this.settingsChangeHandler);
+    
+    // Initialize worker and load key index
+    this.initializeAsync();
+  }
+  
+  /**
+   * Async initialization - loads key index from IndexedDB
+   */
+  private async initializeAsync(): Promise<void> {
+    try {
+      const worker = getWorker();
+      if (!worker) return;
+      
+      const response = await sendWorkerCommand({ type: "init" });
+      this.workerInitialized = true;
+      
+      if (response.keys) {
+        this.keyIndex = new Set(response.keys as string[]);
+        this.sortedKeys = null; // Will be rebuilt on next range query
+      }
+    } catch (error) {
+      console.warn("Failed to initialize thumbnail cache:", error);
+    }
   }
 
   /**
-   * Clean up resources (call when cache is no longer needed)
+   * Clean up resources
    */
   destroy(): void {
-    // Remove event listener
     if (this.settingsChangeHandler) {
       window.removeEventListener("ef-thumbnail-cache-settings-changed", this.settingsChangeHandler);
       this.settingsChangeHandler = null;
     }
-    
-    // Clear pending writes
-    if (this.writeDebounceTimer !== null) {
-      clearTimeout(this.writeDebounceTimer);
-      this.writeDebounceTimer = null;
-    }
-    
-    // Close database connection
-    if (this.db) {
-      this.db.close();
-      this.db = null;
-    }
-  }
-
-  private async initDatabase(): Promise<void> {
-    try {
-      this.db = await openDatabase();
-      // Verify database is actually open
-      if (!this.db || this.db.objectStoreNames.length === 0) {
-        throw new Error("Database opened but object stores not available");
-      }
-    } catch (error) {
-      // IndexedDB not available (e.g., private browsing mode)
-      // Continue without persistence
-      this.db = null;
-    }
   }
 
   /**
-   * Ensure database is ready (wait for initialization)
+   * Ensure worker is initialized
    */
-  private async ensureDbReady(): Promise<void> {
-    await this.dbReady;
+  private async ensureWorkerReady(): Promise<boolean> {
+    if (this.workerInitialized) {
+      return true;
+    }
+    
+    try {
+      const worker = getWorker();
+      if (!worker) return false;
+      
+      const response = await sendWorkerCommand({ type: "init" });
+      this.workerInitialized = true;
+      
+      if (response.keys) {
+        this.keyIndex = new Set(response.keys as string[]);
+        this.sortedKeys = null;
+      }
+      return true;
+    } catch (error) {
+      console.warn("Failed to initialize thumbnail cache worker:", error);
+      return false;
+    }
   }
 
   /**
-   * Get value from cache (checks memory first, then IndexedDB)
+   * Get value from cache (reads from IndexedDB, decodes JPEG to ImageData)
    */
   async get(key: string): Promise<ImageData | undefined> {
-    // Check memory cache first
-    const memoryValue = this.memoryCache.get(key);
-    if (memoryValue) {
-      return memoryValue;
+    // Fast path: check key index first
+    if (!this.keyIndex.has(key)) {
+      return undefined;
     }
-
-    // Try IndexedDB if available
-    if (this.db) {
-      try {
-        await this.ensureDbReady();
-        const buffer = await new Promise<ArrayBuffer | undefined>((resolve, reject) => {
-          const transaction = this.db!.transaction([STORE_NAME], "readonly");
-          const store = transaction.objectStore(STORE_NAME);
-          const request = store.get(key);
-          
-          request.onsuccess = () => resolve(request.result);
-          request.onerror = () => reject(request.error);
-        });
-
-        if (buffer) {
-          const imageData = arrayBufferToImageData(buffer);
-          // Restore to memory cache
-          this.memoryCache.set(key, imageData);
-          // Restore size tracking
-          const size = buffer.byteLength;
-          this.entrySizes.set(key, size);
-          return imageData;
-        }
-      } catch (error) {
-        // IndexedDB read failed, continue without persistence
-        console.warn("Failed to read from IndexedDB:", error);
+    
+    try {
+      const workerAvailable = await this.ensureWorkerReady();
+      if (!workerAvailable) return undefined;
+      
+      const response = await sendWorkerCommand({ type: "get", key });
+      
+      if (response.success && response.blob) {
+        return await jpegBlobToImageData(response.blob);
       }
+    } catch (error) {
+      console.warn("Failed to read thumbnail from IndexedDB:", error);
     }
-
+    
     return undefined;
   }
 
   /**
-   * Set value in cache (memory + IndexedDB)
+   * Set value in cache (converts to JPEG, stores in IndexedDB)
    */
   async set(key: string, value: ImageData): Promise<void> {
-    // Track keys before setting to detect eviction
-    const keysBefore = new Set(this.memoryCache.getSortedKeys());
-    const wasUpdate = this.memoryCache.has(key);
-    
-    // Calculate size
-    const size = value.width * value.height * 4; // RGBA = 4 bytes per pixel
-    
-    // Update size tracking before setting (so we can detect eviction)
-    if (wasUpdate) {
-      const oldSize = this.entrySizes.get(key) || 0;
-      this.totalSizeBytes -= oldSize;
-    }
-    
-    // Let the cache handle LRU eviction internally
-    this.memoryCache.set(key, value);
-    
-    // Check if eviction happened (cache size stayed at max and we added a new key)
-    if (!wasUpdate && this.memoryCache.size === this.maxSize) {
-      const keysAfter = new Set(this.memoryCache.getSortedKeys());
-      // Find which key was evicted
-      for (const oldKey of keysBefore) {
-        if (!keysAfter.has(oldKey)) {
-          // This key was evicted - clean up IndexedDB
-          await this.deleteFromIndexedDB(oldKey);
-          const evictedSize = this.entrySizes.get(oldKey) || 0;
-          this.totalSizeBytes -= evictedSize;
-          this.entrySizes.delete(oldKey);
-          break;
-        }
-      }
-    }
-    
-    // Update size tracking for the new/updated entry
-    this.totalSizeBytes += size;
-    this.entrySizes.set(key, size);
-
-    // Schedule IndexedDB write (debounced)
-    // Ensure database is ready before scheduling writes
     try {
-      await this.ensureDbReady();
-      if (this.db) {
-        const buffer = imageDataToArrayBuffer(value);
-        this.pendingWrites.set(key, buffer);
-        this.scheduleWrite();
-      }
+      const workerAvailable = await this.ensureWorkerReady();
+      if (!workerAvailable) return;
+      
+      // Convert to JPEG blob
+      const blob = await imageDataToJpegBlob(value);
+      
+      // Store in IndexedDB
+      await sendWorkerCommand({ type: "put", key, blob });
+      
+      // Update key index
+      this.keyIndex.add(key);
+      this.sortedKeys = null; // Invalidate sorted cache
+      
+      // Enforce max size by removing oldest entries
+      await this.enforceMaxSize();
     } catch (error) {
-      // IndexedDB not available or failed, continue without persistence
-      // This is expected in private browsing mode
+      console.warn("Failed to store thumbnail in IndexedDB:", error);
     }
   }
 
   /**
-   * Schedule debounced write to IndexedDB
+   * Remove oldest entries if over max size
    */
-  private scheduleWrite(): void {
-    if (this.writeDebounceTimer !== null) {
-      clearTimeout(this.writeDebounceTimer);
-    }
-
-    this.writeDebounceTimer = window.setTimeout(() => {
-      this.flushWrites();
-    }, 500);
-
-    // Also flush if we have too many pending writes
-    if (this.pendingWrites.size >= 10) {
-      if (this.writeDebounceTimer !== null) {
-        clearTimeout(this.writeDebounceTimer);
-        this.writeDebounceTimer = null;
+  private async enforceMaxSize(): Promise<void> {
+    if (this.keyIndex.size <= this.maxSize) return;
+    
+    // Get sorted keys (oldest first based on timestamp)
+    const sorted = this.getSortedKeys();
+    const toRemove = sorted.slice(0, this.keyIndex.size - this.maxSize);
+    
+    for (const key of toRemove) {
+      try {
+        await sendWorkerCommand({ type: "delete", key });
+        this.keyIndex.delete(key);
+      } catch {
+        // Ignore delete errors
       }
-      this.flushWrites();
     }
+    this.sortedKeys = null;
   }
 
   /**
-   * Flush pending writes to IndexedDB immediately (for testing or when persistence is critical)
+   * Set playback active state (kept for API compatibility, no-op now)
+   */
+  setPlaybackActive(_active: boolean): void {
+    // No-op - writes go directly to IndexedDB now, no batching needed
+  }
+
+  /**
+   * Flush pending writes (no-op now - writes go directly to IndexedDB)
    */
   async flush(): Promise<void> {
-    // Ensure database is ready before flushing
-    await this.ensureDbReady();
-    
-    // Cancel any pending debounced write
-    if (this.writeDebounceTimer !== null) {
-      clearTimeout(this.writeDebounceTimer);
-      this.writeDebounceTimer = null;
-    }
-    // Flush immediately
-    await this.flushWrites();
+    // No-op - writes are immediate now
   }
 
   /**
-   * Flush pending writes to IndexedDB
+   * Get sorted keys for range queries
    */
-  private async flushWrites(): Promise<void> {
-    if (!this.db || this.pendingWrites.size === 0) {
-      return;
+  private getSortedKeys(): string[] {
+    if (this.sortedKeys === null) {
+      this.sortedKeys = Array.from(this.keyIndex).sort(this.compareFn);
     }
-
-    const writes = new Map(this.pendingWrites);
-    this.pendingWrites.clear();
-
-    try {
-      await this.ensureDbReady();
-      const transaction = this.db.transaction([STORE_NAME], "readwrite");
-      const store = transaction.objectStore(STORE_NAME);
-
-      for (const [key, buffer] of writes) {
-        store.put(buffer, key);
-      }
-
-      await new Promise<void>((resolve, reject) => {
-        transaction.oncomplete = () => resolve();
-        transaction.onerror = () => reject(transaction.error);
-      });
-    } catch (error) {
-      // Write failed, re-add to pending (will retry on next flush)
-      for (const [key, buffer] of writes) {
-        this.pendingWrites.set(key, buffer);
-      }
-      console.warn("Failed to flush writes to IndexedDB:", error);
-    }
+    return this.sortedKeys;
   }
 
   /**
-   * Find range of keys (memory cache only for now, as IndexedDB range queries are complex)
+   * Find range of keys (memory index only - doesn't load images)
+   * Returns keys that fall within the range for near-hit lookups
    */
   findRange(start: string, end: string): Array<{ key: string; value: ImageData }> {
-    return this.memoryCache.findRange(start, end);
+    const sorted = this.getSortedKeys();
+    const results: Array<{ key: string; value: ImageData }> = [];
+    
+    // Binary search for start position
+    let startIdx = 0;
+    let endIdx = sorted.length;
+    
+    while (startIdx < endIdx) {
+      const mid = Math.floor((startIdx + endIdx) / 2);
+      if (this.compareFn(sorted[mid]!, start) < 0) {
+        startIdx = mid + 1;
+      } else {
+        endIdx = mid;
+      }
+    }
+    
+    // Collect keys in range (return empty ImageData - caller will load if needed)
+    // Note: This is a simplified version - caller should use has() + get() for actual data
+    for (let i = startIdx; i < sorted.length; i++) {
+      const key = sorted[i]!;
+      if (this.compareFn(key, end) > 0) break;
+      // Return placeholder - actual loading happens via get()
+      results.push({ 
+        key, 
+        value: new ImageData(1, 1) // Placeholder - caller uses key for get()
+      });
+    }
+    
+    return results;
   }
 
   /**
-   * Clear cache (memory + IndexedDB)
+   * Clear cache
    */
   async clear(): Promise<void> {
-    this.memoryCache.clear();
-    this.totalSizeBytes = 0;
-    this.entrySizes.clear();
-    this.pendingWrites.clear();
-
-    if (this.writeDebounceTimer !== null) {
-      clearTimeout(this.writeDebounceTimer);
-      this.writeDebounceTimer = null;
-    }
-
-    if (this.db) {
-      try {
-        await this.ensureDbReady();
-        const transaction = this.db.transaction([STORE_NAME], "readwrite");
-        const store = transaction.objectStore(STORE_NAME);
-        store.clear();
-        await new Promise<void>((resolve, reject) => {
-          transaction.oncomplete = () => resolve();
-          transaction.onerror = () => reject(transaction.error);
-        });
-      } catch (error) {
-        console.warn("Failed to clear IndexedDB:", error);
+    this.keyIndex.clear();
+    this.sortedKeys = null;
+    
+    try {
+      const workerAvailable = await this.ensureWorkerReady();
+      if (workerAvailable) {
+        await sendWorkerCommand({ type: "clear" });
       }
+    } catch (error) {
+      console.warn("Failed to clear IndexedDB:", error);
     }
   }
 
@@ -394,28 +606,9 @@ export class PersistentThumbnailCache {
    * Get cache statistics
    */
   async getStats(): Promise<ThumbnailCacheStats> {
-    // Ensure size tracking is accurate
-    // Recalculate if needed (in case of evictions)
-    let calculatedSize = 0;
-    const validKeys = new Set<string>();
-    for (const key of this.memoryCache.getSortedKeys()) {
-      validKeys.add(key);
-      const size = this.entrySizes.get(key) || 0;
-      calculatedSize += size;
-    }
-    
-    // Clean up size tracking for evicted entries
-    for (const [key] of this.entrySizes) {
-      if (!validKeys.has(key)) {
-        this.entrySizes.delete(key);
-      }
-    }
-    
-    this.totalSizeBytes = calculatedSize;
-
     return {
-      itemCount: this.memoryCache.size,
-      totalSizeBytes: this.totalSizeBytes,
+      itemCount: this.keyIndex.size,
+      totalSizeBytes: 0, // Can't easily track with JPEG blobs
       maxSize: this.maxSize,
     };
   }
@@ -425,31 +618,8 @@ export class PersistentThumbnailCache {
    */
   setMaxSize(maxSize: number): void {
     this.maxSize = maxSize;
-    
-    // Create new cache with new max size
-    const oldCache = this.memoryCache;
-    this.memoryCache = new OrderedLRUCache<string, ImageData>(maxSize, this.compareFn);
-    
-    // Migrate entries from old cache (keep most recent entries)
-    const sortedKeys = oldCache.getSortedKeys();
-    const keysToKeep = sortedKeys.slice(-maxSize);
-    
-    // Update size tracking
-    const newEntrySizes = new Map<string, number>();
-    let newTotalSize = 0;
-    
-    for (const key of keysToKeep) {
-      const value = oldCache.get(key);
-      if (value) {
-        this.memoryCache.set(key, value);
-        const size = this.entrySizes.get(key) || (value.width * value.height * 4);
-        newEntrySizes.set(key, size);
-        newTotalSize += size;
-      }
-    }
-    
-    this.entrySizes = newEntrySizes;
-    this.totalSizeBytes = newTotalSize;
+    // Enforce new size asynchronously
+    this.enforceMaxSize();
   }
 
   /**
@@ -460,48 +630,38 @@ export class PersistentThumbnailCache {
   }
 
   /**
-   * Check if key exists in cache
+   * Check if key exists in cache (fast - checks in-memory index)
    */
   has(key: string): boolean {
-    return this.memoryCache.has(key);
-  }
-
-  /**
-   * Delete key from IndexedDB only (used when cache handles eviction)
-   */
-  private async deleteFromIndexedDB(key: string): Promise<void> {
-    if (this.db) {
-      try {
-        await this.ensureDbReady();
-        const transaction = this.db.transaction([STORE_NAME], "readwrite");
-        const store = transaction.objectStore(STORE_NAME);
-        store.delete(key);
-        await new Promise<void>((resolve, reject) => {
-          transaction.oncomplete = () => resolve();
-          transaction.onerror = () => reject(transaction.error);
-        });
-      } catch (error) {
-        console.warn("Failed to delete from IndexedDB:", error);
-      }
-    }
-    
-    // Remove from pending writes
-    this.pendingWrites.delete(key);
+    return this.keyIndex.has(key);
   }
 
   /**
    * Delete key from cache
    */
   async delete(key: string): Promise<boolean> {
-    const deleted = this.memoryCache.delete(key);
-    if (deleted) {
-      const size = this.entrySizes.get(key) || 0;
-      this.totalSizeBytes -= size;
-      this.entrySizes.delete(key);
-      
-      // Remove from IndexedDB
-      await this.deleteFromIndexedDB(key);
+    if (!this.keyIndex.has(key)) {
+      return false;
     }
-    return deleted;
+    
+    try {
+      const workerAvailable = await this.ensureWorkerReady();
+      if (workerAvailable) {
+        await sendWorkerCommand({ type: "delete", key });
+      }
+      this.keyIndex.delete(key);
+      this.sortedKeys = null;
+      return true;
+    } catch (error) {
+      console.warn("Failed to delete from IndexedDB:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Get current cache size (number of entries)
+   */
+  get size(): number {
+    return this.keyIndex.size;
   }
 }
