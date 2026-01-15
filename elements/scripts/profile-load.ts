@@ -210,7 +210,7 @@ async function profilePageLoad(
   const loadStart = performance.now();
   
   // Navigate to the dev project
-  await page.goto(`http://localhost:4321/dev-projects/${project}.html`, {
+  await page.goto(`http://main.localhost:4321/${project}`, {
     waitUntil: "networkidle",
   });
   
@@ -422,6 +422,20 @@ async function printLineLevelProfile(
   }
 }
 
+function findMonorepoRoot(): string | null {
+  let currentDir = __dirname;
+  while (currentDir !== path.dirname(currentDir)) {
+    if (
+      fs.existsSync(path.join(currentDir, "elements")) &&
+      fs.existsSync(path.join(currentDir, "telecine"))
+    ) {
+      return currentDir;
+    }
+    currentDir = path.dirname(currentDir);
+  }
+  return null;
+}
+
 async function main() {
   const { project, output, focus, headless } = parseArgs();
   
@@ -431,14 +445,34 @@ async function main() {
   }
   console.log();
   
-  const browser = await chromium.launch({
-    headless,
-    args: ["--disable-web-security"],
-  });
+  const monorepoRoot = findMonorepoRoot();
+  if (!monorepoRoot) {
+    console.error("Could not find monorepo root");
+    process.exit(1);
+  }
+
+  const wsEndpointPath = path.join(monorepoRoot, ".wsEndpoint.json");
+  let browser: Browser;
+  let shouldCloseBrowser = false;
+
+  if (fs.existsSync(wsEndpointPath)) {
+    const { wsEndpoint } = JSON.parse(fs.readFileSync(wsEndpointPath, "utf-8"));
+    console.log(`📡 Connecting to existing browser: ${wsEndpoint}`);
+    browser = await chromium.connect(wsEndpoint);
+  } else {
+    console.log(`🚀 Launching new browser...`);
+    browser = await chromium.launch({
+      headless,
+      channel: "chrome",
+      args: ["--disable-web-security"],
+    });
+    shouldCloseBrowser = true;
+  }
+  
+  const context = await browser.newContext();
+  const page = await context.newPage();
   
   try {
-    const context = await browser.newContext();
-    const page = await context.newPage();
     const cdp = await context.newCDPSession(page);
     
     const profile = await profilePageLoad(page, cdp, project, focus);
@@ -454,7 +488,11 @@ async function main() {
     await analyzeProfile(profile, resolver, focus);
     
   } finally {
-    await browser.close();
+    page.close().catch(() => {});
+    context.close().catch(() => {});
+    if (shouldCloseBrowser) {
+      browser.close().catch(() => {});
+    }
   }
 }
 
