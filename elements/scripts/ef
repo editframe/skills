@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+# Find monorepo root to read .wsEndpoint.json
+find_monorepo_root() {
+  local current_dir="$1"
+  local dir="$current_dir"
+  while [ "$dir" != "/" ]; do
+    if [ -d "$dir/elements" ] && [ -d "$dir/telecine" ]; then
+      echo "$dir"
+      return 0
+    fi
+    dir=$(dirname "$dir")
+  done
+  echo "$SCRIPT_DIR/.."
+}
+
+MONOREPO_ROOT=$(find_monorepo_root "$SCRIPT_DIR/..")
+WS_ENDPOINT_PATH="$MONOREPO_ROOT/.wsEndpoint.json"
+
+# Read wsEndpoint from file and pass as environment variable
+# This is necessary because Docker only mounts the elements directory, not the monorepo root
+# So the file at the monorepo root isn't accessible inside Docker
+if [ -f "$WS_ENDPOINT_PATH" ]; then
+  WS_ENDPOINT=$(python3 -c "import json, sys; print(json.load(sys.stdin)['wsEndpoint'])" < "$WS_ENDPOINT_PATH" 2>/dev/null || echo "")
+  if [ -n "$WS_ENDPOINT" ]; then
+    export WS_ENDPOINT
+  fi
+fi
+
+# Run the TypeScript CLI implementation via scripts/run npx tsx (like start-dev-projects)
+# Path is relative to /packages in Docker container
+exec "${SCRIPT_DIR}"/run npx tsx scripts/ef.ts "$@"
