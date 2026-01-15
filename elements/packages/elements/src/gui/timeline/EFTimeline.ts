@@ -586,14 +586,19 @@ export class EFTimeline extends TWMixin(LitElement) {
     };
 
     // Only update if values changed to avoid infinite loops
-    if (
+    const hasChanges = 
       this._timelineState.pixelsPerMs !== newState.pixelsPerMs ||
       this._timelineState.currentTimeMs !== newState.currentTimeMs ||
       this._timelineState.durationMs !== newState.durationMs ||
       this._timelineState.viewportScrollLeft !== newState.viewportScrollLeft ||
-      this._timelineState.viewportWidth !== newState.viewportWidth
-    ) {
+      this._timelineState.viewportWidth !== newState.viewportWidth;
+    
+    if (hasChanges) {
+      // Update state - this will trigger context updates to consumers
       this._timelineState = newState;
+      // Explicitly request update to ensure consumers are notified
+      // (Lit context should handle this, but being explicit ensures it works)
+      this.requestUpdate();
     }
   }
 
@@ -992,9 +997,15 @@ export class EFTimeline extends TWMixin(LitElement) {
     if (this.tracksScrollRef.value) {
       this.scrollHandler = () => {
         if (this.tracksScrollRef.value) {
-          this.viewportScrollLeft = this.tracksScrollRef.value.scrollLeft;
-          // Save scroll position on scroll
-          this.debouncedSaveTimelineState();
+          const newScrollLeft = this.tracksScrollRef.value.scrollLeft;
+          // Only update if scroll position actually changed
+          if (newScrollLeft !== this.viewportScrollLeft) {
+            this.viewportScrollLeft = newScrollLeft;
+            // Update timeline state immediately to propagate to consumers
+            this.updateTimelineState();
+            // Save scroll position on scroll
+            this.debouncedSaveTimelineState();
+          }
         }
       };
       this.tracksScrollRef.value.addEventListener(
@@ -1002,6 +1013,7 @@ export class EFTimeline extends TWMixin(LitElement) {
         this.scrollHandler,
         { passive: true },
       );
+      // Initialize scroll position
       this.scrollHandler();
     }
   }
