@@ -27,7 +27,21 @@ export class EFTimegroupTrack extends TrackItem {
   static styles = [
     ...TrackItem.styles,
     css`
-      /* Thumbnail strip positions itself via :host styles */
+      .trim-container {
+        background: linear-gradient(
+          135deg,
+          rgba(148, 163, 184, 0.1) 0%,
+          rgba(148, 163, 184, 0.05) 100%
+        ) !important;
+      }
+      
+      :host(:hover) .trim-container {
+        background: linear-gradient(
+          135deg,
+          rgba(148, 163, 184, 0.15) 0%,
+          rgba(148, 163, 184, 0.08) 100%
+        ) !important;
+      }
     `,
   ];
 
@@ -79,9 +93,13 @@ export class EFTimegroupTrack extends TrackItem {
       `;
     }
 
+    // Show composition mode indicator
+    const mode = (this.element as any).mode || "fixed";
+    const modeLabel = mode.charAt(0).toUpperCase() + mode.slice(1);
+
     // Fallback: show label and children
     return html`
-      <span>TIME GROUP</span>
+      <span style="font-size: 10px; opacity: 0.7; margin-left: 20px;">${modeLabel}</span>
       ${this.skipChildren
         ? nothing
         : renderTrackChildren(
