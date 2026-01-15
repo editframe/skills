@@ -114,10 +114,10 @@ export function SandboxViewer({ sandboxName, sandboxConfig }: SandboxViewerProps
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", fontFamily: "system-ui, -apple-system, sans-serif" }}>
       {/* Header */}
-      <div style={{ padding: "16px", background: "#1f2937", color: "white", borderBottom: "1px solid #374151" }}>
-        <h1 style={{ margin: 0, fontSize: "24px", fontWeight: 600 }}>{sandboxConfig.name}</h1>
+      <div style={{ padding: "6px 8px", background: "#1f2937", color: "white", borderBottom: "1px solid #374151" }}>
+        <h1 style={{ margin: 0, fontSize: "14px", fontWeight: 600 }}>{sandboxConfig.name}</h1>
         {sandboxConfig.description && (
-          <div style={{ marginTop: "8px", color: "#d1d5db", fontSize: "14px" }}>
+          <div style={{ marginTop: "2px", color: "#d1d5db", fontSize: "11px" }}>
             {sandboxConfig.description}
           </div>
         )}
@@ -127,24 +127,24 @@ export function SandboxViewer({ sandboxName, sandboxConfig }: SandboxViewerProps
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         {/* Preview panel */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", borderRight: "1px solid #e5e7eb" }}>
-          <div style={{ padding: "12px", background: "#f9fafb", borderBottom: "1px solid #e5e7eb", fontWeight: 600 }}>
+          <div style={{ padding: "4px 6px", background: "#f9fafb", borderBottom: "1px solid #e5e7eb", fontWeight: 600, fontSize: "11px" }}>
             Preview
           </div>
           <div
             ref={previewContainerRef}
             id="sandbox-container"
-            style={{ flex: 1, padding: "16px", overflow: "auto", background: "white" }}
+            style={{ flex: 1, padding: "8px", overflow: "auto", background: "white" }}
           />
         </div>
 
         {/* Scenarios panel */}
-        <div style={{ width: "400px", display: "flex", flexDirection: "column", background: "#f9fafb" }}>
-          <div style={{ padding: "12px", borderBottom: "1px solid #e5e7eb", fontWeight: 600 }}>
+        <div style={{ width: "250px", display: "flex", flexDirection: "column", background: "#f9fafb" }}>
+          <div style={{ padding: "4px 6px", borderBottom: "1px solid #e5e7eb", fontWeight: 600, fontSize: "11px" }}>
             Scenarios
           </div>
-          <div style={{ flex: 1, overflow: "auto", padding: "8px" }}>
+          <div style={{ flex: 1, overflow: "auto", padding: "6px 8px" }}>
             {scenarioNames.length === 0 ? (
-              <div style={{ padding: "16px", color: "#6b7280", textAlign: "center" }}>
+              <div style={{ padding: "8px", color: "#6b7280", textAlign: "center", fontSize: "11px" }}>
                 No scenarios defined
               </div>
             ) : (
@@ -154,14 +154,15 @@ export function SandboxViewer({ sandboxName, sandboxConfig }: SandboxViewerProps
                   disabled={runningScenario !== null}
                   style={{
                     width: "100%",
-                    padding: "8px",
-                    marginBottom: "8px",
+                    padding: "4px",
+                    marginBottom: "4px",
                     background: "#3b82f6",
                     color: "white",
                     border: "none",
-                    borderRadius: "4px",
+                    borderRadius: "2px",
                     cursor: runningScenario ? "not-allowed" : "pointer",
                     opacity: runningScenario ? 0.5 : 1,
+                    fontSize: "11px",
                   }}
                 >
                   Run All
@@ -173,21 +174,21 @@ export function SandboxViewer({ sandboxName, sandboxConfig }: SandboxViewerProps
                     <div
                       key={name}
                       style={{
-                        padding: "12px",
-                        marginBottom: "8px",
+                        padding: "4px 6px",
+                        marginBottom: "2px",
                         background: "white",
                         border: "1px solid #e5e7eb",
-                        borderRadius: "4px",
+                        borderRadius: "2px",
                       }}
                     >
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-                        <span style={{ fontWeight: 500 }}>{name}</span>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "2px" }}>
+                        <span style={{ fontWeight: 500, fontSize: "11px" }}>{name}</span>
                         {result && (
                           <span
                             style={{
-                              fontSize: "12px",
-                              padding: "2px 8px",
-                              borderRadius: "4px",
+                              fontSize: "10px",
+                              padding: "1px 4px",
+                              borderRadius: "2px",
                               background:
                                 result.status === "passed"
                                   ? "#d1fae5"
@@ -207,7 +208,7 @@ export function SandboxViewer({ sandboxName, sandboxConfig }: SandboxViewerProps
                         )}
                       </div>
                       {result && (
-                        <div style={{ fontSize: "12px", color: "#6b7280", marginBottom: "8px" }}>
+                        <div style={{ fontSize: "10px", color: "#6b7280", marginBottom: "2px" }}>
                           {result.durationMs.toFixed(2)}ms
                         </div>
                       )}
@@ -216,13 +217,14 @@ export function SandboxViewer({ sandboxName, sandboxConfig }: SandboxViewerProps
                         disabled={isRunning}
                         style={{
                           width: "100%",
-                          padding: "6px",
+                          padding: "3px",
                           background: "#3b82f6",
                           color: "white",
                           border: "none",
-                          borderRadius: "4px",
+                          borderRadius: "2px",
                           cursor: isRunning ? "not-allowed" : "pointer",
                           opacity: isRunning ? 0.5 : 1,
+                          fontSize: "10px",
                         }}
                       >
                         {isRunning ? "Running..." : "Run"}
@@ -240,14 +242,16 @@ export function SandboxViewer({ sandboxName, sandboxConfig }: SandboxViewerProps
       {error && (
         <div
           style={{
-            padding: "16px",
+            padding: "6px 8px",
             background: "#fee2e2",
             color: "#991b1b",
             borderTop: "1px solid #fecaca",
+            maxHeight: "120px",
+            overflow: "auto",
           }}
         >
-          <div style={{ fontWeight: 600, marginBottom: "8px" }}>Error</div>
-          <div>{error}</div>
+          <div style={{ fontWeight: 600, marginBottom: "4px", fontSize: "11px" }}>Error</div>
+          <div style={{ fontSize: "10px", fontFamily: "monospace" }}>{error}</div>
         </div>
       )}
 
@@ -255,16 +259,16 @@ export function SandboxViewer({ sandboxName, sandboxConfig }: SandboxViewerProps
       {logs.length > 0 && (
         <div
           style={{
-            padding: "16px",
+            padding: "6px 8px",
             background: "#f9fafb",
             borderTop: "1px solid #e5e7eb",
-            maxHeight: "200px",
+            maxHeight: "100px",
             overflow: "auto",
           }}
         >
-          <div style={{ fontWeight: 600, marginBottom: "8px" }}>Logs</div>
+          <div style={{ fontWeight: 600, marginBottom: "4px", fontSize: "11px" }}>Logs</div>
           {logs.map((log, i) => (
-            <div key={i} style={{ fontSize: "12px", color: "#374151", marginBottom: "4px" }}>
+            <div key={i} style={{ fontSize: "10px", color: "#374151", marginBottom: "2px", fontFamily: "monospace" }}>
               {log}
             </div>
           ))}

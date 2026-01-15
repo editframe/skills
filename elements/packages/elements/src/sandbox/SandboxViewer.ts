@@ -40,7 +40,7 @@ export class SandboxViewer extends LitElement {
     }
 
     .header {
-      padding: 16px;
+      padding: 6px 8px;
       background: #1f2937;
       color: white;
       border-bottom: 1px solid #374151;
@@ -48,13 +48,13 @@ export class SandboxViewer extends LitElement {
 
     .header h1 {
       margin: 0;
-      font-size: 20px;
+      font-size: 14px;
       font-weight: 600;
     }
 
     .header .description {
-      margin-top: 4px;
-      font-size: 14px;
+      margin-top: 2px;
+      font-size: 11px;
       color: #9ca3af;
     }
 
@@ -65,16 +65,16 @@ export class SandboxViewer extends LitElement {
     }
 
     .sidebar {
-      width: 300px;
+      width: 250px;
       background: #f9fafb;
       border-right: 1px solid #e5e7eb;
       overflow-y: auto;
-      padding: 16px;
+      padding: 6px 8px;
     }
 
     .sidebar h2 {
-      margin: 0 0 12px 0;
-      font-size: 16px;
+      margin: 0 0 4px 0;
+      font-size: 12px;
       font-weight: 600;
     }
 
@@ -85,15 +85,15 @@ export class SandboxViewer extends LitElement {
     }
 
     .scenario-item {
-      padding: 8px 12px;
-      margin-bottom: 4px;
+      padding: 4px 6px;
+      margin-bottom: 2px;
       background: white;
       border: 1px solid #e5e7eb;
-      border-radius: 4px;
+      border-radius: 2px;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
 
     .scenario-item:hover {
@@ -105,8 +105,8 @@ export class SandboxViewer extends LitElement {
     }
 
     .status-icon {
-      width: 16px;
-      height: 16px;
+      width: 12px;
+      height: 12px;
       flex-shrink: 0;
     }
 
@@ -120,19 +120,20 @@ export class SandboxViewer extends LitElement {
 
     .scenario-name {
       flex: 1;
-      font-size: 14px;
+      font-size: 11px;
     }
 
     .run-all-btn {
       width: 100%;
-      padding: 8px;
-      margin-top: 12px;
+      padding: 4px;
+      margin-top: 6px;
       background: #3b82f6;
       color: white;
       border: none;
-      border-radius: 4px;
+      border-radius: 2px;
       cursor: pointer;
       font-weight: 500;
+      font-size: 11px;
     }
 
     .run-all-btn:hover {
@@ -148,7 +149,7 @@ export class SandboxViewer extends LitElement {
 
     .preview {
       flex: 1;
-      padding: 24px;
+      padding: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -157,55 +158,55 @@ export class SandboxViewer extends LitElement {
     }
 
     .preview-container {
-      min-width: 400px;
-      min-height: 300px;
+      min-width: 200px;
+      min-height: 150px;
       border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      padding: 24px;
+      border-radius: 4px;
+      padding: 8px;
       background: white;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     }
 
     .error-panel {
-      padding: 16px;
+      padding: 6px 8px;
       background: #fef2f2;
       border-top: 1px solid #fee2e2;
-      max-height: 200px;
+      max-height: 120px;
       overflow-y: auto;
     }
 
     .error-panel h3 {
-      margin: 0 0 8px 0;
-      font-size: 14px;
+      margin: 0 0 4px 0;
+      font-size: 11px;
       font-weight: 600;
       color: #991b1b;
     }
 
     .error-message {
       font-family: monospace;
-      font-size: 12px;
+      font-size: 10px;
       color: #7f1d1d;
       white-space: pre-wrap;
     }
 
     .logs-panel {
-      padding: 16px;
+      padding: 6px 8px;
       background: #f9fafb;
       border-top: 1px solid #e5e7eb;
-      max-height: 150px;
+      max-height: 100px;
       overflow-y: auto;
       font-family: monospace;
-      font-size: 12px;
+      font-size: 10px;
     }
 
     .logs-panel h3 {
-      margin: 0 0 8px 0;
-      font-size: 14px;
+      margin: 0 0 4px 0;
+      font-size: 11px;
       font-weight: 600;
     }
 
     .log-entry {
-      margin-bottom: 4px;
+      margin-bottom: 2px;
       color: #374151;
     }
   `;
