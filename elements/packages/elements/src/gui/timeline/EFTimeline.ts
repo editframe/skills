@@ -161,11 +161,6 @@ export class EFTimeline extends TWMixin(LitElement) {
       .control-btn:hover:not(:disabled) {
         background: rgba(255, 255, 255, 0.2);
         border-color: rgba(255, 255, 255, 0.3);
-        transform: translateY(-1px);
-      }
-      
-      .control-btn:active:not(:disabled) {
-        transform: translateY(0);
       }
       
       .control-btn:disabled {
@@ -533,6 +528,7 @@ export class EFTimeline extends TWMixin(LitElement) {
   private canvasHighlightChangeHandler?: () => void;
   private resizeObserver?: ResizeObserver;
   private cachedViewportWidth = 800; // Cached to avoid layout thrashing
+  private saveZoomScrollDebounceTimer: number | null = null;
 
   // ============================================================================
   // CONTEXT PROVIDERS
@@ -705,6 +701,94 @@ export class EFTimeline extends TWMixin(LitElement) {
     return shouldShowFrameMarkers(pixelsPerFrame);
   }
 
+  /**
+   * Get the root timegroup ID for localStorage key generation.
+   * Returns null if no root timegroup is found or it has no ID.
+   */
+  private getRootTimegroupId(): string | null {
+    if (!this.targetTemporal) return null;
+    
+    const rootTemporal = findRootTemporal(this.targetTemporal as unknown as Element);
+    
+    if (rootTemporal instanceof EFTimegroup && rootTemporal.id) {
+      return rootTemporal.id;
+    }
+    
+    return null;
+  }
+
+  /**
+   * Get localStorage key for timeline state (zoom and scroll).
+   */
+  private getTimelineStorageKey(): string | null {
+    const rootId = this.getRootTimegroupId();
+    return rootId ? `ef-timeline-${rootId}` : null;
+  }
+
+  /**
+   * Save timeline zoom and scroll to localStorage.
+   */
+  private saveTimelineState(): void {
+    const storageKey = this.getTimelineStorageKey();
+    if (!storageKey) return;
+
+    try {
+      const state = {
+        pixelsPerMs: this.pixelsPerMs,
+        viewportScrollLeft: this.viewportScrollLeft,
+      };
+      localStorage.setItem(storageKey, JSON.stringify(state));
+    } catch (error) {
+      console.warn("Failed to save timeline state to localStorage", error);
+    }
+  }
+
+  /**
+   * Restore timeline zoom and scroll from localStorage.
+   */
+  private restoreTimelineState(): void {
+    const storageKey = this.getTimelineStorageKey();
+    if (!storageKey) return;
+
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (!stored) return;
+
+      const state = JSON.parse(stored);
+      if (typeof state.pixelsPerMs === "number" && state.pixelsPerMs > 0) {
+        this.pixelsPerMs = Math.max(
+          this.minZoom * DEFAULT_PIXELS_PER_MS,
+          Math.min(this.maxZoom * DEFAULT_PIXELS_PER_MS, state.pixelsPerMs),
+        );
+      }
+      if (typeof state.viewportScrollLeft === "number" && state.viewportScrollLeft >= 0) {
+        // Restore scroll position after DOM is ready
+        requestAnimationFrame(() => {
+          const tracksScroll = this.tracksScrollRef.value;
+          if (tracksScroll) {
+            tracksScroll.scrollLeft = state.viewportScrollLeft;
+            this.viewportScrollLeft = state.viewportScrollLeft;
+          }
+        });
+      }
+    } catch (error) {
+      console.warn("Failed to restore timeline state from localStorage", error);
+    }
+  }
+
+  /**
+   * Debounced save of timeline state to avoid excessive localStorage writes.
+   */
+  private debouncedSaveTimelineState(): void {
+    if (this.saveZoomScrollDebounceTimer !== null) {
+      clearTimeout(this.saveZoomScrollDebounceTimer);
+    }
+    this.saveZoomScrollDebounceTimer = window.setTimeout(() => {
+      this.saveZoomScrollDebounceTimer = null;
+      this.saveTimelineState();
+    }, 200);
+  }
+
   // ============================================================================
   // LIFECYCLE
   // ============================================================================
@@ -725,6 +809,12 @@ export class EFTimeline extends TWMixin(LitElement) {
     this.removeKeyboardListener();
     this.targetObserver?.disconnect();
     this.resizeObserver?.disconnect();
+    // Save state before disconnecting
+    if (this.saveZoomScrollDebounceTimer !== null) {
+      clearTimeout(this.saveZoomScrollDebounceTimer);
+      this.saveZoomScrollDebounceTimer = null;
+    }
+    this.saveTimelineState();
   }
 
   /**
@@ -801,6 +891,19 @@ export class EFTimeline extends TWMixin(LitElement) {
 
   protected updated(changedProperties: PropertyValues): void {
     super.updated(changedProperties);
+
+    // Restore timeline state when target changes
+    if (changedProperties.has("targetTemporal") || changedProperties.has("target")) {
+      // Wait for DOM to be ready before restoring scroll
+      requestAnimationFrame(() => {
+        this.restoreTimelineState();
+      });
+    }
+
+    // Save timeline state when zoom or scroll changes
+    if (changedProperties.has("pixelsPerMs") || changedProperties.has("viewportScrollLeft")) {
+      this.debouncedSaveTimelineState();
+    }
 
     // Re-register observer and listeners when target changes
     if (changedProperties.has("targetElement") || changedProperties.has("target")) {
@@ -890,6 +993,8 @@ export class EFTimeline extends TWMixin(LitElement) {
       this.scrollHandler = () => {
         if (this.tracksScrollRef.value) {
           this.viewportScrollLeft = this.tracksScrollRef.value.scrollLeft;
+          // Save scroll position on scroll
+          this.debouncedSaveTimelineState();
         }
       };
       this.tracksScrollRef.value.addEventListener(
