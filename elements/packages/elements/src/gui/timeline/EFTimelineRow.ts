@@ -61,6 +61,16 @@ export class EFTimelineRow extends TWMixin(LitElement) {
       :host(.root-timegroup) {
         min-height: 52px;
         height: 52px;
+        /* Sticky at top below ruler (ruler is 24px) */
+        position: sticky;
+        top: 24px;
+        z-index: 9;
+        background: var(--timeline-bg, rgb(30 41 59));
+      }
+
+      /* Root timegroup label needs higher z-index to stay above other labels when scrolling */
+      :host(.root-timegroup) .row-label {
+        z-index: 11;
       }
 
       /* Hover state - this row is directly hovered */
