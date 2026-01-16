@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import {
   handleIndex,
   handleList,
+  handleRelationships,
   handleRunScenario,
   handleSandboxViewer,
   handleScenarios,
@@ -61,6 +62,12 @@ export function createSandboxMiddleware(elementsRoot: string) {
       if (pathname === "/_sandbox/api/list") {
         console.log(`[sandbox-middleware] ✅ Matched: list`);
         await handleList(req, res, elementsRoot);
+        return;
+      }
+
+      if (pathname === "/_sandbox/api/relationships") {
+        console.log(`[sandbox-middleware] ✅ Matched: relationships`);
+        await handleRelationships(req, res, elementsRoot);
         return;
       }
 

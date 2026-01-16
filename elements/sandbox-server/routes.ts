@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { discoverSandboxes, loadSandbox } from "./discover.js";
+import { discoverSandboxes, loadSandbox, buildSandboxGraph } from "./discover.js";
 import type { Sandbox, ScenarioResult } from "../packages/elements/src/sandbox/index.js";
 
 // NOTE: ProfileService and HTTP-based profile routes have been removed.
@@ -32,6 +32,21 @@ export async function handleList(
   res.setHeader("Content-Type", "application/json");
   res.writeHead(200);
   res.end(JSON.stringify({ sandboxes }));
+}
+
+/**
+ * Handle /_sandbox/api/relationships route
+ * Returns the relationship graph for all sandboxes
+ */
+export async function handleRelationships(
+  req: IncomingMessage,
+  res: ServerResponse,
+  elementsRoot: string,
+): Promise<void> {
+  const { relationships } = buildSandboxGraph(elementsRoot);
+  res.setHeader("Content-Type", "application/json");
+  res.writeHead(200);
+  res.end(JSON.stringify({ relationships }));
 }
 
 /**
