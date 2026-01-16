@@ -1,88 +1,27 @@
-import type { TemplateResult } from "lit";
-import type { SandboxContext } from "./SandboxContext.js";
+// Re-export core types and helpers from defineSandbox
+// This allows both import { defineSandbox } from "./index.js" 
+// and import { defineSandbox } from "./defineSandbox.js" to work
+export {
+  defineSandbox,
+  type ScenarioResult,
+  type ScenarioFn,
+  type Scenario,
+  type ScenarioType,
+  type Scenarios,
+  type ProfileAssertion,
+  type SandboxConfig,
+  type Sandbox,
+} from "./defineSandbox.js";
 
-/**
- * Result of running a scenario
- */
-export interface ScenarioResult {
-  name: string;
-  status: "passed" | "failed" | "error";
-  durationMs: number;
-  error?: {
-    message: string;
-    stack?: string;
-  };
-  // Optional profiling data if profiling was enabled
-  profile?: unknown; // CPUProfile type from Chrome DevTools Protocol
-}
-
-/**
- * A scenario function that tests an element
- */
-export type ScenarioFn = (ctx: SandboxContext) => Promise<void> | void;
-
-/**
- * A scenario definition with optional performance assertions
- * Use this format when you want to attach performance assertions to a scenario
- */
-export interface Scenario {
-  /**
-   * The scenario function to execute
-   */
-  run: ScenarioFn;
-  /**
-   * Optional performance assertions for this scenario
-   * These assertions are checked when profiling is enabled
-   */
-  profileAssertions?: ProfileAssertion[];
-}
-
-/**
- * Collection of scenarios for a sandbox
- * Can be either:
- * - A function (legacy format, no assertions)
- * - A Scenario object (with assertions)
- */
-export type Scenarios = Record<string, ScenarioFn | Scenario>;
-
-/**
- * Performance assertion for profile data
- */
-export interface ProfileAssertion {
-  type: "topHotspot" | "notInTopN" | "maxPercentage" | "maxSelfTime";
-  functionName?: string;
-  fileName?: string;
-  position?: number; // For topHotspot: expected position (0-indexed)
-  maxN?: number; // For notInTopN: ensure function is not in top N
-  maxPercentage?: number; // For maxPercentage: maximum allowed percentage
-  maxSelfTimeMs?: number; // For maxSelfTime: maximum allowed self time in ms
-}
-
-/**
- * Sandbox configuration
- */
-export interface SandboxConfig {
-  name: string;
-  description?: string;
-  render: () => TemplateResult;
-  setup?: (container: HTMLElement) => Promise<void> | void;
-  scenarios: Scenarios;
-}
-
-/**
- * Internal sandbox metadata with resolved file path
- */
-export interface Sandbox extends SandboxConfig {
-  filePath: string;
-  elementName: string; // Extracted from file name (e.g., "EFDial" from "EFDial.sandbox.ts")
-}
-
-/**
- * Helper to define a sandbox with type checking
- */
-export function defineSandbox(config: SandboxConfig): SandboxConfig {
-  return config;
-}
+// Re-export Assertion type from SandboxContext
+export { type Assertion } from "./SandboxContext.js";
 
 // Export React SandboxViewer component
 export { SandboxViewer } from "./SandboxViewer.js";
+
+// Export PlaybackControls component
+export { PlaybackControls } from "./PlaybackControls.js";
+export type { PlaybackControlsProps } from "./PlaybackControls.js";
+
+// Export shared scenario runner
+export { runScenario, runAllScenarios } from "./ScenarioRunner.js";

@@ -1,12 +1,77 @@
-import React, { useEffect, useState, useRef } from "react";
-import type { SandboxConfig, ScenarioResult } from "./index.js";
-import { SandboxContext } from "./SandboxContext.js";
+import React, { useEffect, useState, useRef, useCallback } from "react";
+import type { SandboxConfig, ScenarioResult, Assertion, Scenario, ScenarioType } from "./index.js";
+import { runScenario, runAllScenarios as runAllScenariosRunner } from "./ScenarioRunner.js";
 import type { TemplateResult } from "lit";
 import { render as litRender } from "lit";
+import { PlaybackControls } from "./PlaybackControls.js";
+import type { EFTimegroup } from "../elements/EFTimegroup.js";
 
 interface SandboxViewerProps {
   sandboxName: string;
   sandboxConfig: SandboxConfig | null;
+}
+
+/**
+ * Extract metadata from a scenario definition
+ */
+function getScenarioMeta(scenarios: SandboxConfig["scenarios"], name: string): {
+  description?: string;
+  type: ScenarioType;
+} {
+  const def = scenarios[name];
+  if (typeof def === "function") {
+    return { type: "scenario" };
+  }
+  return {
+    description: (def as Scenario).description,
+    type: (def as Scenario).type ?? "scenario",
+  };
+}
+
+/**
+ * Component to display assertions from a scenario run
+ */
+function AssertionsDisplay({ assertions }: { assertions: Assertion[] }) {
+  if (assertions.length === 0) return null;
+
+  const passedCount = assertions.filter(a => a.passed).length;
+  const failedCount = assertions.length - passedCount;
+
+  return (
+    <div style={{
+      marginTop: "4px",
+      padding: "4px 6px",
+      background: "#f8fafc",
+      borderRadius: "2px",
+      fontSize: "10px",
+    }}>
+      <div style={{
+        fontWeight: 500,
+        marginBottom: "4px",
+        color: failedCount > 0 ? "#991b1b" : "#065f46",
+      }}>
+        Assertions: {passedCount} passed{failedCount > 0 ? `, ${failedCount} failed` : ""}
+      </div>
+      <div style={{ maxHeight: "100px", overflowY: "auto" }}>
+        {assertions.map((assertion, i) => (
+          <div
+            key={i}
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: "4px",
+              marginBottom: "2px",
+              color: assertion.passed ? "#065f46" : "#991b1b",
+              fontFamily: "monospace",
+            }}
+          >
+            <span style={{ flexShrink: 0 }}>{assertion.passed ? "✓" : "✗"}</span>
+            <span style={{ wordBreak: "break-word" }}>{assertion.message}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export function SandboxViewer({ sandboxName, sandboxConfig }: SandboxViewerProps) {
@@ -14,16 +79,31 @@ export function SandboxViewer({ sandboxName, sandboxConfig }: SandboxViewerProps
   const [runningScenario, setRunningScenario] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
+  const [timegroup, setTimegroup] = useState<EFTimegroup | null>(null);
+  const [playbackMode, setPlaybackMode] = useState<"auto" | "step">("auto");
   const containerRef = useRef<HTMLDivElement>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
 
+  // Detect timegroup in preview container
+  const detectTimegroup = useCallback(() => {
+    if (!previewContainerRef.current) return;
+    
+    // Look for ef-timegroup elements
+    const timegroupElement = previewContainerRef.current.querySelector("ef-timegroup") as EFTimegroup | null;
+    setTimegroup(timegroupElement);
+  }, []);
+
   useEffect(() => {
-    if (sandboxConfig && previewContainerRef.current) {
+    // Don't render the sandbox template when scenarios are running
+    // Scenarios build their own DOM, and the template interferes with isolation
+    // The template is only for visual preview when not running scenarios
+    if (sandboxConfig && previewContainerRef.current && runningScenario === null) {
       // Render the sandbox template using Lit's render function into a container
       // React doesn't handle custom elements well, so we render into a div ref
       // and let Lit manage the DOM inside it
       const container = previewContainerRef.current;
       container.innerHTML = ""; // Clear previous content
+      setTimegroup(null); // Reset timegroup
       
       try {
         const templateResult = sandboxConfig.render();
@@ -36,30 +116,25 @@ export function SandboxViewer({ sandboxName, sandboxConfig }: SandboxViewerProps
           if (sandboxConfig.setup) {
             sandboxConfig.setup(container);
           }
+          
+          // Detect timegroup after render (with a small delay to allow custom elements to initialize)
+          requestAnimationFrame(() => {
+            detectTimegroup();
+          });
         }
       } catch (err) {
         console.error("Failed to render sandbox template:", err);
         setError(`Failed to render sandbox: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
-  }, [sandboxConfig]);
+  }, [sandboxConfig, runningScenario, detectTimegroup]);
 
-  const runScenario = async (scenarioName: string) => {
+  const runScenarioHandler = async (scenarioName: string) => {
     if (!sandboxConfig) return;
 
-    const scenarioDef = sandboxConfig.scenarios[scenarioName];
-    if (!scenarioDef) {
-      setError(`Scenario "${scenarioName}" not found`);
-      return;
-    }
-
-    // Extract scenario function - handle both function and Scenario object formats
-    const scenario = typeof scenarioDef === "function" 
-      ? scenarioDef 
-      : scenarioDef.run;
-
-    if (!scenario) {
-      setError(`Scenario "${scenarioName}" has no run function`);
+    const container = containerRef.current;
+    if (!container) {
+      setError("Container element not found");
       return;
     }
 
@@ -67,51 +142,88 @@ export function SandboxViewer({ sandboxName, sandboxConfig }: SandboxViewerProps
     setError(null);
     setLogs([]);
 
-    const startTime = performance.now();
-    const result: ScenarioResult = {
-      name: scenarioName,
-      status: "passed",
-      durationMs: 0,
-    };
-
     try {
-      const container = containerRef.current;
-      if (!container) {
-        throw new Error("Container element not found");
-      }
+      const result = await runScenario(
+        sandboxConfig,
+        scenarioName,
+        container,
+        {
+          onLog: (message) => {
+            setLogs((prev) => [...prev, message]);
+          },
+        }
+      );
 
-      const ctx = new SandboxContext(container, (log) => {
-        setLogs((prev) => [...prev, log]);
-      });
-
-      await scenario(ctx);
-
-      result.durationMs = performance.now() - startTime;
-      result.status = "passed";
-    } catch (err) {
-      result.durationMs = performance.now() - startTime;
-      result.status = "error";
-      result.error = {
-        message: err instanceof Error ? err.message : String(err),
-        stack: err instanceof Error ? err.stack : undefined,
-      };
-      setError(result.error.message);
-    } finally {
-      setRunningScenario(null);
       setScenarioResults((prev) => {
         const next = new Map(prev);
         next.set(scenarioName, result);
         return next;
       });
+
+      if (result.error) {
+        setError(result.error.message);
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(errorMessage);
+      const errorResult: ScenarioResult = {
+        name: scenarioName,
+        status: "error",
+        durationMs: 0,
+        error: {
+          message: errorMessage,
+          stack: err instanceof Error ? err.stack : undefined,
+        },
+      };
+      setScenarioResults((prev) => {
+        const next = new Map(prev);
+        next.set(scenarioName, errorResult);
+        return next;
+      });
+    } finally {
+      setRunningScenario(null);
     }
   };
 
-  const runAllScenarios = async () => {
+  const runAllScenariosHandler = async () => {
     if (!sandboxConfig) return;
 
-    const scenarioNames = Object.keys(sandboxConfig.scenarios);
-    for (const name of scenarioNames) {
-      await runScenario(name);
+    const container = containerRef.current;
+    if (!container) {
+      setError("Container element not found");
+      return;
+    }
+
+    setRunningScenario("__all__");
+    setError(null);
+    setLogs([]);
+
+    try {
+      const results = await runAllScenariosRunner(
+        sandboxConfig,
+        container,
+        {
+          onLog: (message) => {
+            setLogs((prev) => [...prev, message]);
+          },
+        }
+      );
+
+      const resultsMap = new Map<string, ScenarioResult>();
+      for (const result of results) {
+        resultsMap.set(result.name, result);
+      }
+      setScenarioResults(resultsMap);
+
+      const failedResults = results.filter(r => r.status === "failed" || r.status === "error");
+      if (failedResults.length > 0) {
+        setError(`${failedResults.length} scenario(s) failed`);
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(errorMessage);
+    } finally {
+      setRunningScenario(null);
     }
   };
 
@@ -120,6 +232,95 @@ export function SandboxViewer({ sandboxName, sandboxConfig }: SandboxViewerProps
   }
 
   const scenarioNames = Object.keys(sandboxConfig.scenarios);
+  
+  // Separate scenarios from validations
+  const mainScenarios = scenarioNames.filter(name => 
+    getScenarioMeta(sandboxConfig.scenarios, name).type === "scenario"
+  );
+  const validations = scenarioNames.filter(name => 
+    getScenarioMeta(sandboxConfig.scenarios, name).type === "validation"
+  );
+  
+  // State for collapsing validations section
+  const [validationsExpanded, setValidationsExpanded] = useState(false);
+
+  // Helper to render a single scenario card
+  const renderScenarioCard = (name: string) => {
+    const result = scenarioResults.get(name);
+    const isRunning = runningScenario === name;
+    const meta = getScenarioMeta(sandboxConfig.scenarios, name);
+    
+    return (
+      <div
+        key={name}
+        style={{
+          padding: "4px 6px",
+          marginBottom: "2px",
+          background: "white",
+          border: "1px solid #e5e7eb",
+          borderRadius: "2px",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "2px" }}>
+          <span style={{ fontWeight: 500, fontSize: "11px" }}>{name}</span>
+          {result && (
+            <span
+              style={{
+                fontSize: "10px",
+                padding: "1px 4px",
+                borderRadius: "2px",
+                background:
+                  result.status === "passed"
+                    ? "#d1fae5"
+                    : result.status === "failed"
+                    ? "#fee2e2"
+                    : "#fef3c7",
+                color:
+                  result.status === "passed"
+                    ? "#065f46"
+                    : result.status === "failed"
+                    ? "#991b1b"
+                    : "#92400e",
+              }}
+            >
+              {result.status === "passed" ? "✓" : result.status === "failed" ? "✗" : "⚠"}
+            </span>
+          )}
+        </div>
+        {meta.description && (
+          <div style={{ fontSize: "10px", color: "#6b7280", marginBottom: "4px", fontStyle: "italic" }}>
+            {meta.description}
+          </div>
+        )}
+        {result && (
+          <div style={{ fontSize: "10px", color: "#6b7280", marginBottom: "2px" }}>
+            {result.durationMs.toFixed(2)}ms
+          </div>
+        )}
+        {result?.assertions && result.assertions.length > 0 && (
+          <AssertionsDisplay assertions={result.assertions} />
+        )}
+        <button
+          onClick={() => runScenarioHandler(name)}
+          disabled={isRunning}
+          style={{
+            width: "100%",
+            padding: "3px",
+            marginTop: result?.assertions?.length ? "4px" : "0",
+            background: "#3b82f6",
+            color: "white",
+            border: "none",
+            borderRadius: "2px",
+            cursor: isRunning ? "not-allowed" : "pointer",
+            opacity: isRunning ? 0.5 : 1,
+            fontSize: "10px",
+          }}
+        >
+          {isRunning ? "Running..." : "Run"}
+        </button>
+      </div>
+    );
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", fontFamily: "system-ui, -apple-system, sans-serif" }}>
@@ -148,9 +349,9 @@ export function SandboxViewer({ sandboxName, sandboxConfig }: SandboxViewerProps
         </div>
 
         {/* Scenarios panel */}
-        <div style={{ width: "250px", display: "flex", flexDirection: "column", background: "#f9fafb" }}>
+        <div style={{ width: "280px", display: "flex", flexDirection: "column", background: "#f9fafb" }}>
           <div style={{ padding: "4px 6px", borderBottom: "1px solid #e5e7eb", fontWeight: 600, fontSize: "11px" }}>
-            Scenarios
+            Scenarios ({mainScenarios.length}){validations.length > 0 && ` + ${validations.length} validations`}
           </div>
           <div style={{ flex: 1, overflow: "auto", padding: "6px 8px" }}>
             {scenarioNames.length === 0 ? (
@@ -160,7 +361,7 @@ export function SandboxViewer({ sandboxName, sandboxConfig }: SandboxViewerProps
             ) : (
               <>
                 <button
-                  onClick={runAllScenarios}
+                  onClick={runAllScenariosHandler}
                   disabled={runningScenario !== null}
                   style={{
                     width: "100%",
@@ -177,76 +378,54 @@ export function SandboxViewer({ sandboxName, sandboxConfig }: SandboxViewerProps
                 >
                   Run All
                 </button>
-                {scenarioNames.map((name) => {
-                  const result = scenarioResults.get(name);
-                  const isRunning = runningScenario === name;
-                  return (
-                    <div
-                      key={name}
+                
+                {/* Main scenarios */}
+                {mainScenarios.map(renderScenarioCard)}
+                
+                {/* Validations section (collapsible) */}
+                {validations.length > 0 && (
+                  <div style={{ marginTop: "8px" }}>
+                    <button
+                      onClick={() => setValidationsExpanded(!validationsExpanded)}
                       style={{
+                        width: "100%",
                         padding: "4px 6px",
-                        marginBottom: "2px",
-                        background: "white",
+                        background: "#f3f4f6",
                         border: "1px solid #e5e7eb",
                         borderRadius: "2px",
+                        cursor: "pointer",
+                        fontSize: "10px",
+                        fontWeight: 500,
+                        color: "#6b7280",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
                       }}
                     >
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "2px" }}>
-                        <span style={{ fontWeight: 500, fontSize: "11px" }}>{name}</span>
-                        {result && (
-                          <span
-                            style={{
-                              fontSize: "10px",
-                              padding: "1px 4px",
-                              borderRadius: "2px",
-                              background:
-                                result.status === "passed"
-                                  ? "#d1fae5"
-                                  : result.status === "failed"
-                                  ? "#fee2e2"
-                                  : "#fef3c7",
-                              color:
-                                result.status === "passed"
-                                  ? "#065f46"
-                                  : result.status === "failed"
-                                  ? "#991b1b"
-                                  : "#92400e",
-                            }}
-                          >
-                            {result.status === "passed" ? "✓" : result.status === "failed" ? "✗" : "⚠"}
-                          </span>
-                        )}
+                      <span>Validations ({validations.length})</span>
+                      <span>{validationsExpanded ? "▼" : "▶"}</span>
+                    </button>
+                    {validationsExpanded && (
+                      <div style={{ marginTop: "4px" }}>
+                        {validations.map(renderScenarioCard)}
                       </div>
-                      {result && (
-                        <div style={{ fontSize: "10px", color: "#6b7280", marginBottom: "2px" }}>
-                          {result.durationMs.toFixed(2)}ms
-                        </div>
-                      )}
-                      <button
-                        onClick={() => runScenario(name)}
-                        disabled={isRunning}
-                        style={{
-                          width: "100%",
-                          padding: "3px",
-                          background: "#3b82f6",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "2px",
-                          cursor: isRunning ? "not-allowed" : "pointer",
-                          opacity: isRunning ? 0.5 : 1,
-                          fontSize: "10px",
-                        }}
-                      >
-                        {isRunning ? "Running..." : "Run"}
-                      </button>
-                    </div>
-                  );
-                })}
+                    )}
+                  </div>
+                )}
               </>
             )}
           </div>
         </div>
       </div>
+
+      {/* Playback Controls - show when timegroup is detected */}
+      {timegroup && (
+        <PlaybackControls
+          timegroup={timegroup}
+          mode={playbackMode}
+          onModeChange={setPlaybackMode}
+        />
+      )}
 
       {/* Error panel */}
       {error && (
