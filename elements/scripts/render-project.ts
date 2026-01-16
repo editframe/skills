@@ -111,14 +111,9 @@ async function main() {
   });
 
   try {
-    // Navigate to dev project - disable workbench wrapping
+    // Navigate to dev project
     const devUrl = `http://main.localhost:4321/${project}`;
     console.log(`📄 Loading ${devUrl}...`);
-    
-    // Disable workbench wrapping before page loads
-    await page.addInitScript(() => {
-      (globalThis as any).EF_DEV_WORKBENCH = false;
-    });
     
     await page.goto(devUrl, { waitUntil: "networkidle", timeout: 60000 });
 
