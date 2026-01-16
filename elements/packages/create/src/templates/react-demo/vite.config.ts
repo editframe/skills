@@ -5,9 +5,6 @@ import { defineConfig } from "vite";
 import { viteSingleFile } from "vite-plugin-singlefile";
 
 export default defineConfig({
-  define: {
-    "globalThis.EF_DEV_WORKBENCH": "true",
-  },
   plugins: [
     vitePluginEditframe({
       root: path.join(__dirname, "src"),
