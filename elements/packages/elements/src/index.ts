@@ -92,6 +92,20 @@ export type {
 } from "./gui/hierarchy/hierarchyContext.js";
 export { hierarchyContext } from "./gui/hierarchy/hierarchyContext.js";
 
+// Generic tree component
+import "./gui/tree/EFTree.js";
+import "./gui/tree/EFTreeItem.js";
+
+export { EFTree } from "./gui/tree/EFTree.js";
+export { EFTreeItem } from "./gui/tree/EFTreeItem.js";
+export type {
+  TreeItem,
+  TreeState,
+  TreeActions,
+  TreeContext,
+} from "./gui/tree/treeContext.js";
+export { treeContext, collectAllIds } from "./gui/tree/treeContext.js";
+
 import "./gui/EFTogglePlay.js";
 
 export { EFTogglePlay } from "./gui/EFTogglePlay.js";
