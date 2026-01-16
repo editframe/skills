@@ -15,9 +15,9 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
-import { discoverSandboxes, loadSandbox } from "../sandbox-server/discover.js";
+import { discoverSandboxes, loadSandbox, buildSandboxGraph } from "../sandbox-server/discover.js";
 import type { Sandbox, ScenarioResult } from "../packages/elements/src/sandbox/index.js";
-import { SandboxContext } from "../packages/elements/src/sandbox/SandboxContext.js";
+// Note: SandboxContext is no longer directly imported - we use ScenarioRunner instead
 import { render as litRender } from "lit";
 import * as http from "node:http";
 import * as os from "node:os";
@@ -740,15 +740,83 @@ interface ProfileAssertionResult {
 async function listSandboxes(): Promise<void> {
   const elementsRoot = findElementsRoot();
   const sandboxes = discoverSandboxes(elementsRoot);
-  
+
   console.log("\n📦 Element Sandboxes:\n");
   if (sandboxes.length === 0) {
     console.log("  No sandboxes found");
     return;
   }
-  
+
   for (const sandbox of sandboxes) {
     console.log(`  • ${sandbox.elementName}`);
+  }
+  console.log();
+}
+
+async function showRelated(sandboxName?: string): Promise<void> {
+  const elementsRoot = findElementsRoot();
+  const { sandboxes, relationships } = buildSandboxGraph(elementsRoot);
+  
+  if (!sandboxName) {
+    // Show all relationships
+    console.log("\n📊 Sandbox Relationships:\n");
+    
+    for (const sandbox of sandboxes) {
+      const rel = relationships[sandbox.elementName];
+      if (!rel) continue;
+      
+      const hasRelations = rel.uses.length > 0 || rel.usedBy.length > 0;
+      if (!hasRelations) continue;
+      
+      console.log(`${sandbox.elementName}`);
+      if (rel.elementTag) {
+        console.log(`  tag: ${rel.elementTag}`);
+      }
+      if (rel.uses.length > 0) {
+        console.log(`  uses: ${rel.uses.join(", ")}`);
+      }
+      if (rel.usedBy.length > 0) {
+        console.log(`  used by: ${rel.usedBy.join(", ")}`);
+      }
+      console.log();
+    }
+    return;
+  }
+  
+  // Show specific sandbox relationships
+  const rel = relationships[sandboxName];
+  if (!rel) {
+    console.error(`\n❌ Sandbox "${sandboxName}" not found\n`);
+    console.log("Available sandboxes:");
+    for (const sandbox of sandboxes) {
+      console.log(`  • ${sandbox.elementName}`);
+    }
+    process.exit(1);
+  }
+  
+  console.log(`\n${sandboxName}`);
+  if (rel.elementTag) {
+    console.log(`  tag: ${rel.elementTag}`);
+  }
+  console.log();
+  
+  if (rel.uses.length > 0) {
+    console.log("Uses:");
+    for (const name of rel.uses) {
+      console.log(`  • ${name}`);
+    }
+  } else {
+    console.log("Uses: (none)");
+  }
+  console.log();
+  
+  if (rel.usedBy.length > 0) {
+    console.log("Used by:");
+    for (const name of rel.usedBy) {
+      console.log(`  • ${name}`);
+    }
+  } else {
+    console.log("Used by: (none)");
   }
   console.log();
 }
@@ -1693,114 +1761,274 @@ async function runSandboxScenarios(
       try {
         // Run scenario directly in the browser by importing the sandbox module
         // and executing the scenario function
-        await page.evaluate(
+        // Wrap in try-catch inside evaluate to ensure errors are properly captured
+        let evaluateResult: any;
+        try {
+          evaluateResult = await page.evaluate(
           async ({ scenarioName, sandboxName }) => {
-            // Mark that scenarios are running
-            (window as any).__scenariosRunning = true;
-            // Import the sandbox module to get the scenario function
-            const response = await fetch(`/_sandbox/api/${sandboxName}/config`);
-            const data = await response.json();
+            // Set up error tracking to catch async errors
+            let scenarioError: { message: string; stack?: string } | null = null;
+            const originalErrorHandler = window.onerror;
+            const originalUnhandledRejection = window.onunhandledrejection;
             
-            // Import the sandbox module
-            let importPath = data.filePath;
-            if (importPath.startsWith("@editframe/elements/")) {
-              const relativePath = importPath.replace("@editframe/elements/", "");
-              importPath = `/packages/packages/elements/src/${relativePath}`;
-            }
+            // Track unhandled errors and promise rejections
+            window.onerror = (message, source, lineno, colno, error) => {
+              scenarioError = {
+                message: error?.message || String(message),
+                stack: error?.stack || `${source}:${lineno}:${colno}`,
+              };
+              return false; // Don't prevent default handling
+            };
             
-            const module = await import(importPath);
-            const config = module.default || module;
-            const scenarioDef = config.scenarios[scenarioName];
+            window.onunhandledrejection = (event: any) => {
+              const reason = event.reason;
+              scenarioError = {
+                message: reason?.message || String(reason),
+                stack: reason?.stack,
+              };
+            };
             
-            if (!scenarioDef) {
-              throw new Error(`Scenario "${scenarioName}" not found`);
-            }
-            
-            // Extract scenario function - handle both function and Scenario object formats
-            const scenario = typeof scenarioDef === "function" 
-              ? scenarioDef 
-              : scenarioDef.run;
-            
-            if (!scenario) {
-              throw new Error(`Scenario "${scenarioName}" has no run function`);
-            }
-            
-            // Import SandboxContext using the actual file path
-            // Vite can resolve this from the scenario-viewer page context
-            const { SandboxContext } = await import(
-              "/packages/packages/elements/src/sandbox/SandboxContext.js"
-            );
-            
-            const container = document.getElementById("sandbox-container");
-            if (!container) throw new Error("Container not found");
-            
-            // Clear container - scenarios will populate it themselves
-            // Note: We don't render the sandbox's template (config.render) for CLI tests.
-            // The template is for visual preview in the sandbox viewer.
-            // Scenarios build their own DOM for precise test control.
-            container.innerHTML = "";
-            
-            // Run sandbox setup if provided (setup runs before scenarios, template doesn't)
-            if (config.setup) {
-              await config.setup(container);
-            }
-            
-            // Wait for custom elements to be defined and connected
-            await new Promise(resolve => {
-              requestAnimationFrame(() => {
-                requestAnimationFrame(resolve);
-              });
-            });
-            
-            // Additional wait to ensure elements are fully initialized
-            await new Promise(resolve => setTimeout(resolve, 100));
-            
-            const ctx = new SandboxContext(container as HTMLElement);
-            
-            // Execute the scenario function
-            await scenario(ctx);
-            
-            // Clean up: Remove all custom elements to trigger disconnectedCallback
-            // This removes document-level event listeners
-            const customElements = container.querySelectorAll("*");
-            customElements.forEach(el => {
-              if (el.tagName.includes("-")) {
-                el.remove();
+            try {
+              // Mark that scenarios are running
+              (window as any).__scenariosRunning = true;
+              // Import the sandbox module to get the scenario function
+              const response = await fetch(`/_sandbox/api/${sandboxName}/config`);
+              const data = await response.json();
+              
+              // Use the glob-loaded sandbox loader (exposed by scenario-runner/main.ts)
+              // This uses import.meta.glob which Vite can statically analyze
+              const loadSandboxByPath = (window as any).__loadSandboxByPath;
+              if (!loadSandboxByPath) {
+                throw new Error("__loadSandboxByPath not available - scenario-runner may not be loaded");
               }
-            });
-            
-            // Wait for cleanup to complete (event listeners removed, etc.)
-            await new Promise(resolve => {
-              requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                  // Additional small delay to ensure all cleanup is done
-                  setTimeout(resolve, 50);
-                });
-              });
-            });
+              
+              const config = await loadSandboxByPath(data.filePath);
+              const scenarioDef = config.scenarios[scenarioName];
+              
+              if (!scenarioDef) {
+                throw new Error(`Scenario "${scenarioName}" not found`);
+              }
+              
+              // Extract scenario function - handle both function and Scenario object formats
+              const scenario = typeof scenarioDef === "function" 
+                ? scenarioDef 
+                : scenarioDef.run;
+              
+              if (!scenario) {
+                throw new Error(`Scenario "${scenarioName}" has no run function`);
+              }
+              
+              // Use the globally exposed runScenario from scenario-runner/main.ts
+              // This avoids issues with dynamic imports in page.evaluate() context
+              const runScenario = (window as any).__runScenario;
+              if (!runScenario) {
+                throw new Error("__runScenario not available - scenario-runner may not be loaded");
+              }
+              
+              const container = document.getElementById("sandbox-container");
+              if (!container) throw new Error("Container not found");
+              
+              // Use shared runner for consistent execution logic
+              // The runner handles container clearing, setup, DOM synchronization, and error handling
+              const result = await runScenario(
+                config,
+                scenarioName,
+                container as HTMLElement
+              );
+              
+              // Restore original error handlers
+              window.onerror = originalErrorHandler;
+              window.onunhandledrejection = originalUnhandledRejection;
+              
+              // Return result based on scenario execution
+              if (result.status === "failed" || result.status === "error") {
+                return {
+                  success: false,
+                  error: result.error || { message: "Scenario failed" },
+                };
+              }
+              
+              return {
+                success: true,
+              };
+            } catch (err) {
+              // Restore original error handlers
+              window.onerror = originalErrorHandler;
+              window.onunhandledrejection = originalUnhandledRejection;
+              
+              const error = err instanceof Error ? err : new Error(String(err));
+              
+              // Prefer the caught error (from scenario execution) over scenarioError (from error handlers)
+              // But if scenarioError has more details, use that
+              const errorToReturn = (scenarioError && scenarioError.message === error.message) 
+                ? scenarioError 
+                : {
+                    message: error.message,
+                    stack: error.stack || scenarioError?.stack,
+                  };
+              
+              // CRITICAL: Always return error object, never throw or return undefined
+              // This ensures Playwright can serialize the error properly
+              return {
+                success: false,
+                error: errorToReturn,
+              };
+            }
           },
           {
             scenarioName,
             sandboxName: sandboxInfo.elementName,
           },
-        );
+          );
+        } catch (evalError) {
+          // If page.evaluate() throws, it means the evaluated function threw an error
+          // Playwright serializes errors, so we need to extract the actual error message
+          const durationMs = Date.now() - startTime;
+          const error = evalError instanceof Error ? evalError : new Error(String(evalError));
+          
+          // Try to extract the actual error message from Playwright's error
+          // Playwright errors often have the actual error in the message
+          let errorMessage = error.message;
+          let errorStack = error.stack;
+          
+          // Playwright may wrap errors, so try to extract the actual error message
+          // Common patterns:
+          // - "Error: Expected false to be true"
+          // - "Evaluation failed: Error: Expected false to be true"
+          // - The error message might be in the stack trace
+          if (errorMessage.includes("Error:")) {
+            const match = errorMessage.match(/Error:\s*(.+?)(?:\n|$)/);
+            if (match) {
+              errorMessage = match[1].trim();
+            }
+          }
+          
+          // Also check the stack trace for the actual error message
+          if (errorStack && errorStack.includes("Expected")) {
+            const stackMatch = errorStack.match(/Expected[^\n]+/);
+            if (stackMatch) {
+              errorMessage = stackMatch[0];
+            }
+          }
+          
+          result = {
+            name: scenarioName,
+            status: "failed",
+            durationMs,
+            error: {
+              message: errorMessage,
+              stack: errorStack,
+            },
+          };
+          
+          // Skip the rest of the result processing
+          sessionData.tests.push(result);
+          results.push(result);
+          currentTestName = null;
+          continue;
+        }
+        
+        // If evaluateResult is undefined/null, page.evaluate() may have returned undefined
+        // This shouldn't happen, but handle it just in case
+        if (evaluateResult === undefined || evaluateResult === null) {
+          const durationMs = Date.now() - startTime;
+          result = {
+            name: scenarioName,
+            status: "error",
+            durationMs,
+            error: {
+              message: "Scenario evaluation returned undefined/null - possible error during execution",
+            },
+          };
+          sessionData.tests.push(result);
+          results.push(result);
+          currentTestName = null;
+          continue;
+        }
         
         const durationMs = Date.now() - startTime;
-        result = {
-          name: scenarioName,
-          status: "passed",
-          durationMs,
-        };
+        
+        // Check if the evaluation returned an error
+        // evaluateResult should be an object with { success: boolean, error?: {...} }
+        // If evaluateResult is undefined/null, page.evaluate() may have thrown (caught above)
+        if (!evaluateResult) {
+          // This shouldn't happen if page.evaluate() completed successfully
+          // But handle it just in case
+          result = {
+            name: scenarioName,
+            status: "error",
+            durationMs,
+            error: {
+              message: "Scenario evaluation returned no result",
+            },
+          };
+        } else if (typeof evaluateResult === "object" && "success" in evaluateResult) {
+          if (!evaluateResult.success && "error" in evaluateResult) {
+            // Scenario failed with an error
+            const errorInfo = (evaluateResult as { error: { message: string; stack?: string } }).error;
+            result = {
+              name: scenarioName,
+              status: "failed",
+              durationMs,
+              error: errorInfo,
+            };
+          } else if (evaluateResult.success) {
+            // Scenario passed
+            result = {
+              name: scenarioName,
+              status: "passed",
+              durationMs,
+            };
+          } else {
+            // success is false but no error object - this shouldn't happen but handle it
+            result = {
+              name: scenarioName,
+              status: "failed",
+              durationMs,
+              error: {
+                message: "Scenario failed but no error details provided",
+              },
+            };
+          }
+        } else {
+          // Unexpected result format - treat as error
+          result = {
+            name: scenarioName,
+            status: "error",
+            durationMs,
+            error: {
+              message: `Unexpected result format from scenario evaluation: ${JSON.stringify(evaluateResult)}`,
+            },
+          };
+        }
       } catch (err) {
+        // This catch block handles errors thrown by page.evaluate() itself
+        // (e.g., if the evaluated function throws and Playwright serializes it)
         const durationMs = Date.now() - startTime;
         const error = err instanceof Error ? err : new Error(String(err));
+        
+        // Check if this is a Playwright error that contains the actual error message
+        // Playwright wraps errors, so we need to extract the actual error message
+        let errorMessage = error.message;
+        let errorStack = error.stack;
+        
+        // Try to extract the actual error from Playwright's error message
+        // Playwright errors often contain the actual error message in the message
+        if (errorMessage.includes("Error:")) {
+          // The actual error message might be embedded in Playwright's error
+          const match = errorMessage.match(/Error:\s*(.+)/);
+          if (match) {
+            errorMessage = match[1];
+          }
+        }
+        
         result = {
           name: scenarioName,
-          status: "error",
+          status: "failed", // Changed from "error" to "failed" to match browser behavior
           durationMs,
           error: {
-            message: error.message,
-            stack: error.stack,
+            message: errorMessage,
+            stack: errorStack,
           },
         };
       } finally {
@@ -1982,6 +2210,226 @@ async function runSandboxScenarios(
   }
   
   return results;
+}
+
+interface ScreenshotOptions {
+  sandboxName: string;
+  scenarioName?: string;
+  outputPath?: string;
+  width?: number;
+  height?: number;
+}
+
+async function screenshotSandbox(options: ScreenshotOptions): Promise<void> {
+  const elementsRoot = findElementsRoot();
+  const sandboxes = discoverSandboxes(elementsRoot);
+  const sandbox = sandboxes.find((s) => s.elementName === options.sandboxName);
+  
+  if (!sandbox) {
+    console.error(`\n❌ Sandbox "${options.sandboxName}" not found\n`);
+    process.exit(1);
+  }
+  
+  // Get browser connection (similar to runScenarios)
+  let browser: Browser;
+  let shouldCloseBrowser = false;
+  
+  const wsEndpoint = process.env.WS_ENDPOINT;
+  if (wsEndpoint) {
+    try {
+      browser = await chromium.connect(wsEndpoint);
+    } catch (err) {
+      console.warn(`Failed to connect to browser server: ${err instanceof Error ? err.message : String(err)}`);
+      browser = await chromium.launch({
+        headless: true,
+        channel: "chrome",
+      });
+      shouldCloseBrowser = true;
+    }
+  } else {
+    const monorepoRoot = findMonorepoRoot();
+    const possiblePaths = [
+      monorepoRoot ? path.join(monorepoRoot, ".wsEndpoint.json") : null,
+      path.join(elementsRoot, ".wsEndpoint.json"),
+      "/.wsEndpoint.json",
+    ].filter((p): p is string => p !== null);
+    
+    let wsEndpointPath: string | null = null;
+    for (const possiblePath of possiblePaths) {
+      if (fs.existsSync(possiblePath)) {
+        wsEndpointPath = possiblePath;
+        break;
+      }
+    }
+    
+    if (wsEndpointPath) {
+      try {
+        const { wsEndpoint: endpoint } = JSON.parse(fs.readFileSync(wsEndpointPath, "utf-8"));
+        browser = await chromium.connect(endpoint);
+      } catch (err) {
+        browser = await chromium.launch({
+          headless: true,
+          channel: "chrome",
+        });
+        shouldCloseBrowser = true;
+      }
+    } else {
+      browser = await chromium.launch({
+        headless: true,
+        channel: "chrome",
+      });
+      shouldCloseBrowser = true;
+    }
+  }
+  
+  const context = await browser.newContext({
+    viewport: options.width && options.height 
+      ? { width: options.width, height: options.height }
+      : null,
+  });
+  const page = await context.newPage();
+  
+  try {
+    // Navigate to scenario-runner.html
+    const worktreeDomain = process.env.WORKTREE_DOMAIN || "main.localhost";
+    const devServerUrl = `http://${worktreeDomain}:4321`;
+    
+    await page.goto(`${devServerUrl}/scenario-runner.html?sandbox=${sandbox.elementName}`, {
+      waitUntil: "load",
+      timeout: 30000,
+    });
+    
+    // Wait for container to exist
+    await page.waitForFunction(() => {
+      return document.getElementById("sandbox-container") !== null;
+    }, { timeout: 5000 });
+    
+    // Wait for track components to load
+    await page.waitForFunction(() => {
+      return (window as any).__trackComponentsLoaded || (window as any).__trackComponentsLoadError;
+    }, { timeout: 10000 }).catch(() => {});
+    
+    const preloadStatus = await page.evaluate(() => {
+      return {
+        loaded: (window as any).__trackComponentsLoaded,
+        error: (window as any).__trackComponentsLoadError,
+      };
+    });
+    
+    if (preloadStatus.error) {
+      throw new Error(`Track components preload failed: ${preloadStatus.error}`);
+    }
+    
+    // Load the sandbox config and store it
+    await page.evaluate(async ({ sandboxName }) => {
+      const loadSandbox = (window as any).__loadSandbox;
+      if (!loadSandbox) {
+        throw new Error("__loadSandbox not available");
+      }
+      
+      const config = await loadSandbox(sandboxName);
+      (window as any).__sandboxConfig = config;
+    }, { sandboxName: sandbox.elementName });
+    
+    // If a scenario is specified, run it first
+    if (options.scenarioName) {
+      const scenarioExists = await page.evaluate(({ scenarioName }) => {
+        const config = (window as any).__sandboxConfig;
+        return config && config.scenarios && scenarioName in config.scenarios;
+      }, { scenarioName: options.scenarioName });
+      
+      if (!scenarioExists) {
+        throw new Error(`Scenario "${options.scenarioName}" not found in sandbox "${sandbox.elementName}"`);
+      }
+      
+      // Run the scenario
+      const scenarioResult = await page.evaluate(async ({ scenarioName }) => {
+        const runScenario = (window as any).__runScenario;
+        if (!runScenario) {
+          throw new Error("__runScenario not available");
+        }
+        
+        const config = (window as any).__sandboxConfig;
+        const container = document.getElementById("sandbox-container");
+        if (!container) {
+          throw new Error("sandbox-container not found");
+        }
+        
+        const result = await runScenario(config, scenarioName, container);
+        return result;
+      }, { scenarioName: options.scenarioName });
+      
+      if (scenarioResult && (scenarioResult.status === "failed" || scenarioResult.status === "error")) {
+        const errorMsg = scenarioResult.error?.message || "Scenario failed";
+        throw new Error(`Scenario "${options.scenarioName}" failed: ${errorMsg}`);
+      }
+      
+      // Wait for scenario to complete and DOM to settle
+      await page.waitForTimeout(500);
+      await page.waitForLoadState("networkidle").catch(() => {});
+    } else {
+      // Render the default template
+      await page.evaluate(async () => {
+        const litRender = (window as any).__litRender;
+        if (!litRender) {
+          throw new Error("__litRender not available");
+        }
+        
+        const config = (window as any).__sandboxConfig;
+        const container = document.getElementById("sandbox-container");
+        if (!container) {
+          throw new Error("sandbox-container not found");
+        }
+        
+        // Render the template
+        const templateResult = config.render();
+        litRender(templateResult, container);
+        
+        // Run setup if provided
+        if (config.setup) {
+          await config.setup(container);
+        }
+      });
+      
+      // Wait for rendering to complete
+      await page.waitForTimeout(500);
+      await page.waitForLoadState("networkidle").catch(() => {});
+    }
+    
+    // Generate output path
+    let outputPath = options.outputPath;
+    if (!outputPath) {
+      const screenshotsDir = path.join(elementsRoot, ".ef-screenshots");
+      if (!fs.existsSync(screenshotsDir)) {
+        fs.mkdirSync(screenshotsDir, { recursive: true });
+      }
+      
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, -5);
+      const scenarioSuffix = options.scenarioName 
+        ? `-${options.scenarioName.replace(/[^a-zA-Z0-9]/g, "_")}`
+        : "";
+      const filename = `${sandbox.elementName}${scenarioSuffix}-${timestamp}.png`;
+      outputPath = path.join(screenshotsDir, filename);
+    }
+    
+    // Ensure output directory exists
+    const outputDir = path.dirname(outputPath);
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
+    }
+    
+    // Take screenshot of the container element
+    const container = page.locator("#sandbox-container");
+    await container.screenshot({ path: outputPath });
+    
+    console.log(`\n✅ Screenshot saved: ${outputPath}\n`);
+  } finally {
+    await page.close();
+    await context.close();
+    if (shouldCloseBrowser) {
+      await browser.close();
+    }
+  }
 }
 
 async function profileScenario(
@@ -3456,9 +3904,11 @@ Usage:
 
 Commands:
   list                          List all sandboxes
+  related [name]                Show sandbox relationships (uses/usedBy)
   open [name]                   Open scenario viewer in browser (optionally with specific sandbox)
   run [name] [options]          Run scenarios as tests
   profile <name> [options]      Profile a scenario
+  screenshot <name> [options]    Capture screenshot of sandbox/scenario (chrome-free)
   info <subcommand> [options]   Query test session data (progressive discovery)
   
 Info Subcommands:
@@ -3479,6 +3929,12 @@ Options:
                                   Options: maxDurationIncreaseMs, maxDurationIncreasePercent,
                                            maxHotspotIncreaseMs, maxHotspotIncreasePercent
 
+Screenshot Options:
+  --scenario <name>             Run specific scenario before capturing screenshot
+  --output <path>               Output file path (default: .ef-screenshots/<sandbox>[-<scenario>]-<timestamp>.png)
+  --width <px>                  Viewport width (default: auto)
+  --height <px>                 Viewport height (default: auto)
+
 Examples:
   ${SCRIPT_NAME} list
   ${SCRIPT_NAME} open                # Open scenario viewer with all sandboxes
@@ -3488,6 +3944,9 @@ Examples:
   ${SCRIPT_NAME} run EFDial --profile                      # Run with profiling
   ${SCRIPT_NAME} run --profile                             # Profile all sandboxes (CI mode)
   ${SCRIPT_NAME} profile EFDial --scenario "rotates through full circle"
+  ${SCRIPT_NAME} screenshot CompactnessScene               # Screenshot default template
+  ${SCRIPT_NAME} screenshot CompactnessScene --scenario "renders with timegroup"  # Screenshot after scenario
+  ${SCRIPT_NAME} screenshot CompactnessScene --output ./screenshot.png --width 800 --height 600
   
 Info Command (Progressive Discovery):
   ${SCRIPT_NAME} info summary --session <id>              # Session overview
@@ -3506,6 +3965,12 @@ Info Command (Progressive Discovery):
   
   if (command === "list" || !command) {
     await listSandboxes();
+    process.exit(0);
+  }
+  
+  if (command === "related") {
+    const sandboxName = args[1];
+    await showRelated(sandboxName);
     process.exit(0);
   }
   
@@ -3598,8 +4063,45 @@ Info Command (Progressive Discovery):
     process.exit(0);
   }
   
+  if (command === "screenshot") {
+    const screenshotOptions: ScreenshotOptions = {
+      sandboxName: "",
+    };
+    
+    let i = 1;
+    while (i < args.length) {
+      if (args[i] === "--scenario" && args[i + 1]) {
+        screenshotOptions.scenarioName = args[i + 1];
+        i += 2;
+      } else if (args[i] === "--output" && args[i + 1]) {
+        screenshotOptions.outputPath = args[i + 1];
+        i += 2;
+      } else if (args[i] === "--width" && args[i + 1]) {
+        screenshotOptions.width = parseInt(args[i + 1], 10);
+        i += 2;
+      } else if (args[i] === "--height" && args[i + 1]) {
+        screenshotOptions.height = parseInt(args[i + 1], 10);
+        i += 2;
+      } else if (!screenshotOptions.sandboxName && !args[i].startsWith("--")) {
+        screenshotOptions.sandboxName = args[i];
+        i++;
+      } else {
+        i++;
+      }
+    }
+    
+    if (!screenshotOptions.sandboxName) {
+      console.error(`Error: sandbox name is required`);
+      console.error(`Usage: ${SCRIPT_NAME} screenshot <sandbox-name> [--scenario <name>] [--output <path>] [--width <px>] [--height <px>]`);
+      process.exit(1);
+    }
+    
+    await screenshotSandbox(screenshotOptions);
+    process.exit(0);
+  }
+  
   console.error(`Unknown command: ${command}`);
-  console.error(`Usage: ${SCRIPT_NAME} [list|open|run|profile|info]`);
+  console.error(`Usage: ${SCRIPT_NAME} [list|open|run|profile|info|screenshot]`);
   process.exit(1);
 }
 
