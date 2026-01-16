@@ -52,6 +52,7 @@ const CardSegment = ({ title, id }: CardInfo) => {
 export const Video = () => {
   return (
     <Timegroup
+      workbench
       className="w-[500px] h-[500px] bg-slate-200 flex items-center justify-center relative overflow-hidden"
       mode="sequence"
     >
