@@ -1,12 +1,43 @@
 /**
+ * A recorded assertion from a scenario run
+ */
+export interface Assertion {
+  /** Whether the assertion passed */
+  passed: boolean;
+  /** Human-readable description of what was asserted */
+  message: string;
+  /** The actual value that was tested */
+  actual?: unknown;
+  /** The expected value (if applicable) */
+  expected?: unknown;
+}
+
+/**
  * Runtime context provided to scenario functions
  */
 export class SandboxContext {
   private container: HTMLElement;
   private logs: string[] = [];
+  private assertions: Assertion[] = [];
+  private onLog?: (message: string) => void;
 
-  constructor(container: HTMLElement) {
+  constructor(container: HTMLElement, onLog?: (message: string) => void) {
     this.container = container;
+    this.onLog = onLog;
+  }
+
+  /**
+   * Record an assertion (called internally by ExpectMatcher)
+   */
+  recordAssertion(assertion: Assertion): void {
+    this.assertions.push(assertion);
+  }
+
+  /**
+   * Get all recorded assertions
+   */
+  getAssertions(): readonly Assertion[] {
+    return this.assertions;
   }
 
   /**
@@ -153,6 +184,9 @@ export class SandboxContext {
   log(message: string): void {
     this.logs.push(message);
     console.log(`[Sandbox] ${message}`);
+    if (this.onLog) {
+      this.onLog(message);
+    }
   }
 
   /**
@@ -175,16 +209,25 @@ export class SandboxContext {
  */
 class ExpectMatcher<T> {
   private actual: T;
+  private ctx: SandboxContext;
 
-  constructor(actual: T, _ctx: SandboxContext) {
+  constructor(actual: T, ctx: SandboxContext) {
     this.actual = actual;
+    this.ctx = ctx;
   }
 
   /**
    * Assert strict equality
    */
   toBe(expected: T): void {
-    if (this.actual !== expected) {
+    const passed = this.actual === expected;
+    this.ctx.recordAssertion({
+      passed,
+      message: `${this.stringify(this.actual)} to be ${this.stringify(expected)}`,
+      actual: this.actual,
+      expected,
+    });
+    if (!passed) {
       throw new Error(
         `Expected ${this.stringify(this.actual)} to be ${this.stringify(expected)}`,
       );
@@ -195,7 +238,14 @@ class ExpectMatcher<T> {
    * Assert loose equality
    */
   toEqual(expected: T): void {
-    if (!this.deepEqual(this.actual, expected)) {
+    const passed = this.deepEqual(this.actual, expected);
+    this.ctx.recordAssertion({
+      passed,
+      message: `${this.stringify(this.actual)} to equal ${this.stringify(expected)}`,
+      actual: this.actual,
+      expected,
+    });
+    if (!passed) {
       throw new Error(
         `Expected ${this.stringify(this.actual)} to equal ${this.stringify(expected)}`,
       );
@@ -206,7 +256,13 @@ class ExpectMatcher<T> {
    * Assert value is defined (not null or undefined)
    */
   toBeDefined(): void {
-    if (this.actual === null || this.actual === undefined) {
+    const passed = this.actual !== null && this.actual !== undefined;
+    this.ctx.recordAssertion({
+      passed,
+      message: `value to be defined (got ${this.stringify(this.actual)})`,
+      actual: this.actual,
+    });
+    if (!passed) {
       throw new Error(`Expected value to be defined, but got ${this.stringify(this.actual)}`);
     }
   }
@@ -215,7 +271,13 @@ class ExpectMatcher<T> {
    * Assert value is null or undefined
    */
   toBeUndefined(): void {
-    if (this.actual !== null && this.actual !== undefined) {
+    const passed = this.actual === null || this.actual === undefined;
+    this.ctx.recordAssertion({
+      passed,
+      message: `value to be undefined (got ${this.stringify(this.actual)})`,
+      actual: this.actual,
+    });
+    if (!passed) {
       throw new Error(
         `Expected value to be undefined, but got ${this.stringify(this.actual)}`,
       );
@@ -226,7 +288,13 @@ class ExpectMatcher<T> {
    * Assert value is truthy
    */
   toBeTruthy(): void {
-    if (!this.actual) {
+    const passed = Boolean(this.actual);
+    this.ctx.recordAssertion({
+      passed,
+      message: `value to be truthy (got ${this.stringify(this.actual)})`,
+      actual: this.actual,
+    });
+    if (!passed) {
       throw new Error(`Expected value to be truthy, but got ${this.stringify(this.actual)}`);
     }
   }
@@ -235,7 +303,13 @@ class ExpectMatcher<T> {
    * Assert value is falsy
    */
   toBeFalsy(): void {
-    if (this.actual) {
+    const passed = !this.actual;
+    this.ctx.recordAssertion({
+      passed,
+      message: `value to be falsy (got ${this.stringify(this.actual)})`,
+      actual: this.actual,
+    });
+    if (!passed) {
       throw new Error(`Expected value to be falsy, but got ${this.stringify(this.actual)}`);
     }
   }
@@ -245,12 +319,24 @@ class ExpectMatcher<T> {
    */
   toBeCloseTo(expected: number, precision: number = 2): void {
     if (typeof this.actual !== "number") {
+      this.ctx.recordAssertion({
+        passed: false,
+        message: `${this.stringify(this.actual)} to be a number`,
+        actual: this.actual,
+      });
       throw new Error(
         `Expected ${this.stringify(this.actual)} to be a number`,
       );
     }
     const diff = Math.abs((this.actual as number) - expected);
-    if (diff > precision) {
+    const passed = diff <= precision;
+    this.ctx.recordAssertion({
+      passed,
+      message: `${this.actual} to be close to ${expected} (within ${precision})`,
+      actual: this.actual,
+      expected,
+    });
+    if (!passed) {
       throw new Error(
         `Expected ${this.actual} to be close to ${expected} (within ${precision})`,
       );
@@ -262,11 +348,23 @@ class ExpectMatcher<T> {
    */
   toBeGreaterThan(expected: number): void {
     if (typeof this.actual !== "number") {
+      this.ctx.recordAssertion({
+        passed: false,
+        message: `${this.stringify(this.actual)} to be a number`,
+        actual: this.actual,
+      });
       throw new Error(
         `Expected ${this.stringify(this.actual)} to be a number`,
       );
     }
-    if ((this.actual as number) <= expected) {
+    const passed = (this.actual as number) > expected;
+    this.ctx.recordAssertion({
+      passed,
+      message: `${this.actual} to be greater than ${expected}`,
+      actual: this.actual,
+      expected,
+    });
+    if (!passed) {
       throw new Error(
         `Expected ${this.actual} to be greater than ${expected}`,
       );
@@ -278,11 +376,23 @@ class ExpectMatcher<T> {
    */
   toBeLessThan(expected: number): void {
     if (typeof this.actual !== "number") {
+      this.ctx.recordAssertion({
+        passed: false,
+        message: `${this.stringify(this.actual)} to be a number`,
+        actual: this.actual,
+      });
       throw new Error(
         `Expected ${this.stringify(this.actual)} to be a number`,
       );
     }
-    if ((this.actual as number) >= expected) {
+    const passed = (this.actual as number) < expected;
+    this.ctx.recordAssertion({
+      passed,
+      message: `${this.actual} to be less than ${expected}`,
+      actual: this.actual,
+      expected,
+    });
+    if (!passed) {
       throw new Error(
         `Expected ${this.actual} to be less than ${expected}`,
       );
@@ -294,11 +404,23 @@ class ExpectMatcher<T> {
    */
   toBeLessThanOrEqual(expected: number): void {
     if (typeof this.actual !== "number") {
+      this.ctx.recordAssertion({
+        passed: false,
+        message: `${this.stringify(this.actual)} to be a number`,
+        actual: this.actual,
+      });
       throw new Error(
         `Expected ${this.stringify(this.actual)} to be a number`,
       );
     }
-    if ((this.actual as number) > expected) {
+    const passed = (this.actual as number) <= expected;
+    this.ctx.recordAssertion({
+      passed,
+      message: `${this.actual} to be less than or equal to ${expected}`,
+      actual: this.actual,
+      expected,
+    });
+    if (!passed) {
       throw new Error(
         `Expected ${this.actual} to be less than or equal to ${expected}`,
       );
@@ -310,11 +432,23 @@ class ExpectMatcher<T> {
    */
   toBeGreaterThanOrEqual(expected: number): void {
     if (typeof this.actual !== "number") {
+      this.ctx.recordAssertion({
+        passed: false,
+        message: `${this.stringify(this.actual)} to be a number`,
+        actual: this.actual,
+      });
       throw new Error(
         `Expected ${this.stringify(this.actual)} to be a number`,
       );
     }
-    if ((this.actual as number) < expected) {
+    const passed = (this.actual as number) >= expected;
+    this.ctx.recordAssertion({
+      passed,
+      message: `${this.actual} to be greater than or equal to ${expected}`,
+      actual: this.actual,
+      expected,
+    });
+    if (!passed) {
       throw new Error(
         `Expected ${this.actual} to be greater than or equal to ${expected}`,
       );
@@ -326,11 +460,23 @@ class ExpectMatcher<T> {
    */
   toContain(substring: string): void {
     if (typeof this.actual !== "string") {
+      this.ctx.recordAssertion({
+        passed: false,
+        message: `${this.stringify(this.actual)} to be a string`,
+        actual: this.actual,
+      });
       throw new Error(
         `Expected ${this.stringify(this.actual)} to be a string`,
       );
     }
-    if (!(this.actual as string).includes(substring)) {
+    const passed = (this.actual as string).includes(substring);
+    this.ctx.recordAssertion({
+      passed,
+      message: `"${this.actual}" to contain "${substring}"`,
+      actual: this.actual,
+      expected: substring,
+    });
+    if (!passed) {
       throw new Error(
         `Expected "${this.actual}" to contain "${substring}"`,
       );
