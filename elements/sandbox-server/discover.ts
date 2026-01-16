@@ -13,6 +13,7 @@ export interface DiscoveredSandbox {
   elementName: string;       // sandbox name, e.g., "CompactnessSlider"
   elementTag: string | null; // custom element tag, e.g., "ef-compactness-slider"
   usedTags: string[];        // custom element tags used in render(), e.g., ["ef-css-variable-line"]
+  category: string | null;   // category from config or inferred from folder path
 }
 
 /**
@@ -33,14 +34,95 @@ export interface SandboxGraph {
 }
 
 /**
- * Parse a sandbox file to extract custom element tag and used tags
+ * Infer category from folder path based on affordance-based categorization
  */
-function parseSandboxFile(filePath: string): { elementTag: string | null; usedTags: string[] } {
+function inferCategoryFromPath(filePath: string, elementsSrc: string): string | null {
+  // Get relative path from elements/src
+  const relativePath = path.relative(elementsSrc, filePath).replace(/\\/g, "/");
+  
+  // Media elements: playback, display, representation
+  if (relativePath.includes("/gui/timeline/tracks/")) {
+    // Tracks are media elements on timeline
+    return "media";
+  }
+  if (relativePath.includes("/elements/") && (
+    relativePath.includes("Timegroup") || 
+    relativePath.includes("Video") || 
+    relativePath.includes("Audio") ||
+    relativePath.includes("Image")
+  )) {
+    return "media";
+  }
+  
+  // Timeline components: editing, trimming, sequencing
+  if (relativePath.includes("/gui/timeline/") && !relativePath.includes("/tracks/")) {
+    return "timeline";
+  }
+  
+  // Controls: user input widgets
+  if (relativePath.includes("Dial") || relativePath.includes("Slider")) {
+    return "controls";
+  }
+  
+  // Panels: UI containers/organizers
+  if (relativePath.includes("Panel") || relativePath.includes("Display")) {
+    return "panels";
+  }
+  
+  // Visualization: visual data representation
+  if (relativePath.includes("Thumbnail") || relativePath.includes("Ruler") || relativePath.includes("waveform")) {
+    return "visualization";
+  }
+  
+  // Layout: structure/organization
+  if (relativePath.includes("flattenHierarchy") || relativePath.includes("PanZoom")) {
+    return "layout";
+  }
+  
+  // Styling: appearance customization
+  if (relativePath.includes("CSS") || relativePath.includes("Variable") || relativePath.includes("Compactness")) {
+    return "styling";
+  }
+  
+  // Fallback for elements directory
+  if (relativePath.startsWith("elements/")) {
+    return "media";
+  }
+  
+  // Fallback for gui directory
+  if (relativePath.startsWith("gui/")) {
+    return "controls";
+  }
+  
+  return null;
+}
+
+/**
+ * Parse a sandbox file to extract custom element tag, used tags, and category
+ */
+function parseSandboxFile(filePath: string, elementsSrc: string): { 
+  elementTag: string | null; 
+  usedTags: string[]; 
+  category: string | null;
+} {
   const content = fs.readFileSync(filePath, "utf-8");
   
   // Extract @customElement("ef-xxx") decorator
   const customElementMatch = content.match(/@customElement\(["']([^"']+)["']\)/);
   const elementTag = customElementMatch ? customElementMatch[1] : null;
+  
+  // Extract category from defineSandbox({ category: "..." })
+  // Match category field more flexibly, handling multiline and whitespace
+  let category: string | null = null;
+  const categoryMatch = content.match(/defineSandbox\s*\(\s*\{[\s\S]*?category\s*:\s*["']([^"']+)["']/);
+  if (categoryMatch) {
+    category = categoryMatch[1];
+  }
+  
+  // If no explicit category, infer from folder path
+  if (!category) {
+    category = inferCategoryFromPath(filePath, elementsSrc);
+  }
   
   // Find the render() function and extract ef-* tags from it
   // Look for render() or render: () => patterns
@@ -60,7 +142,7 @@ function parseSandboxFile(filePath: string): { elementTag: string | null; usedTa
     }
   }
   
-  return { elementTag, usedTags };
+  return { elementTag, usedTags, category };
 }
 
 /**
@@ -90,14 +172,15 @@ export function discoverSandboxes(elementsRoot: string): DiscoveredSandbox[] {
         // Extract element name from filename (e.g., "EFDial.sandbox.ts" -> "EFDial")
         const elementName = entry.name.replace(/\.sandbox\.ts$/, "");
         
-        // Parse the file for element tag and used tags
-        const { elementTag, usedTags } = parseSandboxFile(fullPath);
+        // Parse the file for element tag, used tags, and category
+        const { elementTag, usedTags, category } = parseSandboxFile(fullPath, elementsSrc);
         
         sandboxes.push({
           filePath: fullPath,
           elementName,
           elementTag,
           usedTags,
+          category,
         });
       }
     }
