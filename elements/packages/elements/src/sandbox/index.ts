@@ -16,9 +16,6 @@ export {
 // Re-export Assertion type from SandboxContext
 export { type Assertion } from "./SandboxContext.js";
 
-// Export React SandboxViewer component
-export { SandboxViewer } from "./SandboxViewer.js";
-
 // Export PlaybackControls component
 export { PlaybackControls } from "./PlaybackControls.js";
 export type { PlaybackControlsProps } from "./PlaybackControls.js";
