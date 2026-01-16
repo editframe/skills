@@ -103,7 +103,6 @@ export class EFTree extends LitElement {
 
   private treeActions: TreeActions = {
     select: (id: string | null) => {
-      console.log("[EFTree] select action called", { id });
       this.treeState = {
         ...this.treeState,
         selectedId: id,
@@ -112,7 +111,6 @@ export class EFTree extends LitElement {
       // Find the item for the event detail
       const item = id ? this.findItem(id, this.items) : null;
       
-      console.log("[EFTree] dispatching tree-select event", { id, item });
       this.dispatchEvent(
         new CustomEvent("tree-select", {
           detail: { id, item },

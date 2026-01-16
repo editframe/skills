@@ -11,7 +11,7 @@ import "../TimelineStateProvider.js";
 
 export default defineSandbox({
   name: "EFAudioTrack",
-  description: "Audio track component with waveform visualization",
+  description: "Audio track component with waveform visualization. Base track behavior tested in TrackItem.sandbox.ts",
   
   render: () => html`
     <timeline-state-provider
@@ -21,7 +21,7 @@ export default defineSandbox({
       viewport-scroll-left="0"
       viewport-width="800"
     >
-      <div style="width: 1000px; height: 24px; position: relative;">
+      <div style="width: 1000px; height: 48px; position: relative;">
         <ef-audio id="test-audio-track" duration="5s" style="display: none;"></ef-audio>
         <ef-audio-track
           .element=${document.getElementById("test-audio-track") || (() => {
@@ -37,137 +37,37 @@ export default defineSandbox({
   `,
   
   scenarios: {
-    async "renders with audio element"(ctx) {
-      const container = ctx.getContainer();
-      const provider = document.createElement("timeline-state-provider");
-      provider.setAttribute("pixels-per-ms", "0.1");
-      
-      const audio = document.createElement("ef-audio");
-      audio.id = "test-audio-track-1";
-      audio.setAttribute("duration", "5s");
-      
-      const track = document.createElement("ef-audio-track");
-      (track as any).element = audio;
-      (track as any).pixelsPerMs = 0.1;
-      
-      provider.appendChild(track);
-      container.appendChild(provider);
-      
-      await ctx.frame();
-      await ctx.wait(100);
-      
-      const trackElement = ctx.querySelector<EFAudioTrack>("ef-audio-track")!;
-      ctx.expect(trackElement).toBeDefined();
-      ctx.expect(trackElement.element).toBeDefined();
-    },
-    
-    async "renders at correct time position"(ctx) {
-      const container = ctx.getContainer();
-      const provider = document.createElement("timeline-state-provider");
-      provider.setAttribute("pixels-per-ms", "0.1");
-      
-      const audio = document.createElement("ef-audio");
-      audio.id = "test-audio-track-2";
-      audio.setAttribute("duration", "5s");
-      (audio as any).trimStartMs = 1000;
-      
-      const track = document.createElement("ef-audio-track");
-      (track as any).element = audio;
-      (track as any).pixelsPerMs = 0.1;
-      
-      provider.appendChild(track);
-      container.appendChild(provider);
-      
-      await ctx.frame();
-      await ctx.wait(100);
-      
-      const trackElement = ctx.querySelector<EFAudioTrack>("ef-audio-track")!;
-      const shadowRoot = trackElement.shadowRoot;
-      const trimContainer = shadowRoot?.querySelector(".trim-container") as HTMLElement;
-      
-      ctx.expect(trimContainer).toBeDefined();
-    },
-    
-    async "scales with pixelsPerMs"(ctx) {
-      const container = ctx.getContainer();
-      const provider = document.createElement("timeline-state-provider");
-      provider.setAttribute("pixels-per-ms", "0.1");
-      
-      const audio = document.createElement("ef-audio");
-      audio.id = "test-audio-track-3";
-      audio.setAttribute("duration", "5s");
-      
-      const track = document.createElement("ef-audio-track");
-      (track as any).element = audio;
-      (track as any).pixelsPerMs = 0.1;
-      
-      provider.appendChild(track);
-      container.appendChild(provider);
-      
-      await ctx.frame();
-      await ctx.wait(100);
-      
-      const trackElement = ctx.querySelector<EFAudioTrack>("ef-audio-track")!;
-      (trackElement as any).pixelsPerMs = 0.2;
-      await ctx.frame();
-      
-      ctx.expect((trackElement as any).pixelsPerMs).toBe(0.2);
-    },
-    
-    async "shows trim handles when enabled"(ctx) {
-      const container = ctx.getContainer();
-      const provider = document.createElement("timeline-state-provider");
-      provider.setAttribute("pixels-per-ms", "0.1");
-      
-      const audio = document.createElement("ef-audio");
-      audio.id = "test-audio-track-4";
-      audio.setAttribute("duration", "5s");
-      
-      const track = document.createElement("ef-audio-track");
-      (track as any).element = audio;
-      (track as any).pixelsPerMs = 0.1;
-      (track as any).enableTrim = true;
-      
-      provider.appendChild(track);
-      container.appendChild(provider);
-      
-      await ctx.frame();
-      await ctx.wait(100);
-      
-      const trackElement = ctx.querySelector<EFAudioTrack>("ef-audio-track")!;
-      const shadowRoot = trackElement.shadowRoot;
-      const trimHandles = shadowRoot?.querySelector("ef-trim-handles");
-      
-      ctx.expect(trimHandles).toBeDefined();
-    },
-    
-    async "renders waveform visualization"(ctx) {
-      const container = ctx.getContainer();
-      const provider = document.createElement("timeline-state-provider");
-      provider.setAttribute("pixels-per-ms", "0.1");
-      
-      const audio = document.createElement("ef-audio");
-      audio.id = "test-audio-track-5";
-      audio.setAttribute("duration", "5s");
-      (audio as any).durationMs = 5000; // Set duration so waveform renders
-      
-      const track = document.createElement("ef-audio-track");
-      (track as any).element = audio;
-      (track as any).pixelsPerMs = 0.1;
-      
-      provider.appendChild(track);
-      container.appendChild(provider);
-      
-      await ctx.frame();
-      await ctx.wait(100);
-      
-      const trackElement = ctx.querySelector<EFAudioTrack>("ef-audio-track")!;
-      const shadowRoot = trackElement.shadowRoot;
-      // Waveform is rendered as divs inside trim-container
-      const waveform = shadowRoot?.querySelector(".trim-container > div");
-      
-      // Waveform should be present when duration > 0
-      ctx.expect(waveform).toBeDefined();
+    // Audio-specific: waveform visualization
+    "renders waveform visualization": {
+      description: "Audio tracks display a waveform visualization inside the track content area",
+      run: async (ctx) => {
+        const container = ctx.getContainer();
+        const provider = document.createElement("timeline-state-provider");
+        provider.setAttribute("pixels-per-ms", "0.1");
+        
+        const audio = document.createElement("ef-audio");
+        audio.id = "test-audio-track-wave";
+        audio.setAttribute("duration", "5s");
+        (audio as any).durationMs = 5000; // Set duration so waveform renders
+        
+        const track = document.createElement("ef-audio-track");
+        (track as any).element = audio;
+        (track as any).pixelsPerMs = 0.1;
+        
+        provider.appendChild(track);
+        container.appendChild(provider);
+        
+        await ctx.frame();
+        await ctx.wait(100);
+        
+        const trackElement = ctx.querySelector<EFAudioTrack>("ef-audio-track")!;
+        const shadowRoot = trackElement.shadowRoot;
+        // Waveform is rendered as divs inside trim-container
+        const waveform = shadowRoot?.querySelector(".trim-container > div");
+        
+        // Waveform should be present when duration > 0
+        ctx.expect(waveform).toBeDefined();
+      },
     },
   },
 });

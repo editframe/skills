@@ -111,18 +111,8 @@ export class EFTreeItem extends LitElement {
 
   private handleClick(e: Event): void {
     e.stopPropagation();
-    console.log("[EFTreeItem] handleClick", {
-      item: this.item,
-      hasContext: !!this.treeContext,
-      itemId: this.item?.id,
-    });
     if (this.treeContext && this.item) {
       this.treeContext.actions.select(this.item.id);
-    } else {
-      console.warn("[EFTreeItem] Missing context or item", {
-        treeContext: this.treeContext,
-        item: this.item,
-      });
     }
   }
 

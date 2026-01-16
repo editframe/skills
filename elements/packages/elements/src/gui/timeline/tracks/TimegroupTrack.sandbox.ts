@@ -11,7 +11,7 @@ import "../TimelineStateProvider.js";
 
 export default defineSandbox({
   name: "EFTimegroupTrack",
-  description: "Timegroup track component for nested compositions",
+  description: "Timegroup track component for nested compositions. Base track behavior tested in TrackItem.sandbox.ts",
   
   render: () => html`
     <timeline-state-provider
@@ -21,7 +21,7 @@ export default defineSandbox({
       viewport-scroll-left="0"
       viewport-width="800"
     >
-      <div style="width: 1000px; height: 24px; position: relative;">
+      <div style="width: 1000px; height: 48px; position: relative;">
         <ef-timegroup id="test-timegroup-track" duration="5s" style="display: none;"></ef-timegroup>
         <ef-timegroup-track
           .element=${document.getElementById("test-timegroup-track") || (() => {
@@ -38,171 +38,72 @@ export default defineSandbox({
   `,
   
   scenarios: {
-    async "renders with timegroup element"(ctx) {
-      const container = ctx.getContainer();
-      const provider = document.createElement("timeline-state-provider");
-      provider.setAttribute("pixels-per-ms", "0.1");
-      
-      const timegroup = document.createElement("ef-timegroup");
-      timegroup.id = "test-timegroup-track-1";
-      timegroup.setAttribute("duration", "5s");
-      
-      const track = document.createElement("ef-timegroup-track");
-      (track as any).element = timegroup;
-      (track as any).pixelsPerMs = 0.1;
-      (track as any).skipChildren = true;
-      
-      provider.appendChild(track);
-      container.appendChild(provider);
-      
-      await ctx.frame();
-      await ctx.wait(100);
-      
-      const trackElement = ctx.querySelector<EFTimegroupTrack>("ef-timegroup-track")!;
-      ctx.expect(trackElement).toBeDefined();
-      ctx.expect(trackElement.element).toBeDefined();
+    // Timegroup-specific: filmstrip rendering for root timegroups
+    "shows filmstrip for root timegroups when enabled": {
+      description: "Root timegroups can display an ef-thumbnail-strip filmstrip when showFilmstrip is true",
+      run: async (ctx) => {
+        const container = ctx.getContainer();
+        const provider = document.createElement("timeline-state-provider");
+        provider.setAttribute("pixels-per-ms", "0.1");
+        
+        const timegroup = document.createElement("ef-timegroup");
+        timegroup.id = "test-timegroup-track-film";
+        timegroup.setAttribute("duration", "5s");
+        
+        const track = document.createElement("ef-timegroup-track");
+        (track as any).element = timegroup;
+        (track as any).pixelsPerMs = 0.1;
+        (track as any).skipChildren = true;
+        (track as any).showFilmstrip = true;
+        
+        provider.appendChild(track);
+        container.appendChild(provider);
+        
+        await ctx.frame();
+        await ctx.wait(200);
+        
+        const trackElement = ctx.querySelector<EFTimegroupTrack>("ef-timegroup-track")!;
+        ctx.expect(trackElement).toBeDefined();
+        
+        // Filmstrip may or may not render depending on conditions
+        // (requires root timegroup with visual content)
+        const shadowRoot = trackElement.shadowRoot;
+        const thumbnailStrip = shadowRoot?.querySelector("ef-thumbnail-strip");
+        ctx.log(`Filmstrip present: ${!!thumbnailStrip}`);
+      },
     },
     
-    async "renders at correct time position"(ctx) {
-      const container = ctx.getContainer();
-      const provider = document.createElement("timeline-state-provider");
-      provider.setAttribute("pixels-per-ms", "0.1");
-      
-      const timegroup = document.createElement("ef-timegroup");
-      timegroup.id = "test-timegroup-track-2";
-      timegroup.setAttribute("duration", "5s");
-      (timegroup as any).trimStartMs = 1000;
-      
-      const track = document.createElement("ef-timegroup-track");
-      (track as any).element = timegroup;
-      (track as any).pixelsPerMs = 0.1;
-      (track as any).skipChildren = true;
-      
-      provider.appendChild(track);
-      container.appendChild(provider);
-      
-      await ctx.frame();
-      await ctx.wait(100);
-      
-      const trackElement = ctx.querySelector<EFTimegroupTrack>("ef-timegroup-track")!;
-      const shadowRoot = trackElement.shadowRoot;
-      const trimContainer = shadowRoot?.querySelector(".trim-container") as HTMLElement;
-      
-      ctx.expect(trimContainer).toBeDefined();
-    },
-    
-    async "scales with pixelsPerMs"(ctx) {
-      const container = ctx.getContainer();
-      const provider = document.createElement("timeline-state-provider");
-      provider.setAttribute("pixels-per-ms", "0.1");
-      
-      const timegroup = document.createElement("ef-timegroup");
-      timegroup.id = "test-timegroup-track-3";
-      timegroup.setAttribute("duration", "5s");
-      
-      const track = document.createElement("ef-timegroup-track");
-      (track as any).element = timegroup;
-      (track as any).pixelsPerMs = 0.1;
-      (track as any).skipChildren = true;
-      
-      provider.appendChild(track);
-      container.appendChild(provider);
-      
-      await ctx.frame();
-      await ctx.wait(100);
-      
-      const trackElement = ctx.querySelector<EFTimegroupTrack>("ef-timegroup-track")!;
-      (trackElement as any).pixelsPerMs = 0.2;
-      await ctx.frame();
-      
-      ctx.expect((trackElement as any).pixelsPerMs).toBe(0.2);
-    },
-    
-    async "shows trim handles when enabled"(ctx) {
-      const container = ctx.getContainer();
-      const provider = document.createElement("timeline-state-provider");
-      provider.setAttribute("pixels-per-ms", "0.1");
-      
-      const timegroup = document.createElement("ef-timegroup");
-      timegroup.id = "test-timegroup-track-4";
-      timegroup.setAttribute("duration", "5s");
-      
-      const track = document.createElement("ef-timegroup-track");
-      (track as any).element = timegroup;
-      (track as any).pixelsPerMs = 0.1;
-      (track as any).enableTrim = true;
-      (track as any).skipChildren = true;
-      
-      provider.appendChild(track);
-      container.appendChild(provider);
-      
-      await ctx.frame();
-      await ctx.wait(100);
-      
-      const trackElement = ctx.querySelector<EFTimegroupTrack>("ef-timegroup-track")!;
-      const shadowRoot = trackElement.shadowRoot;
-      const trimHandles = shadowRoot?.querySelector("ef-trim-handles");
-      
-      ctx.expect(trimHandles).toBeDefined();
-    },
-    
-    async "shows filmstrip for root timegroups when enabled"(ctx) {
-      const container = ctx.getContainer();
-      const provider = document.createElement("timeline-state-provider");
-      provider.setAttribute("pixels-per-ms", "0.1");
-      
-      const timegroup = document.createElement("ef-timegroup");
-      timegroup.id = "test-timegroup-track-5";
-      timegroup.setAttribute("duration", "5s");
-      
-      const track = document.createElement("ef-timegroup-track");
-      (track as any).element = timegroup;
-      (track as any).pixelsPerMs = 0.1;
-      (track as any).skipChildren = true;
-      (track as any).showFilmstrip = true;
-      
-      provider.appendChild(track);
-      container.appendChild(provider);
-      
-      await ctx.frame();
-      await ctx.wait(200);
-      
-      const trackElement = ctx.querySelector<EFTimegroupTrack>("ef-timegroup-track")!;
-      const shadowRoot = trackElement.shadowRoot;
-      const thumbnailStrip = shadowRoot?.querySelector("ef-thumbnail-strip");
-      
-      // Filmstrip may or may not render depending on conditions
-      // Just verify track renders correctly
-      ctx.expect(trackElement).toBeDefined();
-    },
-    
-    async "shows mode indicator"(ctx) {
-      const container = ctx.getContainer();
-      const provider = document.createElement("timeline-state-provider");
-      provider.setAttribute("pixels-per-ms", "0.1");
-      
-      const timegroup = document.createElement("ef-timegroup");
-      timegroup.id = "test-timegroup-track-6";
-      timegroup.setAttribute("duration", "5s");
-      timegroup.setAttribute("mode", "fixed");
-      
-      const track = document.createElement("ef-timegroup-track");
-      (track as any).element = timegroup;
-      (track as any).pixelsPerMs = 0.1;
-      (track as any).skipChildren = true;
-      
-      provider.appendChild(track);
-      container.appendChild(provider);
-      
-      await ctx.frame();
-      await ctx.wait(100);
-      
-      const trackElement = ctx.querySelector<EFTimegroupTrack>("ef-timegroup-track")!;
-      const shadowRoot = trackElement.shadowRoot;
-      // Mode indicator should be in the track content
-      const trackContent = shadowRoot?.querySelector(".trim-container");
-      
-      ctx.expect(trackContent).toBeDefined();
+    // Timegroup-specific: mode indicator display
+    "shows mode indicator for fixed mode timegroups": {
+      description: "Timegroups with mode='fixed' display a mode indicator in the track",
+      run: async (ctx) => {
+        const container = ctx.getContainer();
+        const provider = document.createElement("timeline-state-provider");
+        provider.setAttribute("pixels-per-ms", "0.1");
+        
+        const timegroup = document.createElement("ef-timegroup");
+        timegroup.id = "test-timegroup-track-mode";
+        timegroup.setAttribute("duration", "5s");
+        timegroup.setAttribute("mode", "fixed");
+        
+        const track = document.createElement("ef-timegroup-track");
+        (track as any).element = timegroup;
+        (track as any).pixelsPerMs = 0.1;
+        (track as any).skipChildren = true;
+        
+        provider.appendChild(track);
+        container.appendChild(provider);
+        
+        await ctx.frame();
+        await ctx.wait(100);
+        
+        const trackElement = ctx.querySelector<EFTimegroupTrack>("ef-timegroup-track")!;
+        const shadowRoot = trackElement.shadowRoot;
+        // Mode indicator should be in the track content
+        const trackContent = shadowRoot?.querySelector(".trim-container");
+        
+        ctx.expect(trackContent).toBeDefined();
+      },
     },
   },
 });
