@@ -11,12 +11,13 @@ import type { Sandbox, ScenarioResult } from "../packages/elements/src/sandbox/i
 /**
  * Get all discovered sandboxes
  */
-export function getSandboxes(elementsRoot: string): Array<{ name: string; filePath: string; elementName: string }> {
+export function getSandboxes(elementsRoot: string): Array<{ name: string; filePath: string; elementName: string; category: string | null }> {
   const discovered = discoverSandboxes(elementsRoot);
   return discovered.map((s) => ({
     name: s.elementName,
     filePath: s.filePath,
     elementName: s.elementName,
+    category: s.category,
   }));
 }
 
