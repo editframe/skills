@@ -91,6 +91,12 @@ export interface ProfileAssertion {
 export interface SandboxConfig {
   name: string;
   description?: string;
+  /**
+   * Category for organizing sandboxes in the viewer.
+   * Atomic design categories: "atom", "molecule", "organism", "page"
+   * Semantic categories: "track", "timeline", "element", "gui", "utility", etc.
+   */
+  category?: string;
   render: () => TemplateResult;
   setup?: (container: HTMLElement) => Promise<void> | void;
   scenarios: Scenarios;
