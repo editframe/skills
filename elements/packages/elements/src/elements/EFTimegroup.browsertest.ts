@@ -615,70 +615,61 @@ describe("setting currentTime", () => {
 });
 
 describe("shouldWrapWithWorkbench", () => {
-  test("should not wrap if EF_INTERACTIVE is false", () => {
-    // Save original values
-    const originalInteractive = EF_INTERACTIVE;
-    const originalDevWorkbench = globalThis.EF_DEV_WORKBENCH;
+  test("should not wrap if workbench prop is false", () => {
+    const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+    timegroup.workbench = false;
+    document.body.appendChild(timegroup);
 
-    try {
-      // Set EF_INTERACTIVE to false using the setter
-      setEFInteractive(false);
-      globalThis.EF_DEV_WORKBENCH = true;
+    // Observable outcome: no ef-workbench should wrap the timegroup
+    const shouldWrap = timegroup.shouldWrapWithWorkbench();
+    assert.isFalse(
+      shouldWrap,
+      "shouldWrapWithWorkbench should be false when workbench prop is false",
+    );
+    assert.isNull(
+      timegroup.closest("ef-workbench"),
+      "No workbench should wrap timegroup when workbench prop is false",
+    );
 
-      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
-      document.body.appendChild(timegroup);
-
-      // Observable outcome: no ef-workbench should wrap the timegroup
-      const shouldWrap = timegroup.shouldWrapWithWorkbench();
-      assert.isFalse(
-        shouldWrap,
-        "shouldWrapWithWorkbench should be false when EF_INTERACTIVE is false",
-      );
-      assert.isNull(
-        timegroup.closest("ef-workbench"),
-        "No workbench should wrap timegroup when EF_INTERACTIVE is false",
-      );
-
-      timegroup.remove();
-    } finally {
-      // Restore original values
-      setEFInteractive(originalInteractive);
-      globalThis.EF_DEV_WORKBENCH = originalDevWorkbench;
-    }
+    timegroup.remove();
   });
 
-  test("should wrap if root-most timegroup with EF_INTERACTIVE and EF_DEV_WORKBENCH", () => {
-    // Save original values
-    const originalInteractive = EF_INTERACTIVE;
-    const originalDevWorkbench = globalThis.EF_DEV_WORKBENCH;
+  test("should wrap if root-most timegroup with workbench prop set to true", () => {
+    const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+    timegroup.workbench = true;
+    document.body.appendChild(timegroup);
 
-    try {
-      // Set both flags to true using the setter
-      setEFInteractive(true);
-      globalThis.EF_DEV_WORKBENCH = true;
+    // Observable outcome: timegroup should be wrapped in an ef-workbench
+    // (connectedCallback automatically wraps when conditions are met)
+    const workbench = timegroup.closest("ef-workbench");
+    assert.isNotNull(
+      workbench,
+      "Root timegroup should be wrapped in ef-workbench when workbench prop is true",
+    );
 
-      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
-      document.body.appendChild(timegroup);
+    // Clean up (workbench is the parent now)
+    workbench?.remove();
+  });
 
-      // Observable outcome: timegroup should be wrapped in an ef-workbench
-      // (connectedCallback automatically wraps when conditions are met)
-      const workbench = timegroup.closest("ef-workbench");
-      assert.isNotNull(
-        workbench,
-        "Root timegroup should be wrapped in ef-workbench when EF_INTERACTIVE and EF_DEV_WORKBENCH are true",
-      );
+  test("should wrap if workbench attribute is set", () => {
+    const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+    timegroup.setAttribute("workbench", "");
+    document.body.appendChild(timegroup);
 
-      // Clean up (workbench is the parent now)
-      workbench?.remove();
-    } finally {
-      // Restore original values
-      setEFInteractive(originalInteractive);
-      globalThis.EF_DEV_WORKBENCH = originalDevWorkbench;
-    }
+    // Observable outcome: timegroup should be wrapped in an ef-workbench
+    const workbench = timegroup.closest("ef-workbench");
+    assert.isNotNull(
+      workbench,
+      "Root timegroup should be wrapped in ef-workbench when workbench attribute is set",
+    );
+
+    // Clean up (workbench is the parent now)
+    workbench?.remove();
   });
 
   test("should not wrap if contained within a preview context", () => {
-    const timegroup = document.createElement("ef-timegroup");
+    const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+    timegroup.workbench = true;
     const context = document.createElement("test-context");
     context.append(timegroup);
     document.body.appendChild(context);

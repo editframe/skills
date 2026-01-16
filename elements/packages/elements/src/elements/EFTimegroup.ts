@@ -57,9 +57,6 @@ import "../gui/EFWorkbench.js";
 import "../gui/EFFitScale.js";
 import "./EFPanZoom.js";
 
-declare global {
-  var EF_DEV_WORKBENCH: boolean | undefined;
-}
 
 const log = debug("ef:elements:EFTimegroup");
 
@@ -534,6 +531,15 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
    */
   @property({ type: Boolean, attribute: "auto-init" })
   autoInit = false;
+
+  /**
+   * When true, automatically wraps this root timegroup with an ef-workbench element.
+   * The workbench provides development UI including hierarchy panel, timeline, and playback controls.
+   * Only applies to root timegroups.
+   * @public
+   */
+  @property({ type: Boolean, reflect: true })
+  workbench = false;
 
   attributeChangedCallback(
     name: string,
@@ -1692,15 +1698,13 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
    *
    * A timegroup should be wrapped with a workbench if:
    * - It's being rendered (EF_RENDERING), OR
-   * - It's in interactive mode (EF_INTERACTIVE) with the dev workbench flag set
+   * - The workbench property is set to true
    *
    * If the timegroup is already wrapped in a context provider like ef-preview,
    * it should NOT be wrapped in a workbench.
    * @internal
    */
   shouldWrapWithWorkbench() {
-    const isRendering = EF_RENDERING?.() === true;
-
     // Only root timegroups should wrap with workbench
     if (!this.isRootTimegroup) {
       return false;
@@ -1732,12 +1736,13 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     }
 
     // During rendering, always wrap with workbench (needed by EF_FRAMEGEN)
+    const isRendering = EF_RENDERING?.() === true;
     if (isRendering) {
       return true;
     }
 
-    // During interactive mode, respect the dev workbench flag
-    return EF_INTERACTIVE && globalThis.EF_DEV_WORKBENCH === true;
+    // Respect the explicit workbench property
+    return this.workbench;
   }
 
   /** @internal */

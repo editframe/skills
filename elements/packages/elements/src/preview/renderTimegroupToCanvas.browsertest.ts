@@ -2046,14 +2046,10 @@ describe("native vs foreignObject rendering benchmarks", () => {
     const apiHost = getApiHost();
     
     // Create timegroup that WILL get workbench (no ef-preview wrapper)
-    // We need to enable workbench wrapping temporarily
-    const originalDevWorkbench = globalThis.EF_DEV_WORKBENCH;
-    globalThis.EF_DEV_WORKBENCH = true;
-    
     render(
       html`
         <ef-configuration api-host="${apiHost}" signing-url="">
-          <ef-timegroup id="workbench-benchmark" mode="fixed" duration="3s"
+          <ef-timegroup id="workbench-benchmark" workbench mode="fixed" duration="3s"
             style="width: 1920px; height: 1080px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);">
             <div style="position: absolute; inset: 40px; background: rgba(255,255,255,0.1); border-radius: 20px;">
               <h1 style="color: white; font-size: 72px; text-align: center; margin-top: 200px;">
@@ -2079,7 +2075,6 @@ describe("native vs foreignObject rendering benchmarks", () => {
     
     if (!timegroup) {
       container.remove();
-      globalThis.EF_DEV_WORKBENCH = originalDevWorkbench;
       throw new Error("Timegroup not found");
     }
     
@@ -2114,7 +2109,6 @@ describe("native vs foreignObject rendering benchmarks", () => {
     
     // Restore
     setNativeCanvasApiEnabled(true);
-    globalThis.EF_DEV_WORKBENCH = originalDevWorkbench;
     
     const msPerFrame = elapsed / frames;
     const realtimeMultiplier = exportDuration / elapsed;
@@ -2202,14 +2196,11 @@ describe("native vs foreignObject rendering benchmarks", () => {
     containerA.remove();
     
     // === TEST B: WITH WORKBENCH ===
-    const originalDevWorkbench = globalThis.EF_DEV_WORKBENCH;
-    globalThis.EF_DEV_WORKBENCH = true;
-    
     const containerB = document.createElement("div");
     render(
       html`
         <ef-configuration api-host="${apiHost}" signing-url="">
-          <ef-timegroup id="test-b" mode="fixed" duration="2s"
+          <ef-timegroup id="test-b" workbench mode="fixed" duration="2s"
             style="width: 1920px; height: 1080px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);">
             ${contentTemplate}
           </ef-timegroup>
@@ -2225,7 +2216,6 @@ describe("native vs foreignObject rendering benchmarks", () => {
     const timegroupB = document.querySelector("#test-b") as EFTimegroup;
     if (!timegroupB) {
       containerB.remove();
-      globalThis.EF_DEV_WORKBENCH = originalDevWorkbench;
       throw new Error("Timegroup B not found");
     }
     
@@ -2245,7 +2235,6 @@ describe("native vs foreignObject rendering benchmarks", () => {
     const workbench = timegroupB.closest("ef-workbench");
     workbench?.remove();
     containerB.remove();
-    globalThis.EF_DEV_WORKBENCH = originalDevWorkbench;
     setNativeCanvasApiEnabled(true);
     
     // === COMPARISON ===
