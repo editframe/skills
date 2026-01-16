@@ -737,20 +737,187 @@ interface ProfileAssertionResult {
   };
 }
 
-async function listSandboxes(): Promise<void> {
+// Category descriptions for LLM discovery
+const CATEGORY_DESCRIPTIONS: Record<string, string> = {
+  media: "Media Elements - Playback, display, and representation of video, audio, images, and timegroups",
+  timeline: "Timeline Components - Editing, trimming, sequencing, and temporal arrangement",
+  controls: "Controls - User input widgets like sliders, dials, and interactive controls",
+  panels: "Panels - UI containers and organizers for grouping interface elements",
+  visualization: "Visualization - Visual data representation like thumbnails, waveforms, and rulers",
+  layout: "Layout - Structure, organization, and spatial arrangement of content",
+  styling: "Styling - Appearance customization, CSS variables, and theming",
+};
+
+// Map category keys to display labels
+const CATEGORY_LABELS: Record<string, string> = {
+  media: "Media Elements",
+  timeline: "Timeline Components",
+  controls: "Controls",
+  panels: "Panels",
+  visualization: "Visualization",
+  layout: "Layout",
+  styling: "Styling",
+};
+
+async function showCategories(): Promise<void> {
+  console.log("\n📂 Affordance Categories:\n");
+  
+  const categoryOrder = ["media", "timeline", "controls", "panels", "visualization", "layout", "styling"];
+  
+  for (const category of categoryOrder) {
+    const label = CATEGORY_LABELS[category] || category.charAt(0).toUpperCase() + category.slice(1);
+    const description = CATEGORY_DESCRIPTIONS[category] || "No description available";
+    // Extract just the description part (after the dash)
+    const descriptionText = description.includes(" - ") ? description.split(" - ")[1] : description;
+    console.log(`  ${label}`);
+    console.log(`    ${SCRIPT_NAME} list --category ${category}`);
+    console.log(`    ${descriptionText}`);
+    console.log();
+  }
+  
+  console.log(`💡 Use '${SCRIPT_NAME} list <sandbox-name>' to see scenarios for a specific sandbox\n`);
+}
+
+async function listSandboxes(categoryFilter?: string, sandboxName?: string, json: boolean = false): Promise<void> {
   const elementsRoot = findElementsRoot();
   const sandboxes = discoverSandboxes(elementsRoot);
 
-  console.log("\n📦 Element Sandboxes:\n");
-  if (sandboxes.length === 0) {
-    console.log("  No sandboxes found");
+  // If specific sandbox requested, show its scenarios
+  if (sandboxName) {
+    const sandbox = sandboxes.find(s => s.elementName === sandboxName);
+    if (!sandbox) {
+      console.error(`\n❌ Sandbox "${sandboxName}" not found\n`);
+      console.log("Available sandboxes:");
+      for (const s of sandboxes) {
+        console.log(`  • ${s.elementName}`);
+      }
+      console.log();
+      process.exit(1);
+    }
+
+    // Load sandbox config to get scenarios
+    try {
+      const config = await loadSandbox(sandbox.filePath) as Sandbox;
+      const scenarioNames = Object.keys(config.scenarios || {});
+      
+      if (json) {
+        console.log(JSON.stringify({
+          sandbox: sandboxName,
+          category: sandbox.category,
+          description: config.description,
+          scenarios: scenarioNames,
+        }, null, 2));
+        return;
+      }
+
+      console.log(`\n📦 ${sandboxName}`);
+      if (sandbox.category) {
+        const categoryLabel = CATEGORY_LABELS[sandbox.category] || sandbox.category.charAt(0).toUpperCase() + sandbox.category.slice(1);
+        console.log(`   Category: ${categoryLabel}`);
+      }
+      if (config.description) {
+        console.log(`   ${config.description}`);
+      }
+      console.log(`\n   Scenarios (${scenarioNames.length}):\n`);
+      
+      for (const scenarioName of scenarioNames) {
+        const scenario = config.scenarios[scenarioName];
+        if (typeof scenario === "object" && scenario.description) {
+          console.log(`   • ${scenarioName}`);
+          console.log(`     ${scenario.description}`);
+        } else {
+          console.log(`   • ${scenarioName}`);
+        }
+      }
+      console.log();
+    } catch (err) {
+      console.error(`\n❌ Failed to load sandbox "${sandboxName}":`, err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
     return;
   }
 
+  // Group by category
+  const sandboxesByCategory = new Map<string, typeof sandboxes>();
   for (const sandbox of sandboxes) {
-    console.log(`  • ${sandbox.elementName}`);
+    const category = sandbox.category || "uncategorized";
+    if (categoryFilter && category !== categoryFilter) {
+      continue;
+    }
+    if (!sandboxesByCategory.has(category)) {
+      sandboxesByCategory.set(category, []);
+    }
+    sandboxesByCategory.get(category)!.push(sandbox);
   }
-  console.log();
+
+  if (sandboxesByCategory.size === 0) {
+    if (categoryFilter) {
+      console.log(`\n❌ No sandboxes found in category "${categoryFilter}"\n`);
+      console.log("Available categories:");
+      await showCategories();
+    } else {
+      console.log("\n  No sandboxes found\n");
+    }
+    return;
+  }
+
+  if (json) {
+    const output: Record<string, Array<{ name: string; elementTag: string | null }>> = {};
+    for (const [category, categorySandboxes] of sandboxesByCategory.entries()) {
+      output[category] = categorySandboxes.map(s => ({
+        name: s.elementName,
+        elementTag: s.elementTag,
+      }));
+    }
+    console.log(JSON.stringify(output, null, 2));
+    return;
+  }
+
+  // Sort categories by priority
+  const categoryOrder: Record<string, number> = {
+    media: 1,
+    timeline: 2,
+    controls: 3,
+    panels: 4,
+    visualization: 5,
+    layout: 6,
+    styling: 7,
+    uncategorized: 999,
+  };
+
+  const sortedCategories = Array.from(sandboxesByCategory.entries()).sort((a, b) => {
+    const aOrder = categoryOrder[a[0]] || 999;
+    const bOrder = categoryOrder[b[0]] || 999;
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return a[0].localeCompare(b[0]);
+  });
+
+  if (categoryFilter) {
+    console.log(`\n📦 Sandboxes in "${categoryFilter}" category:\n`);
+  } else {
+    console.log("\n📦 Element Sandboxes by Category:\n");
+  }
+
+  for (const [category, categorySandboxes] of sortedCategories) {
+    const categoryLabel = CATEGORY_LABELS[category] || category.charAt(0).toUpperCase() + category.slice(1);
+    const description = CATEGORY_DESCRIPTIONS[category];
+    
+    console.log(`  ${categoryLabel}${description ? ` - ${description.split(" - ")[1]}` : ""}`);
+    console.log(`  ${"=".repeat(60)}`);
+    
+    for (const sandbox of categorySandboxes.sort((a, b) => a.elementName.localeCompare(b.elementName))) {
+      console.log(`    • ${sandbox.elementName}`);
+      if (sandbox.elementTag) {
+        console.log(`      <${sandbox.elementTag}>`);
+      }
+    }
+    console.log();
+  }
+
+  if (!categoryFilter) {
+    console.log(`💡 Use '${SCRIPT_NAME} list --category <name>' to filter by category`);
+    console.log(`💡 Use '${SCRIPT_NAME} list <sandbox-name>' to see scenarios\n`);
+  }
 }
 
 async function showRelated(sandboxName?: string): Promise<void> {
@@ -3903,7 +4070,8 @@ Usage:
   ${SCRIPT_NAME} <command> [options]
 
 Commands:
-  list                          List all sandboxes
+  categories                    Show all affordance categories
+  list [name] [options]        List sandboxes (grouped by category, or scenarios for specific sandbox)
   related [name]                Show sandbox relationships (uses/usedBy)
   open [name]                   Open scenario viewer in browser (optionally with specific sandbox)
   run [name] [options]          Run scenarios as tests
@@ -3917,7 +4085,11 @@ Info Subcommands:
   test <name>                   Show individual test details
   search <query>                Search tests and errors
 
-Options:
+List Options:
+  --category <name>              Filter sandboxes by category (media, timeline, controls, etc.)
+  --json                         Output JSON for machine parsing
+
+Run Options:
   --scenario <pattern>          Run scenarios matching pattern (supports * wildcard)
   --watch                       Watch mode - re-run on file changes (disables profiling by default)
   --profile                     Enable CPU profiling and show hotspots (default: enabled unless --watch)
@@ -3936,7 +4108,10 @@ Screenshot Options:
   --height <px>                 Viewport height (default: auto)
 
 Examples:
-  ${SCRIPT_NAME} list
+  ${SCRIPT_NAME} categories           # Show all affordance categories
+  ${SCRIPT_NAME} list                 # List all sandboxes grouped by category
+  ${SCRIPT_NAME} list --category media # List sandboxes in media category
+  ${SCRIPT_NAME} list EFDial          # Show scenarios for EFDial sandbox
   ${SCRIPT_NAME} open                # Open scenario viewer with all sandboxes
   ${SCRIPT_NAME} open EFDial         # Open scenario viewer with EFDial sandbox selected
   ${SCRIPT_NAME} run EFDial
@@ -3963,8 +4138,30 @@ Info Command (Progressive Discovery):
     process.exit(0);
   }
   
+  if (command === "categories") {
+    await showCategories();
+    process.exit(0);
+  }
+  
   if (command === "list" || !command) {
-    await listSandboxes();
+    // Parse list command options
+    let categoryFilter: string | undefined;
+    let sandboxName: string | undefined;
+    let json = false;
+    
+    for (let i = 1; i < args.length; i++) {
+      if (args[i] === "--category" && args[i + 1]) {
+        categoryFilter = args[i + 1];
+        i++;
+      } else if (args[i] === "--json") {
+        json = true;
+      } else if (!args[i].startsWith("--")) {
+        // First non-flag argument is sandbox name
+        sandboxName = args[i];
+      }
+    }
+    
+    await listSandboxes(categoryFilter, sandboxName, json);
     process.exit(0);
   }
   
