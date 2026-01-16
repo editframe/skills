@@ -10,6 +10,7 @@ import "../../../elements/EFText.js";
 export default defineSandbox({
   name: "TrackItem",
   description: "Atom: Individual track item representing a temporal element on the timeline",
+  category: "timeline",
   
   render: () => html`
     <div style="width: 100%; padding: 24px; display: flex; flex-direction: column; gap: 16px;">

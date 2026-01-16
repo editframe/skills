@@ -6,6 +6,7 @@ import "./EFDial.js";
 export default defineSandbox({
   name: "EFDial",
   description: "Rotation dial control for adjusting angles",
+  category: "controls",
   
   render: () => html`
     <ef-dial .value=${45} style="width: 200px; height: 200px;"></ef-dial>

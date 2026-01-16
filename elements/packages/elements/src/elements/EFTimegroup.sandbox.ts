@@ -6,6 +6,7 @@ import "./EFTimegroup.js";
 export default defineSandbox({
   name: "EFTimegroup",
   description: "Temporal container for synchronized media playback",
+  category: "media",
   
   render: () => html`
     <ef-timegroup mode="fixed" duration="2s" style="width: 400px; height: 300px; border: 1px solid #ccc;">

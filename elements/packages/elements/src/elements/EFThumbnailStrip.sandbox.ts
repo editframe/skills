@@ -234,6 +234,7 @@ async function waitForThumbnails(
 export default defineSandbox({
   name: "EFThumbnailStrip",
   description: "Canvas-based thumbnail strip for ef-video and ef-timegroup elements",
+  category: "visualization",
   
   render: () => html`
     <test-context style="display: contents;">

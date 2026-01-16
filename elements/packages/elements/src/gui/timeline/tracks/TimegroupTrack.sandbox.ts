@@ -12,6 +12,7 @@ import "../TimelineStateProvider.js";
 export default defineSandbox({
   name: "EFTimegroupTrack",
   description: "Timegroup track component for nested compositions. Base track behavior tested in TrackItem.sandbox.ts",
+  category: "media",
   
   render: () => html`
     <timeline-state-provider

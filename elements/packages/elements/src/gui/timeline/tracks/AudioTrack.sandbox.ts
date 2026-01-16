@@ -12,6 +12,7 @@ import "../TimelineStateProvider.js";
 export default defineSandbox({
   name: "EFAudioTrack",
   description: "Audio track component with waveform visualization. Base track behavior tested in TrackItem.sandbox.ts",
+  category: "media",
   
   render: () => html`
     <timeline-state-provider

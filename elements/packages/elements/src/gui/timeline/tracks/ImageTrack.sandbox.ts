@@ -12,6 +12,7 @@ import "../TimelineStateProvider.js";
 export default defineSandbox({
   name: "EFImageTrack",
   description: "Image track component with thumbnail preview. Base track behavior tested in TrackItem.sandbox.ts",
+  category: "media",
   
   render: () => html`
     <timeline-state-provider

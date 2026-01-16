@@ -6,6 +6,7 @@ import "./EFPanZoom.js";
 export default defineSandbox({
   name: "EFPanZoom",
   description: "Pan-zoom container for interactive viewport manipulation",
+  category: "layout",
   
   render: () => html`
     <ef-pan-zoom style="width: 400px; height: 300px; border: 1px solid #ccc;">
