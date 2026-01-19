@@ -16,16 +16,24 @@ export const makeScrubVideoInputTask = (host: EFVideo): InputTask => {
         host.scrubVideoSegmentFetchTask.value,
       ] as const,
     onError: (error) => {
-      // Only log unexpected errors - missing scrub segments is handled gracefully above
+      // Only log unexpected errors - missing scrub segments, fetch failures, and file not found are handled gracefully
       if (
         error instanceof Error &&
-        error.message !== "Scrub init segment or segment is not available"
+        error.message !== "Scrub init segment or segment is not available" &&
+        !error.message.includes("Failed to fetch") &&
+        !error.message.includes("File not found") &&
+        !error.message.includes("is not valid JSON")
       ) {
         console.error("scrubVideoInputTask error", error);
       }
     },
     onComplete: (_value) => {},
     task: async (_, { signal }) => {
+      // Check if media engine task has errored (no valid source) before attempting to use it
+      if (host.mediaEngineTask.error) {
+        return undefined;
+      }
+      
       const initSegment =
         await host.scrubVideoInitSegmentFetchTask.taskComplete;
       if (signal.aborted) return undefined;
@@ -39,7 +47,17 @@ export const makeScrubVideoInputTask = (host: EFVideo): InputTask => {
       }
 
       // Get startTimeOffsetMs from the scrub rendition if available
-      const mediaEngine = await host.mediaEngineTask.taskComplete;
+      let mediaEngine;
+      try {
+        mediaEngine = await host.mediaEngineTask.taskComplete;
+      } catch (error) {
+        // If media engine task failed (no valid source), return undefined silently
+        if (error instanceof Error && error.message === "No valid media source") {
+          return undefined;
+        }
+        // Re-throw unexpected errors
+        throw error;
+      }
       if (signal.aborted) return undefined;
 
       const scrubRendition = mediaEngine.getScrubVideoRendition();

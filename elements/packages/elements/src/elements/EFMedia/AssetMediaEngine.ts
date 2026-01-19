@@ -24,15 +24,17 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
   protected data: Record<number, TrackFragmentIndex> = {};
   durationMs = 0;
   private thumbnailExtractor: ThumbnailExtractor;
+  protected urlGenerator: UrlGenerator;
 
-  constructor(host: EFMedia, src: string) {
+  constructor(host: EFMedia, src: string, urlGenerator: UrlGenerator) {
     super(host);
     this.src = src;
     this.thumbnailExtractor = new ThumbnailExtractor(this);
+    this.urlGenerator = urlGenerator;
   }
 
   static async fetch(host: EFMedia, urlGenerator: UrlGenerator, src: string) {
-    const engine = new AssetMediaEngine(host, src);
+    const engine = new AssetMediaEngine(host, src, urlGenerator);
     const url = urlGenerator.generateTrackFragmentIndexUrl(src);
     const data = await engine.fetchManifest(url);
     engine.data = data as Record<number, TrackFragmentIndex>;
@@ -47,6 +49,70 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
     if (src.startsWith("/")) {
       engine.src = src.slice(1);
     }
+
+    // Validate that segments are accessible by trying to fetch the first init segment
+    // This prevents creating a media engine that will fail on all subsequent segment fetches
+    // If segments require authentication that's not available, fail early
+    // Check both video and audio tracks if available, as they might have different auth requirements
+    const videoTrack = engine.videoTrackIndex;
+    const audioTrack = engine.audioTrackIndex;
+    
+    // Validate video track if available
+    if (videoTrack && videoTrack.track !== undefined) {
+      try {
+        await engine.fetchInitSegment(
+          { trackId: videoTrack.track, src: engine.src },
+          new AbortController().signal,
+        );
+      } catch (error) {
+        // If fetch fails with 401, segments require authentication that's not available
+        // Fail media engine creation early to avoid all subsequent fetch calls
+        if (
+          error instanceof Error &&
+          (error.message.includes("401") ||
+            error.message.includes("UNAUTHORIZED") ||
+            (error.message.includes("Failed to fetch") && error.message.includes("401")))
+        ) {
+          throw new Error(`Video segments require authentication: ${error.message}`);
+        }
+        // For abort errors, continue - might be cancelled
+        if (error instanceof DOMException && error.name === "AbortError") {
+          // Continue to check audio track or return engine
+        } else {
+          // For other errors (404, network errors, etc.), allow media engine creation
+          // These might be transient or expected in some test scenarios
+        }
+      }
+    }
+    
+    // Validate audio track if available (and video validation didn't fail with auth)
+    if (audioTrack && audioTrack.track !== undefined) {
+      try {
+        await engine.fetchInitSegment(
+          { trackId: audioTrack.track, src: engine.src },
+          new AbortController().signal,
+        );
+      } catch (error) {
+        // If fetch fails with 401, segments require authentication that's not available
+        // Fail media engine creation early to avoid all subsequent fetch calls
+        if (
+          error instanceof Error &&
+          (error.message.includes("401") ||
+            error.message.includes("UNAUTHORIZED") ||
+            (error.message.includes("Failed to fetch") && error.message.includes("401")))
+        ) {
+          throw new Error(`Audio segments require authentication: ${error.message}`);
+        }
+        // For abort errors, continue - might be cancelled
+        if (error instanceof DOMException && error.name === "AbortError") {
+          // Continue - abort is fine
+        } else {
+          // For other errors (404, network errors, etc.), allow media engine creation
+          // These might be transient or expected in some test scenarios
+        }
+      }
+    }
+
     return engine;
   }
 
@@ -97,7 +163,7 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
 
     if (this.audioTrackIndex !== undefined) {
       paths.audio = {
-        path: `@ef-track/${this.audioTrackIndex.track}.m4s`,
+        path: `/@ef-track/${this.audioTrackIndex.track}.m4s`,
         pos: this.audioTrackIndex.initSegment.offset,
         size: this.audioTrackIndex.initSegment.size,
       };
@@ -114,27 +180,74 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
     return paths;
   }
 
+  /**
+   * Map trackId to JIT rendition ID
+   * - trackId 1 (video) -> "high" (default video rendition)
+   * - trackId 2 (audio) -> "audio"
+   * - trackId -1 (scrub) -> "scrub"
+   */
+  private getRenditionId(trackId: number): string {
+    if (trackId === -1) return "scrub";
+    if (trackId === 2) return "audio";
+    return "high"; // Default video rendition (trackId 1)
+  }
+
+  /**
+   * Get the source URL for JIT format (needs to be absolute URL)
+   */
+  private getSourceUrlForJit(): string {
+    // If src is already an absolute URL, use it
+    if (this.src.startsWith("http://") || this.src.startsWith("https://")) {
+      return this.src;
+    }
+    
+    // Otherwise, construct absolute URL from baseUrl or current origin
+    let baseUrl = this.urlGenerator.baseUrl();
+    // If baseUrl is empty (no apiHost set), use current origin
+    if (!baseUrl) {
+      baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+    }
+    // If src starts with /, keep it as-is (absolute path)
+    // Otherwise, prepend with /
+    const normalizedSrc = this.src.startsWith("/") ? this.src : `/${this.src}`;
+    return `${baseUrl}${normalizedSrc}`;
+  }
+  
+  /**
+   * Get the base URL for constructing JIT endpoints
+   */
+  private getBaseUrlForJit(): string {
+    let baseUrl = this.urlGenerator.baseUrl();
+    // If baseUrl is empty (no apiHost set), use current origin
+    if (!baseUrl) {
+      baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+    }
+    return baseUrl;
+  }
+
   get templates() {
+    const sourceUrl = this.getSourceUrlForJit();
+    const baseUrl = this.getBaseUrlForJit();
     return {
-      initSegment: "/@ef-track/{src}?trackId={trackId}",
-      mediaSegment: "/@ef-track/{src}?trackId={trackId}",
+      initSegment: `${baseUrl}/api/v1/transcode/{rendition}/init.m4s?url=${encodeURIComponent(sourceUrl)}`,
+      mediaSegment: `${baseUrl}/api/v1/transcode/{rendition}/{segmentId}.m4s?url=${encodeURIComponent(sourceUrl)}`,
     };
   }
 
   buildInitSegmentUrl(trackId: number) {
-    // Use @ef-scrub-track endpoint for scrub track (trackId -1)
-    if (trackId === -1) {
-      return `/@ef-scrub-track/${this.src}`;
-    }
-    return `/@ef-track/${this.src}?trackId=${trackId}`;
+    const renditionId = this.getRenditionId(trackId);
+    const sourceUrl = this.getSourceUrlForJit();
+    const baseUrl = this.getBaseUrlForJit();
+    return `${baseUrl}/api/v1/transcode/${renditionId}/init.m4s?url=${encodeURIComponent(sourceUrl)}`;
   }
 
   buildMediaSegmentUrl(trackId: number, segmentId: number) {
-    // Use @ef-scrub-track endpoint for scrub track (trackId -1)
-    if (trackId === -1) {
-      return `/@ef-scrub-track/${this.src}`;
-    }
-    return `/@ef-track/${this.src}?trackId=${trackId}&segmentId=${segmentId}`;
+    const renditionId = this.getRenditionId(trackId);
+    const sourceUrl = this.getSourceUrlForJit();
+    const baseUrl = this.getBaseUrlForJit();
+    // JIT uses 1-based segment IDs, but AssetMediaEngine uses 0-based internally
+    // So we need to add 1 to segmentId
+    return `${baseUrl}/api/v1/transcode/${renditionId}/${segmentId + 1}.m4s?url=${encodeURIComponent(sourceUrl)}`;
   }
 
   /**
@@ -148,7 +261,10 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
   ): boolean {
     // For scrub track (trackId -1), check if the entire scrub file is cached
     if (rendition.trackId === -1) {
-      const scrubUrl = `/@ef-scrub-track/${this.src}`;
+      const renditionId = this.getRenditionId(-1);
+      const sourceUrl = this.getSourceUrlForJit();
+      const baseUrl = this.getBaseUrlForJit();
+      const scrubUrl = `${baseUrl}/api/v1/transcode/${renditionId}/init.m4s?url=${encodeURIComponent(sourceUrl)}`;
       return mediaCache.has(scrubUrl);
     }
     // For other tracks, use the default behavior

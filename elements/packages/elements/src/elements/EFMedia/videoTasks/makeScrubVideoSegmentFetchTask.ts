@@ -1,6 +1,7 @@
 import { Task } from "@lit/task";
 import type { MediaEngine } from "../../../transcoding/types";
 import type { EFVideo } from "../../EFVideo";
+import { AssetMediaEngine } from "../AssetMediaEngine";
 import { getLatestMediaEngine } from "../tasks/makeMediaEngineTask";
 
 export const makeScrubVideoSegmentFetchTask = (
@@ -23,8 +24,23 @@ export const makeScrubVideoSegmentFetchTask = (
       }
     },
     onComplete: (_value) => {},
-    task: async (_, { signal }) => {
-      const mediaEngine = await getLatestMediaEngine(host, signal);
+    task: async ([mediaEngineValue], { signal }) => {
+      // Check if media engine task has errored (no valid source) before attempting to use it
+      if (host.mediaEngineTask.error || !mediaEngineValue) {
+        return undefined as any;
+      }
+      
+      let mediaEngine;
+      try {
+        mediaEngine = await getLatestMediaEngine(host, signal);
+      } catch (error) {
+        // If media engine task failed (no valid source), return undefined silently
+        if (error instanceof Error && error.message === "No valid media source") {
+          return undefined as any;
+        }
+        // Re-throw unexpected errors
+        throw error;
+      }
       const segmentId = await host.scrubVideoSegmentIdTask.taskComplete;
       if (segmentId === undefined) {
         // Scrub segment ID not available - scrub is optional, return undefined
@@ -40,14 +56,40 @@ export const makeScrubVideoSegmentFetchTask = (
         return undefined as any; // Task expects ArrayBuffer, but undefined indicates unavailable
       }
 
-      return mediaEngine.fetchMediaSegment(
-        segmentId,
-        {
-          ...scrubRendition,
-          src: mediaEngine.src, // Ensure src is set
-        },
-        signal,
-      );
+      // Check if the segment exists in AssetMediaEngine data before fetching
+      // Scrub track uses trackId -1, so check for that
+      if (mediaEngine instanceof AssetMediaEngine && scrubRendition.trackId !== -1) {
+        const trackData = mediaEngine.data?.[scrubRendition.trackId];
+        if (!trackData?.segments || segmentId >= trackData.segments.length) {
+          // Segment doesn't exist in the data - don't fetch
+          return undefined as any;
+        }
+      }
+
+      // Try to fetch the segment, but return undefined if it fails
+      try {
+        return await mediaEngine.fetchMediaSegment(
+          segmentId,
+          {
+            ...scrubRendition,
+            src: mediaEngine.src, // Ensure src is set
+          },
+          signal,
+        );
+      } catch (error) {
+        // If segment doesn't exist or fetch fails, return undefined gracefully
+        if (
+          error instanceof Error &&
+          (error.message.includes("Media segment not found") ||
+            error.message.includes("Track not found") ||
+            error.message.includes("Failed to fetch") ||
+            error.message.includes("File not found"))
+        ) {
+          return undefined as any;
+        }
+        // Re-throw unexpected errors
+        throw error;
+      }
     },
   });
 };

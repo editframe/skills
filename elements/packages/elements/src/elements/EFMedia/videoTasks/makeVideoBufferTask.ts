@@ -4,6 +4,7 @@ import { EF_INTERACTIVE } from "../../../EF_INTERACTIVE";
 import { EF_RENDERING } from "../../../EF_RENDERING";
 import type { VideoRendition } from "../../../transcoding/types";
 import type { EFVideo } from "../../EFVideo";
+import { AssetMediaEngine } from "../AssetMediaEngine";
 import {
   type MediaBufferConfig,
   type MediaBufferState,
@@ -34,6 +35,17 @@ export const makeVideoBufferTask = (host: EFVideo): VideoBufferTask => {
     autoRun: EF_INTERACTIVE, // Make lazy - only run when element becomes timeline-active
     args: () => [host.desiredSeekTimeMs] as const,
     onError: (error) => {
+      // Don't log errors when there's no valid media source, file not found, or auth errors - these are expected
+      if (error instanceof Error && (
+        error.message === "No valid media source" ||
+        error.message.includes("File not found") ||
+        error.message.includes("is not valid JSON") ||
+        error.message.includes("401") ||
+        error.message.includes("UNAUTHORIZED") ||
+        error.message.includes("Failed to fetch")
+      )) {
+        return;
+      }
       console.error("videoBufferTask error", error);
     },
     onComplete: (value) => {
@@ -45,8 +57,23 @@ export const makeVideoBufferTask = (host: EFVideo): VideoBufferTask => {
         return currentState; // Return existing state without any buffering activity
       }
 
+      // Check if media engine task has errored (no valid source) before attempting to use it
+      if (host.mediaEngineTask.error) {
+        return currentState;
+      }
+
       // Get media engine to potentially override buffer configuration
-      const mediaEngine = await getLatestMediaEngine(host, signal);
+      let mediaEngine;
+      try {
+        mediaEngine = await getLatestMediaEngine(host, signal);
+      } catch (error) {
+        // If media engine task failed (no valid source), return current state silently
+        if (error instanceof Error && error.message === "No valid media source") {
+          return currentState;
+        }
+        // Re-throw unexpected errors
+        throw error;
+      }
 
       // Use media engine's buffer config, falling back to host properties
       const engineConfig = mediaEngine.getBufferConfig();
@@ -84,8 +111,35 @@ export const makeVideoBufferTask = (host: EFVideo): VideoBufferTask => {
           },
           prefetchSegment: async (segmentId, rendition) => {
             // Trigger prefetch through BaseMediaEngine - let it handle caching
-            const mediaEngine = await getLatestMediaEngine(host, signal);
-            await mediaEngine.fetchMediaSegment(segmentId, rendition);
+            try {
+              const mediaEngine = await getLatestMediaEngine(host, signal);
+              
+              // Check if the segment exists in AssetMediaEngine data before prefetching
+              // Scrub track uses trackId -1, which is handled specially, so skip check for that
+              if (mediaEngine instanceof AssetMediaEngine && rendition.trackId !== -1) {
+                const trackData = mediaEngine.data?.[rendition.trackId];
+                if (!trackData?.segments || segmentId >= trackData.segments.length) {
+                  // Segment doesn't exist in the data - don't prefetch
+                  return;
+                }
+              }
+              
+              await mediaEngine.fetchMediaSegment(segmentId, rendition);
+            } catch (error) {
+              // If segment doesn't exist or fetch fails (401, etc.), skip prefetch silently
+              if (
+                error instanceof Error &&
+                (error.message.includes("Media segment not found") ||
+                  error.message.includes("Track not found") ||
+                  error.message.includes("Failed to fetch") ||
+                  error.message.includes("401") ||
+                  error.message.includes("UNAUTHORIZED") ||
+                  error.message.includes("File not found"))
+              ) {
+                return;
+              }
+              throw error;
+            }
             // Don't return data - just ensure it's cached in BaseMediaEngine
           },
           isSegmentCached: (segmentId, rendition) => {
@@ -97,8 +151,16 @@ export const makeVideoBufferTask = (host: EFVideo): VideoBufferTask => {
           },
           getRendition: async () => {
             // Get real video rendition from media engine
-            const mediaEngine = await getLatestMediaEngine(host, signal);
-            return mediaEngine.getVideoRendition();
+            try {
+              const mediaEngine = await getLatestMediaEngine(host, signal);
+              return mediaEngine.getVideoRendition();
+            } catch (error) {
+              // If media engine task failed (no valid source), throw error for getRendition
+              if (error instanceof Error && error.message === "No valid media source") {
+                throw new Error("Video rendition not available");
+              }
+              throw error;
+            }
           },
           logError: console.error,
         },

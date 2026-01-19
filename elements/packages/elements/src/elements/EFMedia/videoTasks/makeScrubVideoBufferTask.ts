@@ -24,6 +24,14 @@ export const makeScrubVideoBufferTask = (host: EFVideo) => {
     autoRun: EF_INTERACTIVE,
     args: () => [host.mediaEngineTask.value] as const,
     onError: (error) => {
+      // Don't log errors when there's no valid media source or file not found - these are expected
+      if (error instanceof Error && (
+        error.message === "No valid media source" ||
+        error.message.includes("File not found") ||
+        error.message.includes("is not valid JSON")
+      )) {
+        return;
+      }
       console.error("scrubVideoBufferTask error", error);
     },
     onComplete: (value) => {

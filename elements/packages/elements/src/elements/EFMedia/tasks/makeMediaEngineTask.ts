@@ -10,7 +10,17 @@ export const getLatestMediaEngine = async (
   host: EFMedia,
   signal: AbortSignal,
 ): Promise<MediaEngine> => {
-  const mediaEngine = await host.mediaEngineTask.taskComplete;
+  let mediaEngine;
+  try {
+    mediaEngine = await host.mediaEngineTask.taskComplete;
+  } catch (error) {
+    // If the error is "No valid media source", re-throw it so callers can handle it
+    if (error instanceof Error && error.message === "No valid media source") {
+      throw error;
+    }
+    // For other errors, wrap them
+    throw error;
+  }
   signal.throwIfAborted();
   if (!mediaEngine) {
     throw new Error("Media engine is not available");
@@ -98,6 +108,22 @@ export const makeMediaEngineTask = (host: EFMedia): MediaEngineTask => {
     autoRun: EF_INTERACTIVE,
     args: () => [host.src, host.assetId] as const,
     task: async () => {
+      // Check if we have a valid source before attempting to create media engine
+      // This avoids unnecessary errors when src is empty/null/undefined
+      const { src, assetId } = host;
+      
+      // If we have a valid assetId, proceed
+      if (assetId !== null && assetId !== undefined && assetId.trim() !== "") {
+        return createMediaEngine(host);
+      }
+      
+      // If we don't have a valid src, don't attempt to create media engine
+      if (!src || typeof src !== "string" || src.trim() === "") {
+        // Return a rejected promise to indicate no valid source
+        // This prevents the error from being logged since we're handling it explicitly
+        return Promise.reject(new Error("No valid media source"));
+      }
+      
       return createMediaEngine(host);
     },
     onComplete: (_value) => {

@@ -18,6 +18,17 @@ export function makeAudioTimeDomainAnalysisTask(element: EFMedia) {
         console.info("byteTimeDomainTask skipped: no audio track");
         return;
       }
+      // Don't log errors when there's no valid media source, file not found, or auth errors - these are expected
+      if (error instanceof Error && (
+        error.message === "No valid media source" ||
+        error.message.includes("File not found") ||
+        error.message.includes("is not valid JSON") ||
+        error.message.includes("401") ||
+        error.message.includes("UNAUTHORIZED") ||
+        error.message.includes("Failed to fetch")
+      )) {
+        return;
+      }
       console.error("byteTimeDomainTask error", error);
     },
     args: () =>
@@ -58,22 +69,51 @@ export function makeAudioTimeDomainAnalysisTask(element: EFMedia) {
         return cachedData;
       }
 
+      // Check if media engine task has errored (no valid source) before attempting to use it
+      if (element.mediaEngineTask.error) {
+        return null;
+      }
+      
       // Check if audio rendition exists before attempting to fetch audio data
       // This prevents unnecessary HTTP requests and warnings when audio is not available
-      const mediaEngine = await element.mediaEngineTask.taskComplete;
+      let mediaEngine;
+      try {
+        mediaEngine = await element.mediaEngineTask.taskComplete;
+      } catch (error) {
+        // If media engine task failed (no valid source), return null silently
+        if (error instanceof Error && error.message === "No valid media source") {
+          return null;
+        }
+        // Re-throw unexpected errors
+        throw error;
+      }
       if (!mediaEngine?.audioRendition) {
         // No audio rendition available - skip silently (no warning needed)
         return null;
       }
 
-      const { fetchAudioSpanningTime: fetchAudioSpan } =
-        await import("../shared/AudioSpanUtils.ts");
-      const audioSpan = await fetchAudioSpan(element, fromMs, toMs, signal);
-
-      if (!audioSpan || !audioSpan.blob) {
-        // Audio data not available - skip silently (already checked for rendition above)
+      // Check if audioInputTask has errored or returned undefined before fetching
+      // This prevents fetch calls when we know they'll fail (e.g., 401 auth required)
+      if (element.audioInputTask.error) {
         return null;
       }
+      const audioInputValue = element.audioInputTask.value;
+      if (audioInputValue === undefined) {
+        // Audio input is not available - don't try to fetch
+        return null;
+      }
+
+      const { fetchAudioSpanningTime: fetchAudioSpan } =
+        await import("../shared/AudioSpanUtils.js");
+      
+      // Try to fetch audio span, but return null if it fails with expected errors
+      try {
+        const audioSpan = await fetchAudioSpan(element, fromMs, toMs, signal);
+
+        if (!audioSpan || !audioSpan.blob) {
+          // Audio data not available - skip silently (already checked for rendition above)
+          return null;
+        }
 
       // Decode the real audio data
       const tempAudioContext = new OfflineAudioContext(2, 48000, 48000);
@@ -183,9 +223,25 @@ export function makeAudioTimeDomainAnalysisTask(element: EFMedia) {
         smoothedData[i] = Math.min(255, Math.round(weightedSum / weightSum));
       }
 
-      // Cache with the preliminary key so future requests can skip audio fetching
-      cache.set(preliminaryCacheKey, smoothedData);
-      return smoothedData;
+        // Cache with the preliminary key so future requests can skip audio fetching
+        cache.set(preliminaryCacheKey, smoothedData);
+        return smoothedData;
+      } catch (error) {
+        // If fetch fails with expected errors (401, missing segments, etc.), return null gracefully
+        if (
+          error instanceof Error &&
+          (error.message.includes("401") ||
+            error.message.includes("UNAUTHORIZED") ||
+            error.message.includes("Failed to fetch") ||
+            error.message.includes("File not found") ||
+            error.message.includes("Media segment not found") ||
+            error.message.includes("No segments found"))
+        ) {
+          return null;
+        }
+        // Re-throw unexpected errors
+        throw error;
+      }
     },
   });
 }

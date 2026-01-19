@@ -127,8 +127,29 @@ export abstract class BaseMediaEngine {
               const fetchEnd = performance.now();
               span.setAttribute("fetchMs", fetchEnd - fetchStart);
 
+              // Check response status before parsing
+              if (!response.ok) {
+                // Read body once - can't read again after this
+                const text = await response.text();
+                throw new Error(`Failed to fetch: ${response.status} ${text.substring(0, 100)}`);
+              }
+
               if (responseType === "json") {
-                return response.json();
+                // Check content type header (doesn't consume body)
+                const contentType = response.headers.get("content-type");
+                if (contentType && !contentType.includes("application/json") && !contentType.includes("text/json")) {
+                  // Read body once - can't read again after this
+                  const text = await response.text();
+                  throw new Error(`Expected JSON but got ${contentType}: ${text.substring(0, 100)}`);
+                }
+                try {
+                  // Read body once as JSON
+                  return await response.json();
+                } catch (error) {
+                  // JSON parse failed - body is already consumed, can't read again
+                  // The error should contain enough info, but if we need the text, we'd need to clone the response first
+                  throw new Error(`Failed to parse JSON response: ${error instanceof Error ? error.message : String(error)}`);
+                }
               }
               const buffer = await response.arrayBuffer();
               span.setAttribute("sizeBytes", buffer.byteLength);

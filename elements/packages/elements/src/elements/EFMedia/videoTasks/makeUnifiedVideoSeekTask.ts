@@ -147,18 +147,57 @@ async function tryGetScrubSample(
 
         // For single-file scrub tracks (AssetMediaEngine trackId -1), use URL-based caching
         // This ensures all segments share the same BufferedSeekingInput instance
-        const scrubUrl = scrubRendition.trackId === -1 
-          ? `/@ef-scrub-track/${mediaEngine.src}`
-          : undefined;
+        // Use JIT format URL for consistency
+        let scrubUrl: string | undefined;
+        if (scrubRendition.trackId === -1) {
+          // Check if mediaEngine has urlGenerator (AssetMediaEngine)
+          if (mediaEngine.urlGenerator && typeof mediaEngine.urlGenerator.baseUrl === "function") {
+            // Get baseUrl, fallback to current origin if empty
+            let baseUrl = mediaEngine.urlGenerator.baseUrl();
+            if (!baseUrl && typeof window !== "undefined") {
+              baseUrl = window.location.origin;
+            }
+            // Get source URL
+            const sourceUrl = mediaEngine.src.startsWith("http://") || mediaEngine.src.startsWith("https://")
+              ? mediaEngine.src
+              : `${baseUrl}/${mediaEngine.src.startsWith("/") ? mediaEngine.src.slice(1) : mediaEngine.src}`;
+            scrubUrl = `${baseUrl}/api/v1/transcode/scrub/init.m4s?url=${encodeURIComponent(sourceUrl)}`;
+          } else {
+            // Fallback to old format if no urlGenerator (shouldn't happen, but for safety)
+            scrubUrl = `/@ef-scrub-track/${mediaEngine.src}`;
+          }
+        }
 
         // Get cached scrub input and seek within it
         const scrubInput = await scrubInputCache.getOrCreateInput(
           segmentId,
           async () => {
-            const [initSegment, mediaSegment] = await Promise.all([
-              mediaEngine.fetchInitSegment(scrubRenditionWithSrc, signal),
-              mediaEngine.fetchMediaSegment(segmentId, scrubRenditionWithSrc),
-            ]);
+            // Try to fetch segments, but return undefined if they fail with expected errors
+            let initSegment: ArrayBuffer | undefined;
+            let mediaSegment: ArrayBuffer | undefined;
+            
+            try {
+              [initSegment, mediaSegment] = await Promise.all([
+                mediaEngine.fetchInitSegment(scrubRenditionWithSrc, signal),
+                mediaEngine.fetchMediaSegment(segmentId, scrubRenditionWithSrc),
+              ]);
+            } catch (error) {
+              // If fetch fails with expected errors (401, missing segments, etc.), return undefined
+              if (
+                error instanceof Error &&
+                (error.message.includes("401") ||
+                  error.message.includes("UNAUTHORIZED") ||
+                  error.message.includes("Failed to fetch") ||
+                  error.message.includes("File not found") ||
+                  error.message.includes("Media segment not found") ||
+                  error.message.includes("Init segment not found") ||
+                  error.message.includes("Track not found"))
+              ) {
+                return undefined;
+              }
+              // Re-throw unexpected errors
+              throw error;
+            }
 
             if (!initSegment || !mediaSegment || signal.aborted)
               return undefined;
@@ -270,10 +309,32 @@ async function getMainVideoSample(
           videoRendition.id,
           async () => {
             // Fetch main video segment (will be cached at mediaEngine level)
-            const [initSegment, mediaSegment] = await Promise.all([
-              mediaEngine.fetchInitSegment(videoRendition, signal),
-              mediaEngine.fetchMediaSegment(segmentId, videoRendition, signal),
-            ]);
+            // Try to fetch segments, but return undefined if they fail with expected errors
+            let initSegment: ArrayBuffer | undefined;
+            let mediaSegment: ArrayBuffer | undefined;
+            
+            try {
+              [initSegment, mediaSegment] = await Promise.all([
+                mediaEngine.fetchInitSegment(videoRendition, signal),
+                mediaEngine.fetchMediaSegment(segmentId, videoRendition, signal),
+              ]);
+            } catch (error) {
+              // If fetch fails with expected errors (401, missing segments, etc.), return undefined
+              if (
+                error instanceof Error &&
+                (error.message.includes("401") ||
+                  error.message.includes("UNAUTHORIZED") ||
+                  error.message.includes("Failed to fetch") ||
+                  error.message.includes("File not found") ||
+                  error.message.includes("Media segment not found") ||
+                  error.message.includes("Init segment not found") ||
+                  error.message.includes("Track not found"))
+              ) {
+                return undefined;
+              }
+              // Re-throw unexpected errors
+              throw error;
+            }
 
             if (!initSegment || !mediaSegment) {
               return undefined;
