@@ -63,6 +63,20 @@ export class EFMedia extends EFTargetable(
   static readonly VIDEO_SAMPLE_BUFFER_SIZE = 30;
   static readonly AUDIO_SAMPLE_BUFFER_SIZE = 120;
 
+  /**
+   * Which tracks this media element requires.
+   * Subclasses can override to specify their needs:
+   * - "audio" - Only needs audio track (e.g., EFAudio)
+   * - "video" - Only needs video track
+   * - "both" - Needs both tracks (default for backwards compatibility)
+   * 
+   * This is used during media engine creation to skip validation
+   * of tracks that won't be used, avoiding unnecessary network requests.
+   */
+  get requiredTracks(): "audio" | "video" | "both" {
+    return "both";
+  }
+
   static get observedAttributes() {
     // biome-ignore lint/complexity/noThisInStatic: We need to access super
     const parentAttributes = super.observedAttributes || [];

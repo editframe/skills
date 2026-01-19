@@ -9,6 +9,14 @@ import { EFMedia } from "./EFMedia.js";
 @customElement("ef-audio")
 export class EFAudio extends TWMixin(EFMedia) {
   /**
+   * EFAudio only requires audio tracks - skip video track validation
+   * to avoid unnecessary network requests to transcoding service.
+   */
+  override get requiredTracks(): "audio" | "video" | "both" {
+    return "audio";
+  }
+
+  /**
    * Audio volume level (0.0 to 1.0)
    * @domAttribute "volume"
    */
