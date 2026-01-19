@@ -92,11 +92,20 @@ export interface SandboxConfig {
   name: string;
   description?: string;
   /**
-   * Category for organizing sandboxes in the viewer.
-   * Atomic design categories: "atom", "molecule", "organism", "page"
-   * Semantic categories: "track", "timeline", "element", "gui", "utility", etc.
+   * Top-level category for organizing sandboxes.
+   * - "elements": Composition primitives (things you put in a timegroup)
+   * - "gui": User interface components (how users interact with elements)
+   * - "demos": Example compositions (complete working examples)
    */
   category?: string;
+  /**
+   * Subcategory within the parent category for finer organization.
+   * 
+   * For elements: "temporal", "media", "text", "visualization"
+   * For gui: "controls", "timeline", "hierarchy", "preview", "canvas", "config"
+   * For demos: "workbench", "compactness"
+   */
+  subcategory?: string;
   render: () => TemplateResult;
   setup?: (container: HTMLElement) => Promise<void> | void;
   scenarios: Scenarios;

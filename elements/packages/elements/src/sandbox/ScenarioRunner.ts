@@ -3,6 +3,7 @@
  * This ensures consistent behavior across all test runners
  */
 
+import { render, nothing } from "lit";
 import type { SandboxConfig, ScenarioResult, ScenarioFn } from "./index.js";
 import { SandboxContext } from "./SandboxContext.js";
 
@@ -56,7 +57,13 @@ export async function runScenario(
   try {
     // Clear container before running scenario to ensure isolation
     // This prevents state leakage between scenarios
-    container.innerHTML = "";
+    // We use Lit's render with `nothing` to properly clear the container
+    // This preserves Lit's internal marker nodes and avoids ChildPart errors
+    render(nothing, container);
+    
+    // Render the sandbox content into the container
+    // This provides the elements that scenarios will query and test
+    render(sandboxConfig.render(), container);
     
     // Run sandbox setup if provided (setup runs before each scenario for isolation)
     // This typically clears global caches (e.g., thumbnailImageCache.clear())
@@ -64,13 +71,8 @@ export async function runScenario(
       await sandboxConfig.setup(container);
     }
     
-    // Wait for DOM to settle after clearing and setup
-    // Use requestAnimationFrame to ensure browser has processed DOM changes
-    await new Promise<void>(resolve => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => resolve());
-      });
-    });
+    // Wait for DOM to settle after clearing, rendering, and setup
+    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
 
     // Create context with optional logging callback
     ctx = new SandboxContext(container, options.onLog);
@@ -119,12 +121,7 @@ export async function runAllScenarios(
     results.push(result);
 
     // Wait for DOM to settle between scenarios
-    // This ensures cleanup from previous scenario completes before next starts
-    await new Promise<void>(resolve => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => resolve());
-      });
-    });
+    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
   }
 
   return results;

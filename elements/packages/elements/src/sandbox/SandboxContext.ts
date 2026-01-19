@@ -66,9 +66,7 @@ export class SandboxContext {
    */
   async frame(): Promise<void> {
     return new Promise((resolve) => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => resolve());
-      });
+      requestAnimationFrame(() => resolve());
     });
   }
 
@@ -285,6 +283,23 @@ class ExpectMatcher<T> {
   }
 
   /**
+   * Assert value is null
+   */
+  toBeNull(): void {
+    const passed = this.actual === null;
+    this.ctx.recordAssertion({
+      passed,
+      message: `value to be null (got ${this.stringify(this.actual)})`,
+      actual: this.actual,
+    });
+    if (!passed) {
+      throw new Error(
+        `Expected value to be null, but got ${this.stringify(this.actual)}`,
+      );
+    }
+  }
+
+  /**
    * Assert value is truthy
    */
   toBeTruthy(): void {
@@ -479,6 +494,35 @@ class ExpectMatcher<T> {
     if (!passed) {
       throw new Error(
         `Expected "${this.actual}" to contain "${substring}"`,
+      );
+    }
+  }
+
+  /**
+   * Assert string matches a regular expression
+   */
+  toMatch(pattern: RegExp | string): void {
+    if (typeof this.actual !== "string") {
+      this.ctx.recordAssertion({
+        passed: false,
+        message: `${this.stringify(this.actual)} to be a string`,
+        actual: this.actual,
+      });
+      throw new Error(
+        `Expected ${this.stringify(this.actual)} to be a string`,
+      );
+    }
+    const regex = typeof pattern === "string" ? new RegExp(pattern) : pattern;
+    const passed = regex.test(this.actual as string);
+    this.ctx.recordAssertion({
+      passed,
+      message: `"${this.actual}" to match ${regex}`,
+      actual: this.actual,
+      expected: regex.toString(),
+    });
+    if (!passed) {
+      throw new Error(
+        `Expected "${this.actual}" to match ${regex}`,
       );
     }
   }
