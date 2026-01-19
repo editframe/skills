@@ -33,11 +33,32 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
     this.urlGenerator = urlGenerator;
   }
 
-  static async fetch(host: EFMedia, urlGenerator: UrlGenerator, src: string) {
+  static async fetch(
+    host: EFMedia, 
+    urlGenerator: UrlGenerator, 
+    src: string,
+    requiredTracks: "audio" | "video" | "both" = "both",
+    signal?: AbortSignal,
+  ) {
     const engine = new AssetMediaEngine(host, src, urlGenerator);
-    const url = urlGenerator.generateTrackFragmentIndexUrl(src);
+    
+    // Normalize the path: remove leading slash and any double slashes
+    let normalizedSrc = src.startsWith("/")
+      ? src.slice(1)
+      : src;
+    normalizedSrc = normalizedSrc.replace(/^\/+/, "");
+    
+    // Use production API format: /api/v1/isobmff_files/local/index?src={src}
+    // This route is handled by the vite plugin for local development
+    const baseUrl = urlGenerator.baseUrl();
+    const url = baseUrl 
+      ? `${baseUrl}/api/v1/isobmff_files/local/index?src=${encodeURIComponent(normalizedSrc)}`
+      : `/api/v1/isobmff_files/local/index?src=${encodeURIComponent(normalizedSrc)}`;
     const data = await engine.fetchManifest(url);
     engine.data = data as Record<number, TrackFragmentIndex>;
+
+    // Check for abort after potentially slow network operation
+    signal?.throwIfAborted();
 
     // Calculate duration from the data
     const longestFragment = Object.values(engine.data).reduce(
@@ -53,18 +74,27 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
     // Validate that segments are accessible by trying to fetch the first init segment
     // This prevents creating a media engine that will fail on all subsequent segment fetches
     // If segments require authentication that's not available, fail early
-    // Check both video and audio tracks if available, as they might have different auth requirements
+    // Only validate tracks that are actually required by the consumer (e.g., EFAudio only needs audio)
     const videoTrack = engine.videoTrackIndex;
     const audioTrack = engine.audioTrackIndex;
+    const needsVideo = requiredTracks === "video" || requiredTracks === "both";
+    const needsAudio = requiredTracks === "audio" || requiredTracks === "both";
     
-    // Validate video track if available
-    if (videoTrack && videoTrack.track !== undefined) {
+    // Use provided signal or create a fallback (for backwards compatibility)
+    const validationSignal = signal ?? new AbortController().signal;
+    
+    // Validate video track if required and available
+    if (needsVideo && videoTrack && videoTrack.track !== undefined) {
       try {
         await engine.fetchInitSegment(
           { trackId: videoTrack.track, src: engine.src },
-          new AbortController().signal,
+          validationSignal,
         );
       } catch (error) {
+        // If aborted, re-throw to propagate cancellation
+        if (error instanceof DOMException && error.name === "AbortError") {
+          throw error;
+        }
         // If fetch fails with 401, segments require authentication that's not available
         // Fail media engine creation early to avoid all subsequent fetch calls
         if (
@@ -75,24 +105,26 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
         ) {
           throw new Error(`Video segments require authentication: ${error.message}`);
         }
-        // For abort errors, continue - might be cancelled
-        if (error instanceof DOMException && error.name === "AbortError") {
-          // Continue to check audio track or return engine
-        } else {
-          // For other errors (404, network errors, etc.), allow media engine creation
-          // These might be transient or expected in some test scenarios
-        }
+        // For other errors (404, network errors, etc.), allow media engine creation
+        // These might be transient or expected in some test scenarios
       }
     }
     
-    // Validate audio track if available (and video validation didn't fail with auth)
-    if (audioTrack && audioTrack.track !== undefined) {
+    // Check for abort between validations
+    signal?.throwIfAborted();
+    
+    // Validate audio track if required and available
+    if (needsAudio && audioTrack && audioTrack.track !== undefined) {
       try {
         await engine.fetchInitSegment(
           { trackId: audioTrack.track, src: engine.src },
-          new AbortController().signal,
+          validationSignal,
         );
       } catch (error) {
+        // If aborted, re-throw to propagate cancellation
+        if (error instanceof DOMException && error.name === "AbortError") {
+          throw error;
+        }
         // If fetch fails with 401, segments require authentication that's not available
         // Fail media engine creation early to avoid all subsequent fetch calls
         if (
@@ -103,13 +135,8 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
         ) {
           throw new Error(`Audio segments require authentication: ${error.message}`);
         }
-        // For abort errors, continue - might be cancelled
-        if (error instanceof DOMException && error.name === "AbortError") {
-          // Continue - abort is fine
-        } else {
-          // For other errors (404, network errors, etc.), allow media engine creation
-          // These might be transient or expected in some test scenarios
-        }
+        // For other errors (404, network errors, etc.), allow media engine creation
+        // These might be transient or expected in some test scenarios
       }
     }
 
@@ -158,12 +185,18 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
     };
   }
 
+  /**
+   * @deprecated This property is deprecated. Use fetchInitSegment() with JIT URLs instead.
+   * Kept for backward compatibility but should not be used in new code.
+   */
   get initSegmentPaths() {
     const paths: InitSegmentPaths = {};
+    const sourceUrl = this.getSourceUrlForJit();
+    const baseUrl = this.getBaseUrlForJit();
 
     if (this.audioTrackIndex !== undefined) {
       paths.audio = {
-        path: `/@ef-track/${this.audioTrackIndex.track}.m4s`,
+        path: `${baseUrl}/api/v1/transcode/audio/init.m4s?url=${encodeURIComponent(sourceUrl)}`,
         pos: this.audioTrackIndex.initSegment.offset,
         size: this.audioTrackIndex.initSegment.size,
       };
@@ -171,7 +204,7 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
 
     if (this.videoTrackIndex !== undefined) {
       paths.video = {
-        path: `/@ef-track/${this.videoTrackIndex.track}.m4s`,
+        path: `${baseUrl}/api/v1/transcode/high/init.m4s?url=${encodeURIComponent(sourceUrl)}`,
         pos: this.videoTrackIndex.initSegment.offset,
         size: this.videoTrackIndex.initSegment.size,
       };

@@ -9,31 +9,34 @@ import { JitMediaEngine } from "../JitMediaEngine";
 export const getLatestMediaEngine = async (
   host: EFMedia,
   signal: AbortSignal,
-): Promise<MediaEngine> => {
+): Promise<MediaEngine | undefined> => {
   let mediaEngine;
   try {
     mediaEngine = await host.mediaEngineTask.taskComplete;
   } catch (error) {
-    // If the error is "No valid media source", re-throw it so callers can handle it
+    // If the error is "No valid media source", return undefined instead of throwing
+    // This allows callers to handle missing media gracefully
     if (error instanceof Error && error.message === "No valid media source") {
-      throw error;
+      return undefined;
     }
-    // For other errors, wrap them
+    // For other errors, re-throw
     throw error;
   }
   signal.throwIfAborted();
-  if (!mediaEngine) {
-    throw new Error("Media engine is not available");
-  }
-  return mediaEngine;
+  // Return undefined if no media engine (no valid source)
+  // Callers should check for undefined and exit gracefully
+  return mediaEngine || undefined;
 };
 
 /**
  * Core logic for creating a MediaEngine with explicit dependencies.
  * Pure function that requires all dependencies to be provided.
+ * 
+ * @param host - The EFMedia element host
+ * @param signal - AbortSignal to cancel in-flight requests when element is disconnected
  */
-export const createMediaEngine = (host: EFMedia): Promise<MediaEngine> => {
-  const { src, assetId, urlGenerator, apiHost } = host;
+export const createMediaEngine = (host: EFMedia, signal?: AbortSignal): Promise<MediaEngine> => {
+  const { src, assetId, urlGenerator, apiHost, requiredTracks } = host;
 
   // Check for AssetID mode first
   if (assetId !== null && assetId !== undefined && assetId.trim() !== "") {
@@ -45,6 +48,8 @@ export const createMediaEngine = (host: EFMedia): Promise<MediaEngine> => {
       urlGenerator,
       assetId,
       apiHost,
+      requiredTracks,
+      signal,
     );
   }
 
@@ -77,12 +82,12 @@ export const createMediaEngine = (host: EFMedia): Promise<MediaEngine> => {
   
   // "local" mode: Force AssetMediaEngine for all sources
   if (configuration?.mediaEngine === "local") {
-    return AssetMediaEngine.fetch(host, urlGenerator, src);
+    return AssetMediaEngine.fetch(host, urlGenerator, src, requiredTracks, signal);
   }
   
   // "cloud" mode (default): AssetMediaEngine for local paths, JitMediaEngine for remote URLs
   if (!isRemoteUrl) {
-    return AssetMediaEngine.fetch(host, urlGenerator, src);
+    return AssetMediaEngine.fetch(host, urlGenerator, src, requiredTracks, signal);
   }
 
   // Default: Use JitMediaEngine for remote URLs (transcoding service)
@@ -95,10 +100,21 @@ export const createMediaEngine = (host: EFMedia): Promise<MediaEngine> => {
  * Extracted for testability.
  */
 export const handleMediaEngineComplete = (host: EFMedia): void => {
+  // Update self synchronously - this is fine because we're updating the element
+  // that just completed its task, not a parent
   host.requestUpdate("intrinsicDurationMs");
   host.requestUpdate("ownCurrentTimeMs");
-  host.rootTimegroup?.requestUpdate("ownCurrentTimeMs");
-  host.rootTimegroup?.requestUpdate("durationMs");
+  
+  // Defer updates to parent/root timegroup to avoid Lit warning about scheduling
+  // updates after update completed (change-in-update). Task onComplete can be
+  // called during an update cycle, and directly calling requestUpdate on parent
+  // elements causes the warning.
+  if (host.rootTimegroup) {
+    queueMicrotask(() => {
+      host.rootTimegroup?.requestUpdate("ownCurrentTimeMs");
+      host.rootTimegroup?.requestUpdate("durationMs");
+    });
+  }
 };
 
 type MediaEngineTask = Task<readonly [string, string | null], MediaEngine>;
@@ -107,27 +123,30 @@ export const makeMediaEngineTask = (host: EFMedia): MediaEngineTask => {
   return new Task(host, {
     autoRun: EF_INTERACTIVE,
     args: () => [host.src, host.assetId] as const,
-    task: async () => {
+    task: async ([_src, _assetId], { signal }) => {
       // Check if we have a valid source before attempting to create media engine
       // This avoids unnecessary errors when src is empty/null/undefined
       const { src, assetId } = host;
       
       // If we have a valid assetId, proceed
       if (assetId !== null && assetId !== undefined && assetId.trim() !== "") {
-        return createMediaEngine(host);
+        return createMediaEngine(host, signal);
       }
       
-      // If we don't have a valid src, don't attempt to create media engine
+      // If we don't have a valid src, return undefined instead of throwing
+      // This allows dependent tasks to check for undefined and exit gracefully
+      // without logging errors for expected conditions
       if (!src || typeof src !== "string" || src.trim() === "") {
-        // Return a rejected promise to indicate no valid source
-        // This prevents the error from being logged since we're handling it explicitly
-        return Promise.reject(new Error("No valid media source"));
+        return undefined as unknown as MediaEngine;
       }
       
-      return createMediaEngine(host);
+      return createMediaEngine(host, signal);
     },
-    onComplete: (_value) => {
-      handleMediaEngineComplete(host);
+    onComplete: (value) => {
+      // Only trigger updates if we actually got a media engine
+      if (value) {
+        handleMediaEngineComplete(host);
+      }
     },
   });
 };
