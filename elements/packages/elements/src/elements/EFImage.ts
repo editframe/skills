@@ -52,7 +52,7 @@ export class EFImage extends EFTemporal(
   }
 
   private isDirectUrl(src: string): boolean {
-    return src.startsWith("http://") || src.startsWith("https://");
+    return src.startsWith("http://") || src.startsWith("https://") || src.startsWith("data:");
   }
 
   assetPath() {
@@ -62,7 +62,13 @@ export class EFImage extends EFTemporal(
     if (this.isDirectUrl(this.src)) {
       return this.src;
     }
-    return `/@ef-image/${this.src}`;
+    // Normalize the path: remove leading slash and any double slashes
+    let normalizedSrc = this.src.startsWith("/")
+      ? this.src.slice(1)
+      : this.src;
+    normalizedSrc = normalizedSrc.replace(/^\/+/, "");
+    // Use production API format for local files
+    return `/api/v1/assets/local/image?src=${encodeURIComponent(normalizedSrc)}`;
   }
 
   get hasOwnDuration() {
@@ -71,8 +77,13 @@ export class EFImage extends EFTemporal(
 
   fetchImage = new Task(this, {
     autoRun: EF_INTERACTIVE,
-    args: () => [this.assetPath(), this.fetch] as const,
-    task: async ([assetPath, fetch], { signal }) => {
+    args: () => [this.assetPath(), this.fetch, this.src, this.assetId] as const,
+    task: async ([assetPath, fetch, src, assetId], { signal }) => {
+      // Skip if no source is set
+      if (!src && !assetId) {
+        return;
+      }
+
       // For direct URLs, skip task - src is set directly in render
       if (this.isDirectUrl(assetPath)) {
         return;
