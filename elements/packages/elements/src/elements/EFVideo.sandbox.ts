@@ -195,10 +195,11 @@ export default defineSandbox({
       await ctx.frame();
       
       const originalSrc = video.src;
-      video.src = "/assets/color.mp4";
+      // Use bars-n-tone.mp4 (different from bars-n-tone2.mp4 used in render)
+      video.src = "/assets/bars-n-tone.mp4";
       await ctx.frame();
       
-      ctx.expect(video.src).toBe("/assets/color.mp4");
+      ctx.expect(video.src).toBe("/assets/bars-n-tone.mp4");
       ctx.expect(video.src !== originalSrc).toBe(true);
     },
     
