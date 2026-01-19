@@ -1668,7 +1668,10 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
         // Request an update to the currentTime of this group, ensuring that time updates will cascade
         // down to children, forcing sequence groups to arrange correctly.
         // This also makes the filmstrip update correctly.
-        this.requestUpdate("currentTime");
+        // Defer using setTimeout(0) to avoid Lit warning about scheduling updates after update completed.
+        // This method can be called during a task or after an update cycle completes, and using
+        // setTimeout ensures we're completely outside any Lit update cycle.
+        setTimeout(() => this.requestUpdate("currentTime"), 0);
         // Note: We don't await updateComplete here during initialization to avoid deadlocks.
         // The update will complete asynchronously, and sequence groups will arrange correctly
         // once all timegroups have finished initializing. During normal operation (seeks, etc.),

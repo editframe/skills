@@ -592,11 +592,13 @@ export class OwnCurrentTimeController implements ReactiveController {
     }
     this.#lastKnownTimeMs = currentTimeMs;
     
-    // Defer update to avoid Lit warning about scheduling updates after update completed
-    // This batches updates and prevents cascading update cycles
-    Promise.resolve().then(() => {
+    // Defer update using setTimeout(0) to avoid Lit warning about scheduling updates after update completed.
+    // This batches updates and ensures we're completely outside any Lit update cycle.
+    // Using setTimeout instead of Promise.resolve() because microtasks run before Lit's
+    // change detection completes.
+    setTimeout(() => {
       this.temporal.requestUpdate("ownCurrentTimeMs");
-    });
+    }, 0);
   }
 
   remove() {

@@ -19,8 +19,10 @@ export class SelectionController implements ReactiveController {
     host.addController(this);
 
     // Listen to selection change events from the model
+    // Use queueMicrotask to defer the update and avoid Lit warning about
+    // scheduling updates after update completed (change-in-update)
     this.selectionModel.addEventListener("selectionchange", () => {
-      this.host.requestUpdate();
+      queueMicrotask(() => this.host.requestUpdate());
     });
   }
 
@@ -87,11 +89,11 @@ export class SelectionController implements ReactiveController {
       },
       startBoxSelect: (x: number, y: number) => {
         controller.selectionModel.startBoxSelect(x, y);
-        controller.host.requestUpdate();
+        queueMicrotask(() => controller.host.requestUpdate());
       },
       updateBoxSelect: (x: number, y: number) => {
         controller.selectionModel.updateBoxSelect(x, y);
-        controller.host.requestUpdate();
+        queueMicrotask(() => controller.host.requestUpdate());
       },
       endBoxSelect: (
         hitTest: (bounds: DOMRect) => string[],

@@ -121,7 +121,7 @@ export class CanvasAPI {
       getModel(): SelectionModel;
     };
     controller.getModel().select(id);
-    this.canvas.requestUpdate();
+    // Update is deferred via selectionchange event listener
   }
 
   /**
@@ -133,7 +133,7 @@ export class CanvasAPI {
       getModel(): SelectionModel;
     };
     controller.getModel().selectMultiple(ids);
-    this.canvas.requestUpdate();
+    // Update is deferred via selectionchange event listener
   }
 
   /**
@@ -145,7 +145,7 @@ export class CanvasAPI {
       getModel(): SelectionModel;
     };
     controller.getModel().deselect(id);
-    this.canvas.requestUpdate();
+    // Update is deferred via selectionchange event listener
   }
 
   /**
@@ -169,7 +169,7 @@ export class CanvasAPI {
       getModel(): SelectionModel;
     };
     const groupId = controller.getModel().createGroup(ids);
-    this.canvas.requestUpdate();
+    // Update is deferred via selectionchange event listener
     return groupId;
   }
 
@@ -182,7 +182,7 @@ export class CanvasAPI {
       getModel(): SelectionModel;
     };
     controller.getModel().ungroup(groupId);
-    this.canvas.requestUpdate();
+    // Update is deferred via selectionchange event listener
   }
 
   /**
