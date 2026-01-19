@@ -115,10 +115,34 @@ export function makeAudioTimeDomainAnalysisTask(element: EFMedia) {
           return null;
         }
 
-      // Decode the real audio data
-      const tempAudioContext = new OfflineAudioContext(2, 48000, 48000);
-      const arrayBuffer = await audioSpan.blob.arrayBuffer();
-      const audioBuffer = await tempAudioContext.decodeAudioData(arrayBuffer);
+        // Validate blob has sufficient data before attempting decode
+        // Empty or very small blobs will fail decodeAudioData
+        if (audioSpan.blob.size < 100) {
+          // Too small to be valid audio data - skip silently
+          return null;
+        }
+
+        // Decode the real audio data
+        const tempAudioContext = new OfflineAudioContext(2, 48000, 48000);
+        const arrayBuffer = await audioSpan.blob.arrayBuffer();
+        
+        // Validate arrayBuffer before decode attempt
+        if (arrayBuffer.byteLength < 100) {
+          return null;
+        }
+        
+        let audioBuffer;
+        try {
+          audioBuffer = await tempAudioContext.decodeAudioData(arrayBuffer);
+        } catch (decodeError) {
+          // Unable to decode audio data - this means the data isn't valid audio
+          // This can happen with corrupted/incomplete segments - skip silently
+          if (decodeError instanceof Error && 
+              decodeError.message.includes("Unable to decode audio data")) {
+            return null;
+          }
+          throw decodeError;
+        }
 
       // Use actual startOffset from audioSpan (relative to requested time)
       const startOffsetMs = audioSpan.startMs;

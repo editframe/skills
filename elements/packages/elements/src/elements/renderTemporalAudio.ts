@@ -72,9 +72,27 @@ export async function renderTemporalAudio(
       }
 
       const bufferSource = audioContext.createBufferSource();
-      bufferSource.buffer = await audioContext.decodeAudioData(
-        await audio.blob.arrayBuffer(),
-      );
+      
+      // Decode audio data with error handling for invalid/incomplete audio
+      let decodedBuffer;
+      try {
+        const arrayBuffer = await audio.blob.arrayBuffer();
+        // Skip if buffer is too small to be valid audio
+        if (arrayBuffer.byteLength < 100) {
+          return;
+        }
+        decodedBuffer = await audioContext.decodeAudioData(arrayBuffer);
+      } catch (decodeError) {
+        // Unable to decode audio data - skip this segment silently
+        // This can happen with corrupted/incomplete audio segments
+        if (decodeError instanceof Error && 
+            decodeError.message.includes("Unable to decode audio data")) {
+          return;
+        }
+        throw decodeError;
+      }
+      
+      bufferSource.buffer = decodedBuffer;
       bufferSource.connect(audioContext.destination);
 
       const ctxStartMs = Math.max(0, mediaElement.startTimeMs - fromMs);
