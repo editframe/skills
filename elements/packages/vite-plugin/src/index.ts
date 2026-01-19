@@ -14,11 +14,16 @@ import type { Plugin } from "vite";
 
 import { forbidRelativePaths } from "./forbidRelativePaths.js";
 import { sendTaskResult } from "./sendTaskResult.js";
+import { readdir } from "node:fs/promises";
+import { existsSync } from "node:fs";
 
 interface VitePluginEditframeOptions {
   root: string;
   cacheRoot: string;
 }
+
+// In-memory mapping of MD5 -> file path for API route handling
+const md5ToFilePathMap = new Map<string, string>();
 
 // Create editframe client instance
 const getEditframeClient = () => {
@@ -35,6 +40,163 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
     name: "vite-plugin-editframe",
 
     configureServer(server) {
+      // Handle local assets API format: /api/v1/assets/local/*
+      server.middlewares.use(async (req, res, next) => {
+        const log = debug("ef:vite-plugin");
+        const reqUrl = req.url || "";
+        
+        if (!reqUrl.startsWith("/api/v1/assets/local/")) {
+          return next();
+        }
+        
+        const url = new URL(reqUrl, `http://${req.headers.host}`);
+        const urlPath = url.pathname;
+        const src = url.searchParams.get("src");
+        
+        if (!src) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "src parameter is required" }));
+          return;
+        }
+        
+        // Resolve src to absolute file path
+        const absolutePath = src.startsWith("http")
+          ? src
+          : path.join(options.root, src).replace("dist/", "src/");
+        
+        log(`Handling local assets API: ${urlPath} for ${absolutePath}`);
+        
+        try {
+          // Handle /api/v1/assets/local/captions - captions/transcriptions
+          if (urlPath === "/api/v1/assets/local/captions") {
+            log(`Serving captions for ${absolutePath}`);
+            const taskResult = await findOrCreateCaptions(options.cacheRoot, absolutePath);
+            sendTaskResult(req, res, taskResult);
+            return;
+          }
+          
+          // Handle /api/v1/assets/local/image - cached images
+          if (urlPath === "/api/v1/assets/local/image") {
+            log(`Serving image for ${absolutePath}`);
+            const taskResult = await cacheImage(options.cacheRoot, absolutePath);
+            sendTaskResult(req, res, taskResult);
+            return;
+          }
+          
+          // Unknown endpoint
+          res.writeHead(404, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Unknown assets endpoint" }));
+        } catch (error) {
+          log(`Error handling assets request: ${error}`);
+          if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+            res.writeHead(404, { "Content-Type": "text/plain" });
+            res.end("File not found");
+          } else {
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: (error as Error).message }));
+          }
+        }
+      });
+
+      // Handle production API format for local files: /api/v1/isobmff_files/local/*
+      server.middlewares.use(async (req, res, next) => {
+        const log = debug("ef:vite-plugin");
+        const reqUrl = req.url || "";
+        
+        if (!reqUrl.startsWith("/api/v1/isobmff_files/local/")) {
+          return next();
+        }
+        
+        const url = new URL(reqUrl, `http://${req.headers.host}`);
+        const urlPath = url.pathname;
+        const src = url.searchParams.get("src");
+        
+        if (!src) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "src parameter is required" }));
+          return;
+        }
+        
+        // Resolve src to absolute file path
+        const absolutePath = src.startsWith("http")
+          ? src
+          : path.join(options.root, src).replace("dist/", "src/");
+        
+        log(`Handling local isobmff API: ${urlPath} for ${absolutePath}`);
+        
+        try {
+          // Handle /api/v1/isobmff_files/local/index - fragment index
+          if (urlPath === "/api/v1/isobmff_files/local/index") {
+            log(`Serving track fragment index for ${absolutePath}`);
+            const taskResult = await generateTrackFragmentIndex(options.cacheRoot, absolutePath);
+            sendTaskResult(req, res, taskResult);
+            return;
+          }
+          
+          // Handle /api/v1/isobmff_files/local/md5 - get MD5 hash for a file
+          if (urlPath === "/api/v1/isobmff_files/local/md5") {
+            log(`Getting MD5 for ${absolutePath}`);
+            try {
+              const md5 = await md5FilePath(absolutePath);
+              res.writeHead(200, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({ md5 }));
+            } catch (error) {
+              if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+                res.writeHead(404, { "Content-Type": "text/plain" });
+                res.end("File not found");
+              } else {
+                res.writeHead(500, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: (error as Error).message }));
+              }
+            }
+            return;
+          }
+          
+          // Handle /api/v1/isobmff_files/local/track - track segments
+          if (urlPath === "/api/v1/isobmff_files/local/track") {
+            const trackIdStr = url.searchParams.get("trackId");
+            const segmentIdStr = url.searchParams.get("segmentId");
+            
+            if (!trackIdStr) {
+              res.writeHead(400, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({ error: "trackId parameter is required" }));
+              return;
+            }
+            
+            const trackId = parseInt(trackIdStr, 10);
+            
+            // For scrub track (trackId -1), use generateScrubTrack
+            if (trackId === -1) {
+              log(`Serving scrub track for ${absolutePath}`);
+              const taskResult = await generateScrubTrack(options.cacheRoot, absolutePath);
+              sendTaskResult(req, res, taskResult);
+              return;
+            }
+            
+            // For regular tracks, use generateTrack
+            log(`Serving track ${trackId} segment ${segmentIdStr || "all"} for ${absolutePath}`);
+            const trackUrl = `/@ef-track/${src}?trackId=${trackId}${segmentIdStr ? `&segmentId=${segmentIdStr}` : ""}`;
+            const taskResult = await generateTrack(options.cacheRoot, absolutePath, trackUrl);
+            sendTaskResult(req, res, taskResult);
+            return;
+          }
+          
+          // Unknown endpoint
+          res.writeHead(404, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Unknown isobmff endpoint" }));
+        } catch (error) {
+          log(`Error handling isobmff request: ${error}`);
+          if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+            res.writeHead(404, { "Content-Type": "text/plain" });
+            res.end("File not found");
+          } else {
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: (error as Error).message }));
+          }
+        }
+      });
+      
+      // Handle @ef-* format (legacy)
       server.middlewares.use(async (req, res, next) => {
         const log = debug("ef:vite-plugin");
         // Forbid relative paths in any request
@@ -81,6 +243,10 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
             }
             md5FilePath(absolutePath)
               .then((md5) => {
+                // Store mapping for API route handling
+                md5ToFilePathMap.set(md5, absolutePath);
+                console.log(`[ef:vite-plugin] Stored MD5 mapping: ${md5} -> ${absolutePath}`);
+                log(`Stored MD5 mapping: ${md5} -> ${absolutePath}`);
                 res.writeHead(200, {
                   etag: md5,
                 });
