@@ -8,7 +8,8 @@ import "./EFTimegroup.js";
 export default defineSandbox({
   name: "EFWaveform",
   description: "Audio waveform visualization with multiple rendering modes",
-  category: "visualization",
+  category: "elements",
+  subcategory: "visualization",
   
   render: () => html`
     <ef-timegroup mode="fixed" duration="5s" style="width: 600px; height: 200px; border: 1px solid #ccc;">
@@ -33,7 +34,6 @@ export default defineSandbox({
     async "renders waveform component"(ctx) {
       const waveform = ctx.querySelector<EFWaveform>("ef-waveform")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(waveform).toBeDefined();
@@ -44,7 +44,6 @@ export default defineSandbox({
       const waveform = ctx.querySelector<EFWaveform>("ef-waveform")!;
       const audio = ctx.querySelector("ef-audio")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(waveform.target).toBe("waveform-audio");
@@ -54,7 +53,6 @@ export default defineSandbox({
     async "supports different rendering modes"(ctx) {
       const waveform = ctx.querySelector<EFWaveform>("ef-waveform")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(waveform.mode).toBe("bars");
@@ -68,7 +66,6 @@ export default defineSandbox({
     async "can change color"(ctx) {
       const waveform = ctx.querySelector<EFWaveform>("ef-waveform")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       waveform.color = "#ff0000";
@@ -80,7 +77,6 @@ export default defineSandbox({
     async "has temporal properties"(ctx) {
       const waveform = ctx.querySelector<EFWaveform>("ef-waveform")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(typeof waveform.durationMs).toBe("number");
@@ -90,7 +86,6 @@ export default defineSandbox({
     async "supports bar spacing configuration"(ctx) {
       const waveform = ctx.querySelector<EFWaveform>("ef-waveform")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       waveform.barSpacing = 1.0;

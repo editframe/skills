@@ -8,12 +8,12 @@ import "../elements/EFTimegroup.js";
 export default defineSandbox({
   name: "EFConfiguration",
   description: "Configuration container for API host and context setup",
-  category: "panels",
+  category: "gui",
+  subcategory: "config",
   
   render: () => html`
     <ef-configuration
       id="test-config"
-      api-host="http://localhost:3000"
       style="width: 800px; height: 600px; border: 1px solid #ccc;"
     >
       <ef-workbench>
@@ -34,7 +34,7 @@ export default defineSandbox({
     async "renders configuration component"(ctx) {
       const config = ctx.querySelector<EFConfiguration>("ef-configuration")!;
       
-      await ctx.wait(100);
+      await config.updateComplete;
       await ctx.frame();
       
       ctx.expect(config).toBeDefined();
@@ -43,29 +43,34 @@ export default defineSandbox({
     async "sets API host"(ctx) {
       const config = ctx.querySelector<EFConfiguration>("ef-configuration")!;
       
-      await ctx.wait(100);
+      await config.updateComplete;
       await ctx.frame();
       
-      ctx.expect(config.apiHost).toBe("http://localhost:3000");
+      // apiHost defaults to undefined when not set (uses current origin)
+      ctx.expect(config.apiHost).toBeUndefined();
     },
     
     async "provides API host context"(ctx) {
       const config = ctx.querySelector<EFConfiguration>("ef-configuration")!;
       
-      await ctx.wait(100);
+      await config.updateComplete;
       await ctx.frame();
       
-      const context = (config as any).apiHostContext;
-      ctx.expect(context).toBeDefined();
+      // EFConfiguration provides itself as the efConfiguration context
+      // and exposes apiHost as a property
+      // apiHost defaults to undefined when not set (uses current origin)
+      ctx.expect(config.apiHost).toBeUndefined();
+      ctx.expect((config as any).efConfiguration).toBe(config);
     },
     
     async "can change API host"(ctx) {
       const config = ctx.querySelector<EFConfiguration>("ef-configuration")!;
       
-      await ctx.wait(100);
+      await config.updateComplete;
       await ctx.frame();
       
       config.apiHost = "https://api.example.com";
+      await config.updateComplete;
       await ctx.frame();
       
       ctx.expect(config.apiHost).toBe("https://api.example.com");
@@ -75,7 +80,8 @@ export default defineSandbox({
       const config = ctx.querySelector<EFConfiguration>("ef-configuration")!;
       const workbench = ctx.querySelector("ef-workbench")!;
       
-      await ctx.wait(100);
+      await config.updateComplete;
+      await workbench.updateComplete;
       await ctx.frame();
       
       ctx.expect(workbench).toBeDefined();

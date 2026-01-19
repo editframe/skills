@@ -61,7 +61,8 @@ declare global {
 export default defineSandbox({
   name: "CSSVariableLine",
   description: "Atom: Single CSS custom property display (--var-name: value)",
-  category: "styling",
+  category: "demos",
+  subcategory: "compactness",
 
   render: () => html`
     <div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 8px;">
@@ -133,8 +134,6 @@ export default defineSandbox({
 
     async "renders multiple lines"(ctx) {
       const container = ctx.getContainer();
-      container.innerHTML = "";
-      
       const variables = [
         { name: "--hierarchy-item-height", value: "32px" },
         { name: "--hierarchy-item-font-size", value: "13px" },
@@ -151,7 +150,8 @@ export default defineSandbox({
       await ctx.frame();
 
       const lines = container.querySelectorAll("ef-css-variable-line");
-      ctx.expect(lines.length).toBe(3);
+      // 1 from render() + 3 created in this test = 4 total
+      ctx.expect(lines.length).toBe(4);
     },
   },
 });

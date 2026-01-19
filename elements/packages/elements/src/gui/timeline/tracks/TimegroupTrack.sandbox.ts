@@ -12,7 +12,8 @@ import "../TimelineStateProvider.js";
 export default defineSandbox({
   name: "EFTimegroupTrack",
   description: "Timegroup track component for nested compositions. Base track behavior tested in TrackItem.sandbox.ts",
-  category: "media",
+  category: "gui",
+  subcategory: "timeline",
   
   render: () => html`
     <timeline-state-provider
@@ -61,7 +62,8 @@ export default defineSandbox({
         container.appendChild(provider);
         
         await ctx.frame();
-        await ctx.wait(200);
+        await track.updateComplete;
+        await ctx.frame();
         
         const trackElement = ctx.querySelector<EFTimegroupTrack>("ef-timegroup-track")!;
         ctx.expect(trackElement).toBeDefined();
@@ -96,7 +98,8 @@ export default defineSandbox({
         container.appendChild(provider);
         
         await ctx.frame();
-        await ctx.wait(100);
+        await track.updateComplete;
+        await ctx.frame();
         
         const trackElement = ctx.querySelector<EFTimegroupTrack>("ef-timegroup-track")!;
         const shadowRoot = trackElement.shadowRoot;

@@ -9,7 +9,8 @@ import "../elements/EFVideo.js";
 export default defineSandbox({
   name: "EFPlay",
   description: "Play button that shows when not playing and triggers playback",
-  category: "controls",
+  category: "gui",
+  subcategory: "controls",
   
   render: () => html`
     <ef-preview id="play-preview">
@@ -22,7 +23,7 @@ export default defineSandbox({
       </ef-timegroup>
     </ef-preview>
     
-    <ef-play>
+    <ef-play target="play-preview">
       <button style="padding: 10px 20px; font-size: 16px;">▶ Play</button>
     </ef-play>
   `,
@@ -31,7 +32,7 @@ export default defineSandbox({
     async "renders play button"(ctx) {
       const play = ctx.querySelector<EFPlay>("ef-play")!;
       
-      await ctx.wait(100);
+      await play.updateComplete;
       await ctx.frame();
       
       ctx.expect(play).toBeDefined();
@@ -40,22 +41,22 @@ export default defineSandbox({
     async "shows when not playing"(ctx) {
       const play = ctx.querySelector<EFPlay>("ef-play")!;
       
-      await ctx.wait(100);
+      await play.updateComplete;
       await ctx.frame();
       
       ctx.expect(play.playing).toBe(false);
-      ctx.expect(play.style.display).not.toBe("none");
+      ctx.expect(play.style.display !== "none").toBe(true);
     },
     
     async "hides when playing"(ctx) {
       const play = ctx.querySelector<EFPlay>("ef-play")!;
       const preview = ctx.querySelector("ef-preview")!;
       
-      await ctx.wait(100);
+      await play.updateComplete;
       await ctx.frame();
       
-      (preview as any).playbackController?.play();
-      await ctx.wait(100);
+      await (preview as any).play();
+      await play.updateComplete;
       await ctx.frame();
       
       ctx.expect(play.playing).toBe(true);
@@ -66,17 +67,17 @@ export default defineSandbox({
       const play = ctx.querySelector<EFPlay>("ef-play")!;
       const preview = ctx.querySelector("ef-preview")!;
       
-      await ctx.wait(100);
+      await play.updateComplete;
       await ctx.frame();
       
-      const initialPlaying = (preview as any).playbackController?.playing || false;
+      const initialPlaying = (preview as any).playing || false;
       
       play.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-      await ctx.wait(100);
+      await play.updateComplete;
       await ctx.frame();
       
-      const newPlaying = (preview as any).playbackController?.playing || false;
-      ctx.expect(newPlaying).not.toBe(initialPlaying);
+      const newPlaying = (preview as any).playing || false;
+      ctx.expect(newPlaying !== initialPlaying).toBe(true);
     },
   },
 });

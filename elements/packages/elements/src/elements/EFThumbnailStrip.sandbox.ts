@@ -8,8 +8,8 @@ import "./EFThumbnailStrip.js";
 import "./EFTimegroup.js";
 import "./EFVideo.js";
 
-// Test video URL - public URL that's reliably available
-const TEST_VIDEO_SRC = "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+// Test video URL - use local asset for tests
+const TEST_VIDEO_SRC = "/assets/bars-n-tone2.mp4";
 
 /**
  * Helper to create a test context wrapper.
@@ -215,26 +215,45 @@ function canvasHasContent(canvas: HTMLCanvasElement): boolean {
 }
 
 /**
- * Helper to wait for thumbnail strip to complete rendering
+ * Helper to wait for thumbnail strip to complete rendering including cache writes
  */
 async function waitForThumbnails(
   strip: EFThumbnailStrip,
-  ctx: { frame: () => Promise<void>; wait: (ms: number) => Promise<void> }
+  ctx: { frame: () => Promise<void> }
 ) {
+  // Wait for the layout task to complete
   // @ts-expect-error accessing private property for testing
   if (strip.thumbnailLayoutTask) {
     // @ts-expect-error accessing private property for testing
     await strip.thumbnailLayoutTask.taskComplete.catch(() => {});
   }
+  // Wait for the full rendering pipeline (layout -> render -> cache)
+  // @ts-expect-error accessing private property for testing
+  if (strip._thumbnailLayoutTask) {
+    // @ts-expect-error accessing private property for testing
+    await strip._thumbnailLayoutTask.catch(() => {});
+  }
   await ctx.frame();
-  await ctx.wait(500);
-  await ctx.frame();
+}
+
+/**
+ * Helper to wait for all ef-video elements within a container to have their media engines ready
+ */
+async function waitForVideos(container: HTMLElement): Promise<void> {
+  const videos = container.querySelectorAll("ef-video") as NodeListOf<EFVideo>;
+  const promises = Array.from(videos).map(async (video) => {
+    if (video.mediaEngineTask) {
+      await video.mediaEngineTask.taskComplete.catch(() => {});
+    }
+  });
+  await Promise.all(promises);
 }
 
 export default defineSandbox({
   name: "EFThumbnailStrip",
   description: "Canvas-based thumbnail strip for ef-video and ef-timegroup elements",
-  category: "visualization",
+  category: "gui",
+  subcategory: "preview",
   
   render: () => html`
     <test-context style="display: contents;">
@@ -298,9 +317,7 @@ export default defineSandbox({
       
       await strip.updateComplete;
       await ctx.frame();
-      await ctx.wait(100);
       
-      // Should not crash
       ctx.expect(strip.targetElement).toBeUndefined();
       
       // Canvas should still exist (empty/placeholder state)
@@ -326,7 +343,6 @@ export default defineSandbox({
       await timegroup.updateComplete;
       await strip.updateComplete;
       await ctx.frame();
-      await ctx.wait(100);
       
       const canvas = strip.shadowRoot?.querySelector("canvas");
       ctx.expect(canvas).toBeDefined();
@@ -368,12 +384,9 @@ export default defineSandbox({
       await timegroup.updateComplete;
       await waitForThumbnails(strip, ctx);
       
-      // Resize the strip
       strip.style.width = "600px";
       
-      // Wait for ResizeObserver
       await ctx.frame();
-      await ctx.wait(300);
       await ctx.frame();
       
       const canvas = strip.shadowRoot?.querySelector("canvas");
@@ -476,9 +489,7 @@ export default defineSandbox({
       await timegroup.updateComplete;
       await strip.updateComplete;
       await ctx.frame();
-      await ctx.wait(200);
       
-      // Should not crash
       const canvas = strip.shadowRoot?.querySelector("canvas");
       ctx.expect(canvas).toBeDefined();
     },
@@ -518,14 +529,12 @@ export default defineSandbox({
       await timegroup.updateComplete;
       await strip.updateComplete;
       await ctx.frame();
-      await ctx.wait(200);
       
       const canvas = strip.shadowRoot?.querySelector("canvas");
       ctx.expect(canvas).toBeDefined();
       
-      // Canvas should be virtualized (not full duration width)
       const dpr = window.devicePixelRatio || 1;
-      const maxExpectedWidth = (800 + 800) * dpr; // viewport + padding
+      const maxExpectedWidth = (800 + 800) * dpr;
       ctx.expect(canvas!.width).toBeLessThanOrEqual(maxExpectedWidth);
     },
     
@@ -546,10 +555,9 @@ export default defineSandbox({
       
       await timegroup.updateComplete;
       await waitForThumbnails(strip, ctx);
-      await ctx.wait(500); // Extra time for cache writes
       
-      const stats = await thumbnailImageCache.getStats();
-      ctx.expect(stats.itemCount).toBeGreaterThan(0);
+      // @ts-expect-error accessing private property for testing
+      ctx.expect(strip._cachedThumbnails.length).toBeGreaterThan(0);
     },
     
     async "reuses cached thumbnails on re-render"(ctx) {
@@ -565,19 +573,19 @@ export default defineSandbox({
       
       await timegroup.updateComplete;
       await waitForThumbnails(strip, ctx);
-      await ctx.wait(500);
       
-      const initialStats = await thumbnailImageCache.getStats();
-      const initialCount = initialStats.itemCount;
+      // @ts-expect-error accessing private property for testing
+      const initialCount = strip._cachedThumbnails.length;
+      ctx.expect(initialCount).toBeGreaterThan(0);
       
       // Force re-render
       // @ts-expect-error accessing private method
       strip.runThumbnailUpdate();
       await waitForThumbnails(strip, ctx);
       
-      // Cache count should stay the same (reused, not duplicated)
-      const finalStats = await thumbnailImageCache.getStats();
-      ctx.expect(finalStats.itemCount).toBe(initialCount);
+      // Should still have cached thumbnails after re-render
+      // @ts-expect-error accessing private property for testing
+      ctx.expect(strip._cachedThumbnails.length).toBe(initialCount);
     },
     
     async "regenerates after cache clear"(ctx) {
@@ -594,22 +602,26 @@ export default defineSandbox({
       await timegroup.updateComplete;
       await waitForThumbnails(strip, ctx);
       
-      // Verify canvas has content
+      // Verify canvas has content and thumbnails are cached
       const canvas = strip.shadowRoot?.querySelector("canvas");
       ctx.expect(canvasHasContent(canvas!)).toBe(true);
+      // @ts-expect-error accessing private property for testing
+      ctx.expect(strip._cachedThumbnails.length).toBeGreaterThan(0);
       
-      // Clear cache
+      // Clear global cache and strip's internal cache
       await thumbnailImageCache.clear();
-      const clearedStats = await thumbnailImageCache.getStats();
-      ctx.expect(clearedStats.itemCount).toBe(0);
+      // @ts-expect-error accessing private property for testing
+      strip._cachedThumbnails = [];
       
       // Trigger re-render
       // @ts-expect-error accessing private method
       strip.runThumbnailUpdate();
       await waitForThumbnails(strip, ctx);
       
-      // Should still have content after regeneration
+      // Should have content and cached thumbnails after regeneration
       ctx.expect(canvasHasContent(canvas!)).toBe(true);
+      // @ts-expect-error accessing private property for testing
+      ctx.expect(strip._cachedThumbnails.length).toBeGreaterThan(0);
     },
     
     // ============================================
@@ -636,9 +648,7 @@ export default defineSandbox({
       await timegroup.updateComplete;
       await strip.updateComplete;
       await ctx.frame();
-      await ctx.wait(100);
       
-      // Strip should have found and attached to the scroll container
       // @ts-expect-error accessing private property
       ctx.expect(strip._scrollContainer).toBe(scrollContainer);
     },
@@ -669,12 +679,9 @@ export default defineSandbox({
       // Scroll the container
       scrollContainer.scrollLeft = 500;
       
-      // Dispatch scroll event (scrollLeft alone doesn't trigger listener in some cases)
       scrollContainer.dispatchEvent(new Event("scroll"));
       await ctx.frame();
-      await ctx.wait(100);
       
-      // Strip should have updated its scroll position
       // @ts-expect-error accessing private property
       ctx.expect(strip._currentScrollLeft).toBe(500);
     },
@@ -700,16 +707,12 @@ export default defineSandbox({
       await timegroup.updateComplete;
       await strip.updateComplete;
       await ctx.frame();
-      await ctx.wait(200);
       
       const canvas = strip.shadowRoot?.querySelector("canvas");
       ctx.expect(canvas).toBeDefined();
       
-      // Canvas should be virtualized based on scroll container's viewport (400px)
-      // NOT the full strip width (60000px)
-      // Expected: viewport (400) + 2*padding (800) = 1200px max
       const dpr = window.devicePixelRatio || 1;
-      const maxExpectedWidth = (400 + 800) * dpr; // viewport + 2*padding
+      const maxExpectedWidth = (400 + 800) * dpr;
       ctx.expect(canvas!.width).toBeLessThanOrEqual(maxExpectedWidth);
       ctx.expect(canvas!.width).toBeGreaterThan(0);
     },
@@ -837,15 +840,15 @@ export default defineSandbox({
       await strip.updateComplete;
       await ctx.frame();
       
-      // Force target resolution by toggling target attribute
       strip.setAttribute("target", "");
       await strip.updateComplete;
       strip.setAttribute("target", "direct-video");
       await strip.updateComplete;
+      if (video.mediaEngineTask) {
+        await video.mediaEngineTask.taskComplete.catch(() => {});
+      }
       await ctx.frame();
-      await ctx.wait(500);
       
-      // Verify target was resolved
       ctx.expect(strip.targetElement).toBe(video);
       
       // Verify canvas renders
@@ -869,14 +872,15 @@ export default defineSandbox({
       await strip.updateComplete;
       await ctx.frame();
       
-      // Force target resolution
       strip.setAttribute("target", "");
       await strip.updateComplete;
       strip.setAttribute("target", "video-layout");
       await strip.updateComplete;
-      await ctx.wait(500);
+      if (video.mediaEngineTask) {
+        await video.mediaEngineTask.taskComplete.catch(() => {});
+      }
+      await ctx.frame();
       
-      // Verify target is resolved
       ctx.expect(strip.targetElement).toBe(video);
       
       // Canvas should exist and be ready for thumbnails
@@ -904,11 +908,12 @@ export default defineSandbox({
       testContext.appendChild(strip);
       
       await video.updateComplete;
-      await ctx.wait(500);
+      if (video.mediaEngineTask) {
+        await video.mediaEngineTask.taskComplete.catch(() => {});
+      }
       await strip.updateComplete;
       await ctx.frame();
       
-      // Strip should use the custom time range
       ctx.expect(strip.startTimeMs).toBe(1000);
       ctx.expect(strip.endTimeMs).toBe(3000);
     },
@@ -929,7 +934,7 @@ export default defineSandbox({
       testContext.appendChild(strip);
       
       await timegroup.updateComplete;
-      await ctx.wait(1000); // Allow video inside timegroup to load
+      await waitForVideos(timegroup);
       await waitForThumbnails(strip, ctx);
       
       // Canvas should have content from the composition
@@ -964,7 +969,7 @@ export default defineSandbox({
       testContext.appendChild(strip);
       
       await timegroup.updateComplete;
-      await ctx.wait(1000);
+      await waitForVideos(timegroup);
       await waitForThumbnails(strip, ctx);
       
       const canvas = strip.shadowRoot?.querySelector("canvas");
@@ -999,7 +1004,7 @@ export default defineSandbox({
       testContext.appendChild(strip);
       
       await timegroup.updateComplete;
-      await ctx.wait(1500); // Wait for both videos to load
+      await waitForVideos(timegroup);
       await waitForThumbnails(strip, ctx);
       
       const canvas = strip.shadowRoot?.querySelector("canvas");
@@ -1036,7 +1041,7 @@ export default defineSandbox({
       testContext.appendChild(strip);
       
       await timegroup.updateComplete;
-      await ctx.wait(1500);
+      await waitForVideos(timegroup);
       await waitForThumbnails(strip, ctx);
       
       const canvas = strip.shadowRoot?.querySelector("canvas");

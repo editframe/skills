@@ -151,7 +151,8 @@ declare global {
 export default defineSandbox({
   name: "CompactnessSlider",
   description: "Atom: Range slider with Spacious/Compact labels",
-  category: "controls",
+  category: "demos",
+  subcategory: "compactness",
 
   render: () => html`
     <div style="width: 400px; padding: 20px;">
@@ -223,8 +224,6 @@ export default defineSandbox({
 
     async "supports custom labels"(ctx) {
       const container = ctx.getContainer();
-      container.innerHTML = "";
-      
       const slider = document.createElement("ef-compactness-slider") as EFCompactnessSlider;
       slider.label = "Density";
       slider.minLabel = "Loose";

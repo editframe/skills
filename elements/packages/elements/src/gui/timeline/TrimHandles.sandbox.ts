@@ -6,7 +6,8 @@ import "./TrimHandles.js";
 export default defineSandbox({
   name: "EFTrimHandles",
   description: "Atom: Trim handles for adjusting start/end points of timeline items",
-  category: "timeline",
+  category: "gui",
+  subcategory: "timeline",
   
   render: () => html`
     <div style="width: 100%; height: 200px; display: flex; flex-direction: column; gap: 24px; padding: 24px;">
@@ -16,7 +17,7 @@ export default defineSandbox({
           pixels-per-ms="0.1"
           trim-start-ms="500"
           trim-end-ms="1500"
-          duration-ms="3000"
+          intrinsic-duration-ms="3000"
         ></ef-trim-handles>
       </div>
       
@@ -26,7 +27,7 @@ export default defineSandbox({
           pixels-per-ms="0.2"
           trim-start-ms="0"
           trim-end-ms="0"
-          duration-ms="2000"
+          intrinsic-duration-ms="2000"
         ></ef-trim-handles>
       </div>
     </div>
@@ -104,8 +105,12 @@ export default defineSandbox({
       await ctx.frame();
       
       let eventDetail: any;
-      handles.addEventListener("track-trim-change", (e) => {
-        eventDetail = (e as CustomEvent).detail;
+      // Event is "trim-change", not "track-trim-change"
+      const eventPromise = new Promise<CustomEvent>((resolve) => {
+        handles.addEventListener("trim-change", (e) => {
+          eventDetail = (e as CustomEvent).detail;
+          resolve(e as CustomEvent);
+        }, { once: true });
       });
       
       const shadowRoot = handles.shadowRoot;
@@ -120,7 +125,7 @@ export default defineSandbox({
       
       // Simulate drag
       await ctx.drag(startHandle, { from: [0, 10], to: [20, 10] });
-      await ctx.wait(100);
+      await eventPromise;
       
       ctx.expect(eventDetail).toBeDefined();
       ctx.expect(eventDetail.elementId).toBe("test-1");
@@ -141,10 +146,12 @@ export default defineSandbox({
     async "handles no trim (full duration)"(ctx) {
       const handles = ctx.querySelectorAll<EFTrimHandles>("ef-trim-handles")[1];
       await ctx.frame();
+      await handles.updateComplete;
       
+      ctx.expect(handles).toBeDefined();
       ctx.expect(handles.trimStartMs).toBe(0);
       ctx.expect(handles.trimEndMs).toBe(0);
-      ctx.expect(handles.durationMs).toBe(2000);
+      ctx.expect(handles.intrinsicDurationMs).toBe(2000);
     },
   },
 });

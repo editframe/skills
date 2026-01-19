@@ -6,7 +6,8 @@ import "./EFTimegroup.js";
 export default defineSandbox({
   name: "EFTimegroup",
   description: "Temporal container for synchronized media playback",
-  category: "media",
+  category: "elements",
+  subcategory: "temporal",
   
   render: () => html`
     <ef-timegroup mode="fixed" duration="2s" style="width: 400px; height: 300px; border: 1px solid #ccc;">
@@ -22,7 +23,6 @@ export default defineSandbox({
       const timegroup = ctx.querySelector<EFTimegroup>("ef-timegroup")!;
       
       // Wait for timegroup to initialize
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(timegroup).toBeDefined();
@@ -32,7 +32,6 @@ export default defineSandbox({
     async "starts at time 0"(ctx) {
       const timegroup = ctx.querySelector<EFTimegroup>("ef-timegroup")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(timegroup.currentTimeMs).toBe(0);
@@ -41,7 +40,6 @@ export default defineSandbox({
     async "can set currentTimeMs"(ctx) {
       const timegroup = ctx.querySelector<EFTimegroup>("ef-timegroup")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       timegroup.currentTimeMs = 500;
@@ -53,7 +51,6 @@ export default defineSandbox({
     async "clamps currentTimeMs to duration"(ctx) {
       const timegroup = ctx.querySelector<EFTimegroup>("ef-timegroup")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       timegroup.currentTimeMs = 5000; // Beyond 2s duration
@@ -65,7 +62,6 @@ export default defineSandbox({
     async "has playbackController"(ctx) {
       const timegroup = ctx.querySelector<EFTimegroup>("ef-timegroup")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(timegroup.playbackController).toBeDefined();

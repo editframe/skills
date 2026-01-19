@@ -2,7 +2,7 @@ import { defineSandbox } from "../sandbox/index.js";
 import { html } from "lit";
 import type { EFCanvas } from "./EFCanvas.js";
 import "./EFCanvas.js";
-import "../gui/EFPanZoom.js";
+import "../elements/EFPanZoom.js";
 import "../elements/EFTimegroup.js";
 import "../elements/EFVideo.js";
 import "../elements/EFImage.js";
@@ -10,7 +10,8 @@ import "../elements/EFImage.js";
 export default defineSandbox({
   name: "EFCanvas",
   description: "Canvas container with selection support and coordinate transforms",
-  category: "layout",
+  category: "gui",
+  subcategory: "canvas",
   
   render: () => html`
     <ef-pan-zoom style="width: 800px; height: 600px; border: 1px solid #ccc;">
@@ -45,7 +46,6 @@ export default defineSandbox({
     async "renders canvas container"(ctx) {
       const canvas = ctx.querySelector<EFCanvas>("ef-canvas")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(canvas).toBeDefined();
@@ -54,7 +54,6 @@ export default defineSandbox({
     async "registers elements in canvas"(ctx) {
       const canvas = ctx.querySelector<EFCanvas>("ef-canvas")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       const timegroup = ctx.querySelector("ef-timegroup")!;
@@ -67,20 +66,20 @@ export default defineSandbox({
     async "supports selection"(ctx) {
       const canvas = ctx.querySelector<EFCanvas>("ef-canvas")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       const selectionController = (canvas as any).selectionController;
       ctx.expect(selectionController).toBeDefined();
       
-      const selectedElements = selectionController.getSelectedElements();
-      ctx.expect(Array.isArray(selectedElements)).toBe(true);
+      // SelectionController provides selectionContext with selectedIds (a Set)
+      const selectionContext = selectionController.selectionContext;
+      ctx.expect(selectionContext).toBeDefined();
+      ctx.expect(selectionContext.selectedIds instanceof Set).toBe(true);
     },
     
     async "has coordinate transform support"(ctx) {
       const canvas = ctx.querySelector<EFCanvas>("ef-canvas")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(canvas.panZoomTransform).toBeDefined();
@@ -89,7 +88,6 @@ export default defineSandbox({
     async "can enable/disable transform handles"(ctx) {
       const canvas = ctx.querySelector<EFCanvas>("ef-canvas")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(canvas.enableTransformHandles).toBe(true);
@@ -103,7 +101,6 @@ export default defineSandbox({
     async "manages element registry"(ctx) {
       const canvas = ctx.querySelector<EFCanvas>("ef-canvas")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       const registry = (canvas as any).elementRegistry;

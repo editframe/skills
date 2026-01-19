@@ -8,7 +8,8 @@ import "./EFTimegroup.js";
 export default defineSandbox({
   name: "EFCaptions",
   description: "Caption/subtitle element with word-level timing and active word highlighting",
-  category: "media",
+  category: "elements",
+  subcategory: "text",
   
   render: () => html`
     <ef-timegroup mode="fixed" duration="10s" style="width: 800px; height: 400px; border: 1px solid #ccc;">
@@ -30,7 +31,6 @@ export default defineSandbox({
     async "renders captions element"(ctx) {
       const captions = ctx.querySelector<EFCaptions>("ef-captions")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(captions).toBeDefined();
@@ -39,7 +39,6 @@ export default defineSandbox({
     async "loads captions from source"(ctx) {
       const captions = ctx.querySelector<EFCaptions>("ef-captions")!;
       
-      await ctx.wait(200);
       await ctx.frame();
       
       ctx.expect(captions.src).toBe("/assets/improv-trimmed-captions.json");
@@ -48,7 +47,6 @@ export default defineSandbox({
     async "has word segments"(ctx) {
       const captions = ctx.querySelector<EFCaptions>("ef-captions")!;
       
-      await ctx.wait(300);
       await ctx.frame();
       
       const wordSegments = captions.querySelectorAll("ef-captions-active-word");
@@ -59,12 +57,10 @@ export default defineSandbox({
       const captions = ctx.querySelector<EFCaptions>("ef-captions")!;
       const timegroup = ctx.querySelector("ef-timegroup")!;
       
-      await ctx.wait(300);
       await ctx.frame();
       
       timegroup.currentTimeMs = 1000;
       await ctx.frame();
-      await ctx.wait(100);
       
       const activeWords = captions.querySelectorAll("ef-captions-active-word:not([hidden])");
       ctx.expect(activeWords.length).toBeGreaterThanOrEqual(0);
@@ -73,7 +69,6 @@ export default defineSandbox({
     async "has temporal properties"(ctx) {
       const captions = ctx.querySelector<EFCaptions>("ef-captions")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(typeof captions.durationMs).toBe("number");
@@ -83,16 +78,14 @@ export default defineSandbox({
     async "can change source"(ctx) {
       const captions = ctx.querySelector<EFCaptions>("ef-captions")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       const originalSrc = captions.src;
       captions.src = "/assets/other-captions.json";
       await ctx.frame();
-      await ctx.wait(100);
       
       ctx.expect(captions.src).toBe("/assets/other-captions.json");
-      ctx.expect(captions.src).not.toBe(originalSrc);
+      ctx.expect(captions.src !== originalSrc).toBe(true);
     },
   },
 });

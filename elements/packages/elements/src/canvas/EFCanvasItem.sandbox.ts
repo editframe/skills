@@ -3,12 +3,13 @@ import { html } from "lit";
 import type { EFCanvasItem } from "./EFCanvasItem.js";
 import "./EFCanvasItem.js";
 import "./EFCanvas.js";
-import "../gui/EFPanZoom.js";
+import "../elements/EFPanZoom.js";
 
 export default defineSandbox({
   name: "EFCanvasItem",
   description: "Canvas item wrapper (deprecated - use plain HTML elements instead)",
-  category: "layout",
+  category: "gui",
+  subcategory: "canvas",
   
   render: () => html`
     <ef-pan-zoom style="width: 600px; height: 400px; border: 1px solid #ccc;">
@@ -27,7 +28,6 @@ export default defineSandbox({
     async "renders canvas item"(ctx) {
       const item = ctx.querySelector<EFCanvasItem>("ef-canvas-item")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(item).toBeDefined();
@@ -37,7 +37,6 @@ export default defineSandbox({
       const item = ctx.querySelector<EFCanvasItem>("ef-canvas-item")!;
       const canvas = ctx.querySelector("ef-canvas")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(item.id).toBe("test-canvas-item");
@@ -47,7 +46,6 @@ export default defineSandbox({
     async "has absolute positioning"(ctx) {
       const item = ctx.querySelector<EFCanvasItem>("ef-canvas-item")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       const styles = getComputedStyle(item);
@@ -67,7 +65,6 @@ export default defineSandbox({
       const canvas = ctx.querySelector("ef-canvas")!;
       canvas.appendChild(item);
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect((item as any).canvas).toBeDefined();

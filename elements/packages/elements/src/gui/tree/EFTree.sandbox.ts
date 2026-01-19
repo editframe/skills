@@ -8,7 +8,8 @@ import "./EFTreeItem.js";
 export default defineSandbox({
   name: "EFTree",
   description: "Generic tree component for hierarchical data display",
-  category: "panels",
+  category: "gui",
+  subcategory: "hierarchy",
   
   render: () => html`
     <div style="width: 300px; height: 400px; border: 1px solid #ccc;">
@@ -69,7 +70,6 @@ export default defineSandbox({
     async "renders tree component"(ctx) {
       const tree = ctx.querySelector<EFTree>("ef-tree")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(tree).toBeDefined();
@@ -79,7 +79,6 @@ export default defineSandbox({
     async "displays tree items"(ctx) {
       const tree = ctx.querySelector<EFTree>("ef-tree")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       const items = tree.shadowRoot?.querySelectorAll("ef-tree-item");
@@ -90,7 +89,6 @@ export default defineSandbox({
     async "shows header when enabled"(ctx) {
       const tree = ctx.querySelector<EFTree>("ef-tree")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(tree.showHeader).toBe(true);
@@ -103,7 +101,6 @@ export default defineSandbox({
     async "supports item selection"(ctx) {
       const tree = ctx.querySelector<EFTree>("ef-tree")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       tree.selectedId = "file-1";
@@ -115,7 +112,6 @@ export default defineSandbox({
     async "expands all items when expandAll is true"(ctx) {
       const tree = ctx.querySelector<EFTree>("ef-tree")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(tree.expandAll).toBe(true);
@@ -129,7 +125,6 @@ export default defineSandbox({
         selectedId = e.detail.id;
       });
       
-      await ctx.wait(100);
       await ctx.frame();
       
       (tree as any).treeActions.select("file-2");

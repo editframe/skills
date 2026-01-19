@@ -8,6 +8,12 @@
  *   elements/scripts/ef run [name] [options]    # Run scenarios as tests
  *   elements/scripts/ef profile <name> [options] # Profile a scenario
  *   elements/scripts/ef info <subcommand> [options] # Query test session data
+ * 
+ * Run options:
+ *   --verbose, -v    Show all test names (default: only failures shown)
+ *   --scenario <pat> Filter scenarios by pattern
+ *   --watch          Re-run on file changes
+ *   --concurrency <n>, -j <n>  Number of parallel workers
  */
 
 import { chromium, type Browser, type Page, type CDPSession } from "playwright";
@@ -714,6 +720,23 @@ interface RunOptions {
     maxHotspotIncreaseMs?: number; // Fail if any hotspot increased by more than this
     maxHotspotIncreasePercent?: number; // Fail if any hotspot increased by more than this %
   };
+  concurrency?: number; // Number of parallel workers (default: number of CPU cores)
+  verbose?: boolean; // Show all test names (default: only show failures)
+}
+
+interface SandboxRunResult {
+  sandboxName: string;
+  results: ScenarioResult[];
+  passed: number;
+  failed: number;
+  error?: Error;
+  sessionData: {
+    logs: BrowserLogEntry[];
+    errors: Map<string, BrowserError>;
+    warnings: Map<string, BrowserWarning>;
+    logPrefixes: Map<string, BrowserLogPrefix>;
+    profiles: Map<string, any>;
+  };
 }
 
 interface ProfileAssertion {
@@ -737,50 +760,82 @@ interface ProfileAssertionResult {
   };
 }
 
-// Category descriptions for LLM discovery
+// Category descriptions for LLM discovery (type-first model)
 const CATEGORY_DESCRIPTIONS: Record<string, string> = {
-  media: "Media Elements - Playback, display, and representation of video, audio, images, and timegroups",
-  timeline: "Timeline Components - Editing, trimming, sequencing, and temporal arrangement",
-  controls: "Controls - User input widgets like sliders, dials, and interactive controls",
-  panels: "Panels - UI containers and organizers for grouping interface elements",
-  visualization: "Visualization - Visual data representation like thumbnails, waveforms, and rulers",
-  layout: "Layout - Structure, organization, and spatial arrangement of content",
-  styling: "Styling - Appearance customization, CSS variables, and theming",
+  elements: "elements - Composition primitives (things you put in a timegroup to build video content)",
+  gui: "gui - User interface components (how users interact with and view elements)",
+  demos: "demos - Example compositions (complete working examples showing element + gui integration)",
 };
 
 // Map category keys to display labels
 const CATEGORY_LABELS: Record<string, string> = {
-  media: "Media Elements",
-  timeline: "Timeline Components",
-  controls: "Controls",
-  panels: "Panels",
-  visualization: "Visualization",
-  layout: "Layout",
-  styling: "Styling",
+  elements: "elements",
+  gui: "gui",
+  demos: "demos",
+};
+
+// Subcategory descriptions for each parent category
+const SUBCATEGORY_DESCRIPTIONS: Record<string, Record<string, string>> = {
+  elements: {
+    temporal: "Time containers for synchronizing content",
+    media: "Video, audio, and image content",
+    text: "Text and caption content",
+    visualization: "Visual representation of audio data",
+  },
+  gui: {
+    controls: "Playback and input widgets",
+    timeline: "Timeline editing interface",
+    hierarchy: "Layer/element tree display",
+    preview: "Content preview and thumbnails",
+    canvas: "Spatial composition area",
+    config: "Configuration and settings",
+  },
+  demos: {
+    workbench: "Complete editor environment",
+    compactness: "CSS variable and styling demo",
+  },
 };
 
 async function showCategories(): Promise<void> {
-  console.log("\n📂 Affordance Categories:\n");
+  console.log("\n📂 Categories (Type-First Model):\n");
   
-  const categoryOrder = ["media", "timeline", "controls", "panels", "visualization", "layout", "styling"];
+  const categoryOrder = ["elements", "gui", "demos"];
   
   for (const category of categoryOrder) {
-    const label = CATEGORY_LABELS[category] || category.charAt(0).toUpperCase() + category.slice(1);
     const description = CATEGORY_DESCRIPTIONS[category] || "No description available";
     // Extract just the description part (after the dash)
     const descriptionText = description.includes(" - ") ? description.split(" - ")[1] : description;
-    console.log(`  ${label}`);
+    console.log(`  ${category}`);
     console.log(`    ${SCRIPT_NAME} list --category ${category}`);
     console.log(`    ${descriptionText}`);
+    
+    // Show subcategories
+    const subcategories = SUBCATEGORY_DESCRIPTIONS[category];
+    if (subcategories) {
+      for (const [subcat, subdesc] of Object.entries(subcategories)) {
+        console.log(`      ${category}/${subcat} - ${subdesc}`);
+      }
+    }
     console.log();
   }
   
+  console.log(`💡 Use '${SCRIPT_NAME} list --category <category>' to filter by category`);
+  console.log(`💡 Use '${SCRIPT_NAME} list --category <category>/<subcategory>' to filter by subcategory`);
   console.log(`💡 Use '${SCRIPT_NAME} list <sandbox-name>' to see scenarios for a specific sandbox\n`);
 }
 
 async function listSandboxes(categoryFilter?: string, sandboxName?: string, json: boolean = false): Promise<void> {
   const elementsRoot = findElementsRoot();
   const sandboxes = discoverSandboxes(elementsRoot);
+
+  // Parse category/subcategory filter (e.g., "gui/timeline" or "elements")
+  let filterCategory: string | undefined;
+  let filterSubcategory: string | undefined;
+  if (categoryFilter) {
+    const parts = categoryFilter.split("/");
+    filterCategory = parts[0];
+    filterSubcategory = parts[1];
+  }
 
   // If specific sandbox requested, show its scenarios
   if (sandboxName) {
@@ -804,6 +859,7 @@ async function listSandboxes(categoryFilter?: string, sandboxName?: string, json
         console.log(JSON.stringify({
           sandbox: sandboxName,
           category: sandbox.category,
+          subcategory: sandbox.subcategory,
           description: config.description,
           scenarios: scenarioNames,
         }, null, 2));
@@ -812,8 +868,10 @@ async function listSandboxes(categoryFilter?: string, sandboxName?: string, json
 
       console.log(`\n📦 ${sandboxName}`);
       if (sandbox.category) {
-        const categoryLabel = CATEGORY_LABELS[sandbox.category] || sandbox.category.charAt(0).toUpperCase() + sandbox.category.slice(1);
-        console.log(`   Category: ${categoryLabel}`);
+        const categoryPath = sandbox.subcategory 
+          ? `${sandbox.category}/${sandbox.subcategory}`
+          : sandbox.category;
+        console.log(`   Category: ${categoryPath}`);
       }
       if (config.description) {
         console.log(`   ${config.description}`);
@@ -837,20 +895,17 @@ async function listSandboxes(categoryFilter?: string, sandboxName?: string, json
     return;
   }
 
-  // Group by category
-  const sandboxesByCategory = new Map<string, typeof sandboxes>();
-  for (const sandbox of sandboxes) {
-    const category = sandbox.category || "uncategorized";
-    if (categoryFilter && category !== categoryFilter) {
-      continue;
-    }
-    if (!sandboxesByCategory.has(category)) {
-      sandboxesByCategory.set(category, []);
-    }
-    sandboxesByCategory.get(category)!.push(sandbox);
+  // Filter sandboxes by category and/or subcategory
+  let filteredSandboxes = sandboxes;
+  if (filterCategory) {
+    filteredSandboxes = sandboxes.filter(s => {
+      if (s.category !== filterCategory) return false;
+      if (filterSubcategory && s.subcategory !== filterSubcategory) return false;
+      return true;
+    });
   }
 
-  if (sandboxesByCategory.size === 0) {
+  if (filteredSandboxes.length === 0) {
     if (categoryFilter) {
       console.log(`\n❌ No sandboxes found in category "${categoryFilter}"\n`);
       console.log("Available categories:");
@@ -861,13 +916,34 @@ async function listSandboxes(categoryFilter?: string, sandboxName?: string, json
     return;
   }
 
+  // Group by category, then by subcategory
+  type SandboxByCategorySubcategory = Map<string, Map<string, typeof sandboxes>>;
+  const grouped: SandboxByCategorySubcategory = new Map();
+  
+  for (const sandbox of filteredSandboxes) {
+    const category = sandbox.category || "uncategorized";
+    const subcategory = sandbox.subcategory || "other";
+    
+    if (!grouped.has(category)) {
+      grouped.set(category, new Map());
+    }
+    const subcats = grouped.get(category)!;
+    if (!subcats.has(subcategory)) {
+      subcats.set(subcategory, []);
+    }
+    subcats.get(subcategory)!.push(sandbox);
+  }
+
   if (json) {
-    const output: Record<string, Array<{ name: string; elementTag: string | null }>> = {};
-    for (const [category, categorySandboxes] of sandboxesByCategory.entries()) {
-      output[category] = categorySandboxes.map(s => ({
-        name: s.elementName,
-        elementTag: s.elementTag,
-      }));
+    const output: Record<string, Record<string, Array<{ name: string; elementTag: string | null }>>> = {};
+    for (const [category, subcats] of grouped.entries()) {
+      output[category] = {};
+      for (const [subcategory, subs] of subcats.entries()) {
+        output[category][subcategory] = subs.map(s => ({
+          name: s.elementName,
+          elementTag: s.elementTag,
+        }));
+      }
     }
     console.log(JSON.stringify(output, null, 2));
     return;
@@ -875,17 +951,13 @@ async function listSandboxes(categoryFilter?: string, sandboxName?: string, json
 
   // Sort categories by priority
   const categoryOrder: Record<string, number> = {
-    media: 1,
-    timeline: 2,
-    controls: 3,
-    panels: 4,
-    visualization: 5,
-    layout: 6,
-    styling: 7,
+    elements: 1,
+    gui: 2,
+    demos: 3,
     uncategorized: 999,
   };
 
-  const sortedCategories = Array.from(sandboxesByCategory.entries()).sort((a, b) => {
+  const sortedCategories = Array.from(grouped.entries()).sort((a, b) => {
     const aOrder = categoryOrder[a[0]] || 999;
     const bOrder = categoryOrder[b[0]] || 999;
     if (aOrder !== bOrder) return aOrder - bOrder;
@@ -893,30 +965,167 @@ async function listSandboxes(categoryFilter?: string, sandboxName?: string, json
   });
 
   if (categoryFilter) {
-    console.log(`\n📦 Sandboxes in "${categoryFilter}" category:\n`);
+    console.log(`\n📦 Sandboxes in "${categoryFilter}":\n`);
   } else {
     console.log("\n📦 Element Sandboxes by Category:\n");
   }
 
-  for (const [category, categorySandboxes] of sortedCategories) {
-    const categoryLabel = CATEGORY_LABELS[category] || category.charAt(0).toUpperCase() + category.slice(1);
+  for (const [category, subcats] of sortedCategories) {
     const description = CATEGORY_DESCRIPTIONS[category];
+    const descriptionText = description 
+      ? description.split(" - ")[1] || description
+      : "";
     
-    console.log(`  ${categoryLabel}${description ? ` - ${description.split(" - ")[1]}` : ""}`);
+    console.log(`  ${category}${descriptionText ? ` - ${descriptionText}` : ""}`);
     console.log(`  ${"=".repeat(60)}`);
     
-    for (const sandbox of categorySandboxes.sort((a, b) => a.elementName.localeCompare(b.elementName))) {
-      console.log(`    • ${sandbox.elementName}`);
-      if (sandbox.elementTag) {
-        console.log(`      <${sandbox.elementTag}>`);
+    // Sort subcategories
+    const subcatDescs = SUBCATEGORY_DESCRIPTIONS[category] || {};
+    const subcatOrder = Object.keys(subcatDescs);
+    const sortedSubcats = Array.from(subcats.entries()).sort((a, b) => {
+      const aIdx = subcatOrder.indexOf(a[0]);
+      const bIdx = subcatOrder.indexOf(b[0]);
+      if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
+      if (aIdx !== -1) return -1;
+      if (bIdx !== -1) return 1;
+      return a[0].localeCompare(b[0]);
+    });
+    
+    for (const [subcategory, subs] of sortedSubcats) {
+      const subcatDesc = subcatDescs[subcategory] || "";
+      console.log(`    ${subcategory} (${subs.length})${subcatDesc ? ` - ${subcatDesc}` : ""}`);
+      
+      for (const sandbox of subs.sort((a, b) => a.elementName.localeCompare(b.elementName))) {
+        console.log(`      • ${sandbox.elementName}`);
+        if (sandbox.elementTag) {
+          console.log(`        <${sandbox.elementTag}>`);
+        }
       }
     }
     console.log();
   }
 
   if (!categoryFilter) {
-    console.log(`💡 Use '${SCRIPT_NAME} list --category <name>' to filter by category`);
+    console.log(`💡 Use '${SCRIPT_NAME} list --category <category>' to filter by category`);
+    console.log(`💡 Use '${SCRIPT_NAME} list --category <category>/<subcategory>' to filter by subcategory`);
     console.log(`💡 Use '${SCRIPT_NAME} list <sandbox-name>' to see scenarios\n`);
+  }
+}
+
+/**
+ * Search sandboxes by keyword matching on name, description, category, and subcategory
+ */
+async function searchSandboxes(query: string, json: boolean = false): Promise<void> {
+  const elementsRoot = findElementsRoot();
+  const sandboxes = discoverSandboxes(elementsRoot);
+  
+  // Split query into keywords
+  const keywords = query.toLowerCase().split(/\s+/).filter(k => k.length > 0);
+  
+  if (keywords.length === 0) {
+    console.error("\n❌ Please provide a search query\n");
+    process.exit(1);
+  }
+  
+  // Score each sandbox by keyword matches
+  interface SearchResult {
+    sandbox: typeof sandboxes[0];
+    score: number;
+    matches: string[];
+  }
+  
+  const results: SearchResult[] = [];
+  
+  for (const sandbox of sandboxes) {
+    // Build searchable text from sandbox metadata
+    const searchFields = [
+      sandbox.elementName,
+      sandbox.category || "",
+      sandbox.subcategory || "",
+    ];
+    
+    // Try to load description from sandbox file
+    try {
+      const config = await loadSandbox(sandbox.filePath) as Sandbox;
+      if (config.description) {
+        searchFields.push(config.description);
+      }
+    } catch {
+      // Ignore load errors, just search without description
+    }
+    
+    const searchText = searchFields.join(" ").toLowerCase();
+    const matches: string[] = [];
+    let score = 0;
+    
+    for (const keyword of keywords) {
+      if (searchText.includes(keyword)) {
+        score++;
+        // Track which field matched
+        if (sandbox.elementName.toLowerCase().includes(keyword)) {
+          matches.push(`name: "${keyword}"`);
+        } else if (sandbox.category?.toLowerCase().includes(keyword)) {
+          matches.push(`category: "${keyword}"`);
+        } else if (sandbox.subcategory?.toLowerCase().includes(keyword)) {
+          matches.push(`subcategory: "${keyword}"`);
+        } else {
+          matches.push(`description: "${keyword}"`);
+        }
+      }
+    }
+    
+    if (score > 0) {
+      results.push({ sandbox, score, matches });
+    }
+  }
+  
+  // Sort by score (highest first), then by name
+  results.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return a.sandbox.elementName.localeCompare(b.sandbox.elementName);
+  });
+  
+  if (results.length === 0) {
+    console.log(`\n🔍 No sandboxes found matching "${query}"\n`);
+    return;
+  }
+  
+  if (json) {
+    const output = results.map(r => ({
+      name: r.sandbox.elementName,
+      category: r.sandbox.category,
+      subcategory: r.sandbox.subcategory,
+      elementTag: r.sandbox.elementTag,
+      score: r.score,
+      matches: r.matches,
+    }));
+    console.log(JSON.stringify(output, null, 2));
+    return;
+  }
+  
+  console.log(`\n🔍 Search results for "${query}" (${results.length} found):\n`);
+  
+  for (const result of results) {
+    const { sandbox } = result;
+    const categoryPath = sandbox.subcategory 
+      ? `${sandbox.category}/${sandbox.subcategory}`
+      : sandbox.category || "uncategorized";
+    
+    console.log(`  ${sandbox.elementName} (${categoryPath})`);
+    if (sandbox.elementTag) {
+      console.log(`    <${sandbox.elementTag}>`);
+    }
+    
+    // Try to show description
+    try {
+      const config = await loadSandbox(sandbox.filePath) as Sandbox;
+      if (config.description) {
+        console.log(`    ${config.description}`);
+      }
+    } catch {
+      // Ignore
+    }
+    console.log();
   }
 }
 
@@ -995,12 +1204,14 @@ async function openSandbox(sandboxName?: string): Promise<void> {
   // Generate a unique session ID for this browser session
   const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   
-  // Open scenario viewer with full navigation - if sandboxName provided, include it, otherwise show all sandboxes
+  // Open sandbox app with full navigation - if sandboxName provided, include it, otherwise show all sandboxes
+  // Uses path-based routing: /sandbox/:sandboxName
   // Include sessionId so the page can identify itself for profiling
   // Include profile=true to enable profiling by default when opened with ef open
-  const url = sandboxName 
-    ? `http://${worktreeDomain}:4321/scenario-viewer.html?controlled=true&profile=true&sessionId=${encodeURIComponent(sessionId)}&sandbox=${encodeURIComponent(sandboxName)}`
-    : `http://${worktreeDomain}:4321/scenario-viewer.html?controlled=true&profile=true&sessionId=${encodeURIComponent(sessionId)}`;
+  const basePath = sandboxName 
+    ? `/sandbox/${encodeURIComponent(sandboxName)}`
+    : `/sandbox`;
+  const url = `http://${worktreeDomain}:4321${basePath}?controlled=true&profile=true&sessionId=${encodeURIComponent(sessionId)}`;
   
   console.log(`\n🌐 Opening scenario viewer in Playwright-controlled browser...\n`);
   console.log(`📋 Session ID: ${sessionId}\n`);
@@ -1193,6 +1404,140 @@ async function openSandbox(sandboxName?: string): Promise<void> {
   contextInstance = context;
 }
 
+function mergeSessionData(
+  target: TestSessionData,
+  source: SandboxRunResult["sessionData"],
+): void {
+  target.logs.push(...source.logs);
+  
+  for (const [key, error] of source.errors) {
+    const existing = target.errors.get(key);
+    if (existing) {
+      existing.count += error.count;
+      existing.lastSeen = Math.max(existing.lastSeen, error.lastSeen);
+      for (const testName of error.testNames) {
+        existing.testNames.add(testName);
+      }
+      if (!existing.stackTrace && error.stackTrace) {
+        existing.stackTrace = error.stackTrace;
+      }
+    } else {
+      target.errors.set(key, { ...error, testNames: new Set(error.testNames) });
+    }
+  }
+  
+  for (const [key, warning] of source.warnings) {
+    const existing = target.warnings.get(key);
+    if (existing) {
+      existing.count += warning.count;
+      existing.lastSeen = Math.max(existing.lastSeen, warning.lastSeen);
+      for (const testName of warning.testNames) {
+        existing.testNames.add(testName);
+      }
+      if (!existing.stackTrace && warning.stackTrace) {
+        existing.stackTrace = warning.stackTrace;
+      }
+    } else {
+      target.warnings.set(key, { ...warning, testNames: new Set(warning.testNames) });
+    }
+  }
+  
+  for (const [key, prefix] of source.logPrefixes) {
+    const existing = target.logPrefixes.get(key);
+    if (existing) {
+      existing.count += prefix.count;
+      existing.lastSeen = Math.max(existing.lastSeen, prefix.lastSeen);
+      for (const testName of prefix.testNames) {
+        existing.testNames.add(testName);
+      }
+    } else {
+      target.logPrefixes.set(key, { ...prefix, testNames: new Set(prefix.testNames) });
+    }
+  }
+  
+  for (const [key, profile] of source.profiles) {
+    target.profiles.set(key, profile);
+  }
+}
+
+function createIsolatedSessionData(): SandboxRunResult["sessionData"] {
+  return {
+    logs: [],
+    errors: new Map(),
+    warnings: new Map(),
+    logPrefixes: new Map(),
+    profiles: new Map(),
+  };
+}
+
+async function runSandboxWorker(
+  page: Page,
+  sandboxInfo: { filePath: string; elementName: string },
+  options: RunOptions,
+  elementsRoot: string,
+): Promise<SandboxRunResult> {
+  const isolatedSessionData = createIsolatedSessionData();
+  const tempSessionData: TestSessionData = {
+    metadata: {
+      sessionId: "",
+      sandboxName: sandboxInfo.elementName,
+      startTime: Date.now(),
+      endTime: 0,
+      duration: 0,
+      status: "passed",
+      totalTests: 0,
+      passedTests: 0,
+      failedTests: 0,
+      totalErrors: 0,
+      totalWarnings: 0,
+    },
+    tests: [],
+    errors: isolatedSessionData.errors,
+    warnings: isolatedSessionData.warnings,
+    logPrefixes: isolatedSessionData.logPrefixes,
+    logs: isolatedSessionData.logs,
+    profiles: isolatedSessionData.profiles,
+  };
+  
+  try {
+    const results = await runSandboxScenarios(
+      page,
+      sandboxInfo,
+      options,
+      elementsRoot,
+      tempSessionData,
+    );
+    
+    let passed = 0;
+    let failed = 0;
+    for (const result of results) {
+      if (result.status === "failed" || result.status === "error") {
+        failed++;
+      } else {
+        passed++;
+      }
+    }
+    
+    return {
+      sandboxName: sandboxInfo.elementName,
+      results,
+      passed,
+      failed,
+      sessionData: isolatedSessionData,
+    };
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    return {
+      sandboxName: sandboxInfo.elementName,
+      results: [],
+      passed: 0,
+      failed: 1,
+      error,
+      sessionData: isolatedSessionData,
+    };
+  }
+}
+
 async function runScenarios(options: RunOptions): Promise<number> {
   const elementsRoot = findElementsRoot();
   const sandboxes = discoverSandboxes(elementsRoot);
@@ -1206,6 +1551,10 @@ async function runScenarios(options: RunOptions): Promise<number> {
       return 1;
     }
   }
+  
+  // Determine concurrency level
+  const concurrency = options.concurrency ?? os.cpus().length;
+  const effectiveConcurrency = Math.min(concurrency, sandboxesToRun.length);
   
   // Generate session ID for this test run
   const sessionId = generateSessionId(sandboxName || "all");
@@ -1302,73 +1651,91 @@ async function runScenarios(options: RunOptions): Promise<number> {
   contextInstance = context;
   browserInstance = browser;
   
-  // Track overall statistics
-  let totalSandboxes = 0;
-  let failedSandboxes = 0;
-  let totalPassed = 0;
-  let totalFailed = 0;
+  // Create worker pages
+  const pages: Page[] = [];
+  for (let i = 0; i < effectiveConcurrency; i++) {
+    pages.push(await context.newPage());
+  }
   
-  // Create a single page that will be reused for all sandboxes
-  const page = await context.newPage();
+  console.log(`🔄 Running ${sandboxesToRun.length} sandbox(es) with ${effectiveConcurrency} worker(s)...\n`);
   
   try {
-    for (const sandboxInfo of sandboxesToRun) {
-      totalSandboxes++;
-      let results: ScenarioResult[];
-      
-      try {
-        results = await runSandboxScenarios(
-          page,
-          sandboxInfo,
-          options,
-          elementsRoot,
-          sessionData, // Pass session data collector
-        );
-      } catch (err) {
-        // Sandbox-level error (e.g., failed to load sandbox module)
-        const error = err instanceof Error ? err : new Error(String(err));
-        console.log(`\n${sandboxInfo.elementName}`);
-        console.log(`  \x1b[31m✗\x1b[0m Failed to load sandbox`);
-        console.log(`    Error: ${error.message}`);
-        if (error.stack) {
-          const stackLines = error.stack.split("\n").slice(0, 3);
-          for (const line of stackLines) {
-            console.log(`    ${line}`);
-          }
-        }
-        console.log(`\n0 passed, 1 failed`);
-        failedSandboxes++;
-        totalFailed++;
-        exitCode = 1;
-        continue; // Continue to next sandbox
-      }
-      
-      // Print minimal results (just pass/fail with duration)
-      console.log(`\n${sandboxInfo.elementName}`);
-      let passed = 0;
-      let failed = 0;
-      
-      for (const result of results) {
-        const icon = result.status === "passed" ? "✓" : "✗";
-        const statusColor = result.status === "passed" ? "\x1b[32m" : "\x1b[31m";
-        const resetColor = "\x1b[0m";
-        console.log(
-          `  ${statusColor}${icon}${resetColor} ${result.name} (${result.durationMs}ms)`,
-        );
+    // Create sandbox queue and results collector
+    const sandboxQueue = [...sandboxesToRun];
+    const allResults: SandboxRunResult[] = [];
+    
+    // Worker function that processes sandboxes from queue
+    async function processQueue(page: Page): Promise<void> {
+      while (true) {
+        const sandboxInfo = sandboxQueue.shift();
+        if (!sandboxInfo) break;
         
-        if (result.status === "failed" || result.status === "error") {
-          failed++;
-        } else {
-          passed++;
+        const result = await runSandboxWorker(page, sandboxInfo, options, elementsRoot);
+        allResults.push(result);
+      }
+    }
+    
+    // Start all workers
+    await Promise.all(pages.map(page => processQueue(page)));
+    
+    // Sort results to maintain consistent ordering (by original sandbox order)
+    const sandboxOrder = new Map(sandboxesToRun.map((s, i) => [s.elementName, i]));
+    allResults.sort((a, b) => (sandboxOrder.get(a.sandboxName) ?? 0) - (sandboxOrder.get(b.sandboxName) ?? 0));
+    
+    // Process results and print output
+    let totalPassed = 0;
+    let totalFailed = 0;
+    let failedSandboxes = 0;
+    
+    for (const result of allResults) {
+      // Merge session data
+      mergeSessionData(sessionData, result.sessionData);
+      sessionData.tests.push(...result.results);
+      
+      // Determine if we should show details for this sandbox
+      const hasFailures = result.error || result.failed > 0;
+      const showDetails = options.verbose || hasFailures;
+      
+      if (showDetails) {
+        // Print sandbox name
+        console.log(`\n${result.sandboxName}`);
+        
+        if (result.error) {
+          console.log(`  \x1b[31m✗\x1b[0m Failed to load sandbox`);
+          console.log(`    Error: ${result.error.message}`);
+          if (result.error.stack) {
+            const stackLines = result.error.stack.split("\n").slice(0, 3);
+            for (const line of stackLines) {
+              console.log(`    ${line}`);
+            }
+          }
+          console.log(`\n0 passed, 1 failed`);
+          failedSandboxes++;
+          totalFailed++;
+          exitCode = 1;
+          continue;
         }
+        
+        for (const scenarioResult of result.results) {
+          // In non-verbose mode, only show failures
+          if (!options.verbose && scenarioResult.status === "passed") {
+            continue;
+          }
+          const icon = scenarioResult.status === "passed" ? "✓" : "✗";
+          const statusColor = scenarioResult.status === "passed" ? "\x1b[32m" : "\x1b[31m";
+          const resetColor = "\x1b[0m";
+          console.log(
+            `  ${statusColor}${icon}${resetColor} ${scenarioResult.name} (${scenarioResult.durationMs}ms)`,
+          );
+        }
+        
+        console.log(`\n${result.passed} passed, ${result.failed} failed`);
       }
       
-      console.log(`\n${passed} passed, ${failed} failed`);
+      totalPassed += result.passed;
+      totalFailed += result.failed;
       
-      totalPassed += passed;
-      totalFailed += failed;
-      
-      if (failed > 0) {
+      if (result.failed > 0) {
         failedSandboxes++;
         exitCode = 1;
       }
@@ -1402,6 +1769,7 @@ async function runScenarios(options: RunOptions): Promise<number> {
     console.log(`\n${"=".repeat(60)}`);
     console.log(`Session: ${sessionId}`);
     console.log(`Sandbox: ${sandboxDisplayName}`);
+    console.log(`Workers: ${effectiveConcurrency}`);
     console.log(`Duration: ${(duration / 1000).toFixed(1)}s`);
     console.log(`Tests: ${totalPassed} passed, ${totalFailed} failed`);
     
@@ -1419,9 +1787,10 @@ async function runScenarios(options: RunOptions): Promise<number> {
     console.log(`  ${SCRIPT_NAME} info warnings <type> --session ${sessionId}      # Specific warning details`);
     console.log(`  ${SCRIPT_NAME} info logs --session ${sessionId}                # Log prefix analysis`);
     console.log(`  ${SCRIPT_NAME} info logs <prefix> --session ${sessionId}        # Specific log prefix details`);
-    console.log(`  ${SCRIPT_NAME} info test "<name>" --session ${sessionId}       # Test details`);
-    console.log(`  ${SCRIPT_NAME} info test "<name>" --logs --session ${sessionId} # Test logs`);
-    console.log(`  ${SCRIPT_NAME} info test "<name>" --profile --session ${sessionId} # Performance profile`);
+    console.log(`  ${SCRIPT_NAME} info test "<scenario-name>" --session ${sessionId}              # Test details`);
+    console.log(`  ${SCRIPT_NAME} info test "SandboxName:<scenario-name>" --session ${sessionId}  # Test with sandbox prefix`);
+    console.log(`  ${SCRIPT_NAME} info test "<scenario-name>" --logs --session ${sessionId}       # Test logs`);
+    console.log(`  ${SCRIPT_NAME} info test "<scenario-name>" --profile --session ${sessionId}    # Performance profile`);
     console.log(`  ${SCRIPT_NAME} info search "<query>" --session ${sessionId}    # Search tests/errors`);
     console.log(`\n  Add --json to any query for machine-readable output`);
     console.log(`${"=".repeat(60)}\n`);
@@ -1432,11 +1801,13 @@ async function runScenarios(options: RunOptions): Promise<number> {
       console.log(`❌ Some tests failed\n`);
     }
   } finally {
-    // Close the page and context
-    try {
-      await page.close();
-    } catch {
-      // Ignore close errors
+    // Close all pages and context
+    for (const page of pages) {
+      try {
+        await page.close();
+      } catch {
+        // Ignore close errors
+      }
     }
     await context.close();
     if (shouldCloseBrowser) {
@@ -1959,7 +2330,7 @@ async function runSandboxScenarios(
               // Mark that scenarios are running
               (window as any).__scenariosRunning = true;
               // Import the sandbox module to get the scenario function
-              const response = await fetch(`/_sandbox/api/${sandboxName}/config`);
+              const response = await fetch(`/sandbox/api/${sandboxName}/config`);
               const data = await response.json();
               
               // Use the glob-loaded sandbox loader (exposed by scenario-runner/main.ts)
@@ -2358,9 +2729,6 @@ async function runSandboxScenarios(
       return (window as any).__scenariosComplete === true && 
              (window as any).__scenariosRunning === false;
     }, { timeout: 30000 });
-    
-    // Additional small delay to ensure any final cleanup completes
-    await new Promise(resolve => setTimeout(resolve, 100));
   } finally {
     // Don't close the page - it will be reused for the next sandbox
     // Just clear the container to prepare for next sandbox
@@ -3302,11 +3670,87 @@ async function infoTest(sessionId: string, testName: string, json: boolean = fal
     process.exit(1);
   }
   
-  const test = data.tests.find(t => t.name === testName || t.name.toLowerCase().includes(testName.toLowerCase()));
-  if (!test) {
+  // Parse test name - support formats:
+  // - "scenario name" (just scenario)
+  // - "SandboxName scenario name" (sandbox + scenario)
+  // - "SandboxName:scenario name" (sandbox:scenario)
+  let sandboxFilter: string | undefined;
+  let scenarioName = testName;
+  
+  // Check for "SandboxName:" format
+  const colonIndex = testName.indexOf(":");
+  if (colonIndex > 0) {
+    sandboxFilter = testName.substring(0, colonIndex).trim();
+    scenarioName = testName.substring(colonIndex + 1).trim();
+  } else {
+    // Check for "SandboxName scenario name" format (sandbox name is typically CamelCase, scenario is lowercase/words)
+    // Try to detect if first word looks like a sandbox name (CamelCase) followed by scenario
+    const words = testName.split(/\s+/);
+    if (words.length > 1) {
+      const firstWord = words[0];
+      // If first word is CamelCase (starts with capital, has another capital), it might be a sandbox name
+      if (firstWord.length > 0 && firstWord[0] === firstWord[0].toUpperCase() && 
+          firstWord.length > 1 && /[A-Z]/.test(firstWord.substring(1))) {
+        // Check if this matches any known sandbox names from the session
+        // For now, we'll try both interpretations and see which matches
+        // The user can be more specific if needed
+      }
+    }
+  }
+  
+  // If session is for a single sandbox, use that as filter
+  if (!sandboxFilter && data.metadata.sandboxName !== "all") {
+    sandboxFilter = data.metadata.sandboxName;
+  }
+  
+  // Find matching tests
+  let matchingTests = data.tests.filter(t => {
+    const nameMatch = t.name === scenarioName || t.name.toLowerCase().includes(scenarioName.toLowerCase());
+    // If we have a sandbox filter, we can't filter by sandbox since ScenarioResult doesn't include it
+    // So we'll just match by scenario name and let the user know if there are multiple matches
+    return nameMatch;
+  });
+  
+  // If no exact match, try matching the full testName as-is (for backward compatibility)
+  if (matchingTests.length === 0) {
+    matchingTests = data.tests.filter(t => 
+      t.name === testName || t.name.toLowerCase().includes(testName.toLowerCase())
+    );
+  }
+  
+  if (matchingTests.length === 0) {
     console.error(`Test "${testName}" not found`);
+    console.error(`\nTest name formats:`);
+    console.error(`  - Scenario name only: "${scenarioName}"`);
+    console.error(`  - With sandbox prefix: "SandboxName:${scenarioName}"`);
+    console.error(`\nAvailable tests (showing first 20):`);
+    const testNames = data.tests.map(t => t.name).slice(0, 20);
+    for (const name of testNames) {
+      console.error(`  - ${name}`);
+    }
+    if (data.tests.length > 20) {
+      console.error(`  ... and ${data.tests.length - 20} more`);
+    }
+    console.error(`\n💡 Tips:`);
+    console.error(`  - Use just the scenario name (e.g., "${testNames[0] || "scenario name"}")`);
+    console.error(`  - Or use sandbox prefix format: "SandboxName:${scenarioName}"`);
+    console.error(`  - Search for tests: ${SCRIPT_NAME} info search "<query>" --session ${sessionId}`);
     process.exit(1);
   }
+  
+  if (matchingTests.length > 1) {
+    console.error(`Multiple tests found matching "${testName}":`);
+    for (const test of matchingTests) {
+      console.error(`  - ${test.name} (${test.status})`);
+    }
+    console.error(`\n💡 Tips:`);
+    console.error(`  - Be more specific with the scenario name`);
+    console.error(`  - Use sandbox prefix format: "SandboxName:${scenarioName}" (if you know the sandbox)`);
+    console.error(`  - Search for tests: ${SCRIPT_NAME} info search "<query>" --session ${sessionId}`);
+    process.exit(1);
+  }
+  
+  const test = matchingTests[0];
   
   if (json) {
     const testData: any = { ...test };
@@ -3909,7 +4353,7 @@ Examples:
   ${SCRIPT_NAME} info logs --session ef-20260115-143022-a3f9                # Show all log prefixes
   ${SCRIPT_NAME} info logs captureFromClone --session ef-20260115-143022-a3f9  # Show prefix details
   ${SCRIPT_NAME} info test "handles complex composition" --session ef-20260115-143022-a3f9
-  ${SCRIPT_NAME} info test "renders thumbnails" --logs --grep "error" --session ef-20260115-143022-a3f9
+  ${SCRIPT_NAME} info test "EFThumbnailStrip:renders thumbnails" --logs --grep "error" --session ef-20260115-143022-a3f9
   ${SCRIPT_NAME} info logs --test "video" --level error --session ef-20260115-143022-a3f9
   ${SCRIPT_NAME} info logs --grep "rendition" --session ef-20260115-143022-a3f9
   ${SCRIPT_NAME} info search "video" --session ef-20260115-143022-a3f9
@@ -3990,7 +4434,15 @@ Note: Session IDs are printed after running '${SCRIPT_NAME} run'. Use progressiv
     const testName = testNameIndex >= 0 ? args[testNameIndex] : undefined;
     if (!testName) {
       console.error("Error: test name is required");
-      console.error("Usage: ef info test <test-name> --session <session-id> [--logs] [--profile]");
+      console.error("\nUsage:");
+      console.error(`  ${SCRIPT_NAME} info test "<scenario-name>" --session <session-id> [--logs] [--profile]`);
+      console.error(`  ${SCRIPT_NAME} info test "SandboxName:<scenario-name>" --session <session-id> [--logs] [--profile]`);
+      console.error("\nTest name formats:");
+      console.error("  - Scenario name only: \"dispatches position-changed event\"");
+      console.error("  - With sandbox prefix: \"EFOverlayItem:dispatches position-changed event\"");
+      console.error("\nExamples:");
+      console.error(`  ${SCRIPT_NAME} info test "plays audio in timegroup" --session <id>`);
+      console.error(`  ${SCRIPT_NAME} info test "EFAudio:plays audio in timegroup" --session <id>`);
       process.exit(1);
     }
     const logs = hasFlag(args, "--logs");
@@ -4070,8 +4522,9 @@ Usage:
   ${SCRIPT_NAME} <command> [options]
 
 Commands:
-  categories                    Show all affordance categories
+  categories                    Show all categories and subcategories
   list [name] [options]        List sandboxes (grouped by category, or scenarios for specific sandbox)
+  search <query>               Search sandboxes by keyword (matches name, description, category)
   related [name]                Show sandbox relationships (uses/usedBy)
   open [name]                   Open scenario viewer in browser (optionally with specific sandbox)
   run [name] [options]          Run scenarios as tests
@@ -4086,11 +4539,15 @@ Info Subcommands:
   search <query>                Search tests and errors
 
 List Options:
-  --category <name>              Filter sandboxes by category (media, timeline, controls, etc.)
+  --category <name>              Filter by category (elements, gui, demos) or category/subcategory
+  --json                         Output JSON for machine parsing
+
+Search Options:
   --json                         Output JSON for machine parsing
 
 Run Options:
   --scenario <pattern>          Run scenarios matching pattern (supports * wildcard)
+  --concurrency, -j <n>         Number of parallel workers (default: CPU count)
   --watch                       Watch mode - re-run on file changes (disables profiling by default)
   --profile                     Enable CPU profiling and show hotspots (default: enabled unless --watch)
   --no-profile                  Disable CPU profiling
@@ -4108,16 +4565,20 @@ Screenshot Options:
   --height <px>                 Viewport height (default: auto)
 
 Examples:
-  ${SCRIPT_NAME} categories           # Show all affordance categories
-  ${SCRIPT_NAME} list                 # List all sandboxes grouped by category
-  ${SCRIPT_NAME} list --category media # List sandboxes in media category
-  ${SCRIPT_NAME} list EFDial          # Show scenarios for EFDial sandbox
-  ${SCRIPT_NAME} open                # Open scenario viewer with all sandboxes
-  ${SCRIPT_NAME} open EFDial         # Open scenario viewer with EFDial sandbox selected
+  ${SCRIPT_NAME} categories                      # Show all categories and subcategories
+  ${SCRIPT_NAME} list                            # List all sandboxes grouped by category
+  ${SCRIPT_NAME} list --category elements        # List sandboxes in elements category
+  ${SCRIPT_NAME} list --category gui/timeline    # List sandboxes in gui/timeline subcategory
+  ${SCRIPT_NAME} list EFDial                     # Show scenarios for EFDial sandbox
+  ${SCRIPT_NAME} search "video track"            # Search for sandboxes matching keywords
+  ${SCRIPT_NAME} search waveform --json          # Search with JSON output
+  ${SCRIPT_NAME} open                            # Open scenario viewer with all sandboxes
+  ${SCRIPT_NAME} open EFDial                     # Open scenario viewer with EFDial sandbox selected
   ${SCRIPT_NAME} run EFDial
   ${SCRIPT_NAME} run EFDial --scenario "normalizes*"
   ${SCRIPT_NAME} run EFDial --profile                      # Run with profiling
   ${SCRIPT_NAME} run --profile                             # Profile all sandboxes (CI mode)
+  ${SCRIPT_NAME} run -j 4                                  # Run with 4 parallel workers
   ${SCRIPT_NAME} profile EFDial --scenario "rotates through full circle"
   ${SCRIPT_NAME} screenshot CompactnessScene               # Screenshot default template
   ${SCRIPT_NAME} screenshot CompactnessScene --scenario "renders with timegroup"  # Screenshot after scenario
@@ -4128,9 +4589,10 @@ Info Command (Progressive Discovery):
   ${SCRIPT_NAME} info errors --session <id>               # Error analysis
   ${SCRIPT_NAME} info errors <type> --session <id>        # Specific error details
   ${SCRIPT_NAME} info errors --unexpected --session <id>  # Only unexpected errors
-  ${SCRIPT_NAME} info test "<name>" --session <id>        # Test details
-  ${SCRIPT_NAME} info test "<name>" --logs --session <id> # Test logs
-  ${SCRIPT_NAME} info test "<name>" --profile --session <id> # Performance profile
+  ${SCRIPT_NAME} info test "<scenario-name>" --session <id>              # Test details (scenario name only)
+  ${SCRIPT_NAME} info test "SandboxName:<scenario-name>" --session <id>  # Test details (with sandbox prefix)
+  ${SCRIPT_NAME} info test "<scenario-name>" --logs --session <id>       # Test logs
+  ${SCRIPT_NAME} info test "<scenario-name>" --profile --session <id>   # Performance profile
   ${SCRIPT_NAME} info search "<query>" --session <id>     # Search tests/errors
   
   Add --json to any info command for machine-readable output
@@ -4140,6 +4602,21 @@ Info Command (Progressive Discovery):
   
   if (command === "categories") {
     await showCategories();
+    process.exit(0);
+  }
+  
+  if (command === "search") {
+    const query = args.slice(1).filter(a => !a.startsWith("--")).join(" ");
+    const json = args.includes("--json");
+    if (!query) {
+      console.error("\n❌ Usage: ef search <query> [--json]\n");
+      console.error("Examples:");
+      console.error("  ef search video track");
+      console.error("  ef search waveform");
+      console.error("  ef search timeline controls\n");
+      process.exit(1);
+    }
+    await searchSandboxes(query, json);
     process.exit(0);
   }
   
@@ -4223,6 +4700,12 @@ Info Command (Progressive Discovery):
           }
         }
         i += 2;
+      } else if ((args[i] === "--concurrency" || args[i] === "-j") && args[i + 1]) {
+        options.concurrency = parseInt(args[i + 1], 10);
+        i += 2;
+      } else if (args[i] === "--verbose" || args[i] === "-v") {
+        options.verbose = true;
+        i++;
       } else if (!options.sandboxName && !args[i].startsWith("--")) {
         options.sandboxName = args[i];
         i++;

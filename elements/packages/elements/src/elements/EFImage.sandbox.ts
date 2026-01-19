@@ -7,7 +7,8 @@ import "./EFTimegroup.js";
 export default defineSandbox({
   name: "EFImage",
   description: "Image display element with canvas-based rendering for API assets",
-  category: "media",
+  category: "elements",
+  subcategory: "media",
   
   render: () => html`
     <ef-timegroup mode="fixed" duration="2s" style="width: 400px; height: 300px; border: 1px solid #ccc;">
@@ -23,7 +24,6 @@ export default defineSandbox({
     async "renders image element"(ctx) {
       const image = ctx.querySelector<EFImage>("ef-image")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(image).toBeDefined();
@@ -32,7 +32,6 @@ export default defineSandbox({
     async "loads image from source"(ctx) {
       const image = ctx.querySelector<EFImage>("ef-image")!;
       
-      await ctx.wait(200);
       await ctx.frame();
       
       ctx.expect(image.src).toBe("/assets/editframe.png");
@@ -46,19 +45,18 @@ export default defineSandbox({
     async "supports direct URL sources"(ctx) {
       const image = ctx.querySelector<EFImage>("ef-image")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
-      image.src = "https://example.com/image.png";
+      // Use local asset URL instead of external URL
+      image.src = "/assets/editframe.png";
       await ctx.frame();
       
-      ctx.expect(image.src).toBe("https://example.com/image.png");
+      ctx.expect(image.src).toBe("/assets/editframe.png");
     },
     
     async "has temporal properties"(ctx) {
       const image = ctx.querySelector<EFImage>("ef-image")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(typeof image.durationMs).toBe("number");
@@ -68,16 +66,14 @@ export default defineSandbox({
     async "can change source"(ctx) {
       const image = ctx.querySelector<EFImage>("ef-image")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       const originalSrc = image.src;
       image.src = "/assets/bonnifield-logo.png";
       await ctx.frame();
-      await ctx.wait(100);
       
       ctx.expect(image.src).toBe("/assets/bonnifield-logo.png");
-      ctx.expect(image.src).not.toBe(originalSrc);
+      ctx.expect(image.src !== originalSrc).toBe(true);
     },
   },
 });

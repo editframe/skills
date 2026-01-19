@@ -235,7 +235,8 @@ declare global {
 export default defineSandbox({
   name: "CompactnessScene",
   description: "Page: Timegroup-wrapped compactness demo with animated cursor",
-  category: "media",
+  category: "demos",
+  subcategory: "compactness",
 
   render: () => html`
     <div style="width: 900px; height: 600px; position: relative;">
@@ -287,8 +288,8 @@ export default defineSandbox({
       scene.style.width = "900px";
       scene.style.height = "600px";
       container.appendChild(scene);
+      await scene.updateComplete;
       await ctx.frame();
-      await ctx.wait(100);
 
       const timegroup = scene.shadowRoot?.querySelector("ef-timegroup") as any;
       if (timegroup) {

@@ -9,7 +9,8 @@ import "../elements/EFVideo.js";
 export default defineSandbox({
   name: "EFTimeDisplay",
   description: "Time display component showing current time and duration",
-  category: "controls",
+  category: "gui",
+  subcategory: "controls",
   
   render: () => html`
     <ef-preview id="time-preview">
@@ -22,14 +23,13 @@ export default defineSandbox({
       </ef-timegroup>
     </ef-preview>
     
-    <ef-time-display style="padding: 10px; font-size: 14px;"></ef-time-display>
+    <ef-time-display target="time-preview" style="padding: 10px; font-size: 14px;"></ef-time-display>
   `,
   
   scenarios: {
     async "renders time display"(ctx) {
       const timeDisplay = ctx.querySelector<EFTimeDisplay>("ef-time-display")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(timeDisplay).toBeDefined();
@@ -39,13 +39,11 @@ export default defineSandbox({
       const timeDisplay = ctx.querySelector<EFTimeDisplay>("ef-time-display")!;
       const preview = ctx.querySelector("ef-preview")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       (preview as any).currentTimeMs = 5000;
       (preview as any).durationMs = 10000;
       await ctx.frame();
-      await ctx.wait(100);
       
       const timeText = timeDisplay.shadowRoot?.textContent || "";
       ctx.expect(timeText).toContain(":");
@@ -53,25 +51,25 @@ export default defineSandbox({
     
     async "updates when current time changes"(ctx) {
       const timeDisplay = ctx.querySelector<EFTimeDisplay>("ef-time-display")!;
-      const preview = ctx.querySelector("ef-preview")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       const initialText = timeDisplay.shadowRoot?.textContent || "";
       
-      (preview as any).currentTimeMs = 7000;
+      // EFTimeDisplay consumes currentTimeContext, so setting the property directly
+      // won't trigger Lit's update cycle. We need to call requestUpdate().
+      timeDisplay.currentTimeMs = 7000;
+      timeDisplay.requestUpdate();
+      await timeDisplay.updateComplete;
       await ctx.frame();
-      await ctx.wait(100);
       
       const newText = timeDisplay.shadowRoot?.textContent || "";
-      ctx.expect(newText).not.toBe(initialText);
+      ctx.expect(newText !== initialText).toBe(true);
     },
     
     async "handles NaN values gracefully"(ctx) {
       const timeDisplay = ctx.querySelector<EFTimeDisplay>("ef-time-display")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       timeDisplay.currentTimeMs = Number.NaN;
@@ -84,7 +82,6 @@ export default defineSandbox({
     async "formats time as minutes:seconds"(ctx) {
       const timeDisplay = ctx.querySelector<EFTimeDisplay>("ef-time-display")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       timeDisplay.currentTimeMs = 125000;

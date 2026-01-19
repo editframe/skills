@@ -12,7 +12,8 @@ import "../elements/EFVideo.js";
 export default defineSandbox({
   name: "EFControls",
   description: "Playback controls container that bridges contexts from preview to child controls",
-  category: "controls",
+  category: "gui",
+  subcategory: "controls",
   
   render: () => html`
     <div style="width: 800px; height: 400px; border: 1px solid #ccc;">
@@ -41,7 +42,6 @@ export default defineSandbox({
     async "renders controls container"(ctx) {
       const controls = ctx.querySelector<EFControls>("ef-controls")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(controls).toBeDefined();
@@ -52,7 +52,6 @@ export default defineSandbox({
       const controls = ctx.querySelector<EFControls>("ef-controls")!;
       const preview = ctx.querySelector("ef-preview")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(controls.targetElement).toBeDefined();
@@ -62,7 +61,6 @@ export default defineSandbox({
     async "provides playing context"(ctx) {
       const controls = ctx.querySelector<EFControls>("ef-controls")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(typeof controls.playing).toBe("boolean");
@@ -71,7 +69,6 @@ export default defineSandbox({
     async "provides currentTime context"(ctx) {
       const controls = ctx.querySelector<EFControls>("ef-controls")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(typeof controls.currentTimeMs).toBe("number");
@@ -81,7 +78,6 @@ export default defineSandbox({
     async "provides duration context"(ctx) {
       const controls = ctx.querySelector<EFControls>("ef-controls")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(typeof controls.durationMs).toBe("number");
@@ -92,17 +88,15 @@ export default defineSandbox({
       const controls = ctx.querySelector<EFControls>("ef-controls")!;
       const preview = ctx.querySelector("ef-preview")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       const initialPlaying = controls.playing;
       
-      (preview as any).playbackController?.play();
-      await ctx.wait(100);
+      await (preview as any).play();
       await ctx.frame();
       
       const newPlaying = controls.playing;
-      ctx.expect(newPlaying).not.toBe(initialPlaying);
+      ctx.expect(newPlaying !== initialPlaying).toBe(true);
     },
   },
 });

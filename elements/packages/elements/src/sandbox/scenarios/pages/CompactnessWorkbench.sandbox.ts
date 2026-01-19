@@ -50,7 +50,7 @@ export class EFCompactnessWorkbench extends LitElement {
 
   render() {
     return html`
-      <ef-configuration api-host="http://localhost:3000">
+      <ef-configuration>
         <ef-workbench>
           <!-- Hierarchy panel - targets canvas for selection context -->
           <ef-hierarchy
@@ -100,7 +100,8 @@ declare global {
 export default defineSandbox({
   name: "CompactnessWorkbench",
   description: "Page: Full workbench with compactness demo, hierarchy, filmstrip, and controls",
-  category: "layout",
+  category: "demos",
+  subcategory: "compactness",
 
   render: () => html`
     <div style="width: 1200px; height: 800px;">
@@ -115,8 +116,8 @@ export default defineSandbox({
       workbench.style.width = "1200px";
       workbench.style.height = "800px";
       container.appendChild(workbench);
+      await workbench.updateComplete;
       await ctx.frame();
-      await ctx.wait(200); // Allow workbench to initialize
 
       ctx.expect(workbench).toBeDefined();
 
@@ -131,8 +132,8 @@ export default defineSandbox({
       workbench.style.width = "1200px";
       workbench.style.height = "800px";
       container.appendChild(workbench);
+      await workbench.updateComplete;
       await ctx.frame();
-      await ctx.wait(200);
 
       // Light DOM rendering - query directly
       const timegroup = workbench.querySelector("ef-timegroup");
@@ -159,8 +160,8 @@ export default defineSandbox({
       workbench.style.width = "1200px";
       workbench.style.height = "800px";
       container.appendChild(workbench);
+      await workbench.updateComplete;
       await ctx.frame();
-      await ctx.wait(200);
 
       // Light DOM rendering - query directly
       const demo = workbench.querySelector("ef-compactness-demo");
@@ -173,8 +174,8 @@ export default defineSandbox({
       workbench.style.width = "1200px";
       workbench.style.height = "800px";
       container.appendChild(workbench);
+      await workbench.updateComplete;
       await ctx.frame();
-      await ctx.wait(200);
 
       // Light DOM rendering - query directly
       const efWorkbench = workbench.querySelector("ef-workbench");

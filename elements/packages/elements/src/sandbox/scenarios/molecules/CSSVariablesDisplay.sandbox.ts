@@ -70,7 +70,8 @@ declare global {
 export default defineSandbox({
   name: "CSSVariablesDisplay",
   description: "Molecule: Group of CSS variables with header",
-  category: "panels",
+  category: "demos",
+  subcategory: "compactness",
 
   render: () => html`
     <div style="width: 400px; padding: 20px; background: #0f172a;">
@@ -149,8 +150,6 @@ export default defineSandbox({
 
     async "renders empty when no variables"(ctx) {
       const container = ctx.getContainer();
-      container.innerHTML = "";
-      
       const display = document.createElement("ef-css-variables-display") as EFCSSVariablesDisplay;
       display.header = "Empty Display";
       display.variables = [];
@@ -196,8 +195,6 @@ export default defineSandbox({
 
     async "supports custom header"(ctx) {
       const container = ctx.getContainer();
-      container.innerHTML = "";
-      
       const display = document.createElement("ef-css-variables-display") as EFCSSVariablesDisplay;
       display.header = "Custom Properties";
       display.variables = [{ name: "--custom-var", value: "test" }];

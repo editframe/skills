@@ -6,13 +6,15 @@ import "./ensureTrackItemInit.js";
 // Import AudioTrack ONLY as a type - don't import the class itself to avoid evaluation
 // The custom element will be registered when AudioTrack.ts is loaded elsewhere
 import type { EFAudioTrack } from "./AudioTrack.js";
+import type { EFAudio } from "../../../elements/EFAudio.js";
 import "../../../elements/EFAudio.js";
 import "../TimelineStateProvider.js";
 
 export default defineSandbox({
   name: "EFAudioTrack",
   description: "Audio track component with waveform visualization. Base track behavior tested in TrackItem.sandbox.ts",
-  category: "media",
+  category: "gui",
+  subcategory: "timeline",
   
   render: () => html`
     <timeline-state-provider
@@ -42,31 +44,28 @@ export default defineSandbox({
     "renders waveform visualization": {
       description: "Audio tracks display a waveform visualization inside the track content area",
       run: async (ctx) => {
-        const container = ctx.getContainer();
-        const provider = document.createElement("timeline-state-provider");
-        provider.setAttribute("pixels-per-ms", "0.1");
-        
-        const audio = document.createElement("ef-audio");
-        audio.id = "test-audio-track-wave";
-        audio.setAttribute("duration", "5s");
-        (audio as any).durationMs = 5000; // Set duration so waveform renders
-        
-        const track = document.createElement("ef-audio-track");
-        (track as any).element = audio;
-        (track as any).pixelsPerMs = 0.1;
-        
-        provider.appendChild(track);
-        container.appendChild(provider);
+        const track = ctx.querySelector<EFAudioTrack>("ef-audio-track")!;
+        const audio = track.element as EFAudio;
         
         await ctx.frame();
-        await ctx.wait(100);
+        await track.updateComplete;
         
-        const trackElement = ctx.querySelector<EFAudioTrack>("ef-audio-track")!;
-        const shadowRoot = trackElement.shadowRoot;
-        // Waveform is rendered as divs inside trim-container
+        // Wait for audio media engine to load so durationMs is available
+        if (audio && audio.mediaEngineTask) {
+          try {
+            await audio.mediaEngineTask.taskComplete;
+          } catch {
+            // Ignore errors - media engine may not be needed for this test
+          }
+        }
+        
+        // Wait for track to update after duration is set
+        await track.updateComplete;
+        await ctx.frame();
+        
+        const shadowRoot = track.shadowRoot;
         const waveform = shadowRoot?.querySelector(".trim-container > div");
         
-        // Waveform should be present when duration > 0
         ctx.expect(waveform).toBeDefined();
       },
     },

@@ -6,7 +6,8 @@ import "./EFDial.js";
 export default defineSandbox({
   name: "EFDial",
   description: "Rotation dial control for adjusting angles",
-  category: "controls",
+  category: "gui",
+  subcategory: "controls",
   
   render: () => html`
     <ef-dial .value=${45} style="width: 200px; height: 200px;"></ef-dial>
@@ -57,8 +58,12 @@ export default defineSandbox({
       
       let changeValue: number | undefined;
       
-      dial.addEventListener("change", (e) => {
-        changeValue = (e as CustomEvent<{ value: number }>).detail.value;
+      // Set up promise to wait for change event
+      const changePromise = new Promise<void>((resolve) => {
+        dial.addEventListener("change", (e) => {
+          changeValue = (e as CustomEvent<{ value: number }>).detail.value;
+          resolve();
+        }, { once: true });
       });
       
       // Find the dial-container inside the shadow DOM
@@ -81,7 +86,7 @@ export default defineSandbox({
         from: [centerX, centerY - 50], 
         to: [centerX + 50, centerY + 50] 
       });
-      await ctx.wait(100); // Wait for event to fire
+      await changePromise; // Wait for change event to fire
       
       ctx.expect(changeValue).toBeDefined();
       if (changeValue !== undefined) {

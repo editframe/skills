@@ -10,7 +10,8 @@ import "../elements/EFVideo.js";
 export default defineSandbox({
   name: "EFPreview",
   description: "Preview container with focus tracking and playback control integration",
-  category: "panels",
+  category: "gui",
+  subcategory: "preview",
   
   render: () => html`
     <div style="width: 800px; height: 500px; border: 1px solid #ccc;">
@@ -37,7 +38,7 @@ export default defineSandbox({
     async "renders preview component"(ctx) {
       const preview = ctx.querySelector<EFPreview>("ef-preview")!;
       
-      await ctx.wait(100);
+      await preview.updateComplete;
       await ctx.frame();
       
       ctx.expect(preview).toBeDefined();
@@ -47,15 +48,17 @@ export default defineSandbox({
       const preview = ctx.querySelector<EFPreview>("ef-preview")!;
       const video = ctx.querySelector("ef-video")!;
       
-      await ctx.wait(100);
+      await preview.updateComplete;
+      await video.updateComplete;
       await ctx.frame();
       
-      const hoverEvent = new MouseEvent("pointerover", {
+      // Dispatch pointerover on the video element so it bubbles up to preview
+      const hoverEvent = new PointerEvent("pointerover", {
         bubbles: true,
         cancelable: true,
-        target: video,
+        composed: true,
       });
-      preview.dispatchEvent(hoverEvent);
+      video.dispatchEvent(hoverEvent);
       await ctx.frame();
       
       ctx.expect(preview.focusedElement).toBeDefined();
@@ -65,7 +68,8 @@ export default defineSandbox({
       const preview = ctx.querySelector<EFPreview>("ef-preview")!;
       const video = ctx.querySelector("ef-video")!;
       
-      await ctx.wait(100);
+      await preview.updateComplete;
+      await video.updateComplete;
       await ctx.frame();
       
       const hoverEvent = new MouseEvent("pointerover", {
@@ -89,8 +93,29 @@ export default defineSandbox({
     
     async "provides focused element context"(ctx) {
       const preview = ctx.querySelector<EFPreview>("ef-preview")!;
+      const video = ctx.querySelector("ef-video")!;
       
-      await ctx.wait(100);
+      await preview.updateComplete;
+      await video.updateComplete;
+      await ctx.frame();
+      
+      // Clear any existing focus state first
+      const outEvent = new PointerEvent("pointerout", {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        relatedTarget: preview,
+      });
+      preview.dispatchEvent(outEvent);
+      await ctx.frame();
+      
+      // After hover on video, focusedElement should be the video
+      const hoverEvent = new PointerEvent("pointerover", {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+      });
+      video.dispatchEvent(hoverEvent);
       await ctx.frame();
       
       ctx.expect(preview.focusedElement).toBeDefined();
@@ -99,7 +124,7 @@ export default defineSandbox({
     async "has crosshair cursor"(ctx) {
       const preview = ctx.querySelector<EFPreview>("ef-preview")!;
       
-      await ctx.wait(100);
+      await preview.updateComplete;
       await ctx.frame();
       
       const styles = getComputedStyle(preview);

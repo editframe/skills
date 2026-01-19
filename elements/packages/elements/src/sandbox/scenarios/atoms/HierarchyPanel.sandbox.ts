@@ -90,7 +90,8 @@ function createDemoStructure(): HTMLElement {
 export default defineSandbox({
   name: "HierarchyPanel",
   description: "Atom: ef-hierarchy wrapper with panel styling and CSS variable support",
-  category: "panels",
+  category: "gui",
+  subcategory: "hierarchy",
 
   render: () => html`
     <div style="width: 380px; padding: 20px; background: #0f172a;">
@@ -142,11 +143,13 @@ export default defineSandbox({
       panel.style.width = "380px";
       panel.style.height = "300px";
       container.appendChild(panel);
+      await panel.updateComplete;
       await ctx.frame();
-      await ctx.wait(100); // Wait for hierarchy to render
 
       const hierarchy = panel.shadowRoot?.querySelector("ef-hierarchy") as EFHierarchy;
       ctx.expect(hierarchy).toBeDefined();
+      await hierarchy.updateComplete;
+      await ctx.frame();
       
       // Hierarchy should have items rendered
       const hierarchyContainer = hierarchy.shadowRoot?.querySelector(".hierarchy-container");
@@ -180,6 +183,7 @@ export default defineSandbox({
       panel.style.width = "380px";
       panel.style.height = "300px";
       container.appendChild(panel);
+      await panel.updateComplete;
       await ctx.frame();
 
       // Create new demo structure
@@ -194,8 +198,12 @@ export default defineSandbox({
 
       const newTimegroup = newContainer.querySelector("ef-timegroup");
       panel.targetElement = newTimegroup;
+      await panel.updateComplete;
+      const hierarchy = panel.shadowRoot?.querySelector("ef-hierarchy") as EFHierarchy;
+      if (hierarchy) {
+        await hierarchy.updateComplete;
+      }
       await ctx.frame();
-      await ctx.wait(100);
 
       // Panel should now reference the new structure
       ctx.expect(panel.targetElement).toBe(newTimegroup);

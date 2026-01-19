@@ -9,7 +9,8 @@ import "../elements/EFVideo.js";
 export default defineSandbox({
   name: "EFPause",
   description: "Pause button that shows when playing and pauses playback",
-  category: "controls",
+  category: "gui",
+  subcategory: "controls",
   
   render: () => html`
     <ef-preview id="pause-preview">
@@ -22,7 +23,7 @@ export default defineSandbox({
       </ef-timegroup>
     </ef-preview>
     
-    <ef-pause>
+    <ef-pause target="pause-preview">
       <button style="padding: 10px 20px; font-size: 16px;">⏸ Pause</button>
     </ef-pause>
   `,
@@ -31,7 +32,6 @@ export default defineSandbox({
     async "renders pause button"(ctx) {
       const pause = ctx.querySelector<EFPause>("ef-pause")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(pause).toBeDefined();
@@ -40,7 +40,6 @@ export default defineSandbox({
     async "hides when not playing"(ctx) {
       const pause = ctx.querySelector<EFPause>("ef-pause")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(pause.playing).toBe(false);
@@ -51,36 +50,31 @@ export default defineSandbox({
       const pause = ctx.querySelector<EFPause>("ef-pause")!;
       const preview = ctx.querySelector("ef-preview")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
-      (preview as any).playbackController?.play();
-      await ctx.wait(100);
+      await (preview as any).play();
       await ctx.frame();
       
       ctx.expect(pause.playing).toBe(true);
-      ctx.expect(pause.style.display).not.toBe("none");
+      ctx.expect(pause.style.display !== "none").toBe(true);
     },
     
     async "triggers pause on click"(ctx) {
       const pause = ctx.querySelector<EFPause>("ef-pause")!;
       const preview = ctx.querySelector("ef-preview")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
-      (preview as any).playbackController?.play();
-      await ctx.wait(100);
+      await (preview as any).play();
       await ctx.frame();
       
-      const wasPlaying = (preview as any).playbackController?.playing || false;
+      const wasPlaying = (preview as any).playing || false;
       
       pause.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-      await ctx.wait(100);
       await ctx.frame();
       
-      const nowPlaying = (preview as any).playbackController?.playing || false;
-      ctx.expect(nowPlaying).not.toBe(wasPlaying);
+      const nowPlaying = (preview as any).playing || false;
+      ctx.expect(nowPlaying !== wasPlaying).toBe(true);
     },
   },
 });

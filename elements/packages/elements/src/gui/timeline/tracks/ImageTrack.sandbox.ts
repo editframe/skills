@@ -12,7 +12,8 @@ import "../TimelineStateProvider.js";
 export default defineSandbox({
   name: "EFImageTrack",
   description: "Image track component with thumbnail preview. Base track behavior tested in TrackItem.sandbox.ts",
-  category: "media",
+  category: "gui",
+  subcategory: "timeline",
   
   render: () => html`
     <timeline-state-provider
@@ -39,35 +40,51 @@ export default defineSandbox({
   `,
   
   scenarios: {
-    // Image-specific: thumbnail rendering
     "renders thumbnail when src is available": {
       description: "Image tracks display a thumbnail preview of the source image when the track is wide enough",
       run: async (ctx) => {
-        const container = ctx.getContainer();
-        const provider = document.createElement("timeline-state-provider");
-        provider.setAttribute("pixels-per-ms", "0.1");
-        
-        const image = document.createElement("ef-image");
-        image.id = "test-image-track-thumb";
-        image.setAttribute("duration", "5s");
-        image.setAttribute("src", "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23ccc'/%3E%3C/svg%3E");
-        (image as any).durationMs = 5000;
-        
-        const track = document.createElement("ef-image-track");
-        (track as any).element = image;
-        (track as any).pixelsPerMs = 0.1;
-        
-        provider.appendChild(track);
-        container.appendChild(provider);
+        const track = ctx.querySelector<EFImageTrack>("ef-image-track")!;
         
         await ctx.frame();
-        await ctx.wait(200);
+        await track.updateComplete;
         
-        const trackElement = ctx.querySelector<EFImageTrack>("ef-image-track")!;
-        const shadowRoot = trackElement.shadowRoot;
-        const thumbnail = shadowRoot?.querySelector("img");
+        const shadowRoot = track.shadowRoot;
+        const thumbnail = shadowRoot?.querySelector("img") as HTMLImageElement | null;
         
-        // Should render thumbnail if track is wide enough
+        // Wait for image to load if thumbnail exists
+        if (thumbnail) {
+          if (!thumbnail.complete) {
+            await new Promise<void>((resolve, reject) => {
+              const timeout = setTimeout(() => {
+                thumbnail.removeEventListener("load", onLoad);
+                thumbnail.removeEventListener("error", onError);
+                reject(new Error("Timeout waiting for thumbnail image to load"));
+              }, 5000);
+              
+              const onLoad = () => {
+                clearTimeout(timeout);
+                thumbnail.removeEventListener("load", onLoad);
+                thumbnail.removeEventListener("error", onError);
+                resolve();
+              };
+              
+              const onError = () => {
+                clearTimeout(timeout);
+                thumbnail.removeEventListener("load", onLoad);
+                thumbnail.removeEventListener("error", onError);
+                // Image load error is acceptable - component will fallback to icon
+                resolve();
+              };
+              
+              thumbnail.addEventListener("load", onLoad, { once: true });
+              thumbnail.addEventListener("error", onError, { once: true });
+            }).catch(() => {
+              // Ignore errors - component handles image load failures gracefully
+            });
+          }
+          await ctx.frame();
+        }
+        
         const trimContainer = shadowRoot?.querySelector(".trim-container") as HTMLElement;
         const trackWidth = parseInt(trimContainer?.style.width || "0", 10);
         if (trackWidth > 20) {

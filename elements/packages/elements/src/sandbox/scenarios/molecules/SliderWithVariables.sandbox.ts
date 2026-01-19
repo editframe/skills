@@ -102,7 +102,8 @@ declare global {
 export default defineSandbox({
   name: "SliderWithVariables",
   description: "Molecule: Compactness slider controlling CSS variable values",
-  category: "controls",
+  category: "demos",
+  subcategory: "compactness",
 
   render: () => html`
     <div style="width: 400px; padding: 20px; background: #0f172a;">

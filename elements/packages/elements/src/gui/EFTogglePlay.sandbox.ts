@@ -9,7 +9,8 @@ import "../elements/EFVideo.js";
 export default defineSandbox({
   name: "EFTogglePlay",
   description: "Toggle play/pause button that switches between play and pause slots",
-  category: "controls",
+  category: "gui",
+  subcategory: "controls",
   
   render: () => html`
     <ef-preview id="toggle-preview">
@@ -22,7 +23,7 @@ export default defineSandbox({
       </ef-timegroup>
     </ef-preview>
     
-    <ef-toggle-play>
+    <ef-toggle-play target="toggle-preview">
       <button slot="play" style="padding: 10px 20px; font-size: 16px;">▶ Play</button>
       <button slot="pause" style="padding: 10px 20px; font-size: 16px;">⏸ Pause</button>
     </ef-toggle-play>
@@ -32,7 +33,6 @@ export default defineSandbox({
     async "renders toggle play component"(ctx) {
       const toggle = ctx.querySelector<EFTogglePlay>("ef-toggle-play")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(toggle).toBeDefined();
@@ -41,7 +41,6 @@ export default defineSandbox({
     async "shows play button when not playing"(ctx) {
       const toggle = ctx.querySelector<EFTogglePlay>("ef-toggle-play")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(toggle.playing).toBe(false);
@@ -54,11 +53,9 @@ export default defineSandbox({
       const toggle = ctx.querySelector<EFTogglePlay>("ef-toggle-play")!;
       const preview = ctx.querySelector("ef-preview")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
-      (preview as any).playbackController?.play();
-      await ctx.wait(100);
+      await (preview as any).play();
       await ctx.frame();
       
       ctx.expect(toggle.playing).toBe(true);
@@ -71,17 +68,15 @@ export default defineSandbox({
       const toggle = ctx.querySelector<EFTogglePlay>("ef-toggle-play")!;
       const preview = ctx.querySelector("ef-preview")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
-      const initialPlaying = (preview as any).playbackController?.playing || false;
+      const initialPlaying = (preview as any).playing || false;
       
       toggle.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-      await ctx.wait(100);
       await ctx.frame();
       
-      const newPlaying = (preview as any).playbackController?.playing || false;
-      ctx.expect(newPlaying).not.toBe(initialPlaying);
+      const newPlaying = (preview as any).playing || false;
+      ctx.expect(newPlaying !== initialPlaying).toBe(true);
     },
   },
 });

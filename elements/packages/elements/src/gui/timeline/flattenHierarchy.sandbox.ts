@@ -9,7 +9,8 @@ import "../../elements/EFImage.js";
 export default defineSandbox({
   name: "flattenHierarchy",
   description: "Hierarchy flattening function for timeline rows",
-  category: "layout",
+  category: "gui",
+  subcategory: "timeline",
   
   render: () => html`
     <div id="test-hierarchy-container" style="display: none;">

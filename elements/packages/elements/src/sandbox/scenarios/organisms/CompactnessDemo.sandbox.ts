@@ -150,7 +150,8 @@ declare global {
 export default defineSandbox({
   name: "CompactnessDemo",
   description: "Organism: Full compactness demo with hierarchy panel and slider controls",
-  category: "styling",
+  category: "demos",
+  subcategory: "compactness",
 
   render: () => html`
     <div style="width: 900px; height: 600px;">
@@ -184,8 +185,8 @@ export default defineSandbox({
       demo.style.width = "900px";
       demo.style.height = "600px";
       container.appendChild(demo);
+      await demo.updateComplete;
       await ctx.frame();
-      await ctx.wait(100);
 
       // Set compactness to 100%
       demo.value = 100;
@@ -248,8 +249,8 @@ export default defineSandbox({
       demo.style.width = "900px";
       demo.style.height = "600px";
       container.appendChild(demo);
+      await demo.updateComplete;
       await ctx.frame();
-      await ctx.wait(100);
 
       // Animate from spacious (0) to compact (100)
       const steps = 10;
@@ -281,8 +282,6 @@ export default defineSandbox({
 
     async "supports custom title"(ctx) {
       const container = ctx.getContainer();
-      container.innerHTML = "";
-      
       const demo = document.createElement("ef-compactness-demo") as EFCompactnessDemo;
       demo.title = "Custom Demo Title";
       demo.style.width = "900px";

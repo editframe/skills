@@ -8,7 +8,8 @@ import "./EFTimegroup.js";
 export default defineSandbox({
   name: "EFText",
   description: "Text rendering element with split modes and animation support",
-  category: "media",
+  category: "elements",
+  subcategory: "text",
   
   render: () => html`
     <ef-timegroup mode="fixed" duration="3s" style="width: 600px; height: 400px; border: 1px solid #ccc; padding: 20px;">
@@ -26,7 +27,6 @@ export default defineSandbox({
     async "renders text element"(ctx) {
       const text = ctx.querySelector<EFText>("ef-text")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(text).toBeDefined();
@@ -35,7 +35,6 @@ export default defineSandbox({
     async "splits text by word"(ctx) {
       const text = ctx.querySelector<EFText>("ef-text")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(text.split).toBe("word");
@@ -53,7 +52,6 @@ export default defineSandbox({
       text.style.color = "white";
       container.appendChild(text);
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(text.split).toBe("line");
@@ -68,7 +66,6 @@ export default defineSandbox({
       text.style.color = "white";
       container.appendChild(text);
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(text.split).toBe("char");
@@ -77,7 +74,6 @@ export default defineSandbox({
     async "supports stagger animation"(ctx) {
       const text = ctx.querySelector<EFText>("ef-text")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       text.staggerMs = 100;
@@ -89,7 +85,6 @@ export default defineSandbox({
     async "has temporal properties"(ctx) {
       const text = ctx.querySelector<EFText>("ef-text")!;
       
-      await ctx.wait(100);
       await ctx.frame();
       
       ctx.expect(typeof text.durationMs).toBe("number");
