@@ -200,7 +200,9 @@ export class ThumbnailExtractor {
         }
       }
     } catch (error) {
-      console.error(
+      // Thumbnail extraction can fail for various non-fatal reasons (network issues, 
+      // missing segments, transcoding not ready). Log as warning and return nulls.
+      console.warn(
         `ThumbnailExtractor: Failed to extract thumbnails for segment ${segmentId}:`,
         error,
       );
