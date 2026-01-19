@@ -22,7 +22,7 @@ export function getSandboxes(elementsRoot: string): Array<{ name: string; filePa
 }
 
 /**
- * Handle /_sandbox/api/list route
+ * Handle /sandbox/api/list route
  */
 export async function handleList(
   req: IncomingMessage,
@@ -36,7 +36,7 @@ export async function handleList(
 }
 
 /**
- * Handle /_sandbox/api/relationships route
+ * Handle /sandbox/api/relationships route
  * Returns the relationship graph for all sandboxes
  */
 export async function handleRelationships(
@@ -51,7 +51,7 @@ export async function handleRelationships(
 }
 
 /**
- * Handle /_sandbox/api/:name/scenarios route
+ * Handle /sandbox/api/:name/scenarios route
  */
 export async function handleScenarios(
   req: IncomingMessage,
@@ -76,11 +76,10 @@ export async function handleScenarios(
     
     if (viteServer) {
       // Convert absolute path to a URL that Vite can resolve
-      const relativeToElementsSrc = path.relative(
-        path.join(elementsRoot, "packages", "elements", "src"),
-        sandbox.filePath
-      );
-      const modulePath = `@editframe/elements/${relativeToElementsSrc.replace(/\\/g, "/")}`;
+      const elementsSrcPath = path.join(elementsRoot, "packages", "elements", "src");
+      const relativeToElementsSrc = path.relative(elementsSrcPath, sandbox.filePath);
+      const normalizedPath = relativeToElementsSrc.replace(/\\/g, "/");
+      const modulePath = `@editframe/elements/${normalizedPath}`;
       
       // Use Vite's SSR module loading to handle TypeScript
       const module = await viteServer.ssrLoadModule(modulePath);
@@ -106,7 +105,7 @@ export async function handleScenarios(
 }
 
 /**
- * Handle /_sandbox/api/:name/config route - get sandbox config
+ * Handle /sandbox/api/:name/config route - get sandbox config
  */
 export async function handleSandboxConfig(
   req: IncomingMessage,
@@ -129,16 +128,16 @@ export async function handleSandboxConfig(
   console.log(`[sandbox-routes] ✅ Found sandbox: ${sandboxName} at ${sandbox.filePath}`);
 
   try {
-    // Convert absolute file path to a path that Vite can resolve
-    // In Docker: elementsRoot is /packages, sandbox.filePath is /packages/packages/elements/src/gui/EFDial.sandbox.ts
-    // Use the alias @editframe/elements which maps to /packages/packages/elements/src
-    const relativeToElementsSrc = path.relative(
-      path.join(elementsRoot, "packages", "elements", "src"),
-      sandbox.filePath
-    );
-    const modulePath = `@editframe/elements/${relativeToElementsSrc.replace(/\\/g, "/")}`;
+    // Convert absolute file path to @editframe/elements/... format
+    // This matches what the sandbox-loader expects (it builds paths from import.meta.glob)
+    const elementsSrcPath = path.join(elementsRoot, "packages", "elements", "src");
+    const relativeToElementsSrc = path.relative(elementsSrcPath, sandbox.filePath);
+    const normalizedPath = relativeToElementsSrc.replace(/\\/g, "/");
+    const modulePath = `@editframe/elements/${normalizedPath}`;
     
     console.log(`[sandbox-routes] ✅ Returning config path: ${modulePath}`);
+    console.log(`[sandbox-routes]   elementsRoot: ${elementsRoot}`);
+    console.log(`[sandbox-routes]   sandbox.filePath: ${sandbox.filePath}`);
     
     // Don't load the module server-side - it contains browser-only code (custom elements)
     // Just return the path so the browser can load it
@@ -165,7 +164,7 @@ export async function handleSandboxConfig(
 }
 
 /**
- * Handle /_sandbox/api/:name/run/:scenario route
+ * Handle /sandbox/api/:name/run/:scenario route
  */
 export async function handleRunScenario(
   req: IncomingMessage,
@@ -191,11 +190,10 @@ export async function handleRunScenario(
     
     if (viteServer) {
       // Convert absolute path to a URL that Vite can resolve
-      const relativeToElementsSrc = path.relative(
-        path.join(elementsRoot, "packages", "elements", "src"),
-        sandbox.filePath
-      );
-      const modulePath = `@editframe/elements/${relativeToElementsSrc.replace(/\\/g, "/")}`;
+      const elementsSrcPath = path.join(elementsRoot, "packages", "elements", "src");
+      const relativeToElementsSrc = path.relative(elementsSrcPath, sandbox.filePath);
+      const normalizedPath = relativeToElementsSrc.replace(/\\/g, "/");
+      const modulePath = `@editframe/elements/${normalizedPath}`;
       
       // Use Vite's SSR module loading to handle TypeScript
       const module = await viteServer.ssrLoadModule(modulePath);
@@ -230,102 +228,7 @@ export async function handleRunScenario(
   }
 }
 
-/**
- * Handle /_sandbox/:name route - serve sandbox viewer HTML
- */
-export function handleSandboxViewer(
-  req: IncomingMessage,
-  res: ServerResponse,
-  elementsRoot: string,
-  sandboxName: string,
-): void {
-  const sandboxes = getSandboxes(elementsRoot);
-  const sandbox = sandboxes.find((s) => s.name === sandboxName);
-
-  if (!sandbox) {
-    res.writeHead(404);
-    res.end(`Sandbox "${sandboxName}" not found`);
-    return;
-  }
-
-  // Redirect to the scenario-viewer.html with the sandbox name as a query parameter
-  // This uses the static React app in dev-projects
-  res.writeHead(302, { Location: `/scenario-viewer.html?sandbox=${encodeURIComponent(sandboxName)}` });
-  res.end();
-}
-
-
-/**
- * Handle /_sandbox/ route - serve index page
- */
-export function handleIndex(
-  req: IncomingMessage,
-  res: ServerResponse,
-  elementsRoot: string,
-): void {
-  const sandboxes = getSandboxes(elementsRoot);
-
-  const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Element Sandboxes</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 20px;
-      font-family: system-ui, -apple-system, sans-serif;
-      background: #f5f5f5;
-    }
-    h1 {
-      margin-top: 0;
-    }
-    .sandbox-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 16px;
-      margin-top: 20px;
-    }
-    .sandbox-card {
-      background: white;
-      padding: 16px;
-      border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      text-decoration: none;
-      color: inherit;
-      display: block;
-    }
-    .sandbox-card:hover {
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-    .sandbox-name {
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-  </style>
-</head>
-<body>
-  <h1>Element Sandboxes</h1>
-  <div class="sandbox-list">
-    ${sandboxes
-      .map(
-        (s) => `
-      <a href="/_sandbox/${s.name}" class="sandbox-card">
-        <div class="sandbox-name">${s.name}</div>
-      </a>
-    `,
-      )
-      .join("")}
-  </div>
-</body>
-</html>`;
-
-  res.setHeader("Content-Type", "text/html");
-  res.writeHead(200);
-  res.end(html);
-}
-
-// Profile handler functions have been removed.
+// NOTE: App routes (/sandbox/*) are now served via SPA fallback in vite-plugin.ts
+// See: elements/dev-projects/sandbox.html
 // Profiling is now done via exposed functions injected by `ef open`.
 // See: elements/scripts/ef.ts for __startProfiling/__stopProfiling functions.

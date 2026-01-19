@@ -13,7 +13,8 @@ export interface DiscoveredSandbox {
   elementName: string;       // sandbox name, e.g., "CompactnessSlider"
   elementTag: string | null; // custom element tag, e.g., "ef-compactness-slider"
   usedTags: string[];        // custom element tags used in render(), e.g., ["ef-css-variable-line"]
-  category: string | null;   // category from config or inferred from folder path
+  category: string | null;   // top-level category: "elements", "gui", "demos"
+  subcategory: string | null; // subcategory within parent, e.g., "media", "controls", "timeline"
 }
 
 /**
@@ -98,12 +99,13 @@ function inferCategoryFromPath(filePath: string, elementsSrc: string): string | 
 }
 
 /**
- * Parse a sandbox file to extract custom element tag, used tags, and category
+ * Parse a sandbox file to extract custom element tag, used tags, category, and subcategory
  */
 function parseSandboxFile(filePath: string, elementsSrc: string): { 
   elementTag: string | null; 
   usedTags: string[]; 
   category: string | null;
+  subcategory: string | null;
 } {
   const content = fs.readFileSync(filePath, "utf-8");
   
@@ -117,6 +119,13 @@ function parseSandboxFile(filePath: string, elementsSrc: string): {
   const categoryMatch = content.match(/defineSandbox\s*\(\s*\{[\s\S]*?category\s*:\s*["']([^"']+)["']/);
   if (categoryMatch) {
     category = categoryMatch[1];
+  }
+  
+  // Extract subcategory from defineSandbox({ subcategory: "..." })
+  let subcategory: string | null = null;
+  const subcategoryMatch = content.match(/defineSandbox\s*\(\s*\{[\s\S]*?subcategory\s*:\s*["']([^"']+)["']/);
+  if (subcategoryMatch) {
+    subcategory = subcategoryMatch[1];
   }
   
   // If no explicit category, infer from folder path
@@ -142,7 +151,7 @@ function parseSandboxFile(filePath: string, elementsSrc: string): {
     }
   }
   
-  return { elementTag, usedTags, category };
+  return { elementTag, usedTags, category, subcategory };
 }
 
 /**
@@ -172,8 +181,8 @@ export function discoverSandboxes(elementsRoot: string): DiscoveredSandbox[] {
         // Extract element name from filename (e.g., "EFDial.sandbox.ts" -> "EFDial")
         const elementName = entry.name.replace(/\.sandbox\.ts$/, "");
         
-        // Parse the file for element tag, used tags, and category
-        const { elementTag, usedTags, category } = parseSandboxFile(fullPath, elementsSrc);
+        // Parse the file for element tag, used tags, category, and subcategory
+        const { elementTag, usedTags, category, subcategory } = parseSandboxFile(fullPath, elementsSrc);
         
         sandboxes.push({
           filePath: fullPath,
@@ -181,6 +190,7 @@ export function discoverSandboxes(elementsRoot: string): DiscoveredSandbox[] {
           elementTag,
           usedTags,
           category,
+          subcategory,
         });
       }
     }

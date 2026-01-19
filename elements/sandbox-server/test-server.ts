@@ -8,6 +8,6 @@ import { createSandboxServer } from "./index.js";
 
 const port = parseInt(process.env.PORT || "4321", 10);
 console.log(`Starting test sandbox server on port ${port}...`);
-console.log(`Access at: http://localhost:${port}/_sandbox/`);
+console.log(`Access at: http://localhost:${port}/sandbox/`);
 
 createSandboxServer(port);

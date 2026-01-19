@@ -1,7 +1,7 @@
 import type { Plugin } from "vite";
 import * as path from "node:path";
 import * as fs from "node:fs";
-import { createSandboxMiddleware } from "./index.js";
+import { createSandboxApiMiddleware } from "./index.js";
 
 /**
  * Find monorepo root (directory containing elements/ and telecine/)
@@ -21,46 +21,27 @@ function findMonorepoRoot(startDir: string): string | null {
 
 /**
  * Vite plugin to add sandbox routes to the dev server
+ * 
+ * Architecture:
+ * - /sandbox/api/*  → Handled by API middleware (JSON responses)
+ * - /sandbox/*      → SPA fallback to sandbox.html (React Router handles routing)
  */
 export function sandboxPlugin(elementsRoot?: string): Plugin {
   return {
     name: "sandbox-routes",
-    // Create virtual HTML files that Vite can serve
-    resolveId(id) {
-      if (id.startsWith("/_sandbox/") && id.endsWith(".html")) {
-        return id; // Treat as virtual module
-      }
-      return null;
-    },
-    load(id) {
-      // This won't be called for HTML files, but we'll handle HTML via middleware
-      // that proxies to actual HTML files
-      return null;
-    },
-    transformIndexHtml(html, ctx) {
-      // This will be called for HTML files served by Vite
-      // We'll create actual HTML files that Vite serves
-      return html;
-    },
     // Enable hot module replacement for sandbox-server files and sandbox story files
     handleHotUpdate({ file, server }) {
       // Watch sandbox-server code changes
       if (file.includes("sandbox-server")) {
         console.log(`[sandbox-plugin] 🔥 Hot reload: ${file}`);
-        // Invalidate the module cache and trigger full reload
-        server.ws.send({
-          type: "full-reload",
-        });
+        server.ws.send({ type: "full-reload" });
         return [];
       }
       
       // Watch sandbox story files (*.sandbox.ts)
       if (file.endsWith(".sandbox.ts") || file.endsWith(".sandbox.tsx")) {
         console.log(`[sandbox-plugin] 🔥 Hot reload: sandbox file changed: ${file}`);
-        // Trigger full reload when sandbox files change
-        server.ws.send({
-          type: "full-reload",
-        });
+        server.ws.send({ type: "full-reload" });
         return [];
       }
     },
@@ -70,95 +51,74 @@ export function sandboxPlugin(elementsRoot?: string): Plugin {
       if (elementsRoot) {
         elementsPath = elementsRoot;
       } else {
-        // In Docker, server.config.root is /packages/dev-projects
-        // We need to go up to /packages (which is the elements root)
         const packagesDir = path.dirname(server.config.root);
-        console.log(`[sandbox-plugin] server.config.root: ${server.config.root}`);
-        console.log(`[sandbox-plugin] packagesDir: ${packagesDir}`);
-        
-        // In Docker: /packages is the elements root, sandboxes are at /packages/packages/elements/src/
-        // Check if packagesDir is the elements root (has packages/elements/src)
         const testPath = path.join(packagesDir, "packages", "elements", "src");
-        console.log(`[sandbox-plugin] Testing path: ${testPath}, exists: ${fs.existsSync(testPath)}`);
         
         if (fs.existsSync(testPath)) {
-          elementsPath = packagesDir; // /packages is the elements root
-          console.log(`[sandbox-plugin] ✅ Using elements root: ${elementsPath}`);
+          elementsPath = packagesDir;
         } else {
-          // Try to find monorepo root
           const monorepoRoot = findMonorepoRoot(server.config.root);
           if (monorepoRoot) {
             elementsPath = path.join(monorepoRoot, "elements");
-            console.log(`[sandbox-plugin] Using monorepo root: ${elementsPath}`);
           } else {
-            // Last fallback: assume we're in elements directory
             elementsPath = server.config.root;
-            console.log(`[sandbox-plugin] ⚠️  Using fallback: ${elementsPath}`);
           }
         }
       }
 
-      console.log(`[sandbox-plugin] ✅ Plugin loaded`);
-      console.log(`[sandbox-plugin] Elements root: ${elementsPath}`);
+      console.log(`[sandbox-plugin] ✅ Plugin loaded, elements root: ${elementsPath}`);
       
-      // Test discovery asynchronously to verify it works
+      // Test discovery asynchronously
       import("./discover.js").then(({ discoverSandboxes }) => {
         try {
           const sandboxes = discoverSandboxes(elementsPath);
-          console.log(`[sandbox-plugin] Found ${sandboxes.length} sandboxes: ${sandboxes.map(s => s.elementName).join(", ")}`);
+          console.log(`[sandbox-plugin] Found ${sandboxes.length} sandboxes`);
         } catch (err) {
           console.error(`[sandbox-plugin] ⚠️  Failed to discover sandboxes:`, err);
         }
-      }).catch(() => {
-        // Discovery will happen on first request
-      });
+      }).catch(() => {});
 
-      // Create the middleware once, not on every request
-      const sandboxMiddleware = createSandboxMiddleware(elementsPath);
+      // Create API middleware (only handles /sandbox/api/* routes)
+      const apiMiddleware = createSandboxApiMiddleware(elementsPath);
       
-      // Add sandbox middleware before Vite's default middleware
-      // Note: We use a catch-all approach since Vite's middleware.use with a path
-      // strips the prefix, which would break our path matching
+      // Middleware: Handle API routes, serve SPA for app routes
       server.middlewares.use(async (req, res, next) => {
         const url = req.url || "";
-        const method = req.method || "GET";
         
-        // Only handle sandbox routes, let everything else pass through
-        if (!url.startsWith("/_sandbox")) {
+        if (!url.startsWith("/sandbox")) {
           return next();
         }
 
-        // Log incoming sandbox requests for debugging
-        console.log(`[sandbox-plugin] 📦 Handling sandbox route: ${method} ${url}`);
-
-        try {
-          // Pass Vite server instance and root to the request so routes can load TypeScript modules
-          (req as any).viteServerRoot = server.config.root;
+        // API routes → handled by API middleware
+        if (url.startsWith("/sandbox/api")) {
+          console.log(`[sandbox-plugin] 📡 API route: ${url}`);
           (req as any).viteServer = server;
-          
-          // Call the middleware - it will handle the request and send a response
-          // If no route matches, it will call next(), but that shouldn't happen for /_sandbox routes
-          await sandboxMiddleware(req, res, () => {
-            // This next() callback should only be called if the middleware doesn't handle the request
-            // For /_sandbox routes, this shouldn't happen, but if it does, log it
-            console.warn(`[sandbox-plugin] ⚠️  Sandbox middleware didn't handle: ${method} ${url}`);
-            if (!res.headersSent) {
-              res.setHeader("Content-Type", "application/json");
-              res.writeHead(404);
-              res.end(JSON.stringify({ error: `Sandbox route not found: ${url}` }));
-            }
-          });
-        } catch (error) {
-          console.error("[sandbox-plugin] ❌ Error in sandbox middleware:", error);
-          if (!res.headersSent) {
-            res.setHeader("Content-Type", "application/json");
-            res.writeHead(500);
-            res.end(JSON.stringify({ error: `Sandbox error: ${error instanceof Error ? error.message : String(error)}` }));
-          }
+          await apiMiddleware(req, res, next);
+          return;
         }
+
+        // App routes → serve sandbox.html (SPA fallback)
+        // React Router will handle /sandbox, /sandbox/:name, /sandbox/:name/:scenario
+        console.log(`[sandbox-plugin] 📦 SPA route: ${url} → sandbox.html`);
+        const sandboxHtmlPath = path.join(server.config.root, "sandbox.html");
+        
+        if (!fs.existsSync(sandboxHtmlPath)) {
+          console.error(`[sandbox-plugin] ❌ sandbox.html not found at: ${sandboxHtmlPath}`);
+          res.writeHead(500);
+          res.end("sandbox.html not found");
+          return;
+        }
+
+        // Let Vite transform and serve the HTML
+        const htmlContent = fs.readFileSync(sandboxHtmlPath, "utf-8");
+        const transformedHtml = await server.transformIndexHtml(url, htmlContent);
+        
+        res.setHeader("Content-Type", "text/html");
+        res.writeHead(200);
+        res.end(transformedHtml);
       });
       
-      console.log(`[sandbox-plugin] ✅ Middleware registered for /_sandbox/* routes`);
+      console.log(`[sandbox-plugin] ✅ Routes: /sandbox/api/* (API), /sandbox/* (SPA)`);
     },
   };
 }

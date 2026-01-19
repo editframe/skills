@@ -30,13 +30,13 @@ You should see:
 [sandbox-plugin] ✅ Plugin loaded
 [sandbox-plugin] Elements root: /path/to/elements
 [sandbox-plugin] Found 2 sandboxes: EFDial, EFTimegroup
-[sandbox-plugin] ✅ Middleware registered for /_sandbox/* routes
+[sandbox-plugin] ✅ Middleware registered for /sandbox/* routes
 ```
 
 ## Step 4: Test the Routes
 
-- Browser: `http://main.localhost:4321/_sandbox/`
-- API: `http://main.localhost:4321/_sandbox/api/list`
+- Browser: `http://main.localhost:4321/sandbox/`
+- API: `http://main.localhost:4321/sandbox/api/list`
 
 ## Troubleshooting
 
@@ -45,7 +45,7 @@ You should see:
 - Check for import errors in the dev server console
 
 **If routes return 404:**
-- Check that you see `[sandbox-plugin] 📦 Handling sandbox route: GET /_sandbox/` in logs
+- Check that you see `[sandbox-plugin] 📦 Handling sandbox route: GET /sandbox/` in logs
 - If you don't see this, the middleware isn't being called (plugin not loaded or wrong order)
 
 **If you see "Found 0 sandboxes":**

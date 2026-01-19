@@ -3,17 +3,11 @@ import * as path from "node:path";
 import * as url from "node:url";
 import { fileURLToPath } from "node:url";
 import {
-  handleIndex,
   handleList,
   handleRelationships,
   handleRunScenario,
-  handleSandboxViewer,
   handleScenarios,
 } from "./routes.js";
-
-// NOTE: Profile routes (/_sandbox/api/profile/*) have been removed.
-// Profiling is now done via exposed functions injected by `ef open`.
-// See: elements/scripts/ef.ts for __startProfiling/__stopProfiling functions.
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,10 +30,10 @@ function findMonorepoRoot(startDir: string): string | null {
 }
 
 /**
- * Create middleware function for sandbox routes
- * This can be integrated into an existing HTTP server
+ * Create middleware for sandbox API routes only (/sandbox/api/*)
+ * App routes (/sandbox/*) are handled by SPA fallback in vite-plugin.ts
  */
-export function createSandboxMiddleware(elementsRoot: string) {
+export function createSandboxApiMiddleware(elementsRoot: string) {
   return async (
     req: http.IncomingMessage,
     res: http.ServerResponse,
@@ -47,86 +41,64 @@ export function createSandboxMiddleware(elementsRoot: string) {
   ): Promise<void> => {
     const parsedUrl = url.parse(req.url || "", true);
     const pathname = parsedUrl.pathname || "";
-    const method = req.method || "GET";
 
-    // Handle sandbox routes
-    if (pathname.startsWith("/_sandbox")) {
-      console.log(`[sandbox-middleware] 🔍 Matching route: ${method} ${pathname}`);
-      
-      if (pathname === "/_sandbox/" || pathname === "/_sandbox") {
-        console.log(`[sandbox-middleware] ✅ Matched: index`);
-        await handleIndex(req, res, elementsRoot);
-        return;
-      }
-
-      if (pathname === "/_sandbox/api/list") {
-        console.log(`[sandbox-middleware] ✅ Matched: list`);
-        await handleList(req, res, elementsRoot);
-        return;
-      }
-
-      if (pathname === "/_sandbox/api/relationships") {
-        console.log(`[sandbox-middleware] ✅ Matched: relationships`);
-        await handleRelationships(req, res, elementsRoot);
-        return;
-      }
-
-      // Match /_sandbox/api/:name/config
-      const configMatch = pathname.match(/^\/_sandbox\/api\/([^/]+)\/config$/);
-      if (configMatch) {
-        const { handleSandboxConfig } = await import("./routes.js");
-        await handleSandboxConfig(req, res, elementsRoot, configMatch[1]);
-        return;
-      }
-
-      // Match /_sandbox/api/:name/scenarios
-      const scenariosMatch = pathname.match(/^\/_sandbox\/api\/([^/]+)\/scenarios$/);
-      if (scenariosMatch) {
-        await handleScenarios(req, res, elementsRoot, scenariosMatch[1]);
-        return;
-      }
-
-      // Match /_sandbox/api/:name/run/:scenario
-      const runMatch = pathname.match(/^\/_sandbox\/api\/([^/]+)\/run\/(.+)$/);
-      if (runMatch) {
-        await handleRunScenario(req, res, elementsRoot, runMatch[1], runMatch[2]);
-        return;
-      }
-
-      // Match /_sandbox/:name - redirect to scenario-viewer.html
-      const viewerMatch = pathname.match(/^\/_sandbox\/([^/]+)$/);
-      if (viewerMatch) {
-        console.log(`[sandbox-middleware] ✅ Matched: viewer for ${viewerMatch[1]}`);
-        handleSandboxViewer(req, res, elementsRoot, viewerMatch[1]);
-        return;
-      }
-      
-      // If we got here, the path starts with /_sandbox but didn't match any route
-      console.warn(`[sandbox-middleware] ⚠️  Unmatched sandbox route: ${method} ${pathname}`);
-      if (!res.headersSent) {
-        res.setHeader("Content-Type", "application/json");
-        res.writeHead(404);
-        res.end(JSON.stringify({ error: `Sandbox route not found: ${pathname}` }));
-      }
+    // Only handle API routes
+    if (!pathname.startsWith("/sandbox/api")) {
+      if (next) next();
       return;
     }
 
-    // If no sandbox route matched, call next middleware
-    if (next) {
-      next();
+    // /sandbox/api/list
+    if (pathname === "/sandbox/api/list") {
+      await handleList(req, res, elementsRoot);
+      return;
     }
+
+    // /sandbox/api/relationships
+    if (pathname === "/sandbox/api/relationships") {
+      await handleRelationships(req, res, elementsRoot);
+      return;
+    }
+
+    // /sandbox/api/:name/config
+    const configMatch = pathname.match(/^\/sandbox\/api\/([^/]+)\/config$/);
+    if (configMatch) {
+      const { handleSandboxConfig } = await import("./routes.js");
+      await handleSandboxConfig(req, res, elementsRoot, configMatch[1]);
+      return;
+    }
+
+    // /sandbox/api/:name/scenarios
+    const scenariosMatch = pathname.match(/^\/sandbox\/api\/([^/]+)\/scenarios$/);
+    if (scenariosMatch) {
+      await handleScenarios(req, res, elementsRoot, scenariosMatch[1]);
+      return;
+    }
+
+    // /sandbox/api/:name/run/:scenario
+    const runMatch = pathname.match(/^\/sandbox\/api\/([^/]+)\/run\/(.+)$/);
+    if (runMatch) {
+      await handleRunScenario(req, res, elementsRoot, runMatch[1], runMatch[2]);
+      return;
+    }
+
+    // Unknown API route
+    res.setHeader("Content-Type", "application/json");
+    res.writeHead(404);
+    res.end(JSON.stringify({ error: `Unknown API route: ${pathname}` }));
   };
 }
 
 /**
- * Standalone HTTP server for sandboxes (for testing)
+ * Standalone HTTP server for sandbox API (for testing)
+ * Note: This only serves API routes. For full sandbox app, use the Vite dev server.
  */
-export function createSandboxServer(port: number = 4321, elementsRoot?: string): http.Server {
+export function createSandboxApiServer(port: number = 4322, elementsRoot?: string): http.Server {
   const root = elementsRoot || findMonorepoRoot(__dirname) || process.cwd();
   const elementsPath = path.join(root, "elements");
 
   const server = http.createServer(async (req, res) => {
-    const middleware = createSandboxMiddleware(elementsPath);
+    const middleware = createSandboxApiMiddleware(elementsPath);
     await middleware(req, res, () => {
       res.setHeader("Content-Type", "application/json");
       res.writeHead(404);
@@ -135,14 +107,14 @@ export function createSandboxServer(port: number = 4321, elementsRoot?: string):
   });
 
   server.listen(port, () => {
-    console.log(`Sandbox server listening on port ${port}`);
+    console.log(`Sandbox API server listening on port ${port}`);
   });
 
   return server;
 }
 
-// If run directly, start the server
+// If run directly, start the API server
 if (import.meta.url === url.pathToFileURL(process.argv[1] || "").href) {
-  const port = parseInt(process.env.PORT || "4321", 10);
-  createSandboxServer(port);
+  const port = parseInt(process.env.PORT || "4322", 10);
+  createSandboxApiServer(port);
 }

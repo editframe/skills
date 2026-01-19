@@ -10,7 +10,7 @@
  * 3. Playwright's exposeFunction handles all IPC reliably
  * 
  * The exposed functions are defined in: elements/scripts/ef.ts (openSandbox function)
- * They are used by: elements/dev-projects/src/scenario-viewer/ScenarioViewer.tsx
+ * They are used by: elements/packages/elements/src/sandbox/scenario/ScenarioViewer.tsx
  * 
  * This file is kept for reference only and can be safely deleted.
  */
@@ -536,7 +536,7 @@ export class ProfileService {
                     contexts = browser.contexts();
                     for (const context of contexts) {
                       for (const page of context.pages()) {
-                        if (page.url() === targetUrl || page.url().includes("scenario-viewer.html")) {
+                        if (page.url() === targetUrl || page.url().includes("/sandbox")) {
                           console.log(`[ProfileService] ✅ Found page after CDP attach: ${page.url()}`);
                           await browserCDP.detach();
                           return page;
@@ -577,9 +577,12 @@ export class ProfileService {
     const targetPathname = urlObj.pathname;
     const targetSearchParams = urlObj.searchParams;
     const hasControlled = targetSearchParams.get("controlled") === "true";
-    const targetSandbox = targetSearchParams.get("sandbox");
     
-    console.log(`[ProfileService] 🎯 Looking for page with pathname: ${targetPathname}, controlled: ${hasControlled}, sandbox: ${targetSandbox}`);
+    // Extract sandbox name from path: /sandbox/:sandboxName/:scenarioName
+    const pathParts = targetPathname.split("/").filter(Boolean);
+    const targetSandbox = pathParts.length > 1 && pathParts[0] === "_sandbox" ? pathParts[1] : null;
+    
+    console.log(`[ProfileService] 🎯 Looking for page with pathname: ${targetPathname}, controlled: ${hasControlled}, sandbox: ${targetSandbox || "any"}`);
     
     // Collect all pages first for better logging
     const allPages: Array<{ page: Page; url: string }> = [];
@@ -606,10 +609,10 @@ export class ProfileService {
       console.log(`[ProfileService]    - ${url}`);
     }
     
-    // Very lenient matching: find ANY page with scenario-viewer.html and controlled=true
-    // Ignore all other query parameters (profile, scenario, etc.) as they may vary
-    // The key requirement is just: pathname matches and has controlled=true
-    console.log(`[ProfileService] 🔍 Looking for any controlled scenario-viewer page...`);
+    // Very lenient matching: find ANY page with /sandbox path and controlled=true
+    // Ignore all other query parameters (profile, etc.) as they may vary
+    // The key requirement is just: pathname starts with /sandbox and has controlled=true
+    console.log(`[ProfileService] 🔍 Looking for any controlled sandbox page...`);
     console.log(`[ProfileService] 🎯 Target: pathname=${targetPathname}, controlled=${hasControlled}, sandbox=${targetSandbox || "any"}`);
     
     const controlledPages: Array<{ page: Page; url: string; sandbox?: string }> = [];
@@ -621,11 +624,19 @@ export class ProfileService {
         const pageSearchParams = pageUrlObj.searchParams;
         const pageHasControlled = pageSearchParams.get("controlled") === "true";
         
-        console.log(`[ProfileService] 🔍 Checking page: pathname=${pagePathname}, controlled=${pageHasControlled}`);
+        // Extract sandbox from path: /sandbox/:sandboxName/:scenarioName
+        const pagePathParts = pagePathname.split("/").filter(Boolean);
+        const pageSandbox = pagePathParts.length > 1 && pagePathParts[0] === "_sandbox" ? pagePathParts[1] : null;
         
-        // Check if this is a scenario-viewer page with controlled=true
-        if (pagePathname === targetPathname && pageHasControlled) {
-          const pageSandbox = pageSearchParams.get("sandbox");
+        console.log(`[ProfileService] 🔍 Checking page: pathname=${pagePathname}, controlled=${pageHasControlled}, sandbox=${pageSandbox || "none"}`);
+        
+        // Check if this is a sandbox page with controlled=true
+        // Match if pathnames are equal OR both are sandbox pages (start with /sandbox)
+        const isSandboxPage = pagePathname.startsWith("/sandbox");
+        const targetIsSandboxPage = targetPathname.startsWith("/sandbox");
+        const pathnameMatches = pagePathname === targetPathname || (isSandboxPage && targetIsSandboxPage);
+        
+        if (pathnameMatches && pageHasControlled) {
           console.log(`[ProfileService] ✅ Match! Adding to controlled pages (sandbox: ${pageSandbox || "none"})`);
           controlledPages.push({ page, url: pageUrl, sandbox: pageSandbox || undefined });
         } else {
@@ -634,7 +645,7 @@ export class ProfileService {
       } catch (err) {
         // If URL parsing fails, try simple string matching
         console.warn(`[ProfileService] ⚠️  Failed to parse page URL: ${pageUrl}`, err);
-        if (pageUrl.includes("scenario-viewer.html") && pageUrl.includes("controlled=true")) {
+        if (pageUrl.includes("/sandbox") && pageUrl.includes("controlled=true")) {
           console.log(`[ProfileService] ✅ Match via string matching`);
           controlledPages.push({ page, url: pageUrl });
         }
@@ -642,13 +653,13 @@ export class ProfileService {
     }
     
     if (controlledPages.length === 0) {
-      console.warn(`[ProfileService] ⚠️  No controlled scenario-viewer pages found`);
+      console.warn(`[ProfileService] ⚠️  No controlled sandbox pages found`);
       console.warn(`[ProfileService] 💡 Searched ${allPages.length} pages, none matched criteria`);
       console.warn(`[ProfileService] 💡 Criteria: pathname=${targetPathname}, controlled=true`);
       return null;
     }
     
-    console.log(`[ProfileService] 📋 Found ${controlledPages.length} controlled scenario-viewer page(s):`);
+    console.log(`[ProfileService] 📋 Found ${controlledPages.length} controlled sandbox page(s):`);
     for (const { url, sandbox } of controlledPages) {
       console.log(`[ProfileService]    - ${url}${sandbox ? ` (sandbox: ${sandbox})` : ""}`);
     }
