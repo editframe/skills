@@ -6,7 +6,8 @@ import "./EFPanZoom.js";
 export default defineSandbox({
   name: "EFPanZoom",
   description: "Pan-zoom container for interactive viewport manipulation",
-  category: "layout",
+  category: "gui",
+  subcategory: "canvas",
   
   render: () => html`
     <ef-pan-zoom style="width: 400px; height: 300px; border: 1px solid #ccc;">
@@ -141,11 +142,15 @@ export default defineSandbox({
       const panZoom = ctx.querySelector<EFPanZoom>("ef-pan-zoom")!;
       await ctx.frame();
       
-      let eventDetail: { x: number; y: number; scale: number } | undefined;
+      let lastEventDetail: { x: number; y: number; scale: number } | undefined;
       
-      panZoom.addEventListener("transform-changed", (e: Event) => {
-        eventDetail = (e as CustomEvent<{ x: number; y: number; scale: number }>).detail;
-      });
+      // Collect all transform-changed events during the drag
+      const events: CustomEvent<{ x: number; y: number; scale: number }>[] = [];
+      const eventHandler = (e: Event) => {
+        events.push(e as CustomEvent<{ x: number; y: number; scale: number }>);
+        lastEventDetail = (e as CustomEvent<{ x: number; y: number; scale: number }>).detail;
+      };
+      panZoom.addEventListener("transform-changed", eventHandler);
       
       // Trigger pan via drag
       const rect = panZoom.getBoundingClientRect();
@@ -156,13 +161,21 @@ export default defineSandbox({
         from: [centerX, centerY],
         to: [centerX + 10, centerY + 10],
       });
-      await ctx.wait(50);
       
-      ctx.expect(eventDetail).toBeDefined();
-      if (eventDetail) {
-        ctx.expect(eventDetail.x).toBe(panZoom.x);
-        ctx.expect(eventDetail.y).toBe(panZoom.y);
-        ctx.expect(eventDetail.scale).toBe(panZoom.scale);
+      await ctx.frame();
+      
+      // Clean up listener
+      panZoom.removeEventListener("transform-changed", eventHandler);
+      
+      // Verify at least one event was fired
+      ctx.expect(events.length).toBeGreaterThan(0);
+      ctx.expect(lastEventDetail).toBeDefined();
+      
+      // The last event detail should match the current panZoom values
+      if (lastEventDetail) {
+        ctx.expect(lastEventDetail.x).toBe(panZoom.x);
+        ctx.expect(lastEventDetail.y).toBe(panZoom.y);
+        ctx.expect(lastEventDetail.scale).toBe(panZoom.scale);
       }
     },
     
