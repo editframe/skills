@@ -33,12 +33,34 @@ export function FetchMixin<T extends Constructor<LitElement>>(superClass: T) {
         // Wrap the promise to catch rejections and log the URL
         // Return the promise chain so errors are logged but still propagate
         return fetchPromise.catch((error) => {
-          console.error(
-            "FetchMixin fetch error",
-            url,
-            error,
-            window.location.href,
-          );
+          // Don't log AbortError - these are intentional request cancellations
+          const isAbortError = 
+            error instanceof Error && (
+              error.name === "AbortError" ||
+              error.message.includes("signal is aborted") ||
+              error.message.includes("The user aborted a request")
+            );
+          
+          // Don't log errors if element is disconnected from DOM
+          // This happens during scenario transitions when elements are removed mid-fetch
+          // The browser throws TypeError: "Failed to fetch" when the page navigates
+          const isDisconnected = !this.isConnected;
+          
+          // Also suppress "Failed to fetch" TypeError when disconnected
+          // These occur when the browser aborts a request due to page navigation,
+          // but doesn't throw a proper AbortError
+          const isNavigationAbort = isDisconnected && 
+            error instanceof TypeError && 
+            error.message === "Failed to fetch";
+          
+          if (!isAbortError && !isDisconnected && !isNavigationAbort) {
+            console.error(
+              "FetchMixin fetch error",
+              url,
+              error,
+              window.location.href,
+            );
+          }
           // Create a new error with the URL in the message, preserving the original error type
           const ErrorConstructor =
             error instanceof Error ? error.constructor : Error;
