@@ -218,10 +218,11 @@ export class EFVideo extends TWMixin(EFMedia) {
     autoRun: false,
     args: () => [this.desiredSeekTimeMs] as const,
     onError: (error) => {
-      // Only log unexpected errors - missing video rendition is handled gracefully in unifiedVideoSeekTask
+      // Only log unexpected errors - expected conditions handled gracefully
       if (
         error instanceof Error &&
-        !error.message.includes("Video rendition unavailable")
+        !error.message.includes("Video rendition unavailable") &&
+        !error.message.includes("No valid media source")
       ) {
         console.error("frameTask error", error);
       }

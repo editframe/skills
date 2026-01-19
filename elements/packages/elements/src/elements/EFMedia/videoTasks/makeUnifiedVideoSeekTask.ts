@@ -24,10 +24,11 @@ export const makeUnifiedVideoSeekTask = (
     autoRun: false,
     args: () => [host.desiredSeekTimeMs] as const,
     onError: (error) => {
-      // Only log unexpected errors - missing video rendition is handled gracefully in getMainVideoSample
+      // Only log unexpected errors - expected conditions handled gracefully
       if (
         error instanceof Error &&
-        error.message !== "Video rendition unavailable after checking videoRendition exists"
+        error.message !== "Video rendition unavailable after checking videoRendition exists" &&
+        !error.message.includes("No valid media source")
       ) {
         console.error("unifiedVideoSeekTask error", error);
       }
@@ -163,8 +164,14 @@ async function tryGetScrubSample(
               : `${baseUrl}/${mediaEngine.src.startsWith("/") ? mediaEngine.src.slice(1) : mediaEngine.src}`;
             scrubUrl = `${baseUrl}/api/v1/transcode/scrub/init.m4s?url=${encodeURIComponent(sourceUrl)}`;
           } else {
-            // Fallback to old format if no urlGenerator (shouldn't happen, but for safety)
-            scrubUrl = `/@ef-scrub-track/${mediaEngine.src}`;
+            // Fallback if no urlGenerator (shouldn't happen, but for safety)
+            // Use production API format for local files
+            let normalizedSrc = mediaEngine.src.startsWith("/")
+              ? mediaEngine.src.slice(1)
+              : mediaEngine.src;
+            normalizedSrc = normalizedSrc.replace(/^\/+/, "");
+            // Use the local isobmff API format
+            scrubUrl = `/api/v1/isobmff_files/local/track?src=${encodeURIComponent(normalizedSrc)}&trackId=-1`;
           }
         }
 
