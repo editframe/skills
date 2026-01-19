@@ -41,6 +41,11 @@ export const makeScrubVideoSegmentFetchTask = (
         // Re-throw unexpected errors
         throw error;
       }
+      
+      // Return undefined if no valid media engine (no valid source)
+      if (!mediaEngine) {
+        return undefined as any;
+      }
       const segmentId = await host.scrubVideoSegmentIdTask.taskComplete;
       if (segmentId === undefined) {
         // Scrub segment ID not available - scrub is optional, return undefined

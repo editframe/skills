@@ -38,6 +38,11 @@ export const makeAudioSegmentIdTask = (
         // Re-throw unexpected errors
         throw error;
       }
+      
+      // Return undefined if no valid media engine (no valid source)
+      if (!mediaEngine) {
+        return undefined;
+      }
       signal.throwIfAborted();
 
       const audioRendition = mediaEngine.getAudioRendition();

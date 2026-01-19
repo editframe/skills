@@ -42,6 +42,11 @@ export const makeAudioInitSegmentFetchTask = (
         // Re-throw unexpected errors
         throw error;
       }
+      
+      // Return undefined if no valid media engine (no valid source)
+      if (!mediaEngine) {
+        return undefined;
+      }
       const audioRendition = mediaEngine.getAudioRendition();
 
       // Return undefined if no audio rendition available (video-only asset)

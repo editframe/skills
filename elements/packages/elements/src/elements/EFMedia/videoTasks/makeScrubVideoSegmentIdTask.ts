@@ -38,6 +38,11 @@ export const makeScrubVideoSegmentIdTask = (
         // Re-throw unexpected errors
         throw error;
       }
+      
+      // Return undefined if no valid media engine (no valid source)
+      if (!mediaEngine) {
+        return undefined;
+      }
       signal.throwIfAborted(); // Abort if a new seek started
 
       // Get scrub rendition using the proper interface method

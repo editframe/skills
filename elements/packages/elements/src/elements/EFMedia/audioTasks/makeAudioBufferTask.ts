@@ -75,6 +75,11 @@ export const makeAudioBufferTask = (host: EFMedia): AudioBufferTask => {
         throw error;
       }
 
+      // Return existing state if no valid media engine (no valid source)
+      if (!mediaEngine) {
+        return currentState;
+      }
+
       // Return existing state if no audio rendition available
       if (!mediaEngine.audioRendition) {
         return currentState;
@@ -113,6 +118,7 @@ export const makeAudioBufferTask = (host: EFMedia): AudioBufferTask => {
             // Use media engine's computeSegmentId
             try {
               const mediaEngine = await getLatestMediaEngine(host, signal);
+              if (!mediaEngine) return undefined;
               return mediaEngine.computeSegmentId(timeMs, rendition);
             } catch (error) {
               // If media engine task failed (no valid source), return undefined
@@ -126,6 +132,7 @@ export const makeAudioBufferTask = (host: EFMedia): AudioBufferTask => {
             // Trigger prefetch through BaseMediaEngine - let it handle caching
             try {
               const mediaEngine = await getLatestMediaEngine(host, signal);
+              if (!mediaEngine) return;
               
               // Check if the segment exists in AssetMediaEngine data before prefetching
               if (mediaEngine instanceof AssetMediaEngine) {
@@ -165,6 +172,9 @@ export const makeAudioBufferTask = (host: EFMedia): AudioBufferTask => {
           getRendition: async () => {
             try {
               const mediaEngine = await getLatestMediaEngine(host, signal);
+              if (!mediaEngine) {
+                throw new Error("Audio rendition not available");
+              }
               const audioRendition = mediaEngine.audioRendition;
               if (!audioRendition) {
                 throw new Error("Audio rendition not available");

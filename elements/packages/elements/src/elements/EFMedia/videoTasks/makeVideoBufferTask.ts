@@ -75,6 +75,11 @@ export const makeVideoBufferTask = (host: EFVideo): VideoBufferTask => {
         throw error;
       }
 
+      // Return existing state if no valid media engine (no valid source)
+      if (!mediaEngine) {
+        return currentState;
+      }
+
       // Use media engine's buffer config, falling back to host properties
       const engineConfig = mediaEngine.getBufferConfig();
       const bufferDurationMs = engineConfig.videoBufferDurationMs;
@@ -107,12 +112,14 @@ export const makeVideoBufferTask = (host: EFVideo): VideoBufferTask => {
           computeSegmentId: async (timeMs, rendition) => {
             // Use media engine's computeSegmentId
             const mediaEngine = await getLatestMediaEngine(host, signal);
+            if (!mediaEngine) return undefined;
             return mediaEngine.computeSegmentId(timeMs, rendition);
           },
           prefetchSegment: async (segmentId, rendition) => {
             // Trigger prefetch through BaseMediaEngine - let it handle caching
             try {
               const mediaEngine = await getLatestMediaEngine(host, signal);
+              if (!mediaEngine) return;
               
               // Check if the segment exists in AssetMediaEngine data before prefetching
               // Scrub track uses trackId -1, which is handled specially, so skip check for that
@@ -153,6 +160,9 @@ export const makeVideoBufferTask = (host: EFVideo): VideoBufferTask => {
             // Get real video rendition from media engine
             try {
               const mediaEngine = await getLatestMediaEngine(host, signal);
+              if (!mediaEngine) {
+                throw new Error("Video rendition not available");
+              }
               return mediaEngine.getVideoRendition();
             } catch (error) {
               // If media engine task failed (no valid source), throw error for getRendition

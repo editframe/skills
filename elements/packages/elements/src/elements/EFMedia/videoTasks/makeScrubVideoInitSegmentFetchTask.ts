@@ -33,6 +33,11 @@ export const makeScrubVideoInitSegmentFetchTask = (
         // Re-throw unexpected errors
         throw error;
       }
+      
+      // Return undefined if no valid media engine (no valid source)
+      if (!mediaEngine) {
+        return undefined as any;
+      }
 
       // Get scrub rendition using the proper interface method
       const scrubRendition = mediaEngine.getScrubVideoRendition();
