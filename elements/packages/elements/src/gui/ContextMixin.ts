@@ -185,7 +185,11 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
         "Content-Type": "application/json",
       });
 
-      if (!EF_RENDERING() && this.signingURL) {
+      // Check if this is a local @ef-* endpoint that doesn't need authentication
+      // These endpoints are handled by the Vite plugin locally and don't require signing
+      const isLocalEndpoint = url.startsWith("/@ef-");
+
+      if (!EF_RENDERING() && this.signingURL && !isLocalEndpoint) {
         const { cacheKey, signingPayload } = this.#getTokenCacheKey(url);
 
         // Use global token deduplicator to share tokens across all context providers

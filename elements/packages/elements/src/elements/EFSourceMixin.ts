@@ -23,7 +23,9 @@ export function EFSourceMixin<T extends Constructor<LitElement>>(
         this.closest("ef-workbench")?.apiHost ??
         this.closest("ef-preview")?.apiHost;
 
-      return apiHost || "https://editframe.com";
+      // Return undefined instead of defaulting to external URL
+      // This allows components to use current origin when apiHost is not set
+      return apiHost;
     }
 
     @property({ type: String })
