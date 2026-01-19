@@ -359,7 +359,13 @@ export class EFCaptions extends EFSourceMixin(
       return `${this.apiHost}/api/v1/caption_files/${this.targetElement.assetId}`;
     }
     const targetSrc = this.targetElement.src;
-    return `/@ef-captions/${targetSrc}`;
+    // Normalize the path: remove leading slash and any double slashes
+    let normalizedSrc = targetSrc.startsWith("/")
+      ? targetSrc.slice(1)
+      : targetSrc;
+    normalizedSrc = normalizedSrc.replace(/^\/+/, "");
+    // Use production API format for local files
+    return `/api/v1/assets/local/captions?src=${encodeURIComponent(normalizedSrc)}`;
   }
 
   protected md5SumLoader = new Task(this, {
@@ -369,9 +375,20 @@ export class EFCaptions extends EFSourceMixin(
       if (!this.targetElement) {
         return null;
       }
-      const md5Path = `/@ef-asset/${this.targetElement.src ?? ""}`;
-      const response = await fetch(md5Path, { method: "HEAD", signal });
-      return response.headers.get("etag") ?? undefined;
+      // Normalize the path: remove leading slash and any double slashes
+      const src = this.targetElement.src ?? "";
+      let normalizedSrc = src.startsWith("/")
+        ? src.slice(1)
+        : src;
+      normalizedSrc = normalizedSrc.replace(/^\/+/, "");
+      // Use production API format for local files
+      const md5Path = `/api/v1/isobmff_files/local/md5?src=${encodeURIComponent(normalizedSrc)}`;
+      const response = await fetch(md5Path, { signal });
+      if (!response.ok) {
+        return undefined;
+      }
+      const data = await response.json();
+      return data.md5 ?? undefined;
     },
   });
 

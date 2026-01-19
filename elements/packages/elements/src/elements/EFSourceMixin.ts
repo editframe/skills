@@ -51,9 +51,19 @@ export function EFSourceMixin<T extends Constructor<LitElement>>(
       autoRun: false,
       args: () => [this.src] as const,
       task: async ([src], { signal }) => {
-        const md5Path = `/@ef-asset/${src}`;
-        const response = await fetch(md5Path, { method: "HEAD", signal });
-        return response.headers.get("etag") ?? undefined;
+        // Normalize the path: remove leading slash and any double slashes
+        let normalizedSrc = src.startsWith("/")
+          ? src.slice(1)
+          : src;
+        normalizedSrc = normalizedSrc.replace(/^\/+/, "");
+        // Use production API format for local files
+        const md5Path = `/api/v1/isobmff_files/local/md5?src=${encodeURIComponent(normalizedSrc)}`;
+        const response = await fetch(md5Path, { signal });
+        if (!response.ok) {
+          return undefined;
+        }
+        const data = await response.json();
+        return data.md5 ?? undefined;
       },
     });
   }
