@@ -121,9 +121,10 @@ export abstract class BaseMediaEngine {
           async () => {
             const fetchStart = performance.now();
             try {
-              // Make the fetch request WITHOUT the signal - let each caller handle their own abort
-              // This prevents one instance's abort from affecting other instances using the shared cache
-              const response = await this.host.fetch(url, { headers });
+              // Pass the signal to host.fetch() so network requests can be canceled when tasks are aborted
+              // If multiple callers are waiting on the same request and one aborts, the request will be canceled
+              // Other callers will get an error, but they can retry if needed
+              const response = await this.host.fetch(url, { headers, signal });
               const fetchEnd = performance.now();
               span.setAttribute("fetchMs", fetchEnd - fetchStart);
 
@@ -286,11 +287,12 @@ export abstract class BaseMediaEngine {
   abstract fetchMediaSegment(
     segmentId: number,
     rendition: { trackId: number | undefined; src: string },
+    signal?: AbortSignal,
   ): Promise<ArrayBuffer>;
 
   abstract fetchInitSegment(
     rendition: { trackId: number | undefined; src: string },
-    signal: AbortSignal,
+    signal?: AbortSignal,
   ): Promise<ArrayBuffer>;
 
   abstract computeSegmentId(
@@ -305,12 +307,12 @@ export abstract class BaseMediaEngine {
   async fetchMediaSegmentWithDeduplication(
     segmentId: number,
     rendition: { trackId: number | undefined; src: string },
-    _signal?: AbortSignal,
+    signal?: AbortSignal,
   ): Promise<ArrayBuffer> {
     const cacheKey = this.getSegmentCacheKey(segmentId, rendition);
 
     return globalRequestDeduplicator.executeRequest(cacheKey, async () => {
-      return this.fetchMediaSegment(segmentId, rendition);
+      return this.fetchMediaSegment(segmentId, rendition, signal);
     });
   }
 
@@ -487,6 +489,7 @@ export abstract class BaseMediaEngine {
    */
   async extractThumbnails(
     timestamps: number[],
+    signal?: AbortSignal,
   ): Promise<(ThumbnailResult | null)[]> {
     const engineName = this.constructor.name;
     console.warn(
