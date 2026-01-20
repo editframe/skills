@@ -4,23 +4,41 @@ import type { EFMedia } from "../../EFMedia";
 import { AssetMediaEngine } from "../AssetMediaEngine";
 import { getLatestMediaEngine } from "../tasks/makeMediaEngineTask";
 
-export const makeAudioSegmentFetchTask = (
-  host: EFMedia,
-): Task<
+type AudioSegmentFetchTask = Task<
   readonly [MediaEngine | undefined, number | undefined],
   ArrayBuffer | undefined
-> => {
-  return new Task(host, {
+>;
+
+export const makeAudioSegmentFetchTask = (
+  host: EFMedia,
+): AudioSegmentFetchTask => {
+  // Capture task reference for use in onError
+  let task: AudioSegmentFetchTask;
+
+  task = new Task(host, {
     args: () =>
       [host.mediaEngineTask.value, host.audioSegmentIdTask.value] as const,
     onError: (error) => {
+      // CRITICAL: Attach .catch() handler to taskComplete BEFORE the promise is rejected.
+      // This prevents unhandled rejection when hostUpdate() triggers _performTask() without awaiting.
+      task.taskComplete.catch(() => {});
+      
+      // Don't log AbortError - these are intentional request cancellations
+      const isAbortError = 
+        error instanceof DOMException && error.name === "AbortError" ||
+        error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message.includes("signal is aborted") ||
+          error.message.includes("The user aborted a request")
+        );
+      
       // Don't log errors when there's no valid media source, file not found, or fetch failures - these are expected
-      if (error instanceof Error && (
+      if (isAbortError || (error instanceof Error && (
         error.message === "No valid media source" ||
         error.message.includes("File not found") ||
         error.message.includes("is not valid JSON") ||
         error.message.includes("Failed to fetch")
-      )) {
+      ))) {
         return;
       }
       console.error("audioSegmentFetchTask error", error);
@@ -57,7 +75,9 @@ export const makeAudioSegmentFetchTask = (
       }
 
       const segmentId = await host.audioSegmentIdTask.taskComplete;
-      if (signal.aborted) return undefined;
+      
+      // Check for abort after awaiting segment ID
+      signal?.throwIfAborted();
 
       // Return undefined if no segment ID available
       if (segmentId === undefined) {
@@ -79,6 +99,10 @@ export const makeAudioSegmentFetchTask = (
       try {
         return await mediaEngine.fetchMediaSegment(segmentId, audioRendition, signal);
       } catch (error) {
+        // If aborted, re-throw to propagate cancellation
+        if (error instanceof DOMException && error.name === "AbortError") {
+          throw error;
+        }
         // If segment doesn't exist or fetch fails, return undefined gracefully
         // This prevents error propagation when files are missing (test environment)
         if (
@@ -95,4 +119,6 @@ export const makeAudioSegmentFetchTask = (
       }
     },
   });
+
+  return task;
 };

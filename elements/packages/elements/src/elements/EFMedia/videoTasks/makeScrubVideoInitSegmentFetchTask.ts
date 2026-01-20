@@ -4,12 +4,32 @@ import type { EFVideo } from "../../EFVideo";
 import { AssetMediaEngine } from "../AssetMediaEngine";
 import { getLatestMediaEngine } from "../tasks/makeMediaEngineTask";
 
+type ScrubVideoInitSegmentFetchTask = Task<readonly [MediaEngine | undefined], ArrayBuffer>;
+
 export const makeScrubVideoInitSegmentFetchTask = (
   host: EFVideo,
-): Task<readonly [MediaEngine | undefined], ArrayBuffer> => {
-  return new Task(host, {
+): ScrubVideoInitSegmentFetchTask => {
+  // Capture task reference for use in onError
+  let task: ScrubVideoInitSegmentFetchTask;
+
+  task = new Task(host, {
     args: () => [host.mediaEngineTask.value] as const,
     onError: (error) => {
+      // CRITICAL: Attach .catch() handler to taskComplete BEFORE the promise is rejected.
+      // This prevents unhandled rejection when hostUpdate() triggers _performTask() without awaiting.
+      task.taskComplete.catch(() => {});
+      
+      // Don't log AbortErrors - these are expected when tasks are cancelled
+      if (
+        (error instanceof DOMException && error.name === "AbortError") ||
+        (error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message?.includes("signal is aborted") ||
+          error.message?.includes("The user aborted a request")
+        ))
+      ) {
+        return;
+      }
       // Only log unexpected errors - missing scrub rendition is handled gracefully above
       if (error instanceof Error && error.message !== "No scrub rendition available") {
         console.error("scrubVideoInitSegmentFetchTask error", error);
@@ -68,6 +88,10 @@ export const makeScrubVideoInitSegmentFetchTask = (
           signal,
         );
       } catch (error) {
+        // If aborted, re-throw to propagate cancellation
+        if (error instanceof DOMException && error.name === "AbortError") {
+          throw error;
+        }
         // If init segment doesn't exist or fetch fails, return undefined gracefully
         if (
           error instanceof Error &&
@@ -83,4 +107,6 @@ export const makeScrubVideoInitSegmentFetchTask = (
       }
     },
   });
+
+  return task;
 };

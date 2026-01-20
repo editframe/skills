@@ -14,6 +14,10 @@ export const getLatestMediaEngine = async (
   try {
     mediaEngine = await host.mediaEngineTask.taskComplete;
   } catch (error) {
+    // If aborted, re-throw to propagate cancellation
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw error;
+    }
     // If the error is "No valid media source", return undefined instead of throwing
     // This allows callers to handle missing media gracefully
     if (error instanceof Error && error.message === "No valid media source") {
@@ -77,7 +81,7 @@ export const createMediaEngine = (host: EFMedia, signal?: AbortSignal): Promise<
       manifestSrc = `${baseUrl}${normalizedPath}`;
     }
     const url = urlGenerator.generateManifestUrl(manifestSrc);
-    return JitMediaEngine.fetch(host, urlGenerator, url);
+    return JitMediaEngine.fetch(host, urlGenerator, url, signal);
   }
   
   // "local" mode: Force AssetMediaEngine for all sources
@@ -92,7 +96,7 @@ export const createMediaEngine = (host: EFMedia, signal?: AbortSignal): Promise<
 
   // Default: Use JitMediaEngine for remote URLs (transcoding service)
   const url = urlGenerator.generateManifestUrl(src);
-  return JitMediaEngine.fetch(host, urlGenerator, url);
+  return JitMediaEngine.fetch(host, urlGenerator, url, signal);
 };
 
 /**
@@ -120,10 +124,16 @@ export const handleMediaEngineComplete = (host: EFMedia): void => {
 type MediaEngineTask = Task<readonly [string, string | null], MediaEngine>;
 
 export const makeMediaEngineTask = (host: EFMedia): MediaEngineTask => {
-  return new Task(host, {
+  // Capture task reference for use in onError
+  let task: MediaEngineTask;
+  
+  task = new Task(host, {
     autoRun: EF_INTERACTIVE,
     args: () => [host.src, host.assetId] as const,
     task: async ([_src, _assetId], { signal }) => {
+      // Check abort before starting work
+      signal?.throwIfAborted();
+      
       // Check if we have a valid source before attempting to create media engine
       // This avoids unnecessary errors when src is empty/null/undefined
       const { src, assetId } = host;
@@ -140,7 +150,40 @@ export const makeMediaEngineTask = (host: EFMedia): MediaEngineTask => {
         return undefined as unknown as MediaEngine;
       }
       
+      // Check abort before expensive operation
+      signal?.throwIfAborted();
+      
       return createMediaEngine(host, signal);
+    },
+    onError: (error) => {
+      // CRITICAL: Attach .catch() handler to taskComplete BEFORE the promise is rejected.
+      // onError is called synchronously before completeDeferred.reject() in Lit Task,
+      // so this handler will be attached in time to prevent unhandled rejection.
+      // Without this, the rejection from hostUpdate() -> _performTask() (which isn't awaited)
+      // becomes an unhandled promise rejection.
+      task.taskComplete.catch(() => {});
+      
+      // Don't log AbortError - these are intentional cancellations when element is disconnected
+      const isAbortError = 
+        error instanceof DOMException && error.name === "AbortError" ||
+        error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message.includes("signal is aborted") ||
+          error.message.includes("The user aborted a request")
+        );
+      
+      // Don't log errors when there's no valid media source or file not found - these are expected
+      if (isAbortError || (error instanceof Error && (
+        error.message === "No valid media source" ||
+        error.message.includes("File not found") ||
+        error.message.includes("404") ||
+        error.message.includes("Failed to fetch")
+      ))) {
+        return;
+      }
+      
+      // Log other unexpected errors
+      console.error("mediaEngineTask error", error);
     },
     onComplete: (value) => {
       // Only trigger updates if we actually got a media engine
@@ -149,4 +192,6 @@ export const makeMediaEngineTask = (host: EFMedia): MediaEngineTask => {
       }
     },
   });
+  
+  return task;
 };

@@ -31,10 +31,30 @@ export const makeAudioBufferTask = (host: EFMedia): AudioBufferTask => {
     requestQueue: [],
   };
 
-  return new Task(host, {
+  // Capture task reference for use in onError
+  let task: AudioBufferTask;
+
+  task = new Task(host, {
     autoRun: EF_INTERACTIVE, // Make lazy - only run when element becomes timeline-active
     args: () => [host.desiredSeekTimeMs] as const,
     onError: (error) => {
+      // CRITICAL: Attach .catch() handler to taskComplete BEFORE the promise is rejected.
+      // This prevents unhandled rejection when hostUpdate() triggers _performTask() without awaiting.
+      task.taskComplete.catch(() => {});
+      
+      // Don't log AbortErrors - these are expected when tasks are cancelled
+      const isAbortError = 
+        (error instanceof DOMException && error.name === "AbortError") ||
+        (error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message?.includes("signal is aborted") ||
+          error.message?.includes("The user aborted a request")
+        ));
+      
+      if (isAbortError) {
+        return;
+      }
+      
       // Don't log errors when there's no valid media source, file not found, or auth errors - these are expected
       if (error instanceof Error && (
         error.message === "No valid media source" ||
@@ -143,7 +163,7 @@ export const makeAudioBufferTask = (host: EFMedia): AudioBufferTask => {
                 }
               }
               
-              await mediaEngine.fetchMediaSegment(segmentId, rendition);
+              await mediaEngine.fetchMediaSegment(segmentId, rendition, signal);
             } catch (error) {
               // If media engine task failed, segment doesn't exist, or fetch fails (401, etc.), skip prefetch silently
               if (
@@ -194,4 +214,6 @@ export const makeAudioBufferTask = (host: EFMedia): AudioBufferTask => {
       );
     },
   });
+
+  return task;
 };

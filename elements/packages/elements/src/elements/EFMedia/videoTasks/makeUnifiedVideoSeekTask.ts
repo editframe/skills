@@ -24,6 +24,17 @@ export const makeUnifiedVideoSeekTask = (
     autoRun: false,
     args: () => [host.desiredSeekTimeMs] as const,
     onError: (error) => {
+      // Don't log AbortErrors - these are expected when tasks are cancelled
+      if (
+        (error instanceof DOMException && error.name === "AbortError") ||
+        (error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message?.includes("signal is aborted") ||
+          error.message?.includes("The user aborted a request")
+        ))
+      ) {
+        return;
+      }
       // Only log unexpected errors - expected conditions handled gracefully
       if (
         error instanceof Error &&
@@ -36,7 +47,8 @@ export const makeUnifiedVideoSeekTask = (
     onComplete: (_value) => {},
     task: async ([desiredSeekTimeMs], { signal }) => {
       const mediaEngine = await getLatestMediaEngine(host, signal);
-      if (!mediaEngine || signal.aborted) return undefined;
+      if (!mediaEngine) return undefined;
+      signal?.throwIfAborted();
 
       // FIRST: Check if main quality content is already cached
       const mainRendition = mediaEngine.videoRendition;
@@ -56,9 +68,7 @@ export const makeUnifiedVideoSeekTask = (
             signal,
           );
 
-          if (signal.aborted) {
-            return undefined;
-          }
+          signal?.throwIfAborted();
 
           return result;
         }
@@ -77,9 +87,7 @@ export const makeUnifiedVideoSeekTask = (
         signal,
       );
 
-      if (signal.aborted) {
-        return undefined;
-      }
+      signal?.throwIfAborted();
 
       return result;
     },
@@ -186,9 +194,13 @@ async function tryGetScrubSample(
             try {
               [initSegment, mediaSegment] = await Promise.all([
                 mediaEngine.fetchInitSegment(scrubRenditionWithSrc, signal),
-                mediaEngine.fetchMediaSegment(segmentId, scrubRenditionWithSrc),
+                mediaEngine.fetchMediaSegment(segmentId, scrubRenditionWithSrc, signal),
               ]);
             } catch (error) {
+              // If aborted, re-throw to propagate cancellation
+              if (error instanceof DOMException && error.name === "AbortError") {
+                throw error;
+              }
               // If fetch fails with expected errors (401, missing segments, etc.), return undefined
               if (
                 error instanceof Error &&
@@ -206,19 +218,22 @@ async function tryGetScrubSample(
               throw error;
             }
 
-            if (!initSegment || !mediaSegment || signal.aborted)
+            if (!initSegment || !mediaSegment) {
               return undefined;
+            }
+            signal?.throwIfAborted();
 
             const { BufferedSeekingInput } =
               await import("../BufferedSeekingInput.js");
             const { EFMedia } = await import("../../EFMedia.js");
 
             // Create combined blob - this is expensive, check abort before/after
+            signal?.throwIfAborted();
             const combinedBlob = new Blob([initSegment, mediaSegment]);
-            if (signal.aborted) return undefined;
+            signal?.throwIfAborted();
             
             const arrayBuffer = await combinedBlob.arrayBuffer();
-            if (signal.aborted) return undefined;
+            signal?.throwIfAborted();
 
             return new BufferedSeekingInput(
               arrayBuffer,
@@ -237,10 +252,7 @@ async function tryGetScrubSample(
           return undefined;
         }
 
-        if (signal.aborted) {
-          span.setAttribute("result", "aborted-after-scrub-input");
-          return undefined;
-        }
+        signal?.throwIfAborted();
 
         const videoTrack = await scrubInput.getFirstVideoTrack();
         if (!videoTrack) {
@@ -248,10 +260,7 @@ async function tryGetScrubSample(
           return undefined;
         }
 
-        if (signal.aborted) {
-          span.setAttribute("result", "aborted-after-scrub-track");
-          return undefined;
-        }
+        signal?.throwIfAborted();
 
         const sample = (await scrubInput.seek(
           videoTrack.id,
@@ -261,7 +270,7 @@ async function tryGetScrubSample(
         span.setAttribute("result", sample ? "success" : "no-sample");
         return sample;
       } catch (_error) {
-        if (signal.aborted) {
+        if (signal?.aborted) {
           span.setAttribute("result", "aborted");
           return undefined;
         }
@@ -326,6 +335,10 @@ async function getMainVideoSample(
                 mediaEngine.fetchMediaSegment(segmentId, videoRendition, signal),
               ]);
             } catch (error) {
+              // If aborted, re-throw to propagate cancellation
+              if (error instanceof DOMException && error.name === "AbortError") {
+                throw error;
+              }
               // If fetch fails with expected errors (401, missing segments, etc.), return undefined
               if (
                 error instanceof Error &&
@@ -346,16 +359,17 @@ async function getMainVideoSample(
             if (!initSegment || !mediaSegment) {
               return undefined;
             }
-            signal.throwIfAborted();
+            signal?.throwIfAborted();
 
             const startTimeOffsetMs = videoRendition?.startTimeOffsetMs;
 
             // Create combined blob - this is expensive, check abort before/after
+            signal?.throwIfAborted();
             const combinedBlob = new Blob([initSegment, mediaSegment]);
-            signal.throwIfAborted();
+            signal?.throwIfAborted();
             
             const arrayBuffer = await combinedBlob.arrayBuffer();
-            signal.throwIfAborted();
+            signal?.throwIfAborted();
 
             return new BufferedSeekingInput(
               arrayBuffer,
@@ -373,10 +387,7 @@ async function getMainVideoSample(
           return undefined;
         }
 
-        if (signal.aborted) {
-          span.setAttribute("result", "aborted-after-input");
-          return undefined;
-        }
+        signal?.throwIfAborted();
 
         const videoTrack = await mainInput.getFirstVideoTrack();
         if (!videoTrack) {
@@ -384,10 +395,7 @@ async function getMainVideoSample(
           return undefined;
         }
 
-        if (signal.aborted) {
-          span.setAttribute("result", "aborted-after-track");
-          return undefined;
-        }
+        signal?.throwIfAborted();
 
         const sample = (await mainInput.seek(
           videoTrack.id,
@@ -397,7 +405,7 @@ async function getMainVideoSample(
         span.setAttribute("result", sample ? "success" : "no-sample");
         return sample;
       } catch (error) {
-        if (signal.aborted) {
+        if (signal?.aborted) {
           span.setAttribute("result", "aborted");
           return undefined;
         }
@@ -418,7 +426,7 @@ async function startMainQualityUpgrade(
 ): Promise<void> {
   // Small delay to let scrub content display first
   await new Promise((resolve) => setTimeout(resolve, 50));
-  if (signal.aborted || host.desiredSeekTimeMs !== targetSeekTimeMs) return;
+  if (signal?.aborted || host.desiredSeekTimeMs !== targetSeekTimeMs) return;
 
   // Get main quality sample and upgrade display
   const mainSample = await getMainVideoSample(
@@ -429,7 +437,7 @@ async function startMainQualityUpgrade(
   );
   if (
     mainSample &&
-    !signal.aborted &&
+    !signal?.aborted &&
     host.desiredSeekTimeMs === targetSeekTimeMs
   ) {
     const videoFrame = mainSample.toVideoFrame();

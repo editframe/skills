@@ -4,12 +4,34 @@ import type { EFMedia } from "../../EFMedia";
 import { AssetMediaEngine } from "../AssetMediaEngine";
 import { getLatestMediaEngine } from "../tasks/makeMediaEngineTask";
 
+type AudioSegmentIdTask = Task<readonly [MediaEngine | undefined, number], number | undefined>;
+
 export const makeAudioSegmentIdTask = (
   host: EFMedia,
-): Task<readonly [MediaEngine | undefined, number], number | undefined> => {
-  return new Task(host, {
+): AudioSegmentIdTask => {
+  // Capture task reference for use in onError
+  let task: AudioSegmentIdTask;
+
+  task = new Task(host, {
     args: () => [host.mediaEngineTask.value, host.desiredSeekTimeMs] as const,
     onError: (error) => {
+      // CRITICAL: Attach .catch() handler to taskComplete BEFORE the promise is rejected.
+      // This prevents unhandled rejection when hostUpdate() triggers _performTask() without awaiting.
+      task.taskComplete.catch(() => {});
+      
+      // Don't log AbortErrors - these are expected when tasks are cancelled
+      const isAbortError = 
+        (error instanceof DOMException && error.name === "AbortError") ||
+        (error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message?.includes("signal is aborted") ||
+          error.message?.includes("The user aborted a request")
+        ));
+      
+      if (isAbortError) {
+        return;
+      }
+      
       // Don't log errors when there's no valid media source or file not found - these are expected
       if (error instanceof Error && (
         error.message === "No valid media source" ||
@@ -43,7 +65,7 @@ export const makeAudioSegmentIdTask = (
       if (!mediaEngine) {
         return undefined;
       }
-      signal.throwIfAborted();
+      signal?.throwIfAborted();
 
       const audioRendition = mediaEngine.getAudioRendition();
 
@@ -78,4 +100,6 @@ export const makeAudioSegmentIdTask = (
       }
     },
   });
+
+  return task;
 };

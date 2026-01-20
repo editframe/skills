@@ -11,9 +11,29 @@ type ScrubVideoSeekTask = Task<readonly [number], VideoSample | undefined>;
 const scrubInputCache = new ScrubInputCache();
 
 export const makeScrubVideoSeekTask = (host: EFVideo): ScrubVideoSeekTask => {
-  return new Task(host, {
+  // Capture task reference for use in onError
+  let task: ScrubVideoSeekTask;
+
+  task = new Task(host, {
     args: () => [host.desiredSeekTimeMs] as const,
     onError: (error) => {
+      // CRITICAL: Attach .catch() handler to taskComplete BEFORE the promise is rejected.
+      // This prevents unhandled rejection when hostUpdate() triggers _performTask() without awaiting.
+      task.taskComplete.catch(() => {});
+      
+      // Don't log AbortErrors - these are expected when tasks are cancelled
+      const isAbortError = 
+        error instanceof DOMException && error.name === "AbortError" ||
+        error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message.includes("signal is aborted") ||
+          error.message.includes("The user aborted a request")
+        );
+      
+      if (isAbortError) {
+        return;
+      }
+      
       // Don't log errors when there's no valid media source or file not found - these are expected
       if (error instanceof Error && (
         error.message === "No valid media source" ||
@@ -26,7 +46,7 @@ export const makeScrubVideoSeekTask = (host: EFVideo): ScrubVideoSeekTask => {
     },
     onComplete: (_value) => {},
     task: async ([desiredSeekTimeMs], { signal }) => {
-      signal.throwIfAborted();
+      signal?.throwIfAborted();
 
       const mediaEngine = host.mediaEngineTask.value;
       if (!mediaEngine) {
@@ -65,7 +85,7 @@ export const makeScrubVideoSeekTask = (host: EFVideo): ScrubVideoSeekTask => {
         return undefined;
       }
 
-      signal.throwIfAborted();
+      signal?.throwIfAborted();
 
       try {
         // Get or create BufferedSeekingInput for this scrub segment (30s)
@@ -80,9 +100,13 @@ export const makeScrubVideoSeekTask = (host: EFVideo): ScrubVideoSeekTask => {
             try {
               [initSegment, mediaSegment] = await Promise.all([
                 mediaEngine.fetchInitSegment(scrubRenditionWithSrc, signal),
-                mediaEngine.fetchMediaSegment(segmentId, scrubRenditionWithSrc),
+                mediaEngine.fetchMediaSegment(segmentId, scrubRenditionWithSrc, signal),
               ]);
             } catch (error) {
+              // If aborted, re-throw to propagate cancellation
+              if (error instanceof DOMException && error.name === "AbortError") {
+                throw error;
+              }
               // If fetch fails with expected errors (401, missing segments, etc.), return undefined
               if (
                 error instanceof Error &&
@@ -100,9 +124,10 @@ export const makeScrubVideoSeekTask = (host: EFVideo): ScrubVideoSeekTask => {
               throw error;
             }
 
-            if (!initSegment || !mediaSegment || signal.aborted) {
+            if (!initSegment || !mediaSegment) {
               return undefined;
             }
+            signal?.throwIfAborted();
 
             const { BufferedSeekingInput } =
               await import("../BufferedSeekingInput.js");
@@ -123,9 +148,7 @@ export const makeScrubVideoSeekTask = (host: EFVideo): ScrubVideoSeekTask => {
           return undefined;
         }
 
-        if (signal.aborted) {
-          return undefined;
-        }
+        signal?.throwIfAborted();
 
         // Get video track and seek to precise time within the 30s scrub segment
         const videoTrack = await scrubInput.getFirstVideoTrack();
@@ -133,9 +156,7 @@ export const makeScrubVideoSeekTask = (host: EFVideo): ScrubVideoSeekTask => {
           return undefined;
         }
 
-        if (signal.aborted) {
-          return undefined;
-        }
+        signal?.throwIfAborted();
 
         const sample = (await scrubInput.seek(
           videoTrack.id,
@@ -144,7 +165,10 @@ export const makeScrubVideoSeekTask = (host: EFVideo): ScrubVideoSeekTask => {
 
         return sample;
       } catch (error) {
-        if (signal.aborted) return undefined;
+        // If aborted, return undefined silently
+        if (signal?.aborted || (error instanceof DOMException && error.name === "AbortError")) {
+          return undefined;
+        }
         // Don't warn for RangeError about sample not found - this is expected when seeking
         // outside the segment range (e.g., seeking beyond video duration or outside loaded segment)
         if (error instanceof RangeError && error.message.includes("Sample not found")) {
@@ -155,4 +179,6 @@ export const makeScrubVideoSeekTask = (host: EFVideo): ScrubVideoSeekTask => {
       }
     },
   });
+
+  return task;
 };

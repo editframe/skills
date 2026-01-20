@@ -4,7 +4,10 @@ import { BufferedSeekingInput } from "../BufferedSeekingInput";
 import type { InputTask } from "../shared/MediaTaskUtils";
 
 export const makeAudioInputTask = (host: EFMedia): InputTask => {
-  return new Task<
+  // Capture task reference for use in onError
+  let task: InputTask;
+
+  task = new Task<
     readonly [ArrayBuffer | undefined, ArrayBuffer | undefined],
     BufferedSeekingInput | undefined
   >(host, {
@@ -14,13 +17,26 @@ export const makeAudioInputTask = (host: EFMedia): InputTask => {
         host.audioSegmentFetchTask.value,
       ] as const,
     onError: (error) => {
+      // CRITICAL: Attach .catch() handler to taskComplete BEFORE the promise is rejected.
+      // This prevents unhandled rejection when hostUpdate() triggers _performTask() without awaiting.
+      task.taskComplete.catch(() => {});
+      
+      // Don't log AbortError - these are intentional request cancellations
+      const isAbortError = 
+        error instanceof DOMException && error.name === "AbortError" ||
+        error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message.includes("signal is aborted") ||
+          error.message.includes("The user aborted a request")
+        );
+      
       // Don't log errors when there's no valid media source, file not found, or fetch failures - these are expected
-      if (error instanceof Error && (
+      if (isAbortError || (error instanceof Error && (
         error.message === "No valid media source" ||
         error.message.includes("File not found") ||
         error.message.includes("is not valid JSON") ||
         error.message.includes("Failed to fetch")
-      )) {
+      ))) {
         return;
       }
       console.error("audioInputTask error", error);
@@ -44,7 +60,8 @@ export const makeAudioInputTask = (host: EFMedia): InputTask => {
         throw error;
       }
       
-      if (signal.aborted) return undefined;
+      // Check for abort after awaiting media engine
+      signal?.throwIfAborted();
 
       // If media engine task completed but returned undefined/null, no valid source
       if (!mediaEngine) {
@@ -59,10 +76,14 @@ export const makeAudioInputTask = (host: EFMedia): InputTask => {
       }
 
       const initSegment = await host.audioInitSegmentFetchTask.taskComplete;
-      if (signal.aborted) return undefined;
+      
+      // Check for abort after awaiting init segment
+      signal?.throwIfAborted();
 
       const segment = await host.audioSegmentFetchTask.taskComplete;
-      if (signal.aborted) return undefined;
+      
+      // Check for abort after awaiting segment
+      signal?.throwIfAborted();
 
       if (!initSegment || !segment) {
         return undefined;
@@ -71,7 +92,9 @@ export const makeAudioInputTask = (host: EFMedia): InputTask => {
       const startTimeOffsetMs = audioRendition.startTimeOffsetMs;
 
       const arrayBuffer = await new Blob([initSegment, segment]).arrayBuffer();
-      if (signal.aborted) return undefined;
+      
+      // Check for abort after expensive arrayBuffer operation
+      signal?.throwIfAborted();
 
       return new BufferedSeekingInput(arrayBuffer, {
         videoBufferSize: EFMedia.VIDEO_SAMPLE_BUFFER_SIZE,
@@ -80,4 +103,6 @@ export const makeAudioInputTask = (host: EFMedia): InputTask => {
       });
     },
   });
+
+  return task;
 };

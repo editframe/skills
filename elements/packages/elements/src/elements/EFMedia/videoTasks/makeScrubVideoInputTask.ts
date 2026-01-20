@@ -6,7 +6,10 @@ import { BufferedSeekingInput } from "../BufferedSeekingInput";
 import type { InputTask } from "../shared/MediaTaskUtils";
 
 export const makeScrubVideoInputTask = (host: EFVideo): InputTask => {
-  return new Task<
+  // Capture task reference for use in onError
+  let task: InputTask;
+
+  task = new Task<
     readonly [ArrayBuffer | undefined, ArrayBuffer | undefined],
     BufferedSeekingInput | undefined
   >(host, {
@@ -16,6 +19,23 @@ export const makeScrubVideoInputTask = (host: EFVideo): InputTask => {
         host.scrubVideoSegmentFetchTask.value,
       ] as const,
     onError: (error) => {
+      // CRITICAL: Attach .catch() handler to taskComplete BEFORE the promise is rejected.
+      // This prevents unhandled rejection when hostUpdate() triggers _performTask() without awaiting.
+      task.taskComplete.catch(() => {});
+      
+      // Don't log AbortErrors - these are intentional cancellations when element is disconnected
+      const isAbortError = 
+        error instanceof DOMException && error.name === "AbortError" ||
+        error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message.includes("signal is aborted") ||
+          error.message.includes("The user aborted a request")
+        );
+      
+      if (isAbortError) {
+        return;
+      }
+      
       // Only log unexpected errors - missing scrub segments, fetch failures, and file not found are handled gracefully
       if (
         error instanceof Error &&
@@ -34,12 +54,37 @@ export const makeScrubVideoInputTask = (host: EFVideo): InputTask => {
         return undefined;
       }
       
-      const initSegment =
-        await host.scrubVideoInitSegmentFetchTask.taskComplete;
-      if (signal.aborted) return undefined;
+      // Await init segment with proper error handling for AbortErrors
+      let initSegment: ArrayBuffer | undefined;
+      try {
+        initSegment = await host.scrubVideoInitSegmentFetchTask.taskComplete;
+      } catch (error) {
+        // If aborted, propagate the abort
+        if (error instanceof DOMException && error.name === "AbortError") {
+          throw error;
+        }
+        // Other errors mean init segment failed - return undefined
+        return undefined;
+      }
+      
+      // Check for abort after awaiting init segment
+      signal?.throwIfAborted();
 
-      const segment = await host.scrubVideoSegmentFetchTask.taskComplete;
-      if (signal.aborted) return undefined;
+      // Await segment with proper error handling for AbortErrors
+      let segment: ArrayBuffer | undefined;
+      try {
+        segment = await host.scrubVideoSegmentFetchTask.taskComplete;
+      } catch (error) {
+        // If aborted, propagate the abort
+        if (error instanceof DOMException && error.name === "AbortError") {
+          throw error;
+        }
+        // Other errors mean segment failed - return undefined
+        return undefined;
+      }
+      
+      // Check for abort after awaiting segment
+      signal?.throwIfAborted();
 
       if (!initSegment || !segment) {
         // Scrub segments not available - scrub is optional, return undefined gracefully
@@ -58,13 +103,17 @@ export const makeScrubVideoInputTask = (host: EFVideo): InputTask => {
         // Re-throw unexpected errors
         throw error;
       }
-      if (signal.aborted) return undefined;
+      
+      // Check for abort after awaiting media engine
+      signal?.throwIfAborted();
 
       const scrubRendition = mediaEngine.getScrubVideoRendition();
       const startTimeOffsetMs = scrubRendition?.startTimeOffsetMs;
 
       const arrayBuffer = await new Blob([initSegment, segment]).arrayBuffer();
-      if (signal.aborted) return undefined;
+      
+      // Check for abort after expensive arrayBuffer operation
+      signal?.throwIfAborted();
 
       const input = new BufferedSeekingInput(arrayBuffer, {
         videoBufferSize: EFMedia.VIDEO_SAMPLE_BUFFER_SIZE,
@@ -74,4 +123,6 @@ export const makeScrubVideoInputTask = (host: EFVideo): InputTask => {
       return input;
     },
   });
+
+  return task;
 };

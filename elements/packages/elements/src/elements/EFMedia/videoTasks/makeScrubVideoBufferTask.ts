@@ -20,10 +20,28 @@ export const makeScrubVideoBufferTask = (host: EFVideo) => {
     requestQueue: [],
   };
 
-  return new Task(host, {
+  // Capture task reference for use in onError
+  let task: ReturnType<typeof makeScrubVideoBufferTask>;
+
+  task = new Task(host, {
     autoRun: EF_INTERACTIVE,
     args: () => [host.mediaEngineTask.value] as const,
     onError: (error) => {
+      // CRITICAL: Attach .catch() handler to taskComplete BEFORE the promise is rejected.
+      // This prevents unhandled rejection when hostUpdate() triggers _performTask() without awaiting.
+      task.taskComplete.catch(() => {});
+      
+      // Don't log AbortErrors - these are expected when tasks are cancelled
+      if (
+        (error instanceof DOMException && error.name === "AbortError") ||
+        (error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message?.includes("signal is aborted") ||
+          error.message?.includes("The user aborted a request")
+        ))
+      ) {
+        return;
+      }
       // Don't log errors when there's no valid media source or file not found - these are expected
       if (error instanceof Error && (
         error.message === "No valid media source" ||
@@ -99,7 +117,7 @@ export const makeScrubVideoBufferTask = (host: EFVideo) => {
             },
             prefetchSegment: async (segmentId, rendition) => {
               // Use the media engine to fetch and cache scrub segments
-              await mediaEngine.fetchMediaSegment(segmentId, rendition);
+              await mediaEngine.fetchMediaSegment(segmentId, rendition, signal);
             },
             isSegmentCached: (segmentId, rendition) => {
               return mediaEngine.isSegmentCached(segmentId, rendition);
@@ -113,10 +131,12 @@ export const makeScrubVideoBufferTask = (host: EFVideo) => {
 
         return newState;
       } catch (error) {
-        if (signal.aborted) return currentState;
+        if (signal?.aborted) return currentState;
         console.warn("ScrubBuffer failed:", error);
         return currentState;
       }
     },
   });
+
+  return task;
 };

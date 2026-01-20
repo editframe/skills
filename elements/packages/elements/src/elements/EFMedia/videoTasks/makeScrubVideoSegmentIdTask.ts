@@ -4,12 +4,35 @@ import type { EFVideo } from "../../EFVideo";
 import { AssetMediaEngine } from "../AssetMediaEngine";
 import { getLatestMediaEngine } from "../tasks/makeMediaEngineTask";
 
+type ScrubVideoSegmentIdTask = Task<readonly [MediaEngine | undefined, number], number | undefined>;
+
 export const makeScrubVideoSegmentIdTask = (
   host: EFVideo,
-): Task<readonly [MediaEngine | undefined, number], number | undefined> => {
-  return new Task(host, {
+): ScrubVideoSegmentIdTask => {
+  // Capture task reference for use in onError
+  let task: ScrubVideoSegmentIdTask;
+
+  task = new Task(host, {
     args: () => [host.mediaEngineTask.value, host.desiredSeekTimeMs] as const,
     onError: (error) => {
+      // CRITICAL: Attach .catch() handler to taskComplete BEFORE the promise is rejected.
+      // This prevents unhandled rejection when hostUpdate() triggers _performTask() without awaiting.
+      task.taskComplete.catch(() => {});
+      
+      // Don't log AbortErrors - check this FIRST before instanceof Error
+      // because DOMException might not pass instanceof Error in all cases
+      const isAbortError = 
+        (error instanceof DOMException && error.name === "AbortError") ||
+        (error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message?.includes("signal is aborted") ||
+          error.message?.includes("The user aborted a request")
+        ));
+      
+      if (isAbortError) {
+        return;
+      }
+      
       // Don't log errors when there's no valid media source or file not found - these are expected
       if (error instanceof Error && (
         error.message === "No valid media source" ||
@@ -43,7 +66,7 @@ export const makeScrubVideoSegmentIdTask = (
       if (!mediaEngine) {
         return undefined;
       }
-      signal.throwIfAborted(); // Abort if a new seek started
+      signal?.throwIfAborted(); // Abort if a new seek started
 
       // Get scrub rendition using the proper interface method
       const scrubRendition = mediaEngine.getScrubVideoRendition();
@@ -81,4 +104,6 @@ export const makeScrubVideoSegmentIdTask = (
       }
     },
   });
+
+  return task;
 };

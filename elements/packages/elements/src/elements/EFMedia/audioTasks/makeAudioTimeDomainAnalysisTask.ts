@@ -11,13 +11,34 @@ export function makeAudioTimeDomainAnalysisTask(element: EFMedia) {
   // Internal cache for this task instance (same as original #byteTimeDomainCache)
   const cache = new LRUCache<string, Uint8Array>(1000);
 
-  return new Task(element, {
+  // Capture task reference for use in onError
+  let task: ReturnType<typeof makeAudioTimeDomainAnalysisTask>;
+
+  task = new Task(element, {
     autoRun: EF_INTERACTIVE,
     onError: (error) => {
+      // CRITICAL: Attach .catch() handler to taskComplete BEFORE the promise is rejected.
+      // This prevents unhandled rejection when hostUpdate() triggers _performTask() without awaiting.
+      task.taskComplete.catch(() => {});
+      
       if (error instanceof IgnorableError) {
         console.info("byteTimeDomainTask skipped: no audio track");
         return;
       }
+      
+      // Don't log AbortErrors - these are expected when tasks are cancelled
+      const isAbortError = 
+        (error instanceof DOMException && error.name === "AbortError") ||
+        (error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message?.includes("signal is aborted") ||
+          error.message?.includes("The user aborted a request")
+        ));
+      
+      if (isAbortError) {
+        return;
+      }
+      
       // Don't log errors when there's no valid media source, file not found, or auth errors - these are expected
       if (error instanceof Error && (
         error.message === "No valid media source" ||
@@ -87,6 +108,10 @@ export function makeAudioTimeDomainAnalysisTask(element: EFMedia) {
         // Re-throw unexpected errors
         throw error;
       }
+      
+      // Check for abort after awaiting media engine
+      signal?.throwIfAborted();
+      
       if (!mediaEngine?.audioRendition) {
         // No audio rendition available - skip silently (no warning needed)
         return null;
@@ -126,6 +151,9 @@ export function makeAudioTimeDomainAnalysisTask(element: EFMedia) {
         const tempAudioContext = new OfflineAudioContext(2, 48000, 48000);
         const arrayBuffer = await audioSpan.blob.arrayBuffer();
         
+        // Check for abort after expensive arrayBuffer operation
+        signal?.throwIfAborted();
+        
         // Validate arrayBuffer before decode attempt
         if (arrayBuffer.byteLength < 100) {
           return null;
@@ -134,6 +162,9 @@ export function makeAudioTimeDomainAnalysisTask(element: EFMedia) {
         let audioBuffer;
         try {
           audioBuffer = await tempAudioContext.decodeAudioData(arrayBuffer);
+          
+          // Check for abort after expensive decode operation
+          signal?.throwIfAborted();
         } catch (decodeError) {
           // Unable to decode audio data - this means the data isn't valid audio
           // This can happen with corrupted/incomplete segments - skip silently
@@ -192,6 +223,10 @@ export function makeAudioTimeDomainAnalysisTask(element: EFMedia) {
           const dataLength = analyser.fftSize / 2;
           try {
             await audioContext.startRendering();
+            
+            // Check for abort after expensive rendering operation
+            signal?.throwIfAborted();
+            
             const frameData = new Uint8Array(dataLength);
             analyser.getByteTimeDomainData(frameData);
 
@@ -251,6 +286,10 @@ export function makeAudioTimeDomainAnalysisTask(element: EFMedia) {
         cache.set(preliminaryCacheKey, smoothedData);
         return smoothedData;
       } catch (error) {
+        // If aborted, re-throw to propagate cancellation
+        if (error instanceof DOMException && error.name === "AbortError") {
+          throw error;
+        }
         // If fetch fails with expected errors (401, missing segments, etc.), return null gracefully
         if (
           error instanceof Error &&
@@ -268,4 +307,6 @@ export function makeAudioTimeDomainAnalysisTask(element: EFMedia) {
       }
     },
   });
+
+  return task;
 }

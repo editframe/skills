@@ -4,16 +4,36 @@ import type { EFVideo } from "../../EFVideo";
 import { AssetMediaEngine } from "../AssetMediaEngine";
 import { getLatestMediaEngine } from "../tasks/makeMediaEngineTask";
 
-export const makeScrubVideoSegmentFetchTask = (
-  host: EFVideo,
-): Task<
+type ScrubVideoSegmentFetchTask = Task<
   readonly [MediaEngine | undefined, number | undefined],
   ArrayBuffer
-> => {
-  return new Task(host, {
+>;
+
+export const makeScrubVideoSegmentFetchTask = (
+  host: EFVideo,
+): ScrubVideoSegmentFetchTask => {
+  // Capture task reference for use in onError
+  let task: ScrubVideoSegmentFetchTask;
+
+  task = new Task(host, {
     args: () =>
       [host.mediaEngineTask.value, host.scrubVideoSegmentIdTask.value] as const,
     onError: (error) => {
+      // CRITICAL: Attach .catch() handler to taskComplete BEFORE the promise is rejected.
+      // This prevents unhandled rejection when hostUpdate() triggers _performTask() without awaiting.
+      task.taskComplete.catch(() => {});
+      
+      // Don't log AbortErrors - these are expected when tasks are cancelled
+      if (
+        (error instanceof DOMException && error.name === "AbortError") ||
+        (error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message?.includes("signal is aborted") ||
+          error.message?.includes("The user aborted a request")
+        ))
+      ) {
+        return;
+      }
       // Only log unexpected errors - missing scrub rendition/segment is handled gracefully above
       if (
         error instanceof Error &&
@@ -47,6 +67,10 @@ export const makeScrubVideoSegmentFetchTask = (
         return undefined as any;
       }
       const segmentId = await host.scrubVideoSegmentIdTask.taskComplete;
+      
+      // Check for abort after awaiting segment ID
+      signal?.throwIfAborted();
+      
       if (segmentId === undefined) {
         // Scrub segment ID not available - scrub is optional, return undefined
         return undefined as any; // Task expects ArrayBuffer, but undefined indicates unavailable
@@ -82,6 +106,10 @@ export const makeScrubVideoSegmentFetchTask = (
           signal,
         );
       } catch (error) {
+        // If aborted, re-throw to propagate cancellation
+        if (error instanceof DOMException && error.name === "AbortError") {
+          throw error;
+        }
         // If segment doesn't exist or fetch fails, return undefined gracefully
         if (
           error instanceof Error &&
@@ -97,4 +125,6 @@ export const makeScrubVideoSegmentFetchTask = (
       }
     },
   });
+
+  return task;
 };

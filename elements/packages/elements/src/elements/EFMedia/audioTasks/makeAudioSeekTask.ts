@@ -8,9 +8,29 @@ type AudioSeekTask = Task<
   VideoSample | undefined
 >;
 export const makeAudioSeekTask = (host: EFMedia): AudioSeekTask => {
-  return new Task(host, {
+  // Capture task reference for use in onError
+  let task: AudioSeekTask;
+
+  task = new Task(host, {
     args: () => [host.desiredSeekTimeMs, host.audioInputTask.value] as const,
     onError: (error) => {
+      // CRITICAL: Attach .catch() handler to taskComplete BEFORE the promise is rejected.
+      // This prevents unhandled rejection when hostUpdate() triggers _performTask() without awaiting.
+      task.taskComplete.catch(() => {});
+      
+      // Don't log AbortErrors - these are expected when tasks are cancelled
+      const isAbortError = 
+        (error instanceof DOMException && error.name === "AbortError") ||
+        (error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message?.includes("signal is aborted") ||
+          error.message?.includes("The user aborted a request")
+        ));
+      
+      if (isAbortError) {
+        return;
+      }
+      
       if (error instanceof IgnorableError) {
         console.info("audioSeekTask aborted");
         return;
@@ -26,7 +46,10 @@ export const makeAudioSeekTask = (host: EFMedia): AudioSeekTask => {
       }
     },
     onComplete: (_value) => {},
-    task: async (): Promise<VideoSample | undefined> => {
+    task: async ([_desiredSeekTimeMs, _audioInput], { signal }): Promise<VideoSample | undefined> => {
+      // Check abort before starting work
+      signal?.throwIfAborted();
+      
       // VALIDATED: This task is NOT used for audio rendering.
       // It is only awaited in EFAudio.frameTask for synchronization purposes.
       // The actual audio rendering pipeline uses fetchAudioSpanningTime() which:
@@ -81,4 +104,6 @@ export const makeAudioSeekTask = (host: EFMedia): AudioSeekTask => {
       // return sample;
     },
   });
+
+  return task;
 };

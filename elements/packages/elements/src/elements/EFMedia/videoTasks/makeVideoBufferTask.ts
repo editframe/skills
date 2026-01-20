@@ -31,10 +31,28 @@ export const makeVideoBufferTask = (host: EFVideo): VideoBufferTask => {
     requestQueue: [],
   };
 
-  return new Task(host, {
+  // Capture task reference for use in onError
+  let task: VideoBufferTask;
+
+  task = new Task(host, {
     autoRun: EF_INTERACTIVE, // Make lazy - only run when element becomes timeline-active
     args: () => [host.desiredSeekTimeMs] as const,
     onError: (error) => {
+      // CRITICAL: Attach .catch() handler to taskComplete in onError.
+      // This is called BEFORE reject(), so the handler is attached in time.
+      task.taskComplete.catch(() => {});
+      
+      // Don't log AbortErrors - these are expected when tasks are cancelled
+      if (
+        (error instanceof DOMException && error.name === "AbortError") ||
+        (error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message?.includes("signal is aborted") ||
+          error.message?.includes("The user aborted a request")
+        ))
+      ) {
+        return;
+      }
       // Don't log errors when there's no valid media source, file not found, or auth errors - these are expected
       if (error instanceof Error && (
         error.message === "No valid media source" ||
@@ -131,7 +149,7 @@ export const makeVideoBufferTask = (host: EFVideo): VideoBufferTask => {
                 }
               }
               
-              await mediaEngine.fetchMediaSegment(segmentId, rendition);
+              await mediaEngine.fetchMediaSegment(segmentId, rendition, signal);
             } catch (error) {
               // If segment doesn't exist or fetch fails (401, etc.), skip prefetch silently
               if (
@@ -178,4 +196,11 @@ export const makeVideoBufferTask = (host: EFVideo): VideoBufferTask => {
       );
     },
   });
+
+  // CRITICAL: Attach .catch() handler IMMEDIATELY to prevent unhandled rejections.
+  // This must be done synchronously after task creation, before any updates can trigger run().
+  // When hostUpdate() triggers _performTask() -> run(), the rejection needs to already have a handler.
+  task.taskComplete.catch(() => {});
+
+  return task;
 };
