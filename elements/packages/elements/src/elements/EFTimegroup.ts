@@ -463,6 +463,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
       "fit",
       "fps",
       "auto-init",
+      "workbench",
     ];
   }
 
@@ -557,6 +558,9 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     }
     if (name === "fps" && value) {
       this.fps = Number.parseFloat(value);
+    }
+    if (name === "workbench") {
+      this.workbench = value !== null;
     }
     super.attributeChangedCallback(name, old, value);
   }
@@ -672,7 +676,8 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     this.#userTimeMs = seekTarget * 1000;  // User-initiated time change
     this.#seekInProgress = true;
 
-    this.seekTask.run().finally(() => {
+    // Attach .catch() to prevent unhandled rejection warning - errors are handled by seekTask.onError
+    this.seekTask.run().catch(() => {}).finally(() => {
       this.#seekInProgress = false;
       
       // Process pending seek if it differs from completed seek
@@ -957,6 +962,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
           new TimegroupController(this.parentTimegroup, this);
         }
 
+
         if (this.shouldWrapWithWorkbench()) {
           this.wrapWithWorkbench();
         }
@@ -1220,7 +1226,8 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
       
       if (task.status === TaskStatus.INITIAL) {
         // Need to run the task first
-        task.run();
+        // Attach .catch() to prevent unhandled rejection warning - errors handled via taskComplete
+        task.run().catch(() => {});
       }
       
       // Task is now PENDING, wait for it
@@ -1509,7 +1516,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
   }
 
   /** @internal */
-  async waitForFrameTasks() {
+  async waitForFrameTasks(signal?: AbortSignal) {
     const result = await withSpan(
       "timegroup.waitForFrameTasks",
       {
@@ -1518,12 +1525,18 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
       },
       undefined,
       async (span) => {
+        // Check abort before starting
+        signal?.throwIfAborted();
+        
         const innerStart = performance.now();
 
         const temporalElements = deepGetElementsWithFrameTasks(this);
         if (isTracingEnabled()) {
           span.setAttribute("temporalElementsCount", temporalElements.length);
         }
+
+        // Check abort after getting elements
+        signal?.throwIfAborted();
 
         // Evaluate which elements should be rendered
         const visibleElements = this.#evaluateVisibleElementsForFrame();
@@ -1539,14 +1552,35 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
         // Elements with waitForFrameReady() handle this; others need explicit waiting.
         await Promise.all(
           visibleElements.map(async (element) => {
-            if (
-              "waitForFrameReady" in element &&
-              typeof element.waitForFrameReady === "function"
-            ) {
-              await (element as any).waitForFrameReady();
-            } else {
-              await element.updateComplete;
-              await element.frameTask.run();
+            // Check abort before each element
+            signal?.throwIfAborted();
+            
+            try {
+              if (
+                "waitForFrameReady" in element &&
+                typeof element.waitForFrameReady === "function"
+              ) {
+                await (element as any).waitForFrameReady();
+              } else {
+                await element.updateComplete;
+                await element.frameTask.run();
+              }
+            } catch (error) {
+              // AbortErrors are expected when elements are disconnected or tasks cancelled
+              const isAbortError = 
+                error instanceof DOMException && error.name === "AbortError" ||
+                error instanceof Error && (
+                  error.name === "AbortError" ||
+                  (error as any).message?.includes("signal is aborted") ||
+                  (error as any).message?.includes("The user aborted a request")
+                );
+              
+              if (isAbortError) {
+                // Re-throw if our signal is also aborted (propagate cancellation)
+                signal?.throwIfAborted();
+                return; // Otherwise silently ignore - element was disconnected
+              }
+              throw error;
             }
           }),
         );
@@ -1566,17 +1600,31 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
   #mediaDurationsPromise: Promise<void> | undefined = undefined;
 
   /** @internal */
-  async waitForMediaDurations() {
+  async waitForMediaDurations(signal?: AbortSignal) {
+    // Check abort before starting
+    signal?.throwIfAborted();
+    
     // Start loading media durations in background, but don't block if already in progress
     // This prevents multiple concurrent calls from creating redundant work
     if (!this.#mediaDurationsPromise) {
-      this.#mediaDurationsPromise = this.#waitForMediaDurations().catch(err => {
+      this.#mediaDurationsPromise = this.#waitForMediaDurations(signal).catch(err => {
+        // Re-throw AbortError to propagate cancellation
+        if (err instanceof DOMException && err.name === "AbortError") {
+          this.#mediaDurationsPromise = undefined;
+          throw err;
+        }
         console.error(`[EFTimegroup] waitForMediaDurations failed for ${this.id || 'unnamed'}:`, err);
         // Clear promise on error so it can be retried
         this.#mediaDurationsPromise = undefined;
         throw err;
       });
     }
+    
+    // If signal is provided and aborted, throw immediately
+    if (signal?.aborted) {
+      throw new DOMException("Aborted", "AbortError");
+    }
+    
     return this.#mediaDurationsPromise;
   }
 
@@ -1586,7 +1634,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
    * that caused issues with constructing audio data. We had negative durations
    * in calculations and it was not clear why.
    */
-  async #waitForMediaDurations() {
+  async #waitForMediaDurations(signal?: AbortSignal) {
     return withSpan(
       "timegroup.waitForMediaDurations",
       {
@@ -1595,25 +1643,60 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
       },
       undefined,
       async (span) => {
+        // Check abort before starting
+        signal?.throwIfAborted();
+        
         // Don't wait for updateComplete during initialization - it causes deadlocks with nested timegroups
         // Instead, use a short delay to let elements connect, then scan for media elements
         // If elements aren't ready yet, we'll retry or they'll be picked up on the next update cycle
-        await new Promise<void>((resolve) => {
+        await new Promise<void>((resolve, reject) => {
+          if (signal?.aborted) {
+            reject(new DOMException("Aborted", "AbortError"));
+            return;
+          }
+          
+          const abortHandler = () => {
+            clearTimeout(timeoutId);
+            cancelAnimationFrame(rafId2);
+            cancelAnimationFrame(rafId1);
+            reject(new DOMException("Aborted", "AbortError"));
+          };
+          signal?.addEventListener('abort', abortHandler, { once: true });
+          
+          let rafId1: number;
+          let rafId2: number;
+          let timeoutId: ReturnType<typeof setTimeout>;
+          
           // Use multiple animation frames to ensure DOM is ready, but don't wait for all children
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
+          rafId1 = requestAnimationFrame(() => {
+            if (signal?.aborted) {
+              reject(new DOMException("Aborted", "AbortError"));
+              return;
+            }
+            rafId2 = requestAnimationFrame(() => {
+              if (signal?.aborted) {
+                reject(new DOMException("Aborted", "AbortError"));
+                return;
+              }
               // Small additional delay to let custom elements upgrade
-              setTimeout(() => {
+              timeoutId = setTimeout(() => {
+                signal?.removeEventListener('abort', abortHandler);
                 resolve();
               }, 10);
             });
           });
         });
         
+        // Check abort after delay
+        signal?.throwIfAborted();
+        
         const mediaElements = deepGetMediaElements(this);
         if (isTracingEnabled()) {
           span.setAttribute("mediaElementsCount", mediaElements.length);
         }
+
+        // Check abort after getting elements
+        signal?.throwIfAborted();
 
         // Then, we must await the fragmentIndexTask to ensure all media elements have their
         // fragment index loaded, which is where their duration is parsed from.
@@ -1622,6 +1705,9 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
         const MEDIA_LOAD_TIMEOUT_MS = 30000; // 30 second timeout per element
         
         const loadPromises = mediaElements.map(async (m, index) => {
+          // Check abort before each element
+          signal?.throwIfAborted();
+          
           const elementStart = Date.now();
           try {
             if (m.mediaEngineTask.value) {
@@ -1629,13 +1715,28 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
             }
             
             // Add timeout to prevent indefinite blocking
+            // Attach .catch() to prevent unhandled rejection warning - AbortErrors are expected
             const loadPromise = m.mediaEngineTask.run();
-            const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error(`Media element ${index} load timeout after ${MEDIA_LOAD_TIMEOUT_MS}ms`)), MEDIA_LOAD_TIMEOUT_MS)
-            );
+            loadPromise.catch(() => {}); // Suppress unhandled rejection - errors handled below
+            
+            const timeoutPromise = new Promise((_, reject) => {
+              if (signal?.aborted) {
+                reject(new DOMException("Aborted", "AbortError"));
+                return;
+              }
+              const timeoutId = setTimeout(() => reject(new Error(`Media element ${index} load timeout after ${MEDIA_LOAD_TIMEOUT_MS}ms`)), MEDIA_LOAD_TIMEOUT_MS);
+              signal?.addEventListener('abort', () => {
+                clearTimeout(timeoutId);
+                reject(new DOMException("Aborted", "AbortError"));
+              }, { once: true });
+            });
             
             await Promise.race([loadPromise, timeoutPromise]);
           } catch (error) {
+            // Re-throw AbortError to propagate cancellation
+            if (error instanceof DOMException && error.name === "AbortError") {
+              throw error;
+            }
             // Log only if tracing is enabled to reduce console noise
             if (isTracingEnabled()) {
               const elementElapsed = Date.now() - elementStart;
@@ -1646,6 +1747,16 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
         });
         
         const results = await Promise.allSettled(loadPromises);
+        
+        // Check if any were aborted
+        const aborted = results.some(r => 
+          r.status === 'rejected' && 
+          r.reason instanceof DOMException && 
+          r.reason.name === "AbortError"
+        );
+        if (aborted) {
+          throw new DOMException("Aborted", "AbortError");
+        }
         
         // Log any failures but don't throw - we want to continue even if some media fails
         const failures = results.filter(r => r.status === 'rejected');
@@ -1818,8 +1929,8 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
    * Delegates to shared renderTemporalAudio utility for consistent behavior
    * @internal
    */
-  async renderAudio(fromMs: number, toMs: number): Promise<AudioBuffer> {
-    return renderTemporalAudio(this, fromMs, toMs);
+  async renderAudio(fromMs: number, toMs: number, signal?: AbortSignal): Promise<AudioBuffer> {
+    return renderTemporalAudio(this, fromMs, toMs, signal);
   }
 
   /**
@@ -1856,7 +1967,8 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     for (const el of efElements) {
       const md5SumLoader = (el as any).md5SumLoader;
       if (md5SumLoader instanceof Task) {
-        md5SumLoader.run();
+        // Attach .catch() to prevent unhandled rejection warning - errors handled via taskComplete
+        md5SumLoader.run().catch(() => {});
         loaderTasks.push(md5SumLoader.taskComplete);
       }
     }
@@ -1882,7 +1994,27 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     // During export/rendering, frame tasks are triggered explicitly via seekTask
     autoRun: EF_INTERACTIVE,
     args: () => [this.ownCurrentTimeMs, this.currentTimeMs] as const,
-    task: async ([ownCurrentTimeMs, currentTimeMs]) => {
+    onError: (error) => {
+      // CRITICAL: Attach .catch() handler to taskComplete in onError.
+      // This is called BEFORE reject(), so the handler is attached in time
+      // to prevent unhandled rejection when hostUpdate() triggers _performTask() without awaiting.
+      this.frameTask.taskComplete.catch(() => {});
+      
+      // Don't log AbortErrors - these are expected when tasks are cancelled
+      const isAbortError = 
+        error instanceof DOMException && error.name === "AbortError" ||
+        error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message?.includes("signal is aborted") ||
+          error.message?.includes("The user aborted a request")
+        );
+      
+      if (isAbortError) {
+        return;
+      }
+      console.error("EFTimegroup frameTask error", error);
+    },
+    task: async ([ownCurrentTimeMs, currentTimeMs], { signal }) => {
       // Check for runaway loop
       const now = Date.now();
       if (now - this.#timegroupFrameTaskLastReset > EFTimegroup.TIMEGROUP_FRAME_TASK_RESET_MS) {
@@ -1896,9 +2028,12 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
         return;
       }
       
+      // Check abort before starting work
+      signal?.throwIfAborted();
+      
       if (this.isRootTimegroup) {
         // Root timegroup orchestrates frame rendering for entire tree
-        await withSpan(
+        return withSpan(
           "timegroup.frameTask",
           {
             timegroupId: this.id || "unknown",
@@ -1908,9 +2043,13 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
           undefined,
           async () => {
             // Wait for all child frame tasks to complete (Purpose 4)
-            await this.waitForFrameTasks();
+            await this.waitForFrameTasks(signal);
+            // Check abort after async operation
+            signal?.throwIfAborted();
             // Execute custom frame tasks registered on this timegroup
             await this.#executeCustomFrameTasks();
+            // Check abort before final operation
+            signal?.throwIfAborted();
             // Update animations based on current time
             // NOTE: This is needed even during export because it sets CSS animation
             // times which syncStyles then copies to the clone structure.
@@ -1919,7 +2058,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
         );
       } else {
         // Non-root timegroups execute their custom frame tasks when called
-        await this.#executeCustomFrameTasks();
+        return this.#executeCustomFrameTasks();
       }
     },
   });
@@ -1949,11 +2088,16 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     autoRun: false,
     args: () => [this.#pendingSeekTime ?? this.#currentTime] as const,
     onComplete: () => {},
-    task: async ([targetTime]) => {
+    task: async ([targetTime], { signal }) => {
+      // Check abort before starting
+      signal?.throwIfAborted();
+      
       // Delegate to playbackController if available
       if (this.playbackController) {
-        await this.playbackController.seekTask.taskComplete;
-        return this.currentTime;
+        return this.playbackController.seekTask.taskComplete.then(() => {
+          signal?.throwIfAborted();
+          return this.currentTime;
+        });
       }
 
       // Only root timegroups execute seek tasks
@@ -1974,15 +2118,30 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
           // But don't block indefinitely - use a timeout to prevent freezes
           try {
             await Promise.race([
-              this.waitForMediaDurations(),
-              new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('waitForMediaDurations timeout')), 10000)
-              )
+              this.waitForMediaDurations(signal),
+              new Promise((_, reject) => {
+                if (signal?.aborted) {
+                  reject(new DOMException("Aborted", "AbortError"));
+                  return;
+                }
+                const timeoutId = setTimeout(() => reject(new Error('waitForMediaDurations timeout')), 10000);
+                signal?.addEventListener('abort', () => {
+                  clearTimeout(timeoutId);
+                  reject(new DOMException("Aborted", "AbortError"));
+                });
+              })
             ]);
           } catch (error) {
+            // Re-throw AbortError to propagate cancellation
+            if (error instanceof DOMException && error.name === "AbortError") {
+              throw error;
+            }
             // Continue with seek even if durations aren't loaded yet
             // Duration will be 0 or incorrect, but at least the page won't freeze
           }
+
+          // Check abort after async operation
+          signal?.throwIfAborted();
 
           // Evaluate and apply seek target
           const newTime = evaluateSeekTarget(
@@ -2002,8 +2161,14 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
           // before we run their frame tasks. Without this, children would use stale values.
           await this.updateComplete;
 
+          // Check abort before frame task
+          signal?.throwIfAborted();
+
           // Trigger frame rendering for the new time position
           await this.#runThrottledFrameTask();
+
+          // Check abort after frame task
+          signal?.throwIfAborted();
 
           // Save to localStorage for persistence (but not during restoration to avoid loops)
           if (!this.#restoringFromLocalStorage) {
