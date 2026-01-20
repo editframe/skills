@@ -12,7 +12,7 @@ interface PlaybackHost extends HTMLElement, ReactiveControllerHost {
   endTimeMs: number;
   frameTask: { run(): void; taskComplete: Promise<unknown> };
   renderAudio?(fromMs: number, toMs: number): Promise<AudioBuffer>;
-  waitForMediaDurations?(): Promise<void>;
+  waitForMediaDurations?(signal?: AbortSignal): Promise<void>;
   saveTimeToLocalStorage?(time: number): void;
   loadTimeFromLocalStorage?(): number | undefined;
   requestUpdate(property?: string): void;
@@ -82,8 +82,15 @@ export class PlaybackController implements ReactiveController {
       autoRun: false,
       args: () => [this.#pendingSeekTime ?? this.#currentTime] as const,
       onComplete: () => {},
-      task: async ([targetTime]) => {
-        await this.#host.waitForMediaDurations?.();
+      task: async ([targetTime], { signal }) => {
+        // Check abort before starting
+        signal?.throwIfAborted();
+        
+        await this.#host.waitForMediaDurations?.(signal);
+        
+        // Check abort after async operation
+        signal?.throwIfAborted();
+        
         const newTime = Math.max(
           0,
           Math.min(targetTime ?? 0, this.#host.durationMs / 1000),
@@ -95,7 +102,15 @@ export class PlaybackController implements ReactiveController {
           property: "currentTimeMs",
           value: this.currentTimeMs,
         });
+        
+        // Check abort before frame task
+        signal?.throwIfAborted();
+        
         await this.runThrottledFrameTask();
+        
+        // Check abort after frame task
+        signal?.throwIfAborted();
+        
         // Save to localStorage for persistence (only if not restoring to avoid loops)
         // Check if host has a restoration flag before saving
         // Use a method to check restoration state to avoid accessing private fields
@@ -284,7 +299,18 @@ export class PlaybackController implements ReactiveController {
               this.seekTask.run();
             }
           }).catch(err => {
-            console.error("Error in PlaybackController hostConnected:", err);
+            // Don't log AbortError - these are intentional cancellations when element is disconnected
+            const isAbortError = 
+              err instanceof DOMException && err.name === "AbortError" ||
+              err instanceof Error && (
+                err.name === "AbortError" ||
+                err.message.includes("signal is aborted") ||
+                err.message.includes("The user aborted a request")
+              );
+            
+            if (!isAbortError) {
+              console.error("Error in PlaybackController hostConnected:", err);
+            }
           });
         }
       });

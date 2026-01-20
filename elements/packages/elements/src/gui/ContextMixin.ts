@@ -229,6 +229,12 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
         // Wrap the promise to catch rejections and log the URL
         // Return the promise chain so errors are logged but still propagate
         return fetchPromise.catch((error) => {
+          // For AbortErrors, re-throw directly without modification
+          // DOMException properties like 'name' are read-only
+          if (error instanceof DOMException && error.name === "AbortError") {
+            throw error;
+          }
+          
           console.error(
             "ContextMixin fetch error",
             url,
@@ -241,8 +247,8 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
           const enhancedError = new (ErrorConstructor as typeof Error)(
             `Failed to fetch: ${url}. Original error: ${error instanceof Error ? error.message : String(error)}`,
           );
-          // Preserve the original error's properties
-          if (error instanceof Error) {
+          // Preserve the original error's properties (except for DOMException which has read-only properties)
+          if (error instanceof Error && !(error instanceof DOMException)) {
             enhancedError.name = error.name;
             enhancedError.stack = error.stack;
             // Copy any additional properties from the original error
