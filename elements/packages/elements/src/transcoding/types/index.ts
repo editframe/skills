@@ -283,8 +283,9 @@ export interface MediaEngine {
    * Uses scrub rendition and batches by segment for optimal performance
    * Returns thumbnail objects in same order as input timestamps
    * Returns null for any timestamps that fail to extract
+   * @param signal - Optional AbortSignal to cancel in-flight requests when element is disconnected
    */
-  extractThumbnails(timestamps: number[]): Promise<(ThumbnailResult | null)[]>;
+  extractThumbnails(timestamps: number[], signal?: AbortSignal): Promise<(ThumbnailResult | null)[]>;
 }
 
 export interface ThumbnailResult {

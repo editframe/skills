@@ -470,6 +470,12 @@ function isExpectedError(errorType: string, message: string): boolean {
     /Video rendition unavailable/i,
     /Failed to load resource.*401/i,
     /Failed to load resource.*404/i,
+    // AbortErrors are expected when elements are disconnected from DOM during tests
+    // These occur when tasks are cancelled due to element removal
+    /AbortError/i,
+    /signal.*aborted/i,
+    /signal_is_aborted/i,
+    /The user aborted a request/i,
   ];
   
   return expectedPatterns.some(pattern => 
@@ -1993,6 +1999,19 @@ async function runSandboxScenarios(
       const text = msg.text();
       const msgType = msg.type() as BrowserLogEntry["type"];
       const timestamp = Date.now();
+      
+      // Filter out expected AbortErrors - don't log them at all
+      if (msgType === "error") {
+        const isAbortError = 
+          text.includes("signal is aborted") ||
+          text.includes("AbortError") ||
+          text.includes("The user aborted a request");
+        
+        if (isAbortError) {
+          // Don't log expected AbortErrors - these are intentional cancellations
+          return;
+        }
+      }
       
       // Always log to session data (but don't print to console - available via ef info)
       const logEntry: BrowserLogEntry = {
