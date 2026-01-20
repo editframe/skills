@@ -54,7 +54,7 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
     const url = baseUrl 
       ? `${baseUrl}/api/v1/isobmff_files/local/index?src=${encodeURIComponent(normalizedSrc)}`
       : `/api/v1/isobmff_files/local/index?src=${encodeURIComponent(normalizedSrc)}`;
-    const data = await engine.fetchManifest(url);
+    const data = await engine.fetchManifest(url, signal);
     engine.data = data as Record<number, TrackFragmentIndex>;
 
     // Check for abort after potentially slow network operation
@@ -75,68 +75,68 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
     // This prevents creating a media engine that will fail on all subsequent segment fetches
     // If segments require authentication that's not available, fail early
     // Only validate tracks that are actually required by the consumer (e.g., EFAudio only needs audio)
-    const videoTrack = engine.videoTrackIndex;
-    const audioTrack = engine.audioTrackIndex;
-    const needsVideo = requiredTracks === "video" || requiredTracks === "both";
-    const needsAudio = requiredTracks === "audio" || requiredTracks === "both";
-    
-    // Use provided signal or create a fallback (for backwards compatibility)
-    const validationSignal = signal ?? new AbortController().signal;
-    
-    // Validate video track if required and available
-    if (needsVideo && videoTrack && videoTrack.track !== undefined) {
-      try {
-        await engine.fetchInitSegment(
-          { trackId: videoTrack.track, src: engine.src },
-          validationSignal,
-        );
-      } catch (error) {
-        // If aborted, re-throw to propagate cancellation
-        if (error instanceof DOMException && error.name === "AbortError") {
-          throw error;
+    // Skip validation if no signal provided (backwards compatibility) - validation is optional
+    if (signal) {
+      const videoTrack = engine.videoTrackIndex;
+      const audioTrack = engine.audioTrackIndex;
+      const needsVideo = requiredTracks === "video" || requiredTracks === "both";
+      const needsAudio = requiredTracks === "audio" || requiredTracks === "both";
+      
+      // Validate video track if required and available
+      if (needsVideo && videoTrack && videoTrack.track !== undefined) {
+        try {
+          await engine.fetchInitSegment(
+            { trackId: videoTrack.track, src: engine.src },
+            signal,
+          );
+        } catch (error) {
+          // If aborted, re-throw to propagate cancellation
+          if (error instanceof DOMException && error.name === "AbortError") {
+            throw error;
+          }
+          // If fetch fails with 401, segments require authentication that's not available
+          // Fail media engine creation early to avoid all subsequent fetch calls
+          if (
+            error instanceof Error &&
+            (error.message.includes("401") ||
+              error.message.includes("UNAUTHORIZED") ||
+              (error.message.includes("Failed to fetch") && error.message.includes("401")))
+          ) {
+            throw new Error(`Video segments require authentication: ${error.message}`);
+          }
+          // For other errors (404, network errors, etc.), allow media engine creation
+          // These might be transient or expected in some test scenarios
         }
-        // If fetch fails with 401, segments require authentication that's not available
-        // Fail media engine creation early to avoid all subsequent fetch calls
-        if (
-          error instanceof Error &&
-          (error.message.includes("401") ||
-            error.message.includes("UNAUTHORIZED") ||
-            (error.message.includes("Failed to fetch") && error.message.includes("401")))
-        ) {
-          throw new Error(`Video segments require authentication: ${error.message}`);
-        }
-        // For other errors (404, network errors, etc.), allow media engine creation
-        // These might be transient or expected in some test scenarios
       }
-    }
-    
-    // Check for abort between validations
-    signal?.throwIfAborted();
-    
-    // Validate audio track if required and available
-    if (needsAudio && audioTrack && audioTrack.track !== undefined) {
-      try {
-        await engine.fetchInitSegment(
-          { trackId: audioTrack.track, src: engine.src },
-          validationSignal,
-        );
-      } catch (error) {
-        // If aborted, re-throw to propagate cancellation
-        if (error instanceof DOMException && error.name === "AbortError") {
-          throw error;
+      
+      // Check for abort between validations
+      signal?.throwIfAborted();
+      
+      // Validate audio track if required and available
+      if (needsAudio && audioTrack && audioTrack.track !== undefined) {
+        try {
+          await engine.fetchInitSegment(
+            { trackId: audioTrack.track, src: engine.src },
+            signal,
+          );
+        } catch (error) {
+          // If aborted, re-throw to propagate cancellation
+          if (error instanceof DOMException && error.name === "AbortError") {
+            throw error;
+          }
+          // If fetch fails with 401, segments require authentication that's not available
+          // Fail media engine creation early to avoid all subsequent fetch calls
+          if (
+            error instanceof Error &&
+            (error.message.includes("401") ||
+              error.message.includes("UNAUTHORIZED") ||
+              (error.message.includes("Failed to fetch") && error.message.includes("401")))
+          ) {
+            throw new Error(`Audio segments require authentication: ${error.message}`);
+          }
+          // For other errors (404, network errors, etc.), allow media engine creation
+          // These might be transient or expected in some test scenarios
         }
-        // If fetch fails with 401, segments require authentication that's not available
-        // Fail media engine creation early to avoid all subsequent fetch calls
-        if (
-          error instanceof Error &&
-          (error.message.includes("401") ||
-            error.message.includes("UNAUTHORIZED") ||
-            (error.message.includes("Failed to fetch") && error.message.includes("401")))
-        ) {
-          throw new Error(`Audio segments require authentication: ${error.message}`);
-        }
-        // For other errors (404, network errors, etc.), allow media engine creation
-        // These might be transient or expected in some test scenarios
       }
     }
 
@@ -306,7 +306,7 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
 
   async fetchInitSegment(
     rendition: { trackId: number | undefined; src: string },
-    signal: AbortSignal,
+    signal?: AbortSignal,
   ) {
     return withSpan(
       "assetEngine.fetchInitSegment",
@@ -575,6 +575,7 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
    */
   async extractThumbnails(
     timestamps: number[],
+    signal?: AbortSignal,
   ): Promise<(ThumbnailResult | null)[]> {
     // Use main video rendition for thumbnails - scrub track may have incomplete segments
     const rendition = this.videoRendition;
@@ -590,6 +591,7 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
       timestamps,
       rendition,
       this.durationMs,
+      signal,
     );
   }
 

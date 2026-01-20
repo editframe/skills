@@ -16,9 +16,13 @@ export class JitMediaEngine extends BaseMediaEngine implements MediaEngine {
   private data: ManifestResponse = {} as ManifestResponse;
   private thumbnailExtractor: ThumbnailExtractor;
 
-  static async fetch(host: EFMedia, urlGenerator: UrlGenerator, url: string) {
+  static async fetch(host: EFMedia, urlGenerator: UrlGenerator, url: string, signal?: AbortSignal) {
     const engine = new JitMediaEngine(host, urlGenerator);
-    const data = await engine.fetchManifest(url);
+    const data = await engine.fetchManifest(url, signal);
+    
+    // Check for abort after potentially slow network operation
+    signal?.throwIfAborted();
+    
     engine.data = data;
     return engine;
   }
@@ -77,7 +81,7 @@ export class JitMediaEngine extends BaseMediaEngine implements MediaEngine {
 
   async fetchInitSegment(
     rendition: { id?: RenditionId; trackId: number | undefined; src: string },
-    signal: AbortSignal,
+    signal?: AbortSignal,
   ) {
     if (!rendition.id) {
       throw new Error("Rendition ID is required for JIT metadata");
@@ -95,6 +99,7 @@ export class JitMediaEngine extends BaseMediaEngine implements MediaEngine {
   async fetchMediaSegment(
     segmentId: number,
     rendition: { id?: RenditionId; trackId: number | undefined; src: string },
+    signal?: AbortSignal,
   ) {
     if (!rendition.id) {
       throw new Error("Rendition ID is required for JIT metadata");
@@ -104,7 +109,7 @@ export class JitMediaEngine extends BaseMediaEngine implements MediaEngine {
       rendition.id,
       this,
     );
-    return this.fetchMedia(url);
+    return this.fetchMedia(url, signal);
   }
 
   computeSegmentId(
@@ -215,6 +220,7 @@ export class JitMediaEngine extends BaseMediaEngine implements MediaEngine {
    */
   async extractThumbnails(
     timestamps: number[],
+    signal?: AbortSignal,
   ): Promise<(ThumbnailResult | null)[]> {
     // Use same rendition priority as video: try main rendition first for frame alignment
     let rendition: VideoRendition;
@@ -243,6 +249,7 @@ export class JitMediaEngine extends BaseMediaEngine implements MediaEngine {
       timestamps,
       rendition,
       this.durationMs,
+      signal,
     );
   }
 
