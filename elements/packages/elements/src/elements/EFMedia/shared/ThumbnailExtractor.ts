@@ -20,6 +20,7 @@ export class ThumbnailExtractor {
     timestamps: number[],
     rendition: VideoRendition,
     durationMs: number,
+    signal?: AbortSignal,
   ): Promise<(ThumbnailResult | null)[]> {
     if (timestamps.length === 0) {
       return [];
@@ -47,17 +48,25 @@ export class ThumbnailExtractor {
     const results = new Map<number, ThumbnailResult | null>();
 
     for (const [segmentId, segmentTimestamps] of segmentGroups) {
+      // Check abort before processing each segment
+      signal?.throwIfAborted();
+      
       try {
         const segmentResults = await this.extractSegmentThumbnails(
           segmentId,
           segmentTimestamps,
           rendition,
+          signal,
         );
 
         for (const [timestamp, thumbnail] of segmentResults) {
           results.set(timestamp, thumbnail);
         }
       } catch (error) {
+        // If aborted, re-throw to propagate cancellation
+        if (error instanceof DOMException && error.name === "AbortError") {
+          throw error;
+        }
         console.warn(
           `ThumbnailExtractor: Failed to extract thumbnails for segment ${segmentId}:`,
           error,
@@ -119,16 +128,33 @@ export class ThumbnailExtractor {
     segmentId: number,
     timestamps: number[],
     rendition: VideoRendition,
+    signal?: AbortSignal,
   ): Promise<Map<number, ThumbnailResult | null>> {
     const results = new Map<number, ThumbnailResult | null>();
 
     try {
+      // Check abort before starting segment fetch
+      signal?.throwIfAborted();
+      
       // Get segment data through existing media engine methods (uses caches)
-      const abortController = new AbortController();
+      // Note: fetchInitSegment requires a signal, so signal must be provided
+      // If no signal provided, we cannot abort the operation, so skip it
+      if (!signal) {
+        // Return nulls for all timestamps when signal is not provided
+        // This ensures we don't create orphan signals that can never be aborted
+        for (const timestamp of timestamps) {
+          results.set(timestamp, null);
+        }
+        return results;
+      }
+      
       const [initSegment, mediaSegment] = await Promise.all([
-        this.mediaEngine.fetchInitSegment(rendition, abortController.signal),
-        this.mediaEngine.fetchMediaSegment(segmentId, rendition),
+        this.mediaEngine.fetchInitSegment(rendition, signal),
+        this.mediaEngine.fetchMediaSegment(segmentId, rendition, signal),
       ]);
+      
+      // Check abort after potentially slow network operations
+      signal?.throwIfAborted();
 
       // Create Input for this segment using global shared cache
       const segmentBlob = new Blob([initSegment, mediaSegment]);
@@ -200,6 +226,10 @@ export class ThumbnailExtractor {
         }
       }
     } catch (error) {
+      // If aborted, re-throw to propagate cancellation
+      if (error instanceof DOMException && error.name === "AbortError") {
+        throw error;
+      }
       // Thumbnail extraction can fail for various non-fatal reasons (network issues, 
       // missing segments, transcoding not ready). Log as warning and return nulls.
       console.warn(

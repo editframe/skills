@@ -318,7 +318,20 @@ export const manageMediaBuffer = async <
       .catch((error) => {
         if (signal.aborted) return;
         newActiveRequests.delete(nextSegmentId);
-        deps.logError(`Failed to prefetch segment ${nextSegmentId}`, error);
+        
+        // Don't log AbortError - these are intentional request cancellations
+        const isAbortError = 
+          error instanceof DOMException && error.name === "AbortError" ||
+          (error instanceof Error && (
+            error.name === "AbortError" ||
+            error.message.includes("signal is aborted") ||
+            error.message.includes("The user aborted a request")
+          ));
+        
+        if (!isAbortError) {
+          deps.logError(`Failed to prefetch segment ${nextSegmentId}`, error);
+        }
+        
         // Continue even after error if continuous buffering is enabled
         if (config.enableContinuousBuffering ?? true) {
           startNextSegment();

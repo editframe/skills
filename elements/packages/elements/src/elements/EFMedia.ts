@@ -308,7 +308,7 @@ export class EFMedia extends EFTargetable(
   async fetchAudioSpanningTime(
     fromMs: number,
     toMs: number,
-    signal: AbortSignal = new AbortController().signal,
+    signal?: AbortSignal,
   ): Promise<AudioSpan | undefined> {
     return withSpan(
       "media.fetchAudioSpanningTime",
@@ -331,11 +331,40 @@ export class EFMedia extends EFTargetable(
    * Wait for media engine to load and determine duration
    * Ensures media is ready for playback
    */
-  async waitForMediaDurations(): Promise<void> {
+  async waitForMediaDurations(signal?: AbortSignal): Promise<void> {
     if (this.mediaEngineTask.value) {
       return;
     }
-    await this.mediaEngineTask.run();
+    
+    // Use taskComplete instead of run() to avoid throwing errors
+    // taskComplete resolves when the task completes successfully or rejects on error
+    // This allows us to handle AbortError without it being logged as unhandled
+    try {
+      await this.mediaEngineTask.taskComplete;
+    } catch (error) {
+      // Don't throw AbortError - these are intentional cancellations when element is disconnected
+      const isAbortError = 
+        error instanceof DOMException && error.name === "AbortError" ||
+        error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message.includes("signal is aborted") ||
+          error.message.includes("The user aborted a request")
+        );
+      
+      // If explicitly aborted via signal, throw to propagate cancellation
+      if (signal?.aborted) {
+        throw error;
+      }
+      
+      // For task abort (element disconnected), silently return
+      // This is expected behavior when element is removed from DOM
+      if (isAbortError) {
+        return;
+      }
+      
+      // Re-throw other errors
+      throw error;
+    }
   }
 
   /**
