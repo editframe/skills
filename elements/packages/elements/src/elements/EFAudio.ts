@@ -51,11 +51,71 @@ export class EFAudio extends TWMixin(EFMedia) {
         this.audioSegmentFetchTask.status,
         this.mediaEngineTask.status,
       ] as const,
-    task: async () => {
-      await this.mediaEngineTask.taskComplete;
-      await this.audioSegmentFetchTask.taskComplete;
-      await this.audioSeekTask.taskComplete;
-      await this.audioBufferTask.taskComplete;
+    onError: (error) => {
+      // CRITICAL: Attach .catch() handler to taskComplete BEFORE the promise is rejected.
+      // This prevents unhandled rejection when hostUpdate() triggers _performTask() without awaiting.
+      this.frameTask.taskComplete.catch(() => {});
+      
+      // Don't log AbortErrors - these are expected when tasks are cancelled
+      const isAbortError = 
+        (error instanceof DOMException && error.name === "AbortError") ||
+        (error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message?.includes("signal is aborted") ||
+          error.message?.includes("The user aborted a request")
+        ));
+      
+      if (isAbortError) {
+        return;
+      }
+      
+      console.error("EFAudio frameTask error", error);
+    },
+    task: async ([_audioBufferStatus, _audioSeekStatus, _audioSegmentFetchStatus, _mediaEngineStatus], { signal }) => {
+      // Wrap all taskComplete awaits in try/catch to handle AbortErrors
+      try {
+        await this.mediaEngineTask.taskComplete;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          signal?.throwIfAborted();
+          return;
+        }
+        throw error;
+      }
+      signal?.throwIfAborted();
+      
+      try {
+        await this.audioSegmentFetchTask.taskComplete;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          signal?.throwIfAborted();
+          return;
+        }
+        throw error;
+      }
+      signal?.throwIfAborted();
+      
+      try {
+        await this.audioSeekTask.taskComplete;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          signal?.throwIfAborted();
+          return;
+        }
+        throw error;
+      }
+      signal?.throwIfAborted();
+      
+      try {
+        await this.audioBufferTask.taskComplete;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          signal?.throwIfAborted();
+          return;
+        }
+        throw error;
+      }
+      signal?.throwIfAborted();
       // REMOVED: this.rootTimegroup?.requestUpdate() was causing infinite update loops.
       // When EFAudio's frameTask ran, it would trigger root to update, which triggered
       // OwnCurrentTimeController.hostUpdated on all children, which triggered more

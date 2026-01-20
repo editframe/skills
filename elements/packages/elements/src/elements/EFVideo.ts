@@ -218,6 +218,23 @@ export class EFVideo extends TWMixin(EFMedia) {
     autoRun: false,
     args: () => [this.desiredSeekTimeMs] as const,
     onError: (error) => {
+      // CRITICAL: Attach .catch() handler to taskComplete BEFORE the promise is rejected.
+      // This prevents unhandled rejection when hostUpdate() triggers _performTask() without awaiting.
+      this.frameTask.taskComplete.catch(() => {});
+      
+      // Don't log AbortErrors - these are expected when tasks are cancelled
+      const isAbortError = 
+        (error instanceof DOMException && error.name === "AbortError") ||
+        (error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message?.includes("signal is aborted") ||
+          error.message?.includes("The user aborted a request")
+        ));
+      
+      if (isAbortError) {
+        return;
+      }
+      
       // Only log unexpected errors - expected conditions handled gracefully
       if (
         error instanceof Error &&
@@ -243,17 +260,25 @@ export class EFVideo extends TWMixin(EFMedia) {
           const t1 = performance.now();
           span.setAttribute("preworkMs", t1 - t0);
 
-          this.unifiedVideoSeekTask.run();
+          // Attach .catch() to prevent unhandled rejection - errors handled via taskComplete
+          this.unifiedVideoSeekTask.run().catch(() => {});
           const t2 = performance.now();
           span.setAttribute("seekRunMs", t2 - t1);
 
-          await this.unifiedVideoSeekTask.taskComplete;
+          try {
+            await this.unifiedVideoSeekTask.taskComplete;
+          } catch (error) {
+            // If aborted, check our signal and return early if it's also aborted
+            if (error instanceof DOMException && error.name === "AbortError") {
+              signal?.throwIfAborted();
+              return; // Our signal not aborted, but seek task was - exit gracefully
+            }
+            throw error;
+          }
           const t3 = performance.now();
           span.setAttribute("seekAwaitMs", t3 - t2);
-          if (signal.aborted) {
-            span.setAttribute("aborted", true);
-            return;
-          }
+          // Check abort after async operation
+          signal?.throwIfAborted();
 
           const t4 = performance.now();
           this.paint(_desiredSeekTimeMs, span);
@@ -576,7 +601,25 @@ export class EFVideo extends TWMixin(EFMedia) {
       this.desiredSeekTimeMs = currentTime;
     }
     await this.updateComplete;
-    await this.frameTask.run();
+    
+    try {
+      await this.frameTask.run();
+    } catch (error) {
+      // AbortErrors are expected when element is disconnected or task is cancelled
+      // Return gracefully instead of propagating the error
+      const isAbortError = 
+        error instanceof DOMException && error.name === "AbortError" ||
+        error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message?.includes("signal is aborted") ||
+          error.message?.includes("The user aborted a request")
+        );
+      
+      if (isAbortError) {
+        return;
+      }
+      throw error;
+    }
   }
 
   /**

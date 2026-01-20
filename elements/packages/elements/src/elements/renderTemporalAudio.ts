@@ -12,6 +12,7 @@ export async function renderTemporalAudio(
   host: TemporalAudioHost,
   fromMs: number,
   toMs: number,
+  signal?: AbortSignal,
 ): Promise<AudioBuffer> {
   const durationMs = toMs - fromMs;
   const duration = durationMs / 1000;
@@ -26,13 +27,16 @@ export async function renderTemporalAudio(
     );
   }
 
+  // Check abort before starting
+  signal?.throwIfAborted();
+
   const audioContext = new OfflineAudioContext(2, contextSize, 48000);
 
   if (host.waitForMediaDurations) {
     await host.waitForMediaDurations();
+    // Check abort after potentially slow operation
+    signal?.throwIfAborted();
   }
-
-  const abortController = new AbortController();
 
   await Promise.all(
     host.getMediaElements().map(async (mediaElement) => {
@@ -62,10 +66,13 @@ export async function renderTemporalAudio(
       const mediaSourceFromMs = mediaLocalFromMs + sourceInMs;
       const mediaSourceToMs = mediaLocalToMs + sourceInMs;
 
+      // Check abort before processing each media element
+      signal?.throwIfAborted();
+      
       const audio = await mediaElement.fetchAudioSpanningTime(
         mediaSourceFromMs,
         mediaSourceToMs,
-        abortController.signal,
+        signal,
       );
       if (!audio) {
         return;

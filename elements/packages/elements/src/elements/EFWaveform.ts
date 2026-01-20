@@ -471,9 +471,10 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) {
         this.targetElement?.frequencyDataTask.value,
       ] as const;
     },
-    task: async () => {
+    task: async ([_targetElement, _frequencyData], { signal }) => {
       if (!this.targetElement) return;
       await this.targetElement.frequencyDataTask.taskComplete;
+      signal?.throwIfAborted();
       this.ctx ||= this.initCanvas();
       const ctx = this.ctx;
       if (!ctx) return;

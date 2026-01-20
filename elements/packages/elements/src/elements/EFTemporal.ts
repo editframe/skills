@@ -1067,8 +1067,27 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
     frameTask = new Task(this, {
       autoRun: EF_INTERACTIVE,
       args: () => [this.ownCurrentTimeMs] as const,
-      task: async ([], { signal: _signal }) => {
+      onError: (error) => {
+        // CRITICAL: Attach .catch() handler to prevent unhandled rejection
+        this.frameTask.taskComplete.catch(() => {});
+        
+        // Don't log AbortErrors - these are expected when element is disconnected
+        const isAbortError = 
+          error instanceof DOMException && error.name === "AbortError" ||
+          error instanceof Error && (
+            error.name === "AbortError" ||
+            error.message?.includes("signal is aborted") ||
+            error.message?.includes("The user aborted a request")
+          );
+        
+        if (isAbortError) {
+          return;
+        }
+        console.error("EFTemporal frameTask error", error);
+      },
+      task: async ([], { signal }) => {
         let fullyUpdated = await this.updateComplete;
+        signal?.throwIfAborted();
         let loopCount = 0;
         const MAX_LOOP_ITERATIONS = 100;
         while (!fullyUpdated) {
@@ -1078,6 +1097,7 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
             break; // Break out to prevent infinite loop
           }
           fullyUpdated = await this.updateComplete;
+          signal?.throwIfAborted();
         }
       },
     });

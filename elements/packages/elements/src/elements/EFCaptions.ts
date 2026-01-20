@@ -421,7 +421,8 @@ export class EFCaptions extends EFSourceMixin(
     autoRun: EF_INTERACTIVE,
     args: () =>
       [this.transcriptionDataTask.value, this.ownCurrentTimeMs] as const,
-    task: async ([transcription, ownCurrentTimeMs]) => {
+    task: async ([transcription, ownCurrentTimeMs], { signal }) => {
+      signal?.throwIfAborted();
       if (!transcription) {
         return null;
       }
@@ -512,12 +513,19 @@ export class EFCaptions extends EFSourceMixin(
         this.customCaptionsDataTask.value,
         this.transcriptionFragmentDataTask.value,
       ] as const,
-    task: async ([_customData, _transcriptionData]) => {
+    task: async ([_customData, _transcriptionData], { signal }) => {
+      // Check abort before starting
+      signal?.throwIfAborted();
+      
       if (this.customCaptionsDataTask.status === TaskStatus.PENDING) {
         await this.customCaptionsDataTask.taskComplete;
+        // Check abort after async operation
+        signal?.throwIfAborted();
       }
       if (this.transcriptionFragmentDataTask.status === TaskStatus.PENDING) {
         await this.transcriptionFragmentDataTask.taskComplete;
+        // Check abort after async operation
+        signal?.throwIfAborted();
       }
       return (
         this.customCaptionsDataTask.value ||
@@ -529,8 +537,36 @@ export class EFCaptions extends EFSourceMixin(
   frameTask = new Task(this, {
     autoRun: EF_INTERACTIVE,
     args: () => [this.unifiedCaptionsDataTask.status, this.ownCurrentTimeMs],
-    task: async () => {
-      await this.unifiedCaptionsDataTask.taskComplete;
+    onError: (error) => {
+      // CRITICAL: Attach .catch() handler to prevent unhandled rejection
+      this.frameTask.taskComplete.catch(() => {});
+      
+      // Don't log AbortErrors - these are expected when element is disconnected
+      const isAbortError = 
+        error instanceof DOMException && error.name === "AbortError" ||
+        error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message?.includes("signal is aborted") ||
+          error.message?.includes("The user aborted a request")
+        );
+      
+      if (isAbortError) {
+        return;
+      }
+      console.error("EFCaptions frameTask error", error);
+    },
+    task: async ([_status, _ownCurrentTimeMs], { signal }) => {
+      try {
+        await this.unifiedCaptionsDataTask.taskComplete;
+      } catch (error) {
+        // Handle AbortError from dependent task gracefully
+        if (error instanceof DOMException && error.name === "AbortError") {
+          signal?.throwIfAborted();
+          return;
+        }
+        throw error;
+      }
+      signal?.throwIfAborted();
       // Trigger updateTextContainers when data is ready or time changes
       this.updateTextContainers();
     },

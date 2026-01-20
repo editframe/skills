@@ -53,14 +53,20 @@ export function FetchMixin<T extends Constructor<LitElement>>(superClass: T) {
             error instanceof TypeError && 
             error.message === "Failed to fetch";
           
-          if (!isAbortError && !isDisconnected && !isNavigationAbort) {
-            console.error(
-              "FetchMixin fetch error",
-              url,
-              error,
-              window.location.href,
-            );
+          // For AbortErrors, navigation aborts, and disconnected elements,
+          // re-throw the original error without enhancement to preserve error type
+          if (isAbortError || isNavigationAbort || isDisconnected) {
+            throw error;
           }
+          
+          // Log unexpected errors
+          console.error(
+            "FetchMixin fetch error",
+            url,
+            error,
+            window.location.href,
+          );
+          
           // Create a new error with the URL in the message, preserving the original error type
           const ErrorConstructor =
             error instanceof Error ? error.constructor : Error;
@@ -69,7 +75,23 @@ export function FetchMixin<T extends Constructor<LitElement>>(superClass: T) {
           );
           // Preserve the original error's properties
           if (error instanceof Error) {
-            enhancedError.name = error.name;
+            // Some error types (like DOMException) have read-only name property
+            // Use try-catch to handle cases where name cannot be set
+            try {
+              enhancedError.name = error.name;
+            } catch {
+              // If name is read-only, use Object.defineProperty as fallback
+              try {
+                Object.defineProperty(enhancedError, "name", {
+                  value: error.name,
+                  writable: true,
+                  enumerable: false,
+                  configurable: true,
+                });
+              } catch {
+                // If that also fails, just skip setting name
+              }
+            }
             enhancedError.stack = error.stack;
             // Copy any additional properties from the original error
             Object.assign(enhancedError, error);

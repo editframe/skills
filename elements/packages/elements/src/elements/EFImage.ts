@@ -78,6 +78,27 @@ export class EFImage extends EFTemporal(
   fetchImage = new Task(this, {
     autoRun: EF_INTERACTIVE,
     args: () => [this.assetPath(), this.fetch, this.src, this.assetId] as const,
+    onError: (error) => {
+      // CRITICAL: Attach .catch() handler to prevent unhandled rejection
+      this.fetchImage.taskComplete.catch(() => {});
+      
+      // Don't log AbortErrors - these are expected when element is disconnected
+      const isAbortError = 
+        error instanceof DOMException && error.name === "AbortError" ||
+        error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message?.includes("signal is aborted") ||
+          error.message?.includes("The user aborted a request")
+        );
+      
+      // Also ignore "Canvas not ready" errors - happens during element lifecycle
+      const isCanvasNotReady = error instanceof Error && error.message === "Canvas not ready";
+      
+      if (isAbortError || isCanvasNotReady) {
+        return;
+      }
+      console.error("EFImage fetchImage error", error);
+    },
     task: async ([assetPath, fetch, src, assetId], { signal }) => {
       // Skip if no source is set
       if (!src && !assetId) {
@@ -91,13 +112,43 @@ export class EFImage extends EFTemporal(
 
       // For asset-id and local files, use canvas as before
       const response = await fetch(assetPath, { signal });
+      // Check abort after fetch
+      signal?.throwIfAborted();
+      
       const image = new Image();
-      image.src = URL.createObjectURL(await response.blob());
+      const blob = await response.blob();
+      // Check abort after blob conversion
+      signal?.throwIfAborted();
+      
+      image.src = URL.createObjectURL(blob);
 
-      await new Promise((resolve, reject) => {
-        image.onload = resolve;
-        image.onerror = reject;
+      await new Promise<void>((resolve, reject) => {
+        // Check abort before setting up image load handlers
+        if (signal?.aborted) {
+          URL.revokeObjectURL(image.src);
+          reject(new DOMException("Aborted", "AbortError"));
+          return;
+        }
+        
+        const abortHandler = () => {
+          URL.revokeObjectURL(image.src);
+          reject(new DOMException("Aborted", "AbortError"));
+        };
+        signal?.addEventListener("abort", abortHandler, { once: true });
+        
+        image.onload = () => {
+          signal?.removeEventListener("abort", abortHandler);
+          resolve();
+        };
+        image.onerror = (error) => {
+          signal?.removeEventListener("abort", abortHandler);
+          URL.revokeObjectURL(image.src);
+          reject(error);
+        };
       });
+
+      // Check abort after image load
+      signal?.throwIfAborted();
 
       if (!this.canvasRef.value) throw new Error("Canvas not ready");
       const ctx = this.canvasRef.value.getContext("2d");
@@ -105,14 +156,45 @@ export class EFImage extends EFTemporal(
       this.canvasRef.value.width = image.width;
       this.canvasRef.value.height = image.height;
       ctx.drawImage(image, 0, 0);
+      
+      // Clean up object URL after use
+      URL.revokeObjectURL(image.src);
     },
   });
 
   frameTask = new Task(this, {
     autoRun: EF_INTERACTIVE,
     args: () => [this.fetchImage.status] as const,
-    task: async () => {
-      await this.fetchImage.taskComplete;
+    onError: (error) => {
+      // CRITICAL: Attach .catch() handler to prevent unhandled rejection
+      this.frameTask.taskComplete.catch(() => {});
+      
+      // Don't log AbortErrors - these are expected when element is disconnected
+      const isAbortError = 
+        error instanceof DOMException && error.name === "AbortError" ||
+        error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message?.includes("signal is aborted") ||
+          error.message?.includes("The user aborted a request")
+        );
+      
+      if (isAbortError) {
+        return;
+      }
+      console.error("EFImage frameTask error", error);
+    },
+    task: async ([_status], { signal }) => {
+      try {
+        await this.fetchImage.taskComplete;
+      } catch (error) {
+        // Handle AbortError from fetchImage gracefully
+        if (error instanceof DOMException && error.name === "AbortError") {
+          signal?.throwIfAborted();
+          return;
+        }
+        throw error;
+      }
+      signal?.throwIfAborted();
     },
   });
 

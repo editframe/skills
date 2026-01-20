@@ -633,7 +633,7 @@ export class EFThumbnailStrip extends LitElement {
       number | undefined,
       boolean,
       ImportedMediaEngine | null | undefined,
-    ]) => {
+    ], { signal }) => {
       // Need valid dimensions and target element
       if (stripWidth <= 0 || stripHeight <= 0 || !targetElement) {
         return { count: 0, segments: [], effectiveThumbnailWidth: 0, pitch: 0 };
@@ -657,6 +657,7 @@ export class EFThumbnailStrip extends LitElement {
         // If no media engine yet, wait for it to be ready
         if (targetElement.mediaEngineTask) {
           await targetElement.mediaEngineTask.taskComplete;
+          signal?.throwIfAborted();
           // Get the media engine after it's ready
           const readyMediaEngine = targetElement.mediaEngineTask.value;
           if (!readyMediaEngine) {
@@ -848,12 +849,15 @@ export class EFThumbnailStrip extends LitElement {
     task: async ([layout, targetElement]: readonly [
       ThumbnailLayout | null,
       EFVideo | EFTimegroup | null,
-    ]) => {
+    ], { signal }) => {
+      // Check abort before starting
+      signal?.throwIfAborted();
+      
       // Simplified task that delegates to renderThumbnails method
       if (!layout || !targetElement) {
         return [];
       }
-      return this.renderThumbnails(layout, targetElement);
+      return this.renderThumbnails(layout, targetElement, signal);
     },
     args: () =>
       [
@@ -868,6 +872,7 @@ export class EFThumbnailStrip extends LitElement {
   private async renderThumbnails(
     layout: ThumbnailLayout,
     targetElement: EFVideo | EFTimegroup,
+    signal?: AbortSignal,
   ): Promise<ThumbnailRenderInfo[]> {
     if (!layout || !targetElement || layout.count === 0) {
       return [];
@@ -890,8 +895,14 @@ export class EFThumbnailStrip extends LitElement {
       }
     }
 
+    // Check abort before starting cache lookups
+    signal?.throwIfAborted();
+    
     // Parallel cache lookups for faster performance (especially important for cached content)
     const cacheLookups = thumbnailTimestamps.map(async ({ timeMs, segmentId, index }) => {
+      // Check abort before each lookup
+      signal?.throwIfAborted();
+      
       const cacheKey = getThumbnailCacheKey(cacheId, timeMs);
 
       // Try exact cache hit first (fast check using in-memory key index)
@@ -901,6 +912,8 @@ export class EFThumbnailStrip extends LitElement {
 
       if (thumbnailImageCache.has(cacheKey)) {
         imageData = await thumbnailImageCache.get(cacheKey);
+        // Check abort after async operation
+        signal?.throwIfAborted();
         if (imageData) {
           status = "exact-hit";
         }
@@ -916,6 +929,9 @@ export class EFThumbnailStrip extends LitElement {
 
         // findRange returns keys only (with placeholder values)
         const nearHits = thumbnailImageCache.findRange(rangeStartKey, rangeEndKey);
+        
+        // Check abort after range search
+        signal?.throwIfAborted();
 
         // Filter to only include the same source
         const sameSourceHits = nearHits.filter((hit) =>
@@ -939,6 +955,8 @@ export class EFThumbnailStrip extends LitElement {
 
           // Load the actual image data for the nearest hit
           imageData = await thumbnailImageCache.get(closestKey);
+          // Check abort after async operation
+          signal?.throwIfAborted();
           if (imageData) {
             status = "near-hit";
             nearHitKey = closestKey;
@@ -967,10 +985,16 @@ export class EFThumbnailStrip extends LitElement {
 
     // Wait for all cache lookups to complete in parallel
     const allThumbnails = await Promise.all(cacheLookups);
+    
+    // Check abort after all cache lookups complete
+    signal?.throwIfAborted();
 
     // Draw current state (cache hits and placeholders) IMMEDIATELY
     // This ensures cached thumbnails appear instantly when scrolling
     await this.drawThumbnails(allThumbnails);
+    
+    // Check abort after drawing
+    signal?.throwIfAborted();
 
     // Load missing thumbnails asynchronously (don't await - let it run in background)
     // This allows cache hits to be visible immediately while missing thumbnails load
@@ -1640,7 +1664,10 @@ export class EFThumbnailStrip extends LitElement {
     const videoTimestamps = missingThumbnails.map((t) => t.timeMs);
 
     try {
-      const thumbnailResults = await mediaEngine.extractThumbnails(videoTimestamps);
+      // Check abort before starting thumbnail extraction
+      signal?.throwIfAborted();
+      
+      const thumbnailResults = await mediaEngine.extractThumbnails(videoTimestamps, signal);
 
       // Convert canvases to ImageData and update thumbnails
       for (let i = 0; i < missingThumbnails.length; i++) {

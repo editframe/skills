@@ -77,7 +77,10 @@ export class EFSurface extends LitElement {
   frameTask = new Task(this, {
     autoRun: false,
     args: () => [this.targetElement] as const,
-    task: async ([target]) => {
+    task: async ([target], { signal }) => {
+      // Check abort before starting
+      signal?.throwIfAborted();
+      
       if (!target) return;
 
       // Ensure the target has painted its frame for this tick
@@ -87,11 +90,20 @@ export class EFSurface extends LitElement {
           // Run (idempotent) and then wait for completion
           maybeTask.run();
           await maybeTask.taskComplete;
+          // Check abort after async operation
+          signal?.throwIfAborted();
         }
-      } catch (_err) {
-        // Best-effort; continue to attempt copy
+      } catch (error) {
+        // Re-throw AbortError to propagate cancellation
+        if (error instanceof DOMException && error.name === "AbortError") {
+          throw error;
+        }
+        // Best-effort; continue to attempt copy for other errors
       }
 
+      // Check abort before copy operation
+      signal?.throwIfAborted();
+      
       this.copyFromTarget(target);
     },
   });
