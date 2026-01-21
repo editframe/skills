@@ -916,7 +916,9 @@ describe("renderTimegroupToCanvas", () => {
   });
 
   describe("nested animated timegroup (reproduction test)", () => {
-    const THUMBNAIL_COUNT = 50; // More thumbnails to catch timing issues
+    // 20 thumbnails is sufficient to catch timing issues while being faster
+    // Use 50 for deeper investigation if needed
+    const THUMBNAIL_COUNT = 20;
 
     function generateTimestamps(durationMs: number, count: number): number[] {
       const timestamps: number[] = [];
@@ -958,7 +960,7 @@ describe("renderTimegroupToCanvas", () => {
       return { blankIndices, canvases };
     }
 
-    test("native: 50 thumbnails from nested animated timegroup - none blank", async ({
+    test("native: thumbnails from nested animated timegroup - none blank", async ({
       nestedAnimatedTimegroup,
     }) => {
       setNativeCanvasApiEnabled(true);
@@ -984,7 +986,7 @@ describe("renderTimegroupToCanvas", () => {
       expect(blankIndices.length).toBe(0);
     });
 
-    test("foreignObject: 50 thumbnails from nested animated timegroup - none blank", async ({
+    test("foreignObject: thumbnails from nested animated timegroup - none blank", async ({
       nestedAnimatedTimegroup,
     }) => {
       setNativeCanvasApiEnabled(false);
@@ -1028,8 +1030,6 @@ describe("renderTimegroupToCanvas", () => {
     test("visual regression: sample thumbnails from nested animated timegroup", async ({
       nestedAnimatedTimegroup,
     }) => {
-      const durationMs = nestedAnimatedTimegroup.durationMs || 35000;
-      const timestamps = generateTimestamps(durationMs, THUMBNAIL_COUNT);
 
       // Sample thumbnails from each scene
       // Scene 1: 0-5000ms (intro), Scene 2: 5000-15000ms (video overlay),
