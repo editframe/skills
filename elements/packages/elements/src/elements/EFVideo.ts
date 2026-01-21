@@ -239,7 +239,8 @@ export class EFVideo extends TWMixin(EFMedia) {
       if (
         error instanceof Error &&
         !error.message.includes("Video rendition unavailable") &&
-        !error.message.includes("No valid media source")
+        !error.message.includes("No valid media source") &&
+        !error.message.includes("Sample not found for time") // Seeking beyond video duration
       ) {
         console.error("frameTask error", error);
       }

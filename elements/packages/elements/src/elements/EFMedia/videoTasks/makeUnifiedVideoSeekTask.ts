@@ -39,7 +39,8 @@ export const makeUnifiedVideoSeekTask = (
       if (
         error instanceof Error &&
         error.message !== "Video rendition unavailable after checking videoRendition exists" &&
-        !error.message.includes("No valid media source")
+        !error.message.includes("No valid media source") &&
+        !error.message.includes("Sample not found for time") // Seeking beyond video duration
       ) {
         console.error("unifiedVideoSeekTask error", error);
       }
