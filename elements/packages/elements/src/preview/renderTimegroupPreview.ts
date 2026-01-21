@@ -125,11 +125,19 @@ function isDefaultValue(prop: string, value: string): boolean {
   return defaults === value;
 }
 
-/** Interface for temporal elements */
-interface TemporalElement extends Element {
-  startTimeMs?: number;
-  endTimeMs?: number;
-}
+// Re-export temporal types from shared module
+export {
+  type TemporalElement,
+  isTemporal,
+  getTemporalBounds,
+  isVisibleAtTime,
+} from "./previewTypes.js";
+
+// Import for internal use
+import {
+  type TemporalElement,
+  getTemporalBounds,
+} from "./previewTypes.js";
 
 /**
  * Tree node representing a source/clone pair with children.
@@ -170,25 +178,6 @@ export function traverseCloneTree(state: SyncState, callback: (node: CloneNode) 
   if (state.tree.root) {
     visit(state.tree.root);
   }
-}
-
-function isTemporal(el: Element): el is TemporalElement {
-  return 'startTimeMs' in el && 'endTimeMs' in el;
-}
-
-/**
- * Get temporal bounds for an element, treating invalid ranges as unbounded.
- */
-function getTemporalBounds(el: Element): { startMs: number; endMs: number } {
-  if (!isTemporal(el)) return { startMs: -Infinity, endMs: Infinity };
-  
-  const startMs = el.startTimeMs ?? -Infinity;
-  const endMs = el.endTimeMs ?? Infinity;
-  
-  // Invalid range (end <= start) means element hasn't computed its duration yet
-  if (endMs <= startMs) return { startMs: -Infinity, endMs: Infinity };
-  
-  return { startMs, endMs };
 }
 
 /**
@@ -890,6 +879,24 @@ export function collectDocumentStyles(): string {
 // Backward-compatible aliases
 export const syncStaticStyles = syncStyles;
 export const syncAnimatedStyles = syncStyles;
+
+/**
+ * Override clip-path, opacity, and optionally transform on the root clone element.
+ * The source may have these properties set for proxy mode or workbench scaling.
+ * 
+ * @param syncState - The sync state containing the clone tree
+ * @param fullReset - If true, also resets opacity and transform (for capture operations)
+ */
+export function overrideRootCloneStyles(syncState: SyncState, fullReset: boolean = false): void {
+  const rootClone = syncState.tree.root?.clone;
+  if (!rootClone) return;
+  
+  rootClone.style.clipPath = "none";
+  if (fullReset) {
+    rootClone.style.opacity = "1";
+    rootClone.style.transform = "none";
+  }
+}
 
 /**
  * Create a live preview of a timegroup with a refresh function.

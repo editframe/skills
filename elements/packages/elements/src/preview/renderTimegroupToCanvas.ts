@@ -3,13 +3,25 @@ import {
   buildCloneStructure,
   syncStyles,
   collectDocumentStyles,
+  overrideRootCloneStyles,
   type SyncState,
 } from "./renderTimegroupPreview.js";
 import { isNativeCanvasApiAvailable, getRenderMode, type RenderMode } from "./previewSettings.js";
 import { WorkerPool, encodeCanvasInWorker } from "./workers/WorkerPool.js";
+import {
+  type TemporalElement,
+  isVisibleAtTime,
+  DEFAULT_WIDTH,
+  DEFAULT_HEIGHT,
+  DEFAULT_THUMBNAIL_SCALE,
+  DEFAULT_BLOCKING_TIMEOUT_MS,
+  JPEG_QUALITY_HIGH,
+  JPEG_QUALITY_MEDIUM,
+  createPreviewContainer,
+} from "./previewTypes.js";
 
 // ============================================================================
-// Constants
+// Constants (module-specific, not shared)
 // ============================================================================
 
 /** Number of rows to sample when checking canvas content */
@@ -17,20 +29,6 @@ const CANVAS_SAMPLE_STRIP_HEIGHT = 4;
 
 /** Interval between profiling log outputs (ms) */
 const PROFILING_LOG_INTERVAL_MS = 2000;
-
-/** Default timeout for blocking content readiness mode (ms) */
-const DEFAULT_BLOCKING_TIMEOUT_MS = 5000;
-
-/** Default scale for thumbnail captures */
-const DEFAULT_THUMBNAIL_SCALE = 0.25;
-
-/** Default timegroup dimensions when not measurable */
-const DEFAULT_WIDTH = 1920;
-const DEFAULT_HEIGHT = 1080;
-
-/** JPEG quality settings for different canvas scales */
-const JPEG_QUALITY_HIGH = 0.95;
-const JPEG_QUALITY_MEDIUM = 0.85;
 
 /** Maximum number of cached inline images before eviction */
 const MAX_INLINE_IMAGE_CACHE_SIZE = 100;
@@ -45,16 +43,6 @@ const MAX_INLINE_IMAGE_CACHE_SIZE = 100;
  * - "blocking": Wait for video content to be ready. Throws on timeout.
  */
 export type ContentReadyMode = "immediate" | "blocking";
-
-/**
- * Element with temporal properties (startTimeMs, endTimeMs).
- * Used for temporal visibility checks.
- */
-interface TemporalElement extends Element {
-  startTimeMs?: number;
-  endTimeMs?: number;
-  src?: string;
-}
 
 /**
  * Extended CanvasRenderingContext2D with HTML-in-Canvas API support.
@@ -535,38 +523,6 @@ function canvasHasContent(canvas: HTMLCanvasElement): boolean {
     // Canvas might be tainted, assume it has content
     return true;
   }
-}
-
-/**
- * Override clip-path, opacity, and optionally transform on the root clone element.
- * The source may have these properties set for proxy mode or workbench scaling.
- * 
- * @param syncState - The sync state containing the clone tree
- * @param fullReset - If true, also resets opacity and transform (for capture operations)
- */
-function overrideRootCloneStyles(syncState: SyncState, fullReset: boolean = false): void {
-  const rootClone = syncState.tree.root?.clone;
-  if (!rootClone) return;
-  
-  rootClone.style.clipPath = "none";
-  if (fullReset) {
-    rootClone.style.opacity = "1";
-    rootClone.style.transform = "none";
-  }
-}
-
-/**
- * Check if an element is temporally visible at the given time.
- */
-function isVisibleAtTime(element: Element, timeMs: number): boolean {
-  const temporal = element as TemporalElement;
-  if (typeof temporal.startTimeMs === 'number' && typeof temporal.endTimeMs === 'number') {
-    if (temporal.endTimeMs <= temporal.startTimeMs) {
-      return true;
-    }
-    return timeMs >= temporal.startTimeMs && timeMs <= temporal.endTimeMs;
-  }
-  return true;
 }
 
 interface WaitForVideoContentResult {
@@ -1328,16 +1284,13 @@ export async function captureFromClone(
     const { container, syncState } = buildCloneStructure(renderClone, timeMs);
     const buildTime = performance.now() - t0;
 
-    // Create wrapper
+    // Create wrapper using shared helper
     const bgSource = originalTimegroup ?? renderClone;
-    const previewContainer = document.createElement("div");
-    previewContainer.style.cssText = `
-      width: ${width}px;
-      height: ${height}px;
-      position: relative;
-      overflow: hidden;
-      background: ${getComputedStyle(bgSource).background || "#000"};
-    `;
+    const previewContainer = createPreviewContainer({
+      width,
+      height,
+      background: getComputedStyle(bgSource).background || "#000",
+    });
     
     const t1 = performance.now();
     const styleEl = document.createElement("style");
@@ -1564,14 +1517,11 @@ export function renderTimegroupToCanvas(
 
   // Create a wrapper div with scaled dimensions
   // When resolutionScale < 1, we render at a smaller size and CSS transform scales the content
-  const previewContainer = document.createElement("div");
-  previewContainer.style.cssText = `
-    width: ${renderWidth}px;
-    height: ${renderHeight}px;
-    position: relative;
-    overflow: hidden;
-    background: ${getComputedStyle(timegroup).background || "#000"};
-  `;
+  const previewContainer = createPreviewContainer({
+    width: renderWidth,
+    height: renderHeight,
+    background: getComputedStyle(timegroup).background || "#000",
+  });
   
   // Apply CSS transform to scale down the content within the container
   // This makes the clone render at reduced complexity
