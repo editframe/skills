@@ -387,6 +387,149 @@ export function getInlineImageCacheSize(): number {
 // ============================================================================
 
 /**
+ * Information needed to restore canvases after serialization.
+ */
+interface CanvasRestoreInfo {
+  canvas: HTMLCanvasElement;
+  parent: Node;
+  nextSibling: Node | null;
+  img: HTMLImageElement;
+}
+
+/**
+ * Options for SVG serialization.
+ */
+interface SerializeToSvgOptions {
+  /** Scale factor for encoding canvases (default: 1) */
+  canvasScale?: number;
+  /** Whether to inline external images (default: false for cloned containers) */
+  inlineImages?: boolean;
+  /** Whether to log early render info (default: false) */
+  logEarlyRenders?: boolean;
+}
+
+/**
+ * Result of SVG serialization.
+ */
+interface SerializationResult {
+  dataUri: string;
+  /** Call this to restore canvases if they were modified in-place */
+  restore: () => void;
+}
+
+/**
+ * Common SVG foreignObject serialization pipeline.
+ * Handles canvas encoding, serialization, and base64 encoding.
+ * 
+ * @param container - The HTML element to serialize
+ * @param width - Output width
+ * @param height - Output height
+ * @param options - Serialization options
+ * @returns Serialization result with data URI and restore function
+ */
+async function serializeToSvgDataUri(
+  container: HTMLElement,
+  width: number,
+  height: number,
+  options: SerializeToSvgOptions = {},
+): Promise<SerializationResult> {
+  const { canvasScale = 1, inlineImages: shouldInlineImages = false, logEarlyRenders = false } = options;
+  
+  // Store info for restoration (only used if modifying in-place)
+  const canvasRestoreInfo: CanvasRestoreInfo[] = [];
+  
+  // Phase 1: Encode canvases to data URLs (parallel)
+  const canvasStart = performance.now();
+  const canvases = Array.from(container.querySelectorAll("canvas"));
+  const encodedResults = await encodeCanvasesInParallel(canvases, canvasScale);
+  
+  // Replace canvases with images
+  for (const { canvas, dataUrl } of encodedResults) {
+    try {
+      const img = document.createElement("img");
+      img.src = dataUrl;
+      img.width = canvas.width;
+      img.height = canvas.height;
+      const style = canvas.getAttribute("style");
+      if (style) img.setAttribute("style", style);
+      
+      const parent = canvas.parentNode;
+      if (parent) {
+        const nextSibling = canvas.nextSibling;
+        parent.replaceChild(img, canvas);
+        canvasRestoreInfo.push({ canvas, parent, nextSibling, img });
+      }
+    } catch {
+      // Cross-origin canvas - leave as-is
+    }
+  }
+  defaultProfiler.addTime("canvasEncode", performance.now() - canvasStart);
+  
+  // Phase 2: Inline external images (if requested)
+  if (shouldInlineImages) {
+    const inlineStart = performance.now();
+    await inlineImages(container);
+    defaultProfiler.addTime("inline", performance.now() - inlineStart);
+  }
+  
+  // Phase 3: Serialize to XHTML
+  const serializeStart = performance.now();
+  const wrapper = document.createElement("div");
+  wrapper.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
+  wrapper.setAttribute("style", `width:${width}px;height:${height}px;overflow:hidden;position:relative;`);
+  wrapper.appendChild(container);
+  
+  if (!_xmlSerializer) {
+    _xmlSerializer = new XMLSerializer();
+  }
+  const serialized = _xmlSerializer.serializeToString(wrapper);
+  defaultProfiler.addTime("serialize", performance.now() - serializeStart);
+  
+  // Prepare restore function (removes container from wrapper, restores canvases)
+  const restore = (): void => {
+    const restoreStart = performance.now();
+    wrapper.removeChild(container);
+    
+    for (const { canvas, parent, nextSibling, img } of canvasRestoreInfo) {
+      if (img.parentNode === parent) {
+        if (nextSibling) {
+          parent.insertBefore(canvas, nextSibling);
+          parent.removeChild(img);
+        } else {
+          parent.replaceChild(canvas, img);
+        }
+      }
+    }
+    defaultProfiler.addTime("restore", performance.now() - restoreStart);
+  };
+  
+  // DEBUG: Log serialized HTML size for early renders
+  if (logEarlyRenders && defaultProfiler.isEarlyRender(2)) {
+    console.log(`[serializeToSvgDataUri] FO serialized: ${serialized.length} chars`);
+  }
+  
+  // Phase 4: Create SVG and encode to base64
+  const base64Start = performance.now();
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><foreignObject width="100%" height="100%">${serialized}</foreignObject></svg>`;
+  
+  if (!_textEncoder) {
+    _textEncoder = new TextEncoder();
+  }
+  const utf8Bytes = _textEncoder.encode(svg);
+  
+  let base64: string;
+  if (typeof (Uint8Array.prototype as any).toBase64 === "function") {
+    base64 = (utf8Bytes as any).toBase64();
+  } else {
+    base64 = encodeBase64Fast(utf8Bytes);
+  }
+  const dataUri = `data:image/svg+xml;base64,${base64}`;
+  defaultProfiler.addTime("base64", performance.now() - base64Start);
+  
+  return { dataUri, restore };
+}
+
+/**
  * Get the effective render mode, validating that native is available when selected.
  * Falls back to foreignObject if native is selected but not available.
  */
@@ -820,90 +963,48 @@ export async function renderToImage(
   }
   
   // Fallback: SVG foreignObject serialization
-  
-  // Fallback: SVG foreignObject approach
-  // Get all canvases from original BEFORE cloning (cloneNode doesn't copy canvas pixels)
+  // Clone the container first (don't modify original)
+  // Note: cloneNode doesn't copy canvas pixels, so we encode from original canvases
   const originalCanvases = Array.from(container.querySelectorAll("canvas"));
-  
-  // Clone the container for serialization (don't modify original)
   const clone = container.cloneNode(true) as HTMLElement;
-  
-  // Convert original canvases directly to images and replace cloned canvases
-  // When canvasScale < 1, we scale down before encoding (MUCH faster for thumbnails)
-  const canvasScale = options?.canvasScale ?? 1;
   const clonedCanvases = clone.querySelectorAll("canvas");
   
-  // Encode canvases in parallel using worker pool
+  // Encode original canvases and map to cloned elements
+  const canvasScale = options?.canvasScale ?? 1;
+  const canvasStart = performance.now();
   const encodedResults = await encodeCanvasesInParallel(originalCanvases, canvasScale);
   
-  // Map encoded results to cloned canvases and replace them
   for (let i = 0; i < originalCanvases.length; i++) {
     const srcCanvas = originalCanvases[i];
     const dstCanvas = clonedCanvases[i];
     const encoded = encodedResults.find((r) => r.canvas === srcCanvas);
     
-    if (!srcCanvas || !dstCanvas || !encoded) {
-      continue;
-    }
+    if (!srcCanvas || !dstCanvas || !encoded) continue;
     
     try {
       const img = document.createElement("img");
       img.src = encoded.dataUrl;
-      // Keep original dimensions - CSS will handle the visual scaling
       img.width = srcCanvas.width;
       img.height = srcCanvas.height;
       const style = dstCanvas.getAttribute("style");
       if (style) img.setAttribute("style", style);
       dstCanvas.parentNode?.replaceChild(img, dstCanvas);
-    } catch (e) {
+    } catch {
       // Cross-origin or other error - skip
     }
   }
+  defaultProfiler.addTime("canvasEncode", performance.now() - canvasStart);
 
-  // Inline external images
+  // Inline external images in the clone
+  const inlineStart = performance.now();
   await inlineImages(clone);
+  defaultProfiler.addTime("inline", performance.now() - inlineStart);
 
-  // Create wrapper with XHTML namespace (reuse serializer for better performance)
-  const wrapper = document.createElement("div");
-  wrapper.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
-  wrapper.setAttribute("style", `width:${width}px;height:${height}px;overflow:hidden;position:relative;`);
-  wrapper.appendChild(clone);
-
-  // Serialize to XHTML - reuse serializer instance (faster than creating new one each frame)
-  if (!_xmlSerializer) {
-    _xmlSerializer = new XMLSerializer();
-  }
-  const serialized = _xmlSerializer.serializeToString(wrapper);
+  // Use common serialization pipeline (no restore needed since we're working on a clone)
+  const { dataUri } = await serializeToSvgDataUri(clone, width, height);
   
-  // Wrap in SVG foreignObject
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><foreignObject width="100%" height="100%">${serialized}</foreignObject></svg>`;
-
-  // Optimized base64 encoding: Use TextEncoder for UTF-8 → bytes, then encode directly
-  // Prefer Uint8Array.prototype.toBase64() if available (faster, avoids binary string conversion)
-  // Otherwise use optimized base64 encoder that works directly on Uint8Array
-  if (!_textEncoder) {
-    _textEncoder = new TextEncoder();
-  }
-  const utf8Bytes = _textEncoder.encode(svg);
-  
-  let base64: string;
-  // Check if Uint8Array.prototype.toBase64 is available (newer browsers)
-  if (typeof (Uint8Array.prototype as any).toBase64 === "function") {
-    base64 = (utf8Bytes as any).toBase64();
-  } else {
-    // Fast base64 encoding directly from Uint8Array (avoids binary string conversion)
-    base64 = encodeBase64Fast(utf8Bytes);
-  }
-  const dataUri = `data:image/svg+xml;base64,${base64}`;
-  
-  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-    img.src = dataUri;
-  });
-  
-  return image;
+  // Load as image
+  return loadImageFromDataUri(dataUri);
 }
 
 
@@ -928,113 +1029,15 @@ export async function renderToImageDirect(
 ): Promise<HTMLImageElement> {
   defaultProfiler.incrementRenderCount();
   
-  // Store original canvas elements and their parents for restoration
-  const canvasRestoreInfo: Array<{ canvas: HTMLCanvasElement; parent: Node; nextSibling: Node | null; img: HTMLImageElement }> = [];
-  
-  // Convert canvases to images IN-PLACE (we'll restore them after serialization)
-  // Use JPEG encoding for video frames (faster), PNG for images (preserves transparency)
-  const canvasStart = performance.now();
-  const canvases = Array.from(container.querySelectorAll("canvas"));
-  
-  // Encode canvases in parallel using worker pool
-  const encodedResults = await encodeCanvasesInParallel(canvases);
-  
-  // Replace canvases with images and store restoration info
-  for (const { canvas, dataUrl } of encodedResults) {
-    try {
-      const img = document.createElement("img");
-      img.src = dataUrl;
-      img.width = canvas.width;
-      img.height = canvas.height;
-      const style = canvas.getAttribute("style");
-      if (style) img.setAttribute("style", style);
-      
-      // Store info for restoration
-      const parent = canvas.parentNode;
-      if (parent) {
-        const nextSibling = canvas.nextSibling;
-        parent.replaceChild(img, canvas);
-        canvasRestoreInfo.push({ canvas, parent, nextSibling, img });
-      }
-    } catch (e) {
-      // Cross-origin canvas - leave as-is
-    }
-  }
-  defaultProfiler.addTime("canvasEncode", performance.now() - canvasStart);
-  
-  // Inline external images (this is idempotent, safe to call multiple times)
-  const inlineStart = performance.now();
-  await inlineImages(container);
-  defaultProfiler.addTime("inline", performance.now() - inlineStart);
-  
-  // Create wrapper with XHTML namespace
-  const serializeStart = performance.now();
-  const wrapper = document.createElement("div");
-  wrapper.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
-  wrapper.setAttribute("style", `width:${width}px;height:${height}px;overflow:hidden;position:relative;`);
-  wrapper.appendChild(container);
-  
-  // Serialize to XHTML
-  if (!_xmlSerializer) {
-    _xmlSerializer = new XMLSerializer();
-  }
-  const serialized = _xmlSerializer.serializeToString(wrapper);
-  defaultProfiler.addTime("serialize", performance.now() - serializeStart);
-  
-  // RESTORE: Put container back (remove from wrapper)
-  const restoreStart = performance.now();
-  wrapper.removeChild(container);
-  
-  // RESTORE: Put canvases back in place of images
-  for (const { canvas, parent, nextSibling, img } of canvasRestoreInfo) {
-    if (img.parentNode === parent) {
-      if (nextSibling) {
-        parent.insertBefore(canvas, nextSibling);
-        parent.removeChild(img);
-      } else {
-        parent.replaceChild(canvas, img);
-      }
-    }
-  }
-  defaultProfiler.addTime("restore", performance.now() - restoreStart);
-  
-  // DEBUG: Log serialized HTML size
-  if (defaultProfiler.isEarlyRender(2)) {
-    console.log(`[renderToImageDirect] FO serialized: ${serialized.length} chars`);
-  }
-  
-  // Wrap in SVG foreignObject
-  const base64Start = performance.now();
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><foreignObject width="100%" height="100%">${serialized}</foreignObject></svg>`;
-  
-  // Use data URI (Blob URLs cause cross-origin tainting when drawn to canvas)
-  // Optimized base64 encoding using TextEncoder + fast encoder
-  if (!_textEncoder) {
-    _textEncoder = new TextEncoder();
-  }
-  const utf8Bytes = _textEncoder.encode(svg);
-  
-  let base64: string;
-  if (typeof (Uint8Array.prototype as any).toBase64 === "function") {
-    base64 = (utf8Bytes as any).toBase64();
-  } else {
-    base64 = encodeBase64Fast(utf8Bytes);
-  }
-  const dataUri = `data:image/svg+xml;base64,${base64}`;
-  defaultProfiler.addTime("base64", performance.now() - base64Start);
-  
-  // Create new Image for each frame (needed for pipelining - can't reuse when overlapping)
-  const img = new Image();
-  
-  const imageLoadStart = performance.now();
-  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-    img.onload = () => {
-      defaultProfiler.addTime("imageLoad", performance.now() - imageLoadStart);
-      resolve(img);
-    };
-    img.onerror = reject;
-    img.src = dataUri;
+  // Use common serialization pipeline (modifies in-place, restores after)
+  const { dataUri, restore } = await serializeToSvgDataUri(container, width, height, {
+    inlineImages: true,
+    logEarlyRenders: true,
   });
+  restore();
+  
+  // Load as image
+  const image = await loadImageFromDataUri(dataUri);
   
   // Log timing breakdown periodically
   defaultProfiler.shouldLogByFrameCount(100);
@@ -1054,86 +1057,9 @@ export async function prepareFrameDataUri(
 ): Promise<string> {
   defaultProfiler.incrementRenderCount();
   
-  // Store original canvas elements and their parents for restoration
-  const canvasRestoreInfo: Array<{ canvas: HTMLCanvasElement; parent: Node; nextSibling: Node | null; img: HTMLImageElement }> = [];
-  
-  // Convert canvases to images IN-PLACE using worker pool
-  const canvasStart = performance.now();
-  const canvases = Array.from(container.querySelectorAll("canvas"));
-  
-  // Encode canvases in parallel using worker pool
-  const encodedResults = await encodeCanvasesInParallel(canvases);
-  
-  // Replace canvases with images and store restoration info
-  for (const { canvas, dataUrl } of encodedResults) {
-    try {
-      const img = document.createElement("img");
-      img.src = dataUrl;
-      img.width = canvas.width;
-      img.height = canvas.height;
-      const style = canvas.getAttribute("style");
-      if (style) img.setAttribute("style", style);
-      
-      const parent = canvas.parentNode;
-      if (parent) {
-        const nextSibling = canvas.nextSibling;
-        parent.replaceChild(img, canvas);
-        canvasRestoreInfo.push({ canvas, parent, nextSibling, img });
-      }
-    } catch (e) {
-      // Cross-origin canvas - leave as-is
-    }
-  }
-  defaultProfiler.addTime("canvasEncode", performance.now() - canvasStart);
-  
-  // Create wrapper with XHTML namespace
-  const serializeStart = performance.now();
-  const wrapper = document.createElement("div");
-  wrapper.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
-  wrapper.setAttribute("style", `width:${width}px;height:${height}px;overflow:hidden;position:relative;`);
-  wrapper.appendChild(container);
-  
-  // Serialize to XHTML
-  if (!_xmlSerializer) {
-    _xmlSerializer = new XMLSerializer();
-  }
-  const serialized = _xmlSerializer.serializeToString(wrapper);
-  defaultProfiler.addTime("serialize", performance.now() - serializeStart);
-  
-  // RESTORE: Put container back
-  const restoreStart = performance.now();
-  wrapper.removeChild(container);
-  
-  // RESTORE: Put canvases back
-  for (const { canvas, parent, nextSibling, img } of canvasRestoreInfo) {
-    if (img.parentNode === parent) {
-      if (nextSibling) {
-        parent.insertBefore(canvas, nextSibling);
-        parent.removeChild(img);
-      } else {
-        parent.replaceChild(canvas, img);
-      }
-    }
-  }
-  defaultProfiler.addTime("restore", performance.now() - restoreStart);
-  
-  // Wrap in SVG foreignObject and encode to base64 data URI
-  const base64Start = performance.now();
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><foreignObject width="100%" height="100%">${serialized}</foreignObject></svg>`;
-  
-  if (!_textEncoder) {
-    _textEncoder = new TextEncoder();
-  }
-  const utf8Bytes = _textEncoder.encode(svg);
-  
-  let base64: string;
-  if (typeof (Uint8Array.prototype as any).toBase64 === "function") {
-    base64 = (utf8Bytes as any).toBase64();
-  } else {
-    base64 = encodeBase64Fast(utf8Bytes);
-  }
-  const dataUri = `data:image/svg+xml;base64,${base64}`;
-  defaultProfiler.addTime("base64", performance.now() - base64Start);
+  // Use common serialization pipeline (modifies in-place, restores after)
+  const { dataUri, restore } = await serializeToSvgDataUri(container, width, height);
+  restore();
   
   return dataUri;
 }
