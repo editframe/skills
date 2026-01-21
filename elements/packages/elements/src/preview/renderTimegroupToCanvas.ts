@@ -387,6 +387,81 @@ export function getInlineImageCacheSize(): number {
 // ============================================================================
 
 /**
+ * Options for creating a DPR-aware canvas.
+ */
+interface CanvasOptions {
+  /** Render width (internal resolution) */
+  renderWidth: number;
+  /** Render height (internal resolution) */
+  renderHeight: number;
+  /** Display scale factor */
+  scale: number;
+  /** Device pixel ratio (defaults to window.devicePixelRatio) */
+  dpr?: number;
+  /** Full logical width (for CSS sizing) */
+  fullWidth: number;
+  /** Full logical height (for CSS sizing) */
+  fullHeight: number;
+}
+
+/**
+ * Create a canvas element with proper DPR handling.
+ * Buffer size is based on renderWidth/renderHeight (internal resolution).
+ * CSS size is based on fullWidth/fullHeight (logical display size).
+ */
+function createDprCanvas(options: CanvasOptions): HTMLCanvasElement {
+  const { renderWidth, renderHeight, scale, fullWidth, fullHeight } = options;
+  const dpr = options.dpr ?? window.devicePixelRatio ?? 1;
+  
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.floor(renderWidth * scale * dpr);
+  canvas.height = Math.floor(renderHeight * scale * dpr);
+  canvas.style.width = `${Math.floor(fullWidth * scale)}px`;
+  canvas.style.height = `${Math.floor(fullHeight * scale)}px`;
+  
+  return canvas;
+}
+
+/**
+ * Create a debug label for showing render info.
+ */
+function createDebugLabel(): HTMLDivElement {
+  const debugLabel = document.createElement("div");
+  debugLabel.style.cssText = `
+    position: absolute;
+    top: -24px;
+    left: 0;
+    padding: 2px 8px;
+    font: bold 12px monospace;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 3px;
+    white-space: nowrap;
+    z-index: 1000;
+    pointer-events: none;
+  `;
+  return debugLabel;
+}
+
+/**
+ * Update debug label with resolution info.
+ */
+function updateDebugLabel(
+  label: HTMLDivElement,
+  renderWidth: number,
+  renderHeight: number,
+  resolutionScale: number,
+): void {
+  const scaleColors: Record<number, string> = {
+    1: "#00ff00",
+    0.75: "#ffff00",
+    0.5: "#ff8800",
+    0.25: "#ff0000",
+  };
+  label.style.color = scaleColors[resolutionScale] || "#ffffff";
+  label.textContent = `Render: ${renderWidth}x${renderHeight} (${Math.round(resolutionScale * 100)}%)`;
+}
+
+/**
  * Information needed to restore canvases after serialization.
  */
 interface CanvasRestoreInfo {
@@ -1356,42 +1431,26 @@ export function renderTimegroupToCanvas(
   
   const width = timegroup.offsetWidth || DEFAULT_WIDTH;
   const height = timegroup.offsetHeight || DEFAULT_HEIGHT;
+  const dpr = window.devicePixelRatio || 1;
   
   // Calculate effective render dimensions (internal resolution) - mutable
   let renderWidth = Math.floor(width * currentResolutionScale);
   let renderHeight = Math.floor(height * currentResolutionScale);
 
-  // Create canvas at scaled size (with devicePixelRatio for sharpness)
-  // Canvas buffer size is based on resolutionScale (internal resolution)
-  // CSS size is based on scale (logical display size)
-  const dpr = window.devicePixelRatio || 1;
-  const canvas = document.createElement("canvas");
-  // Canvas buffer: render at resolutionScale (effective internal resolution)
-  canvas.width = Math.floor(renderWidth * scale * dpr);
-  canvas.height = Math.floor(renderHeight * scale * dpr);
-  // CSS size: display at full logical size (browser upscales if needed)
-  canvas.style.width = `${Math.floor(width * scale)}px`;
-  canvas.style.height = `${Math.floor(height * scale)}px`;
+  // Create canvas with proper DPR handling
+  const canvas = createDprCanvas({
+    renderWidth,
+    renderHeight,
+    scale,
+    fullWidth: width,
+    fullHeight: height,
+    dpr,
+  });
   
-  // Create wrapper container for canvas + debug label
+  // Create wrapper container with debug label
   const wrapperContainer = document.createElement("div");
   wrapperContainer.style.cssText = "position: relative; display: inline-block;";
-  
-  // Create debug label (positioned above the canvas, doesn't scale with it)
-  const debugLabel = document.createElement("div");
-  debugLabel.style.cssText = `
-    position: absolute;
-    top: -24px;
-    left: 0;
-    padding: 2px 8px;
-    font: bold 12px monospace;
-    background: rgba(0, 0, 0, 0.8);
-    border-radius: 3px;
-    white-space: nowrap;
-    z-index: 1000;
-    pointer-events: none;
-  `;
-  
+  const debugLabel = createDebugLabel();
   wrapperContainer.appendChild(debugLabel);
   wrapperContainer.appendChild(canvas);
 
@@ -1546,16 +1605,8 @@ export function renderTimegroupToCanvas(
         console.log(`[renderTimegroupToCanvas] Frame render: ${renderTime.toFixed(1)}ms (resolutionScale=${currentResolutionScale}, image=${image.width}x${image.height})`);
       }
       
-      // Update debug label (outside canvas, doesn't scale)
-      const scaleColors: Record<number, string> = {
-        1: "#00ff00",    // Green = full
-        0.75: "#ffff00", // Yellow = 3/4
-        0.5: "#ff8800",  // Orange = 1/2
-        0.25: "#ff0000", // Red = 1/4
-      };
-      const indicatorColor = scaleColors[currentResolutionScale] || "#ffffff";
-      debugLabel.style.color = indicatorColor;
-      debugLabel.textContent = `Render: ${renderWidth}x${renderHeight} (${Math.round(currentResolutionScale * 100)}%)`;
+      // Update debug label
+      updateDebugLabel(debugLabel, renderWidth, renderHeight, currentResolutionScale);
     } catch (e) {
       console.error("Canvas preview render failed:", e);
     } finally {
