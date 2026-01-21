@@ -1709,15 +1709,25 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
           
           const elementStart = Date.now();
           try {
-            if (m.mediaEngineTask.value) {
+            // Check task status to avoid aborting already-running tasks
+            // TaskStatus: INITIAL=0, PENDING=1, COMPLETE=2, ERROR=3
+            const status = m.mediaEngineTask.status;
+            
+            // Already complete or errored - no need to wait
+            if (status === TaskStatus.COMPLETE || status === TaskStatus.ERROR) {
               return;
             }
             
-            // Add timeout to prevent indefinite blocking
-            // Attach .catch() to prevent unhandled rejection warning - AbortErrors are expected
-            const loadPromise = m.mediaEngineTask.run();
-            loadPromise.catch(() => {}); // Suppress unhandled rejection - errors handled below
+            // Task is in INITIAL state - need to run it
+            // (PENDING means it's already running - don't call run() again as that would abort it)
+            if (status === TaskStatus.INITIAL) {
+              // Attach .catch() to prevent unhandled rejection warning - AbortErrors are expected
+              const runPromise = m.mediaEngineTask.run();
+              runPromise.catch(() => {}); // Suppress unhandled rejection - errors handled below
+            }
             
+            // Now wait for the task to complete (whether we started it or it was already running)
+            // Add timeout to prevent indefinite blocking
             const timeoutPromise = new Promise((_, reject) => {
               if (signal?.aborted) {
                 reject(new DOMException("Aborted", "AbortError"));
@@ -1730,7 +1740,11 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
               }, { once: true });
             });
             
-            await Promise.race([loadPromise, timeoutPromise]);
+            // Attach .catch() to taskComplete to prevent unhandled rejection
+            const taskPromise = m.mediaEngineTask.taskComplete;
+            taskPromise.catch(() => {});
+            
+            await Promise.race([taskPromise, timeoutPromise]);
           } catch (error) {
             // Re-throw AbortError to propagate cancellation
             if (error instanceof DOMException && error.name === "AbortError") {

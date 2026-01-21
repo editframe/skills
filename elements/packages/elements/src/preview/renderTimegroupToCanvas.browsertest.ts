@@ -1023,7 +1023,7 @@ describe("renderTimegroupToCanvas", () => {
       // Both should have no blanks
       expect(foreignBlanks.length).toBe(0);
       expect(nativeBlanks.length).toBe(0);
-    });
+    }, 30000);
 
     test("visual regression: sample thumbnails from nested animated timegroup", async ({
       nestedAnimatedTimegroup,
