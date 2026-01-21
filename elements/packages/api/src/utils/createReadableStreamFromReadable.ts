@@ -66,13 +66,13 @@ class StreamPump {
     this.stream.off("close", this.close);
   }
 
-  enqueue(chunk: Uint8Array | string) {
+  enqueue(chunk: ArrayBufferView<ArrayBuffer> & Uint8Array<ArrayBufferLike>) {
     if (this.controller) {
       try {
         // const bytes = chunk instanceof Uint8Array ? chunk : Buffer.from(chunk);
 
         const available = (this.controller.desiredSize || 0) - chunk.length;
-        this.controller.enqueue(chunk as Uint8Array);
+        this.controller.enqueue(chunk);
         if (available <= 0) {
           this.pause();
         }

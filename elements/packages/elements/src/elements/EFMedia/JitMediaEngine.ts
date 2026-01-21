@@ -55,6 +55,7 @@ export class JitMediaEngine extends BaseMediaEngine implements MediaEngine {
       src: this.data.sourceUrl,
       segmentDurationMs: rendition.segmentDurationMs,
       segmentDurationsMs: rendition.segmentDurationsMs,
+      startTimeOffsetMs: rendition.startTimeOffsetMs,
     };
   }
 
@@ -72,6 +73,7 @@ export class JitMediaEngine extends BaseMediaEngine implements MediaEngine {
       src: this.data.sourceUrl,
       segmentDurationMs: rendition.segmentDurationMs,
       segmentDurationsMs: rendition.segmentDurationsMs,
+      startTimeOffsetMs: rendition.startTimeOffsetMs,
     };
   }
 

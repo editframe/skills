@@ -42,12 +42,14 @@ async function main() {
   const wsEndpointPath = path.join(targetRoot, ".wsEndpoint.json");
 
   // Launch a Playwright browser server, not just Chrome
+  // Default to headless for ef run compatibility (containers connect to this)
   const browserServer = await chromium.launchServer({
-    headless: false,
+    headless: process.env.HEADLESS === "false" ? false : true,
     host: "0.0.0.0",
     channel: "chrome", // Uses system Chrome
     args: [
       "--autoplay-policy=no-user-gesture-required", // Allow AudioContext without user interaction
+      "--enable-features=CanvasDrawElement", // allow drawing of HTML elements to canvas with new API (for tests)
     ],
   });
 

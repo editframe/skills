@@ -13,7 +13,7 @@ headers:
 
 **Solution:** Thumbnail strips automatically calculate the optimal number of thumbnails based on available width. Use CSS to control the container size.
 
-<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+<Demonstration layout="horizontal" defaultSourceVisible alwaysShowSource>
   <div className="flex flex-col gap-4 w-full">
     <Video 
       id="howto-responsive-video"
@@ -47,3 +47,7 @@ headers:
 - Set a fixed `thumbnailWidth` for consistent thumbnail size
 - Use CSS width constraints (e.g., `w-full`, `max-w-4xl`) to control the strip width
 - The strip height is controlled by CSS (default: 48px)
+The responsive layout ensures optimal thumbnail density regardless of container size.
+
+
+

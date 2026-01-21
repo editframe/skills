@@ -288,7 +288,7 @@ async function sendWorkerCommand(command: Omit<WorkerCommand, "id">): Promise<Wo
   const fullCommand: WorkerCommand = { ...command, id };
   
   return new Promise((resolve, reject) => {
-    const timeoutId = window.setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       pendingWorkerRequests.delete(id);
       reject(new Error("Worker command timeout"));
     }, 10000);
@@ -392,7 +392,7 @@ export class PersistentThumbnailCache {
     this.settingsChangeHandler = () => {
       this.maxSize = getThumbnailCacheMaxSize();
     };
-    window.addEventListener("ef-thumbnail-cache-settings-changed", this.settingsChangeHandler);
+    addEventListener("ef-thumbnail-cache-settings-changed", this.settingsChangeHandler);
     
     // Initialize worker and load key index
     this.initializeAsync();
@@ -423,7 +423,7 @@ export class PersistentThumbnailCache {
    */
   destroy(): void {
     if (this.settingsChangeHandler) {
-      window.removeEventListener("ef-thumbnail-cache-settings-changed", this.settingsChangeHandler);
+      removeEventListener("ef-thumbnail-cache-settings-changed", this.settingsChangeHandler);
       this.settingsChangeHandler = null;
     }
   }

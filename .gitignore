@@ -10,3 +10,4 @@ node_modules/
 debug.log
 export-profile.cpuprofile
 **.cpuprofile
+**/.ef-sessions/**

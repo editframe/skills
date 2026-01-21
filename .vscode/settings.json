@@ -46,7 +46,8 @@
   "[jsonc]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
-  "cmake.sourceDirectory": "/Users/collin/Editframe/editframe-motion-designer/telecine/lib/transcode",
+  "cmake.sourceDirectory": "/Users/collin/Editframe/monorepo/telecine/lib/transcode",
+  "typescript.tsdk": "node_modules/typescript/lib",
   
 }
 

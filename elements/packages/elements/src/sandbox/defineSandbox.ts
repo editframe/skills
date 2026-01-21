@@ -38,6 +38,15 @@ export type ScenarioFn = (ctx: SandboxContext) => Promise<void> | void;
 export type ScenarioType = "scenario" | "validation";
 
 /**
+ * Scenario category for organizing scenarios by purpose
+ * - "demonstration": Shows how components work (for humans/LLMs to understand) - default
+ * - "theming": For GUI components, allows inline theme modification via UI controls
+ * - "internals": Verifies critical behaviors work correctly (metadata for tooling filtering)
+ * - "performance": Built to give good profile output for performance improvement (triggers profiling)
+ */
+export type ScenarioCategory = "demonstration" | "theming" | "internals" | "performance";
+
+/**
  * A scenario definition with optional metadata and performance assertions
  * Use this format when you want to add description, type, or performance assertions
  */
@@ -46,6 +55,13 @@ export interface Scenario {
    * The scenario function to execute
    */
   run: ScenarioFn;
+  /**
+   * Optional render function that returns HTML markup for this scenario.
+   * If provided, this overrides the sandbox's top-level render() function.
+   * This allows each scenario to have its own declarative HTML markup
+   * instead of programmatically creating elements in the run function.
+   */
+  render?: () => TemplateResult;
   /**
    * Human-readable description of what this scenario tests
    * Shown in the viewer to help understand the scenario's purpose
@@ -58,6 +74,14 @@ export interface Scenario {
    */
   type?: ScenarioType;
   /**
+   * Category for organizing scenarios by purpose
+   * - "demonstration": Default category, shown prominently in viewer
+   * - "theming": For GUI components, viewer should provide UI controls to modify CSS variables/properties inline
+   * - "internals": Metadata for tooling to filter (viewer shows all, but tooling can hide)
+   * - "performance": Automatically triggers profiling when run, can also have profileAssertions
+   */
+  category?: ScenarioCategory;
+  /**
    * Optional performance assertions for this scenario
    * These assertions are checked when profiling is enabled
    */
@@ -67,10 +91,9 @@ export interface Scenario {
 /**
  * Collection of scenarios for a sandbox
  * Can be either:
- * - A function (legacy format, no assertions)
  * - A Scenario object (with assertions)
  */
-export type Scenarios = Record<string, ScenarioFn | Scenario>;
+export type Scenarios = Record<string, Scenario>;
 
 /**
  * Performance assertion for profile data
@@ -111,6 +134,17 @@ export interface SandboxConfig {
   scenarios: Scenarios;
 }
 
+export interface SandboxConfigInput {
+  name: string;
+  description?: string;
+  category?: string;
+  subcategory?: string;
+  render: () => TemplateResult;
+  setup?: (container: HTMLElement) => Promise<void> | void;
+  scenarios: Scenarios | Record<string, ScenarioFn>;
+  assertions?: Assertion[];
+}
+
 /**
  * Internal sandbox metadata with resolved file path
  */
@@ -122,6 +156,16 @@ export interface Sandbox extends SandboxConfig {
 /**
  * Helper to define a sandbox with type checking
  */
-export function defineSandbox(config: SandboxConfig): SandboxConfig {
-  return config;
+export function defineSandbox(config: SandboxConfigInput): SandboxConfig {
+  for (const key in config.scenarios) {
+    if (typeof config.scenarios[key] === 'function') {
+      config.scenarios[key] = {
+        run: config.scenarios[key],
+        description: key,
+        type: 'scenario',
+        category: 'demonstration',
+      };
+    }
+  }
+  return config as SandboxConfig;
 }

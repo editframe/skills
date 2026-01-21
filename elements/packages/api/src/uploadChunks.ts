@@ -61,7 +61,7 @@ const uploadChunk = async (
       "Content-Range": `bytes=${startByte}-${endByte}/${fileSize}`,
       "Content-Type": "application/octet-stream",
     },
-    body: chunkBuffer,
+    body: chunkBuffer as BodyInit,
   });
 
   if (response.ok) {

@@ -1,13 +1,15 @@
 /// <reference types="@vitest/browser/providers/playwright" />
 
 // import "tsconfig-paths/register";
-import { existsSync, readFileSync } from "node:fs";
 import * as path from "node:path";
 import type { UserConfig } from "vite";
 import { defineConfig } from "vitest/config";
 import type { BrowserProviderOptions } from "vitest/node";
 import { recordReplayProxyPlugin } from "./packages/elements/test/recordReplayProxyPlugin.js";
 import { TEST_SERVER_PORT } from "./packages/elements/test/constants.js";
+import debug from 'debug';
+
+const log = debug('ef');
 
 type ViteTestBrowserMode = "connect" | "launch";
 
@@ -25,190 +27,14 @@ const isCI =
   Boolean(process.env.CI) ||
   process.env.DOCKER_SERVICE === "ci-runner";
 
-function findMonorepoRoot(): string | null {
-  // Strategy 1: Use MONOREPO_ROOT environment variable if set by browsertest script
-  // This is the most reliable when config is bundled
-  // Trust the environment variable - don't verify paths since we might be in Docker
-  // where paths are mounted differently
-  if (process.env.MONOREPO_ROOT) {
-    return process.env.MONOREPO_ROOT;
-  }
-
-  // Strategy 2: Try git rev-parse from multiple possible locations
-  // When config is bundled, we might be in a temp directory, so try from
-  // current working directory and also try to find the actual elements directory
-  const possibleCwds = [
-    process.cwd(),
-    __dirname,
-    // Try to find elements directory by looking for known files
-    ...(process.env.PWD ? [process.env.PWD] : []),
-  ];
-
-  for (const cwd of possibleCwds) {
-    try {
-      const { execSync } = require("node:child_process");
-      const gitRoot = execSync("git rev-parse --show-toplevel", {
-        encoding: "utf-8",
-        stdio: "pipe",
-        cwd: cwd,
-      }).trim();
-
-      if (
-        existsSync(path.join(gitRoot, "elements")) &&
-        existsSync(path.join(gitRoot, "telecine"))
-      ) {
-        return gitRoot;
-      }
-    } catch {
-      // Continue to next location
-    }
-  }
-
-  // Strategy 3: Traverse up from multiple starting points
-  const startingDirs = [process.cwd(), __dirname];
-  if (process.env.PWD) {
-    startingDirs.push(process.env.PWD);
-  }
-
-  for (const startDir of startingDirs) {
-    try {
-      let currentDir = startDir;
-      const rootDir = path.parse(currentDir).root;
-
-      while (currentDir !== rootDir) {
-        if (
-          existsSync(path.join(currentDir, "elements")) &&
-          existsSync(path.join(currentDir, "telecine"))
-        ) {
-          return currentDir;
-        }
-        const parentDir = path.dirname(currentDir);
-        if (parentDir === currentDir) {
-          break; // Reached filesystem root
-        }
-        currentDir = parentDir;
-      }
-    } catch {
-      // Continue to next starting directory
-    }
-  }
-
-  // Strategy 4: Look for the .wsEndpoint.json file itself and use its directory
-  // This is a last resort - if the file exists, we know where the monorepo root is
-  // Try many possible locations since we might be in a bundled temp directory
-  const possibleWsPaths = [
-    // Current directory and nearby
-    path.join(process.cwd(), ".wsEndpoint.json"),
-    path.join(__dirname, ".wsEndpoint.json"),
-    // Go up several levels (handles temp directories like /packages)
-    path.join(process.cwd(), "..", ".wsEndpoint.json"),
-    path.join(process.cwd(), "..", "..", ".wsEndpoint.json"),
-    path.join(process.cwd(), "..", "..", "..", ".wsEndpoint.json"),
-    path.join(process.cwd(), "..", "..", "..", "..", ".wsEndpoint.json"),
-    path.join(process.cwd(), "..", "..", "..", "..", "..", ".wsEndpoint.json"),
-    path.join(
-      process.cwd(),
-      "..",
-      "..",
-      "..",
-      "..",
-      "..",
-      "..",
-      ".wsEndpoint.json",
-    ),
-    // Also try from __dirname
-    path.join(__dirname, "..", ".wsEndpoint.json"),
-    path.join(__dirname, "..", "..", ".wsEndpoint.json"),
-    path.join(__dirname, "..", "..", "..", ".wsEndpoint.json"),
-    path.join(__dirname, "..", "..", "..", "..", ".wsEndpoint.json"),
-    path.join(__dirname, "..", "..", "..", "..", "..", ".wsEndpoint.json"),
-  ];
-
-  for (const wsPath of possibleWsPaths) {
-    try {
-      if (existsSync(wsPath)) {
-        const dir = path.dirname(wsPath);
-        // Verify it's actually the monorepo root
-        if (
-          existsSync(path.join(dir, "elements")) &&
-          existsSync(path.join(dir, "telecine"))
-        ) {
-          return dir;
-        }
-      }
-    } catch {
-      // Continue to next path
-    }
-  }
-
-  return null;
-}
-
-async function loadWebSocketEndpoint(): Promise<string | null> {
+  
+function loadWebSocketEndpoint(): string {
   // Strategy 1: Use WS_ENDPOINT environment variable if set by browsertest script
   // This is the most reliable when running in Docker where the monorepo root isn't mounted
-  if (process.env.WS_ENDPOINT) {
-    return process.env.WS_ENDPOINT;
+  if (!process.env.WS_ENDPOINT) {
+    throw new Error("WS_ENDPOINT environment variable is not set");
   }
-
-  // Strategy 2: Try to read from file (for cases where we're not in Docker)
-  const monorepoRoot = findMonorepoRoot();
-  let wsEndpointPath: string | null = null;
-
-  if (monorepoRoot) {
-    wsEndpointPath = path.join(monorepoRoot, ".wsEndpoint.json");
-  } else {
-    // Fallback to project root
-    wsEndpointPath = path.resolve(__dirname, ".wsEndpoint.json");
-  }
-
-  if (!wsEndpointPath) {
-    console.error("[vitest.config.browser] No wsEndpointPath determined");
-    return null;
-  }
-
-  // Retry mechanism: wait up to 2 seconds for file to appear
-  // This handles race conditions where vitest starts loading config
-  // before the browsertest script finishes starting the browser server
-  const maxRetries = 20;
-  const retryDelay = 100; // ms
-
-  const sleep = (ms: number) =>
-    new Promise((resolve) => setTimeout(resolve, ms));
-
-  for (let i = 0; i < maxRetries; i++) {
-    if (existsSync(wsEndpointPath)) {
-      try {
-        const content = readFileSync(wsEndpointPath, "utf-8");
-        const parsed = JSON.parse(content);
-        if (typeof parsed.wsEndpoint === "string" && parsed.wsEndpoint) {
-          return parsed.wsEndpoint;
-        }
-      } catch (error) {
-        // File exists but is invalid, wait a bit and retry
-        console.error(
-          "[vitest.config.browser] Error reading wsEndpoint file:",
-          error,
-        );
-        if (i < maxRetries - 1) {
-          await sleep(retryDelay);
-          continue;
-        }
-      }
-    }
-
-    // Wait before retrying (except on last iteration)
-    if (i < maxRetries - 1) {
-      await sleep(retryDelay);
-    }
-  }
-
-  console.error(
-    "[vitest.config.browser] Failed to find wsEndpoint after",
-    maxRetries,
-    "retries",
-  );
-  return null;
+  return process.env.WS_ENDPOINT;
 }
 
 function createConnectConfig(wsEndpoint: string): TestConfiguration {
@@ -261,12 +87,12 @@ function createLaunchConfig(): TestConfiguration {
   };
 }
 
-async function resolveTestConfiguration(
+function resolveTestConfiguration(
   mode: ViteTestBrowserMode,
-): Promise<TestConfiguration> {
+): TestConfiguration {
   switch (mode) {
     case "connect": {
-      const wsEndpoint = await loadWebSocketEndpoint();
+      const wsEndpoint = loadWebSocketEndpoint();
       if (!wsEndpoint) {
         throw new Error(
           "WebSocket endpoint required for connect mode but .wsEndpoint.json not found or invalid",
@@ -281,13 +107,17 @@ async function resolveTestConfiguration(
   }
 }
 
-export default defineConfig(async () => {
-  const browserMode: ViteTestBrowserMode =
-    process.env.VITEST_BROWSER_MODE === "connect" ? "connect" : "launch";
+const browserMode: ViteTestBrowserMode =
+  process.env.VITEST_BROWSER_MODE === "connect" ? "connect" : "launch";
 
-  const config = await resolveTestConfiguration(browserMode);
-  const { vitePluginEditframe } =
-    await import("./packages/vite-plugin/src/index.vitest.js");
+const config = resolveTestConfiguration(browserMode);
+log("resolved test configuration", config);
+
+export default defineConfig(async () => {
+  log("VITEST_BROWSER_MODE", process.env.VITEST_BROWSER_MODE);
+  const { vitePluginEditframe } = await import(
+    "./packages/vite-plugin/src/index.vitest.js"
+  );
 
   // Get worktree domain for Traefik URL rewriting
   // Test server uses its own Traefik entrypoint (port 4322) to avoid conflict with dev-projects
@@ -305,6 +135,15 @@ export default defineConfig(async () => {
       // So we'll do it in configureServer
     },
     configureServer(server) {
+      log(
+        "[Traefik URL Plugin] Configuring server, original port:",
+        server.config.server?.port,
+      );
+      log(
+        "[Traefik URL Plugin] Overriding server URLs to:",
+        traefikUrl,
+      );
+
       // Ensure the server is configured to listen on the correct port
       // Vitest should start the server automatically, but we ensure it's configured correctly
       if (server.config.server) {
@@ -333,10 +172,17 @@ export default defineConfig(async () => {
       // Also override the getter in case Vite tries to recompute it
       Object.defineProperty(server, "resolvedUrls", {
         get() {
+          log(
+            "[Traefik URL Plugin] resolvedUrls accessed, returning:",
+            traefikResolvedUrls,
+          );
           return traefikResolvedUrls;
         },
         set(_value) {
           // Ignore any attempts to set it back
+          log(
+            "[Traefik URL Plugin] Attempted to set resolvedUrls, ignoring",
+          );
         },
         configurable: true,
         enumerable: true,
@@ -349,6 +195,34 @@ export default defineConfig(async () => {
         },
         configurable: true,
         enumerable: true,
+      });
+
+      // Log when server is actually listening
+      server.httpServer?.once("listening", () => {
+        const address = server.httpServer?.address();
+        log("[Traefik URL Plugin] Server is listening on:", address);
+        log("[Traefik URL Plugin] Server URL:", server.resolvedUrls);
+        log(
+          "[Traefik URL Plugin] Server middleware count:",
+          server.middlewares.stack?.length || 0,
+        );
+      });
+
+      // Ensure server actually starts listening
+      // Vitest browser mode should start the server automatically, but we ensure it's ready
+      if (!server.httpServer?.listening) {
+        log(
+          "[Traefik URL Plugin] Server not yet listening, waiting for Vitest to start it...",
+        );
+      } else {
+        log("[Traefik URL Plugin] Server is already listening");
+      }
+
+      // Add a test endpoint to verify the server is working
+      server.middlewares.use("/__test__", (req, res) => {
+        log("[Traefik URL Plugin] Test endpoint hit:", req.url);
+        res.writeHead(200, { "Content-Type": "text/plain" });
+        res.end("Server is working");
       });
     },
   };
@@ -366,11 +240,11 @@ export default defineConfig(async () => {
   };
 
   const plugins = [
-    recordReplayProxyPlugin(),
     vitePluginEditframe({
       root: "./test-assets",
       cacheRoot: "./test-assets",
     }),
+    recordReplayProxyPlugin(),
     ciModePlugin,
   ];
 

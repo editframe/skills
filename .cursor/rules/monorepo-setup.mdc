@@ -1,7 +1,6 @@
 ---
-alwaysApply: true
+alwaysApply: false
 ---
-
 # Monorepo Setup with Git Worktrees
 
 ## Overview

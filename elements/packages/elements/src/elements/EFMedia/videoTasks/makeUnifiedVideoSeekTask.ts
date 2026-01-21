@@ -361,8 +361,6 @@ async function getMainVideoSample(
             }
             signal?.throwIfAborted();
 
-            const startTimeOffsetMs = videoRendition?.startTimeOffsetMs;
-
             // Create combined blob - this is expensive, check abort before/after
             signal?.throwIfAborted();
             const combinedBlob = new Blob([initSegment, mediaSegment]);
@@ -376,7 +374,7 @@ async function getMainVideoSample(
               {
                 videoBufferSize: EFMedia.VIDEO_SAMPLE_BUFFER_SIZE,
                 audioBufferSize: EFMedia.AUDIO_SAMPLE_BUFFER_SIZE,
-                startTimeOffsetMs,
+                startTimeOffsetMs: videoRendition.startTimeOffsetMs,
               },
             );
           },

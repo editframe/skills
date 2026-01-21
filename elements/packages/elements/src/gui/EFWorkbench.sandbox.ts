@@ -5,6 +5,7 @@ import "./EFWorkbench.js";
 import "./EFConfiguration.js";
 import "./hierarchy/EFHierarchy.js";
 import "./timeline/EFTimeline.js";
+import "./EFFilmstrip.js";
 import "../elements/EFPanZoom.js";
 import "../canvas/EFCanvas.js";
 import "../elements/EFTimegroup.js";
@@ -18,76 +19,97 @@ export default defineSandbox({
   
   render: () => html`
     <ef-configuration style="width: 1200px; height: 800px; border: 1px solid #ccc;">
-      <ef-workbench>
-        <ef-hierarchy
-          slot="hierarchy"
-          target="workbench-canvas"
-          show-header
-          header="LAYERS"
-        ></ef-hierarchy>
-        
-        <ef-pan-zoom slot="canvas" style="width: 100%; height: 100%;">
-          <ef-canvas id="workbench-canvas" style="width: 100%; height: 100%;">
-            <ef-timegroup
-              id="demo-timegroup"
-              mode="fixed"
-              duration="5s"
-              style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 400px; height: 300px;"
-            >
-              <ef-video
-                src="/assets/bars-n-tone2.mp4"
-                duration="5s"
-                style="width: 100%; height: 100%;"
-              ></ef-video>
-            </ef-timegroup>
-          </ef-canvas>
-        </ef-pan-zoom>
-        
-        <ef-timeline slot="timeline"></ef-timeline>
-      </ef-workbench>
+      <ef-timegroup
+        id="demo-timegroup"
+        workbench
+        mode="fixed"
+        duration="5s"
+        style="width: 400px; height: 300px;"
+      >
+        <ef-video
+          src="/assets/bars-n-tone2.mp4"
+          duration="5s"
+          style="width: 100%; height: 100%;"
+        ></ef-video>
+      </ef-timegroup>
     </ef-configuration>
   `,
   
   scenarios: {
-    async "renders workbench container"(ctx) {
-      const workbench = ctx.querySelector<EFWorkbench>("ef-workbench")!;
+    async "wraps timegroup with workbench"(ctx) {
+      const timegroup = ctx.querySelector("ef-timegroup")!;
       
       await ctx.frame();
+      await ctx.wait(100); // Wait for wrapWithWorkbench to execute
       
+      const workbench = ctx.querySelector<EFWorkbench>("ef-workbench");
       ctx.expect(workbench).toBeDefined();
+      ctx.expect(timegroup.closest("ef-workbench")).toBe(workbench);
     },
     
     async "renders hierarchy panel"(ctx) {
-      const hierarchy = ctx.querySelector("ef-hierarchy")!;
-      
       await ctx.frame();
+      await ctx.wait(100);
+      
+      const hierarchy = ctx.querySelector("ef-hierarchy")!;
       
       ctx.expect(hierarchy).toBeDefined();
       ctx.expect(hierarchy.getAttribute("slot")).toBe("hierarchy");
+      ctx.expect(hierarchy.getAttribute("target")).toBe("workbench-canvas");
     },
     
     async "renders canvas area"(ctx) {
-      const canvas = ctx.querySelector("ef-canvas")!;
-      
       await ctx.frame();
+      await ctx.wait(100);
+      
+      const canvas = ctx.querySelector("ef-canvas")!;
       
       ctx.expect(canvas).toBeDefined();
       ctx.expect(canvas.id).toBe("workbench-canvas");
     },
     
-    async "renders timeline"(ctx) {
+    async "renders filmstrip with timeline"(ctx) {
+      await ctx.frame();
+      await ctx.wait(100);
+      
+      const filmstrip = ctx.querySelector("ef-filmstrip")!;
       const timeline = ctx.querySelector("ef-timeline")!;
       
-      await ctx.frame();
-      
+      ctx.expect(filmstrip).toBeDefined();
+      ctx.expect(filmstrip.getAttribute("slot")).toBe("timeline");
+      ctx.expect(filmstrip.getAttribute("target")).toBe("demo-timegroup");
       ctx.expect(timeline).toBeDefined();
-      ctx.expect(timeline.getAttribute("slot")).toBe("timeline");
+    },
+    
+    async "timeline shows thumbnails for root timegroup"(ctx) {
+      await ctx.frame();
+      await ctx.wait(500); // Wait for timeline to initialize and render tracks
+      
+      const timeline = ctx.querySelector("ef-timeline")!;
+      ctx.expect(timeline).toBeDefined();
+      
+      // Find the timegroup track row
+      const timelineRow = timeline.shadowRoot?.querySelector("ef-timeline-row");
+      ctx.expect(timelineRow).toBeDefined();
+      
+      // Find the timegroup track component
+      const timegroupTrack = timelineRow?.shadowRoot?.querySelector("ef-timegroup-track");
+      ctx.expect(timegroupTrack).toBeDefined();
+      
+      // Check that show-filmstrip is set (should be true for root timegroups)
+      const hasShowFilmstrip = timegroupTrack?.hasAttribute("show-filmstrip");
+      ctx.expect(hasShowFilmstrip).toBe(true);
+      
+      // Check that thumbnail strip is rendered
+      const thumbnailStrip = timegroupTrack?.shadowRoot?.querySelector("ef-thumbnail-strip");
+      ctx.expect(thumbnailStrip).toBeDefined();
     },
     
     async "integrates preview with controls"(ctx) {
-      const workbench = ctx.querySelector<EFWorkbench>("ef-workbench")!;
-      
       await ctx.frame();
+      await ctx.wait(100);
+      
+      const workbench = ctx.querySelector<EFWorkbench>("ef-workbench")!;
       
       // Check that previewSettings context is provided
       const previewSettings = (workbench as any).previewSettings;
@@ -95,9 +117,10 @@ export default defineSandbox({
     },
     
     async "manages render mode"(ctx) {
-      const workbench = ctx.querySelector<EFWorkbench>("ef-workbench")!;
-      
       await ctx.frame();
+      await ctx.wait(100);
+      
+      const workbench = ctx.querySelector<EFWorkbench>("ef-workbench")!;
       
       const renderMode = (workbench as any).renderMode;
       ctx.expect(renderMode).toBeDefined();

@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Wrapper script for ag CLI tool
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Run the TypeScript file with tsx
+exec npx tsx "$SCRIPT_DIR/ag-lib/index.ts" "$@"

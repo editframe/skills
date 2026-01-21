@@ -13,7 +13,7 @@ Video elements can exist within a hierarchy of timegroups that affects how time 
 
 ### The Problem: Flexible Composition Without Forced Complexity
 
-Using a single composition model presents these engineering challenges: Requiring everything to be in a timeline adds complexity for simple cases, while making everything standalone prevents multi-element compositions. This creates friction when you need flexibility—simple videos shouldn't require complex setup, but complex compositions need precise timing coordination.
+Traditional video systems force a single composition model: either everything must be in a timeline (adding complexity for simple cases) or everything is standalone (preventing multi-element compositions). This creates friction when you need flexibility—simple videos shouldn't require complex setup, but complex compositions need precise timing coordination.
 
 ### The Solution: Optional Hierarchy with Precise Coordination
 
@@ -84,7 +84,7 @@ The `rootTimegroup` property references the outermost timegroup that defines the
 
 Here's how video elements work within timegroup hierarchies:
 
-<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+<Demonstration layout="horizontal" defaultSourceVisible alwaysShowSource>
   <Timegroup mode="contain" className="w-[720px] h-[480px] bg-black">
     <Video 
       src="https://assets.editframe.com/bars-n-tone.mp4" 

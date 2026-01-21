@@ -15,11 +15,8 @@ import {
 import type { EFTimegroup } from "../elements/EFTimegroup.js";
 import {
   type ContentReadyMode,
-  renderToImage,
-  renderToImageDirect,
   renderToImageNative,
-  resetRenderProfiling,
-  logRenderToImageDirectTiming,
+  resetRenderState,
   prepareFrameDataUri,
   loadImageFromDataUri,
 } from "./renderTimegroupToCanvas.js";
@@ -456,32 +453,15 @@ function selectCanvasStrategy(config: ResolvedRenderConfig): CanvasStrategy {
  */
 function debugFirstFrame(
   image: HTMLCanvasElement | HTMLImageElement,
-  timeMs: number,
-  nodeCount: number
 ): void {
-  console.log(`[renderToVideo] DEBUG: First frame at ${timeMs}ms`);
-  console.log(`[renderToVideo] DEBUG: Clone nodes: ${nodeCount}`);
-
   if (image instanceof HTMLImageElement) {
-    console.log(`[renderToVideo] DEBUG: Rendered HTMLImageElement ${image.width}x${image.height}`);
     const tempCanvas = document.createElement("canvas");
     tempCanvas.width = image.width;
     tempCanvas.height = image.height;
     const tempCtx = tempCanvas.getContext("2d");
     if (tempCtx) {
       tempCtx.drawImage(image, 0, 0);
-      const centerP = tempCtx.getImageData(Math.floor(image.width/2), Math.floor(image.height/2), 1, 1).data;
-      console.log(`[renderToVideo] DEBUG: center RGBA: ${centerP[0]}, ${centerP[1]}, ${centerP[2]}, ${centerP[3]}`);
-      const debugPoints = [
-        { x: 145, y: 145, name: "LAYERS-expected" },
-        { x: 100, y: 200, name: "(100,200)" },
-        { x: 500, y: 300, name: "(500,300)" },
-        { x: 960, y: 540, name: "center" },
-      ];
-      for (const pt of debugPoints) {
-        const p = tempCtx.getImageData(pt.x, pt.y, 1, 1).data;
-        console.log(`[renderToVideo] DEBUG: FO ${pt.name} RGBA: ${p[0]}, ${p[1]}, ${p[2]}, ${p[3]}`);
-      }
+     
       const bgColor = { r: 15, g: 23, b: 42 };
       let nonBgCount = 0;
       const scanData = tempCtx.getImageData(0, 0, image.width, image.height).data;
@@ -492,13 +472,11 @@ function debugFirstFrame(
           nonBgCount++;
         }
       }
-      console.log(`[renderToVideo] DEBUG: ForeignObject non-background pixels in ENTIRE image: ${nonBgCount}`);
     }
   } else {
     const canvasImage = image as HTMLCanvasElement;
     const debugCtx = canvasImage.getContext("2d");
     if (debugCtx) {
-      console.log(`[renderToVideo] DEBUG: Rendered image ${canvasImage.width}x${canvasImage.height}`);
       const samples = [
         { x: canvasImage.width / 2, y: canvasImage.height / 2, name: "center" },
         { x: 100, y: 100, name: "top-left" },
@@ -508,7 +486,6 @@ function debugFirstFrame(
       ];
       for (const s of samples) {
         const p = debugCtx.getImageData(Math.floor(s.x), Math.floor(s.y), 1, 1).data;
-        console.log(`[renderToVideo] DEBUG: ${s.name} (${Math.floor(s.x)},${Math.floor(s.y)}) RGBA: ${p[0]}, ${p[1]}, ${p[2]}, ${p[3]}`);
       }
       const bgColor = { r: 15, g: 23, b: 42 };
       let nonBgCount = 0;
@@ -520,7 +497,6 @@ function debugFirstFrame(
           nonBgCount++;
         }
       }
-      console.log(`[renderToVideo] DEBUG: Non-background pixels in top 200 rows: ${nonBgCount}`);
     }
   }
 }
@@ -598,14 +574,12 @@ export async function renderTimegroupToVideo(
     }
 
     if (useStreaming && fileStream) {
-      console.log(`[renderToVideo] Using streaming output (direct to disk)`);
       target = new StreamTarget(fileStream.writable);
       output = new Output({
         format: new Mp4OutputFormat({ fastStart: "fragmented" }),
         target,
       });
     } else {
-      console.log(`[renderToVideo] Using buffered output (in-memory)`);
       target = new BufferTarget();
       output = new Output({
         format: new Mp4OutputFormat(),
@@ -617,8 +591,6 @@ export async function renderTimegroupToVideo(
     if (videoSource) {
       output.addVideoTrack(videoSource);
     }
-  } else {
-    console.log(`[renderToVideo] BENCHMARK MODE - skipping video encoding`);
   }
 
   // Set up audio source for chunked rendering
@@ -640,7 +612,6 @@ export async function renderTimegroupToVideo(
     };
     audioSource = new AudioBufferSource(audioEncodingConfig);
     output.addAudioTrack(audioSource);
-    console.log(`[renderToVideo] Audio track added with codec '${selectedAudioCodec}' (will render in ${audioChunkDurationMs}ms chunks)`);
   }
 
   // Helper to render audio chunk up to a given time
@@ -656,21 +627,18 @@ export async function renderTimegroupToVideo(
       const audioBuffer = await timegroup.renderAudio(chunkStartMs, chunkEndMs);
       if (audioBuffer && audioBuffer.length > 0) {
         await audioSource.add(audioBuffer);
-        console.log(`[renderToVideo] Audio chunk: ${chunkStartMs}ms - ${chunkEndMs}ms (${audioBuffer.duration.toFixed(2)}s)`);
       }
       lastRenderedAudioEndMs = chunkEndMs;
     } catch (e) {
-      console.warn(`[renderToVideo] Audio chunk failed (${chunkStartMs}-${chunkEndMs}ms):`, e);
       lastRenderedAudioEndMs = chunkEndMs;
     }
   };
 
   const renderStartTime = performance.now();
   const audioStatus = includeAudio ? (audioSource ? "with audio" : "audio disabled") : "audio disabled";
-  console.log(`[renderToVideo] Starting: ${videoWidth}x${videoHeight}, ${totalFrames} frames @ ${fps}fps (${audioStatus})`);
   
   // Reset render profiling for clean export stats
-  resetRenderProfiling();
+  resetRenderState();
   
   // Property validation is expensive (getComputedStyle on all nodes every 30 frames)
   // Only enable during development debugging, not production exports
@@ -686,8 +654,6 @@ export async function renderTimegroupToVideo(
   // This keeps Prime-timeline at userTimeMs (user can preview/edit during render).
   const { clone: renderClone, container: renderContainer, cleanup: cleanupRenderClone } =
     await timegroup.createRenderClone();
-  
-  console.log(`[renderToVideo] Clone-timeline created`);
   
   // Pre-fetch scrub segments for all video elements to ensure fast seeks
   // This is critical for performance - without prefetching, each seek requires loading segments on-demand
@@ -705,12 +671,10 @@ export async function renderTimegroupToVideo(
         (video as any).prefetchScrubSegments(allTimestamps),
       ),
     );
-    console.log(`[renderToVideo] Prefetched scrub segments for ${videoElements.length} videos in ${(performance.now() - prefetchStartTime).toFixed(0)}ms`);
   }
   
   // Determine rendering path: native (fast) vs foreignObject (fallback)
   const useNativePath = isNativeCanvasApiEnabled();
-  console.log(`[renderToVideo] Rendering path: ${useNativePath ? 'NATIVE (Clone direct paint)' : 'ForeignObject (passive clone sync)'}`);
   
   // For foreignObject path: collect document styles ONCE and build clone structure ONCE
   // Clone structure is reused across frames - only styles are synced per-frame
@@ -763,7 +727,6 @@ export async function renderTimegroupToVideo(
     };
     videoSource = new CanvasSource(captureCanvas, encodingConfig);
     output.addVideoTrack(videoSource);
-    console.log(`[renderToVideo] Using DIRECT capture canvas encoding (no intermediate copy)`);
   }
   
   // Start output after all tracks are added
@@ -921,7 +884,6 @@ export async function renderTimegroupToVideo(
           });
           
           foCloneState = { container: cloneContainer, syncState, previewContainer };
-          console.log(`[renderToVideo] ForeignObject: Built clone structure once (${syncState.nodeCount} nodes, will reuse across frames)`);
           
           // First frame: prepare data URI and start loading
           const dataUri = await prepareFrameDataUri(foCloneState.previewContainer, timegroupWidth, timegroupHeight);
@@ -961,14 +923,14 @@ export async function renderTimegroupToVideo(
         
         // Debug logging for first frame only
         if (frameIndex === 0) {
-          debugFirstFrame(image, timeMs, foCloneState.syncState.nodeCount);
+          debugFirstFrame(image);
         }
       }
       totalRenderMs += performance.now() - renderStart;
       
       // Debug logging for first frame (native path)
       if (frameIndex === 0 && useNativePath) {
-        debugFirstFrame(image, timeMs, 0);
+        debugFirstFrame(image);
       }
       
       // Draw to encoding canvas based on strategy
@@ -1048,7 +1010,6 @@ export async function renderTimegroupToVideo(
       if (percent > lastLoggedPercent) {
         lastLoggedPercent = percent;
         const elapsed = (elapsedMs / 1000).toFixed(1);
-        console.log(`[renderToVideo] ${percent}% (${currentFrame}/${totalFrames}) ${elapsed}s`);
       }
     }
     
@@ -1065,41 +1026,17 @@ export async function renderTimegroupToVideo(
       await renderAudioUpTo(endMs);
     }
 
-    const totalElapsed = performance.now() - renderStartTime;
-    const totalTime = (totalElapsed / 1000).toFixed(2);
-    
     // Log profiling breakdown
-    console.log(`[renderToVideo] PROFILING BREAKDOWN${benchmarkMode ? ' (BENCHMARK MODE)' : ''}:`);
-    console.log(`[renderToVideo]   seek:    ${(totalSeekMs / 1000).toFixed(2)}s (${((totalSeekMs / totalElapsed) * 100).toFixed(1)}%)`);
-    console.log(`[renderToVideo]   sync:    ${(totalSyncMs / 1000).toFixed(2)}s (${((totalSyncMs / totalElapsed) * 100).toFixed(1)}%)`);
-    console.log(`[renderToVideo]   render:  ${(totalRenderMs / 1000).toFixed(2)}s (${((totalRenderMs / totalElapsed) * 100).toFixed(1)}%)`);
-    console.log(`[renderToVideo]   canvas:  ${(totalCanvasMs / 1000).toFixed(2)}s (${((totalCanvasMs / totalElapsed) * 100).toFixed(1)}%)`);
-    if (!benchmarkMode) {
-      console.log(`[renderToVideo]   encode:  ${(totalEncodeMs / 1000).toFixed(2)}s (${((totalEncodeMs / totalElapsed) * 100).toFixed(1)}%)`);
-      console.log(`[renderToVideo]   audio:   ${(totalAudioMs / 1000).toFixed(2)}s (${((totalAudioMs / totalElapsed) * 100).toFixed(1)}%) [${audioChunkCount} chunks]`);
-    }
     // Log renderToImageDirect timing breakdown if using foreignObject path
-    if (!useNativePath) {
-      logRenderToImageDirectTiming();
-    }
-    console.log(`[renderToVideo]   ───────────────────────`);
-    console.log(`[renderToVideo]   total:   ${(totalElapsed / 1000).toFixed(2)}s`);
-    console.log(`[renderToVideo]   frames:  ${totalFrames} @ ${fps}fps`);
-    console.log(`[renderToVideo]   video:   ${(renderDurationMs / 1000).toFixed(1)}s`);
-    console.log(`[renderToVideo]   speed:   ${((renderDurationMs / totalElapsed)).toFixed(2)}x realtime`);
-
     // Benchmark mode: skip finalization and output
     if (benchmarkMode) {
-      console.log(`[renderToVideo] BENCHMARK Complete! ${totalTime}s (${totalFrames} frames rendered, no encoding)`);
       return undefined;
     }
 
-    console.log(`[renderToVideo] Finalizing...`);
     await output!.finalize();
     // Note: StreamTarget closes the writable stream during finalize(), so we don't close it manually
 
     if (useStreaming) {
-      console.log(`[renderToVideo] Complete! ${totalTime}s (streamed to disk)`);
       return undefined;
     } else {
       // Buffered: download the result
@@ -1109,8 +1046,6 @@ export async function renderTimegroupToVideo(
         throw new Error("Video encoding failed: no buffer produced");
       }
 
-      const fileSizeMB = (videoBuffer.byteLength / (1024 * 1024)).toFixed(2);
-      console.log(`[renderToVideo] Complete! ${totalTime}s, ${fileSizeMB} MB`);
 
       // Return buffer if requested (for server-side use), otherwise download
       if (returnBuffer) {

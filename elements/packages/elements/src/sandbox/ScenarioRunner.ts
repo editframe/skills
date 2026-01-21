@@ -3,8 +3,8 @@
  * This ensures consistent behavior across all test runners
  */
 
-import { render, nothing } from "lit";
-import type { SandboxConfig, ScenarioResult, ScenarioFn } from "./index.js";
+import { render, nothing, type TemplateResult } from "lit";
+import type { SandboxConfig, ScenarioResult } from "./index.js";
 import { SandboxContext } from "./SandboxContext.js";
 
 export interface RunScenarioOptions {
@@ -35,14 +35,9 @@ export async function runScenario(
     throw new Error(`Scenario "${scenarioName}" not found`);
   }
 
-  // Extract scenario function - handle both function and Scenario object formats
-  const scenario: ScenarioFn = typeof scenarioDef === "function" 
-    ? scenarioDef 
-    : scenarioDef.run;
-
-  if (!scenario) {
-    throw new Error(`Scenario "${scenarioName}" has no run function`);
-  }
+  const scenarioCategory = scenarioDef.category;
+  // Get scenario-specific render function if provided, otherwise use sandbox render
+  const scenarioRender: () => TemplateResult = scenarioDef.render ?? sandboxConfig.render;
 
   const startTime = performance.now();
   const result: ScenarioResult = {
@@ -50,6 +45,10 @@ export async function runScenario(
     status: "passed",
     durationMs: 0,
   };
+
+  // For performance scenarios, mark that profiling should be enabled
+  // The actual profiling will be handled by the viewer/CLI that runs scenarios
+  const isPerformanceScenario = scenarioCategory === "performance";
 
   // Create context outside try block so we can capture assertions even on failure
   let ctx: SandboxContext | undefined;
@@ -106,95 +105,44 @@ export async function runScenario(
       return;
     }
     if (originalUnhandledRejection) {
+      // @ts-ignore
       originalUnhandledRejection(event);
     }
   };
 
   try {
-    // STEP 1: Collect task promises BEFORE clearing
-    // This captures all currently running tasks
-    const elements = Array.from(container.querySelectorAll("*"));
-    const taskPromises: Promise<unknown>[] = [];
-    
-    for (const element of elements) {
-      // Collect all taskComplete promises from Lit Tasks
-      const anyElement = element as any;
-      if (anyElement.mediaEngineTask?.taskComplete) {
-        taskPromises.push(
-          anyElement.mediaEngineTask.taskComplete.catch(() => {})
-        );
-      }
-      if (anyElement.frameTask?.taskComplete) {
-        taskPromises.push(
-          anyElement.frameTask.taskComplete.catch(() => {})
-        );
-      }
-      if (anyElement.unifiedVideoSeekTask?.taskComplete) {
-        taskPromises.push(
-          anyElement.unifiedVideoSeekTask.taskComplete.catch(() => {})
-        );
-      }
-      // Add video-specific tasks
-      if (anyElement.videoBufferTask?.taskComplete) {
-        taskPromises.push(
-          anyElement.videoBufferTask.taskComplete.catch(() => {})
-        );
-      }
-      if (anyElement.scrubVideoBufferTask?.taskComplete) {
-        taskPromises.push(
-          anyElement.scrubVideoBufferTask.taskComplete.catch(() => {})
-        );
-      }
-      // Add audio tasks
-      if (anyElement.audioBufferTask?.taskComplete) {
-        taskPromises.push(
-          anyElement.audioBufferTask.taskComplete.catch(() => {})
-        );
-      }
-      if (anyElement.audioSeekTask?.taskComplete) {
-        taskPromises.push(
-          anyElement.audioSeekTask.taskComplete.catch(() => {})
-        );
-      }
-    }
-    
-    // STEP 2: Clear container - this disconnects elements and triggers task aborts
-    // We use Lit's render with `nothing` to properly clear the container
-    // This preserves Lit's internal marker nodes and avoids ChildPart errors
     render(nothing, container);
-    
-    // STEP 3: Wait for all previously collected task promises to settle
-    // The tasks have now been aborted, so their promises should resolve/reject quickly
-    // Use a timeout to prevent hanging if tasks never settle (shouldn't happen, but safety first)
-    if (taskPromises.length > 0) {
-      const settleTimeout = new Promise<void>(resolve => setTimeout(resolve, 2000));
-      await Promise.race([
-        Promise.allSettled(taskPromises),
-        settleTimeout,
-      ]);
-    }
-    
-    // STEP 4: Give time for any microtasks/error handlers to complete
-    await new Promise<void>(resolve => setTimeout(resolve, 50));
-    
-    // STEP 5: Render the sandbox content into the container
-    // This provides the elements that scenarios will query and test
-    render(sandboxConfig.render(), container);
+    await Promise.resolve();
+    render(scenarioRender(), container);
+    await Promise.resolve();
+
     
     // Run sandbox setup if provided (setup runs before each scenario for isolation)
     // This typically clears global caches (e.g., thumbnailImageCache.clear())
     if (sandboxConfig.setup) {
       await sandboxConfig.setup(container);
     }
-    
-    // Wait for DOM to settle after clearing, rendering, and setup
-    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
 
     // Create context with optional logging callback
     ctx = new SandboxContext(container, options.onLog);
     
+    // For performance scenarios, emit an event that profiling tools can listen to
+    // This allows the viewer/CLI to enable profiling before running the scenario
+    if (isPerformanceScenario && typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("sandbox-scenario-performance-start", {
+        detail: { scenarioName, startTime }
+      }));
+    }
+    
     // Run the scenario
-    await scenario(ctx);
+    await scenarioDef.run(ctx);
+    
+    // Emit event when performance scenario completes
+    if (isPerformanceScenario && typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("sandbox-scenario-performance-end", {
+        detail: { scenarioName, durationMs: performance.now() - startTime }
+      }));
+    }
 
     result.durationMs = performance.now() - startTime;
     result.status = "passed";
@@ -240,9 +188,7 @@ export async function runAllScenarios(
   for (const scenarioName of scenarioNames) {
     const result = await runScenario(sandboxConfig, scenarioName, container, options);
     results.push(result);
-
-    // Wait for DOM to settle between scenarios
-    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+    await Promise.resolve();
   }
 
   return results;

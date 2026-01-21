@@ -9,9 +9,9 @@ headers:
 
 ## Time Propagation: Single Source of Truth for Timeline State
 
-Timegroups use a single source of truth architecture where only the root timegroup's `currentTime` is written, and all child times are computed from parent state. This prevents synchronization issues and race conditions that arise when maintaining separate timeline states.
+Timegroups use a single source of truth architecture where only the root timegroup's `currentTime` is written, and all child times are computed from parent state. This eliminates synchronization issues and race conditions that arise when maintaining separate timeline states.
 
-### Engineering Challenges with Separate Timeline States
+### The Problem: Separate Timeline States Present Engineering Challenges
 
 Using separate timeline states for different elements presents these engineering challenges:
 
@@ -23,11 +23,11 @@ Using separate timeline states for different elements presents these engineering
 
 ### The Solution: Root-Only Writes with Computed Child Times
 
-Timegroups use a single source of truth: only the root timegroup's `currentTime` is written. All child times are computed from parent state via `ownCurrentTimeMs`, providing synchronization and automatic propagation.
+Timegroups use a single source of truth: only the root timegroup's `currentTime` is written. All child times are computed from parent state via `ownCurrentTimeMs`, ensuring guaranteed synchronization and automatic propagation.
 
 ### Benefits for Your Workflow
 
-**Synchronization:** Setting root `currentTime` automatically updates all children, preventing timelines from desynchronizing. No manual synchronization code needed.
+**Guaranteed synchronization:** Setting root `currentTime` automatically updates all children—impossible for timelines to desynchronize. No manual synchronization code needed.
 
 **Simplified seeking:** Set root `currentTime` once and everything updates atomically. Single place where time is set makes debugging straightforward.
 
@@ -40,18 +40,9 @@ const rootTimegroup = document.getElementById('my-video');
 rootTimegroup.currentTime = 5.5; // All children automatically update
 ```
 
-In sequence mode, each child computes its local time (`ownCurrentTimeMs`) from the root position, resetting to 0 when it starts. This means you can seek the entire timeline by setting one property:
+In sequence mode, each child computes its local time (`ownCurrentTimeMs`) from the root position, resetting to 0 when it starts.
 
-```javascript
-// Seek to 10 seconds - all children update automatically
-rootTimegroup.currentTime = 10;
-
-// Each child computes its own local time
-const child1 = rootTimegroup.querySelector('[data-timegroup-child]');
-console.log(child1.ownCurrentTimeMs); // Local time relative to child's start
-```
-
-<Demonstration layout="horizontal" alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+<Demonstration layout="horizontal" alwaysShowSource>
   <Timegroup
     id="time-propagation-example"
     mode="sequence"

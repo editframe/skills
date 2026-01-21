@@ -9,15 +9,15 @@ headers:
 
 ## Tutorial: Your First Captions Composition
 
-Learn the essentials of working with captions elements through progressive steps.
+This tutorial will guide you through the essential concepts of working with captions elements in Editframe. Each step builds on the previous one, teaching you the fundamental skills needed for caption composition.
 
 ### Step 1: Display Basic Segment Captions
 
-Display complete caption segments as they play.
+Let's start with the simplest captions display - showing complete caption segments as they play.
 
-**What you'll learn:** Using `<ef-captions-segment>` to show full phrases.
+**What you'll learn:** How to display caption segments using the `<ef-captions-segment>` child element.
 
-<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+<Demonstration layout="horizontal" defaultSourceVisible alwaysShowSource>
   <Timegroup mode="contain" className="w-[720px] h-[405px] flex items-center justify-center bg-gradient-to-r from-blue-900 to-purple-900 relative">
     <Captions captionsScript="basic-captions" className="text-center text-white text-2xl bg-black bg-opacity-60 px-4 py-2 rounded-lg shadow-lg">
       <CaptionsSegment />
@@ -47,15 +47,15 @@ Display complete caption segments as they play.
   })}</script>
 </Demonstration>
 
-**Try it yourself:** Modify the segment text in the script element.
+**Try it yourself:** Modify the segment text in the script element to see how captions update automatically.
 
 ### Step 2: Add Word-by-Word Highlighting
 
-Display individual words as they're spoken.
+Now let's display individual words as they're spoken, creating a more dynamic caption experience.
 
-**What you'll learn:** Using `<ef-captions-active-word>` for word-level display.
+**What you'll learn:** How to use `<ef-captions-active-word>` to highlight words individually.
 
-<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+<Demonstration layout="horizontal" defaultSourceVisible alwaysShowSource>
   <Timegroup mode="contain" className="w-[720px] h-[405px] flex items-center justify-center bg-gradient-to-r from-green-900 to-blue-900 relative">
     <Captions captionsScript="word-captions" className="text-center">
       <CaptionsActiveWord className="text-yellow-300 text-4xl font-bold bg-black bg-opacity-70 px-3 py-2 rounded-lg shadow-lg transition-all duration-300" />
@@ -82,15 +82,15 @@ Display individual words as they're spoken.
   })}</script>
 </Demonstration>
 
-**Try it yourself:** Change the className to experiment with styling.
+**Try it yourself:** Change the className on `<ef-captions-active-word>` to experiment with different styling.
 
 ### Step 3: Create Context Display
 
-Show the current word with surrounding context.
+Let's show the current word with surrounding context, creating a more complete reading experience.
 
-**What you'll learn:** Combining `<ef-captions-before-active-word>`, `<ef-captions-active-word>`, and `<ef-captions-after-active-word>`.
+**What you'll learn:** How to combine `<ef-captions-before-active-word>`, `<ef-captions-active-word>`, and `<ef-captions-after-active-word>` to show context.
 
-<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+<Demonstration layout="horizontal" defaultSourceVisible alwaysShowSource>
   <Timegroup id="context-captions-demo" mode="contain" className="w-[720px] h-[405px] flex items-center justify-center bg-gradient-to-r from-purple-900 to-pink-900 relative">
     <Captions captionsScript="context-captions" className="text-center bg-black bg-opacity-60 px-6 py-4 rounded-lg">
       <CaptionsBeforeActiveWord className="text-gray-300 text-xl" />
@@ -116,15 +116,15 @@ Show the current word with surrounding context.
   })}</script>
 </Demonstration>
 
-**Try it yourself:** Adjust text colors to create visual hierarchy.
+**Try it yourself:** Adjust the text colors and sizes of each child element to create your own visual hierarchy.
 
 ### Step 4: Style with CSS Variables
 
-Use `--ef-word-seed` to create varied animations for each word.
+Now let's use the `--ef-word-seed` CSS variable to create varied, non-repetitive animations for each word.
 
-**What you'll learn:** Using CSS variables for unique word styling.
+**What you'll learn:** How to use CSS variables to create unique styling for each word.
 
-<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+<Demonstration layout="horizontal" defaultSourceVisible alwaysShowSource>
   <Timegroup id="animated-captions-demo" mode="contain" className="w-[720px] h-[405px] flex items-center justify-center bg-gradient-to-r from-indigo-900 to-teal-900 relative">
     <Captions captionsScript="animated-captions" className="text-center">
       <CaptionsActiveWord 
@@ -154,15 +154,15 @@ Use `--ef-word-seed` to create varied animations for each word.
   })}</script>
 </Demonstration>
 
-**Try it yourself:** Experiment with different CSS properties using `var(--ef-word-seed)`.
+**Try it yourself:** Experiment with different CSS properties using `var(--ef-word-seed)` to create your own animation variations.
 
 ### Step 5: Connect to Video or Audio Element
 
-Synchronize captions with a video or audio element.
+Finally, let's synchronize captions with a video or audio element for real-world use.
 
-**What you'll learn:** Using the `target` attribute for media synchronization.
+**What you'll learn:** How to use the `target` attribute to synchronize captions with media playback.
 
-<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+<Demonstration layout="horizontal" defaultSourceVisible alwaysShowSource>
   <Timegroup mode="contain" className="w-[720px] h-[405px] flex items-center justify-center bg-gradient-to-r from-red-900 to-orange-900 relative">
     <Video id="tutorial-video" src="https://assets.editframe.com/card-joker.mp4" className="w-full h-full object-contain" />
     <Captions target="tutorial-video" className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-center text-white text-2xl bg-black bg-opacity-70 px-6 py-3 rounded-lg shadow-xl">
@@ -171,10 +171,14 @@ Synchronize captions with a video or audio element.
   </Timegroup>
 </Demonstration>
 
-**Try it yourself:** Add `<ef-captions-active-word>` for word-by-word highlighting.
+**Try it yourself:** Add `<ef-captions-active-word>` to see word-by-word highlighting synchronized with the video.
 
 ## Next Steps
 
-- [How-To Guides](/docs/elements/captions/how-to/) - Learn specific techniques
-- [Explanations](/docs/elements/captions/explanation/) - Understand synchronization and architecture
+Now that you've learned the basics, explore:
+
+- [How-To Guides](/docs/elements/captions/how-to/) - Learn specific techniques like creating karaoke-style captions
+- [Explanations](/docs/elements/captions/explanation/) - Understand how captions synchronize with media and timegroups
 - [Reference](/docs/elements/captions/reference) - Complete property documentation
+
+

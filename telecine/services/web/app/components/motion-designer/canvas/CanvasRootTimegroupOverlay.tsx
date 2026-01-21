@@ -15,6 +15,7 @@ import {
 import {
   normalizeSize,
   isLegacySize,
+  type ElementSize,
 } from "~/lib/motion-designer/sizingTypes";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
 import { PlayLoopButton } from "../controls/PlayLoopButton";
@@ -23,6 +24,7 @@ import { OverlayItem } from "@editframe/react";
 import { hasRotateAnimations } from "../rendering/styleGenerators/rotationUtils";
 import { parseRotationFromTransform } from "../rendering/styleGenerators/rotationUtils";
 import { usePanZoomScale } from "./usePanZoomScale";
+import type { EFPanZoom } from "@editframe/elements";
 
 /**
  * Formats duration in milliseconds to human-readable string
@@ -98,9 +100,9 @@ export function CanvasRootTimegroupOverlay({
           typeof timegroupElement.durationMs === "number"
         ) {
           const newDurationMs = timegroupElement.durationMs;
-            setDurationMs(newDurationMs);
-          }
+          setDurationMs(newDurationMs);
         }
+      }
     };
 
     // Read immediately
@@ -124,9 +126,9 @@ export function CanvasRootTimegroupOverlay({
           attributeFilter: ["duration"],
         });
 
-    return () => {
+        return () => {
           observer.disconnect();
-    };
+        };
       }
     }
   }, [element.id, isActive]);
@@ -231,6 +233,7 @@ export function CanvasRootTimegroupOverlay({
         actions.addElement(
           {
             type: elementType,
+            parentId: element.id,
             childIds: [],
             props: defaultProps,
             animations: [],
@@ -298,11 +301,9 @@ export function CanvasRootTimegroupOverlay({
       currentHeight,
     );
 
-    // Ensure we have numeric values for calculations
-    const fixedDimensions = getSizeDimensions(fixedSize);
     const currentSize = {
-      width: fixedDimensions.width,
-      height: fixedDimensions.height,
+      width: fixedSize.widthValue,
+      height: fixedSize.heightValue,
     };
     const currentPosition = element.props?.canvasPosition || { x: 100, y: 100 };
     // Use computed rotation from DOM when rotate animations are active, otherwise use design property

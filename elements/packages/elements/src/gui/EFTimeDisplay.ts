@@ -10,12 +10,15 @@ import { TargetOrContextMixin } from "./TargetOrContextMixin.js";
 export class EFTimeDisplay extends TargetOrContextMixin(LitElement, efContext) {
   static styles = css`
     :host {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
       font-family: var(--ef-font-family, system-ui);
       font-size: var(--ef-font-size-xs, 0.75rem);
       color: var(--ef-text-color, rgb(75 85 99));
       white-space: nowrap;
     }
+
+    ::part(time) {}
   `;
 
   @consume({ context: currentTimeContext, subscribe: true })

@@ -530,9 +530,58 @@ class ExpectMatcher<T> {
   private stringify(value: unknown): string {
     if (value === null) return "null";
     if (value === undefined) return "undefined";
+    
+    // Handle HTMLElement instances specially
+    if (value instanceof Element) {
+      const parts: string[] = [];
+      parts.push(value.tagName.toLowerCase());
+      
+      // Add attributes in a readable format
+      const attrs: string[] = [];
+      if (value.id) {
+        attrs.push(`id="${value.id}"`);
+      }
+      if (value.className && typeof value.className === "string" && value.className.trim()) {
+        const classes = value.className.trim().split(/\s+/).filter(Boolean);
+        if (classes.length > 0) {
+          attrs.push(`class="${classes.join(" ")}"`);
+        }
+      }
+      
+      // Build the element representation
+      let result = `<${parts.join("")}`;
+      if (attrs.length > 0) {
+        result += ` ${attrs.join(" ")}`;
+      }
+      result += ">";
+      
+      // Add text content preview if it's short and meaningful
+      const textContent = value.textContent?.trim();
+      if (textContent && textContent.length > 0 && textContent.length < 50 && !value.querySelector("*")) {
+        // Only show text content if element has no child elements
+        result += ` "${textContent}"`;
+      }
+      
+      return result;
+    }
+    
+    // Handle NodeList and other array-like objects
+    if (value instanceof NodeList || (Array.isArray(value) && value.length > 0 && value[0] instanceof Element)) {
+      const arr = Array.from(value as NodeList | Element[]);
+      if (arr.length === 0) return "[]";
+      if (arr.length === 1) return this.stringify(arr[0]);
+      return `[${arr.length} elements]`;
+    }
+    
+    // Handle plain objects and arrays
     try {
-      return JSON.stringify(value);
+      return JSON.stringify(value, null, 0);
     } catch {
+      // For objects that can't be stringified, try to show type info
+      if (typeof value === "object" && value !== null) {
+        const constructorName = value.constructor?.name || "Object";
+        return `[${constructorName}]`;
+      }
       return String(value);
     }
   }

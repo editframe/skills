@@ -394,15 +394,7 @@ export function resetRenderState(): void {
   _totalDownsampleMs = 0;
   _lastLogTime = 0;
   _pathLogged = false;
-  _hasLoggedNativeApiStatus = false;
   _inlineImageCache.clear();
-}
-
-/**
- * @deprecated Use resetRenderState() instead for complete state reset
- */
-export function resetRenderProfiling(): void {
-  resetRenderState();
 }
 
 /**
@@ -433,11 +425,6 @@ function getEffectiveRenderMode(): RenderMode {
   // Native mode requires browser support
   if (mode === "native" && !isNativeCanvasApiAvailable()) {
     return "foreignObject";
-  }
-  
-  if (!_hasLoggedNativeApiStatus) {
-    _hasLoggedNativeApiStatus = true;
-    console.log(`[renderToImage] Render mode: ${mode}${mode === "native" ? " (drawElementImage API)" : " (SVG foreignObject)"}`);
   }
   
   return mode;
@@ -479,35 +466,6 @@ async function inlineImages(container: HTMLElement): Promise<void> {
   }
 }
 
-/**
- * Convert all canvas elements to img elements with data URIs.
- * Canvas elements don't serialize their pixel content in SVG foreignObject.
- * Uses worker pool for parallel encoding when available.
- * 
- * @internal - Currently unused but kept for potential future use
- */
-async function convertCanvasesToImages(container: HTMLElement): Promise<void> {
-  const canvases = Array.from(container.querySelectorAll("canvas"));
-  if (canvases.length === 0) {
-    return;
-  }
-
-  const encodedResults = await encodeCanvasesInParallel(canvases);
-
-  for (const { canvas, dataUrl } of encodedResults) {
-    try {
-      const img = document.createElement("img");
-      img.src = dataUrl;
-      img.width = canvas.width;
-      img.height = canvas.height;
-      const style = canvas.getAttribute("style");
-      if (style) img.setAttribute("style", style);
-      canvas.parentNode?.replaceChild(img, canvas);
-    } catch (e) {
-      console.warn("Failed to convert canvas to image:", e);
-    }
-  }
-}
 
 /**
  * Convert a Blob to a data URL.
@@ -879,10 +837,6 @@ export async function renderToImageNative(
   
   if (t3 - _lastLogTime > PROFILING_LOG_INTERVAL_MS) {
     _lastLogTime = t3;
-    const avgSetup = _totalSetupMs / _renderCallCount;
-    const avgDraw = _totalDrawMs / _renderCallCount;
-    const avgDownsample = _totalDownsampleMs / _renderCallCount;
-    console.log(`[renderToImageNative] ${_renderCallCount} calls: setup=${avgSetup.toFixed(1)}ms, draw=${avgDraw.toFixed(1)}ms, downsample=${avgDownsample.toFixed(1)}ms (DPR=${dpr})`);
   }
   
   return outputCanvas;
@@ -927,7 +881,6 @@ export async function renderToImage(
     if (!_pathLogged) {
       _pathLogged = true;
       const effectiveDpr = options?.skipDprScaling ? 1 : window.devicePixelRatio;
-      console.log(`[renderToImage] Using NATIVE path (${width}x${height}, effectiveDPR=${effectiveDpr}, displayDPR=${window.devicePixelRatio}${options?.skipDprScaling ? ' - SKIP DPR for export' : ''})`);
     }
     return renderToImageNative(container, width, height, options);
   }
@@ -935,7 +888,6 @@ export async function renderToImage(
   // Fallback: SVG foreignObject serialization
   if (!_pathLogged) {
     _pathLogged = true;
-    console.log(`[renderToImage] Using FOREIGNOBJECT path (${width}x${height}) - native available: ${isNativeCanvasApiAvailable()}`);
   }
   
   // Fallback: SVG foreignObject approach
@@ -992,11 +944,6 @@ export async function renderToImage(
   }
   const serialized = _xmlSerializer.serializeToString(wrapper);
   
-  // DEBUG: Log serialized HTML size and dimensions
-  if (_renderCallCount < 5) {
-    console.log(`[renderToImage] FO path: ${width}x${height}, serialized: ${serialized.length} chars, canvasScale: ${canvasScale}`);
-  }
-
   // Wrap in SVG foreignObject
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><foreignObject width="100%" height="100%">${serialized}</foreignObject></svg>`;
 
@@ -1051,17 +998,6 @@ let _totalBase64Ms = 0;
 let _totalImageLoadMs = 0;
 let _totalRestoreMs = 0;
 let _timingLoggedAt = 0;
-
-export function logRenderToImageDirectTiming(): void {
-  const total = _totalCanvasEncodeMs + _totalInlineMs + _totalSerializeMs + _totalBase64Ms + _totalImageLoadMs + _totalRestoreMs;
-  console.log(`[renderToVideo] RENDER SUB-TIMING (${_renderCallCount} frames):`);
-  console.log(`[renderToVideo]   canvas→jpeg: ${(_totalCanvasEncodeMs / 1000).toFixed(2)}s (${((_totalCanvasEncodeMs / total) * 100).toFixed(1)}%)`);
-  console.log(`[renderToVideo]   inline img:  ${(_totalInlineMs / 1000).toFixed(2)}s (${((_totalInlineMs / total) * 100).toFixed(1)}%)`);
-  console.log(`[renderToVideo]   serialize:   ${(_totalSerializeMs / 1000).toFixed(2)}s (${((_totalSerializeMs / total) * 100).toFixed(1)}%)`);
-  console.log(`[renderToVideo]   base64:      ${(_totalBase64Ms / 1000).toFixed(2)}s (${((_totalBase64Ms / total) * 100).toFixed(1)}%)`);
-  console.log(`[renderToVideo]   img.onload:  ${(_totalImageLoadMs / 1000).toFixed(2)}s (${((_totalImageLoadMs / total) * 100).toFixed(1)}%)`);
-  console.log(`[renderToVideo]   restore DOM: ${(_totalRestoreMs / 1000).toFixed(2)}s (${((_totalRestoreMs / total) * 100).toFixed(1)}%)`);
-}
 
 export async function renderToImageDirect(
   container: HTMLElement,
@@ -1180,7 +1116,6 @@ export async function renderToImageDirect(
   
   // Log timing breakdown periodically
   if (_renderCallCount - _timingLoggedAt >= 100) {
-    logRenderToImageDirectTiming();
     _timingLoggedAt = _renderCallCount;
   }
   

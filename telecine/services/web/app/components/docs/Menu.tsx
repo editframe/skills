@@ -46,42 +46,26 @@ import {
 const getIconForTitle = (title: string, href?: string): React.ElementType => {
   const lowerTitle = title.toLowerCase();
   const lowerHref = href?.toLowerCase() || "";
-
+  
   // Section type icons (check before element types)
   if (lowerTitle === "tutorial" || lowerHref.includes("/tutorial")) {
     return GraduationCap;
   }
-  if (
-    lowerTitle.includes("how-to") ||
-    lowerTitle.includes("how to") ||
-    lowerHref.includes("/how-to")
-  ) {
+  if (lowerTitle.includes("how-to") || lowerTitle.includes("how to") || lowerHref.includes("/how-to")) {
     return FileText;
   }
-  if (
-    lowerTitle === "concepts" ||
-    lowerTitle === "concept" ||
-    lowerHref.includes("/explanation") ||
-    lowerHref.includes("/concept")
-  ) {
+  if (lowerTitle === "concepts" || lowerTitle === "concept" || lowerHref.includes("/explanation") || lowerHref.includes("/concept")) {
     return Brain;
   }
   if (lowerTitle === "reference" || lowerHref.includes("/reference")) {
     return FileText;
   }
-
+  
   // Getting Started section
-  if (
-    lowerTitle.includes("getting started") ||
-    lowerTitle === "getting started"
-  ) {
+  if (lowerTitle.includes("getting started") || lowerTitle === "getting started") {
     return Rocket;
   }
-  if (
-    lowerTitle.includes("authentication") ||
-    lowerTitle.includes("auth") ||
-    lowerHref.includes("authentication")
-  ) {
+  if (lowerTitle.includes("authentication") || lowerTitle.includes("auth") || lowerHref.includes("authentication")) {
     return Key;
   }
   if (lowerTitle.includes("packages") || lowerHref.includes("packages")) {
@@ -96,21 +80,15 @@ const getIconForTitle = (title: string, href?: string): React.ElementType => {
   if (lowerTitle.includes("temporal") || lowerHref.includes("temporal")) {
     return Clock;
   }
-
+  
   // Elements section
-  if (
-    lowerTitle === "elements" ||
-    (lowerHref.includes("/elements") && !lowerHref.includes("/elements/"))
-  ) {
+  if (lowerTitle === "elements" || lowerHref.includes("/elements") && !lowerHref.includes("/elements/")) {
     return PuzzlePiece;
   }
   if (lowerTitle.includes("timegroup") || lowerHref.includes("timegroup")) {
     return SquaresFour;
   }
-  if (
-    (lowerTitle.includes("audio") && !lowerTitle.includes("video")) ||
-    (lowerHref.includes("/audio") && !lowerHref.includes("video"))
-  ) {
+  if (lowerTitle.includes("audio") && !lowerTitle.includes("video") || lowerHref.includes("/audio") && !lowerHref.includes("video")) {
     return SpeakerHigh;
   }
   if (lowerTitle.includes("video") || lowerHref.includes("/video")) {
@@ -134,23 +112,17 @@ const getIconForTitle = (title: string, href?: string): React.ElementType => {
   if (lowerTitle.includes("example") || lowerHref.includes("example")) {
     return Sparkle;
   }
-
+  
   // Rendering section
   if (lowerTitle.includes("rendering") || lowerHref.includes("rendering")) {
     return FilmReel;
   }
-  if (
-    lowerTitle.includes("api") &&
-    (lowerTitle.includes("rendering") || lowerHref.includes("rendering"))
-  ) {
+  if (lowerTitle.includes("api") && (lowerTitle.includes("rendering") || lowerHref.includes("rendering"))) {
     return Terminal;
   }
-
+  
   // React section
-  if (
-    lowerTitle === "react" ||
-    (lowerHref.includes("/react") && !lowerHref.includes("/react/"))
-  ) {
+  if (lowerTitle === "react" || lowerHref.includes("/react") && !lowerHref.includes("/react/")) {
     return Code;
   }
   if (lowerTitle.includes("component") || lowerHref.includes("component")) {
@@ -159,41 +131,26 @@ const getIconForTitle = (title: string, href?: string): React.ElementType => {
   if (lowerTitle.includes("hook") || lowerHref.includes("hook")) {
     return Code;
   }
-
+  
   // Controls section
-  if (
-    lowerTitle === "controls" ||
-    (lowerHref.includes("/controls") && !lowerHref.includes("/controls/"))
-  ) {
+  if (lowerTitle === "controls" || lowerHref.includes("/controls") && !lowerHref.includes("/controls/")) {
     return Sliders;
   }
-  if (
-    (lowerTitle.includes("toggle") && lowerTitle.includes("play")) ||
-    lowerHref.includes("toggle-play")
-  ) {
+  if (lowerTitle.includes("toggle") && lowerTitle.includes("play") || lowerHref.includes("toggle-play")) {
     return Play;
   }
-  if (
-    (lowerTitle.includes("toggle") && lowerTitle.includes("loop")) ||
-    lowerHref.includes("toggle-loop")
-  ) {
+  if (lowerTitle.includes("toggle") && lowerTitle.includes("loop") || lowerHref.includes("toggle-loop")) {
     return ArrowClockwise;
   }
   if (lowerTitle.includes("scrubber") || lowerHref.includes("scrubber")) {
     return FastForward;
   }
-  if (
-    lowerTitle.includes("time display") ||
-    lowerHref.includes("time-display")
-  ) {
+  if (lowerTitle.includes("time display") || lowerHref.includes("time-display")) {
     return Clock;
   }
-
+  
   // Resources section
-  if (
-    lowerTitle === "resources" ||
-    (lowerHref.includes("/resources") && !lowerHref.includes("/resources/"))
-  ) {
+  if (lowerTitle === "resources" || lowerHref.includes("/resources") && !lowerHref.includes("/resources/")) {
     return Stack;
   }
   if (lowerTitle.includes("image file") || lowerHref.includes("image-file")) {
@@ -208,22 +165,16 @@ const getIconForTitle = (title: string, href?: string): React.ElementType => {
   if (lowerTitle.includes("isobmff") || lowerHref.includes("isobmff")) {
     return FilmReel;
   }
-  if (
-    lowerTitle.includes("transcription") ||
-    lowerHref.includes("transcription")
-  ) {
+  if (lowerTitle.includes("transcription") || lowerHref.includes("transcription")) {
     return Microphone;
   }
-  if (
-    (lowerTitle.includes("render") && !lowerTitle.includes("rendering")) ||
-    (lowerHref.includes("render") && !lowerHref.includes("rendering"))
-  ) {
+  if (lowerTitle.includes("render") && !lowerTitle.includes("rendering") || (lowerHref.includes("render") && !lowerHref.includes("rendering"))) {
     return FilmReel;
   }
   if (lowerTitle.includes("url token") || lowerHref.includes("url-token")) {
     return Key;
   }
-
+  
   // Editor UI section
   if (lowerTitle.includes("editor") || lowerHref.includes("editor-ui")) {
     return Eye;
@@ -231,25 +182,18 @@ const getIconForTitle = (title: string, href?: string): React.ElementType => {
   if (lowerTitle.includes("preview") || lowerHref.includes("preview")) {
     return PlayCircle;
   }
-  if (
-    lowerTitle.includes("configuration") ||
-    lowerTitle.includes("config") ||
-    lowerHref.includes("configuration")
-  ) {
+  if (lowerTitle.includes("configuration") || lowerTitle.includes("config") || lowerHref.includes("configuration")) {
     return Gear;
   }
-
+  
   // Processing Files section
   if (lowerTitle.includes("processing") || lowerHref.includes("processing")) {
     return Cpu;
   }
-  if (
-    (lowerTitle.includes("audio") && lowerTitle.includes("video")) ||
-    lowerHref.includes("audio-video")
-  ) {
+  if (lowerTitle.includes("audio") && lowerTitle.includes("video") || lowerHref.includes("audio-video")) {
     return VideoCamera;
   }
-
+  
   // Fallback for common patterns
   if (lowerTitle.includes("api") || lowerTitle.includes("endpoint")) {
     return Terminal;
@@ -272,35 +216,28 @@ const getIconForTitle = (title: string, href?: string): React.ElementType => {
   if (lowerTitle.includes("snippet") || lowerTitle.includes("reusable")) {
     return Sparkle;
   }
-
+  
   // Default icon
   return FileText;
 };
 
-const MenuItem: FC<{
-  item: DocsMenuItem;
+const MenuItem: FC<{ 
+  item: DocsMenuItem; 
   level?: number;
   expandedItems?: Set<string>;
   collapsedItems?: Set<string>;
   onToggle?: (slug: string) => void;
   isActivePath?: boolean;
-}> = ({
-  item,
-  level = 0,
-  expandedItems = new Set(),
-  collapsedItems = new Set(),
-  onToggle,
-  isActivePath = false,
-}) => {
+}> = ({ item, level = 0, expandedItems = new Set(), collapsedItems = new Set(), onToggle, isActivePath = false }) => {
   const location = useLocation();
   const hasChildren = item.children.length > 0;
   const ItemIcon = getIconForTitle(item.attrs.title, item.slug);
   const isManuallyExpanded = expandedItems.has(item.slug || "");
   const indentLevel = level * 12; // 12px per level for better visual hierarchy
-
+  
   // Check if this item is active
   const isActive = item.slug === location.pathname;
-
+  
   // Check if any child is active (recursively)
   const hasActiveChild = (children: DocsMenuItem[]): boolean => {
     return children.some((child) => {
@@ -308,20 +245,15 @@ const MenuItem: FC<{
       return child.children.length > 0 && hasActiveChild(child.children);
     });
   };
-
+  
   // Check if manually collapsed
   const isManuallyCollapsed = collapsedItems.has(item.slug || "");
-
+  
   // Expand if:
   // 1. Manually expanded (takes precedence)
   // 2. OR in active path (need to show active page, even if manually collapsed)
   // 3. OR (not manually collapsed AND has active child - for auto-expansion)
-  const shouldBeExpanded =
-    isManuallyExpanded ||
-    isActivePath ||
-    (!isManuallyCollapsed &&
-      hasChildren &&
-      (isActive || hasActiveChild(item.children)));
+  const shouldBeExpanded = isManuallyExpanded || isActivePath || (!isManuallyCollapsed && hasChildren && (isActive || hasActiveChild(item.children)));
 
   const handleToggle = (e: React.MouseEvent) => {
     if (hasChildren && item.slug) {
@@ -339,7 +271,7 @@ const MenuItem: FC<{
             onClick={handleToggle}
             className={clsx(
               "flex-shrink-0 p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors",
-              "text-slate-400 dark:text-slate-500",
+              "text-slate-400 dark:text-slate-500"
             )}
             aria-label={shouldBeExpanded ? "Collapse" : "Expand"}
           >
@@ -357,8 +289,10 @@ const MenuItem: FC<{
             className={({ isActive }) =>
               clsx(
                 "flex items-center px-2 py-1 rounded-md cursor-pointer w-full text-xs leading-5 transition-all flex-1",
-                level <= 2 && "gap-2",
-                level === 0 ? "font-semibold" : "font-normal",
+                level <= 2 ? "gap-2" : "gap-0",
+                level === 0
+                  ? "font-semibold"
+                  : "font-normal",
                 isActive
                   ? level === 0
                     ? "text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800"
@@ -377,10 +311,8 @@ const MenuItem: FC<{
           <div
             className={clsx(
               "flex items-center px-2 py-1 rounded-md text-xs leading-5 flex-1",
-              level <= 2 && "gap-2",
-              level === 0
-                ? "font-semibold text-slate-700 dark:text-slate-300"
-                : "font-normal text-slate-600 dark:text-slate-400",
+              level <= 2 ? "gap-2" : "gap-0",
+              level === 0 ? "font-semibold text-slate-700 dark:text-slate-300" : "font-normal text-slate-600 dark:text-slate-400"
             )}
             style={level > 0 ? { paddingLeft: `${indentLevel}px` } : undefined}
           >
@@ -390,36 +322,30 @@ const MenuItem: FC<{
         )}
       </div>
       {hasChildren && shouldBeExpanded && (
-        <ul
-          className={clsx(
-            "mt-0.5 space-y-0.5 ml-4",
-            level === 0
-              ? "border-l border-slate-200 dark:border-slate-800 pl-3"
-              : "",
-          )}
-        >
-          {item.children
-            .filter((child) => child.slug || child.children.length > 0)
-            .map((child) => {
-              // Check if this child or any descendant is active
-              const checkIfActive = (item: DocsMenuItem): boolean => {
-                if (item.slug === location.pathname) return true;
-                return item.children.some(checkIfActive);
-              };
-              const childIsInActivePath = checkIfActive(child);
-
-              return (
-                <MenuItem
-                  key={child.slug || child.attrs.title}
-                  item={child}
-                  level={level + 1}
-                  expandedItems={expandedItems}
-                  collapsedItems={collapsedItems}
-                  onToggle={onToggle}
-                  isActivePath={childIsInActivePath}
-                />
-              );
-            })}
+        <ul className={clsx(
+          "mt-0.5 space-y-0.5 ml-4",
+          level === 0 ? "border-l border-slate-200 dark:border-slate-800 pl-3" : ""
+        )}>
+          {item.children.map((child) => {
+            // Check if this child or any descendant is active
+            const checkIfActive = (item: DocsMenuItem): boolean => {
+              if (item.slug === location.pathname) return true;
+              return item.children.some(checkIfActive);
+            };
+            const childIsInActivePath = checkIfActive(child);
+            
+            return (
+              <MenuItem 
+                key={child.slug || child.attrs.title} 
+                item={child} 
+                level={level + 1}
+                expandedItems={expandedItems}
+                collapsedItems={collapsedItems}
+                onToggle={onToggle}
+                isActivePath={childIsInActivePath}
+              />
+            );
+          })}
         </ul>
       )}
     </li>
@@ -439,7 +365,7 @@ export const Menu: FC<{ menu: DocsMenuItem[]; className?: string }> = ({
     const findAndExpandParents = (
       items: DocsMenuItem[],
       targetPath: string,
-      parents: string[] = [],
+      parents: string[] = []
     ): string[] | null => {
       for (const item of items) {
         if (item.slug === targetPath) {
@@ -450,7 +376,7 @@ export const Menu: FC<{ menu: DocsMenuItem[]; className?: string }> = ({
           const found = findAndExpandParents(
             item.children,
             targetPath,
-            item.slug ? [...parents, item.slug] : parents,
+            item.slug ? [...parents, item.slug] : parents
           );
           if (found !== null) {
             return found;
@@ -477,7 +403,7 @@ export const Menu: FC<{ menu: DocsMenuItem[]; className?: string }> = ({
     setExpandedItems((prev) => {
       const next = new Set(prev);
       const isCurrentlyExpanded = next.has(slug);
-
+      
       if (isCurrentlyExpanded) {
         // Collapsing: remove from expanded, add to collapsed
         next.delete(slug);
@@ -511,9 +437,9 @@ export const Menu: FC<{ menu: DocsMenuItem[]; className?: string }> = ({
         {menu.map((category) => {
           const isActive = isItemActive(category);
           return (
-            <MenuItem
-              key={category.slug || category.attrs.title}
-              item={category}
+            <MenuItem 
+              key={category.slug || category.attrs.title} 
+              item={category} 
               level={0}
               expandedItems={expandedItems}
               collapsedItems={collapsedItems}

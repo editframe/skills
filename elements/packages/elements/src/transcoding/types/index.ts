@@ -95,6 +95,8 @@ export interface ManifestVideoRendition {
   profile?: string;
   /** Optional level indication */
   level?: string;
+  /** Optional start time offset in milliseconds */
+  startTimeOffsetMs?: number;
 }
 
 export interface ManifestAudioRendition {
@@ -120,6 +122,8 @@ export interface ManifestAudioRendition {
   mimeType: string; // 'audio/mp4; codecs="mp4a.40.2"'
   /** Optional language code */
   language?: string;
+  /** Optional start time offset in milliseconds */
+  startTimeOffsetMs?: number;
 }
 
 /**

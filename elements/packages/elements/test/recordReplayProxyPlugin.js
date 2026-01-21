@@ -3,7 +3,10 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import debug from 'debug';
 import { TEST_SERVER_PORT } from "./constants.js";
+
+const log = debug('ef:recordReplayProxyPlugin');
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = join(__dirname, "__cache__");
@@ -43,7 +46,7 @@ export function recordReplayProxyPlugin() {
     name: "record-replay-proxy",
 
     configureServer(server) {
-      console.log(
+      log(
         `[Proxy Plugin] Configuring record-replay proxy middleware... ${CACHE_ONLY_MODE ? "(CACHE-ONLY MODE)" : ""}`,
       );
 
@@ -60,10 +63,10 @@ export function recordReplayProxyPlugin() {
         await handleProxyRequest(req, res, next);
       });
 
-      console.log("[Proxy Plugin] Proxy middleware configured");
-      console.log(`[Proxy Plugin] Cache directory: ${CACHE_DIR}`);
+      log("[Proxy Plugin] Proxy middleware configured");
+      log(`[Proxy Plugin] Cache directory: ${CACHE_DIR}`);
       if (CACHE_ONLY_MODE) {
-        console.log(
+        log(
           "[Proxy Plugin] ⚠️  Running in CACHE-ONLY mode - no remote fetching",
         );
       }
@@ -122,7 +125,7 @@ export function recordReplayProxyPlugin() {
             responseHeaders["content-length"] = body.length.toString();
           }
 
-          console.log(
+          log(
             `[Proxy] ✓ Rewrote cached URLs: ${originalHost} → ${proxyHost}`,
           );
         } catch (error) {
@@ -199,7 +202,7 @@ export function recordReplayProxyPlugin() {
       const dataFile = join(cacheDir, "data.bin");
       await writeFile(dataFile, body); // Write raw binary data
 
-      console.log("[Proxy] ✓ Cached response");
+      log("[Proxy] ✓ Cached response");
     } catch (error) {
       console.warn(`[Proxy] Failed to cache: ${error.message}`);
     }
@@ -226,9 +229,9 @@ export function recordReplayProxyPlugin() {
     }
 
     const fullPath = apiPath;
-    console.log(`[Proxy] → ${req.method} ${fullPath}`);
+    log(`[Proxy] → ${req.method} ${fullPath}`);
     if (req.headers.range) {
-      console.log(`[Proxy] Range: ${req.headers.range}`);
+      log(`[Proxy] Range: ${req.headers.range}`);
     }
 
     // Set CORS headers
@@ -257,7 +260,7 @@ export function recordReplayProxyPlugin() {
         try {
           const metadataFile = join(cacheDir, "metadata.json");
           if (existsSync(metadataFile)) {
-            console.log(
+            log(
               `[Proxy] ✓ CACHE-ONLY: Serving from cache: ${cacheKey}`,
             );
             await serveCachedResponse(res, cacheDir, req);
@@ -268,7 +271,7 @@ export function recordReplayProxyPlugin() {
         }
       }
 
-      console.log(`[Proxy] ✗ CACHE-ONLY: No cache available for ${cacheKey}`);
+      log(`[Proxy] ✗ CACHE-ONLY: No cache available for ${cacheKey}`);
       res.writeHead(404, { "Content-Type": "application/json" });
       res.end(
         JSON.stringify({
@@ -339,7 +342,7 @@ export function recordReplayProxyPlugin() {
                 responseHeaders["content-length"] = body.length.toString();
               }
 
-              console.log(
+              log(
                 `[Proxy] ✓ Rewrote URLs: ${originalHost} → ${proxyHost}`,
               );
             } catch (error) {
@@ -350,8 +353,8 @@ export function recordReplayProxyPlugin() {
 
           // If we get a 404, try to serve from cache first
           if (response.status === 404) {
-            console.log("[Proxy] ✗ Target server returned 404");
-            console.log(`[Proxy] Checking cache: ${cacheKey}`);
+            log("[Proxy] ✗ Target server returned 404");
+            log(`[Proxy] Checking cache: ${cacheKey}`);
 
             if (existsSync(cacheDir)) {
               try {
@@ -360,7 +363,7 @@ export function recordReplayProxyPlugin() {
                   const metadata = JSON.parse(
                     await readFile(metadataFile, "utf-8"),
                   );
-                  console.log(
+                  log(
                     `[Proxy] ✓ Serving from cache instead of 404 (${metadata.timestamp})`,
                   );
                   await serveCachedResponse(res, cacheDir, req);
@@ -373,7 +376,7 @@ export function recordReplayProxyPlugin() {
               }
             }
 
-            console.log("[Proxy] ✗ No cache available, passing through 404");
+            log("[Proxy] ✗ No cache available, passing through 404");
           }
 
           res.writeHead(response.status, responseHeaders);
@@ -391,8 +394,8 @@ export function recordReplayProxyPlugin() {
             );
           }
         } catch (err) {
-          console.log(`[Proxy] ✗ Real server failed: ${err.message}`);
-          console.log(`[Proxy] Checking cache: ${cacheKey}`);
+          log(`[Proxy] ✗ Real server failed: ${err.message}`);
+          log(`[Proxy] Checking cache: ${cacheKey}`);
 
           if (existsSync(cacheDir)) {
             try {
@@ -401,7 +404,7 @@ export function recordReplayProxyPlugin() {
                 const metadata = JSON.parse(
                   await readFile(metadataFile, "utf-8"),
                 );
-                console.log(
+                log(
                   `[Proxy] ✓ Serving from cache (${metadata.timestamp})`,
                 );
                 await serveCachedResponse(res, cacheDir, req);
@@ -414,7 +417,7 @@ export function recordReplayProxyPlugin() {
             }
           }
 
-          console.log("[Proxy] ✗ No cache available, failing request");
+          log("[Proxy] ✗ No cache available, failing request");
           res.writeHead(500, { "Content-Type": "application/json" });
           res.end(
             JSON.stringify({

@@ -1,6 +1,7 @@
 import { defineSandbox } from "../../sandbox/index.js";
 import { html } from "lit";
 import type { EFTimelineRow } from "./EFTimelineRow.js";
+import "./tracks/preloadTracks.js";
 import "./EFTimelineRow.js";
 import "./TimelineStateProvider.js";
 import "../../elements/EFVideo.js";
@@ -60,7 +61,7 @@ export default defineSandbox({
       
       await ctx.frame();
       
-      const rowElement = ctx.querySelector<EFTimelineRow>("ef-timeline-row")!;
+      const rowElement = ctx.querySelector("ef-timeline-row") as EFTimelineRow;
       ctx.expect(rowElement).toBeDefined();
       ctx.expect(rowElement.element).toBeDefined();
     },
@@ -111,7 +112,7 @@ export default defineSandbox({
       
       await ctx.frame();
       
-      const rowElement = ctx.querySelector<EFTimelineRow>("ef-timeline-row")!;
+      const rowElement = ctx.querySelector("ef-timeline-row") as EFTimelineRow;
       const shadowRoot = rowElement.shadowRoot;
       const track = shadowRoot?.querySelector(".row-track");
       

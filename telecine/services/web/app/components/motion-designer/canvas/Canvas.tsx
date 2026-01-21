@@ -5,7 +5,8 @@ import {
   createDefaultSize,
   createDefaultSizeForFlexChild,
 } from "~/lib/motion-designer/defaultSizes";
-import { PanZoom, OverlayLayer } from "@editframe/react";
+import { PanZoom, OverlayLayer, usePanZoomTransform } from "@editframe/react";
+import type { EFPanZoom } from "@editframe/elements";
 import { CanvasRootTimegroup } from "./CanvasRootTimegroup";
 import { CanvasRootTimegroupOverlay } from "./CanvasRootTimegroupOverlay";
 import { ChildElementOverlays } from "./ChildElementOverlays";
@@ -13,11 +14,9 @@ import { DragCreationPreview } from "./DragCreationPreview";
 import { CanvasContextMenu } from "./CanvasContextMenu";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
 
-type EFPanZoomElement = React.ComponentRef<typeof PanZoom>;
-
 interface CanvasProps {
   state: MotionDesignerState;
-  panZoomRef: React.RefObject<EFPanZoomElement | null>;
+  panZoomRef: React.RefObject<EFPanZoom | null>;
 }
 
 export function Canvas({ state, panZoomRef }: CanvasProps) {
@@ -43,6 +42,9 @@ export function Canvas({ state, panZoomRef }: CanvasProps) {
   const lastClickTimeRef = React.useRef<number>(0);
   const overlayLayerRef = React.useRef<HTMLDivElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
+
+  // Get transform values from PanZoom via context/events
+  const transform = usePanZoomTransform(panZoomRef);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     // Only handle drag-to-create if clicking directly on canvas background (not on PanZoom or its children)
@@ -599,6 +601,7 @@ export function Canvas({ state, panZoomRef }: CanvasProps) {
               key={id}
               element={element}
               state={state}
+              canvasScale={transform.scale}
               showOverlay={false}
             />
           );
@@ -622,10 +625,14 @@ export function Canvas({ state, panZoomRef }: CanvasProps) {
               <CanvasRootTimegroupOverlay
                 element={element}
                 state={state}
+                canvasScale={transform.scale}
               />
               <ChildElementOverlays
                 rootTimegroup={element}
                 state={state}
+                canvasScale={transform.scale}
+                canvasTranslateX={transform.x}
+                canvasTranslateY={transform.y}
               />
             </React.Fragment>
           );
@@ -641,6 +648,9 @@ export function Canvas({ state, panZoomRef }: CanvasProps) {
               startY={dragStart.canvasY}
               currentX={dragCurrent.canvasX}
               currentY={dragCurrent.canvasY}
+              canvasScale={transform.scale}
+              canvasTranslateX={transform.x}
+              canvasTranslateY={transform.y}
               elementType={state.ui.placementMode}
             />
           )}

@@ -13,7 +13,7 @@ headers:
 
 **Solution:** Use multiple surface elements targeting the same video, each with different CSS filter classes applied. Surfaces efficiently apply filters without re-decoding the video.
 
-<Demonstration layout="horizontal" sourceVisible alwaysShowSource enablePreview enableFilmstrip enableFitScale>
+<Demonstration layout="horizontal" defaultSourceVisible alwaysShowSource>
   <Timegroup mode="contain" className="w-[720px] h-[480px] grid grid-cols-3 gap-2 p-2 bg-black">
     <Video id="filter-video" src="https://assets.editframe.com/bars-n-tone.mp4" className="w-full h-full object-cover" />
     <Surface target="filter-video" className="w-full h-full object-cover grayscale" />
@@ -29,6 +29,6 @@ headers:
 
 **Available filters:** `blur`, `brightness`, `contrast`, `saturate`, `grayscale`, `sepia`, `hue-rotate`, `invert`, and `opacity`. You can combine multiple filters in a single `className`.
 
-For details on why surfaces are efficient for this use case, see the [Canvas Mirroring Architecture explanation](/docs/elements/surface/explanation/canvas-mirroring-architecture).
+**Performance benefit:** All surfaces share the same video decode and network stream, with filters applied efficiently at the canvas level.
 
 

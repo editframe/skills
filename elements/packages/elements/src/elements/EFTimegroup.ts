@@ -453,7 +453,6 @@ function evaluateSeekTarget(
 @customElement("ef-timegroup")
 export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
   static get observedAttributes(): string[] {
-    // biome-ignore lint/complexity/noThisInStatic: It's okay to use this here
     const parentAttributes = super.observedAttributes || [];
     return [
       ...parentAttributes,

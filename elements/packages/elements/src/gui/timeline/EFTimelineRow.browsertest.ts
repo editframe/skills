@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test } from "vitest";
 import "../../elements/EFTimegroup.js";
 import "../../elements/EFVideo.js";
 import "../../elements/EFAudio.js";
+import "./tracks/preloadTracks.js";
 import "./EFTimelineRow.js";
 import type { EFTimelineRow } from "./EFTimelineRow.js";
 import type { EFTimegroup } from "../../elements/EFTimegroup.js";

@@ -39,6 +39,7 @@ import { TWMixin } from "../TWMixin.js";
 // NOTE: Track components (ef-audio-track, ef-video-track, etc.) are NOT imported here
 // to avoid circular dependencies with TrackItem. They must be registered before
 // EFTimeline is used. See preloadTracks.ts for the registration sequence.
+import "./tracks/preloadTracks.js";
 import type { TrimChangeDetail } from "./TrimHandles.js";
 import { flattenHierarchy } from "./flattenHierarchy.js";
 import "./EFTimelineRow.js";

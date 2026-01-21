@@ -1,11 +1,8 @@
-import type { EFTimegroup } from "../elements/EFTimegroup.js";
-
 /**
  * Elements to skip entirely when building the preview.
  */
 const SKIP_TAGS = new Set([
   "EF-AUDIO",
-  "EF-WAVEFORM",
   "EF-THUMBNAIL-STRIP",
   "EF-FILMSTRIP",
   "EF-TIMELINE",
@@ -71,7 +68,7 @@ const SYNC_PROPERTIES_KEBAB = SYNC_PROPERTIES.map(prop =>
 /**
  * Feature detection: computedStyleMap is ~15% faster for style syncing.
  */
-const HAS_COMPUTED_STYLE_MAP = typeof Element.prototype.computedStyleMap === "function";
+const HAS_COMPUTED_STYLE_MAP = typeof Element !== "undefined" && typeof Element.prototype.computedStyleMap === "function";
 
 /**
  * CSS initial/default values for SAFE-TO-SKIP properties.
@@ -236,7 +233,7 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
         try { ctx.drawImage(srcEl, 0, 0); } catch {}
       }
       // Raw canvas elements don't need style syncing, just return clone
-      return null;
+      // return null;
     }
     
     // Custom elements with shadow canvas (e.g., ef-video, ef-image)
@@ -249,7 +246,7 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
         clone.height = shadowCanvas.height || srcEl.clientHeight;
         // Mark ef-image canvases to preserve transparency (use PNG instead of JPEG)
         // ef-video doesn't need this since videos don't have transparency
-        if (srcEl.tagName === "EF-IMAGE") {
+        if (srcEl.tagName === "EF-IMAGE" || srcEl.tagName === "EF-WAVEFORM") {
           clone.dataset.preserveAlpha = "true";
         }
         const ctx = clone.getContext("2d");
@@ -536,7 +533,7 @@ function syncNodeStyles(node: CloneNode): void {
         if (s.transformStyle !== srcTransformStyle) s.transformStyle = srcTransformStyle;
       } catch {}
     }
-    return;
+    // return;
   }
   
   // Regular element - sync CSS properties with cache-based change detection

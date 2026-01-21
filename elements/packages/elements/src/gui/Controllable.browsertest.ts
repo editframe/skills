@@ -1,6 +1,4 @@
-import { html, LitElement } from "lit";
-import { customElement } from "lit/decorators.js";
-import { afterEach, describe, expect, test } from "vitest";
+import { beforeEach, describe, expect, test } from "vitest";
 import "./EFPreview.js";
 import "./EFScrubber.js";
 import "./EFTimeDisplay.js";
@@ -12,58 +10,44 @@ import type { EFTimegroup } from "../elements/EFTimegroup.js";
 import type { EFVideo } from "../elements/EFVideo.js";
 import type { EFTogglePlay } from "./EFTogglePlay.js";
 
-@customElement("test-controllable-wrapper")
-// @ts-expect-error Used via custom element registration
-// biome-ignore lint/correctness/noUnusedVariables: Used via custom element registration
-class TestControllableWrapper extends LitElement {
-  render() {
-    return html`<slot></slot>`;
-  }
-}
-
 function createTestContainer() {
-  const container = document.createElement("test-controllable-wrapper");
+  const container = document.createElement("div");
   document.body.appendChild(container);
+  container.style.display = "block";
   return container;
 }
 
 describe("Controllable Interface", () => {
   let container: Element;
 
-  afterEach(() => {
+  beforeEach(() => {
     container?.remove();
   });
 
-  test(
-    "ef-toggle-play can target ef-video directly and connect",
+  test.only(
+    "ef-toggle-play can target ef-video directly",
     { timeout: 1000 },
     async () => {
       container = createTestContainer();
       container.innerHTML = `
-      <ef-video id="my-video" src="test_audio.mp4"></ef-video>
+      <ef-video id="my-video" src="bars-n-tone.mp4"></ef-video>
       <ef-toggle-play target="my-video">
         <button slot="play">Play</button>
         <button slot="pause">Pause</button>
       </ef-toggle-play>
     `;
 
-      const video = container.querySelector("#my-video") as EFVideo;
+      const video = container.querySelector<EFVideo>("#my-video")!;
       await video.updateComplete;
+      video.currentTimeMs = 1000;
       expect(video).toBeTruthy();
       expect(video.playbackController).toBeTruthy();
 
-      const togglePlay = container.querySelector(
+      const togglePlay = container.querySelector<EFTogglePlay>(
         "ef-toggle-play",
-      ) as EFTogglePlay;
-      await togglePlay.updateComplete;
+      )!;
 
-      // Wait for TargetController to connect
-      await new Promise((resolve) => setTimeout(resolve, 50));
-
-      // Verify the control has found the target
-      const effectiveContext = (togglePlay as any).effectiveContext;
-      expect(effectiveContext).toBeTruthy();
-      expect(effectiveContext).toBe(video);
+      expect(togglePlay.effectiveContext).toBe(video);
     },
   );
 

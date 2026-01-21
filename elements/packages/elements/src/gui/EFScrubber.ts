@@ -206,7 +206,13 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
   }
 
   get effectiveCurrentTimeMs(): number {
-    return this.currentTimeMs ?? this.contextCurrentTimeMs ?? 0;
+    if (!Number.isNaN(this.currentTimeMs)) {
+      return this.currentTimeMs;
+    }
+    if (!Number.isNaN(this.contextCurrentTimeMs)) {
+      return this.contextCurrentTimeMs;
+    }
+    return 0;
   }
 
   get effectiveDurationMs(): number {

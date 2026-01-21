@@ -5,12 +5,32 @@ import { styleMap } from "lit/directives/style-map.js";
 // See preloadTracks.ts for the initialization sequence
 import { TrackItem } from "./TrackItem.js";
 import { renderTrackChildren } from "./renderTrackChildren.js";
+import { EFTimegroup } from "../../../elements/EFTimegroup.js";
 import "../../../elements/EFThumbnailStrip.js";
 
 /**
  * Check if a timegroup is a root timegroup (has no parent timegroup)
+ * Uses the timegroup's own isRootTimegroup property for reliability
  */
-function isRootTimegroup(element: Element): boolean {
+function isRootTimegroup(element: Element | null | undefined): boolean {
+  // Handle null/undefined
+  if (!element) {
+    return false;
+  }
+  
+  // Check if element has the isRootTimegroup property (most reliable)
+  // EFTimegroup instances have this property that checks parentTimegroup
+  const elem = element as any;
+  if (typeof elem.isRootTimegroup === 'boolean') {
+    return elem.isRootTimegroup;
+  }
+  
+  // Alternative: check parentTimegroup property directly (EFTimegroup has this)
+  if (elem.parentTimegroup !== undefined) {
+    return !elem.parentTimegroup; // Root if no parent timegroup
+  }
+  
+  // Fallback: check DOM parent tree (less reliable after DOM moves)
   let parent = element.parentElement;
   while (parent) {
     if (parent.tagName.toLowerCase() === "ef-timegroup") {
@@ -65,7 +85,26 @@ export class EFTimegroupTrack extends TrackItem {
    * Check if this track should show a filmstrip
    */
   private get shouldShowFilmstrip(): boolean {
-    return this.skipChildren && this.showFilmstrip && !!this.element?.id && isRootTimegroup(this.element);
+    const skipChildren = this.skipChildren;
+    const showFilmstrip = this.showFilmstrip;
+    const hasId = !!this.element?.id;
+    const isRoot = isRootTimegroup(this.element);
+    
+    // Debug logging for root timegroup
+    if (this.element?.id === "root-timegroup") {
+      console.log("[TimegroupTrack.shouldShowFilmstrip]", {
+        skipChildren,
+        showFilmstrip,
+        hasId,
+        isRoot,
+        elementTag: this.element?.tagName,
+        elementIsEFTimegroup: this.element instanceof EFTimegroup,
+        elementIsRootProperty: this.element instanceof EFTimegroup ? this.element.isRootTimegroup : 'N/A',
+        result: skipChildren && showFilmstrip && hasId && isRoot,
+      });
+    }
+    
+    return skipChildren && showFilmstrip && hasId && isRoot;
   }
 
   /**
@@ -74,9 +113,17 @@ export class EFTimegroupTrack extends TrackItem {
   override get trimPortionStyles() {
     const baseStyles = super.trimPortionStyles;
     if (this.shouldShowFilmstrip) {
+      // Ensure minimum width for filmstrip tracks so thumbnail strip can render
+      // even when duration is 0 (e.g., sequence mode timegroups before children load)
+      const durationMs = this.element.durationMs ?? 0;
+      const calculatedWidth = this.pixelsPerMs * durationMs;
+      const minWidth = Math.max(calculatedWidth, 500); // Minimum 500px for thumbnail strip visibility
+      
       return {
         ...baseStyles,
         height: `${FILMSTRIP_ROW_HEIGHT}px`,
+        width: `${minWidth}px`,
+        minWidth: `${minWidth}px`, // Ensure minimum width is enforced
       };
     }
     return baseStyles;
@@ -84,16 +131,42 @@ export class EFTimegroupTrack extends TrackItem {
 
   contents() {
     // Show filmstrip only for ROOT timegroups (no parent timegroup)
-    if (this.shouldShowFilmstrip) {
+    const shouldShow = this.shouldShowFilmstrip;
+    
+    // Debug logging
+    console.log("[TimegroupTrack.contents]", {
+      elementId: this.element?.id,
+      skipChildren: this.skipChildren,
+      showFilmstrip: this.showFilmstrip,
+      elementIsRoot: this.element instanceof EFTimegroup ? this.element.isRootTimegroup : undefined,
+      shouldShowFilmstrip: shouldShow,
+      isRootTimegroupResult: isRootTimegroup(this.element),
+    });
+    
+    if (shouldShow) {
+      // Don't set end-time-ms if duration is 0 - let thumbnail strip use target's duration directly
+      // This allows the thumbnail strip to watch for duration changes and update automatically
+      const durationMs = this.element.durationMs ?? 0;
+      const elementId = this.element.id;
+      
+      // Debug: Log when rendering thumbnail strip
+      if (!elementId) {
+        console.warn("[TimegroupTrack] Cannot render thumbnail strip: element has no ID", this.element);
+      }
+      
+      console.log("[TimegroupTrack] Rendering thumbnail strip for", elementId);
+      
       return html`
         <ef-thumbnail-strip
-          target="${this.element.id}"
+          target="${elementId}"
           start-time-ms="0"
-          end-time-ms="${this.element.durationMs ?? 0}"
+          ${durationMs > 0 ? html`end-time-ms="${durationMs}"` : nothing}
           pixels-per-ms="${this.pixelsPerMs}"
         ></ef-thumbnail-strip>
       `;
     }
+    
+    console.log("[TimegroupTrack] NOT rendering thumbnail strip, shouldShowFilmstrip is false");
 
     // Show composition mode indicator
     const mode = (this.element as any).mode || "fixed";

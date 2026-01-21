@@ -198,19 +198,20 @@ export class EFThumbnailStrip extends LitElement {
     css`
       :host {
         display: block;
-        position: absolute;
-        inset: 0;
+        position: relative;
         background: #1a1a2e;
-        overflow: hidden; /* Clip canvas to strip bounds */
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
       }
       canvas {
         display: block;
-        position: sticky;
+        position: absolute;
         left: 0;
         top: 0;
-        image-rendering: auto; /* Smooth thumbnails */
+        width: 100%;
         height: 100%;
-        /* Canvas stays in viewport, content shifts via drawing offsets */
+        image-rendering: auto;
       }
     `,
   ];
@@ -520,7 +521,7 @@ export class EFThumbnailStrip extends LitElement {
   updated(changedProperties: Map<string | number | symbol, unknown>) {
     super.updated(changedProperties);
 
-    // IMPLEMENTATION GUIDELINES: Fix for initial loading bug - ensure width is detected
+    // Ensure width is detected on initial render
     if (this._stripWidth === 0) {
       const width = this.clientWidth;
       if (width > 0) {
@@ -528,7 +529,7 @@ export class EFThumbnailStrip extends LitElement {
       }
     }
 
-    // IMPLEMENTATION GUIDELINES: Responsive debouncing for thumbnail property changes using EFTimegroup pattern
+    // Responsive debouncing for thumbnail property changes
     if (
       changedProperties.has("thumbnailWidth") ||
       changedProperties.has("gap") ||
@@ -1017,19 +1018,21 @@ export class EFThumbnailStrip extends LitElement {
     // Set up ResizeObserver to track element dimensions
     this.resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        // Use borderBoxSize for accurate dimensions including borders/padding
-        const width =
-          entry.borderBoxSize && entry.borderBoxSize.length > 0
-            ? entry.borderBoxSize[0]?.inlineSize
-            : entry.contentRect.width;
-
         const height =
           entry.borderBoxSize && entry.borderBoxSize.length > 0
             ? entry.borderBoxSize[0]?.blockSize
             : entry.contentRect.height;
 
         this._stripHeight = height ?? 0;
-        this.stripWidth = width ?? 0; // This triggers thumbnail layout update
+        
+        // Width comes from CSS (set by parent) - use actual rendered width
+        const width = entry.borderBoxSize && entry.borderBoxSize.length > 0
+          ? entry.borderBoxSize[0]?.inlineSize
+          : entry.contentRect.width;
+        
+        if (width > 0 && width !== this._stripWidth) {
+          this.stripWidth = width;
+        }
       }
     });
 
@@ -1052,6 +1055,9 @@ export class EFThumbnailStrip extends LitElement {
   /**
    * Find the scroll container and attach a direct scroll listener.
    * This enables immediate redraw during scroll without waiting for context updates.
+   * 
+   * NOTE: This method ONLY tracks scroll position for virtual rendering.
+   * It does NOT manipulate the element's position or width - that's controlled by CSS.
    */
   private _attachScrollListener() {
     // Find the nearest scrollable ancestor
@@ -1077,6 +1083,9 @@ export class EFThumbnailStrip extends LitElement {
   /**
    * Handle scroll events - immediately redraw canvas content at new offset.
    * Canvas stays in place, content shifts via drawing calculations.
+   * 
+   * NOTE: This method ONLY tracks scroll position and triggers redraws.
+   * It does NOT manipulate the element's position - that's controlled by CSS.
    */
   private _onScroll() {
     if (!this._scrollContainer) return;
@@ -1084,7 +1093,7 @@ export class EFThumbnailStrip extends LitElement {
     const newScrollLeft = this._scrollContainer.scrollLeft;
     const scrollDelta = Math.abs(newScrollLeft - this._currentScrollLeft);
     
-    // Always update current scroll position
+    // Update current scroll position
     this._currentScrollLeft = newScrollLeft;
     
     // Immediately redraw if we have cached thumbnails (fast path)
@@ -1092,16 +1101,25 @@ export class EFThumbnailStrip extends LitElement {
       this.redrawAtCurrentScroll();
     }
     
-    // If scrolled significantly, also schedule full update (to load new thumbnails)
-    if (scrollDelta > VIRTUAL_RENDER_PADDING_PX / 2) {
-      if (this._scrollUpdateFrame) {
-        cancelAnimationFrame(this._scrollUpdateFrame);
-      }
-      this._scrollUpdateFrame = requestAnimationFrame(() => {
-        this._scrollUpdateFrame = undefined;
-        this.runThumbnailUpdate();
-      });
+    // Schedule update to load missing thumbnails for new visible range
+    // Debounce with requestAnimationFrame to avoid excessive updates
+    if (this._scrollUpdateFrame) {
+      cancelAnimationFrame(this._scrollUpdateFrame);
     }
+    this._scrollUpdateFrame = requestAnimationFrame(() => {
+      this._scrollUpdateFrame = undefined;
+      // Check for missing thumbnails in the new visible range
+      if (this._cachedThumbnails.length > 0 && this.targetElement) {
+        // Load missing thumbnails for the current visible range
+        this.loadMissingThumbnails(this._cachedThumbnails, this.targetElement).catch(() => {
+          // Ignore errors - thumbnails will show as placeholders
+        });
+      }
+      // Also trigger full update if scrolled significantly (to recalculate layout if needed)
+      if (scrollDelta > VIRTUAL_RENDER_PADDING_PX / 2) {
+        this.runThumbnailUpdate();
+      }
+    });
   }
   
   /**
@@ -1119,16 +1137,29 @@ export class EFThumbnailStrip extends LitElement {
     
     const hostHeight = this.clientHeight || this._stripHeight;
     const viewportWidth = this._effectiveViewportWidth;
-    const canvasWidth = viewportWidth + VIRTUAL_RENDER_PADDING_PX * 2;
+    const canvasWidth = viewportWidth;
     
     // Scroll offset for drawing (content shifts opposite to scroll)
-    const scrollOffset = this._currentScrollLeft - VIRTUAL_RENDER_PADDING_PX;
+    // Match drawThumbnails calculation for consistency
+    const scrollOffset = this._currentScrollLeft;
     
-    // Visible range in absolute coordinates
-    const visibleLeft = this._currentScrollLeft - VIRTUAL_RENDER_PADDING_PX;
+    // Visible range in absolute coordinates (with padding for loading)
+    const visibleLeft = Math.max(0, this._currentScrollLeft - VIRTUAL_RENDER_PADDING_PX);
     const visibleRight = this._currentScrollLeft + viewportWidth + VIRTUAL_RENDER_PADDING_PX;
     
     const dpr = window.devicePixelRatio || 1;
+    
+    // Ensure canvas is properly sized
+    const needsResize = 
+      canvas.width !== Math.ceil(canvasWidth * dpr) || 
+      canvas.height !== Math.ceil(hostHeight * dpr);
+    
+    if (needsResize) {
+      canvas.width = Math.ceil(canvasWidth * dpr);
+      canvas.height = Math.ceil(hostHeight * dpr);
+      canvas.style.width = `${canvasWidth}px`;
+      canvas.style.height = `${hostHeight}px`;
+    }
     
     // Reset transform
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -1139,7 +1170,7 @@ export class EFThumbnailStrip extends LitElement {
     
     // Draw each cached thumbnail at offset position
     for (const thumb of this._cachedThumbnails) {
-      // Skip if outside visible range
+      // Skip if outside visible range (with padding for loading)
       const thumbRight = thumb.x + thumb.width;
       if (thumbRight < visibleLeft || thumb.x > visibleRight) {
         continue;
@@ -1148,7 +1179,7 @@ export class EFThumbnailStrip extends LitElement {
       // Draw position: absolute position minus scroll offset
       const drawX = thumb.x - scrollOffset;
       
-      // Skip if would draw outside canvas bounds
+      // Skip if completely outside canvas bounds (canvas is viewport width only)
       if (drawX + thumb.width < 0 || drawX > canvasWidth) {
         continue;
       }
@@ -1305,16 +1336,18 @@ export class EFThumbnailStrip extends LitElement {
     const scrollLeft = this._currentScrollLeft || this._timelineState?.viewportScrollLeft || 0;
     const viewportWidth = this._effectiveViewportWidth;
     
-    // Canvas is viewport + padding (virtual rendering)
-    const canvasWidth = viewportWidth + VIRTUAL_RENDER_PADDING_PX * 2;
+    // Canvas is exactly viewport width - never wider than visible area
+    // Canvas stays fixed in position, content shifts via drawing offsets
+    const canvasWidth = viewportWidth;
     
     // Scroll offset for drawing calculations
-    // Content at scrollOffset should appear at canvas x=0
-    const scrollOffset = Math.max(0, scrollLeft - VIRTUAL_RENDER_PADDING_PX);
+    // Content at scrollLeft should appear at canvas x=0
+    // We draw content starting from scrollLeft position
+    const scrollOffset = scrollLeft;
     
-    // Visible range in absolute coordinates
-    const visibleLeft = scrollOffset;
-    const visibleRight = scrollOffset + canvasWidth;
+    // Visible range in absolute coordinates (with padding for loading)
+    const visibleLeft = Math.max(0, scrollLeft - VIRTUAL_RENDER_PADDING_PX);
+    const visibleRight = scrollLeft + viewportWidth + VIRTUAL_RENDER_PADDING_PX;
     
     // Track for change detection
     this._lastRenderedScrollLeft = scrollLeft;
@@ -1350,7 +1383,7 @@ export class EFThumbnailStrip extends LitElement {
       const thumb = thumbnails[i];
       if (!thumb) continue;
       
-      // Skip thumbnails outside visible range
+      // Skip thumbnails outside visible range (with padding for loading)
       const thumbRight = thumb.x + thumb.width;
       if (thumbRight < visibleLeft || thumb.x > visibleRight) {
         continue;
@@ -1359,7 +1392,7 @@ export class EFThumbnailStrip extends LitElement {
       // Draw position: absolute position minus scroll offset
       const drawX = thumb.x - scrollOffset;
       
-      // Skip if outside canvas bounds
+      // Skip if completely outside canvas bounds (canvas is viewport width only)
       if (drawX + thumb.width < 0 || drawX > canvasWidth) {
         continue;
       }
@@ -1509,12 +1542,14 @@ export class EFThumbnailStrip extends LitElement {
 
   /**
    * Get visible thumbnail range based on viewport (for virtual rendering)
+   * This should match the visible range used in drawThumbnails for consistency.
    */
   private getVisibleRange(): { left: number; right: number } {
     // Use direct scroll position if available, fall back to timeline context
     const viewportScrollLeft = this._currentScrollLeft || this._timelineState?.viewportScrollLeft || 0;
     const viewportWidth = this._effectiveViewportWidth;
     
+    // Visible range with padding for loading thumbnails just outside viewport
     const left = Math.max(0, viewportScrollLeft - VIRTUAL_RENDER_PADDING_PX);
     const right = viewportScrollLeft + viewportWidth + VIRTUAL_RENDER_PADDING_PX;
     
@@ -1664,10 +1699,7 @@ export class EFThumbnailStrip extends LitElement {
     const videoTimestamps = missingThumbnails.map((t) => t.timeMs);
 
     try {
-      // Check abort before starting thumbnail extraction
-      signal?.throwIfAborted();
-      
-      const thumbnailResults = await mediaEngine.extractThumbnails(videoTimestamps, signal);
+      const thumbnailResults = await mediaEngine.extractThumbnails(videoTimestamps);
 
       // Convert canvases to ImageData and update thumbnails
       for (let i = 0; i < missingThumbnails.length; i++) {

@@ -160,25 +160,30 @@ export class EFControls extends LitElement {
     this.#proxyUnsubscribeMap.clear();
   }
 
+  #subscribe() {
+    if (!this.targetElement) return;
+    for (const [callback, context] of proxiedContexts) {
+      const event = new ContextRequestEvent(
+        context,
+        this,
+        (value, unsubscribe) => {
+          callback(this, value as never);
+          this.#proxyUnsubscribeMap.set(context, unsubscribe);
+        },
+        true,
+      );
+      this.targetElement.dispatchEvent(event);
+    }
+  }
+
+  #resubscribe() {
+    this.#unsubscribe();
+    this.#subscribe();
+  }
   updated(changedProperties: PropertyValueMap<this>) {
     super.updated(changedProperties);
     if (changedProperties.has("targetElement")) {
-      this.#unsubscribe();
-
-      if (this.targetElement) {
-        for (const [callback, context] of proxiedContexts) {
-          const event = new ContextRequestEvent(
-            context,
-            this,
-            (value, unsubscribe) => {
-              callback(this, value as never);
-              this.#proxyUnsubscribeMap.set(context, unsubscribe);
-            },
-            true,
-          );
-          this.targetElement.dispatchEvent(event);
-        }
-      }
+      this.#resubscribe();
     }
   }
 

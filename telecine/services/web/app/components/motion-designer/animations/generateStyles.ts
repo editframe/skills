@@ -1,9 +1,4 @@
 import type { ElementNode, Animation } from "~/lib/motion-designer/types";
-import type {
-  KeyframesDefinition,
-  KeyframeRule,
-} from "../rendering/cssStructures";
-import { keyframesToString } from "../rendering/cssStructures";
 
 export interface AnimationMetadata {
   property: string;
@@ -39,14 +34,8 @@ function getCSSProperty(property: string): string {
   return isTransformProperty(property) ? "transform" : property;
 }
 
-/**
- * Generates structured keyframe definitions for animations.
- * Returns structured data that can be converted to CSS strings when inserting into stylesheets.
- */
-export function generateAnimationKeyframes(
-  element: ElementNode,
-): KeyframesDefinition[] {
-  if (element.animations.length === 0) return [];
+export function generateAnimationStyles(element: ElementNode): string | null {
+  if (element.animations.length === 0) return null;
 
   // Group animations by their CSS property
   const animationsByProperty = new Map<
@@ -60,44 +49,24 @@ export function generateAnimationKeyframes(
     animationsByProperty.set(cssProperty, existing);
   });
 
-  const keyframes: KeyframesDefinition[] = [];
+  const keyframes: string[] = [];
 
   for (const [cssProperty, group] of animationsByProperty) {
     if (group.length === 1) {
       // Single animation - generate normally
       const first = group[0];
       if (first) {
-        keyframes.push(
-          generateKeyframesDefinition(first.anim, element, first.index),
-        );
+        keyframes.push(generateKeyframes(first.anim, element, first.index));
       }
     } else {
       // Multiple animations on same property - merge into one keyframe animation
-      const mergedKeyframes = generateMergedKeyframesDefinition(
-        group,
-        element,
-        cssProperty,
-      );
-      if (mergedKeyframes) {
-        keyframes.push(mergedKeyframes);
-      }
+      keyframes.push(generateMergedKeyframes(group, element, cssProperty));
     }
+
   }
 
-  return keyframes;
+  return keyframes.join("\n");
 }
-
-/**
- * Legacy function for backward compatibility.
- * @deprecated Use generateAnimationKeyframes instead
- */
-export function generateAnimationStyles(element: ElementNode): string | null {
-  const keyframes = generateAnimationKeyframes(element);
-  if (keyframes.length === 0) return null;
-  // This will be removed once all callers are updated
-  return keyframes.map((kf) => keyframesToString(kf)).join("\n");
-}
-
 
 export function getAnimationMetadata(
   element: ElementNode,
@@ -166,7 +135,7 @@ function convertToTransformIfNeeded(
   if (property === "rotate" && baseRotation !== 0) {
     const match = value.match(/(-?\d+\.?\d*)(deg|rad)?/);
     if (match) {
-      const numValue = parseFloat(match[1] || "0");
+      const numValue = parseFloat(match[1]);
       const unit = match[2] || "deg";
       let valueDegrees = numValue;
       if (unit === "rad") {
@@ -184,20 +153,16 @@ function convertToTransformIfNeeded(
   return { prop: property, val: finalValue };
 }
 
-/**
- * Generates structured keyframes definition for merged animations.
- * Returns structured data instead of strings - no string concatenation.
- */
-function generateMergedKeyframesDefinition(
+function generateMergedKeyframes(
   group: Array<{ anim: Animation; index: number }>,
   element: ElementNode,
   cssProperty: string,
-): KeyframesDefinition | null {
+): string {
   // Sort by start time (delay)
   const sorted = group.sort((a, b) => a.anim.delay - b.anim.delay);
   const first = sorted[0];
   if (!first) {
-    return null;
+    return "";
   }
 
   // Calculate total duration (from first animation start to last animation end)
@@ -205,6 +170,7 @@ function generateMergedKeyframesDefinition(
   const lastEnd = Math.max(
     ...sorted.map(({ anim }) => anim.delay + anim.duration),
   );
+  const totalDuration = lastEnd - firstStart;
 
   // Use the first animation's index for the merged animation name
   const animationName = `animation-${element.id}-${first.index}`;
@@ -247,9 +213,9 @@ function generateMergedKeyframesDefinition(
         value: to.val,
         property: to.prop,
       });
-    } else if ((anim as any).keyframes && (anim as any).keyframes.length > 0) {
+    } else if (anim.keyframes && anim.keyframes.length > 0) {
       // Complex keyframes animation - base rotation added in convertToTransformIfNeeded
-      for (const kf of (anim as any).keyframes) {
+      for (const kf of anim.keyframes) {
         const timeMs = animStart + kf.time * anim.duration;
         const converted = convertToTransformIfNeeded(
           anim.property,
@@ -392,10 +358,9 @@ function generateMergedKeyframesDefinition(
                 value = progress < 0.5 ? from : to;
               }
               // Base rotation will be added in convertToTransformIfNeeded below
-            } else if ((anim as any).keyframes && (anim as any).keyframes.length > 0) {
-              const animKeyframes = (anim as any).keyframes;
-              const kfIndex = animKeyframes.findIndex((kf: any, idx: number) => {
-                const nextKf = animKeyframes[idx + 1];
+            } else if (anim.keyframes && anim.keyframes.length > 0) {
+              const kfIndex = anim.keyframes.findIndex((kf, idx) => {
+                const nextKf = anim.keyframes[idx + 1];
                 const kfTime = kf.time * anim.duration;
                 const nextTime = nextKf
                   ? nextKf.time * anim.duration
@@ -406,8 +371,8 @@ function generateMergedKeyframesDefinition(
                 );
               });
               if (kfIndex >= 0) {
-                const kf = animKeyframes[kfIndex];
-                const nextKf = animKeyframes[kfIndex + 1];
+                const kf = anim.keyframes[kfIndex];
+                const nextKf = anim.keyframes[kfIndex + 1];
                 if (nextKf) {
                   const kfTime = kf.time;
                   const nextTime = nextKf.time;
@@ -429,7 +394,7 @@ function generateMergedKeyframesDefinition(
                   value = kf.value;
                 }
               } else {
-                value = animKeyframes[animKeyframes.length - 1]?.value || "0";
+                value = anim.keyframes[anim.keyframes.length - 1]?.value || "0";
               }
               // Base rotation will be added in convertToTransformIfNeeded below
             } else {
@@ -460,52 +425,38 @@ function generateMergedKeyframesDefinition(
         let easing: string | undefined;
         if (index < sortedTimePoints.length - 1) {
           const nextTimeMs = sortedTimePoints[index + 1];
-          if (nextTimeMs !== undefined) {
-            // Find which animation controls the segment from this keyframe to the next
-            const segmentAnim = sorted.find(({ anim }) => {
-              const start = Math.round(anim.delay);
-              const end = Math.round(anim.delay + anim.duration);
-              // Animation controls this segment if it's active at the start of the segment
-              return timeMs >= start && timeMs < end;
-            });
-            if (segmentAnim) {
-              easing = segmentAnim.anim.easing || "ease";
-            } else {
-              // Check if next keyframe is the start of a new animation
-              const nextAnim = sorted.find(
-                ({ anim }) => Math.round(anim.delay) === Math.round(nextTimeMs),
-              );
-              if (nextAnim && nextAnim.anim) {
-                easing = nextAnim.anim.easing || "ease";
-              }
+          // Find which animation controls the segment from this keyframe to the next
+          const segmentAnim = sorted.find(({ anim }) => {
+            const start = Math.round(anim.delay);
+            const end = Math.round(anim.delay + anim.duration);
+            // Animation controls this segment if it's active at the start of the segment
+            return timeMs >= start && timeMs < end;
+          });
+          if (segmentAnim) {
+            easing = segmentAnim.anim.easing || "ease";
+          } else {
+            // Check if next keyframe is the start of a new animation
+            const nextAnim = sorted.find(
+              ({ anim }) => Math.round(anim.delay) === Math.round(nextTimeMs),
+            );
+            if (nextAnim) {
+              easing = nextAnim.anim.easing || "ease";
             }
           }
         }
 
         const transformValue =
           transforms.length > 0 ? transforms.join(" ") : "none";
-        
-      // Build structured keyframe rule instead of string
-      const properties: Record<string, string> = {
-        transform: transformValue || "none",
-      };
-      
-      const rule: KeyframeRule = {
-        percent,
-        properties,
-      };
-      
-      if (easing) {
-        rule.easing = easing;
-      }
-      
-      return rule;
-      });
+        const easingRule = easing
+          ? ` animation-timing-function: ${easing};`
+          : "";
+        const percentStr =
+          percent === 0 ? "0" : percent === 100 ? "100" : percent.toFixed(2);
+        return `  ${percentStr}% { transform: ${transformValue};${easingRule} }`;
+      })
+      .join("\n");
 
-    return {
-      name: animationName,
-      keyframes: keyframeRules,
-    };
+    return `@keyframes ${animationName} {\n${keyframeRules}\n}`;
   }
 
   // For non-transform properties, merge keyframes by time
@@ -528,9 +479,9 @@ function generateMergedKeyframesDefinition(
     sortedTimePoints[sortedTimePoints.length - 1] ?? Math.round(lastEnd);
   const roundedTotalDuration = roundedLastEnd - roundedFirstStart;
 
-  // For each time point, determine the value and easing - build structured data
-  const keyframeRules: KeyframeRule[] = sortedTimePoints.map(
-    (timeMs, index) => {
+  // For each time point, determine the value and easing
+  const keyframeRules = sortedTimePoints
+    .map((timeMs, index) => {
       // Force first keyframe to 0% and last to 100% for proper fill mode support
       let percent: number;
       if (index === 0) {
@@ -547,13 +498,12 @@ function generateMergedKeyframesDefinition(
       // Find the value at this time point and which animation controls it
       let value: string | undefined;
       let easing: string | undefined;
+      let controllingAnim: Animation | undefined;
 
       // Check if this time point is within any animation
       // Process animations in reverse order so later animations take precedence
       for (let i = sorted.length - 1; i >= 0; i--) {
-        const item = sorted[i];
-        if (!item) continue;
-        const { anim } = item;
+        const { anim } = sorted[i];
         const animStart = Math.round(anim.delay);
         const animEnd = Math.round(anim.delay + anim.duration);
 
@@ -562,27 +512,27 @@ function generateMergedKeyframesDefinition(
           // At exact end time, use toValue (or last keyframe value)
           if (anim.toValue !== undefined) {
             value = anim.toValue;
-          } else if ((anim as any).keyframes && (anim as any).keyframes.length > 0) {
-            const animKeyframes = (anim as any).keyframes;
-            value = animKeyframes[animKeyframes.length - 1]?.value;
+          } else if (anim.keyframes && anim.keyframes.length > 0) {
+            value = anim.keyframes[anim.keyframes.length - 1]?.value;
           } else if (anim.fromValue !== undefined) {
             value = anim.fromValue;
           } else {
             value = "0";
           }
+          controllingAnim = anim;
           break;
         } else if (timeMs === animStart) {
           // At exact start time, use fromValue (or first keyframe value)
           if (anim.fromValue !== undefined) {
             value = anim.fromValue;
-          } else if ((anim as any).keyframes && (anim as any).keyframes.length > 0) {
-            const animKeyframes = (anim as any).keyframes;
-            value = animKeyframes[0]?.value;
+          } else if (anim.keyframes && anim.keyframes.length > 0) {
+            value = anim.keyframes[0]?.value;
           } else if (anim.toValue !== undefined) {
             value = anim.toValue;
           } else {
             value = "0";
           }
+          controllingAnim = anim;
           break;
         } else if (timeMs > animStart && timeMs < animEnd) {
           // Within animation, calculate progress
@@ -603,17 +553,16 @@ function generateMergedKeyframesDefinition(
             } else {
               value = progress < 0.5 ? anim.fromValue : anim.toValue;
             }
-          } else if ((anim as any).keyframes && (anim as any).keyframes.length > 0) {
-            const animKeyframes = (anim as any).keyframes;
-            const kfIndex = animKeyframes.findIndex((kf: any, idx: number) => {
-              const nextKf = animKeyframes[idx + 1];
+          } else if (anim.keyframes && anim.keyframes.length > 0) {
+            const kfIndex = anim.keyframes.findIndex((kf, idx) => {
+              const nextKf = anim.keyframes[idx + 1];
               const kfTime = kf.time;
               const nextTime = nextKf ? nextKf.time : 1;
               return progress >= kfTime && progress < nextTime;
             });
             if (kfIndex >= 0) {
-              const kf = animKeyframes[kfIndex];
-              const nextKf = animKeyframes[kfIndex + 1];
+              const kf = anim.keyframes[kfIndex];
+              const nextKf = anim.keyframes[kfIndex + 1];
               if (nextKf) {
                 const kfTime = kf.time;
                 const nextTime = nextKf.time;
@@ -635,22 +584,25 @@ function generateMergedKeyframesDefinition(
                 value = kf.value;
               }
             } else {
-              value = animKeyframes[animKeyframes.length - 1]?.value || "0";
+              value = anim.keyframes[anim.keyframes.length - 1]?.value || "0";
             }
           } else {
             value = anim.fromValue || anim.toValue || "0";
           }
+          controllingAnim = anim;
           break;
         } else if (
           timeMs < animStart &&
           (anim.fillMode === "backwards" || anim.fillMode === "both")
         ) {
           value = anim.fromValue || "0";
+          controllingAnim = anim;
         } else if (
           timeMs > animEnd &&
           (anim.fillMode === "forwards" || anim.fillMode === "both")
         ) {
           value = anim.toValue || "1";
+          controllingAnim = anim;
         }
       }
 
@@ -667,39 +619,44 @@ function generateMergedKeyframesDefinition(
             value = previousAnim.anim.toValue;
             if (
               value === undefined &&
-              (previousAnim.anim as any).keyframes &&
-              (previousAnim.anim as any).keyframes.length > 0
+              previousAnim.anim.keyframes &&
+              previousAnim.anim.keyframes.length > 0
             ) {
-              const prevKeyframes = (previousAnim.anim as any).keyframes;
-              value = prevKeyframes[prevKeyframes.length - 1]?.value;
+              value =
+                previousAnim.anim.keyframes[
+                  previousAnim.anim.keyframes.length - 1
+                ]?.value;
             }
             if (value === undefined) {
               value = previousAnim.anim.fromValue || "0";
             }
+            controllingAnim = previousAnim.anim;
           } else {
             const nextAnim = sorted.find(({ anim }) => anim.delay > timeMs);
             if (
               nextAnim &&
-              nextAnim.anim &&
               (nextAnim.anim.fillMode === "backwards" ||
                 nextAnim.anim.fillMode === "both")
             ) {
               value = nextAnim.anim.fromValue || "0";
-            } else if (sorted[0] && sorted[0].anim) {
+              controllingAnim = nextAnim.anim;
+            } else {
               value = sorted[0].anim.fromValue || "0";
+              controllingAnim = sorted[0].anim;
             }
           }
         } else {
           const nextAnim = sorted.find(({ anim }) => anim.delay >= timeMs);
           if (
             nextAnim &&
-            nextAnim.anim &&
             (nextAnim.anim.fillMode === "backwards" ||
               nextAnim.anim.fillMode === "both")
           ) {
             value = nextAnim.anim.fromValue || "0";
-          } else if (sorted[0] && sorted[0].anim) {
+            controllingAnim = nextAnim.anim;
+          } else {
             value = sorted[0].anim.fromValue || "0";
+            controllingAnim = sorted[0].anim;
           }
         }
       }
@@ -708,66 +665,49 @@ function generateMergedKeyframesDefinition(
       // The easing applies to the segment from this keyframe to the next
       if (index < sortedTimePoints.length - 1) {
         const nextTimeMs = sortedTimePoints[index + 1];
-        if (nextTimeMs !== undefined) {
-          // Find which animation controls the segment from this keyframe to the next
-          const segmentAnim = sorted.find(({ anim }) => {
-            const start = Math.round(anim.delay);
-            const end = Math.round(anim.delay + anim.duration);
-            // Animation controls this segment if it's active at the start of the segment
-            return timeMs >= start && timeMs < end;
-          });
-          if (segmentAnim) {
-            easing = segmentAnim.anim.easing || "ease";
-          } else {
-            // Check if next keyframe is the start of a new animation
-            const nextAnim = sorted.find(
-              ({ anim }) => Math.round(anim.delay) === Math.round(nextTimeMs),
-            );
-            if (nextAnim && nextAnim.anim) {
-              easing = nextAnim.anim.easing || "ease";
-            }
+        // Find which animation controls the segment from this keyframe to the next
+        const segmentAnim = sorted.find(({ anim }) => {
+          const start = Math.round(anim.delay);
+          const end = Math.round(anim.delay + anim.duration);
+          // Animation controls this segment if it's active at the start of the segment
+          return timeMs >= start && timeMs < end;
+        });
+        if (segmentAnim) {
+          easing = segmentAnim.anim.easing || "ease";
+        } else {
+          // Check if next keyframe is the start of a new animation
+          const nextAnim = sorted.find(
+            ({ anim }) => Math.round(anim.delay) === Math.round(nextTimeMs),
+          );
+          if (nextAnim) {
+            easing = nextAnim.anim.easing || "ease";
           }
         }
       }
 
-      // Build structured keyframe rule instead of string
-      const rule: KeyframeRule = {
-        percent,
-        properties: {
-          [cssProperty]: value || "0",
-        },
-      };
-      
-      if (easing) {
-        rule.easing = easing;
-      }
-      
-      return rule;
-    },
-  );
+      // Build keyframe rule with optional easing
+      const easingRule = easing ? ` animation-timing-function: ${easing};` : "";
+      const percentStr =
+        percent === 0 ? "0" : percent === 100 ? "100" : percent.toFixed(2);
+      return `  ${percentStr}% { ${cssProperty}: ${value};${easingRule} }`;
+    })
+    .join("\n");
 
-  return {
-    name: animationName,
-    keyframes: keyframeRules,
-  };
+  return `@keyframes ${animationName} {\n${keyframeRules}\n}`;
 }
 
-
-/**
- * Generates a structured keyframes definition for a single animation.
- */
-function generateKeyframesDefinition(
+function generateKeyframes(
   animation: ElementNode["animations"][0],
   element: ElementNode,
   index: number,
-): KeyframesDefinition {
+): string {
   const animationName = `animation-${element.id}-${index}`;
 
   // Get base rotation for rotate animations
   const baseRotation =
     animation.property === "rotate" ? (element.props.rotation ?? 0) : 0;
 
-  const keyframeRules: KeyframeRule[] = [];
+  let keyframeRules: string;
 
   // If fromValue/toValue are specified, use simple 0-100% animation
   if (animation.fromValue !== undefined && animation.toValue !== undefined) {
@@ -782,27 +722,22 @@ function generateKeyframesDefinition(
       animation.toValue,
       baseRotation,
     );
-    keyframeRules.push(
-      { percent: 0, properties: { [from.prop]: from.val } },
-      { percent: 100, properties: { [to.prop]: to.val } },
-    );
+    keyframeRules = `  0% { ${from.prop}: ${from.val}; }\n  100% { ${to.prop}: ${to.val}; }`;
   }
   // Otherwise use the keyframes array for complex animations
-  else if ((animation as any).keyframes && (animation as any).keyframes.length > 0) {
-    const animKeyframes = (animation as any).keyframes;
-    for (const kf of animKeyframes) {
-      const percent = Math.round(kf.time * 100);
-      // Base rotation added in convertToTransformIfNeeded
-      const converted = convertToTransformIfNeeded(
-        animation.property,
-        kf.value,
-        baseRotation,
-      );
-      keyframeRules.push({
-        percent,
-        properties: { [converted.prop]: converted.val },
-      });
-    }
+  else if (animation.keyframes && animation.keyframes.length > 0) {
+    keyframeRules = animation.keyframes
+      .map((kf) => {
+        const percent = Math.round(kf.time * 100);
+        // Base rotation added in convertToTransformIfNeeded
+        const converted = convertToTransformIfNeeded(
+          animation.property,
+          kf.value,
+          baseRotation,
+        );
+        return `  ${percent}% { ${converted.prop}: ${converted.val}; }`;
+      })
+      .join("\n");
   }
   // Fallback: if neither are specified, create a simple 0-100% with same value
   else {
@@ -813,13 +748,9 @@ function generateKeyframesDefinition(
       value,
       baseRotation,
     );
-    keyframeRules.push(
-      { percent: 0, properties: { [converted.prop]: converted.val } },
-      { percent: 100, properties: { [converted.prop]: converted.val } },
-    );
+    keyframeRules = `  0% { ${converted.prop}: ${converted.val}; }\n  100% { ${converted.prop}: ${converted.val}; }`;
   }
 
-  return { name: animationName, keyframes: keyframeRules };
+  return `@keyframes ${animationName} {\n${keyframeRules}\n}`;
 }
-
 

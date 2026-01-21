@@ -7,6 +7,7 @@ export {
   type ScenarioFn,
   type Scenario,
   type ScenarioType,
+  type ScenarioCategory,
   type Scenarios,
   type ProfileAssertion,
   type SandboxConfig,

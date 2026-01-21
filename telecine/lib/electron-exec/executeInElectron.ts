@@ -105,7 +105,7 @@ export const executeInElectronWithRpc = async (script: string) => {
   });
 
   const rpc = createRpcClient(socketPath, {
-    timeoutMs: 30_000,
+    timeoutMs: 5_000,
     onKeepalive: (requestId) => {
       logger.debug({ requestId }, "RPC keepalive received");
     },
@@ -148,6 +148,9 @@ const spawnElectronBootloader = async (script: string) => {
                 "http://tracing:4318",
               OTEL_TRACE_CONTEXT: JSON.stringify(traceContext),
               ELECTRON_SPAWN_TIME: String(spawnTime),
+              // Ensure FFmpeg libraries are found and preloaded by native module
+              LD_LIBRARY_PATH: `/usr/local/lib:${process.env.LD_LIBRARY_PATH || ""}`,
+              LD_PRELOAD: `/usr/local/lib/libavcodec.so.61:/usr/local/lib/libavformat.so.61:/usr/local/lib/libavutil.so.59:/usr/local/lib/libavfilter.so.10:/usr/local/lib/libswscale.so.8`,
             },
           },
         );

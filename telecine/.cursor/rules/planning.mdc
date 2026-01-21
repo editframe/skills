@@ -1,8 +1,0 @@
----
-description: 
-globs: 
-alwaysApply: false
----
-When planning, don't alter any code, just go back and forth with the user to define an implementation plan.
-
-Construct the plan as a checklist. Then when it's time begin implementation, the user will request that.

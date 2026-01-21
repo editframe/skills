@@ -1,5 +1,0 @@
----
-alwaysApply: false
----
-
-Never remove .only from tests unless explicitly told to do so. Warn about it if you are asked to commit a test with .only in it.

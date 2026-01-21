@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Foreign Object Rendering Test</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #0f172a;
+      color: white;
+      font-family: monospace;
+    }
+    .container {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .section {
+      border: 1px solid #334155;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    .section h3 {
+      margin-top: 0;
+    }
+    button {
+      padding: 8px 16px;
+      margin: 5px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #2563eb;
+    }
+    #preview {
+      background: #1e293b;
+      padding: 10px;
+      margin-top: 10px;
+    }
+    canvas {
+      border: 1px solid #475569;
+      margin: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Foreign Object Rendering Debug</h1>
+  
+  <div class="container">
+    <div class="section">
+      <h3>Test Timegroup</h3>
+      <ef-timegroup id="test-tg" style="width: 400px; height: 300px; background: #1e293b;">
+        <ef-text style="position: absolute; top: 20px; left: 20px; font-size: 24px; color: white;">
+          Test Content
+        </ef-text>
+        <ef-video id="test-video" 
+          src="https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+          style="position: absolute; top: 60px; left: 20px; width: 360px; height: 200px;">
+        </ef-video>
+      </ef-timegroup>
+      
+      <div>
+        <button onclick="seekTo(0)">Seek to 0s</button>
+        <button onclick="seekTo(5000)">Seek to 5s</button>
+        <button onclick="seekTo(10000)">Seek to 10s</button>
+      </div>
+      
+      <div>
+        <button onclick="captureThumbnail()">Capture Thumbnail (Works)</button>
+        <button onclick="renderSingleFrame()">Render Single Frame (FO)</button>
+        <button onclick="renderMultipleFrames()">Render 3 Frames (FO)</button>
+      </div>
+    </div>
+    
+    <div class="section">
+      <h3>Results</h3>
+      <div id="preview"></div>
+      <pre id="log" style="background: #0f172a; padding: 10px; border-radius: 4px; max-height: 400px; overflow-y: auto;"></pre>
+    </div>
+  </div>
+
+  <script type="module">
+    import { 
+      captureTimegroupAtTime,
+      buildCloneStructure,
+      syncStyles,
+      collectDocumentStyles,
+      renderToImageDirect,
+      prepareFrameDataUri,
+      loadImageFromDataUri
+    } from './packages/elements/src/preview/renderTimegroupToCanvas.js';
+    
+    const tg = document.getElementById('test-tg');
+    const video = document.getElementById('test-video');
+    const preview = document.getElementById('preview');
+    const log = document.getElementById('log');
+    
+    function addLog(msg) {
+      console.log(msg);
+      log.textContent += msg + '\n';
+      log.scrollTop = log.scrollHeight;
+    }
+    
+    window.seekTo = async (timeMs) => {
+      addLog(`Seeking to ${timeMs}ms...`);
+      await tg.seek(timeMs);
+      addLog(`Seeked to ${timeMs}ms`);
+    };
+    
+    window.captureThumbnail = async () => {
+      addLog('=== Capturing thumbnail (this works) ===');
+      try {
+        const canvas = await captureTimegroupAtTime(tg, {
+          timeMs: tg.currentTimeMs,
+          scale: 0.5,
+          contentReadyMode: 'immediate'
+        });
+        
+        preview.appendChild(canvas);
+        addLog(`✓ Thumbnail captured: ${canvas.width}x${canvas.height}`);
+        
+        // Check if canvas has content
+        const ctx = canvas.getContext('2d');
+        const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        let nonZeroPixels = 0;
+        for (let i = 3; i < data.length; i += 4) {
+          if (data[i] > 0) nonZeroPixels++;
+        }
+        addLog(`  Non-transparent pixels: ${nonZeroPixels} / ${canvas.width * canvas.height}`);
+      } catch (e) {
+        addLog(`✗ Error: ${e.message}`);
+      }
+    };
+    
+    window.renderSingleFrame = async () => {
+      addLog('=== Rendering single frame (FO path) ===');
+      try {
+        const timeMs = tg.currentTimeMs;
+        addLog(`Current time: ${timeMs}ms`);
+        
+        // Create render clone
+        const { clone: renderClone, container: renderContainer, cleanup } = await tg.createRenderClone();
+        addLog('✓ Render clone created');
+        
+        // Seek clone
+        await renderClone.seekForRender(timeMs);
+        addLog(`✓ Clone seeked to ${timeMs}ms`);
+        
+        // Build clone structure
+        const { container: cloneContainer, syncState } = buildCloneStructure(renderClone, timeMs);
+        addLog(`✓ Clone structure built (${syncState.nodeCount} nodes)`);
+        
+        // Check if video canvas has content
+        const videoCanvas = renderClone.querySelector('ef-video')?.shadowRoot?.querySelector('canvas');
+        if (videoCanvas) {
+          const ctx = videoCanvas.getContext('2d');
+          const sample = ctx.getImageData(videoCanvas.width/2, videoCanvas.height/2, 1, 1).data;
+          addLog(`  Video canvas sample pixel: rgba(${sample[0]}, ${sample[1]}, ${sample[2]}, ${sample[3]})`);
+        }
+        
+        // Create preview container
+        const width = tg.offsetWidth;
+        const height = tg.offsetHeight;
+        const previewContainer = document.createElement('div');
+        previewContainer.style.cssText = `
+          width: ${width}px;
+          height: ${height}px;
+          position: relative;
+          overflow: hidden;
+          background: ${getComputedStyle(tg).background || '#000'};
+        `;
+        
+        const styleEl = document.createElement('style');
+        styleEl.textContent = collectDocumentStyles();
+        previewContainer.appendChild(styleEl);
+        previewContainer.appendChild(cloneContainer);
+        
+        // Render to image
+        addLog('Rendering to image...');
+        const dataUri = await prepareFrameDataUri(previewContainer, width, height);
+        const image = await loadImageFromDataUri(dataUri);
+        addLog(`✓ Image rendered: ${image.width}x${image.height}`);
+        
+        // Draw to canvas for display
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(image, 0, 0);
+        preview.appendChild(canvas);
+        
+        // Check if canvas has content
+        const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        let nonZeroPixels = 0;
+        for (let i = 3; i < data.length; i += 4) {
+          if (data[i] > 0) nonZeroPixels++;
+        }
+        addLog(`  Non-transparent pixels: ${nonZeroPixels} / ${canvas.width * canvas.height}`);
+        
+        cleanup();
+        addLog('✓ Cleanup complete');
+      } catch (e) {
+        addLog(`✗ Error: ${e.message}`);
+        console.error(e);
+      }
+    };
+    
+    window.renderMultipleFrames = async () => {
+      addLog('=== Rendering 3 frames (FO path with reuse) ===');
+      try {
+        const times = [0, 5000, 10000];
+        
+        // Create render clone ONCE
+        const { clone: renderClone, container: renderContainer, cleanup } = await tg.createRenderClone();
+        addLog('✓ Render clone created');
+        
+        // Build clone structure ONCE
+        await renderClone.seekForRender(times[0]);
+        const { container: cloneContainer, syncState } = buildCloneStructure(renderClone, times[0]);
+        addLog(`✓ Clone structure built (${syncState.nodeCount} nodes)`);
+        
+        const width = tg.offsetWidth;
+        const height = tg.offsetHeight;
+        const previewContainer = document.createElement('div');
+        previewContainer.style.cssText = `
+          width: ${width}px;
+          height: ${height}px;
+          position: relative;
+          overflow: hidden;
+          background: ${getComputedStyle(tg).background || '#000'};
+        `;
+        
+        const styleEl = document.createElement('style');
+        styleEl.textContent = collectDocumentStyles();
+        previewContainer.appendChild(styleEl);
+        previewContainer.appendChild(cloneContainer);
+        
+        // Render each frame
+        for (let i = 0; i < times.length; i++) {
+          const timeMs = times[i];
+          addLog(`\nFrame ${i+1}: ${timeMs}ms`);
+          
+          // Seek and sync
+          await renderClone.seekForRender(timeMs);
+          syncStyles(syncState, timeMs);
+          addLog(`  ✓ Synced to ${timeMs}ms`);
+          
+          // Check video canvas content
+          const videoCanvas = renderClone.querySelector('ef-video')?.shadowRoot?.querySelector('canvas');
+          if (videoCanvas) {
+            const ctx = videoCanvas.getContext('2d');
+            const sample = ctx.getImageData(videoCanvas.width/2, videoCanvas.height/2, 1, 1).data;
+            addLog(`  Video canvas sample: rgba(${sample[0]}, ${sample[1]}, ${sample[2]}, ${sample[3]})`);
+          }
+          
+          // Render
+          const dataUri = await prepareFrameDataUri(previewContainer, width, height);
+          const image = await loadImageFromDataUri(dataUri);
+          
+          const canvas = document.createElement('canvas');
+          canvas.width = width * 0.5;
+          canvas.height = height * 0.5;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+          canvas.title = `Frame at ${timeMs}ms`;
+          preview.appendChild(canvas);
+          
+          // Check content
+          const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+          let nonZeroPixels = 0;
+          for (let i = 3; i < data.length; i += 4) {
+            if (data[i] > 0) nonZeroPixels++;
+          }
+          addLog(`  Non-transparent pixels: ${nonZeroPixels} / ${canvas.width * canvas.height}`);
+        }
+        
+        cleanup();
+        addLog('\n✓ All frames rendered');
+      } catch (e) {
+        addLog(`✗ Error: ${e.message}`);
+        console.error(e);
+      }
+    };
+    
+    addLog('Ready! Click buttons to test rendering.');
+  </script>
+</body>
+</html>

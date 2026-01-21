@@ -277,7 +277,7 @@ export class EFTimelineRow extends TWMixin(LitElement) {
 
     // Update root timegroup class for filmstrip rows
     if (changedProperties.has("element")) {
-      const isRoot = this.element instanceof EFTimegroup && isRootTimegroup(this.element);
+      const isRoot = this.element instanceof EFTimegroup && this.element.isRootTimegroup;
       this.classList.toggle("root-timegroup", isRoot);
     }
   }
@@ -337,7 +337,8 @@ export class EFTimelineRow extends TWMixin(LitElement) {
     // For timegroups, use skip-children since children get their own rows
     if (this.element instanceof EFTimegroup) {
       // Show filmstrip for root timegroups (no parent timegroup)
-      const showFilmstrip = isRootTimegroup(this.element);
+      // Use the timegroup's own isRootTimegroup property for reliability
+      const showFilmstrip = this.element.isRootTimegroup;
       return html`<ef-timegroup-track
         .element=${this.element}
         pixels-per-ms=${this.pixelsPerMs}
