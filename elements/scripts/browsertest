@@ -4,6 +4,22 @@ set -e
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
+# Check for --profile flag
+PROFILE_MODE=0
+ARGS=()
+for arg in "$@"; do
+  if [ "$arg" = "--profile" ]; then
+    PROFILE_MODE=1
+  else
+    ARGS+=("$arg")
+  fi
+done
+
+if [ $PROFILE_MODE -eq 1 ]; then
+  export VITEST_PROFILE=1
+  echo "🔬 CPU Profiling enabled"
+fi
+
 # Find monorepo root, prioritizing main worktree checkout
 find_monorepo_root() {
   local current_dir="$1"
@@ -126,7 +142,7 @@ fi
 # Explicitly pass MONOREPO_ROOT, WS_ENDPOINT, and VITEST_BROWSER_MODE to vitest command
 # Use --run to ensure non-watch mode by default, unless --watch is explicitly passed
 VITEST_ARGS=()
-if [[ ! " $* " =~ " --watch " ]]; then
+if [[ ! " ${ARGS[*]} " =~ " --watch " ]]; then
   VITEST_ARGS+=(--run)
 fi
-DEBUG="" MONOREPO_ROOT="$MONOREPO_ROOT" WS_ENDPOINT="$WS_ENDPOINT" VITEST_BROWSER_MODE="$VITEST_BROWSER_MODE" "${SCRIPT_DIR}"/run npx vitest "${VITEST_ARGS[@]}" --config vitest.config.browser.ts --configLoader bundle "$@"
+DEBUG="" MONOREPO_ROOT="$MONOREPO_ROOT" WS_ENDPOINT="$WS_ENDPOINT" VITEST_BROWSER_MODE="$VITEST_BROWSER_MODE" "${SCRIPT_DIR}"/run npx vitest "${VITEST_ARGS[@]}" --config vitest.config.browser.ts --configLoader bundle "${ARGS[@]}"

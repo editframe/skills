@@ -799,8 +799,15 @@ export async function renderToImageNative(
       }
     }
     
+    const drawStart = performance.now();
     const ctx = captureCanvas.getContext("2d") as HtmlInCanvasContext;
     ctx.drawElementImage(container, 0, 0);
+    const drawTime = performance.now() - drawStart;
+    
+    // Log if drawElementImage itself is slow
+    if (drawTime > 15) {
+      console.log(`[renderToImageNative] drawElementImage=${drawTime.toFixed(0)}ms, dpr=${dpr}, size=${captureCanvas.width}x${captureCanvas.height}`);
+    }
   } finally {
     // Only clean up if we created the canvas
     if (shouldCleanup && captureCanvas.parentNode) {
@@ -1306,6 +1313,7 @@ export async function captureFromClone(
     // visual state including video frames at the correct position.
     // 
     // Position render container properly for capture
+    const t0 = performance.now();
     renderContainer.style.cssText = `
       position: fixed;
       left: 0;
@@ -1315,9 +1323,20 @@ export async function captureFromClone(
       pointer-events: none;
       overflow: hidden;
     `;
+    const setupTime = performance.now() - t0;
+    
+    // OPTIMIZATION: Skip DPR scaling for thumbnails - retina quality isn't needed
+    // and DPR=2 means 4x more pixels to render.
+    const skipDpr = scale < 1;
     
     // Use renderToImageNative which handles canvas setup and drawElementImage internally
-    image = await renderToImageNative(renderContainer, width, height);
+    const t1 = performance.now();
+    image = await renderToImageNative(renderContainer, width, height, { skipDprScaling: skipDpr });
+    const renderTime = performance.now() - t1;
+    
+    if (renderTime > 10) {
+      console.log(`[captureFromClone:native] setup=${setupTime.toFixed(0)}ms, render=${renderTime.toFixed(0)}ms, skipDpr=${skipDpr}`);
+    }
   } else {
     // FOREIGNOBJECT PATH: Build passive structure from the SEEKED render clone
     // The clone is already at the correct time, so getComputedStyle captures the right values.
