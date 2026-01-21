@@ -213,6 +213,10 @@ export class EFControls extends LitElement {
    * Wait for a temporal element to initialize its playbackController.
    * This handles the case where we target a temporal element before it has
    * completed initialization and created its playbackController.
+   * 
+   * Note: playbackController is created in EFTemporal's connectedCallback via
+   * `this.updateComplete.then(() => this.didBecomeRoot())`, so we need to wait
+   * past updateComplete for the .then() callback to run.
    */
   async #waitForTemporalToInitialize() {
     if (!this.targetElement || !isEFTemporal(this.targetElement)) return;
@@ -223,6 +227,15 @@ export class EFControls extends LitElement {
     // Wait for the element to finish its update cycle
     await temporal.updateComplete;
     if (signal?.aborted) return;
+
+    // playbackController is created in a .then() callback after updateComplete,
+    // so we need to wait for that microtask to complete
+    if (!temporal.playbackController) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      if (signal?.aborted) return;
+      await temporal.updateComplete;
+      if (signal?.aborted) return;
+    }
 
     // Check again if it now has a playbackController
     if (temporal.playbackController) {
