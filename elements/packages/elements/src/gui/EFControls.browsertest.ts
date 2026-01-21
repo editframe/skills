@@ -386,4 +386,250 @@ describe("EFControls", () => {
 
     expect((togglePlay as any).playing).toBe(true);
   });
+
+  describe("direct temporal element targeting", () => {
+    test("can target ef-timegroup directly without ef-preview wrapper", async () => {
+      // Create a standalone timegroup (not wrapped in ef-preview)
+      const timegroup = makeElement(
+        "ef-timegroup",
+        { id: "direct-timegroup", mode: "fixed", duration: "10s" },
+        document.body,
+      );
+
+      const controls = makeElement(
+        "ef-controls",
+        { target: "direct-timegroup" },
+        document.body,
+      );
+
+      await timegroup.updateComplete;
+      await controls.updateComplete;
+
+      // Controls should find and connect to the timegroup
+      expect(controls.targetElement).toBe(timegroup);
+    });
+
+    test("synchronizes playing state from direct timegroup to controls", async () => {
+      const timegroup = makeElement(
+        "ef-timegroup",
+        { id: "direct-timegroup", mode: "fixed", duration: "10s" },
+        document.body,
+      );
+
+      const controls = makeElement(
+        "ef-controls",
+        { target: "direct-timegroup" },
+        document.body,
+      );
+
+      const togglePlay = makeElement("ef-toggle-play", {}, controls);
+
+      // Wait for timegroup to fully initialize (playbackController is created async)
+      await timegroup.updateComplete;
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await timegroup.updateComplete;
+      await controls.updateComplete;
+      await togglePlay.updateComplete;
+      // Wait for async subscription to complete
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await controls.updateComplete;
+
+      // Initial state should be not playing
+      expect(controls.playing).toBe(false);
+      expect(togglePlay.playing).toBe(false);
+
+      // Play the timegroup directly
+      timegroup.play();
+      await timegroup.updateComplete;
+      await controls.updateComplete;
+      await togglePlay.updateComplete;
+
+      // Controls and child elements should reflect the playing state
+      expect(controls.playing).toBe(true);
+      expect(togglePlay.playing).toBe(true);
+
+      // Pause
+      timegroup.pause();
+      await timegroup.updateComplete;
+      await controls.updateComplete;
+      await togglePlay.updateComplete;
+
+      expect(controls.playing).toBe(false);
+      expect(togglePlay.playing).toBe(false);
+    });
+
+    test("synchronizes currentTimeMs from direct timegroup to controls", async () => {
+      const timegroup = makeElement(
+        "ef-timegroup",
+        { id: "direct-timegroup", mode: "fixed", duration: "10s" },
+        document.body,
+      );
+
+      const controls = makeElement(
+        "ef-controls",
+        { target: "direct-timegroup" },
+        document.body,
+      );
+
+      const timeDisplay = makeElement("ef-time-display", {}, controls);
+
+      // Wait for timegroup to fully initialize
+      await timegroup.updateComplete;
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await timegroup.updateComplete;
+      await controls.updateComplete;
+      await timeDisplay.updateComplete;
+      // Wait for async subscription to complete
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await controls.updateComplete;
+
+      // Verify subscription is working by checking initial state
+      expect(controls.targetTemporal).toBe(timegroup);
+
+      // Seek the timegroup - seek() internally sets currentTimeMs and runs seekTask
+      await timegroup.seek(5000);
+      
+      // Wait for PlaybackController's notification to propagate
+      // The seekTask completes and notifies listeners before seek() returns,
+      // but we need to wait for Lit's reactive update cycle
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      await controls.updateComplete;
+      await timeDisplay.updateComplete;
+
+      // Controls should reflect the current time
+      // Note: currentTimeMs from playbackController is quantized to frame boundaries
+      expect(controls.currentTimeMs).toBe(5000);
+    });
+
+    test("synchronizes durationMs from direct timegroup to controls", async () => {
+      const timegroup = makeElement(
+        "ef-timegroup",
+        { id: "direct-timegroup", mode: "fixed", duration: "10s" },
+        document.body,
+      );
+
+      const controls = makeElement(
+        "ef-controls",
+        { target: "direct-timegroup" },
+        document.body,
+      );
+
+      // Wait for timegroup to fully initialize
+      await timegroup.updateComplete;
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await timegroup.updateComplete;
+      await controls.updateComplete;
+      // Wait for async subscription to complete
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await controls.updateComplete;
+
+      // Controls should have the correct duration
+      expect(controls.durationMs).toBe(10000);
+    });
+
+    test("sets targetTemporal when targeting direct timegroup", async () => {
+      const timegroup = makeElement(
+        "ef-timegroup",
+        { id: "direct-timegroup", mode: "fixed", duration: "10s" },
+        document.body,
+      );
+
+      const controls = makeElement(
+        "ef-controls",
+        { target: "direct-timegroup" },
+        document.body,
+      );
+
+      // Wait for timegroup to fully initialize
+      await timegroup.updateComplete;
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await timegroup.updateComplete;
+      await controls.updateComplete;
+      // Wait for async subscription to complete
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await controls.updateComplete;
+
+      // targetTemporal should be set to the timegroup itself
+      expect(controls.targetTemporal).toBe(timegroup);
+    });
+
+    test("controls can play/pause direct timegroup", async () => {
+      const timegroup = makeElement(
+        "ef-timegroup",
+        { id: "direct-timegroup", mode: "fixed", duration: "10s" },
+        document.body,
+      );
+
+      const controls = makeElement(
+        "ef-controls",
+        { target: "direct-timegroup" },
+        document.body,
+      );
+
+      const togglePlay = makeElement("ef-toggle-play", {}, controls);
+
+      // Wait for timegroup to fully initialize
+      await timegroup.updateComplete;
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await timegroup.updateComplete;
+      await controls.updateComplete;
+      await togglePlay.updateComplete;
+      // Wait for async subscription to complete
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await controls.updateComplete;
+
+      // Click toggle play to start playback
+      togglePlay.click();
+      await togglePlay.updateComplete;
+      await controls.updateComplete;
+      await timegroup.updateComplete;
+
+      // Timegroup should now be playing
+      expect(timegroup.playing).toBe(true);
+      expect(controls.playing).toBe(true);
+
+      // Click again to pause
+      togglePlay.click();
+      await togglePlay.updateComplete;
+      await controls.updateComplete;
+      await timegroup.updateComplete;
+
+      expect(timegroup.playing).toBe(false);
+      expect(controls.playing).toBe(false);
+    });
+
+    test("nested timegroup should NOT be targetable (no playbackController)", async () => {
+      // Create a parent timegroup
+      const parentTimegroup = makeElement(
+        "ef-timegroup",
+        { id: "parent-timegroup", mode: "fixed", duration: "20s" },
+        document.body,
+      );
+
+      // Create a nested child timegroup inside the parent
+      const childTimegroup = makeElement(
+        "ef-timegroup",
+        { id: "child-timegroup", mode: "fixed", duration: "10s" },
+        parentTimegroup,
+      );
+
+      const controls = makeElement(
+        "ef-controls",
+        { target: "child-timegroup" },
+        document.body,
+      );
+
+      await parentTimegroup.updateComplete;
+      await childTimegroup.updateComplete;
+      await controls.updateComplete;
+
+      // Controls should find the element but it should NOT have playbackController
+      // because nested temporal elements delegate to their root
+      expect(controls.targetElement).toBe(childTimegroup);
+      // Child should not have its own playbackController
+      expect(childTimegroup.playbackController).toBeUndefined();
+      // Therefore targetTemporal should be null (not a valid controllable)
+      expect(controls.targetTemporal).toBeNull();
+    });
+  });
 });
