@@ -335,6 +335,13 @@ const determineElementPhase = (
   const endTimeMs = element.endTimeMs;
   const startTimeMs = element.startTimeMs;
 
+  // Invalid range (end <= start) means element hasn't computed its duration yet,
+  // or has no temporal children (e.g., timegroup with only static HTML).
+  // Treat as always active - these elements should be visible at all times.
+  if (endTimeMs <= startTimeMs) {
+    return "active";
+  }
+
   if (timelineTimeMs < startTimeMs) {
     return "before-start";
   }
