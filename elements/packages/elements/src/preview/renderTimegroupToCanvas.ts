@@ -6,7 +6,11 @@ import {
   overrideRootCloneStyles,
   type SyncState,
 } from "./renderTimegroupPreview.js";
-import { isNativeCanvasApiAvailable, getRenderMode, type RenderMode } from "./previewSettings.js";
+import { getEffectiveRenderMode } from "./renderers.js";
+
+// Re-export renderer types for external use
+export type { RenderOptions, RenderResult, Renderer } from "./renderers.js";
+export { getEffectiveRenderMode, isCanvas, isImage } from "./renderers.js";
 import { WorkerPool, encodeCanvasInWorker } from "./workers/WorkerPool.js";
 import {
   type TemporalElement,
@@ -603,22 +607,6 @@ async function serializeToSvgDataUri(
   
   return { dataUri, restore };
 }
-
-/**
- * Get the effective render mode, validating that native is available when selected.
- * Falls back to foreignObject if native is selected but not available.
- */
-function getEffectiveRenderMode(): RenderMode {
-  const mode = getRenderMode();
-  
-  // Native mode requires browser support
-  if (mode === "native" && !isNativeCanvasApiAvailable()) {
-    return "foreignObject";
-  }
-  
-  return mode;
-}
-
 
 /**
  * Inline all images in a container as base64 data URIs.
