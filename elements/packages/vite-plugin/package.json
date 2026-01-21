@@ -25,6 +25,7 @@
     "connect": "^3.7.0",
     "debug": "^4.3.5",
     "mime": "^4.0.3",
+    "odiff-bin": "^4.3.2",
     "vite": "npm:rolldown-vite@^7.1.15"
   },
   "devDependencies": {

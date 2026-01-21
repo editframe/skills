@@ -143,7 +143,7 @@ export async function compareSnapshot(
       acceptableDiffPercentage,
     }),
   });
-  
+  console.log("response", response);
   if (!response.ok) {
     const error = await response.text();
     throw new Error(`Failed to compare snapshot: ${error}`);
@@ -165,7 +165,8 @@ export async function assertCanvasSnapshot(
     acceptableDiffPercentage?: number;
   } = {},
 ): Promise<SnapshotComparisonResult> {
-  const dataUrl = captureCanvasAsDataUrl(canvas);
+  // Use PNG format for consistent snapshot comparison (odiff works best with PNG)
+  const dataUrl = captureCanvasAsDataUrl(canvas, "image/png");
   return compareSnapshot(testName, snapshotName, dataUrl, options);
 }
 
@@ -216,8 +217,9 @@ export async function compareTwoCanvases(
     acceptableDiffPercentage = 1.0,
   } = options;
   
-  const dataUrl1 = captureCanvasAsDataUrl(canvas1);
-  const dataUrl2 = captureCanvasAsDataUrl(canvas2);
+  // Use PNG format for consistent comparison (odiff works best with PNG)
+  const dataUrl1 = captureCanvasAsDataUrl(canvas1, "image/png");
+  const dataUrl2 = captureCanvasAsDataUrl(canvas2, "image/png");
   
   const response = await fetch("/@ef-compare-two-images", {
     method: "POST",
