@@ -1,0 +1,7 @@
+---
+alwaysApply: true
+---
+
+use {elements}/scripts/{test,browsertest,npm,run,tsx,docker,docker-compose}
+
+All our dev environments run in docker containers that are configured to run only through those scripts.
