@@ -105,12 +105,6 @@ export class ContentNotReadyError extends Error {
 // Module State (reset via resetRenderState)
 // ============================================================================
 
-/** Track if we've logged the native API detection message (to avoid spam) */
-let _hasLoggedNativeApiStatus = false;
-
-/** Track which rendering path is being used */
-let _pathLogged = false;
-
 /** Image cache for inlining external images as data URIs (foreignObject path) */
 const _inlineImageCache = new Map<string, string>();
 
@@ -381,7 +375,6 @@ export function resetRenderState(): void {
   _totalDrawMs = 0;
   _totalDownsampleMs = 0;
   _lastLogTime = 0;
-  _pathLogged = false;
   _inlineImageCache.clear();
 }
 
@@ -834,17 +827,10 @@ export async function renderToImage(
   
   // Native HTML-in-Canvas API path (fastest, requires Chrome flag)
   if (renderMode === "native") {
-    if (!_pathLogged) {
-      _pathLogged = true;
-      const effectiveDpr = options?.skipDprScaling ? 1 : window.devicePixelRatio;
-    }
     return renderToImageNative(container, width, height, options);
   }
   
   // Fallback: SVG foreignObject serialization
-  if (!_pathLogged) {
-    _pathLogged = true;
-  }
   
   // Fallback: SVG foreignObject approach
   // Get all canvases from original BEFORE cloning (cloneNode doesn't copy canvas pixels)
