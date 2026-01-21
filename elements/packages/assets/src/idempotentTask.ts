@@ -129,7 +129,7 @@ export const idempotentTask = <T extends unknown[]>({
     const scanStartTime = Date.now();
     try {
       const cacheDirs = await readdir(cacheDirRoot, { withFileTypes: true });
-      console.log(`[ef:${label}] Scanning ${cacheDirs.length} cache directories for ${expectedFilename}`);
+      log(`Scanning ${cacheDirs.length} cache directories for ${expectedFilename}`);
       for (const dir of cacheDirs) {
         if (dir.isDirectory()) {
           const candidatePath = path.join(cacheDirRoot, dir.name, expectedFilename);
@@ -137,30 +137,28 @@ export const idempotentTask = <T extends unknown[]>({
             cachePath = candidatePath;
             md5 = dir.name; // Directory name is the MD5
             const scanElapsed = Date.now() - scanStartTime;
-            console.log(`[ef:${label}] Found existing cache in ${scanElapsed}ms: ${candidatePath} (skipped MD5)`);
-            log(`Found existing cache for ${expectedFilename} in ${dir.name}, skipping MD5 computation`);
+            log(`Found existing cache in ${scanElapsed}ms: ${candidatePath} (skipped MD5)`);
             break;
           }
         }
       }
       if (!cachePath) {
         const scanElapsed = Date.now() - scanStartTime;
-        console.log(`[ef:${label}] Cache scan completed in ${scanElapsed}ms, no cache found - will compute MD5`);
+        log(`Cache scan completed in ${scanElapsed}ms, no cache found - will compute MD5`);
       }
     } catch (error) {
       // If cache directory doesn't exist or can't be read, continue to MD5 computation
       const scanElapsed = Date.now() - scanStartTime;
-      console.log(`[ef:${label}] Cache scan failed after ${scanElapsed}ms, will compute MD5: ${error}`);
-      log(`Cache scan failed, will compute MD5: ${error}`);
+      log(`Cache scan failed after ${scanElapsed}ms, will compute MD5: ${error}`);
     }
 
     // Only compute MD5 if we didn't find an existing cache
     if (!md5) {
       const md5StartTime = Date.now();
-      console.log(`[ef:${label}] Computing MD5 for ${absolutePath}...`);
+      log(`Computing MD5 for ${absolutePath}...`);
       md5 = await md5FilePath(absolutePath);
       const md5Elapsed = Date.now() - md5StartTime;
-      console.log(`[ef:${label}] MD5 computed in ${md5Elapsed}ms: ${md5}`);
+      log(`MD5 computed in ${md5Elapsed}ms: ${md5}`);
     }
     
     const cacheDir = path.join(cacheDirRoot, md5);

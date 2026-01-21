@@ -17,9 +17,8 @@ export const sendTaskResult = (
   const log = debug("ef:sendfile");
   const sendStartTime = Date.now();
   try {
-    console.log(`[ef:sendfile] Sending file ${filePath} (size: ${statSync(filePath).size} bytes)`);
-    log(`Sending file ${filePath}`);
     const stats = statSync(filePath);
+    log(`Sending file ${filePath} (size: ${stats.size} bytes)`);
 
     if (req.headers.range) {
       const [x, y] = req.headers.range.replace("bytes=", "").split("-");
@@ -46,11 +45,10 @@ export const sendTaskResult = (
         "Accept-Ranges": "bytes",
       });
       log(`Sending ${filePath} range ${start}-${end}/${stats.size}`);
-      console.log(`[ef:sendfile] Sending range ${start}-${end}/${stats.size} of ${filePath}`);
       const readStream = createReadStream(filePath, { start, end });
       readStream.on("end", () => {
         const elapsed = Date.now() - sendStartTime;
-        console.log(`[ef:sendfile] Range request completed in ${elapsed}ms`);
+        log(`Range request completed in ${elapsed}ms`);
       });
       readStream.pipe(res);
     } else {
@@ -60,18 +58,16 @@ export const sendTaskResult = (
         "Cache-Control": "max-age=3600",
         "Content-Length": stats.size,
       });
-      log(`Sending ${filePath}`);
-      console.log(`[ef:sendfile] Sending full file ${filePath} (${stats.size} bytes)`);
+      log(`Sending full file ${filePath} (${stats.size} bytes)`);
       const readStream = createReadStream(filePath);
       readStream.on("end", () => {
         const elapsed = Date.now() - sendStartTime;
-        console.log(`[ef:sendfile] File send completed in ${elapsed}ms`);
+        log(`File send completed in ${elapsed}ms`);
       });
       readStream.pipe(res);
     }
   } catch (error) {
     const elapsed = Date.now() - sendStartTime;
-    log("Error sending file", error);
-    console.error(`[ef:sendfile] Error sending file after ${elapsed}ms:`, error);
+    log(`Error sending file after ${elapsed}ms:`, error);
   }
 };

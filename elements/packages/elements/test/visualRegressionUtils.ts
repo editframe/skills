@@ -143,7 +143,7 @@ export async function compareSnapshot(
       acceptableDiffPercentage,
     }),
   });
-  console.log("response", response);
+  
   if (!response.ok) {
     const error = await response.text();
     throw new Error(`Failed to compare snapshot: ${error}`);

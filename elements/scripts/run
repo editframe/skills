@@ -17,12 +17,12 @@ if [ -n "$RUNNER_CONTAINER" ] && docker inspect "$RUNNER_CONTAINER" --format='{{
     # Filter out Docker Debug promotional messages from stderr
     if [ -t 0 ]; then
         # TTY mode: filter stderr but preserve TTY
-        docker exec --env EF_CACHE_ONLY="$EF_CACHE_ONLY" --env WORKTREE_DOMAIN="$WORKTREE_DOMAIN" --env MONOREPO_ROOT="$MONOREPO_ROOT" --env WS_ENDPOINT="$WS_ENDPOINT" --env VITEST_BROWSER_MODE="$VITEST_BROWSER_MODE" $INTERACTIVE_FLAGS "$RUNNER_CONTAINER" "$@" 2> >(grep -v "What's next:" | grep -v "Try Docker Debug" | grep -v "Learn more at" >&2)
+        docker exec --env EF_CACHE_ONLY="$EF_CACHE_ONLY" --env WORKTREE_DOMAIN="$WORKTREE_DOMAIN" --env MONOREPO_ROOT="$MONOREPO_ROOT" --env WS_ENDPOINT="$WS_ENDPOINT" --env VITEST_BROWSER_MODE="$VITEST_BROWSER_MODE" --env DEBUG="$DEBUG" $INTERACTIVE_FLAGS "$RUNNER_CONTAINER" "$@" 2> >(grep -v "What's next:" | grep -v "Try Docker Debug" | grep -v "Learn more at" >&2)
     else
         # Non-TTY mode: filter both stdout and stderr
-        docker exec --env EF_CACHE_ONLY="$EF_CACHE_ONLY" --env WORKTREE_DOMAIN="$WORKTREE_DOMAIN" --env MONOREPO_ROOT="$MONOREPO_ROOT" --env WS_ENDPOINT="$WS_ENDPOINT" --env VITEST_BROWSER_MODE="$VITEST_BROWSER_MODE" $INTERACTIVE_FLAGS "$RUNNER_CONTAINER" "$@" 2>&1 | grep -v "What's next:" | grep -v "Try Docker Debug" | grep -v "Learn more at"
+        docker exec --env EF_CACHE_ONLY="$EF_CACHE_ONLY" --env WORKTREE_DOMAIN="$WORKTREE_DOMAIN" --env MONOREPO_ROOT="$MONOREPO_ROOT" --env WS_ENDPOINT="$WS_ENDPOINT" --env VITEST_BROWSER_MODE="$VITEST_BROWSER_MODE" --env DEBUG="$DEBUG" $INTERACTIVE_FLAGS "$RUNNER_CONTAINER" "$@" 2>&1 | grep -v "What's next:" | grep -v "Try Docker Debug" | grep -v "Learn more at"
     fi
 else
     # Service not running, start new ephemeral container
-    "${SCRIPT_DIR}"/docker-compose run --rm $INTERACTIVE_FLAGS -e EF_CACHE_ONLY="$EF_CACHE_ONLY" -e WORKTREE_DOMAIN="$WORKTREE_DOMAIN" -e MONOREPO_ROOT="$MONOREPO_ROOT" -e WS_ENDPOINT="$WS_ENDPOINT" -e VITEST_BROWSER_MODE="$VITEST_BROWSER_MODE" runner "$@"
+    "${SCRIPT_DIR}"/docker-compose run --rm $INTERACTIVE_FLAGS -e EF_CACHE_ONLY="$EF_CACHE_ONLY" -e WORKTREE_DOMAIN="$WORKTREE_DOMAIN" -e MONOREPO_ROOT="$MONOREPO_ROOT" -e WS_ENDPOINT="$WS_ENDPOINT" -e VITEST_BROWSER_MODE="$VITEST_BROWSER_MODE" -e DEBUG="$DEBUG" runner "$@"
 fi
