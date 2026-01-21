@@ -19,6 +19,7 @@ import {
   JPEG_QUALITY_MEDIUM,
   createPreviewContainer,
 } from "./previewTypes.js";
+import { defaultProfiler } from "./RenderProfiler.js";
 
 // ============================================================================
 // Constants (module-specific, not shared)
@@ -107,13 +108,6 @@ export class ContentNotReadyError extends Error {
 
 /** Image cache for inlining external images as data URIs (foreignObject path) */
 const _inlineImageCache = new Map<string, string>();
-
-/** Render timing stats (for profiling) */
-let _renderCallCount = 0;
-let _totalSetupMs = 0;
-let _totalDrawMs = 0;
-let _totalDownsampleMs = 0;
-let _lastLogTime = 0;
 
 /** Track canvases that have been initialized for layoutsubtree (only need to wait once) */
 const _layoutInitializedCanvases = new WeakSet<HTMLCanvasElement>();
@@ -370,11 +364,7 @@ function encodeBase64Fast(bytes: Uint8Array): string {
  * Call at the start of export sessions to ensure clean state.
  */
 export function resetRenderState(): void {
-  _renderCallCount = 0;
-  _totalSetupMs = 0;
-  _totalDrawMs = 0;
-  _totalDownsampleMs = 0;
-  _lastLogTime = 0;
+  defaultProfiler.reset();
   _inlineImageCache.clear();
 }
 
@@ -720,7 +710,7 @@ export async function renderToImageNative(
   }
   
   const t1 = performance.now();
-  _totalSetupMs += t1 - t0;
+  defaultProfiler.addTime("setup", t1 - t0);
   
   try {
     // Force style calculation to ensure CSS is computed before capture
@@ -758,11 +748,11 @@ export async function renderToImageNative(
   }
   
   const t2 = performance.now();
-  _totalDrawMs += t2 - t1;
+  defaultProfiler.addTime("draw", t2 - t1);
   
   // If DPR is 1, no downsampling needed - return as-is
   if (dpr === 1) {
-    _renderCallCount++;
+    defaultProfiler.incrementRenderCount();
     return captureCanvas;
   }
   
@@ -781,12 +771,11 @@ export async function renderToImageNative(
   );
   
   const t3 = performance.now();
-  _totalDownsampleMs += t3 - t2;
-  _renderCallCount++;
+  defaultProfiler.addTime("downsample", t3 - t2);
+  defaultProfiler.incrementRenderCount();
   
-  if (t3 - _lastLogTime > PROFILING_LOG_INTERVAL_MS) {
-    _lastLogTime = t3;
-  }
+  // Log timing periodically
+  defaultProfiler.shouldLogByTime(PROFILING_LOG_INTERVAL_MS);
   
   return outputCanvas;
 }
@@ -932,21 +921,12 @@ export async function renderToImage(
  * @param height - Output height
  * @returns Promise resolving to an HTMLImageElement
  */
-// Timing accumulators for renderToImageDirect breakdown
-let _totalCanvasEncodeMs = 0;
-let _totalInlineMs = 0;
-let _totalSerializeMs = 0;
-let _totalBase64Ms = 0;
-let _totalImageLoadMs = 0;
-let _totalRestoreMs = 0;
-let _timingLoggedAt = 0;
-
 export async function renderToImageDirect(
   container: HTMLElement,
   width: number,
   height: number,
 ): Promise<HTMLImageElement> {
-  _renderCallCount++;
+  defaultProfiler.incrementRenderCount();
   
   // Store original canvas elements and their parents for restoration
   const canvasRestoreInfo: Array<{ canvas: HTMLCanvasElement; parent: Node; nextSibling: Node | null; img: HTMLImageElement }> = [];
@@ -980,12 +960,12 @@ export async function renderToImageDirect(
       // Cross-origin canvas - leave as-is
     }
   }
-  _totalCanvasEncodeMs += performance.now() - canvasStart;
+  defaultProfiler.addTime("canvasEncode", performance.now() - canvasStart);
   
   // Inline external images (this is idempotent, safe to call multiple times)
   const inlineStart = performance.now();
   await inlineImages(container);
-  _totalInlineMs += performance.now() - inlineStart;
+  defaultProfiler.addTime("inline", performance.now() - inlineStart);
   
   // Create wrapper with XHTML namespace
   const serializeStart = performance.now();
@@ -999,7 +979,7 @@ export async function renderToImageDirect(
     _xmlSerializer = new XMLSerializer();
   }
   const serialized = _xmlSerializer.serializeToString(wrapper);
-  _totalSerializeMs += performance.now() - serializeStart;
+  defaultProfiler.addTime("serialize", performance.now() - serializeStart);
   
   // RESTORE: Put container back (remove from wrapper)
   const restoreStart = performance.now();
@@ -1016,10 +996,10 @@ export async function renderToImageDirect(
       }
     }
   }
-  _totalRestoreMs += performance.now() - restoreStart;
+  defaultProfiler.addTime("restore", performance.now() - restoreStart);
   
   // DEBUG: Log serialized HTML size
-  if (_renderCallCount < 2) {
+  if (defaultProfiler.isEarlyRender(2)) {
     console.log(`[renderToImageDirect] FO serialized: ${serialized.length} chars`);
   }
   
@@ -1041,7 +1021,7 @@ export async function renderToImageDirect(
     base64 = encodeBase64Fast(utf8Bytes);
   }
   const dataUri = `data:image/svg+xml;base64,${base64}`;
-  _totalBase64Ms += performance.now() - base64Start;
+  defaultProfiler.addTime("base64", performance.now() - base64Start);
   
   // Create new Image for each frame (needed for pipelining - can't reuse when overlapping)
   const img = new Image();
@@ -1049,7 +1029,7 @@ export async function renderToImageDirect(
   const imageLoadStart = performance.now();
   const image = await new Promise<HTMLImageElement>((resolve, reject) => {
     img.onload = () => {
-      _totalImageLoadMs += performance.now() - imageLoadStart;
+      defaultProfiler.addTime("imageLoad", performance.now() - imageLoadStart);
       resolve(img);
     };
     img.onerror = reject;
@@ -1057,9 +1037,7 @@ export async function renderToImageDirect(
   });
   
   // Log timing breakdown periodically
-  if (_renderCallCount - _timingLoggedAt >= 100) {
-    _timingLoggedAt = _renderCallCount;
-  }
+  defaultProfiler.shouldLogByFrameCount(100);
   
   return image;
 }
@@ -1074,7 +1052,7 @@ export async function prepareFrameDataUri(
   width: number,
   height: number,
 ): Promise<string> {
-  _renderCallCount++;
+  defaultProfiler.incrementRenderCount();
   
   // Store original canvas elements and their parents for restoration
   const canvasRestoreInfo: Array<{ canvas: HTMLCanvasElement; parent: Node; nextSibling: Node | null; img: HTMLImageElement }> = [];
@@ -1106,7 +1084,7 @@ export async function prepareFrameDataUri(
       // Cross-origin canvas - leave as-is
     }
   }
-  _totalCanvasEncodeMs += performance.now() - canvasStart;
+  defaultProfiler.addTime("canvasEncode", performance.now() - canvasStart);
   
   // Create wrapper with XHTML namespace
   const serializeStart = performance.now();
@@ -1120,7 +1098,7 @@ export async function prepareFrameDataUri(
     _xmlSerializer = new XMLSerializer();
   }
   const serialized = _xmlSerializer.serializeToString(wrapper);
-  _totalSerializeMs += performance.now() - serializeStart;
+  defaultProfiler.addTime("serialize", performance.now() - serializeStart);
   
   // RESTORE: Put container back
   const restoreStart = performance.now();
@@ -1137,7 +1115,7 @@ export async function prepareFrameDataUri(
       }
     }
   }
-  _totalRestoreMs += performance.now() - restoreStart;
+  defaultProfiler.addTime("restore", performance.now() - restoreStart);
   
   // Wrap in SVG foreignObject and encode to base64 data URI
   const base64Start = performance.now();
@@ -1155,7 +1133,7 @@ export async function prepareFrameDataUri(
     base64 = encodeBase64Fast(utf8Bytes);
   }
   const dataUri = `data:image/svg+xml;base64,${base64}`;
-  _totalBase64Ms += performance.now() - base64Start;
+  defaultProfiler.addTime("base64", performance.now() - base64Start);
   
   return dataUri;
 }
@@ -1169,7 +1147,7 @@ export function loadImageFromDataUri(dataUri: string): Promise<HTMLImageElement>
   
   return new Promise<HTMLImageElement>((resolve, reject) => {
     img.onload = () => {
-      _totalImageLoadMs += performance.now() - imageLoadStart;
+      defaultProfiler.addTime("imageLoad", performance.now() - imageLoadStart);
       resolve(img);
     };
     img.onerror = reject;
@@ -1637,8 +1615,8 @@ export function renderTimegroupToCanvas(
       ctx.restore();
       
       // Log render time periodically (every 60 frames)
-      _renderCallCount++;
-      if (_renderCallCount % 60 === 0) {
+      defaultProfiler.incrementRenderCount();
+      if (defaultProfiler.shouldLogByFrameCount(60)) {
         console.log(`[renderTimegroupToCanvas] Frame render: ${renderTime.toFixed(1)}ms (resolutionScale=${currentResolutionScale}, image=${image.width}x${image.height})`);
       }
       
