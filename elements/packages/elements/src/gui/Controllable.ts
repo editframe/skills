@@ -140,10 +140,35 @@ export function createDirectTemporalSubscription(
     subtree: true,
   });
   
+  // For media elements (ef-video, ef-audio), also watch for intrinsic duration changes
+  // The intrinsicDurationMs comes from mediaEngineTask which loads asynchronously
+  let lastKnownDuration = target.durationMs;
+  let durationPollInterval: ReturnType<typeof setInterval> | null = null;
+  
+  // If duration is currently 0, poll until it becomes available
+  // This handles the case where media hasn't loaded yet
+  if (lastKnownDuration === 0) {
+    durationPollInterval = setInterval(() => {
+      const currentDuration = target.durationMs;
+      if (currentDuration !== lastKnownDuration) {
+        lastKnownDuration = currentDuration;
+        callbacks.onDurationMsChange(currentDuration);
+        // Once we have a non-zero duration, stop polling
+        if (currentDuration > 0 && durationPollInterval) {
+          clearInterval(durationPollInterval);
+          durationPollInterval = null;
+        }
+      }
+    }, 100); // Check every 100ms
+  }
+  
   return {
     unsubscribe: () => {
       controller.removeListener(listener);
       durationObserver.disconnect();
+      if (durationPollInterval) {
+        clearInterval(durationPollInterval);
+      }
     },
   };
 }
