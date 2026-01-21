@@ -1398,21 +1398,6 @@ export async function captureTimegroupAtTime(
     await timegroup.createRenderClone();
   
   try {
-    // Pre-fetch scrub segments for video elements to ensure fast seeks
-    // This is critical for blocking mode which waits for video content
-    const videoElements = renderClone.querySelectorAll("ef-video");
-    if (videoElements.length > 0) {
-      await Promise.all(
-        Array.from(videoElements).map(async (video) => {
-          try {
-            await (video as any).prefetchScrubSegments?.([timeMs]);
-          } catch {
-            // Ignore errors - prefetch is best-effort optimization
-          }
-        }),
-      );
-    }
-    
     // Seek the clone to target time (Prime stays at user position)
     // Use seekForRender which bypasses duration clamping - render clones may have
     // zero duration initially until media durations are computed, but we still
