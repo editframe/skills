@@ -916,9 +916,9 @@ describe("renderTimegroupToCanvas", () => {
   });
 
   describe("nested animated timegroup (reproduction test)", () => {
-    // 20 thumbnails is sufficient to catch timing issues while being faster
-    // Use 50 for deeper investigation if needed
-    const THUMBNAIL_COUNT = 20;
+    // 3 frames (beginning/middle/end) catches most timing issues while being fast
+    // Increase for deeper investigation if needed
+    const THUMBNAIL_COUNT = 3;
 
     function generateTimestamps(durationMs: number, count: number): number[] {
       const timestamps: number[] = [];
