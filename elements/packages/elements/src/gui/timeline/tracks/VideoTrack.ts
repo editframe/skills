@@ -20,28 +20,41 @@ import {
 /** Padding for virtual rendering */
 const VIRTUAL_RENDER_PADDING_PX = 100;
 
+/** Height of thumbnail section */
+const THUMBNAIL_HEIGHT = 24;
+/** Height of audio section when present */
+const AUDIO_SECTION_HEIGHT = 14;
+
 @customElement("ef-video-track")
 export class EFVideoTrack extends TrackItem {
   static override styles = [
     ...TrackItem.styles,
     css`
+      .video-content {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+      .thumbnail-section {
+        position: relative;
+        flex: 0 0 ${THUMBNAIL_HEIGHT}px;
+        height: ${THUMBNAIL_HEIGHT}px;
+      }
       ef-thumbnail-strip {
         height: 100%;
         border: none;
         border-radius: 0;
         background: transparent;
       }
-      .audio-overlay {
-        position: absolute;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        height: 12px;
+      .audio-section {
+        position: relative;
+        flex: 0 0 ${AUDIO_SECTION_HEIGHT}px;
+        height: ${AUDIO_SECTION_HEIGHT}px;
+        background: rgba(0, 0, 0, 0.3);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
         overflow: hidden;
-        pointer-events: none;
-        background: linear-gradient(to top, rgba(0, 0, 0, 0.4), transparent);
       }
-      .audio-overlay-canvas {
+      .audio-section-canvas {
         position: absolute;
         top: 0;
         height: 100%;
@@ -158,7 +171,7 @@ export class EFVideoTrack extends TrackItem {
 
     if (visibleWidthPx <= 0) return;
 
-    const height = 12; // Height for audio overlay
+    const height = AUDIO_SECTION_HEIGHT;
     const dpr = window.devicePixelRatio || 1;
 
     // Set canvas size
@@ -184,11 +197,11 @@ export class EFVideoTrack extends TrackItem {
     const timeStartMs = sourceInMs + visibleStartInTrack / pixelsPerMs;
     const timeEndMs = sourceInMs + visibleEndInTrack / pixelsPerMs;
 
-    // Draw subtle waveform
-    this.#drawSubtleWaveform(ctx, waveformData, visibleWidthPx, height, timeStartMs, timeEndMs);
+    // Draw waveform in dedicated section
+    this.#drawAudioWaveform(ctx, waveformData, visibleWidthPx, height, timeStartMs, timeEndMs);
   }
 
-  #drawSubtleWaveform(
+  #drawAudioWaveform(
     ctx: CanvasRenderingContext2D,
     waveformData: WaveformData,
     width: number,
@@ -204,22 +217,24 @@ export class EFVideoTrack extends TrackItem {
 
     if (sampleCount <= 0 || width <= 0) return;
 
-    // More visible green color for audio indicator
-    ctx.fillStyle = "rgba(74, 222, 128, 0.85)";
-    ctx.beginPath();
-
+    const centerY = height / 2;
+    const halfHeight = (height / 2) - 1;
     const pixelsPerSample = width / sampleCount;
 
-    // Draw only the bottom half of the waveform (like a reflection)
+    // Draw filled waveform
+    ctx.fillStyle = "rgb(74, 222, 128)";
+    ctx.globalAlpha = 0.9;
+    ctx.beginPath();
+
+    // Draw top half (max values) left to right
     for (let i = 0; i <= sampleCount; i++) {
       const sampleIndex = startSample + i;
       const peakIndex = sampleIndex * 2;
       if (peakIndex + 1 >= peaks.length) break;
 
-      const maxValue = Math.abs(peaks[peakIndex + 1] ?? 0);
+      const maxValue = peaks[peakIndex + 1] ?? 0;
       const px = i * pixelsPerSample;
-      // Amplify the waveform a bit to make it more visible
-      const py = height - Math.min(maxValue * 1.5, 1) * height;
+      const py = centerY - maxValue * halfHeight;
 
       if (i === 0) {
         ctx.moveTo(px, py);
@@ -228,11 +243,32 @@ export class EFVideoTrack extends TrackItem {
       }
     }
 
-    // Close path at bottom
-    ctx.lineTo(width, height);
-    ctx.lineTo(0, height);
+    // Draw bottom half (min values) right to left
+    for (let i = sampleCount; i >= 0; i--) {
+      const sampleIndex = startSample + i;
+      const peakIndex = sampleIndex * 2;
+      if (peakIndex >= peaks.length) continue;
+
+      const minValue = peaks[peakIndex] ?? 0;
+      const px = i * pixelsPerSample;
+      const py = centerY - minValue * halfHeight;
+
+      ctx.lineTo(px, py);
+    }
+
     ctx.closePath();
     ctx.fill();
+
+    // Draw center line
+    ctx.globalAlpha = 0.3;
+    ctx.strokeStyle = "rgb(74, 222, 128)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, centerY);
+    ctx.lineTo(width, centerY);
+    ctx.stroke();
+
+    ctx.globalAlpha = 1;
   }
 
   connectedCallback(): void {
@@ -263,6 +299,16 @@ export class EFVideoTrack extends TrackItem {
     }
   }
 
+  /**
+   * Get the total track height based on whether audio is present
+   */
+  #getTrackHeight(): number {
+    if (this._hasAudio && this._waveformData) {
+      return THUMBNAIL_HEIGHT + AUDIO_SECTION_HEIGHT;
+    }
+    return THUMBNAIL_HEIGHT;
+  }
+
   override render() {
     const video = this.element as EFVideo;
     const elementId = (this.element as HTMLElement).id || "";
@@ -275,6 +321,9 @@ export class EFVideoTrack extends TrackItem {
     const trimEndMs = this.element.trimEndMs ?? 0;
     const intrinsicDurationMs =
       this.element.intrinsicDurationMs ?? this.element.durationMs;
+
+    const trackHeight = this.#getTrackHeight();
+    const hasAudioSection = this._hasAudio && this._waveformData;
 
     return html`<div style=${styleMap(this.gutterStyles)}>
       <div
@@ -296,23 +345,27 @@ export class EFVideoTrack extends TrackItem {
           class="trim-container relative mb-0 block text-nowrap border text-sm"
           style=${styleMap({
             ...this.trimPortionStyles,
-            height: "24px",
+            height: `${trackHeight}px`,
             backgroundColor: this.isFocused
               ? "var(--filmstrip-item-focused)"
               : "var(--filmstrip-item-bg)",
             borderColor: "var(--filmstrip-border)",
           })}
         >
-          <ef-thumbnail-strip
-            .targetElement=${video}
-            .useIntrinsicDuration=${true}
-          ></ef-thumbnail-strip>
-          ${this._hasAudio && this._waveformData
-            ? html`<div class="audio-overlay">
-                <canvas ${ref(this.audioCanvasRef)} class="audio-overlay-canvas"></canvas>
-              </div>`
-            : nothing
-          }
+          <div class="video-content">
+            <div class="thumbnail-section">
+              <ef-thumbnail-strip
+                .targetElement=${video}
+                .useIntrinsicDuration=${true}
+              ></ef-thumbnail-strip>
+            </div>
+            ${hasAudioSection
+              ? html`<div class="audio-section">
+                  <canvas ${ref(this.audioCanvasRef)} class="audio-section-canvas"></canvas>
+                </div>`
+              : nothing
+            }
+          </div>
           ${
             this.enableTrim
               ? html`<ef-trim-handles
