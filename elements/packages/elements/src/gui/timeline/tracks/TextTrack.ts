@@ -132,12 +132,17 @@ export class EFTextTrack extends TrackItem {
   ];
 
   /**
-   * Get the text content - either from direct text nodes or from segments
+   * Get the text content - from segments, direct text nodes, or element textContent
    */
   #getTextContent(segments: EFTextSegment[]): string {
     const text = this.element as EFText;
     
-    // First try direct text nodes
+    // If there are segments, use their text
+    if (segments.length > 0) {
+      return segments.map(s => s.segmentText).join(" ");
+    }
+    
+    // Try direct text nodes (excluding templates and other elements)
     const directText = Array.from(text.childNodes)
       .filter(node => node.nodeType === Node.TEXT_NODE)
       .map(node => node.textContent?.trim())
@@ -146,12 +151,10 @@ export class EFTextTrack extends TrackItem {
     
     if (directText) return directText;
     
-    // Fall back to concatenating segment text
-    if (segments.length > 0) {
-      return segments.map(s => s.segmentText).join(" ");
-    }
-    
-    return "";
+    // Ultimate fallback: use the element's full text content
+    // (excluding script/style content but including nested text)
+    const fullText = text.textContent?.trim() || "";
+    return fullText;
   }
 
   /**
