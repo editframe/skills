@@ -51,9 +51,12 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   static styles = [
     css`
       :host {
-        display: block;
+        display: flex;
+        flex-direction: column;
         width: 100%;
         height: 100%;
+        max-height: 100vh;
+        overflow: hidden;
         
         /* Light mode colors */
         --workbench-bg: rgb(30 41 59); /* slate-800 */
@@ -2680,8 +2683,8 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     }
     return html`
       <div
-        class="grid h-full w-full overflow-hidden"
-        style="grid-template-rows: auto 1fr 280px; grid-template-columns: 280px 1fr; background-color: var(--workbench-bg); min-height: 0;"
+        class="grid w-full overflow-hidden"
+        style="flex: 1; min-height: 0; grid-template-rows: auto 1fr 280px; grid-template-columns: 280px 1fr; background-color: var(--workbench-bg);"
       >
         <!-- Top: Full-width Toolbar -->
         <div style="grid-row: 1 / 2; grid-column: 1 / -1;">
@@ -2690,7 +2693,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         
         <!-- Left: Hierarchy Panel -->
         <div
-          style="grid-row: 2 / 3; grid-column: 1 / 2; background: rgb(30 41 59); border-right: 1px solid rgba(148, 163, 184, 0.2); min-height: 0; overflow: hidden;"
+          style="grid-row: 2 / 3; grid-column: 1 / 2; background: rgb(30 41 59); border-right: 1px solid rgba(148, 163, 184, 0.2); min-height: 0; max-height: 100%; display: flex; flex-direction: column; overflow: hidden;"
         >
           <slot name="hierarchy"></slot>
         </div>
