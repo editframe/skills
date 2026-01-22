@@ -10,6 +10,7 @@ dev-projects/
 .wsEndpoint.json
 .xcursor
 __screenshots__
+*.diff.png
 test-install/
 .packed-packages
 .logs/
