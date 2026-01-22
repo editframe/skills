@@ -523,6 +523,206 @@ describe("EFTimeline", () => {
         0.5 * DEFAULT_PIXELS_PER_MS,
       );
     });
+
+    test("Ctrl+wheel zooms in and out", async () => {
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      const timegroupId = nextId();
+      timegroup.id = timegroupId;
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "10s");
+      document.body.appendChild(timegroup);
+
+      const timeline = document.createElement("ef-timeline") as EFTimeline;
+      timeline.controlTarget = timegroupId;
+      timeline.pixelsPerMs = DEFAULT_PIXELS_PER_MS;
+      timeline.style.width = "800px";
+      timeline.style.height = "400px";
+      document.body.appendChild(timeline);
+
+      await timegroup.updateComplete;
+      await timeline.updateComplete;
+      // Wait for wheel handler to be set up in updated() lifecycle
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      const tracksScroll = timeline.shadowRoot?.querySelector(
+        ".tracks-scroll",
+      ) as HTMLElement;
+      expect(tracksScroll).toBeTruthy();
+
+      const initialPixelsPerMs = timeline.pixelsPerMs;
+      const rect = tracksScroll.getBoundingClientRect();
+
+      // Ctrl+wheel up (negative deltaY) should zoom in
+      const zoomInEvent = new WheelEvent("wheel", {
+        deltaY: -100,
+        ctrlKey: true,
+        clientX: rect.left + 300, // Position cursor in track area
+        clientY: rect.top + 50,
+        bubbles: true,
+        cancelable: true,
+      });
+      tracksScroll.dispatchEvent(zoomInEvent);
+      await timeline.updateComplete;
+
+      expect(timeline.pixelsPerMs).toBeGreaterThan(initialPixelsPerMs);
+
+      const afterZoomIn = timeline.pixelsPerMs;
+
+      // Ctrl+wheel down (positive deltaY) should zoom out
+      const zoomOutEvent = new WheelEvent("wheel", {
+        deltaY: 100,
+        ctrlKey: true,
+        clientX: rect.left + 300,
+        clientY: rect.top + 50,
+        bubbles: true,
+        cancelable: true,
+      });
+      tracksScroll.dispatchEvent(zoomOutEvent);
+      await timeline.updateComplete;
+
+      expect(timeline.pixelsPerMs).toBeLessThan(afterZoomIn);
+    });
+
+    test("Cmd+wheel zooms (metaKey)", async () => {
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      const timegroupId = nextId();
+      timegroup.id = timegroupId;
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "10s");
+      document.body.appendChild(timegroup);
+
+      const timeline = document.createElement("ef-timeline") as EFTimeline;
+      timeline.controlTarget = timegroupId;
+      timeline.pixelsPerMs = DEFAULT_PIXELS_PER_MS;
+      timeline.style.width = "800px";
+      timeline.style.height = "400px";
+      document.body.appendChild(timeline);
+
+      await timegroup.updateComplete;
+      await timeline.updateComplete;
+      // Wait for wheel handler to be set up in updated() lifecycle
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      const tracksScroll = timeline.shadowRoot?.querySelector(
+        ".tracks-scroll",
+      ) as HTMLElement;
+
+      const initialPixelsPerMs = timeline.pixelsPerMs;
+      const rect = tracksScroll.getBoundingClientRect();
+
+      // Meta+wheel (Cmd on Mac) should also zoom
+      const zoomEvent = new WheelEvent("wheel", {
+        deltaY: -100,
+        metaKey: true,
+        clientX: rect.left + 300, // Position cursor in track area
+        clientY: rect.top + 50,
+        bubbles: true,
+        cancelable: true,
+      });
+      tracksScroll.dispatchEvent(zoomEvent);
+      await timeline.updateComplete;
+
+      expect(timeline.pixelsPerMs).toBeGreaterThan(initialPixelsPerMs);
+    });
+
+    test("gestural zoom keeps time under cursor stable", async () => {
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      const timegroupId = nextId();
+      timegroup.id = timegroupId;
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "20s");
+      document.body.appendChild(timegroup);
+
+      const timeline = document.createElement("ef-timeline") as EFTimeline;
+      timeline.controlTarget = timegroupId;
+      timeline.pixelsPerMs = 0.1; // 100px per second
+      timeline.style.width = "800px";
+      timeline.style.height = "400px";
+      document.body.appendChild(timeline);
+
+      await timegroup.updateComplete;
+      await timeline.updateComplete;
+
+      const tracksScroll = timeline.shadowRoot?.querySelector(
+        ".tracks-scroll",
+      ) as HTMLElement;
+      expect(tracksScroll).toBeTruthy();
+
+      // Scroll to middle of timeline first
+      tracksScroll.scrollLeft = 500;
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      await timeline.updateComplete;
+
+      const rect = tracksScroll.getBoundingClientRect();
+      const hierarchyWidth = 200; // Default hierarchy width
+      
+      // Position cursor in the middle of the track area
+      const cursorX = rect.left + hierarchyWidth + 200;
+      const cursorY = rect.top + rect.height / 2;
+
+      // Calculate the time at cursor position before zoom
+      const cursorXInViewport = cursorX - rect.left - hierarchyWidth;
+      const cursorXInContent = cursorXInViewport + tracksScroll.scrollLeft;
+      const timeAtCursorBefore = cursorXInContent / timeline.pixelsPerMs;
+
+      // Zoom in at cursor position
+      const zoomEvent = new WheelEvent("wheel", {
+        deltaY: -100,
+        ctrlKey: true,
+        clientX: cursorX,
+        clientY: cursorY,
+        bubbles: true,
+        cancelable: true,
+      });
+      tracksScroll.dispatchEvent(zoomEvent);
+      await timeline.updateComplete;
+
+      // Calculate time at cursor position after zoom
+      const newCursorXInContent = cursorXInViewport + tracksScroll.scrollLeft;
+      const timeAtCursorAfter = newCursorXInContent / timeline.pixelsPerMs;
+
+      // The time under the cursor should be approximately the same
+      // (within a small tolerance for floating point precision)
+      expect(Math.abs(timeAtCursorAfter - timeAtCursorBefore)).toBeLessThan(50);
+    });
+
+    test("wheel without modifier does not zoom", async () => {
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      const timegroupId = nextId();
+      timegroup.id = timegroupId;
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "10s");
+      document.body.appendChild(timegroup);
+
+      const timeline = document.createElement("ef-timeline") as EFTimeline;
+      timeline.controlTarget = timegroupId;
+      timeline.pixelsPerMs = DEFAULT_PIXELS_PER_MS;
+      timeline.style.width = "800px";
+      timeline.style.height = "400px";
+      document.body.appendChild(timeline);
+
+      await timegroup.updateComplete;
+      await timeline.updateComplete;
+      // Wait for wheel handler to be set up in updated() lifecycle
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      const tracksScroll = timeline.shadowRoot?.querySelector(
+        ".tracks-scroll",
+      ) as HTMLElement;
+
+      const initialPixelsPerMs = timeline.pixelsPerMs;
+
+      // Regular wheel (no modifier) should not zoom
+      const scrollEvent = new WheelEvent("wheel", {
+        deltaY: -100,
+        bubbles: true,
+        cancelable: true,
+      });
+      tracksScroll.dispatchEvent(scrollEvent);
+      await timeline.updateComplete;
+
+      expect(timeline.pixelsPerMs).toBe(initialPixelsPerMs);
+    });
   });
 
   describe("track rendering", () => {
