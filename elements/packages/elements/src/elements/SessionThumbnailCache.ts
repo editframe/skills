@@ -8,6 +8,8 @@
  * - No workers, no IndexedDB complexity
  */
 
+import type { ThumbnailCacheStats } from "./thumbnailCache.js";
+
 /** Cache key format: "rootId:elementId:quantizedTimeMs" */
 type CacheKey = string;
 
@@ -160,7 +162,7 @@ export class SessionThumbnailCache {
   /**
    * Clear entire cache.
    */
-  clear(): void {
+  async clear(): Promise<void> {
     this.cache.clear();
   }
 
@@ -186,6 +188,24 @@ export class SessionThumbnailCache {
         break;
       }
     }
+  }
+
+  /**
+   * Get cache statistics.
+   */
+  async getStats(): Promise<ThumbnailCacheStats> {
+    // Calculate total size by summing all ImageData sizes
+    let totalSizeBytes = 0;
+    for (const entry of this.cache.values()) {
+      // ImageData size = width * height * 4 bytes (RGBA)
+      totalSizeBytes += entry.imageData.width * entry.imageData.height * 4;
+    }
+
+    return {
+      itemCount: this.cache.size,
+      totalSizeBytes,
+      maxSize: this.maxSize,
+    };
   }
 }
 
