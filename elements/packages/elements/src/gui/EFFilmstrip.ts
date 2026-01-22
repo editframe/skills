@@ -106,13 +106,14 @@ export class EFFilmstrip extends TWMixin(LitElement) {
 
   render() {
     const targetId = this.targetTemporal
-      ? (this.targetTemporal as HTMLElement).id || this.target
+      ? ((this.targetTemporal as unknown as HTMLElement).id || this.target)
       : this.target;
 
     return html`
       <ef-timeline
         ${ref(this.timelineRef)}
         target=${targetId}
+        control-target=${targetId}
         pixels-per-ms=${this.pixelsPerMs}
         ?show-playhead=${!this.hidePlayhead}
         ?show-controls=${false}

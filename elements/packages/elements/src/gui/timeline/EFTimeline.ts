@@ -36,6 +36,10 @@ import { loopContext, playingContext } from "../playingContext.js";
 import type { EFCanvas } from "../../canvas/EFCanvas.js";
 import { shouldRenderElement } from "../hierarchy/EFHierarchyItem.js";
 import { TWMixin } from "../TWMixin.js";
+import type {
+  ControllableSubscription,
+} from "../Controllable.js";
+import { createDirectTemporalSubscription } from "../Controllable.js";
 // NOTE: Track components (ef-audio-track, ef-video-track, etc.) are NOT imported here
 // to avoid circular dependencies with TrackItem. They must be registered before
 // EFTimeline is used. See preloadTracks.ts for the registration sequence.
@@ -540,6 +544,8 @@ export class EFTimeline extends TWMixin(LitElement) {
   // Throttling for context updates (avoid cascading re-renders)
   private lastContextUpdateTime = 0;
   private static readonly CONTEXT_UPDATE_INTERVAL_MS = 100; // 10fps for context updates
+  // Subscription to playback controller for playing state (avoids polling race conditions)
+  #playbackSubscription: ControllableSubscription | null = null;
 
   // ============================================================================
   // CONTEXT PROVIDERS
@@ -683,6 +689,15 @@ export class EFTimeline extends TWMixin(LitElement) {
       if (element && isEFTemporal(element)) {
         return element as TemporalMixinInterface & HTMLElement;
       }
+      // Log when controlTarget is set but element not found
+      if (this.isPlaying) {
+        console.warn(
+          "[EFTimeline] controlTarget set but element not found:",
+          this.controlTarget,
+          "isPlaying:",
+          this.isPlaying,
+        );
+      }
     }
 
     // If controlTarget is "selection" or empty, derive from canvas selection
@@ -696,6 +711,27 @@ export class EFTimeline extends TWMixin(LitElement) {
           if (rootTemporal) return rootTemporal;
         }
       }
+      // Log when selection exists but no temporal found
+      if (this.isPlaying && selectedIds.length > 0) {
+        console.warn(
+          "[EFTimeline] Selection found but no temporal element:",
+          selectedIds[0],
+          "isPlaying:",
+          this.isPlaying,
+        );
+      }
+    }
+
+    // Log when targetTemporal becomes null during playback
+    if (this.isPlaying) {
+      console.warn(
+        "[EFTimeline] targetTemporal is null during playback. controlTarget:",
+        this.controlTarget,
+        "target:",
+        this.target,
+        "hasSelectionContext:",
+        !!this.getCanvasSelectionContext(),
+      );
     }
 
     return null;
@@ -832,6 +868,8 @@ export class EFTimeline extends TWMixin(LitElement) {
     this.setupSelectionListener();
     this.setupKeyboardListener();
     this.updateTimelineState();
+    // Subscribe to playback controller when connected
+    this.subscribeToPlaybackController();
   }
 
   disconnectedCallback(): void {
@@ -842,6 +880,8 @@ export class EFTimeline extends TWMixin(LitElement) {
     this.removeKeyboardListener();
     this.targetObserver?.disconnect();
     this.resizeObserver?.disconnect();
+    // Unsubscribe from playback controller
+    this.unsubscribeFromPlaybackController();
     // Save state before disconnecting
     if (this.saveZoomScrollDebounceTimer !== null) {
       clearTimeout(this.saveZoomScrollDebounceTimer);
@@ -924,6 +964,11 @@ export class EFTimeline extends TWMixin(LitElement) {
 
   protected updated(changedProperties: PropertyValues): void {
     super.updated(changedProperties);
+
+    // Subscribe to playback controller when targetTemporal changes
+    if (changedProperties.has("targetTemporal") || changedProperties.has("controlTarget")) {
+      this.subscribeToPlaybackController();
+    }
 
     // Restore timeline state when target changes
     if (changedProperties.has("targetTemporal") || changedProperties.has("target")) {
@@ -1076,7 +1121,8 @@ export class EFTimeline extends TWMixin(LitElement) {
     const update = () => {
       if (this.targetTemporal) {
         // Skip time updates during thumbnail capture to prevent playhead jumping
-        const isCapturing = (this.targetTemporal as EFTimegroup).captureInProgress;
+        // Note: captureInProgress is a property that may exist on EFTimegroup
+        const isCapturing = (this.targetTemporal as any).captureInProgress;
         if (!isCapturing) {
           const rawTime = this.targetTemporal.currentTimeMs ?? 0;
           const duration = this.targetTemporal.durationMs ?? 0;
@@ -1086,25 +1132,29 @@ export class EFTimeline extends TWMixin(LitElement) {
           // Update playhead position directly via DOM (bypasses Lit render cycle)
           this.updatePlayheadPositionDirect(newTimeMs);
           
-          // Track playing state changes (these do need Lit updates)
+          // Note: Playing state is now updated via subscription (subscribeToPlaybackController)
+          // We still read it here as a fallback, but the subscription is the primary source
+          // This ensures we catch state changes even if subscription hasn't been set up yet
           const newIsPlaying = this.targetTemporal.playing ?? false;
           const newIsLooping = this.targetTemporal.loop ?? false;
           
+          // Only update if subscription hasn't already updated these values
+          // This prevents race conditions between polling and subscription
           if (newIsPlaying !== this.isPlaying || newIsLooping !== this.isLooping) {
-            const wasPlaying = this.isPlaying;
-            this.isPlaying = newIsPlaying;
-            this.isLooping = newIsLooping;
-            
-            // PERFORMANCE: Notify thumbnail cache of playback state to defer IndexedDB writes
-            thumbnailImageCache.setPlaybackActive(newIsPlaying);
-            
-            // PERFORMANCE: When playback stops, force context update with current scroll
-            // During playback, scroll-only changes don't trigger context updates (see updateTimelineState).
-            // When stopping, we need to update context so consumers can do any deferred work.
-            if (wasPlaying && !newIsPlaying) {
-              // Force context update by calling updateTimelineState directly
-              // (isPlaying is now false, so scroll changes will propagate)
-              this.updateTimelineState();
+            // Only update if we don't have an active subscription (fallback mode)
+            if (!this.#playbackSubscription) {
+              const wasPlaying = this.isPlaying;
+              this.isPlaying = newIsPlaying;
+              this.isLooping = newIsLooping;
+              
+              // PERFORMANCE: When playback stops, force context update with current scroll
+              // During playback, scroll-only changes don't trigger context updates (see updateTimelineState).
+              // When stopping, we need to update context so consumers can do any deferred work.
+              if (wasPlaying && !newIsPlaying) {
+                // Force context update by calling updateTimelineState directly
+                // (isPlaying is now false, so scroll changes will propagate)
+                this.updateTimelineState();
+              }
             }
           }
           
@@ -1127,6 +1177,22 @@ export class EFTimeline extends TWMixin(LitElement) {
             this.isFollowingPlayhead = false;
           }
         }
+      } else {
+        // Defensive check: if we were playing and lost targetTemporal, this is unexpected
+        if (this.isPlaying) {
+          console.warn(
+            "[EFTimeline] Lost targetTemporal during playback. Stopping playback state.",
+            "controlTarget:",
+            this.controlTarget,
+            "target:",
+            this.target,
+          );
+          this.isPlaying = false;
+          this.isLooping = false;
+          // Force context update to notify consumers
+          this.updateTimelineState();
+        }
+        // Continue polling to detect when target becomes available again
       }
       this.animationFrameId = requestAnimationFrame(update);
     };
@@ -1236,23 +1302,148 @@ export class EFTimeline extends TWMixin(LitElement) {
     }
   }
 
+  /**
+   * Subscribe to playback controller events for playing/loop state.
+   * This avoids race conditions from polling when targetTemporal changes.
+   */
+  private subscribeToPlaybackController(): void {
+    // Unsubscribe from previous controller
+    this.unsubscribeFromPlaybackController();
+
+    const temporal = this.targetTemporal;
+    if (!temporal) {
+      return;
+    }
+
+    // Wait for playbackController to be available if needed
+    if (!temporal.playbackController) {
+      (temporal as any).updateComplete?.then(() => {
+        // Check again after async operation - temporal might have changed
+        if (temporal === this.targetTemporal && temporal.playbackController) {
+          this.#playbackSubscription = createDirectTemporalSubscription(
+            temporal as TemporalMixinInterface & HTMLElement,
+            {
+              onPlayingChange: (value) => {
+                // Only update if targetTemporal hasn't changed
+                if (temporal === this.targetTemporal) {
+                  const wasPlaying = this.isPlaying;
+                  this.isPlaying = value;
+                  
+                  // When stopping, force context update
+                  if (wasPlaying && !value) {
+                    this.updateTimelineState();
+                  }
+                }
+              },
+              onLoopChange: (value) => {
+                if (temporal === this.targetTemporal) {
+                  this.isLooping = value;
+                }
+              },
+              onCurrentTimeMsChange: () => {
+                // We still poll for currentTimeMs to update playhead smoothly
+                // This callback is here for completeness but doesn't need to do anything
+              },
+              onDurationMsChange: () => {
+                // Duration changes are handled via other mechanisms
+              },
+              onTargetTemporalChange: () => {
+                // Not used here
+              },
+            },
+          );
+        }
+      });
+      return;
+    }
+
+    // Subscribe immediately if controller is available
+    this.#playbackSubscription = createDirectTemporalSubscription(
+      temporal as TemporalMixinInterface & HTMLElement,
+      {
+        onPlayingChange: (value) => {
+          // Only update if targetTemporal hasn't changed
+          if (temporal === this.targetTemporal) {
+            const wasPlaying = this.isPlaying;
+            this.isPlaying = value;
+            
+            // When stopping, force context update
+            if (wasPlaying && !value) {
+              this.updateTimelineState();
+            }
+          }
+        },
+        onLoopChange: (value) => {
+          if (temporal === this.targetTemporal) {
+            this.isLooping = value;
+          }
+        },
+        onCurrentTimeMsChange: () => {
+          // We still poll for currentTimeMs to update playhead smoothly
+          // This callback is here for completeness but doesn't need to do anything
+        },
+        onDurationMsChange: () => {
+          // Duration changes are handled via other mechanisms
+        },
+        onTargetTemporalChange: () => {
+          // Not used here
+        },
+      },
+    );
+  }
+
+  /**
+   * Unsubscribe from playback controller events.
+   */
+  private unsubscribeFromPlaybackController(): void {
+    if (this.#playbackSubscription) {
+      this.#playbackSubscription.unsubscribe();
+      this.#playbackSubscription = null;
+    }
+  }
+
   // ============================================================================
   // EVENT HANDLERS
   // ============================================================================
 
   private handlePlay(): void {
-    this.targetTemporal?.play();
+    if (!this.targetTemporal) {
+      console.warn(
+        "[EFTimeline] Cannot play: targetTemporal is null. controlTarget:",
+        this.controlTarget,
+        "target:",
+        this.target,
+      );
+      return;
+    }
+    this.targetTemporal.play();
   }
 
   private handlePause(): void {
-    this.targetTemporal?.pause();
+    if (!this.targetTemporal) {
+      console.warn(
+        "[EFTimeline] Cannot pause: targetTemporal is null. controlTarget:",
+        this.controlTarget,
+        "target:",
+        this.target,
+      );
+      return;
+    }
+    this.targetTemporal.pause();
   }
 
   private handleToggleLoop(): void {
-    if (this.targetTemporal) {
-      this.targetTemporal.loop = !this.targetTemporal.loop;
-      this.isLooping = this.targetTemporal.loop;
+    if (!this.targetTemporal) {
+      console.warn(
+        "[EFTimeline] Cannot toggle loop: targetTemporal is null. controlTarget:",
+        this.controlTarget,
+        "target:",
+        this.target,
+      );
+      return;
     }
+    this.targetTemporal.loop = !this.targetTemporal.loop;
+    this.isLooping = this.targetTemporal.loop;
   }
 
   private handleZoomIn(): void {
@@ -1276,6 +1467,16 @@ export class EFTimeline extends TWMixin(LitElement) {
     timeMs: number,
     snapToFrame: boolean = this.showFrameMarkers,
   ): void {
+    if (!this.targetTemporal) {
+      console.warn(
+        "[EFTimeline] Cannot seek: targetTemporal is null. controlTarget:",
+        this.controlTarget,
+        "target:",
+        this.target,
+      );
+      return;
+    }
+
     let seekTime = timeMs;
 
     // Quantize to frame boundaries when snapping is enabled
@@ -1286,10 +1487,8 @@ export class EFTimeline extends TWMixin(LitElement) {
     // Clamp to valid range
     const clampedTime = Math.max(0, Math.min(seekTime, this.durationMs));
 
-    if (this.targetTemporal) {
-      this.targetTemporal.currentTimeMs = clampedTime;
-      this.currentTimeMs = clampedTime;
-    }
+    this.targetTemporal.currentTimeMs = clampedTime;
+    this.currentTimeMs = clampedTime;
   }
 
   /**
@@ -1635,8 +1834,8 @@ export class EFTimeline extends TWMixin(LitElement) {
    * Render timeline rows using flattened hierarchy.
    * Each row is a unified component with both label and track.
    */
-  private renderRows(target: TemporalMixinInterface & Element): TemplateResult {
-    const rows = flattenHierarchy(target).filter((row) =>
+  private renderRows(target: TemporalMixinInterface & HTMLElement): TemplateResult {
+    const rows = flattenHierarchy(target as unknown as TemporalMixinInterface & Element).filter((row) =>
       shouldRenderElement(row.element, this.hideSelectors, this.showSelectors),
     );
 
@@ -1655,7 +1854,10 @@ export class EFTimeline extends TWMixin(LitElement) {
         ${repeat(
           rows,
           // Key function: use element ID or element itself for stable identity
-          (row) => (row.element as HTMLElement).id || row.element,
+          (row) => {
+            const el = row.element as unknown as HTMLElement;
+            return (el && el.id) ? el.id : row.element;
+          },
           (row) => html`
             <ef-timeline-row
               .element=${row.element}
@@ -1736,7 +1938,7 @@ export class EFTimeline extends TWMixin(LitElement) {
               }
               <div class="tracks-content" style="min-width: ${this.contentWidthPx + hierarchyWidth}px;">
                 <!-- Unified rows with sticky labels -->
-                ${this.renderRows(target as TemporalMixinInterface & Element)}
+                ${this.renderRows(target as unknown as TemporalMixinInterface & HTMLElement)}
               </div>
               
               <!-- Playhead container - inside scroll for native sync -->
