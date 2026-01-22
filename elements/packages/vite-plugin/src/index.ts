@@ -227,10 +227,34 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
               break;
             }
             log(`Clearing cache for ${options.cacheRoot}`);
-            await rm(join(options.cacheRoot, ".cache"), {
-              recursive: true,
-              force: true,
-            });
+            // Retry cache clearing to handle race conditions with concurrent tests
+            const cachePath = join(options.cacheRoot, ".cache");
+            const maxRetries = 3;
+            for (let attempt = 0; attempt < maxRetries; attempt++) {
+              try {
+                await rm(cachePath, {
+                  recursive: true,
+                  force: true,
+                });
+                break; // Success, exit retry loop
+              } catch (error: any) {
+                // ENOTEMPTY can happen if files are being written during deletion
+                // ENOENT is fine - directory doesn't exist
+                if (error.code === "ENOENT") {
+                  break; // Already cleared, done
+                }
+                if (error.code === "ENOTEMPTY" && attempt < maxRetries - 1) {
+                  // Wait a bit and retry
+                  await new Promise(resolve => setTimeout(resolve, 100 * (attempt + 1)));
+                  continue;
+                }
+                // Log but don't fail - cache clearing is best-effort
+                log(`Warning: Cache clear attempt ${attempt + 1} failed: ${error.message}`);
+                if (attempt === maxRetries - 1) {
+                  log(`Cache clear failed after ${maxRetries} attempts, continuing anyway`);
+                }
+              }
+            }
             res.writeHead(200, { "Content-Type": "text/plain" });
             res.end("Cache cleared");
             break;
