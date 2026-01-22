@@ -36,9 +36,10 @@ export class EFVideoTrack extends TrackItem {
         left: 0;
         right: 0;
         bottom: 0;
-        height: 8px;
+        height: 12px;
         overflow: hidden;
         pointer-events: none;
+        background: linear-gradient(to top, rgba(0, 0, 0, 0.4), transparent);
       }
       .audio-overlay-canvas {
         position: absolute;
@@ -157,7 +158,7 @@ export class EFVideoTrack extends TrackItem {
 
     if (visibleWidthPx <= 0) return;
 
-    const height = 8; // Fixed height for subtle overlay
+    const height = 12; // Height for audio overlay
     const dpr = window.devicePixelRatio || 1;
 
     // Set canvas size
@@ -203,8 +204,8 @@ export class EFVideoTrack extends TrackItem {
 
     if (sampleCount <= 0 || width <= 0) return;
 
-    // Subtle green color for audio indicator
-    ctx.fillStyle = "rgba(34, 197, 94, 0.5)";
+    // More visible green color for audio indicator
+    ctx.fillStyle = "rgba(74, 222, 128, 0.85)";
     ctx.beginPath();
 
     const pixelsPerSample = width / sampleCount;
@@ -217,7 +218,8 @@ export class EFVideoTrack extends TrackItem {
 
       const maxValue = Math.abs(peaks[peakIndex + 1] ?? 0);
       const px = i * pixelsPerSample;
-      const py = height - maxValue * height;
+      // Amplify the waveform a bit to make it more visible
+      const py = height - Math.min(maxValue * 1.5, 1) * height;
 
       if (i === 0) {
         ctx.moveTo(px, py);
