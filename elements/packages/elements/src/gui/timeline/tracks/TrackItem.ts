@@ -94,73 +94,16 @@ export class TrackItem extends TWMixin(LitElement) {
       }
       .trim-container {
         position: relative;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        transition: box-shadow 0.2s ease, border-color 0.2s ease;
+        border-radius: 3px;
+        transition: background-color 0.15s ease, box-shadow 0.15s ease;
       }
       
       :host(:hover) .trim-container {
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-        border-color: var(--timeline-playhead, rgb(239 68 68));
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
       }
       
       :host([data-focused]) .trim-container {
-        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
-        border-color: rgb(59, 130, 246);
-      }
-      
-      .element-icon {
-        position: absolute;
-        left: 4px;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 14px;
-        height: 14px;
-        opacity: 0.7;
-        z-index: 1;
-        pointer-events: none;
-      }
-      
-      .element-type-indicator {
-        position: absolute;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        width: 3px;
-        border-radius: 2px 0 0 2px;
-      }
-      
-      .duration-label {
-        position: absolute;
-        right: 4px;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 10px;
-        color: rgba(255, 255, 255, 0.6);
-        pointer-events: none;
-        z-index: 2;
-        font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
-      }
-      
-      .tooltip {
-        position: absolute;
-        bottom: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-        margin-bottom: 4px;
-        padding: 4px 8px;
-        background: rgba(0, 0, 0, 0.9);
-        color: white;
-        font-size: 11px;
-        white-space: nowrap;
-        border-radius: 4px;
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity 0.2s ease;
-        z-index: 1000;
-      }
-      
-      :host(:hover) .tooltip {
-        opacity: 1;
+        box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.6);
       }
     `,
   ];
@@ -416,9 +359,10 @@ export class TrackItem extends TWMixin(LitElement) {
     const intrinsicDurationMs =
       this.element.intrinsicDurationMs ?? this.element.durationMs;
 
+    const typeColor = this.getElementTypeColor();
+    
     return html`<div style=${styleMap(this.gutterStyles)}>
       <div
-        style="background-color: var(--filmstrip-bg);"
         ?data-focused=${this.isFocused}
         @mouseenter=${() => {
           if (this.focusContext) {
@@ -433,16 +377,14 @@ export class TrackItem extends TWMixin(LitElement) {
       >
         <div
           ?data-focused=${this.isFocused}
-          class="trim-container relative mb-0 block text-nowrap border text-sm"
+          class="trim-container"
           style=${styleMap({
             ...this.trimPortionStyles,
             height: "var(--timeline-track-height, 22px)",
             backgroundColor: this.isFocused
-              ? "var(--filmstrip-item-focused)"
-              : "var(--filmstrip-item-bg)",
-            borderColor: "var(--filmstrip-border)",
-            borderLeftColor: this.getElementTypeColor(),
-            borderLeftWidth: "3px",
+              ? "rgba(59, 130, 246, 0.25)"
+              : "rgba(30, 41, 59, 0.8)",
+            borderLeft: `3px solid ${typeColor}`,
           })}
           title="${this.getTooltipText()}"
         >

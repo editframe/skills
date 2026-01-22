@@ -44,7 +44,7 @@ export class EFTimelineRow extends TWMixin(LitElement) {
       :host {
         display: flex;
         min-height: var(--timeline-row-height, 28px);
-        border-bottom: 1px solid var(--timeline-border, rgb(71 85 105));
+        border-bottom: 1px solid rgba(71, 85, 105, 0.4);
       }
 
       /* Root timegroup row with filmstrip - taller to show thumbnails */
@@ -57,6 +57,7 @@ export class EFTimelineRow extends TWMixin(LitElement) {
         /* Higher z-index than regular row labels (z-index: 8) so everything scrolls underneath */
         z-index: 15;
         background: var(--timeline-bg, rgb(30 41 59));
+        border-bottom: 1px solid rgba(71, 85, 105, 0.6);
       }
 
       /* Root timegroup label needs higher z-index to stay above other labels when scrolling */
@@ -66,34 +67,31 @@ export class EFTimelineRow extends TWMixin(LitElement) {
 
       /* Hover state - this row is directly hovered */
       :host(.hovered) {
-        background: var(--timeline-row-hover, rgba(59, 130, 246, 0.15));
+        background: rgba(59, 130, 246, 0.1);
       }
 
       /* Ancestor hovered - a descendant of this row is hovered */
       :host(.ancestor-hovered) {
-        background: var(--timeline-row-ancestor-hover, rgba(59, 130, 246, 0.08));
+        background: rgba(59, 130, 246, 0.05);
       }
 
       /* Descendant hovered - an ancestor of this row is hovered */
       :host(.descendant-hovered) {
-        background: var(
-          --timeline-row-descendant-hover,
-          rgba(59, 130, 246, 0.05)
-        );
+        background: rgba(59, 130, 246, 0.03);
       }
 
       /* Selected state */
       :host(.selected) {
-        background: var(--timeline-row-selected, rgba(59, 130, 246, 0.3));
+        background: rgba(59, 130, 246, 0.2);
       }
       
       :host(.selected) .row-label {
-        font-weight: 600;
+        font-weight: 500;
       }
 
       /* Ancestor has selected descendant */
       :host(.ancestor-selected) {
-        background: var(--timeline-row-ancestor-selected, rgba(59, 130, 246, 0.15));
+        background: rgba(59, 130, 246, 0.1);
       }
 
       .row-label {
@@ -103,29 +101,30 @@ export class EFTimelineRow extends TWMixin(LitElement) {
         z-index: 8;
         width: var(--timeline-hierarchy-width, 200px);
         flex-shrink: 0;
-        background: var(--timeline-header-bg, rgb(51 65 85));
-        border-right: 1px solid var(--timeline-border, rgb(71 85 105));
+        background: rgb(38, 50, 68);
+        border-right: 1px solid rgba(71, 85, 105, 0.5);
         display: flex;
         align-items: center;
-        font-size: 12px;
+        font-size: 11px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        color: var(--timeline-text, rgb(226 232 240));
+        color: rgba(226, 232, 240, 0.9);
         cursor: pointer;
+        transition: background-color 0.1s ease;
       }
 
       .row-label:hover {
-        background: var(--timeline-label-hover, rgb(71 85 105));
+        background: rgb(51, 65, 85);
       }
 
       :host(.hovered) .row-label {
-        background: var(--timeline-label-active, rgb(59 130 246));
+        background: rgb(55, 90, 150);
         color: white;
       }
 
       :host(.selected) .row-label {
-        background: var(--timeline-label-selected, rgb(37 99 235));
+        background: rgb(45, 85, 140);
         color: white;
       }
 
@@ -133,19 +132,6 @@ export class EFTimelineRow extends TWMixin(LitElement) {
         flex: 1;
         position: relative;
         min-width: 0;
-      }
-      
-      /* Visual connector for parent-child relationships */
-      .row-track::before {
-        content: "";
-        position: absolute;
-        left: -8px;
-        top: 50%;
-        width: 8px;
-        height: 1px;
-        background: var(--timeline-border, rgb(71 85 105));
-        opacity: 0.3;
-        z-index: 1;
       }
       
       :host(:first-child) .row-track::before {

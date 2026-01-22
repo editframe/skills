@@ -221,12 +221,11 @@ export class EFCaptionsTrack extends TrackItem {
         border-radius: 3px;
         transition: box-shadow 0.15s ease, z-index 0.15s ease;
         cursor: pointer;
-        border: 1px solid;
         overflow: visible;
       }
       
       .segment-block:hover {
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
         z-index: 5;
       }
       
@@ -241,29 +240,29 @@ export class EFCaptionsTrack extends TrackItem {
         padding: 2px 4px;
         border-radius: 2px;
         transition: all 0.1s ease;
-        background: rgb(30, 41, 59);
+        background: rgba(30, 41, 59, 0.9);
         color: rgb(226, 232, 240);
         z-index: 1;
       }
       
       .word-element.active {
-        background: rgb(255, 255, 255);
-        color: rgb(34, 197, 94);
-        font-weight: 800;
+        background: rgb(74, 222, 128);
+        color: rgb(20, 30, 20);
+        font-weight: 700;
         font-size: 10px;
         z-index: 10;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
       }
       
       .word-element.future {
-        background: rgb(51, 65, 85);
+        background: rgba(51, 65, 85, 0.8);
         color: rgb(226, 232, 240);
         z-index: 5;
       }
       
       .segment-block.active .word-element:not(.active):not(.future) {
         color: rgb(203, 213, 225);
-        background: rgb(30, 41, 59);
+        background: rgba(30, 41, 59, 0.9);
       }
       
       /* Compact text mode - when words are too small to position individually */
@@ -282,12 +281,12 @@ export class EFCaptionsTrack extends TrackItem {
         /* Expand to fit content on hover */
         width: max-content !important;
         min-width: max-content;
-        background: rgb(34, 60, 40) !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        background: rgba(34, 60, 40, 0.95) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
       }
       
       .segment-text-compact {
-        font-size: 9px;
+        font-size: 10px;
         line-height: 1.2;
         white-space: nowrap;
         overflow: hidden;
@@ -314,13 +313,13 @@ export class EFCaptionsTrack extends TrackItem {
         right: 0;
         height: 2px;
         background: currentColor;
-        opacity: 0.3;
+        opacity: 0.2;
         border-radius: 0 0 3px 3px;
       }
       
       .segment-block.active .segment-duration-indicator {
-        opacity: 0.6;
-        height: 3px;
+        opacity: 0.4;
+        height: 2px;
       }
       
       .word-marker {

@@ -64,20 +64,18 @@ export class EFTextTrack extends TrackItem {
     css`
       .text-segment-block {
         position: absolute;
-        height: 100%;
-        top: 0;
+        height: calc(100% - 4px);
+        top: 2px;
         display: flex;
         align-items: center;
-        padding: 0 2px;
+        padding: 0 4px;
         border-radius: 2px;
         overflow: hidden;
-        border: 1px solid rgba(249, 115, 22, 0.3);
-        background: rgba(249, 115, 22, 0.1);
+        background: rgba(249, 115, 22, 0.15);
       }
       
       .text-segment-block.active {
-        background: rgba(249, 115, 22, 0.3);
-        border-color: rgba(249, 115, 22, 0.6);
+        background: rgba(249, 115, 22, 0.35);
       }
       
       .text-segment-block:hover {
@@ -85,16 +83,16 @@ export class EFTextTrack extends TrackItem {
         overflow: visible;
         width: max-content !important;
         min-width: max-content;
-        background: rgb(80, 50, 30);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        background: rgba(80, 50, 30, 0.95);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
       }
       
       .segment-text {
-        font-size: 9px;
+        font-size: 10px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        color: rgba(255, 255, 255, 0.8);
+        color: rgba(255, 255, 255, 0.85);
       }
       
       .text-segment-block:hover .segment-text {
@@ -103,30 +101,31 @@ export class EFTextTrack extends TrackItem {
       }
       
       .text-segment-block.active .segment-text {
-        font-weight: 600;
-        color: rgba(255, 255, 255, 0.95);
+        font-weight: 500;
+        color: white;
       }
       
       /* Compact mode - single block for full text */
       .text-compact-block {
         position: absolute;
-        left: 0;
-        right: 0;
-        top: 0;
-        bottom: 0;
+        left: 4px;
+        right: 4px;
+        top: 2px;
+        bottom: 2px;
         display: flex;
         align-items: center;
         padding: 0 4px;
         overflow: hidden;
+        border-radius: 2px;
+        background: rgba(249, 115, 22, 0.1);
       }
       
       .text-compact-block:hover {
         overflow: visible;
         z-index: 100;
         width: max-content;
-        background: rgb(80, 50, 30);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-        border-radius: 2px;
+        background: rgba(80, 50, 30, 0.95);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
       }
     `,
   ];

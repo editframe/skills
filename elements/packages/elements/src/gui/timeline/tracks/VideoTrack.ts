@@ -325,9 +325,10 @@ export class EFVideoTrack extends TrackItem {
     const trackHeight = this.#getTrackHeight();
     const hasAudioSection = this._hasAudio && this._waveformData;
 
+    const typeColor = this.getElementTypeColor();
+    
     return html`<div style=${styleMap(this.gutterStyles)}>
       <div
-        style="background-color: var(--filmstrip-bg);"
         ?data-focused=${this.isFocused}
         @mouseenter=${() => {
           if (this.focusContext) {
@@ -342,14 +343,15 @@ export class EFVideoTrack extends TrackItem {
       >
         <div
           ?data-focused=${this.isFocused}
-          class="trim-container relative mb-0 block text-nowrap border text-sm"
+          class="trim-container"
           style=${styleMap({
             ...this.trimPortionStyles,
             height: `${trackHeight}px`,
             backgroundColor: this.isFocused
-              ? "var(--filmstrip-item-focused)"
-              : "var(--filmstrip-item-bg)",
-            borderColor: "var(--filmstrip-border)",
+              ? "rgba(59, 130, 246, 0.25)"
+              : "rgba(30, 41, 59, 0.8)",
+            borderLeft: `3px solid ${typeColor}`,
+            borderRadius: "3px",
           })}
         >
           <div class="video-content">
