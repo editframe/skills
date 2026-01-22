@@ -22,6 +22,7 @@ export class EFHierarchy extends TWMixin(LitElement) {
       :host {
         display: block;
         overflow: auto;
+        height: 100%;
         font-size: 12px;
         
         --hierarchy-bg: rgb(30 41 59);
