@@ -26,14 +26,21 @@ export function flattenHierarchy(
   if (root instanceof EFTimegroup) {
     for (const child of root.children) {
       if (isEFTemporal(child)) {
-        // Skip captions child elements - they're consolidated into the captions track
+        // Skip child elements that are consolidated into their parent track
         const tagName = (child as Element).tagName?.toUpperCase();
+        
+        // Skip captions child elements - they're shown inline in the captions track
         if (
           tagName === "EF-CAPTIONS-ACTIVE-WORD" ||
           tagName === "EF-CAPTIONS-SEGMENT" ||
           tagName === "EF-CAPTIONS-BEFORE-ACTIVE-WORD" ||
           tagName === "EF-CAPTIONS-AFTER-ACTIVE-WORD"
         ) {
+          continue;
+        }
+        
+        // Skip text segments - they're shown inline in the text track
+        if (tagName === "EF-TEXT-SEGMENT") {
           continue;
         }
         

@@ -321,25 +321,33 @@ export class EFTimeline extends TWMixin(LitElement) {
         background: var(--timeline-track-bg);
       }
       
+      /* === TRACKS CONTENT uses grid to layer playhead over tracks === */
       .tracks-content {
         position: relative;
         min-height: 100%;
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr;
       }
       
-      .tracks-rows {
+      .tracks-content > * {
+        grid-area: 1 / 1;
+      }
+      
+      .tracks-rows-layer {
         display: flex;
         flex-direction: column;
       }
       
-      /* === PLAYHEAD (inside scroll container for native sync) === */
-      .playhead-container {
-        position: absolute;
+      /* === PLAYHEAD (sticky layer that stays visible during vertical scroll) === */
+      .playhead-layer {
+        position: sticky;
         top: 0;
-        bottom: 0;
-        left: 0;
+        height: 100%;
         pointer-events: none;
         /* Below sticky labels (z-index 10-11) but above tracks */
         z-index: 5;
+        overflow: hidden;
       }
       
       .playhead {
@@ -538,6 +546,8 @@ export class EFTimeline extends TWMixin(LitElement) {
   private static readonly CONTEXT_UPDATE_INTERVAL_MS = 100; // 10fps for context updates
   // Subscription to playback controller for playing state (avoids polling race conditions)
   #playbackSubscription: ControllableSubscription | null = null;
+  // Wheel event handler bound reference for cleanup
+  #wheelHandler: ((e: WheelEvent) => void) | null = null;
 
   // ============================================================================
   // CONTEXT PROVIDERS
@@ -1080,15 +1090,32 @@ export class EFTimeline extends TWMixin(LitElement) {
       );
       // Initialize scroll position
       this.scrollHandler();
+      
+      // Set up wheel listener for gestural zoom
+      this.#wheelHandler = (e: WheelEvent) => this.handleWheel(e);
+      this.tracksScrollRef.value.addEventListener(
+        "wheel",
+        this.#wheelHandler,
+        { passive: false },
+      );
     }
   }
 
   private removeScrollListener(): void {
-    if (this.tracksScrollRef.value && this.scrollHandler) {
-      this.tracksScrollRef.value.removeEventListener(
-        "scroll",
-        this.scrollHandler,
-      );
+    if (this.tracksScrollRef.value) {
+      if (this.scrollHandler) {
+        this.tracksScrollRef.value.removeEventListener(
+          "scroll",
+          this.scrollHandler,
+        );
+      }
+      if (this.#wheelHandler) {
+        this.tracksScrollRef.value.removeEventListener(
+          "wheel",
+          this.#wheelHandler,
+        );
+        this.#wheelHandler = null;
+      }
     }
   }
 
@@ -1448,6 +1475,62 @@ export class EFTimeline extends TWMixin(LitElement) {
     const currentZoom = pixelsPerMsToZoom(this.pixelsPerMs);
     const newZoom = Math.max(this.minZoom, currentZoom / 1.25);
     this.pixelsPerMs = newZoom * DEFAULT_PIXELS_PER_MS;
+  }
+
+  /**
+   * Handle wheel events for gestural zoom.
+   * Cmd/Ctrl + wheel zooms toward the cursor position.
+   * Without modifier, native scroll behavior is preserved.
+   */
+  private handleWheel(e: WheelEvent): void {
+    const isZoom = e.metaKey || e.ctrlKey;
+    
+    if (!isZoom) {
+      // Let native scroll handle it
+      return;
+    }
+    
+    // Prevent default to handle zoom ourselves
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const tracksScroll = this.tracksScrollRef.value;
+    if (!tracksScroll) return;
+    
+    const rect = tracksScroll.getBoundingClientRect();
+    const hierarchyWidth = this.showHierarchy ? EFTimeline.HIERARCHY_WIDTH : 0;
+    
+    // Cursor X position relative to the track content area (excluding hierarchy)
+    const cursorXInViewport = e.clientX - rect.left - hierarchyWidth;
+    
+    // If cursor is over the hierarchy panel, don't zoom
+    if (cursorXInViewport < 0) return;
+    
+    // Calculate the time at cursor position before zoom
+    const scrollLeft = tracksScroll.scrollLeft;
+    const cursorXInContent = cursorXInViewport + scrollLeft;
+    const timeAtCursor = pxToTime(cursorXInContent, this.pixelsPerMs);
+    
+    // Calculate zoom delta (same factor as EFPanZoom)
+    const zoomFactor = e.deltaY > 0 ? 0.95 : 1.05;
+    const currentZoom = pixelsPerMsToZoom(this.pixelsPerMs);
+    const newZoom = Math.max(this.minZoom, Math.min(this.maxZoom, currentZoom * zoomFactor));
+    const newPixelsPerMs = newZoom * DEFAULT_PIXELS_PER_MS;
+    
+    // Calculate new scroll position to keep timeAtCursor under the cursor
+    const newCursorXInContent = timeToPx(timeAtCursor, newPixelsPerMs);
+    const newScrollLeft = newCursorXInContent - cursorXInViewport;
+    
+    // Apply zoom
+    this.pixelsPerMs = newPixelsPerMs;
+    
+    // Apply scroll position (clamp to valid range)
+    const maxScroll = Math.max(0, timeToPx(this.durationMs, newPixelsPerMs) - (rect.width - hierarchyWidth));
+    tracksScroll.scrollLeft = Math.max(0, Math.min(maxScroll, newScrollLeft));
+    this.viewportScrollLeft = tracksScroll.scrollLeft;
+    
+    // Update timeline state
+    this.updateTimelineState();
   }
 
   /**
@@ -1929,18 +2012,20 @@ export class EFTimeline extends TWMixin(LitElement) {
                   : nothing
               }
               <div class="tracks-content" style="min-width: ${this.contentWidthPx + hierarchyWidth}px;">
-                <!-- Unified rows with sticky labels -->
-                ${this.renderRows(target as unknown as TemporalMixinInterface & HTMLElement)}
-              </div>
-              
-              <!-- Playhead container - inside scroll for native sync -->
-              <div class="playhead-container">
-                ${this.renderFrameHighlight()}
-                ${this.showPlayhead ? html`
-                  <div ${ref(this.playheadRef)} class="playhead" style="left: ${playheadLeft - 1}px;">
-                    <div class="playhead-drag-target" @pointerdown=${this.handlePlayheadPointerDown}></div>
-                  </div>
-                ` : nothing}
+                <!-- Track rows layer -->
+                <div class="tracks-rows-layer">
+                  ${this.renderRows(target as unknown as TemporalMixinInterface & HTMLElement)}
+                </div>
+                
+                <!-- Playhead layer - sticky to stay visible during vertical scroll -->
+                <div class="playhead-layer">
+                  ${this.renderFrameHighlight()}
+                  ${this.showPlayhead ? html`
+                    <div ${ref(this.playheadRef)} class="playhead" style="left: ${playheadLeft - 1}px;">
+                      <div class="playhead-drag-target" @pointerdown=${this.handlePlayheadPointerDown}></div>
+                    </div>
+                  ` : nothing}
+                </div>
               </div>
             </div>
           </div>

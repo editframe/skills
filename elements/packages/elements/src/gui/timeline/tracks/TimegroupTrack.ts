@@ -90,20 +90,6 @@ export class EFTimegroupTrack extends TrackItem {
     const hasId = !!this.element?.id;
     const isRoot = isRootTimegroup(this.element);
     
-    // Debug logging for root timegroup
-    if (this.element?.id === "root-timegroup") {
-      console.log("[TimegroupTrack.shouldShowFilmstrip]", {
-        skipChildren,
-        showFilmstrip,
-        hasId,
-        isRoot,
-        elementTag: this.element?.tagName,
-        elementIsEFTimegroup: this.element instanceof EFTimegroup,
-        elementIsRootProperty: this.element instanceof EFTimegroup ? this.element.isRootTimegroup : 'N/A',
-        result: skipChildren && showFilmstrip && hasId && isRoot,
-      });
-    }
-    
     return skipChildren && showFilmstrip && hasId && isRoot;
   }
 
@@ -133,28 +119,15 @@ export class EFTimegroupTrack extends TrackItem {
     // Show filmstrip only for ROOT timegroups (no parent timegroup)
     const shouldShow = this.shouldShowFilmstrip;
     
-    // Debug logging
-    console.log("[TimegroupTrack.contents]", {
-      elementId: this.element?.id,
-      skipChildren: this.skipChildren,
-      showFilmstrip: this.showFilmstrip,
-      elementIsRoot: this.element instanceof EFTimegroup ? this.element.isRootTimegroup : undefined,
-      shouldShowFilmstrip: shouldShow,
-      isRootTimegroupResult: isRootTimegroup(this.element),
-    });
-    
     if (shouldShow) {
       // Don't set end-time-ms if duration is 0 - let thumbnail strip use target's duration directly
       // This allows the thumbnail strip to watch for duration changes and update automatically
       const durationMs = this.element.durationMs ?? 0;
       const elementId = this.element.id;
       
-      // Debug: Log when rendering thumbnail strip
       if (!elementId) {
-        console.warn("[TimegroupTrack] Cannot render thumbnail strip: element has no ID", this.element);
+        return nothing;
       }
-      
-      console.log("[TimegroupTrack] Rendering thumbnail strip for", elementId);
       
       return html`
         <ef-thumbnail-strip
@@ -165,27 +138,20 @@ export class EFTimegroupTrack extends TrackItem {
         ></ef-thumbnail-strip>
       `;
     }
-    
-    console.log("[TimegroupTrack] NOT rendering thumbnail strip, shouldShowFilmstrip is false");
 
-    // Show composition mode indicator
-    const mode = (this.element as any).mode || "fixed";
-    const modeLabel = mode.charAt(0).toUpperCase() + mode.slice(1);
-
-    // Fallback: show label and children
-    return html`
-      <span style="font-size: 10px; opacity: 0.7; margin-left: 20px;">${modeLabel}</span>
-      ${this.skipChildren
-        ? nothing
-        : renderTrackChildren(
-            Array.from(this.element.children || []),
-            this.pixelsPerMs,
-            this.hideSelectors,
-            this.showSelectors,
-            false,
-            this.enableTrim,
-          )}
-    `;
+    // Mode info is now shown in the label, track is empty for non-root timegroups
+    if (this.skipChildren) {
+      return nothing;
+    }
+    // Wrap children in a fragment for consistent return type
+    return html`${renderTrackChildren(
+      Array.from(this.element.children || []),
+      this.pixelsPerMs,
+      this.hideSelectors,
+      this.showSelectors,
+      false,
+      this.enableTrim,
+    )}`;
   }
 
   /**

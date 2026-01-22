@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Ensure workbench fills viewport when directly in body */
+body > ef-workbench {
+  width: 100vw !important;
+  height: 100vh !important;
+}
+
 @keyframes slide-up {
   from {
     transform: translateY(100%);

@@ -444,21 +444,8 @@ export class TrackItem extends TWMixin(LitElement) {
             borderLeftColor: this.getElementTypeColor(),
             borderLeftWidth: "3px",
           })}
+          title="${this.getTooltipText()}"
         >
-          <div class="element-type-indicator" style=${styleMap({
-            backgroundColor: this.getElementTypeColor(),
-          })}></div>
-          <div class="element-icon" style=${styleMap({
-            color: this.getElementTypeColor(),
-          })}>
-            ${this.getElementIcon()}
-          </div>
-          <div class="duration-label">
-            ${this.formatDuration(this.element.durationMs ?? 0)}
-          </div>
-          <div class="tooltip">
-            ${this.getTooltipText()}
-          </div>
           ${this.animations()}
           ${this.contents()}
           ${

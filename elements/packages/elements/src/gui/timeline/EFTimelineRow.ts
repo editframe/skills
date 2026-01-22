@@ -18,8 +18,10 @@ import { EFVideo } from "../../elements/EFVideo.js";
 import { EFAudio } from "../../elements/EFAudio.js";
 import { EFImage } from "../../elements/EFImage.js";
 import { EFText } from "../../elements/EFText.js";
+import { EFCaptions } from "../../elements/EFCaptions.js";
 import { TWMixin } from "../TWMixin.js";
 import { renderTrackChildren } from "./tracks/renderTrackChildren.js";
+import { phosphorIcon, ICONS } from "../icons.js";
 // NOTE: Track components (ef-timegroup-track, etc.) are NOT imported here
 // to avoid circular dependencies with TrackItem. They must be registered before
 // EFTimelineRow is used. See preloadTracks.ts for the registration sequence.
@@ -35,20 +37,6 @@ const INDENT_PX = 16;
  *
  * Heights are determined by content, not hardcoded.
  */
-/**
- * Check if a timegroup is a root timegroup (has no parent timegroup)
- */
-function isRootTimegroup(element: Element): boolean {
-  let parent = element.parentElement;
-  while (parent) {
-    if (parent.tagName.toLowerCase() === "ef-timegroup") {
-      return false;
-    }
-    parent = parent.parentElement;
-  }
-  return true;
-}
-
 @customElement("ef-timeline-row")
 export class EFTimelineRow extends TWMixin(LitElement) {
   static styles = [
@@ -66,13 +54,14 @@ export class EFTimelineRow extends TWMixin(LitElement) {
         /* Sticky at top below ruler (ruler is 24px) */
         position: sticky;
         top: 24px;
-        z-index: 9;
+        /* Higher z-index than regular row labels (z-index: 8) so everything scrolls underneath */
+        z-index: 15;
         background: var(--timeline-bg, rgb(30 41 59));
       }
 
       /* Root timegroup label needs higher z-index to stay above other labels when scrolling */
       :host(.root-timegroup) .row-label {
-        z-index: 11;
+        z-index: 16;
       }
 
       /* Hover state - this row is directly hovered */
@@ -110,7 +99,8 @@ export class EFTimelineRow extends TWMixin(LitElement) {
       .row-label {
         position: sticky;
         left: 0;
-        z-index: 10;
+        /* Lower z-index so labels scroll underneath the sticky root timegroup row (z-index: 15) */
+        z-index: 8;
         width: var(--timeline-hierarchy-width, 200px);
         flex-shrink: 0;
         background: var(--timeline-header-bg, rgb(51 65 85));
@@ -321,14 +311,101 @@ export class EFTimelineRow extends TWMixin(LitElement) {
     if (element instanceof EFAudio) return "audio";
     if (element instanceof EFImage) return "image";
     if (element instanceof EFText) return "text";
+    if (element instanceof EFCaptions) return "captions";
     if (element instanceof EFTimegroup) return "timegroup";
     return "unknown";
+  }
+
+  private getElementTypeColor(type: string): string {
+    const colors: Record<string, string> = {
+      video: "rgb(59, 130, 246)",     // Blue
+      audio: "rgb(34, 197, 94)",      // Green
+      image: "rgb(168, 85, 247)",     // Purple
+      text: "rgb(249, 115, 22)",      // Orange
+      captions: "rgb(34, 197, 94)",   // Green (like audio/subtitles)
+      timegroup: "rgb(148, 163, 184)", // Gray
+      unknown: "rgb(148, 163, 184)",
+    };
+    return colors[type] || colors.unknown!;
+  }
+
+  private getElementIcon(type: string): TemplateResult {
+    const iconMap: Record<string, TemplateResult> = {
+      video: phosphorIcon(ICONS.filmStrip, 14),
+      audio: phosphorIcon(ICONS.speakerHigh, 14),
+      image: phosphorIcon(ICONS.image, 14),
+      text: phosphorIcon(ICONS.textT, 14),
+      captions: phosphorIcon(ICONS.subtitles, 14),
+      timegroup: phosphorIcon(ICONS.filmSlate, 14),
+      unknown: phosphorIcon(ICONS.code, 14),
+    };
+    return iconMap[type] ?? iconMap.unknown!;
   }
 
   private getElementLabel(element: Element): string {
     const id = element.id || "";
     const type = this.getElementType(element);
-    return id || type;
+    
+    // If element has a meaningful ID (not auto-generated), use it
+    if (id && !id.includes("-") && !id.match(/^\d+$/)) {
+      return id;
+    }
+    
+    // For auto-generated IDs, create a friendly name based on type
+    // Count siblings of same type to generate "Video 1", "Video 2", etc.
+    const parent = element.parentElement;
+    if (parent) {
+      const siblings = Array.from(parent.children).filter(
+        (child) => this.getElementType(child) === type
+      );
+      const index = siblings.indexOf(element) + 1;
+      const typeLabels: Record<string, string> = {
+        video: "Video",
+        audio: "Audio",
+        image: "Image",
+        text: "Text",
+        captions: "Captions",
+        timegroup: "Composition",
+        unknown: "Layer",
+      };
+      const label = typeLabels[type] || "Layer";
+      
+      // If there's only one of this type, don't add number
+      if (siblings.length === 1) {
+        return label;
+      }
+      return `${label} ${index}`;
+    }
+    
+    // Fallback: capitalize the type
+    return type.charAt(0).toUpperCase() + type.slice(1);
+  }
+
+  /**
+   * Get additional detail text for the label (mode, preview, etc.)
+   */
+  private getElementDetail(element: Element): string | null {
+    if (element instanceof EFTimegroup) {
+      const mode = element.mode || "fixed";
+      const modeLabels: Record<string, string> = {
+        fixed: "Fixed",
+        sequence: "Sequence",
+        contain: "Container",
+      };
+      return modeLabels[mode] || mode;
+    }
+    if (element instanceof EFText) {
+      // Get text preview
+      const textContent = Array.from(element.childNodes)
+        .filter(node => node.nodeType === Node.TEXT_NODE)
+        .map(node => node.textContent?.trim())
+        .filter(Boolean)
+        .join(" ");
+      if (textContent) {
+        return textContent.length > 20 ? textContent.slice(0, 20) + "..." : textContent;
+      }
+    }
+    return null;
   }
 
   private renderTrack(): TemplateResult | typeof nothing {
@@ -378,15 +455,32 @@ export class EFTimelineRow extends TWMixin(LitElement) {
   render() {
     if (!this.element) return nothing;
 
+    const type = this.getElementType(this.element);
     const label = this.getElementLabel(this.element);
+    const detail = this.getElementDetail(this.element);
+    const typeColor = this.getElementTypeColor(type);
+    const icon = this.getElementIcon(type);
     const indentPx = this.depth * INDENT_PX;
 
     return html`
       <div
         class="row-label"
-        style=${styleMap({ paddingLeft: `${indentPx}px` })}
+        style=${styleMap({ 
+          paddingLeft: `${indentPx}px`,
+          borderLeftColor: typeColor,
+          borderLeftWidth: "3px",
+          borderLeftStyle: "solid",
+        })}
       >
-        ${label}
+        <span style="color: ${typeColor}; opacity: 0.9; margin-right: 6px; flex-shrink: 0;">
+          ${icon}
+        </span>
+        <span style="flex-shrink: 0;">${label}</span>
+        ${detail ? html`
+          <span style="margin-left: 6px; opacity: 0.6; font-size: 10px; overflow: hidden; text-overflow: ellipsis;">
+            ${detail}
+          </span>
+        ` : nothing}
       </div>
       <div class="row-track">${this.renderTrack()}</div>
     `;

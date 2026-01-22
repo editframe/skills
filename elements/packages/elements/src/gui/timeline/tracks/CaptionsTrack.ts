@@ -272,13 +272,18 @@ export class EFCaptionsTrack extends TrackItem {
         align-items: center;
         padding: 0 4px;
         overflow: hidden;
-        position: relative;
+        /* Keep position: absolute from .segment-block for correct time-based positioning */
       }
       
       /* Allow overflow on hover for compact text */
       .segment-block.compact-text:hover {
         overflow: visible;
-        z-index: 20;
+        z-index: 100;
+        /* Expand to fit content on hover */
+        width: max-content !important;
+        min-width: max-content;
+        background: rgb(34, 60, 40) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
       }
       
       .segment-text-compact {
@@ -289,17 +294,12 @@ export class EFCaptionsTrack extends TrackItem {
         text-overflow: ellipsis;
         color: rgb(226, 232, 240);
         width: 100%;
-        transition: overflow 0.15s ease;
       }
       
-      /* On hover, allow text to overflow horizontally */
+      /* On hover, show full text */
       .segment-block.compact-text:hover .segment-text-compact {
         overflow: visible;
         text-overflow: clip;
-        width: max-content;
-        min-width: 100%;
-        background: inherit;
-        padding-right: 4px;
       }
       
       .segment-block.compact-text.active .segment-text-compact {
@@ -398,20 +398,6 @@ export class EFCaptionsTrack extends TrackItem {
             minHeight: "22px",
           })}
         >
-          <div class="element-type-indicator" style=${styleMap({
-            backgroundColor: this.getElementTypeColor(),
-          })}></div>
-          <div class="element-icon" style=${styleMap({
-            color: this.getElementTypeColor(),
-          })}>
-            ${this.getElementIcon()}
-          </div>
-          <div class="duration-label">
-            ${this.formatDuration(this.element.durationMs ?? 0)}
-          </div>
-          <div class="tooltip">
-            ${this.getTooltipText()}
-          </div>
           ${this.renderCaptionsData(captionsData)}
           ${
             this.enableTrim

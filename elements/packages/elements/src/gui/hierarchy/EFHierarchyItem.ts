@@ -25,12 +25,14 @@ const DEFAULT_HIDDEN_TAGS = new Set([
   "LINK",
   "META",
   "SLOT",
+  "TEMPLATE",
   "EF-WORKBENCH",
   "EF-FILMSTRIP",
   "EF-CONTROLS",
   "EF-SCRUBBER",
   "EF-TIMELINE-RULER",
   "EF-TRIM-HANDLES",
+  "EF-TEXT-SEGMENT",
 ]);
 
 export const shouldRenderElement = (
@@ -151,13 +153,9 @@ export function renderHierarchyChildren(
         .temporalOnly=${temporalOnly}
       ></ef-text-hierarchy-item>`;
     }
+    // Skip text segments - they're shown within the parent text element
     if (child instanceof EFTextSegment) {
-      return html`<ef-text-segment-hierarchy-item
-        .element=${child}
-        .hideSelectors=${hideSelectors}
-        .showSelectors=${showSelectors}
-        .temporalOnly=${temporalOnly}
-      ></ef-text-segment-hierarchy-item>`;
+      return nothing;
     }
     if (child instanceof EFWaveform) {
       return html`<ef-waveform-hierarchy-item
@@ -205,9 +203,10 @@ export class EFHierarchyItem<
         padding-top: var(--hierarchy-item-padding-top, 0);
         padding-bottom: var(--hierarchy-item-padding-bottom, 0);
         font-size: var(--hierarchy-item-font-size, 0.75rem);
-        font-family: monospace;
+        font-family: system-ui, -apple-system, sans-serif;
         cursor: pointer;
         user-select: none;
+        border-left: 3px solid transparent;
       }
       .item-row:hover {
         background: var(--hierarchy-hover-bg, rgba(148, 163, 184, 0.2));
@@ -252,7 +251,7 @@ export class EFHierarchyItem<
         flex: 1;
       }
       .children {
-        padding-left: var(--hierarchy-indent, 1rem);
+        padding-left: var(--hierarchy-indent, 0.75rem);
       }
       .children[data-collapsed] {
         display: none;
@@ -260,7 +259,7 @@ export class EFHierarchyItem<
       .drop-indicator {
         height: 2px;
         background: var(--hierarchy-drop-indicator, #3b82f6);
-        margin-left: var(--hierarchy-indent, 1rem);
+        margin-left: var(--hierarchy-indent, 0.75rem);
       }
       .drop-inside {
         outline: 2px solid var(--hierarchy-drop-indicator, #3b82f6);
@@ -298,6 +297,10 @@ export class EFHierarchyItem<
 
   get icon(): TemplateResult<1> | string {
     return phosphorIcon(ICONS.code);
+  }
+
+  get typeColor(): string {
+    return "rgb(148, 163, 184)"; // Default gray
   }
 
   get isFocused(): boolean {
@@ -519,6 +522,7 @@ export class EFHierarchyItem<
       ${this.dropPosition === "before" ? html`<div class="drop-indicator"></div>` : nothing}
       <div
         class="item-row ${this.dropPosition === "inside" ? "drop-inside" : ""}"
+        style=${styleMap({ borderLeftColor: this.typeColor })}
         ?data-focused=${this.isFocused}
         ?data-selected=${this.isSelected}
         ?data-ancestor-selected=${this.isAncestorSelected}
@@ -575,14 +579,47 @@ export class EFHierarchyItem<
   }
 }
 
+/**
+ * Generate a friendly label for an element based on its type and siblings
+ */
+function getFriendlyLabel(element: HTMLElement, typeLabel: string): string {
+  // If element has a meaningful ID (not auto-generated), use it
+  const id = element.id || "";
+  if (id && !id.includes("-") && !id.match(/^\d+$/)) {
+    return id;
+  }
+  
+  // Count siblings of same type to generate "Video 1", "Video 2", etc.
+  const parent = element.parentElement;
+  if (parent) {
+    const tagName = element.tagName;
+    const siblings = Array.from(parent.children).filter(
+      (child) => child.tagName === tagName
+    );
+    const index = siblings.indexOf(element) + 1;
+    
+    // If there's only one of this type, don't add number
+    if (siblings.length === 1) {
+      return typeLabel;
+    }
+    return `${typeLabel} ${index}`;
+  }
+  
+  return typeLabel;
+}
+
 @customElement("ef-timegroup-hierarchy-item")
 export class EFTimegroupHierarchyItem extends EFHierarchyItem<EFTimegroup> {
   get icon() {
-    return phosphorIcon(ICONS.clock);
+    return phosphorIcon(ICONS.filmSlate);
+  }
+
+  get typeColor(): string {
+    return "rgb(148, 163, 184)"; // Gray for compositions
   }
 
   displayLabel(): string | TemplateResult<1> | typeof nothing {
-    return this.element.mode ?? "(no mode)";
+    return getFriendlyLabel(this.element, "Composition");
   }
 }
 
@@ -592,19 +629,27 @@ export class EFAudioHierarchyItem extends EFHierarchyItem<EFAudio> {
     return phosphorIcon(ICONS.speakerHigh);
   }
 
+  get typeColor(): string {
+    return "rgb(34, 197, 94)"; // Green for audio
+  }
+
   displayLabel() {
-    return this.element.src ?? "(no src)";
+    return getFriendlyLabel(this.element, "Audio");
   }
 }
 
 @customElement("ef-video-hierarchy-item")
 export class EFVideoHierarchyItem extends EFHierarchyItem<EFVideo> {
   get icon() {
-    return phosphorIcon(ICONS.filmSlate);
+    return phosphorIcon(ICONS.filmStrip);
+  }
+
+  get typeColor(): string {
+    return "rgb(59, 130, 246)"; // Blue for video
   }
 
   displayLabel() {
-    return this.element.src ?? "(no src)";
+    return getFriendlyLabel(this.element, "Video");
   }
 }
 
@@ -614,8 +659,12 @@ export class EFCaptionsHierarchyItem extends EFHierarchyItem {
     return phosphorIcon(ICONS.subtitles);
   }
 
+  get typeColor(): string {
+    return "rgb(34, 197, 94)"; // Green
+  }
+
   displayLabel() {
-    return "Captions";
+    return getFriendlyLabel(this.element as HTMLElement, "Captions");
   }
 }
 
@@ -623,6 +672,10 @@ export class EFCaptionsHierarchyItem extends EFHierarchyItem {
 export class EFCaptionsActiveWordHierarchyItem extends EFHierarchyItem {
   get icon() {
     return phosphorIcon(ICONS.microphone);
+  }
+
+  get typeColor(): string {
+    return "rgb(34, 197, 94)"; // Green
   }
 
   displayLabel() {
@@ -636,8 +689,20 @@ export class EFTextHierarchyItem extends EFHierarchyItem {
     return phosphorIcon(ICONS.textT);
   }
 
+  get typeColor(): string {
+    return "rgb(249, 115, 22)"; // Orange for text
+  }
+
+  get hasChildren(): boolean {
+    return false; // Text segments are internal, not shown as children
+  }
+
   displayLabel() {
-    return "Text";
+    return getFriendlyLabel(this.element as HTMLElement, "Text");
+  }
+
+  renderChildren(): typeof nothing {
+    return nothing;
   }
 }
 
@@ -645,6 +710,10 @@ export class EFTextHierarchyItem extends EFHierarchyItem {
 export class EFTextSegmentHierarchyItem extends EFHierarchyItem {
   get icon() {
     return phosphorIcon(ICONS.textT);
+  }
+
+  get typeColor(): string {
+    return "rgb(249, 115, 22)"; // Orange
   }
 
   displayLabel() {
@@ -658,6 +727,10 @@ export class EFWaveformHierarchyItem extends EFHierarchyItem {
     return phosphorIcon(ICONS.waveform);
   }
 
+  get typeColor(): string {
+    return "rgb(34, 197, 94)"; // Green
+  }
+
   renderChildren(): typeof nothing {
     return nothing;
   }
@@ -669,8 +742,12 @@ export class EFImageHierarchyItem extends EFHierarchyItem<EFImage> {
     return phosphorIcon(ICONS.image);
   }
 
+  get typeColor(): string {
+    return "rgb(168, 85, 247)"; // Purple for images
+  }
+
   displayLabel() {
-    return this.element.src ?? "(no src)";
+    return getFriendlyLabel(this.element, "Image");
   }
 }
 
