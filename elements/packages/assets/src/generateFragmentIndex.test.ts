@@ -69,8 +69,8 @@ describe("generateFragmentIndex", () => {
     assert.isArray(track1.segments, "Should have segments array");
     assert.equal(
       track1.segments.length,
-      9,
-      "Should have 9 segments (improved efficiency)",
+      5,
+      "Should have 5 segments (consolidated with minimum 2s duration)",
     );
 
     // Validate segments have proper structure
@@ -338,30 +338,16 @@ describe("generateFragmentIndex", () => {
           {
             cts: 31744,
             dts: 30720,
-            duration: 30720,
+            duration: 61440,
             offset: 105148,
-            size: 106862,
-          },
-          {
-            cts: 62464,
-            dts: 61440,
-            duration: 30720,
-            offset: 212010,
-            size: 92329,
+            size: 199191,
           },
           {
             cts: 93184,
             dts: 92160,
-            duration: 30720,
+            duration: 61440,
             offset: 304339,
-            size: 98708,
-          },
-          {
-            cts: 123904,
-            dts: 122880,
-            duration: 30720,
-            offset: 403047,
-            size: 92282,
+            size: 190990,
           },
         ],
       },
@@ -384,30 +370,16 @@ describe("generateFragmentIndex", () => {
           {
             cts: 88956,
             dts: 88956,
-            duration: 88064,
+            duration: 176128,
             offset: 105148,
-            size: 106862,
-          },
-          {
-            cts: 177020,
-            dts: 177020,
-            duration: 88064,
-            offset: 212010,
-            size: 92329,
+            size: 199191,
           },
           {
             cts: 265084,
             dts: 265084,
-            duration: 88064,
+            duration: 179200,
             offset: 304339,
-            size: 98708,
-          },
-          {
-            cts: 353148,
-            dts: 353148,
-            duration: 91136,
-            offset: 403047,
-            size: 92282,
+            size: 190990,
           },
         ],
       },
