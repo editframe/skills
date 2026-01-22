@@ -53,9 +53,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       :host {
         display: block;
         width: 100%;
-        height: 100vh;
-        position: fixed;
-        inset: 0;
+        height: 100%;
         
         /* Light mode colors */
         --workbench-bg: rgb(30 41 59); /* slate-800 */
@@ -498,14 +496,6 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   }
 
   connectedCallback(): void {
-    document.body.style.width = "100%";
-    document.body.style.height = "100%";
-    document.body.style.margin = "0";
-    document.body.style.padding = "0";
-    document.documentElement.style.width = "100%";
-    document.documentElement.style.height = "100vh";
-    document.documentElement.style.margin = "0";
-    document.documentElement.style.padding = "0";
     super.connectedCallback();
     // Listen for pan-zoom transform changes
     this.addEventListener("transform-changed", this.boundHandleTransformChanged as EventListener);
@@ -555,11 +545,6 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       this.statsStrategy.stop();
       this.statsStrategy = null;
     }
-    
-    document.body.style.width = "";
-    document.body.style.height = "";
-    document.documentElement.style.width = "";
-    document.documentElement.style.height = "";
     
     // Clean up current mode
     if (this.presentationMode === "clone") {
@@ -1732,6 +1717,17 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     // applySettings() will be called automatically via updated() hook when context changes
   }
   
+  /**
+   * Reset and fit the preview to show all content centered.
+   * Finds the pan-zoom element and calls fitToContent() on it.
+   */
+  private handleFitToContent(): void {
+    const panZoomElement = this.querySelector("ef-pan-zoom") as any;
+    if (panZoomElement && typeof panZoomElement.fitToContent === "function") {
+      panZoomElement.fitToContent();
+    }
+  }
+  
   private renderSettingsPopover() {
     const isAvailable = isNativeCanvasApiAvailable();
     
@@ -2402,7 +2398,17 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     return html`
       <div class="toolbar">
         <div class="toolbar-left">
-          <!-- Future: Add more toolbar items here (zoom, etc.) -->
+          <!-- Fit to content button -->
+          <button 
+            class="toolbar-icon-btn"
+            @click=${this.handleFitToContent}
+            title="Fit to Content (Reset Zoom & Center)"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <path d="M8 12h8M12 8v8"></path>
+            </svg>
+          </button>
         </div>
         
         <div class="toolbar-right">
