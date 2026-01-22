@@ -3,8 +3,8 @@ import type { TrackFragmentIndex } from "@editframe/assets";
 import { withSpan } from "../../otel/tracingHelpers.js";
 import type {
   AudioRendition,
-  InitSegmentPaths,
   MediaEngine,
+  RenditionId,
   SegmentTimeRange,
   ThumbnailResult,
   VideoRendition,
@@ -50,7 +50,7 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
     
     // Use production API format: /api/v1/isobmff_files/local/index?src={src}
     // This route is handled by the vite plugin for local development
-    const baseUrl = urlGenerator.baseUrl();
+    const baseUrl = urlGenerator.getBaseUrl();
     const url = baseUrl 
       ? `${baseUrl}/api/v1/isobmff_files/local/index?src=${encodeURIComponent(normalizedSrc)}`
       : `/api/v1/isobmff_files/local/index?src=${encodeURIComponent(normalizedSrc)}`;
@@ -166,6 +166,7 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
     }
 
     return {
+      id: "high" as RenditionId, // Use JIT-style rendition ID
       trackId: videoTrack.track,
       src: this.src,
       startTimeOffsetMs: videoTrack.startTimeOffsetMs,
@@ -180,50 +181,12 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
     }
 
     return {
+      id: "audio" as RenditionId, // Use JIT-style rendition ID
       trackId: audioTrack.track,
       src: this.src,
     };
   }
 
-  /**
-   * @deprecated This property is deprecated. Use fetchInitSegment() with JIT URLs instead.
-   * Kept for backward compatibility but should not be used in new code.
-   */
-  get initSegmentPaths() {
-    const paths: InitSegmentPaths = {};
-    const sourceUrl = this.getSourceUrlForJit();
-    const baseUrl = this.getBaseUrlForJit();
-
-    if (this.audioTrackIndex !== undefined) {
-      paths.audio = {
-        path: `${baseUrl}/api/v1/transcode/audio/init.m4s?url=${encodeURIComponent(sourceUrl)}`,
-        pos: this.audioTrackIndex.initSegment.offset,
-        size: this.audioTrackIndex.initSegment.size,
-      };
-    }
-
-    if (this.videoTrackIndex !== undefined) {
-      paths.video = {
-        path: `${baseUrl}/api/v1/transcode/high/init.m4s?url=${encodeURIComponent(sourceUrl)}`,
-        pos: this.videoTrackIndex.initSegment.offset,
-        size: this.videoTrackIndex.initSegment.size,
-      };
-    }
-
-    return paths;
-  }
-
-  /**
-   * Map trackId to JIT rendition ID
-   * - trackId 1 (video) -> "high" (default video rendition)
-   * - trackId 2 (audio) -> "audio"
-   * - trackId -1 (scrub) -> "scrub"
-   */
-  private getRenditionId(trackId: number): string {
-    if (trackId === -1) return "scrub";
-    if (trackId === 2) return "audio";
-    return "high"; // Default video rendition (trackId 1)
-  }
 
   /**
    * Get the source URL for JIT format (needs to be absolute URL)
@@ -235,7 +198,7 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
     }
     
     // Otherwise, construct absolute URL from baseUrl or current origin
-    let baseUrl = this.urlGenerator.baseUrl();
+    let baseUrl = this.urlGenerator.getBaseUrl();
     // If baseUrl is empty (no apiHost set), use current origin
     if (!baseUrl) {
       baseUrl = typeof window !== "undefined" ? window.location.origin : "";
@@ -250,7 +213,7 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
    * Get the base URL for constructing JIT endpoints
    */
   private getBaseUrlForJit(): string {
-    let baseUrl = this.urlGenerator.baseUrl();
+    let baseUrl = this.urlGenerator.getBaseUrl();
     // If baseUrl is empty (no apiHost set), use current origin
     if (!baseUrl) {
       baseUrl = typeof window !== "undefined" ? window.location.origin : "";
@@ -267,45 +230,38 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
     };
   }
 
-  buildInitSegmentUrl(trackId: number) {
-    const renditionId = this.getRenditionId(trackId);
-    const sourceUrl = this.getSourceUrlForJit();
-    const baseUrl = this.getBaseUrlForJit();
-    return `${baseUrl}/api/v1/transcode/${renditionId}/init.m4s?url=${encodeURIComponent(sourceUrl)}`;
-  }
-
-  buildMediaSegmentUrl(trackId: number, segmentId: number) {
-    const renditionId = this.getRenditionId(trackId);
-    const sourceUrl = this.getSourceUrlForJit();
-    const baseUrl = this.getBaseUrlForJit();
-    // JIT uses 1-based segment IDs, but AssetMediaEngine uses 0-based internally
-    // So we need to add 1 to segmentId
-    return `${baseUrl}/api/v1/transcode/${renditionId}/${segmentId + 1}.m4s?url=${encodeURIComponent(sourceUrl)}`;
+  /**
+   * Map trackId to JIT rendition ID for URL generation
+   * - trackId 1 (video) -> "high" (default video rendition)
+   * - trackId 2 (audio) -> "audio"
+   * - trackId -1 (scrub) -> "scrub"
+   */
+  private getRenditionId(trackId: number): RenditionId {
+    if (trackId === -1) return "scrub";
+    if (trackId === 2) return "audio";
+    return "high"; // Default video rendition (trackId 1)
   }
 
   /**
-   * Override isSegmentCached to handle scrub track specially.
-   * The scrub track is served as a single file, not segmented,
-   * so we check if the scrub track file is cached (regardless of segment ID).
+   * Override isSegmentCached to use URL-based cache checking (like JitMediaEngine)
    */
   override isSegmentCached(
     segmentId: number,
     rendition: AudioRendition | VideoRendition,
   ): boolean {
-    // For scrub track (trackId -1), check if the entire scrub file is cached
-    if (rendition.trackId === -1) {
-      const renditionId = this.getRenditionId(-1);
-      const sourceUrl = this.getSourceUrlForJit();
-      const baseUrl = this.getBaseUrlForJit();
-      const scrubUrl = `${baseUrl}/api/v1/transcode/${renditionId}/init.m4s?url=${encodeURIComponent(sourceUrl)}`;
-      return mediaCache.has(scrubUrl);
+    // Use URL-based cache checking (same as JitMediaEngine)
+    if (!rendition.id) {
+      return false;
     }
-    // For other tracks, use the default behavior
-    return super.isSegmentCached(segmentId, rendition);
+    
+    // JIT uses 1-based segment IDs, but AssetMediaEngine uses 0-based internally
+    const jitSegmentId = segmentId + 1;
+    const segmentUrl = this.urlGenerator.generateSegmentUrl(jitSegmentId, rendition.id, this);
+    return mediaCache.has(segmentUrl);
   }
 
   async fetchInitSegment(
-    rendition: { trackId: number | undefined; src: string },
+    rendition: { id?: RenditionId; trackId: number | undefined; src: string },
     signal?: AbortSignal,
   ) {
     return withSpan(
@@ -315,34 +271,26 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
         src: rendition.src,
       },
       undefined,
-      async (span) => {
+      async () => {
         if (!rendition.trackId) {
           throw new Error(
             "[fetchInitSegment] Track ID is required for asset metadata",
           );
         }
-        const url = this.buildInitSegmentUrl(rendition.trackId);
-        const initSegment = this.data[rendition.trackId]?.initSegment;
-        if (!initSegment) {
-          throw new Error("Init segment not found");
-        }
-
-        span.setAttribute("offset", initSegment.offset);
-        span.setAttribute("size", initSegment.size);
-
-        // Use unified fetch method with Range headers
-        const headers = {
-          Range: `bytes=${initSegment.offset}-${initSegment.offset + initSegment.size - 1}`,
-        };
-
-        return this.fetchMediaWithHeaders(url, headers, signal);
+        
+        // Use rendition ID if provided, otherwise map from trackId
+        const renditionId = rendition.id || this.getRenditionId(rendition.trackId);
+        const url = this.urlGenerator.generateSegmentUrl("init", renditionId, this);
+        
+        // Segments are now served directly (not via byte ranges), so use simple fetch
+        return this.fetchMedia(url, signal);
       },
     );
   }
 
   async fetchMediaSegment(
     segmentId: number,
-    rendition: { trackId: number | undefined; src: string },
+    rendition: { id?: RenditionId; trackId: number | undefined; src: string },
     signal?: AbortSignal,
   ) {
     return withSpan(
@@ -353,7 +301,7 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
         src: rendition.src,
       },
       undefined,
-      async (span) => {
+      async () => {
         if (!rendition.trackId) {
           throw new Error(
             "[fetchMediaSegment] Track ID is required for asset metadata",
@@ -362,29 +310,17 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
         if (segmentId === undefined) {
           throw new Error("Segment ID is not available");
         }
-        const url = this.buildMediaSegmentUrl(rendition.trackId, segmentId);
+        
+        // Use rendition ID if provided, otherwise map from trackId
+        const renditionId = rendition.id || this.getRenditionId(rendition.trackId);
+        
+        // JIT uses 1-based segment IDs, but AssetMediaEngine uses 0-based internally
+        // So we need to add 1 to segmentId for the URL
+        const jitSegmentId = segmentId + 1;
+        const url = this.urlGenerator.generateSegmentUrl(jitSegmentId, renditionId, this);
 
-        // For scrub track (trackId -1), fetch entire file without Range headers
-        // This ensures a single cache entry for all segments
-        if (rendition.trackId === -1) {
-          span.setAttribute("scrubTrack", true);
-          return this.fetchMedia(url, signal);
-        }
-
-        const mediaSegment = this.data[rendition.trackId]?.segments[segmentId];
-        if (!mediaSegment) {
-          throw new Error("Media segment not found");
-        }
-
-        span.setAttribute("offset", mediaSegment.offset);
-        span.setAttribute("size", mediaSegment.size);
-
-        // Use unified fetch method with Range headers
-        const headers = {
-          Range: `bytes=${mediaSegment.offset}-${mediaSegment.offset + mediaSegment.size - 1}`,
-        };
-
-        return this.fetchMediaWithHeaders(url, headers, signal);
+        // Segments are now served directly (not via byte ranges), so use simple fetch
+        return this.fetchMedia(url, signal);
       },
     );
   }
@@ -545,6 +481,7 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
         : undefined;
 
     return {
+      id: "scrub" as RenditionId, // Use JIT-style rendition ID
       trackId: scrubTrack.track,
       src: this.src,
       segmentDurationMs: scrubSegmentDurationMs,

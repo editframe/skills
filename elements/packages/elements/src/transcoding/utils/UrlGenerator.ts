@@ -9,6 +9,13 @@ export class UrlGenerator {
   constructor(private baseUrl: () => string) {}
 
   /**
+   * Get the base URL for constructing absolute URLs
+   */
+  getBaseUrl(): string {
+    return this.baseUrl();
+  }
+
+  /**
    * Generate video segment URL
    */
   generateSegmentUrl(
