@@ -6,14 +6,22 @@ import type { BufferedSeekingInput } from "../BufferedSeekingInput";
  * For JIT media (segmented scrub tracks), caches by segment ID.
  * For Asset media (single-file scrub tracks), caches by URL so all segments
  * share the same BufferedSeekingInput instance.
+ * 
+ * Uses promise deduplication to prevent race conditions when multiple
+ * concurrent requests arrive for the same segment.
  */
 export class ScrubInputCache {
-  private cache = new Map<number, BufferedSeekingInput>();
-  private urlCache = new Map<string, BufferedSeekingInput>();
-  private maxCacheSize = 5;
+  #cache = new Map<number, BufferedSeekingInput>();
+  #urlCache = new Map<string, BufferedSeekingInput>();
+  #pendingBySegment = new Map<number, Promise<BufferedSeekingInput | undefined>>();
+  #pendingByUrl = new Map<string, Promise<BufferedSeekingInput | undefined>>();
+  #maxCacheSize = 5;
 
   /**
    * Get or create BufferedSeekingInput for a scrub segment.
+   * 
+   * Uses promise deduplication to prevent race conditions when multiple
+   * concurrent requests arrive for the same segment.
    * 
    * @param segmentId - The segment ID
    * @param createInputFn - Factory function to create the input
@@ -27,51 +35,80 @@ export class ScrubInputCache {
     // For single-file scrub tracks (AssetMediaEngine), use URL-based caching
     // This ensures all segments share the same BufferedSeekingInput
     if (scrubUrl) {
-      const cached = this.urlCache.get(scrubUrl);
+      // Check completed cache
+      const cached = this.#urlCache.get(scrubUrl);
       if (cached) {
         return cached;
       }
 
-      const input = await createInputFn();
-      if (!input) {
-        return undefined;
+      // Check pending requests (deduplication)
+      const pending = this.#pendingByUrl.get(scrubUrl);
+      if (pending) {
+        return pending;
       }
 
-      this.urlCache.set(scrubUrl, input);
-      return input;
+      // Create promise and cache immediately
+      const promise = createInputFn().then((input) => {
+        this.#pendingByUrl.delete(scrubUrl);
+        if (input) {
+          this.#urlCache.set(scrubUrl, input);
+        }
+        return input;
+      }).catch((error) => {
+        this.#pendingByUrl.delete(scrubUrl);
+        throw error;
+      });
+
+      this.#pendingByUrl.set(scrubUrl, promise);
+      return promise;
     }
 
     // For segmented scrub tracks (JIT), use segment-based caching
-    const cached = this.cache.get(segmentId);
+    const cached = this.#cache.get(segmentId);
     if (cached) {
       return cached;
     }
 
-    // Create new input
-    const input = await createInputFn();
-    if (!input) {
-      return undefined;
+    // Check pending requests (deduplication)
+    const pending = this.#pendingBySegment.get(segmentId);
+    if (pending) {
+      return pending;
     }
 
-    // Add to cache and maintain size limit
-    this.cache.set(segmentId, input);
+    // Create promise and cache immediately
+    const promise = createInputFn().then((input) => {
+      this.#pendingBySegment.delete(segmentId);
+      
+      if (input) {
+        this.#cache.set(segmentId, input);
 
-    // Evict oldest entries if cache is too large
-    if (this.cache.size > this.maxCacheSize) {
-      const oldestKey = this.cache.keys().next().value;
-      if (oldestKey !== undefined) {
-        this.cache.delete(oldestKey);
+        // Evict oldest entries if cache is too large
+        if (this.#cache.size > this.#maxCacheSize) {
+          const oldestKey = this.#cache.keys().next().value;
+          if (oldestKey !== undefined) {
+            this.#cache.delete(oldestKey);
+          }
+        }
       }
-    }
+      
+      return input;
+    }).catch((error) => {
+      this.#pendingBySegment.delete(segmentId);
+      throw error;
+    });
 
-    return input;
+    this.#pendingBySegment.set(segmentId, promise);
+    return promise;
   }
 
   /**
    * Clear the entire cache (called when video changes)
    */
   clear() {
-    this.cache.clear();
+    this.#cache.clear();
+    this.#urlCache.clear();
+    this.#pendingBySegment.clear();
+    this.#pendingByUrl.clear();
   }
 
   /**
@@ -79,8 +116,10 @@ export class ScrubInputCache {
    */
   getStats() {
     return {
-      size: this.cache.size,
-      segmentIds: Array.from(this.cache.keys()),
+      size: this.#cache.size,
+      urlCacheSize: this.#urlCache.size,
+      pendingCount: this.#pendingBySegment.size + this.#pendingByUrl.size,
+      segmentIds: Array.from(this.#cache.keys()),
     };
   }
 }
