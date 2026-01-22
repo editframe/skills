@@ -17,15 +17,12 @@ import { createRef, ref, type Ref } from "lit/directives/ref.js";
 import { repeat } from "lit/directives/repeat.js";
 import { styleMap } from "lit/directives/style-map.js";
 
-import { EFAudio } from "../../elements/EFAudio.js";
-import { EFImage } from "../../elements/EFImage.js";
-import { EFText } from "../../elements/EFText.js";
+
 import {
   isEFTemporal,
   type TemporalMixinInterface,
 } from "../../elements/EFTemporal.js";
 import { EFTimegroup } from "../../elements/EFTimegroup.js";
-import { EFVideo } from "../../elements/EFVideo.js";
 import { findRootTemporal } from "../../elements/findRootTemporal.js";
 import { TargetController } from "../../elements/TargetController.js";
 import { selectionContext } from "../../canvas/selection/selectionContext.js";
@@ -54,8 +51,6 @@ import {
   pxToTime,
   DEFAULT_PIXELS_PER_MS,
   pixelsPerMsToZoom,
-  TIMELINE_ROW_HEIGHT,
-  TIMELINE_ROW_PADDING,
 } from "./timelineStateContext.js";
 import "../EFTimelineRuler.js";
 import {
@@ -65,7 +60,6 @@ import {
   shouldShowFrameMarkers,
 } from "../EFTimelineRuler.js";
 import "../../elements/EFThumbnailStrip.js";
-import { thumbnailImageCache } from "../../elements/EFThumbnailStrip.js";
 
 // ============================================================================
 // TIMELINE STATE CONTEXT
@@ -530,14 +524,12 @@ export class EFTimeline extends TWMixin(LitElement) {
   private playheadHandleRef: Ref<HTMLDivElement> = createRef();
   private frameHighlightRef: Ref<HTMLDivElement> = createRef();
   private animationFrameId?: number;
-  private thumbnailUpdatePending = false;
   private selectionChangeHandler?: () => void;
   private scrollHandler?: () => void;
   private keydownHandler?: (e: KeyboardEvent) => void;
   private isDraggingPlayhead = false;
   private targetObserver?: MutationObserver;
   private canvasActiveRootTemporalChangeHandler?: () => void;
-  private canvasHighlightChangeHandler?: () => void;
   private resizeObserver?: ResizeObserver;
   private cachedViewportWidth = 800; // Cached to avoid layout thrashing
   private saveZoomScrollDebounceTimer: number | null = null;
