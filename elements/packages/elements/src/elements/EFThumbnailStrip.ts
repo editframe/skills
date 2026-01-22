@@ -847,8 +847,12 @@ export class EFThumbnailStrip extends LitElement {
 
     const timestamps = slots.map((s) => s.timeMs);
 
+    // Create an abort controller for this thumbnail extraction
+    // ThumbnailExtractor requires a signal to properly handle cleanup
+    const abortController = new AbortController();
+
     try {
-      const results = await mediaEngine.extractThumbnails(timestamps);
+      const results = await mediaEngine.extractThumbnails(timestamps, abortController.signal);
 
       for (let i = 0; i < slots.length; i++) {
         const slot = slots[i]!;
@@ -865,6 +869,8 @@ export class EFThumbnailStrip extends LitElement {
         }
       }
     } catch (error) {
+      // Abort on error to clean up any in-flight requests
+      abortController.abort();
       console.warn("Video thumbnail extraction failed:", error);
     }
   }
