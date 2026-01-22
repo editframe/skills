@@ -68,17 +68,16 @@ export class EFThumbnailStrip extends LitElement {
         display: block;
         position: relative;
         background: #1a1a2e;
-        overflow: visible; /* Allow sticky canvas to escape */
+        overflow: hidden;
         width: 100%;
         height: 100%;
       }
       canvas {
         display: block;
-        /* Sticky positioning: canvas stays in viewport while host scrolls */
-        position: sticky;
-        left: 0;
+        /* Absolute positioning - we manually position at visible region */
+        position: absolute;
         top: 0;
-        /* Width is set programmatically to viewport width */
+        /* Left and width set programmatically based on visible portion */
         height: 100%;
         image-rendering: auto;
       }
@@ -305,14 +304,12 @@ export class EFThumbnailStrip extends LitElement {
       const labelWidth = this._getTimelineRowLabelWidth(timelineRow);
       if (labelWidth > 0) {
         this._trackLeftOffset = labelWidth;
-        this._updateCanvasPosition();
         return;
       }
     }
     
     // No timeline row found - track starts at scroll container's left edge
     this._trackLeftOffset = 0;
-    this._updateCanvasPosition();
   }
   
   /**
@@ -354,13 +351,22 @@ export class EFThumbnailStrip extends LitElement {
   }
   
   /**
-   * Update canvas sticky position to account for track offset.
+   * Get this strip's absolute position in the timeline (pixels from timeline origin).
+   * Uses the target element's startTimeMs to determine position.
    */
-  private _updateCanvasPosition(): void {
-    const canvas = this.canvasRef.value;
-    if (canvas) {
-      canvas.style.left = `${this._trackLeftOffset}px`;
+  private _getStripTimelinePosition(): number {
+    const target = this._targetElement;
+    if (!target) return 0;
+    
+    // For videos, use their startTimeMs to get timeline position
+    if (isEFVideo(target)) {
+      const startTimeMs = target.startTimeMs ?? 0;
+      const pixelsPerMs = this._timelineState?.pixelsPerMs ?? 0.1;
+      return startTimeMs * pixelsPerMs;
     }
+    
+    // For root timegroup, position is 0
+    return 0;
   }
 
   private _attachScrollListener(): void {
@@ -608,8 +614,8 @@ export class EFThumbnailStrip extends LitElement {
 
   /**
    * Draw the canvas with current thumbnail state.
-   * Canvas is viewport-sized and sticky-positioned at track offset.
-   * Content is offset by scroll position to implement virtual rendering.
+   * Canvas is absolutely positioned at the visible portion of the strip.
+   * Uses virtual rendering - only draws thumbnails in the visible region.
    */
   private _drawCanvas(): void {
     const canvas = this.canvasRef.value;
@@ -618,51 +624,76 @@ export class EFThumbnailStrip extends LitElement {
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
-    const viewportWidth = this._viewportWidth;
+    const stripWidth = this._width;
     const height = this._height;
 
-    if (viewportWidth <= 0 || height <= 0) return;
-
-    // Ensure canvas sticky position is set correctly
-    this._updateCanvasPosition();
+    if (stripWidth <= 0 || height <= 0) return;
 
     const dpr = window.devicePixelRatio || 1;
-    const scrollOffset = this._currentScrollLeft;
+    
+    // Get scroll and viewport info
+    const scrollLeft = this._currentScrollLeft;
+    const viewportWidth = this._viewportWidth;
+    
+    // Get this strip's absolute position in the timeline
+    const stripStartPx = this._getStripTimelinePosition();
+    const stripEndPx = stripStartPx + stripWidth;
+    
+    // Calculate visible region in timeline coordinates (with padding)
+    const visibleLeftPx = scrollLeft - VIRTUAL_RENDER_PADDING_PX;
+    const visibleRightPx = scrollLeft + viewportWidth + VIRTUAL_RENDER_PADDING_PX;
+    
+    // Check if strip is visible at all
+    if (stripEndPx < visibleLeftPx || stripStartPx > visibleRightPx) {
+      canvas.style.display = "none";
+      return;
+    }
+    canvas.style.display = "block";
+    
+    // Calculate the intersection: what part of the strip is visible
+    // Coordinates relative to strip's left edge (0 = strip start)
+    const visibleStartInStrip = Math.max(0, visibleLeftPx - stripStartPx);
+    const visibleEndInStrip = Math.min(stripWidth, visibleRightPx - stripStartPx);
+    const visibleWidthPx = visibleEndInStrip - visibleStartInStrip;
+    
+    if (visibleWidthPx <= 0) {
+      canvas.style.display = "none";
+      return;
+    }
 
-    // Resize canvas if needed
-    const targetWidth = Math.ceil(viewportWidth * dpr);
+    // Set canvas size with DPR
+    const targetWidth = Math.ceil(visibleWidthPx * dpr);
     const targetHeight = Math.ceil(height * dpr);
 
     if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
       canvas.width = targetWidth;
       canvas.height = targetHeight;
-      canvas.style.width = `${viewportWidth}px`;
-      canvas.style.height = `${height}px`;
     }
+    
+    // Position canvas at the visible portion within the strip
+    canvas.style.left = `${visibleStartInStrip}px`;
+    canvas.style.width = `${visibleWidthPx}px`;
+    canvas.style.height = `${height}px`;
 
     // Reset transform
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     // Clear with background
     ctx.fillStyle = "#1a1a2e";
-    ctx.fillRect(0, 0, viewportWidth, height);
-
-    // Visible range with padding
-    const visibleLeft = scrollOffset - VIRTUAL_RENDER_PADDING_PX;
-    const visibleRight = scrollOffset + viewportWidth + VIRTUAL_RENDER_PADDING_PX;
+    ctx.fillRect(0, 0, visibleWidthPx, height);
 
     // Draw each visible thumbnail
     for (const slot of this._thumbnailSlots) {
       const slotRight = slot.x + slot.width;
 
-      // Skip if outside visible range
-      if (slotRight < visibleLeft || slot.x > visibleRight) continue;
+      // Skip if slot is outside visible strip region
+      if (slotRight < visibleStartInStrip || slot.x > visibleEndInStrip) continue;
 
-      // Draw position (content shifts opposite to scroll)
-      const drawX = slot.x - scrollOffset;
+      // Draw position relative to canvas (canvas starts at visibleStartInStrip)
+      const drawX = slot.x - visibleStartInStrip;
 
-      // Skip if outside canvas
-      if (drawX + slot.width < 0 || drawX > viewportWidth) continue;
+      // Skip if outside canvas bounds
+      if (drawX + slot.width < 0 || drawX > visibleWidthPx) continue;
 
       if (slot.imageData) {
         this._drawThumbnailImage(ctx, slot.imageData, drawX, slot.width, height);
@@ -727,14 +758,24 @@ export class EFThumbnailStrip extends LitElement {
 
     const viewportWidth = this._viewportWidth;
     const scrollOffset = this._currentScrollLeft;
-    const visibleLeft = scrollOffset - VIRTUAL_RENDER_PADDING_PX;
-    const visibleRight = scrollOffset + viewportWidth + VIRTUAL_RENDER_PADDING_PX;
+    const stripWidth = this._width;
+    
+    // Get strip's timeline position
+    const stripStartPx = this._getStripTimelinePosition();
+    
+    // Calculate visible region in timeline coordinates
+    const visibleLeftPx = scrollOffset - VIRTUAL_RENDER_PADDING_PX;
+    const visibleRightPx = scrollOffset + viewportWidth + VIRTUAL_RENDER_PADDING_PX;
+    
+    // Convert to strip-local coordinates
+    const visibleStartInStrip = Math.max(0, visibleLeftPx - stripStartPx);
+    const visibleEndInStrip = Math.min(stripWidth, visibleRightPx - stripStartPx);
 
-    // Find pending slots in visible range
+    // Find pending slots in visible range (using strip-local coordinates)
     const pending = this._thumbnailSlots.filter((slot) => {
       if (slot.status !== "pending") return false;
       const slotRight = slot.x + slot.width;
-      return slotRight >= visibleLeft && slot.x <= visibleRight;
+      return slotRight >= visibleStartInStrip && slot.x <= visibleEndInStrip;
     });
 
     if (pending.length === 0) return;
