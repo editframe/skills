@@ -8,6 +8,51 @@ const log = debug("ef:generateFragmentIndex");
 
 // Minimum segment duration in milliseconds
 const MIN_SEGMENT_DURATION_MS = 2000; // 2 seconds
+const MS_PER_SECOND = 1000;
+
+// ============================================================================
+// Core Domain Types (Type Safety as Invariant Enforcement)
+// ============================================================================
+
+/** Raw packet from ffprobe - the fundamental unit of media data */
+interface ProbePacket {
+  stream_index: number;
+  pts: number;
+  dts: number;
+  pts_time: number;
+  dts_time: number;
+  duration?: number;
+  pos?: number;
+  flags?: string;
+}
+
+/** Video packet with keyframe status - invariant: isKeyframe is always defined */
+interface VideoPacket {
+  pts: number;
+  dts: number;
+  duration?: number;
+  isKeyframe: boolean;
+}
+
+/** Audio packet - simpler than video, no keyframe concept */
+interface AudioPacket {
+  pts: number;
+  dts: number;
+  duration?: number;
+}
+
+/** Fragment timing data - packets organized by fragment */
+interface FragmentTimingData {
+  fragmentIndex: number;
+  videoPackets: VideoPacket[];
+  audioPackets: AudioPacket[];
+}
+
+/** Timebase for timestamp conversion */
+interface Timebase {
+  num: number;
+  den: number;
+}
 
 // Helper function to construct H.264 codec string from profile and level
 function constructH264CodecString(
@@ -72,7 +117,7 @@ class StreamingBoxParser extends Transform {
     super({ objectMode: false });
   }
 
-  _transform(chunk: any, _encoding: BufferEncoding, callback: () => void) {
+  _transform(chunk: Buffer, _encoding: BufferEncoding, callback: () => void) {
     // Append new data to our sliding buffer
     this.buffer = Buffer.concat([this.buffer, chunk]);
 
@@ -194,6 +239,250 @@ function createFragmentStream(fragmentData: Uint8Array): Readable {
   });
 }
 
+// Helper to convert timestamp from ffprobe timebase to track timescale
+function convertTimestamp(
+  pts: number,
+  timebase: Timebase,
+  timescale: number,
+): number {
+  return Math.round((pts * timescale) / timebase.den);
+}
+
+// Helper to calculate duration in milliseconds from timescale units
+function durationMsFromTimescale(
+  durationTimescale: number,
+  timescale: number,
+): number {
+  return (durationTimescale / timescale) * MS_PER_SECOND;
+}
+
+// Helper to calculate segment byte range from accumulated fragments
+function calculateSegmentByteRange(
+  accumulatedFragments: Array<{ fragment: Fragment }>,
+): { offset: number; size: number } {
+  const firstFrag = accumulatedFragments[0]!;
+  const lastFrag = accumulatedFragments[accumulatedFragments.length - 1]!;
+  return {
+    offset: firstFrag.fragment.offset,
+    size: lastFrag.fragment.offset + lastFrag.fragment.size - firstFrag.fragment.offset,
+  };
+}
+
+// Explicit enumeration of segment accumulation state (Enumerate the Core Concept)
+type SegmentAccumulationState =
+  | { type: "idle" }
+  | {
+      type: "accumulating";
+      startPts: number;
+      startDts: number;
+      fragments: Array<{ fragment: Fragment; fragmentData: FragmentTimingData }>;
+    };
+
+// Invariant: Segment must start on keyframe (for video) and have minimum duration
+interface SegmentEvaluation {
+  cts: number;
+  dts: number;
+  duration: number;
+  offset: number;
+  size: number;
+}
+
+// Track processing context - single source of truth for track processing
+interface TrackProcessingContext {
+  timebase: Timebase;
+  timescale: number;
+  fragmentTimingData: FragmentTimingData[];
+  mediaFragments: Fragment[];
+  // Cached filtered packets for this stream (Performance Through Caching)
+  streamPackets: ProbePacket[];
+  streamType: "video" | "audio";
+  streamIndex: number;
+}
+
+// Segment accumulator that encapsulates accumulation logic
+class SegmentAccumulator {
+  private state: SegmentAccumulationState = { type: "idle" };
+  private readonly context: TrackProcessingContext;
+  private readonly minDurationMs: number;
+
+  constructor(context: TrackProcessingContext, minDurationMs: number) {
+    this.context = context;
+    this.minDurationMs = minDurationMs;
+  }
+
+  // Evaluation: Determine if we should finalize (semantics)
+  shouldFinalize(nextKeyframe: { pts: number; dts: number } | null): boolean {
+    if (this.state.type !== "accumulating") {
+      return false;
+    }
+
+    const durationMs = this.calculateAccumulatedDurationMs();
+    const hasMinimumDuration = durationMs >= this.minDurationMs;
+
+    // For video: finalize on keyframe + minimum duration
+    // For audio: finalize on minimum duration (no keyframe requirement)
+    if (this.context.streamType === "video") {
+      return hasMinimumDuration && nextKeyframe !== null;
+    } else {
+      return hasMinimumDuration;
+    }
+  }
+
+  // Evaluation: Calculate what the segment would be (semantics)
+  evaluateSegment(
+    nextBoundary: { pts: number } | null,
+  ): SegmentEvaluation | null {
+    if (this.state.type !== "accumulating") {
+      return null;
+    }
+
+    const segmentCts = convertTimestamp(
+      this.state.startPts,
+      this.context.timebase,
+      this.context.timescale,
+    );
+    const segmentDts = convertTimestamp(
+      this.state.startDts,
+      this.context.timebase,
+      this.context.timescale,
+    );
+    const segmentDuration = this.calculateSegmentDuration(
+      segmentCts,
+      nextBoundary,
+    );
+    const { offset, size } = calculateSegmentByteRange(this.state.fragments);
+
+    return {
+      cts: segmentCts,
+      dts: segmentDts,
+      duration: segmentDuration,
+      offset,
+      size,
+    };
+  }
+
+  // Application: Add fragment to accumulation (mechanism)
+  addFragment(fragment: Fragment, fragmentData: FragmentTimingData): void {
+    if (this.state.type === "idle") {
+      // Start accumulation - invariant: video segments must start on keyframe
+      const startPts = this.getStartPts(fragmentData);
+      const startDts = this.getStartDts(fragmentData);
+      this.state = {
+        type: "accumulating",
+        startPts,
+        startDts,
+        fragments: [{ fragment, fragmentData }],
+      };
+    } else {
+      // Continue accumulation
+      this.state.fragments.push({ fragment, fragmentData });
+    }
+  }
+
+  // Application: Reset accumulation (mechanism)
+  reset(): void {
+    this.state = { type: "idle" };
+  }
+
+  // Application: Start new segment with keyframe (mechanism)
+  startNewSegment(keyframe: { pts: number; dts: number }): void {
+    this.state = {
+      type: "accumulating",
+      startPts: keyframe.pts,
+      startDts: keyframe.dts,
+      fragments: [],
+    };
+  }
+
+  // Query: Get current state
+  getState(): SegmentAccumulationState {
+    return this.state;
+  }
+
+  // Query: Check if accumulating
+  isAccumulating(): boolean {
+    return this.state.type === "accumulating";
+  }
+
+  // Private helpers
+  private calculateAccumulatedDurationMs(): number {
+    if (this.state.type !== "accumulating") {
+      return 0;
+    }
+
+    const lastFrag = this.state.fragments[this.state.fragments.length - 1]!;
+    const lastPacket = this.getLastPacket(lastFrag.fragmentData);
+    const endCts = convertTimestamp(
+      lastPacket.pts + (lastPacket.duration || 0),
+      this.context.timebase,
+      this.context.timescale,
+    );
+    const startCts = convertTimestamp(
+      this.state.startPts,
+      this.context.timebase,
+      this.context.timescale,
+    );
+    return durationMsFromTimescale(endCts - startCts, this.context.timescale);
+  }
+
+  private calculateSegmentDuration(
+    segmentCts: number,
+    nextBoundary: { pts: number } | null,
+  ): number {
+    if (nextBoundary) {
+      const nextSegmentCts = convertTimestamp(
+        nextBoundary.pts,
+        this.context.timebase,
+        this.context.timescale,
+      );
+      return nextSegmentCts - segmentCts;
+    }
+
+    // Last segment: duration to end of all packets
+    // Use pre-cached streamPackets (Performance Through Caching)
+    const sortedPackets = [...this.context.streamPackets].sort(
+      (a, b) => a.pts - b.pts,
+    );
+    const lastPacket = sortedPackets[sortedPackets.length - 1]!;
+    const streamEnd = convertTimestamp(
+      lastPacket.pts + (lastPacket.duration || 0),
+      this.context.timebase,
+      this.context.timescale,
+    );
+    return streamEnd - segmentCts;
+  }
+
+  private getStartPts(fragmentData: FragmentTimingData): number {
+    if (this.context.streamType === "video") {
+      const keyframe = fragmentData.videoPackets.find((p) => p.isKeyframe);
+      return keyframe?.pts ?? fragmentData.videoPackets[0]?.pts ?? 0;
+    } else {
+      return fragmentData.audioPackets[0]?.pts ?? 0;
+    }
+  }
+
+  private getStartDts(fragmentData: FragmentTimingData): number {
+    if (this.context.streamType === "video") {
+      const keyframe = fragmentData.videoPackets.find((p) => p.isKeyframe);
+      return keyframe?.dts ?? fragmentData.videoPackets[0]?.dts ?? 0;
+    } else {
+      return fragmentData.audioPackets[0]?.dts ?? 0;
+    }
+  }
+
+  private getLastPacket(
+    fragmentData: FragmentTimingData,
+  ): { pts: number; duration?: number } {
+    if (this.context.streamType === "video") {
+      const packets = fragmentData.videoPackets;
+      return packets[packets.length - 1]!;
+    } else {
+      const packets = fragmentData.audioPackets;
+      return packets[packets.length - 1]!;
+    }
+  }
+}
+
 // Helper function to extract fragment data (init + media fragment)
 
 export const generateFragmentIndex = async (
@@ -252,16 +541,7 @@ export const generateFragmentIndex = async (
 
   // Map packets to fragments using byte position for moof+mdat boundaries
   // But create contiguous segments based on keyframes
-  const fragmentTimingData: Array<{
-    fragmentIndex: number;
-    videoPackets: Array<{
-      pts: number;
-      dts: number;
-      isKeyframe: boolean;
-      duration?: number;
-    }>;
-    audioPackets: Array<{ pts: number; dts: number; duration?: number }>;
-  }> = [];
+  const fragmentTimingData: FragmentTimingData[] = [];
 
   for (
     let fragmentIndex = 0;
@@ -318,25 +598,126 @@ export const generateFragmentIndex = async (
     });
   }
 
+  // Unified track processing function (One Direction of Truth)
+  const processTrack = (
+    streamIndex: number,
+    streamType: "video" | "audio",
+    timebase: Timebase,
+    allPackets: ProbePacket[],
+  ): TrackSegment[] => {
+    const segments: TrackSegment[] = [];
+    const timescale = Math.round(timebase.den / timebase.num);
+
+    // Cache filtered packets once (Performance Through Caching)
+    const streamPackets = allPackets.filter(
+      (p) => p.stream_index === streamIndex,
+    );
+
+    const context: TrackProcessingContext = {
+      timebase,
+      timescale,
+      fragmentTimingData,
+      mediaFragments,
+      streamPackets,
+      streamType,
+      streamIndex,
+    };
+
+    const accumulator = new SegmentAccumulator(context, MIN_SEGMENT_DURATION_MS);
+
+    for (let i = 0; i < fragmentTimingData.length; i++) {
+      const fragmentData = fragmentTimingData[i]!;
+      const fragment = mediaFragments[fragmentData.fragmentIndex]!;
+      const packets =
+        streamType === "video"
+          ? fragmentData.videoPackets
+          : fragmentData.audioPackets;
+
+      log(
+        `Fragment ${fragmentData.fragmentIndex}: ${packets.length} ${streamType} packets`,
+      );
+
+      if (packets.length === 0) {
+        log(
+          `Skipping fragment ${fragmentData.fragmentIndex} - no ${streamType} packets`,
+        );
+        continue;
+      }
+
+      if (streamType === "video") {
+        // Video: segments must start on keyframes
+        const keyframe = fragmentData.videoPackets.find(
+          (p) => p.isKeyframe,
+        );
+        const hasKeyframe = keyframe !== undefined;
+
+        // Start new segment on keyframe if none exists
+        if (!accumulator.isAccumulating() && hasKeyframe) {
+          accumulator.startNewSegment({
+            pts: keyframe.pts,
+            dts: keyframe.dts,
+          });
+          accumulator.addFragment(fragment, fragmentData);
+          continue;
+        }
+
+        // Skip fragments without keyframes if no segment started
+        if (!accumulator.isAccumulating()) {
+          continue;
+        }
+
+        // Check if we should finalize when encountering a new keyframe
+        if (hasKeyframe) {
+          if (accumulator.shouldFinalize({ pts: keyframe.pts, dts: keyframe.dts })) {
+            // Duration should be to the start of this keyframe (start of next segment)
+            const nextBoundary = { pts: keyframe.pts };
+            const evaluation = accumulator.evaluateSegment(nextBoundary);
+            if (evaluation) {
+              segments.push(evaluation);
+            }
+            accumulator.reset();
+            accumulator.startNewSegment({
+              pts: keyframe.pts,
+              dts: keyframe.dts,
+            });
+          }
+        }
+      } else {
+        // Audio: no keyframe requirement, just duration-based
+        if (!accumulator.isAccumulating()) {
+          accumulator.addFragment(fragment, fragmentData);
+          continue;
+        }
+
+        // Check if we should finalize based on accumulated duration
+        if (accumulator.shouldFinalize(null)) {
+          // Duration should be to the start of this fragment (start of next segment)
+          const nextBoundary = { pts: fragmentData.audioPackets[0]!.pts };
+          const evaluation = accumulator.evaluateSegment(nextBoundary);
+          if (evaluation) {
+            segments.push(evaluation);
+          }
+          accumulator.reset();
+        }
+      }
+
+      // Add fragment to current segment
+      accumulator.addFragment(fragment, fragmentData);
+    }
+
+    // Finalize any remaining accumulated fragments
+    if (accumulator.isAccumulating()) {
+      const evaluation = accumulator.evaluateSegment(null);
+      if (evaluation) {
+        segments.push(evaluation);
+      }
+    }
+
+    return segments;
+  };
+
   // Step 4: Process video tracks using ffprobe data
   for (const videoStream of videoStreams) {
-    const segments: TrackSegment[] = [];
-
-    // Count total samples from complete stream - try counting keyframes for "improved efficiency"
-    const totalVideoPackets = probe.packets.filter(
-      (p) => p.stream_index === videoStream.index,
-    );
-    const keyframePackets = totalVideoPackets.filter((p) =>
-      p.flags?.includes("K"),
-    );
-
-    // The test comment mentions "improved efficiency" suggesting we should count keyframes
-    const totalSampleCount = keyframePackets.length;
-
-    log(
-      `Complete stream has ${totalVideoPackets.length} video packets, ${keyframePackets.length} keyframes for stream ${videoStream.index}`,
-    );
-
     // Get timebase for this stream to convert timestamps
     const timebase = probe.videoTimebase;
     if (!timebase) {
@@ -344,25 +725,30 @@ export const generateFragmentIndex = async (
       continue;
     }
 
-    // Calculate timescale as the inverse of timebase
     const timescale = Math.round(timebase.den / timebase.num);
+
+    // Cache filtered packets once (Performance Through Caching)
+    const streamPackets = (probe.packets as ProbePacket[]).filter(
+      (p) => p.stream_index === videoStream.index,
+    );
+    const keyframePackets = streamPackets.filter((p) =>
+      p.flags?.includes("K"),
+    );
+    const totalSampleCount = keyframePackets.length;
+
+    log(
+      `Complete stream has ${streamPackets.length} video packets, ${keyframePackets.length} keyframes for stream ${videoStream.index}`,
+    );
 
     // Calculate per-track timing offset from first packet for timeline mapping
     let trackStartTimeOffsetMs: number | undefined;
-    const allVideoPackets = probe.packets.filter(
-      (p) => p.stream_index === videoStream.index,
-    );
-    if (allVideoPackets.length > 0) {
-      const firstPacketTime = allVideoPackets[0]!.dts_time;
+    if (streamPackets.length > 0) {
       log(
-        `First video packet dts_time: ${firstPacketTime}, pts_time: ${allVideoPackets[0]!.pts_time}`,
+        `First video packet dts_time: ${streamPackets[0]!.dts_time}, pts_time: ${streamPackets[0]!.pts_time}`,
       );
-
-      // Use PTS time instead of DTS time for offset calculation
-      // since PTS represents the presentation timeline
-      const presentationTime = allVideoPackets[0]!.pts_time;
+      const presentationTime = streamPackets[0]!.pts_time;
       if (Math.abs(presentationTime) > 0.01) {
-        trackStartTimeOffsetMs = presentationTime * 1000;
+        trackStartTimeOffsetMs = presentationTime * MS_PER_SECOND;
       }
     }
     if (startTimeOffsetMs !== undefined) {
@@ -370,165 +756,20 @@ export const generateFragmentIndex = async (
     }
 
     // Process fragments to create segments with minimum duration
-    // Accumulate fragments until we hit a keyframe AND accumulated duration >= 2 seconds
-    log(
-      `Processing ${fragmentTimingData.length} fragments for video stream ${videoStream.index}`,
+    const segments = processTrack(
+      videoStream.index,
+      "video",
+      timebase,
+      probe.packets as ProbePacket[],
     );
 
-    // Accumulated fragments for current segment
-    const accumulatedFragments: Array<{
-      fragment: Fragment;
-      fragmentData: typeof fragmentTimingData[0];
-    }> = [];
-    let currentSegmentStartKeyframe: {
-      pts: number;
-      dts: number;
-    } | null = null;
-
-    const finalizeSegment = () => {
-      if (accumulatedFragments.length === 0 || !currentSegmentStartKeyframe) {
-        return;
-      }
-
-      const firstFrag = accumulatedFragments[0]!;
-      const lastFrag = accumulatedFragments[accumulatedFragments.length - 1]!;
-
-      // Convert timestamps from ffprobe timebase to track timescale
-      const segmentCts = Math.round(
-        (currentSegmentStartKeyframe.pts * timescale) / timebase.den,
-      );
-      const segmentDts = Math.round(
-        (currentSegmentStartKeyframe.dts * timescale) / timebase.den,
-      );
-
-      // Calculate duration to next segment or end of stream
-      const nextFragmentData =
-        fragmentTimingData[lastFrag.fragmentData.fragmentIndex + 1];
-      const nextKeyframe = nextFragmentData?.videoPackets.find(
-        (p) => p.isKeyframe,
-      );
-
-      let segmentDuration: number;
-      if (nextKeyframe) {
-        // Duration to next keyframe (perfectly contiguous)
-        const nextSegmentCts = Math.round(
-          (nextKeyframe.pts * timescale) / timebase.den,
-        );
-        segmentDuration = nextSegmentCts - segmentCts;
-      } else {
-        // Last segment: duration to end of all video packets
-        const allVideoPackets = probe.packets
-          .filter((p) => {
-            const stream = videoStreams.find((s) => s.index === p.stream_index);
-            return stream?.codec_type === "video";
-          })
-          .sort((a, b) => a.pts - b.pts);
-        const lastPacket = allVideoPackets[allVideoPackets.length - 1]!;
-        const streamEnd = Math.round(
-          ((lastPacket.pts + (lastPacket.duration || 0)) * timescale) /
-            timebase.den,
-        );
-        segmentDuration = streamEnd - segmentCts;
-      }
-
-      // Segment spans from first fragment to last fragment
-      const segmentOffset = firstFrag.fragment.offset;
-      const segmentSize =
-        lastFrag.fragment.offset + lastFrag.fragment.size - segmentOffset;
-
-      segments.push({
-        cts: segmentCts,
-        dts: segmentDts,
-        duration: segmentDuration,
-        offset: segmentOffset,
-        size: segmentSize,
-      });
-
-      // Reset accumulation
-      accumulatedFragments.length = 0;
-      currentSegmentStartKeyframe = null;
-    };
-
-    for (const fragmentData of fragmentTimingData) {
-      const fragment = mediaFragments[fragmentData.fragmentIndex]!;
-      const videoPackets = fragmentData.videoPackets;
-
-      log(
-        `Fragment ${fragmentData.fragmentIndex}: ${videoPackets.length} video packets`,
-      );
-      if (videoPackets.length === 0) {
-        log(
-          `Skipping fragment ${fragmentData.fragmentIndex} - no video packets`,
-        );
-        continue;
-      }
-
-      // Find keyframe in this fragment
-      const keyframe = videoPackets.find((p) => p.isKeyframe);
-      const isNewKeyframe = keyframe !== undefined;
-
-      // If we have a current segment and this is a new keyframe, check if we should finalize
-      if (currentSegmentStartKeyframe !== null && isNewKeyframe) {
-        // Calculate accumulated duration in milliseconds
-        const lastFrag = accumulatedFragments[accumulatedFragments.length - 1]!;
-        const lastFragLastPacket =
-          lastFrag.fragmentData.videoPackets[
-            lastFrag.fragmentData.videoPackets.length - 1
-          ]!;
-        const accumulatedEndCts = Math.round(
-          ((lastFragLastPacket.pts + (lastFragLastPacket.duration || 0)) *
-            timescale) /
-            timebase.den,
-        );
-        const accumulatedStartCts = Math.round(
-          (currentSegmentStartKeyframe.pts * timescale) / timebase.den,
-        );
-        const accumulatedDurationMs =
-          ((accumulatedEndCts - accumulatedStartCts) / timescale) * 1000;
-
-        // If we've accumulated >= 2 seconds, finalize the segment
-        if (accumulatedDurationMs >= MIN_SEGMENT_DURATION_MS) {
-          finalizeSegment();
-          // Start a new segment with this keyframe
-          currentSegmentStartKeyframe = {
-            pts: keyframe.pts,
-            dts: keyframe.dts,
-          };
-          accumulatedFragments.push({ fragment, fragmentData });
-        } else {
-          // Duration not enough yet, continue accumulating
-          accumulatedFragments.push({ fragment, fragmentData });
-        }
-      } else if (isNewKeyframe) {
-        // Start a new segment with this keyframe
-        currentSegmentStartKeyframe = {
-          pts: keyframe.pts,
-          dts: keyframe.dts,
-        };
-        accumulatedFragments.push({ fragment, fragmentData });
-      } else if (currentSegmentStartKeyframe !== null) {
-        // No keyframe in this fragment, but we have a segment started - continue accumulating
-        accumulatedFragments.push({ fragment, fragmentData });
-      }
-      // If no keyframe and no segment started, skip this fragment
-    }
-
-    // Finalize any remaining accumulated fragments
-    if (accumulatedFragments.length > 0) {
-      finalizeSegment();
-    }
-
-    // Calculate total duration from complete stream packets, not just segments
-    // This accounts for standalone mdat fragments that don't create segments
+    // Calculate total duration from cached stream packets
     let totalDuration = 0;
-    if (totalVideoPackets.length > 0) {
-      const firstPacket = totalVideoPackets[0]!;
-      const lastPacket = totalVideoPackets[totalVideoPackets.length - 1]!;
-
-      const firstPts = Math.round((firstPacket.pts * timescale) / timebase.den);
-      const lastPts = Math.round((lastPacket.pts * timescale) / timebase.den);
-
-      // Calculate duration as the span from first to last packet
+    if (streamPackets.length > 0) {
+      const firstPacket = streamPackets[0]!;
+      const lastPacket = streamPackets[streamPackets.length - 1]!;
+      const firstPts = convertTimestamp(firstPacket.pts, timebase, timescale);
+      const lastPts = convertTimestamp(lastPacket.pts, timebase, timescale);
       totalDuration = lastPts - firstPts;
     }
 
@@ -558,14 +799,6 @@ export const generateFragmentIndex = async (
 
   // Step 5: Process audio tracks using ffprobe data
   for (const audioStream of audioStreams) {
-    const segments: TrackSegment[] = [];
-
-    // Count total samples from complete stream, not individual fragments
-    const totalAudioPackets = probe.packets.filter(
-      (p) => p.stream_index === audioStream.index,
-    );
-    const totalSampleCount = totalAudioPackets.length;
-
     // Get timebase for this stream to convert timestamps
     const timebase = probe.audioTimebase;
     if (!timebase) {
@@ -573,19 +806,20 @@ export const generateFragmentIndex = async (
       continue;
     }
 
-    // Calculate timescale as the inverse of timebase
     const timescale = Math.round(timebase.den / timebase.num);
+
+    // Cache filtered packets once (Performance Through Caching)
+    const streamPackets = (probe.packets as ProbePacket[]).filter(
+      (p) => p.stream_index === audioStream.index,
+    );
+    const totalSampleCount = streamPackets.length;
 
     // Calculate per-track timing offset from first packet for timeline mapping
     let trackStartTimeOffsetMs: number | undefined;
-    const allAudioPackets = probe.packets.filter(
-      (p) => p.stream_index === audioStream.index,
-    );
-    if (allAudioPackets.length > 0) {
-      // Use PTS time for offset calculation since it represents presentation timeline
-      const presentationTime = allAudioPackets[0]!.pts_time;
+    if (streamPackets.length > 0) {
+      const presentationTime = streamPackets[0]!.pts_time;
       if (Math.abs(presentationTime) > 0.01) {
-        trackStartTimeOffsetMs = presentationTime * 1000;
+        trackStartTimeOffsetMs = presentationTime * MS_PER_SECOND;
       }
     }
     if (startTimeOffsetMs !== undefined) {
@@ -593,137 +827,12 @@ export const generateFragmentIndex = async (
     }
 
     // Process fragments to create segments with minimum duration
-    // Accumulate fragments until accumulated duration >= 2 seconds
-    log(
-      `Processing ${fragmentTimingData.length} fragments for audio stream ${audioStream.index}`,
+    const segments = processTrack(
+      audioStream.index,
+      "audio",
+      timebase,
+      probe.packets as ProbePacket[],
     );
-
-    // Accumulated fragments for current segment
-    const accumulatedFragments: Array<{
-      fragment: Fragment;
-      fragmentData: typeof fragmentTimingData[0];
-    }> = [];
-    let currentSegmentStartPts: number | null = null;
-
-    const finalizeSegment = () => {
-      if (accumulatedFragments.length === 0 || currentSegmentStartPts === null) {
-        return;
-      }
-
-      const firstFrag = accumulatedFragments[0]!;
-      const lastFrag = accumulatedFragments[accumulatedFragments.length - 1]!;
-
-      // Convert timestamps from ffprobe timebase to track timescale
-      // For audio, CTS always equals PTS (no reordering)
-      const segmentCts = Math.round(
-        (currentSegmentStartPts * timescale) / timebase.den,
-      );
-      const segmentDts = Math.round(
-        (currentSegmentStartPts * timescale) / timebase.den,
-      );
-
-      // Calculate duration to next segment or end of stream
-      const nextFragmentData =
-        fragmentTimingData[lastFrag.fragmentData.fragmentIndex + 1];
-      const nextFirstPacket = nextFragmentData?.audioPackets[0];
-
-      let segmentDuration: number;
-      if (nextFirstPacket) {
-        // Duration to next segment start (perfectly contiguous)
-        const nextSegmentCts = Math.round(
-          (nextFirstPacket.pts * timescale) / timebase.den,
-        );
-        segmentDuration = nextSegmentCts - segmentCts;
-      } else {
-        // Last segment: duration to end of all audio packets
-        const allAudioPackets = probe.packets
-          .filter((p) => {
-            const stream = audioStreams.find((s) => s.index === p.stream_index);
-            return stream?.codec_type === "audio";
-          })
-          .sort((a, b) => a.pts - b.pts);
-        const lastPacket = allAudioPackets[allAudioPackets.length - 1]!;
-        const streamEnd = Math.round(
-          ((lastPacket.pts + (lastPacket.duration || 0)) * timescale) /
-            timebase.den,
-        );
-        segmentDuration = streamEnd - segmentCts;
-      }
-
-      // Segment spans from first fragment to last fragment
-      const segmentOffset = firstFrag.fragment.offset;
-      const segmentSize =
-        lastFrag.fragment.offset + lastFrag.fragment.size - segmentOffset;
-
-      segments.push({
-        cts: segmentCts,
-        dts: segmentDts,
-        duration: segmentDuration,
-        offset: segmentOffset,
-        size: segmentSize,
-      });
-
-      // Reset accumulation
-      accumulatedFragments.length = 0;
-      currentSegmentStartPts = null;
-    };
-
-    for (const fragmentData of fragmentTimingData) {
-      const fragment = mediaFragments[fragmentData.fragmentIndex]!;
-      const audioPackets = fragmentData.audioPackets;
-
-      log(
-        `Fragment ${fragmentData.fragmentIndex}: ${audioPackets.length} audio packets`,
-      );
-      if (audioPackets.length === 0) {
-        log(
-          `Skipping fragment ${fragmentData.fragmentIndex} - no audio packets`,
-        );
-        continue;
-      }
-
-      const firstPacket = audioPackets[0]!;
-
-      // Start a new segment if we don't have one
-      if (currentSegmentStartPts === null) {
-        currentSegmentStartPts = firstPacket.pts;
-        accumulatedFragments.push({ fragment, fragmentData });
-        continue;
-      }
-
-      // Calculate accumulated duration in milliseconds
-      const lastFrag = accumulatedFragments[accumulatedFragments.length - 1]!;
-      const lastFragLastPacket =
-        lastFrag.fragmentData.audioPackets[
-          lastFrag.fragmentData.audioPackets.length - 1
-        ]!;
-      const accumulatedEndCts = Math.round(
-        ((lastFragLastPacket.pts + (lastFragLastPacket.duration || 0)) *
-          timescale) /
-          timebase.den,
-      );
-      const accumulatedStartCts = Math.round(
-        (currentSegmentStartPts * timescale) / timebase.den,
-      );
-      const accumulatedDurationMs =
-        ((accumulatedEndCts - accumulatedStartCts) / timescale) * 1000;
-
-      // If we've accumulated >= 2 seconds, finalize the segment and start a new one
-      if (accumulatedDurationMs >= MIN_SEGMENT_DURATION_MS) {
-        finalizeSegment();
-        // Start a new segment with this fragment
-        currentSegmentStartPts = firstPacket.pts;
-        accumulatedFragments.push({ fragment, fragmentData });
-      } else {
-        // Duration not enough yet, continue accumulating
-        accumulatedFragments.push({ fragment, fragmentData });
-      }
-    }
-
-    // Finalize any remaining accumulated fragments
-    if (accumulatedFragments.length > 0) {
-      finalizeSegment();
-    }
 
     // Calculate total duration
     const totalDuration = segments.reduce((sum, seg) => sum + seg.duration, 0);
