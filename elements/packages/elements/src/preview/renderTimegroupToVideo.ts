@@ -25,6 +25,7 @@ import {
   collectDocumentStyles,
   syncStyles,
   traverseCloneTree,
+  overrideRootCloneStyles,
   type SyncState,
 } from "./renderTimegroupPreview.js";
 import { isNativeCanvasApiEnabled } from "./previewSettings.js";
@@ -910,6 +911,10 @@ export async function renderTimegroupToVideo(
             node.clone.style.clipPath = "none";
           });
           
+          // Override root clone styles to ensure visibility (opacity: 1, transform: none)
+          // This is critical - without it, the root may have opacity: 0 from source styles
+          overrideRootCloneStyles(syncState, true);
+          
           foCloneState = { container: cloneContainer, syncState, previewContainer };
           
           // First frame: prepare data URI and start loading
@@ -959,6 +964,9 @@ export async function renderTimegroupToVideo(
           
           const syncStart = performance.now();
           syncStyles(foCloneState.syncState, nextTimeMs);
+          
+          // Re-apply root clone style overrides after syncStyles (it may restore source styles)
+          overrideRootCloneStyles(foCloneState.syncState, true);
           
           // Prepare next frame's data URI (serializes DOM, restores it immediately)
           // Canvas encoding happens in parallel via worker pool
