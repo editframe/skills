@@ -26,15 +26,6 @@ const BaseScrubber = createComponent<
   events: {
     onSeek: "seek",
   },
-  props: {
-    orientation: "orientation",
-    currentTimeMs: "current-time-ms",
-    durationMs: "duration-ms",
-    zoomScale: "zoom-scale",
-    containerWidth: "container-width",
-    fps: "fps",
-    rawScrubTimeMs: "raw-scrub-time-ms",
-  },
 }) as React.ForwardRefExoticComponent<ScrubberProps & React.RefAttributes<EFScrubber>>;
 
 export const Scrubber = React.forwardRef<EFScrubber, ScrubberProps>(

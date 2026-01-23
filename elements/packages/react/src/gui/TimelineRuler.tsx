@@ -19,13 +19,6 @@ const BaseTimelineRuler = createComponent<
   elementClass: EFTimelineRuler,
   react: React,
   displayName: "TimelineRuler",
-  props: {
-    durationMs: "duration-ms",
-    zoomScale: "zoom-scale",
-    containerWidth: "container-width",
-    fps: "fps",
-    scrollContainerSelector: "scroll-container-selector",
-  },
 }) as React.ForwardRefExoticComponent<TimelineRulerProps & React.RefAttributes<EFTimelineRuler>>;
 
 export const TimelineRuler = React.forwardRef<
