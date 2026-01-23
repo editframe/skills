@@ -2012,7 +2012,23 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
   /** @internal */
   wrapWithWorkbench() {
     const workbench = document.createElement("ef-workbench");
-    this.parentElement?.append(workbench);
+    const parent = this.parentElement;
+    
+    // Only apply viewport sizing when the workbench will be a direct child of body.
+    // This ensures the workbench fills the screen regardless of the document's CSS
+    // setup (e.g., missing `html, body { height: 100% }`).
+    // When embedded in another container, use default sizing and let the container
+    // control the workbench dimensions.
+    if (parent === document.body) {
+      workbench.style.position = "fixed";
+      workbench.style.top = "0";
+      workbench.style.left = "0";
+      workbench.style.width = "100vw";
+      workbench.style.height = "100vh";
+      workbench.style.zIndex = "0";
+    }
+    
+    parent?.append(workbench);
     if (!this.hasAttribute("id")) {
       this.setAttribute("id", "root-timegroup");
     }
