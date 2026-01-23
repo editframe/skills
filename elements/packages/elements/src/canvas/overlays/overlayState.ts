@@ -100,7 +100,7 @@ export function getOverlayTargets(
   highlightedElement: HTMLElement | null,
 ): OverlayTargets {
   return {
-    selectedIds: selection?.selectedIds ?? new Set(),
+    selectedIds: selection?.selectedIds ? new Set(selection.selectedIds) : new Set(),
     boxSelectBounds: selection?.boxSelectBounds ?? null,
     highlightedElementId:
       highlightedElement?.getAttribute("data-element-id") ??

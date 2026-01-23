@@ -419,7 +419,7 @@ export class SelectionOverlay extends LitElement {
           ? html`
             <div
               class="highlight-box"
-              style="left: ${highlight.x}px; top: ${highlight.y}px; width: ${highlight.width}px; height: ${highlight.height}px; position: absolute; border: 2px solid rgb(148, 163, 184); background: rgba(148, 163, 184, 0.1); pointer-events: none; box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.3);${highlight.rotation ? ` transform: rotate(${highlight.rotation}deg); transform-origin: center;` : ""}"
+              style="left: ${highlight.x}px; top: ${highlight.y}px; width: ${highlight.width}px; height: ${highlight.height}px; position: absolute; border: 2px solid rgb(148, 163, 184); background: rgba(148, 163, 184, 0.1); pointer-events: none; box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.3);"
             ></div>
           `
           : html``

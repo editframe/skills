@@ -113,7 +113,7 @@ export class SelectionModel extends EventTarget {
     for (const id of ids) {
       this._selectedIds.add(id);
     }
-    this._primaryId = ids.length > 0 ? ids[0] : null;
+    this._primaryId = ids.length > 0 ? (ids[0] ?? null) : null;
     this._selectionMode =
       ids.length === 0 ? "none" : ids.length === 1 ? "single" : "multiple";
     this._emitSelectionChange();
@@ -139,7 +139,7 @@ export class SelectionModel extends EventTarget {
     if (this._primaryId === id) {
       // Set primary to first remaining, or null if none
       const remaining = Array.from(this._selectedIds);
-      this._primaryId = remaining.length > 0 ? remaining[0] : null;
+      this._primaryId = remaining.length > 0 ? (remaining[0] ?? null) : null;
     }
     this._updateSelectionMode();
     this._emitSelectionChange();

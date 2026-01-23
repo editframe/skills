@@ -70,7 +70,7 @@ class StreamPump {
     if (this.controller) {
       try {
         const available = (this.controller.desiredSize || 0) - chunk.length;
-        this.controller.enqueue(chunk as Uint8Array);
+        this.controller.enqueue(chunk as Uint8Array<ArrayBuffer>);
         if (available <= 0) {
           this.pause();
         }

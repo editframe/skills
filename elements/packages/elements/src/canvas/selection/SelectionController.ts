@@ -126,13 +126,13 @@ export class SelectionController implements ReactiveController {
         type: "selectionchange",
         listener: (event: CustomEvent) => void,
       ) => {
-        controller.selectionModel.addEventListener(type, listener);
+        controller.selectionModel.addEventListener(type, listener as EventListener);
       },
       removeEventListener: (
         type: "selectionchange",
         listener: (event: CustomEvent) => void,
       ) => {
-        controller.selectionModel.removeEventListener(type, listener);
+        controller.selectionModel.removeEventListener(type, listener as EventListener);
       },
     };
   }
