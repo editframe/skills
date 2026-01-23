@@ -1,0 +1,24 @@
+{
+  "name": "editframe-project",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "start": "editframe preview"
+  },
+  "dependencies": {
+    "@editframe/cli": "0.31.0-beta.0",
+    "@editframe/react": "0.31.0-beta.0",
+    "@editframe/vite-plugin": "0.31.0-beta.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "tailwindcss": "^3.4.3",
+    "vite": "^6.3.5",
+    "vite-plugin-singlefile": "^2.0.1",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0"
+  }
+}

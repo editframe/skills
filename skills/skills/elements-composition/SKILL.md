@@ -23,6 +23,10 @@ metadata:
 
 `5s` (seconds) | `1000ms` (milliseconds) | `2m` (minutes)
 
+## Getting Started
+
+- [references/getting-started.md](references/getting-started.md) - Create a new project
+
 ## Elements
 
 - [references/timegroup.md](references/timegroup.md) - Container, sequencing, scenes
