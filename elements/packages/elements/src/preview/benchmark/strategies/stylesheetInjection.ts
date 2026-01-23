@@ -6,7 +6,8 @@
  * call may be faster than many individual style property assignments.
  */
 
-import type { SyncStrategy, SyncTiming, SyncState, EnhancedPair } from "../types.js";
+import type { SyncStrategy, SyncTiming, SyncState } from "../types.js";
+type EnhancedPair = any;
 import { createTiming } from "../Profiler.js";
 
 /** Properties to include in injected CSS rules - must match SYNC_PROPERTIES in renderTimegroupPreview */
@@ -93,7 +94,7 @@ export const stylesheetInjectionStrategy: SyncStrategy = {
   writeMechanism: "stylesheet",
 
   sync(state: SyncState, timeMs: number): SyncTiming {
-    const { pairs, visibilityCache } = state;
+    const { pairs, visibilityCache } = state as any;
     const len = pairs.length;
     
     // Reset visibility

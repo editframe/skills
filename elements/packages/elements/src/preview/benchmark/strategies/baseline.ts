@@ -20,7 +20,7 @@ export const baselineStrategy: SyncStrategy = {
 
   sync(state: SyncState, timeMs: number): SyncTiming {
     const profiler = new Profiler();
-    const elementCount = state.pairs.length;
+    const elementCount = (state as any).pairs?.length ?? state.nodeCount;
 
     // The current implementation interleaves reads and writes,
     // so we can only measure total time, not phase breakdown.

@@ -18,7 +18,7 @@ export const displayNoneBatchStrategy: SyncStrategy = {
   sync(state: SyncState, timeMs: number): SyncTiming {
     // Get the container element from the first clone's parent
     // The container is typically a div wrapping all clones
-    const container = state.pairs[0]?.clone.parentElement;
+    const container = (state as any).pairs?.[0]?.clone.parentElement;
     
     if (!container) {
       // Fallback to batched reads if no container

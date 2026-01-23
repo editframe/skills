@@ -1,4 +1,4 @@
-import { html, nothing } from "lit";
+import { html, nothing, type TemplateResult } from "lit";
 import { customElement } from "lit/decorators.js";
 import { phosphorIcon, ICONS } from "../../icons.js";
 // TrackItem must be pre-loaded before this module is imported
@@ -11,7 +11,7 @@ export class EFWaveformTrack extends TrackItem {
     return phosphorIcon(ICONS.waveform);
   }
 
-  renderChildren() {
+  renderChildren(): Array<TemplateResult<1> | typeof nothing> | typeof nothing {
     return nothing;
   }
 }

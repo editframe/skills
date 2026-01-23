@@ -191,19 +191,20 @@ export class EFTimelineRow extends TWMixin(LitElement) {
   }
 
   private get isSelected(): boolean {
-    const elementId = (this.element as HTMLElement)?.id;
+    const elementId = (this.element as unknown as HTMLElement)?.id;
     return elementId ? this.selectedIds.has(elementId) : false;
   }
 
   private get isAncestorSelected(): boolean {
     if (!this.element) return false;
     // Check if this element contains any selected element
+    const elementAsHTMLElement = this.element as unknown as HTMLElement;
     for (const selectedId of this.selectedIds) {
       const selectedElement = document.getElementById(selectedId);
       if (
         selectedElement &&
-        this.element.contains(selectedElement) &&
-        selectedElement !== this.element
+        elementAsHTMLElement.contains(selectedElement) &&
+        selectedElement !== elementAsHTMLElement
       ) {
         return true;
       }
@@ -280,7 +281,7 @@ export class EFTimelineRow extends TWMixin(LitElement) {
 
   private handleClick = (e: Event): void => {
     e.stopPropagation();
-    const elementId = (this.element as HTMLElement)?.id;
+    const elementId = (this.element as unknown as HTMLElement)?.id;
     if (elementId) {
       this.dispatchEvent(
         new CustomEvent("row-select", {

@@ -65,7 +65,7 @@ export function getPositionInfoFromElement(
     // Transform matrix format: matrix(a, b, c, d, e, f)
     // Rotation = atan2(b, a) * (180 / Math.PI)
     const matrixMatch = transform.match(/matrix\(([^)]+)\)/);
-    if (matrixMatch) {
+    if (matrixMatch && matrixMatch[1]) {
       const values = matrixMatch[1].split(",").map((v) => parseFloat(v.trim()));
       if (values.length >= 4) {
         const a = values[0]!;

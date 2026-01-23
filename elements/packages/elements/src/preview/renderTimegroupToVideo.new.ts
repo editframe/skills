@@ -27,6 +27,7 @@ import {
 } from "mediabunny";
 import type { EFTimegroup } from "../elements/EFTimegroup.js";
 import { resetRenderState, type ContentReadyMode } from "./renderTimegroupToCanvas.js";
+// @ts-ignore - RenderSession.js module not yet implemented
 import {
   createRenderSession,
   prefetchScrubSegments,

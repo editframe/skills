@@ -138,7 +138,11 @@ export class WorkerPool {
     }
 
     return new Promise<T>((resolve, reject) => {
-      this.taskQueue.push({ resolve, reject, task });
+      this.taskQueue.push({ 
+        resolve: resolve as (value: unknown) => void, 
+        reject, 
+        task 
+      });
       this.processQueue();
     });
   }

@@ -1197,8 +1197,8 @@ export function ScenarioViewer({ sandboxLoaders }: ScenarioViewerProps = {}) {
       console.log("[Profile] Final result:", {
         scenarioName,
         hasProfile: !!result.profile,
-        profileNodes: result.profile?.nodes?.length || 0,
-        profileSamples: result.profile?.samples?.length || 0,
+        profileNodes: (result.profile as any)?.nodes?.length || 0,
+        profileSamples: (result.profile as any)?.samples?.length || 0,
       });
 
       setRunningScenario(null);
@@ -1226,9 +1226,11 @@ export function ScenarioViewer({ sandboxLoaders }: ScenarioViewerProps = {}) {
         
         // If no scenario is selected (or selected one doesn't exist), select the first one
         if (!selectedScenario || !scenarioNames.includes(selectedScenario)) {
-          targetScenario = scenarioNames[0];
-          setSelectedScenario(targetScenario);
-          updateUrlWithScenario(targetScenario);
+          targetScenario = scenarioNames[0] ?? null;
+          if (targetScenario) {
+            setSelectedScenario(targetScenario);
+            updateUrlWithScenario(targetScenario);
+          }
         }
         
         // Ensure the scenario's container is rendered, then run the scenario
@@ -1987,7 +1989,7 @@ export function ScenarioViewer({ sandboxLoaders }: ScenarioViewerProps = {}) {
                   />
 
                   {/* Error panel */}
-                  {error && (
+                  {error ? (
                     <div
                       style={{
                         padding: "8px 12px",
@@ -2001,7 +2003,7 @@ export function ScenarioViewer({ sandboxLoaders }: ScenarioViewerProps = {}) {
                       }}
                     >
                       <div style={{ fontWeight: 600, marginBottom: "4px" }}>Error</div>
-                      <div style={{ fontFamily: "monospace", whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: "1.4" }}>{error}</div>
+                      <div style={{ fontFamily: "monospace", whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: "1.4" }}>{String(error)}</div>
                     </div>
                   )}
 
