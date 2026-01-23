@@ -113,8 +113,55 @@ interface ForeignObjectState {
 // ============================================================================
 
 /**
- * Wait for video elements to have rendered content.
- * Uses middle-strip sampling to detect actual video frames (not just black).
+ * Ensure all video elements have their frame tasks completed for the current time.
+ * 
+ * This is more reliable than pixel sampling because it actually waits for the
+ * video decoding pipeline to complete, rather than checking if the canvas
+ * happens to have content (which could be stale from a previous frame).
+ * 
+ * The issue with pixel-based detection:
+ * - If the canvas already has content from a PREVIOUS frame, the check passes
+ * - But we haven't actually rendered the NEW frame yet
+ * - This causes inconsistent behavior where sometimes thumbnails work and sometimes don't
+ */
+async function ensureVideoFramesReady(
+  renderClone: EFTimegroup,
+): Promise<void> {
+  const allVideos = renderClone.querySelectorAll("ef-video");
+  
+  if (allVideos.length === 0) {
+    return;
+  }
+  
+  // Wait for all videos to have their frame ready
+  // This calls waitForFrameReady() on each video, which:
+  // 1. Syncs desiredSeekTimeMs from currentSourceTimeMs
+  // 2. Awaits updateComplete
+  // 3. Runs the frameTask (which seeks and paints)
+  await Promise.all(
+    Array.from(allVideos).map(async (video) => {
+      // Use duck-typing to check for waitForFrameReady method
+      if ('waitForFrameReady' in video && typeof (video as any).waitForFrameReady === 'function') {
+        try {
+          await (video as any).waitForFrameReady();
+        } catch (e) {
+          // Ignore AbortErrors - these happen during cleanup
+          const isAbortError = e instanceof Error && (
+            e.name === 'AbortError' || 
+            e.message?.includes('signal is aborted')
+          );
+          if (!isAbortError) {
+            console.warn('[ensureVideoFramesReady] Video frame task failed:', e);
+          }
+        }
+      }
+    }),
+  );
+}
+
+/**
+ * Wait for video canvases to have visible content (pixel-based verification).
+ * Used as a fallback/verification step after ensureVideoFramesReady.
  */
 async function waitForVideoContent(
   renderClone: EFTimegroup,
@@ -310,15 +357,24 @@ class RenderSessionImpl implements RenderSession {
     const timings = { seekMs: 0, waitMs: 0, renderMs: 0 };
     
     // 1. Seek render clone to target time
+    // This already calls waitForFrameReady on visible elements, but visibility
+    // checks can fail on first render before animations initialize
     const seekStart = performance.now();
     await this.#renderClone.seekForRender(timeMs);
     timings.seekMs = performance.now() - seekStart;
     
-    // 2. Wait for video content if blocking mode
+    // 2. Ensure video frames are ready
+    // This is more robust than the visibility-based check in seekForRender
+    // because it directly waits for ALL videos, not just "visible" ones
+    // This fixes the timing issue where thumbnails work on second pass but not first
+    const waitStart = performance.now();
+    await ensureVideoFramesReady(this.#renderClone);
+    
+    // 3. Optional: pixel-based verification in blocking mode
     if (contentReadyMode === "blocking") {
-      const waitResult = await waitForVideoContent(this.#renderClone, blockingTimeoutMs);
-      timings.waitMs = waitResult.waitMs;
+      await waitForVideoContent(this.#renderClone, blockingTimeoutMs);
     }
+    timings.waitMs = performance.now() - waitStart;
     
     // 3. Render frame
     const renderStart = performance.now();
