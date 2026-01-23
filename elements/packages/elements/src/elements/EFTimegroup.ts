@@ -799,11 +799,18 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     // First await: let Lit propagate time to children
     await this.updateComplete;
     
-    // Now collect all the things we need to wait for and await them together
+    // Collect all LitElement descendants (not just those with frameTask)
+    // This ensures ef-text, ef-captions, and other reactive elements update
+    const allLitElements = this.#getAllLitElementDescendants();
+    
+    // Wait for ALL LitElement descendants to complete their reactive updates
+    // This is critical for elements like ef-text and ef-captions that don't have frameTask
+    await Promise.all(allLitElements.map((el) => el.updateComplete));
+    
+    // Now collect elements with frame tasks (media elements that need special handling)
     const visibleElements = this.#evaluateVisibleElementsForFrame();
     
-    // Consolidate waits: frame task + all visible element readiness
-    // This reduces sequential awaits to a single parallel await
+    // Wait for frame tasks and frame-ready elements
     await Promise.all([
       this.frameTask.run(),
       ...visibleElements.map((element) => {
@@ -817,6 +824,24 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
         }
       }),
     ]);
+  }
+  
+  /**
+   * Collects all LitElement descendants recursively.
+   * Used by seekForRender to ensure all reactive elements have updated.
+   */
+  #getAllLitElementDescendants(): LitElement[] {
+    const result: LitElement[] = [];
+    const walk = (el: Element) => {
+      for (const child of el.children) {
+        if (child instanceof LitElement) {
+          result.push(child);
+        }
+        walk(child);
+      }
+    };
+    walk(this);
+    return result;
   }
 
   /**
