@@ -1,0 +1,788 @@
++++ dirname -- ./scripts/test
+++ cd -- ./scripts
+++ pwd
++ SCRIPT_DIR=/Users/collin/Editframe/monorepo/elements/scripts
++ /Users/collin/Editframe/monorepo/elements/scripts/npx vitest --config vitest.config.ts --test-timeout=3000 --reporter=verbose
+
+ RUN  v3.2.4 /packages
+
+stdout | packages/elements/src/ScrubResolvedFlashing.test.ts > Scrub Loading Flashing Resolution > scrubbing through cached segments shows no loading flashes
+
+--- Simulating rapid scrubbing through cached data (original issue) ---
+
+stdout | packages/elements/src/LoadingDebounce.test.ts > Loading Indicator Debouncing > fast operation under 250ms does not show loading indicator
+
+--- Test: Fast operation (10ms) should not flash loading ---
+
+stdout | packages/elements/src/ScrubResolvedFlashing.test.ts > Scrub Loading Flashing Resolution > scrubbing through cached segments shows no loading flashes
+Seek to 1000ms: 7ms (simulated 6ms operation)
+
+stdout | packages/elements/src/ScrubResolvedFlashing.test.ts > Scrub Loading Flashing Resolution > scrubbing through cached segments shows no loading flashes
+Seek to 2000ms: 5ms (simulated 4ms operation)
+
+stdout | packages/elements/src/ScrubResolvedFlashing.test.ts > Scrub Loading Flashing Resolution > scrubbing through cached segments shows no loading flashes
+Seek to 3000ms: 9ms (simulated 8ms operation)
+
+stdout | packages/elements/src/ScrubResolvedFlashing.test.ts > Scrub Loading Flashing Resolution > scrubbing through cached segments shows no loading flashes
+Seek to 4000ms: 4ms (simulated 2ms operation)
+
+stdout | packages/elements/src/ScrubResolvedFlashing.test.ts > Scrub Loading Flashing Resolution > scrubbing through cached segments shows no loading flashes
+Seek to 5000ms: 6ms (simulated 5ms operation)
+
+ ✓ packages/elements/src/elements/EFMedia/AssetIdMediaEngine.test.ts > AssetIdMediaEngine > constructor > should initialize with correct duration 3ms
+ ✓ packages/elements/src/elements/EFMedia/AssetIdMediaEngine.test.ts > AssetIdMediaEngine > constructor > should set assetId correctly 0ms
+ ✓ packages/elements/src/elements/EFMedia/AssetIdMediaEngine.test.ts > AssetIdMediaEngine > constructor > should expose assetId as src for MediaEngine interface compatibility 0ms
+ ✓ packages/elements/src/elements/EFMedia/AssetIdMediaEngine.test.ts > AssetIdMediaEngine > track access > should find audio track 0ms
+ ✓ packages/elements/src/elements/EFMedia/AssetIdMediaEngine.test.ts > AssetIdMediaEngine > track access > should find video track 0ms
+ ✓ packages/elements/src/elements/EFMedia/AssetIdMediaEngine.test.ts > AssetIdMediaEngine > track access > should return correct audio rendition 0ms
+ ✓ packages/elements/src/elements/EFMedia/AssetIdMediaEngine.test.ts > AssetIdMediaEngine > track access > should return correct video rendition 1ms
+ ✓ packages/elements/src/elements/EFMedia/AssetIdMediaEngine.test.ts > AssetIdMediaEngine > URL generation > should generate correct init segment URLs 0ms
+ ✓ packages/elements/src/elements/EFMedia/AssetIdMediaEngine.test.ts > AssetIdMediaEngine > URL generation > should generate correct media segment URLs 0ms
+ ✓ packages/elements/src/elements/EFMedia/AssetIdMediaEngine.test.ts > AssetIdMediaEngine > URL generation > should return correct templates 0ms
+ ✓ packages/elements/src/elements/EFMedia/AssetIdMediaEngine.test.ts > AssetIdMediaEngine > URL generation > should return correct init segment paths 0ms
+ ✓ packages/elements/src/elements/EFMedia/AssetIdMediaEngine.test.ts > AssetIdMediaEngine > segment calculations > should calculate audio segment ranges correctly 1ms
+ ✓ packages/elements/src/elements/EFMedia/AssetIdMediaEngine.test.ts > AssetIdMediaEngine > segment calculations > should compute segment ID correctly 1ms
+ × packages/elements/src/elements/EFMedia/AssetIdMediaEngine.test.ts > AssetIdMediaEngine > static fetch method > should create engine from API response 8ms
+   → expected "spy" to be called with arguments: [ Array(1) ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    "https://api.example.com/api/v1/isobmff_files/test-asset-123/index",[22m
+[31m+   {[90m
+[31m+     "signal": undefined,[90m
+[31m+   },[90m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+stdout | packages/elements/src/LoadingDebounce.test.ts > Loading Indicator Debouncing > fast operation under 250ms does not show loading indicator
+Loading state changes recorded: 1
+Loading states: [ [32m'HIDE'[39m ]
+
+stdout | packages/elements/src/LoadingDebounce.test.ts > Loading Indicator Debouncing > slow operation over 250ms shows loading indicator
+
+--- Test: Slow operation (300ms) should show loading ---
+
+stdout | packages/elements/src/ScrubResolvedFlashing.test.ts > Scrub Loading Flashing Resolution > scrubbing through cached segments shows no loading flashes
+Total scrub operations: 5
+Loading state changes: 5
+Show events: 0, Hide events: 5
+✅ No loading flashes during rapid scrubbing!
+
+stdout | packages/elements/src/ScrubResolvedFlashing.test.ts > Scrub Loading Flashing Resolution > slow scrub operations still show loading when needed
+
+--- Verifying slow operations still show loading feedback ---
+
+ ✓ packages/elements/src/LoadingDebounce.test.ts > Loading Indicator Debouncing > fast operation under 250ms does not show loading indicator 315ms
+stdout | packages/assets/src/generateSingleTrack.test.ts > generateSingleTrack > should generate single video track stream and fragment index
+Generated 11194 bytes for video track with 5 segments
+
+ ✓ packages/assets/src/generateSingleTrack.test.ts > generateSingleTrack > should generate single video track stream and fragment index 308ms
+ ✓ packages/elements/src/ScrubResolvedFlashing.test.ts > Scrub Loading Flashing Resolution > scrubbing through cached segments shows no loading flashes 394ms
+Syncing asset dir: /tmp/5f7a086b-5350-45b0-8b38-3157d9e31f35/src/assets/.cache
+ Syncing asset: e8e4d438-0a1d-0944-c9a0-4b07a85b67eb
+stdout | packages/elements/src/LoadingDebounce.test.ts > Loading Indicator Debouncing > slow operation over 250ms shows loading indicator
+Total operation time: 302ms
+Loading state changes: 2
+
+stdout | packages/elements/src/LoadingDebounce.test.ts > Loading Indicator Debouncing > multiple rapid operations only show loading once
+
+--- Test: Rapid operations should not cause multiple flashes ---
+
+ 🖼️  Syncing image: /tmp/5f7a086b-5350-45b0-8b38-3157d9e31f35/src/assets/.cache/e8e4d438-0a1d-0944-c9a0-4b07a85b67eb/test.png
+✏️  Marking asset as synced: /tmp/5f7a086b-5350-45b0-8b38-3157d9e31f35/src/assets/.cache/e8e4d438-0a1d-0944-c9a0-4b07a85b67eb/test.png
+ ✅ Synced image: /tmp/5f7a086b-5350-45b0-8b38-3157d9e31f35/src/assets/.cache/e8e4d438-0a1d-0944-c9a0-4b07a85b67eb/test.png
+ ✓ packages/elements/src/LoadingDebounce.test.ts > Loading Indicator Debouncing > slow operation over 250ms shows loading indicator 303ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncTrack.test.ts > SyncTrack > Reads byte size 3ms
+Syncing asset dir: /tmp/37e47d5f-730f-4178-a24f-736f5a07246f/src/assets/.cache
+ Syncing asset: e8e4d438-0a1d-0944-c9a0-4b07a85b67eb
+stdout | packages/assets/src/generateSingleTrack.test.ts > generateSingleTrack > should generate single audio track stream and fragment index
+Generated 90038 bytes for audio track with 3 segments
+
+ ✓ packages/assets/src/generateSingleTrack.test.ts > generateSingleTrack > should generate single audio track stream and fragment index 292ms
+stdout | packages/elements/src/ScrubResolvedFlashing.test.ts > Scrub Loading Flashing Resolution > slow scrub operations still show loading when needed
+Slow operation duration: 401ms
+
+ 🖼️  Syncing image: /tmp/37e47d5f-730f-4178-a24f-736f5a07246f/src/assets/.cache/e8e4d438-0a1d-0944-c9a0-4b07a85b67eb/test.png
+✏️  Marking asset as synced: /tmp/37e47d5f-730f-4178-a24f-736f5a07246f/src/assets/.cache/e8e4d438-0a1d-0944-c9a0-4b07a85b67eb/test.png
+ ✅ Synced image: /tmp/37e47d5f-730f-4178-a24f-736f5a07246f/src/assets/.cache/e8e4d438-0a1d-0944-c9a0-4b07a85b67eb/test.png
+ ✓ packages/cli/src/operations/syncAssetsDirectory.test.ts > syncAssetsDirectory > Image sync > Syncs assets directory when file is already uploaded 171ms
+Syncing asset dir: /tmp/f3ed49f4-b6bf-44b1-8bd4-69f7f0721de9/src/assets/.cache
+ Syncing asset: e8e4d438-0a1d-0944-c9a0-4b07a85b67eb
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncTrack.test.ts > SyncTrack > prepare() > Uses existing ISOBMFF file if md5 matches 144ms
+stdout | packages/elements/src/ScrubResolvedFlashing.test.ts > Scrub Loading Flashing Resolution > slow scrub operations still show loading when needed
+Loading state changes: 2
+Show events: 1, Hide events: 1
+✅ Loading indicator correctly shown for slow operations!
+
+stdout | packages/elements/src/ScrubResolvedFlashing.test.ts > Scrub Loading Flashing Resolution > mixed fast and slow operations handle loading appropriately
+
+--- Testing mixed operation speeds ---
+
+ 🖼️  Syncing image: /tmp/f3ed49f4-b6bf-44b1-8bd4-69f7f0721de9/src/assets/.cache/e8e4d438-0a1d-0944-c9a0-4b07a85b67eb/test.png
+✏️  Marking asset as synced: /tmp/f3ed49f4-b6bf-44b1-8bd4-69f7f0721de9/src/assets/.cache/e8e4d438-0a1d-0944-c9a0-4b07a85b67eb/test.png
+ ✅ Synced image: /tmp/f3ed49f4-b6bf-44b1-8bd4-69f7f0721de9/src/assets/.cache/e8e4d438-0a1d-0944-c9a0-4b07a85b67eb/test.png
+ ✓ packages/cli/src/operations/syncAssetsDirectory.test.ts > syncAssetsDirectory > Image sync > Syncs assets directory when file is not uploaded 98ms
+ ✓ packages/assets/src/tasks/generateTrackFragmentIndex.test.ts > generateTrackFragmentIndex > should generate fragment index 794ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncTrack.test.ts > SyncTrack > prepare() > Creates ISOBMFF file 79ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncTrack.test.ts > SyncTrack > prepare() > Probes track 70ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncTrack.test.ts > SyncTrack > validate() > throws when prepare() is not called 3ms
+ ↓ packages/cli/src/operations/syncAssetsDirectory/SyncTrack.test.ts > SyncTrack > validate() > throws when track has bad duration
+ ↓ packages/cli/src/operations/syncAssetsDirectory/SyncTrack.test.ts > SyncTrack > validate() > throws when track has bad codec_type
+ ↓ packages/cli/src/operations/syncAssetsDirectory/SyncTrack.test.ts > SyncTrack > validate() > throws when no isoFile exists
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncTrack.test.ts > SyncTrack > .create() > throws if prepare() is not called 1ms
+ 🖼️  Syncing image: /tmp/f3ed49f4-b6bf-44b1-8bd4-69f7f0721de9/src/assets/.cache/e8e4d438-0a1d-0944-c9a0-4b07a85b67eb/test2.png
+✏️  Marking asset as synced: /tmp/f3ed49f4-b6bf-44b1-8bd4-69f7f0721de9/src/assets/.cache/e8e4d438-0a1d-0944-c9a0-4b07a85b67eb/test2.png
+ ✅ Synced image: /tmp/f3ed49f4-b6bf-44b1-8bd4-69f7f0721de9/src/assets/.cache/e8e4d438-0a1d-0944-c9a0-4b07a85b67eb/test2.png
+stdout | packages/assets/src/generateSingleTrack.test.ts > generateSingleTrack > should handle track extraction with fragment index events
+Event-based: 203208 bytes, 5 segments
+
+ ✓ packages/assets/src/generateSingleTrack.test.ts > generateSingleTrack > should handle track extraction with fragment index events 211ms
+Syncing asset dir: /tmp/9d2afb80-d05e-4dda-8a47-418a9e9e2f12/src/assets/.cache
+ Syncing asset: f2972b45-8862-2098-7ca1-59a1dd5ef33f
+ 📼  Syncing track: /tmp/9d2afb80-d05e-4dda-8a47-418a9e9e2f12/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test.mp4.track-1.mp4
+✏️  Marking asset as synced: /tmp/9d2afb80-d05e-4dda-8a47-418a9e9e2f12/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test.mp4.track-1.mp4
+✏️  Marking asset as synced: /tmp/9d2afb80-d05e-4dda-8a47-418a9e9e2f12/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/isobmff
+ ✅ Synced track: /tmp/9d2afb80-d05e-4dda-8a47-418a9e9e2f12/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test.mp4.track-1.mp4
+stdout | packages/assets/src/generateSingleTrack.test.ts > generateSingleTrack > should work with different file types
+
+Testing test-assets/10s-bars.mp4 track 1...
+
+stdout | packages/elements/src/LoadingDebounce.test.ts > Loading Indicator Debouncing > multiple rapid operations only show loading once
+Total operations: 5
+Loading state changes: 5
+Show events: 0, Hide events: 5
+
+stdout | packages/elements/src/LoadingDebounce.test.ts > Loading Indicator Debouncing > cancelling loading during grace period prevents flash
+
+--- Test: Cancelling during grace period prevents flash ---
+
+ ✓ packages/assets/src/generateSingleTrack.test.ts > generateSingleTrack > should handle invalid track IDs gracefully 66ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory.test.ts > syncAssetsDirectory > Image sync > Syncs assets directory when file is present with different name 138ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncTrack.test.ts > SyncTrack > .create() > isComplete() returns false when not complete 69ms
+ 📼  Syncing track: /tmp/9d2afb80-d05e-4dda-8a47-418a9e9e2f12/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test.mp4.track-2.mp4
+✏️  Marking asset as synced: /tmp/9d2afb80-d05e-4dda-8a47-418a9e9e2f12/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test.mp4.track-2.mp4
+✏️  Marking asset as synced: /tmp/9d2afb80-d05e-4dda-8a47-418a9e9e2f12/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/isobmff
+ ✅ Synced track: /tmp/9d2afb80-d05e-4dda-8a47-418a9e9e2f12/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test.mp4.track-2.mp4
+ 📋  Syncing fragment index: /tmp/9d2afb80-d05e-4dda-8a47-418a9e9e2f12/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test.mp4.tracks.json
+✏️  Marking asset as synced: /tmp/9d2afb80-d05e-4dda-8a47-418a9e9e2f12/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test.mp4.tracks.json
+✏️  Marking asset as synced: /tmp/9d2afb80-d05e-4dda-8a47-418a9e9e2f12/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/isobmff
+ ✅ Synced fragment index: /tmp/9d2afb80-d05e-4dda-8a47-418a9e9e2f12/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test.mp4.tracks.json
+Syncing asset dir: /tmp/5c10fe2f-ee18-4c6f-a830-a735d02ff1fd/src/assets/.cache
+ Syncing asset: f2972b45-8862-2098-7ca1-59a1dd5ef33f
+ ✓ packages/elements/src/LoadingDebounce.test.ts > Loading Indicator Debouncing > multiple rapid operations only show loading once 452ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncTrack.test.ts > SyncTrack > .create() > isComplete() returns true when complete 105ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncTrack.test.ts > SyncTrack > .upload() > throws when not created 1ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncTrack.test.ts > SyncTrack > .upload() > uploads track 69ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncTrack.test.ts > SyncTrack > .markSynced() > throws when not created 1ms
+ 📼  Syncing track: /tmp/5c10fe2f-ee18-4c6f-a830-a735d02ff1fd/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test.mp4.track-1.mp4
+✏️  Marking asset as synced: /tmp/5c10fe2f-ee18-4c6f-a830-a735d02ff1fd/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test.mp4.track-1.mp4
+✏️  Marking asset as synced: /tmp/5c10fe2f-ee18-4c6f-a830-a735d02ff1fd/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/isobmff
+ ✅ Synced track: /tmp/5c10fe2f-ee18-4c6f-a830-a735d02ff1fd/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test.mp4.track-1.mp4
+stdout | packages/elements/src/ScrubResolvedFlashing.test.ts > Scrub Loading Flashing Resolution > mixed fast and slow operations handle loading appropriately
+fast (50ms): expected loading=false, actual loading=false
+
+✏️  Marking asset as synced: /tmp/c17bba2b-bcb9-4f3a-962e-2c245da83a97/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test.mp4.track-1.mp4
+✏️  Marking asset as synced: /tmp/c17bba2b-bcb9-4f3a-962e-2c245da83a97/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/isobmff
+ ✓ packages/cli/src/operations/syncAssetsDirectory.test.ts > syncAssetsDirectory > A/V Sync > Syncs assets directory when fragment index is already uploaded 173ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncTrack.test.ts > SyncTrack > .markSynced() > marks synced 71ms
+stdout | packages/assets/src/generateSingleTrack.test.ts > generateSingleTrack > should work with different file types
+test-assets/10s-bars.mp4 track 1: 11194 bytes, 5 segments
+
+Testing test-assets/10s-bars.mp4 track 2...
+
+ 📼  Syncing track: /tmp/5c10fe2f-ee18-4c6f-a830-a735d02ff1fd/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test.mp4.track-2.mp4
+✏️  Marking asset as synced: /tmp/5c10fe2f-ee18-4c6f-a830-a735d02ff1fd/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test.mp4.track-2.mp4
+✏️  Marking asset as synced: /tmp/5c10fe2f-ee18-4c6f-a830-a735d02ff1fd/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/isobmff
+ ✅ Synced track: /tmp/5c10fe2f-ee18-4c6f-a830-a735d02ff1fd/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test.mp4.track-2.mp4
+ 📋  Syncing fragment index: /tmp/5c10fe2f-ee18-4c6f-a830-a735d02ff1fd/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test.mp4.tracks.json
+✏️  Marking asset as synced: /tmp/5c10fe2f-ee18-4c6f-a830-a735d02ff1fd/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test.mp4.tracks.json
+✏️  Marking asset as synced: /tmp/5c10fe2f-ee18-4c6f-a830-a735d02ff1fd/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/isobmff
+ ✅ Synced fragment index: /tmp/5c10fe2f-ee18-4c6f-a830-a735d02ff1fd/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test.mp4.tracks.json
+Syncing asset dir: /tmp/91f86758-0134-426f-93b0-4997907151a4/src/assets/.cache
+ Syncing asset: f2972b45-8862-2098-7ca1-59a1dd5ef33f
+ 📼  Syncing track: /tmp/91f86758-0134-426f-93b0-4997907151a4/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test.mp4.track-1.mp4
+✏️  Marking asset as synced: /tmp/91f86758-0134-426f-93b0-4997907151a4/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test.mp4.track-1.mp4
+✏️  Marking asset as synced: /tmp/91f86758-0134-426f-93b0-4997907151a4/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/isobmff
+ ✅ Synced track: /tmp/91f86758-0134-426f-93b0-4997907151a4/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test.mp4.track-1.mp4
+stdout | packages/elements/src/LoadingDebounce.test.ts > Loading Indicator Debouncing > cancelling loading during grace period prevents flash
+Loading state changes: 1
+
+stdout | packages/elements/src/LoadingDebounce.test.ts > Loading Indicator Debouncing > measures timing accuracy of grace period
+
+--- Test: Grace period timing accuracy ---
+
+ ✓ packages/cli/src/operations/syncAssetsDirectory.test.ts > syncAssetsDirectory > A/V Sync > Syncs assets directory when fragment index is not uploaded 142ms
+ 📼  Syncing track: /tmp/91f86758-0134-426f-93b0-4997907151a4/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test.mp4.track-2.mp4
+✏️  Marking asset as synced: /tmp/91f86758-0134-426f-93b0-4997907151a4/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test.mp4.track-2.mp4
+✏️  Marking asset as synced: /tmp/91f86758-0134-426f-93b0-4997907151a4/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/isobmff
+ ✅ Synced track: /tmp/91f86758-0134-426f-93b0-4997907151a4/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test.mp4.track-2.mp4
+ 📋  Syncing fragment index: /tmp/91f86758-0134-426f-93b0-4997907151a4/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test.mp4.tracks.json
+✏️  Marking asset as synced: /tmp/91f86758-0134-426f-93b0-4997907151a4/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test.mp4.tracks.json
+✏️  Marking asset as synced: /tmp/91f86758-0134-426f-93b0-4997907151a4/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/isobmff
+ ✅ Synced fragment index: /tmp/91f86758-0134-426f-93b0-4997907151a4/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test.mp4.tracks.json
+ ✓ packages/assets/src/tasks/generateTrackFragmentIndex.test.ts > generateTrackFragmentIndex > should handle single track files 511ms
+stdout | packages/assets/src/generateSingleTrack.test.ts > generateSingleTrack > should work with different file types
+test-assets/10s-bars.mp4 track 2: 90038 bytes, 3 segments
+
+Testing test-assets/bars-n-tone.mp4 track 1...
+
+ 📼  Syncing track: /tmp/91f86758-0134-426f-93b0-4997907151a4/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test2.mp4.track-1.mp4
+✏️  Marking asset as synced: /tmp/91f86758-0134-426f-93b0-4997907151a4/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test2.mp4.track-1.mp4
+✏️  Marking asset as synced: /tmp/91f86758-0134-426f-93b0-4997907151a4/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/isobmff
+ ✅ Synced track: /tmp/91f86758-0134-426f-93b0-4997907151a4/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test2.mp4.track-1.mp4
+stdout | packages/elements/src/LoadingDebounce.test.ts > Loading Indicator Debouncing > measures timing accuracy of grace period
+under-grace-period: waited 151ms, expected show: false, actual show: false
+
+ 📼  Syncing track: /tmp/91f86758-0134-426f-93b0-4997907151a4/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test2.mp4.track-2.mp4
+✏️  Marking asset as synced: /tmp/91f86758-0134-426f-93b0-4997907151a4/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test2.mp4.track-2.mp4
+✏️  Marking asset as synced: /tmp/91f86758-0134-426f-93b0-4997907151a4/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/isobmff
+ ✅ Synced track: /tmp/91f86758-0134-426f-93b0-4997907151a4/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test2.mp4.track-2.mp4
+ 📋  Syncing fragment index: /tmp/91f86758-0134-426f-93b0-4997907151a4/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test2.mp4.tracks.json
+✏️  Marking asset as synced: /tmp/91f86758-0134-426f-93b0-4997907151a4/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test2.mp4.tracks.json
+✏️  Marking asset as synced: /tmp/91f86758-0134-426f-93b0-4997907151a4/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/isobmff
+ ✅ Synced fragment index: /tmp/91f86758-0134-426f-93b0-4997907151a4/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test2.mp4.tracks.json
+ ✓ packages/cli/src/operations/syncAssetsDirectory.test.ts > syncAssetsDirectory > A/V Sync > Syncs assets when file has already been synced with a different name 305ms
+stdout | packages/cli/src/operations/syncAssetsDirectory/SyncImage.test.ts > SyncImage > prepare() probes image
+Probe {
+  absolutePath: [32m'/tmp/1ae1f9be-4bd3-4cde-8fe3-3f9003b3ac89/src/assets/.cache/e8e4d438-0a1d-0944-c9a0-4b07a85b67eb/test.png'[39m,
+  data: {
+    streams: [ [36m[Object][39m ],
+    format: {
+      filename: [32m'/tmp/1ae1f9be-4bd3-4cde-8fe3-3f9003b3ac89/src/assets/.cache/e8e4d438-0a1d-0944-c9a0-4b07a85b67eb/test.png'[39m,
+      nb_streams: [33m1[39m,
+      nb_programs: [33m0[39m,
+      format_name: [32m'png_pipe'[39m,
+      format_long_name: [32m'piped png sequence'[39m,
+      size: [32m'276'[39m,
+      probe_score: [33m99[39m
+    }
+  }
+}
+
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncImage.test.ts > SyncImage > Reads byte size 2ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncImage.test.ts > SyncImage > prepare() probes image 79ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncImage.test.ts > SyncImage > validate() > Throws when prepare() is not called 6ms
+ ↓ packages/cli/src/operations/syncAssetsDirectory/SyncImage.test.ts > SyncImage > validate() > throws when probe is not a supported image
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncImage.test.ts > SyncImage > .create() > Throws when prepare() is not called 2ms
+stdout | packages/assets/src/generateSingleTrack.test.ts > generateSingleTrack > should work with different file types
+test-assets/bars-n-tone.mp4 track 1: 405460 bytes, 3 segments
+
+Testing test-assets/bars-n-tone.mp4 track 2...
+
+stdout | packages/elements/src/LoadingDebounce.test.ts > Loading Indicator Debouncing > measures timing accuracy of grace period
+still-under-grace-period: waited 251ms, expected show: false, actual show: false
+
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncImage.test.ts > SyncImage > .create() > Skips creation if image file matches md5 104ms
+stdout | packages/elements/src/ScrubResolvedFlashing.test.ts > Scrub Loading Flashing Resolution > mixed fast and slow operations handle loading appropriately
+slow (350ms): expected loading=true, actual loading=true
+
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncImage.test.ts > SyncImage > .create() > isComplete() returns false when not created 76ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncImage.test.ts > SyncImage > .create() > isComplete() returns true when created 73ms
+stdout | packages/assets/src/generateSingleTrack.test.ts > generateSingleTrack > should work with different file types
+test-assets/bars-n-tone.mp4 track 2: 89944 bytes, 3 segments
+
+ ✓ packages/assets/src/generateSingleTrack.test.ts > generateSingleTrack > should work with different file types 908ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncImage.test.ts > SyncImage > .upload() > throws when not created 63ms
+stdout | packages/assets/src/tasks/generateTrack.test.ts > generateTrack > should generate video track
+Generated 11194 bytes for video track
+
+ ✓ packages/assets/src/tasks/generateTrack.test.ts > generateTrack > should generate video track 217ms
+✏️  Marking asset as synced: /tmp/1ae1f9be-4bd3-4cde-8fe3-3f9003b3ac89/src/assets/.cache/e8e4d438-0a1d-0944-c9a0-4b07a85b67eb/test.png
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncImage.test.ts > SyncImage > .upload() > uploads image 72ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncImage.test.ts > SyncImage > .markSynced() > throws when not created 3ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncImage.test.ts > SyncImage > .markSynced() > marks synced 64ms
+stdout | packages/elements/src/LoadingDebounce.test.ts > Loading Indicator Debouncing > measures timing accuracy of grace period
+over-grace-period: waited 357ms, expected show: true, actual show: true
+
+ ✓ packages/assets/src/tasks/generateTrackFragmentIndex.test.ts > generateTrackFragmentIndex > should generate consistent results with original implementation 722ms
+stdout | packages/elements/src/ScrubResolvedFlashing.test.ts > Scrub Loading Flashing Resolution > mixed fast and slow operations handle loading appropriately
+fast (20ms): expected loading=false, actual loading=false
+
+stdout | packages/assets/src/tasks/generateTrack.test.ts > generateTrack > should generate audio track
+Generated 90038 bytes for audio track
+
+ ✓ packages/assets/src/tasks/generateTrack.test.ts > generateTrack > should generate audio track 215ms
+ ✓ packages/assets/src/tasks/generateTrack.test.ts > generateTrack > should handle invalid track IDs gracefully 80ms
+ ✓ packages/assets/src/generateFragmentIndex.test.ts > generateFragmentIndex > single video track files > frame-count.mp4 generates correct track metadata and segments 243ms
+ ✓ packages/elements/src/transcoding/cache/RequestDeduplicator.test.ts > RequestDeduplicator > executeRequest > should execute request and return result for new key 4ms
+ ✓ packages/elements/src/transcoding/cache/RequestDeduplicator.test.ts > RequestDeduplicator > executeRequest > should return same promise for concurrent requests with same key 0ms
+ ✓ packages/elements/src/transcoding/cache/RequestDeduplicator.test.ts > RequestDeduplicator > executeRequest > should allow separate requests for different keys 0ms
+ ✓ packages/elements/src/transcoding/cache/RequestDeduplicator.test.ts > RequestDeduplicator > executeRequest > should handle request failures and clean up 1ms
+ ✓ packages/elements/src/transcoding/cache/RequestDeduplicator.test.ts > RequestDeduplicator > executeRequest > should clean up pending requests after success 0ms
+ ↓ packages/assets/src/generateFragmentIndex.test.ts > generateFragmentIndex > multi-track files > 10s-bars.mp4 generates expected multi-track structure
+ ↓ packages/assets/src/generateFragmentIndex.test.ts > generateFragmentIndex > multi-track files > 10s-bars.frag.mp4 generates expected fragmented structure
+ ✓ packages/elements/src/transcoding/cache/RequestDeduplicator.test.ts > RequestDeduplicator > isPending > should return true for pending requests 100ms
+ ✓ packages/elements/src/transcoding/cache/RequestDeduplicator.test.ts > RequestDeduplicator > isPending > should return false for non-existent keys 0ms
+ ✓ packages/elements/src/transcoding/cache/RequestDeduplicator.test.ts > RequestDeduplicator > getPendingCount > should return 0 initially 0ms
+stdout | packages/assets/src/tasks/generateTrack.test.ts > generateTrack > should work with single track files
+Generated 203208 bytes for single track file
+
+ ✓ packages/assets/src/tasks/generateTrack.test.ts > generateTrack > should work with single track files 259ms
+ ✓ packages/elements/src/transcoding/cache/RequestDeduplicator.test.ts > RequestDeduplicator > getPendingCount > should track pending request count 104ms
+ ✓ packages/elements/src/transcoding/cache/RequestDeduplicator.test.ts > RequestDeduplicator > getPendingKeys > should return empty array initially 1ms
+ ✓ packages/elements/src/transcoding/cache/RequestDeduplicator.test.ts > RequestDeduplicator > getPendingKeys > should return pending keys 101ms
+ ✓ packages/elements/src/transcoding/cache/RequestDeduplicator.test.ts > RequestDeduplicator > clear > should clear all pending requests 0ms
+stdout | packages/elements/src/LoadingDebounce.test.ts > Loading Indicator Debouncing > measures timing accuracy of grace period
+well-over-grace-period: waited 552ms, expected show: true, actual show: true
+
+ ✓ packages/elements/src/LoadingDebounce.test.ts > Loading Indicator Debouncing > cancelling loading during grace period prevents flash 302ms
+ ✓ packages/elements/src/LoadingDebounce.test.ts > Loading Indicator Debouncing > measures timing accuracy of grace period 1311ms
+ ✓ packages/assets/src/generateFragmentIndex.test.ts > generateFragmentIndex > multi-track files > bars-n-tone.mp4 generates expected multi-track structure 310ms
+ ↓ packages/assets/src/generateFragmentIndex.test.ts > generateFragmentIndex > streaming behavior > handles streaming with minimal memory usage via small chunks
+ ✓ packages/assets/src/generateFragmentIndex.test.ts > generateFragmentIndex > edge cases and error handling > empty stream returns empty index 4ms
+ ✓ packages/assets/src/generateFragmentIndex.test.ts > generateFragmentIndex > edge cases and error handling > stream errors propagate correctly 10ms
+ ✓ packages/assets/src/tasks/generateTrackFragmentIndex.test.ts > generateTrackFragmentIndex > should preserve timing offset detection 630ms
+stdout | packages/elements/src/ScrubResolvedFlashing.test.ts > Scrub Loading Flashing Resolution > mixed fast and slow operations handle loading appropriately
+slow (300ms): expected loading=true, actual loading=true
+✅ Mixed operation speeds handled correctly!
+
+ ✓ packages/elements/src/ScrubResolvedFlashing.test.ts > Scrub Loading Flashing Resolution > slow scrub operations still show loading when needed 504ms
+ ✓ packages/elements/src/ScrubResolvedFlashing.test.ts > Scrub Loading Flashing Resolution > mixed fast and slow operations handle loading appropriately 1934ms
+ ✓ packages/assets/src/idempotentTask.race-conditions.test.ts > idempotentTask Race Condition Protection > concurrent download protection > prevents zero-byte files from concurrent downloads 65ms
+ ✓ packages/assets/src/idempotentTask.race-conditions.test.ts > idempotentTask Race Condition Protection > concurrent download protection > handles empty file downloads correctly 14ms
+ ✓ packages/assets/src/idempotentTask.race-conditions.test.ts > idempotentTask Race Condition Protection > cache corruption protection > detects and recovers from corrupted cache files 6ms
+(node:696) [DEP0147] DeprecationWarning: In future versions of Node.js, fs.rmdir(path, { recursive: true }) will be removed. Use fs.rm(path, { recursive: true }) instead
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ packages/assets/src/idempotentTask.race-conditions.test.ts > idempotentTask Race Condition Protection > task deduplication integrity > maintains deduplication under concurrent load 20ms
+ ✓ packages/assets/src/idempotentTask.race-conditions.test.ts > idempotentTask Race Condition Protection > stream processing safety > handles concurrent stream tasks safely 18ms
+ ✓ packages/assets/src/idempotentTask.race-conditions.test.ts > idempotentTask Race Condition Protection > atomic operations verification > ensures no temporary files remain after task completion 10ms
+ ✓ packages/assets/src/idempotentTask.race-conditions.test.ts > idempotentTask Race Condition Protection > atomic operations verification > cleans up temporary files on task failure 4ms
+- ⚡️ Calculating MD5
+- ⚡️ Calculating MD5
+✔ MD5 calculated /tmp/md5-test-1769197221639-0gry4fw2m1ch/empty
+- ⚡️ Calculating MD5
+✔ MD5 calculated /tmp/md5-test-1769197221642-9y5mlfkzgw7/parent/child
+- ⚡️ Calculating MD5
+✔ MD5 calculated /tmp/md5-test-1769197221646-qmh07xy2i18/level-0/level-1/level-2/level-3/level-4/level-5/level-6/level-7/level-8/level-9/deep-file.txt
+- ⚡️ Calculating MD5
+✔ MD5 calculated /tmp/md5-test-1769197221654-pstaj6z88s9/mixed/subdir/nested.txt
+- ⚡️ Calculating MD5
+✔ MD5 calculated /tmp/md5-test-1769197221657-gciqcsxdb2r/consistent/file2.txt
+- ⚡️ Calculating MD5
+✔ MD5 calculated /tmp/md5-test-1769197221657-gciqcsxdb2r/consistent/file2.txt
+- ⚡️ Calculating MD5
+✔ MD5 calculated /tmp/md5-test-1769197221660-8outicqpyia/restricted/file.txt
+ ✓ packages/assets/src/md5.error-scenarios.test.ts > MD5 Error Scenarios > md5Buffer edge cases > handles empty buffer 16ms
+ ✓ packages/assets/src/md5.error-scenarios.test.ts > MD5 Error Scenarios > md5Buffer edge cases > handles very large buffer 29ms
+ ✓ packages/assets/src/md5.error-scenarios.test.ts > MD5 Error Scenarios > md5Buffer edge cases > produces consistent results for same input 0ms
+ ✓ packages/assets/src/md5.error-scenarios.test.ts > MD5 Error Scenarios > md5Buffer edge cases > produces different results for different input 1ms
+ ✓ packages/assets/src/md5.error-scenarios.test.ts > MD5 Error Scenarios > md5FilePath error scenarios > handles non-existent file 2ms
+ ✓ packages/assets/src/md5.error-scenarios.test.ts > MD5 Error Scenarios > md5FilePath error scenarios > handles empty file 1ms
+ ✓ packages/assets/src/md5.error-scenarios.test.ts > MD5 Error Scenarios > md5FilePath error scenarios > handles directory instead of file 1ms
+ ✓ packages/assets/src/md5.error-scenarios.test.ts > MD5 Error Scenarios > md5FilePath error scenarios > handles file with unusual characters in name 2ms
+ ✓ packages/assets/src/md5.error-scenarios.test.ts > MD5 Error Scenarios > md5FilePath error scenarios > handles very large file 7ms
+ ✓ packages/assets/src/md5.error-scenarios.test.ts > MD5 Error Scenarios > md5ReadStream error scenarios > handles stream that errors 1ms
+ ✓ packages/assets/src/md5.error-scenarios.test.ts > MD5 Error Scenarios > md5ReadStream error scenarios > handles stream that closes without data 0ms
+ ✓ packages/assets/src/md5.error-scenarios.test.ts > MD5 Error Scenarios > md5ReadStream error scenarios > handles stream with binary data 0ms
+ ✓ packages/assets/src/md5.error-scenarios.test.ts > MD5 Error Scenarios > md5ReadStream error scenarios > handles stream with multiple chunks 1ms
+ ✓ packages/assets/src/md5.error-scenarios.test.ts > MD5 Error Scenarios > md5Directory error scenarios > handles non-existent directory 4ms
+ ✓ packages/assets/src/md5.error-scenarios.test.ts > MD5 Error Scenarios > md5Directory error scenarios > handles empty directory 2ms
+ ✓ packages/assets/src/md5.error-scenarios.test.ts > MD5 Error Scenarios > md5Directory error scenarios > handles directory with only subdirectories 4ms
+ ✓ packages/assets/src/md5.error-scenarios.test.ts > MD5 Error Scenarios > md5Directory error scenarios > handles deeply nested directory structure 8ms
+ ✓ packages/assets/src/md5.error-scenarios.test.ts > MD5 Error Scenarios > md5Directory error scenarios > handles directory with mixed file types 3ms
+ ✓ packages/assets/src/md5.error-scenarios.test.ts > MD5 Error Scenarios > md5Directory error scenarios > produces consistent results for same directory 3ms
+ ✓ packages/assets/src/md5.error-scenarios.test.ts > MD5 Error Scenarios > md5Directory error scenarios > handles permission errors gracefully 1ms
+ ✓ packages/assets/src/md5.error-scenarios.test.ts > MD5 Error Scenarios > UUID formatting edge cases > consistent UUID format across all functions 0ms
+stdout | packages/assets/src/timing-coordination.test.ts > timing coordination > stream should not end until fragment index is complete
+Fragment index completed at: 254ms
+Stream ended at: 254ms
+Coordination gap: 0ms
+
+ ✓ packages/assets/src/timing-coordination.test.ts > timing coordination > stream should not end until fragment index is complete 346ms
+✏️  Marking asset as synced: /tmp/b2c9c65f-46c8-4dc2-9ec0-5f60ac7f7ba0/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test.mp4.captions.json
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncCaption.test.ts > SyncCaption > Reads byte size 8ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncCaption.test.ts > SyncCaption > prepare() is noop 3ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncCaption.test.ts > SyncCaption > validate() is noop 1ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncCaption.test.ts > SyncCaption > .create() > uses matching data when file matches md5 21ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncCaption.test.ts > SyncCaption > .create() > isComplete() returns false when not created 4ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncCaption.test.ts > SyncCaption > .create() > isComplete() returns true when created 5ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncCaption.test.ts > SyncCaption > .upload() > throws when not created 1ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncCaption.test.ts > SyncCaption > .upload() > uploads caption 8ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncCaption.test.ts > SyncCaption > .markSynced() > throws when not created 1ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncCaption.test.ts > SyncCaption > .markSynced() > marks synced 6ms
+stdout | packages/assets/src/tasks/generateScrubTrack.test.ts > generateScrubTrack > should generate scrub track for video file
+Generated 73236 bytes for scrub track
+
+ ✓ packages/assets/src/tasks/generateScrubTrack.test.ts > generateScrubTrack > should generate scrub track for video file 401ms
+ ✓ packages/assets/src/tasks/generateScrubTrack.test.ts > generateScrubTrack > should handle files without video streams 1ms
+ ✓ packages/assets/src/tasks/generateScrubTrack.test.ts > generateScrubTrack > should cache scrub track and return same result on second call 1ms
+✏️  Marking asset as synced: /tmp/f0cd2abf-5289-46f3-a553-c70b72df6a3c/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/test.mp4.tracks.json
+✏️  Marking asset as synced: /tmp/f0cd2abf-5289-46f3-a553-c70b72df6a3c/src/assets/.cache/f2972b45-8862-2098-7ca1-59a1dd5ef33f/isobmff
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncFragmentIndex.test.ts > SyncFragmentIndex > Reads byte size 2ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncFragmentIndex.test.ts > SyncFragmentIndex > prepare() is noop 2ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncFragmentIndex.test.ts > SyncFragmentIndex > validate() is noop 4ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncFragmentIndex.test.ts > SyncFragmentIndex > .create() > uses matching data when file matches md5 18ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncFragmentIndex.test.ts > SyncFragmentIndex > .create() > isComplete() returns false when not created 7ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncFragmentIndex.test.ts > SyncFragmentIndex > .create() > isComplete() returns true when created 5ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncFragmentIndex.test.ts > SyncFragmentIndex > .upload() > throws when not created 3ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncFragmentIndex.test.ts > SyncFragmentIndex > .upload() > uploads index 20ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncFragmentIndex.test.ts > SyncFragmentIndex > .markSynced() > throws when not created 4ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/SyncFragmentIndex.test.ts > SyncFragmentIndex > .markSynced() > marks synced 9ms
+ ✓ packages/api/src/resources/unprocessed-file.test.ts > Unprocessed File > createUnprocessedFile > Throws when file is too large 8ms
+ ✓ packages/api/src/resources/unprocessed-file.test.ts > Unprocessed File > createUnprocessedFile > Throws when server returns an error 16ms
+ ✓ packages/api/src/resources/unprocessed-file.test.ts > Unprocessed File > createUnprocessedFile > Returns json data from the http response 5ms
+ ✓ packages/api/src/resources/unprocessed-file.test.ts > Unprocessed File > uploadUnprocessedFile > Throws when server responds with an error 5ms
+ ✓ packages/api/src/resources/unprocessed-file.test.ts > Unprocessed File > uploadUnprocessedFile > Succeeds when server returns a success 8ms
+ ✓ packages/api/src/resources/unprocessed-file.test.ts > Unprocessed File > lookupUnprocessedFileByMd5 > Returns json data from the http response 1ms
+ ✓ packages/api/src/resources/unprocessed-file.test.ts > Unprocessed File > lookupUnprocessedFileByMd5 > Returns null when file is not found 2ms
+ ✓ packages/api/src/resources/unprocessed-file.test.ts > Unprocessed File > lookupUnprocessedFileByMd5 > Throws when server returns an error 1ms
+ ✓ packages/api/src/uploadChunks.test.ts > uploadChunks > can be awaited 40ms
+ ✓ packages/api/src/uploadChunks.test.ts > uploadChunks > can be iterated 4ms
+ ✓ packages/api/src/uploadChunks.test.ts > uploadChunks > throws error if chunk upload fails 3ms
+ ✓ packages/api/src/uploadChunks.test.ts > uploadChunks > Emits progress events as iterable 4ms
+ ✓ packages/api/src/uploadChunks.test.ts > fakeCompleteUpload > can be awaited 1ms
+ ✓ packages/api/src/uploadChunks.test.ts > fakeCompleteUpload > can be iterated 0ms
+ ✓ packages/api/src/resources/image-file.test.ts > CreateImageFilePayload > parses mime type from filename 3ms
+ ✓ packages/api/src/resources/image-file.test.ts > CreateImageFilePayload > rejects unsupported mime types 1ms
+ ✓ packages/api/src/resources/image-file.test.ts > ImageFile > createImageFile > Throws when file is too large 8ms
+ ✓ packages/api/src/resources/image-file.test.ts > ImageFile > createImageFile > Throws when server returns an error 22ms
+ ✓ packages/api/src/resources/image-file.test.ts > ImageFile > createImageFile > Returns json data from the http response 6ms
+ ✓ packages/api/src/resources/image-file.test.ts > ImageFile > uploadImageFile > Throws when file is too large 1ms
+ ✓ packages/api/src/resources/image-file.test.ts > ImageFile > uploadImageFile > Throws if upload fails 11ms
+ ✓ packages/api/src/resources/image-file.test.ts > ImageFile > uploadImageFile > Uploads file 5ms
+ ✓ packages/api/src/resources/image-file.test.ts > ImageFile > lookupImageFileByMd5 > Returns json data from the http response 2ms
+ ✓ packages/api/src/resources/image-file.test.ts > ImageFile > lookupImageFileByMd5 > Returns null when file is not found 2ms
+ ✓ packages/api/src/resources/image-file.test.ts > ImageFile > lookupImageFileByMd5 > Throws when server returns an error 1ms
+ ✓ packages/api/src/resources/isobmff-track.test.ts > ISOBMFF Track > createISOBMFFTrack > Throws when track is too large 9ms
+ ✓ packages/api/src/resources/isobmff-track.test.ts > ISOBMFF Track > createISOBMFFTrack > Throws when server returns an error 21ms
+ ✓ packages/api/src/resources/isobmff-track.test.ts > ISOBMFF Track > createISOBMFFTrack > Returns json data from the http response 9ms
+ ✓ packages/api/src/resources/isobmff-track.test.ts > ISOBMFF Track > uploadISOBMFFTrack > Throws when server returns an error 5ms
+ ✓ packages/api/src/resources/isobmff-track.test.ts > ISOBMFF Track > uploadISOBMFFTrack > Succeeds when server returns a success 6ms
+ ✓ packages/api/src/resources/renders.test.ts > Renders > createRender > throws if server returns an error 19ms
+ ✓ packages/api/src/resources/renders.test.ts > Renders > createRender > returns json data from the http response 4ms
+ ✓ packages/api/src/resources/renders.test.ts > Renders > uploadRender > throws if server returns an error 4ms
+ ✓ packages/api/src/resources/renders.test.ts > Renders > uploadRender > returns json data from the http response 1ms
+ ✓ packages/api/src/resources/renders.test.ts > Renders > lookupRenderByMd5 > Returns json data from the http response 1ms
+ ✓ packages/api/src/resources/renders.test.ts > Renders > lookupRenderByMd5 > Returns null when file is not found 4ms
+ ✓ packages/api/src/resources/renders.test.ts > Renders > lookupRenderByMd5 > Throws when server returns an error 1ms
+ ✓ packages/api/src/resources/renders.test.ts > OutputConfiguration > should create a valid output configuration from nullish values 1ms
+ ✓ packages/api/src/resources/renders.test.ts > OutputConfiguration > should permit mp4 configuration 0ms
+ ✓ packages/api/src/resources/renders.test.ts > OutputConfiguration > should permit png configuration 0ms
+ ✓ packages/api/src/resources/renders.test.ts > OutputConfiguration > should permit webp configuration 0ms
+ ✓ packages/api/src/resources/renders.test.ts > OutputConfiguration > should permit jpeg configuration 0ms
+ ✓ packages/api/src/client.test.ts > Client > Throws on improperly formed tokens 2ms
+ ✓ packages/api/src/client.test.ts > Client > Attaches token to requests 24ms
+ ✓ packages/api/src/client.test.ts > Client > Passes through request init 5ms
+ ✓ packages/api/src/resources/caption-file.test.ts > CaptionFile > createCaptionFile > Throws when file is too large 2ms
+ ✓ packages/api/src/resources/caption-file.test.ts > CaptionFile > createCaptionFile > Throws when server returns an error 18ms
+ ✓ packages/api/src/resources/caption-file.test.ts > CaptionFile > createCaptionFile > Returns json data from the http response 5ms
+ ✓ packages/api/src/resources/caption-file.test.ts > CaptionFile > uploadCaptionFile > Throws when file is too large 1ms
+ ✓ packages/api/src/resources/caption-file.test.ts > CaptionFile > uploadCaptionFile > Throws when server returns an error 1ms
+ ✓ packages/api/src/resources/caption-file.test.ts > CaptionFile > uploadCaptionFile > Returns json data from the http response 1ms
+ ✓ packages/api/src/resources/caption-file.test.ts > CaptionFile > lookupCaptionFileByMd5 > Returns json data from the http response 1ms
+ ✓ packages/api/src/resources/caption-file.test.ts > CaptionFile > lookupCaptionFileByMd5 > Returns null when file is not found 2ms
+ ✓ packages/api/src/resources/caption-file.test.ts > CaptionFile > lookupCaptionFileByMd5 > Throws when server returns an error 1ms
+ ✓ packages/api/src/resources/isobmff-file.test.ts > ISOBMFFFile > createISOBMFFFile > Throws when server returns an error 22ms
+ ✓ packages/api/src/resources/isobmff-file.test.ts > ISOBMFFFile > createISOBMFFFile > Returns json data from the http response 3ms
+ ✓ packages/api/src/resources/isobmff-file.test.ts > ISOBMFFFile > uploadFragmentIndex > Throws when file size exceeds limit 1ms
+ ✓ packages/api/src/resources/isobmff-file.test.ts > ISOBMFFFile > uploadFragmentIndex > Throws when server returns an error 4ms
+ ✓ packages/api/src/resources/isobmff-file.test.ts > ISOBMFFFile > uploadFragmentIndex > Returns json data from the http response 5ms
+ ✓ packages/api/src/resources/isobmff-file.test.ts > ISOBMFFFile > lookupISOBMFFFileByMd5 > Returns json data from the http response 1ms
+ ✓ packages/api/src/resources/isobmff-file.test.ts > ISOBMFFFile > lookupISOBMFFFileByMd5 > Returns null when file is not found 3ms
+ ✓ packages/api/src/resources/isobmff-file.test.ts > ISOBMFFFile > lookupISOBMFFFileByMd5 > Throws when server returns an error 1ms
+ ✓ packages/api/src/resources/process-isobmff.test.ts > process-isobmff > getIsobmffProcessInfo > returns the process info 24ms
+ ✓ packages/api/src/resources/process-isobmff.test.ts > process-isobmff > getIsobmffProcessInfo > throws when the server returns an error 3ms
+ ✓ packages/api/src/resources/process-isobmff.test.ts > process-isobmff > getIsobmffProcessProgress > returns the progress 3ms
+ ✓ packages/api/src/resources/url-token.test.ts > URL Token > createURLToken > Throws when server returns an error 19ms
+ ✓ packages/api/src/resources/url-token.test.ts > URL Token > createURLToken > Returns token from the http response 2ms
+stdout | packages/assets/src/memoize.error-scenarios.test.ts > Memoize Error Scenarios > decorator edge cases > handles multiple decorators on same class
+Getting decoratedValue
+
+ ✓ packages/assets/src/memoize.error-scenarios.test.ts > Memoize Error Scenarios > basic memoization behavior > handles simple getter memoization 1ms
+ ✓ packages/assets/src/memoize.error-scenarios.test.ts > Memoize Error Scenarios > basic memoization behavior > memoization is instance-specific 1ms
+ ✓ packages/assets/src/memoize.error-scenarios.test.ts > Memoize Error Scenarios > edge cases with object lifecycle > handles object destruction and garbage collection simulation 0ms
+ ✓ packages/assets/src/memoize.error-scenarios.test.ts > Memoize Error Scenarios > edge cases with object lifecycle > handles multiple instances with rapid creation/destruction 8ms
+ ✓ packages/assets/src/memoize.error-scenarios.test.ts > Memoize Error Scenarios > error handling in getter functions > handles getter that throws error 4ms
+ ✓ packages/assets/src/memoize.error-scenarios.test.ts > Memoize Error Scenarios > error handling in getter functions > handles getter that returns undefined 0ms
+ ✓ packages/assets/src/memoize.error-scenarios.test.ts > Memoize Error Scenarios > error handling in getter functions > handles getter that returns null 0ms
+ ✓ packages/assets/src/memoize.error-scenarios.test.ts > Memoize Error Scenarios > error handling in getter functions > handles getter that returns falsy values 0ms
+ ✓ packages/assets/src/memoize.error-scenarios.test.ts > Memoize Error Scenarios > complex object scenarios > handles inheritance hierarchies 0ms
+ ✓ packages/assets/src/memoize.error-scenarios.test.ts > Memoize Error Scenarios > complex object scenarios > handles object property modification 0ms
+ ✓ packages/assets/src/memoize.error-scenarios.test.ts > Memoize Error Scenarios > complex object scenarios > handles circular references in returned objects 0ms
+ ✓ packages/assets/src/memoize.error-scenarios.test.ts > Memoize Error Scenarios > memory-related edge cases > handles many memoized properties on single object 1ms
+ ✓ packages/assets/src/memoize.error-scenarios.test.ts > Memoize Error Scenarios > memory-related edge cases > handles object with large memoized values 10ms
+ ✓ packages/assets/src/memoize.error-scenarios.test.ts > Memoize Error Scenarios > decorator edge cases > handles descriptor without getter 0ms
+ ✓ packages/assets/src/memoize.error-scenarios.test.ts > Memoize Error Scenarios > decorator edge cases > handles multiple decorators on same class 1ms
+ ✓ packages/api/src/resources/transcriptions.test.ts > Transcriptions > createTranscription > throws if server returns an error 24ms
+ ✓ packages/api/src/resources/transcriptions.test.ts > Transcriptions > createTranscription > returns json data from the http response 4ms
+ ✓ packages/elements/src/utils/LRUCache.test.ts > LRUCache > basic LRU functionality 1ms
+ ✓ packages/elements/src/utils/LRUCache.test.ts > OrderedLRUCache > basic LRU functionality with ordered keys 0ms
+ ✓ packages/elements/src/utils/LRUCache.test.ts > OrderedLRUCache > maintains sorted key order 0ms
+ ✓ packages/elements/src/utils/LRUCache.test.ts > OrderedLRUCache > binary search exact match 0ms
+ ✓ packages/elements/src/utils/LRUCache.test.ts > OrderedLRUCache > find nearest in range 1ms
+ ✓ packages/elements/src/utils/LRUCache.test.ts > OrderedLRUCache > range search 0ms
+ ✓ packages/elements/src/utils/LRUCache.test.ts > OrderedLRUCache > LRU eviction maintains sorted order 0ms
+ ✓ packages/elements/src/utils/LRUCache.test.ts > OrderedLRUCache > works with string keys and custom comparator 8ms
+ ✓ packages/elements/src/utils/LRUCache.test.ts > OrderedLRUCache > handles empty cache gracefully 0ms
+ ✓ packages/elements/src/utils/LRUCache.test.ts > OrderedLRUCache > handles single item cache 0ms
+ ✓ packages/elements/src/utils/LRUCache.test.ts > OrderedLRUCache > updates existing keys without duplicating in sorted index 0ms
+ ✓ packages/elements/src/utils/LRUCache.test.ts > OrderedLRUCache > video segment caching use case 1ms
+ ✓ packages/elements/src/utils/LRUCache.test.ts > OrderedLRUCache > findNearestInRange edge cases 0ms
+ ↓ packages/elements/src/utils/LRUCache.test.ts > OrderedLRUCache > performance characteristics with large dataset
+stderr | packages/api/src/ProgressIterator.test.ts > ProgressIterator > Rejects promise if error event is emitted
+StreamEventSource: Error reading stream: TypeError: Cannot read properties of null (reading 'read')
+    at StreamEventSource.startReading [90m(/packages/[39mpackages/api/src/StreamEventSource.ts:166:57[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+
+stderr | packages/api/src/ProgressIterator.test.ts > ProgressIterator > Iterates over all events even if error is emitted
+StreamEventSource: Error reading stream: TypeError: Cannot read properties of null (reading 'read')
+    at StreamEventSource.startReading [90m(/packages/[39mpackages/api/src/StreamEventSource.ts:166:57[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+
+ ✓ packages/api/src/StreamEventSource.test.ts > StreamEventSource > Emits events progress and complete events 4ms
+ ✓ packages/api/src/StreamEventSource.test.ts > StreamEventSource > Emits error events 1ms
+ ✓ packages/api/src/StreamEventSource.test.ts > StreamEventSource > Emits unknown events as error events 8ms
+ ✓ packages/api/src/StreamEventSource.test.ts > StreamEventSource > Emits message events 0ms
+ ✓ packages/api/src/ProgressIterator.test.ts > ProgressIterator > Fulfills promise when complete event is emitted 3ms
+ ✓ packages/api/src/ProgressIterator.test.ts > ProgressIterator > Fulfills promise if registered after events are emitted 0ms
+ ✓ packages/api/src/ProgressIterator.test.ts > ProgressIterator > Rejects promise if error event is emitted 5ms
+ ✓ packages/api/src/ProgressIterator.test.ts > ProgressIterator > Iterates over all events 1ms
+ ✓ packages/api/src/ProgressIterator.test.ts > ProgressIterator > Iterates over all events even if error is emitted 1ms
+ ✓ packages/elements/src/transcoding/cache/URLTokenDeduplicator.test.ts > URLTokenDeduplicator > should deduplicate concurrent requests for same cache key 5ms
+ ✓ packages/elements/src/transcoding/cache/URLTokenDeduplicator.test.ts > URLTokenDeduplicator > should use separate tokens for different cache keys 1ms
+ ✓ packages/elements/src/transcoding/cache/URLTokenDeduplicator.test.ts > URLTokenDeduplicator > should reuse cached tokens that haven't expired 0ms
+ ✓ packages/elements/src/transcoding/cache/URLTokenDeduplicator.test.ts > URLTokenDeduplicator > should fetch new token when cached token is expired 1ms
+ ✓ packages/elements/src/transcoding/cache/URLTokenDeduplicator.test.ts > URLTokenDeduplicator > should handle token factory errors by removing from cache 1ms
+ ✓ packages/elements/src/transcoding/cache/URLTokenDeduplicator.test.ts > URLTokenDeduplicator > should provide utility methods for cache management 1ms
+ ✓ packages/elements/src/transcoding/cache/URLTokenDeduplicator.test.ts > URLTokenDeduplicator > should cleanup expired tokens 0ms
+ ✓ packages/elements/src/DelayedLoadingState.test.ts > DelayedLoadingState > should not show loading immediately for fast operations 4ms
+ ✓ packages/elements/src/DelayedLoadingState.test.ts > DelayedLoadingState > should show loading indicator only after 250ms delay 2ms
+ ✓ packages/elements/src/DelayedLoadingState.test.ts > DelayedLoadingState > should handle multiple concurrent operations 1ms
+ ✓ packages/elements/src/DelayedLoadingState.test.ts > DelayedLoadingState > should not show loading for background operations 1ms
+ ✓ packages/elements/src/DelayedLoadingState.test.ts > DelayedLoadingState > should use most recent operation message 0ms
+ ✓ packages/elements/src/DelayedLoadingState.test.ts > DelayedLoadingState > should properly clean up all operations 1ms
+ ✓ packages/elements/src/DelayedLoadingState.test.ts > DelayedLoadingState > should handle mixed background and foreground operations 0ms
+ ✓ packages/api/src/streamChunker.test.ts > chunks stream into buffers of specified size 11ms
+ ✓ packages/api/src/streamChunker.test.ts > yields remaining buffer if less than chunk size 0ms
+ ✓ packages/api/src/streamChunker.test.ts > handles Uint8Array input from browser streams 0ms
+stdout | packages/elements/src/ManualScrubTest.test.ts > Manual Scrubbing Functionality > paintTask processes seek operations correctly
+
+--- Testing manual scrubbing logic isolation ---
+Target seek time: 2.5s
+
+stdout | packages/elements/src/ManualScrubTest.test.ts > Manual Scrubbing Functionality > paintTask processes seek operations correctly
+Frame received: Yes
+Canvas resized to 640x480
+Frame drawn to canvas successfully
+✅ Manual scrubbing logic works correctly in asset mode
+
+stdout | packages/elements/src/ManualScrubTest.test.ts > Manual Scrubbing Functionality > JIT mode scrubbing logic flow
+
+--- Testing JIT mode scrubbing decision flow ---
+Case 1: Should use scrub track
+shouldUseScrub: true, isFastSeeking: false
+
+stdout | packages/elements/src/ManualScrubTest.test.ts > Manual Scrubbing Functionality > JIT mode scrubbing logic flow
+Scrub frame received: Yes
+Using scrub track - recorded cache miss
+
+Case 2: Should use normal video
+shouldUseScrub: false, isFastSeeking: false
+Using normal video - recorded cache hit
+✅ JIT mode decision logic flows correctly
+
+ ✓ packages/elements/src/ManualScrubTest.test.ts > Manual Scrubbing Functionality > paintTask processes seek operations correctly 4ms
+ ✓ packages/elements/src/ManualScrubTest.test.ts > Manual Scrubbing Functionality > JIT mode scrubbing logic flow 1ms
+ ✓ packages/elements/src/DelayedLoadingState.integration.test.ts > DelayedLoadingState Integration (EFVideo Pattern) > should handle typical video seeking scenario 3ms
+ ✓ packages/elements/src/DelayedLoadingState.integration.test.ts > DelayedLoadingState Integration (EFVideo Pattern) > should handle slow uncached video loading 1ms
+ ✓ packages/elements/src/DelayedLoadingState.integration.test.ts > DelayedLoadingState Integration (EFVideo Pattern) > should handle scrub track fallback scenario 1ms
+ ✓ packages/elements/src/DelayedLoadingState.integration.test.ts > DelayedLoadingState Integration (EFVideo Pattern) > should handle background preloading without user-visible loading 1ms
+ ✓ packages/elements/src/DelayedLoadingState.integration.test.ts > DelayedLoadingState Integration (EFVideo Pattern) > should handle rapid seeking with mixed cached/uncached content 1ms
+ ✓ packages/elements/src/DelayedLoadingState.integration.test.ts > DelayedLoadingState Integration (EFVideo Pattern) > should handle component cleanup scenario 1ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/doAssetSync.test.ts > doAssetSync > Succeeds if all steps are executed without error 2ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/doAssetSync.test.ts > doAssetSync > Succeeds if asset is already synced 0ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/doAssetSync.test.ts > doAssetSync > Succeeds if asset is already uploaded 0ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/doAssetSync.test.ts > doAssetSync > Throws if prepare fails 1ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/doAssetSync.test.ts > doAssetSync > Throws if validate fails 0ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/doAssetSync.test.ts > doAssetSync > Throws if create fails 0ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/doAssetSync.test.ts > doAssetSync > Throws if upload fails 0ms
+ ✓ packages/cli/src/operations/syncAssetsDirectory/doAssetSync.test.ts > doAssetSync > Throws if markSynced fails 0ms
+ ✓ packages/elements/src/canvas/selection/SelectionModel.test.ts > SelectionModel > initializes with no selection 1ms
+ ✓ packages/elements/src/canvas/selection/SelectionModel.test.ts > SelectionModel > selects a single element 0ms
+ ✓ packages/elements/src/canvas/selection/SelectionModel.test.ts > SelectionModel > selects multiple elements 0ms
+ ✓ packages/elements/src/canvas/selection/SelectionModel.test.ts > SelectionModel > selecting single element sets mode to single 0ms
+ ✓ packages/elements/src/canvas/selection/SelectionModel.test.ts > SelectionModel > selecting empty array sets mode to none 0ms
+ ✓ packages/elements/src/canvas/selection/SelectionModel.test.ts > SelectionModel > deselects an element 0ms
+ ✓ packages/elements/src/canvas/selection/SelectionModel.test.ts > SelectionModel > adds to selection 0ms
+ ✓ packages/elements/src/canvas/selection/SelectionModel.test.ts > SelectionModel > toggles element selection 0ms
+ ✓ packages/elements/src/canvas/selection/SelectionModel.test.ts > SelectionModel > clears selection 0ms
+ ✓ packages/elements/src/canvas/selection/SelectionModel.test.ts > SelectionModel > starts box selection 0ms
+ ✓ packages/elements/src/canvas/selection/SelectionModel.test.ts > SelectionModel > updates box selection 0ms
+ ✓ packages/elements/src/canvas/selection/SelectionModel.test.ts > SelectionModel > ends box selection and selects elements 0ms
+ ✓ packages/elements/src/canvas/selection/SelectionModel.test.ts > SelectionModel > creates a group 0ms
+ ✓ packages/elements/src/canvas/selection/SelectionModel.test.ts > SelectionModel > throws error when creating group with no elements 1ms
+ ✓ packages/elements/src/canvas/selection/SelectionModel.test.ts > SelectionModel > ungroups a group 0ms
+ ✓ packages/elements/src/canvas/selection/SelectionModel.test.ts > SelectionModel > selects all elements in a group 0ms
+ ✓ packages/elements/src/canvas/selection/SelectionModel.test.ts > SelectionModel > box selection bounds are null when not selecting 0ms
+ ✓ packages/elements/src/canvas/selection/SelectionModel.test.ts > SelectionModel > box selection handles reversed coordinates 0ms
+stdout | packages/elements/src/VideoStuckDiagnostic.test.ts > Video Operations Getting Stuck Diagnosis > simulates the paintTask getting stuck scenario
+
+--- Diagnosing why video operations get stuck ---
+
+=== paintTask called with seekToMs: 1000 ===
+🔒 Setting decoder lock...
+📹 Attempting normal video rendering...
+⏱️ Setting loading state...
+🎯 Seeking to 1s...
+paintTask call #1 - seeking to 1s
+
+stdout | packages/elements/src/VideoStuckDiagnostic.test.ts > Video Operations Getting Stuck Diagnosis > simulates the paintTask getting stuck scenario
+✅ Clearing loading state...
+✅ Frame received: 640x480
+🔓 Clearing decoder lock...
+
+stdout | packages/elements/src/VideoStuckDiagnostic.test.ts > Video Operations Getting Stuck Diagnosis > simulates the paintTask getting stuck scenario
+✅ Seek to 1000ms completed
+
+=== paintTask called with seekToMs: 2000 ===
+🔒 Setting decoder lock...
+📹 Attempting normal video rendering...
+⏱️ Setting loading state...
+🎯 Seeking to 2s...
+paintTask call #2 - seeking to 2s
+
+stdout | packages/elements/src/VideoStuckDiagnostic.test.ts > Video Operations Getting Stuck Diagnosis > simulates the paintTask getting stuck scenario
+✅ Clearing loading state...
+✅ Frame received: 640x480
+🔓 Clearing decoder lock...
+
+stdout | packages/elements/src/VideoStuckDiagnostic.test.ts > Video Operations Getting Stuck Diagnosis > simulates the paintTask getting stuck scenario
+✅ Seek to 2000ms completed
+
+=== paintTask called with seekToMs: 3000 ===
+🔒 Setting decoder lock...
+📹 Attempting normal video rendering...
+⏱️ Setting loading state...
+🎯 Seeking to 3s...
+paintTask call #3 - seeking to 3s
+
+stdout | packages/elements/src/VideoStuckDiagnostic.test.ts > Video Operations Getting Stuck Diagnosis > simulates the paintTask getting stuck scenario
+✅ Clearing loading state...
+✅ Frame received: 640x480
+🔓 Clearing decoder lock...
+
+stdout | packages/elements/src/VideoStuckDiagnostic.test.ts > Video Operations Getting Stuck Diagnosis > simulates the paintTask getting stuck scenario
+✅ Seek to 3000ms completed
+
+=== paintTask called with seekToMs: 4000 ===
+🔒 Setting decoder lock...
+📹 Attempting normal video rendering...
+⏱️ Setting loading state...
+🎯 Seeking to 4s...
+paintTask call #4 - seeking to 4s
+
+stdout | packages/elements/src/VideoStuckDiagnostic.test.ts > Video Operations Getting Stuck Diagnosis > simulates the paintTask getting stuck scenario
+✅ Clearing loading state...
+✅ Frame received: 640x480
+🔓 Clearing decoder lock...
+
+stdout | packages/elements/src/VideoStuckDiagnostic.test.ts > Video Operations Getting Stuck Diagnosis > simulates the paintTask getting stuck scenario
+✅ Seek to 4000ms completed
+
+=== paintTask called with seekToMs: 5000 ===
+🔒 Setting decoder lock...
+📹 Attempting normal video rendering...
+⏱️ Setting loading state...
+🎯 Seeking to 5s...
+paintTask call #5 - seeking to 5s
+
+stdout | packages/elements/src/VideoStuckDiagnostic.test.ts > Video Operations Getting Stuck Diagnosis > simulates the paintTask getting stuck scenario
+✅ Clearing loading state...
+✅ Frame received: 640x480
+🔓 Clearing decoder lock...
+
+stdout | packages/elements/src/VideoStuckDiagnostic.test.ts > Video Operations Getting Stuck Diagnosis > simulates the paintTask getting stuck scenario
+✅ Seek to 5000ms completed
+
+=== paintTask called with seekToMs: 6000 ===
+🔒 Setting decoder lock...
+📹 Attempting normal video rendering...
+⏱️ Setting loading state...
+🎯 Seeking to 6s...
+paintTask call #6 - seeking to 6s
+Simulating error on 6th call...
+
+stdout | packages/elements/src/VideoStuckDiagnostic.test.ts > Video Operations Getting Stuck Diagnosis > simulates the paintTask getting stuck scenario
+💥 Error caught: Decoder error: key frame is required
+🚫 Setting decoder needs reset...
+🔓 Clearing decoder lock...
+
+stdout | packages/elements/src/VideoStuckDiagnostic.test.ts > Video Operations Getting Stuck Diagnosis > simulates the paintTask getting stuck scenario
+❌ Seek to 6000ms failed: Decoder error: key frame is required
+Current state - decoderLock: false, decoderNeedsReset: true, loadingState.isLoading: false
+🔍 Testing if subsequent operations are blocked...
+
+=== paintTask called with seekToMs: 6100 ===
+❌ Decoder needs reset - returning early
+
+stdout | packages/elements/src/VideoStuckDiagnostic.test.ts > Video Operations Getting Stuck Diagnosis > simulates the paintTask getting stuck scenario
+
+=== Final Diagnosis ===
+Total paintTask calls: 6
+Final decoder lock: false
+Final decoder needs reset: true
+Final loading state: {"isLoading":false,"operation":null,"message":""}
+Last error: Decoder error: key frame is required
+🎯 ROOT CAUSE: decoderNeedsReset=true blocks all subsequent operations!
+   This explains why video gets stuck after initial frames.
+   Once a decoder error occurs, no further seeks/scrubs will work.
+
+stdout | packages/elements/src/VideoStuckDiagnostic.test.ts > Video Operations Getting Stuck Diagnosis > identifies the decoder reset blocking pattern
+
+--- Testing decoder reset blocking pattern ---
+First operation:
+Decoder error occurs...
+Subsequent operations:
+❌ paintTask returning early due to decoderNeedsReset
+❌ paintTask returning early due to decoderNeedsReset
+❌ paintTask returning early due to decoderNeedsReset
+🎯 CONFIRMED: Once decoderNeedsReset=true, all operations are blocked
+
+ ✓ packages/elements/src/VideoStuckDiagnostic.test.ts > Video Operations Getting Stuck Diagnosis > simulates the paintTask getting stuck scenario 4ms
+ ✓ packages/elements/src/VideoStuckDiagnostic.test.ts > Video Operations Getting Stuck Diagnosis > identifies the decoder reset blocking pattern 0ms
+ ✓ packages/elements/src/elements/EFMedia/audioTasks/makeAudioSeekTask.validation.test.ts > makeAudioSeekTask validation > audioSeekTask returns undefined and is not used for rendering 1ms
+ ✓ packages/elements/src/elements/EFMedia/audioTasks/makeAudioSeekTask.validation.test.ts > makeAudioSeekTask validation > audioSeekTask result is never passed to audio encoder or renderer 0ms
+ ✓ packages/elements/src/elements/EFMedia/audioTasks/makeAudioSeekTask.validation.test.ts > makeAudioSeekTask validation > audioSeekTask is only used for synchronization in EFAudio.frameTask 0ms
+ ✓ packages/elements/src/elements/EFMedia/audioTasks/makeAudioSeekTask.validation.test.ts > makeAudioSeekTask validation > audio rendering pipeline uses fetchAudioSpanningTime, not audioSeekTask 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  packages/elements/src/elements/EFMedia/AssetIdMediaEngine.test.ts > AssetIdMediaEngine > static fetch method > should create engine from API response
+AssertionError: expected "spy" to be called with arguments: [ Array(1) ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    "https://api.example.com/api/v1/isobmff_files/test-asset-123/index",[22m
+[31m+   {[90m
+[31m+     "signal": undefined,[90m
+[31m+   },[90m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+ ❯ packages/elements/src/elements/EFMedia/AssetIdMediaEngine.test.ts:221:25
+    219|       );
+    220| 
+    221|       expect(mockFetch).toHaveBeenCalledWith(
+       |                         ^
+    222|         `${mockApiHost}/api/v1/isobmff_files/${mockAssetId}/index`,
+    223|       );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 40 passed (41)
+      Tests  1 failed | 294 passed | 8 skipped (303)
+   Start at  19:40:17
+   Duration  5.66s (transform 1.04s, setup 2.30s, collect 3.91s, tests 15.54s, environment 5ms, prepare 2.85s)
+
+

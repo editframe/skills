@@ -111,8 +111,11 @@ describe("generateTrackFragmentIndex", () => {
       "test-assets/frame-count.mp4",
     );
 
-    const trackIds = Object.keys(fragmentIndex).map(Number);
-    assert.equal(trackIds.length, 1, "Should have exactly one track");
+    // Filter out scrub track (track ID -1) - it's generated separately
+    const trackIds = Object.keys(fragmentIndex)
+      .map(Number)
+      .filter((id) => id !== -1);
+    assert.equal(trackIds.length, 1, "Should have exactly one regular track");
 
     const track = fragmentIndex[trackIds[0]!]!;
     assert.equal(track.type, "video", "Should be video track");
@@ -125,7 +128,10 @@ describe("generateTrackFragmentIndex", () => {
       "test-assets/bars-n-tone.mp4",
     );
 
-    const trackIds = Object.keys(fragmentIndex).map(Number);
+    // Filter out scrub track (track ID -1) - it's generated separately
+    const trackIds = Object.keys(fragmentIndex)
+      .map(Number)
+      .filter((id) => id !== -1);
     assert.equal(trackIds.length, 2, "Should have video and audio tracks");
 
     // Should have both video and audio

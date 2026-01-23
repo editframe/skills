@@ -198,9 +198,14 @@ describe("AssetIdMediaEngine", () => {
   describe("static fetch method", () => {
     it("should create engine from API response", async () => {
       // Mock the host's fetch method
-      const mockFetch = vi.fn().mockResolvedValue({
+      // The implementation calls response.text() for error handling, so we need to mock it
+      const mockResponse = {
+        ok: true,
+        headers: new Headers({ "content-type": "application/json" }),
         json: vi.fn().mockResolvedValue(mockTrackFragmentData),
-      });
+        text: vi.fn().mockResolvedValue(JSON.stringify(mockTrackFragmentData)),
+      };
+      const mockFetch = vi.fn().mockResolvedValue(mockResponse);
 
       const mockHost = {
         fetch: mockFetch,
@@ -215,6 +220,7 @@ describe("AssetIdMediaEngine", () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         `${mockApiHost}/api/v1/isobmff_files/${mockAssetId}/index`,
+        { signal: undefined },
       );
       expect(fetchedEngine.assetId).toBe(mockAssetId);
       expect(fetchedEngine.durationMs).toBe(15000);
