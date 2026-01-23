@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useMemo, useCallback } from "react";
+import React, { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { useNavigate, useSearchParams, useParams } from "react-router";
 import type { SandboxConfig, ScenarioResult, Scenario, ScenarioType, Assertion } from "../index.js";
 import { runScenario as runScenarioRunner } from "../ScenarioRunner.js";
@@ -1881,7 +1881,7 @@ export function ScenarioViewer({ sandboxLoaders }: ScenarioViewerProps = {}) {
                 const logs = scenarioLogs.get(scenarioName) || [];
                 const isVisible = scenarioName === selectedScenario;
                 
-                const errorPanel: JSX.Element | null = (() => {
+                const errorPanel: React.ReactElement | null = (() => {
                   if (!error) return null;
                   return (
                     <div
@@ -2010,7 +2010,7 @@ export function ScenarioViewer({ sandboxLoaders }: ScenarioViewerProps = {}) {
                   />
 
                   {/* Error panel */}
-                  {errorPanel as JSX.Element | null}
+                  {errorPanel}
 
                   {/* Assertions panel */}
                   {result?.assertions && result.assertions.length > 0 && (
