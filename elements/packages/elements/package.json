@@ -7,7 +7,7 @@
     "typecheck": "tsc --noEmit --emitDeclarationOnly false",
     "build": "tsdown && node scripts/build-css.js",
     "build:watch": "tsdown --watch",
-    "typedoc": "typedoc --json ./types.json --plugin typedoc-plugin-zod --excludeExternals ./src && jq -c . ./types.json > ./types.tmp.json && mv ./types.tmp.json ./types.json"
+    "typedoc": "typedoc --json ./types.json --plugin typedoc-plugin-zod --excludeExternals --ignoreCompilerErrors ./src && jq -c . ./types.json > ./types.tmp.json && mv ./types.tmp.json ./types.json"
   },
   "author": "",
   "license": "UNLICENSED",

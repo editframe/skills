@@ -10,7 +10,7 @@
  */
 
 import { defineSandbox } from "./sandbox/index.js";
-import { html, nothing } from "lit";
+import { html } from "lit";
 import { Task } from "@lit/task";
 import { LitElement } from "lit";
 import { customElement, property } from "lit/decorators.js";
@@ -82,7 +82,11 @@ class ReentrantTaskElement extends LitElement {
       return `result-${val}`;
     },
     onError: (error) => {
-      log(`task.onError: ${error.name}: ${error.message}`);
+      if (error instanceof Error) {
+        log(`task.onError: ${error.name}: ${error.message}`);
+      } else {
+        log(`task.onError: ${String(error)}`);
+      }
     },
     onComplete: (value) => {
       log(`task.onComplete: ${value}`);

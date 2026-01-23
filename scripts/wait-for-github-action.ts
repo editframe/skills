@@ -270,17 +270,14 @@ async function main() {
   console.log("");
 
   const startTime = Date.now();
-  const spinnerChars = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
-  let spinnerIndex = 0;
   let lastStatus: string | null = null;
-  let lastJobCount = 0;
+  let lastJobStatuses: Map<string, { status: string; conclusion: string | null }> = new Map();
 
   while (true) {
     const elapsed = Math.floor((Date.now() - startTime) / 1000);
 
     // Check timeout
     if (elapsed >= timeoutSeconds) {
-      console.log("");
       console.error(
         chalk.red(
           `Error: Workflow watch timed out after ${formatElapsed(elapsed)} (${formatElapsed(timeoutSeconds)} limit)`,
@@ -291,99 +288,67 @@ async function main() {
     }
 
     const status = await getStatus(repo, runId);
-    const spinnerChar = spinnerChars[spinnerIndex % spinnerChars.length];
-    spinnerIndex++;
 
-    // Update status display
+    // Print status changes only
     if (status.status !== lastStatus) {
+      const statusIcon = getStatusIcon(status.status, status.conclusion);
+      let statusText: string;
+
+      switch (status.status) {
+        case "queued":
+          statusText = "Queued";
+          break;
+        case "in_progress":
+          statusText = "In Progress";
+          break;
+        case "completed":
+          if (status.conclusion === "success") {
+            statusText = "Completed";
+          } else if (
+            status.conclusion === "failure" ||
+            status.conclusion === "cancelled"
+          ) {
+            statusText = "Failed";
+          } else {
+            statusText = `Completed (${status.conclusion})`;
+          }
+          break;
+        default:
+          statusText = status.status;
+      }
+
+      const titleText = status.title ? ` | ${status.title}` : "";
+      console.log(
+        `${statusIcon} ${statusText} | Elapsed: ${formatElapsed(elapsed)}${titleText}`,
+      );
       lastStatus = status.status;
     }
 
-    const statusIcon = getStatusIcon(status.status, status.conclusion);
-    let statusText: string;
-
-    switch (status.status) {
-      case "queued":
-        statusText = "Queued";
-        break;
-      case "in_progress":
-        statusText = "In Progress";
-        break;
-      case "completed":
-        if (status.conclusion === "success") {
-          statusText = "Completed";
-        } else if (
-          status.conclusion === "failure" ||
-          status.conclusion === "cancelled"
-        ) {
-          statusText = "Failed";
-        } else {
-          statusText = `Completed (${status.conclusion})`;
+    // Print job status changes
+    for (const job of status.jobs) {
+      const jobKey = job.name;
+      const lastJobStatus = lastJobStatuses.get(jobKey);
+      
+      if (
+        !lastJobStatus ||
+        lastJobStatus.status !== job.status ||
+        lastJobStatus.conclusion !== job.conclusion
+      ) {
+        const jobIcon = getJobIcon(job.status, job.conclusion);
+        let jobStatusText = job.status;
+        if (job.status === "completed" && job.conclusion) {
+          jobStatusText = job.conclusion;
         }
-        break;
-      default:
-        statusText = status.status;
-    }
-
-    // Always move back to status line first (if we have jobs displayed)
-    if (lastJobCount > 0) {
-      // Move up: lastJobCount lines (jobs section) + 1 line (newline before jobs)
-      process.stdout.write(`\x1b[${lastJobCount + 1}A`);
-    }
-
-    // Clear status line and redraw
-    process.stdout.write("\r\x1b[K");
-
-    if (status.status === "in_progress" || status.status === "queued") {
-      process.stdout.write(
-        `${statusIcon} ${spinnerChar} ${statusText} | Elapsed: ${formatElapsed(elapsed)}`,
-      );
-    } else {
-      process.stdout.write(
-        `${statusIcon} ${statusText} | Elapsed: ${formatElapsed(elapsed)}`,
-      );
-    }
-
-    if (status.title) {
-      process.stdout.write(` | ${status.title}`);
-    }
-
-    // Display jobs
-    if (status.jobs.length > 0) {
-      // Calculate how many lines we'll need for the new jobs section
-      const showSteps = status.jobs.length === 1; // Only show steps if single job
-      let newJobCount = 1; // "Jobs:" header
-      for (const job of status.jobs) {
-        newJobCount += 1; // Job line
-        if (showSteps && job.steps && job.steps.length > 0) {
-          newJobCount += job.steps.length; // Step lines
-        }
-      }
-      
-      // Move to next line for jobs section
-      process.stdout.write("\n");
-      
-      // Clear everything from cursor to end of screen (simpler and more reliable)
-      process.stdout.write("\x1b[J");
-      
-      // Draw jobs section
-      lastJobCount = displayJobs(status.jobs, spinnerChar, 0);
-    } else {
-      // No jobs - clear jobs section if it exists
-      if (lastJobCount > 0) {
-        // Move to next line (where jobs section starts)
-        process.stdout.write("\n");
-        // Clear from cursor to end of screen
-        process.stdout.write("\x1b[J");
-        // Move back up to status line (1 line up for the newline we just wrote)
-        process.stdout.write("\x1b[A");
-        lastJobCount = 0;
+        console.log(`  ${jobIcon} ${job.name}: ${jobStatusText}`);
+        lastJobStatuses.set(jobKey, {
+          status: job.status,
+          conclusion: job.conclusion,
+        });
       }
     }
 
     // Check if workflow is complete
     if (status.status === "completed") {
-      console.log("");
       console.log("");
       if (status.conclusion === "success") {
         console.log(chalk.green("✅ GitHub Actions workflow completed successfully"));
@@ -398,8 +363,8 @@ async function main() {
       }
     }
 
-    // Sleep before next check
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // Sleep before next check (check every 5 seconds to reduce output)
+    await new Promise((resolve) => setTimeout(resolve, 5000));
   }
 }
 

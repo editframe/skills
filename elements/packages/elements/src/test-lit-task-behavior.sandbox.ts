@@ -900,7 +900,7 @@ export default defineSandbox({
               try {
                 // This should be awaited, but if it throws synchronously, we'll catch it
                 const hostUpdatePromise = task.hostUpdate();
-                hostUpdatePromise.catch(err => {
+                hostUpdatePromise.catch((err: unknown) => {
                   log(`hostUpdate() promise rejected: ${err instanceof Error ? err.message : String(err)}`);
                 });
               } catch (error) {
@@ -922,7 +922,7 @@ export default defineSandbox({
               log(`Calling task.hostUpdate() in RAF...`);
               try {
                 const hostUpdatePromise = task.hostUpdate();
-                hostUpdatePromise.catch(err => {
+                hostUpdatePromise.catch((err: unknown) => {
                   log(`hostUpdate() promise rejected in RAF: ${err instanceof Error ? err.message : String(err)}`);
                 });
               } catch (error) {
