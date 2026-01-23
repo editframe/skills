@@ -790,37 +790,6 @@ export async function renderTimegroupToVideo(
         totalSeekMs += performance.now() - seekStart;
       }
       
-      // Wait for video content if in blocking mode (NATIVE PATH ONLY)
-      // NOTE: ForeignObject path handles seeking inside its own section - the blocking loop
-      // would check stale video content since FO seeks happen later in the loop.
-      // This RAF-polling loop is the main bottleneck for video exports.
-      if (useNativePath && contentReadyMode === "blocking") {
-        // Query videos from the CLONE (not Prime)
-        const allVideos = renderClone.querySelectorAll("ef-video");
-        if (allVideos.length > 0) {
-          // Simple check: wait for videos to have content
-          const waitStart = performance.now();
-          while (performance.now() - waitStart < blockingTimeoutMs) {
-            let allReady = true;
-            for (const video of allVideos) {
-              const shadowCanvas = video.shadowRoot?.querySelector("canvas");
-              if (shadowCanvas && shadowCanvas.width > 0) {
-                const ctx = shadowCanvas.getContext("2d");
-                if (ctx) {
-                  const data = ctx.getImageData(0, 0, 1, 1).data;
-                  if (data[0] === 0 && data[1] === 0 && data[2] === 0 && data[3] === 0) {
-                    allReady = false;
-                    break;
-                  }
-                }
-              }
-            }
-            if (allReady) break;
-            await new Promise(r => requestAnimationFrame(r));
-          }
-        }
-      }
-      
       // Render to image based on path
       const renderStart = performance.now();
       let image: HTMLCanvasElement | HTMLImageElement;
@@ -830,12 +799,43 @@ export async function renderTimegroupToVideo(
         // Without reuseCanvas, renderToImageNative creates a new canvas each frame,
         // orphaning renderContainer when the temp canvas is removed - causing black content.
         
-        // Make both canvas and container visible for layout
-        // drawElementImage requires elements to be laid out (not hidden)
+        // Make both canvas and container visible for layout BEFORE waiting for video content.
+        // Video elements only paint frames to their shadow canvases when visible.
+        // drawElementImage also requires elements to be laid out (not hidden).
         const savedCanvasOpacity = captureCanvas.style.opacity;
         captureCanvas.style.opacity = "1";
         renderContainer.style.transform = "none";
         renderContainer.style.opacity = "1";
+        
+        // Wait for video content if in blocking mode (NATIVE PATH ONLY)
+        // Must happen AFTER making container visible so videos can paint their frames.
+        // This RAF-polling loop is the main bottleneck for video exports.
+        if (contentReadyMode === "blocking") {
+          // Query videos from the CLONE (not Prime)
+          const allVideos = renderClone.querySelectorAll("ef-video");
+          if (allVideos.length > 0) {
+            // Simple check: wait for videos to have content
+            const waitStart = performance.now();
+            while (performance.now() - waitStart < blockingTimeoutMs) {
+              let allReady = true;
+              for (const video of allVideos) {
+                const shadowCanvas = video.shadowRoot?.querySelector("canvas");
+                if (shadowCanvas && shadowCanvas.width > 0) {
+                  const ctx = shadowCanvas.getContext("2d");
+                  if (ctx) {
+                    const data = ctx.getImageData(0, 0, 1, 1).data;
+                    if (data[0] === 0 && data[1] === 0 && data[2] === 0 && data[3] === 0) {
+                      allReady = false;
+                      break;
+                    }
+                  }
+                }
+              }
+              if (allReady) break;
+              await new Promise(r => requestAnimationFrame(r));
+            }
+          }
+        }
         
         // Pass renderContainer with reuseCanvas to keep everything in the DOM
         image = await renderToImageNative(renderContainer, timegroupWidth, timegroupHeight, { 
