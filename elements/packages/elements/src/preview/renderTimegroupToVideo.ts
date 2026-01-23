@@ -1,14 +1,8 @@
 /**
- * Video rendering for timegroups using the RenderSession abstraction.
+ * Video rendering for timegroups.
  * 
- * This module is responsible for:
- * 1. Resolving render configuration
- * 2. Setting up video/audio encoding
- * 3. Frame loop orchestration
- * 4. Output handling (streaming vs buffer)
- * 
- * Frame capture is delegated to RenderSession - the same code path
- * used by thumbnail generation. This ensures consistency.
+ * Uses the EXACT same rendering path as thumbnail generation (captureFromClone),
+ * ensuring consistency between preview thumbnails and exported video.
  */
 
 import {
@@ -26,97 +20,47 @@ import {
   type AudioCodec,
 } from "mediabunny";
 import type { EFTimegroup } from "../elements/EFTimegroup.js";
-import { resetRenderState, type ContentReadyMode } from "./renderTimegroupToCanvas.js";
+import type { EFVideo } from "../elements/EFVideo.js";
 import {
-  createRenderSession,
-  prefetchScrubSegments,
-} from "./RenderSession.js";
+  resetRenderState,
+  captureFromClone,
+  type ContentReadyMode,
+} from "./renderTimegroupToCanvas.js";
 
 // ============================================================================
 // Types
 // ============================================================================
 
 export interface RenderProgress {
-  /** Progress ratio (0-1) */
   progress: number;
-  /** Current frame being rendered (1-indexed) */
   currentFrame: number;
-  /** Total number of frames to render */
   totalFrames: number;
-  /** Video time rendered so far in milliseconds */
   renderedMs: number;
-  /** Total video duration in milliseconds */
   totalDurationMs: number;
-  /** Elapsed wall-clock time in milliseconds */
   elapsedMs: number;
-  /** Estimated remaining time in milliseconds */
   estimatedRemainingMs: number;
-  /** Render speed as a multiplier (e.g., 0.5 = half realtime, 2 = 2x realtime) */
   speedMultiplier: number;
-  /** Data URL of the current frame preview (small thumbnail) */
   framePreviewUrl?: string;
 }
 
 export interface RenderToVideoOptions {
-  /** Frames per second for the output video. Defaults to timegroup's fps or 30. */
   fps?: number;
-  /** Video codec to use. Defaults to 'avc' (H.264). */
   codec?: "avc" | "hevc" | "vp9" | "av1" | "vp8";
-  /** Bitrate in bits per second, or use QUALITY_HIGH, QUALITY_MEDIUM, etc. */
   bitrate?: number;
-  /** Filename for the downloaded video. Defaults to 'timegroup-video.mp4'. */
   filename?: string;
-  /** Scale factor for resolution (1 = full size, 0.5 = half). Defaults to 1. */
   scale?: number;
-  /** Key frame interval in seconds. Defaults to 2. */
   keyFrameInterval?: number;
-  /** Start time in milliseconds. Defaults to 0. */
   fromMs?: number;
-  /** End time in milliseconds. Defaults to timegroup duration. */
   toMs?: number;
-  /** Called with detailed progress info during rendering. */
   onProgress?: (progress: RenderProgress) => void;
-  /** 
-   * If true, use File System Access API to stream output directly to disk.
-   * This reduces memory usage for large videos. Falls back to buffer if unavailable.
-   * Defaults to true (will prompt user for save location).
-   */
   streaming?: boolean;
-  /** AbortSignal for cancelling the render */
   signal?: AbortSignal;
-  /** 
-   * If true, includes audio in the output. Defaults to true.
-   * Audio is rendered using the timegroup's renderAudio method.
-   */
   includeAudio?: boolean;
-  /** Audio bitrate in bits per second. Defaults to 128kbps. */
   audioBitrate?: number;
-  /** 
-   * Content readiness strategy. Defaults to "blocking" for video export.
-   * - "blocking": Wait for video content to be ready, throw on timeout
-   * - "immediate": Capture immediately, may have blank frames
-   */
   contentReadyMode?: ContentReadyMode;
-  /** Max wait time for blocking mode before throwing (default 5000ms) */
   blockingTimeoutMs?: number;
-  /**
-   * If true, returns the video buffer instead of triggering a download.
-   * Only works when streaming is false. Useful for server-side rendering.
-   */
   returnBuffer?: boolean;
-  /**
-   * Priority list of acceptable audio codecs. The first codec that is supported
-   * by the browser's encoder will be used. If none are supported, an error is thrown.
-   * 
-   * If not provided, defaults to ["aac", "opus"] for broad compatibility.
-   * For AAC-only output (e.g., server-side splicing), use ["aac"].
-   */
   preferredAudioCodecs?: AudioCodec[];
-  /**
-   * If true, renders all frames but skips video encoding and output.
-   * Used for benchmarking the pure rendering pipeline without encoder overhead.
-   * Returns undefined (no video output).
-   */
   benchmarkMode?: boolean;
 }
 
@@ -124,7 +68,6 @@ export interface RenderToVideoOptions {
 // Errors
 // ============================================================================
 
-/** Error thrown when no supported audio codec is available */
 export class NoSupportedAudioCodecError extends Error {
   constructor(requestedCodecs: AudioCodec[], availableCodecs: AudioCodec[]) {
     super(
@@ -135,7 +78,6 @@ export class NoSupportedAudioCodecError extends Error {
   }
 }
 
-/** Error thrown when render is cancelled */
 export class RenderCancelledError extends Error {
   constructor() {
     super("Render cancelled");
@@ -144,7 +86,7 @@ export class RenderCancelledError extends Error {
 }
 
 // ============================================================================
-// Configuration Resolution
+// Configuration
 // ============================================================================
 
 interface ResolvedConfig {
@@ -209,7 +151,6 @@ function resolveConfig(
   const width = Math.floor(timegroupWidth * scale);
   const height = Math.floor(timegroupHeight * scale);
 
-  // Ensure even dimensions (required for H.264)
   const videoWidth = width % 2 === 0 ? width : width - 1;
   const videoHeight = height % 2 === 0 ? height : height - 1;
 
@@ -244,7 +185,7 @@ function resolveConfig(
 }
 
 // ============================================================================
-// File System Access Helpers
+// Helpers
 // ============================================================================
 
 function isFileSystemAccessSupported(): boolean {
@@ -261,21 +202,10 @@ async function getFileWritableStream(
   try {
     const fileHandle = await (window as any).showSaveFilePicker({
       suggestedName: filename,
-      types: [
-        {
-          description: "MP4 Video",
-          accept: { "video/mp4": [".mp4"] },
-        },
-      ],
+      types: [{ description: "MP4 Video", accept: { "video/mp4": [".mp4"] } }],
     });
-
     const writable = await fileHandle.createWritable();
-    return {
-      writable,
-      close: async () => {
-        await writable.close();
-      },
-    };
+    return { writable, close: async () => { await writable.close(); } };
   } catch (e) {
     if ((e as Error).name !== "AbortError") {
       console.warn("[renderToVideo] File System Access failed:", e);
@@ -284,43 +214,21 @@ async function getFileWritableStream(
   }
 }
 
-// ============================================================================
-// Audio Codec Selection
-// ============================================================================
-
 async function selectAudioCodec(
   preferredCodecs: AudioCodec[],
   encodingOptions: { numberOfChannels: number; sampleRate: number; bitrate: number },
 ): Promise<AudioCodec> {
-  const { numberOfChannels, sampleRate, bitrate } = encodingOptions;
-  
   for (const codec of preferredCodecs) {
     try {
-      const isSupported = await canEncodeAudio(codec, {
-        numberOfChannels,
-        sampleRate,
-        bitrate,
-      });
-      if (isSupported) {
-        return codec;
-      }
+      const isSupported = await canEncodeAudio(codec, encodingOptions);
+      if (isSupported) return codec;
     } catch (e) {
       console.warn(`[selectAudioCodec] Check failed for ${codec}:`, e);
     }
   }
-  
-  const availableCodecs = await getEncodableAudioCodecs(undefined, {
-    numberOfChannels,
-    sampleRate,
-    bitrate,
-  });
-  
+  const availableCodecs = await getEncodableAudioCodecs(undefined, encodingOptions);
   throw new NoSupportedAudioCodecError(preferredCodecs, availableCodecs);
 }
-
-// ============================================================================
-// Utility Functions
-// ============================================================================
 
 function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
@@ -333,21 +241,10 @@ function downloadBlob(blob: Blob, filename: string): void {
   URL.revokeObjectURL(url);
 }
 
-function generateTimestamps(config: ResolvedConfig): number[] {
-  const timestamps: number[] = [];
-  for (let i = 0; i < config.totalFrames; i++) {
-    timestamps.push(config.startMs + i * config.frameDurationMs);
-  }
-  return timestamps;
-}
-
 // ============================================================================
 // Public API
 // ============================================================================
 
-/**
- * Get all audio codecs that can be encoded by this browser.
- */
 export async function getSupportedAudioCodecs(options?: {
   numberOfChannels?: number;
   sampleRate?: number;
@@ -360,61 +257,61 @@ export async function getSupportedAudioCodecs(options?: {
 /**
  * Renders a timegroup to an MP4 video file.
  * 
- * Uses the same rendering pipeline as thumbnail generation (RenderSession),
- * ensuring consistency between preview thumbnails and exported video.
- * 
- * By default, prompts user to select a save location and streams the video
- * directly to disk as it renders (using File System Access API).
+ * Uses the EXACT same code path as thumbnail generation (captureFromClone).
+ * This ensures consistency - if thumbnails work, video export works.
  */
 export async function renderTimegroupToVideo(
   timegroup: EFTimegroup,
   options: RenderToVideoOptions = {},
 ): Promise<Uint8Array | undefined> {
-  // 1. Resolve configuration
   const config = resolveConfig(timegroup, options);
   const { signal, onProgress } = options;
   
-  // Check cancellation helper
   const checkCancelled = () => {
-    if (signal?.aborted) {
-      throw new RenderCancelledError();
-    }
+    if (signal?.aborted) throw new RenderCancelledError();
   };
   
-  // Reset render profiling
   resetRenderState();
   
-  // 2. Create render session (same code path as thumbnails!)
-  const session = await createRenderSession(timegroup, {
-    contentReadyMode: config.contentReadyMode,
-    blockingTimeoutMs: config.blockingTimeoutMs,
-    skipDprScaling: true, // Video export doesn't need retina resolution
-  });
+  // =========================================================================
+  // Create render clone - EXACT same as captureBatch in EFTimegroup
+  // =========================================================================
+  const { clone: renderClone, container: renderContainer, cleanup: cleanupRenderClone } =
+    await timegroup.createRenderClone();
   
-  // 3. Pre-fetch scrub segments for all timestamps
-  const timestamps = generateTimestamps(config);
-  await prefetchScrubSegments(session, timestamps);
+  // Pre-fetch scrub segments for all timestamps (same as captureBatch)
+  const timestamps: number[] = [];
+  for (let i = 0; i < config.totalFrames; i++) {
+    timestamps.push(config.startMs + i * config.frameDurationMs);
+  }
   
-  // 4. Set up video encoding (skip in benchmark mode)
+  const videoElements = renderClone.querySelectorAll("ef-video");
+  if (videoElements.length > 0) {
+    await Promise.all(
+      Array.from(videoElements).map((video) =>
+        (video as EFVideo).prefetchScrubSegments(timestamps),
+      ),
+    );
+  }
+  
+  // =========================================================================
+  // Set up video encoding
+  // =========================================================================
   let output: Output | null = null;
   let videoSource: CanvasSource | null = null;
   let audioSource: AudioBufferSource | null = null;
   let target: BufferTarget | StreamTarget | null = null;
   let fileStream: { writable: WritableStream<Uint8Array>; close: () => Promise<void> } | null = null;
   let useStreaming = false;
-  
-  // Encoding canvas and context (kept separate from CanvasSource)
   let encodingCanvas: OffscreenCanvas | null = null;
   let encodingCtx: OffscreenCanvasRenderingContext2D | null = null;
   
   if (!config.benchmarkMode) {
-    // Set up streaming target if requested
     if (config.streaming) {
       fileStream = await getFileWritableStream(config.filename);
       useStreaming = fileStream !== null;
     }
     
-    // Create output target
     if (useStreaming && fileStream) {
       target = new StreamTarget(fileStream.writable as any);
       output = new Output({
@@ -423,21 +320,16 @@ export async function renderTimegroupToVideo(
       });
     } else {
       target = new BufferTarget();
-      output = new Output({
-        format: new Mp4OutputFormat(),
-        target,
-      });
+      output = new Output({ format: new Mp4OutputFormat(), target });
     }
     
-    // Create encoding canvas at video dimensions
     encodingCanvas = new OffscreenCanvas(config.videoWidth, config.videoHeight);
     encodingCtx = encodingCanvas.getContext("2d");
     if (!encodingCtx) {
-      session.dispose();
+      cleanupRenderClone();
       throw new Error("Failed to get encoding canvas context");
     }
     
-    // Create video source
     const videoConfig: VideoEncodingConfig = {
       codec: config.codec,
       bitrate: config.bitrate,
@@ -446,14 +338,12 @@ export async function renderTimegroupToVideo(
     videoSource = new CanvasSource(encodingCanvas, videoConfig);
     output.addVideoTrack(videoSource);
     
-    // Set up audio if requested
     if (config.includeAudio) {
       const selectedCodec = await selectAudioCodec(config.preferredAudioCodecs, {
         numberOfChannels: 2,
         sampleRate: 48000,
         bitrate: config.audioBitrate,
       });
-      
       const audioConfig: AudioEncodingConfig = {
         codec: selectedCodec,
         bitrate: config.audioBitrate,
@@ -465,16 +355,16 @@ export async function renderTimegroupToVideo(
     await output.start();
   }
   
-  // 5. Frame loop
+  // =========================================================================
+  // Frame loop - using EXACT same code path as captureBatch
+  // =========================================================================
   const renderStartTime = performance.now();
   let lastFramePreviewUrl: string | undefined;
   let lastRenderedAudioEndMs = config.startMs;
   const audioChunkDurationMs = 2000;
   
-  // Profiling accumulators
   let totalSeekMs = 0;
-  let totalWaitMs = 0;
-  let totalRenderMs = 0;
+  let totalCaptureMs = 0;
   let totalEncodeMs = 0;
   
   try {
@@ -492,38 +382,39 @@ export async function renderTimegroupToVideo(
           if (audioBuffer && audioBuffer.length > 0) {
             await audioSource.add(audioBuffer);
           }
-        } catch (e) {
-          // Audio render failures are non-fatal
-        }
+        } catch (e) { /* Audio render failures are non-fatal */ }
         lastRenderedAudioEndMs = chunkEndMs;
       }
       
-      // Capture frame using RenderSession (same code as thumbnails!)
-      const { canvas, timings } = await session.captureFrame({
-        timeMs,
-        scale: config.scale,
-      });
+      // =====================================================================
+      // EXACT same pattern as captureBatch: seekForRender + captureFromClone
+      // =====================================================================
+      const seekStart = performance.now();
+      await renderClone.seekForRender(timeMs);
+      totalSeekMs += performance.now() - seekStart;
       
-      totalSeekMs += timings.seekMs;
-      totalWaitMs += timings.waitMs;
-      totalRenderMs += timings.renderMs;
+      const captureStart = performance.now();
+      const canvas = await captureFromClone(renderClone, renderContainer, {
+        scale: config.scale,
+        contentReadyMode: config.contentReadyMode,
+        blockingTimeoutMs: config.blockingTimeoutMs,
+        originalTimegroup: timegroup,
+      });
+      totalCaptureMs += performance.now() - captureStart;
       
       // Encode frame
       if (videoSource && output && encodingCtx) {
         const encodeStart = performance.now();
-        
-        // Copy to encoding canvas (handles dimension conversion)
         encodingCtx.drawImage(
           canvas,
           0, 0, canvas.width, canvas.height,
           0, 0, config.videoWidth, config.videoHeight,
         );
-        
         await videoSource.add(timestampS, config.frameDurationS);
         totalEncodeMs += performance.now() - encodeStart;
       }
       
-      // Update progress
+      // Progress
       const currentFrame = frameIndex + 1;
       const progress = currentFrame / config.totalFrames;
       const renderedMs = currentFrame * config.frameDurationMs;
@@ -533,7 +424,6 @@ export async function renderTimegroupToVideo(
       const estimatedRemainingMs = remainingFrames * msPerFrame;
       const speedMultiplier = renderedMs / elapsedMs;
       
-      // Generate preview every 10 frames
       if (onProgress && frameIndex % 10 === 0) {
         const previewWidth = 160;
         const previewHeight = Math.round(previewWidth * (config.videoHeight / config.videoWidth));
@@ -565,26 +455,20 @@ export async function renderTimegroupToVideo(
         if (audioBuffer && audioBuffer.length > 0) {
           await audioSource.add(audioBuffer);
         }
-      } catch (e) {
-        // Audio render failures are non-fatal
-      }
+      } catch (e) { /* Audio render failures are non-fatal */ }
     }
     
-    // Log profiling
     const totalTime = performance.now() - renderStartTime;
     console.log(
       `[renderTimegroupToVideo] ${config.totalFrames} frames: ` +
-      `seek=${totalSeekMs.toFixed(0)}ms, wait=${totalWaitMs.toFixed(0)}ms, ` +
-      `render=${totalRenderMs.toFixed(0)}ms, encode=${totalEncodeMs.toFixed(0)}ms, ` +
-      `total=${totalTime.toFixed(0)}ms`
+      `seek=${totalSeekMs.toFixed(0)}ms, capture=${totalCaptureMs.toFixed(0)}ms, ` +
+      `encode=${totalEncodeMs.toFixed(0)}ms, total=${totalTime.toFixed(0)}ms`
     );
     
-    // Benchmark mode: skip finalization
     if (config.benchmarkMode) {
       return undefined;
     }
     
-    // Finalize output
     await output!.finalize();
     
     if (useStreaming) {
@@ -606,7 +490,7 @@ export async function renderTimegroupToVideo(
     }
     
   } finally {
-    session.dispose();
+    cleanupRenderClone();
   }
 }
 
