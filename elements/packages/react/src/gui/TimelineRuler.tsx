@@ -44,15 +44,15 @@ export const TimelineRuler = React.forwardRef<
 
   React.useLayoutEffect(() => {
     if (elementRef.current && scrollContainerRef?.current) {
-      elementRef.current.scrollContainerElement = scrollContainerRef.current;
+      (elementRef.current as any).scrollContainerElement = scrollContainerRef.current;
     } else if (elementRef.current) {
-      elementRef.current.scrollContainerElement = null;
+      (elementRef.current as any).scrollContainerElement = null;
     }
   }, [scrollContainerRef?.current]);
 
   return (
     <BaseTimelineRuler
-      {...restProps}
+      {...(restProps as any)}
       ref={(node) => {
         elementRef.current = node;
         if (typeof ref === "function") ref(node);

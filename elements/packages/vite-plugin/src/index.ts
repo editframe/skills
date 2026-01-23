@@ -14,8 +14,6 @@ import type { Plugin } from "vite";
 
 import { forbidRelativePaths } from "./forbidRelativePaths.js";
 import { sendTaskResult } from "./sendTaskResult.js";
-import { readdir } from "node:fs/promises";
-import { existsSync } from "node:fs";
 
 interface VitePluginEditframeOptions {
   root: string;
