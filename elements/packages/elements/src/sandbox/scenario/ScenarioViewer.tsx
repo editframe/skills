@@ -1989,7 +1989,7 @@ export function ScenarioViewer({ sandboxLoaders }: ScenarioViewerProps = {}) {
                   />
 
                   {/* Error panel */}
-                  {error ? (
+                  {error && typeof error === "string" ? (
                     <div
                       style={{
                         padding: "8px 12px",
