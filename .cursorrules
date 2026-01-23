@@ -2,17 +2,19 @@
 
 ## Overview
 
-This is a monorepo containing two main projects:
+This is a monorepo containing three main projects:
 - **telecine**: Located at `telecine/`
 - **elements**: Located at `elements/`
+- **skills**: Located at `skills/`
 
-Both projects are maintained as git worktrees with separate remotes configured in the root repository.
+All projects are maintained with separate remotes configured in the root repository.
 
 ## Git Remotes Configuration
 
-The root repository has two remotes configured:
+The root repository has three remotes configured:
 - `telecine`: Points to `git@github.com:editframe/telecine.git`
 - `elements`: Points to `git@github.com:editframe/elements.git`
+- `skills`: Points to `git@github.com:editframe/skills.git`
 
 These remotes are used for syncing changes to/from the separate repositories.
 
@@ -48,19 +50,20 @@ The elements project also uses git worktrees with similar structure:
 
 ### Pushing Changes to Remotes
 
-To push changes from the monorepo to the telecine or elements remotes:
+Use the push scripts to push subdirectories to their respective remotes:
 
 ```bash
-# Push current branch to telecine remote
-git push telecine <branch-name>:<branch-name>
+# Push telecine/ directory to telecine remote
+./scripts/push-telecine
 
-# Push current branch to elements remote  
-git push elements <branch-name>:<branch-name>
+# Push elements/ directory to elements remote
+./scripts/push-elements
 
-# Push all branches (example)
-git push telecine --all
-git push elements --all
+# Push skills/ directory to skills remote
+./scripts/push-skills
 ```
+
+These scripts use `git subtree split` to extract only the relevant directory and push it to the appropriate remote.
 
 ### Pulling Changes from Remotes
 
@@ -73,9 +76,13 @@ git fetch telecine
 # Fetch from elements remote
 git fetch elements
 
+# Fetch from skills remote
+git fetch skills
+
 # Merge specific branch from remote
 git merge telecine/<branch-name>
 git merge elements/<branch-name>
+git merge skills/<branch-name>
 ```
 
 ### Creating Worktrees
@@ -101,7 +108,10 @@ The monorepo acts as the primary working repository. Changes should be:
 
 ## Scripts Location
 
-- Root scripts: `scripts/` - Delegates to telecine/elements scripts
+- Root scripts: `scripts/` - Push scripts and delegation
+  - `push-telecine` - Push telecine/ to telecine remote
+  - `push-elements` - Push elements/ to elements remote
+  - `push-skills` - Push skills/ to skills remote
 - Telecine scripts: `telecine/scripts/`
 - Elements scripts: `elements/scripts/`
 

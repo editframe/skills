@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+PROJECT_ROOT="$SCRIPT_DIR/.."
+
+cd "$PROJECT_ROOT"
+
+BRANCH="main"
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --branch)
+      BRANCH="$2"
+      shift 2
+      ;;
+    *)
+      BRANCH="$1"
+      shift
+      ;;
+  esac
+done
+
+TEMP_BRANCH="skills-split-${BRANCH}"
+
+echo "Splitting skills subtree to temporary branch..."
+git subtree split --prefix=skills -b "$TEMP_BRANCH"
+
+echo "Pushing to skills remote..."
+git push skills "$TEMP_BRANCH:$BRANCH" --force
+
+echo "Cleaning up temporary branch..."
+git branch -D "$TEMP_BRANCH"
+
+echo "✅ Successfully pushed skills/ directory to skills remote ($BRANCH branch)"
