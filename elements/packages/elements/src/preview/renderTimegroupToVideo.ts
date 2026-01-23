@@ -862,6 +862,7 @@ export async function renderTimegroupToVideo(
           
           // Wait for video content if in blocking mode (foreignObject path)
           // Must happen after seek but before buildCloneStructure copies canvas content
+          // Uses robust middle-strip sampling (same as thumbnails) to avoid false positives
           if (contentReadyMode === "blocking") {
             const allVideos = renderClone.querySelectorAll("ef-video");
             if (allVideos.length > 0) {
@@ -870,15 +871,31 @@ export async function renderTimegroupToVideo(
                 let allReady = true;
                 for (const video of allVideos) {
                   const shadowCanvas = video.shadowRoot?.querySelector("canvas");
-                  if (shadowCanvas && shadowCanvas.width > 0) {
-                    const ctx = shadowCanvas.getContext("2d");
-                    if (ctx) {
-                      const data = ctx.getImageData(0, 0, 1, 1).data;
-                      if (data[0] === 0 && data[1] === 0 && data[2] === 0 && data[3] === 0) {
-                        allReady = false;
-                        break;
-                      }
+                  // Canvas must exist and have dimensions
+                  if (!shadowCanvas || shadowCanvas.width === 0 || shadowCanvas.height === 0) {
+                    allReady = false;
+                    break;
+                  }
+                  const ctx = shadowCanvas.getContext("2d");
+                  if (!ctx) {
+                    allReady = false;
+                    break;
+                  }
+                  // Sample middle strip (catches video content even if edges are black)
+                  const stripY = Math.floor(shadowCanvas.height / 2);
+                  const imageData = ctx.getImageData(0, stripY, shadowCanvas.width, 4);
+                  const data = imageData.data;
+                  // Check if ANY pixel has non-zero alpha (not transparent/uninitialized)
+                  let hasContent = false;
+                  for (let i = 3; i < data.length; i += 4) {
+                    if (data[i] !== 0) {
+                      hasContent = true;
+                      break;
                     }
+                  }
+                  if (!hasContent) {
+                    allReady = false;
+                    break;
                   }
                 }
                 if (allReady) break;
@@ -937,6 +954,7 @@ export async function renderTimegroupToVideo(
           
           // Wait for video content if in blocking mode (foreignObject path)
           // Must happen after seek but before syncStyles copies canvas content
+          // Uses robust middle-strip sampling (same as thumbnails) to avoid false positives
           if (contentReadyMode === "blocking") {
             const allVideos = renderClone.querySelectorAll("ef-video");
             if (allVideos.length > 0) {
@@ -945,15 +963,31 @@ export async function renderTimegroupToVideo(
                 let allReady = true;
                 for (const video of allVideos) {
                   const shadowCanvas = video.shadowRoot?.querySelector("canvas");
-                  if (shadowCanvas && shadowCanvas.width > 0) {
-                    const ctx = shadowCanvas.getContext("2d");
-                    if (ctx) {
-                      const data = ctx.getImageData(0, 0, 1, 1).data;
-                      if (data[0] === 0 && data[1] === 0 && data[2] === 0 && data[3] === 0) {
-                        allReady = false;
-                        break;
-                      }
+                  // Canvas must exist and have dimensions
+                  if (!shadowCanvas || shadowCanvas.width === 0 || shadowCanvas.height === 0) {
+                    allReady = false;
+                    break;
+                  }
+                  const ctx = shadowCanvas.getContext("2d");
+                  if (!ctx) {
+                    allReady = false;
+                    break;
+                  }
+                  // Sample middle strip (catches video content even if edges are black)
+                  const stripY = Math.floor(shadowCanvas.height / 2);
+                  const imageData = ctx.getImageData(0, stripY, shadowCanvas.width, 4);
+                  const data = imageData.data;
+                  // Check if ANY pixel has non-zero alpha (not transparent/uninitialized)
+                  let hasContent = false;
+                  for (let i = 3; i < data.length; i += 4) {
+                    if (data[i] !== 0) {
+                      hasContent = true;
+                      break;
                     }
+                  }
+                  if (!hasContent) {
+                    allReady = false;
+                    break;
                   }
                 }
                 if (allReady) break;
