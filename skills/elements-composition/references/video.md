@@ -1,6 +1,6 @@
 # ef-video
 
-Video element with source trimming and canvas rendering.
+Video element with source trimming.
 
 ## Props
 
@@ -22,7 +22,7 @@ Video element with source trimming and canvas rendering.
 <ef-video src="video.mp4" sourcein="5s" sourceout="15s" class="size-full"></ef-video>
 ```
 
-## Muted with Volume
+## Muted / Volume
 
 ```html
 <ef-video src="video.mp4" mute class="size-full"></ef-video>
@@ -33,10 +33,7 @@ Video element with source trimming and canvas rendering.
 
 ```html
 <ef-timegroup mode="fixed" duration="6s" class="absolute w-full h-full">
-  <!-- Main video (full screen) -->
   <ef-video src="main.mp4" class="size-full object-cover"></ef-video>
-  
-  <!-- PiP overlay (small) -->
   <ef-video src="overlay.mp4" class="absolute bottom-4 right-4 w-48 h-28 rounded-lg border-2 border-white"></ef-video>
 </ef-timegroup>
 ```
