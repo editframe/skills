@@ -21,20 +21,21 @@ function isEFTimegroup(element: Element | null): element is EFTimegroup {
 
 /**
  * Get identifiers for cache key generation.
- * Returns rootId (for cache isolation) and elementId (for element-specific caching).
+ * Returns rootId (for cache isolation), elementId (for element-specific caching), and epoch (for content versioning).
  */
-function getCacheIdentifiers(element: EFVideo | EFTimegroup): { rootId: string; elementId: string } {
+function getCacheIdentifiers(element: EFVideo | EFTimegroup): { rootId: string; elementId: string; epoch: number } {
   // Get root timegroup for cache isolation between projects
   const rootTemporal = findRootTemporal(element);
   const rootTimegroup = rootTemporal && isEFTimegroup(rootTemporal) ? rootTemporal : null;
   const rootId = rootTimegroup?.id || "default";
+  const epoch = rootTimegroup?.contentEpoch ?? 0;
 
   // Element identifier
   const elementId = isEFVideo(element)
     ? element.src || element.id || "video"
     : element.id || "timegroup";
 
-  return { rootId, elementId };
+  return { rootId, elementId, epoch };
 }
 
 /** Padding in pixels for virtual rendering (render extra thumbnails beyond viewport) */
@@ -150,6 +151,8 @@ export class EFThumbnailStrip extends LitElement {
     // Reset ready state when target changes
     if (value !== oldValue) {
       this._hasLoadedThumbnails = false;
+      this._lastLoadedEpoch = null;
+      this._lastLayoutParams = null;
     }
 
     if (value && value !== oldValue) {
@@ -193,6 +196,19 @@ export class EFThumbnailStrip extends LitElement {
 
   /** Track if any thumbnails have been loaded (for ready event) */
   private _hasLoadedThumbnails = false;
+
+  /** Track the last epoch we loaded thumbnails for */
+  private _lastLoadedEpoch: number | null = null;
+  
+  /** Track layout parameters to avoid unnecessary slot recreation */
+  private _lastLayoutParams: {
+    width: number;
+    height: number;
+    startTimeMs: number;
+    endTimeMs: number;
+    thumbWidth: number;
+    gap: number;
+  } | null = null;
 
   // ─────────────────────────────────────────────────────────────────────────
   // Lifecycle
@@ -417,6 +433,46 @@ export class EFThumbnailStrip extends LitElement {
   // Target Observer
   // ─────────────────────────────────────────────────────────────────────────
 
+  /**
+   * Watch for async content loading from child media elements.
+   * When media finishes loading, increment the epoch to invalidate cached thumbnails.
+   */
+  private _watchChildContentLoading(target: EFTimegroup): void {
+    const mediaElements = target.querySelectorAll('ef-video, ef-image, ef-audio');
+    
+    for (const el of mediaElements) {
+      // Watch EFVideo/EFAudio mediaEngineTask completion
+      const mediaEngine = (el as any).mediaEngineTask;
+      if (mediaEngine?.taskComplete) {
+        mediaEngine.taskComplete.then(() => {
+          if (this._targetElement === target) {
+            target.incrementContentEpoch();
+            // Reset layout params to force slot recreation with new epoch
+            this._lastLayoutParams = null;
+            this._scheduleRender();
+          }
+        }).catch(() => {
+          // Ignore abort errors
+        });
+      }
+      
+      // Watch EFImage fetchImage completion  
+      const fetchTask = (el as any).fetchImage;
+      if (fetchTask?.taskComplete) {
+        fetchTask.taskComplete.then(() => {
+          if (this._targetElement === target) {
+            target.incrementContentEpoch();
+            // Reset layout params to force slot recreation with new epoch
+            this._lastLayoutParams = null;
+            this._scheduleRender();
+          }
+        }).catch(() => {
+          // Ignore abort errors
+        });
+      }
+    }
+  }
+
   private _setupTargetObserver(target: EFVideo | EFTimegroup): void {
     if (isEFVideo(target)) {
       // Watch video property changes
@@ -435,12 +491,64 @@ export class EFThumbnailStrip extends LitElement {
         });
       });
     } else if (isEFTimegroup(target)) {
-      // Watch timegroup structure changes
-      this._mutationObserver = new MutationObserver(() => this._scheduleRender());
+      // Watch timegroup structure and content changes
+      this._mutationObserver = new MutationObserver((mutations) => {
+        // Double-check that mutations are actually content-changing
+        // (defensive check in case attributeFilter doesn't catch everything)
+        const hasContentChange = mutations.some((mutation) => {
+          if (mutation.type === "childList") {
+            return mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0;
+          }
+          if (mutation.type === "attributes") {
+            const attrName = mutation.attributeName;
+            // Skip time/playback attributes that might slip through
+            if (attrName === "currenttime" || attrName === "current-time" || 
+                attrName === "playing" || attrName === "loop") {
+              return false;
+            }
+            // Only count visual content attributes
+            return attrName === "src" || attrName === "asset-id" || 
+                   attrName === "style" || attrName === "transform";
+          }
+          return false;
+        });
+        
+        // Only increment epoch and schedule render if content actually changed
+        if (hasContentChange) {
+          const epochBefore = target.contentEpoch;
+          target.incrementContentEpoch();
+          const epochAfter = target.contentEpoch;
+          
+          // Only schedule render if epoch actually changed
+          // (defensive check in case incrementContentEpoch was called elsewhere)
+          if (epochAfter !== epochBefore) {
+            // Reset layout params to force slot recreation with new epoch
+            this._lastLayoutParams = null;
+            
+            // Check if new children were added
+            const hasNewChildren = mutations.some(m => m.addedNodes.length > 0);
+            
+            // Re-watch content loading for new children
+            if (hasNewChildren) {
+              this._watchChildContentLoading(target);
+            }
+            
+            this._scheduleRender();
+          }
+        }
+      });
       this._mutationObserver.observe(target, {
         childList: true,
         subtree: true,
+        attributes: true,
+        // Only watch attributes that affect visual content
+        // Exclude time/playback attributes (currenttime, playing, loop) and trim/source attributes
+        // (those affect which part of content is shown, not the content itself)
+        attributeFilter: ["src", "asset-id", "style", "transform"],
       });
+
+      // Watch for async content loading from child media elements
+      this._watchChildContentLoading(target);
 
       // Watch for duration becoming available
       if (target.durationMs === 0) {
@@ -467,9 +575,12 @@ export class EFThumbnailStrip extends LitElement {
 
     requestAnimationFrame(() => {
       this._renderRequested = false;
+      
       this._calculateLayout();
       this._checkCache();
       this._drawCanvas();
+      
+      // Load any pending thumbnails (has its own epoch and state checks)
       this._loadVisibleThumbnails();
 
       // Check if we should dispatch ready event
@@ -499,22 +610,50 @@ export class EFThumbnailStrip extends LitElement {
 
   /**
    * Calculate thumbnail layout based on current dimensions and time range.
+   * Only recreates slots if layout parameters have actually changed.
    */
   private _calculateLayout(): void {
     if (this._width <= 0 || this._height <= 0 || !this._targetElement) {
       this._thumbnailSlots = [];
+      this._lastLayoutParams = null;
       return;
     }
 
     const timeRange = this._getTimeRange();
     if (timeRange.endMs <= timeRange.startMs) {
       this._thumbnailSlots = [];
+      this._lastLayoutParams = null;
       return;
     }
 
     // Calculate thumbnail dimensions
     const thumbWidth = this._getEffectiveThumbnailWidth();
     const gap = this.gap;
+
+    // Check if layout parameters have changed
+    const currentParams = {
+      width: this._width,
+      height: this._height,
+      startTimeMs: timeRange.startMs,
+      endTimeMs: timeRange.endMs,
+      thumbWidth,
+      gap,
+    };
+
+    // If layout parameters haven't changed, preserve existing slots
+    if (this._lastLayoutParams &&
+        this._lastLayoutParams.width === currentParams.width &&
+        this._lastLayoutParams.height === currentParams.height &&
+        this._lastLayoutParams.startTimeMs === currentParams.startTimeMs &&
+        this._lastLayoutParams.endTimeMs === currentParams.endTimeMs &&
+        this._lastLayoutParams.thumbWidth === currentParams.thumbWidth &&
+        this._lastLayoutParams.gap === currentParams.gap) {
+      // Layout hasn't changed, keep existing slots
+      return;
+    }
+
+    // Layout changed - recreate slots
+    this._lastLayoutParams = currentParams;
 
     // Calculate how many thumbnails fit
     const count = Math.max(1, Math.floor((this._width + gap) / (thumbWidth + gap)));
@@ -601,13 +740,16 @@ export class EFThumbnailStrip extends LitElement {
   private _checkCache(): void {
     if (!this._targetElement) return;
 
-    const { rootId, elementId } = getCacheIdentifiers(this._targetElement);
+    const { rootId, elementId, epoch } = getCacheIdentifiers(this._targetElement);
 
     for (const slot of this._thumbnailSlots) {
-      const key = getCacheKey(rootId, elementId, slot.timeMs);
+      const key = getCacheKey(rootId, elementId, slot.timeMs, epoch);
       if (sessionThumbnailCache.has(key)) {
         slot.imageData = sessionThumbnailCache.get(key);
         slot.status = "cached";
+      } else {
+        // Mark as pending if not in cache
+        slot.status = "pending";
       }
     }
   }
@@ -752,9 +894,24 @@ export class EFThumbnailStrip extends LitElement {
 
   /**
    * Load thumbnails that are visible in the current viewport.
+   * Skips loading if the epoch hasn't changed since last load.
    */
   private async _loadVisibleThumbnails(): Promise<void> {
     if (this._captureInProgress || !this._targetElement) return;
+
+    // For timegroups, check if epoch has changed since last load
+    // If not, don't reload - the cache should already have the thumbnails
+    if (isEFTimegroup(this._targetElement)) {
+      const currentEpoch = this._targetElement.contentEpoch;
+      if (this._lastLoadedEpoch !== null && this._lastLoadedEpoch === currentEpoch) {
+        // Epoch hasn't changed, check if all visible slots are already cached
+        // Only proceed if there are actually pending slots that need loading
+        const hasPendingSlots = this._thumbnailSlots.some(s => s.status === "pending");
+        if (!hasPendingSlots) {
+          return;
+        }
+      }
+    }
 
     const viewportWidth = this._viewportWidth;
     const scrollOffset = this._currentScrollLeft;
@@ -806,6 +963,11 @@ export class EFThumbnailStrip extends LitElement {
       this._captureInProgress = false;
       this._drawCanvas();
 
+      // Update last loaded epoch for timegroups
+      if (isEFTimegroup(this._targetElement)) {
+        this._lastLoadedEpoch = this._targetElement.contentEpoch;
+      }
+
       // Dispatch ready event when thumbnails are first loaded
       const hasAnyLoaded = this._thumbnailSlots.some((s) => s.status === "cached");
       if (hasAnyLoaded && !this._hasLoadedThumbnails) {
@@ -820,7 +982,7 @@ export class EFThumbnailStrip extends LitElement {
    */
   private async _captureTimegroupThumbnails(slots: ThumbnailSlot[]): Promise<void> {
     const target = this._targetElement as EFTimegroup;
-    const { rootId, elementId } = getCacheIdentifiers(target);
+    const { rootId, elementId, epoch } = getCacheIdentifiers(target);
 
     // Calculate capture scale
     const timegroupWidth = target.offsetWidth || 1920;
@@ -845,7 +1007,7 @@ export class EFThumbnailStrip extends LitElement {
           if (canvas) {
             const imageData = this._canvasToImageData(canvas);
             if (imageData) {
-              const key = getCacheKey(rootId, elementId, slot.timeMs);
+              const key = getCacheKey(rootId, elementId, slot.timeMs, epoch);
               sessionThumbnailCache.set(key, imageData, slot.timeMs, elementId);
               slot.imageData = imageData;
               slot.status = "cached";
@@ -871,7 +1033,7 @@ export class EFThumbnailStrip extends LitElement {
    */
   private async _captureVideoThumbnails(slots: ThumbnailSlot[]): Promise<void> {
     const target = this._targetElement as EFVideo;
-    const { rootId, elementId } = getCacheIdentifiers(target);
+    const { rootId, elementId, epoch } = getCacheIdentifiers(target);
 
     // Wait for media engine
     if (target.mediaEngineTask) {
@@ -902,7 +1064,7 @@ export class EFThumbnailStrip extends LitElement {
         if (result?.thumbnail) {
           const imageData = this._canvasToImageData(result.thumbnail);
           if (imageData) {
-            const key = getCacheKey(rootId, elementId, slot.timeMs);
+            const key = getCacheKey(rootId, elementId, slot.timeMs, epoch);
             sessionThumbnailCache.set(key, imageData, slot.timeMs, elementId);
             slot.imageData = imageData;
             slot.status = "cached";

@@ -570,6 +570,9 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
 
   #resizeObserver?: ResizeObserver;
 
+  /** Content epoch - increments when visual content changes (used by thumbnail cache) */
+  #contentEpoch = 0;
+
   #currentTime: number | undefined = undefined;
   #userTimeMs: number = 0;  // What the user last requested (for preview display)
   #seekInProgress = false;
@@ -603,6 +606,24 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
       return window.EF_FRAMEGEN.renderOptions.encoderOptions.video.framerate;
     }
     return this.fps;
+  }
+
+  /**
+   * Get the current content epoch (used by thumbnail cache).
+   * The epoch increments whenever visual content changes.
+   * @public
+   */
+  get contentEpoch(): number {
+    return this.#contentEpoch;
+  }
+
+  /**
+   * Increment content epoch (called when visual content changes).
+   * This invalidates cached thumbnails by changing their cache keys.
+   * @public
+   */
+  incrementContentEpoch(): void {
+    this.#contentEpoch++;
   }
 
   async #runThrottledFrameTask(): Promise<void> {

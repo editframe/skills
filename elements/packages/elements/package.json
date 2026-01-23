@@ -46,12 +46,6 @@
         "default": "./dist/index.js"
       }
     },
-    "./sandbox": {
-      "import": {
-        "types": "./dist/sandbox/index.d.ts",
-        "default": "./dist/sandbox/index.js"
-      }
-    },
     "./package.json": "./package.json",
     "./styles.css": "./dist/style.css",
     "./types.json": "./types.json"

@@ -153,8 +153,7 @@ const awaitThumbnailLayout = async (thumbnailStrip: EFThumbnailStrip, timeoutMs 
   await Promise.race([thumbnailStrip.whenReady(), timeoutPromise]);
 };
 
-// Skip all EFThumbnailStrip tests - failing tests need investigation
-describe.skip("EFThumbnailStrip", () => {
+describe("EFThumbnailStrip", () => {
   describe("initialization", () => {
     test("should detect dimensions and target element on connection", async ({
       expect,
@@ -712,5 +711,74 @@ describe.skip("EFThumbnailStrip", () => {
 
       newContainer.remove();
     }, 30000);
+  });
+
+  describe("timegroup content updates", () => {
+    test("should update thumbnails when child video loads asynchronously", async ({
+      expect,
+    }) => {
+      // Create a timegroup with a video that loads asynchronously
+      const container = document.createElement("div");
+      const apiHost = getApiHost();
+      render(
+        html`
+        <ef-configuration api-host="${apiHost}" signing-url="/@ef-sign-url">
+          <div style="width: 800px; height: 600px;">
+            <ef-preview class="w-full h-[400px]">
+              <ef-timegroup id="root-timegroup" mode="contain" class="w-full h-full bg-black">
+                <ef-video id="async-video" src="http://web:3000/head-moov-480p.mp4" 
+                  class="size-full object-contain">
+                </ef-video>
+              </ef-timegroup>
+            </ef-preview>
+            <ef-thumbnail-strip 
+              target="root-timegroup" 
+              thumbnail-width="80" 
+              style="width: 600px; height: 48px;"
+            ></ef-thumbnail-strip>
+          </div>
+        </ef-configuration>
+      `,
+        container,
+      );
+      document.body.appendChild(container);
+
+      const timegroup = container.querySelector("#root-timegroup") as EFTimegroup;
+      const video = container.querySelector("#async-video") as EFVideo;
+      const thumbnailStrip = container.querySelector(
+        "ef-thumbnail-strip",
+      ) as EFThumbnailStrip;
+
+      await Promise.all([
+        timegroup.updateComplete,
+        video.updateComplete,
+        thumbnailStrip.updateComplete,
+      ]);
+
+      // Initially, thumbnails may be empty/placeholder before video loads
+      await new Promise((r) => requestAnimationFrame(r));
+      await new Promise((r) => requestAnimationFrame(r));
+
+      // Wait for video to load
+      await video.mediaEngineTask.taskComplete;
+
+      // Wait for thumbnail strip to update after content loads
+      await awaitThumbnailLayout(thumbnailStrip);
+
+      // Verify thumbnails now show video content
+      const canvas = thumbnailStrip.shadowRoot?.querySelector("canvas");
+      expect(canvas).toBeTruthy();
+      expect(canvas?.width).toBeGreaterThan(0);
+
+      // Check that canvas has actual pixel data (not blank placeholder)
+      const ctx = canvas?.getContext("2d");
+      if (ctx && canvas) {
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const hasContent = imageData.data.some((byte) => byte !== 0);
+        expect(hasContent).toBe(true);
+      }
+
+      container.remove();
+    }, 20000);
   });
 });

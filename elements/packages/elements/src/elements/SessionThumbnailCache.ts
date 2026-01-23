@@ -10,7 +10,7 @@
 
 import type { ThumbnailCacheStats } from "./thumbnailCache.js";
 
-/** Cache key format: "rootId:elementId:quantizedTimeMs" */
+/** Cache key format: "rootId:elementId:epoch:quantizedTimeMs" */
 type CacheKey = string;
 
 /** Cache entry with metadata for invalidation */
@@ -31,33 +31,36 @@ export function quantizeTimestamp(timeMs: number): number {
 
 /**
  * Generate cache key for thumbnail image data.
- * Format: "rootId:elementId:quantizedTimeMs"
+ * Format: "rootId:elementId:epoch:quantizedTimeMs"
  */
-export function getCacheKey(rootId: string, elementId: string, timeMs: number): string {
+export function getCacheKey(
+  rootId: string,
+  elementId: string,
+  timeMs: number,
+  epoch: number = 0,
+): string {
   const quantizedTimeMs = quantizeTimestamp(timeMs);
-  return `${rootId}:${elementId}:${quantizedTimeMs}`;
+  return `${rootId}:${elementId}:${epoch}:${quantizedTimeMs}`;
 }
 
 /**
  * Parse a cache key back into its components.
  */
-function parseCacheKey(key: CacheKey): { rootId: string; elementId: string; timeMs: number } | null {
+function parseCacheKey(key: CacheKey): { rootId: string; elementId: string; epoch: number; timeMs: number } | null {
   const parts = key.split(":");
-  if (parts.length < 3) return null;
+  if (parts.length < 4) return null; // Now requires at least 4 parts: rootId:elementId:epoch:timeMs
   
   // Last part is always timeMs
   const timeMs = Number.parseFloat(parts.pop()!);
-  // Second to last is elementId (may contain colons in URLs)
-  // Actually, we need to be smarter - rootId is first, elementId is middle, timeMs is last
-  // For URL-based elementIds like "http://example.com/video.mp4", we need to handle colons
-  
-  // Simpler approach: rootId is first part, timeMs is last, everything else is elementId
+  // Second to last is epoch
+  const epoch = Number.parseInt(parts.pop()!, 10);
+  // Everything before epoch is rootId:elementId (elementId may contain colons in URLs)
   const rootId = parts[0]!;
   parts.shift(); // Remove rootId
   const elementId = parts.join(":"); // Rejoin middle parts as elementId
   
-  if (Number.isNaN(timeMs)) return null;
-  return { rootId, elementId, timeMs };
+  if (Number.isNaN(timeMs) || Number.isNaN(epoch)) return null;
+  return { rootId, elementId, epoch, timeMs };
 }
 
 /**
@@ -104,6 +107,8 @@ export class SessionThumbnailCache {
    * Invalidate all thumbnails for a specific element.
    */
   invalidateElement(rootId: string, elementId: string): number {
+    // Match pattern: rootId:elementId:epoch:timeMs
+    // We need to match rootId:elementId: followed by any epoch
     const prefix = `${rootId}:${elementId}:`;
     let count = 0;
     
@@ -122,6 +127,7 @@ export class SessionThumbnailCache {
    * Used when content changes at specific times.
    */
   invalidateTimeRange(rootId: string, elementId: string, startTimeMs: number, endTimeMs: number): number {
+    // Match pattern: rootId:elementId:epoch:timeMs
     const prefix = `${rootId}:${elementId}:`;
     let count = 0;
     
