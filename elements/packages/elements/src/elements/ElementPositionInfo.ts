@@ -1,5 +1,7 @@
 import type { LitElement } from "lit";
 
+type Constructor<T = {}> = new (...args: any[]) => T;
+
 /**
  * Element position information interface.
  * Provides computed position, bounds, and transform information for elements.
@@ -25,8 +27,9 @@ export interface ElementPositionInfo {
  * Mixin that adds getPositionInfo() method to LitElement.
  * Elements can use this to expose their position information.
  */
-export function PositionInfoMixin<T extends typeof LitElement>(superClass: T) {
+export function PositionInfoMixin<T extends Constructor<LitElement>>(superClass: T) {
   class PositionInfoElement extends superClass {
+
     /**
      * Get position information for this element.
      * Returns computed bounds, transform, and rotation.
@@ -65,8 +68,8 @@ export function getPositionInfoFromElement(
     if (matrixMatch) {
       const values = matrixMatch[1].split(",").map((v) => parseFloat(v.trim()));
       if (values.length >= 4) {
-        const a = values[0];
-        const b = values[1];
+        const a = values[0]!;
+        const b = values[1]!;
         rotation = Math.atan2(b, a) * (180 / Math.PI);
       }
     }

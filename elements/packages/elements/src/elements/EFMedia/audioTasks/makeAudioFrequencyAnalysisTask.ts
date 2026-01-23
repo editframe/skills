@@ -75,12 +75,12 @@ function interpolateData(data: Uint8Array, targetSize: number): Uint8Array {
   return resampled;
 }
 
-export function makeAudioFrequencyAnalysisTask(element: EFMedia): Task<readonly [number], Uint8Array> {
+export function makeAudioFrequencyAnalysisTask(element: EFMedia): Task<readonly [number], Uint8Array | null> {
   // Internal cache for this task instance (same as original #frequencyDataCache)
   const cache = new LRUCache<string, Uint8Array>(100);
 
   // Capture task reference for use in onError
-  let task: Task<readonly [number], Uint8Array>;
+  let task: Task<readonly [number], Uint8Array | null>;
 
   task = new Task(element, {
     autoRun: EF_INTERACTIVE,
@@ -118,10 +118,6 @@ export function makeAudioFrequencyAnalysisTask(element: EFMedia): Task<readonly 
     args: () =>
       [
         element.currentSourceTimeMs,
-        element.fftSize,
-        element.fftDecay,
-        element.fftGain,
-        element.shouldInterpolateFrequencies,
       ] as const,
     task: async (_, { signal }) => {
       if (element.currentSourceTimeMs < 0) return null;

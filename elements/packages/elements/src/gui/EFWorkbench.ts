@@ -1000,7 +1000,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     this.cloneTimegroup = timegroup;
     
     // Disable the timegroup's own proxy mode - workbench handles cloning
-    timegroup.proxyMode = false;
+    (timegroup as any).proxyMode = false;
     
     // Ensure timegroup and its children have finished their initial render
     // before building the clone (custom elements need their shadow DOM ready)
@@ -1036,15 +1036,15 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     if (!container) return;
     
     try {
-      const { container: previewContainer, refresh, syncState } = renderTimegroupPreview(timegroup);
+      const { container: previewContainer, refresh } = renderTimegroupPreview(timegroup);
       
       container.innerHTML = "";
       previewContainer.classList.add("clone-content");
       container.appendChild(previewContainer);
       this.cloneRefresh = refresh;
       
-      // Store reference to the root clone element
-      this.cloneRootElement = syncState.tree.root?.clone as HTMLElement ?? null;
+      // Store reference to the root clone element (first child of preview container)
+      this.cloneRootElement = previewContainer.firstElementChild as HTMLElement ?? null;
       
       // Ensure the clone root is visible and properly positioned
       // (opacity and position values get copied from hidden original which are wrong for clone context)
@@ -1253,7 +1253,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     }
     
     // Disable the timegroup's own proxy mode (it may have been enabled by thumbnail strip)
-    timegroup.proxyMode = false;
+    (timegroup as any).proxyMode = false;
     
     // Show the original timegroup directly
     timegroup.style.clipPath = "";
@@ -1364,7 +1364,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     // This avoids blocking the main thread while still ensuring correct rendering.
     
     // Disable the timegroup's own proxy mode - workbench handles canvas rendering
-    timegroup.proxyMode = false;
+    (timegroup as any).proxyMode = false;
     
     // Hide the original timegroup
     timegroup.style.clipPath = "inset(100%)";

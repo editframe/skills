@@ -650,10 +650,6 @@ export class EFText extends EFTemporal(LitElement) {
             } else {
               result.push(seg.segment);
             }
-            } else {
-              // No preceding word, add punctuation as its own segment
-              result.push(seg.segment);
-            }
           }
         }
 
