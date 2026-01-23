@@ -17,8 +17,7 @@ import {
   type ContentReadyMode,
   renderToImageNative,
   resetRenderState,
-  prepareFrameDataUri,
-  loadImageFromDataUri,
+  renderToImage,
 } from "./renderTimegroupToCanvas.js";
 import {
   buildCloneStructure,
@@ -762,10 +761,6 @@ export async function renderTimegroupToVideo(
     const MAX_PENDING_ENCODES = 2;
     const pendingEncodes: Promise<void>[] = [];
     
-    // PIPELINING: For ForeignObject path, we prepare frame N+1 while frame N's image loads
-    // This variable holds the pending image Promise between iterations
-    let pendingImagePromise: Promise<HTMLImageElement> | null = null;
-
     for (let frameIndex = 0; frameIndex < totalFrames; frameIndex++) {
       // Check for cancellation at start of each frame
       checkCancelled();
@@ -933,28 +928,17 @@ export async function renderTimegroupToVideo(
           overrideRootCloneStyles(syncState, true);
           
           foCloneState = { container: cloneContainer, syncState, previewContainer };
-          
-          // First frame: prepare data URI and start loading
-          const dataUri = await prepareFrameDataUri(foCloneState.previewContainer, timegroupWidth, timegroupHeight);
-          pendingImagePromise = loadImageFromDataUri(dataUri);
           totalSyncMs += performance.now() - syncStart;
         }
         
-        // PIPELINING: Prepare NEXT frame while current is loading (if not last frame)
-        const isLastFrame = frameIndex === totalFrames - 1;
-        let nextImagePromise: Promise<HTMLImageElement> | null = null;
-        
-        if (!isLastFrame) {
-          const nextTimeMs = startMs + (frameIndex + 1) * frameDurationMs;
-          
-          // Seek and sync for next frame (this can happen while current image is loading)
+        // For subsequent frames: seek and sync styles
+        if (frameIndex > 0) {
+          // Seek render clone to current frame time
           const seekStart = performance.now();
-          await renderClone.seekForRender(nextTimeMs);
+          await renderClone.seekForRender(timeMs);
           totalSeekMs += performance.now() - seekStart;
           
-          // Wait for video content if in blocking mode (foreignObject path)
-          // Must happen after seek but before syncStyles copies canvas content
-          // Uses robust middle-strip sampling (same as thumbnails) to avoid false positives
+          // Wait for video content if in blocking mode
           if (contentReadyMode === "blocking") {
             const allVideos = renderClone.querySelectorAll("ef-video");
             if (allVideos.length > 0) {
@@ -963,7 +947,6 @@ export async function renderTimegroupToVideo(
                 let allReady = true;
                 for (const video of allVideos) {
                   const shadowCanvas = video.shadowRoot?.querySelector("canvas");
-                  // Canvas must exist and have dimensions
                   if (!shadowCanvas || shadowCanvas.width === 0 || shadowCanvas.height === 0) {
                     allReady = false;
                     break;
@@ -973,11 +956,9 @@ export async function renderTimegroupToVideo(
                     allReady = false;
                     break;
                   }
-                  // Sample middle strip (catches video content even if edges are black)
                   const stripY = Math.floor(shadowCanvas.height / 2);
                   const imageData = ctx.getImageData(0, stripY, shadowCanvas.width, 4);
                   const data = imageData.data;
-                  // Check if ANY pixel has non-zero alpha (not transparent/uninitialized)
                   let hasContent = false;
                   for (let i = 3; i < data.length; i += 4) {
                     if (data[i] !== 0) {
@@ -996,26 +977,18 @@ export async function renderTimegroupToVideo(
             }
           }
           
+          // Sync styles for current frame
           const syncStart = performance.now();
-          syncStyles(foCloneState.syncState, nextTimeMs);
+          syncStyles(foCloneState.syncState, timeMs);
           
-          // Re-apply root clone style overrides after syncStyles (it may restore source styles)
+          // Re-apply root clone style overrides after syncStyles
           overrideRootCloneStyles(foCloneState.syncState, true);
-          
-          // Prepare next frame's data URI (serializes DOM, restores it immediately)
-          // Canvas encoding happens in parallel via worker pool
-          const nextDataUri = await prepareFrameDataUri(foCloneState.previewContainer, timegroupWidth, timegroupHeight);
           totalSyncMs += performance.now() - syncStart;
-          
-          // Start loading next frame's image (don't await yet)
-          nextImagePromise = loadImageFromDataUri(nextDataUri);
         }
         
-        // NOW wait for current frame's image (overlapped with next frame's preparation)
-        image = await pendingImagePromise!;
-        
-        // Move next to current for next iteration
-        pendingImagePromise = nextImagePromise;
+        // Use renderToImage - same code path as thumbnails (includes cloning and inlineImages)
+        // This ensures foreignObject serialization works identically to thumbnail capture
+        image = await renderToImage(foCloneState.previewContainer, timegroupWidth, timegroupHeight) as HTMLImageElement;
         
         // Debug logging for first frame only
         if (frameIndex === 0) {
