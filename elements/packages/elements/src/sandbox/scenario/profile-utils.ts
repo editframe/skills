@@ -15,16 +15,16 @@ export function calculateTotalTime(profile: CPUProfile): Map<number, number> {
   }
 
   // Calculate time deltas
-  let currentTime = profile.startTime;
+  let currentTime: number = profile.startTime;
   const timeDeltas = profile.timeDeltas || [];
   for (let i = 0; i < profile.samples.length; i++) {
-    const sample = profile.samples[i];
-    const delta = timeDeltas[i] ?? 0;
-    currentTime += delta;
+    const sample: number = profile.samples[i] ?? 0;
+    const delta: number = timeDeltas[i] ?? 0;
+    currentTime = currentTime + delta;
 
     if (nodeMap.has(sample)) {
-      const existingTime = totalTime.get(sample);
-      totalTime.set(sample, (existingTime ?? 0) + delta);
+      const existingTime = totalTime.get(sample) ?? 0;
+      totalTime.set(sample, existingTime + delta);
     }
   }
 
