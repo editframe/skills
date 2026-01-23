@@ -10,15 +10,15 @@ npm create @editframe/elements
 
 ## Available Templates
 
-- `blank-html` - Minimal HTML/CSS/JS project
-- `blank-react` - Minimal React/TypeScript project
+- `html` - Minimal HTML/CSS/JS project
+- `react` - Minimal React/TypeScript project
 - `simple-demo` - HTML demo with sample assets
 - `react-demo` - React demo with sample assets
 
 ## Quick Start (HTML)
 
 ```bash
-npm create @editframe/elements -- blank-html -d my-project
+npm create @editframe/elements -- html -d my-project
 cd my-project
 npm install
 npm start
@@ -27,7 +27,7 @@ npm start
 ## Quick Start (React)
 
 ```bash
-npm create @editframe/elements -- blank-react -d my-project
+npm create @editframe/elements -- react -d my-project
 cd my-project
 npm install
 npm start
