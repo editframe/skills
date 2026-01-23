@@ -1881,7 +1881,7 @@ export function ScenarioViewer({ sandboxLoaders }: ScenarioViewerProps = {}) {
                 const logs = scenarioLogs.get(scenarioName) || [];
                 const isVisible = scenarioName === selectedScenario;
                 
-                const errorPanel = error ? (
+                const errorPanel: React.ReactNode = error ? (
                   <div
                     style={{
                       padding: "8px 12px",
