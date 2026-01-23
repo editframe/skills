@@ -1,6 +1,6 @@
 ---
 name: elements-composition
-description: Create video compositions with Editframe Elements. Use when working with ef-timegroup, ef-video, ef-audio, ef-image, ef-text, ef-captions, ef-waveform, ef-surface, or building timelines.
+description: Create video compositions with Editframe Elements. Use when working with ef-timegroup, ef-video, ef-audio, ef-image, ef-text, ef-captions, ef-waveform, ef-surface, building timelines, or generating captions/transcriptions.
 license: MIT
 metadata:
   author: editframe
@@ -33,6 +33,10 @@ metadata:
 - [references/captions.md](references/captions.md) - Subtitles with word highlighting
 - [references/waveform.md](references/waveform.md) - Audio visualization
 - [references/surface.md](references/surface.md) - Mirror another element
+
+## Tools
+
+- [references/transcription.md](references/transcription.md) - Generate captions with WhisperX
 
 ## Scene Structure
 
