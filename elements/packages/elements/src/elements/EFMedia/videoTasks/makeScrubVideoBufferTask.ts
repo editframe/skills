@@ -12,7 +12,7 @@ import { manageMediaBuffer } from "../shared/BufferUtils";
  * Unlike main video buffering, this loads the full duration with higher concurrency
  * for instant visual feedback during seeking
  */
-export const makeScrubVideoBufferTask = (host: EFVideo) => {
+export const makeScrubVideoBufferTask = (host: EFVideo): Task<EFVideo, readonly [any], void> => {
   let currentState: MediaBufferState = {
     currentSeekTimeMs: 0,
     requestedSegments: new Set(),
@@ -21,7 +21,7 @@ export const makeScrubVideoBufferTask = (host: EFVideo) => {
   };
 
   // Capture task reference for use in onError
-  let task: ReturnType<typeof makeScrubVideoBufferTask>;
+  let task: Task<EFVideo, readonly [any], void>;
 
   task = new Task(host, {
     autoRun: EF_INTERACTIVE,

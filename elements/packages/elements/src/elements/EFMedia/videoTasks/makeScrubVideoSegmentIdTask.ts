@@ -78,7 +78,8 @@ export const makeScrubVideoSegmentIdTask = (
       // Check if the track exists in AssetMediaEngine data before computing segment ID
       // Scrub track uses trackId -1, which is handled specially, so skip check for that
       if (mediaEngine instanceof AssetMediaEngine && scrubRendition.trackId !== -1) {
-        const trackData = mediaEngine.data?.[scrubRendition.trackId];
+        // @ts-expect-error - data is protected but we need to check track existence
+        const trackData = (mediaEngine as any).data?.[scrubRendition.trackId];
         if (!trackData || !trackData.segments || trackData.segments.length === 0) {
           // Track doesn't exist or has no segments - don't compute segment ID
           return undefined;

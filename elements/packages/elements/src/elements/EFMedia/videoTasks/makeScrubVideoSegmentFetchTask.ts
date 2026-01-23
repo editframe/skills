@@ -88,7 +88,8 @@ export const makeScrubVideoSegmentFetchTask = (
       // Check if the segment exists in AssetMediaEngine data before fetching
       // Scrub track uses trackId -1, so check for that
       if (mediaEngine instanceof AssetMediaEngine && scrubRendition.trackId !== -1) {
-        const trackData = mediaEngine.data?.[scrubRendition.trackId];
+        // @ts-expect-error - data is protected but we need to check segment existence
+        const trackData = (mediaEngine as any).data?.[scrubRendition.trackId];
         if (!trackData?.segments || segmentId >= trackData.segments.length) {
           // Segment doesn't exist in the data - don't fetch
           return undefined as any;

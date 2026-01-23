@@ -77,7 +77,8 @@ export const makeAudioSegmentIdTask = (
       // Check if the track exists in AssetMediaEngine data before computing segment ID
       // This prevents computing segment IDs for tracks that don't exist
       if (mediaEngine instanceof AssetMediaEngine) {
-        const trackData = mediaEngine.data?.[audioRendition.trackId];
+        // @ts-expect-error - data is protected but we need to check track existence
+        const trackData = (mediaEngine as any).data?.[audioRendition.trackId];
         if (!trackData || !trackData.segments || trackData.segments.length === 0) {
           // Track doesn't exist or has no segments - don't compute segment ID
           return undefined;

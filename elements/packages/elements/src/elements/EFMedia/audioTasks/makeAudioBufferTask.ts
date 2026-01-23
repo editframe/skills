@@ -156,7 +156,8 @@ export const makeAudioBufferTask = (host: EFMedia): AudioBufferTask => {
               
               // Check if the segment exists in AssetMediaEngine data before prefetching
               if (mediaEngine instanceof AssetMediaEngine) {
-                const trackData = mediaEngine.data?.[rendition.trackId];
+                // @ts-expect-error - data is protected but we need to check segment existence
+                const trackData = (mediaEngine as any).data?.[rendition.trackId];
                 if (!trackData?.segments || segmentId >= trackData.segments.length) {
                   // Segment doesn't exist in the data - don't prefetch
                   return;

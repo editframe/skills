@@ -7,12 +7,12 @@ import { type EFMedia, IgnorableError } from "../../EFMedia.js";
 // DECAY_WEIGHT constant - same as original
 const DECAY_WEIGHT = 0.8;
 
-export function makeAudioTimeDomainAnalysisTask(element: EFMedia) {
+export function makeAudioTimeDomainAnalysisTask(element: EFMedia): Task<EFMedia, readonly [number], Uint8Array> {
   // Internal cache for this task instance (same as original #byteTimeDomainCache)
   const cache = new LRUCache<string, Uint8Array>(1000);
 
   // Capture task reference for use in onError
-  let task: ReturnType<typeof makeAudioTimeDomainAnalysisTask>;
+  let task: Task<EFMedia, readonly [number], Uint8Array>;
 
   task = new Task(element, {
     autoRun: EF_INTERACTIVE,

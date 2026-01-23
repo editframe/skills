@@ -87,7 +87,8 @@ export const makeAudioSegmentFetchTask = (
       // Check if the segment exists in the media engine data before fetching
       // This prevents fetch errors when segments don't exist in AssetMediaEngine
       if (mediaEngine instanceof AssetMediaEngine) {
-        const trackData = mediaEngine.data?.[audioRendition.trackId];
+        // @ts-expect-error - data is protected but we need to check segment existence
+        const trackData = (mediaEngine as any).data?.[audioRendition.trackId];
         if (!trackData?.segments || segmentId >= trackData.segments.length) {
           // Segment doesn't exist in the data - don't fetch
           return undefined;

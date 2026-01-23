@@ -142,7 +142,8 @@ export const makeVideoBufferTask = (host: EFVideo): VideoBufferTask => {
               // Check if the segment exists in AssetMediaEngine data before prefetching
               // Scrub track uses trackId -1, which is handled specially, so skip check for that
               if (mediaEngine instanceof AssetMediaEngine && rendition.trackId !== -1) {
-                const trackData = mediaEngine.data?.[rendition.trackId];
+                // @ts-expect-error - data is protected but we need to check segment existence
+                const trackData = (mediaEngine as any).data?.[rendition.trackId];
                 if (!trackData?.segments || segmentId >= trackData.segments.length) {
                   // Segment doesn't exist in the data - don't prefetch
                   return;
