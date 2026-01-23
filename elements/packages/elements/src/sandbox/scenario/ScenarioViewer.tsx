@@ -1877,9 +1877,11 @@ export function ScenarioViewer({ sandboxLoaders }: ScenarioViewerProps = {}) {
               .map((scenarioName) => {
                 const result = scenarioResults.get(scenarioName);
                 const isRunning = runningScenario === scenarioName;
-                const error: string | undefined = scenarioErrors.get(scenarioName);
+                const errorValue: string | undefined = scenarioErrors.get(scenarioName);
                 const logs = scenarioLogs.get(scenarioName) || [];
                 const isVisible = scenarioName === selectedScenario;
+                const hasError = Boolean(errorValue);
+                const errorText = errorValue ?? "";
                 
                 return (
                   <div 
@@ -1989,27 +1991,23 @@ export function ScenarioViewer({ sandboxLoaders }: ScenarioViewerProps = {}) {
                   />
 
                   {/* Error panel */}
-                  {(((): React.ReactNode => {
-                    if (!error) return null;
-                    const errorText: string = error;
-                    return (
-                      <div
-                        style={{
-                          padding: "8px 12px",
-                          background: "#490202",
-                          color: "#ffa198",
-                          borderTop: "1px solid #da3633",
-                          fontSize: "11px",
-                          flexShrink: 0,
-                          maxHeight: "300px",
-                          overflow: "auto",
-                        }}
-                      >
-                        <div style={{ fontWeight: 600, marginBottom: "4px" }}>Error</div>
-                        <div style={{ fontFamily: "monospace", whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: "1.4" }}>{errorText}</div>
-                      </div>
-                    );
-                  })())}
+                  {hasError ? (
+                    <div
+                      style={{
+                        padding: "8px 12px",
+                        background: "#490202",
+                        color: "#ffa198",
+                        borderTop: "1px solid #da3633",
+                        fontSize: "11px",
+                        flexShrink: 0,
+                        maxHeight: "300px",
+                        overflow: "auto",
+                      }}
+                    >
+                      <div style={{ fontWeight: 600, marginBottom: "4px" }}>Error</div>
+                      <div style={{ fontFamily: "monospace", whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: "1.4" }}>{errorText}</div>
+                    </div>
+                  ) : null}
 
                   {/* Assertions panel */}
                   {result?.assertions && result.assertions.length > 0 && (
