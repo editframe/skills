@@ -1243,6 +1243,67 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
       }
     }
   }
+  
+  /**
+   * Copy ef-text _textContent property from original to cloned elements.
+   * This MUST be called BEFORE elements upgrade (before updateComplete)
+   * because splitText() runs in connectedCallback and will clear segments
+   * if _textContent is null/empty.
+   * @internal
+   */
+  #copyTextContent(original: Element, clone: Element): void {
+    const originalTexts = original.querySelectorAll('ef-text');
+    const cloneTexts = clone.querySelectorAll('ef-text');
+    
+    for (let i = 0; i < originalTexts.length && i < cloneTexts.length; i++) {
+      const origText = originalTexts[i] as any;
+      const cloneText = cloneTexts[i] as any;
+      
+      // Copy _textContent if it exists
+      // This is a private property, so we access it via any
+      if (origText._textContent !== undefined) {
+        cloneText._textContent = origText._textContent;
+      }
+      // Also copy the segments getter to ensure we can read them
+      if (origText._templateElement !== undefined) {
+        cloneText._templateElement = origText._templateElement;
+      }
+    }
+  }
+  
+  /**
+   * Copy ef-text-segment properties from original to cloned elements.
+   * segmentText and other properties are set via JS, not attributes,
+   * so we must manually copy them to the cloned elements.
+   * @internal
+   */
+  #copyTextSegmentData(original: Element, clone: Element): void {
+    // Find matching text segment elements by position
+    const originalSegments = original.querySelectorAll('ef-text-segment');
+    const cloneSegments = clone.querySelectorAll('ef-text-segment');
+    
+    for (let i = 0; i < originalSegments.length && i < cloneSegments.length; i++) {
+      const origSeg = originalSegments[i] as any;
+      const cloneSeg = cloneSegments[i] as any;
+      
+      // Copy all segment properties
+      if (origSeg.segmentText !== undefined) {
+        cloneSeg.segmentText = origSeg.segmentText;
+      }
+      if (origSeg.segmentIndex !== undefined) {
+        cloneSeg.segmentIndex = origSeg.segmentIndex;
+      }
+      if (origSeg.staggerOffsetMs !== undefined) {
+        cloneSeg.staggerOffsetMs = origSeg.staggerOffsetMs;
+      }
+      if (origSeg.segmentStartMs !== undefined) {
+        cloneSeg.segmentStartMs = origSeg.segmentStartMs;
+      }
+      if (origSeg.segmentEndMs !== undefined) {
+        cloneSeg.segmentEndMs = origSeg.segmentEndMs;
+      }
+    }
+  }
 
   /**
    * Wait for all ef-captions elements to have their data loaded.
@@ -1331,8 +1392,12 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     cloneEl.removeAttribute("id");
     
     // 2b. Copy JavaScript properties that aren't cloned by cloneNode()
-    // captionsData is set via JS property, not attribute, so we must copy it manually
     this.#copyCaptionsData(this, cloneEl);
+    
+    // 2c. Copy ef-text _textContent BEFORE elements upgrade
+    // This is critical because splitText() runs in connectedCallback and will
+    // clear segments if _textContent is empty
+    this.#copyTextContent(this, cloneEl);
     
     // 3. Preserve ef-configuration context for the clone
     // Media elements use closest("ef-configuration") to determine settings like media-engine.
@@ -1351,6 +1416,10 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     
     // 3. Wait for custom elements to upgrade
     await cloneEl.updateComplete;
+    
+    // 3b. Copy ef-text-segment properties AFTER elements have upgraded
+    // segmentText is a JS property, so we need to wait for custom elements to define it
+    this.#copyTextSegmentData(this, cloneEl);
     
     // 4. Run initializer to set up JavaScript behavior on the clone
     // This re-registers frame callbacks, React components, etc.

@@ -348,18 +348,20 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
     
     // Shadow DOM children
     if (srcEl.shadowRoot) {
-      // For caption elements, ALWAYS create a text node placeholder even if empty.
+      // For caption elements and text segments, ALWAYS create a text node placeholder even if empty.
       // This allows syncStyles to update the text later when captions change.
       const isCaptionElement = srcEl.tagName === 'EF-CAPTIONS-ACTIVE-WORD' ||
                                srcEl.tagName === 'EF-CAPTIONS-BEFORE-ACTIVE-WORD' ||
                                srcEl.tagName === 'EF-CAPTIONS-AFTER-ACTIVE-WORD' ||
                                srcEl.tagName === 'EF-CAPTIONS-SEGMENT';
+      const isTextSegment = srcEl.tagName === 'EF-TEXT-SEGMENT';
       let hasTextNode = false;
       
       for (const child of srcEl.shadowRoot.childNodes) {
         if (child.nodeType === Node.TEXT_NODE) {
           const text = child.textContent?.trim();
-          if (text || isCaptionElement) {
+          // Always include text for text segments (even if whitespace-only, e.g., " ")
+          if (text || isCaptionElement || isTextSegment) {
             clone.appendChild(document.createTextNode(child.textContent || ""));
             hasTextNode = true;
           }
