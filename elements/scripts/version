@@ -18,8 +18,8 @@ set -ex
 "${SCRIPT_DIR}"/npm install --workspaces --include-workspace-root --legacy-peer-deps
 
 git add .
-git commit -m "Bump version to v$@"
-git tag -a "v$@" -m "$@"
+git commit -m "Bump version to v$@" || true
+git tag -a "v$@" -m "$@" 2>/dev/null || git tag -f "v$@" -m "$@"
 
 # Detect if we're in a monorepo by checking for elements remote
 GIT_ROOT=$(git rev-parse --show-toplevel)
