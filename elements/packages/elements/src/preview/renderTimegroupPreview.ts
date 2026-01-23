@@ -434,10 +434,15 @@ function syncNodeStyles(node: CloneNode): void {
       if (canvas.height !== shadowCanvas.height) canvas.height = shadowCanvas.height;
       
       const ctx = canvas.getContext("2d");
-      if (ctx) {
-        // Clear canvas before drawing to ensure clean refresh
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(shadowCanvas, 0, 0);
+      if (ctx && shadowCanvas.width > 0 && shadowCanvas.height > 0) {
+        try {
+          // Clear canvas before drawing to ensure clean refresh
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(shadowCanvas, 0, 0);
+        } catch (e) {
+          // Canvas draw can fail if source is in invalid state - log and continue
+          console.warn("[syncNodeStyles] Canvas draw failed:", e);
+        }
       }
       
       try {
@@ -843,7 +848,7 @@ export function syncAllStyles(pairs: ElementPair[], syncState?: SyncState, timeM
     // Canvas refresh
     if (clone instanceof HTMLCanvasElement && src.shadowRoot) {
       const shadowCanvas = src.shadowRoot.querySelector("canvas");
-      if (shadowCanvas) {
+      if (shadowCanvas && shadowCanvas.width > 0 && shadowCanvas.height > 0) {
         const ctx = clone.getContext("2d");
         if (ctx) {
           if (clone.width !== shadowCanvas.width) clone.width = shadowCanvas.width;
