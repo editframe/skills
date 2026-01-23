@@ -1881,27 +1881,6 @@ export function ScenarioViewer({ sandboxLoaders }: ScenarioViewerProps = {}) {
                 const logs = scenarioLogs.get(scenarioName) || [];
                 const isVisible = scenarioName === selectedScenario;
                 
-                const errorPanel: React.ReactElement | null = (() => {
-                  if (!error) return null;
-                  return (
-                    <div
-                      style={{
-                        padding: "8px 12px",
-                        background: "#490202",
-                        color: "#ffa198",
-                        borderTop: "1px solid #da3633",
-                        fontSize: "11px",
-                        flexShrink: 0,
-                        maxHeight: "300px",
-                        overflow: "auto",
-                      }}
-                    >
-                      <div style={{ fontWeight: 600, marginBottom: "4px" }}>Error</div>
-                      <div style={{ fontFamily: "monospace", whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: "1.4" }}>{error}</div>
-                    </div>
-                  );
-                })();
-                
                 return (
                   <div 
                     key={scenarioName}
@@ -2010,7 +1989,23 @@ export function ScenarioViewer({ sandboxLoaders }: ScenarioViewerProps = {}) {
                   />
 
                   {/* Error panel */}
-                  {(errorPanel as unknown) as React.ReactNode}
+                  {error ? (
+                    <div
+                      style={{
+                        padding: "8px 12px",
+                        background: "#490202",
+                        color: "#ffa198",
+                        borderTop: "1px solid #da3633",
+                        fontSize: "11px",
+                        flexShrink: 0,
+                        maxHeight: "300px",
+                        overflow: "auto",
+                      }}
+                    >
+                      <div style={{ fontWeight: 600, marginBottom: "4px" }}>Error</div>
+                      <div style={{ fontFamily: "monospace", whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: "1.4" }}>{error}</div>
+                    </div>
+                  ) : null}
 
                   {/* Assertions panel */}
                   {result?.assertions && result.assertions.length > 0 && (
