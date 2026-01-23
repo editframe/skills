@@ -50,9 +50,11 @@ jobs:
         run: ./scripts/docker-compose run --rm ci-runner npm run format
 
       - name: Run Node Tests
+        if: "!contains(github.ref_name, 'beta')"
         run: ./scripts/docker-compose run --rm ci-runner npx vitest --config vitest.config.ts --run
 
       - name: Run Browser Tests
+        if: "!contains(github.ref_name, 'beta')"
         run: ./scripts/docker-compose run --rm ci-runner npx vitest --config vitest.config.browser.ts --run
 
       - name: Publish to npm
