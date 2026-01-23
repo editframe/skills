@@ -841,6 +841,11 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
         }
       }),
     ]);
+    
+    // CRITICAL: Force style recalculation after updateAnimations sets animation.currentTime
+    // Without this, getComputedStyle may return stale values (e.g., opacity: 0 instead of 1)
+    // Accessing offsetWidth triggers synchronous style recalc
+    void this.offsetWidth;
   }
   
   /**
