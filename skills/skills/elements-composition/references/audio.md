@@ -9,7 +9,7 @@ Audio element for music, voiceover, sound effects.
 - `duration` - Override duration
 - `volume` - 0.0 to 1.0 (default: 1.0)
 - `mute` - Silence audio
-- `fft-size` - FFT size for frequency analysis (for waveform)
+- `fft-size` - Required for waveform visualization (e.g., `"256"`)
 
 ## Basic Usage
 
@@ -40,11 +40,4 @@ Audio element for music, voiceover, sound effects.
   <ef-audio src="music.mp3" volume="0.25"></ef-audio>
   <ef-audio src="voiceover.mp3" volume="0.9"></ef-audio>
 </ef-timegroup>
-```
-
-## For Waveform Visualization
-
-```html
-<ef-audio id="audio-track" fft-size="256" src="music.mp3"></ef-audio>
-<ef-waveform target="audio-track" mode="bars"></ef-waveform>
 ```

@@ -4,16 +4,15 @@ Audio waveform visualization.
 
 ## Props
 
-- `target` - Selector for `ef-audio` or `ef-video` element (must have `fft-size`)
-- `mode` - `"bars"` | `"bricks"` | `"line"` | `"curve"` | `"pixel"` | `"wave"` | `"spikes"` | `"roundBars"` (default: `"bars"`)
-- `color` - Stroke/fill color (default: `"currentColor"`)
+- `target` - ID of `ef-audio` or `ef-video` element
+- `mode` - `"bars"` | `"roundBars"` | `"line"` | `"curve"` | `"wave"` | `"spikes"` | `"bricks"` | `"pixel"` (default: `"bars"`)
 - `bar-spacing` - Spacing between bars (default: 0.5)
 - `line-width` - Line width for line/curve modes (default: 4)
 
 ## Basic Usage
 
 ```html
-<ef-audio id="audio" fft-size="256" src="music.mp3" volume="0.6"></ef-audio>
+<ef-audio id="audio" fft-size="256" src="music.mp3"></ef-audio>
 <ef-waveform target="audio" mode="bars" class="text-green-400 w-3/4 h-32"></ef-waveform>
 ```
 
@@ -38,4 +37,4 @@ Audio waveform visualization.
 <ef-waveform target="audio" mode="spikes"></ef-waveform>
 ```
 
-Color is inherited from `currentColor` (use Tailwind `text-*` classes).
+Color uses `currentColor` (set via Tailwind `text-*` classes).
