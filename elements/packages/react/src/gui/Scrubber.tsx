@@ -17,23 +17,15 @@ export interface ScrubberProps {
 
 const BaseScrubber = createComponent<
   EFScrubber,
-  {
-    orientation?: "horizontal" | "vertical";
-    currentTimeMs?: number;
-    durationMs?: number;
-    zoomScale?: number;
-    containerWidth?: number;
-    fps?: number;
-    rawScrubTimeMs?: number | null;
-    scrollContainerRef?: { current: HTMLElement | null };
-    isScrubbingRef?: { current: boolean };
-    onSeek?: (time: number) => void;
-  }
+  { onSeek: "seek" }
 >({
   tagName: "ef-scrubber",
   elementClass: EFScrubber,
   react: React,
   displayName: "Scrubber",
+  events: {
+    onSeek: "seek",
+  },
   props: {
     orientation: "orientation",
     currentTimeMs: "current-time-ms",
@@ -43,7 +35,7 @@ const BaseScrubber = createComponent<
     fps: "fps",
     rawScrubTimeMs: "raw-scrub-time-ms",
   },
-});
+}) as React.ForwardRefExoticComponent<ScrubberProps & React.RefAttributes<EFScrubber>>;
 
 export const Scrubber = React.forwardRef<EFScrubber, ScrubberProps>(
   (props, ref) => {

@@ -1,6 +1,5 @@
 import {
   EFOverlayItem as EFOverlayItemElement,
-  type OverlayItemPosition,
 } from "@editframe/elements";
 import React from "react";
 import { createComponent } from "../hooks/create-element";
@@ -16,7 +15,7 @@ export interface OverlayItemProps {
 
 export const OverlayItem = createComponent<
   EFOverlayItemElement,
-  OverlayItemProps
+  { onPositionChanged: "position-changed" }
 >({
   tagName: "ef-overlay-item",
   elementClass: EFOverlayItemElement,
@@ -25,4 +24,4 @@ export const OverlayItem = createComponent<
   events: {
     onPositionChanged: "position-changed",
   },
-});
+}) as React.ForwardRefExoticComponent<OverlayItemProps & React.RefAttributes<EFOverlayItemElement>>;

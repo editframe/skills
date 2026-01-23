@@ -13,14 +13,7 @@ export interface TimelineRulerProps {
 
 const BaseTimelineRuler = createComponent<
   EFTimelineRuler,
-  {
-    durationMs?: number;
-    zoomScale?: number;
-    containerWidth?: number;
-    fps?: number;
-    scrollContainerSelector?: string;
-    scrollContainerElement?: HTMLElement | null;
-  }
+  {}
 >({
   tagName: "ef-timeline-ruler",
   elementClass: EFTimelineRuler,
@@ -33,7 +26,7 @@ const BaseTimelineRuler = createComponent<
     fps: "fps",
     scrollContainerSelector: "scroll-container-selector",
   },
-});
+}) as React.ForwardRefExoticComponent<TimelineRulerProps & React.RefAttributes<EFTimelineRuler>>;
 
 export const TimelineRuler = React.forwardRef<
   EFTimelineRuler,

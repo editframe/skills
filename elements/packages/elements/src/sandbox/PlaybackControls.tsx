@@ -98,15 +98,21 @@ export function PlaybackControls({
     if (mode === "step" && steps.length > 0) {
       // Find closest step
       let closestIndex = 0;
-      let closestDiff = Math.abs(currentTimeMs - steps[0]);
-      for (let i = 1; i < steps.length; i++) {
-        const diff = Math.abs(currentTimeMs - steps[i]);
-        if (diff < closestDiff) {
-          closestDiff = diff;
-          closestIndex = i;
+      const firstStep = steps[0];
+      if (firstStep !== undefined) {
+        let closestDiff = Math.abs(currentTimeMs - firstStep);
+        for (let i = 1; i < steps.length; i++) {
+          const step = steps[i];
+          if (step !== undefined) {
+            const diff = Math.abs(currentTimeMs - step);
+            if (diff < closestDiff) {
+              closestDiff = diff;
+              closestIndex = i;
+            }
+          }
         }
+        setCurrentStepIndex(closestIndex);
       }
-      setCurrentStepIndex(closestIndex);
     }
   }, [currentTimeMs, mode, steps]);
 
@@ -136,6 +142,7 @@ export function PlaybackControls({
     if (!timegroup?.playbackController) return;
     
     const newLooping = !isLooping;
+    // @ts-expect-error - loop property is read-only in types but writable at runtime
     timegroup.playbackController.loop = newLooping;
     setIsLooping(newLooping);
   }, [timegroup, isLooping]);
@@ -150,9 +157,13 @@ export function PlaybackControls({
   const handleScrub = useCallback((e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchEvent) => {
     if (!timegroup || !scrubberRef.current || !isDragging) return;
     
-    const rect = scrubberRef.current.getBoundingClientRect();
-    const clientX = "touches" in e 
-      ? e.touches[0].clientX 
+    const scrubber = scrubberRef.current;
+    if (!scrubber) return;
+    
+    const rect = scrubber.getBoundingClientRect();
+    const touches = "touches" in e ? e.touches : null;
+    const clientX = touches && touches[0] 
+      ? touches[0].clientX 
       : (e as MouseEvent).clientX;
     const x = clientX - rect.left;
     const percent = Math.max(0, Math.min(1, x / rect.width));
@@ -190,18 +201,24 @@ export function PlaybackControls({
     if (!timegroup || steps.length === 0) return;
     
     const newIndex = Math.max(0, currentStepIndex - 1);
-    timegroup.currentTime = steps[newIndex] / 1000;
-    setCurrentStepIndex(newIndex);
-    setCurrentTimeMs(steps[newIndex]);
+    const step = steps[newIndex];
+    if (step !== undefined) {
+      timegroup.currentTime = step / 1000;
+      setCurrentStepIndex(newIndex);
+      setCurrentTimeMs(step);
+    }
   }, [timegroup, steps, currentStepIndex]);
 
   const handleStepNext = useCallback(() => {
     if (!timegroup || steps.length === 0) return;
     
     const newIndex = Math.min(steps.length - 1, currentStepIndex + 1);
-    timegroup.currentTime = steps[newIndex] / 1000;
-    setCurrentStepIndex(newIndex);
-    setCurrentTimeMs(steps[newIndex]);
+    const step = steps[newIndex];
+    if (step !== undefined) {
+      timegroup.currentTime = step / 1000;
+      setCurrentStepIndex(newIndex);
+      setCurrentTimeMs(step);
+    }
   }, [timegroup, steps, currentStepIndex]);
 
   const progress = durationMs > 0 ? (currentTimeMs / durationMs) * 100 : 0;
