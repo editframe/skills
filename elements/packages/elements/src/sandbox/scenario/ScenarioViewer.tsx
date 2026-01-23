@@ -1877,7 +1877,7 @@ export function ScenarioViewer({ sandboxLoaders }: ScenarioViewerProps = {}) {
               .map((scenarioName) => {
                 const result = scenarioResults.get(scenarioName);
                 const isRunning = runningScenario === scenarioName;
-                const error = scenarioErrors.get(scenarioName);
+                const error: string | undefined = scenarioErrors.get(scenarioName);
                 const logs = scenarioLogs.get(scenarioName) || [];
                 const isVisible = scenarioName === selectedScenario;
                 
