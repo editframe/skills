@@ -726,6 +726,87 @@ export class EFVideo extends TWMixin(EFMedia) {
   }
 
   /**
+   * Pre-fetch main video segments for given timestamps.
+   * This ensures segments are cached for fast seeking during video export.
+   *
+   * @param timestamps - Array of timestamps (in ms) that will be captured
+   * @param onProgress - Optional callback for loading progress
+   * @returns Promise that resolves when all segments are cached
+   * @public
+   */
+  async prefetchMainVideoSegments(
+    timestamps: number[],
+    onProgress?: (loaded: number, total: number) => void,
+  ): Promise<void> {
+    // Wait for media engine to be ready
+    const mediaEngine = await this.mediaEngineTask.taskComplete;
+    if (!mediaEngine) {
+      log("prefetchMainVideoSegments: no media engine available");
+      return;
+    }
+
+    // Get main video rendition
+    const videoRendition = mediaEngine.getVideoRendition?.() || mediaEngine.videoRendition;
+    if (!videoRendition) {
+      log("prefetchMainVideoSegments: no video rendition available");
+      return;
+    }
+
+    // Compute unique segment IDs needed for all timestamps
+    const segmentIds = new Set<number>();
+    for (const ts of timestamps) {
+      const segmentId = mediaEngine.computeSegmentId(ts, videoRendition);
+      if (segmentId !== undefined) {
+        segmentIds.add(segmentId);
+      }
+    }
+
+    if (segmentIds.size === 0) {
+      log("prefetchMainVideoSegments: no segments to prefetch");
+      return;
+    }
+
+    // Filter to segments not already cached
+    const uncachedSegmentIds: number[] = [];
+    for (const segmentId of segmentIds) {
+      if (!mediaEngine.isSegmentCached(segmentId, videoRendition)) {
+        uncachedSegmentIds.push(segmentId);
+      }
+    }
+
+    if (uncachedSegmentIds.length === 0) {
+      log("prefetchMainVideoSegments: all segments already cached");
+      onProgress?.(segmentIds.size, segmentIds.size);
+      return;
+    }
+
+    log(`prefetchMainVideoSegments: fetching ${uncachedSegmentIds.length} segments...`);
+
+    // Fetch init segment first (needed for all media segments)
+    try {
+      await mediaEngine.fetchInitSegment(videoRendition);
+    } catch (error) {
+      log("prefetchMainVideoSegments: failed to fetch init segment", error);
+      return;
+    }
+
+    // Fetch media segments sequentially to avoid overwhelming the network
+    let loaded = segmentIds.size - uncachedSegmentIds.length;
+    for (const segmentId of uncachedSegmentIds) {
+      try {
+        await mediaEngine.fetchMediaSegment(segmentId, videoRendition);
+        loaded++;
+        onProgress?.(loaded, segmentIds.size);
+      } catch (error) {
+        log(`prefetchMainVideoSegments: failed to fetch segment ${segmentId}`, error);
+        // Continue with other segments
+      }
+    }
+
+    log(`prefetchMainVideoSegments: complete (${loaded}/${segmentIds.size} segments)`);
+  }
+
+  /**
    * Clean up resources when component is disconnected
    */
   disconnectedCallback(): void {

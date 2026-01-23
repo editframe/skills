@@ -279,7 +279,9 @@ export async function renderTimegroupToVideo(
   const { clone: renderClone, container: renderContainer, cleanup: cleanupRenderClone } =
     await timegroup.createRenderClone();
   
-  // Pre-fetch scrub segments for all timestamps (same as captureBatch)
+  // Pre-fetch main video segments for all timestamps
+  // This ensures all segments are cached before rendering starts,
+  // avoiding network delays during the frame loop
   const timestamps: number[] = [];
   for (let i = 0; i < config.totalFrames; i++) {
     timestamps.push(config.startMs + i * config.frameDurationMs);
@@ -287,11 +289,13 @@ export async function renderTimegroupToVideo(
   
   const videoElements = renderClone.querySelectorAll("ef-video");
   if (videoElements.length > 0) {
+    console.log(`[renderTimegroupToVideo] Prefetching main video segments for ${videoElements.length} video(s)...`);
     await Promise.all(
       Array.from(videoElements).map((video) =>
-        (video as EFVideo).prefetchScrubSegments(timestamps),
+        (video as EFVideo).prefetchMainVideoSegments(timestamps),
       ),
     );
+    console.log(`[renderTimegroupToVideo] Prefetch complete`);
   }
   
   // =========================================================================
