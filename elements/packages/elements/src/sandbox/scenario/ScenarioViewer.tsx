@@ -1881,7 +1881,7 @@ export function ScenarioViewer({ sandboxLoaders }: ScenarioViewerProps = {}) {
                 const logs = scenarioLogs.get(scenarioName) || [];
                 const isVisible = scenarioName === selectedScenario;
                 
-                const errorPanel = (() => {
+                const errorPanel: JSX.Element | null = (() => {
                   if (!error) return null;
                   return (
                     <div
