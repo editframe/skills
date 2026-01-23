@@ -12,6 +12,7 @@ import { getEffectiveRenderMode } from "./renderers.js";
 export type { RenderOptions, RenderResult, Renderer } from "./renderers.js";
 export { getEffectiveRenderMode, isCanvas, isImage } from "./renderers.js";
 import { WorkerPool, encodeCanvasInWorker } from "./workers/WorkerPool.js";
+import { getEncoderWorkerUrl } from "./workers/encoderWorkerInline.js";
 import {
   type TemporalElement,
   isVisibleAtTime,
@@ -149,26 +150,9 @@ function getWorkerPool(): WorkerPool | null {
   }
 
   try {
-    // Create worker URL - Vite processes worker files when using ?worker_file suffix
-    // In browser environments (Vite), import.meta.url is available at runtime
-    let workerUrl: string;
-    try {
-      // TypeScript may not recognize import.meta in CommonJS mode, but it works at runtime in Vite
-      // Access it dynamically to avoid TypeScript compilation errors
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-expect-error - import.meta.url works at runtime in Vite even if TS doesn't recognize it
-      const metaUrl = import.meta?.url;
-      if (metaUrl) {
-        // Use ?worker_file&type=module - this is what Vite uses internally when processing workers
-        // The ?worker suffix creates a wrapper, but ?worker_file gives us the actual worker
-        workerUrl = new URL("./workers/encoderWorker.ts?worker_file&type=module", metaUrl).href;
-      } else {
-        workerUrl = "./workers/encoderWorker.ts?worker_file&type=module";
-      }
-    } catch {
-      // Fallback: use relative path
-      workerUrl = "./workers/encoderWorker.ts?worker_file&type=module";
-    }
+    // Use inline worker URL - this works in any bundler environment
+    // because the worker code is embedded in the bundle as a blob URL
+    const workerUrl = getEncoderWorkerUrl();
     
     _workerPool = new WorkerPool(workerUrl);
     
