@@ -2010,7 +2010,7 @@ export function ScenarioViewer({ sandboxLoaders }: ScenarioViewerProps = {}) {
                   />
 
                   {/* Error panel */}
-                  {errorPanel}
+                  {(errorPanel as unknown) as React.ReactNode}
 
                   {/* Assertions panel */}
                   {result?.assertions && result.assertions.length > 0 && (
