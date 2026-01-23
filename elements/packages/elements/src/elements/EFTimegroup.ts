@@ -807,6 +807,23 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     // This is critical for elements like ef-text and ef-captions that don't have frameTask
     await Promise.all(allLitElements.map((el) => el.updateComplete));
     
+    // Wait for ef-text elements to have their segments ready
+    // ef-text creates segments asynchronously via requestAnimationFrame
+    const textElements = allLitElements.filter((el) => el.tagName === "EF-TEXT");
+    if (textElements.length > 0) {
+      await Promise.all(
+        textElements.map((el) => {
+          if ("whenSegmentsReady" in el && typeof el.whenSegmentsReady === "function") {
+            return (el as any).whenSegmentsReady();
+          }
+          return Promise.resolve();
+        }),
+      );
+    }
+    
+    // Wait one frame to ensure animations and styles have settled
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    
     // Now collect elements with frame tasks (media elements that need special handling)
     const visibleElements = this.#evaluateVisibleElementsForFrame();
     
