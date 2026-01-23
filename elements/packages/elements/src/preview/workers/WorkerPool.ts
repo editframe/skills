@@ -47,8 +47,7 @@ export class WorkerPool {
   private initializeWorkers(): void {
     for (let i = 0; i < this.poolSize; i++) {
       try {
-        // Vite processes worker files - the URL should point to the actual worker file
-        // When using ?worker_file&type=module, Vite will serve the processed worker
+        // Create worker from URL (typically a blob URL from inlined worker code)
         const worker = new Worker(this.workerUrl, { type: "module" });
         
         // Test if worker is responding - cleanup handler after confirmation
