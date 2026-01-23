@@ -1991,7 +1991,7 @@ export function ScenarioViewer({ sandboxLoaders }: ScenarioViewerProps = {}) {
                   />
 
                   {/* Error panel */}
-                  {hasError ? (
+                  {hasError && (
                     <div
                       style={{
                         padding: "8px 12px",
@@ -2007,7 +2007,7 @@ export function ScenarioViewer({ sandboxLoaders }: ScenarioViewerProps = {}) {
                       <div style={{ fontWeight: 600, marginBottom: "4px" }}>Error</div>
                       <div style={{ fontFamily: "monospace", whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: "1.4" }}>{errorText}</div>
                     </div>
-                  ) : null}
+                  )}
 
                   {/* Assertions panel */}
                   {result?.assertions && result.assertions.length > 0 && (

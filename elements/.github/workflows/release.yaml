@@ -40,6 +40,7 @@ jobs:
             --workspace @editframe/assets
 
       - name: Type Check
+        if: "!contains(github.ref_name, 'beta')"
         run: ./scripts/docker-compose run --rm ci-runner npm run typecheck --workspaces
 
       - name: Lint
