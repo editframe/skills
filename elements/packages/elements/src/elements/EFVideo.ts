@@ -784,7 +784,7 @@ export class EFVideo extends TWMixin(EFMedia) {
 
     // Fetch init segment first (needed for all media segments)
     try {
-      await mediaEngine.fetchInitSegment(videoRendition);
+      await mediaEngine.fetchInitSegment(videoRendition, undefined);
     } catch (error) {
       log("prefetchMainVideoSegments: failed to fetch init segment", error);
       return;

@@ -640,8 +640,16 @@ export class EFText extends EFTemporal(LitElement) {
             result.push(seg.segment);
           } else {
             // Punctuation segment - attach to preceding word if it exists
-            if (result.length > 0 && !/^\s+$/.test(result[result.length - 1])) {
-              result[result.length - 1] += seg.segment;
+            if (result.length > 0) {
+              const lastItem = result[result.length - 1];
+              if (lastItem && !/^\s+$/.test(lastItem)) {
+                result[result.length - 1] = lastItem + seg.segment;
+              } else {
+                result.push(seg.segment);
+              }
+            } else {
+              result.push(seg.segment);
+            }
             } else {
               // No preceding word, add punctuation as its own segment
               result.push(seg.segment);

@@ -1,6 +1,10 @@
 import { css, html, LitElement } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { EFTemporal, type TemporalMixinInterface } from "./EFTemporal.ts";
+import { EFText } from "./EFText.js";
+
+// Global registry for animation stylesheets shared across all text segments
+const globalAnimationSheets = new Map<string, CSSStyleSheet>();
 
 @customElement("ef-text-segment")
 export class EFTextSegment extends EFTemporal(LitElement) {

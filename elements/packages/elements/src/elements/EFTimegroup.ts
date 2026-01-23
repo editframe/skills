@@ -1177,7 +1177,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
    * @returns Promise that resolves when video is downloaded
    * @public
    */
-  async renderToVideo(options?: RenderToVideoOptions): Promise<void> {
+  async renderToVideo(options?: RenderToVideoOptions): Promise<Uint8Array | undefined> {
     return renderTimegroupToVideo(this, options);
   }
 
@@ -1194,11 +1194,11 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     }
     
     const startTime = performance.now();
-    const result = this.initializer(cloneEl);
+    const result: unknown = this.initializer(cloneEl);
     const elapsed = performance.now() - startTime;
     
     // Check for async (Promise return) - initializers MUST be synchronous
-    if (result && typeof (result as any).then === 'function') {
+    if (result !== undefined && result !== null && typeof (result as any).then === 'function') {
       throw new Error(
         'Timeline initializer must be synchronous. ' +
         'Do not return a Promise from the initializer function.'
@@ -1468,7 +1468,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
           childTG.parentTimegroup = parent;
           childTG.rootTimegroup = root;
           // Lock to prevent Lit Context from overriding our manually set root
-          childTG.lockRootTimegroup();
+          (childTG as any).lockRootTimegroup();
           // Recursively process children
           setupParentChildRelationships(childTG, root);
         }
@@ -1495,7 +1495,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
           const childTG = child as EFTimegroup;
           childTG.parentTimegroup = nearestParentTG;
           childTG.rootTimegroup = root;
-          childTG.lockRootTimegroup();
+          (childTG as any).lockRootTimegroup();
           setupParentChildRelationships(childTG, root);
         } else if ('parentTimegroup' in child && 'rootTimegroup' in child) {
           const temporal = child as TemporalMixinInterface & HTMLElement;
@@ -1521,7 +1521,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     // CRITICAL: Lock AFTER all updates are complete to prevent further context changes
     // Also re-set rootTimegroup in case Lit Context overwrote it during updates
     actualClone.rootTimegroup = actualClone;
-    actualClone.lockRootTimegroup();
+    (actualClone as any).lockRootTimegroup();
     const finalizeRootTimegroup = (el: Element) => {
       if ('rootTimegroup' in el && 'lockRootTimegroup' in el) {
         (el as any).rootTimegroup = actualClone;
