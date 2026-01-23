@@ -859,6 +859,33 @@ export async function renderTimegroupToVideo(
           await renderClone.seekForRender(timeMs);
           totalSeekMs += performance.now() - seekStart;
           
+          // Wait for video content if in blocking mode (foreignObject path)
+          // Must happen after seek but before buildCloneStructure copies canvas content
+          if (contentReadyMode === "blocking") {
+            const allVideos = renderClone.querySelectorAll("ef-video");
+            if (allVideos.length > 0) {
+              const waitStart = performance.now();
+              while (performance.now() - waitStart < blockingTimeoutMs) {
+                let allReady = true;
+                for (const video of allVideos) {
+                  const shadowCanvas = video.shadowRoot?.querySelector("canvas");
+                  if (shadowCanvas && shadowCanvas.width > 0) {
+                    const ctx = shadowCanvas.getContext("2d");
+                    if (ctx) {
+                      const data = ctx.getImageData(0, 0, 1, 1).data;
+                      if (data[0] === 0 && data[1] === 0 && data[2] === 0 && data[3] === 0) {
+                        allReady = false;
+                        break;
+                      }
+                    }
+                  }
+                }
+                if (allReady) break;
+                await new Promise(r => requestAnimationFrame(r));
+              }
+            }
+          }
+          
           const syncStart = performance.now();
           const { container: cloneContainer, syncState } = buildCloneStructure(renderClone, timeMs);
           
@@ -902,6 +929,33 @@ export async function renderTimegroupToVideo(
           const seekStart = performance.now();
           await renderClone.seekForRender(nextTimeMs);
           totalSeekMs += performance.now() - seekStart;
+          
+          // Wait for video content if in blocking mode (foreignObject path)
+          // Must happen after seek but before syncStyles copies canvas content
+          if (contentReadyMode === "blocking") {
+            const allVideos = renderClone.querySelectorAll("ef-video");
+            if (allVideos.length > 0) {
+              const waitStart = performance.now();
+              while (performance.now() - waitStart < blockingTimeoutMs) {
+                let allReady = true;
+                for (const video of allVideos) {
+                  const shadowCanvas = video.shadowRoot?.querySelector("canvas");
+                  if (shadowCanvas && shadowCanvas.width > 0) {
+                    const ctx = shadowCanvas.getContext("2d");
+                    if (ctx) {
+                      const data = ctx.getImageData(0, 0, 1, 1).data;
+                      if (data[0] === 0 && data[1] === 0 && data[2] === 0 && data[3] === 0) {
+                        allReady = false;
+                        break;
+                      }
+                    }
+                  }
+                }
+                if (allReady) break;
+                await new Promise(r => requestAnimationFrame(r));
+              }
+            }
+          }
           
           const syncStart = performance.now();
           syncStyles(foCloneState.syncState, nextTimeMs);
