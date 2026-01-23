@@ -1989,7 +1989,7 @@ export function ScenarioViewer({ sandboxLoaders }: ScenarioViewerProps = {}) {
                   />
 
                   {/* Error panel */}
-                  {(() => {
+                  {(((): React.ReactNode => {
                     if (!error) return null;
                     const errorText: string = error;
                     return (
@@ -2009,7 +2009,7 @@ export function ScenarioViewer({ sandboxLoaders }: ScenarioViewerProps = {}) {
                         <div style={{ fontFamily: "monospace", whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: "1.4" }}>{errorText}</div>
                       </div>
                     );
-                  })() as React.ReactNode}
+                  })())}
 
                   {/* Assertions panel */}
                   {result?.assertions && result.assertions.length > 0 && (
