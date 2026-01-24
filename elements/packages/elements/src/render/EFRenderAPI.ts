@@ -18,7 +18,7 @@ import {
 // Types
 // ============================================================================
 
-export interface EFRenderAPI {
+export interface IEFRenderAPI {
   /**
    * Render with streaming output (calls window.onRenderChunk for each chunk).
    * Use this for CLI/Playwright to avoid memory buffering.
@@ -46,7 +46,7 @@ export interface EFRenderAPI {
 
 declare global {
   interface Window {
-    EF_RENDER?: EFRenderAPI;
+    EF_RENDER?: IEFRenderAPI;
     EF_RENDER_DATA?: Record<string, unknown>;
     onRenderChunk?: (chunk: Uint8Array) => void; // Set by Playwright
     onRenderProgress?: (progress: RenderProgress) => void; // Optional progress callback
@@ -79,7 +79,7 @@ function setWorkbenchRendering(rendering: boolean): void {
   }
 }
 
-const api: EFRenderAPI = {
+const api: IEFRenderAPI = {
   async renderStreaming(options: RenderToVideoOptions = {}): Promise<void> {
     const timegroup = findRootTimegroup();
     if (!timegroup) {
@@ -174,3 +174,4 @@ if (typeof window !== "undefined") {
 }
 
 export { api as EFRenderAPI };
+export type { IEFRenderAPI as EFRenderAPIInterface };
