@@ -426,8 +426,8 @@ function hasMeaningfulContent(canvas: HTMLCanvasElement): boolean {
   return hasContent;
 }
 
-// Skip all renderTimegroupToCanvas tests - failing tests need investigation
-describe.skip("renderTimegroupToCanvas", () => {
+// Re-enabled 2026-01-24: Tests were passing when skipped for beta release
+describe("renderTimegroupToCanvas", () => {
   test("native Canvas API (drawElementImage) is available", () => {
     expect(isNativeCanvasApiAvailable()).toBe(true);
   });
