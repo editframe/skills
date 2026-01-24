@@ -64,10 +64,6 @@ export const DEFAULT_THUMBNAIL_SCALE = 0.25;
 /** Default timeout for blocking content readiness mode (ms) */
 export const DEFAULT_BLOCKING_TIMEOUT_MS = 5000;
 
-/** JPEG quality settings for different canvas scales */
-export const JPEG_QUALITY_HIGH = 0.95;
-export const JPEG_QUALITY_MEDIUM = 0.85;
-
 // ============================================================================
 // Container Creation
 // ============================================================================

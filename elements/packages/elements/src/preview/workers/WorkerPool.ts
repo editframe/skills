@@ -4,7 +4,6 @@
  */
 
 // Constants
-const WORKER_TASK_TIMEOUT_MS = 30000;
 const WORKER_INIT_TEST_TIMEOUT_MS = 2000;
 
 interface QueuedTask<T> {
@@ -197,72 +196,4 @@ export class WorkerPool {
     this.workers = [];
     this.availableWorkers = [];
   }
-}
-
-/**
- * Helper function to encode a canvas using a worker.
- */
-export async function encodeCanvasInWorker(
-  worker: Worker,
-  canvas: HTMLCanvasElement,
-  preserveAlpha: boolean,
-): Promise<string> {
-  return new Promise<string>((resolve, reject) => {
-    const taskId = `task-${Date.now()}-${Math.random()}-${performance.now()}`;
-    const startTime = performance.now();
-    let timeoutId: number | null = null;
-
-    const cleanup = () => {
-      if (timeoutId !== null) {
-        clearTimeout(timeoutId);
-        timeoutId = null;
-      }
-      worker.removeEventListener("message", messageHandler);
-      worker.removeEventListener("messageerror", messageErrorHandler);
-    };
-
-    const messageHandler = (event: MessageEvent) => {
-      const result = event.data as { taskId: string; dataUrl: string; error?: string };
-      if (result.taskId === taskId) {
-        cleanup();
-        if (result.error) {
-          reject(new Error(`Worker encoding failed: ${result.error}`));
-        } else {
-          resolve(result.dataUrl);
-        }
-      }
-    };
-
-    const messageErrorHandler = () => {
-      cleanup();
-      reject(new Error("Worker message error"));
-    };
-
-    worker.addEventListener("message", messageHandler);
-    worker.addEventListener("messageerror", messageErrorHandler);
-
-    // Set timeout to detect if worker never responds
-    timeoutId = window.setTimeout(() => {
-      cleanup();
-      reject(new Error("Worker task timed out"));
-    }, WORKER_TASK_TIMEOUT_MS);
-
-    // Create ImageBitmap from canvas
-    createImageBitmap(canvas)
-      .then((bitmap) => {
-        // Transfer bitmap to worker (zero-copy)
-        worker.postMessage(
-          {
-            taskId,
-            bitmap,
-            preserveAlpha,
-          },
-          [bitmap],
-        );
-      })
-      .catch((error) => {
-        cleanup();
-        reject(error instanceof Error ? error : new Error(String(error)));
-      });
-  });
 }
