@@ -1,61 +1,49 @@
-# Programmatic Rendering
+# Local Rendering
 
-Render compositions to video from CLI or Playwright with custom data injection.
+Render compositions to video locally using the Editframe CLI.
 
 ## CLI Usage
 
 ```bash
-ef local-render ./my-project -o output.mp4 --data '{"userName":"John"}'
+npx editframe render [directory] -o output.mp4 --data '{"userName":"John"}'
 ```
 
-Options:
+### Arguments
 
-- `-o, --output <path>` - Output file (default: output.mp4)
-- `-d, --data <json>` - Custom data as JSON string
-- `--data-file <path>` - Custom data from JSON file
-- `--fps <number>` - Frame rate (default: 30)
-- `--scale <number>` - Resolution scale 0-1 (default: 1)
-- `--include-audio` - Include audio track (default: true)
+- `directory` - Project directory containing `index.html` (default: `.`)
+
+### Options
+
+- `-o, --output <path>` - Output file path (default: `output.mp4`)
+- `-d, --data <json>` - Custom render data as JSON string
+- `--data-file <path>` - Custom render data from JSON file
+- `--fps <number>` - Frame rate (default: `30`)
+- `--scale <number>` - Resolution scale 0-1 (default: `1`)
+- `--include-audio` - Include audio track (default: `true`)
 - `--no-include-audio` - Exclude audio track
 - `--from-ms <number>` - Start time in milliseconds
 - `--to-ms <number>` - End time in milliseconds
+- `--experimental-native-render` - Use experimental canvas capture API (faster, Chrome only)
 
-## Playwright Usage
+### Examples
 
-```typescript
-import { chromium } from "playwright";
-import fs from "fs";
+```bash
+# Basic render
+npx editframe render ./my-project
 
-const browser = await chromium.launch({ headless: true });
-const page = await browser.newPage();
+# Custom output and data
+npx editframe render ./my-project -o video.mp4 --data '{"userName":"John","theme":"dark"}'
 
-// Stream chunks directly to file
-const outputStream = fs.createWriteStream("output.mp4");
-await page.exposeFunction("onRenderChunk", (chunk: number[]) => {
-  outputStream.write(Buffer.from(chunk));
-});
+# Render specific time range
+npx editframe render ./my-project --from-ms 1000 --to-ms 5000
 
-await page.goto("http://localhost:5173");
-await page.waitForFunction(() => window.EF_REGISTERED);
-
-// Inject custom data
-await page.evaluate((data) => {
-  window.EF_RENDER_DATA = data;
-}, { userName: "John", theme: "dark" });
-
-// Render with streaming
-await page.evaluate(async () => {
-  await window.EF_RENDER.renderStreaming({
-    fps: 30,
-    includeAudio: true,
-  });
-});
-
-outputStream.end();
-await browser.close();
+# Use experimental native render (faster)
+npx editframe render ./my-project --experimental-native-render
 ```
 
 ## Reading Custom Data in Compositions
+
+Use `getRenderData()` to read custom data passed via `--data` or `--data-file`:
 
 ```typescript
 import { getRenderData } from "@editframe/elements";
@@ -68,38 +56,18 @@ interface MyRenderData {
 const data = getRenderData<MyRenderData>();
 if (data) {
   console.log(data.userName);  // "John"
+  console.log(data.theme);     // "dark"
 }
 ```
 
-## Window API
+## Requirements
 
-| API | Description |
-|-----|-------------|
-| `window.EF_RENDER.renderStreaming(options)` | Stream render to `window.onRenderChunk` |
-| `window.EF_RENDER.render(options)` | Return video as `Uint8Array` |
-| `window.EF_RENDER.getRenderInfo()` | Get dimensions, duration, assets |
-| `window.EF_RENDER.isReady()` | Check if SDK is ready for rendering |
-| `window.EF_RENDER_DATA` | Custom data bag (set before render) |
-| `window.onRenderChunk` | Callback for streaming chunks (set by Playwright) |
-| `window.onRenderProgress` | Optional progress callback |
-
-## Render Options
-
-```typescript
-interface RenderToVideoOptions {
-  fps?: number;           // Frame rate (default: 30)
-  scale?: number;         // Resolution scale (default: 1)
-  includeAudio?: boolean; // Include audio track (default: true)
-  fromMs?: number;        // Start time in ms
-  toMs?: number;         // End time in ms
-  codec?: "avc" | "hevc" | "vp9" | "av1" | "vp8"; // Video codec (default: "avc")
-  bitrate?: number;       // Video bitrate (default: 8_000_000)
-  audioBitrate?: number;  // Audio bitrate (default: 128_000)
-}
-```
+- **Google Chrome**: The render command requires Google Chrome to be installed on your system. Install from [https://www.google.com/chrome/](https://www.google.com/chrome/)
+- **Node.js**: Node.js 18+ required
 
 ## Notes
 
-- **Streaming**: Use `renderStreaming()` for long videos to avoid memory buffering. Chunks are written to file as they're encoded.
+- **Streaming**: Video chunks are streamed directly to disk as they're encoded, avoiding memory buffering for long videos.
 - **Workbench Hidden**: The workbench UI (toolbar, timeline, hierarchy) is automatically hidden during render, so only the composition content appears in the video.
-- **Custom Data**: Set `window.EF_RENDER_DATA` before calling render to pass data to your composition. Use `getRenderData()` in your composition code to read it.
+- **Custom Data**: Pass data to your composition using `--data` or `--data-file`. Use `getRenderData()` in your composition code to read it.
+- **Experimental Native Render**: The `--experimental-native-render` flag enables Chrome's experimental `drawElementImage` canvas API for faster rendering. Requires Chrome Canary with the `chrome://flags/#canvas-draw-element` flag enabled.
