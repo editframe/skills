@@ -453,11 +453,37 @@ export function createJitTranscodeMiddleware(
         return;
       }
 
-      // Helper: Map rendition ID to track ID
+      // Get fragment index first - we need it to determine track IDs
+      const fragmentIndexResult = await assetFunctions.generateTrackFragmentIndex(options.cacheRoot, mediaPath);
+      const fragmentIndex: Record<number, TrackFragmentIndex> = JSON.parse(
+        await import("node:fs/promises").then((fs) => fs.readFile(fragmentIndexResult.cachePath, "utf-8")),
+      );
+
+      // Helper: Map rendition ID to track ID, using fragment index to find correct track
+      // For video files: track 1 = video, track 2 = audio
+      // For audio-only files: track 1 = audio (no track 2)
       const getTrackId = (renditionId: string): number => {
-        if (renditionId === "audio") return 2;
         if (renditionId === "scrub") return -1;
-        return 1; // high, medium, low all use video track 1
+        
+        if (renditionId === "audio") {
+          // Find the audio track - could be track 1 (audio-only) or track 2 (video+audio)
+          for (const [trackIdStr, trackInfo] of Object.entries(fragmentIndex)) {
+            if (trackInfo.type === "audio") {
+              return Number.parseInt(trackIdStr, 10);
+            }
+          }
+          // Fallback to track 2 if no audio track found by type
+          return 2;
+        }
+        
+        // For video renditions (high, medium, low), find the video track
+        for (const [trackIdStr, trackInfo] of Object.entries(fragmentIndex)) {
+          if (trackInfo.type === "video") {
+            return Number.parseInt(trackIdStr, 10);
+          }
+        }
+        // Fallback to track 1
+        return 1;
       };
 
       // Handle init segment endpoint (e.g., /api/v1/transcode/high/init.mp4 or init.m4s)
@@ -479,16 +505,11 @@ export function createJitTranscodeMiddleware(
             trackTaskResult = await assetFunctions.generateTrack(options.cacheRoot, mediaPath, trackUrl);
           }
 
-          // Get the fragment index to find init segment byte range
-          const fragmentIndexResult = await assetFunctions.generateTrackFragmentIndex(options.cacheRoot, mediaPath);
-          const fragmentIndex: Record<number, TrackFragmentIndex> = JSON.parse(
-            await import("node:fs/promises").then((fs) => fs.readFile(fragmentIndexResult.cachePath, "utf-8")),
-          );
-
           const track = fragmentIndex[trackId];
           if (!track) {
+            const validTracks = Object.keys(fragmentIndex).join(", ");
             res.writeHead(404, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: `Track ${trackId} not found` }));
+            res.end(JSON.stringify({ error: `Track ${trackId} not found (valid tracks: ${validTracks})` }));
             return;
           }
 
@@ -536,16 +557,11 @@ export function createJitTranscodeMiddleware(
             trackTaskResult = await assetFunctions.generateTrack(options.cacheRoot, mediaPath, trackUrl);
           }
 
-          // Get the fragment index to find segment byte range
-          const fragmentIndexResult = await assetFunctions.generateTrackFragmentIndex(options.cacheRoot, mediaPath);
-          const fragmentIndex: Record<number, TrackFragmentIndex> = JSON.parse(
-            await import("node:fs/promises").then((fs) => fs.readFile(fragmentIndexResult.cachePath, "utf-8")),
-          );
-
           const track = fragmentIndex[trackId];
           if (!track) {
+            const validTracks = Object.keys(fragmentIndex).join(", ");
             res.writeHead(404, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: `Track ${trackId} not found` }));
+            res.end(JSON.stringify({ error: `Track ${trackId} not found (valid tracks: ${validTracks})` }));
             return;
           }
 
