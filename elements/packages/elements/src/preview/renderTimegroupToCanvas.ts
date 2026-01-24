@@ -12,7 +12,6 @@ import { getEffectiveRenderMode } from "./renderers.js";
 export type { RenderOptions, RenderResult, Renderer } from "./renderers.js";
 export { getEffectiveRenderMode, isCanvas, isImage } from "./renderers.js";
 import { encodeCanvasesInParallel } from "./encoding/canvasEncoder.js";
-import { JPEG_QUALITY_HIGH, JPEG_QUALITY_MEDIUM } from "./encoding/mainThreadEncoder.js";
 import {
   type TemporalElement,
   isVisibleAtTime,
@@ -63,6 +62,7 @@ interface HtmlInCanvasElement extends HTMLCanvasElement {
   layoutSubtree?: boolean;
 }
 
+
 /**
  * Options for capturing a timegroup frame.
  */
@@ -109,15 +109,60 @@ export class ContentNotReadyError extends Error {
 // Module State (reset via resetRenderState)
 // ============================================================================
 
-/** Image cache for inlining external images as data URIs (foreignObject path) */
-const _inlineImageCache = new Map<string, string>();
+/**
+ * Centralized render state for the canvas rendering module.
+ * All module-level state is consolidated here for easier testing and debugging.
+ */
+interface CanvasRenderState {
+  /** Image cache for inlining external images as data URIs (foreignObject path) */
+  inlineImageCache: Map<string, string>;
+  
+  /** Track canvases that have been initialized for layoutsubtree (only need to wait once) */
+  layoutInitializedCanvases: WeakSet<HTMLCanvasElement>;
+  
+  /** Reusable XMLSerializer instance (avoid creating new instances every frame) */
+  xmlSerializer: XMLSerializer | null;
+  
+  /** Reusable TextEncoder instance (avoid creating new instances every frame) */
+  textEncoder: TextEncoder | null;
+  
+  /** Cache metrics for diagnostics */
+  metrics: CacheMetrics;
+}
 
-/** Track canvases that have been initialized for layoutsubtree (only need to wait once) */
-const _layoutInitializedCanvases = new WeakSet<HTMLCanvasElement>();
+/**
+ * Metrics for tracking cache usage and performance.
+ */
+interface CacheMetrics {
+  /** Number of inline image cache hits */
+  inlineImageCacheHits: number;
+  
+  /** Number of inline image cache misses */
+  inlineImageCacheMisses: number;
+  
+  /** Number of inline image cache evictions */
+  inlineImageCacheEvictions: number;
+}
 
-// Reusable instances for better performance (avoid creating new instances every frame)
-let _xmlSerializer: XMLSerializer | null = null;
-let _textEncoder: TextEncoder | null = null;
+/**
+ * Create a new render state instance with default values.
+ */
+function createRenderState(): CanvasRenderState {
+  return {
+    inlineImageCache: new Map<string, string>(),
+    layoutInitializedCanvases: new WeakSet<HTMLCanvasElement>(),
+    xmlSerializer: null,
+    textEncoder: null,
+    metrics: {
+      inlineImageCacheHits: 0,
+      inlineImageCacheMisses: 0,
+      inlineImageCacheEvictions: 0,
+    },
+  };
+}
+
+/** Global render state instance */
+const renderState = createRenderState();
 
 /**
  * Fast base64 encoding directly from Uint8Array.
@@ -166,26 +211,59 @@ function encodeBase64Fast(bytes: Uint8Array): string {
 }
 
 /**
+ * Get the current render state for testing and diagnostics.
+ * @returns The current render state instance
+ */
+export function getRenderState(): CanvasRenderState {
+  return renderState;
+}
+
+/**
  * Reset all module state including profiling counters, caches, and logging flags.
  * Call at the start of export sessions to ensure clean state.
  */
 export function resetRenderState(): void {
   defaultProfiler.reset();
-  _inlineImageCache.clear();
+  renderState.inlineImageCache.clear();
+  // Note: WeakSet can't be cleared, so we reassign a new instance
+  renderState.layoutInitializedCanvases = new WeakSet<HTMLCanvasElement>();
+  renderState.xmlSerializer = null;
+  renderState.textEncoder = null;
+  renderState.metrics.inlineImageCacheHits = 0;
+  renderState.metrics.inlineImageCacheMisses = 0;
+  renderState.metrics.inlineImageCacheEvictions = 0;
 }
 
 /**
  * Clear the inline image cache. Useful for memory management in long-running sessions.
  */
 export function clearInlineImageCache(): void {
-  _inlineImageCache.clear();
+  renderState.inlineImageCache.clear();
 }
 
 /**
  * Get current inline image cache size for diagnostics.
  */
 export function getInlineImageCacheSize(): number {
-  return _inlineImageCache.size;
+  return renderState.inlineImageCache.size;
+}
+
+/**
+ * Get current cache metrics for diagnostics and testing.
+ * @returns Current cache metrics including hits, misses, and evictions
+ */
+export function getCacheMetrics(): CacheMetrics {
+  return { ...renderState.metrics };
+}
+
+/**
+ * Reset cache metrics to zero.
+ * Useful for benchmarking and testing.
+ */
+export function resetCacheMetrics(): void {
+  renderState.metrics.inlineImageCacheHits = 0;
+  renderState.metrics.inlineImageCacheMisses = 0;
+  renderState.metrics.inlineImageCacheEvictions = 0;
 }
 
 // ============================================================================
@@ -360,10 +438,10 @@ async function serializeToSvgDataUri(
   wrapper.setAttribute("style", `width:${width}px;height:${height}px;overflow:hidden;position:relative;`);
   wrapper.appendChild(container);
   
-  if (!_xmlSerializer) {
-    _xmlSerializer = new XMLSerializer();
+  if (!renderState.xmlSerializer) {
+    renderState.xmlSerializer = new XMLSerializer();
   }
-  const serialized = _xmlSerializer.serializeToString(wrapper);
+  const serialized = renderState.xmlSerializer.serializeToString(wrapper);
   defaultProfiler.addTime("serialize", performance.now() - serializeStart);
   
   // Prepare restore function (removes container from wrapper, restores canvases)
@@ -393,10 +471,10 @@ async function serializeToSvgDataUri(
   const base64Start = performance.now();
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><foreignObject width="100%" height="100%">${serialized}</foreignObject></svg>`;
   
-  if (!_textEncoder) {
-    _textEncoder = new TextEncoder();
+  if (!renderState.textEncoder) {
+    renderState.textEncoder = new TextEncoder();
   }
-  const utf8Bytes = _textEncoder.encode(svg);
+  const utf8Bytes = renderState.textEncoder.encode(svg);
   
   let base64: string;
   if (typeof (Uint8Array.prototype as any).toBase64 === "function") {
@@ -421,12 +499,15 @@ async function inlineImages(container: HTMLElement): Promise<void> {
     const src = image.getAttribute("src");
     if (!src || src.startsWith("data:")) continue;
 
-    const cached = _inlineImageCache.get(src);
+    const cached = renderState.inlineImageCache.get(src);
     if (cached) {
       image.setAttribute("src", cached);
+      renderState.metrics.inlineImageCacheHits++;
       continue;
     }
 
+    renderState.metrics.inlineImageCacheMisses++;
+    
     try {
       const response = await fetch(src);
       const blob = await response.blob();
@@ -434,11 +515,14 @@ async function inlineImages(container: HTMLElement): Promise<void> {
       image.setAttribute("src", dataUrl);
       
       // Evict oldest entries if cache is full (simple FIFO eviction)
-      if (_inlineImageCache.size >= MAX_INLINE_IMAGE_CACHE_SIZE) {
-        const firstKey = _inlineImageCache.keys().next().value;
-        if (firstKey) _inlineImageCache.delete(firstKey);
+      if (renderState.inlineImageCache.size >= MAX_INLINE_IMAGE_CACHE_SIZE) {
+        const firstKey = renderState.inlineImageCache.keys().next().value;
+        if (firstKey) {
+          renderState.inlineImageCache.delete(firstKey);
+          renderState.metrics.inlineImageCacheEvictions++;
+        }
       }
-      _inlineImageCache.set(src, dataUrl);
+      renderState.inlineImageCache.set(src, dataUrl);
     } catch (e) {
       console.warn("Failed to inline image:", src, e);
     }
@@ -727,9 +811,9 @@ export async function renderToImageNative(
     
     // When reusing canvas with layoutsubtree, wait for initial layout (first use only)
     // Use a WeakSet to track canvases that have been initialized
-    if (reuseCanvas && (captureCanvas as any).layoutSubtree && !_layoutInitializedCanvases.has(captureCanvas)) {
+    if (reuseCanvas && (captureCanvas as any).layoutSubtree && !renderState.layoutInitializedCanvases.has(captureCanvas)) {
       await waitForFrame();
-      _layoutInitializedCanvases.add(captureCanvas);
+      renderState.layoutInitializedCanvases.add(captureCanvas);
       
       // Canvas may have been detached during async wait (e.g., test cleanup)
       if (!captureCanvas.parentNode) {

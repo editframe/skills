@@ -8,8 +8,11 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import {
   resetRenderState,
+  getRenderState,
   clearInlineImageCache,
   getInlineImageCacheSize,
+  getCacheMetrics,
+  resetCacheMetrics,
   ContentNotReadyError,
   loadImageFromDataUri,
   renderToImage,
@@ -22,6 +25,37 @@ import {
 import "../elements/EFTimegroup.js";
 import type { EFTimegroup } from "../elements/EFTimegroup.js";
 
+describe("getRenderState", () => {
+  it("returns current render state object", () => {
+    const state = getRenderState();
+    
+    expect(state).toBeDefined();
+    expect(state).toHaveProperty("inlineImageCache");
+    expect(state).toHaveProperty("layoutInitializedCanvases");
+    expect(state).toHaveProperty("xmlSerializer");
+    expect(state).toHaveProperty("textEncoder");
+    expect(state).toHaveProperty("metrics");
+  });
+
+  it("returns same instance on multiple calls", () => {
+    const state1 = getRenderState();
+    const state2 = getRenderState();
+    
+    expect(state1).toBe(state2);
+  });
+
+  it("has valid metrics structure", () => {
+    const state = getRenderState();
+    
+    expect(state.metrics).toHaveProperty("inlineImageCacheHits");
+    expect(state.metrics).toHaveProperty("inlineImageCacheMisses");
+    expect(state.metrics).toHaveProperty("inlineImageCacheEvictions");
+    expect(typeof state.metrics.inlineImageCacheHits).toBe("number");
+    expect(typeof state.metrics.inlineImageCacheMisses).toBe("number");
+    expect(typeof state.metrics.inlineImageCacheEvictions).toBe("number");
+  });
+});
+
 describe("resetRenderState", () => {
   it("clears profiling counters and caches", () => {
     // Perform some operations to populate state
@@ -29,6 +63,22 @@ describe("resetRenderState", () => {
     
     // After reset, cache should be empty
     expect(getInlineImageCacheSize()).toBe(0);
+  });
+
+  it("resets all state including metrics", () => {
+    const state = getRenderState();
+    
+    // Set some values
+    state.metrics.inlineImageCacheHits = 10;
+    state.metrics.inlineImageCacheMisses = 5;
+    state.metrics.inlineImageCacheEvictions = 2;
+    
+    resetRenderState();
+    
+    // All metrics should be reset to 0
+    expect(state.metrics.inlineImageCacheHits).toBe(0);
+    expect(state.metrics.inlineImageCacheMisses).toBe(0);
+    expect(state.metrics.inlineImageCacheEvictions).toBe(0);
   });
 
   it("can be called multiple times safely", () => {
@@ -356,5 +406,68 @@ describe("cache behavior", () => {
     // After clear, should still be 0
     clearInlineImageCache();
     expect(getInlineImageCacheSize()).toBe(0);
+  });
+});
+
+describe("cache metrics", () => {
+  beforeEach(() => {
+    resetCacheMetrics();
+    clearInlineImageCache();
+  });
+
+  it("getCacheMetrics returns metrics object", () => {
+    const metrics = getCacheMetrics();
+    
+    expect(metrics).toBeDefined();
+    expect(metrics).toHaveProperty("inlineImageCacheHits");
+    expect(metrics).toHaveProperty("inlineImageCacheMisses");
+    expect(metrics).toHaveProperty("inlineImageCacheEvictions");
+  });
+
+  it("returns copy of metrics (not reference)", () => {
+    const metrics1 = getCacheMetrics();
+    const metrics2 = getCacheMetrics();
+    
+    // Should be different objects (copies)
+    expect(metrics1).not.toBe(metrics2);
+    
+    // But with same values
+    expect(metrics1).toEqual(metrics2);
+  });
+
+  it("resetCacheMetrics clears all metrics to zero", () => {
+    const state = getRenderState();
+    
+    // Manually set some values
+    state.metrics.inlineImageCacheHits = 42;
+    state.metrics.inlineImageCacheMisses = 10;
+    state.metrics.inlineImageCacheEvictions = 5;
+    
+    resetCacheMetrics();
+    
+    const metrics = getCacheMetrics();
+    expect(metrics.inlineImageCacheHits).toBe(0);
+    expect(metrics.inlineImageCacheMisses).toBe(0);
+    expect(metrics.inlineImageCacheEvictions).toBe(0);
+  });
+
+  it("metrics start at zero after reset", () => {
+    resetCacheMetrics();
+    
+    const metrics = getCacheMetrics();
+    expect(metrics.inlineImageCacheHits).toBe(0);
+    expect(metrics.inlineImageCacheMisses).toBe(0);
+    expect(metrics.inlineImageCacheEvictions).toBe(0);
+  });
+
+  it("metrics persist between getCacheMetrics calls", () => {
+    const state = getRenderState();
+    state.metrics.inlineImageCacheHits = 7;
+    
+    const metrics1 = getCacheMetrics();
+    expect(metrics1.inlineImageCacheHits).toBe(7);
+    
+    const metrics2 = getCacheMetrics();
+    expect(metrics2.inlineImageCacheHits).toBe(7);
   });
 });
