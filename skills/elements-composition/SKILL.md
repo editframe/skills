@@ -42,6 +42,10 @@ metadata:
 
 - [references/transcription.md](references/transcription.md) - Generate captions with WhisperX
 
+## Programmatic Rendering
+
+- [references/render-api.md](references/render-api.md) - Render via CLI or Playwright with custom data
+
 ## Scene Structure
 
 ```html
