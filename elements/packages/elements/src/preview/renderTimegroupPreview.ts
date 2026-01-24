@@ -1,4 +1,13 @@
 /**
+ * Canvas refresh fix:
+ * Canvas pixels must be explicitly cleared and redrawn in syncNodeStyles
+ * to ensure video frames are captured correctly during foreignObject rendering.
+ * Without clearRect, stale frames from previous seeks may be serialized.
+ * 
+ * See FOREIGNOBJECT_BUG_FIX.md for detailed explanation.
+ */
+
+/**
  * Elements to skip entirely when building the preview.
  */
 const SKIP_TAGS = new Set([
@@ -29,34 +38,6 @@ const SYNC_PROPERTIES = [
   "perspective", "perspectiveOrigin", "backfaceVisibility",
   "cursor", "pointerEvents", "userSelect", "overflow",
 ] as const;
-
-/** Set version of SYNC_PROPERTIES for O(1) validation lookups */
-const SYNC_PROPERTIES_SET: Set<string> = new Set(SYNC_PROPERTIES);
-
-/**
- * Validation state for property change detection.
- * Reset via resetPropertyValidation() at start of export.
- */
-let _propertyValidationEnabled = false;
-let _validationFrameCount = 0;
-let _baselineSnapshot: Map<Element, Map<string, string>> | null = null;
-
-export function enablePropertyValidation(): void {
-  _propertyValidationEnabled = true;
-  _validationFrameCount = 0;
-  _baselineSnapshot = null;
-}
-
-export function disablePropertyValidation(): void {
-  _propertyValidationEnabled = false;
-  _validationFrameCount = 0;
-  _baselineSnapshot = null;
-}
-
-export function resetPropertyValidation(): void {
-  _validationFrameCount = 0;
-  _baselineSnapshot = null;
-}
 
 /**
  * Kebab-case versions for computedStyleMap.get() - pre-computed for speed.
@@ -156,9 +137,6 @@ export interface CloneTree {
   root: CloneNode | null;
 }
 
-/** Legacy pair type (kept for backward compatibility) */
-export type ElementPair = [source: Element, clone: HTMLElement];
-
 /** Sync state with tree structure */
 export interface SyncState {
   tree: CloneTree;
@@ -186,14 +164,12 @@ export function traverseCloneTree(state: SyncState, callback: (node: CloneNode) 
  */
 export function buildCloneStructure(source: Element, timeMs?: number): {
   container: HTMLDivElement;
-  pairs: ElementPair[];
   syncState: SyncState;
 } {
   const container = document.createElement("div");
   container.style.cssText = "position:absolute;top:0;left:0;width:100%;height:100%";
   
-  // Collect pairs for legacy compatibility
-  const legacyPairs: ElementPair[] = [];
+  let nodeCount = 0;
   
   function cloneElement(srcEl: Element): CloneNode | null {
     if (SKIP_TAGS.has(srcEl.tagName)) return null;
@@ -208,7 +184,7 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
         isCanvasClone: false,
         styleCache: new Map(),
       };
-      legacyPairs.push([srcEl, node.clone]);
+      nodeCount++;
       return node;
     }
     
@@ -271,7 +247,7 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
           isCanvasClone: true,
           styleCache: new Map(),
         };
-        legacyPairs.push([srcEl, clone]);
+        nodeCount++;
         return node;
       }
       
@@ -314,7 +290,7 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
           isCanvasClone: true,
           styleCache: new Map(),
         };
-        legacyPairs.push([srcEl, clone]);
+        nodeCount++;
         return node;
       }
     }
@@ -344,7 +320,7 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
       isCanvasClone: false,
       styleCache: new Map(),
     };
-    legacyPairs.push([srcEl, clone]);
+    nodeCount++;
     
     // Shadow DOM children
     if (srcEl.shadowRoot) {
@@ -404,7 +380,7 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
   
   const syncState: SyncState = {
     tree: { root },
-    nodeCount: legacyPairs.length,
+    nodeCount,
   };
   
   // Sync styles in the same pass if timeMs is provided
@@ -414,7 +390,6 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
   
   return {
     container,
-    pairs: legacyPairs,
     syncState,
   };
 }
@@ -709,157 +684,6 @@ function syncNodeRecursive(node: CloneNode, timeMs: number): void {
 export function syncStyles(state: SyncState, timeMs: number): void {
   if (state.tree.root) {
     syncNodeRecursive(state.tree.root, timeMs);
-  }
-  
-  // Property validation: detect unexpected property changes
-  if (_propertyValidationEnabled) {
-    validatePropertyChanges(state);
-  }
-}
-
-/**
- * Captures a snapshot of all CSS properties for all source elements.
- */
-function capturePropertySnapshot(state: SyncState): Map<Element, Map<string, string>> {
-  const snapshot = new Map<Element, Map<string, string>>();
-  
-  function captureNode(node: CloneNode): void {
-    const props = new Map<string, string>();
-    try {
-      const cs = getComputedStyle(node.source);
-      for (const prop of SYNC_PROPERTIES) {
-        props.set(prop, (cs as any)[prop] ?? "");
-      }
-    } catch {}
-    snapshot.set(node.source, props);
-    
-    for (const child of node.children) {
-      captureNode(child);
-    }
-  }
-  
-  if (state.tree.root) {
-    captureNode(state.tree.root);
-  }
-  
-  return snapshot;
-}
-
-/**
- * Validates that only expected properties have changed since baseline.
- * Throws if any unexpected property changed.
- */
-function validatePropertyChanges(state: SyncState): void {
-  _validationFrameCount++;
-  
-  // Capture baseline on first frame
-  if (_baselineSnapshot === null) {
-    _baselineSnapshot = capturePropertySnapshot(state);
-    return;
-  }
-  
-  // Only validate every 30 frames (expensive operation)
-  if (_validationFrameCount % 30 !== 0) {
-    return;
-  }
-  
-  const currentSnapshot = capturePropertySnapshot(state);
-  const violations: string[] = [];
-  
-  for (const [element, baselineProps] of _baselineSnapshot) {
-    const currentProps = currentSnapshot.get(element);
-    if (!currentProps) continue;
-    
-    for (const [prop, baselineValue] of baselineProps) {
-      const currentValue = currentProps.get(prop) ?? "";
-      
-      // Skip if value unchanged
-      if (baselineValue === currentValue) continue;
-      
-      if (!SYNC_PROPERTIES_SET.has(prop)) {
-        const elementId = element.id || element.tagName;
-        violations.push(
-          `[${elementId}] ${prop}: "${baselineValue}" → "${currentValue}"`
-        );
-      }
-    }
-  }
-  
-  if (violations.length > 0) {
-    const message = [
-      `\n⚠️  UNEXPECTED PROPERTY CHANGES at frame ${_validationFrameCount}:`,
-      `Properties not in SYNC_PROPERTIES changed during export.`,
-      ``,
-      `Violations (${violations.length}):`,
-      ...violations.slice(0, 20).map(v => `  ${v}`),
-      violations.length > 20 ? `  ... and ${violations.length - 20} more` : "",
-    ].join("\n");
-    
-    throw new Error(message);
-  }
-}
-
-/**
- * Legacy sync function for backwards compatibility.
- */
-export function syncAllStyles(pairs: ElementPair[], syncState?: SyncState, timeMs?: number): void {
-  if (syncState) {
-    syncStyles(syncState, timeMs ?? 0);
-    return;
-  }
-  
-  // Fallback for legacy callers without syncState
-  for (let i = 0; i < pairs.length; i++) {
-    const [src, clone] = pairs[i]!;
-    
-    let cs: CSSStyleDeclaration;
-    try {
-      cs = getComputedStyle(src);
-    } catch { continue; }
-    
-    const cloneStyle = clone.style as any;
-    const srcStyle = cs as any;
-    
-    if (srcStyle.display === "none") {
-      if (cloneStyle.display !== "none") cloneStyle.display = "none";
-      continue;
-    }
-    
-    for (const prop of SYNC_PROPERTIES) {
-      if (prop === "display") continue;
-      const srcVal = srcStyle[prop];
-      if (cloneStyle[prop] !== srcVal) cloneStyle[prop] = srcVal;
-    }
-    if (cloneStyle.animation !== "none") cloneStyle.animation = "none";
-    if (cloneStyle.transition !== "none") cloneStyle.transition = "none";
-    
-    const srcTextNode = src.childNodes[0];
-    const cloneTextNode = clone.childNodes[0];
-    if (srcTextNode?.nodeType === Node.TEXT_NODE && cloneTextNode?.nodeType === Node.TEXT_NODE) {
-      const srcText = srcTextNode.textContent || "";
-      if (cloneTextNode.textContent !== srcText) cloneTextNode.textContent = srcText;
-    }
-    if (src instanceof HTMLInputElement && clone instanceof HTMLInputElement) {
-      const srcVal = src.value;
-      if (clone.value !== srcVal) {
-        clone.value = srcVal;
-        clone.setAttribute("value", srcVal);
-      }
-    }
-    
-    // Canvas refresh
-    if (clone instanceof HTMLCanvasElement && src.shadowRoot) {
-      const shadowCanvas = src.shadowRoot.querySelector("canvas");
-      if (shadowCanvas && shadowCanvas.width > 0 && shadowCanvas.height > 0) {
-        const ctx = clone.getContext("2d");
-        if (ctx) {
-          if (clone.width !== shadowCanvas.width) clone.width = shadowCanvas.width;
-          if (clone.height !== shadowCanvas.height) clone.height = shadowCanvas.height;
-          ctx.clearRect(0, 0, clone.width, clone.height);
-          try { ctx.drawImage(shadowCanvas, 0, 0); } catch {}
-        }
-      }
-    }
   }
 }
 
