@@ -180,8 +180,21 @@ export function setPreviewPresentationMode(mode: PreviewPresentationMode): void 
 /**
  * Get the current render mode for HTML-to-canvas capture.
  * Defaults to "native" if available, otherwise "foreignObject".
+ * 
+ * Checks EF_NATIVE_RENDER URL parameter to force native mode when set.
  */
 export function getRenderMode(): RenderMode {
+  // Check URL parameter first (CLI flag override)
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("EF_NATIVE_RENDER") === "1") {
+      // Force native mode if available, otherwise fall back to foreignObject
+      return isNativeCanvasApiAvailable() ? "native" : "foreignObject";
+    }
+  } catch {
+    // URL parsing failed, continue with normal logic
+  }
+
   try {
     const stored = localStorage.getItem(STORAGE_KEY_RENDER_MODE);
     if (stored === "foreignObject" || stored === "native") {

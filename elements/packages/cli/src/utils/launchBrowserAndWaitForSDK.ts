@@ -2,6 +2,7 @@ import chalk from "chalk";
 import debug from "debug";
 import { type Browser, chromium, type Page } from "playwright";
 
+import { requireChrome } from "./detectChrome.js";
 import { withSpinner } from "./withSpinner.js";
 
 const browserLog = debug("ef:cli::browser");
@@ -11,19 +12,34 @@ interface LaunchOptions {
   headless?: boolean;
   interactive?: boolean;
   efInteractive?: boolean;
+  nativeRender?: boolean;
+  chromePath?: string;
 }
 
 export async function launchBrowserAndWaitForSDK(
   options: LaunchOptions,
   fn: (page: Page) => Promise<void>,
 ) {
+  // Detect Chrome before launching (only for non-interactive renders)
+  if (options.interactive !== true && !options.chromePath) {
+    requireChrome();
+  }
+
   const browser = await withSpinner("Launching chrome", async () => {
-    return chromium.launch({
+    const launchOptions: Parameters<typeof chromium.launch>[0] = {
       channel: "chrome",
       headless: options.headless ?? true,
-      // headless: false,
       devtools: options.interactive === true,
-    });
+    };
+
+    // Use custom Chrome path if provided
+    if (options.chromePath) {
+      launchOptions.executablePath = options.chromePath;
+      // Don't use channel when providing explicit path
+      delete launchOptions.channel;
+    }
+
+    return chromium.launch(launchOptions);
   });
 
   const page = await withSpinner("Loading Editframe SDK", async () => {
@@ -38,8 +54,17 @@ export async function launchBrowserAndWaitForSDK(
     page.on("console", (msg) => {
       browserLog(chalk.blue(`browser (${msg.type()}) |`), msg.text());
     });
-    const url =
-      options.url + (options.efInteractive ? "" : "?EF_NONINTERACTIVE=1");
+
+    // Build URL with query parameters
+    const urlParams = new URLSearchParams();
+    if (!options.efInteractive) {
+      urlParams.set("EF_NONINTERACTIVE", "1");
+    }
+    if (options.nativeRender) {
+      urlParams.set("EF_NATIVE_RENDER", "1");
+    }
+    const url = options.url + (urlParams.toString() ? `?${urlParams.toString()}` : "");
+
     process.stderr.write("\nLoading url: ");
     process.stderr.write(url);
     process.stderr.write("\n");

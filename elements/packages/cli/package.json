@@ -9,7 +9,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit --emitDeclarationOnly false",
     "build": "tsdown",
-    "build:watch": "tsdown --watch"
+    "build:watch": "tsdown --watch",
+    "postinstall": "echo 'Skipping Playwright browser download - uses system Chrome'"
   },
   "author": "",
   "license": "UNLICENSED",

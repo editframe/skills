@@ -9,3 +9,5 @@ All our dev environments run in docker containers that are configured to run onl
 Always create failing tests first, verify they fail, implement the fix, then verify they pass. Look for existing tests that might already cover the current task.
 
 When tasks are complete, immediately commit the changes with a terse declarative message.
+
+Do not maintain backwards compatibility unless explicitly requested by the user.
