@@ -230,5 +230,13 @@ if (typeof window !== "undefined") {
 
 import "./EF_FRAMEGEN.js";
 
+// Initialize render API
+import "./render/EFRenderAPI.js";
+
 export { getRenderInfo, RenderInfo } from "./getRenderInfo.js";
+export { getRenderData } from "./render/getRenderData.js";
+export type {
+  RenderToVideoOptions,
+  RenderProgress,
+} from "./preview/renderTimegroupToVideo.js";
 export type { TraceContext } from "./otel/tracingHelpers.js";

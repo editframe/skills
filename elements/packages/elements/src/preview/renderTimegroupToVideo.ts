@@ -62,6 +62,7 @@ export interface RenderToVideoOptions {
   returnBuffer?: boolean;
   preferredAudioCodecs?: AudioCodec[];
   benchmarkMode?: boolean;
+  customWritableStream?: WritableStream<Uint8Array>; // For programmatic streaming (CLI/Playwright)
 }
 
 // ============================================================================
@@ -311,18 +312,28 @@ export async function renderTimegroupToVideo(
   let encodingCtx: OffscreenCanvasRenderingContext2D | null = null;
   
   if (!config.benchmarkMode) {
-    if (config.streaming) {
-      fileStream = await getFileWritableStream(config.filename);
-      useStreaming = fileStream !== null;
-    }
-    
-    if (useStreaming && fileStream) {
-      target = new StreamTarget(fileStream.writable as any);
+    // Check for custom writable stream first (for programmatic streaming)
+    if (options.customWritableStream) {
+      target = new StreamTarget(options.customWritableStream as any);
       output = new Output({
         format: new Mp4OutputFormat({ fastStart: "fragmented" }),
         target,
       });
-    } else {
+      useStreaming = true;
+    } else if (config.streaming) {
+      fileStream = await getFileWritableStream(config.filename);
+      useStreaming = fileStream !== null;
+      
+      if (useStreaming && fileStream) {
+        target = new StreamTarget(fileStream.writable as any);
+        output = new Output({
+          format: new Mp4OutputFormat({ fastStart: "fragmented" }),
+          target,
+        });
+      }
+    }
+    
+    if (!target) {
       target = new BufferTarget();
       output = new Output({ format: new Mp4OutputFormat(), target });
     }
@@ -476,6 +487,7 @@ export async function renderTimegroupToVideo(
     await output!.finalize();
     
     if (useStreaming) {
+      // Streaming mode: chunks already sent via customWritableStream or file stream
       return undefined;
     } else {
       const bufferTarget = target as BufferTarget;

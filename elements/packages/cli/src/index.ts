@@ -22,6 +22,7 @@ program
 import "./commands/auth.js";
 import "./commands/sync.js";
 import "./commands/render.js";
+import "./commands/local-render.js";
 import "./commands/preview.js";
 import "./commands/process.js";
 import "./commands/process-file.js";
