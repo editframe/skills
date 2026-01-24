@@ -59,15 +59,3 @@ if (data) {
   console.log(data.theme);     // "dark"
 }
 ```
-
-## Requirements
-
-- **Google Chrome**: The render command requires Google Chrome to be installed on your system. Install from [https://www.google.com/chrome/](https://www.google.com/chrome/)
-- **Node.js**: Node.js 18+ required
-
-## Notes
-
-- **Streaming**: Video chunks are streamed directly to disk as they're encoded, avoiding memory buffering for long videos.
-- **Workbench Hidden**: The workbench UI (toolbar, timeline, hierarchy) is automatically hidden during render, so only the composition content appears in the video.
-- **Custom Data**: Pass data to your composition using `--data` or `--data-file`. Use `getRenderData()` in your composition code to read it.
-- **Experimental Native Render**: The `--experimental-native-render` flag enables Chrome's experimental `drawElementImage` canvas API for faster rendering. Requires Chrome Canary with the `chrome://flags/#canvas-draw-element` flag enabled.

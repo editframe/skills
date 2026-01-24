@@ -3,11 +3,26 @@ import { createWriteStream } from "node:fs";
 import path from "node:path";
 import { program } from "commander";
 import debug from "debug";
+import ora from "ora";
 import { launchBrowserAndWaitForSDK } from "../utils/launchBrowserAndWaitForSDK.js";
 import { PreviewServer } from "../utils/startPreviewServer.js";
-import { withSpinner } from "../utils/withSpinner.js";
 
 const log = debug("ef:cli:render");
+
+/**
+ * Format milliseconds as MM:SS or HH:MM:SS
+ */
+function formatTime(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+  }
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
 
 program
   .command("render [directory]")
@@ -91,8 +106,31 @@ program
           throw new Error("Render API is not ready. No ef-timegroup found.");
         }
 
+        // Create progress spinner
+        const progressSpinner = ora("Rendering video...").start();
+
+        // Expose progress callback
+        await page.exposeFunction("onRenderProgress", (progress: {
+          progress: number;
+          currentFrame: number;
+          totalFrames: number;
+          renderedMs: number;
+          totalDurationMs: number;
+          elapsedMs: number;
+          estimatedRemainingMs: number;
+          speedMultiplier: number;
+        }) => {
+          const percent = (progress.progress * 100).toFixed(1);
+          const renderedTime = formatTime(progress.renderedMs);
+          const totalTime = formatTime(progress.totalDurationMs);
+          const remainingTime = formatTime(progress.estimatedRemainingMs);
+          const speed = progress.speedMultiplier.toFixed(2);
+          
+          progressSpinner.text = `Rendering: ${progress.currentFrame}/${progress.totalFrames} frames (${percent}%) | ${renderedTime}/${totalTime} | ${remainingTime} remaining | ${speed}x speed`;
+        });
+
         // Render with streaming
-        await withSpinner("Rendering video...", async () => {
+        try {
           const renderOptions: any = {
             fps,
             scale,
@@ -109,7 +147,12 @@ program
           await page.evaluate(async (opts) => {
             await window.EF_RENDER!.renderStreaming(opts);
           }, renderOptions);
-        });
+
+          progressSpinner.succeed("Render complete");
+        } catch (error) {
+          progressSpinner.fail("Render failed");
+          throw error;
+        }
 
         // Close the output stream
         outputStream.end();
