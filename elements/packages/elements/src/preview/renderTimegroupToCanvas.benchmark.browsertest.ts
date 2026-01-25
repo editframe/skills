@@ -236,7 +236,7 @@ describe.skip("renderTimegroupToCanvas benchmarks", () => {
         console.log(`\n=== ${strategy.name} (${strategy.writeMechanism}) ===`);
         console.log(`Description: ${strategy.description}`);
         profiler.report();
-      }, { timeout: 30000 });
+      }, 30000);
     }
 
     // Test with complex HTML (more elements = more pronounced differences)
@@ -260,7 +260,7 @@ describe.skip("renderTimegroupToCanvas benchmarks", () => {
         console.log(`Description: ${strategy.description}`);
         console.log(`Element count: ${syncState.nodeCount}`);
         profiler.report();
-      }, { timeout: 30000 });
+      }, 30000);
     }
   });
 
@@ -283,7 +283,7 @@ describe.skip("renderTimegroupToCanvas benchmarks", () => {
           { threshold: 0.01, acceptableDiffPercentage: 0.5 },
         );
       }
-    }, { timeout: 30000 });
+    }, 30000);
 
     test("all strategies produce identical output for complex HTML", async ({ complexHtmlTimegroup }) => {
       const baselineStrategy = strategies.get("baseline")!;
@@ -302,7 +302,7 @@ describe.skip("renderTimegroupToCanvas benchmarks", () => {
           { threshold: 0.01, acceptableDiffPercentage: 0.5 },
         );
       }
-    }, { timeout: 30000 });
+    }, 30000);
 
     test("all strategies produce identical output with video content", async ({ videoTimegroup }) => {
       // Seek to a specific time to ensure video frame is stable
@@ -324,7 +324,7 @@ describe.skip("renderTimegroupToCanvas benchmarks", () => {
           { threshold: 0.05, acceptableDiffPercentage: 2.0 },
         );
       }
-    }, { timeout: 30000 });
+    }, 30000);
   });
 
   describe("phase breakdown analysis", () => {
@@ -351,7 +351,7 @@ describe.skip("renderTimegroupToCanvas benchmarks", () => {
           console.log(`  ${row.phase}: avg=${row.avgMs}ms, min=${row.minMs}ms, max=${row.maxMs}ms`);
         }
       }
-    }, { timeout: 30000 });
+    }, 30000);
   });
 
   describe("full pipeline timing", () => {
@@ -412,7 +412,7 @@ describe.skip("renderTimegroupToCanvas benchmarks", () => {
       console.log(`  Realtime multiple (vs 30fps): ${realtimeMultiple.toFixed(2)}x`);
       console.log(`  `);
       console.log(`  ⚠️  renderToImage uses waitForPaintFlush (double RAF) = ~33ms minimum per frame`);
-    }, { timeout: 30000 });
+    }, 30000);
 
     test("compare renderToImage paths: native vs foreignObject", async ({ htmlTimegroup }) => {
       const width = htmlTimegroup.offsetWidth || 800;
@@ -465,7 +465,7 @@ describe.skip("renderTimegroupToCanvas benchmarks", () => {
         console.log(`  `);
         console.log(`  ⚠️  Native has ~${avgNative.toFixed(0)}ms overhead from waitForPaintFlush (double RAF)`);
       }
-    }, { timeout: 30000 });
+    }, 30000);
 
     test("native path WITHOUT RAF wait (maximum throughput)", async ({ htmlTimegroup }) => {
       const width = htmlTimegroup.offsetWidth || 800;
@@ -519,7 +519,7 @@ describe.skip("renderTimegroupToCanvas benchmarks", () => {
       console.log(`    avg=${avgSkipWait.toFixed(2)}ms → ${fpsSkipWait.toFixed(0)} fps → ${(fpsSkipWait / 30).toFixed(1)}x realtime`);
       console.log(`  `);
       console.log(`  🎯 Speedup: ${(avgWithWait / avgSkipWait).toFixed(0)}x faster without artificial RAF wait!`);
-    }, { timeout: 30000 });
+    }, 30000);
 
     test("measure RAF overhead (theoretical minimum time)", async () => {
       // Single RAF takes ~16.67ms at 60Hz, double RAF takes ~33ms
@@ -570,7 +570,7 @@ describe.skip("renderTimegroupToCanvas benchmarks", () => {
       console.log(`  1. Remove waitForPaintFlush entirely (risk: content not painted)`);
       console.log(`  2. Use single RAF instead of double (risk: some paint misses)`);
       console.log(`  3. Use getComputedStyle flush only (synchronous, risk: layout incomplete)`);
-    }, { timeout: 30000 });
+    }, 30000);
 
     test("export optimization: reused clone vs rebuilt clone per frame", async ({ htmlTimegroup }) => {
       const width = htmlTimegroup.offsetWidth || 800;
@@ -638,7 +638,7 @@ describe.skip("renderTimegroupToCanvas benchmarks", () => {
       console.log(`    → ${(1000 / avgReuse).toFixed(0)} fps → ${((1000 / avgReuse) / 30).toFixed(2)}x realtime`);
       console.log(`  `);
       console.log(`  🎯 Export speedup: ${(avgRebuild / avgReuse).toFixed(1)}x faster with clone reuse!`);
-    }, { timeout: 60000 });
+    }, 60000);
 
     test("full export simulation with seek", async ({ htmlTimegroup }) => {
       const width = htmlTimegroup.offsetWidth || 800;
@@ -710,7 +710,7 @@ describe.skip("renderTimegroupToCanvas benchmarks", () => {
       console.log(`  Achievable: ${fps.toFixed(0)} fps → ${realtime.toFixed(1)}x realtime`);
       console.log(`  `);
       console.log(`  NOTE: This doesn't include WebCodecs encoding time!`);
-    }, { timeout: 60000 });
+    }, 60000);
   });
 
   describe("comparative summary", () => {
@@ -773,7 +773,7 @@ describe.skip("renderTimegroupToCanvas benchmarks", () => {
           console.log(`  ${r.strategy}: ${speedup}% ${parseFloat(speedup) > 0 ? "faster" : "slower"}`);
         }
       }
-    }, { timeout: 60000 });
+    }, 60000);
     
     test("CSS property sync strategies comparison", async ({ htmlTimegroup }) => {
       console.log("\n=== CSS Property Sync Strategies ===\n");
@@ -1147,7 +1147,7 @@ describe.skip("renderTimegroupToCanvas benchmarks", () => {
       
       testClone.remove();
       container.remove();
-    }, { timeout: 30000 });
+    }, 30000);
     
     test("change detection strategies", async ({ complexHtmlTimegroup }) => {
       const htmlTimegroup = complexHtmlTimegroup;
@@ -1516,7 +1516,7 @@ describe.skip("renderTimegroupToCanvas benchmarks", () => {
       }
       
       container.remove();
-    }, { timeout: 30000 });
+    }, 30000);
   });
 
   describe("batched vs interleaved style reads", () => {
@@ -1612,7 +1612,7 @@ describe.skip("renderTimegroupToCanvas benchmarks", () => {
       console.log(`  Per iteration: interleaved=${(interleavedTime/ITERATIONS).toFixed(2)}ms, batched=${(batchedTime/ITERATIONS).toFixed(2)}ms`);
       
       container.remove();
-    }, { timeout: 30000 });
+    }, 30000);
   });
 });
 
