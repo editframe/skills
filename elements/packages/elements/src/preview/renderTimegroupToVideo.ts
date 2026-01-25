@@ -382,6 +382,7 @@ export async function renderTimegroupToVideo(
   // Build clone structure ONCE - reuse like live preview does
   // =========================================================================
   const initialTimeMs = config.startMs;
+  await renderClone.seekForRender(initialTimeMs);
   const { container: cloneContainer, syncState } = buildCloneStructure(renderClone, initialTimeMs);
   
   // Create preview container with proper styling
