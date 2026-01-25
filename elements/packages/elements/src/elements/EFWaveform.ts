@@ -95,7 +95,9 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) {
     this.mutationObserver = new MutationObserver((mutationsList) => {
       for (const mutation of mutationsList) {
         if (mutation.type === "attributes") {
-          this.frameTask.run();
+          this.frameTask.run().catch(() => {
+            // AbortErrors are expected during cleanup
+          });
         }
       }
     });
@@ -105,7 +107,9 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) {
 
     if (!EF_RENDERING()) {
       this.styleObserver = new CSSStyleObserver(["color"], () => {
-        this.frameTask.run();
+        this.frameTask.run().catch(() => {
+          // AbortErrors are expected during cleanup
+        });
       });
       this.styleObserver.attach(this);
     }
@@ -122,7 +126,9 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) {
   private resizeCanvas() {
     this.ctx = this.initCanvas();
     if (this.ctx) {
-      this.frameTask.run(); // Redraw the canvas
+      this.frameTask.run().catch(() => {
+        // AbortErrors are expected during cleanup
+      }); // Redraw the canvas
     }
   }
 
@@ -536,7 +542,9 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) {
     // Trigger a redraw if any property changes
     if (changedProperties.size > 0) {
       // Request a new frame
-      this.frameTask.run();
+      this.frameTask.run().catch(() => {
+        // AbortErrors are expected during cleanup
+      });
     }
   }
 }

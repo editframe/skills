@@ -2701,7 +2701,9 @@ describe("captions rendering in foreignObject path", () => {
       timegroup.currentTimeMs = timeMs;
       timegroup.seekTask.run();
       await timegroup.seekTask.taskComplete;
-      captions.frameTask.run();
+      captions.frameTask.run().catch(() => {
+        // AbortErrors are expected during cleanup
+      });
       await captions.frameTask.taskComplete;
       await activeWord.updateComplete;
       await new Promise((resolve) => requestAnimationFrame(resolve));

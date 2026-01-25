@@ -414,7 +414,9 @@ describe.skip("EFAudio", () => {
       const audio = container.querySelector("ef-audio") as EFAudio;
 
       // Start some operations
-      audio.frameTask.run();
+      audio.frameTask.run().catch(() => {
+        // AbortErrors are expected during cleanup
+      });
 
       // Remove element
       audio.remove();

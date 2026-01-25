@@ -296,7 +296,9 @@ describe.skip("EFCaptions", () => {
         timegroup.seekTask.run();
         await timegroup.seekTask.taskComplete;
         // Explicitly run the captions frameTask to update text containers
-        captions.frameTask.run();
+        captions.frameTask.run().catch(() => {
+          // AbortErrors are expected during cleanup
+        });
         await captions.frameTask.taskComplete;
         await segmentContainer.updateComplete;
         // Wait for DOM updates
@@ -350,7 +352,9 @@ describe.skip("EFCaptions", () => {
         timegroup.currentTimeMs = timeMs;
         timegroup.seekTask.run();
         await timegroup.seekTask.taskComplete;
-        captions.frameTask.run();
+        captions.frameTask.run().catch(() => {
+          // AbortErrors are expected during cleanup
+        });
         await captions.frameTask.taskComplete;
         await wordContainer.updateComplete;
         await new Promise((resolve) => requestAnimationFrame(resolve));
@@ -1661,7 +1665,9 @@ describe.skip("EFCaptions", () => {
         timegroup.currentTimeMs = timeMs;
         timegroup.seekTask.run();
         await timegroup.seekTask.taskComplete;
-        captions.frameTask.run();
+        captions.frameTask.run().catch(() => {
+          // AbortErrors are expected during cleanup
+        });
         await captions.frameTask.taskComplete;
         await activeContainer.updateComplete;
         await new Promise((resolve) => requestAnimationFrame(resolve));
