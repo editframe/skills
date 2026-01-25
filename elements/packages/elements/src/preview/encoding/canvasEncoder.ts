@@ -2,6 +2,7 @@
  * Canvas encoding orchestration with worker pool support.
  */
 
+import { logger } from "../logger.js";
 import { WorkerPool } from "../workers/WorkerPool.js";
 import { getEncoderWorkerUrl } from "../workers/encoderWorkerInline.js";
 import { encodeCanvasOnMainThread } from "./mainThreadEncoder.js";
@@ -29,7 +30,7 @@ function getWorkerPool(): WorkerPool | null {
   ) {
     if (!_workerPoolWarningLogged) {
       _workerPoolWarningLogged = true;
-      console.warn(
+      logger.warn(
         "[canvasEncoder] Web Workers or OffscreenCanvas not available, using main thread fallback",
       );
     }
@@ -51,7 +52,7 @@ function getWorkerPool(): WorkerPool | null {
       _workerPool = null;
       if (!_workerPoolWarningLogged) {
         _workerPoolWarningLogged = true;
-        console.warn(
+        logger.warn(
           `[canvasEncoder] Worker pool initialization failed (${reason}), using main thread fallback`,
         );
       }
@@ -61,7 +62,7 @@ function getWorkerPool(): WorkerPool | null {
     if (!_workerPoolWarningLogged) {
       _workerPoolWarningLogged = true;
       const errorMessage = error instanceof Error ? error.message : String(error);
-      console.warn(
+      logger.warn(
         `[canvasEncoder] Failed to create worker pool: ${errorMessage} - using main thread fallback`,
       );
     }

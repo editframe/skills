@@ -21,6 +21,7 @@ import {
   createPreviewContainer,
 } from "./previewTypes.js";
 import { defaultProfiler } from "./RenderProfiler.js";
+import { logger } from "./logger.js";
 
 // Import rendering modules
 import {
@@ -447,7 +448,7 @@ export async function captureFromClone(
     image = await renderToImage(previewContainer, width, height, { canvasScale: scale });
     const renderTime = performance.now() - t2;
     
-    console.log(`[captureFromClone] build=${buildTime.toFixed(0)}ms, styles=${stylesTime.toFixed(0)}ms, render=${renderTime.toFixed(0)}ms (canvasScale=${scale})`);
+    logger.debug(`[captureFromClone] build=${buildTime.toFixed(0)}ms, styles=${stylesTime.toFixed(0)}ms, render=${renderTime.toFixed(0)}ms (canvasScale=${scale})`);
   }
 
   // Draw to canvas (may need scaling for native path which is at DPR)
@@ -743,7 +744,7 @@ export function renderTimegroupToCanvas(
     if (!hasLoggedScale) {
       hasLoggedScale = true;
       const mode = getEffectiveRenderMode();
-      console.log(`[renderTimegroupToCanvas] Resolution scale: ${currentResolutionScale} (${width}x${height} → ${renderWidth}x${renderHeight}), canvas buffer: ${canvas.width}x${canvas.height}, CSS size: ${canvas.style.width}x${canvas.style.height}, renderMode: ${mode}`);
+      logger.debug(`[renderTimegroupToCanvas] Resolution scale: ${currentResolutionScale} (${width}x${height} → ${renderWidth}x${renderHeight}), canvas buffer: ${canvas.width}x${canvas.height}, CSS size: ${canvas.style.width}x${canvas.style.height}, renderMode: ${mode}`);
     }
 
     try {
@@ -776,13 +777,13 @@ export function renderTimegroupToCanvas(
       // Log render time periodically (every 60 frames)
       defaultProfiler.incrementRenderCount();
       if (defaultProfiler.shouldLogByFrameCount(60)) {
-        console.log(`[renderTimegroupToCanvas] Frame render: ${renderTime.toFixed(1)}ms (resolutionScale=${currentResolutionScale}, image=${image.width}x${image.height})`);
+        logger.debug(`[renderTimegroupToCanvas] Frame render: ${renderTime.toFixed(1)}ms (resolutionScale=${currentResolutionScale}, image=${image.width}x${image.height})`);
       }
       
       // Update debug label
       updateDebugLabel(debugLabel, renderWidth, renderHeight, currentResolutionScale);
     } catch (e) {
-      console.error("Canvas preview render failed:", e);
+      logger.error("Canvas preview render failed:", e);
     } finally {
       rendering = false;
     }

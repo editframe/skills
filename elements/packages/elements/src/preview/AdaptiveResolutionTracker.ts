@@ -9,6 +9,8 @@
  * If renders consistently have headroom, scale up.
  */
 
+import { logger } from "./logger.js";
+
 /**
  * Available resolution scale steps for adaptive scaling.
  * Finer-grained steps (5% increments) for smoother adaptation.
@@ -113,7 +115,7 @@ export class AdaptiveResolutionTracker {
       
       this.pressureObserver.observe("cpu", { sampleInterval: 500 });
     } catch (e) {
-      console.warn("[AdaptiveResolutionTracker] Failed to initialize PressureObserver:", e);
+      logger.warn("[AdaptiveResolutionTracker] Failed to initialize PressureObserver:", e);
       this.pressureObserver = null;
     }
   }
@@ -195,7 +197,7 @@ export class AdaptiveResolutionTracker {
       this.renderTimes = []; // Clear history at new scale
       
       const newScale = SCALE_STEPS[this.currentScaleIndex]!;
-      console.log(`[AdaptiveResolutionTracker] Scaling DOWN to ${(newScale * 100).toFixed(0)}% (reason: ${reason})`);
+      logger.debug(`[AdaptiveResolutionTracker] Scaling DOWN to ${(newScale * 100).toFixed(0)}% (reason: ${reason})`);
       this.onScaleChange?.(newScale);
     }
   }
@@ -211,7 +213,7 @@ export class AdaptiveResolutionTracker {
       this.renderTimes = []; // Clear history at new scale
       
       const newScale = SCALE_STEPS[this.currentScaleIndex]!;
-      console.log(`[AdaptiveResolutionTracker] Scaling UP to ${(newScale * 100).toFixed(0)}% (reason: stable performance)`);
+      logger.debug(`[AdaptiveResolutionTracker] Scaling UP to ${(newScale * 100).toFixed(0)}% (reason: stable performance)`);
       this.onScaleChange?.(newScale);
     }
   }
@@ -308,7 +310,7 @@ export class AdaptiveResolutionTracker {
     this.lastScaleChangeTime = 0;
     this.samplesAtCurrentScale = 0;
     
-    console.log(`[AdaptiveResolutionTracker] Initialized at scale ${(SCALE_STEPS[bestIndex]! * 100).toFixed(0)}%`);
+    logger.debug(`[AdaptiveResolutionTracker] Initialized at scale ${(SCALE_STEPS[bestIndex]! * 100).toFixed(0)}%`);
   }
   
   /**

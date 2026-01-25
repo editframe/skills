@@ -5,6 +5,7 @@
  * ensuring consistency between preview thumbnails and exported video.
  */
 
+import { logger } from "./logger.js";
 import {
   Output,
   Mp4OutputFormat,
@@ -209,7 +210,7 @@ async function getFileWritableStream(
     return { writable, close: async () => { await writable.close(); } };
   } catch (e) {
     if ((e as Error).name !== "AbortError") {
-      console.warn("[renderToVideo] File System Access failed:", e);
+      logger.warn("[renderToVideo] File System Access failed:", e);
     }
     return null;
   }
@@ -224,7 +225,7 @@ async function selectAudioCodec(
       const isSupported = await canEncodeAudio(codec, encodingOptions);
       if (isSupported) return codec;
     } catch (e) {
-      console.warn(`[selectAudioCodec] Check failed for ${codec}:`, e);
+      logger.warn(`[selectAudioCodec] Check failed for ${codec}:`, e);
     }
   }
   const availableCodecs = await getEncodableAudioCodecs(undefined, encodingOptions);
@@ -290,13 +291,13 @@ export async function renderTimegroupToVideo(
   
   const videoElements = renderClone.querySelectorAll("ef-video");
   if (videoElements.length > 0) {
-    console.log(`[renderTimegroupToVideo] Prefetching main video segments for ${videoElements.length} video(s)...`);
+    logger.debug(`[renderTimegroupToVideo] Prefetching main video segments for ${videoElements.length} video(s)...`);
     await Promise.all(
       Array.from(videoElements).map((video) =>
         (video as EFVideo).prefetchMainVideoSegments(timestamps),
       ),
     );
-    console.log(`[renderTimegroupToVideo] Prefetch complete`);
+    logger.debug(`[renderTimegroupToVideo] Prefetch complete`);
   }
   
   // =========================================================================
@@ -474,7 +475,7 @@ export async function renderTimegroupToVideo(
     }
     
     const totalTime = performance.now() - renderStartTime;
-    console.log(
+    logger.debug(
       `[renderTimegroupToVideo] ${config.totalFrames} frames: ` +
       `seek=${totalSeekMs.toFixed(0)}ms, capture=${totalCaptureMs.toFixed(0)}ms, ` +
       `encode=${totalEncodeMs.toFixed(0)}ms, total=${totalTime.toFixed(0)}ms`

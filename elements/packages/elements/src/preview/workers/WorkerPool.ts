@@ -3,6 +3,8 @@
  * Manages a pool of workers and distributes tasks across them.
  */
 
+import { logger } from "../logger.js";
+
 // Constants
 const WORKER_INIT_TEST_TIMEOUT_MS = 2000;
 
@@ -78,7 +80,7 @@ export class WorkerPool {
         
         worker.onerror = (error) => {
           cleanupTest();
-          console.error(`[WorkerPool] Worker ${i} error:`, {
+          logger.error(`[WorkerPool] Worker ${i} error:`, {
             message: error.message,
             filename: error.filename,
             lineno: error.lineno,
@@ -86,17 +88,17 @@ export class WorkerPool {
           });
         };
         worker.onmessageerror = (error) => {
-          console.error(`[WorkerPool] Worker ${i} message error:`, error);
+          logger.error(`[WorkerPool] Worker ${i} message error:`, error);
         };
         this.workers.push(worker);
         this.availableWorkers.push(worker);
       } catch (error) {
-        console.error(`[WorkerPool] Failed to create worker ${i}:`, error instanceof Error ? error.message : String(error));
+        logger.error(`[WorkerPool] Failed to create worker ${i}:`, error instanceof Error ? error.message : String(error));
       }
     }
     if (this.workers.length === 0) {
-      console.error(`[WorkerPool] Failed to create any workers. URL: ${this.workerUrl}`);
-      console.error(`[WorkerPool] Browser support check:`, {
+      logger.error(`[WorkerPool] Failed to create any workers. URL: ${this.workerUrl}`);
+      logger.error(`[WorkerPool] Browser support check:`, {
         Worker: typeof Worker !== "undefined",
         OffscreenCanvas: typeof OffscreenCanvas !== "undefined",
         createImageBitmap: typeof createImageBitmap !== "undefined",

@@ -7,6 +7,8 @@
  * See FOREIGNOBJECT_BUG_FIX.md for detailed explanation.
  */
 
+import { logger } from "./logger.js";
+
 /**
  * Elements to skip entirely when building the preview.
  */
@@ -418,7 +420,7 @@ function syncNodeStyles(node: CloneNode): void {
           ctx.drawImage(shadowCanvas, 0, 0);
         } catch (e) {
           // Canvas draw can fail if source is in invalid state - log and continue
-          console.warn("[syncNodeStyles] Canvas draw failed:", e);
+          logger.warn("[syncNodeStyles] Canvas draw failed:", e);
         }
       }
       

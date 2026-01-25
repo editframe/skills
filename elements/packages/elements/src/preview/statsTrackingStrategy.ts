@@ -5,6 +5,7 @@
  * allowing each mode to report what stats it supports and provide its own implementation.
  */
 
+import { logger } from "./logger.js";
 import type { EFTimegroup } from "../elements/EFTimegroup.js";
 import type { AdaptiveResolutionTracker } from "./AdaptiveResolutionTracker.js";
 import type { CanvasPreviewResult } from "./renderTimegroupToCanvas.js";
@@ -120,7 +121,7 @@ export class CanvasStatsStrategy implements StatsTrackingStrategy {
             this.updateStats(renderWidth, renderHeight, currentScale);
           }
         } catch (e) {
-          console.error("Canvas stats tracking failed:", e);
+          logger.error("Canvas stats tracking failed:", e);
         }
       }
       
