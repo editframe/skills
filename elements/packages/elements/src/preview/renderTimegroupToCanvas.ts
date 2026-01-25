@@ -153,7 +153,7 @@ export function getRenderState(): RenderState {
  * @returns Object with cache hit/miss/eviction counts
  */
 export function getCacheMetrics(): RenderState['metrics'] {
-  return renderState.metrics;
+  return { ...renderState.metrics };
 }
 
 /**
@@ -412,10 +412,10 @@ export async function captureFromClone(
       overflow: hidden;
     `;
     
-    // OPTIMIZATION: Skip DPR scaling for thumbnails - retina quality isn't needed
-    // and DPR=2 means 4x more pixels to render.
-    const skipDpr = scale < 1;
-    image = await renderToImageNative(renderContainer, width, height, { skipDprScaling: skipDpr });
+    // OPTIMIZATION: Always skip DPR scaling for captures (thumbnails and video export).
+    // Retina quality isn't needed for captured frames, and DPR=2 means 4x more pixels.
+    // Live preview uses a different code path (renderTimegroupToCanvas) which handles DPR properly.
+    image = await renderToImageNative(renderContainer, width, height, { skipDprScaling: true });
   } else {
     // FOREIGNOBJECT PATH: Build passive structure from the SEEKED render clone
     // The clone is already at the correct time, so getComputedStyle captures the right values.
