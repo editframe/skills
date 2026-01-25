@@ -5,6 +5,10 @@ Render compositions to video locally using the Editframe CLI.
 ## CLI Usage
 
 ```bash
+# Render from URL (recommended)
+npx editframe render --url http://localhost:4321/video.html -o output.mp4
+
+# Or render from directory
 npx editframe render [directory] -o output.mp4 --data '{"userName":"John"}'
 ```
 
@@ -15,6 +19,7 @@ npx editframe render [directory] -o output.mp4 --data '{"userName":"John"}'
 ### Options
 
 - `-o, --output <path>` - Output file path (default: `output.mp4`)
+- `--url <url>` - URL to render (bypasses directory/server startup)
 - `-d, --data <json>` - Custom render data as JSON string
 - `--data-file <path>` - Custom render data from JSON file
 - `--fps <number>` - Frame rate (default: `30`)
@@ -28,17 +33,20 @@ npx editframe render [directory] -o output.mp4 --data '{"userName":"John"}'
 ### Examples
 
 ```bash
-# Basic render
-npx editframe render ./my-project
+# Render from dev server (recommended)
+npx editframe render --url http://localhost:4321/video.html -o output.mp4
 
-# Custom output and data
-npx editframe render ./my-project -o video.mp4 --data '{"userName":"John","theme":"dark"}'
+# Render with custom data
+npx editframe render --url http://localhost:4321/video.html --data '{"userName":"John","theme":"dark"}' -o video.mp4
 
 # Render specific time range
-npx editframe render ./my-project --from-ms 1000 --to-ms 5000
+npx editframe render --url http://localhost:4321/video.html --from-ms 1000 --to-ms 5000
 
 # Use experimental native render (faster)
-npx editframe render ./my-project --experimental-native-render
+npx editframe render --url http://localhost:4321/video.html --experimental-native-render
+
+# Directory-based render (starts own server)
+npx editframe render ./my-project -o output.mp4
 ```
 
 ## Reading Custom Data in Compositions
