@@ -101,10 +101,12 @@ export async function serializeToSvgDataUri(
     
     for (const { canvas, parent, nextSibling, img } of canvasRestoreInfo) {
       if (img.parentNode === parent) {
-        if (nextSibling) {
+        // Verify nextSibling is still valid (DOM may have changed between frames due to syncStyles)
+        if (nextSibling && nextSibling.parentNode === parent) {
           parent.insertBefore(canvas, nextSibling);
           parent.removeChild(img);
         } else {
+          // Fallback: just replace img with canvas (safer when DOM structure changed)
           parent.replaceChild(canvas, img);
         }
       }
