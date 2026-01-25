@@ -548,8 +548,6 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) {
       ctx.restore();
     },
   });
-  // CRITICAL: Attach .catch() handler IMMEDIATELY after creation
-  { this.frameTask.taskComplete.catch(() => {}); }
 
   get durationMs() {
     if (!this.targetElement) return 0;

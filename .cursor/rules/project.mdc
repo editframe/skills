@@ -11,3 +11,5 @@ Always create failing tests first, verify they fail, implement the fix, then ver
 When tasks are complete, immediately commit the changes with a terse declarative message.
 
 Do not maintain backwards compatibility unless explicitly requested by the user.
+
+Do not create markdown summary files for your work. Do not automatically generate readmefiles or documentation files.

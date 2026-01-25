@@ -2368,8 +2368,6 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
       );
     },
   });
-  // CRITICAL: Attach .catch() handler IMMEDIATELY after creation
-  { this.seekTask.taskComplete.catch(() => {}); }
 
   /**
    * Get container information for this timegroup.

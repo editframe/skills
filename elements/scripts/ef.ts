@@ -238,18 +238,20 @@ Info Command (Progressive Discovery):
   }
   
   if (command === "profile") {
-    const sandboxName = args[1];
-    const scenarioName = args.find((a) => a.startsWith("--scenario"))?.split("=")[1] || args[3];
-    const outputPath =
-      args.find((a) => a.startsWith("--output"))?.split("=")[1] || "./profile.cpuprofile";
+    // The profileScenario function in ef-profile.ts is a full CLI entrypoint
+    // We just need to re-execute it with the remaining args
+    const { spawn } = await import("node:child_process");
+    const profileProcess = spawn("npx", ["tsx", "./scripts/ef-profile.ts", ...args.slice(1)], {
+      cwd: process.cwd(),
+      stdio: "inherit",
+    });
     
-    if (!sandboxName || !scenarioName) {
-      console.error(`Usage: ${SCRIPT_NAME} profile <sandbox-name> --scenario <scenario-name> [--output <path>]`);
-      process.exit(1);
-    }
+    const exitCode = await new Promise<number>((resolve) => {
+      profileProcess.on("close", (code) => resolve(code || 0));
+      profileProcess.on("error", () => resolve(1));
+    });
     
-    await profileScenario(sandboxName, scenarioName, outputPath);
-    process.exit(0);
+    process.exit(exitCode);
   }
   
   if (command === "info") {

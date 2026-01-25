@@ -15,6 +15,7 @@
  *   --headless         Run in headless mode (default: false)
  *   --scrub            Profile scrubbing instead of playback (default: false)
  *   --scrub-speed <ms> Time between scrub updates in ms (default: 50)
+ *   --json             Output analysis as JSON
  * 
  * Examples:
  *   npx tsx scripts/profile-playback.ts
@@ -191,6 +192,7 @@ async function main() {
   const focusFile = getArg("focus", "");
   const scrubMode = hasFlag("scrub");
   const scrubSpeed = parseInt(getArg("scrub-speed", "50"), 10);
+  const jsonOutput = hasFlag("json");
 
   console.log(`\n🔬 Playback Profiling Harness`);
   console.log(`   Project: ${project}`);
@@ -349,22 +351,26 @@ async function main() {
     }
     console.log(`   Loaded ${resolvedCount}/${scriptUrls.size} source maps`);
 
-    // Analyze and print hotspots
-    console.log(`\n📊 Top Hotspots:`);
-    const hotspots = await analyzeProfile(profile);
+    // Use unified profiling library for analysis
+    const { analyzeProfile: analyzeProfileNew, formatProfileAnalysis, formatProfileAnalysisJSON } = await import("../packages/elements/src/profiling/index.js");
     
-    const ourCode = hotspots.filter(h => 
-      h.url.includes("/elements/") || 
-      h.url.includes("EFTimegroup") ||
-      h.url.includes("PlaybackController") ||
-      h.url.includes("preview/")
-    );
+    const analysis = analyzeProfileNew(profile, {
+      filterNodeModules: true,
+      filterInternals: true,
+      topN: 20,
+    });
 
-    console.log(`\n   === Our Code ===`);
-    printHotspots(ourCode.slice(0, 20));
-
-    // Print detailed analysis
-    await printDetailedAnalysis(profile, focusFile);
+    if (jsonOutput) {
+      console.log(formatProfileAnalysisJSON(analysis, { sandbox: project, scenario: scrubMode ? "scrub" : "playback" }, { topN: 20 }));
+    } else {
+      console.log(`\n📊 Profile Analysis:`);
+      console.log(formatProfileAnalysis(analysis, { sandbox: project, scenario: scrubMode ? "scrub" : "playback" }, { topN: 20, showRecommendations: true }));
+      
+      // Print detailed analysis if focus file is specified
+      if (focusFile) {
+        await printDetailedAnalysis(profile, focusFile);
+      }
+    }
 
   } finally {
     page.close().catch(() => {});

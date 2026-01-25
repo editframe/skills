@@ -1,33 +1,17 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { createWriteStream } from "node:fs";
 import path from "node:path";
 import { program } from "commander";
 import debug from "debug";
-import ora from "ora";
 import { launchBrowserAndWaitForSDK } from "../utils/launchBrowserAndWaitForSDK.js";
 import { PreviewServer } from "../utils/startPreviewServer.js";
-import { StreamTargetChunk } from "mediabunny";
+import { withSpinner } from "../utils/withSpinner.js";
 
-const log = debug("ef:cli:render");
-
-/**
- * Format milliseconds as MM:SS or HH:MM:SS
- */
-function formatTime(ms: number): string {
-  const totalSeconds = Math.floor(ms / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-
-  if (hours > 0) {
-    return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-  }
-  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-}
+const log = debug("ef:cli:local-render");
 
 program
-  .command("render [directory]")
-  .description("Render a video composition locally")
+  .command("local-render [directory]")
+  .description("Render a directory's index.html file as a video locally using Playwright")
   .option("-o, --output <path>", "Output file path", "output.mp4")
   .option("-d, --data <json>", "Custom render data (JSON string)")
   .option("--data-file <path>", "Custom render data from JSON file")
@@ -37,7 +21,6 @@ program
   .option("--no-include-audio", "Exclude audio track")
   .option("--from-ms <number>", "Start time in milliseconds")
   .option("--to-ms <number>", "End time in milliseconds")
-  .option("--experimental-native-render", "Use experimental canvas capture API (faster)")
   .action(async (directory = ".", options) => {
     const srcDir = path.resolve(process.cwd(), directory);
     const outputPath = path.resolve(process.cwd(), options.output);
@@ -70,7 +53,6 @@ program
         headless: true,
         interactive: false,
         efInteractive: false,
-        nativeRender: options.experimentalNativeRender === true,
       },
       async (page) => {
         // Open output file for streaming writes
@@ -79,11 +61,12 @@ program
         let totalBytes = 0;
 
         // Expose chunk handler - writes directly to file
-        await page.exposeFunction("onRenderChunk", (chunk: StreamTargetChunk) => {
-          writeFile(outputPath, chunk.data, { flag: "a" });
+        await page.exposeFunction("onRenderChunk", (chunkArray: number[]) => {
+          const chunk = Buffer.from(chunkArray);
+          outputStream.write(chunk);
           chunkCount++;
-          totalBytes += chunk.data.length;
-          log(`Received chunk ${chunkCount}: ${chunk.data.length} bytes (total: ${totalBytes} bytes)`);
+          totalBytes += chunk.length;
+          log(`Received chunk ${chunkCount}: ${chunk.length} bytes (total: ${totalBytes} bytes)`);
         });
 
         // Set custom render data if provided
@@ -106,31 +89,8 @@ program
           throw new Error("Render API is not ready. No ef-timegroup found.");
         }
 
-        // Create progress spinner
-        const progressSpinner = ora("Rendering video...").start();
-
-        // Expose progress callback
-        await page.exposeFunction("onRenderProgress", (progress: {
-          progress: number;
-          currentFrame: number;
-          totalFrames: number;
-          renderedMs: number;
-          totalDurationMs: number;
-          elapsedMs: number;
-          estimatedRemainingMs: number;
-          speedMultiplier: number;
-        }) => {
-          const percent = (progress.progress * 100).toFixed(1);
-          const renderedTime = formatTime(progress.renderedMs);
-          const totalTime = formatTime(progress.totalDurationMs);
-          const remainingTime = formatTime(progress.estimatedRemainingMs);
-          const speed = progress.speedMultiplier.toFixed(2);
-          
-          progressSpinner.text = `Rendering: ${progress.currentFrame}/${progress.totalFrames} frames (${percent}%) | ${renderedTime}/${totalTime} | ${remainingTime} remaining | ${speed}x speed`;
-        });
-
         // Render with streaming
-        try {
+        await withSpinner("Rendering video...", async () => {
           const renderOptions: any = {
             fps,
             scale,
@@ -147,12 +107,7 @@ program
           await page.evaluate(async (opts) => {
             await window.EF_RENDER!.renderStreaming(opts);
           }, renderOptions);
-
-          progressSpinner.succeed("Render complete");
-        } catch (error) {
-          progressSpinner.fail("Render failed");
-          throw error;
-        }
+        });
 
         // Close the output stream
         outputStream.end();

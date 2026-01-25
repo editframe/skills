@@ -409,8 +409,6 @@ export class EFCaptions extends EFSourceMixin(
       return data.md5 ?? undefined;
     },
   });
-  // CRITICAL: Attach .catch() handler IMMEDIATELY after creation
-  { this.md5SumLoader.taskComplete.catch(() => {}); }
 
   private transcriptionDataTask = new Task(this, {
     autoRun: EF_INTERACTIVE,
@@ -447,8 +445,6 @@ export class EFCaptions extends EFSourceMixin(
       return response.json() as any as GetISOBMFFFileTranscriptionResult;
     },
   });
-  // CRITICAL: Attach .catch() handler IMMEDIATELY after creation
-  { this.transcriptionDataTask.taskComplete.catch(() => {}); }
 
   private transcriptionFragmentPath(
     transcriptionId: string,
@@ -490,8 +486,6 @@ export class EFCaptions extends EFSourceMixin(
       return fragmentIndex;
     },
   });
-  // CRITICAL: Attach .catch() handler IMMEDIATELY after creation
-  { this.fragmentIndexTask.taskComplete.catch(() => {}); }
 
   private customCaptionsDataTask = new Task(this, {
     autoRun: EF_INTERACTIVE,
@@ -557,8 +551,6 @@ export class EFCaptions extends EFSourceMixin(
       return null;
     },
   });
-  // CRITICAL: Attach .catch() handler IMMEDIATELY after creation
-  { this.customCaptionsDataTask.taskComplete.catch(() => {}); }
 
   private transcriptionFragmentDataTask = new Task(this, {
     autoRun: EF_INTERACTIVE,
@@ -603,8 +595,6 @@ export class EFCaptions extends EFSourceMixin(
       return response.json() as any as Caption;
     },
   });
-  // CRITICAL: Attach .catch() handler IMMEDIATELY after creation
-  { this.transcriptionFragmentDataTask.taskComplete.catch(() => {}); }
 
   unifiedCaptionsDataTask = new Task(this, {
     autoRun: EF_INTERACTIVE,
@@ -651,8 +641,6 @@ export class EFCaptions extends EFSourceMixin(
       );
     },
   });
-  // CRITICAL: Attach .catch() handler IMMEDIATELY after creation
-  { this.unifiedCaptionsDataTask.taskComplete.catch(() => {}); }
 
   frameTask = new Task(this, {
     autoRun: EF_INTERACTIVE,

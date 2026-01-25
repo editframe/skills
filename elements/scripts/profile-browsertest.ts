@@ -12,6 +12,7 @@
  *   -t <pattern>       Test name pattern to run
  *   --output <path>    Output path for .cpuprofile (default: ./browsertest-profile.cpuprofile)
  *   --focus <file>     Focus analysis on specific source file
+ *   --json             Output analysis as JSON
  * 
  * Examples:
  *   npx tsx scripts/profile-browsertest.ts packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts -t "batch capture"

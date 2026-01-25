@@ -127,8 +127,6 @@ export class EFSurface extends LitElement {
       this.copyFromTarget(target);
     },
   });
-  // CRITICAL: Attach .catch() handler IMMEDIATELY after creation
-  { this.frameTask.taskComplete.catch(() => {}); }
 
   protected updated(): void {
     if (this.targetElement) {
