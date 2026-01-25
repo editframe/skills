@@ -869,13 +869,34 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
   /**
    * Collects all LitElement descendants recursively.
    * Used by seekForRender to ensure all reactive elements have updated.
+   * Optimized to filter by temporal visibility and skip hidden subtrees.
    */
   #getAllLitElementDescendants(): LitElement[] {
     const result: LitElement[] = [];
+    const currentTimeMs = this.currentTimeMs;
+    
     const walk = (el: Element) => {
+      // Skip hidden subtrees early
+      if (el instanceof HTMLElement) {
+        const style = getComputedStyle(el);
+        if (style.display === "none" || style.visibility === "hidden") {
+          return; // Don't walk children
+        }
+      }
+      
       for (const child of el.children) {
         if (child instanceof LitElement) {
-          result.push(child);
+          // Check temporal visibility for temporal elements
+          if ("startTimeMs" in child && "endTimeMs" in child) {
+            const startMs = (child as any).startTimeMs ?? -Infinity;
+            const endMs = (child as any).endTimeMs ?? Infinity;
+            if (currentTimeMs >= startMs && currentTimeMs <= endMs) {
+              result.push(child);
+            }
+          } else {
+            // Non-temporal elements always included
+            result.push(child);
+          }
         }
         walk(child);
       }

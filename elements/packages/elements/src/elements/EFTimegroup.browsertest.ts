@@ -64,8 +64,6 @@ class TimegroupTestMedia extends EFMedia {
       return Promise.resolve({} as unknown as MediaEngine);
     },
   });
-  // CRITICAL: Attach .catch() handler IMMEDIATELY after creation
-  { this.mediaEngineTask.taskComplete.catch(() => {}); }
 }
 
 @customElement("test-frame-task-a")
@@ -100,8 +98,6 @@ class TestFrameTaskA extends EFTemporal(LitElement) {
       return Promise.resolve();
     },
   });
-  // CRITICAL: Attach .catch() handler IMMEDIATELY after creation
-  { this.frameTask.taskComplete.catch(() => {}); }
 }
 
 @customElement("test-frame-task-b")
@@ -136,8 +132,6 @@ class TestFrameTaskB extends EFTemporal(LitElement) {
       return Promise.resolve();
     },
   });
-  // CRITICAL: Attach .catch() handler IMMEDIATELY after creation
-  { this.frameTask.taskComplete.catch(() => {}); }
 }
 
 @customElement("test-frame-task-c")
@@ -172,8 +166,6 @@ class TestFrameTaskC extends EFTemporal(LitElement) {
       return Promise.resolve();
     },
   });
-  // CRITICAL: Attach .catch() handler IMMEDIATELY after creation
-  { this.frameTask.taskComplete.catch(() => {}); }
 }
 
 @customElement("test-temporal")

@@ -635,6 +635,16 @@ function syncNodeRecursive(node: CloneNode, timeMs: number): void {
   // Temporal culling - check if this node is visible at current time
   // Canvas clones skip temporal check (ef-video may have [0,0] range before video loads)
   if (!isCanvasClone) {
+    // OPTIMIZATION: Check if parent is already hidden to skip bounds computation
+    const parent = clone.parentElement;
+    if (parent instanceof HTMLElement) {
+      // If parent has display:none, this element is already hidden - skip bounds check
+      if (parent.style.display === "none") {
+        clone.style.display = "none";
+        return;
+      }
+    }
+    
     const { startMs, endMs } = getTemporalBounds(source);
     if (timeMs < startMs || timeMs > endMs) {
       // Hide this element and BAIL OUT - skip all descendants automatically!
