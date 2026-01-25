@@ -1,5 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, test } from "vitest";
-import { WorkerPool, encodeCanvasInWorker } from "./WorkerPool.js";
+import { WorkerPool } from "./WorkerPool.js";
+import { encodeCanvasInWorker } from "../encoding/workerEncoder.js";
 
 // Get worker URL - in a real build system this would be resolved properly
 const getWorkerUrl = () => {
