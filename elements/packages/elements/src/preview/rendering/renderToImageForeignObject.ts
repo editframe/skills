@@ -142,8 +142,21 @@ export async function serializeToSvgDataUri(
   const elementsAfterRemoval = _wrapperElement!.querySelectorAll('*').length;
   const hiddenCount = hiddenElements.length;
 
+  // Performance instrumentation
+  const perfStart = performance.now();
+  const elementCount = _wrapperElement!.querySelectorAll('*').length;
+  const timegroupCount = _wrapperElement!.querySelectorAll('ef-timegroup').length;
+  const hiddenTimegroupCount = Array.from(_wrapperElement!.querySelectorAll('ef-timegroup'))
+    .filter(tg => tg instanceof HTMLElement && getComputedStyle(tg).display === 'none').length;
+
   // Now serialize (only visible elements!)
   const serialized = _xmlSerializer.serializeToString(_wrapperElement);
+
+  const serializeTime = performance.now() - perfStart;
+  // Sample 1% of frames to avoid spam
+  if (Math.random() < 0.01) {
+    console.log(`[serialize] elements=${elementCount}, timegroups=${timegroupCount}, hidden=${hiddenTimegroupCount}, time=${serializeTime.toFixed(1)}ms, size=${(serialized.length / 1024).toFixed(1)}KB`);
+  }
 
   // Restore all hidden elements in reverse order (to maintain correct tree structure)
   for (let i = hiddenElements.length - 1; i >= 0; i--) {

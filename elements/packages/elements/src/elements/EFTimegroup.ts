@@ -879,7 +879,13 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     let totalLitElements = 0;
     
     const walk = (el: Element) => {
-      // Skip hidden subtrees early
+      // OPTIMIZATION: Check inline style.display first (no getComputedStyle call)
+      if (el instanceof HTMLElement && el.style.display === 'none') {
+        hiddenSubtreesSkipped++;
+        return; // Fast path - skip without expensive getComputedStyle
+      }
+      
+      // Slow path: only if inline style doesn't indicate hidden
       if (el instanceof HTMLElement) {
         const style = getComputedStyle(el);
         if (style.display === "none" || style.visibility === "hidden") {
