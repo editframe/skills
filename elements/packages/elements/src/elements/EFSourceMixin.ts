@@ -84,8 +84,6 @@ export function EFSourceMixin<T extends Constructor<LitElement>>(
         return data.md5 ?? undefined;
       },
     });
-    // CRITICAL: Attach .catch() handler IMMEDIATELY after creation
-    this.md5SumLoader.taskComplete.catch(() => {});
   }
 
   return EFSourceElement as Constructor<EFSourceMixinInterface> & T;
