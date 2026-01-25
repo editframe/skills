@@ -30,6 +30,7 @@ program
   .command("render [directory]")
   .description("Render a video composition locally")
   .option("-o, --output <path>", "Output file path", "output.mp4")
+  .option("--url <url>", "URL to render (bypasses directory/server startup)")
   .option("-d, --data <json>", "Custom render data (JSON string)")
   .option("--data-file <path>", "Custom render data from JSON file")
   .option("--fps <number>", "Frame rate", "30")
@@ -42,7 +43,6 @@ program
   .option("--profile", "Enable CPU profiling")
   .option("--profile-output <path>", "Profile output path", "./render-profile.cpuprofile")
   .action(async (directory = ".", options) => {
-    const srcDir = path.resolve(process.cwd(), directory);
     const outputPath = path.resolve(process.cwd(), options.output);
 
     // Parse custom data if provided
@@ -62,14 +62,26 @@ program
     const fromMs = options.fromMs ? parseInt(options.fromMs, 10) : undefined;
     const toMs = options.toMs ? parseInt(options.toMs, 10) : undefined;
 
-    // Start preview server
-    const previewServer = await PreviewServer.start(srcDir);
-    log("Preview server started at:", previewServer.url);
+    // Determine URL to render
+    let renderUrl: string;
+    let previewServer: PreviewServer | null = null;
+
+    if (options.url) {
+      // Use provided URL directly
+      renderUrl = options.url;
+      log("Using provided URL:", renderUrl);
+    } else {
+      // Start preview server for directory
+      const srcDir = path.resolve(process.cwd(), directory);
+      previewServer = await PreviewServer.start(srcDir);
+      renderUrl = previewServer.url;
+      log("Preview server started at:", renderUrl);
+    }
 
     // Launch browser and render
     await launchBrowserAndWaitForSDK(
       {
-        url: previewServer.url,
+        url: renderUrl,
         headless: true,
         interactive: false,
         efInteractive: false,
