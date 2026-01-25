@@ -214,7 +214,7 @@ async function captureWithStrategy(
 
 // Skip benchmark tests in CI - these are performance tests, not functional tests
 // They require longer timeouts and are not critical for beta release validation
-describe.skip("renderTimegroupToCanvas benchmarks", () => {
+describe("renderTimegroupToCanvas benchmarks", () => {
   describe("strategy timing comparison", () => {
     // Test each strategy's performance
     for (const [name, strategy] of strategies) {

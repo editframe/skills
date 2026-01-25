@@ -15,8 +15,6 @@ export interface RenderOptions {
   canvasScale?: number;
   /** Whether to reuse an existing canvas (native only) */
   reuseCanvas?: HTMLCanvasElement;
-  /** Whether to wait for an extra paint cycle (native only) */
-  waitForPaint?: boolean;
 }
 
 /**

@@ -1,0 +1,55 @@
+
+🔬 Browser Test CPU Profiler
+   Test file: packages/elements/src/preview/workers/WorkerPool.integration.browsertest.ts
+   Output: ./browsertest-profile.cpuprofile
+
+📡 Connecting to browser: ws://host.docker.internal:51512/bce12e0857a82ea67eb79e06e2db32f1
+
+📋 Browser targets: 0
+🎬 Starting profiler and running tests...
+
+
+ RUN  v3.2.4 /packages
+
+stdout | packages/elements/src/preview/workers/WorkerPool.integration.browsertest.ts > WorkerPool Integration Tests > Parallel Canvas Encoding > encodes multiple canvases in parallel
+Encoded 4 canvases in parallel: 272.90ms
+stdout | packages/elements/src/preview/workers/WorkerPool.integration.browsertest.ts > WorkerPool Integration Tests > Parallel Canvas Encoding > encodes 8 canvases with 4 workers
+Encoded 8 canvases with 4 workers: 22.30ms
+stdout | packages/elements/src/preview/workers/WorkerPool.integration.browsertest.ts > WorkerPool Integration Tests > Performance Validation > parallel encoding is faster than sequential
+Sequential: 26.40ms
+stdout | packages/elements/src/preview/workers/WorkerPool.integration.browsertest.ts > WorkerPool Integration Tests > Performance Validation > parallel encoding is faster than sequential
+Parallel: 5.20ms
+stdout | packages/elements/src/preview/workers/WorkerPool.integration.browsertest.ts > WorkerPool Integration Tests > Performance Validation > parallel encoding is faster than sequential
+Speedup: 5.08x
+stdout | packages/elements/src/preview/workers/WorkerPool.integration.browsertest.ts > WorkerPool Integration Tests > Performance Validation > worker pool vs main thread comparison
+Main thread: 4.60ms
+stdout | packages/elements/src/preview/workers/WorkerPool.integration.browsertest.ts > WorkerPool Integration Tests > Performance Validation > worker pool vs main thread comparison
+Worker: 11.70ms
+stdout | packages/elements/src/preview/workers/WorkerPool.integration.browsertest.ts > WorkerPool Integration Tests > ImageBitmap Transfer > handles large canvas ImageBitmap transfer
+Encoded 1080p canvas: 40.80ms
+ ✓ |chromium| packages/elements/src/preview/workers/WorkerPool.integration.browsertest.ts (19 tests) 1571ms
+   ✓ WorkerPool Integration Tests > Edge Cases > handles termination during active encoding  1002ms
+
+ Test Files  1 passed (1)
+      Tests  19 passed (19)
+   Start at  01:51:23
+   Duration  4.81s (transform 0ms, setup 23ms, collect 16ms, tests 1.57s, environment 0ms, prepare 3.09s)
+
+
+⏱️  Tests completed in 6.25s
+
+⚠️  Profile captured mostly idle time (1 non-idle samples)
+   This happens because profiling is per-renderer process.
+   Vitest runs in a different renderer process than our profiling page.
+
+💡 Alternative profiling methods:
+   1. Use Chrome DevTools manually:
+      - Open chrome://inspect in Chrome
+      - Find the Vitest test page under "Remote Target"
+      - Click "inspect" and use the Performance tab
+   2. Add performance.mark/measure in test code
+   3. Use the console timing output from captureBatch
+
+💾 Profile saved to: /Users/collin/Editframe/monorepo/elements/browsertest-profile.cpuprofile
+
+✅ Done!

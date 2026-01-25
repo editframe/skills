@@ -1,0 +1,375 @@
+
+🔬 Browser Test CPU Profiler
+   Test file: packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts
+   Output: ./browsertest-profile.cpuprofile
+
+📡 Connecting to browser: ws://host.docker.internal:51512/bce12e0857a82ea67eb79e06e2db32f1
+
+📋 Browser targets: 0
+🎬 Starting profiler and running tests...
+
+
+ RUN  v3.2.4 /packages
+
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > renderTimegroupToCanvas > batch capture (thumbnail strip) > native: all thumbnails have content
+[captureBatch] 6 frames: clone=26ms, prefetch=0ms, seek=42ms, capture=98ms, total=166ms
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > renderTimegroupToCanvas > batch capture (thumbnail strip) > foreignObject: all thumbnails have content
+[captureBatch] 6 frames: clone=22ms, prefetch=0ms, seek=33ms, capture=110ms, total=165ms
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > renderTimegroupToCanvas > batch capture (thumbnail strip) > cross-path: batch captures produce similar thumbnails
+[captureBatch] 6 frames: clone=23ms, prefetch=0ms, seek=44ms, capture=101ms, total=168ms
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > renderTimegroupToCanvas > batch capture (thumbnail strip) > cross-path: batch captures produce similar thumbnails
+[captureBatch] 6 frames: clone=18ms, prefetch=0ms, seek=35ms, capture=109ms, total=162ms
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > renderTimegroupToCanvas > thumbnail strip simulation (many small thumbnails) > native: 30 thumbnails from video timegroup - none blank
+[captureBatch] 30 frames: clone=29ms, prefetch=0ms, seek=141ms, capture=453ms, total=623ms
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > renderTimegroupToCanvas > thumbnail strip simulation (many small thumbnails) > foreignObject: 30 thumbnails from video timegroup - none blank
+[captureBatch] 30 frames: clone=36ms, prefetch=0ms, seek=122ms, capture=353ms, total=510ms
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > renderTimegroupToCanvas > thumbnail strip simulation (many small thumbnails) > cross-path: both paths produce non-blank thumbnails
+[captureBatch] 30 frames: clone=27ms, prefetch=0ms, seek=141ms, capture=515ms, total=683ms
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > renderTimegroupToCanvas > thumbnail strip simulation (many small thumbnails) > cross-path: both paths produce non-blank thumbnails
+[captureBatch] 30 frames: clone=15ms, prefetch=0ms, seek=98ms, capture=213ms, total=325ms
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > renderTimegroupToCanvas > thumbnail strip simulation (many small thumbnails) > native: 30 thumbnails from complex HTML timegroup - none blank
+[captureBatch] 30 frames: clone=14ms, prefetch=0ms, seek=428ms, capture=21ms, total=463ms
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > renderTimegroupToCanvas > thumbnail strip simulation (many small thumbnails) > foreignObject: 30 thumbnails from complex HTML timegroup - none blank
+[captureBatch] 30 frames: clone=17ms, prefetch=0ms, seek=386ms, capture=19ms, total=422ms
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > renderTimegroupToCanvas > thumbnail strip simulation (many small thumbnails) > visual regression: sample thumbnails from strip
+[captureBatch] 30 frames: clone=23ms, prefetch=0ms, seek=125ms, capture=383ms, total=531ms
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > renderTimegroupToCanvas > nested animated timegroup (reproduction test) > native: thumbnails from nested animated timegroup - none blank
+=== Sequence timegroup structure ===
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > renderTimegroupToCanvas > nested animated timegroup (reproduction test) > native: thumbnails from nested animated timegroup - none blank
+Root duration: 35062.04081632653ms
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > renderTimegroupToCanvas > nested animated timegroup (reproduction test) > native: thumbnails from nested animated timegroup - none blank
+Mode: sequence
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > renderTimegroupToCanvas > nested animated timegroup (reproduction test) > native: thumbnails from nested animated timegroup - none blank
+Child 0: start=0ms, end=5000ms, duration=5000ms
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > renderTimegroupToCanvas > nested animated timegroup (reproduction test) > native: thumbnails from nested animated timegroup - none blank
+Child 1: start=5000ms, end=15031.020408163266ms, duration=10031.020408163266ms
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > renderTimegroupToCanvas > nested animated timegroup (reproduction test) > native: thumbnails from nested animated timegroup - none blank
+Child 2: start=15031.020408163266ms, end=25031.020408163266ms, duration=10000ms
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > renderTimegroupToCanvas > nested animated timegroup (reproduction test) > native: thumbnails from nested animated timegroup - none blank
+Child 3: start=25031.020408163266ms, end=35062.04081632653ms, duration=10031.020408163266ms
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > renderTimegroupToCanvas > nested animated timegroup (reproduction test) > native: thumbnails from nested animated timegroup - none blank
+[captureBatch] 3 frames: clone=17ms, prefetch=0ms, seek=184ms, capture=98ms, total=299ms
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > renderTimegroupToCanvas > nested animated timegroup (reproduction test) > native: thumbnails from nested animated timegroup - none blank
+✅ native: All 3 thumbnails have meaningful content
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > renderTimegroupToCanvas > nested animated timegroup (reproduction test) > foreignObject: thumbnails from nested animated timegroup - none blank
+[captureBatch] 3 frames: clone=133ms, prefetch=0ms, seek=124ms, capture=99ms, total=356ms
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > renderTimegroupToCanvas > nested animated timegroup (reproduction test) > foreignObject: thumbnails from nested animated timegroup - none blank
+✅ foreignObject: All 3 thumbnails have meaningful content
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > renderTimegroupToCanvas > nested animated timegroup (reproduction test) > cross-path: both paths produce non-blank thumbnails for nested animated content
+[captureBatch] 3 frames: clone=131ms, prefetch=0ms, seek=134ms, capture=97ms, total=362ms
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > renderTimegroupToCanvas > nested animated timegroup (reproduction test) > cross-path: both paths produce non-blank thumbnails for nested animated content
+✅ foreignObject: All 3 thumbnails have meaningful content
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > renderTimegroupToCanvas > nested animated timegroup (reproduction test) > cross-path: both paths produce non-blank thumbnails for nested animated content
+[captureBatch] 3 frames: clone=23ms, prefetch=0ms, seek=23ms, capture=59ms, total=104ms
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > renderTimegroupToCanvas > nested animated timegroup (reproduction test) > cross-path: both paths produce non-blank thumbnails for nested animated content
+✅ native: All 3 thumbnails have meaningful content
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > renderTimegroupToCanvas > contentReadyMode: immediate vs blocking > captureBatch uses immediate mode by default
+[captureBatch] 4 frames: clone=28ms, prefetch=0ms, seek=14ms, capture=84ms, total=126ms
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > renderTimegroupToCanvas > contentReadyMode: immediate vs blocking > captureBatch with blocking mode waits for video content
+[captureBatch] 3 frames: clone=32ms, prefetch=0ms, seek=20ms, capture=57ms, total=108ms
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > clone-timeline video rendition (reproduction) > createRenderClone: cloned video has same media engine type and videoRendition as original
+Original video rendition: {
+  "id": "high",
+  "src": "bars-n-tone.mp4",
+  "startTimeOffsetMs": 66.667,
+  "trackId": 1,
+}
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > clone-timeline video rendition (reproduction) > createRenderClone: cloned video has same media engine type and videoRendition as original
+Original media engine type: AssetMediaEngine
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > clone-timeline video rendition (reproduction) > createRenderClone: cloned video has same media engine type and videoRendition as original
+Cloned media engine: AssetMediaEngine {
+  "data": {
+    "-1": {
+      "codec": "avc1",
+      "duration": 153088,
+      "height": 180,
+      "initSegment": {
+        "offset": 0,
+        "size": 734,
+      },
+      "sample_count": 30,
+      "segments": [
+        {
+          "cts": 0,
+          "dts": 0,
+          "duration": 153600,
+          "offset": 734,
+          "size": 712335,
+        },
+      ],
+      "timescale": 15360,
+      "track": -1,
+      "type": "video",
+      "width": 320,
+    },
+    "1": {
+      "codec": "avc1.64000d",
+      "duration": 152576,
+      "height": 216,
+      "initSegment": {
+        "offset": 0,
+        "size": 763,
+      },
+      "sample_count": 5,
+      "segments": [
+        {
+          "cts": 1024,
+          "dts": 0,
+          "duration": 30720,
+          "offset": 763,
+          "size": 85700,
+        },
+        {
+          "cts": 31744,
+          "dts": 30720,
+          "duration": 61440,
+          "offset": 86463,
+          "size": 163825,
+        },
+        {
+          "cts": 93184,
+          "dts": 92160,
+          "duration": 61440,
+          "offset": 250288,
+          "size": 155029,
+        },
+      ],
+      "startTimeOffsetMs": 66.667,
+      "timescale": 15360,
+      "track": 1,
+      "type": "video",
+      "width": 384,
+    },
+    "2": {
+      "channel_count": 1,
+      "codec": "mp4a",
+      "duration": 442368,
+      "initSegment": {
+        "offset": 0,
+        "size": 692,
+      },
+      "sample_count": 432,
+      "sample_rate": 44100,
+      "sample_size": 0,
+      "segments": [
+        {
+          "cts": 0,
+          "dts": 0,
+          "duration": 177152,
+          "offset": 692,
+          "size": 35631,
+        },
+        {
+          "cts": 177152,
+          "dts": 177152,
+          "duration": 177152,
+          "offset": 36323,
+          "size": 35460,
+        },
+        {
+          "cts": 354304,
+          "dts": 354304,
+          "duration": 88064,
+          "offset": 71783,
+          "size": 18056,
+        },
+      ],
+      "timescale": 44100,
+      "track": 2,
+      "type": "audio",
+    },
+  },
+  "durationMs": 10031.020408163266,
+  "host": <ef-video
+    fft-decay="8"
+    fft-gain="3"
+    fft-size="128"
+    src="bars-n-tone.mp4"
+    style="width: 100%; height: 100%; object-fit: contain; --ef-progress: 0; --ef-duration: 10031.020408163266ms; --ef-transition-duration: 0ms; --ef-transition-out-start: 10031.020408163266ms;"
+  />,
+  "src": "bars-n-tone.mp4",
+  "thumbnailExtractor": ThumbnailExtractor {
+    "mediaEngine": [Circular],
+  },
+  "urlGenerator": UrlGenerator {
+    "baseUrl": [Function anonymous],
+  },
+}
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > clone-timeline video rendition (reproduction) > createRenderClone: cloned video has same media engine type and videoRendition as original
+Cloned media engine type: AssetMediaEngine
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > clone-timeline video rendition (reproduction) > createRenderClone: cloned video has same media engine type and videoRendition as original
+Cloned video rendition: {
+  "id": "high",
+  "src": "bars-n-tone.mp4",
+  "startTimeOffsetMs": 66.667,
+  "trackId": 1,
+}
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > clone-timeline video rendition (reproduction) > createRenderClone preserves ef-configuration context (media-engine attribute)
+Original ef-configuration: <ef-configuration
+  api-host="http://main.localhost:4322"
+  media-engine="local"
+  signing-url=""
+>
+  
+        
+  <ef-timegroup
+    id="config-loss-test"
+    mode="contain"
+    style="width: 800px; height: 450px; background: rgb(26, 26, 46); --ef-progress: 1; --ef-duration: 0ms; --ef-transition-duration: 0ms; --ef-transition-out-start: 0ms;"
+  >
+    
+          
+    <ef-video
+      fft-decay="8"
+      fft-gain="3"
+      fft-size="128"
+      src="bars-n-tone.mp4"
+      style="width: 100%; height: 100%; object-fit: contain; --ef-progress: 0; --ef-duration: 10031.020408163266ms; --ef-transition-duration: 0ms; --ef-transition-out-start: 10031.020408163266ms;"
+    />
+    
+        
+  </ef-timegroup>
+  
+      
+</ef-configuration>
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > clone-timeline video rendition (reproduction) > createRenderClone preserves ef-configuration context (media-engine attribute)
+Original media-engine attribute: local
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > clone-timeline video rendition (reproduction) > createRenderClone preserves ef-configuration context (media-engine attribute)
+Original media engine type: AssetMediaEngine
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > clone-timeline video rendition (reproduction) > createRenderClone preserves ef-configuration context (media-engine attribute)
+Cloned ef-configuration: <ef-configuration
+  api-host="http://main.localhost:4322"
+  media-engine="local"
+  signing-url=""
+>
+  <ef-timegroup
+    mode="contain"
+    style="width: 800px; height: 450px; background: rgb(26, 26, 46); --ef-progress: 0; --ef-duration: 10031.020408163266ms; --ef-transition-duration: 0ms; --ef-transition-out-start: 10031.020408163266ms;"
+  >
+    
+          
+    <ef-video
+      fft-decay="8"
+      fft-gain="3"
+      fft-size="128"
+      src="bars-n-tone.mp4"
+      style="width: 100%; height: 100%; object-fit: contain; --ef-progress: 0; --ef-duration: 10031.020408163266ms; --ef-transition-duration: 0ms; --ef-transition-out-start: 10031.020408163266ms;"
+    />
+    
+        
+  </ef-timegroup>
+</ef-configuration>
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > clone-timeline video rendition (reproduction) > createRenderClone preserves ef-configuration context (media-engine attribute)
+Cloned media-engine attribute: local
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > clone-timeline video rendition (reproduction) > createRenderClone preserves ef-configuration context (media-engine attribute)
+Cloned media engine type: AssetMediaEngine
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > clone-timeline video rendition (reproduction) > captureBatch: captures thumbnails without 'Video rendition unavailable' error
+[captureBatch] 3 frames: clone=26ms, prefetch=0ms, seek=14ms, capture=63ms, total=103ms
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > clone-timeline video rendition (reproduction) > createRenderClone with media-engine=local and remote URL
+Local-remote original media engine type: undefined
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > clone-timeline video rendition (reproduction) > createRenderClone with media-engine=local and remote URL
+Local-remote original src: http://main.localhost:4322/bars-n-tone.mp4
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > clone-timeline video rendition (reproduction) > createRenderClone with media-engine=local and remote URL
+No media engine - test infrastructure may not support this URL
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > captions rendering in foreignObject path > foreignObject: captions data loads in render clone (captions-src)
+Clone captions data loaded: true
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > captions rendering in foreignObject path > foreignObject: captions data loads in render clone (captions-src)
+Clone captions segments: 3
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > captions rendering in foreignObject path > foreignObject: captions data loads in render clone (captions-src)
+Clone caption text at 500ms: "First"
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > captions rendering in foreignObject path > foreignObject: captions data copies to render clone (captionsData JS property)
+Clone captionsData copied: true
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > captions rendering in foreignObject path > foreignObject: captions data copies to render clone (captionsData JS property)
+Clone captionsData segments: 2
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > captions rendering in foreignObject path > foreignObject: captions data copies to render clone (captionsData JS property)
+Clone caption text at 500ms (JS data): "JSWord1"
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > captions rendering in foreignObject path > foreignObject: syncs shadow DOM text content for caption elements
+Source element text at 500ms: "Hello"
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > captions rendering in foreignObject path > foreignObject: syncs shadow DOM text content for caption elements
+Clone text content at 500ms: "Hello"
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > captions rendering in foreignObject path > foreignObject: syncs shadow DOM text content for caption elements
+Source element text at 1500ms: "World"
+stdout | packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts > captions rendering in foreignObject path > foreignObject: syncs shadow DOM text content for caption elements
+Clone text content at 1500ms after sync: "World"
+ ❯ |chromium| packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts (54 tests | 2 failed | 2 skipped) 20157ms
+   ✓ renderTimegroupToCanvas > native Canvas API (drawElementImage) is available 1ms
+   ✓ renderTimegroupToCanvas > simple HTML content > native: captures and matches baseline 176ms
+   ✓ renderTimegroupToCanvas > simple HTML content > foreignObject: captures and matches baseline 170ms
+   ✓ renderTimegroupToCanvas > simple HTML content > cross-path: native vs foreignObject both render content 96ms
+   ✓ renderTimegroupToCanvas > complex HTML content > native: captures and matches baseline  556ms
+   ✓ renderTimegroupToCanvas > complex HTML content > foreignObject: captures and matches baseline  507ms
+   ✓ renderTimegroupToCanvas > complex HTML content > cross-path: native vs foreignObject both render content 265ms
+   ✓ renderTimegroupToCanvas > video frame capture > native: captures and matches baseline  963ms
+   × renderTimegroupToCanvas > video frame capture > foreignObject: captures and matches baseline 199ms
+     → Visual regression detected for renderTimegroupToCanvas/video-frame-foreign: 18.23% different
+   ✓ renderTimegroupToCanvas > video frame capture > cross-path: native vs foreignObject produce similar output 151ms
+   ✓ renderTimegroupToCanvas > batch capture (thumbnail strip) > native: all thumbnails have content 223ms
+   ✓ renderTimegroupToCanvas > batch capture (thumbnail strip) > foreignObject: all thumbnails have content 200ms
+   ✓ renderTimegroupToCanvas > batch capture (thumbnail strip) > cross-path: batch captures produce similar thumbnails  490ms
+   ✓ renderTimegroupToCanvas > scale factors > native: captures at different scales 122ms
+   ✓ renderTimegroupToCanvas > scale factors > foreignObject: captures at different scales 125ms
+   ✓ renderTimegroupToCanvas > timing consistency > native: consecutive captures are consistent 69ms
+   ✓ renderTimegroupToCanvas > timing consistency > foreignObject: consecutive captures are consistent 72ms
+   ✓ renderTimegroupToCanvas > timing consistency > native: captures after rapid seeking are not blank 116ms
+   ✓ renderTimegroupToCanvas > timing consistency > foreignObject: captures after rapid seeking are not blank 106ms
+   ✓ renderTimegroupToCanvas > timing consistency > temporal culling: elements reappear after crossing time boundaries  456ms
+   ✓ renderTimegroupToCanvas > thumbnail strip simulation (many small thumbnails) > native: 30 thumbnails from video timegroup - none blank  654ms
+   ✓ renderTimegroupToCanvas > thumbnail strip simulation (many small thumbnails) > foreignObject: 30 thumbnails from video timegroup - none blank  541ms
+   ✓ renderTimegroupToCanvas > thumbnail strip simulation (many small thumbnails) > cross-path: both paths produce non-blank thumbnails  1067ms
+   ✓ renderTimegroupToCanvas > thumbnail strip simulation (many small thumbnails) > native: 30 thumbnails from complex HTML timegroup - none blank  1743ms
+   ✓ renderTimegroupToCanvas > thumbnail strip simulation (many small thumbnails) > foreignObject: 30 thumbnails from complex HTML timegroup - none blank  1696ms
+   × renderTimegroupToCanvas > thumbnail strip simulation (many small thumbnails) > visual regression: sample thumbnails from strip 608ms
+     → Visual regression detected for renderTimegroupToCanvas/strip-thumb-29-native: 14.40% different
+   ✓ renderTimegroupToCanvas > nested animated timegroup (reproduction test) > native: thumbnails from nested animated timegroup - none blank  360ms
+   ✓ renderTimegroupToCanvas > nested animated timegroup (reproduction test) > foreignObject: thumbnails from nested animated timegroup - none blank  397ms
+   ✓ renderTimegroupToCanvas > nested animated timegroup (reproduction test) > cross-path: both paths produce non-blank thumbnails for nested animated content  536ms
+   ✓ renderTimegroupToCanvas > nested animated timegroup (reproduction test) > visual regression: sample thumbnails from nested animated timegroup  1559ms
+   ✓ renderTimegroupToCanvas > contentReadyMode: immediate vs blocking > blocking mode waits for video content 98ms
+   ✓ renderTimegroupToCanvas > contentReadyMode: immediate vs blocking > ContentNotReadyError has correct structure 1ms
+   ✓ renderTimegroupToCanvas > contentReadyMode: immediate vs blocking > immediate mode captures without waiting (may have video hole) 93ms
+   ✓ renderTimegroupToCanvas > contentReadyMode: immediate vs blocking > blocking mode produces video content where immediate may not 140ms
+   ✓ renderTimegroupToCanvas > contentReadyMode: immediate vs blocking > captureBatch uses immediate mode by default 151ms
+   ✓ renderTimegroupToCanvas > contentReadyMode: immediate vs blocking > captureBatch with blocking mode waits for video content 149ms
+   ✓ renderTimegroupToCanvas > contentReadyMode: immediate vs blocking > visual regression: immediate vs blocking at same timestamp 278ms
+   ✓ renderTimegroupToCanvas > DOM vs Clone visual parity > simple HTML: DOM and Clone produce identical visual output 190ms
+   ✓ renderTimegroupToCanvas > DOM vs Clone visual parity > complex HTML: DOM and Clone produce identical visual output  486ms
+   ✓ renderTimegroupToCanvas > DOM vs Clone visual parity > video: DOM and Clone produce identical visual output 244ms
+   ✓ renderTimegroupToCanvas > DOM vs Clone visual parity > visual snapshots: DOM vs Clone for debugging 182ms
+   ✓ renderTimegroupToCanvas > video export (reproduction test for blank frames) > renderTimegroupToVideo with workbench-style timegroup produces non-blank frames  617ms
+   ✓ renderTimegroupToCanvas > video export (reproduction test for blank frames) > renderTimegroupToVideo with NESTED sequence timegroups (design-catalog structure) produces non-blank frames  2030ms
+   ✓ renderTimegroupToCanvas > video export (reproduction test for blank frames) > video export should output at logical dimensions and have correct content  846ms
+   ↓ benchmark: 2026 Chromium optimizations > Blob URL vs Data URI vs createImageBitmap
+   ↓ benchmark: parallel image loading queue depth > compare sequential vs parallel SVG image loading
+   ✓ clone-timeline video rendition (reproduction) > createRenderClone: cloned video has same media engine type and videoRendition as original 39ms
+   ✓ clone-timeline video rendition (reproduction) > createRenderClone preserves ef-configuration context (media-engine attribute) 66ms
+   ✓ clone-timeline video rendition (reproduction) > createRenderClone: seek on clone triggers unifiedVideoSeekTask without error 49ms
+   ✓ clone-timeline video rendition (reproduction) > captureBatch: captures thumbnails without 'Video rendition unavailable' error 134ms
+   ✓ clone-timeline video rendition (reproduction) > createRenderClone with media-engine=local and remote URL 23ms
+   ✓ captions rendering in foreignObject path > foreignObject: captions data loads in render clone (captions-src) 50ms
+   ✓ captions rendering in foreignObject path > foreignObject: captions data copies to render clone (captionsData JS property) 25ms
+   ✓ captions rendering in foreignObject path > foreignObject: syncs shadow DOM text content for caption elements 39ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 50 passed | 2 skipped (54)
+     Errors  10 errors
+   Start at  02:11:24
+   Duration  23.58s (transform 0ms, setup 39ms, collect 314ms, tests 20.16s, environment 0ms, prepare 3.05s)
+
+
+⏱️  Tests completed in 25.05s
+
+⚠️  Profile captured mostly idle time (1 non-idle samples)
+   This happens because profiling is per-renderer process.
+   Vitest runs in a different renderer process than our profiling page.
+
+💡 Alternative profiling methods:
+   1. Use Chrome DevTools manually:
+      - Open chrome://inspect in Chrome
+      - Find the Vitest test page under "Remote Target"
+      - Click "inspect" and use the Performance tab
+   2. Add performance.mark/measure in test code
+   3. Use the console timing output from captureBatch
+
+💾 Profile saved to: /Users/collin/Editframe/monorepo/elements/browsertest-profile.cpuprofile
+
+✅ Done!

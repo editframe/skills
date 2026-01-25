@@ -40,15 +40,6 @@ export interface CanvasOptions {
  */
 export interface NativeRenderOptions {
   /**
-   * Wait for RAF before capturing. Only needed if content hasn't been laid out yet.
-   * Default: false (capture immediately - frame tasks should already be complete)
-   * 
-   * Set to true only for edge cases where you're rendering content that was just
-   * added to the DOM and hasn't had a chance to layout yet.
-   */
-  waitForPaint?: boolean;
-  
-  /**
    * Reuse an existing canvas instead of creating a new one.
    * The canvas must have layoutsubtree enabled and be in the DOM.
    */

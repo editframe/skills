@@ -161,6 +161,62 @@ export function traverseCloneTree(state: SyncState, callback: (node: CloneNode) 
 }
 
 /**
+ * Helper to check if a canvas has any content (non-transparent pixels).
+ * Samples a small region for performance. Returns true if canvas has content.
+ */
+function hasCanvasContent(canvas: HTMLCanvasElement): boolean {
+  if (canvas.width === 0 || canvas.height === 0) return false;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return false;
+  
+  try {
+    // Sample center 10x10 region (or smaller if canvas is tiny)
+    const sampleSize = Math.min(10, canvas.width, canvas.height);
+    const x = Math.floor((canvas.width - sampleSize) / 2);
+    const y = Math.floor((canvas.height - sampleSize) / 2);
+    const imageData = ctx.getImageData(x, y, sampleSize, sampleSize);
+    const data = imageData.data;
+    
+    // Check if any pixel has non-zero alpha
+    for (let i = 3; i < data.length; i += 4) {
+      if (data[i] !== 0) return true;
+    }
+    return false;
+  } catch {
+    // If getImageData fails (e.g., tainted canvas), assume it has content
+    return true;
+  }
+}
+
+/**
+ * Helper to copy styles from host and content elements to a canvas clone.
+ * Reduces code duplication for shadow canvas and shadow img cases.
+ */
+function copyCanvasCloneStyles(
+  clone: HTMLCanvasElement,
+  hostCs: CSSStyleDeclaration,
+  contentCs: CSSStyleDeclaration
+): void {
+  const s = clone.style;
+  s.position = hostCs.position;
+  s.top = hostCs.top;
+  s.right = hostCs.right;
+  s.bottom = hostCs.bottom;
+  s.left = hostCs.left;
+  s.margin = hostCs.margin;
+  s.zIndex = hostCs.zIndex;
+  s.transform = hostCs.transform;
+  s.transformOrigin = hostCs.transformOrigin;
+  s.opacity = hostCs.opacity;
+  s.visibility = hostCs.visibility;
+  s.width = contentCs.width;
+  s.height = contentCs.height;
+  s.display = "block";
+  s.animation = "none";
+  s.transition = "none";
+}
+
+/**
  * Build clone tree structure with minimal overhead.
  * Optionally syncs styles in the same pass if timeMs is provided.
  */
@@ -195,9 +251,12 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
       const canvas = document.createElement("canvas");
       canvas.width = srcEl.width;
       canvas.height = srcEl.height;
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        try { ctx.drawImage(srcEl, 0, 0); } catch {}
+      // OPTIMIZATION: Only copy pixels if canvas has content
+      if (hasCanvasContent(srcEl)) {
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          try { ctx.drawImage(srcEl, 0, 0); } catch {}
+        }
       }
       // Raw canvas elements don't need style syncing, just return clone
       // return null;
@@ -216,30 +275,20 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
         if (srcEl.tagName === "EF-IMAGE" || srcEl.tagName === "EF-WAVEFORM") {
           clone.dataset.preserveAlpha = "true";
         }
-        const ctx = clone.getContext("2d");
-        if (ctx) {
-          try { ctx.drawImage(shadowCanvas, 0, 0); } catch {}
+        
+        // OPTIMIZATION: Only copy pixels if canvas has content
+        if (hasCanvasContent(shadowCanvas)) {
+          const ctx = clone.getContext("2d");
+          if (ctx) {
+            try { ctx.drawImage(shadowCanvas, 0, 0); } catch {}
+          }
         }
-        // Copy initial CSS styles
+        
+        // Copy initial CSS styles - OPTIMIZATION: Cache getComputedStyle results
         try {
-          const canvasCs = getComputedStyle(shadowCanvas);
           const hostCs = getComputedStyle(srcEl);
-          clone.style.position = hostCs.position;
-          clone.style.top = hostCs.top;
-          clone.style.right = hostCs.right;
-          clone.style.bottom = hostCs.bottom;
-          clone.style.left = hostCs.left;
-          clone.style.margin = hostCs.margin;
-          clone.style.zIndex = hostCs.zIndex;
-          clone.style.transform = hostCs.transform;
-          clone.style.transformOrigin = hostCs.transformOrigin;
-          clone.style.opacity = hostCs.opacity;
-          clone.style.visibility = hostCs.visibility;
-          clone.style.width = canvasCs.width;
-          clone.style.height = canvasCs.height;
-          clone.style.display = "block";
-          clone.style.animation = "none";
-          clone.style.transition = "none";
+          const canvasCs = getComputedStyle(shadowCanvas);
+          copyCanvasCloneStyles(clone, hostCs, canvasCs);
         } catch {}
         
         const node: CloneNode = {
@@ -264,25 +313,12 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
         if (ctx) {
           try { ctx.drawImage(shadowImg, 0, 0); } catch {}
         }
+        
+        // Copy initial CSS styles - OPTIMIZATION: Cache getComputedStyle results
         try {
-          const imgCs = getComputedStyle(shadowImg);
           const hostCs = getComputedStyle(srcEl);
-          clone.style.position = hostCs.position;
-          clone.style.top = hostCs.top;
-          clone.style.right = hostCs.right;
-          clone.style.bottom = hostCs.bottom;
-          clone.style.left = hostCs.left;
-          clone.style.margin = hostCs.margin;
-          clone.style.zIndex = hostCs.zIndex;
-          clone.style.transform = hostCs.transform;
-          clone.style.transformOrigin = hostCs.transformOrigin;
-          clone.style.opacity = hostCs.opacity;
-          clone.style.visibility = hostCs.visibility;
-          clone.style.width = imgCs.width;
-          clone.style.height = imgCs.height;
-          clone.style.display = "block";
-          clone.style.animation = "none";
-          clone.style.transition = "none";
+          const imgCs = getComputedStyle(shadowImg);
+          copyCanvasCloneStyles(clone, hostCs, imgCs);
         } catch {}
         
         const node: CloneNode = {
@@ -300,12 +336,17 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
     // Standard element clone
     const clone = document.createElement(isCustom ? "div" : srcEl.tagName.toLowerCase()) as HTMLElement;
     
-    // Copy attributes
-    for (const attr of srcEl.attributes) {
-      const name = attr.name.toLowerCase();
-      if (name === "id" || name.startsWith("on")) continue;
-      if (isCustom && name !== "class" && !name.startsWith("data-")) continue;
-      try { clone.setAttribute(attr.name, attr.value); } catch {}
+    // Copy attributes - OPTIMIZATION: Early exit if no attributes
+    const attrs = srcEl.attributes;
+    const attrLen = attrs.length;
+    if (attrLen > 0) {
+      for (let i = 0; i < attrLen; i++) {
+        const attr = attrs[i]!;
+        const name = attr.name.toLowerCase();
+        if (name === "id" || name.startsWith("on")) continue;
+        if (isCustom && name !== "class" && !name.startsWith("data-")) continue;
+        try { clone.setAttribute(attr.name, attr.value); } catch {}
+      }
     }
     
     if (srcEl instanceof HTMLImageElement && srcEl.src) {
@@ -324,44 +365,52 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
     };
     nodeCount++;
     
-    // Shadow DOM children
+    // Shadow DOM children - OPTIMIZATION: Early exit if no childNodes
     if (srcEl.shadowRoot) {
-      // For caption elements and text segments, ALWAYS create a text node placeholder even if empty.
-      // This allows syncStyles to update the text later when captions change.
-      const isCaptionElement = srcEl.tagName === 'EF-CAPTIONS-ACTIVE-WORD' ||
-                               srcEl.tagName === 'EF-CAPTIONS-BEFORE-ACTIVE-WORD' ||
-                               srcEl.tagName === 'EF-CAPTIONS-AFTER-ACTIVE-WORD' ||
-                               srcEl.tagName === 'EF-CAPTIONS-SEGMENT';
-      const isTextSegment = srcEl.tagName === 'EF-TEXT-SEGMENT';
-      let hasTextNode = false;
-      
-      for (const child of srcEl.shadowRoot.childNodes) {
-        if (child.nodeType === Node.TEXT_NODE) {
-          const text = child.textContent?.trim();
-          // Always include text for text segments (even if whitespace-only, e.g., " ")
-          if (text || isCaptionElement || isTextSegment) {
-            clone.appendChild(document.createTextNode(child.textContent || ""));
-            hasTextNode = true;
-          }
-        } else if (child.nodeType === Node.ELEMENT_NODE) {
-          const el = child as Element;
-          if (el.tagName === "STYLE" || el.tagName === "SLOT") continue;
-          const childNode = cloneElement(el);
-          if (childNode) {
-            node.children.push(childNode);
-            clone.appendChild(childNode.clone);
+      const shadowChildren = srcEl.shadowRoot.childNodes;
+      const shadowLen = shadowChildren.length;
+      if (shadowLen > 0) {
+        // For caption elements and text segments, ALWAYS create a text node placeholder even if empty.
+        // This allows syncStyles to update the text later when captions change.
+        const isCaptionElement = srcEl.tagName === 'EF-CAPTIONS-ACTIVE-WORD' ||
+                                 srcEl.tagName === 'EF-CAPTIONS-BEFORE-ACTIVE-WORD' ||
+                                 srcEl.tagName === 'EF-CAPTIONS-AFTER-ACTIVE-WORD' ||
+                                 srcEl.tagName === 'EF-CAPTIONS-SEGMENT';
+        const isTextSegment = srcEl.tagName === 'EF-TEXT-SEGMENT';
+        let hasTextNode = false;
+        
+        for (let i = 0; i < shadowLen; i++) {
+          const child = shadowChildren[i]!;
+          if (child.nodeType === Node.TEXT_NODE) {
+            const text = child.textContent?.trim();
+            // Always include text for text segments (even if whitespace-only, e.g., " ")
+            if (text || isCaptionElement || isTextSegment) {
+              clone.appendChild(document.createTextNode(child.textContent || ""));
+              hasTextNode = true;
+            }
+          } else if (child.nodeType === Node.ELEMENT_NODE) {
+            const el = child as Element;
+            if (el.tagName === "STYLE" || el.tagName === "SLOT") continue;
+            const childNode = cloneElement(el);
+            if (childNode) {
+              node.children.push(childNode);
+              clone.appendChild(childNode.clone);
+            }
           }
         }
-      }
-      
-      // For caption elements, ensure there's always a text node for syncStyles to update
-      if (isCaptionElement && !hasTextNode) {
-        clone.appendChild(document.createTextNode(""));
+        
+        // For caption elements, ensure there's always a text node for syncStyles to update
+        if (isCaptionElement && !hasTextNode) {
+          clone.appendChild(document.createTextNode(""));
+        }
       }
     }
     
-    // Light DOM children
-    for (const child of srcEl.childNodes) {
+    // Light DOM children - OPTIMIZATION: Use indexed loop for performance
+    const lightChildren = srcEl.childNodes;
+    const lightLen = lightChildren.length;
+    for (let i = 0; i < lightLen; i++) {
+      const child = lightChildren[i]!;
       if (child.nodeType === Node.TEXT_NODE) {
         const text = child.textContent?.trim();
         if (text) clone.appendChild(document.createTextNode(text));
@@ -428,6 +477,7 @@ function syncNodeStyles(node: CloneNode): void {
         const canvasCs = getComputedStyle(shadowCanvas);
         const hostCs = getComputedStyle(source);
         const s = canvas.style;
+        const { styleCache } = node;
         const srcWidth = canvasCs.width;
         const srcHeight = canvasCs.height;
         const srcPosition = hostCs.position;
@@ -443,21 +493,23 @@ function syncNodeStyles(node: CloneNode): void {
         const srcZIndex = hostCs.zIndex;
         const srcBackfaceVisibility = hostCs.backfaceVisibility;
         const srcTransformStyle = hostCs.transformStyle;
-        if (s.position !== srcPosition) s.position = srcPosition;
-        if (s.top !== srcTop) s.top = srcTop;
-        if (s.left !== srcLeft) s.left = srcLeft;
-        if (s.right !== srcRight) s.right = srcRight;
-        if (s.bottom !== srcBottom) s.bottom = srcBottom;
-        if (s.margin !== srcMargin) s.margin = srcMargin;
-        if (s.transform !== srcTransform) s.transform = srcTransform;
-        if (s.transformOrigin !== srcTransformOrigin) s.transformOrigin = srcTransformOrigin;
-        if (s.opacity !== srcOpacity) s.opacity = srcOpacity;
-        if (s.visibility !== srcVisibility) s.visibility = srcVisibility;
-        if (s.zIndex !== srcZIndex) s.zIndex = srcZIndex;
-        if (s.width !== srcWidth) s.width = srcWidth;
-        if (s.height !== srcHeight) s.height = srcHeight;
-        if (s.backfaceVisibility !== srcBackfaceVisibility) s.backfaceVisibility = srcBackfaceVisibility;
-        if (s.transformStyle !== srcTransformStyle) s.transformStyle = srcTransformStyle;
+        
+        // Use cache-based change detection for canvas clones
+        if (styleCache.get("position") !== srcPosition) { s.position = srcPosition; styleCache.set("position", srcPosition); }
+        if (styleCache.get("top") !== srcTop) { s.top = srcTop; styleCache.set("top", srcTop); }
+        if (styleCache.get("left") !== srcLeft) { s.left = srcLeft; styleCache.set("left", srcLeft); }
+        if (styleCache.get("right") !== srcRight) { s.right = srcRight; styleCache.set("right", srcRight); }
+        if (styleCache.get("bottom") !== srcBottom) { s.bottom = srcBottom; styleCache.set("bottom", srcBottom); }
+        if (styleCache.get("margin") !== srcMargin) { s.margin = srcMargin; styleCache.set("margin", srcMargin); }
+        if (styleCache.get("transform") !== srcTransform) { s.transform = srcTransform; styleCache.set("transform", srcTransform); }
+        if (styleCache.get("transformOrigin") !== srcTransformOrigin) { s.transformOrigin = srcTransformOrigin; styleCache.set("transformOrigin", srcTransformOrigin); }
+        if (styleCache.get("opacity") !== srcOpacity) { s.opacity = srcOpacity; styleCache.set("opacity", srcOpacity); }
+        if (styleCache.get("visibility") !== srcVisibility) { s.visibility = srcVisibility; styleCache.set("visibility", srcVisibility); }
+        if (styleCache.get("zIndex") !== srcZIndex) { s.zIndex = srcZIndex; styleCache.set("zIndex", srcZIndex); }
+        if (styleCache.get("width") !== srcWidth) { s.width = srcWidth; styleCache.set("width", srcWidth); }
+        if (styleCache.get("height") !== srcHeight) { s.height = srcHeight; styleCache.set("height", srcHeight); }
+        if (styleCache.get("backfaceVisibility") !== srcBackfaceVisibility) { s.backfaceVisibility = srcBackfaceVisibility; styleCache.set("backfaceVisibility", srcBackfaceVisibility); }
+        if (styleCache.get("transformStyle") !== srcTransformStyle) { s.transformStyle = srcTransformStyle; styleCache.set("transformStyle", srcTransformStyle); }
       } catch {}
     } else if (shadowImg?.complete && shadowImg.naturalWidth > 0) {
       if (canvas.width !== shadowImg.naturalWidth) canvas.width = shadowImg.naturalWidth;
@@ -474,6 +526,7 @@ function syncNodeStyles(node: CloneNode): void {
         const imgCs = getComputedStyle(shadowImg);
         const hostCs = getComputedStyle(source);
         const s = canvas.style;
+        const { styleCache } = node;
         const srcWidth = imgCs.width;
         const srcHeight = imgCs.height;
         const srcPosition = hostCs.position;
@@ -489,21 +542,23 @@ function syncNodeStyles(node: CloneNode): void {
         const srcZIndex = hostCs.zIndex;
         const srcBackfaceVisibility = hostCs.backfaceVisibility;
         const srcTransformStyle = hostCs.transformStyle;
-        if (s.position !== srcPosition) s.position = srcPosition;
-        if (s.top !== srcTop) s.top = srcTop;
-        if (s.left !== srcLeft) s.left = srcLeft;
-        if (s.right !== srcRight) s.right = srcRight;
-        if (s.bottom !== srcBottom) s.bottom = srcBottom;
-        if (s.margin !== srcMargin) s.margin = srcMargin;
-        if (s.transform !== srcTransform) s.transform = srcTransform;
-        if (s.transformOrigin !== srcTransformOrigin) s.transformOrigin = srcTransformOrigin;
-        if (s.opacity !== srcOpacity) s.opacity = srcOpacity;
-        if (s.visibility !== srcVisibility) s.visibility = srcVisibility;
-        if (s.zIndex !== srcZIndex) s.zIndex = srcZIndex;
-        if (s.width !== srcWidth) s.width = srcWidth;
-        if (s.height !== srcHeight) s.height = srcHeight;
-        if (s.backfaceVisibility !== srcBackfaceVisibility) s.backfaceVisibility = srcBackfaceVisibility;
-        if (s.transformStyle !== srcTransformStyle) s.transformStyle = srcTransformStyle;
+        
+        // Use cache-based change detection for canvas clones
+        if (styleCache.get("position") !== srcPosition) { s.position = srcPosition; styleCache.set("position", srcPosition); }
+        if (styleCache.get("top") !== srcTop) { s.top = srcTop; styleCache.set("top", srcTop); }
+        if (styleCache.get("left") !== srcLeft) { s.left = srcLeft; styleCache.set("left", srcLeft); }
+        if (styleCache.get("right") !== srcRight) { s.right = srcRight; styleCache.set("right", srcRight); }
+        if (styleCache.get("bottom") !== srcBottom) { s.bottom = srcBottom; styleCache.set("bottom", srcBottom); }
+        if (styleCache.get("margin") !== srcMargin) { s.margin = srcMargin; styleCache.set("margin", srcMargin); }
+        if (styleCache.get("transform") !== srcTransform) { s.transform = srcTransform; styleCache.set("transform", srcTransform); }
+        if (styleCache.get("transformOrigin") !== srcTransformOrigin) { s.transformOrigin = srcTransformOrigin; styleCache.set("transformOrigin", srcTransformOrigin); }
+        if (styleCache.get("opacity") !== srcOpacity) { s.opacity = srcOpacity; styleCache.set("opacity", srcOpacity); }
+        if (styleCache.get("visibility") !== srcVisibility) { s.visibility = srcVisibility; styleCache.set("visibility", srcVisibility); }
+        if (styleCache.get("zIndex") !== srcZIndex) { s.zIndex = srcZIndex; styleCache.set("zIndex", srcZIndex); }
+        if (styleCache.get("width") !== srcWidth) { s.width = srcWidth; styleCache.set("width", srcWidth); }
+        if (styleCache.get("height") !== srcHeight) { s.height = srcHeight; styleCache.set("height", srcHeight); }
+        if (styleCache.get("backfaceVisibility") !== srcBackfaceVisibility) { s.backfaceVisibility = srcBackfaceVisibility; styleCache.set("backfaceVisibility", srcBackfaceVisibility); }
+        if (styleCache.get("transformStyle") !== srcTransformStyle) { s.transformStyle = srcTransformStyle; styleCache.set("transformStyle", srcTransformStyle); }
       } catch {}
     }
     // return;
@@ -587,8 +642,15 @@ function syncNodeStyles(node: CloneNode): void {
   }
   
   // Disable animations/transitions to prevent re-animation (animations already finished above)
-  if (cloneStyle.animation !== "none") cloneStyle.animation = "none";
-  if (cloneStyle.transition !== "none") cloneStyle.transition = "none";
+  // Use cache to avoid redundant writes
+  if (styleCache.get("animation") !== "none") {
+    cloneStyle.animation = "none";
+    styleCache.set("animation", "none");
+  }
+  if (styleCache.get("transition") !== "none") {
+    cloneStyle.transition = "none";
+    styleCache.set("transition", "none");
+  }
   
   // Sync text content from light DOM
   const srcTextNode = source.childNodes[0];

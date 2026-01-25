@@ -16,22 +16,6 @@ function waitForFrame(): Promise<void> {
 }
 
 /**
- * Wait for multiple animation frames to ensure all paints are flushed.
- * This is necessary because video frame decoding and canvas painting may
- * happen asynchronously even after seek() returns.
- */
-function waitForPaintFlush(): Promise<void> {
-  return new Promise(resolve => {
-    // Double RAF ensures we wait for:
-    // 1. First RAF: Any pending paints are scheduled
-    // 2. Second RAF: Those paints have completed
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => resolve());
-    });
-  });
-}
-
-/**
  * Create a canvas element with proper DPR handling.
  * Buffer size is based on renderWidth/renderHeight (internal resolution).
  * CSS size is based on fullWidth/fullHeight (logical display size).
@@ -77,7 +61,7 @@ export async function renderToImageNative(
   options: NativeRenderOptions = {},
 ): Promise<HTMLCanvasElement> {
   const t0 = performance.now();
-  const { waitForPaint = false, reuseCanvas, skipDprScaling = false } = options;
+  const { reuseCanvas, skipDprScaling = false } = options;
   // Use 1x DPR when skipDprScaling is true (for video export) - 4x fewer pixels!
   const dpr = skipDprScaling ? 1 : (window.devicePixelRatio || 1);
   
@@ -187,15 +171,6 @@ export async function renderToImageNative(
       _layoutInitializedCanvases.add(captureCanvas);
       
       // Canvas may have been detached during async wait (e.g., test cleanup)
-      if (!captureCanvas.parentNode) {
-        return captureCanvas;
-      }
-    }
-    
-    // Only wait for paint in rare edge cases where content was just added to DOM
-    if (waitForPaint) {
-      await waitForPaintFlush();
-      
       if (!captureCanvas.parentNode) {
         return captureCanvas;
       }

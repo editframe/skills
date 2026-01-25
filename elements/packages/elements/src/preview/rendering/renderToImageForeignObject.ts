@@ -12,6 +12,17 @@ import { logger } from "../logger.js";
 // Reusable instances for better performance (avoid creating new instances every frame)
 let _xmlSerializer: XMLSerializer | null = null;
 let _textEncoder: TextEncoder | null = null;
+let _wrapperElement: HTMLDivElement | null = null;
+
+// Pre-computed SVG constants
+const SVG_PREFIX = '<svg xmlns="http://www.w3.org/2000/svg" width="';
+const SVG_HEIGHT_PREFIX = '" height="';
+const SVG_MIDDLE = '"><foreignObject width="100%" height="100%">';
+const SVG_SUFFIX = '</foreignObject></svg>';
+const DATA_URI_PREFIX = 'data:image/svg+xml;base64,';
+
+// Shared style string to reduce allocations
+const WRAPPER_STYLE_BASE = "overflow:hidden;position:relative;";
 
 /**
  * Common SVG foreignObject serialization pipeline.
@@ -70,21 +81,27 @@ export async function serializeToSvgDataUri(
   
   // Phase 3: Serialize to XHTML
   const serializeStart = performance.now();
-  const wrapper = document.createElement("div");
-  wrapper.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
-  wrapper.setAttribute("style", `width:${width}px;height:${height}px;overflow:hidden;position:relative;`);
-  wrapper.appendChild(container);
+  
+  // Reuse wrapper element (just update dimensions)
+  if (!_wrapperElement) {
+    _wrapperElement = document.createElement("div");
+    _wrapperElement.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
+  }
+  
+  // Update style attribute with current dimensions
+  _wrapperElement.setAttribute("style", `width:${width}px;height:${height}px;${WRAPPER_STYLE_BASE}`);
+  _wrapperElement.appendChild(container);
   
   if (!_xmlSerializer) {
     _xmlSerializer = new XMLSerializer();
   }
-  const serialized = _xmlSerializer.serializeToString(wrapper);
+  const serialized = _xmlSerializer.serializeToString(_wrapperElement);
   defaultProfiler.addTime("serialize", performance.now() - serializeStart);
   
   // Prepare restore function (removes container from wrapper, restores canvases)
   const restore = (): void => {
     const restoreStart = performance.now();
-    wrapper.removeChild(container);
+    _wrapperElement!.removeChild(container);
     
     for (const { canvas, parent, nextSibling, img } of canvasRestoreInfo) {
       if (img.parentNode === parent) {
@@ -106,7 +123,9 @@ export async function serializeToSvgDataUri(
   
   // Phase 4: Create SVG and encode to base64
   const base64Start = performance.now();
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><foreignObject width="100%" height="100%">${serialized}</foreignObject></svg>`;
+  
+  // Build SVG string with minimal allocations (concatenation is faster for small strings)
+  const svg = SVG_PREFIX + width + SVG_HEIGHT_PREFIX + height + SVG_MIDDLE + serialized + SVG_SUFFIX;
   
   if (!_textEncoder) {
     _textEncoder = new TextEncoder();
@@ -119,7 +138,7 @@ export async function serializeToSvgDataUri(
   } else {
     base64 = encodeBase64Fast(utf8Bytes);
   }
-  const dataUri = `data:image/svg+xml;base64,${base64}`;
+  const dataUri = DATA_URI_PREFIX + base64;
   defaultProfiler.addTime("base64", performance.now() - base64Start);
   
   return { dataUri, restore };
