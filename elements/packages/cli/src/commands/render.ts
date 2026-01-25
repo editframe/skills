@@ -7,6 +7,7 @@ import ora from "ora";
 import { launchBrowserAndWaitForSDK } from "../utils/launchBrowserAndWaitForSDK.js";
 import { PreviewServer } from "../utils/startPreviewServer.js";
 import { StreamTargetChunk } from "mediabunny";
+import { withProfiling } from "../utils/profileRender.js";
 
 const log = debug("ef:cli:render");
 
@@ -38,6 +39,8 @@ program
   .option("--from-ms <number>", "Start time in milliseconds")
   .option("--to-ms <number>", "End time in milliseconds")
   .option("--experimental-native-render", "Use experimental canvas capture API (faster)")
+  .option("--profile", "Enable CPU profiling")
+  .option("--profile-output <path>", "Profile output path", "./render-profile.cpuprofile")
   .action(async (directory = ".", options) => {
     const srcDir = path.resolve(process.cwd(), directory);
     const outputPath = path.resolve(process.cwd(), options.output);
@@ -71,100 +74,111 @@ program
         interactive: false,
         efInteractive: false,
         nativeRender: options.experimentalNativeRender === true,
+        profile: options.profile === true,
+        profileOutput: options.profileOutput,
       },
       async (page) => {
-        // Open output file for streaming writes
-        const outputStream = createWriteStream(outputPath);
-        let chunkCount = 0;
-        let totalBytes = 0;
+        await withProfiling(
+          page,
+          {
+            enabled: options.profile === true,
+            outputPath: options.profileOutput,
+          },
+          async () => {
+            // Open output file for streaming writes
+            const outputStream = createWriteStream(outputPath);
+            let chunkCount = 0;
+            let totalBytes = 0;
 
-        // Expose chunk handler - writes directly to file
-        await page.exposeFunction("onRenderChunk", (chunk: StreamTargetChunk) => {
-          writeFile(outputPath, chunk.data, { flag: "a" });
-          chunkCount++;
-          totalBytes += chunk.data.length;
-          log(`Received chunk ${chunkCount}: ${chunk.data.length} bytes (total: ${totalBytes} bytes)`);
-        });
+            // Expose chunk handler - writes directly to file
+            await page.exposeFunction("onRenderChunk", (chunk: StreamTargetChunk) => {
+              writeFile(outputPath, chunk.data, { flag: "a" });
+              chunkCount++;
+              totalBytes += chunk.data.length;
+              log(`Received chunk ${chunkCount}: ${chunk.data.length} bytes (total: ${totalBytes} bytes)`);
+            });
 
-        // Set custom render data if provided
-        if (renderData) {
-          await page.evaluate((data) => {
-            window.EF_RENDER_DATA = data;
-          }, renderData);
-          log("Set EF_RENDER_DATA:", renderData);
-        }
+            // Set custom render data if provided
+            if (renderData) {
+              await page.evaluate((data) => {
+                window.EF_RENDER_DATA = data;
+              }, renderData);
+              log("Set EF_RENDER_DATA:", renderData);
+            }
 
-        // Wait for EF_RENDER API to be available
-        await page.waitForFunction(
-          () => typeof window.EF_RENDER !== "undefined",
-          { timeout: 10_000 },
+            // Wait for EF_RENDER API to be available
+            await page.waitForFunction(
+              () => typeof window.EF_RENDER !== "undefined",
+              { timeout: 10_000 },
+            );
+
+            // Check if ready
+            const isReady = await page.evaluate(() => window.EF_RENDER?.isReady());
+            if (!isReady) {
+              throw new Error("Render API is not ready. No ef-timegroup found.");
+            }
+
+            // Create progress spinner
+            const progressSpinner = ora("Rendering video...").start();
+
+            // Expose progress callback
+            await page.exposeFunction("onRenderProgress", (progress: {
+              progress: number;
+              currentFrame: number;
+              totalFrames: number;
+              renderedMs: number;
+              totalDurationMs: number;
+              elapsedMs: number;
+              estimatedRemainingMs: number;
+              speedMultiplier: number;
+            }) => {
+              const percent = (progress.progress * 100).toFixed(1);
+              const renderedTime = formatTime(progress.renderedMs);
+              const totalTime = formatTime(progress.totalDurationMs);
+              const remainingTime = formatTime(progress.estimatedRemainingMs);
+              const speed = progress.speedMultiplier.toFixed(2);
+              
+              progressSpinner.text = `Rendering: ${progress.currentFrame}/${progress.totalFrames} frames (${percent}%) | ${renderedTime}/${totalTime} | ${remainingTime} remaining | ${speed}x speed`;
+            });
+
+            // Render with streaming
+            try {
+              const renderOptions: any = {
+                fps,
+                scale,
+                includeAudio: options.includeAudio !== false,
+              };
+
+              if (fromMs !== undefined) {
+                renderOptions.fromMs = fromMs;
+              }
+              if (toMs !== undefined) {
+                renderOptions.toMs = toMs;
+              }
+
+              await page.evaluate(async (opts) => {
+                await window.EF_RENDER!.renderStreaming(opts);
+              }, renderOptions);
+
+              progressSpinner.succeed("Render complete");
+            } catch (error) {
+              progressSpinner.fail("Render failed");
+              throw error;
+            }
+
+            // Close the output stream
+            outputStream.end();
+
+            // Wait for stream to finish
+            await new Promise<void>((resolve, reject) => {
+              outputStream.on("finish", () => {
+                log(`Render complete: ${chunkCount} chunks, ${totalBytes} bytes written to ${outputPath}`);
+                resolve();
+              });
+              outputStream.on("error", reject);
+            });
+          },
         );
-
-        // Check if ready
-        const isReady = await page.evaluate(() => window.EF_RENDER?.isReady());
-        if (!isReady) {
-          throw new Error("Render API is not ready. No ef-timegroup found.");
-        }
-
-        // Create progress spinner
-        const progressSpinner = ora("Rendering video...").start();
-
-        // Expose progress callback
-        await page.exposeFunction("onRenderProgress", (progress: {
-          progress: number;
-          currentFrame: number;
-          totalFrames: number;
-          renderedMs: number;
-          totalDurationMs: number;
-          elapsedMs: number;
-          estimatedRemainingMs: number;
-          speedMultiplier: number;
-        }) => {
-          const percent = (progress.progress * 100).toFixed(1);
-          const renderedTime = formatTime(progress.renderedMs);
-          const totalTime = formatTime(progress.totalDurationMs);
-          const remainingTime = formatTime(progress.estimatedRemainingMs);
-          const speed = progress.speedMultiplier.toFixed(2);
-          
-          progressSpinner.text = `Rendering: ${progress.currentFrame}/${progress.totalFrames} frames (${percent}%) | ${renderedTime}/${totalTime} | ${remainingTime} remaining | ${speed}x speed`;
-        });
-
-        // Render with streaming
-        try {
-          const renderOptions: any = {
-            fps,
-            scale,
-            includeAudio: options.includeAudio !== false,
-          };
-
-          if (fromMs !== undefined) {
-            renderOptions.fromMs = fromMs;
-          }
-          if (toMs !== undefined) {
-            renderOptions.toMs = toMs;
-          }
-
-          await page.evaluate(async (opts) => {
-            await window.EF_RENDER!.renderStreaming(opts);
-          }, renderOptions);
-
-          progressSpinner.succeed("Render complete");
-        } catch (error) {
-          progressSpinner.fail("Render failed");
-          throw error;
-        }
-
-        // Close the output stream
-        outputStream.end();
-
-        // Wait for stream to finish
-        await new Promise<void>((resolve, reject) => {
-          outputStream.on("finish", () => {
-            log(`Render complete: ${chunkCount} chunks, ${totalBytes} bytes written to ${outputPath}`);
-            resolve();
-          });
-          outputStream.on("error", reject);
-        });
       },
     );
 

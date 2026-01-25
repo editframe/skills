@@ -128,10 +128,16 @@ interface RenderState {
 /**
  * Module-level state for render operations.
  */
+let _xmlSerializer: XMLSerializer | undefined;
 const renderState: RenderState = {
   inlineImageCache: new Map(),
   layoutInitializedCanvases: new WeakSet(),
-  xmlSerializer: new XMLSerializer(),
+  get xmlSerializer() {
+    if (!_xmlSerializer) {
+      _xmlSerializer = new XMLSerializer();
+    }
+    return _xmlSerializer;
+  },
   textEncoder: new TextEncoder(),
   metrics: {
     inlineImageCacheHits: 0,

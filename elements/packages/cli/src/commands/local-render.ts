@@ -6,6 +6,7 @@ import debug from "debug";
 import { launchBrowserAndWaitForSDK } from "../utils/launchBrowserAndWaitForSDK.js";
 import { PreviewServer } from "../utils/startPreviewServer.js";
 import { withSpinner } from "../utils/withSpinner.js";
+import { withProfiling } from "../utils/profileRender.js";
 
 const log = debug("ef:cli:local-render");
 
@@ -21,6 +22,8 @@ program
   .option("--no-include-audio", "Exclude audio track")
   .option("--from-ms <number>", "Start time in milliseconds")
   .option("--to-ms <number>", "End time in milliseconds")
+  .option("--profile", "Enable CPU profiling")
+  .option("--profile-output <path>", "Profile output path", "./render-profile.cpuprofile")
   .action(async (directory = ".", options) => {
     const srcDir = path.resolve(process.cwd(), directory);
     const outputPath = path.resolve(process.cwd(), options.output);
@@ -53,73 +56,84 @@ program
         headless: true,
         interactive: false,
         efInteractive: false,
+        profile: options.profile === true,
+        profileOutput: options.profileOutput,
       },
       async (page) => {
-        // Open output file for streaming writes
-        const outputStream = createWriteStream(outputPath);
-        let chunkCount = 0;
-        let totalBytes = 0;
+        await withProfiling(
+          page,
+          {
+            enabled: options.profile === true,
+            outputPath: options.profileOutput,
+          },
+          async () => {
+            // Open output file for streaming writes
+            const outputStream = createWriteStream(outputPath);
+            let chunkCount = 0;
+            let totalBytes = 0;
 
-        // Expose chunk handler - writes directly to file
-        await page.exposeFunction("onRenderChunk", (chunkArray: number[]) => {
-          const chunk = Buffer.from(chunkArray);
-          outputStream.write(chunk);
-          chunkCount++;
-          totalBytes += chunk.length;
-          log(`Received chunk ${chunkCount}: ${chunk.length} bytes (total: ${totalBytes} bytes)`);
-        });
+            // Expose chunk handler - writes directly to file
+            await page.exposeFunction("onRenderChunk", (chunkArray: number[]) => {
+              const chunk = Buffer.from(chunkArray);
+              outputStream.write(chunk);
+              chunkCount++;
+              totalBytes += chunk.length;
+              log(`Received chunk ${chunkCount}: ${chunk.length} bytes (total: ${totalBytes} bytes)`);
+            });
 
-        // Set custom render data if provided
-        if (renderData) {
-          await page.evaluate((data) => {
-            window.EF_RENDER_DATA = data;
-          }, renderData);
-          log("Set EF_RENDER_DATA:", renderData);
-        }
+            // Set custom render data if provided
+            if (renderData) {
+              await page.evaluate((data) => {
+                window.EF_RENDER_DATA = data;
+              }, renderData);
+              log("Set EF_RENDER_DATA:", renderData);
+            }
 
-        // Wait for EF_RENDER API to be available
-        await page.waitForFunction(
-          () => typeof window.EF_RENDER !== "undefined",
-          { timeout: 10_000 },
+            // Wait for EF_RENDER API to be available
+            await page.waitForFunction(
+              () => typeof window.EF_RENDER !== "undefined",
+              { timeout: 10_000 },
+            );
+
+            // Check if ready
+            const isReady = await page.evaluate(() => window.EF_RENDER?.isReady());
+            if (!isReady) {
+              throw new Error("Render API is not ready. No ef-timegroup found.");
+            }
+
+            // Render with streaming
+            await withSpinner("Rendering video...", async () => {
+              const renderOptions: any = {
+                fps,
+                scale,
+                includeAudio: options.includeAudio !== false,
+              };
+
+              if (fromMs !== undefined) {
+                renderOptions.fromMs = fromMs;
+              }
+              if (toMs !== undefined) {
+                renderOptions.toMs = toMs;
+              }
+
+              await page.evaluate(async (opts) => {
+                await window.EF_RENDER!.renderStreaming(opts);
+              }, renderOptions);
+            });
+
+            // Close the output stream
+            outputStream.end();
+
+            // Wait for stream to finish
+            await new Promise<void>((resolve, reject) => {
+              outputStream.on("finish", () => {
+                log(`Render complete: ${chunkCount} chunks, ${totalBytes} bytes written to ${outputPath}`);
+                resolve();
+              });
+              outputStream.on("error", reject);
+            });
+          },
         );
-
-        // Check if ready
-        const isReady = await page.evaluate(() => window.EF_RENDER?.isReady());
-        if (!isReady) {
-          throw new Error("Render API is not ready. No ef-timegroup found.");
-        }
-
-        // Render with streaming
-        await withSpinner("Rendering video...", async () => {
-          const renderOptions: any = {
-            fps,
-            scale,
-            includeAudio: options.includeAudio !== false,
-          };
-
-          if (fromMs !== undefined) {
-            renderOptions.fromMs = fromMs;
-          }
-          if (toMs !== undefined) {
-            renderOptions.toMs = toMs;
-          }
-
-          await page.evaluate(async (opts) => {
-            await window.EF_RENDER!.renderStreaming(opts);
-          }, renderOptions);
-        });
-
-        // Close the output stream
-        outputStream.end();
-
-        // Wait for stream to finish
-        await new Promise<void>((resolve, reject) => {
-          outputStream.on("finish", () => {
-            log(`Render complete: ${chunkCount} chunks, ${totalBytes} bytes written to ${outputPath}`);
-            resolve();
-          });
-          outputStream.on("error", reject);
-        });
       },
     );
 

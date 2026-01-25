@@ -14,6 +14,8 @@ interface LaunchOptions {
   efInteractive?: boolean;
   nativeRender?: boolean;
   chromePath?: string;
+  profile?: boolean;
+  profileOutput?: string;
 }
 
 export async function launchBrowserAndWaitForSDK(
