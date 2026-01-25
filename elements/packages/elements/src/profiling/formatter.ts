@@ -112,7 +112,7 @@ export function formatProfileAnalysis(
   context?: { sandbox?: string; scenario?: string },
   options: FormatOptions = {}
 ): string {
-  const { showRecommendations = true, topN = 20 } = options;
+  const { showRecommendations = true, topN = 20, verbose = false } = options;
   const lines: string[] = [];
 
   lines.push("=== PROFILE ANALYSIS ===");
@@ -129,7 +129,7 @@ export function formatProfileAnalysis(
   lines.push("");
 
   lines.push("TOP HOTSPOTS (by self time):");
-  lines.push(formatHotspotsTable(analysis.hotspots, { topN }));
+  lines.push(formatHotspotsTable(analysis.hotspots, { topN, verbose }));
   lines.push("");
 
   lines.push("BY FILE:");
@@ -144,6 +144,16 @@ export function formatProfileAnalysis(
     }
   }
 
+  // Add pattern detection if verbose
+  if (verbose) {
+    const { detectPatterns, formatPatterns } = require("./patterns.js");
+    const patterns = detectPatterns(analysis);
+    if (patterns.length > 0) {
+      lines.push("");
+      lines.push(formatPatterns(patterns));
+    }
+  }
+
   return lines.join("\n");
 }
 
@@ -155,9 +165,9 @@ export function formatProfileAnalysisJSON(
   context?: { sandbox?: string; scenario?: string },
   options: FormatOptions = {}
 ): string {
-  const { showRecommendations = true, topN = 20 } = options;
+  const { showRecommendations = true, topN = 20, verbose = false } = options;
 
-  const output = {
+  const output: any = {
     ...(context?.sandbox && { sandbox: context.sandbox }),
     ...(context?.scenario && { scenario: context.scenario }),
     durationMs: analysis.duration,
@@ -183,10 +193,18 @@ export function formatProfileAnalysisJSON(
         timeMs,
         timePct: (timeMs / analysis.totalTimeMs) * 100,
       })),
-    ...(showRecommendations && {
-      recommendations: generateRecommendations(analysis.hotspots),
-    }),
   };
+
+  if (showRecommendations) {
+    output.recommendations = generateRecommendations(analysis.hotspots);
+  }
+
+  // Add pattern detection if verbose
+  if (verbose) {
+    const { detectPatterns, formatPatternsJSON } = require("./patterns.js");
+    const patterns = detectPatterns(analysis);
+    output.patterns = formatPatternsJSON(patterns);
+  }
 
   return JSON.stringify(output, null, 2);
 }

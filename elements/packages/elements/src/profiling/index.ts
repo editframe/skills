@@ -67,3 +67,11 @@ export {
   resolveSourceLocation,
   SourceMapResolver,
 } from "./source-maps.js";
+
+// Pattern detection
+export type { Pattern } from "./patterns.js";
+export {
+  detectPatterns,
+  formatPatterns,
+  formatPatternsJSON,
+} from "./patterns.js";
