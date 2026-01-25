@@ -120,11 +120,13 @@ async function main() {
   let testPattern = "";
   let outputPath = "./browsertest-profile.cpuprofile";
   let focusFile = "";
+  let jsonOutput = false;
   
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "-t" && args[i + 1]) testPattern = args[++i];
     else if (args[i] === "--output" && args[i + 1]) outputPath = args[++i];
     else if (args[i] === "--focus" && args[i + 1]) focusFile = args[++i];
+    else if (args[i] === "--json") jsonOutput = true;
     else if (!args[i].startsWith("-") && !testFile) testFile = args[i];
   }
 
