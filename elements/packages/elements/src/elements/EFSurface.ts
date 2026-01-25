@@ -88,7 +88,9 @@ export class EFSurface extends LitElement {
         const maybeTask = (target as any).frameTask;
         if (maybeTask && typeof maybeTask.run === "function") {
           // Run (idempotent) and then wait for completion
-          maybeTask.run();
+          maybeTask.run().catch(() => {
+            // AbortErrors are expected during cleanup
+          });
           await maybeTask.taskComplete;
           // Check abort after async operation
           signal?.throwIfAborted();

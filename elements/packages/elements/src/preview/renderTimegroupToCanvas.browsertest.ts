@@ -2601,7 +2601,9 @@ describe("captions rendering in foreignObject path", () => {
     // Wait for the task to process the new data
     await originalCaptions.updateComplete;
     if (originalCaptions.unifiedCaptionsDataTask?.status === 0) { // INITIAL
-      originalCaptions.unifiedCaptionsDataTask.run();
+      originalCaptions.unifiedCaptionsDataTask.run().catch(() => {
+        // AbortErrors are expected during cleanup
+      });
     }
     await originalCaptions.unifiedCaptionsDataTask?.taskComplete;
     
@@ -2624,7 +2626,9 @@ describe("captions rendering in foreignObject path", () => {
       
       // Wait for unified task to use the copied data
       if (cloneCaptions.unifiedCaptionsDataTask?.status === 0) {
-        cloneCaptions.unifiedCaptionsDataTask.run();
+        cloneCaptions.unifiedCaptionsDataTask.run().catch(() => {
+          // AbortErrors are expected during cleanup
+        });
       }
       await cloneCaptions.unifiedCaptionsDataTask?.taskComplete;
       
@@ -2699,7 +2703,9 @@ describe("captions rendering in foreignObject path", () => {
     // Helper to properly seek and wait for captions to update (from existing captions tests)
     const seekAndWait = async (timeMs: number) => {
       timegroup.currentTimeMs = timeMs;
-      timegroup.seekTask.run();
+      timegroup.seekTask.run().catch(() => {
+        // AbortErrors are expected during cleanup
+      });
       await timegroup.seekTask.taskComplete;
       captions.frameTask.run().catch(() => {
         // AbortErrors are expected during cleanup

@@ -293,7 +293,9 @@ describe.skip("EFCaptions", () => {
       const seekAndWait = async (timeMs: number) => {
         timegroup.currentTimeMs = timeMs;
         // Trigger the seek task
-        timegroup.seekTask.run();
+        timegroup.seekTask.run().catch(() => {
+          // AbortErrors are expected during cleanup
+        });
         await timegroup.seekTask.taskComplete;
         // Explicitly run the captions frameTask to update text containers
         captions.frameTask.run().catch(() => {
@@ -350,7 +352,9 @@ describe.skip("EFCaptions", () => {
       // Helper to wait for word to update after seeking
       const seekAndWait = async (timeMs: number) => {
         timegroup.currentTimeMs = timeMs;
-        timegroup.seekTask.run();
+        timegroup.seekTask.run().catch(() => {
+          // AbortErrors are expected during cleanup
+        });
         await timegroup.seekTask.taskComplete;
         captions.frameTask.run().catch(() => {
           // AbortErrors are expected during cleanup
@@ -1663,7 +1667,9 @@ describe.skip("EFCaptions", () => {
       // Helper to seek and wait for updates
       const seekAndWait = async (timeMs: number) => {
         timegroup.currentTimeMs = timeMs;
-        timegroup.seekTask.run();
+        timegroup.seekTask.run().catch(() => {
+          // AbortErrors are expected during cleanup
+        });
         await timegroup.seekTask.taskComplete;
         captions.frameTask.run().catch(() => {
           // AbortErrors are expected during cleanup
