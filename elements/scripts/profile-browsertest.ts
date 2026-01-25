@@ -250,8 +250,24 @@ Examples:
 
   // Analyze if we have data
   if (nonIdleSamples.length >= 10) {
-    sourceMapResolver = new SourceMapResolver();
-    await printProfileAnalysis(profile, focusFile, wallClockMs);
+    const { analyzeProfile, formatProfileAnalysis, formatProfileAnalysisJSON } = await import("../packages/elements/src/profiling/index.js");
+    
+    const analysis = analyzeProfile(profile, {
+      filterNodeModules: true,
+      filterInternals: true,
+      topN: 20,
+    });
+
+    if (jsonOutput) {
+      console.log(formatProfileAnalysisJSON(analysis, { sandbox: testFile, scenario: testPattern || "all" }, { topN: 20 }));
+    } else {
+      console.log(`\n📊 Profile Analysis:`);
+      console.log(formatProfileAnalysis(analysis, { sandbox: testFile, scenario: testPattern || "all" }, { topN: 20, showRecommendations: true }));
+      
+      if (focusFile) {
+        await printProfileAnalysis(profile, focusFile, wallClockMs);
+      }
+    }
   }
 
   await page.close();
