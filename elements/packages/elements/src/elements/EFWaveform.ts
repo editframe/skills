@@ -477,6 +477,24 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) {
         this.targetElement?.frequencyDataTask.value,
       ] as const;
     },
+    onError: (error) => {
+      // Attach catch to prevent unhandled rejection
+      this.frameTask.taskComplete.catch(() => {});
+      
+      // Don't log AbortErrors - these are expected when element is disconnected
+      const isAbortError = 
+        error instanceof DOMException && error.name === "AbortError" ||
+        error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message?.includes("signal is aborted") ||
+          error.message?.includes("The user aborted a request")
+        );
+      
+      if (isAbortError) {
+        return;
+      }
+      console.error("EFWaveform frameTask error", error);
+    },
     task: async ([_targetElement, _frequencyData], { signal }) => {
       if (!this.targetElement) return;
       await this.targetElement.frequencyDataTask.taskComplete;
@@ -530,6 +548,8 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) {
       ctx.restore();
     },
   });
+  // CRITICAL: Attach .catch() handler IMMEDIATELY after creation
+  { this.frameTask.taskComplete.catch(() => {}); }
 
   get durationMs() {
     if (!this.targetElement) return 0;

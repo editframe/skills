@@ -41,11 +41,31 @@ class TimegroupTestMedia extends EFMedia {
   mediaEngineTask = new Task(this, {
     autoRun: false,
     args: () => ["source", null] as const,
+    onError: (error) => {
+      // Attach catch to prevent unhandled rejection
+      this.mediaEngineTask.taskComplete.catch(() => {});
+      
+      // Don't log AbortErrors - these are expected when element is disconnected
+      const isAbortError = 
+        error instanceof DOMException && error.name === "AbortError" ||
+        error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message?.includes("signal is aborted") ||
+          error.message?.includes("The user aborted a request")
+        );
+      
+      if (isAbortError) {
+        return;
+      }
+      console.error("TimegroupTestMedia mediaEngineTask error", error);
+    },
     task: () => {
       this.setAttribute("data-media-loaded", "true");
       return Promise.resolve({} as unknown as MediaEngine);
     },
   });
+  // CRITICAL: Attach .catch() handler IMMEDIATELY after creation
+  { this.mediaEngineTask.taskComplete.catch(() => {}); }
 }
 
 @customElement("test-frame-task-a")
@@ -57,11 +77,31 @@ class TestFrameTaskA extends EFTemporal(LitElement) {
   frameTask = new Task(this, {
     autoRun: false,
     args: () => [],
+    onError: (error) => {
+      // Attach catch to prevent unhandled rejection
+      this.frameTask.taskComplete.catch(() => {});
+      
+      // Don't log AbortErrors - these are expected when element is disconnected
+      const isAbortError = 
+        error instanceof DOMException && error.name === "AbortError" ||
+        error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message?.includes("signal is aborted") ||
+          error.message?.includes("The user aborted a request")
+        );
+      
+      if (isAbortError) {
+        return;
+      }
+      console.error("TestFrameTaskA frameTask error", error);
+    },
     task: () => {
       this.setAttribute("data-frame-executed", "true");
       return Promise.resolve();
     },
   });
+  // CRITICAL: Attach .catch() handler IMMEDIATELY after creation
+  { this.frameTask.taskComplete.catch(() => {}); }
 }
 
 @customElement("test-frame-task-b")
@@ -73,11 +113,31 @@ class TestFrameTaskB extends EFTemporal(LitElement) {
   frameTask = new Task(this, {
     autoRun: false,
     args: () => [],
+    onError: (error) => {
+      // Attach catch to prevent unhandled rejection
+      this.frameTask.taskComplete.catch(() => {});
+      
+      // Don't log AbortErrors - these are expected when element is disconnected
+      const isAbortError = 
+        error instanceof DOMException && error.name === "AbortError" ||
+        error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message?.includes("signal is aborted") ||
+          error.message?.includes("The user aborted a request")
+        );
+      
+      if (isAbortError) {
+        return;
+      }
+      console.error("TestFrameTaskB frameTask error", error);
+    },
     task: () => {
       this.setAttribute("data-frame-executed", "true");
       return Promise.resolve();
     },
   });
+  // CRITICAL: Attach .catch() handler IMMEDIATELY after creation
+  { this.frameTask.taskComplete.catch(() => {}); }
 }
 
 @customElement("test-frame-task-c")
@@ -89,11 +149,31 @@ class TestFrameTaskC extends EFTemporal(LitElement) {
   frameTask = new Task(this, {
     autoRun: false,
     args: () => [],
+    onError: (error) => {
+      // Attach catch to prevent unhandled rejection
+      this.frameTask.taskComplete.catch(() => {});
+      
+      // Don't log AbortErrors - these are expected when element is disconnected
+      const isAbortError = 
+        error instanceof DOMException && error.name === "AbortError" ||
+        error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message?.includes("signal is aborted") ||
+          error.message?.includes("The user aborted a request")
+        );
+      
+      if (isAbortError) {
+        return;
+      }
+      console.error("TestFrameTaskC frameTask error", error);
+    },
     task: () => {
       this.setAttribute("data-frame-executed", "true");
       return Promise.resolve();
     },
   });
+  // CRITICAL: Attach .catch() handler IMMEDIATELY after creation
+  { this.frameTask.taskComplete.catch(() => {}); }
 }
 
 @customElement("test-temporal")

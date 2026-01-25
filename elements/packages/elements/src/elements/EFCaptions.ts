@@ -371,6 +371,24 @@ export class EFCaptions extends EFSourceMixin(
   protected md5SumLoader = new Task(this, {
     autoRun: false,
     args: () => [this.target, this.fetch] as const,
+    onError: (error) => {
+      // Attach catch to prevent unhandled rejection
+      this.md5SumLoader.taskComplete.catch(() => {});
+      
+      // Don't log AbortErrors - these are expected when element is disconnected
+      const isAbortError = 
+        error instanceof DOMException && error.name === "AbortError" ||
+        error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message?.includes("signal is aborted") ||
+          error.message?.includes("The user aborted a request")
+        );
+      
+      if (isAbortError) {
+        return;
+      }
+      console.error("EFCaptions md5SumLoader error", error);
+    },
     task: async ([_target, fetch], { signal }) => {
       if (!this.targetElement) {
         return null;
@@ -391,6 +409,8 @@ export class EFCaptions extends EFSourceMixin(
       return data.md5 ?? undefined;
     },
   });
+  // CRITICAL: Attach .catch() handler IMMEDIATELY after creation
+  { this.md5SumLoader.taskComplete.catch(() => {}); }
 
   private transcriptionDataTask = new Task(this, {
     autoRun: EF_INTERACTIVE,
@@ -400,6 +420,24 @@ export class EFCaptions extends EFSourceMixin(
         this.fetch,
         this.hasCustomCaptionsData,
       ] as const,
+    onError: (error) => {
+      // Attach catch to prevent unhandled rejection
+      this.transcriptionDataTask.taskComplete.catch(() => {});
+      
+      // Don't log AbortErrors - these are expected when element is disconnected
+      const isAbortError = 
+        error instanceof DOMException && error.name === "AbortError" ||
+        error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message?.includes("signal is aborted") ||
+          error.message?.includes("The user aborted a request")
+        );
+      
+      if (isAbortError) {
+        return;
+      }
+      console.error("EFCaptions transcriptionDataTask error", error);
+    },
     task: async ([transcriptionsPath, fetch, hasCustomData], { signal }) => {
       // Skip transcription if we have custom captions data
       if (hasCustomData || !transcriptionsPath) {
@@ -409,6 +447,8 @@ export class EFCaptions extends EFSourceMixin(
       return response.json() as any as GetISOBMFFFileTranscriptionResult;
     },
   });
+  // CRITICAL: Attach .catch() handler IMMEDIATELY after creation
+  { this.transcriptionDataTask.taskComplete.catch(() => {}); }
 
   private transcriptionFragmentPath(
     transcriptionId: string,
@@ -421,6 +461,24 @@ export class EFCaptions extends EFSourceMixin(
     autoRun: EF_INTERACTIVE,
     args: () =>
       [this.transcriptionDataTask.value, this.ownCurrentTimeMs] as const,
+    onError: (error) => {
+      // Attach catch to prevent unhandled rejection
+      this.fragmentIndexTask.taskComplete.catch(() => {});
+      
+      // Don't log AbortErrors - these are expected when element is disconnected
+      const isAbortError = 
+        error instanceof DOMException && error.name === "AbortError" ||
+        error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message?.includes("signal is aborted") ||
+          error.message?.includes("The user aborted a request")
+        );
+      
+      if (isAbortError) {
+        return;
+      }
+      console.error("EFCaptions fragmentIndexTask error", error);
+    },
     task: async ([transcription, ownCurrentTimeMs], { signal }) => {
       signal?.throwIfAborted();
       if (!transcription) {
@@ -432,6 +490,8 @@ export class EFCaptions extends EFSourceMixin(
       return fragmentIndex;
     },
   });
+  // CRITICAL: Attach .catch() handler IMMEDIATELY after creation
+  { this.fragmentIndexTask.taskComplete.catch(() => {}); }
 
   private customCaptionsDataTask = new Task(this, {
     autoRun: EF_INTERACTIVE,
@@ -442,6 +502,24 @@ export class EFCaptions extends EFSourceMixin(
         this.captionsScript,
         this.fetch,
       ] as const,
+    onError: (error) => {
+      // Attach catch to prevent unhandled rejection
+      this.customCaptionsDataTask.taskComplete.catch(() => {});
+      
+      // Don't log AbortErrors - these are expected when element is disconnected
+      const isAbortError = 
+        error instanceof DOMException && error.name === "AbortError" ||
+        error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message?.includes("signal is aborted") ||
+          error.message?.includes("The user aborted a request")
+        );
+      
+      if (isAbortError) {
+        return;
+      }
+      console.error("EFCaptions customCaptionsDataTask error", error);
+    },
     task: async (
       [captionsSrc, captionsData, captionsScript, fetch],
       { signal },
@@ -479,6 +557,8 @@ export class EFCaptions extends EFSourceMixin(
       return null;
     },
   });
+  // CRITICAL: Attach .catch() handler IMMEDIATELY after creation
+  { this.customCaptionsDataTask.taskComplete.catch(() => {}); }
 
   private transcriptionFragmentDataTask = new Task(this, {
     autoRun: EF_INTERACTIVE,
@@ -488,6 +568,24 @@ export class EFCaptions extends EFSourceMixin(
         this.fragmentIndexTask.value,
         this.fetch,
       ] as const,
+    onError: (error) => {
+      // Attach catch to prevent unhandled rejection
+      this.transcriptionFragmentDataTask.taskComplete.catch(() => {});
+      
+      // Don't log AbortErrors - these are expected when element is disconnected
+      const isAbortError = 
+        error instanceof DOMException && error.name === "AbortError" ||
+        error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message?.includes("signal is aborted") ||
+          error.message?.includes("The user aborted a request")
+        );
+      
+      if (isAbortError) {
+        return;
+      }
+      console.error("EFCaptions transcriptionFragmentDataTask error", error);
+    },
     task: async ([transcription, fragmentIndex, fetch], { signal }) => {
       if (
         transcription === null ||
@@ -505,6 +603,8 @@ export class EFCaptions extends EFSourceMixin(
       return response.json() as any as Caption;
     },
   });
+  // CRITICAL: Attach .catch() handler IMMEDIATELY after creation
+  { this.transcriptionFragmentDataTask.taskComplete.catch(() => {}); }
 
   unifiedCaptionsDataTask = new Task(this, {
     autoRun: EF_INTERACTIVE,
@@ -513,6 +613,24 @@ export class EFCaptions extends EFSourceMixin(
         this.customCaptionsDataTask.value,
         this.transcriptionFragmentDataTask.value,
       ] as const,
+    onError: (error) => {
+      // Attach catch to prevent unhandled rejection
+      this.unifiedCaptionsDataTask.taskComplete.catch(() => {});
+      
+      // Don't log AbortErrors - these are expected when element is disconnected
+      const isAbortError = 
+        error instanceof DOMException && error.name === "AbortError" ||
+        error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message?.includes("signal is aborted") ||
+          error.message?.includes("The user aborted a request")
+        );
+      
+      if (isAbortError) {
+        return;
+      }
+      console.error("EFCaptions unifiedCaptionsDataTask error", error);
+    },
     task: async ([_customData, _transcriptionData], { signal }) => {
       // Check abort before starting
       signal?.throwIfAborted();
@@ -533,6 +651,8 @@ export class EFCaptions extends EFSourceMixin(
       );
     },
   });
+  // CRITICAL: Attach .catch() handler IMMEDIATELY after creation
+  { this.unifiedCaptionsDataTask.taskComplete.catch(() => {}); }
 
   frameTask = new Task(this, {
     autoRun: EF_INTERACTIVE,

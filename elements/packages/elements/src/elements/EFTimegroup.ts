@@ -2254,6 +2254,24 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     autoRun: false,
     args: () => [this.#pendingSeekTime ?? this.#currentTime] as const,
     onComplete: () => {},
+    onError: (error) => {
+      // Attach catch to prevent unhandled rejection
+      this.seekTask.taskComplete.catch(() => {});
+      
+      // Don't log AbortErrors - these are expected when element is disconnected
+      const isAbortError = 
+        error instanceof DOMException && error.name === "AbortError" ||
+        error instanceof Error && (
+          error.name === "AbortError" ||
+          error.message?.includes("signal is aborted") ||
+          error.message?.includes("The user aborted a request")
+        );
+      
+      if (isAbortError) {
+        return;
+      }
+      console.error("EFTimegroup seekTask error", error);
+    },
     task: async ([targetTime], { signal }) => {
       // Check abort before starting
       signal?.throwIfAborted();
@@ -2350,6 +2368,8 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
       );
     },
   });
+  // CRITICAL: Attach .catch() handler IMMEDIATELY after creation
+  { this.seekTask.taskComplete.catch(() => {}); }
 
   /**
    * Get container information for this timegroup.

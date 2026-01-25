@@ -50,6 +50,24 @@ export function EFSourceMixin<T extends Constructor<LitElement>>(
     md5SumLoader = new Task(this, {
       autoRun: false,
       args: () => [this.src] as const,
+      onError: (error) => {
+        // Attach catch to prevent unhandled rejection
+        this.md5SumLoader.taskComplete.catch(() => {});
+        
+        // Don't log AbortErrors - these are expected when element is disconnected
+        const isAbortError = 
+          error instanceof DOMException && error.name === "AbortError" ||
+          error instanceof Error && (
+            error.name === "AbortError" ||
+            error.message?.includes("signal is aborted") ||
+            error.message?.includes("The user aborted a request")
+          );
+        
+        if (isAbortError) {
+          return;
+        }
+        console.error("EFSourceMixin md5SumLoader error", error);
+      },
       task: async ([src], { signal }) => {
         // Normalize the path: remove leading slash and any double slashes
         let normalizedSrc = src.startsWith("/")
@@ -66,6 +84,8 @@ export function EFSourceMixin<T extends Constructor<LitElement>>(
         return data.md5 ?? undefined;
       },
     });
+    // CRITICAL: Attach .catch() handler IMMEDIATELY after creation
+    this.md5SumLoader.taskComplete.catch(() => {});
   }
 
   return EFSourceElement as Constructor<EFSourceMixinInterface> & T;
