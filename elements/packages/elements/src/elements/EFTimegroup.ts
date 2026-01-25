@@ -842,9 +842,6 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
       );
     }
     
-    // Wait one frame to ensure animations and styles have settled
-    await new Promise((resolve) => requestAnimationFrame(resolve));
-    
     // Now collect elements with frame tasks (media elements that need special handling)
     const visibleElements = this.#evaluateVisibleElementsForFrame();
     
