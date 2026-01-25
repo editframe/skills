@@ -23,18 +23,23 @@ export {
 export type CallTreeNode = UnifiedCallTreeNode;
 
 /**
- * Get hotspots with legacy interface (converts to ms in the function)
+ * Get hotspots with legacy interface
  * @deprecated Use analyzeProfile from @editframe/elements/profiling instead
  */
 export function getHotspots(profile: CPUProfile): HotspotInfo[] {
-  // Import dynamically to use the unified library
   const { getHotspots: getHotspotsNew } = require("../../profiling/analyzer.js");
   const hotspots = getHotspotsNew(profile, {});
   
-  // Convert back to microseconds for legacy compatibility
+  // The unified library returns times in milliseconds
+  // The old interface returned times in microseconds
+  // HotspotsList.tsx divides by 1000 when displaying, so we need to convert to μs
   return hotspots.map(h => ({
-    ...h,
+    functionName: h.functionName,
+    url: h.url,
+    line: h.line - 1, // Old interface used 0-based line numbers
+    column: h.column - 1, // Old interface used 0-based column numbers
     selfTime: h.selfTime * 1000, // Convert ms to μs
     totalTime: h.totalTime * 1000, // Convert ms to μs
+    hitCount: h.hitCount,
   }));
 }
