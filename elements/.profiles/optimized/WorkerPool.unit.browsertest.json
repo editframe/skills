@@ -6,9 +6,14 @@
 📡 Connecting to browser: ws://host.docker.internal:51512/bce12e0857a82ea67eb79e06e2db32f1
 
 📋 Browser targets: 4
-   Found Vitest page: http://main.localhost:4322/__vitest_test__/?sessionId=b5c83a10-df07-4e61-aa8a-aa41bdbd67ec#/
-   Found Vitest page: http://main.localhost:4322/__vitest_test__/?sessionId=f6558d2f-4206-48f7-b895-a26a0a129d7b#/
-🎬 Starting profiler and running tests...
+   Found Vitest page: http://main.localhost:4322/__vitest_test__/?sess
+ Test Files   (1)
+      Tests  no tests
+     Errors  3 errors
+   Start at  02:15:44
+   Duration  1340.90s (transform 0ms, setup 0ms, collect 0ms, tests 0ms, environment 0ms, prepare 0ms)
+
+nning tests...
 
 
  RUN  v3.2.4 /packages

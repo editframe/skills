@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Native Canvas API Diagnostic</title>
+  <style>
+    body {
+      font-family: monospace;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #00ff00;
+    }
+    .result {
+      margin: 10px 0;
+      padding: 10px;
+      border: 1px solid #333;
+    }
+    .error { color: #ff0000; }
+    .success { color: #00ff00; }
+    .warning { color: #ffaa00; }
+  </style>
+</head>
+<body>
+  <h1>Native Canvas API Diagnostic</h1>
+  <div id="results"></div>
+  
+  <script>
+    const results = document.getElementById('results');
+    
+    function log(message, type = 'info') {
+      const div = document.createElement('div');
+      div.className = `result ${type}`;
+      div.textContent = message;
+      results.appendChild(div);
+    }
+    
+    // Test 1: Check if drawElementImage exists
+    log('=== Test 1: Check if drawElementImage exists ===');
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    if (!ctx) {
+      log('ERROR: Could not get 2D context', 'error');
+    } else {
+      log('SUCCESS: Got 2D context', 'success');
+      
+      if ('drawElementImage' in ctx) {
+        log('SUCCESS: drawElementImage exists on context!', 'success');
+      } else {
+        log('ERROR: drawElementImage does NOT exist on context', 'error');
+        log('This is the ROOT CAUSE of the performance regression!', 'error');
+      }
+    }
+    
+    // Test 2: Try to call drawElementImage
+    log('\n=== Test 2: Try to call drawElementImage ===');
+    try {
+      const testCanvas = document.createElement('canvas');
+      testCanvas.width = 100;
+      testCanvas.height = 100;
+      testCanvas.setAttribute('layoutsubtree', '');
+      
+      const testDiv = document.createElement('div');
+      testDiv.textContent = 'Test';
+      testDiv.style.cssText = 'position:absolute;width:50px;height:50px;';
+      testCanvas.appendChild(testDiv);
+      document.body.appendChild(testCanvas);
+      
+      const testCtx = testCanvas.getContext('2d');
+      if (typeof testCtx.drawElementImage === 'function') {
+        testCtx.drawElementImage(testDiv, 0, 0);
+        log('SUCCESS: drawElementImage callable', 'success');
+      } else {
+        log('ERROR: drawElementImage is not a function', 'error');
+        log('Actual type: ' + typeof testCtx.drawElementImage, 'error');
+      }
+      
+      document.body.removeChild(testCanvas);
+    } catch (err) {
+      log('ERROR calling drawElementImage: ' + err.message, 'error');
+      log('Stack: ' + err.stack, 'error');
+    }
+    
+    // Test 3: Check what happens with isNativeCanvasApiAvailable
+    log('\n=== Test 3: What isNativeCanvasApiAvailable returns ===');
+    log('The function is HARDCODED to return true', 'warning');
+    log('See previewSettings.ts line 59', 'warning');
+    
+    // Test 4: Performance impact
+    log('\n=== Test 4: hasCanvasContent performance ===');
+    const perfCanvas = document.createElement('canvas');
+    perfCanvas.width = 1920;
+    perfCanvas.height = 1080;
+    const perfCtx = perfCanvas.getContext('2d');
+    
+    // Fill with some content
+    perfCtx.fillStyle = 'red';
+    perfCtx.fillRect(100, 100, 50, 50);
+    
+    const iterations = 100;
+    const start = performance.now();
+    
+    for (let i = 0; i < iterations; i++) {
+      // Simulate hasCanvasContent check
+      const sampleSize = Math.min(10, perfCanvas.width, perfCanvas.height);
+      const x = Math.floor((perfCanvas.width - sampleSize) / 2);
+      const y = Math.floor((perfCanvas.height - sampleSize) / 2);
+      const imageData = perfCtx.getImageData(x, y, sampleSize, sampleSize);
+      const data = imageData.data;
+      let hasContent = false;
+      for (let j = 3; j < data.length; j += 4) {
+        if (data[j] !== 0) {
+          hasContent = true;
+          break;
+        }
+      }
+    }
+    
+    const end = performance.now();
+    const avgTime = (end - start) / iterations;
+    log(`Average time per hasCanvasContent check: ${avgTime.toFixed(3)}ms`, avgTime > 0.1 ? 'warning' : 'success');
+    log('This check happens for EVERY canvas in EVERY frame!', 'warning');
+    
+    // Test 5: drawImage performance comparison
+    log('\n=== Test 5: drawImage vs hasCanvasContent comparison ===');
+    const destCanvas = document.createElement('canvas');
+    destCanvas.width = 1920;
+    destCanvas.height = 1080;
+    const destCtx = destCanvas.getContext('2d');
+    
+    const drawStart = performance.now();
+    for (let i = 0; i < iterations; i++) {
+      destCtx.drawImage(perfCanvas, 0, 0);
+    }
+    const drawEnd = performance.now();
+    const avgDrawTime = (drawEnd - drawStart) / iterations;
+    
+    log(`Average time per drawImage: ${avgDrawTime.toFixed(3)}ms`, 'success');
+    log(`Speedup ratio: ${(avgTime / avgDrawTime).toFixed(2)}x`, 
+        avgTime > avgDrawTime ? 'error' : 'success');
+    
+    if (avgTime > avgDrawTime) {
+      log('CONCLUSION: hasCanvasContent is SLOWER than just doing drawImage!', 'error');
+      log('The "optimization" is actually making things slower!', 'error');
+    }
+  </script>
+</body>
+</html>

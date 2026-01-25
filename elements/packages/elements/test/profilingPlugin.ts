@@ -90,8 +90,6 @@ export function profilingPlugin(): Plugin {
  * Call this from test setup or beforeAll
  */
 export async function startProfiling(page: any): Promise<void> {
-  if (process.env.VITEST_PROFILE !== "1") return;
-  
   try {
     // Get CDP session from Playwright page
     // In Playwright, we access CDP via page.context().newCDPSession(page)
@@ -114,7 +112,7 @@ export async function startProfiling(page: any): Promise<void> {
  * Call this from test teardown or afterAll
  */
 export async function stopProfiling(outputPath?: string): Promise<CPUProfile | null> {
-  if (process.env.VITEST_PROFILE !== "1" || !cdpSession) return null;
+  if (!cdpSession) return null;
   
   try {
     const { profile } = await cdpSession.send("Profiler.stop") as { profile: CPUProfile };

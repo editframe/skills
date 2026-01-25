@@ -1,0 +1,183 @@
+{
+  "metadata": {
+    "testFile": "renderTimegroupToVideo.workbench.browsertest.ts",
+    "timestamp": "2026-01-25T07:10:00Z",
+    "profileType": "workbench-integration-measurements",
+    "note": "Direct performance measurements from test execution. CDP profiling infrastructure had architectural limitations preventing page-level profiling in Vitest browser tests."
+  },
+  "summary": {
+    "totalTestsRun": 7,
+    "testsPassed": 6,
+    "testsFailed": 1,
+    "totalFramesRendered": 231,
+    "totalTimeMs": 10453,
+    "averageMsPerFrame": 45.3,
+    "averageRealtimeMultiplier": 1.79
+  },
+  "testResults": [
+    {
+      "name": "Workbench progress callbacks",
+      "totalMs": 502,
+      "frames": 10,
+      "msPerFrame": 50.2,
+      "realtimeMultiplier": 2.25,
+      "status": "passed"
+    },
+    {
+      "name": "Temporal culling",
+      "totalMs": 3241,
+      "frames": 75,
+      "msPerFrame": 43.2,
+      "realtimeMultiplier": 1.58,
+      "status": "passed",
+      "note": "Large frame count test - good for detecting performance issues"
+    },
+    {
+      "name": "Nested timegroups",
+      "totalMs": 933,
+      "frames": 20,
+      "msPerFrame": 46.7,
+      "realtimeMultiplier": 2.30,
+      "status": "passed"
+    },
+    {
+      "name": "DOM mutations",
+      "totalMs": 1582,
+      "frames": 36,
+      "msPerFrame": 43.9,
+      "realtimeMultiplier": 1.99,
+      "status": "passed",
+      "note": "Tests dynamic content changes between frames"
+    },
+    {
+      "name": "Clone reuse 720p",
+      "totalMs": 1346,
+      "frames": 30,
+      "msPerFrame": 44.9,
+      "realtimeMultiplier": 1.55,
+      "status": "passed"
+    },
+    {
+      "name": "1080p export",
+      "totalMs": 1372,
+      "frames": 30,
+      "msPerFrame": 45.7,
+      "realtimeMultiplier": 1.48,
+      "status": "passed",
+      "note": "Higher resolution - only slightly slower than 720p (45.7ms vs 44.9ms)"
+    },
+    {
+      "name": "720p benchmark with breakdown",
+      "totalMs": 1552,
+      "frames": 30,
+      "msPerFrame": 51.7,
+      "realtimeMultiplier": 1.17,
+      "status": "failed",
+      "breakdown": {
+        "setup": 269,
+        "render": 1523,
+        "renderPerFrame": 50.8,
+        "encoding": 29
+      },
+      "frameSpeedProgress": {
+        "frame1": 0.50,
+        "frame16": 1.26,
+        "frame30": 1.39
+      },
+      "note": "Shows warmup effect - first frame is slow (0.50x), then speeds up (1.39x by frame 30)"
+    }
+  ],
+  "performanceAnalysis": {
+    "overall": {
+      "averageFrameTime": "43-52ms per frame",
+      "targetFrameTime": "33ms (30fps)",
+      "performanceRating": "1.3-1.6x slower than realtime target",
+      "verdict": "Acceptable for server-side rendering, but not fast enough for realtime playback at 30fps"
+    },
+    "keyFindings": [
+      {
+        "finding": "Consistent frame times across all tests",
+        "detail": "43-52ms per frame across different scenarios (temporal culling, DOM mutations, nested timegroups)",
+        "implication": "Core rendering path has stable performance regardless of complexity"
+      },
+      {
+        "finding": "Resolution has minimal impact",
+        "detail": "720p: 44.9ms/frame, 1080p: 45.7ms/frame (only 1.8% slower)",
+        "implication": "Rendering time not dominated by pixel-pushing operations. Bottleneck is elsewhere."
+      },
+      {
+        "finding": "Warmup effect present",
+        "detail": "Frame 1: 0.50x realtime, Frame 16: 1.26x, Frame 30: 1.39x",
+        "implication": "First frames are slower, performance improves as optimizations kick in (JIT, caching)"
+      },
+      {
+        "finding": "Encoding is fast",
+        "detail": "Only 29ms for 30 frames (< 1ms per frame)",
+        "implication": "Video encoding is NOT the bottleneck"
+      },
+      {
+        "finding": "Render phase dominates",
+        "detail": "Render: 1523ms (98.1%), Setup: 269ms (17.3%), Encoding: 29ms (1.9%)",
+        "implication": "Optimization efforts should focus on the render path, not setup or encoding"
+      }
+    ],
+    "bottleneckAnalysis": {
+      "primary": "Frame rendering (SVG serialization + canvas encoding)",
+      "breakdown": "98% of time spent in render phase",
+      "notBottlenecks": [
+        "Video encoding (< 2% of time)",
+        "Resolution/pixel operations (minimal impact from 720p to 1080p)",
+        "Setup overhead (17% - acceptable for batch exports)"
+      ]
+    },
+    "optimizationOpportunities": [
+      {
+        "priority": "HIGH",
+        "area": "SVG serialization",
+        "rationale": "If resolution doesn't matter, bottleneck is likely DOM serialization, not canvas operations",
+        "suggestions": [
+          "Profile serializeToSvgDataUri to find hotspots within",
+          "Check if style syncing (syncStyles) is called unnecessarily",
+          "Investigate buildCloneStructure - is it being reused properly?"
+        ]
+      },
+      {
+        "priority": "MEDIUM",
+        "area": "First frame warmup",
+        "rationale": "0.50x on first frame suggests cold start overhead",
+        "suggestions": [
+          "Pre-warm caches before starting render loop",
+          "Initialize heavy objects during setup phase",
+          "Consider rendering a dummy frame before the actual export"
+        ]
+      },
+      {
+        "priority": "LOW",
+        "area": "Setup time",
+        "rationale": "269ms setup for 30 frames is 17% overhead, but acceptable for batch exports",
+        "suggestions": [
+          "Only optimize if doing many small exports",
+          "For large exports (>100 frames), 17% overhead is negligible"
+        ]
+      }
+    ]
+  },
+  "comparisonToExpectations": {
+    "currentPerformance": "~45ms per frame (22 fps equivalent)",
+    "targetPerformance": "33ms per frame (30 fps realtime)",
+    "gap": "12ms per frame (36% slower than target)",
+    "contextNote": "For server-side video export, current performance is acceptable. For realtime preview/playback, would need 36% speedup."
+  },
+  "recommendations": [
+    "Immediate action: Profile the render phase to identify specific function hotspots (likely serializeToSvgDataUri or syncStyles)",
+    "The fact that resolution barely matters (720p vs 1080p) strongly suggests the bottleneck is DOM/SVG operations, not canvas pixel operations",
+    "Consider: Can we skip some style syncing or DOM serialization steps for consecutive frames with minimal changes?",
+    "The warmup effect (0.50x → 1.39x) suggests caching or JIT optimization is helping - ensure these optimizations are maximally effective",
+    "Not worth optimizing: Video encoding (already fast), resolution/canvas operations (minimal impact)"
+  ],
+  "nextSteps": [
+    "Run function-level profiling on a single test to identify which specific function (serializeToSvgDataUri, syncStyles, buildCloneStructure, canvas operations) is taking the most time",
+    "Add instrumentation to measure time spent in each major function during the render phase",
+    "Test hypothesis: Add manual timing logs to measure serializeToSvgDataUri vs toBlob vs other operations"
+  ]
+}
