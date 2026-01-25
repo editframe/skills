@@ -71,6 +71,48 @@ export function calculateSelfTime(profile: CPUProfile): Map<number, number> {
 }
 
 /**
+ * Calculate how many times each function was called (appears in call stack)
+ */
+export function calculateCallCounts(profile: CPUProfile): Map<number, number> {
+  const callCounts = new Map<number, number>();
+
+  // Build parent map for traversing call stacks
+  const parentMap = new Map<number, number>();
+  for (const node of profile.nodes) {
+    if (node.children) {
+      for (const childId of node.children) {
+        parentMap.set(childId, node.id);
+      }
+    }
+  }
+
+  // For each sample, traverse up the call stack and count each node
+  const processedSamples = new Set<string>();
+  
+  for (let i = 0; i < profile.samples.length; i++) {
+    const sampleId = profile.samples[i];
+    if (sampleId === undefined) continue;
+
+    // Create unique key for this sample to avoid double-counting
+    const sampleKey = `${i}-${sampleId}`;
+    if (processedSamples.has(sampleKey)) continue;
+    processedSamples.add(sampleKey);
+
+    // Traverse up the call stack
+    const visited = new Set<number>();
+    let currentId: number | undefined = sampleId;
+
+    while (currentId !== undefined && !visited.has(currentId)) {
+      visited.add(currentId);
+      callCounts.set(currentId, (callCounts.get(currentId) || 0) + 1);
+      currentId = parentMap.get(currentId);
+    }
+  }
+
+  return callCounts;
+}
+
+/**
  * Extract hotspots from profile, sorted by self time
  */
 export function getHotspots(profile: CPUProfile, options: AnalyzeOptions = {}): HotspotInfo[] {
@@ -82,6 +124,7 @@ export function getHotspots(profile: CPUProfile, options: AnalyzeOptions = {}): 
 
   const selfTime = calculateSelfTime(profile);
   const totalTime = calculateTotalTime(profile);
+  const callCounts = calculateCallCounts(profile);
   const hotspots: HotspotInfo[] = [];
   const duration = profile.endTime - profile.startTime;
 
@@ -110,6 +153,7 @@ export function getHotspots(profile: CPUProfile, options: AnalyzeOptions = {}): 
         totalTime: total / 1000,
         selfTimePct: duration > 0 ? (self / duration) * 100 : 0,
         hitCount: node.hitCount || 0,
+        callCount: callCounts.get(node.id) || 0,
       });
     }
   }

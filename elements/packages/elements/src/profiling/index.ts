@@ -26,6 +26,7 @@ export {
   getNodeById,
   calculateTotalTime,
   calculateSelfTime,
+  calculateCallCounts,
   getHotspots,
   buildCallTree,
   getCallStack,

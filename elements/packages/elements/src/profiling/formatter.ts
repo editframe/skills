@@ -13,7 +13,7 @@ import type {
  * Format hotspots as a table for console output
  */
 export function formatHotspotsTable(hotspots: HotspotInfo[], options: FormatOptions = {}): string {
-  const { topN = 20 } = options;
+  const { topN = 20, verbose = false } = options;
   const lines: string[] = [];
   const displayHotspots = hotspots.slice(0, topN);
 
@@ -23,7 +23,8 @@ export function formatHotspotsTable(hotspots: HotspotInfo[], options: FormatOpti
     const time = h.selfTime.toFixed(1).padStart(7);
     const pct = h.selfTimePct.toFixed(1).padStart(5);
     const location = `${h.file}:${h.line}`;
-    lines.push(`  ${rank}.  ${time}ms (${pct}%) - ${h.functionName} @ ${location}`);
+    const callInfo = verbose && h.callCount ? ` [${h.callCount} calls]` : "";
+    lines.push(`  ${rank}.  ${time}ms (${pct}%) - ${h.functionName} @ ${location}${callInfo}`);
   }
 
   return lines.join("\n");
@@ -59,17 +60,26 @@ export function generateRecommendations(hotspots: HotspotInfo[]): string[] {
   for (let i = 0; i < Math.min(3, hotspots.length); i++) {
     const h = hotspots[i];
     if (h.selfTimePct > 15) {
+      const callInfo = h.callCount && h.callCount > 1 ? ` (called ${h.callCount} times)` : "";
       recommendations.push(
-        `• ${h.functionName} @ ${h.file}:${h.line} takes ${h.selfTimePct.toFixed(1)}% - consider optimization`
+        `• ${h.functionName} @ ${h.file}:${h.line} takes ${h.selfTimePct.toFixed(1)}%${callInfo} - consider optimization`
       );
     }
   }
 
-  // Look for potential caching opportunities
-  const highHitCount = hotspots.filter(h => h.hitCount > 100 && h.selfTimePct > 5);
-  for (const h of highHitCount.slice(0, 2)) {
+  // Look for potential caching opportunities based on call count
+  const highCallCount = hotspots.filter(h => h.callCount && h.callCount > 50 && h.selfTimePct > 5);
+  for (const h of highCallCount.slice(0, 2)) {
     recommendations.push(
-      `• ${h.functionName} called ${h.hitCount} times - consider caching or memoization`
+      `• ${h.functionName} called ${h.callCount} times - consider caching or memoization`
+    );
+  }
+
+  // Look for functions with high hit count (tight loops)
+  const tightLoops = hotspots.filter(h => h.hitCount > 100 && h.selfTimePct > 10);
+  for (const h of tightLoops.slice(0, 2)) {
+    recommendations.push(
+      `• ${h.functionName} appears in ${h.hitCount} samples - may be in hot loop`
     );
   }
 
@@ -91,7 +101,7 @@ export function generateRecommendations(hotspots: HotspotInfo[]): string[] {
     }
   }
 
-  return recommendations.slice(0, 5); // Limit to top 5 recommendations
+  return recommendations.slice(0, 6); // Top 6 recommendations
 }
 
 /**
@@ -163,6 +173,7 @@ export function formatProfileAnalysisJSON(
       totalTimeMs: h.totalTime,
       selfTimePct: h.selfTimePct,
       hitCount: h.hitCount,
+      callCount: h.callCount || 0,
     })),
     byFile: Array.from(analysis.byFile.entries())
       .sort((a, b) => b[1] - a[1])
