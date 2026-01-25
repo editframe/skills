@@ -32,8 +32,11 @@ import {
   collectDocumentStyles,
   overrideRootCloneStyles,
 } from "./renderTimegroupPreview.js";
-import { renderToImageDirect } from "./rendering/renderToImage.js";
+import { renderToImageDirect, loadImageFromDataUri } from "./rendering/renderToImage.js";
 import { createPreviewContainer } from "./previewTypes.js";
+import { getSerializationWorkerPool, resetSerializationWorkerPool } from "./rendering/SerializationWorkerPool.js";
+import { extractCanvasData, serializeToHtmlString, cleanupCanvasMarkers } from "./rendering/frameSerializationHelpers.js";
+import { inlineImages } from "./rendering/inlineImages.js";
 
 // ============================================================================
 // Types
@@ -413,6 +416,17 @@ export async function renderTimegroupToVideo(
   let totalSyncMs = 0;
   let totalRenderMs = 0;
   let totalEncodeMs = 0;
+  let totalWorkerMs = 0;
+  
+  // Initialize worker pool for parallel frame serialization
+  const serializationPool = getSerializationWorkerPool();
+  const useWorkerSerialization = serializationPool !== null && serializationPool.isAvailable();
+  
+  if (useWorkerSerialization) {
+    logger.debug(`[renderTimegroupToVideo] Using worker pool with ${serializationPool.workerCount} workers for parallel serialization`);
+  } else {
+    logger.debug("[renderTimegroupToVideo] Worker pool not available, using main thread serialization");
+  }
   
   try {
     // ========================================================================
@@ -421,7 +435,27 @@ export async function renderTimegroupToVideo(
     await renderClone.seekForRender(timestamps[0]!);
     syncStyles(syncState, timestamps[0]!);
     overrideRootCloneStyles(syncState, true);
-    let preparedImage = await renderToImageDirect(previewContainer, width, height);
+    
+    // Inline external images once (they're the same for all frames)
+    await inlineImages(previewContainer);
+    
+    let preparedImage: HTMLImageElement;
+    
+    if (useWorkerSerialization && serializationPool) {
+      // Worker-based serialization path
+      const canvasData = extractCanvasData(previewContainer);
+      const htmlString = serializeToHtmlString(previewContainer, width, height);
+      cleanupCanvasMarkers(previewContainer);
+      
+      const workerStart = performance.now();
+      const svgDataUrl = await serializationPool.serializeFrame(htmlString, canvasData, width, height);
+      totalWorkerMs += performance.now() - workerStart;
+      
+      preparedImage = await loadImageFromDataUri(svgDataUrl);
+    } else {
+      // Fallback to main thread serialization
+      preparedImage = await renderToImageDirect(previewContainer, width, height);
+    }
     
     let pendingEncodePromise: Promise<void> | null = null;
     
@@ -481,7 +515,27 @@ export async function renderTimegroupToVideo(
         
         // Start rendering next frame (don't await yet)
         const renderStart = performance.now();
-        nextRenderPromise = renderToImageDirect(previewContainer, width, height);
+        
+        if (useWorkerSerialization && serializationPool) {
+          // Worker-based serialization: extract data and send to worker pool
+          const canvasData = extractCanvasData(previewContainer);
+          const htmlString = serializeToHtmlString(previewContainer, width, height);
+          cleanupCanvasMarkers(previewContainer);
+          
+          // Start worker serialization (runs in parallel with encoding)
+          const workerPromise = serializationPool.serializeFrame(htmlString, canvasData, width, height);
+          
+          // Chain with image loading
+          nextRenderPromise = workerPromise.then(async (svgDataUrl) => {
+            const workerEnd = performance.now();
+            totalWorkerMs += workerEnd - renderStart;
+            return loadImageFromDataUri(svgDataUrl);
+          });
+        } else {
+          // Fallback to main thread serialization
+          nextRenderPromise = renderToImageDirect(previewContainer, width, height);
+        }
+        
         totalRenderMs += performance.now() - renderStart; // Just timing overhead
       }
       
@@ -494,7 +548,9 @@ export async function renderTimegroupToVideo(
         nextRenderPromise || Promise.resolve(null),
       ]);
       
-      preparedImage = nextImage;
+      if (nextImage) {
+        preparedImage = nextImage;
+      }
       pendingEncodePromise = currentEncodePromise;
       
       // Progress
@@ -547,12 +603,21 @@ export async function renderTimegroupToVideo(
     }
     
     const totalTime = performance.now() - renderStartTime;
-    logger.debug(
-      `[renderTimegroupToVideo] ${config.totalFrames} frames: ` +
-      `seek=${totalSeekMs.toFixed(0)}ms, sync=${totalSyncMs.toFixed(0)}ms, ` +
-      `render=${totalRenderMs.toFixed(0)}ms, encode=${totalEncodeMs.toFixed(0)}ms, ` +
-      `total=${totalTime.toFixed(0)}ms`
-    );
+    const logParts = [
+      `[renderTimegroupToVideo] ${config.totalFrames} frames:`,
+      `seek=${totalSeekMs.toFixed(0)}ms`,
+      `sync=${totalSyncMs.toFixed(0)}ms`,
+      `render=${totalRenderMs.toFixed(0)}ms`
+    ];
+    
+    if (useWorkerSerialization) {
+      logParts.push(`worker=${totalWorkerMs.toFixed(0)}ms`);
+    }
+    
+    logParts.push(`encode=${totalEncodeMs.toFixed(0)}ms`);
+    logParts.push(`total=${totalTime.toFixed(0)}ms`);
+    
+    logger.debug(logParts.join(', '));
     
     if (config.benchmarkMode) {
       return undefined;
@@ -581,7 +646,19 @@ export async function renderTimegroupToVideo(
     
   } finally {
     cleanupRenderClone();
+    
+    // Note: We don't terminate the worker pool here because it's a singleton
+    // that can be reused across multiple render calls for better performance.
+    // It will be cleaned up when the page unloads or when explicitly reset.
   }
+}
+
+/**
+ * Clean up resources (for testing or when changing settings).
+ * Call this to reset the worker pool and force recreation on next render.
+ */
+export function cleanupRenderResources(): void {
+  resetSerializationWorkerPool();
 }
 
 export { QUALITY_HIGH };
