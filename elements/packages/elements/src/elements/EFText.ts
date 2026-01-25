@@ -76,6 +76,7 @@ export class EFText extends EFTemporal(LitElement) {
   private _textContent: string | null = null; // null means not initialized, "" means explicitly empty
   private _templateElement: HTMLTemplateElement | null = null;
   private _segmentsReadyResolvers: Array<() => void> = [];
+  #segmentsInitialized = false;
 
   render() {
     return html`<slot></slot>`;
@@ -151,7 +152,13 @@ export class EFText extends EFTemporal(LitElement) {
       return [];
     }
 
-    // Wait a frame for splitText to run
+    // If segments already initialized and exist, skip RAF waits
+    if (this.#segmentsInitialized && this.segments.length > 0) {
+      await Promise.all(this.segments.map((seg) => seg.updateComplete));
+      return this.segments;
+    }
+
+    // First time: wait a frame for splitText to run
     await new Promise((resolve) => requestAnimationFrame(resolve));
 
     // If segments already exist and are connected, wait for updates
@@ -163,6 +170,8 @@ export class EFText extends EFTemporal(LitElement) {
       await new Promise((resolve) => requestAnimationFrame(resolve));
       // Wait one more frame to ensure properties are fully processed
       await new Promise((resolve) => requestAnimationFrame(resolve));
+      // Mark as initialized after first successful wait
+      this.#segmentsInitialized = true;
       return this.segments;
     }
 
@@ -179,6 +188,8 @@ export class EFText extends EFTemporal(LitElement) {
             // Wait frames to ensure connectedCallback has run and properties are set
             requestAnimationFrame(() => {
               requestAnimationFrame(() => {
+                // Mark as initialized after first successful wait
+                this.#segmentsInitialized = true;
                 resolve(this.segments);
               });
             });
@@ -315,8 +326,13 @@ export class EFText extends EFTemporal(LitElement) {
         resolve();
       });
       this._segmentsReadyResolvers = [];
+      // Reset initialization flag when clearing segments
+      this.#segmentsInitialized = false;
       return;
     }
+
+    // Reset initialization flag when we're about to create new segments
+    this.#segmentsInitialized = false;
 
     const segments = this.splitTextIntoSegments(text);
     const durationMs = this.durationMs || 1000; // Default 1 second if no duration
