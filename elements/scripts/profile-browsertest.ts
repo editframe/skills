@@ -122,20 +122,22 @@ async function main() {
   let outputPath = "./browsertest-profile.cpuprofile";
   let focusFile = "";
   let jsonOutput = false;
-  let profileDurationMs = 3000; // Default to 3 seconds, automatically stops before page closes
   
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "-t" && args[i + 1]) testPattern = args[++i];
     else if (args[i] === "--output" && args[i + 1]) outputPath = args[++i];
     else if (args[i] === "--focus" && args[i + 1]) focusFile = args[++i];
     else if (args[i] === "--json") jsonOutput = true;
-    else if (args[i] === "--duration" && args[i + 1]) profileDurationMs = parseInt(args[++i], 10);
     else if (!args[i].startsWith("-") && !testFile) testFile = args[i];
   }
 
   if (!testFile) {
     console.log(`
 🔬 Browser Test CPU Profiler
+
+Automatically profiles the entire test run using event-based signaling.
+No duration configuration needed - profiling starts when tests start
+and stops when tests complete.
 
 Usage:
   npx tsx scripts/profile-browsertest.ts <test-file> [options]
@@ -144,12 +146,11 @@ Options:
   -t <pattern>       Test name pattern to run
   --output <path>    Output path for .cpuprofile file
   --focus <file>     Focus analysis on specific source file
-  --duration <ms>    Profile for specified milliseconds (default: 3000ms)
-                     Profiling stops automatically before tests complete
+  --json             Output analysis as JSON
 
 Examples:
   npx tsx scripts/profile-browsertest.ts packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts -t "batch"
-  npx tsx scripts/profile-browsertest.ts packages/elements/src/gui/EFWorkbench.browsertest.ts --duration 10000
+  npx tsx scripts/profile-browsertest.ts packages/elements/src/gui/EFWorkbench.browsertest.ts
 `);
     process.exit(1);
   }
@@ -240,7 +241,7 @@ Examples:
     process.exit(1);
   }
   
-  // Attach to the target using non-flattened mode
+  // Attach to the target using non-flattened mode for CDP profiling
   const { sessionId } = await browserCdp.send("Target.attachToTarget", {
     targetId: vitestTarget.targetId,
     flatten: false  // Don't use flat mode
@@ -276,7 +277,7 @@ Examples:
     }
   });
   
-  async function sendToTarget(method: string, params: any = {}): Promise<any> {
+  async function sendToTarget(method: string, params: any = {}, timeout: number = 5000): Promise<any> {
     const id = messageId++;
     const promise = new Promise((resolve, reject) => {
       pendingMessages.set(id, { resolve, reject });
@@ -285,7 +286,7 @@ Examples:
           pendingMessages.delete(id);
           reject(new Error(`Timeout waiting for ${method}`));
         }
-      }, 5000);
+      }, timeout);
     });
     
     await browserCdp.send("Target.sendMessageToTarget", {
@@ -296,9 +297,17 @@ Examples:
     return promise;
   }
   
-  // Enable Runtime for profiling
-  console.log(`🔧 Enabling profiler...`);
+  // Enable Runtime for profiling and script evaluation
+  console.log(`🔧 Enabling profiler and runtime...`);
   await sendToTarget("Runtime.enable");
+  
+  // Inject the stop flag into the page using CDP
+  console.log(`🔧 Injecting profiler stop flag into page...`);
+  await sendToTarget("Runtime.evaluate", {
+    expression: "window.__PROFILER_STOP_REQUESTED__ = false;",
+    returnByValue: false
+  });
+  console.log(`✓ Stop flag injected\n`);
   
   // Start profiling
   await sendToTarget("Profiler.enable");
@@ -307,21 +316,97 @@ Examples:
   
   const startTime = Date.now();
   
-  // Profile for specified duration (stops BEFORE tests complete to keep CDP session alive)
-  console.log(`🔄 Profiling for ${(profileDurationMs / 1000).toFixed(1)}s...\n`);
+  console.log(`🔄 Profiling tests with event-based signaling...\n`);
   let finalUrl = vitestTarget.url;
   let profile: CPUProfile | null = null;
   
-  // Wait for duration timeout
-  await new Promise<void>((resolve) => {
-    setTimeout(() => {
-      console.log(`⏰ Profile duration reached, stopping profiler...`);
-      resolve();
-    }, profileDurationMs);
+  // Track if browsertest process exited
+  let browsertestExited = false;
+  browsertest.on("close", () => {
+    browsertestExited = true;
   });
+  
+  // Poll the stop flag in a loop
+  const pollInterval = 50; // ms
+  const maxWaitTime = 120000; // 120 seconds max
+  const pollStartTime = Date.now();
+  let stopReason = "";
+  
+  console.log(`⏳ Polling for stop signal (checking every ${pollInterval}ms)...`);
+  
+  let pollCount = 0;
+  while (true) {
+    await new Promise(resolve => setTimeout(resolve, pollInterval));
+    pollCount++;
+    
+    // Check if we've exceeded max wait time
+    if (Date.now() - pollStartTime > maxWaitTime) {
+      stopReason = "timeout (120s)";
+      console.log(`⏰ Max profiling time reached (120s), stopping...`);
+      break;
+    }
+    
+    // Check if browsertest process exited
+    if (browsertestExited) {
+      stopReason = "browsertest process exited";
+      console.log(`✓ Browsertest process exited`);
+      break;
+    }
+    
+    // Check the stop flag in all frames (main window + iframes) using CDP
+    try {
+      // Check all frames for the stop flag
+      // Tests may run in an iframe, so we need to check both main window and iframes
+      const evalResult = await sendToTarget("Runtime.evaluate", {
+        expression: `
+          (function() {
+            // Check main window
+            if (window.__PROFILER_STOP_REQUESTED__ === true) return true;
+            
+            // Check all iframes
+            const frames = document.querySelectorAll('iframe');
+            for (const frame of frames) {
+              try {
+                if (frame.contentWindow && frame.contentWindow.__PROFILER_STOP_REQUESTED__ === true) {
+                  return true;
+                }
+              } catch (e) {
+                // Cross-origin iframe, skip
+              }
+            }
+            
+            return false;
+          })()
+        `,
+        returnByValue: true
+      }, 200); // Use 200ms timeout for fast failure detection
+      
+      const flagValue = evalResult?.result?.value;
+      
+      // Log every 20 polls to show we're still checking
+      if (pollCount % 20 === 0) {
+        console.log(`   Poll #${pollCount}: flag=${flagValue}`);
+      }
+      
+      if (flagValue === true) {
+        stopReason = "stop signal received from tests";
+        console.log(`✓ Stop signal received from tests (poll #${pollCount})`);
+        break;
+      }
+    } catch (e: any) {
+      // Page closed or session lost
+      stopReason = "CDP session lost or page closed";
+      console.log(`✓ CDP session lost or page closed (poll #${pollCount}, error: ${e.message})`);
+      break;
+    }
+  }
+  
+  const profilingDuration = Date.now() - pollStartTime;
+  console.log(`\n⏱️  Profiled for ${(profilingDuration / 1000).toFixed(2)}s (${stopReason})`);
   
   // Stop profiling while CDP session is still alive
   try {
+    console.log(`🛑 Stopping profiler...`);
     const stopResult = await sendToTarget("Profiler.stop");
     profile = stopResult.profile as CPUProfile;
     await sendToTarget("Profiler.disable");
@@ -330,18 +415,16 @@ Examples:
     console.log(`❌ Could not stop profiler: ${error.message}\n`);
   }
   
-  // Wait for browsertest to complete
-  console.log(`⏳ Waiting for browsertest to complete...`);
-  await new Promise<void>((resolve) => {
-    if (browsertest.exitCode !== null) {
-      resolve();
-    } else {
+  // Wait for browsertest to complete if it hasn't already
+  if (!browsertestExited) {
+    console.log(`⏳ Waiting for browsertest to complete...`);
+    await new Promise<void>((resolve) => {
       browsertest.on("close", () => {
         console.log(`✅ Browsertest completed`);
         resolve();
       });
-    }
-  });
+    });
+  }
   
   const wallClockMs = Date.now() - startTime;
   
