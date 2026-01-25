@@ -91,7 +91,80 @@ export async function serializeToSvgDataUri(
   if (!_xmlSerializer) {
     _xmlSerializer = new XMLSerializer();
   }
+  
+  // PERFORMANCE OPTIMIZATION: Remove hidden elements before serialization
+  // Hidden elements (display:none) are still serialized by XMLSerializer, adding overhead.
+  // In sequence mode, inactive scenes remain in DOM but are hidden - we need to physically
+  // remove them before serialization, then restore after.
+  const elementsBeforeRemoval = _wrapperElement!.querySelectorAll('*').length;
+  
+  const hiddenElements: Array<{ 
+    element: HTMLElement; 
+    parent: Node; 
+    nextSibling: Node | null;
+  }> = [];
+
+  // Find all hidden ef-timegroup elements (scenes in sequence mode)
+  const timegroups = _wrapperElement!.querySelectorAll('ef-timegroup');
+  for (const child of timegroups) {
+    if (child instanceof HTMLElement) {
+      const computedStyle = getComputedStyle(child);
+      if (computedStyle.display === 'none') {
+        // Only remove if it has a parent (safety check)
+        if (child.parentNode) {
+          hiddenElements.push({
+            element: child,
+            parent: child.parentNode,
+            nextSibling: child.nextSibling
+          });
+          child.parentNode.removeChild(child);
+        }
+      }
+    }
+  }
+
+  // Also remove any other hidden elements with display:none (not just timegroups)
+  const allHidden = _wrapperElement!.querySelectorAll('[style*="display: none"], [style*="display:none"]');
+  for (const el of allHidden) {
+    if (el instanceof HTMLElement && el.parentNode && getComputedStyle(el).display === 'none') {
+      // Skip if already removed (was a child of a removed timegroup)
+      if (el.parentNode) {
+        hiddenElements.push({
+          element: el,
+          parent: el.parentNode,
+          nextSibling: el.nextSibling
+        });
+        el.parentNode.removeChild(el);
+      }
+    }
+  }
+
+  const elementsAfterRemoval = _wrapperElement!.querySelectorAll('*').length;
+  const hiddenCount = hiddenElements.length;
+
+  // Now serialize (only visible elements!)
   const serialized = _xmlSerializer.serializeToString(_wrapperElement);
+
+  // Restore all hidden elements in reverse order (to maintain correct tree structure)
+  for (let i = hiddenElements.length - 1; i >= 0; i--) {
+    const { element, parent, nextSibling } = hiddenElements[i]!;
+    // Verify parent still exists (DOM may have changed)
+    if (parent && parent.ownerDocument) {
+      if (nextSibling && nextSibling.parentNode === parent) {
+        parent.insertBefore(element, nextSibling);
+      } else {
+        parent.appendChild(element);
+      }
+    }
+  }
+
+  const elementsAfterRestore = _wrapperElement!.querySelectorAll('*').length;
+
+  // Log (only occasionally to avoid spam)
+  if (logEarlyRenders && Math.random() < 0.1) { // 10% of frames
+    logger.debug(`[serializeToSvgDataUri] elements: before=${elementsBeforeRemoval}, after removal=${elementsAfterRemoval}, hidden=${hiddenCount}, after restore=${elementsAfterRestore}`);
+  }
+
   defaultProfiler.addTime("serialize", performance.now() - serializeStart);
   
   // Prepare restore function (removes container from wrapper, restores canvases)
