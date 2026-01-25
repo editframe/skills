@@ -121,5 +121,10 @@ export const makeAudioSegmentFetchTask = (
     },
   });
 
+  // CRITICAL: Attach .catch() handler IMMEDIATELY to prevent unhandled rejections.
+  // This must be done synchronously after task creation, before any updates can trigger run().
+  // When hostUpdate() triggers _performTask() -> run(), the rejection needs to already have a handler.
+  task.taskComplete.catch(() => {});
+
   return task;
 };
