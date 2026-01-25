@@ -874,24 +874,31 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
   #getAllLitElementDescendants(): LitElement[] {
     const result: LitElement[] = [];
     const currentTimeMs = this.currentTimeMs;
+    let hiddenSubtreesSkipped = 0;
+    let temporallyFilteredOut = 0;
+    let totalLitElements = 0;
     
     const walk = (el: Element) => {
       // Skip hidden subtrees early
       if (el instanceof HTMLElement) {
         const style = getComputedStyle(el);
         if (style.display === "none" || style.visibility === "hidden") {
+          hiddenSubtreesSkipped++;
           return; // Don't walk children
         }
       }
       
       for (const child of el.children) {
         if (child instanceof LitElement) {
+          totalLitElements++;
           // Check temporal visibility for temporal elements
           if ("startTimeMs" in child && "endTimeMs" in child) {
             const startMs = (child as any).startTimeMs ?? -Infinity;
             const endMs = (child as any).endTimeMs ?? Infinity;
             if (currentTimeMs >= startMs && currentTimeMs <= endMs) {
               result.push(child);
+            } else {
+              temporallyFilteredOut++;
             }
           } else {
             // Non-temporal elements always included
@@ -902,6 +909,14 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
       }
     };
     walk(this);
+    
+    console.log(
+      `[getAllLitElementDescendants] Total=${totalLitElements}, ` +
+      `included=${result.length}, ` +
+      `filtered=${temporallyFilteredOut}, ` +
+      `hiddenSubtrees=${hiddenSubtreesSkipped}`
+    );
+    
     return result;
   }
 

@@ -625,12 +625,28 @@ function syncNodeStyles(node: CloneNode): void {
   }
 }
 
+// Performance instrumentation counters
+interface SyncStats {
+  nodesVisited: number;
+  nodesCulledByParent: number;
+  nodesCulledByTemporal: number;
+  nodesProcessed: number;
+}
+
+let syncStats: SyncStats = {
+  nodesVisited: 0,
+  nodesCulledByParent: 0,
+  nodesCulledByTemporal: 0,
+  nodesProcessed: 0,
+};
+
 /**
  * Recursively sync a node and its children.
  * Returns early if the node is temporally culled, skipping ALL descendants.
  */
 function syncNodeRecursive(node: CloneNode, timeMs: number): void {
   const { source, clone, children, isCanvasClone } = node;
+  syncStats.nodesVisited++;
   
   // Temporal culling - check if this node is visible at current time
   // Canvas clones skip temporal check (ef-video may have [0,0] range before video loads)
@@ -641,6 +657,7 @@ function syncNodeRecursive(node: CloneNode, timeMs: number): void {
       // If parent has display:none, this element is already hidden - skip bounds check
       if (parent.style.display === "none") {
         clone.style.display = "none";
+        syncStats.nodesCulledByParent++;
         return;
       }
     }
@@ -649,12 +666,14 @@ function syncNodeRecursive(node: CloneNode, timeMs: number): void {
     if (timeMs < startMs || timeMs > endMs) {
       // Hide this element and BAIL OUT - skip all descendants automatically!
       clone.style.display = "none";
+      syncStats.nodesCulledByTemporal++;
       return;
     }
   }
   
   // Sync this node's styles
   syncNodeStyles(node);
+  syncStats.nodesProcessed++;
   
   // Recursively sync children
   for (const child of children) {
@@ -667,9 +686,25 @@ function syncNodeRecursive(node: CloneNode, timeMs: number): void {
  * Uses recursive tree traversal with early bailout for temporal culling.
  */
 export function syncStyles(state: SyncState, timeMs: number): void {
+  // Reset stats
+  syncStats = {
+    nodesVisited: 0,
+    nodesCulledByParent: 0,
+    nodesCulledByTemporal: 0,
+    nodesProcessed: 0,
+  };
+  
   if (state.tree.root) {
     syncNodeRecursive(state.tree.root, timeMs);
   }
+  
+  // Log performance stats
+  const totalCulled = syncStats.nodesCulledByParent + syncStats.nodesCulledByTemporal;
+  console.log(
+    `[syncStyles] Nodes: visited=${syncStats.nodesVisited}, ` +
+    `culled=${totalCulled} (parent=${syncStats.nodesCulledByParent}, temporal=${syncStats.nodesCulledByTemporal}), ` +
+    `processed=${syncStats.nodesProcessed}`
+  );
 }
 
 /**
