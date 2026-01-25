@@ -82,13 +82,9 @@ export async function serializeToSvgDataUri(
   // Phase 3: Serialize to XHTML
   const serializeStart = performance.now();
   
-  // Reuse wrapper element (just update dimensions)
-  if (!_wrapperElement) {
-    _wrapperElement = document.createElement("div");
-    _wrapperElement.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
-  }
-  
-  // Update style attribute with current dimensions
+  // Create fresh wrapper element each time to avoid stale DOM references
+  _wrapperElement = document.createElement("div");
+  _wrapperElement.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
   _wrapperElement.setAttribute("style", `width:${width}px;height:${height}px;${WRAPPER_STYLE_BASE}`);
   _wrapperElement.appendChild(container);
   
