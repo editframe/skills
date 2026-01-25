@@ -161,34 +161,6 @@ export function traverseCloneTree(state: SyncState, callback: (node: CloneNode) 
 }
 
 /**
- * Helper to check if a canvas has any content (non-transparent pixels).
- * Samples a small region for performance. Returns true if canvas has content.
- */
-function hasCanvasContent(canvas: HTMLCanvasElement): boolean {
-  if (canvas.width === 0 || canvas.height === 0) return false;
-  const ctx = canvas.getContext("2d", { willReadFrequently: true });
-  if (!ctx) return false;
-  
-  try {
-    // Sample center 10x10 region (or smaller if canvas is tiny)
-    const sampleSize = Math.min(10, canvas.width, canvas.height);
-    const x = Math.floor((canvas.width - sampleSize) / 2);
-    const y = Math.floor((canvas.height - sampleSize) / 2);
-    const imageData = ctx.getImageData(x, y, sampleSize, sampleSize);
-    const data = imageData.data;
-    
-    // Check if any pixel has non-zero alpha
-    for (let i = 3; i < data.length; i += 4) {
-      if (data[i] !== 0) return true;
-    }
-    return false;
-  } catch {
-    // If getImageData fails (e.g., tainted canvas), assume it has content
-    return true;
-  }
-}
-
-/**
  * Helper to copy styles from host and content elements to a canvas clone.
  * Reduces code duplication for shadow canvas and shadow img cases.
  */
@@ -251,12 +223,9 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
       const canvas = document.createElement("canvas");
       canvas.width = srcEl.width;
       canvas.height = srcEl.height;
-      // OPTIMIZATION: Only copy pixels if canvas has content
-      if (hasCanvasContent(srcEl)) {
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          try { ctx.drawImage(srcEl, 0, 0); } catch {}
-        }
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        try { ctx.drawImage(srcEl, 0, 0); } catch {}
       }
       // Raw canvas elements don't need style syncing, just return clone
       // return null;
@@ -276,12 +245,9 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
           clone.dataset.preserveAlpha = "true";
         }
         
-        // OPTIMIZATION: Only copy pixels if canvas has content
-        if (hasCanvasContent(shadowCanvas)) {
-          const ctx = clone.getContext("2d");
-          if (ctx) {
-            try { ctx.drawImage(shadowCanvas, 0, 0); } catch {}
-          }
+        const ctx = clone.getContext("2d");
+        if (ctx) {
+          try { ctx.drawImage(shadowCanvas, 0, 0); } catch {}
         }
         
         // Copy initial CSS styles - OPTIMIZATION: Cache getComputedStyle results
