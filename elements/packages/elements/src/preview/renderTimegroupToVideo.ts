@@ -24,9 +24,16 @@ import type { EFTimegroup } from "../elements/EFTimegroup.js";
 import type { EFVideo } from "../elements/EFVideo.js";
 import {
   resetRenderState,
-  captureFromClone,
   type ContentReadyMode,
 } from "./renderTimegroupToCanvas.js";
+import {
+  buildCloneStructure,
+  syncStyles,
+  collectDocumentStyles,
+  overrideRootCloneStyles,
+} from "./renderTimegroupPreview.js";
+import { renderToImage } from "./rendering/renderToImage.js";
+import { createPreviewContainer } from "./previewTypes.js";
 
 // ============================================================================
 // Types
@@ -278,7 +285,7 @@ export async function renderTimegroupToVideo(
   // =========================================================================
   // Create render clone - EXACT same as captureBatch in EFTimegroup
   // =========================================================================
-  const { clone: renderClone, container: renderContainer, cleanup: cleanupRenderClone } =
+  const { clone: renderClone, cleanup: cleanupRenderClone } =
     await timegroup.createRenderClone();
   
   // Pre-fetch main video segments for all timestamps
@@ -372,7 +379,29 @@ export async function renderTimegroupToVideo(
   }
   
   // =========================================================================
-  // Frame loop - using EXACT same code path as captureBatch
+  // Build clone structure ONCE - reuse like live preview does
+  // =========================================================================
+  const initialTimeMs = config.startMs;
+  const { container: cloneContainer, syncState } = buildCloneStructure(renderClone, initialTimeMs);
+  
+  // Create preview container with proper styling
+  const width = timegroup.offsetWidth || 1920;
+  const height = timegroup.offsetHeight || 1080;
+  const previewContainer = createPreviewContainer({
+    width,
+    height,
+    background: getComputedStyle(timegroup).background || "#000",
+  });
+  
+  // Inject document styles
+  const styleEl = document.createElement("style");
+  styleEl.textContent = collectDocumentStyles();
+  previewContainer.appendChild(styleEl);
+  previewContainer.appendChild(cloneContainer);
+  overrideRootCloneStyles(syncState, true);
+  
+  // =========================================================================
+  // Frame loop - sync styles per frame (NO rebuild!)
   // =========================================================================
   const renderStartTime = performance.now();
   let lastFramePreviewUrl: string | undefined;
@@ -380,7 +409,8 @@ export async function renderTimegroupToVideo(
   const audioChunkDurationMs = 2000;
   
   let totalSeekMs = 0;
-  let totalCaptureMs = 0;
+  let totalSyncMs = 0;
+  let totalRenderMs = 0;
   let totalEncodeMs = 0;
   
   try {
@@ -403,20 +433,24 @@ export async function renderTimegroupToVideo(
       }
       
       // =====================================================================
-      // EXACT same pattern as captureBatch: seekForRender + captureFromClone
+      // OPTIMIZED: Build once, sync per frame (like live preview does)
       // =====================================================================
       const seekStart = performance.now();
       await renderClone.seekForRender(timeMs);
       totalSeekMs += performance.now() - seekStart;
       
-      const captureStart = performance.now();
-      const canvas = await captureFromClone(renderClone, renderContainer, {
-        scale: config.scale,
-        contentReadyMode: config.contentReadyMode,
-        blockingTimeoutMs: config.blockingTimeoutMs,
-        originalTimegroup: timegroup,
+      // Just sync styles - NO rebuild!
+      const syncStart = performance.now();
+      syncStyles(syncState, timeMs);
+      overrideRootCloneStyles(syncState, true);
+      totalSyncMs += performance.now() - syncStart;
+      
+      // Render the updated clone
+      const renderStart = performance.now();
+      const canvas = await renderToImage(previewContainer, width, height, {
+        canvasScale: config.scale,
       });
-      totalCaptureMs += performance.now() - captureStart;
+      totalRenderMs += performance.now() - renderStart;
       
       // Encode frame
       if (videoSource && output && encodingCtx) {
@@ -477,8 +511,9 @@ export async function renderTimegroupToVideo(
     const totalTime = performance.now() - renderStartTime;
     logger.debug(
       `[renderTimegroupToVideo] ${config.totalFrames} frames: ` +
-      `seek=${totalSeekMs.toFixed(0)}ms, capture=${totalCaptureMs.toFixed(0)}ms, ` +
-      `encode=${totalEncodeMs.toFixed(0)}ms, total=${totalTime.toFixed(0)}ms`
+      `seek=${totalSeekMs.toFixed(0)}ms, sync=${totalSyncMs.toFixed(0)}ms, ` +
+      `render=${totalRenderMs.toFixed(0)}ms, encode=${totalEncodeMs.toFixed(0)}ms, ` +
+      `total=${totalTime.toFixed(0)}ms`
     );
     
     if (config.benchmarkMode) {

@@ -131,7 +131,6 @@ export interface CloneNode {
   clone: HTMLElement;
   children: CloneNode[];
   isCanvasClone: boolean;
-  styleCache: Map<string, string>;  // Cache of previous style values for change detection
 }
 
 /** Tree-based sync state */
@@ -212,7 +211,6 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
         clone: svgClone as unknown as HTMLElement,
         children: [],
         isCanvasClone: false,
-        styleCache: new Map(),
       };
       nodeCount++;
       return node;
@@ -262,7 +260,6 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
           clone,
           children: [],
           isCanvasClone: true,
-          styleCache: new Map(),
         };
         nodeCount++;
         return node;
@@ -292,7 +289,6 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
           clone,
           children: [],
           isCanvasClone: true,
-          styleCache: new Map(),
         };
         nodeCount++;
         return node;
@@ -327,7 +323,6 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
       clone,
       children: [],
       isCanvasClone: false,
-      styleCache: new Map(),
     };
     nodeCount++;
     
@@ -443,39 +438,23 @@ function syncNodeStyles(node: CloneNode): void {
         const canvasCs = getComputedStyle(shadowCanvas);
         const hostCs = getComputedStyle(source);
         const s = canvas.style;
-        const { styleCache } = node;
-        const srcWidth = canvasCs.width;
-        const srcHeight = canvasCs.height;
-        const srcPosition = hostCs.position;
-        const srcTop = hostCs.top;
-        const srcLeft = hostCs.left;
-        const srcRight = hostCs.right;
-        const srcBottom = hostCs.bottom;
-        const srcMargin = hostCs.margin;
-        const srcTransform = hostCs.transform;
-        const srcTransformOrigin = hostCs.transformOrigin;
-        const srcOpacity = hostCs.opacity;
-        const srcVisibility = hostCs.visibility;
-        const srcZIndex = hostCs.zIndex;
-        const srcBackfaceVisibility = hostCs.backfaceVisibility;
-        const srcTransformStyle = hostCs.transformStyle;
         
-        // Use cache-based change detection for canvas clones
-        if (styleCache.get("position") !== srcPosition) { s.position = srcPosition; styleCache.set("position", srcPosition); }
-        if (styleCache.get("top") !== srcTop) { s.top = srcTop; styleCache.set("top", srcTop); }
-        if (styleCache.get("left") !== srcLeft) { s.left = srcLeft; styleCache.set("left", srcLeft); }
-        if (styleCache.get("right") !== srcRight) { s.right = srcRight; styleCache.set("right", srcRight); }
-        if (styleCache.get("bottom") !== srcBottom) { s.bottom = srcBottom; styleCache.set("bottom", srcBottom); }
-        if (styleCache.get("margin") !== srcMargin) { s.margin = srcMargin; styleCache.set("margin", srcMargin); }
-        if (styleCache.get("transform") !== srcTransform) { s.transform = srcTransform; styleCache.set("transform", srcTransform); }
-        if (styleCache.get("transformOrigin") !== srcTransformOrigin) { s.transformOrigin = srcTransformOrigin; styleCache.set("transformOrigin", srcTransformOrigin); }
-        if (styleCache.get("opacity") !== srcOpacity) { s.opacity = srcOpacity; styleCache.set("opacity", srcOpacity); }
-        if (styleCache.get("visibility") !== srcVisibility) { s.visibility = srcVisibility; styleCache.set("visibility", srcVisibility); }
-        if (styleCache.get("zIndex") !== srcZIndex) { s.zIndex = srcZIndex; styleCache.set("zIndex", srcZIndex); }
-        if (styleCache.get("width") !== srcWidth) { s.width = srcWidth; styleCache.set("width", srcWidth); }
-        if (styleCache.get("height") !== srcHeight) { s.height = srcHeight; styleCache.set("height", srcHeight); }
-        if (styleCache.get("backfaceVisibility") !== srcBackfaceVisibility) { s.backfaceVisibility = srcBackfaceVisibility; styleCache.set("backfaceVisibility", srcBackfaceVisibility); }
-        if (styleCache.get("transformStyle") !== srcTransformStyle) { s.transformStyle = srcTransformStyle; styleCache.set("transformStyle", srcTransformStyle); }
+        // Browser optimizes redundant style writes internally
+        s.position = hostCs.position;
+        s.top = hostCs.top;
+        s.left = hostCs.left;
+        s.right = hostCs.right;
+        s.bottom = hostCs.bottom;
+        s.margin = hostCs.margin;
+        s.transform = hostCs.transform;
+        s.transformOrigin = hostCs.transformOrigin;
+        s.opacity = hostCs.opacity;
+        s.visibility = hostCs.visibility;
+        s.zIndex = hostCs.zIndex;
+        s.width = canvasCs.width;
+        s.height = canvasCs.height;
+        s.backfaceVisibility = hostCs.backfaceVisibility;
+        s.transformStyle = hostCs.transformStyle;
       } catch {}
     } else if (shadowImg?.complete && shadowImg.naturalWidth > 0) {
       if (canvas.width !== shadowImg.naturalWidth) canvas.width = shadowImg.naturalWidth;
@@ -492,47 +471,30 @@ function syncNodeStyles(node: CloneNode): void {
         const imgCs = getComputedStyle(shadowImg);
         const hostCs = getComputedStyle(source);
         const s = canvas.style;
-        const { styleCache } = node;
-        const srcWidth = imgCs.width;
-        const srcHeight = imgCs.height;
-        const srcPosition = hostCs.position;
-        const srcTop = hostCs.top;
-        const srcLeft = hostCs.left;
-        const srcRight = hostCs.right;
-        const srcBottom = hostCs.bottom;
-        const srcMargin = hostCs.margin;
-        const srcTransform = hostCs.transform;
-        const srcTransformOrigin = hostCs.transformOrigin;
-        const srcOpacity = hostCs.opacity;
-        const srcVisibility = hostCs.visibility;
-        const srcZIndex = hostCs.zIndex;
-        const srcBackfaceVisibility = hostCs.backfaceVisibility;
-        const srcTransformStyle = hostCs.transformStyle;
         
-        // Use cache-based change detection for canvas clones
-        if (styleCache.get("position") !== srcPosition) { s.position = srcPosition; styleCache.set("position", srcPosition); }
-        if (styleCache.get("top") !== srcTop) { s.top = srcTop; styleCache.set("top", srcTop); }
-        if (styleCache.get("left") !== srcLeft) { s.left = srcLeft; styleCache.set("left", srcLeft); }
-        if (styleCache.get("right") !== srcRight) { s.right = srcRight; styleCache.set("right", srcRight); }
-        if (styleCache.get("bottom") !== srcBottom) { s.bottom = srcBottom; styleCache.set("bottom", srcBottom); }
-        if (styleCache.get("margin") !== srcMargin) { s.margin = srcMargin; styleCache.set("margin", srcMargin); }
-        if (styleCache.get("transform") !== srcTransform) { s.transform = srcTransform; styleCache.set("transform", srcTransform); }
-        if (styleCache.get("transformOrigin") !== srcTransformOrigin) { s.transformOrigin = srcTransformOrigin; styleCache.set("transformOrigin", srcTransformOrigin); }
-        if (styleCache.get("opacity") !== srcOpacity) { s.opacity = srcOpacity; styleCache.set("opacity", srcOpacity); }
-        if (styleCache.get("visibility") !== srcVisibility) { s.visibility = srcVisibility; styleCache.set("visibility", srcVisibility); }
-        if (styleCache.get("zIndex") !== srcZIndex) { s.zIndex = srcZIndex; styleCache.set("zIndex", srcZIndex); }
-        if (styleCache.get("width") !== srcWidth) { s.width = srcWidth; styleCache.set("width", srcWidth); }
-        if (styleCache.get("height") !== srcHeight) { s.height = srcHeight; styleCache.set("height", srcHeight); }
-        if (styleCache.get("backfaceVisibility") !== srcBackfaceVisibility) { s.backfaceVisibility = srcBackfaceVisibility; styleCache.set("backfaceVisibility", srcBackfaceVisibility); }
-        if (styleCache.get("transformStyle") !== srcTransformStyle) { s.transformStyle = srcTransformStyle; styleCache.set("transformStyle", srcTransformStyle); }
+        // Browser optimizes redundant style writes internally
+        s.position = hostCs.position;
+        s.top = hostCs.top;
+        s.left = hostCs.left;
+        s.right = hostCs.right;
+        s.bottom = hostCs.bottom;
+        s.margin = hostCs.margin;
+        s.transform = hostCs.transform;
+        s.transformOrigin = hostCs.transformOrigin;
+        s.opacity = hostCs.opacity;
+        s.visibility = hostCs.visibility;
+        s.zIndex = hostCs.zIndex;
+        s.width = imgCs.width;
+        s.height = imgCs.height;
+        s.backfaceVisibility = hostCs.backfaceVisibility;
+        s.transformStyle = hostCs.transformStyle;
       } catch {}
     }
     // return;
   }
   
-  // Regular element - sync CSS properties with cache-based change detection
+  // Regular element - sync CSS properties directly (browser optimizes redundant writes)
   const cloneStyle = clone.style as any;
-  const { styleCache } = node;
   const propLen = SYNC_PROPERTIES.length;
   
   if (HAS_COMPUTED_STYLE_MAP) {
@@ -548,10 +510,6 @@ function syncNodeStyles(node: CloneNode): void {
       if (!srcVal) continue;
       
       const strVal = srcVal.toString();
-      
-      // Skip if value hasn't changed from cache
-      if (styleCache.get(camel) === strVal) continue;
-      styleCache.set(camel, strVal);
       
       if (camel === "display") {
         const targetDisplay = strVal === "none" ? "block" : strVal;
@@ -583,10 +541,6 @@ function syncNodeStyles(node: CloneNode): void {
     for (const prop of SYNC_PROPERTIES) {
       const srcVal = srcStyle[prop];
       
-      // Skip if value hasn't changed from cache
-      if (styleCache.get(prop) === srcVal) continue;
-      styleCache.set(prop, srcVal);
-      
       if (prop === "display") {
         const targetDisplay = srcVal === "none" ? "block" : srcVal;
         cloneStyle.display = targetDisplay;
@@ -607,16 +561,9 @@ function syncNodeStyles(node: CloneNode): void {
     }
   }
   
-  // Disable animations/transitions to prevent re-animation (animations already finished above)
-  // Use cache to avoid redundant writes
-  if (styleCache.get("animation") !== "none") {
-    cloneStyle.animation = "none";
-    styleCache.set("animation", "none");
-  }
-  if (styleCache.get("transition") !== "none") {
-    cloneStyle.transition = "none";
-    styleCache.set("transition", "none");
-  }
+  // Disable animations/transitions to prevent re-animation (browser optimizes redundant writes)
+  cloneStyle.animation = "none";
+  cloneStyle.transition = "none";
   
   // Sync text content from light DOM
   const srcTextNode = source.childNodes[0];
@@ -683,7 +630,7 @@ function syncNodeStyles(node: CloneNode): void {
  * Returns early if the node is temporally culled, skipping ALL descendants.
  */
 function syncNodeRecursive(node: CloneNode, timeMs: number): void {
-  const { source, clone, children, isCanvasClone, styleCache } = node;
+  const { source, clone, children, isCanvasClone } = node;
   
   // Temporal culling - check if this node is visible at current time
   // Canvas clones skip temporal check (ef-video may have [0,0] range before video loads)
@@ -692,8 +639,6 @@ function syncNodeRecursive(node: CloneNode, timeMs: number): void {
     if (timeMs < startMs || timeMs > endMs) {
       // Hide this element and BAIL OUT - skip all descendants automatically!
       clone.style.display = "none";
-      // Invalidate display cache so it gets restored when element comes back in range
-      styleCache.delete("display");
       return;
     }
   }
