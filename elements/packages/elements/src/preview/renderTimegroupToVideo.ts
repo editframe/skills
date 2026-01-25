@@ -32,7 +32,7 @@ import {
   collectDocumentStyles,
   overrideRootCloneStyles,
 } from "./renderTimegroupPreview.js";
-import { renderToImage } from "./rendering/renderToImage.js";
+import { renderToImageDirect } from "./rendering/renderToImage.js";
 import { createPreviewContainer } from "./previewTypes.js";
 
 // ============================================================================
@@ -448,17 +448,15 @@ export async function renderTimegroupToVideo(
       
       // Render the updated clone
       const renderStart = performance.now();
-      const canvas = await renderToImage(previewContainer, width, height, {
-        canvasScale: config.scale,
-      });
+      const image = await renderToImageDirect(previewContainer, width, height);
       totalRenderMs += performance.now() - renderStart;
       
       // Encode frame
       if (videoSource && output && encodingCtx) {
         const encodeStart = performance.now();
         encodingCtx.drawImage(
-          canvas,
-          0, 0, canvas.width, canvas.height,
+          image,
+          0, 0, image.width, image.height,
           0, 0, config.videoWidth, config.videoHeight,
         );
         await videoSource.add(timestampS, config.frameDurationS);
@@ -482,7 +480,7 @@ export async function renderTimegroupToVideo(
         thumbCanvas.width = previewWidth;
         thumbCanvas.height = previewHeight;
         const thumbCtx = thumbCanvas.getContext("2d")!;
-        thumbCtx.drawImage(canvas, 0, 0, previewWidth, previewHeight);
+        thumbCtx.drawImage(image, 0, 0, previewWidth, previewHeight);
         lastFramePreviewUrl = thumbCanvas.toDataURL("image/jpeg", 0.7);
       }
       
