@@ -122,7 +122,7 @@ async function main() {
   let outputPath = "./browsertest-profile.cpuprofile";
   let focusFile = "";
   let jsonOutput = false;
-  let profileDurationMs = 0; // 0 means profile entire test run
+  let profileDurationMs = 3000; // Default to 3 seconds, automatically stops before page closes
   
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "-t" && args[i + 1]) testPattern = args[++i];
@@ -144,10 +144,11 @@ Options:
   -t <pattern>       Test name pattern to run
   --output <path>    Output path for .cpuprofile file
   --focus <file>     Focus analysis on specific source file
-  --duration <ms>    Profile for specified milliseconds then stop (default: profile entire test)
+  --duration <ms>    Profile for specified milliseconds (default: 3000ms)
+                     Profiling stops automatically before tests complete
 
 Examples:
-  npx tsx scripts/profile-browsertest.ts packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts -t "batch capture"
+  npx tsx scripts/profile-browsertest.ts packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts -t "batch"
   npx tsx scripts/profile-browsertest.ts packages/elements/src/gui/EFWorkbench.browsertest.ts --duration 10000
 `);
     process.exit(1);
@@ -295,6 +296,10 @@ Examples:
     return promise;
   }
   
+  // Enable Runtime for profiling
+  console.log(`🔧 Enabling profiler...`);
+  await sendToTarget("Runtime.enable");
+  
   // Start profiling
   await sendToTarget("Profiler.enable");
   await sendToTarget("Profiler.setSamplingInterval", { interval: samplingIntervalUs });
@@ -302,36 +307,43 @@ Examples:
   
   const startTime = Date.now();
   
-  // Wait for either browsertest to complete or duration timeout
-  if (profileDurationMs > 0) {
-    console.log(`⏱️  Profiling for ${profileDurationMs}ms...`);
-    await new Promise<void>((resolve) => {
-      const timer = setTimeout(() => resolve(), profileDurationMs);
-      browsertest.on("close", () => { clearTimeout(timer); resolve(); });
-      browsertest.on("error", () => { clearTimeout(timer); resolve(); });
-    });
-  } else {
-    await new Promise<void>((resolve) => {
-      browsertest.on("close", () => resolve());
-      browsertest.on("error", () => resolve());
-    });
-  }
-
-  const wallClockMs = Date.now() - startTime;
-
-  // Stop profiling - handle session closure gracefully
-  let profile: CPUProfile | null = null;
+  // Profile for specified duration (stops BEFORE tests complete to keep CDP session alive)
+  console.log(`🔄 Profiling for ${(profileDurationMs / 1000).toFixed(1)}s...\n`);
   let finalUrl = vitestTarget.url;
+  let profile: CPUProfile | null = null;
   
+  // Wait for duration timeout
+  await new Promise<void>((resolve) => {
+    setTimeout(() => {
+      console.log(`⏰ Profile duration reached, stopping profiler...`);
+      resolve();
+    }, profileDurationMs);
+  });
+  
+  // Stop profiling while CDP session is still alive
   try {
     const stopResult = await sendToTarget("Profiler.stop");
     profile = stopResult.profile as CPUProfile;
     await sendToTarget("Profiler.disable");
+    console.log(`✅ Successfully retrieved profile data\n`);
   } catch (error: any) {
-    console.log(`\n⚠️  Could not stop profiler - session likely closed: ${error.message}`);
-    console.log(`    This is normal if the test completes very quickly.`);
-    console.log(`    The profile data was not captured for this run.\n`);
+    console.log(`❌ Could not stop profiler: ${error.message}\n`);
   }
+  
+  // Wait for browsertest to complete
+  console.log(`⏳ Waiting for browsertest to complete...`);
+  await new Promise<void>((resolve) => {
+    if (browsertest.exitCode !== null) {
+      resolve();
+    } else {
+      browsertest.on("close", () => {
+        console.log(`✅ Browsertest completed`);
+        resolve();
+      });
+    }
+  });
+  
+  const wallClockMs = Date.now() - startTime;
   
   try {
     await browserCdp.send("Target.detachFromTarget", { sessionId });

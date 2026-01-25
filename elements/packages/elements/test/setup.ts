@@ -3,13 +3,20 @@
  * This runs before every test to ensure clean state
  */
 
-import { beforeEach } from "vitest";
+import { beforeEach, afterAll } from "vitest";
 import {
   globalRequestDeduplicator,
   mediaCache,
 } from "../src/elements/EFMedia/BaseMediaEngine.js";
 import { globalURLTokenDeduplicator } from "../src/transcoding/cache/URLTokenDeduplicator.js";
 import { TEST_SERVER_PORT } from "./constants.js";
+
+// Type declarations for test environment
+declare global {
+  interface Window {
+    __CI_MODE__?: boolean;
+  }
+}
 
 /**
  * Get the correct API host for the current environment.
