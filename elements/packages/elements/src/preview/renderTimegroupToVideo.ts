@@ -402,7 +402,7 @@ export async function renderTimegroupToVideo(
   overrideRootCloneStyles(syncState, true);
   
   // =========================================================================
-  // Frame loop - sync styles per frame (NO rebuild!)
+  // Frame loop - PIPELINED: prepare next while rendering current
   // =========================================================================
   const renderStartTime = performance.now();
   let lastFramePreviewUrl: string | undefined;
@@ -415,6 +415,9 @@ export async function renderTimegroupToVideo(
   let totalEncodeMs = 0;
   
   try {
+    // Prime the pipeline: prepare frame 0 before loop starts
+    // (First frame is already prepared by buildCloneStructure at initialTimeMs)
+    
     for (let frameIndex = 0; frameIndex < config.totalFrames; frameIndex++) {
       checkCancelled();
       
@@ -434,24 +437,37 @@ export async function renderTimegroupToVideo(
       }
       
       // =====================================================================
-      // OPTIMIZED: Build once, sync per frame (like live preview does)
+      // PIPELINE STAGE 1: Start rendering current frame (already prepared)
       // =====================================================================
-      const seekStart = performance.now();
-      await renderClone.seekForRender(timeMs);
-      totalSeekMs += performance.now() - seekStart;
-      
-      // Just sync styles - NO rebuild!
-      const syncStart = performance.now();
-      syncStyles(syncState, timeMs);
-      overrideRootCloneStyles(syncState, true);
-      totalSyncMs += performance.now() - syncStart;
-      
-      // Render the updated clone
       const renderStart = performance.now();
-      const image = await renderToImageDirect(previewContainer, width, height);
+      const renderPromise = renderToImageDirect(previewContainer, width, height);
+      
+      // =====================================================================
+      // PIPELINE STAGE 2: While rendering, prepare NEXT frame
+      // =====================================================================
+      const nextFrameIndex = frameIndex + 1;
+      if (nextFrameIndex < config.totalFrames) {
+        const nextTimeMs = timestamps[nextFrameIndex]!;
+        
+        const seekStart = performance.now();
+        await renderClone.seekForRender(nextTimeMs);
+        totalSeekMs += performance.now() - seekStart;
+        
+        const syncStart = performance.now();
+        syncStyles(syncState, nextTimeMs);
+        overrideRootCloneStyles(syncState, true);
+        totalSyncMs += performance.now() - syncStart;
+      }
+      
+      // =====================================================================
+      // PIPELINE STAGE 3: Wait for current frame render to complete
+      // =====================================================================
+      const image = await renderPromise;
       totalRenderMs += performance.now() - renderStart;
       
-      // Encode frame
+      // =====================================================================
+      // PIPELINE STAGE 4: Encode the rendered frame
+      // =====================================================================
       if (videoSource && output && encodingCtx) {
         const encodeStart = performance.now();
         encodingCtx.drawImage(
