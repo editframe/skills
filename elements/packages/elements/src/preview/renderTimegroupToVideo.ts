@@ -402,7 +402,7 @@ export async function renderTimegroupToVideo(
   overrideRootCloneStyles(syncState, true);
   
   // =========================================================================
-  // Frame loop - PIPELINED: prepare next while rendering current
+  // Frame loop - DEEP PIPELINE: overlap encode + render + prepare
   // =========================================================================
   const renderStartTime = performance.now();
   let lastFramePreviewUrl: string | undefined;
@@ -415,8 +415,15 @@ export async function renderTimegroupToVideo(
   let totalEncodeMs = 0;
   
   try {
-    // Prime the pipeline: prepare frame 0 before loop starts
-    // (First frame is already prepared by buildCloneStructure at initialTimeMs)
+    // ========================================================================
+    // Prime the pipeline: render frame 0 completely before entering loop
+    // ========================================================================
+    await renderClone.seekForRender(timestamps[0]!);
+    syncStyles(syncState, timestamps[0]!);
+    overrideRootCloneStyles(syncState, true);
+    let preparedImage = await renderToImageDirect(previewContainer, width, height);
+    
+    let pendingEncodePromise: Promise<void> | null = null;
     
     for (let frameIndex = 0; frameIndex < config.totalFrames; frameIndex++) {
       checkCancelled();
@@ -437,18 +444,32 @@ export async function renderTimegroupToVideo(
       }
       
       // =====================================================================
-      // PIPELINE STAGE 1: Start rendering current frame (already prepared)
+      // PIPELINE STAGE 1: Start encoding current frame (DON'T AWAIT YET!)
       // =====================================================================
-      const renderStart = performance.now();
-      const renderPromise = renderToImageDirect(previewContainer, width, height);
+      let currentEncodePromise: Promise<void> | null = null;
+      
+      if (videoSource && output && encodingCtx && preparedImage) {
+        const encodeStart = performance.now();
+        encodingCtx.drawImage(
+          preparedImage,
+          0, 0, preparedImage.width, preparedImage.height,
+          0, 0, config.videoWidth, config.videoHeight,
+        );
+        // Start encode but DON'T await yet - let it run in web worker
+        currentEncodePromise = videoSource.add(timestampS, config.frameDurationS);
+        totalEncodeMs += performance.now() - encodeStart; // Just timing overhead
+      }
       
       // =====================================================================
-      // PIPELINE STAGE 2: While rendering, prepare NEXT frame
+      // PIPELINE STAGE 2: While encoding, prepare and render NEXT frame
       // =====================================================================
       const nextFrameIndex = frameIndex + 1;
+      let nextRenderPromise: Promise<HTMLImageElement> | null = null;
+      
       if (nextFrameIndex < config.totalFrames) {
         const nextTimeMs = timestamps[nextFrameIndex]!;
         
+        // Prepare next frame
         const seekStart = performance.now();
         await renderClone.seekForRender(nextTimeMs);
         totalSeekMs += performance.now() - seekStart;
@@ -457,27 +478,34 @@ export async function renderTimegroupToVideo(
         syncStyles(syncState, nextTimeMs);
         overrideRootCloneStyles(syncState, true);
         totalSyncMs += performance.now() - syncStart;
+        
+        // Start rendering next frame (don't await yet)
+        const renderStart = performance.now();
+        nextRenderPromise = renderToImageDirect(previewContainer, width, height);
+        totalRenderMs += performance.now() - renderStart; // Just timing overhead
       }
       
       // =====================================================================
-      // PIPELINE STAGE 3: Wait for current frame render to complete
+      // PIPELINE STAGE 3: Await PREVIOUS frame's encode to finish
       // =====================================================================
-      const image = await renderPromise;
-      totalRenderMs += performance.now() - renderStart;
+      if (pendingEncodePromise) {
+        await pendingEncodePromise;
+      }
       
       // =====================================================================
-      // PIPELINE STAGE 4: Encode the rendered frame
+      // PIPELINE STAGE 4: Await current encode and next render
       // =====================================================================
-      if (videoSource && output && encodingCtx) {
-        const encodeStart = performance.now();
-        encodingCtx.drawImage(
-          image,
-          0, 0, image.width, image.height,
-          0, 0, config.videoWidth, config.videoHeight,
-        );
-        await videoSource.add(timestampS, config.frameDurationS);
-        totalEncodeMs += performance.now() - encodeStart;
+      if (currentEncodePromise) {
+        await currentEncodePromise;
       }
+      
+      if (nextRenderPromise) {
+        preparedImage = await nextRenderPromise;
+      } else {
+        preparedImage = null;
+      }
+      
+      pendingEncodePromise = currentEncodePromise;
       
       // Progress
       const currentFrame = frameIndex + 1;
@@ -489,14 +517,14 @@ export async function renderTimegroupToVideo(
       const estimatedRemainingMs = remainingFrames * msPerFrame;
       const speedMultiplier = renderedMs / elapsedMs;
       
-      if (onProgress && frameIndex % 10 === 0) {
+      if (onProgress && frameIndex % 10 === 0 && preparedImage) {
         const previewWidth = 160;
         const previewHeight = Math.round(previewWidth * (config.videoHeight / config.videoWidth));
         const thumbCanvas = document.createElement("canvas");
         thumbCanvas.width = previewWidth;
         thumbCanvas.height = previewHeight;
         const thumbCtx = thumbCanvas.getContext("2d")!;
-        thumbCtx.drawImage(image, 0, 0, previewWidth, previewHeight);
+        thumbCtx.drawImage(preparedImage, 0, 0, previewWidth, previewHeight);
         lastFramePreviewUrl = thumbCanvas.toDataURL("image/jpeg", 0.7);
       }
       
@@ -511,6 +539,11 @@ export async function renderTimegroupToVideo(
         speedMultiplier,
         framePreviewUrl: lastFramePreviewUrl,
       });
+    }
+    
+    // Final encode (if any pending)
+    if (pendingEncodePromise) {
+      await pendingEncodePromise;
     }
     
     // Render remaining audio
