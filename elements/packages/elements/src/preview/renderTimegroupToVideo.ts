@@ -486,25 +486,15 @@ export async function renderTimegroupToVideo(
       }
       
       // =====================================================================
-      // PIPELINE STAGE 3: Await PREVIOUS frame's encode to finish
+      // PIPELINE STAGES 3-4: Await all promises in parallel
       // =====================================================================
-      if (pendingEncodePromise) {
-        await pendingEncodePromise;
-      }
+      const [_, __, nextImage] = await Promise.all([
+        pendingEncodePromise || Promise.resolve(),
+        currentEncodePromise || Promise.resolve(),
+        nextRenderPromise || Promise.resolve(null),
+      ]);
       
-      // =====================================================================
-      // PIPELINE STAGE 4: Await current encode and next render
-      // =====================================================================
-      if (currentEncodePromise) {
-        await currentEncodePromise;
-      }
-      
-      if (nextRenderPromise) {
-        preparedImage = await nextRenderPromise;
-      } else {
-        preparedImage = null;
-      }
-      
+      preparedImage = nextImage;
       pendingEncodePromise = currentEncodePromise;
       
       // Progress
