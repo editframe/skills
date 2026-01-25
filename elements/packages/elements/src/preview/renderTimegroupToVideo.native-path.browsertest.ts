@@ -26,6 +26,7 @@ import {
   isNativeCanvasApiAvailable,
   setNativeCanvasApiEnabled,
 } from "./previewSettings.js";
+import { logger } from "./logger.js";
 
 beforeAll(async () => {
   await customElements.whenDefined("ef-timegroup");
@@ -169,10 +170,10 @@ describe("renderTimegroupToVideo foreignObject path with ef-video", () => {
       // Additional wait for video to be ready
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      console.log("[ForeignObject Path Test] Timegroup ready, starting export...");
-      console.log(`[ForeignObject Path Test] Timegroup dimensions: ${timegroup.offsetWidth}x${timegroup.offsetHeight}`);
-      console.log(`[ForeignObject Path Test] Timegroup duration: ${timegroup.durationMs}ms`);
-      console.log(`[ForeignObject Path Test] Native API enabled: ${isNativeCanvasApiAvailable()}`);
+      logger.debug("[ForeignObject Path Test] Timegroup ready, starting export...");
+      logger.debug(`[ForeignObject Path Test] Timegroup dimensions: ${timegroup.offsetWidth}x${timegroup.offsetHeight}`);
+      logger.debug(`[ForeignObject Path Test] Timegroup duration: ${timegroup.durationMs}ms`);
+      logger.debug(`[ForeignObject Path Test] Native API enabled: ${isNativeCanvasApiAvailable()}`);
       
       // First, verify that thumbnail capture works (this uses captureTimegroupAtTime)
       const thumbnailCanvas = await captureTimegroupAtTime(timegroup, {
@@ -183,7 +184,7 @@ describe("renderTimegroupToVideo foreignObject path with ef-video", () => {
       });
       
       const thumbnailResult = canvasHasContent(thumbnailCanvas);
-      console.log(`[ForeignObject Path Test] Thumbnail capture: ${thumbnailCanvas.width}x${thumbnailCanvas.height}, hasContent: ${thumbnailResult.hasContent}, nonBlack: ${thumbnailResult.nonBlackPercentage.toFixed(1)}%`);
+      logger.debug(`[ForeignObject Path Test] Thumbnail capture: ${thumbnailCanvas.width}x${thumbnailCanvas.height}, hasContent: ${thumbnailResult.hasContent}, nonBlack: ${thumbnailResult.nonBlackPercentage.toFixed(1)}%`);
       
       expect(thumbnailResult.hasContent, "Thumbnail capture should have non-black content").toBe(true);
       
@@ -202,15 +203,15 @@ describe("renderTimegroupToVideo foreignObject path with ef-video", () => {
       expect(videoBuffer).toBeDefined();
       expect(videoBuffer!.length).toBeGreaterThan(1000);
       
-      console.log(`[ForeignObject Path Test] Video buffer size: ${videoBuffer!.length} bytes`);
+      logger.debug(`[ForeignObject Path Test] Video buffer size: ${videoBuffer!.length} bytes`);
       
       // Decode first frame to verify it has content
       const frameData = await decodeFirstFrame(videoBuffer!);
       
-      console.log(`[ForeignObject Path Test] Exported frame: ${frameData.width}x${frameData.height}`);
-      console.log(`[ForeignObject Path Test] Center pixel: rgba(${frameData.samplePixel.join(",")})`);
-      console.log(`[ForeignObject Path Test] Non-black percentage: ${frameData.nonBlackPercentage.toFixed(1)}%`);
-      console.log(`[ForeignObject Path Test] hasContent: ${frameData.hasContent}`);
+      logger.debug(`[ForeignObject Path Test] Exported frame: ${frameData.width}x${frameData.height}`);
+      logger.debug(`[ForeignObject Path Test] Center pixel: rgba(${frameData.samplePixel.join(",")})`);
+      logger.debug(`[ForeignObject Path Test] Non-black percentage: ${frameData.nonBlackPercentage.toFixed(1)}%`);
+      logger.debug(`[ForeignObject Path Test] hasContent: ${frameData.hasContent}`);
       
       // This is the key assertion - video export should have non-black content
       expect(frameData.hasContent, "Video export first frame should have non-black content (not all black)").toBe(true);
@@ -282,8 +283,8 @@ describe("renderTimegroupToVideo foreignObject path with ef-video", () => {
       // Additional wait for video to be ready
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      console.log("[Sequence Test] Timegroup ready, starting export...");
-      console.log(`[Sequence Test] Timegroup duration: ${timegroup.durationMs}ms`);
+      logger.debug("[Sequence Test] Timegroup ready, starting export...");
+      logger.debug(`[Sequence Test] Timegroup duration: ${timegroup.durationMs}ms`);
       
       // Export first 2 seconds (should be in Scene 1)
       const videoBuffer = await renderTimegroupToVideo(timegroup, {
@@ -301,10 +302,10 @@ describe("renderTimegroupToVideo foreignObject path with ef-video", () => {
       
       const frameData = await decodeFirstFrame(videoBuffer!);
       
-      console.log(`[Sequence Test] Exported frame: ${frameData.width}x${frameData.height}`);
-      console.log(`[Sequence Test] Center pixel: rgba(${frameData.samplePixel.join(",")})`);
-      console.log(`[Sequence Test] Non-black percentage: ${frameData.nonBlackPercentage.toFixed(1)}%`);
-      console.log(`[Sequence Test] hasContent: ${frameData.hasContent}`);
+      logger.debug(`[Sequence Test] Exported frame: ${frameData.width}x${frameData.height}`);
+      logger.debug(`[Sequence Test] Center pixel: rgba(${frameData.samplePixel.join(",")})`);
+      logger.debug(`[Sequence Test] Non-black percentage: ${frameData.nonBlackPercentage.toFixed(1)}%`);
+      logger.debug(`[Sequence Test] hasContent: ${frameData.hasContent}`);
       
       expect(frameData.hasContent, "Sequence mode video export should have non-black content").toBe(true);
       

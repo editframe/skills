@@ -24,6 +24,7 @@ import {
   isNativeCanvasApiAvailable,
   setNativeCanvasApiEnabled,
 } from "./previewSettings.js";
+import { logger } from "./logger.js";
 import "../elements/EFTimegroup.js";
 import "../elements/EFVideo.js";
 import "../elements/EFPanZoom.js";
@@ -1233,7 +1234,7 @@ describe("renderTimegroupToCanvas", () => {
       }
 
       // Batch capture should be relatively fast since it's not blocking
-      console.log(`captureBatch (immediate) took ${batchTime.toFixed(0)}ms for ${timestamps.length} frames`);
+      logger.debug(`captureBatch (immediate) took ${batchTime.toFixed(0)}ms for ${timestamps.length} frames`);
     });
 
     test("captureBatch with blocking mode waits for video content", async ({
@@ -1557,14 +1558,14 @@ describe("renderTimegroupToCanvas", () => {
       expect(videoBuffer).toBeDefined();
       expect(videoBuffer!.length).toBeGreaterThan(1000);
       
-      console.log(`[Workbench Video Export Test] Video buffer size: ${videoBuffer!.length} bytes`);
+      logger.debug(`[Workbench Video Export Test] Video buffer size: ${videoBuffer!.length} bytes`);
       
       // Decode first frame to verify it has content
       // Use VideoDecoder to check actual frame data
       const frameData = await decodeFirstFrame(videoBuffer!);
       expect(frameData.hasContent, "First frame should have non-black content").toBe(true);
       
-      console.log(`[Workbench Video Export Test] First frame: ${frameData.width}x${frameData.height}, hasContent: ${frameData.hasContent}, samplePixel: rgba(${frameData.samplePixel.join(",")})`);
+      logger.debug(`[Workbench Video Export Test] First frame: ${frameData.width}x${frameData.height}, hasContent: ${frameData.hasContent}, samplePixel: rgba(${frameData.samplePixel.join(",")})`);
 
       container.remove();
     }, 30000);
@@ -1707,7 +1708,7 @@ describe("renderTimegroupToCanvas", () => {
       const frames = 3;
       const msPerFrame = elapsed / frames;
       
-      console.log(`[DPR Test] ${frames} frames in ${elapsed.toFixed(0)}ms (${msPerFrame.toFixed(1)}ms/frame)`);
+      logger.debug(`[DPR Test] ${frames} frames in ${elapsed.toFixed(0)}ms (${msPerFrame.toFixed(1)}ms/frame)`);
       
       // Performance check - should be reasonable even on high-DPI displays
       expect(msPerFrame).toBeLessThan(100);
@@ -1722,7 +1723,7 @@ describe("renderTimegroupToCanvas", () => {
       // Output should have actual content (not black/blank)
       expect(frameData.hasContent, "Video output should have non-black content").toBe(true);
       
-      console.log(`[DPR Test] Output: ${frameData.width}x${frameData.height}, hasContent: ${frameData.hasContent}`);
+      logger.debug(`[DPR Test] Output: ${frameData.width}x${frameData.height}, hasContent: ${frameData.hasContent}`);
 
       container.remove();
     }, 30000);

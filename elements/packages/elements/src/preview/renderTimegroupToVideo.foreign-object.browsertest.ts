@@ -17,6 +17,7 @@ import {
   prepareFrameDataUri,
   loadImageFromDataUri,
 } from "./renderTimegroupToCanvas.js";
+import { logger } from "./logger.js";
 
 describe("foreignObject rendering with video", () => {
   beforeAll(async () => {
@@ -58,7 +59,7 @@ describe("foreignObject rendering with video", () => {
         expect(shadowCanvas).toBeTruthy();
         
         if (shadowCanvas) {
-          console.log(`[FO test] Shadow canvas dimensions: ${shadowCanvas.width}x${shadowCanvas.height}`);
+          logger.debug(`[FO test] Shadow canvas dimensions: ${shadowCanvas.width}x${shadowCanvas.height}`);
           expect(shadowCanvas.width).toBeGreaterThan(0);
           expect(shadowCanvas.height).toBeGreaterThan(0);
           
@@ -99,22 +100,22 @@ describe("foreignObject rendering with video", () => {
         await renderClone.seekForRender(0);
         const { container: cloneContainer, syncState } = buildCloneStructure(renderClone, 0);
         
-        console.log(`[FO test] Clone structure built with ${syncState.nodeCount} nodes`);
+        logger.debug(`[FO test] Clone structure built with ${syncState.nodeCount} nodes`);
         
         // Check that we have canvas clones
         const canvasClones = cloneContainer.querySelectorAll("canvas");
-        console.log(`[FO test] Found ${canvasClones.length} canvas clones`);
+        logger.debug(`[FO test] Found ${canvasClones.length} canvas clones`);
         expect(canvasClones.length).toBeGreaterThan(0);
         
         // The canvas clone should have dimensions
         const canvasClone = canvasClones[0] as HTMLCanvasElement;
-        console.log(`[FO test] Canvas clone dimensions: ${canvasClone.width}x${canvasClone.height}`);
+        logger.debug(`[FO test] Canvas clone dimensions: ${canvasClone.width}x${canvasClone.height}`);
         expect(canvasClone.width).toBeGreaterThan(0);
         expect(canvasClone.height).toBeGreaterThan(0);
         
         // Now sync styles (this should refresh canvas pixels)
         syncStyles(syncState, 0);
-        console.log(`[FO test] Styles synced`);
+        logger.debug(`[FO test] Styles synced`);
         
         // The canvas should still have dimensions after sync
         expect(canvasClone.width).toBeGreaterThan(0);
@@ -155,7 +156,7 @@ describe("foreignObject rendering with video", () => {
         // Check that prefetchScrubSegments method exists
         expect(typeof cloneVideo.prefetchScrubSegments).toBe("function");
         
-        console.log("[FO test] prefetchScrubSegments method exists");
+        logger.debug("[FO test] prefetchScrubSegments method exists");
         
         cleanup();
       } catch (e) {
@@ -210,7 +211,7 @@ describe("foreignObject rendering with video", () => {
         const times = [0, 100, 200];
         
         for (const timeMs of times) {
-          console.log(`[FO test] Rendering frame at ${timeMs}ms`);
+          logger.debug(`[FO test] Rendering frame at ${timeMs}ms`);
           
           // Seek and sync (reusing clone structure)
           await renderClone.seekForRender(timeMs);
@@ -234,7 +235,7 @@ describe("foreignObject rendering with video", () => {
           expect(image.width).toBe(width);
           expect(image.height).toBe(height);
           
-          console.log(`[FO test] Frame at ${timeMs}ms rendered successfully`);
+          logger.debug(`[FO test] Frame at ${timeMs}ms rendered successfully`);
         }
         
         cleanup();
