@@ -1,323 +1,199 @@
-# Function-Level Performance Analysis - Implementation & Validation
+# Function-Level Performance Analysis
 
-**Generated:** 2026-01-25
-**Status:** Enhanced profiler implemented, CDP session timing limitation discovered
+**Generated:** 2026-01-25T08:12:12.873Z
+**Test File:** packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts
+**Test Pattern:** batch
 
 ---
 
-## Executive Summary
+## Performance Summary
 
-Successfully enhanced the browsertest profiler to capture detailed function-level performance data with source maps. The profiler now provides:
+| Metric | Value |
+|--------|-------|
+| Wall Clock Time | 3335ms |
+| Profile Time | 3037.7ms |
+| Total Samples | 2,231 |
+| Sampling Interval | 1361.5652173913043μs (1.4ms) |
+| Coverage | 91.1% |
 
-✅ **Implemented Features:**
-- Function-level hotspot analysis with TypeScript source mapping
-- Self time vs total time analysis (time in function vs including callees)
-- Call tree visualization showing caller/callee relationships
-- Sample-based frequency analysis for hot loops
-- File-level aggregation of performance data
-- Formatted table output for console
-- Markdown report generation
+### Data Quality Assessment
 
-⚠️ **Known Limitation:**
-- CDP session closes immediately when Vitest browsertests complete
-- Profile data cannot be retrieved if tests finish before manual profiling stop
-- This is a Vitest/browsertest architecture limitation, not a profiler bug
+✓ **Good** - 2,231 samples provide reasonable statistical confidence
 
-## Implementation Details
+## Top 20 Files by Self Time
 
-### Enhanced Profiler Features
+Self time = time spent executing code in the file itself (not in functions it calls)
 
-#### 1. Source Map Resolution ✅
-```typescript
-class SourceMapResolver {
-  async resolve(scriptUrl: string, line: number, column: number)
-  async getTraceMap(scriptUrl: string): Promise<TraceMap | null>
-}
-```
+| Rank | Self Time | Self % | Samples | File |
+|------|-----------|--------|---------|------|
+| 1 | 2396.4ms | 78.9% | 1,760 | `(native)` |
+| 2 | 285.9ms | 9.4% | 210 | `renderToImageNative.ts` |
+| 3 | 81.7ms | 2.7% | 60 | `visualRegressionUtils.ts` |
+| 4 | 64.0ms | 2.1% | 47 | `index-D_ryMEPs.js` |
+| 5 | 35.4ms | 1.2% | 26 | `renderTimegroupToCanvas.browsertest.ts` |
+| 6 | 20.4ms | 0.7% | 15 | `mediabunny.js` |
+| 7 | 12.3ms | 0.4% | 9 | `chunk-IWWBZPJH.js` |
+| 8 | 12.3ms | 0.4% | 9 | `chunk-hooks.js` |
+| 9 | 10.9ms | 0.4% | 8 | `EFTemporal.ts` |
+| 10 | 9.5ms | 0.3% | 7 | `EFVideo.ts` |
+| 11 | 9.5ms | 0.3% | 7 | `@lit_task.js` |
+| 12 | 9.5ms | 0.3% | 7 | `source-map.js` |
+| 13 | 8.2ms | 0.3% | 6 | `EFTimegroup.ts` |
+| 14 | 6.8ms | 0.2% | 5 | `chunk-6QPQ5RNJ.js` |
+| 15 | 5.4ms | 0.2% | 4 | `trie.js` |
+| 16 | 5.4ms | 0.2% | 4 | `vitest___@vitest_runner___strip-literal.js` |
+| 17 | 5.4ms | 0.2% | 4 | `makeAudioTimeDomainAnalysisTask.ts` |
+| 18 | 5.4ms | 0.2% | 4 | `renderTimegroupToCanvas.ts` |
+| 19 | 4.1ms | 0.1% | 3 | `client.js` |
+| 20 | 4.1ms | 0.1% | 3 | `EFMedia.ts` |
 
-- Fetches and parses source maps from compiled JavaScript
-- Maps line numbers back to TypeScript source files
-- Caches source maps for performance
-- Supports inline base64-encoded source maps
+## Top 20 Functions by Self Time
 
-#### 2. Function-Level Hotspot Analysis ✅
+Self time = time spent in the function itself (not in functions it calls)
 
-**Self Time Analysis:**
-- Time spent executing code IN the function itself
-- Excludes time spent in functions it calls
-- Identifies true computational hotspots
+| Rank | Self Time | Self % | Samples | Function | Location |
+|------|-----------|--------|---------|----------|----------|
+| 1 | 285.9ms | 9.4% | 210 | `renderToImageNative` | `renderToImageNative.ts:16` |
+| 2 | 79.0ms | 2.6% | 58 | `captureCanvasAsDataUrl` | `visualRegressionUtils.ts:1` |
+| 3 | 17.7ms | 0.6% | 13 | `hasCanvasContent` | `renderTimegroupToCanvas.browsertest.ts:345` |
+| 4 | 16.3ms | 0.5% | 12 | `hasCanvasContent` | `renderTimegroupToCanvas.browsertest.ts:345` |
+| 5 | 6.8ms | 0.2% | 5 | `(anonymous)` | `EFVideo.ts:261` |
+| 6 | 4.1ms | 0.1% | 3 | `(anonymous)` | `makeAudioTimeDomainAnalysisTask.ts:97` |
+| 7 | 4.1ms | 0.1% | 3 | `(anonymous)` | `makeAudioFrequencyAnalysisTask.ts:137` |
+| 8 | 4.1ms | 0.1% | 3 | `(anonymous)` | `EFTemporal.ts:331` |
+| 9 | 2.7ms | 0.1% | 2 | `(anonymous)` | `EFTimegroup.ts:1389` |
+| 10 | 2.7ms | 0.1% | 2 | `captureFromClone` | `renderTimegroupToCanvas.ts:157` |
+| 11 | 2.7ms | 0.1% | 2 | `captureFromClone` | `renderTimegroupToCanvas.ts:157` |
+| 12 | 2.7ms | 0.1% | 2 | `compareTwoCanvases` | `visualRegressionUtils.ts:94` |
+| 13 | 1.4ms | 0.0% | 1 | `(anonymous)` | `useMSW.ts:1` |
+| 14 | 1.4ms | 0.0% | 1 | `(anonymous)` | `EFText.ts:1` |
+| 15 | 1.4ms | 0.0% | 1 | `(anonymous)` | `EFTimeline.ts:1` |
+| 16 | 1.4ms | 0.0% | 1 | `TargetableElement` | `TargetController.ts:52` |
+| 17 | 1.4ms | 0.0% | 1 | `determineDurationSource` | `EFTemporal.ts:42` |
+| 18 | 1.4ms | 0.0% | 1 | `get intrinsicDurationMs` | `EFMedia.ts:150` |
+| 19 | 1.4ms | 0.0% | 1 | `(anonymous)` | `EFTimegroup.ts:1375` |
+| 20 | 1.4ms | 0.0% | 1 | `__privateWrapper` | `EFTimegroup.ts:19` |
 
-**Total Time Analysis:**
-- Time spent in function INCLUDING all callees
-- Shows which high-level functions are slowest overall
-- Useful for understanding call hierarchies
+## Top 20 Functions by Total Time
 
-**Sample Frequency Analysis:**
-- Counts how often each function appears in samples
-- Identifies hot loops and frequently-called code
-- Different from time-based analysis (frequent != slow)
+Total time = time spent in the function including all functions it calls
 
-#### 3. Call Tree Visualization ✅
+| Rank | Total Time | Total % | Self Time | Function | Location |
+|------|------------|---------|-----------|----------|----------|
+| 1 | 291.4ms | 9.6% | 1.4ms | `captureBatch` | `EFTimegroup.ts:769` |
+| 2 | 290.0ms | 9.5% | 2.7ms | `captureFromClone` | `renderTimegroupToCanvas.ts:157` |
+| 3 | 287.3ms | 9.5% | 285.9ms | `renderToImageNative` | `renderToImageNative.ts:16` |
+| 4 | 87.1ms | 2.9% | 1.4ms | `(anonymous)` | `renderTimegroupToCanvas.browsertest.ts:543` |
+| 5 | 85.8ms | 2.8% | 0.0ms | `expectCanvasesToMatch` | `visualRegressionUtils.ts:121` |
+| 6 | 85.8ms | 2.8% | 2.7ms | `compareTwoCanvases` | `visualRegressionUtils.ts:94` |
+| 7 | 79.0ms | 2.6% | 79.0ms | `captureCanvasAsDataUrl` | `visualRegressionUtils.ts:1` |
+| 8 | 17.7ms | 0.6% | 0.0ms | `(anonymous)` | `renderTimegroupToCanvas.browsertest.ts:529` |
+| 9 | 17.7ms | 0.6% | 17.7ms | `hasCanvasContent` | `renderTimegroupToCanvas.browsertest.ts:345` |
+| 10 | 16.3ms | 0.5% | 0.0ms | `(anonymous)` | `renderTimegroupToCanvas.browsertest.ts:517` |
+| 11 | 16.3ms | 0.5% | 16.3ms | `hasCanvasContent` | `renderTimegroupToCanvas.browsertest.ts:345` |
+| 12 | 10.9ms | 0.4% | 0.0ms | `(anonymous)` | `EFVideo.ts:80` |
+| 13 | 10.9ms | 0.4% | 0.0ms | `paint` | `EFVideo.ts:174` |
+| 14 | 10.9ms | 0.4% | 0.0ms | `withSpanSync` | `tracingHelpers.ts:129` |
+| 15 | 10.9ms | 0.4% | 0.0ms | `(anonymous)` | `EFVideo.ts:184` |
+| 16 | 8.2ms | 0.3% | 0.0ms | `videoTimegroup` | `renderTimegroupToCanvas.browsertest.ts:69` |
+| 17 | 6.8ms | 0.2% | 0.0ms | `displayFrame` | `EFVideo.ts:249` |
+| 18 | 6.8ms | 0.2% | 0.0ms | `withSpanSync` | `tracingHelpers.ts:129` |
+| 19 | 6.8ms | 0.2% | 6.8ms | `(anonymous)` | `EFVideo.ts:261` |
+| 20 | 5.4ms | 0.2% | 1.4ms | `task` | `makeAudioTimeDomainAnalysisTask.ts:30` |
 
-Shows caller/callee relationships for top hotspots:
-```
-TOP HOTSPOT: serializeToString
-Called by:
-  └─ serializeToSvgDataUri (234.5ms)
-  └─ renderToImage (189.3ms)
-  
-Calls:
-  └─ XMLSerializer.serializeToString (native)
-  └─ encodeString (15.2ms)
-```
+## Most Frequently Sampled Functions
 
-#### 4. Formatted Console Output ✅
+Functions that appeared most often in profiling samples (may indicate hot loops or frequently called code)
 
-Beautiful ASCII tables for terminal output:
-```
-┌─ TOP 20 FUNCTIONS BY SELF TIME ───────────────┐
-│ Rank │ Self Time │  Self % │ Samples │ Function @ Location │
-├──────┼───────────┼─────────┼─────────┼────────────────────┤
-│    1 │  145.2ms  │  12.3%  │   1,234 │ serializeToString @ XMLSerializer.ts:45 │
-```
+| Rank | Samples | Sample % | Avg Time/Sample | Function | Location |
+|------|---------|----------|-----------------|----------|----------|
+| 1 | 210 | 9.41% | 1.362ms | `renderToImageNative` | `renderToImageNative.ts:16` |
+| 2 | 58 | 2.60% | 1.362ms | `captureCanvasAsDataUrl` | `visualRegressionUtils.ts:1` |
+| 3 | 13 | 0.58% | 1.362ms | `hasCanvasContent` | `renderTimegroupToCanvas.browsertest.ts:345` |
+| 4 | 12 | 0.54% | 1.362ms | `hasCanvasContent` | `renderTimegroupToCanvas.browsertest.ts:345` |
+| 5 | 5 | 0.22% | 1.362ms | `(anonymous)` | `EFVideo.ts:261` |
+| 6 | 3 | 0.13% | 1.362ms | `(anonymous)` | `makeAudioTimeDomainAnalysisTask.ts:97` |
+| 7 | 3 | 0.13% | 1.362ms | `(anonymous)` | `makeAudioFrequencyAnalysisTask.ts:137` |
+| 8 | 3 | 0.13% | 1.362ms | `(anonymous)` | `EFTemporal.ts:331` |
+| 9 | 2 | 0.09% | 1.362ms | `(anonymous)` | `EFTimegroup.ts:1389` |
+| 10 | 2 | 0.09% | 1.362ms | `captureFromClone` | `renderTimegroupToCanvas.ts:157` |
+| 11 | 2 | 0.09% | 1.362ms | `captureFromClone` | `renderTimegroupToCanvas.ts:157` |
+| 12 | 2 | 0.09% | 1.362ms | `compareTwoCanvases` | `visualRegressionUtils.ts:94` |
+| 13 | 1 | 0.04% | 1.362ms | `(anonymous)` | `useMSW.ts:1` |
+| 14 | 1 | 0.04% | 1.362ms | `(anonymous)` | `EFText.ts:1` |
+| 15 | 1 | 0.04% | 1.362ms | `(anonymous)` | `EFTimeline.ts:1` |
+| 16 | 1 | 0.04% | 1.362ms | `TargetableElement` | `TargetController.ts:52` |
+| 17 | 1 | 0.04% | 1.362ms | `determineDurationSource` | `EFTemporal.ts:42` |
+| 18 | 1 | 0.04% | 1.362ms | `get intrinsicDurationMs` | `EFMedia.ts:150` |
+| 19 | 1 | 0.04% | 1.362ms | `(anonymous)` | `EFTimegroup.ts:1375` |
+| 20 | 1 | 0.04% | 1.362ms | `__privateWrapper` | `EFTimegroup.ts:19` |
 
-#### 5. Markdown Report Generation ✅
+## Key Findings
 
-Generates comprehensive `.profiles/FUNCTION_LEVEL_ANALYSIS.md` with:
-- Performance summary and data quality assessment
-- Top 20 files by self time
-- Top 20 functions by self time
-- Top 20 functions by total time
-- Most frequently sampled functions
-- Key findings and optimization recommendations
-- Source map validation status
+### Top Hotspot
 
-### Standalone Analysis Tool ✅
+**Function:** `renderToImageNative`
+**Location:** `renderToImageNative.ts:16`
+**Self Time:** 285.9ms (9.4% of profile)
+**Total Time:** 287.3ms (9.5% of profile)
+**Samples:** 210
 
-Created `scripts/analyze-profile.ts` for analyzing existing `.cpuprofile` files:
+This function is the single biggest performance bottleneck in our code.
 
-```bash
-# Analyze any existing profile
-npx tsx scripts/analyze-profile.ts browsertest-profile.cpuprofile
-```
+### Top 3 Functions
 
-This allows:
-- Post-hoc analysis of profiles captured by other tools
-- Re-running analysis with different parameters
-- Generating reports from Chrome DevTools profiles
+The top 3 functions account for **382.6ms (12.6%)** of total profile time:
 
-## CDP Session Closure Limitation
+1. `renderToImageNative` - 285.9ms @ `renderToImageNative.ts:16`
+2. `captureCanvasAsDataUrl` - 79.0ms @ `visualRegressionUtils.ts:1`
+3. `hasCanvasContent` - 17.7ms @ `renderTimegroupToCanvas.browsertest.ts:345`
 
-### The Problem
+## Optimization Recommendations
 
-When Vitest browsertests complete, they immediately close the browser page/context:
-1. Profiler attaches to CDP session on Vitest test page
-2. Tests execute (profiling active)
-3. Tests complete
-4. Vitest closes page **immediately**
-5. CDP session terminates
-6. `Profiler.stop()` fails with "No session with given id"
-7. Profile data is lost
+Based on the profiling data, focus optimization efforts on:
 
-### What We Tried
+### 1. renderToImageNative
 
-**Attempt 1: Wait for browsertest to complete**
-- Result: Session already closed when we try to stop profiling ❌
+- **Impact:** 285.9ms (9.4% of profile)
+- **Location:** `renderToImageNative.ts:16`
+- **Recommendation:** Investigate and optimize this function
 
-**Attempt 2: Add duration timeout to stop profiling early**
-- Result: Tests complete faster than timeout, session still closes ❌
+### 2. captureCanvasAsDataUrl
 
-**Attempt 3: Graceful error handling**
-- Result: Can detect session closure, but profile data is lost ❌
+- **Impact:** 79.0ms (2.6% of profile)
+- **Location:** `visualRegressionUtils.ts:1`
+- **Recommendation:** Investigate and optimize this function
 
-### Root Cause
+### 3. hasCanvasContent
 
-The Vitest browsertest architecture closes the page synchronously when tests complete. There's no "beforeClose" hook or delay we can use to retrieve profiling data. This is a fundamental timing issue with the test runner, not our profiler.
+- **Impact:** 17.7ms (0.6% of profile)
+- **Location:** `renderTimegroupToCanvas.browsertest.ts:345`
+- **Recommendation:** Investigate and optimize this function
 
-### Workarounds
+### 4. hasCanvasContent
 
-**Option 1: Use Chrome DevTools directly**
-```bash
-# 1. Start browsertest in dev mode (keeps browser open)
-./scripts/browsertest packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts -t "batch capture" --headed
+- **Impact:** 16.3ms (0.5% of profile)
+- **Location:** `renderTimegroupToCanvas.browsertest.ts:345`
+- **Recommendation:** Investigate and optimize this function
 
-# 2. Open Chrome DevTools on the test page
-# 3. Start CPU profiling manually
-# 4. Run tests
-# 5. Stop profiling manually
-# 6. Export .cpuprofile
-# 7. Analyze with our tool
-npx tsx scripts/analyze-profile.ts downloaded-profile.cpuprofile
-```
+### 5. (anonymous)
 
-**Option 2: Profile longer-running workbench tests**
-Some workbench integration tests run long enough that we could potentially:
-- Detect when tests enter "main execution" phase
-- Start profiling after setup
-- Stop profiling before teardown
-- Still requires test cooperation
-
-**Option 3: Modify browsertest runner (out of scope)**
-Would require changes to Vitest's browsertest mode to:
-- Add `--keep-alive` flag
-- Delay page closure after tests complete
-- Provide CDP session lifecycle hooks
-
-## Profiler Usage
-
-### Basic Usage (with session limitation)
-
-```bash
-# Profile a browsertest (will capture during test, may fail at stop)
-npx tsx scripts/profile-browsertest.ts packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts -t "batch capture"
-```
-
-### Analyze Existing Profile
-
-```bash
-# If you have a .cpuprofile from any source
-npx tsx scripts/analyze-profile.ts path/to/profile.cpuprofile
-```
-
-### Manual Chrome DevTools Workflow
-
-1. Start test in headed mode:
-   ```bash
-   ./scripts/browsertest packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts -t "batch capture" --headed
-   ```
-
-2. Open DevTools, go to Performance tab
-
-3. Click "Record" (CPU profiling)
-
-4. Let test run
-
-5. Stop recording
-
-6. Right-click profile → "Save profile"
-
-7. Analyze with our tool:
-   ```bash
-   npx tsx scripts/analyze-profile.ts ~/Downloads/Profile-*.cpuprofile
-   ```
-
-## Data Quality Requirements
-
-For statistically significant profiling results:
-
-- **Minimum:** 1,000 samples (marginal confidence)
-- **Good:** 10,000 samples (reasonable confidence)
-- **Excellent:** 50,000+ samples (high confidence)
-
-At 1ms sampling interval:
-- 1,000 samples = 1 second of profiling
-- 10,000 samples = 10 seconds of profiling
-- 50,000 samples = 50 seconds of profiling
-
-## Output Format Example
-
-### Console Output
-
-```
-====================================================================================================
-PERFORMANCE SUMMARY
-  Profile Time: 12,345.6ms
-  Total Samples: 12,345
-  Sampling Interval: 1000μs (1.0ms)
-====================================================================================================
-
-┌─ TOP 20 FILES BY SELF TIME ───────────────────────────────────────────────┐
-│ Rank │  Self Time │  Self % │ Samples │ File                              │
-├──────┼────────────┼─────────┼─────────┼───────────────────────────────────┤
-│    1 │   1234.5ms │   10.0% │   1,234 │ renderTimegroupPreview.ts         │
-│    2 │    987.6ms │    8.0% │     988 │ serializeToSvgDataUri.ts          │
-...
-```
-
-### Markdown Report
-
-- Performance summary with data quality assessment
-- Top 20 hotspots by multiple metrics
-- Key findings and actionable recommendations
-- Source map validation status
+- **Impact:** 6.8ms (0.2% of profile)
+- **Location:** `EFVideo.ts:261`
+- **Recommendation:** Investigate and optimize this function
 
 ## Source Map Validation
 
-The profiler validates source maps are working by checking:
+✅ **Source maps working correctly**
 
-✅ TypeScript files (`.ts`, `.tsx`) appear in profile
-✅ Line numbers are from original source, not compiled output
-✅ Can identify exact functions and locations
-
-If no TypeScript files found:
-- Source maps may not be loading
-- May be profiling wrong page
-- May be profiling mostly native/idle code
-
-## Key Findings from Implementation
-
-### What Works
-
-1. **Source map resolution** - Can map compiled JS to TypeScript
-2. **Function-level analysis** - Shows exact hotspots with line numbers
-3. **Call tree construction** - Identifies caller/callee relationships
-4. **Statistical analysis** - Self time, total time, frequency metrics
-5. **Report generation** - Professional markdown output
-6. **Standalone analysis** - Can process any .cpuprofile file
-
-### What Needs Improvement
-
-1. **CDP session timing** - Need Vitest cooperation to keep page alive
-2. **Live profiling** - Currently requires manual Chrome DevTools workflow
-3. **Long-running tests** - Could work with workbench tests that run 30+ seconds
+- Found 184 TypeScript functions in profile
+- Line numbers are being mapped from compiled JavaScript back to TypeScript
+- Can identify exact functions and locations for optimization
 
 ## Next Steps
 
-### Immediate: Use Manual Workflow
+1. **Review top hotspots** - Examine the top 5 functions for optimization opportunities
+2. **Measure impact** - After optimizing, re-run profiler to measure improvements
+3. **Focus on high-value targets** - Prioritize functions with both high self time and high total time
+4. **Check call patterns** - Look for functions called too frequently (high sample counts)
 
-For accurate profiling of browsertest performance:
-1. Use headed mode + Chrome DevTools
-2. Manual profile recording
-3. Export .cpuprofile
-4. Analyze with our enhanced tools
-
-### Future: Request Vitest Enhancement
-
-File feature request with Vitest for:
-- `--profile` flag in browsertest mode
-- `--keep-alive` duration option
-- CDP session lifecycle hooks
-
-### Alternative: Integration Test Profiling
-
-Profile longer-running integration/workbench tests where:
-- Tests run 30+ seconds
-- Can capture partial profiles
-- Session may stay alive longer
-
-## Conclusion
-
-**Status: Enhanced profiler implemented successfully ✅**
-
-The profiler now provides comprehensive function-level analysis with:
-- TypeScript source map resolution
-- Multiple performance metrics (self/total/frequency)
-- Call tree visualization
-- Professional reporting
-
-**Limitation: CDP session timing ⚠️**
-
-Cannot reliably capture profiles from short-running browsertests due to Vitest immediately closing the page when tests complete. This is a test runner architecture limitation.
-
-**Workaround: Manual Chrome DevTools workflow ✅**
-
-Can still capture profiles manually and analyze with our enhanced tools, providing all the detailed function-level analysis we need.
-
-**Deliverables:**
-1. ✅ Enhanced `profile-browsertest.ts` with function-level analysis
-2. ✅ Standalone `analyze-profile.ts` for existing profiles
-3. ✅ Comprehensive markdown report generation
-4. ✅ Documentation of limitations and workarounds
-5. ✅ Professional formatted output (tables, metrics, recommendations)
-
-The profiler is production-ready for use with manual Chrome DevTools profiling or any existing .cpuprofile files.
