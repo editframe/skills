@@ -1,0 +1,339 @@
+🔬 Export Profiling Harness
+   Project: dev-projects/video.html
+   Max duration: 30000ms
+   Output: ./export-profile.cpuprofile
+   Headless: false
+
+📡 Connecting to existing browser: ws://host.docker.internal:51512/bce12e0857a82ea67eb79e06e2db32f1
+📄 Loading http://main.localhost:4321/dev-projects/video.html...
+⏳ Waiting for timegroup...
+✅ Timegroup ready: 800x500, 41000ms
+
+📊 VideoFrame Creation Benchmark (1920x1080, 50 frames):
+   HTMLCanvasElement → VideoFrame: 0.4ms (0.01ms/frame)
+   OffscreenCanvas → VideoFrame:   0.2ms (0.00ms/frame)
+
+🎬 Starting CPU profile and export...
+⏱️  Export completed in 56.88s
+   Result keys: success, videoBuffer
+   Video buffer size: 5338149 bytes
+
+💾 Profile saved to: ./export-profile.cpuprofile
+   Load in Chrome DevTools: chrome://inspect → Open dedicated DevTools → Performance → Load profile
+
+🗺️  Resolving source maps...
+   Loaded 115/115 source maps
+
+📊 Top Hotspots:
+
+   === Our Code ===
+      58.1ms  syncNodeStyles                           renderTimegroupPreview.ts:407
+      55.4ms  syncNodeStyles                           renderTimegroupPreview.ts:407
+      26.0ms  syncNodeStyles                           renderTimegroupPreview.ts:407
+      21.0ms  syncNodeStyles                           renderTimegroupPreview.ts:407
+       9.8ms  syncNodeStyles                           renderTimegroupPreview.ts:407
+       4.6ms  renderTimegroupToVideo                   renderTimegroupToVideo.ts:264
+       2.0ms  collectDocumentStyles                    renderTimegroupPreview.ts:663
+       1.8ms  syncNodeStyles                           renderTimegroupPreview.ts:407
+       1.5ms  syncNodeStyles                           renderTimegroupPreview.ts:407
+       1.5ms  syncNodeRecursive                        renderTimegroupPreview.ts:626
+       1.2ms  syncNodeRecursive                        renderTimegroupPreview.ts:626
+       1.0ms  cloneElement                             renderTimegroupPreview.ts:201
+       1.0ms  syncNodeRecursive                        renderTimegroupPreview.ts:626
+       0.8ms  syncNodeRecursive                        renderTimegroupPreview.ts:626
+       0.7ms  syncNodeRecursive                        renderTimegroupPreview.ts:626
+       0.7ms  isDefaultValue                           renderTimegroupPreview.ts:97
+       0.5ms  copyCanvasCloneStyles                    renderTimegroupPreview.ts:160
+       0.5ms  cloneElement                             renderTimegroupPreview.ts:201
+       0.5ms  syncNodeStyles                           renderTimegroupPreview.ts:407
+       0.3ms  buildCloneStructure                      renderTimegroupPreview.ts:188
+
+================================================================================
+DETAILED PROFILE ANALYSIS
+================================================================================
+Total profile time: 56985.2ms
+Sample interval: 165µs
+Total samples: 344364
+
+--- TIME BY FILE ---
+   54197.7ms ( 95.1%)  (native)
+     674.0ms (  1.2%)  renderToImage.ts
+     332.6ms (  0.6%)  EFTemporal.ts
+     197.4ms (  0.3%)  renderToImageForeignObject.ts
+     186.2ms (  0.3%)  renderTimegroupPreview.ts
+     170.4ms (  0.3%)  waveformUtils.ts
+     121.1ms (  0.2%)  EFOverlayLayer.ts
+     119.1ms (  0.2%)  EFTimegroup.ts
+      95.2ms (  0.2%)  updateAnimations.ts
+      90.7ms (  0.2%)  lit-html.ts
+      79.9ms (  0.1%)  EFCanvas.ts
+      63.0ms (  0.1%)  chunk-JOMJT2WW.js
+      50.8ms (  0.1%)  reactive-element.ts
+      45.0ms (  0.1%)  EFTimeline.ts
+      37.7ms (  0.1%)  media-source.js
+
+--- LINE-LEVEL PROFILING ---
+
+  📄 renderToImage.ts (1340.7ms, 2.4%)
+    Line      Time     Pct  Function/Context
+  ------  --------  ------  ----------------------------------------
+      19    670.4ms    1.2%  (anonymous)
+      26    668.5ms    1.2%  (anonymous)
+      21      1.8ms    0.0%  (anonymous)
+
+  📄 renderToImageForeignObject.ts (391.9ms, 0.7%)
+    Line      Time     Pct  Function/Context
+  ------  --------  ------  ----------------------------------------
+      25    195.9ms    0.3%  serializeToSvgDataUri
+      56    102.9ms    0.2%  serializeToSvgDataUri
+     134     44.5ms    0.1%  serializeToSvgDataUri
+     129     39.1ms    0.1%  serializeToSvgDataUri
+      57      2.2ms    0.0%  serializeToSvgDataUri
+      71      1.0ms    0.0%  serializeToSvgDataUri
+      58      1.0ms    0.0%  serializeToSvgDataUri
+      64      0.7ms    0.0%  serializeToSvgDataUri
+      77      0.7ms    0.0%  serializeToSvgDataUri
+      78      0.5ms    0.0%  serializeToSvgDataUri
+      94      0.5ms    0.0%  serializeToSvgDataUri
+     114      0.5ms    0.0%  serializeToSvgDataUri
+     139      0.3ms    0.0%  serializeToSvgDataUri
+     123      0.3ms    0.0%  serializeToSvgDataUri
+      51      0.3ms    0.0%  serializeToSvgDataUri
+      60      0.3ms    0.0%  serializeToSvgDataUri
+      87      0.2ms    0.0%  serializeToSvgDataUri
+      88      0.2ms    0.0%  serializeToSvgDataUri
+      65      0.2ms    0.0%  serializeToSvgDataUri
+     133      0.2ms    0.0%  serializeToSvgDataUri
+     137      0.2ms    0.0%  serializeToSvgDataUri
+      83      0.2ms    0.0%  serializeToSvgDataUri
+      66      0.2ms    0.0%  serializeToSvgDataUri
+
+  📄 renderTimegroupPreview.ts (227.0ms, 0.4%)
+    Line      Time     Pct  Function/Context
+  ------  --------  ------  ----------------------------------------
+     407    113.5ms    0.2%  syncNodeStyles
+     504     94.3ms    0.2%  syncNodeStyles
+     529      4.8ms    0.0%  syncNodeStyles
+     508      4.5ms    0.0%  syncNodeStyles
+     561      3.0ms    0.0%  syncNodeStyles
+     510      1.5ms    0.0%  syncNodeStyles
+     565      1.3ms    0.0%  syncNodeStyles
+     566      1.0ms    0.0%  syncNodeStyles
+     515      0.7ms    0.0%  syncNodeStyles
+     569      0.7ms    0.0%  syncNodeStyles
+     526      0.5ms    0.0%  syncNodeStyles
+     573      0.3ms    0.0%  syncNodeStyles
+     570      0.2ms    0.0%  syncNodeStyles
+     502      0.2ms    0.0%  syncNodeStyles
+     522      0.2ms    0.0%  syncNodeStyles
+     492      0.2ms    0.0%  syncNodeStyles
+     578      0.2ms    0.0%  syncNodeStyles
+     506      0.2ms    0.0%  syncNodeStyles
+
+--- TOP HOTSPOTS IN OUR CODE (with callers) ---
+
+  670.4ms (1.2%) - (anonymous)
+    Location: renderToImage.ts:19:8
+    Called by: loadImageFromDataUri @ renderToImage.ts:12, renderToImageDirect @ renderToImage.ts:100
+    Hot lines:
+      L26: 638.8ms (3860 samples)
+      L26: 29.8ms (180 samples)
+      L21: 1.3ms (8 samples)
+      L21: 0.5ms (3 samples)
+
+  195.9ms (0.3%) - serializeToSvgDataUri
+    Location: renderToImageForeignObject.ts:25:27
+    Called by: (root) @ (native):0
+    Hot lines:
+      L56: 101.6ms (614 samples)
+      L134: 44.5ms (269 samples)
+      L129: 39.1ms (236 samples)
+      L57: 2.0ms (12 samples)
+      L56: 1.3ms (8 samples)
+
+  58.1ms (0.1%) - syncNodeStyles
+    Location: renderTimegroupPreview.ts:407:0
+    Called by: syncNodeRecursive @ renderTimegroupPreview.ts:626, syncStyles @ renderTimegroupPreview.ts:653
+    Hot lines:
+      L504: 48.5ms (293 samples)
+      L529: 2.2ms (13 samples)
+      L508: 1.8ms (11 samples)
+      L561: 1.7ms (10 samples)
+      L510: 0.8ms (5 samples)
+
+  55.4ms (0.1%) - syncNodeStyles
+    Location: renderTimegroupPreview.ts:407:0
+    Called by: syncNodeRecursive @ renderTimegroupPreview.ts:626, syncStyles @ renderTimegroupPreview.ts:653
+    Hot lines:
+      L504: 45.8ms (277 samples)
+      L529: 2.6ms (16 samples)
+      L508: 2.6ms (16 samples)
+      L561: 1.3ms (8 samples)
+      L565: 0.7ms (4 samples)
+
+  26.0ms (0.0%) - syncNodeStyles
+    Location: renderTimegroupPreview.ts:407:0
+    Called by: syncNodeRecursive @ renderTimegroupPreview.ts:626, syncStyles @ renderTimegroupPreview.ts:653
+    Hot lines:
+      L504: 21.7ms (131 samples)
+      L508: 1.2ms (7 samples)
+      L561: 0.8ms (5 samples)
+      L510: 0.7ms (4 samples)
+      L529: 0.7ms (4 samples)
+
+  21.0ms (0.0%) - syncNodeStyles
+    Location: renderTimegroupPreview.ts:407:0
+    Called by: syncNodeRecursive @ renderTimegroupPreview.ts:626, syncStyles @ renderTimegroupPreview.ts:653
+    Hot lines:
+      L504: 14.2ms (86 samples)
+      L508: 1.2ms (7 samples)
+      L565: 0.5ms (3 samples)
+      L561: 0.5ms (3 samples)
+      L452: 0.3ms (2 samples)
+
+  9.8ms (0.0%) - (anonymous)
+    Location: reactive-element.ts:1502:24
+    Called by: performUpdate @ chunk-JOMJT2WW.js:691, scheduleUpdate @ chunk-JOMJT2WW.js:674
+    Hot lines:
+      L1502: 5.1ms (31 samples)
+      L1502: 4.6ms (28 samples)
+
+  9.8ms (0.0%) - syncNodeStyles
+    Location: renderTimegroupPreview.ts:407:0
+    Called by: syncNodeRecursive @ renderTimegroupPreview.ts:626, syncStyles @ renderTimegroupPreview.ts:653
+    Hot lines:
+      L504: 7.1ms (43 samples)
+      L561: 0.7ms (4 samples)
+      L508: 0.5ms (3 samples)
+      L566: 0.3ms (2 samples)
+      L569: 0.2ms (1 samples)
+
+  5.0ms (0.0%) - get
+    Location: reactive-element.ts:759:4
+    Called by: (root) @ (native):0
+    Hot lines:
+      L759: 5.0ms (30 samples)
+
+  4.6ms (0.0%) - debugLogEvent
+    Location: reactive-element.ts:118:0
+    Called by: performUpdate @ chunk-JOMJT2WW.js:691, scheduleUpdate @ chunk-JOMJT2WW.js:674
+    Hot lines:
+      L158: 4.5ms (27 samples)
+      L110: 0.2ms (1 samples)
+
+  4.6ms (0.0%) - renderTimegroupToVideo
+    Location: renderTimegroupToVideo.ts:264:0
+    Called by: (root) @ (native):0
+    Hot lines:
+      L459: 1.0ms (6 samples)
+      L456: 0.8ms (5 samples)
+      L455: 0.5ms (3 samples)
+      L264: 0.3ms (2 samples)
+      L429: 0.3ms (2 samples)
+
+  4.5ms (0.0%) - (anonymous)
+    Location: reactive-element.ts:1547:14
+    Called by: _$didUpdate @ chunk-JOMJT2WW.js:767, performUpdate @ chunk-JOMJT2WW.js:691
+    Hot lines:
+      L768: 3.0ms (18 samples)
+      L768: 1.5ms (9 samples)
+
+  2.0ms (0.0%) - collectDocumentStyles
+    Location: renderTimegroupPreview.ts:663:0
+    Called by: renderTimegroupToVideo @ renderTimegroupToVideo.ts:264, (root) @ (native):0
+    Hot lines:
+      L674: 1.2ms (7 samples)
+      L674: 0.5ms (3 samples)
+      L673: 0.2ms (1 samples)
+      L670: 0.2ms (1 samples)
+
+  1.8ms (0.0%) - syncNodeStyles
+    Location: renderTimegroupPreview.ts:407:0
+    Called by: syncNodeRecursive @ renderTimegroupPreview.ts:626, buildCloneStructure @ renderTimegroupPreview.ts:188
+    Hot lines:
+      L529: 0.8ms (5 samples)
+      L508: 0.7ms (4 samples)
+      L510: 0.3ms (2 samples)
+
+  1.7ms (0.0%) - (anonymous)
+    Location: renderTrackChildren.ts:21:16
+    Called by: renderTrackChildren @ renderTrackChildren.ts:13, renderTrack @ EFTimelineRow.ts:396
+    Hot lines:
+      L56: 0.5ms (3 samples)
+      L45: 0.3ms (2 samples)
+      L66: 0.3ms (2 samples)
+      L99: 0.2ms (1 samples)
+      L76: 0.2ms (1 samples)
+
+  1.7ms (0.0%) - set
+    Location: reactive-element.ts:762:6
+    Called by: set @ reactive-element.ts:785, update @ EFCanvas.ts:1278
+    Hot lines:
+      L287: 1.7ms (10 samples)
+
+  1.5ms (0.0%) - set
+    Location: reactive-element.ts:785:6
+    Called by: update @ EFCanvas.ts:1278, (root) @ (native):0
+    Hot lines:
+      L788: 1.2ms (7 samples)
+      L299: 0.3ms (2 samples)
+
+  1.5ms (0.0%) - syncNodeStyles
+    Location: renderTimegroupPreview.ts:407:0
+    Called by: syncNodeRecursive @ renderTimegroupPreview.ts:626, buildCloneStructure @ renderTimegroupPreview.ts:188
+    Hot lines:
+      L508: 0.7ms (4 samples)
+      L529: 0.7ms (4 samples)
+      L522: 0.2ms (1 samples)
+
+  1.5ms (0.0%) - syncNodeRecursive
+    Location: renderTimegroupPreview.ts:626:0
+    Called by: syncNodeRecursive @ renderTimegroupPreview.ts:626, syncStyles @ renderTimegroupPreview.ts:653
+    Hot lines:
+      L643: 1.5ms (9 samples)
+
+  1.3ms (0.0%) - renderToImageDirect
+    Location: renderToImage.ts:100:0
+    Called by: (root) @ (native):0
+    Hot lines:
+      L126: 0.7ms (4 samples)
+      L100: 0.3ms (2 samples)
+      L131: 0.2ms (1 samples)
+      L128: 0.2ms (1 samples)
+
+--- NATIVE API TIME ---
+   41725.4ms ( 73.2%)  (idle)
+    6300.6ms ( 11.1%)  (program)
+    1867.4ms (  3.3%)  getImageData
+     844.1ms (  1.5%)  (anonymous)
+     817.6ms (  1.4%)  serializeToString
+     487.0ms (  0.9%)  getAnimations
+     384.9ms (  0.7%)  encode
+     381.8ms (  0.7%)  (garbage collector)
+     344.0ms (  0.6%)  VideoFrame
+     246.7ms (  0.4%)  drawImage
+      98.5ms (  0.2%)  Blob
+      98.5ms (  0.2%)  drawElementImage
+      79.4ms (  0.1%)  innerSerialize
+      71.3ms (  0.1%)  serialize
+      71.0ms (  0.1%)  setProperty
+
+--- ACTIONABLE OPTIMIZATION TARGETS ---
+
+  🎯 (anonymous) in renderToImage.ts:19: 670.4ms
+     → Optimize this function - 1.2% of total time
+
+  🎯 getAnimations() calls: 487.0ms
+     → Cache animations or use animation tracking to avoid repeated discovery
+
+  🎯 Garbage collection: 381.8ms
+     → Reduce allocations by reusing objects/arrays
+
+  🎯 serializeToSvgDataUri in renderToImageForeignObject.ts:25: 195.9ms
+     → Optimize this function - 0.3% of total time
+
+================================================================================
+
+🎬 Video saved to: /Users/collin/Editframe/monorepo/elements/profile-export-test.mp4
+
+✅ Profiling complete!

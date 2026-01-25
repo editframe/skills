@@ -374,7 +374,7 @@ async function main() {
     const exportPromise = page.evaluate(async ({ maxDur, benchmark }) => {
       const timegroup = document.querySelector("ef-timegroup") as any;
       if (timegroup?.renderToVideo) {
-        const exportDuration = Math.min(timegroup.durationMs, 6000);
+        const exportDuration = timegroup.durationMs; // Profile full duration
         const buffer = await timegroup.renderToVideo({
           toMs: exportDuration,
           streaming: false,

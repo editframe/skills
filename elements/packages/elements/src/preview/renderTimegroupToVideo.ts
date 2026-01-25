@@ -32,10 +32,8 @@ import {
   collectDocumentStyles,
   overrideRootCloneStyles,
 } from "./renderTimegroupPreview.js";
-import { renderToImageDirect, loadImageFromDataUri } from "./rendering/renderToImage.js";
+import { renderToImageDirect } from "./rendering/renderToImage.js";
 import { createPreviewContainer } from "./previewTypes.js";
-import { getSerializationWorkerPool, resetSerializationWorkerPool } from "./rendering/SerializationWorkerPool.js";
-import { extractCanvasData, serializeToHtmlString, cleanupCanvasMarkers } from "./rendering/frameSerializationHelpers.js";
 import { inlineImages } from "./rendering/inlineImages.js";
 
 // ============================================================================
@@ -356,6 +354,10 @@ export async function renderTimegroupToVideo(
       throw new Error("Failed to get encoding canvas context");
     }
     
+    if (!output) {
+      throw new Error("Output not initialized");
+    }
+    
     const videoConfig: VideoEncodingConfig = {
       codec: config.codec,
       bitrate: config.bitrate,
@@ -416,56 +418,93 @@ export async function renderTimegroupToVideo(
   let totalSyncMs = 0;
   let totalRenderMs = 0;
   let totalEncodeMs = 0;
-  let totalWorkerMs = 0;
-  
-  // Initialize worker pool for parallel frame serialization
-  const serializationPool = getSerializationWorkerPool();
-  const useWorkerSerialization = serializationPool !== null && serializationPool.isAvailable();
-  
-  if (useWorkerSerialization) {
-    logger.debug(`[renderTimegroupToVideo] Using worker pool with ${serializationPool.workerCount} workers for parallel serialization`);
-  } else {
-    logger.debug("[renderTimegroupToVideo] Worker pool not available, using main thread serialization");
-  }
   
   try {
     // ========================================================================
-    // Prime the pipeline: render frame 0 completely before entering loop
+    // DEEP PIPELINE: 3-4 frames ahead with operation queues
     // ========================================================================
-    await renderClone.seekForRender(timestamps[0]!);
-    syncStyles(syncState, timestamps[0]!);
-    overrideRootCloneStyles(syncState, true);
+    // Maintain queues of in-flight work (like the reference architecture)
+    type RenderTask = { frameIndex: number; timeMs: number; timestampS: number; promise: Promise<HTMLImageElement> };
+    const seekQueue: Promise<void>[] = [];
+    const renderTasks: RenderTask[] = [];
+    
+    // Pipeline depth configuration
+    const MAX_SEEK = 3;    // 3 seeks can overlap
+    const MAX_RENDER = 3;  // 3 renders can overlap (image loading is async)
+    
+    let nextSeekFrame = 0;
+    let nextRenderFrame = 0;
     
     // Inline external images once (they're the same for all frames)
     await inlineImages(previewContainer);
     
-    let preparedImage: HTMLImageElement;
-    
-    if (useWorkerSerialization && serializationPool) {
-      // Worker-based serialization path
-      const canvasData = extractCanvasData(previewContainer);
-      const htmlString = serializeToHtmlString(previewContainer, width, height);
-      cleanupCanvasMarkers(previewContainer);
-      
-      const workerStart = performance.now();
-      const svgDataUrl = await serializationPool.serializeFrame(htmlString, canvasData, width, height);
-      totalWorkerMs += performance.now() - workerStart;
-      
-      preparedImage = await loadImageFromDataUri(svgDataUrl);
-    } else {
-      // Fallback to main thread serialization
-      preparedImage = await renderToImageDirect(previewContainer, width, height);
-    }
-    
-    let pendingEncodePromise: Promise<void> | null = null;
-    
-    for (let frameIndex = 0; frameIndex < config.totalFrames; frameIndex++) {
+    for (let completedFrames = 0; completedFrames < config.totalFrames; completedFrames++) {
       checkCancelled();
       
+      const frameIndex = completedFrames;
       const timeMs = timestamps[frameIndex]!;
       const timestampS = (frameIndex * config.frameDurationMs) / 1000;
       
-      // Render audio chunk if needed
+      // =====================================================================
+      // STAGE 1: Fill seek queue (don't block!)
+      // =====================================================================
+      while (seekQueue.length < MAX_SEEK && nextSeekFrame < config.totalFrames) {
+        const seekFrameIndex = nextSeekFrame;
+        const seekTimeMs = timestamps[seekFrameIndex]!;
+        
+        const seekStart = performance.now();
+        const seekPromise = renderClone.seekForRender(seekTimeMs).then(() => {
+          totalSeekMs += performance.now() - seekStart;
+        });
+        seekQueue.push(seekPromise);
+        nextSeekFrame++;
+      }
+      
+      // =====================================================================
+      // STAGE 2: Fill render queue (don't block!)
+      // =====================================================================
+      while (renderTasks.length < MAX_RENDER && seekQueue.length > 0 && nextRenderFrame < config.totalFrames) {
+        const renderFrameIndex = nextRenderFrame;
+        const renderTimeMs = timestamps[renderFrameIndex]!;
+        const renderTimestampS = (renderFrameIndex * config.frameDurationMs) / 1000;
+        const seekPromise = seekQueue.shift()!;
+        
+        const renderPromise = seekPromise.then(async () => {
+          const syncStart = performance.now();
+          syncStyles(syncState, renderTimeMs);
+          overrideRootCloneStyles(syncState, true);
+          totalSyncMs += performance.now() - syncStart;
+          
+          const renderStart = performance.now();
+          const image = await renderToImageDirect(previewContainer, width, height);
+          totalRenderMs += performance.now() - renderStart;
+          return image;
+        });
+        
+        renderTasks.push({
+          frameIndex: renderFrameIndex,
+          timeMs: renderTimeMs,
+          timestampS: renderTimestampS,
+          promise: renderPromise,
+        });
+        nextRenderFrame++;
+      }
+      
+      // =====================================================================
+      // STAGE 3: Await the render for THIS frame (in strict order)
+      // =====================================================================
+      const taskIndex = renderTasks.findIndex((t) => t.frameIndex === frameIndex);
+      if (taskIndex === -1) {
+        throw new Error(`No render task found for frame ${frameIndex}`);
+      }
+      
+      const task = renderTasks[taskIndex]!;
+      const image = await task.promise;
+      renderTasks.splice(taskIndex, 1);
+      
+      // =====================================================================
+      // STAGE 4: Render audio chunk if needed
+      // =====================================================================
       if (audioSource && timeMs >= lastRenderedAudioEndMs + audioChunkDurationMs) {
         const chunkEndMs = Math.min(timeMs + audioChunkDurationMs, config.endMs);
         try {
@@ -478,82 +517,22 @@ export async function renderTimegroupToVideo(
       }
       
       // =====================================================================
-      // PIPELINE STAGE 1: Start encoding current frame (DON'T AWAIT YET!)
+      // STAGE 5: Encode frame (sequential, maintains order)
       // =====================================================================
-      let currentEncodePromise: Promise<void> | null = null;
-      
-      if (videoSource && output && encodingCtx && preparedImage) {
+      if (videoSource && output && encodingCtx) {
         const encodeStart = performance.now();
         encodingCtx.drawImage(
-          preparedImage,
-          0, 0, preparedImage.width, preparedImage.height,
+          image,
+          0, 0, image.width, image.height,
           0, 0, config.videoWidth, config.videoHeight,
         );
-        // Start encode but DON'T await yet - let it run in web worker
-        currentEncodePromise = videoSource.add(timestampS, config.frameDurationS);
-        totalEncodeMs += performance.now() - encodeStart; // Just timing overhead
+        await videoSource.add(timestampS, config.frameDurationS);
+        totalEncodeMs += performance.now() - encodeStart;
       }
       
       // =====================================================================
-      // PIPELINE STAGE 2: While encoding, prepare and render NEXT frame
+      // STAGE 6: Progress reporting
       // =====================================================================
-      const nextFrameIndex = frameIndex + 1;
-      let nextRenderPromise: Promise<HTMLImageElement> | null = null;
-      
-      if (nextFrameIndex < config.totalFrames) {
-        const nextTimeMs = timestamps[nextFrameIndex]!;
-        
-        // Prepare next frame
-        const seekStart = performance.now();
-        await renderClone.seekForRender(nextTimeMs);
-        totalSeekMs += performance.now() - seekStart;
-        
-        const syncStart = performance.now();
-        syncStyles(syncState, nextTimeMs);
-        overrideRootCloneStyles(syncState, true);
-        totalSyncMs += performance.now() - syncStart;
-        
-        // Start rendering next frame (don't await yet)
-        const renderStart = performance.now();
-        
-        if (useWorkerSerialization && serializationPool) {
-          // Worker-based serialization: extract data and send to worker pool
-          const canvasData = extractCanvasData(previewContainer);
-          const htmlString = serializeToHtmlString(previewContainer, width, height);
-          cleanupCanvasMarkers(previewContainer);
-          
-          // Start worker serialization (runs in parallel with encoding)
-          const workerPromise = serializationPool.serializeFrame(htmlString, canvasData, width, height);
-          
-          // Chain with image loading
-          nextRenderPromise = workerPromise.then(async (svgDataUrl) => {
-            const workerEnd = performance.now();
-            totalWorkerMs += workerEnd - renderStart;
-            return loadImageFromDataUri(svgDataUrl);
-          });
-        } else {
-          // Fallback to main thread serialization
-          nextRenderPromise = renderToImageDirect(previewContainer, width, height);
-        }
-        
-        totalRenderMs += performance.now() - renderStart; // Just timing overhead
-      }
-      
-      // =====================================================================
-      // PIPELINE STAGES 3-4: Await all promises in parallel
-      // =====================================================================
-      const [_, __, nextImage] = await Promise.all([
-        pendingEncodePromise || Promise.resolve(),
-        currentEncodePromise || Promise.resolve(),
-        nextRenderPromise || Promise.resolve(null),
-      ]);
-      
-      if (nextImage) {
-        preparedImage = nextImage;
-      }
-      pendingEncodePromise = currentEncodePromise;
-      
-      // Progress
       const currentFrame = frameIndex + 1;
       const progress = currentFrame / config.totalFrames;
       const renderedMs = currentFrame * config.frameDurationMs;
@@ -563,14 +542,14 @@ export async function renderTimegroupToVideo(
       const estimatedRemainingMs = remainingFrames * msPerFrame;
       const speedMultiplier = renderedMs / elapsedMs;
       
-      if (onProgress && frameIndex % 10 === 0 && preparedImage) {
+      if (onProgress && frameIndex % 10 === 0) {
         const previewWidth = 160;
         const previewHeight = Math.round(previewWidth * (config.videoHeight / config.videoWidth));
         const thumbCanvas = document.createElement("canvas");
         thumbCanvas.width = previewWidth;
         thumbCanvas.height = previewHeight;
         const thumbCtx = thumbCanvas.getContext("2d")!;
-        thumbCtx.drawImage(preparedImage, 0, 0, previewWidth, previewHeight);
+        thumbCtx.drawImage(image, 0, 0, previewWidth, previewHeight);
         lastFramePreviewUrl = thumbCanvas.toDataURL("image/jpeg", 0.7);
       }
       
@@ -587,11 +566,6 @@ export async function renderTimegroupToVideo(
       });
     }
     
-    // Final encode (if any pending)
-    if (pendingEncodePromise) {
-      await pendingEncodePromise;
-    }
-    
     // Render remaining audio
     if (audioSource && lastRenderedAudioEndMs < config.endMs) {
       try {
@@ -603,21 +577,12 @@ export async function renderTimegroupToVideo(
     }
     
     const totalTime = performance.now() - renderStartTime;
-    const logParts = [
-      `[renderTimegroupToVideo] ${config.totalFrames} frames:`,
-      `seek=${totalSeekMs.toFixed(0)}ms`,
-      `sync=${totalSyncMs.toFixed(0)}ms`,
-      `render=${totalRenderMs.toFixed(0)}ms`
-    ];
-    
-    if (useWorkerSerialization) {
-      logParts.push(`worker=${totalWorkerMs.toFixed(0)}ms`);
-    }
-    
-    logParts.push(`encode=${totalEncodeMs.toFixed(0)}ms`);
-    logParts.push(`total=${totalTime.toFixed(0)}ms`);
-    
-    logger.debug(logParts.join(', '));
+    logger.debug(
+      `[renderTimegroupToVideo] ${config.totalFrames} frames: ` +
+      `seek=${totalSeekMs.toFixed(0)}ms, sync=${totalSyncMs.toFixed(0)}ms, ` +
+      `render=${totalRenderMs.toFixed(0)}ms, encode=${totalEncodeMs.toFixed(0)}ms, ` +
+      `total=${totalTime.toFixed(0)}ms`
+    );
     
     if (config.benchmarkMode) {
       return undefined;
@@ -646,19 +611,7 @@ export async function renderTimegroupToVideo(
     
   } finally {
     cleanupRenderClone();
-    
-    // Note: We don't terminate the worker pool here because it's a singleton
-    // that can be reused across multiple render calls for better performance.
-    // It will be cleaned up when the page unloads or when explicitly reset.
   }
-}
-
-/**
- * Clean up resources (for testing or when changing settings).
- * Call this to reset the worker pool and force recreation on next render.
- */
-export function cleanupRenderResources(): void {
-  resetSerializationWorkerPool();
 }
 
 export { QUALITY_HIGH };
