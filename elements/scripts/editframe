@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+#
+# Development CLI wrapper for Editframe
+# =====================================
+# This script allows running the Editframe CLI directly from TypeScript source
+# files without building packages. Use this for local development in the monorepo.
+#
+# Usage:
+#   scripts/editframe preview dev-projects/simple-demo.html
+#   scripts/editframe render --help
+#   scripts/editframe --version
+#
+# For production use or in external projects:
+#   Install @editframe/cli from npm and use: npx editframe <command>
+#
+# How it works:
+# - Runs CLI via tsx (TypeScript execution)
+# - Uses tsconfig-paths/register to resolve @editframe/* imports
+# - Resolves to source files (packages/*/src/) via tsconfig.json paths
+# - No build step required!
+#
+
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+ELEMENTS_ROOT="$SCRIPT_DIR/.."
+
+# Change to elements directory so tsconfig.json paths resolve correctly
+cd "$ELEMENTS_ROOT"
+
+# Run the CLI using tsx with TypeScript path resolution
+# Use Node.js loader to handle CSS imports before tsx processes the file
+# The CSS loader handles .css?inline imports by converting them to string exports
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+exec node --import "data:text/javascript,import { register } from 'node:module'; import { pathToFileURL } from 'node:url'; register('$SCRIPT_DIR/css-loader.mjs', pathToFileURL('$SCRIPT_DIR/'));" --import tsx --import tsconfig-paths/register packages/cli/src/index.ts "$@"

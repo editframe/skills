@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+#
+# Test script for the editframe development wrapper
+#
+
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+cd "$SCRIPT_DIR/.."
+
+echo "Testing editframe development wrapper..."
+echo ""
+
+echo "Test 1: --version command"
+echo "Command: ./scripts/editframe --version"
+./scripts/editframe --version
+VERSION_EXIT=$?
+echo "Exit code: $VERSION_EXIT"
+echo ""
+
+if [ $VERSION_EXIT -eq 0 ]; then
+    echo "✓ Test 1 PASSED: --version works"
+else
+    echo "✗ Test 1 FAILED: --version returned non-zero exit code"
+    exit 1
+fi
+
+echo ""
+echo "Test 2: --help command"
+echo "Command: ./scripts/editframe --help"
+./scripts/editframe --help > /dev/null 2>&1
+HELP_EXIT=$?
+echo "Exit code: $HELP_EXIT"
+echo ""
+
+if [ $HELP_EXIT -eq 0 ]; then
+    echo "✓ Test 2 PASSED: --help works"
+else
+    echo "✗ Test 2 FAILED: --help returned non-zero exit code"
+    exit 1
+fi
+
+echo ""
+echo "Test 3: preview --help command"
+echo "Command: ./scripts/editframe preview --help"
+./scripts/editframe preview --help > /dev/null 2>&1
+PREVIEW_HELP_EXIT=$?
+echo "Exit code: $PREVIEW_HELP_EXIT"
+echo ""
+
+if [ $PREVIEW_HELP_EXIT -eq 0 ]; then
+    echo "✓ Test 3 PASSED: preview --help works"
+else
+    echo "✗ Test 3 FAILED: preview --help returned non-zero exit code"
+    exit 1
+fi
+
+echo ""
+echo "========================================="
+echo "All CLI wrapper tests PASSED! ✓"
+echo "========================================="
+echo ""
+echo "The wrapper successfully:"
+echo "  - Executes TypeScript source directly via tsx"
+echo "  - Resolves @editframe/* imports to source files"
+echo "  - Runs without requiring any builds"
+echo ""

@@ -4,7 +4,7 @@ alwaysApply: true
 
 use {elements}/scripts/{test,browsertest,npm,run,tsx,docker,docker-compose}
 
-All our dev environments run in docker containers that are configured to run only through those scripts.
+All our dev environments run in docker containers that are configured to run only through those scripts. The exception is running the editframe cli, this should be run from the host machine using elements/scripts/editframe (no build required).
 
 Always create failing tests first, verify they fail, implement the fix, then verify they pass. Look for existing tests that might already cover the current task.
 

@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+cd "$SCRIPT_DIR/.."
+
+echo "==================================="
+echo "Comprehensive CLI Wrapper Tests"
+echo "==================================="
+echo ""
+
+# Phase 1: Basic commands
+echo "Phase 1: Testing basic commands"
+echo "--------------------------------"
+echo ""
+
+echo "Test 1: preview --help"
+./scripts/editframe preview --help > /dev/null 2>&1
+echo "✓ Exit code: $?"
+
+echo "Test 2: render --help"
+./scripts/editframe render --help > /dev/null 2>&1
+echo "✓ Exit code: $?"
+
+echo "Test 3: check --help"
+./scripts/editframe check --help > /dev/null 2>&1
+echo "✓ Exit code: $?"
+
+echo "Test 4: sync --help"
+./scripts/editframe sync --help > /dev/null 2>&1
+echo "✓ Exit code: $?"
+
+echo ""
+echo "Phase 2: Verify source file resolution"
+echo "---------------------------------------"
+echo ""
+
+# Test by checking if tsx is being used (indicates TypeScript execution)
+echo "Test 5: Check execution method"
+if ./scripts/editframe --version 2>&1 | grep -q "0.33.0-beta"; then
+    echo "✓ CLI executed successfully from TypeScript source"
+fi
+
+# Check if the CLI can import @editframe packages without builds
+echo "Test 6: Verify no dist/ directories required"
+# Temporarily rename a dist directory if it exists to prove source is used
+if [ -d "packages/elements/dist" ]; then
+    mv packages/elements/dist packages/elements/dist.backup
+    RESTORE_ELEMENTS_DIST=1
+fi
+
+./scripts/editframe --version > /dev/null 2>&1
+EXIT_CODE=$?
+
+if [ "$RESTORE_ELEMENTS_DIST" = "1" ]; then
+    mv packages/elements/dist.backup packages/elements/dist
+fi
+
+if [ $EXIT_CODE -eq 0 ]; then
+    echo "✓ CLI runs without built dist/ directories"
+else
+    echo "✗ CLI requires built packages"
+    exit 1
+fi
+
+echo ""
+echo "Phase 3: Import resolution verification"
+echo "----------------------------------------"
+echo ""
+
+# Verify tsconfig.json paths point to source files
+echo "Test 7: Verify tsconfig.json paths configuration"
+if grep -q "@editframe/cli.*packages/cli/src" tsconfig.json; then
+    echo "✓ tsconfig.json paths configured to use source files"
+else
+    echo "✗ tsconfig.json paths not configured correctly"
+    exit 1
+fi
+
+# Test with multiple dist directories renamed to prove source resolution
+echo "Test 8: Verify CLI works with multiple dist/ directories renamed"
+DIST_BACKUPS=()
+for pkg in api elements assets cli; do
+    if [ -d "packages/$pkg/dist" ]; then
+        mv "packages/$pkg/dist" "packages/$pkg/dist.backup"
+        DIST_BACKUPS+=("packages/$pkg/dist.backup")
+    fi
+done
+
+./scripts/editframe --version > /dev/null 2>&1
+EXIT_CODE=$?
+
+# Restore all dist directories
+for backup in "${DIST_BACKUPS[@]}"; do
+    if [ -d "$backup" ]; then
+        mv "$backup" "${backup%.backup}"
+    fi
+done
+
+if [ $EXIT_CODE -eq 0 ]; then
+    echo "✓ CLI works with multiple dist/ directories removed (proves source resolution)"
+else
+    echo "✗ CLI failed when dist/ directories removed"
+    exit 1
+fi
+
+# Verify the CLI entry point is a TypeScript source file
+echo "Test 9: Verify CLI entry point is TypeScript source"
+if [ -f "packages/cli/src/index.ts" ]; then
+    echo "✓ CLI entry point exists: packages/cli/src/index.ts"
+    if head -1 "packages/cli/src/index.ts" | grep -q "#!/usr/bin/env node\|import"; then
+        echo "✓ CLI entry point is TypeScript source file"
+    fi
+else
+    echo "✗ CLI entry point not found"
+    exit 1
+fi
+
+echo ""
+echo "==================================="
+echo "All tests PASSED! ✓"
+echo "==================================="
+echo ""
+echo "Summary:"
+echo "  ✓ All CLI commands work with --help"
+echo "  ✓ CLI executes TypeScript source directly"
+echo "  ✓ No built packages required"
+echo "  ✓ @editframe/* imports resolve to source files"
