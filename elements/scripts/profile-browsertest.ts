@@ -2,8 +2,9 @@
 /**
  * CPU Profiling for Browser Tests
  * 
- * Runs a browsertest file with CPU profiling enabled at the browser level.
- * Connects to the shared Chrome instance and profiles all browser activity.
+ * Runs a browsertest file with CPU profiling enabled on the actual Vitest test page.
+ * Connects to the shared Chrome instance, waits for Vitest to create its test page,
+ * and profiles the test execution in that renderer process.
  * 
  * Usage:
  *   npx tsx scripts/profile-browsertest.ts <test-file> [options]
@@ -168,50 +169,52 @@ Examples:
 
   const browser = await chromium.connect(wsEndpoint);
   
-  // Get browser-level CDP session for profiling
-  const browserCdp = await browser.newBrowserCDPSession();
-  
-  // List all targets to find the right one to profile
-  const { targetInfos } = await browserCdp.send("Target.getTargets") as any;
-  console.log(`📋 Browser targets: ${targetInfos.length}`);
-  
-  // Create a context to get a page for profiling
+  // Create a context - don't navigate to about:blank, wait for Vitest to create its page
   const context = await browser.newContext();
-  const page = await context.newPage();
-  await page.goto("about:blank");
-  const pageCdp = await context.newCDPSession(page);
   
-  // We'll collect profiles from pages that Vitest creates
-  const profiles: CPUProfile[] = [];
+  console.log(`⏳ Waiting for Vitest test page to be created...`);
   
-  // Listen for new targets (pages) that Vitest creates
-  browserCdp.on("Target.targetCreated", async (event: any) => {
-    if (event.targetInfo.type === "page" && event.targetInfo.url.includes("vitest")) {
-      console.log(`   Found Vitest page: ${event.targetInfo.url}`);
-    }
+  // Set up promise to wait for the Vitest page
+  const vitestPagePromise = context.waitForEvent('page', {
+    timeout: 15000 // 15 second timeout
   });
   
-  await browserCdp.send("Target.setDiscoverTargets", { discover: true });
-
-  console.log(`🎬 Starting profiler and running tests...\n`);
-  
-  // Start profiling on our page (will capture renderer process activity)
-  await pageCdp.send("Profiler.enable");
-  await pageCdp.send("Profiler.setSamplingInterval", { interval: 100 });
-  await pageCdp.send("Profiler.start");
-  
-  const startTime = Date.now();
-
-  // Run the browsertest script (which will run vitest)
+  // Run the browsertest script (which will create the Vitest page)
   const browsertestArgs = [testFile];
   if (testPattern) browsertestArgs.push("-t", testPattern);
 
+  console.log(`🎬 Starting browsertest...\n`);
+  
   const browsertest = spawn("./scripts/browsertest", browsertestArgs, {
     cwd: path.join(monorepoRoot, "elements"),
     stdio: "inherit",
     shell: true,
   });
 
+  // Wait for Vitest to create its test page
+  let page;
+  try {
+    page = await vitestPagePromise;
+    console.log(`✓ Vitest test page detected: ${page.url()}\n`);
+  } catch (error) {
+    console.error(`❌ Timeout waiting for Vitest page. Ensure the test starts properly.`);
+    browsertest.kill();
+    await context.close();
+    process.exit(1);
+  }
+  
+  // Now profile this actual Vitest page
+  const pageCdp = await context.newCDPSession(page);
+  
+  console.log(`🎬 Starting profiler on Vitest test page...\n`);
+  
+  await pageCdp.send("Profiler.enable");
+  await pageCdp.send("Profiler.setSamplingInterval", { interval: 100 });
+  await pageCdp.send("Profiler.start");
+  
+  const startTime = Date.now();
+
+  // Wait for browsertest to complete
   await new Promise<void>((resolve) => {
     browsertest.on("close", () => resolve());
     browsertest.on("error", () => resolve());
@@ -219,7 +222,7 @@ Examples:
 
   const wallClockMs = Date.now() - startTime;
 
-  // Stop profiling
+  // Stop profiling from the Vitest page
   const { profile } = await pageCdp.send("Profiler.stop") as { profile: CPUProfile };
   await pageCdp.send("Profiler.disable");
 
@@ -230,17 +233,14 @@ Examples:
     n.callFrame.functionName !== "(idle)" && n.callFrame.functionName !== "(program)"
   );
   
+  console.log(`📊 Profile captured ${nonIdleSamples.length} non-idle samples from ${profile.samples.length} total samples`);
+  
   if (nonIdleSamples.length < 10) {
-    console.log(`\n⚠️  Profile captured mostly idle time (${nonIdleSamples.length} non-idle samples)`);
-    console.log(`   This happens because profiling is per-renderer process.`);
-    console.log(`   Vitest runs in a different renderer process than our profiling page.`);
-    console.log(`\n💡 Alternative profiling methods:`);
-    console.log(`   1. Use Chrome DevTools manually:`);
-    console.log(`      - Open chrome://inspect in Chrome`);
-    console.log(`      - Find the Vitest test page under "Remote Target"`);
-    console.log(`      - Click "inspect" and use the Performance tab`);
-    console.log(`   2. Add performance.mark/measure in test code`);
-    console.log(`   3. Use the console timing output from captureBatch`);
+    console.log(`\n⚠️  Warning: Profile captured mostly idle time`);
+    console.log(`   This may indicate that:`);
+    console.log(`   - The test completed very quickly`);
+    console.log(`   - The profiler attached after tests completed`);
+    console.log(`   - Try running a longer test or increasing sampling interval`);
   }
 
   // Save profile anyway
