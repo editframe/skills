@@ -17,10 +17,25 @@ import { EF_INTERACTIVE, setEFInteractive } from "../EF_INTERACTIVE.js";
 // Additional imports for sequence boundary test
 import "./EFVideo.js";
 import "../gui/EFConfiguration.js";
-import { Task } from "@lit/task";
 import type { MediaEngine } from "../transcoding/types/index.js";
-import { EFMedia } from "./EFMedia.js";
+import { EFMedia, AsyncValue } from "./EFMedia.js";
 import "./EFText.js";
+
+// Helper to create a simple task-like object for testing
+function createTestFrameTask(host: LitElement, onExecute: () => void) {
+  let promise = Promise.resolve();
+  return {
+    run: () => {
+      promise = (async () => {
+        onExecute();
+      })();
+      return promise;
+    },
+    get taskComplete() {
+      return promise;
+    },
+  };
+}
 
 beforeEach(() => {
   for (let i = 0; i < localStorage.length; i++) {
@@ -38,32 +53,16 @@ class TestContext extends ContextMixin(LitElement) {}
 
 @customElement("timegroup-test-media")
 class TimegroupTestMedia extends EFMedia {
-  mediaEngineTask = new Task(this, {
-    autoRun: false,
-    args: () => ["source", null] as const,
-    onError: (error) => {
-      // Attach catch to prevent unhandled rejection
-      this.mediaEngineTask.taskComplete.catch(() => {});
-      
-      // Don't log AbortErrors - these are expected when element is disconnected
-      const isAbortError = 
-        error instanceof DOMException && error.name === "AbortError" ||
-        error instanceof Error && (
-          error.name === "AbortError" ||
-          error.message?.includes("signal is aborted") ||
-          error.message?.includes("The user aborted a request")
-        );
-      
-      if (isAbortError) {
-        return;
-      }
-      console.error("TimegroupTestMedia mediaEngineTask error", error);
-    },
-    task: () => {
-      this.setAttribute("data-media-loaded", "true");
-      return Promise.resolve({} as unknown as MediaEngine);
-    },
-  });
+  #mediaEngineValue: MediaEngine | null = null;
+  
+  override async getMediaEngine(_signal?: AbortSignal): Promise<MediaEngine | undefined> {
+    this.setAttribute("data-media-loaded", "true");
+    this.#mediaEngineValue = {} as unknown as MediaEngine;
+    this.mediaEngineTask.setValue(this.#mediaEngineValue);
+    return this.#mediaEngineValue;
+  }
+  
+  override mediaEngineTask = new AsyncValue<MediaEngine>();
 }
 
 @customElement("test-frame-task-a")
@@ -72,31 +71,8 @@ class TestFrameTaskA extends EFTemporal(LitElement) {
     return html`<div data-frame-element="a"></div>`;
   }
 
-  frameTask = new Task(this, {
-    autoRun: false,
-    args: () => [],
-    onError: (error) => {
-      // Attach catch to prevent unhandled rejection
-      this.frameTask.taskComplete.catch(() => {});
-      
-      // Don't log AbortErrors - these are expected when element is disconnected
-      const isAbortError = 
-        error instanceof DOMException && error.name === "AbortError" ||
-        error instanceof Error && (
-          error.name === "AbortError" ||
-          error.message?.includes("signal is aborted") ||
-          error.message?.includes("The user aborted a request")
-        );
-      
-      if (isAbortError) {
-        return;
-      }
-      console.error("TestFrameTaskA frameTask error", error);
-    },
-    task: () => {
-      this.setAttribute("data-frame-executed", "true");
-      return Promise.resolve();
-    },
+  override frameTask = createTestFrameTask(this, () => {
+    this.setAttribute("data-frame-executed", "true");
   });
 }
 
@@ -106,31 +82,8 @@ class TestFrameTaskB extends EFTemporal(LitElement) {
     return html`<div data-frame-element="b"></div>`;
   }
 
-  frameTask = new Task(this, {
-    autoRun: false,
-    args: () => [],
-    onError: (error) => {
-      // Attach catch to prevent unhandled rejection
-      this.frameTask.taskComplete.catch(() => {});
-      
-      // Don't log AbortErrors - these are expected when element is disconnected
-      const isAbortError = 
-        error instanceof DOMException && error.name === "AbortError" ||
-        error instanceof Error && (
-          error.name === "AbortError" ||
-          error.message?.includes("signal is aborted") ||
-          error.message?.includes("The user aborted a request")
-        );
-      
-      if (isAbortError) {
-        return;
-      }
-      console.error("TestFrameTaskB frameTask error", error);
-    },
-    task: () => {
-      this.setAttribute("data-frame-executed", "true");
-      return Promise.resolve();
-    },
+  override frameTask = createTestFrameTask(this, () => {
+    this.setAttribute("data-frame-executed", "true");
   });
 }
 
@@ -140,31 +93,8 @@ class TestFrameTaskC extends EFTemporal(LitElement) {
     return html`<div data-frame-element="c"></div>`;
   }
 
-  frameTask = new Task(this, {
-    autoRun: false,
-    args: () => [],
-    onError: (error) => {
-      // Attach catch to prevent unhandled rejection
-      this.frameTask.taskComplete.catch(() => {});
-      
-      // Don't log AbortErrors - these are expected when element is disconnected
-      const isAbortError = 
-        error instanceof DOMException && error.name === "AbortError" ||
-        error instanceof Error && (
-          error.name === "AbortError" ||
-          error.message?.includes("signal is aborted") ||
-          error.message?.includes("The user aborted a request")
-        );
-      
-      if (isAbortError) {
-        return;
-      }
-      console.error("TestFrameTaskC frameTask error", error);
-    },
-    task: () => {
-      this.setAttribute("data-frame-executed", "true");
-      return Promise.resolve();
-    },
+  override frameTask = createTestFrameTask(this, () => {
+    this.setAttribute("data-frame-executed", "true");
   });
 }
 

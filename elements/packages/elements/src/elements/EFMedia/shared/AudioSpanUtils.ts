@@ -68,17 +68,21 @@ export const fetchAudioSpanningTime = async (
     throw new Error(`Invalid time range: fromMs=${fromMs}, toMs=${toMs}`);
   }
 
-  // Get dependencies from host
-  const mediaEngine = await host.mediaEngineTask.taskComplete;
-  signal?.throwIfAborted();
-  
-  const initSegment = await host.audioInitSegmentFetchTask.taskComplete;
+  // Get media engine using the new async method
+  const mediaEngine = await host.getMediaEngine(signal);
   signal?.throwIfAborted();
 
   // Return undefined if no audio rendition available
   if (!mediaEngine?.audioRendition) {
     return undefined;
   }
+
+  // Fetch the init segment directly from media engine
+  const initSegment = await mediaEngine.fetchInitSegment(
+    mediaEngine.audioRendition,
+    signal!,
+  );
+  signal?.throwIfAborted();
 
   if (!initSegment) {
     return undefined;

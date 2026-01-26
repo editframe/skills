@@ -13,3 +13,5 @@ When tasks are complete, immediately commit the changes with a terse declarative
 Do not maintain backwards compatibility unless explicitly requested by the user.
 
 Do not create markdown summary files for your work. Do not automatically generate readmefiles or documentation files.
+
+Do not make assumptions about performance. Always test and measure performance before and after changes. Don't reference % improvements that are not results of actual measurements. Never make assertions about performance that were not prooven by actual measurements.

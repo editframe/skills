@@ -10,6 +10,7 @@ import {
 } from "./renderTimegroupPreview.js";
 import { getEffectiveRenderMode } from "./renderers.js";
 import { RenderContext } from "./RenderContext.js";
+import { FrameController } from "./FrameController.js";
 
 // Re-export renderer types for external use
 export type { RenderOptions, RenderResult, Renderer } from "./renderers.js";
@@ -395,6 +396,12 @@ export async function captureFromClone(
 
   // Handle content readiness based on mode
   const timeMs = renderClone.currentTimeMs;
+  
+  // Use FrameController to ensure all FrameRenderable elements are ready
+  // This coordinates prepare → render phases for video, audio, captions, etc.
+  const frameController = new FrameController(renderClone);
+  await frameController.renderFrame(timeMs, { waitForLitUpdate: false });
+  
   if (contentReadyMode === "blocking") {
     const result = await waitForVideoContent(renderClone, timeMs, blockingTimeoutMs);
     if (!result.ready) {
@@ -695,6 +702,10 @@ export function renderTimegroupToCanvas(
 
   // Create RenderContext for caching across refresh calls
   const renderContext = new RenderContext();
+  
+  // Create FrameController for coordinating element rendering
+  // Cached for the lifetime of this preview instance
+  const frameController = new FrameController(timegroup);
 
   // Log resolution scale on first render for debugging
   let hasLoggedScale = false;
@@ -778,6 +789,10 @@ export function renderTimegroupToCanvas(
     }
 
     try {
+      // Use FrameController to ensure all FrameRenderable elements are ready
+      // This coordinates prepare → render phases before we capture their state
+      await frameController.renderFrame(userTimeMs);
+      
       syncStyles(syncState, toAbsoluteTime(timegroup, userTimeMs));
       overrideRootCloneStyles(syncState);
 
@@ -835,6 +850,7 @@ export function renderTimegroupToCanvas(
   const dispose = (): void => {
     if (disposed) return;
     disposed = true;
+    frameController.abort();
     renderContext.dispose();
   };
 

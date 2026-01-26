@@ -516,7 +516,10 @@ export const deepGetTemporalElements = (
   element: Element,
   temporals: Array<TemporalMixinInterface & HTMLElement> = [],
 ) => {
-  for (const child of element.children) {
+  // Get children to walk - handle both regular children and slotted content
+  const children = getChildrenIncludingSlotted(element);
+  
+  for (const child of children) {
     if (isEFTemporal(child)) {
       temporals.push(child as TemporalMixinInterface & HTMLElement);
     }
@@ -525,11 +528,42 @@ export const deepGetTemporalElements = (
   return temporals;
 };
 
+/**
+ * Gets all child elements including slotted content for shadow DOM elements.
+ * For elements with shadow DOM that contain slots, this returns the assigned
+ * elements (slotted content) instead of just the shadow DOM children.
+ */
+const getChildrenIncludingSlotted = (element: Element): Element[] => {
+  // If element has shadowRoot with slots, get assigned elements
+  if (element.shadowRoot) {
+    const slots = element.shadowRoot.querySelectorAll('slot');
+    if (slots.length > 0) {
+      const assignedElements: Element[] = [];
+      for (const slot of slots) {
+        assignedElements.push(...slot.assignedElements());
+      }
+      // Also include shadow DOM children that aren't slots (for mixed content)
+      for (const child of element.shadowRoot.children) {
+        if (child.tagName !== 'SLOT') {
+          assignedElements.push(child);
+        }
+      }
+      return assignedElements;
+    }
+  }
+  
+  // Fallback to regular children
+  return Array.from(element.children);
+};
+
 export const deepGetElementsWithFrameTasks = (
   element: Element,
   elements: Array<TemporalMixinInterface & HTMLElement> = [],
 ) => {
-  for (const child of element.children) {
+  // Get children to walk - handle both regular children and slotted content
+  const children = getChildrenIncludingSlotted(element);
+  
+  for (const child of children) {
     // Check for frameTask with run method (works with both Lit Task and our compatibility wrapper)
     const hasFrameTask = "frameTask" in child && 
       child.frameTask != null && 
@@ -567,7 +601,10 @@ export const shallowGetTemporalElements = (
   if (cachedResult) {
     return cachedResult;
   }
-  for (const child of element.children) {
+  // Get children to walk - handle both regular children and slotted content
+  const children = getChildrenIncludingSlotted(element);
+  
+  for (const child of children) {
     if (isEFTemporal(child)) {
       temporals.push(child);
     } else {

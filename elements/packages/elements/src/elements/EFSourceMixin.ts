@@ -1,4 +1,3 @@
-import { Task } from "@lit/task";
 import type { LitElement } from "lit";
 import { property } from "lit/decorators/property.js";
 
@@ -31,8 +30,12 @@ export function EFSourceMixin<T extends Constructor<LitElement>>(
     @property({ type: String })
     src = "";
 
+    #md5Value: string | undefined = undefined;
+    #md5Promise: Promise<string | undefined> | null = null;
+    #md5LastSrc: string | null = null;
+
     productionSrc() {
-      if (!this.md5SumLoader.value) {
+      if (!this.#md5Value) {
         throw new Error(
           `MD5 sum not available for ${this}. Cannot generate production URL`,
         );
@@ -44,46 +47,63 @@ export function EFSourceMixin<T extends Constructor<LitElement>>(
         );
       }
 
-      return `${this.apiHost}/api/v1/${options.assetType}/${this.md5SumLoader.value}`;
+      return `${this.apiHost}/api/v1/${options.assetType}/${this.#md5Value}`;
     }
 
-    md5SumLoader = new Task(this, {
-      autoRun: false,
-      args: () => [this.src] as const,
-      onError: (error) => {
-        // Attach catch to prevent unhandled rejection
-        this.md5SumLoader.taskComplete.catch(() => {});
-        
-        // Don't log AbortErrors - these are expected when element is disconnected
-        const isAbortError = 
-          error instanceof DOMException && error.name === "AbortError" ||
-          error instanceof Error && (
-            error.name === "AbortError" ||
-            error.message?.includes("signal is aborted") ||
-            error.message?.includes("The user aborted a request")
-          );
-        
-        if (isAbortError) {
-          return;
+    /**
+     * Load MD5 sum for the current source
+     */
+    async loadMd5Sum(signal?: AbortSignal): Promise<string | undefined> {
+      if (this.#md5LastSrc === this.src && this.#md5Value) {
+        return this.#md5Value;
+      }
+
+      if (this.#md5Promise && this.#md5LastSrc === this.src) {
+        return this.#md5Promise;
+      }
+
+      this.#md5LastSrc = this.src;
+      this.#md5Promise = this.#doLoadMd5(this.src, signal);
+
+      try {
+        this.#md5Value = await this.#md5Promise;
+        return this.#md5Value;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          throw error;
         }
-        console.error("EFSourceMixin md5SumLoader error", error);
-      },
-      task: async ([src], { signal }) => {
-        // Normalize the path: remove leading slash and any double slashes
-        let normalizedSrc = src.startsWith("/")
-          ? src.slice(1)
-          : src;
-        normalizedSrc = normalizedSrc.replace(/^\/+/, "");
-        // Use production API format for local files
-        const md5Path = `/api/v1/isobmff_files/local/md5?src=${encodeURIComponent(normalizedSrc)}`;
-        const response = await fetch(md5Path, { signal });
-        if (!response.ok) {
-          return undefined;
-        }
-        const data = await response.json();
-        return data.md5 ?? undefined;
-      },
-    });
+        console.error("EFSourceMixin md5Sum error", error);
+        return undefined;
+      } finally {
+        this.#md5Promise = null;
+      }
+    }
+
+    async #doLoadMd5(src: string, signal?: AbortSignal): Promise<string | undefined> {
+      // Normalize the path: remove leading slash and any double slashes
+      let normalizedSrc = src.startsWith("/")
+        ? src.slice(1)
+        : src;
+      normalizedSrc = normalizedSrc.replace(/^\/+/, "");
+      // Use production API format for local files
+      const md5Path = `/api/v1/isobmff_files/local/md5?src=${encodeURIComponent(normalizedSrc)}`;
+      const response = await fetch(md5Path, { signal });
+      if (!response.ok) {
+        return undefined;
+      }
+      const data = await response.json();
+      return data.md5 ?? undefined;
+    }
+
+    /**
+     * Compatibility wrapper for code expecting md5SumLoader.value
+     */
+    md5SumLoader = {
+      run: () => this.loadMd5Sum(),
+      get value() { return (this as any)._host.#md5Value; },
+      get taskComplete() { return (this as any)._host.#md5Promise || Promise.resolve((this as any)._host.#md5Value); },
+      _host: this,
+    };
   }
 
   return EFSourceElement as Constructor<EFSourceMixinInterface> & T;

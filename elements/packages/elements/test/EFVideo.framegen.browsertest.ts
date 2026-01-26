@@ -6,7 +6,14 @@ import type { EFVideo } from "../src/elements/EFVideo.js";
 import "../src/elements/EFVideo.js";
 import { assetMSWHandlers } from "./useAssetMSW.js";
 import "../src/elements/EFTimegroup.js";
-import { TaskStatus } from "@lit/task";
+
+// Status values match the old TaskStatus enum: INITIAL=0, PENDING=1, COMPLETE=2, ERROR=3
+const TaskStatus = {
+  INITIAL: 0,
+  PENDING: 1,
+  COMPLETE: 2,
+  ERROR: 3,
+};
 
 const test = baseTest.extend({
   setupAssetHandlers: [

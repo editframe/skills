@@ -685,10 +685,17 @@ function syncNodeStyles(node: CloneNode): void {
   // Sync text content from light DOM
   // Caption child elements now use light DOM, so this handles them naturally
   const srcTextNode = source.childNodes[0];
-  const cloneTextNode = clone.childNodes[0];
-  if (srcTextNode?.nodeType === Node.TEXT_NODE && cloneTextNode?.nodeType === Node.TEXT_NODE) {
+  if (srcTextNode?.nodeType === Node.TEXT_NODE) {
     const srcText = srcTextNode.textContent || "";
-    if (cloneTextNode.textContent !== srcText) cloneTextNode.textContent = srcText;
+    const cloneTextNode = clone.childNodes[0];
+    
+    if (cloneTextNode?.nodeType === Node.TEXT_NODE) {
+      // Update existing text node
+      if (cloneTextNode.textContent !== srcText) cloneTextNode.textContent = srcText;
+    } else {
+      // Create text node if clone doesn't have one (element was empty when initially cloned)
+      clone.textContent = srcText;
+    }
   }
   
   // Sync input value

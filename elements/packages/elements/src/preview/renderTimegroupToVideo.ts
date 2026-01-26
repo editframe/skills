@@ -40,6 +40,7 @@ import {
 import { renderToImageDirect } from "./rendering/renderToImage.js";
 import { createPreviewContainer } from "./previewTypes.js";
 import { inlineImages } from "./rendering/inlineImages.js";
+import { FrameController } from "./FrameController.js";
 
 // ============================================================================
 // Types
@@ -395,6 +396,9 @@ export async function renderTimegroupToVideo(
   await renderClone.seekForRender(initialTimeMs);
   const { container: cloneContainer, syncState } = buildCloneStructure(renderClone, initialTimeMs);
   
+  // Create FrameController for coordinating element rendering
+  const frameController = new FrameController(renderClone);
+  
   // Create preview container with proper styling
   const width = timegroup.offsetWidth || 1920;
   const height = timegroup.offsetHeight || 1080;
@@ -477,6 +481,9 @@ export async function renderTimegroupToVideo(
         const seekPromise = seekQueue.shift()!;
         
         const renderPromise = seekPromise.then(async () => {
+          // Ensure all FrameRenderable elements are ready before capturing state
+          await frameController.renderFrame(renderTimeMs, { waitForLitUpdate: false });
+          
           const syncStart = performance.now();
           syncStyles(syncState, renderTimeMs);
           overrideRootCloneStyles(syncState, true);
@@ -618,6 +625,7 @@ export async function renderTimegroupToVideo(
     }
     
   } finally {
+    frameController.abort();
     cleanupRenderClone();
   }
 }

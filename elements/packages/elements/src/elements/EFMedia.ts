@@ -5,18 +5,10 @@ import { isContextMixin } from "../gui/ContextMixin.js";
 import type { ControllableInterface } from "../gui/Controllable.js";
 import { efContext } from "../gui/efContext.js";
 import { withSpan } from "../otel/tracingHelpers.js";
+import type { MediaEngine } from "../transcoding/types/index.ts";
 import type { AudioSpan } from "../transcoding/types/index.ts";
 import { UrlGenerator } from "../transcoding/utils/UrlGenerator.ts";
-import { makeAudioBufferTask } from "./EFMedia/audioTasks/makeAudioBufferTask.ts";
-import { makeAudioFrequencyAnalysisTask } from "./EFMedia/audioTasks/makeAudioFrequencyAnalysisTask.ts";
-import { makeAudioInitSegmentFetchTask } from "./EFMedia/audioTasks/makeAudioInitSegmentFetchTask.ts";
-import { makeAudioInputTask } from "./EFMedia/audioTasks/makeAudioInputTask.ts";
-import { makeAudioSeekTask } from "./EFMedia/audioTasks/makeAudioSeekTask.ts";
-import { makeAudioSegmentFetchTask } from "./EFMedia/audioTasks/makeAudioSegmentFetchTask.ts";
-import { makeAudioSegmentIdTask } from "./EFMedia/audioTasks/makeAudioSegmentIdTask.ts";
-import { makeAudioTimeDomainAnalysisTask } from "./EFMedia/audioTasks/makeAudioTimeDomainAnalysisTask.ts";
-import { fetchAudioSpanningTime } from "./EFMedia/shared/AudioSpanUtils.ts";
-import { makeMediaEngineTask } from "./EFMedia/tasks/makeMediaEngineTask.ts";
+import { LRUCache } from "../utils/LRUCache.js";
 import { EFSourceMixin } from "./EFSourceMixin.js";
 import { FetchMixin } from "./FetchMixin.js";
 import { renderTemporalAudio } from "./renderTemporalAudio.js";
@@ -31,11 +23,35 @@ const freqWeightsCache = new Map<number, Float32Array>();
 
 export class IgnorableError extends Error {}
 
+/**
+ * Gets all child elements including slotted content for shadow DOM elements.
+ * Duplicated here to avoid circular imports from EFTemporal.
+ */
+const getChildrenIncludingSlotted = (element: Element): Element[] => {
+  if (element.shadowRoot) {
+    const slots = element.shadowRoot.querySelectorAll('slot');
+    if (slots.length > 0) {
+      const assignedElements: Element[] = [];
+      for (const slot of slots) {
+        assignedElements.push(...slot.assignedElements());
+      }
+      for (const child of element.shadowRoot.children) {
+        if (child.tagName !== 'SLOT') {
+          assignedElements.push(child);
+        }
+      }
+      return assignedElements;
+    }
+  }
+  return Array.from(element.children);
+};
+
 export const deepGetMediaElements = (
   element: Element,
   medias: EFMedia[] = [],
 ) => {
-  for (const child of Array.from(element.children)) {
+  const children = getChildrenIncludingSlotted(element);
+  for (const child of children) {
     if (child instanceof EFMedia) {
       medias.push(child);
     } else {
@@ -48,6 +64,155 @@ export const deepGetMediaElements = (
 // Import EFTemporal - use a function wrapper to defer evaluation until class definition
 // This breaks the circular dependency: EFTimegroup -> EFMedia -> EFTemporal
 import { EFTemporal } from "./EFTemporal.js";
+
+/**
+ * Simple async value wrapper that mimics Lit Task interface.
+ * Used for backwards compatibility with code expecting task-like objects.
+ */
+export class AsyncValue<T> {
+  #value: T | undefined = undefined;
+  #error: Error | undefined = undefined;
+  #status: "initial" | "pending" | "complete" | "error" = "initial";
+  #promise: Promise<T | undefined> = Promise.resolve(undefined);
+  #resolvePromise: ((value: T | undefined) => void) | undefined;
+
+  get value(): T | undefined {
+    return this.#value;
+  }
+
+  get error(): Error | undefined {
+    return this.#error;
+  }
+
+  get status(): number {
+    // Match TaskStatus enum: INITIAL=0, PENDING=1, COMPLETE=2, ERROR=3
+    switch (this.#status) {
+      case "initial": return 0;
+      case "pending": return 1;
+      case "complete": return 2;
+      case "error": return 3;
+    }
+  }
+
+  get taskComplete(): Promise<T | undefined> {
+    return this.#promise;
+  }
+
+  /**
+   * Set the value (marks status as complete)
+   */
+  setValue(value: T): void {
+    this.#value = value;
+    this.#error = undefined;
+    this.#status = "complete";
+    this.#resolvePromise?.(value);
+  }
+
+  /**
+   * Set an error (marks status as error)
+   */
+  setError(error: Error): void {
+    this.#error = error;
+    this.#value = undefined;
+    this.#status = "error";
+    // Don't reject - just resolve with undefined to match old behavior
+    this.#resolvePromise?.(undefined);
+  }
+
+  /**
+   * Start a new async operation
+   */
+  startPending(): void {
+    this.#status = "pending";
+    this.#promise = new Promise((resolve) => {
+      this.#resolvePromise = resolve;
+    });
+    // Prevent unhandled rejection warnings
+    this.#promise.catch(() => {});
+  }
+
+  /**
+   * Run an async function and update status accordingly
+   */
+  async run(fn: () => Promise<T>): Promise<T | undefined> {
+    this.startPending();
+    try {
+      const result = await fn();
+      this.setValue(result);
+      return result;
+    } catch (error) {
+      if (error instanceof Error) {
+        this.setError(error);
+      } else {
+        this.setError(new Error(String(error)));
+      }
+      return undefined;
+    }
+  }
+}
+
+// Audio analysis helper functions
+const DECAY_WEIGHT = 0.8;
+
+function processFFTData(
+  fftData: Uint8Array,
+  zeroThresholdPercent = 0.1,
+): Uint8Array {
+  const totalBins = fftData.length;
+  const zeroThresholdCount = Math.floor(totalBins * zeroThresholdPercent);
+
+  let zeroCount = 0;
+  let cutoffIndex = totalBins;
+
+  for (let i = totalBins - 1; i >= 0; i--) {
+    if (fftData[i] ?? 0 < 10) {
+      zeroCount++;
+    } else {
+      if (zeroCount >= zeroThresholdCount) {
+        cutoffIndex = i + 1;
+        break;
+      }
+    }
+  }
+
+  if (cutoffIndex < zeroThresholdCount) {
+    return fftData;
+  }
+
+  const goodData = fftData.slice(0, cutoffIndex);
+  const resampledData = interpolateData(goodData, fftData.length);
+
+  const attenuationStartIndex = Math.floor(totalBins * 0.9);
+  for (let i = attenuationStartIndex; i < totalBins; i++) {
+    const attenuationProgress =
+      (i - attenuationStartIndex) / (totalBins - attenuationStartIndex) + 0.2;
+    const attenuationFactor = Math.max(0, 1 - attenuationProgress);
+    resampledData[i] = Math.floor((resampledData[i] ?? 0) * attenuationFactor);
+  }
+
+  return resampledData;
+}
+
+function interpolateData(data: Uint8Array, targetSize: number): Uint8Array {
+  const resampled = new Uint8Array(targetSize);
+  const dataLength = data.length;
+
+  for (let i = 0; i < targetSize; i++) {
+    const ratio = (i / (targetSize - 1)) * (dataLength - 1);
+    const index = Math.floor(ratio);
+    const fraction = ratio - index;
+
+    if (index >= dataLength - 1) {
+      resampled[i] = data[dataLength - 1] ?? 0;
+    } else {
+      resampled[i] = Math.round(
+        (data[index] ?? 0) * (1 - fraction) + (data[index + 1] ?? 0) * fraction,
+      );
+    }
+  }
+
+  return resampled;
+}
 
 export class EFMedia extends EFTargetable(
   EFSourceMixin(EFTemporal(FetchMixin(LitElement)), {
@@ -201,19 +366,459 @@ export class EFMedia extends EFTargetable(
     return new UrlGenerator(() => this.apiHost ?? "");
   }
 
-  mediaEngineTask = makeMediaEngineTask(this);
+  // ============================================================================
+  // Media Engine - replaced task with async method + cached wrapper
+  // ============================================================================
 
-  audioSegmentIdTask = makeAudioSegmentIdTask(this);
-  audioInitSegmentFetchTask = makeAudioInitSegmentFetchTask(this);
-  audioSegmentFetchTask = makeAudioSegmentFetchTask(this);
-  audioInputTask = makeAudioInputTask(this);
-  audioSeekTask = makeAudioSeekTask(this);
+  #mediaEngine: MediaEngine | undefined = undefined;
+  #mediaEnginePromise: Promise<MediaEngine | undefined> | undefined = undefined;
+  #mediaEngineError: Error | undefined = undefined;
+  #mediaEngineSrcKey: string | null = null;
 
-  audioBufferTask = makeAudioBufferTask(this);
+  /**
+   * Async wrapper that mimics Task interface for backwards compatibility.
+   * Code expecting mediaEngineTask.value, .taskComplete, .error, .status will still work.
+   */
+  mediaEngineTask = new AsyncValue<MediaEngine>();
 
-  // Audio analysis tasks for frequency and time domain analysis
-  byteTimeDomainTask = makeAudioTimeDomainAnalysisTask(this);
-  frequencyDataTask = makeAudioFrequencyAnalysisTask(this);
+  /**
+   * Get or create the MediaEngine for this element.
+   * Uses caching based on src/assetId to avoid redundant fetches.
+   */
+  async getMediaEngine(signal?: AbortSignal): Promise<MediaEngine | undefined> {
+    const srcKey = `${this.src}|${this.assetId}`;
+    
+    // Return cached if src hasn't changed
+    if (this.#mediaEngineSrcKey === srcKey && this.#mediaEngine) {
+      return this.#mediaEngine;
+    }
+
+    // If already loading for this src, wait for it
+    if (this.#mediaEngineSrcKey === srcKey && this.#mediaEnginePromise) {
+      return this.#mediaEnginePromise;
+    }
+
+    // Start new load
+    this.#mediaEngineSrcKey = srcKey;
+    this.mediaEngineTask.startPending();
+
+    this.#mediaEnginePromise = this.#createMediaEngine(signal);
+    
+    try {
+      this.#mediaEngine = await this.#mediaEnginePromise;
+      this.#mediaEngineError = undefined;
+      if (this.#mediaEngine) {
+        this.mediaEngineTask.setValue(this.#mediaEngine);
+        this.#handleMediaEngineComplete();
+      }
+      return this.#mediaEngine;
+    } catch (error) {
+      this.#mediaEngineError = error instanceof Error ? error : new Error(String(error));
+      this.mediaEngineTask.setError(this.#mediaEngineError);
+      
+      // Don't throw for expected errors
+      const isExpectedError = error instanceof DOMException && error.name === "AbortError" ||
+        error instanceof Error && (
+          error.message === "No valid media source" ||
+          error.message.includes("File not found") ||
+          error.message.includes("404") ||
+          error.message.includes("Failed to fetch")
+        );
+      
+      if (!isExpectedError) {
+        console.error("Media engine error:", error);
+      }
+      
+      return undefined;
+    }
+  }
+
+  async #createMediaEngine(signal?: AbortSignal): Promise<MediaEngine | undefined> {
+    const { src, assetId, urlGenerator, apiHost, requiredTracks } = this;
+
+    // Check for AssetID mode first
+    if (assetId !== null && assetId !== undefined && assetId.trim() !== "") {
+      if (!apiHost) {
+        throw new Error("API host is required for AssetID mode");
+      }
+      const { AssetIdMediaEngine } = await import("./EFMedia/AssetIdMediaEngine.js");
+      return AssetIdMediaEngine.fetchByAssetId(
+        this,
+        urlGenerator,
+        assetId,
+        apiHost,
+        requiredTracks,
+        signal,
+      );
+    }
+
+    // Check for null/undefined/empty/whitespace src
+    if (!src || typeof src !== "string" || src.trim() === "") {
+      return undefined;
+    }
+
+    const lowerSrc = src.toLowerCase();
+    const isRemoteUrl = lowerSrc.startsWith("http://") || lowerSrc.startsWith("https://");
+    
+    // Check configuration for explicit engine preference
+    const configuration = this.closest("ef-configuration");
+    
+    // "jit" mode: Force JitMediaEngine for all sources (including local files)
+    if (configuration?.mediaEngine === "jit") {
+      let manifestSrc = src;
+      if (!isRemoteUrl && configuration.apiHost) {
+        const baseUrl = configuration.apiHost.replace(/\/$/, "");
+        const normalizedPath = src.replace(/^\.\//, "/src/");
+        manifestSrc = `${baseUrl}${normalizedPath}`;
+      }
+      const url = urlGenerator.generateManifestUrl(manifestSrc);
+      const { JitMediaEngine } = await import("./EFMedia/JitMediaEngine.js");
+      return JitMediaEngine.fetch(this, urlGenerator, url, signal);
+    }
+    
+    // "local" mode: Force AssetMediaEngine for all sources
+    if (configuration?.mediaEngine === "local") {
+      const { AssetMediaEngine } = await import("./EFMedia/AssetMediaEngine.js");
+      return AssetMediaEngine.fetch(this, urlGenerator, src, requiredTracks, signal);
+    }
+    
+    // "cloud" mode (default): AssetMediaEngine for local paths, JitMediaEngine for remote URLs
+    if (!isRemoteUrl) {
+      const { AssetMediaEngine } = await import("./EFMedia/AssetMediaEngine.js");
+      return AssetMediaEngine.fetch(this, urlGenerator, src, requiredTracks, signal);
+    }
+
+    // Default: Use JitMediaEngine for remote URLs (transcoding service)
+    const url = urlGenerator.generateManifestUrl(src);
+    const { JitMediaEngine } = await import("./EFMedia/JitMediaEngine.js");
+    return JitMediaEngine.fetch(this, urlGenerator, url, signal);
+  }
+
+  #handleMediaEngineComplete(): void {
+    // Update self synchronously
+    this.requestUpdate("intrinsicDurationMs");
+    this.requestUpdate("ownCurrentTimeMs");
+    
+    // Defer updates to parent/root timegroup
+    if (this.rootTimegroup) {
+      queueMicrotask(() => {
+        this.rootTimegroup?.requestUpdate("ownCurrentTimeMs");
+        this.rootTimegroup?.requestUpdate("durationMs");
+      });
+    }
+  }
+
+  // ============================================================================
+  // Audio Analysis - replaced tasks with async methods + cached wrappers
+  // ============================================================================
+
+  #frequencyDataCache = new LRUCache<string, Uint8Array>(100);
+  #timeDomainDataCache = new LRUCache<string, Uint8Array>(100);
+
+  /**
+   * Async wrapper for frequency data - mimics Task interface for EFWaveform compatibility
+   */
+  frequencyDataTask = new AsyncValue<Uint8Array | null>();
+
+  /**
+   * Async wrapper for time domain data - mimics Task interface for EFWaveform compatibility
+   */
+  byteTimeDomainTask = new AsyncValue<Uint8Array | null>();
+
+  /**
+   * Get frequency data for audio visualization at a given time.
+   */
+  async getFrequencyData(timeMs: number, signal?: AbortSignal): Promise<Uint8Array | null> {
+    if (timeMs < 0) return null;
+
+    const cacheKey = `${this.shouldInterpolateFrequencies}:${this.fftSize}:${this.fftDecay}:${this.fftGain}:${timeMs}`;
+    const cached = this.#frequencyDataCache.get(cacheKey);
+    if (cached) return cached;
+
+    try {
+      const result = await this.#analyzeFrequencies(timeMs, signal);
+      if (result) {
+        this.#frequencyDataCache.set(cacheKey, result);
+        this.frequencyDataTask.setValue(result);
+      }
+      return result;
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        throw error;
+      }
+      return null;
+    }
+  }
+
+  /**
+   * Get time domain data for audio visualization at a given time.
+   */
+  async getTimeDomainData(timeMs: number, signal?: AbortSignal): Promise<Uint8Array | null> {
+    if (timeMs < 0) return null;
+
+    const cacheKey = `${this.fftSize}:${timeMs}`;
+    const cached = this.#timeDomainDataCache.get(cacheKey);
+    if (cached) return cached;
+
+    try {
+      const result = await this.#analyzeTimeDomain(timeMs, signal);
+      if (result) {
+        this.#timeDomainDataCache.set(cacheKey, result);
+        this.byteTimeDomainTask.setValue(result);
+      }
+      return result;
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        throw error;
+      }
+      return null;
+    }
+  }
+
+  async #analyzeFrequencies(currentTimeMs: number, signal?: AbortSignal): Promise<Uint8Array | null> {
+    const mediaEngine = await this.getMediaEngine(signal);
+    signal?.throwIfAborted();
+    
+    if (!mediaEngine?.audioRendition) {
+      return null;
+    }
+
+    // Calculate exact audio window needed based on fftDecay and frame timing
+    const frameIntervalMs = 1000 / 30;
+    const earliestFrameMs = currentTimeMs - (this.fftDecay - 1) * frameIntervalMs;
+    const fromMs = Math.max(0, earliestFrameMs);
+    const maxToMs = currentTimeMs + frameIntervalMs;
+    const videoDurationMs = this.intrinsicDurationMs || 0;
+    const toMs = videoDurationMs > 0 ? Math.min(maxToMs, videoDurationMs) : maxToMs;
+
+    if (fromMs >= toMs) {
+      return null;
+    }
+
+    const { fetchAudioSpanningTime: fetchAudioSpan } = await import("./EFMedia/shared/AudioSpanUtils.js");
+    
+    let audioSpan;
+    try {
+      audioSpan = await fetchAudioSpan(this, fromMs, toMs, signal);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        throw error;
+      }
+      return null;
+    }
+
+    if (!audioSpan?.blob || audioSpan.blob.size < 100) {
+      return null;
+    }
+
+    // Decode the real audio data
+    const tempAudioContext = new OfflineAudioContext(2, 48000, 48000);
+    const arrayBuffer = await audioSpan.blob.arrayBuffer();
+    signal?.throwIfAborted();
+
+    let audioBuffer;
+    try {
+      audioBuffer = await tempAudioContext.decodeAudioData(arrayBuffer);
+      signal?.throwIfAborted();
+    } catch {
+      return null;
+    }
+
+    const startOffsetMs = audioSpan.startMs;
+
+    const framesData = await Promise.all(
+      Array.from({ length: this.fftDecay }, async (_, i) => {
+        const frameOffset = i * (1000 / 30);
+        const startTime = Math.max(0, (currentTimeMs - frameOffset - startOffsetMs) / 1000);
+
+        const SIZE = 48000 / 30;
+        const audioContext = new OfflineAudioContext(2, SIZE, 48000);
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = this.fftSize;
+        analyser.minDecibels = -90;
+        analyser.maxDecibels = -10;
+
+        const gainNode = audioContext.createGain();
+        gainNode.gain.value = this.fftGain;
+
+        const filter = audioContext.createBiquadFilter();
+        filter.type = "bandpass";
+        filter.frequency.value = 15000;
+        filter.Q.value = 0.05;
+
+        const audioBufferSource = audioContext.createBufferSource();
+        audioBufferSource.buffer = audioBuffer;
+
+        audioBufferSource.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(analyser);
+        analyser.connect(audioContext.destination);
+
+        audioBufferSource.start(0, startTime, 1 / 30);
+
+        try {
+          await audioContext.startRendering();
+          signal?.throwIfAborted();
+          
+          const frameData = new Uint8Array(this.fftSize / 2);
+          analyser.getByteFrequencyData(frameData);
+          return frameData;
+        } finally {
+          audioBufferSource.disconnect();
+          analyser.disconnect();
+        }
+      }),
+    );
+
+    const frameLength = framesData[0]?.length ?? 0;
+
+    // Combine frames with decay
+    const smoothedData = new Uint8Array(frameLength);
+    for (let i = 0; i < frameLength; i++) {
+      let weightedSum = 0;
+      let weightSum = 0;
+
+      framesData.forEach((frame: Uint8Array, frameIndex: number) => {
+        const decayWeight = DECAY_WEIGHT ** frameIndex;
+        weightedSum += (frame[i] ?? 0) * decayWeight;
+        weightSum += decayWeight;
+      });
+
+      smoothedData[i] = Math.min(255, Math.round(weightedSum / weightSum));
+    }
+
+    // Apply frequency weights
+    smoothedData.forEach((value, i) => {
+      const freqWeight = this.FREQ_WEIGHTS[i] ?? 0;
+      smoothedData[i] = Math.min(255, Math.round(value * freqWeight));
+    });
+
+    // Only return the lower half of the frequency data
+    const slicedData = smoothedData.slice(0, Math.floor(smoothedData.length / 2));
+    return this.shouldInterpolateFrequencies ? processFFTData(slicedData) : slicedData;
+  }
+
+  async #analyzeTimeDomain(currentTimeMs: number, signal?: AbortSignal): Promise<Uint8Array | null> {
+    const mediaEngine = await this.getMediaEngine(signal);
+    signal?.throwIfAborted();
+    
+    if (!mediaEngine?.audioRendition) {
+      return null;
+    }
+
+    const frameIntervalMs = 1000 / 30;
+    const earliestFrameMs = currentTimeMs - (this.fftDecay - 1) * frameIntervalMs;
+    const fromMs = Math.max(0, earliestFrameMs);
+    const maxToMs = currentTimeMs + frameIntervalMs;
+    const videoDurationMs = this.intrinsicDurationMs || 0;
+    const toMs = videoDurationMs > 0 ? Math.min(maxToMs, videoDurationMs) : maxToMs;
+
+    if (fromMs >= toMs) {
+      return null;
+    }
+
+    const { fetchAudioSpanningTime: fetchAudioSpan } = await import("./EFMedia/shared/AudioSpanUtils.js");
+    
+    let audioSpan;
+    try {
+      audioSpan = await fetchAudioSpan(this, fromMs, toMs, signal);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        throw error;
+      }
+      return null;
+    }
+
+    if (!audioSpan?.blob || audioSpan.blob.size < 100) {
+      return null;
+    }
+
+    const tempAudioContext = new OfflineAudioContext(2, 48000, 48000);
+    const arrayBuffer = await audioSpan.blob.arrayBuffer();
+    signal?.throwIfAborted();
+
+    let audioBuffer;
+    try {
+      audioBuffer = await tempAudioContext.decodeAudioData(arrayBuffer);
+      signal?.throwIfAborted();
+    } catch {
+      return null;
+    }
+
+    const startOffsetMs = audioSpan.startMs;
+
+    const framesData = await Promise.all(
+      Array.from({ length: this.fftDecay }, async (_, i) => {
+        const frameOffset = i * (1000 / 30);
+        const startTime = Math.max(0, (currentTimeMs - frameOffset - startOffsetMs) / 1000);
+
+        const SIZE = 48000 / 30;
+        const audioContext = new OfflineAudioContext(2, SIZE, 48000);
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = this.fftSize;
+        analyser.minDecibels = -90;
+        analyser.maxDecibels = -10;
+
+        const gainNode = audioContext.createGain();
+        gainNode.gain.value = this.fftGain;
+
+        const filter = audioContext.createBiquadFilter();
+        filter.type = "bandpass";
+        filter.frequency.value = 15000;
+        filter.Q.value = 0.05;
+
+        const audioBufferSource = audioContext.createBufferSource();
+        audioBufferSource.buffer = audioBuffer;
+
+        audioBufferSource.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(analyser);
+        analyser.connect(audioContext.destination);
+
+        audioBufferSource.start(0, startTime, 1 / 30);
+
+        try {
+          await audioContext.startRendering();
+          signal?.throwIfAborted();
+          
+          const frameData = new Uint8Array(this.fftSize);
+          analyser.getByteTimeDomainData(frameData);
+          return frameData;
+        } finally {
+          audioBufferSource.disconnect();
+          analyser.disconnect();
+        }
+      }),
+    );
+
+    const frameLength = framesData[0]?.length ?? 0;
+
+    // Use RMS calculation to preserve waveform shape
+    const smoothedData = new Uint8Array(frameLength);
+    for (let i = 0; i < frameLength; i++) {
+      let sumSquares = 0;
+      framesData.forEach((frame: Uint8Array) => {
+        const value = (frame[i] ?? 128) - 128;
+        sumSquares += value * value;
+      });
+      const rms = Math.sqrt(sumSquares / framesData.length);
+      smoothedData[i] = Math.min(255, Math.max(0, Math.round(rms + 128)));
+    }
+
+    return smoothedData;
+  }
+
+  // ============================================================================
+  // Removed task properties - these are kept as stubs for backwards compatibility
+  // ============================================================================
+
+  // These tasks are no longer used but kept for API compatibility
+  audioSegmentIdTask = new AsyncValue<number | undefined>();
+  audioInitSegmentFetchTask = new AsyncValue<ArrayBuffer | undefined>();
+  audioSegmentFetchTask = new AsyncValue<ArrayBuffer | undefined>();
+  audioInputTask = new AsyncValue<any>();
+  audioSeekTask = new AsyncValue<any>();
+  audioBufferTask = new AsyncValue<any>();
 
   /**
    * The unique identifier for the media asset.
@@ -224,13 +829,19 @@ export class EFMedia extends EFTargetable(
   assetId: string | null = null;
 
   get intrinsicDurationMs() {
-    return this.mediaEngineTask.value?.durationMs ?? 0;
+    return this.#mediaEngine?.durationMs ?? 0;
   }
 
   protected updated(
     changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>,
   ): void {
     super.updated(changedProperties);
+
+    // Trigger media engine load when src or assetId changes
+    if (changedProperties.has("src") || changedProperties.has("assetId")) {
+      // Start loading media engine asynchronously
+      this.getMediaEngine().catch(() => {});
+    }
 
     // Check if our timeline position has actually changed, even if ownCurrentTimeMs isn't tracked as a property
     const newCurrentSourceTimeMs = this.currentSourceTimeMs;
@@ -322,6 +933,7 @@ export class EFMedia extends EFTargetable(
       },
       undefined,
       async () => {
+        const { fetchAudioSpanningTime } = await import("./EFMedia/shared/AudioSpanUtils.js");
         return fetchAudioSpanningTime(this, fromMs, toMs, signal);
       },
     );
@@ -332,15 +944,12 @@ export class EFMedia extends EFTargetable(
    * Ensures media is ready for playback
    */
   async waitForMediaDurations(signal?: AbortSignal): Promise<void> {
-    if (this.mediaEngineTask.value) {
+    if (this.#mediaEngine) {
       return;
     }
     
-    // Use taskComplete instead of run() to avoid throwing errors
-    // taskComplete resolves when the task completes successfully or rejects on error
-    // This allows us to handle AbortError without it being logged as unhandled
     try {
-      await this.mediaEngineTask.taskComplete;
+      await this.getMediaEngine(signal);
     } catch (error) {
       // Don't throw AbortError - these are intentional cancellations when element is disconnected
       const isAbortError = 
@@ -357,7 +966,6 @@ export class EFMedia extends EFTargetable(
       }
       
       // For task abort (element disconnected), silently return
-      // This is expected behavior when element is removed from DOM
       if (isAbortError) {
         return;
       }

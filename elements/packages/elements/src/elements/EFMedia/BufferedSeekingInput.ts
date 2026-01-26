@@ -265,7 +265,10 @@ export class BufferedSeekingInput {
           );
           span.setAttribute("firstTimestampMs", firstTimestampMs);
 
-          if (roundedTimeMs < firstTimestampMs) {
+          // Use tolerance for floating point comparison (0.01ms tolerance)
+          // This handles rounding errors like 20916.666 vs 20916.667
+          const PRECISION_TOLERANCE_MS = 0.01;
+          if (roundedTimeMs < firstTimestampMs - PRECISION_TOLERANCE_MS) {
             console.error("Seeking outside bounds of input", {
               roundedTimeMs,
               firstTimestampMs,
