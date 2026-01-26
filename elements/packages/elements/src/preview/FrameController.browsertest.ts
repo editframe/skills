@@ -517,6 +517,64 @@ describe("createFrameTaskWrapper", () => {
     expect(element.renderTimeMs).toBe(7000);
     element.remove();
   });
+
+  test("only latest run renders when multiple calls overlap", async () => {
+    const element = document.createElement("test-frame-element") as TestFrameElement;
+    element.needsPrep = true;
+    document.body.appendChild(element);
+    await element.updateComplete;
+
+    let timeMs = 1000;
+    const wrapper = createFrameTaskWrapper(element, {
+      getTimeMs: () => timeMs,
+    });
+
+    // Start first run
+    const firstRun = wrapper.run();
+    
+    // Immediately start second run with different time
+    timeMs = 2000;
+    const secondRun = wrapper.run();
+
+    // Wait for both to complete
+    await Promise.all([firstRun, secondRun]);
+
+    // Both preparations run, but only the latest renders
+    expect(element.prepareCallCount).toBe(2);
+    expect(element.renderCallCount).toBe(1);
+    expect(element.renderTimeMs).toBe(2000);
+
+    element.remove();
+  });
+
+  test("multiple rapid run() calls only render the last one", async () => {
+    const element = document.createElement("test-frame-element") as TestFrameElement;
+    element.needsPrep = true;
+    document.body.appendChild(element);
+    await element.updateComplete;
+
+    let timeMs = 0;
+    const wrapper = createFrameTaskWrapper(element, {
+      getTimeMs: () => timeMs,
+    });
+
+    // Fire off many rapid run() calls
+    const runs: Promise<void>[] = [];
+    for (let i = 1; i <= 5; i++) {
+      timeMs = i * 1000;
+      runs.push(wrapper.run());
+    }
+
+    // Wait for all to complete
+    await Promise.all(runs);
+
+    // All preparations run, but only the last renders
+    expect(element.prepareCallCount).toBe(5);
+    expect(element.renderCallCount).toBe(1);
+    expect(element.renderTimeMs).toBe(5000);
+
+    element.remove();
+  });
 });
 
 // Clean up custom elements after tests

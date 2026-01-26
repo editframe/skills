@@ -460,6 +460,7 @@ export function createFrameTaskWrapper(
   options: FrameTaskWrapperOptions = {}
 ): FrameTask {
   let frameTaskPromise: Promise<void> = Promise.resolve();
+  let latestRequestId = 0;
 
   const getTimeMs = options.getTimeMs ?? (() => {
     // Try desiredSeekTimeMs first (video), then ownCurrentTimeMs, then 0
@@ -476,11 +477,17 @@ export function createFrameTaskWrapper(
     run: () => {
       const abortController = new AbortController();
       const timeMs = getTimeMs();
+      // Assign unique ID to this request - only the latest will render
+      const requestId = ++latestRequestId;
       
       frameTaskPromise = (async () => {
         try {
           await element.prepareFrame(timeMs, abortController.signal);
-          element.renderFrame(timeMs);
+          // Only render if this is still the latest request
+          // Stale requests complete preparation but skip render to prevent flickering
+          if (requestId === latestRequestId) {
+            element.renderFrame(timeMs);
+          }
         } catch (error) {
           // Silently ignore AbortErrors - expected when task is cancelled
           if (error instanceof DOMException && error.name === "AbortError") {
