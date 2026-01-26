@@ -39,294 +39,142 @@ export interface Caption {
 
 const stopWords = new Set(["", ".", "!", "?", ","]);
 
+/**
+ * Caption active word element - displays the currently spoken word.
+ * Uses light DOM for simplicity - parent sets textContent directly.
+ */
 @customElement("ef-captions-active-word")
-export class EFCaptionsActiveWord extends EFTemporal(LitElement) {
-  static styles = [
-    css`
-      :host {
-        display: inline-block;
-        white-space: normal;
-        line-height: 1;
-      }
-      :host([hidden]) {
-        opacity: 0;
-        pointer-events: none;
-      }
-    `,
-  ];
-
-  render() {
+export class EFCaptionsActiveWord extends HTMLElement {
+  #wordText = "";
+  #wordIndex = 0;
+  
+  constructor() {
+    super();
+    // Apply default styles via inline style
+    this.style.display = "inline-block";
+    this.style.whiteSpace = "normal";
+    this.style.lineHeight = "1";
+  }
+  
+  set wordText(text: string) {
+    this.#wordText = text;
     // Hide element if no content or only stop words
-    if (!this.wordText || stopWords.has(this.wordText)) {
-      this.hidden = true;
+    if (!text || stopWords.has(text)) {
       this.style.display = "none";
-      return undefined;
+      this.textContent = "";
+    } else {
+      this.style.display = "inline-block";
+      this.textContent = text;
     }
-    this.hidden = false;
-    this.style.removeProperty("display");
-
+  }
+  
+  get wordText(): string {
+    return this.#wordText;
+  }
+  
+  set wordIndex(index: number) {
+    this.#wordIndex = index;
     // Set deterministic --ef-word-seed value based on word index
-    const seed = (this.wordIndex * 9007) % 233; // Prime numbers for better distribution
+    const seed = (index * 9007) % 233; // Prime numbers for better distribution
     const seedValue = seed / 233; // Normalize to 0-1 range
     this.style.setProperty("--ef-word-seed", seedValue.toString());
-
-    return html`${this.wordText}`;
   }
-
-  @property({ type: Number, attribute: false })
-  wordStartMs = 0;
-
-  @property({ type: Number, attribute: false })
-  wordEndMs = 0;
-
-  @property({ type: String, attribute: false })
-  wordText = "";
-
-  @property({ type: Number, attribute: false })
-  wordIndex = 0;
-
-  @property({ type: Boolean, reflect: true })
-  hidden = false;
   
-  /**
-   * Force synchronous update for video rendering.
-   * First calls requestUpdate() to ensure Lit recognizes property changes,
-   * then immediately calls performUpdate() to execute the update synchronously.
-   */
-  updateNow(): void {
-    this.requestUpdate();
-    this.performUpdate();
-  }
-
-  get startTimeMs() {
-    // Get parent captions element's absolute start time, then add our local offset
-    const parentCaptions = this.closest("ef-captions") as EFCaptions;
-    const parentStartTime = parentCaptions?.startTimeMs || 0;
-    return parentStartTime + (this.wordStartMs || 0);
-  }
-
-  get endTimeMs() {
-    const parentCaptions = this.closest("ef-captions") as EFCaptions;
-    const parentStartTime = parentCaptions?.startTimeMs || 0;
-    return parentStartTime + (this.wordEndMs || 0);
-  }
-
-  get durationMs(): number {
-    return this.wordEndMs - this.wordStartMs;
+  get wordIndex(): number {
+    return this.#wordIndex;
   }
 }
 
+/**
+ * Caption segment element - displays a full caption segment.
+ * Uses light DOM for simplicity - parent sets textContent directly.
+ */
 @customElement("ef-captions-segment")
-export class EFCaptionsSegment extends EFTemporal(LitElement) {
-  static styles = [
-    css`
-      :host {
-        display: inline-block;
-        white-space: normal;
-        line-height: 1;
-      }
-    `,
-  ];
-
-  render() {
-    // Hide element if no content or only stop words
-    if (!this.segmentText || stopWords.has(this.segmentText)) {
-      this.hidden = true;
-      this.style.display = "none";
-      return undefined;
-    }
-    this.hidden = false;
-    this.style.removeProperty("display");
-    return html`${this.segmentText}`;
-  }
-
-  @property({ type: Number, attribute: false })
-  segmentStartMs = 0;
-
-  @property({ type: Number, attribute: false })
-  segmentEndMs = 0;
-
-  @property({ type: String, attribute: false })
-  segmentText = "";
-
-  @property({ type: Boolean, reflect: true })
-  hidden = false;
+export class EFCaptionsSegment extends HTMLElement {
+  #segmentText = "";
   
-  /**
-   * Force synchronous update for video rendering.
-   * First calls requestUpdate() to ensure Lit recognizes property changes,
-   * then immediately calls performUpdate() to execute the update synchronously.
-   */
-  updateNow(): void {
-    this.requestUpdate();
-    this.performUpdate();
+  constructor() {
+    super();
+    // Apply default styles via inline style
+    this.style.display = "inline-block";
+    this.style.whiteSpace = "normal";
+    this.style.lineHeight = "1";
   }
-
-  get startTimeMs() {
-    // Get parent captions element's absolute start time, then add our local offset
-    const parentCaptions = this.closest("ef-captions") as EFCaptions;
-    const parentStartTime = parentCaptions?.startTimeMs || 0;
-    return parentStartTime + (this.segmentStartMs || 0);
+  
+  set segmentText(text: string) {
+    this.#segmentText = text;
+    // Hide element if no content or only stop words
+    if (!text || stopWords.has(text)) {
+      this.style.display = "none";
+      this.textContent = "";
+    } else {
+      this.style.display = "inline-block";
+      this.textContent = text;
+    }
   }
-
-  get endTimeMs() {
-    const parentCaptions = this.closest("ef-captions") as EFCaptions;
-    const parentStartTime = parentCaptions?.startTimeMs || 0;
-    return parentStartTime + (this.segmentEndMs || 0);
-  }
-
-  get durationMs(): number {
-    return this.segmentEndMs - this.segmentStartMs;
+  
+  get segmentText(): string {
+    return this.#segmentText;
   }
 }
 
+/**
+ * Caption before-active-word element - displays words before the current word.
+ * Uses light DOM for simplicity - parent sets textContent directly.
+ */
 @customElement("ef-captions-before-active-word")
 export class EFCaptionsBeforeActiveWord extends EFCaptionsSegment {
-  static styles = [
-    css`
-      :host {
-        display: inline-block;
-        white-space: pre;
-        line-height: 1;
-      }
-      :host([hidden]) {
-        opacity: 0;
-        pointer-events: none;
-      }
-    `,
-  ];
-  
-  /**
-   * Force synchronous update for video rendering.
-   * First calls requestUpdate() to ensure Lit recognizes property changes,
-   * then immediately calls performUpdate() to execute the update synchronously.
-   */
-  updateNow(): void {
-    this.requestUpdate();
-    this.performUpdate();
+  constructor() {
+    super();
+    // Override whiteSpace to preserve spacing
+    this.style.whiteSpace = "pre";
   }
-
-  render() {
-    // Hide element if no content or only stop words
-    if (!this.segmentText || stopWords.has(this.segmentText)) {
-      this.hidden = true;
-      this.style.display = "none";
-      return undefined;
-    }
-    this.hidden = false;
-    this.style.removeProperty("display");
-
+  
+  set segmentText(text: string) {
     // Check if there's an active word by looking for sibling active word element
     const activeWord = this.closest("ef-captions")?.querySelector(
       "ef-captions-active-word",
-    );
-    const hasActiveWord = activeWord?.wordText && !activeWord.hidden;
-
-    return html`${this.segmentText}${hasActiveWord ? " " : ""}`;
-  }
-
-  @property({ type: Boolean, reflect: true })
-  hidden = false;
-
-  @property({ type: String, attribute: false })
-  segmentText = "";
-
-  @property({ type: Number, attribute: false })
-  segmentStartMs = 0;
-
-  @property({ type: Number, attribute: false })
-  segmentEndMs = 0;
-
-  get startTimeMs() {
-    // Get parent captions element's absolute start time, then add our local offset
-    const parentCaptions = this.closest("ef-captions") as EFCaptions;
-    const parentStartTime = parentCaptions?.startTimeMs || 0;
-    return parentStartTime + (this.segmentStartMs || 0);
-  }
-
-  get endTimeMs() {
-    const parentCaptions = this.closest("ef-captions") as EFCaptions;
-    const parentStartTime = parentCaptions?.startTimeMs || 0;
-    return parentStartTime + (this.segmentEndMs || 0);
-  }
-
-  get durationMs(): number {
-    return this.segmentEndMs - this.segmentStartMs;
+    ) as EFCaptionsActiveWord;
+    const hasActiveWord = activeWord?.wordText;
+    
+    // Add trailing space if there's an active word coming after us
+    const finalText = text && hasActiveWord ? text + " " : text;
+    
+    // Hide element if no content or only stop words
+    if (!finalText || stopWords.has(finalText)) {
+      this.style.display = "none";
+      this.textContent = "";
+    } else {
+      this.style.display = "inline-block";
+      this.textContent = finalText;
+    }
   }
 }
 
+/**
+ * Caption after-active-word element - displays words after the current word.
+ * Uses light DOM for simplicity - parent sets textContent directly.
+ */
 @customElement("ef-captions-after-active-word")
 export class EFCaptionsAfterActiveWord extends EFCaptionsSegment {
-  static styles = [
-    css`
-      :host {
-        display: inline-block;
-        white-space: pre;
-        line-height: 1;
-      }
-      :host([hidden]) {
-        opacity: 0;
-        pointer-events: none;
-      }
-    `,
-  ];
+  constructor() {
+    super();
+    // Override whiteSpace to preserve spacing
+    this.style.whiteSpace = "pre";
+  }
   
-  /**
-   * Force synchronous update for video rendering.
-   * First calls requestUpdate() to ensure Lit recognizes property changes,
-   * then immediately calls performUpdate() to execute the update synchronously.
-   */
-  updateNow(): void {
-    this.requestUpdate();
-    this.performUpdate();
-  }
-
-  render() {
+  set segmentText(text: string) {
+    // Add leading space if there's text
+    const finalText = text ? " " + text : text;
+    
     // Hide element if no content or only stop words
-    if (!this.segmentText || stopWords.has(this.segmentText)) {
-      this.hidden = true;
+    if (!finalText || stopWords.has(finalText)) {
       this.style.display = "none";
-      return undefined;
+      this.textContent = "";
+    } else {
+      this.style.display = "inline-block";
+      this.textContent = finalText;
     }
-    this.hidden = false;
-    this.style.removeProperty("display");
-
-    // Check if there's an active word by looking for sibling active word element
-    const activeWord = this.closest("ef-captions")?.querySelector(
-      "ef-captions-active-word",
-    );
-    const hasActiveWord = activeWord?.wordText && !activeWord.hidden;
-
-    return html`${hasActiveWord ? " " : ""}${this.segmentText}`;
-  }
-
-  @property({ type: Boolean, reflect: true })
-  hidden = false;
-
-  @property({ type: String, attribute: false })
-  segmentText = "";
-
-  @property({ type: Number, attribute: false })
-  segmentStartMs = 0;
-
-  @property({ type: Number, attribute: false })
-  segmentEndMs = 0;
-
-  get startTimeMs() {
-    // Get parent captions element's absolute start time, then add our local offset
-    const parentCaptions = this.closest("ef-captions") as EFCaptions;
-    const parentStartTime = parentCaptions?.startTimeMs || 0;
-    return parentStartTime + (this.segmentStartMs || 0);
-  }
-
-  get endTimeMs() {
-    const parentCaptions = this.closest("ef-captions") as EFCaptions;
-    const parentStartTime = parentCaptions?.startTimeMs || 0;
-    return parentStartTime + (this.segmentEndMs || 0);
-  }
-
-  get durationMs(): number {
-    return this.segmentEndMs - this.segmentStartMs;
   }
 }
 
@@ -585,12 +433,12 @@ export class EFCaptions extends EFSourceMixin(
 
   /**
    * Synchronous render - updates caption text containers.
-   * Uses performUpdate() for synchronous Lit rendering (no async batching).
+   * Sets textContent directly on child elements (light DOM).
    * @implements FrameRenderable
    */
   renderFrame(_timeMs: number): void {
-    // Update text containers synchronously using performUpdate()
-    // This ensures shadow DOM is immediately up-to-date for video frame capture
+    // Update text containers by setting properties
+    // Child elements update their textContent directly (light DOM)
     this.updateTextContainers();
   }
 
@@ -757,9 +605,6 @@ export class EFCaptions extends EFSourceMixin(
 
     for (const wordContainer of this.activeWordContainers) {
       if (currentWord) {
-        wordContainer.wordText = currentWord.text;
-        wordContainer.wordStartMs = currentWord.start * 1000;
-        wordContainer.wordEndMs = currentWord.end * 1000;
         const wordIndex = captionsData.word_segments.findIndex(
           (w) =>
             w.start === currentWord.start &&
@@ -767,29 +612,18 @@ export class EFCaptions extends EFSourceMixin(
             w.text === currentWord.text,
         );
         wordContainer.wordIndex = wordIndex >= 0 ? wordIndex : 0;
-        // Force synchronous update for video rendering correctness
-        wordContainer.updateNow();
+        wordContainer.wordText = currentWord.text; // Sets textContent directly
       } else {
-        wordContainer.wordText = "";
-        wordContainer.wordStartMs = 0;
-        wordContainer.wordEndMs = 0;
-        // Force synchronous update for video rendering correctness
-        wordContainer.updateNow();
+        wordContainer.wordText = ""; // Hides element
       }
     }
 
     for (const segmentContainer of this.segmentContainers) {
       if (currentSegment) {
-        segmentContainer.segmentText = currentSegment.text;
-        segmentContainer.segmentStartMs = currentSegment.start * 1000;
-        segmentContainer.segmentEndMs = currentSegment.end * 1000;
+        segmentContainer.segmentText = currentSegment.text; // Sets textContent directly
       } else {
-        segmentContainer.segmentText = "";
-        segmentContainer.segmentStartMs = 0;
-        segmentContainer.segmentEndMs = 0;
+        segmentContainer.segmentText = ""; // Hides element
       }
-      // Force synchronous update for video rendering correctness
-      segmentContainer.updateNow();
     }
 
     // Process context for both word and segment cases
@@ -816,19 +650,11 @@ export class EFCaptions extends EFSourceMixin(
           .join(" ");
 
         for (const container of this.beforeActiveWordContainers) {
-          container.segmentText = beforeWords;
-          container.segmentStartMs = currentWord.start * 1000;
-          container.segmentEndMs = currentWord.end * 1000;
-          // Force synchronous update for video rendering correctness
-          container.updateNow();
+          container.segmentText = beforeWords; // Sets textContent directly
         }
 
         for (const container of this.afterActiveWordContainers) {
-          container.segmentText = afterWords;
-          container.segmentStartMs = currentWord.start * 1000;
-          container.segmentEndMs = currentWord.end * 1000;
-          // Force synchronous update for video rendering correctness
-          container.updateNow();
+          container.segmentText = afterWords; // Sets textContent directly
         }
       }
     } else if (currentSegment) {
@@ -844,19 +670,11 @@ export class EFCaptions extends EFSourceMixin(
         const allWords = segmentWords.map((w) => w.text.trim()).join(" ");
 
         for (const container of this.beforeActiveWordContainers) {
-          container.segmentText = "";
-          container.segmentStartMs = currentSegment.start * 1000;
-          container.segmentEndMs = currentSegment.end * 1000;
-          // Force synchronous update for video rendering correctness
-          container.updateNow();
+          container.segmentText = ""; // Hides element
         }
 
         for (const container of this.afterActiveWordContainers) {
-          container.segmentText = allWords;
-          container.segmentStartMs = currentSegment.start * 1000;
-          container.segmentEndMs = currentSegment.end * 1000;
-          // Force synchronous update for video rendering correctness
-          container.updateNow();
+          container.segmentText = allWords; // Sets textContent directly
         }
       } else {
         const allCompletedWords = segmentWords
@@ -864,36 +682,20 @@ export class EFCaptions extends EFSourceMixin(
           .join(" ");
 
         for (const container of this.beforeActiveWordContainers) {
-          container.segmentText = allCompletedWords;
-          container.segmentStartMs = currentSegment.start * 1000;
-          container.segmentEndMs = currentSegment.end * 1000;
-          // Force synchronous update for video rendering correctness
-          container.updateNow();
+          container.segmentText = allCompletedWords; // Sets textContent directly
         }
 
         for (const container of this.afterActiveWordContainers) {
-          container.segmentText = "";
-          container.segmentStartMs = currentSegment.start * 1000;
-          container.segmentEndMs = currentSegment.end * 1000;
-          // Force synchronous update for video rendering correctness
-          container.updateNow();
+          container.segmentText = ""; // Hides element
         }
       }
     } else {
       for (const container of this.beforeActiveWordContainers) {
-        container.segmentText = "";
-        container.segmentStartMs = 0;
-        container.segmentEndMs = 0;
-        // Force synchronous update for video rendering correctness
-        container.updateNow();
+        container.segmentText = ""; // Hides element
       }
 
       for (const container of this.afterActiveWordContainers) {
-        container.segmentText = "";
-        container.segmentStartMs = 0;
-        container.segmentEndMs = 0;
-        // Force synchronous update for video rendering correctness
-        container.updateNow();
+        container.segmentText = ""; // Hides element
       }
     }
   }

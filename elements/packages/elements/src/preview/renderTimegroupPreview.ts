@@ -432,12 +432,8 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
       const shadowChildren = srcEl.shadowRoot.childNodes;
       const shadowLen = shadowChildren.length;
       if (shadowLen > 0) {
-        // For caption elements and text segments, ALWAYS create a text node placeholder even if empty.
-        // This allows syncStyles to update the text later when captions change.
-        const isCaptionElement = srcEl.tagName === 'EF-CAPTIONS-ACTIVE-WORD' ||
-                                 srcEl.tagName === 'EF-CAPTIONS-BEFORE-ACTIVE-WORD' ||
-                                 srcEl.tagName === 'EF-CAPTIONS-AFTER-ACTIVE-WORD' ||
-                                 srcEl.tagName === 'EF-CAPTIONS-SEGMENT';
+        // For text segments, ALWAYS create a text node placeholder even if empty.
+        // Caption elements now use light DOM, so they don't need special handling here.
         const isTextSegment = srcEl.tagName === 'EF-TEXT-SEGMENT';
         let hasTextNode = false;
         
@@ -446,7 +442,7 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
           if (child.nodeType === Node.TEXT_NODE) {
             const text = child.textContent?.trim();
             // Always include text for text segments (even if whitespace-only, e.g., " ")
-            if (text || isCaptionElement || isTextSegment) {
+            if (text || isTextSegment) {
               clone.appendChild(document.createTextNode(child.textContent || ""));
               hasTextNode = true;
             }
@@ -461,8 +457,8 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
           }
         }
         
-        // For caption elements, ensure there's always a text node for syncStyles to update
-        if (isCaptionElement && !hasTextNode) {
+        // For text segments, ensure there's always a text node for syncStyles to update
+        if (isTextSegment && !hasTextNode) {
           clone.appendChild(document.createTextNode(""));
         }
       }
@@ -687,51 +683,12 @@ function syncNodeStyles(node: CloneNode): void {
   cloneStyle.transition = "none";
   
   // Sync text content from light DOM
+  // Caption child elements now use light DOM, so this handles them naturally
   const srcTextNode = source.childNodes[0];
   const cloneTextNode = clone.childNodes[0];
   if (srcTextNode?.nodeType === Node.TEXT_NODE && cloneTextNode?.nodeType === Node.TEXT_NODE) {
     const srcText = srcTextNode.textContent || "";
     if (cloneTextNode.textContent !== srcText) cloneTextNode.textContent = srcText;
-  }
-  
-  // Sync text content from shadow DOM (for caption elements that render text in shadow DOM)
-  // Only check specific caption elements - checking every element's shadowRoot is expensive
-  if (tagName && (
-    tagName === 'EF-CAPTIONS-ACTIVE-WORD' ||
-    tagName === 'EF-CAPTIONS-BEFORE-ACTIVE-WORD' ||
-    tagName === 'EF-CAPTIONS-AFTER-ACTIVE-WORD' ||
-    tagName === 'EF-CAPTIONS-SEGMENT'
-  )) {
-    const srcShadowRoot = (source as HTMLElement).shadowRoot;
-    if (srcShadowRoot && !srcTextNode) {
-      // Collect ALL text nodes from shadow root (may be multiple due to Lit rendering)
-      // Concatenate them to get the complete text content
-      let srcShadowText = "";
-      const textNodes: string[] = [];
-      for (const srcChild of srcShadowRoot.childNodes) {
-        if (srcChild.nodeType === Node.TEXT_NODE) {
-          const text = srcChild.textContent || "";
-          textNodes.push(text);
-          srcShadowText += text;
-        }
-      }
-      
-      // Clear ALL existing text nodes from clone (may have multiple from previous frames)
-      const cloneChildrenToRemove: Node[] = [];
-      for (const cloneChild of clone.childNodes) {
-        if (cloneChild.nodeType === Node.TEXT_NODE) {
-          cloneChildrenToRemove.push(cloneChild);
-        }
-      }
-      for (const child of cloneChildrenToRemove) {
-        clone.removeChild(child);
-      }
-      
-      // Create single new text node with combined source text
-      if (srcShadowText || srcShadowText === "") {
-        clone.appendChild(document.createTextNode(srcShadowText));
-      }
-    }
   }
   
   // Sync input value
