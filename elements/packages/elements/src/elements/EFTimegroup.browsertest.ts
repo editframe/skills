@@ -24,17 +24,17 @@ import "./EFText.js";
 // Helper to create a simple task-like object for testing
 function createTestFrameTask(host: LitElement, onExecute: () => void) {
   let promise = Promise.resolve();
-  return {
+  const taskObj = {
     run: () => {
       promise = (async () => {
         onExecute();
       })();
+      taskObj.taskComplete = promise;
       return promise;
     },
-    get taskComplete() {
-      return promise;
-    },
+    taskComplete: Promise.resolve(),
   };
+  return taskObj;
 }
 
 beforeEach(() => {
