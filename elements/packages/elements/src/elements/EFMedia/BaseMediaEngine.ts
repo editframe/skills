@@ -21,23 +21,25 @@ export abstract class BaseMediaEngine {
     this.host = host;
   }
 
-  abstract get videoRendition(): VideoRendition | undefined;
-  abstract get audioRendition(): AudioRendition | undefined;
+  // Use protected abstract methods instead of abstract getters to avoid TypeScript bug
+  // See: https://github.com/microsoft/TypeScript/issues/58020
+  protected abstract getVideoRenditionInternal(): VideoRendition | undefined;
+  protected abstract getAudioRenditionInternal(): AudioRendition | undefined;
 
   /**
    * Get video rendition if available. Returns undefined for audio-only assets.
    * Callers should handle undefined gracefully.
    */
   getVideoRendition(): VideoRendition | undefined {
-    return this.videoRendition;
+    return this.getVideoRenditionInternal();
   }
 
   /**
    * Get audio rendition if available. Returns undefined for video-only assets.
-   * Callers should handle undefined gracefully.
+   * Callers should handle undefined appropriately.
    */
   getAudioRendition(): AudioRendition | undefined {
-    return this.audioRendition;
+    return this.getAudioRenditionInternal();
   }
 
   /**

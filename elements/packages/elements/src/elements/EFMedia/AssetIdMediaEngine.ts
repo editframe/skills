@@ -66,8 +66,8 @@ export class AssetIdMediaEngine
     // Only validate tracks that are actually required by the consumer (e.g., EFAudio only needs audio)
     // Skip validation if no signal provided (backwards compatibility) - validation is optional
     if (signal) {
-      const videoTrack = engine.videoTrackIndex;
-      const audioTrack = engine.audioTrackIndex;
+      const videoTrack = engine.getVideoTrackIndex();
+      const audioTrack = engine.getAudioTrackIndex();
       const needsVideo = requiredTracks === "video" || requiredTracks === "both";
       const needsAudio = requiredTracks === "audio" || requiredTracks === "both";
       
@@ -150,37 +150,43 @@ export class AssetIdMediaEngine
       0,
     );
     this.durationMs = longestFragment * 1000;
+    
+    // Initialize MediaEngine interface properties
+    this.templates = {
+      initSegment: `${apiHost}/api/v1/isobmff_tracks/${assetId}/{trackId}`,
+      mediaSegment: `${apiHost}/api/v1/isobmff_tracks/${assetId}/{trackId}`,
+    };
+    this.videoRendition = this.getVideoRenditionInternal();
+    this.audioRendition = this.getAudioRenditionInternal();
   }
 
   // Override URL-building methods to use API endpoints instead of file paths
-  get initSegmentPaths() {
+  getInitSegmentPaths(): InitSegmentPaths {
     const paths: InitSegmentPaths = {};
+    const audioTrack = this.getAudioTrackIndex();
+    const videoTrack = this.getVideoTrackIndex();
 
-    if (this.audioTrackIndex !== undefined) {
+    if (audioTrack !== undefined) {
       paths.audio = {
-        path: `${this.apiHost}/api/v1/isobmff_tracks/${this.assetId}/${this.audioTrackIndex.track}`,
-        pos: this.audioTrackIndex.initSegment.offset,
-        size: this.audioTrackIndex.initSegment.size,
+        path: `${this.apiHost}/api/v1/isobmff_tracks/${this.assetId}/${audioTrack.track}`,
+        pos: audioTrack.initSegment.offset,
+        size: audioTrack.initSegment.size,
       };
     }
 
-    if (this.videoTrackIndex !== undefined) {
+    if (videoTrack !== undefined) {
       paths.video = {
-        path: `${this.apiHost}/api/v1/isobmff_tracks/${this.assetId}/${this.videoTrackIndex.track}`,
-        pos: this.videoTrackIndex.initSegment.offset,
-        size: this.videoTrackIndex.initSegment.size,
+        path: `${this.apiHost}/api/v1/isobmff_tracks/${this.assetId}/${videoTrack.track}`,
+        pos: videoTrack.initSegment.offset,
+        size: videoTrack.initSegment.size,
       };
     }
 
     return paths;
   }
 
-  get templates() {
-    return {
-      initSegment: `${this.apiHost}/api/v1/isobmff_tracks/${this.assetId}/{trackId}`,
-      mediaSegment: `${this.apiHost}/api/v1/isobmff_tracks/${this.assetId}/{trackId}`,
-    };
-  }
+  // MediaEngine interface property - initialized in constructor/static fetch
+  templates!: { initSegment: string; mediaSegment: string };
 
   buildInitSegmentUrl(trackId: number) {
     return `${this.apiHost}/api/v1/isobmff_tracks/${this.assetId}/${trackId}`;

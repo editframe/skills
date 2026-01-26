@@ -12,7 +12,7 @@ import type {
 import type { UrlGenerator } from "../../transcoding/utils/UrlGenerator";
 import type { EFMedia } from "../EFMedia";
 import { BaseMediaEngine, mediaCache } from "./BaseMediaEngine";
-import type { MediaRendition } from "./shared/MediaTaskUtils";
+import type { MediaRendition } from "./shared/MediaTaskUtils.js";
 import {
   convertToScaledTime,
   roundToMilliseconds,
@@ -25,6 +25,11 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
   durationMs = 0;
   private thumbnailExtractor: ThumbnailExtractor;
   protected urlGenerator: UrlGenerator;
+
+  // MediaEngine interface properties
+  templates!: { initSegment: string; mediaSegment: string };
+  videoRendition!: VideoRendition | undefined;
+  audioRendition!: AudioRendition | undefined;
 
   constructor(host: EFMedia, src: string, urlGenerator: UrlGenerator) {
     super(host);
@@ -50,9 +55,9 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
     
     // Use production API format: /api/v1/isobmff_files/local/index?src={src}
     // This route is handled by the vite plugin for local development
-    const baseUrl = urlGenerator.getBaseUrl();
-    const url = baseUrl 
-      ? `${baseUrl}/api/v1/isobmff_files/local/index?src=${encodeURIComponent(normalizedSrc)}`
+    const apiBaseUrl = urlGenerator.getBaseUrl();
+    const url = apiBaseUrl 
+      ? `${apiBaseUrl}/api/v1/isobmff_files/local/index?src=${encodeURIComponent(normalizedSrc)}`
       : `/api/v1/isobmff_files/local/index?src=${encodeURIComponent(normalizedSrc)}`;
     const data = await engine.fetchManifest(url, signal);
     engine.data = data as Record<number, TrackFragmentIndex>;
@@ -71,14 +76,24 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
       engine.src = src.slice(1);
     }
 
+    // Initialize MediaEngine interface properties
+    const sourceUrl = engine.getSourceUrlForJit();
+    const jitBaseUrl = engine.getBaseUrlForJit();
+    engine.templates = {
+      initSegment: `${jitBaseUrl}/api/v1/transcode/{rendition}/init.m4s?url=${encodeURIComponent(sourceUrl)}`,
+      mediaSegment: `${jitBaseUrl}/api/v1/transcode/{rendition}/{segmentId}.m4s?url=${encodeURIComponent(sourceUrl)}`,
+    };
+    engine.videoRendition = engine.getVideoRenditionInternal();
+    engine.audioRendition = engine.getAudioRenditionInternal();
+
     // Validate that segments are accessible by trying to fetch the first init segment
     // This prevents creating a media engine that will fail on all subsequent segment fetches
     // If segments require authentication that's not available, fail early
     // Only validate tracks that are actually required by the consumer (e.g., EFAudio only needs audio)
     // Skip validation if no signal provided (backwards compatibility) - validation is optional
     if (signal) {
-      const videoTrack = engine.videoTrackIndex;
-      const audioTrack = engine.audioTrackIndex;
+      const videoTrack = engine.getVideoTrackIndex();
+      const audioTrack = engine.getAudioTrackIndex();
       const needsVideo = requiredTracks === "video" || requiredTracks === "both";
       const needsAudio = requiredTracks === "audio" || requiredTracks === "both";
       
@@ -143,49 +158,64 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
     return engine;
   }
 
-  get audioTrackIndex() {
+  getAudioTrackIndex() {
     return Object.values(this.data).find((track) => track.type === "audio");
   }
 
-  get videoTrackIndex() {
+  getVideoTrackIndex() {
     return Object.values(this.data).find(
       (track) => track.type === "video" && track.track !== undefined && track.track > 0,
     );
   }
 
-  get scrubTrackIndex() {
+  getScrubTrackIndex() {
     // Scrub track uses track ID -1
     return this.data[-1];
   }
 
-  get videoRendition() {
-    const videoTrack = this.videoTrackIndex;
+  // Cache renditions to avoid getter accessor issues with TypeScript declaration generation
+  #cachedVideoRendition: VideoRendition | undefined | null = null;
+  #cachedAudioRendition: AudioRendition | undefined | null = null;
+
+  protected getVideoRenditionInternal() {
+    if (this.#cachedVideoRendition !== null) {
+      return this.#cachedVideoRendition;
+    }
+    const videoTrack = this.getVideoTrackIndex();
 
     if (!videoTrack || videoTrack.track === undefined) {
+      this.#cachedVideoRendition = undefined;
       return undefined;
     }
 
-    return {
+    this.#cachedVideoRendition = {
       id: "high" as RenditionId, // Use JIT-style rendition ID
       trackId: videoTrack.track,
       src: this.src,
       startTimeOffsetMs: videoTrack.startTimeOffsetMs,
     };
+    return this.#cachedVideoRendition;
   }
 
-  get audioRendition() {
-    const audioTrack = this.audioTrackIndex;
+  protected getAudioRenditionInternal() {
+    if (this.#cachedAudioRendition !== null) {
+      return this.#cachedAudioRendition;
+    }
+    const audioTrack = this.getAudioTrackIndex();
 
     if (!audioTrack || audioTrack.track === undefined) {
+      this.#cachedAudioRendition = undefined;
       return undefined;
     }
 
-    return {
+    this.#cachedAudioRendition = {
       id: "audio" as RenditionId, // Use JIT-style rendition ID
       trackId: audioTrack.track,
       src: this.src,
     };
+    return this.#cachedAudioRendition;
   }
+
 
 
   /**
@@ -221,14 +251,6 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
     return baseUrl;
   }
 
-  get templates() {
-    const sourceUrl = this.getSourceUrlForJit();
-    const baseUrl = this.getBaseUrlForJit();
-    return {
-      initSegment: `${baseUrl}/api/v1/transcode/{rendition}/init.m4s?url=${encodeURIComponent(sourceUrl)}`,
-      mediaSegment: `${baseUrl}/api/v1/transcode/{rendition}/{segmentId}.m4s?url=${encodeURIComponent(sourceUrl)}`,
-    };
-  }
 
   /**
    * Map trackId to JIT rendition ID for URL generation
@@ -461,7 +483,7 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
   }
 
   getScrubVideoRendition(): VideoRendition | undefined {
-    const scrubTrack = this.scrubTrackIndex;
+    const scrubTrack = this.getScrubTrackIndex();
 
     if (!scrubTrack || scrubTrack.track === undefined) {
       return undefined;
@@ -515,7 +537,7 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
     signal?: AbortSignal,
   ): Promise<(ThumbnailResult | null)[]> {
     // Use main video rendition for thumbnails - scrub track may have incomplete segments
-    const rendition = this.videoRendition;
+    const rendition = this.getVideoRenditionInternal();
 
     if (!rendition) {
       console.warn(

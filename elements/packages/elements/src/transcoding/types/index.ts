@@ -2,8 +2,6 @@
  * Core types and interfaces for JIT Transcoding System
  */
 
-import type { MediaRendition } from "../../elements/EFMedia/shared/MediaTaskUtils";
-
 export interface QualityPreset {
   name: string;
   width: number;
@@ -204,6 +202,12 @@ export interface VideoRendition {
   segmentDurationsMs?: number[];
   startTimeOffsetMs?: number;
 }
+
+/**
+ * Union type representing either an audio or video rendition.
+ * Used in methods that can work with either type of media rendition.
+ */
+export type MediaRendition = AudioRendition | VideoRendition;
 export interface MediaEngine {
   durationMs: number;
   src: string;

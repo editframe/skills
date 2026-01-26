@@ -24,8 +24,22 @@ export class JitMediaEngine extends BaseMediaEngine implements MediaEngine {
     signal?.throwIfAborted();
     
     engine.data = data;
+    // Set MediaEngine interface properties
+    engine.durationMs = data.durationMs;
+    engine.src = data.sourceUrl;
+    engine.templates = data.endpoints;
+    // Initialize renditions (will be computed on first access)
+    engine.videoRendition = engine.getVideoRenditionInternal();
+    engine.audioRendition = engine.getAudioRenditionInternal();
     return engine;
   }
+
+  // MediaEngine interface properties
+  durationMs = 0;
+  src = "";
+  templates!: { initSegment: string; mediaSegment: string };
+  videoRendition!: VideoRendition | undefined;
+  audioRendition!: AudioRendition | undefined;
 
   constructor(host: EFMedia, urlGenerator: UrlGenerator) {
     super(host);
@@ -33,23 +47,26 @@ export class JitMediaEngine extends BaseMediaEngine implements MediaEngine {
     this.thumbnailExtractor = new ThumbnailExtractor(this);
   }
 
-  get durationMs() {
-    return this.data.durationMs;
-  }
+  // Cache renditions to avoid getter accessor issues with TypeScript declaration generation
+  #cachedVideoRendition: VideoRendition | undefined | null = null;
+  #cachedAudioRendition: AudioRendition | undefined | null = null;
 
-  get src() {
-    return this.data.sourceUrl;
-  }
-
-  get audioRendition(): AudioRendition | undefined {
+  protected getAudioRenditionInternal(): AudioRendition | undefined {
+    if (this.#cachedAudioRendition !== null) {
+      return this.#cachedAudioRendition;
+    }
     if (!this.data.audioRenditions || this.data.audioRenditions.length === 0) {
+      this.#cachedAudioRendition = undefined;
       return undefined;
     }
 
     const rendition = this.data.audioRenditions[0];
-    if (!rendition) return undefined;
+    if (!rendition) {
+      this.#cachedAudioRendition = undefined;
+      return undefined;
+    }
 
-    return {
+    this.#cachedAudioRendition = {
       id: rendition.id as RenditionId,
       trackId: undefined,
       src: this.data.sourceUrl,
@@ -57,17 +74,25 @@ export class JitMediaEngine extends BaseMediaEngine implements MediaEngine {
       segmentDurationsMs: rendition.segmentDurationsMs,
       startTimeOffsetMs: rendition.startTimeOffsetMs,
     };
+    return this.#cachedAudioRendition;
   }
 
-  get videoRendition(): VideoRendition | undefined {
+  protected getVideoRenditionInternal(): VideoRendition | undefined {
+    if (this.#cachedVideoRendition !== null) {
+      return this.#cachedVideoRendition;
+    }
     if (!this.data.videoRenditions || this.data.videoRenditions.length === 0) {
+      this.#cachedVideoRendition = undefined;
       return undefined;
     }
 
     const rendition = this.data.videoRenditions[0];
-    if (!rendition) return undefined;
+    if (!rendition) {
+      this.#cachedVideoRendition = undefined;
+      return undefined;
+    }
 
-    return {
+    this.#cachedVideoRendition = {
       id: rendition.id as RenditionId,
       trackId: undefined,
       src: this.data.sourceUrl,
@@ -75,11 +100,10 @@ export class JitMediaEngine extends BaseMediaEngine implements MediaEngine {
       segmentDurationsMs: rendition.segmentDurationsMs,
       startTimeOffsetMs: rendition.startTimeOffsetMs,
     };
+    return this.#cachedVideoRendition;
   }
 
-  get templates() {
-    return this.data.endpoints;
-  }
+
 
   async fetchInitSegment(
     rendition: { id?: RenditionId; trackId: number | undefined; src: string },
@@ -227,7 +251,7 @@ export class JitMediaEngine extends BaseMediaEngine implements MediaEngine {
     // Use same rendition priority as video: try main rendition first for frame alignment
     let rendition: VideoRendition;
     try {
-      const mainRendition = this.getVideoRendition();
+      const mainRendition = this.videoRendition;
       if (mainRendition) {
         rendition = mainRendition;
       } else {

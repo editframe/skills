@@ -157,7 +157,7 @@ describe("AssetIdMediaEngine", () => {
     });
 
     it("should return correct init segment paths", () => {
-      const paths = engine.initSegmentPaths;
+      const paths = engine.getInitSegmentPaths();
       expect(paths.audio?.path).toBe(
         `${mockApiHost}/api/v1/isobmff_tracks/${mockAssetId}/1`,
       );

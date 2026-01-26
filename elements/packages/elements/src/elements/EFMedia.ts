@@ -76,6 +76,7 @@ export class AsyncValue<T> {
   #promise: Promise<T | undefined> = Promise.resolve(undefined);
   #resolvePromise: ((value: T | undefined) => void) | undefined;
 
+  // Use properties instead of getters to avoid TypeScript declaration generation bug
   get value(): T | undefined {
     return this.#value;
   }
@@ -336,7 +337,7 @@ export class EFMedia extends EFTargetable(
   interpolateFrequencies = false;
 
   // Update FREQ_WEIGHTS to use the instance fftSize instead of a static value
-  get FREQ_WEIGHTS() {
+  getFreqWeights() {
     if (freqWeightsCache.has(this.fftSize)) {
       // biome-ignore lint/style/noNonNullAssertion: We know the value is set due to the guard above
       return freqWeightsCache.get(this.fftSize)!;
@@ -357,12 +358,12 @@ export class EFMedia extends EFTargetable(
     return weights;
   }
 
-  // Helper getter for backwards compatibility
-  get shouldInterpolateFrequencies() {
+  // Helper method for backwards compatibility
+  getShouldInterpolateFrequencies() {
     return this.interpolateFrequencies;
   }
 
-  get urlGenerator() {
+  getUrlGenerator() {
     return new UrlGenerator(() => this.apiHost ?? "");
   }
 
@@ -434,7 +435,8 @@ export class EFMedia extends EFTargetable(
   }
 
   async #createMediaEngine(signal?: AbortSignal): Promise<MediaEngine | undefined> {
-    const { src, assetId, urlGenerator, apiHost, requiredTracks } = this;
+    const { src, assetId, apiHost, requiredTracks } = this;
+    const urlGenerator = this.getUrlGenerator();
 
     // Check for AssetID mode first
     if (assetId !== null && assetId !== undefined && assetId.trim() !== "") {
@@ -531,7 +533,7 @@ export class EFMedia extends EFTargetable(
   async getFrequencyData(timeMs: number, signal?: AbortSignal): Promise<Uint8Array | null> {
     if (timeMs < 0) return null;
 
-    const cacheKey = `${this.shouldInterpolateFrequencies}:${this.fftSize}:${this.fftDecay}:${this.fftGain}:${timeMs}`;
+    const cacheKey = `${this.getShouldInterpolateFrequencies()}:${this.fftSize}:${this.fftDecay}:${this.fftGain}:${timeMs}`;
     const cached = this.#frequencyDataCache.get(cacheKey);
     if (cached) return cached;
 
@@ -689,13 +691,13 @@ export class EFMedia extends EFTargetable(
 
     // Apply frequency weights
     smoothedData.forEach((value, i) => {
-      const freqWeight = this.FREQ_WEIGHTS[i] ?? 0;
+      const freqWeight = this.getFreqWeights()[i] ?? 0;
       smoothedData[i] = Math.min(255, Math.round(value * freqWeight));
     });
 
     // Only return the lower half of the frequency data
     const slicedData = smoothedData.slice(0, Math.floor(smoothedData.length / 2));
-    return this.shouldInterpolateFrequencies ? processFFTData(slicedData) : slicedData;
+    return this.getShouldInterpolateFrequencies() ? processFFTData(slicedData) : slicedData;
   }
 
   async #analyzeTimeDomain(currentTimeMs: number, signal?: AbortSignal): Promise<Uint8Array | null> {
@@ -828,8 +830,8 @@ export class EFMedia extends EFTargetable(
   @property({ type: String, attribute: "asset-id", reflect: true })
   assetId: string | null = null;
 
-  get intrinsicDurationMs() {
-    return this.#mediaEngine?.durationMs ?? 0;
+  get intrinsicDurationMs(): number | undefined {
+    return this.#mediaEngine?.durationMs;
   }
 
   protected updated(
@@ -888,14 +890,14 @@ export class EFMedia extends EFTargetable(
     }
   }
 
-  get hasOwnDuration() {
+  get hasOwnDuration(): boolean {
     return true;
   }
 
   @state()
   private _desiredSeekTimeMs = 0; // Initialize to 0 for proper segment loading
 
-  get desiredSeekTimeMs() {
+  get desiredSeekTimeMs(): number {
     return this._desiredSeekTimeMs;
   }
 
@@ -908,7 +910,7 @@ export class EFMedia extends EFTargetable(
   protected async executeSeek(seekToMs: number) {
     // The seekToMs parameter should be the timeline-relative media time
     // calculated from currentSourceTimeMs which includes timeline positioning
-    this.desiredSeekTimeMs = seekToMs;
+    this._desiredSeekTimeMs = seekToMs;
   }
 
   /**
