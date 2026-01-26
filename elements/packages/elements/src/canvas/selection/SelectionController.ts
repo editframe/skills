@@ -53,16 +53,7 @@ export class SelectionController implements ReactiveController {
    */
   private createContextProxy(): SelectionContext {
     const controller = this;
-    return {
-      get selectedIds() {
-        return controller.selectionModel.selectedIds;
-      },
-      get selectionMode() {
-        return controller.selectionModel.selectionMode;
-      },
-      get boxSelectBounds() {
-        return controller.selectionModel.boxSelectBounds;
-      },
+    return new Proxy({
       select: (id: string) => {
         controller.selectionModel.select(id);
         // Event will trigger requestUpdate via event listener
@@ -134,6 +125,19 @@ export class SelectionController implements ReactiveController {
       ) => {
         controller.selectionModel.removeEventListener(type, listener as EventListener);
       },
-    };
+    } as Omit<SelectionContext, 'selectedIds' | 'selectionMode' | 'boxSelectBounds'>, {
+      get(target, prop) {
+        if (prop === 'selectedIds') {
+          return controller.selectionModel.selectedIds;
+        }
+        if (prop === 'selectionMode') {
+          return controller.selectionModel.selectionMode;
+        }
+        if (prop === 'boxSelectBounds') {
+          return controller.selectionModel.boxSelectBounds;
+        }
+        return (target as any)[prop];
+      },
+    }) as SelectionContext;
   }
 }

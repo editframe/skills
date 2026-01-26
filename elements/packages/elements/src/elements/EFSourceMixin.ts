@@ -98,12 +98,26 @@ export function EFSourceMixin<T extends Constructor<LitElement>>(
     /**
      * Compatibility wrapper for code expecting md5SumLoader.value
      */
-    md5SumLoader = {
+    md5SumLoader = new Proxy({
       run: () => this.loadMd5Sum(),
-      get value() { return (this as any)._host.#md5Value; },
-      get taskComplete() { return (this as any)._host.#md5Promise || Promise.resolve((this as any)._host.#md5Value); },
       _host: this,
-    };
+    } as {
+      run: () => Promise<string | undefined>;
+      value: string | undefined;
+      taskComplete: Promise<string | undefined>;
+      _host: typeof this;
+    }, {
+      get(target, prop) {
+        if (prop === 'value') {
+          return (target._host as any).#md5Value;
+        }
+        if (prop === 'taskComplete') {
+          const host = target._host as any;
+          return host.#md5Promise || Promise.resolve(host.#md5Value);
+        }
+        return (target as any)[prop];
+      },
+    });
   }
 
   return EFSourceElement as Constructor<EFSourceMixinInterface> & T;
