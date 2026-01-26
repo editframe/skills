@@ -600,6 +600,7 @@ function syncNodeStyles(node: CloneNode): void {
   // Regular element - sync CSS properties directly (browser optimizes redundant writes)
   const cloneStyle = clone.style as any;
   const propLen = SYNC_PROPERTIES.length;
+  const tagName = (source as HTMLElement).tagName;
   
   if (HAS_COMPUTED_STYLE_MAP) {
     let srcMap: StylePropertyMapReadOnly;
@@ -616,7 +617,15 @@ function syncNodeStyles(node: CloneNode): void {
       const strVal = srcVal.toString();
       
       if (camel === "display") {
-        const targetDisplay = strVal === "none" ? "block" : strVal;
+        // For caption child elements, preserve display:none when explicitly set
+        // (they use it to hide empty content, not for temporal visibility)
+        const isCaptionChild = tagName && (
+          tagName === 'EF-CAPTIONS-ACTIVE-WORD' ||
+          tagName === 'EF-CAPTIONS-BEFORE-ACTIVE-WORD' ||
+          tagName === 'EF-CAPTIONS-AFTER-ACTIVE-WORD' ||
+          tagName === 'EF-CAPTIONS-SEGMENT'
+        );
+        const targetDisplay = (strVal === "none" && !isCaptionChild) ? "block" : strVal;
         cloneStyle.display = targetDisplay;
         continue;
       }
@@ -646,7 +655,15 @@ function syncNodeStyles(node: CloneNode): void {
       const srcVal = srcStyle[prop];
       
       if (prop === "display") {
-        const targetDisplay = srcVal === "none" ? "block" : srcVal;
+        // For caption child elements, preserve display:none when explicitly set
+        // (they use it to hide empty content, not for temporal visibility)
+        const isCaptionChild = tagName && (
+          tagName === 'EF-CAPTIONS-ACTIVE-WORD' ||
+          tagName === 'EF-CAPTIONS-BEFORE-ACTIVE-WORD' ||
+          tagName === 'EF-CAPTIONS-AFTER-ACTIVE-WORD' ||
+          tagName === 'EF-CAPTIONS-SEGMENT'
+        );
+        const targetDisplay = (srcVal === "none" && !isCaptionChild) ? "block" : srcVal;
         cloneStyle.display = targetDisplay;
         continue;
       }
@@ -679,7 +696,6 @@ function syncNodeStyles(node: CloneNode): void {
   
   // Sync text content from shadow DOM (for caption elements that render text in shadow DOM)
   // Only check specific caption elements - checking every element's shadowRoot is expensive
-  const tagName = (source as HTMLElement).tagName;
   if (tagName && (
     tagName === 'EF-CAPTIONS-ACTIVE-WORD' ||
     tagName === 'EF-CAPTIONS-BEFORE-ACTIVE-WORD' ||
