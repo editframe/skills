@@ -535,58 +535,23 @@ export class EFCaptions extends EFSourceMixin(
   }
 
   /**
-   * Async preparation - waits for captions data to load AND child elements to update.
+   * Async preparation - waits for captions data to load.
    * @implements FrameRenderable
    */
   async prepareFrame(_timeMs: number, signal: AbortSignal): Promise<void> {
     await this.loadCaptionsData(signal);
     signal.throwIfAborted();
-    
-    // Update text containers and wait for child elements to complete their render cycles.
-    // CRITICAL: This must happen in prepareFrame (not renderFrame) because video rendering
-    // captures shadow DOM content immediately after renderFrame returns. If child elements
-    // haven't finished their Lit render cycles, stale content from previous frames will
-    // appear in the video output.
-    this.updateTextContainers();
-    signal.throwIfAborted();
-    
-    // Wait for all child caption elements to complete Lit rendering
-    await this.#waitForChildUpdates();
-    signal.throwIfAborted();
   }
 
   /**
-   * Synchronous render - no-op since updateTextContainers() is called in prepareFrame.
+   * Synchronous render - updates caption text containers.
+   * Uses performUpdate() for synchronous Lit rendering (no async batching).
    * @implements FrameRenderable
    */
   renderFrame(_timeMs: number): void {
-    // No-op: Text containers are already updated in prepareFrame to ensure
-    // child elements have completed their Lit render cycles before frame capture.
-  }
-  
-  /**
-   * Wait for all caption child elements to complete their Lit render cycles.
-   * This ensures shadow DOM content is up-to-date before video frame capture.
-   */
-  async #waitForChildUpdates(): Promise<void> {
-    const updates: Promise<unknown>[] = [];
-    
-    for (const container of this.activeWordContainers) {
-      updates.push(container.updateComplete);
-    }
-    for (const container of this.segmentContainers) {
-      updates.push(container.updateComplete);
-    }
-    for (const container of this.beforeActiveWordContainers) {
-      updates.push(container.updateComplete);
-    }
-    for (const container of this.afterActiveWordContainers) {
-      updates.push(container.updateComplete);
-    }
-    
-    if (updates.length > 0) {
-      await Promise.all(updates);
-    }
+    // Update text containers synchronously using performUpdate()
+    // This ensures shadow DOM is immediately up-to-date for video frame capture
+    this.updateTextContainers();
   }
 
   // ============================================================================
@@ -762,12 +727,14 @@ export class EFCaptions extends EFSourceMixin(
             w.text === currentWord.text,
         );
         wordContainer.wordIndex = wordIndex >= 0 ? wordIndex : 0;
-        wordContainer.requestUpdate();
+        // Force synchronous update for video rendering correctness
+        wordContainer.updateNow();
       } else {
         wordContainer.wordText = "";
         wordContainer.wordStartMs = 0;
         wordContainer.wordEndMs = 0;
-        wordContainer.requestUpdate();
+        // Force synchronous update for video rendering correctness
+        wordContainer.updateNow();
       }
     }
 
@@ -781,7 +748,8 @@ export class EFCaptions extends EFSourceMixin(
         segmentContainer.segmentStartMs = 0;
         segmentContainer.segmentEndMs = 0;
       }
-      segmentContainer.requestUpdate();
+      // Force synchronous update for video rendering correctness
+      segmentContainer.updateNow();
     }
 
     // Process context for both word and segment cases
@@ -811,14 +779,16 @@ export class EFCaptions extends EFSourceMixin(
           container.segmentText = beforeWords;
           container.segmentStartMs = currentWord.start * 1000;
           container.segmentEndMs = currentWord.end * 1000;
-          container.requestUpdate();
+          // Force synchronous update for video rendering correctness
+          container.performUpdate();
         }
 
         for (const container of this.afterActiveWordContainers) {
           container.segmentText = afterWords;
           container.segmentStartMs = currentWord.start * 1000;
           container.segmentEndMs = currentWord.end * 1000;
-          container.requestUpdate();
+          // Force synchronous update for video rendering correctness
+          container.performUpdate();
         }
       }
     } else if (currentSegment) {
@@ -837,14 +807,16 @@ export class EFCaptions extends EFSourceMixin(
           container.segmentText = "";
           container.segmentStartMs = currentSegment.start * 1000;
           container.segmentEndMs = currentSegment.end * 1000;
-          container.requestUpdate();
+          // Force synchronous update for video rendering correctness
+          container.updateNow();
         }
 
         for (const container of this.afterActiveWordContainers) {
           container.segmentText = allWords;
           container.segmentStartMs = currentSegment.start * 1000;
           container.segmentEndMs = currentSegment.end * 1000;
-          container.requestUpdate();
+          // Force synchronous update for video rendering correctness
+          container.updateNow();
         }
       } else {
         const allCompletedWords = segmentWords
@@ -855,14 +827,16 @@ export class EFCaptions extends EFSourceMixin(
           container.segmentText = allCompletedWords;
           container.segmentStartMs = currentSegment.start * 1000;
           container.segmentEndMs = currentSegment.end * 1000;
-          container.requestUpdate();
+          // Force synchronous update for video rendering correctness
+          container.performUpdate();
         }
 
         for (const container of this.afterActiveWordContainers) {
           container.segmentText = "";
           container.segmentStartMs = currentSegment.start * 1000;
           container.segmentEndMs = currentSegment.end * 1000;
-          container.requestUpdate();
+          // Force synchronous update for video rendering correctness
+          container.performUpdate();
         }
       }
     } else {
@@ -870,14 +844,16 @@ export class EFCaptions extends EFSourceMixin(
         container.segmentText = "";
         container.segmentStartMs = 0;
         container.segmentEndMs = 0;
-        container.requestUpdate();
+        // Force synchronous update for video rendering correctness
+        container.updateNow();
       }
 
       for (const container of this.afterActiveWordContainers) {
         container.segmentText = "";
         container.segmentStartMs = 0;
         container.segmentEndMs = 0;
-        container.requestUpdate();
+        // Force synchronous update for video rendering correctness
+        container.updateNow();
       }
     }
   }
