@@ -62,9 +62,14 @@ export async function renderToImage(
   const clonedCanvases = clone.querySelectorAll("canvas");
   
   // Encode original canvases and map to cloned elements
+  // Pass through renderContext and sourceMap for caching
   const canvasScale = options?.canvasScale ?? 1;
   const canvasStart = performance.now();
-  const encodedResults = await encodeCanvasesInParallel(originalCanvases, { scale: canvasScale });
+  const encodedResults = await encodeCanvasesInParallel(originalCanvases, { 
+    scale: canvasScale,
+    renderContext: options?.renderContext,
+    sourceMap: options?.sourceMap,
+  });
   
   for (let i = 0; i < originalCanvases.length; i++) {
     const srcCanvas = originalCanvases[i];

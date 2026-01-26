@@ -2,6 +2,9 @@
  * Shared types for rendering modules.
  */
 
+import type { RenderContext } from "../RenderContext.js";
+import type { CanvasSourceMap } from "../encoding/types.js";
+
 /**
  * Extended CanvasRenderingContext2D with HTML-in-Canvas API support.
  * @see https://github.com/WICG/html-in-canvas
@@ -66,6 +69,16 @@ export interface ForeignObjectRenderOptions extends NativeRenderOptions {
    * Default: 1 (no scaling - encode at full resolution)
    */
   canvasScale?: number;
+  /**
+   * Optional RenderContext for caching encoded dataURLs.
+   * When provided, enables caching for static elements and direct capture for video.
+   */
+  renderContext?: RenderContext;
+  /**
+   * Optional map from clone canvases to their source elements.
+   * Required for RenderContext caching to work.
+   */
+  sourceMap?: CanvasSourceMap;
 }
 
 /**
@@ -78,6 +91,10 @@ export interface SerializeToSvgOptions {
   inlineImages?: boolean;
   /** Whether to log early render info (default: false) */
   logEarlyRenders?: boolean;
+  /** Optional RenderContext for caching */
+  renderContext?: RenderContext;
+  /** Optional map from clone canvases to source elements */
+  sourceMap?: CanvasSourceMap;
 }
 
 /**

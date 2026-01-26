@@ -624,6 +624,162 @@ export class EFVideo extends TWMixin(EFMedia) {
   }
 
   /**
+   * Capture a video frame directly at a source media timestamp.
+   * Bypasses the frameTask system - designed for export/rendering.
+   * Does NOT paint to the element's internal canvas.
+   * 
+   * Uses the same routing logic as unifiedVideoSeekTask:
+   * - "auto": main track for production rendering, follows normal routing otherwise
+   * - "scrub": force low-res scrub track (for thumbnails)
+   * - "main": force full-quality main track
+   * 
+   * @param sourceTimeMs - Timestamp in source media coordinates (not timeline)
+   * @param quality - Which video track to use (default: "auto")
+   * @returns Frame data for serialization
+   * @public
+   */
+  async captureFrameAtSourceTime(
+    sourceTimeMs: number,
+    quality: "auto" | "scrub" | "main" = "auto"
+  ): Promise<{
+    dataUrl: string;
+    width: number;
+    height: number;
+  }> {
+    // 1. Get media engine
+    const mediaEngine = await this.mediaEngineTask.taskComplete;
+    if (!mediaEngine) {
+      throw new Error("No media engine available for frame capture");
+    }
+
+    // 2. Determine which track to use
+    const useMainTrack = quality === "main" || 
+      (quality === "auto" && this.isInProductionRenderingMode());
+
+    // 3. Get video sample using the same logic as unifiedVideoSeekTask
+    let videoSample: any;
+    
+    if (useMainTrack) {
+      // Use main video track
+      const videoRendition = mediaEngine.getVideoRendition?.() || mediaEngine.videoRendition;
+      if (!videoRendition) {
+        throw new Error("No video rendition available");
+      }
+
+      const segmentId = mediaEngine.computeSegmentId(sourceTimeMs, videoRendition);
+      if (segmentId === undefined) {
+        throw new Error(`Cannot compute segment ID for time ${sourceTimeMs}ms`);
+      }
+
+      // Fetch segments if needed (signal is optional)
+      const [initSegment, mediaSegment] = await Promise.all([
+        (mediaEngine as any).fetchInitSegment(videoRendition),
+        (mediaEngine as any).fetchMediaSegment(segmentId, videoRendition),
+      ]);
+
+      if (!initSegment || !mediaSegment) {
+        throw new Error(`Failed to fetch video segments for time ${sourceTimeMs}ms`);
+      }
+
+      // Create BufferedSeekingInput and seek
+      const { BufferedSeekingInput } = await import("./EFMedia/BufferedSeekingInput.js");
+      const combinedBlob = new Blob([initSegment, mediaSegment]);
+      const arrayBuffer = await combinedBlob.arrayBuffer();
+
+      const seekingInput = new BufferedSeekingInput(arrayBuffer, {
+        videoBufferSize: EFMedia.VIDEO_SAMPLE_BUFFER_SIZE,
+        audioBufferSize: EFMedia.AUDIO_SAMPLE_BUFFER_SIZE,
+        startTimeOffsetMs: videoRendition.startTimeOffsetMs,
+      });
+
+      const videoTrack = await seekingInput.getFirstVideoTrack();
+      if (!videoTrack) {
+        throw new Error("No video track found in segment");
+      }
+
+      videoSample = await seekingInput.seek(videoTrack.id, sourceTimeMs);
+    } else {
+      // Use scrub track for thumbnails/preview
+      const scrubRendition = mediaEngine.getScrubVideoRendition?.();
+      if (!scrubRendition) {
+        // Fall back to main track if no scrub available
+        return this.captureFrameAtSourceTime(sourceTimeMs, "main");
+      }
+
+      const scrubRenditionWithSrc = { ...scrubRendition, src: mediaEngine.src };
+      const segmentId = mediaEngine.computeSegmentId(sourceTimeMs, scrubRenditionWithSrc);
+      
+      if (segmentId === undefined) {
+        throw new Error(`Cannot compute scrub segment ID for time ${sourceTimeMs}ms`);
+      }
+
+      const [initSegment, mediaSegment] = await Promise.all([
+        (mediaEngine as any).fetchInitSegment(scrubRenditionWithSrc),
+        (mediaEngine as any).fetchMediaSegment(segmentId, scrubRenditionWithSrc),
+      ]);
+
+      if (!initSegment || !mediaSegment) {
+        // Fall back to main track
+        return this.captureFrameAtSourceTime(sourceTimeMs, "main");
+      }
+
+      const { BufferedSeekingInput } = await import("./EFMedia/BufferedSeekingInput.js");
+      const combinedBlob = new Blob([initSegment, mediaSegment]);
+      const arrayBuffer = await combinedBlob.arrayBuffer();
+
+      const seekingInput = new BufferedSeekingInput(arrayBuffer, {
+        videoBufferSize: EFMedia.VIDEO_SAMPLE_BUFFER_SIZE,
+        audioBufferSize: EFMedia.AUDIO_SAMPLE_BUFFER_SIZE,
+        startTimeOffsetMs: scrubRendition.startTimeOffsetMs,
+      });
+
+      const videoTrack = await seekingInput.getFirstVideoTrack();
+      if (!videoTrack) {
+        // Fall back to main track
+        return this.captureFrameAtSourceTime(sourceTimeMs, "main");
+      }
+
+      videoSample = await seekingInput.seek(videoTrack.id, sourceTimeMs);
+    }
+
+    if (!videoSample) {
+      throw new Error(`No video sample found at ${sourceTimeMs}ms`);
+    }
+
+    // 4. Convert to VideoFrame
+    const videoFrame = videoSample.toVideoFrame();
+
+    try {
+      // 5. Draw to OffscreenCanvas and encode to dataURL
+      const canvas = new OffscreenCanvas(videoFrame.codedWidth, videoFrame.codedHeight);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        throw new Error("Failed to get 2d context from OffscreenCanvas");
+      }
+      ctx.drawImage(videoFrame, 0, 0);
+
+      // Encode to JPEG blob
+      const blob = await canvas.convertToBlob({ type: "image/jpeg", quality: 0.92 });
+      
+      // Convert blob to dataURL
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+
+      return {
+        dataUrl,
+        width: videoFrame.codedWidth,
+        height: videoFrame.codedHeight,
+      };
+    } finally {
+      videoFrame.close();
+    }
+  }
+
+  /**
    * Pre-fetch scrub segments for given timestamps.
    * Loads 30-second segments sequentially, emitting progress events.
    * This ensures scrub track is cached for fast thumbnail generation.

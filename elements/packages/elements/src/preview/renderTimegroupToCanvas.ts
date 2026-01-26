@@ -7,6 +7,7 @@ import {
   type SyncState,
 } from "./renderTimegroupPreview.js";
 import { getEffectiveRenderMode } from "./renderers.js";
+import { RenderContext } from "./RenderContext.js";
 
 // Re-export renderer types for external use
 export type { RenderOptions, RenderResult, Renderer } from "./renderers.js";
@@ -399,74 +400,86 @@ export async function captureFromClone(
     }
   }
 
-  let image: HTMLCanvasElement | HTMLImageElement;
-  const renderMode = getEffectiveRenderMode();
+  // Create RenderContext for caching during this capture operation
+  const renderContext = new RenderContext();
   
-  if (renderMode === "native") {
-    // NATIVE PATH: Render the seeked renderClone directly from live DOM
-    // The clone is already at the correct time, so drawElementImage captures its current
-    // visual state including video frames at the correct position.
-    // 
-    // Position render container properly for capture
-    renderContainer.style.cssText = `
-      position: fixed;
-      left: 0;
-      top: 0;
-      width: ${width}px;
-      height: ${height}px;
-      pointer-events: none;
-      overflow: hidden;
-    `;
+  try {
+    let image: HTMLCanvasElement | HTMLImageElement;
+    const renderMode = getEffectiveRenderMode();
     
-    // OPTIMIZATION: Always skip DPR scaling for captures (thumbnails and video export).
-    // Retina quality isn't needed for captured frames, and DPR=2 means 4x more pixels.
-    // Live preview uses a different code path (renderTimegroupToCanvas) which handles DPR properly.
-    image = await renderToImageNative(renderContainer, width, height, { skipDprScaling: true });
-  } else {
-    // FOREIGNOBJECT PATH: Build passive structure from the SEEKED render clone
-    // The clone is already at the correct time, so getComputedStyle captures the right values.
-    // Styles are synced during clone building in a single pass.
-    const t0 = performance.now();
-    const { container, syncState } = buildCloneStructure(renderClone, timeMs);
-    const buildTime = performance.now() - t0;
+    if (renderMode === "native") {
+      // NATIVE PATH: Render the seeked renderClone directly from live DOM
+      // The clone is already at the correct time, so drawElementImage captures its current
+      // visual state including video frames at the correct position.
+      // 
+      // Position render container properly for capture
+      renderContainer.style.cssText = `
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: ${width}px;
+        height: ${height}px;
+        pointer-events: none;
+        overflow: hidden;
+      `;
+      
+      // OPTIMIZATION: Always skip DPR scaling for captures (thumbnails and video export).
+      // Retina quality isn't needed for captured frames, and DPR=2 means 4x more pixels.
+      // Live preview uses a different code path (renderTimegroupToCanvas) which handles DPR properly.
+      image = await renderToImageNative(renderContainer, width, height, { skipDprScaling: true });
+    } else {
+      // FOREIGNOBJECT PATH: Build passive structure from the SEEKED render clone
+      // The clone is already at the correct time, so getComputedStyle captures the right values.
+      // Styles are synced during clone building in a single pass.
+      const t0 = performance.now();
+      const { container, syncState } = buildCloneStructure(renderClone, timeMs);
+      const buildTime = performance.now() - t0;
 
-    // Create wrapper using shared helper
-    const bgSource = originalTimegroup ?? renderClone;
-    const previewContainer = createPreviewContainer({
-      width,
-      height,
-      background: getComputedStyle(bgSource).background || "#000",
-    });
-    
-    const t1 = performance.now();
-    const styleEl = document.createElement("style");
-    styleEl.textContent = collectDocumentStyles();
-    const stylesTime = performance.now() - t1;
-    previewContainer.appendChild(styleEl);
-    previewContainer.appendChild(container);
-    
-    // Ensure clone root is visible
-    overrideRootCloneStyles(syncState, true);
+      // Create wrapper using shared helper
+      const bgSource = originalTimegroup ?? renderClone;
+      const previewContainer = createPreviewContainer({
+        width,
+        height,
+        background: getComputedStyle(bgSource).background || "#000",
+      });
+      
+      const t1 = performance.now();
+      const styleEl = document.createElement("style");
+      styleEl.textContent = collectDocumentStyles();
+      const stylesTime = performance.now() - t1;
+      previewContainer.appendChild(styleEl);
+      previewContainer.appendChild(container);
+      
+      // Ensure clone root is visible
+      overrideRootCloneStyles(syncState, true);
 
-    // Render using foreignObject serialization
-    // Pass scale so canvases are encoded at thumbnail size (MUCH faster)
-    const t2 = performance.now();
-    image = await renderToImage(previewContainer, width, height, { canvasScale: scale });
-    const renderTime = performance.now() - t2;
-    
-    logger.debug(`[captureFromClone] build=${buildTime.toFixed(0)}ms, styles=${stylesTime.toFixed(0)}ms, render=${renderTime.toFixed(0)}ms (canvasScale=${scale})`);
+      // Render using foreignObject serialization
+      // Pass scale, renderContext, and sourceMap for caching optimization
+      const t2 = performance.now();
+      image = await renderToImage(previewContainer, width, height, { 
+        canvasScale: scale,
+        renderContext,
+        sourceMap: syncState.canvasSourceMap,
+      });
+      const renderTime = performance.now() - t2;
+      
+      logger.debug(`[captureFromClone] build=${buildTime.toFixed(0)}ms, styles=${stylesTime.toFixed(0)}ms, render=${renderTime.toFixed(0)}ms (canvasScale=${scale})`);
+    }
+
+    // Draw to canvas (may need scaling for native path which is at DPR)
+    const srcWidth = image.width;
+    const srcHeight = image.height;
+    ctx.drawImage(
+      image,
+      0, 0, srcWidth, srcHeight,
+      0, 0, canvas.width, canvas.height
+    );
+
+    return canvas;
+  } finally {
+    // Ensure RenderContext is disposed even if an error occurs
+    renderContext.dispose();
   }
-
-  // Draw to canvas (may need scaling for native path which is at DPR)
-  const srcWidth = image.width;
-  const srcHeight = image.height;
-  ctx.drawImage(
-    image,
-    0, 0, srcWidth, srcHeight,
-    0, 0, canvas.width, canvas.height
-  );
-
-  return canvas;
 }
 
 /**
@@ -559,6 +572,11 @@ export interface CanvasPreviewResult {
    * Get the current resolution scale.
    */
   getResolutionScale: () => number;
+  /**
+   * Dispose the preview and release resources.
+   * Call this when the preview is no longer needed.
+   */
+  dispose: () => void;
 }
 
 /**
@@ -671,6 +689,10 @@ export function renderTimegroupToCanvas(
   // Track render state
   let rendering = false;
   let lastTimeMs = -1;
+  let disposed = false;
+
+  // Create RenderContext for caching across refresh calls
+  const renderContext = new RenderContext();
 
   // Log resolution scale on first render for debugging
   let hasLoggedScale = false;
@@ -730,7 +752,7 @@ export function renderTimegroupToCanvas(
   const getResolutionScale = (): number => pendingResolutionScale ?? currentResolutionScale;
   
   const refresh = async (): Promise<void> => {
-    if (rendering) return;
+    if (rendering || disposed) return;
     // Clone-timeline: captures use separate clones, Prime-timeline is never locked
     
     const sourceTimeMs = timegroup.currentTimeMs ?? 0;
@@ -758,9 +780,12 @@ export function renderTimegroupToCanvas(
       overrideRootCloneStyles(syncState);
 
       // Render at scaled dimensions with canvas scaling for internal video frames
+      // Pass renderContext and sourceMap for caching optimization
       const t0 = performance.now();
       const image = await renderToImage(previewContainer, renderWidth, renderHeight, {
         canvasScale: currentResolutionScale,
+        renderContext,
+        sourceMap: syncState.canvasSourceMap,
       });
       const renderTime = performance.now() - t0;
 
@@ -795,8 +820,17 @@ export function renderTimegroupToCanvas(
     }
   };
 
+  /**
+   * Dispose the preview and release resources.
+   */
+  const dispose = (): void => {
+    if (disposed) return;
+    disposed = true;
+    renderContext.dispose();
+  };
+
   // Do initial render
   refresh();
 
-  return { container: wrapperContainer, canvas, refresh, syncState, setResolutionScale, getResolutionScale };
+  return { container: wrapperContainer, canvas, refresh, syncState, setResolutionScale, getResolutionScale, dispose };
 }

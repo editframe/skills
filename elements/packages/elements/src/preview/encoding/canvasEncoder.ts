@@ -1,5 +1,9 @@
 /**
  * Canvas encoding orchestration with worker pool support.
+ * 
+ * Supports caching via RenderContext:
+ * - For ef-image/ef-waveform: caches by element + renderVersion
+ * - For ef-video: uses direct capture API with source timestamp caching
  */
 
 import { logger } from "../logger.js";
@@ -8,6 +12,8 @@ import { getEncoderWorkerUrl } from "../workers/encoderWorkerInline.js";
 import { encodeCanvasOnMainThread } from "./mainThreadEncoder.js";
 import { encodeCanvasInWorker } from "./workerEncoder.js";
 import type { CanvasEncodeResult, CanvasEncodeOptions } from "./types.js";
+import type { EFVideo } from "../../elements/EFVideo.js";
+import type { EFSurface } from "../../elements/EFSurface.js";
 
 // Module-level worker pool state
 let _workerPool: WorkerPool | null = null;
@@ -72,40 +78,100 @@ function getWorkerPool(): WorkerPool | null {
 }
 
 /**
+ * Check if an element is an EFVideo.
+ */
+function isEFVideo(element: Element): element is EFVideo {
+  return element.tagName === "EF-VIDEO";
+}
+
+/**
+ * Check if an element is an EFSurface.
+ */
+function isEFSurface(element: Element): element is EFSurface {
+  return element.tagName === "EF-SURFACE";
+}
+
+/**
  * Encode canvases to data URLs in parallel using worker pool.
  * Falls back to main thread encoding if workers are unavailable.
  * 
+ * When RenderContext and sourceMap are provided:
+ * - Checks cache for static elements (ef-image, ef-waveform)
+ * - Uses direct capture API for ef-video elements
+ * - Shares cached frames for ef-surface elements targeting ef-video
+ * 
  * @param canvases - Array of canvases to encode
- * @param options - Encoding options
+ * @param options - Encoding options including optional renderContext and sourceMap
  * @returns Promise resolving to array of encoded results
  */
 export async function encodeCanvasesInParallel(
   canvases: HTMLCanvasElement[],
   options: CanvasEncodeOptions = {},
 ): Promise<CanvasEncodeResult[]> {
-  const { scale: canvasScale = 1 } = options;
+  const { scale: canvasScale = 1, renderContext, sourceMap } = options;
   const workerPool = getWorkerPool();
 
-  // If no worker pool available, fall back to main thread
-  if (!workerPool) {
-    const results: CanvasEncodeResult[] = [];
-    for (const canvas of canvases) {
-      const encoded = encodeCanvasOnMainThread(canvas, canvasScale);
-      if (encoded) {
-        results.push({ canvas, ...encoded });
-      }
-    }
-    return results;
-  }
-
-  // Use worker pool for parallel encoding
-  const encodingTasks = canvases.map(async (canvas) => {
+  // Helper to encode a single canvas (with caching)
+  const encodeCanvas = async (canvas: HTMLCanvasElement): Promise<CanvasEncodeResult | null> => {
     try {
       if (canvas.width === 0 || canvas.height === 0) {
         return null;
       }
 
       const preserveAlpha = canvas.dataset.preserveAlpha === "true";
+      const sourceElement = sourceMap?.get(canvas);
+
+      // OPTIMIZATION: Check RenderContext cache for static elements
+      if (renderContext && sourceElement) {
+        // For ef-video, use direct capture API
+        if (isEFVideo(sourceElement)) {
+          const sourceTimeMs = sourceElement.currentSourceTimeMs;
+          const cached = renderContext.getCachedVideoFrame(sourceElement, sourceTimeMs);
+          if (cached) {
+            return { canvas, dataUrl: cached.dataUrl, preserveAlpha: false };
+          }
+          
+          // Use direct capture API (bypasses frameTask)
+          try {
+            const frame = await sourceElement.captureFrameAtSourceTime(sourceTimeMs);
+            renderContext.setCachedVideoFrame(sourceElement, sourceTimeMs, frame);
+            return { canvas, dataUrl: frame.dataUrl, preserveAlpha: false };
+          } catch (e) {
+            // Fall back to normal encoding if direct capture fails
+            logger.warn("[canvasEncoder] Direct capture failed, falling back to canvas encoding:", e);
+          }
+        }
+        
+        // For ef-surface targeting ef-video, share the video's cached frame
+        if (isEFSurface(sourceElement)) {
+          const target = sourceElement.targetElement;
+          if (target && isEFVideo(target as Element)) {
+            const videoTarget = target as unknown as EFVideo;
+            const sourceTimeMs = videoTarget.currentSourceTimeMs;
+            const cached = renderContext.getCachedVideoFrame(videoTarget, sourceTimeMs);
+            if (cached) {
+              return { canvas, dataUrl: cached.dataUrl, preserveAlpha: false };
+            }
+            
+            // Capture from the target video
+            try {
+              const frame = await videoTarget.captureFrameAtSourceTime(sourceTimeMs);
+              renderContext.setCachedVideoFrame(videoTarget, sourceTimeMs, frame);
+              return { canvas, dataUrl: frame.dataUrl, preserveAlpha: false };
+            } catch (e) {
+              logger.warn("[canvasEncoder] Direct capture for surface target failed:", e);
+            }
+          }
+        }
+        
+        // For static elements (ef-image, ef-waveform), check version-based cache
+        const cachedDataUrl = renderContext.getCachedCanvasDataUrl(sourceElement);
+        if (cachedDataUrl) {
+          return { canvas, dataUrl: cachedDataUrl, preserveAlpha };
+        }
+      }
+
+      // Standard encoding path
       let sourceCanvas = canvas;
 
       // Handle canvas scaling on main thread before encoding
@@ -121,11 +187,25 @@ export async function encodeCanvasesInParallel(
           sourceCanvas = scaledCanvas;
         }
       }
+
+      let dataUrl: string;
       
-      // Encode in worker
-      const dataUrl = await workerPool.execute((worker) =>
-        encodeCanvasInWorker(worker, sourceCanvas, preserveAlpha),
-      );
+      if (workerPool) {
+        // Encode in worker
+        dataUrl = await workerPool.execute((worker) =>
+          encodeCanvasInWorker(worker, sourceCanvas, preserveAlpha),
+        );
+      } else {
+        // Main thread fallback
+        const encoded = encodeCanvasOnMainThread(sourceCanvas, canvasScale);
+        if (!encoded) return null;
+        dataUrl = encoded.dataUrl;
+      }
+
+      // Cache the result for static elements
+      if (renderContext && sourceElement) {
+        renderContext.setCachedCanvasDataUrl(sourceElement, dataUrl);
+      }
 
       return { canvas, dataUrl, preserveAlpha };
     } catch (error) {
@@ -138,8 +218,10 @@ export async function encodeCanvasesInParallel(
       // Cross-origin canvas or other error - skip
       return null;
     }
-  });
+  };
 
+  // Encode all canvases in parallel
+  const encodingTasks = canvases.map(encodeCanvas);
   const encodedResults = await Promise.all(encodingTasks);
   const validResults = encodedResults.filter(
     (r): r is CanvasEncodeResult => r !== null,

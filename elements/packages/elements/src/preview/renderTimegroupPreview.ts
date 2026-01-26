@@ -142,6 +142,8 @@ export interface CloneTree {
 export interface SyncState {
   tree: CloneTree;
   nodeCount: number;  // Total number of nodes (for debugging/logging)
+  /** Maps clone canvases to their original source elements (ef-video, ef-image, etc.) */
+  canvasSourceMap: WeakMap<HTMLCanvasElement, Element>;
 }
 
 /**
@@ -199,6 +201,7 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
   container.style.cssText = "position:absolute;top:0;left:0;width:100%;height:100%";
   
   let nodeCount = 0;
+  const canvasSourceMap = new WeakMap<HTMLCanvasElement, Element>();
   
   function cloneElement(srcEl: Element): CloneNode | null {
     if (SKIP_TAGS.has(srcEl.tagName)) return null;
@@ -255,6 +258,9 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
           copyCanvasCloneStyles(clone, hostCs, canvasCs);
         } catch {}
         
+        // Map clone canvas to source element for RenderContext caching
+        canvasSourceMap.set(clone, srcEl);
+        
         const node: CloneNode = {
           source: srcEl,
           clone,
@@ -283,6 +289,9 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
           const imgCs = getComputedStyle(shadowImg);
           copyCanvasCloneStyles(clone, hostCs, imgCs);
         } catch {}
+        
+        // Map clone canvas to source element for RenderContext caching
+        canvasSourceMap.set(clone, srcEl);
         
         const node: CloneNode = {
           source: srcEl,
@@ -393,6 +402,7 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
   const syncState: SyncState = {
     tree: { root },
     nodeCount,
+    canvasSourceMap,
   };
   
   // Sync styles in the same pass if timeMs is provided

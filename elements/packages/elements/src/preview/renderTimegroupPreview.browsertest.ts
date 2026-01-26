@@ -242,7 +242,6 @@ describe("buildCloneStructure", () => {
         expect(node.clone).toBeDefined();
         expect(node.children).toBeInstanceOf(Array);
         expect(typeof node.isCanvasClone).toBe("boolean");
-        expect(node.styleCache).toBeInstanceOf(Map);
       });
     });
   });
@@ -651,20 +650,15 @@ describe("invariants", () => {
     expect(syncState.tree.root?.children.length).toBe(3);
   });
 
-  it("styleCache is empty initially and populated after sync", () => {
+  it("canvasSourceMap is available after buildCloneStructure", () => {
     const source = document.createElement("div");
-    source.style.opacity = "0.5";
     document.body.appendChild(source);
     
     try {
       const { syncState } = buildCloneStructure(source);
       
-      // Before sync, cache should be empty
-      expect(syncState.tree.root?.styleCache.size).toBe(0);
-      
-      // After sync, cache should have entries
-      syncStyles(syncState, 0);
-      expect(syncState.tree.root?.styleCache.size).toBeGreaterThan(0);
+      // canvasSourceMap should be a WeakMap
+      expect(syncState.canvasSourceMap).toBeInstanceOf(WeakMap);
     } finally {
       document.body.removeChild(source);
     }

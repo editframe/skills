@@ -40,15 +40,26 @@ export async function serializeToSvgDataUri(
   height: number,
   options: SerializeToSvgOptions = {},
 ): Promise<SerializationResult> {
-  const { canvasScale = 1, inlineImages: shouldInlineImages = false, logEarlyRenders = false } = options;
+  const { 
+    canvasScale = 1, 
+    inlineImages: shouldInlineImages = false, 
+    logEarlyRenders = false,
+    renderContext,
+    sourceMap,
+  } = options;
   
   // Store info for restoration (only used if modifying in-place)
   const canvasRestoreInfo: CanvasRestoreInfo[] = [];
   
   // Phase 1: Encode canvases to data URLs (parallel)
+  // Pass renderContext and sourceMap for caching optimization
   const canvasStart = performance.now();
   const canvases = Array.from(container.querySelectorAll("canvas"));
-  const encodedResults = await encodeCanvasesInParallel(canvases, { scale: canvasScale });
+  const encodedResults = await encodeCanvasesInParallel(canvases, { 
+    scale: canvasScale,
+    renderContext,
+    sourceMap,
+  });
   
   // Replace canvases with images
   for (const { canvas, dataUrl } of encodedResults) {

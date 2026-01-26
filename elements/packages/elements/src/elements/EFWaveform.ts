@@ -36,6 +36,21 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) {
   private resizeObserver?: ResizeObserver;
   private mutationObserver?: MutationObserver;
 
+  /**
+   * Render version counter - increments when visual content changes.
+   * Used by RenderContext to cache rendered dataURLs.
+   */
+  #renderVersion = 0;
+
+  /**
+   * Get the current render version.
+   * Version increments when mode, color, barSpacing, lineWidth, or target changes.
+   * @public
+   */
+  get renderVersion(): number {
+    return this.#renderVersion;
+  }
+
   render() {
     return html`<canvas ${ref(this.canvasRef)}></canvas>`;
   }
@@ -556,6 +571,17 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) {
 
   protected updated(changedProperties: PropertyValueMap<this>): void {
     super.updated(changedProperties);
+
+    // Increment render version when visual-affecting properties change
+    if (
+      changedProperties.has("mode") ||
+      changedProperties.has("color") ||
+      changedProperties.has("barSpacing") ||
+      changedProperties.has("lineWidth") ||
+      changedProperties.has("target")
+    ) {
+      this.#renderVersion++;
+    }
 
     // Trigger a redraw if any property changes
     if (changedProperties.size > 0) {

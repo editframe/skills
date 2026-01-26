@@ -1,5 +1,5 @@
 import { Task } from "@lit/task";
-import { css, html, LitElement } from "lit";
+import { css, html, LitElement, type PropertyValueMap } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { createRef, ref } from "lit/directives/ref.js";
 import { EF_INTERACTIVE } from "../EF_INTERACTIVE.js";
@@ -32,6 +32,21 @@ export class EFImage extends EFTemporal(
 
   imageRef = createRef<HTMLImageElement>();
   canvasRef = createRef<HTMLCanvasElement>();
+
+  /**
+   * Render version counter - increments when visual content changes.
+   * Used by RenderContext to cache rendered dataURLs.
+   */
+  #renderVersion = 0;
+
+  /**
+   * Get the current render version.
+   * Version increments when src or assetId changes.
+   * @public
+   */
+  get renderVersion(): number {
+    return this.#renderVersion;
+  }
 
   #assetId: string | null = null;
   @property({ type: String, attribute: "asset-id", reflect: true })
@@ -197,6 +212,14 @@ export class EFImage extends EFTemporal(
       signal?.throwIfAborted();
     },
   });
+
+  protected updated(changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
+    super.updated(changedProperties);
+    // Increment render version when content-affecting properties change
+    if (changedProperties.has("src") || changedProperties.has("assetId")) {
+      this.#renderVersion++;
+    }
+  }
 
   /**
    * Get the natural dimensions of the image.
