@@ -13,6 +13,51 @@
 
 import type { LitElement } from "lit";
 
+// ============================================================================
+// Priority Constants
+// ============================================================================
+// Lower numbers render first. Elements with dependencies should have higher
+// priority numbers than their dependencies.
+//
+// Example: Waveform depends on audio analysis data, so it renders after audio.
+// ============================================================================
+
+/**
+ * Priority for video elements.
+ * Video renders first as other elements may depend on video frames being ready.
+ */
+export const PRIORITY_VIDEO = 1;
+
+/**
+ * Priority for captions elements.
+ * Captions render after video so they can overlay correctly.
+ */
+export const PRIORITY_CAPTIONS = 2;
+
+/**
+ * Priority for audio elements.
+ * Audio renders after captions (no visual dependency, but keeps consistent ordering).
+ */
+export const PRIORITY_AUDIO = 3;
+
+/**
+ * Priority for waveform elements.
+ * Waveform renders after audio because it depends on audio analysis data.
+ */
+export const PRIORITY_WAVEFORM = 4;
+
+/**
+ * Priority for image elements.
+ * Images render with low priority as they're typically static.
+ */
+export const PRIORITY_IMAGE = 5;
+
+/**
+ * Default priority for elements that don't specify one.
+ * High number ensures custom elements render after standard elements.
+ */
+export const PRIORITY_DEFAULT = 100;
+
 /**
  * State returned by elements describing their readiness for a given time.
  */
@@ -32,6 +77,14 @@ export interface FrameState {
   /**
    * Rendering priority hint. Lower numbers render first.
    * Used to order render calls for elements with dependencies.
+   * 
+   * Standard priorities:
+   * - PRIORITY_VIDEO (1): Video elements
+   * - PRIORITY_CAPTIONS (2): Caption overlays
+   * - PRIORITY_AUDIO (3): Audio elements
+   * - PRIORITY_WAVEFORM (4): Audio visualizers (depend on audio)
+   * - PRIORITY_IMAGE (5): Static images
+   * - PRIORITY_DEFAULT (100): Fallback for custom elements
    */
   priority: number;
 }
@@ -90,6 +143,13 @@ export interface RenderFrameOptions {
    * Default: true
    */
   waitForLitUpdate?: boolean;
+
+  /**
+   * Callback to update CSS animations after frame rendering completes.
+   * Called with the root element after all elements have rendered.
+   * This centralizes animation synchronization in one place.
+   */
+  onAnimationsUpdate?: (rootElement: Element) => void;
 }
 
 /**
@@ -130,7 +190,7 @@ export class FrameController {
     timeMs: number,
     options: RenderFrameOptions = {}
   ): Promise<void> {
-    const { waitForLitUpdate = true } = options;
+    const { waitForLitUpdate = true, onAnimationsUpdate } = options;
 
     // If a render is in progress, queue this one
     if (this.#renderInProgress) {
@@ -153,7 +213,8 @@ export class FrameController {
       }
 
       // Query all visible elements that implement FrameRenderable
-      const elements = this.#queryVisibleElements();
+      // Pass the timeMs parameter to use for visibility checks (root element's time may be stale)
+      const elements = this.#queryVisibleElements(timeMs);
       signal.throwIfAborted();
 
       // Phase 1: Parallel preparation
@@ -177,6 +238,11 @@ export class FrameController {
         signal.throwIfAborted();
         element.renderFrame(timeMs);
       }
+
+      // Phase 3: Update CSS animations (centralized)
+      if (onAnimationsUpdate) {
+        onAnimationsUpdate(this.#rootElement);
+      }
     } finally {
       this.#renderInProgress = false;
 
@@ -195,48 +261,97 @@ export class FrameController {
   /**
    * Query all visible FrameRenderable elements in the tree.
    * Uses temporal visibility to filter out elements not visible at current time.
+   * 
+   * IMPORTANT: For temporal elements, we use temporal visibility (startTimeMs/endTimeMs)
+   * instead of CSS visibility. This is because updateAnimations sets display:none on
+   * elements outside their time range, but that CSS state is from the PREVIOUS frame.
+   * When seeking, we need to evaluate visibility based on the NEW time, not stale CSS.
+   * 
+   * @param timeMs - The time to use for visibility checks. This should be the target
+   *                 render time, not read from root element (which may be stale).
    */
-  #queryVisibleElements(): FrameRenderable[] {
+  #queryVisibleElements(timeMs: number): FrameRenderable[] {
     const result: FrameRenderable[] = [];
-    const currentTimeMs = this.#rootElement.currentTimeMs;
+    const currentTimeMs = timeMs;
 
     const walk = (element: Element): void => {
-      // Check visibility
-      if (element instanceof HTMLElement) {
-        // Fast path: check inline display style
-        if (element.style.display === "none") {
+      // For temporal elements (ef-timegroup, ef-video, etc.), use temporal visibility
+      // instead of CSS visibility. CSS display:none may be stale from previous frame.
+      const isTemporal = "startTimeMs" in element && "endTimeMs" in element;
+      
+      if (isTemporal) {
+        // Temporal element: check time-based visibility
+        // Use exclusive end (< not <=) to avoid overlap at boundaries
+        const startMs = (element as { startTimeMs?: number }).startTimeMs ?? -Infinity;
+        const endMs = (element as { endTimeMs?: number }).endTimeMs ?? Infinity;
+        const isTemporallyVisible = currentTimeMs >= startMs && currentTimeMs < endMs;
+        
+        if (!isTemporallyVisible) {
+          // Skip this element AND its children (children's times are relative to parent)
           return;
         }
-        // Slow path: check computed style
-        const style = getComputedStyle(element);
-        if (style.display === "none" || style.visibility === "hidden") {
-          return;
+        
+        // Element is temporally visible - include if it implements FrameRenderable
+        if (isFrameRenderable(element)) {
+          result.push(element);
         }
-      }
-
-      // Check if this element implements FrameRenderable
-      if (isFrameRenderable(element)) {
-        // Check temporal visibility if element has timing properties
-        if ("startTimeMs" in element && "endTimeMs" in element) {
-          const startMs = (element as { startTimeMs?: number }).startTimeMs ?? -Infinity;
-          const endMs = (element as { endTimeMs?: number }).endTimeMs ?? Infinity;
-          if (currentTimeMs >= startMs && currentTimeMs <= endMs) {
-            result.push(element);
+      } else {
+        // Non-temporal element: use CSS visibility
+        if (element instanceof HTMLElement) {
+          // Fast path: check inline display style
+          if (element.style.display === "none") {
+            return;
           }
-        } else {
-          // Non-temporal FrameRenderable - always include
+          // Slow path: check computed style
+          const style = getComputedStyle(element);
+          if (style.display === "none" || style.visibility === "hidden") {
+            return;
+          }
+        }
+
+        // Check if this element implements FrameRenderable
+        if (isFrameRenderable(element)) {
           result.push(element);
         }
       }
 
-      // Walk children
-      for (const child of element.children) {
+      // Walk children - handle both regular children and slotted content
+      const children = this.#getChildrenIncludingSlotted(element);
+      for (const child of children) {
         walk(child);
       }
     };
 
     walk(this.#rootElement);
     return result;
+  }
+
+  /**
+   * Gets all child elements including slotted content for shadow DOM elements.
+   * For elements with shadow DOM that contain slots, this returns the assigned
+   * elements (slotted content) instead of just the shadow DOM children.
+   */
+  #getChildrenIncludingSlotted(element: Element): Element[] {
+    // If element has shadowRoot with slots, get assigned elements
+    if (element.shadowRoot) {
+      const slots = element.shadowRoot.querySelectorAll('slot');
+      if (slots.length > 0) {
+        const assignedElements: Element[] = [];
+        for (const slot of slots) {
+          assignedElements.push(...slot.assignedElements());
+        }
+        // Also include shadow DOM children that aren't slots (for mixed content)
+        for (const child of element.shadowRoot.children) {
+          if (child.tagName !== 'SLOT') {
+            assignedElements.push(child);
+          }
+        }
+        return assignedElements;
+      }
+    }
+    
+    // Fallback to regular children
+    return Array.from(element.children);
   }
 
   /**
@@ -254,7 +369,7 @@ export class FrameController {
 export const DEFAULT_FRAME_STATE: FrameState = {
   needsPreparation: false,
   isReady: true,
-  priority: 100,
+  priority: PRIORITY_DEFAULT,
 };
 
 /**
@@ -276,5 +391,109 @@ export function createFrameRenderableMixin<T extends { new (...args: any[]): HTM
     renderFrame(_timeMs: number): void {
       // Default: no explicit render needed
     }
+  };
+}
+
+// ============================================================================
+// Shared Frame Task Wrapper
+// ============================================================================
+// Creates a backwards-compatible frameTask object from a FrameRenderable element.
+// This eliminates duplicate boilerplate code across all temporal elements.
+// ============================================================================
+
+/**
+ * Interface for the legacy frameTask object.
+ * Used for backwards compatibility with code expecting the old Task-like API.
+ */
+export interface FrameTask {
+  /**
+   * Run the frame task (prepare + render).
+   * @returns Promise that resolves when the task completes
+   */
+  run(): Promise<void>;
+
+  /**
+   * Promise that resolves when the current task completes.
+   */
+  readonly taskComplete: Promise<void>;
+}
+
+/**
+ * Options for creating a frame task wrapper.
+ */
+export interface FrameTaskWrapperOptions {
+  /**
+   * Function to get the current time in milliseconds.
+   * Default uses element's ownCurrentTimeMs if available, otherwise 0.
+   */
+  getTimeMs?: () => number;
+}
+
+/**
+ * Create a backwards-compatible frameTask wrapper for a FrameRenderable element.
+ * 
+ * This factory function creates a frameTask object that:
+ * - Manages its own AbortController for cancellation
+ * - Calls prepareFrame() then renderFrame() in sequence
+ * - Silently ignores AbortErrors (expected during cancellation)
+ * - Provides taskComplete promise for awaiting completion
+ * 
+ * @param element - The element implementing FrameRenderable
+ * @param options - Optional configuration
+ * @returns A frameTask object compatible with legacy code
+ * 
+ * @example
+ * ```typescript
+ * class MyElement extends LitElement implements FrameRenderable {
+ *   frameTask = createFrameTaskWrapper(this, {
+ *     getTimeMs: () => this.currentSourceTimeMs,
+ *   });
+ * 
+ *   getFrameState(timeMs: number): FrameState { ... }
+ *   async prepareFrame(timeMs: number, signal: AbortSignal): Promise<void> { ... }
+ *   renderFrame(timeMs: number): void { ... }
+ * }
+ * ```
+ */
+export function createFrameTaskWrapper(
+  element: FrameRenderable & { ownCurrentTimeMs?: number; desiredSeekTimeMs?: number },
+  options: FrameTaskWrapperOptions = {}
+): FrameTask {
+  let frameTaskPromise: Promise<void> = Promise.resolve();
+
+  const getTimeMs = options.getTimeMs ?? (() => {
+    // Try desiredSeekTimeMs first (video), then ownCurrentTimeMs, then 0
+    if ("desiredSeekTimeMs" in element && typeof element.desiredSeekTimeMs === "number") {
+      return element.desiredSeekTimeMs;
+    }
+    if ("ownCurrentTimeMs" in element && typeof element.ownCurrentTimeMs === "number") {
+      return element.ownCurrentTimeMs;
+    }
+    return 0;
+  });
+
+  return {
+    run: () => {
+      const abortController = new AbortController();
+      const timeMs = getTimeMs();
+      
+      frameTaskPromise = (async () => {
+        try {
+          await element.prepareFrame(timeMs, abortController.signal);
+          element.renderFrame(timeMs);
+        } catch (error) {
+          // Silently ignore AbortErrors - expected when task is cancelled
+          if (error instanceof DOMException && error.name === "AbortError") {
+            return;
+          }
+          throw error;
+        }
+      })();
+      
+      return frameTaskPromise;
+    },
+    get taskComplete() {
+      return frameTaskPromise;
+    },
   };
 }

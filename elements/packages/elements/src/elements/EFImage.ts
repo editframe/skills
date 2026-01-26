@@ -1,9 +1,12 @@
-import { Task, TaskStatus } from "@lit/task";
 import { css, html, LitElement, type PropertyValueMap } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { createRef, ref } from "lit/directives/ref.js";
-import { EF_INTERACTIVE } from "../EF_INTERACTIVE.js";
-import type { FrameRenderable, FrameState } from "../preview/FrameController.js";
+import {
+  type FrameRenderable,
+  type FrameState,
+  createFrameTaskWrapper,
+  PRIORITY_IMAGE,
+} from "../preview/FrameController.js";
 import { EFSourceMixin } from "./EFSourceMixin.js";
 import { EFTemporal } from "./EFTemporal.js";
 import { FetchMixin } from "./FetchMixin.js";
@@ -91,127 +94,117 @@ export class EFImage extends EFTemporal(
     return this.hasExplicitDuration;
   }
 
-  fetchImage = new Task(this, {
-    autoRun: EF_INTERACTIVE,
-    args: () => [this.assetPath(), this.fetch, this.src, this.assetId] as const,
-    onError: (error) => {
-      // CRITICAL: Attach .catch() handler to prevent unhandled rejection
-      this.fetchImage.taskComplete.catch(() => {});
-      
-      // Don't log AbortErrors - these are expected when element is disconnected
-      const isAbortError = 
-        error instanceof DOMException && error.name === "AbortError" ||
-        error instanceof Error && (
-          error.name === "AbortError" ||
-          error.message?.includes("signal is aborted") ||
-          error.message?.includes("The user aborted a request")
-        );
-      
-      // Also ignore "Canvas not ready" errors - happens during element lifecycle
-      const isCanvasNotReady = error instanceof Error && error.message === "Canvas not ready";
-      
-      if (isAbortError || isCanvasNotReady) {
+  // ============================================================================
+  // Image Loading - async method instead of Task
+  // ============================================================================
+
+  #imageLoaded = false;
+  #imageLoadPromise: Promise<void> | null = null;
+  #lastLoadedPath: string | null = null;
+
+  /**
+   * Load image from the configured source
+   */
+  async loadImage(signal?: AbortSignal): Promise<void> {
+    const assetPath = this.assetPath();
+
+    // Skip if no source
+    if (!this.src && !this.assetId) {
+      return;
+    }
+
+    // Return cached if path hasn't changed
+    if (this.#imageLoaded && this.#lastLoadedPath === assetPath) {
+      return;
+    }
+
+    // Return in-flight promise
+    if (this.#imageLoadPromise && this.#lastLoadedPath === assetPath) {
+      return this.#imageLoadPromise;
+    }
+
+    // For direct URLs, the img element handles loading
+    if (this.isDirectUrl(assetPath)) {
+      this.#imageLoaded = true;
+      this.#lastLoadedPath = assetPath;
+      return;
+    }
+
+    this.#lastLoadedPath = assetPath;
+    this.#imageLoadPromise = this.#doLoadImage(assetPath, signal);
+
+    try {
+      await this.#imageLoadPromise;
+      this.#imageLoaded = true;
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        throw error;
+      }
+      // Canvas not ready errors are expected during lifecycle
+      if (error instanceof Error && error.message === "Canvas not ready") {
         return;
       }
-      console.error("EFImage fetchImage error", error);
-    },
-    task: async ([assetPath, fetch, src, assetId], { signal }) => {
-      // Skip if no source is set
-      if (!src && !assetId) {
+      console.error("EFImage load error", error);
+    } finally {
+      this.#imageLoadPromise = null;
+    }
+  }
+
+  async #doLoadImage(assetPath: string, signal?: AbortSignal): Promise<void> {
+    const response = await this.fetch(assetPath, { signal });
+    signal?.throwIfAborted();
+    
+    const image = new Image();
+    const blob = await response.blob();
+    signal?.throwIfAborted();
+    
+    image.src = URL.createObjectURL(blob);
+
+    await new Promise<void>((resolve, reject) => {
+      if (signal?.aborted) {
+        URL.revokeObjectURL(image.src);
+        reject(new DOMException("Aborted", "AbortError"));
         return;
       }
-
-      // For direct URLs, skip task - src is set directly in render
-      if (this.isDirectUrl(assetPath)) {
-        return;
-      }
-
-      // For asset-id and local files, use canvas as before
-      const response = await fetch(assetPath, { signal });
-      // Check abort after fetch
-      signal?.throwIfAborted();
       
-      const image = new Image();
-      const blob = await response.blob();
-      // Check abort after blob conversion
-      signal?.throwIfAborted();
+      const abortHandler = () => {
+        URL.revokeObjectURL(image.src);
+        reject(new DOMException("Aborted", "AbortError"));
+      };
+      signal?.addEventListener("abort", abortHandler, { once: true });
       
-      image.src = URL.createObjectURL(blob);
+      image.onload = () => {
+        signal?.removeEventListener("abort", abortHandler);
+        resolve();
+      };
+      image.onerror = (error) => {
+        signal?.removeEventListener("abort", abortHandler);
+        URL.revokeObjectURL(image.src);
+        reject(error);
+      };
+    });
 
-      await new Promise<void>((resolve, reject) => {
-        // Check abort before setting up image load handlers
-        if (signal?.aborted) {
-          URL.revokeObjectURL(image.src);
-          reject(new DOMException("Aborted", "AbortError"));
-          return;
-        }
-        
-        const abortHandler = () => {
-          URL.revokeObjectURL(image.src);
-          reject(new DOMException("Aborted", "AbortError"));
-        };
-        signal?.addEventListener("abort", abortHandler, { once: true });
-        
-        image.onload = () => {
-          signal?.removeEventListener("abort", abortHandler);
-          resolve();
-        };
-        image.onerror = (error) => {
-          signal?.removeEventListener("abort", abortHandler);
-          URL.revokeObjectURL(image.src);
-          reject(error);
-        };
-      });
+    signal?.throwIfAborted();
 
-      // Check abort after image load
-      signal?.throwIfAborted();
-
-      if (!this.canvasRef.value) throw new Error("Canvas not ready");
-      const ctx = this.canvasRef.value.getContext("2d");
-      if (!ctx) throw new Error("Canvas 2d context not ready");
-      this.canvasRef.value.width = image.width;
-      this.canvasRef.value.height = image.height;
-      ctx.drawImage(image, 0, 0);
-      
-      // Clean up object URL after use
-      URL.revokeObjectURL(image.src);
-    },
-  });
+    if (!this.canvasRef.value) throw new Error("Canvas not ready");
+    const ctx = this.canvasRef.value.getContext("2d");
+    if (!ctx) throw new Error("Canvas 2d context not ready");
+    this.canvasRef.value.width = image.width;
+    this.canvasRef.value.height = image.height;
+    ctx.drawImage(image, 0, 0);
+    
+    URL.revokeObjectURL(image.src);
+  }
 
   /**
    * @deprecated Use FrameRenderable methods (prepareFrame, renderFrame) via FrameController instead.
    * This is a compatibility wrapper that delegates to the new system.
    */
-  #frameTaskPromise: Promise<void> = Promise.resolve();
-  
-  frameTask = (() => {
-    const self = this;
-    return {
-      run: () => {
-        const abortController = new AbortController();
-        const timeMs = self.ownCurrentTimeMs;
-        self.#frameTaskPromise = (async () => {
-          try {
-            await self.prepareFrame(timeMs, abortController.signal);
-            self.renderFrame(timeMs);
-          } catch (error) {
-            if (error instanceof DOMException && error.name === "AbortError") {
-              return;
-            }
-            throw error;
-          }
-        })();
-        return self.#frameTaskPromise;
-      },
-      get taskComplete() {
-        return self.#frameTaskPromise;
-      },
-    };
-  })();
+  frameTask = createFrameTaskWrapper(this);
 
   // ============================================================================
   // FrameRenderable Implementation
-  // Centralized frame control - replaces distributed Lit Task system
+  // Centralized frame control - no Lit Tasks
   // ============================================================================
 
   /**
@@ -219,13 +212,10 @@ export class EFImage extends EFTemporal(
    * @implements FrameRenderable
    */
   getFrameState(_timeMs: number): FrameState {
-    // Image is ready when fetchImage task is complete
-    const isComplete = this.fetchImage.status === TaskStatus.COMPLETE;
-
     return {
-      needsPreparation: !isComplete,
-      isReady: isComplete,
-      priority: 5, // Images render with low priority (usually static)
+      needsPreparation: !this.#imageLoaded,
+      isReady: this.#imageLoaded,
+      priority: PRIORITY_IMAGE,
     };
   }
 
@@ -234,17 +224,7 @@ export class EFImage extends EFTemporal(
    * @implements FrameRenderable
    */
   async prepareFrame(_timeMs: number, signal: AbortSignal): Promise<void> {
-    if (this.fetchImage.status !== TaskStatus.COMPLETE) {
-      try {
-        await this.fetchImage.taskComplete;
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") {
-          signal.throwIfAborted();
-          return;
-        }
-        throw error;
-      }
-    }
+    await this.loadImage(signal);
     signal.throwIfAborted();
   }
 
@@ -262,9 +242,14 @@ export class EFImage extends EFTemporal(
 
   protected updated(changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
     super.updated(changedProperties);
+    
+    // Trigger image load when src or assetId changes
+    if (changedProperties.has("src") || changedProperties.has("assetId")) {
+      this.#imageLoaded = false;
+      this.loadImage().catch(() => {});
+    }
+
     // Increment render version on any property change.
-    // This is intentionally broad to avoid cache staleness - the cache is
-    // per-render-session so within a render the version will be stable.
     if (changedProperties.size > 0) {
       this.#renderVersion++;
     }

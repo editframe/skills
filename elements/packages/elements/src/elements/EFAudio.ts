@@ -1,9 +1,13 @@
-import { TaskStatus } from "@lit/task";
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { createRef, ref } from "lit/directives/ref.js";
 import { TWMixin } from "../gui/TWMixin.js";
-import type { FrameRenderable, FrameState } from "../preview/FrameController.js";
+import {
+  type FrameRenderable,
+  type FrameState,
+  createFrameTaskWrapper,
+  PRIORITY_AUDIO,
+} from "../preview/FrameController.js";
 import { EFMedia } from "./EFMedia.js";
 
 @customElement("ef-audio")
@@ -24,6 +28,8 @@ export class EFAudio extends TWMixin(EFMedia) implements FrameRenderable {
   volume = 1.0;
 
   audioElementRef = createRef<HTMLAudioElement>();
+
+  #mediaEngineLoaded = false;
 
   protected updated(
     changedProperties: Map<PropertyKey, unknown>,
@@ -46,36 +52,13 @@ export class EFAudio extends TWMixin(EFMedia) implements FrameRenderable {
    * @deprecated Use FrameRenderable methods (prepareFrame, renderFrame) via FrameController instead.
    * This is a compatibility wrapper that delegates to the new system.
    */
-  #frameTaskPromise: Promise<void> = Promise.resolve();
-  
-  frameTask = (() => {
-    const self = this;
-    return {
-      run: () => {
-        const abortController = new AbortController();
-        const timeMs = self.desiredSeekTimeMs;
-        self.#frameTaskPromise = (async () => {
-          try {
-            await self.prepareFrame(timeMs, abortController.signal);
-            self.renderFrame(timeMs);
-          } catch (error) {
-            if (error instanceof DOMException && error.name === "AbortError") {
-              return;
-            }
-            throw error;
-          }
-        })();
-        return self.#frameTaskPromise;
-      },
-      get taskComplete() {
-        return self.#frameTaskPromise;
-      },
-    };
-  })();
+  frameTask = createFrameTaskWrapper(this, {
+    getTimeMs: () => this.desiredSeekTimeMs,
+  });
 
   // ============================================================================
   // FrameRenderable Implementation
-  // Centralized frame control - replaces distributed Lit Task system
+  // Centralized frame control - no Lit Tasks
   // ============================================================================
 
   /**
@@ -83,47 +66,25 @@ export class EFAudio extends TWMixin(EFMedia) implements FrameRenderable {
    * @implements FrameRenderable
    */
   getFrameState(_timeMs: number): FrameState {
-    // Check if all audio tasks are complete
-    const allTasksComplete = 
-      this.mediaEngineTask.status === TaskStatus.COMPLETE &&
-      this.audioSegmentFetchTask.status === TaskStatus.COMPLETE &&
-      this.audioSeekTask.status === TaskStatus.COMPLETE &&
-      this.audioBufferTask.status === TaskStatus.COMPLETE;
+    // Check if media engine is loaded
+    const isReady = this.#mediaEngineLoaded && this.mediaEngineTask.status === 2; // COMPLETE
 
     return {
-      needsPreparation: !allTasksComplete,
-      isReady: allTasksComplete,
-      priority: 3, // Audio renders after video and captions
+      needsPreparation: !isReady,
+      isReady,
+      priority: PRIORITY_AUDIO,
     };
   }
 
   /**
-   * Async preparation - waits for audio tasks to complete.
+   * Async preparation - waits for media engine to load.
    * @implements FrameRenderable
    */
   async prepareFrame(_timeMs: number, signal: AbortSignal): Promise<void> {
-    // Wait for all audio tasks in sequence
-    const tasks = [
-      this.mediaEngineTask,
-      this.audioSegmentFetchTask,
-      this.audioSeekTask,
-      this.audioBufferTask,
-    ];
-
-    for (const task of tasks) {
-      if (task.status !== TaskStatus.COMPLETE) {
-        try {
-          await task.taskComplete;
-        } catch (error) {
-          if (error instanceof DOMException && error.name === "AbortError") {
-            signal.throwIfAborted();
-            return;
-          }
-          throw error;
-        }
-      }
-      signal.throwIfAborted();
-    }
+    // Just ensure media engine is loaded
+    const mediaEngine = await this.getMediaEngine(signal);
+    this.#mediaEngineLoaded = !!mediaEngine;
+    signal.throwIfAborted();
   }
 
   /**
@@ -140,11 +101,11 @@ export class EFAudio extends TWMixin(EFMedia) implements FrameRenderable {
   // ============================================================================
 
   /**
-   * Legacy getter for fragment index task (maps to audioSegmentIdTask)
+   * Legacy getter for fragment index task (maps to frameTask)
    * Still used by EFCaptions
    */
   get fragmentIndexTask() {
-    return this.audioSegmentIdTask;
+    return this.frameTask;
   }
 }
 

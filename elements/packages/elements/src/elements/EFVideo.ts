@@ -7,23 +7,20 @@ import type { VideoSample } from "mediabunny";
 import { DelayedLoadingState } from "../DelayedLoadingState.js";
 import { TWMixin } from "../gui/TWMixin.js";
 import { withSpanSync } from "../otel/tracingHelpers.js";
-import type { FrameRenderable, FrameState } from "../preview/FrameController.js";
-import { makeScrubVideoBufferTask } from "./EFMedia/videoTasks/makeScrubVideoBufferTask.ts";
-import { makeScrubVideoInitSegmentFetchTask } from "./EFMedia/videoTasks/makeScrubVideoInitSegmentFetchTask.ts";
-import { makeScrubVideoInputTask } from "./EFMedia/videoTasks/makeScrubVideoInputTask.ts";
-import { makeScrubVideoSeekTask } from "./EFMedia/videoTasks/makeScrubVideoSeekTask.ts";
-import { makeScrubVideoSegmentFetchTask } from "./EFMedia/videoTasks/makeScrubVideoSegmentFetchTask.ts";
-import { makeScrubVideoSegmentIdTask } from "./EFMedia/videoTasks/makeScrubVideoSegmentIdTask.ts";
-import { makeUnifiedVideoSeekTask } from "./EFMedia/videoTasks/makeUnifiedVideoSeekTask.ts";
-import { makeVideoBufferTask } from "./EFMedia/videoTasks/makeVideoBufferTask.ts";
+import {
+  type FrameRenderable,
+  type FrameState,
+  createFrameTaskWrapper,
+  PRIORITY_VIDEO,
+} from "../preview/FrameController.js";
 import { MainVideoInputCache } from "./EFMedia/videoTasks/MainVideoInputCache.ts";
 import { ScrubInputCache } from "./EFMedia/videoTasks/ScrubInputCache.ts";
 import { EFMedia } from "./EFMedia.js";
 import { updateAnimations } from "./updateAnimations.js";
 
-// Shared caches for captureFrameAtSourceTime - same as used by unifiedVideoSeekTask
-const captureMainVideoInputCache = new MainVideoInputCache();
-const captureScrubInputCache = new ScrubInputCache();
+// Shared caches for video seeking
+const mainVideoInputCache = new MainVideoInputCache();
+const scrubInputCache = new ScrubInputCache();
 
 // EF_FRAMEGEN is a global instance created in EF_FRAMEGEN.ts
 declare global {
@@ -140,21 +137,9 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
   @property({ type: Boolean, attribute: "enable-video-buffering" })
   enableVideoBuffering = true;
 
-  // Unified video system - single smart seek task that routes to scrub or main
-  unifiedVideoSeekTask = makeUnifiedVideoSeekTask(this);
-  videoBufferTask = makeVideoBufferTask(this); // Keep for main video buffering
-
-  // Scrub video preloading system
-  scrubVideoBufferTask = makeScrubVideoBufferTask(this);
-  scrubVideoInputTask = makeScrubVideoInputTask(this);
-  scrubVideoSeekTask = makeScrubVideoSeekTask(this);
-  scrubVideoSegmentIdTask = makeScrubVideoSegmentIdTask(this);
-  scrubVideoSegmentFetchTask = makeScrubVideoSegmentFetchTask(this);
-  scrubVideoInitSegmentFetchTask = makeScrubVideoInitSegmentFetchTask(this);
-
   // ============================================================================
   // FrameRenderable Implementation
-  // Centralized frame control - replaces distributed Lit Task system
+  // Centralized frame control - no more Lit Tasks
   // ============================================================================
 
   /**
@@ -167,59 +152,92 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
   /**
    * Query readiness state for a given time.
    * @implements FrameRenderable
+   * 
+   * Note: The timeMs parameter is the root timegroup's time. We check against
+   * this.currentSourceTimeMs since that's what we cache in prepareFrame.
    */
-  getFrameState(timeMs: number): FrameState {
-    // Check if we have a cached sample for this exact time
+  getFrameState(_timeMs: number): FrameState {
+    // Use element's source time to match what prepareFrame caches
+    const sourceTimeMs = this.currentSourceTimeMs;
+    
+    // Check if we have a cached sample for this exact source time
     const hasCache = 
       this.#cachedVideoSample !== undefined && 
-      this.#cachedVideoSampleTimeMs === timeMs;
+      this.#cachedVideoSampleTimeMs === sourceTimeMs;
 
     return {
       needsPreparation: !hasCache,
       isReady: hasCache,
-      priority: 1, // Video renders first (lower priority number = earlier)
+      priority: PRIORITY_VIDEO,
     };
   }
 
   /**
    * Async preparation - seeks video and caches the sample.
    * @implements FrameRenderable
+   * 
+   * Note: The timeMs parameter is the root timegroup's time. We ignore it and
+   * use this.currentSourceTimeMs instead, which accounts for:
+   * - Our position within the parent timegroup (ownCurrentTimeMs)
+   * - Source trimming (sourceIn/sourceOut or trimStart/trimEnd)
    */
-  async prepareFrame(timeMs: number, signal: AbortSignal): Promise<void> {
-    // Import dynamically to avoid circular dependency
-    const { getLatestMediaEngine } = await import("./EFMedia/tasks/makeMediaEngineTask.js");
-    
+  async prepareFrame(_timeMs: number, signal: AbortSignal): Promise<void> {
     signal.throwIfAborted();
     
-    const mediaEngine = await getLatestMediaEngine(this, signal);
+    // Use element's source time, not the passed root timegroup time.
+    // currentSourceTimeMs = ownCurrentTimeMs + (sourceIn || trimStart || 0)
+    // This correctly maps timeline position to actual media time.
+    const sourceTimeMs = this.currentSourceTimeMs;
+    
+    const mediaEngine = await this.getMediaEngine(signal);
     if (!mediaEngine) {
       this.#cachedVideoSample = undefined;
-      this.#cachedVideoSampleTimeMs = timeMs;
+      this.#cachedVideoSampleTimeMs = sourceTimeMs;
       return;
     }
     
     signal.throwIfAborted();
     
-    // Fetch video sample using the same logic as unifiedVideoSeekTask
-    const videoSample = await this.#fetchVideoSampleForFrame(mediaEngine, timeMs, signal);
-    
-    signal.throwIfAborted();
-    
-    // Cache the result
-    this.#cachedVideoSample = videoSample;
-    this.#cachedVideoSampleTimeMs = timeMs;
+    // Fetch video sample at the correct source time
+    // Handle errors gracefully so one failed seek doesn't break subsequent frames
+    try {
+      const videoSample = await this.#fetchVideoSampleForFrame(mediaEngine, sourceTimeMs, signal);
+      
+      signal.throwIfAborted();
+      
+      // Cache the result
+      this.#cachedVideoSample = videoSample;
+      this.#cachedVideoSampleTimeMs = sourceTimeMs;
+    } catch (error) {
+      // Re-throw abort errors to properly handle cancellation
+      if (error instanceof DOMException && error.name === "AbortError") {
+        throw error;
+      }
+      
+      // For seek errors (NoSample, out of bounds, etc.), just clear cache
+      // This allows subsequent frames to retry instead of being stuck
+      console.warn(`Video seek error at ${sourceTimeMs}ms:`, error);
+      this.#cachedVideoSample = undefined;
+      this.#cachedVideoSampleTimeMs = sourceTimeMs;
+    }
   }
 
   /**
    * Synchronous render - paints cached video sample to canvas.
    * @implements FrameRenderable
+   * 
+   * Note: The timeMs parameter is the root timegroup's time. We use 
+   * this.currentSourceTimeMs to match what prepareFrame cached.
    */
-  renderFrame(timeMs: number): void {
-    // Use cached sample if available for this time
-    if (this.#cachedVideoSampleTimeMs === timeMs && this.#cachedVideoSample) {
+  renderFrame(_timeMs: number): void {
+    // Use element's source time to match what was cached in prepareFrame
+    const sourceTimeMs = this.currentSourceTimeMs;
+    
+    // Use cached sample if available for this source time
+    if (this.#cachedVideoSampleTimeMs === sourceTimeMs && this.#cachedVideoSample) {
       const videoFrame = this.#cachedVideoSample.toVideoFrame();
       try {
-        this.displayFrame(videoFrame, timeMs);
+        this.displayFrame(videoFrame, sourceTimeMs);
       } finally {
         videoFrame.close();
       }
@@ -233,14 +251,19 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
 
   /**
    * Fetch video sample for a given time.
-   * Extracted from unifiedVideoSeekTask for direct use by FrameRenderable.
+   * 
+   * Uses a quality routing strategy:
+   * - In production rendering: always use main (full quality) track
+   * - In preview mode: try scrub track first for faster scrubbing, fall back to main
+   * - If main track segment is already cached: use it (avoid redundant lower-quality fetch)
    */
   async #fetchVideoSampleForFrame(
     mediaEngine: any,
     desiredSeekTimeMs: number,
     signal: AbortSignal
   ): Promise<VideoSample | undefined> {
-    // FIRST: Check if main quality content is already cached
+    // FIRST: Check if main quality content is already cached - use it if so
+    // This avoids redundant lower-quality fetches when main is already loaded
     const mainRendition = mediaEngine.videoRendition;
     if (mainRendition) {
       const mainSegmentId = mediaEngine.computeSegmentId(
@@ -255,13 +278,116 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       }
     }
 
-    // SECOND: Fetch main video path (scrub track disabled)
+    // SECOND: In production rendering mode, always use main (full quality) track
+    if (this.isInProductionRenderingMode()) {
+      return this.#getMainVideoSampleForFrame(mediaEngine, desiredSeekTimeMs, signal);
+    }
+
+    // THIRD: In preview mode, try scrub track first for faster scrubbing
+    const scrubRendition = mediaEngine.getScrubVideoRendition?.();
+    if (scrubRendition) {
+      const scrubSample = await this.#getScrubVideoSampleForFrame(
+        mediaEngine,
+        desiredSeekTimeMs,
+        signal
+      );
+      if (scrubSample) {
+        return scrubSample;
+      }
+      // Scrub track failed, fall through to main track
+    }
+
+    // FOURTH: Fall back to main video path
     return this.#getMainVideoSampleForFrame(mediaEngine, desiredSeekTimeMs, signal);
   }
 
   /**
+   * Get scrub (low-resolution) video sample for fast preview scrubbing.
+   * Used in preview mode for faster response during timeline scrubbing.
+   */
+  async #getScrubVideoSampleForFrame(
+    mediaEngine: any,
+    desiredSeekTimeMs: number,
+    signal: AbortSignal
+  ): Promise<VideoSample | undefined> {
+    const scrubRendition = mediaEngine.getScrubVideoRendition?.();
+    if (!scrubRendition) {
+      return undefined;
+    }
+
+    const scrubRenditionWithSrc = { ...scrubRendition, src: mediaEngine.src };
+    const segmentId = mediaEngine.computeSegmentId(desiredSeekTimeMs, scrubRenditionWithSrc);
+    if (segmentId === undefined) {
+      return undefined;
+    }
+
+    // Get cached scrub video input or create new one
+    const scrubInput = await scrubInputCache.getOrCreateInput(
+      mediaEngine.src,
+      segmentId,
+      async () => {
+        // Fetch scrub video segment
+        let initSegment: ArrayBuffer | undefined;
+        let mediaSegment: ArrayBuffer | undefined;
+        
+        try {
+          [initSegment, mediaSegment] = await Promise.all([
+            mediaEngine.fetchInitSegment(scrubRenditionWithSrc, signal),
+            mediaEngine.fetchMediaSegment(segmentId, scrubRenditionWithSrc, signal),
+          ]);
+        } catch (error) {
+          // If aborted, re-throw to propagate cancellation
+          if (error instanceof DOMException && error.name === "AbortError") {
+            throw error;
+          }
+          // Return undefined for expected errors - will fall back to main track
+          return undefined;
+        }
+
+        if (!initSegment || !mediaSegment) {
+          return undefined;
+        }
+        signal.throwIfAborted();
+
+        // Create combined blob and BufferedSeekingInput
+        const combinedBlob = new Blob([initSegment, mediaSegment]);
+        signal.throwIfAborted();
+        
+        const arrayBuffer = await combinedBlob.arrayBuffer();
+        signal.throwIfAborted();
+
+        const { BufferedSeekingInput } = await import("./EFMedia/BufferedSeekingInput.js");
+        
+        return new BufferedSeekingInput(
+          arrayBuffer,
+          {
+            videoBufferSize: EFMedia.VIDEO_SAMPLE_BUFFER_SIZE,
+            audioBufferSize: EFMedia.AUDIO_SAMPLE_BUFFER_SIZE,
+            startTimeOffsetMs: scrubRendition.startTimeOffsetMs,
+          },
+        );
+      }
+    );
+
+    if (!scrubInput) {
+      return undefined;
+    }
+
+    signal.throwIfAborted();
+
+    const videoTrack = await scrubInput.getFirstVideoTrack();
+    if (!videoTrack) {
+      return undefined;
+    }
+
+    signal.throwIfAborted();
+
+    // Cast MediaSample to VideoSample (it's a video track, so it's a VideoSample)
+    return scrubInput.seek(videoTrack.id, desiredSeekTimeMs) as Promise<VideoSample | undefined>;
+  }
+
+  /**
    * Get main video sample for a given time.
-   * Adapted from getMainVideoSample in makeUnifiedVideoSeekTask.
    */
   async #getMainVideoSampleForFrame(
     mediaEngine: any,
@@ -279,7 +405,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     }
 
     // Get cached main video input or create new one
-    const mainInput = await captureMainVideoInputCache.getOrCreateInput(
+    const mainInput = await mainVideoInputCache.getOrCreateInput(
       mediaEngine.src,
       segmentId,
       videoRendition.id,
@@ -433,33 +559,9 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
    * @deprecated Use FrameRenderable methods (prepareFrame, renderFrame) via FrameController instead.
    * This is a compatibility wrapper that delegates to the new system.
    */
-  #frameTaskPromise: Promise<void> = Promise.resolve();
-  
-  frameTask = (() => {
-    const self = this;
-    return {
-      run: () => {
-        const abortController = new AbortController();
-        const timeMs = self.desiredSeekTimeMs;
-        self.#frameTaskPromise = (async () => {
-          try {
-            await self.prepareFrame(timeMs, abortController.signal);
-            self.renderFrame(timeMs);
-          } catch (error) {
-            // Silently ignore AbortErrors - expected when task is cancelled
-            if (error instanceof DOMException && error.name === "AbortError") {
-              return;
-            }
-            throw error;
-          }
-        })();
-        return self.#frameTaskPromise;
-      },
-      get taskComplete() {
-        return self.#frameTaskPromise;
-      },
-    };
-  })();
+  frameTask = createFrameTaskWrapper(this, {
+    getTimeMs: () => this.desiredSeekTimeMs,
+  });
 
   /**
    * Start a delayed loading operation for testing
@@ -520,11 +622,10 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         span.setAttribute("isProductionRendering", isProductionRendering);
         span.setAttribute("modeCheckMs", t1 - t0);
 
-        // Unified video system: smart routing to scrub or main, with background upgrades
-        // Note: frameTask guarantees unifiedVideoSeekTask is complete before calling paint
+        // Use cached video sample from prepareFrame
         try {
           const t2 = performance.now();
-          const videoSample = this.unifiedVideoSeekTask.value;
+          const videoSample = this.#cachedVideoSample;
           span.setAttribute("hasVideoSample", !!videoSample);
           span.setAttribute("valueAccessMs", t2 - t1);
 
@@ -544,7 +645,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
             }
           }
         } catch (error) {
-          console.warn("Unified video pipeline error:", error);
+          console.warn("Video pipeline error:", error);
         }
 
         // EF_FRAMEGEN-aware rendering mode detection
@@ -745,10 +846,10 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
 
   /**
    * Legacy getter for fragment index task
-   * Still used by EFCaptions - maps to unified video seek task
+   * Still used by EFCaptions - maps to frameTask
    */
   get fragmentIndexTask() {
-    return this.unifiedVideoSeekTask;
+    return this.frameTask;
   }
 
   // Track in-flight waitForFrameReady to prevent duplicate calls from aborting each other
@@ -820,7 +921,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
    * Bypasses the frameTask system - designed for export/rendering.
    * Does NOT paint to the element's internal canvas.
    * 
-   * Uses the same routing logic as unifiedVideoSeekTask:
+   * Uses the same routing logic as unified video system:
    * - "auto": main track for production rendering, follows normal routing otherwise
    * - "scrub": force low-res scrub track (for thumbnails)
    * - "main": force full-quality main track
@@ -847,7 +948,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     signal?.throwIfAborted();
 
     // 1. Get media engine
-    const mediaEngine = await this.mediaEngineTask.taskComplete;
+    const mediaEngine = await this.getMediaEngine(signal);
     signal?.throwIfAborted();
     
     if (!mediaEngine) {
@@ -858,10 +959,9 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     const useMainTrack = quality === "main" || 
       (quality === "auto" && this.isInProductionRenderingMode());
 
-    // 3. Get video sample using the same logic as unifiedVideoSeekTask
+    // 3. Get video sample using the same logic as frame preparation
     // NOTE: BufferedSeekingInput is created per-call. This is intentional for now
-    // as caching would require careful lifecycle management. A future optimization
-    // could cache these per-segment in a similar way to MainVideoInputCache.
+    // as caching would require careful lifecycle management.
     let videoSample: any;
     
     // Import BufferedSeekingInput upfront for use in cache factory functions
@@ -881,7 +981,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       }
 
       // Use shared cache for BufferedSeekingInput - avoids recreating for same segment
-      const seekingInput = await captureMainVideoInputCache.getOrCreateInput(
+      const seekingInput = await mainVideoInputCache.getOrCreateInput(
         mediaEngine.src,
         segmentId,
         videoRendition.id,
@@ -938,7 +1038,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
 
       // Use shared cache for BufferedSeekingInput
       // Include mediaEngine.src in cache key to prevent collisions between different videos
-      const seekingInput = await captureScrubInputCache.getOrCreateInput(
+      const seekingInput = await scrubInputCache.getOrCreateInput(
         mediaEngine.src,
         segmentId,
         async () => {
@@ -1039,7 +1139,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     onProgress?: (loaded: number, total: number, segmentTimeRange: [number, number]) => void,
   ): Promise<void> {
     // Wait for media engine to be ready
-    const mediaEngine = await this.mediaEngineTask.taskComplete;
+    const mediaEngine = await this.getMediaEngine();
     if (!mediaEngine) {
       log("prefetchScrubSegments: no media engine available");
       return;
@@ -1140,7 +1240,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     onProgress?: (loaded: number, total: number) => void,
   ): Promise<void> {
     // Wait for media engine to be ready
-    const mediaEngine = await this.mediaEngineTask.taskComplete;
+    const mediaEngine = await this.getMediaEngine();
     if (!mediaEngine) {
       log("prefetchMainVideoSegments: no media engine available");
       return;

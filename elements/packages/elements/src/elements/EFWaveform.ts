@@ -1,11 +1,15 @@
 import { CSSStyleObserver } from "@bramus/style-observer";
-import { TaskStatus } from "@lit/task";
 import { css, html, LitElement, type PropertyValueMap } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { createRef, type Ref, ref } from "lit/directives/ref.js";
 import { EF_RENDERING } from "../EF_RENDERING.js";
 import { TWMixin } from "../gui/TWMixin.js";
-import type { FrameRenderable, FrameState } from "../preview/FrameController.js";
+import {
+  type FrameRenderable,
+  type FrameState,
+  createFrameTaskWrapper,
+  PRIORITY_WAVEFORM,
+} from "../preview/FrameController.js";
 import { CrossUpdateController } from "./CrossUpdateController.js";
 import type { EFAudio } from "./EFAudio.js";
 import { EFTemporal } from "./EFTemporal.js";
@@ -489,74 +493,57 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
    * @deprecated Use FrameRenderable methods (prepareFrame, renderFrame) via FrameController instead.
    * This is a compatibility wrapper that delegates to the new system.
    */
-  #frameTaskPromise: Promise<void> = Promise.resolve();
-  
-  frameTask = (() => {
-    const self = this;
-    return {
-      run: () => {
-        const abortController = new AbortController();
-        const timeMs = self.ownCurrentTimeMs;
-        self.#frameTaskPromise = (async () => {
-          try {
-            await self.prepareFrame(timeMs, abortController.signal);
-            self.renderFrame(timeMs);
-          } catch (error) {
-            if (error instanceof DOMException && error.name === "AbortError") {
-              return;
-            }
-            throw error;
-          }
-        })();
-        return self.#frameTaskPromise;
-      },
-      get taskComplete() {
-        return self.#frameTaskPromise;
-      },
-    };
-  })();
+  frameTask = createFrameTaskWrapper(this);
 
   // ============================================================================
   // FrameRenderable Implementation
-  // Centralized frame control - replaces distributed Lit Task system
+  // Centralized frame control - uses direct async methods
   // ============================================================================
+
+  /**
+   * Cached audio analysis data
+   */
+  #frequencyData: Uint8Array | null = null;
+  #timeDomainData: Uint8Array | null = null;
+  #dataTimeMs: number | undefined = undefined;
 
   /**
    * Query readiness state for a given time.
    * @implements FrameRenderable
    */
-  getFrameState(_timeMs: number): FrameState {
-    // Waveform is ready when target has frequency data
+  getFrameState(timeMs: number): FrameState {
+    // Waveform is ready when we have cached data for this time
     const hasTarget = !!this.targetElement;
     const hasData = hasTarget && 
-      this.targetElement?.frequencyDataTask.status === TaskStatus.COMPLETE;
+      this.#dataTimeMs === timeMs &&
+      this.#frequencyData !== null;
 
     return {
       needsPreparation: hasTarget && !hasData,
       isReady: hasData,
-      priority: 4, // Waveform renders after video/captions/audio
+      priority: PRIORITY_WAVEFORM,
     };
   }
 
   /**
-   * Async preparation - waits for target's frequency data.
+   * Async preparation - fetches frequency data from target.
    * @implements FrameRenderable
    */
-  async prepareFrame(_timeMs: number, signal: AbortSignal): Promise<void> {
+  async prepareFrame(timeMs: number, signal: AbortSignal): Promise<void> {
     if (!this.targetElement) return;
 
-    if (this.targetElement.frequencyDataTask.status !== TaskStatus.COMPLETE) {
-      try {
-        await this.targetElement.frequencyDataTask.taskComplete;
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") {
-          signal.throwIfAborted();
-          return;
-        }
-        throw error;
-      }
-    }
+    // Get audio analysis data directly from target
+    const [frequencyData, timeDomainData] = await Promise.all([
+      this.targetElement.getFrequencyData(timeMs, signal),
+      this.targetElement.getTimeDomainData(timeMs, signal),
+    ]);
+
     signal.throwIfAborted();
+
+    // Cache results
+    this.#frequencyData = frequencyData;
+    this.#timeDomainData = timeDomainData;
+    this.#dataTimeMs = timeMs;
   }
 
   /**
@@ -570,8 +557,8 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
     const ctx = this.ctx;
     if (!ctx) return;
 
-    const frequencyData = this.targetElement.frequencyDataTask.value;
-    const byteTimeData = this.targetElement.byteTimeDomainTask.value;
+    const frequencyData = this.#frequencyData;
+    const byteTimeData = this.#timeDomainData;
     if (!frequencyData || !byteTimeData) return;
 
     ctx.save();

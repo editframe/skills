@@ -1,6 +1,7 @@
 import type { VideoRenderOptions } from "@editframe/assets";
 
 import { shallowGetTimegroups } from "./elements/EFTimegroup.js";
+import { updateAnimations } from "./elements/updateAnimations.js";
 import { setupBrowserTracing } from "./otel/setupBrowserTracing.js";
 import {
   clearCurrentFrameSpan,
@@ -314,7 +315,10 @@ export class EFFramegen {
     }
     const startingTimeMs = renderOptions.encoderOptions.fromMs;
     await firstGroup.waitForMediaDurations();
-    await firstGroup.waitForFrameTasks();
+    // Use FrameController for centralized frame rendering
+    await firstGroup.frameController.renderFrame(startingTimeMs, {
+      onAnimationsUpdate: (root) => updateAnimations(root as typeof firstGroup),
+    });
 
     this.frameDurationMs = 1000 / renderOptions.encoderOptions.video.framerate;
 
@@ -362,8 +366,12 @@ export class EFFramegen {
     const frameTime =
       this.renderOptions.encoderOptions.fromMs +
       frameNumber * this.frameDurationMs;
-    firstGroup.currentTimeMs = Number(Number(frameTime).toFixed(5));
-    await firstGroup.waitForFrameTasks();
+    const frameTimeMs = Number(Number(frameTime).toFixed(5));
+    firstGroup.currentTimeMs = frameTimeMs;
+    // Use FrameController for centralized frame rendering
+    await firstGroup.frameController.renderFrame(frameTimeMs, {
+      onAnimationsUpdate: (root) => updateAnimations(root as typeof firstGroup),
+    });
     if (this.showFrameBox) {
       this.frameBox.innerHTML = `
         <div>🖼️   Frame: ${frameNumber}</div>

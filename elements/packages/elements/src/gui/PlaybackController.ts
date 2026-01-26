@@ -1,10 +1,10 @@
 import { ContextProvider } from "@lit/context";
-import { Task, TaskStatus } from "@lit/task";
 import type { ReactiveController, ReactiveControllerHost } from "lit";
-import { EF_INTERACTIVE } from "../EF_INTERACTIVE.js";
 import { currentTimeContext } from "./currentTimeContext.js";
 import { durationContext } from "./durationContext.js";
 import { loopContext, playingContext } from "./playingContext.js";
+import { updateAnimations, type AnimatableElement } from "../elements/updateAnimations.js";
+import type { RenderFrameOptions } from "../preview/FrameController.js";
 
 interface PlaybackHost extends HTMLElement, ReactiveControllerHost {
   currentTimeMs: number;
@@ -12,7 +12,10 @@ interface PlaybackHost extends HTMLElement, ReactiveControllerHost {
   endTimeMs: number;
   frameTask: { run(): void; taskComplete: Promise<unknown> };
   /** New centralized frame controller (replaces frameTask) */
-  frameController?: { renderFrame(timeMs: number): Promise<void>; abort(): void };
+  frameController?: { 
+    renderFrame(timeMs: number, options?: RenderFrameOptions): Promise<void>; 
+    abort(): void;
+  };
   renderAudio?(fromMs: number, toMs: number): Promise<AudioBuffer>;
   waitForMediaDurations?(signal?: AbortSignal): Promise<void>;
   saveTimeToLocalStorage?(time: number): void;
@@ -74,59 +77,11 @@ export class PlaybackController implements ReactiveController {
   #loopingPlayback = false; // Track if we're in a looping playback session
   #playbackWrapTimeSeconds = 0; // The AudioContext time when we wrapped
 
-  seekTask!: Task<readonly [number | undefined], number | undefined>;
+  #seekAbortController: AbortController | null = null;
 
   constructor(host: PlaybackHost) {
     this.#host = host;
     host.addController(this);
-
-    this.seekTask = new Task(this.#host, {
-      autoRun: false,
-      args: () => [this.#pendingSeekTime ?? this.#currentTime] as const,
-      onComplete: () => {},
-      task: async ([targetTime], { signal }) => {
-        // Check abort before starting
-        signal?.throwIfAborted();
-        
-        await this.#host.waitForMediaDurations?.(signal);
-        
-        // Check abort after async operation
-        signal?.throwIfAborted();
-        
-        const newTime = Math.max(
-          0,
-          Math.min(targetTime ?? 0, this.#host.durationMs / 1000),
-        );
-        this.#currentTime = newTime;
-        this.#host.requestUpdate("currentTime");
-        this.#currentTimeMsProvider.setValue(this.currentTimeMs);
-        this.#notifyListeners({
-          property: "currentTimeMs",
-          value: this.currentTimeMs,
-        });
-        
-        // Check abort before frame task
-        signal?.throwIfAborted();
-        
-        await this.runThrottledFrameTask();
-        
-        // Check abort after frame task
-        signal?.throwIfAborted();
-        
-        // Save to localStorage for persistence (only if not restoring to avoid loops)
-        // Check if host has a restoration flag before saving
-        // Use a method to check restoration state to avoid accessing private fields
-        const isRestoring = (this.#host as any).isRestoringFromLocalStorage?.() ?? false;
-        if (!isRestoring) {
-          this.#host.saveTimeToLocalStorage?.(newTime);
-        } else {
-          // Clear restoration flag after seek completes
-          (this.#host as any).setRestoringFromLocalStorage?.(false);
-        }
-        this.#seekInProgress = false;
-        return newTime;
-      },
-    });
 
     this.#playingProvider = new ContextProvider(host, {
       context: playingContext,
@@ -179,7 +134,7 @@ export class PlaybackController implements ReactiveController {
     this.#currentTime = time;
     this.#seekInProgress = true;
 
-    this.seekTask.run().finally(() => {
+    this.#runSeek(time).finally(() => {
       if (
         this.#pendingSeekTime !== undefined &&
         this.#pendingSeekTime !== time
@@ -196,6 +151,53 @@ export class PlaybackController implements ReactiveController {
         this.#pendingSeekTime = undefined;
       }
     });
+  }
+
+  async #runSeek(targetTime: number): Promise<number | undefined> {
+    // Abort any in-flight seek
+    this.#seekAbortController?.abort();
+    this.#seekAbortController = new AbortController();
+    const signal = this.#seekAbortController.signal;
+
+    try {
+      signal.throwIfAborted();
+      
+      await this.#host.waitForMediaDurations?.(signal);
+      signal.throwIfAborted();
+      
+      const newTime = Math.max(
+        0,
+        Math.min(targetTime, this.#host.durationMs / 1000),
+      );
+      this.#currentTime = newTime;
+      this.#host.requestUpdate("currentTime");
+      this.#currentTimeMsProvider.setValue(this.currentTimeMs);
+      this.#notifyListeners({
+        property: "currentTimeMs",
+        value: this.currentTimeMs,
+      });
+      
+      signal.throwIfAborted();
+      
+      await this.runThrottledFrameTask();
+      signal.throwIfAborted();
+      
+      // Save to localStorage for persistence (only if not restoring to avoid loops)
+      const isRestoring = (this.#host as any).isRestoringFromLocalStorage?.() ?? false;
+      if (!isRestoring) {
+        this.#host.saveTimeToLocalStorage?.(newTime);
+      } else {
+        (this.#host as any).setRestoringFromLocalStorage?.(false);
+      }
+      this.#seekInProgress = false;
+      return newTime;
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        // Expected - don't log
+        return undefined;
+      }
+      throw error;
+    }
   }
 
   get playing(): boolean {
@@ -290,15 +292,12 @@ export class PlaybackController implements ReactiveController {
             
             const maybeLoadedTime = this.#host.loadTimeFromLocalStorage?.();
             if (maybeLoadedTime !== undefined) {
-              // Set restoration flag to prevent seekTask from saving back to localStorage
+              // Set restoration flag to prevent seek from saving back to localStorage
               (this.#host as any).setRestoringFromLocalStorage?.(true);
               this.currentTime = maybeLoadedTime;
-              // Flag is cleared by seekTask after seek finishes
+              // Flag is cleared by runSeek after seek finishes
             } else if (this.#currentTime === undefined) {
               this.#currentTime = 0;
-            }
-            if (EF_INTERACTIVE && this.seekTask.status === TaskStatus.INITIAL) {
-              this.seekTask.run();
             }
           }).catch(err => {
             // Don't log AbortError - these are intentional cancellations when element is disconnected
@@ -338,8 +337,15 @@ export class PlaybackController implements ReactiveController {
     // Use FrameController if available (new centralized system)
     if (this.#host.frameController) {
       // FrameController handles its own cancellation and queuing internally
+      // Animation updates are centralized via the onAnimationsUpdate callback
       try {
-        await this.#host.frameController.renderFrame(this.currentTimeMs);
+        await this.#host.frameController.renderFrame(this.currentTimeMs, {
+          onAnimationsUpdate: (root: Element) => {
+            // Update CSS visibility and animation synchronization after frame renders
+            // This sets display:none on elements outside their time range
+            updateAnimations(root as unknown as AnimatableElement);
+          },
+        });
       } catch (error) {
         // Silently ignore AbortErrors (expected during cancellation)
         if (error instanceof DOMException && error.name === "AbortError") {
@@ -597,10 +603,13 @@ export class PlaybackController implements ReactiveController {
       const willReachEnd = endMs >= toMs;
 
       if (!host.renderAudio) {
+        console.log('[PlaybackController] host.renderAudio is not defined');
         return false;
       }
 
+      console.log(`[PlaybackController] Rendering audio from ${startMs}ms to ${endMs}ms`);
       const audioBuffer = await host.renderAudio(startMs, endMs);
+      console.log(`[PlaybackController] Got audio buffer: ${audioBuffer.length} samples, ${audioBuffer.duration}s`);
       bufferCount++;
       const source = playbackContext.createBufferSource();
       source.buffer = audioBuffer;

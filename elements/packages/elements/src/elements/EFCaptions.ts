@@ -1,10 +1,14 @@
-import { Task, TaskStatus } from "@lit/task";
 import { css, html, LitElement, type PropertyValueMap } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import type { ReactiveController } from "lit";
 import type { GetISOBMFFFileTranscriptionResult } from "../../../api/src/index.js";
-import { EF_INTERACTIVE } from "../EF_INTERACTIVE.js";
-import type { FrameRenderable, FrameState } from "../preview/FrameController.js";
+import {
+  type FrameRenderable,
+  type FrameState,
+  createFrameTaskWrapper,
+  PRIORITY_CAPTIONS,
+} from "../preview/FrameController.js";
+import { AsyncValue } from "./EFMedia.js";
 import { CrossUpdateController } from "./CrossUpdateController.js";
 import { EFAudio } from "./EFAudio.js";
 import { EFSourceMixin } from "./EFSourceMixin.js";
@@ -369,314 +373,138 @@ export class EFCaptions extends EFSourceMixin(
     return `/api/v1/assets/local/captions?src=${encodeURIComponent(normalizedSrc)}`;
   }
 
-  protected md5SumLoader = new Task(this, {
-    autoRun: false,
-    args: () => [this.target, this.fetch] as const,
-    onError: (error) => {
-      // Attach catch to prevent unhandled rejection
-      this.md5SumLoader.taskComplete.catch(() => {});
-      
-      // Don't log AbortErrors - these are expected when element is disconnected
-      const isAbortError = 
-        error instanceof DOMException && error.name === "AbortError" ||
-        error instanceof Error && (
-          error.name === "AbortError" ||
-          error.message?.includes("signal is aborted") ||
-          error.message?.includes("The user aborted a request")
-        );
-      
-      if (isAbortError) {
-        return;
-      }
-      console.error("EFCaptions md5SumLoader error", error);
-    },
-    task: async ([_target, fetch], { signal }) => {
-      if (!this.targetElement) {
-        return null;
-      }
-      // Normalize the path: remove leading slash and any double slashes
-      const src = this.targetElement.src ?? "";
-      let normalizedSrc = src.startsWith("/")
-        ? src.slice(1)
-        : src;
-      normalizedSrc = normalizedSrc.replace(/^\/+/, "");
-      // Use production API format for local files
-      const md5Path = `/api/v1/isobmff_files/local/md5?src=${encodeURIComponent(normalizedSrc)}`;
-      const response = await fetch(md5Path, { signal });
-      if (!response.ok) {
-        return undefined;
-      }
-      const data = await response.json();
-      return data.md5 ?? undefined;
-    },
-  });
+  // ============================================================================
+  // Captions Data Loading - async methods instead of Tasks
+  // ============================================================================
 
-  private transcriptionDataTask = new Task(this, {
-    autoRun: EF_INTERACTIVE,
-    args: () =>
-      [
-        this.transcriptionsPath(),
-        this.fetch,
-        this.hasCustomCaptionsData,
-      ] as const,
-    onError: (error) => {
-      // Attach catch to prevent unhandled rejection
-      this.transcriptionDataTask.taskComplete.catch(() => {});
-      
-      // Don't log AbortErrors - these are expected when element is disconnected
-      const isAbortError = 
-        error instanceof DOMException && error.name === "AbortError" ||
-        error instanceof Error && (
-          error.name === "AbortError" ||
-          error.message?.includes("signal is aborted") ||
-          error.message?.includes("The user aborted a request")
-        );
-      
-      if (isAbortError) {
-        return;
-      }
-      console.error("EFCaptions transcriptionDataTask error", error);
-    },
-    task: async ([transcriptionsPath, fetch, hasCustomData], { signal }) => {
-      // Skip transcription if we have custom captions data
-      if (hasCustomData || !transcriptionsPath) {
-        return null;
-      }
-      const response = await fetch(transcriptionsPath, { signal });
-      return response.json() as any as GetISOBMFFFileTranscriptionResult;
-    },
-  });
+  #captionsDataLoaded = false;
+  #captionsDataPromise: Promise<Caption | null> | null = null;
+  #captionsDataValue: Caption | null = null;
+  #transcriptionData: GetISOBMFFFileTranscriptionResult | null = null;
 
-  private transcriptionFragmentPath(
-    transcriptionId: string,
-    fragmentIndex: number,
-  ) {
-    return `${this.apiHost}/api/v1/transcriptions/${transcriptionId}/fragments/${fragmentIndex}`;
+  /**
+   * AsyncValue wrapper for backwards compatibility
+   */
+  unifiedCaptionsDataTask = new AsyncValue<Caption | null>();
+
+  /**
+   * Load captions data from all possible sources
+   */
+  async loadCaptionsData(signal?: AbortSignal): Promise<Caption | null> {
+    // Return cached if already loaded
+    if (this.#captionsDataLoaded && this.#captionsDataValue) {
+      return this.#captionsDataValue;
+    }
+
+    // Return in-flight promise
+    if (this.#captionsDataPromise) {
+      return this.#captionsDataPromise;
+    }
+
+    this.unifiedCaptionsDataTask.startPending();
+    this.#captionsDataPromise = this.#doLoadCaptionsData(signal);
+
+    try {
+      this.#captionsDataValue = await this.#captionsDataPromise;
+      this.#captionsDataLoaded = true;
+      if (this.#captionsDataValue) {
+        this.unifiedCaptionsDataTask.setValue(this.#captionsDataValue);
+      }
+      return this.#captionsDataValue;
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        throw error;
+      }
+      console.error("Failed to load captions data:", error);
+      return null;
+    } finally {
+      this.#captionsDataPromise = null;
+    }
   }
 
-  private fragmentIndexTask = new Task(this, {
-    autoRun: EF_INTERACTIVE,
-    args: () =>
-      [this.transcriptionDataTask.value, this.ownCurrentTimeMs] as const,
-    onError: (error) => {
-      // Attach catch to prevent unhandled rejection
-      this.fragmentIndexTask.taskComplete.catch(() => {});
-      
-      // Don't log AbortErrors - these are expected when element is disconnected
-      const isAbortError = 
-        error instanceof DOMException && error.name === "AbortError" ||
-        error instanceof Error && (
-          error.name === "AbortError" ||
-          error.message?.includes("signal is aborted") ||
-          error.message?.includes("The user aborted a request")
-        );
-      
-      if (isAbortError) {
-        return;
-      }
-      console.error("EFCaptions fragmentIndexTask error", error);
-    },
-    task: async ([transcription, ownCurrentTimeMs], { signal }) => {
-      signal?.throwIfAborted();
-      if (!transcription) {
-        return null;
-      }
-      const fragmentIndex = Math.floor(
-        ownCurrentTimeMs / transcription.work_slice_ms,
-      );
-      return fragmentIndex;
-    },
-  });
+  async #doLoadCaptionsData(signal?: AbortSignal): Promise<Caption | null> {
+    // Priority 1: Direct captionsData property
+    if (this.captionsData) {
+      return this.captionsData;
+    }
 
-  private customCaptionsDataTask = new Task(this, {
-    autoRun: EF_INTERACTIVE,
-    args: () =>
-      [
-        this.captionsSrc,
-        this.captionsData,
-        this.captionsScript,
-        this.fetch,
-      ] as const,
-    onError: (error) => {
-      // Attach catch to prevent unhandled rejection
-      this.customCaptionsDataTask.taskComplete.catch(() => {});
-      
-      // Don't log AbortErrors - these are expected when element is disconnected
-      const isAbortError = 
-        error instanceof DOMException && error.name === "AbortError" ||
-        error instanceof Error && (
-          error.name === "AbortError" ||
-          error.message?.includes("signal is aborted") ||
-          error.message?.includes("The user aborted a request")
-        );
-      
-      if (isAbortError) {
-        return;
-      }
-      console.error("EFCaptions customCaptionsDataTask error", error);
-    },
-    task: async (
-      [captionsSrc, captionsData, captionsScript, fetch],
-      { signal },
-    ) => {
-      // Priority: direct data > script reference > URL source
-      if (captionsData) {
-        return captionsData;
-      }
-
-      if (captionsScript) {
-        const scriptElement = document.getElementById(captionsScript);
-        if (scriptElement?.textContent) {
-          try {
-            return JSON.parse(scriptElement.textContent) as Caption;
-          } catch (error) {
-            console.error(
-              `Failed to parse captions from script #${captionsScript}:`,
-              error,
-            );
-            return null;
-          }
-        }
-      }
-
-      if (captionsSrc) {
+    // Priority 2: Script element reference
+    if (this.captionsScript) {
+      const scriptElement = document.getElementById(this.captionsScript);
+      if (scriptElement?.textContent) {
         try {
-          const response = await fetch(captionsSrc, { signal });
-          return (await response.json()) as Caption;
+          return JSON.parse(scriptElement.textContent) as Caption;
         } catch (error) {
-          console.error(`Failed to load captions from ${captionsSrc}:`, error);
-          return null;
+          console.error(`Failed to parse captions from script #${this.captionsScript}:`, error);
         }
       }
+    }
 
+    // Priority 3: External captions file
+    if (this.captionsSrc) {
+      try {
+        const response = await this.fetch(this.captionsSrc, { signal });
+        return await response.json() as Caption;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          throw error;
+        }
+        console.error(`Failed to load captions from ${this.captionsSrc}:`, error);
+      }
+    }
+
+    // Priority 4: Transcription from target element
+    if (this.targetElement && !this.hasCustomCaptionsData) {
+      const transcriptionPath = this.transcriptionsPath();
+      if (transcriptionPath) {
+        try {
+          const response = await this.fetch(transcriptionPath, { signal });
+          this.#transcriptionData = await response.json() as GetISOBMFFFileTranscriptionResult;
+          signal?.throwIfAborted();
+
+          // Load fragment for current time
+          if (this.#transcriptionData) {
+            return this.#loadTranscriptionFragment(signal);
+          }
+        } catch (error) {
+          if (error instanceof DOMException && error.name === "AbortError") {
+            throw error;
+          }
+          // Transcription not available - not an error
+        }
+      }
+    }
+
+    return null;
+  }
+
+  async #loadTranscriptionFragment(signal?: AbortSignal): Promise<Caption | null> {
+    if (!this.#transcriptionData) return null;
+
+    const fragmentIndex = Math.floor(this.ownCurrentTimeMs / this.#transcriptionData.work_slice_ms);
+    const fragmentPath = `${this.apiHost}/api/v1/transcriptions/${this.#transcriptionData.id}/fragments/${fragmentIndex}`;
+
+    try {
+      const response = await this.fetch(fragmentPath, { signal });
+      return await response.json() as Caption;
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        throw error;
+      }
+      console.error("Failed to load transcription fragment:", error);
       return null;
-    },
-  });
-
-  private transcriptionFragmentDataTask = new Task(this, {
-    autoRun: EF_INTERACTIVE,
-    args: () =>
-      [
-        this.transcriptionDataTask.value,
-        this.fragmentIndexTask.value,
-        this.fetch,
-      ] as const,
-    onError: (error) => {
-      // Attach catch to prevent unhandled rejection
-      this.transcriptionFragmentDataTask.taskComplete.catch(() => {});
-      
-      // Don't log AbortErrors - these are expected when element is disconnected
-      const isAbortError = 
-        error instanceof DOMException && error.name === "AbortError" ||
-        error instanceof Error && (
-          error.name === "AbortError" ||
-          error.message?.includes("signal is aborted") ||
-          error.message?.includes("The user aborted a request")
-        );
-      
-      if (isAbortError) {
-        return;
-      }
-      console.error("EFCaptions transcriptionFragmentDataTask error", error);
-    },
-    task: async ([transcription, fragmentIndex, fetch], { signal }) => {
-      if (
-        transcription === null ||
-        transcription === undefined ||
-        fragmentIndex === null ||
-        fragmentIndex === undefined
-      ) {
-        return null;
-      }
-      const fragmentPath = this.transcriptionFragmentPath(
-        transcription.id,
-        fragmentIndex,
-      );
-      const response = await fetch(fragmentPath, { signal });
-      return response.json() as any as Caption;
-    },
-  });
-
-  unifiedCaptionsDataTask = new Task(this, {
-    autoRun: EF_INTERACTIVE,
-    args: () =>
-      [
-        this.customCaptionsDataTask.value,
-        this.transcriptionFragmentDataTask.value,
-      ] as const,
-    onError: (error) => {
-      // Attach catch to prevent unhandled rejection
-      this.unifiedCaptionsDataTask.taskComplete.catch(() => {});
-      
-      // Don't log AbortErrors - these are expected when element is disconnected
-      const isAbortError = 
-        error instanceof DOMException && error.name === "AbortError" ||
-        error instanceof Error && (
-          error.name === "AbortError" ||
-          error.message?.includes("signal is aborted") ||
-          error.message?.includes("The user aborted a request")
-        );
-      
-      if (isAbortError) {
-        return;
-      }
-      console.error("EFCaptions unifiedCaptionsDataTask error", error);
-    },
-    task: async ([_customData, _transcriptionData], { signal }) => {
-      // Check abort before starting
-      signal?.throwIfAborted();
-      
-      if (this.customCaptionsDataTask.status === TaskStatus.PENDING) {
-        await this.customCaptionsDataTask.taskComplete;
-        // Check abort after async operation
-        signal?.throwIfAborted();
-      }
-      if (this.transcriptionFragmentDataTask.status === TaskStatus.PENDING) {
-        await this.transcriptionFragmentDataTask.taskComplete;
-        // Check abort after async operation
-        signal?.throwIfAborted();
-      }
-      return (
-        this.customCaptionsDataTask.value ||
-        this.transcriptionFragmentDataTask.value
-      );
-    },
-  });
+    }
+  }
 
   /**
    * @deprecated Use FrameRenderable methods (prepareFrame, renderFrame) via FrameController instead.
    * This is a compatibility wrapper that delegates to the new system.
    */
-  #frameTaskPromise: Promise<void> = Promise.resolve();
-  
-  frameTask = (() => {
-    const self = this;
-    return {
-      run: () => {
-        const abortController = new AbortController();
-        const timeMs = self.ownCurrentTimeMs;
-        self.#frameTaskPromise = (async () => {
-          try {
-            await self.prepareFrame(timeMs, abortController.signal);
-            self.renderFrame(timeMs);
-          } catch (error) {
-            if (error instanceof DOMException && error.name === "AbortError") {
-              return;
-            }
-            throw error;
-          }
-        })();
-        return self.#frameTaskPromise;
-      },
-      get taskComplete() {
-        return self.#frameTaskPromise;
-      },
-    };
-  })();
+  frameTask = createFrameTaskWrapper(this);
 
   // ============================================================================
   // FrameRenderable Implementation
-  // Centralized frame control - replaces distributed Lit Task system
+  // Centralized frame control - no Lit Tasks
   // ============================================================================
 
   /**
@@ -685,13 +513,12 @@ export class EFCaptions extends EFSourceMixin(
    */
   getFrameState(_timeMs: number): FrameState {
     // Check if captions data is loaded
-    const hasData = this.unifiedCaptionsDataTask.status === TaskStatus.COMPLETE &&
-                    this.unifiedCaptionsDataTask.value !== undefined;
+    const hasData = this.#captionsDataLoaded && this.#captionsDataValue !== null;
 
     return {
       needsPreparation: !hasData,
       isReady: hasData,
-      priority: 2, // Captions render after video
+      priority: PRIORITY_CAPTIONS,
     };
   }
 
@@ -700,19 +527,7 @@ export class EFCaptions extends EFSourceMixin(
    * @implements FrameRenderable
    */
   async prepareFrame(_timeMs: number, signal: AbortSignal): Promise<void> {
-    // Wait for captions data to be ready
-    if (this.unifiedCaptionsDataTask.status !== TaskStatus.COMPLETE) {
-      try {
-        await this.unifiedCaptionsDataTask.taskComplete;
-      } catch (error) {
-        // Handle AbortError gracefully
-        if (error instanceof DOMException && error.name === "AbortError") {
-          signal.throwIfAborted();
-          return;
-        }
-        throw error;
-      }
-    }
+    await this.loadCaptionsData(signal);
     signal.throwIfAborted();
   }
 
@@ -733,6 +548,9 @@ export class EFCaptions extends EFSourceMixin(
   connectedCallback() {
     super.connectedCallback();
 
+    // Start loading captions data
+    this.loadCaptionsData().catch(() => {});
+
     // Try to get target element safely
     const target = this.targetSelector
       ? document.getElementById(this.targetSelector)
@@ -746,17 +564,9 @@ export class EFCaptions extends EFSourceMixin(
     }
 
     // Ensure captions update when root timegroup's currentTimeMs changes
-    // This is critical for sequence mode where timegroups become inactive
-    // and then active again when scrubbing
     if (this.rootTimegroup) {
       this.#rootTimegroupUpdateController = {
         hostUpdated: () => {
-          // Always update captions when root timegroup updates
-          // ownCurrentTimeMs is a getter that reads rootTimegroup.currentTimeMs,
-          // so it will always read the latest value when updateTextContainers() is called
-          // This ensures captions update even when ownCurrentTimeMs appears
-          // unchanged due to clamping in inactive timegroups
-          // Use microtask to ensure root timegroup's update completes first
           Promise.resolve().then(() => {
             this.updateTextContainers();
           });
@@ -769,15 +579,12 @@ export class EFCaptions extends EFSourceMixin(
     }
 
     // Prevent display:none from being set on caption elements
-    // This maintains constant width in the parent flex container
     const observer = new MutationObserver(() => {
       if (this.style.display === "none") {
-        // Remove the display:none and use opacity instead
         this.style.removeProperty("display");
         this.style.opacity = "0";
         this.style.pointerEvents = "none";
       } else if (!this.style.display || this.style.display === "") {
-        // When display is removed (element becomes visible), reset opacity
         this.style.removeProperty("opacity");
         this.style.removeProperty("pointer-events");
       }
@@ -797,16 +604,9 @@ export class EFCaptions extends EFSourceMixin(
     changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>,
   ): void {
     // Set up root timegroup controller if rootTimegroup is now available
-    // (it might not have been available in connectedCallback)
     if (this.rootTimegroup && !this.#rootTimegroupUpdateController) {
       this.#rootTimegroupUpdateController = {
         hostUpdated: () => {
-          // Always update captions when root timegroup updates
-          // ownCurrentTimeMs is a getter that reads rootTimegroup.currentTimeMs,
-          // so it will always read the latest value when updateTextContainers() is called
-          // This ensures captions update even when ownCurrentTimeMs appears
-          // unchanged due to clamping in inactive timegroups
-          // Use microtask to ensure root timegroup's update completes first
           Promise.resolve().then(() => {
             this.updateTextContainers();
           });
@@ -840,15 +640,17 @@ export class EFCaptions extends EFSourceMixin(
       changedProperties.has("captionsSrc") ||
       changedProperties.has("captionsScript")
     ) {
-      // Invalidate the intrinsicDurationMs cache
+      // Invalidate caches and reload
       this.#cachedIntrinsicDurationMs = null;
+      this.#captionsDataLoaded = false;
+      this.#captionsDataValue = null;
+      this.loadCaptionsData().catch(() => {});
+
       this.requestUpdate("intrinsicDurationMs");
 
-      // Flush sequence duration cache and notify parent timegroups that child duration has changed
       flushSequenceDurationCache();
       flushStartTimeMsCache();
 
-      // Notify parent timegroup to recalculate its duration
       if (this.parentTimegroup) {
         this.parentTimegroup.requestUpdate("durationMs");
         this.parentTimegroup.requestUpdate("currentTime");
@@ -862,25 +664,20 @@ export class EFCaptions extends EFSourceMixin(
   }
 
   updateTextContainers() {
-    const captionsData = this.unifiedCaptionsDataTask.value as Caption;
+    const captionsData = this.#captionsDataValue;
     if (!captionsData) {
       return;
     }
 
     // For captions with custom data, try to use the video's source time
-    // This ensures correct timing when clips don't start at the beginning of the source video
     let currentTimeMs = this.ownCurrentTimeMs;
     if (this.hasCustomCaptionsData && this.parentTimegroup) {
-      // Find video element in the same parent timegroup
       const videoElement = Array.from(this.parentTimegroup.children).find(
         (child): child is EFVideo => child instanceof EFVideo,
       );
       if (videoElement) {
         const sourceInMs = videoElement.sourceInMs ?? 0;
-        // Use video's source time minus sourceIn to get time relative to clip start
-        // This matches the adjusted captions data timestamps (which are relative to clip.start)
         currentTimeMs = videoElement.currentSourceTimeMs - sourceInMs;
-        // Clamp to valid range
         currentTimeMs = Math.max(0, Math.min(currentTimeMs, this.durationMs));
       }
     }
@@ -888,13 +685,11 @@ export class EFCaptions extends EFSourceMixin(
     const currentTimeSec = currentTimeMs / 1000;
 
     // Find the current word from word_segments
-    // Use exclusive end boundary to prevent overlap at exact boundaries
     const currentWord = captionsData.word_segments.find(
       (word) => currentTimeSec >= word.start && currentTimeSec < word.end,
     );
 
     // Find the current segment
-    // Use exclusive end boundary to prevent overlap at exact boundaries
     const currentSegment = captionsData.segments.find(
       (segment) =>
         currentTimeSec >= segment.start && currentTimeSec < segment.end,
@@ -905,7 +700,6 @@ export class EFCaptions extends EFSourceMixin(
         wordContainer.wordText = currentWord.text;
         wordContainer.wordStartMs = currentWord.start * 1000;
         wordContainer.wordEndMs = currentWord.end * 1000;
-        // Set word index for deterministic animation variation
         const wordIndex = captionsData.word_segments.findIndex(
           (w) =>
             w.start === currentWord.start &&
@@ -913,11 +707,9 @@ export class EFCaptions extends EFSourceMixin(
             w.text === currentWord.text,
         );
         wordContainer.wordIndex = wordIndex >= 0 ? wordIndex : 0;
-        // Force re-render to update hidden property
         wordContainer.requestUpdate();
       } else {
-        // No active word - maintain layout with invisible placeholder
-        wordContainer.wordText = ""; // Empty when no active word
+        wordContainer.wordText = "";
         wordContainer.wordStartMs = 0;
         wordContainer.wordEndMs = 0;
         wordContainer.requestUpdate();
@@ -930,7 +722,6 @@ export class EFCaptions extends EFSourceMixin(
         segmentContainer.segmentStartMs = currentSegment.start * 1000;
         segmentContainer.segmentEndMs = currentSegment.end * 1000;
       } else {
-        // No active segment - clear the container
         segmentContainer.segmentText = "";
         segmentContainer.segmentStartMs = 0;
         segmentContainer.segmentEndMs = 0;
@@ -940,32 +731,27 @@ export class EFCaptions extends EFSourceMixin(
 
     // Process context for both word and segment cases
     if (currentWord && currentSegment) {
-      // Find all word segments that fall within the current segment's time range
       const segmentWords = captionsData.word_segments.filter(
         (word) =>
           word.start >= currentSegment.start && word.end <= currentSegment.end,
       );
 
-      // Find the index of the current word within the segment's word segments
       const currentWordIndex = segmentWords.findIndex(
         (word) =>
           word.start === currentWord.start && word.end === currentWord.end,
       );
 
       if (currentWordIndex !== -1) {
-        // Get words before the current word
         const beforeWords = segmentWords
           .slice(0, currentWordIndex)
           .map((w) => w.text.trim())
           .join(" ");
 
-        // Get words after the current word
         const afterWords = segmentWords
           .slice(currentWordIndex + 1)
           .map((w) => w.text.trim())
           .join(" ");
 
-        // Update before containers - should be visible at the same time as active word
         for (const container of this.beforeActiveWordContainers) {
           container.segmentText = beforeWords;
           container.segmentStartMs = currentWord.start * 1000;
@@ -973,7 +759,6 @@ export class EFCaptions extends EFSourceMixin(
           container.requestUpdate();
         }
 
-        // Update after containers - should be visible at the same time as active word
         for (const container of this.afterActiveWordContainers) {
           container.segmentText = afterWords;
           container.segmentStartMs = currentWord.start * 1000;
@@ -982,35 +767,31 @@ export class EFCaptions extends EFSourceMixin(
         }
       }
     } else if (currentSegment) {
-      // No active word but we have an active segment
       const segmentWords = captionsData.word_segments.filter(
         (word) =>
           word.start >= currentSegment.start && word.end <= currentSegment.end,
       );
 
-      // Check if we're before the first word or after the last word
       const firstWord = segmentWords[0];
       const isBeforeFirstWord = firstWord && currentTimeSec < firstWord.start;
 
       if (isBeforeFirstWord) {
-        // Before first word starts - show all words in "after" container (they're all upcoming)
         const allWords = segmentWords.map((w) => w.text.trim()).join(" ");
 
         for (const container of this.beforeActiveWordContainers) {
-          container.segmentText = ""; // Nothing before yet
+          container.segmentText = "";
           container.segmentStartMs = currentSegment.start * 1000;
           container.segmentEndMs = currentSegment.end * 1000;
           container.requestUpdate();
         }
 
         for (const container of this.afterActiveWordContainers) {
-          container.segmentText = allWords; // All words are upcoming
+          container.segmentText = allWords;
           container.segmentStartMs = currentSegment.start * 1000;
           container.segmentEndMs = currentSegment.end * 1000;
           container.requestUpdate();
         }
       } else {
-        // After last word ends - show all completed words in "before" container
         const allCompletedWords = segmentWords
           .map((w) => w.text.trim())
           .join(" ");
@@ -1030,7 +811,6 @@ export class EFCaptions extends EFSourceMixin(
         }
       }
     } else {
-      // No active segment or word - clear all context containers
       for (const container of this.beforeActiveWordContainers) {
         container.segmentText = "";
         container.segmentStartMs = 0;
@@ -1052,7 +832,6 @@ export class EFCaptions extends EFSourceMixin(
     if (target instanceof EFAudio || target instanceof EFVideo) {
       return target;
     }
-    // When using custom captions data, a target is not required
     if (this.hasCustomCaptionsData) {
       return null;
     }
@@ -1063,15 +842,11 @@ export class EFCaptions extends EFSourceMixin(
     return !!(this.captionsData || this.captionsSrc || this.captionsScript);
   }
 
-  // Follow the exact EFMedia pattern for safe duration integration
   get intrinsicDurationMs(): number | undefined {
-    // Return cached value if available (null means not computed yet)
     if (this.#cachedIntrinsicDurationMs !== null) {
       return this.#cachedIntrinsicDurationMs;
     }
 
-    // Direct access to custom captions data - avoiding complex task dependencies
-    // Priority: direct data > script reference > external file
     let captionsData: Caption | null = null;
 
     if (this.captionsData) {
@@ -1082,16 +857,14 @@ export class EFCaptions extends EFSourceMixin(
         try {
           captionsData = JSON.parse(scriptElement.textContent) as Caption;
         } catch {
-          // Invalid JSON, fall through to return undefined
+          // Invalid JSON
         }
       }
-    } else if (this.customCaptionsDataTask.value) {
-      captionsData = this.customCaptionsDataTask.value as Caption;
+    } else if (this.#captionsDataValue) {
+      captionsData = this.#captionsDataValue;
     }
 
     if (!captionsData) {
-      // Don't cache undefined when data hasn't loaded yet - it may load later
-      // Only cache once we have confirmed no data source
       if (!this.captionsData && !this.captionsScript && !this.captionsSrc) {
         this.#cachedIntrinsicDurationMs = undefined;
       }
@@ -1105,8 +878,6 @@ export class EFCaptions extends EFSourceMixin(
     ) {
       result = 0;
     } else {
-      // Find the maximum end time from both segments and word_segments
-      // Use reduce instead of Math.max(...array) to avoid creating intermediate arrays
       const maxSegmentEnd =
         captionsData.segments.length > 0
           ? captionsData.segments.reduce(
@@ -1122,21 +893,18 @@ export class EFCaptions extends EFSourceMixin(
             )
           : 0;
 
-      result = Math.max(maxSegmentEnd, maxWordEnd) * 1000; // Convert to milliseconds
+      result = Math.max(maxSegmentEnd, maxWordEnd) * 1000;
     }
 
-    // Cache the computed result
     this.#cachedIntrinsicDurationMs = result;
     return result;
   }
 
-  // Follow the exact EFMedia pattern for safe duration integration
   get hasOwnDuration(): boolean {
-    // Simple check - if we have any form of custom captions data, we have our own duration
     return !!(
       this.captionsData ||
       this.captionsScript ||
-      this.customCaptionsDataTask.value
+      this.#captionsDataValue
     );
   }
 }
