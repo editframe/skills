@@ -535,20 +535,58 @@ export class EFCaptions extends EFSourceMixin(
   }
 
   /**
-   * Async preparation - waits for captions data to load.
+   * Async preparation - waits for captions data to load AND child elements to update.
    * @implements FrameRenderable
    */
   async prepareFrame(_timeMs: number, signal: AbortSignal): Promise<void> {
     await this.loadCaptionsData(signal);
     signal.throwIfAborted();
+    
+    // Update text containers and wait for child elements to complete their render cycles.
+    // CRITICAL: This must happen in prepareFrame (not renderFrame) because video rendering
+    // captures shadow DOM content immediately after renderFrame returns. If child elements
+    // haven't finished their Lit render cycles, stale content from previous frames will
+    // appear in the video output.
+    this.updateTextContainers();
+    signal.throwIfAborted();
+    
+    // Wait for all child caption elements to complete Lit rendering
+    await this.#waitForChildUpdates();
+    signal.throwIfAborted();
   }
 
   /**
-   * Synchronous render - updates caption text containers.
+   * Synchronous render - no-op since updateTextContainers() is called in prepareFrame.
    * @implements FrameRenderable
    */
   renderFrame(_timeMs: number): void {
-    this.updateTextContainers();
+    // No-op: Text containers are already updated in prepareFrame to ensure
+    // child elements have completed their Lit render cycles before frame capture.
+  }
+  
+  /**
+   * Wait for all caption child elements to complete their Lit render cycles.
+   * This ensures shadow DOM content is up-to-date before video frame capture.
+   */
+  async #waitForChildUpdates(): Promise<void> {
+    const updates: Promise<unknown>[] = [];
+    
+    for (const container of this.activeWordContainers) {
+      updates.push(container.updateComplete);
+    }
+    for (const container of this.segmentContainers) {
+      updates.push(container.updateComplete);
+    }
+    for (const container of this.beforeActiveWordContainers) {
+      updates.push(container.updateComplete);
+    }
+    for (const container of this.afterActiveWordContainers) {
+      updates.push(container.updateComplete);
+    }
+    
+    if (updates.length > 0) {
+      await Promise.all(updates);
+    }
   }
 
   // ============================================================================
