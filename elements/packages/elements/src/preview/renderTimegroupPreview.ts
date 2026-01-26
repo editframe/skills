@@ -707,29 +707,29 @@ function syncNodeStyles(node: CloneNode): void {
       // Collect ALL text nodes from shadow root (may be multiple due to Lit rendering)
       // Concatenate them to get the complete text content
       let srcShadowText = "";
+      const textNodes: string[] = [];
       for (const srcChild of srcShadowRoot.childNodes) {
         if (srcChild.nodeType === Node.TEXT_NODE) {
-          srcShadowText += srcChild.textContent || "";
+          const text = srcChild.textContent || "";
+          textNodes.push(text);
+          srcShadowText += text;
         }
       }
       
-      // Find or create text node in clone
-      // For caption elements, there should be exactly one text node (created in buildCloneStructure)
-      let cloneTextNode: Text | null = null;
+      // Clear ALL existing text nodes from clone (may have multiple from previous frames)
+      const cloneChildrenToRemove: Node[] = [];
       for (const cloneChild of clone.childNodes) {
         if (cloneChild.nodeType === Node.TEXT_NODE) {
-          cloneTextNode = cloneChild as Text;
-          break;
+          cloneChildrenToRemove.push(cloneChild);
         }
       }
+      for (const child of cloneChildrenToRemove) {
+        clone.removeChild(child);
+      }
       
-      // Create text node if it doesn't exist (shouldn't happen with fixed buildCloneStructure)
-      if (!cloneTextNode) {
-        cloneTextNode = document.createTextNode(srcShadowText);
-        clone.appendChild(cloneTextNode);
-      } else if (cloneTextNode.textContent !== srcShadowText) {
-        // Update text content if it has changed
-        cloneTextNode.textContent = srcShadowText;
+      // Create single new text node with combined source text
+      if (srcShadowText || srcShadowText === "") {
+        clone.appendChild(document.createTextNode(srcShadowText));
       }
     }
   }
