@@ -131,6 +131,10 @@ export interface CloneNode {
   clone: HTMLElement;
   children: CloneNode[];
   isCanvasClone: boolean;
+  /** Cached temporal bounds for this node */
+  bounds: { startMs: number; endMs: number };
+  /** Parent node reference for ancestor visibility checks */
+  parent: CloneNode | null;
 }
 
 /** Tree-based sync state */
@@ -138,12 +142,28 @@ export interface CloneTree {
   root: CloneNode | null;
 }
 
-/** Sync state with tree structure */
+/**
+ * Time interval entry in the sorted index.
+ * Enables O(log n + k) visibility queries via binary search.
+ */
+export interface TimeInterval {
+  startMs: number;
+  endMs: number;
+  node: CloneNode;
+}
+
+/** Sync state with tree structure and interval index */
 export interface SyncState {
   tree: CloneTree;
   nodeCount: number;  // Total number of nodes (for debugging/logging)
   /** Maps clone canvases to their original source elements (ef-video, ef-image, etc.) */
   canvasSourceMap: WeakMap<HTMLCanvasElement, Element>;
+  /** Sorted array of time intervals for O(log n) visibility queries */
+  intervalIndex: TimeInterval[];
+  /** Nodes that are always visible (infinite bounds) - no binary search needed */
+  alwaysVisibleNodes: CloneNode[];
+  /** Previous frame's visible set for delta tracking */
+  previousVisibleSet: Set<CloneNode>;
 }
 
 /**
@@ -191,6 +211,7 @@ function copyCanvasCloneStyles(
 
 /**
  * Build clone tree structure with minimal overhead.
+ * Builds an interval index for O(log n) visibility queries.
  * Optionally syncs styles in the same pass if timeMs is provided.
  */
 export function buildCloneStructure(source: Element, timeMs?: number): {
@@ -202,9 +223,14 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
   
   let nodeCount = 0;
   const canvasSourceMap = new WeakMap<HTMLCanvasElement, Element>();
+  const intervalIndex: TimeInterval[] = [];
+  const alwaysVisibleNodes: CloneNode[] = [];
   
-  function cloneElement(srcEl: Element): CloneNode | null {
+  function cloneElement(srcEl: Element, parentNode: CloneNode | null): CloneNode | null {
     if (SKIP_TAGS.has(srcEl.tagName)) return null;
+    
+    // Get temporal bounds upfront for indexing
+    const bounds = getTemporalBounds(srcEl);
     
     // SVG - clone entire subtree (no children tracking needed)
     if (srcEl instanceof SVGElement) {
@@ -214,8 +240,11 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
         clone: svgClone as unknown as HTMLElement,
         children: [],
         isCanvasClone: false,
+        bounds,
+        parent: parentNode,
       };
       nodeCount++;
+      addToIntervalIndex(node, bounds);
       return node;
     }
     
@@ -266,8 +295,11 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
           clone,
           children: [],
           isCanvasClone: true,
+          bounds,
+          parent: parentNode,
         };
         nodeCount++;
+        addToIntervalIndex(node, bounds);
         return node;
       }
       
@@ -298,8 +330,11 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
           clone,
           children: [],
           isCanvasClone: true,
+          bounds,
+          parent: parentNode,
         };
         nodeCount++;
+        addToIntervalIndex(node, bounds);
         return node;
       }
     }
@@ -332,8 +367,11 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
       clone,
       children: [],
       isCanvasClone: false,
+      bounds,
+      parent: parentNode,
     };
     nodeCount++;
+    addToIntervalIndex(node, bounds);
     
     // Shadow DOM children - OPTIMIZATION: Early exit if no childNodes
     if (srcEl.shadowRoot) {
@@ -361,7 +399,7 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
           } else if (child.nodeType === Node.ELEMENT_NODE) {
             const el = child as Element;
             if (el.tagName === "STYLE" || el.tagName === "SLOT") continue;
-            const childNode = cloneElement(el);
+            const childNode = cloneElement(el, node);
             if (childNode) {
               node.children.push(childNode);
               clone.appendChild(childNode.clone);
@@ -385,7 +423,7 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
         const text = child.textContent?.trim();
         if (text) clone.appendChild(document.createTextNode(text));
       } else if (child.nodeType === Node.ELEMENT_NODE) {
-        const childNode = cloneElement(child as Element);
+        const childNode = cloneElement(child as Element, node);
         if (childNode) {
           node.children.push(childNode);
           clone.appendChild(childNode.clone);
@@ -396,18 +434,35 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
     return node;
   }
   
-  const root = cloneElement(source);
+  // Helper to add node to appropriate index based on bounds
+  function addToIntervalIndex(node: CloneNode, bounds: { startMs: number; endMs: number }): void {
+    if (bounds.startMs === -Infinity && bounds.endMs === Infinity) {
+      // Always visible - no need for binary search
+      alwaysVisibleNodes.push(node);
+    } else {
+      // Finite bounds - add to interval index
+      intervalIndex.push({ startMs: bounds.startMs, endMs: bounds.endMs, node });
+    }
+  }
+  
+  const root = cloneElement(source, null);
   if (root) container.appendChild(root.clone);
+  
+  // Sort interval index by startMs for binary search
+  intervalIndex.sort((a, b) => a.startMs - b.startMs);
   
   const syncState: SyncState = {
     tree: { root },
     nodeCount,
     canvasSourceMap,
+    intervalIndex,
+    alwaysVisibleNodes,
+    previousVisibleSet: new Set(),
   };
   
   // Sync styles in the same pass if timeMs is provided
   if (timeMs !== undefined && root) {
-    syncNodeRecursive(root, timeMs);
+    syncStylesWithIndex(syncState, timeMs);
   }
   
   return {
@@ -641,6 +696,11 @@ interface SyncStats {
   nodesCulledByParent: number;
   nodesCulledByTemporal: number;
   nodesProcessed: number;
+  nodesFullSync: number;      // Newly visible nodes (full sync)
+  nodesIncrementalSync: number; // Still visible nodes (incremental sync)
+  nodesHidden: number;        // Newly hidden nodes
+  indexQueryTimeMs: number;
+  syncTimeMs: number;
 }
 
 let syncStats: SyncStats = {
@@ -648,19 +708,236 @@ let syncStats: SyncStats = {
   nodesCulledByParent: 0,
   nodesCulledByTemporal: 0,
   nodesProcessed: 0,
+  nodesFullSync: 0,
+  nodesIncrementalSync: 0,
+  nodesHidden: 0,
+  indexQueryTimeMs: 0,
+  syncTimeMs: 0,
 };
 
 /**
- * Recursively sync a node and its children.
- * Returns early if the node is temporally culled, skipping ALL descendants.
+ * Binary search to find the first interval that COULD overlap with timeMs.
+ * Returns the index where we should start scanning.
+ * An interval overlaps if: startMs <= timeMs <= endMs
+ * Since we're sorted by startMs, we find intervals where startMs <= timeMs.
  */
-function syncNodeRecursive(node: CloneNode, timeMs: number): void {
-  const { source, clone, children, isCanvasClone } = node;
+function findOverlappingIntervals(intervals: TimeInterval[], timeMs: number): CloneNode[] {
+  if (intervals.length === 0) return [];
+  
+  const result: CloneNode[] = [];
+  
+  // Binary search to find the rightmost interval where startMs <= timeMs
+  // All intervals with startMs <= timeMs are candidates (they've started)
+  // Then we filter by endMs >= timeMs (they haven't ended)
+  let left = 0;
+  let right = intervals.length - 1;
+  
+  // Find the rightmost interval where startMs <= timeMs
+  while (left < right) {
+    const mid = Math.ceil((left + right + 1) / 2);
+    if (intervals[mid]!.startMs <= timeMs) {
+      left = mid;
+    } else {
+      right = mid - 1;
+    }
+  }
+  
+  // If even the first interval starts after timeMs, nothing overlaps
+  if (intervals[left]!.startMs > timeMs) {
+    return result;
+  }
+  
+  // Scan backwards from 'left' to find all intervals where startMs <= timeMs AND endMs >= timeMs
+  // We scan backwards because intervals are sorted by startMs, and we found the rightmost valid startMs
+  for (let i = left; i >= 0; i--) {
+    const interval = intervals[i]!;
+    if (interval.startMs > timeMs) break; // No more valid start times
+    if (interval.endMs >= timeMs) {
+      result.push(interval.node);
+    }
+  }
+  
+  return result;
+}
+
+/**
+ * Check if a node is visible considering ancestor visibility.
+ * A node is only visible if all its ancestors are also visible at the given time.
+ */
+function isNodeVisibleWithAncestors(node: CloneNode, timeMs: number): boolean {
+  // Check if this node's bounds allow visibility
+  const { startMs, endMs } = node.bounds;
+  if (timeMs < startMs || timeMs > endMs) {
+    return false;
+  }
+  
+  // Check ancestors
+  let current = node.parent;
+  while (current) {
+    // If ancestor has finite bounds, check them
+    if (current.bounds.startMs !== -Infinity || current.bounds.endMs !== Infinity) {
+      if (timeMs < current.bounds.startMs || timeMs > current.bounds.endMs) {
+        return false;
+      }
+    }
+    current = current.parent;
+  }
+  
+  return true;
+}
+
+/**
+ * Visibility delta between frames.
+ * Used for incremental updates - only sync what changed.
+ */
+interface VisibilityDelta {
+  nowVisible: Set<CloneNode>;    // Need full style sync + show
+  stillVisible: Set<CloneNode>;  // Only sync animated properties (or skip if same time)
+  nowHidden: Set<CloneNode>;     // Just set display:none
+}
+
+/**
+ * Compute visibility delta between previous and current frame.
+ */
+function computeVisibilityDelta(
+  previousSet: Set<CloneNode>,
+  currentSet: Set<CloneNode>,
+): VisibilityDelta {
+  const nowVisible = new Set<CloneNode>();
+  const stillVisible = new Set<CloneNode>();
+  const nowHidden = new Set<CloneNode>();
+  
+  // Find nodes that became visible or stayed visible
+  for (const node of currentSet) {
+    if (previousSet.has(node)) {
+      stillVisible.add(node);
+    } else {
+      nowVisible.add(node);
+    }
+  }
+  
+  // Find nodes that became hidden
+  for (const node of previousSet) {
+    if (!currentSet.has(node)) {
+      nowHidden.add(node);
+    }
+  }
+  
+  return { nowVisible, stillVisible, nowHidden };
+}
+
+/**
+ * Sync styles using interval index for O(log n + k) visibility queries.
+ * This is the optimized version that replaces the recursive traversal.
+ * 
+ * DELTA TRACKING: Tracks visibility changes between frames to minimize work:
+ * - nowVisible nodes: Full style sync + show
+ * - stillVisible nodes: Only sync animated properties (transform, opacity)
+ * - nowHidden nodes: Just hide (display:none)
+ */
+function syncStylesWithIndex(state: SyncState, timeMs: number): void {
+  const queryStart = performance.now();
+  
+  // Build the set of visible nodes using interval index
+  const visibleSet = new Set<CloneNode>();
+  
+  // Query interval index for nodes with overlapping bounds (O(log n + k))
+  const overlappingNodes = findOverlappingIntervals(state.intervalIndex, timeMs);
+  
+  // Add overlapping nodes that pass ancestor check
+  for (const node of overlappingNodes) {
+    if (isNodeVisibleWithAncestors(node, timeMs)) {
+      visibleSet.add(node);
+    }
+  }
+  
+  // Add always-visible nodes (if ancestors are visible)
+  for (const node of state.alwaysVisibleNodes) {
+    if (isNodeVisibleWithAncestors(node, timeMs)) {
+      visibleSet.add(node);
+    }
+  }
+  
+  // Compute delta from previous frame
+  const delta = computeVisibilityDelta(state.previousVisibleSet, visibleSet);
+  
+  syncStats.indexQueryTimeMs = performance.now() - queryStart;
+  
+  // Now traverse the tree but use the delta for O(1) sync decisions
+  const syncStart = performance.now();
+  if (state.tree.root) {
+    syncNodeWithDelta(state.tree.root, visibleSet, delta);
+  }
+  syncStats.syncTimeMs = performance.now() - syncStart;
+  
+  // Update state for next frame
+  state.previousVisibleSet = visibleSet;
+}
+
+/**
+ * Sync a node using visibility delta for incremental updates.
+ * 
+ * DELTA TRACKING optimization:
+ * - nowVisible: Full style sync (element just appeared)
+ * - stillVisible: Incremental sync (source DOM may have changed)
+ * - nowHidden: Just hide the element
+ * - Not in any set: Skip entirely (was already hidden)
+ */
+function syncNodeWithDelta(
+  node: CloneNode,
+  visibleSet: Set<CloneNode>,
+  delta: VisibilityDelta,
+): void {
+  syncStats.nodesVisited++;
+  
+  const isVisible = visibleSet.has(node);
+  
+  if (!isVisible) {
+    // Node is not visible
+    if (delta.nowHidden.has(node)) {
+      // Just became hidden - need to set display:none
+      node.clone.style.display = "none";
+      syncStats.nodesHidden++;
+    }
+    // Already hidden nodes: skip (don't even recurse to children)
+    syncStats.nodesCulledByTemporal++;
+    return;
+  }
+  
+  // Node is visible - determine sync strategy
+  if (delta.nowVisible.has(node)) {
+    // Just became visible - need full style sync
+    syncNodeStyles(node);
+    syncStats.nodesFullSync++;
+  } else if (delta.stillVisible.has(node)) {
+    // Was visible, still visible - still need to sync
+    // Source DOM properties can change independently of time (input values, text, etc.)
+    // TODO: Phase 5 could track property changes for smarter incremental sync
+    syncNodeStyles(node);
+    syncStats.nodesIncrementalSync++;
+  }
+  
+  syncStats.nodesProcessed++;
+  
+  // Recurse to children
+  for (const child of node.children) {
+    syncNodeWithDelta(child, visibleSet, delta);
+  }
+}
+
+/**
+ * Legacy recursive sync (kept for comparison/fallback).
+ * Returns early if the node is temporally culled, skipping ALL descendants.
+ * @deprecated Use syncStylesWithIndex for better performance
+ */
+export function syncNodeRecursiveLegacy(node: CloneNode, timeMs: number): void {
+  const { clone, children, bounds } = node;
   syncStats.nodesVisited++;
   
   // Temporal culling - check if this node is visible at current time
-  // Canvas clones skip temporal check (ef-video may have [0,0] range before video loads)
-  if (!isCanvasClone) {
+  // NOTE: Canvas clones now participate in temporal culling (lazy canvas copying).
+  // Invalid bounds [0,0] are treated as [-Infinity, Infinity] by getTemporalBounds.
+  {
     // OPTIMIZATION: Check if parent is already hidden to skip bounds computation
     const parent = clone.parentElement;
     if (parent instanceof HTMLElement) {
@@ -672,7 +949,8 @@ function syncNodeRecursive(node: CloneNode, timeMs: number): void {
       }
     }
     
-    const { startMs, endMs } = getTemporalBounds(source);
+    // Use cached bounds from node instead of calling getTemporalBounds
+    const { startMs, endMs } = bounds;
     if (timeMs < startMs || timeMs > endMs) {
       // Hide this element and BAIL OUT - skip all descendants automatically!
       clone.style.display = "none";
@@ -687,13 +965,14 @@ function syncNodeRecursive(node: CloneNode, timeMs: number): void {
   
   // Recursively sync children
   for (const child of children) {
-    syncNodeRecursive(child, timeMs);
+    syncNodeRecursiveLegacy(child, timeMs);
   }
 }
 
 /**
  * Sync all CSS properties from source elements to their clones.
- * Uses recursive tree traversal with early bailout for temporal culling.
+ * Uses interval index for O(log n + k) visibility queries instead of O(n) traversal.
+ * Uses delta tracking for incremental updates between frames.
  */
 export function syncStyles(state: SyncState, timeMs: number): void {
   // Reset stats
@@ -702,18 +981,23 @@ export function syncStyles(state: SyncState, timeMs: number): void {
     nodesCulledByParent: 0,
     nodesCulledByTemporal: 0,
     nodesProcessed: 0,
+    nodesFullSync: 0,
+    nodesIncrementalSync: 0,
+    nodesHidden: 0,
+    indexQueryTimeMs: 0,
+    syncTimeMs: 0,
   };
   
-  if (state.tree.root) {
-    syncNodeRecursive(state.tree.root, timeMs);
-  }
+  // Use interval-index-based sync with delta tracking
+  syncStylesWithIndex(state, timeMs);
   
   // Log performance stats
   const totalCulled = syncStats.nodesCulledByParent + syncStats.nodesCulledByTemporal;
   console.log(
-    `[syncStyles] Nodes: visited=${syncStats.nodesVisited}, ` +
-    `culled=${totalCulled} (parent=${syncStats.nodesCulledByParent}, temporal=${syncStats.nodesCulledByTemporal}), ` +
-    `processed=${syncStats.nodesProcessed}`
+    `[syncStyles] visited=${syncStats.nodesVisited}, ` +
+    `culled=${totalCulled}, processed=${syncStats.nodesProcessed} ` +
+    `(full=${syncStats.nodesFullSync}, incr=${syncStats.nodesIncrementalSync}, hidden=${syncStats.nodesHidden}), ` +
+    `query=${syncStats.indexQueryTimeMs.toFixed(2)}ms, sync=${syncStats.syncTimeMs.toFixed(2)}ms`
   );
 }
 
