@@ -692,9 +692,10 @@ function syncNodeStyles(node: CloneNode): void {
     if (cloneTextNode?.nodeType === Node.TEXT_NODE) {
       // Update existing text node
       if (cloneTextNode.textContent !== srcText) cloneTextNode.textContent = srcText;
-    } else {
-      // Create text node if clone doesn't have one (element was empty when initially cloned)
-      clone.textContent = srcText;
+    } else if (!clone.childNodes.length) {
+      // Only create text node if clone has NO children (was empty when initially cloned)
+      // Don't set textContent as it would delete element children!
+      clone.appendChild(document.createTextNode(srcText));
     }
   }
   
