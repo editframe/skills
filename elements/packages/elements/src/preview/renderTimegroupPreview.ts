@@ -150,6 +150,81 @@ export interface SyncState {
   canvasSourceMap: WeakMap<HTMLCanvasElement, Element>;
   /** Previous frame's visible set for delta tracking */
   previousVisibleSet: Set<CloneNode>;
+  /** Current frame's visible set (updated by syncStyles) */
+  currentVisibleSet: Set<CloneNode>;
+}
+
+/** Info needed to restore a removed node */
+interface RemovedNodeInfo {
+  node: CloneNode;
+  parent: Node;
+  nextSibling: Node | null;
+}
+
+/**
+ * Remove hidden nodes from the clone DOM for serialization.
+ * Returns info needed to restore them afterward.
+ * 
+ * This physically removes non-visible nodes so they won't be serialized,
+ * avoiding the cost of serializing hidden elements and their resources.
+ */
+export function removeHiddenNodesForSerialization(state: SyncState): RemovedNodeInfo[] {
+  const removed: RemovedNodeInfo[] = [];
+  const visibleSet = state.currentVisibleSet;
+  
+  // Traverse all nodes and remove those not in visible set
+  function visit(node: CloneNode): void {
+    // First recurse to children (before potentially removing this node)
+    for (const child of node.children) {
+      visit(child);
+    }
+    
+    // If this node isn't visible, remove it from DOM
+    if (!visibleSet.has(node)) {
+      const parent = node.clone.parentNode;
+      if (parent) {
+        const nextSibling = node.clone.nextSibling;
+        parent.removeChild(node.clone);
+        removed.push({ node, parent, nextSibling });
+      }
+    }
+  }
+  
+  if (state.tree.root) {
+    visit(state.tree.root);
+  }
+  
+  return removed;
+}
+
+/**
+ * Restore previously removed hidden nodes to the clone DOM.
+ * Must be called after serialization to maintain tree integrity for next frame.
+ */
+export function restoreHiddenNodes(removed: RemovedNodeInfo[]): void {
+  // Restore in reverse order to maintain correct DOM positions
+  for (let i = removed.length - 1; i >= 0; i--) {
+    const { node, parent, nextSibling } = removed[i]!;
+    if (nextSibling) {
+      parent.insertBefore(node.clone, nextSibling);
+    } else {
+      parent.appendChild(node.clone);
+    }
+  }
+}
+
+/**
+ * Get visible canvases from the current visible set.
+ * Use this to skip encoding hidden canvases during serialization.
+ */
+export function getVisibleCanvases(state: SyncState): Set<HTMLCanvasElement> {
+  const visibleCanvases = new Set<HTMLCanvasElement>();
+  for (const node of state.currentVisibleSet) {
+    if (node.clone instanceof HTMLCanvasElement) {
+      visibleCanvases.add(node.clone);
+    }
+  }
+  return visibleCanvases;
 }
 
 /**
@@ -422,6 +497,7 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
     nodeCount,
     canvasSourceMap,
     previousVisibleSet: new Set(),
+    currentVisibleSet: new Set(),
   };
   
   // Sync styles in the same pass if timeMs is provided
@@ -776,8 +852,9 @@ function syncStylesWithIndex(state: SyncState, timeMs: number): void {
   }
   syncStats.syncTimeMs = performance.now() - syncStart;
   
-  // Update state for next frame
+  // Update state for next frame and expose current visible set
   state.previousVisibleSet = visibleSet;
+  state.currentVisibleSet = visibleSet;
 }
 
 /**

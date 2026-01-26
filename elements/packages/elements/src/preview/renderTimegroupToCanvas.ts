@@ -4,6 +4,8 @@ import {
   syncStyles,
   collectDocumentStyles,
   overrideRootCloneStyles,
+  removeHiddenNodesForSerialization,
+  restoreHiddenNodes,
   type SyncState,
 } from "./renderTimegroupPreview.js";
 import { getEffectiveRenderMode } from "./renderers.js";
@@ -779,6 +781,10 @@ export function renderTimegroupToCanvas(
       syncStyles(syncState, toAbsoluteTime(timegroup, userTimeMs));
       overrideRootCloneStyles(syncState);
 
+      // Remove hidden nodes from DOM for serialization - they won't be serialized
+      // or have their canvases encoded. This is a significant optimization.
+      const removedNodes = removeHiddenNodesForSerialization(syncState);
+
       // Render at scaled dimensions with canvas scaling for internal video frames
       // Pass renderContext and sourceMap for caching optimization
       const t0 = performance.now();
@@ -788,6 +794,9 @@ export function renderTimegroupToCanvas(
         sourceMap: syncState.canvasSourceMap,
       });
       const renderTime = performance.now() - t0;
+      
+      // Restore hidden nodes for next frame's delta tracking
+      restoreHiddenNodes(removedNodes);
 
       // Update canvas buffer dimensions NOW, right before drawing
       // This clears the canvas, but we immediately draw new content

@@ -103,18 +103,15 @@ export async function serializeToSvgDataUri(
     _xmlSerializer = new XMLSerializer();
   }
   
-  // NOTE: Hidden element removal has been REMOVED - it's now handled by the interval index
-  // in syncStyles(). Elements outside their time range are already marked display:none on
-  // the clone nodes, so they serialize but don't render. This eliminates duplicate work:
-  // - Before: syncStyles marks hidden → serialize finds hidden again → remove → serialize → restore
-  // - After: syncStyles marks hidden → serialize (hidden elements serialize but are invisible)
+  // NOTE: Hidden element handling is now done by the caller via removeHiddenNodesForSerialization().
+  // The caller physically removes hidden nodes from the clone tree BEFORE calling this function,
+  // so hidden elements are never serialized at all - not just hidden with display:none.
   //
-  // Performance impact: Serialization includes hidden elements but avoids:
-  // - querySelectorAll('ef-timegroup') + getComputedStyle for each
-  // - querySelectorAll('[style*="display:none"]') + getComputedStyle for each  
-  // - DOM manipulation (removeChild + insertBefore for each hidden element)
-  //
-  // Net effect: ~2-3ms saved per frame for timelines with many hidden elements.
+  // Benefits of removing before serialization:
+  // - Hidden canvases are not encoded (saves encoding time and memory)
+  // - Hidden elements are not serialized (smaller SVG, faster serialization)
+  // - Hidden images are not inlined (saves fetch and encoding)
+  // - The serialized output is smaller and faster to base64 encode
   
   // Serialize to XHTML string
   const perfStart = performance.now();
