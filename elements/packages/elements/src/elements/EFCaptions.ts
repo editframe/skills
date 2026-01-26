@@ -87,6 +87,14 @@ export class EFCaptionsActiveWord extends EFTemporal(LitElement) {
 
   @property({ type: Boolean, reflect: true })
   hidden = false;
+  
+  /**
+   * Force synchronous update for video rendering.
+   * Bypasses Lit's async batching by calling performUpdate() directly.
+   */
+  updateNow(): void {
+    this.performUpdate();
+  }
 
   get startTimeMs() {
     // Get parent captions element's absolute start time, then add our local offset
@@ -141,6 +149,14 @@ export class EFCaptionsSegment extends EFTemporal(LitElement) {
 
   @property({ type: Boolean, reflect: true })
   hidden = false;
+  
+  /**
+   * Force synchronous update for video rendering.
+   * Bypasses Lit's async batching by calling performUpdate() directly.
+   */
+  updateNow(): void {
+    this.performUpdate();
+  }
 
   get startTimeMs() {
     // Get parent captions element's absolute start time, then add our local offset
@@ -175,6 +191,14 @@ export class EFCaptionsBeforeActiveWord extends EFCaptionsSegment {
       }
     `,
   ];
+  
+  /**
+   * Force synchronous update for video rendering.
+   * Bypasses Lit's async batching by calling performUpdate() directly.
+   */
+  updateNow(): void {
+    this.performUpdate();
+  }
 
   render() {
     // Hide element if no content or only stop words
@@ -240,6 +264,14 @@ export class EFCaptionsAfterActiveWord extends EFCaptionsSegment {
       }
     `,
   ];
+  
+  /**
+   * Force synchronous update for video rendering.
+   * Bypasses Lit's async batching by calling performUpdate() directly.
+   */
+  updateNow(): void {
+    this.performUpdate();
+  }
 
   render() {
     // Hide element if no content or only stop words
@@ -780,7 +812,7 @@ export class EFCaptions extends EFSourceMixin(
           container.segmentStartMs = currentWord.start * 1000;
           container.segmentEndMs = currentWord.end * 1000;
           // Force synchronous update for video rendering correctness
-          container.performUpdate();
+          container.updateNow();
         }
 
         for (const container of this.afterActiveWordContainers) {
@@ -788,7 +820,7 @@ export class EFCaptions extends EFSourceMixin(
           container.segmentStartMs = currentWord.start * 1000;
           container.segmentEndMs = currentWord.end * 1000;
           // Force synchronous update for video rendering correctness
-          container.performUpdate();
+          container.updateNow();
         }
       }
     } else if (currentSegment) {
@@ -828,7 +860,7 @@ export class EFCaptions extends EFSourceMixin(
           container.segmentStartMs = currentSegment.start * 1000;
           container.segmentEndMs = currentSegment.end * 1000;
           // Force synchronous update for video rendering correctness
-          container.performUpdate();
+          container.updateNow();
         }
 
         for (const container of this.afterActiveWordContainers) {
@@ -836,7 +868,7 @@ export class EFCaptions extends EFSourceMixin(
           container.segmentStartMs = currentSegment.start * 1000;
           container.segmentEndMs = currentSegment.end * 1000;
           // Force synchronous update for video rendering correctness
-          container.performUpdate();
+          container.updateNow();
         }
       }
     } else {
