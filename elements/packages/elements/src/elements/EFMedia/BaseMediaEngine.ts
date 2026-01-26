@@ -23,6 +23,7 @@ export abstract class BaseMediaEngine {
 
   // Use protected abstract methods instead of abstract getters to avoid TypeScript bug
   // See: https://github.com/microsoft/TypeScript/issues/58020
+  // Note: Abstract getters ALSO trigger this bug, not just getters in object literals
   protected abstract getVideoRenditionInternal(): VideoRendition | undefined;
   protected abstract getAudioRenditionInternal(): AudioRendition | undefined;
 

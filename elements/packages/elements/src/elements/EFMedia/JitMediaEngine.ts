@@ -28,9 +28,6 @@ export class JitMediaEngine extends BaseMediaEngine implements MediaEngine {
     engine.durationMs = data.durationMs;
     engine.src = data.sourceUrl;
     engine.templates = data.endpoints;
-    // Initialize renditions (will be computed on first access)
-    engine.videoRendition = engine.getVideoRenditionInternal();
-    engine.audioRendition = engine.getAudioRenditionInternal();
     return engine;
   }
 
@@ -38,8 +35,6 @@ export class JitMediaEngine extends BaseMediaEngine implements MediaEngine {
   durationMs = 0;
   src = "";
   templates!: { initSegment: string; mediaSegment: string };
-  videoRendition!: VideoRendition | undefined;
-  audioRendition!: AudioRendition | undefined;
 
   constructor(host: EFMedia, urlGenerator: UrlGenerator) {
     super(host);
@@ -47,11 +42,11 @@ export class JitMediaEngine extends BaseMediaEngine implements MediaEngine {
     this.thumbnailExtractor = new ThumbnailExtractor(this);
   }
 
-  // Cache renditions to avoid getter accessor issues with TypeScript declaration generation
+  // Cache renditions to avoid recomputing on every access
   #cachedVideoRendition: VideoRendition | undefined | null = null;
   #cachedAudioRendition: AudioRendition | undefined | null = null;
 
-  protected getAudioRenditionInternal(): AudioRendition | undefined {
+  get audioRendition(): AudioRendition | undefined {
     if (this.#cachedAudioRendition !== null) {
       return this.#cachedAudioRendition;
     }
@@ -77,7 +72,7 @@ export class JitMediaEngine extends BaseMediaEngine implements MediaEngine {
     return this.#cachedAudioRendition;
   }
 
-  protected getVideoRenditionInternal(): VideoRendition | undefined {
+  get videoRendition(): VideoRendition | undefined {
     if (this.#cachedVideoRendition !== null) {
       return this.#cachedVideoRendition;
     }
@@ -215,7 +210,7 @@ export class JitMediaEngine extends BaseMediaEngine implements MediaEngine {
       (r) => r.id === "scrub",
     );
 
-    if (!scrubManifestRendition) return this.videoRendition; // Fallback to main
+    if (!scrubManifestRendition) return this.getVideoRenditionInternal(); // Fallback to main
 
     return {
       id: scrubManifestRendition.id as any,
@@ -251,7 +246,7 @@ export class JitMediaEngine extends BaseMediaEngine implements MediaEngine {
     // Use same rendition priority as video: try main rendition first for frame alignment
     let rendition: VideoRendition;
     try {
-      const mainRendition = this.videoRendition;
+      const mainRendition = this.getVideoRenditionInternal();
       if (mainRendition) {
         rendition = mainRendition;
       } else {

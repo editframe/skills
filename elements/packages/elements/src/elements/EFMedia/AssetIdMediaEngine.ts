@@ -156,8 +156,6 @@ export class AssetIdMediaEngine
       initSegment: `${apiHost}/api/v1/isobmff_tracks/${assetId}/{trackId}`,
       mediaSegment: `${apiHost}/api/v1/isobmff_tracks/${assetId}/{trackId}`,
     };
-    this.videoRendition = this.getVideoRenditionInternal();
-    this.audioRendition = this.getAudioRenditionInternal();
   }
 
   // Override URL-building methods to use API endpoints instead of file paths

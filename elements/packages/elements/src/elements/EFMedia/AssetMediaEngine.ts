@@ -28,8 +28,6 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
 
   // MediaEngine interface properties
   templates!: { initSegment: string; mediaSegment: string };
-  videoRendition!: VideoRendition | undefined;
-  audioRendition!: AudioRendition | undefined;
 
   constructor(host: EFMedia, src: string, urlGenerator: UrlGenerator) {
     super(host);
@@ -83,8 +81,6 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
       initSegment: `${jitBaseUrl}/api/v1/transcode/{rendition}/init.m4s?url=${encodeURIComponent(sourceUrl)}`,
       mediaSegment: `${jitBaseUrl}/api/v1/transcode/{rendition}/{segmentId}.m4s?url=${encodeURIComponent(sourceUrl)}`,
     };
-    engine.videoRendition = engine.getVideoRenditionInternal();
-    engine.audioRendition = engine.getAudioRenditionInternal();
 
     // Validate that segments are accessible by trying to fetch the first init segment
     // This prevents creating a media engine that will fail on all subsequent segment fetches
@@ -173,11 +169,11 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
     return this.data[-1];
   }
 
-  // Cache renditions to avoid getter accessor issues with TypeScript declaration generation
+  // Cache renditions to avoid recomputing on every access
   #cachedVideoRendition: VideoRendition | undefined | null = null;
   #cachedAudioRendition: AudioRendition | undefined | null = null;
 
-  protected getVideoRenditionInternal() {
+  protected getVideoRenditionInternal(): VideoRendition | undefined {
     if (this.#cachedVideoRendition !== null) {
       return this.#cachedVideoRendition;
     }
@@ -197,7 +193,7 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
     return this.#cachedVideoRendition;
   }
 
-  protected getAudioRenditionInternal() {
+  protected getAudioRenditionInternal(): AudioRendition | undefined {
     if (this.#cachedAudioRendition !== null) {
       return this.#cachedAudioRendition;
     }
