@@ -133,7 +133,7 @@ export async function encodeCanvasesInParallel(
           
           // Use direct capture API (bypasses frameTask)
           try {
-            const frame = await sourceElement.captureFrameAtSourceTime(sourceTimeMs);
+            const frame = await sourceElement.captureFrameAtSourceTime(sourceTimeMs, {});
             renderContext.setCachedVideoFrame(sourceElement, sourceTimeMs, frame);
             return { canvas, dataUrl: frame.dataUrl, preserveAlpha: false };
           } catch (e) {
@@ -155,7 +155,7 @@ export async function encodeCanvasesInParallel(
             
             // Capture from the target video
             try {
-              const frame = await videoTarget.captureFrameAtSourceTime(sourceTimeMs);
+              const frame = await videoTarget.captureFrameAtSourceTime(sourceTimeMs, {});
               renderContext.setCachedVideoFrame(videoTarget, sourceTimeMs, frame);
               return { canvas, dataUrl: frame.dataUrl, preserveAlpha: false };
             } catch (e) {
@@ -196,7 +196,7 @@ export async function encodeCanvasesInParallel(
           encodeCanvasInWorker(worker, sourceCanvas, preserveAlpha),
         );
       } else {
-        // Main thread fallback
+        // Main thread fallback - warning already logged once in getWorkerPool()
         const encoded = encodeCanvasOnMainThread(sourceCanvas, canvasScale);
         if (!encoded) return null;
         dataUrl = encoded.dataUrl;
@@ -210,12 +210,15 @@ export async function encodeCanvasesInParallel(
       return { canvas, dataUrl, preserveAlpha };
     } catch (error) {
       // Fallback to main thread if worker encoding fails
+      logger.warn("[canvasEncoder] Worker encoding failed, using main thread fallback:", error);
       const encoded = encodeCanvasOnMainThread(canvas, canvasScale);
       if (encoded) {
+        logger.warn("[canvasEncoder] Main thread fallback succeeded");
         return { canvas, ...encoded };
       }
       
       // Cross-origin canvas or other error - skip
+      logger.warn("[canvasEncoder] Main thread encoding also failed, skipping canvas:", error);
       return null;
     }
   };

@@ -215,8 +215,10 @@ export class EFImage extends EFTemporal(
 
   protected updated(changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
     super.updated(changedProperties);
-    // Increment render version when content-affecting properties change
-    if (changedProperties.has("src") || changedProperties.has("assetId")) {
+    // Increment render version on any property change.
+    // This is intentionally broad to avoid cache staleness - the cache is
+    // per-render-session so within a render the version will be stable.
+    if (changedProperties.size > 0) {
       this.#renderVersion++;
     }
   }

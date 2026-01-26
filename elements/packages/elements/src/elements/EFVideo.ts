@@ -634,20 +634,30 @@ export class EFVideo extends TWMixin(EFMedia) {
    * - "main": force full-quality main track
    * 
    * @param sourceTimeMs - Timestamp in source media coordinates (not timeline)
-   * @param quality - Which video track to use (default: "auto")
+   * @param options - Capture options including quality and abort signal
    * @returns Frame data for serialization
    * @public
    */
   async captureFrameAtSourceTime(
     sourceTimeMs: number,
-    quality: "auto" | "scrub" | "main" = "auto"
+    options: {
+      quality?: "auto" | "scrub" | "main";
+      signal?: AbortSignal;
+    } = {}
   ): Promise<{
     dataUrl: string;
     width: number;
     height: number;
   }> {
+    const { quality = "auto", signal } = options;
+    
+    // Check abort before starting
+    signal?.throwIfAborted();
+
     // 1. Get media engine
     const mediaEngine = await this.mediaEngineTask.taskComplete;
+    signal?.throwIfAborted();
+    
     if (!mediaEngine) {
       throw new Error("No media engine available for frame capture");
     }
@@ -657,7 +667,14 @@ export class EFVideo extends TWMixin(EFMedia) {
       (quality === "auto" && this.isInProductionRenderingMode());
 
     // 3. Get video sample using the same logic as unifiedVideoSeekTask
+    // NOTE: BufferedSeekingInput is created per-call. This is intentional for now
+    // as caching would require careful lifecycle management. A future optimization
+    // could cache these per-segment in a similar way to MainVideoInputCache.
     let videoSample: any;
+    
+    // Note: signal parameter is optional in the API but TypeScript gets confused
+    // so we cast it for use with mediaEngine methods
+    const fetchSignal = signal as AbortSignal | undefined;
     
     if (useMainTrack) {
       // Use main video track
@@ -671,11 +688,12 @@ export class EFVideo extends TWMixin(EFMedia) {
         throw new Error(`Cannot compute segment ID for time ${sourceTimeMs}ms`);
       }
 
-      // Fetch segments if needed (signal is optional)
+      // Fetch segments with signal propagation
       const [initSegment, mediaSegment] = await Promise.all([
-        (mediaEngine as any).fetchInitSegment(videoRendition),
-        (mediaEngine as any).fetchMediaSegment(segmentId, videoRendition),
+        (mediaEngine as any).fetchInitSegment(videoRendition, fetchSignal),
+        (mediaEngine as any).fetchMediaSegment(segmentId, videoRendition, fetchSignal),
       ]);
+      signal?.throwIfAborted();
 
       if (!initSegment || !mediaSegment) {
         throw new Error(`Failed to fetch video segments for time ${sourceTimeMs}ms`);
@@ -683,8 +701,11 @@ export class EFVideo extends TWMixin(EFMedia) {
 
       // Create BufferedSeekingInput and seek
       const { BufferedSeekingInput } = await import("./EFMedia/BufferedSeekingInput.js");
+      signal?.throwIfAborted();
+      
       const combinedBlob = new Blob([initSegment, mediaSegment]);
       const arrayBuffer = await combinedBlob.arrayBuffer();
+      signal?.throwIfAborted();
 
       const seekingInput = new BufferedSeekingInput(arrayBuffer, {
         videoBufferSize: EFMedia.VIDEO_SAMPLE_BUFFER_SIZE,
@@ -693,17 +714,20 @@ export class EFVideo extends TWMixin(EFMedia) {
       });
 
       const videoTrack = await seekingInput.getFirstVideoTrack();
+      signal?.throwIfAborted();
+      
       if (!videoTrack) {
         throw new Error("No video track found in segment");
       }
 
       videoSample = await seekingInput.seek(videoTrack.id, sourceTimeMs);
+      signal?.throwIfAborted();
     } else {
       // Use scrub track for thumbnails/preview
       const scrubRendition = mediaEngine.getScrubVideoRendition?.();
       if (!scrubRendition) {
         // Fall back to main track if no scrub available
-        return this.captureFrameAtSourceTime(sourceTimeMs, "main");
+        return this.captureFrameAtSourceTime(sourceTimeMs, { quality: "main", signal });
       }
 
       const scrubRenditionWithSrc = { ...scrubRendition, src: mediaEngine.src };
@@ -714,18 +738,22 @@ export class EFVideo extends TWMixin(EFMedia) {
       }
 
       const [initSegment, mediaSegment] = await Promise.all([
-        (mediaEngine as any).fetchInitSegment(scrubRenditionWithSrc),
-        (mediaEngine as any).fetchMediaSegment(segmentId, scrubRenditionWithSrc),
+        (mediaEngine as any).fetchInitSegment(scrubRenditionWithSrc, fetchSignal),
+        (mediaEngine as any).fetchMediaSegment(segmentId, scrubRenditionWithSrc, fetchSignal),
       ]);
+      signal?.throwIfAborted();
 
       if (!initSegment || !mediaSegment) {
         // Fall back to main track
-        return this.captureFrameAtSourceTime(sourceTimeMs, "main");
+        return this.captureFrameAtSourceTime(sourceTimeMs, { quality: "main", signal });
       }
 
       const { BufferedSeekingInput } = await import("./EFMedia/BufferedSeekingInput.js");
+      signal?.throwIfAborted();
+      
       const combinedBlob = new Blob([initSegment, mediaSegment]);
       const arrayBuffer = await combinedBlob.arrayBuffer();
+      signal?.throwIfAborted();
 
       const seekingInput = new BufferedSeekingInput(arrayBuffer, {
         videoBufferSize: EFMedia.VIDEO_SAMPLE_BUFFER_SIZE,
@@ -734,12 +762,15 @@ export class EFVideo extends TWMixin(EFMedia) {
       });
 
       const videoTrack = await seekingInput.getFirstVideoTrack();
+      signal?.throwIfAborted();
+      
       if (!videoTrack) {
         // Fall back to main track
-        return this.captureFrameAtSourceTime(sourceTimeMs, "main");
+        return this.captureFrameAtSourceTime(sourceTimeMs, { quality: "main", signal });
       }
 
       videoSample = await seekingInput.seek(videoTrack.id, sourceTimeMs);
+      signal?.throwIfAborted();
     }
 
     if (!videoSample) {
@@ -750,6 +781,8 @@ export class EFVideo extends TWMixin(EFMedia) {
     const videoFrame = videoSample.toVideoFrame();
 
     try {
+      signal?.throwIfAborted();
+      
       // 5. Draw to OffscreenCanvas and encode to dataURL
       const canvas = new OffscreenCanvas(videoFrame.codedWidth, videoFrame.codedHeight);
       const ctx = canvas.getContext("2d");
@@ -758,16 +791,22 @@ export class EFVideo extends TWMixin(EFMedia) {
       }
       ctx.drawImage(videoFrame, 0, 0);
 
+      signal?.throwIfAborted();
+
       // Encode to JPEG blob
       const blob = await canvas.convertToBlob({ type: "image/jpeg", quality: 0.92 });
+      signal?.throwIfAborted();
       
-      // Convert blob to dataURL
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
+      // Convert blob to dataURL using base64 encoding (faster than FileReader)
+      const arrayBuffer = await blob.arrayBuffer();
+      signal?.throwIfAborted();
+      
+      const bytes = new Uint8Array(arrayBuffer);
+      let binary = "";
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]!);
+      }
+      const dataUrl = `data:image/jpeg;base64,${btoa(binary)}`;
 
       return {
         dataUrl,

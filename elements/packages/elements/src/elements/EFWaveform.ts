@@ -572,19 +572,11 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) {
   protected updated(changedProperties: PropertyValueMap<this>): void {
     super.updated(changedProperties);
 
-    // Increment render version when visual-affecting properties change
-    if (
-      changedProperties.has("mode") ||
-      changedProperties.has("color") ||
-      changedProperties.has("barSpacing") ||
-      changedProperties.has("lineWidth") ||
-      changedProperties.has("target")
-    ) {
-      this.#renderVersion++;
-    }
-
-    // Trigger a redraw if any property changes
+    // Increment render version on any property change.
+    // This is intentionally broad to avoid cache staleness - the cache is
+    // per-render-session so within a render the version will be stable.
     if (changedProperties.size > 0) {
+      this.#renderVersion++;
       // Request a new frame
       this.frameTask.run().catch(() => {
         // AbortErrors are expected during cleanup

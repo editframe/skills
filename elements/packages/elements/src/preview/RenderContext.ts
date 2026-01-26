@@ -20,6 +20,33 @@ function hasRenderVersion(element: Element): element is Element & { renderVersio
 }
 
 /**
+ * Module-level counter for generating unique element IDs.
+ * This ensures uniqueness across all RenderContext instances.
+ */
+let nextElementId = 1;
+
+/**
+ * WeakMap to store unique IDs for elements.
+ * Using WeakMap ensures we don't prevent garbage collection of elements.
+ * The ID is stable for the lifetime of the element.
+ */
+const elementUniqueIds = new WeakMap<Element, number>();
+
+/**
+ * Get or create a unique ID for an element.
+ * This guarantees uniqueness even for elements with the same id attribute
+ * or no id attribute at all.
+ */
+function getElementUniqueId(element: Element): number {
+  let id = elementUniqueIds.get(element);
+  if (id === undefined) {
+    id = nextElementId++;
+    elementUniqueIds.set(element, id);
+  }
+  return id;
+}
+
+/**
  * Result of capturing a video frame.
  */
 export interface CapturedFrame {
@@ -95,15 +122,17 @@ export class RenderContext {
 
   /**
    * Generate a cache key for a static element.
+   * Uses a unique element ID (via WeakMap) to ensure uniqueness even if
+   * multiple elements have the same id attribute.
    * Returns null if the element doesn't support caching (no renderVersion).
    */
   #getCanvasCacheKey(element: Element): string | null {
     if (!hasRenderVersion(element)) {
       return null;
     }
-    // Use tag name + id (or empty) + render version
-    const id = element.id || "";
-    return `${element.tagName}:${id}:${element.renderVersion}`;
+    // Use unique element ID + render version for guaranteed uniqueness
+    const uniqueId = getElementUniqueId(element);
+    return `canvas:${uniqueId}:${element.renderVersion}`;
   }
 
   /**
@@ -144,13 +173,14 @@ export class RenderContext {
 
   /**
    * Generate a cache key for a video frame.
-   * Uses video element id and source timestamp.
+   * Uses a unique element ID (via WeakMap) to ensure uniqueness even if
+   * multiple videos have the same id attribute.
    */
   #getVideoFrameCacheKey(videoElement: Element, sourceTimeMs: number): string {
-    const id = videoElement.id || "anon";
+    const uniqueId = getElementUniqueId(videoElement);
     // Round to nearest ms to avoid floating point issues
     const roundedTime = Math.round(sourceTimeMs);
-    return `${id}:${roundedTime}`;
+    return `video:${uniqueId}:${roundedTime}`;
   }
 
   /**
@@ -186,13 +216,16 @@ export class RenderContext {
    * 
    * @param video - The ef-video element
    * @param sourceTimeMs - Source media timestamp
-   * @param quality - Quality setting for capture
+   * @param options - Capture options including quality and signal
    * @returns The captured frame data
    */
   async getOrCaptureVideoFrame(
     video: EFVideo,
     sourceTimeMs: number,
-    quality: "auto" | "scrub" | "main" = "auto"
+    options: {
+      quality?: "auto" | "scrub" | "main";
+      signal?: AbortSignal;
+    } = {}
   ): Promise<CapturedFrame> {
     // Check cache first
     const cached = this.getCachedVideoFrame(video, sourceTimeMs);
@@ -201,7 +234,7 @@ export class RenderContext {
     }
 
     // Capture frame using direct API
-    const frame = await video.captureFrameAtSourceTime(sourceTimeMs, quality);
+    const frame = await video.captureFrameAtSourceTime(sourceTimeMs, options);
     
     // Cache for future use
     this.setCachedVideoFrame(video, sourceTimeMs, frame);
@@ -223,6 +256,20 @@ export class RenderContext {
     this.#canvasCache.clear();
     this.#videoFrameCache.clear();
     this.#disposed = true;
+  }
+
+  /**
+   * Symbol.dispose implementation for use with the `using` keyword.
+   * 
+   * @example
+   * ```typescript
+   * using context = new RenderContext();
+   * // ... render operations
+   * // context is automatically disposed when scope exits
+   * ```
+   */
+  [Symbol.dispose](): void {
+    this.dispose();
   }
 
   /**
