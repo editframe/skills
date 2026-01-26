@@ -31,6 +31,11 @@ import {
   syncStyles,
   collectDocumentStyles,
   overrideRootCloneStyles,
+  // NOTE: Video export does NOT use removeHiddenNodesForSerialization because the
+  // concurrent pipeline has multiple frames in flight sharing the same container.
+  // If frame N removes node X and frame N+1 needs X, N+1's serialization would be wrong.
+  // Instead, hidden nodes get display:none which is sufficient for correctness.
+  // Live preview (renderTimegroupToCanvas) uses the full remove/restore optimization.
 } from "./renderTimegroupPreview.js";
 import { renderToImageDirect } from "./rendering/renderToImage.js";
 import { createPreviewContainer } from "./previewTypes.js";
