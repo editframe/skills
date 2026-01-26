@@ -1074,12 +1074,20 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
      * @deprecated Use FrameRenderable interface via FrameController instead.
      * This is a compatibility wrapper - base class just waits for updateComplete.
      */
-    frameTask = {
-      run: async () => {
-        await this.updateComplete;
-      },
-      taskComplete: Promise.resolve(),
-    };
+    #frameTaskPromise: Promise<void> = Promise.resolve();
+    
+    frameTask = (() => {
+      const self = this;
+      return {
+        run: () => {
+          self.#frameTaskPromise = self.updateComplete.then(() => {});
+          return self.#frameTaskPromise;
+        },
+        get taskComplete() {
+          return self.#frameTaskPromise;
+        },
+      };
+    })();
 
     didBecomeRoot() {
       if (!this.playbackController) {

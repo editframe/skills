@@ -433,15 +433,33 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
    * @deprecated Use FrameRenderable methods (prepareFrame, renderFrame) via FrameController instead.
    * This is a compatibility wrapper that delegates to the new system.
    */
-  frameTask = {
-    run: async () => {
-      const abortController = new AbortController();
-      const timeMs = this.desiredSeekTimeMs;
-      await this.prepareFrame(timeMs, abortController.signal);
-      this.renderFrame(timeMs);
-    },
-    taskComplete: Promise.resolve(),
-  };
+  #frameTaskPromise: Promise<void> = Promise.resolve();
+  
+  frameTask = (() => {
+    const self = this;
+    return {
+      run: () => {
+        const abortController = new AbortController();
+        const timeMs = self.desiredSeekTimeMs;
+        self.#frameTaskPromise = (async () => {
+          try {
+            await self.prepareFrame(timeMs, abortController.signal);
+            self.renderFrame(timeMs);
+          } catch (error) {
+            // Silently ignore AbortErrors - expected when task is cancelled
+            if (error instanceof DOMException && error.name === "AbortError") {
+              return;
+            }
+            throw error;
+          }
+        })();
+        return self.#frameTaskPromise;
+      },
+      get taskComplete() {
+        return self.#frameTaskPromise;
+      },
+    };
+  })();
 
   /**
    * Start a delayed loading operation for testing
