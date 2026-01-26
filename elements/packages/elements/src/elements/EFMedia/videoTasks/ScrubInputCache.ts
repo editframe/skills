@@ -3,7 +3,7 @@ import type { BufferedSeekingInput } from "../BufferedSeekingInput";
 /**
  * Cache for scrub BufferedSeekingInput instances.
  * 
- * For JIT media (segmented scrub tracks), caches by segment ID.
+ * For JIT media (segmented scrub tracks), caches by src + segment ID.
  * For Asset media (single-file scrub tracks), caches by URL so all segments
  * share the same BufferedSeekingInput instance.
  * 
@@ -11,11 +11,19 @@ import type { BufferedSeekingInput } from "../BufferedSeekingInput";
  * concurrent requests arrive for the same segment.
  */
 export class ScrubInputCache {
-  #cache = new Map<number, BufferedSeekingInput>();
+  // Changed from Map<number> to Map<string> to include src in key
+  #cache = new Map<string, BufferedSeekingInput>();
   #urlCache = new Map<string, BufferedSeekingInput>();
-  #pendingBySegment = new Map<number, Promise<BufferedSeekingInput | undefined>>();
+  #pendingBySegment = new Map<string, Promise<BufferedSeekingInput | undefined>>();
   #pendingByUrl = new Map<string, Promise<BufferedSeekingInput | undefined>>();
   #maxCacheSize = 5;
+
+  /**
+   * Create a cache key that uniquely identifies a segment for a specific video
+   */
+  #getCacheKey(src: string, segmentId: number): string {
+    return `${src}:${segmentId}`;
+  }
 
   /**
    * Get or create BufferedSeekingInput for a scrub segment.
@@ -23,11 +31,13 @@ export class ScrubInputCache {
    * Uses promise deduplication to prevent race conditions when multiple
    * concurrent requests arrive for the same segment.
    * 
+   * @param src - The source URL of the video (required to distinguish between videos)
    * @param segmentId - The segment ID
    * @param createInputFn - Factory function to create the input
    * @param scrubUrl - Optional URL for single-file scrub tracks (all segments share same input)
    */
   async getOrCreateInput(
+    src: string,
     segmentId: number,
     createInputFn: () => Promise<BufferedSeekingInput | undefined>,
     scrubUrl?: string,
@@ -63,24 +73,25 @@ export class ScrubInputCache {
       return promise;
     }
 
-    // For segmented scrub tracks (JIT), use segment-based caching
-    const cached = this.#cache.get(segmentId);
+    // For segmented scrub tracks (JIT), use src + segment-based caching
+    const cacheKey = this.#getCacheKey(src, segmentId);
+    const cached = this.#cache.get(cacheKey);
     if (cached) {
       return cached;
     }
 
     // Check pending requests (deduplication)
-    const pending = this.#pendingBySegment.get(segmentId);
+    const pending = this.#pendingBySegment.get(cacheKey);
     if (pending) {
       return pending;
     }
 
     // Create promise and cache immediately
     const promise = createInputFn().then((input) => {
-      this.#pendingBySegment.delete(segmentId);
+      this.#pendingBySegment.delete(cacheKey);
       
       if (input) {
-        this.#cache.set(segmentId, input);
+        this.#cache.set(cacheKey, input);
 
         // Evict oldest entries if cache is too large
         if (this.#cache.size > this.#maxCacheSize) {
@@ -93,11 +104,11 @@ export class ScrubInputCache {
       
       return input;
     }).catch((error) => {
-      this.#pendingBySegment.delete(segmentId);
+      this.#pendingBySegment.delete(cacheKey);
       throw error;
     });
 
-    this.#pendingBySegment.set(segmentId, promise);
+    this.#pendingBySegment.set(cacheKey, promise);
     return promise;
   }
 
@@ -119,7 +130,7 @@ export class ScrubInputCache {
       size: this.#cache.size,
       urlCacheSize: this.#urlCache.size,
       pendingCount: this.#pendingBySegment.size + this.#pendingByUrl.size,
-      segmentIds: Array.from(this.#cache.keys()),
+      cacheKeys: Array.from(this.#cache.keys()),
     };
   }
 }

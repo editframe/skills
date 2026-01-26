@@ -916,13 +916,6 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
     };
     walk(this);
     
-    console.log(
-      `[getAllLitElementDescendants] Total=${totalLitElements}, ` +
-      `included=${result.length}, ` +
-      `filtered=${temporallyFilteredOut}, ` +
-      `hiddenSubtrees=${hiddenSubtreesSkipped}`
-    );
-    
     return result;
   }
 

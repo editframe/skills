@@ -126,15 +126,11 @@ export async function encodeCanvasesInParallel(
         // For ef-video, use direct capture API
         if (isEFVideo(sourceElement)) {
           const sourceTimeMs = sourceElement.currentSourceTimeMs;
-          const cached = renderContext.getCachedVideoFrame(sourceElement, sourceTimeMs);
-          if (cached) {
-            return { canvas, dataUrl: cached.dataUrl, preserveAlpha: false };
-          }
           
           // Use direct capture API (bypasses frameTask)
+          // Always use "main" quality for export - scrub track is only for preview scrubbing
           try {
-            const frame = await sourceElement.captureFrameAtSourceTime(sourceTimeMs, {});
-            renderContext.setCachedVideoFrame(sourceElement, sourceTimeMs, frame);
+            const frame = await sourceElement.captureFrameAtSourceTime(sourceTimeMs, { quality: "main" });
             return { canvas, dataUrl: frame.dataUrl, preserveAlpha: false };
           } catch (e) {
             // Fall back to normal encoding if direct capture fails
@@ -154,8 +150,9 @@ export async function encodeCanvasesInParallel(
             }
             
             // Capture from the target video
+            // Always use "main" quality for export
             try {
-              const frame = await videoTarget.captureFrameAtSourceTime(sourceTimeMs, {});
+              const frame = await videoTarget.captureFrameAtSourceTime(sourceTimeMs, { quality: "main" });
               renderContext.setCachedVideoFrame(videoTarget, sourceTimeMs, frame);
               return { canvas, dataUrl: frame.dataUrl, preserveAlpha: false };
             } catch (e) {
@@ -171,7 +168,7 @@ export async function encodeCanvasesInParallel(
         }
       }
 
-      // Standard encoding path
+      // Standard encoding path (fallback when no RenderContext cache)
       let sourceCanvas = canvas;
 
       // Handle canvas scaling on main thread before encoding

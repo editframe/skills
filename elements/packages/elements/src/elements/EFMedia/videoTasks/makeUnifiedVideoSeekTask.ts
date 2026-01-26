@@ -192,7 +192,9 @@ async function tryGetScrubSample(
         }
 
         // Get cached scrub input and seek within it
+        // Include mediaEngine.src in cache key to prevent collisions between different videos
         const scrubInput = await scrubInputCache.getOrCreateInput(
+          mediaEngine.src,
           segmentId,
           async () => {
             // Try to fetch segments, but return undefined if they fail with expected errors

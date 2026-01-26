@@ -118,7 +118,6 @@ export {
 
 // Import for internal use
 import {
-  type TemporalElement,
   getTemporalBounds,
 } from "./previewTypes.js";
 
@@ -973,15 +972,6 @@ export function syncStyles(state: SyncState, timeMs: number): void {
   
   // Use interval-index-based sync with delta tracking
   syncStylesWithIndex(state, timeMs);
-  
-  // Log performance stats
-  const totalCulled = syncStats.nodesCulledByParent + syncStats.nodesCulledByTemporal;
-  console.log(
-    `[syncStyles] visited=${syncStats.nodesVisited}, ` +
-    `culled=${totalCulled}, processed=${syncStats.nodesProcessed} ` +
-    `(full=${syncStats.nodesFullSync}, incr=${syncStats.nodesIncrementalSync}, hidden=${syncStats.nodesHidden}), ` +
-    `query=${syncStats.indexQueryTimeMs.toFixed(2)}ms, sync=${syncStats.syncTimeMs.toFixed(2)}ms`
-  );
 }
 
 /**

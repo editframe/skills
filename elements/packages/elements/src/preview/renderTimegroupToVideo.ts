@@ -434,8 +434,10 @@ export async function renderTimegroupToVideo(
     const renderTasks: RenderTask[] = [];
     
     // Pipeline depth configuration
-    const MAX_SEEK = 3;    // 3 seeks can overlap
-    const MAX_RENDER = 3;  // 3 renders can overlap (image loading is async)
+    // NOTE: Set to 1 for correctness - parallel seeks cause duplicate frames
+    // TODO: Investigate why parallel seeks don't work with the clone structure
+    const MAX_SEEK = 1;
+    const MAX_RENDER = 1;
     
     let nextSeekFrame = 0;
     let nextRenderFrame = 0;
@@ -483,6 +485,7 @@ export async function renderTimegroupToVideo(
           const renderStart = performance.now();
           const image = await renderToImageDirect(previewContainer, width, height);
           totalRenderMs += performance.now() - renderStart;
+          
           return image;
         });
         

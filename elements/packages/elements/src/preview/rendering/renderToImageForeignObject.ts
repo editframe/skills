@@ -71,14 +71,50 @@ export async function serializeToSvgDataUri(
   const canvasStart = performance.now();
   const allCanvases = Array.from(container.querySelectorAll("canvas"));
   const visibleCanvases = allCanvases.filter(canvas => !isElementHidden(canvas));
-  const encodedResults = await encodeCanvasesInParallel(visibleCanvases, { 
+  
+  // CRITICAL FIX: Synchronously copy canvas pixels BEFORE any async work.
+  // This prevents race conditions where concurrent render tasks overwrite
+  // the shared clone canvases while encoding is in progress.
+  // See: Hypothesis 1 - Clone Canvas Overwritten During Serialization
+  const canvasSnapshots: { original: HTMLCanvasElement; copy: HTMLCanvasElement }[] = [];
+  for (let i = 0; i < visibleCanvases.length; i++) {
+    const canvas = visibleCanvases[i]!;
+    if (canvas.width > 0 && canvas.height > 0) {
+      const copy = document.createElement("canvas");
+      copy.width = canvas.width;
+      copy.height = canvas.height;
+      // Copy dataset attributes (e.g., preserveAlpha)
+      if (canvas.dataset.preserveAlpha) {
+        copy.dataset.preserveAlpha = canvas.dataset.preserveAlpha;
+      }
+      const ctx = copy.getContext("2d");
+      if (ctx) {
+        // drawImage is SYNCHRONOUS - pixels are copied immediately
+        ctx.drawImage(canvas, 0, 0);
+      }
+      canvasSnapshots.push({ original: canvas, copy });
+    }
+  }
+  
+  // Encode from the snapshot copies (safe from concurrent overwrites)
+  const snapshotCanvases = canvasSnapshots.map(s => s.copy);
+  const encodedResults = await encodeCanvasesInParallel(snapshotCanvases, { 
     scale: canvasScale,
     renderContext,
     sourceMap,
   });
   
+  // Map encoded results back to original canvases for DOM replacement
+  const encodedWithOriginals = encodedResults.map(result => {
+    const snapshot = canvasSnapshots.find(s => s.copy === result.canvas);
+    return {
+      ...result,
+      canvas: snapshot?.original ?? result.canvas,
+    };
+  });
+  
   // Replace canvases with images
-  for (const { canvas, dataUrl } of encodedResults) {
+  for (const { canvas, dataUrl } of encodedWithOriginals) {
     try {
       const img = document.createElement("img");
       img.src = dataUrl;

@@ -90,7 +90,9 @@ export const makeScrubVideoSeekTask = (host: EFVideo): ScrubVideoSeekTask => {
       try {
         // Get or create BufferedSeekingInput for this scrub segment (30s)
         // This efficiently reuses the same input for seeks within the same 30s range
+        // Include mediaEngine.src in cache key to prevent collisions between different videos
         const scrubInput = await scrubInputCache.getOrCreateInput(
+          mediaEngine.src,
           segmentId,
           async () => {
             // Try to fetch segments, but return undefined if they fail with expected errors

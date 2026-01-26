@@ -5,7 +5,6 @@ import { styleMap } from "lit/directives/style-map.js";
 // See preloadTracks.ts for the initialization sequence
 import { TrackItem } from "./TrackItem.js";
 import { renderTrackChildren } from "./renderTrackChildren.js";
-import { EFTimegroup } from "../../../elements/EFTimegroup.js";
 import "../../../elements/EFThumbnailStrip.js";
 
 /**
@@ -129,6 +128,7 @@ export class EFTimegroupTrack extends TrackItem {
         return nothing;
       }
       
+      return nothing;
       return html`
         <ef-thumbnail-strip
           target="${elementId}"

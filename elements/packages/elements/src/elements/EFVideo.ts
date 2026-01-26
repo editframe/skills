@@ -592,6 +592,10 @@ export class EFVideo extends TWMixin(EFMedia) {
     return this.unifiedVideoSeekTask;
   }
 
+  // Track in-flight waitForFrameReady to prevent duplicate calls from aborting each other
+  #pendingFrameReadyTime: number | null = null;
+  #pendingFrameReadyPromise: Promise<void> | null = null;
+
   /**
    * Helper method for tests: wait for the current frame to be ready
    * This encapsulates the complexity of ensuring the video has updated
@@ -607,6 +611,29 @@ export class EFVideo extends TWMixin(EFMedia) {
     if (this.desiredSeekTimeMs !== currentTime) {
       this.desiredSeekTimeMs = currentTime;
     }
+    
+    // IDEMPOTENT: If we're already waiting for this exact time, return the existing promise
+    // This prevents multiple concurrent calls from aborting each other's frameTask
+    if (this.#pendingFrameReadyTime === currentTime && this.#pendingFrameReadyPromise) {
+      return this.#pendingFrameReadyPromise;
+    }
+    
+    // Start a new wait for this time
+    this.#pendingFrameReadyTime = currentTime;
+    this.#pendingFrameReadyPromise = this.#doWaitForFrameReady(currentTime);
+    
+    try {
+      await this.#pendingFrameReadyPromise;
+    } finally {
+      // Clear the pending state when done (success or error)
+      if (this.#pendingFrameReadyTime === currentTime) {
+        this.#pendingFrameReadyTime = null;
+        this.#pendingFrameReadyPromise = null;
+      }
+    }
+  }
+
+  async #doWaitForFrameReady(_targetTimeMs: number): Promise<void> {
     await this.updateComplete;
     
     try {
@@ -751,7 +778,9 @@ export class EFVideo extends TWMixin(EFMedia) {
       }
 
       // Use shared cache for BufferedSeekingInput
+      // Include mediaEngine.src in cache key to prevent collisions between different videos
       const seekingInput = await captureScrubInputCache.getOrCreateInput(
+        mediaEngine.src,
         segmentId,
         async () => {
           const scrubFetchSignal = signal ?? new AbortController().signal;
