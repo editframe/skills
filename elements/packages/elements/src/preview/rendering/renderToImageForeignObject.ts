@@ -10,9 +10,9 @@ import { defaultProfiler } from "../RenderProfiler.js";
 import { logger } from "../logger.js";
 
 // Reusable instances for better performance (avoid creating new instances every frame)
+// Note: wrapper element is NOT reused - each concurrent frame needs its own wrapper
 let _xmlSerializer: XMLSerializer | null = null;
 let _textEncoder: TextEncoder | null = null;
-let _wrapperElement: HTMLDivElement | null = null;
 
 /**
  * Check if an element or any of its ancestors has display:none.
@@ -109,11 +109,12 @@ export async function serializeToSvgDataUri(
   // Phase 3: Serialize to XHTML
   const serializeStart = performance.now();
   
-  // Create fresh wrapper element each time to avoid stale DOM references
-  _wrapperElement = document.createElement("div");
-  _wrapperElement.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
-  _wrapperElement.setAttribute("style", `width:${width}px;height:${height}px;${WRAPPER_STYLE_BASE}`);
-  _wrapperElement.appendChild(container);
+  // Create fresh wrapper element for THIS frame (local variable for closure safety)
+  // Multiple concurrent frames in video export each get their own wrapper
+  const wrapperElement = document.createElement("div");
+  wrapperElement.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
+  wrapperElement.setAttribute("style", `width:${width}px;height:${height}px;${WRAPPER_STYLE_BASE}`);
+  wrapperElement.appendChild(container);
   
   if (!_xmlSerializer) {
     _xmlSerializer = new XMLSerializer();
@@ -131,31 +132,38 @@ export async function serializeToSvgDataUri(
   
   // Serialize to XHTML string
   const perfStart = performance.now();
-  const serialized = _xmlSerializer.serializeToString(_wrapperElement);
+  const serialized = _xmlSerializer.serializeToString(wrapperElement);
   const serializeTime = performance.now() - perfStart;
   
   // Sample 1% of frames to avoid spam
   if (Math.random() < 0.01) {
-    const elementCount = _wrapperElement!.querySelectorAll('*').length;
+    const elementCount = wrapperElement.querySelectorAll('*').length;
     console.log(`[serialize] elements=${elementCount}, time=${serializeTime.toFixed(1)}ms, size=${(serialized.length / 1024).toFixed(1)}KB`);
   }
 
   defaultProfiler.addTime("serialize", performance.now() - serializeStart);
   
   // Prepare restore function (removes container from wrapper, restores canvases)
+  // Must be robust against concurrent frame rendering where DOM state may change
   const restore = (): void => {
     const restoreStart = performance.now();
-    _wrapperElement!.removeChild(container);
+    
+    // Guard: only remove if container is still a child of wrapper
+    if (container.parentNode === wrapperElement) {
+      wrapperElement.removeChild(container);
+    }
     
     for (const { canvas, parent, nextSibling, img } of canvasRestoreInfo) {
+      // Guard: only restore if img is still in expected position
       if (img.parentNode === parent) {
-        // Verify nextSibling is still valid (DOM may have changed between frames due to syncStyles)
+        // Use replaceChild which is atomic and safer than insertBefore + removeChild
+        parent.replaceChild(canvas, img);
+      } else if (canvas.parentNode !== parent) {
+        // Canvas was never restored and img was moved/removed - try to restore canvas
         if (nextSibling && nextSibling.parentNode === parent) {
           parent.insertBefore(canvas, nextSibling);
-          parent.removeChild(img);
         } else {
-          // Fallback: just replace img with canvas (safer when DOM structure changed)
-          parent.replaceChild(canvas, img);
+          parent.appendChild(canvas);
         }
       }
     }
