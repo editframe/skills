@@ -212,7 +212,14 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
     return this.#cachedAudioRendition;
   }
 
+  // MediaEngine interface properties
+  get videoRendition(): VideoRendition | undefined {
+    return this.getVideoRenditionInternal();
+  }
 
+  get audioRendition(): AudioRendition | undefined {
+    return this.getAudioRenditionInternal();
+  }
 
   /**
    * Get the source URL for JIT format (needs to be absolute URL)
