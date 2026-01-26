@@ -90,9 +90,11 @@ export class EFCaptionsActiveWord extends EFTemporal(LitElement) {
   
   /**
    * Force synchronous update for video rendering.
-   * Bypasses Lit's async batching by calling performUpdate() directly.
+   * First calls requestUpdate() to ensure Lit recognizes property changes,
+   * then immediately calls performUpdate() to execute the update synchronously.
    */
   updateNow(): void {
+    this.requestUpdate();
     this.performUpdate();
   }
 
@@ -152,9 +154,11 @@ export class EFCaptionsSegment extends EFTemporal(LitElement) {
   
   /**
    * Force synchronous update for video rendering.
-   * Bypasses Lit's async batching by calling performUpdate() directly.
+   * First calls requestUpdate() to ensure Lit recognizes property changes,
+   * then immediately calls performUpdate() to execute the update synchronously.
    */
   updateNow(): void {
+    this.requestUpdate();
     this.performUpdate();
   }
 
@@ -194,9 +198,11 @@ export class EFCaptionsBeforeActiveWord extends EFCaptionsSegment {
   
   /**
    * Force synchronous update for video rendering.
-   * Bypasses Lit's async batching by calling performUpdate() directly.
+   * First calls requestUpdate() to ensure Lit recognizes property changes,
+   * then immediately calls performUpdate() to execute the update synchronously.
    */
   updateNow(): void {
+    this.requestUpdate();
     this.performUpdate();
   }
 
@@ -267,9 +273,11 @@ export class EFCaptionsAfterActiveWord extends EFCaptionsSegment {
   
   /**
    * Force synchronous update for video rendering.
-   * Bypasses Lit's async batching by calling performUpdate() directly.
+   * First calls requestUpdate() to ensure Lit recognizes property changes,
+   * then immediately calls performUpdate() to execute the update synchronously.
    */
   updateNow(): void {
+    this.requestUpdate();
     this.performUpdate();
   }
 
