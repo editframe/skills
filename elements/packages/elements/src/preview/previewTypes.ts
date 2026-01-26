@@ -26,42 +26,31 @@ export function isTemporal(el: Element): el is TemporalElement {
   return "startTimeMs" in el && "endTimeMs" in el;
 }
 
-// Cache for temporal bounds - temporal properties don't change during render
-// WeakMap automatically cleans up when elements are garbage collected
-const temporalBoundsCache = new WeakMap<Element, { startMs: number, endMs: number }>();
-
 /**
  * Get temporal bounds for an element, treating invalid ranges as unbounded.
  * Invalid range (end <= start) means element hasn't computed its duration yet.
+ * 
+ * NOTE: No caching - bounds are computed dynamically by timegroups based on
+ * composition mode (sequence/contain/fit) and may change between frames.
  */
 export function getTemporalBounds(el: Element): { startMs: number; endMs: number } {
-  // Check cache first
-  const cached = temporalBoundsCache.get(el);
-  if (cached) {
-    return cached;
-  }
-  
-  // Not temporal elements are always visible
+  // Non-temporal elements are always visible
   if (!isTemporal(el)) {
-    const bounds = { startMs: -Infinity, endMs: Infinity };
-    temporalBoundsCache.set(el, bounds);
-    return bounds;
+    return { startMs: -Infinity, endMs: Infinity };
   }
 
-  // Compute bounds
+  // Compute bounds fresh each time
   const temporal = el as TemporalElement;
   let startMs = temporal.startTimeMs ?? -Infinity;
   let endMs = temporal.endTimeMs ?? Infinity;
 
-  // If end <= start, treat as always visible
+  // If end <= start, treat as always visible (element hasn't computed duration yet)
   if (endMs <= startMs) {
     startMs = -Infinity;
     endMs = Infinity;
   }
 
-  const bounds = { startMs, endMs };
-  temporalBoundsCache.set(el, bounds);
-  return bounds;
+  return { startMs, endMs };
 }
 
 /**

@@ -721,14 +721,18 @@ function computeVisibilityDelta(
 
 /**
  * Build visible set by recursive traversal with bounds checking.
- * Simpler and more reliable than interval index for complex hierarchies.
+ * Queries fresh bounds from source elements each time - bounds are computed
+ * dynamically by timegroups based on composition mode.
  */
 function buildVisibleSetRecursive(
   node: CloneNode,
   timeMs: number,
   visibleSet: Set<CloneNode>,
 ): void {
-  const { bounds, children } = node;
+  const { children, source } = node;
+  
+  // Get fresh bounds from source element (not cached - timegroup bounds are dynamic)
+  const bounds = getTemporalBounds(source);
   
   // Check if this node is visible at current time
   const isVisible = timeMs >= bounds.startMs && timeMs <= bounds.endMs;
@@ -795,10 +799,10 @@ function syncNodeWithDelta(
   const isVisible = visibleSet.has(node);
   
   if (!isVisible) {
-    // Node is not visible
+    // Node is not visible - ALWAYS set display:none
+    // This handles both "just became hidden" and "initial build with node outside time range"
+    node.clone.style.display = "none";
     if (delta.nowHidden.has(node)) {
-      // Just became hidden - need to set display:none
-      node.clone.style.display = "none";
       syncStats.nodesHidden++;
     }
     // Already hidden nodes: skip (don't even recurse to children)
