@@ -16,6 +16,17 @@ import { EFTemporal } from "./EFTemporal.js";
 import type { EFVideo } from "./EFVideo.js";
 import { TargetController } from "./TargetController.ts";
 
+// Debug logging for waveform rendering
+const WAVEFORM_DEBUG = true;
+let waveformRenderCount = 0;
+
+function dataFingerprint(data: Uint8Array | null): string {
+  if (!data) return "null";
+  // Simple fingerprint: sum of first 8 values + length
+  const sum = data.slice(0, 8).reduce((a, b) => a + b, 0);
+  return `len=${data.length},sum8=${sum}`;
+}
+
 @customElement("ef-waveform")
 export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements FrameRenderable {
   static styles = css`
@@ -115,6 +126,7 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
     this.mutationObserver = new MutationObserver((mutationsList) => {
       for (const mutation of mutationsList) {
         if (mutation.type === "attributes") {
+          if (WAVEFORM_DEBUG) console.log(`[Waveform id=${this.id || 'none'}] frameTask.run() triggered by MutationObserver (attr: ${mutation.attributeName})`);
           this.frameTask.run().catch(() => {
             // AbortErrors are expected during cleanup
           });
@@ -127,6 +139,7 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
 
     if (!EF_RENDERING()) {
       this.styleObserver = new CSSStyleObserver(["color"], () => {
+        if (WAVEFORM_DEBUG) console.log(`[Waveform id=${this.id || 'none'}] frameTask.run() triggered by CSSStyleObserver`);
         this.frameTask.run().catch(() => {
           // AbortErrors are expected during cleanup
         });
@@ -146,6 +159,7 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
   private resizeCanvas() {
     this.ctx = this.initCanvas();
     if (this.ctx) {
+      if (WAVEFORM_DEBUG) console.log(`[Waveform id=${this.id || 'none'}] frameTask.run() triggered by resizeCanvas`);
       this.frameTask.run().catch(() => {
         // AbortErrors are expected during cleanup
       }); // Redraw the canvas
@@ -532,6 +546,8 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
   async prepareFrame(timeMs: number, signal: AbortSignal): Promise<void> {
     if (!this.targetElement) return;
 
+    if (WAVEFORM_DEBUG) console.log(`[Waveform id=${this.id || 'none'} target=${this.target}] prepareFrame START timeMs=${timeMs}`);
+
     // Get audio analysis data directly from target
     const [frequencyData, timeDomainData] = await Promise.all([
       this.targetElement.getFrequencyData(timeMs, signal),
@@ -544,6 +560,8 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
     this.#frequencyData = frequencyData;
     this.#timeDomainData = timeDomainData;
     this.#dataTimeMs = timeMs;
+
+    if (WAVEFORM_DEBUG) console.log(`[Waveform id=${this.id || 'none'} target=${this.target}] prepareFrame END timeMs=${timeMs} freq=${dataFingerprint(frequencyData)}`);
   }
 
   /**
@@ -560,6 +578,13 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
     const frequencyData = this.#frequencyData;
     const byteTimeData = this.#timeDomainData;
     if (!frequencyData || !byteTimeData) return;
+
+    waveformRenderCount++;
+    const renderNum = waveformRenderCount;
+    if (WAVEFORM_DEBUG) {
+      const stack = new Error().stack?.split('\n').slice(2, 6).join('\n') || '';
+      console.log(`[Waveform id=${this.id || 'none'} target=${this.target}] renderFrame #${renderNum} timeMs=${_timeMs} cachedTimeMs=${this.#dataTimeMs} freq=${dataFingerprint(frequencyData)}\n${stack}`);
+    }
 
     ctx.save();
     if (this.color === "currentColor") {
@@ -600,6 +625,7 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
     }
 
     ctx.restore();
+    if (WAVEFORM_DEBUG) console.log(`[Waveform id=${this.id || 'none'}] renderFrame #${renderNum} DONE`);
   }
 
   // ============================================================================
@@ -620,6 +646,7 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
     if (changedProperties.size > 0) {
       this.#renderVersion++;
       // Request a new frame
+      if (WAVEFORM_DEBUG) console.log(`[Waveform id=${this.id || 'none'}] frameTask.run() triggered by updated() changedProps=[${[...changedProperties.keys()].join(",")}] ownCurrentTimeMs=${this.ownCurrentTimeMs}`);
       this.frameTask.run().catch(() => {
         // AbortErrors are expected during cleanup
       });
