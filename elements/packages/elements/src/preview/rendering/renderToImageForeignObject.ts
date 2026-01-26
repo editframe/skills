@@ -14,6 +14,21 @@ let _xmlSerializer: XMLSerializer | null = null;
 let _textEncoder: TextEncoder | null = null;
 let _wrapperElement: HTMLDivElement | null = null;
 
+/**
+ * Check if an element or any of its ancestors has display:none.
+ * Used to skip encoding hidden canvases.
+ */
+function isElementHidden(element: Element): boolean {
+  let current: Element | null = element;
+  while (current) {
+    if (current instanceof HTMLElement && current.style.display === "none") {
+      return true;
+    }
+    current = current.parentElement;
+  }
+  return false;
+}
+
 // Pre-computed SVG constants
 const SVG_PREFIX = '<svg xmlns="http://www.w3.org/2000/svg" width="';
 const SVG_HEIGHT_PREFIX = '" height="';
@@ -52,10 +67,11 @@ export async function serializeToSvgDataUri(
   const canvasRestoreInfo: CanvasRestoreInfo[] = [];
   
   // Phase 1: Encode canvases to data URLs (parallel)
-  // Pass renderContext and sourceMap for caching optimization
+  // Filter out hidden canvases - they have display:none and won't render anyway
   const canvasStart = performance.now();
-  const canvases = Array.from(container.querySelectorAll("canvas"));
-  const encodedResults = await encodeCanvasesInParallel(canvases, { 
+  const allCanvases = Array.from(container.querySelectorAll("canvas"));
+  const visibleCanvases = allCanvases.filter(canvas => !isElementHidden(canvas));
+  const encodedResults = await encodeCanvasesInParallel(visibleCanvases, { 
     scale: canvasScale,
     renderContext,
     sourceMap,

@@ -12,6 +12,21 @@ import { encodeCanvasesInParallel } from "../encoding/canvasEncoder.js";
 import { defaultProfiler } from "../RenderProfiler.js";
 
 /**
+ * Check if an element or any of its ancestors has display:none.
+ * Used to skip encoding hidden canvases.
+ */
+function isElementHidden(element: Element): boolean {
+  let current: Element | null = element;
+  while (current) {
+    if (current instanceof HTMLElement && current.style.display === "none") {
+      return true;
+    }
+    current = current.parentElement;
+  }
+  return false;
+}
+
+/**
  * Load an image from a data URI. Returns a Promise that resolves when loaded.
  */
 export function loadImageFromDataUri(dataUri: string): Promise<HTMLImageElement> {
@@ -57,11 +72,13 @@ export async function renderToImage(
   // Fallback: SVG foreignObject serialization
   // Clone the container first (don't modify original)
   // Note: cloneNode doesn't copy canvas pixels, so we encode from original canvases
-  const originalCanvases = Array.from(container.querySelectorAll("canvas"));
+  const allOriginalCanvases = Array.from(container.querySelectorAll("canvas"));
+  // Filter out hidden canvases - they have display:none and won't render anyway
+  const originalCanvases = allOriginalCanvases.filter(canvas => !isElementHidden(canvas));
   const clone = container.cloneNode(true) as HTMLElement;
   const clonedCanvases = clone.querySelectorAll("canvas");
   
-  // Encode original canvases and map to cloned elements
+  // Encode visible original canvases and map to cloned elements
   // Pass through renderContext and sourceMap for caching
   const canvasScale = options?.canvasScale ?? 1;
   const canvasStart = performance.now();
