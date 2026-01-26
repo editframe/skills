@@ -290,23 +290,20 @@ function determineCurrentTimeSource(
   return { source: "local", timeMs };
 }
 
-// Use interface instead of declare class to avoid TypeScript declaration generation bug
-// See: https://github.com/microsoft/TypeScript/issues/58020
-// Declare class getters trigger the bug when generating .d.ts files
-export interface TemporalMixinInterface {
+export declare class TemporalMixinInterface {
   playbackController?: PlaybackController;
   playing: boolean;
   loop: boolean;
   play(): void;
   pause(): void;
 
-  readonly hasOwnDuration: boolean;
+  get hasOwnDuration(): boolean;
   /**
    * Whether the element has a duration set as an attribute.
    */
-  readonly hasExplicitDuration: boolean;
+  get hasExplicitDuration(): boolean;
 
-  readonly sourceStartMs: number;
+  get sourceStartMs(): number;
 
   /**
    * Used to trim the start of the media.
@@ -317,7 +314,7 @@ export interface TemporalMixinInterface {
    *
    * @domAttribute "trimstart"
    */
-  trimStartMs: number | undefined;
+  get trimStartMs(): number | undefined;
 
   /**
    * Used to trim the end of the media.
@@ -328,10 +325,12 @@ export interface TemporalMixinInterface {
    *
    * @domAttribute "trimend"
    */
-  trimEndMs: number;
+  get trimEndMs(): number;
 
-  trimstart: string | undefined;
-  trimend: string | undefined;
+  set trimStartMs(value: number | undefined);
+  set trimEndMs(value: number | undefined);
+  set trimstart(value: string | undefined);
+  set trimend(value: string | undefined);
 
   /**
    * The source in time of the element.
@@ -352,7 +351,7 @@ export interface TemporalMixinInterface {
    *
    * @domAttribute "sourcein"
    */
-  sourceInMs: number | undefined;
+  get sourceInMs(): number | undefined;
 
   /**
    * The source out time of the element.
@@ -375,19 +374,21 @@ export interface TemporalMixinInterface {
    *
    * @domAttribute "sourceout"
    */
-  sourceOutMs: number | undefined;
+  get sourceOutMs(): number | undefined;
 
-  sourcein: string | undefined;
-  sourceout: string | undefined;
+  set sourceInMs(value: number | undefined);
+  set sourceOutMs(value: number | undefined);
+  set sourcein(value: string | undefined);
+  set sourceout(value: string | undefined);
 
   /**
    * @domAttribute "duration"
    */
-  readonly durationMs: number;
+  get durationMs(): number;
 
-  readonly explicitDurationMs: number | undefined;
+  get explicitDurationMs(): number | undefined;
 
-  readonly intrinsicDurationMs: number | undefined;
+  get intrinsicDurationMs(): number | undefined;
 
   /**
    * The start time of the element within its root timegroup in milliseconds.
@@ -403,7 +404,7 @@ export interface TemporalMixinInterface {
    * If the parent time group is in `contain` or `fixed` mode, the start time will be
    * the start time of the parent time group plus the offset of the media element.
    */
-  readonly startTimeMs: number;
+  get startTimeMs(): number;
   /**
    * The end time of the element within its root timegroup in milliseconds.
    *
@@ -414,7 +415,7 @@ export interface TemporalMixinInterface {
    * If the media element has been trimmed, its end time will be calculated according it
    * its trimmed duration, not its original duration.
    */
-  readonly endTimeMs: number;
+  get endTimeMs(): number;
   /**
    * The start time of the element within its parent timegroup in milliseconds.
    *
@@ -422,7 +423,7 @@ export interface TemporalMixinInterface {
    * is contained within. Unless the media element has been given any kind of specific offset
    * it is common for this time to be zero.
    */
-  readonly startTimeWithinParentMs: number;
+  get startTimeWithinParentMs(): number;
 
   /**
    * The current time of the element in milliseconds.
@@ -433,14 +434,15 @@ export interface TemporalMixinInterface {
    * This is suitable for determining the percentage of the media that has been
    * played.
    */
-  readonly ownCurrentTimeMs: number;
+  get ownCurrentTimeMs(): number;
 
   /**
    * Element's current time for progress calculation.
    * For timegroups: their timeline currentTimeMs
    * For other temporal elements: their ownCurrentTimeMs
    */
-  currentTimeMs: number;
+  get currentTimeMs(): number;
+  set currentTimeMs(value: number);
   /**
    * The current time of the element in milliseconds, adjusted for trimming.
    *
@@ -459,9 +461,10 @@ export interface TemporalMixinInterface {
    *          |_
    *            ownCurrentTimeMs === 0s
    */
-  readonly currentSourceTimeMs: number;
+  get currentSourceTimeMs(): number;
 
-  duration: string;
+  set duration(value: string);
+  get duration(): string;
 
   /**
    * The offset of the element within its parent timegroup in milliseconds.
@@ -479,7 +482,8 @@ export interface TemporalMixinInterface {
    *
    * @domAttribute "offset"
    */
-  offset: string;
+  set offset(value: string);
+  get offset(): string;
 
   /**
    * A convenience property for getting the nearest containing timegroup of the media element.
