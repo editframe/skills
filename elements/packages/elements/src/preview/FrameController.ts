@@ -415,7 +415,7 @@ export interface FrameTask {
   /**
    * Promise that resolves when the current task completes.
    */
-  readonly taskComplete: Promise<void>;
+  taskComplete: Promise<void>;
 }
 
 /**
@@ -472,7 +472,7 @@ export function createFrameTaskWrapper(
     return 0;
   });
 
-  return {
+  const taskObj: FrameTask = {
     run: () => {
       const abortController = new AbortController();
       const timeMs = getTimeMs();
@@ -490,10 +490,10 @@ export function createFrameTaskWrapper(
         }
       })();
       
+      taskObj.taskComplete = frameTaskPromise;
       return frameTaskPromise;
     },
-    get taskComplete() {
-      return frameTaskPromise;
-    },
+    taskComplete: Promise.resolve(),
   };
+  return taskObj;
 }

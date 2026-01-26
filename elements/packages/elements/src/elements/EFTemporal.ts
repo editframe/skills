@@ -1115,15 +1115,15 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
     
     frameTask = (() => {
       const self = this;
-      return {
+      const taskObj: { run(): void | Promise<void>; taskComplete: Promise<void> } = {
         run: () => {
           self.#frameTaskPromise = self.updateComplete.then(() => {});
+          taskObj.taskComplete = self.#frameTaskPromise;
           return self.#frameTaskPromise;
         },
-        get taskComplete() {
-          return self.#frameTaskPromise;
-        },
+        taskComplete: Promise.resolve(),
       };
+      return taskObj;
     })();
 
     didBecomeRoot() {

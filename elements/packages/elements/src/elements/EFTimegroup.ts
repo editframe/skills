@@ -2201,7 +2201,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
   
   frameTask = (() => {
     const self = this;
-    return {
+    const taskObj: { run(): void | Promise<void>; taskComplete: Promise<void> } = {
       run: () => {
         // Abort any in-flight task
         self.#frameTaskAbortController?.abort();
@@ -2209,12 +2209,12 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
         const signal = self.#frameTaskAbortController.signal;
         
         self.#frameTaskPromise = self.#runFrameTask(signal);
+        taskObj.taskComplete = self.#frameTaskPromise;
         return self.#frameTaskPromise;
       },
-      get taskComplete() {
-        return self.#frameTaskPromise;
-      },
+      taskComplete: Promise.resolve(),
     };
+    return taskObj;
   })();
 
   async #runFrameTask(signal: AbortSignal): Promise<void> {
@@ -2297,7 +2297,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
   
   seekTask = (() => {
     const self = this;
-    return {
+    const taskObj: { run(): void | Promise<number | undefined>; taskComplete: Promise<number | undefined> } = {
       run: () => {
         // Abort any in-flight task
         self.#seekTaskAbortController?.abort();
@@ -2306,12 +2306,12 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
         
         const targetTime = self.#pendingSeekTime ?? self.#currentTime;
         self.#seekTaskPromise = self.#runSeekTask(targetTime, signal);
+        taskObj.taskComplete = self.#seekTaskPromise;
         return self.#seekTaskPromise;
       },
-      get taskComplete() {
-        return self.#seekTaskPromise;
-      },
+      taskComplete: Promise.resolve(undefined),
     };
+    return taskObj;
   })();
 
   async #runSeekTask(targetTime: number | undefined, signal: AbortSignal): Promise<number | undefined> {
