@@ -73,27 +73,39 @@ export async function renderToImage(
   // Clone the container first (don't modify original)
   // Note: cloneNode doesn't copy canvas pixels, so we encode from original canvases
   const allOriginalCanvases = Array.from(container.querySelectorAll("canvas"));
-  // Filter out hidden canvases - they have display:none and won't render anyway
-  const originalCanvases = allOriginalCanvases.filter(canvas => !isElementHidden(canvas));
   const clone = container.cloneNode(true) as HTMLElement;
-  const clonedCanvases = clone.querySelectorAll("canvas");
+  const allClonedCanvases = Array.from(clone.querySelectorAll("canvas"));
   
-  // Encode visible original canvases and map to cloned elements
+  // Filter out hidden canvases - they have display:none and won't render anyway
+  // Keep track of indices to match with cloned canvases
+  const visibleIndices: number[] = [];
+  const visibleCanvases: HTMLCanvasElement[] = [];
+  for (let i = 0; i < allOriginalCanvases.length; i++) {
+    const canvas = allOriginalCanvases[i]!;
+    if (!isElementHidden(canvas)) {
+      visibleIndices.push(i);
+      visibleCanvases.push(canvas);
+    }
+  }
+  
+  // Encode visible original canvases
   // Pass through renderContext and sourceMap for caching
   const canvasScale = options?.canvasScale ?? 1;
   const canvasStart = performance.now();
-  const encodedResults = await encodeCanvasesInParallel(originalCanvases, { 
+  const encodedResults = await encodeCanvasesInParallel(visibleCanvases, { 
     scale: canvasScale,
     renderContext: options?.renderContext,
     sourceMap: options?.sourceMap,
   });
   
-  for (let i = 0; i < originalCanvases.length; i++) {
-    const srcCanvas = originalCanvases[i];
-    const dstCanvas = clonedCanvases[i];
+  // Map encoded results to corresponding cloned canvases using tracked indices
+  for (let j = 0; j < visibleCanvases.length; j++) {
+    const srcCanvas = visibleCanvases[j]!;
+    const originalIndex = visibleIndices[j]!;
+    const dstCanvas = allClonedCanvases[originalIndex];
     const encoded = encodedResults.find((r) => r.canvas === srcCanvas);
     
-    if (!srcCanvas || !dstCanvas || !encoded) continue;
+    if (!dstCanvas || !encoded) continue;
     
     try {
       const img = document.createElement("img");
