@@ -1,13 +1,13 @@
-import { Task } from "@lit/task";
+import { TaskStatus } from "@lit/task";
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { createRef, ref } from "lit/directives/ref.js";
-import { EF_INTERACTIVE } from "../EF_INTERACTIVE.js";
 import { TWMixin } from "../gui/TWMixin.js";
+import type { FrameRenderable, FrameState } from "../preview/FrameController.js";
 import { EFMedia } from "./EFMedia.js";
 
 @customElement("ef-audio")
-export class EFAudio extends TWMixin(EFMedia) {
+export class EFAudio extends TWMixin(EFMedia) implements FrameRenderable {
   /**
    * EFAudio only requires audio tracks - skip video track validation
    * to avoid unnecessary network requests to transcoding service.
@@ -42,87 +42,85 @@ export class EFAudio extends TWMixin(EFMedia) {
     return html`<audio ${ref(this.audioElementRef)}></audio>`;
   }
 
-  frameTask = new Task(this, {
-    autoRun: EF_INTERACTIVE,
-    args: () =>
-      [
-        this.audioBufferTask.status,
-        this.audioSeekTask.status,
-        this.audioSegmentFetchTask.status,
-        this.mediaEngineTask.status,
-      ] as const,
-    onError: (error) => {
-      // CRITICAL: Attach .catch() handler to taskComplete BEFORE the promise is rejected.
-      // This prevents unhandled rejection when hostUpdate() triggers _performTask() without awaiting.
-      this.frameTask.taskComplete.catch(() => {});
-      
-      // Don't log AbortErrors - these are expected when tasks are cancelled
-      const isAbortError = 
-        (error instanceof DOMException && error.name === "AbortError") ||
-        (error instanceof Error && (
-          error.name === "AbortError" ||
-          error.message?.includes("signal is aborted") ||
-          error.message?.includes("The user aborted a request")
-        ));
-      
-      if (isAbortError) {
-        return;
-      }
-      
-      console.error("EFAudio frameTask error", error);
+  /**
+   * @deprecated Use FrameRenderable methods (prepareFrame, renderFrame) via FrameController instead.
+   * This is a compatibility wrapper that delegates to the new system.
+   */
+  frameTask = {
+    run: async () => {
+      const abortController = new AbortController();
+      const timeMs = this.desiredSeekTimeMs;
+      await this.prepareFrame(timeMs, abortController.signal);
+      this.renderFrame(timeMs);
     },
-    task: async ([_audioBufferStatus, _audioSeekStatus, _audioSegmentFetchStatus, _mediaEngineStatus], { signal }) => {
-      // Wrap all taskComplete awaits in try/catch to handle AbortErrors
-      try {
-        await this.mediaEngineTask.taskComplete;
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") {
-          signal?.throwIfAborted();
-          return;
+    taskComplete: Promise.resolve(),
+  };
+
+  // ============================================================================
+  // FrameRenderable Implementation
+  // Centralized frame control - replaces distributed Lit Task system
+  // ============================================================================
+
+  /**
+   * Query readiness state for a given time.
+   * @implements FrameRenderable
+   */
+  getFrameState(_timeMs: number): FrameState {
+    // Check if all audio tasks are complete
+    const allTasksComplete = 
+      this.mediaEngineTask.status === TaskStatus.COMPLETE &&
+      this.audioSegmentFetchTask.status === TaskStatus.COMPLETE &&
+      this.audioSeekTask.status === TaskStatus.COMPLETE &&
+      this.audioBufferTask.status === TaskStatus.COMPLETE;
+
+    return {
+      needsPreparation: !allTasksComplete,
+      isReady: allTasksComplete,
+      priority: 3, // Audio renders after video and captions
+    };
+  }
+
+  /**
+   * Async preparation - waits for audio tasks to complete.
+   * @implements FrameRenderable
+   */
+  async prepareFrame(_timeMs: number, signal: AbortSignal): Promise<void> {
+    // Wait for all audio tasks in sequence
+    const tasks = [
+      this.mediaEngineTask,
+      this.audioSegmentFetchTask,
+      this.audioSeekTask,
+      this.audioBufferTask,
+    ];
+
+    for (const task of tasks) {
+      if (task.status !== TaskStatus.COMPLETE) {
+        try {
+          await task.taskComplete;
+        } catch (error) {
+          if (error instanceof DOMException && error.name === "AbortError") {
+            signal.throwIfAborted();
+            return;
+          }
+          throw error;
         }
-        throw error;
       }
-      signal?.throwIfAborted();
-      
-      try {
-        await this.audioSegmentFetchTask.taskComplete;
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") {
-          signal?.throwIfAborted();
-          return;
-        }
-        throw error;
-      }
-      signal?.throwIfAborted();
-      
-      try {
-        await this.audioSeekTask.taskComplete;
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") {
-          signal?.throwIfAborted();
-          return;
-        }
-        throw error;
-      }
-      signal?.throwIfAborted();
-      
-      try {
-        await this.audioBufferTask.taskComplete;
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") {
-          signal?.throwIfAborted();
-          return;
-        }
-        throw error;
-      }
-      signal?.throwIfAborted();
-      // REMOVED: this.rootTimegroup?.requestUpdate() was causing infinite update loops.
-      // When EFAudio's frameTask ran, it would trigger root to update, which triggered
-      // OwnCurrentTimeController.hostUpdated on all children, which triggered more
-      // frameTask runs, creating an infinite cycle.
-      // The root timegroup already updates when currentTime changes - no need to force it here.
-    },
-  });
+      signal.throwIfAborted();
+    }
+  }
+
+  /**
+   * Synchronous render - audio plays via HTMLAudioElement, no explicit render needed.
+   * @implements FrameRenderable
+   */
+  renderFrame(_timeMs: number): void {
+    // Audio playback is handled by the browser's HTMLAudioElement
+    // No explicit rendering action needed
+  }
+
+  // ============================================================================
+  // End FrameRenderable Implementation
+  // ============================================================================
 
   /**
    * Legacy getter for fragment index task (maps to audioSegmentIdTask)

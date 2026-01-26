@@ -1,8 +1,9 @@
-import { Task } from "@lit/task";
+import { Task, TaskStatus } from "@lit/task";
 import { css, html, LitElement, type PropertyValueMap } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { createRef, ref } from "lit/directives/ref.js";
 import { EF_INTERACTIVE } from "../EF_INTERACTIVE.js";
+import type { FrameRenderable, FrameState } from "../preview/FrameController.js";
 import { EFSourceMixin } from "./EFSourceMixin.js";
 import { EFTemporal } from "./EFTemporal.js";
 import { FetchMixin } from "./FetchMixin.js";
@@ -12,7 +13,7 @@ export class EFImage extends EFTemporal(
   EFSourceMixin(FetchMixin(LitElement), {
     assetType: "image_files",
   }),
-) {
+) implements FrameRenderable {
   static styles = [
     css`
       :host {
@@ -177,41 +178,70 @@ export class EFImage extends EFTemporal(
     },
   });
 
-  frameTask = new Task(this, {
-    autoRun: EF_INTERACTIVE,
-    args: () => [this.fetchImage.status] as const,
-    onError: (error) => {
-      // CRITICAL: Attach .catch() handler to prevent unhandled rejection
-      this.frameTask.taskComplete.catch(() => {});
-      
-      // Don't log AbortErrors - these are expected when element is disconnected
-      const isAbortError = 
-        error instanceof DOMException && error.name === "AbortError" ||
-        error instanceof Error && (
-          error.name === "AbortError" ||
-          error.message?.includes("signal is aborted") ||
-          error.message?.includes("The user aborted a request")
-        );
-      
-      if (isAbortError) {
-        return;
-      }
-      console.error("EFImage frameTask error", error);
+  /**
+   * @deprecated Use FrameRenderable methods (prepareFrame, renderFrame) via FrameController instead.
+   * This is a compatibility wrapper that delegates to the new system.
+   */
+  frameTask = {
+    run: async () => {
+      const abortController = new AbortController();
+      const timeMs = this.ownCurrentTimeMs;
+      await this.prepareFrame(timeMs, abortController.signal);
+      this.renderFrame(timeMs);
     },
-    task: async ([_status], { signal }) => {
+    taskComplete: Promise.resolve(),
+  };
+
+  // ============================================================================
+  // FrameRenderable Implementation
+  // Centralized frame control - replaces distributed Lit Task system
+  // ============================================================================
+
+  /**
+   * Query readiness state for a given time.
+   * @implements FrameRenderable
+   */
+  getFrameState(_timeMs: number): FrameState {
+    // Image is ready when fetchImage task is complete
+    const isComplete = this.fetchImage.status === TaskStatus.COMPLETE;
+
+    return {
+      needsPreparation: !isComplete,
+      isReady: isComplete,
+      priority: 5, // Images render with low priority (usually static)
+    };
+  }
+
+  /**
+   * Async preparation - waits for image to load.
+   * @implements FrameRenderable
+   */
+  async prepareFrame(_timeMs: number, signal: AbortSignal): Promise<void> {
+    if (this.fetchImage.status !== TaskStatus.COMPLETE) {
       try {
         await this.fetchImage.taskComplete;
       } catch (error) {
-        // Handle AbortError from fetchImage gracefully
         if (error instanceof DOMException && error.name === "AbortError") {
-          signal?.throwIfAborted();
+          signal.throwIfAborted();
           return;
         }
         throw error;
       }
-      signal?.throwIfAborted();
-    },
-  });
+    }
+    signal.throwIfAborted();
+  }
+
+  /**
+   * Synchronous render - image is already displayed via img element or canvas.
+   * @implements FrameRenderable
+   */
+  renderFrame(_timeMs: number): void {
+    // Image is already displayed - no explicit render action needed
+  }
+
+  // ============================================================================
+  // End FrameRenderable Implementation
+  // ============================================================================
 
   protected updated(changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
     super.updated(changedProperties);

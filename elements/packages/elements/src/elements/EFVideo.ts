@@ -1,12 +1,13 @@
-import { Task } from "@lit/task";
 import { context, trace } from "@opentelemetry/api";
 import debug from "debug";
 import { css, html, type PropertyValueMap } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { createRef, ref } from "lit/directives/ref.js";
+import type { VideoSample } from "mediabunny";
 import { DelayedLoadingState } from "../DelayedLoadingState.js";
 import { TWMixin } from "../gui/TWMixin.js";
-import { withSpan, withSpanSync } from "../otel/tracingHelpers.js";
+import { withSpanSync } from "../otel/tracingHelpers.js";
+import type { FrameRenderable, FrameState } from "../preview/FrameController.js";
 import { makeScrubVideoBufferTask } from "./EFMedia/videoTasks/makeScrubVideoBufferTask.ts";
 import { makeScrubVideoInitSegmentFetchTask } from "./EFMedia/videoTasks/makeScrubVideoInitSegmentFetchTask.ts";
 import { makeScrubVideoInputTask } from "./EFMedia/videoTasks/makeScrubVideoInputTask.ts";
@@ -55,7 +56,7 @@ export interface ScrubSegmentLoadingDetail {
 }
 
 @customElement("ef-video")
-export class EFVideo extends TWMixin(EFMedia) {
+export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
   static styles = [
     css`
       :host {
@@ -151,10 +152,218 @@ export class EFVideo extends TWMixin(EFMedia) {
   scrubVideoSegmentFetchTask = makeScrubVideoSegmentFetchTask(this);
   scrubVideoInitSegmentFetchTask = makeScrubVideoInitSegmentFetchTask(this);
 
+  // ============================================================================
+  // FrameRenderable Implementation
+  // Centralized frame control - replaces distributed Lit Task system
+  // ============================================================================
+
+  /**
+   * Cached video sample for the current frame.
+   * Set by prepareFrame(), consumed by renderFrame().
+   */
+  #cachedVideoSample: VideoSample | undefined = undefined;
+  #cachedVideoSampleTimeMs: number | undefined = undefined;
+
+  /**
+   * Query readiness state for a given time.
+   * @implements FrameRenderable
+   */
+  getFrameState(timeMs: number): FrameState {
+    // Check if we have a cached sample for this exact time
+    const hasCache = 
+      this.#cachedVideoSample !== undefined && 
+      this.#cachedVideoSampleTimeMs === timeMs;
+
+    return {
+      needsPreparation: !hasCache,
+      isReady: hasCache,
+      priority: 1, // Video renders first (lower priority number = earlier)
+    };
+  }
+
+  /**
+   * Async preparation - seeks video and caches the sample.
+   * @implements FrameRenderable
+   */
+  async prepareFrame(timeMs: number, signal: AbortSignal): Promise<void> {
+    // Import dynamically to avoid circular dependency
+    const { getLatestMediaEngine } = await import("./EFMedia/tasks/makeMediaEngineTask.js");
+    
+    signal.throwIfAborted();
+    
+    const mediaEngine = await getLatestMediaEngine(this, signal);
+    if (!mediaEngine) {
+      this.#cachedVideoSample = undefined;
+      this.#cachedVideoSampleTimeMs = timeMs;
+      return;
+    }
+    
+    signal.throwIfAborted();
+    
+    // Fetch video sample using the same logic as unifiedVideoSeekTask
+    const videoSample = await this.#fetchVideoSampleForFrame(mediaEngine, timeMs, signal);
+    
+    signal.throwIfAborted();
+    
+    // Cache the result
+    this.#cachedVideoSample = videoSample;
+    this.#cachedVideoSampleTimeMs = timeMs;
+  }
+
+  /**
+   * Synchronous render - paints cached video sample to canvas.
+   * @implements FrameRenderable
+   */
+  renderFrame(timeMs: number): void {
+    // Use cached sample if available for this time
+    if (this.#cachedVideoSampleTimeMs === timeMs && this.#cachedVideoSample) {
+      const videoFrame = this.#cachedVideoSample.toVideoFrame();
+      try {
+        this.displayFrame(videoFrame, timeMs);
+      } finally {
+        videoFrame.close();
+      }
+    }
+    
+    // Update animations if not in parent timegroup (same as frameTask behavior)
+    if (!this.parentTimegroup) {
+      updateAnimations(this);
+    }
+  }
+
+  /**
+   * Fetch video sample for a given time.
+   * Extracted from unifiedVideoSeekTask for direct use by FrameRenderable.
+   */
+  async #fetchVideoSampleForFrame(
+    mediaEngine: any,
+    desiredSeekTimeMs: number,
+    signal: AbortSignal
+  ): Promise<VideoSample | undefined> {
+    // FIRST: Check if main quality content is already cached
+    const mainRendition = mediaEngine.videoRendition;
+    if (mainRendition) {
+      const mainSegmentId = mediaEngine.computeSegmentId(
+        desiredSeekTimeMs,
+        mainRendition,
+      );
+      if (
+        mainSegmentId !== undefined &&
+        mediaEngine.isSegmentCached(mainSegmentId, mainRendition)
+      ) {
+        return this.#getMainVideoSampleForFrame(mediaEngine, desiredSeekTimeMs, signal);
+      }
+    }
+
+    // SECOND: Fetch main video path (scrub track disabled)
+    return this.#getMainVideoSampleForFrame(mediaEngine, desiredSeekTimeMs, signal);
+  }
+
+  /**
+   * Get main video sample for a given time.
+   * Adapted from getMainVideoSample in makeUnifiedVideoSeekTask.
+   */
+  async #getMainVideoSampleForFrame(
+    mediaEngine: any,
+    desiredSeekTimeMs: number,
+    signal: AbortSignal
+  ): Promise<VideoSample | undefined> {
+    const videoRendition = mediaEngine.getVideoRendition?.() ?? mediaEngine.videoRendition;
+    if (!videoRendition) {
+      return undefined;
+    }
+
+    const segmentId = mediaEngine.computeSegmentId(desiredSeekTimeMs, videoRendition);
+    if (segmentId === undefined) {
+      return undefined;
+    }
+
+    // Get cached main video input or create new one
+    const mainInput = await captureMainVideoInputCache.getOrCreateInput(
+      mediaEngine.src,
+      segmentId,
+      videoRendition.id,
+      async () => {
+        // Fetch main video segment
+        let initSegment: ArrayBuffer | undefined;
+        let mediaSegment: ArrayBuffer | undefined;
+        
+        try {
+          [initSegment, mediaSegment] = await Promise.all([
+            mediaEngine.fetchInitSegment(videoRendition, signal),
+            mediaEngine.fetchMediaSegment(segmentId, videoRendition, signal),
+          ]);
+        } catch (error) {
+          // If aborted, re-throw to propagate cancellation
+          if (error instanceof DOMException && error.name === "AbortError") {
+            throw error;
+          }
+          // Return undefined for expected errors
+          if (
+            error instanceof Error &&
+            (error.message.includes("401") ||
+              error.message.includes("UNAUTHORIZED") ||
+              error.message.includes("Failed to fetch") ||
+              error.message.includes("File not found") ||
+              error.message.includes("Media segment not found") ||
+              error.message.includes("Init segment not found") ||
+              error.message.includes("Track not found"))
+          ) {
+            return undefined;
+          }
+          throw error;
+        }
+
+        if (!initSegment || !mediaSegment) {
+          return undefined;
+        }
+        signal.throwIfAborted();
+
+        // Create combined blob and BufferedSeekingInput
+        const combinedBlob = new Blob([initSegment, mediaSegment]);
+        signal.throwIfAborted();
+        
+        const arrayBuffer = await combinedBlob.arrayBuffer();
+        signal.throwIfAborted();
+
+        const { BufferedSeekingInput } = await import("./EFMedia/BufferedSeekingInput.js");
+        
+        return new BufferedSeekingInput(
+          arrayBuffer,
+          {
+            videoBufferSize: EFMedia.VIDEO_SAMPLE_BUFFER_SIZE,
+            audioBufferSize: EFMedia.AUDIO_SAMPLE_BUFFER_SIZE,
+            startTimeOffsetMs: videoRendition.startTimeOffsetMs,
+          },
+        );
+      }
+    );
+
+    if (!mainInput) {
+      return undefined;
+    }
+
+    signal.throwIfAborted();
+
+    const videoTrack = await mainInput.getFirstVideoTrack();
+    if (!videoTrack) {
+      return undefined;
+    }
+
+    signal.throwIfAborted();
+
+    // Cast MediaSample to VideoSample (it's a video track, so it's a VideoSample)
+    return mainInput.seek(videoTrack.id, desiredSeekTimeMs) as Promise<VideoSample | undefined>;
+  }
+
+  // ============================================================================
+  // End FrameRenderable Implementation
+  // ============================================================================
+
   /**
    * Delayed loading state manager for user feedback
    */
-  private delayedLoadingState: DelayedLoadingState;
+  #delayedLoadingState: DelayedLoadingState;
 
   /**
    * Loading state for user feedback
@@ -170,7 +379,7 @@ export class EFVideo extends TWMixin(EFMedia) {
     super();
 
     // Initialize delayed loading state with callback to update UI
-    this.delayedLoadingState = new DelayedLoadingState(
+    this.#delayedLoadingState = new DelayedLoadingState(
       250,
       (isLoading, message) => {
         this.setLoadingState(isLoading, null, message);
@@ -220,87 +429,19 @@ export class EFVideo extends TWMixin(EFMedia) {
     return undefined;
   }
 
-  frameTask = new Task(this, {
-    autoRun: false,
-    args: () => [this.desiredSeekTimeMs] as const,
-    onError: (error) => {
-      // CRITICAL: Attach .catch() handler to taskComplete BEFORE the promise is rejected.
-      // This prevents unhandled rejection when hostUpdate() triggers _performTask() without awaiting.
-      this.frameTask.taskComplete.catch(() => {});
-      
-      // Don't log AbortErrors - these are expected when tasks are cancelled
-      const isAbortError = 
-        (error instanceof DOMException && error.name === "AbortError") ||
-        (error instanceof Error && (
-          error.name === "AbortError" ||
-          error.message?.includes("signal is aborted") ||
-          error.message?.includes("The user aborted a request")
-        ));
-      
-      if (isAbortError) {
-        return;
-      }
-      
-      // Only log unexpected errors - expected conditions handled gracefully
-      if (
-        error instanceof Error &&
-        !error.message.includes("Video rendition unavailable") &&
-        !error.message.includes("No valid media source") &&
-        !error.message.includes("Sample not found for time") // Seeking beyond video duration
-      ) {
-        console.error("frameTask error", error);
-      }
+  /**
+   * @deprecated Use FrameRenderable methods (prepareFrame, renderFrame) via FrameController instead.
+   * This is a compatibility wrapper that delegates to the new system.
+   */
+  frameTask = {
+    run: async () => {
+      const abortController = new AbortController();
+      const timeMs = this.desiredSeekTimeMs;
+      await this.prepareFrame(timeMs, abortController.signal);
+      this.renderFrame(timeMs);
     },
-    onComplete: () => {},
-    task: async ([_desiredSeekTimeMs], { signal }) => {
-      const t0 = performance.now();
-
-      await withSpan(
-        "video.frameTask",
-        {
-          elementId: this.id || "unknown",
-          desiredSeekTimeMs: _desiredSeekTimeMs,
-          src: this.src || "none",
-        },
-        undefined,
-        async (span) => {
-          const t1 = performance.now();
-          span.setAttribute("preworkMs", t1 - t0);
-
-          // Attach .catch() to prevent unhandled rejection - errors handled via taskComplete
-          this.unifiedVideoSeekTask.run().catch(() => {});
-          const t2 = performance.now();
-          span.setAttribute("seekRunMs", t2 - t1);
-
-          try {
-            await this.unifiedVideoSeekTask.taskComplete;
-          } catch (error) {
-            // If aborted, check our signal and return early if it's also aborted
-            if (error instanceof DOMException && error.name === "AbortError") {
-              signal?.throwIfAborted();
-              return; // Our signal not aborted, but seek task was - exit gracefully
-            }
-            throw error;
-          }
-          const t3 = performance.now();
-          span.setAttribute("seekAwaitMs", t3 - t2);
-          // Check abort after async operation
-          signal?.throwIfAborted();
-
-          const t4 = performance.now();
-          this.paint(_desiredSeekTimeMs, span);
-          const t5 = performance.now();
-          span.setAttribute("paintMs", t5 - t4);
-
-          if (!this.parentTimegroup) {
-            updateAnimations(this);
-          }
-
-          span.setAttribute("totalFrameMs", t5 - t0);
-        },
-      );
-    },
-  });
+    taskComplete: Promise.resolve(),
+  };
 
   /**
    * Start a delayed loading operation for testing
@@ -310,14 +451,14 @@ export class EFVideo extends TWMixin(EFMedia) {
     message: string,
     options: { background?: boolean } = {},
   ): void {
-    this.delayedLoadingState.startLoading(operationId, message, options);
+    this.#delayedLoadingState.startLoading(operationId, message, options);
   }
 
   /**
    * Clear a delayed loading operation for testing
    */
   clearDelayedLoading(operationId: string): void {
-    this.delayedLoadingState.clearLoading(operationId);
+    this.#delayedLoadingState.clearLoading(operationId);
   }
 
   /**
@@ -1055,7 +1196,7 @@ export class EFVideo extends TWMixin(EFMedia) {
     super.disconnectedCallback();
 
     // Clean up delayed loading state
-    this.delayedLoadingState.clearAllLoading();
+    this.#delayedLoadingState.clearAllLoading();
   }
 
   didBecomeRoot() {

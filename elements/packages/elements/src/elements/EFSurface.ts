@@ -1,12 +1,12 @@
-import { Task } from "@lit/task";
 import { css, html, LitElement } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { createRef, ref } from "lit/directives/ref.js";
 import type { ContextMixinInterface } from "../gui/ContextMixin.ts";
+import type { FrameRenderable, FrameState } from "../preview/FrameController.js";
 import { TargetController } from "./TargetController.ts";
 
 @customElement("ef-surface")
-export class EFSurface extends LitElement {
+export class EFSurface extends LitElement implements FrameRenderable {
   static styles = [
     css`
       :host {
@@ -70,63 +70,76 @@ export class EFSurface extends LitElement {
   }
 
   /**
-   * Minimal integration with EFTimegroup's frame scheduling:
-   * - Waits for the target video element's frameTask to complete (ensuring it painted)
-   * - Copies the target's canvas into this element's canvas
+   * @deprecated Use FrameRenderable methods (prepareFrame, renderFrame) via FrameController instead.
+   * This is a compatibility wrapper that delegates to the new system.
    */
-  frameTask = new Task(this, {
-    autoRun: false,
-    args: () => [this.targetElement] as const,
-    onError: (error) => {
-      // Attach catch to prevent unhandled rejection
-      this.frameTask.taskComplete.catch(() => {});
-      
-      // Don't log AbortErrors - these are expected when element is disconnected
-      const isAbortError = 
-        error instanceof DOMException && error.name === "AbortError" ||
-        error instanceof Error && (
-          error.name === "AbortError" ||
-          error.message?.includes("signal is aborted") ||
-          error.message?.includes("The user aborted a request")
-        );
-      
-      if (isAbortError) {
-        return;
-      }
-      console.error("EFSurface frameTask error", error);
+  frameTask = {
+    run: async () => {
+      const abortController = new AbortController();
+      const timeMs = this.currentTimeMs;
+      await this.prepareFrame(timeMs, abortController.signal);
+      this.renderFrame(timeMs);
     },
-    task: async ([target], { signal }) => {
-      // Check abort before starting
-      signal?.throwIfAborted();
-      
-      if (!target) return;
+    taskComplete: Promise.resolve(),
+  };
 
-      // Ensure the target has painted its frame for this tick
+  // ============================================================================
+  // FrameRenderable Implementation
+  // Centralized frame control - replaces distributed Lit Task system
+  // ============================================================================
+
+  /**
+   * Query readiness state for a given time.
+   * @implements FrameRenderable
+   */
+  getFrameState(_timeMs: number): FrameState {
+    // Surface is ready when target element exists
+    const hasTarget = !!this.targetElement;
+
+    return {
+      needsPreparation: false, // Surface just copies, no async prep needed
+      isReady: hasTarget,
+      priority: 10, // Surface renders last (depends on other elements)
+    };
+  }
+
+  /**
+   * Async preparation - waits for target element's frameTask.
+   * @implements FrameRenderable
+   */
+  async prepareFrame(_timeMs: number, signal: AbortSignal): Promise<void> {
+    if (!this.targetElement) return;
+
+    // Wait for target's frame to be ready
+    const maybeTask = (this.targetElement as any).frameTask;
+    if (maybeTask && typeof maybeTask.run === "function") {
       try {
-        const maybeTask = (target as any).frameTask;
-        if (maybeTask && typeof maybeTask.run === "function") {
-          // Run (idempotent) and then wait for completion
-          maybeTask.run().catch(() => {
-            // AbortErrors are expected during cleanup
-          });
-          await maybeTask.taskComplete;
-          // Check abort after async operation
-          signal?.throwIfAborted();
-        }
+        maybeTask.run().catch(() => {});
+        await maybeTask.taskComplete;
       } catch (error) {
-        // Re-throw AbortError to propagate cancellation
         if (error instanceof DOMException && error.name === "AbortError") {
-          throw error;
+          signal.throwIfAborted();
+          return;
         }
-        // Best-effort; continue to attempt copy for other errors
+        // Best-effort; continue to copy for other errors
       }
+    }
+    signal.throwIfAborted();
+  }
 
-      // Check abort before copy operation
-      signal?.throwIfAborted();
-      
-      this.copyFromTarget(target);
-    },
-  });
+  /**
+   * Synchronous render - copies canvas from target element.
+   * @implements FrameRenderable
+   */
+  renderFrame(_timeMs: number): void {
+    if (this.targetElement) {
+      this.copyFromTarget(this.targetElement);
+    }
+  }
+
+  // ============================================================================
+  // End FrameRenderable Implementation
+  // ============================================================================
 
   protected updated(): void {
     if (this.targetElement) {

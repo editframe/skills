@@ -1,10 +1,11 @@
 import { CSSStyleObserver } from "@bramus/style-observer";
-import { Task } from "@lit/task";
+import { TaskStatus } from "@lit/task";
 import { css, html, LitElement, type PropertyValueMap } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { createRef, type Ref, ref } from "lit/directives/ref.js";
 import { EF_RENDERING } from "../EF_RENDERING.js";
 import { TWMixin } from "../gui/TWMixin.js";
+import type { FrameRenderable, FrameState } from "../preview/FrameController.js";
 import { CrossUpdateController } from "./CrossUpdateController.js";
 import type { EFAudio } from "./EFAudio.js";
 import { EFTemporal } from "./EFTemporal.js";
@@ -12,7 +13,7 @@ import type { EFVideo } from "./EFVideo.js";
 import { TargetController } from "./TargetController.ts";
 
 @customElement("ef-waveform")
-export class EFWaveform extends EFTemporal(TWMixin(LitElement)) {
+export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements FrameRenderable {
   static styles = css`
       :host {
         all: inherit;
@@ -484,85 +485,122 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) {
     ctx.fill(path);
   }
 
-  frameTask = new Task(this, {
-    autoRun: false,
-    args: () => {
-      return [
-        this.targetElement,
-        this.targetElement?.frequencyDataTask.value,
-      ] as const;
+  /**
+   * @deprecated Use FrameRenderable methods (prepareFrame, renderFrame) via FrameController instead.
+   * This is a compatibility wrapper that delegates to the new system.
+   */
+  frameTask = {
+    run: async () => {
+      const abortController = new AbortController();
+      const timeMs = this.ownCurrentTimeMs;
+      await this.prepareFrame(timeMs, abortController.signal);
+      this.renderFrame(timeMs);
     },
-    onError: (error) => {
-      // Attach catch to prevent unhandled rejection
-      this.frameTask.taskComplete.catch(() => {});
-      
-      // Don't log AbortErrors - these are expected when element is disconnected
-      const isAbortError = 
-        error instanceof DOMException && error.name === "AbortError" ||
-        error instanceof Error && (
-          error.name === "AbortError" ||
-          error.message?.includes("signal is aborted") ||
-          error.message?.includes("The user aborted a request")
-        );
-      
-      if (isAbortError) {
-        return;
+    taskComplete: Promise.resolve(),
+  };
+
+  // ============================================================================
+  // FrameRenderable Implementation
+  // Centralized frame control - replaces distributed Lit Task system
+  // ============================================================================
+
+  /**
+   * Query readiness state for a given time.
+   * @implements FrameRenderable
+   */
+  getFrameState(_timeMs: number): FrameState {
+    // Waveform is ready when target has frequency data
+    const hasTarget = !!this.targetElement;
+    const hasData = hasTarget && 
+      this.targetElement?.frequencyDataTask.status === TaskStatus.COMPLETE;
+
+    return {
+      needsPreparation: hasTarget && !hasData,
+      isReady: hasData,
+      priority: 4, // Waveform renders after video/captions/audio
+    };
+  }
+
+  /**
+   * Async preparation - waits for target's frequency data.
+   * @implements FrameRenderable
+   */
+  async prepareFrame(_timeMs: number, signal: AbortSignal): Promise<void> {
+    if (!this.targetElement) return;
+
+    if (this.targetElement.frequencyDataTask.status !== TaskStatus.COMPLETE) {
+      try {
+        await this.targetElement.frequencyDataTask.taskComplete;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          signal.throwIfAborted();
+          return;
+        }
+        throw error;
       }
-      console.error("EFWaveform frameTask error", error);
-    },
-    task: async ([_targetElement, _frequencyData], { signal }) => {
-      if (!this.targetElement) return;
-      await this.targetElement.frequencyDataTask.taskComplete;
-      signal?.throwIfAborted();
-      this.ctx ||= this.initCanvas();
-      const ctx = this.ctx;
-      if (!ctx) return;
+    }
+    signal.throwIfAborted();
+  }
 
-      const frequencyData = this.targetElement.frequencyDataTask.value;
-      const byteTimeData = this.targetElement.byteTimeDomainTask.value;
-      if (!frequencyData || !byteTimeData) return;
+  /**
+   * Synchronous render - draws waveform to canvas.
+   * @implements FrameRenderable
+   */
+  renderFrame(_timeMs: number): void {
+    if (!this.targetElement) return;
 
-      ctx.save();
-      if (this.color === "currentColor") {
-        const computedStyle = getComputedStyle(this);
-        const currentColor = computedStyle.color;
-        ctx.strokeStyle = currentColor;
-        ctx.fillStyle = currentColor;
-      } else {
-        ctx.strokeStyle = this.color;
-        ctx.fillStyle = this.color;
-      }
+    this.ctx ||= this.initCanvas();
+    const ctx = this.ctx;
+    if (!ctx) return;
 
-      switch (this.mode) {
-        case "bars":
-          this.drawBars(ctx, frequencyData);
-          break;
-        case "bricks":
-          this.drawBricks(ctx, frequencyData);
-          break;
-        case "line":
-          this.drawLine(ctx, byteTimeData);
-          break;
-        case "curve":
-          this.drawCurve(ctx, byteTimeData);
-          break;
-        case "pixel":
-          this.drawPixel(ctx, frequencyData);
-          break;
-        case "wave":
-          this.drawWave(ctx, frequencyData);
-          break;
-        case "spikes":
-          this.drawSpikes(ctx, frequencyData);
-          break;
-        case "roundBars":
-          this.drawRoundBars(ctx, frequencyData);
-          break;
-      }
+    const frequencyData = this.targetElement.frequencyDataTask.value;
+    const byteTimeData = this.targetElement.byteTimeDomainTask.value;
+    if (!frequencyData || !byteTimeData) return;
 
-      ctx.restore();
-    },
-  });
+    ctx.save();
+    if (this.color === "currentColor") {
+      const computedStyle = getComputedStyle(this);
+      const currentColor = computedStyle.color;
+      ctx.strokeStyle = currentColor;
+      ctx.fillStyle = currentColor;
+    } else {
+      ctx.strokeStyle = this.color;
+      ctx.fillStyle = this.color;
+    }
+
+    switch (this.mode) {
+      case "bars":
+        this.drawBars(ctx, frequencyData);
+        break;
+      case "bricks":
+        this.drawBricks(ctx, frequencyData);
+        break;
+      case "line":
+        this.drawLine(ctx, byteTimeData);
+        break;
+      case "curve":
+        this.drawCurve(ctx, byteTimeData);
+        break;
+      case "pixel":
+        this.drawPixel(ctx, frequencyData);
+        break;
+      case "wave":
+        this.drawWave(ctx, frequencyData);
+        break;
+      case "spikes":
+        this.drawSpikes(ctx, frequencyData);
+        break;
+      case "roundBars":
+        this.drawRoundBars(ctx, frequencyData);
+        break;
+    }
+
+    ctx.restore();
+  }
+
+  // ============================================================================
+  // End FrameRenderable Implementation
+  // ============================================================================
 
   get durationMs() {
     if (!this.targetElement) return 0;

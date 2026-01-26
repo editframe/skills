@@ -11,6 +11,7 @@ import { isContextMixin } from "../gui/ContextMixin.js";
 import { efContext } from "../gui/efContext.js";
 import { TWMixin } from "../gui/TWMixin.js";
 import { isTracingEnabled, withSpan } from "../otel/tracingHelpers.js";
+import { FrameController } from "../preview/FrameController.js";
 import { deepGetMediaElements, type EFMedia } from "./EFMedia.js";
 import {
   deepGetElementsWithFrameTasks,
@@ -593,6 +594,20 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
   #onFrameCallback: FrameTaskCallback | null = null;
   #onFrameCleanup: (() => void) | null = null;
   #playbackListener: ((event: PlaybackControllerUpdateEvent) => void) | null = null;
+  
+  /**
+   * Centralized frame controller for coordinating element rendering.
+   * Replaces the distributed Lit Task hierarchy with a single control point.
+   */
+  #frameController: FrameController = new FrameController(this);
+  
+  /**
+   * Get the frame controller for centralized rendering coordination.
+   * @public
+   */
+  get frameController(): FrameController {
+    return this.#frameController;
+  }
 
   /**
    * Get the effective FPS for this timegroup.
@@ -803,9 +818,9 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
    * Unlike `seek()`, this:
    * - Skips waitForMediaDurations (already loaded at render setup)
    * - Skips localStorage persistence
-   * - Consolidates awaits to reduce event loop yields
+   * - Uses FrameController for centralized element coordination
    * 
-   * Still waits for all content to be ready (Lit updates, frame tasks, video frames).
+   * Still waits for all content to be ready (Lit updates, element preparation, rendering).
    * 
    * @param timeMs - Time in milliseconds to seek to
    * @internal
@@ -842,23 +857,15 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
       );
     }
     
-    // Now collect elements with frame tasks (media elements that need special handling)
-    const visibleElements = this.#evaluateVisibleElementsForFrame();
+    // Use FrameController for centralized element coordination
+    // This replaces the old distributed frameTask system
+    await this.#frameController.renderFrame(timeMs, { waitForLitUpdate: false });
     
-    // Wait for frame tasks and frame-ready elements
-    await Promise.all([
-      this.frameTask.run(),
-      ...visibleElements.map((element) => {
-        if (
-          "waitForFrameReady" in element &&
-          typeof element.waitForFrameReady === "function"
-        ) {
-          return (element as any).waitForFrameReady();
-        } else {
-          return element.updateComplete;
-        }
-      }),
-    ]);
+    // Execute custom frame tasks registered via addFrameTask()
+    await this.#executeCustomFrameTasks();
+    
+    // Update animations for CSS animation synchronization
+    updateAnimations(this);
     
     // CRITICAL: Force style recalculation after updateAnimations sets animation.currentTime
     // Without this, getComputedStyle may return stale values (e.g., opacity: 0 instead of 1)

@@ -1,8 +1,6 @@
 import { consume, createContext } from "@lit/context";
-import { Task } from "@lit/task";
 import type { LitElement, ReactiveController } from "lit";
 import { property, state } from "lit/decorators.js";
-import { EF_INTERACTIVE } from "../EF_INTERACTIVE.js";
 import { PlaybackController } from "../gui/PlaybackController.js";
 import { durationConverter } from "./durationConverter.js";
 import type { EFTimegroup } from "./EFTimegroup.js";
@@ -497,7 +495,11 @@ export declare class TemporalMixinInterface {
    */
   rootTimegroup?: EFTimegroup;
 
-  frameTask: Task<readonly unknown[], unknown>;
+  /**
+   * Frame task interface. Can be a Lit Task or a simple object with run() and taskComplete.
+   * @deprecated Prefer using FrameRenderable interface via FrameController.
+   */
+  frameTask: { run(): void | Promise<void>; taskComplete: Promise<unknown> };
 
   didBecomeRoot(): void;
   didBecomeChild(): void;
@@ -528,7 +530,11 @@ export const deepGetElementsWithFrameTasks = (
   elements: Array<TemporalMixinInterface & HTMLElement> = [],
 ) => {
   for (const child of element.children) {
-    if ("frameTask" in child && child.frameTask instanceof Task) {
+    // Check for frameTask with run method (works with both Lit Task and our compatibility wrapper)
+    const hasFrameTask = "frameTask" in child && 
+      child.frameTask != null && 
+      typeof (child.frameTask as any).run === "function";
+    if (hasFrameTask) {
       elements.push(child as TemporalMixinInterface & HTMLElement);
     }
     deepGetElementsWithFrameTasks(child, elements);
@@ -1064,43 +1070,16 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
       return this.ownCurrentTimeMs + leadingTrimMs;
     }
 
-    frameTask = new Task(this, {
-      autoRun: EF_INTERACTIVE,
-      args: () => [this.ownCurrentTimeMs] as const,
-      onError: (error) => {
-        // CRITICAL: Attach .catch() handler to prevent unhandled rejection
-        this.frameTask.taskComplete.catch(() => {});
-        
-        // Don't log AbortErrors - these are expected when element is disconnected
-        const isAbortError = 
-          error instanceof DOMException && error.name === "AbortError" ||
-          error instanceof Error && (
-            error.name === "AbortError" ||
-            error.message?.includes("signal is aborted") ||
-            error.message?.includes("The user aborted a request")
-          );
-        
-        if (isAbortError) {
-          return;
-        }
-        console.error("EFTemporal frameTask error", error);
+    /**
+     * @deprecated Use FrameRenderable interface via FrameController instead.
+     * This is a compatibility wrapper - base class just waits for updateComplete.
+     */
+    frameTask = {
+      run: async () => {
+        await this.updateComplete;
       },
-      task: async ([], { signal }) => {
-        let fullyUpdated = await this.updateComplete;
-        signal?.throwIfAborted();
-        let loopCount = 0;
-        const MAX_LOOP_ITERATIONS = 100;
-        while (!fullyUpdated) {
-          loopCount++;
-          if (loopCount > MAX_LOOP_ITERATIONS) {
-            console.error(`[EFTemporal] frameTask while loop exceeded ${MAX_LOOP_ITERATIONS} iterations, breaking. Element:`, this.tagName, this.id || 'unnamed');
-            break; // Break out to prevent infinite loop
-          }
-          fullyUpdated = await this.updateComplete;
-          signal?.throwIfAborted();
-        }
-      },
-    });
+      taskComplete: Promise.resolve(),
+    };
 
     didBecomeRoot() {
       if (!this.playbackController) {

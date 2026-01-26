@@ -4,6 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 import type { ReactiveController } from "lit";
 import type { GetISOBMFFFileTranscriptionResult } from "../../../api/src/index.js";
 import { EF_INTERACTIVE } from "../EF_INTERACTIVE.js";
+import type { FrameRenderable, FrameState } from "../preview/FrameController.js";
 import { CrossUpdateController } from "./CrossUpdateController.js";
 import { EFAudio } from "./EFAudio.js";
 import { EFSourceMixin } from "./EFSourceMixin.js";
@@ -277,7 +278,7 @@ export class EFCaptionsAfterActiveWord extends EFCaptionsSegment {
 export class EFCaptions extends EFSourceMixin(
   EFTemporal(FetchMixin(LitElement)),
   { assetType: "caption_files" },
-) {
+) implements FrameRenderable {
   static styles = [
     css`
       :host {
@@ -642,43 +643,73 @@ export class EFCaptions extends EFSourceMixin(
     },
   });
 
-  frameTask = new Task(this, {
-    autoRun: EF_INTERACTIVE,
-    args: () => [this.unifiedCaptionsDataTask.status, this.ownCurrentTimeMs],
-    onError: (error) => {
-      // CRITICAL: Attach .catch() handler to prevent unhandled rejection
-      this.frameTask.taskComplete.catch(() => {});
-      
-      // Don't log AbortErrors - these are expected when element is disconnected
-      const isAbortError = 
-        error instanceof DOMException && error.name === "AbortError" ||
-        error instanceof Error && (
-          error.name === "AbortError" ||
-          error.message?.includes("signal is aborted") ||
-          error.message?.includes("The user aborted a request")
-        );
-      
-      if (isAbortError) {
-        return;
-      }
-      console.error("EFCaptions frameTask error", error);
+  /**
+   * @deprecated Use FrameRenderable methods (prepareFrame, renderFrame) via FrameController instead.
+   * This is a compatibility wrapper that delegates to the new system.
+   */
+  frameTask = {
+    run: async () => {
+      const abortController = new AbortController();
+      const timeMs = this.ownCurrentTimeMs;
+      await this.prepareFrame(timeMs, abortController.signal);
+      this.renderFrame(timeMs);
     },
-    task: async ([_status, _ownCurrentTimeMs], { signal }) => {
+    taskComplete: Promise.resolve(),
+  };
+
+  // ============================================================================
+  // FrameRenderable Implementation
+  // Centralized frame control - replaces distributed Lit Task system
+  // ============================================================================
+
+  /**
+   * Query readiness state for a given time.
+   * @implements FrameRenderable
+   */
+  getFrameState(_timeMs: number): FrameState {
+    // Check if captions data is loaded
+    const hasData = this.unifiedCaptionsDataTask.status === TaskStatus.COMPLETE &&
+                    this.unifiedCaptionsDataTask.value !== undefined;
+
+    return {
+      needsPreparation: !hasData,
+      isReady: hasData,
+      priority: 2, // Captions render after video
+    };
+  }
+
+  /**
+   * Async preparation - waits for captions data to load.
+   * @implements FrameRenderable
+   */
+  async prepareFrame(_timeMs: number, signal: AbortSignal): Promise<void> {
+    // Wait for captions data to be ready
+    if (this.unifiedCaptionsDataTask.status !== TaskStatus.COMPLETE) {
       try {
         await this.unifiedCaptionsDataTask.taskComplete;
       } catch (error) {
-        // Handle AbortError from dependent task gracefully
+        // Handle AbortError gracefully
         if (error instanceof DOMException && error.name === "AbortError") {
-          signal?.throwIfAborted();
+          signal.throwIfAborted();
           return;
         }
         throw error;
       }
-      signal?.throwIfAborted();
-      // Trigger updateTextContainers when data is ready or time changes
-      this.updateTextContainers();
-    },
-  });
+    }
+    signal.throwIfAborted();
+  }
+
+  /**
+   * Synchronous render - updates caption text containers.
+   * @implements FrameRenderable
+   */
+  renderFrame(_timeMs: number): void {
+    this.updateTextContainers();
+  }
+
+  // ============================================================================
+  // End FrameRenderable Implementation
+  // ============================================================================
 
   #rootTimegroupUpdateController?: ReactiveController;
 
