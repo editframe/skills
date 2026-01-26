@@ -142,26 +142,12 @@ export interface CloneTree {
   root: CloneNode | null;
 }
 
-/**
- * Time interval entry in the sorted index.
- * Enables O(log n + k) visibility queries via binary search.
- */
-export interface TimeInterval {
-  startMs: number;
-  endMs: number;
-  node: CloneNode;
-}
-
-/** Sync state with tree structure and interval index */
+/** Sync state with tree structure and delta tracking */
 export interface SyncState {
   tree: CloneTree;
   nodeCount: number;  // Total number of nodes (for debugging/logging)
   /** Maps clone canvases to their original source elements (ef-video, ef-image, etc.) */
   canvasSourceMap: WeakMap<HTMLCanvasElement, Element>;
-  /** Sorted array of time intervals for O(log n) visibility queries */
-  intervalIndex: TimeInterval[];
-  /** Nodes that are always visible (infinite bounds) - no binary search needed */
-  alwaysVisibleNodes: CloneNode[];
   /** Previous frame's visible set for delta tracking */
   previousVisibleSet: Set<CloneNode>;
 }
@@ -211,7 +197,7 @@ function copyCanvasCloneStyles(
 
 /**
  * Build clone tree structure with minimal overhead.
- * Builds an interval index for O(log n) visibility queries.
+ * Caches temporal bounds on each node for visibility checks.
  * Optionally syncs styles in the same pass if timeMs is provided.
  */
 export function buildCloneStructure(source: Element, timeMs?: number): {
@@ -223,8 +209,6 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
   
   let nodeCount = 0;
   const canvasSourceMap = new WeakMap<HTMLCanvasElement, Element>();
-  const intervalIndex: TimeInterval[] = [];
-  const alwaysVisibleNodes: CloneNode[] = [];
   
   function cloneElement(srcEl: Element, parentNode: CloneNode | null): CloneNode | null {
     if (SKIP_TAGS.has(srcEl.tagName)) return null;
@@ -244,7 +228,6 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
         parent: parentNode,
       };
       nodeCount++;
-      addToIntervalIndex(node, bounds);
       return node;
     }
     
@@ -299,7 +282,6 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
           parent: parentNode,
         };
         nodeCount++;
-        addToIntervalIndex(node, bounds);
         return node;
       }
       
@@ -334,7 +316,6 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
           parent: parentNode,
         };
         nodeCount++;
-        addToIntervalIndex(node, bounds);
         return node;
       }
     }
@@ -371,7 +352,6 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
       parent: parentNode,
     };
     nodeCount++;
-    addToIntervalIndex(node, bounds);
     
     // Shadow DOM children - OPTIMIZATION: Early exit if no childNodes
     if (srcEl.shadowRoot) {
@@ -434,29 +414,13 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
     return node;
   }
   
-  // Helper to add node to appropriate index based on bounds
-  function addToIntervalIndex(node: CloneNode, bounds: { startMs: number; endMs: number }): void {
-    if (bounds.startMs === -Infinity && bounds.endMs === Infinity) {
-      // Always visible - no need for binary search
-      alwaysVisibleNodes.push(node);
-    } else {
-      // Finite bounds - add to interval index
-      intervalIndex.push({ startMs: bounds.startMs, endMs: bounds.endMs, node });
-    }
-  }
-  
   const root = cloneElement(source, null);
   if (root) container.appendChild(root.clone);
-  
-  // Sort interval index by startMs for binary search
-  intervalIndex.sort((a, b) => a.startMs - b.startMs);
   
   const syncState: SyncState = {
     tree: { root },
     nodeCount,
     canvasSourceMap,
-    intervalIndex,
-    alwaysVisibleNodes,
     previousVisibleSet: new Set(),
   };
   
@@ -716,77 +680,6 @@ let syncStats: SyncStats = {
 };
 
 /**
- * Binary search to find the first interval that COULD overlap with timeMs.
- * Returns the index where we should start scanning.
- * An interval overlaps if: startMs <= timeMs <= endMs
- * Since we're sorted by startMs, we find intervals where startMs <= timeMs.
- */
-function findOverlappingIntervals(intervals: TimeInterval[], timeMs: number): CloneNode[] {
-  if (intervals.length === 0) return [];
-  
-  const result: CloneNode[] = [];
-  
-  // Binary search to find the rightmost interval where startMs <= timeMs
-  // All intervals with startMs <= timeMs are candidates (they've started)
-  // Then we filter by endMs >= timeMs (they haven't ended)
-  let left = 0;
-  let right = intervals.length - 1;
-  
-  // Find the rightmost interval where startMs <= timeMs
-  while (left < right) {
-    const mid = Math.ceil((left + right + 1) / 2);
-    if (intervals[mid]!.startMs <= timeMs) {
-      left = mid;
-    } else {
-      right = mid - 1;
-    }
-  }
-  
-  // If even the first interval starts after timeMs, nothing overlaps
-  if (intervals[left]!.startMs > timeMs) {
-    return result;
-  }
-  
-  // Scan backwards from 'left' to find all intervals where startMs <= timeMs AND endMs >= timeMs
-  // We scan backwards because intervals are sorted by startMs, and we found the rightmost valid startMs
-  for (let i = left; i >= 0; i--) {
-    const interval = intervals[i]!;
-    if (interval.startMs > timeMs) break; // No more valid start times
-    if (interval.endMs >= timeMs) {
-      result.push(interval.node);
-    }
-  }
-  
-  return result;
-}
-
-/**
- * Check if a node is visible considering ancestor visibility.
- * A node is only visible if all its ancestors are also visible at the given time.
- */
-function isNodeVisibleWithAncestors(node: CloneNode, timeMs: number): boolean {
-  // Check if this node's bounds allow visibility
-  const { startMs, endMs } = node.bounds;
-  if (timeMs < startMs || timeMs > endMs) {
-    return false;
-  }
-  
-  // Check ancestors
-  let current = node.parent;
-  while (current) {
-    // If ancestor has finite bounds, check them
-    if (current.bounds.startMs !== -Infinity || current.bounds.endMs !== Infinity) {
-      if (timeMs < current.bounds.startMs || timeMs > current.bounds.endMs) {
-        return false;
-      }
-    }
-    current = current.parent;
-  }
-  
-  return true;
-}
-
-/**
  * Visibility delta between frames.
  * Used for incremental updates - only sync what changed.
  */
@@ -827,35 +720,44 @@ function computeVisibilityDelta(
 }
 
 /**
- * Sync styles using interval index for O(log n + k) visibility queries.
- * This is the optimized version that replaces the recursive traversal.
+ * Build visible set by recursive traversal with bounds checking.
+ * Simpler and more reliable than interval index for complex hierarchies.
+ */
+function buildVisibleSetRecursive(
+  node: CloneNode,
+  timeMs: number,
+  visibleSet: Set<CloneNode>,
+): void {
+  const { bounds, children } = node;
+  
+  // Check if this node is visible at current time
+  const isVisible = timeMs >= bounds.startMs && timeMs <= bounds.endMs;
+  
+  if (isVisible) {
+    visibleSet.add(node);
+    // Recurse to children
+    for (const child of children) {
+      buildVisibleSetRecursive(child, timeMs, visibleSet);
+    }
+  }
+  // If not visible, skip entire subtree
+}
+
+/**
+ * Sync styles with recursive visibility check and delta tracking.
  * 
  * DELTA TRACKING: Tracks visibility changes between frames to minimize work:
  * - nowVisible nodes: Full style sync + show
- * - stillVisible nodes: Only sync animated properties (transform, opacity)
+ * - stillVisible nodes: Incremental sync (source DOM may have changed)
  * - nowHidden nodes: Just hide (display:none)
  */
 function syncStylesWithIndex(state: SyncState, timeMs: number): void {
   const queryStart = performance.now();
   
-  // Build the set of visible nodes using interval index
+  // Build the set of visible nodes by recursive traversal
   const visibleSet = new Set<CloneNode>();
-  
-  // Query interval index for nodes with overlapping bounds (O(log n + k))
-  const overlappingNodes = findOverlappingIntervals(state.intervalIndex, timeMs);
-  
-  // Add overlapping nodes that pass ancestor check
-  for (const node of overlappingNodes) {
-    if (isNodeVisibleWithAncestors(node, timeMs)) {
-      visibleSet.add(node);
-    }
-  }
-  
-  // Add always-visible nodes (if ancestors are visible)
-  for (const node of state.alwaysVisibleNodes) {
-    if (isNodeVisibleWithAncestors(node, timeMs)) {
-      visibleSet.add(node);
-    }
+  if (state.tree.root) {
+    buildVisibleSetRecursive(state.tree.root, timeMs, visibleSet);
   }
   
   // Compute delta from previous frame
