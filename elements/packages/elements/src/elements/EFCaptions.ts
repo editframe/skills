@@ -56,11 +56,14 @@ export class EFCaptionsActiveWord extends EFTemporal(LitElement) {
   ];
 
   render() {
-    if (stopWords.has(this.wordText)) {
+    // Hide element if no content or only stop words
+    if (!this.wordText || stopWords.has(this.wordText)) {
       this.hidden = true;
+      this.style.display = "none";
       return undefined;
     }
     this.hidden = false;
+    this.style.removeProperty("display");
 
     // Set deterministic --ef-word-seed value based on word index
     const seed = (this.wordIndex * 9007) % 233; // Prime numbers for better distribution
@@ -116,11 +119,14 @@ export class EFCaptionsSegment extends EFTemporal(LitElement) {
   ];
 
   render() {
-    if (stopWords.has(this.segmentText)) {
+    // Hide element if no content or only stop words
+    if (!this.segmentText || stopWords.has(this.segmentText)) {
       this.hidden = true;
+      this.style.display = "none";
       return undefined;
     }
     this.hidden = false;
+    this.style.removeProperty("display");
     return html`${this.segmentText}`;
   }
 
@@ -171,11 +177,14 @@ export class EFCaptionsBeforeActiveWord extends EFCaptionsSegment {
   ];
 
   render() {
-    if (stopWords.has(this.segmentText)) {
+    // Hide element if no content or only stop words
+    if (!this.segmentText || stopWords.has(this.segmentText)) {
       this.hidden = true;
+      this.style.display = "none";
       return undefined;
     }
     this.hidden = false;
+    this.style.removeProperty("display");
 
     // Check if there's an active word by looking for sibling active word element
     const activeWord = this.closest("ef-captions")?.querySelector(
@@ -233,11 +242,14 @@ export class EFCaptionsAfterActiveWord extends EFCaptionsSegment {
   ];
 
   render() {
-    if (stopWords.has(this.segmentText)) {
+    // Hide element if no content or only stop words
+    if (!this.segmentText || stopWords.has(this.segmentText)) {
       this.hidden = true;
+      this.style.display = "none";
       return undefined;
     }
     this.hidden = false;
+    this.style.removeProperty("display");
 
     // Check if there's an active word by looking for sibling active word element
     const activeWord = this.closest("ef-captions")?.querySelector(
@@ -578,7 +590,12 @@ export class EFCaptions extends EFSourceMixin(
       this.rootTimegroup.addController(this.#rootTimegroupUpdateController);
     }
 
-    // Prevent display:none from being set on caption elements
+    // Prevent display:none from being set on the parent caption element.
+    // IMPORTANT: This only applies to the parent <ef-captions> element, NOT to
+    // caption child elements (<ef-captions-segment>, <ef-captions-active-word>, etc.).
+    // Child elements MUST respect display:none for proper temporal visibility
+    // in video rendering. Video export relies on display:none to hide elements
+    // outside their time range.
     const observer = new MutationObserver(() => {
       if (this.style.display === "none") {
         this.style.removeProperty("display");
