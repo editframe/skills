@@ -20,7 +20,7 @@ const mainVideoInputCache = new MainVideoInputCache();
 export const makeUnifiedVideoSeekTask = (
   host: EFVideo,
 ): UnifiedVideoSeekTask => {
-  return new Task(host, {
+  const task: UnifiedVideoSeekTask = new Task(host, {
     autoRun: false,
     args: () => [host.desiredSeekTimeMs] as const,
     onError: (error) => {
