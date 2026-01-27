@@ -28,6 +28,7 @@ const SKIP_TAGS = new Set([
   "SCRIPT",
   "STYLE",
   "SLOT",
+  "TEMPLATE",
 ]);
 
 /**
@@ -84,12 +85,14 @@ function serializeComputedStyles(element: Element): string {
   
   for (const prop of SERIALIZED_STYLE_PROPERTIES) {
     const value = styles[prop as any];
-    // Only skip truly empty values - keep 'none', 'auto', 'normal' as they may be important defaults
-    if (value && value !== '' && value !== 'initial' && value !== 'inherit') {
-      // Convert camelCase to kebab-case
-      const kebab = prop.replace(/[A-Z]/g, m => `-${m.toLowerCase()}`);
-      styleParts.push(`${kebab}:${value}`);
+    // Skip empty, initial, or inherit values - we only want actual computed values
+    if (!value || value === '' || value === 'initial' || value === 'inherit') {
+      continue;
     }
+    
+    // Convert camelCase to kebab-case
+    const kebab = prop.replace(/[A-Z]/g, m => `-${m.toLowerCase()}`);
+    styleParts.push(`${kebab}:${value}`);
   }
   
   return styleParts.join(';');
@@ -120,14 +123,20 @@ function serializeCanvas(
   canvasJobs: CanvasJob[],
   options: SerializationOptions
 ): void {
-  const styles = getComputedStyle(sourceElement);
-  
   // Use intrinsic canvas dimensions, not computed styles (which may be zoom-affected)
   const width = canvas.width;
   const height = canvas.height;
   
-  // Open img tag with positioning/transform styles from source element
-  parts.push(`<img style="width:${width}px;height:${height}px;position:${styles.position};left:${styles.left};top:${styles.top};transform:${styles.transform};opacity:${styles.opacity};display:block" src="`);
+  // Get all computed styles from source element
+  const styleStr = serializeComputedStyles(sourceElement);
+  
+  // Override width/height with intrinsic canvas dimensions
+  const styleParts = styleStr ? styleStr.split(';').filter(s => s.trim()) : [];
+  styleParts.push(`width:${width}px`, `height:${height}px`, `display:block`);
+  const finalStyle = styleParts.join(';');
+  
+  // Open img tag with all styles from source element
+  parts.push(`<img style="${escapeXML(finalStyle)}" src="`);
   
   // Kick off async encoding, push promise into parts array
   const promiseIndex = parts.length;
@@ -293,22 +302,29 @@ function serializeElement(
  * Apply temporal visibility to timeline before serialization.
  * Walks the DOM and sets display:none on elements out of temporal bounds.
  */
-function applyTemporalVisibility(element: Element, timeMs: number): number {
+function applyTemporalVisibility(element: Element, timeMs: number, depth = 0): number {
   let hiddenCount = 0;
+  const indent = '  '.repeat(depth);
   
   // Check if this element should be visible
+  const bounds = getTemporalBounds(element);
   const isVisible = isVisibleAtTime(element, timeMs);
+  
+  if (depth < 3) {
+    console.log(`${indent}[applyTemporalVisibility] ${element.tagName}: bounds=${bounds.startMs}-${bounds.endMs}ms, timeMs=${timeMs}ms, isVisible=${isVisible}`);
+  }
   
   if (!isVisible && element instanceof HTMLElement) {
     // Hide this element and skip its children
     element.style.display = 'none';
     hiddenCount++;
+    console.log(`${indent}  → Hidden (${element.children.length} children skipped)`);
     return hiddenCount;
   }
   
   // Element is visible, recurse to children
   for (const child of element.children) {
-    hiddenCount += applyTemporalVisibility(child, timeMs);
+    hiddenCount += applyTemporalVisibility(child, timeMs, depth + 1);
   }
   
   return hiddenCount;
