@@ -25,8 +25,10 @@ program
   .option("--profile", "Enable CPU profiling")
   .option("--profile-output <path>", "Profile output path", "./render-profile.cpuprofile")
   .action(async (directory = ".", options) => {
-    const srcDir = path.resolve(process.cwd(), directory);
-    const outputPath = path.resolve(process.cwd(), options.output);
+    // If running from the dev script (via tsx), ORIGINAL_CWD contains the user's actual directory
+    const baseCwd = process.env.ORIGINAL_CWD || process.cwd();
+    const srcDir = path.resolve(baseCwd, directory);
+    const outputPath = path.resolve(baseCwd, options.output);
 
     // Parse custom data if provided
     let renderData: Record<string, unknown> | undefined;

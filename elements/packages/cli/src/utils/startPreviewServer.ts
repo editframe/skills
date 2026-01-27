@@ -18,7 +18,9 @@ export class PreviewServer {
 
 const startPreviewServer = async (directory: string) => {
   return await withSpinner("Starting vite...", async () => {
-    const resolvedDirectory = path.resolve(process.cwd(), directory);
+    // If running from the dev script (via tsx), ORIGINAL_CWD contains the user's actual directory
+    const baseCwd = process.env.ORIGINAL_CWD || process.cwd();
+    const resolvedDirectory = path.resolve(baseCwd, directory);
     const cacheRoot = path.join(resolvedDirectory, "assets");
     const devServer = await createServer({
       server: {

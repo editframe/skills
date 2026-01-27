@@ -25,11 +25,15 @@ set -e
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 ELEMENTS_ROOT="$SCRIPT_DIR/.."
 
+# Save the original working directory where the user ran the command
+ORIGINAL_CWD="$(pwd)"
+
 # Change to elements directory so tsconfig.json paths resolve correctly
 cd "$ELEMENTS_ROOT"
 
 # Run the CLI using tsx with TypeScript path resolution
 # Use Node.js loader to handle CSS imports before tsx processes the file
 # The CSS loader handles .css?inline imports by converting them to string exports
+# Pass the original working directory so the CLI knows where the user actually is
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-exec node --import "data:text/javascript,import { register } from 'node:module'; import { pathToFileURL } from 'node:url'; register('$SCRIPT_DIR/css-loader.mjs', pathToFileURL('$SCRIPT_DIR/'));" --import tsx --import tsconfig-paths/register packages/cli/src/index.ts "$@"
+ORIGINAL_CWD="$ORIGINAL_CWD" exec node --import "data:text/javascript,import { register } from 'node:module'; import { pathToFileURL } from 'node:url'; register('$SCRIPT_DIR/css-loader.mjs', pathToFileURL('$SCRIPT_DIR/'));" --import tsx --import tsconfig-paths/register packages/cli/src/index.ts "$@"

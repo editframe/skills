@@ -54,12 +54,16 @@ program
   .action(async (directory, options) => {
     directory ??= ".";
 
+    // If running from the dev script (via tsx), ORIGINAL_CWD contains the user's actual directory
+    const baseCwd = process.env.ORIGINAL_CWD || process.cwd();
+    const resolvedDirectory = path.resolve(baseCwd, directory);
+
     await syncAssetDirectory(
-      join(process.cwd(), directory, "src", "assets", ".cache"),
+      join(resolvedDirectory, "src", "assets", ".cache"),
     );
 
-    const srcDir = path.join(directory, "src");
-    const distDir = path.join(directory, "dist");
+    const srcDir = path.join(resolvedDirectory, "src");
+    const distDir = path.join(resolvedDirectory, "dist");
     await withSpinner("Building\n", async () => {
       try {
         await withSpinner("Building\n", async () => {
@@ -69,7 +73,7 @@ program
             [
               "vite",
               "build",
-              directory,
+              resolvedDirectory,
               "--clearScreen",
               "false",
               "--logLevel",
