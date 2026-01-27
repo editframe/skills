@@ -515,12 +515,20 @@ export async function renderTimegroupToVideo(
             syncTime = performance.now() - syncStart;
             totalSyncMs += syncTime;
             
+            console.log(`[Frame ${renderFrameIndex}] Data URI length: ${dataUri.length}, preview: ${dataUri.substring(0, 100)}...`);
+            
             // Create image from data URI
             const renderStart = performance.now();
             image = new Image();
             await new Promise<void>((resolve, reject) => {
-              image.onload = () => resolve();
-              image.onerror = reject;
+              image.onload = () => {
+                console.log(`[Frame ${renderFrameIndex}] Image loaded: ${image.width}x${image.height}`);
+                resolve();
+              };
+              image.onerror = (e) => {
+                console.error(`[Frame ${renderFrameIndex}] Image load error:`, e);
+                reject(e);
+              };
               image.src = dataUri;
             });
             const renderTime = performance.now() - renderStart;

@@ -192,14 +192,18 @@ function serializeElement(
 ): void {
   // Skip certain elements
   if (SKIP_TAGS.has(element.tagName)) {
+    console.log(`[serializeElement] Skipping ${element.tagName} (in SKIP_TAGS)`);
     return;
   }
   
   // Check temporal bounds - skip if outside current time
   const bounds = getTemporalBounds(element);
   if (options.timeMs < bounds.startMs || options.timeMs > bounds.endMs) {
+    console.log(`[serializeElement] Skipping ${element.tagName} (out of bounds: ${bounds.startMs}-${bounds.endMs}, current=${options.timeMs})`);
     return;
   }
+  
+  console.log(`[serializeElement] Processing ${element.tagName}, isCustom=${element.tagName.includes('-')}, hasShadow=${!!(element as any).shadowRoot}`);
   
   // Custom element with shadow DOM?
   const isCustom = element.tagName.includes('-');
@@ -282,6 +286,8 @@ export async function serializeTimelineToXHTML(
   height: number,
   options: SerializationOptions
 ): Promise<string> {
+  console.log(`[serializeTimelineToXHTML] Starting serialization: ${timeline.tagName}, ${width}x${height}, timeMs=${options.timeMs}`);
+  
   const parts: Array<string | Promise<string>> = [];
   const canvasJobs: CanvasJob[] = [];
   
@@ -297,11 +303,16 @@ export async function serializeTimelineToXHTML(
   // Close wrapper
   parts.push('</div>');
   
+  console.log(`[serializeTimelineToXHTML] Built ${parts.length} parts, ${canvasJobs.length} canvas jobs`);
+  
   // Wait for all canvas encodings to complete
   const resolvedParts = await Promise.all(parts);
   
   // Join into final XHTML string
-  return resolvedParts.join('');
+  const result = resolvedParts.join('');
+  console.log(`[serializeTimelineToXHTML] Final XHTML length: ${result.length} chars`);
+  
+  return result;
 }
 
 /**
