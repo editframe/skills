@@ -224,10 +224,11 @@ function serializeElement(
       return;
     }
     
-    // No special shadow content - serialize children directly (flatten)
-    console.log(`[serializeElement] ${element.tagName} has no special shadow content, serializing children`);
-    const children = element.shadowRoot?.childNodes || element.childNodes;
-    for (const child of children) {
+    // No special shadow content - serialize light DOM children (flatten)
+    // Note: We serialize element.childNodes (light DOM), NOT shadowRoot.childNodes,
+    // because the light DOM children are the actual content (projected through <slot>)
+    console.log(`[serializeElement] ${element.tagName} has no special shadow content, serializing ${element.childNodes.length} light DOM children`);
+    for (const child of element.childNodes) {
       if (child.nodeType === Node.TEXT_NODE) {
         const text = child.textContent?.trim();
         if (text) {
