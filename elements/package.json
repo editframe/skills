@@ -1,6 +1,6 @@
 {
   "name": "@editframe/packages",
-  "version": "0.34.9-beta",
+  "version": "0.34.10-beta",
   "description": "Editframe Elements Development package",
   "main": "index.js",
   "scripts": {
