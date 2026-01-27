@@ -243,7 +243,9 @@ export function traverseCloneTree(state: SyncState, callback: (node: CloneNode) 
 
 /**
  * Unified CSS property sync for all elements (canvas clones and regular elements).
- * Single source of truth using the SYNC_PROPERTIES array.
+ * 
+ * Canvas clones use a limited property set matching the original implementation
+ * to avoid dimension/layout issues. Regular elements use the full SYNC_PROPERTIES array.
  * 
  * @param source - Source element to read styles from
  * @param clone - Clone element to write styles to
@@ -255,31 +257,64 @@ function syncElementStyles(
   contentSource?: Element,
 ): void {
   const cloneStyle = clone.style as any;
-  const propLen = SYNC_PROPERTIES.length;
   const tagName = (source as HTMLElement).tagName;
   const isCanvasClone = !!contentSource;
   
+  // Canvas clones: Use exact property list from original implementation
+  if (isCanvasClone) {
+    let cs: CSSStyleDeclaration;
+    let contentCs: CSSStyleDeclaration | undefined;
+    
+    try {
+      cs = getComputedStyle(source);
+      if (contentSource) {
+        contentCs = getComputedStyle(contentSource);
+      }
+    } catch { return; }
+    
+    // Exact properties from original copyCanvasCloneStyles + syncNodeStyles
+    cloneStyle.position = cs.position;
+    cloneStyle.top = cs.top;
+    cloneStyle.right = cs.right;
+    cloneStyle.bottom = cs.bottom;
+    cloneStyle.left = cs.left;
+    cloneStyle.margin = cs.margin;
+    cloneStyle.zIndex = cs.zIndex;
+    cloneStyle.transform = cs.transform;
+    cloneStyle.transformOrigin = cs.transformOrigin;
+    cloneStyle.opacity = cs.opacity;
+    cloneStyle.visibility = cs.visibility;
+    cloneStyle.backfaceVisibility = cs.backfaceVisibility;
+    cloneStyle.transformStyle = cs.transformStyle;
+    
+    // Width/height from content source (shadow canvas/img)
+    if (contentCs) {
+      cloneStyle.width = contentCs.width;
+      cloneStyle.height = contentCs.height;
+    }
+    
+    cloneStyle.display = "block";
+    cloneStyle.animation = "none";
+    cloneStyle.transition = "none";
+    
+    return;
+  }
+  
+  // Regular elements: full property sync from SYNC_PROPERTIES
+  const propLen = SYNC_PROPERTIES.length;
+  
   if (HAS_COMPUTED_STYLE_MAP) {
     let srcMap: StylePropertyMapReadOnly;
-    let contentMap: StylePropertyMapReadOnly | undefined;
     
     try {
       srcMap = source.computedStyleMap();
-      if (contentSource) {
-        contentMap = contentSource.computedStyleMap();
-      }
     } catch { return; }
     
     for (let j = 0; j < propLen; j++) {
       const kebab = SYNC_PROPERTIES_KEBAB[j]!;
       const camel = SYNC_PROPERTIES[j]!;
       
-      // For canvas clones, width/height come from content element (shadow canvas/img)
-      const useContentSource = contentSource && (camel === "width" || camel === "height");
-      const styleMap = useContentSource ? contentMap : srcMap;
-      if (!styleMap) continue;
-      
-      const srcVal = styleMap.get(kebab);
+      const srcVal = srcMap.get(kebab);
       if (!srcVal) continue;
       
       const strVal = srcVal.toString();
@@ -302,17 +337,6 @@ function syncElementStyles(
       // (source may have clip-path: inset(100%) from proxy mode)
       if (camel === "clipPath") continue;
       
-      // Canvas clones: Skip properties that affect dimension calculation
-      // Canvas buffer dimensions must exactly match CSS dimensions for crisp rendering
-      // Properties like padding, border, boxSizing would cause mismatch → blur/scaling
-      if (isCanvasClone && (
-        camel === "padding" || camel === "border" || camel === "borderTop" || 
-        camel === "borderRight" || camel === "borderBottom" || camel === "borderLeft" ||
-        camel === "borderRadius" || camel === "boxSizing"
-      )) {
-        continue;
-      }
-      
       // OPTIMIZATION: Skip default values to reduce serialized HTML size
       // If the computed value is the CSS default, don't set it as inline style
       if (isDefaultValue(camel, strVal)) {
@@ -325,22 +349,15 @@ function syncElementStyles(
     }
   } else {
     let cs: CSSStyleDeclaration;
-    let contentCs: CSSStyleDeclaration | undefined;
     
     try {
       cs = getComputedStyle(source);
-      if (contentSource) {
-        contentCs = getComputedStyle(contentSource);
-      }
     } catch { return; }
     
     const srcStyle = cs as any;
-    const contentStyle = contentCs as any;
     
     for (const prop of SYNC_PROPERTIES) {
-      // For canvas clones, width/height come from content element (shadow canvas/img)
-      const useContentSource = contentSource && (prop === "width" || prop === "height");
-      const srcVal = useContentSource ? contentStyle?.[prop] : srcStyle[prop];
+      const srcVal = srcStyle[prop];
       if (!srcVal) continue;
       
       if (prop === "display") {
@@ -361,17 +378,6 @@ function syncElementStyles(
       // (source may have clip-path: inset(100%) from proxy mode)
       if (prop === "clipPath") continue;
       
-      // Canvas clones: Skip properties that affect dimension calculation
-      // Canvas buffer dimensions must exactly match CSS dimensions for crisp rendering
-      // Properties like padding, border, boxSizing would cause mismatch → blur/scaling
-      if (isCanvasClone && (
-        prop === "padding" || prop === "border" || prop === "borderTop" || 
-        prop === "borderRight" || prop === "borderBottom" || prop === "borderLeft" ||
-        prop === "borderRadius" || prop === "boxSizing"
-      )) {
-        continue;
-      }
-      
       // OPTIMIZATION: Skip default values to reduce serialized HTML size
       if (isDefaultValue(prop, srcVal)) {
         if (cloneStyle[prop]) cloneStyle[prop] = "";
@@ -382,7 +388,7 @@ function syncElementStyles(
     }
   }
   
-  // Disable animations/transitions to prevent re-animation (browser optimizes redundant writes)
+  // Disable animations/transitions to prevent re-animation
   cloneStyle.animation = "none";
   cloneStyle.transition = "none";
 }
