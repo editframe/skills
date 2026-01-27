@@ -392,10 +392,10 @@ export async function captureFromClone(
   // Handle content readiness based on mode
   const timeMs = renderClone.currentTimeMs;
   
-  // Use FrameController to ensure all FrameRenderable elements are ready
-  // This coordinates prepare → render phases for video, audio, captions, etc.
-  const frameController = new FrameController(renderClone);
-  await frameController.renderFrame(timeMs, { waitForLitUpdate: false });
+  // NOTE: seekForRender() has already:
+  // 1. Called frameController.renderFrame() to coordinate FrameRenderable elements
+  // 2. Awaited #executeCustomFrameTasks() so frame tasks are complete
+  // No need to call frameController.renderFrame() again - it would fire tasks redundantly
   
   if (contentReadyMode === "blocking") {
     const result = await waitForVideoContent(renderClone, timeMs, blockingTimeoutMs);
