@@ -41,12 +41,12 @@ const SERIALIZED_STYLE_PROPERTIES = [
   "gridTemplate", "gridColumn", "gridRow", "gridArea",
   "margin", "padding", "boxSizing",
   "border", "borderTop", "borderRight", "borderBottom", "borderLeft", "borderRadius",
-  "background", "color", "boxShadow", "filter", "backdropFilter", "clipPath",
-  "font", "textAlign", "textDecoration", "textTransform",
+  "background", "backgroundColor", "color", "boxShadow", "filter", "backdropFilter", "clipPath",
+  "fontFamily", "fontSize", "fontWeight", "fontStyle", "textAlign", "textDecoration", "textTransform",
   "letterSpacing", "whiteSpace", "textOverflow", "lineHeight",
   "transform", "transformOrigin", "transformStyle",
   "perspective", "perspectiveOrigin", "backfaceVisibility",
-  "cursor", "pointerEvents", "userSelect", "overflow",
+  "cursor", "pointerEvents", "userSelect", "overflow", "overflowX", "overflowY",
 ] as const;
 
 interface SerializationOptions {
@@ -73,15 +73,6 @@ function escapeXML(str: string): string {
     .replace(/'/g, '&apos;');
 }
 
-/**
- * Get temporal bounds from an element (start/end time).
- */
-function getTemporalBounds(element: Element): { startMs: number; endMs: number } {
-  const dataset = (element as HTMLElement).dataset;
-  const startMs = dataset.startMs ? parseFloat(dataset.startMs) : -Infinity;
-  const endMs = dataset.endMs ? parseFloat(dataset.endMs) : Infinity;
-  return { startMs, endMs };
-}
 
 /**
  * Serialize computed styles as inline style string.
@@ -92,7 +83,8 @@ function serializeComputedStyles(element: Element): string {
   
   for (const prop of SERIALIZED_STYLE_PROPERTIES) {
     const value = styles[prop as any];
-    if (value && value !== 'none' && value !== 'auto' && value !== 'normal') {
+    // Only skip truly empty values - keep 'none', 'auto', 'normal' as they may be important defaults
+    if (value && value !== '' && value !== 'initial' && value !== 'inherit') {
       // Convert camelCase to kebab-case
       const kebab = prop.replace(/[A-Z]/g, m => `-${m.toLowerCase()}`);
       styleParts.push(`${kebab}:${value}`);
@@ -198,17 +190,16 @@ function serializeElement(
     return;
   }
   
-  // Check temporal bounds - skip if outside current time
-  const bounds = getTemporalBounds(element);
-  const inBounds = options.timeMs >= bounds.startMs && options.timeMs <= bounds.endMs;
-  console.log(`[serializeElement] ${element.tagName}: bounds=${bounds.startMs}-${bounds.endMs}ms, current=${options.timeMs}ms, inBounds=${inBounds}`);
-  
-  if (!inBounds) {
-    console.log(`[serializeElement] → Skipping (out of bounds)`);
-    return;
+  // Check visibility via computed styles (timegroup sets display:none on hidden elements)
+  if (element instanceof HTMLElement) {
+    const styles = getComputedStyle(element);
+    if (styles.display === 'none' || styles.visibility === 'hidden') {
+      console.log(`[serializeElement] ${element.tagName}: display=${styles.display}, visibility=${styles.visibility} → Skipping (hidden)`);
+      return;
+    }
   }
   
-  console.log(`[serializeElement] → Processing (isCustom=${element.tagName.includes('-')}, hasShadow=${!!(element as any).shadowRoot})`);
+  console.log(`[serializeElement] ${element.tagName} → Processing (isCustom=${element.tagName.includes('-')}, hasShadow=${!!(element as any).shadowRoot})`);
   
   // Custom element with shadow DOM?
   const isCustom = element.tagName.includes('-');
