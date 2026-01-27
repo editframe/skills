@@ -1,8 +1,12 @@
 /**
  * Video rendering for timegroups.
  * 
- * Uses the EXACT same rendering path as thumbnail generation (captureFromClone),
- * ensuring consistency between preview thumbnails and exported video.
+ * Uses the same rendering architecture as live preview (renderTimegroupToCanvas):
+ * - Rebuilds passive structure each frame from clone's current DOM state
+ * - Captures DOM changes from frame tasks (SVG paths, canvas content, text updates)
+ * - RenderContext provides pixel caching across frames for performance
+ * 
+ * This ensures consistency between live preview and exported video.
  */
 
 import { logger } from "./logger.js";
@@ -28,19 +32,12 @@ import {
 } from "./renderTimegroupToCanvas.js";
 import {
   buildCloneStructure,
-  syncStyles,
   collectDocumentStyles,
   overrideRootCloneStyles,
-  // NOTE: Video export does NOT use removeHiddenNodesForSerialization because the
-  // concurrent pipeline has multiple frames in flight sharing the same container.
-  // If frame N removes node X and frame N+1 needs X, N+1's serialization would be wrong.
-  // Instead, hidden nodes get display:none which is sufficient for correctness.
-  // Live preview (renderTimegroupToCanvas) uses the full remove/restore optimization.
 } from "./renderTimegroupPreview.js";
 import { renderToImageDirect } from "./rendering/renderToImage.js";
 import { createPreviewContainer } from "./previewTypes.js";
 import { inlineImages } from "./rendering/inlineImages.js";
-import { FrameController } from "./FrameController.js";
 import { RenderContext } from "./RenderContext.js";
 
 // ============================================================================
@@ -391,36 +388,12 @@ export async function renderTimegroupToVideo(
   }
   
   // =========================================================================
-  // Build clone structure ONCE - reuse like live preview does
+  // Setup for per-frame passive structure rebuilding (like live preview)
   // =========================================================================
-  const initialTimeMs = config.startMs;
-  await renderClone.seekForRender(initialTimeMs);
-  const { container: cloneContainer, syncState } = buildCloneStructure(renderClone, initialTimeMs);
-  
-  // Create RenderContext for caching across all frames (like live preview does)
+  // Create RenderContext for caching across all frames
   const renderContext = new RenderContext();
-  console.log(`[renderTimegroupToVideo] Created RenderContext, sourceMap has ${syncState.canvasSourceMap ? 'entries' : 'NO MAP'}`);
-  if (syncState.canvasSourceMap) {
-    // Count entries in WeakMap by trying to access it
-    let mapHasEntries = false;
-    const allCanvases = cloneContainer.querySelectorAll('canvas');
-    console.log(`[renderTimegroupToVideo] Found ${allCanvases.length} canvas elements in clone`);
-    for (const canvas of allCanvases) {
-      const source = syncState.canvasSourceMap.get(canvas as HTMLCanvasElement);
-      if (source) {
-        mapHasEntries = true;
-        console.log(`[renderTimegroupToVideo] Canvas ${canvas.width}x${canvas.height} -> ${source.tagName}`);
-      }
-    }
-    if (!mapHasEntries) {
-      console.log(`[renderTimegroupToVideo] WARNING: sourceMap exists but has no entries for canvases!`);
-    }
-  }
   
-  // Create FrameController for coordinating element rendering
-  const frameController = new FrameController(renderClone);
-  
-  // Create preview container with proper styling
+  // Create preview container with proper styling (reusable, content rebuilt each frame)
   const width = timegroup.offsetWidth || 1920;
   const height = timegroup.offsetHeight || 1080;
   const previewContainer = createPreviewContainer({
@@ -429,12 +402,10 @@ export async function renderTimegroupToVideo(
     background: getComputedStyle(timegroup).background || "#000",
   });
   
-  // Inject document styles
+  // Inject document styles once (cached for all frames)
   const styleEl = document.createElement("style");
   styleEl.textContent = collectDocumentStyles();
   previewContainer.appendChild(styleEl);
-  previewContainer.appendChild(cloneContainer);
-  overrideRootCloneStyles(syncState, true);
   
   // =========================================================================
   // Frame loop - DEEP PIPELINE: overlap encode + render + prepare
@@ -445,7 +416,7 @@ export async function renderTimegroupToVideo(
   const audioChunkDurationMs = 2000;
   
   let totalSeekMs = 0;
-  let totalSyncMs = 0;
+  let totalBuildMs = 0;
   let totalRenderMs = 0;
   let totalEncodeMs = 0;
   
@@ -502,13 +473,22 @@ export async function renderTimegroupToVideo(
         const seekPromise = seekQueue.shift()!;
         
         const renderPromise = seekPromise.then(async () => {
-          // Ensure all FrameRenderable elements are ready before capturing state
-          await frameController.renderFrame(renderTimeMs, { waitForLitUpdate: false });
+          // NOTE: seekForRender() has already:
+          // 1. Called frameController.renderFrame() to coordinate FrameRenderable elements
+          // 2. Awaited #executeCustomFrameTasks() so frame tasks are complete
+          // Clone's DOM now reflects all changes from frame tasks
           
-          const syncStart = performance.now();
-          syncStyles(syncState, renderTimeMs);
+          // Build passive structure from clone's CURRENT DOM state (captures frame task changes)
+          const buildStart = performance.now();
+          const { container: cloneContainer, syncState } = buildCloneStructure(renderClone, renderTimeMs);
+          totalBuildMs += performance.now() - buildStart;
+          
+          // Clear previous container content and add new structure
+          while (previewContainer.firstChild !== styleEl && previewContainer.firstChild) {
+            previewContainer.removeChild(previewContainer.firstChild);
+          }
+          previewContainer.appendChild(cloneContainer);
           overrideRootCloneStyles(syncState, true);
-          totalSyncMs += performance.now() - syncStart;
           
           const renderStart = performance.now();
           const image = await renderToImageDirect(previewContainer, width, height, {
@@ -619,7 +599,7 @@ export async function renderTimegroupToVideo(
     const totalTime = performance.now() - renderStartTime;
     logger.debug(
       `[renderTimegroupToVideo] ${config.totalFrames} frames: ` +
-      `seek=${totalSeekMs.toFixed(0)}ms, sync=${totalSyncMs.toFixed(0)}ms, ` +
+      `seek=${totalSeekMs.toFixed(0)}ms, build=${totalBuildMs.toFixed(0)}ms, ` +
       `render=${totalRenderMs.toFixed(0)}ms, encode=${totalEncodeMs.toFixed(0)}ms, ` +
       `total=${totalTime.toFixed(0)}ms`
     );
@@ -650,7 +630,6 @@ export async function renderTimegroupToVideo(
     }
     
   } finally {
-    frameController.abort();
     renderContext.dispose();
     cleanupRenderClone();
   }
