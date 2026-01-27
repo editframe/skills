@@ -11,6 +11,7 @@ Add to your project's `.cursor/skills/` directory:
 ```bash
 cp -r skills/elements-composition .cursor/skills/
 cp -r skills/react-composition .cursor/skills/
+cp -r skills/motion-design .cursor/skills/
 ```
 
 ### Claude Code
@@ -24,11 +25,13 @@ cp -r skills/react-composition .cursor/skills/
 Copy the skill folders to your agent's skills directory:
 - `skills/elements-composition/` - HTML/Web Components
 - `skills/react-composition/` - React Components
+- `skills/motion-design/` - Motion graphics principles
 
 ## Available Skills
 
 - **elements-composition** - Create video compositions with Editframe Elements (HTML/Web Components)
 - **react-composition** - Create video compositions with @editframe/react React wrappers (React/TypeScript)
+- **motion-design** - Professional motion graphics principles: timing, easing, physics, attention choreography, and advanced animation techniques
 
 ## License
 
