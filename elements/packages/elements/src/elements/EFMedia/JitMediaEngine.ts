@@ -46,6 +46,15 @@ export class JitMediaEngine extends BaseMediaEngine implements MediaEngine {
   #cachedVideoRendition: VideoRendition | undefined | null = null;
   #cachedAudioRendition: AudioRendition | undefined | null = null;
 
+  // Implement abstract methods required by BaseMediaEngine
+  protected getVideoRenditionInternal(): VideoRendition | undefined {
+    return this.videoRendition;
+  }
+
+  protected getAudioRenditionInternal(): AudioRendition | undefined {
+    return this.audioRendition;
+  }
+
   get audioRendition(): AudioRendition | undefined {
     if (this.#cachedAudioRendition !== null) {
       return this.#cachedAudioRendition;
