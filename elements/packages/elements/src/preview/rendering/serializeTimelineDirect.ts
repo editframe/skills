@@ -200,12 +200,15 @@ function serializeElement(
   
   // Check temporal bounds - skip if outside current time
   const bounds = getTemporalBounds(element);
-  if (options.timeMs < bounds.startMs || options.timeMs > bounds.endMs) {
-    console.log(`[serializeElement] Skipping ${element.tagName} (out of bounds: ${bounds.startMs}-${bounds.endMs}, current=${options.timeMs})`);
+  const inBounds = options.timeMs >= bounds.startMs && options.timeMs <= bounds.endMs;
+  console.log(`[serializeElement] ${element.tagName}: bounds=${bounds.startMs}-${bounds.endMs}ms, current=${options.timeMs}ms, inBounds=${inBounds}`);
+  
+  if (!inBounds) {
+    console.log(`[serializeElement] → Skipping (out of bounds)`);
     return;
   }
   
-  console.log(`[serializeElement] Processing ${element.tagName}, isCustom=${element.tagName.includes('-')}, hasShadow=${!!(element as any).shadowRoot}`);
+  console.log(`[serializeElement] → Processing (isCustom=${element.tagName.includes('-')}, hasShadow=${!!(element as any).shadowRoot})`);
   
   // Custom element with shadow DOM?
   const isCustom = element.tagName.includes('-');
@@ -213,7 +216,8 @@ function serializeElement(
     const shadowCanvas = element.shadowRoot.querySelector('canvas');
     if (shadowCanvas) {
       // Replace custom element with its shadow canvas
-      console.log(`[serializeElement] ${element.tagName} has shadow canvas, serializing it`);
+      const styles = getComputedStyle(element);
+      console.log(`[serializeElement] → ${element.tagName} has shadow canvas, serializing (position=${styles.position}, display=${styles.display})`);
       serializeCanvas(element, shadowCanvas, parts, canvasJobs, options);
       return;
     }
@@ -221,7 +225,8 @@ function serializeElement(
     const shadowImg = element.shadowRoot.querySelector('img');
     if (shadowImg?.complete && shadowImg.naturalWidth > 0) {
       // Convert shadow img to canvas
-      console.log(`[serializeElement] ${element.tagName} has shadow img, serializing it`);
+      const styles = getComputedStyle(element);
+      console.log(`[serializeElement] → ${element.tagName} has shadow img, serializing (position=${styles.position}, display=${styles.display})`);
       serializeImageAsCanvas(element, shadowImg, parts, canvasJobs, options);
       return;
     }
@@ -229,7 +234,7 @@ function serializeElement(
     // No special shadow content - serialize light DOM children (flatten)
     // Note: We serialize element.childNodes (light DOM), NOT shadowRoot.childNodes,
     // because the light DOM children are the actual content (projected through <slot>)
-    console.log(`[serializeElement] ${element.tagName} has no special shadow content, serializing ${element.childNodes.length} light DOM children`);
+    console.log(`[serializeElement] → ${element.tagName} has no special shadow content, serializing ${element.childNodes.length} light DOM children`);
     for (const child of element.childNodes) {
       if (child.nodeType === Node.TEXT_NODE) {
         const text = child.textContent?.trim();
