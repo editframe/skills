@@ -2,8 +2,6 @@
  * Main thread canvas encoding (fallback implementation).
  */
 
-import type { CanvasEncodeResult } from "./types.js";
-
 // JPEG quality constants
 export const JPEG_QUALITY_HIGH = 0.92;
 export const JPEG_QUALITY_MEDIUM = 0.85;
@@ -24,6 +22,8 @@ export function encodeCanvasOnMainThread(
     }
 
     const preserveAlpha = canvas.dataset.preserveAlpha === "true";
+    const format = preserveAlpha ? "PNG" : "JPEG";
+    // Note: mainThreadEncoder logs would spam console, so skip for now
     let dataUrl: string;
 
     if (canvasScale < 1) {

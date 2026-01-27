@@ -79,10 +79,14 @@ addEventListener("message", async (event: MessageEvent<EncodeTask>) => {
     bitmap.close();
     
     // Convert to blob (JPEG or PNG based on preserveAlpha)
+    const format = preserveAlpha ? "image/png" : "image/jpeg";
     const blob = await canvas.convertToBlob({
-      type: preserveAlpha ? "image/png" : "image/jpeg",
+      type: format,
       quality: preserveAlpha ? undefined : 0.95,
     });
+    
+    // Note: Can't use console.log in worker, but we can send debug info
+    postMessage({ debug: `[encoderWorker] Encoded ${bitmap.width}x${bitmap.height} as ${format}, blob size: ${blob.size} bytes` });
     
     // Convert blob to base64 data URL
     const arrayBuffer = await blob.arrayBuffer();

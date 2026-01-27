@@ -120,6 +120,9 @@ export async function encodeCanvasesInParallel(
 
       const preserveAlpha = canvas.dataset.preserveAlpha === "true";
       const sourceElement = sourceMap?.get(canvas);
+      
+      // Always log encoding attempts (use console.warn so it's always visible)
+      console.warn(`[canvasEncoder] Encoding canvas ${canvas.width}x${canvas.height}, preserveAlpha=${preserveAlpha}, hasSourceElement=${!!sourceElement}, hasRenderContext=${!!renderContext}, sourceTag=${sourceElement?.tagName || 'none'}`);
 
       // OPTIMIZATION: Check RenderContext cache for static elements
       if (renderContext && sourceElement) {
@@ -164,9 +167,12 @@ export async function encodeCanvasesInParallel(
         // For static elements (ef-image, ef-waveform), check version-based cache
         const cachedDataUrl = renderContext.getCachedCanvasDataUrl(sourceElement);
         if (cachedDataUrl) {
+          logger.debug(`[canvasEncoder] Using cached dataUrl for ${sourceElement.tagName}`);
           return { canvas, dataUrl: cachedDataUrl, preserveAlpha };
         }
       }
+      
+      logger.debug(`[canvasEncoder] No cache hit, encoding canvas from scratch...`);
 
       // Standard encoding path (fallback when no RenderContext cache)
       let sourceCanvas = canvas;
@@ -201,7 +207,10 @@ export async function encodeCanvasesInParallel(
 
       // Cache the result for static elements
       if (renderContext && sourceElement) {
+        logger.debug(`[canvasEncoder] Caching result for ${sourceElement.tagName}`);
         renderContext.setCachedCanvasDataUrl(sourceElement, dataUrl);
+      } else {
+        logger.debug(`[canvasEncoder] NOT caching (hasRenderContext=${!!renderContext}, hasSourceElement=${!!sourceElement})`);
       }
 
       return { canvas, dataUrl, preserveAlpha };

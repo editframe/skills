@@ -528,8 +528,13 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
         // ef-waveform always needs alpha for proper rendering
         if (srcEl.tagName === "EF-WAVEFORM") {
           clone.dataset.preserveAlpha = "true";
-        } else if (srcEl.tagName === "EF-IMAGE" && "hasAlpha" in srcEl && (srcEl as any).hasAlpha) {
-          clone.dataset.preserveAlpha = "true";
+        } else if (srcEl.tagName === "EF-IMAGE") {
+          const hasAlpha = "hasAlpha" in srcEl && (srcEl as any).hasAlpha;
+          if (hasAlpha) {
+            clone.dataset.preserveAlpha = "true";
+          }
+          // Always log format detection (use console.warn so it's always visible)
+          console.warn(`[buildCloneStructure] EF-IMAGE (canvas): hasAlpha=${hasAlpha}, will encode as ${hasAlpha ? 'PNG' : 'JPEG'}`);
         }
         
         const ctx = clone.getContext("2d");
@@ -565,8 +570,13 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
         clone.height = shadowImg.naturalHeight;
         // Check if the element actually has alpha channel before preserving it
         // For direct img elements, check the element's hasAlpha property
-        if (srcEl.tagName === "EF-IMAGE" && "hasAlpha" in srcEl && (srcEl as any).hasAlpha) {
-          clone.dataset.preserveAlpha = "true";
+        if (srcEl.tagName === "EF-IMAGE") {
+          const hasAlpha = "hasAlpha" in srcEl && (srcEl as any).hasAlpha;
+          if (hasAlpha) {
+            clone.dataset.preserveAlpha = "true";
+          }
+          // Always log format detection (use console.warn so it's always visible)
+          console.warn(`[buildCloneStructure] EF-IMAGE (img): hasAlpha=${hasAlpha}, will encode as ${hasAlpha ? 'PNG' : 'JPEG'}`);
         }
         const ctx = clone.getContext("2d");
         if (ctx) {

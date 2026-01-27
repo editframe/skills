@@ -177,6 +177,8 @@ export class EFImage extends EFTemporal(
     // JPEG images don't have alpha, PNG/WebP may have alpha
     const mimeType = blob.type.toLowerCase();
     this.#hasAlpha = !mimeType.includes("jpeg") && !mimeType.includes("jpg");
+    // Always log image loading (use console.warn so it's always visible)
+    console.warn(`[EFImage] Loaded image: mimeType=${mimeType}, hasAlpha=${this.#hasAlpha}, src=${this.src}`);
     
     image.src = URL.createObjectURL(blob);
 
@@ -269,6 +271,8 @@ export class EFImage extends EFTemporal(
       this.loadImage().catch(() => {});
       // Increment render version only when actual image content changes
       this.#renderVersion++;
+      // Always log version changes (use console.warn so it's always visible)
+      console.warn(`[EFImage] Content changed, renderVersion now ${this.#renderVersion}, src=${this.src}`);
     }
   }
 
