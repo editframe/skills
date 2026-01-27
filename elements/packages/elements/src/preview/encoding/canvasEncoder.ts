@@ -121,11 +121,6 @@ export async function encodeCanvasesInParallel(
       const preserveAlpha = canvas.dataset.preserveAlpha === "true";
       const sourceElement = sourceMap?.get(canvas);
       
-      console.log(`[canvasEncoder] Canvas ${canvas.width}x${canvas.height}: hasRenderContext=${!!renderContext}, hasSourceMap=${!!sourceMap}, hasSourceElement=${!!sourceElement}`);
-      if (sourceElement) {
-        console.log(`[canvasEncoder] SourceElement: tag=${sourceElement.tagName}, hasRenderVersion=${"renderVersion" in sourceElement}`);
-      }
-
       // OPTIMIZATION: Check RenderContext cache for static elements
       if (renderContext && sourceElement) {
         // For ef-video, use direct capture API

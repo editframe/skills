@@ -484,6 +484,10 @@ export async function renderTimegroupToVideo(
           const buildTime = performance.now() - buildStart;
           totalBuildMs += buildTime;
           
+          // DIAGNOSTIC: Count elements before clear
+          const beforeClearCount = previewContainer.querySelectorAll('*').length;
+          const beforeClearSvgs = previewContainer.querySelectorAll('svg').length;
+          
           // Clear previous container content and add new structure
           const domUpdateStart = performance.now();
           while (previewContainer.firstChild !== styleEl && previewContainer.firstChild) {
@@ -492,6 +496,13 @@ export async function renderTimegroupToVideo(
           previewContainer.appendChild(cloneContainer);
           overrideRootCloneStyles(syncState, true);
           const domUpdateTime = performance.now() - domUpdateStart;
+          
+          // DIAGNOSTIC: Count elements after adding new structure
+          const afterAddCount = previewContainer.querySelectorAll('*').length;
+          const afterAddSvgs = previewContainer.querySelectorAll('svg').length;
+          const svgChildren = Array.from(previewContainer.querySelectorAll('svg')).map(svg => 
+            svg.querySelectorAll('*').length
+          );
           
           const renderStart = performance.now();
           const image = await renderToImageDirect(previewContainer, width, height, {
@@ -505,6 +516,10 @@ export async function renderTimegroupToVideo(
           // Log detailed timing every 30 frames to see breakdown
           if (renderFrameIndex % 30 === 0) {
             console.log(`[Frame ${renderFrameIndex}] build=${buildTime.toFixed(1)}ms, domUpdate=${domUpdateTime.toFixed(1)}ms, render=${renderTime.toFixed(1)}ms, nodeCount=${syncState.nodeCount}`);
+            console.log(`  DOM: beforeClear=${beforeClearCount} elems (${beforeClearSvgs} svgs), afterAdd=${afterAddCount} elems (${afterAddSvgs} svgs)`);
+            if (svgChildren.length > 0) {
+              console.log(`  SVG complexity: ${svgChildren.join(', ')} elements per SVG`);
+            }
           }
           
           return image;

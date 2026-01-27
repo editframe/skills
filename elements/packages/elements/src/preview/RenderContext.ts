@@ -100,7 +100,6 @@ export class RenderContext {
     const { maxCanvasCacheSize = 50, maxVideoFrameCacheSize = 100 } = options;
     this.#canvasCache = new LRUCache(maxCanvasCacheSize);
     this.#videoFrameCache = new LRUCache(maxVideoFrameCacheSize);
-    console.log(`[RenderContext] Created (maxCanvasCache=${maxCanvasCacheSize}, maxVideoFrameCache=${maxVideoFrameCacheSize})`);
   }
 
   /**
@@ -149,10 +148,8 @@ export class RenderContext {
     const cached = this.#canvasCache.get(key);
     if (cached) {
       this.#metrics.canvasCacheHits++;
-      console.log(`[RenderContext] Cache HIT for ${element.tagName} (key: ${key}, dataUrl size: ${cached.length} chars)`);
     } else {
       this.#metrics.canvasCacheMisses++;
-      console.log(`[RenderContext] Cache MISS for ${element.tagName} (key: ${key})`);
     }
     return cached;
   }
@@ -167,7 +164,6 @@ export class RenderContext {
     const key = this.#getCanvasCacheKey(element);
     if (key) {
       this.#canvasCache.set(key, dataUrl);
-      console.log(`[RenderContext] Cache SET for ${element.tagName} (key: ${key}, dataUrl size: ${dataUrl.length} chars)`);
     }
   }
 
@@ -257,7 +253,6 @@ export class RenderContext {
   dispose(): void {
     if (this.#disposed) return;
     
-    console.log(`[RenderContext] Disposing (canvasCache: ${this.#metrics.canvasCacheHits} hits / ${this.#metrics.canvasCacheMisses} misses, videoFrameCache: ${this.#metrics.videoFrameCacheHits} hits / ${this.#metrics.videoFrameCacheMisses} misses)`);
     this.#canvasCache.clear();
     this.#videoFrameCache.clear();
     this.#disposed = true;
