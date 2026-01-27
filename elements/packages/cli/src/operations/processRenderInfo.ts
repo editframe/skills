@@ -3,7 +3,7 @@ import {
   findOrCreateCaptions,
   generateTrack,
 } from "@editframe/assets";
-import type { getRenderInfo } from "@editframe/elements";
+import type { getRenderInfo } from "@editframe/elements/node";
 
 export const processRenderInfo = async (
   renderInfo: Awaited<ReturnType<typeof getRenderInfo>>,

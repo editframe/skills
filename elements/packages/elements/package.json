@@ -45,6 +45,12 @@
         "default": "./dist/index.js"
       }
     },
+    "./node": {
+      "import": {
+        "types": "./dist/node.d.ts",
+        "default": "./dist/node.js"
+      }
+    },
     "./package.json": "./package.json",
     "./styles.css": "./dist/style.css",
     "./types.json": "./types.json"
@@ -55,6 +61,12 @@
         "import": {
           "types": "./dist/index.d.ts",
           "default": "./dist/index.js"
+        }
+      },
+      "./node": {
+        "import": {
+          "types": "./dist/node.d.ts",
+          "default": "./dist/node.js"
         }
       },
       "./package.json": "./package.json",

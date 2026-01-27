@@ -48,6 +48,7 @@ const inlineCssPlugin = (): Plugin => ({
 
 export default defineConfig(
   createTsdownConfig({
+    entry: ["src/index.ts", "src/node.ts"],
     plugins: [inlineCssPlugin()],
     external: [/@editframe\/assets/],
     publint: false, // Disabled because CSS is built after tsdown

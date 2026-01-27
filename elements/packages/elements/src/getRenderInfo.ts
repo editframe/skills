@@ -7,12 +7,11 @@
  * of the render info extraction.
  */
 
-import type {
-  EFCaptions,
-  EFImage,
-  EFMedia,
-  EFTimegroup,
-} from "@editframe/elements";
+// Import types directly from source files to avoid circular dependency through index.ts
+import type { EFTimegroup } from "./elements/EFTimegroup.js";
+import type { EFMedia } from "./elements/EFMedia.js";
+import type { EFCaptions } from "./elements/EFCaptions.js";
+import type { EFImage } from "./elements/EFImage.js";
 import { z } from "zod";
 
 export const RenderInfo = z.object({

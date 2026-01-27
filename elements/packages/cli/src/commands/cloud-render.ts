@@ -5,7 +5,7 @@ import { PassThrough } from "node:stream";
 import { inspect } from "node:util";
 import { createRender, uploadRender } from "@editframe/api";
 import { md5Directory, md5FilePath } from "@editframe/assets";
-import { getRenderInfo, RenderInfo } from "@editframe/elements";
+import { getRenderInfo, RenderInfo } from "@editframe/elements/node";
 import { Option, program } from "commander";
 import debug from "debug";
 import { parse as parseHTML } from "node-html-parser";

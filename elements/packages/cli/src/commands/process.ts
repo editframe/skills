@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import path from "node:path";
-import { getRenderInfo } from "@editframe/elements";
+import { getRenderInfo } from "@editframe/elements/node";
 import { program } from "commander";
 import { processRenderInfo } from "../operations/processRenderInfo.js";
 import { launchBrowserAndWaitForSDK } from "../utils/launchBrowserAndWaitForSDK.js";

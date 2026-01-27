@@ -1,4 +1,4 @@
-import type { EFTimegroup } from "@editframe/elements";
+import type { EFTimegroup } from "@editframe/elements/node";
 import type { Page } from "playwright";
 
 export const attachWorkbench = (page: Page) => {
