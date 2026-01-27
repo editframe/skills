@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Serialization Benchmark: DOM vs String Building</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+    .results {
+      margin: 20px 0;
+      padding: 20px;
+      background: #f5f5f5;
+      border-radius: 8px;
+    }
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      margin: 10px 0;
+      padding: 10px;
+      background: white;
+      border-radius: 4px;
+    }
+    .winner {
+      background: #e8f5e9;
+      font-weight: bold;
+    }
+    button {
+      padding: 12px 24px;
+      font-size: 16px;
+      background: #2196F3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #1976D2;
+    }
+    .config {
+      margin: 20px 0;
+      padding: 15px;
+      background: #fff3e0;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Serialization Benchmark: DOM Creation vs String Building</h1>
+  
+  <div class="config">
+    <h3>Test Configuration</h3>
+    <label>
+      Tree depth: <input type="number" id="depth" value="5" min="1" max="10">
+    </label>
+    <br><br>
+    <label>
+      Children per node: <input type="number" id="childrenPerNode" value="3" min="1" max="10">
+    </label>
+    <br><br>
+    <label>
+      Iterations: <input type="number" id="iterations" value="100" min="1" max="1000">
+    </label>
+    <br><br>
+    <small>
+      Approximate nodes: <span id="nodeCount">0</span><br>
+      (Your timeline has ~216 nodes)
+    </small>
+  </div>
+
+  <button onclick="runBenchmark()">Run Benchmark</button>
+  
+  <div class="results" id="results" style="display:none">
+    <h3>Results</h3>
+    <div id="resultsContent"></div>
+  </div>
+
+  <script>
+    // Calculate approximate node count
+    function updateNodeCount() {
+      const depth = parseInt(document.getElementById('depth').value);
+      const childrenPerNode = parseInt(document.getElementById('childrenPerNode').value);
+      let count = 0;
+      for (let i = 0; i <= depth; i++) {
+        count += Math.pow(childrenPerNode, i);
+      }
+      document.getElementById('nodeCount').textContent = count;
+    }
+    
+    document.getElementById('depth').addEventListener('input', updateNodeCount);
+    document.getElementById('childrenPerNode').addEventListener('input', updateNodeCount);
+    updateNodeCount();
+
+    // Create a test tree in live DOM (simulates your timeline)
+    function createTestTree(depth, childrenPerNode) {
+      const container = document.createElement('div');
+      container.setAttribute('data-test', 'root');
+      container.style.width = '1920px';
+      container.style.height = '1080px';
+      container.style.position = 'absolute';
+      container.style.background = '#000';
+      
+      function addChildren(parent, currentDepth) {
+        if (currentDepth >= depth) return;
+        
+        for (let i = 0; i < childrenPerNode; i++) {
+          const child = document.createElement('div');
+          child.className = `level-${currentDepth} item-${i}`;
+          child.style.position = 'absolute';
+          child.style.left = `${i * 20}px`;
+          child.style.top = `${currentDepth * 50}px`;
+          child.style.width = '100px';
+          child.style.height = '40px';
+          child.style.background = `hsl(${currentDepth * 60}, 70%, 50%)`;
+          child.style.border = '1px solid white';
+          child.setAttribute('data-depth', currentDepth);
+          child.setAttribute('data-index', i);
+          
+          // Add some text content
+          const text = document.createTextNode(`Node ${currentDepth}-${i}`);
+          child.appendChild(text);
+          
+          parent.appendChild(child);
+          addChildren(child, currentDepth + 1);
+        }
+      }
+      
+      addChildren(container, 0);
+      return container;
+    }
+
+    // Approach 1: DOM creation + XMLSerializer (current approach)
+    function benchmarkDOMCreation(sourceTree) {
+      const container = document.createElement('div');
+      
+      function cloneNode(src) {
+        const clone = document.createElement(src.tagName.toLowerCase());
+        
+        // Copy attributes
+        for (const attr of src.attributes) {
+          clone.setAttribute(attr.name, attr.value);
+        }
+        
+        // Copy computed styles (subset)
+        const styles = getComputedStyle(src);
+        clone.style.position = styles.position;
+        clone.style.width = styles.width;
+        clone.style.height = styles.height;
+        clone.style.left = styles.left;
+        clone.style.top = styles.top;
+        clone.style.background = styles.background;
+        clone.style.border = styles.border;
+        
+        // Clone children
+        for (const child of src.childNodes) {
+          if (child.nodeType === Node.TEXT_NODE) {
+            clone.appendChild(document.createTextNode(child.textContent));
+          } else if (child.nodeType === Node.ELEMENT_NODE) {
+            clone.appendChild(cloneNode(child));
+          }
+        }
+        
+        return clone;
+      }
+      
+      const cloned = cloneNode(sourceTree);
+      container.appendChild(cloned);
+      
+      // Serialize
+      const serializer = new XMLSerializer();
+      const xml = serializer.serializeToString(container);
+      
+      return xml.length;
+    }
+
+    // Approach 2: Direct string building
+    function benchmarkStringBuilding(sourceTree) {
+      let xml = '';
+      
+      function escapeXML(str) {
+        return str.replace(/[<>&"']/g, (c) => {
+          switch(c) {
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '&': return '&amp;';
+            case '"': return '&quot;';
+            case "'": return '&apos;';
+            default: return c;
+          }
+        });
+      }
+      
+      function serializeNode(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+          return escapeXML(node.textContent);
+        }
+        
+        if (node.nodeType !== Node.ELEMENT_NODE) {
+          return '';
+        }
+        
+        const tag = node.tagName.toLowerCase();
+        let html = `<${tag}`;
+        
+        // Attributes
+        for (const attr of node.attributes) {
+          html += ` ${attr.name}="${escapeXML(attr.value)}"`;
+        }
+        
+        // Computed styles as inline style
+        const styles = getComputedStyle(node);
+        const styleStr = `position:${styles.position};width:${styles.width};height:${styles.height};left:${styles.left};top:${styles.top};background:${styles.background};border:${styles.border}`;
+        html += ` style="${escapeXML(styleStr)}"`;
+        
+        html += '>';
+        
+        // Children
+        for (const child of node.childNodes) {
+          html += serializeNode(child);
+        }
+        
+        html += `</${tag}>`;
+        return html;
+      }
+      
+      xml = '<div>' + serializeNode(sourceTree) + '</div>';
+      return xml.length;
+    }
+
+    // Approach 3: Hybrid - reuse XMLSerializer but build tree more efficiently
+    function benchmarkHybrid(sourceTree) {
+      // Build a lightweight clone that only copies essential data
+      function lightClone(src) {
+        const clone = document.createElement(src.tagName.toLowerCase());
+        
+        // Copy only essential attributes (skip data-*, etc)
+        for (const attr of src.attributes) {
+          if (!attr.name.startsWith('data-')) {
+            clone.setAttribute(attr.name, attr.value);
+          }
+        }
+        
+        // Inline computed styles directly
+        const styles = getComputedStyle(src);
+        clone.style.cssText = `position:${styles.position};width:${styles.width};height:${styles.height};left:${styles.left};top:${styles.top};background:${styles.background};border:${styles.border}`;
+        
+        // Clone children
+        for (const child of src.childNodes) {
+          if (child.nodeType === Node.TEXT_NODE) {
+            clone.appendChild(document.createTextNode(child.textContent));
+          } else if (child.nodeType === Node.ELEMENT_NODE) {
+            clone.appendChild(lightClone(child));
+          }
+        }
+        
+        return clone;
+      }
+      
+      const cloned = lightClone(sourceTree);
+      const serializer = new XMLSerializer();
+      const xml = serializer.serializeToString(cloned);
+      
+      return xml.length;
+    }
+
+    function runBenchmark() {
+      const depth = parseInt(document.getElementById('depth').value);
+      const childrenPerNode = parseInt(document.getElementById('childrenPerNode').value);
+      const iterations = parseInt(document.getElementById('iterations').value);
+      
+      // Create test tree once
+      const testTree = createTestTree(depth, childrenPerNode);
+      
+      // Warmup
+      benchmarkDOMCreation(testTree);
+      benchmarkStringBuilding(testTree);
+      benchmarkHybrid(testTree);
+      
+      // Benchmark 1: DOM Creation + XMLSerializer
+      const start1 = performance.now();
+      for (let i = 0; i < iterations; i++) {
+        benchmarkDOMCreation(testTree);
+      }
+      const time1 = performance.now() - start1;
+      const avg1 = time1 / iterations;
+      
+      // Benchmark 2: Direct String Building
+      const start2 = performance.now();
+      for (let i = 0; i < iterations; i++) {
+        benchmarkStringBuilding(testTree);
+      }
+      const time2 = performance.now() - start2;
+      const avg2 = time2 / iterations;
+      
+      // Benchmark 3: Hybrid
+      const start3 = performance.now();
+      for (let i = 0; i < iterations; i++) {
+        benchmarkHybrid(testTree);
+      }
+      const time3 = performance.now() - start3;
+      const avg3 = time3 / iterations;
+      
+      // Display results
+      const fastest = Math.min(avg1, avg2, avg3);
+      
+      document.getElementById('results').style.display = 'block';
+      document.getElementById('resultsContent').innerHTML = `
+        <div class="result-row ${avg1 === fastest ? 'winner' : ''}">
+          <strong>DOM Creation + XMLSerializer:</strong>
+          <span>${avg1.toFixed(3)}ms/iter (${iterations} iterations = ${time1.toFixed(0)}ms total)</span>
+        </div>
+        <div class="result-row ${avg2 === fastest ? 'winner' : ''}">
+          <strong>Direct String Building:</strong>
+          <span>${avg2.toFixed(3)}ms/iter (${iterations} iterations = ${time2.toFixed(0)}ms total)</span>
+        </div>
+        <div class="result-row ${avg3 === fastest ? 'winner' : ''}">
+          <strong>Hybrid (Light DOM + XMLSerializer):</strong>
+          <span>${avg3.toFixed(3)}ms/iter (${iterations} iterations = ${time3.toFixed(0)}ms total)</span>
+        </div>
+        <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 4px;">
+          <strong>Performance comparison:</strong><br>
+          String Building is ${(avg1/avg2).toFixed(2)}x ${avg2 < avg1 ? 'faster' : 'slower'} than DOM Creation<br>
+          Hybrid is ${(avg1/avg3).toFixed(2)}x ${avg3 < avg1 ? 'faster' : 'slower'} than DOM Creation<br>
+          ${avg2 < avg3 ? 'String Building' : 'Hybrid'} is ${Math.abs((avg2/avg3 - 1) * 100).toFixed(1)}% ${avg2 < avg3 ? 'faster' : 'slower'} than ${avg2 < avg3 ? 'Hybrid' : 'String Building'}
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>
