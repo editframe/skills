@@ -533,8 +533,7 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
           if (hasAlpha) {
             clone.dataset.preserveAlpha = "true";
           }
-          // Always log format detection (use console.warn so it's always visible)
-          console.warn(`[buildCloneStructure] EF-IMAGE (canvas): hasAlpha=${hasAlpha}, will encode as ${hasAlpha ? 'PNG' : 'JPEG'}`);
+          console.log(`[buildCloneStructure] EF-IMAGE canvas: size=${clone.width}x${clone.height}, hasAlpha=${hasAlpha}, preserveAlpha=${hasAlpha ? 'PNG' : 'JPEG'}`);
         }
         
         const ctx = clone.getContext("2d");
@@ -575,8 +574,6 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
           if (hasAlpha) {
             clone.dataset.preserveAlpha = "true";
           }
-          // Always log format detection (use console.warn so it's always visible)
-          console.warn(`[buildCloneStructure] EF-IMAGE (img): hasAlpha=${hasAlpha}, will encode as ${hasAlpha ? 'PNG' : 'JPEG'}`);
         }
         const ctx = clone.getContext("2d");
         if (ctx) {

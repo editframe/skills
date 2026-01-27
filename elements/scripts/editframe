@@ -17,6 +17,7 @@
 # - Runs CLI via tsx (TypeScript execution)
 # - Uses tsconfig-paths/register to resolve @editframe/* imports
 # - Resolves to source files (packages/*/src/) via tsconfig.json paths
+# - When run from external projects, temporarily swaps @editframe dependencies to file: paths
 # - No build step required!
 #
 
@@ -24,9 +25,100 @@ set -e
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 ELEMENTS_ROOT="$SCRIPT_DIR/.."
+PACKAGES_DIR="$ELEMENTS_ROOT/packages"
 
 # Save the original working directory where the user ran the command
 ORIGINAL_CWD="$(pwd)"
+
+# Detect if we're running from outside the monorepo
+RUNNING_EXTERNAL=false
+if [[ "$ORIGINAL_CWD" != "$ELEMENTS_ROOT"* ]]; then
+  RUNNING_EXTERNAL=true
+fi
+
+# Function to restore package.json on exit
+cleanup_package_json() {
+  local backup_file="$ORIGINAL_CWD/.package.json.backup"
+  echo "" >&2
+  echo "[cleanup] Checking for backup at: $backup_file" >&2
+  
+  if [ -f "$backup_file" ]; then
+    echo "[cleanup] Restoring original package.json..." >&2
+    mv "$backup_file" "$ORIGINAL_CWD/package.json"
+    
+    echo "[cleanup] Reinstalling published dependencies..." >&2
+    cd "$ORIGINAL_CWD"
+    npm install --silent 2>/dev/null || true
+    echo "[cleanup] Done!" >&2
+  else
+    echo "[cleanup] No backup found, skipping" >&2
+  fi
+}
+
+# Variable to track if we need cleanup
+NEEDS_CLEANUP=false
+
+# If running from external project, swap dependencies to source files
+if [ "$RUNNING_EXTERNAL" = true ] && [ -f "$ORIGINAL_CWD/package.json" ]; then
+  # Check if package.json has @editframe dependencies
+  if grep -q '"@editframe/' "$ORIGINAL_CWD/package.json"; then
+    echo "📦 Detected external project with @editframe dependencies"
+    echo "   Temporarily swapping to monorepo source files..."
+    echo ""
+    
+    NEEDS_CLEANUP=true
+    
+    # Backup original package.json
+    cp "$ORIGINAL_CWD/package.json" "$ORIGINAL_CWD/.package.json.backup"
+    
+    # Replace @editframe dependencies with file: paths using Node
+    cd "$ORIGINAL_CWD"
+    node -e "
+      const fs = require('fs');
+      const path = require('path');
+      const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+      const packagesDir = '$PACKAGES_DIR';
+      const projectDir = '$ORIGINAL_CWD';
+      
+      const editframePackages = ['assets', 'cli', 'elements', 'vite-plugin', 'api', 'react'];
+      let modified = false;
+      
+      ['dependencies', 'devDependencies'].forEach(depType => {
+        if (!pkg[depType]) return;
+        
+        Object.keys(pkg[depType]).forEach(pkgName => {
+          if (pkgName.startsWith('@editframe/')) {
+            const shortName = pkgName.replace('@editframe/', '');
+            if (editframePackages.includes(shortName)) {
+              const pkgPath = path.join(packagesDir, shortName);
+              const relativePath = path.relative(projectDir, pkgPath);
+              pkg[depType][pkgName] = 'file:' + relativePath;
+              modified = true;
+            }
+          }
+        });
+      });
+      
+      if (modified) {
+        fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+        process.exit(0);
+      } else {
+        process.exit(1);
+      }
+    "
+    
+    # If dependencies were modified, reinstall
+    if [ $? -eq 0 ]; then
+      echo "   Installing source dependencies..."
+      npm install --silent
+      echo "✓ Ready to use monorepo source files"
+      echo ""
+    else
+      # No @editframe deps found, remove backup
+      rm -f "$ORIGINAL_CWD/.package.json.backup"
+    fi
+  fi
+fi
 
 # Change to elements directory so tsconfig.json paths resolve correctly
 cd "$ELEMENTS_ROOT"
@@ -35,5 +127,14 @@ cd "$ELEMENTS_ROOT"
 # Use Node.js loader to handle CSS imports before tsx processes the file
 # The CSS loader handles .css?inline imports by converting them to string exports
 # Pass the original working directory so the CLI knows where the user actually is
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-ORIGINAL_CWD="$ORIGINAL_CWD" exec node --import "data:text/javascript,import { register } from 'node:module'; import { pathToFileURL } from 'node:url'; register('$SCRIPT_DIR/css-loader.mjs', pathToFileURL('$SCRIPT_DIR/'));" --import tsx --import tsconfig-paths/register packages/cli/src/index.ts "$@"
+# NOTE: Don't use exec here if we need cleanup so trap can fire
+if [ "$NEEDS_CLEANUP" = true ]; then
+  # Set up trap before running CLI
+  trap cleanup_package_json EXIT INT TERM
+  
+  # Run CLI normally (not backgrounded) - trap will fire on Ctrl+C
+  ORIGINAL_CWD="$ORIGINAL_CWD" node --import "data:text/javascript,import { register } from 'node:module'; import { pathToFileURL } from 'node:url'; register('$SCRIPT_DIR/css-loader.mjs', pathToFileURL('$SCRIPT_DIR/'));" --import tsx --import tsconfig-paths/register packages/cli/src/index.ts "$@"
+else
+  # No cleanup needed, use exec for efficiency
+  ORIGINAL_CWD="$ORIGINAL_CWD" exec node --import "data:text/javascript,import { register } from 'node:module'; import { pathToFileURL } from 'node:url'; register('$SCRIPT_DIR/css-loader.mjs', pathToFileURL('$SCRIPT_DIR/'));" --import tsx --import tsconfig-paths/register packages/cli/src/index.ts "$@"
+fi
