@@ -1,93 +1,83 @@
 ---
 name: motion-design
-description: Professional motion graphics principles and techniques. Use when creating animations, transitions, UI micro-interactions, or any time-based visual design. Covers timing, easing, physics, attention choreography, and advanced animation techniques.
+description: Professional motion graphics for video content. Use when creating animations, transitions, title sequences, or any time-based visual design for video production.
 license: MIT
 metadata:
   author: editframe
-  version: "1.0"
+  version: "2.0"
 ---
 
 # Motion Design
 
-Professional motion graphics cognitive skills for creating purposeful, polished animations.
+**For Video Content Creation**
 
-## Core Principle
+Motion serves communication, not decoration. Every animation must guide attention and express intent.
 
-**Motion should always serve communication, not decoration.** Every animation must have clear intent and guide viewer attention.
+## The 4 Core Concepts
 
-## The 20 Motion Design Skills
+All motion design derives from these four ideas:
 
-### Foundation Skills (Start Here)
-1. [Message & Intent Analysis](references/message-intent-analysis.md) - Translate goals into motion strategy
-2. [Attention Choreography](references/attention-choreography.md) - Plan sequential viewer focus flow
-3. [Timing Intelligence](references/timing-intelligence.md) - Determine duration based on multiple factors
+### [1. Intent → Strategy](references/1-intent.md)
+Message + Emotion → Motion characteristics
 
-### Core Motion Techniques
-4. [Easing Mastery](references/easing-mastery.md) - Select acceleration/deceleration curves
-5. [Physics Simulation](references/physics-simulation.md) - Apply realistic or stylized physics
-8. [Stagger & Sequencing](references/stagger-sequencing.md) - Create rhythmic patterns across elements
+What should the viewer feel? This determines material selection and personality.
 
-### Advanced Animation
-6. [Squash & Stretch](references/squash-stretch.md) - Add life through strategic deformation
-7. [Anticipation & Follow-Through](references/anticipation-follow-through.md) - Preparation and continuation
-9. [Arc & Path Construction](references/arc-path-construction.md) - Define natural motion trajectories
-14. [Exaggeration Calibration](references/exaggeration-calibration.md) - Push beyond realism appropriately
+### [2. Physics Model](references/2-physics-model.md)
+Material + Weight + Force → Timing + Deformation + Easing
 
-### UI Animation Patterns
-10. [Entrance & Exit Patterns](references/entrance-exit-patterns.md) - Appear/disappear transitions
-16. [State Transitions](references/state-transitions.md) - Hover, focus, loading, success, error states
+Material properties determine how objects move. Contains reference tables for durations, deformation, bounce, and easing curves.
 
-### Specialized Techniques
-17. [Text Animation](references/text-animation.md) - Typography-specific principles
-18. [Color Transitions](references/color-transitions.md) - Smooth color changes over time
-19. [Particles & Effects](references/particles-effects.md) - Ambient and celebratory particle systems
+### [3. Attention Flow](references/3-attention.md)
+One focus at a time. Sequence everything.
 
-### Composition & Polish
-11. [Staging & Composition](references/staging-composition.md) - Visual hierarchy and clarity during motion
-12. [Rhythm & Pacing](references/rhythm-pacing.md) - Musical timing structure and beats
-13. [Material & Weight](references/material-weight.md) - Express physical properties through timing
-15. [Looping](references/looping.md) - Seamless infinite animations
+Plan viewer focus flow. Contains stagger patterns, timing, and sequencing strategies.
 
-### Process
-20. [Iteration & Refinement](references/iteration-process.md) - Systematic workflow from concept to polish
+### [4. Systematic Iteration](references/4-process.md)
+Broad strokes → Easing → Secondary → Polish
+
+Don't perfect details before structure is right. Process for iterating from concept to polish.
+
+## Decision Framework
+
+```
+START: What's the message?
+  ↓
+INTENT: What should viewer feel?
+  → Determines material personality
+  ↓
+PHYSICS MODEL: What material expresses that?
+  → Material determines timing/deformation/bounce
+  → Weight scales duration
+  → Force determines easing
+  ↓
+ATTENTION: What's the viewing sequence?
+  → Determines stagger patterns
+  → Ensures one focus at a time
+  ↓
+PROCESS: Iterate systematically
+  → Broad strokes → Easing → Secondary → Polish
+```
+
+## Core Rules
+
+1. **One focus at a time** - Never animate unrelated elements simultaneously
+2. **Intent first** - Every animation serves the message
+3. **Material consistency** - All elements of same material move similarly
+4. **Exits faster than entrances** - 30-40% shorter duration
+5. **Respect physics** - Unless intentionally stylized
+
+## Video-Specific Considerations
+
+- Work in **frames**, not just milliseconds (24fps, 30fps, 60fps)
+- Consider **composition duration** and pacing for full sequence
+- Think about **viewer distance** (mobile vs TV vs cinema)
+- Plan for **audio sync** when applicable
+- Account for **export format** constraints
 
 ## Quick Reference
 
-### Base Durations
-- **Mobile UI**: 200-300ms
-- **Desktop UI**: 300-500ms  
-- **Cinematic**: 800-1200ms
-- **Micro-interactions**: 150-250ms
-
-### Common Timings
-- Hover enter: 150-200ms
-- Hover exit: 200-300ms
-- Focus: 200-300ms
-- Success: 600-1000ms
-- Error: 400-600ms
-- Loading loops: 1200-1500ms
-
-### Easing Rules
-- **Entrances**: ease-out (decelerating)
-- **Exits**: ease-in (accelerating)
-- **Within-screen**: ease-in-out (smooth)
-- **Never**: linear (except mechanical)
-
-### Stagger Delays
-- Per character: 30-50ms
-- Per word: 80-120ms
-- Per line: 200-300ms
-- List items: 50ms
-- Card groups: 150ms
-- Major sections: 400ms+
-
-### One Focus at a Time
-**Never** have multiple unrelated elements moving simultaneously. Motion competes for attention—sequence everything.
-
-## Design Philosophy
-
-1. **Message First** - What should the viewer remember/feel/do?
-2. **Guide Attention** - One focus point at any moment
-3. **Respect Physics** - Motion must feel plausible (unless stylized)
-4. **Add Polish Last** - Get timing right before adding secondary motion
-5. **Iterate Systematically** - Broad strokes → easing → secondary → polish
+For detailed tables and patterns, see:
+- **Material properties & durations**: [2-physics-model.md](references/2-physics-model.md)
+- **Stagger delays & patterns**: [3-attention.md](references/3-attention.md)
+- **Common animation patterns**: [2-physics-model.md](references/2-physics-model.md)
+- **Iteration workflow**: [4-process.md](references/4-process.md)
