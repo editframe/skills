@@ -52,6 +52,21 @@ export class EFImage extends EFTemporal(
     return this.#renderVersion;
   }
 
+  /**
+   * Whether the loaded image has an alpha channel.
+   * JPEG images don't have alpha, PNG/WebP may have alpha.
+   */
+  #hasAlpha = true; // Default to true (preserve alpha) until we know otherwise
+
+  /**
+   * Get whether the image has an alpha channel.
+   * Used to determine if we should encode as PNG (alpha) or JPEG (no alpha).
+   * @public
+   */
+  get hasAlpha(): boolean {
+    return this.#hasAlpha;
+  }
+
   #assetId: string | null = null;
   @property({ type: String, attribute: "asset-id", reflect: true })
   set assetId(value: string | null) {
@@ -158,6 +173,11 @@ export class EFImage extends EFTemporal(
     const blob = await response.blob();
     signal?.throwIfAborted();
     
+    // Detect if image has alpha channel based on MIME type
+    // JPEG images don't have alpha, PNG/WebP may have alpha
+    const mimeType = blob.type.toLowerCase();
+    this.#hasAlpha = !mimeType.includes("jpeg") && !mimeType.includes("jpg");
+    
     image.src = URL.createObjectURL(blob);
 
     await new Promise<void>((resolve, reject) => {
@@ -247,10 +267,7 @@ export class EFImage extends EFTemporal(
     if (changedProperties.has("src") || changedProperties.has("assetId")) {
       this.#imageLoaded = false;
       this.loadImage().catch(() => {});
-    }
-
-    // Increment render version on any property change.
-    if (changedProperties.size > 0) {
+      // Increment render version only when actual image content changes
       this.#renderVersion++;
     }
   }
