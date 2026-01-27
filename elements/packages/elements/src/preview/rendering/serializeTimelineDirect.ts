@@ -188,7 +188,8 @@ function serializeElement(
   element: Element,
   parts: Array<string | Promise<string>>,
   canvasJobs: CanvasJob[],
-  options: SerializationOptions
+  options: SerializationOptions,
+  parentIsSVG = false
 ): void {
   // Skip certain elements
   if (SKIP_TAGS.has(element.tagName)) {
@@ -235,7 +236,7 @@ function serializeElement(
           parts.push(escapeXML(text));
         }
       } else if (child.nodeType === Node.ELEMENT_NODE) {
-        serializeElement(child as Element, parts, canvasJobs, options);
+        serializeElement(child as Element, parts, canvasJobs, options, parentIsSVG);
       }
     }
     return;
@@ -251,10 +252,12 @@ function serializeElement(
   const tagName = element.tagName.toLowerCase();
   const isSVG = element instanceof SVGElement;
   
-  // Open tag
-  if (isSVG) {
+  // Open tag with namespace (only add xmlns for root SVG elements, not children)
+  if (isSVG && !parentIsSVG) {
+    // Root SVG element - needs xmlns declaration
     parts.push(`<${tagName} xmlns="http://www.w3.org/2000/svg"`);
   } else {
+    // XHTML or child SVG element - no xmlns needed
     parts.push(`<${tagName}`);
   }
   
@@ -278,7 +281,7 @@ function serializeElement(
         parts.push(escapeXML(text));
       }
     } else if (child.nodeType === Node.ELEMENT_NODE) {
-      serializeElement(child as Element, parts, canvasJobs, options);
+      serializeElement(child as Element, parts, canvasJobs, options, isSVG);
     }
   }
   
@@ -323,9 +326,27 @@ export async function serializeTimelineToXHTML(
   // Wait for all canvas encodings to complete
   const resolvedParts = await Promise.all(parts);
   
+  // Check for any unresolved promises or [object Promise] strings
+  const hasUnresolved = resolvedParts.some(part => 
+    typeof part !== 'string' || part.includes('[object Promise]')
+  );
+  if (hasUnresolved) {
+    console.error('[serializeTimelineToXHTML] ERROR: Unresolved promises detected!');
+    resolvedParts.forEach((part, i) => {
+      if (typeof part !== 'string' || part.includes('[object Promise]')) {
+        console.error(`  Part ${i}: ${typeof part} = ${String(part).substring(0, 100)}`);
+      }
+    });
+  }
+  
   // Join into final XHTML string
   const result = resolvedParts.join('');
   console.log(`[serializeTimelineToXHTML] Final XHTML length: ${result.length} chars`);
+  
+  // Validate basic XML structure
+  const openTags = (result.match(/<[a-z]/gi) || []).length;
+  const closeTags = (result.match(/<\//gi) || []).length;
+  console.log(`[serializeTimelineToXHTML] XML validation: ${openTags} open tags, ${closeTags} close tags`);
   
   return result;
 }
