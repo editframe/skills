@@ -257,6 +257,7 @@ function syncElementStyles(
   const cloneStyle = clone.style as any;
   const propLen = SYNC_PROPERTIES.length;
   const tagName = (source as HTMLElement).tagName;
+  const isCanvasClone = !!contentSource;
   
   if (HAS_COMPUTED_STYLE_MAP) {
     let srcMap: StylePropertyMapReadOnly;
@@ -300,6 +301,17 @@ function syncElementStyles(
       // Skip clipPath - clones always have clipPath: none for rendering
       // (source may have clip-path: inset(100%) from proxy mode)
       if (camel === "clipPath") continue;
+      
+      // Canvas clones: Skip properties that affect dimension calculation
+      // Canvas buffer dimensions must exactly match CSS dimensions for crisp rendering
+      // Properties like padding, border, boxSizing would cause mismatch → blur/scaling
+      if (isCanvasClone && (
+        camel === "padding" || camel === "border" || camel === "borderTop" || 
+        camel === "borderRight" || camel === "borderBottom" || camel === "borderLeft" ||
+        camel === "borderRadius" || camel === "boxSizing"
+      )) {
+        continue;
+      }
       
       // OPTIMIZATION: Skip default values to reduce serialized HTML size
       // If the computed value is the CSS default, don't set it as inline style
@@ -348,6 +360,17 @@ function syncElementStyles(
       // Skip clipPath - clones always have clipPath: none for rendering
       // (source may have clip-path: inset(100%) from proxy mode)
       if (prop === "clipPath") continue;
+      
+      // Canvas clones: Skip properties that affect dimension calculation
+      // Canvas buffer dimensions must exactly match CSS dimensions for crisp rendering
+      // Properties like padding, border, boxSizing would cause mismatch → blur/scaling
+      if (isCanvasClone && (
+        prop === "padding" || prop === "border" || prop === "borderTop" || 
+        prop === "borderRight" || prop === "borderBottom" || prop === "borderLeft" ||
+        prop === "borderRadius" || prop === "boxSizing"
+      )) {
+        continue;
+      }
       
       // OPTIMIZATION: Skip default values to reduce serialized HTML size
       if (isDefaultValue(prop, srcVal)) {
