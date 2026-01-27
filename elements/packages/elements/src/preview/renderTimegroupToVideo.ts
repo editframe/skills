@@ -38,6 +38,7 @@ import {
   overrideRootCloneStyles,
 } from "./renderTimegroupPreview.js";
 import { renderToImageDirect } from "./rendering/renderToImage.js";
+import { serializeTimelineToDataUri } from "./rendering/serializeTimelineDirect.js";
 import { createPreviewContainer } from "./previewTypes.js";
 import { inlineImages } from "./rendering/inlineImages.js";
 import { RenderContext } from "./RenderContext.js";
@@ -78,6 +79,7 @@ export interface RenderToVideoOptions {
   preferredAudioCodecs?: AudioCodec[];
   benchmarkMode?: boolean;
   customWritableStream?: WritableStream<Uint8Array>; // For programmatic streaming (CLI/Playwright)
+  useDirectSerialization?: boolean; // Enable new direct timeline serialization (no passive structure)
 }
 
 // ============================================================================
@@ -404,18 +406,27 @@ export async function renderTimegroupToVideo(
     background: getComputedStyle(timegroup).background || "#000",
   });
   
-  // Inject document styles once (cached for all frames)
-  const styleEl = document.createElement("style");
-  styleEl.textContent = collectDocumentStyles();
-  previewContainer.appendChild(styleEl);
+  // Conditional setup based on serialization mode
+  const useDirectSerialization = options.useDirectSerialization ?? false;
+  let syncState: any = null;
   
-  // Build passive structure ONCE before frame loop - will be reused and incrementally synced
-  const initialBuildStart = performance.now();
-  const { container: cloneContainer, syncState } = buildCloneStructure(renderClone, config.startMs);
-  previewContainer.appendChild(cloneContainer);
-  overrideRootCloneStyles(syncState, true);
-  const initialBuildTime = performance.now() - initialBuildStart;
-  console.log(`[renderTimegroupToVideo] Initial build: ${initialBuildTime.toFixed(1)}ms, nodeCount=${syncState.nodeCount}`);
+  if (useDirectSerialization) {
+    console.log(`[renderTimegroupToVideo] Using direct timeline serialization (no passive structure)`);
+  } else {
+    // Inject document styles once (cached for all frames)
+    const styleEl = document.createElement("style");
+    styleEl.textContent = collectDocumentStyles();
+    previewContainer.appendChild(styleEl);
+    
+    // Build passive structure ONCE before frame loop - will be reused and incrementally synced
+    const initialBuildStart = performance.now();
+    const result = buildCloneStructure(renderClone, config.startMs);
+    syncState = result.syncState;
+    previewContainer.appendChild(result.container);
+    overrideRootCloneStyles(syncState, true);
+    const initialBuildTime = performance.now() - initialBuildStart;
+    console.log(`[renderTimegroupToVideo] Initial build: ${initialBuildTime.toFixed(1)}ms, nodeCount=${syncState.nodeCount}`);
+  }
   
   // =========================================================================
   // Frame loop - DEEP PIPELINE: overlap encode + render + prepare
@@ -448,8 +459,10 @@ export async function renderTimegroupToVideo(
     let nextSeekFrame = 0;
     let nextRenderFrame = 0;
     
-    // Inline external images once (they're the same for all frames)
-    await inlineImages(previewContainer);
+    // Inline external images once (only for passive structure approach)
+    if (!useDirectSerialization) {
+      await inlineImages(previewContainer);
+    }
     
     for (let completedFrames = 0; completedFrames < config.totalFrames; completedFrames++) {
       checkCancelled();
@@ -488,24 +501,50 @@ export async function renderTimegroupToVideo(
           // 2. Awaited #executeCustomFrameTasks() so frame tasks are complete
           // Clone's DOM now reflects all changes from frame tasks
           
-          // Incrementally sync passive structure from clone's CURRENT DOM state
-          const syncStart = performance.now();
-          syncStyles(syncState, renderTimeMs);
-          const syncTime = performance.now() - syncStart;
-          totalSyncMs += syncTime;
+          let syncTime = 0;
+          let image: HTMLImageElement;
           
-          const renderStart = performance.now();
-          const image = await renderToImageDirect(previewContainer, width, height, {
-            renderContext,
-            sourceMap: syncState.canvasSourceMap,
-            canvasScale: config.scale, // Pass video export scale for optimal encoding
-          });
-          const renderTime = performance.now() - renderStart;
-          totalRenderMs += renderTime;
+          if (useDirectSerialization) {
+            // Direct serialization: serialize timeline to data URI in one pass
+            const syncStart = performance.now();
+            const dataUri = await serializeTimelineToDataUri(renderClone, width, height, {
+              renderContext,
+              canvasScale: config.scale,
+              timeMs: renderTimeMs,
+            });
+            syncTime = performance.now() - syncStart;
+            totalSyncMs += syncTime;
+            
+            // Create image from data URI
+            const renderStart = performance.now();
+            image = new Image();
+            await new Promise<void>((resolve, reject) => {
+              image.onload = () => resolve();
+              image.onerror = reject;
+              image.src = dataUri;
+            });
+            const renderTime = performance.now() - renderStart;
+            totalRenderMs += renderTime;
+          } else {
+            // Passive structure: incrementally sync then serialize
+            const syncStart = performance.now();
+            syncStyles(syncState, renderTimeMs);
+            syncTime = performance.now() - syncStart;
+            totalSyncMs += syncTime;
+            
+            const renderStart = performance.now();
+            image = await renderToImageDirect(previewContainer, width, height, {
+              renderContext,
+              sourceMap: syncState.canvasSourceMap,
+              canvasScale: config.scale,
+            });
+            const renderTime = performance.now() - renderStart;
+            totalRenderMs += renderTime;
+          }
           
           // Log detailed timing every 30 frames to see breakdown
           if (renderFrameIndex % 30 === 0) {
-            console.log(`[Frame ${renderFrameIndex}] sync=${syncTime.toFixed(1)}ms, render=${renderTime.toFixed(1)}ms`);
+            console.log(`[Frame ${renderFrameIndex}] ${useDirectSerialization ? 'serialize' : 'sync'}=${syncTime.toFixed(1)}ms`);
           }
           
           return image;
@@ -619,11 +658,12 @@ export async function renderTimegroupToVideo(
     const untracked = totalTime - tracked;
     
     console.log(`\n=== Video Export Performance Breakdown ===`);
+    console.log(`Mode: ${useDirectSerialization ? 'Direct Serialization' : 'Passive Structure'}`);
     console.log(`Total frames: ${config.totalFrames}`);
     console.log(`Total time: ${totalTime.toFixed(0)}ms (${avgTotal.toFixed(1)}ms/frame)`);
     console.log(`\nPer-stage totals:`);
     console.log(`  Seek:   ${totalSeekMs.toFixed(0)}ms (${(totalSeekMs/totalTime*100).toFixed(1)}%) - avg ${avgSeek.toFixed(1)}ms/frame`);
-    console.log(`  Sync:   ${totalSyncMs.toFixed(0)}ms (${(totalSyncMs/totalTime*100).toFixed(1)}%) - avg ${avgSync.toFixed(1)}ms/frame`);
+    console.log(`  ${useDirectSerialization ? 'Serialize' : 'Sync'}:  ${totalSyncMs.toFixed(0)}ms (${(totalSyncMs/totalTime*100).toFixed(1)}%) - avg ${avgSync.toFixed(1)}ms/frame`);
     console.log(`  Render: ${totalRenderMs.toFixed(0)}ms (${(totalRenderMs/totalTime*100).toFixed(1)}%) - avg ${avgRender.toFixed(1)}ms/frame`);
     console.log(`  Encode: ${totalEncodeMs.toFixed(0)}ms (${(totalEncodeMs/totalTime*100).toFixed(1)}%) - avg ${avgEncode.toFixed(1)}ms/frame`);
     console.log(`  Other:  ${untracked.toFixed(0)}ms (${(untracked/totalTime*100).toFixed(1)}%)`);
