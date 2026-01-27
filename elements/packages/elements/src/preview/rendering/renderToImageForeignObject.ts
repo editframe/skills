@@ -98,10 +98,25 @@ export async function serializeToSvgDataUri(
   
   // Encode from the snapshot copies (safe from concurrent overwrites)
   const snapshotCanvases = canvasSnapshots.map(s => s.copy);
+  
+  // Create a new sourceMap that maps snapshot canvases to their source elements
+  // The original sourceMap maps original canvases -> source elements
+  // We need snapshot canvases -> source elements for caching to work
+  let snapshotSourceMap: WeakMap<HTMLCanvasElement, Element> | undefined;
+  if (sourceMap) {
+    snapshotSourceMap = new WeakMap();
+    for (const { original, copy } of canvasSnapshots) {
+      const sourceElement = sourceMap.get(original);
+      if (sourceElement) {
+        snapshotSourceMap.set(copy, sourceElement);
+      }
+    }
+  }
+  
   const encodedResults = await encodeCanvasesInParallel(snapshotCanvases, { 
     scale: canvasScale,
     renderContext,
-    sourceMap,
+    sourceMap: snapshotSourceMap,
   });
   
   // Map encoded results back to original canvases for DOM replacement
