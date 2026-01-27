@@ -13,6 +13,12 @@
       "description": "Create video compositions with Editframe Elements",
       "source": "./",
       "skills": ["./skills/elements-composition"]
+    },
+    {
+      "name": "react-composition",
+      "description": "Create video compositions with @editframe/react React wrappers",
+      "source": "./",
+      "skills": ["./skills/react-composition"]
     }
   ]
 }
