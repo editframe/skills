@@ -9,65 +9,69 @@ Common interaction patterns and state transitions.
 ### Entrance Patterns
 
 **Fade + Slide (most common):**
-```javascript
-element.animate([
-  { 
-    opacity: 0,
-    transform: 'translateY(20px)'  // start below
-  },
-  { 
-    opacity: 1,
-    transform: 'translateY(0)'     // slide up while fading in
+```css
+.fade-slide-in {
+  animation: fadeSlideIn 300ms ease-out;
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
   }
-], {
-  duration: 300,
-  easing: 'ease-out'
-});
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 ```
 
 **Scale + Fade:**
-```javascript
-element.animate([
-  { 
-    opacity: 0,
-    transform: 'scale(0.8)'  // start small
-  },
-  { 
-    opacity: 1,
-    transform: 'scale(1)'    // grow while fading in
+```css
+.scale-fade-in {
+  animation: scaleFadeIn 300ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes scaleFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
   }
-], {
-  duration: 300,
-  easing: 'cubic-bezier(0.68, -0.55, 0.265, 1.55)'  // bounce
-});
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
 ```
 
 **Wipe/Reveal:**
-```javascript
-element.animate([
-  { clipPath: 'inset(0 100% 0 0)' },  // hidden right
-  { clipPath: 'inset(0 0% 0 0)' }     // reveal left to right
-], {
-  duration: 400,
-  easing: 'ease-out'
-});
+```css
+.wipe-in {
+  animation: wipeIn 400ms ease-out;
+}
+
+@keyframes wipeIn {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0% 0 0); }
+}
 ```
 
 **Blur Focus:**
-```javascript
-element.animate([
-  { 
-    opacity: 0,
-    filter: 'blur(10px)'
-  },
-  { 
-    opacity: 1,
-    filter: 'blur(0px)'
+```css
+.blur-in {
+  animation: blurIn 400ms ease-out;
+}
+
+@keyframes blurIn {
+  from {
+    opacity: 0;
+    filter: blur(10px);
   }
-], {
-  duration: 400,
-  easing: 'ease-out'
-});
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
 ```
 
 ### Exit Patterns
@@ -77,37 +81,31 @@ element.animate([
 **Key rule: Exits are 30-40% faster than entrances**
 
 **Fade + Slide Out:**
-```javascript
-element.animate([
-  { 
-    opacity: 1,
-    transform: 'translateY(0)'
-  },
-  { 
-    opacity: 0,
-    transform: 'translateY(-20px)'  // slide up while fading
+```css
+.fade-slide-out {
+  animation: fadeSlideOut 200ms ease-in forwards;
+}
+
+@keyframes fadeSlideOut {
+  to {
+    opacity: 0;
+    transform: translateY(-20px);
   }
-], {
-  duration: 200,  // faster than 300ms entrance
-  easing: 'ease-in'
-});
+}
 ```
 
 **Scale + Fade Out:**
-```javascript
-element.animate([
-  { 
-    opacity: 1,
-    transform: 'scale(1)'
-  },
-  { 
-    opacity: 0,
-    transform: 'scale(0.9)'  // shrink slightly
+```css
+.scale-fade-out {
+  animation: scaleFadeOut 200ms ease-in forwards;
+}
+
+@keyframes scaleFadeOut {
+  to {
+    opacity: 0;
+    transform: scale(0.9);
   }
-], {
-  duration: 200,
-  easing: 'ease-in'
-});
+}
 ```
 
 ### Direction Selection
@@ -117,11 +115,15 @@ element.animate([
 - Use when element is replacing something
 - Directional = shows relationship
 
-```javascript
-// Slide in from right (new content)
-element.animate({
-  transform: ['translateX(100%)', 'translateX(0)']
-}, { duration: 300, easing: 'ease-out' });
+```css
+.slide-from-right {
+  animation: slideFromRight 300ms ease-out;
+}
+
+@keyframes slideFromRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
 ```
 
 **From center:**
@@ -129,12 +131,16 @@ element.animate({
 - Use when element is appearing in place
 - Non-directional = focus on content
 
-```javascript
-// Scale from center
-element.animate({
-  transform: ['scale(0)', 'scale(1)'],
-  transformOrigin: 'center center'
-}, { duration: 300, easing: 'ease-out' });
+```css
+.scale-from-center {
+  transform-origin: center center;
+  animation: scaleFromCenter 300ms ease-out;
+}
+
+@keyframes scaleFromCenter {
+  from { transform: scale(0); }
+  to { transform: scale(1); }
+}
 ```
 
 ### Transform Origin Selection
