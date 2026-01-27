@@ -155,6 +155,7 @@ export async function renderToImageDirect(
   options?: {
     renderContext?: RenderContext;
     sourceMap?: WeakMap<HTMLCanvasElement, Element>;
+    canvasScale?: number;
   },
 ): Promise<HTMLImageElement> {
   defaultProfiler.incrementRenderCount();
@@ -165,6 +166,7 @@ export async function renderToImageDirect(
     logEarlyRenders: true,
     renderContext: options?.renderContext,
     sourceMap: options?.sourceMap,
+    canvasScale: options?.canvasScale ?? 1,
   });
   restore();
   

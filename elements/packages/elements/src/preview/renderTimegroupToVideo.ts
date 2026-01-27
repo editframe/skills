@@ -514,6 +514,7 @@ export async function renderTimegroupToVideo(
           const image = await renderToImageDirect(previewContainer, width, height, {
             renderContext,
             sourceMap: syncState.canvasSourceMap,
+            canvasScale: config.scale, // Pass video export scale for optimal encoding
           });
           totalRenderMs += performance.now() - renderStart;
           

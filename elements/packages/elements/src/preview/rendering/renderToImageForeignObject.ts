@@ -75,22 +75,63 @@ export async function serializeToSvgDataUri(
   // CRITICAL FIX: Synchronously copy canvas pixels BEFORE any async work.
   // This prevents race conditions where concurrent render tasks overwrite
   // the shared clone canvases while encoding is in progress.
-  // See: Hypothesis 1 - Clone Canvas Overwritten During Serialization
+  // 
+  // OPTIMIZATION: Calculate optimal encoding resolution based on:
+  // 1. CSS display size (how big it actually appears)
+  // 2. Video export scale (output resolution multiplier)
+  // 3. Quality multiplier (for sharpness, default 1.5x)
   const canvasSnapshots: { original: HTMLCanvasElement; copy: HTMLCanvasElement }[] = [];
+  const qualityMultiplier = 1.5; // Encode at 1.5x display size for quality
+  
   for (let i = 0; i < visibleCanvases.length; i++) {
     const canvas = visibleCanvases[i]!;
     if (canvas.width > 0 && canvas.height > 0) {
+      // Calculate optimal encoding scale
+      let optimalScale = canvasScale; // Start with video export scale
+      
+      // If we have sourceMap, calculate based on CSS display size
+      if (sourceMap) {
+        const sourceElement = sourceMap.get(canvas);
+        if (sourceElement) {
+          try {
+            const computedStyle = getComputedStyle(sourceElement);
+            const cssWidth = parseFloat(computedStyle.width) || canvas.width;
+            const cssHeight = parseFloat(computedStyle.height) || canvas.height;
+            
+            // Calculate how much smaller the display is vs natural size
+            const displayScaleX = cssWidth / canvas.width;
+            const displayScaleY = cssHeight / canvas.height;
+            const displayScale = Math.min(displayScaleX, displayScaleY);
+            
+            // Combine display scale, video scale, and quality multiplier
+            // Clamp to 1.0 max (never upscale beyond natural resolution)
+            optimalScale = Math.min(1.0, displayScale * canvasScale * qualityMultiplier);
+            
+            console.log(`[serializeToSvg] Canvas ${canvas.width}x${canvas.height} -> CSS ${cssWidth.toFixed(0)}x${cssHeight.toFixed(0)}, displayScale=${displayScale.toFixed(3)}, videoScale=${canvasScale}, optimalScale=${optimalScale.toFixed(3)}`);
+          } catch (e) {
+            // Fallback to just video scale if we can't get computed style
+            console.warn(`[serializeToSvg] Failed to get computed style for ${sourceElement.tagName}:`, e);
+          }
+        }
+      }
+      
+      // Create snapshot at optimal resolution
+      const targetWidth = Math.max(1, Math.floor(canvas.width * optimalScale));
+      const targetHeight = Math.max(1, Math.floor(canvas.height * optimalScale));
+      
       const copy = document.createElement("canvas");
-      copy.width = canvas.width;
-      copy.height = canvas.height;
+      copy.width = targetWidth;
+      copy.height = targetHeight;
+      
       // Copy dataset attributes (e.g., preserveAlpha)
       if (canvas.dataset.preserveAlpha) {
         copy.dataset.preserveAlpha = canvas.dataset.preserveAlpha;
       }
+      
       const ctx = copy.getContext("2d");
       if (ctx) {
-        // drawImage is SYNCHRONOUS - pixels are copied immediately
-        ctx.drawImage(canvas, 0, 0);
+        // drawImage with scaling is SYNCHRONOUS - pixels are copied and scaled immediately
+        ctx.drawImage(canvas, 0, 0, targetWidth, targetHeight);
       }
       canvasSnapshots.push({ original: canvas, copy });
     }
@@ -113,8 +154,9 @@ export async function serializeToSvgDataUri(
     }
   }
   
+  // Snapshots are already scaled to optimal resolution, so encode at 1.0 scale
   const encodedResults = await encodeCanvasesInParallel(snapshotCanvases, { 
-    scale: canvasScale,
+    scale: 1.0, // Already scaled during snapshot creation
     renderContext,
     sourceMap: snapshotSourceMap,
   });
