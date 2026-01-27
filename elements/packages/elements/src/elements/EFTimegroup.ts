@@ -500,29 +500,60 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
   /** @public */
   overlapMs = 0;
 
+  #initializer?: TimegroupInitializer;
+  
   /**
    * Initializer function for setting up JavaScript behavior on this timegroup.
-   * This function is called on both the prime timeline and each render clone.
+   * This function is called ONCE per instance - on the prime timeline when first connected,
+   * and on each render clone when created.
    * 
-   * REQUIRED for render operations (captureBatch, renderToVideo, createRenderClone).
+   * Use this to register frame callbacks, set up event listeners, or initialize state.
+   * The same initializer code runs on both prime and clones, eliminating duplication.
    * 
    * CONSTRAINTS:
    * - MUST be synchronous (no async/await, no Promise return)
    * - MUST complete in <100ms (error thrown) or <10ms (warning logged)
    * - Should only register callbacks and set up behavior, not do expensive work
    * 
+   * TIMING:
+   * - If set before element connects to DOM: runs automatically after connectedCallback
+   * - If set after element is connected: runs immediately
+   * - Clones automatically copy and run the initializer when created
+   * 
    * @example
    * ```javascript
    * const tg = document.querySelector('ef-timegroup');
    * tg.initializer = (instance) => {
-   *   instance.addFrameCallback((time) => {
+   *   // Runs once on prime timeline, once on each clone
+   *   instance.addFrameTask((info) => {
    *     // Update content based on time
    *   });
    * };
    * ```
    * @public
    */
-  initializer?: TimegroupInitializer;
+  get initializer(): TimegroupInitializer | undefined {
+    return this.#initializer;
+  }
+  
+  set initializer(fn: TimegroupInitializer | undefined) {
+    this.#initializer = fn;
+    
+    // If element is already connected and initializer hasn't run, run it now
+    // This handles the case where initializer is set after connectedCallback
+    if (fn && this.isConnected && !this.#initializerHasRun) {
+      // Use updateComplete to ensure element is in a stable state
+      this.updateComplete.then(() => {
+        this.#runInitializer();
+      });
+    }
+  }
+  
+  /**
+   * Track if initializer has run on this instance to prevent double execution.
+   * @internal
+   */
+  #initializerHasRun = false;
 
   /** @public */
   @property({ type: Number })
@@ -1110,6 +1141,12 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     // and PlaybackController.hostConnected tried to initialize, causing concurrent seeks.
     super.connectedCallback();
 
+    // Run initializer after element is fully connected and Lit has updated
+    // This ensures the element is in a stable state before user code runs
+    this.updateComplete.then(() => {
+      this.#runInitializer();
+    });
+
     // Defer TimegroupController creation and workbench wrapping to next frame
     // These operations involve DOM queries (closest, getBoundingClientRect) which
     // can be expensive when many elements initialize simultaneously
@@ -1294,18 +1331,22 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
 
   /**
    * Runs the initializer function with validation for synchronous execution and time budget.
-   * @throws Error if no initializer is set
+   * Only runs once per instance. Safe to call multiple times - will skip if already run.
    * @throws Error if initializer returns a Promise (async not allowed)
    * @throws Error if initializer takes more than INITIALIZER_ERROR_THRESHOLD_MS
    * @internal
    */
-  #runInitializer(cloneEl: EFTimegroup): void {
-    if (!this.initializer) {
+  #runInitializer(): void {
+    // Skip if no initializer or already run
+    if (!this.initializer || this.#initializerHasRun) {
       return;
     }
     
+    // Mark as run before executing to prevent recursion
+    this.#initializerHasRun = true;
+    
     const startTime = performance.now();
-    const result: unknown = this.initializer(cloneEl);
+    const result: unknown = this.initializer(this);
     const elapsed = performance.now() - startTime;
     
     // Check for async (Promise return) - initializers MUST be synchronous
@@ -1316,7 +1357,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
       );
     }
     
-    // Time budget enforcement - initializers run for EVERY clone
+    // Time budget enforcement - initializers run for EVERY instance
     if (elapsed > INITIALIZER_ERROR_THRESHOLD_MS) {
       throw new Error(
         `Timeline initializer took ${elapsed.toFixed(1)}ms, exceeding the ${INITIALIZER_ERROR_THRESHOLD_MS}ms limit. ` +
@@ -1498,6 +1539,12 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     // clear segments if _textContent is empty
     this.#copyTextContent(this, cloneEl);
     
+    // 2d. Copy initializer function to the clone
+    // The initializer property is not cloned by cloneNode() since it's a JS property
+    if (this.initializer) {
+      cloneEl.initializer = this.initializer;
+    }
+    
     // 3. Preserve ef-configuration context for the clone
     // Media elements use closest("ef-configuration") to determine settings like media-engine.
     // Without this, clones would lose configuration and use wrong media engine types.
@@ -1520,11 +1567,10 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     // segmentText is a JS property, so we need to wait for custom elements to define it
     this.#copyTextSegmentData(this, cloneEl);
     
-    // 4. Run initializer to set up JavaScript behavior on the clone
-    // This re-registers frame callbacks, React components, etc.
-    // MUST be synchronous and fast (enforced by #runInitializer)
-    // NOTE: For React, the initializer may REPLACE cloneEl with a fresh React-rendered tree
-    this.#runInitializer(cloneEl);
+    // 4. Initializer has already run via connectedCallback (scheduled in updateComplete)
+    // No need to call it manually - it runs automatically when the clone was appended to DOM.
+    // NOTE: For React, the initializer may REPLACE cloneEl with a fresh React-rendered tree,
+    // so we need to find the actual timegroup element in the container after this point.
     
     // 5. Find the actual timegroup after initializer runs
     // React initializers replace the cloned DOM with a fresh render, so we need to find
