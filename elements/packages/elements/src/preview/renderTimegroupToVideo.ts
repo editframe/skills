@@ -41,6 +41,7 @@ import { renderToImageDirect } from "./rendering/renderToImage.js";
 import { createPreviewContainer } from "./previewTypes.js";
 import { inlineImages } from "./rendering/inlineImages.js";
 import { FrameController } from "./FrameController.js";
+import { RenderContext } from "./RenderContext.js";
 
 // ============================================================================
 // Types
@@ -396,6 +397,9 @@ export async function renderTimegroupToVideo(
   await renderClone.seekForRender(initialTimeMs);
   const { container: cloneContainer, syncState } = buildCloneStructure(renderClone, initialTimeMs);
   
+  // Create RenderContext for caching across all frames (like live preview does)
+  const renderContext = new RenderContext();
+  
   // Create FrameController for coordinating element rendering
   const frameController = new FrameController(renderClone);
   
@@ -490,7 +494,10 @@ export async function renderTimegroupToVideo(
           totalSyncMs += performance.now() - syncStart;
           
           const renderStart = performance.now();
-          const image = await renderToImageDirect(previewContainer, width, height);
+          const image = await renderToImageDirect(previewContainer, width, height, {
+            renderContext,
+            sourceMap: syncState.canvasSourceMap,
+          });
           totalRenderMs += performance.now() - renderStart;
           
           return image;
@@ -626,6 +633,7 @@ export async function renderTimegroupToVideo(
     
   } finally {
     frameController.abort();
+    renderContext.dispose();
     cleanupRenderClone();
   }
 }

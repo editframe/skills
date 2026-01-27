@@ -4,6 +4,7 @@
  */
 
 import type { ForeignObjectRenderOptions } from "./types.js";
+import type { RenderContext } from "../RenderContext.js";
 import { renderToImageNative } from "./renderToImageNative.js";
 import { serializeToSvgDataUri } from "./renderToImageForeignObject.js";
 import { inlineImages } from "./inlineImages.js";
@@ -151,6 +152,10 @@ export async function renderToImageDirect(
   container: HTMLElement,
   width: number,
   height: number,
+  options?: {
+    renderContext?: RenderContext;
+    sourceMap?: WeakMap<HTMLCanvasElement, Element>;
+  },
 ): Promise<HTMLImageElement> {
   defaultProfiler.incrementRenderCount();
   
@@ -158,6 +163,8 @@ export async function renderToImageDirect(
   const { dataUri, restore } = await serializeToSvgDataUri(container, width, height, {
     inlineImages: true,
     logEarlyRenders: true,
+    renderContext: options?.renderContext,
+    sourceMap: options?.sourceMap,
   });
   restore();
   
