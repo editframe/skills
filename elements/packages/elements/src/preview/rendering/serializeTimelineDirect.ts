@@ -103,13 +103,14 @@ function serializeComputedStyles(element: Element): string {
 }
 
 /**
- * Serialize element attributes (excluding style, id, event handlers).
+ * Serialize element attributes (excluding style, id, xmlns, event handlers).
  */
 function serializeAttributes(element: Element, parts: Array<string | Promise<string>>): void {
   for (const attr of element.attributes) {
     const name = attr.name.toLowerCase();
-    if (name === 'id' || name === 'style' || name.startsWith('on')) {
-      continue; // Skip
+    // Skip: id, style, xmlns (namespace handled separately), event handlers
+    if (name === 'id' || name === 'style' || name === 'xmlns' || name.startsWith('on')) {
+      continue;
     }
     parts.push(` ${attr.name}="${escapeXML(attr.value)}"`);
   }
