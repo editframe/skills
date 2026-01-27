@@ -481,14 +481,17 @@ export async function renderTimegroupToVideo(
           // Build passive structure from clone's CURRENT DOM state (captures frame task changes)
           const buildStart = performance.now();
           const { container: cloneContainer, syncState } = buildCloneStructure(renderClone, renderTimeMs);
-          totalBuildMs += performance.now() - buildStart;
+          const buildTime = performance.now() - buildStart;
+          totalBuildMs += buildTime;
           
           // Clear previous container content and add new structure
+          const domUpdateStart = performance.now();
           while (previewContainer.firstChild !== styleEl && previewContainer.firstChild) {
             previewContainer.removeChild(previewContainer.firstChild);
           }
           previewContainer.appendChild(cloneContainer);
           overrideRootCloneStyles(syncState, true);
+          const domUpdateTime = performance.now() - domUpdateStart;
           
           const renderStart = performance.now();
           const image = await renderToImageDirect(previewContainer, width, height, {
@@ -496,7 +499,13 @@ export async function renderTimegroupToVideo(
             sourceMap: syncState.canvasSourceMap,
             canvasScale: config.scale, // Pass video export scale for optimal encoding
           });
-          totalRenderMs += performance.now() - renderStart;
+          const renderTime = performance.now() - renderStart;
+          totalRenderMs += renderTime;
+          
+          // Log detailed timing every 30 frames to see breakdown
+          if (renderFrameIndex % 30 === 0) {
+            console.log(`[Frame ${renderFrameIndex}] build=${buildTime.toFixed(1)}ms, domUpdate=${domUpdateTime.toFixed(1)}ms, render=${renderTime.toFixed(1)}ms, nodeCount=${syncState.nodeCount}`);
+          }
           
           return image;
         });
@@ -597,6 +606,28 @@ export async function renderTimegroupToVideo(
     }
     
     const totalTime = performance.now() - renderStartTime;
+    
+    // Calculate percentages and averages for performance analysis
+    const avgSeek = totalSeekMs / config.totalFrames;
+    const avgBuild = totalBuildMs / config.totalFrames;
+    const avgRender = totalRenderMs / config.totalFrames;
+    const avgEncode = totalEncodeMs / config.totalFrames;
+    const avgTotal = totalTime / config.totalFrames;
+    
+    const tracked = totalSeekMs + totalBuildMs + totalRenderMs + totalEncodeMs;
+    const untracked = totalTime - tracked;
+    
+    console.log(`\n=== Video Export Performance Breakdown ===`);
+    console.log(`Total frames: ${config.totalFrames}`);
+    console.log(`Total time: ${totalTime.toFixed(0)}ms (${avgTotal.toFixed(1)}ms/frame)`);
+    console.log(`\nPer-stage totals:`);
+    console.log(`  Seek:   ${totalSeekMs.toFixed(0)}ms (${(totalSeekMs/totalTime*100).toFixed(1)}%) - avg ${avgSeek.toFixed(1)}ms/frame`);
+    console.log(`  Build:  ${totalBuildMs.toFixed(0)}ms (${(totalBuildMs/totalTime*100).toFixed(1)}%) - avg ${avgBuild.toFixed(1)}ms/frame`);
+    console.log(`  Render: ${totalRenderMs.toFixed(0)}ms (${(totalRenderMs/totalTime*100).toFixed(1)}%) - avg ${avgRender.toFixed(1)}ms/frame`);
+    console.log(`  Encode: ${totalEncodeMs.toFixed(0)}ms (${(totalEncodeMs/totalTime*100).toFixed(1)}%) - avg ${avgEncode.toFixed(1)}ms/frame`);
+    console.log(`  Other:  ${untracked.toFixed(0)}ms (${(untracked/totalTime*100).toFixed(1)}%)`);
+    console.log(`==========================================\n`);
+    
     logger.debug(
       `[renderTimegroupToVideo] ${config.totalFrames} frames: ` +
       `seek=${totalSeekMs.toFixed(0)}ms, build=${totalBuildMs.toFixed(0)}ms, ` +
