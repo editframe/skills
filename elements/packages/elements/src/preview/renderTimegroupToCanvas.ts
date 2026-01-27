@@ -120,7 +120,7 @@ export class ContentNotReadyError extends Error {
 interface RenderState {
   inlineImageCache: Map<string, string>;
   layoutInitializedCanvases: WeakSet<HTMLCanvasElement>;
-  xmlSerializer: XMLSerializer;
+  xmlSerializer: XMLSerializer | null;
   textEncoder: TextEncoder;
   metrics: {
     inlineImageCacheHits: number;
@@ -131,11 +131,12 @@ interface RenderState {
 
 /**
  * Module-level state for render operations.
+ * Note: xmlSerializer is lazy-initialized for Node.js compatibility
  */
 const renderState: RenderState = {
   inlineImageCache: new Map(),
   layoutInitializedCanvases: new WeakSet(),
-  xmlSerializer: new XMLSerializer(),
+  xmlSerializer: null, // Lazy-initialized in browser context
   textEncoder: new TextEncoder(),
   metrics: {
     inlineImageCacheHits: 0,
