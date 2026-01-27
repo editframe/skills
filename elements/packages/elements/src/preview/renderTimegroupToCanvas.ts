@@ -565,7 +565,6 @@ export interface CanvasPreviewResult {
    * Returns a promise that resolves when rendering is complete.
    */
   refresh: () => Promise<void>;
-  syncState: SyncState;
   /**
    * Dynamically change the resolution scale without rebuilding the clone structure.
    * This is nearly instant - just updates CSS and internal variables.
@@ -608,14 +607,16 @@ export interface CanvasPreviewOptions {
 /**
  * Renders a timegroup preview to a canvas using SVG foreignObject.
  * 
+ * Captures the prime timeline's current visual state including DOM changes
+ * from frame tasks (SVG paths, canvas content, text updates, etc.).
+ * 
  * Optimized with:
- * - Persistent clone structure (built once)
+ * - Passive clone structure rebuilt each frame from prime's current state
  * - Temporal bucketing for time-based culling
- * - Property split (static vs animated)
- * - Parent index for O(1) visibility checks
+ * - RenderContext for canvas pixel caching across frames
  * - Resolution scaling for performance (renders at lower resolution, CSS upscales)
  *
- * @param timegroup - The source timegroup to preview
+ * @param timegroup - The source timegroup to preview (prime timeline)
  * @param scaleOrOptions - Scale factor (default 1) or options object
  * @returns Object with canvas and refresh function
  */
@@ -662,34 +663,6 @@ export function renderTimegroupToCanvas(
     throw new Error("Failed to get canvas 2d context");
   }
 
-  // Build clone structure ONCE with optimized sync state
-  // Initial sync happens during clone building in a single pass
-  const initialTimeMs = toAbsoluteTime(timegroup, timegroup.currentTimeMs ?? 0);
-  const { container, syncState } = buildCloneStructure(timegroup, initialTimeMs);
-
-  // Create a wrapper div with scaled dimensions
-  // When resolutionScale < 1, we render at a smaller size and CSS transform scales the content
-  const previewContainer = createPreviewContainer({
-    width: renderWidth,
-    height: renderHeight,
-    background: getComputedStyle(timegroup).background || "#000",
-  });
-  
-  // Apply CSS transform to scale down the content within the container
-  // This makes the clone render at reduced complexity
-  if (currentResolutionScale < 1) {
-    container.style.transform = `scale(${currentResolutionScale})`;
-    container.style.transformOrigin = "top left";
-  }
-  
-  // Inject document styles so CSS rules work in SVG foreignObject
-  const styleEl = document.createElement("style");
-  styleEl.textContent = collectDocumentStyles();
-  previewContainer.appendChild(styleEl);
-  
-  previewContainer.appendChild(container);
-  overrideRootCloneStyles(syncState);
-
   // Track render state
   let rendering = false;
   let lastTimeMs = -1;
@@ -701,6 +674,18 @@ export function renderTimegroupToCanvas(
   // Create FrameController for coordinating element rendering
   // Cached for the lifetime of this preview instance
   const frameController = new FrameController(timegroup);
+  
+  // Reusable preview container and style element
+  // Container gets new content each frame but CSS styles are cached
+  const previewContainer = createPreviewContainer({
+    width: renderWidth,
+    height: renderHeight,
+    background: getComputedStyle(timegroup).background || "#000",
+  });
+  
+  const styleEl = document.createElement("style");
+  styleEl.textContent = collectDocumentStyles();
+  previewContainer.appendChild(styleEl);
 
   // Log resolution scale on first render for debugging
   let hasLoggedScale = false;
@@ -788,7 +773,23 @@ export function renderTimegroupToCanvas(
       // This coordinates prepare → render phases before we capture their state
       await frameController.renderFrame(userTimeMs);
       
-      syncStyles(syncState, toAbsoluteTime(timegroup, userTimeMs));
+      // Build passive structure from prime timeline's CURRENT state
+      // Frame tasks have already run above, so DOM changes are captured
+      const absoluteTimeMs = toAbsoluteTime(timegroup, userTimeMs);
+      const { container, syncState } = buildCloneStructure(timegroup, absoluteTimeMs);
+      
+      // Apply CSS transform to scale down the content within the container
+      // This makes the clone render at reduced complexity
+      if (currentResolutionScale < 1) {
+        container.style.transform = `scale(${currentResolutionScale})`;
+        container.style.transformOrigin = "top left";
+      }
+      
+      // Clear previous container content and add new structure
+      while (previewContainer.firstChild !== styleEl && previewContainer.firstChild) {
+        previewContainer.removeChild(previewContainer.firstChild);
+      }
+      previewContainer.appendChild(container);
       overrideRootCloneStyles(syncState);
 
       // Remove hidden nodes from DOM for serialization - they won't be serialized
@@ -852,5 +853,5 @@ export function renderTimegroupToCanvas(
   // Do initial render
   refresh();
 
-  return { container: wrapperContainer, canvas, refresh, syncState, setResolutionScale, getResolutionScale, dispose };
+  return { container: wrapperContainer, canvas, refresh, setResolutionScale, getResolutionScale, dispose };
 }
