@@ -514,6 +514,7 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
     // Long-term solution: Create EFCanvas wrapper element to track modifications.
     if (srcEl instanceof HTMLCanvasElement) {
       const canvas = document.createElement("canvas");
+      // Use intrinsic buffer dimensions (not affected by zoom/transforms)
       canvas.width = srcEl.width;
       canvas.height = srcEl.height;
       const ctx = canvas.getContext("2d");
@@ -521,9 +522,26 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
         try { ctx.drawImage(srcEl, 0, 0); } catch {}
       }
       
-      // Sync styles from source canvas to clone
+      // Set explicit CSS dimensions based on buffer size to avoid zoom-affected computed styles
+      // This ensures the canvas renders at its natural size regardless of workspace zoom
+      canvas.style.width = `${srcEl.width}px`;
+      canvas.style.height = `${srcEl.height}px`;
+      
+      // Sync positioning/transform styles from source, but dimensions are already set above
       try {
-        syncElementStyles(srcEl, canvas);
+        const cs = getComputedStyle(srcEl);
+        canvas.style.position = cs.position;
+        canvas.style.top = cs.top;
+        canvas.style.right = cs.right;
+        canvas.style.bottom = cs.bottom;
+        canvas.style.left = cs.left;
+        canvas.style.margin = cs.margin;
+        canvas.style.zIndex = cs.zIndex;
+        canvas.style.transform = cs.transform;
+        canvas.style.transformOrigin = cs.transformOrigin;
+        canvas.style.opacity = cs.opacity;
+        canvas.style.visibility = cs.visibility;
+        canvas.style.display = "block";
       } catch {}
       
       // Map clone canvas to source for RenderContext (though caching won't help here)
