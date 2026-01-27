@@ -40,15 +40,21 @@ Slow start, fast end     Smooth both ends
 - **Feel:** Responsive, natural
 - **Cubic bezier:** `cubic-bezier(0, 0, 0.2, 1)` or `ease-out`
 
-```javascript
-// Element entering screen
-element.animate({
-  opacity: [0, 1],
-  transform: ['translateY(-20px)', 'translateY(0)']
-}, {
-  duration: 300,
-  easing: 'cubic-bezier(0, 0, 0.2, 1)' // ease-out
-});
+```css
+.entering {
+  animation: enter 300ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 ```
 
 **2. Ease-In (Acceleration)**
@@ -57,15 +63,17 @@ element.animate({
 - **Feel:** Intentional departure
 - **Cubic bezier:** `cubic-bezier(0.4, 0, 1, 1)` or `ease-in`
 
-```javascript
-// Element leaving screen
-element.animate({
-  opacity: [1, 0],
-  transform: ['translateY(0)', 'translateY(20px)']
-}, {
-  duration: 200,
-  easing: 'cubic-bezier(0.4, 0, 1, 1)' // ease-in
-});
+```css
+.exiting {
+  animation: exit 200ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+@keyframes exit {
+  to {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}
 ```
 
 **3. Ease-In-Out (S-Curve)**
@@ -74,14 +82,10 @@ element.animate({
 - **Feel:** Polished, professional
 - **Cubic bezier:** `cubic-bezier(0.4, 0, 0.2, 1)` or `ease-in-out`
 
-```javascript
-// Element moving to new position
-element.animate({
-  transform: ['translateX(0)', 'translateX(200px)']
-}, {
-  duration: 400,
-  easing: 'cubic-bezier(0.4, 0, 0.2, 1)' // ease-in-out
-});
+```css
+.repositioning {
+  transition: transform 400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
 ```
 
 ### Never Use Linear
@@ -94,34 +98,34 @@ element.animate({
 
 **Bounce (celebration, playfulness):**
 ```css
-/* Element overshoots then settles */
-cubic-bezier(0.68, -0.55, 0.265, 1.55)
+.bounce {
+  animation-timing-function: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
 ```
-
 **Use for:** Success states, playful interactions, emphasis
 
 **Elastic (springy, attention-grabbing):**
 ```css
-/* Element oscillates before settling */
-cubic-bezier(0.175, 0.885, 0.32, 1.275)
+.elastic {
+  animation-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
 ```
-
 **Use for:** Notifications, errors that need attention, playful brands
 
 **Anticipation (windup before action):**
 ```css
-/* Slight reverse motion before main motion */
-cubic-bezier(0.6, -0.28, 0.735, 0.045)
+.anticipate {
+  animation-timing-function: cubic-bezier(0.6, -0.28, 0.735, 0.045);
+}
 ```
-
 **Use for:** User-initiated actions, dramatic moments
 
 **Overshoot (material design standard):**
 ```css
-/* Subtle overshoot for UI elements */
-cubic-bezier(0.4, 0, 0.2, 1)
+.overshoot {
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
 ```
-
 **Use for:** Cards, dialogs, modals
 
 ### Customizing Cubic Bezier Curves
@@ -250,14 +254,21 @@ Standard gravity: 9.8 m/s²
 - Rising elements decelerate (ease-out)
 - Neutral motion (ease-in-out)
 
-```javascript
-// Falling with gravity
-element.animate({
-  transform: ['translateY(0)', 'translateY(400px)']
-}, {
-  duration: 600,
-  easing: 'cubic-bezier(0.55, 0, 1, 0.45)' // accelerate down
-});
+```css
+.falling {
+  animation: fall 600ms cubic-bezier(0.55, 0, 1, 0.45);
+}
+
+@keyframes fall {
+  from { transform: translateY(0); }
+  to { transform: translateY(400px); }
+}
+```
+
+**Conceptual:**
+```
+falling: start slow → accelerate → fast impact
+rising: start fast → decelerate → gentle peak
 ```
 
 ### Momentum and Inertia
@@ -275,29 +286,17 @@ element.animate({
 - Use ease-in or add overshoot
 
 **Changing direction:**
-- Must slow down first
-- Then accelerate in new direction
-- 2-phase animation
-
-```javascript
-// Direction change
-await element.animate({
-  transform: ['translateX(0)', 'translateX(50px)']
-}, {
-  duration: 200,
-  easing: 'ease-out'
-}).finished;
-
-// Pause represents momentum decay
-await new Promise(r => setTimeout(r, 100));
-
-await element.animate({
-  transform: ['translateX(50px)', 'translateX(-30px)']
-}, {
-  duration: 250,
-  easing: 'ease-out'
-}).finished;
 ```
+Phase 1: Decelerate to stop (200ms)
+  moveRight(50px) with ease-in
+  
+Pause: Momentum decay (100ms)
+  
+Phase 2: Accelerate in new direction (250ms)
+  moveLeft(30px) with ease-out
+```
+
+Must slow down first, then accelerate in new direction.
 
 ### Friction and Air Resistance
 
@@ -316,24 +315,25 @@ await element.animate({
 ### Bounce Physics
 
 **Realistic bounce:**
-```javascript
-// Each bounce is ~70% of previous height
-// Each bounce is faster
-bounce1: { height: 100%, duration: 400ms }
-bounce2: { height: 70%, duration: 280ms }
-bounce3: { height: 49%, duration: 196ms }
-bounce4: { height: 34%, duration: 137ms }
 ```
+bounce1: height 100%, duration 400ms
+bounce2: height 70%, duration 280ms (70% of time)
+bounce3: height 49%, duration 196ms (70% of time)
+bounce4: height 34%, duration 137ms (70% of time)
+```
+Each bounce is ~70% of previous height and 70% of previous duration.
 
 **Simplified UI bounce:**
-```javascript
-// Single overshoot and settle
-element.animate({
-  transform: ['scale(0)', 'scale(1.1)', 'scale(1)']
-}, {
-  duration: 400,
-  easing: 'cubic-bezier(0.68, -0.55, 0.265, 1.55)'
-});
+```css
+.bounce-in {
+  animation: bounceIn 400ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes bounceIn {
+  0% { transform: scale(0); }
+  70% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
 ```
 
 ### Spring Physics
@@ -408,71 +408,54 @@ Do:
 ### Determining Stagger Delays
 
 **Per-character text (30-50ms):**
-```javascript
-'HELLO'.split('').forEach((char, i) => {
-  char.animate({ opacity: [0, 1] }, {
-    delay: i * 40, // 40ms per character
-    duration: 300
-  });
-});
+```css
+.char-1 { animation-delay: 0ms; }
+.char-2 { animation-delay: 40ms; }
+.char-3 { animation-delay: 80ms; }
+.char-4 { animation-delay: 120ms; }
+.char-5 { animation-delay: 160ms; }
 ```
+**Pattern:** delay = index × 40ms
 
 **Per-word text (80-120ms):**
-```javascript
-'The quick brown fox'.split(' ').forEach((word, i) => {
-  word.animate({ opacity: [0, 1] }, {
-    delay: i * 100, // 100ms per word
-    duration: 400
-  });
-});
 ```
+word 1: delay 0ms
+word 2: delay 100ms
+word 3: delay 200ms
+word 4: delay 300ms
+```
+**Pattern:** delay = index × 100ms
 
 **Per-line text (200-300ms):**
-```javascript
-lines.forEach((line, i) => {
-  line.animate({ opacity: [0, 1] }, {
-    delay: i * 250, // 250ms per line
-    duration: 500
-  });
-});
 ```
+line 1: delay 0ms
+line 2: delay 250ms
+line 3: delay 500ms
+```
+**Pattern:** delay = index × 250ms
 
 **List items (50ms):**
-```javascript
-listItems.forEach((item, i) => {
-  item.animate({ 
-    opacity: [0, 1],
-    transform: ['translateX(-20px)', 'translateX(0)']
-  }, {
-    delay: i * 50,
-    duration: 300,
-    easing: 'ease-out'
-  });
-});
+```css
+.item {
+  animation: slideIn 300ms ease-out;
+}
+.item:nth-child(1) { animation-delay: 0ms; }
+.item:nth-child(2) { animation-delay: 50ms; }
+.item:nth-child(3) { animation-delay: 100ms; }
 ```
 
 **Card groups (100-150ms):**
-```javascript
-cards.forEach((card, i) => {
-  card.animate({ 
-    opacity: [0, 1],
-    transform: ['translateY(20px)', 'translateY(0)']
-  }, {
-    delay: i * 120,
-    duration: 400,
-    easing: 'ease-out'
-  });
-});
+```
+card 1: delay 0ms
+card 2: delay 120ms
+card 3: delay 240ms
 ```
 
 **Major sections (400ms+):**
-```javascript
-sections.forEach((section, i) => {
-  section.animate({ opacity: [0, 1] }, {
-    delay: i * 500,
-    duration: 600
-  });
-});
+```
+section 1: delay 0ms
+section 2: delay 500ms
+section 3: delay 1000ms
 ```
 
 ### Stagger Patterns

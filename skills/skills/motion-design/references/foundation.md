@@ -114,6 +114,18 @@ Pack more = viewer misses content
 
 **Never skip the waits.** Attention needs time to shift.
 
+**Pseudo-code pattern:**
+```
+sequence:
+  animate(background, fadeIn, 400ms)
+  wait(300ms)
+  animate(hero, scaleIn, 600ms)
+  wait(400ms)
+  animate(text, fadeIn, 400ms)
+  wait(200ms)
+  animate(button, scaleIn, 300ms)
+```
+
 ### Staging Scenes
 
 ```
@@ -170,6 +182,19 @@ Timeline document:
 
 Every element gets dedicated attention time.
 
+**Visual timeline:**
+```
+Background  |████████|
+           ↓ rest
+Hero              |████████████|
+                 ↓ rest
+Title                        |████████|
+                             ↓ rest
+Subtitle                              |██████|
+                                      ↓ rest
+Button                                       |██████|
+```
+
 ---
 
 ## Skill 3: Timing Intelligence
@@ -192,15 +217,11 @@ Every element gets dedicated attention time.
 
 **The Farther Rule:** Longer distances need more time to feel right.
 
-```javascript
-// Example calculation
-const baseTime = 300; // ms
-const distance = elementMovesInPixels;
-const screenSize = windowWidth;
-
-// Distance factor: 0.5-2.0x
-const distanceFactor = Math.min(2, Math.max(0.5, distance / (screenSize * 0.3)));
-const duration = baseTime * distanceFactor;
+**Formula:**
+```
+baseTime = 300ms
+distanceFactor = clamp(distance / (screenSize * 0.3), 0.5, 2.0)
+duration = baseTime × distanceFactor
 ```
 
 **Practical examples:**
