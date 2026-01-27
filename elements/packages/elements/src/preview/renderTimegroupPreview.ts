@@ -510,6 +510,8 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
     }
     
     // Canvas - copy pixels
+    // NOTE: Raw canvases are always recopied (no caching) since we can't detect when their content changes.
+    // Long-term solution: Create EFCanvas wrapper element to track modifications.
     if (srcEl instanceof HTMLCanvasElement) {
       const canvas = document.createElement("canvas");
       canvas.width = srcEl.width;
@@ -518,8 +520,25 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
       if (ctx) {
         try { ctx.drawImage(srcEl, 0, 0); } catch {}
       }
-      // Raw canvas elements don't need style syncing, just return clone
-      // return null;
+      
+      // Sync styles from source canvas to clone
+      try {
+        syncElementStyles(srcEl, canvas);
+      } catch {}
+      
+      // Map clone canvas to source for RenderContext (though caching won't help here)
+      canvasSourceMap.set(canvas, srcEl);
+      
+      const node: CloneNode = {
+        source: srcEl,
+        clone: canvas,
+        children: [],
+        isCanvasClone: true,
+        bounds,
+        parent: parentNode,
+      };
+      nodeCount++;
+      return node;
     }
     
     // Custom elements with shadow canvas (e.g., ef-video, ef-image)
