@@ -211,6 +211,7 @@ function serializeElement(
     const shadowCanvas = element.shadowRoot.querySelector('canvas');
     if (shadowCanvas) {
       // Replace custom element with its shadow canvas
+      console.log(`[serializeElement] ${element.tagName} has shadow canvas, serializing it`);
       serializeCanvas(element, shadowCanvas, parts, canvasJobs, options);
       return;
     }
@@ -218,11 +219,24 @@ function serializeElement(
     const shadowImg = element.shadowRoot.querySelector('img');
     if (shadowImg?.complete && shadowImg.naturalWidth > 0) {
       // Convert shadow img to canvas
+      console.log(`[serializeElement] ${element.tagName} has shadow img, serializing it`);
       serializeImageAsCanvas(element, shadowImg, parts, canvasJobs, options);
       return;
     }
     
-    // No special shadow content - skip custom element entirely
+    // No special shadow content - serialize children directly (flatten)
+    console.log(`[serializeElement] ${element.tagName} has no special shadow content, serializing children`);
+    const children = element.shadowRoot?.childNodes || element.childNodes;
+    for (const child of children) {
+      if (child.nodeType === Node.TEXT_NODE) {
+        const text = child.textContent?.trim();
+        if (text) {
+          parts.push(escapeXML(text));
+        }
+      } else if (child.nodeType === Node.ELEMENT_NODE) {
+        serializeElement(child as Element, parts, canvasJobs, options);
+      }
+    }
     return;
   }
   
