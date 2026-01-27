@@ -19,6 +19,12 @@
       "description": "Create video compositions with @editframe/react React wrappers",
       "source": "./",
       "skills": ["./skills/react-composition"]
+    },
+    {
+      "name": "motion-design",
+      "description": "Professional motion graphics principles and animation techniques",
+      "source": "./",
+      "skills": ["./skills/motion-design"]
     }
   ]
 }
