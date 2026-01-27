@@ -1,6 +1,6 @@
 {
   "name": "@editframe/create",
-  "version": "0.34.10-beta",
+  "version": "0.34.11-beta",
   "description": "",
   "bin": {
     "create-editframe": "dist/index.js"
