@@ -399,6 +399,23 @@ export async function renderTimegroupToVideo(
   
   // Create RenderContext for caching across all frames (like live preview does)
   const renderContext = new RenderContext();
+  console.log(`[renderTimegroupToVideo] Created RenderContext, sourceMap has ${syncState.canvasSourceMap ? 'entries' : 'NO MAP'}`);
+  if (syncState.canvasSourceMap) {
+    // Count entries in WeakMap by trying to access it
+    let mapHasEntries = false;
+    const allCanvases = cloneContainer.querySelectorAll('canvas');
+    console.log(`[renderTimegroupToVideo] Found ${allCanvases.length} canvas elements in clone`);
+    for (const canvas of allCanvases) {
+      const source = syncState.canvasSourceMap.get(canvas as HTMLCanvasElement);
+      if (source) {
+        mapHasEntries = true;
+        console.log(`[renderTimegroupToVideo] Canvas ${canvas.width}x${canvas.height} -> ${source.tagName}`);
+      }
+    }
+    if (!mapHasEntries) {
+      console.log(`[renderTimegroupToVideo] WARNING: sourceMap exists but has no entries for canvases!`);
+    }
+  }
   
   // Create FrameController for coordinating element rendering
   const frameController = new FrameController(renderClone);
