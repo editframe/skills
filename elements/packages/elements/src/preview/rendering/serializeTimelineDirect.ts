@@ -14,6 +14,7 @@
 
 import { encodeCanvasesInParallel } from "../encoding/canvasEncoder.js";
 import type { RenderContext } from "../RenderContext.js";
+import { getTemporalBounds, isVisibleAtTime } from "../previewTypes.js";
 
 /**
  * Elements to skip entirely when serializing.
@@ -289,6 +290,31 @@ function serializeElement(
 }
 
 /**
+ * Apply temporal visibility to timeline before serialization.
+ * Walks the DOM and sets display:none on elements out of temporal bounds.
+ */
+function applyTemporalVisibility(element: Element, timeMs: number): number {
+  let hiddenCount = 0;
+  
+  // Check if this element should be visible
+  const isVisible = isVisibleAtTime(element, timeMs);
+  
+  if (!isVisible && element instanceof HTMLElement) {
+    // Hide this element and skip its children
+    element.style.display = 'none';
+    hiddenCount++;
+    return hiddenCount;
+  }
+  
+  // Element is visible, recurse to children
+  for (const child of element.children) {
+    hiddenCount += applyTemporalVisibility(child, timeMs);
+  }
+  
+  return hiddenCount;
+}
+
+/**
  * Serialize a timeline element directly to XHTML string.
  * 
  * @param timeline - The timeline element to serialize (e.g., EFTimegroup)
@@ -303,7 +329,14 @@ export async function serializeTimelineToXHTML(
   height: number,
   options: SerializationOptions
 ): Promise<string> {
-  console.log(`[serializeTimelineToXHTML] Starting serialization: ${timeline.tagName}, ${width}x${height}, timeMs=${options.timeMs}`);
+  console.log(`\n[serializeTimelineToXHTML] ===== Starting serialization =====`);
+  console.log(`  Timeline: ${timeline.tagName}, ${width}x${height}`);
+  console.log(`  Current time: ${options.timeMs}ms`);
+  console.log(`  Timeline currentTime: ${(timeline as any).currentTime}ms`);
+  
+  // Apply temporal visibility before serialization
+  const hiddenCount = applyTemporalVisibility(timeline, options.timeMs);
+  console.log(`  Applied temporal visibility: ${hiddenCount} elements hidden`);
   
   const parts: Array<string | Promise<string>> = [];
   const canvasJobs: CanvasJob[] = [];
