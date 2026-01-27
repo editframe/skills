@@ -380,6 +380,14 @@ export async function serializeTimelineToXHTML(
   const closeTags = (result.match(/<\//gi) || []).length;
   console.log(`[serializeTimelineToXHTML] XML validation: ${openTags} open tags, ${closeTags} close tags`);
   
+  // Log sanitized XML (replace base64 data with placeholders for inspection)
+  const sanitized = result.replace(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/g, (match) => {
+    const mimeType = match.match(/data:image\/([^;]+)/)?.[1] || 'unknown';
+    const length = match.length;
+    return `data:image/${mimeType};base64,[${length} chars]`;
+  });
+  console.log(`\n[serializeTimelineToXHTML] Sanitized XHTML (for inspection):\n${sanitized}\n`);
+  
   return result;
 }
 
