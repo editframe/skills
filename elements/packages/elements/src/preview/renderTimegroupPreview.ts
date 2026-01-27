@@ -494,21 +494,6 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
     // Get temporal bounds upfront for indexing
     const bounds = getTemporalBounds(srcEl);
     
-    // SVG - clone entire subtree (no children tracking needed)
-    if (srcEl instanceof SVGElement) {
-      const svgClone = srcEl.cloneNode(true) as SVGElement;
-      const node: CloneNode = {
-        source: srcEl,
-        clone: svgClone as unknown as HTMLElement,
-        children: [],
-        isCanvasClone: false,
-        bounds,
-        parent: parentNode,
-      };
-      nodeCount++;
-      return node;
-    }
-    
     // Canvas - copy pixels
     // NOTE: Raw canvases are always recopied (no caching) since we can't detect when their content changes.
     // Long-term solution: Create EFCanvas wrapper element to track modifications.
@@ -647,7 +632,13 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
     }
     
     // Standard element clone
-    const clone = document.createElement(isCustom ? "div" : srcEl.tagName.toLowerCase()) as HTMLElement;
+    // SVG elements need createElementNS, HTML elements use createElement
+    let clone: HTMLElement;
+    if (srcEl instanceof SVGElement) {
+      clone = document.createElementNS("http://www.w3.org/2000/svg", srcEl.tagName) as unknown as HTMLElement;
+    } else {
+      clone = document.createElement(isCustom ? "div" : srcEl.tagName.toLowerCase()) as HTMLElement;
+    }
     
     // Copy attributes - OPTIMIZATION: Early exit if no attributes
     const attrs = srcEl.attributes;
