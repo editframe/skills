@@ -9,7 +9,12 @@ import { isContextMixin } from "../gui/ContextMixin.js";
 import { efContext } from "../gui/efContext.js";
 import { TWMixin } from "../gui/TWMixin.js";
 import { isTracingEnabled, withSpan } from "../otel/tracingHelpers.js";
-import { FrameController } from "../preview/FrameController.js";
+import {
+  FrameController,
+  type FrameRenderable,
+  type FrameState,
+  PRIORITY_DEFAULT,
+} from "../preview/FrameController.js";
 import { deepGetMediaElements, type EFMedia } from "./EFMedia.js";
 import {
   deepGetElementsWithFrameTasks,
@@ -450,7 +455,7 @@ function evaluateSeekTarget(
 }
 
 @customElement("ef-timegroup")
-export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
+export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) implements FrameRenderable {
   static get observedAttributes(): string[] {
     const parentAttributes = super.observedAttributes || [];
     return [
@@ -605,6 +610,52 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) {
    */
   get frameController(): FrameController {
     return this.#frameController;
+  }
+
+  // ============================================================================
+  // FrameRenderable Interface Implementation
+  // ============================================================================
+  // Allows FrameController to discover and coordinate nested timegroups.
+  // This ensures frame callbacks registered on nested timegroups are executed.
+  // ============================================================================
+
+  /**
+   * Query timegroup's readiness state for a given time.
+   * Timegroups are always ready (no async preparation needed).
+   * @public
+   */
+  getFrameState(_timeMs: number): FrameState {
+    return {
+      needsPreparation: false,
+      isReady: true,
+      priority: PRIORITY_DEFAULT,
+    };
+  }
+
+  /**
+   * Async preparation phase (no-op for timegroups).
+   * Timegroups don't need preparation - they just coordinate child rendering.
+   * @public
+   */
+  async prepareFrame(_timeMs: number, _signal: AbortSignal): Promise<void> {
+    // No preparation needed for timegroups
+  }
+
+  /**
+   * Synchronous render phase - executes custom frame callbacks.
+   * Called by FrameController after all preparation is complete.
+   * Kicks off async frame callbacks without blocking (they run in background).
+   * @public
+   */
+  renderFrame(_timeMs: number): void {
+    // Execute custom frame tasks registered via addFrameTask()
+    // Fire and forget - callbacks can be async but we don't block here
+    // The frameTask.taskComplete promise tracks completion if needed
+    if (this.#customFrameTasks.size > 0) {
+      this.#executeCustomFrameTasks().catch((error) => {
+        console.error("EFTimegroup custom frame task error:", error);
+      });
+    }
   }
 
   /**
