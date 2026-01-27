@@ -287,6 +287,13 @@ function syncElementStyles(
     cloneStyle.backfaceVisibility = cs.backfaceVisibility;
     cloneStyle.transformStyle = cs.transformStyle;
     
+    // Visual properties (safe for canvas clones - don't affect dimensions)
+    cloneStyle.background = cs.background;
+    cloneStyle.color = cs.color;
+    cloneStyle.boxShadow = cs.boxShadow;
+    cloneStyle.filter = cs.filter;
+    cloneStyle.backdropFilter = cs.backdropFilter;
+    
     // Width/height from content source (shadow canvas/img)
     if (contentCs) {
       cloneStyle.width = contentCs.width;
