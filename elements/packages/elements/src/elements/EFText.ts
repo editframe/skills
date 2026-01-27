@@ -152,57 +152,50 @@ export class EFText extends EFTemporal(LitElement) {
       return [];
     }
 
-    // If segments already initialized and exist, skip RAF waits
+    // If segments already initialized and exist, return immediately (no RAF waits)
     if (this.#segmentsInitialized && this.segments.length > 0) {
       await Promise.all(this.segments.map((seg) => seg.updateComplete));
       return this.segments;
     }
 
-    // First time: wait a frame for splitText to run
-    await new Promise((resolve) => requestAnimationFrame(resolve));
-
-    // If segments already exist and are connected, wait for updates
+    // Check if segments are already in DOM (synchronous check - no RAF)
     let segments = this.segments;
     if (segments.length > 0) {
-      // Wait for all segments to be updated
+      // Segments exist, just wait for their Lit updates (no RAF)
       await Promise.all(segments.map((seg) => seg.updateComplete));
-      // Wait one more frame to ensure connectedCallback has run and properties are set
-      await new Promise((resolve) => requestAnimationFrame(resolve));
-      // Wait one more frame to ensure properties are fully processed
-      await new Promise((resolve) => requestAnimationFrame(resolve));
-      // Mark as initialized after first successful wait
       this.#segmentsInitialized = true;
-      return this.segments;
+      return segments;
     }
 
-    // Otherwise, wait for segments to be created (with timeout)
-    return new Promise<EFTextSegment[]>((resolve) => {
-      let attempts = 0;
-      const maxAttempts = 100; // 100 frames = ~1.6 seconds at 60fps
-
-      const checkSegments = () => {
-        segments = this.segments;
-        if (segments.length > 0) {
-          // Wait for all segments to be updated
-          Promise.all(segments.map((seg) => seg.updateComplete)).then(() => {
-            // Wait frames to ensure connectedCallback has run and properties are set
-            requestAnimationFrame(() => {
-              requestAnimationFrame(() => {
-                // Mark as initialized after first successful wait
-                this.#segmentsInitialized = true;
-                resolve(this.segments);
-              });
-            });
-          });
-        } else if (attempts < maxAttempts) {
-          attempts++;
-          requestAnimationFrame(checkSegments);
-        } else {
-          // Timeout - return empty array (might be empty text)
-          resolve([]);
+    // Segments don't exist yet - use the promise-based mechanism (no RAF polling)
+    // This waits for splitText() to complete and resolve the promise
+    return new Promise<EFTextSegment[]>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        // Remove our resolver if we timeout
+        const index = this._segmentsReadyResolvers.indexOf(resolveWithSegments);
+        if (index > -1) {
+          this._segmentsReadyResolvers.splice(index, 1);
         }
+        reject(new Error('Timeout waiting for text segments to be created'));
+      }, 5000); // 5 second timeout
+
+      const resolveWithSegments = () => {
+        clearTimeout(timeout);
+        // Wait for segment Lit updates
+        const segments = this.segments;
+        Promise.all(segments.map((seg) => seg.updateComplete)).then(() => {
+          this.#segmentsInitialized = true;
+          resolve(segments);
+        });
       };
-      checkSegments();
+
+      this._segmentsReadyResolvers.push(resolveWithSegments);
+      
+      // Trigger splitText if it hasn't run yet
+      // This handles the case where segments haven't been created at all
+      if (segments.length === 0 && this.isConnected) {
+        this.splitText();
+      }
     });
   }
 
@@ -571,24 +564,20 @@ export class EFText extends EFTemporal(LitElement) {
     // Segments will pause their own animations in connectedCallback
     // Lit will automatically update them when they're connected to the DOM
     // Ensure segments are updated after being connected
-    requestAnimationFrame(() => {
-      const segmentElements = this.segments;
-      Promise.all(segmentElements.map((seg) => seg.updateComplete)).then(() => {
-        const rootTimegroup = this.rootTimegroup || this;
-        updateAnimations(rootTimegroup as AnimatableElement);
-      });
+    const segmentElements = this.segments;
+    Promise.all(segmentElements.map((seg) => seg.updateComplete)).then(() => {
+      const rootTimegroup = this.rootTimegroup || this;
+      updateAnimations(rootTimegroup as AnimatableElement);
     });
 
     this.lastTextContent = text;
     this._textContent = text;
 
-    // Resolve any waiting promises after segments are connected
-    requestAnimationFrame(() => {
-      this._segmentsReadyResolvers.forEach((resolve) => {
-        resolve();
-      });
-      this._segmentsReadyResolvers = [];
+    // Resolve any waiting promises after segments are connected (synchronous)
+    this._segmentsReadyResolvers.forEach((resolve) => {
+      resolve();
     });
+    this._segmentsReadyResolvers = [];
   }
 
   private detectWordBoundaries(text: string): Map<number, number> {
