@@ -16,6 +16,10 @@
     "tsx": "^4.20.6"
   },
   "dependencies": {
+    "@editframe/assets": "^0.34.9-beta",
+    "@editframe/cli": "^0.34.9-beta",
+    "@editframe/elements": "^0.34.9-beta",
+    "@editframe/vite-plugin": "^0.34.9-beta",
     "better-sqlite3": "^12.6.0",
     "typescript": "^5.9.3"
   }
