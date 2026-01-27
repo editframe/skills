@@ -433,6 +433,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     useInOut: false,
     inMs: 0,
     outMs: 0,
+    useDirectSerialization: false,
   };
   
   private exportAbortController: AbortController | null = null;
@@ -1612,6 +1613,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       scale: this.exportOptions.scale,
       fromMs: this.exportOptions.useInOut ? this.exportOptions.inMs : undefined,
       toMs: this.exportOptions.useInOut ? this.exportOptions.outMs : undefined,
+      useDirectSerialization: this.exportOptions.useDirectSerialization,
     });
   }
   
@@ -2211,6 +2213,22 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
             />
             <span style="color: #e2e8f0; font-size: 12px;">Include Audio</span>
           </label>
+        </div>
+        
+        <!-- Direct Serialization (Experimental) -->
+        <div style="margin-bottom: 10px;">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input
+              type="checkbox"
+              ?checked=${this.exportOptions.useDirectSerialization}
+              @change=${(e: Event) => this.updateExportOption("useDirectSerialization", (e.target as HTMLInputElement).checked)}
+              style="width: 14px; height: 14px; accent-color: #f59e0b;"
+            />
+            <span style="color: #e2e8f0; font-size: 12px;">Direct Serialization ⚡</span>
+          </label>
+          <div style="color: #64748b; font-size: 10px; margin-left: 22px; line-height: 1.3;">
+            Experimental: 3x faster serialization (no passive DOM structure)
+          </div>
         </div>
         
         <!-- In/Out Range -->
