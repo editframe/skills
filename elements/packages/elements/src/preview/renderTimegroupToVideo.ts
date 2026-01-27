@@ -1,12 +1,13 @@
 /**
  * Video rendering for timegroups.
  * 
- * Uses the same rendering architecture as live preview (renderTimegroupToCanvas):
- * - Rebuilds passive structure each frame from clone's current DOM state
+ * Architecture:
+ * - Builds passive structure ONCE from clone timeline at start
+ * - Incrementally syncs styles/content each frame from clone's current DOM state
  * - Captures DOM changes from frame tasks (SVG paths, canvas content, text updates)
  * - RenderContext provides pixel caching across frames for performance
  * 
- * This ensures consistency between live preview and exported video.
+ * This ensures consistency while avoiding expensive per-frame DOM reconstruction.
  */
 
 import { logger } from "./logger.js";
@@ -32,6 +33,7 @@ import {
 } from "./renderTimegroupToCanvas.js";
 import {
   buildCloneStructure,
+  syncStyles,
   collectDocumentStyles,
   overrideRootCloneStyles,
 } from "./renderTimegroupPreview.js";
@@ -407,6 +409,14 @@ export async function renderTimegroupToVideo(
   styleEl.textContent = collectDocumentStyles();
   previewContainer.appendChild(styleEl);
   
+  // Build passive structure ONCE before frame loop - will be reused and incrementally synced
+  const initialBuildStart = performance.now();
+  const { container: cloneContainer, syncState } = buildCloneStructure(renderClone, config.startMs);
+  previewContainer.appendChild(cloneContainer);
+  overrideRootCloneStyles(syncState, true);
+  const initialBuildTime = performance.now() - initialBuildStart;
+  console.log(`[renderTimegroupToVideo] Initial build: ${initialBuildTime.toFixed(1)}ms, nodeCount=${syncState.nodeCount}`);
+  
   // =========================================================================
   // Frame loop - DEEP PIPELINE: overlap encode + render + prepare
   // =========================================================================
@@ -416,7 +426,7 @@ export async function renderTimegroupToVideo(
   const audioChunkDurationMs = 2000;
   
   let totalSeekMs = 0;
-  let totalBuildMs = 0;
+  let totalSyncMs = 0;
   let totalRenderMs = 0;
   let totalEncodeMs = 0;
   
@@ -478,31 +488,11 @@ export async function renderTimegroupToVideo(
           // 2. Awaited #executeCustomFrameTasks() so frame tasks are complete
           // Clone's DOM now reflects all changes from frame tasks
           
-          // Build passive structure from clone's CURRENT DOM state (captures frame task changes)
-          const buildStart = performance.now();
-          const { container: cloneContainer, syncState } = buildCloneStructure(renderClone, renderTimeMs);
-          const buildTime = performance.now() - buildStart;
-          totalBuildMs += buildTime;
-          
-          // DIAGNOSTIC: Count elements before clear
-          const beforeClearCount = previewContainer.querySelectorAll('*').length;
-          const beforeClearSvgs = previewContainer.querySelectorAll('svg').length;
-          
-          // Clear previous container content and add new structure
-          const domUpdateStart = performance.now();
-          while (previewContainer.firstChild !== styleEl && previewContainer.firstChild) {
-            previewContainer.removeChild(previewContainer.firstChild);
-          }
-          previewContainer.appendChild(cloneContainer);
-          overrideRootCloneStyles(syncState, true);
-          const domUpdateTime = performance.now() - domUpdateStart;
-          
-          // DIAGNOSTIC: Count elements after adding new structure
-          const afterAddCount = previewContainer.querySelectorAll('*').length;
-          const afterAddSvgs = previewContainer.querySelectorAll('svg').length;
-          const svgChildren = Array.from(previewContainer.querySelectorAll('svg')).map(svg => 
-            svg.querySelectorAll('*').length
-          );
+          // Incrementally sync passive structure from clone's CURRENT DOM state
+          const syncStart = performance.now();
+          syncStyles(syncState, renderTimeMs);
+          const syncTime = performance.now() - syncStart;
+          totalSyncMs += syncTime;
           
           const renderStart = performance.now();
           const image = await renderToImageDirect(previewContainer, width, height, {
@@ -515,11 +505,7 @@ export async function renderTimegroupToVideo(
           
           // Log detailed timing every 30 frames to see breakdown
           if (renderFrameIndex % 30 === 0) {
-            console.log(`[Frame ${renderFrameIndex}] build=${buildTime.toFixed(1)}ms, domUpdate=${domUpdateTime.toFixed(1)}ms, render=${renderTime.toFixed(1)}ms, nodeCount=${syncState.nodeCount}`);
-            console.log(`  DOM: beforeClear=${beforeClearCount} elems (${beforeClearSvgs} svgs), afterAdd=${afterAddCount} elems (${afterAddSvgs} svgs)`);
-            if (svgChildren.length > 0) {
-              console.log(`  SVG complexity: ${svgChildren.join(', ')} elements per SVG`);
-            }
+            console.log(`[Frame ${renderFrameIndex}] sync=${syncTime.toFixed(1)}ms, render=${renderTime.toFixed(1)}ms`);
           }
           
           return image;
@@ -624,12 +610,12 @@ export async function renderTimegroupToVideo(
     
     // Calculate percentages and averages for performance analysis
     const avgSeek = totalSeekMs / config.totalFrames;
-    const avgBuild = totalBuildMs / config.totalFrames;
+    const avgSync = totalSyncMs / config.totalFrames;
     const avgRender = totalRenderMs / config.totalFrames;
     const avgEncode = totalEncodeMs / config.totalFrames;
     const avgTotal = totalTime / config.totalFrames;
     
-    const tracked = totalSeekMs + totalBuildMs + totalRenderMs + totalEncodeMs;
+    const tracked = totalSeekMs + totalSyncMs + totalRenderMs + totalEncodeMs;
     const untracked = totalTime - tracked;
     
     console.log(`\n=== Video Export Performance Breakdown ===`);
@@ -637,7 +623,7 @@ export async function renderTimegroupToVideo(
     console.log(`Total time: ${totalTime.toFixed(0)}ms (${avgTotal.toFixed(1)}ms/frame)`);
     console.log(`\nPer-stage totals:`);
     console.log(`  Seek:   ${totalSeekMs.toFixed(0)}ms (${(totalSeekMs/totalTime*100).toFixed(1)}%) - avg ${avgSeek.toFixed(1)}ms/frame`);
-    console.log(`  Build:  ${totalBuildMs.toFixed(0)}ms (${(totalBuildMs/totalTime*100).toFixed(1)}%) - avg ${avgBuild.toFixed(1)}ms/frame`);
+    console.log(`  Sync:   ${totalSyncMs.toFixed(0)}ms (${(totalSyncMs/totalTime*100).toFixed(1)}%) - avg ${avgSync.toFixed(1)}ms/frame`);
     console.log(`  Render: ${totalRenderMs.toFixed(0)}ms (${(totalRenderMs/totalTime*100).toFixed(1)}%) - avg ${avgRender.toFixed(1)}ms/frame`);
     console.log(`  Encode: ${totalEncodeMs.toFixed(0)}ms (${(totalEncodeMs/totalTime*100).toFixed(1)}%) - avg ${avgEncode.toFixed(1)}ms/frame`);
     console.log(`  Other:  ${untracked.toFixed(0)}ms (${(untracked/totalTime*100).toFixed(1)}%)`);
@@ -645,7 +631,7 @@ export async function renderTimegroupToVideo(
     
     logger.debug(
       `[renderTimegroupToVideo] ${config.totalFrames} frames: ` +
-      `seek=${totalSeekMs.toFixed(0)}ms, build=${totalBuildMs.toFixed(0)}ms, ` +
+      `seek=${totalSeekMs.toFixed(0)}ms, sync=${totalSyncMs.toFixed(0)}ms, ` +
       `render=${totalRenderMs.toFixed(0)}ms, encode=${totalEncodeMs.toFixed(0)}ms, ` +
       `total=${totalTime.toFixed(0)}ms`
     );
