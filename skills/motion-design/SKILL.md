@@ -15,33 +15,41 @@ Professional motion graphics cognitive skills for creating purposeful, polished 
 
 **Motion should always serve communication, not decoration.** Every animation must have clear intent and guide viewer attention.
 
-## Skill Categories
+## The 20 Motion Design Skills
 
-### Foundation (Start Here)
-- [references/foundation.md](references/foundation.md) - Message analysis, attention choreography, timing intelligence
+### Foundation Skills (Start Here)
+1. [Message & Intent Analysis](references/message-intent-analysis.md) - Translate goals into motion strategy
+2. [Attention Choreography](references/attention-choreography.md) - Plan sequential viewer focus flow
+3. [Timing Intelligence](references/timing-intelligence.md) - Determine duration based on multiple factors
 
 ### Core Motion Techniques
-- [references/core-motion.md](references/core-motion.md) - Easing mastery, physics simulation, stagger patterns
+4. [Easing Mastery](references/easing-mastery.md) - Select acceleration/deceleration curves
+5. [Physics Simulation](references/physics-simulation.md) - Apply realistic or stylized physics
+8. [Stagger & Sequencing](references/stagger-sequencing.md) - Create rhythmic patterns across elements
 
 ### Advanced Animation
-- [references/advanced-techniques.md](references/advanced-techniques.md) - Squash & stretch, anticipation, follow-through, arcs, exaggeration
+6. [Squash & Stretch](references/squash-stretch.md) - Add life through strategic deformation
+7. [Anticipation & Follow-Through](references/anticipation-follow-through.md) - Preparation and continuation
+9. [Arc & Path Construction](references/arc-path-construction.md) - Define natural motion trajectories
+14. [Exaggeration Calibration](references/exaggeration-calibration.md) - Push beyond realism appropriately
 
-### UI Patterns
-- [references/ui-patterns.md](references/ui-patterns.md) - Entrance/exit, state transitions, hover, focus, loading, success, error
+### UI Animation Patterns
+10. [Entrance & Exit Patterns](references/entrance-exit-patterns.md) - Appear/disappear transitions
+16. [State Transitions](references/state-transitions.md) - Hover, focus, loading, success, error states
 
 ### Specialized Techniques
-- [references/text-animation.md](references/text-animation.md) - Typography-specific animation principles
-- [references/color-transitions.md](references/color-transitions.md) - Color change strategies
-- [references/particles-effects.md](references/particles-effects.md) - Particle systems and visual effects
+17. [Text Animation](references/text-animation.md) - Typography-specific principles
+18. [Color Transitions](references/color-transitions.md) - Smooth color changes over time
+19. [Particles & Effects](references/particles-effects.md) - Ambient and celebratory particle systems
 
-### Composition & Structure
-- [references/staging-composition.md](references/staging-composition.md) - Visual hierarchy, focal points, depth, clarity
-- [references/material-weight.md](references/material-weight.md) - Expressing physical properties through motion
-- [references/rhythm-pacing.md](references/rhythm-pacing.md) - Musical timing, beats, tempo
-- [references/looping.md](references/looping.md) - Seamless infinite animations
+### Composition & Polish
+11. [Staging & Composition](references/staging-composition.md) - Visual hierarchy and clarity during motion
+12. [Rhythm & Pacing](references/rhythm-pacing.md) - Musical timing structure and beats
+13. [Material & Weight](references/material-weight.md) - Express physical properties through timing
+15. [Looping](references/looping.md) - Seamless infinite animations
 
 ### Process
-- [references/iteration-process.md](references/iteration-process.md) - Systematic workflow from concept to polish
+20. [Iteration & Refinement](references/iteration-process.md) - Systematic workflow from concept to polish
 
 ## Quick Reference
 
