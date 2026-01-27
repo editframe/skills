@@ -19,6 +19,7 @@ import {
 } from "./EFTimegroup.js";
 import { EFVideo } from "./EFVideo.js";
 import { FetchMixin } from "./FetchMixin.js";
+import { HTMLElementCompat } from "../utils/nodeCompat.js";
 
 export interface WordSegment {
   text: string;
@@ -44,7 +45,7 @@ const stopWords = new Set(["", ".", "!", "?", ","]);
  * Uses light DOM for simplicity - parent sets textContent directly.
  */
 @customElement("ef-captions-active-word")
-export class EFCaptionsActiveWord extends HTMLElement {
+export class EFCaptionsActiveWord extends HTMLElementCompat {
   #wordText = "";
   #wordIndex = 0;
   
@@ -90,7 +91,7 @@ export class EFCaptionsActiveWord extends HTMLElement {
  * Uses light DOM for simplicity - parent sets textContent directly.
  */
 @customElement("ef-captions-segment")
-export class EFCaptionsSegment extends HTMLElement {
+export class EFCaptionsSegment extends HTMLElementCompat {
   #segmentText = "";
   
   constructor() {
