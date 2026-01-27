@@ -242,31 +242,199 @@ export function traverseCloneTree(state: SyncState, callback: (node: CloneNode) 
 }
 
 /**
- * Helper to copy styles from host and content elements to a canvas clone.
- * Reduces code duplication for shadow canvas and shadow img cases.
+ * Unified CSS property sync for all elements (canvas clones and regular elements).
+ * Single source of truth using the SYNC_PROPERTIES array.
+ * 
+ * @param source - Source element to read styles from
+ * @param clone - Clone element to write styles to
+ * @param contentSource - Optional content element for width/height (canvas clones only)
  */
-function copyCanvasCloneStyles(
-  clone: HTMLCanvasElement,
-  hostCs: CSSStyleDeclaration,
-  contentCs: CSSStyleDeclaration
+function syncElementStyles(
+  source: Element,
+  clone: HTMLElement,
+  contentSource?: Element,
 ): void {
-  const s = clone.style;
-  s.position = hostCs.position;
-  s.top = hostCs.top;
-  s.right = hostCs.right;
-  s.bottom = hostCs.bottom;
-  s.left = hostCs.left;
-  s.margin = hostCs.margin;
-  s.zIndex = hostCs.zIndex;
-  s.transform = hostCs.transform;
-  s.transformOrigin = hostCs.transformOrigin;
-  s.opacity = hostCs.opacity;
-  s.visibility = hostCs.visibility;
-  s.width = contentCs.width;
-  s.height = contentCs.height;
-  s.display = "block";
-  s.animation = "none";
-  s.transition = "none";
+  const cloneStyle = clone.style as any;
+  const propLen = SYNC_PROPERTIES.length;
+  const tagName = (source as HTMLElement).tagName;
+  
+  if (HAS_COMPUTED_STYLE_MAP) {
+    let srcMap: StylePropertyMapReadOnly;
+    let contentMap: StylePropertyMapReadOnly | undefined;
+    
+    try {
+      srcMap = source.computedStyleMap();
+      if (contentSource) {
+        contentMap = contentSource.computedStyleMap();
+      }
+    } catch { return; }
+    
+    for (let j = 0; j < propLen; j++) {
+      const kebab = SYNC_PROPERTIES_KEBAB[j]!;
+      const camel = SYNC_PROPERTIES[j]!;
+      
+      // For canvas clones, width/height come from content element (shadow canvas/img)
+      const useContentSource = contentSource && (camel === "width" || camel === "height");
+      const styleMap = useContentSource ? contentMap : srcMap;
+      if (!styleMap) continue;
+      
+      const srcVal = styleMap.get(kebab);
+      if (!srcVal) continue;
+      
+      const strVal = srcVal.toString();
+      
+      if (camel === "display") {
+        // For caption child elements, preserve display:none when explicitly set
+        // (they use it to hide empty content, not for temporal visibility)
+        const isCaptionChild = tagName && (
+          tagName === 'EF-CAPTIONS-ACTIVE-WORD' ||
+          tagName === 'EF-CAPTIONS-BEFORE-ACTIVE-WORD' ||
+          tagName === 'EF-CAPTIONS-AFTER-ACTIVE-WORD' ||
+          tagName === 'EF-CAPTIONS-SEGMENT'
+        );
+        const targetDisplay = (strVal === "none" && !isCaptionChild) ? "block" : strVal;
+        cloneStyle.display = targetDisplay;
+        continue;
+      }
+      
+      // Skip clipPath - clones always have clipPath: none for rendering
+      // (source may have clip-path: inset(100%) from proxy mode)
+      if (camel === "clipPath") continue;
+      
+      // OPTIMIZATION: Skip default values to reduce serialized HTML size
+      // If the computed value is the CSS default, don't set it as inline style
+      if (isDefaultValue(camel, strVal)) {
+        // Remove from inline style if it was previously set
+        if (cloneStyle[camel]) cloneStyle[camel] = "";
+        continue;
+      }
+      
+      cloneStyle[camel] = strVal;
+    }
+  } else {
+    let cs: CSSStyleDeclaration;
+    let contentCs: CSSStyleDeclaration | undefined;
+    
+    try {
+      cs = getComputedStyle(source);
+      if (contentSource) {
+        contentCs = getComputedStyle(contentSource);
+      }
+    } catch { return; }
+    
+    const srcStyle = cs as any;
+    const contentStyle = contentCs as any;
+    
+    for (const prop of SYNC_PROPERTIES) {
+      // For canvas clones, width/height come from content element (shadow canvas/img)
+      const useContentSource = contentSource && (prop === "width" || prop === "height");
+      const srcVal = useContentSource ? contentStyle?.[prop] : srcStyle[prop];
+      if (!srcVal) continue;
+      
+      if (prop === "display") {
+        // For caption child elements, preserve display:none when explicitly set
+        // (they use it to hide empty content, not for temporal visibility)
+        const isCaptionChild = tagName && (
+          tagName === 'EF-CAPTIONS-ACTIVE-WORD' ||
+          tagName === 'EF-CAPTIONS-BEFORE-ACTIVE-WORD' ||
+          tagName === 'EF-CAPTIONS-AFTER-ACTIVE-WORD' ||
+          tagName === 'EF-CAPTIONS-SEGMENT'
+        );
+        const targetDisplay = (srcVal === "none" && !isCaptionChild) ? "block" : srcVal;
+        cloneStyle.display = targetDisplay;
+        continue;
+      }
+      
+      // Skip clipPath - clones always have clipPath: none for rendering
+      // (source may have clip-path: inset(100%) from proxy mode)
+      if (prop === "clipPath") continue;
+      
+      // OPTIMIZATION: Skip default values to reduce serialized HTML size
+      if (isDefaultValue(prop, srcVal)) {
+        if (cloneStyle[prop]) cloneStyle[prop] = "";
+        continue;
+      }
+      
+      cloneStyle[prop] = srcVal;
+    }
+  }
+  
+  // Disable animations/transitions to prevent re-animation (browser optimizes redundant writes)
+  cloneStyle.animation = "none";
+  cloneStyle.transition = "none";
+}
+
+/**
+ * Refresh canvas pixel content from shadow DOM source.
+ * Handles both shadow canvas and shadow img sources.
+ */
+function refreshCanvasPixels(node: CloneNode): void {
+  const { source, clone } = node;
+  const canvas = clone as HTMLCanvasElement;
+  const shadowCanvas = source.shadowRoot?.querySelector("canvas");
+  const shadowImg = source.shadowRoot?.querySelector("img");
+  
+  if (shadowCanvas) {
+    // Update buffer dimensions if needed
+    if (canvas.width !== shadowCanvas.width) canvas.width = shadowCanvas.width;
+    if (canvas.height !== shadowCanvas.height) canvas.height = shadowCanvas.height;
+    
+    // Copy pixels with explicit clear
+    const ctx = canvas.getContext("2d");
+    if (ctx && shadowCanvas.width > 0 && shadowCanvas.height > 0) {
+      try {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(shadowCanvas, 0, 0);
+      } catch (e) {
+        logger.warn("[refreshCanvasPixels] Canvas draw failed:", e);
+      }
+    }
+  } else if (shadowImg?.complete && shadowImg.naturalWidth > 0) {
+    // Update buffer dimensions if needed
+    if (canvas.width !== shadowImg.naturalWidth) canvas.width = shadowImg.naturalWidth;
+    if (canvas.height !== shadowImg.naturalHeight) canvas.height = shadowImg.naturalHeight;
+    
+    // Copy pixels with explicit clear
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      try { ctx.drawImage(shadowImg, 0, 0); } catch {}
+    }
+  }
+}
+
+/**
+ * Sync text content from light DOM to clone.
+ */
+function syncTextContent(source: Element, clone: HTMLElement): void {
+  const srcTextNode = source.childNodes[0];
+  if (srcTextNode?.nodeType === Node.TEXT_NODE) {
+    const srcText = srcTextNode.textContent || "";
+    const cloneTextNode = clone.childNodes[0];
+    
+    if (cloneTextNode?.nodeType === Node.TEXT_NODE) {
+      // Update existing text node
+      if (cloneTextNode.textContent !== srcText) cloneTextNode.textContent = srcText;
+    } else if (!clone.childNodes.length) {
+      // Only create text node if clone has NO children (was empty when initially cloned)
+      // Don't set textContent as it would delete element children!
+      clone.appendChild(document.createTextNode(srcText));
+    }
+  }
+}
+
+/**
+ * Sync input element value.
+ */
+function syncInputValue(source: Element, clone: HTMLElement): void {
+  if (source instanceof HTMLInputElement) {
+    const srcVal = source.value;
+    const cloneInput = clone as HTMLInputElement;
+    if (cloneInput.value !== srcVal) {
+      cloneInput.value = srcVal;
+      cloneInput.setAttribute("value", srcVal);
+    }
+  }
 }
 
 /**
@@ -337,11 +505,10 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
           try { ctx.drawImage(shadowCanvas, 0, 0); } catch {}
         }
         
-        // Copy initial CSS styles - OPTIMIZATION: Cache getComputedStyle results
+        // Copy initial CSS styles using unified sync
+        // Pass shadowCanvas as contentSource for width/height
         try {
-          const hostCs = getComputedStyle(srcEl);
-          const canvasCs = getComputedStyle(shadowCanvas);
-          copyCanvasCloneStyles(clone, hostCs, canvasCs);
+          syncElementStyles(srcEl, clone, shadowCanvas);
         } catch {}
         
         // Map clone canvas to source element for RenderContext caching
@@ -371,11 +538,10 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
           try { ctx.drawImage(shadowImg, 0, 0); } catch {}
         }
         
-        // Copy initial CSS styles - OPTIMIZATION: Cache getComputedStyle results
+        // Copy initial CSS styles using unified sync
+        // Pass shadowImg as contentSource for width/height
         try {
-          const hostCs = getComputedStyle(srcEl);
-          const imgCs = getComputedStyle(shadowImg);
-          copyCanvasCloneStyles(clone, hostCs, imgCs);
+          syncElementStyles(srcEl, clone, shadowImg);
         } catch {}
         
         // Map clone canvas to source element for RenderContext caching
@@ -508,206 +674,29 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
 
 /**
  * Sync a single node's styles (extracted for reuse).
+ * Now uses unified style syncing with clear separation of concerns:
+ * 1. Canvas pixel refresh (if canvas clone)
+ * 2. Unified CSS property sync (all elements)
+ * 3. Content sync (text, input values)
  */
 function syncNodeStyles(node: CloneNode): void {
   const { source, clone, isCanvasClone } = node;
   
-  // Canvas clone - refresh pixels AND sync CSS styles
+  // 1. Canvas-specific: Refresh pixel content from shadow DOM
   if (isCanvasClone) {
-    const canvas = clone as HTMLCanvasElement;
-    const shadowCanvas = source.shadowRoot?.querySelector("canvas");
-    const shadowImg = source.shadowRoot?.querySelector("img");
-    
-    if (shadowCanvas) {
-      if (canvas.width !== shadowCanvas.width) canvas.width = shadowCanvas.width;
-      if (canvas.height !== shadowCanvas.height) canvas.height = shadowCanvas.height;
-      
-      const ctx = canvas.getContext("2d");
-      if (ctx && shadowCanvas.width > 0 && shadowCanvas.height > 0) {
-        try {
-          // Clear canvas before drawing to ensure clean refresh
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(shadowCanvas, 0, 0);
-        } catch (e) {
-          // Canvas draw can fail if source is in invalid state - log and continue
-          logger.warn("[syncNodeStyles] Canvas draw failed:", e);
-        }
-      }
-      
-      try {
-        const canvasCs = getComputedStyle(shadowCanvas);
-        const hostCs = getComputedStyle(source);
-        const s = canvas.style;
-        
-        // Browser optimizes redundant style writes internally
-        s.position = hostCs.position;
-        s.top = hostCs.top;
-        s.left = hostCs.left;
-        s.right = hostCs.right;
-        s.bottom = hostCs.bottom;
-        s.margin = hostCs.margin;
-        s.transform = hostCs.transform;
-        s.transformOrigin = hostCs.transformOrigin;
-        s.opacity = hostCs.opacity;
-        s.visibility = hostCs.visibility;
-        s.zIndex = hostCs.zIndex;
-        s.width = canvasCs.width;
-        s.height = canvasCs.height;
-        s.backfaceVisibility = hostCs.backfaceVisibility;
-        s.transformStyle = hostCs.transformStyle;
-      } catch {}
-    } else if (shadowImg?.complete && shadowImg.naturalWidth > 0) {
-      if (canvas.width !== shadowImg.naturalWidth) canvas.width = shadowImg.naturalWidth;
-      if (canvas.height !== shadowImg.naturalHeight) canvas.height = shadowImg.naturalHeight;
-      
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        // Clear canvas before drawing to ensure clean refresh
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        try { ctx.drawImage(shadowImg, 0, 0); } catch {}
-      }
-      
-      try {
-        const imgCs = getComputedStyle(shadowImg);
-        const hostCs = getComputedStyle(source);
-        const s = canvas.style;
-        
-        // Browser optimizes redundant style writes internally
-        s.position = hostCs.position;
-        s.top = hostCs.top;
-        s.left = hostCs.left;
-        s.right = hostCs.right;
-        s.bottom = hostCs.bottom;
-        s.margin = hostCs.margin;
-        s.transform = hostCs.transform;
-        s.transformOrigin = hostCs.transformOrigin;
-        s.opacity = hostCs.opacity;
-        s.visibility = hostCs.visibility;
-        s.zIndex = hostCs.zIndex;
-        s.width = imgCs.width;
-        s.height = imgCs.height;
-        s.backfaceVisibility = hostCs.backfaceVisibility;
-        s.transformStyle = hostCs.transformStyle;
-      } catch {}
-    }
-    // return;
+    refreshCanvasPixels(node);
   }
   
-  // Regular element - sync CSS properties directly (browser optimizes redundant writes)
-  const cloneStyle = clone.style as any;
-  const propLen = SYNC_PROPERTIES.length;
-  const tagName = (source as HTMLElement).tagName;
+  // 2. Unified: Sync ALL CSS properties using SYNC_PROPERTIES array
+  // For canvas clones, pass content source (shadow canvas/img) for width/height
+  const contentSource = isCanvasClone
+    ? (source.shadowRoot?.querySelector("canvas") || source.shadowRoot?.querySelector("img") || undefined)
+    : undefined;
+  syncElementStyles(source, clone, contentSource);
   
-  if (HAS_COMPUTED_STYLE_MAP) {
-    let srcMap: StylePropertyMapReadOnly;
-    try {
-      srcMap = source.computedStyleMap();
-    } catch { return; }
-    
-    for (let j = 0; j < propLen; j++) {
-      const kebab = SYNC_PROPERTIES_KEBAB[j]!;
-      const camel = SYNC_PROPERTIES[j]!;
-      const srcVal = srcMap.get(kebab);
-      if (!srcVal) continue;
-      
-      const strVal = srcVal.toString();
-      
-      if (camel === "display") {
-        // For caption child elements, preserve display:none when explicitly set
-        // (they use it to hide empty content, not for temporal visibility)
-        const isCaptionChild = tagName && (
-          tagName === 'EF-CAPTIONS-ACTIVE-WORD' ||
-          tagName === 'EF-CAPTIONS-BEFORE-ACTIVE-WORD' ||
-          tagName === 'EF-CAPTIONS-AFTER-ACTIVE-WORD' ||
-          tagName === 'EF-CAPTIONS-SEGMENT'
-        );
-        const targetDisplay = (strVal === "none" && !isCaptionChild) ? "block" : strVal;
-        cloneStyle.display = targetDisplay;
-        continue;
-      }
-      
-      // Skip clipPath - clones always have clipPath: none for rendering
-      // (source may have clip-path: inset(100%) from proxy mode)
-      if (camel === "clipPath") continue;
-      
-      // OPTIMIZATION: Skip default values to reduce serialized HTML size
-      // If the computed value is the CSS default, don't set it as inline style
-      if (isDefaultValue(camel, strVal)) {
-        // Remove from inline style if it was previously set
-        if (cloneStyle[camel]) cloneStyle[camel] = "";
-        continue;
-      }
-      
-      cloneStyle[camel] = strVal;
-    }
-  } else {
-    let cs: CSSStyleDeclaration;
-    try {
-      cs = getComputedStyle(source);
-    } catch { return; }
-    
-    const srcStyle = cs as any;
-    for (const prop of SYNC_PROPERTIES) {
-      const srcVal = srcStyle[prop];
-      
-      if (prop === "display") {
-        // For caption child elements, preserve display:none when explicitly set
-        // (they use it to hide empty content, not for temporal visibility)
-        const isCaptionChild = tagName && (
-          tagName === 'EF-CAPTIONS-ACTIVE-WORD' ||
-          tagName === 'EF-CAPTIONS-BEFORE-ACTIVE-WORD' ||
-          tagName === 'EF-CAPTIONS-AFTER-ACTIVE-WORD' ||
-          tagName === 'EF-CAPTIONS-SEGMENT'
-        );
-        const targetDisplay = (srcVal === "none" && !isCaptionChild) ? "block" : srcVal;
-        cloneStyle.display = targetDisplay;
-        continue;
-      }
-      
-      // Skip clipPath - clones always have clipPath: none for rendering
-      // (source may have clip-path: inset(100%) from proxy mode)
-      if (prop === "clipPath") continue;
-      
-      // OPTIMIZATION: Skip default values to reduce serialized HTML size
-      if (isDefaultValue(prop, srcVal)) {
-        if (cloneStyle[prop]) cloneStyle[prop] = "";
-        continue;
-      }
-      
-      cloneStyle[prop] = srcVal;
-    }
-  }
-  
-  // Disable animations/transitions to prevent re-animation (browser optimizes redundant writes)
-  cloneStyle.animation = "none";
-  cloneStyle.transition = "none";
-  
-  // Sync text content from light DOM
-  // Caption child elements now use light DOM, so this handles them naturally
-  const srcTextNode = source.childNodes[0];
-  if (srcTextNode?.nodeType === Node.TEXT_NODE) {
-    const srcText = srcTextNode.textContent || "";
-    const cloneTextNode = clone.childNodes[0];
-    
-    if (cloneTextNode?.nodeType === Node.TEXT_NODE) {
-      // Update existing text node
-      if (cloneTextNode.textContent !== srcText) cloneTextNode.textContent = srcText;
-    } else if (!clone.childNodes.length) {
-      // Only create text node if clone has NO children (was empty when initially cloned)
-      // Don't set textContent as it would delete element children!
-      clone.appendChild(document.createTextNode(srcText));
-    }
-  }
-  
-  // Sync input value
-  if (source instanceof HTMLInputElement) {
-    const srcVal = source.value;
-    const cloneInput = clone as HTMLInputElement;
-    if (cloneInput.value !== srcVal) {
-      cloneInput.value = srcVal;
-      cloneInput.setAttribute("value", srcVal);
-    }
-  }
+  // 3. Element-specific: Sync text content and input values
+  syncTextContent(source, clone);
+  syncInputValue(source, clone);
 }
 
 // Performance instrumentation counters
