@@ -414,6 +414,8 @@ export async function renderTimegroupToVideo(
     console.log(`[renderTimegroupToVideo] Using direct timeline serialization (no passive structure)`);
     // For direct serialization, we still need to attach renderClone to get proper computed styles
     previewContainer.appendChild(renderClone);
+    // Force layout/reflow so getComputedStyle returns correct values
+    void renderClone.offsetHeight;
   } else {
     // Inject document styles once (cached for all frames)
     const styleEl = document.createElement("style");

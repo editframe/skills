@@ -193,13 +193,15 @@ function serializeElement(
   // Check visibility via computed styles (timegroup sets display:none on hidden elements)
   if (element instanceof HTMLElement) {
     const styles = getComputedStyle(element);
-    if (styles.display === 'none' || styles.visibility === 'hidden') {
-      console.log(`[serializeElement] ${element.tagName}: display=${styles.display}, visibility=${styles.visibility} → Skipping (hidden)`);
+    const isHidden = styles.display === 'none' || styles.visibility === 'hidden';
+    console.log(`[serializeElement] ${element.tagName}: display=${styles.display}, visibility=${styles.visibility}, position=${styles.position}, left=${styles.left}, top=${styles.top}`);
+    if (isHidden) {
+      console.log(`  → Skipping (hidden)`);
       return;
     }
   }
   
-  console.log(`[serializeElement] ${element.tagName} → Processing (isCustom=${element.tagName.includes('-')}, hasShadow=${!!(element as any).shadowRoot})`);
+  console.log(`  → Processing (isCustom=${element.tagName.includes('-')}, hasShadow=${!!(element as any).shadowRoot})`);
   
   // Custom element with shadow DOM?
   const isCustom = element.tagName.includes('-');
