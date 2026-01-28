@@ -15,6 +15,7 @@
 import { encodeCanvasesInParallel } from "../encoding/canvasEncoder.js";
 import type { RenderContext } from "../RenderContext.js";
 import { isVisibleAtTime } from "../previewTypes.js";
+import { collectDocumentStyles } from "../renderTimegroupPreview.js";
 
 /**
  * Elements to skip entirely when serializing.

@@ -26,10 +26,10 @@ export class EFImage extends EFTemporal(
         justify-content: center;
       }
       canvas, img {
-        position: static;
-        all: initial;
         width: 100%;
         height: 100%;
+        object-fit: var(--object-fit, contain);
+        object-position: var(--object-position, center);
       }
     `,
   ];
@@ -264,12 +264,28 @@ export class EFImage extends EFTemporal(
   protected updated(changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
     super.updated(changedProperties);
     
+    // Sync object-fit styles from host element
+    this.#syncObjectFitStyles();
+    
     // Trigger image load when src or assetId changes
     if (changedProperties.has("src") || changedProperties.has("assetId")) {
       this.#imageLoaded = false;
       this.loadImage().catch(() => {});
       // Increment render version only when actual image content changes
       this.#renderVersion++;
+    }
+  }
+
+  #syncObjectFitStyles() {
+    const computedStyle = getComputedStyle(this);
+    const objectFit = computedStyle.objectFit;
+    const objectPosition = computedStyle.objectPosition;
+    
+    if (objectFit && objectFit !== 'fill') {
+      this.style.setProperty('--object-fit', objectFit);
+    }
+    if (objectPosition) {
+      this.style.setProperty('--object-position', objectPosition);
     }
   }
 
