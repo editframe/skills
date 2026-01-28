@@ -87,7 +87,26 @@ async function waitForTimegroupDimensions(timegroup: EFTimegroup): Promise<void>
   const styleLinks = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
   console.log(`[EFRenderAPI] Found ${styleLinks.length} stylesheet <link> elements`);
   styleLinks.forEach((link, i) => {
-    console.log(`[EFRenderAPI]   [${i}] ${(link as HTMLLinkElement).href} - loaded: ${!!(link as HTMLLinkElement).sheet}`);
+    const href = (link as HTMLLinkElement).href;
+    const sheet = (link as HTMLLinkElement).sheet;
+    console.log(`[EFRenderAPI]   [${i}] ${href}`);
+    try {
+      const rulesCount = sheet ? sheet.cssRules.length : 0;
+      console.log(`[EFRenderAPI]       loaded: ${!!sheet}, rules: ${rulesCount}`);
+      if (sheet && sheet.cssRules.length > 0) {
+        // Log first few rules to see what CSS is loaded
+        const firstRules = Array.from(sheet.cssRules).slice(0, 5).map(r => r.cssText.substring(0, 100));
+        console.log(`[EFRenderAPI]       first rules:`, firstRules);
+        
+        // Search for the specific Tailwind classes we need
+        const hasWidthClass = Array.from(sheet.cssRules).some(r => 
+          r.cssText.includes('w-\\[1080px\\]') || r.cssText.includes('width: 1080px')
+        );
+        console.log(`[EFRenderAPI]       has w-[1080px] class: ${hasWidthClass}`);
+      }
+    } catch (e) {
+      console.log(`[EFRenderAPI]       Error reading stylesheet rules:`, e);
+    }
   });
   
   await Promise.all(
@@ -109,9 +128,17 @@ async function waitForTimegroupDimensions(timegroup: EFTimegroup): Promise<void>
     })
   );
   
+  // Force trigger Tailwind JIT by checking if classes exist
+  const testDiv = document.createElement('div');
+  testDiv.className = 'w-[1080px] h-[1920px]';
+  document.body.appendChild(testDiv);
+  void testDiv.offsetHeight; // Force style calculation
+  console.log('[EFRenderAPI] Test div dimensions:', testDiv.offsetWidth, testDiv.offsetHeight);
+  document.body.removeChild(testDiv);
+  
   // Wait longer for Vite HMR and Tailwind JIT to process
-  console.log('[EFRenderAPI] Waiting for Vite/Tailwind processing...');
-  await new Promise(resolve => setTimeout(resolve, 2000));
+  console.log('[EFRenderAPI] Waiting for Vite/Tailwind JIT processing...');
+  await new Promise(resolve => setTimeout(resolve, 5000));
   
   console.log('[EFRenderAPI] Stylesheets loaded, waiting for timegroup dimensions...');
   
