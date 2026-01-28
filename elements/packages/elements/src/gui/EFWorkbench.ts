@@ -2339,19 +2339,18 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         </div>
         
         ${isRendering && p !== null ? html`
-          ${p.framePreviewUrl ? html`
+          ${p.framePreviewCanvas ? html`
             <div style="margin-bottom: 10px; display: flex; justify-content: center;">
-              <img 
-                src=${p.framePreviewUrl} 
-                alt="Current frame"
-                style="
-                  border-radius: 4px;
-                  border: 1px solid rgba(148, 163, 184, 0.2);
-                  max-width: 100%;
-                  height: auto;
-                "
-              />
+              ${p.framePreviewCanvas}
             </div>
+            <style>
+              ef-workbench canvas {
+                border-radius: 4px;
+                border: 1px solid rgba(148, 163, 184, 0.2);
+                max-width: 100%;
+                height: auto;
+              }
+            </style>
           ` : null}
           
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; margin-bottom: 10px; font-family: ui-monospace, monospace; font-size: 10px;">

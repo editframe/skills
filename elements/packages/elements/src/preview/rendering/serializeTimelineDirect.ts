@@ -599,7 +599,7 @@ export async function serializeTimelineToDataUri(
     `<foreignObject x="0" y="0" width="${width}" height="${height}">${xhtml}</foreignObject>` +
     `</svg>`;
   
-  // Encode to base64 data URI
-  const base64 = btoa(unescape(encodeURIComponent(svg)));
-  return `data:image/svg+xml;base64,${base64}`;
+  // Use percent-encoding instead of base64 for faster encoding
+  // encodeURIComponent is faster than btoa(unescape(encodeURIComponent()))
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }

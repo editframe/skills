@@ -50,7 +50,7 @@ export interface RenderProgress {
   elapsedMs: number;
   estimatedRemainingMs: number;
   speedMultiplier: number;
-  framePreviewUrl?: string;
+  framePreviewCanvas?: HTMLCanvasElement; // Canvas with current frame (updated async, no encoding cost)
 }
 
 export interface RenderToVideoOptions {
@@ -73,6 +73,7 @@ export interface RenderToVideoOptions {
   preferredAudioCodecs?: AudioCodec[];
   benchmarkMode?: boolean;
   customWritableStream?: WritableStream<Uint8Array>; // For programmatic streaming (CLI/Playwright)
+  progressPreviewInterval?: number; // How often to generate preview thumbnails (default: 60 frames, 0 = disabled)
 }
 
 // ============================================================================
@@ -125,6 +126,7 @@ interface ResolvedConfig {
   returnBuffer: boolean;
   preferredAudioCodecs: AudioCodec[];
   benchmarkMode: boolean;
+  progressPreviewInterval: number;
 }
 
 function resolveConfig(
@@ -145,6 +147,9 @@ function resolveConfig(
   const returnBuffer = options.returnBuffer ?? false;
   const preferredAudioCodecs = options.preferredAudioCodecs ?? ["aac", "opus"];
   const benchmarkMode = options.benchmarkMode ?? false;
+  // Preview generation now uses canvas reference (no encoding) - cheap to enable!
+  // Defaults to 60 frames (every 2 seconds at 30fps). Set to 0 to disable.
+  const progressPreviewInterval = options.progressPreviewInterval ?? 60;
 
   const totalDurationMs = timegroup.durationMs;
   if (!totalDurationMs || totalDurationMs <= 0) {
@@ -211,6 +216,7 @@ function resolveConfig(
     returnBuffer,
     preferredAudioCodecs,
     benchmarkMode,
+    progressPreviewInterval,
   };
 }
 
@@ -447,9 +453,20 @@ export async function renderTimegroupToVideo(
   // Frame loop - DEEP PIPELINE: overlap encode + render + prepare
   // =========================================================================
   const renderStartTime = performance.now();
-  let lastFramePreviewUrl: string | undefined;
   let lastRenderedAudioEndMs = config.startMs;
   const audioChunkDurationMs = 2000;
+  
+  // Reusable thumbnail canvas for preview (no encoding, just draw to canvas)
+  let thumbCanvas: HTMLCanvasElement | null = null;
+  let thumbCtx: CanvasRenderingContext2D | null = null;
+  if (onProgress && config.progressPreviewInterval > 0) {
+    const previewWidth = 160;
+    const previewHeight = Math.round(previewWidth * (config.videoHeight / config.videoWidth));
+    thumbCanvas = document.createElement("canvas");
+    thumbCanvas.width = previewWidth;
+    thumbCanvas.height = previewHeight;
+    thumbCtx = thumbCanvas.getContext("2d");
+  }
   
   let totalSeekMs = 0;
   let totalSyncMs = 0;
@@ -466,10 +483,11 @@ export async function renderTimegroupToVideo(
     const renderTasks: RenderTask[] = [];
     
     // Pipeline depth configuration
-    // NOTE: Set to 1 for correctness - parallel seeks cause duplicate frames
-    // TODO: Investigate why parallel seeks don't work with the clone structure
+    // MAX_SEEK must be 1: Only one clone exists, so seeks must be sequential
+    // MAX_RENDER can be higher: serializeElement captures DOM state synchronously,
+    // then canvas encoding and image loading happen async and don't touch the clone
     const MAX_SEEK = 1;
-    const MAX_RENDER = 1;
+    const MAX_RENDER = 4; // Allow 4 frames to encode/load in parallel (seek, serialize, encode, load)
     
     let nextSeekFrame = 0;
     let nextRenderFrame = 0;
@@ -525,19 +543,20 @@ export async function renderTimegroupToVideo(
           const renderStart = performance.now();
           const image = new Image();
           await new Promise<void>((resolve, reject) => {
-            image.onload = () => {
-              console.log(`[Frame ${renderFrameIndex}] Image loaded: ${image.width}x${image.height}`);
-              resolve();
-            };
+            image.onload = () => resolve();
             image.onerror = (e) => {
               console.error(`[Frame ${renderFrameIndex}] Image load error:`, e);
-              console.error(`[Frame ${renderFrameIndex}] Try opening this in a new tab:`, dataUri.substring(0, 200) + '...');
+              console.error(`[Frame ${renderFrameIndex}] Data URI preview:`, dataUri.substring(0, 200) + '...');
               reject(new Error(`Failed to load image from data URI`));
             };
             image.src = dataUri;
           });
           const renderTime = performance.now() - renderStart;
           totalRenderMs += renderTime;
+          
+          if (renderFrameIndex % 30 === 0) {
+            console.log(`[Frame ${renderFrameIndex}] Image loaded: ${image.width}x${image.height}`);
+          }
           
           // Log detailed timing every 30 frames to see breakdown
           if (renderFrameIndex % 30 === 0) {
@@ -608,15 +627,10 @@ export async function renderTimegroupToVideo(
       const estimatedRemainingMs = remainingFrames * msPerFrame;
       const speedMultiplier = renderedMs / elapsedMs;
       
-      if (onProgress && frameIndex % 10 === 0) {
-        const previewWidth = 160;
-        const previewHeight = Math.round(previewWidth * (config.videoHeight / config.videoWidth));
-        const thumbCanvas = document.createElement("canvas");
-        thumbCanvas.width = previewWidth;
-        thumbCanvas.height = previewHeight;
-        const thumbCtx = thumbCanvas.getContext("2d")!;
-        thumbCtx.drawImage(image, 0, 0, previewWidth, previewHeight);
-        lastFramePreviewUrl = thumbCanvas.toDataURL("image/jpeg", 0.7);
+      // Update preview canvas if enabled (just draw, no encoding - super fast!)
+      // The canvas reference is passed to onProgress and can be displayed directly in UI
+      if (thumbCanvas && thumbCtx && frameIndex % config.progressPreviewInterval === 0) {
+        thumbCtx.drawImage(image, 0, 0, thumbCanvas.width, thumbCanvas.height);
       }
       
       onProgress?.({
@@ -628,7 +642,7 @@ export async function renderTimegroupToVideo(
         elapsedMs,
         estimatedRemainingMs,
         speedMultiplier,
-        framePreviewUrl: lastFramePreviewUrl,
+        framePreviewCanvas: thumbCanvas || undefined, // Pass canvas reference (no encoding!)
       });
     }
     
