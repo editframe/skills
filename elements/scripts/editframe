@@ -223,6 +223,8 @@ VITE_CONFIG_EOF
             console.log('[]');
           }
         " 2>/dev/null || echo '[]')
+        
+        echo "   User Tailwind content paths: $USER_CONTENT_JSON" >&2
 
         cat > "$TW_DEV_CONFIG" << TW_CONFIG_EOF
 // ============================================================================
