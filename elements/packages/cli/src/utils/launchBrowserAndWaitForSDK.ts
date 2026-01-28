@@ -16,6 +16,7 @@ interface LaunchOptions {
   chromePath?: string;
   profile?: boolean;
   profileOutput?: string;
+  silent?: boolean; // Suppress spinner output
 }
 
 export async function launchBrowserAndWaitForSDK(
@@ -27,7 +28,7 @@ export async function launchBrowserAndWaitForSDK(
     requireChrome();
   }
 
-  const browser = await withSpinner("Launching chrome", async () => {
+  const launchBrowser = async () => {
     const launchOptions: Parameters<typeof chromium.launch>[0] = {
       channel: "chrome",
       headless: options.headless ?? true,
@@ -72,9 +73,13 @@ export async function launchBrowserAndWaitForSDK(
     }
 
     return chromium.launch(launchOptions);
-  });
+  };
 
-  const page = await withSpinner("Loading Editframe SDK", async () => {
+  const browser = options.silent
+    ? await launchBrowser()
+    : await withSpinner("Launching chrome", launchBrowser);
+
+  const loadSDK = async () => {
     const pageOptions: Parameters<Browser["newPage"]>[0] = {};
     if (options.interactive === true) {
       // By default, playwright uses its own viewport, so resizing the browser window
@@ -110,7 +115,12 @@ export async function launchBrowserAndWaitForSDK(
       { timeout: 10_000 },
     );
     return page;
-  });
+  };
+
+  const page = options.silent
+    ? await loadSDK()
+    : await withSpinner("Loading Editframe SDK", loadSDK);
+
   await fn(page);
   if (options.interactive !== true) {
     await browser.close();

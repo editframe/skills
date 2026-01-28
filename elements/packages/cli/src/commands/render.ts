@@ -4,11 +4,11 @@ import path from "node:path";
 import { program } from "commander";
 import debug from "debug";
 import ora from "ora";
+import type { Page } from "playwright";
 import { launchBrowserAndWaitForSDK } from "../utils/launchBrowserAndWaitForSDK.js";
 import { spawnViteServer, type SpawnedViteServer } from "../utils/spawnViteServer.js";
 import { StreamTargetChunk } from "mediabunny";
 import { withProfiling } from "../utils/profileRender.js";
-import { withSpinner } from "../utils/withSpinner.js";
 
 const log = debug("ef:cli:render");
 
@@ -65,38 +65,44 @@ program
     const fromMs = options.fromMs ? parseInt(options.fromMs, 10) : undefined;
     const toMs = options.toMs ? parseInt(options.toMs, 10) : undefined;
 
-    // Determine URL to render
+    // Single initialization spinner for all setup steps
+    const initSpinner = ora("Initializing...").start();
+    
     let renderUrl: string;
     let viteServer: SpawnedViteServer | null = null;
 
-    if (options.url) {
-      // Use provided URL directly
-      renderUrl = options.url;
-      log("Using provided URL:", renderUrl);
-    } else {
-      // Spawn Vite dev server as subprocess
-      // This allows Vite to run with full config resolution (including Tailwind)
-      // while we maintain Playwright control for rendering
-      const srcDir = path.resolve(baseCwd, directory);
-      viteServer = await withSpinner("Starting vite...", () =>
-        spawnViteServer(srcDir),
-      );
-      renderUrl = viteServer.url;
-      log("Vite server spawned at:", renderUrl);
-    }
+    try {
+      // Determine URL to render
+      if (options.url) {
+        // Use provided URL directly
+        renderUrl = options.url;
+        log("Using provided URL:", renderUrl);
+      } else {
+        // Spawn Vite dev server as subprocess
+        // This allows Vite to run with full config resolution (including Tailwind)
+        // while we maintain Playwright control for rendering
+        const srcDir = path.resolve(baseCwd, directory);
+        viteServer = await spawnViteServer(srcDir);
+        renderUrl = viteServer.url;
+        log("Vite server spawned at:", renderUrl);
+      }
 
-    // Launch browser and render
-    await launchBrowserAndWaitForSDK(
-      {
-        url: renderUrl,
-        headless: true,
-        interactive: false,
-        efInteractive: false,
-        nativeRender: options.experimentalNativeRender === true,
-        profile: options.profile === true,
-        profileOutput: options.profileOutput,
-      },
-      async (page) => {
+      // Launch browser and load SDK (all within initialization)
+      await launchBrowserAndWaitForSDK(
+        {
+          url: renderUrl,
+          headless: true,
+          interactive: false,
+          efInteractive: false,
+          nativeRender: options.experimentalNativeRender === true,
+          profile: options.profile === true,
+          profileOutput: options.profileOutput,
+          silent: true, // Suppress individual spinners since we show unified "Initializing..."
+        },
+        async (page) => {
+          initSpinner.succeed("Ready");
+          
+          // Now handle the render
         await withProfiling(
           page,
           {
@@ -140,6 +146,16 @@ program
             // Create progress spinner
             const progressSpinner = ora("Rendering video...").start();
 
+            // Track last progress for completion message
+            let lastProgress: {
+              currentFrame: number;
+              totalFrames: number;
+              renderedMs: number;
+              totalDurationMs: number;
+              elapsedMs: number;
+              speedMultiplier: number;
+            } | null = null;
+
             // Expose progress callback
             await page.exposeFunction("onRenderProgress", (progress: {
               progress: number;
@@ -158,6 +174,16 @@ program
               const speed = progress.speedMultiplier.toFixed(2);
               
               progressSpinner.text = `Rendering: ${progress.currentFrame}/${progress.totalFrames} frames (${percent}%) | ${renderedTime}/${totalTime} | ${remainingTime} remaining | ${speed}x speed`;
+              
+              // Store last progress for completion message
+              lastProgress = {
+                currentFrame: progress.currentFrame,
+                totalFrames: progress.totalFrames,
+                renderedMs: progress.renderedMs,
+                totalDurationMs: progress.totalDurationMs,
+                elapsedMs: progress.elapsedMs,
+                speedMultiplier: progress.speedMultiplier,
+              };
             });
 
             // Render with streaming
@@ -179,7 +205,18 @@ program
                 await window.EF_RENDER!.renderStreaming(opts);
               }, renderOptions);
 
-              progressSpinner.succeed("Render complete");
+              // Build completion message with performance stats
+              if (lastProgress) {
+                const renderedTime = formatTime(lastProgress.renderedMs);
+                const totalTime = formatTime(lastProgress.totalDurationMs);
+                const elapsedTime = formatTime(lastProgress.elapsedMs);
+                const speed = lastProgress.speedMultiplier.toFixed(2);
+                progressSpinner.succeed(
+                  `Render complete: ${lastProgress.currentFrame}/${lastProgress.totalFrames} frames | ${renderedTime}/${totalTime} | ${elapsedTime} elapsed | ${speed}x speed`
+                );
+              } else {
+                progressSpinner.succeed("Render complete");
+              }
             } catch (error) {
               progressSpinner.fail("Render failed");
               throw error;
@@ -198,8 +235,12 @@ program
             });
           },
         );
-      },
-    );
+        },
+      );
+    } catch (error) {
+      initSpinner.fail("Initialization failed");
+      throw error;
+    }
 
     // Clean up spawned Vite process
     if (viteServer) {
