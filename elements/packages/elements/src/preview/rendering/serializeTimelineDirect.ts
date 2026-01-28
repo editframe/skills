@@ -374,7 +374,8 @@ function serializeElement(
 
 /**
  * Apply temporal visibility to timeline before serialization.
- * Walks the DOM and sets display:none on elements out of temporal bounds.
+ * Walks the DOM and sets/clears display:none on elements based on temporal bounds.
+ * Must handle both hiding AND showing since clone may be reused across frames.
  */
 function applyTemporalVisibility(element: Element, timeMs: number): number {
   let hiddenCount = 0;
@@ -382,11 +383,19 @@ function applyTemporalVisibility(element: Element, timeMs: number): number {
   // Check if this element should be visible
   const isVisible = isVisibleAtTime(element, timeMs);
   
-  if (!isVisible && element instanceof HTMLElement) {
-    // Hide this element and skip its children
-    element.style.display = 'none';
-    hiddenCount++;
-    return hiddenCount;
+  if (element instanceof HTMLElement) {
+    if (!isVisible) {
+      // Hide this element and skip its children
+      element.style.display = 'none';
+      hiddenCount++;
+      return hiddenCount;
+    } else {
+      // Ensure element is visible (may have been hidden in previous frame)
+      // Clear inline display style to restore original display value
+      if (element.style.display === 'none') {
+        element.style.display = '';
+      }
+    }
   }
   
   // Element is visible, recurse to children
