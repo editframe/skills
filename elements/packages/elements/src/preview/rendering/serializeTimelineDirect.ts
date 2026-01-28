@@ -15,7 +15,6 @@
 import { encodeCanvasesInParallel } from "../encoding/canvasEncoder.js";
 import type { RenderContext } from "../RenderContext.js";
 import { isVisibleAtTime } from "../previewTypes.js";
-import { collectDocumentStyles } from "../renderTimegroupPreview.js";
 
 /**
  * Elements to skip entirely when serializing.
@@ -44,7 +43,6 @@ const VOID_ELEMENTS = new Set([
 
 /**
  * CSS properties to serialize as inline styles.
- * Matches SYNC_PROPERTIES from renderTimegroupPreview.ts
  */
 const SERIALIZED_STYLE_PROPERTIES = [
   "display", "visibility", "opacity",
@@ -374,9 +372,6 @@ function serializeElement(
   // 1. The container may have visibility:hidden for off-screen rendering
   // 2. Temporal elements control their own visibility via time bounds
   if (!isTemporallyVisible(element, options.timeMs)) {
-    if (element.tagName.toLowerCase() === 'svg') {
-      console.log('[serializeElement] SVG filtered out by temporal visibility');
-    }
     return;
   }
   
@@ -447,19 +442,6 @@ function serializeElement(
   const tagName = element.tagName.toLowerCase();
   const isSVG = element instanceof SVGElement;
   const isVoid = VOID_ELEMENTS.has(tagName);
-  
-  // Debug: log SVG elements with timestamp to track changes
-  if (tagName === 'svg') {
-    console.log(`[serializeElement @ ${options.timeMs}ms] Found SVG element:`, {
-      tagName,
-      isSVG,
-      parentIsSVG,
-      childCount: element.childNodes.length,
-      innerHTML: element.innerHTML?.substring(0, 200),
-      // Hash the content to see if it's changing between frames
-      contentHash: element.innerHTML?.length || 0
-    });
-  }
   
   // Open tag with namespace (only add xmlns for root SVG elements, not children)
   if (isSVG && !parentIsSVG) {

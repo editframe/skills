@@ -7,7 +7,6 @@ import { TWMixin } from "./TWMixin.js";
 import { EFTimegroup } from "../elements/EFTimegroup.js";
 import { findRootTemporal } from "../elements/findRootTemporal.js";
 import { renderTimegroupToCanvas, type CanvasPreviewResult } from "../preview/renderTimegroupToCanvas.js";
-import { renderTimegroupPreview } from "../preview/renderTimegroupPreview.js";
 import { renderTimegroupToVideo, type RenderToVideoOptions, type RenderProgress, RenderCancelledError } from "../preview/renderTimegroupToVideo.js";
 import { 
   isNativeCanvasApiAvailable, 

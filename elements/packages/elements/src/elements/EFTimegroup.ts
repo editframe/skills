@@ -539,19 +539,11 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
   set initializer(fn: TimegroupInitializer | undefined) {
     this.#initializer = fn;
     
-    console.log('[initializer setter]', {
-      hasFn: !!fn,
-      isConnected: this.isConnected,
-      initializerHasRun: this.#initializerHasRun,
-      willSchedule: !!(fn && this.isConnected && !this.#initializerHasRun)
-    });
-    
     // If element is already connected and initializer hasn't run, run it now
     // This handles the case where initializer is set after connectedCallback
     if (fn && this.isConnected && !this.#initializerHasRun) {
       // Create promise that resolves when initializer completes
       this.#initializerComplete = this.updateComplete.then(() => {
-        console.log('[initializer setter] Running initializer now');
         this.#runInitializer();
       });
     }
@@ -930,7 +922,6 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
    * @internal
    */
   async seekForRender(timeMs: number): Promise<void> {
-    console.log(`[seekForRender] Starting seek to ${timeMs}ms`);
     // Set time directly (skip seekTask overhead)
     const newTime = timeMs / 1000;
     this.#userTimeMs = timeMs;
@@ -977,9 +968,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     });
     
     // Execute custom frame tasks registered via addFrameTask()
-    console.log(`[seekForRender] Executing custom frame tasks at ${timeMs}ms`);
     await this.#executeCustomFrameTasks();
-    console.log(`[seekForRender] Frame tasks complete at ${timeMs}ms`);
   }
   
   /**
@@ -1535,10 +1524,6 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     
     // Copy initializer from this level
     if (original.initializer) {
-      console.log('[copyInitializersToClone] Setting initializer on clone:', {
-        originalId: original.id,
-        cloneId: clone.id
-      });
       clone.initializer = original.initializer;
       if (clone.initializerComplete) {
         initializerPromises.push(clone.initializerComplete);
@@ -1549,22 +1534,12 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     const originalNested = Array.from(original.querySelectorAll('ef-timegroup')) as EFTimegroup[];
     const cloneNested = Array.from(clone.querySelectorAll('ef-timegroup')) as EFTimegroup[];
     
-    console.log('[copyInitializersToClone] Found nested timegroups:', {
-      originalCount: originalNested.length,
-      cloneCount: cloneNested.length
-    });
-    
     // Match up nested timegroups by index (they should correspond 1:1)
     for (let i = 0; i < originalNested.length && i < cloneNested.length; i++) {
       const origNested = originalNested[i];
       const cloneNestedItem = cloneNested[i];
       
       if (origNested.initializer) {
-        console.log('[copyInitializersToClone] Setting nested initializer:', {
-          index: i,
-          originalId: origNested.id,
-          cloneId: cloneNestedItem.id
-        });
         cloneNestedItem.initializer = origNested.initializer;
         if (cloneNestedItem.initializerComplete) {
           initializerPromises.push(cloneNestedItem.initializerComplete);
@@ -1574,9 +1549,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     
     // Wait for all initializers to complete
     if (initializerPromises.length > 0) {
-      console.log('[copyInitializersToClone] Waiting for', initializerPromises.length, 'initializers to complete');
       await Promise.all(initializerPromises);
-      console.log('[copyInitializersToClone] All initializers complete');
     }
   }
 
