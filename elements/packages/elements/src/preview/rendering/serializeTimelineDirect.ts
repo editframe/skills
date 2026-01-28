@@ -282,16 +282,14 @@ function serializeCanvas(
   sourceMap.set(snapshot, sourceElement);
   
   // Snapshot is already scaled, so encode at 1.0 scale
-  // TEMPORARY DEBUG: Comment out image encoding to reduce XML size for logging
-  // const encodePromise = encodeCanvasesInParallel([snapshot], {
-  //   scale: 1.0,
-  //   renderContext: options.renderContext,
-  //   sourceMap,
-  // }).then(results => results[0]?.dataUrl || '');
-  const encodePromise = Promise.resolve('data:image/png;base64,PLACEHOLDER');
+  const encodePromise = encodeCanvasesInParallel([snapshot], {
+    scale: 1.0,
+    renderContext: options.renderContext,
+    sourceMap,
+  }).then(results => results[0]?.dataUrl || '');
   
   parts.push(encodePromise);
-  // canvasJobs.push({ canvas: snapshot, sourceElement, promiseIndex });
+  canvasJobs.push({ canvas: snapshot, sourceElement, promiseIndex });
   
   // Close img tag
   parts.push('" />');
