@@ -326,9 +326,14 @@ function serializeSlottedContent(
   for (const slottedChild of slotHost.childNodes) {
     if (slottedChild.nodeType === Node.TEXT_NODE) {
       const text = slottedChild.textContent;
-      // Preserve ALL text content exactly as-is, let CSS white-space properties handle rendering
       if (text) {
-        parts.push(escapeXML(text));
+        // For whitespace-only content, use non-breaking spaces to prevent collapse in foreignObject
+        if (/^\s+$/.test(text)) {
+          const nbspText = text.replace(/ /g, '&#160;');
+          parts.push(nbspText);
+        } else {
+          parts.push(escapeXML(text));
+        }
       }
     } else if (slottedChild.nodeType === Node.ELEMENT_NODE) {
       serializeElement(slottedChild as Element, parts, canvasJobs, options, parentIsSVG, null);
@@ -436,7 +441,8 @@ function serializeElement(
         if (text) {
           // For whitespace-only content, use non-breaking spaces to prevent collapse in foreignObject
           // Regular spaces can be collapsed even with white-space:pre in SVG/XML context
-          if (hasWhitespaceContent && /^\s+$/.test(text)) {
+          // This is critical for word-split text where spaces are in separate segments
+          if (/^\s+$/.test(text)) {
             // Replace spaces with non-breaking space entity
             const nbspText = text.replace(/ /g, '&#160;');
             parts.push(nbspText);
@@ -495,9 +501,14 @@ function serializeElement(
   for (const child of children) {
     if (child.nodeType === Node.TEXT_NODE) {
       const text = child.textContent;
-      // Preserve ALL text content exactly as-is, let CSS white-space properties handle rendering
       if (text) {
-        parts.push(escapeXML(text));
+        // For whitespace-only content, use non-breaking spaces to prevent collapse in foreignObject
+        if (/^\s+$/.test(text)) {
+          const nbspText = text.replace(/ /g, '&#160;');
+          parts.push(nbspText);
+        } else {
+          parts.push(escapeXML(text));
+        }
       }
     } else if (child.nodeType === Node.ELEMENT_NODE) {
       // Preserve slotHost when recursing into standard elements inside shadow DOM
