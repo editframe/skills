@@ -229,8 +229,10 @@ try {
   if (typeof userConfig === 'function') {
     userConfig = userConfig({ mode: 'jit' });
   }
+  console.log('[Editframe Tailwind] Loaded user config, content paths:', userConfig.content);
 } catch (e) {
-  console.warn('Could not load user Tailwind config:', e.message);
+  console.error('[Editframe Tailwind] Could not load user Tailwind config:', e.message);
+  console.error('[Editframe Tailwind] Using fallback empty config');
   userConfig = { content: [], theme: { extend: {} }, plugins: [] };
 }
 
@@ -241,13 +243,15 @@ function mergeContent(userContent) {
   const contentArray = Array.isArray(userContent) ? userContent : 
                        userContent?.files || [];
   
+  console.log('[Editframe Tailwind] User content array:', contentArray);
+  
   // If user has no content configured, add sensible defaults for their project
   const defaultContent = contentArray.length === 0 ? [
     './index.html',
     './src/**/*.{js,ts,jsx,tsx,html}',
   ] : [];
   
-  return [
+  const merged = [
     // User's original content paths (or defaults if empty)
     ...contentArray,
     ...defaultContent,
@@ -257,6 +261,9 @@ function mergeContent(userContent) {
     path.join(monorepoElementsDist, 'gui/**/*.js'),
     path.join(monorepoElementsDist, 'preview/**/*.js'),
   ];
+  
+  console.log('[Editframe Tailwind] Merged content:', merged);
+  return merged;
 }
 
 // Helper to deep merge theme
@@ -286,7 +293,7 @@ function mergeSafelist(userSafelist = []) {
     : commonDimensions;
 }
 
-module.exports = {
+const finalConfig = {
   ...userConfig,
   content: mergeContent(userConfig.content),
   theme: mergeTheme(userConfig.theme),
@@ -297,6 +304,11 @@ module.exports = {
   safelist: mergeSafelist(userConfig.safelist),
   blocklist: userConfig.blocklist,
 };
+
+console.log('[Editframe Tailwind] Final config content:', finalConfig.content);
+console.log('[Editframe Tailwind] Final config safelist count:', finalConfig.safelist?.length || 0);
+
+module.exports = finalConfig;
 TW_CONFIG_EOF
         
         # Replace placeholders
