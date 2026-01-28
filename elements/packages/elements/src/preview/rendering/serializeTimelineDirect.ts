@@ -79,7 +79,7 @@ function escapeXML(str: string): string {
 /**
  * Serialize computed styles as inline style string.
  */
-function serializeComputedStyles(element: Element): string {
+function serializeComputedStyles(element: Element, debugLabel?: string): string {
   const styles = getComputedStyle(element);
   const styleParts: string[] = [];
   
@@ -93,6 +93,11 @@ function serializeComputedStyles(element: Element): string {
     // Convert camelCase to kebab-case
     const kebab = prop.replace(/[A-Z]/g, m => `-${m.toLowerCase()}`);
     styleParts.push(`${kebab}:${value}`);
+  }
+  
+  if (debugLabel && styleParts.length < 5) {
+    console.log(`[serializeComputedStyles] ${debugLabel}: only ${styleParts.length} styles - ${styleParts.join(';')}`);
+    console.log(`  position=${styles.position}, left=${styles.left}, top=${styles.top}, transform=${styles.transform}`);
   }
   
   return styleParts.join(';');
@@ -128,12 +133,14 @@ function serializeCanvas(
   const height = canvas.height;
   
   // Get all computed styles from source element
-  const styleStr = serializeComputedStyles(sourceElement);
+  const styleStr = serializeComputedStyles(sourceElement, sourceElement.tagName);
   
   // Override width/height with intrinsic canvas dimensions
   const styleParts = styleStr ? styleStr.split(';').filter(s => s.trim()) : [];
   styleParts.push(`width:${width}px`, `height:${height}px`, `display:block`);
   const finalStyle = styleParts.join(';');
+  
+  console.log(`[serializeCanvas] ${sourceElement.tagName}: finalStyle="${finalStyle}"`);
   
   // Open img tag with all styles from source element
   parts.push(`<img style="${escapeXML(finalStyle)}" src="`);
@@ -274,7 +281,7 @@ function serializeElement(
   serializeAttributes(element, parts);
   
   // Computed styles as inline style attribute
-  const styleStr = serializeComputedStyles(element);
+  const styleStr = serializeComputedStyles(element, element.tagName);
   if (styleStr) {
     parts.push(` style="${escapeXML(styleStr)}"`);
   }
@@ -351,8 +358,12 @@ export async function serializeTimelineToXHTML(
   console.log(`  Timeline currentTime: ${(timeline as any).currentTime}ms`);
   
   // Apply temporal visibility before serialization
-  const hiddenCount = applyTemporalVisibility(timeline, options.timeMs);
-  console.log(`  Applied temporal visibility: ${hiddenCount} elements hidden`);
+  try {
+    const hiddenCount = applyTemporalVisibility(timeline, options.timeMs);
+    console.log(`  Applied temporal visibility: ${hiddenCount} elements hidden`);
+  } catch (e) {
+    console.error(`  Error applying temporal visibility:`, e);
+  }
   
   const parts: Array<string | Promise<string>> = [];
   const canvasJobs: CanvasJob[] = [];
