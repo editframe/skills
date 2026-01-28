@@ -1611,7 +1611,12 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     // 7. Wait for LitElement updates and media durations
     await actualClone.updateComplete;
     
-    // 7a. CRITICAL: Manually set up parent-child relationships for cloned elements
+    // 7a. Copy ef-text-segment properties from original to actualClone
+    // IMPORTANT: This must happen AFTER the initializer runs (which may replace the DOM for React)
+    // segmentText is a JS property that needs to be copied, then we wait for shadow DOM updates
+    await this.#copyTextSegmentData(this, actualClone);
+    
+    // 7b. CRITICAL: Manually set up parent-child relationships for cloned elements
     // Lit Context doesn't automatically propagate to cloned children because the
     // context consumer decorator runs before the element is in the DOM tree.
     // We need to explicitly walk the tree and set parentTimegroup/rootTimegroup on each element.

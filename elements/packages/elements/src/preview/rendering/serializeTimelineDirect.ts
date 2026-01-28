@@ -32,14 +32,6 @@ const SKIP_TAGS = new Set([
   "TEMPLATE",
 ]);
 
-/**
- * Custom elements that should be serialized as inline elements (span).
- * These elements have display:inline, inline-block, or inline-flex.
- */
-const INLINE_CUSTOM_ELEMENTS = new Set([
-  "EF-TEXT",
-  "EF-TEXT-SEGMENT",
-]);
 
 /**
  * HTML void elements - these cannot have children and must be self-closing in XHTML.
@@ -130,16 +122,14 @@ function serializeComputedStyles(element: Element): string {
     // Handle display property specially
     let finalValue = value;
     if (prop === 'display') {
-      // For custom elements with shadow DOM styles that may not be computed correctly,
-      // use the correct display value based on the element type
-      if (tagName === 'EF-TEXT-SEGMENT') {
-        // EFTextSegment has :host { display: inline-block }
-        finalValue = 'inline-block';
-        console.log(`[serializeComputedStyles] EF-TEXT-SEGMENT: forcing display from '${value}' to '${finalValue}'`);
-      } else if (tagName === 'EF-TEXT') {
-        // EFText has :host { display: inline-flex }
-        finalValue = 'inline-flex';
-        console.log(`[serializeComputedStyles] EF-TEXT: forcing display from '${value}' to '${finalValue}'`);
+      // Fix for cloned Lit elements: shadow DOM stylesheets aren't adopted properly
+      // so computed display is wrong. Use the correct values based on element type.
+      if (tagName === 'EF-TEXT') {
+        // EFText: inline-flex (or flex for split="line")
+        finalValue = element.getAttribute('split') === 'line' ? 'flex' : 'inline-flex';
+      } else if (tagName === 'EF-TEXT-SEGMENT') {
+        // EFTextSegment: inline-block (or block for data-line-segment)
+        finalValue = element.hasAttribute('data-line-segment') ? 'block' : 'inline-block';
       }
       // For non-caption elements, convert display:none to block since temporal
       // visibility is handled separately, not by CSS display
@@ -292,14 +282,16 @@ function serializeCanvas(
   sourceMap.set(snapshot, sourceElement);
   
   // Snapshot is already scaled, so encode at 1.0 scale
-  const encodePromise = encodeCanvasesInParallel([snapshot], {
-    scale: 1.0,
-    renderContext: options.renderContext,
-    sourceMap,
-  }).then(results => results[0]?.dataUrl || '');
+  // TEMPORARY DEBUG: Comment out image encoding to reduce XML size for logging
+  // const encodePromise = encodeCanvasesInParallel([snapshot], {
+  //   scale: 1.0,
+  //   renderContext: options.renderContext,
+  //   sourceMap,
+  // }).then(results => results[0]?.dataUrl || '');
+  const encodePromise = Promise.resolve('data:image/png;base64,PLACEHOLDER');
   
   parts.push(encodePromise);
-  canvasJobs.push({ canvas: snapshot, sourceElement, promiseIndex });
+  // canvasJobs.push({ canvas: snapshot, sourceElement, promiseIndex });
   
   // Close img tag
   parts.push('" />');
@@ -346,14 +338,8 @@ function serializeSlottedContent(
   for (const slottedChild of slotHost.childNodes) {
     if (slottedChild.nodeType === Node.TEXT_NODE) {
       const text = slottedChild.textContent;
-      if (text) {
-        // For whitespace-only content, use non-breaking spaces to prevent collapse in foreignObject
-        if (/^\s+$/.test(text)) {
-          const nbspText = text.replace(/ /g, '&#160;');
-          parts.push(nbspText);
-        } else {
-          parts.push(escapeXML(text));
-        }
+      if (text && text.length > 0) {
+        parts.push(escapeXML(text));
       }
     } else if (slottedChild.nodeType === Node.ELEMENT_NODE) {
       serializeElement(slottedChild as Element, parts, canvasJobs, options, parentIsSVG, null);
@@ -409,73 +395,16 @@ function serializeElement(
     }
     
     // Serialize custom element with its styles, then shadow DOM content inside
-    // Use span for inline/inline-block elements to preserve inline behavior
+    // Use span for inline/inline-block/inline-flex elements to preserve inline behavior
     const tagName = element.tagName;
-    
-    // For custom elements, use our explicit inline element list instead of getComputedStyle
-    // because shadow DOM styles may not be properly adopted in the render clone
-    const isInline = INLINE_CUSTOM_ELEMENTS.has(tagName);
+    const computedDisplay = getComputedStyle(element).display;
+    const isInline = computedDisplay === 'inline' || computedDisplay === 'inline-block' || computedDisplay === 'inline-flex';
     const containerTag = isInline ? 'span' : 'div';
-    
-    if (tagName === 'EF-TEXT') {
-      console.log(`[serializeElement] EF-TEXT:`, {
-        isInline,
-        containerTag,
-        childElementCount: element.childElementCount,
-        lightDOMChildren: Array.from(element.childNodes).map(n => ({
-          type: n.nodeType,
-          tag: (n as any).tagName,
-          text: n.textContent?.substring(0, 50)
-        })),
-        shadowChildren: Array.from(element.shadowRoot?.childNodes || []).map(n => ({
-          type: n.nodeType,
-          tag: (n as any).tagName,
-          text: n.textContent?.substring(0, 50)
-        }))
-      });
-    }
     
     let styleStr = serializeComputedStyles(element);
     
-    // Special handling for text segments with whitespace-only content
-    // Ensure they don't shrink to zero width in flex layouts
-    let hasWhitespaceContent = false;
-    if (tagName === 'EF-TEXT-SEGMENT') {
-      const shadowContent = element.shadowRoot?.textContent || '';
-      const segmentTextProp = (element as any).segmentText;
-      console.log(`[serializeElement] EF-TEXT-SEGMENT:`, {
-        shadowContent: JSON.stringify(shadowContent),
-        shadowContentLength: shadowContent.length,
-        segmentTextProp: JSON.stringify(segmentTextProp),
-        isWhitespace: /^\s+$/.test(shadowContent),
-        shadowRoot: !!element.shadowRoot,
-        shadowChildNodes: element.shadowRoot?.childNodes.length,
-        styleStr: styleStr.substring(0, 200) + '...'
-      });
-      if (shadowContent && /^\s+$/.test(shadowContent)) {
-        hasWhitespaceContent = true;
-        // Whitespace-only segment - ensure it doesn't collapse in flex layouts
-        const styleParts = styleStr ? styleStr.split(';').filter(s => s.trim()) : [];
-        
-        // Extract the width value to use as min-width and flex-basis
-        const widthPart = styleParts.find(s => s.trim().startsWith('width:'));
-        const width = widthPart ? widthPart.split(':')[1] : '1ch';
-        
-        // In flex layouts, width can be ignored. Use min-width and flex-basis to force the space
-        const newParts = styleParts
-          .filter(s => !s.includes('flex-shrink') && !s.includes('flex-basis') && !s.includes('min-width'))
-          .concat([`flex-shrink:0`, `flex-basis:${width}`, `min-width:${width}`]);
-        styleStr = newParts.join(';');
-        console.log(`[serializeElement] EF-TEXT-SEGMENT whitespace - forcing width=${width}, final styleStr:`, styleStr.substring(0, 300));
-      }
-    }
     
     parts.push(`<${containerTag}`);
-    
-    // For elements with whitespace content, add xml:space="preserve" to prevent XML whitespace collapse
-    if (hasWhitespaceContent) {
-      parts.push(` xml:space="preserve"`);
-    }
     
     // Copy data attributes and class from custom element
     for (const attr of element.attributes) {
@@ -494,22 +423,8 @@ function serializeElement(
     for (const child of element.shadowRoot.childNodes) {
       if (child.nodeType === Node.TEXT_NODE) {
         const text = child.textContent;
-        if (text) {
-          // For whitespace-only content, use non-breaking spaces to prevent collapse in foreignObject
-          // Regular spaces can be collapsed even with white-space:pre in SVG/XML context
-          // This is critical for word-split text where spaces are in separate segments
-          if (/^\s+$/.test(text)) {
-            // Replace spaces with non-breaking space entity
-            const nbspText = text.replace(/ /g, '&#160;');
-            console.log(`[serializeElement] Converting whitespace in ${tagName}:`, {
-              originalLength: text.length,
-              nbspText,
-              parentTag: element.tagName
-            });
-            parts.push(nbspText);
-          } else {
-            parts.push(escapeXML(text));
-          }
+        if (text && text.length > 0) {
+          parts.push(escapeXML(text));
         }
       } else if (child.nodeType === Node.ELEMENT_NODE) {
         // Pass this element as slotHost so nested SLOTs can access light DOM children
@@ -562,14 +477,8 @@ function serializeElement(
   for (const child of children) {
     if (child.nodeType === Node.TEXT_NODE) {
       const text = child.textContent;
-      if (text) {
-        // For whitespace-only content, use non-breaking spaces to prevent collapse in foreignObject
-        if (/^\s+$/.test(text)) {
-          const nbspText = text.replace(/ /g, '&#160;');
-          parts.push(nbspText);
-        } else {
-          parts.push(escapeXML(text));
-        }
+      if (text && text.length > 0) {
+        parts.push(escapeXML(text));
       }
     } else if (child.nodeType === Node.ELEMENT_NODE) {
       // Preserve slotHost when recursing into standard elements inside shadow DOM
@@ -638,7 +547,12 @@ export async function serializeTimelineToXHTML(
   const resolvedParts = await Promise.all(parts);
   
   // Join into final XHTML string
-  return resolvedParts.join('');
+  const xhtml = resolvedParts.join('');
+  
+  // DEBUG: Log the XHTML output
+  console.log('[serializeTimelineToXHTML] Generated XHTML:', xhtml);
+  
+  return xhtml;
 }
 
 /**
@@ -664,6 +578,9 @@ export async function serializeTimelineToDataUri(
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">` +
     `<foreignObject x="0" y="0" width="${width}" height="${height}">${xhtml}</foreignObject>` +
     `</svg>`;
+  
+  // DEBUG: Log the full SVG
+  console.log('[serializeTimelineToDataUri] Generated SVG:', svg);
   
   // Encode to base64 data URI
   const base64 = btoa(unescape(encodeURIComponent(svg)));
