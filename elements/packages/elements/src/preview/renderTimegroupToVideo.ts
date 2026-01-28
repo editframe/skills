@@ -398,11 +398,12 @@ export async function renderTimegroupToVideo(
   const renderContext = new RenderContext();
   
   // Create preview container with proper styling (reusable, content rebuilt each frame)
-  const width = timegroup.offsetWidth || 1920;
-  const height = timegroup.offsetHeight || 1080;
+  // Use unscaled dimensions for the preview container (which holds the full-size clone)
+  const containerWidth = timegroup.offsetWidth || 1920;
+  const containerHeight = timegroup.offsetHeight || 1080;
   const previewContainer = createPreviewContainer({
-    width,
-    height,
+    width: containerWidth,
+    height: containerHeight,
     background: getComputedStyle(timegroup).background || "#000",
   });
   
