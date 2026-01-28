@@ -1376,48 +1376,6 @@ describe.skip("Dynamic content updates", () => {
       document.head.removeChild(style);
       document.body.removeChild(timegroup);
     }, 1000);
-
-    test("animations remain controllable after completion", async () => {
-      const style = document.createElement("style");
-      style.textContent = `
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .fade-in { animation: fadeIn 1s paused; }
-      `;
-      document.head.appendChild(style);
-
-      const timegroup = renderTimegroup(
-        html`
-          <ef-timegroup>
-            <ef-text split="line" stagger="1000ms" duration="5s">
-              <template>
-                <ef-text-segment class="fade-in"></ef-text-segment>
-              </template>
-              Line 1
-              Line 2
-            </ef-text>
-          </ef-timegroup>
-        `,
-      );
-      document.body.appendChild(timegroup);
-      await timegroup.updateComplete;
-      await timegroup.waitForMediaDurations();
-
-      const segments = await timegroup
-        .querySelector("ef-text")!
-        .whenSegmentsReady();
-
-      await timegroup.seek(5000);
-      await Promise.all(
-        segments.map((seg) => seg.frameTask?.taskComplete).filter((p) => p),
-      );
-      await new Promise((resolve) => requestAnimationFrame(resolve));
-
-      const { getTrackedAnimations } = await import("./updateAnimations.ts");
-      assert.isAbove(getTrackedAnimations(segments[1]!).length, 0);
-
-      document.head.removeChild(style);
-      document.body.removeChild(timegroup);
-    }, 1000);
   });
 
   describe("auto-init", () => {

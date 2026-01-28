@@ -99,40 +99,33 @@ const isAnimationValid = (
  * For prime timeline (interactive), discovery is responsive to DOM changes.
  *
  * Also cleans up invalid animations (cancelled, removed from DOM, etc.)
+ * 
+ * @param providedAnimations - Optional pre-discovered animations to avoid redundant getAnimations() calls
  */
 const discoverAndTrackAnimations = (
   element: AnimatableElement,
+  providedAnimations?: Animation[],
 ): { tracked: Set<Animation>; current: Animation[] } => {
   const isClone = isRenderClone(element);
   const hasTrackedAnimations = animationTracker.has(element);
   const structureChanged = domStructureChanged.get(element) ?? true;
   
   // OPTIMIZATION: For render clones with already-tracked animations and no structure changes,
-  // skip expensive getAnimations() call and reuse tracked animations.
-  // We still need to validate tracked animations are still valid, but we can do that
-  // without calling getAnimations({ subtree: true }) on every frame.
+  // skip ALL getAnimations() calls entirely. Render clones have static animations that never
+  // change, so we can reuse the tracked set without any validation.
   if (isClone && hasTrackedAnimations && !structureChanged) {
-    // Use tracked animations directly, but validate them are still valid
     const rootTracked = animationTracker.get(element)!;
-    const currentAnimations: Animation[] = [];
     
-    // Quick validation: check if any tracked animations are still in getAnimations()
-    // We only check the root element's direct animations (cheaper than subtree)
-    const rootDirectAnimations = element.getAnimations();
-    for (const animation of rootTracked) {
-      if (isAnimationValid(animation, rootDirectAnimations)) {
-        currentAnimations.push(animation);
-      }
-    }
-    
-    // For render clones, animations don't change, so we can trust tracked set
-    // Just return the tracked set (which should be complete)
-    return { tracked: rootTracked, current: currentAnimations };
+    // For render clones, animations are completely static - no validation needed
+    // Just return the tracked set as both tracked and current
+    // This avoids calling getAnimations() entirely (was line 121)
+    return { tracked: rootTracked, current: Array.from(rootTracked) };
   }
   
   // For prime timeline or first discovery: get current animations from the browser (includes subtree)
   // CRITICAL: This is expensive, so we return it to avoid calling it again
-  const currentAnimations = element.getAnimations({ subtree: true });
+  // If animations were provided by caller (to avoid redundant calls), use those
+  const currentAnimations = providedAnimations ?? element.getAnimations({ subtree: true });
   
   // Mark structure as stable after discovery (for render clones, this stays stable)
   if (isClone) {
@@ -176,26 +169,32 @@ const discoverAndTrackAnimations = (
     }
   }
 
-  // Also clean up invalid animations from per-element sets
-  // We need to check all elements that might have tracked animations
-  const allTargets = new Set<Element>();
+  // Build a map of element -> current animations from the subtree lookup we already did
+  // This avoids calling getAnimations() repeatedly on each element (expensive!)
+  const elementAnimationsMap = new Map<Element, Animation[]>();
   for (const animation of currentAnimations) {
     const effect = animation.effect;
     const target = effect && effect instanceof KeyframeEffect ? effect.target : null;
     if (target && target instanceof Element) {
-      allTargets.add(target);
+      let anims = elementAnimationsMap.get(target);
+      if (!anims) {
+        anims = [];
+        elementAnimationsMap.set(target, anims);
+      }
+      anims.push(animation);
     }
   }
 
-  // Check tracked sets for elements that might have invalid animations
-  // We can't iterate WeakMap directly, but we can check elements we know about
-  // and also check elements in the subtree
+  // Clean up invalid animations from per-element sets using the map we just built
+  // We check all elements that have tracked animations
   const subtreeElements = element.querySelectorAll("*");
   for (const el of subtreeElements) {
     const tracked = animationTracker.get(el);
     if (tracked) {
+      // Use the pre-built map instead of calling el.getAnimations() (which would be expensive)
+      const currentElAnimations = elementAnimationsMap.get(el) || [];
       for (const animation of tracked) {
-        if (!isAnimationValid(animation, Array.from(el.getAnimations()))) {
+        if (!isAnimationValid(animation, currentElAnimations)) {
           tracked.delete(animation);
         }
       }
@@ -207,25 +206,6 @@ const discoverAndTrackAnimations = (
   }
 
   return { tracked: rootTracked, current: currentAnimations };
-};
-
-/**
- * Gets tracked animations for a specific element.
- * This allows external code to access animations even after they complete.
- * Automatically filters out invalid animations (cancelled, removed, etc.)
- */
-export const getTrackedAnimations = (element: Element): Animation[] => {
-  const tracked = animationTracker.get(element);
-  if (!tracked) {
-    return [];
-  }
-
-  const currentAnimations = element.getAnimations();
-
-  // Filter out invalid animations
-  return Array.from(tracked).filter((animation) =>
-    isAnimationValid(animation, currentAnimations),
-  );
 };
 
 /**
@@ -976,10 +956,15 @@ const synchronizeAnimation = (
  * they're removed from getAnimations(), but we keep references to them so we can continue
  * controlling them.
  */
-const coordinateElementAnimations = (element: AnimatableElement): void => {
+const coordinateElementAnimations = (
+  element: AnimatableElement,
+  providedAnimations?: Animation[],
+): void => {
   // Discover and track animations (includes both current and previously completed ones)
   // Reuse the current animations array to avoid calling getAnimations() twice
-  const { tracked: trackedAnimations, current: currentAnimations } = discoverAndTrackAnimations(element);
+  // Accept pre-discovered animations to avoid redundant getAnimations() calls
+  const { tracked: trackedAnimations, current: currentAnimations } = 
+    discoverAndTrackAnimations(element, providedAnimations);
 
   for (const animation of trackedAnimations) {
     // Skip invalid animations (cancelled, removed from DOM, etc.)
@@ -1037,9 +1022,10 @@ const applyVisualState = (
 const applyAnimationCoordination = (
   element: AnimatableElement,
   phase: ElementPhase,
+  providedAnimations?: Animation[],
 ): void => {
   if (shouldCoordinateAnimations(phase, element)) {
-    coordinateElementAnimations(element);
+    coordinateElementAnimations(element, providedAnimations);
   }
 };
 
@@ -1072,19 +1058,52 @@ const evaluateElementState = (
  * 4. Apply visual state (update CSS and display based on phase and policies)
  */
 export const updateAnimations = (element: AnimatableElement): void => {
+  // OPTIMIZATION: Call getAnimations({ subtree: true }) ONCE for the entire tree
+  // This avoids redundant calls for each child element (which would have massive overlap)
+  // We'll distribute the relevant animations to each element
+  const allAnimations = element.getAnimations({ subtree: true });
+  
+  // Build a map of element -> animations for fast lookup
+  const animationsByElement = new Map<Element, Animation[]>();
+  for (const animation of allAnimations) {
+    const effect = animation.effect;
+    if (effect && effect instanceof KeyframeEffect && effect.target) {
+      const target = effect.target;
+      let anims = animationsByElement.get(target);
+      if (!anims) {
+        anims = [];
+        animationsByElement.set(target, anims);
+      }
+      anims.push(animation);
+    }
+  }
+  
   // Evaluate all states
   const rootContext = evaluateElementState(element);
   const childContexts = deepGetTemporalElements(element).map(
     (temporalElement) => evaluateElementState(temporalElement),
   );
 
-  // Apply visual state and animation coordination for root element
-  applyVisualState(rootContext.element, rootContext.state);
-  applyAnimationCoordination(rootContext.element, rootContext.state.phase);
+  // OPTIMIZATION: Batch reads and writes to avoid layout thrashing
+  // Phase 1: Animation coordination (READS - animation properties, DOM state)
+  // Do ALL animation coordination first before any CSS writes
+  applyAnimationCoordination(
+    rootContext.element, 
+    rootContext.state.phase,
+    animationsByElement.get(rootContext.element),
+  );
+  childContexts.forEach((context) => {
+    applyAnimationCoordination(
+      context.element, 
+      context.state.phase,
+      animationsByElement.get(context.element),
+    );
+  });
 
-  // Apply visual state and animation coordination for all temporal child elements
+  // Phase 2: Visual state application (WRITES - CSS properties)
+  // Do ALL CSS writes together so browser can batch style recalculation
+  applyVisualState(rootContext.element, rootContext.state);
   childContexts.forEach((context) => {
     applyVisualState(context.element, context.state);
-    applyAnimationCoordination(context.element, context.state.phase);
   });
 };
