@@ -416,19 +416,15 @@ export async function renderTimegroupToVideo(
     previewContainer.appendChild(renderClone);
     // CRITICAL: Attach container to document so getComputedStyle returns actual values
     // Without this, all computed styles are empty strings!
-    // Hide the container so it's not visible during export
-    previewContainer.style.cssText += ';position:fixed;left:-99999px;top:-99999px;visibility:hidden;pointer-events:none;';
+    // Hide the container OFF-SCREEN but do NOT use visibility:hidden because:
+    // 1. visibility:hidden is inherited by all children
+    // 2. seekForRender checks getComputedStyle().visibility and skips "hidden" subtrees
+    // 3. This would cause FrameController to skip rendering all nested content
+    previewContainer.style.cssText += ';position:fixed;left:-99999px;top:-99999px;pointer-events:none;';
     document.body.appendChild(previewContainer);
-    
-    // Disable all CSS transitions and animations on the render clone to prevent flickering
-    // when seeking rapidly between frames. Inject a style that applies to all descendants.
-    const noAnimStyle = document.createElement('style');
-    noAnimStyle.textContent = '*, *::before, *::after { transition: none !important; animation: none !important; }';
-    previewContainer.insertBefore(noAnimStyle, previewContainer.firstChild);
-    
     // Force layout/reflow so getComputedStyle returns correct values
     void renderClone.offsetHeight;
-    console.log(`[renderTimegroupToVideo] Attached previewContainer to document.body (hidden) for style computation`);
+    console.log(`[renderTimegroupToVideo] Attached previewContainer to document.body (off-screen) for style computation`);
   } else {
     // Inject document styles once (cached for all frames)
     const styleEl = document.createElement("style");
