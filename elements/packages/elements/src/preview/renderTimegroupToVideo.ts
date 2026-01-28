@@ -419,6 +419,13 @@ export async function renderTimegroupToVideo(
     // Hide the container so it's not visible during export
     previewContainer.style.cssText += ';position:fixed;left:-99999px;top:-99999px;visibility:hidden;pointer-events:none;';
     document.body.appendChild(previewContainer);
+    
+    // Disable all CSS transitions and animations on the render clone to prevent flickering
+    // when seeking rapidly between frames. Inject a style that applies to all descendants.
+    const noAnimStyle = document.createElement('style');
+    noAnimStyle.textContent = '*, *::before, *::after { transition: none !important; animation: none !important; }';
+    previewContainer.insertBefore(noAnimStyle, previewContainer.firstChild);
+    
     // Force layout/reflow so getComputedStyle returns correct values
     void renderClone.offsetHeight;
     console.log(`[renderTimegroupToVideo] Attached previewContainer to document.body (hidden) for style computation`);
