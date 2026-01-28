@@ -244,13 +244,17 @@ function serializeElement(
     // No special shadow content - serialize BOTH shadow DOM and light DOM
     // Shadow DOM contains the rendering (text, styles, etc.)
     // Light DOM contains slotted content (child elements)
-    console.log(`[serializeElement] → ${element.tagName} has shadow DOM with ${element.shadowRoot.childNodes.length} children, light DOM with ${element.childNodes.length} children`);
+    const shadowChildren = Array.from(element.shadowRoot.childNodes).map(n => 
+      n.nodeType === Node.ELEMENT_NODE ? (n as Element).tagName : `#text(${n.textContent?.trim().substring(0, 20)}...)`
+    ).join(', ');
+    console.log(`[serializeElement] → ${element.tagName} has shadow DOM with ${element.shadowRoot.childNodes.length} children: [${shadowChildren}], light DOM with ${element.childNodes.length} children`);
     
     // First serialize shadow DOM content (this includes <slot> placeholders)
     for (const child of element.shadowRoot.childNodes) {
       if (child.nodeType === Node.TEXT_NODE) {
         const text = child.textContent?.trim();
         if (text) {
+          console.log(`[serializeElement]     → Shadow text node: "${text.substring(0, 50)}..."`);
           parts.push(escapeXML(text));
         }
       } else if (child.nodeType === Node.ELEMENT_NODE) {
@@ -268,7 +272,8 @@ function serializeElement(
             }
           }
         } else {
-          // Regular shadow DOM element
+          // Regular shadow DOM element - serialize it with its styles
+          console.log(`[serializeElement]     → Shadow element: ${(child as Element).tagName}`);
           serializeElement(child as Element, parts, canvasJobs, options, parentIsSVG);
         }
       }
