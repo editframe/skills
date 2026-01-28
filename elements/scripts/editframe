@@ -60,6 +60,12 @@ cleanup_editframe_dev() {
   fi
   
   if [ "$TAILWIND_CONFIG_CREATED" = true ]; then
+    # Restore PostCSS config if we backed it up
+    if [ -f "$ORIGINAL_CWD/postcss.config.cjs.editframe-backup" ]; then
+      mv "$ORIGINAL_CWD/postcss.config.cjs.editframe-backup" "$ORIGINAL_CWD/postcss.config.cjs"
+      echo "[cleanup] Restored postcss.config.cjs" >&2
+    fi
+    
     # Remove symlink if it exists (including broken symlinks)
     # Check all possible Tailwind config names since we don't know which one was created
     for tw_name in tailwind.config.js tailwind.config.ts tailwind.config.mjs tailwind.config.cjs; do
@@ -270,6 +276,20 @@ TW_CONFIG_EOF
         
           # Create symlink with same name as original config so PostCSS/Tailwind finds it
           ln -sf "$(basename "$TW_DEV_CONFIG")" "$ORIGINAL_CWD/$USER_TAILWIND_CONFIG"
+          
+          # Also update PostCSS config to explicitly point to our Tailwind config
+          # This ensures Tailwind finds it even with Vite's caching
+          if [ -f "$ORIGINAL_CWD/postcss.config.cjs" ]; then
+            cp "$ORIGINAL_CWD/postcss.config.cjs" "$ORIGINAL_CWD/postcss.config.cjs.editframe-backup"
+            cat > "$ORIGINAL_CWD/postcss.config.cjs" << 'POSTCSS_EOF'
+module.exports = {
+  plugins: {
+    tailwindcss: { config: './tailwind.config.editframe-dev.cjs' },
+  },
+};
+POSTCSS_EOF
+            echo "   ✓ Updated PostCSS config to point to temp Tailwind config" >&2
+          fi
 
           TAILWIND_CONFIG_CREATED=true
         echo "✓ Created temporary Tailwind config with @editframe/elements scanning"
