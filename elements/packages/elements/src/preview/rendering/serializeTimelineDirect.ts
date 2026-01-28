@@ -33,6 +33,15 @@ const SKIP_TAGS = new Set([
 ]);
 
 /**
+ * HTML void elements - these cannot have children and must be self-closing in XHTML.
+ * Using `<br />` instead of `<br></br>`.
+ */
+const VOID_ELEMENTS = new Set([
+  "area", "base", "br", "col", "embed", "hr", "img", "input",
+  "link", "meta", "param", "source", "track", "wbr",
+]);
+
+/**
  * CSS properties to serialize as inline styles.
  * Matches SYNC_PROPERTIES from renderTimegroupPreview.ts
  */
@@ -385,16 +394,16 @@ function serializeElement(
     return;
   }
   
-  // Standard element - serialize to XML
+  // Standard element - serialize to XHTML
   const tagName = element.tagName.toLowerCase();
   const isSVG = element instanceof SVGElement;
+  const isVoid = VOID_ELEMENTS.has(tagName);
   
   // Open tag with namespace (only add xmlns for root SVG elements, not children)
   if (isSVG && !parentIsSVG) {
     // Root SVG element - needs xmlns declaration
     parts.push(`<${tagName} xmlns="http://www.w3.org/2000/svg"`);
   } else {
-    // XHTML or child SVG element - no xmlns needed
     parts.push(`<${tagName}`);
   }
   
@@ -405,6 +414,12 @@ function serializeElement(
   const styleStr = serializeComputedStyles(element);
   if (styleStr) {
     parts.push(` style="${escapeXML(styleStr)}"`);
+  }
+  
+  // Void elements: self-close with /> (XHTML requirement)
+  if (isVoid) {
+    parts.push(' />');
+    return;
   }
   
   parts.push('>');
@@ -491,9 +506,9 @@ export async function serializeTimelineToXHTML(
     `style="width:${width}px;height:${height}px;overflow:hidden;position:relative;">`
   );
   
-  // Inject document styles
+  // Inject document styles (CSS content is wrapped in CDATA to avoid XML escaping issues)
   if (documentStyles) {
-    parts.push(`<style>${escapeXML(documentStyles)}</style>`);
+    parts.push(`<style type="text/css"><![CDATA[${documentStyles}]]></style>`);
   }
   
   // Recursively serialize timeline
