@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { serializeTimelineToXHTML } from "./serializeTimelineDirect.js";
+import { serializeTimelineToXHTML, serializeTimelineToDataUri } from "./serializeTimelineDirect.js";
 import type { EFTimegroup } from "../../elements/EFTimegroup.js";
 import type { EFText } from "../../elements/EFText.js";
 
@@ -21,41 +21,72 @@ describe("serializeTimelineDirect", () => {
   });
 
   describe("text segment whitespace handling", () => {
-    it("should preserve whitespace between word-split segments", async () => {
+    it("should use non-breaking spaces for whitespace-only segments", async () => {
       // Create ef-text with word splitting
       const text = document.createElement("ef-text") as EFText;
       text.split = "word";
-      text.textContent = "Hello World Test";
+      text.textContent = "Hello World";
       
       container.appendChild(text);
       await text.updateComplete;
-      
-      // Wait for segments to be ready
       await text.whenSegmentsReady();
       
-      // Serialize
+      // Serialize to XHTML
       const xhtml = await serializeTimelineToXHTML(text, 800, 600, {
         canvasScale: 1,
         timeMs: 0,
       });
       
-      // Check that whitespace is preserved in output
-      // Should contain the actual space characters or whitespace segments
-      console.log("Serialized XHTML:", xhtml);
+      // Should contain non-breaking space entity for whitespace segments
+      expect(xhtml).toContain('&#160;');
       
-      // Verify whitespace segments are present
-      expect(xhtml).toContain(" ");
+      // Count segments - should have "Hello", " ", "World"
+      const segments = text.segments;
+      expect(segments.length).toBe(3);
       
-      // Count segments - should have 5: "Hello", " ", "World", " ", "Test"
-      const segmentMatches = xhtml.match(/<span[^>]*>/g) || [];
-      console.log(`Found ${segmentMatches.length} span elements`);
-      expect(segmentMatches.length).toBeGreaterThanOrEqual(5);
+      // Verify middle segment is whitespace
+      const middleSegment = segments[1];
+      expect(middleSegment?.segmentText).toBe(' ');
     });
 
-    it("should serialize whitespace-only segments with xml:space preserve", async () => {
+    it("should preserve whitespace in rendered SVG foreignObject", async () => {
       const text = document.createElement("ef-text") as EFText;
       text.split = "word";
-      text.textContent = "A B";
+      text.textContent = "Free Admission";
+      text.style.fontSize = "24px";
+      
+      container.appendChild(text);
+      await text.updateComplete;
+      await text.whenSegmentsReady();
+      
+      // Serialize to data URI (full SVG)
+      const dataUri = await serializeTimelineToDataUri(text, 800, 600, {
+        canvasScale: 1,
+        timeMs: 0,
+      });
+      
+      // Decode SVG
+      const svgContent = atob(dataUri.substring('data:image/svg+xml;base64,'.length));
+      
+      // Should have non-breaking spaces in the SVG
+      expect(svgContent).toContain('&#160;');
+      
+      // Parse and check text content is preserved
+      const parser = new DOMParser();
+      const svgDoc = parser.parseFromString(svgContent, 'image/svg+xml');
+      const textContent = svgDoc.documentElement.textContent || '';
+      
+      // Should have space between words (non-breaking space)
+      expect(textContent).toContain('Free');
+      expect(textContent).toContain('Admission');
+      // Non-breaking space renders as regular space in textContent
+      expect(textContent.replace(/\s+/g, ' ').trim()).toBe('Free Admission');
+    });
+
+    it("should handle multiple whitespace segments correctly", async () => {
+      const text = document.createElement("ef-text") as EFText;
+      text.split = "word";
+      text.textContent = "A B C";
       
       container.appendChild(text);
       await text.updateComplete;
@@ -66,7 +97,28 @@ describe("serializeTimelineDirect", () => {
         timeMs: 0,
       });
       
-      console.log("Serialized XHTML with whitespace:", xhtml);
+      // Should have 5 segments: "A", " ", "B", " ", "C"
+      const segments = text.segments;
+      expect(segments.length).toBe(5);
+      
+      // Count non-breaking spaces - should be 2
+      const nbspCount = (xhtml.match(/&#160;/g) || []).length;
+      expect(nbspCount).toBe(2);
+    });
+
+    it("should preserve xml:space and flex-shrink on whitespace segments", async () => {
+      const text = document.createElement("ef-text") as EFText;
+      text.split = "word";
+      text.textContent = "Test Space";
+      
+      container.appendChild(text);
+      await text.updateComplete;
+      await text.whenSegmentsReady();
+      
+      const xhtml = await serializeTimelineToXHTML(text, 800, 600, {
+        canvasScale: 1,
+        timeMs: 0,
+      });
       
       // Should have xml:space="preserve" on whitespace segments
       expect(xhtml).toContain('xml:space="preserve"');
@@ -75,7 +127,7 @@ describe("serializeTimelineDirect", () => {
       expect(xhtml).toContain('flex-shrink:0');
     });
 
-    it("should use span elements for inline-block text segments", async () => {
+    it("should use span elements for inline text segments", async () => {
       const text = document.createElement("ef-text") as EFText;
       text.split = "char";
       text.textContent = "Hi";
@@ -88,8 +140,6 @@ describe("serializeTimelineDirect", () => {
         canvasScale: 1,
         timeMs: 0,
       });
-      
-      console.log("Char-split XHTML:", xhtml);
       
       // Text segments should be serialized as spans (inline elements)
       const spanCount = (xhtml.match(/<span/g) || []).length;
@@ -113,8 +163,6 @@ describe("serializeTimelineDirect", () => {
         canvasScale: 1,
         timeMs: 0,
       });
-      
-      console.log("Timegroup XHTML:", xhtml);
       
       // Should have XHTML namespace
       expect(xhtml).toContain('xmlns="http://www.w3.org/1999/xhtml"');
@@ -142,8 +190,6 @@ describe("serializeTimelineDirect", () => {
         timeMs: 0,
       });
       
-      console.log("Flex styles XHTML:", xhtml);
-      
       // Should include flex properties
       expect(xhtml).toMatch(/display:[^;]*inline-flex/);
       expect(xhtml).toContain('gap:');
@@ -163,8 +209,6 @@ describe("serializeTimelineDirect", () => {
         canvasScale: 1,
         timeMs: 0,
       });
-      
-      console.log("Font properties XHTML:", xhtml);
       
       // Should have individual font properties
       expect(xhtml).toContain('font-family:');
