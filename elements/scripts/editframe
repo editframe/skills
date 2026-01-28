@@ -269,6 +269,23 @@ function mergeTheme(userTheme = {}) {
   };
 }
 
+// Helper to merge safelist with common ef-timegroup dimension classes
+function mergeSafelist(userSafelist = []) {
+  // Common dimension patterns used in ef-timegroup elements for video rendering
+  // These ensure Tailwind generates CSS even in headless/non-JIT scenarios
+  const commonDimensions = [
+    // Common video aspect ratios
+    { pattern: /^w-\[(480|640|720|1080|1280|1920|2560|3840)px\]$/ },
+    { pattern: /^h-\[(270|360|480|720|1080|1440|2160)px\]$/ },
+    { pattern: /^w-\[(\d+)px\]$/ }, // Any pixel width
+    { pattern: /^h-\[(\d+)px\]$/ }, // Any pixel height
+  ];
+  
+  return Array.isArray(userSafelist) 
+    ? [...userSafelist, ...commonDimensions]
+    : commonDimensions;
+}
+
 module.exports = {
   ...userConfig,
   content: mergeContent(userConfig.content),
@@ -277,7 +294,7 @@ module.exports = {
   // Preserve any other config properties
   presets: userConfig.presets,
   darkMode: userConfig.darkMode,
-  safelist: userConfig.safelist,
+  safelist: mergeSafelist(userConfig.safelist),
   blocklist: userConfig.blocklist,
 };
 TW_CONFIG_EOF
