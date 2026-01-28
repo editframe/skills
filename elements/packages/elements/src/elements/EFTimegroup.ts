@@ -542,8 +542,8 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     // If element is already connected and initializer hasn't run, run it now
     // This handles the case where initializer is set after connectedCallback
     if (fn && this.isConnected && !this.#initializerHasRun) {
-      // Use updateComplete to ensure element is in a stable state
-      this.updateComplete.then(() => {
+      // Create promise that resolves when initializer completes
+      this.#initializerComplete = this.updateComplete.then(() => {
         this.#runInitializer();
       });
     }
@@ -554,6 +554,13 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
    * @internal
    */
   #initializerHasRun = false;
+  
+  /**
+   * Promise that resolves when initializer completes.
+   * Used by createRenderClone to ensure frame tasks are registered before rendering.
+   * @internal
+   */
+  #initializerComplete?: Promise<void>;
 
   /** @public */
   @property({ type: Number })
@@ -906,6 +913,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
    * @internal
    */
   async seekForRender(timeMs: number): Promise<void> {
+    console.log(`[seekForRender] Starting seek to ${timeMs}ms`);
     // Set time directly (skip seekTask overhead)
     const newTime = timeMs / 1000;
     this.#userTimeMs = timeMs;
@@ -952,7 +960,9 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     });
     
     // Execute custom frame tasks registered via addFrameTask()
+    console.log(`[seekForRender] Executing custom frame tasks at ${timeMs}ms`);
     await this.#executeCustomFrameTasks();
+    console.log(`[seekForRender] Frame tasks complete at ${timeMs}ms`);
   }
   
   /**
@@ -1572,6 +1582,12 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     
     // 3. Wait for custom elements to upgrade
     await cloneEl.updateComplete;
+    
+    // 3a. Wait for initializer to complete
+    // The initializer is scheduled via updateComplete.then(), which runs AFTER updateComplete resolves
+    // We need to wait for it to ensure frame tasks are registered before rendering
+    // Use a simple approach: wait one more microtask cycle
+    await Promise.resolve();
     
     // 3b. Copy ef-text-segment properties AFTER elements have upgraded
     // segmentText is a JS property, so we need to wait for custom elements to define it
