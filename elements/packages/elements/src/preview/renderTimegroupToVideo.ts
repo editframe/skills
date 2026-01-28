@@ -537,28 +537,6 @@ export async function renderTimegroupToVideo(
             syncTime = performance.now() - syncStart;
             totalSyncMs += syncTime;
             
-            // Decode and log the actual SVG content for debugging
-            const svgContent = dataUri.startsWith('data:image/svg+xml;base64,') 
-              ? atob(dataUri.substring('data:image/svg+xml;base64,'.length))
-              : dataUri;
-            console.log(`[Frame ${renderFrameIndex}] Data URI length: ${dataUri.length} (${(dataUri.length / 1024 / 1024).toFixed(1)}MB)`);
-            console.log(`[Frame ${renderFrameIndex}] SVG content preview:`, svgContent.substring(0, 500));
-            console.log(`[Frame ${renderFrameIndex}] SVG content end:`, svgContent.substring(svgContent.length - 200));
-            
-            // Try to parse as XML to validate
-            try {
-              const parser = new DOMParser();
-              const doc = parser.parseFromString(svgContent, 'image/svg+xml');
-              const parseError = doc.querySelector('parsererror');
-              if (parseError) {
-                console.error(`[Frame ${renderFrameIndex}] XML parse error:`, parseError.textContent);
-              } else {
-                console.log(`[Frame ${renderFrameIndex}] XML parsed successfully`);
-              }
-            } catch (e) {
-              console.error(`[Frame ${renderFrameIndex}] XML validation failed:`, e);
-            }
-            
             // Create image from data URI
             const renderStart = performance.now();
             image = new Image();

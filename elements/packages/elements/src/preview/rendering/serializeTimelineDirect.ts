@@ -547,9 +547,6 @@ export async function serializeTimelineToXHTML(
   // Join into final XHTML string
   const xhtml = resolvedParts.join('');
   
-  // DEBUG: Log the XHTML output
-  console.log('[serializeTimelineToXHTML] Generated XHTML:', xhtml);
-  
   return xhtml;
 }
 
@@ -576,9 +573,6 @@ export async function serializeTimelineToDataUri(
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">` +
     `<foreignObject x="0" y="0" width="${width}" height="${height}">${xhtml}</foreignObject>` +
     `</svg>`;
-  
-  // DEBUG: Log the full SVG
-  console.log('[serializeTimelineToDataUri] Generated SVG:', svg);
   
   // Encode to base64 data URI
   const base64 = btoa(unescape(encodeURIComponent(svg)));
