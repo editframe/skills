@@ -204,6 +204,9 @@ function serializeElement(
     const styles = getComputedStyle(element);
     if (styles.display === 'none' || styles.visibility === 'hidden') {
       serializeStats.skippedHidden++;
+      if (Math.random() < 0.05) { // Sample 5% for debugging
+        console.log(`[Skipped] ${element.tagName} hidden: display=${styles.display}, visibility=${styles.visibility}`);
+      }
       return;
     }
   }
@@ -250,6 +253,9 @@ function serializeElement(
           }
         } else {
           // Regular shadow DOM element - serialize it with its styles
+          if (Math.random() < 0.1) { // Sample 10%
+            console.log(`[Shadow child] Recursing into ${(child as Element).tagName} (isCustom: ${(child as Element).tagName.includes('-')})`);
+          }
           serializeElement(child as Element, parts, canvasJobs, options, parentIsSVG);
         }
       }
@@ -265,6 +271,9 @@ function serializeElement(
   
   // Standard element - serialize to XML
   serializeStats.standardElements++;
+  if (serializeStats.standardElements <= 3) { // Log first 3
+    console.log(`[Standard element] Serializing ${element.tagName}`);
+  }
   const tagName = element.tagName.toLowerCase();
   const isSVG = element instanceof SVGElement;
   
