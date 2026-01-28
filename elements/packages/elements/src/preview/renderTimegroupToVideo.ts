@@ -562,7 +562,7 @@ export async function renderTimegroupToVideo(
             totalSyncMs += syncTime;
             
             const renderStart = performance.now();
-            image = await renderToImageDirect(previewContainer, width, height, {
+            image = await renderToImageDirect(previewContainer, config.width, config.height, {
               renderContext,
               sourceMap: syncState.canvasSourceMap,
               canvasScale: config.scale,
