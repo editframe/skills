@@ -41,6 +41,36 @@ export async function launchBrowserAndWaitForSDK(
       delete launchOptions.channel;
     }
 
+    // Enable GPU acceleration for headless rendering
+    // This significantly improves canvas/WebGL performance for video rendering
+    // Set EF_DISABLE_GPU=1 to disable GPU acceleration (for debugging/compatibility)
+    const disableGpu = process.env.EF_DISABLE_GPU === "1";
+    
+    if (options.headless && options.interactive !== true && !disableGpu) {
+      launchOptions.args = [
+        // Core GPU acceleration flags
+        "--enable-gpu",                      // Enable GPU hardware acceleration
+        "--use-angle=default",               // Use ANGLE for OpenGL (better compatibility)
+        "--enable-accelerated-2d-canvas",    // Hardware-accelerate canvas operations
+        "--enable-webgl",                    // Enable WebGL
+        "--enable-features=VaapiVideoDecoder", // Hardware video decoding (Linux)
+        
+        // Prevent fallback to software rendering
+        "--disable-software-rasterizer",
+        
+        // System resource optimizations
+        "--disable-dev-shm-usage",           // Avoid /dev/shm issues (especially on Linux/Docker)
+        
+        // Optional: Uncomment if running in Docker or restricted environments
+        // "--no-sandbox",
+        // "--disable-setuid-sandbox",
+      ];
+
+      browserLog("Launching Chrome with GPU acceleration enabled");
+    } else if (disableGpu) {
+      browserLog("GPU acceleration disabled via EF_DISABLE_GPU");
+    }
+
     return chromium.launch(launchOptions);
   });
 
