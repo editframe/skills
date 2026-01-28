@@ -383,18 +383,22 @@ function serializeElement(
       return;
     }
     
-    // Serialize custom element as a div with its styles, then shadow DOM content inside
-    // Always use div to ensure consistent rendering of display properties
-    const containerTag = 'div';
+    // Serialize custom element with its styles, then shadow DOM content inside
+    // Use span for inline/inline-block elements to preserve inline behavior
     const tagName = element.tagName;
+    const computedDisplay = getComputedStyle(element).display;
+    const isInline = computedDisplay === 'inline' || computedDisplay === 'inline-block' || computedDisplay === 'inline-flex';
+    const containerTag = isInline ? 'span' : 'div';
     
     let styleStr = serializeComputedStyles(element);
     
     // Special handling for text segments with whitespace-only content
     // Ensure they don't shrink to zero width in flex layouts
+    let hasWhitespaceContent = false;
     if (tagName === 'EF-TEXT-SEGMENT') {
       const shadowContent = element.shadowRoot?.textContent || '';
       if (shadowContent && /^\s+$/.test(shadowContent)) {
+        hasWhitespaceContent = true;
         // Whitespace-only segment - ensure it doesn't collapse
         const styleParts = styleStr ? styleStr.split(';').filter(s => s.trim()) : [];
         // Prevent flex shrinking and set minimum width based on font size
@@ -406,6 +410,11 @@ function serializeElement(
     }
     
     parts.push(`<${containerTag}`);
+    
+    // For elements with whitespace content, add xml:space="preserve" to prevent XML whitespace collapse
+    if (hasWhitespaceContent) {
+      parts.push(` xml:space="preserve"`);
+    }
     
     // Copy data attributes and class from custom element
     for (const attr of element.attributes) {
