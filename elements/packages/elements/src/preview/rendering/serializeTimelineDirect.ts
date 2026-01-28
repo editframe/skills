@@ -19,6 +19,7 @@ import { collectDocumentStyles } from "../renderTimegroupPreview.js";
 
 /**
  * Elements to skip entirely when serializing.
+ * NOTE: SLOT is NOT skipped - it's handled specially to serialize light DOM children.
  */
 const SKIP_TAGS = new Set([
   "EF-AUDIO",
@@ -28,7 +29,6 @@ const SKIP_TAGS = new Set([
   "EF-WORKBENCH",
   "SCRIPT",
   "STYLE",
-  "SLOT",
   "TEMPLATE",
 ]);
 
@@ -239,17 +239,47 @@ function serializeImageAsCanvas(
 }
 
 /**
+ * Serialize slotted light DOM children of a host element.
+ */
+function serializeSlottedContent(
+  slotHost: Element,
+  parts: Array<string | Promise<string>>,
+  canvasJobs: CanvasJob[],
+  options: SerializationOptions,
+  parentIsSVG: boolean
+): void {
+  for (const slottedChild of slotHost.childNodes) {
+    if (slottedChild.nodeType === Node.TEXT_NODE) {
+      const text = slottedChild.textContent?.trim();
+      if (text) {
+        parts.push(escapeXML(text));
+      }
+    } else if (slottedChild.nodeType === Node.ELEMENT_NODE) {
+      serializeElement(slottedChild as Element, parts, canvasJobs, options, parentIsSVG, null);
+    }
+  }
+}
+
+/**
  * Recursively serialize an element and its children to XML parts.
+ * @param slotHost - When serializing inside shadow DOM, the custom element whose light DOM children should be serialized for slots
  */
 function serializeElement(
   element: Element,
   parts: Array<string | Promise<string>>,
   canvasJobs: CanvasJob[],
   options: SerializationOptions,
-  parentIsSVG = false
+  parentIsSVG = false,
+  slotHost: Element | null = null
 ): void {
   // Skip certain elements
   if (SKIP_TAGS.has(element.tagName)) {
+    return;
+  }
+  
+  // Handle SLOT elements - serialize light DOM children of the slot host
+  if (element.tagName === 'SLOT' && slotHost) {
+    serializeSlottedContent(slotHost, parts, canvasJobs, options, parentIsSVG);
     return;
   }
   
@@ -294,7 +324,7 @@ function serializeElement(
     }
     parts.push('>');
     
-    // Serialize shadow DOM content
+    // Serialize shadow DOM content with this element as the slot host
     for (const child of element.shadowRoot.childNodes) {
       if (child.nodeType === Node.TEXT_NODE) {
         const text = child.textContent?.trim();
@@ -302,22 +332,8 @@ function serializeElement(
           parts.push(escapeXML(text));
         }
       } else if (child.nodeType === Node.ELEMENT_NODE) {
-        // If it's a <slot>, serialize the light DOM children instead
-        if ((child as Element).tagName === 'SLOT') {
-          for (const slottedChild of element.childNodes) {
-            if (slottedChild.nodeType === Node.TEXT_NODE) {
-              const text = slottedChild.textContent?.trim();
-              if (text) {
-                parts.push(escapeXML(text));
-              }
-            } else if (slottedChild.nodeType === Node.ELEMENT_NODE) {
-              serializeElement(slottedChild as Element, parts, canvasJobs, options, parentIsSVG);
-            }
-          }
-        } else {
-          // Regular shadow DOM element - serialize it with its styles
-          serializeElement(child as Element, parts, canvasJobs, options, parentIsSVG);
-        }
+        // Pass this element as slotHost so nested SLOTs can access light DOM children
+        serializeElement(child as Element, parts, canvasJobs, options, parentIsSVG, element);
       }
     }
     
@@ -364,7 +380,8 @@ function serializeElement(
         parts.push(escapeXML(text));
       }
     } else if (child.nodeType === Node.ELEMENT_NODE) {
-      serializeElement(child as Element, parts, canvasJobs, options, isSVG);
+      // Preserve slotHost when recursing into standard elements inside shadow DOM
+      serializeElement(child as Element, parts, canvasJobs, options, isSVG, slotHost);
     }
   }
   
