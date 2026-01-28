@@ -33,6 +33,15 @@ const SKIP_TAGS = new Set([
 ]);
 
 /**
+ * Custom elements that should be serialized as inline elements (span).
+ * These elements have display:inline, inline-block, or inline-flex.
+ */
+const INLINE_CUSTOM_ELEMENTS = new Set([
+  "EF-TEXT",
+  "EF-TEXT-SEGMENT",
+]);
+
+/**
  * HTML void elements - these cannot have children and must be self-closing in XHTML.
  * Using `<br />` instead of `<br></br>`.
  */
@@ -121,9 +130,18 @@ function serializeComputedStyles(element: Element): string {
     // Handle display property specially
     let finalValue = value;
     if (prop === 'display') {
+      // For custom elements with shadow DOM styles that may not be computed correctly,
+      // use the correct display value based on the element type
+      if (tagName === 'EF-TEXT-SEGMENT') {
+        // EFTextSegment has :host { display: inline-block }
+        finalValue = 'inline-block';
+      } else if (tagName === 'EF-TEXT') {
+        // EFText has :host { display: inline-flex }
+        finalValue = 'inline-flex';
+      }
       // For non-caption elements, convert display:none to block since temporal
       // visibility is handled separately, not by CSS display
-      if (value === 'none' && !isCaptionChild) {
+      else if (value === 'none' && !isCaptionChild) {
         finalValue = 'block';
       }
     }
@@ -391,13 +409,15 @@ function serializeElement(
     // Serialize custom element with its styles, then shadow DOM content inside
     // Use span for inline/inline-block elements to preserve inline behavior
     const tagName = element.tagName;
-    const computedDisplay = getComputedStyle(element).display;
-    const isInline = computedDisplay === 'inline' || computedDisplay === 'inline-block' || computedDisplay === 'inline-flex';
+    
+    // For custom elements, use our explicit inline element list instead of getComputedStyle
+    // because shadow DOM styles may not be properly adopted in the render clone
+    const isInline = INLINE_CUSTOM_ELEMENTS.has(tagName);
     const containerTag = isInline ? 'span' : 'div';
     
     if (tagName === 'EF-TEXT') {
       console.log(`[serializeElement] EF-TEXT:`, {
-        display: computedDisplay,
+        isInline,
         containerTag,
         childElementCount: element.childElementCount,
         lightDOMChildren: Array.from(element.childNodes).map(n => ({
