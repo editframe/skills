@@ -229,6 +229,16 @@ function serializeElement(
     }
     
     // Serialize shadow DOM content (text, elements, etc.)
+    if (element.tagName === 'EF-TEXT-SEGMENT' || element.tagName === 'EF-TEXT') {
+      // Debug text elements specifically
+      const children = Array.from(element.shadowRoot.childNodes).map(n => {
+        if (n.nodeType === Node.TEXT_NODE) return `#text:"${n.textContent?.trim().substring(0, 10)}"`;
+        if (n.nodeType === Node.ELEMENT_NODE) return `<${(n as Element).tagName}>`;
+        return `#${n.nodeType}`;
+      });
+      console.log(`[Shadow DOM] ${element.tagName}: [${children.join(', ')}]`);
+    }
+    
     for (const child of element.shadowRoot.childNodes) {
       if (child.nodeType === Node.TEXT_NODE) {
         const text = child.textContent?.trim();
@@ -253,9 +263,6 @@ function serializeElement(
           }
         } else {
           // Regular shadow DOM element - serialize it with its styles
-          if (Math.random() < 0.1) { // Sample 10%
-            console.log(`[Shadow child] Recursing into ${(child as Element).tagName} (isCustom: ${(child as Element).tagName.includes('-')})`);
-          }
           serializeElement(child as Element, parts, canvasJobs, options, parentIsSVG);
         }
       }
