@@ -1559,11 +1559,8 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     // clear segments if _textContent is empty
     this.#copyTextContent(this, cloneEl);
     
-    // 2d. Copy initializer function to the clone
-    // The initializer property is not cloned by cloneNode() since it's a JS property
-    if (this.initializer) {
-      cloneEl.initializer = this.initializer;
-    }
+    // Note: We'll copy the initializer AFTER the clone is connected to DOM
+    // so that the setter's isConnected check passes and schedules execution
     
     // 3. Preserve ef-configuration context for the clone
     // Media elements use closest("ef-configuration") to determine settings like media-engine.
@@ -1580,14 +1577,23 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     
     document.body.appendChild(container);
     
+    // 3a. Set initializer AFTER clone is connected to DOM
+    // The initializer setter only schedules execution if this.isConnected is true
+    // Setting it before connection would skip the automatic scheduling
+    if (this.initializer) {
+      console.log('[createRenderClone] Setting initializer on connected clone');
+      cloneEl.initializer = this.initializer;
+    }
+    
     // 3. Wait for custom elements to upgrade
     await cloneEl.updateComplete;
     
-    // 3a. Wait for initializer to complete
+    // 3b. Wait for initializer to complete
     // The initializer is scheduled via updateComplete.then(), which runs AFTER updateComplete resolves
     // We need to wait for it to ensure frame tasks are registered before rendering
     // Use a simple approach: wait one more microtask cycle
     await Promise.resolve();
+    console.log('[createRenderClone] Initializer should have run by now');
     
     // 3b. Copy ef-text-segment properties AFTER elements have upgraded
     // segmentText is a JS property, so we need to wait for custom elements to define it
