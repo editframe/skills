@@ -236,14 +236,6 @@ const monorepoElementsDist = '$PACKAGES_DIR/elements/dist';
 // User's original content paths (extracted from backup config)
 const userContent = $USER_CONTENT_JSON;
 
-// Common dimension patterns for ef-timegroup video rendering
-const safelistPatterns = [
-  { pattern: /^w-\\\[(480|640|720|1080|1280|1920|2560|3840)px\\\]\$/ },
-  { pattern: /^h-\\\[(270|360|480|720|1080|1440|2160)px\\\]\$/ },
-  { pattern: /^w-\\\[(\\\d+)px\\\]\$/ },
-  { pattern: /^h-\\\[(\\\d+)px\\\]\$/ },
-];
-
 module.exports = {
   content: [
     ...userContent,
@@ -254,7 +246,6 @@ module.exports = {
     path.join(monorepoElementsDist, 'gui/**/*.js'),
     path.join(monorepoElementsDist, 'preview/**/*.js'),
   ],
-  safelist: safelistPatterns,
   theme: {
     extend: {},
   },
