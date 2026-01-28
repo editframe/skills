@@ -166,8 +166,23 @@ function resolveConfig(
     throw new Error(`Invalid render range: from ${startMs}ms to ${endMs}ms`);
   }
 
-  const timegroupWidth = timegroup.offsetWidth || 1920;
-  const timegroupHeight = timegroup.offsetHeight || 1080;
+  // Force layout reflow before reading dimensions
+  void timegroup.offsetHeight;
+  
+  const timegroupWidth = timegroup.offsetWidth;
+  const timegroupHeight = timegroup.offsetHeight;
+  
+  console.log(`[renderTimegroupToVideo] Timegroup dimensions: ${timegroupWidth}x${timegroupHeight}`);
+  console.log(`[renderTimegroupToVideo] Computed style:`, getComputedStyle(timegroup).width, getComputedStyle(timegroup).height);
+  console.log(`[renderTimegroupToVideo] BoundingClientRect:`, timegroup.getBoundingClientRect());
+  
+  if (!timegroupWidth || !timegroupHeight) {
+    throw new Error(
+      `Timegroup has no dimensions (${timegroupWidth}x${timegroupHeight}). ` +
+      `Ensure the timegroup element is in the document and has explicit width/height styles ` +
+      `(e.g., class="w-[1920px] h-[1080px]")`
+    );
+  }
   const width = Math.floor(timegroupWidth * scale);
   const height = Math.floor(timegroupHeight * scale);
 
