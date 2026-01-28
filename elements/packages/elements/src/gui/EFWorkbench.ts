@@ -75,6 +75,34 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         --toolbar-border: rgba(148, 163, 184, 0.15);
       }
       
+      /* Utility classes (not relying on external Tailwind) */
+      .grid {
+        display: grid;
+      }
+      
+      .overflow-hidden {
+        overflow: hidden;
+      }
+      
+      .fixed {
+        position: fixed;
+      }
+      
+      .inset-0 {
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+      }
+      
+      .h-full {
+        height: 100%;
+      }
+      
+      .w-full {
+        width: 100%;
+      }
+      
       .toolbar {
         display: flex;
         align-items: center;
