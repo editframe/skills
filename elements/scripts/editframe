@@ -60,6 +60,12 @@ cleanup_editframe_dev() {
   fi
   
   if [ "$TAILWIND_CONFIG_CREATED" = true ]; then
+    # Restore PostCSS config if we backed it up
+    if [ -f "$ORIGINAL_CWD/postcss.config.cjs.editframe-backup" ]; then
+      mv "$ORIGINAL_CWD/postcss.config.cjs.editframe-backup" "$ORIGINAL_CWD/postcss.config.cjs"
+      echo "[cleanup] Restored postcss.config.cjs" >&2
+    fi
+    
     # Remove symlink if it exists (including broken symlinks)
     if [ -L "$ORIGINAL_CWD/tailwind.config.cjs" ] || [ -e "$ORIGINAL_CWD/tailwind.config.cjs" ]; then
       rm -f "$ORIGINAL_CWD/tailwind.config.cjs"
@@ -262,17 +268,19 @@ function mergeTheme(userTheme = {}) {
   };
 }
 
-module.exports = {
-  ...userConfig,
+const exportedConfig = {
   content: mergeContent(userConfig.content),
   theme: mergeTheme(userConfig.theme),
   plugins: userConfig.plugins || [],
-  // Preserve any other config properties
-  presets: userConfig.presets,
-  darkMode: userConfig.darkMode,
-  safelist: userConfig.safelist,
-  blocklist: userConfig.blocklist,
 };
+
+// Only include optional properties if they exist in user config
+if (userConfig.presets) exportedConfig.presets = userConfig.presets;
+if (userConfig.darkMode) exportedConfig.darkMode = userConfig.darkMode;
+if (userConfig.safelist) exportedConfig.safelist = userConfig.safelist;
+if (userConfig.blocklist) exportedConfig.blocklist = userConfig.blocklist;
+
+module.exports = exportedConfig;
 TW_CONFIG_EOF
         
         # Replace placeholders
@@ -287,6 +295,19 @@ TW_CONFIG_EOF
           # Create symlink with .cjs extension so PostCSS/Tailwind finds it
           # Use .cjs to ensure CommonJS in ES module projects
           ln -sf "$(basename "$TW_DEV_CONFIG")" "$ORIGINAL_CWD/tailwind.config.cjs"
+          
+          # Update PostCSS config to explicitly point to our Tailwind config
+          # This ensures Tailwind finds it even with Vite's caching
+          if [ -f "$ORIGINAL_CWD/postcss.config.cjs" ]; then
+            cp "$ORIGINAL_CWD/postcss.config.cjs" "$ORIGINAL_CWD/postcss.config.cjs.editframe-backup"
+            cat > "$ORIGINAL_CWD/postcss.config.cjs" << 'POSTCSS_EOF'
+module.exports = {
+  plugins: {
+    tailwindcss: { config: './tailwind.config.cjs' },
+  },
+};
+POSTCSS_EOF
+          fi
 
           TAILWIND_CONFIG_CREATED=true
         echo "✓ Created temporary Tailwind config with @editframe/elements scanning"

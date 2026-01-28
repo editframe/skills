@@ -60,7 +60,7 @@ const SERIALIZED_STYLE_PROPERTIES = [
   "verticalAlign",
   "transform", "transformOrigin", "transformStyle",
   "perspective", "perspectiveOrigin", "backfaceVisibility",
-  "cursor", "pointerEvents", "userSelect", "overflow",
+  "cursor", "pointerEvents", "userSelect", "overflow", "objectFit",
 ] as const;
 
 /**
