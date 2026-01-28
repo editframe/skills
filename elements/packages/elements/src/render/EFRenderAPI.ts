@@ -79,6 +79,73 @@ function setWorkbenchRendering(rendering: boolean): void {
   }
 }
 
+async function waitForTimegroupDimensions(timegroup: EFTimegroup): Promise<void> {
+  // Wait for all stylesheets to load first
+  console.log('[EFRenderAPI] Waiting for stylesheets to load...');
+  console.log(`[EFRenderAPI] Found ${document.styleSheets.length} stylesheets`);
+  
+  const styleLinks = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
+  console.log(`[EFRenderAPI] Found ${styleLinks.length} stylesheet <link> elements`);
+  styleLinks.forEach((link, i) => {
+    console.log(`[EFRenderAPI]   [${i}] ${(link as HTMLLinkElement).href} - loaded: ${!!(link as HTMLLinkElement).sheet}`);
+  });
+  
+  await Promise.all(
+    Array.from(document.styleSheets).map((sheet) => {
+      if (sheet.href) {
+        // Check if stylesheet is from a <link> tag and wait for it
+        const link = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).find(
+          (l) => (l as HTMLLinkElement).href === sheet.href
+        );
+        if (link && !(link as HTMLLinkElement).sheet) {
+          console.log(`[EFRenderAPI] Waiting for stylesheet: ${sheet.href}`);
+          return new Promise((resolve) => {
+            link.addEventListener('load', resolve);
+            link.addEventListener('error', resolve);
+          });
+        }
+      }
+      return Promise.resolve();
+    })
+  );
+  
+  // Wait longer for Vite HMR and Tailwind JIT to process
+  console.log('[EFRenderAPI] Waiting for Vite/Tailwind processing...');
+  await new Promise(resolve => setTimeout(resolve, 2000));
+  
+  console.log('[EFRenderAPI] Stylesheets loaded, waiting for timegroup dimensions...');
+  
+  // Wait for timegroup to have dimensions (CSS must be loaded and processed)
+  let attempts = 0;
+  while ((!timegroup.offsetWidth || !timegroup.offsetHeight) && attempts < 50) {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    void timegroup.offsetHeight; // Force layout
+    attempts++;
+    
+    if (attempts % 10 === 0) {
+      console.log(`[EFRenderAPI] Still waiting... computed: ${getComputedStyle(timegroup).width} x ${getComputedStyle(timegroup).height}`);
+    }
+  }
+  
+  if (!timegroup.offsetWidth || !timegroup.offsetHeight) {
+    // Dump more debug info
+    console.error('[EFRenderAPI] Timegroup element:', timegroup);
+    console.error('[EFRenderAPI] Timegroup classes:', timegroup.className);
+    console.error('[EFRenderAPI] Timegroup inline style:', timegroup.getAttribute('style'));
+    console.error('[EFRenderAPI] All computed styles:', getComputedStyle(timegroup));
+    
+    throw new Error(
+      `Timegroup has no dimensions after waiting (${timegroup.offsetWidth}x${timegroup.offsetHeight}). ` +
+      `Computed styles: width=${getComputedStyle(timegroup).width}, height=${getComputedStyle(timegroup).height}. ` +
+      `Classes: ${timegroup.className}. ` +
+      `Ensure Tailwind CSS or other stylesheets are loaded and the timegroup has explicit dimensions. ` +
+      `Try using inline styles: style="width: 1080px; height: 1920px;"`
+    );
+  }
+  
+  console.log(`[EFRenderAPI] Timegroup dimensions ready: ${timegroup.offsetWidth}x${timegroup.offsetHeight}`);
+}
+
 const api: IEFRenderAPI = {
   async renderStreaming(options: RenderToVideoOptions = {}): Promise<void> {
     const timegroup = findRootTimegroup();
@@ -98,52 +165,8 @@ const api: IEFRenderAPI = {
     setWorkbenchRendering(true);
 
     try {
-      // Wait for all stylesheets to load first
-      console.log('[EFRenderAPI] Waiting for stylesheets to load...');
-      await Promise.all(
-        Array.from(document.styleSheets).map((sheet) => {
-          if (sheet.href) {
-            // Check if stylesheet is from a <link> tag and wait for it
-            const link = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).find(
-              (l) => (l as HTMLLinkElement).href === sheet.href
-            );
-            if (link && !(link as HTMLLinkElement).sheet) {
-              return new Promise((resolve) => {
-                link.addEventListener('load', resolve);
-                link.addEventListener('error', resolve);
-              });
-            }
-          }
-          return Promise.resolve();
-        })
-      );
-      
-      // Additional wait for any pending stylesheets from Vite/dev server
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      console.log('[EFRenderAPI] Stylesheets loaded, waiting for timegroup dimensions...');
-      
-      // Wait for timegroup to have dimensions (CSS must be loaded and processed)
-      let attempts = 0;
-      while ((!timegroup.offsetWidth || !timegroup.offsetHeight) && attempts < 50) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        void timegroup.offsetHeight; // Force layout
-        attempts++;
-        
-        if (attempts % 10 === 0) {
-          console.log(`[EFRenderAPI] Still waiting... computed: ${getComputedStyle(timegroup).width} x ${getComputedStyle(timegroup).height}`);
-        }
-      }
-      
-      if (!timegroup.offsetWidth || !timegroup.offsetHeight) {
-        throw new Error(
-          `Timegroup has no dimensions after waiting (${timegroup.offsetWidth}x${timegroup.offsetHeight}). ` +
-          `Computed styles: width=${getComputedStyle(timegroup).width}, height=${getComputedStyle(timegroup).height}. ` +
-          `Ensure Tailwind CSS or other stylesheets are loaded and the timegroup has explicit dimensions.`
-        );
-      }
-      
-      console.log(`[EFRenderAPI] Timegroup dimensions ready: ${timegroup.offsetWidth}x${timegroup.offsetHeight}`);
+      // Wait for timegroup to have dimensions
+      await waitForTimegroupDimensions(timegroup);
       
       // Wait for media to be ready
       await timegroup.waitForMediaDurations();
@@ -184,52 +207,8 @@ const api: IEFRenderAPI = {
     setWorkbenchRendering(true);
 
     try {
-      // Wait for all stylesheets to load first
-      console.log('[EFRenderAPI] Waiting for stylesheets to load...');
-      await Promise.all(
-        Array.from(document.styleSheets).map((sheet) => {
-          if (sheet.href) {
-            // Check if stylesheet is from a <link> tag and wait for it
-            const link = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).find(
-              (l) => (l as HTMLLinkElement).href === sheet.href
-            );
-            if (link && !(link as HTMLLinkElement).sheet) {
-              return new Promise((resolve) => {
-                link.addEventListener('load', resolve);
-                link.addEventListener('error', resolve);
-              });
-            }
-          }
-          return Promise.resolve();
-        })
-      );
-      
-      // Additional wait for any pending stylesheets from Vite/dev server
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      console.log('[EFRenderAPI] Stylesheets loaded, waiting for timegroup dimensions...');
-      
-      // Wait for timegroup to have dimensions (CSS must be loaded and processed)
-      let attempts = 0;
-      while ((!timegroup.offsetWidth || !timegroup.offsetHeight) && attempts < 50) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        void timegroup.offsetHeight; // Force layout
-        attempts++;
-        
-        if (attempts % 10 === 0) {
-          console.log(`[EFRenderAPI] Still waiting... computed: ${getComputedStyle(timegroup).width} x ${getComputedStyle(timegroup).height}`);
-        }
-      }
-      
-      if (!timegroup.offsetWidth || !timegroup.offsetHeight) {
-        throw new Error(
-          `Timegroup has no dimensions after waiting (${timegroup.offsetWidth}x${timegroup.offsetHeight}). ` +
-          `Computed styles: width=${getComputedStyle(timegroup).width}, height=${getComputedStyle(timegroup).height}. ` +
-          `Ensure Tailwind CSS or other stylesheets are loaded and the timegroup has explicit dimensions.`
-        );
-      }
-      
-      console.log(`[EFRenderAPI] Timegroup dimensions ready: ${timegroup.offsetWidth}x${timegroup.offsetHeight}`);
+      // Wait for timegroup to have dimensions
+      await waitForTimegroupDimensions(timegroup);
       
       // Wait for media to be ready
       await timegroup.waitForMediaDurations();
