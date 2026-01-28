@@ -49,7 +49,8 @@ const SERIALIZED_STYLE_PROPERTIES = [
   "display", "visibility", "opacity",
   "position", "top", "right", "bottom", "left", "zIndex",
   "width", "height", "minWidth", "minHeight", "maxWidth", "maxHeight",
-  "flex", "flexFlow", "justifyContent", "alignItems", "alignContent", "alignSelf", "gap",
+  "flexGrow", "flexShrink", "flexBasis", "flexDirection", "flexWrap",
+  "justifyContent", "alignItems", "alignContent", "alignSelf", "gap",
   "gridTemplate", "gridColumn", "gridRow", "gridArea",
   "margin", "padding", "boxSizing",
   "border", "borderTop", "borderRight", "borderBottom", "borderLeft", "borderRadius",
@@ -109,7 +110,6 @@ function serializeComputedStyles(element: Element): string {
   const styleParts: string[] = [];
   const tagName = element.tagName;
   const isCaptionChild = CAPTION_CHILD_TAGS.has(tagName);
-  const isTextSegment = tagName === 'EF-TEXT-SEGMENT';
   
   for (const prop of SERIALIZED_STYLE_PROPERTIES) {
     const value = styles[prop as any];
@@ -125,11 +125,6 @@ function serializeComputedStyles(element: Element): string {
       // visibility is handled separately, not by CSS display
       if (value === 'none' && !isCaptionChild) {
         finalValue = 'block';
-      }
-      // For text segments, use inline instead of inline-block to better preserve whitespace
-      // inline-block can cause whitespace-only segments to not render correctly in foreignObject
-      else if (value === 'inline-block' && isTextSegment) {
-        finalValue = 'inline';
       }
     }
     
@@ -388,11 +383,9 @@ function serializeElement(
       return;
     }
     
-    // Serialize custom element as a span/div with its styles, then shadow DOM content inside
-    // Use span for inline elements (ef-text-segment) to better preserve whitespace
-    const tagName = element.tagName;
-    const isTextSegment = tagName === 'EF-TEXT-SEGMENT';
-    const containerTag = isTextSegment ? 'span' : 'div';
+    // Serialize custom element as a div with its styles, then shadow DOM content inside
+    // Always use div to ensure consistent rendering of display properties
+    const containerTag = 'div';
     
     const styleStr = serializeComputedStyles(element);
     parts.push(`<${containerTag}`);
