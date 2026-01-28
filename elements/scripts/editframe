@@ -61,10 +61,14 @@ cleanup_editframe_dev() {
   
   if [ "$TAILWIND_CONFIG_CREATED" = true ]; then
     # Remove symlink if it exists (including broken symlinks)
-    if [ -L "$ORIGINAL_CWD/tailwind.config.cjs" ] || [ -e "$ORIGINAL_CWD/tailwind.config.cjs" ]; then
-      rm -f "$ORIGINAL_CWD/tailwind.config.cjs"
-      echo "[cleanup] Removed tailwind.config.cjs symlink" >&2
-    fi
+    # Check all possible Tailwind config names since we don't know which one was created
+    for tw_name in tailwind.config.js tailwind.config.ts tailwind.config.mjs tailwind.config.cjs; do
+      if [ -L "$ORIGINAL_CWD/$tw_name" ] || [ -e "$ORIGINAL_CWD/$tw_name" ]; then
+        rm -f "$ORIGINAL_CWD/$tw_name"
+        echo "[cleanup] Removed $tw_name symlink" >&2
+        break
+      fi
+    done
 
     # Remove our temporary Tailwind config
     local our_tw_config="$ORIGINAL_CWD/tailwind.config.editframe-dev.cjs"
@@ -259,9 +263,8 @@ module.exports = {
 };
 TW_CONFIG_EOF
         
-          # Create symlink with .cjs extension so PostCSS/Tailwind finds it
-          # Use .cjs to ensure CommonJS in ES module projects
-          ln -sf "$(basename "$TW_DEV_CONFIG")" "$ORIGINAL_CWD/tailwind.config.cjs"
+          # Create symlink with same name as original config so PostCSS/Tailwind finds it
+          ln -sf "$(basename "$TW_DEV_CONFIG")" "$ORIGINAL_CWD/$USER_TAILWIND_CONFIG"
 
           TAILWIND_CONFIG_CREATED=true
         echo "✓ Created temporary Tailwind config with @editframe/elements scanning"
