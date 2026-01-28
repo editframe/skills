@@ -330,10 +330,16 @@ function serializeElement(
     return;
   }
   
-  // Check visibility via computed styles (timegroup sets display:none on hidden elements)
+  // Check temporal visibility - skip elements outside their time bounds
+  // This is non-destructive (doesn't modify DOM)
+  if (!isTemporallyVisible(element, options.timeMs)) {
+    return;
+  }
+  
+  // Check CSS visibility (but NOT display:none since temporal elements may have that set)
   if (element instanceof HTMLElement) {
     const styles = getComputedStyle(element);
-    if (styles.display === 'none' || styles.visibility === 'hidden') {
+    if (styles.visibility === 'hidden') {
       return;
     }
   }
@@ -443,37 +449,15 @@ function serializeElement(
 }
 
 /**
- * Apply temporal visibility to timeline before serialization.
- * Walks the DOM and sets/clears display:none on elements based on temporal bounds.
- * Must handle both hiding AND showing since clone may be reused across frames.
+ * Check if an element is temporally visible at the given time.
+ * Returns false if the element or any ancestor is outside its temporal bounds.
  */
-function applyTemporalVisibility(element: Element, timeMs: number): number {
-  let hiddenCount = 0;
-  
-  // Check if this element should be visible
-  const isVisible = isVisibleAtTime(element, timeMs);
-  
-  if (element instanceof HTMLElement) {
-    if (!isVisible) {
-      // Hide this element and skip its children
-      element.style.display = 'none';
-      hiddenCount++;
-      return hiddenCount;
-    } else {
-      // Ensure element is visible (may have been hidden in previous frame)
-      // Clear inline display style to restore original display value
-      if (element.style.display === 'none') {
-        element.style.display = '';
-      }
-    }
+function isTemporallyVisible(element: Element, timeMs: number): boolean {
+  // Check this element's temporal bounds
+  if (!isVisibleAtTime(element, timeMs)) {
+    return false;
   }
-  
-  // Element is visible, recurse to children
-  for (const child of element.children) {
-    hiddenCount += applyTemporalVisibility(child, timeMs);
-  }
-  
-  return hiddenCount;
+  return true;
 }
 
 /**
@@ -491,8 +475,8 @@ export async function serializeTimelineToXHTML(
   height: number,
   options: SerializationOptions
 ): Promise<string> {
-  // Apply temporal visibility before serialization
-  applyTemporalVisibility(timeline, options.timeMs);
+  // Note: Temporal visibility is checked non-destructively during serialization
+  // We do NOT modify the source DOM - this allows serializing the main timeline safely
   
   const parts: Array<string | Promise<string>> = [];
   const canvasJobs: CanvasJob[] = [];
