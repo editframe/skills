@@ -414,6 +414,10 @@ export async function renderTimegroupToVideo(
     console.log(`[renderTimegroupToVideo] Using direct timeline serialization (no passive structure)`);
     // For direct serialization, attach renderClone to container
     previewContainer.appendChild(renderClone);
+    // CRITICAL: Add ef-render-clone-container class so isRenderClone() returns true
+    // This affects animation tracking - without it, the animation system treats the clone
+    // as the prime timeline, which causes incorrect behavior
+    previewContainer.classList.add('ef-render-clone-container');
     // CRITICAL: Attach container to document so getComputedStyle returns actual values
     // Without this, all computed styles are empty strings!
     // Hide the container OFF-SCREEN but do NOT use visibility:hidden because:
