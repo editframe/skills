@@ -416,10 +416,12 @@ export async function renderTimegroupToVideo(
     previewContainer.appendChild(renderClone);
     // CRITICAL: Attach container to document so getComputedStyle returns actual values
     // Without this, all computed styles are empty strings!
+    // Hide the container so it's not visible during export
+    previewContainer.style.cssText += ';position:fixed;left:-99999px;top:-99999px;visibility:hidden;pointer-events:none;';
     document.body.appendChild(previewContainer);
     // Force layout/reflow so getComputedStyle returns correct values
     void renderClone.offsetHeight;
-    console.log(`[renderTimegroupToVideo] Attached previewContainer to document.body for style computation`);
+    console.log(`[renderTimegroupToVideo] Attached previewContainer to document.body (hidden) for style computation`);
   } else {
     // Inject document styles once (cached for all frames)
     const styleEl = document.createElement("style");
