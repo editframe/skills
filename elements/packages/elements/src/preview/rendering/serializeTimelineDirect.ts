@@ -433,9 +433,16 @@ function serializeElement(
     for (const child of element.shadowRoot.childNodes) {
       if (child.nodeType === Node.TEXT_NODE) {
         const text = child.textContent;
-        // Preserve ALL text content exactly as-is, let CSS white-space properties handle rendering
         if (text) {
-          parts.push(escapeXML(text));
+          // For whitespace-only content, use non-breaking spaces to prevent collapse in foreignObject
+          // Regular spaces can be collapsed even with white-space:pre in SVG/XML context
+          if (hasWhitespaceContent && /^\s+$/.test(text)) {
+            // Replace spaces with non-breaking space entity
+            const nbspText = text.replace(/ /g, '&#160;');
+            parts.push(nbspText);
+          } else {
+            parts.push(escapeXML(text));
+          }
         }
       } else if (child.nodeType === Node.ELEMENT_NODE) {
         // Pass this element as slotHost so nested SLOTs can access light DOM children
