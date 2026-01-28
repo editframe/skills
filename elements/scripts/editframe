@@ -209,12 +209,17 @@ VITE_CONFIG_EOF
           
           USER_TAILWIND_CONFIG="$tw_config"
           # Backup and move user's Tailwind config
-          mv "$ORIGINAL_CWD/$tw_config" "$ORIGINAL_CWD/$tw_config.editframe-backup"
-          echo "   Temporarily moved $tw_config"
+          echo "   Moving $tw_config to backup..." >&2
+          mv "$ORIGINAL_CWD/$tw_config" "$ORIGINAL_CWD/$tw_config.editframe-backup" || {
+            echo "   ERROR: Failed to move $tw_config" >&2
+            exit 1
+          }
+          echo "   ✓ Moved $tw_config -> $tw_config.editframe-backup" >&2
+          ls -la "$ORIGINAL_CWD"/tailwind.config* >&2
         
-          # Create temporary Tailwind config with same extension as user's original
-          # This ensures Tailwind/PostCSS finds it correctly
-          TW_DEV_CONFIG="$ORIGINAL_CWD/tailwind.config.editframe-dev${tw_config#tailwind.config}"
+          # Create temporary Tailwind config with .cjs extension
+          # Use .cjs to ensure CommonJS in projects with "type": "module"
+          TW_DEV_CONFIG="$ORIGINAL_CWD/tailwind.config.editframe-dev.cjs"
         
         # Read the user's original config to extract content paths
         echo "" >&2
