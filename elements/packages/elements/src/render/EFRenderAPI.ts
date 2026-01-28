@@ -98,12 +98,41 @@ const api: IEFRenderAPI = {
     setWorkbenchRendering(true);
 
     try {
+      // Wait for all stylesheets to load first
+      console.log('[EFRenderAPI] Waiting for stylesheets to load...');
+      await Promise.all(
+        Array.from(document.styleSheets).map((sheet) => {
+          if (sheet.href) {
+            // Check if stylesheet is from a <link> tag and wait for it
+            const link = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).find(
+              (l) => (l as HTMLLinkElement).href === sheet.href
+            );
+            if (link && !(link as HTMLLinkElement).sheet) {
+              return new Promise((resolve) => {
+                link.addEventListener('load', resolve);
+                link.addEventListener('error', resolve);
+              });
+            }
+          }
+          return Promise.resolve();
+        })
+      );
+      
+      // Additional wait for any pending stylesheets from Vite/dev server
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      console.log('[EFRenderAPI] Stylesheets loaded, waiting for timegroup dimensions...');
+      
       // Wait for timegroup to have dimensions (CSS must be loaded and processed)
       let attempts = 0;
       while ((!timegroup.offsetWidth || !timegroup.offsetHeight) && attempts < 50) {
         await new Promise(resolve => setTimeout(resolve, 100));
         void timegroup.offsetHeight; // Force layout
         attempts++;
+        
+        if (attempts % 10 === 0) {
+          console.log(`[EFRenderAPI] Still waiting... computed: ${getComputedStyle(timegroup).width} x ${getComputedStyle(timegroup).height}`);
+        }
       }
       
       if (!timegroup.offsetWidth || !timegroup.offsetHeight) {
@@ -155,12 +184,41 @@ const api: IEFRenderAPI = {
     setWorkbenchRendering(true);
 
     try {
+      // Wait for all stylesheets to load first
+      console.log('[EFRenderAPI] Waiting for stylesheets to load...');
+      await Promise.all(
+        Array.from(document.styleSheets).map((sheet) => {
+          if (sheet.href) {
+            // Check if stylesheet is from a <link> tag and wait for it
+            const link = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).find(
+              (l) => (l as HTMLLinkElement).href === sheet.href
+            );
+            if (link && !(link as HTMLLinkElement).sheet) {
+              return new Promise((resolve) => {
+                link.addEventListener('load', resolve);
+                link.addEventListener('error', resolve);
+              });
+            }
+          }
+          return Promise.resolve();
+        })
+      );
+      
+      // Additional wait for any pending stylesheets from Vite/dev server
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      console.log('[EFRenderAPI] Stylesheets loaded, waiting for timegroup dimensions...');
+      
       // Wait for timegroup to have dimensions (CSS must be loaded and processed)
       let attempts = 0;
       while ((!timegroup.offsetWidth || !timegroup.offsetHeight) && attempts < 50) {
         await new Promise(resolve => setTimeout(resolve, 100));
         void timegroup.offsetHeight; // Force layout
         attempts++;
+        
+        if (attempts % 10 === 0) {
+          console.log(`[EFRenderAPI] Still waiting... computed: ${getComputedStyle(timegroup).width} x ${getComputedStyle(timegroup).height}`);
+        }
       }
       
       if (!timegroup.offsetWidth || !timegroup.offsetHeight) {
