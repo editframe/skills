@@ -395,6 +395,24 @@ function serializeElement(
     const isInline = computedDisplay === 'inline' || computedDisplay === 'inline-block' || computedDisplay === 'inline-flex';
     const containerTag = isInline ? 'span' : 'div';
     
+    if (tagName === 'EF-TEXT') {
+      console.log(`[serializeElement] EF-TEXT:`, {
+        display: computedDisplay,
+        containerTag,
+        childElementCount: element.childElementCount,
+        lightDOMChildren: Array.from(element.childNodes).map(n => ({
+          type: n.nodeType,
+          tag: (n as any).tagName,
+          text: n.textContent?.substring(0, 50)
+        })),
+        shadowChildren: Array.from(element.shadowRoot?.childNodes || []).map(n => ({
+          type: n.nodeType,
+          tag: (n as any).tagName,
+          text: n.textContent?.substring(0, 50)
+        }))
+      });
+    }
+    
     let styleStr = serializeComputedStyles(element);
     
     // Special handling for text segments with whitespace-only content
@@ -402,6 +420,15 @@ function serializeElement(
     let hasWhitespaceContent = false;
     if (tagName === 'EF-TEXT-SEGMENT') {
       const shadowContent = element.shadowRoot?.textContent || '';
+      const segmentTextProp = (element as any).segmentText;
+      console.log(`[serializeElement] EF-TEXT-SEGMENT:`, {
+        shadowContent: JSON.stringify(shadowContent),
+        shadowContentLength: shadowContent.length,
+        segmentTextProp: JSON.stringify(segmentTextProp),
+        isWhitespace: /^\s+$/.test(shadowContent),
+        shadowRoot: !!element.shadowRoot,
+        shadowChildNodes: element.shadowRoot?.childNodes.length
+      });
       if (shadowContent && /^\s+$/.test(shadowContent)) {
         hasWhitespaceContent = true;
         // Whitespace-only segment - ensure it doesn't collapse
