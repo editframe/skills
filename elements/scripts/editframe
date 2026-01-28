@@ -241,9 +241,16 @@ function mergeContent(userContent) {
   const contentArray = Array.isArray(userContent) ? userContent : 
                        userContent?.files || [];
   
+  // If user has no content configured, add sensible defaults for their project
+  const defaultContent = contentArray.length === 0 ? [
+    './index.html',
+    './src/**/*.{js,ts,jsx,tsx,html}',
+  ] : [];
+  
   return [
-    // User's original content paths
+    // User's original content paths (or defaults if empty)
     ...contentArray,
+    ...defaultContent,
     // Add @editframe/elements dist files so Tailwind scans workbench classes
     // Be specific to avoid performance issues
     path.join(monorepoElementsDist, 'index.js'),
