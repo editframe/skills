@@ -5,9 +5,10 @@ import { program } from "commander";
 import debug from "debug";
 import ora from "ora";
 import { launchBrowserAndWaitForSDK } from "../utils/launchBrowserAndWaitForSDK.js";
-import { PreviewServer } from "../utils/startPreviewServer.js";
+import { spawnViteServer, type SpawnedViteServer } from "../utils/spawnViteServer.js";
 import { StreamTargetChunk } from "mediabunny";
 import { withProfiling } from "../utils/profileRender.js";
+import { withSpinner } from "../utils/withSpinner.js";
 
 const log = debug("ef:cli:render");
 
@@ -66,18 +67,22 @@ program
 
     // Determine URL to render
     let renderUrl: string;
-    let previewServer: PreviewServer | null = null;
+    let viteServer: SpawnedViteServer | null = null;
 
     if (options.url) {
       // Use provided URL directly
       renderUrl = options.url;
       log("Using provided URL:", renderUrl);
     } else {
-      // Start preview server for directory
+      // Spawn Vite dev server as subprocess
+      // This allows Vite to run with full config resolution (including Tailwind)
+      // while we maintain Playwright control for rendering
       const srcDir = path.resolve(baseCwd, directory);
-      previewServer = await PreviewServer.start(srcDir);
-      renderUrl = previewServer.url;
-      log("Preview server started at:", renderUrl);
+      viteServer = await withSpinner("Starting vite...", () =>
+        spawnViteServer(srcDir),
+      );
+      renderUrl = viteServer.url;
+      log("Vite server spawned at:", renderUrl);
     }
 
     // Launch browser and render
@@ -195,6 +200,12 @@ program
         );
       },
     );
+
+    // Clean up spawned Vite process
+    if (viteServer) {
+      viteServer.kill();
+      log("Vite server stopped");
+    }
 
     process.stderr.write(`\nRender complete: ${outputPath}\n`);
   });
