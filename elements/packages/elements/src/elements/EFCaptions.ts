@@ -48,23 +48,16 @@ export class EFCaptionsActiveWord extends HTMLElement {
   #wordText = "";
   #wordIndex = 0;
   
-  constructor() {
-    super();
-    // Apply default styles via inline style
-    this.style.display = "inline-block";
-    this.style.whiteSpace = "normal";
-    this.style.lineHeight = "1";
-  }
-  
   set wordText(text: string) {
     this.#wordText = text;
     // Hide element if no content or only stop words
     if (!text || stopWords.has(text)) {
-      this.style.display = "none";
+      this.hidden = true;
       this.textContent = "";
     } else {
-      this.style.display = "inline-block";
-      this.textContent = text;
+      this.hidden = false;
+      // Add trailing space to maintain consistent spacing with surrounding words
+      this.textContent = text + " ";
     }
   }
   
@@ -93,22 +86,14 @@ export class EFCaptionsActiveWord extends HTMLElement {
 export class EFCaptionsSegment extends HTMLElement {
   #segmentText = "";
   
-  constructor() {
-    super();
-    // Apply default styles via inline style
-    this.style.display = "inline-block";
-    this.style.whiteSpace = "normal";
-    this.style.lineHeight = "1";
-  }
-  
   set segmentText(text: string) {
     this.#segmentText = text;
     // Hide element if no content or only stop words
     if (!text || stopWords.has(text)) {
-      this.style.display = "none";
+      this.hidden = true;
       this.textContent = "";
     } else {
-      this.style.display = "inline-block";
+      this.hidden = false;
       this.textContent = text;
     }
   }
@@ -124,12 +109,6 @@ export class EFCaptionsSegment extends HTMLElement {
  */
 @customElement("ef-captions-before-active-word")
 export class EFCaptionsBeforeActiveWord extends EFCaptionsSegment {
-  constructor() {
-    super();
-    // Override whiteSpace to preserve spacing
-    this.style.whiteSpace = "pre";
-  }
-  
   set segmentText(text: string) {
     // Check if there's an active word by looking for sibling active word element
     const activeWord = this.closest("ef-captions")?.querySelector(
@@ -142,10 +121,10 @@ export class EFCaptionsBeforeActiveWord extends EFCaptionsSegment {
     
     // Hide element if no content or only stop words
     if (!finalText || stopWords.has(finalText)) {
-      this.style.display = "none";
+      this.hidden = true;
       this.textContent = "";
     } else {
-      this.style.display = "inline-block";
+      this.hidden = false;
       this.textContent = finalText;
     }
   }
@@ -157,22 +136,16 @@ export class EFCaptionsBeforeActiveWord extends EFCaptionsSegment {
  */
 @customElement("ef-captions-after-active-word")
 export class EFCaptionsAfterActiveWord extends EFCaptionsSegment {
-  constructor() {
-    super();
-    // Override whiteSpace to preserve spacing
-    this.style.whiteSpace = "pre";
-  }
-  
   set segmentText(text: string) {
-    // Add leading space if there's text
-    const finalText = text ? " " + text : text;
+    // No leading space - active word will add trailing space
+    const finalText = text;
     
     // Hide element if no content or only stop words
     if (!finalText || stopWords.has(finalText)) {
-      this.style.display = "none";
+      this.hidden = true;
       this.textContent = "";
     } else {
-      this.style.display = "inline-block";
+      this.hidden = false;
       this.textContent = finalText;
     }
   }
@@ -186,13 +159,13 @@ export class EFCaptions extends EFSourceMixin(
   static styles = [
     css`
       :host {
-        display: inline-flex;
+        display: block;
         white-space: normal;
         line-height: 1;
         gap: 0;
       }
       ::slotted(*) {
-        display: inline-block;
+        display: inline;
         margin: 0;
         padding: 0;
       }

@@ -4,3 +4,36 @@
 @tailwind components;
 /* biome-ignore lint/suspicious/noUnknownAtRules: @tailwind is a valid Tailwind CSS directive */
 @tailwind utilities;
+
+/* Caption element styles - default behavior is block container with inline text flow */
+ef-captions {
+  display: block;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  line-height: inherit;
+}
+
+/* Child elements are transparent to layout - text flows as if they don't exist */
+ef-captions-segment,
+ef-captions-before-active-word,
+ef-captions-active-word,
+ef-captions-after-active-word {
+  display: inline;
+  white-space: normal;
+  word-wrap: inherit;
+  overflow-wrap: inherit;
+  line-height: inherit;
+  /* Remove any default spacing that might interfere with text flow */
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* Hidden state */
+ef-captions-segment[hidden],
+ef-captions-before-active-word[hidden],
+ef-captions-active-word[hidden],
+ef-captions-after-active-word[hidden] {
+  display: none;
+}
