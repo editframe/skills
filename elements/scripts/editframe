@@ -208,23 +208,36 @@ VITE_CONFIG_EOF
           mv "$ORIGINAL_CWD/$tw_config" "$ORIGINAL_CWD/$tw_config.editframe-backup"
           echo "   Temporarily moved $tw_config"
         
-          # Create temporary Tailwind config that extends theirs
-          # Use .cjs extension to ensure it's treated as CommonJS even if package.json has "type": "module"
-          TW_DEV_CONFIG="$ORIGINAL_CWD/tailwind.config.editframe-dev.cjs"
+          # Create temporary Tailwind config with same extension as user's original
+          # This ensures Tailwind/PostCSS finds it correctly
+          TW_DEV_CONFIG="$ORIGINAL_CWD/tailwind.config.editframe-dev${tw_config#tailwind.config}"
         
         # Read the user's original config to extract content paths
+        echo "" >&2
+        echo "   Extracting Tailwind content paths from $tw_config..." >&2
+        
+        # Change to the project directory for the require to work
+        cd "$ORIGINAL_CWD"
         USER_CONTENT_JSON=$(node -e "
+          const path = require('path');
+          const backupFile = './$USER_TAILWIND_CONFIG.editframe-backup';
+          console.error('[editframe] Loading:', backupFile);
           try {
-            const config = require('./$USER_TAILWIND_CONFIG.editframe-backup');
+            const config = require(backupFile);
             const userConfig = config.default || config;
             const resolvedConfig = typeof userConfig === 'function' ? userConfig({ mode: 'jit' }) : userConfig;
-            console.log(JSON.stringify(resolvedConfig.content || []));
+            const content = resolvedConfig.content || [];
+            console.error('[editframe] Extracted', content.length, 'content paths');
+            console.log(JSON.stringify(content));
           } catch (e) {
+            console.error('[editframe] Error:', e.message);
             console.log('[]');
           }
-        " 2>/dev/null || echo '[]')
+        " 2>&1 | tee /dev/stderr | tail -1)
+        cd "$ELEMENTS_ROOT"
         
-        echo "   User Tailwind content paths: $USER_CONTENT_JSON" >&2
+        echo "   ✓ Content paths: $USER_CONTENT_JSON" >&2
+        echo "" >&2
 
         cat > "$TW_DEV_CONFIG" << TW_CONFIG_EOF
 // ============================================================================
