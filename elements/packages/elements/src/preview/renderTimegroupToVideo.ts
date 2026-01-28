@@ -429,16 +429,6 @@ export async function renderTimegroupToVideo(
     // Force layout/reflow so getComputedStyle returns correct values
     void renderClone.offsetHeight;
     console.log(`[renderTimegroupToVideo] Attached previewContainer to document.body (off-screen) for style computation`);
-    
-    // CRITICAL: Remove PlaybackController that was created when clone was attached to document
-    // Attaching to document.body causes Lit Context to update, making the clone a "root"
-    // which triggers didBecomeRoot() and creates a PlaybackController.
-    // We must remove it AFTER attachment so seekForRender sets #currentTime directly.
-    if (renderClone.playbackController) {
-      console.log(`[renderTimegroupToVideo] Removing PlaybackController from render clone after DOM attachment`);
-      renderClone.playbackController.remove();
-      renderClone.playbackController = undefined;
-    }
   } else {
     // Inject document styles once (cached for all frames)
     const styleEl = document.createElement("style");

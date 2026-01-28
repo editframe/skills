@@ -1127,6 +1127,12 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
     })();
 
     didBecomeRoot() {
+      // Never create PlaybackController for render clones
+      // Render clones need direct time control via seekForRender
+      if ((this as any).closest?.('.ef-render-clone-container')) {
+        return;
+      }
+      
       if (!this.playbackController) {
         this.playbackController = new PlaybackController(this as any);
         if (this.#loop) {
