@@ -117,6 +117,8 @@ interface ResolvedConfig {
   startMs: number;
   endMs: number;
   renderDurationMs: number;
+  width: number;
+  height: number;
   videoWidth: number;
   videoHeight: number;
   totalFrames: number;
@@ -186,6 +188,8 @@ function resolveConfig(
     startMs,
     endMs,
     renderDurationMs,
+    width,
+    height,
     videoWidth,
     videoHeight,
     totalFrames,
@@ -525,7 +529,7 @@ export async function renderTimegroupToVideo(
           if (useDirectSerialization) {
             // Direct serialization: serialize timeline to data URI in one pass
             const syncStart = performance.now();
-            const dataUri = await serializeTimelineToDataUri(renderClone, width, height, {
+            const dataUri = await serializeTimelineToDataUri(renderClone, config.width, config.height, {
               renderContext,
               canvasScale: config.scale,
               timeMs: renderTimeMs,
