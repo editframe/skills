@@ -54,8 +54,10 @@ const SERIALIZED_STYLE_PROPERTIES = [
   "margin", "padding", "boxSizing",
   "border", "borderTop", "borderRight", "borderBottom", "borderLeft", "borderRadius",
   "background", "color", "boxShadow", "filter", "backdropFilter", "clipPath",
-  "font", "textAlign", "textDecoration", "textTransform",
-  "letterSpacing", "whiteSpace", "textOverflow", "lineHeight",
+  "fontFamily", "fontSize", "fontWeight", "fontStyle", "fontVariant",
+  "textAlign", "textDecoration", "textTransform",
+  "letterSpacing", "wordSpacing", "whiteSpace", "textOverflow", "lineHeight",
+  "verticalAlign",
   "transform", "transformOrigin", "transformStyle",
   "perspective", "perspectiveOrigin", "backfaceVisibility",
   "cursor", "pointerEvents", "userSelect", "overflow",
@@ -110,8 +112,8 @@ function serializeComputedStyles(element: Element): string {
   
   for (const prop of SERIALIZED_STYLE_PROPERTIES) {
     const value = styles[prop as any];
-    // Skip empty, initial, or inherit values - we only want actual computed values
-    if (!value || value === '' || value === 'initial' || value === 'inherit') {
+    // Skip only truly empty values
+    if (!value || value === '') {
       continue;
     }
     
