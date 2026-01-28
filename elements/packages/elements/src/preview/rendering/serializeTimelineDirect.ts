@@ -276,7 +276,25 @@ function serializeElement(
       return;
     }
     
-    // Serialize shadow DOM content (text, elements, etc.)
+    // Serialize custom element as a div with its styles, then shadow DOM content inside
+    // This preserves positioning, layout, fonts, etc. from the custom element
+    const styleStr = serializeComputedStyles(element);
+    parts.push(`<div`);
+    
+    // Copy data attributes and class from custom element
+    for (const attr of element.attributes) {
+      const name = attr.name.toLowerCase();
+      if (name === 'class' || name.startsWith('data-')) {
+        parts.push(` ${attr.name}="${escapeXML(attr.value)}"`);
+      }
+    }
+    
+    if (styleStr) {
+      parts.push(` style="${escapeXML(styleStr)}"`);
+    }
+    parts.push('>');
+    
+    // Serialize shadow DOM content
     for (const child of element.shadowRoot.childNodes) {
       if (child.nodeType === Node.TEXT_NODE) {
         const text = child.textContent?.trim();
@@ -302,6 +320,8 @@ function serializeElement(
         }
       }
     }
+    
+    parts.push('</div>');
     return;
   }
   
