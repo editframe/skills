@@ -48,6 +48,14 @@ cleanup_editframe_dev() {
   debug_log ""
   debug_log "[cleanup] Cleaning up temporary files..."
   
+  if [ "$PACKAGE_JSON_MODIFIED" = true ]; then
+    # Restore package.json
+    if [ -f "$ORIGINAL_CWD/package.json.editframe-backup" ]; then
+      mv "$ORIGINAL_CWD/package.json.editframe-backup" "$ORIGINAL_CWD/package.json"
+      debug_log "[cleanup] Restored package.json"
+    fi
+  fi
+  
   if [ "$VITE_CONFIG_CREATED" = true ]; then
     # Remove our temporary config
     local our_config="$ORIGINAL_CWD/vite.config.js"
@@ -107,6 +115,7 @@ cleanup_editframe_dev() {
 
 # Variable to track if we need cleanup
 NEEDS_CLEANUP=false
+PACKAGE_JSON_MODIFIED=false
 VITE_CONFIG_CREATED=false
 TAILWIND_CONFIG_CREATED=false
 
@@ -115,10 +124,52 @@ if [ "$RUNNING_EXTERNAL" = true ] && [ -f "$ORIGINAL_CWD/package.json" ]; then
   # Check if package.json has @editframe dependencies
   if grep -q '"@editframe/' "$ORIGINAL_CWD/package.json"; then
     debug_log "📦 Detected external project with @editframe dependencies"
-    debug_log "   Configuring Vite to use monorepo source files..."
+    debug_log "   Configuring to use monorepo source files..."
     debug_log ""
     
     NEEDS_CLEANUP=true
+    
+    # Rewrite package.json to use file: protocol for @editframe dependencies
+    debug_log "   Rewriting package.json dependencies to file: protocol..."
+    cp "$ORIGINAL_CWD/package.json" "$ORIGINAL_CWD/package.json.editframe-backup"
+    
+    # Use node to safely rewrite the package.json
+    node -e "
+      const fs = require('fs');
+      const path = require('path');
+      const pkgPath = '$ORIGINAL_CWD/package.json';
+      const packagesDir = '$PACKAGES_DIR';
+      
+      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+      let modified = false;
+      
+      // Helper to rewrite @editframe dependencies
+      function rewriteDeps(deps) {
+        if (!deps) return;
+        for (const [name, version] of Object.entries(deps)) {
+          if (name.startsWith('@editframe/')) {
+            const pkgName = name.replace('@editframe/', '');
+            const pkgPath = path.join(packagesDir, pkgName);
+            // Check if package exists in monorepo
+            if (fs.existsSync(path.join(pkgPath, 'package.json'))) {
+              deps[name] = 'file:' + pkgPath;
+              modified = true;
+            }
+          }
+        }
+      }
+      
+      rewriteDeps(pkg.dependencies);
+      rewriteDeps(pkg.devDependencies);
+      rewriteDeps(pkg.peerDependencies);
+      
+      if (modified) {
+        fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+        console.error('   ✓ Rewrote @editframe/* dependencies to file: protocol');
+      }
+    " 2>&1
+    
+    PACKAGE_JSON_MODIFIED=true
     
       # Find and backup/rename user's existing Vite config
       USER_VITE_CONFIG=""
