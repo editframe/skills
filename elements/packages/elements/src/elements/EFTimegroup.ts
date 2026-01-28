@@ -539,11 +539,19 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
   set initializer(fn: TimegroupInitializer | undefined) {
     this.#initializer = fn;
     
+    console.log('[initializer setter]', {
+      hasFn: !!fn,
+      isConnected: this.isConnected,
+      initializerHasRun: this.#initializerHasRun,
+      willSchedule: !!(fn && this.isConnected && !this.#initializerHasRun)
+    });
+    
     // If element is already connected and initializer hasn't run, run it now
     // This handles the case where initializer is set after connectedCallback
     if (fn && this.isConnected && !this.#initializerHasRun) {
       // Create promise that resolves when initializer completes
       this.#initializerComplete = this.updateComplete.then(() => {
+        console.log('[initializer setter] Running initializer now');
         this.#runInitializer();
       });
     }
@@ -1592,9 +1600,18 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     // 3a. Set initializer AFTER clone is connected to DOM and upgraded
     // The initializer setter only schedules execution if this.isConnected is true
     // Setting it before connection would skip the automatic scheduling
+    console.log('[createRenderClone] Checking initializer:', {
+      hasInitializer: !!this.initializer,
+      cloneIsConnected: cloneEl.isConnected,
+      cloneInDocument: document.body.contains(cloneEl)
+    });
+    
     if (this.initializer) {
       console.log('[createRenderClone] Setting initializer on connected clone');
       cloneEl.initializer = this.initializer;
+      console.log('[createRenderClone] After setting, initializerComplete exists:', !!cloneEl.initializerComplete);
+    } else {
+      console.log('[createRenderClone] Original has no initializer to copy');
     }
     
     // 3b. Wait for initializer to complete
