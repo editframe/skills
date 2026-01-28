@@ -544,9 +544,10 @@ export async function serializeTimelineToDataUri(
   const xhtml = await serializeTimelineToXHTML(timeline, width, height, options);
   
   // Wrap in SVG foreignObject
+  // Use explicit pixel dimensions for foreignObject to match SVG viewport exactly
   const svg = 
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">` +
-    `<foreignObject width="100%" height="100%">${xhtml}</foreignObject>` +
+    `<foreignObject x="0" y="0" width="${width}" height="${height}">${xhtml}</foreignObject>` +
     `</svg>`;
   
   // Encode to base64 data URI
