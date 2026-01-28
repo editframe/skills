@@ -135,9 +135,11 @@ function serializeComputedStyles(element: Element): string {
       if (tagName === 'EF-TEXT-SEGMENT') {
         // EFTextSegment has :host { display: inline-block }
         finalValue = 'inline-block';
+        console.log(`[serializeComputedStyles] EF-TEXT-SEGMENT: forcing display from '${value}' to '${finalValue}'`);
       } else if (tagName === 'EF-TEXT') {
         // EFText has :host { display: inline-flex }
         finalValue = 'inline-flex';
+        console.log(`[serializeComputedStyles] EF-TEXT: forcing display from '${value}' to '${finalValue}'`);
       }
       // For non-caption elements, convert display:none to block since temporal
       // visibility is handled separately, not by CSS display
@@ -447,17 +449,19 @@ function serializeElement(
         segmentTextProp: JSON.stringify(segmentTextProp),
         isWhitespace: /^\s+$/.test(shadowContent),
         shadowRoot: !!element.shadowRoot,
-        shadowChildNodes: element.shadowRoot?.childNodes.length
+        shadowChildNodes: element.shadowRoot?.childNodes.length,
+        styleStr: styleStr.substring(0, 200) + '...'
       });
       if (shadowContent && /^\s+$/.test(shadowContent)) {
         hasWhitespaceContent = true;
         // Whitespace-only segment - ensure it doesn't collapse
         const styleParts = styleStr ? styleStr.split(';').filter(s => s.trim()) : [];
-        // Prevent flex shrinking and set minimum width based on font size
-        if (!styleParts.some(s => s.includes('flex-shrink'))) {
-          styleParts.push('flex-shrink:0');
-        }
-        styleStr = styleParts.join(';');
+        // Replace flex-shrink with 0 to prevent collapsing, and force opacity to 1
+        const newParts = styleParts
+          .filter(s => !s.includes('flex-shrink') && !s.includes('opacity'))
+          .concat(['flex-shrink:0', 'opacity:1']);
+        styleStr = newParts.join(';');
+        console.log(`[serializeElement] EF-TEXT-SEGMENT whitespace - final styleStr:`, styleStr.substring(0, 300));
       }
     }
     
