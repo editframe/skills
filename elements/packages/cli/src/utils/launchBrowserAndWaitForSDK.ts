@@ -97,9 +97,7 @@ export async function launchBrowserAndWaitForSDK(
     }
     const url = options.url + (urlParams.toString() ? `?${urlParams.toString()}` : "");
 
-    process.stderr.write("\nLoading url: ");
-    process.stderr.write(url);
-    process.stderr.write("\n");
+    browserLog("Loading url:", url);
     await page.goto(url);
     await page.waitForFunction(
       () => {

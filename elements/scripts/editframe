@@ -36,17 +36,24 @@ if [[ "$ORIGINAL_CWD" != "$ELEMENTS_ROOT"* ]]; then
   RUNNING_EXTERNAL=true
 fi
 
+# Debug logging helper - only output if DEBUG is set
+debug_log() {
+  if [ -n "$DEBUG" ]; then
+    echo "$@" >&2
+  fi
+}
+
 # Function to cleanup temporary files on exit
 cleanup_editframe_dev() {
-  echo "" >&2
-  echo "[cleanup] Cleaning up temporary files..." >&2
+  debug_log ""
+  debug_log "[cleanup] Cleaning up temporary files..."
   
   if [ "$VITE_CONFIG_CREATED" = true ]; then
     # Remove our temporary config
     local our_config="$ORIGINAL_CWD/vite.config.js"
     if [ -f "$our_config" ]; then
       rm -f "$our_config"
-      echo "[cleanup] Removed temporary vite.config.js" >&2
+      debug_log "[cleanup] Removed temporary vite.config.js"
     fi
     
     # Restore user's original config
@@ -54,7 +61,7 @@ cleanup_editframe_dev() {
       if [ -f "$backup" ]; then
         original="${backup%.editframe-backup}"
         mv "$backup" "$original"
-        echo "[cleanup] Restored $(basename "$original")" >&2
+        debug_log "[cleanup] Restored $(basename "$original")"
       fi
     done
   fi
@@ -63,20 +70,20 @@ cleanup_editframe_dev() {
     # Restore PostCSS config if we backed it up
     if [ -f "$ORIGINAL_CWD/postcss.config.cjs.editframe-backup" ]; then
       mv "$ORIGINAL_CWD/postcss.config.cjs.editframe-backup" "$ORIGINAL_CWD/postcss.config.cjs"
-      echo "[cleanup] Restored postcss.config.cjs" >&2
+      debug_log "[cleanup] Restored postcss.config.cjs"
     fi
     
     # Remove symlink if it exists (including broken symlinks)
     if [ -L "$ORIGINAL_CWD/tailwind.config.cjs" ] || [ -e "$ORIGINAL_CWD/tailwind.config.cjs" ]; then
       rm -f "$ORIGINAL_CWD/tailwind.config.cjs"
-      echo "[cleanup] Removed tailwind.config.cjs symlink" >&2
+      debug_log "[cleanup] Removed tailwind.config.cjs symlink"
     fi
 
     # Remove our temporary Tailwind config
     local our_tw_config="$ORIGINAL_CWD/tailwind.config.editframe-dev.cjs"
     if [ -f "$our_tw_config" ]; then
       rm -f "$our_tw_config"
-      echo "[cleanup] Removed temporary tailwind.config.editframe-dev.cjs" >&2
+      debug_log "[cleanup] Removed temporary tailwind.config.editframe-dev.cjs"
     fi
 
     # Restore user's original Tailwind config
@@ -86,16 +93,16 @@ cleanup_editframe_dev() {
         if ! head -n 3 "$backup" 2>/dev/null | grep -q "TEMPORARY EDITFRAME DEV"; then
           original="${backup%.editframe-backup}"
           mv "$backup" "$original"
-          echo "[cleanup] Restored $(basename "$original")" >&2
+          debug_log "[cleanup] Restored $(basename "$original")"
         else
           rm -f "$backup"
-          echo "[cleanup] Removed invalid backup $(basename "$backup")" >&2
+          debug_log "[cleanup] Removed invalid backup $(basename "$backup")"
         fi
       fi
     done
   fi
   
-  echo "[cleanup] Done!" >&2
+  debug_log "[cleanup] Done!"
 }
 
 # Variable to track if we need cleanup
@@ -107,9 +114,9 @@ TAILWIND_CONFIG_CREATED=false
 if [ "$RUNNING_EXTERNAL" = true ] && [ -f "$ORIGINAL_CWD/package.json" ]; then
   # Check if package.json has @editframe dependencies
   if grep -q '"@editframe/' "$ORIGINAL_CWD/package.json"; then
-    echo "📦 Detected external project with @editframe dependencies"
-    echo "   Configuring Vite to use monorepo source files..."
-    echo ""
+    debug_log "📦 Detected external project with @editframe dependencies"
+    debug_log "   Configuring Vite to use monorepo source files..."
+    debug_log ""
     
     NEEDS_CLEANUP=true
     
@@ -119,14 +126,14 @@ if [ "$RUNNING_EXTERNAL" = true ] && [ -f "$ORIGINAL_CWD/package.json" ]; then
         if [ -f "$ORIGINAL_CWD/$config_file" ]; then
           # Skip if this is already our generated config (check for our header)
           if head -n 3 "$ORIGINAL_CWD/$config_file" 2>/dev/null | grep -q "TEMPORARY EDITFRAME DEV CONFIG"; then
-            echo "   Skipping $config_file (already our generated config)"
+            debug_log "   Skipping $config_file (already our generated config)"
             continue
           fi
           
           USER_VITE_CONFIG="$config_file"
           # Move (not copy) so Vite won't find it
           mv "$ORIGINAL_CWD/$config_file" "$ORIGINAL_CWD/$config_file.editframe-backup"
-          echo "   Temporarily moved $config_file"
+          debug_log "   Temporarily moved $config_file"
           break
         fi
       done
@@ -192,11 +199,9 @@ VITE_CONFIG_EOF
     
     VITE_CONFIG_CREATED=true
     
+    debug_log "✓ Created temporary vite.config.js with source aliases"
     if [ -n "$USER_VITE_CONFIG" ]; then
-      echo "✓ Created temporary vite.config.js with source aliases"
-      echo "   (Your $USER_VITE_CONFIG will be restored on exit)"
-    else
-      echo "✓ Created temporary vite.config.js with source aliases"
+      debug_log "   (Your $USER_VITE_CONFIG will be restored on exit)"
     fi
     
       # Handle Tailwind config if present
@@ -205,14 +210,14 @@ VITE_CONFIG_EOF
         if [ -f "$ORIGINAL_CWD/$tw_config" ]; then
           # Skip if this is already our generated config (check for our header)
           if head -n 3 "$ORIGINAL_CWD/$tw_config" 2>/dev/null | grep -q "TEMPORARY EDITFRAME DEV"; then
-            echo "   Skipping $tw_config (already our generated config)"
+            debug_log "   Skipping $tw_config (already our generated config)"
             continue
           fi
           
           USER_TAILWIND_CONFIG="$tw_config"
           # Backup and move user's Tailwind config
           mv "$ORIGINAL_CWD/$tw_config" "$ORIGINAL_CWD/$tw_config.editframe-backup"
-          echo "   Temporarily moved $tw_config"
+          debug_log "   Temporarily moved $tw_config"
         
           # Create temporary Tailwind config that extends theirs
           # Use .cjs extension to ensure it's treated as CommonJS even if package.json has "type": "module"
@@ -324,14 +329,14 @@ POSTCSS_EOF
           fi
 
           TAILWIND_CONFIG_CREATED=true
-        echo "✓ Created temporary Tailwind config with @editframe/elements scanning"
-        echo "   (Your $USER_TAILWIND_CONFIG will be restored on exit)"
+        debug_log "✓ Created temporary Tailwind config with @editframe/elements scanning"
+        debug_log "   (Your $USER_TAILWIND_CONFIG will be restored on exit)"
         
         break
       fi
     done
     
-    echo ""
+    debug_log ""
   fi
 fi
 
