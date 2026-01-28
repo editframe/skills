@@ -14,7 +14,8 @@
 
 import { encodeCanvasesInParallel } from "../encoding/canvasEncoder.js";
 import type { RenderContext } from "../RenderContext.js";
-import { getTemporalBounds, isVisibleAtTime } from "../previewTypes.js";
+import { isVisibleAtTime } from "../previewTypes.js";
+import { collectDocumentStyles } from "../renderTimegroupPreview.js";
 
 /**
  * Elements to skip entirely when serializing.
@@ -43,13 +44,24 @@ const SERIALIZED_STYLE_PROPERTIES = [
   "gridTemplate", "gridColumn", "gridRow", "gridArea",
   "margin", "padding", "boxSizing",
   "border", "borderTop", "borderRight", "borderBottom", "borderLeft", "borderRadius",
-  "background", "backgroundColor", "color", "boxShadow", "filter", "backdropFilter", "clipPath",
-  "fontFamily", "fontSize", "fontWeight", "fontStyle", "textAlign", "textDecoration", "textTransform",
+  "background", "color", "boxShadow", "filter", "backdropFilter", "clipPath",
+  "font", "textAlign", "textDecoration", "textTransform",
   "letterSpacing", "whiteSpace", "textOverflow", "lineHeight",
   "transform", "transformOrigin", "transformStyle",
   "perspective", "perspectiveOrigin", "backfaceVisibility",
-  "cursor", "pointerEvents", "userSelect", "overflow", "overflowX", "overflowY",
+  "cursor", "pointerEvents", "userSelect", "overflow",
 ] as const;
+
+/**
+ * Caption child elements that should preserve display:none.
+ * These use display:none for content visibility, not temporal visibility.
+ */
+const CAPTION_CHILD_TAGS = new Set([
+  'EF-CAPTIONS-ACTIVE-WORD',
+  'EF-CAPTIONS-BEFORE-ACTIVE-WORD',
+  'EF-CAPTIONS-AFTER-ACTIVE-WORD',
+  'EF-CAPTIONS-SEGMENT',
+]);
 
 interface SerializationOptions {
   renderContext?: RenderContext;
@@ -78,10 +90,14 @@ function escapeXML(str: string): string {
 
 /**
  * Serialize computed styles as inline style string.
+ * Handles display:none → block conversion for non-caption elements
+ * (temporal visibility is handled separately).
  */
 function serializeComputedStyles(element: Element): string {
   const styles = getComputedStyle(element);
   const styleParts: string[] = [];
+  const tagName = element.tagName;
+  const isCaptionChild = CAPTION_CHILD_TAGS.has(tagName);
   
   for (const prop of SERIALIZED_STYLE_PROPERTIES) {
     const value = styles[prop as any];
@@ -90,10 +106,27 @@ function serializeComputedStyles(element: Element): string {
       continue;
     }
     
+    // Handle display property specially
+    // For non-caption elements, convert display:none to block since temporal
+    // visibility is handled by applyTemporalVisibility, not CSS display
+    let finalValue = value;
+    if (prop === 'display' && value === 'none' && !isCaptionChild) {
+      finalValue = 'block';
+    }
+    
+    // Skip clipPath - clones always render without clip-path
+    // (source may have clip-path: inset(100%) from proxy mode)
+    if (prop === 'clipPath') {
+      continue;
+    }
+    
     // Convert camelCase to kebab-case
     const kebab = prop.replace(/[A-Z]/g, m => `-${m.toLowerCase()}`);
-    styleParts.push(`${kebab}:${value}`);
+    styleParts.push(`${kebab}:${finalValue}`);
   }
+  
+  // Disable animations/transitions to prevent re-animation
+  styleParts.push('animation:none', 'transition:none');
   
   return styleParts.join(';');
 }
@@ -110,6 +143,21 @@ function serializeAttributes(element: Element, parts: Array<string | Promise<str
     }
     parts.push(` ${attr.name}="${escapeXML(attr.value)}"`);
   }
+}
+
+/**
+ * Check if a canvas element should preserve alpha channel.
+ * EF-WAVEFORM always needs alpha, EF-IMAGE checks hasAlpha property.
+ */
+function shouldPreserveAlpha(sourceElement: Element): boolean {
+  const tagName = sourceElement.tagName;
+  if (tagName === 'EF-WAVEFORM') {
+    return true;
+  }
+  if (tagName === 'EF-IMAGE') {
+    return 'hasAlpha' in sourceElement && (sourceElement as any).hasAlpha === true;
+  }
+  return false;
 }
 
 /**
@@ -134,6 +182,12 @@ function serializeCanvas(
   const styleParts = styleStr ? styleStr.split(';').filter(s => s.trim()) : [];
   styleParts.push(`width:${width}px`, `height:${height}px`, `display:block`);
   const finalStyle = styleParts.join(';');
+  
+  // Check if we need to preserve alpha channel
+  const preserveAlpha = shouldPreserveAlpha(sourceElement);
+  if (preserveAlpha) {
+    canvas.dataset.preserveAlpha = 'true';
+  }
   
   // Open img tag with all styles from source element
   parts.push(`<img style="${escapeXML(finalStyle)}" src="`);
@@ -203,10 +257,6 @@ function serializeElement(
   if (element instanceof HTMLElement) {
     const styles = getComputedStyle(element);
     if (styles.display === 'none' || styles.visibility === 'hidden') {
-      serializeStats.skippedHidden++;
-      if (Math.random() < 0.05) { // Sample 5% for debugging
-        console.log(`[Skipped] ${element.tagName} hidden: display=${styles.display}, visibility=${styles.visibility}`);
-      }
       return;
     }
   }
@@ -214,8 +264,6 @@ function serializeElement(
   // Custom element with shadow DOM?
   const isCustom = element.tagName.includes('-');
   if (isCustom && element.shadowRoot) {
-    serializeStats.customElements++;
-    
     const shadowCanvas = element.shadowRoot.querySelector('canvas');
     if (shadowCanvas) {
       serializeCanvas(element, shadowCanvas, parts, canvasJobs, options);
@@ -229,32 +277,19 @@ function serializeElement(
     }
     
     // Serialize shadow DOM content (text, elements, etc.)
-    if (element.tagName === 'EF-TEXT-SEGMENT' || element.tagName === 'EF-TEXT') {
-      // Debug text elements specifically
-      const children = Array.from(element.shadowRoot.childNodes).map(n => {
-        if (n.nodeType === Node.TEXT_NODE) return `#text:"${n.textContent?.trim().substring(0, 10)}"`;
-        if (n.nodeType === Node.ELEMENT_NODE) return `<${(n as Element).tagName}>`;
-        return `#${n.nodeType}`;
-      });
-      console.log(`[Shadow DOM] ${element.tagName}: [${children.join(', ')}]`);
-    }
-    
     for (const child of element.shadowRoot.childNodes) {
       if (child.nodeType === Node.TEXT_NODE) {
         const text = child.textContent?.trim();
         if (text) {
-          serializeStats.textNodes++;
           parts.push(escapeXML(text));
         }
       } else if (child.nodeType === Node.ELEMENT_NODE) {
-        serializeStats.shadowDOMElements++;
         // If it's a <slot>, serialize the light DOM children instead
         if ((child as Element).tagName === 'SLOT') {
           for (const slottedChild of element.childNodes) {
             if (slottedChild.nodeType === Node.TEXT_NODE) {
               const text = slottedChild.textContent?.trim();
               if (text) {
-                serializeStats.textNodes++;
                 parts.push(escapeXML(text));
               }
             } else if (slottedChild.nodeType === Node.ELEMENT_NODE) {
@@ -277,10 +312,6 @@ function serializeElement(
   }
   
   // Standard element - serialize to XML
-  serializeStats.standardElements++;
-  if (serializeStats.standardElements <= 3) { // Log first 3
-    console.log(`[Standard element] Serializing ${element.tagName}`);
-  }
   const tagName = element.tagName.toLowerCase();
   const isSVG = element instanceof SVGElement;
   
@@ -310,7 +341,6 @@ function serializeElement(
     if (child.nodeType === Node.TEXT_NODE) {
       const text = child.textContent?.trim();
       if (text) {
-        serializeStats.textNodes++;
         parts.push(escapeXML(text));
       }
     } else if (child.nodeType === Node.ELEMENT_NODE) {
@@ -356,39 +386,31 @@ function applyTemporalVisibility(element: Element, timeMs: number): number {
  * @param options - Serialization options (renderContext, canvasScale, timeMs)
  * @returns XHTML string with all canvases encoded as base64 data URLs
  */
-// Stats for debugging
-let serializeStats = {
-  customElements: 0,
-  shadowDOMElements: 0,
-  standardElements: 0,
-  textNodes: 0,
-  skippedHidden: 0,
-};
-
 export async function serializeTimelineToXHTML(
   timeline: Element,
   width: number,
   height: number,
   options: SerializationOptions
 ): Promise<string> {
-  // Reset stats
-  serializeStats = { customElements: 0, shadowDOMElements: 0, standardElements: 0, textNodes: 0, skippedHidden: 0 };
-  
   // Apply temporal visibility before serialization
-  try {
-    applyTemporalVisibility(timeline, options.timeMs);
-  } catch (e) {
-    console.error(`[serializeTimelineToXHTML] Error applying temporal visibility:`, e);
-  }
+  applyTemporalVisibility(timeline, options.timeMs);
   
   const parts: Array<string | Promise<string>> = [];
   const canvasJobs: CanvasJob[] = [];
   
-  // Open wrapper div
+  // Collect document styles for proper CSS cascade
+  const documentStyles = collectDocumentStyles();
+  
+  // Open wrapper div with embedded styles
   parts.push(
     `<div xmlns="http://www.w3.org/1999/xhtml" ` +
     `style="width:${width}px;height:${height}px;overflow:hidden;position:relative;">`
   );
+  
+  // Inject document styles
+  if (documentStyles) {
+    parts.push(`<style>${escapeXML(documentStyles)}</style>`);
+  }
   
   // Recursively serialize timeline
   serializeElement(timeline, parts, canvasJobs, options);
@@ -396,18 +418,8 @@ export async function serializeTimelineToXHTML(
   // Close wrapper
   parts.push('</div>');
   
-  console.log(`[Serialize Stats] Custom: ${serializeStats.customElements}, Shadow: ${serializeStats.shadowDOMElements}, Standard: ${serializeStats.standardElements}, Text: ${serializeStats.textNodes}, Hidden: ${serializeStats.skippedHidden}`);
-  
   // Wait for all canvas encodings to complete
   const resolvedParts = await Promise.all(parts);
-  
-  // Check for any unresolved promises
-  const hasUnresolved = resolvedParts.some(part => 
-    typeof part !== 'string' || part.includes('[object Promise]')
-  );
-  if (hasUnresolved) {
-    console.error('[serializeTimelineToXHTML] ERROR: Unresolved promises in serialized parts!');
-  }
   
   // Join into final XHTML string
   return resolvedParts.join('');
