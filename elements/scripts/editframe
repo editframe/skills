@@ -229,10 +229,10 @@ try {
   if (typeof userConfig === 'function') {
     userConfig = userConfig({ mode: 'jit' });
   }
-  console.log('[Editframe Tailwind] Loaded user config, content paths:', userConfig.content);
+  process.stderr.write(`[Editframe Tailwind] Loaded user config, content paths: ${JSON.stringify(userConfig.content)}\n`);
 } catch (e) {
-  console.error('[Editframe Tailwind] Could not load user Tailwind config:', e.message);
-  console.error('[Editframe Tailwind] Using fallback empty config');
+  process.stderr.write(`[Editframe Tailwind] ERROR loading user config: ${e.message}\n`);
+  process.stderr.write('[Editframe Tailwind] Using fallback empty config\n');
   userConfig = { content: [], theme: { extend: {} }, plugins: [] };
 }
 
@@ -243,7 +243,7 @@ function mergeContent(userContent) {
   const contentArray = Array.isArray(userContent) ? userContent : 
                        userContent?.files || [];
   
-  console.log('[Editframe Tailwind] User content array:', contentArray);
+  process.stderr.write(`[Editframe Tailwind] User content array: ${JSON.stringify(contentArray)}\n`);
   
   // If user has no content configured, add sensible defaults for their project
   const defaultContent = contentArray.length === 0 ? [
@@ -262,7 +262,7 @@ function mergeContent(userContent) {
     path.join(monorepoElementsDist, 'preview/**/*.js'),
   ];
   
-  console.log('[Editframe Tailwind] Merged content:', merged);
+  process.stderr.write(`[Editframe Tailwind] Merged content: ${JSON.stringify(merged)}\n`);
   return merged;
 }
 
@@ -305,8 +305,10 @@ const finalConfig = {
   blocklist: userConfig.blocklist,
 };
 
-console.log('[Editframe Tailwind] Final config content:', finalConfig.content);
-console.log('[Editframe Tailwind] Final config safelist count:', finalConfig.safelist?.length || 0);
+// Write debug info to stderr so it appears in terminal
+process.stderr.write('\n[Editframe Tailwind] Config loaded successfully\n');
+process.stderr.write(`[Editframe Tailwind] Content paths: ${JSON.stringify(finalConfig.content)}\n`);
+process.stderr.write(`[Editframe Tailwind] Safelist count: ${finalConfig.safelist?.length || 0}\n\n`);
 
 module.exports = finalConfig;
 TW_CONFIG_EOF
