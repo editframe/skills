@@ -117,10 +117,16 @@ function serializeComputedStyles(element: Element): string {
     
     // Handle display property specially
     // For non-caption elements, convert display:none to block since temporal
-    // visibility is handled by applyTemporalVisibility, not CSS display
+    // visibility is handled separately, not by CSS display
     let finalValue = value;
     if (prop === 'display' && value === 'none' && !isCaptionChild) {
       finalValue = 'block';
+    }
+    
+    // Force visibility:visible - the source container may have visibility:hidden
+    // for off-screen rendering, but we want the serialized output to be visible
+    if (prop === 'visibility') {
+      finalValue = 'visible';
     }
     
     // Skip clipPath - clones always render without clip-path
