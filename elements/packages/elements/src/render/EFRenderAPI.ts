@@ -128,45 +128,22 @@ async function waitForTimegroupDimensions(timegroup: EFTimegroup): Promise<void>
     })
   );
   
-  // Force trigger Tailwind JIT by checking if classes exist
-  const testDiv = document.createElement('div');
-  testDiv.className = 'w-[1080px] h-[1920px]';
-  document.body.appendChild(testDiv);
-  void testDiv.offsetHeight; // Force style calculation
-  console.log('[EFRenderAPI] Test div dimensions:', testDiv.offsetWidth, testDiv.offsetHeight);
-  document.body.removeChild(testDiv);
-  
-  // Wait longer for Vite HMR and Tailwind JIT to process
-  console.log('[EFRenderAPI] Waiting for Vite/Tailwind JIT processing...');
-  await new Promise(resolve => setTimeout(resolve, 5000));
-  
-  console.log('[EFRenderAPI] Stylesheets loaded, waiting for timegroup dimensions...');
-  
-  // Wait for timegroup to have dimensions (CSS must be loaded and processed)
-  let attempts = 0;
-  while ((!timegroup.offsetWidth || !timegroup.offsetHeight) && attempts < 50) {
-    await new Promise(resolve => setTimeout(resolve, 100));
-    void timegroup.offsetHeight; // Force layout
-    attempts++;
-    
-    if (attempts % 10 === 0) {
-      console.log(`[EFRenderAPI] Still waiting... computed: ${getComputedStyle(timegroup).width} x ${getComputedStyle(timegroup).height}`);
-    }
-  }
+  // Force layout immediately after stylesheets load
+  void timegroup.offsetHeight;
   
   if (!timegroup.offsetWidth || !timegroup.offsetHeight) {
-    // Dump more debug info
-    console.error('[EFRenderAPI] Timegroup element:', timegroup);
-    console.error('[EFRenderAPI] Timegroup classes:', timegroup.className);
-    console.error('[EFRenderAPI] Timegroup inline style:', timegroup.getAttribute('style'));
-    console.error('[EFRenderAPI] All computed styles:', getComputedStyle(timegroup));
+    const computedWidth = getComputedStyle(timegroup).width;
+    const computedHeight = getComputedStyle(timegroup).height;
     
     throw new Error(
-      `Timegroup has no dimensions after waiting (${timegroup.offsetWidth}x${timegroup.offsetHeight}). ` +
-      `Computed styles: width=${getComputedStyle(timegroup).width}, height=${getComputedStyle(timegroup).height}. ` +
-      `Classes: ${timegroup.className}. ` +
-      `Ensure Tailwind CSS or other stylesheets are loaded and the timegroup has explicit dimensions. ` +
-      `Try using inline styles: style="width: 1080px; height: 1920px;"`
+      `Timegroup has no dimensions (${timegroup.offsetWidth}x${timegroup.offsetHeight}). ` +
+      `Computed styles: width=${computedWidth}, height=${computedHeight}. ` +
+      `Classes: "${timegroup.className}". ` +
+      `\n\nTailwind CSS did not generate styles for these classes. ` +
+      `Check that:\n` +
+      `1. Your Tailwind config 'content' array includes the HTML file\n` +
+      `2. Tailwind CSS is properly configured in your project\n` +
+      `3. The dev server successfully compiled CSS (check for Tailwind warnings above)`
     );
   }
   
