@@ -332,16 +332,11 @@ function serializeElement(
   
   // Check temporal visibility - skip elements outside their time bounds
   // This is non-destructive (doesn't modify DOM)
+  // NOTE: We do NOT check CSS visibility/display here because:
+  // 1. The container may have visibility:hidden for off-screen rendering
+  // 2. Temporal elements control their own visibility via time bounds
   if (!isTemporallyVisible(element, options.timeMs)) {
     return;
-  }
-  
-  // Check CSS visibility (but NOT display:none since temporal elements may have that set)
-  if (element instanceof HTMLElement) {
-    const styles = getComputedStyle(element);
-    if (styles.visibility === 'hidden') {
-      return;
-    }
   }
   
   // Custom element with shadow DOM?
