@@ -98,6 +98,24 @@ const api: IEFRenderAPI = {
     setWorkbenchRendering(true);
 
     try {
+      // Wait for timegroup to have dimensions (CSS must be loaded and processed)
+      let attempts = 0;
+      while ((!timegroup.offsetWidth || !timegroup.offsetHeight) && attempts < 50) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        void timegroup.offsetHeight; // Force layout
+        attempts++;
+      }
+      
+      if (!timegroup.offsetWidth || !timegroup.offsetHeight) {
+        throw new Error(
+          `Timegroup has no dimensions after waiting (${timegroup.offsetWidth}x${timegroup.offsetHeight}). ` +
+          `Computed styles: width=${getComputedStyle(timegroup).width}, height=${getComputedStyle(timegroup).height}. ` +
+          `Ensure Tailwind CSS or other stylesheets are loaded and the timegroup has explicit dimensions.`
+        );
+      }
+      
+      console.log(`[EFRenderAPI] Timegroup dimensions ready: ${timegroup.offsetWidth}x${timegroup.offsetHeight}`);
+      
       // Wait for media to be ready
       await timegroup.waitForMediaDurations();
 
@@ -137,6 +155,24 @@ const api: IEFRenderAPI = {
     setWorkbenchRendering(true);
 
     try {
+      // Wait for timegroup to have dimensions (CSS must be loaded and processed)
+      let attempts = 0;
+      while ((!timegroup.offsetWidth || !timegroup.offsetHeight) && attempts < 50) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        void timegroup.offsetHeight; // Force layout
+        attempts++;
+      }
+      
+      if (!timegroup.offsetWidth || !timegroup.offsetHeight) {
+        throw new Error(
+          `Timegroup has no dimensions after waiting (${timegroup.offsetWidth}x${timegroup.offsetHeight}). ` +
+          `Computed styles: width=${getComputedStyle(timegroup).width}, height=${getComputedStyle(timegroup).height}. ` +
+          `Ensure Tailwind CSS or other stylesheets are loaded and the timegroup has explicit dimensions.`
+        );
+      }
+      
+      console.log(`[EFRenderAPI] Timegroup dimensions ready: ${timegroup.offsetWidth}x${timegroup.offsetHeight}`);
+      
       // Wait for media to be ready
       await timegroup.waitForMediaDurations();
 
