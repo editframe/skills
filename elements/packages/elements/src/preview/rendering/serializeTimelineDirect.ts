@@ -454,14 +454,19 @@ function serializeElement(
       });
       if (shadowContent && /^\s+$/.test(shadowContent)) {
         hasWhitespaceContent = true;
-        // Whitespace-only segment - ensure it doesn't collapse
+        // Whitespace-only segment - ensure it doesn't collapse in flex layouts
         const styleParts = styleStr ? styleStr.split(';').filter(s => s.trim()) : [];
-        // Replace flex-shrink with 0 to prevent collapsing, and force opacity to 1
+        
+        // Extract the width value to use as min-width and flex-basis
+        const widthPart = styleParts.find(s => s.trim().startsWith('width:'));
+        const width = widthPart ? widthPart.split(':')[1] : '1ch';
+        
+        // In flex layouts, width can be ignored. Use min-width and flex-basis to force the space
         const newParts = styleParts
-          .filter(s => !s.includes('flex-shrink') && !s.includes('opacity'))
-          .concat(['flex-shrink:0', 'opacity:1']);
+          .filter(s => !s.includes('flex-shrink') && !s.includes('flex-basis') && !s.includes('min-width'))
+          .concat([`flex-shrink:0`, `flex-basis:${width}`, `min-width:${width}`]);
         styleStr = newParts.join(';');
-        console.log(`[serializeElement] EF-TEXT-SEGMENT whitespace - final styleStr:`, styleStr.substring(0, 300));
+        console.log(`[serializeElement] EF-TEXT-SEGMENT whitespace - forcing width=${width}, final styleStr:`, styleStr.substring(0, 300));
       }
     }
     
