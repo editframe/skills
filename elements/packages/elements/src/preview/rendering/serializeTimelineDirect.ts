@@ -386,8 +386,25 @@ function serializeElement(
     // Serialize custom element as a div with its styles, then shadow DOM content inside
     // Always use div to ensure consistent rendering of display properties
     const containerTag = 'div';
+    const tagName = element.tagName;
     
-    const styleStr = serializeComputedStyles(element);
+    let styleStr = serializeComputedStyles(element);
+    
+    // Special handling for text segments with whitespace-only content
+    // Ensure they don't shrink to zero width in flex layouts
+    if (tagName === 'EF-TEXT-SEGMENT') {
+      const shadowContent = element.shadowRoot?.textContent || '';
+      if (shadowContent && /^\s+$/.test(shadowContent)) {
+        // Whitespace-only segment - ensure it doesn't collapse
+        const styleParts = styleStr ? styleStr.split(';').filter(s => s.trim()) : [];
+        // Prevent flex shrinking and set minimum width based on font size
+        if (!styleParts.some(s => s.includes('flex-shrink'))) {
+          styleParts.push('flex-shrink:0');
+        }
+        styleStr = styleParts.join(';');
+      }
+    }
+    
     parts.push(`<${containerTag}`);
     
     // Copy data attributes and class from custom element
