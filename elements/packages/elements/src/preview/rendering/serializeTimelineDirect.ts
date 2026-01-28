@@ -109,6 +109,7 @@ function serializeComputedStyles(element: Element): string {
   const styleParts: string[] = [];
   const tagName = element.tagName;
   const isCaptionChild = CAPTION_CHILD_TAGS.has(tagName);
+  const isTextSegment = tagName === 'EF-TEXT-SEGMENT';
   
   for (const prop of SERIALIZED_STYLE_PROPERTIES) {
     const value = styles[prop as any];
@@ -118,11 +119,18 @@ function serializeComputedStyles(element: Element): string {
     }
     
     // Handle display property specially
-    // For non-caption elements, convert display:none to block since temporal
-    // visibility is handled separately, not by CSS display
     let finalValue = value;
-    if (prop === 'display' && value === 'none' && !isCaptionChild) {
-      finalValue = 'block';
+    if (prop === 'display') {
+      // For non-caption elements, convert display:none to block since temporal
+      // visibility is handled separately, not by CSS display
+      if (value === 'none' && !isCaptionChild) {
+        finalValue = 'block';
+      }
+      // For text segments, use inline instead of inline-block to better preserve whitespace
+      // inline-block can cause whitespace-only segments to not render correctly in foreignObject
+      else if (value === 'inline-block' && isTextSegment) {
+        finalValue = 'inline';
+      }
     }
     
     // Force visibility:visible - the source container may have visibility:hidden
@@ -363,10 +371,14 @@ function serializeElement(
       return;
     }
     
-    // Serialize custom element as a div with its styles, then shadow DOM content inside
-    // This preserves positioning, layout, fonts, etc. from the custom element
+    // Serialize custom element as a span/div with its styles, then shadow DOM content inside
+    // Use span for inline elements (ef-text-segment) to better preserve whitespace
+    const tagName = element.tagName;
+    const isTextSegment = tagName === 'EF-TEXT-SEGMENT';
+    const containerTag = isTextSegment ? 'span' : 'div';
+    
     const styleStr = serializeComputedStyles(element);
-    parts.push(`<div`);
+    parts.push(`<${containerTag}`);
     
     // Copy data attributes and class from custom element
     for (const attr of element.attributes) {
@@ -395,7 +407,7 @@ function serializeElement(
       }
     }
     
-    parts.push('</div>');
+    parts.push(`</${containerTag}>`);
     return;
   }
   
