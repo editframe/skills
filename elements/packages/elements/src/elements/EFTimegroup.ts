@@ -561,6 +561,15 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
    * @internal
    */
   #initializerComplete?: Promise<void>;
+  
+  /**
+   * Public accessor for initializer completion promise.
+   * Allows createRenderClone to wait for initializer before rendering.
+   * @internal
+   */
+  get initializerComplete(): Promise<void> | undefined {
+    return this.#initializerComplete;
+  }
 
   /** @public */
   @property({ type: Number })
@@ -1577,7 +1586,10 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     
     document.body.appendChild(container);
     
-    // 3a. Set initializer AFTER clone is connected to DOM
+    // 3. Wait for custom elements to upgrade
+    await cloneEl.updateComplete;
+    
+    // 3a. Set initializer AFTER clone is connected to DOM and upgraded
     // The initializer setter only schedules execution if this.isConnected is true
     // Setting it before connection would skip the automatic scheduling
     if (this.initializer) {
@@ -1585,15 +1597,15 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
       cloneEl.initializer = this.initializer;
     }
     
-    // 3. Wait for custom elements to upgrade
-    await cloneEl.updateComplete;
-    
     // 3b. Wait for initializer to complete
-    // The initializer is scheduled via updateComplete.then(), which runs AFTER updateComplete resolves
-    // We need to wait for it to ensure frame tasks are registered before rendering
-    // Use a simple approach: wait one more microtask cycle
-    await Promise.resolve();
-    console.log('[createRenderClone] Initializer should have run by now');
+    // The setter creates initializerComplete promise when it schedules the initializer
+    if (cloneEl.initializerComplete) {
+      console.log('[createRenderClone] Waiting for initializer to complete...');
+      await cloneEl.initializerComplete;
+      console.log('[createRenderClone] Initializer complete');
+    } else {
+      console.log('[createRenderClone] No initializer or already complete');
+    }
     
     // 3b. Copy ef-text-segment properties AFTER elements have upgraded
     // segmentText is a JS property, so we need to wait for custom elements to define it
