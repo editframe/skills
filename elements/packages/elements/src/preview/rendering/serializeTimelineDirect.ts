@@ -241,18 +241,36 @@ function serializeElement(
       return;
     }
     
-    // No special shadow content - serialize light DOM children (flatten)
-    // Note: We serialize element.childNodes (light DOM), NOT shadowRoot.childNodes,
-    // because the light DOM children are the actual content (projected through <slot>)
-    console.log(`[serializeElement] → ${element.tagName} has no special shadow content, serializing ${element.childNodes.length} light DOM children`);
-    for (const child of element.childNodes) {
+    // No special shadow content - serialize BOTH shadow DOM and light DOM
+    // Shadow DOM contains the rendering (text, styles, etc.)
+    // Light DOM contains slotted content (child elements)
+    console.log(`[serializeElement] → ${element.tagName} has shadow DOM with ${element.shadowRoot.childNodes.length} children, light DOM with ${element.childNodes.length} children`);
+    
+    // First serialize shadow DOM content (this includes <slot> placeholders)
+    for (const child of element.shadowRoot.childNodes) {
       if (child.nodeType === Node.TEXT_NODE) {
         const text = child.textContent?.trim();
         if (text) {
           parts.push(escapeXML(text));
         }
       } else if (child.nodeType === Node.ELEMENT_NODE) {
-        serializeElement(child as Element, parts, canvasJobs, options, parentIsSVG);
+        // If it's a <slot>, serialize the light DOM children instead
+        if ((child as Element).tagName === 'SLOT') {
+          console.log(`[serializeElement]   → Found <slot>, serializing ${element.childNodes.length} slotted children`);
+          for (const slottedChild of element.childNodes) {
+            if (slottedChild.nodeType === Node.TEXT_NODE) {
+              const text = slottedChild.textContent?.trim();
+              if (text) {
+                parts.push(escapeXML(text));
+              }
+            } else if (slottedChild.nodeType === Node.ELEMENT_NODE) {
+              serializeElement(slottedChild as Element, parts, canvasJobs, options, parentIsSVG);
+            }
+          }
+        } else {
+          // Regular shadow DOM element
+          serializeElement(child as Element, parts, canvasJobs, options, parentIsSVG);
+        }
       }
     }
     return;
@@ -358,11 +376,13 @@ export async function serializeTimelineToXHTML(
   console.log(`  Timeline currentTime: ${(timeline as any).currentTime}ms`);
   
   // Apply temporal visibility before serialization
+  console.log(`  About to apply temporal visibility...`);
   try {
     const hiddenCount = applyTemporalVisibility(timeline, options.timeMs);
     console.log(`  Applied temporal visibility: ${hiddenCount} elements hidden`);
   } catch (e) {
     console.error(`  Error applying temporal visibility:`, e);
+    console.error(`  Stack:`, (e as Error).stack);
   }
   
   const parts: Array<string | Promise<string>> = [];
