@@ -238,9 +238,26 @@ function serializeCanvas(
   // Get all computed styles from source element
   const styleStr = serializeComputedStyles(sourceElement);
   
-  // Override width/height with intrinsic canvas dimensions
+  // Get computed dimensions from source element (respects CSS like w-[420px])
+  const computedStyle = getComputedStyle(sourceElement);
+  const computedWidth = computedStyle.width;
+  const computedHeight = computedStyle.height;
+  
+  // Use computed dimensions if available, otherwise fall back to canvas natural dimensions
   const styleParts = styleStr ? styleStr.split(';').filter(s => s.trim()) : [];
-  styleParts.push(`width:${width}px`, `height:${height}px`, `display:block`);
+  
+  // Only override dimensions if they weren't already captured from computed styles
+  const hasWidth = styleParts.some(s => s.trim().startsWith('width:'));
+  const hasHeight = styleParts.some(s => s.trim().startsWith('height:'));
+  
+  if (!hasWidth) {
+    styleParts.push(`width:${computedWidth || `${width}px`}`);
+  }
+  if (!hasHeight) {
+    styleParts.push(`height:${computedHeight || `${height}px`}`);
+  }
+  styleParts.push(`display:block`);
+  
   const finalStyle = styleParts.join(';');
   
   // Check if we need to preserve alpha channel
