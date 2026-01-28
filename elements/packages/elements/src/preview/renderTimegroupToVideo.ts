@@ -412,10 +412,14 @@ export async function renderTimegroupToVideo(
   
   if (useDirectSerialization) {
     console.log(`[renderTimegroupToVideo] Using direct timeline serialization (no passive structure)`);
-    // For direct serialization, we still need to attach renderClone to get proper computed styles
+    // For direct serialization, attach renderClone to container
     previewContainer.appendChild(renderClone);
+    // CRITICAL: Attach container to document so getComputedStyle returns actual values
+    // Without this, all computed styles are empty strings!
+    document.body.appendChild(previewContainer);
     // Force layout/reflow so getComputedStyle returns correct values
     void renderClone.offsetHeight;
+    console.log(`[renderTimegroupToVideo] Attached previewContainer to document.body for style computation`);
   } else {
     // Inject document styles once (cached for all frames)
     const styleEl = document.createElement("style");
@@ -737,6 +741,10 @@ export async function renderTimegroupToVideo(
   } finally {
     renderContext.dispose();
     cleanupRenderClone();
+    // Remove preview container if it was attached to document
+    if (previewContainer.parentNode) {
+      previewContainer.parentNode.removeChild(previewContainer);
+    }
   }
 }
 
