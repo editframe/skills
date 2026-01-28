@@ -1573,6 +1573,11 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     // 3. Wait for custom elements to upgrade
     await cloneEl.updateComplete;
     
+    // 3b. Copy ef-text-segment properties AFTER elements have upgraded
+    // segmentText is a JS property, so we need to wait for custom elements to define it
+    // Wait for segments to update their shadow DOM with the copied text
+    await this.#copyTextSegmentData(this, cloneEl);
+    
     // 4. Initializer has already run via connectedCallback (scheduled in updateComplete)
     // No need to call it manually - it runs automatically when the clone was appended to DOM.
     // NOTE: For React, the initializer may REPLACE cloneEl with a fresh React-rendered tree,
@@ -1606,12 +1611,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     // 7. Wait for LitElement updates and media durations
     await actualClone.updateComplete;
     
-    // 7a. Copy ef-text-segment properties from original to actualClone
-    // IMPORTANT: This must happen AFTER the initializer runs (which may replace the DOM for React)
-    // segmentText is a JS property that needs to be copied, then we wait for shadow DOM updates
-    await this.#copyTextSegmentData(this, actualClone);
-    
-    // 7c. CRITICAL: Manually set up parent-child relationships for cloned elements
+    // 7a. CRITICAL: Manually set up parent-child relationships for cloned elements
     // Lit Context doesn't automatically propagate to cloned children because the
     // context consumer decorator runs before the element is in the DOM tree.
     // We need to explicitly walk the tree and set parentTimegroup/rootTimegroup on each element.
@@ -1691,7 +1691,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     
     await actualClone.waitForMediaDurations();
     
-    // 7d. Wait for captions data to load (ef-captions elements need to fetch their data)
+    // 7b. Wait for captions data to load (ef-captions elements need to fetch their data)
     // This is separate from waitForMediaDurations because EFCaptions is not an EFMedia.
     await this.#waitForCaptionsData(actualClone);
     
