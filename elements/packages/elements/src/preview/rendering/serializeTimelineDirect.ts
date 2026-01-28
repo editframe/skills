@@ -161,8 +161,38 @@ function shouldPreserveAlpha(sourceElement: Element): boolean {
 }
 
 /**
+ * Create a snapshot copy of a canvas's current pixels.
+ * This captures the pixels synchronously before any async encoding,
+ * preventing race conditions where the source canvas is modified.
+ */
+function snapshotCanvas(
+  canvas: HTMLCanvasElement,
+  scale: number,
+  preserveAlpha: boolean
+): HTMLCanvasElement {
+  const targetWidth = Math.max(1, Math.floor(canvas.width * scale));
+  const targetHeight = Math.max(1, Math.floor(canvas.height * scale));
+  
+  const copy = document.createElement('canvas');
+  copy.width = targetWidth;
+  copy.height = targetHeight;
+  
+  if (preserveAlpha) {
+    copy.dataset.preserveAlpha = 'true';
+  }
+  
+  const ctx = copy.getContext('2d');
+  if (ctx && canvas.width > 0 && canvas.height > 0) {
+    // drawImage with scaling is SYNCHRONOUS - pixels are copied immediately
+    ctx.drawImage(canvas, 0, 0, targetWidth, targetHeight);
+  }
+  
+  return copy;
+}
+
+/**
  * Serialize a canvas element as an <img> with base64 data URL.
- * Kicks off async encoding and returns promise.
+ * Creates a snapshot of current pixels before async encoding to prevent race conditions.
  */
 function serializeCanvas(
   sourceElement: Element,
@@ -175,6 +205,11 @@ function serializeCanvas(
   const width = canvas.width;
   const height = canvas.height;
   
+  // Skip empty canvases
+  if (width === 0 || height === 0) {
+    return;
+  }
+  
   // Get all computed styles from source element
   const styleStr = serializeComputedStyles(sourceElement);
   
@@ -185,26 +220,29 @@ function serializeCanvas(
   
   // Check if we need to preserve alpha channel
   const preserveAlpha = shouldPreserveAlpha(sourceElement);
-  if (preserveAlpha) {
-    canvas.dataset.preserveAlpha = 'true';
-  }
+  
+  // CRITICAL: Create a snapshot of canvas pixels SYNCHRONOUSLY before any async work.
+  // This prevents race conditions where concurrent renders overwrite the shared
+  // shadow canvas while encoding is in progress.
+  const snapshot = snapshotCanvas(canvas, options.canvasScale, preserveAlpha);
   
   // Open img tag with all styles from source element
   parts.push(`<img style="${escapeXML(finalStyle)}" src="`);
   
-  // Kick off async encoding, push promise into parts array
+  // Kick off async encoding of the SNAPSHOT (not the live canvas)
   const promiseIndex = parts.length;
   const sourceMap = new WeakMap<HTMLCanvasElement, Element>();
-  sourceMap.set(canvas, sourceElement);
+  sourceMap.set(snapshot, sourceElement);
   
-  const encodePromise = encodeCanvasesInParallel([canvas], {
-    scale: options.canvasScale,
+  // Snapshot is already scaled, so encode at 1.0 scale
+  const encodePromise = encodeCanvasesInParallel([snapshot], {
+    scale: 1.0,
     renderContext: options.renderContext,
     sourceMap,
   }).then(results => results[0]?.dataUrl || '');
   
   parts.push(encodePromise);
-  canvasJobs.push({ canvas, sourceElement, promiseIndex });
+  canvasJobs.push({ canvas: snapshot, sourceElement, promiseIndex });
   
   // Close img tag
   parts.push('" />');
