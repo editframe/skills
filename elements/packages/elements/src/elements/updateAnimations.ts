@@ -981,10 +981,6 @@ const coordinateElementAnimations = (element: AnimatableElement): void => {
   // Reuse the current animations array to avoid calling getAnimations() twice
   const { tracked: trackedAnimations, current: currentAnimations } = discoverAndTrackAnimations(element);
 
-  if (trackedAnimations.size > 0) {
-    console.log(`[coordinateElementAnimations] ${element.tagName}: Found ${trackedAnimations.size} tracked animations, ${currentAnimations.length} current animations`);
-  }
-
   for (const animation of trackedAnimations) {
     // Skip invalid animations (cancelled, removed from DOM, etc.)
     if (!isAnimationValid(animation, currentAnimations)) {
@@ -1082,18 +1078,12 @@ export const updateAnimations = (element: AnimatableElement): void => {
     (temporalElement) => evaluateElementState(temporalElement),
   );
 
-  console.log(`[updateAnimations] Root element: ${element.tagName}, currentTimeMs=${element.currentTimeMs}, ownCurrentTimeMs=${element.ownCurrentTimeMs}`);
-  console.log(`[updateAnimations] Found ${childContexts.length} temporal children`);
-  
   // Apply visual state and animation coordination for root element
   applyVisualState(rootContext.element, rootContext.state);
   applyAnimationCoordination(rootContext.element, rootContext.state.phase);
 
   // Apply visual state and animation coordination for all temporal child elements
-  childContexts.forEach((context, idx) => {
-    if (context.element.tagName === 'EF-TIMEGROUP') {
-      console.log(`[updateAnimations] Child ${idx}: ${context.element.tagName}, ownCurrentTimeMs=${context.element.ownCurrentTimeMs}, phase=${context.state.phase}, isVisible=${context.state.isVisible}`);
-    }
+  childContexts.forEach((context) => {
     applyVisualState(context.element, context.state);
     applyAnimationCoordination(context.element, context.state.phase);
   });

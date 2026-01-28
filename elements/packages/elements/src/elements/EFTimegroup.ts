@@ -818,12 +818,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
   /** @public */
   get currentTime() {
     if (this.playbackController) {
-      const pcTime = this.playbackController.currentTime;
-      // DEBUG: Log when playbackController is used
-      if (this.closest('.ef-render-clone-container')) {
-        console.warn(`[currentTime getter] Clone has playbackController! pcTime=${pcTime}, #currentTime=${this.#currentTime}`);
-      }
-      return pcTime;
+      return this.playbackController.currentTime;
     }
     return this.#currentTime ?? 0;
   }
@@ -917,8 +912,6 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     this.#currentTime = newTime;
     this.requestUpdate("currentTime");
     
-    console.log(`[seekForRender] Setting time to ${timeMs}ms (${newTime}s), #currentTime=${this.#currentTime}, playbackController=${!!this.playbackController}, currentTimeMs=${this.currentTimeMs}`);
-    
     // First await: let Lit propagate time to children
     await this.updateComplete;
     
@@ -944,20 +937,12 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
       );
     }
     
-    // Log nested timegroup times for debugging
-    const nestedTimegroups = this.querySelectorAll('ef-timegroup');
-    for (const nested of nestedTimegroups) {
-      const tg = nested as EFTimegroup;
-      console.log(`[seekForRender] Nested timegroup: ownCurrentTimeMs=${tg.ownCurrentTimeMs}, startTimeMs=${tg.startTimeMs}, rootTimegroup.currentTimeMs=${tg.rootTimegroup?.currentTimeMs}`);
-    }
-    
     // Use FrameController for centralized element coordination
     // This replaces the old distributed frameTask system
     // Animation updates are handled via the onAnimationsUpdate callback
     await this.#frameController.renderFrame(timeMs, { 
       waitForLitUpdate: false,
       onAnimationsUpdate: (root) => {
-        console.log(`[seekForRender] onAnimationsUpdate called, root.currentTimeMs=${(root as any).currentTimeMs}`);
         updateAnimations(root as typeof this);
         // CRITICAL: Force style recalculation after updateAnimations sets animation.currentTime
         // Without this, getComputedStyle may return stale values (e.g., opacity: 0 instead of 1)
