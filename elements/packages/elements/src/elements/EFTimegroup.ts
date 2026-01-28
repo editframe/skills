@@ -1526,6 +1526,61 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
   }
 
   /**
+   * Copies initializers from original timegroup tree to cloned timegroup tree.
+   * Handles both the root timegroup and all nested timegroups recursively.
+   * @internal
+   */
+  async #copyInitializersToClone(original: EFTimegroup, clone: EFTimegroup): Promise<void> {
+    const initializerPromises: Promise<void>[] = [];
+    
+    // Copy initializer from this level
+    if (original.initializer) {
+      console.log('[copyInitializersToClone] Setting initializer on clone:', {
+        originalId: original.id,
+        cloneId: clone.id
+      });
+      clone.initializer = original.initializer;
+      if (clone.initializerComplete) {
+        initializerPromises.push(clone.initializerComplete);
+      }
+    }
+    
+    // Find all nested timegroups in both original and clone
+    const originalNested = Array.from(original.querySelectorAll('ef-timegroup')) as EFTimegroup[];
+    const cloneNested = Array.from(clone.querySelectorAll('ef-timegroup')) as EFTimegroup[];
+    
+    console.log('[copyInitializersToClone] Found nested timegroups:', {
+      originalCount: originalNested.length,
+      cloneCount: cloneNested.length
+    });
+    
+    // Match up nested timegroups by index (they should correspond 1:1)
+    for (let i = 0; i < originalNested.length && i < cloneNested.length; i++) {
+      const origNested = originalNested[i];
+      const cloneNestedItem = cloneNested[i];
+      
+      if (origNested.initializer) {
+        console.log('[copyInitializersToClone] Setting nested initializer:', {
+          index: i,
+          originalId: origNested.id,
+          cloneId: cloneNestedItem.id
+        });
+        cloneNestedItem.initializer = origNested.initializer;
+        if (cloneNestedItem.initializerComplete) {
+          initializerPromises.push(cloneNestedItem.initializerComplete);
+        }
+      }
+    }
+    
+    // Wait for all initializers to complete
+    if (initializerPromises.length > 0) {
+      console.log('[copyInitializersToClone] Waiting for', initializerPromises.length, 'initializers to complete');
+      await Promise.all(initializerPromises);
+      console.log('[copyInitializersToClone] All initializers complete');
+    }
+  }
+
+  /**
    * Create an independent clone of this timegroup for rendering.
    * The clone is a fully functional ef-timegroup with its own animations
    * and time state, isolated from the original (Prime-timeline).
@@ -1597,32 +1652,10 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     // 3. Wait for custom elements to upgrade
     await cloneEl.updateComplete;
     
-    // 3a. Set initializer AFTER clone is connected to DOM and upgraded
+    // 3a. Copy initializers from this timegroup and all nested timegroups
     // The initializer setter only schedules execution if this.isConnected is true
     // Setting it before connection would skip the automatic scheduling
-    console.log('[createRenderClone] Checking initializer:', {
-      hasInitializer: !!this.initializer,
-      cloneIsConnected: cloneEl.isConnected,
-      cloneInDocument: document.body.contains(cloneEl)
-    });
-    
-    if (this.initializer) {
-      console.log('[createRenderClone] Setting initializer on connected clone');
-      cloneEl.initializer = this.initializer;
-      console.log('[createRenderClone] After setting, initializerComplete exists:', !!cloneEl.initializerComplete);
-    } else {
-      console.log('[createRenderClone] Original has no initializer to copy');
-    }
-    
-    // 3b. Wait for initializer to complete
-    // The setter creates initializerComplete promise when it schedules the initializer
-    if (cloneEl.initializerComplete) {
-      console.log('[createRenderClone] Waiting for initializer to complete...');
-      await cloneEl.initializerComplete;
-      console.log('[createRenderClone] Initializer complete');
-    } else {
-      console.log('[createRenderClone] No initializer or already complete');
-    }
+    await this.#copyInitializersToClone(this, cloneEl);
     
     // 3b. Copy ef-text-segment properties AFTER elements have upgraded
     // segmentText is a JS property, so we need to wait for custom elements to define it
