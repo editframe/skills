@@ -818,7 +818,12 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
   /** @public */
   get currentTime() {
     if (this.playbackController) {
-      return this.playbackController.currentTime;
+      const pcTime = this.playbackController.currentTime;
+      // DEBUG: Log when playbackController is used
+      if (this.closest('.ef-render-clone-container')) {
+        console.warn(`[currentTime getter] Clone has playbackController! pcTime=${pcTime}, #currentTime=${this.#currentTime}`);
+      }
+      return pcTime;
     }
     return this.#currentTime ?? 0;
   }
@@ -912,7 +917,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     this.#currentTime = newTime;
     this.requestUpdate("currentTime");
     
-    console.log(`[seekForRender] Setting time to ${timeMs}ms (${newTime}s), currentTimeMs after set: ${this.currentTimeMs}`);
+    console.log(`[seekForRender] Setting time to ${timeMs}ms (${newTime}s), #currentTime=${this.#currentTime}, playbackController=${!!this.playbackController}, currentTimeMs=${this.currentTimeMs}`);
     
     // First await: let Lit propagate time to children
     await this.updateComplete;
