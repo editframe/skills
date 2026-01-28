@@ -222,6 +222,11 @@ function snapshotCanvas(
 /**
  * Serialize a canvas element as an <img> with base64 data URL.
  * Creates a snapshot of current pixels before async encoding to prevent race conditions.
+ * 
+ * OPTIMIZATION: Calculate optimal encoding resolution based on:
+ * 1. CSS display size (how big it actually appears)
+ * 2. Video export scale (output resolution multiplier)
+ * 3. Quality multiplier (for sharpness, default 1.5x)
  */
 function serializeCanvas(
   sourceElement: Element,
@@ -267,10 +272,32 @@ function serializeCanvas(
   // Check if we need to preserve alpha channel
   const preserveAlpha = shouldPreserveAlpha(sourceElement);
   
+  // CRITICAL: Calculate optimal encoding scale BEFORE creating snapshot.
+  // This prevents encoding at full resolution when CSS display size is much smaller.
+  let optimalScale = options.canvasScale; // Start with video export scale
+  const qualityMultiplier = 1.5; // Encode at 1.5x display size for quality
+  
+  try {
+    const cssWidth = parseFloat(computedWidth) || canvas.width;
+    const cssHeight = parseFloat(computedHeight) || canvas.height;
+    
+    // Calculate how much smaller the display is vs natural size
+    const displayScaleX = cssWidth / canvas.width;
+    const displayScaleY = cssHeight / canvas.height;
+    const displayScale = Math.min(displayScaleX, displayScaleY);
+    
+    // Combine display scale, video scale, and quality multiplier
+    // Clamp to 1.0 max (never upscale beyond natural resolution)
+    optimalScale = Math.min(1.0, displayScale * options.canvasScale * qualityMultiplier);
+  } catch (e) {
+    // Fallback to just video scale if we can't get computed style
+    console.warn(`[serializeCanvas] Failed to get computed style for ${sourceElement.tagName}:`, e);
+  }
+  
   // CRITICAL: Create a snapshot of canvas pixels SYNCHRONOUSLY before any async work.
   // This prevents race conditions where concurrent renders overwrite the shared
   // shadow canvas while encoding is in progress.
-  const snapshot = snapshotCanvas(canvas, options.canvasScale, preserveAlpha);
+  const snapshot = snapshotCanvas(canvas, optimalScale, preserveAlpha);
   
   // Open img tag with all styles from source element
   parts.push(`<img style="${escapeXML(finalStyle)}" src="`);
@@ -393,7 +420,6 @@ function serializeElement(
     
     // Serialize custom element with its styles, then shadow DOM content inside
     // Use span for inline/inline-block/inline-flex elements to preserve inline behavior
-    const tagName = element.tagName;
     const computedDisplay = getComputedStyle(element).display;
     const isInline = computedDisplay === 'inline' || computedDisplay === 'inline-block' || computedDisplay === 'inline-flex';
     const containerTag = isInline ? 'span' : 'div';
