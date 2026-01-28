@@ -303,9 +303,14 @@ function serializeSlottedContent(
 ): void {
   for (const slottedChild of slotHost.childNodes) {
     if (slottedChild.nodeType === Node.TEXT_NODE) {
-      const text = slottedChild.textContent?.trim();
+      const text = slottedChild.textContent;
       if (text) {
-        parts.push(escapeXML(text));
+        // Skip formatting whitespace (contains newlines), but preserve content whitespace (spaces/tabs)
+        const hasNewlines = /[\r\n]/.test(text);
+        const hasNonWhitespace = text.trim().length > 0;
+        if (hasNonWhitespace || (!hasNewlines && text.length > 0)) {
+          parts.push(escapeXML(text));
+        }
       }
     } else if (slottedChild.nodeType === Node.ELEMENT_NODE) {
       serializeElement(slottedChild as Element, parts, canvasJobs, options, parentIsSVG, null);
@@ -381,8 +386,9 @@ function serializeElement(
     // Serialize shadow DOM content with this element as the slot host
     for (const child of element.shadowRoot.childNodes) {
       if (child.nodeType === Node.TEXT_NODE) {
-        const text = child.textContent?.trim();
-        if (text) {
+        const text = child.textContent;
+        // Output all non-empty text (including whitespace-only text like spaces)
+        if (text && text.length > 0) {
           parts.push(escapeXML(text));
         }
       } else if (child.nodeType === Node.ELEMENT_NODE) {
@@ -435,9 +441,14 @@ function serializeElement(
   const children = element.shadowRoot?.childNodes || element.childNodes;
   for (const child of children) {
     if (child.nodeType === Node.TEXT_NODE) {
-      const text = child.textContent?.trim();
+      const text = child.textContent;
       if (text) {
-        parts.push(escapeXML(text));
+        // Skip formatting whitespace (contains newlines), but preserve content whitespace (spaces/tabs)
+        const hasNewlines = /[\r\n]/.test(text);
+        const hasNonWhitespace = text.trim().length > 0;
+        if (hasNonWhitespace || (!hasNewlines && text.length > 0)) {
+          parts.push(escapeXML(text));
+        }
       }
     } else if (child.nodeType === Node.ELEMENT_NODE) {
       // Preserve slotHost when recursing into standard elements inside shadow DOM
