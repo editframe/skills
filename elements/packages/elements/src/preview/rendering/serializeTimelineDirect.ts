@@ -203,6 +203,7 @@ function serializeElement(
   if (element instanceof HTMLElement) {
     const styles = getComputedStyle(element);
     if (styles.display === 'none' || styles.visibility === 'hidden') {
+      serializeStats.skippedHidden++;
       return;
     }
   }
@@ -210,6 +211,8 @@ function serializeElement(
   // Custom element with shadow DOM?
   const isCustom = element.tagName.includes('-');
   if (isCustom && element.shadowRoot) {
+    serializeStats.customElements++;
+    
     const shadowCanvas = element.shadowRoot.querySelector('canvas');
     if (shadowCanvas) {
       serializeCanvas(element, shadowCanvas, parts, canvasJobs, options);
@@ -227,15 +230,18 @@ function serializeElement(
       if (child.nodeType === Node.TEXT_NODE) {
         const text = child.textContent?.trim();
         if (text) {
+          serializeStats.textNodes++;
           parts.push(escapeXML(text));
         }
       } else if (child.nodeType === Node.ELEMENT_NODE) {
+        serializeStats.shadowDOMElements++;
         // If it's a <slot>, serialize the light DOM children instead
         if ((child as Element).tagName === 'SLOT') {
           for (const slottedChild of element.childNodes) {
             if (slottedChild.nodeType === Node.TEXT_NODE) {
               const text = slottedChild.textContent?.trim();
               if (text) {
+                serializeStats.textNodes++;
                 parts.push(escapeXML(text));
               }
             } else if (slottedChild.nodeType === Node.ELEMENT_NODE) {
@@ -258,6 +264,7 @@ function serializeElement(
   }
   
   // Standard element - serialize to XML
+  serializeStats.standardElements++;
   const tagName = element.tagName.toLowerCase();
   const isSVG = element instanceof SVGElement;
   
@@ -287,6 +294,7 @@ function serializeElement(
     if (child.nodeType === Node.TEXT_NODE) {
       const text = child.textContent?.trim();
       if (text) {
+        serializeStats.textNodes++;
         parts.push(escapeXML(text));
       }
     } else if (child.nodeType === Node.ELEMENT_NODE) {
@@ -332,12 +340,24 @@ function applyTemporalVisibility(element: Element, timeMs: number): number {
  * @param options - Serialization options (renderContext, canvasScale, timeMs)
  * @returns XHTML string with all canvases encoded as base64 data URLs
  */
+// Stats for debugging
+let serializeStats = {
+  customElements: 0,
+  shadowDOMElements: 0,
+  standardElements: 0,
+  textNodes: 0,
+  skippedHidden: 0,
+};
+
 export async function serializeTimelineToXHTML(
   timeline: Element,
   width: number,
   height: number,
   options: SerializationOptions
 ): Promise<string> {
+  // Reset stats
+  serializeStats = { customElements: 0, shadowDOMElements: 0, standardElements: 0, textNodes: 0, skippedHidden: 0 };
+  
   // Apply temporal visibility before serialization
   try {
     applyTemporalVisibility(timeline, options.timeMs);
@@ -359,6 +379,8 @@ export async function serializeTimelineToXHTML(
   
   // Close wrapper
   parts.push('</div>');
+  
+  console.log(`[Serialize Stats] Custom: ${serializeStats.customElements}, Shadow: ${serializeStats.shadowDOMElements}, Standard: ${serializeStats.standardElements}, Text: ${serializeStats.textNodes}, Hidden: ${serializeStats.skippedHidden}`);
   
   // Wait for all canvas encodings to complete
   const resolvedParts = await Promise.all(parts);
