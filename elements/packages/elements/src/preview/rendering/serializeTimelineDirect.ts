@@ -445,6 +445,11 @@ function serializeElement(
           if (/^\s+$/.test(text)) {
             // Replace spaces with non-breaking space entity
             const nbspText = text.replace(/ /g, '&#160;');
+            console.log(`[serializeElement] Converting whitespace in ${tagName}:`, {
+              originalLength: text.length,
+              nbspText,
+              parentTag: element.tagName
+            });
             parts.push(nbspText);
           } else {
             parts.push(escapeXML(text));

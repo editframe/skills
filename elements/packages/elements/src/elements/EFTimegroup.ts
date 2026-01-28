@@ -1429,10 +1429,12 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
    * so we must manually copy them to the cloned elements.
    * @internal
    */
-  #copyTextSegmentData(original: Element, clone: Element): void {
+  async #copyTextSegmentData(original: Element, clone: Element): Promise<void> {
     // Find matching text segment elements by position
     const originalSegments = original.querySelectorAll('ef-text-segment');
     const cloneSegments = clone.querySelectorAll('ef-text-segment');
+    
+    const updatePromises: Promise<any>[] = [];
     
     for (let i = 0; i < originalSegments.length && i < cloneSegments.length; i++) {
       const origSeg = originalSegments[i] as any;
@@ -1454,7 +1456,15 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
       if (origSeg.segmentEndMs !== undefined) {
         cloneSeg.segmentEndMs = origSeg.segmentEndMs;
       }
+      
+      // Wait for Lit to render the updated segmentText to shadow DOM
+      if (cloneSeg.updateComplete) {
+        updatePromises.push(cloneSeg.updateComplete);
+      }
     }
+    
+    // Wait for all segment updates to complete
+    await Promise.all(updatePromises);
   }
 
   /**
@@ -1565,7 +1575,8 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     
     // 3b. Copy ef-text-segment properties AFTER elements have upgraded
     // segmentText is a JS property, so we need to wait for custom elements to define it
-    this.#copyTextSegmentData(this, cloneEl);
+    // Wait for segments to update their shadow DOM with the copied text
+    await this.#copyTextSegmentData(this, cloneEl);
     
     // 4. Initializer has already run via connectedCallback (scheduled in updateComplete)
     // No need to call it manually - it runs automatically when the clone was appended to DOM.
