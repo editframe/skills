@@ -12,6 +12,7 @@ Add to your project's `.cursor/skills/` directory:
 cp -r skills/elements-composition .cursor/skills/
 cp -r skills/react-composition .cursor/skills/
 cp -r skills/motion-design .cursor/skills/
+cp -r skills/brand-video-generator .cursor/skills/
 ```
 
 ### Claude Code
@@ -26,12 +27,14 @@ Copy the skill folders to your agent's skills directory:
 - `skills/elements-composition/` - HTML/Web Components
 - `skills/react-composition/` - React Components
 - `skills/motion-design/` - Motion graphics principles
+- `skills/brand-video-generator/` - Generate video plans from brand websites
 
 ## Available Skills
 
 - **elements-composition** - Create video compositions with Editframe Elements (HTML/Web Components)
 - **react-composition** - Create video compositions with @editframe/react React wrappers (React/TypeScript)
 - **motion-design** - Professional motion graphics principles: timing, easing, physics, attention choreography, and advanced animation techniques
+- **brand-video-generator** - Analyze brand websites and generate strategic video composition plans: visual identity analysis, messaging strategy, scene planning, and asset requirements
 
 ## License
 
