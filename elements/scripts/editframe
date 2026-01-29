@@ -170,11 +170,14 @@ export default defineConfig({
         replacement: path.join(__dirname, 'src/assets')
       },
       // Monorepo source aliases
-      // NOTE: We intentionally don't alias CSS files - they're built assets
-      // and should load from node_modules. Only source code (TS/JS) is aliased.
       {
         find: /^@editframe\\/elements$/,
         replacement: path.join(monorepoPackages, 'elements/src/index.ts')
+      },
+      // CSS from source (Tailwind will process @tailwind directives)
+      {
+        find: '@editframe/elements/styles.css',
+        replacement: path.join(monorepoPackages, 'elements/src/elements.css')
       },
       {
         find: /^@editframe\\/api$/,
