@@ -210,9 +210,35 @@ export class EFImage extends EFTemporal(
     if (!this.canvasRef.value) throw new Error("Canvas not ready");
     const ctx = this.canvasRef.value.getContext("2d");
     if (!ctx) throw new Error("Canvas 2d context not ready");
-    this.canvasRef.value.width = image.width;
-    this.canvasRef.value.height = image.height;
-    ctx.drawImage(image, 0, 0);
+    
+    // Determine canvas dimensions
+    // For SVG images without explicit dimensions, image.width/height may be 0
+    // In that case, fall back to naturalWidth/naturalHeight or element's computed size
+    let canvasWidth = image.width || image.naturalWidth;
+    let canvasHeight = image.height || image.naturalHeight;
+    
+    // If still zero (common with SVGs that only have viewBox), use element's computed size
+    if (canvasWidth === 0 || canvasHeight === 0) {
+      const computedStyle = getComputedStyle(this);
+      const elementWidth = parseFloat(computedStyle.width);
+      const elementHeight = parseFloat(computedStyle.height);
+      
+      // Use element dimensions if available, otherwise use a reasonable default
+      if (elementWidth > 0 && elementHeight > 0) {
+        canvasWidth = elementWidth;
+        canvasHeight = elementHeight;
+      } else {
+        // Default to 300x150 (standard canvas default size)
+        canvasWidth = 300;
+        canvasHeight = 150;
+      }
+      
+      console.log(`[EFImage] SVG has no intrinsic dimensions, using fallback: ${canvasWidth}x${canvasHeight}`);
+    }
+    
+    this.canvasRef.value.width = canvasWidth;
+    this.canvasRef.value.height = canvasHeight;
+    ctx.drawImage(image, 0, 0, canvasWidth, canvasHeight);
     
     URL.revokeObjectURL(image.src);
   }

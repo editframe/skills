@@ -3,8 +3,7 @@ import "./EFImage.js";
 import "../gui/EFPreview.js";
 import { v4 } from "uuid";
 
-// Skip all EFImage tests - failing tests need investigation
-describe.skip("EFImage", () => {
+describe("EFImage", () => {
   describe("when rendering", () => {
     beforeEach(() => {
       // @ts-expect-error
@@ -116,6 +115,38 @@ describe.skip("EFImage", () => {
         "https://storage.googleapis.com/editframe-assets-7ac794b/1080-cat.jpeg",
       );
       // Note: CORS fallback behavior is tested in the fetchImage task logic
+    });
+  });
+
+  describe("SVG rendering", () => {
+    test("renders SVG with viewBox but no width/height attributes", async () => {
+      const image = document.createElement("ef-image");
+      document.body.appendChild(image);
+      
+      // Create an SVG blob with only viewBox (no width/height)
+      const svgContent = '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" fill="#3b82f6" /></svg>';
+      const blob = new Blob([svgContent], { type: "image/svg+xml" });
+      const url = URL.createObjectURL(blob);
+      
+      image.src = url;
+      image.style.width = "200px";
+      image.style.height = "200px";
+      
+      await image.loadImage();
+      
+      const canvas = image.canvasRef.value;
+      expect(canvas).toBeDefined();
+      expect(canvas!.width).toBeGreaterThan(0);
+      expect(canvas!.height).toBeGreaterThan(0);
+      
+      // Verify canvas has content (not blank)
+      const ctx = canvas!.getContext("2d");
+      const imageData = ctx!.getImageData(0, 0, canvas!.width, canvas!.height);
+      const hasNonZeroPixels = imageData.data.some(byte => byte !== 0);
+      expect(hasNonZeroPixels).toBe(true);
+      
+      URL.revokeObjectURL(url);
+      document.body.removeChild(image);
     });
   });
 });
