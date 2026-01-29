@@ -11,9 +11,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@editframe/cli": "0.37.1-beta",
-    "@editframe/react": "0.37.1-beta",
-    "@editframe/vite-plugin": "0.37.1-beta",
+    "@editframe/cli": "0.37.2-beta",
+    "@editframe/react": "0.37.2-beta",
+    "@editframe/vite-plugin": "0.37.2-beta",
     "@vitejs/plugin-react": "^4.3.1",
     "tailwindcss": "^3.4.3",
     "vite": "^6.3.5",
