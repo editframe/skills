@@ -4,7 +4,7 @@ Add dynamic JavaScript behavior to timegroups using React refs.
 
 ## Initializer
 
-Set up behavior that runs once per instance (prime timeline and render clones).
+Set up behavior that runs once when the element is initialized.
 
 ### Basic Usage with Refs
 
@@ -19,10 +19,10 @@ const DynamicScene = () => {
     const tg = timegroupRef.current;
     if (!tg) return;
     
-    tg.initializer = (instance) => {
-      // Runs once on prime timeline, once on each render clone
-      console.log('Initializer running');
-    };
+  tg.initializer = (instance) => {
+    // Runs once when element is initialized
+    console.log('Initializer running');
+  };
   }, []);
   
   return (
@@ -43,7 +43,6 @@ const DynamicScene = () => {
 
 - Set before connection: Runs after element connects to DOM
 - Set after connection: Runs immediately
-- Clones: Automatically copy and run initializer
 
 ## Frame Tasks
 
@@ -295,25 +294,20 @@ useEffect(() => {
 }, []);
 ```
 
-## Prime Timeline vs Render Clone
+## Consistent Behavior
 
-The initializer runs on both:
-
-- **Prime timeline**: Interactive preview in browser
-- **Render clone**: Headless rendering for video export
-
-Same code runs in both contexts, ensuring consistent behavior.
+The initializer ensures your code runs consistently in both preview and rendering:
 
 ```tsx
 tg.initializer = (instance) => {
-  // This code runs identically on prime timeline and render clones
+  // This code runs the same way in preview and rendering
   return instance.addFrameTask((info) => {
     // Update content based on time
   });
 };
 ```
 
-**Important**: For React components, you must use `TimelineRoot` to ensure the entire React component tree (including all hooks and state) is properly recreated for render clones. See [timeline-root.md](timeline-root.md) for details.
+**Important**: For React components, you must use `TimelineRoot` to ensure React hooks and state work correctly. See [timeline-root.md](timeline-root.md) for details.
 
 ## Best Practices
 
@@ -376,6 +370,6 @@ const MyScene = () => {
 
 ## See Also
 
-- [timeline-root.md](timeline-root.md) - TimelineRoot wrapper for proper clone rendering
+- [timeline-root.md](timeline-root.md) - TimelineRoot wrapper (required for React)
 - [hooks.md](hooks.md) - useTimingInfo and other React hooks
 - [timegroup.md](timegroup.md) - Timegroup component reference

@@ -1,17 +1,17 @@
 # TimelineRoot
 
-Factory wrapper component that enables proper clone rendering for React-based timelines.
+Wrapper component required for React-based timelines to ensure proper rendering.
 
 ## Why TimelineRoot is Required
 
-When Editframe renders videos, it creates **clones** of your timeline for each frame. Without `TimelineRoot`, these clones are just copied DOM nodes without React bindings, which means:
+`TimelineRoot` ensures that React components work correctly during video rendering. Without it:
 
-- React hooks won't work (`useTimingInfo`, `useEffect`, etc.)
+- React hooks won't work during rendering (`useTimingInfo`, `useEffect`, etc.)
 - JavaScript state and effects won't be present
 - Dynamic content won't update correctly
 - Render output may not match preview
 
-`TimelineRoot` solves this by re-rendering the entire React component tree for each clone, ensuring consistent behavior between preview and render.
+Always wrap your composition component with `TimelineRoot` for consistent behavior.
 
 ## Import
 
@@ -108,28 +108,7 @@ ReactDOM.createRoot(root).render(
 
 ## How It Works
 
-### Prime Timeline vs Render Clones
-
-1. **Prime Timeline**: The original timeline you see in the browser preview
-2. **Render Clones**: Copies created for each frame during video rendering
-
-`TimelineRoot` registers an initializer that:
-1. Removes the cloned DOM (which has no React bindings)
-2. Creates a fresh React root for the clone
-3. Renders the component tree using `flushSync` (synchronous)
-4. Ensures all hooks, state, and effects work correctly
-
-### Synchronous Rendering
-
-The initializer uses `flushSync` to render synchronously, which is required by Editframe's rendering system:
-
-```tsx
-flushSync(() => {
-  root.render(<Component />);
-});
-```
-
-This ensures the component tree is fully rendered before the frame is captured.
+`TimelineRoot` ensures your React component tree is properly initialized for both preview and rendering. It handles the setup required to make React hooks, state, and effects work consistently throughout the video rendering process.
 
 ## Examples
 
@@ -245,7 +224,7 @@ export const Video = () => {
   );
 };
 
-// main.tsx - TimelineRoot ensures frame tasks work in render clones
+// main.tsx - TimelineRoot ensures frame tasks work during rendering
 ReactDOM.createRoot(root).render(
   <TimelineRoot id="root" component={Video} />
 );
@@ -363,12 +342,12 @@ Your component must render a `Timegroup` at the root level. Check that:
 - No wrapper divs around the `Timegroup`
 - Component is not returning `null` or `undefined`
 
-### Hooks Not Working in Render
+### Hooks Not Working During Rendering
 
 Make sure you're using `TimelineRoot` in your `main.tsx`:
 
 ```tsx
-// ❌ Wrong - hooks won't work in render clones
+// ❌ Wrong - hooks won't work during rendering
 ReactDOM.createRoot(root).render(<Video />);
 
 // ✅ Correct - hooks work everywhere
@@ -379,11 +358,11 @@ ReactDOM.createRoot(root).render(
 
 ### Render Output Doesn't Match Preview
 
-This usually means `TimelineRoot` is missing. The preview works because it has React bindings, but render clones don't without `TimelineRoot`.
+This usually means `TimelineRoot` is missing. Always use `TimelineRoot` to ensure consistent behavior between preview and rendering.
 
 ## Performance Considerations
 
-`TimelineRoot` re-renders the entire React component tree for each clone. This is necessary for correctness, but means:
+`TimelineRoot` ensures your React components work correctly during rendering. For best performance:
 
 - Keep your component tree reasonably sized
 - Avoid expensive computations in render
