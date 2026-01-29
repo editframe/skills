@@ -28,5 +28,6 @@ import "./commands/process.js";
 import "./commands/process-file.js";
 import "./commands/check.js";
 import "./commands/webhook.js";
+import "./commands/transcribe.js";
 
 program.parse(process.argv);

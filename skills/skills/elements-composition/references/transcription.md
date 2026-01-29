@@ -1,98 +1,84 @@
-# Generating Captions with WhisperX
+# Generating Captions
 
-Generate caption data for `ef-captions` using WhisperX.
+Generate caption data for `ef-captions` using the Editframe CLI.
 
-## Check Installation
-
-```bash
-python -c "import whisperx; print('WhisperX installed')"
-```
-
-## Install WhisperX
+## Quick Start
 
 ```bash
-# Create virtual environment (recommended)
-python3 -m venv .venv
-source .venv/bin/activate
-
-# Install WhisperX
-pip install git+https://github.com/m-bain/whisperx.git
+npx @editframe/cli transcribe video.mp4 -o captions.json
 ```
 
-## Generate Captions
+This generates a JSON file with word-level timestamps that works with `ef-captions`.
 
-Create `transcribe.py`:
+## Installation Requirements
 
-```python
-import whisperx
-import json
-import sys
-
-def transcribe(input_file, output_file="captions.json"):
-    device = "cpu"  # or "cuda" for GPU
-    compute_type = "float32"  # "float16" for GPU
-    
-    # Load model and transcribe
-    model = whisperx.load_model("large-v2", device=device, compute_type=compute_type)
-    audio = whisperx.load_audio(input_file)
-    result = model.transcribe(audio, batch_size=16, language="en")
-    
-    # Align for word-level timestamps
-    model_a, metadata = whisperx.load_align_model(language_code="en", device=device)
-    result = whisperx.align(result["segments"], model_a, metadata, audio, device)
-    
-    # Convert to ef-captions format
-    captions = {
-        "segments": [],
-        "word_segments": []
-    }
-    
-    for segment in result["segments"]:
-        captions["segments"].append({
-            "start": segment["start"],
-            "end": segment["end"],
-            "text": segment["text"].strip()
-        })
-        
-        if "words" in segment:
-            for word in segment["words"]:
-                if "start" in word and "end" in word:
-                    captions["word_segments"].append({
-                        "start": word["start"],
-                        "end": word["end"],
-                        "text": word["word"]
-                    })
-    
-    with open(output_file, "w") as f:
-        json.dump(captions, f, indent=2)
-    
-    print(f"Captions saved to {output_file}")
-
-if __name__ == "__main__":
-    transcribe(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else "captions.json")
-```
-
-Run:
+The transcribe command requires `whisper_timestamped` to be installed:
 
 ```bash
-python transcribe.py video.mp4 captions.json
+pip3 install whisper-timestamped
 ```
+
+Verify installation:
+
+```bash
+npx @editframe/cli check
+```
+
+## Usage
+
+### Basic Transcription
+
+```bash
+npx @editframe/cli transcribe input.mp4
+```
+
+Creates `captions.json` in the current directory.
+
+### Custom Output File
+
+```bash
+npx @editframe/cli transcribe video.mp4 -o my-captions.json
+```
+
+### Different Language
+
+```bash
+npx @editframe/cli transcribe video.mp4 -l es -o spanish-captions.json
+```
+
+Supported languages: en, es, fr, de, it, pt, nl, and more.
+
+## Automatic Transcription
+
+During development, captions are generated automatically when you reference a video/audio file:
+
+```html
+<ef-captions for="my-video">
+  <ef-captions-active-word class="text-yellow-300"></ef-captions-active-word>
+</ef-captions>
+
+<ef-video id="my-video" src="video.mp4"></ef-video>
+```
+
+The dev server detects the video and generates captions on first use.
 
 ## Output Format
 
-The script outputs JSON compatible with `ef-captions`:
+The CLI generates JSON in the format required by `ef-captions`:
 
 ```json
 {
   "segments": [
-    { "start": 0, "end": 2.5, "text": "Hello world" }
+    { "start": 0, "end": 2500, "text": "Hello world" }
   ],
   "word_segments": [
-    { "start": 0, "end": 0.8, "text": "Hello" },
-    { "start": 0.9, "end": 2.5, "text": "world" }
+    { "text": "Hello", "start": 0, "end": 800 },
+    { "text": "world", "start": 900, "end": 2500 }
   ]
 }
 ```
+
+**Note:** Times are in milliseconds, not seconds.
 
 ## Use in Composition
 
