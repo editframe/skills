@@ -100,11 +100,19 @@ Use caption components for custom styling:
 
 ## Generate Captions
 
-Use the `elements-composition` skill for transcription info. The Editframe CLI can generate captions:
+Use the Editframe CLI to generate captions from video/audio files:
 
 ```bash
-npx @editframe/elements transcribe input.mp4 -o captions.json
+npx @editframe/cli transcribe input.mp4 -o captions.json
 ```
+
+This uses `whisper_timestamped` to create word-level timestamps. Install it first:
+
+```bash
+pip3 install whisper-timestamped
+```
+
+See the `elements-composition` skill's [transcription.md](../../elements-composition/references/transcription.md) for more details.
 
 ## Multiple Caption Tracks
 
