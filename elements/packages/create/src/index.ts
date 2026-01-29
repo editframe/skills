@@ -10,7 +10,7 @@ import {
   getUserPkgManager,
   installDependencies,
   installAgentSkills,
-  getDevCommand,
+  getStartCommand,
 } from "./utils.js";
 import { getAgentChoices } from "./detectAgent.js";
 
@@ -262,7 +262,7 @@ async function main() {
     process.stderr.write(chalk.cyan(`  ${pkgManager} install\n`));
   }
 
-  process.stderr.write(chalk.cyan(`  ${getDevCommand(pkgManager)}\n`));
+  process.stderr.write(chalk.cyan(`  ${getStartCommand(pkgManager)}\n`));
 
   // Skills info
   if (skillsInstalled) {

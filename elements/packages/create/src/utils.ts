@@ -95,8 +95,8 @@ export async function installAgentSkills(
 }
 
 /**
- * Get the appropriate dev command for the package manager.
+ * Get the appropriate start command for the package manager.
  */
-export function getDevCommand(pkgManager: PackageManager): string {
-  return pkgManager === "npm" ? "npm run dev" : `${pkgManager} dev`;
+export function getStartCommand(pkgManager: PackageManager): string {
+  return pkgManager === "npm" ? "npm start" : `${pkgManager} start`;
 }
