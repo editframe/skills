@@ -12,6 +12,9 @@ import { Timegroup } from "@editframe/react";
 
 - `mode` - `"fixed"` | `"sequence"` | `"contain"` | `"fit"`
 - `duration` - Explicit duration (for fixed mode) - e.g. `"5s"`, `"1000ms"`, `"2m"`
+- `overlap` - Overlap time between sequence items - e.g. `"1s"`
+- `fps` - Frame rate for rendering - number (default: 30)
+- `autoInit` - Auto-seek to frame 0 on load (root only) - boolean
 - `workbench` - Enable timeline/hierarchy UI (root only) - boolean
 - `className` - CSS classes for styling
 - `ref` - React ref (useful with hooks)
@@ -88,6 +91,19 @@ const scenes = [
 </Timegroup>
 ```
 
+## Sequence with Overlap
+
+Use `overlap` to create transitions between items:
+
+```tsx
+<Timegroup mode="sequence" overlap="1s">
+  <Timegroup mode="contain">{/* Scene 1 */}</Timegroup>
+  <Timegroup mode="contain">{/* Scene 2 */}</Timegroup>
+</Timegroup>
+```
+
+See [transitions.md](transitions.md) for crossfade examples.
+
 ## With useTimingInfo Hook
 
 ```tsx
@@ -102,6 +118,39 @@ const AnimatedScene = () => {
       <div style={{ opacity: percentComplete }}>
         Fading in... {(ownCurrentTimeMs / 1000).toFixed(2)}s
       </div>
+    </Timegroup>
+  );
+};
+```
+
+## Scripting with Refs
+
+Add dynamic behavior with JavaScript. See [scripting.md](scripting.md) for details.
+
+```tsx
+import { useRef, useEffect } from "react";
+import { Timegroup } from "@editframe/react";
+
+const DynamicScene = () => {
+  const timegroupRef = useRef<HTMLElement>(null);
+  
+  useEffect(() => {
+    const tg = timegroupRef.current;
+    if (!tg) return;
+    
+    tg.initializer = (instance) => {
+      const cleanup = instance.addFrameTask((info) => {
+        // Update content based on time
+        console.log(`Time: ${info.ownCurrentTimeMs}ms`);
+      });
+      
+      return cleanup;
+    };
+  }, []);
+  
+  return (
+    <Timegroup ref={timegroupRef} mode="fixed" duration="5s">
+      {/* Content */}
     </Timegroup>
   );
 };

@@ -5,7 +5,8 @@ Video element with source trimming.
 ## Props
 
 - `src` - URL or path
-- `sourcein` / `sourceout` - Trim source (e.g., `"5s"`, `"10s"`)
+- `sourcein` / `sourceout` - Absolute trim (e.g., `"5s"`, `"10s"`)
+- `trimstart` / `trimend` - Relative trim (e.g., `"2s"`, `"3s"`)
 - `duration` - Override duration
 - `mute` - Silence audio track
 - `volume` - 0.0 to 1.0
@@ -16,11 +17,31 @@ Video element with source trimming.
 <ef-video src="video.mp4" class="size-full object-cover"></ef-video>
 ```
 
-## Trimming
+## Trimming Approaches
+
+Two ways to trim video - choose based on your workflow:
+
+### Absolute Trimming (sourcein/sourceout)
+
+Show specific timestamps from source. Use when you know exact timecodes.
 
 ```html
+<!-- Show seconds 5-15 from source (10s clip) -->
 <ef-video src="video.mp4" sourcein="5s" sourceout="15s" class="size-full"></ef-video>
 ```
+
+### Relative Trimming (trimstart/trimend)
+
+Remove time from start/end. Use when thinking "cut off X seconds".
+
+```html
+<!-- Remove 2s from start, 3s from end -->
+<ef-video src="video.mp4" trimstart="2s" trimend="3s" class="size-full"></ef-video>
+```
+
+**When to use each:**
+- `sourcein`/`sourceout` - Working with timecode, precise frame references
+- `trimstart`/`trimend` - UI builders, "how much to cut off" thinking
 
 ## Muted / Volume
 

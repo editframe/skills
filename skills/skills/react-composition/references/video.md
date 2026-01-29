@@ -11,8 +11,10 @@ import { Video } from "@editframe/react";
 ## Props
 
 - `src` - Video file URL (required)
-- `sourceIn` - Start time in source - e.g. `"5s"`, `"1000ms"`
-- `sourceOut` - End time in source - e.g. `"10s"`, `"5000ms"`
+- `sourceIn` - Absolute start time - e.g. `"5s"`, `"1000ms"`
+- `sourceOut` - Absolute end time - e.g. `"10s"`, `"5000ms"`
+- `trimStart` - Relative trim from start - e.g. `"2s"`
+- `trimEnd` - Relative trim from end - e.g. `"3s"`
 - `muted` - Mute audio - boolean
 - `volume` - Volume level - number (0-1)
 - `className` - CSS classes for styling
@@ -24,9 +26,16 @@ import { Video } from "@editframe/react";
 <Video src="/assets/clip.mp4" className="size-full object-cover" />
 ```
 
-## With Trimming
+## Trimming Approaches
+
+Two ways to trim video - choose based on your workflow:
+
+### Absolute Trimming (sourceIn/sourceOut)
+
+Show specific timestamps from source. Use when you know exact timecodes.
 
 ```tsx
+{/* Show seconds 10-20 from source (10s clip) */}
 <Video 
   src="/assets/long-video.mp4"
   sourceIn="10s"
@@ -34,6 +43,24 @@ import { Video } from "@editframe/react";
   className="size-full object-cover"
 />
 ```
+
+### Relative Trimming (trimStart/trimEnd)
+
+Remove time from start/end. Use when thinking "cut off X seconds".
+
+```tsx
+{/* Remove 2s from start, 3s from end */}
+<Video 
+  src="/assets/video.mp4"
+  trimStart="2s"
+  trimEnd="3s"
+  className="size-full object-cover"
+/>
+```
+
+**When to use each:**
+- `sourceIn`/`sourceOut` - Working with timecode, precise frame references
+- `trimStart`/`trimEnd` - UI builders, "how much to cut off" thinking
 
 ## With Volume Control
 

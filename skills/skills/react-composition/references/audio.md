@@ -11,8 +11,10 @@ import { Audio } from "@editframe/react";
 ## Props
 
 - `src` - Audio file URL (required)
-- `sourceIn` - Start time in source - e.g. `"5s"`, `"1000ms"`
-- `sourceOut` - End time in source - e.g. `"10s"`, `"5000ms"`
+- `sourceIn` - Absolute start time - e.g. `"5s"`, `"1000ms"`
+- `sourceOut` - Absolute end time - e.g. `"10s"`, `"5000ms"`
+- `trimStart` - Relative trim from start - e.g. `"2s"`
+- `trimEnd` - Relative trim from end - e.g. `"3s"`
 - `volume` - Volume level - number (0-1), default 1
 - `id` - Unique identifier for the audio element
 
@@ -28,9 +30,16 @@ import { Audio } from "@editframe/react";
 <Audio src="/assets/music.mp3" volume={0.3} />
 ```
 
-## With Trimming
+## Trimming Approaches
+
+Two ways to trim audio - choose based on your workflow:
+
+### Absolute Trimming (sourceIn/sourceOut)
+
+Use specific timestamps from source. Best for precise timecodes.
 
 ```tsx
+{/* Play seconds 30-60 from source (30s clip) */}
 <Audio 
   src="/assets/song.mp3"
   sourceIn="30s"
@@ -38,6 +47,24 @@ import { Audio } from "@editframe/react";
   volume={0.5}
 />
 ```
+
+### Relative Trimming (trimStart/trimEnd)
+
+Remove time from start/end. Best for "cut off X seconds" thinking.
+
+```tsx
+{/* Remove 1s from start, 2s from end */}
+<Audio 
+  src="/assets/music.mp3"
+  trimStart="1s"
+  trimEnd="2s"
+  volume={0.5}
+/>
+```
+
+**When to use each:**
+- `sourceIn`/`sourceOut` - Working with timecode, precise frame references
+- `trimStart`/`trimEnd` - UI builders, "how much to cut off" thinking
 
 ## Background Music
 
