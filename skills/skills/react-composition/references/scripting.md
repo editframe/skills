@@ -313,6 +313,8 @@ tg.initializer = (instance) => {
 };
 ```
 
+**Important**: For React components, you must use `TimelineRoot` to ensure the entire React component tree (including all hooks and state) is properly recreated for render clones. See [timeline-root.md](timeline-root.md) for details.
+
 ## Best Practices
 
 1. **Use refs to access timegroup** - Don't query the DOM directly from React
@@ -374,5 +376,6 @@ const MyScene = () => {
 
 ## See Also
 
+- [timeline-root.md](timeline-root.md) - TimelineRoot wrapper for proper clone rendering
 - [hooks.md](hooks.md) - useTimingInfo and other React hooks
 - [timegroup.md](timegroup.md) - Timegroup component reference

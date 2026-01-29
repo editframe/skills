@@ -16,17 +16,27 @@ import { Configuration } from "@editframe/react";
 ## Basic Usage
 
 ```tsx
-import { Configuration, Timegroup } from "@editframe/react";
+// Video.tsx
+import { Timegroup } from "@editframe/react";
 
 export const Video = () => {
   return (
-    <Configuration apiHost="https://api.example.com" mediaEngine="local">
-      <Timegroup workbench mode="sequence" className="w-[1920px] h-[1080px]">
-        {/* Your composition */}
-      </Timegroup>
-    </Configuration>
+    <Timegroup workbench mode="sequence" className="w-[1920px] h-[1080px]">
+      {/* Your composition */}
+    </Timegroup>
   );
 };
+
+// main.tsx
+import ReactDOM from "react-dom/client";
+import { Configuration, TimelineRoot } from "@editframe/react";
+import { Video } from "./Video";
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <Configuration apiHost="https://api.example.com" mediaEngine="local">
+    <TimelineRoot id="root" component={Video} />
+  </Configuration>
+);
 ```
 
 ## Media Engine
@@ -101,26 +111,36 @@ export const Video = () => {
 ## Typical Setup
 
 ```tsx
-import React from "react";
-import { Configuration, Timegroup, Video, Audio } from "@editframe/react";
+// VideoComposition.tsx
+import { Timegroup, Video, Audio } from "@editframe/react";
 
 export const VideoComposition = () => {
   return (
-    <Configuration 
-      apiHost={import.meta.env.VITE_EDITFRAME_API}
-      mediaEngine="local"
+    <Timegroup 
+      workbench 
+      mode="sequence" 
+      className="w-[1920px] h-[1080px] bg-black"
     >
-      <Timegroup 
-        workbench 
-        mode="sequence" 
-        className="w-[1920px] h-[1080px] bg-black"
-      >
-        <Timegroup mode="fixed" duration="10s" className="absolute w-full h-full">
-          <Video src="/assets/intro.mp4" className="size-full object-cover" />
-          <Audio src="/assets/music.mp3" volume={0.3} />
-        </Timegroup>
+      <Timegroup mode="fixed" duration="10s" className="absolute w-full h-full">
+        <Video src="/assets/intro.mp4" className="size-full object-cover" />
+        <Audio src="/assets/music.mp3" volume={0.3} />
       </Timegroup>
-    </Configuration>
+    </Timegroup>
   );
 };
+
+// main.tsx
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { Configuration, TimelineRoot } from "@editframe/react";
+import { VideoComposition } from "./VideoComposition";
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <Configuration 
+    apiHost={import.meta.env.VITE_EDITFRAME_API}
+    mediaEngine="local"
+  >
+    <TimelineRoot id="root" component={VideoComposition} />
+  </Configuration>
+);
 ```

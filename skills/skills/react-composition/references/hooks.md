@@ -6,6 +6,8 @@ React hooks for accessing timing information and transforms.
 
 Access timing information for the current element.
 
+**Important**: This hook requires `TimelineRoot` to work correctly in render clones. See [timeline-root.md](timeline-root.md).
+
 ### Import
 
 ```tsx

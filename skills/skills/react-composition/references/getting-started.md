@@ -63,6 +63,25 @@ export const Video = () => {
 };
 ```
 
+And `src/main.tsx` wraps it with `TimelineRoot`:
+
+```tsx
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { TimelineRoot } from "@editframe/react";
+import { Video } from "./Video";
+import "@editframe/elements/styles.css";
+
+const root = document.getElementById("root");
+if (!root) throw new Error("Root element not found");
+
+ReactDOM.createRoot(root).render(
+  <TimelineRoot id="root" component={Video} />
+);
+```
+
+**Important**: `TimelineRoot` is required for proper rendering. It ensures React hooks and state work correctly in render clones. See [timeline-root.md](timeline-root.md) for details.
+
 ## Add Assets
 
 Place media files in `src/assets/`:
@@ -84,6 +103,15 @@ import { Video, Audio, Image } from "@editframe/react";
 <Audio src="/assets/music.mp3" />
 <Image src="/assets/logo.png" />
 ```
+
+## TimelineRoot Requirement
+
+All React projects must use `TimelineRoot` to wrap the composition component. This ensures:
+- React hooks work in render clones
+- State and effects are present during rendering
+- Consistent behavior between preview and render
+
+See [timeline-root.md](timeline-root.md) for complete documentation.
 
 ## Rendering
 
