@@ -7,9 +7,9 @@
     "start": "editframe preview"
   },
   "dependencies": {
-    "@editframe/cli": "0.36.0-beta",
-    "@editframe/elements": "0.36.0-beta",
-    "@editframe/vite-plugin": "0.36.0-beta",
+    "@editframe/cli": "0.36.1-beta",
+    "@editframe/elements": "0.36.1-beta",
+    "@editframe/vite-plugin": "0.36.1-beta",
     "tailwindcss": "^3.4.3",
     "vite": "^6.3.5",
     "vite-plugin-singlefile": "^2.0.1"
