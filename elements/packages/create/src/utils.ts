@@ -1,5 +1,4 @@
 import { execa } from "execa";
-import ora, { type Ora } from "ora";
 import chalk from "chalk";
 
 export type PackageManager = "npm" | "pnpm" | "yarn" | "bun";
@@ -21,75 +20,19 @@ export function getUserPkgManager(): PackageManager {
 }
 
 /**
- * Execute a package manager command with a spinner for progress indication.
- */
-async function execWithSpinner(
-  projectDir: string,
-  pkgManager: PackageManager,
-  options: {
-    args?: string[];
-    stdout?: "pipe" | "ignore" | "inherit";
-    onDataHandle?: (spinner: Ora) => (data: Buffer) => void;
-  }
-) {
-  const { onDataHandle, args = ["install"], stdout = "pipe" } = options;
-
-  const spinner = ora(`Running ${pkgManager} install...`).start();
-  const subprocess = execa(pkgManager, args, { cwd: projectDir, stdout });
-
-  await new Promise<void>((res, rej) => {
-    if (onDataHandle) {
-      subprocess.stdout?.on("data", onDataHandle(spinner));
-    }
-
-    void subprocess.on("error", (e) => rej(e));
-    void subprocess.on("close", () => res());
-  });
-
-  return spinner;
-}
-
-/**
  * Run the appropriate install command for the detected package manager.
+ * Shows full output to the user so they can see progress.
  */
 async function runInstallCommand(
   pkgManager: PackageManager,
   projectDir: string
-): Promise<Ora | null> {
-  switch (pkgManager) {
-    // npm has built-in progress bar, inherit stderr to show it
-    case "npm":
-      await execa(pkgManager, ["install"], {
-        cwd: projectDir,
-        stderr: "inherit",
-      });
-      return null;
-
-    // pnpm outputs progress to stdout with "Progress" prefix
-    case "pnpm":
-      return execWithSpinner(projectDir, pkgManager, {
-        onDataHandle: (spinner) => (data) => {
-          const text = data.toString();
-          if (text.includes("Progress")) {
-            spinner.text = text.includes("|")
-              ? (text.split(" | ")[1] ?? "")
-              : text;
-          }
-        },
-      });
-
-    // yarn outputs progress to stdout
-    case "yarn":
-      return execWithSpinner(projectDir, pkgManager, {
-        onDataHandle: (spinner) => (data) => {
-          spinner.text = data.toString().trim();
-        },
-      });
-
-    // bun is fast, just show a spinner
-    case "bun":
-      return execWithSpinner(projectDir, pkgManager, { stdout: "ignore" });
-  }
+): Promise<void> {
+  // Show all output directly to user - no hiding behind spinners
+  await execa(pkgManager, ["install"], {
+    cwd: projectDir,
+    stdout: "inherit",
+    stderr: "inherit",
+  });
 }
 
 /**
@@ -99,12 +42,11 @@ export async function installDependencies(projectDir: string): Promise<boolean> 
   const pkgManager = getUserPkgManager();
 
   try {
-    const installSpinner = await runInstallCommand(pkgManager, projectDir);
+    process.stderr.write(chalk.bold(`\nInstalling dependencies with ${pkgManager}...\n\n`));
+    
+    await runInstallCommand(pkgManager, projectDir);
 
-    // If the spinner was used, succeed it; otherwise create a new one
-    (installSpinner ?? ora()).succeed(
-      chalk.green("Successfully installed dependencies!")
-    );
+    process.stderr.write(chalk.green("\n✓ Dependencies installed successfully!\n"));
 
     return true;
   } catch (error) {
@@ -123,22 +65,26 @@ export async function installAgentSkills(
   projectDir: string,
   agent: string
 ): Promise<boolean> {
-  const spinner = ora("Installing AI agent skills...").start();
-
   try {
+    process.stderr.write(chalk.bold(`\nInstalling AI agent skills for ${agent}...\n\n`));
+    
     const agentFlag = agent === "all" ? [] : ["--agent", agent];
 
     await execa(
       "npx",
       ["ai-agent-skills", "install", "editframe/skills", ...agentFlag],
-      { cwd: projectDir }
+      { 
+        cwd: projectDir,
+        stdout: "inherit",
+        stderr: "inherit",
+      }
     );
 
-    spinner.succeed(chalk.green(`AI agent skills installed for ${agent}!`));
+    process.stderr.write(chalk.green(`\n✓ Agent skills installed for ${agent}!\n`));
     return true;
   } catch (error) {
-    spinner.fail(chalk.yellow("Failed to install agent skills"));
-    process.stderr.write(chalk.dim("\nYou can install manually:\n"));
+    process.stderr.write(chalk.yellow("\n⚠ Failed to install agent skills\n"));
+    process.stderr.write(chalk.dim("You can install manually:\n"));
     process.stderr.write(
       chalk.cyan(
         `  npx ai-agent-skills install editframe/skills --agent ${agent}\n\n`

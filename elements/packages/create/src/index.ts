@@ -123,7 +123,7 @@ async function main() {
     process.exit(1);
   }
 
-  // Build prompts array based on what CLI args were provided
+  // Build prompts array - ask ALL questions upfront before any network calls
   const promptQuestions: prompts.PromptObject[] = [];
 
   if (!cliDirectory && !nonInteractive) {
@@ -147,7 +147,36 @@ async function main() {
     });
   }
 
-  // Prompt for missing information
+  // Ask about agent skills upfront (unless skipped via CLI)
+  if (!skipSkills && !cliAgent && !nonInteractive) {
+    promptQuestions.push({
+      type: "confirm",
+      name: "installSkills",
+      message: "Install AI agent skills for better coding assistance?",
+      initial: true,
+    });
+    
+    promptQuestions.push({
+      type: (_prev, values) => (values.installSkills ? "select" : null),
+      name: "agent",
+      message: "Which AI coding agent are you using?",
+      choices: [
+        {
+          title: "Cursor",
+          value: "cursor",
+          description: "Most popular",
+        },
+        { title: "VS Code Copilot", value: "vscode" },
+        { title: "Claude Code", value: "claude" },
+        { title: "Windsurf", value: "windsurf" },
+        { title: "All agents", value: "all" },
+        { title: "Skip", value: "skip" },
+      ],
+      initial: 0,
+    });
+  }
+
+  // Prompt for all missing information at once
   const answers =
     promptQuestions.length > 0 ? await prompts(promptQuestions) : {};
 
@@ -164,6 +193,14 @@ async function main() {
   const directoryName =
     cliDirectory || answers.directoryName || "my-project";
   const templateName = cliTemplate || answers.templateName || templates[0];
+  
+  // Determine agent selection from CLI or prompts
+  let selectedAgent = cliAgent || answers.agent;
+  
+  // Default to cursor in non-interactive mode if skills not skipped
+  if (!skipSkills && !selectedAgent && nonInteractive) {
+    selectedAgent = "cursor";
+  }
 
   const targetDir = path.join(process.cwd(), directoryName);
   const templateDir = path.join(__dirname, "templates", templateName);
@@ -196,55 +233,17 @@ async function main() {
   const pkgManager = getUserPkgManager();
   let depsInstalled = false;
   let skillsInstalled = false;
-  let selectedAgent = cliAgent;
 
+  // All questions have been asked - now do the work
+  
   // Install dependencies unless skipped
   if (!skipInstall) {
     depsInstalled = await installDependencies(targetDir);
   }
 
-  // Prompt for and install agent skills unless skipped
-  if (!skipSkills) {
-    // If agent not specified via CLI, prompt for it (unless non-interactive)
-    if (!selectedAgent && !nonInteractive) {
-      const skillsPrompt = await prompts([
-        {
-          type: "confirm",
-          name: "installSkills",
-          message: "Install AI agent skills for better coding assistance?",
-          initial: true,
-        },
-        {
-          type: (prev) => (prev ? "select" : null),
-          name: "agent",
-          message: "Which AI coding agent are you using?",
-          choices: [
-            {
-              title: "Cursor",
-              value: "cursor",
-              description: "Most popular",
-            },
-            { title: "VS Code Copilot", value: "vscode" },
-            { title: "Claude Code", value: "claude" },
-            { title: "Windsurf", value: "windsurf" },
-            { title: "All agents", value: "all" },
-            { title: "Skip", value: "skip" },
-          ],
-          initial: 0,
-        },
-      ]);
-
-      selectedAgent = skillsPrompt.agent;
-    }
-
-    // Install skills if agent was selected (default to cursor in non-interactive mode)
-    if (!selectedAgent && nonInteractive) {
-      selectedAgent = "cursor";
-    }
-
-    if (selectedAgent && selectedAgent !== "skip") {
-      skillsInstalled = await installAgentSkills(targetDir, selectedAgent);
-    }
+  // Install agent skills if an agent was selected
+  if (!skipSkills && selectedAgent && selectedAgent !== "skip") {
+    skillsInstalled = await installAgentSkills(targetDir, selectedAgent);
   }
 
   // Success message
