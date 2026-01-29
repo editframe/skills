@@ -43,6 +43,11 @@ const domStructureChanged = new WeakMap<Element, boolean>();
 const lastAnimationCount = new WeakMap<Element, number>();
 
 /**
+ * Tracks which animations have already been validated to avoid duplicate warnings.
+ */
+const validatedAnimations = new WeakSet<Animation>();
+
+/**
  * Checks if an element is in a render clone (static DOM context).
  * Render clones are in containers with class "ef-render-clone-container".
  */
@@ -769,6 +774,158 @@ const extractAnimationTiming = (effect: KeyframeEffect): AnimationTiming => {
   };
 };
 
+// ============================================================================
+// Animation Fill Mode Validation (Development Mode)
+// ============================================================================
+
+/**
+ * Analyzes keyframes to detect if animation is a fade-in or fade-out effect.
+ * Returns 'fade-in', 'fade-out', 'both', or null.
+ */
+const detectFadePattern = (keyframes: Keyframe[]): 'fade-in' | 'fade-out' | 'both' | null => {
+  if (!keyframes || keyframes.length < 2) return null;
+
+  const firstFrame = keyframes[0];
+  const lastFrame = keyframes[keyframes.length - 1];
+
+  const firstOpacity = firstFrame && 'opacity' in firstFrame ? Number(firstFrame.opacity) : null;
+  const lastOpacity = lastFrame && 'opacity' in lastFrame ? Number(lastFrame.opacity) : null;
+
+  if (firstOpacity === null || lastOpacity === null) return null;
+
+  const isFadeIn = firstOpacity < lastOpacity;
+  const isFadeOut = firstOpacity > lastOpacity;
+
+  if (isFadeIn && isFadeOut) return 'both';
+  if (isFadeIn) return 'fade-in';
+  if (isFadeOut) return 'fade-out';
+  return null;
+};
+
+/**
+ * Analyzes keyframes to detect if animation has transform changes (slide, scale, etc).
+ */
+const hasTransformAnimation = (keyframes: Keyframe[]): boolean => {
+  if (!keyframes || keyframes.length < 2) return false;
+  
+  return keyframes.some(frame => 
+    'transform' in frame || 
+    'translate' in frame || 
+    'scale' in frame || 
+    'rotate' in frame
+  );
+};
+
+/**
+ * Validates CSS animation fill-mode to prevent flashing issues.
+ * 
+ * CRITICAL: Editframe's timeline system pauses animations and manually controls them
+ * via animation.currentTime. This means elements exist in the DOM before their animations
+ * start. Without proper fill-mode, elements will "flash" to their natural state before
+ * the animation begins.
+ * 
+ * Common issues:
+ * - Delayed animations without 'backwards': Element shows natural state during delay
+ * - Fade-in without 'backwards': Element visible before fade starts
+ * - Fade-out without 'forwards': Element snaps back after fade completes
+ * 
+ * Only runs in development mode to avoid performance impact in production.
+ */
+const validateAnimationFillMode = (
+  animation: Animation,
+  timing: AnimationTiming,
+): void => {
+  // Only validate in development mode
+  if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'production') {
+    return;
+  }
+
+  // Skip if already validated
+  if (validatedAnimations.has(animation)) {
+    return;
+  }
+  validatedAnimations.add(animation);
+
+  const effect = animation.effect;
+  if (!validateAnimationEffect(effect)) {
+    return;
+  }
+
+  const effectTiming = effect.getTiming();
+  const fill = effectTiming.fill || 'none';
+  const target = effect.target;
+
+  // Get animation name for better error messages
+  let animationName = 'unknown';
+  if (animation.id) {
+    animationName = animation.id;
+  } else if (target instanceof HTMLElement) {
+    const computedStyle = window.getComputedStyle(target);
+    const animationNameValue = computedStyle.animationName;
+    if (animationNameValue && animationNameValue !== 'none') {
+      animationName = animationNameValue.split(',')[0]?.trim() || 'unknown';
+    }
+  }
+
+  const warnings: string[] = [];
+
+  // Check 1: Delayed animations without backwards/both
+  if (timing.delay > 0 && fill !== 'backwards' && fill !== 'both') {
+    warnings.push(
+      `⚠️  Animation "${animationName}" has a ${timing.delay}ms delay but no 'backwards' fill-mode.`,
+      `   This will cause the element to show its natural state during the delay, then suddenly jump when the animation starts.`,
+      `   Fix: Add 'backwards' or 'both' to the animation shorthand.`,
+      `   Example: animation: ${animationName} ${timing.duration}ms ${timing.delay}ms backwards;`
+    );
+  }
+
+  // Check 2: Analyze keyframes for fade/transform patterns
+  try {
+    const keyframes = effect.getKeyframes();
+    const fadePattern = detectFadePattern(keyframes);
+    const hasTransform = hasTransformAnimation(keyframes);
+
+    // Fade-in or transform-in animations should use backwards
+    if ((fadePattern === 'fade-in' || hasTransform) && fill !== 'backwards' && fill !== 'both') {
+      warnings.push(
+        `⚠️  Animation "${animationName}" appears to be a fade-in or slide-in effect but lacks 'backwards' fill-mode.`,
+        `   The element will be visible in its natural state before the animation starts.`,
+        `   Fix: Add 'backwards' or 'both' to the animation.`,
+        `   Example: animation: ${animationName} ${timing.duration}ms backwards;`
+      );
+    }
+
+    // Fade-out animations should use forwards
+    if (fadePattern === 'fade-out' && fill !== 'forwards' && fill !== 'both') {
+      warnings.push(
+        `⚠️  Animation "${animationName}" appears to be a fade-out effect but lacks 'forwards' fill-mode.`,
+        `   The element will snap back to its natural state after the animation completes.`,
+        `   Fix: Add 'forwards' or 'both' to the animation.`,
+        `   Example: animation: ${animationName} ${timing.duration}ms forwards;`
+      );
+    }
+
+    // Combined effects should use both
+    if (fadePattern === 'both' && fill !== 'both') {
+      warnings.push(
+        `⚠️  Animation "${animationName}" has both fade-in and fade-out keyframes but doesn't use 'both' fill-mode.`,
+        `   Fix: Use 'both' to apply initial and final states.`,
+        `   Example: animation: ${animationName} ${timing.duration}ms both;`
+      );
+    }
+  } catch (e) {
+    // Silently skip keyframe analysis if it fails
+  }
+
+  // Log all warnings together
+  if (warnings.length > 0) {
+    console.group('%c🎬 Editframe Animation Fill-Mode Warning', 'color: #f59e0b; font-weight: bold');
+    warnings.forEach(warning => console.log(warning));
+    console.log('\n📚 Learn more: https://developer.mozilla.org/en-US/docs/Web/CSS/animation-fill-mode');
+    console.groupEnd();
+  }
+};
+
 /**
  * Prepares animation for manual control by ensuring it's paused
  */
@@ -905,6 +1062,9 @@ const synchronizeAnimation = (
     animation.currentTime = 0;
     return;
   }
+
+  // Validate fill-mode in development mode
+  validateAnimationFillMode(animation, timing);
 
   // Find the containing timegroup for the animation target.
   // Temporal elements are always synced to timegroups, so animations should use

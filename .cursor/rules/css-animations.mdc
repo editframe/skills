@@ -1,0 +1,268 @@
+---
+description: CSS animation fill-mode requirements for Editframe timeline system
+globs: **/*.css,**/*.html,**/*.ts,**/*.tsx,**/*.js,**/*.jsx
+alwaysApply: false
+---
+
+# CSS Animation Fill-Mode Requirements
+
+## Critical Rule: Always Specify Fill-Mode for Timeline Animations
+
+When creating CSS animations for Editframe elements (ef-text, ef-image, ef-video, ef-timegroup, etc.), you **MUST** specify the appropriate `animation-fill-mode` to prevent flashing/flickering issues.
+
+## Why This Matters
+
+Editframe's timeline system:
+1. Pauses all CSS animations
+2. Manually controls them via `animation.currentTime`
+3. Elements exist in the DOM **before** their animations start
+
+Without proper fill-mode, elements will "flash" to their natural state before/after animations, creating jarring visual glitches.
+
+## Required Fill-Mode Patterns
+
+### Pattern 1: Delayed Animations → Use `backwards`
+
+**Problem:** Element shows natural state during delay, then suddenly jumps when animation starts.
+
+```css
+/* ❌ WRONG - Will flash during 500ms delay */
+animation: fade-in 1s 500ms;
+
+/* ✅ CORRECT - Shows initial keyframe during delay */
+animation: fade-in 1s 500ms backwards;
+```
+
+**Rule:** Any animation with a delay MUST use `backwards` or `both`.
+
+### Pattern 2: Fade-In / Slide-In Effects → Use `backwards`
+
+**Problem:** Element visible in natural state before animation begins.
+
+```css
+/* ❌ WRONG - Element visible at opacity: 1 before fading in */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.element {
+  animation: fade-in 1s;
+}
+
+/* ✅ CORRECT - Element hidden (opacity: 0) until animation starts */
+.element {
+  animation: fade-in 1s backwards;
+}
+```
+
+**Rule:** Fade-in, slide-in, scale-in, and similar entrance effects MUST use `backwards` or `both`.
+
+### Pattern 3: Fade-Out / Slide-Out Effects → Use `forwards`
+
+**Problem:** Element snaps back to natural state after animation completes.
+
+```css
+/* ❌ WRONG - Element becomes visible again after fading out */
+@keyframes fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+.element {
+  animation: fade-out 500ms;
+}
+
+/* ✅ CORRECT - Element stays hidden (opacity: 0) after animation */
+.element {
+  animation: fade-out 500ms forwards;
+}
+```
+
+**Rule:** Fade-out, slide-out, and similar exit effects MUST use `forwards` or `both`.
+
+### Pattern 4: Sequential/Staggered Animations → Use `backwards`
+
+**Problem:** Elements in a sequence flash before their turn.
+
+```html
+<!-- ❌ WRONG - Each element flashes during its delay -->
+<ef-text style="animation: fade-in 1s 0s">First</ef-text>
+<ef-text style="animation: fade-in 1s 500ms">Second</ef-text>
+<ef-text style="animation: fade-in 1s 1s">Third</ef-text>
+
+<!-- ✅ CORRECT - Elements hidden until their animation starts -->
+<ef-text style="animation: fade-in 1s 0s backwards">First</ef-text>
+<ef-text style="animation: fade-in 1s 500ms backwards">Second</ef-text>
+<ef-text style="animation: fade-in 1s 1s backwards">Third</ef-text>
+```
+
+**Rule:** Staggered animations MUST use `backwards` or `both`.
+
+### Pattern 5: Combined In/Out Effects → Use `both`
+
+**Problem:** Element flashes at both start and end.
+
+```css
+/* ❌ WRONG - Flashes at start AND end */
+animation: 
+  fade-in 1s,
+  fade-out 500ms calc(var(--ef-duration) - 500ms);
+
+/* ✅ CORRECT - Applies both initial and final states */
+animation: 
+  fade-in 1s backwards,
+  fade-out 500ms calc(var(--ef-duration) - 500ms) forwards;
+
+/* ✅ ALSO CORRECT - Single animation with both */
+animation: fade-in-out 2s both;
+```
+
+**Rule:** Animations with both entrance and exit effects MUST use `both`, or specify `backwards` and `forwards` separately.
+
+## Common Animation Patterns
+
+### Fade In
+```css
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.element {
+  animation: fade-in 1s backwards; /* or 'both' */
+}
+```
+
+### Fade Out
+```css
+@keyframes fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+.element {
+  animation: fade-out 500ms forwards; /* or 'both' */
+}
+```
+
+### Slide In
+```css
+@keyframes slide-in-left {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+.element {
+  animation: slide-in-left 800ms backwards; /* or 'both' */
+}
+```
+
+### Slide Out
+```css
+@keyframes slide-out-right {
+  from { transform: translateX(0); }
+  to { transform: translateX(100%); }
+}
+.element {
+  animation: slide-out-right 500ms forwards; /* or 'both' */
+}
+```
+
+### Scale/Zoom In
+```css
+@keyframes zoom-in {
+  from { transform: scale(0); }
+  to { transform: scale(1); }
+}
+.element {
+  animation: zoom-in 600ms backwards; /* or 'both' */
+}
+```
+
+### Combined Entrance and Exit
+```css
+.element {
+  animation: 
+    fade-in 1s backwards,
+    fade-out 500ms calc(var(--ef-duration) - 500ms) forwards;
+}
+```
+
+## Real-World Example
+
+From the card-poetry template:
+
+```html
+<ef-timegroup
+  mode="contain"
+  style="
+    animation:
+      fadein 1250ms backwards,
+      fadeout 500ms calc(var(--ef-duration) - 500ms) forwards;
+  "
+>
+  <h1 style="animation: 1s slide-in-left ease-out backwards">
+    9 of Spades
+  </h1>
+  <ef-image
+    src="/assets/card.png"
+    style="
+      animation-composition: add;
+      animation:
+        4s rotate 4s,
+        1s slide-in-left 0.25s ease-out backwards;
+    "
+  />
+</ef-timegroup>
+```
+
+## Quick Reference Table
+
+| Animation Type | Fill-Mode | Reason |
+|---------------|-----------|---------|
+| Fade-in | `backwards` or `both` | Hide element before animation |
+| Slide-in | `backwards` or `both` | Position element before animation |
+| Scale-in | `backwards` or `both` | Size element before animation |
+| Fade-out | `forwards` or `both` | Keep element hidden after animation |
+| Slide-out | `forwards` or `both` | Keep element positioned after animation |
+| With delay | `backwards` or `both` | Apply initial state during delay |
+| Combined in/out | `both` | Apply both initial and final states |
+
+## Development Mode Validation
+
+The Editframe system includes automatic validation in development mode that will warn you if:
+- An animation has a delay but no `backwards`/`both` fill-mode
+- A fade-in animation lacks `backwards`
+- A fade-out animation lacks `forwards`
+- Transform animations lack proper fill-mode
+
+Check your browser console for warnings like:
+```
+🎬 Editframe Animation Fill-Mode Warning
+⚠️  Animation "fade-in" has a 500ms delay but no 'backwards' fill-mode.
+   Fix: Add 'backwards' or 'both' to the animation shorthand.
+   Example: animation: fade-in 1000ms 500ms backwards;
+```
+
+## When in Doubt
+
+If you're unsure which fill-mode to use, `both` is the safest choice:
+
+```css
+/* Safe default for most animations */
+animation: my-animation 1s both;
+```
+
+## Technical Background
+
+CSS animations have four fill-mode values:
+- `none` (default): No styles applied before/after animation
+- `forwards`: Final keyframe styles persist after animation
+- `backwards`: Initial keyframe styles applied before animation starts
+- `both`: Combination of forwards and backwards
+
+Editframe's timeline system requires explicit fill-modes because:
+1. Elements are rendered before their timeline position
+2. Animations are paused and controlled manually
+3. Without fill-mode, browsers apply natural element styles instead of keyframe styles
+
+## Resources
+
+- [MDN: animation-fill-mode](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-fill-mode)
+- [MDN: CSS Animations](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Animations)
