@@ -53,6 +53,12 @@ export const Video = () => {
 - [references/waveform.md](references/waveform.md) - Audio visualization
 - [references/surface.md](references/surface.md) - Mirror another element
 
+## Advanced Features
+
+- [references/transitions.md](references/transitions.md) - Crossfades, slides, zoom transitions
+- [references/css-variables.md](references/css-variables.md) - Dynamic animations with CSS variables
+- [references/scripting.md](references/scripting.md) - JavaScript behavior with initializer and frameTask
+
 ## GUI Components
 
 - [references/preview.md](references/preview.md) - Preview player
@@ -70,14 +76,14 @@ import { Timegroup, Video, Text, Audio } from "@editframe/react";
 
 export const Video = () => {
   return (
-    <Timegroup workbench mode="sequence" className="w-[1920px] h-[1080px]">
+    <Timegroup workbench mode="sequence" overlap="1s" className="w-[1920px] h-[1080px]">
       {/* Scene 1 */}
       <Timegroup mode="fixed" duration="5s" className="absolute w-full h-full">
         <Video src="/assets/intro.mp4" className="size-full object-cover" />
         <Text className="absolute top-8 text-white text-3xl">Title</Text>
       </Timegroup>
 
-      {/* Scene 2 */}
+      {/* Scene 2 with transition */}
       <Timegroup mode="fixed" duration="5s" className="absolute w-full h-full">
         <Video src="/assets/main.mp4" sourceIn="10s" sourceOut="15s" className="size-full" />
         <Audio src="/assets/music.mp3" volume={0.3} />
