@@ -116,6 +116,7 @@ export class EFImage extends EFTemporal(
   #imageLoaded = false;
   #imageLoadPromise: Promise<void> | null = null;
   #lastLoadedPath: string | null = null;
+  #currentObjectUrl: string | null = null;
 
   /**
    * Load image from the configured source
@@ -267,12 +268,32 @@ export class EFImage extends EFTemporal(
       const imageData = ctx.getImageData(0, 0, Math.min(canvasWidth, 10), Math.min(canvasHeight, 10));
       const hasContent = imageData.data.some((byte, i) => i % 4 !== 3 && byte !== 0);
       console.log(`[EFImage] Canvas has content: ${hasContent}`);
+      
+      // Sample some pixel data for debugging
+      console.log(`[EFImage] Sample pixels:`, Array.from(imageData.data.slice(0, 16)));
+      
+      // Export canvas as data URL for inspection
+      const dataUrl = this.canvasRef.value.toDataURL();
+      console.log(`[EFImage] Canvas data URL (first 200 chars):`, dataUrl.substring(0, 200));
+      
+      // Create a test image to verify the data URL is valid
+      const testImg = new Image();
+      testImg.onload = () => console.log(`[EFImage] Canvas data URL is valid and loadable`);
+      testImg.onerror = () => console.error(`[EFImage] Canvas data URL failed to load!`);
+      testImg.src = dataUrl;
     } catch (drawError) {
       console.error(`[EFImage] drawImage failed:`, drawError);
       throw drawError;
     }
     
-    URL.revokeObjectURL(image.src);
+    // DON'T revoke the URL yet - keep it alive in case we need to redraw
+    // URL.revokeObjectURL(image.src);
+    
+    // Store the object URL for cleanup later
+    if (this.#currentObjectUrl && this.#currentObjectUrl !== image.src) {
+      URL.revokeObjectURL(this.#currentObjectUrl);
+    }
+    this.#currentObjectUrl = image.src;
   }
 
   /**
@@ -331,6 +352,15 @@ export class EFImage extends EFTemporal(
       this.loadImage().catch(() => {});
       // Increment render version only when actual image content changes
       this.#renderVersion++;
+    }
+  }
+  
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    // Clean up object URL when element is removed
+    if (this.#currentObjectUrl) {
+      URL.revokeObjectURL(this.#currentObjectUrl);
+      this.#currentObjectUrl = null;
     }
   }
 
