@@ -12,6 +12,7 @@ import {
   installAgentSkills,
   getDevCommand,
 } from "./utils.js";
+import { getAgentChoices } from "./detectAgent.js";
 
 function showHelp(templates: string[]) {
   const usage = `
@@ -149,6 +150,9 @@ async function main() {
 
   // Ask about agent skills upfront (unless skipped via CLI)
   if (!skipSkills && !cliAgent && !nonInteractive) {
+    // Get agent choices sorted by detection
+    const agentChoices = await getAgentChoices();
+    
     promptQuestions.push({
       type: "confirm",
       name: "installSkills",
@@ -160,18 +164,7 @@ async function main() {
       type: (_prev, values) => (values.installSkills ? "select" : null),
       name: "agent",
       message: "Which AI coding agent are you using?",
-      choices: [
-        {
-          title: "Cursor",
-          value: "cursor",
-          description: "Most popular",
-        },
-        { title: "VS Code Copilot", value: "vscode" },
-        { title: "Claude Code", value: "claude" },
-        { title: "Windsurf", value: "windsurf" },
-        { title: "All agents", value: "all" },
-        { title: "Skip", value: "skip" },
-      ],
+      choices: agentChoices,
       initial: 0,
     });
   }
