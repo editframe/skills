@@ -80,7 +80,7 @@ ReactDOM.createRoot(root).render(
 );
 ```
 
-**Important**: `TimelineRoot` is required for proper rendering. It ensures React hooks and state work correctly in render clones. See [timeline-root.md](timeline-root.md) for details.
+**Important**: `TimelineRoot` is required for proper rendering. It ensures React hooks and state work correctly during video rendering. See [timeline-root.md](timeline-root.md) for details.
 
 ## Add Assets
 
@@ -107,7 +107,7 @@ import { Video, Audio, Image } from "@editframe/react";
 ## TimelineRoot Requirement
 
 All React projects must use `TimelineRoot` to wrap the composition component. This ensures:
-- React hooks work in render clones
+- React hooks work during rendering
 - State and effects are present during rendering
 - Consistent behavior between preview and render
 
