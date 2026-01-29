@@ -14,6 +14,7 @@ React wrapper components for Editframe Elements. Provides type-safe React compon
 ## Quick Start
 
 ```tsx
+// Video.tsx
 import { Timegroup, Text } from "@editframe/react";
 
 export const Video = () => {
@@ -31,6 +32,15 @@ export const Video = () => {
     </Timegroup>
   );
 };
+
+// main.tsx
+import ReactDOM from "react-dom/client";
+import { TimelineRoot } from "@editframe/react";
+import { Video } from "./Video";
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <TimelineRoot id="root" component={Video} />
+);
 ```
 
 ## Duration Units
@@ -40,6 +50,7 @@ export const Video = () => {
 ## Getting Started
 
 - [references/getting-started.md](references/getting-started.md) - Create a React project
+- [references/timeline-root.md](references/timeline-root.md) - TimelineRoot wrapper (required for rendering)
 - [references/configuration.md](references/configuration.md) - Configuration component
 
 ## Element Components
@@ -72,9 +83,10 @@ export const Video = () => {
 ## Scene Structure
 
 ```tsx
+// VideoComposition.tsx
 import { Timegroup, Video, Text, Audio } from "@editframe/react";
 
-export const Video = () => {
+export const VideoComposition = () => {
   return (
     <Timegroup workbench mode="sequence" overlap="1s" className="w-[1920px] h-[1080px]">
       {/* Scene 1 */}
@@ -91,6 +103,15 @@ export const Video = () => {
     </Timegroup>
   );
 };
+
+// main.tsx
+import ReactDOM from "react-dom/client";
+import { TimelineRoot } from "@editframe/react";
+import { VideoComposition } from "./VideoComposition";
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <TimelineRoot id="root" component={VideoComposition} />
+);
 ```
 
 ## Styling
