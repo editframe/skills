@@ -211,6 +211,8 @@ export class EFImage extends EFTemporal(
     const ctx = this.canvasRef.value.getContext("2d");
     if (!ctx) throw new Error("Canvas 2d context not ready");
     
+    console.log(`[EFImage] Image loaded - width: ${image.width}, height: ${image.height}, naturalWidth: ${image.naturalWidth}, naturalHeight: ${image.naturalHeight}`);
+    
     // Determine canvas dimensions
     // For SVG images without explicit dimensions, image.width/height may be 0
     // In that case, fall back to naturalWidth/naturalHeight or element's computed size
@@ -238,7 +240,37 @@ export class EFImage extends EFTemporal(
     
     this.canvasRef.value.width = canvasWidth;
     this.canvasRef.value.height = canvasHeight;
-    ctx.drawImage(image, 0, 0, canvasWidth, canvasHeight);
+    
+    console.log(`[EFImage] Drawing to canvas: ${canvasWidth}x${canvasHeight}, image complete: ${image.complete}`);
+    
+    // Ensure the image is fully decoded before drawing
+    // This is especially important for SVGs
+    try {
+      await image.decode();
+      console.log(`[EFImage] Image decoded successfully`);
+    } catch (decodeError) {
+      console.warn(`[EFImage] Image decode failed, attempting to draw anyway:`, decodeError);
+    }
+    
+    // Clear canvas first to ensure we're starting fresh
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    
+    // For debugging: fill with a background color to verify canvas is working
+    ctx.fillStyle = '#ff00ff';
+    ctx.fillRect(0, 0, 10, 10);
+    
+    try {
+      ctx.drawImage(image, 0, 0, canvasWidth, canvasHeight);
+      console.log(`[EFImage] drawImage called successfully`);
+      
+      // Verify something was actually drawn
+      const imageData = ctx.getImageData(0, 0, Math.min(canvasWidth, 10), Math.min(canvasHeight, 10));
+      const hasContent = imageData.data.some((byte, i) => i % 4 !== 3 && byte !== 0);
+      console.log(`[EFImage] Canvas has content: ${hasContent}`);
+    } catch (drawError) {
+      console.error(`[EFImage] drawImage failed:`, drawError);
+      throw drawError;
+    }
     
     URL.revokeObjectURL(image.src);
   }
