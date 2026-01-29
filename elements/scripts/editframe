@@ -220,9 +220,7 @@ export default defineConfig({
         find: '/assets',
         replacement: path.join(__dirname, 'src/assets')
       },
-      // Monorepo source aliases
-      // NOTE: We intentionally don't alias CSS files - they're built assets
-      // and should load from node_modules. Only source code (TS/JS) is aliased.
+      // Monorepo source aliases for TypeScript/JavaScript
       {
         find: /^@editframe\\/elements$/,
         replacement: path.join(monorepoPackages, 'elements/src/index.ts')
@@ -242,6 +240,11 @@ export default defineConfig({
       {
         find: /^@editframe\\/react$/,
         replacement: path.join(monorepoPackages, 'react/src/index.ts')
+      },
+      // CSS files must point to built dist files (not source)
+      {
+        find: '@editframe/elements/styles.css',
+        replacement: path.join(monorepoPackages, 'elements/dist/style.css')
       }
     ]
   }
