@@ -240,3 +240,11 @@ export type {
   RenderProgress,
 } from "./preview/renderTimegroupToVideo.js";
 export type { TraceContext } from "./otel/tracingHelpers.js";
+
+// Element-to-canvas rendering
+export {
+  renderElementToCanvas,
+  findRootTimegroup,
+  isTimelineAware,
+  type RenderElementOptions,
+} from "./preview/renderElementToCanvas.js";

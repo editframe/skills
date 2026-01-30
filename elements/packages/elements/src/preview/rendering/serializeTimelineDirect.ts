@@ -659,6 +659,25 @@ export async function serializeTimelineToXHTML(
 }
 
 /**
+ * Serialize any element to XHTML.
+ * Alias for serializeTimelineToXHTML - works on any element, not just timelines.
+ * 
+ * @param element - The element to serialize
+ * @param width - Output width
+ * @param height - Output height
+ * @param options - Serialization options
+ * @returns XHTML string with all canvases encoded as base64 data URLs
+ */
+export async function serializeElementToXHTML(
+  element: Element,
+  width: number,
+  height: number,
+  options: SerializationOptions
+): Promise<string> {
+  return serializeTimelineToXHTML(element, width, height, options);
+}
+
+/**
  * Serialize timeline to SVG foreignObject data URI (ready for rendering).
  * 
  * @param timeline - The timeline element to serialize
