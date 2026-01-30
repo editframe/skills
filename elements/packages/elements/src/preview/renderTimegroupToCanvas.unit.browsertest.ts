@@ -15,13 +15,8 @@ import {
   resetCacheMetrics,
   ContentNotReadyError,
   loadImageFromDataUri,
-  renderToImage,
   captureTimegroupAtTime,
 } from "./renderTimegroupToCanvas.js";
-import {
-  setRenderMode,
-  setNativeCanvasApiEnabled,
-} from "./previewSettings.js";
 import "../elements/EFTimegroup.js";
 import type { EFTimegroup } from "../elements/EFTimegroup.js";
 
@@ -187,67 +182,6 @@ describe("loadImageFromDataUri", () => {
   });
 });
 
-describe("renderToImage", () => {
-  beforeEach(() => {
-    resetRenderState();
-    // Force foreignObject mode for predictable testing
-    setNativeCanvasApiEnabled(false);
-    setRenderMode("foreignObject");
-  });
-
-  it("renders a simple div to image", async () => {
-    const container = document.createElement("div");
-    container.style.cssText = "width: 100px; height: 100px; background: red;";
-    document.body.appendChild(container);
-    
-    try {
-      const result = await renderToImage(container, 100, 100);
-      
-      // ForeignObject path returns HTMLImageElement
-      expect(result).toBeInstanceOf(HTMLImageElement);
-      expect(result.width).toBe(100);
-      expect(result.height).toBe(100);
-    } finally {
-      document.body.removeChild(container);
-    }
-  });
-
-  it("renders nested elements correctly", async () => {
-    const container = document.createElement("div");
-    container.style.cssText = "width: 200px; height: 200px; background: white;";
-    container.innerHTML = `
-      <div style="position: absolute; top: 10px; left: 10px; width: 50px; height: 50px; background: red;"></div>
-      <div style="position: absolute; top: 100px; left: 100px; width: 50px; height: 50px; background: blue;"></div>
-    `;
-    document.body.appendChild(container);
-    
-    try {
-      const result = await renderToImage(container, 200, 200);
-      
-      expect(result).toBeInstanceOf(HTMLImageElement);
-      expect(result.width).toBe(200);
-      expect(result.height).toBe(200);
-    } finally {
-      document.body.removeChild(container);
-    }
-  });
-
-  it("respects canvasScale option for thumbnail generation", async () => {
-    const container = document.createElement("div");
-    container.style.cssText = "width: 400px; height: 300px; background: green;";
-    document.body.appendChild(container);
-    
-    try {
-      const result = await renderToImage(container, 400, 300, { canvasScale: 0.25 });
-      
-      // Output dimensions should still be 400x300 (canvasScale affects internal encoding)
-      expect(result.width).toBe(400);
-      expect(result.height).toBe(300);
-    } finally {
-      document.body.removeChild(container);
-    }
-  });
-});
 
 describe("captureTimegroupAtTime", () => {
   beforeEach(async () => {
@@ -343,33 +277,6 @@ describe("edge cases", () => {
     resetRenderState();
   });
 
-  it("renderToImage handles empty container", async () => {
-    const container = document.createElement("div");
-    container.style.cssText = "width: 50px; height: 50px;";
-    document.body.appendChild(container);
-    
-    try {
-      // Should not throw
-      const result = await renderToImage(container, 50, 50);
-      expect(result).toBeDefined();
-    } finally {
-      document.body.removeChild(container);
-    }
-  });
-
-  it("renderToImage handles zero dimensions gracefully", async () => {
-    const container = document.createElement("div");
-    container.style.cssText = "width: 0px; height: 0px;";
-    document.body.appendChild(container);
-    
-    try {
-      // Should not throw (though output may be empty)
-      const result = await renderToImage(container, 0, 0);
-      expect(result).toBeDefined();
-    } finally {
-      document.body.removeChild(container);
-    }
-  });
 
   it("loadImageFromDataUri handles SVG data URI", async () => {
     const svgDataUri = "data:image/svg+xml;base64," + btoa(`
