@@ -19,23 +19,16 @@ import { defaultProfiler } from "./RenderProfiler.js";
 import { logger } from "./logger.js";
 
 // Import rendering modules
-import {
-  renderToImageDirect,
-  prepareFrameDataUri,
-  loadImageFromDataUri,
-} from "./rendering/renderToImage.js";
+import { loadImageFromDataUri } from "./rendering/loadImage.js";
 import { renderToImageNative, createDprCanvas } from "./rendering/renderToImageNative.js";
 import { clearInlineImageCache, getInlineImageCacheSize } from "./rendering/inlineImages.js";
 
 // Re-export rendering types and functions for external use
 export type {
   NativeRenderOptions,
-  ForeignObjectRenderOptions,
 } from "./rendering/types.js";
 export {
   renderToImageNative,
-  renderToImageDirect,
-  prepareFrameDataUri,
   loadImageFromDataUri,
 };
 
