@@ -1,7 +1,12 @@
+import { consume } from "@lit/context";
 import { css, html, LitElement, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { TWMixin } from "../TWMixin.js";
+import {
+  timelineEditingContext,
+  type TimelineEditingContext,
+} from "./timelineEditingContext.js";
 
 export interface TrimChangeDetail {
   elementId: string;
@@ -109,6 +114,9 @@ export class EFTrimHandles extends TWMixin(LitElement) {
   @property({ type: Boolean, attribute: "show-overlays" })
   showOverlays = true;
 
+  @consume({ context: timelineEditingContext, subscribe: true })
+  editingContext?: TimelineEditingContext;
+
   @state()
   private draggingHandle: "start" | "end" | null = null;
 
@@ -125,6 +133,15 @@ export class EFTrimHandles extends TWMixin(LitElement) {
     this.draggingHandle = type;
     this.dragStartX = e.clientX;
     this.dragStartValue = type === "start" ? this.trimStartMs : this.trimEndMs;
+
+    // Update editing context to block hover interactions during trimming
+    if (this.editingContext) {
+      this.editingContext.setState({
+        mode: "trimming",
+        elementId: this.elementId,
+        handle: type,
+      });
+    }
 
     const target = e.currentTarget as HTMLElement;
     target.setPointerCapture(e.pointerId);
@@ -191,6 +208,11 @@ export class EFTrimHandles extends TWMixin(LitElement) {
     }
 
     this.draggingHandle = null;
+    
+    // Reset editing context to allow hover interactions again
+    if (this.editingContext) {
+      this.editingContext.setState({ mode: "idle" });
+    }
   };
 
   render() {

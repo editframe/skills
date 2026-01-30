@@ -1490,4 +1490,144 @@ describe("EFTimeline", () => {
       ]);
     });
   });
+
+  describe("editing context", () => {
+    test("blocks hover interactions during playhead scrubbing", async () => {
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      const timegroupId = nextId();
+      timegroup.id = timegroupId;
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "5s");
+      document.body.appendChild(timegroup);
+
+      const video = document.createElement("ef-video");
+      const videoId = nextId();
+      video.id = videoId;
+      video.setAttribute("src", "test.mp4");
+      video.setAttribute("duration", "3s");
+      timegroup.appendChild(video);
+
+      const canvas = document.createElement("ef-canvas");
+      canvas.id = nextId();
+      canvas.appendChild(timegroup);
+      document.body.appendChild(canvas);
+
+      const timeline = document.createElement("ef-timeline") as EFTimeline;
+      timeline.controlTarget = timegroupId;
+      timeline.style.width = "800px";
+      timeline.style.height = "400px";
+      document.body.appendChild(timeline);
+
+      await timegroup.updateComplete;
+      await canvas.updateComplete;
+      await timeline.updateComplete;
+
+      // Verify editing context starts in idle mode
+      expect((timeline as any)._editingContext.state.mode).toBe("idle");
+      expect((timeline as any)._editingContext.canInteract()).toBe(true);
+
+      // Simulate starting playhead drag
+      const rulerContent = timeline.shadowRoot?.querySelector(
+        ".ruler-content",
+      ) as HTMLElement;
+      expect(rulerContent).toBeTruthy();
+
+      const pointerDownEvent = new PointerEvent("pointerdown", {
+        bubbles: true,
+        cancelable: true,
+        clientX: 100,
+        pointerId: 1,
+      });
+
+      rulerContent.dispatchEvent(pointerDownEvent);
+      await timeline.updateComplete;
+
+      // Verify editing context is now in scrubbing mode
+      expect((timeline as any)._editingContext.state.mode).toBe("scrubbing");
+      expect((timeline as any)._editingContext.canInteract()).toBe(false);
+
+      // Simulate ending drag
+      const pointerUpEvent = new PointerEvent("pointerup", {
+        bubbles: true,
+        cancelable: true,
+        clientX: 150,
+        pointerId: 1,
+      });
+      window.dispatchEvent(pointerUpEvent);
+      await timeline.updateComplete;
+
+      // Verify editing context returns to idle
+      expect((timeline as any)._editingContext.state.mode).toBe("idle");
+      expect((timeline as any)._editingContext.canInteract()).toBe(true);
+    });
+
+    test("blocks hover interactions during trim handle dragging", async () => {
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      const timegroupId = nextId();
+      timegroup.id = timegroupId;
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "5s");
+      document.body.appendChild(timegroup);
+
+      const video = document.createElement("ef-video");
+      const videoId = nextId();
+      video.id = videoId;
+      video.setAttribute("src", "test.mp4");
+      video.setAttribute("duration", "3s");
+      timegroup.appendChild(video);
+
+      const timeline = document.createElement("ef-timeline") as EFTimeline;
+      timeline.controlTarget = timegroupId;
+      timeline.enableTrim = true;
+      timeline.style.width = "800px";
+      timeline.style.height = "400px";
+      document.body.appendChild(timeline);
+
+      await timegroup.updateComplete;
+      await timeline.updateComplete;
+
+      // Find trim handles component
+      const trimHandles = timeline.shadowRoot
+        ?.querySelector("ef-timeline-row")
+        ?.shadowRoot?.querySelector("ef-trim-handles");
+
+      if (trimHandles) {
+        // Verify editing context starts in idle mode
+        expect((timeline as any)._editingContext.state.mode).toBe("idle");
+
+        // Simulate trim handle drag start
+        const startHandle = trimHandles.shadowRoot?.querySelector(
+          ".handle-start",
+        ) as HTMLElement;
+        if (startHandle) {
+          const pointerDownEvent = new PointerEvent("pointerdown", {
+            bubbles: true,
+            cancelable: true,
+            clientX: 50,
+            pointerId: 1,
+          });
+          startHandle.dispatchEvent(pointerDownEvent);
+          await timeline.updateComplete;
+
+          // Verify editing context is in trimming mode
+          expect((timeline as any)._editingContext.state.mode).toBe("trimming");
+          expect((timeline as any)._editingContext.canInteract()).toBe(false);
+
+          // Simulate drag end
+          const pointerUpEvent = new PointerEvent("pointerup", {
+            bubbles: true,
+            cancelable: true,
+            clientX: 60,
+            pointerId: 1,
+          });
+          startHandle.dispatchEvent(pointerUpEvent);
+          await timeline.updateComplete;
+
+          // Verify editing context returns to idle
+          expect((timeline as any)._editingContext.state.mode).toBe("idle");
+          expect((timeline as any)._editingContext.canInteract()).toBe(true);
+        }
+      }
+    });
+  });
 });

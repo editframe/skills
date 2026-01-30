@@ -1,3 +1,4 @@
+import { consume } from "@lit/context";
 import {
   css,
   html,
@@ -22,6 +23,10 @@ import { EFCaptions } from "../../elements/EFCaptions.js";
 import { TWMixin } from "../TWMixin.js";
 import { renderTrackChildren } from "./tracks/renderTrackChildren.js";
 import { phosphorIcon, ICONS } from "../icons.js";
+import {
+  timelineEditingContext,
+  type TimelineEditingContext,
+} from "./timelineEditingContext.js";
 // NOTE: Track components (ef-timegroup-track, etc.) are NOT imported here
 // to avoid circular dependencies with TrackItem. They must be registered before
 // EFTimelineRow is used. See preloadTracks.ts for the registration sequence.
@@ -185,6 +190,9 @@ export class EFTimelineRow extends TWMixin(LitElement) {
   @property({ type: Object, attribute: false })
   selectedIds: ReadonlySet<string> = new Set();
 
+  @consume({ context: timelineEditingContext, subscribe: true })
+  editingContext?: TimelineEditingContext;
+
   // Derived interaction states (computed on-demand)
   private get isHovered(): boolean {
     return this.highlightedElement === this.element;
@@ -260,6 +268,11 @@ export class EFTimelineRow extends TWMixin(LitElement) {
   }
 
   private handleMouseEnter = (): void => {
+    // Skip hover interactions during active editing operations (scrubbing, trimming, etc.)
+    if (this.editingContext && !this.editingContext.canInteract()) {
+      return;
+    }
+    
     this.dispatchEvent(
       new CustomEvent("row-hover", {
         detail: { element: this.element },
@@ -270,6 +283,11 @@ export class EFTimelineRow extends TWMixin(LitElement) {
   };
 
   private handleMouseLeave = (): void => {
+    // Skip hover interactions during active editing operations (scrubbing, trimming, etc.)
+    if (this.editingContext && !this.editingContext.canInteract()) {
+      return;
+    }
+    
     this.dispatchEvent(
       new CustomEvent("row-hover", {
         detail: { element: null },
