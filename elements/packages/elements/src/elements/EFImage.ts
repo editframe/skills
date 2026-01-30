@@ -256,10 +256,6 @@ export class EFImage extends EFTemporal(
     // Clear canvas first to ensure we're starting fresh
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
     
-    // For debugging: fill with a background color to verify canvas is working
-    ctx.fillStyle = '#ff00ff';
-    ctx.fillRect(0, 0, 10, 10);
-    
     try {
       ctx.drawImage(image, 0, 0, canvasWidth, canvasHeight);
       console.log(`[EFImage] drawImage called successfully`);

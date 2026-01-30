@@ -257,22 +257,55 @@ function serializeCanvas(
   const computedWidth = computedStyle.width;
   const computedHeight = computedStyle.height;
   
-  // Use computed dimensions if available, otherwise fall back to canvas natural dimensions
+  // Use CSS object-fit and object-position to let the browser handle aspect ratio and centering
+  // Set img dimensions to host element size, then use object-fit: contain to scale the image data
   const styleParts = styleStr ? styleStr.split(';').filter(s => s.trim()) : [];
   
-  // Only override dimensions if they weren't already captured from computed styles
-  const hasWidth = styleParts.some(s => s.trim().startsWith('width:'));
-  const hasHeight = styleParts.some(s => s.trim().startsWith('height:'));
+  // Remove width/height/object-fit/object-position from computed styles (we'll set them explicitly)
+  const filteredParts = styleParts.filter(s => {
+    const trimmed = s.trim();
+    return !trimmed.startsWith('width:') && 
+           !trimmed.startsWith('height:') &&
+           !trimmed.startsWith('object-fit:') &&
+           !trimmed.startsWith('object-position:');
+  });
   
-  if (!hasWidth) {
-    styleParts.push(`width:${computedWidth || `${width}px`}`);
-  }
-  if (!hasHeight) {
-    styleParts.push(`height:${computedHeight || `${height}px`}`);
-  }
-  styleParts.push(`display:block`);
+  // Use host element dimensions if available, otherwise fall back to canvas natural dimensions
+  const displayWidth = computedWidth || `${width}px`;
+  const displayHeight = computedHeight || `${height}px`;
   
-  const finalStyle = styleParts.join(';');
+  // Set dimensions to host size and let object-fit: contain handle the aspect ratio
+  filteredParts.push(`width:${displayWidth}`);
+  filteredParts.push(`height:${displayHeight}`);
+  filteredParts.push(`object-fit:contain`);
+  filteredParts.push(`object-position:center`);
+  filteredParts.push(`display:block`);
+  
+  const finalStyle = filteredParts.join(';');
+  
+  // DIAGNOSTIC: Log dimensions for EF-IMAGE elements
+  if (sourceElement.tagName === "EF-IMAGE") {
+    console.log("[ASPECT_DIAG] serializeCanvas:", JSON.stringify({
+      tag: sourceElement.tagName,
+      src: (sourceElement as any).src || "unknown",
+      canvasBuffer: {
+        width: canvas.width,
+        height: canvas.height,
+        aspectRatio: (canvas.width / canvas.height).toFixed(3),
+      },
+      computedFromHost: {
+        width: computedWidth,
+        height: computedHeight,
+        aspectRatio: computedWidth && computedHeight ? (parseFloat(computedWidth) / parseFloat(computedHeight)).toFixed(3) : "N/A",
+      },
+      finalCSSBeingApplied: {
+        width: filteredParts.find(s => s.trim().startsWith('width:'))?.split(':')[1]?.trim(),
+        height: filteredParts.find(s => s.trim().startsWith('height:'))?.split(':')[1]?.trim(),
+        objectFit: filteredParts.find(s => s.trim().startsWith('object-fit:'))?.split(':')[1]?.trim(),
+        objectPosition: filteredParts.find(s => s.trim().startsWith('object-position:'))?.split(':')[1]?.trim(),
+      }
+    }));
+  }
   
   // Check if we need to preserve alpha channel
   const preserveAlpha = shouldPreserveAlpha(sourceElement);
@@ -336,6 +369,33 @@ function serializeImageAsCanvas(
   canvasJobs: CanvasJob[],
   options: SerializationOptions
 ): void {
+  // DIAGNOSTIC: Log dimensions for shadow img path
+  if (sourceElement.tagName === "EF-IMAGE") {
+    const hostCs = getComputedStyle(sourceElement);
+    const imgCs = getComputedStyle(img);
+    console.log("[ASPECT_DIAG] serializeImageAsCanvas:", JSON.stringify({
+      tag: sourceElement.tagName,
+      src: (sourceElement as any).src || img.src || "unknown",
+      hostElement: {
+        offsetWidth: (sourceElement as HTMLElement).offsetWidth,
+        offsetHeight: (sourceElement as HTMLElement).offsetHeight,
+        computedWidth: hostCs.width,
+        computedHeight: hostCs.height,
+        objectFit: hostCs.objectFit,
+      },
+      shadowImg: {
+        naturalWidth: img.naturalWidth,
+        naturalHeight: img.naturalHeight,
+        width: img.width,
+        height: img.height,
+        computedWidth: imgCs.width,
+        computedHeight: imgCs.height,
+        objectFit: imgCs.objectFit,
+        aspectRatio: (img.naturalWidth / img.naturalHeight).toFixed(3),
+      }
+    }));
+  }
+  
   // Convert img to canvas for serialization
   const canvas = document.createElement('canvas');
   canvas.width = img.naturalWidth;

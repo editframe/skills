@@ -1,16 +1,8 @@
 import type { EFTimegroup } from "../elements/EFTimegroup.js";
-import {
-  buildCloneStructure,
-  syncStyles,
-  collectDocumentStyles,
-  overrideRootCloneStyles,
-  removeHiddenNodesForSerialization,
-  restoreHiddenNodes,
-  type SyncState,
-} from "./renderTimegroupPreview.js";
 import { getEffectiveRenderMode } from "./renderers.js";
 import { RenderContext } from "./RenderContext.js";
 import { FrameController } from "./FrameController.js";
+import { serializeTimelineToDataUri } from "./rendering/serializeTimelineDirect.js";
 
 // Re-export renderer types for external use
 export type { RenderOptions, RenderResult, Renderer } from "./renderers.js";
@@ -22,14 +14,12 @@ import {
   DEFAULT_HEIGHT,
   DEFAULT_THUMBNAIL_SCALE,
   DEFAULT_BLOCKING_TIMEOUT_MS,
-  createPreviewContainer,
 } from "./previewTypes.js";
 import { defaultProfiler } from "./RenderProfiler.js";
 import { logger } from "./logger.js";
 
 // Import rendering modules
 import {
-  renderToImage,
   renderToImageDirect,
   prepareFrameDataUri,
   loadImageFromDataUri,
@@ -43,7 +33,6 @@ export type {
   ForeignObjectRenderOptions,
 } from "./rendering/types.js";
 export {
-  renderToImage,
   renderToImageNative,
   renderToImageDirect,
   prepareFrameDataUri,
@@ -187,44 +176,6 @@ export { clearInlineImageCache, getInlineImageCacheSize };
 // Internal Helpers
 // ============================================================================
 
-/**
- * Create a debug label for showing render info.
- */
-function createDebugLabel(): HTMLDivElement {
-  const debugLabel = document.createElement("div");
-  debugLabel.style.cssText = `
-    position: absolute;
-    top: -24px;
-    left: 0;
-    padding: 2px 8px;
-    font: bold 12px monospace;
-    background: rgba(0, 0, 0, 0.8);
-    border-radius: 3px;
-    white-space: nowrap;
-    z-index: 1000;
-    pointer-events: none;
-  `;
-  return debugLabel;
-}
-
-/**
- * Update debug label with resolution info.
- */
-function updateDebugLabel(
-  label: HTMLDivElement,
-  renderWidth: number,
-  renderHeight: number,
-  resolutionScale: number,
-): void {
-  const scaleColors: Record<number, string> = {
-    1: "#00ff00",
-    0.75: "#ffff00",
-    0.5: "#ff8800",
-    0.25: "#ff0000",
-  };
-  label.style.color = scaleColors[resolutionScale] || "#ffffff";
-  label.textContent = `Render: ${renderWidth}x${renderHeight} (${Math.round(resolutionScale * 100)}%)`;
-}
 
 /**
  * Wait for next animation frame (allows browser to complete layout)
@@ -432,42 +383,22 @@ export async function captureFromClone(
       // Live preview uses a different code path (renderTimegroupToCanvas) which handles DPR properly.
       image = await renderToImageNative(renderContainer, width, height, { skipDprScaling: true });
     } else {
-      // FOREIGNOBJECT PATH: Build passive structure from the SEEKED render clone
-      // The clone is already at the correct time, so getComputedStyle captures the right values.
-      // Styles are synced during clone building in a single pass.
+      // FOREIGNOBJECT PATH: Direct serialization of the render clone
+      // The clone is already at the correct time and isolated from the prime timeline.
+      // No need for intermediate passive structure - serialize the clone directly.
       const t0 = performance.now();
-      const { container, syncState } = buildCloneStructure(renderClone, timeMs);
-      const buildTime = performance.now() - t0;
-
-      // Create wrapper using shared helper
-      const bgSource = originalTimegroup ?? renderClone;
-      const previewContainer = createPreviewContainer({
-        width,
-        height,
-        background: getComputedStyle(bgSource).background,
+      const dataUri = await serializeTimelineToDataUri(renderClone, width, height, {
+        renderContext,
+        canvasScale: scale,
+        timeMs,
       });
+      const serializeTime = performance.now() - t0;
       
       const t1 = performance.now();
-      const styleEl = document.createElement("style");
-      styleEl.textContent = collectDocumentStyles();
-      const stylesTime = performance.now() - t1;
-      previewContainer.appendChild(styleEl);
-      previewContainer.appendChild(container);
+      image = await loadImageFromDataUri(dataUri);
+      const loadTime = performance.now() - t1;
       
-      // Ensure clone root is visible
-      overrideRootCloneStyles(syncState, true);
-
-      // Render using foreignObject serialization
-      // Pass scale, renderContext, and sourceMap for caching optimization
-      const t2 = performance.now();
-      image = await renderToImage(previewContainer, width, height, { 
-        canvasScale: scale,
-        renderContext,
-        sourceMap: syncState.canvasSourceMap,
-      });
-      const renderTime = performance.now() - t2;
-      
-      logger.debug(`[captureFromClone] build=${buildTime.toFixed(0)}ms, styles=${stylesTime.toFixed(0)}ms, render=${renderTime.toFixed(0)}ms (canvasScale=${scale})`);
+      logger.debug(`[captureFromClone] serialize=${serializeTime.toFixed(0)}ms, load=${loadTime.toFixed(0)}ms (canvasScale=${scale})`);
     }
 
     // Draw to canvas (may need scaling for native path which is at DPR)
@@ -555,10 +486,9 @@ function toAbsoluteTime(timegroup: EFTimegroup, relativeTimeMs: number): number 
 
 export interface CanvasPreviewResult {
   /**
-   * Wrapper container holding the canvas and debug label.
-   * Append this to your DOM - the canvas inside will receive transforms.
+   * Canvas element to append to your DOM.
    */
-  container: HTMLDivElement;
+  container: HTMLCanvasElement;
   canvas: HTMLCanvasElement;
   /**
    * Call this to re-render the timegroup to canvas at current visual state.
@@ -651,12 +581,8 @@ export function renderTimegroupToCanvas(
     dpr,
   });
   
-  // Create wrapper container with debug label
-  const wrapperContainer = document.createElement("div");
-  wrapperContainer.style.cssText = "position: relative; display: inline-block;";
-  const debugLabel = createDebugLabel();
-  wrapperContainer.appendChild(debugLabel);
-  wrapperContainer.appendChild(canvas);
+  // Return canvas directly - no wrapper needed
+  const wrapperContainer = canvas;
 
   const ctx = canvas.getContext("2d");
   if (!ctx) {
@@ -674,18 +600,6 @@ export function renderTimegroupToCanvas(
   // Create FrameController for coordinating element rendering
   // Cached for the lifetime of this preview instance
   const frameController = new FrameController(timegroup);
-  
-  // Reusable preview container and style element
-  // Container gets new content each frame but CSS styles are cached
-  const previewContainer = createPreviewContainer({
-    width: renderWidth,
-    height: renderHeight,
-    background: getComputedStyle(timegroup).background,
-  });
-  
-  const styleEl = document.createElement("style");
-  styleEl.textContent = collectDocumentStyles();
-  previewContainer.appendChild(styleEl);
 
   // Log resolution scale on first render for debugging
   let hasLoggedScale = false;
@@ -707,18 +621,6 @@ export function renderTimegroupToCanvas(
     currentResolutionScale = newScale;
     renderWidth = Math.floor(width * currentResolutionScale);
     renderHeight = Math.floor(height * currentResolutionScale);
-    
-    // Update previewContainer dimensions (affects what renderToImage produces)
-    previewContainer.style.width = `${renderWidth}px`;
-    previewContainer.style.height = `${renderHeight}px`;
-    
-    // Update clone transform
-    if (currentResolutionScale < 1) {
-      container.style.transform = `scale(${currentResolutionScale})`;
-      container.style.transformOrigin = "top left";
-    } else {
-      container.style.transform = "";
-    }
     
     // Canvas dimensions will be updated right before drawing (in refresh)
     // to avoid clearing the canvas until new content is ready
@@ -745,16 +647,22 @@ export function renderTimegroupToCanvas(
   const getResolutionScale = (): number => pendingResolutionScale ?? currentResolutionScale;
   
   const refresh = async (): Promise<void> => {
-    if (rendering || disposed) return;
-    // Clone-timeline: captures use separate clones, Prime-timeline is never locked
+    if (disposed) return;
     
     const sourceTimeMs = timegroup.currentTimeMs ?? 0;
     const userTimeMs = timegroup.userTimeMs ?? 0;
+    
+    // Skip if seek in progress (source and user time out of sync)
     if (Math.abs(sourceTimeMs - userTimeMs) > TIME_EPSILON_MS) return;
     
+    // Skip if time hasn't changed
     if (userTimeMs === lastTimeMs) return;
-    lastTimeMs = userTimeMs;
     
+    // Skip if already rendering (don't queue up multiple renders)
+    if (rendering) return;
+    
+    // Mark this time as being rendered and set the rendering flag
+    lastTimeMs = userTimeMs;
     rendering = true;
     
     // Apply any pending resolution changes before rendering
@@ -773,44 +681,28 @@ export function renderTimegroupToCanvas(
       // This coordinates prepare → render phases before we capture their state
       await frameController.renderFrame(userTimeMs);
       
-      // Build passive structure from prime timeline's CURRENT state
-      // Frame tasks have already run above, so DOM changes are captured
+      // DIRECT SERIALIZATION PATH (same as video rendering)
+      // Serialize the prime timeline directly without building intermediate passive structure
       const absoluteTimeMs = toAbsoluteTime(timegroup, userTimeMs);
-      const { container, syncState } = buildCloneStructure(timegroup, absoluteTimeMs);
       
-      // Apply CSS transform to scale down the content within the container
-      // This makes the clone render at reduced complexity
-      if (currentResolutionScale < 1) {
-        container.style.transform = `scale(${currentResolutionScale})`;
-        container.style.transformOrigin = "top left";
-      }
-      
-      // Clear previous container content and add new structure
-      while (previewContainer.firstChild !== styleEl && previewContainer.firstChild) {
-        previewContainer.removeChild(previewContainer.firstChild);
-      }
-      previewContainer.appendChild(container);
-      overrideRootCloneStyles(syncState);
-
-      // Remove hidden nodes from DOM for serialization - they won't be serialized
-      // or have their canvases encoded. This is a significant optimization.
-      const removedNodes = removeHiddenNodesForSerialization(syncState);
-
-      // Render at scaled dimensions with canvas scaling for internal video frames
-      // Pass renderContext and sourceMap for caching optimization
+      // Pass FULL dimensions to serializeTimelineToDataUri, let canvasScale handle internal scaling
+      // This matches video rendering: full dimensions + canvasScale, not pre-scaled dimensions
       const t0 = performance.now();
-      const image = await renderToImage(previewContainer, renderWidth, renderHeight, {
-        canvasScale: currentResolutionScale,
+      const dataUri = await serializeTimelineToDataUri(timegroup, width, height, {
         renderContext,
-        sourceMap: syncState.canvasSourceMap,
+        canvasScale: currentResolutionScale,
+        timeMs: absoluteTimeMs,
       });
-      const renderTime = performance.now() - t0;
+      const serializeTime = performance.now() - t0;
       
-      // Restore hidden nodes for next frame's delta tracking
-      restoreHiddenNodes(removedNodes);
+      // Load image from data URI
+      const t1 = performance.now();
+      const image = await loadImageFromDataUri(dataUri);
+      const loadTime = performance.now() - t1;
+      const renderTime = serializeTime + loadTime;
 
-      // Update canvas buffer dimensions NOW, right before drawing
-      // This clears the canvas, but we immediately draw new content
+      // The image is already at the scaled resolution (width * resolutionScale x height * resolutionScale)
+      // Now scale it to the final canvas size with DPR
       const targetWidth = Math.floor(renderWidth * scale * dpr);
       const targetHeight = Math.floor(renderHeight * scale * dpr);
       if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
@@ -822,17 +714,15 @@ export function renderTimegroupToCanvas(
       
       ctx.save();
       ctx.scale(dpr * scale, dpr * scale);
-      ctx.drawImage(image, 0, 0);
+      // Draw the scaled image to fill the render dimensions
+      ctx.drawImage(image, 0, 0, renderWidth, renderHeight);
       ctx.restore();
       
       // Log render time periodically (every 60 frames)
       defaultProfiler.incrementRenderCount();
       if (defaultProfiler.shouldLogByFrameCount(60)) {
-        logger.debug(`[renderTimegroupToCanvas] Frame render: ${renderTime.toFixed(1)}ms (resolutionScale=${currentResolutionScale}, image=${image.width}x${image.height})`);
+        logger.debug(`[renderTimegroupToCanvas] Frame render: ${renderTime.toFixed(1)}ms (serialize=${serializeTime.toFixed(1)}ms, load=${loadTime.toFixed(1)}ms, resolutionScale=${currentResolutionScale}, image=${image.width}x${image.height})`);
       }
-      
-      // Update debug label
-      updateDebugLabel(debugLabel, renderWidth, renderHeight, currentResolutionScale);
     } catch (e) {
       logger.error("Canvas preview render failed:", e);
     } finally {
