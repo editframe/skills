@@ -110,16 +110,10 @@ async function renderElementWithTimeline(
   root: EFTimegroup,
   options: RenderElementOptions
 ): Promise<HTMLCanvasElement> {
-  const { timeMs, scale = 1.0 } = options;
-  
-  // Get element dimensions
-  const computedStyle = getComputedStyle(element);
-  const width = options.width ?? (parseFloat(computedStyle.width) || DEFAULT_WIDTH);
-  const height = options.height ?? (parseFloat(computedStyle.height) || DEFAULT_HEIGHT);
+  const { timeMs } = options;
   
   // Create render clone of root timegroup
-  const { clone: renderClone, cleanup } = 
-    await root.createRenderClone();
+  const { clone: renderClone, cleanup } = await root.createRenderClone();
   
   try {
     // Seek clone to target time
@@ -128,69 +122,8 @@ async function renderElementWithTimeline(
     // Find corresponding element in clone
     const clonedElement = findCorrespondingElement(renderClone, element);
     
-    // Create render context for caching
-    const renderContext = options.renderContext ?? new RenderContext();
-    const shouldDisposeContext = !options.renderContext;
-    
-    try {
-      // Determine render mode
-      const renderMode = options.renderMode ?? getEffectiveRenderMode();
-      
-      let image: HTMLCanvasElement | HTMLImageElement;
-      
-      if (renderMode === 'native') {
-        // NATIVE PATH: Render clone directly using drawElementImage
-        // Position element container for capture
-        const elementContainer = document.createElement('div');
-        elementContainer.style.cssText = `
-          position: fixed;
-          left: 0;
-          top: 0;
-          width: ${width}px;
-          height: ${height}px;
-          pointer-events: none;
-          overflow: hidden;
-        `;
-        
-        // Clone the element subtree into container
-        elementContainer.appendChild(clonedElement.cloneNode(true));
-        document.body.appendChild(elementContainer);
-        
-        try {
-          image = await renderToImageNative(elementContainer, width, height, {
-            skipDprScaling: true
-          });
-        } finally {
-          elementContainer.remove();
-        }
-      } else {
-        // FOREIGNOBJECT PATH: Direct serialization
-        const dataUri = await serializeTimelineToDataUri(clonedElement, width, height, {
-          renderContext,
-          canvasScale: scale,
-          timeMs,
-        });
-        
-        image = await loadImageFromDataUri(dataUri);
-      }
-      
-      // Draw to canvas
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        throw new Error('Failed to get 2d context');
-      }
-      
-      ctx.drawImage(image, 0, 0, width, height);
-      
-      return canvas;
-    } finally {
-      if (shouldDisposeContext) {
-        renderContext.dispose();
-      }
-    }
+    // Render the cloned element
+    return await renderElementToCanvasCore(clonedElement, options);
   } finally {
     cleanup();
   }
@@ -200,6 +133,17 @@ async function renderElementWithTimeline(
  * Render static (non-timeline-aware) element to canvas.
  */
 async function renderElementStatic(
+  element: Element,
+  options: RenderElementOptions
+): Promise<HTMLCanvasElement> {
+  return await renderElementToCanvasCore(element, options);
+}
+
+/**
+ * Core rendering logic shared by both timeline-aware and static paths.
+ * Renders an element to canvas using either native or foreignObject mode.
+ */
+async function renderElementToCanvasCore(
   element: Element,
   options: RenderElementOptions
 ): Promise<HTMLCanvasElement> {
@@ -221,7 +165,7 @@ async function renderElementStatic(
     let image: HTMLCanvasElement | HTMLImageElement;
     
     if (renderMode === 'native') {
-      // NATIVE PATH: Render element directly
+      // NATIVE PATH: Render element using drawElementImage
       const elementContainer = document.createElement('div');
       elementContainer.style.cssText = `
         position: fixed;
