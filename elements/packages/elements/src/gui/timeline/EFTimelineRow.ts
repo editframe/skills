@@ -421,7 +421,6 @@ export class EFTimelineRow extends TWMixin(LitElement) {
       this.showSelectors,
       true, // skipRootFiltering - the row itself handles filtering
       this.enableTrim,
-      true, // useAbsolutePosition - flat row architecture needs absolute positioning
     )}`;
   }
 

@@ -144,6 +144,8 @@ export class EFTimegroupTrack extends TrackItem {
       return nothing;
     }
     // Wrap children in a fragment for consistent return type
+    // Note: This hierarchical rendering path is only used in tests/sandboxes.
+    // Production code always uses skipChildren=true with flat row architecture.
     return html`${renderTrackChildren(
       Array.from(this.element.children || []),
       this.pixelsPerMs,

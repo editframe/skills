@@ -233,53 +233,11 @@ export class TrackItem extends TWMixin(LitElement) {
   @property({ type: Array, attribute: false })
   showSelectors?: string[];
 
-  /**
-   * When true, positions the track at the element's absolute start time
-   * (startTimeMs) rather than relative to parent (startTimeWithinParentMs).
-   * Used for flat row architectures where each element gets its own row.
-   */
-  @property({ type: Boolean, attribute: "use-absolute-position" })
-  useAbsolutePosition = false;
-
   get gutterStyles() {
-    const startMs = this.useAbsolutePosition
-      ? this.element.startTimeMs
-      : this.element.startTimeWithinParentMs;
-    // When using absolute positioning, don't subtract sourceStartMs - the track container
-    // should be positioned at the element's absolute start time in the timeline.
-    // When using relative positioning, sourceStartMs is already accounted for in startTimeWithinParentMs.
-    const leftOffset = this.useAbsolutePosition
-      ? startMs
-      : startMs - this.element.sourceStartMs;
-    
-    // DIAGNOSTIC: Log positioning for nested timegroups (only when enabled)
-    if ((window as any).__TIMELINE_DIAGNOSTIC_ENABLED) {
-      const elementId = (this.element as any).id || 'no-id';
-      const elementTag = (this.element as any).tagName || 'unknown';
-      const parentTimegroup = (this.element as any).parentTimegroup;
-      const parentId = parentTimegroup?.id || 'no-parent';
-      const parentStartTimeMs = parentTimegroup?.startTimeMs ?? null;
-      
-      if (!(window as any).__TIMELINE_DIAGNOSTIC_DATA) {
-        (window as any).__TIMELINE_DIAGNOSTIC_DATA = [];
-      }
-      
-      (window as any).__TIMELINE_DIAGNOSTIC_DATA.push({
-        type: 'gutterStyles',
-        elementId,
-        elementTag,
-        parentId,
-        useAbsolutePosition: this.useAbsolutePosition,
-        startTimeMs: this.element.startTimeMs,
-        startTimeWithinParentMs: this.element.startTimeWithinParentMs,
-        parentStartTimeMs,
-        sourceStartMs: this.element.sourceStartMs,
-        offsetMs: (this.element as any)._offsetMs || 0,
-        calculatedStartMs: startMs,
-        calculatedLeftOffset: leftOffset,
-        leftPx: this.pixelsPerMs * leftOffset,
-      });
-    }
+    // Always use absolute positioning (startTimeMs) for flat row architecture.
+    // startTimeMs already includes the cumulative position from all parent timegroups.
+    const startMs = this.element.startTimeMs;
+    const leftOffset = startMs;
     
     return {
       position: "relative",
@@ -289,16 +247,11 @@ export class TrackItem extends TWMixin(LitElement) {
   }
 
   get trimPortionStyles() {
-    // When using absolute positioning, the trim container should start at 0
-    // relative to the gutter (which is already positioned at startTimeMs).
-    // When using relative positioning, we need to offset by sourceStartMs
-    // to show the trimmed portion correctly.
-    const leftOffset = this.useAbsolutePosition
-      ? 0
-      : this.element.sourceStartMs;
+    // The trim container starts at 0 relative to the gutter,
+    // which is already positioned at the element's absolute startTimeMs.
     return {
       width: `${this.pixelsPerMs * this.element.durationMs}px`,
-      left: `${this.pixelsPerMs * leftOffset}px`,
+      left: '0px',
     };
   }
 
