@@ -1,29 +1,25 @@
 /**
- * Render any DOM element to canvas with timeline awareness.
+ * Render any DOM element to canvas.
  * 
- * Supports rendering:
- * - Timegroups (timeline-aware elements)
- * - Temporal elements (elements inside timegroups)
- * - Plain DOM elements (static rendering)
+ * Low-level rendering function that renders elements as-is.
+ * Supports both native (drawElementImage) and foreignObject render modes.
  * 
- * Automatically detects timeline context and handles cloning/seeking when needed.
+ * Caller is responsible for clone management and seeking.
  */
 
-import { EFTimegroup } from "../elements/EFTimegroup.js";
 import { getEffectiveRenderMode } from "./renderers.js";
 import type { RenderMode } from "./previewSettings.js";
 import { RenderContext } from "./RenderContext.js";
 import { serializeTimelineToDataUri } from "./rendering/serializeTimelineDirect.js";
 import { loadImageFromDataUri } from "./rendering/loadImage.js";
 import { renderToImageNative } from "./rendering/renderToImageNative.js";
-import { findCorrespondingElement } from "./elementIdentity.js";
 import { DEFAULT_WIDTH, DEFAULT_HEIGHT } from "./previewTypes.js";
 
 /**
  * Options for rendering an element to canvas.
  */
 export interface RenderElementOptions {
-  /** Time to render at in milliseconds (required for timeline-aware elements) */
+  /** Time to render at in milliseconds (used for serialization metadata) */
   timeMs: number;
   /** Scale factor for canvas encoding (default: 1.0) */
   scale?: number;
@@ -31,8 +27,6 @@ export interface RenderElementOptions {
   width?: number;
   /** Output height in pixels (defaults to element's computed height or 1080) */
   height?: number;
-  /** Root timegroup (auto-detected if not provided) */
-  rootTimegroup?: EFTimegroup;
   /** Render context for canvas pixel caching */
   renderContext?: RenderContext;
   /** Override render mode (native or foreignObject) */
@@ -40,49 +34,18 @@ export interface RenderElementOptions {
 }
 
 /**
- * Find root timegroup for an element (if any).
- * Walks up the DOM tree to find the outermost timegroup.
+ * Render any element to canvas.
  * 
- * @param element - Element to find root timegroup for
- * @returns Root timegroup or undefined if element is not timeline-aware
- */
-export function findRootTimegroup(element: Element): EFTimegroup | undefined {
-  let current: Element | null = element;
-  let lastTimegroup: EFTimegroup | undefined;
-  
-  while (current) {
-    if (current instanceof EFTimegroup) {
-      lastTimegroup = current as EFTimegroup;
-    }
-    current = current.parentElement;
-  }
-  
-  return lastTimegroup;
-}
-
-/**
- * Check if element is timeline-aware (inside a timegroup).
+ * This is a low-level rendering function that renders the element as-is.
+ * The caller is responsible for:
+ * - Creating clones if needed
+ * - Seeking to the correct time
+ * - Finding the correct element to render
  * 
- * @param element - Element to check
- * @returns true if element is inside a timegroup
- */
-export function isTimelineAware(element: Element): boolean {
-  return findRootTimegroup(element) !== undefined;
-}
-
-/**
- * Render any element to canvas with timeline awareness.
- * 
- * TIMELINE-AWARE PATH:
- * - Detects if element is inside a timegroup
- * - Creates render clone of root timegroup
- * - Seeks clone to target time
- * - Finds corresponding element in clone
- * - Renders element subtree to canvas
- * 
- * STATIC PATH:
- * - Element is not timeline-aware
- * - Renders element directly to canvas
+ * Use cases:
+ * - Preview: Pass prime timeline element (already at correct time)
+ * - Video/thumbnails: Pass element from reused clone (already seeked)
+ * - One-off capture: Create clone, seek, pass element, clean up
  * 
  * @param element - Element to render (timegroup, temporal element, or plain DOM)
  * @param options - Render options
@@ -92,34 +55,7 @@ export async function renderElementToCanvas(
   element: Element,
   options: RenderElementOptions
 ): Promise<HTMLCanvasElement> {
-  const root = options.rootTimegroup ?? findRootTimegroup(element);
-  let elementToRender = element;
-  let cleanup: (() => void) | undefined;
-  
-  // Timeline-aware path: create clone, seek, and find element
-  if (root) {
-    const { timeMs } = options;
-    const { clone: renderClone, cleanup: cleanupClone } = await root.createRenderClone();
-    cleanup = cleanupClone;
-    
-    try {
-      // Seek clone to target time
-      await renderClone.seekForRender(timeMs);
-      
-      // Find corresponding element in clone
-      elementToRender = findCorrespondingElement(renderClone, element);
-    } catch (error) {
-      cleanup();
-      throw error;
-    }
-  }
-  
-  // Render the element (either cloned or original)
-  try {
-    return await renderElementToImage(elementToRender, options);
-  } finally {
-    cleanup?.();
-  }
+  return await renderElementToImage(element, options);
 }
 
 /**

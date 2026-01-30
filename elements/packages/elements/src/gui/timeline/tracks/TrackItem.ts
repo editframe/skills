@@ -251,6 +251,36 @@ export class TrackItem extends TWMixin(LitElement) {
     const leftOffset = this.useAbsolutePosition
       ? startMs
       : startMs - this.element.sourceStartMs;
+    
+    // DIAGNOSTIC: Log positioning for nested timegroups (only when enabled)
+    if ((window as any).__TIMELINE_DIAGNOSTIC_ENABLED) {
+      const elementId = (this.element as any).id || 'no-id';
+      const elementTag = (this.element as any).tagName || 'unknown';
+      const parentTimegroup = (this.element as any).parentTimegroup;
+      const parentId = parentTimegroup?.id || 'no-parent';
+      const parentStartTimeMs = parentTimegroup?.startTimeMs ?? null;
+      
+      if (!(window as any).__TIMELINE_DIAGNOSTIC_DATA) {
+        (window as any).__TIMELINE_DIAGNOSTIC_DATA = [];
+      }
+      
+      (window as any).__TIMELINE_DIAGNOSTIC_DATA.push({
+        type: 'gutterStyles',
+        elementId,
+        elementTag,
+        parentId,
+        useAbsolutePosition: this.useAbsolutePosition,
+        startTimeMs: this.element.startTimeMs,
+        startTimeWithinParentMs: this.element.startTimeWithinParentMs,
+        parentStartTimeMs,
+        sourceStartMs: this.element.sourceStartMs,
+        offsetMs: (this.element as any)._offsetMs || 0,
+        calculatedStartMs: startMs,
+        calculatedLeftOffset: leftOffset,
+        leftPx: this.pixelsPerMs * leftOffset,
+      });
+    }
+    
     return {
       position: "relative",
       left: `${this.pixelsPerMs * leftOffset}px`,

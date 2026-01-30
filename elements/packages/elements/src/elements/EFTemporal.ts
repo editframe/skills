@@ -215,7 +215,24 @@ function evaluateStartTimeForOffset(
   parentTimegroup: EFTimegroup,
   offsetMs: number,
 ): number {
-  return parentTimegroup.startTimeMs + offsetMs;
+  const result = parentTimegroup.startTimeMs + offsetMs;
+  
+  // DIAGNOSTIC: Log offset-based start time calculation (only when enabled)
+  if ((window as any).__TIMELINE_DIAGNOSTIC_ENABLED) {
+    if (!(window as any).__TIMELINE_DIAGNOSTIC_DATA) {
+      (window as any).__TIMELINE_DIAGNOSTIC_DATA = [];
+    }
+    
+    (window as any).__TIMELINE_DIAGNOSTIC_DATA.push({
+      type: 'evaluateStartTimeForOffset',
+      parentId: parentTimegroup.id || 'no-id',
+      parentStartTimeMs: parentTimegroup.startTimeMs,
+      offsetMs,
+      result,
+    });
+  }
+  
+  return result;
 }
 
 function evaluateStartTime(
@@ -1027,15 +1044,51 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
     get startTimeMs(): number {
       const cachedStartTime = startTimeMsCache.get(this);
       if (cachedStartTime !== undefined) {
+        // DIAGNOSTIC: Log cache hit (only when enabled)
+        if ((window as any).__TIMELINE_DIAGNOSTIC_ENABLED) {
+          const elementId = (this as any).id || 'no-id';
+          const elementTag = (this as any).tagName || 'unknown';
+          
+          if (!(window as any).__TIMELINE_DIAGNOSTIC_DATA) {
+            (window as any).__TIMELINE_DIAGNOSTIC_DATA = [];
+          }
+          
+          (window as any).__TIMELINE_DIAGNOSTIC_DATA.push({
+            type: 'cache-hit',
+            elementId,
+            elementTag,
+            cachedValue: cachedStartTime,
+          });
+        }
         return cachedStartTime;
       }
 
+      const elementId = (this as any).id || 'no-id';
+      const elementTag = (this as any).tagName || 'unknown';
+      const parentId = this.parentTimegroup?.id || 'no-parent';
+      
       const startTime = evaluateStartTime(
         this as InstanceType<Constructor<TemporalMixinInterface> & T>,
         this.parentTimegroup,
         this.#offsetMs(),
         (parent) => shallowGetTemporalElements(parent),
       );
+
+      // DIAGNOSTIC: Log calculated value (only when enabled)
+      if ((window as any).__TIMELINE_DIAGNOSTIC_ENABLED) {
+        if (!(window as any).__TIMELINE_DIAGNOSTIC_DATA) {
+          (window as any).__TIMELINE_DIAGNOSTIC_DATA = [];
+        }
+        
+        (window as any).__TIMELINE_DIAGNOSTIC_DATA.push({
+          type: 'fresh-calculation',
+          elementId,
+          elementTag,
+          parentId,
+          offsetMs: this.#offsetMs(),
+          calculatedValue: startTime,
+        });
+      }
 
       startTimeMsCache.set(this, startTime);
       return startTime;

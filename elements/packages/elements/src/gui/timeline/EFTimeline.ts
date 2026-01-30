@@ -873,6 +873,78 @@ export class EFTimeline extends TWMixin(LitElement) {
     this.updateTimelineState();
     // Subscribe to playback controller when connected
     this.subscribeToPlaybackController();
+    
+    // DIAGNOSTIC: Set up window helper function for on-demand diagnostics
+    (window as any).captureTimelineDiagnostics = () => {
+      const data: any[] = [];
+      
+      // Capture current timeline state
+      const target = this.targetTemporal;
+      if (!target) {
+        console.log('No target temporal element');
+        return [];
+      }
+      
+      // Walk through all timeline rows and capture their positioning data
+      const rows = this.shadowRoot?.querySelectorAll('ef-timeline-row');
+      console.log('Found ' + (rows?.length || 0) + ' timeline rows');
+      
+      rows?.forEach((row: any) => {
+        const element = row.element;
+        if (!element) return;
+        
+        const elementId = element.id || 'no-id';
+        const elementTag = element.tagName || 'unknown';
+        const parentTimegroup = element.parentTimegroup;
+        const parentId = parentTimegroup?.id || 'no-parent';
+        
+        // Capture the element's position data
+        data.push({
+          type: 'element-data',
+          elementId,
+          elementTag,
+          parentId,
+          startTimeMs: element.startTimeMs,
+          startTimeWithinParentMs: element.startTimeWithinParentMs,
+          parentStartTimeMs: parentTimegroup?.startTimeMs ?? null,
+          offsetMs: (element as any)._offsetMs || 0,
+          durationMs: element.durationMs,
+          mode: (element as any).mode || null,
+        });
+        
+        // Try to get the track item and its positioning
+        const track = row.shadowRoot?.querySelector('[class*="row-track"]')?.firstElementChild;
+        if (track) {
+          data.push({
+            type: 'track-info',
+            elementId,
+            trackTagName: track.tagName,
+            useAbsolutePosition: (track as any).useAbsolutePosition,
+            pixelsPerMs: (track as any).pixelsPerMs,
+          });
+          
+          if ((track as any).gutterStyles) {
+            const styles = (track as any).gutterStyles;
+            data.push({
+              type: 'track-positioning',
+              elementId,
+              gutterStyles: {
+                position: styles.position,
+                left: styles.left,
+                width: styles.width,
+              },
+            });
+          }
+        }
+      });
+      
+      console.log('Captured ' + data.length + ' diagnostic entries');
+      console.log('Copy this JSON:');
+      console.log(JSON.stringify(data, null, 2));
+      return data;
+    };
+    
+    console.log('Timeline diagnostics ready. Run: captureTimelineDiagnostics()');
   }
 
   disconnectedCallback(): void {
@@ -891,6 +963,11 @@ export class EFTimeline extends TWMixin(LitElement) {
       this.saveZoomScrollDebounceTimer = null;
     }
     this.saveTimelineState();
+    
+    // DIAGNOSTIC: Clean up window helper
+    delete (window as any).captureTimelineDiagnostics;
+    delete (window as any).__TIMELINE_DIAGNOSTIC_DATA;
+    delete (window as any).__TIMELINE_DIAGNOSTIC_ENABLED;
   }
 
   /**
