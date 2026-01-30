@@ -4,7 +4,6 @@ import path from "node:path";
 import { program } from "commander";
 import debug from "debug";
 import ora from "ora";
-import type { Page } from "playwright";
 import { launchBrowserAndWaitForSDK } from "../utils/launchBrowserAndWaitForSDK.js";
 import { spawnViteServer, type SpawnedViteServer } from "../utils/spawnViteServer.js";
 import { StreamTargetChunk } from "mediabunny";

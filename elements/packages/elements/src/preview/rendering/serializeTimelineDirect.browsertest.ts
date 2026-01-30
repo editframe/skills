@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { serializeTimelineToXHTML, serializeTimelineToDataUri } from "./serializeTimelineDirect.js";
+import { serializeElementToXHTML, serializeTimelineToDataUri } from "./serializeTimelineDirect.js";
 import type { EFTimegroup } from "../../elements/EFTimegroup.js";
 import type { EFText } from "../../elements/EFText.js";
 
@@ -32,7 +32,7 @@ describe("serializeTimelineDirect", () => {
       await text.whenSegmentsReady();
       
       // Serialize to XHTML
-      const xhtml = await serializeTimelineToXHTML(text, 800, 600, {
+      const xhtml = await serializeElementToXHTML(text, 800, 600, {
         canvasScale: 1,
         timeMs: 0,
       });
@@ -92,7 +92,7 @@ describe("serializeTimelineDirect", () => {
       await text.updateComplete;
       await text.whenSegmentsReady();
       
-      const xhtml = await serializeTimelineToXHTML(text, 800, 600, {
+      const xhtml = await serializeElementToXHTML(text, 800, 600, {
         canvasScale: 1,
         timeMs: 0,
       });
@@ -115,7 +115,7 @@ describe("serializeTimelineDirect", () => {
       await text.updateComplete;
       await text.whenSegmentsReady();
       
-      const xhtml = await serializeTimelineToXHTML(text, 800, 600, {
+      const xhtml = await serializeElementToXHTML(text, 800, 600, {
         canvasScale: 1,
         timeMs: 0,
       });
@@ -136,7 +136,7 @@ describe("serializeTimelineDirect", () => {
       await text.updateComplete;
       await text.whenSegmentsReady();
       
-      const xhtml = await serializeTimelineToXHTML(text, 800, 600, {
+      const xhtml = await serializeElementToXHTML(text, 800, 600, {
         canvasScale: 1,
         timeMs: 0,
       });
@@ -159,7 +159,7 @@ describe("serializeTimelineDirect", () => {
       container.appendChild(timegroup);
       await timegroup.updateComplete;
       
-      const xhtml = await serializeTimelineToXHTML(timegroup, 1920, 1080, {
+      const xhtml = await serializeElementToXHTML(timegroup, 1920, 1080, {
         canvasScale: 1,
         timeMs: 0,
       });
@@ -185,7 +185,7 @@ describe("serializeTimelineDirect", () => {
       await text.updateComplete;
       await text.whenSegmentsReady();
       
-      const xhtml = await serializeTimelineToXHTML(text, 800, 600, {
+      const xhtml = await serializeElementToXHTML(text, 800, 600, {
         canvasScale: 1,
         timeMs: 0,
       });
@@ -205,7 +205,7 @@ describe("serializeTimelineDirect", () => {
       container.appendChild(text);
       await text.updateComplete;
       
-      const xhtml = await serializeTimelineToXHTML(text, 800, 600, {
+      const xhtml = await serializeElementToXHTML(text, 800, 600, {
         canvasScale: 1,
         timeMs: 0,
       });

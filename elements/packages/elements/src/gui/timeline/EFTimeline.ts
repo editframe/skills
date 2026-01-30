@@ -21,6 +21,7 @@ import { styleMap } from "lit/directives/style-map.js";
 import {
   isEFTemporal,
   type TemporalMixinInterface,
+  flushStartTimeMsCache,
 } from "../../elements/EFTemporal.js";
 import { EFTimegroup } from "../../elements/EFTimegroup.js";
 import { findRootTemporal } from "../../elements/findRootTemporal.js";
@@ -919,6 +920,12 @@ export class EFTimeline extends TWMixin(LitElement) {
 
     // Retry setting up selection listener if not yet connected
     this.setupSelectionListener();
+
+    // Flush startTimeMs cache to ensure all position calculations are fresh
+    // This is critical for nested timegroups - without this, nested elements
+    // may read stale cached positions from their parents, causing them to
+    // appear at position 0 instead of their actual timeline position.
+    flushStartTimeMsCache();
 
     // Always update timeline state - values may come from getters
     this.updateTimelineState();

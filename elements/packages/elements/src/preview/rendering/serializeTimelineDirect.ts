@@ -609,16 +609,16 @@ function isTemporallyVisible(element: Element, timeMs: number): boolean {
 }
 
 /**
- * Serialize a timeline element directly to XHTML string.
+ * Serialize any element directly to XHTML string.
  * 
- * @param timeline - The timeline element to serialize (e.g., EFTimegroup)
+ * @param element - The element to serialize (timegroup, temporal element, or plain DOM)
  * @param width - Output width
  * @param height - Output height
  * @param options - Serialization options (renderContext, canvasScale, timeMs)
  * @returns XHTML string with all canvases encoded as base64 data URLs
  */
-export async function serializeTimelineToXHTML(
-  timeline: Element,
+export async function serializeElementToXHTML(
+  element: Element,
   width: number,
   height: number,
   options: SerializationOptions
@@ -643,8 +643,8 @@ export async function serializeTimelineToXHTML(
     parts.push(`<style type="text/css"><![CDATA[${documentStyles}]]></style>`);
   }
   
-  // Recursively serialize timeline
-  serializeElement(timeline, parts, canvasJobs, options);
+  // Recursively serialize element
+  serializeElement(element, parts, canvasJobs, options);
   
   // Close wrapper
   parts.push('</div>');
@@ -659,40 +659,21 @@ export async function serializeTimelineToXHTML(
 }
 
 /**
- * Serialize any element to XHTML.
- * Alias for serializeTimelineToXHTML - works on any element, not just timelines.
+ * Serialize element to SVG foreignObject data URI (ready for rendering).
  * 
  * @param element - The element to serialize
- * @param width - Output width
- * @param height - Output height
- * @param options - Serialization options
- * @returns XHTML string with all canvases encoded as base64 data URLs
- */
-export async function serializeElementToXHTML(
-  element: Element,
-  width: number,
-  height: number,
-  options: SerializationOptions
-): Promise<string> {
-  return serializeTimelineToXHTML(element, width, height, options);
-}
-
-/**
- * Serialize timeline to SVG foreignObject data URI (ready for rendering).
- * 
- * @param timeline - The timeline element to serialize
  * @param width - Output width
  * @param height - Output height
  * @param options - Serialization options
  * @returns SVG data URI
  */
 export async function serializeTimelineToDataUri(
-  timeline: Element,
+  element: Element,
   width: number,
   height: number,
   options: SerializationOptions
 ): Promise<string> {
-  const xhtml = await serializeTimelineToXHTML(timeline, width, height, options);
+  const xhtml = await serializeElementToXHTML(element, width, height, options);
   
   // Wrap in SVG foreignObject
   // Use explicit pixel dimensions for foreignObject to match SVG viewport exactly

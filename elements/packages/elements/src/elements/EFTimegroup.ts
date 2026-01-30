@@ -1198,12 +1198,11 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     if (this.#playbackListener || !this.playbackController) return;
     
     this.#playbackListener = (event: PlaybackControllerUpdateEvent) => {
-      // Only update userTimeMs during playback time changes
+      // Update userTimeMs during playback time changes
       // Clone-timeline: captures use separate clones, so Prime-timeline updates freely
+      // Canvas preview reads userTimeMs to know what to render
       if (event.property === "currentTimeMs" && typeof event.value === "number") {
-        if (this.playing) {
-          this.#userTimeMs = event.value;
-        }
+        this.#userTimeMs = event.value;
       }
     };
     
