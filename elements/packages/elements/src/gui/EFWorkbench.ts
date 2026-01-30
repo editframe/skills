@@ -24,10 +24,6 @@ import {
 } from "../preview/previewSettings.js";
 import { setShowStats } from "../preview/previewSettings.js";
 import {
-  createStatsTrackingStrategy,
-  type StatsTrackingStrategy,
-} from "../preview/statsTrackingStrategy.js";
-import {
   getThumbnailCacheMaxSize,
   setThumbnailCacheMaxSize,
   onThumbnailCacheSettingsChanged,
@@ -35,6 +31,8 @@ import {
 import { thumbnailImageCache } from "../elements/EFThumbnailStrip.js";
 import type { ThumbnailCacheStats } from "../elements/thumbnailCache.js";
 import { AdaptiveResolutionTracker } from "../preview/AdaptiveResolutionTracker.js";
+import { RenderStats, type PlaybackStats } from "../preview/RenderStats.js";
+import { DomStatsStrategy } from "../preview/statsTrackingStrategy.js";
 import { provide } from "@lit/context";
 import { previewSettingsContext, type PreviewSettings } from "./previewSettingsContext.js";
 import { phosphorIcon, ICONS } from "./icons.js";
@@ -235,7 +233,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         grid-row: 1;
       }
       
-      .clone-overlay {
+      .canvas-overlay {
         position: absolute;
         inset: 0;
         pointer-events: none;
@@ -487,7 +485,17 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   @state()
   private showStats: boolean = this.previewSettings.showStats;
   
-  private statsStrategy: StatsTrackingStrategy | null = null;
+  /**
+   * Always-on render statistics collection for canvas mode.
+   * Collects data regardless of whether stats are visible.
+   */
+  private renderStats: RenderStats | null = null;
+  
+  /**
+   * DOM mode stats strategy (has its own animation loop).
+   * Only active in DOM mode.
+   */
+  private domStatsStrategy: DomStatsStrategy | null = null;
   
   /**
    * Reference for tracking scrubbing state from EFScrubber.
@@ -500,14 +508,6 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   private adaptiveTracker: AdaptiveResolutionTracker | null = null;
   private savePanZoomDebounceTimer: number | null = null;
   
-  // Clone overlay (computed styles preview on top of hidden original)
-  private cloneOverlayRef = createRef<HTMLDivElement>();
-  private cloneRefresh: (() => void) | null = null;
-  private cloneAnimationFrame: number | null = null;
-  private cloneRootElement: HTMLElement | null = null;
-  private cloneTimegroup: EFTimegroup | null = null;
-  private structureObserver: MutationObserver | null = null;
-  private rebuildPending = false;
   
   // Canvas renderer (kept for thumbnail generation, not displayed)
   private canvasRefresh: (() => Promise<void>) | null = null;
@@ -554,6 +554,9 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       },
     });
     
+    // Initialize render stats (always-on collection)
+    this.renderStats = new RenderStats(this.adaptiveTracker);
+    
     // Initialize thumbnail cache stats
     this.updateThumbnailCacheStats();
     this.startCacheStatsUpdates();
@@ -571,16 +574,8 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   disconnectedCallback(): void {
     super.disconnectedCallback();
     
-    // Stop stats tracking
-    if (this.statsStrategy) {
-      this.statsStrategy.stop();
-      this.statsStrategy = null;
-    }
-    
     // Clean up current mode
-    if (this.presentationMode === "clone") {
-      this.stopCloneOverlay();
-    } else if (this.presentationMode === "dom") {
+    if (this.presentationMode === "dom") {
       this.stopDomMode();
     } else if (this.presentationMode === "canvas") {
       this.stopCanvasMode();
@@ -623,9 +618,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     });
     
     // Initialize based on current presentation mode
-    if (this.presentationMode === "clone") {
-      this.initCloneOverlay();
-    } else if (this.presentationMode === "dom") {
+    if (this.presentationMode === "dom") {
       this.initDomMode();
     } else if (this.presentationMode === "canvas") {
       this.initCanvasMode();
@@ -643,9 +636,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     this.debouncedSavePreviewPanZoom();
     
     // Update overlay transform based on current mode
-    if (this.presentationMode === "clone") {
-      this.updateCloneTransform();
-    } else if (this.presentationMode === "canvas") {
+    if (this.presentationMode === "canvas") {
       this.updateCanvasTransform();
       
       // Check if zoom changed enough to warrant re-rendering at new resolution
@@ -754,9 +745,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
           }
           
           // Update transforms based on current mode
-          if (this.presentationMode === "clone") {
-            this.updateCloneTransform();
-          } else if (this.presentationMode === "canvas") {
+          if (this.presentationMode === "canvas") {
             this.updateCanvasTransform();
           }
         });
@@ -961,274 +950,10 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     this.previewResolutionScale = this.previewSettings.resolutionScale;
     this.showStats = this.previewSettings.showStats;
     this.thumbnailCacheMaxSize = this.previewSettings.thumbnailCacheMaxSize;
-    
-    // Apply stats strategy if enabled and dependencies are ready
-    this.updateStatsStrategy();
-  }
-  
-  /**
-   * Update or create stats tracking strategy based on current mode and settings.
-   */
-  private updateStatsStrategy(): void {
-    // Stop existing strategy
-    if (this.statsStrategy) {
-      this.statsStrategy.stop();
-      this.statsStrategy = null;
-    }
-    
-    // Only create strategy if stats are enabled
-    if (!this.showStats) {
-      return;
-    }
-    
-    const timegroup = this.getTimegroup();
-    if (!timegroup || !this.adaptiveTracker) {
-      return;
-    }
-    
-    const compositionWidth = timegroup.offsetWidth || 1920;
-    const compositionHeight = timegroup.offsetHeight || 1080;
-    
-    // Create strategy based on current mode
-    const strategy = createStatsTrackingStrategy(this.presentationMode, {
-      timegroup,
-      adaptiveTracker: this.adaptiveTracker,
-      canvasPreviewResult: this.canvasPreviewResult ?? undefined,
-      compositionWidth,
-      compositionHeight,
-      getResolutionScale: this.canvasPreviewResult?.getResolutionScale,
-      isAtRest: () => this.isAtRest,
-      isExporting: () => this.isExporting,
-    });
-    
-    if (strategy) {
-      this.statsStrategy = strategy;
-      strategy.start();
-    }
   }
   
   // ==================== End Motion State Detection ====================
   
-  private initCloneOverlay() {
-    // Don't initialize if we're no longer in clone mode
-    if (this.presentationMode !== "clone") return;
-    
-    const timegroup = this.getTimegroup();
-    const cloneContainer = this.cloneOverlayRef.value;
-    
-    // Wait for both timegroup and container to be available
-    if (!timegroup || !cloneContainer) {
-      // Retry after a short delay
-      setTimeout(() => this.initCloneOverlay(), 100);
-      return;
-    }
-    
-    // Store reference to timegroup
-    this.cloneTimegroup = timegroup;
-    
-    // Disable the timegroup's own proxy mode - workbench handles cloning
-    (timegroup as any).proxyMode = false;
-    
-    // Ensure timegroup and its children have finished their initial render
-    // before building the clone (custom elements need their shadow DOM ready)
-    timegroup.updateComplete.then(() => {
-      // Double-check we're still in clone mode
-      if (this.presentationMode !== "clone") return;
-      this.finishCloneSetup(timegroup, cloneContainer);
-    });
-  }
-  
-  private finishCloneSetup(timegroup: EFTimegroup, cloneContainer: HTMLDivElement) {
-    
-    // Hide the original timegroup but keep it rendering (critical for video frame decoding)
-    // Using clip-path instead of opacity ensures video elements continue to decode frames
-    timegroup.style.clipPath = "inset(100%)";
-    timegroup.style.pointerEvents = "none";
-    
-    // Show the clone overlay container
-    cloneContainer.style.display = "block";
-    
-    // Build initial clone
-    this.rebuildClone(timegroup);
-    
-    // Watch for structural changes to rebuild clone
-    this.setupStructureObserver(timegroup);
-  }
-  
-  private rebuildClone(timegroup: EFTimegroup) {
-    // Don't rebuild if we're not in clone mode
-    if (this.presentationMode !== "clone") return;
-    
-    const container = this.cloneOverlayRef.value;
-    if (!container) return;
-    
-    try {
-      const { container: previewContainer, refresh } = renderTimegroupPreview(timegroup);
-      
-      container.innerHTML = "";
-      previewContainer.classList.add("clone-content");
-      container.appendChild(previewContainer);
-      this.cloneRefresh = refresh;
-      
-      // Store reference to the root clone element (first child of preview container)
-      this.cloneRootElement = previewContainer.firstElementChild as HTMLElement ?? null;
-      
-      // Ensure the clone root is visible and properly positioned
-      // (opacity and position values get copied from hidden original which are wrong for clone context)
-      if (this.cloneRootElement) {
-        this.cloneRootElement.style.opacity = "1";
-        this.cloneRootElement.style.clipPath = "none";
-        this.cloneRootElement.style.position = "relative";
-        this.cloneRootElement.style.inset = "auto";
-        this.cloneRootElement.style.top = "0";
-        this.cloneRootElement.style.right = "auto";
-        this.cloneRootElement.style.bottom = "auto";
-        this.cloneRootElement.style.left = "0";
-      }
-      
-      // Apply current transform
-      this.updateCloneTransform();
-      
-      // Re-observe shadow roots (new ones may have been created)
-      this.observeShadowRoots(timegroup);
-      
-      // Start the sync loop if not already running
-      if (this.cloneAnimationFrame === null) {
-        this.startCloneLoop();
-      }
-    } catch (e) {
-      console.error("Failed to build clone:", e);
-    }
-  }
-  
-  private setupStructureObserver(timegroup: EFTimegroup) {
-    // Clean up existing observer
-    if (this.structureObserver) {
-      this.structureObserver.disconnect();
-    }
-    
-    // Watch for structural changes (child additions/removals)
-    // No special handling needed for batch operations - preview uses userTimeMs
-    // which doesn't change during thumbnail/export captures
-    this.structureObserver = new MutationObserver((mutations) => {
-      // Don't process if we're no longer in clone mode
-      if (this.presentationMode !== "clone") return;
-      
-      // Check if any mutation added/removed nodes
-      const hasStructuralChange = mutations.some(m => 
-        m.type === "childList" && (m.addedNodes.length > 0 || m.removedNodes.length > 0)
-      );
-      
-      if (hasStructuralChange && !this.rebuildPending) {
-        this.rebuildPending = true;
-        // Debounce rebuilds to batch rapid changes
-        requestAnimationFrame(() => {
-          this.rebuildPending = false;
-          if (this.presentationMode === "clone") {
-            this.rebuildClone(timegroup);
-          }
-        });
-      }
-    });
-    
-    // Observe the timegroup and all descendants for child changes
-    this.structureObserver.observe(timegroup, {
-      childList: true,
-      subtree: true,
-    });
-    
-    // Also observe shadow roots of custom elements
-    this.observeShadowRoots(timegroup);
-  }
-  
-  private observeShadowRoots(root: Element) {
-    if (!this.structureObserver) return;
-    
-    // Walk the tree and observe any shadow roots
-    const walker = document.createTreeWalker(
-      root,
-      NodeFilter.SHOW_ELEMENT,
-      null
-    );
-    
-    let node: Element | null = root;
-    while (node) {
-      if (node.shadowRoot) {
-        this.structureObserver.observe(node.shadowRoot, {
-          childList: true,
-          subtree: true,
-        });
-      }
-      node = walker.nextNode() as Element | null;
-    }
-  }
-  
-  private updateCloneTransform() {
-    if (this.presentationMode !== "clone") return;
-    
-    const container = this.cloneOverlayRef.value;
-    if (!container) return;
-    
-    const cloneContent = container.querySelector(".clone-content") as HTMLElement;
-    if (!cloneContent) return;
-    
-    const { x, y, scale } = this.panZoomTransform;
-    cloneContent.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
-  }
-  
-  private startCloneLoop() {
-    const loop = () => {
-      // Stop the loop if we're no longer in clone mode
-      if (this.presentationMode !== "clone" || !this.cloneRefresh) {
-        this.cloneAnimationFrame = null;
-        return;
-      }
-      
-      // Skip sync during export to avoid wasting CPU
-      // cloneRefresh uses userTimeMs which doesn't change during batch captures
-      if (!this.isExporting) {
-        this.cloneRefresh();
-        // Restore visibility and position on root clone 
-        // (syncing copies clip-path and position values from the hidden original,
-        // which are relative to the workbench, not the clone container)
-        if (this.cloneRootElement) {
-          this.cloneRootElement.style.clipPath = "none";
-          this.cloneRootElement.style.opacity = "1";
-          // Reset position to fill the preview container
-          this.cloneRootElement.style.position = "relative";
-          this.cloneRootElement.style.inset = "auto";
-          this.cloneRootElement.style.top = "0";
-          this.cloneRootElement.style.right = "auto";
-          this.cloneRootElement.style.bottom = "auto";
-          this.cloneRootElement.style.left = "0";
-        }
-      }
-      this.cloneAnimationFrame = requestAnimationFrame(loop);
-    };
-    this.cloneAnimationFrame = requestAnimationFrame(loop);
-  }
-  
-  private stopCloneOverlay() {
-    if (this.cloneAnimationFrame !== null) {
-      cancelAnimationFrame(this.cloneAnimationFrame);
-      this.cloneAnimationFrame = null;
-    }
-    if (this.structureObserver) {
-      this.structureObserver.disconnect();
-      this.structureObserver = null;
-    }
-    this.cloneRefresh = null;
-    this.cloneRootElement = null;
-    this.cloneTimegroup = null;
-    this.rebuildPending = false;
-    
-    // Clear and hide the clone overlay container
-    const container = this.cloneOverlayRef.value;
-    if (container) {
-      container.innerHTML = "";
-      container.style.display = "none";
-    }
-  }
   
   private async handlePresentationModeChange(mode: PreviewPresentationMode) {
     if (mode === this.presentationMode) return;
@@ -1236,9 +961,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     const previousMode = this.presentationMode;
     
     // Stop previous mode (this will stop stats strategy)
-    if (previousMode === "clone") {
-      this.stopCloneOverlay();
-    } else if (previousMode === "dom") {
+    if (previousMode === "dom") {
       this.stopDomMode();
     } else if (previousMode === "canvas") {
       this.stopCanvasMode();
@@ -1252,14 +975,11 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     await this.updateComplete;
     
     // Start new mode after DOM is updated
-    if (mode === "clone") {
-      this.initCloneOverlay();
-    } else if (mode === "dom") {
+    if (mode === "dom") {
       this.initDomMode();
     } else if (mode === "canvas") {
       this.initCanvasMode();
     }
-    // Stats strategy will be created by applySettings() when dependencies are ready
   }
   
   private initDomMode() {
@@ -1286,11 +1006,23 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     timegroup.style.clipPath = "";
     timegroup.style.pointerEvents = "";
     
-    // Settings will be applied via applySettings() when dependencies are ready
-    // This happens automatically in updated() hook when timegroup becomes available
+    // Create DOM stats strategy if stats are enabled
+    if (this.showStats && this.adaptiveTracker) {
+      this.domStatsStrategy = new DomStatsStrategy({
+        timegroup,
+        adaptiveTracker: this.adaptiveTracker,
+      });
+      this.domStatsStrategy.start();
+    }
   }
   
   private stopDomMode() {
+    // Stop DOM stats strategy
+    if (this.domStatsStrategy) {
+      this.domStatsStrategy.stop();
+      this.domStatsStrategy = null;
+    }
+    
     const timegroup = this.getTimegroup();
     if (timegroup) {
       // Hide the original again
@@ -1302,12 +1034,6 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     const fitScale = this.querySelector("[slot='canvas']") as any;
     if (fitScale?.paused !== undefined) {
       fitScale.paused = false;
-    }
-    
-    // Stop stats tracking
-    if (this.statsStrategy) {
-      this.statsStrategy.stop();
-      this.statsStrategy = null;
     }
   }
   
@@ -1439,7 +1165,16 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         // Skip refresh during export to avoid wasting CPU
         if (!this.isExporting) {
           try {
+            // Measure render time for stats tracking
+            const renderStart = performance.now();
             await refresh();
+            const renderTime = performance.now() - renderStart;
+            
+            // Always record render stats (regardless of display visibility)
+            if (this.renderStats) {
+              this.renderStats.recordFrame(renderTime, performance.now(), this.isAtRest);
+            }
+            
             this.updateCanvasTransform();
           } catch (e) {
             console.error("Canvas refresh failed:", e);
@@ -1449,9 +1184,6 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         this.canvasAnimationFrame = requestAnimationFrame(loop);
       };
       this.canvasAnimationFrame = requestAnimationFrame(loop);
-      
-      // Settings will be applied via applySettings() when dependencies are ready
-      // This happens automatically in updated() hook when timegroup becomes available
     } catch (e) {
       console.error("Failed to init canvas mode:", e);
     }
@@ -1468,11 +1200,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     }
     this.canvasPreviewResult = null;
     
-    // Stop stats tracking
-    if (this.statsStrategy) {
-      this.statsStrategy.stop();
-      this.statsStrategy = null;
-    }
+    // Note: renderStats persists across mode changes - no cleanup needed
     
     // Clear and hide the canvas container
     const container = this.canvasPreviewRef.value;
@@ -1785,22 +1513,6 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
           
           <div style="display: flex; gap: 4px; background: rgba(30, 41, 59, 0.6); border-radius: 6px; padding: 3px;">
             <button
-              @click=${() => this.handlePresentationModeChange("clone")}
-              style="
-                flex: 1;
-                padding: 6px 10px;
-                border: none;
-                border-radius: 4px;
-                font-size: 11px;
-                font-weight: 500;
-                cursor: pointer;
-                transition: all 0.15s ease;
-                background: ${this.presentationMode === "clone" ? "rgba(59, 130, 246, 0.3)" : "transparent"};
-                color: ${this.presentationMode === "clone" ? "#60a5fa" : "#94a3b8"};
-                border: 1px solid ${this.presentationMode === "clone" ? "rgba(59, 130, 246, 0.4)" : "transparent"};
-              "
-            >Clone</button>
-            <button
               @click=${() => this.handlePresentationModeChange("dom")}
               style="
                 flex: 1;
@@ -1835,11 +1547,9 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
           </div>
           
           <div style="margin-top: 8px; color: #64748b; font-size: 10px; line-height: 1.4;">
-            ${this.presentationMode === "clone" 
-              ? "Default. Shows a styled clone synced from the hidden original." 
-              : this.presentationMode === "dom" 
-                ? "Shows the real timegroup DOM directly." 
-                : "Renders to canvas each frame (experimental)."}
+            ${this.presentationMode === "dom" 
+              ? "Default. Shows the real timegroup DOM directly." 
+              : "Renders to canvas each frame."}
           </div>
         </div>
         
@@ -2442,16 +2152,14 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         </div>
         
         <div class="toolbar-right">
-          <!-- Mode indicator (shown when not in default clone mode) -->
-          ${this.presentationMode !== "clone" ? html`
-            <span class="mode-indicator ${this.presentationMode}">
-              ${this.presentationMode === "dom" ? "DOM" : html`
-                Canvas ${getRenderMode() === "native" 
-                  ? phosphorIcon(ICONS.lightning, 12) 
-                  : phosphorIcon(ICONS.code, 12)}
-              `}
-            </span>
-          ` : null}
+          <!-- Mode indicator -->
+          <span class="mode-indicator ${this.presentationMode}">
+            ${this.presentationMode === "dom" ? "DOM" : html`
+              Canvas ${getRenderMode() === "native" 
+                ? phosphorIcon(ICONS.lightning, 12) 
+                : phosphorIcon(ICONS.code, 12)}
+            `}
+          </span>
           
           <!-- Settings button -->
           <button 
@@ -2572,12 +2280,35 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   };
   
   private renderPlaybackStats() {
-    // Only show stats if enabled and strategy is available
-    if (!this.showStats || !this.statsStrategy) {
+    // Only show stats if enabled
+    if (!this.showStats) {
       return null;
     }
     
-    const stats = this.statsStrategy.getStats();
+    // Get stats based on current mode
+    let stats: PlaybackStats | null = null;
+    
+    if (this.presentationMode === "canvas" && this.renderStats) {
+      // Canvas mode: use RenderStats (always-on collection)
+      const timegroup = this.getTimegroup();
+      if (!timegroup) return null;
+      
+      const compositionWidth = timegroup.offsetWidth || 1920;
+      const compositionHeight = timegroup.offsetHeight || 1080;
+      
+      const resolutionScale = this.canvasPreviewResult
+        ? this.canvasPreviewResult.getResolutionScale()
+        : 1;
+      
+      const renderWidth = Math.floor(compositionWidth * resolutionScale);
+      const renderHeight = Math.floor(compositionHeight * resolutionScale);
+      
+      stats = this.renderStats.getStats(renderWidth, renderHeight, resolutionScale);
+    } else if (this.presentationMode === "dom" && this.domStatsStrategy) {
+      // DOM mode: use DomStatsStrategy (has its own loop)
+      stats = this.domStatsStrategy.getStats();
+    }
+    
     if (!stats) {
       return null;
     }
@@ -2586,13 +2317,11 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     const fpsClass = stats.fps >= 55 ? "good" : stats.fps >= 25 ? "warning" : "bad";
     
     // Determine render time color (target is 33ms for 30fps)
-    // Only show if supported
     const renderClass = stats.avgRenderTime !== null
       ? (stats.avgRenderTime <= 20 ? "good" : stats.avgRenderTime <= 30 ? "warning" : "bad")
       : "";
     
     // Determine headroom color (positive = good, negative = bad)
-    // Only show if supported
     const headroomClass = stats.headroom !== null
       ? (stats.headroom >= 10 ? "good" : stats.headroom >= 0 ? "warning" : "bad")
       : "";
@@ -2603,10 +2332,17 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       : stats.pressureState === "serious" ? "warning" 
       : "bad";
     
-    // Resolution scale color (only if supported)
+    // Resolution scale color (only for canvas mode)
     const scaleClass = stats.resolutionScale !== null
       ? (stats.resolutionScale >= 0.75 ? "good" : stats.resolutionScale >= 0.5 ? "warning" : "bad")
       : "";
+    
+    // Determine which stats to show based on mode
+    const isCanvasMode = this.presentationMode === "canvas";
+    const showRenderTime = isCanvasMode;
+    const showHeadroom = isCanvasMode;
+    const showResolutionScale = isCanvasMode;
+    const showAdaptiveResolution = isCanvasMode && this.previewResolutionScale === "auto";
     
     // Motion state
     const motionState = this.isAtRest ? "At Rest" : this.isPlaying ? "Playing" : this.isScrubbing ? "Scrubbing" : "Idle";
@@ -2642,13 +2378,13 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
           <span class="stat-label">FPS</span>
           <span class="stat-value ${fpsClass}">${padNum(stats.fps, 1, 5)}</span>
         </div>
-        ${this.statsStrategy.supportsStat("renderTime") && stats.avgRenderTime !== null ? html`
+        ${showRenderTime && stats.avgRenderTime !== null ? html`
           <div class="stat-row">
             <span class="stat-label">Render</span>
             <span class="stat-value ${renderClass}">${padNum(stats.avgRenderTime, 1, 5)}ms</span>
           </div>
         ` : null}
-        ${this.statsStrategy.supportsStat("headroom") && stats.headroom !== null ? html`
+        ${showHeadroom && stats.headroom !== null ? html`
           <div class="stat-row">
             <span class="stat-label">Headroom</span>
             <span class="stat-value ${headroomClass}">${stats.headroom >= 0 ? '+' : ''}${padNum(stats.headroom, 1, 4)}ms</span>
@@ -2658,7 +2394,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
           <span class="stat-label">Resolution</span>
           <span class="stat-value">${stats.renderWidth}×${stats.renderHeight}</span>
         </div>
-        ${this.statsStrategy.supportsStat("resolutionScale") && stats.resolutionScale !== null ? html`
+        ${showResolutionScale && stats.resolutionScale !== null ? html`
           <div class="stat-row">
             <span class="stat-label">Scale</span>
             <span class="stat-value ${scaleClass}">${String(Math.round(stats.resolutionScale * 100)).padStart(3, '\u2007')}%</span>
@@ -2672,7 +2408,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
           <span class="stat-label">State</span>
           <span class="stat-value">${motionState}</span>
         </div>
-        ${this.statsStrategy.supportsStat("adaptiveResolution") && this.previewResolutionScale === "auto" && stats.samplesAtCurrentScale !== undefined ? html`
+        ${showAdaptiveResolution && stats.samplesAtCurrentScale !== undefined ? html`
           <div style="margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(148, 163, 184, 0.2);">
             <div class="stat-row">
               <span class="stat-label">Mode</span>
@@ -2734,16 +2470,9 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
           <!-- Original timegroup (hidden in clone/canvas mode, visible in dom mode) -->
           <slot name="canvas"></slot>
           
-          <!-- Clone overlay (visible in clone mode only) -->
-          <div 
-            class="clone-overlay" 
-            ${ref(this.cloneOverlayRef)}
-            style="display: ${this.presentationMode === "clone" ? "block" : "none"}"
-          ></div>
-          
           <!-- Canvas preview (visible in canvas mode only) -->
           <div 
-            class="clone-overlay" 
+            class="canvas-overlay" 
             ${ref(this.canvasPreviewRef)}
             style="display: ${this.presentationMode === "canvas" ? "block" : "none"}"
           ></div>

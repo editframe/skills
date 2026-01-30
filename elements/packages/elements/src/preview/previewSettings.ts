@@ -36,7 +36,7 @@ export type PreviewResolutionScale = 1 | 0.75 | 0.5 | 0.25 | "auto";
  * - "computed": Show a clone with computed styles applied
  * - "canvas": Render to canvas using the active rendering path
  */
-export type PreviewPresentationMode = "original" | "computed" | "canvas" | "clone" | "dom";
+export type PreviewPresentationMode = "dom" | "canvas";
 
 /**
  * Cached detection result for native HTML-in-Canvas API availability.
@@ -146,17 +146,17 @@ export interface PreviewSettingsChangedDetail {
 
 /**
  * Get the current preview presentation mode.
- * Defaults to "original" if not set.
+ * Defaults to "dom" if not set.
  */
 export function getPreviewPresentationMode(): PreviewPresentationMode {
   try {
     const stored = localStorage.getItem(STORAGE_KEY_PRESENTATION_MODE);
-    if (stored === "original" || stored === "computed" || stored === "canvas") {
+    if (stored === "dom" || stored === "canvas") {
       return stored;
     }
-    return "original";
+    return "dom";
   } catch {
-    return "original";
+    return "dom";
   }
 }
 
