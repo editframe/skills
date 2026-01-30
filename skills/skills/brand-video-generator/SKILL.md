@@ -195,7 +195,6 @@ Scene 2: Problem (4s-9s)
 
 ## Reference Files (Optional)
 
-For deeper guidance, see:
-- [references/visual-metaphors.md](references/visual-metaphors.md) - Comprehensive visual metaphor library
-- [references/video-archetypes.md](references/video-archetypes.md) - Industry-specific patterns
-- [references/composition-patterns.md](references/composition-patterns.md) - Technical implementation patterns
+- [references/visual-metaphors.md](references/visual-metaphors.md) - Visual metaphor library
+- [references/video-archetypes.md](references/video-archetypes.md) - Industry patterns
+- [references/video-fundamentals.md](references/video-fundamentals.md) - Transitions, arcs, brand basics
