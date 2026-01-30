@@ -52,14 +52,21 @@ export interface StatsTrackingStrategy {
   getStats(): PlaybackStats | null;
   /** Check if this strategy supports a specific stat type */
   supportsStat(stat: StatType): boolean;
+  /** 
+   * Record render timing (optional - only implemented by canvas stats).
+   * Called by EFWorkbench after each canvas refresh.
+   */
+  recordRenderTime?(renderTimeMs: number, timestamp: number): void;
 }
 
 /**
  * Canvas mode stats tracking strategy.
  * Tracks all stats including render time, headroom, resolution scale, and adaptive resolution.
+ * 
+ * This strategy is PASSIVE - it receives render timing from EFWorkbench rather than
+ * driving its own render loop. This prevents race conditions and ensures accurate measurements.
  */
 export class CanvasStatsStrategy implements StatsTrackingStrategy {
-  private canvasPreviewResult: CanvasPreviewResult;
   private adaptiveTracker: AdaptiveResolutionTracker;
   private readonly compositionWidth: number;
   private readonly compositionHeight: number;
@@ -67,7 +74,6 @@ export class CanvasStatsStrategy implements StatsTrackingStrategy {
   private isAtRest: () => boolean;
   private isExporting: () => boolean;
   
-  private animationFrame: number | null = null;
   private lastStatsUpdateTime = 0;
   private currentStats: PlaybackStats | null = null;
 
@@ -80,7 +86,7 @@ export class CanvasStatsStrategy implements StatsTrackingStrategy {
     isAtRest: () => boolean;
     isExporting: () => boolean;
   }) {
-    this.canvasPreviewResult = options.canvasPreviewResult;
+    // Note: canvasPreviewResult no longer needed since we don't call refresh()
     this.adaptiveTracker = options.adaptiveTracker;
     this.compositionWidth = options.compositionWidth;
     this.compositionHeight = options.compositionHeight;
@@ -90,53 +96,37 @@ export class CanvasStatsStrategy implements StatsTrackingStrategy {
   }
 
   start(): void {
-    if (this.animationFrame !== null) return;
-    
-    const { refresh } = this.canvasPreviewResult;
-    
-    const loop = async (timestamp: number) => {
-      if (this.animationFrame === null) return; // Stopped
-      
-      // Skip refresh during export to avoid wasting CPU
-      if (!this.isExporting()) {
-        try {
-          // Measure actual render time
-          const renderStart = performance.now();
-          await refresh();
-          const renderTime = performance.now() - renderStart;
-          
-          // Only record frame timing when in motion (playing/scrubbing)
-          // This prevents inflated stats at rest and focuses tracking on actual playback
-          if (!this.isAtRest()) {
-            this.adaptiveTracker.recordFrame(renderTime, timestamp);
-          }
-
-          // Update playback stats every 100ms (10 times per second)
-          if (timestamp - this.lastStatsUpdateTime > 100) {
-            this.lastStatsUpdateTime = timestamp;
-            // Get CURRENT resolution from the canvas result (may have changed dynamically)
-            const currentScale = this.getResolutionScale();
-            const renderWidth = Math.floor(this.compositionWidth * currentScale);
-            const renderHeight = Math.floor(this.compositionHeight * currentScale);
-            this.updateStats(renderWidth, renderHeight, currentScale);
-          }
-        } catch (e) {
-          logger.error("Canvas stats tracking failed:", e);
-        }
-      }
-      
-      this.animationFrame = requestAnimationFrame(loop);
-    };
-    
-    this.animationFrame = requestAnimationFrame(loop);
+    // Initialize stats update time
+    this.lastStatsUpdateTime = performance.now();
   }
 
   stop(): void {
-    if (this.animationFrame !== null) {
-      cancelAnimationFrame(this.animationFrame);
-      this.animationFrame = null;
-    }
     this.currentStats = null;
+  }
+
+  /**
+   * Record render timing from EFWorkbench's render loop.
+   * This is called after each successful canvas refresh.
+   */
+  recordRenderTime(renderTimeMs: number, timestamp: number): void {
+    // Skip during export
+    if (this.isExporting()) return;
+    
+    // Only record frame timing when in motion (playing/scrubbing)
+    // This prevents inflated stats at rest and focuses tracking on actual playback
+    if (!this.isAtRest()) {
+      this.adaptiveTracker.recordFrame(renderTimeMs, timestamp);
+    }
+
+    // Update playback stats every 100ms (10 times per second)
+    if (timestamp - this.lastStatsUpdateTime > 100) {
+      this.lastStatsUpdateTime = timestamp;
+      // Get CURRENT resolution from the canvas result (may have changed dynamically)
+      const currentScale = this.getResolutionScale();
+      const renderWidth = Math.floor(this.compositionWidth * currentScale);
+      const renderHeight = Math.floor(this.compositionHeight * currentScale);
+      this.updateStats(renderWidth, renderHeight, currentScale);
+    }
   }
 
   getStats(): PlaybackStats | null {

@@ -15,7 +15,25 @@
 import { encodeCanvasesInParallel } from "../encoding/canvasEncoder.js";
 import type { RenderContext } from "../RenderContext.js";
 import { isVisibleAtTime } from "../previewTypes.js";
-import { collectDocumentStyles } from "../renderTimegroupPreview.js";
+
+/**
+ * Collect document styles for shadow DOM injection.
+ */
+function collectDocumentStyles(): string {
+  const rules: string[] = [];
+  try {
+    for (const sheet of document.styleSheets) {
+      try {
+        if (sheet.cssRules) {
+          for (const rule of sheet.cssRules) {
+            rules.push(rule.cssText);
+          }
+        }
+      } catch {}
+    }
+  } catch {}
+  return rules.join("\n");
+}
 
 /**
  * Elements to skip entirely when serializing.
