@@ -93,57 +93,39 @@ export async function renderElementToCanvas(
   options: RenderElementOptions
 ): Promise<HTMLCanvasElement> {
   const root = options.rootTimegroup ?? findRootTimegroup(element);
+  let elementToRender = element;
+  let cleanup: (() => void) | undefined;
   
+  // Timeline-aware path: create clone, seek, and find element
   if (root) {
-    return await renderElementWithTimeline(element, root, options);
-  } else {
-    return await renderElementStatic(element, options);
+    const { timeMs } = options;
+    const { clone: renderClone, cleanup: cleanupClone } = await root.createRenderClone();
+    cleanup = cleanupClone;
+    
+    try {
+      // Seek clone to target time
+      await renderClone.seekForRender(timeMs);
+      
+      // Find corresponding element in clone
+      elementToRender = findCorrespondingElement(renderClone, element);
+    } catch (error) {
+      cleanup();
+      throw error;
+    }
   }
-}
-
-/**
- * Render timeline-aware element to canvas.
- * Creates a render clone, seeks to target time, finds element, and renders.
- */
-async function renderElementWithTimeline(
-  element: Element,
-  root: EFTimegroup,
-  options: RenderElementOptions
-): Promise<HTMLCanvasElement> {
-  const { timeMs } = options;
   
-  // Create render clone of root timegroup
-  const { clone: renderClone, cleanup } = await root.createRenderClone();
-  
+  // Render the element (either cloned or original)
   try {
-    // Seek clone to target time
-    await renderClone.seekForRender(timeMs);
-    
-    // Find corresponding element in clone
-    const clonedElement = findCorrespondingElement(renderClone, element);
-    
-    // Render the cloned element
-    return await renderElementToCanvasCore(clonedElement, options);
+    return await renderElementToImage(elementToRender, options);
   } finally {
-    cleanup();
+    cleanup?.();
   }
 }
 
 /**
- * Render static (non-timeline-aware) element to canvas.
+ * Render an element to canvas using either native or foreignObject mode.
  */
-async function renderElementStatic(
-  element: Element,
-  options: RenderElementOptions
-): Promise<HTMLCanvasElement> {
-  return await renderElementToCanvasCore(element, options);
-}
-
-/**
- * Core rendering logic shared by both timeline-aware and static paths.
- * Renders an element to canvas using either native or foreignObject mode.
- */
-async function renderElementToCanvasCore(
+async function renderElementToImage(
   element: Element,
   options: RenderElementOptions
 ): Promise<HTMLCanvasElement> {
