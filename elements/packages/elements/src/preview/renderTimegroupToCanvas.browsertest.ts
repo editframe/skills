@@ -356,7 +356,20 @@ const test = baseTest.extend<{
   },
 });
 
-function hasCanvasContent(canvas: HTMLCanvasElement): boolean {
+function hasCanvasContent(source: CanvasImageSource | HTMLCanvasElement): boolean {
+  let canvas: HTMLCanvasElement;
+  
+  if (source instanceof HTMLCanvasElement) {
+    canvas = source;
+  } else {
+    // Draw to temp canvas
+    canvas = document.createElement('canvas');
+    canvas.width = source.width as number;
+    canvas.height = source.height as number;
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(source, 0, 0);
+  }
+  
   const ctx = canvas.getContext("2d")!;
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   return imageData.data.some((value, index) => index % 4 !== 3 && value !== 0);

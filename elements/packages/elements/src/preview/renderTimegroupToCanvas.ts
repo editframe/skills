@@ -301,13 +301,13 @@ export interface CaptureFromCloneOptions {
  * @param renderClone - A render clone that has already been seeked to the target time
  * @param renderContainer - The container holding the render clone (from createRenderClone)
  * @param options - Capture options
- * @returns Canvas with the rendered frame
+ * @returns Canvas or Image with the rendered frame (both are CanvasImageSource)
  */
 export async function captureFromClone(
   renderClone: EFTimegroup,
   renderContainer: HTMLElement,
   options: CaptureFromCloneOptions = {},
-): Promise<HTMLCanvasElement> {
+): Promise<CanvasImageSource> {
   const {
     scale = DEFAULT_THUMBNAIL_SCALE,
     contentReadyMode = "immediate",
@@ -319,19 +319,6 @@ export async function captureFromClone(
   const sourceForDimensions = originalTimegroup ?? renderClone;
   const width = sourceForDimensions.offsetWidth || DEFAULT_WIDTH;
   const height = sourceForDimensions.offsetHeight || DEFAULT_HEIGHT;
-
-  // Create canvas at scaled size
-  const dpr = window.devicePixelRatio || 1;
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.floor(width * scale * dpr);
-  canvas.height = Math.floor(height * scale * dpr);
-  canvas.style.width = `${Math.floor(width * scale)}px`;
-  canvas.style.height = `${Math.floor(height * scale)}px`;
-
-  const ctx = canvas.getContext("2d");
-  if (!ctx) {
-    throw new Error("Failed to get canvas 2d context");
-  }
 
   // Handle content readiness based on mode
   const timeMs = renderClone.currentTimeMs;
@@ -352,7 +339,6 @@ export async function captureFromClone(
   const renderContext = new RenderContext();
   
   try {
-    let image: HTMLCanvasElement | HTMLImageElement;
     const renderMode = getEffectiveRenderMode();
     
     if (renderMode === "native") {
@@ -374,7 +360,8 @@ export async function captureFromClone(
       // OPTIMIZATION: Always skip DPR scaling for captures (thumbnails and video export).
       // Retina quality isn't needed for captured frames, and DPR=2 means 4x more pixels.
       // Live preview uses a different code path (renderTimegroupToCanvas) which handles DPR properly.
-      image = await renderToImageNative(renderContainer, width, height, { skipDprScaling: true });
+      // Return canvas directly - no copy needed!
+      return await renderToImageNative(renderContainer, width, height, { skipDprScaling: true });
     } else {
       // FOREIGNOBJECT PATH: Direct serialization of the render clone
       // The clone is already at the correct time and isolated from the prime timeline.
@@ -388,22 +375,14 @@ export async function captureFromClone(
       const serializeTime = performance.now() - t0;
       
       const t1 = performance.now();
-      image = await loadImageFromDataUri(dataUri);
+      const image = await loadImageFromDataUri(dataUri);
       const loadTime = performance.now() - t1;
       
       logger.debug(`[captureFromClone] serialize=${serializeTime.toFixed(0)}ms, load=${loadTime.toFixed(0)}ms (canvasScale=${scale})`);
+      
+      // Return image directly - no copy needed!
+      return image;
     }
-
-    // Draw to canvas (may need scaling for native path which is at DPR)
-    const srcWidth = image.width;
-    const srcHeight = image.height;
-    ctx.drawImage(
-      image,
-      0, 0, srcWidth, srcHeight,
-      0, 0, canvas.width, canvas.height
-    );
-
-    return canvas;
   } finally {
     // Ensure RenderContext is disposed even if an error occurs
     renderContext.dispose();
@@ -425,7 +404,7 @@ export async function captureFromClone(
 export async function captureTimegroupAtTime(
   timegroup: EFTimegroup,
   options: CaptureOptions,
-): Promise<HTMLCanvasElement> {
+): Promise<CanvasImageSource> {
   const {
     timeMs,
     scale = DEFAULT_THUMBNAIL_SCALE,

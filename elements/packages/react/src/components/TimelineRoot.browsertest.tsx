@@ -80,9 +80,23 @@ const DesignCatalogLikeContent: React.FC = () => {
 };
 
 /**
- * Helper to get average color of a canvas
+ * Helper to get average color of a canvas or image
  */
-function getCanvasAverageColor(canvas: HTMLCanvasElement): { r: number; g: number; b: number } {
+function getCanvasAverageColor(source: CanvasImageSource | HTMLCanvasElement): { r: number; g: number; b: number } {
+  let canvas: HTMLCanvasElement;
+  
+  if (source instanceof HTMLCanvasElement) {
+    canvas = source;
+  } else {
+    // Draw to temp canvas
+    canvas = document.createElement('canvas');
+    canvas.width = source.width as number;
+    canvas.height = source.height as number;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Failed to get canvas context");
+    ctx.drawImage(source, 0, 0);
+  }
+  
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Failed to get canvas context");
   

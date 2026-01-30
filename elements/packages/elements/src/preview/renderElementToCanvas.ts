@@ -34,7 +34,7 @@ export interface RenderElementOptions {
 }
 
 /**
- * Render any element to canvas.
+ * Render any element to canvas or image.
  * 
  * This is a low-level rendering function that renders the element as-is.
  * The caller is responsible for:
@@ -49,22 +49,23 @@ export interface RenderElementOptions {
  * 
  * @param element - Element to render (timegroup, temporal element, or plain DOM)
  * @param options - Render options
- * @returns Canvas with rendered element
+ * @returns Canvas or Image (both are CanvasImageSource)
  */
 export async function renderElementToCanvas(
   element: Element,
   options: RenderElementOptions
-): Promise<HTMLCanvasElement> {
+): Promise<CanvasImageSource> {
   return await renderElementToImage(element, options);
 }
 
 /**
- * Render an element to canvas using either native or foreignObject mode.
+ * Render an element using either native or foreignObject mode.
+ * Returns Canvas or Image directly without unnecessary copying.
  */
 async function renderElementToImage(
   element: Element,
   options: RenderElementOptions
-): Promise<HTMLCanvasElement> {
+): Promise<CanvasImageSource> {
   const { timeMs, scale = 1.0 } = options;
   
   // Get element dimensions
@@ -79,8 +80,6 @@ async function renderElementToImage(
   try {
     // Determine render mode
     const renderMode = options.renderMode ?? getEffectiveRenderMode();
-    
-    let image: HTMLCanvasElement | HTMLImageElement;
     
     if (renderMode === 'native') {
       // NATIVE PATH: Render element using drawElementImage
@@ -100,7 +99,8 @@ async function renderElementToImage(
       document.body.appendChild(elementContainer);
       
       try {
-        image = await renderToImageNative(elementContainer, width, height, {
+        // Return canvas directly - no copy needed!
+        return await renderToImageNative(elementContainer, width, height, {
           skipDprScaling: true
         });
       } finally {
@@ -114,21 +114,9 @@ async function renderElementToImage(
         timeMs,
       });
       
-      image = await loadImageFromDataUri(dataUri);
+      // Return image directly - no copy needed!
+      return await loadImageFromDataUri(dataUri);
     }
-    
-    // Draw to canvas
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      throw new Error('Failed to get 2d context');
-    }
-    
-    ctx.drawImage(image, 0, 0, width, height);
-    
-    return canvas;
   } finally {
     if (shouldDisposeContext) {
       renderContext.dispose();

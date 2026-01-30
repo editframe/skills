@@ -42,9 +42,7 @@ import {
   getPositionInfoFromElement,
 } from "./ElementPositionInfo.js";
 import {
-  captureTimegroupAtTime,
   captureFromClone,
-  type CaptureOptions,
   type CaptureBatchOptions,
 } from "../preview/renderTimegroupToCanvas.js";
 import {
@@ -1240,20 +1238,9 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     this.#removePlaybackListener();
   }
 
-  /**
-   * Capture the timegroup at a specific timestamp as a canvas.
-   * Does NOT modify currentTimeMs - captures are rendered independently.
-   * 
-   * @param options - Capture options including timeMs, scale, contentReadyMode
-   * @returns Promise resolving to an HTMLCanvasElement with the captured frame
-   * @public
-   */
-  async captureAtTime(options: CaptureOptions): Promise<HTMLCanvasElement> {
-    return captureTimegroupAtTime(this, options);
-  }
 
   /**
-   * Capture multiple timestamps as canvas thumbnails in a single batch.
+   * Capture multiple timestamps as thumbnails in a single batch.
    * 
    * CLONE-TIMELINE ARCHITECTURE:
    * Creates a single render clone and reuses it across all captures.
@@ -1261,13 +1248,13 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
    * 
    * @param timestamps - Array of timestamps (in milliseconds) to capture
    * @param options - Capture options (scale, contentReadyMode, blockingTimeoutMs)
-   * @returns Promise resolving to array of HTMLCanvasElements
+   * @returns Promise resolving to array of CanvasImageSource (Canvas or Image)
    * @public
    */
   async captureBatch(
     timestamps: number[],
     options: CaptureBatchOptions = {},
-  ): Promise<HTMLCanvasElement[]> {
+  ): Promise<CanvasImageSource[]> {
     if (timestamps.length === 0) return [];
 
     const {
@@ -1296,7 +1283,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     }
     const prefetchTime = performance.now() - prefetchStartTime;
 
-    const canvases: HTMLCanvasElement[] = [];
+    const results: CanvasImageSource[] = [];
     let totalSeekTime = 0;
     let totalCaptureTime = 0;
 
@@ -1312,17 +1299,17 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
         
         // Capture from the seeked clone
         const captureStart = performance.now();
-        const canvas = await captureFromClone(renderClone, renderContainer, {
+        const result = await captureFromClone(renderClone, renderContainer, {
           scale,
           contentReadyMode,
           blockingTimeoutMs,
           originalTimegroup: this,
         });
         totalCaptureTime += performance.now() - captureStart;
-        canvases.push(canvas);
+        results.push(result);
       }
       
-      return canvases;
+      return results;
     } finally {
       // Log timing and clean up the render clone
       const totalTime = performance.now() - batchStartTime;

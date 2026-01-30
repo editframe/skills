@@ -1079,15 +1079,36 @@ export class EFThumbnailStrip extends LitElement {
   }
 
   /**
-   * Convert canvas to ImageData.
+   * Convert CanvasImageSource to ImageData.
+   * Handles Canvas, Image, ImageBitmap, OffscreenCanvas, etc.
    */
-  private _canvasToImageData(canvas: HTMLCanvasElement | OffscreenCanvas): ImageData | null {
-    const ctx = canvas.getContext("2d", { willReadFrequently: true }) as
-      | CanvasRenderingContext2D
-      | OffscreenCanvasRenderingContext2D
-      | null;
-    if (!ctx) return null;
-    return ctx.getImageData(0, 0, canvas.width, canvas.height);
+  private _canvasToImageData(source: CanvasImageSource | HTMLCanvasElement | OffscreenCanvas): ImageData | null {
+    try {
+      // If it's already a canvas (regular or offscreen), extract directly
+      if (source instanceof HTMLCanvasElement || source instanceof OffscreenCanvas) {
+        const ctx = source.getContext("2d", { willReadFrequently: true }) as
+          | CanvasRenderingContext2D
+          | OffscreenCanvasRenderingContext2D
+          | null;
+        if (!ctx) return null;
+        return ctx.getImageData(0, 0, source.width, source.height);
+      }
+      
+      // Otherwise (Image, ImageBitmap, VideoFrame, etc.), draw to temp canvas first
+      const canvas = document.createElement('canvas');
+      // Get dimensions - different source types have different properties
+      const width = 'width' in source ? source.width : (source as unknown as HTMLImageElement).naturalWidth;
+      const height = 'height' in source ? source.height : (source as unknown as HTMLImageElement).naturalHeight;
+      canvas.width = typeof width === 'number' ? width : parseInt(String(width));
+      canvas.height = typeof height === 'number' ? height : parseInt(String(height));
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) return null;
+      ctx.drawImage(source, 0, 0);
+      return ctx.getImageData(0, 0, canvas.width, canvas.height);
+    } catch (e) {
+      console.error("Failed to extract ImageData from source:", e);
+      return null;
+    }
   }
 
   // ─────────────────────────────────────────────────────────────────────────

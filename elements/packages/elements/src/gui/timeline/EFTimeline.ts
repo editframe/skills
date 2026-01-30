@@ -60,6 +60,11 @@ import {
   shouldShowFrameMarkers,
 } from "../EFTimelineRuler.js";
 import "../../elements/EFThumbnailStrip.js";
+import {
+  timelineEditingContext,
+  type TimelineEditingContext,
+  createTimelineEditingContext,
+} from "./timelineEditingContext.js";
 
 // ============================================================================
 // TIMELINE STATE CONTEXT
@@ -523,6 +528,10 @@ export class EFTimeline extends TWMixin(LitElement) {
     zoomIn: () => {},
     zoomOut: () => {},
   };
+
+  @provide({ context: timelineEditingContext })
+  @state()
+  private _editingContext: TimelineEditingContext = createTimelineEditingContext();
 
   private targetController?: TargetController;
   private tracksScrollRef: Ref<HTMLDivElement> = createRef();
@@ -1667,6 +1676,11 @@ export class EFTimeline extends TWMixin(LitElement) {
 
   private startPlayheadDrag(e: PointerEvent): void {
     this.isDraggingPlayhead = true;
+    // Update editing context to block hover interactions during scrubbing
+    this._editingContext.setState({ 
+      mode: "scrubbing", 
+      startTimeMs: this.currentTimeMs 
+    });
     // Sync scroll state immediately to prevent offset
     const tracksScroll = this.tracksScrollRef.value;
     if (tracksScroll) {
@@ -1740,6 +1754,8 @@ export class EFTimeline extends TWMixin(LitElement) {
 
     const onUp = () => {
       this.isDraggingPlayhead = false;
+      // Reset editing context to allow hover interactions again
+      this._editingContext.setState({ mode: "idle" });
       if (edgeScrollAnimationId) {
         cancelAnimationFrame(edgeScrollAnimationId);
       }

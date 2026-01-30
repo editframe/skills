@@ -15,14 +15,28 @@ export interface SnapshotComparisonResult {
 }
 
 /**
- * Capture a canvas element as a data URL.
+ * Capture a canvas or image as a data URL.
  * Uses JPEG format with configurable quality for smaller file sizes.
  */
 export function captureCanvasAsDataUrl(
-  canvas: HTMLCanvasElement,
+  source: CanvasImageSource | HTMLCanvasElement,
   format: "image/png" | "image/jpeg" = "image/jpeg",
   quality: number = 0.85,
 ): string {
+  // If it's already a canvas, use toDataURL directly
+  if (source instanceof HTMLCanvasElement) {
+    return source.toDataURL(format, quality);
+  }
+  
+  // Otherwise, draw to temp canvas first
+  const canvas = document.createElement('canvas');
+  canvas.width = source.width as number;
+  canvas.height = source.height as number;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    throw new Error("Failed to get canvas 2d context");
+  }
+  ctx.drawImage(source, 0, 0);
   return canvas.toDataURL(format, quality);
 }
 
@@ -175,7 +189,7 @@ export async function assertCanvasSnapshot(
  * Throws an assertion error if the diff exceeds the acceptable threshold.
  */
 export async function expectCanvasToMatchSnapshot(
-  canvas: HTMLCanvasElement,
+  source: CanvasImageSource | HTMLCanvasElement,
   testName: string,
   snapshotName: string,
   options: {
@@ -183,7 +197,7 @@ export async function expectCanvasToMatchSnapshot(
     acceptableDiffPercentage?: number;
   } = {},
 ): Promise<void> {
-  const result = await assertCanvasSnapshot(canvas, testName, snapshotName, options);
+  const result = await assertCanvasSnapshot(source, testName, snapshotName, options);
   
   if (result.baselineCreated) {
     console.log(`✅ Created baseline: ${testName}/${snapshotName}`);
@@ -199,12 +213,12 @@ export async function expectCanvasToMatchSnapshot(
 }
 
 /**
- * Compare two canvases directly against each other.
+ * Compare two canvases or images directly against each other.
  * Returns comparison results including diff percentage.
  */
 export async function compareTwoCanvases(
-  canvas1: HTMLCanvasElement,
-  canvas2: HTMLCanvasElement,
+  source1: CanvasImageSource | HTMLCanvasElement,
+  source2: CanvasImageSource | HTMLCanvasElement,
   testName: string,
   comparisonName: string,
   options: {
@@ -218,8 +232,8 @@ export async function compareTwoCanvases(
   } = options;
   
   // Use PNG format for consistent comparison (odiff works best with PNG)
-  const dataUrl1 = captureCanvasAsDataUrl(canvas1, "image/png");
-  const dataUrl2 = captureCanvasAsDataUrl(canvas2, "image/png");
+  const dataUrl1 = captureCanvasAsDataUrl(source1, "image/png");
+  const dataUrl2 = captureCanvasAsDataUrl(source2, "image/png");
   
   const response = await fetch("/@ef-compare-two-images", {
     method: "POST",
