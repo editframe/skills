@@ -177,6 +177,7 @@ function serializeAttributes(element: Element, parts: Array<string | Promise<str
 /**
  * Check if a canvas element should preserve alpha channel.
  * EF-WAVEFORM always needs alpha, EF-IMAGE checks hasAlpha property.
+ * Raw canvas elements must preserve alpha - we don't know what they contain.
  */
 function shouldPreserveAlpha(sourceElement: Element): boolean {
   const tagName = sourceElement.tagName;
@@ -185,6 +186,10 @@ function shouldPreserveAlpha(sourceElement: Element): boolean {
   }
   if (tagName === 'EF-IMAGE') {
     return 'hasAlpha' in sourceElement && (sourceElement as any).hasAlpha === true;
+  }
+  // Raw canvas elements must preserve alpha
+  if (sourceElement instanceof HTMLCanvasElement) {
+    return true;
   }
   return false;
 }

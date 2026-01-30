@@ -505,6 +505,10 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
       // Use intrinsic buffer dimensions (not affected by zoom/transforms)
       canvas.width = srcEl.width;
       canvas.height = srcEl.height;
+      
+      // Raw canvases must preserve alpha - we don't know what they contain
+      canvas.dataset.preserveAlpha = "true";
+      
       const ctx = canvas.getContext("2d");
       if (ctx) {
         try { ctx.drawImage(srcEl, 0, 0); } catch {}
@@ -565,7 +569,6 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
           if (hasAlpha) {
             clone.dataset.preserveAlpha = "true";
           }
-          console.log(`[buildCloneStructure] EF-IMAGE canvas: size=${clone.width}x${clone.height}, hasAlpha=${hasAlpha}, preserveAlpha=${hasAlpha ? 'PNG' : 'JPEG'}`);
         }
         
         const ctx = clone.getContext("2d");

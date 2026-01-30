@@ -444,7 +444,7 @@ export async function captureFromClone(
       const previewContainer = createPreviewContainer({
         width,
         height,
-        background: getComputedStyle(bgSource).background || "#000",
+        background: getComputedStyle(bgSource).background,
       });
       
       const t1 = performance.now();
@@ -680,7 +680,7 @@ export function renderTimegroupToCanvas(
   const previewContainer = createPreviewContainer({
     width: renderWidth,
     height: renderHeight,
-    background: getComputedStyle(timegroup).background || "#000",
+    background: getComputedStyle(timegroup).background,
   });
   
   const styleEl = document.createElement("style");
