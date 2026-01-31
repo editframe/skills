@@ -160,6 +160,9 @@ export class EFThumbnailStrip extends LitElement {
 
   /** Track if any thumbnails have been loaded (for ready event) */
   private _hasLoadedThumbnails = false;
+
+  /** Track if we need to retry loading after current capture completes */
+  private _needsRetryLoad = false;
   
   /** Track layout parameters to avoid unnecessary slot recreation */
   private _lastLayoutParams: {
@@ -507,7 +510,13 @@ export class EFThumbnailStrip extends LitElement {
    * Load all pending thumbnails.
    */
   private async _loadThumbnails(): Promise<void> {
-    if (this._captureInProgress || !this._targetElement) return;
+    if (!this._targetElement) return;
+
+    // If capture is in progress, schedule a retry
+    if (this._captureInProgress) {
+      this._needsRetryLoad = true;
+      return;
+    }
 
     // Find all pending slots
     const pending = this._thumbnailSlots.filter((slot) => slot.status === "pending");
@@ -515,6 +524,7 @@ export class EFThumbnailStrip extends LitElement {
     if (pending.length === 0) return;
 
     this._captureInProgress = true;
+    this._needsRetryLoad = false;
 
     // Mark as loading
     for (const slot of pending) {
@@ -545,6 +555,13 @@ export class EFThumbnailStrip extends LitElement {
       if (hasAnyLoaded && !this._hasLoadedThumbnails) {
         this._hasLoadedThumbnails = true;
         this.dispatchEvent(new CustomEvent("thumbnails-ready", { bubbles: true }));
+      }
+
+      // If we need to retry (new pending slots appeared during capture), do it now
+      if (this._needsRetryLoad) {
+        this._needsRetryLoad = false;
+        // Schedule on next frame to avoid blocking
+        requestAnimationFrame(() => this._loadThumbnails());
       }
     }
   }
@@ -583,7 +600,13 @@ export class EFThumbnailStrip extends LitElement {
               sessionThumbnailCache.set(key, imageData, slot.timeMs, elementId);
               slot.imageData = imageData;
               slot.status = "cached";
+            } else {
+              // Failed to convert to ImageData - reset to pending
+              slot.status = "pending";
             }
+          } else {
+            // No canvas returned - reset to pending
+            slot.status = "pending";
           }
         }
 
@@ -596,6 +619,12 @@ export class EFThumbnailStrip extends LitElement {
         }
       } catch (error) {
         console.warn("Batch capture failed:", error);
+        // Reset all slots in this batch to pending
+        for (const slot of batch) {
+          if (slot.status === "loading") {
+            slot.status = "pending";
+          }
+        }
       }
     }
   }
@@ -613,12 +642,24 @@ export class EFThumbnailStrip extends LitElement {
     }
 
     const mediaEngine = target.mediaEngineTask?.value;
-    if (!mediaEngine) return;
+    if (!mediaEngine) {
+      // No media engine - reset all slots to pending
+      for (const slot of slots) {
+        slot.status = "pending";
+      }
+      return;
+    }
 
     // Check for video rendition
     const videoRendition = mediaEngine.getVideoRendition();
     const scrubRendition = mediaEngine.getScrubVideoRendition();
-    if (!videoRendition && !scrubRendition) return;
+    if (!videoRendition && !scrubRendition) {
+      // No video rendition - reset all slots to pending
+      for (const slot of slots) {
+        slot.status = "pending";
+      }
+      return;
+    }
 
     const timestamps = slots.map((s) => s.timeMs);
 
@@ -640,13 +681,25 @@ export class EFThumbnailStrip extends LitElement {
             sessionThumbnailCache.set(key, imageData, slot.timeMs, elementId);
             slot.imageData = imageData;
             slot.status = "cached";
+          } else {
+            // Failed to convert to ImageData - reset to pending
+            slot.status = "pending";
           }
+        } else {
+          // No thumbnail returned - reset to pending
+          slot.status = "pending";
         }
       }
     } catch (error) {
       // Abort on error to clean up any in-flight requests
       abortController.abort();
       console.warn("Video thumbnail extraction failed:", error);
+      // Reset all slots to pending
+      for (const slot of slots) {
+        if (slot.status === "loading") {
+          slot.status = "pending";
+        }
+      }
     }
   }
 
