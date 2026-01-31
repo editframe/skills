@@ -12,7 +12,7 @@ import {
   isVisibleAtTime,
   DEFAULT_WIDTH,
   DEFAULT_HEIGHT,
-  DEFAULT_THUMBNAIL_SCALE,
+  DEFAULT_CAPTURE_SCALE,
   DEFAULT_BLOCKING_TIMEOUT_MS,
 } from "./previewTypes.js";
 import { defaultProfiler } from "./RenderProfiler.js";
@@ -56,22 +56,10 @@ export type ContentReadyMode = "immediate" | "blocking";
 export interface CaptureOptions {
   /** Time to capture at in milliseconds (required) */
   timeMs: number;
-  /** Scale factor (default: 0.25 for captureTimegroupAtTime) */
+  /** Scale factor (default: 0.25) */
   scale?: number;
   /** Skip restoring original time after capture (for batch operations) */
   skipRestore?: boolean;
-  /** Content readiness strategy (default: "immediate") */
-  contentReadyMode?: ContentReadyMode;
-  /** Max wait time for blocking mode before throwing (default: 5000ms) */
-  blockingTimeoutMs?: number;
-}
-
-/**
- * Options for batch capture operations, excluding timeMs which is provided per-timestamp.
- */
-export interface CaptureBatchOptions {
-  /** Scale factor for thumbnails (default: 0.25) */
-  scale?: number;
   /** Content readiness strategy (default: "immediate") */
   contentReadyMode?: ContentReadyMode;
   /** Max wait time for blocking mode before throwing (default: 5000ms) */
@@ -309,7 +297,7 @@ export async function captureFromClone(
   options: CaptureFromCloneOptions = {},
 ): Promise<CanvasImageSource> {
   const {
-    scale = DEFAULT_THUMBNAIL_SCALE,
+    scale = DEFAULT_CAPTURE_SCALE,
     contentReadyMode = "immediate",
     blockingTimeoutMs = DEFAULT_BLOCKING_TIMEOUT_MS,
     originalTimegroup,
@@ -407,7 +395,7 @@ export async function captureTimegroupAtTime(
 ): Promise<CanvasImageSource> {
   const {
     timeMs,
-    scale = DEFAULT_THUMBNAIL_SCALE,
+    scale = DEFAULT_CAPTURE_SCALE,
     // skipRestore is deprecated with Clone-timeline (Prime is never seeked)
     contentReadyMode = "immediate",
     blockingTimeoutMs = DEFAULT_BLOCKING_TIMEOUT_MS,

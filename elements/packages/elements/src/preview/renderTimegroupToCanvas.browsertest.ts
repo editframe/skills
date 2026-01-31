@@ -33,7 +33,7 @@ import "../gui/EFWorkbench.js";
 import "../gui/EFConfiguration.js";
 import "../canvas/EFCanvas.js";
 
-const THUMBNAIL_SCALE = 0.1; // Small scale like real thumbnail strip uses
+const TEST_CAPTURE_SCALE = 0.1; // Small scale like real thumbnail strip uses
 
 beforeAll(async () => {
   console.clear();

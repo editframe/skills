@@ -71,8 +71,6 @@ export default defineSandbox({
         
         const trackElement = ctx.querySelector<EFTimegroupTrack>("ef-timegroup-track")!;
         ctx.expect(trackElement).toBeDefined();
-        
-        // Thumbnail strip removed - will be redesigned
       },
     },
     
@@ -385,7 +383,6 @@ export default defineSandbox({
         
         const trackElement = ctx.querySelector<EFTimegroupTrack>("ef-timegroup-track")!;
         ctx.expect(trackElement).toBeDefined();
-        // Thumbnail strip removed - will be redesigned
       },
     },
     
@@ -416,7 +413,6 @@ export default defineSandbox({
         
         const trackElement = ctx.querySelector<EFTimegroupTrack>("ef-timegroup-track")!;
         ctx.expect(trackElement).toBeDefined();
-        // Thumbnail strip removed - will be redesigned
       },
     },
     
@@ -447,7 +443,6 @@ export default defineSandbox({
         
         const trackElement = ctx.querySelector<EFTimegroupTrack>("ef-timegroup-track")!;
         ctx.expect(trackElement).toBeDefined();
-        // Thumbnail strip removed - will be redesigned
       },
     },
     
@@ -478,7 +473,6 @@ export default defineSandbox({
         
         const trackElement = ctx.querySelector<EFTimegroupTrack>("ef-timegroup-track")!;
         ctx.expect(trackElement).toBeDefined();
-        // Thumbnail strip removed - will be redesigned
       },
     },
     
@@ -512,10 +506,8 @@ export default defineSandbox({
         ctx.expect(rootTimegroup.id).toBe("root-tg-all-conditions");
         
         const trackElement = ctx.querySelector<EFTimegroupTrack>("ef-timegroup-track")!;
-        ctx.expect(trackElement.skipChildren).toBe(true);
+        ctx.expect(trackElement.skipChildren).toBe(true);        
         ctx.expect(trackElement.showFilmstrip).toBe(true);
-        
-        // Thumbnail strip removed - will be redesigned
       },
     },
     
@@ -562,7 +554,6 @@ export default defineSandbox({
         await ctx.wait(500);
         
         const trackElement = ctx.querySelector<EFTimegroupTrack>("ef-timegroup-track")!;
-        // Thumbnail strip removed - will be redesigned
       },
     },
   },

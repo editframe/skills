@@ -350,7 +350,6 @@ export class EFVideoTrack extends TrackItem {
         >
           <div class="video-content">
             <div class="thumbnail-section">
-              <!-- Thumbnail strip removed - will be redesigned -->
             </div>
             ${hasAudioSection
               ? html`<div class="audio-section">

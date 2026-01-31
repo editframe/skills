@@ -127,7 +127,6 @@ export class EFTimegroupTrack extends TrackItem {
         return nothing;
       }
       
-      // Thumbnail strip removed - will be redesigned
       return nothing;
     }
 

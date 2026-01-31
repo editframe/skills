@@ -69,8 +69,8 @@ export function isVisibleAtTime(element: Element, timeMs: number): boolean {
 export const DEFAULT_WIDTH = 1920;
 export const DEFAULT_HEIGHT = 1080;
 
-/** Default scale for thumbnail captures */
-export const DEFAULT_THUMBNAIL_SCALE = 0.25;
+/** Default scale for capture operations */
+export const DEFAULT_CAPTURE_SCALE = 0.25;
 
 /** Default timeout for blocking content readiness mode (ms) */
 export const DEFAULT_BLOCKING_TIMEOUT_MS = 5000;
