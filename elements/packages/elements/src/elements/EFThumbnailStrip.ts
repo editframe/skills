@@ -392,6 +392,7 @@ export class EFThumbnailStrip extends LitElement {
 
   /**
    * Check cache for existing thumbnails.
+   * Uses nearest-neighbor lookup for missing thumbnails to avoid flickering.
    */
   private _checkCache(): void {
     if (!this._targetElement) return;
@@ -401,11 +402,21 @@ export class EFThumbnailStrip extends LitElement {
     for (const slot of this._thumbnailSlots) {
       const key = getCacheKey(rootId, elementId, slot.timeMs);
       if (sessionThumbnailCache.has(key)) {
+        // Exact match - use it
         slot.imageData = sessionThumbnailCache.get(key);
         slot.status = "cached";
       } else {
-        // Mark as pending if not in cache
-        slot.status = "pending";
+        // No exact match - try to find nearest neighbor as placeholder
+        const nearestImage = sessionThumbnailCache.getNearest(rootId, elementId, slot.timeMs);
+        if (nearestImage) {
+          // Use nearest as placeholder, but mark as pending so we still load the exact one
+          slot.imageData = nearestImage;
+          slot.status = "pending";
+        } else {
+          // No thumbnails at all for this element yet
+          slot.imageData = undefined;
+          slot.status = "pending";
+        }
       }
     }
   }
@@ -453,8 +464,14 @@ export class EFThumbnailStrip extends LitElement {
     for (const slot of this._thumbnailSlots) {
       if (slot.imageData) {
         this._drawThumbnailImage(ctx, slot.imageData, slot.x, slot.width, height);
+        
+        // If this is a nearest-neighbor placeholder (pending with imageData), show subtle loading indicator
+        if (slot.status === "pending" || slot.status === "loading") {
+          ctx.fillStyle = "rgba(59, 130, 246, 0.2)";
+          ctx.fillRect(slot.x, 0, slot.width, 2);
+        }
       } else {
-        // Placeholder
+        // No thumbnail at all - show placeholder
         ctx.fillStyle = slot.status === "loading" ? "#2d2d50" : "#2d2d44";
         ctx.fillRect(slot.x, 0, slot.width, height);
 

@@ -61,7 +61,7 @@ function parseCacheKey(key: CacheKey): { rootId: string; elementId: string; time
 }
 
 /**
- * Session thumbnail cache - simple Map with time-range invalidation.
+ * Session thumbnail cache - LRU cache with nearest-neighbor lookup.
  */
 export class SessionThumbnailCache {
   private cache: Map<CacheKey, CacheEntry> = new Map();
@@ -79,17 +79,52 @@ export class SessionThumbnailCache {
   }
 
   /**
-   * Get a thumbnail from cache.
+   * Get a thumbnail from cache (LRU - moves to end).
    */
   get(key: CacheKey): ImageData | undefined {
-    return this.cache.get(key)?.imageData;
+    const entry = this.cache.get(key);
+    if (entry) {
+      // Move to end (most recently used)
+      this.cache.delete(key);
+      this.cache.set(key, entry);
+      return entry.imageData;
+    }
+    return undefined;
   }
 
   /**
-   * Store a thumbnail in cache.
+   * Get the nearest cached thumbnail for a given time.
+   * Returns the cached thumbnail closest in time to the requested time.
+   * Useful for showing approximate thumbnails while exact ones load.
+   */
+  getNearest(rootId: string, elementId: string, timeMs: number): ImageData | undefined {
+    const prefix = `${rootId}:${elementId}:`;
+    let nearestEntry: CacheEntry | undefined;
+    let nearestDistance = Number.POSITIVE_INFINITY;
+
+    for (const [key, entry] of this.cache.entries()) {
+      if (key.startsWith(prefix) && entry.elementId === elementId) {
+        const distance = Math.abs(entry.timeMs - timeMs);
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearestEntry = entry;
+        }
+      }
+    }
+
+    return nearestEntry?.imageData;
+  }
+
+  /**
+   * Store a thumbnail in cache (LRU eviction).
    */
   set(key: CacheKey, imageData: ImageData, timeMs: number, elementId: string): void {
-    // Enforce max size with simple FIFO eviction
+    // If key already exists, delete it first to update position
+    if (this.cache.has(key)) {
+      this.cache.delete(key);
+    }
+
+    // Enforce max size with LRU eviction (remove oldest/first entry)
     if (this.cache.size >= this.maxSize) {
       const firstKey = this.cache.keys().next().value;
       if (firstKey) {
@@ -97,6 +132,7 @@ export class SessionThumbnailCache {
       }
     }
 
+    // Add to end (most recently used)
     this.cache.set(key, { imageData, timeMs, elementId });
   }
 
