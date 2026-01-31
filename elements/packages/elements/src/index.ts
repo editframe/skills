@@ -212,12 +212,14 @@ export {
 
 import "./gui/timeline/EFTimeline.js";
 import "./gui/timeline/TrimHandles.js";
+import "./gui/timeline/tracks/EFThumbnailStrip.js";
 
 export { EFTimeline } from "./gui/timeline/EFTimeline.js";
 export {
   EFTrimHandles,
   type TrimChangeDetail,
 } from "./gui/timeline/TrimHandles.js";
+export { EFThumbnailStrip } from "./gui/timeline/tracks/EFThumbnailStrip.js";
 
 if (typeof window !== "undefined") {
   // @ts-expect-error

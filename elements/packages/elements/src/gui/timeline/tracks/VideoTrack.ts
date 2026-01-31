@@ -15,6 +15,7 @@ import {
   timelineStateContext,
   type TimelineState,
 } from "../timelineStateContext.js";
+import "./EFThumbnailStrip.js";
 
 /** Padding for virtual rendering */
 const VIRTUAL_RENDER_PADDING_PX = 100;
@@ -350,6 +351,12 @@ export class EFVideoTrack extends TrackItem {
         >
           <div class="video-content">
             <div class="thumbnail-section">
+              <ef-thumbnail-strip
+                target=${elementId}
+                thumbnail-height=${THUMBNAIL_HEIGHT}
+                thumbnail-spacing-px="48"
+                pixels-per-ms=${this.pixelsPerMs}
+              ></ef-thumbnail-strip>
             </div>
             ${hasAudioSection
               ? html`<div class="audio-section">

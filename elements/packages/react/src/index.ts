@@ -31,6 +31,7 @@ export { Play } from "./gui/Play.js";
 export { Preview } from "./gui/Preview.js";
 export { Scrubber } from "./gui/Scrubber.jsx";
 export type { ScrubberProps } from "./gui/Scrubber.jsx";
+export { ThumbnailStrip } from "./gui/ThumbnailStrip.js";
 export { TimelineRuler } from "./gui/TimelineRuler.js";
 export { ToggleLoop } from "./gui/ToggleLoop.js";
 export { TogglePlay } from "./gui/TogglePlay.js";
