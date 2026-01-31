@@ -320,15 +320,25 @@ export class EFThumbnailStrip extends LitElement {
   // ─────────────────────────────────────────────────────────────────────────
 
   private _scheduleRender(): void {
+    const stack = new Error().stack?.split('\n').slice(2, 5).join(' | ') || 'no stack';
+    console.log('[THUMB_STRIP] _scheduleRender called', JSON.stringify({ 
+      renderRequested: this._renderRequested,
+      caller: stack
+    }));
+    
     if (this._renderRequested) return;
     this._renderRequested = true;
 
     requestAnimationFrame(() => {
       this._renderRequested = false;
       
+      console.log('[THUMB_STRIP] RAF START - about to calculate layout');
       this._calculateLayout();
+      console.log('[THUMB_STRIP] RAF - about to check cache');
       this._checkCache();
+      console.log('[THUMB_STRIP] RAF - about to draw canvas');
       this._drawCanvas();
+      console.log('[THUMB_STRIP] RAF - about to load visible thumbnails');
       
       // Load visible pending thumbnails
       this._loadVisibleThumbnails();
@@ -461,9 +471,12 @@ export class EFThumbnailStrip extends LitElement {
       timeRange: `${Math.round(timeRange.startMs)}ms - ${Math.round(timeRange.endMs)}ms`,
       duration: Math.round(duration),
       stripWidth: Math.round(stripWidth),
+      thumbWidth,
+      gap,
       pixelsPerMs: this.pixelsPerMs,
-      sampleTimes: slots.slice(0, 5).map(s => Math.round(s.timeMs)),
-      samplePositions: slots.slice(0, 5).map(s => Math.round(s.x))
+      timeBetweenThumbs: count > 1 ? Math.round(duration / (count - 1)) : 0,
+      sampleTimes: slots.slice(0, 10).map(s => Math.round(s.timeMs)),
+      samplePositions: slots.slice(0, 10).map(s => Math.round(s.x))
     }));
 
     this._thumbnailSlots = slots;
@@ -527,9 +540,18 @@ export class EFThumbnailStrip extends LitElement {
    * Uses nearest-neighbor lookup for missing thumbnails to avoid flickering.
    */
   private _checkCache(): void {
+    console.log('[THUMB_STRIP] _checkCache called', JSON.stringify({
+      hasTarget: !!this._targetElement,
+      slotCount: this._thumbnailSlots.length
+    }));
+    
     if (!this._targetElement) return;
 
     const { rootId, elementId } = getCacheIdentifiers(this._targetElement);
+
+    let exactHits = 0;
+    let nearestHits = 0;
+    let misses = 0;
 
     for (const slot of this._thumbnailSlots) {
       const key = getCacheKey(rootId, elementId, slot.timeMs);
@@ -537,6 +559,7 @@ export class EFThumbnailStrip extends LitElement {
         // Exact match - use it
         slot.image = sessionThumbnailCache.get(key);
         slot.status = "cached";
+        exactHits++;
       } else {
         // No exact match - try to find nearest neighbor as placeholder
         const nearestImage = sessionThumbnailCache.getNearest(rootId, elementId, slot.timeMs);
@@ -544,13 +567,23 @@ export class EFThumbnailStrip extends LitElement {
           // Use nearest as placeholder, but mark as pending so we still load the exact one
           slot.image = nearestImage;
           slot.status = "pending";
+          nearestHits++;
         } else {
           // No thumbnails at all for this element yet
           slot.image = undefined;
           slot.status = "pending";
+          misses++;
         }
       }
     }
+
+    console.log('[THUMB_STRIP] Cache check', JSON.stringify({
+      totalSlots: this._thumbnailSlots.length,
+      exactHits,
+      nearestHits,
+      misses,
+      cacheSize: sessionThumbnailCache.size
+    }));
   }
 
   /**
@@ -559,20 +592,32 @@ export class EFThumbnailStrip extends LitElement {
    */
   private _drawCanvas(): void {
     const canvas = this.canvasRef.value;
-    if (!canvas) return;
+    if (!canvas) {
+      console.log('[THUMB_STRIP] _drawCanvas: no canvas ref');
+      return;
+    }
 
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    if (!ctx) return;
+    if (!ctx) {
+      console.log('[THUMB_STRIP] _drawCanvas: no 2d context');
+      return;
+    }
 
     const height = this._height;
-    if (height <= 0 || !this._targetElement) return;
+    if (height <= 0 || !this._targetElement) {
+      console.log('[THUMB_STRIP] _drawCanvas: invalid height or no target', JSON.stringify({ height, hasTarget: !!this._targetElement }));
+      return;
+    }
 
     // Calculate strip width from timeline duration, not element CSS width
     const timeRange = this._getTimeRange();
     const duration = timeRange.endMs - timeRange.startMs;
     const stripWidth = duration * this.pixelsPerMs;
 
-    if (stripWidth <= 0) return;
+    if (stripWidth <= 0) {
+      console.log('[THUMB_STRIP] _drawCanvas: invalid stripWidth', stripWidth);
+      return;
+    }
 
     const dpr = window.devicePixelRatio || 1;
 
@@ -630,6 +675,10 @@ export class EFThumbnailStrip extends LitElement {
     const time = Date.now() / 1000;
     const pulse = (Math.sin(time * 3) + 1) / 2; // 3 Hz pulse
 
+    // Track what we're drawing
+    let drawnCount = 0;
+    const drawnSlots: any[] = [];
+
     // Draw only visible thumbnails
     for (const slot of this._thumbnailSlots) {
       const slotRight = slot.x + slot.width;
@@ -639,6 +688,17 @@ export class EFThumbnailStrip extends LitElement {
 
       // Draw position relative to canvas (canvas starts at visibleStartInStrip)
       const drawX = slot.x - visibleStartInStrip;
+      
+      drawnCount++;
+      if (drawnCount <= 10) {
+        drawnSlots.push({
+          timeMs: Math.round(slot.timeMs),
+          x: Math.round(slot.x),
+          drawX: Math.round(drawX),
+          status: slot.status,
+          hasImage: !!slot.image
+        });
+      }
 
       if (slot.image) {
         this._drawThumbnail(ctx, slot.image, drawX, slot.width, height);
@@ -676,6 +736,15 @@ export class EFThumbnailStrip extends LitElement {
           ctx.fillRect(drawX, barHeight, slot.width, 2);
         }
       }
+    }
+    
+    // Log what we drew (sample)
+    if (drawnCount > 0 && Math.random() < 0.05) {
+      console.log('[THUMB_STRIP] Drew frame', JSON.stringify({
+        visibleRegion: `${Math.round(visibleStartInStrip)}px - ${Math.round(visibleEndInStrip)}px`,
+        drawnCount,
+        sampleSlots: drawnSlots
+      }));
     }
   }
 
@@ -802,6 +871,9 @@ export class EFThumbnailStrip extends LitElement {
     } finally {
       this._captureInProgress = false;
       this._captureAbortController = undefined;
+      
+      // CRITICAL: Update slots with newly cached thumbnails
+      this._checkCache();
       this._drawCanvas();
 
       // Dispatch ready event when thumbnails are first loaded
@@ -946,6 +1018,17 @@ export class EFThumbnailStrip extends LitElement {
             slot.image = canvas;
             slot.status = "cached";
             successCount++;
+            
+            // Verify it was stored
+            if (successCount <= 3) {
+              const retrieved = sessionThumbnailCache.get(key);
+              console.log('[THUMB_STRIP] Stored in cache', JSON.stringify({
+                timeMs: Math.round(slot.timeMs),
+                key,
+                stored: !!retrieved,
+                sameObject: retrieved === canvas
+              }));
+            }
 
             // Progressive UI update - redraw every 50ms or every 10 thumbnails
             const now = performance.now();
