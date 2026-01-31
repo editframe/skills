@@ -42,10 +42,6 @@ import {
   getPositionInfoFromElement,
 } from "./ElementPositionInfo.js";
 import {
-  captureFromClone,
-  type CaptureBatchOptions,
-} from "../preview/renderTimegroupToCanvas.js";
-import {
   renderTimegroupToVideo,
   type RenderToVideoOptions,
 } from "../preview/renderTimegroupToVideo.js";
@@ -1238,85 +1234,6 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     this.#removePlaybackListener();
   }
 
-
-  /**
-   * Capture multiple timestamps as thumbnails in a single batch.
-   * 
-   * CLONE-TIMELINE ARCHITECTURE:
-   * Creates a single render clone and reuses it across all captures.
-   * Prime-timeline is NEVER seeked - user can continue previewing/editing during capture.
-   * 
-   * @param timestamps - Array of timestamps (in milliseconds) to capture
-   * @param options - Capture options (scale, contentReadyMode, blockingTimeoutMs)
-   * @returns Promise resolving to array of CanvasImageSource (Canvas or Image)
-   * @public
-   */
-  async captureBatch(
-    timestamps: number[],
-    options: CaptureBatchOptions = {},
-  ): Promise<CanvasImageSource[]> {
-    if (timestamps.length === 0) return [];
-
-    const {
-      scale = 0.25,
-      contentReadyMode = "immediate",
-      blockingTimeoutMs = 5000,
-    } = options;
-
-    const batchStartTime = performance.now();
-
-    // CLONE-TIMELINE: Create ONE clone and reuse across all captures
-    const cloneStartTime = performance.now();
-    const { clone: renderClone, container: renderContainer, cleanup: cleanupRenderClone } =
-      await this.createRenderClone();
-    const cloneTime = performance.now() - cloneStartTime;
-
-    // Pre-fetch scrub segments for all video elements to ensure fast seeks
-    const prefetchStartTime = performance.now();
-    const videoElements = renderClone.querySelectorAll("ef-video");
-    if (videoElements.length > 0) {
-      await Promise.all(
-        Array.from(videoElements).map((video) =>
-          (video as import("./EFVideo.js").EFVideo).prefetchScrubSegments(timestamps),
-        ),
-      );
-    }
-    const prefetchTime = performance.now() - prefetchStartTime;
-
-    const results: CanvasImageSource[] = [];
-    let totalSeekTime = 0;
-    let totalCaptureTime = 0;
-
-    try {
-      for (let i = 0; i < timestamps.length; i++) {
-        const timeMs = timestamps[i]!
-        
-        // Seek clone to target time using optimized seekForRender
-        // (skips waitForMediaDurations, localStorage, consolidates awaits)
-        const seekStart = performance.now();
-        await renderClone.seekForRender(timeMs);
-        totalSeekTime += performance.now() - seekStart;
-        
-        // Capture from the seeked clone
-        const captureStart = performance.now();
-        const result = await captureFromClone(renderClone, renderContainer, {
-          scale,
-          contentReadyMode,
-          blockingTimeoutMs,
-          originalTimegroup: this,
-        });
-        totalCaptureTime += performance.now() - captureStart;
-        results.push(result);
-      }
-      
-      return results;
-    } finally {
-      // Log timing and clean up the render clone
-      const totalTime = performance.now() - batchStartTime;
-      console.log(`[captureBatch] ${timestamps.length} frames: clone=${cloneTime.toFixed(0)}ms, prefetch=${prefetchTime.toFixed(0)}ms, seek=${totalSeekTime.toFixed(0)}ms, capture=${totalCaptureTime.toFixed(0)}ms, total=${totalTime.toFixed(0)}ms`);
-      cleanupRenderClone();
-    }
-  }
 
   /**
    * Render the timegroup to an MP4 video file and trigger download.

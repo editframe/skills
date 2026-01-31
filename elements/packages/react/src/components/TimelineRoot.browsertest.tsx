@@ -120,8 +120,11 @@ function getCanvasAverageColor(source: CanvasImageSource | HTMLCanvasElement): {
 }
 
 describe("TimelineRoot", () => {
-  describe("captureBatch with React content", () => {
-    test("captures different frames at different timestamps (simple)", async () => {
+  describe("video export with native rendering", () => {
+    test("renderTimegroupToVideo with React TimelineRoot + Configuration (matches design-catalog setup)", async () => {
+      // Ensure native API is enabled
+      setNativeCanvasApiEnabled(true);
+      
       const container = document.createElement("div");
       document.body.appendChild(container);
       
