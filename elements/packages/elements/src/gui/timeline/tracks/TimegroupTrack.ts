@@ -128,7 +128,6 @@ export class EFTimegroupTrack extends TrackItem {
         return nothing;
       }
       
-      return nothing;
       return html`
         <ef-thumbnail-strip
           target="${elementId}"
