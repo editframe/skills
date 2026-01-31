@@ -141,8 +141,7 @@ export class EFThumbnailStrip extends LitElement {
     this.requestUpdate("targetElement", oldValue);
   }
 
-  /** Host element dimensions */
-  private _width = 0;
+  /** Host element height (width is calculated from timeline duration) */
   private _height = 0;
 
   /** Scroll container and state */
@@ -182,11 +181,10 @@ export class EFThumbnailStrip extends LitElement {
   connectedCallback() {
     super.connectedCallback();
 
-    // Set up resize observer
+    // Set up resize observer (only track height, width comes from timeline duration)
     this._resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const box = entry.borderBoxSize?.[0];
-        this._width = box?.inlineSize ?? entry.contentRect.width;
         this._height = box?.blockSize ?? entry.contentRect.height;
         this._scheduleRender();
       }
@@ -411,10 +409,10 @@ export class EFThumbnailStrip extends LitElement {
   }
 
   /**
-   * Calculate thumbnail layout based on current dimensions and time range.
+   * Calculate thumbnail layout based on timeline duration and time range.
    */
   private _calculateLayout(): void {
-    if (this._width <= 0 || this._height <= 0 || !this._targetElement) {
+    if (this._height <= 0 || !this._targetElement) {
       this._thumbnailSlots = [];
       return;
     }
@@ -429,28 +427,44 @@ export class EFThumbnailStrip extends LitElement {
     const thumbWidth = this._getEffectiveThumbnailWidth();
     const gap = this.gap;
 
-    // Calculate how many thumbnails fit
-    const count = Math.max(1, Math.floor((this._width + gap) / (thumbWidth + gap)));
-
-    // Calculate pitch (spacing) for edge-to-edge fill
-    const pitch = count > 1 ? (this._width - thumbWidth) / (count - 1) : 0;
-
-    // Generate slots with timestamps
-    const slots: ThumbnailSlot[] = [];
+    // Calculate strip width from TIMELINE DURATION, not element CSS width
     const duration = timeRange.endMs - timeRange.startMs;
+    const stripWidth = duration * this.pixelsPerMs;
+
+    // Calculate how many thumbnails fit across the entire timeline
+    const count = Math.max(1, Math.floor((stripWidth + gap) / (thumbWidth + gap)));
+
+    // Generate slots with timestamps and positions that align
+    const slots: ThumbnailSlot[] = [];
 
     for (let i = 0; i < count; i++) {
       const timeMs = count === 1
         ? (timeRange.startMs + timeRange.endMs) / 2
         : timeRange.startMs + (i * duration) / (count - 1);
 
+      // Position matches time: x = timeMs * pixelsPerMs (in strip-local coordinates)
+      const x = (timeMs - timeRange.startMs) * this.pixelsPerMs;
+
       slots.push({
         timeMs,
-        x: Math.round(i * pitch),
+        x: Math.round(x),
         width: thumbWidth,
         status: "pending",
       });
     }
+
+    console.log('[THUMB_STRIP] Layout calculated', JSON.stringify({
+      targetId: this._targetElement?.id || 'no-id',
+      targetTag: this._targetElement?.tagName,
+      targetDuration: Math.round((this._targetElement as any)?.durationMs || 0),
+      count,
+      timeRange: `${Math.round(timeRange.startMs)}ms - ${Math.round(timeRange.endMs)}ms`,
+      duration: Math.round(duration),
+      stripWidth: Math.round(stripWidth),
+      pixelsPerMs: this.pixelsPerMs,
+      sampleTimes: slots.slice(0, 5).map(s => Math.round(s.timeMs)),
+      samplePositions: slots.slice(0, 5).map(s => Math.round(s.x))
+    }));
 
     this._thumbnailSlots = slots;
   }
@@ -550,10 +564,15 @@ export class EFThumbnailStrip extends LitElement {
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
-    const stripWidth = this._width;
     const height = this._height;
+    if (height <= 0 || !this._targetElement) return;
 
-    if (stripWidth <= 0 || height <= 0) return;
+    // Calculate strip width from timeline duration, not element CSS width
+    const timeRange = this._getTimeRange();
+    const duration = timeRange.endMs - timeRange.startMs;
+    const stripWidth = duration * this.pixelsPerMs;
+
+    if (stripWidth <= 0) return;
 
     const dpr = window.devicePixelRatio || 1;
 
@@ -705,9 +724,13 @@ export class EFThumbnailStrip extends LitElement {
   private async _loadVisibleThumbnails(): Promise<void> {
     if (!this._targetElement) return;
 
+    // Calculate strip width from timeline duration
+    const timeRange = this._getTimeRange();
+    const duration = timeRange.endMs - timeRange.startMs;
+    const stripWidth = duration * this.pixelsPerMs;
+
     // Calculate visible region
     const stripStartPx = this._getStripTimelinePosition();
-    const stripWidth = this._width;
     const scrollLeft = this._scrollLeft;
     const viewportWidth = this._viewportWidth || stripWidth;
 
@@ -817,7 +840,9 @@ export class EFThumbnailStrip extends LitElement {
       scale: scale.toFixed(3),
       targetSize: `${Math.round(timegroupWidth * scale)}x${Math.round(timegroupHeight * scale)}`,
       timeRange: `${Math.round(slots[0]?.timeMs || 0)}ms - ${Math.round(slots[slots.length - 1]?.timeMs || 0)}ms`,
-      mode: 'blocking'
+      mode: 'blocking',
+      targetId: target.id,
+      targetChildren: target.children.length
     }));
 
     let successCount = 0;
@@ -845,6 +870,76 @@ export class EFThumbnailStrip extends LitElement {
           const canvas = canvases[0];
 
           if (canvas) {
+            // Check what type of object we got
+            const canvasType = canvas.constructor.name;
+            const isHTMLCanvas = canvas instanceof HTMLCanvasElement;
+            const isHTMLImage = canvas instanceof HTMLImageElement;
+            
+            // Sample canvas to detect red content
+            let ctx2d: CanvasRenderingContext2D | null = null;
+            
+            if (isHTMLCanvas) {
+              ctx2d = (canvas as HTMLCanvasElement).getContext('2d');
+            } else if (isHTMLImage) {
+              // Need to draw image to temp canvas to sample pixels
+              const tempCanvas = document.createElement('canvas');
+              const img = canvas as HTMLImageElement;
+              tempCanvas.width = img.naturalWidth || img.width;
+              tempCanvas.height = img.naturalHeight || img.height;
+              ctx2d = tempCanvas.getContext('2d');
+              if (ctx2d) {
+                ctx2d.drawImage(img, 0, 0);
+              }
+            }
+            
+            let pixelInfo = 'unknown';
+            let hasRedContent = false;
+            
+            if (ctx2d) {
+              const canvasWidth = isHTMLCanvas 
+                ? (canvas as HTMLCanvasElement).width 
+                : (isHTMLImage ? (canvas as HTMLImageElement).naturalWidth : 0);
+              const canvasHeight = isHTMLCanvas 
+                ? (canvas as HTMLCanvasElement).height 
+                : (isHTMLImage ? (canvas as HTMLImageElement).naturalHeight : 0);
+              
+              // Sample center
+              const centerX = Math.floor(canvasWidth / 2);
+              const centerY = Math.floor(canvasHeight / 2);
+              const centerPixel = ctx2d.getImageData(centerX, centerY, 1, 1).data;
+              pixelInfo = `rgb(${centerPixel[0]},${centerPixel[1]},${centerPixel[2]})`;
+              
+              // Sample grid of pixels looking for red
+              const sampleCount = 16;
+              for (let sy = 0; sy < sampleCount && canvasWidth > 0 && canvasHeight > 0; sy++) {
+                for (let sx = 0; sx < sampleCount; sx++) {
+                  const x = Math.floor((sx / sampleCount) * canvasWidth);
+                  const y = Math.floor((sy / sampleCount) * canvasHeight);
+                  const p = ctx2d.getImageData(x, y, 1, 1).data;
+                  // Check for red (R > 150, G < 100, B < 100)
+                  if (p && p.length >= 3 && p[0]! > 150 && p[1]! < 100 && p[2]! < 100) {
+                    hasRedContent = true;
+                    break;
+                  }
+                }
+                if (hasRedContent) break;
+              }
+            }
+            
+            const width = (canvas as any).width ?? (canvas as HTMLImageElement).naturalWidth ?? 0;
+            const height = (canvas as any).height ?? (canvas as HTMLImageElement).naturalHeight ?? 0;
+            
+            console.log('[THUMB_STRIP] Captured thumbnail', JSON.stringify({
+              index: i,
+              timeMs: Math.round(slot.timeMs),
+              type: canvasType,
+              isHTMLCanvas,
+              isHTMLImage,
+              canvasSize: `${width}x${height}`,
+              centerPixel: pixelInfo,
+              hasRedContent
+            }));
+            
             // Store canvas directly - no conversion needed
             const key = getCacheKey(rootId, elementId, slot.timeMs);
             sessionThumbnailCache.set(key, canvas, slot.timeMs, elementId);
