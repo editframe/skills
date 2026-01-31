@@ -44,14 +44,13 @@ const DEFAULT_ASPECT_RATIO = 16 / 9;
 /** Max canvas width for thumbnail captures */
 const MAX_CAPTURE_WIDTH = 480;
 
-/** Thumbnails to capture per batch */
-const BATCH_SIZE = 10;
+// No batching - capture all thumbnails at once
 
 interface ThumbnailSlot {
   timeMs: number;
   x: number; // Absolute position (not scroll-adjusted)
   width: number;
-  imageData?: ImageData;
+  image?: CanvasImageSource; // Canvas, Image, ImageBitmap, etc - directly drawable
   status: "cached" | "loading" | "pending";
 }
 
@@ -136,7 +135,6 @@ export class EFThumbnailStrip extends LitElement {
     // Reset ready state when target changes
     if (value !== oldValue) {
       this._hasLoadedThumbnails = false;
-      this._lastLayoutParams = null;
     }
 
     this.requestUpdate("targetElement", oldValue);
@@ -164,18 +162,9 @@ export class EFThumbnailStrip extends LitElement {
   /** Track if we need to retry loading after current capture completes */
   private _needsRetryLoad = false;
 
-  /** Animation frame for loading indicator pulse */
+  /** Animation frame for continuous rendering */
   private _animationFrame?: number;
-  
-  /** Track layout parameters to avoid unnecessary slot recreation */
-  private _lastLayoutParams: {
-    width: number;
-    height: number;
-    startTimeMs: number;
-    endTimeMs: number;
-    thumbWidth: number;
-    gap: number;
-  } | null = null;
+  private _isAnimating = false;
 
   // ─────────────────────────────────────────────────────────────────────────
   // Lifecycle
@@ -204,9 +193,7 @@ export class EFThumbnailStrip extends LitElement {
   disconnectedCallback() {
     super.disconnectedCallback();
     this._resizeObserver?.disconnect();
-    if (this._animationFrame) {
-      cancelAnimationFrame(this._animationFrame);
-    }
+    this._stopAnimation();
   }
 
   updated(changedProperties: Map<string | number | symbol, unknown>) {
@@ -248,7 +235,57 @@ export class EFThumbnailStrip extends LitElement {
       // Check if we should dispatch ready event
       // (e.g., all thumbnails were already cached, or nothing to load)
       this._checkAndDispatchReady();
+      
+      // Start continuous animation if we have loading slots
+      this._startAnimationIfNeeded();
     });
+  }
+
+  /**
+   * Start continuous animation loop if there are loading/pending slots.
+   */
+  private _startAnimationIfNeeded(): void {
+    const hasLoadingSlots = this._thumbnailSlots.some(
+      (s) => s.status === "pending" || s.status === "loading"
+    );
+
+    if (hasLoadingSlots && !this._isAnimating) {
+      this._isAnimating = true;
+      this._animate();
+    } else if (!hasLoadingSlots && this._isAnimating) {
+      this._stopAnimation();
+    }
+  }
+
+  /**
+   * Continuous animation loop for loading indicators.
+   */
+  private _animate = (): void => {
+    if (!this._isAnimating) return;
+
+    this._drawCanvas();
+
+    // Check if we still have loading slots
+    const hasLoadingSlots = this._thumbnailSlots.some(
+      (s) => s.status === "pending" || s.status === "loading"
+    );
+
+    if (hasLoadingSlots) {
+      this._animationFrame = requestAnimationFrame(this._animate);
+    } else {
+      this._stopAnimation();
+    }
+  };
+
+  /**
+   * Stop animation loop.
+   */
+  private _stopAnimation(): void {
+    this._isAnimating = false;
+    if (this._animationFrame) {
+      cancelAnimationFrame(this._animationFrame);
+      this._animationFrame = undefined;
+    }
   }
 
   /**
@@ -272,50 +309,22 @@ export class EFThumbnailStrip extends LitElement {
 
   /**
    * Calculate thumbnail layout based on current dimensions and time range.
-   * Only recreates slots if layout parameters have actually changed.
    */
   private _calculateLayout(): void {
     if (this._width <= 0 || this._height <= 0 || !this._targetElement) {
       this._thumbnailSlots = [];
-      this._lastLayoutParams = null;
       return;
     }
 
     const timeRange = this._getTimeRange();
     if (timeRange.endMs <= timeRange.startMs) {
       this._thumbnailSlots = [];
-      this._lastLayoutParams = null;
       return;
     }
 
     // Calculate thumbnail dimensions
     const thumbWidth = this._getEffectiveThumbnailWidth();
     const gap = this.gap;
-
-    // Check if layout parameters have changed
-    const currentParams = {
-      width: this._width,
-      height: this._height,
-      startTimeMs: timeRange.startMs,
-      endTimeMs: timeRange.endMs,
-      thumbWidth,
-      gap,
-    };
-
-    // If layout parameters haven't changed, preserve existing slots
-    if (this._lastLayoutParams &&
-        this._lastLayoutParams.width === currentParams.width &&
-        this._lastLayoutParams.height === currentParams.height &&
-        this._lastLayoutParams.startTimeMs === currentParams.startTimeMs &&
-        this._lastLayoutParams.endTimeMs === currentParams.endTimeMs &&
-        this._lastLayoutParams.thumbWidth === currentParams.thumbWidth &&
-        this._lastLayoutParams.gap === currentParams.gap) {
-      // Layout hasn't changed, keep existing slots
-      return;
-    }
-
-    // Layout changed - recreate slots
-    this._lastLayoutParams = currentParams;
 
     // Calculate how many thumbnails fit
     const count = Math.max(1, Math.floor((this._width + gap) / (thumbWidth + gap)));
@@ -409,18 +418,18 @@ export class EFThumbnailStrip extends LitElement {
       const key = getCacheKey(rootId, elementId, slot.timeMs);
       if (sessionThumbnailCache.has(key)) {
         // Exact match - use it
-        slot.imageData = sessionThumbnailCache.get(key);
+        slot.image = sessionThumbnailCache.get(key);
         slot.status = "cached";
       } else {
         // No exact match - try to find nearest neighbor as placeholder
         const nearestImage = sessionThumbnailCache.getNearest(rootId, elementId, slot.timeMs);
         if (nearestImage) {
           // Use nearest as placeholder, but mark as pending so we still load the exact one
-          slot.imageData = nearestImage;
+          slot.image = nearestImage;
           slot.status = "pending";
         } else {
           // No thumbnails at all for this element yet
-          slot.imageData = undefined;
+          slot.image = undefined;
           slot.status = "pending";
         }
       }
@@ -466,21 +475,16 @@ export class EFThumbnailStrip extends LitElement {
     ctx.fillStyle = "#1a1a2e";
     ctx.fillRect(0, 0, width, height);
 
-    // Check if we have any loading slots for animation
-    const hasLoadingSlots = this._thumbnailSlots.some(
-      (s) => s.status === "pending" || s.status === "loading"
-    );
-
     // Pulse animation for loading indicators (0.0 to 1.0 and back)
     const time = Date.now() / 1000;
     const pulse = (Math.sin(time * 3) + 1) / 2; // 3 Hz pulse
 
     // Draw each thumbnail
     for (const slot of this._thumbnailSlots) {
-      if (slot.imageData) {
-        this._drawThumbnailImage(ctx, slot.imageData, slot.x, slot.width, height);
+      if (slot.image) {
+        this._drawThumbnail(ctx, slot.image, slot.x, slot.width, height);
         
-        // If this is a nearest-neighbor placeholder (pending/loading with imageData), show loading overlay
+        // If this is a nearest-neighbor placeholder (pending/loading with image), show loading overlay
         if (slot.status === "pending" || slot.status === "loading") {
           // Semi-transparent overlay to indicate this is approximate
           ctx.fillStyle = "rgba(26, 26, 46, 0.15)";
@@ -504,51 +508,40 @@ export class EFThumbnailStrip extends LitElement {
         }
       }
     }
-
-    // Schedule next animation frame if we have loading slots
-    if (hasLoadingSlots) {
-      if (!this._animationFrame) {
-        this._animationFrame = requestAnimationFrame(() => {
-          this._animationFrame = undefined;
-          this._drawCanvas();
-        });
-      }
-    }
   }
 
   /**
-   * Draw a thumbnail image with cover mode scaling.
+   * Draw a thumbnail with cover mode scaling.
+   * Draws directly from CanvasImageSource (Canvas, Image, ImageBitmap, etc).
    */
-  private _drawThumbnailImage(
+  private _drawThumbnail(
     ctx: CanvasRenderingContext2D,
-    imageData: ImageData,
+    image: CanvasImageSource,
     x: number,
     width: number,
     height: number,
   ): void {
-    // Create temp canvas for ImageData
-    const tempCanvas = document.createElement("canvas");
-    tempCanvas.width = imageData.width;
-    tempCanvas.height = imageData.height;
-    const tempCtx = tempCanvas.getContext("2d");
-    if (!tempCtx) return;
-    tempCtx.putImageData(imageData, 0, 0);
+    // Get source dimensions
+    const srcWidth = (image as any).width || (image as HTMLImageElement).naturalWidth || 0;
+    const srcHeight = (image as any).height || (image as HTMLImageElement).naturalHeight || 0;
+    
+    if (srcWidth === 0 || srcHeight === 0) return;
 
     // Cover mode: crop to fill destination
-    const srcAspect = imageData.width / imageData.height;
+    const srcAspect = srcWidth / srcHeight;
     const dstAspect = width / height;
 
-    let srcX = 0, srcY = 0, srcW = imageData.width, srcH = imageData.height;
+    let srcX = 0, srcY = 0, srcW = srcWidth, srcH = srcHeight;
 
     if (srcAspect > dstAspect) {
-      srcW = imageData.height * dstAspect;
-      srcX = (imageData.width - srcW) / 2;
+      srcW = srcHeight * dstAspect;
+      srcX = (srcWidth - srcW) / 2;
     } else {
-      srcH = imageData.width / dstAspect;
-      srcY = (imageData.height - srcH) / 2;
+      srcH = srcWidth / dstAspect;
+      srcY = (srcHeight - srcH) / 2;
     }
 
-    ctx.drawImage(tempCanvas, srcX, srcY, srcW, srcH, x, 0, width, height);
+    ctx.drawImage(image, srcX, srcY, srcW, srcH, x, 0, width, height);
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -627,52 +620,36 @@ export class EFThumbnailStrip extends LitElement {
     const timegroupHeight = target.offsetHeight || 1080;
     const scale = Math.min(1, this._height / timegroupHeight, MAX_CAPTURE_WIDTH / timegroupWidth);
 
-    // Process in batches
-    for (let i = 0; i < slots.length; i += BATCH_SIZE) {
-      const batch = slots.slice(i, i + BATCH_SIZE);
-      const timestamps = batch.map((s) => s.timeMs);
+    // Capture all thumbnails at once
+    const timestamps = slots.map((s) => s.timeMs);
 
-      try {
-        const canvases = await target.captureBatch(timestamps, {
-          scale,
-          contentReadyMode: "immediate",
-        });
+    try {
+      const canvases = await target.captureBatch(timestamps, {
+        scale,
+        contentReadyMode: "immediate",
+      });
 
-        for (let j = 0; j < batch.length; j++) {
-          const slot = batch[j]!;
-          const canvas = canvases[j];
+      for (let i = 0; i < slots.length; i++) {
+        const slot = slots[i]!;
+        const canvas = canvases[i];
 
-          if (canvas) {
-            const imageData = this._canvasToImageData(canvas);
-            if (imageData) {
-              const key = getCacheKey(rootId, elementId, slot.timeMs);
-              sessionThumbnailCache.set(key, imageData, slot.timeMs, elementId);
-              slot.imageData = imageData;
-              slot.status = "cached";
-            } else {
-              // Failed to convert to ImageData - reset to pending
-              slot.status = "pending";
-            }
-          } else {
-            // No canvas returned - reset to pending
-            slot.status = "pending";
-          }
+        if (canvas) {
+          // Store canvas directly - no conversion needed
+          const key = getCacheKey(rootId, elementId, slot.timeMs);
+          sessionThumbnailCache.set(key, canvas, slot.timeMs, elementId);
+          slot.image = canvas;
+          slot.status = "cached";
+        } else {
+          // No canvas returned - reset to pending
+          slot.status = "pending";
         }
-
-        // Redraw after each batch for progressive feedback
-        this._drawCanvas();
-
-        // Yield to main thread between batches
-        if (i + BATCH_SIZE < slots.length) {
-          await new Promise((r) => requestAnimationFrame(r));
-        }
-      } catch (error) {
-        console.warn("Batch capture failed:", error);
-        // Reset all slots in this batch to pending
-        for (const slot of batch) {
-          if (slot.status === "loading") {
-            slot.status = "pending";
-          }
+      }
+    } catch (error) {
+      console.warn("Thumbnail capture failed:", error);
+      // Reset all slots to pending
+      for (const slot of slots) {
+        if (slot.status === "loading") {
+          slot.status = "pending";
         }
       }
     }
@@ -724,16 +701,11 @@ export class EFThumbnailStrip extends LitElement {
         const result = results[i];
 
         if (result?.thumbnail) {
-          const imageData = this._canvasToImageData(result.thumbnail);
-          if (imageData) {
-            const key = getCacheKey(rootId, elementId, slot.timeMs);
-            sessionThumbnailCache.set(key, imageData, slot.timeMs, elementId);
-            slot.imageData = imageData;
-            slot.status = "cached";
-          } else {
-            // Failed to convert to ImageData - reset to pending
-            slot.status = "pending";
-          }
+          // Store thumbnail directly - no conversion needed
+          const key = getCacheKey(rootId, elementId, slot.timeMs);
+          sessionThumbnailCache.set(key, result.thumbnail, slot.timeMs, elementId);
+          slot.image = result.thumbnail;
+          slot.status = "cached";
         } else {
           // No thumbnail returned - reset to pending
           slot.status = "pending";
@@ -752,38 +724,6 @@ export class EFThumbnailStrip extends LitElement {
     }
   }
 
-  /**
-   * Convert CanvasImageSource to ImageData.
-   * Handles Canvas, Image, ImageBitmap, OffscreenCanvas, etc.
-   */
-  private _canvasToImageData(source: CanvasImageSource | HTMLCanvasElement | OffscreenCanvas): ImageData | null {
-    try {
-      // If it's already a canvas (regular or offscreen), extract directly
-      if (source instanceof HTMLCanvasElement || source instanceof OffscreenCanvas) {
-        const ctx = source.getContext("2d", { willReadFrequently: true }) as
-          | CanvasRenderingContext2D
-          | OffscreenCanvasRenderingContext2D
-          | null;
-        if (!ctx) return null;
-        return ctx.getImageData(0, 0, source.width, source.height);
-      }
-      
-      // Otherwise (Image, ImageBitmap, VideoFrame, etc.), draw to temp canvas first
-      const canvas = document.createElement('canvas');
-      // Get dimensions - different source types have different properties
-      const width = 'width' in source ? source.width : (source as unknown as HTMLImageElement).naturalWidth;
-      const height = 'height' in source ? source.height : (source as unknown as HTMLImageElement).naturalHeight;
-      canvas.width = typeof width === 'number' ? width : parseInt(String(width));
-      canvas.height = typeof height === 'number' ? height : parseInt(String(height));
-      const ctx = canvas.getContext("2d", { willReadFrequently: true });
-      if (!ctx) return null;
-      ctx.drawImage(source, 0, 0);
-      return ctx.getImageData(0, 0, canvas.width, canvas.height);
-    } catch (e) {
-      console.error("Failed to extract ImageData from source:", e);
-      return null;
-    }
-  }
 
   // ─────────────────────────────────────────────────────────────────────────
   // Public API

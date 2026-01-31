@@ -15,7 +15,7 @@ type CacheKey = string;
 
 /** Cache entry with metadata for invalidation */
 interface CacheEntry {
-  imageData: ImageData;
+  image: CanvasImageSource; // Canvas, Image, ImageBitmap - directly drawable
   timeMs: number; // Original (non-quantized) time for invalidation checks
   elementId: string; // Element identifier for scoped invalidation
 }
@@ -81,13 +81,13 @@ export class SessionThumbnailCache {
   /**
    * Get a thumbnail from cache (LRU - moves to end).
    */
-  get(key: CacheKey): ImageData | undefined {
+  get(key: CacheKey): CanvasImageSource | undefined {
     const entry = this.cache.get(key);
     if (entry) {
       // Move to end (most recently used)
       this.cache.delete(key);
       this.cache.set(key, entry);
-      return entry.imageData;
+      return entry.image;
     }
     return undefined;
   }
@@ -97,7 +97,7 @@ export class SessionThumbnailCache {
    * Returns the cached thumbnail closest in time to the requested time.
    * Useful for showing approximate thumbnails while exact ones load.
    */
-  getNearest(rootId: string, elementId: string, timeMs: number): ImageData | undefined {
+  getNearest(rootId: string, elementId: string, timeMs: number): CanvasImageSource | undefined {
     const prefix = `${rootId}:${elementId}:`;
     let nearestEntry: CacheEntry | undefined;
     let nearestDistance = Number.POSITIVE_INFINITY;
@@ -112,13 +112,13 @@ export class SessionThumbnailCache {
       }
     }
 
-    return nearestEntry?.imageData;
+    return nearestEntry?.image;
   }
 
   /**
    * Store a thumbnail in cache (LRU eviction).
    */
-  set(key: CacheKey, imageData: ImageData, timeMs: number, elementId: string): void {
+  set(key: CacheKey, image: CanvasImageSource, timeMs: number, elementId: string): void {
     // If key already exists, delete it first to update position
     if (this.cache.has(key)) {
       this.cache.delete(key);
@@ -133,7 +133,7 @@ export class SessionThumbnailCache {
     }
 
     // Add to end (most recently used)
-    this.cache.set(key, { imageData, timeMs, elementId });
+    this.cache.set(key, { image, timeMs, elementId });
   }
 
   /**
@@ -232,11 +232,14 @@ export class SessionThumbnailCache {
    * Get cache statistics.
    */
   async getStats(): Promise<ThumbnailCacheStats> {
-    // Calculate total size by summing all ImageData sizes
+    // Calculate total size by estimating canvas sizes
     let totalSizeBytes = 0;
     for (const entry of this.cache.values()) {
-      // ImageData size = width * height * 4 bytes (RGBA)
-      totalSizeBytes += entry.imageData.width * entry.imageData.height * 4;
+      // Estimate size based on canvas dimensions if available
+      const img = entry.image as any;
+      if (img.width && img.height) {
+        totalSizeBytes += img.width * img.height * 4; // RGBA bytes
+      }
     }
 
     return {
