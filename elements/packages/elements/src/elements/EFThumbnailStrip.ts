@@ -163,6 +163,9 @@ export class EFThumbnailStrip extends LitElement {
 
   /** Track if we need to retry loading after current capture completes */
   private _needsRetryLoad = false;
+
+  /** Animation frame for loading indicator pulse */
+  private _animationFrame?: number;
   
   /** Track layout parameters to avoid unnecessary slot recreation */
   private _lastLayoutParams: {
@@ -201,6 +204,9 @@ export class EFThumbnailStrip extends LitElement {
   disconnectedCallback() {
     super.disconnectedCallback();
     this._resizeObserver?.disconnect();
+    if (this._animationFrame) {
+      cancelAnimationFrame(this._animationFrame);
+    }
   }
 
   updated(changedProperties: Map<string | number | symbol, unknown>) {
@@ -460,26 +466,52 @@ export class EFThumbnailStrip extends LitElement {
     ctx.fillStyle = "#1a1a2e";
     ctx.fillRect(0, 0, width, height);
 
+    // Check if we have any loading slots for animation
+    const hasLoadingSlots = this._thumbnailSlots.some(
+      (s) => s.status === "pending" || s.status === "loading"
+    );
+
+    // Pulse animation for loading indicators (0.0 to 1.0 and back)
+    const time = Date.now() / 1000;
+    const pulse = (Math.sin(time * 3) + 1) / 2; // 3 Hz pulse
+
     // Draw each thumbnail
     for (const slot of this._thumbnailSlots) {
       if (slot.imageData) {
         this._drawThumbnailImage(ctx, slot.imageData, slot.x, slot.width, height);
         
-        // If this is a nearest-neighbor placeholder (pending with imageData), show subtle loading indicator
+        // If this is a nearest-neighbor placeholder (pending/loading with imageData), show loading overlay
         if (slot.status === "pending" || slot.status === "loading") {
-          ctx.fillStyle = "rgba(59, 130, 246, 0.2)";
-          ctx.fillRect(slot.x, 0, slot.width, 2);
+          // Semi-transparent overlay to indicate this is approximate
+          ctx.fillStyle = "rgba(26, 26, 46, 0.15)";
+          ctx.fillRect(slot.x, 0, slot.width, height);
+          
+          // Animated loading bar at top with pulse
+          const barOpacity = 0.4 + pulse * 0.3; // 0.4 to 0.7
+          ctx.fillStyle = `rgba(59, 130, 246, ${barOpacity})`;
+          ctx.fillRect(slot.x, 0, slot.width, 3);
         }
       } else {
         // No thumbnail at all - show placeholder
         ctx.fillStyle = slot.status === "loading" ? "#2d2d50" : "#2d2d44";
         ctx.fillRect(slot.x, 0, slot.width, height);
 
-        // Loading indicator
+        // Loading indicator for empty slots with pulse
         if (slot.status === "loading") {
-          ctx.fillStyle = "rgba(59, 130, 246, 0.3)";
-          ctx.fillRect(slot.x, 0, slot.width, 2);
+          const barOpacity = 0.3 + pulse * 0.3; // 0.3 to 0.6
+          ctx.fillStyle = `rgba(59, 130, 246, ${barOpacity})`;
+          ctx.fillRect(slot.x, 0, slot.width, 3);
         }
+      }
+    }
+
+    // Schedule next animation frame if we have loading slots
+    if (hasLoadingSlots) {
+      if (!this._animationFrame) {
+        this._animationFrame = requestAnimationFrame(() => {
+          this._animationFrame = undefined;
+          this._drawCanvas();
+        });
       }
     }
   }
