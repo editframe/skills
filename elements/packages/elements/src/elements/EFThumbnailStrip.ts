@@ -42,9 +42,10 @@ const DEFAULT_GAP = 4;
 const DEFAULT_ASPECT_RATIO = 16 / 9;
 
 /** Max canvas width for thumbnail captures */
-const MAX_CAPTURE_WIDTH = 480;
+const MAX_CAPTURE_WIDTH = 240; // Reduced from 480 for faster rendering
 
-// No batching - capture all thumbnails at once
+/** Padding in pixels for virtual rendering (render extra thumbnails beyond viewport) */
+const VIRTUAL_PADDING_PX = 500;
 
 interface ThumbnailSlot {
   timeMs: number;
@@ -144,11 +145,19 @@ export class EFThumbnailStrip extends LitElement {
   private _width = 0;
   private _height = 0;
 
-  /** Current thumbnail slots */
+  /** Scroll container and state */
+  private _scrollContainer: HTMLElement | null = null;
+  private _scrollLeft = 0;
+  private _viewportWidth = 0;
+
+  /** Current thumbnail slots (all possible slots for entire strip) */
   private _thumbnailSlots: ThumbnailSlot[] = [];
 
   /** Capture in progress flag */
   private _captureInProgress = false;
+
+  /** Abort controller for current capture */
+  private _captureAbortController?: AbortController;
 
   /** Resize observer */
   private _resizeObserver?: ResizeObserver;
@@ -184,8 +193,9 @@ export class EFThumbnailStrip extends LitElement {
     });
     this._resizeObserver.observe(this);
 
-    // Schedule initial render
+    // Schedule initial render and find scroll container
     this.updateComplete.then(() => {
+      this._findScrollContainer();
       this._scheduleRender();
     });
   }
@@ -194,6 +204,7 @@ export class EFThumbnailStrip extends LitElement {
     super.disconnectedCallback();
     this._resizeObserver?.disconnect();
     this._stopAnimation();
+    this._detachScrollListener();
   }
 
   updated(changedProperties: Map<string | number | symbol, unknown>) {
@@ -213,6 +224,98 @@ export class EFThumbnailStrip extends LitElement {
     }
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // Scroll Container Detection
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Find the scrollable container by walking up the DOM tree.
+   * Crosses shadow DOM boundaries.
+   */
+  private _findScrollContainer(): void {
+    let node: Node | null = this.parentNode;
+    
+    while (node) {
+      if (node instanceof HTMLElement) {
+        const style = getComputedStyle(node);
+        if (style.overflowX === "auto" || style.overflowX === "scroll") {
+          this._scrollContainer = node;
+          this._updateScrollState();
+          this._attachScrollListener();
+          console.log('[THUMB_STRIP] Found scroll container', JSON.stringify({
+            tagName: node.tagName,
+            clientWidth: node.clientWidth,
+            scrollWidth: node.scrollWidth
+          }));
+          return;
+        }
+      }
+      
+      // Move to parent, crossing shadow DOM boundaries
+      if (node.parentNode) {
+        node = node.parentNode;
+      } else if (node instanceof ShadowRoot) {
+        node = node.host;
+      } else {
+        break;
+      }
+    }
+    
+    console.warn('[THUMB_STRIP] No scroll container found');
+  }
+
+  /**
+   * Update cached scroll state.
+   */
+  private _updateScrollState(): void {
+    if (!this._scrollContainer) return;
+    this._scrollLeft = this._scrollContainer.scrollLeft;
+    this._viewportWidth = this._scrollContainer.clientWidth;
+  }
+
+  /**
+   * Attach scroll listener to container.
+   */
+  private _attachScrollListener(): void {
+    if (!this._scrollContainer) return;
+    this._scrollContainer.addEventListener('scroll', this._onScroll, { passive: true });
+  }
+
+  /**
+   * Detach scroll listener.
+   */
+  private _detachScrollListener(): void {
+    if (this._scrollContainer) {
+      this._scrollContainer.removeEventListener('scroll', this._onScroll);
+    }
+  }
+
+  /**
+   * Handle scroll events - update immediately for lockstep rendering.
+   */
+  private _onScroll = (): void => {
+    this._updateScrollState();
+    this._drawCanvas();
+    this._loadVisibleThumbnails();
+  };
+
+  /**
+   * Get this strip's absolute position in the timeline (pixels from timeline origin).
+   * For root timegroup: 0
+   * For video: startTimeMs × pixelsPerMs
+   */
+  private _getStripTimelinePosition(): number {
+    const target = this._targetElement;
+    if (!target) return 0;
+    
+    if (isEFVideo(target)) {
+      const startTimeMs = target.startTimeMs ?? 0;
+      return startTimeMs * this.pixelsPerMs;
+    }
+    
+    // Root timegroup starts at 0
+    return 0;
+  }
 
   // ─────────────────────────────────────────────────────────────────────────
   // Rendering Pipeline
@@ -229,8 +332,8 @@ export class EFThumbnailStrip extends LitElement {
       this._checkCache();
       this._drawCanvas();
       
-      // Load any pending thumbnails
-      this._loadThumbnails();
+      // Load visible pending thumbnails
+      this._loadVisibleThumbnails();
 
       // Check if we should dispatch ready event
       // (e.g., all thumbnails were already cached, or nothing to load)
@@ -438,7 +541,7 @@ export class EFThumbnailStrip extends LitElement {
 
   /**
    * Draw the canvas with current thumbnail state.
-   * Renders all thumbnails to a full-width canvas.
+   * Uses virtual rendering - only draws visible portion.
    */
   private _drawCanvas(): void {
     const canvas = this.canvasRef.value;
@@ -447,25 +550,54 @@ export class EFThumbnailStrip extends LitElement {
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
-    const width = this._width;
+    const stripWidth = this._width;
     const height = this._height;
 
-    if (width <= 0 || height <= 0) return;
+    if (stripWidth <= 0 || height <= 0) return;
 
     const dpr = window.devicePixelRatio || 1;
 
-    // Set canvas size with DPR
-    const targetWidth = Math.ceil(width * dpr);
+    // Get strip's position in timeline
+    const stripStartPx = this._getStripTimelinePosition();
+    const stripEndPx = stripStartPx + stripWidth;
+
+    // Get scroll state
+    const scrollLeft = this._scrollLeft;
+    const viewportWidth = this._viewportWidth || stripWidth; // Fallback to full width if no scroll container
+
+    // Calculate visible region in timeline coordinates (with padding)
+    const visibleLeftPx = scrollLeft - VIRTUAL_PADDING_PX;
+    const visibleRightPx = scrollLeft + viewportWidth + VIRTUAL_PADDING_PX;
+
+    // Check if strip is visible at all
+    if (stripEndPx < visibleLeftPx || stripStartPx > visibleRightPx) {
+      canvas.style.display = "none";
+      return;
+    }
+    canvas.style.display = "block";
+
+    // Calculate intersection: what part of THIS STRIP is visible (in strip-local coordinates)
+    const visibleStartInStrip = Math.max(0, visibleLeftPx - stripStartPx);
+    const visibleEndInStrip = Math.min(stripWidth, visibleRightPx - stripStartPx);
+    const visibleWidth = visibleEndInStrip - visibleStartInStrip;
+
+    if (visibleWidth <= 0) {
+      canvas.style.display = "none";
+      return;
+    }
+
+    // Set canvas size to visible region (not full strip width)
+    const targetWidth = Math.ceil(visibleWidth * dpr);
     const targetHeight = Math.ceil(height * dpr);
 
     if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
       canvas.width = targetWidth;
       canvas.height = targetHeight;
     }
-    
-    // Position canvas to fill the strip
-    canvas.style.left = "0";
-    canvas.style.width = `${width}px`;
+
+    // Position canvas at the visible portion within the strip
+    canvas.style.left = `${visibleStartInStrip}px`;
+    canvas.style.width = `${visibleWidth}px`;
     canvas.style.height = `${height}px`;
 
     // Reset transform
@@ -473,38 +605,56 @@ export class EFThumbnailStrip extends LitElement {
 
     // Clear with background
     ctx.fillStyle = "#1a1a2e";
-    ctx.fillRect(0, 0, width, height);
+    ctx.fillRect(0, 0, visibleWidth, height);
 
     // Pulse animation for loading indicators (0.0 to 1.0 and back)
     const time = Date.now() / 1000;
     const pulse = (Math.sin(time * 3) + 1) / 2; // 3 Hz pulse
 
-    // Draw each thumbnail
+    // Draw only visible thumbnails
     for (const slot of this._thumbnailSlots) {
+      const slotRight = slot.x + slot.width;
+
+      // Skip if slot is outside visible region
+      if (slotRight < visibleStartInStrip || slot.x > visibleEndInStrip) continue;
+
+      // Draw position relative to canvas (canvas starts at visibleStartInStrip)
+      const drawX = slot.x - visibleStartInStrip;
+
       if (slot.image) {
-        this._drawThumbnail(ctx, slot.image, slot.x, slot.width, height);
+        this._drawThumbnail(ctx, slot.image, drawX, slot.width, height);
         
         // If this is a nearest-neighbor placeholder (pending/loading with image), show loading overlay
         if (slot.status === "pending" || slot.status === "loading") {
           // Semi-transparent overlay to indicate this is approximate
-          ctx.fillStyle = "rgba(26, 26, 46, 0.15)";
-          ctx.fillRect(slot.x, 0, slot.width, height);
+          ctx.fillStyle = "rgba(26, 26, 46, 0.25)";
+          ctx.fillRect(drawX, 0, slot.width, height);
           
           // Animated loading bar at top with pulse
-          const barOpacity = 0.4 + pulse * 0.3; // 0.4 to 0.7
+          const barOpacity = 0.5 + pulse * 0.5; // 0.5 to 1.0
+          const barHeight = 4;
           ctx.fillStyle = `rgba(59, 130, 246, ${barOpacity})`;
-          ctx.fillRect(slot.x, 0, slot.width, 3);
+          ctx.fillRect(drawX, 0, slot.width, barHeight);
+          
+          // Glow effect
+          ctx.fillStyle = `rgba(59, 130, 246, ${barOpacity * 0.3})`;
+          ctx.fillRect(drawX, barHeight, slot.width, 2);
         }
       } else {
         // No thumbnail at all - show placeholder
         ctx.fillStyle = slot.status === "loading" ? "#2d2d50" : "#2d2d44";
-        ctx.fillRect(slot.x, 0, slot.width, height);
+        ctx.fillRect(drawX, 0, slot.width, height);
 
         // Loading indicator for empty slots with pulse
         if (slot.status === "loading") {
-          const barOpacity = 0.3 + pulse * 0.3; // 0.3 to 0.6
+          const barOpacity = 0.4 + pulse * 0.6; // 0.4 to 1.0
+          const barHeight = 4;
           ctx.fillStyle = `rgba(59, 130, 246, ${barOpacity})`;
-          ctx.fillRect(slot.x, 0, slot.width, 3);
+          ctx.fillRect(drawX, 0, slot.width, barHeight);
+          
+          // Glow effect
+          ctx.fillStyle = `rgba(59, 130, 246, ${barOpacity * 0.3})`;
+          ctx.fillRect(drawX, barHeight, slot.width, 2);
         }
       }
     }
@@ -549,47 +699,86 @@ export class EFThumbnailStrip extends LitElement {
   // ─────────────────────────────────────────────────────────────────────────
 
   /**
-   * Load all pending thumbnails.
+   * Load only visible pending thumbnails.
+   * Cancels any in-progress capture and starts a new one.
    */
-  private async _loadThumbnails(): Promise<void> {
+  private async _loadVisibleThumbnails(): Promise<void> {
     if (!this._targetElement) return;
 
-    // If capture is in progress, schedule a retry
-    if (this._captureInProgress) {
-      this._needsRetryLoad = true;
-      return;
-    }
+    // Calculate visible region
+    const stripStartPx = this._getStripTimelinePosition();
+    const stripWidth = this._width;
+    const scrollLeft = this._scrollLeft;
+    const viewportWidth = this._viewportWidth || stripWidth;
 
-    // Find all pending slots
-    const pending = this._thumbnailSlots.filter((slot) => slot.status === "pending");
+    const visibleLeftPx = scrollLeft - VIRTUAL_PADDING_PX;
+    const visibleRightPx = scrollLeft + viewportWidth + VIRTUAL_PADDING_PX;
+
+    const visibleStartInStrip = Math.max(0, visibleLeftPx - stripStartPx);
+    const visibleEndInStrip = Math.min(stripWidth, visibleRightPx - stripStartPx);
+
+    // Find pending slots in visible range
+    const pending = this._thumbnailSlots.filter((slot) => {
+      if (slot.status !== "pending") return false;
+      const slotRight = slot.x + slot.width;
+      return slotRight >= visibleStartInStrip && slot.x <= visibleEndInStrip;
+    });
 
     if (pending.length === 0) return;
+
+    await this._loadThumbnails(pending);
+  }
+
+  /**
+   * Load specific thumbnail slots.
+   * Cancels any in-progress capture and starts a new one.
+   */
+  private async _loadThumbnails(slotsToLoad: ThumbnailSlot[]): Promise<void> {
+    if (!this._targetElement) return;
+
+    // If capture is in progress, abort it and start fresh
+    if (this._captureInProgress && this._captureAbortController) {
+      console.log('[THUMB_STRIP] Aborting previous capture');
+      this._captureAbortController.abort();
+      this._captureAbortController = undefined;
+    }
+
+    if (slotsToLoad.length === 0) return;
 
     this._captureInProgress = true;
     this._needsRetryLoad = false;
 
+    // Create new abort controller for this capture
+    this._captureAbortController = new AbortController();
+    const signal = this._captureAbortController.signal;
+
     // Mark as loading
-    for (const slot of pending) {
+    for (const slot of slotsToLoad) {
       slot.status = "loading";
     }
     this._drawCanvas();
 
     try {
       if (isEFTimegroup(this._targetElement)) {
-        await this._captureTimegroupThumbnails(pending);
+        await this._captureTimegroupThumbnailsIterative(slotsToLoad, signal);
       } else if (isEFVideo(this._targetElement)) {
-        await this._captureVideoThumbnails(pending);
+        await this._captureVideoThumbnails(slotsToLoad);
       }
-    } catch (error) {
-      console.warn("Failed to capture thumbnails:", error);
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('[THUMB_STRIP] Capture aborted');
+      } else {
+        console.warn('[THUMB_STRIP] Capture failed:', error);
+      }
       // Reset failed slots
-      for (const slot of pending) {
+      for (const slot of slotsToLoad) {
         if (slot.status === "loading") {
           slot.status = "pending";
         }
       }
     } finally {
       this._captureInProgress = false;
+      this._captureAbortController = undefined;
       this._drawCanvas();
 
       // Dispatch ready event when thumbnails are first loaded
@@ -603,15 +792,16 @@ export class EFThumbnailStrip extends LitElement {
       if (this._needsRetryLoad) {
         this._needsRetryLoad = false;
         // Schedule on next frame to avoid blocking
-        requestAnimationFrame(() => this._loadThumbnails());
+        requestAnimationFrame(() => this._loadVisibleThumbnails());
       }
     }
   }
 
   /**
-   * Capture thumbnails from a timegroup target.
+   * Capture thumbnails from a timegroup target using async iteration.
+   * Yields thumbnails progressively and can be aborted mid-capture.
    */
-  private async _captureTimegroupThumbnails(slots: ThumbnailSlot[]): Promise<void> {
+  private async _captureTimegroupThumbnailsIterative(slots: ThumbnailSlot[], signal: AbortSignal): Promise<void> {
     const target = this._targetElement as EFTimegroup;
     const { rootId, elementId } = getCacheIdentifiers(target);
 
@@ -620,38 +810,97 @@ export class EFThumbnailStrip extends LitElement {
     const timegroupHeight = target.offsetHeight || 1080;
     const scale = Math.min(1, this._height / timegroupHeight, MAX_CAPTURE_WIDTH / timegroupWidth);
 
-    // Capture all thumbnails at once
-    const timestamps = slots.map((s) => s.timeMs);
+    const startTime = performance.now();
+    
+    console.log('[THUMB_STRIP] Starting iterative capture', JSON.stringify({ 
+      slotCount: slots.length,
+      scale: scale.toFixed(3),
+      targetSize: `${Math.round(timegroupWidth * scale)}x${Math.round(timegroupHeight * scale)}`
+    }));
+
+    let successCount = 0;
+    let failCount = 0;
+    let lastDrawTime = 0;
 
     try {
-      const canvases = await target.captureBatch(timestamps, {
-        scale,
-        contentReadyMode: "immediate",
-      });
-
+      // Capture thumbnails one at a time with abort support
       for (let i = 0; i < slots.length; i++) {
-        const slot = slots[i]!;
-        const canvas = canvases[i];
+        // Check for abort before each capture
+        if (signal.aborted) {
+          throw new DOMException('Capture aborted', 'AbortError');
+        }
 
-        if (canvas) {
-          // Store canvas directly - no conversion needed
-          const key = getCacheKey(rootId, elementId, slot.timeMs);
-          sessionThumbnailCache.set(key, canvas, slot.timeMs, elementId);
-          slot.image = canvas;
-          slot.status = "cached";
-        } else {
-          // No canvas returned - reset to pending
+        const slot = slots[i]!;
+        
+        try {
+          // Capture single thumbnail
+          const canvases = await target.captureBatch([slot.timeMs], {
+            scale,
+            contentReadyMode: "immediate",
+          });
+
+          const canvas = canvases[0];
+
+          if (canvas) {
+            // Store canvas directly - no conversion needed
+            const key = getCacheKey(rootId, elementId, slot.timeMs);
+            sessionThumbnailCache.set(key, canvas, slot.timeMs, elementId);
+            slot.image = canvas;
+            slot.status = "cached";
+            successCount++;
+
+            // Progressive UI update - redraw every 50ms or every 10 thumbnails
+            const now = performance.now();
+            if (now - lastDrawTime > 50 || (successCount % 10 === 0)) {
+              this._drawCanvas();
+              lastDrawTime = now;
+            }
+          } else {
+            // No canvas returned - reset to pending
+            slot.status = "pending";
+            failCount++;
+          }
+        } catch (error) {
+          // Individual thumbnail failed
           slot.status = "pending";
+          failCount++;
         }
       }
-    } catch (error) {
-      console.warn("Thumbnail capture failed:", error);
-      // Reset all slots to pending
+
+      const captureTime = performance.now() - startTime;
+      const avgTimePerThumb = captureTime / slots.length;
+
+      console.log('[THUMB_STRIP] Iterative capture complete', JSON.stringify({ 
+        totalTimeMs: Math.round(captureTime),
+        avgPerThumbMs: avgTimePerThumb.toFixed(1),
+        successCount, 
+        failCount 
+      }));
+    } catch (error: any) {
+      const captureTime = performance.now() - startTime;
+      
+      if (error.name === 'AbortError') {
+        console.log('[THUMB_STRIP] Capture aborted after', JSON.stringify({
+          timeMs: Math.round(captureTime),
+          completed: successCount,
+          remaining: slots.length - successCount - failCount
+        }));
+      } else {
+        console.error('[THUMB_STRIP] Capture failed', JSON.stringify({ 
+          error: String(error),
+          timeMs: Math.round(captureTime),
+          slotCount: slots.length 
+        }));
+      }
+      
+      // Reset remaining loading slots to pending
       for (const slot of slots) {
         if (slot.status === "loading") {
           slot.status = "pending";
         }
       }
+      
+      throw error;
     }
   }
 
