@@ -815,7 +815,9 @@ export class EFThumbnailStrip extends LitElement {
     console.log('[THUMB_STRIP] Starting iterative capture', JSON.stringify({ 
       slotCount: slots.length,
       scale: scale.toFixed(3),
-      targetSize: `${Math.round(timegroupWidth * scale)}x${Math.round(timegroupHeight * scale)}`
+      targetSize: `${Math.round(timegroupWidth * scale)}x${Math.round(timegroupHeight * scale)}`,
+      timeRange: `${Math.round(slots[0]?.timeMs || 0)}ms - ${Math.round(slots[slots.length - 1]?.timeMs || 0)}ms`,
+      mode: 'blocking'
     }));
 
     let successCount = 0;
@@ -833,10 +835,11 @@ export class EFThumbnailStrip extends LitElement {
         const slot = slots[i]!;
         
         try {
-          // Capture single thumbnail
+          // Capture single thumbnail - use blocking mode for accurate content
           const canvases = await target.captureBatch([slot.timeMs], {
             scale,
-            contentReadyMode: "immediate",
+            contentReadyMode: "blocking",
+            blockingTimeoutMs: 5000,
           });
 
           const canvas = canvases[0];
