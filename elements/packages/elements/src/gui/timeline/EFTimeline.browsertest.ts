@@ -228,7 +228,6 @@ describe("EFTimeline", () => {
     test.skip("reinitializes timeline ruler and thumbnails after clearing and re-selecting", async () => {
       await import("../../canvas/EFCanvas.js");
       await import("../EFTimelineRuler.js");
-      await import("../../elements/EFThumbnailStrip.js");
       
       const canvas = document.createElement("ef-canvas");
       canvas.style.width = "800px";
@@ -318,12 +317,6 @@ describe("EFTimeline", () => {
       expect(reinitRulerContentWidth).toBeGreaterThan(0);
       expect(reinitRulerContentWidth).toBe(rulerContentWidth);
       
-      // Verify thumbnail strip has proper width (if present)
-      const thumbnailStrip = timeline.shadowRoot?.querySelector("ef-thumbnail-strip");
-      if (thumbnailStrip) {
-        const stripWidth = (thumbnailStrip as any).stripWidth || (thumbnailStrip as any)._stripWidth;
-        expect(stripWidth).toBeGreaterThan(0);
-      }
     });
   });
 

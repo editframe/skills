@@ -99,10 +99,7 @@ export default defineSandbox({
       // Check that show-filmstrip is set (should be true for root timegroups)
       const hasShowFilmstrip = timegroupTrack?.hasAttribute("show-filmstrip");
       ctx.expect(hasShowFilmstrip).toBe(true);
-      
-      // Check that thumbnail strip is rendered
-      const thumbnailStrip = timegroupTrack?.shadowRoot?.querySelector("ef-thumbnail-strip");
-      ctx.expect(thumbnailStrip).toBeDefined();
+      // Thumbnail strip removed - will be redesigned
     },
     
     async "integrates preview with controls"(ctx) {

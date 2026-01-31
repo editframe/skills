@@ -39,9 +39,9 @@ export default defineSandbox({
   `,
   
   scenarios: {
-    // Video-specific: thumbnail strip rendering
-    "renders thumbnail strip": {
-      description: "Video tracks display an ef-thumbnail-strip for frame previews",
+    // Video-specific: track rendering
+    "renders video track": {
+      description: "Video tracks render properly in timeline",
       run: async (ctx) => {
         const container = ctx.getContainer();
         const provider = document.createElement("timeline-state-provider");
@@ -63,16 +63,7 @@ export default defineSandbox({
         await ctx.frame();
         
         const trackElement = ctx.querySelector<EFVideoTrack>("ef-video-track")!;
-        const shadowRoot = trackElement.shadowRoot;
-        const thumbnailStrip = shadowRoot?.querySelector("ef-thumbnail-strip");
-        
-        // Wait for thumbnail strip to initialize if it exists
-        if (thumbnailStrip) {
-          await (thumbnailStrip as any).updateComplete;
-          await ctx.frame();
-        }
-        
-        ctx.expect(thumbnailStrip).toBeDefined();
+        ctx.expect(trackElement).toBeDefined();
       },
     },
     

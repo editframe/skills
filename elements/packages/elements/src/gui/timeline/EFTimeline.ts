@@ -59,7 +59,6 @@ import {
   calculatePixelsPerFrame,
   shouldShowFrameMarkers,
 } from "../EFTimelineRuler.js";
-import "../../elements/EFThumbnailStrip.js";
 import {
   timelineEditingContext,
   type TimelineEditingContext,

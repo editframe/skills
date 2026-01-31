@@ -173,10 +173,6 @@ import "./elements/EFSurface.ts";
 
 export { EFSurface } from "./elements/EFSurface.ts";
 
-import "./elements/EFThumbnailStrip.ts";
-
-export { EFThumbnailStrip } from "./elements/EFThumbnailStrip.ts";
-
 import "./elements/EFPanZoom.js";
 
 export { EFPanZoom } from "./elements/EFPanZoom.js";

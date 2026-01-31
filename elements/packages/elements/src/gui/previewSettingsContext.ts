@@ -10,7 +10,6 @@ export interface PreviewSettings {
   renderMode: RenderMode;
   resolutionScale: PreviewResolutionScale;
   showStats: boolean;
-  thumbnailCacheMaxSize: number;
 }
 
 /**

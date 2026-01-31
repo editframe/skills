@@ -6,12 +6,10 @@ import "../elements/EFAudio.js";
 import "../elements/EFTimegroup.js";
 import "../elements/EFVideo.js";
 import "../elements/EFWaveform.js";
-import "../elements/EFThumbnailStrip.js";
 import type { EFAudio } from "../elements/EFAudio.js";
 import type { EFTimegroup } from "../elements/EFTimegroup.js";
 import type { EFVideo } from "../elements/EFVideo.js";
 import type { EFWaveform } from "../elements/EFWaveform.js";
-import type { EFThumbnailStrip } from "../elements/EFThumbnailStrip.js";
 import { ContextMixin } from "./ContextMixin.js";
 import "./EFFilmstrip.js";
 import type { EFFilmstrip } from "./EFFilmstrip.js";
@@ -738,78 +736,6 @@ describe.skip("EFFilmstrip", () => {
     }, 1000);
   });
 
-  describe("video thumbnail strips", () => {
-    test("should render ef-thumbnail-strip inside video tracks", async () => {
-      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
-      timegroup.id = nextId();
-      timegroup.setAttribute("mode", "fixed");
-      timegroup.setAttribute("duration", "10s");
-      document.body.appendChild(timegroup);
-
-      const video = document.createElement("ef-video") as EFVideo;
-      video.id = nextId();
-      timegroup.appendChild(video);
-
-      const filmstrip = document.createElement("ef-filmstrip") as EFFilmstrip;
-      filmstrip.target = timegroup.id;
-      document.body.appendChild(filmstrip);
-
-      await timegroup.updateComplete;
-      await video.updateComplete;
-      await filmstrip.updateComplete;
-
-      const timeline = filmstrip.shadowRoot?.querySelector("ef-timeline");
-      await (timeline as any)?.updateComplete;
-      await new Promise((r) => requestAnimationFrame(r));
-      await (timeline as any)?.updateComplete;
-
-      // Video track is inside ef-timeline-row shadow DOM
-      const videoTrack = findTrackInTimeline(timeline, "ef-video-track");
-      expect(videoTrack).toBeTruthy();
-
-      await (videoTrack as any)?.updateComplete;
-
-      const thumbnailStrip = videoTrack?.shadowRoot?.querySelector(
-        "ef-thumbnail-strip",
-      ) as EFThumbnailStrip | null;
-      expect(thumbnailStrip).toBeTruthy();
-    }, 1000);
-
-    test("should set use-intrinsic-duration on thumbnail strip", async () => {
-      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
-      timegroup.id = nextId();
-      timegroup.setAttribute("mode", "fixed");
-      timegroup.setAttribute("duration", "10s");
-      document.body.appendChild(timegroup);
-
-      const video = document.createElement("ef-video") as EFVideo;
-      video.id = nextId();
-      timegroup.appendChild(video);
-
-      const filmstrip = document.createElement("ef-filmstrip") as EFFilmstrip;
-      filmstrip.target = timegroup.id;
-      document.body.appendChild(filmstrip);
-
-      await timegroup.updateComplete;
-      await video.updateComplete;
-      await filmstrip.updateComplete;
-
-      const timeline = filmstrip.shadowRoot?.querySelector("ef-timeline");
-      await (timeline as any)?.updateComplete;
-      await new Promise((r) => requestAnimationFrame(r));
-      await (timeline as any)?.updateComplete;
-
-      // Video track is inside ef-timeline-row shadow DOM
-      const videoTrack = findTrackInTimeline(timeline, "ef-video-track");
-      await (videoTrack as any)?.updateComplete;
-
-      const thumbnailStrip = videoTrack?.shadowRoot?.querySelector(
-        "ef-thumbnail-strip",
-      ) as EFThumbnailStrip | null;
-      expect(thumbnailStrip).toBeTruthy();
-      expect(thumbnailStrip?.useIntrinsicDuration).toBe(true);
-    }, 1000);
-  });
 });
 
 declare global {

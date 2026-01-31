@@ -5,7 +5,6 @@ import { styleMap } from "lit/directives/style-map.js";
 // See preloadTracks.ts for the initialization sequence
 import { TrackItem } from "./TrackItem.js";
 import { renderTrackChildren } from "./renderTrackChildren.js";
-import "../../../elements/EFThumbnailStrip.js";
 
 /**
  * Check if a timegroup is a root timegroup (has no parent timegroup)
@@ -128,14 +127,8 @@ export class EFTimegroupTrack extends TrackItem {
         return nothing;
       }
       
-      return html`
-        <ef-thumbnail-strip
-          target="${elementId}"
-          start-time-ms="0"
-          ${durationMs > 0 ? html`end-time-ms="${durationMs}"` : nothing}
-          pixels-per-ms="${this.pixelsPerMs}"
-        ></ef-thumbnail-strip>
-      `;
+      // Thumbnail strip removed - will be redesigned
+      return nothing;
     }
 
     // Mode info is now shown in the label, track is empty for non-root timegroups

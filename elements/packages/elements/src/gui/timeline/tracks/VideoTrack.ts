@@ -4,7 +4,6 @@ import { customElement, state } from "lit/decorators.js";
 import { createRef, ref } from "lit/directives/ref.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { EFVideo } from "../../../elements/EFVideo.js";
-import "../../../elements/EFThumbnailStrip.js";
 // TrackItem must be pre-loaded before this module is imported
 // See preloadTracks.ts for the initialization sequence
 import { TrackItem } from "./TrackItem.js";
@@ -39,12 +38,7 @@ export class EFVideoTrack extends TrackItem {
         position: relative;
         flex: 0 0 ${THUMBNAIL_HEIGHT}px;
         height: ${THUMBNAIL_HEIGHT}px;
-      }
-      ef-thumbnail-strip {
-        height: 100%;
-        border: none;
-        border-radius: 0;
-        background: transparent;
+        background: rgba(30, 41, 59, 0.6);
       }
       .audio-section {
         position: relative;
@@ -356,10 +350,7 @@ export class EFVideoTrack extends TrackItem {
         >
           <div class="video-content">
             <div class="thumbnail-section">
-              <ef-thumbnail-strip
-                .targetElement=${video}
-                .useIntrinsicDuration=${true}
-              ></ef-thumbnail-strip>
+              <!-- Thumbnail strip removed - will be redesigned -->
             </div>
             ${hasAudioSection
               ? html`<div class="audio-section">

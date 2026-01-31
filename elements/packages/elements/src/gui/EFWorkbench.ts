@@ -23,13 +23,6 @@ import {
   onPreviewSettingsChanged,
 } from "../preview/previewSettings.js";
 import { setShowStats } from "../preview/previewSettings.js";
-import {
-  getThumbnailCacheMaxSize,
-  setThumbnailCacheMaxSize,
-  onThumbnailCacheSettingsChanged,
-} from "../preview/thumbnailCacheSettings.js";
-import { thumbnailImageCache } from "../elements/EFThumbnailStrip.js";
-import type { ThumbnailCacheStats } from "../elements/thumbnailCache.js";
 import { AdaptiveResolutionTracker } from "../preview/AdaptiveResolutionTracker.js";
 import { RenderStats, type PlaybackStats } from "../preview/RenderStats.js";
 import { DomStatsStrategy } from "../preview/statsTrackingStrategy.js";
@@ -427,7 +420,6 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     renderMode: getRenderMode(),
     resolutionScale: getPreviewResolutionScale(),
     showStats: getShowStats(),
-    thumbnailCacheMaxSize: getThumbnailCacheMaxSize(),
   };
   
   // Local state mirrors for direct access (context is primary source of truth)
@@ -439,17 +431,6 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   
   @state()
   private previewResolutionScale: PreviewResolutionScale = this.previewSettings.resolutionScale;
-  
-  @state()
-  private debugThumbnailTimestamps = false;
-  
-  @state()
-  private thumbnailCacheMaxSize = this.previewSettings.thumbnailCacheMaxSize;
-  
-  @state()
-  private thumbnailCacheStats: ThumbnailCacheStats | null = null;
-  
-  private cacheStatsUpdateInterval: number | null = null;
   
   @state()
   private exportOptions = {
@@ -557,18 +538,6 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     // Initialize render stats (always-on collection)
     this.renderStats = new RenderStats(this.adaptiveTracker);
     
-    // Initialize thumbnail cache stats
-    this.updateThumbnailCacheStats();
-    this.startCacheStatsUpdates();
-    
-    // Listen for cache settings changes (keep for thumbnail cache updates)
-    onThumbnailCacheSettingsChanged(() => {
-      const newSize = getThumbnailCacheMaxSize();
-      this.thumbnailCacheMaxSize = newSize;
-      this.previewSettings = { ...this.previewSettings, thumbnailCacheMaxSize: newSize };
-      thumbnailImageCache.setMaxSize(newSize);
-      this.updateThumbnailCacheStats();
-    });
   }
 
   disconnectedCallback(): void {
@@ -949,7 +918,6 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     this.renderMode = this.previewSettings.renderMode;
     this.previewResolutionScale = this.previewSettings.resolutionScale;
     this.showStats = this.previewSettings.showStats;
-    this.thumbnailCacheMaxSize = this.previewSettings.thumbnailCacheMaxSize;
   }
   
   // ==================== End Motion State Detection ====================
@@ -1416,60 +1384,6 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     }
   }
   
-  private async updateThumbnailCacheStats() {
-    try {
-      this.thumbnailCacheStats = await thumbnailImageCache.getStats();
-    } catch (error) {
-      console.warn("Failed to update thumbnail cache stats:", error);
-    }
-  }
-  
-  private startCacheStatsUpdates() {
-    // Update stats every 2 seconds
-    this.cacheStatsUpdateInterval = window.setInterval(() => {
-      this.updateThumbnailCacheStats();
-    }, 2000);
-  }
-  
-  private stopCacheStatsUpdates() {
-    if (this.cacheStatsUpdateInterval !== null) {
-      clearInterval(this.cacheStatsUpdateInterval);
-      this.cacheStatsUpdateInterval = null;
-    }
-  }
-  
-  private handleThumbnailCacheMaxSizeChange(size: number) {
-    setThumbnailCacheMaxSize(size);
-    this.previewSettings = { ...this.previewSettings, thumbnailCacheMaxSize: size };
-    thumbnailImageCache.setMaxSize(size);
-    this.updateThumbnailCacheStats();
-  }
-  
-  private async handleClearThumbnailCache() {
-    await thumbnailImageCache.clear();
-    await this.updateThumbnailCacheStats();
-  }
-  
-  private formatBytes(bytes: number): string {
-    if (bytes < 1024) {
-      return `${bytes} B`;
-    } else if (bytes < 1024 * 1024) {
-      return `${(bytes / 1024).toFixed(1)} KB`;
-    } else {
-      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-    }
-  }
-  
-  private handleDebugThumbnailTimestampsToggle(enabled: boolean) {
-    this.debugThumbnailTimestamps = enabled;
-    // Dispatch event so thumbnail strips can react
-    this.dispatchEvent(new CustomEvent("ef-debug-thumbnail-timestamps-changed", {
-      detail: { enabled },
-      bubbles: true,
-      composed: true,
-    }));
-  }
-  
   private handleShowStatsToggle(enabled: boolean) {
     setShowStats(enabled);
     this.previewSettings = { ...this.previewSettings, showStats: enabled };
@@ -1757,140 +1671,6 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
             line-height: 1.4;
           ">
             Display FPS, CPU pressure, and performance metrics overlay.
-          </div>
-        </div>
-        
-        <!-- Thumbnail Cache Setting -->
-        <div 
-          data-testid="thumbnail-cache-section"
-          style="
-            background: rgba(51, 65, 85, 0.4);
-            border-radius: 8px;
-            padding: 12px;
-            margin-top: 10px;
-          "
-        >
-          <div style="color: #e2e8f0; font-size: 12px; font-weight: 500; margin-bottom: 10px;">Thumbnail Cache</div>
-          
-          <!-- Cache Size Input -->
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-            <label style="color: #94a3b8; font-size: 11px; min-width: 80px;">Max Size:</label>
-            <input
-              data-testid="thumbnail-cache-size"
-              type="number"
-              min="100"
-              max="5000"
-              step="100"
-              .value=${String(this.thumbnailCacheMaxSize)}
-              @change=${(e: Event) => {
-                const value = parseInt((e.target as HTMLInputElement).value, 10);
-                if (!isNaN(value) && value >= 100 && value <= 5000) {
-                  this.handleThumbnailCacheMaxSizeChange(value);
-                }
-              }}
-              style="
-                flex: 1;
-                padding: 4px 8px;
-                background: rgba(30, 41, 59, 0.6);
-                border: 1px solid rgba(148, 163, 184, 0.2);
-                border-radius: 4px;
-                color: #e2e8f0;
-                font-size: 11px;
-              "
-            />
-            <span style="color: #64748b; font-size: 10px;">items</span>
-          </div>
-          
-          <!-- Cache Statistics -->
-          ${this.thumbnailCacheStats ? html`
-            <div 
-              data-testid="thumbnail-cache-stats"
-              style="
-                background: rgba(30, 41, 59, 0.6);
-                border-radius: 6px;
-                padding: 8px;
-                margin-bottom: 10px;
-                font-size: 10px;
-                color: #94a3b8;
-              "
-            >
-              <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                <span>Items:</span>
-                <span style="color: #e2e8f0; font-weight: 500;">${this.thumbnailCacheStats.itemCount} / ${this.thumbnailCacheStats.maxSize}</span>
-              </div>
-              <div style="display: flex; justify-content: space-between;">
-                <span>Size:</span>
-                <span style="color: #e2e8f0; font-weight: 500;">${this.formatBytes(this.thumbnailCacheStats.totalSizeBytes)}</span>
-              </div>
-            </div>
-          ` : ''}
-          
-          <!-- Clear Cache Button -->
-          <button
-            data-testid="thumbnail-cache-clear"
-            @click=${() => this.handleClearThumbnailCache()}
-            style="
-              width: 100%;
-              padding: 6px 10px;
-              background: rgba(239, 68, 68, 0.2);
-              border: 1px solid rgba(239, 68, 68, 0.4);
-              border-radius: 4px;
-              color: #f87171;
-              font-size: 11px;
-              font-weight: 500;
-              cursor: pointer;
-              transition: all 0.15s ease;
-            "
-            onmouseover="this.style.background='rgba(239, 68, 68, 0.3)'"
-            onmouseout="this.style.background='rgba(239, 68, 68, 0.2)'"
-          >
-            Clear Cache
-          </button>
-          
-          <div style="
-            margin-top: 8px;
-            color: #64748b;
-            font-size: 10px;
-            line-height: 1.4;
-          ">
-            Persistent cache survives page reloads. Stored in IndexedDB.
-          </div>
-        </div>
-        
-        <!-- Debug Thumbnails Setting -->
-        <div style="
-          background: rgba(51, 65, 85, 0.4);
-          border-radius: 8px;
-          padding: 12px;
-          margin-top: 10px;
-        ">
-          <label style="
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-          ">
-            <input
-              type="checkbox"
-              ?checked=${this.debugThumbnailTimestamps}
-              @change=${(e: Event) => this.handleDebugThumbnailTimestampsToggle((e.target as HTMLInputElement).checked)}
-              style="
-                width: 14px;
-                height: 14px;
-                accent-color: #f59e0b;
-                cursor: pointer;
-              "
-            />
-            <span style="color: #e2e8f0; font-size: 12px; font-weight: 500;">Show Thumbnail Timestamps</span>
-          </label>
-          
-          <div style="
-            margin-top: 8px;
-            color: #64748b;
-            font-size: 10px;
-            line-height: 1.4;
-          ">
-            Overlays capture timestamps on timeline thumbnails for debugging.
           </div>
         </div>
       </div>
