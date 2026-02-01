@@ -328,6 +328,7 @@ export async function captureFromClone(
   
   try {
     const renderMode = getEffectiveRenderMode();
+    console.log(`[captureFromClone] Using render mode: ${renderMode}`);
     
     if (renderMode === "native") {
       // NATIVE PATH: Render the seeked renderClone directly from live DOM
@@ -494,9 +495,6 @@ export async function* generateThumbnailsFromClone(
     
     // Seek the clone to the target time
     await renderClone.seekForRender(timeMs);
-    
-    // Wait for browser to process animations/transforms
-    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
     
     // Capture from the seeked clone
     const canvas = await captureFromClone(renderClone, renderContainer, {
