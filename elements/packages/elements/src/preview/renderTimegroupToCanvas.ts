@@ -545,6 +545,10 @@ export async function* generateThumbnailsFromClone(
     // Seek the clone to the target time
     await renderClone.seekForRender(timeMs);
     
+    // Wait for layout to stabilize after seek
+    // seekForRender forces style recalc but layout may not be fully stable
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    
     // Capture from the seeked clone, passing explicit timeMs
     const canvas = await captureFromClone(renderClone, renderContainer, {
       scale,
@@ -555,6 +559,9 @@ export async function* generateThumbnailsFromClone(
     
     // Yield the result with explicit timestamp association
     yield { timeMs, canvas };
+    
+    // Small delay to let clone fully reset before next operation
+    await new Promise(resolve => setTimeout(resolve, 16));
   }
 }
 
