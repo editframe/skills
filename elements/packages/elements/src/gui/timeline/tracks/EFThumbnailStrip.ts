@@ -8,7 +8,11 @@ import { EFVideo } from "../../../elements/EFVideo.js";
 import { TargetController } from "../../../elements/TargetController.js";
 import { ThumbnailExtractor } from "../../../elements/EFMedia/shared/ThumbnailExtractor.js";
 import type { BaseMediaEngine } from "../../../elements/EFMedia/BaseMediaEngine.js";
-import { generateThumbnails } from "../../../preview/renderTimegroupToCanvas.js";
+import { 
+  generateThumbnailsFromClone,
+  type GeneratedThumbnail,
+  type ThumbnailQueue 
+} from "../../../preview/renderTimegroupToCanvas.js";
 import { quantizeToFrameTimeMs } from "../../../utils/frameTime.js";
 import { TWMixin } from "../../TWMixin.js";
 import {
@@ -18,6 +22,45 @@ import {
 
 /** Padding for virtual rendering */
 const VIRTUAL_RENDER_PADDING_PX = 100;
+
+/**
+ * Mutable queue for timestamp generation.
+ * Allows updating timestamps while generator is consuming them.
+ */
+class MutableTimestampQueue implements ThumbnailQueue {
+  #timestamps: number[] = [];
+
+  /** Replace entire queue with new timestamps (sorted) */
+  reset(timestamps: number[]): void {
+    this.#timestamps = [...timestamps].sort((a, b) => a - b);
+  }
+
+  /** Keep only these specific timestamps (maintains order) */
+  retainOnly(timestamps: number[]): void {
+    const keep = new Set(timestamps);
+    this.#timestamps = this.#timestamps.filter(t => keep.has(t));
+  }
+
+  /** Append timestamps to end (sorted) */
+  append(timestamps: number[]): void {
+    this.#timestamps.push(...[...timestamps].sort((a, b) => a - b));
+  }
+
+  /** Get next timestamp (removes from front) */
+  shift(): number | undefined {
+    return this.#timestamps.shift();
+  }
+
+  /** Get remaining timestamps without modifying queue */
+  remaining(): number[] {
+    return [...this.#timestamps];
+  }
+
+  /** Check if queue is empty */
+  isEmpty(): boolean {
+    return this.#timestamps.length === 0;
+  }
+}
 
 /**
  * Descriptor for a thumbnail to render
@@ -114,8 +157,12 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
   #renderRequested = false;
   #canvasContainer: Ref<HTMLDivElement> = createRef();
   #lastRequiredTimestamps = "";
-  #captureAbortController: AbortController | null = null;
   #thumbnailCache = new Map<number, CanvasImageSource>();
+  
+  // Timegroup thumbnail generation state
+  #timegroupQueue = new MutableTimestampQueue();
+  #timegroupClone: { clone: EFTimegroup; container: HTMLElement; cleanup: () => void } | null = null;
+  #timegroupGenerator: AsyncGenerator<GeneratedThumbnail> | null = null;
 
   /**
    * Check if target is valid (EFVideo or root EFTimegroup)
@@ -153,7 +200,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
   disconnectedCallback(): void {
     super.disconnectedCallback();
     this.#abortController?.abort();
-    this.#captureAbortController?.abort();
+    this.#cleanupTimegroupGenerator();
   }
 
   protected willUpdate(
@@ -289,10 +336,12 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
       console.log("Required thumbnails:", timestampsString);
       this.#lastRequiredTimestamps = timestampsString;
       
-      // Abort previous capture and start new one
-      this.#captureAbortController?.abort();
-      this.#captureAbortController = new AbortController();
-      this.#startCapture(requiredTimestamps, this.#captureAbortController.signal);
+      // Update capture queue
+      if (this.targetElement instanceof EFVideo) {
+        this.#updateVideoCapture(requiredTimestamps);
+      } else if (this.targetElement instanceof EFTimegroup) {
+        this.#updateTimegroupCapture(requiredTimestamps);
+      }
     }
 
     if (signal.aborted) return;
@@ -305,30 +354,23 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
   }
 
   /**
-   * Start capturing thumbnails for the given timestamps
+   * Update video thumbnail capture
    */
-  async #startCapture(timestamps: number[], signal: AbortSignal): Promise<void> {
-    if (this.targetElement instanceof EFVideo) {
-      await this.#captureVideoThumbnails(timestamps, signal);
-    } else if (this.targetElement instanceof EFTimegroup) {
-      await this.#captureTimegroupThumbnails(timestamps, signal);
-    }
-  }
-
-  /**
-   * Capture video thumbnails
-   */
-  async #captureVideoThumbnails(timestamps: number[], signal: AbortSignal): Promise<void> {
+  async #updateVideoCapture(timestamps: number[]): Promise<void> {
     const video = this.targetElement as EFVideo;
     if (!video) return;
+
+    // Filter out cached timestamps
+    const uncached = timestamps.filter(t => !this.#thumbnailCache.has(t));
+    if (uncached.length === 0) return;
 
     const mediaEngineTask = video.mediaEngineTask;
     if (!mediaEngineTask) return;
 
     const mediaEngine = await mediaEngineTask.taskComplete;
-    if (!mediaEngine || signal.aborted) return;
+    if (!mediaEngine) return;
 
-    const sourceTimestamps = timestamps.map(t => this.#getSourceTimeMs(t));
+    const sourceTimestamps = uncached.map(t => this.#getSourceTimeMs(t));
 
     const extractor = new ThumbnailExtractor(mediaEngine as unknown as BaseMediaEngine);
     const scrubRendition = mediaEngine.videoRendition;
@@ -338,15 +380,12 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
       sourceTimestamps,
       scrubRendition,
       video.durationMs ?? 0,
-      signal,
     );
 
-    if (signal.aborted) return;
-
     // Store in cache and trigger redraw
-    for (let i = 0; i < timestamps.length; i++) {
+    for (let i = 0; i < uncached.length; i++) {
       const thumbnail = results[i]?.thumbnail;
-      const timestamp = timestamps[i];
+      const timestamp = uncached[i];
       if (thumbnail && timestamp !== undefined) {
         this.#thumbnailCache.set(timestamp, thumbnail);
       }
@@ -356,33 +395,92 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
   }
 
   /**
-   * Capture timegroup thumbnails using generator (single clone for all thumbnails)
+   * Update timegroup thumbnail capture using mutable queue
    */
-  async #captureTimegroupThumbnails(timestamps: number[], signal: AbortSignal): Promise<void> {
+  async #updateTimegroupCapture(timestamps: number[]): Promise<void> {
     const timegroup = this.targetElement as EFTimegroup;
     if (!timegroup) return;
 
-    try {
-      for await (const { timeMs, canvas } of generateThumbnails(
-        timegroup,
-        timestamps,
-        {
-          scale: 0.25,
-          contentReadyMode: "blocking",
-          blockingTimeoutMs: 1000,
-        },
-        signal,
-      )) {
-        if (!signal.aborted) {
-          this.#thumbnailCache.set(timeMs, canvas);
-          this.#scheduleRender();
+    // Filter out cached timestamps
+    const uncached = timestamps.filter(t => !this.#thumbnailCache.has(t)).sort((a, b) => a - b);
+    if (uncached.length === 0) return;
+
+    // If generator is running, update queue intelligently
+    if (this.#timegroupGenerator) {
+      const currentRemaining = this.#timegroupQueue.remaining();
+      const overlap = uncached.filter(t => currentRemaining.includes(t));
+      const newWork = uncached.filter(t => !currentRemaining.includes(t));
+
+      if (overlap.length > 0) {
+        // Keep generator running, update queue
+        this.#timegroupQueue.retainOnly(overlap);
+        if (newWork.length > 0) {
+          this.#timegroupQueue.append(newWork);
         }
+      } else {
+        // No overlap, restart with new timestamps
+        this.#cleanupTimegroupGenerator();
+        await this.#startTimegroupGenerator(timegroup, uncached);
+      }
+    } else {
+      // No generator running, start fresh
+      await this.#startTimegroupGenerator(timegroup, uncached);
+    }
+  }
+
+  /**
+   * Start timegroup thumbnail generator
+   */
+  async #startTimegroupGenerator(timegroup: EFTimegroup, timestamps: number[]): Promise<void> {
+    // Create render clone
+    this.#timegroupClone = await timegroup.createRenderClone();
+    
+    // Initialize queue
+    this.#timegroupQueue.reset(timestamps);
+    
+    // Start generator
+    this.#timegroupGenerator = generateThumbnailsFromClone(
+      this.#timegroupClone.clone,
+      this.#timegroupClone.container,
+      this.#timegroupQueue,
+      {
+        scale: 0.25,
+        contentReadyMode: "blocking",
+        blockingTimeoutMs: 1000,
+      },
+    );
+    
+    // Consume generator
+    this.#consumeTimegroupGenerator();
+  }
+
+  /**
+   * Consume generator and handle cleanup
+   */
+  async #consumeTimegroupGenerator(): Promise<void> {
+    if (!this.#timegroupGenerator) return;
+
+    try {
+      for await (const { timeMs, canvas } of this.#timegroupGenerator) {
+        this.#thumbnailCache.set(timeMs, canvas);
+        this.#scheduleRender();
       }
     } catch (err) {
-      if (err instanceof DOMException && err.name === "AbortError") {
-        return; // Expected cancellation
-      }
-      console.warn("Failed to capture timegroup thumbnails:", err);
+      console.warn("Timegroup thumbnail generation error:", err);
+    } finally {
+      // Generator finished → cleanup immediately
+      this.#cleanupTimegroupGenerator();
+    }
+  }
+
+  /**
+   * Cleanup timegroup generator and clone
+   */
+  #cleanupTimegroupGenerator(): void {
+    this.#timegroupGenerator = null;
+    if (this.#timegroupClone) {
+      this.#timegroupClone.cleanup();
+      this.#timegroupClone = null;
     }
   }
 

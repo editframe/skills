@@ -444,6 +444,70 @@ export interface GenerateThumbnailsOptions {
 }
 
 /**
+ * Mutable queue interface for timestamp generation.
+ * Allows updating the queue while generator is consuming it.
+ */
+export interface ThumbnailQueue {
+  /** Get next timestamp (removes from front) */
+  shift(): number | undefined;
+}
+
+/**
+ * Generate thumbnails using an existing render clone and mutable queue.
+ * The queue can be modified while generation is in progress.
+ * 
+ * @param renderClone - Pre-created render clone to use
+ * @param renderContainer - Container for the render clone
+ * @param queue - Mutable queue that provides timestamps
+ * @param options - Capture options (scale, contentReadyMode, etc.)
+ * @yields Objects with { timeMs, canvas } for each captured thumbnail
+ * 
+ * @example
+ * ```ts
+ * const queue = new MutableTimestampQueue();
+ * queue.reset([0, 100, 200]);
+ * 
+ * for await (const { timeMs, canvas } of generateThumbnailsFromClone(clone, container, queue)) {
+ *   cache.set(timeMs, canvas);
+ *   // Queue can be modified here while generator continues
+ * }
+ * ```
+ */
+export async function* generateThumbnailsFromClone(
+  renderClone: EFTimegroup,
+  renderContainer: HTMLElement,
+  queue: ThumbnailQueue,
+  options: GenerateThumbnailsOptions = {},
+): AsyncGenerator<GeneratedThumbnail> {
+  const {
+    scale = DEFAULT_CAPTURE_SCALE,
+    contentReadyMode = "immediate",
+    blockingTimeoutMs = DEFAULT_BLOCKING_TIMEOUT_MS,
+  } = options;
+
+  while (true) {
+    const timeMs = queue.shift();
+    if (timeMs === undefined) {
+      // Queue is empty, generator exits
+      break;
+    }
+    
+    // Seek the clone to the target time
+    await renderClone.seekForRender(timeMs);
+    
+    // Capture from the seeked clone
+    const canvas = await captureFromClone(renderClone, renderContainer, {
+      scale,
+      contentReadyMode,
+      blockingTimeoutMs,
+    });
+    
+    // Yield the result with explicit timestamp association
+    yield { timeMs, canvas };
+  }
+}
+
+/**
  * Generate thumbnails for multiple timestamps efficiently using a single render clone.
  * This avoids the overhead of creating/destroying a clone for each thumbnail.
  * 
