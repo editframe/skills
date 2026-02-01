@@ -13,6 +13,7 @@ import {
   type GeneratedThumbnail,
   type ThumbnailQueue 
 } from "../../../preview/renderTimegroupToCanvas.js";
+import { createPreviewContainer } from "../../../preview/previewTypes.js";
 import { quantizeToFrameTimeMs } from "../../../utils/frameTime.js";
 import { TWMixin } from "../../TWMixin.js";
 import {
@@ -163,6 +164,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
   #timegroupQueue = new MutableTimestampQueue();
   #timegroupClone: { clone: EFTimegroup; container: HTMLElement; cleanup: () => void } | null = null;
   #timegroupGenerator: AsyncGenerator<GeneratedThumbnail> | null = null;
+  #previewContainer: HTMLDivElement | null = null;
 
   /**
    * Check if target is valid (EFVideo or root EFTimegroup)
@@ -435,13 +437,37 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     // Create render clone
     this.#timegroupClone = await timegroup.createRenderClone();
     
+    // Create fresh preview container (like video rendering does)
+    const containerWidth = timegroup.offsetWidth || 1920;
+    const containerHeight = timegroup.offsetHeight || 1080;
+    const background = getComputedStyle(timegroup).background || "#000";
+    
+    this.#previewContainer = createPreviewContainer({
+      width: containerWidth,
+      height: containerHeight,
+      background,
+    });
+    
+    // Move clone from old container to new container
+    this.#previewContainer.appendChild(this.#timegroupClone.clone);
+    
+    // Add marker class for animation tracking
+    this.#previewContainer.classList.add('ef-render-clone-container');
+    
+    // Position off-screen
+    this.#previewContainer.style.cssText += ';position:fixed;left:-99999px;top:-99999px;pointer-events:none;';
+    document.body.appendChild(this.#previewContainer);
+    
+    // Force layout/reflow
+    void this.#timegroupClone.clone.offsetHeight;
+    
     // Initialize queue
     this.#timegroupQueue.reset(timestamps);
     
-    // Start generator
+    // Start generator using the fresh container
     this.#timegroupGenerator = generateThumbnailsFromClone(
       this.#timegroupClone.clone,
-      this.#timegroupClone.container,
+      this.#previewContainer,
       this.#timegroupQueue,
       {
         scale: 0.25,
@@ -478,6 +504,14 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
    */
   #cleanupTimegroupGenerator(): void {
     this.#timegroupGenerator = null;
+    
+    // Remove preview container from DOM
+    if (this.#previewContainer) {
+      this.#previewContainer.remove();
+      this.#previewContainer = null;
+    }
+    
+    // Cleanup render clone
     if (this.#timegroupClone) {
       this.#timegroupClone.cleanup();
       this.#timegroupClone = null;
