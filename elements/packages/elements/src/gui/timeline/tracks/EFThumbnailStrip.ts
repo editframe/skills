@@ -391,7 +391,8 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
           const result = await captureTimegroupAtTime(timegroup, {
             timeMs: thumbnail.timeMs,
             scale: 0.25, // Low resolution for performance
-            contentReadyMode: "immediate",
+            contentReadyMode: "blocking",
+            blockingTimeoutMs: 1000, // 1 second timeout
           });
 
           if (result) {
