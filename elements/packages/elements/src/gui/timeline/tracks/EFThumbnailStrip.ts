@@ -461,6 +461,19 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     // Force layout/reflow
     void this.#timegroupClone.clone.offsetHeight;
     
+    // CRITICAL: Wait for Lit to process shadow DOM updates after moving to new container
+    await this.#timegroupClone.clone.updateComplete;
+    
+    // Also wait for all nested Lit elements to update
+    const litElements = this.#previewContainer.querySelectorAll('*');
+    const updatePromises: Promise<any>[] = [];
+    for (const el of litElements) {
+      if ('updateComplete' in el) {
+        updatePromises.push((el as any).updateComplete);
+      }
+    }
+    await Promise.all(updatePromises);
+    
     // Initialize queue
     this.#timegroupQueue.reset(timestamps);
     
