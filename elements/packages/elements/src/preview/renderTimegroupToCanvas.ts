@@ -496,6 +496,17 @@ export async function* generateThumbnailsFromClone(
     // Seek the clone to the target time
     await renderClone.seekForRender(timeMs);
     
+    // CRITICAL: Wait for browser to paint the seeked state
+    // seekForRender updates animations and forces style recalc, but doesn't guarantee paint
+    // Multiple animation frames to ensure paint completes
+    await new Promise<void>(resolve => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setTimeout(() => resolve(), 0);
+        });
+      });
+    });
+    
     // DEBUG: Check text segment content
     const textSegments = renderClone.querySelectorAll('ef-text-segment');
     console.log(`[generateThumbnailsFromClone] ${textSegments.length} text segments at ${timeMs}ms:`);
