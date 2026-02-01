@@ -488,6 +488,9 @@ function serializeElement(
       if (child.nodeType === Node.TEXT_NODE) {
         const text = child.textContent;
         if (text && text.length > 0) {
+          if (element.tagName === 'EF-TEXT-SEGMENT') {
+            console.log(`[serialize] Adding text node: "${text}"`);
+          }
           parts.push(escapeXML(text));
         }
       } else if (child.nodeType === Node.ELEMENT_NODE) {
