@@ -301,30 +301,6 @@ function serializeCanvas(
   
   const finalStyle = filteredParts.join(';');
   
-  // DIAGNOSTIC: Log dimensions for EF-IMAGE elements
-  if (sourceElement.tagName === "EF-IMAGE") {
-    console.log("[ASPECT_DIAG] serializeCanvas:", JSON.stringify({
-      tag: sourceElement.tagName,
-      src: (sourceElement as any).src || "unknown",
-      canvasBuffer: {
-        width: canvas.width,
-        height: canvas.height,
-        aspectRatio: (canvas.width / canvas.height).toFixed(3),
-      },
-      computedFromHost: {
-        width: computedWidth,
-        height: computedHeight,
-        aspectRatio: computedWidth && computedHeight ? (parseFloat(computedWidth) / parseFloat(computedHeight)).toFixed(3) : "N/A",
-      },
-      finalCSSBeingApplied: {
-        width: filteredParts.find(s => s.trim().startsWith('width:'))?.split(':')[1]?.trim(),
-        height: filteredParts.find(s => s.trim().startsWith('height:'))?.split(':')[1]?.trim(),
-        objectFit: filteredParts.find(s => s.trim().startsWith('object-fit:'))?.split(':')[1]?.trim(),
-        objectPosition: filteredParts.find(s => s.trim().startsWith('object-position:'))?.split(':')[1]?.trim(),
-      }
-    }));
-  }
-  
   // Check if we need to preserve alpha channel
   const preserveAlpha = shouldPreserveAlpha(sourceElement);
   
@@ -387,33 +363,6 @@ function serializeImageAsCanvas(
   canvasJobs: CanvasJob[],
   options: SerializationOptions
 ): void {
-  // DIAGNOSTIC: Log dimensions for shadow img path
-  if (sourceElement.tagName === "EF-IMAGE") {
-    const hostCs = getComputedStyle(sourceElement);
-    const imgCs = getComputedStyle(img);
-    console.log("[ASPECT_DIAG] serializeImageAsCanvas:", JSON.stringify({
-      tag: sourceElement.tagName,
-      src: (sourceElement as any).src || img.src || "unknown",
-      hostElement: {
-        offsetWidth: (sourceElement as HTMLElement).offsetWidth,
-        offsetHeight: (sourceElement as HTMLElement).offsetHeight,
-        computedWidth: hostCs.width,
-        computedHeight: hostCs.height,
-        objectFit: hostCs.objectFit,
-      },
-      shadowImg: {
-        naturalWidth: img.naturalWidth,
-        naturalHeight: img.naturalHeight,
-        width: img.width,
-        height: img.height,
-        computedWidth: imgCs.width,
-        computedHeight: imgCs.height,
-        objectFit: imgCs.objectFit,
-        aspectRatio: (img.naturalWidth / img.naturalHeight).toFixed(3),
-      }
-    }));
-  }
-  
   // Convert img to canvas for serialization
   const canvas = document.createElement('canvas');
   canvas.width = img.naturalWidth;

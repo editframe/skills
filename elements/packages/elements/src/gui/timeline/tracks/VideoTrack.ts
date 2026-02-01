@@ -4,6 +4,7 @@ import { customElement, state } from "lit/decorators.js";
 import { createRef, ref } from "lit/directives/ref.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { EFVideo } from "../../../elements/EFVideo.js";
+
 // TrackItem must be pre-loaded before this module is imported
 // See preloadTracks.ts for the initialization sequence
 import { TrackItem } from "./TrackItem.js";
@@ -352,7 +353,7 @@ export class EFVideoTrack extends TrackItem {
           <div class="video-content">
             <div class="thumbnail-section">
               <ef-thumbnail-strip
-                target=${elementId}
+                .targetElement=${this.element}
                 thumbnail-height=${THUMBNAIL_HEIGHT}
                 thumbnail-spacing-px="48"
                 pixels-per-ms=${this.pixelsPerMs}

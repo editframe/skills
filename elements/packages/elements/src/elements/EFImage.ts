@@ -178,7 +178,6 @@ export class EFImage extends EFTemporal(
     // JPEG images don't have alpha, PNG/WebP may have alpha
     const mimeType = blob.type.toLowerCase();
     this.#hasAlpha = !mimeType.includes("jpeg") && !mimeType.includes("jpg");
-    console.log(`[EFImage] Loaded image: mimeType=${mimeType}, hasAlpha=${this.#hasAlpha}`);
     
     image.src = URL.createObjectURL(blob);
 
@@ -212,8 +211,6 @@ export class EFImage extends EFTemporal(
     const ctx = this.canvasRef.value.getContext("2d");
     if (!ctx) throw new Error("Canvas 2d context not ready");
     
-    console.log(`[EFImage] Image loaded - width: ${image.width}, height: ${image.height}, naturalWidth: ${image.naturalWidth}, naturalHeight: ${image.naturalHeight}`);
-    
     // Determine canvas dimensions
     // For SVG images without explicit dimensions, image.width/height may be 0
     // In that case, fall back to naturalWidth/naturalHeight or element's computed size
@@ -235,22 +232,17 @@ export class EFImage extends EFTemporal(
         canvasWidth = 300;
         canvasHeight = 150;
       }
-      
-      console.log(`[EFImage] SVG has no intrinsic dimensions, using fallback: ${canvasWidth}x${canvasHeight}`);
     }
     
     this.canvasRef.value.width = canvasWidth;
     this.canvasRef.value.height = canvasHeight;
     
-    console.log(`[EFImage] Drawing to canvas: ${canvasWidth}x${canvasHeight}, image complete: ${image.complete}`);
-    
     // Ensure the image is fully decoded before drawing
     // This is especially important for SVGs
     try {
       await image.decode();
-      console.log(`[EFImage] Image decoded successfully`);
     } catch (decodeError) {
-      console.warn(`[EFImage] Image decode failed, attempting to draw anyway:`, decodeError);
+      // Image decode failed, attempting to draw anyway
     }
     
     // Clear canvas first to ensure we're starting fresh
@@ -258,25 +250,6 @@ export class EFImage extends EFTemporal(
     
     try {
       ctx.drawImage(image, 0, 0, canvasWidth, canvasHeight);
-      console.log(`[EFImage] drawImage called successfully`);
-      
-      // Verify something was actually drawn
-      const imageData = ctx.getImageData(0, 0, Math.min(canvasWidth, 10), Math.min(canvasHeight, 10));
-      const hasContent = imageData.data.some((byte, i) => i % 4 !== 3 && byte !== 0);
-      console.log(`[EFImage] Canvas has content: ${hasContent}`);
-      
-      // Sample some pixel data for debugging
-      console.log(`[EFImage] Sample pixels:`, Array.from(imageData.data.slice(0, 16)));
-      
-      // Export canvas as data URL for inspection
-      const dataUrl = this.canvasRef.value.toDataURL();
-      console.log(`[EFImage] Canvas data URL (first 200 chars):`, dataUrl.substring(0, 200));
-      
-      // Create a test image to verify the data URL is valid
-      const testImg = new Image();
-      testImg.onload = () => console.log(`[EFImage] Canvas data URL is valid and loadable`);
-      testImg.onerror = () => console.error(`[EFImage] Canvas data URL failed to load!`);
-      testImg.src = dataUrl;
     } catch (drawError) {
       console.error(`[EFImage] drawImage failed:`, drawError);
       throw drawError;

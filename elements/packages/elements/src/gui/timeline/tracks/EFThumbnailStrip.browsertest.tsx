@@ -140,4 +140,49 @@ describe("EFThumbnailStrip", () => {
     strip.remove();
     video.remove();
   });
+
+  test("accepts direct targetElement assignment", async () => {
+    const video = document.createElement("ef-video");
+    video.setAttribute("src", "https://example.com/video.mp4");
+    document.body.appendChild(video);
+
+    const strip = document.createElement("ef-thumbnail-strip") as any;
+    strip.targetElement = video; // Direct assignment instead of ID
+    document.body.appendChild(strip);
+
+    await strip.updateComplete;
+
+    const errorMessage = strip.shadowRoot?.querySelector(".error-message");
+    expect(errorMessage).toBeFalsy();
+    expect(strip.targetElement).toBe(video);
+
+    strip.remove();
+    video.remove();
+  });
+
+  test("prefers direct targetElement over target ID", async () => {
+    const video1 = document.createElement("ef-video");
+    video1.id = "video-1";
+    video1.setAttribute("src", "https://example.com/video1.mp4");
+    document.body.appendChild(video1);
+
+    const video2 = document.createElement("ef-video");
+    video2.id = "video-2";
+    video2.setAttribute("src", "https://example.com/video2.mp4");
+    document.body.appendChild(video2);
+
+    const strip = document.createElement("ef-thumbnail-strip") as any;
+    strip.setAttribute("target", "video-1"); // Set via ID
+    strip.targetElement = video2; // But also set directly
+    document.body.appendChild(strip);
+
+    await strip.updateComplete;
+
+    // Direct assignment should take precedence
+    expect(strip.targetElement).toBe(video2);
+
+    strip.remove();
+    video1.remove();
+    video2.remove();
+  });
 });

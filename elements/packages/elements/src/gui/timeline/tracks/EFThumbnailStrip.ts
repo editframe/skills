@@ -82,6 +82,9 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
   @property({ type: String })
   target = "";
 
+  @property({ attribute: false })
+  targetElement: Element | null = null;
+
   @property({ type: Number, attribute: "thumbnail-height" })
   thumbnailHeight = 24;
 
@@ -90,9 +93,6 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
 
   @property({ type: Number, attribute: "pixels-per-ms" })
   pixelsPerMs = 0.04;
-
-  @state()
-  targetElement: Element | null = null;
 
   @consume({ context: timelineStateContext, subscribe: true })
   @state()
@@ -133,7 +133,8 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
 
   connectedCallback(): void {
     super.connectedCallback();
-    if (this.target) {
+    // Only use TargetController if target is set and targetElement is not directly set
+    if (this.target && !this.targetElement) {
       this.#targetController = new TargetController(this);
     }
   }
@@ -148,8 +149,9 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
   ): void {
     super.willUpdate(changedProperties);
 
+    // Create TargetController if target is set and targetElement is not directly set
     if (changedProperties.has("target")) {
-      if (this.target && !this.#targetController) {
+      if (this.target && !this.targetElement && !this.#targetController) {
         this.#targetController = new TargetController(this);
       }
     }
@@ -455,13 +457,13 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
   }
 
   render() {
-    // Error: No target specified
-    if (!this.target) {
+    // Error: No target specified (neither target string nor targetElement)
+    if (!this.target && !this.targetElement) {
       return html`<div class="error-message">No target specified</div>`;
     }
 
-    // Error: Target element not found
-    if (!this.targetElement) {
+    // Error: Target element not found (when using target string)
+    if (this.target && !this.targetElement) {
       return html`<div class="error-message">
         Target element "${this.target}" not found
       </div>`;

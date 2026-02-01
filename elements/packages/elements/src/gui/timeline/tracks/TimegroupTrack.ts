@@ -119,14 +119,8 @@ export class EFTimegroupTrack extends TrackItem {
     const shouldShow = this.shouldShowFilmstrip;
     
     if (shouldShow) {
-      const elementId = this.element.id;
-      
-      if (!elementId) {
-        return nothing;
-      }
-      
       return html`<ef-thumbnail-strip
-        target=${elementId}
+        .targetElement=${this.element}
         thumbnail-height=${FILMSTRIP_ROW_HEIGHT}
         thumbnail-spacing-px="96"
         pixels-per-ms=${this.pixelsPerMs}
