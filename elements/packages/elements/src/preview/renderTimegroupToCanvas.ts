@@ -495,6 +495,9 @@ export async function* generateThumbnailsFromClone(
     // Seek the clone to the target time
     await renderClone.seekForRender(timeMs);
     
+    // Wait for browser to process animations/transforms
+    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+    
     // Capture from the seeked clone
     const canvas = await captureFromClone(renderClone, renderContainer, {
       scale,
