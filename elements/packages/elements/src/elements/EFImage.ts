@@ -4,7 +4,6 @@ import { createRef, ref } from "lit/directives/ref.js";
 import {
   type FrameRenderable,
   type FrameState,
-  createFrameTaskWrapper,
   PRIORITY_IMAGE,
 } from "../preview/FrameController.js";
 import { EFSourceMixin } from "./EFSourceMixin.js";
@@ -265,15 +264,8 @@ export class EFImage extends EFTemporal(
     this.#currentObjectUrl = image.src;
   }
 
-  /**
-   * @deprecated Use FrameRenderable methods (prepareFrame, renderFrame) via FrameController instead.
-   * This is a compatibility wrapper that delegates to the new system.
-   */
-  frameTask = createFrameTaskWrapper(this);
-
   // ============================================================================
   // FrameRenderable Implementation
-  // Centralized frame control - no Lit Tasks
   // ============================================================================
 
   /**

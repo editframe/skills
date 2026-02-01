@@ -10,9 +10,8 @@ interface PlaybackHost extends HTMLElement, ReactiveControllerHost {
   currentTimeMs: number;
   durationMs: number;
   endTimeMs: number;
-  frameTask: { run(): void; taskComplete: Promise<unknown> };
-  /** New centralized frame controller (replaces frameTask) */
-  frameController?: { 
+  /** Centralized frame controller */
+  frameController: { 
     renderFrame(timeMs: number, options?: RenderFrameOptions): Promise<void>; 
     abort(): void;
   };
@@ -65,10 +64,6 @@ export class PlaybackController implements ReactiveController {
   #playbackAnimationFrameRequest: number | null = null;
   #pendingAudioContext: AudioContext | null = null;
   #AUDIO_PLAYBACK_SLICE_MS = ((47 * 1024) / 48000) * 1000;
-
-  #frameTaskInProgress = false;
-  #pendingFrameTaskRun = false;
-  #processingPendingFrameTask = false;
 
   #currentTime: number | undefined = undefined;
   #seekInProgress = false;
@@ -134,7 +129,12 @@ export class PlaybackController implements ReactiveController {
     this.#currentTime = time;
     this.#seekInProgress = true;
 
-    this.#runSeek(time).finally(() => {
+    this.#runSeek(time).finally(async () => {
+      // CRITICAL: Coordinate animations after seek completes
+      // This ensures animations are positioned correctly, not playing naturally
+      const { updateAnimations } = await import("../elements/updateAnimations.js");
+      updateAnimations(this.#host as any);
+      
       if (
         this.#pendingSeekTime !== undefined &&
         this.#pendingSeekTime !== time
@@ -327,70 +327,26 @@ export class PlaybackController implements ReactiveController {
     this.#currentTimeMsProvider.setValue(this.currentTimeMs);
   }
 
-  static readonly THROTTLED_FRAME_TASK_MAX_WAITS = 100;
-  
   /**
-   * Run frame rendering with throttling to prevent concurrent executions.
-   * Uses the new FrameController when available, falling back to frameTask.
+   * Run frame rendering via FrameController.
    */
   async runThrottledFrameTask(): Promise<void> {
-    // Use FrameController if available (new centralized system)
-    if (this.#host.frameController) {
-      // FrameController handles its own cancellation and queuing internally
-      // Animation updates are centralized via the onAnimationsUpdate callback
-      try {
-        await this.#host.frameController.renderFrame(this.currentTimeMs, {
-          onAnimationsUpdate: (root: Element) => {
-            // Update CSS visibility and animation synchronization after frame renders
-            // This sets display:none on elements outside their time range
-            updateAnimations(root as unknown as AnimatableElement);
-          },
-        });
-      } catch (error) {
-        // Silently ignore AbortErrors (expected during cancellation)
-        if (error instanceof DOMException && error.name === "AbortError") {
-          return;
-        }
-        console.error("FrameController error:", error);
-      }
-      return;
-    }
-
-    // Fallback to old frameTask system (for backwards compatibility)
-    if (this.#frameTaskInProgress) {
-      this.#pendingFrameTaskRun = true;
-      let waitLoopCount = 0;
-      while (this.#frameTaskInProgress) {
-        waitLoopCount++;
-        if (waitLoopCount > PlaybackController.THROTTLED_FRAME_TASK_MAX_WAITS) {
-          // Safety break to prevent infinite loops
-          break;
-        }
-        await this.#host.frameTask.taskComplete;
-      }
-      return;
-    }
-
-    this.#frameTaskInProgress = true;
-
+    // FrameController handles its own cancellation and queuing internally
+    // Animation updates are centralized via the onAnimationsUpdate callback
     try {
-      await this.#host.frameTask.run();
+      await this.#host.frameController.renderFrame(this.currentTimeMs, {
+        onAnimationsUpdate: (root: Element) => {
+          // Update CSS visibility and animation synchronization after frame renders
+          // This sets display:none on elements outside their time range
+          updateAnimations(root as unknown as AnimatableElement);
+        },
+      });
     } catch (error) {
-      console.error("Frame task error:", error);
-    } finally {
-      this.#frameTaskInProgress = false;
-
-      if (this.#pendingFrameTaskRun && !this.#processingPendingFrameTask) {
-        this.#pendingFrameTaskRun = false;
-        this.#processingPendingFrameTask = true;
-        try {
-          await this.runThrottledFrameTask();
-        } finally {
-          this.#processingPendingFrameTask = false;
-        }
-      } else {
-        this.#pendingFrameTaskRun = false;
+      // Silently ignore AbortErrors (expected during cancellation)
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
       }
+      console.error("FrameController error:", error);
     }
   }
 

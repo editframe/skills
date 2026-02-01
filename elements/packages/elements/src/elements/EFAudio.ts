@@ -5,7 +5,6 @@ import { TWMixin } from "../gui/TWMixin.js";
 import {
   type FrameRenderable,
   type FrameState,
-  createFrameTaskWrapper,
   PRIORITY_AUDIO,
 } from "../preview/FrameController.js";
 import { EFMedia } from "./EFMedia.js";
@@ -48,17 +47,8 @@ export class EFAudio extends TWMixin(EFMedia) implements FrameRenderable {
     return html`<audio ${ref(this.audioElementRef)}></audio>`;
   }
 
-  /**
-   * @deprecated Use FrameRenderable methods (prepareFrame, renderFrame) via FrameController instead.
-   * This is a compatibility wrapper that delegates to the new system.
-   */
-  frameTask = createFrameTaskWrapper(this, {
-    getTimeMs: () => this.desiredSeekTimeMs,
-  });
-
   // ============================================================================
   // FrameRenderable Implementation
-  // Centralized frame control - no Lit Tasks
   // ============================================================================
 
   /**
@@ -99,14 +89,6 @@ export class EFAudio extends TWMixin(EFMedia) implements FrameRenderable {
   // ============================================================================
   // End FrameRenderable Implementation
   // ============================================================================
-
-  /**
-   * Legacy getter for fragment index task (maps to frameTask)
-   * Still used by EFCaptions
-   */
-  get fragmentIndexTask() {
-    return this.frameTask;
-  }
 }
 
 declare global {

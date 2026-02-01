@@ -17,7 +17,6 @@ import {
 } from "../preview/FrameController.js";
 import { deepGetMediaElements, type EFMedia } from "./EFMedia.js";
 import {
-  deepGetElementsWithFrameTasks,
   EFTemporal,
   flushStartTimeMsCache,
   resetTemporalCache,
@@ -29,10 +28,7 @@ import { parseTimeToMs } from "./parseTimeToMs.js";
 import { renderTemporalAudio } from "./renderTemporalAudio.js";
 import { EFTargetable } from "./TargetController.js";
 import { TimegroupController } from "./TimegroupController.js";
-import {
-  evaluateAnimationVisibilityState,
-  updateAnimations,
-} from "./updateAnimations.js";
+import { updateAnimations } from "./updateAnimations.js";
 import {
   type ContainerInfo,
   getContainerInfoFromElement,
@@ -735,7 +731,20 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     if (this.playbackController) {
       return this.playbackController.runThrottledFrameTask();
     }
-    await this.frameTask.run();
+    // Use FrameController directly (no frameTask fallback)
+    try {
+      await this.#frameController.renderFrame(this.currentTimeMs, {
+        onAnimationsUpdate: (root) => {
+          const { updateAnimations } = require("./updateAnimations.js");
+          updateAnimations(root as typeof this);
+        },
+      });
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
+      }
+      console.error("FrameController error:", error);
+    }
   }
 
   // ============================================================================
@@ -745,6 +754,8 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
   /** @public */
   @property({ type: Number, attribute: "currenttime" })
   set currentTime(time: number) {
+    console.log(`[SEEK-DEBUG] currentTime setter called with ${time}s`);
+    
     // Evaluate seek target (quantization and clamping)
     const seekTarget = evaluateSeekTarget(
       time,
@@ -802,8 +813,13 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     this.#seekInProgress = true;
 
     // Attach .catch() to prevent unhandled rejection warning - errors are handled by seekTask.onError
-    this.seekTask.run().catch(() => {}).finally(() => {
+    Promise.resolve(this.seekTask.run()).catch(() => {}).finally(async () => {
       this.#seekInProgress = false;
+      
+      // CRITICAL: Coordinate animations after seekTask completes
+      // This handles seeks from currentTime setter (like localStorage restore)
+      const { updateAnimations } = await import("./updateAnimations.js");
+      updateAnimations(this);
       
       // Process pending seek if it differs from completed seek
       // This jumps directly to wherever the user ended up, skipping intermediates
@@ -867,6 +883,8 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
    * @public
    */
   async seek(timeMs: number): Promise<void> {
+    console.log(`[SEEK-DEBUG] seek(${timeMs}) called, seekInProgress=${this.#seekInProgress}`);
+    
     // Update user time - this is what the preview should display
     this.#userTimeMs = timeMs;
     
@@ -879,28 +897,15 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
       this.saveTimeToLocalStorage(this.currentTime);
     }
 
-    // Wait for frame rendering (Purpose 4)
-    await this.frameTask.taskComplete;
-
-    // Ensure all visible elements have completed their reactive update cycles AND frame rendering
-    // waitForFrameTasks() calls frameTask.run() on children, but this may happen before child
-    // elements have processed property changes from requestUpdate(). To ensure frame data is
-    // accurate, we wait for updateComplete first, then ensure the frameTask has run with the
-    // updated properties. Elements like EFVideo provide waitForFrameReady() for this pattern.
-    const visibleElements = this.#evaluateVisibleElementsForFrame();
-
-    await Promise.all(
-      visibleElements.map(async (element) => {
-        if (
-          "waitForFrameReady" in element &&
-          typeof element.waitForFrameReady === "function"
-        ) {
-          await (element as any).waitForFrameReady();
-        } else {
-          await element.updateComplete;
-        }
-      }),
-    );
+    // Wait for frame rendering via FrameController
+    await this.#frameController.renderFrame(timeMs, {
+      onAnimationsUpdate: (root) => {
+        const { updateAnimations } = require("./updateAnimations.js");
+        updateAnimations(root as typeof this);
+      },
+    });
+    
+    console.log(`[SEEK-DEBUG] seek() completed to ${timeMs}ms via FrameController`);
   }
 
   /**
@@ -1736,102 +1741,6 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
   // Purpose 4: Frame Rendering - What Happens Each Frame
   // ============================================================================
 
-  /**
-   * Evaluates which elements should be rendered in the current frame.
-   * Filters to only include temporally visible elements for frame processing.
-   * Uses animation-friendly visibility to prevent animation jumps at exact boundaries.
-   */
-  #evaluateVisibleElementsForFrame(): Array<
-    TemporalMixinInterface & HTMLElement
-  > {
-    const temporalElements = deepGetElementsWithFrameTasks(this);
-    return temporalElements.filter((element) => {
-      const animationState = evaluateAnimationVisibilityState(element);
-      return animationState.isVisible;
-    });
-  }
-
-  /** @internal */
-  async waitForFrameTasks(signal?: AbortSignal) {
-    const result = await withSpan(
-      "timegroup.waitForFrameTasks",
-      {
-        timegroupId: this.id || "unknown",
-        mode: this.mode,
-      },
-      undefined,
-      async (span) => {
-        // Check abort before starting
-        signal?.throwIfAborted();
-        
-        const innerStart = performance.now();
-
-        const temporalElements = deepGetElementsWithFrameTasks(this);
-        if (isTracingEnabled()) {
-          span.setAttribute("temporalElementsCount", temporalElements.length);
-        }
-
-        // Check abort after getting elements
-        signal?.throwIfAborted();
-
-        // Evaluate which elements should be rendered
-        const visibleElements = this.#evaluateVisibleElementsForFrame();
-        if (isTracingEnabled()) {
-          span.setAttribute("visibleElementsCount", visibleElements.length);
-        }
-
-        const promiseStart = performance.now();
-
-        // Execute frame tasks for all visible elements
-        // CRITICAL: Must wait for updateComplete before running frameTask so that
-        // property changes (like desiredSeekTimeMs) have propagated to the element.
-        // Elements with waitForFrameReady() handle this; others need explicit waiting.
-        await Promise.all(
-          visibleElements.map(async (element) => {
-            // Check abort before each element
-            signal?.throwIfAborted();
-            
-            try {
-              if (
-                "waitForFrameReady" in element &&
-                typeof element.waitForFrameReady === "function"
-              ) {
-                await (element as any).waitForFrameReady();
-              } else {
-                await element.updateComplete;
-                await element.frameTask.run();
-              }
-            } catch (error) {
-              // AbortErrors are expected when elements are disconnected or tasks cancelled
-              const isAbortError = 
-                error instanceof DOMException && error.name === "AbortError" ||
-                error instanceof Error && (
-                  error.name === "AbortError" ||
-                  (error as any).message?.includes("signal is aborted") ||
-                  (error as any).message?.includes("The user aborted a request")
-                );
-              
-              if (isAbortError) {
-                // Re-throw if our signal is also aborted (propagate cancellation)
-                signal?.throwIfAborted();
-                return; // Otherwise silently ignore - element was disconnected
-              }
-              throw error;
-            }
-          }),
-        );
-        const promiseEnd = performance.now();
-
-        const innerEnd = performance.now();
-        if (isTracingEnabled()) {
-          span.setAttribute("actualInnerMs", innerEnd - innerStart);
-          span.setAttribute("promiseAwaitMs", promiseEnd - promiseStart);
-        }
-      },
-    );
-
-    return result;
-  }
 
   #mediaDurationsPromise: Promise<void> | undefined = undefined;
 
@@ -2260,88 +2169,6 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
         el.setAttribute("src", el.productionSrc());
       }
     });
-  }
-
-  // Track frameTask execution count to detect runaway loops
-  #timegroupFrameTaskCount = 0;
-  #timegroupFrameTaskLastReset = Date.now();
-  static readonly TIMEGROUP_FRAME_TASK_THRESHOLD = 100;
-  static readonly TIMEGROUP_FRAME_TASK_RESET_MS = 1000;
-
-  /** @internal */
-  #frameTaskPromise: Promise<void> = Promise.resolve();
-  #frameTaskAbortController: AbortController | null = null;
-  
-  frameTask = (() => {
-    const self = this;
-    const taskObj: { run(): void | Promise<void>; taskComplete: Promise<void> } = {
-      run: () => {
-        // Abort any in-flight task
-        self.#frameTaskAbortController?.abort();
-        self.#frameTaskAbortController = new AbortController();
-        const signal = self.#frameTaskAbortController.signal;
-        
-        self.#frameTaskPromise = self.#runFrameTask(signal);
-        taskObj.taskComplete = self.#frameTaskPromise;
-        return self.#frameTaskPromise;
-      },
-      taskComplete: Promise.resolve(),
-    };
-    return taskObj;
-  })();
-
-  async #runFrameTask(signal: AbortSignal): Promise<void> {
-    // Check for runaway loop
-    const now = Date.now();
-    if (now - this.#timegroupFrameTaskLastReset > EFTimegroup.TIMEGROUP_FRAME_TASK_RESET_MS) {
-      this.#timegroupFrameTaskCount = 0;
-      this.#timegroupFrameTaskLastReset = now;
-    }
-    this.#timegroupFrameTaskCount++;
-    
-    if (this.#timegroupFrameTaskCount > EFTimegroup.TIMEGROUP_FRAME_TASK_THRESHOLD) {
-      // Safety break to prevent infinite loops
-      return;
-    }
-    
-    try {
-      signal.throwIfAborted();
-      
-      if (this.isRootTimegroup) {
-        // Root timegroup orchestrates frame rendering for entire tree
-        // Use FrameController for centralized, unified rendering
-        await withSpan(
-          "timegroup.frameTask",
-          {
-            timegroupId: this.id || "unknown",
-            ownCurrentTimeMs: this.ownCurrentTimeMs,
-            currentTimeMs: this.currentTimeMs,
-          },
-          undefined,
-          async () => {
-            // Use FrameController for centralized element coordination
-            // This replaces waitForFrameTasks() with the new unified rendering path
-            await this.#frameController.renderFrame(this.currentTimeMs, {
-              waitForLitUpdate: false, // Already in an update cycle
-              onAnimationsUpdate: (root) => {
-                updateAnimations(root as typeof this);
-              },
-            });
-            signal.throwIfAborted();
-            // Execute custom frame tasks registered on this timegroup
-            await this.#executeCustomFrameTasks();
-          },
-        );
-      } else {
-        // Non-root timegroups execute their custom frame tasks when called
-        await this.#executeCustomFrameTasks();
-      }
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") {
-        return;
-      }
-      console.error("EFTimegroup frameTask error", error);
-    }
   }
 
   async #executeCustomFrameTasks() {

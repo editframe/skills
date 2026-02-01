@@ -10,7 +10,6 @@ import { withSpanSync } from "../otel/tracingHelpers.js";
 import {
   type FrameRenderable,
   type FrameState,
-  createFrameTaskWrapper,
   PRIORITY_VIDEO,
 } from "../preview/FrameController.js";
 import { MainVideoInputCache } from "./EFMedia/videoTasks/MainVideoInputCache.ts";
@@ -243,7 +242,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       }
     }
     
-    // Update animations if not in parent timegroup (same as frameTask behavior)
+    // Update animations if not in parent timegroup
     if (!this.parentTimegroup) {
       updateAnimations(this);
     }
@@ -555,13 +554,6 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     return undefined;
   }
 
-  /**
-   * @deprecated Use FrameRenderable methods (prepareFrame, renderFrame) via FrameController instead.
-   * This is a compatibility wrapper that delegates to the new system.
-   */
-  frameTask = createFrameTaskWrapper(this, {
-    getTimeMs: () => this.desiredSeekTimeMs,
-  });
 
   /**
    * Start a delayed loading operation for testing
@@ -598,7 +590,6 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
 
   /**
    * Paint the current video frame to canvas
-   * Called by frameTask after seek is complete
    */
   paint(seekToMs: number, parentSpan?: any): void {
     const parentContext = parentSpan
@@ -845,80 +836,8 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
   }
 
   /**
-   * Legacy getter for fragment index task
-   * Still used by EFCaptions - maps to frameTask
-   */
-  get fragmentIndexTask() {
-    return this.frameTask;
-  }
-
-  // Track in-flight waitForFrameReady to prevent duplicate calls from aborting each other
-  #pendingFrameReadyTime: number | null = null;
-  #pendingFrameReadyPromise: Promise<void> | null = null;
-
-  /**
-   * Helper method for tests: wait for the current frame to be ready
-   * This encapsulates the complexity of ensuring the video has updated
-   * and its frameTask has completed.
-   *
-   * @returns Promise that resolves when the frame is ready
-   */
-  async waitForFrameReady(): Promise<void> {
-    // CRITICAL: Sync desiredSeekTimeMs immediately from currentSourceTimeMs
-    // The update cycle may not have processed yet, but currentSourceTimeMs
-    // is a getter that already reflects the correct time from the parent.
-    const currentTime = this.currentSourceTimeMs;
-    if (this.desiredSeekTimeMs !== currentTime) {
-      this.desiredSeekTimeMs = currentTime;
-    }
-    
-    // IDEMPOTENT: If we're already waiting for this exact time, return the existing promise
-    // This prevents multiple concurrent calls from aborting each other's frameTask
-    if (this.#pendingFrameReadyTime === currentTime && this.#pendingFrameReadyPromise) {
-      return this.#pendingFrameReadyPromise;
-    }
-    
-    // Start a new wait for this time
-    this.#pendingFrameReadyTime = currentTime;
-    this.#pendingFrameReadyPromise = this.#doWaitForFrameReady(currentTime);
-    
-    try {
-      await this.#pendingFrameReadyPromise;
-    } finally {
-      // Clear the pending state when done (success or error)
-      if (this.#pendingFrameReadyTime === currentTime) {
-        this.#pendingFrameReadyTime = null;
-        this.#pendingFrameReadyPromise = null;
-      }
-    }
-  }
-
-  async #doWaitForFrameReady(_targetTimeMs: number): Promise<void> {
-    await this.updateComplete;
-    
-    try {
-      await this.frameTask.run();
-    } catch (error) {
-      // AbortErrors are expected when element is disconnected or task is cancelled
-      // Return gracefully instead of propagating the error
-      const isAbortError = 
-        error instanceof DOMException && error.name === "AbortError" ||
-        error instanceof Error && (
-          error.name === "AbortError" ||
-          error.message?.includes("signal is aborted") ||
-          error.message?.includes("The user aborted a request")
-        );
-      
-      if (isAbortError) {
-        return;
-      }
-      throw error;
-    }
-  }
-
-  /**
    * Capture a video frame directly at a source media timestamp.
-   * Bypasses the frameTask system - designed for export/rendering.
+   * Designed for export/rendering.
    * Does NOT paint to the element's internal canvas.
    * 
    * Uses the same routing logic as unified video system:

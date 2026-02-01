@@ -21,22 +21,6 @@ import type { MediaEngine } from "../transcoding/types/index.js";
 import { EFMedia, AsyncValue } from "./EFMedia.js";
 import "./EFText.js";
 
-// Helper to create a simple task-like object for testing
-function createTestFrameTask(host: LitElement, onExecute: () => void) {
-  let promise = Promise.resolve();
-  const taskObj = {
-    run: () => {
-      promise = (async () => {
-        onExecute();
-      })();
-      taskObj.taskComplete = promise;
-      return promise;
-    },
-    taskComplete: Promise.resolve(),
-  };
-  return taskObj;
-}
-
 beforeEach(() => {
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
@@ -65,38 +49,6 @@ class TimegroupTestMedia extends EFMedia {
   override mediaEngineTask = new AsyncValue<MediaEngine>();
 }
 
-@customElement("test-frame-task-a")
-class TestFrameTaskA extends EFTemporal(LitElement) {
-  render() {
-    return html`<div data-frame-element="a"></div>`;
-  }
-
-  override frameTask = createTestFrameTask(this, () => {
-    this.setAttribute("data-frame-executed", "true");
-  });
-}
-
-@customElement("test-frame-task-b")
-class TestFrameTaskB extends EFTemporal(LitElement) {
-  render() {
-    return html`<div data-frame-element="b"></div>`;
-  }
-
-  override frameTask = createTestFrameTask(this, () => {
-    this.setAttribute("data-frame-executed", "true");
-  });
-}
-
-@customElement("test-frame-task-c")
-class TestFrameTaskC extends EFTemporal(LitElement) {
-  render() {
-    return html`<div data-frame-element="c"></div>`;
-  }
-
-  override frameTask = createTestFrameTask(this, () => {
-    this.setAttribute("data-frame-executed", "true");
-  });
-}
 
 @customElement("test-temporal")
 class TestTemporal extends EFTemporal(LitElement) {
@@ -110,9 +62,6 @@ declare global {
     "test-temporal": TestTemporal;
     "test-context": TestContext;
     "timegroup-test-media": TimegroupTestMedia;
-    "test-frame-task-a": TestFrameTaskA;
-    "test-frame-task-b": TestFrameTaskB;
-    "test-frame-task-c": TestFrameTaskC;
   }
 }
 
@@ -758,110 +707,7 @@ describe.skip("Dynamic content updates", () => {
     assert.equal(remainingTemporals.length, 2);
   });
 
-  describe("frameTask", () => {
-    test("visible nested elements are rendered when seeking to their time range", async () => {
-      const timegroup = renderTimegroup(
-        html`<ef-timegroup mode="sequence">
-          <test-frame-task-a duration="1s"></test-frame-task-a>
-          <div>
-            <test-frame-task-b duration="1s">
-              <test-frame-task-c duration="1s"></test-frame-task-c>
-            </test-frame-task-b>
-          </div>
-        </ef-timegroup>`,
-      );
-      await timegroup.waitForMediaDurations();
-
-      const frameTaskA = timegroup.querySelector("test-frame-task-a")!;
-      const frameTaskB = timegroup.querySelector("test-frame-task-b")!;
-      const frameTaskC = timegroup.querySelector("test-frame-task-c")!;
-
-      // Seek to time 0ms - first element should be visible
-      await timegroup.seek(0);
-
-      // At timeline time 0ms:
-      // - frameTaskA (0-1000ms) should be visible and executed
-      // - frameTaskB (1000-2000ms) should NOT be visible (not in range at time 0)
-      // - frameTaskC (0-1000ms) should be visible (inherits root positioning)
-
-      // Verify observable behavior: elements are visible/hidden and frame tasks executed
-      const getDisplay = (el: Element) => window.getComputedStyle(el).display;
-      assert.notEqual(
-        getDisplay(frameTaskA),
-        "none",
-        "A should be visible at time 0",
-      );
-      assert.equal(
-        getDisplay(frameTaskB),
-        "none",
-        "B should not be visible at time 0",
-      );
-      assert.notEqual(
-        getDisplay(frameTaskC),
-        "none",
-        "C should be visible at time 0",
-      );
-
-      assert.equal(
-        frameTaskA.getAttribute("data-frame-executed"),
-        "true",
-        "A's frame task should have executed",
-      );
-      assert.isNull(
-        frameTaskB.getAttribute("data-frame-executed"),
-        "B's frame task should not have executed",
-      );
-      assert.equal(
-        frameTaskC.getAttribute("data-frame-executed"),
-        "true",
-        "C's frame task should have executed",
-      );
-    });
-  });
-
   describe("seekTask", () => {
-    test("non-root timegroups do not affect root timeline when seeking", async () => {
-      const timegroup = renderTimegroup(
-        html`<ef-timegroup mode="sequence">
-            <ef-timegroup mode="fixed" duration="3s">
-              <test-frame-task-a></test-frame-task-a>
-            </ef-timegroup>
-          </ef-timegroup>`,
-      );
-      await timegroup.waitForMediaDurations();
-
-      const nonRootTimegroup = timegroup.querySelector("ef-timegroup")!;
-      const frameTaskA = timegroup.querySelector("test-frame-task-a")!;
-
-      // Seek root to time 0
-      await timegroup.seek(0);
-      const getDisplay = (el: Element) => window.getComputedStyle(el).display;
-      const initialDisplay = getDisplay(frameTaskA);
-      const initialExecuted = frameTaskA.getAttribute("data-frame-executed");
-
-      // Attempt to seek non-root (should not affect root timeline)
-      nonRootTimegroup.currentTime = 1.5;
-      await nonRootTimegroup.updateComplete;
-      await new Promise((resolve) => setTimeout(resolve, 50)); // Allow any async updates
-
-      // Verify observable behavior: root timeline unchanged
-      assert.equal(
-        timegroup.currentTime,
-        0,
-        "Root timeline should be unchanged",
-      );
-      assert.equal(
-        getDisplay(frameTaskA),
-        initialDisplay,
-        "Element visibility should be unchanged",
-      );
-      assert.equal(
-        frameTaskA.getAttribute("data-frame-executed"),
-        initialExecuted,
-        "Frame task execution should be unchanged",
-      );
-    });
-
     test("media elements are loaded before seeking completes", async () => {
       const timegroup = renderTimegroup(
         html`
@@ -1363,9 +1209,6 @@ describe.skip("Dynamic content updates", () => {
         .whenSegmentsReady();
 
       await timegroup.seek(500);
-      await Promise.all(
-        segments.map((seg) => seg.frameTask?.taskComplete).filter((p) => p),
-      );
       await new Promise((resolve) => requestAnimationFrame(resolve));
 
       assert.equal(

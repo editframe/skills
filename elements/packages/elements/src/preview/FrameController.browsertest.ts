@@ -10,7 +10,6 @@ import {
   type FrameRenderable,
   type FrameState,
   isFrameRenderable,
-  createFrameTaskWrapper,
   PRIORITY_VIDEO,
   PRIORITY_CAPTIONS,
   PRIORITY_AUDIO,
@@ -437,85 +436,6 @@ describe("FrameController", () => {
       expect(element.renderCallCount).toBe(1);
       element.remove();
     });
-  });
-});
-
-// ============================================================================
-// createFrameTaskWrapper Tests
-// ============================================================================
-
-describe("createFrameTaskWrapper", () => {
-  test("creates a wrapper with run() and taskComplete", () => {
-    const element = document.createElement("test-frame-element") as TestFrameElement;
-    document.body.appendChild(element);
-
-    const wrapper = createFrameTaskWrapper(element);
-
-    expect(typeof wrapper.run).toBe("function");
-    expect(wrapper.taskComplete).toBeInstanceOf(Promise);
-
-    element.remove();
-  });
-
-  test("run() calls prepareFrame and renderFrame", async () => {
-    const element = document.createElement("test-frame-element") as TestFrameElement;
-    element.needsPrep = true;
-    document.body.appendChild(element);
-    await element.updateComplete;
-
-    const wrapper = createFrameTaskWrapper(element, {
-      getTimeMs: () => 5000,
-    });
-
-    await wrapper.run();
-
-    expect(element.prepareCallCount).toBe(1);
-    expect(element.prepareTimeMs).toBe(5000);
-    expect(element.renderCallCount).toBe(1);
-    expect(element.renderTimeMs).toBe(5000);
-
-    element.remove();
-  });
-
-  test("taskComplete reflects current run promise", async () => {
-    const element = document.createElement("test-frame-element") as TestFrameElement;
-    document.body.appendChild(element);
-    await element.updateComplete;
-
-    const wrapper = createFrameTaskWrapper(element);
-
-    const runPromise = wrapper.run();
-    expect(wrapper.taskComplete).toBe(runPromise);
-
-    await runPromise;
-    element.remove();
-  });
-
-  test("uses ownCurrentTimeMs as default time", async () => {
-    const element = document.createElement("test-frame-element") as TestFrameElement;
-    (element as any).ownCurrentTimeMs = 3000;
-    document.body.appendChild(element);
-    await element.updateComplete;
-
-    const wrapper = createFrameTaskWrapper(element);
-    await wrapper.run();
-
-    expect(element.renderTimeMs).toBe(3000);
-    element.remove();
-  });
-
-  test("uses desiredSeekTimeMs if available", async () => {
-    const element = document.createElement("test-frame-element") as TestFrameElement;
-    (element as any).desiredSeekTimeMs = 7000;
-    (element as any).ownCurrentTimeMs = 3000;
-    document.body.appendChild(element);
-    await element.updateComplete;
-
-    const wrapper = createFrameTaskWrapper(element);
-    await wrapper.run();
-
-    expect(element.renderTimeMs).toBe(7000);
-    element.remove();
   });
 });
 

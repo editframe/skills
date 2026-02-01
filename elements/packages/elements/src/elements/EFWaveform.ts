@@ -7,7 +7,6 @@ import { TWMixin } from "../gui/TWMixin.js";
 import {
   type FrameRenderable,
   type FrameState,
-  createFrameTaskWrapper,
   PRIORITY_WAVEFORM,
 } from "../preview/FrameController.js";
 import { CrossUpdateController } from "./CrossUpdateController.js";
@@ -112,15 +111,11 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
     this.resizeObserver.observe(this);
 
     // Initialize MutationObserver - only for non-style attributes
-    // Style changes are handled by FrameController; triggering frameTask.run()
-    // here would use ownCurrentTimeMs which is LOCAL time, not root time,
-    // causing wrong audio data to be fetched and displayed.
+    // Style changes are handled by FrameController
     this.mutationObserver = new MutationObserver((mutationsList) => {
       for (const mutation of mutationsList) {
         if (mutation.type === "attributes" && mutation.attributeName !== "style") {
-          this.frameTask.run().catch(() => {
-            // AbortErrors are expected during cleanup
-          });
+          this.requestUpdate();
         }
       }
     });
@@ -130,9 +125,7 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
 
     if (!EF_RENDERING()) {
       this.styleObserver = new CSSStyleObserver(["color"], () => {
-        this.frameTask.run().catch(() => {
-          // AbortErrors are expected during cleanup
-        });
+        this.requestUpdate();
       });
       this.styleObserver.attach(this);
     }
@@ -149,9 +142,7 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
   private resizeCanvas() {
     this.ctx = this.initCanvas();
     if (this.ctx) {
-      this.frameTask.run().catch(() => {
-        // AbortErrors are expected during cleanup
-      }); // Redraw the canvas
+      this.requestUpdate();
     }
   }
 
@@ -492,15 +483,8 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
     ctx.fill(path);
   }
 
-  /**
-   * @deprecated Use FrameRenderable methods (prepareFrame, renderFrame) via FrameController instead.
-   * This is a compatibility wrapper that delegates to the new system.
-   */
-  frameTask = createFrameTaskWrapper(this);
-
   // ============================================================================
   // FrameRenderable Implementation
-  // Centralized frame control - uses direct async methods
   // ============================================================================
 
   /**
@@ -622,10 +606,6 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
     // per-render-session so within a render the version will be stable.
     if (changedProperties.size > 0) {
       this.#renderVersion++;
-      // Request a new frame
-      this.frameTask.run().catch(() => {
-        // AbortErrors are expected during cleanup
-      });
     }
   }
 }

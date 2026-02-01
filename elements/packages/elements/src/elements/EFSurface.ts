@@ -69,40 +69,8 @@ export class EFSurface extends LitElement implements FrameRenderable {
     return this.startTimeMs + this.durationMs;
   }
 
-  /**
-   * @deprecated Use FrameRenderable methods (prepareFrame, renderFrame) via FrameController instead.
-   * This is a compatibility wrapper that delegates to the new system.
-   */
-  #frameTaskPromise: Promise<void> = Promise.resolve();
-  
-  frameTask = (() => {
-    const self = this;
-    const taskObj: { run(): void | Promise<void>; taskComplete: Promise<void> } = {
-      run: () => {
-        const abortController = new AbortController();
-        const timeMs = self.currentTimeMs;
-        self.#frameTaskPromise = (async () => {
-          try {
-            await self.prepareFrame(timeMs, abortController.signal);
-            self.renderFrame(timeMs);
-          } catch (error) {
-            if (error instanceof DOMException && error.name === "AbortError") {
-              return;
-            }
-            throw error;
-          }
-        })();
-        taskObj.taskComplete = self.#frameTaskPromise;
-        return self.#frameTaskPromise;
-      },
-      taskComplete: Promise.resolve(),
-    };
-    return taskObj;
-  })();
-
   // ============================================================================
   // FrameRenderable Implementation
-  // Centralized frame control - replaces distributed Lit Task system
   // ============================================================================
 
   /**
@@ -121,27 +89,12 @@ export class EFSurface extends LitElement implements FrameRenderable {
   }
 
   /**
-   * Async preparation - waits for target element's frameTask.
+   * Async preparation - no preparation needed.
+   * FrameController's priority system ensures dependencies render first.
    * @implements FrameRenderable
    */
-  async prepareFrame(_timeMs: number, signal: AbortSignal): Promise<void> {
-    if (!this.targetElement) return;
-
-    // Wait for target's frame to be ready
-    const maybeTask = (this.targetElement as any).frameTask;
-    if (maybeTask && typeof maybeTask.run === "function") {
-      try {
-        maybeTask.run().catch(() => {});
-        await maybeTask.taskComplete;
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") {
-          signal.throwIfAborted();
-          return;
-        }
-        // Best-effort; continue to copy for other errors
-      }
-    }
-    signal.throwIfAborted();
+  async prepareFrame(_timeMs: number, _signal: AbortSignal): Promise<void> {
+    // No preparation needed - FrameController handles dependencies via priority
   }
 
   /**

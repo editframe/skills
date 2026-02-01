@@ -194,10 +194,10 @@ describe.skip("JIT Media Engine", () => {
       // SKIP: audioSeekTask is not part of the audio rendering pipeline
       await timegroup.waitForMediaDurations();
       timegroup.currentTimeMs = 1000;
-      await timegroup.frameTask.taskComplete;
+      await timegroup.updateComplete;
 
       timegroup.currentTimeMs = 2026.6666666666663;
-      await timegroup.frameTask.taskComplete;
+      await timegroup.updateComplete;
       const sample = await jitVideo.unifiedVideoSeekTask.taskComplete;
       expect(sample?.timestamp).toBeCloseTo(2, 1);
     });

@@ -817,9 +817,6 @@ describe("EFText", () => {
       // Set timeline to different times and verify animations are coordinated
       timegroup.currentTimeMs = 0;
       await timegroup.seekTask.taskComplete;
-      if (segment?.frameTask) {
-        await segment?.frameTask.taskComplete;
-      }
 
       // Animation should be paused and controlled (may be running initially, then paused)
       // Give it a moment to be paused by the system
@@ -987,9 +984,6 @@ describe("EFText", () => {
       // At t=0 (before delay), animation should be at initial state (currentTime = 0)
       timegroup.currentTimeMs = 0;
       await timegroup.seekTask.taskComplete;
-      if (segments[0]?.frameTask) {
-        await segments[0]?.frameTask.taskComplete;
-      }
 
       // Animation should be paused and at initial state
       // Note: animations might be running initially before being paused by the system
@@ -1002,9 +996,6 @@ describe("EFText", () => {
       // At t=1000ms (before delay), animation should still be at initial state
       timegroup.currentTimeMs = 1000;
       await timegroup.seekTask.taskComplete;
-      if (segments[0]?.frameTask) {
-        await segments[0]?.frameTask.taskComplete;
-      }
 
       // Animation state may vary - what matters is timing control
       // Animation may be running or paused depending on timing
@@ -1015,9 +1006,6 @@ describe("EFText", () => {
       // At t=2000ms (at delay start), animation should start
       timegroup.currentTimeMs = 2000;
       await timegroup.seekTask.taskComplete;
-      if (segments[0]?.frameTask) {
-        await segments[0]?.frameTask.taskComplete;
-      }
 
       // Animation state may vary - what matters is timing control
       expect(["paused", "running"]).toContain(animation.playState);
@@ -1028,9 +1016,6 @@ describe("EFText", () => {
       // At t=2100ms (100ms after delay start), animation should be progressing
       timegroup.currentTimeMs = 2100;
       await timegroup.seekTask.taskComplete;
-      if (segments[0]?.frameTask) {
-        await segments[0]?.frameTask.taskComplete;
-      }
 
       // Animation state may vary - what matters is timing control
       expect(["paused", "running"]).toContain(animation.playState);
@@ -1094,7 +1079,7 @@ describe("EFText", () => {
       await timegroup.seekTask.taskComplete;
       await Promise.all(
         segments
-          .map((seg) => seg?.frameTask?.taskComplete)
+          .map((seg) => seg?.updateComplete)
           .filter((p) => p !== undefined),
       );
 
@@ -1110,7 +1095,7 @@ describe("EFText", () => {
       await timegroup.seekTask.taskComplete;
       await Promise.all(
         segments
-          .map((seg) => seg?.frameTask?.taskComplete)
+          .map((seg) => seg?.updateComplete)
           .filter((p) => p !== undefined),
       );
 
@@ -1124,7 +1109,7 @@ describe("EFText", () => {
       await timegroup.seekTask.taskComplete;
       await Promise.all(
         segments
-          .map((seg) => seg?.frameTask?.taskComplete)
+          .map((seg) => seg?.updateComplete)
           .filter((p) => p !== undefined),
       );
 
@@ -1138,7 +1123,7 @@ describe("EFText", () => {
       await timegroup.seekTask.taskComplete;
       await Promise.all(
         segments
-          .map((seg) => seg?.frameTask?.taskComplete)
+          .map((seg) => seg?.updateComplete)
           .filter((p) => p !== undefined),
       );
 

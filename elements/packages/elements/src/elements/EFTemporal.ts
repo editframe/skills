@@ -495,12 +495,6 @@ export declare class TemporalMixinInterface {
    */
   rootTimegroup?: EFTimegroup;
 
-  /**
-   * Frame task interface. Can be a Lit Task or a simple object with run() and taskComplete.
-   * @deprecated Prefer using FrameRenderable interface via FrameController.
-   */
-  frameTask: { run(): void | Promise<void>; taskComplete: Promise<unknown> };
-
   didBecomeRoot(): void;
   didBecomeChild(): void;
 
@@ -556,25 +550,6 @@ const getChildrenIncludingSlotted = (element: Element): Element[] => {
   return Array.from(element.children);
 };
 
-export const deepGetElementsWithFrameTasks = (
-  element: Element,
-  elements: Array<TemporalMixinInterface & HTMLElement> = [],
-) => {
-  // Get children to walk - handle both regular children and slotted content
-  const children = getChildrenIncludingSlotted(element);
-  
-  for (const child of children) {
-    // Check for frameTask with run method (works with both Lit Task and our compatibility wrapper)
-    const hasFrameTask = "frameTask" in child && 
-      child.frameTask != null && 
-      typeof (child.frameTask as any).run === "function";
-    if (hasFrameTask) {
-      elements.push(child as TemporalMixinInterface & HTMLElement);
-    }
-    deepGetElementsWithFrameTasks(child, elements);
-  }
-  return elements;
-};
 
 let temporalCache: Map<Element, TemporalMixinInterface[]>;
 let temporalCacheResetScheduled = false;
@@ -1106,25 +1081,6 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
       const leadingTrimMs = this.sourceInMs || this.trimStartMs || 0;
       return this.ownCurrentTimeMs + leadingTrimMs;
     }
-
-    /**
-     * @deprecated Use FrameRenderable interface via FrameController instead.
-     * This is a compatibility wrapper - base class just waits for updateComplete.
-     */
-    #frameTaskPromise: Promise<void> = Promise.resolve();
-    
-    frameTask = (() => {
-      const self = this;
-      const taskObj: { run(): void | Promise<void>; taskComplete: Promise<void> } = {
-        run: () => {
-          self.#frameTaskPromise = self.updateComplete.then(() => {});
-          taskObj.taskComplete = self.#frameTaskPromise;
-          return self.#frameTaskPromise;
-        },
-        taskComplete: Promise.resolve(),
-      };
-      return taskObj;
-    })();
 
     didBecomeRoot() {
       // Never create PlaybackController for render clones

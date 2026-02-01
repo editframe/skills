@@ -450,14 +450,6 @@ function serializeElement(
       return;
     }
     
-    // DEBUG: Log shadow DOM serialization for text segments
-    if (element.tagName === 'EF-TEXT-SEGMENT') {
-      console.log(`[serialize] EF-TEXT-SEGMENT shadow DOM:`, {
-        childNodes: element.shadowRoot.childNodes.length,
-        textContent: element.shadowRoot.textContent,
-        innerHTML: element.shadowRoot.innerHTML,
-      });
-    }
     
     // Serialize custom element with its styles, then shadow DOM content inside
     // Use span for inline/inline-block/inline-flex elements to preserve inline behavior
@@ -483,29 +475,11 @@ function serializeElement(
     }
     parts.push('>');
     
-    // DEBUG: Log the serialized HTML for text segments
-    if (element.tagName === 'EF-TEXT-SEGMENT') {
-      const htmlSoFar = `<${containerTag}${styleStr ? ` style="${escapeXML(styleStr)}"` : ''}>`;
-      console.log(`[serialize] Text segment container HTML: ${htmlSoFar}`);
-    }
-    
     // Serialize shadow DOM content with this element as the slot host
-    if (element.tagName === 'EF-TEXT-SEGMENT') {
-      console.log(`[serialize] Iterating ${element.shadowRoot.childNodes.length} child nodes`);
-    }
     for (const child of element.shadowRoot.childNodes) {
-      if (element.tagName === 'EF-TEXT-SEGMENT') {
-        console.log(`[serialize] Child node type=${child.nodeType} (TEXT=3, ELEMENT=1, COMMENT=8), textContent="${child.textContent}"`);
-      }
       if (child.nodeType === Node.TEXT_NODE) {
         const text = child.textContent;
-        if (element.tagName === 'EF-TEXT-SEGMENT') {
-          console.log(`[serialize] Text node found, length=${text?.length}, will add=${!!(text && text.length > 0)}`);
-        }
         if (text && text.length > 0) {
-          if (element.tagName === 'EF-TEXT-SEGMENT') {
-            console.log(`[serialize] Adding text node: "${text}"`);
-          }
           parts.push(escapeXML(text));
         }
       } else if (child.nodeType === Node.ELEMENT_NODE) {

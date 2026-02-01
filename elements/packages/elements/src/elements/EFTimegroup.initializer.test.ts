@@ -97,24 +97,6 @@ describe("EFTimegroup initializer", () => {
     cleanup();
   });
 
-  it("should allow frame callbacks registered in initializer to work", async () => {
-    const tg = document.createElement("ef-timegroup") as EFTimegroup;
-    const frameCallbackFn = vi.fn();
-    
-    tg.initializer = (instance) => {
-      instance.addFrameTask(frameCallbackFn);
-    };
-    
-    container.appendChild(tg);
-    await tg.updateComplete;
-    
-    // Trigger a frame task
-    await tg.frameTask.run();
-    
-    // Frame callback should have been called
-    expect(frameCallbackFn).toHaveBeenCalled();
-  });
-
   it("should work with React-style initializers that replace the DOM", async () => {
     const tg = document.createElement("ef-timegroup") as EFTimegroup;
     let cloneReplaced = false;

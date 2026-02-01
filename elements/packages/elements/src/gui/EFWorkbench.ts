@@ -7,6 +7,7 @@ import { TWMixin } from "./TWMixin.js";
 import { EFTimegroup } from "../elements/EFTimegroup.js";
 import { findRootTemporal } from "../elements/findRootTemporal.js";
 import { renderTimegroupToCanvas, type CanvasPreviewResult } from "../preview/renderTimegroupToCanvas.js";
+import { updateAnimations } from "../elements/updateAnimations.js";
 import { renderTimegroupToVideo, type RenderToVideoOptions, type RenderProgress, RenderCancelledError } from "../preview/renderTimegroupToVideo.js";
 import { 
   isNativeCanvasApiAvailable, 
@@ -1063,7 +1064,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     return finalScale;
   }
   
-  private initCanvasMode() {
+  private async initCanvasMode() {
     // Don't initialize if we're no longer in canvas mode
     if (this.presentationMode !== "canvas") return;
     
@@ -1107,6 +1108,22 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     const compositionHeight = timegroup.offsetHeight || 1080;
     
     try {
+      // CRITICAL: Wait for any in-progress seek to complete AND let playback controller initialize
+      // The playback controller may be restoring time from localStorage
+      await timegroup.seekTask.taskComplete;
+      
+      // If there's a playback controller, wait for it to complete initial seek
+      // This prevents rendering at 0ms before restoring to saved time
+      if (timegroup.playbackController) {
+        // The playback controller's seek is async, give it time to start and coordinate animations
+        await new Promise(resolve => setTimeout(resolve, 0));
+      }
+      
+      // CRITICAL: Ensure timegroup has correct display states before first render
+      // Text elements have default display:flex until updateAnimations runs
+      console.log(`[CANVAS-INIT-DEBUG] Initializing canvas mode at timegroup.currentTimeMs=${timegroup.currentTimeMs}`);
+      updateAnimations(timegroup);
+      
       // Create canvas preview - this builds the clone structure ONCE
       const result = renderTimegroupToCanvas(timegroup, {
         scale: 1,

@@ -2282,10 +2282,7 @@ describe("captions rendering in foreignObject path", () => {
         // AbortErrors are expected during cleanup
       });
       await timegroup.seekTask.taskComplete;
-      captions.frameTask.run().catch(() => {
-        // AbortErrors are expected during cleanup
-      });
-      await captions.frameTask.taskComplete;
+      await captions.updateComplete;
       await activeWord.updateComplete;
       await new Promise((resolve) => requestAnimationFrame(resolve));
       await activeWord.updateComplete;

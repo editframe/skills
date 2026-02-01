@@ -3,6 +3,7 @@ import { getEffectiveRenderMode } from "./renderers.js";
 import { RenderContext } from "./RenderContext.js";
 import { FrameController } from "./FrameController.js";
 import { serializeTimelineToDataUri } from "./rendering/serializeTimelineDirect.js";
+import { updateAnimations } from "../elements/updateAnimations.js";
 
 // Re-export renderer types for external use
 export type { RenderOptions, RenderResult, Renderer } from "./renderers.js";
@@ -351,6 +352,7 @@ export async function captureFromClone(
   const sourceForDimensions = originalTimegroup ?? renderClone;
   const width = sourceForDimensions.offsetWidth || DEFAULT_WIDTH;
   const height = sourceForDimensions.offsetHeight || DEFAULT_HEIGHT;
+  
 
   // Use explicit time if provided, otherwise fall back to clone's currentTimeMs
   // CRITICAL: Using explicit time ensures temporal visibility checks are accurate
@@ -373,7 +375,6 @@ export async function captureFromClone(
   
   try {
     const renderMode = getEffectiveRenderMode();
-    console.log(`[captureFromClone] Using render mode: ${renderMode}`);
     
     if (renderMode === "native") {
       // NATIVE PATH: Render the seeked renderClone directly from live DOM
@@ -408,9 +409,6 @@ export async function captureFromClone(
       });
       const serializeTime = performance.now() - t0;
       
-      // DEBUG: Log data URI length and save to global for inspection
-      console.log(`[captureFromClone] SVG data URI length: ${dataUri.length} characters`);
-      (window as any).__lastThumbnailDataUri = dataUri;
       
       const t1 = performance.now();
       const image = await loadImageFromDataUri(dataUri);
@@ -545,10 +543,6 @@ export async function* generateThumbnailsFromClone(
     // Seek the clone to the target time
     await renderClone.seekForRender(timeMs);
     
-    // Wait for layout to stabilize after seek
-    // seekForRender forces style recalc but layout may not be fully stable
-    await new Promise(resolve => requestAnimationFrame(resolve));
-    
     // Capture from the seeked clone, passing explicit timeMs
     const canvas = await captureFromClone(renderClone, renderContainer, {
       scale,
@@ -559,9 +553,6 @@ export async function* generateThumbnailsFromClone(
     
     // Yield the result with explicit timestamp association
     yield { timeMs, canvas };
-    
-    // Small delay to let clone fully reset before next operation
-    await new Promise(resolve => setTimeout(resolve, 16));
   }
 }
 
@@ -810,6 +801,8 @@ export function renderTimegroupToCanvas(
     const sourceTimeMs = timegroup.currentTimeMs ?? 0;
     const userTimeMs = timegroup.userTimeMs ?? 0;
     
+    console.log(`[CANVAS-REFRESH-DEBUG] refresh called: sourceTimeMs=${sourceTimeMs}, userTimeMs=${userTimeMs}, lastTimeMs=${lastTimeMs}`);
+    
     // Skip if seek in progress (source and user time out of sync)
     if (Math.abs(sourceTimeMs - userTimeMs) > TIME_EPSILON_MS) return;
     
@@ -836,8 +829,24 @@ export function renderTimegroupToCanvas(
 
     try {
       // Use FrameController to ensure all FrameRenderable elements are ready
-      // This coordinates prepare → render phases before we capture their state
-      await frameController.renderFrame(userTimeMs);
+      // This coordinates prepare → render phases AND animation coordination before capture
+      await frameController.renderFrame(userTimeMs, {
+        waitForLitUpdate: false,
+        onAnimationsUpdate: (root) => {
+          updateAnimations(root);
+          // Force style recalc
+          void (root as HTMLElement).offsetWidth;
+        },
+      });
+      
+      // DEBUG: Check text segments and shadow DOM before serialization
+      const textEls = timegroup.querySelectorAll('ef-text');
+      const text3 = textEls[3] as any;
+      if (text3) {
+        const seg0 = text3.querySelector('ef-text-segment');
+        const shadowText = seg0?.shadowRoot?.textContent || 'NO-SHADOW';
+        console.log(`[CANVAS-PREVIEW-DEBUG] ${userTimeMs}ms - "Spin up 10": ${text3.offsetWidth}x${text3.offsetHeight}, firstSeg.shadowText="${shadowText}"`);
+      }
       
       // DIRECT SERIALIZATION PATH (same as video rendering)
       // Serialize the prime timeline directly without building intermediate passive structure

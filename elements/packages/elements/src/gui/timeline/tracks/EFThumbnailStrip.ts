@@ -407,20 +407,37 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     const uncached = timestamps.filter(t => !this.#thumbnailCache.has(t)).sort((a, b) => a - b);
     if (uncached.length === 0) return;
 
-    // If generator is running, update queue intelligently
-    if (this.#timegroupGenerator) {
+    // If generator is running OR clone exists, reuse it
+    if (this.#timegroupGenerator || this.#timegroupClone) {
       const currentRemaining = this.#timegroupQueue.remaining();
       const overlap = uncached.filter(t => currentRemaining.includes(t));
       const newWork = uncached.filter(t => !currentRemaining.includes(t));
 
-      if (overlap.length > 0) {
-        // Keep generator running, update queue
-        this.#timegroupQueue.retainOnly(overlap);
-        if (newWork.length > 0) {
-          this.#timegroupQueue.append(newWork);
+      if (overlap.length > 0 || !this.#timegroupGenerator) {
+        // Reuse clone: either overlap exists OR generator finished but clone still alive
+        if (this.#timegroupGenerator) {
+          // Generator is running, update queue
+          this.#timegroupQueue.retainOnly(overlap);
+          if (newWork.length > 0) {
+            this.#timegroupQueue.append(newWork);
+          }
+        } else {
+          // Generator finished, restart with existing clone
+          this.#timegroupQueue.reset(uncached);
+          this.#timegroupGenerator = generateThumbnailsFromClone(
+            this.#timegroupClone!.clone,
+            this.#previewContainer!,
+            this.#timegroupQueue,
+            {
+              scale: 0.25,
+              contentReadyMode: "blocking",
+              blockingTimeoutMs: 1000,
+            },
+          );
+          this.#consumeTimegroupGenerator();
         }
       } else {
-        // No overlap, restart with new timestamps
+        // No overlap and generator running, restart with new timestamps
         this.#cleanupTimegroupGenerator();
         await this.#startTimegroupGenerator(timegroup, uncached);
       }
@@ -437,29 +454,13 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     // Create render clone
     this.#timegroupClone = await timegroup.createRenderClone();
     
-    // Create fresh preview container (like video rendering does)
-    const containerWidth = timegroup.offsetWidth || 1920;
-    const containerHeight = timegroup.offsetHeight || 1080;
-    const background = getComputedStyle(timegroup).background || "#000";
+    // DEBUG: Check dimensions BEFORE moving
+    const textBeforeMove = this.#timegroupClone.container.querySelector('ef-text') as HTMLElement;
+    console.log(`[EFThumbnailStrip] BEFORE move - ef-text: ${textBeforeMove?.offsetWidth}x${textBeforeMove?.offsetHeight}`);
     
-    this.#previewContainer = createPreviewContainer({
-      width: containerWidth,
-      height: containerHeight,
-      background,
-    });
+    // Use the original container from createRenderClone (already configured)
+    this.#previewContainer = this.#timegroupClone.container as HTMLDivElement;
     
-    // Move clone from old container to new container
-    this.#previewContainer.appendChild(this.#timegroupClone.clone);
-    
-    // Add marker class for animation tracking
-    this.#previewContainer.classList.add('ef-render-clone-container');
-    
-    // Position off-screen
-    this.#previewContainer.style.cssText += ';position:fixed;left:-99999px;top:-99999px;pointer-events:none;';
-    document.body.appendChild(this.#previewContainer);
-    
-    // Force layout/reflow
-    void this.#timegroupClone.clone.offsetHeight;
     
     // CRITICAL: Wait for Lit to process shadow DOM updates after moving to new container
     await this.#timegroupClone.clone.updateComplete;
@@ -473,6 +474,26 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
       }
     }
     await Promise.all(updatePromises);
+    
+    // Wait AGAIN specifically for text segments (they may need to re-render after move)
+    const textSegments = this.#previewContainer.querySelectorAll('ef-text-segment');
+    const textUpdatePromises: Promise<any>[] = [];
+    for (const seg of textSegments) {
+      if ('updateComplete' in seg) {
+        textUpdatePromises.push((seg as any).updateComplete);
+      }
+    }
+    await Promise.all(textUpdatePromises);
+    
+    // CRITICAL: Wait for ef-text to split text into segments
+    // EFText.connectedCallback schedules splitText in requestAnimationFrame
+    // We must wait for that RAF to fire before capturing
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    
+    // WARMUP: Do a seek to the first timestamp to "prime" the clone
+    if (timestamps.length > 0) {
+      await this.#timegroupClone.clone.seekForRender(timestamps[0]);
+    }
     
     // CRITICAL: Wait for fonts to load
     // Text won't render correctly if fonts aren't ready
@@ -526,8 +547,8 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     } catch (err) {
       console.warn("Timegroup thumbnail generation error:", err);
     } finally {
-      // Generator finished → cleanup immediately
-      this.#cleanupTimegroupGenerator();
+      // Generator finished, but keep clone alive for reuse
+      this.#timegroupGenerator = null;
     }
   }
 

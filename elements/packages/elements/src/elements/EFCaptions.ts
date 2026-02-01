@@ -5,7 +5,6 @@ import type { GetISOBMFFFileTranscriptionResult } from "../../../api/src/index.j
 import {
   type FrameRenderable,
   type FrameState,
-  createFrameTaskWrapper,
   PRIORITY_CAPTIONS,
 } from "../preview/FrameController.js";
 import { AsyncValue } from "./EFMedia.js";
@@ -369,15 +368,8 @@ export class EFCaptions extends EFSourceMixin(
     }
   }
 
-  /**
-   * @deprecated Use FrameRenderable methods (prepareFrame, renderFrame) via FrameController instead.
-   * This is a compatibility wrapper that delegates to the new system.
-   */
-  frameTask = createFrameTaskWrapper(this);
-
   // ============================================================================
   // FrameRenderable Implementation
-  // Centralized frame control - no Lit Tasks
   // ============================================================================
 
   /**

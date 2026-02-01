@@ -392,41 +392,6 @@ describe.skip("EFVideo", () => {
     });
   });
 
-  describe("frame task integration", () => {
-    test("frameTask coordinates all required tasks", async ({ expect }) => {
-      const container = document.createElement("div");
-      render(
-        html`
-        <ef-preview>
-          <ef-video src="/test-video.mp4"></ef-video>
-        </ef-preview>
-      `,
-        container,
-      );
-      document.body.appendChild(container);
-
-      const video = container.querySelector("ef-video") as EFVideo;
-
-      // frameTask should complete without errors even when other tasks fail
-      expect(() => {
-        video.frameTask.run();
-      }).not.toThrow();
-    });
-
-    test("frameTask handles missing dependencies", ({ expect }) => {
-      const container = document.createElement("div");
-      render(html`<ef-video></ef-video>`, container);
-      document.body.appendChild(container);
-
-      const video = container.querySelector("ef-video") as EFVideo;
-
-      // Should handle missing dependencies gracefully
-      expect(() => {
-        video.frameTask.run();
-      }).not.toThrow();
-    });
-  });
-
   describe("error handling and edge cases", () => {
     test("handles seek to invalid time", ({ expect }) => {
       const container = document.createElement("div");
@@ -606,7 +571,7 @@ describe.skip("EFVideo", () => {
 
       // Seek the video through the preview
       preview.currentTimeMs = 1000;
-      await video.frameTask.taskComplete;
+      await video.updateComplete;
 
       // Video should have seeked
       expect(video.ownCurrentTimeMs).toBeCloseTo(1000, 0);
@@ -1249,8 +1214,6 @@ describe.skip("EFVideo", () => {
       await timegroup.seek(1000);
       expect(headMoov480p.unifiedVideoSeekTask.value?.timestamp).toBe(1);
 
-      // // Track frameTask executions using a spy on the run method
-      // const runSpy = vi.spyOn(timegroup.frameTask, 'run');
 
       // // Rapid succession of seeks - intermediate ones should be skipped
       // timegroup.currentTimeMs = 1000;
@@ -1445,10 +1408,7 @@ describe.skip("EFVideo", () => {
       // Use timegroup.currentTimeMs to properly trigger the seek flow
       const seekPromises = rapidSeekSequence.map((timeMs) => {
         timegroup.currentTimeMs = timeMs;
-        // Don't await - let them run concurrently
-        return headMoov480p.frameTask.run().catch(() => {
-          // Ignore errors from aborted seeks
-        });
+        return Promise.resolve();
       });
 
       // Wait for all seeks to settle (some will be aborted, that's expected)
