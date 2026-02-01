@@ -9,7 +9,6 @@ import { TargetController } from "../../../elements/TargetController.js";
 import { ThumbnailExtractor } from "../../../elements/EFMedia/shared/ThumbnailExtractor.js";
 import type { BaseMediaEngine } from "../../../elements/EFMedia/BaseMediaEngine.js";
 import { captureTimegroupAtTime } from "../../../preview/renderTimegroupToCanvas.js";
-import { LRUCache } from "../../../utils/LRUCache.js";
 import { TWMixin } from "../../TWMixin.js";
 import {
   timelineStateContext,
@@ -18,13 +17,6 @@ import {
 
 /** Padding for virtual rendering */
 const VIRTUAL_RENDER_PADDING_PX = 100;
-
-/** Module-level cache for timegroup thumbnails */
-const timegroupThumbnailCache = new LRUCache<string, CanvasImageSource>(100);
-
-function getCacheKey(elementId: string, timeMs: number): string {
-  return `${elementId}:${Math.round(timeMs)}`;
-}
 
 /**
  * Descriptor for a thumbnail to render
@@ -374,41 +366,35 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     const timegroup = this.targetElement as EFTimegroup;
     if (!timegroup) return;
 
-    const elementId = (timegroup as HTMLElement).id;
     const results: ThumbnailResult[] = [];
 
-    // Render each thumbnail
+    // Render each thumbnail (no caching for debugging)
     for (const thumbnail of thumbnails) {
       if (signal.aborted) return;
 
-      const cacheKey = getCacheKey(elementId, thumbnail.timeMs);
-      let canvas = timegroupThumbnailCache.get(cacheKey);
+      let canvas: CanvasImageSource | null = null;
       let error: Error | undefined;
 
-      if (!canvas) {
-        // Render new thumbnail
-        try {
-          const result = await captureTimegroupAtTime(timegroup, {
-            timeMs: thumbnail.timeMs,
-            scale: 0.25, // Low resolution for performance
-            contentReadyMode: "blocking",
-            blockingTimeoutMs: 1000, // 1 second timeout
-          });
+      try {
+        const result = await captureTimegroupAtTime(timegroup, {
+          timeMs: thumbnail.timeMs,
+          scale: 0.25, // Low resolution for performance
+          contentReadyMode: "blocking",
+          blockingTimeoutMs: 1000, // 1 second timeout
+        });
 
-          if (result) {
-            canvas = result;
-            timegroupThumbnailCache.set(cacheKey, canvas);
-          } else {
-            error = new Error("captureTimegroupAtTime returned null or undefined");
-          }
-        } catch (err) {
-          if (signal.aborted) return;
-          error = err instanceof Error ? err : new Error(String(err));
-          console.warn("Failed to render timegroup thumbnail:", error);
+        if (result) {
+          canvas = result;
+        } else {
+          error = new Error("captureTimegroupAtTime returned null or undefined");
         }
+      } catch (err) {
+        if (signal.aborted) return;
+        error = err instanceof Error ? err : new Error(String(err));
+        console.warn("Failed to render timegroup thumbnail:", error);
       }
 
-      results.push({ canvas: canvas ?? null, error });
+      results.push({ canvas, error });
     }
 
     if (signal.aborted) return;
