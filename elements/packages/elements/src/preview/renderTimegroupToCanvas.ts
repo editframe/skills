@@ -153,6 +153,47 @@ export function resetRenderState(): void {
 // Re-export cache management functions
 export { clearInlineImageCache, getInlineImageCacheSize };
 
+/**
+ * DEBUG: Capture a single thumbnail at the current time.
+ * Call from console: window.debugCaptureThumbnail()
+ */
+(window as any).debugCaptureThumbnail = async function() {
+  const timegroup = document.querySelector('ef-timegroup') as any;
+  if (!timegroup) {
+    console.error('No timegroup found');
+    return;
+  }
+  
+  const currentTime = timegroup.currentTimeMs ?? 0;
+  console.log(`[DEBUG] Capturing thumbnail at ${currentTime}ms`);
+  
+  try {
+    const result = await captureTimegroupAtTime(timegroup, {
+      timeMs: currentTime,
+      scale: 0.25,
+      contentReadyMode: 'blocking',
+      blockingTimeoutMs: 1000,
+    });
+    console.log('[DEBUG] Capture result:', result);
+    
+    // Create a temporary img element to display the result
+    const img = document.createElement('img');
+    if (result instanceof HTMLCanvasElement) {
+      img.src = result.toDataURL();
+    } else if (result instanceof HTMLImageElement) {
+      img.src = result.src;
+    }
+    img.style.cssText = 'position:fixed;top:10px;right:10px;border:2px solid red;z-index:99999;';
+    document.body.appendChild(img);
+    console.log('[DEBUG] Result displayed in top-right corner');
+    
+    return result;
+  } catch (err) {
+    console.error('[DEBUG] Capture failed:', err);
+    throw err;
+  }
+};
+
 // ============================================================================
 // Internal Helpers
 // ============================================================================
@@ -280,6 +321,8 @@ export interface CaptureFromCloneOptions {
   blockingTimeoutMs?: number;
   /** Original timegroup (for dimension and background reference) */
   originalTimegroup?: EFTimegroup;
+  /** Explicit time for temporal visibility checks (if not provided, uses renderClone.currentTimeMs) */
+  timeMs?: number;
 }
 
 /**
@@ -301,6 +344,7 @@ export async function captureFromClone(
     contentReadyMode = "immediate",
     blockingTimeoutMs = DEFAULT_BLOCKING_TIMEOUT_MS,
     originalTimegroup,
+    timeMs: explicitTimeMs,
   } = options;
 
   // Use original timegroup dimensions if available, otherwise clone dimensions
@@ -308,8 +352,9 @@ export async function captureFromClone(
   const width = sourceForDimensions.offsetWidth || DEFAULT_WIDTH;
   const height = sourceForDimensions.offsetHeight || DEFAULT_HEIGHT;
 
-  // Handle content readiness based on mode
-  const timeMs = renderClone.currentTimeMs;
+  // Use explicit time if provided, otherwise fall back to clone's currentTimeMs
+  // CRITICAL: Using explicit time ensures temporal visibility checks are accurate
+  const timeMs = explicitTimeMs ?? renderClone.currentTimeMs;
   
   // NOTE: seekForRender() has already:
   // 1. Called frameController.renderFrame() to coordinate FrameRenderable elements
@@ -362,6 +407,10 @@ export async function captureFromClone(
         timeMs,
       });
       const serializeTime = performance.now() - t0;
+      
+      // DEBUG: Log data URI length and save to global for inspection
+      console.log(`[captureFromClone] SVG data URI length: ${dataUri.length} characters`);
+      (window as any).__lastThumbnailDataUri = dataUri;
       
       const t1 = performance.now();
       const image = await loadImageFromDataUri(dataUri);
@@ -496,29 +545,12 @@ export async function* generateThumbnailsFromClone(
     // Seek the clone to the target time
     await renderClone.seekForRender(timeMs);
     
-    // CRITICAL: Wait for browser to paint the seeked state
-    // seekForRender updates animations and forces style recalc, but doesn't guarantee paint
-    // Multiple animation frames to ensure paint completes
-    await new Promise<void>(resolve => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setTimeout(() => resolve(), 0);
-        });
-      });
-    });
-    
-    // DEBUG: Check text segment content
-    const textSegments = renderClone.querySelectorAll('ef-text-segment');
-    console.log(`[generateThumbnailsFromClone] ${textSegments.length} text segments at ${timeMs}ms:`);
-    textSegments.forEach((seg: any, i) => {
-      console.log(`  [${i}] segmentText="${seg.segmentText}", shadowRoot=${!!seg.shadowRoot}, shadowText="${seg.shadowRoot?.textContent}"`);
-    });
-    
-    // Capture from the seeked clone
+    // Capture from the seeked clone, passing explicit timeMs
     const canvas = await captureFromClone(renderClone, renderContainer, {
       scale,
       contentReadyMode,
       blockingTimeoutMs,
+      timeMs, // CRITICAL: Pass explicit time for accurate temporal visibility
     });
     
     // Yield the result with explicit timestamp association

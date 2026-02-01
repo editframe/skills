@@ -23,3 +23,5 @@ Never run build unless explicitly requested by the user. We run against source, 
 The user isn't interested in hacks or workarounds, attack the root cause unless explicitly requested by the user.
 
 Arbitrary timeouts are rarely a defensible solution. We must find event or deterministic solutions to problems.
+
+Do not replace user's stated goals with simpler ones just because they are hard to achieve. The user is the sole decision maker for what the goals are.
