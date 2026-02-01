@@ -474,6 +474,25 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     }
     await Promise.all(updatePromises);
     
+    // CRITICAL: Wait for fonts to load
+    // Text won't render correctly if fonts aren't ready
+    await document.fonts.ready;
+    
+    // CRITICAL: Wait for all images to load
+    const images = this.#previewContainer.querySelectorAll('img');
+    const imagePromises: Promise<void>[] = [];
+    for (const img of images) {
+      if (!img.complete) {
+        imagePromises.push(new Promise((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = () => resolve(); // Don't block on errors
+          // Timeout after 5s
+          setTimeout(() => resolve(), 5000);
+        }));
+      }
+    }
+    await Promise.all(imagePromises);
+    
     // Initialize queue
     this.#timegroupQueue.reset(timestamps);
     
