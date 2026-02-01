@@ -496,6 +496,13 @@ export async function* generateThumbnailsFromClone(
     // Seek the clone to the target time
     await renderClone.seekForRender(timeMs);
     
+    // DEBUG: Check text segment content
+    const textSegments = renderClone.querySelectorAll('ef-text-segment');
+    console.log(`[generateThumbnailsFromClone] ${textSegments.length} text segments at ${timeMs}ms:`);
+    textSegments.forEach((seg: any, i) => {
+      console.log(`  [${i}] segmentText="${seg.segmentText}", shadowRoot=${!!seg.shadowRoot}, shadowText="${seg.shadowRoot?.textContent}"`);
+    });
+    
     // Capture from the seeked clone
     const canvas = await captureFromClone(renderClone, renderContainer, {
       scale,
