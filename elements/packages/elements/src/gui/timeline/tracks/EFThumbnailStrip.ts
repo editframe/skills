@@ -37,6 +37,14 @@ interface ThumbnailDescriptor {
 }
 
 /**
+ * Result of thumbnail rendering (canvas or error)
+ */
+interface ThumbnailResult {
+  canvas: HTMLCanvasElement | OffscreenCanvas | null;
+  error?: Error;
+}
+
+/**
  * Thumbnail strip component that renders thumbnails for video or timegroup elements.
  * 
  * Features:
@@ -340,7 +348,11 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     if (signal.aborted) return;
 
     // Render thumbnails to canvas
-    this.#drawThumbnails(thumbnails, results.map((r) => r?.thumbnail ?? null));
+    const thumbnailResults: ThumbnailResult[] = results.map((r) => ({
+      canvas: r?.thumbnail ?? null,
+      error: r ? undefined : new Error("Thumbnail extraction failed"),
+    }));
+    this.#drawThumbnails(thumbnails, thumbnailResults);
   }
 
   /**
@@ -354,7 +366,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     if (!timegroup) return;
 
     const elementId = (timegroup as HTMLElement).id;
-    const canvases: (HTMLCanvasElement | null)[] = [];
+    const results: ThumbnailResult[] = [];
 
     // Render each thumbnail
     for (const thumbnail of thumbnails) {
@@ -362,6 +374,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
 
       const cacheKey = getCacheKey(elementId, thumbnail.timeMs);
       let canvas = timegroupThumbnailCache.get(cacheKey);
+      let error: Error | undefined;
 
       if (!canvas) {
         // Render new thumbnail
@@ -375,20 +388,23 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
           if (result instanceof HTMLCanvasElement) {
             canvas = result;
             timegroupThumbnailCache.set(cacheKey, canvas);
+          } else {
+            error = new Error("captureTimegroupAtTime did not return HTMLCanvasElement");
           }
-        } catch (error) {
+        } catch (err) {
           if (signal.aborted) return;
+          error = err instanceof Error ? err : new Error(String(err));
           console.warn("Failed to render timegroup thumbnail:", error);
         }
       }
 
-      canvases.push(canvas ?? null);
+      results.push({ canvas: canvas ?? null, error });
     }
 
     if (signal.aborted) return;
 
     // Draw thumbnails to canvas
-    this.#drawThumbnails(thumbnails, canvases);
+    this.#drawThumbnails(thumbnails, results);
   }
 
   /**
@@ -396,7 +412,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
    */
   #drawThumbnails(
     thumbnails: ThumbnailDescriptor[],
-    sources: (HTMLCanvasElement | OffscreenCanvas | null)[],
+    results: ThumbnailResult[],
   ): void {
     const container = this.#canvasContainer.value;
     if (!container) return;
@@ -406,7 +422,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
 
     for (let i = 0; i < thumbnails.length; i++) {
       const thumbnail = thumbnails[i];
-      const source = sources[i];
+      const result = results[i];
 
       if (!thumbnail) continue;
 
@@ -421,12 +437,20 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
       const ctx = canvas.getContext("2d");
       if (!ctx) continue;
 
-      if (source) {
+      if (result?.canvas) {
         // Draw thumbnail
-        ctx.drawImage(source, 0, 0, thumbnail.width, thumbnail.height);
+        ctx.drawImage(result.canvas, 0, 0, thumbnail.width, thumbnail.height);
       } else {
-        // Draw error indicator
+        // Draw error indicator and log error
         this.#drawErrorIndicator(ctx, thumbnail.width, thumbnail.height);
+        
+        if (result?.error) {
+          console.warn(
+            `Thumbnail render failed at ${thumbnail.timeMs}ms:`,
+            result.error,
+            { element: this.targetElement, thumbnail }
+          );
+        }
       }
 
       container.appendChild(canvas);
