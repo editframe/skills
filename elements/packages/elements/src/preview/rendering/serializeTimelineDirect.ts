@@ -450,6 +450,15 @@ function serializeElement(
       return;
     }
     
+    // DEBUG: Log shadow DOM serialization for text segments
+    if (element.tagName === 'EF-TEXT-SEGMENT') {
+      console.log(`[serialize] EF-TEXT-SEGMENT shadow DOM:`, {
+        childNodes: element.shadowRoot.childNodes.length,
+        textContent: element.shadowRoot.textContent,
+        innerHTML: element.shadowRoot.innerHTML,
+      });
+    }
+    
     // Serialize custom element with its styles, then shadow DOM content inside
     // Use span for inline/inline-block/inline-flex elements to preserve inline behavior
     const computedDisplay = getComputedStyle(element).display;
