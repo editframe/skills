@@ -67,6 +67,13 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
         overflow: hidden;
       }
 
+      .thumbnail-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+
       .error-message {
         display: flex;
         align-items: center;
@@ -231,10 +238,12 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
 
     let x = 0;
     while (x < trackWidthPx) {
-      // Only include thumbnails in visible range
-      if (x + width >= visibleStartPx && x <= visibleEndPx) {
+      // Only include thumbnails that:
+      // 1. Are in visible range (for performance)
+      // 2. Start before the track ends (don't extend past duration)
+      if (x + width >= visibleStartPx && x <= visibleEndPx && x < trackWidthPx) {
         const timeMs = x / pixelsPerMs;
-        if (timeMs <= durationMs) {
+        if (timeMs < durationMs) {
           thumbnails.push({ timeMs, x, width, height });
         }
       }
@@ -501,8 +510,8 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
       </div>`;
     }
 
-    // Render canvas container
-    return html`<div ${ref(this.#canvasContainer)}></div>`;
+    // Render canvas container with overflow hidden
+    return html`<div class="thumbnail-container" ${ref(this.#canvasContainer)}></div>`;
   }
 }
 
