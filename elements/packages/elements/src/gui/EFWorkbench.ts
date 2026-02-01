@@ -1143,6 +1143,10 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       // Apply current transform
       this.updateCanvasTransform();
       
+      // CRITICAL: Wait for seekTask before starting loop to avoid rendering at wrong time
+      // This prevents showing a frame at 0ms before localStorage restore to saved time
+      await timegroup.seekTask.taskComplete;
+      
       // Start the canvas render loop
       const loop = async () => {
         if (this.presentationMode !== "canvas") return;

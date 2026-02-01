@@ -735,7 +735,6 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     try {
       await this.#frameController.renderFrame(this.currentTimeMs, {
         onAnimationsUpdate: (root) => {
-          const { updateAnimations } = require("./updateAnimations.js");
           updateAnimations(root as typeof this);
         },
       });
@@ -900,7 +899,6 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     // Wait for frame rendering via FrameController
     await this.#frameController.renderFrame(timeMs, {
       onAnimationsUpdate: (root) => {
-        const { updateAnimations } = require("./updateAnimations.js");
         updateAnimations(root as typeof this);
       },
     });
