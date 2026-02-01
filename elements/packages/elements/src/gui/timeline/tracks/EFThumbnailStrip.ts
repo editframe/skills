@@ -20,7 +20,7 @@ import {
 const VIRTUAL_RENDER_PADDING_PX = 100;
 
 /** Module-level cache for timegroup thumbnails */
-const timegroupThumbnailCache = new LRUCache<string, HTMLCanvasElement>(100);
+const timegroupThumbnailCache = new LRUCache<string, CanvasImageSource>(100);
 
 function getCacheKey(elementId: string, timeMs: number): string {
   return `${elementId}:${Math.round(timeMs)}`;
@@ -40,7 +40,7 @@ interface ThumbnailDescriptor {
  * Result of thumbnail rendering (canvas or error)
  */
 interface ThumbnailResult {
-  canvas: HTMLCanvasElement | OffscreenCanvas | null;
+  canvas: CanvasImageSource | null;
   error?: Error;
 }
 
@@ -394,11 +394,11 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
             contentReadyMode: "immediate",
           });
 
-          if (result instanceof HTMLCanvasElement) {
+          if (result) {
             canvas = result;
             timegroupThumbnailCache.set(cacheKey, canvas);
           } else {
-            error = new Error("captureTimegroupAtTime did not return HTMLCanvasElement");
+            error = new Error("captureTimegroupAtTime returned null or undefined");
           }
         } catch (err) {
           if (signal.aborted) return;
