@@ -426,6 +426,82 @@ export async function captureTimegroupAtTime(
   }
 }
 
+/**
+ * Result from thumbnail generator
+ */
+export interface GeneratedThumbnail {
+  timeMs: number;
+  canvas: CanvasImageSource;
+}
+
+/**
+ * Options for thumbnail generation (subset of CaptureOptions without timeMs)
+ */
+export interface GenerateThumbnailsOptions {
+  scale?: number;
+  contentReadyMode?: ContentReadyMode;
+  blockingTimeoutMs?: number;
+}
+
+/**
+ * Generate thumbnails for multiple timestamps efficiently using a single render clone.
+ * This avoids the overhead of creating/destroying a clone for each thumbnail.
+ * 
+ * @param timegroup - The timegroup to capture
+ * @param timestamps - Array of timestamps to capture (in milliseconds)
+ * @param options - Capture options (scale, contentReadyMode, etc.)
+ * @param signal - Optional AbortSignal to cancel generation
+ * @yields Objects with { timeMs, canvas } for each captured thumbnail
+ * 
+ * @example
+ * ```ts
+ * for await (const { timeMs, canvas } of generateThumbnails(tg, [0, 100, 200])) {
+ *   console.log(`Got thumbnail for ${timeMs}ms`);
+ *   thumbnailCache.set(timeMs, canvas);
+ * }
+ * ```
+ */
+export async function* generateThumbnails(
+  timegroup: EFTimegroup,
+  timestamps: number[],
+  options: GenerateThumbnailsOptions = {},
+  signal?: AbortSignal,
+): AsyncGenerator<GeneratedThumbnail> {
+  const {
+    scale = DEFAULT_CAPTURE_SCALE,
+    contentReadyMode = "immediate",
+    blockingTimeoutMs = DEFAULT_BLOCKING_TIMEOUT_MS,
+  } = options;
+
+  // Create a single render clone for all thumbnails
+  const { clone: renderClone, container: renderContainer, cleanup: cleanupRenderClone } = 
+    await timegroup.createRenderClone();
+  
+  try {
+    for (const timeMs of timestamps) {
+      // Check for abort before each capture
+      signal?.throwIfAborted();
+      
+      // Seek the clone to the target time
+      await renderClone.seekForRender(timeMs);
+      
+      // Capture from the seeked clone
+      const canvas = await captureFromClone(renderClone, renderContainer, {
+        scale,
+        contentReadyMode,
+        blockingTimeoutMs,
+        originalTimegroup: timegroup,
+      });
+      
+      // Yield the result with explicit timestamp association
+      yield { timeMs, canvas };
+    }
+  } finally {
+    // Always clean up the render clone
+    cleanupRenderClone();
+  }
+}
+
 /** Epsilon for comparing time values (ms) - times within this are considered equal */
 const TIME_EPSILON_MS = 1;
 

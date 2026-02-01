@@ -21,3 +21,5 @@ Do not make assumptions about performance. Always test and measure performance b
 Never run build unless explicitly requested by the user. We run against source, not built packages during development.
 
 The user isn't interested in hacks or workarounds, attack the root cause unless explicitly requested by the user.
+
+Arbitrary timeouts are rarely a defensible solution. We must find event or deterministic solutions to problems.

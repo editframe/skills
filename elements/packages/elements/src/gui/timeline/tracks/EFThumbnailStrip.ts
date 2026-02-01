@@ -8,7 +8,8 @@ import { EFVideo } from "../../../elements/EFVideo.js";
 import { TargetController } from "../../../elements/TargetController.js";
 import { ThumbnailExtractor } from "../../../elements/EFMedia/shared/ThumbnailExtractor.js";
 import type { BaseMediaEngine } from "../../../elements/EFMedia/BaseMediaEngine.js";
-import { captureTimegroupAtTime } from "../../../preview/renderTimegroupToCanvas.js";
+import { generateThumbnails } from "../../../preview/renderTimegroupToCanvas.js";
+import { quantizeToFrameTimeMs } from "../../../utils/frameTime.js";
 import { TWMixin } from "../../TWMixin.js";
 import {
   timelineStateContext,
@@ -112,6 +113,9 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
   #abortController: AbortController | null = null;
   #renderRequested = false;
   #canvasContainer: Ref<HTMLDivElement> = createRef();
+  #lastRequiredTimestamps = "";
+  #captureAbortController: AbortController | null = null;
+  #thumbnailCache = new Map<number, CanvasImageSource>();
 
   /**
    * Check if target is valid (EFVideo or root EFTimegroup)
@@ -149,6 +153,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
   disconnectedCallback(): void {
     super.disconnectedCallback();
     this.#abortController?.abort();
+    this.#captureAbortController?.abort();
   }
 
   protected willUpdate(
@@ -217,13 +222,16 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     const viewportWidth = this.#timelineState?.viewportWidth ?? 800;
     const pixelsPerMs = this.#timelineState?.pixelsPerMs ?? this.pixelsPerMs;
 
-    const visibleStartPx = scrollLeft - VIRTUAL_RENDER_PADDING_PX;
-    const visibleEndPx = scrollLeft + viewportWidth + VIRTUAL_RENDER_PADDING_PX;
-
     const durationMs = (element as any).durationMs ?? 0;
     if (durationMs === 0) return [];
 
     const trackWidthPx = durationMs * pixelsPerMs;
+
+    // Get FPS for quantization
+    const fps = (element as any).fps ?? 30;
+
+    const visibleStartPx = scrollLeft - VIRTUAL_RENDER_PADDING_PX;
+    const visibleEndPx = scrollLeft + viewportWidth + VIRTUAL_RENDER_PADDING_PX;
 
     const thumbnails: ThumbnailDescriptor[] = [];
     const { width, height } = this.#thumbnailDimensions;
@@ -234,7 +242,8 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
       // 1. Are in visible range (for performance)
       // 2. Start before the track ends (don't extend past duration)
       if (x + width >= visibleStartPx && x <= visibleEndPx && x < trackWidthPx) {
-        const timeMs = x / pixelsPerMs;
+        const rawTimeMs = x / pixelsPerMs;
+        const timeMs = quantizeToFrameTimeMs(rawTimeMs, fps);
         if (timeMs < durationMs) {
           thumbnails.push({ timeMs, x, width, height });
         }
@@ -273,16 +282,107 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
       return;
     }
 
+    // Check if required timestamps changed
+    const requiredTimestamps = visibleThumbnails.map(t => t.timeMs);
+    const timestampsString = requiredTimestamps.join(", ");
+    if (timestampsString !== this.#lastRequiredTimestamps) {
+      console.log("Required thumbnails:", timestampsString);
+      this.#lastRequiredTimestamps = timestampsString;
+      
+      // Abort previous capture and start new one
+      this.#captureAbortController?.abort();
+      this.#captureAbortController = new AbortController();
+      this.#startCapture(requiredTimestamps, this.#captureAbortController.signal);
+    }
+
+    if (signal.aborted) return;
+
+    // Draw thumbnails (actual or placeholder)
+    const results: ThumbnailResult[] = visibleThumbnails.map(t => ({
+      canvas: this.#thumbnailCache.get(t.timeMs) ?? null,
+    }));
+    this.#drawThumbnails(visibleThumbnails, results);
+  }
+
+  /**
+   * Start capturing thumbnails for the given timestamps
+   */
+  async #startCapture(timestamps: number[], signal: AbortSignal): Promise<void> {
+    if (this.targetElement instanceof EFVideo) {
+      await this.#captureVideoThumbnails(timestamps, signal);
+    } else if (this.targetElement instanceof EFTimegroup) {
+      await this.#captureTimegroupThumbnails(timestamps, signal);
+    }
+  }
+
+  /**
+   * Capture video thumbnails
+   */
+  async #captureVideoThumbnails(timestamps: number[], signal: AbortSignal): Promise<void> {
+    const video = this.targetElement as EFVideo;
+    if (!video) return;
+
+    const mediaEngineTask = video.mediaEngineTask;
+    if (!mediaEngineTask) return;
+
+    const mediaEngine = await mediaEngineTask.taskComplete;
+    if (!mediaEngine || signal.aborted) return;
+
+    const sourceTimestamps = timestamps.map(t => this.#getSourceTimeMs(t));
+
+    const extractor = new ThumbnailExtractor(mediaEngine as unknown as BaseMediaEngine);
+    const scrubRendition = mediaEngine.videoRendition;
+    if (!scrubRendition) return;
+
+    const results = await extractor.extractThumbnails(
+      sourceTimestamps,
+      scrubRendition,
+      video.durationMs ?? 0,
+      signal,
+    );
+
+    if (signal.aborted) return;
+
+    // Store in cache and trigger redraw
+    for (let i = 0; i < timestamps.length; i++) {
+      const thumbnail = results[i]?.thumbnail;
+      const timestamp = timestamps[i];
+      if (thumbnail && timestamp !== undefined) {
+        this.#thumbnailCache.set(timestamp, thumbnail);
+      }
+    }
+    
+    this.#scheduleRender();
+  }
+
+  /**
+   * Capture timegroup thumbnails using generator (single clone for all thumbnails)
+   */
+  async #captureTimegroupThumbnails(timestamps: number[], signal: AbortSignal): Promise<void> {
+    const timegroup = this.targetElement as EFTimegroup;
+    if (!timegroup) return;
+
     try {
-      if (this.targetElement instanceof EFVideo) {
-        await this.#renderVideoThumbnails(visibleThumbnails, signal);
-      } else if (this.targetElement instanceof EFTimegroup) {
-        await this.#renderTimegroupThumbnails(visibleThumbnails, signal);
+      for await (const { timeMs, canvas } of generateThumbnails(
+        timegroup,
+        timestamps,
+        {
+          scale: 0.25,
+          contentReadyMode: "blocking",
+          blockingTimeoutMs: 1000,
+        },
+        signal,
+      )) {
+        if (!signal.aborted) {
+          this.#thumbnailCache.set(timeMs, canvas);
+          this.#scheduleRender();
+        }
       }
-    } catch (error) {
-      if (!(error instanceof DOMException && error.name === "AbortError")) {
-        console.warn("Thumbnail rendering failed:", error);
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        return; // Expected cancellation
       }
+      console.warn("Failed to capture timegroup thumbnails:", err);
     }
   }
 
@@ -305,102 +405,6 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
       return compositionTimeMs + (el.sourceStartMs ?? 0);
     }
     return compositionTimeMs;
-  }
-
-  /**
-   * Render video thumbnails using ThumbnailExtractor
-   */
-  async #renderVideoThumbnails(
-    thumbnails: ThumbnailDescriptor[],
-    signal: AbortSignal,
-  ): Promise<void> {
-    const video = this.targetElement as EFVideo;
-    if (!video) return;
-
-    // Get media engine
-    const mediaEngineTask = video.mediaEngineTask;
-    if (!mediaEngineTask) {
-      console.warn("No media engine task available");
-      return;
-    }
-
-    const mediaEngine = await mediaEngineTask.taskComplete;
-    if (!mediaEngine || signal.aborted) return;
-
-    // Translate composition times to source times
-    const timestamps = thumbnails.map((t) => this.#getSourceTimeMs(t.timeMs));
-
-    // Batch extract thumbnails
-    // MediaEngine implementations (JitMediaEngine, AssetMediaEngine) extend BaseMediaEngine
-    const extractor = new ThumbnailExtractor(mediaEngine as unknown as BaseMediaEngine);
-    const scrubRendition = mediaEngine.videoRendition;
-    if (!scrubRendition) {
-      console.warn("No video rendition available for thumbnails");
-      return;
-    }
-
-    const results = await extractor.extractThumbnails(
-      timestamps,
-      scrubRendition,
-      video.durationMs ?? 0,
-      signal,
-    );
-
-    if (signal.aborted) return;
-
-    // Render thumbnails to canvas
-    const thumbnailResults: ThumbnailResult[] = results.map((r) => ({
-      canvas: r?.thumbnail ?? null,
-      error: r ? undefined : new Error("Thumbnail extraction failed"),
-    }));
-    this.#drawThumbnails(thumbnails, thumbnailResults);
-  }
-
-  /**
-   * Render timegroup thumbnails using canvas rendering
-   */
-  async #renderTimegroupThumbnails(
-    thumbnails: ThumbnailDescriptor[],
-    signal: AbortSignal,
-  ): Promise<void> {
-    const timegroup = this.targetElement as EFTimegroup;
-    if (!timegroup) return;
-
-    const results: ThumbnailResult[] = [];
-
-    // Render each thumbnail (no caching for debugging)
-    for (const thumbnail of thumbnails) {
-      if (signal.aborted) return;
-
-      let canvas: CanvasImageSource | null = null;
-      let error: Error | undefined;
-
-      try {
-        const result = await captureTimegroupAtTime(timegroup, {
-          timeMs: thumbnail.timeMs,
-          scale: 0.25, // Low resolution for performance
-          contentReadyMode: "blocking",
-          blockingTimeoutMs: 1000, // 1 second timeout
-        });
-
-        if (result) {
-          canvas = result;
-        } else {
-          error = new Error("captureTimegroupAtTime returned null or undefined");
-        }
-      } catch (err) {
-        if (signal.aborted) return;
-        error = err instanceof Error ? err : new Error(String(err));
-        console.warn("Failed to render timegroup thumbnail:", error);
-      }
-
-      results.push({ canvas, error });
-    }
-
-    if (signal.aborted) return;
-
-    // Draw thumbnails to canvas
-    this.#drawThumbnails(thumbnails, results);
   }
 
   /**
@@ -434,47 +438,28 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
       if (!ctx) continue;
 
       if (result?.canvas) {
-        // Draw thumbnail
+        // Draw actual thumbnail
         ctx.drawImage(result.canvas, 0, 0, thumbnail.width, thumbnail.height);
       } else {
-        // Draw error indicator and log error
-        this.#drawErrorIndicator(ctx, thumbnail.width, thumbnail.height);
+        // Draw placeholder with timestamp text
+        ctx.fillStyle = "rgba(100, 100, 100, 0.3)";
+        ctx.fillRect(0, 0, thumbnail.width, thumbnail.height);
         
-        if (result?.error) {
-          console.warn(
-            `Thumbnail render failed at ${thumbnail.timeMs}ms:`,
-            result.error,
-            { element: this.targetElement, thumbnail }
-          );
-        }
+        ctx.strokeStyle = "rgba(150, 150, 150, 0.5)";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(0, 0, thumbnail.width, thumbnail.height);
+        
+        ctx.fillStyle = "white";
+        ctx.font = "10px monospace";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(`${Math.round(thumbnail.timeMs)}ms`, thumbnail.width / 2, thumbnail.height / 2);
       }
 
       container.appendChild(canvas);
     }
   }
 
-  /**
-   * Draw error indicator for failed thumbnails
-   */
-  #drawErrorIndicator(
-    ctx: CanvasRenderingContext2D,
-    width: number,
-    height: number,
-  ): void {
-    // Red tint background
-    ctx.fillStyle = "rgba(239, 68, 68, 0.2)";
-    ctx.fillRect(0, 0, width, height);
-
-    // Draw X
-    ctx.strokeStyle = "rgb(239, 68, 68)";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(4, 4);
-    ctx.lineTo(width - 4, height - 4);
-    ctx.moveTo(width - 4, 4);
-    ctx.lineTo(4, height - 4);
-    ctx.stroke();
-  }
 
   render() {
     // Error: No target specified (neither target string nor targetElement)
