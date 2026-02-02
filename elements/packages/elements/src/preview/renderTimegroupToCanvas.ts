@@ -371,56 +371,26 @@ export async function captureFromClone(
   const renderContext = new RenderContext();
   
   try {
-    const renderMode = getEffectiveRenderMode();
+    // UNIFIED PATH: Always use foreignObject serialization (same as video rendering)
+    // This ensures consistency - thumbnails, video export, and preview all use the same code path
+    // The native path had reliability issues with scaling and content rendering
+    const t0 = performance.now();
+    const dataUri = await serializeTimelineToDataUri(renderClone, width, height, {
+      renderContext,
+      canvasScale: scale,
+      timeMs,
+    });
+    const serializeTime = performance.now() - t0;
     
-    if (renderMode === "native") {
-      // NATIVE PATH: Render the seeked renderClone directly from live DOM
-      // The clone is already at the correct time, so drawElementImage captures its current
-      // visual state including video frames at the correct position.
-      // 
-      // Apply scale to dimensions for thumbnail captures
-      const scaledWidth = Math.floor(width * scale);
-      const scaledHeight = Math.floor(height * scale);
-      
-      // Position render container at FULL size (element needs to layout at natural size)
-      // but we'll capture at scaled dimensions
-      renderContainer.style.cssText = `
-        position: fixed;
-        left: 0;
-        top: 0;
-        width: ${width}px;
-        height: ${height}px;
-        pointer-events: none;
-        overflow: hidden;
-      `;
-      
-      // OPTIMIZATION: Always skip DPR scaling for captures (thumbnails and video export).
-      // Retina quality isn't needed for captured frames, and DPR=2 means 4x more pixels.
-      // Live preview uses a different code path (renderTimegroupToCanvas) which handles DPR properly.
-      // Capture at SCALED dimensions to match foreignObject behavior
-      return await renderToImageNative(renderContainer, scaledWidth, scaledHeight, { skipDprScaling: true });
-    } else {
-      // FOREIGNOBJECT PATH: Direct serialization of the render clone
-      // The clone is already at the correct time and isolated from the prime timeline.
-      // No need for intermediate passive structure - serialize the clone directly.
-      const t0 = performance.now();
-      const dataUri = await serializeTimelineToDataUri(renderClone, width, height, {
-        renderContext,
-        canvasScale: scale,
-        timeMs,
-      });
-      const serializeTime = performance.now() - t0;
-      
-      
-      const t1 = performance.now();
-      const image = await loadImageFromDataUri(dataUri);
-      const loadTime = performance.now() - t1;
-      
-      logger.debug(`[captureFromClone] serialize=${serializeTime.toFixed(0)}ms, load=${loadTime.toFixed(0)}ms (canvasScale=${scale})`);
-      
-      // Return image directly - no copy needed!
-      return image;
-    }
+    
+    const t1 = performance.now();
+    const image = await loadImageFromDataUri(dataUri);
+    const loadTime = performance.now() - t1;
+    
+    logger.debug(`[captureFromClone] serialize=${serializeTime.toFixed(0)}ms, load=${loadTime.toFixed(0)}ms (canvasScale=${scale})`);
+    
+    // Return image directly - no copy needed!
+    return image;
   } finally {
     // Ensure RenderContext is disposed even if an error occurs
     renderContext.dispose();
