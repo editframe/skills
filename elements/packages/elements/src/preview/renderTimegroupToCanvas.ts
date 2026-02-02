@@ -378,7 +378,12 @@ export async function captureFromClone(
       // The clone is already at the correct time, so drawElementImage captures its current
       // visual state including video frames at the correct position.
       // 
-      // Position render container properly for capture
+      // Apply scale to dimensions for thumbnail captures
+      const scaledWidth = Math.floor(width * scale);
+      const scaledHeight = Math.floor(height * scale);
+      
+      // Position render container at FULL size (element needs to layout at natural size)
+      // but we'll capture at scaled dimensions
       renderContainer.style.cssText = `
         position: fixed;
         left: 0;
@@ -392,8 +397,8 @@ export async function captureFromClone(
       // OPTIMIZATION: Always skip DPR scaling for captures (thumbnails and video export).
       // Retina quality isn't needed for captured frames, and DPR=2 means 4x more pixels.
       // Live preview uses a different code path (renderTimegroupToCanvas) which handles DPR properly.
-      // Return canvas directly - no copy needed!
-      return await renderToImageNative(renderContainer, width, height, { skipDprScaling: true });
+      // Capture at SCALED dimensions to match foreignObject behavior
+      return await renderToImageNative(renderContainer, scaledWidth, scaledHeight, { skipDprScaling: true });
     } else {
       // FOREIGNOBJECT PATH: Direct serialization of the render clone
       // The clone is already at the correct time and isolated from the prime timeline.
