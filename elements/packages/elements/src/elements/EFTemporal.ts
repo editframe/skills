@@ -1083,17 +1083,16 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
     }
 
     didBecomeRoot() {
-      // Never create PlaybackController for render clones
-      // Render clones need direct time control via seekForRender
-      if ((this as any).closest?.('.ef-render-clone-container')) {
+      // Don't create PlaybackController if explicitly disabled (e.g., for render clones)
+      // or if one already exists
+      const noPlayback = (this as any).hasAttribute?.('data-no-playback-controller');
+      if (noPlayback || this.playbackController) {
         return;
       }
       
-      if (!this.playbackController) {
-        this.playbackController = new PlaybackController(this as any);
-        if (this.#loop) {
-          this.playbackController.setLoop(this.#loop);
-        }
+      this.playbackController = new PlaybackController(this as any);
+      if (this.#loop) {
+        this.playbackController.setLoop(this.#loop);
       }
     }
 

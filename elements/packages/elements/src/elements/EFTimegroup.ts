@@ -930,6 +930,12 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     // This is critical for elements like ef-text and ef-captions that don't have frameTask
     await Promise.all(allLitElements.map((el) => el.updateComplete));
     
+    // CRITICAL: For nested timegroups, ensure ownCurrentTimeMs is updated
+    // OwnCurrentTimeController uses setTimeout(0) to schedule updates, so we need to
+    // yield to the event loop before proceeding. Without this, child timegroups have
+    // stale ownCurrentTimeMs values, causing animation times to be calculated incorrectly.
+    await new Promise(resolve => setTimeout(resolve, 0));
+    
     // Wait for ef-text elements to have their segments ready
     // ef-text creates segments asynchronously via requestAnimationFrame
     const textElements = allLitElements.filter((el) => el.tagName === "EF-TEXT");
@@ -942,6 +948,15 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
           return Promise.resolve();
         }),
       );
+      
+      // CRITICAL: Force layout stabilization after text segments are created
+      // The browser needs time to reflow and compute final text layout (line wrapping, etc.)
+      // Access offsetHeight to trigger synchronous layout computation
+      void this.offsetHeight;
+      
+      // Wait one more frame to ensure layout is fully stable
+      // Some browsers need an additional frame after forced reflow
+      await new Promise(resolve => requestAnimationFrame(resolve));
     }
     
     // Use FrameController for centralized element coordination
@@ -1496,6 +1511,21 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     // which causes time to be loaded from storage during connectedCallback.
     cloneEl.removeAttribute("id");
     
+    // Mark clone as not needing workbench wrapping or playback controller
+    // Clones are offscreen and used only for rendering, not for user interaction
+    // Time control is done via seekForRender, not via PlaybackController
+    cloneEl.setAttribute("data-no-workbench", "true");
+    cloneEl.setAttribute("data-no-playback-controller", "true");
+    
+    // CRITICAL: Set explicit dimensions on the clone element itself
+    // The container has dimensions, but the timegroup element needs them too
+    // for correct layout of child elements (text wrapping, etc.)
+    const width = this.offsetWidth || 1920;
+    const height = this.offsetHeight || 1080;
+    cloneEl.style.width = `${width}px`;
+    cloneEl.style.height = `${height}px`;
+    cloneEl.style.display = 'block'; // Ensure block layout
+    
     // 2b. Copy JavaScript properties that aren't cloned by cloneNode()
     this.#copyCaptionsData(this, cloneEl);
     
@@ -1568,12 +1598,42 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     // 7. Wait for LitElement updates and media durations
     await actualClone.updateComplete;
     
-    // 7a. Copy ef-text-segment properties from original to actualClone
+    // 7a. Wait for all LitElement descendants to complete their updates
+    const allLitElements = Array.from(actualClone.querySelectorAll('*')).filter(
+      (el) => el instanceof LitElement
+    ) as LitElement[];
+    await Promise.all(allLitElements.map((el) => el.updateComplete));
+    
+    // 7b. Wait for ef-text elements to have their segments ready
+    // ef-text creates segments asynchronously via requestAnimationFrame
+    // This ensures segments exist before we serialize the clone
+    const textElements = allLitElements.filter((el) => el.tagName === "EF-TEXT");
+    if (textElements.length > 0) {
+      await Promise.all(
+        textElements.map((el) => {
+          if ("whenSegmentsReady" in el && typeof el.whenSegmentsReady === "function") {
+            return (el as any).whenSegmentsReady();
+          }
+          return Promise.resolve();
+        }),
+      );
+      
+      // CRITICAL: Force layout stabilization after text segments are created
+      // The browser needs time to reflow and compute final text layout (line wrapping, etc.)
+      // Access offsetHeight to trigger synchronous layout computation
+      void actualClone.offsetHeight;
+      
+      // Wait one more frame to ensure layout is fully stable
+      // Some browsers need an additional frame after forced reflow
+      await new Promise(resolve => requestAnimationFrame(resolve));
+    }
+    
+    // 7c. Copy ef-text-segment properties from original to actualClone
     // IMPORTANT: This must happen AFTER the initializer runs (which may replace the DOM for React)
     // segmentText is a JS property that needs to be copied, then we wait for shadow DOM updates
     await this.#copyTextSegmentData(this, actualClone);
     
-    // 7b. CRITICAL: Manually set up parent-child relationships for cloned elements
+    // 7d. CRITICAL: Manually set up parent-child relationships for cloned elements
     // Lit Context doesn't automatically propagate to cloned children because the
     // context consumer decorator runs before the element is in the DOM tree.
     // We need to explicitly walk the tree and set parentTimegroup/rootTimegroup on each element.
@@ -2001,13 +2061,12 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
       return false;
     }
 
-    // Skip wrapping in test contexts
-    if (this.closest("test-context") !== null) {
-      return false;
-    }
-
-    // Never wrap render clones (they're in an offscreen container for capture operations)
-    if (this.closest(".ef-render-clone-container") !== null) {
+    // Skip wrapping in test contexts or if explicitly disabled
+    // Test contexts and render clones provide their own rendering infrastructure
+    if (
+      this.closest("test-context") !== null ||
+      this.hasAttribute("data-no-workbench")
+    ) {
       return false;
     }
 

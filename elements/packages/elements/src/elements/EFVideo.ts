@@ -641,26 +641,10 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
 
         // EF_FRAMEGEN-aware rendering mode detection
         if (!isProductionRendering) {
-          // Check if we're in a render clone (used for thumbnails, video export, etc.)
-          // Render clones should ALWAYS render, even at time 0
-          const isInRenderClone = !!this.closest('.ef-render-clone-container');
-          
-          if (isInRenderClone) {
-            span.setAttribute("renderClone", true);
-          }
-          
-          // Preview mode: skip rendering during initialization to prevent artifacts
-          // BUT: Always render if we're in a render clone (for thumbnails/export)
-          if (
-            !isInRenderClone &&
-            (!this.rootTimegroup ||
-            (this.rootTimegroup.currentTimeMs === 0 &&
-              this.desiredSeekTimeMs === 0))
-          ) {
-            span.setAttribute("skipped", "preview-initialization");
-            return; // Skip initialization frame in preview mode
-          }
-          // Preview mode: proceed with rendering
+          // Preview mode: always render
+          // Visibility is handled by the phase/visibility system (CSS display:none)
+          // No need to skip initialization frames - if element shouldn't be visible,
+          // it will be hidden by CSS
         } else {
           // Production rendering mode: only render when EF_FRAMEGEN has explicitly started frame rendering
           // This prevents initialization frames before the actual render sequence begins

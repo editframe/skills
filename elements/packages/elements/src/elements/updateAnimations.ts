@@ -48,14 +48,6 @@ const lastAnimationCount = new WeakMap<Element, number>();
 const validatedAnimations = new WeakSet<Animation>();
 
 /**
- * Checks if an element is in a render clone (static DOM context).
- * Render clones are in containers with class "ef-render-clone-container".
- */
-const isRenderClone = (element: Element): boolean => {
-  return element.closest(".ef-render-clone-container") !== null;
-};
-
-/**
  * Validates that an animation is still valid and controllable.
  * Animations become invalid when:
  * - They've been cancelled (idle state and not in getAnimations())
@@ -111,31 +103,22 @@ const discoverAndTrackAnimations = (
   element: AnimatableElement,
   providedAnimations?: Animation[],
 ): { tracked: Set<Animation>; current: Animation[] } => {
-  const isClone = isRenderClone(element);
   const hasTrackedAnimations = animationTracker.has(element);
   const structureChanged = domStructureChanged.get(element) ?? true;
   
-  // OPTIMIZATION: For render clones with already-tracked animations and no structure changes,
-  // skip ALL getAnimations() calls entirely. Render clones have static animations that never
-  // change, so we can reuse the tracked set without any validation.
-  if (isClone && hasTrackedAnimations && !structureChanged) {
-    const rootTracked = animationTracker.get(element)!;
-    
-    // For render clones, animations are completely static - no validation needed
-    // Just return the tracked set as both tracked and current
-    // This avoids calling getAnimations() entirely (was line 121)
-    return { tracked: rootTracked, current: Array.from(rootTracked) };
-  }
+  // REMOVED: Clone optimization that cached animation references.
+  // The optimization assumed animations were "static" for clones, but this was incorrect.
+  // After seeking to a new time, we need fresh animation state from the browser.
+  // Caching caused animations to be stuck at their discovery state (often 0ms).
   
   // For prime timeline or first discovery: get current animations from the browser (includes subtree)
   // CRITICAL: This is expensive, so we return it to avoid calling it again
   // If animations were provided by caller (to avoid redundant calls), use those
   const currentAnimations = providedAnimations ?? element.getAnimations({ subtree: true });
   
-  // Mark structure as stable after discovery (for render clones, this stays stable)
-  if (isClone) {
-    domStructureChanged.set(element, false);
-  }
+  // Mark structure as stable after discovery
+  // This prevents redundant getAnimations() calls when DOM hasn't changed
+  domStructureChanged.set(element, false);
   
   // Track animation count for lightweight change detection
   lastAnimationCount.set(element, currentAnimations.length);
@@ -226,15 +209,9 @@ export const cleanupTrackedAnimations = (element: Element): void => {
 /**
  * Marks that DOM structure has changed for an element, requiring animation rediscovery.
  * Should be called when elements are added/removed or CSS classes change that affect animations.
- * 
- * For render clones, this should never be called (DOM is static).
- * For prime timeline, call this when mutations occur that might affect animations.
  */
 export const markDomStructureChanged = (element: Element): void => {
-  // Only mark changes for prime timeline (not render clones)
-  if (!isRenderClone(element)) {
-    domStructureChanged.set(element, true);
-  }
+  domStructureChanged.set(element, true);
 };
 
 // ============================================================================
@@ -440,19 +417,23 @@ const shouldBeVisible = (
 
 /**
  * Determines if animations should be coordinated based on element phase and animation policy.
+ * 
+ * CRITICAL: Always returns true to support scrubbing to arbitrary times.
+ * 
+ * Previously, this function skipped coordination for before-start and after-end phases as an
+ * optimization for live playback. However, this broke scrubbing scenarios where we seek to
+ * arbitrary times (timeline scrubbing, thumbnails, video export).
+ * 
+ * The performance cost of always coordinating is minimal:
+ * - Animations only update when element time changes
+ * - Paused animation updates are optimized by the browser
+ * - The benefit is correct animation state at all times, regardless of phase
  */
 const shouldCoordinateAnimations = (
   phase: ElementPhase,
   element: AnimatableElement,
 ): boolean => {
-  if (phase === "before-start" || phase === "after-end") {
-    return false;
-  }
-  if (phase === "active") {
-    return true;
-  }
-  // phase === "at-end-boundary"
-  return animationPolicy.shouldIncludeEndBoundary(element);
+  return true;
 };
 
 // ============================================================================

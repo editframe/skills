@@ -179,22 +179,23 @@ export class TargetController implements ReactiveController {
 
     // First try the local registry (same root node)
     let newTarget = this.registry.get(this.host.target);
-    
-    const isClone = !!(this.host as HTMLElement).closest?.('.ef-render-clone-container');
-    console.log('[RENDER_DEBUG:TARGET] updateTarget', JSON.stringify({
-      targetId: this.host.target,
-      foundInRegistry: !!newTarget,
-      isClone,
-      rootNodeType: this.host.getRootNode().constructor.name
-    }));
 
-    // Fall back to document.getElementById for cross-shadow-root targeting
+    // If not in registry, search within our subtree first
+    if (!newTarget) {
+      // Find the nearest timegroup or configuration container
+      const container = (this.host as Element).closest('ef-timegroup, ef-configuration') 
+        || (this.host as Element).getRootNode();
+      
+      // Search within the container's subtree
+      if (container && 'querySelector' in container) {
+        newTarget = (container as Element).querySelector(`#${CSS.escape(this.host.target)}`) as LitElement | undefined;
+      }
+    }
+    
+    // Last resort: document.getElementById (for truly global references)
+    // This should rarely be needed and may find wrong element in clone scenarios
     if (!newTarget) {
       newTarget = document.getElementById(this.host.target) as LitElement | undefined;
-      console.log('[RENDER_DEBUG:TARGET] fallback to document.getElementById', JSON.stringify({
-        targetId: this.host.target,
-        found: !!newTarget
-      }));
     }
 
     if (this.host.targetElement !== newTarget) {

@@ -8,6 +8,7 @@ const STORAGE_KEY_PRESENTATION_MODE = "ef-preview-presentation-mode";
 const STORAGE_KEY_RENDER_MODE = "ef-preview-render-mode";
 const STORAGE_KEY_RESOLUTION_SCALE = "ef-preview-resolution-scale";
 const STORAGE_KEY_SHOW_STATS = "ef-preview-show-stats";
+const STORAGE_KEY_SHOW_THUMBNAIL_TIMESTAMPS = "ef-preview-show-thumbnail-timestamps";
 
 /**
  * Render mode for HTML-to-canvas capture operations.
@@ -142,6 +143,7 @@ export interface PreviewSettingsChangedDetail {
   renderMode?: RenderMode;
   resolutionScale?: PreviewResolutionScale;
   showStats?: boolean;
+  showThumbnailTimestamps?: boolean;
 }
 
 /**
@@ -297,6 +299,36 @@ export function setShowStats(enabled: boolean): void {
   // Dispatch event so components can react to the change
   window.dispatchEvent(new CustomEvent("ef-preview-settings-changed", {
     detail: { showStats: enabled }
+  }));
+}
+
+/**
+ * Get whether thumbnail timestamps should be shown.
+ * Defaults to false (timestamps hidden by default).
+ */
+export function getShowThumbnailTimestamps(): boolean {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY_SHOW_THUMBNAIL_TIMESTAMPS);
+    return stored === "true";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Set whether thumbnail timestamps should be shown.
+ * Persists to localStorage and dispatches a change event.
+ */
+export function setShowThumbnailTimestamps(enabled: boolean): void {
+  try {
+    localStorage.setItem(STORAGE_KEY_SHOW_THUMBNAIL_TIMESTAMPS, String(enabled));
+  } catch {
+    // localStorage not available
+  }
+  
+  // Dispatch event so components can react to the change
+  window.dispatchEvent(new CustomEvent("ef-preview-settings-changed", {
+    detail: { showThumbnailTimestamps: enabled }
   }));
 }
 

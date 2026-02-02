@@ -102,22 +102,8 @@ export class EFSurface extends LitElement implements FrameRenderable {
    * @implements FrameRenderable
    */
   renderFrame(_timeMs: number): void {
-    const isClone = !!this.closest('.ef-render-clone-container');
-    console.log('[RENDER_DEBUG:SURFACE] renderFrame called', JSON.stringify({
-      timeMs: _timeMs,
-      hasTarget: !!this.targetElement,
-      targetId: this.target,
-      isClone,
-      rootNodeType: this.getRootNode().constructor.name
-    }));
-    
     if (this.targetElement) {
       this.copyFromTarget(this.targetElement);
-    } else {
-      console.log('[RENDER_DEBUG:SURFACE] NO TARGET - cannot copy canvas', JSON.stringify({
-        targetId: this.target,
-        isClone
-      }));
     }
   }
 

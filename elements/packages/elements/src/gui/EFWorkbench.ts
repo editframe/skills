@@ -21,6 +21,8 @@ import {
   setPreviewResolutionScale,
   type PreviewResolutionScale,
   getShowStats,
+  getShowThumbnailTimestamps,
+  setShowThumbnailTimestamps,
   onPreviewSettingsChanged,
 } from "../preview/previewSettings.js";
 import { setShowStats } from "../preview/previewSettings.js";
@@ -421,6 +423,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     renderMode: getRenderMode(),
     resolutionScale: getPreviewResolutionScale(),
     showStats: getShowStats(),
+    showThumbnailTimestamps: getShowThumbnailTimestamps(),
   };
   
   // Local state mirrors for direct access (context is primary source of truth)
@@ -1427,6 +1430,11 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     // applySettings() will be called automatically via updated() hook when context changes
   }
   
+  private handleShowThumbnailTimestampsToggle(enabled: boolean) {
+    setShowThumbnailTimestamps(enabled);
+    this.previewSettings = { ...this.previewSettings, showThumbnailTimestamps: enabled };
+  }
+  
   /**
    * Reset and fit the preview to show all content centered.
    * Finds the pan-zoom element and calls fitToContent() on it.
@@ -1708,6 +1716,43 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
             line-height: 1.4;
           ">
             Display FPS, CPU pressure, and performance metrics overlay.
+          </div>
+        </div>
+        
+        <!-- Thumbnail Timestamps -->
+        <div style="
+          background: rgba(51, 65, 85, 0.4);
+          border-radius: 8px;
+          padding: 12px;
+          margin-top: 10px;
+        ">
+          <label style="
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+          ">
+            <input
+              type="checkbox"
+              ?checked=${this.previewSettings.showThumbnailTimestamps}
+              @change=${(e: Event) => this.handleShowThumbnailTimestampsToggle((e.target as HTMLInputElement).checked)}
+              style="
+                width: 14px;
+                height: 14px;
+                accent-color: #3b82f6;
+                cursor: pointer;
+              "
+            />
+            <span style="color: #e2e8f0; font-size: 12px; font-weight: 500;">Show Thumbnail Timestamps</span>
+          </label>
+          
+          <div style="
+            margin-top: 8px;
+            color: #64748b;
+            font-size: 10px;
+            line-height: 1.4;
+          ">
+            Display timestamp overlay on timeline thumbnails for debugging.
           </div>
         </div>
       </div>

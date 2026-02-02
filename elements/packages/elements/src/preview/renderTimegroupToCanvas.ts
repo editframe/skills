@@ -341,15 +341,31 @@ export async function captureFromClone(
     timeMs: explicitTimeMs,
   } = options;
 
+  // Use explicit time if provided, otherwise fall back to clone's currentTimeMs
+  // CRITICAL: Using explicit time ensures temporal visibility checks are accurate
+  // NOTE: Must be defined BEFORE any logging that references timeMs
+  const timeMs = explicitTimeMs ?? renderClone.currentTimeMs;
+  
   // Use original timegroup dimensions if available, otherwise clone dimensions
   const sourceForDimensions = originalTimegroup ?? renderClone;
   const width = sourceForDimensions.offsetWidth || DEFAULT_WIDTH;
   const height = sourceForDimensions.offsetHeight || DEFAULT_HEIGHT;
   
-
-  // Use explicit time if provided, otherwise fall back to clone's currentTimeMs
-  // CRITICAL: Using explicit time ensures temporal visibility checks are accurate
-  const timeMs = explicitTimeMs ?? renderClone.currentTimeMs;
+  const cloneComputedWidth = getComputedStyle(renderClone).width;
+  const cloneComputedHeight = getComputedStyle(renderClone).height;
+  const dimensionsOk = cloneComputedWidth && cloneComputedHeight && cloneComputedWidth !== '' && cloneComputedHeight !== '';
+  
+  if (!dimensionsOk) {
+    console.warn('[THUMB_DEBUG][RENDER_DEBUG:BAD_DIMENSIONS]', JSON.stringify({
+      timeMs,
+      cloneOffsetWidth: renderClone.offsetWidth,
+      cloneOffsetHeight: renderClone.offsetHeight,
+      cloneStyleWidth: renderClone.style.width,
+      cloneStyleHeight: renderClone.style.height,
+      cloneComputedWidth,
+      cloneComputedHeight
+    }));
+  }
   
   // NOTE: seekForRender() has already:
   // 1. Called frameController.renderFrame() to coordinate FrameRenderable elements
@@ -371,15 +387,14 @@ export async function captureFromClone(
     // This ensures consistency - thumbnails, video export, and preview all use the same code path
     // The native path had reliability issues with scaling and content rendering
     
-    const childTags = Array.from(renderClone.children).map(c => c.tagName);
-    console.log('[RENDER_DEBUG:THUMB_CAPTURE] Rendering clone timegroup', JSON.stringify({
-      timeMs,
-      renderCloneId: renderClone.id,
-      renderCloneTime: renderClone.currentTimeMs,
-      childCount: renderClone.children.length,
-      childTags,
-      scale
-    }));
+    // CRITICAL: Force browser to compute styles before serialization
+  // getComputedStyle() may return empty strings if called before cascade is computed
+  // Accessing offsetWidth triggers synchronous style computation
+  void renderClone.offsetWidth;
+  
+  // Wait one more frame to ensure styles are fully computed
+  // This is necessary because some browsers don't compute styles synchronously
+  await new Promise(resolve => requestAnimationFrame(resolve));
     
     const t0 = performance.now();
     const dataUri = await serializeTimelineToDataUri(renderClone, width, height, {
@@ -519,18 +534,8 @@ export async function* generateThumbnailsFromClone(
       break;
     }
     
-    console.log('[RENDER_DEBUG:THUMB_GEN] About to seek and capture', JSON.stringify({
-      timeMs,
-      scale,
-      contentReadyMode
-    }));
-    
     // Seek the clone to the target time
     await renderClone.seekForRender(timeMs);
-    
-    console.log('[RENDER_DEBUG:THUMB_GEN] Seek complete, starting capture', JSON.stringify({
-      timeMs
-    }));
     
     // Capture from the seeked clone, passing explicit timeMs
     const canvas = await captureFromClone(renderClone, renderContainer, {
@@ -539,12 +544,6 @@ export async function* generateThumbnailsFromClone(
       blockingTimeoutMs,
       timeMs, // CRITICAL: Pass explicit time for accurate temporal visibility
     });
-    
-    console.log('[RENDER_DEBUG:THUMB_GEN] Capture complete', JSON.stringify({
-      timeMs,
-      canvasWidth: (canvas as HTMLCanvasElement).width,
-      canvasHeight: (canvas as HTMLCanvasElement).height
-    }));
     
     // Yield the result with explicit timestamp association
     yield { timeMs, canvas };

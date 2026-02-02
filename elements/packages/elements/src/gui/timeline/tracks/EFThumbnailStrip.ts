@@ -20,6 +20,10 @@ import {
   timelineStateContext,
   type TimelineState,
 } from "../timelineStateContext.js";
+import {
+  previewSettingsContext,
+  type PreviewSettings,
+} from "../../previewSettingsContext.js";
 
 /** Padding for virtual rendering */
 const VIRTUAL_RENDER_PADDING_PX = 100;
@@ -149,6 +153,10 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
   @consume({ context: timelineStateContext, subscribe: true })
   @state()
   timelineState?: TimelineState;
+  
+  @consume({ context: previewSettingsContext, subscribe: true })
+  @state()
+  previewSettings?: PreviewSettings;
 
   @state()
   thumbnailDimensions = { width: 0, height: 0 };
@@ -165,6 +173,10 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
   #timegroupClone: { clone: EFTimegroup; container: HTMLElement; cleanup: () => void } | null = null;
   #timegroupGenerator: AsyncGenerator<GeneratedThumbnail> | null = null;
   #previewContainer: HTMLDivElement | null = null;
+  #updateInProgress = false; // Lock to prevent concurrent updates
+  #consumerRunning = false; // Lock to prevent concurrent consumers
+  #pendingTimestamps = new Set<number>(); // Timestamps requested while update in progress
+  #retryScheduled = false; // Flag to prevent duplicate retry schedules
 
   /**
    * Check if target is valid (EFVideo or root EFTimegroup)
@@ -335,7 +347,6 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     const requiredTimestamps = visibleThumbnails.map(t => t.timeMs);
     const timestampsString = requiredTimestamps.join(", ");
     if (timestampsString !== this.#lastRequiredTimestamps) {
-      console.log("Required thumbnails:", timestampsString);
       this.#lastRequiredTimestamps = timestampsString;
       
       // Update capture queue
@@ -405,67 +416,85 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
 
     // Filter out cached timestamps
     const uncached = timestamps.filter(t => !this.#thumbnailCache.has(t)).sort((a, b) => a - b);
-    console.log('[RENDER_DEBUG:THUMB_STRIP] #updateTimegroupCapture called', JSON.stringify({
-      totalTimestamps: timestamps.length,
-      uncachedCount: uncached.length,
-      hasGenerator: !!this.#timegroupGenerator,
-      hasClone: !!this.#timegroupClone
-    }));
-    if (uncached.length === 0) return;
+    if (uncached.length === 0) {
+      return;
+    }
+    
+    // CRITICAL: If update already in progress, add to pending set and schedule retry
+    if (this.#updateInProgress) {
+      uncached.forEach(t => this.#pendingTimestamps.add(t));
+      
+      // Schedule a retry (debounced via RAF)
+      if (!this.#retryScheduled) {
+        this.#retryScheduled = true;
+        requestAnimationFrame(() => {
+          this.#retryScheduled = false;
+          if (this.#pendingTimestamps.size > 0) {
+            const pending = Array.from(this.#pendingTimestamps);
+            this.#pendingTimestamps.clear();
+            this.#updateTimegroupCapture(pending);
+          }
+        });
+      }
+      return;
+    }
+    this.#updateInProgress = true;
 
-    // If generator is running OR clone exists, reuse it
-    if (this.#timegroupGenerator || this.#timegroupClone) {
-      const currentRemaining = this.#timegroupQueue.remaining();
-      const overlap = uncached.filter(t => currentRemaining.includes(t));
-      const newWork = uncached.filter(t => !currentRemaining.includes(t));
+    try {
+      // If generator is running OR clone exists, reuse it
+      if (this.#timegroupGenerator || this.#timegroupClone) {
+        const currentRemaining = this.#timegroupQueue.remaining();
+        const overlap = uncached.filter(t => currentRemaining.includes(t));
+        const newWork = uncached.filter(t => !currentRemaining.includes(t));
 
-      console.log('[RENDER_DEBUG:THUMB_STRIP] Generator/clone exists, checking reuse', JSON.stringify({
-        hasGenerator: !!this.#timegroupGenerator,
-        queueRemaining: currentRemaining.length,
-        overlap: overlap.length,
-        newWork: newWork.length
-      }));
-
-      if (overlap.length > 0 || !this.#timegroupGenerator) {
-        // Reuse clone: either overlap exists OR generator finished but clone still alive
-        if (this.#timegroupGenerator) {
-          // Generator is running, update queue
-        console.log('[RENDER_DEBUG:THUMB_STRIP] Generator RUNNING - updating queue', JSON.stringify({
-          retaining: overlap,
-          appending: newWork
-        }));
-          this.#timegroupQueue.retainOnly(overlap);
-          if (newWork.length > 0) {
-            this.#timegroupQueue.append(newWork);
+        if (overlap.length > 0 || !this.#timegroupGenerator) {
+          // Reuse clone: either overlap exists OR generator finished but clone still alive
+          if (this.#timegroupGenerator) {
+            // Generator is running, update queue
+            this.#timegroupQueue.retainOnly(overlap);
+            if (newWork.length > 0) {
+              this.#timegroupQueue.append(newWork);
+            }
+          } else {
+            // Generator finished, restart with existing clone
+            this.#timegroupQueue.reset(uncached);
+            this.#timegroupGenerator = generateThumbnailsFromClone(
+              this.#timegroupClone!.clone,
+              this.#previewContainer!,
+              this.#timegroupQueue,
+              {
+                scale: 0.25,
+                contentReadyMode: "blocking",
+                blockingTimeoutMs: 1000,
+              },
+            );
+            await this.#consumeTimegroupGenerator();
           }
         } else {
-          // Generator finished, restart with existing clone
-        console.log('[RENDER_DEBUG:THUMB_STRIP] Restarting generator with EXISTING clone (NO WAITING)', JSON.stringify({
-          uncachedCount: uncached.length,
-          uncachedTimes: uncached,
-          cloneAge: 'reused'
-        }));
-          this.#timegroupQueue.reset(uncached);
-          this.#timegroupGenerator = generateThumbnailsFromClone(
-            this.#timegroupClone!.clone,
-            this.#previewContainer!,
-            this.#timegroupQueue,
-            {
-              scale: 0.25,
-              contentReadyMode: "blocking",
-              blockingTimeoutMs: 1000,
-            },
-          );
-          this.#consumeTimegroupGenerator();
+          // No overlap and generator running, restart with new timestamps
+          this.#cleanupTimegroupGenerator();
+          await this.#startTimegroupGenerator(timegroup, uncached);
         }
       } else {
-        // No overlap and generator running, restart with new timestamps
-        this.#cleanupTimegroupGenerator();
+        // No generator running, start fresh
         await this.#startTimegroupGenerator(timegroup, uncached);
       }
-    } else {
-      // No generator running, start fresh
-      await this.#startTimegroupGenerator(timegroup, uncached);
+    } finally {
+      this.#updateInProgress = false;
+      
+      // Check if there are pending timestamps that need processing
+      // This happens when updates were skipped while this update was in progress
+      if (this.#pendingTimestamps.size > 0 && !this.#retryScheduled) {
+        this.#retryScheduled = true;
+        requestAnimationFrame(() => {
+          this.#retryScheduled = false;
+          if (this.#pendingTimestamps.size > 0) {
+            const pending = Array.from(this.#pendingTimestamps);
+            this.#pendingTimestamps.clear();
+            this.#updateTimegroupCapture(pending);
+          }
+        });
+      }
     }
   }
 
@@ -473,10 +502,6 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
    * Start timegroup thumbnail generator
    */
   async #startTimegroupGenerator(timegroup: EFTimegroup, timestamps: number[]): Promise<void> {
-    console.log('[RENDER_DEBUG:THUMB_STRIP] Starting FRESH generator with NEW clone', JSON.stringify({
-      timestampCount: timestamps.length,
-      timestamps: timestamps
-    }));
     // Create render clone
     this.#timegroupClone = await timegroup.createRenderClone();
     
@@ -552,15 +577,24 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
       },
     );
     
-    // Consume generator
-    this.#consumeTimegroupGenerator();
+    // Consume generator (CRITICAL: Must await to prevent concurrent consumers)
+    await this.#consumeTimegroupGenerator();
   }
 
   /**
    * Consume generator and handle cleanup
    */
   async #consumeTimegroupGenerator(): Promise<void> {
-    if (!this.#timegroupGenerator) return;
+    // CRITICAL: Prevent concurrent consumers
+    if (this.#consumerRunning) {
+      return;
+    }
+    this.#consumerRunning = true;
+    
+    if (!this.#timegroupGenerator) {
+      this.#consumerRunning = false;
+      return;
+    }
 
     try {
       for await (const { timeMs, canvas } of this.#timegroupGenerator) {
@@ -572,6 +606,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     } finally {
       // Generator finished, but keep clone alive for reuse
       this.#timegroupGenerator = null;
+      this.#consumerRunning = false;
     }
   }
 
@@ -648,6 +683,17 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
       if (result?.canvas) {
         // Draw actual thumbnail
         ctx.drawImage(result.canvas, 0, 0, thumbnail.width, thumbnail.height);
+        
+        // Draw timestamp overlay if enabled
+        if (this.previewSettings?.showThumbnailTimestamps) {
+          ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+          ctx.fillRect(2, 2, 95, 16);
+          ctx.fillStyle = "yellow";
+          ctx.font = "11px monospace";
+          ctx.textAlign = "left";
+          ctx.textBaseline = "top";
+          ctx.fillText(`${Math.round(thumbnail.timeMs)}ms`, 5, 4);
+        }
       } else {
         // Draw placeholder with timestamp text
         ctx.fillStyle = "rgba(100, 100, 100, 0.3)";

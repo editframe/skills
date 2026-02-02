@@ -431,9 +431,7 @@ export async function renderTimegroupToVideo(
   // Attach renderClone to container
   previewContainer.appendChild(renderClone);
   
-  // CRITICAL: Add ef-render-clone-container class so isRenderClone() returns true
-  // This affects animation tracking - without it, the animation system treats the clone
-  // as the prime timeline, which causes incorrect behavior
+  // Add ef-render-clone-container class for CSS selectors and debugging
   previewContainer.classList.add('ef-render-clone-container');
   
   // CRITICAL: Attach container to document so getComputedStyle returns actual values

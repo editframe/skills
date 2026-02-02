@@ -210,16 +210,9 @@ export class EFText extends EFTemporal(LitElement) {
       this.lastTextContent = this._textContent;
     }
 
-    // Use requestAnimationFrame to ensure DOM is ready
-    console.log('[RENDER_DEBUG:TEXT_SPLIT] RAF scheduled in connectedCallback', JSON.stringify({
-      textContent: this._textContent?.substring(0, 50),
-      hasSegments: this.segments.length > 0,
-      isRenderClone: !!this.closest('.ef-render-clone-container')
-    }));
+    // Use RAF to ensure DOM is fully ready before splitting text
+    // Callers that need segments immediately (e.g., render clones) should await whenSegmentsReady()
     requestAnimationFrame(() => {
-      console.log('[RENDER_DEBUG:TEXT_SPLIT] RAF firing from connectedCallback', JSON.stringify({
-        textContent: this._textContent?.substring(0, 50)
-      }));
       this.setupMutationObserver();
       this.splitText();
     });
@@ -248,11 +241,6 @@ export class EFText extends EFTemporal(LitElement) {
       // Only react to changes that aren't from our own segment creation
       const currentText = this._textContent || this.getTextContent();
       if (currentText !== this.lastTextContent) {
-        console.log('[RENDER_DEBUG:TEXT_SPLIT] MutationObserver detected change, calling splitText()', JSON.stringify({
-          oldText: this.lastTextContent.substring(0, 50),
-          newText: currentText.substring(0, 50),
-          segmentCount: this.segments.length
-        }));
         this._textContent = currentText;
         this.lastTextContent = currentText;
         this.splitText();
@@ -289,15 +277,6 @@ export class EFText extends EFTemporal(LitElement) {
   }
 
   private splitText() {
-    const callStack = new Error().stack?.split('\n').slice(2, 4).join(' | ') || 'unknown';
-    console.log('[TEXT_SPLIT] splitText() ENTER', JSON.stringify({
-      textContent: this._textContent?.substring(0, 50),
-      existingSegments: this.segments.length,
-      segmentsInitialized: this.#segmentsInitialized,
-      isRenderClone: !!this.closest('.ef-render-clone-container'),
-      caller: callStack
-    }));
-    
     // Validate split mode
     const validatedSplit = this.validateSplit(this.split);
     if (validatedSplit !== this.split) {
@@ -321,10 +300,6 @@ export class EFText extends EFTemporal(LitElement) {
     // GUARD: Check if segments are already correct before clearing/recreating
     // This prevents redundant splits from RAF callbacks, updated(), etc.
     if (this.#segmentsInitialized && this.segments.length > 0 && this.lastTextContent === text) {
-      console.log('[TEXT_SPLIT] Segments already correct, skipping split', JSON.stringify({
-        segmentCount: this.segments.length,
-        textMatch: true
-      }));
       return;
     }
     
@@ -333,9 +308,6 @@ export class EFText extends EFTemporal(LitElement) {
       const existingSegments = Array.from(
         this.querySelectorAll("ef-text-segment"),
       );
-      console.log('[TEXT_SPLIT] Clearing segments (no text)', JSON.stringify({
-        segmentsCleared: existingSegments.length
-      }));
       for (const segment of existingSegments) {
         segment.remove();
       }
@@ -360,10 +332,6 @@ export class EFText extends EFTemporal(LitElement) {
       return;
     }
 
-    console.log('[RENDER_DEBUG:TEXT_SPLIT] Clearing segmentsInitialized flag, will create new segments', JSON.stringify({
-      previousSegments: this.segments.length
-    }));
-    
     // Reset initialization flag when we're about to create new segments
     this.#segmentsInitialized = false;
 
@@ -616,11 +584,6 @@ export class EFText extends EFTemporal(LitElement) {
     // Mark segments as initialized to prevent redundant splits
     this.#segmentsInitialized = true;
 
-    console.log('[RENDER_DEBUG:TEXT_SPLIT] splitText() EXIT - segments created', JSON.stringify({
-      segmentCount: segmentElements.length,
-      textContent: text.substring(0, 50)
-    }));
-    
     // Resolve any waiting promises after segments are connected (synchronous)
     this._segmentsReadyResolvers.forEach((resolve) => {
       resolve();

@@ -129,6 +129,7 @@ function serializeComputedStyles(element: Element): string {
   const tagName = element.tagName;
   const isCaptionChild = CAPTION_CHILD_TAGS.has(tagName);
   
+  
   for (const prop of SERIALIZED_STYLE_PROPERTIES) {
     const value = styles[prop as any];
     // Skip only truly empty values
@@ -593,8 +594,24 @@ export async function serializeElementToXHTML(
     parts.push(`<style type="text/css"><![CDATA[${documentStyles}]]></style>`);
   }
   
+  // Apply scale transform if canvasScale is specified and < 1
+  // This scales the content while keeping the container at the target dimensions
+  const needsScaling = options.canvasScale < 1;
+  if (needsScaling) {
+    const originalWidth = Math.floor(width / options.canvasScale);
+    const originalHeight = Math.floor(height / options.canvasScale);
+    parts.push(
+      `<div style="transform:scale(${options.canvasScale});transform-origin:0 0;` +
+      `width:${originalWidth}px;height:${originalHeight}px;">`
+    );
+  }
   // Recursively serialize element
   serializeElement(element, parts, canvasJobs, options);
+  
+  // Close scaling wrapper if applied
+  if (needsScaling) {
+    parts.push('</div>');
+  }
   
   // Close wrapper
   parts.push('</div>');
@@ -623,13 +640,18 @@ export async function serializeTimelineToDataUri(
   height: number,
   options: SerializationOptions
 ): Promise<string> {
-  const xhtml = await serializeElementToXHTML(element, width, height, options);
+  // Apply canvas scale to output dimensions
+  const scaledWidth = Math.floor(width * options.canvasScale);
+  const scaledHeight = Math.floor(height * options.canvasScale);
+  
+  
+  const xhtml = await serializeElementToXHTML(element, scaledWidth, scaledHeight, options);
   
   // Wrap in SVG foreignObject
   // Use explicit pixel dimensions for foreignObject to match SVG viewport exactly
   const svg = 
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">` +
-    `<foreignObject x="0" y="0" width="${width}" height="${height}">${xhtml}</foreignObject>` +
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${scaledWidth}" height="${scaledHeight}">` +
+    `<foreignObject x="0" y="0" width="${scaledWidth}" height="${scaledHeight}">${xhtml}</foreignObject>` +
     `</svg>`;
   
   // Use percent-encoding instead of base64 for faster encoding

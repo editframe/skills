@@ -302,7 +302,7 @@ export class EFCaptions extends EFSourceMixin(
 
     // Priority 2: Script element reference
     if (this.captionsScript) {
-      const scriptElement = document.getElementById(this.captionsScript);
+      const scriptElement = this.#findElementById(this.captionsScript);
       if (scriptElement?.textContent) {
         try {
           return JSON.parse(scriptElement.textContent) as Caption;
@@ -421,7 +421,7 @@ export class EFCaptions extends EFSourceMixin(
 
     // Try to get target element safely
     const target = this.targetSelector
-      ? document.getElementById(this.targetSelector)
+      ? this.#findElementById(this.targetSelector)
       : null;
     if (target && (target instanceof EFAudio || target instanceof EFVideo)) {
       new CrossUpdateController(target, this);
@@ -666,7 +666,7 @@ export class EFCaptions extends EFSourceMixin(
   }
 
   get targetElement() {
-    const target = document.getElementById(this.targetSelector ?? "");
+    const target = this.targetSelector ? this.#findElementById(this.targetSelector) : null;
     if (target instanceof EFAudio || target instanceof EFVideo) {
       return target;
     }
@@ -680,6 +680,22 @@ export class EFCaptions extends EFSourceMixin(
     return !!(this.captionsData || this.captionsSrc || this.captionsScript);
   }
 
+  /**
+   * Find element by ID, searching within clone scope first to avoid cross-boundary references.
+   * @private
+   */
+  #findElementById(id: string): Element | null {
+    // Search within nearest timegroup or configuration container first
+    const container = this.closest('ef-timegroup, ef-configuration');
+    if (container) {
+      const result = container.querySelector(`#${CSS.escape(id)}`);
+      if (result) return result;
+    }
+    
+    // Fall back to document-wide search
+    return document.getElementById(id);
+  }
+
   get intrinsicDurationMs(): number | undefined {
     if (this.#cachedIntrinsicDurationMs !== null) {
       return this.#cachedIntrinsicDurationMs;
@@ -690,7 +706,7 @@ export class EFCaptions extends EFSourceMixin(
     if (this.captionsData) {
       captionsData = this.captionsData;
     } else if (this.captionsScript) {
-      const scriptElement = document.getElementById(this.captionsScript);
+      const scriptElement = this.#findElementById(this.captionsScript);
       if (scriptElement?.textContent) {
         try {
           captionsData = JSON.parse(scriptElement.textContent) as Caption;
