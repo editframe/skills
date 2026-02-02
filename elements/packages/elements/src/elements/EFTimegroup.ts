@@ -753,8 +753,6 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
   /** @public */
   @property({ type: Number, attribute: "currenttime" })
   set currentTime(time: number) {
-    console.log(`[SEEK-DEBUG] currentTime setter called with ${time}s`);
-    
     // Evaluate seek target (quantization and clamping)
     const seekTarget = evaluateSeekTarget(
       time,
@@ -882,8 +880,6 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
    * @public
    */
   async seek(timeMs: number): Promise<void> {
-    console.log(`[SEEK-DEBUG] seek(${timeMs}) called, seekInProgress=${this.#seekInProgress}`);
-    
     // Update user time - this is what the preview should display
     this.#userTimeMs = timeMs;
     
@@ -902,8 +898,6 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
         updateAnimations(root as typeof this);
       },
     });
-    
-    console.log(`[SEEK-DEBUG] seek() completed to ${timeMs}ms via FrameController`);
   }
 
   /**

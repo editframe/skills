@@ -166,7 +166,6 @@ export { clearInlineImageCache, getInlineImageCacheSize };
   }
   
   const currentTime = timegroup.currentTimeMs ?? 0;
-  console.log(`[DEBUG] Capturing thumbnail at ${currentTime}ms`);
   
   try {
     const result = await captureTimegroupAtTime(timegroup, {
@@ -175,7 +174,6 @@ export { clearInlineImageCache, getInlineImageCacheSize };
       contentReadyMode: 'blocking',
       blockingTimeoutMs: 1000,
     });
-    console.log('[DEBUG] Capture result:', result);
     
     // Create a temporary img element to display the result
     const img = document.createElement('img');
@@ -186,7 +184,6 @@ export { clearInlineImageCache, getInlineImageCacheSize };
     }
     img.style.cssText = 'position:fixed;top:10px;right:10px;border:2px solid red;z-index:99999;';
     document.body.appendChild(img);
-    console.log('[DEBUG] Result displayed in top-right corner');
     
     return result;
   } catch (err) {
@@ -801,8 +798,6 @@ export function renderTimegroupToCanvas(
     const sourceTimeMs = timegroup.currentTimeMs ?? 0;
     const userTimeMs = timegroup.userTimeMs ?? 0;
     
-    console.log(`[CANVAS-REFRESH-DEBUG] refresh called: sourceTimeMs=${sourceTimeMs}, userTimeMs=${userTimeMs}, lastTimeMs=${lastTimeMs}`);
-    
     // Skip if seek in progress (source and user time out of sync)
     if (Math.abs(sourceTimeMs - userTimeMs) > TIME_EPSILON_MS) return;
     
@@ -838,15 +833,6 @@ export function renderTimegroupToCanvas(
           void (root as HTMLElement).offsetWidth;
         },
       });
-      
-      // DEBUG: Check text segments and shadow DOM before serialization
-      const textEls = timegroup.querySelectorAll('ef-text');
-      const text3 = textEls[3] as any;
-      if (text3) {
-        const seg0 = text3.querySelector('ef-text-segment');
-        const shadowText = seg0?.shadowRoot?.textContent || 'NO-SHADOW';
-        console.log(`[CANVAS-PREVIEW-DEBUG] ${userTimeMs}ms - "Spin up 10": ${text3.offsetWidth}x${text3.offsetHeight}, firstSeg.shadowText="${shadowText}"`);
-      }
       
       // DIRECT SERIALIZATION PATH (same as video rendering)
       // Serialize the prime timeline directly without building intermediate passive structure

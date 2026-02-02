@@ -587,12 +587,17 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       this.restorePreviewPanZoom();
     });
     
-    // Initialize based on current presentation mode
-    if (this.presentationMode === "dom") {
-      this.initDomMode();
-    } else if (this.presentationMode === "canvas") {
-      this.initCanvasMode();
-    }
+    // Wait for Lit to complete initial render and layout before initializing preview
+    // This ensures workbench dimensions are available for resolution calculation
+    this.updateComplete.then(() => {
+      
+      // Initialize based on current presentation mode
+      if (this.presentationMode === "dom") {
+        this.initDomMode();
+      } else if (this.presentationMode === "canvas") {
+        this.initCanvasMode();
+      }
+    });
   }
   
   // Track zoom for detecting changes that need canvas reinit
@@ -610,7 +615,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       this.updateCanvasTransform();
       
       // Check if zoom changed enough to warrant re-rendering at new resolution
-      // Only reinit if zoom changed by >25% from last init
+      // Only update if zoom changed by >25% from last init
       const zoomRatio = e.detail.scale / this.lastCanvasZoom;
       if (zoomRatio < 0.75 || zoomRatio > 1.33) {
         // Debounce to avoid thrashing during zoom gestures
@@ -619,10 +624,19 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         }
         this.zoomReinitTimeout = window.setTimeout(() => {
           this.zoomReinitTimeout = null;
-          if (this.presentationMode === "canvas") {
+          if (this.presentationMode === "canvas" && this.canvasPreviewResult) {
             this.lastCanvasZoom = this.panZoomTransform.scale;
-            this.stopCanvasMode();
-            this.initCanvasMode();
+            
+            // Dynamically update resolution scale without recreating canvas
+            const timegroup = this.getTimegroup();
+            const canvasContainer = this.canvasPreviewRef.value;
+            if (timegroup && canvasContainer) {
+              const newScale = this.previewResolutionScale === "auto"
+                ? this.getEffectiveResolutionScale(timegroup, canvasContainer)
+                : this.getResolutionScale(timegroup, canvasContainer);
+              
+              this.canvasPreviewResult.setResolutionScale(newScale);
+            }
           }
         }, 500); // Wait 500ms after zoom stops
       }
@@ -1121,7 +1135,6 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       
       // CRITICAL: Ensure timegroup has correct display states before first render
       // Text elements have default display:flex until updateAnimations runs
-      console.log(`[CANVAS-INIT-DEBUG] Initializing canvas mode at timegroup.currentTimeMs=${timegroup.currentTimeMs}`);
       updateAnimations(timegroup);
       
       // Create canvas preview - this builds the clone structure ONCE
@@ -1143,9 +1156,6 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       // Apply current transform
       this.updateCanvasTransform();
       
-      // CRITICAL: Wait for seekTask before starting loop to avoid rendering at wrong time
-      // This prevents showing a frame at 0ms before localStorage restore to saved time
-      await timegroup.seekTask.taskComplete;
       
       // Start the canvas render loop
       const loop = async () => {
@@ -1396,12 +1406,18 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       this.currentAdaptiveScale = 1;
     }
     
-    // Reinitialize canvas mode if active to apply new resolution
-    // Note: presentationMode at runtime may be "clone" or "dom" (not in TS type but used in UI)
-    if (this.presentationMode === "canvas") {
-      console.log("[EFWorkbench] Reinitializing canvas mode with new resolution scale");
-      this.stopCanvasMode();
-      this.initCanvasMode();
+    // Apply new resolution scale dynamically if canvas mode is active
+    if (this.presentationMode === "canvas" && this.canvasPreviewResult) {
+      console.log("[EFWorkbench] Applying new resolution scale to canvas");
+      const timegroup = this.getTimegroup();
+      const canvasContainer = this.canvasPreviewRef.value;
+      if (timegroup && canvasContainer) {
+        const newScale = scale === "auto"
+          ? this.getEffectiveResolutionScale(timegroup, canvasContainer)
+          : this.getResolutionScale(timegroup, canvasContainer);
+        
+        this.canvasPreviewResult.setResolutionScale(newScale);
+      }
     }
   }
   

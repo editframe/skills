@@ -454,9 +454,6 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     // Create render clone
     this.#timegroupClone = await timegroup.createRenderClone();
     
-    // DEBUG: Check dimensions BEFORE moving
-    const textBeforeMove = this.#timegroupClone.container.querySelector('ef-text') as HTMLElement;
-    console.log(`[EFThumbnailStrip] BEFORE move - ef-text: ${textBeforeMove?.offsetWidth}x${textBeforeMove?.offsetHeight}`);
     
     // Use the original container from createRenderClone (already configured)
     this.#previewContainer = this.#timegroupClone.container as HTMLDivElement;
