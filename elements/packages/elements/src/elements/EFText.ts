@@ -317,6 +317,17 @@ export class EFText extends EFTemporal(LitElement) {
       this._textContent !== null ? this._textContent : this.getTextContent();
     const trimmedText = text.trim();
     const textStartOffset = text.indexOf(trimmedText);
+    
+    // GUARD: Check if segments are already correct before clearing/recreating
+    // This prevents redundant splits from RAF callbacks, updated(), etc.
+    if (this.#segmentsInitialized && this.segments.length > 0 && this.lastTextContent === text) {
+      console.log('[TEXT_SPLIT] Segments already correct, skipping split', JSON.stringify({
+        segmentCount: this.segments.length,
+        textMatch: true
+      }));
+      return;
+    }
+    
     if (!text || trimmedText.length === 0) {
       // Clear segments if no text
       const existingSegments = Array.from(
@@ -601,6 +612,9 @@ export class EFText extends EFTemporal(LitElement) {
 
     this.lastTextContent = text;
     this._textContent = text;
+    
+    // Mark segments as initialized to prevent redundant splits
+    this.#segmentsInitialized = true;
 
     console.log('[TEXT_SPLIT] splitText() EXIT - segments created', JSON.stringify({
       segmentCount: segmentElements.length,
