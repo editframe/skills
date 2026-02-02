@@ -21,15 +21,11 @@ import { logger } from "./logger.js";
 
 // Import rendering modules
 import { loadImageFromDataUri } from "./rendering/loadImage.js";
-import { renderToImageNative, createDprCanvas } from "./rendering/renderToImageNative.js";
+import { createDprCanvas } from "./rendering/renderToImageNative.js";
 import { clearInlineImageCache, getInlineImageCacheSize } from "./rendering/inlineImages.js";
 
 // Re-export rendering types and functions for external use
-export type {
-  NativeRenderOptions,
-} from "./rendering/types.js";
 export {
-  renderToImageNative,
   loadImageFromDataUri,
 };
 
