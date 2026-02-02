@@ -405,7 +405,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
 
     // Filter out cached timestamps
     const uncached = timestamps.filter(t => !this.#thumbnailCache.has(t)).sort((a, b) => a - b);
-    console.log('[THUMB_STRIP] #updateTimegroupCapture called', JSON.stringify({
+    console.log('[RENDER_DEBUG:THUMB_STRIP] #updateTimegroupCapture called', JSON.stringify({
       totalTimestamps: timestamps.length,
       uncachedCount: uncached.length,
       hasGenerator: !!this.#timegroupGenerator,
@@ -419,7 +419,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
       const overlap = uncached.filter(t => currentRemaining.includes(t));
       const newWork = uncached.filter(t => !currentRemaining.includes(t));
 
-      console.log('[THUMB_STRIP] Generator/clone exists, checking reuse', JSON.stringify({
+      console.log('[RENDER_DEBUG:THUMB_STRIP] Generator/clone exists, checking reuse', JSON.stringify({
         hasGenerator: !!this.#timegroupGenerator,
         queueRemaining: currentRemaining.length,
         overlap: overlap.length,
@@ -430,21 +430,21 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
         // Reuse clone: either overlap exists OR generator finished but clone still alive
         if (this.#timegroupGenerator) {
           // Generator is running, update queue
-          console.log('[THUMB_STRIP] Generator RUNNING - updating queue', JSON.stringify({
-            retaining: overlap,
-            appending: newWork
-          }));
+        console.log('[RENDER_DEBUG:THUMB_STRIP] Generator RUNNING - updating queue', JSON.stringify({
+          retaining: overlap,
+          appending: newWork
+        }));
           this.#timegroupQueue.retainOnly(overlap);
           if (newWork.length > 0) {
             this.#timegroupQueue.append(newWork);
           }
         } else {
           // Generator finished, restart with existing clone
-          console.log('[THUMB_STRIP] Restarting generator with EXISTING clone (NO WAITING)', JSON.stringify({
-            uncachedCount: uncached.length,
-            uncachedTimes: uncached,
-            cloneAge: 'reused'
-          }));
+        console.log('[RENDER_DEBUG:THUMB_STRIP] Restarting generator with EXISTING clone (NO WAITING)', JSON.stringify({
+          uncachedCount: uncached.length,
+          uncachedTimes: uncached,
+          cloneAge: 'reused'
+        }));
           this.#timegroupQueue.reset(uncached);
           this.#timegroupGenerator = generateThumbnailsFromClone(
             this.#timegroupClone!.clone,
@@ -473,7 +473,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
    * Start timegroup thumbnail generator
    */
   async #startTimegroupGenerator(timegroup: EFTimegroup, timestamps: number[]): Promise<void> {
-    console.log('[THUMB_STRIP] Starting FRESH generator with NEW clone', JSON.stringify({
+    console.log('[RENDER_DEBUG:THUMB_STRIP] Starting FRESH generator with NEW clone', JSON.stringify({
       timestampCount: timestamps.length,
       timestamps: timestamps
     }));

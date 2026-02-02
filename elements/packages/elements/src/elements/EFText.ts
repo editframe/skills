@@ -211,13 +211,13 @@ export class EFText extends EFTemporal(LitElement) {
     }
 
     // Use requestAnimationFrame to ensure DOM is ready
-    console.log('[TEXT_SPLIT] RAF scheduled in connectedCallback', JSON.stringify({
+    console.log('[RENDER_DEBUG:TEXT_SPLIT] RAF scheduled in connectedCallback', JSON.stringify({
       textContent: this._textContent?.substring(0, 50),
       hasSegments: this.segments.length > 0,
       isRenderClone: !!this.closest('.ef-render-clone-container')
     }));
     requestAnimationFrame(() => {
-      console.log('[TEXT_SPLIT] RAF firing from connectedCallback', JSON.stringify({
+      console.log('[RENDER_DEBUG:TEXT_SPLIT] RAF firing from connectedCallback', JSON.stringify({
         textContent: this._textContent?.substring(0, 50)
       }));
       this.setupMutationObserver();
@@ -248,7 +248,7 @@ export class EFText extends EFTemporal(LitElement) {
       // Only react to changes that aren't from our own segment creation
       const currentText = this._textContent || this.getTextContent();
       if (currentText !== this.lastTextContent) {
-        console.log('[TEXT_SPLIT] MutationObserver detected change, calling splitText()', JSON.stringify({
+        console.log('[RENDER_DEBUG:TEXT_SPLIT] MutationObserver detected change, calling splitText()', JSON.stringify({
           oldText: this.lastTextContent.substring(0, 50),
           newText: currentText.substring(0, 50),
           segmentCount: this.segments.length
@@ -360,7 +360,7 @@ export class EFText extends EFTemporal(LitElement) {
       return;
     }
 
-    console.log('[TEXT_SPLIT] Clearing segmentsInitialized flag, will create new segments', JSON.stringify({
+    console.log('[RENDER_DEBUG:TEXT_SPLIT] Clearing segmentsInitialized flag, will create new segments', JSON.stringify({
       previousSegments: this.segments.length
     }));
     
@@ -616,7 +616,7 @@ export class EFText extends EFTemporal(LitElement) {
     // Mark segments as initialized to prevent redundant splits
     this.#segmentsInitialized = true;
 
-    console.log('[TEXT_SPLIT] splitText() EXIT - segments created', JSON.stringify({
+    console.log('[RENDER_DEBUG:TEXT_SPLIT] splitText() EXIT - segments created', JSON.stringify({
       segmentCount: segmentElements.length,
       textContent: text.substring(0, 50)
     }));

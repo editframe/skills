@@ -372,7 +372,7 @@ export async function captureFromClone(
     // The native path had reliability issues with scaling and content rendering
     
     const childTags = Array.from(renderClone.children).map(c => c.tagName);
-    console.log('[THUMB_CAPTURE] Rendering clone timegroup', JSON.stringify({
+    console.log('[RENDER_DEBUG:THUMB_CAPTURE] Rendering clone timegroup', JSON.stringify({
       timeMs,
       renderCloneId: renderClone.id,
       renderCloneTime: renderClone.currentTimeMs,
@@ -519,7 +519,7 @@ export async function* generateThumbnailsFromClone(
       break;
     }
     
-    console.log('[THUMB_GEN] About to seek and capture', JSON.stringify({
+    console.log('[RENDER_DEBUG:THUMB_GEN] About to seek and capture', JSON.stringify({
       timeMs,
       scale,
       contentReadyMode
@@ -528,7 +528,7 @@ export async function* generateThumbnailsFromClone(
     // Seek the clone to the target time
     await renderClone.seekForRender(timeMs);
     
-    console.log('[THUMB_GEN] Seek complete, starting capture', JSON.stringify({
+    console.log('[RENDER_DEBUG:THUMB_GEN] Seek complete, starting capture', JSON.stringify({
       timeMs
     }));
     
@@ -540,7 +540,7 @@ export async function* generateThumbnailsFromClone(
       timeMs, // CRITICAL: Pass explicit time for accurate temporal visibility
     });
     
-    console.log('[THUMB_GEN] Capture complete', JSON.stringify({
+    console.log('[RENDER_DEBUG:THUMB_GEN] Capture complete', JSON.stringify({
       timeMs,
       canvasWidth: (canvas as HTMLCanvasElement).width,
       canvasHeight: (canvas as HTMLCanvasElement).height
@@ -837,7 +837,7 @@ export function renderTimegroupToCanvas(
       const absoluteTimeMs = toAbsoluteTime(timegroup, userTimeMs);
       
       const childTags = Array.from(timegroup.children).map(c => c.tagName);
-      console.log('[PREVIEW_CANVAS] Rendering prime timegroup', JSON.stringify({
+      console.log('[RENDER_DEBUG:PREVIEW_CANVAS] Rendering prime timegroup', JSON.stringify({
         userTimeMs,
         absoluteTimeMs,
         timegroupId: timegroup.id,
