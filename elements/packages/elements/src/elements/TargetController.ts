@@ -179,10 +179,22 @@ export class TargetController implements ReactiveController {
 
     // First try the local registry (same root node)
     let newTarget = this.registry.get(this.host.target);
+    
+    const isClone = !!(this.host as HTMLElement).closest?.('.ef-render-clone-container');
+    console.log('[TARGET_CONTROLLER] updateTarget', JSON.stringify({
+      targetId: this.host.target,
+      foundInRegistry: !!newTarget,
+      isClone,
+      rootNodeType: this.host.getRootNode().constructor.name
+    }));
 
     // Fall back to document.getElementById for cross-shadow-root targeting
     if (!newTarget) {
       newTarget = document.getElementById(this.host.target) as LitElement | undefined;
+      console.log('[TARGET_CONTROLLER] fallback to document.getElementById', JSON.stringify({
+        targetId: this.host.target,
+        found: !!newTarget
+      }));
     }
 
     if (this.host.targetElement !== newTarget) {

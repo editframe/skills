@@ -370,6 +370,17 @@ export async function captureFromClone(
     // UNIFIED PATH: Always use foreignObject serialization (same as video rendering)
     // This ensures consistency - thumbnails, video export, and preview all use the same code path
     // The native path had reliability issues with scaling and content rendering
+    
+    const childTags = Array.from(renderClone.children).map(c => c.tagName);
+    console.log('[THUMB_CAPTURE] Rendering clone timegroup', JSON.stringify({
+      timeMs,
+      renderCloneId: renderClone.id,
+      renderCloneTime: renderClone.currentTimeMs,
+      childCount: renderClone.children.length,
+      childTags,
+      scale
+    }));
+    
     const t0 = performance.now();
     const dataUri = await serializeTimelineToDataUri(renderClone, width, height, {
       renderContext,
@@ -824,6 +835,15 @@ export function renderTimegroupToCanvas(
       // DIRECT SERIALIZATION PATH (same as video rendering)
       // Serialize the prime timeline directly without building intermediate passive structure
       const absoluteTimeMs = toAbsoluteTime(timegroup, userTimeMs);
+      
+      const childTags = Array.from(timegroup.children).map(c => c.tagName);
+      console.log('[PREVIEW_CANVAS] Rendering prime timegroup', JSON.stringify({
+        userTimeMs,
+        absoluteTimeMs,
+        timegroupId: timegroup.id,
+        childCount: timegroup.children.length,
+        childTags
+      }));
       
       // Pass FULL dimensions to serializeTimelineToDataUri, let canvasScale handle internal scaling
       // This matches video rendering: full dimensions + canvasScale, not pre-scaled dimensions
