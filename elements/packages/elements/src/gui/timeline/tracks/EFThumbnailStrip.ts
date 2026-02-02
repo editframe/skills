@@ -423,6 +423,11 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
           }
         } else {
           // Generator finished, restart with existing clone
+          console.log('[THUMB_STRIP] Restarting generator with EXISTING clone (NO WAITING)', JSON.stringify({
+            uncachedCount: uncached.length,
+            uncachedTimes: uncached,
+            cloneAge: 'reused'
+          }));
           this.#timegroupQueue.reset(uncached);
           this.#timegroupGenerator = generateThumbnailsFromClone(
             this.#timegroupClone!.clone,
@@ -451,6 +456,10 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
    * Start timegroup thumbnail generator
    */
   async #startTimegroupGenerator(timegroup: EFTimegroup, timestamps: number[]): Promise<void> {
+    console.log('[THUMB_STRIP] Starting FRESH generator with NEW clone', JSON.stringify({
+      timestampCount: timestamps.length,
+      timestamps: timestamps
+    }));
     // Create render clone
     this.#timegroupClone = await timegroup.createRenderClone();
     

@@ -537,8 +537,18 @@ export async function* generateThumbnailsFromClone(
       break;
     }
     
+    console.log('[THUMB_GEN] About to seek and capture', JSON.stringify({
+      timeMs,
+      scale,
+      contentReadyMode
+    }));
+    
     // Seek the clone to the target time
     await renderClone.seekForRender(timeMs);
+    
+    console.log('[THUMB_GEN] Seek complete, starting capture', JSON.stringify({
+      timeMs
+    }));
     
     // Capture from the seeked clone, passing explicit timeMs
     const canvas = await captureFromClone(renderClone, renderContainer, {
@@ -547,6 +557,12 @@ export async function* generateThumbnailsFromClone(
       blockingTimeoutMs,
       timeMs, // CRITICAL: Pass explicit time for accurate temporal visibility
     });
+    
+    console.log('[THUMB_GEN] Capture complete', JSON.stringify({
+      timeMs,
+      canvasWidth: (canvas as HTMLCanvasElement).width,
+      canvasHeight: (canvas as HTMLCanvasElement).height
+    }));
     
     // Yield the result with explicit timestamp association
     yield { timeMs, canvas };
