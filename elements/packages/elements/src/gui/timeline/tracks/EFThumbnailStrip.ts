@@ -405,6 +405,12 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
 
     // Filter out cached timestamps
     const uncached = timestamps.filter(t => !this.#thumbnailCache.has(t)).sort((a, b) => a - b);
+    console.log('[THUMB_STRIP] #updateTimegroupCapture called', JSON.stringify({
+      totalTimestamps: timestamps.length,
+      uncachedCount: uncached.length,
+      hasGenerator: !!this.#timegroupGenerator,
+      hasClone: !!this.#timegroupClone
+    }));
     if (uncached.length === 0) return;
 
     // If generator is running OR clone exists, reuse it
@@ -413,10 +419,21 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
       const overlap = uncached.filter(t => currentRemaining.includes(t));
       const newWork = uncached.filter(t => !currentRemaining.includes(t));
 
+      console.log('[THUMB_STRIP] Generator/clone exists, checking reuse', JSON.stringify({
+        hasGenerator: !!this.#timegroupGenerator,
+        queueRemaining: currentRemaining.length,
+        overlap: overlap.length,
+        newWork: newWork.length
+      }));
+
       if (overlap.length > 0 || !this.#timegroupGenerator) {
         // Reuse clone: either overlap exists OR generator finished but clone still alive
         if (this.#timegroupGenerator) {
           // Generator is running, update queue
+          console.log('[THUMB_STRIP] Generator RUNNING - updating queue', JSON.stringify({
+            retaining: overlap,
+            appending: newWork
+          }));
           this.#timegroupQueue.retainOnly(overlap);
           if (newWork.length > 0) {
             this.#timegroupQueue.append(newWork);
