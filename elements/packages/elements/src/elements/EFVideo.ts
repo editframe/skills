@@ -673,7 +673,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
   clearCanvas(): void {
     if (!this.canvasElement) return;
 
-    const ctx = this.canvasElement.getContext("2d");
+    const ctx = this.canvasElement.getContext("2d", { willReadFrequently: true });
     if (ctx) {
       ctx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
     }
@@ -714,7 +714,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         const t1 = performance.now();
         span.setAttribute("getCanvasMs", Math.round((t1 - t0) * 100) / 100);
 
-        const ctx = this.canvasElement.getContext("2d");
+        const ctx = this.canvasElement.getContext("2d", { willReadFrequently: true });
         const t2 = performance.now();
         span.setAttribute("getCtxMs", Math.round((t2 - t1) * 100) / 100);
 
