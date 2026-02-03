@@ -16,6 +16,8 @@ import {
   compareFramesWithOdiff,
   bundleTestTemplate,
 } from "../../test-utils";
+import { writeFileSync } from "node:fs";
+import { join } from "node:path";
 
 /**
  * All browser-based rendering mode combinations to test.
@@ -235,6 +237,37 @@ describe("Video-Only Asset Fidelity", () => {
       // Final timing
       const totalTime = (performance.now() - testStartTime) / 1000;
       console.log(`\n=== Total test time: ${totalTime.toFixed(1)}s ===\n`);
+      
+      // Write test results manifest for viewer
+      // Convert absolute paths to relative paths from the root
+      const makeRelativePath = (absPath: string) => {
+        return absPath.replace('/app/', '').replace(/^\//, '');
+      };
+      
+      const manifest = {
+        timestamp: new Date().toISOString(),
+        testName: "video-only-fidelity",
+        totalTime,
+        baseline: {
+          label: "Server (baseline)",
+          videoPath: makeRelativePath(baseline.videoPath),
+          templateHash: baseline.templateHash,
+          renderInfo: baseline.renderInfo,
+        },
+        results: browserResults.map(({ label, result, duration, error }) => ({
+          label,
+          videoPath: result?.videoPath ? makeRelativePath(result.videoPath) : null,
+          templateHash: result?.templateHash,
+          renderInfo: result?.renderInfo,
+          duration,
+          error,
+          sizeKB: result ? (result.finalVideoBuffer.length / 1024).toFixed(1) : null,
+        })),
+      };
+      
+      const manifestPath = join(process.cwd(), "lib/queues/units-of-work/Render/full-render/fidelity/video-only-test-results.json");
+      writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+      console.log(`Wrote test results manifest to: ${manifestPath}`);
     },
   );
 });

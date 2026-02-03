@@ -23,12 +23,23 @@ export class UrlGenerator {
     renditionId: RenditionId,
     metadata: MediaEngine,
   ): string {
+    // Determine which rendition to use based on renditionId
+    // Audio renditions: "audio"
+    // Video renditions: "high", "scrub", "low", "medium", etc.
     const audioRendition = metadata.audioRendition;
     const videoRendition = metadata.videoRendition;
-    const rendition = audioRendition ?? videoRendition;
+    
+    let rendition;
+    if (renditionId === "audio") {
+      rendition = audioRendition;
+    } else {
+      // For all other rendition IDs (high, scrub, low, medium), use video rendition
+      rendition = videoRendition;
+    }
+    
     if (!rendition) {
-      console.error("Rendition not found", metadata);
-      throw new Error(`Rendition ${renditionId} not found`);
+      console.error("Rendition not found", { renditionId, hasAudio: !!audioRendition, hasVideo: !!videoRendition, metadata });
+      throw new Error(`Rendition ${renditionId} not found (hasAudio=${!!audioRendition}, hasVideo=${!!videoRendition})`);
     }
 
     const template =

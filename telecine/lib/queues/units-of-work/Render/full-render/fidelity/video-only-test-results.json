@@ -1,0 +1,69 @@
+{
+  "timestamp": "2026-02-03T22:49:48.546Z",
+  "testName": "video-only-fidelity",
+  "totalTime": 9.033405183,
+  "baseline": {
+    "label": "Server (baseline)",
+    "videoPath": "temp/test-render-video-only-fidelity-baseline-c7c1bdfcb6dd52db/artifacts/output.mp4",
+    "templateHash": "c7c1bdfcb6dd52db",
+    "renderInfo": {
+      "width": 480,
+      "height": 270,
+      "durationMs": 1000
+    }
+  },
+  "results": [
+    {
+      "label": "browser-full-video + native",
+      "videoPath": "temp/test-render-video-only-fidelity-browser-full-video-native-c7c1bdfcb6dd52db/artifacts/output.mp4",
+      "templateHash": "c7c1bdfcb6dd52db",
+      "renderInfo": {
+        "width": 480,
+        "height": 270,
+        "durationMs": 1000
+      },
+      "duration": 891.7736829999994,
+      "error": null,
+      "sizeKB": "2.4"
+    },
+    {
+      "label": "browser-full-video + foreignObject",
+      "videoPath": "temp/test-render-video-only-fidelity-browser-full-video-foreignobject-c7c1bdfcb6dd52db/artifacts/output.mp4",
+      "templateHash": "c7c1bdfcb6dd52db",
+      "renderInfo": {
+        "width": 480,
+        "height": 270,
+        "durationMs": 1000
+      },
+      "duration": 898.9501359999995,
+      "error": null,
+      "sizeKB": "2.4"
+    },
+    {
+      "label": "browser-frame-by-frame + native",
+      "videoPath": "temp/test-render-video-only-fidelity-browser-frame-by-frame-native-c7c1bdfcb6dd52db/artifacts/output.mp4",
+      "templateHash": "c7c1bdfcb6dd52db",
+      "renderInfo": {
+        "width": 480,
+        "height": 270,
+        "durationMs": 1000
+      },
+      "duration": 2742.067106999999,
+      "error": null,
+      "sizeKB": "4.5"
+    },
+    {
+      "label": "browser-frame-by-frame + foreignObject",
+      "videoPath": "temp/test-render-video-only-fidelity-browser-frame-by-frame-foreignobject-c7c1bdfcb6dd52db/artifacts/output.mp4",
+      "templateHash": "c7c1bdfcb6dd52db",
+      "renderInfo": {
+        "width": 480,
+        "height": 270,
+        "durationMs": 1000
+      },
+      "duration": 2658.9320769999995,
+      "error": null,
+      "sizeKB": "4.5"
+    }
+  ]
+}
