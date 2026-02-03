@@ -28,6 +28,7 @@ import {
 /** Padding for virtual rendering */
 const VIRTUAL_RENDER_PADDING_PX = 100;
 
+
 /**
  * Mutable queue for timestamp generation.
  * Allows updating timestamps while generator is consuming them.
@@ -172,11 +173,14 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
   #timegroupQueue = new MutableTimestampQueue();
   #timegroupClone: { clone: EFTimegroup; container: HTMLElement; cleanup: () => void } | null = null;
   #timegroupGenerator: AsyncGenerator<GeneratedThumbnail> | null = null;
+  #timegroupGeneratorAbort: AbortController | null = null;
   #previewContainer: HTMLDivElement | null = null;
   #updateInProgress = false; // Lock to prevent concurrent updates
   #consumerRunning = false; // Lock to prevent concurrent consumers
   #pendingTimestamps = new Set<number>(); // Timestamps requested while update in progress
   #retryScheduled = false; // Flag to prevent duplicate retry schedules
+  #thumbnailPhase: number = 0; // Phase offset for thumbnail grid
+  #previousPixelsPerMs: number | null = null; // Track zoom changes
 
   /**
    * Check if target is valid (EFVideo or root EFTimegroup)
@@ -296,20 +300,53 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
 
     const thumbnails: ThumbnailDescriptor[] = [];
     const { width, height } = this.#thumbnailDimensions;
-
-    let x = 0;
-    while (x < trackWidthPx) {
-      // Only include thumbnails that:
-      // 1. Are in visible range (for performance)
-      // 2. Start before the track ends (don't extend past duration)
-      if (x + width >= visibleStartPx && x <= visibleEndPx && x < trackWidthPx) {
-        const rawTimeMs = x / pixelsPerMs;
+    
+    const thumbnailStride = this.thumbnailSpacingPx;
+    
+    // Detect zoom by checking if pixelsPerMs changed
+    const isZoom = this.#previousPixelsPerMs !== null && this.#previousPixelsPerMs !== pixelsPerMs;
+    
+    // Check if track is narrower than viewport (fully visible, no scrolling)
+    const trackFitsInViewport = trackWidthPx <= viewportWidth;
+    
+    if (this.#previousPixelsPerMs === null) {
+      // First render: align grid to track start (t=0)
+      this.#thumbnailPhase = 0;
+    } else if (isZoom) {
+      // On zoom: if track fits in viewport, always align to t=0
+      // Otherwise, snap a thumbnail to near the left edge of viewport
+      if (trackFitsInViewport) {
+        this.#thumbnailPhase = 0;
+      } else {
+        this.#thumbnailPhase = scrollLeft % thumbnailStride;
+      }
+    } else if (scrollLeft < thumbnailStride) {
+      // When scrolled near the start, realign to t=0 to avoid left gap
+      this.#thumbnailPhase = 0;
+    }
+    // During normal scroll: phase unchanged, grid scrolls naturally with track
+    
+    this.#previousPixelsPerMs = pixelsPerMs;
+    
+    // Generate thumbnail grid anchored at phase offset
+    // Each thumbnail is at absolute track position: phase + (i * stride)
+    // This means grid is stable in track space (scrolls naturally)
+    const startIndex = Math.max(0, Math.floor((visibleStartPx - this.#thumbnailPhase) / thumbnailStride));
+    const endIndex = Math.ceil((visibleEndPx - this.#thumbnailPhase) / thumbnailStride);
+    
+    for (let i = startIndex; i <= endIndex; i++) {
+      const thumbX = this.#thumbnailPhase + (i * thumbnailStride);
+      
+      // Only include if within track bounds
+      if (thumbX >= 0 && thumbX < trackWidthPx) {
+        // Convert position to time (leading edge)
+        const rawTimeMs = thumbX / pixelsPerMs;
         const timeMs = quantizeToFrameTimeMs(rawTimeMs, fps);
-        if (timeMs < durationMs) {
-          thumbnails.push({ timeMs, x, width, height });
+        
+        if (timeMs >= 0 && timeMs < durationMs) {
+          thumbnails.push({ timeMs, x: thumbX, width, height });
         }
       }
-      x += this.thumbnailSpacingPx;
     }
 
     return thumbnails;
@@ -359,10 +396,31 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
 
     if (signal.aborted) return;
 
-    // Draw thumbnails (actual or placeholder)
-    const results: ThumbnailResult[] = visibleThumbnails.map(t => ({
-      canvas: this.#thumbnailCache.get(t.timeMs) ?? null,
-    }));
+    // Draw thumbnails - use nearest neighbor if exact timestamp not cached
+    const maxNeighborDistanceMs = 3000; // Don't use thumbnails more than 3s away
+    const results: ThumbnailResult[] = visibleThumbnails.map(t => {
+      let canvas = this.#thumbnailCache.get(t.timeMs);
+      
+      // If exact match not found, find nearest cached thumbnail
+      if (!canvas) {
+        let nearestTimeMs: number | null = null;
+        let minDistance = Infinity;
+        
+        for (const cachedTimeMs of this.#thumbnailCache.keys()) {
+          const distance = Math.abs(cachedTimeMs - t.timeMs);
+          if (distance < minDistance && distance <= maxNeighborDistanceMs) {
+            minDistance = distance;
+            nearestTimeMs = cachedTimeMs;
+          }
+        }
+        
+        if (nearestTimeMs !== null) {
+          canvas = this.#thumbnailCache.get(nearestTimeMs);
+        }
+      }
+      
+      return { canvas: canvas ?? null };
+    });
     this.#drawThumbnails(visibleThumbnails, results);
   }
 
@@ -420,8 +478,11 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
       return;
     }
     
-    // CRITICAL: If update already in progress, add to pending set and schedule retry
+    // CRITICAL: If update already in progress, REPLACE pending (not add)
+    // We only want the LATEST required timestamps, not a union of all previous ones
     if (this.#updateInProgress) {
+      // Clear old pending and replace with latest
+      this.#pendingTimestamps.clear();
       uncached.forEach(t => this.#pendingTimestamps.add(t));
       
       // Schedule a retry (debounced via RAF)
@@ -441,42 +502,37 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     this.#updateInProgress = true;
 
     try {
-      // If generator is running OR clone exists, reuse it
-      if (this.#timegroupGenerator || this.#timegroupClone) {
-        const currentRemaining = this.#timegroupQueue.remaining();
-        const overlap = uncached.filter(t => currentRemaining.includes(t));
-        const newWork = uncached.filter(t => !currentRemaining.includes(t));
-
-        if (overlap.length > 0 || !this.#timegroupGenerator) {
-          // Reuse clone: either overlap exists OR generator finished but clone still alive
-          if (this.#timegroupGenerator) {
-            // Generator is running, update queue
-            this.#timegroupQueue.retainOnly(overlap);
-            if (newWork.length > 0) {
-              this.#timegroupQueue.append(newWork);
-            }
-          } else {
-            // Generator finished, restart with existing clone
-            this.#timegroupQueue.reset(uncached);
-            this.#timegroupGenerator = generateThumbnailsFromClone(
-              this.#timegroupClone!.clone,
-              this.#previewContainer!,
-              this.#timegroupQueue,
-              {
-                scale: 0.25,
-                contentReadyMode: "blocking",
-                blockingTimeoutMs: 1000,
-              },
-            );
-            await this.#consumeTimegroupGenerator();
-          }
-        } else {
-          // No overlap and generator running, restart with new timestamps
-          this.#cleanupTimegroupGenerator();
-          await this.#startTimegroupGenerator(timegroup, uncached);
-        }
+      if (this.#timegroupGenerator) {
+        // Generator is running - abort and reset queue to exactly what we need now
+        // Abort in-flight capture
+        this.#timegroupGeneratorAbort?.abort();
+        
+        // Create new abort controller for the updated queue
+        this.#timegroupGeneratorAbort = new AbortController();
+        
+        // Reset queue to exactly what we need now
+        this.#timegroupQueue.reset(uncached);
+      } else if (this.#timegroupClone) {
+        // Generator finished, restart with existing clone
+        this.#timegroupQueue.reset(uncached);
+        
+        // Create new abort controller
+        this.#timegroupGeneratorAbort = new AbortController();
+        
+        this.#timegroupGenerator = generateThumbnailsFromClone(
+          this.#timegroupClone.clone,
+          this.#previewContainer!,
+          this.#timegroupQueue,
+          {
+            scale: 0.25,
+            contentReadyMode: "blocking",
+            blockingTimeoutMs: 1000,
+            signal: this.#timegroupGeneratorAbort.signal,
+          },
+        );
+        await this.#consumeTimegroupGenerator();
       } else {
-        // No generator running, start fresh
+        // No generator or clone, start fresh
         await this.#startTimegroupGenerator(timegroup, uncached);
       }
     } finally {
@@ -565,6 +621,9 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     // Initialize queue
     this.#timegroupQueue.reset(timestamps);
     
+    // Create abort controller for this generator
+    this.#timegroupGeneratorAbort = new AbortController();
+    
     // Start generator using the fresh container
     this.#timegroupGenerator = generateThumbnailsFromClone(
       this.#timegroupClone.clone,
@@ -574,6 +633,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
         scale: 0.25,
         contentReadyMode: "blocking",
         blockingTimeoutMs: 1000,
+        signal: this.#timegroupGeneratorAbort.signal,
       },
     );
     
@@ -614,6 +674,10 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
    * Cleanup timegroup generator and clone
    */
   #cleanupTimegroupGenerator(): void {
+    // Abort any in-flight work
+    this.#timegroupGeneratorAbort?.abort();
+    this.#timegroupGeneratorAbort = null;
+    
     this.#timegroupGenerator = null;
     
     // Remove preview container from DOM
@@ -736,8 +800,18 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
       </div>`;
     }
 
-    // Render canvas container with overflow hidden
-    return html`<div class="thumbnail-container" ${ref(this.#canvasContainer)}></div>`;
+    // Calculate track width to clip thumbnails at track end
+    const element = this.targetElement;
+    const durationMs = element ? (element as any).durationMs ?? 0 : 0;
+    const pixelsPerMs = this.#timelineState?.pixelsPerMs ?? this.pixelsPerMs;
+    const trackWidthPx = durationMs * pixelsPerMs;
+
+    // Render canvas container with explicit width clipping
+    return html`<div 
+      class="thumbnail-container" 
+      style="max-width: ${trackWidthPx}px;"
+      ${ref(this.#canvasContainer)}
+    ></div>`;
   }
 }
 

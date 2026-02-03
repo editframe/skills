@@ -353,19 +353,6 @@ export async function captureFromClone(
   
   const cloneComputedWidth = getComputedStyle(renderClone).width;
   const cloneComputedHeight = getComputedStyle(renderClone).height;
-  const dimensionsOk = cloneComputedWidth && cloneComputedHeight && cloneComputedWidth !== '' && cloneComputedHeight !== '';
-  
-  if (!dimensionsOk) {
-    console.warn('[THUMB_DEBUG][RENDER_DEBUG:BAD_DIMENSIONS]', JSON.stringify({
-      timeMs,
-      cloneOffsetWidth: renderClone.offsetWidth,
-      cloneOffsetHeight: renderClone.offsetHeight,
-      cloneStyleWidth: renderClone.style.width,
-      cloneStyleHeight: renderClone.style.height,
-      cloneComputedWidth,
-      cloneComputedHeight
-    }));
-  }
   
   // NOTE: seekForRender() has already:
   // 1. Called frameController.renderFrame() to coordinate FrameRenderable elements
@@ -483,6 +470,8 @@ export interface GenerateThumbnailsOptions {
   scale?: number;
   contentReadyMode?: ContentReadyMode;
   blockingTimeoutMs?: number;
+  enablePerfLogging?: boolean;
+  signal?: AbortSignal;
 }
 
 /**
@@ -525,25 +514,54 @@ export async function* generateThumbnailsFromClone(
     scale = DEFAULT_CAPTURE_SCALE,
     contentReadyMode = "immediate",
     blockingTimeoutMs = DEFAULT_BLOCKING_TIMEOUT_MS,
+    enablePerfLogging = false,
+    signal,
   } = options;
 
   while (true) {
+    // Check if aborted before starting work
+    if (signal?.aborted) {
+      if (enablePerfLogging) {
+        console.log(`[THUMB_PERF] Generator aborted`);
+      }
+      break;
+    }
+    
     const timeMs = queue.shift();
     if (timeMs === undefined) {
       // Queue is empty, generator exits
       break;
     }
     
+    const thumbStart = enablePerfLogging ? performance.now() : 0;
+    
     // Seek the clone to the target time
+    const seekStart = enablePerfLogging ? performance.now() : 0;
     await renderClone.seekForRender(timeMs);
+    const seekTime = enablePerfLogging ? performance.now() - seekStart : 0;
+    
+    // Check if aborted after seek (before expensive capture)
+    if (signal?.aborted) {
+      if (enablePerfLogging) {
+        console.log(`[THUMB_PERF] Generator aborted after seek for ${Math.round(timeMs)}ms`);
+      }
+      break;
+    }
     
     // Capture from the seeked clone, passing explicit timeMs
+    const captureStart = enablePerfLogging ? performance.now() : 0;
     const canvas = await captureFromClone(renderClone, renderContainer, {
       scale,
       contentReadyMode,
       blockingTimeoutMs,
       timeMs, // CRITICAL: Pass explicit time for accurate temporal visibility
     });
+    const captureTime = enablePerfLogging ? performance.now() - captureStart : 0;
+    
+    if (enablePerfLogging) {
+      const totalTime = performance.now() - thumbStart;
+      console.log(`[THUMB_PERF] ${Math.round(timeMs)}ms: seek=${Math.round(seekTime)}ms, capture=${Math.round(captureTime)}ms, total=${Math.round(totalTime)}ms`);
+    }
     
     // Yield the result with explicit timestamp association
     yield { timeMs, canvas };
@@ -835,14 +853,6 @@ export function renderTimegroupToCanvas(
       // Serialize the prime timeline directly without building intermediate passive structure
       const absoluteTimeMs = toAbsoluteTime(timegroup, userTimeMs);
       
-      const childTags = Array.from(timegroup.children).map(c => c.tagName);
-      console.log('[RENDER_DEBUG:PREVIEW_CANVAS] Rendering prime timegroup', JSON.stringify({
-        userTimeMs,
-        absoluteTimeMs,
-        timegroupId: timegroup.id,
-        childCount: timegroup.children.length,
-        childTags
-      }));
       
       // Pass FULL dimensions to serializeTimelineToDataUri, let canvasScale handle internal scaling
       // This matches video rendering: full dimensions + canvasScale, not pre-scaled dimensions

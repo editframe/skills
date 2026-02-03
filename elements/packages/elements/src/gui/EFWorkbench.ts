@@ -1071,13 +1071,6 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     const renderWidth = Math.floor(compositionWidth * finalScale);
     const renderHeight = Math.floor(compositionHeight * finalScale);
     
-    console.log(`[EFWorkbench] Resolution scale:
-  Composition (offsetWidth×offsetHeight): ${compositionWidth}×${compositionHeight}
-  Displayed (boundingRect): ${Math.round(displayedWidth)}×${Math.round(displayedHeight)}
-  Display scale: ${(displayScale * 100).toFixed(1)}%
-  Setting: ${this.previewResolutionScale === 1 ? "Full" : `${Math.round((this.previewResolutionScale as number) * 100)}%`}
-  Final: ${(finalScale * 100).toFixed(1)}% → ${renderWidth}×${renderHeight}`);
-    
     return finalScale;
   }
   

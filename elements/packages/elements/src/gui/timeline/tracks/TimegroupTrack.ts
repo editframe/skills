@@ -98,17 +98,9 @@ export class EFTimegroupTrack extends TrackItem {
   override get trimPortionStyles() {
     const baseStyles = super.trimPortionStyles;
     if (this.shouldShowFilmstrip) {
-      // Ensure minimum width for filmstrip tracks so thumbnail strip can render
-      // even when duration is 0 (e.g., sequence mode timegroups before children load)
-      const durationMs = this.element.durationMs ?? 0;
-      const calculatedWidth = this.pixelsPerMs * durationMs;
-      const minWidth = Math.max(calculatedWidth, 500); // Minimum 500px for thumbnail strip visibility
-      
       return {
         ...baseStyles,
         height: `${FILMSTRIP_ROW_HEIGHT}px`,
-        width: `${minWidth}px`,
-        minWidth: `${minWidth}px`, // Ensure minimum width is enforced
       };
     }
     return baseStyles;
