@@ -1,4 +1,5 @@
 import type { EFMedia } from "./EFMedia.js";
+import { logger } from "../preview/logger.js";
 
 interface TemporalAudioHost {
   startTimeMs: number;
@@ -39,11 +40,11 @@ export async function renderTemporalAudio(
   }
 
   const mediaElements = host.getMediaElements();
-  console.log(`[renderTemporalAudio] Found ${mediaElements.length} media elements, time range: ${fromMs}-${toMs}ms`);
+  logger.debug(`[renderTemporalAudio] Found ${mediaElements.length} media elements, time range: ${fromMs}-${toMs}ms`);
   
   await Promise.all(
     mediaElements.map(async (mediaElement) => {
-      console.log(`[renderTemporalAudio] Checking ${mediaElement.tagName} at ${mediaElement.startTimeMs}-${mediaElement.endTimeMs}ms, mute=${mediaElement.mute}`);
+      logger.debug(`[renderTemporalAudio] Checking ${mediaElement.tagName} at ${mediaElement.startTimeMs}-${mediaElement.endTimeMs}ms, mute=${mediaElement.mute}`);
       
       if (mediaElement.mute) {
         return;
@@ -53,7 +54,7 @@ export async function renderTemporalAudio(
       const mediaEndsAfterStart = mediaElement.endTimeMs >= fromMs;
       const mediaOverlaps = mediaStartsBeforeEnd && mediaEndsAfterStart;
       if (!mediaOverlaps) {
-        console.log(`[renderTemporalAudio] ${mediaElement.tagName} does not overlap`);
+        logger.debug(`[renderTemporalAudio] ${mediaElement.tagName} does not overlap`);
         return;
       }
 
@@ -75,17 +76,17 @@ export async function renderTemporalAudio(
       // Check abort before processing each media element
       signal?.throwIfAborted();
       
-      console.log(`[renderTemporalAudio] Fetching audio for ${mediaElement.tagName} from ${mediaSourceFromMs}-${mediaSourceToMs}ms`);
+      logger.debug(`[renderTemporalAudio] Fetching audio for ${mediaElement.tagName} from ${mediaSourceFromMs}-${mediaSourceToMs}ms`);
       const audio = await mediaElement.fetchAudioSpanningTime(
         mediaSourceFromMs,
         mediaSourceToMs,
         signal,
       );
       if (!audio) {
-        console.log(`[renderTemporalAudio] No audio returned for ${mediaElement.tagName}`);
+        logger.debug(`[renderTemporalAudio] No audio returned for ${mediaElement.tagName}`);
         return;
       }
-      console.log(`[renderTemporalAudio] Got audio blob size: ${audio.blob.size}, range: ${audio.startMs}-${audio.endMs}ms`);
+      logger.debug(`[renderTemporalAudio] Got audio blob size: ${audio.blob.size}, range: ${audio.startMs}-${audio.endMs}ms`);
 
       const bufferSource = audioContext.createBufferSource();
       

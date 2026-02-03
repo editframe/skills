@@ -170,9 +170,9 @@ function resolveConfig(
   const timegroupWidth = timegroup.offsetWidth;
   const timegroupHeight = timegroup.offsetHeight;
   
-  console.log(`[renderTimegroupToVideo] Timegroup dimensions: ${timegroupWidth}x${timegroupHeight}`);
-  console.log(`[renderTimegroupToVideo] Computed style:`, getComputedStyle(timegroup).width, getComputedStyle(timegroup).height);
-  console.log(`[renderTimegroupToVideo] BoundingClientRect:`, timegroup.getBoundingClientRect());
+  logger.debug(`[renderTimegroupToVideo] Timegroup dimensions: ${timegroupWidth}x${timegroupHeight}`);
+  logger.debug(`[renderTimegroupToVideo] Computed style:`, getComputedStyle(timegroup).width, getComputedStyle(timegroup).height);
+  logger.debug(`[renderTimegroupToVideo] BoundingClientRect:`, timegroup.getBoundingClientRect());
   
   if (!timegroupWidth || !timegroupHeight) {
     throw new Error(
@@ -426,7 +426,7 @@ export async function renderTimegroupToVideo(
   });
   
   // Setup for direct serialization
-  console.log(`[renderTimegroupToVideo] Using direct timeline serialization`);
+  logger.debug(`[renderTimegroupToVideo] Using direct timeline serialization`);
   
   // Attach renderClone to container
   previewContainer.appendChild(renderClone);
@@ -445,7 +445,7 @@ export async function renderTimegroupToVideo(
   
   // Force layout/reflow so getComputedStyle returns correct values
   void renderClone.offsetHeight;
-  console.log(`[renderTimegroupToVideo] Attached previewContainer to document.body (off-screen) for style computation`);
+  logger.debug(`[renderTimegroupToVideo] Attached previewContainer to document.body (off-screen) for style computation`);
   
   // =========================================================================
   // Frame loop - DEEP PIPELINE: overlap encode + render + prepare
@@ -543,8 +543,8 @@ export async function renderTimegroupToVideo(
           await new Promise<void>((resolve, reject) => {
             image.onload = () => resolve();
             image.onerror = (e) => {
-              console.error(`[Frame ${renderFrameIndex}] Image load error:`, e);
-              console.error(`[Frame ${renderFrameIndex}] Data URI preview:`, dataUri.substring(0, 200) + '...');
+              logger.error(`[Frame ${renderFrameIndex}] Image load error:`, e);
+              logger.error(`[Frame ${renderFrameIndex}] Data URI preview:`, dataUri.substring(0, 200) + '...');
               reject(new Error(`Failed to load image from data URI`));
             };
             image.src = dataUri;
@@ -552,14 +552,7 @@ export async function renderTimegroupToVideo(
           const renderTime = performance.now() - renderStart;
           totalRenderMs += renderTime;
           
-          if (renderFrameIndex % 30 === 0) {
-            console.log(`[Frame ${renderFrameIndex}] Image loaded: ${image.width}x${image.height}`);
-          }
-          
-          // Log detailed timing every 30 frames to see breakdown
-          if (renderFrameIndex % 30 === 0) {
-            console.log(`[Frame ${renderFrameIndex}] serialize=${syncTime.toFixed(1)}ms`);
-          }
+          logger.debug(`[Frame ${renderFrameIndex}] Image loaded: ${image.width}x${image.height}, serialize=${syncTime.toFixed(1)}ms`);
           
           return image;
         });
@@ -666,17 +659,19 @@ export async function renderTimegroupToVideo(
     const tracked = totalSeekMs + totalSyncMs + totalRenderMs + totalEncodeMs;
     const untracked = totalTime - tracked;
     
-    console.log(`\n=== Video Export Performance Breakdown ===`);
-    console.log(`Mode: Direct Serialization`);
-    console.log(`Total frames: ${config.totalFrames}`);
-    console.log(`Total time: ${totalTime.toFixed(0)}ms (${avgTotal.toFixed(1)}ms/frame)`);
-    console.log(`\nPer-stage totals:`);
-    console.log(`  Seek:      ${totalSeekMs.toFixed(0)}ms (${(totalSeekMs/totalTime*100).toFixed(1)}%) - avg ${avgSeek.toFixed(1)}ms/frame`);
-    console.log(`  Serialize: ${totalSyncMs.toFixed(0)}ms (${(totalSyncMs/totalTime*100).toFixed(1)}%) - avg ${avgSync.toFixed(1)}ms/frame`);
-    console.log(`  Render: ${totalRenderMs.toFixed(0)}ms (${(totalRenderMs/totalTime*100).toFixed(1)}%) - avg ${avgRender.toFixed(1)}ms/frame`);
-    console.log(`  Encode: ${totalEncodeMs.toFixed(0)}ms (${(totalEncodeMs/totalTime*100).toFixed(1)}%) - avg ${avgEncode.toFixed(1)}ms/frame`);
-    console.log(`  Other:  ${untracked.toFixed(0)}ms (${(untracked/totalTime*100).toFixed(1)}%)`);
-    console.log(`==========================================\n`);
+    logger.debug(
+      `\n=== Video Export Performance Breakdown ===\n` +
+      `Mode: Direct Serialization\n` +
+      `Total frames: ${config.totalFrames}\n` +
+      `Total time: ${totalTime.toFixed(0)}ms (${avgTotal.toFixed(1)}ms/frame)\n` +
+      `\nPer-stage totals:\n` +
+      `  Seek:      ${totalSeekMs.toFixed(0)}ms (${(totalSeekMs/totalTime*100).toFixed(1)}%) - avg ${avgSeek.toFixed(1)}ms/frame\n` +
+      `  Serialize: ${totalSyncMs.toFixed(0)}ms (${(totalSyncMs/totalTime*100).toFixed(1)}%) - avg ${avgSync.toFixed(1)}ms/frame\n` +
+      `  Render: ${totalRenderMs.toFixed(0)}ms (${(totalRenderMs/totalTime*100).toFixed(1)}%) - avg ${avgRender.toFixed(1)}ms/frame\n` +
+      `  Encode: ${totalEncodeMs.toFixed(0)}ms (${(totalEncodeMs/totalTime*100).toFixed(1)}%) - avg ${avgEncode.toFixed(1)}ms/frame\n` +
+      `  Other:  ${untracked.toFixed(0)}ms (${(untracked/totalTime*100).toFixed(1)}%)\n` +
+      `==========================================`
+    );
     
     logger.debug(
       `[renderTimegroupToVideo] ${config.totalFrames} frames: ` +
