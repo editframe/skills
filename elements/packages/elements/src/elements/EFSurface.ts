@@ -144,7 +144,7 @@ export class EFSurface extends LitElement implements FrameRenderable {
       dst.height = src.height;
     }
 
-    const ctx = dst.getContext("2d");
+    const ctx = dst.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
     ctx.drawImage(src, 0, 0, dst.width, dst.height);
   }

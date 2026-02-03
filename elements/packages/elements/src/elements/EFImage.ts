@@ -207,7 +207,7 @@ export class EFImage extends EFTemporal(
     signal?.throwIfAborted();
 
     if (!this.canvasRef.value) throw new Error("Canvas not ready");
-    const ctx = this.canvasRef.value.getContext("2d");
+    const ctx = this.canvasRef.value.getContext("2d", { willReadFrequently: true });
     if (!ctx) throw new Error("Canvas 2d context not ready");
     
     // Determine canvas dimensions

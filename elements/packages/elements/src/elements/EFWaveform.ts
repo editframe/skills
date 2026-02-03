@@ -162,7 +162,7 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return null;
     ctx.reset();
 
