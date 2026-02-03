@@ -162,24 +162,9 @@ export async function encodeCanvasesInParallel(
         }
         
         // For static elements (ef-image, ef-waveform), check version-based cache
-        const renderVersion = 'renderVersion' in sourceElement ? (sourceElement as any).renderVersion : 'no-version';
         const cachedDataUrl = renderContext.getCachedCanvasDataUrl(sourceElement);
         if (cachedDataUrl) {
-          console.log('[CANVAS_ENCODER] Cache hit', JSON.stringify({
-            element: sourceElement.tagName,
-            renderVersion,
-            canvasSize: `${canvas.width}x${canvas.height}`,
-            pixelCount: canvas.width * canvas.height,
-          }));
           return { canvas, dataUrl: cachedDataUrl, preserveAlpha };
-        } else {
-          console.log('[CANVAS_ENCODER] Cache miss - full encode required', JSON.stringify({
-            element: sourceElement.tagName,
-            renderVersion,
-            canvasSize: `${canvas.width}x${canvas.height}`,
-            pixelCount: canvas.width * canvas.height,
-            preserveAlpha,
-          }));
         }
       }
 
@@ -202,7 +187,6 @@ export async function encodeCanvasesInParallel(
 
       let dataUrl: string;
       
-      const t0_encode = performance.now();
       if (workerPool) {
         // Encode in worker
         dataUrl = await workerPool.execute((worker) =>
@@ -214,16 +198,6 @@ export async function encodeCanvasesInParallel(
         if (!encoded) return null;
         dataUrl = encoded.dataUrl;
       }
-      const encodeTime = performance.now() - t0_encode;
-      
-      console.log('[CANVAS_ENCODER] Encoding complete', JSON.stringify({
-        element: sourceElement?.tagName || 'unknown',
-        canvasSize: `${sourceCanvas.width}x${sourceCanvas.height}`,
-        pixelCount: sourceCanvas.width * sourceCanvas.height,
-        encodeTimeMs: encodeTime.toFixed(2),
-        encodedSizeKB: (dataUrl.length / 1024).toFixed(1),
-        worker: workerPool ? 'yes' : 'no',
-      }));
 
       // Cache the result for static elements
       if (renderContext && sourceElement) {

@@ -537,7 +537,7 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
    * Synchronous render - draws waveform to canvas.
    * @implements FrameRenderable
    */
-  renderFrame(timeMs: number): void {
+  renderFrame(_timeMs: number): void {
     if (!this.targetElement) return;
 
     this.ctx ||= this.initCanvas();
@@ -547,15 +547,6 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
     const frequencyData = this.#frequencyData;
     const byteTimeData = this.#timeDomainData;
     if (!frequencyData || !byteTimeData) return;
-
-    console.log('[WAVEFORM_RENDER] Drawing to canvas', JSON.stringify({
-      timeMs,
-      renderVersion: this.#renderVersion,
-      canvasSize: `${ctx.canvas.width}x${ctx.canvas.height}`,
-      dataPoints: frequencyData.length,
-      firstDataValue: frequencyData[0],
-      mode: this.mode,
-    }));
 
     ctx.save();
     if (this.color === "currentColor") {
@@ -596,6 +587,8 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
     }
 
     ctx.restore();
+    
+    this.#renderVersion++;
   }
 
   // ============================================================================
@@ -614,14 +607,7 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
     // This is intentionally broad to avoid cache staleness - the cache is
     // per-render-session so within a render the version will be stable.
     if (changedProperties.size > 0) {
-      const oldVersion = this.#renderVersion;
       this.#renderVersion++;
-      console.log('[WAVEFORM_VERSION] renderVersion incremented', JSON.stringify({
-        oldVersion,
-        newVersion: this.#renderVersion,
-        changedProperties: Array.from(changedProperties.keys()),
-        canvasSize: this.canvasRef.value ? `${this.canvasRef.value.width}x${this.canvasRef.value.height}` : 'no-canvas',
-      }));
     }
   }
 }
