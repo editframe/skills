@@ -605,7 +605,14 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
     // This is intentionally broad to avoid cache staleness - the cache is
     // per-render-session so within a render the version will be stable.
     if (changedProperties.size > 0) {
+      const oldVersion = this.#renderVersion;
       this.#renderVersion++;
+      console.log('[WAVEFORM_VERSION] renderVersion incremented', JSON.stringify({
+        oldVersion,
+        newVersion: this.#renderVersion,
+        changedProperties: Array.from(changedProperties.keys()),
+        canvasSize: this.canvasRef.value ? `${this.canvasRef.value.width}x${this.canvasRef.value.height}` : 'no-canvas',
+      }));
     }
   }
 }

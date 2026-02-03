@@ -801,7 +801,13 @@ export function renderTimegroupToCanvas(
     if (userTimeMs === lastTimeMs) return;
     
     // Skip if already rendering (don't queue up multiple renders)
-    if (rendering) return;
+    if (rendering) {
+      console.warn('[RENDER_CANVAS] Frame skipped - previous render still in progress', JSON.stringify({
+        requestedTimeMs: userTimeMs,
+        lastTimeMs,
+      }));
+      return;
+    }
     
     // Mark this time as being rendered and set the rendering flag
     lastTimeMs = userTimeMs;
@@ -872,6 +878,12 @@ export function renderTimegroupToCanvas(
       defaultProfiler.incrementRenderCount();
       if (defaultProfiler.shouldLogByFrameCount(60)) {
         logger.debug(`[renderTimegroupToCanvas] Frame render: ${renderTime.toFixed(1)}ms (serialize=${serializeTime.toFixed(1)}ms, load=${loadTime.toFixed(1)}ms, resolutionScale=${currentResolutionScale}, image=${image.width}x${image.height})`);
+        console.log('[RENDER_CANVAS] Cache metrics', JSON.stringify({
+          canvasCacheHits: renderContext.metrics.canvasCacheHits,
+          canvasCacheMisses: renderContext.metrics.canvasCacheMisses,
+          videoFrameCacheHits: renderContext.metrics.videoFrameCacheHits,
+          videoFrameCacheMisses: renderContext.metrics.videoFrameCacheMisses,
+        }));
       }
     } catch (e) {
       logger.error("Canvas preview render failed:", e);

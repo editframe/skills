@@ -269,12 +269,22 @@ function serializeCanvas(
   }
   
   // Get all computed styles from source element
+  const t0_styles = performance.now();
   const styleStr = serializeComputedStyles(sourceElement);
+  const stylesTime = performance.now() - t0_styles;
   
   // Get computed dimensions from source element (respects CSS like w-[420px])
+  const t0_computed = performance.now();
   const computedStyle = getComputedStyle(sourceElement);
   const computedWidth = computedStyle.width;
   const computedHeight = computedStyle.height;
+  const computedTime = performance.now() - t0_computed;
+  
+  console.log('[SERIALIZE_CANVAS] Style computation', JSON.stringify({
+    element: sourceElement.tagName,
+    serializeStylesMs: stylesTime.toFixed(2),
+    getComputedStyleMs: computedTime.toFixed(2),
+  }));
   
   // Use CSS object-fit and object-position to let the browser handle aspect ratio and centering
   // Set img dimensions to host element size, then use object-fit: contain to scale the image data
@@ -327,10 +337,27 @@ function serializeCanvas(
     console.warn(`[serializeCanvas] Failed to get computed style for ${sourceElement.tagName}:`, e);
   }
   
+  const t0_snapshot = performance.now();
   // CRITICAL: Create a snapshot of canvas pixels SYNCHRONOUSLY before any async work.
   // This prevents race conditions where concurrent renders overwrite the shared
   // shadow canvas while encoding is in progress.
   const snapshot = snapshotCanvas(canvas, optimalScale, preserveAlpha);
+  const snapshotTime = performance.now() - t0_snapshot;
+  
+  const originalPixels = canvas.width * canvas.height;
+  const snapshotPixels = snapshot.width * snapshot.height;
+  const pixelReduction = ((1 - snapshotPixels / originalPixels) * 100).toFixed(1);
+  
+  console.log('[SERIALIZE_CANVAS] Canvas snapshot created', JSON.stringify({
+    element: sourceElement.tagName,
+    originalSize: `${canvas.width}x${canvas.height}`,
+    snapshotSize: `${snapshot.width}x${snapshot.height}`,
+    originalPixels,
+    snapshotPixels,
+    pixelReduction: `${pixelReduction}%`,
+    optimalScale,
+    snapshotTimeMs: snapshotTime.toFixed(2),
+  }));
   
   // Open img tag with all styles from source element
   parts.push(`<img style="${escapeXML(finalStyle)}" src="`);
