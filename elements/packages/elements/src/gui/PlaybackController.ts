@@ -563,9 +563,7 @@ export class PlaybackController implements ReactiveController {
         return false;
       }
 
-      console.log(`[PlaybackController] Rendering audio from ${startMs}ms to ${endMs}ms`);
       const audioBuffer = await host.renderAudio(startMs, endMs);
-      console.log(`[PlaybackController] Got audio buffer: ${audioBuffer.length} samples, ${audioBuffer.duration}s`);
       bufferCount++;
       const source = playbackContext.createBufferSource();
       source.buffer = audioBuffer;

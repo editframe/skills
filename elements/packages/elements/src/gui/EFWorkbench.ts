@@ -533,8 +533,6 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
             this.canvasPreviewResult.setResolutionScale(scale);
             console.log(`[EFWorkbench] Resolution changed ${(oldScale * 100).toFixed(0)}% → ${(scale * 100).toFixed(0)}% (instant)`);
           }
-        } else {
-          console.log(`[EFWorkbench] Adaptive scale updated to ${(scale * 100).toFixed(0)}% (no change: atRest=${this.isAtRest}, mode=${this.presentationMode})`);
         }
       },
     });
@@ -873,7 +871,6 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
    */
   private transitionToRest(): void {
     this.isAtRest = true;
-    console.log("[EFWorkbench] Transitioned to rest state");
 
     // If in auto mode, set full resolution (instant - no rebuild needed)
     if (this.previewResolutionScale === "auto" && this.presentationMode === "canvas") {
