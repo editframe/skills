@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Results - Browser Rendering</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            line-height: 1.6;
+        }
+        
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        /* Left Navigation */
+        .nav {
+            width: 320px;
+            background: #161b22;
+            border-right: 1px solid #30363d;
+            overflow-y: auto;
+            position: fixed;
+            height: 100vh;
+            padding: 20px;
+        }
+        
+        .nav h1 {
+            font-size: 1.2rem;
+            color: #58a6ff;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #30363d;
+        }
+        
+        .nav-section {
+            margin-bottom: 25px;
+        }
+        
+        .nav-section-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #c9d1d9;
+            margin-bottom: 8px;
+            padding: 6px 10px;
+            background: #0d1117;
+            border-radius: 4px;
+        }
+        
+        .nav-section-title:hover {
+            background: #1f2937;
+            cursor: pointer;
+        }
+        
+        .nav-items {
+            margin-left: 12px;
+        }
+        
+        .nav-item {
+            display: block;
+            padding: 6px 12px;
+            color: #8b949e;
+            text-decoration: none;
+            font-size: 0.85rem;
+            border-left: 2px solid transparent;
+            margin: 2px 0;
+            transition: all 0.2s;
+        }
+        
+        .nav-item:hover {
+            color: #58a6ff;
+            border-left-color: #58a6ff;
+            background: #0d1117;
+        }
+        
+        .nav-item.active {
+            color: #58a6ff;
+            border-left-color: #58a6ff;
+            font-weight: 500;
+        }
+        
+        /* Main Content */
+        .content {
+            margin-left: 320px;
+            flex: 1;
+            overflow-y: auto;
+            padding: 40px;
+        }
+        
+        .result-item {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 30px;
+            scroll-margin-top: 20px;
+        }
+        
+        .result-item h2 {
+            font-size: 1.4rem;
+            color: #58a6ff;
+            margin-bottom: 8px;
+        }
+        
+        .result-item h3 {
+            font-size: 1.1rem;
+            color: #8b949e;
+            margin-bottom: 15px;
+            font-weight: 400;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        
+        .badge-baseline {
+            background: #238636;
+            color: #fff;
+        }
+        
+        .badge-fast {
+            background: #1f6feb;
+            color: #fff;
+        }
+        
+        .badge-slow {
+            background: #966600;
+            color: #fff;
+        }
+        
+        video {
+            width: 100%;
+            max-width: 800px;
+            border-radius: 6px;
+            background: #000;
+            margin: 15px 0;
+            border: 1px solid #30363d;
+        }
+        
+        .metadata {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin: 15px 0;
+            padding: 15px;
+            background: #0d1117;
+            border-radius: 6px;
+            border: 1px solid #21262d;
+        }
+        
+        .metadata-item {
+            font-size: 0.9rem;
+        }
+        
+        .metadata-label {
+            color: #8b949e;
+            font-size: 0.8rem;
+        }
+        
+        .metadata-value {
+            color: #c9d1d9;
+            font-weight: 500;
+        }
+        
+        .frames {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding: 12px 0;
+            margin: 15px 0;
+        }
+        
+        .frames img {
+            max-width: 250px;
+            height: auto;
+            border-radius: 4px;
+            border: 1px solid #30363d;
+            flex-shrink: 0;
+        }
+        
+        .path {
+            font-size: 0.7rem;
+            color: #6e7681;
+            word-break: break-all;
+            margin-top: 12px;
+            padding: 10px;
+            background: #0d1117;
+            border-radius: 4px;
+            border: 1px solid #21262d;
+            font-family: 'SF Mono', Monaco, monospace;
+        }
+        
+        .speedup {
+            color: #3fb950;
+            font-weight: 600;
+        }
+        
+        .slowdown {
+            color: #f85149;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Left Navigation -->
+        <nav class="nav">
+            <h1>Test Results</h1>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Optimized Fidelity (500ms)</div>
+                <div class="nav-items">
+                    <a href="#opt-server" class="nav-item">Server (baseline)</a>
+                    <a href="#opt-bfv-fo" class="nav-item">Full Video - foreignObject</a>
+                    <a href="#opt-bfv-native" class="nav-item">Full Video - native</a>
+                    <a href="#opt-fbf-fo" class="nav-item">Frame-by-Frame - foreignObject</a>
+                    <a href="#opt-fbf-native" class="nav-item">Frame-by-Frame - native</a>
+                </div>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Video Only (1s real asset)</div>
+                <div class="nav-items">
+                    <a href="#video-server" class="nav-item">Server (baseline)</a>
+                    <a href="#video-bfv-fo" class="nav-item">Full Video - foreignObject</a>
+                    <a href="#video-bfv-native" class="nav-item">Full Video - native</a>
+                    <a href="#video-fbf-fo" class="nav-item">Frame-by-Frame - foreignObject</a>
+                    <a href="#video-fbf-native" class="nav-item">Frame-by-Frame - native</a>
+                </div>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Audio Fidelity (1s)</div>
+                <div class="nav-items">
+                    <a href="#audio-server" class="nav-item">Server (baseline)</a>
+                    <a href="#audio-bfv-fo" class="nav-item">Full Video - foreignObject</a>
+                    <a href="#audio-bfv-native" class="nav-item">Full Video - native</a>
+                    <a href="#audio-fbf-fo" class="nav-item">Frame-by-Frame - foreignObject</a>
+                    <a href="#audio-fbf-native" class="nav-item">Frame-by-Frame - native</a>
+                </div>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Bars Video (1s)</div>
+                <div class="nav-items">
+                    <a href="#bars-server" class="nav-item">Server (baseline)</a>
+                    <a href="#bars-bfv-fo" class="nav-item">Full Video - foreignObject</a>
+                    <a href="#bars-bfv-native" class="nav-item">Full Video - native</a>
+                    <a href="#bars-fbf-fo" class="nav-item">Frame-by-Frame - foreignObject</a>
+                    <a href="#bars-fbf-native" class="nav-item">Frame-by-Frame - native</a>
+                </div>
+            </div>
+        </nav>
+        
+        <!-- Main Content -->
+        <main class="content">
+            <!-- OPTIMIZED FIDELITY -->
+            <div id="opt-server" class="result-item">
+                <h2>Server (baseline) <span class="badge badge-baseline">BASELINE</span></h2>
+                <h3>Optimized Fidelity Test - 500ms @ 30fps, 200x200px</h3>
+                <video controls>
+                    <source src="lib/queues/units-of-work/Render/full-render/fidelity/optimized-fidelity.test.renders/optimized-fidelity-c7c1bdfc/artifacts/server.mp4" type="video/mp4">
+                </video>
+                <div class="metadata">
+                    <div class="metadata-item">
+                        <div class="metadata-label">Render Time</div>
+                        <div class="metadata-value">766ms</div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-label">File Size</div>
+                        <div class="metadata-value">16.2 KB</div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-label">Resolution</div>
+                        <div class="metadata-value">200x200</div>
+                    </div>
+                </div>
+                <div class="frames">
+                    <img src="lib/queues/units-of-work/Render/full-render/fidelity/optimized-fidelity.test.renders/optimized-fidelity-c7c1bdfc/artifacts/server-frame.png" alt="Frame">
+                </div>
+                <div class="path">lib/queues/units-of-work/Render/full-render/fidelity/optimized-fidelity.test.renders/optimized-fidelity-c7c1bdfc/artifacts/server.mp4</div>
+            </div>
+
+            <div id="opt-bfv-fo" class="result-item">
+                <h2>browser-full-video + foreignObject <span class="badge badge-fast">FASTEST</span></h2>
+                <h3>Optimized Fidelity Test</h3>
+                <video controls>
+                    <source src="lib/queues/units-of-work/Render/full-render/fidelity/optimized-fidelity.test.renders/optimized-fidelity-c7c1bdfc/artifacts/browser-full-video---foreignobject.mp4" type="video/mp4">
+                </video>
+                <div class="metadata">
+                    <div class="metadata-item">
+                        <div class="metadata-label">Render Time</div>
+                        <div class="metadata-value speedup">628ms (1.22x faster)</div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-label">File Size</div>
+                        <div class="metadata-value">2.0 KB</div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-label">Visual Diff</div>
+                        <div class="metadata-value speedup">0.00%</div>
+                    </div>
+                </div>
+                <div class="frames">
+                    <img src="lib/queues/units-of-work/Render/full-render/fidelity/optimized-fidelity.test.renders/optimized-fidelity-c7c1bdfc/artifacts/browser-full-video---foreignobject-frame.png" alt="Frame">
+                    <img src="lib/queues/units-of-work/Render/full-render/fidelity/optimized-fidelity.test.renders/optimized-fidelity-c7c1bdfc/artifacts/browser-full-video---foreignobject-diff.png" alt="Diff">
+                </div>
+                <div class="path">lib/queues/units-of-work/Render/full-render/fidelity/optimized-fidelity.test.renders/optimized-fidelity-c7c1bdfc/artifacts/browser-full-video---foreignobject.mp4</div>
+            </div>
+
+            <div id="opt-bfv-native" class="result-item">
+                <h2>browser-full-video + native</h2>
+                <h3>Optimized Fidelity Test</h3>
+                <video controls>
+                    <source src="lib/queues/units-of-work/Render/full-render/fidelity/optimized-fidelity.test.renders/optimized-fidelity-c7c1bdfc/artifacts/browser-full-video---native.mp4" type="video/mp4">
+                </video>
+                <div class="metadata">
+                    <div class="metadata-item">
+                        <div class="metadata-label">Render Time</div>
+                        <div class="metadata-value speedup">607ms (1.26x faster)</div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-label">File Size</div>
+                        <div class="metadata-value">2.0 KB</div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-label">Visual Diff</div>
+                        <div class="metadata-value">SKIPPED</div>
+                    </div>
+                </div>
+                <div class="frames">
+                    <img src="lib/queues/units-of-work/Render/full-render/fidelity/optimized-fidelity.test.renders/optimized-fidelity-c7c1bdfc/artifacts/browser-full-video---native-frame.png" alt="Frame">
+                    <img src="lib/queues/units-of-work/Render/full-render/fidelity/optimized-fidelity.test.renders/optimized-fidelity-c7c1bdfc/artifacts/browser-full-video---native-diff.png" alt="Diff">
+                </div>
+                <div class="path">lib/queues/units-of-work/Render/full-render/fidelity/optimized-fidelity.test.renders/optimized-fidelity-c7c1bdfc/artifacts/browser-full-video---native.mp4</div>
+            </div>
+
+            <div id="opt-fbf-fo" class="result-item">
+                <h2>browser-frame-by-frame + foreignObject</h2>
+                <h3>Optimized Fidelity Test</h3>
+                <video controls>
+                    <source src="lib/queues/units-of-work/Render/full-render/fidelity/optimized-fidelity.test.renders/optimized-fidelity-c7c1bdfc/artifacts/browser-frame-by-frame---foreignobject.mp4" type="video/mp4">
+                </video>
+                <div class="metadata">
+                    <div class="metadata-item">
+                        <div class="metadata-label">Render Time</div>
+                        <div class="metadata-value slowdown">1,017ms (0.75x - slower)</div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-label">File Size</div>
+                        <div class="metadata-value">2.9 KB</div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-label">Visual Diff</div>
+                        <div class="metadata-value speedup">0.00%</div>
+                    </div>
+                </div>
+                <div class="frames">
+                    <img src="lib/queues/units-of-work/Render/full-render/fidelity/optimized-fidelity.test.renders/optimized-fidelity-c7c1bdfc/artifacts/browser-frame-by-frame---foreignobject-frame.png" alt="Frame">
+                    <img src="lib/queues/units-of-work/Render/full-render/fidelity/optimized-fidelity.test.renders/optimized-fidelity-c7c1bdfc/artifacts/browser-frame-by-frame---foreignobject-diff.png" alt="Diff">
+                </div>
+                <div class="path">lib/queues/units-of-work/Render/full-render/fidelity/optimized-fidelity.test.renders/optimized-fidelity-c7c1bdfc/artifacts/browser-frame-by-frame---foreignobject.mp4</div>
+            </div>
+
+            <div id="opt-fbf-native" class="result-item">
+                <h2>browser-frame-by-frame + native</h2>
+                <h3>Optimized Fidelity Test</h3>
+                <video controls>
+                    <source src="lib/queues/units-of-work/Render/full-render/fidelity/optimized-fidelity.test.renders/optimized-fidelity-c7c1bdfc/artifacts/browser-frame-by-frame---native.mp4" type="video/mp4">
+                </video>
+                <div class="metadata">
+                    <div class="metadata-item">
+                        <div class="metadata-label">Render Time</div>
+                        <div class="metadata-value slowdown">1,003ms (0.76x - slower)</div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-label">File Size</div>
+                        <div class="metadata-value">2.9 KB</div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-label">Visual Diff</div>
+                        <div class="metadata-value">SKIPPED</div>
+                    </div>
+                </div>
+                <div class="frames">
+                    <img src="lib/queues/units-of-work/Render/full-render/fidelity/optimized-fidelity.test.renders/optimized-fidelity-c7c1bdfc/artifacts/browser-frame-by-frame---native-frame.png" alt="Frame">
+                    <img src="lib/queues/units-of-work/Render/full-render/fidelity/optimized-fidelity.test.renders/optimized-fidelity-c7c1bdfc/artifacts/browser-frame-by-frame---native-diff.png" alt="Diff">
+                </div>
+                <div class="path">lib/queues/units-of-work/Render/full-render/fidelity/optimized-fidelity.test.renders/optimized-fidelity-c7c1bdfc/artifacts/browser-frame-by-frame---native.mp4</div>
+            </div>
+
+            <!-- VIDEO ONLY -->
+            <div id="video-server" class="result-item">
+                <h2>Server (baseline) <span class="badge badge-baseline">BASELINE</span></h2>
+                <h3>Video Only Fidelity - 1s @ 30fps, 480x270px, Real Video Asset</h3>
+                <video controls>
+                    <source src="lib/queues/units-of-work/Render/full-render/fidelity/video-only.test.renders/video-only-fidelity-baseline-d4cea59c/artifacts/output.mp4" type="video/mp4">
+                </video>
+                <div class="metadata">
+                    <div class="metadata-item">
+                        <div class="metadata-label">Render Time</div>
+                        <div class="metadata-value">3,181ms</div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-label">File Size</div>
+                        <div class="metadata-value">5.6 KB</div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-label">Resolution</div>
+                        <div class="metadata-value">480x270</div>
+                    </div>
+                </div>
+                <div class="frames">
+                    <img src="lib/queues/units-of-work/Render/full-render/fidelity/video-only.test.renders/video-only-fidelity-baseline-d4cea59c/artifacts/regression-frame-001.png" alt="Frame 1">
+                    <img src="lib/queues/units-of-work/Render/full-render/fidelity/video-only.test.renders/video-only-fidelity-baseline-d4cea59c/artifacts/regression-frame-002.png" alt="Frame 2">
+                    <img src="lib/queues/units-of-work/Render/full-render/fidelity/video-only.test.renders/video-only-fidelity-baseline-d4cea59c/artifacts/regression-frame-003.png" alt="Frame 3">
+                </div>
+                <div class="path">lib/queues/units-of-work/Render/full-render/fidelity/video-only.test.renders/video-only-fidelity-baseline-d4cea59c/artifacts/output.mp4</div>
+            </div>
+
+            <div id="video-bfv-fo" class="result-item">
+                <h2>browser-full-video + foreignObject <span class="badge badge-fast">3.8x FASTER</span></h2>
+                <h3>Video Only Fidelity</h3>
+                <video controls>
+                    <source src="lib/queues/units-of-work/Render/full-render/fidelity/video-only.test.renders/video-only-fidelity-browser-full-video-foreignobject-d4cea59c/artifacts/output.mp4" type="video/mp4">
+                </video>
+                <div class="metadata">
+                    <div class="metadata-item">
+                        <div class="metadata-label">Render Time</div>
+                        <div class="metadata-value speedup">838ms (3.8x faster!)</div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-label">File Size</div>
+                        <div class="metadata-value">2.4 KB</div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-label">Visual Diff</div>
+                        <div class="metadata-value speedup">0.00%</div>
+                    </div>
+                </div>
+                <div class="frames">
+                    <img src="lib/queues/units-of-work/Render/full-render/fidelity/video-only.test.renders/video-only-fidelity-browser-full-video-foreignobject-d4cea59c/artifacts/regression-frame-001.png" alt="Frame 1">
+                    <img src="lib/queues/units-of-work/Render/full-render/fidelity/video-only.test.renders/video-only-fidelity-browser-full-video-foreignobject-d4cea59c/artifacts/regression-frame-002.png" alt="Frame 2">
+                    <img src="lib/queues/units-of-work/Render/full-render/fidelity/video-only.test.renders/video-only-fidelity-browser-full-video-foreignobject-d4cea59c/artifacts/regression-frame-003.png" alt="Frame 3">
+                </div>
+                <div class="path">lib/queues/units-of-work/Render/full-render/fidelity/video-only.test.renders/video-only-fidelity-browser-full-video-foreignobject-d4cea59c/artifacts/output.mp4</div>
+            </div>
+
+            <div id="video-bfv-native" class="result-item">
+                <h2>browser-full-video + native</h2>
+                <h3>Video Only Fidelity</h3>
+                <video controls>
+                    <source src="lib/queues/units-of-work/Render/full-render/fidelity/video-only.test.renders/video-only-fidelity-browser-full-video-native-d4cea59c/artifacts/output.mp4" type="video/mp4">
+                </video>
+                <div class="metadata">
+                    <div class="metadata-item">
+                        <div class="metadata-label">Render Time</div>
+                        <div class="metadata-value speedup">821ms (3.9x faster!)</div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-label">File Size</div>
+                        <div class="metadata-value">2.4 KB</div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-label">Visual Diff</div>
+                        <div class="metadata-value">SKIPPED</div>
+                    </div>
+                </div>
+                <div class="path">lib/queues/units-of-work/Render/full-render/fidelity/video-only.test.renders/video-only-fidelity-browser-full-video-native-d4cea59c/artifacts/output.mp4</div>
+            </div>
+
+            <div id="video-fbf-fo" class="result-item">
+                <h2>browser-frame-by-frame + foreignObject</h2>
+                <h3>Video Only Fidelity</h3>
+                <video controls>
+                    <source src="lib/queues/units-of-work/Render/full-render/fidelity/video-only.test.renders/video-only-fidelity-browser-frame-by-frame-foreignobject-d4cea59c/artifacts/output.mp4" type="video/mp4">
+                </video>
+                <div class="metadata">
+                    <div class="metadata-item">
+                        <div class="metadata-label">Render Time</div>
+                        <div class="metadata-value speedup">2,898ms (1.1x faster)</div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-label">File Size</div>
+                        <div class="metadata-value">41.1 KB</div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-label">Visual Diff</div>
+                        <div class="metadata-value speedup">0.00%</div>
+                    </div>
+                </div>
+                <div class="frames">
+                    <img src="lib/queues/units-of-work/Render/full-render/fidelity/video-only.test.renders/video-only-fidelity-browser-frame-by-frame-foreignobject-d4cea59c/artifacts/regression-frame-001.png" alt="Frame 1">
+                    <img src="lib/queues/units-of-work/Render/full-render/fidelity/video-only.test.renders/video-only-fidelity-browser-frame-by-frame-foreignobject-d4cea59c/artifacts/regression-frame-002.png" alt="Frame 2">
+                    <img src="lib/queues/units-of-work/Render/full-render/fidelity/video-only.test.renders/video-only-fidelity-browser-frame-by-frame-foreignobject-d4cea59c/artifacts/regression-frame-003.png" alt="Frame 3">
+                </div>
+                <div class="path">lib/queues/units-of-work/Render/full-render/fidelity/video-only.test.renders/video-only-fidelity-browser-frame-by-frame-foreignobject-d4cea59c/artifacts/output.mp4</div>
+            </div>
+
+            <div id="video-fbf-native" class="result-item">
+                <h2>browser-frame-by-frame + native</h2>
+                <h3>Video Only Fidelity</h3>
+                <video controls>
+                    <source src="lib/queues/units-of-work/Render/full-render/fidelity/video-only.test.renders/video-only-fidelity-browser-frame-by-frame-native-d4cea59c/artifacts/output.mp4" type="video/mp4">
+                </video>
+                <div class="metadata">
+                    <div class="metadata-item">
+                        <div class="metadata-label">Render Time</div>
+                        <div class="metadata-value speedup">2,914ms (1.09x faster)</div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-label">File Size</div>
+                        <div class="metadata-value">41.1 KB</div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-label">Visual Diff</div>
+                        <div class="metadata-value">SKIPPED</div>
+                    </div>
+                </div>
+                <div class="frames">
+                    <img src="lib/queues/units-of-work/Render/full-render/fidelity/video-only.test.renders/video-only-fidelity-browser-frame-by-frame-native-d4cea59c/artifacts/regression-frame-001.png" alt="Frame 1">
+                    <img src="lib/queues/units-of-work/Render/full-render/fidelity/video-only.test.renders/video-only-fidelity-browser-frame-by-frame-native-d4cea59c/artifacts/regression-frame-002.png" alt="Frame 2">
+                    <img src="lib/queues/units-of-work/Render/full-render/fidelity/video-only.test.renders/video-only-fidelity-browser-frame-by-frame-native-d4cea59c/artifacts/regression-frame-003.png" alt="Frame 3">
+                </div>
+                <div class="path">lib/queues/units-of-work/Render/full-render/fidelity/video-only.test.renders/video-only-fidelity-browser-frame-by-frame-native-d4cea59c/artifacts/output.mp4</div>
+            </div>
+
+            <!-- AUDIO FIDELITY -->
+            <div id="audio-server" class="result-item">
+                <h2>Server (baseline) <span class="badge badge-baseline">BASELINE</span></h2>
+                <h3>Audio Fidelity - 1s @ 30fps with audio track</h3>
+                <video controls>
+                    <source src="lib/queues/units-of-work/Render/full-render/fidelity/audio-fidelity.test.renders/audio-fidelity-baseline-c7c1bdfc/artifacts/output.mp4" type="video/mp4">
+                </video>
+                <div class="path">lib/queues/units-of-work/Render/full-render/fidelity/audio-fidelity.test.renders/audio-fidelity-baseline-c7c1bdfc/artifacts/output.mp4</div>
+            </div>
+
+            <div id="audio-bfv-fo" class="result-item">
+                <h2>browser-full-video + foreignObject</h2>
+                <h3>Audio Fidelity</h3>
+                <video controls>
+                    <source src="lib/queues/units-of-work/Render/full-render/fidelity/audio-fidelity.test.renders/audio-fidelity-browser-full-video-foreignobject-c7c1bdfc/artifacts/output.mp4" type="video/mp4">
+                </video>
+                <div class="frames">
+                    <img src="lib/queues/units-of-work/Render/full-render/fidelity/audio-fidelity.test.renders/browser-full-video-foreignobject-c7c1bdfc/audio-visuals/waveform-diff.png" alt="Waveform Diff">
+                </div>
+                <div class="path">lib/queues/units-of-work/Render/full-render/fidelity/audio-fidelity.test.renders/audio-fidelity-browser-full-video-foreignobject-c7c1bdfc/artifacts/output.mp4</div>
+            </div>
+
+            <div id="audio-bfv-native" class="result-item">
+                <h2>browser-full-video + native</h2>
+                <h3>Audio Fidelity</h3>
+                <video controls>
+                    <source src="lib/queues/units-of-work/Render/full-render/fidelity/audio-fidelity.test.renders/audio-fidelity-browser-full-video-native-c7c1bdfc/artifacts/output.mp4" type="video/mp4">
+                </video>
+                <div class="frames">
+                    <img src="lib/queues/units-of-work/Render/full-render/fidelity/audio-fidelity.test.renders/browser-full-video-native-c7c1bdfc/audio-visuals/waveform-diff.png" alt="Waveform Diff">
+                </div>
+                <div class="path">lib/queues/units-of-work/Render/full-render/fidelity/audio-fidelity.test.renders/audio-fidelity-browser-full-video-native-c7c1bdfc/artifacts/output.mp4</div>
+            </div>
+
+            <div id="audio-fbf-fo" class="result-item">
+                <h2>browser-frame-by-frame + foreignObject</h2>
+                <h3>Audio Fidelity</h3>
+                <video controls>
+                    <source src="lib/queues/units-of-work/Render/full-render/fidelity/audio-fidelity.test.renders/audio-fidelity-browser-frame-by-frame-foreignobject-c7c1bdfc/artifacts/output.mp4" type="video/mp4">
+                </video>
+                <div class="frames">
+                    <img src="lib/queues/units-of-work/Render/full-render/fidelity/audio-fidelity.test.renders/browser-frame-by-frame-foreignobject-c7c1bdfc/audio-visuals/waveform-diff.png" alt="Waveform Diff">
+                </div>
+                <div class="path">lib/queues/units-of-work/Render/full-render/fidelity/audio-fidelity.test.renders/audio-fidelity-browser-frame-by-frame-foreignobject-c7c1bdfc/artifacts/output.mp4</div>
+            </div>
+
+            <div id="audio-fbf-native" class="result-item">
+                <h2>browser-frame-by-frame + native</h2>
+                <h3>Audio Fidelity</h3>
+                <video controls>
+                    <source src="lib/queues/units-of-work/Render/full-render/fidelity/audio-fidelity.test.renders/audio-fidelity-browser-frame-by-frame-native-c7c1bdfc/artifacts/output.mp4" type="video/mp4">
+                </video>
+                <div class="frames">
+                    <img src="lib/queues/units-of-work/Render/full-render/fidelity/audio-fidelity.test.renders/browser-frame-by-frame-native-c7c1bdfc/audio-visuals/waveform-diff.png" alt="Waveform Diff">
+                </div>
+                <div class="path">lib/queues/units-of-work/Render/full-render/fidelity/audio-fidelity.test.renders/audio-fidelity-browser-frame-by-frame-native-c7c1bdfc/artifacts/output.mp4</div>
+            </div>
+
+            <!-- BARS VIDEO -->
+            <div id="bars-server" class="result-item">
+                <h2>Server (baseline) <span class="badge badge-baseline">BASELINE</span></h2>
+                <h3>Bars Video - 1s @ 30fps with bars-n-tone.mp4</h3>
+                <video controls>
+                    <source src="lib/queues/units-of-work/Render/full-render/fidelity/bars-video.test.renders/bars-fidelity-baseline-c7c1bdfc/artifacts/output.mp4" type="video/mp4">
+                </video>
+                <div class="path">lib/queues/units-of-work/Render/full-render/fidelity/bars-video.test.renders/bars-fidelity-baseline-c7c1bdfc/artifacts/output.mp4</div>
+            </div>
+
+            <div id="bars-bfv-fo" class="result-item">
+                <h2>browser-full-video + foreignObject</h2>
+                <h3>Bars Video</h3>
+                <video controls>
+                    <source src="lib/queues/units-of-work/Render/full-render/fidelity/bars-video.test.renders/bars-fidelity-browser-full-video-foreignobject-c7c1bdfc/artifacts/output.mp4" type="video/mp4">
+                </video>
+                <div class="path">lib/queues/units-of-work/Render/full-render/fidelity/bars-video.test.renders/bars-fidelity-browser-full-video-foreignobject-c7c1bdfc/artifacts/output.mp4</div>
+            </div>
+
+            <div id="bars-bfv-native" class="result-item">
+                <h2>browser-full-video + native</h2>
+                <h3>Bars Video</h3>
+                <video controls>
+                    <source src="lib/queues/units-of-work/Render/full-render/fidelity/bars-video.test.renders/bars-fidelity-browser-full-video-native-c7c1bdfc/artifacts/output.mp4" type="video/mp4">
+                </video>
+                <div class="path">lib/queues/units-of-work/Render/full-render/fidelity/bars-video.test.renders/bars-fidelity-browser-full-video-native-c7c1bdfc/artifacts/output.mp4</div>
+            </div>
+
+            <div id="bars-fbf-fo" class="result-item">
+                <h2>browser-frame-by-frame + foreignObject</h2>
+                <h3>Bars Video</h3>
+                <video controls>
+                    <source src="lib/queues/units-of-work/Render/full-render/fidelity/bars-video.test.renders/bars-fidelity-browser-frame-by-frame-foreignobject-c7c1bdfc/artifacts/output.mp4" type="video/mp4">
+                </video>
+                <div class="path">lib/queues/units-of-work/Render/full-render/fidelity/bars-video.test.renders/bars-fidelity-browser-frame-by-frame-foreignobject-c7c1bdfc/artifacts/output.mp4</div>
+            </div>
+
+            <div id="bars-fbf-native" class="result-item">
+                <h2>browser-frame-by-frame + native</h2>
+                <h3>Bars Video</h3>
+                <video controls>
+                    <source src="lib/queues/units-of-work/Render/full-render/fidelity/bars-video.test.renders/bars-fidelity-browser-frame-by-frame-native-c7c1bdfc/artifacts/output.mp4" type="video/mp4">
+                </video>
+                <div class="path">lib/queues/units-of-work/Render/full-render/fidelity/bars-video.test.renders/bars-fidelity-browser-frame-by-frame-native-c7c1bdfc/artifacts/output.mp4</div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Highlight active nav item based on scroll position
+        const navItems = document.querySelectorAll('.nav-item');
+        const resultItems = document.querySelectorAll('.result-item');
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.id;
+                    navItems.forEach(item => {
+                        if (item.getAttribute('href') === `#${id}`) {
+                            navItems.forEach(i => i.classList.remove('active'));
+                            item.classList.add('active');
+                        }
+                    });
+                }
+            });
+        }, { threshold: 0.5 });
+        
+        resultItems.forEach(item => observer.observe(item));
+    </script>
+</body>
+</html>
