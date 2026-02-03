@@ -13,6 +13,22 @@ import { makeTestAgent, type TestAgent } from "TEST/util/test";
 import type { Video2IsobmffFiles } from "@/sql-client.server/kysely-codegen";
 import { createElectronRPC, type ElectronRPC } from "../ElectronRPCClient";
 import { GetRenderInfoResult } from "../ElectronRPCServer";
+import {
+  renderWithBrowserFullVideo,
+  renderWithBrowserFrameByFrame,
+} from "./browser-render";
+import type { TestBundleInfo } from "../test-utils/html-bundler";
+
+// Type definitions for render modes
+export type RenderMode = "server" | "browser-full-video" | "browser-frame-by-frame";
+export type CanvasMode = "native" | "foreignObject";
+
+// Extended render options that include render mode and canvas mode
+export interface ExtendedRenderOptions extends ElectronRenderOptionsInput {
+  renderMode?: RenderMode;
+  canvasMode?: CanvasMode;
+  bundleInfo?: TestBundleInfo;
+}
 
 // IMPLEMENTATION GUIDELINES: These tests use worker-scoped fixtures for performance.
 // The fixtures involve expensive operations (video processing, Electron RPC setup).
@@ -46,8 +62,9 @@ export const test = baseTest.extend<{
   complexFilterRenderOutput: RenderOutput;
   render: (
     html: string,
-    renderOptions?: ElectronRenderOptionsInput,
-    testTitle?: string,
+    testFilePath: string,
+    testTitle: string,
+    renderOptions?: ExtendedRenderOptions,
   ) => Promise<RenderOutput>;
 }>({
   // Worker-scoped: Created once per worker, shared across all tests
@@ -138,21 +155,61 @@ export const test = baseTest.extend<{
     { scope: "worker" },
   ],
 
-  // Worker-scoped: Just a function wrapper
+  // Worker-scoped: Render function that routes to appropriate implementation
   render: [
     async ({ electronRPC, testAgent }, use) => {
-      const render = (
+      const render = async (
         html: string,
-        renderOptions?: ElectronRenderOptionsInput,
-        testTitle?: string,
-      ) =>
-        renderWithElectronRPC({
-          html,
-          electronRpc: electronRPC,
-          renderOptions: renderOptions ?? {},
-          testAgent,
-          testTitle,
-        });
+        testFilePath: string,
+        testTitle: string,
+        renderOptions?: ExtendedRenderOptions,
+      ): Promise<RenderOutput> => {
+        const options = renderOptions ?? {};
+        const renderMode = options.renderMode ?? "server";
+
+        // Route to appropriate render implementation based on renderMode
+        switch (renderMode) {
+          case "browser-full-video":
+            if (!options.canvasMode) {
+              throw new Error("canvasMode is required for browser-full-video renderMode");
+            }
+            return renderWithBrowserFullVideo({
+              html,
+              testAgent,
+              electronRpc: electronRPC,
+              renderOptions: options,
+              canvasMode: options.canvasMode,
+              testFilePath,
+              testTitle,
+              bundleInfo: options.bundleInfo,
+            });
+
+          case "browser-frame-by-frame":
+            if (!options.canvasMode) {
+              throw new Error("canvasMode is required for browser-frame-by-frame renderMode");
+            }
+            return renderWithBrowserFrameByFrame({
+              html,
+              testAgent,
+              electronRpc: electronRPC,
+              renderOptions: options,
+              canvasMode: options.canvasMode,
+              testFilePath,
+              testTitle,
+              bundleInfo: options.bundleInfo,
+            });
+
+          case "server":
+          default:
+            return renderWithElectronRPC({
+              html,
+              electronRpc: electronRPC,
+              renderOptions: options,
+              testAgent,
+              testTitle,
+            });
+        }
+      };
       await use(render);
     },
     { scope: "worker" },
@@ -181,8 +238,9 @@ export const test = baseTest.extend<{
           <ef-video asset-id="${barsNTone.id}" class="w-full" sourceOut="2s"></ef-video>
         </ef-timegroup>
       `,
-        { renderSliceMs: 500 },
+        "",
         "bars-n-tone-video",
+        { renderSliceMs: 500 },
       );
       await use(renderOutput);
     },
@@ -198,8 +256,9 @@ export const test = baseTest.extend<{
           <ef-waveform target="test-audio" mode="bars" class="color-red-500 bg-yellow-100 absolute top-0 left-0 w-full h-full"></ef-waveform>
         </ef-timegroup>
       `,
-        {},
+        "",
         "audio-waveform",
+        {},
       );
       await use(audioRenderOutput);
     },
@@ -215,8 +274,9 @@ export const test = baseTest.extend<{
           <ef-waveform target="wav-audio" mode="bars" class="color-blue-500 bg-gray-100 absolute top-0 left-0 w-full h-full"></ef-waveform>
         </ef-timegroup>
       `,
-        {},
+        "",
         "wav-audio-waveform",
+        {},
       );
       await use(wavRenderOutput);
     },
@@ -247,8 +307,9 @@ export const test = baseTest.extend<{
           <ef-video asset-id="${videoOnly.id}" class="w-full" sourceOut="2s"></ef-video>
         </ef-timegroup>
       `,
-        { renderSliceMs: 500 },
+        "",
         "video-only-no-audio",
+        { renderSliceMs: 500 },
       );
       await use(videoOnlyRenderOutput);
     },
@@ -317,8 +378,9 @@ export const test = baseTest.extend<{
           </ef-timegroup>
         </ef-timegroup>
       `,
-        { renderSliceMs: 4000 },
+        "",
         "complex-svg-filter-remote-video",
+        { renderSliceMs: 4000 },
       );
       await use(complexFilterRenderOutput);
     },

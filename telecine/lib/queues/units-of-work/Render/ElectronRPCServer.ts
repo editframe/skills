@@ -79,6 +79,38 @@ export type RenderStillArgs = [
 ];
 export type RenderStillResult = Uint8Array;
 
+export type RenderBrowserFullVideoArgs = [
+  {
+    width: number;
+    height: number;
+    location: string;
+    orgId: string;
+    durationMs: number;
+    fps: number;
+    canvasMode: "native" | "foreignObject";
+    assetsBundle?: AssetsMetadataBundle;
+  },
+];
+export type RenderBrowserFullVideoResult = Uint8Array;
+
+export type RenderBrowserFrameByFrameArgs = [
+  {
+    width: number;
+    height: number;
+    location: string;
+    orgId: string;
+    renderId: string;
+    segmentDurationMs: number;
+    segmentIndex: number | "init";
+    durationMs: number;
+    fps: number;
+    fileType: "standalone" | "fragment";
+    canvasMode: "native" | "foreignObject";
+    assetsBundle?: AssetsMetadataBundle;
+  },
+];
+export type RenderBrowserFrameByFrameResult = Uint8Array;
+
 export interface ElectronRPCClient {
   call(
     method: "createContext",
@@ -96,6 +128,14 @@ export interface ElectronRPCClient {
     method: "renderStill",
     ...args: RenderStillArgs
   ): Promise<RenderStillResult>;
+  call(
+    method: "renderBrowserFullVideo",
+    ...args: RenderBrowserFullVideoArgs
+  ): Promise<RenderBrowserFullVideoResult>;
+  call(
+    method: "renderBrowserFrameByFrame",
+    ...args: RenderBrowserFrameByFrameArgs
+  ): Promise<RenderBrowserFrameByFrameResult>;
   call(method: "disposeContext", contextId: string): Promise<void>;
   call(method: "terminate"): Promise<void>;
 }
@@ -144,7 +184,7 @@ export const rpcServerReady = (async () => {
       logger.debug("🔧 [RPC_SERVER] Registering disposeContext handler...");
       registerRcpHandler(
         "disposeContext",
-        async (contextId: string): Promise<void> => {
+        async ([contextId]: [string]): Promise<void> => {
           const ctx = contexts.get(contextId);
           if (ctx) {
             await ctx[Symbol.asyncDispose]();
@@ -414,6 +454,270 @@ export const rpcServerReady = (async () => {
             if (shouldDispose) {
               await renderContext[Symbol.asyncDispose]();
             }
+          }
+        },
+      );
+
+      logger.debug("🔧 [RPC_SERVER] Registering renderBrowserFullVideo handler...");
+      registerRcpHandler(
+        "renderBrowserFullVideo",
+        async (
+          [
+            {
+              width,
+              height,
+              location,
+              orgId,
+              durationMs,
+              fps,
+              canvasMode,
+              assetsBundle,
+            },
+          ]: RenderBrowserFullVideoArgs,
+          ctx,
+        ): Promise<RenderBrowserFullVideoResult> => {
+          if (width <= 0 || height <= 0) {
+            throw new Error(
+              `Invalid video dimensions: ${width}x${height}. Width and height must be positive numbers.`,
+            );
+          }
+
+          if (durationMs <= 0) {
+            throw new Error(
+              `Invalid video duration: ${durationMs}ms. Duration must be positive.`,
+            );
+          }
+
+          const carrier = {};
+          propagation.inject(context.active(), carrier);
+
+          await using renderContext = await electronEngine.createContext({
+            width,
+            height,
+            location,
+            orgId,
+            assetsBundle,
+            traceContext: carrier,
+          });
+
+          ctx.sendKeepalive();
+
+          // Call renderTimegroupToVideo in the browser context
+          logger.debug("🔧 [RPC_SERVER] Calling renderTimegroupToVideo in browser...", {
+            canvasMode,
+            width,
+            height,
+            durationMs,
+            fps,
+          });
+          const videoBuffer = await renderContext.webContents.executeJavaScript(`
+            (async () => {
+              const { renderTimegroupToVideo } = await import('/@editframe/elements/preview/renderTimegroupToVideo.js');
+              
+              const rootTimegroup = document.querySelector('ef-timegroup');
+              if (!rootTimegroup) {
+                throw new Error('No root timegroup found');
+              }
+
+              // Wait for media to be ready
+              await rootTimegroup.waitForMediaDurations();
+              await rootTimegroup.frameTask.taskComplete;
+
+              const videoBuffer = await renderTimegroupToVideo(rootTimegroup, {
+                fps: ${fps},
+                codec: 'avc',
+                returnBuffer: true,
+                includeAudio: true,
+              });
+
+              // Convert Uint8Array to regular Array so it can cross IPC boundary
+              return Array.from(videoBuffer);
+            })();
+          `);
+
+          logger.debug(`🔧 [RPC_SERVER] Browser render complete, buffer size: ${videoBuffer.length}`);
+          
+          return new Uint8Array(videoBuffer);
+        },
+      );
+
+      logger.debug("🔧 [RPC_SERVER] Registering renderBrowserFrameByFrame handler...");
+      registerRcpHandler(
+        "renderBrowserFrameByFrame",
+        async (
+          [
+            {
+              width,
+              height,
+              location,
+              orgId,
+              renderId,
+              segmentDurationMs,
+              segmentIndex,
+              durationMs,
+              fps,
+              fileType,
+              canvasMode,
+              assetsBundle,
+            },
+          ]: RenderBrowserFrameByFrameArgs,
+          ctx,
+        ): Promise<RenderBrowserFrameByFrameResult> => {
+          if (width <= 0 || height <= 0) {
+            throw new Error(
+              `Invalid frame dimensions: ${width}x${height}. Width and height must be positive numbers.`,
+            );
+          }
+
+          if (durationMs <= 0) {
+            throw new Error(
+              `Invalid frame duration: ${durationMs}ms. Duration must be positive.`,
+            );
+          }
+
+          if (segmentDurationMs <= 0) {
+            throw new Error(
+              `Invalid segment duration: ${segmentDurationMs}ms. Segment duration must be positive.`,
+            );
+          }
+
+          const carrier = {};
+          propagation.inject(context.active(), carrier);
+
+          await using renderContext = await electronEngine.createContext({
+            width,
+            height,
+            location,
+            orgId,
+            assetsBundle,
+            traceContext: carrier,
+          });
+
+          const renderOptions = createVideoRenderOptionsForSegment({
+            segmentDurationMs,
+            segmentIndex,
+            width,
+            height,
+            durationMs,
+            fps,
+            strategy: "v1",
+          });
+
+          renderOptions.showFrameBox = false;
+
+          const abortController = new AbortController();
+
+          logger.debug("🔧 [RPC_SERVER] Setting up browser frame-by-frame engine...", {
+            canvasMode,
+            segmentIndex,
+            fileType,
+          });
+
+          // Create a custom engine adapter that captures frames via browser executeJavaScript
+          const browserFrameEngine = {
+            isBitmapEngine: false, // We're providing JPEG frames
+            onError: (handler: (error: Error) => void) => {
+              renderContext.onError(handler);
+            },
+            initialize: async () => {
+              // Initialize the timegroup in the browser
+              await renderContext.webContents.executeJavaScript(`
+                (async () => {
+                  const rootTimegroup = document.querySelector('ef-timegroup');
+                  if (!rootTimegroup) {
+                    throw new Error('No root timegroup found');
+                  }
+                  await rootTimegroup.waitForMediaDurations();
+                  await rootTimegroup.frameTask.taskComplete;
+                })();
+              `);
+            },
+            beginFrame: async (frameNumber: number, _isLast: boolean) => {
+              // Render audio for this frame
+              const frameDurationMs = 1000 / fps;
+              const fromMs = renderOptions.encoderOptions.fromMs + frameNumber * frameDurationMs;
+              const toMs = fromMs + frameDurationMs;
+
+              const audioSamples = await renderContext.webContents.executeJavaScript(`
+                (async () => {
+                  const rootTimegroup = document.querySelector('ef-timegroup');
+                  if (!rootTimegroup || !rootTimegroup.renderAudio) {
+                    return new ArrayBuffer(0);
+                  }
+                  
+                  const audioBuffer = await rootTimegroup.renderAudio(${fromMs}, ${toMs});
+                  return audioBuffer ? audioBuffer.buffer : new ArrayBuffer(0);
+                })();
+              `);
+
+              return Buffer.from(audioSamples);
+            },
+            captureFrame: async (frameNumber: number, fps: number) => {
+              ctx.sendKeepalive();
+
+              const frameDurationMs = 1000 / fps;
+              const timeMs = renderOptions.encoderOptions.fromMs + frameNumber * frameDurationMs;
+
+              // Capture frame using captureTimegroupAtTime
+              const jpegArray = await renderContext.webContents.executeJavaScript(`
+                (async () => {
+                  const { captureTimegroupAtTime } = await import('/@editframe/elements/preview/captureTimegroupAtTime.js');
+                  
+                  const rootTimegroup = document.querySelector('ef-timegroup');
+                  if (!rootTimegroup) {
+                    throw new Error('No root timegroup found');
+                  }
+
+                  const canvas = await captureTimegroupAtTime(rootTimegroup, ${timeMs}, {
+                    width: ${width},
+                    height: ${height},
+                  });
+
+                  // Convert canvas to JPEG blob
+                  const blob = await new Promise((resolve) => {
+                    canvas.toBlob(resolve, 'image/jpeg', 0.95);
+                  });
+                  
+                  // Convert blob to array buffer
+                  const arrayBuffer = await blob.arrayBuffer();
+                  return Array.from(new Uint8Array(arrayBuffer));
+                })();
+              `);
+
+              return Buffer.from(jpegArray);
+            },
+          };
+
+          const segmentEncoder = new SegmentEncoder({
+            renderId,
+            renderOptions,
+            engine: browserFrameEngine as any,
+            abortSignal: abortController.signal,
+          });
+
+          // Set up event-driven keepalives
+          const frameRenderedHandler = () => {
+            ctx.sendKeepalive();
+          };
+
+          const encodingStartedHandler = () => {
+            ctx.sendKeepalive();
+          };
+
+          segmentEncoder.on("frameRendered", frameRenderedHandler);
+          segmentEncoder.on("encodingStarted", encodingStartedHandler);
+
+          let fragmentBuffer: ArrayBuffer;
+          try {
+            if (fileType === "standalone") {
+              fragmentBuffer = await segmentEncoder.generateStandaloneSegment();
+            } else {
+              fragmentBuffer = await segmentEncoder.generateFragmentBuffer();
+            }
+            return new Uint8Array(fragmentBuffer);
+          } finally {
+            segmentEncoder.off("frameRendered", frameRenderedHandler);
+            segmentEncoder.off("encodingStarted", encodingStartedHandler);
           }
         },
       );

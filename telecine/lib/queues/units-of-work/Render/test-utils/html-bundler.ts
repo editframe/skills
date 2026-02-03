@@ -48,6 +48,23 @@ export interface TestBundleInfo {
 const WEB_HOST = envString("WEB_HOST", "http://localhost:3000");
 
 /**
+ * Get test render directory path when sharing bundles across multiple tests.
+ * Each test title gets its own directory to avoid conflicts.
+ */
+export const getTestRenderDir = (
+  _testFilePath: string,
+  testTitle: string,
+  templateHash: string,
+): string => {
+  const titleSlug = testTitle.toLowerCase().replace(/\s+/g, "-");
+  return path.join(
+    process.cwd(),
+    "temp",
+    `test-render-${titleSlug}-${templateHash}`,
+  );
+};
+
+/**
  * Bundle HTML template into a directory structure
  */
 export const bundleTestTemplate = async (
