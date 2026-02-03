@@ -314,11 +314,20 @@ export class EFFramegen {
       throw new Error("No temporal elements found");
     }
     const startingTimeMs = renderOptions.encoderOptions.fromMs;
+    console.log("[EF_FRAMEGEN.initialize] About to wait for media durations");
     await firstGroup.waitForMediaDurations();
+    console.log("[EF_FRAMEGEN.initialize] Media durations loaded");
+    
+    // Wait for any pending Lit updates before rendering
+    await firstGroup.updateComplete;
+    console.log("[EF_FRAMEGEN.initialize] Lit updates complete");
+    
     // Use FrameController for centralized frame rendering
+    console.log("[EF_FRAMEGEN.initialize] About to call frameController.renderFrame at", startingTimeMs);
     await firstGroup.frameController.renderFrame(startingTimeMs, {
       onAnimationsUpdate: (root) => updateAnimations(root as typeof firstGroup),
     });
+    console.log("[EF_FRAMEGEN.initialize] frameController.renderFrame complete");
 
     this.frameDurationMs = 1000 / renderOptions.encoderOptions.video.framerate;
 
@@ -341,10 +350,12 @@ export class EFFramegen {
 
     // These times are aligned to the audio frame boundaries
     // And they include padding if any.
+    console.log("[EF_FRAMEGEN.initialize] About to call renderAudio");
     this.audioBufferPromise = firstGroup.renderAudio(
       renderOptions.encoderOptions.alignedFromUs / 1000,
       renderOptions.encoderOptions.alignedToUs / 1000,
     );
+    console.log("[EF_FRAMEGEN.initialize] renderAudio promise created");
   }
 
   async beginFrame(frameNumber: number, isLast: boolean) {

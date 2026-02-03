@@ -315,23 +315,10 @@ export async function renderTimegroupToVideo(
   const { clone: renderClone, cleanup: cleanupRenderClone } =
     await timegroup.createRenderClone();
   
-  // Pre-fetch main video segments for all timestamps
-  // This ensures all segments are cached before rendering starts,
-  // avoiding network delays during the frame loop
+  // Build timestamps array for frame loop
   const timestamps: number[] = [];
   for (let i = 0; i < config.totalFrames; i++) {
     timestamps.push(config.startMs + i * config.frameDurationMs);
-  }
-  
-  const videoElements = renderClone.querySelectorAll("ef-video");
-  if (videoElements.length > 0) {
-    logger.debug(`[renderTimegroupToVideo] Prefetching main video segments for ${videoElements.length} video(s)...`);
-    await Promise.all(
-      Array.from(videoElements).map((video) =>
-        (video as EFVideo).prefetchMainVideoSegments(timestamps),
-      ),
-    );
-    logger.debug(`[renderTimegroupToVideo] Prefetch complete`);
   }
   
   // =========================================================================

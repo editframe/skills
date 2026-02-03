@@ -319,78 +319,129 @@ export class SegmentEncoder extends EventEmitter {
       return this.buildMuxerForInitSegment(paths);
     }
 
+    const hasAudio = !this.renderOptions.encoderOptions.noAudio;
     const fragDurationUs =
       (this.renderOptions.encoderOptions.toMs -
         this.renderOptions.encoderOptions.fromMs) *
       1000 *
       2;
 
+    // Build command based on whether audio is present
+    const command = hasAudio
+      ? [
+          "-f",
+          "concat",
+          "-safe",
+          "0",
+          "-i",
+          paths.concatPath,
+          "-i",
+          paths.videoPath,
+          "-bsf:a",
+          "aac_adtstoasc",
+          "-c",
+          "copy",
+          "-flush_packets",
+          "1",
+          "-frag_duration",
+          String(fragDurationUs),
+          "-min_frag_duration",
+          String(fragDurationUs),
+          "-movflags",
+          "cmaf+empty_moov+delay_moov",
+          "-pix_fmt",
+          "yuv420p",
+          "-f",
+          "mp4",
+          "pipe:1",
+        ]
+      : [
+          "-i",
+          paths.videoPath,
+          "-c",
+          "copy",
+          "-flush_packets",
+          "1",
+          "-frag_duration",
+          String(fragDurationUs),
+          "-min_frag_duration",
+          String(fragDurationUs),
+          "-movflags",
+          "cmaf+empty_moov+delay_moov",
+          "-pix_fmt",
+          "yuv420p",
+          "-f",
+          "mp4",
+          "pipe:1",
+        ];
+
     // biome-ignore format: strict command line format
-    return new DisposableMuxer([
-      "-f",
-      "concat",
-      "-safe",
-      "0",
-      "-i",
-      paths.concatPath,
-      "-i",
-      paths.videoPath,
-      "-bsf:a",
-      "aac_adtstoasc",
-      "-c",
-      "copy",
-      "-flush_packets",
-      "1",
-      "-frag_duration",
-      String(fragDurationUs),
-      "-min_frag_duration",
-      String(fragDurationUs),
-      "-movflags",
-      "cmaf+empty_moov+delay_moov",
-      "-pix_fmt",
-      "yuv420p",
-      "-f",
-      "mp4",
-      "pipe:1",
-    ]);
+    return new DisposableMuxer(command);
   }
 
   buildMuxerForInitSegment(paths: MuxerPaths) {
     // Init segments don't need fragmentation or precise timing - generate normal MP4 for header extraction
     // Use audio and video files directly without concat directive
 
-    const command = [
-      "-i",
-      paths.audioPath,
-      "-i",
-      paths.videoPath,
-      "-bsf:a",
-      "aac_adtstoasc",
-      "-c",
-      "copy",
-      "-flush_packets",
-      "1",
-      "-movflags",
-      "frag_keyframe+empty_moov+delay_moov",
-      "-pix_fmt",
-      "yuv420p",
-      "-color_range",
-      "tv",
-      "-colorspace",
-      "bt709",
-      "-color_primaries",
-      "bt709",
-      "-color_trc",
-      "bt709",
-      "-f",
-      "mp4",
-      "pipe:1",
-    ];
+    const hasAudio = !this.renderOptions.encoderOptions.noAudio;
+
+    const command = hasAudio
+      ? [
+          "-i",
+          paths.audioPath,
+          "-i",
+          paths.videoPath,
+          "-bsf:a",
+          "aac_adtstoasc",
+          "-c",
+          "copy",
+          "-flush_packets",
+          "1",
+          "-movflags",
+          "frag_keyframe+empty_moov+delay_moov",
+          "-pix_fmt",
+          "yuv420p",
+          "-color_range",
+          "tv",
+          "-colorspace",
+          "bt709",
+          "-color_primaries",
+          "bt709",
+          "-color_trc",
+          "bt709",
+          "-f",
+          "mp4",
+          "pipe:1",
+        ]
+      : [
+          "-i",
+          paths.videoPath,
+          "-c",
+          "copy",
+          "-flush_packets",
+          "1",
+          "-movflags",
+          "frag_keyframe+empty_moov+delay_moov",
+          "-pix_fmt",
+          "yuv420p",
+          "-color_range",
+          "tv",
+          "-colorspace",
+          "bt709",
+          "-color_primaries",
+          "bt709",
+          "-color_trc",
+          "bt709",
+          "-f",
+          "mp4",
+          "pipe:1",
+        ];
 
     this.logger.debug(
       {
         command,
-        audioPath: paths.audioPath,
+        hasAudio,
+        audioPath: hasAudio ? paths.audioPath : "N/A",
         videoPath: paths.videoPath,
       },
       "Building init segment muxer command",
@@ -443,9 +494,11 @@ export class SegmentEncoder extends EventEmitter {
   async renderAndMux() {
     this.abortSignal.throwIfAborted();
 
+    const hasAudio = !this.renderOptions.encoderOptions.noAudio;
+
     await using paths = await this.muxerFiles();
     await using videoEncoder = this.buildVideoEncoder(paths);
-    await using audioEncoder = this.buildAudioEncoder(paths);
+    await using audioEncoder = hasAudio ? this.buildAudioEncoder(paths) : null;
 
     const startRenderAndMux = performance.now();
 
@@ -591,7 +644,7 @@ export class SegmentEncoder extends EventEmitter {
           frameNumber,
           totalFrames: this.totalFrameCount,
         });
-        if (audioSamples?.byteLength > 0) {
+        if (audioEncoder && audioSamples?.byteLength > 0) {
           audioWritesCanGoAhead = audioEncoder.process.stdin.write(
             audioSamples,
             "binary",
@@ -605,10 +658,11 @@ export class SegmentEncoder extends EventEmitter {
 
     this.logger.trace("Awaiting encoders exit");
 
-    await Promise.all([
-      audioEncoder.closeAndAwaitExit(),
-      videoEncoder.closeAndAwaitExit(),
-    ]);
+    const encoderPromises = [videoEncoder.closeAndAwaitExit()];
+    if (audioEncoder) {
+      encoderPromises.push(audioEncoder.closeAndAwaitExit());
+    }
+    await Promise.all(encoderPromises);
 
     this.logger.trace("Encoders exited");
     const encoderExitTime = performance.now();
@@ -617,7 +671,7 @@ export class SegmentEncoder extends EventEmitter {
     // For regular segments, create concat directive for precise logical boundary extraction
     let concatEndTime = encoderExitTime; // Default for init segments
 
-    if (!this.renderOptions.encoderOptions.isInitSegment) {
+    if (!this.renderOptions.encoderOptions.isInitSegment && hasAudio) {
       const shouldTrimStart = this.renderOptions.encoderOptions.shouldPadStart;
       const shouldTrimEnd = this.renderOptions.encoderOptions.shouldPadEnd;
 
@@ -647,7 +701,9 @@ export class SegmentEncoder extends EventEmitter {
       concatEndTime = performance.now();
     } else {
       this.logger.debug(
-        "Skipping concat directive for init segment - using files directly",
+        hasAudio
+          ? "Skipping concat directive for init segment - using files directly"
+          : "Skipping concat directive - no audio",
       );
     }
 

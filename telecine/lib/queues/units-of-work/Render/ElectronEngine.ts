@@ -515,37 +515,20 @@ export class ElectronEngineContext implements FramegenEngine {
           throw new Error("No root timegroup found");
         }
 
-        const elements = document.querySelectorAll("ef-audio, ef-video, ef-image");
+        console.log("GetRenderInfo: rootTimegroup.durationMs before wait =", rootTimegroup.durationMs);
 
-        for (const element of elements) {
-          if (element.mediaEngineTask) {
-            console.log("GetRenderInfo: waiting for media engine task", element.mediaEngineTask.status);
-            await element.mediaEngineTask.taskComplete;
-            console.log("GetRenderInfo: waiting for media engine task.value", JSON.stringify(element.mediaEngineTask.value.data, null, 2));
-            console.log("GetRenderInfo: element.durationMs", element.durationMs);
-          }
+        await rootTimegroup.waitForMediaDurations();
+        
+        if (rootTimegroup.durationMs === 0) {
+          throw new Error("Root timegroup duration is 0 after waiting for media durations");
         }
 
-        for (const element of elements) {
-          if (element.mediaEngineTask && element.mediaEngineTask.value === undefined) {
-            throw new Error("Media engine task value is undefined");
-          }
-        }
+        console.log("GetRenderInfo: after waitForMediaDurations, durationMs =", rootTimegroup.durationMs);
 
-        console.log("GetRenderInfo: ", rootTimegroup.durationMs);
-
-        try {
-          await rootTimegroup.waitForMediaDurations();
-          if (rootTimegroup.durationMs === 0) {
-            throw new Error("Root timegroup duration is 0");
-          }
-        } catch (error) {
-          console.error("🔍 getRenderInfo: Error waiting for media durations", error);
-        }
-
-
-        await rootTimegroup.frameTask.taskComplete;
-        console.log("GetRenderInfo: frameTask.taskComplete");
+        // Skip frameController.renderFrame for getRenderInfo - it's not necessary
+        // and causes crashes when called multiple times on the same video element
+        // The actual rendering will happen during the render phase
+        console.log("GetRenderInfo: skipping frameController.renderFrame");
         console.log("rootTimegroup.outerHTML", rootTimegroup.outerHTML);
         console.log("rootTimegroup.durationMs", rootTimegroup.durationMs);
         console.log("rootTimegroup.currentTimeMs", rootTimegroup.currentTimeMs);
@@ -565,6 +548,7 @@ export class ElectronEngineContext implements FramegenEngine {
           efImage: new Set(),
         };
 
+        const elements = document.querySelectorAll("ef-audio, ef-video, ef-image");
         for (const element of elements) {
           switch (element.tagName) {
             case "EF-AUDIO":

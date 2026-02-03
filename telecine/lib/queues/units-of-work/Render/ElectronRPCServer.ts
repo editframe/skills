@@ -512,8 +512,6 @@ export const rpcServerReady = (async () => {
           });
           const videoBuffer = await renderContext.webContents.executeJavaScript(`
             (async () => {
-              const { renderTimegroupToVideo } = await import('/@editframe/elements/preview/renderTimegroupToVideo.js');
-              
               const rootTimegroup = document.querySelector('ef-timegroup');
               if (!rootTimegroup) {
                 throw new Error('No root timegroup found');
@@ -521,9 +519,11 @@ export const rpcServerReady = (async () => {
 
               // Wait for media to be ready
               await rootTimegroup.waitForMediaDurations();
-              await rootTimegroup.frameTask.taskComplete;
+              await rootTimegroup.frameController.renderFrame(rootTimegroup.currentTimeMs, {
+                waitForLitUpdate: false,
+              });
 
-              const videoBuffer = await renderTimegroupToVideo(rootTimegroup, {
+              const videoBuffer = await window.renderTimegroupToVideo(rootTimegroup, {
                 fps: ${fps},
                 codec: 'avc',
                 returnBuffer: true,
@@ -604,6 +604,8 @@ export const rpcServerReady = (async () => {
           });
 
           renderOptions.showFrameBox = false;
+          // For simple tests without audio, disable audio encoding
+          renderOptions.encoderOptions.noAudio = true;
 
           const abortController = new AbortController();
 
@@ -619,7 +621,8 @@ export const rpcServerReady = (async () => {
             onError: (handler: (error: Error) => void) => {
               renderContext.onError(handler);
             },
-            initialize: async () => {
+            initialize: async (renderOptions: VideoRenderOptions) => {
+              logger.debug("🔧 [RPC_SERVER] Browser frame engine initialize() called", { renderOptions });
               // Initialize the timegroup in the browser
               await renderContext.webContents.executeJavaScript(`
                 (async () => {
@@ -628,9 +631,12 @@ export const rpcServerReady = (async () => {
                     throw new Error('No root timegroup found');
                   }
                   await rootTimegroup.waitForMediaDurations();
-                  await rootTimegroup.frameTask.taskComplete;
+                  await rootTimegroup.frameController.renderFrame(rootTimegroup.currentTimeMs, {
+                    waitForLitUpdate: false,
+                  });
                 })();
               `);
+              logger.debug("🔧 [RPC_SERVER] Browser frame engine initialize() complete");
             },
             beginFrame: async (frameNumber: number, _isLast: boolean) => {
               // Render audio for this frame
@@ -638,22 +644,27 @@ export const rpcServerReady = (async () => {
               const fromMs = renderOptions.encoderOptions.fromMs + frameNumber * frameDurationMs;
               const toMs = fromMs + frameDurationMs;
 
-              const audioSamples = await renderContext.webContents.executeJavaScript(`
+              const audioArray = await renderContext.webContents.executeJavaScript(`
                 (async () => {
                   const rootTimegroup = document.querySelector('ef-timegroup');
                   if (!rootTimegroup || !rootTimegroup.renderAudio) {
-                    return new ArrayBuffer(0);
+                    return [];
                   }
                   
                   const audioBuffer = await rootTimegroup.renderAudio(${fromMs}, ${toMs});
-                  return audioBuffer ? audioBuffer.buffer : new ArrayBuffer(0);
+                  if (!audioBuffer || !audioBuffer.buffer) {
+                    return [];
+                  }
+                  // Convert ArrayBuffer to Array for IPC serialization
+                  return Array.from(new Uint8Array(audioBuffer.buffer));
                 })();
               `);
 
-              return Buffer.from(audioSamples);
+              return Buffer.from(audioArray);
             },
             captureFrame: async (frameNumber: number, fps: number) => {
               ctx.sendKeepalive();
+              logger.debug("🔧 [RPC_SERVER] captureFrame() called", { frameNumber, fps });
 
               const frameDurationMs = 1000 / fps;
               const timeMs = renderOptions.encoderOptions.fromMs + frameNumber * frameDurationMs;
@@ -661,17 +672,22 @@ export const rpcServerReady = (async () => {
               // Capture frame using captureTimegroupAtTime
               const jpegArray = await renderContext.webContents.executeJavaScript(`
                 (async () => {
-                  const { captureTimegroupAtTime } = await import('/@editframe/elements/preview/captureTimegroupAtTime.js');
-                  
                   const rootTimegroup = document.querySelector('ef-timegroup');
                   if (!rootTimegroup) {
                     throw new Error('No root timegroup found');
                   }
 
-                  const canvas = await captureTimegroupAtTime(rootTimegroup, ${timeMs}, {
-                    width: ${width},
-                    height: ${height},
+                  const imageSource = await window.captureTimegroupAtTime(rootTimegroup, {
+                    timeMs: ${timeMs},
+                    scale: 1,
                   });
+
+                  // Create a canvas and draw the image source to it
+                  const canvas = document.createElement('canvas');
+                  canvas.width = ${width};
+                  canvas.height = ${height};
+                  const ctx = canvas.getContext('2d');
+                  ctx.drawImage(imageSource, 0, 0, ${width}, ${height});
 
                   // Convert canvas to JPEG blob
                   const blob = await new Promise((resolve) => {
@@ -709,12 +725,22 @@ export const rpcServerReady = (async () => {
 
           let fragmentBuffer: ArrayBuffer;
           try {
+            logger.debug("🔧 [RPC_SERVER] Starting segment encoding...", { fileType });
             if (fileType === "standalone") {
               fragmentBuffer = await segmentEncoder.generateStandaloneSegment();
             } else {
               fragmentBuffer = await segmentEncoder.generateFragmentBuffer();
             }
+            logger.debug("🔧 [RPC_SERVER] Segment encoding complete", { 
+              bufferSize: fragmentBuffer?.byteLength ?? 0 
+            });
+            if (!fragmentBuffer) {
+              throw new Error("Segment encoder returned undefined buffer");
+            }
             return new Uint8Array(fragmentBuffer);
+          } catch (error) {
+            logger.error({ error, stack: error instanceof Error ? error.stack : undefined }, "🔧 [RPC_SERVER] Segment encoding failed");
+            throw error;
           } finally {
             segmentEncoder.off("frameRendered", frameRenderedHandler);
             segmentEncoder.off("encodingStarted", encodingStartedHandler);

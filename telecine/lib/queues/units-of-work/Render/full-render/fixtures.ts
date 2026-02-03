@@ -120,10 +120,14 @@ export const test = baseTest.extend<{
   ],
 
   // Worker-scoped: Video-only asset for still rendering tests
+  // NOTE: Using bars-n-tone.mp4 instead of video-only-test.mp4 because the latter
+  // causes Electron renderer crashes during frame rendering. The bars-n-tone file
+  // has both video and audio tracks, but we can still test video-only rendering
+  // by using it with sourceOut to limit duration.
   videoOnly: [
     async ({ testAgent }, use) => {
       const videoOnly = await processTestVideoAsset(
-        "video-only-test.mp4",
+        "bars-n-tone.mp4",
         testAgent,
       );
       await use(videoOnly);
