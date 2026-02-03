@@ -266,7 +266,7 @@ export class ThumbnailLoadingManager {
     tempCanvas.width = sampleSize;
     tempCanvas.height = sampleSize;
     
-    const ctx = tempCanvas.getContext('2d');
+    const ctx = tempCanvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return true;
     
     ctx.drawImage(canvas, 0, 0, sampleSize, sampleSize);

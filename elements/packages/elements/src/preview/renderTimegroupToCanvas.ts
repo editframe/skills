@@ -205,7 +205,7 @@ function waitForFrame(): Promise<void> {
  * Returns true if there's ANY non-transparent pixel.
  */
 function canvasHasContent(canvas: HTMLCanvasElement): boolean {
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
   if (!ctx) return false;
   
   try {
