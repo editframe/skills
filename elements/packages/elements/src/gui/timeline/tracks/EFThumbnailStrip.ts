@@ -28,7 +28,6 @@ import {
 /** Padding for virtual rendering */
 const VIRTUAL_RENDER_PADDING_PX = 100;
 
-
 /**
  * Mutable queue for timestamp generation.
  * Allows updating timestamps while generator is consuming them.
@@ -303,28 +302,14 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     
     const thumbnailStride = this.thumbnailSpacingPx;
     
-    // Detect zoom by checking if pixelsPerMs changed
-    const isZoom = this.#previousPixelsPerMs !== null && this.#previousPixelsPerMs !== pixelsPerMs;
-    
-    // Check if track is narrower than viewport (fully visible, no scrolling)
-    const trackFitsInViewport = trackWidthPx <= viewportWidth;
-    
     if (this.#previousPixelsPerMs === null) {
       // First render: align grid to track start (t=0)
       this.#thumbnailPhase = 0;
-    } else if (isZoom) {
-      // On zoom: if track fits in viewport, always align to t=0
-      // Otherwise, snap a thumbnail to near the left edge of viewport
-      if (trackFitsInViewport) {
-        this.#thumbnailPhase = 0;
-      } else {
-        this.#thumbnailPhase = scrollLeft % thumbnailStride;
-      }
     } else if (scrollLeft < thumbnailStride) {
       // When scrolled near the start, realign to t=0 to avoid left gap
       this.#thumbnailPhase = 0;
     }
-    // During normal scroll: phase unchanged, grid scrolls naturally with track
+    // Otherwise: phase unchanged, grid scrolls naturally with track
     
     this.#previousPixelsPerMs = pixelsPerMs;
     
