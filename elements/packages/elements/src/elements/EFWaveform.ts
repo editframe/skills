@@ -537,7 +537,7 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
    * Synchronous render - draws waveform to canvas.
    * @implements FrameRenderable
    */
-  renderFrame(_timeMs: number): void {
+  renderFrame(timeMs: number): void {
     if (!this.targetElement) return;
 
     this.ctx ||= this.initCanvas();
@@ -547,6 +547,15 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
     const frequencyData = this.#frequencyData;
     const byteTimeData = this.#timeDomainData;
     if (!frequencyData || !byteTimeData) return;
+
+    console.log('[WAVEFORM_RENDER] Drawing to canvas', JSON.stringify({
+      timeMs,
+      renderVersion: this.#renderVersion,
+      canvasSize: `${ctx.canvas.width}x${ctx.canvas.height}`,
+      dataPoints: frequencyData.length,
+      firstDataValue: frequencyData[0],
+      mode: this.mode,
+    }));
 
     ctx.save();
     if (this.color === "currentColor") {
