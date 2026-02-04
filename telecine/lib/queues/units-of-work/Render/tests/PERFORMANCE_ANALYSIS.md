@@ -235,6 +235,32 @@ From Electron SegmentEncoder logs, the rendering pipeline for 3 frames (100ms vi
 
 1. ✅ **Add timing instrumentation** (completed)
 2. ✅ **Collect performance data** (completed)
-3. 🎯 **Implement bundle caching** (next priority)
-4. 📊 **Re-measure after bundle caching** (validate improvements)
+3. ✅ **Implement bundle caching** (completed)
+4. ✅ **Measure cache effectiveness** (completed)
 5. 🔍 **Profile frame rendering if needed** (only if still too slow)
+
+## Bundle Caching Implementation Results
+
+**Implementation**: Content-based hash caching with disk-existence validation
+
+**Cache Hit Performance** (rendering identical HTML):
+- Test without cache: ~2,300ms (1,800ms bundling)
+- Test with cache hit: **~530ms** (0ms bundling)
+- **Speedup: 78-79% faster** (~4.3x faster)
+- Bundle time: 1,800ms → 0.16ms (**10,000x faster**)
+
+**Cache Effectiveness**:
+- Hit rate in test scenario: 60% (3 hits / 5 tests)
+- Cache validation: Checks file existence before returning cached result
+- Memory overhead: Minimal (Map of bundle paths + hashes)
+
+**When Cache Helps**:
+- ✅ Rendering same composition multiple times
+- ✅ Iterating on test development (running tests repeatedly)
+- ✅ Test suites with common template patterns
+- ❌ Smoke tests with unique HTML per test (no duplicate HTML)
+
+**Impact Assessment**:
+- Single test with reused HTML: **78% faster** (2.3s → 0.5s)
+- Test suite with unique HTML: No improvement (each test has different HTML)
+- Development workflow: Significant improvement when re-running tests during development

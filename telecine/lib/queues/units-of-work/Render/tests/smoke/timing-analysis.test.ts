@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeAll, afterAll } from "vitest";
-import { render } from "../utils/render";
+import { render, getBundleCacheStats } from "../utils/render";
 import { processTestVideoAsset, processTestImageAsset } from "../../test-utils/processTestAssets";
 import { createElectronRPC, type ElectronRPC } from "../../ElectronRPCClient";
 import { makeTestAgent } from "TEST/util/test";
@@ -36,6 +36,16 @@ describe("Timing Analysis", { timeout: 120000 }, () => {
     if (electronRpc) {
       await electronRpc.rpc.call("terminate");
     }
+    
+    // Print bundle cache statistics
+    const cacheStats = getBundleCacheStats();
+    console.log("\n" + "=".repeat(80));
+    console.log("BUNDLE CACHE STATISTICS");
+    console.log("=".repeat(80));
+    console.log(`  Cache Hits: ${cacheStats.hits}`);
+    console.log(`  Cache Misses: ${cacheStats.misses}`);
+    console.log(`  Hit Rate: ${cacheStats.hitRate}`);
+    console.log(`  Cache Size: ${cacheStats.cacheSize} entries`);
     
     // Print detailed timing report
     console.log("\n" + "=".repeat(80));
@@ -159,5 +169,25 @@ describe("Timing Analysis", { timeout: 120000 }, () => {
     
     timingResults.push(result);
     expect(result.durationMs).toBeCloseTo(100, 20);
+  });
+
+  test("cache hit - simple render (duplicate)", async () => {
+    // This test uses the exact same HTML as the first test
+    // Should hit the bundle cache and be much faster
+    const result = await render(
+      `
+      <ef-timegroup class="w-[640px] h-[360px]" mode="fixed" duration="100ms">
+        <div class="w-full h-full bg-blue-500"></div>
+      </ef-timegroup>
+    `,
+      { testAgent, electronRpc, testName: "timing-simple-timegroup-cached" },
+    );
+    
+    timingResults.push(result);
+    expect(result.durationMs).toBeCloseTo(100, 20);
+    
+    // Bundle HTML time should be near zero (cache hit)
+    console.log(`\n[CACHE HIT TEST] Bundle time: ${result.timing.bundleHtml?.toFixed(2)}ms`);
+    expect(result.timing.bundleHtml).toBeLessThan(10); // Should be < 10ms for cache hit
   });
 });

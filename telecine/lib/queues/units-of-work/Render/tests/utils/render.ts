@@ -1,8 +1,8 @@
 import path from "node:path";
-import { writeFile, mkdir } from "node:fs/promises";
+import { writeFile, mkdir, access } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { createElectronRPC, type ElectronRPC } from "../../ElectronRPCClient";
-import { bundleTestTemplate } from "../../test-utils/html-bundler";
+import { bundleTestTemplate, type TestBundleInfo } from "../../test-utils/html-bundler";
 import { createAssetsMetadataBundle } from "../../shared/assetMetadata";
 import { makeTestAgent } from "TEST/util/test";
 import type { Selectable } from "kysely";
@@ -57,6 +57,22 @@ const SHARED_OUTPUT_DIR = path.join(
   "lib/queues/units-of-work/Render/tests/.test-output",
   `run-${Date.now()}`,
 );
+
+/**
+ * Cache for bundled HTML templates.
+ * Key: template hash
+ * Value: bundle info
+ * 
+ * This cache persists across tests in the same run, avoiding
+ * redundant Vite/Rolldown compilations for identical HTML.
+ */
+const bundleCache = new Map<string, TestBundleInfo>();
+
+/**
+ * Statistics for bundle caching
+ */
+let bundleCacheHits = 0;
+let bundleCacheMisses = 0;
 
 /**
  * Simple, focused render function for tests.
@@ -190,10 +206,10 @@ async function renderWithServer(
   }
 
   try {
-    // Bundle HTML template
+    // Bundle HTML template (with caching)
     const bundleStart = performance.now();
     const testTitle = options.testName || `render-${Date.now()}`;
-    const bundleInfo = await bundleTestTemplate(
+    const bundleInfo = await getCachedOrBundleTemplate(
       html,
       import.meta.url,
       testTitle,
@@ -293,6 +309,80 @@ async function getOrCreateTestAgent(): Promise<Selectable<TestAgent>> {
     cachedTestAgent = await makeTestAgent("test-render@example.org");
   }
   return cachedTestAgent;
+}
+
+/**
+ * Check if bundle files exist on disk
+ */
+async function bundleExists(bundleInfo: TestBundleInfo): Promise<boolean> {
+  try {
+    await access(bundleInfo.indexPath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Bundle HTML template with caching.
+ * 
+ * Uses content-based hashing to avoid re-bundling identical HTML.
+ * Checks cache first, then validates files exist on disk.
+ * Falls back to bundling if cache miss or files deleted.
+ */
+async function getCachedOrBundleTemplate(
+  html: string,
+  testFilePath?: string,
+  testTitle?: string,
+): Promise<TestBundleInfo> {
+  // Compute hash for cache key
+  const templateHash = createHash("sha256")
+    .update(html)
+    .digest("hex")
+    .substring(0, 16);
+  
+  // Check cache
+  const cached = bundleCache.get(templateHash);
+  if (cached) {
+    // Verify files still exist on disk
+    if (await bundleExists(cached)) {
+      bundleCacheHits++;
+      return cached;
+    } else {
+      // Cache entry is stale, remove it
+      bundleCache.delete(templateHash);
+    }
+  }
+  
+  // Cache miss or stale entry - bundle now
+  bundleCacheMisses++;
+  const bundleInfo = await bundleTestTemplate(html, testFilePath, testTitle);
+  bundleCache.set(templateHash, bundleInfo);
+  
+  return bundleInfo;
+}
+
+/**
+ * Get bundle cache statistics (useful for debugging/testing)
+ */
+export function getBundleCacheStats() {
+  return {
+    hits: bundleCacheHits,
+    misses: bundleCacheMisses,
+    hitRate: bundleCacheHits + bundleCacheMisses > 0 
+      ? (bundleCacheHits / (bundleCacheHits + bundleCacheMisses) * 100).toFixed(1) + '%'
+      : 'N/A',
+    cacheSize: bundleCache.size,
+  };
+}
+
+/**
+ * Clear bundle cache (useful for testing)
+ */
+export function clearBundleCache() {
+  bundleCache.clear();
+  bundleCacheHits = 0;
+  bundleCacheMisses = 0;
 }
 
 /**
