@@ -57,6 +57,7 @@ export async function renderWithBrowserFullVideo({
   bundleInfo: existingBundleInfo,
 }: BrowserRenderParams): Promise<RenderOutput> {
   return executeSpan("renderWithBrowserFullVideo", async (span) => {
+    const totalStart = performance.now();
     span.setAttributes({
       html,
       testAgent: testAgent.org.id,
@@ -64,14 +65,18 @@ export async function renderWithBrowserFullVideo({
       canvasMode,
     });
 
+    const bundleStart = performance.now();
     const bundleInfo = existingBundleInfo ?? await bundleTestTemplate(html, testFilePath, testTitle);
+    const bundleTimeMs = existingBundleInfo ? 0 : performance.now() - bundleStart;
     const parsedOptions = ElectronRenderOptions.parse(renderOptions);
 
     // Get render info first
+    const renderInfoStart = performance.now();
     const renderInfo = await electronRpc.rpc.call("getRenderInfo", {
       location: `file://${bundleInfo.indexPath}`,
       orgId: testAgent.org.id,
     });
+    const renderInfoTimeMs = performance.now() - renderInfoStart;
 
     const assetsBundle = await createAssetsMetadataBundle(
       renderInfo.assets,
@@ -79,6 +84,7 @@ export async function renderWithBrowserFullVideo({
     );
 
     // Call the browser-based full video render
+    const renderStart = performance.now();
     const videoBuffer = await electronRpc.rpc.call("renderBrowserFullVideo", {
       width: renderInfo.width,
       height: renderInfo.height,
@@ -89,6 +95,7 @@ export async function renderWithBrowserFullVideo({
       canvasMode,
       assetsBundle,
     });
+    const renderTimeMs = performance.now() - renderStart;
 
     // Write output - use testTitle-specific directory when bundle is shared
     const testRenderDir = existingBundleInfo
@@ -100,6 +107,8 @@ export async function renderWithBrowserFullVideo({
     const finalVideoPath = path.join(outputDir, "output.mp4");
     await writeFile(finalVideoPath, videoBuffer);
 
+    const totalTimeMs = performance.now() - totalStart;
+
     const metadata = {
       renderInfo: {
         width: renderInfo.width,
@@ -108,6 +117,14 @@ export async function renderWithBrowserFullVideo({
       },
       renderMode: "browser-full-video",
       canvasMode,
+      timing: {
+        totalMs: Math.round(totalTimeMs),
+        bundleMs: Math.round(bundleTimeMs),
+        renderInfoMs: Math.round(renderInfoTimeMs),
+        renderMs: Math.round(renderTimeMs),
+      },
+      outputSizeBytes: videoBuffer.length,
+      timestamp: new Date().toISOString(),
     };
     await writeFile(
       path.join(outputDir, "metadata.json"),
@@ -145,6 +162,7 @@ export async function renderWithBrowserFrameByFrame({
   bundleInfo: existingBundleInfo,
 }: BrowserRenderParams): Promise<RenderOutput> {
   return executeSpan("renderWithBrowserFrameByFrame", async (span) => {
+    const totalStart = performance.now();
     span.setAttributes({
       html,
       testAgent: testAgent.org.id,
@@ -152,14 +170,18 @@ export async function renderWithBrowserFrameByFrame({
       canvasMode,
     });
 
+    const bundleStart = performance.now();
     const bundleInfo = existingBundleInfo ?? await bundleTestTemplate(html, testFilePath, testTitle);
+    const bundleTimeMs = existingBundleInfo ? 0 : performance.now() - bundleStart;
     const parsedOptions = ElectronRenderOptions.parse(renderOptions);
 
     // Get render info first
+    const renderInfoStart = performance.now();
     const renderInfo = await electronRpc.rpc.call("getRenderInfo", {
       location: `file://${bundleInfo.indexPath}`,
       orgId: testAgent.org.id,
     });
+    const renderInfoTimeMs = performance.now() - renderInfoStart;
 
     const assetsBundle = await createAssetsMetadataBundle(
       renderInfo.assets,
@@ -180,9 +202,12 @@ export async function renderWithBrowserFrameByFrame({
 
     const segmentBuffers: Uint8Array[] = [];
     const segmentPaths: string[] = [];
+    const segmentTimings: { fragmentId: number | "init"; timeMs: number; sizeBytes: number }[] = [];
 
+    const renderStart = performance.now();
     for (const fragmentId of fragmentIds) {
       // Call the browser-based frame-by-frame render for this segment
+      const segmentStart = performance.now();
       const buffer = await electronRpc.rpc.call("renderBrowserFrameByFrame", {
         width: renderInfo.width,
         height: renderInfo.height,
@@ -197,6 +222,13 @@ export async function renderWithBrowserFrameByFrame({
         canvasMode,
         assetsBundle,
       });
+      const segmentTimeMs = performance.now() - segmentStart;
+
+      segmentTimings.push({
+        fragmentId,
+        timeMs: Math.round(segmentTimeMs),
+        sizeBytes: buffer.length,
+      });
 
       console.log("🔧 [RENDER_BROWSER_FRAME_BY_FRAME] Rendered fragment", {
         fragmentId,
@@ -210,6 +242,7 @@ export async function renderWithBrowserFrameByFrame({
       await writeFile(segmentPath, buffer);
       segmentPaths.push(segmentPath);
     }
+    const renderTimeMs = performance.now() - renderStart;
 
     const finalVideoPath = path.join(outputDir, "output.mp4");
     if (segmentBuffers.length === 0) {
@@ -219,6 +252,8 @@ export async function renderWithBrowserFrameByFrame({
     // Concatenate all segments into final video buffer
     const finalVideoBuffer = Buffer.concat(segmentBuffers);
     await writeFile(finalVideoPath, finalVideoBuffer);
+
+    const totalTimeMs = performance.now() - totalStart;
 
     const metadata = {
       renderInfo: {
@@ -230,6 +265,16 @@ export async function renderWithBrowserFrameByFrame({
       fragmentCount: fragmentIds.length,
       renderMode: "browser-frame-by-frame",
       canvasMode,
+      timing: {
+        totalMs: Math.round(totalTimeMs),
+        bundleMs: Math.round(bundleTimeMs),
+        renderInfoMs: Math.round(renderInfoTimeMs),
+        renderMs: Math.round(renderTimeMs),
+        segments: segmentTimings,
+        avgSegmentMs: Math.round(renderTimeMs / fragmentIds.length),
+      },
+      outputSizeBytes: finalVideoBuffer.length,
+      timestamp: new Date().toISOString(),
     };
     await writeFile(
       path.join(outputDir, "metadata.json"),

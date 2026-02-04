@@ -1,0 +1,41 @@
+{
+  "renderInfo": {
+    "width": 480,
+    "height": 270,
+    "durationMs": 1000
+  },
+  "segmentPaths": [
+    "/app/lib/queues/units-of-work/Render/full-render/fidelity/bars-video.test.test.renders/bars-fidelity-browser-frame-by-frame-native-f1f21e1c/artifacts/segment_init.mp4",
+    "/app/lib/queues/units-of-work/Render/full-render/fidelity/bars-video.test.test.renders/bars-fidelity-browser-frame-by-frame-native-f1f21e1c/artifacts/segment_0.mp4",
+    "/app/lib/queues/units-of-work/Render/full-render/fidelity/bars-video.test.test.renders/bars-fidelity-browser-frame-by-frame-native-f1f21e1c/artifacts/segment_1.mp4"
+  ],
+  "fragmentCount": 3,
+  "renderMode": "browser-frame-by-frame",
+  "canvasMode": "native",
+  "timing": {
+    "totalMs": 5597,
+    "bundleMs": 0,
+    "renderInfoMs": 213,
+    "renderMs": 5374,
+    "segments": [
+      {
+        "fragmentId": "init",
+        "timeMs": 1073,
+        "sizeBytes": 821
+      },
+      {
+        "fragmentId": 0,
+        "timeMs": 2336,
+        "sizeBytes": 52631
+      },
+      {
+        "fragmentId": 1,
+        "timeMs": 1960,
+        "sizeBytes": 53803
+      }
+    ],
+    "avgSegmentMs": 1791
+  },
+  "outputSizeBytes": 107255,
+  "timestamp": "2026-02-04T18:44:41.960Z"
+}

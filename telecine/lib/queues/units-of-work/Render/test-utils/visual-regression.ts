@@ -76,16 +76,31 @@ const extractFramesToDirectory = async (
 export const extractFramesForComparison = async (
   videoPath: string,
   templateHash: string,
+  testFilePath?: string,
   testTitle?: string,
 ): Promise<string[]> => {
-  const titleSlug = testTitle
-    ? `${testTitle.toLowerCase().replace(/\s+/g, "-")}-`
-    : "";
-  const testRenderDir = path.join(
-    process.cwd(),
-    "temp",
-    `test-render-${titleSlug}${templateHash}`,
-  );
+  let testRenderDir: string;
+  if (testFilePath && testTitle) {
+    // Write to .test.renders directory next to test file
+    const normalizedPath = testFilePath.startsWith("file://")
+      ? testFilePath.slice(7)
+      : testFilePath;
+    const testDir = path.dirname(normalizedPath);
+    const testFileName = path.basename(normalizedPath);
+    const rendersDir = testFileName.replace(/\.test\.ts$|\.ts$/, ".test.renders");
+    const titleSlug = testTitle.toLowerCase().replace(/\s+/g, "-");
+    testRenderDir = path.join(testDir, rendersDir, `${titleSlug}-${templateHash.slice(0, 8)}`);
+  } else {
+    // Fallback to temp directory
+    const titleSlug = testTitle
+      ? `${testTitle.toLowerCase().replace(/\s+/g, "-")}-`
+      : "";
+    testRenderDir = path.join(
+      process.cwd(),
+      "temp",
+      `test-render-${titleSlug}${templateHash}`,
+    );
+  }
   const artifactsDir = path.join(testRenderDir, "artifacts");
 
   return extractFramesToDirectory(videoPath, artifactsDir, "regression-frame");
@@ -98,16 +113,29 @@ export const extractFramesForComparison = async (
 export const getOrCreateBaseline = async (
   videoPath: string,
   templateHash: string,
+  testFilePath?: string,
   testTitle?: string,
 ): Promise<string[]> => {
-  const titleSlug = testTitle
-    ? `${testTitle.toLowerCase().replace(/\s+/g, "-")}-`
-    : "";
-  const testRenderDir = path.join(
-    process.cwd(),
-    "temp",
-    `test-render-${titleSlug}${templateHash}`,
-  );
+  let testRenderDir: string;
+  if (testFilePath && testTitle) {
+    const normalizedPath = testFilePath.startsWith("file://")
+      ? testFilePath.slice(7)
+      : testFilePath;
+    const testDir = path.dirname(normalizedPath);
+    const testFileName = path.basename(normalizedPath);
+    const rendersDir = testFileName.replace(/\.test\.ts$|\.ts$/, ".test.renders");
+    const titleSlug = testTitle.toLowerCase().replace(/\s+/g, "-");
+    testRenderDir = path.join(testDir, rendersDir, `${titleSlug}-${templateHash.slice(0, 8)}`);
+  } else {
+    const titleSlug = testTitle
+      ? `${testTitle.toLowerCase().replace(/\s+/g, "-")}-`
+      : "";
+    testRenderDir = path.join(
+      process.cwd(),
+      "temp",
+      `test-render-${titleSlug}${templateHash}`,
+    );
+  }
   const baselineDir = path.join(testRenderDir, "baselines");
 
   // Get video duration to determine expected frame count
@@ -157,6 +185,7 @@ export const compareFramesWithOdiff = async (
     threshold?: number;
     antialiasing?: boolean;
     diffColor?: string;
+    testFilePath?: string;
     testTitle?: string;
   } = {},
 ): Promise<VisualRegressionResult> => {
@@ -171,14 +200,26 @@ export const compareFramesWithOdiff = async (
     }
 
     // Generate diff output path in the same directory structure as baselines/artifacts
-    const titleSlug = options.testTitle
-      ? `${options.testTitle.toLowerCase().replace(/\s+/g, "-")}-`
-      : "";
-    const testRenderDir = path.join(
-      process.cwd(),
-      "temp",
-      `test-render-${titleSlug}${templateHash}`,
-    );
+    let testRenderDir: string;
+    if (options.testFilePath && options.testTitle) {
+      const normalizedPath = options.testFilePath.startsWith("file://")
+        ? options.testFilePath.slice(7)
+        : options.testFilePath;
+      const testDir = path.dirname(normalizedPath);
+      const testFileName = path.basename(normalizedPath);
+      const rendersDir = testFileName.replace(/\.test\.ts$|\.ts$/, ".test.renders");
+      const titleSlug = options.testTitle.toLowerCase().replace(/\s+/g, "-");
+      testRenderDir = path.join(testDir, rendersDir, `${titleSlug}-${templateHash.slice(0, 8)}`);
+    } else {
+      const titleSlug = options.testTitle
+        ? `${options.testTitle.toLowerCase().replace(/\s+/g, "-")}-`
+        : "";
+      testRenderDir = path.join(
+        process.cwd(),
+        "temp",
+        `test-render-${titleSlug}${templateHash}`,
+      );
+    }
     const diffsDir = path.join(testRenderDir, "diffs");
     await mkdir(diffsDir, { recursive: true });
     const diffOutputPath = path.join(

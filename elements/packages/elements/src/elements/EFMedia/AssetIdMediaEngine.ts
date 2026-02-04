@@ -26,19 +26,19 @@ export class AssetIdMediaEngine
     // Check for abort after potentially slow network operation
     signal?.throwIfAborted();
     
-    // Check if response is ok before parsing JSON
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`Failed to fetch asset index: ${response.status} ${text}`);
-    }
-    
-    // Check content type to avoid parsing non-JSON responses
+    // Check response headers first (doesn't consume body)
     const contentType = response.headers.get("content-type");
-    if (contentType && !contentType.includes("application/json")) {
-      const text = await response.text();
+    
+    // If response is not ok or content type is wrong, clone to read body for error message
+    if (!response.ok || (contentType && !contentType.includes("application/json"))) {
+      const text = await response.clone().text();
+      if (!response.ok) {
+        throw new Error(`Failed to fetch asset index: ${response.status} ${text}`);
+      }
       throw new Error(`Expected JSON but got ${contentType}: ${text.substring(0, 100)}`);
     }
     
+    // Response is ok and content type is correct, parse as JSON  
     let data: Record<number, TrackFragmentIndex>;
     try {
       data = (await response.json()) as Record<number, TrackFragmentIndex>;
@@ -50,9 +50,8 @@ export class AssetIdMediaEngine
       if (error instanceof DOMException && error.name === "AbortError") {
         throw error;
       }
-      // If JSON parse fails, the response might be "File not found" or similar text
-      const text = await response.text();
-      throw new Error(`Failed to parse JSON response: ${text.substring(0, 100)}`);
+      // Body already consumed, can't read again for error details
+      throw new Error(`Failed to parse JSON response: ${error instanceof Error ? error.message : String(error)}`);
     }
     
     const engine = new AssetIdMediaEngine(host, assetId, data, apiHost, _urlGenerator);

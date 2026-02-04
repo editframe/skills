@@ -131,30 +131,35 @@ export abstract class BaseMediaEngine {
               const fetchEnd = performance.now();
               span.setAttribute("fetchMs", fetchEnd - fetchStart);
 
-              // Check response status before parsing
-              if (!response.ok) {
-                // Read body once - can't read again after this
-                const text = await response.text();
-                throw new Error(`Failed to fetch: ${response.status} ${text.substring(0, 100)}`);
-              }
+              // Check headers first (doesn't consume body)
+              const contentType = response.headers.get("content-type");
 
+              // For JSON responses, check both status and content type before consuming body
               if (responseType === "json") {
-                // Check content type header (doesn't consume body)
-                const contentType = response.headers.get("content-type");
-                if (contentType && !contentType.includes("application/json") && !contentType.includes("text/json")) {
-                  // Read body once - can't read again after this
-                  const text = await response.text();
+                // If response is not ok or content type is wrong, clone to read body for error message
+                if (!response.ok || (contentType && !contentType.includes("application/json") && !contentType.includes("text/json"))) {
+                  const text = await response.clone().text();
+                  if (!response.ok) {
+                    throw new Error(`Failed to fetch: ${response.status} ${text.substring(0, 100)}`);
+                  }
                   throw new Error(`Expected JSON but got ${contentType}: ${text.substring(0, 100)}`);
                 }
+                
+                // Response is ok and content type is correct, parse as JSON
                 try {
-                  // Read body once as JSON
                   return await response.json();
                 } catch (error) {
-                  // JSON parse failed - body is already consumed, can't read again
-                  // The error should contain enough info, but if we need the text, we'd need to clone the response first
+                  // Body already consumed, can't read again for error details
                   throw new Error(`Failed to parse JSON response: ${error instanceof Error ? error.message : String(error)}`);
                 }
               }
+              
+              // For arrayBuffer responses, check status before consuming body
+              if (!response.ok) {
+                const text = await response.clone().text();
+                throw new Error(`Failed to fetch: ${response.status} ${text.substring(0, 100)}`);
+              }
+              
               const buffer = await response.arrayBuffer();
               span.setAttribute("sizeBytes", buffer.byteLength);
               return buffer;

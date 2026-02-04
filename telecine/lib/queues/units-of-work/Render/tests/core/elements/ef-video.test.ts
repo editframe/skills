@@ -20,7 +20,7 @@ describe("ef-video Element", { timeout: 30000 }, () => {
     test("renders video element", async () => {
       const result = await render(`
         <ef-timegroup class="w-[1920px] h-[1080px]" mode="fixed" duration="2s">
-          <ef-video asset-id="${barsNTone.id}" class="w-full h-full object-cover" />
+          <ef-video asset-id="${barsNTone.id}" class="w-full h-full object-cover"></ef-video>
         </ef-timegroup>
       `);
 

@@ -29,6 +29,7 @@ export interface ElectronRenderOutput {
   videoPath: string;
   renderInfo: { width: number; height: number; durationMs: number };
   templateHash: string;
+  testFilePath?: string;
   testTitle?: string;
 }
 
@@ -124,29 +125,37 @@ export async function renderWithElectronRPC({
   testAgent,
   electronRpc,
   renderOptions = {},
+  testFilePath,
   testTitle,
 }: {
   html: string;
   testAgent: TestAgent;
   electronRpc: ElectronRPC;
   renderOptions?: ElectronRenderOptionsInput;
+  testFilePath?: string;
   testTitle?: string;
 }): Promise<ElectronRenderOutput> {
   return executeSpan("renderWithElectronRPC", async (span) => {
+    const totalStart = performance.now();
     span.setAttributes({
       html,
       testAgent: testAgent.org.id,
       testTitle,
     });
     span.setAttributes(renderOptions);
-    const bundleInfo = await bundleTestTemplate(html, testTitle);
+
+    const bundleStart = performance.now();
+    const bundleInfo = await bundleTestTemplate(html, testFilePath, testTitle);
+    const bundleTimeMs = performance.now() - bundleStart;
 
     const parsedOptions = ElectronRenderOptions.parse(renderOptions);
 
+    const renderInfoStart = performance.now();
     const renderInfo = await electronRpc.rpc.call("getRenderInfo", {
       location: `file://${bundleInfo.indexPath}`,
       orgId: testAgent.org.id,
     });
+    const renderInfoTimeMs = performance.now() - renderInfoStart;
 
     const assetsBundle = await createAssetsMetadataBundle(
       renderInfo.assets,
@@ -164,8 +173,11 @@ export async function renderWithElectronRPC({
 
     const segmentBuffers: Uint8Array[] = [];
     const segmentPaths: string[] = [];
+    const segmentTimings: { fragmentId: number | "init"; timeMs: number; sizeBytes: number }[] = [];
 
+    const renderStart = performance.now();
     for (const fragmentId of fragmentIds) {
+      const segmentStart = performance.now();
       const buffer = await electronRpc.rpc.call("renderFragment", {
         width: renderInfo.width,
         height: renderInfo.height,
@@ -179,6 +191,14 @@ export async function renderWithElectronRPC({
         fileType: "fragment",
         assetsBundle,
       });
+      const segmentTimeMs = performance.now() - segmentStart;
+
+      segmentTimings.push({
+        fragmentId,
+        timeMs: Math.round(segmentTimeMs),
+        sizeBytes: buffer.length,
+      });
+
       console.log("🔧 [RENDERWITHELECTRONRPC] Rendered fragment", {
         bufferLength: buffer.length,
       });
@@ -190,6 +210,7 @@ export async function renderWithElectronRPC({
       await writeFile(segmentPath, buffer);
       segmentPaths.push(segmentPath);
     }
+    const renderTimeMs = performance.now() - renderStart;
 
     const finalVideoPath = path.join(outputDir, "output.mp4");
     if (segmentBuffers.length === 0) {
@@ -200,6 +221,8 @@ export async function renderWithElectronRPC({
     const finalVideoBuffer = Buffer.concat(segmentBuffers);
     await writeFile(finalVideoPath, finalVideoBuffer);
 
+    const totalTimeMs = performance.now() - totalStart;
+
     const metadata = {
       renderInfo: {
         width: renderInfo.width,
@@ -208,6 +231,17 @@ export async function renderWithElectronRPC({
       },
       segmentPaths,
       fragmentCount: fragmentIds.length,
+      renderMode: "server",
+      timing: {
+        totalMs: Math.round(totalTimeMs),
+        bundleMs: Math.round(bundleTimeMs),
+        renderInfoMs: Math.round(renderInfoTimeMs),
+        renderMs: Math.round(renderTimeMs),
+        segments: segmentTimings,
+        avgSegmentMs: Math.round(renderTimeMs / fragmentIds.length),
+      },
+      outputSizeBytes: finalVideoBuffer.length,
+      timestamp: new Date().toISOString(),
     };
     await writeFile(
       path.join(outputDir, "metadata.json"),
@@ -224,6 +258,7 @@ export async function renderWithElectronRPC({
         durationMs: renderInfo.durationMs,
       },
       templateHash: bundleInfo.templateHash,
+      testFilePath,
       testTitle,
     };
   });
@@ -245,24 +280,30 @@ export async function renderWithElectronRPCAndScripts({
   testTitle?: string;
 }): Promise<ElectronRenderOutput> {
   return executeSpan("renderWithElectronRPCAndScripts", async (span) => {
+    const totalStart = performance.now();
     span.setAttributes({
       html,
       testAgent: testAgent.org.id,
       testTitle,
     });
     span.setAttributes(renderOptions);
+
+    const bundleStart = performance.now();
     const bundleInfo = await bundleTestTemplateWithScripts(
       html,
       scriptFiles,
       testTitle,
     );
+    const bundleTimeMs = performance.now() - bundleStart;
 
     const parsedOptions = ElectronRenderOptions.parse(renderOptions);
 
+    const renderInfoStart = performance.now();
     const renderInfo = await electronRpc.rpc.call("getRenderInfo", {
       location: `file://${bundleInfo.indexPath}`,
       orgId: testAgent.org.id,
     });
+    const renderInfoTimeMs = performance.now() - renderInfoStart;
 
     const assetsBundle = await createAssetsMetadataBundle(
       renderInfo.assets,
@@ -280,8 +321,11 @@ export async function renderWithElectronRPCAndScripts({
 
     const segmentBuffers: Uint8Array[] = [];
     const segmentPaths: string[] = [];
+    const segmentTimings: { fragmentId: number | "init"; timeMs: number; sizeBytes: number }[] = [];
 
+    const renderStart = performance.now();
     for (const fragmentId of fragmentIds) {
+      const segmentStart = performance.now();
       const buffer = await electronRpc.rpc.call("renderFragment", {
         width: renderInfo.width,
         height: renderInfo.height,
@@ -295,6 +339,14 @@ export async function renderWithElectronRPCAndScripts({
         fileType: "fragment",
         assetsBundle,
       });
+      const segmentTimeMs = performance.now() - segmentStart;
+
+      segmentTimings.push({
+        fragmentId,
+        timeMs: Math.round(segmentTimeMs),
+        sizeBytes: buffer.length,
+      });
+
       console.log("🔧 [RENDERWITHELECTRONRPCANDSCRIPTS] Rendered fragment", {
         bufferLength: buffer.length,
       });
@@ -306,6 +358,7 @@ export async function renderWithElectronRPCAndScripts({
       await writeFile(segmentPath, buffer);
       segmentPaths.push(segmentPath);
     }
+    const renderTimeMs = performance.now() - renderStart;
 
     const finalVideoPath = path.join(outputDir, "output.mp4");
     if (segmentBuffers.length === 0) {
@@ -316,6 +369,8 @@ export async function renderWithElectronRPCAndScripts({
     const finalVideoBuffer = Buffer.concat(segmentBuffers);
     await writeFile(finalVideoPath, finalVideoBuffer);
 
+    const totalTimeMs = performance.now() - totalStart;
+
     const metadata = {
       renderInfo: {
         width: renderInfo.width,
@@ -324,6 +379,17 @@ export async function renderWithElectronRPCAndScripts({
       },
       segmentPaths,
       fragmentCount: fragmentIds.length,
+      renderMode: "server",
+      timing: {
+        totalMs: Math.round(totalTimeMs),
+        bundleMs: Math.round(bundleTimeMs),
+        renderInfoMs: Math.round(renderInfoTimeMs),
+        renderMs: Math.round(renderTimeMs),
+        segments: segmentTimings,
+        avgSegmentMs: Math.round(renderTimeMs / fragmentIds.length),
+      },
+      outputSizeBytes: finalVideoBuffer.length,
+      timestamp: new Date().toISOString(),
     };
     await writeFile(
       path.join(outputDir, "metadata.json"),

@@ -1,11 +1,11 @@
 {
-  "timestamp": "2026-02-03T22:49:48.546Z",
+  "timestamp": "2026-02-04T18:35:12.417Z",
   "testName": "video-only-fidelity",
-  "totalTime": 9.033405183,
+  "totalTime": 13.233726367,
   "baseline": {
     "label": "Server (baseline)",
-    "videoPath": "temp/test-render-video-only-fidelity-baseline-c7c1bdfcb6dd52db/artifacts/output.mp4",
-    "templateHash": "c7c1bdfcb6dd52db",
+    "videoPath": "temp/test-render-video-only-fidelity-baseline-f1f21e1c2ac94944/artifacts/output.mp4",
+    "templateHash": "f1f21e1c2ac94944",
     "renderInfo": {
       "width": 480,
       "height": 270,
@@ -15,55 +15,55 @@
   "results": [
     {
       "label": "browser-full-video + native",
-      "videoPath": "temp/test-render-video-only-fidelity-browser-full-video-native-c7c1bdfcb6dd52db/artifacts/output.mp4",
-      "templateHash": "c7c1bdfcb6dd52db",
+      "videoPath": "temp/test-render-video-only-fidelity-browser-full-video-native-f1f21e1c2ac94944/artifacts/output.mp4",
+      "templateHash": "f1f21e1c2ac94944",
       "renderInfo": {
         "width": 480,
         "height": 270,
         "durationMs": 1000
       },
-      "duration": 891.7736829999994,
+      "duration": 3399.5357490000006,
       "error": null,
-      "sizeKB": "2.4"
+      "sizeKB": "156.0"
     },
     {
       "label": "browser-full-video + foreignObject",
-      "videoPath": "temp/test-render-video-only-fidelity-browser-full-video-foreignobject-c7c1bdfcb6dd52db/artifacts/output.mp4",
-      "templateHash": "c7c1bdfcb6dd52db",
+      "videoPath": "temp/test-render-video-only-fidelity-browser-full-video-foreignobject-f1f21e1c2ac94944/artifacts/output.mp4",
+      "templateHash": "f1f21e1c2ac94944",
       "renderInfo": {
         "width": 480,
         "height": 270,
         "durationMs": 1000
       },
-      "duration": 898.9501359999995,
+      "duration": 3399.7910790000005,
       "error": null,
-      "sizeKB": "2.4"
+      "sizeKB": "156.0"
     },
     {
       "label": "browser-frame-by-frame + native",
-      "videoPath": "temp/test-render-video-only-fidelity-browser-frame-by-frame-native-c7c1bdfcb6dd52db/artifacts/output.mp4",
-      "templateHash": "c7c1bdfcb6dd52db",
+      "videoPath": "temp/test-render-video-only-fidelity-browser-frame-by-frame-native-f1f21e1c2ac94944/artifacts/output.mp4",
+      "templateHash": "f1f21e1c2ac94944",
       "renderInfo": {
         "width": 480,
         "height": 270,
         "durationMs": 1000
       },
-      "duration": 2742.067106999999,
+      "duration": 6799.6032410000025,
       "error": null,
-      "sizeKB": "4.5"
+      "sizeKB": "104.7"
     },
     {
       "label": "browser-frame-by-frame + foreignObject",
-      "videoPath": "temp/test-render-video-only-fidelity-browser-frame-by-frame-foreignobject-c7c1bdfcb6dd52db/artifacts/output.mp4",
-      "templateHash": "c7c1bdfcb6dd52db",
+      "videoPath": "temp/test-render-video-only-fidelity-browser-frame-by-frame-foreignobject-f1f21e1c2ac94944/artifacts/output.mp4",
+      "templateHash": "f1f21e1c2ac94944",
       "renderInfo": {
         "width": 480,
         "height": 270,
         "durationMs": 1000
       },
-      "duration": 2658.9320769999995,
+      "duration": 6862.468321,
       "error": null,
-      "sizeKB": "4.5"
+      "sizeKB": "104.7"
     }
   ]
 }

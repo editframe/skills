@@ -210,6 +210,7 @@ export const test = baseTest.extend<{
               electronRpc: electronRPC,
               renderOptions: options,
               testAgent,
+              testFilePath,
               testTitle,
             });
         }

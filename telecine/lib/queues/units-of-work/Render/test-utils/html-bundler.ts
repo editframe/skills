@@ -49,19 +49,23 @@ const WEB_HOST = envString("WEB_HOST", "http://localhost:3000");
 
 /**
  * Get test render directory path when sharing bundles across multiple tests.
- * Each test title gets its own directory to avoid conflicts.
+ * Creates a .test.renders directory next to the test file for artifact browsing.
  */
 export const getTestRenderDir = (
-  _testFilePath: string,
+  testFilePath: string,
   testTitle: string,
   templateHash: string,
 ): string => {
   const titleSlug = testTitle.toLowerCase().replace(/\s+/g, "-");
-  return path.join(
-    process.cwd(),
-    "temp",
-    `test-render-${titleSlug}-${templateHash}`,
-  );
+  // Convert file:// URL to path if needed
+  const normalizedPath = testFilePath.startsWith("file://")
+    ? testFilePath.slice(7)
+    : testFilePath;
+  const testDir = path.dirname(normalizedPath);
+  const testFileName = path.basename(normalizedPath);
+  // Replace .test.ts or .ts with .test.renders
+  const rendersDir = testFileName.replace(/\.test\.ts$|\.ts$/, ".test.renders");
+  return path.join(testDir, rendersDir, `${titleSlug}-${templateHash.slice(0, 8)}`);
 };
 
 /**
@@ -69,6 +73,7 @@ export const getTestRenderDir = (
  */
 export const bundleTestTemplate = async (
   html: string,
+  testFilePath?: string,
   testTitle?: string,
 ): Promise<TestBundleInfo> => {
   return executeSpan("bundleTestTemplate", async () => {
@@ -76,14 +81,23 @@ export const bundleTestTemplate = async (
       .update(html)
       .digest("hex")
       .substring(0, 16);
-    const titleSlug = testTitle
-      ? `${testTitle.toLowerCase().replace(/\s+/g, "-")}-`
-      : "";
-    const testRenderDir = path.join(
-      process.cwd(),
-      "temp",
-      `test-render-${titleSlug}${templateHash}`,
-    );
+
+    let testRenderDir: string;
+    if (testFilePath && testTitle) {
+      // Write to .test.renders directory next to test file
+      testRenderDir = getTestRenderDir(testFilePath, testTitle, templateHash);
+    } else {
+      // Fallback to temp directory
+      const titleSlug = testTitle
+        ? `${testTitle.toLowerCase().replace(/\s+/g, "-")}-`
+        : "";
+      testRenderDir = path.join(
+        process.cwd(),
+        "temp",
+        `test-render-${titleSlug}${templateHash}`,
+      );
+    }
+
     const bundleDir = path.join(testRenderDir, "bundle");
     const indexPath = path.join(bundleDir, "dist", "index.html");
 
