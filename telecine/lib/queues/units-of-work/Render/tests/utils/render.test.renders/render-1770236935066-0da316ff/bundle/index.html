@@ -1,0 +1,30 @@
+
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <script type="module" src="./index.ts"></script>
+            <link rel="stylesheet" href="./styles.css">
+          </head>
+          <body>
+            <ef-configuration api-host="http://localhost:3000">
+              
+        <ef-timegroup class="w-[1920px] h-[1080px]" mode="fixed" duration="1.5s">
+          <ef-audio id="top-audio" asset-id="2823079c-d1e3-4bc5-af46-6c99a2f452d6" />
+          <div class="w-full h-full bg-gradient-to-b from-blue-900 to-purple-900 flex flex-col">
+            <div class="p-8">
+              <ef-waveform 
+                target="top-audio" 
+                class="w-full h-24"
+                style="--waveform-color: white;"
+              />
+            </div>
+            <div class="flex-1 flex items-center justify-center">
+              <span class="text-white text-6xl font-bold">Now Playing</span>
+            </div>
+          </div>
+        </ef-timegroup>
+      
+            </ef-configuration>
+          </body>
+          </html>
+        

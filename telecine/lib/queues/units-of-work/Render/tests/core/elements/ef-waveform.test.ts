@@ -29,7 +29,7 @@ describe("ef-waveform Element", { timeout: 30000 }, () => {
             />
           </div>
         </ef-timegroup>
-      `);
+      `, { testAgent });
 
       expect(result.videoBuffer.length).toBeGreaterThan(1000);
       expect(result.durationMs).toBeCloseTo(2000, 100);
@@ -50,7 +50,7 @@ describe("ef-waveform Element", { timeout: 30000 }, () => {
             />
           </div>
         </ef-timegroup>
-      `);
+      `, { testAgent });
 
       expect(result.videoBuffer.length).toBeGreaterThan(1000);
     });
@@ -69,7 +69,7 @@ describe("ef-waveform Element", { timeout: 30000 }, () => {
             />
           </div>
         </ef-timegroup>
-      `);
+      `, { testAgent });
 
       expect(result.videoBuffer.length).toBeGreaterThan(1000);
     });
@@ -88,7 +88,7 @@ describe("ef-waveform Element", { timeout: 30000 }, () => {
             </div>
           </div>
         </ef-timegroup>
-      `);
+      `, { testAgent });
 
       expect(result.videoBuffer.length).toBeGreaterThan(1000);
     });
@@ -107,7 +107,7 @@ describe("ef-waveform Element", { timeout: 30000 }, () => {
             />
           </div>
         </ef-timegroup>
-      `);
+      `, { testAgent });
 
       expect(result.videoBuffer.length).toBeGreaterThan(1000);
       expect(result.durationMs).toBeCloseTo(1000, 100);
@@ -132,7 +132,7 @@ describe("ef-waveform Element", { timeout: 30000 }, () => {
             </div>
           </div>
         </ef-timegroup>
-      `);
+      `, { testAgent });
 
       expect(result.videoBuffer.length).toBeGreaterThan(1000);
     });
@@ -154,7 +154,7 @@ describe("ef-waveform Element", { timeout: 30000 }, () => {
             </div>
           </div>
         </ef-timegroup>
-      `);
+      `, { testAgent });
 
       expect(result.videoBuffer.length).toBeGreaterThan(1000);
     });
@@ -183,7 +183,7 @@ describe("ef-waveform Element", { timeout: 30000 }, () => {
             />
           </div>
         </ef-timegroup>
-      `);
+      `, { testAgent });
 
       expect(result.videoBuffer.length).toBeGreaterThan(1000);
     });
@@ -206,7 +206,7 @@ describe("ef-waveform Element", { timeout: 30000 }, () => {
             <span class="text-white text-3xl opacity-75">Audio Visualization</span>
           </div>
         </ef-timegroup>
-      `);
+      `, { testAgent });
 
       expect(result.videoBuffer.length).toBeGreaterThan(1000);
       expect(result.durationMs).toBeCloseTo(2000, 100);

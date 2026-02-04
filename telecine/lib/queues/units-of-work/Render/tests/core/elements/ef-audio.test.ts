@@ -27,7 +27,7 @@ describe("ef-audio Element", { timeout: 30000 }, () => {
             <span class="text-white text-6xl font-bold">Audio Test</span>
           </div>
         </ef-timegroup>
-      `);
+      `, { testAgent });
 
       expect(result.videoBuffer.length).toBeGreaterThan(1000);
       expect(result.durationMs).toBeCloseTo(2000, 100);
@@ -46,7 +46,7 @@ describe("ef-audio Element", { timeout: 30000 }, () => {
             <span class="text-white text-5xl font-bold">Music Playing</span>
           </div>
         </ef-timegroup>
-      `);
+      `, { testAgent });
 
       expect(result.videoBuffer.length).toBeGreaterThan(1000);
       expect(result.durationMs).toBeCloseTo(1500, 100);
@@ -60,7 +60,7 @@ describe("ef-audio Element", { timeout: 30000 }, () => {
           <ef-audio asset-id="${cardJoker.id}" source-in="0.5s" />
           <div class="w-full h-full bg-green-500"></div>
         </ef-timegroup>
-      `);
+      `, { testAgent });
 
       expect(result.videoBuffer.length).toBeGreaterThan(1000);
       expect(result.durationMs).toBeCloseTo(1000, 100);
@@ -75,7 +75,7 @@ describe("ef-audio Element", { timeout: 30000 }, () => {
           <ef-audio asset-id="${cardJoker.id}" source-out="1s" />
           <div class="w-full h-full bg-yellow-500"></div>
         </ef-timegroup>
-      `);
+      `, { testAgent });
 
       expect(result.videoBuffer.length).toBeGreaterThan(1000);
       expect(result.durationMs).toBeCloseTo(1000, 100);
@@ -87,7 +87,7 @@ describe("ef-audio Element", { timeout: 30000 }, () => {
           <ef-audio asset-id="${cardJoker.id}" source-in="0.5s" source-out="1.5s" />
           <div class="w-full h-full bg-red-500"></div>
         </ef-timegroup>
-      `);
+      `, { testAgent });
 
       expect(result.videoBuffer.length).toBeGreaterThan(1000);
       expect(result.durationMs).toBeCloseTo(1000, 100);
@@ -104,7 +104,7 @@ describe("ef-audio Element", { timeout: 30000 }, () => {
             <span class="text-white text-6xl font-bold">Layered Audio</span>
           </div>
         </ef-timegroup>
-      `);
+      `, { testAgent });
 
       expect(result.videoBuffer.length).toBeGreaterThan(1000);
       expect(result.durationMs).toBeCloseTo(2000, 100);
@@ -120,7 +120,7 @@ describe("ef-audio Element", { timeout: 30000 }, () => {
             <span class="text-white text-6xl font-bold">Video Audio</span>
           </div>
         </ef-timegroup>
-      `);
+      `, { testAgent });
 
       expect(result.videoBuffer.length).toBeGreaterThan(1000);
       expect(result.durationMs).toBeCloseTo(2000, 100);
@@ -137,7 +137,7 @@ describe("ef-audio Element", { timeout: 30000 }, () => {
           <ef-audio asset-id="${cardJoker.id}" />
           <div class="w-full h-full bg-black"></div>
         </ef-timegroup>
-      `);
+      `, { testAgent });
 
       expect(result.videoBuffer.length).toBeGreaterThan(1000);
 
@@ -156,7 +156,7 @@ describe("ef-audio Element", { timeout: 30000 }, () => {
             <div class="w-full h-full bg-teal-500"></div>
           </ef-timegroup>
         </ef-timegroup>
-      `);
+      `, { testAgent });
 
       expect(result.videoBuffer.length).toBeGreaterThan(1000);
       expect(result.durationMs).toBeCloseTo(3000, 150);

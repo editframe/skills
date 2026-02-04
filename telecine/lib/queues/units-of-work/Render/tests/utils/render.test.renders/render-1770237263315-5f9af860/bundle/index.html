@@ -1,0 +1,25 @@
+
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <script type="module" src="./index.ts"></script>
+            <link rel="stylesheet" href="./styles.css">
+          </head>
+          <body>
+            <ef-configuration api-host="http://localhost:3000">
+              
+        <ef-timegroup class="w-[1280px] h-[720px]" mode="fixed" duration="1.5s">
+          <ef-audio id="audio-track" asset-id="2823079c-d1e3-4bc5-af46-6c99a2f452d6" />
+          <div class="w-full h-full bg-gray-900 flex items-center justify-center p-8">
+            <ef-waveform 
+              target="audio-track" 
+              class="w-full h-48"
+              style="--waveform-color: #10b981;"
+            />
+          </div>
+        </ef-timegroup>
+      
+            </ef-configuration>
+          </body>
+          </html>
+        
