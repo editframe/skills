@@ -1,46 +1,79 @@
 # Smoke Tests
 
-Fast smoke tests that render minimal videos (100ms = 3 frames at 30fps) for quick feedback during development.
+Fast, focused rendering tests that verify core functionality across multiple rendering strategies.
 
 ## Purpose
 
-- **Fast TDD**: Get immediate feedback while developing (entire suite runs in ~30 seconds)
-- **Basic validation**: Ensure each element can render without errors
-- **Quick sanity check**: Verify core rendering functionality works
-- **Pre-commit check**: Fast enough to run before every commit
+- **Fast feedback loop**: Each test renders only a few frames (~100ms durations)
+- **Core element coverage**: Tests all essential Editframe elements
+- **Multiple render strategies**: Validates 5 different rendering paths
+- **Rendering validation**: Verifies video generation and basic MP4 structure
+- **CI-friendly**: Quick enough to run on every commit
 
-## Structure
+## Test Coverage
 
-- `elements.smoke.test.ts` - One test per element (ef-timegroup, ef-image, ef-text, ef-video, ef-audio, ef-waveform)
-- `core.smoke.test.ts` - Basic MP4 structure validation
+- `ef-timegroup` - Basic timegroup rendering and nesting
+- `ef-image` - Image element rendering with real assets
+- `ef-text` - Text rendering with styling
+- `ef-video` - Video element with frame seeking
+- `ef-audio` - Audio element and track validation
+- `ef-waveform` - Waveform visualization
 
-Each test renders a 100ms video (3-6 frames at 30fps), which takes ~1-3 seconds per test.
+## Rendering Strategies
 
-## Usage
+The smoke tests support 5 different rendering strategies:
+
+1. **server** (default): Electron offscreen rendering - fastest, most reliable
+2. **browser-full-video-foreignObject**: Browser with SVG foreignObject + mediabunny encoder
+3. **browser-full-video-native**: Browser with native canvas + mediabunny encoder
+4. **browser-frame-by-frame-foreignObject**: Browser frame-by-frame with SVG + FFmpeg
+5. **browser-frame-by-frame-native**: Browser frame-by-frame with native canvas + FFmpeg
+
+### Strategy Selection
+
+By default, only the **server** strategy runs for fast local feedback.
+
+To test all strategies (recommended for CI or comprehensive testing):
 
 ```bash
-# Run all smoke tests
-cd telecine && ./scripts/test lib/queues/units-of-work/Render/tests/smoke/
-
-# Run specific smoke test file
-cd telecine && ./scripts/test lib/queues/units-of-work/Render/tests/smoke/elements.smoke.test.ts
-
-# Run smoke tests in watch mode during development
-cd telecine && ./scripts/test lib/queues/units-of-work/Render/tests/smoke/ --watch
+cd telecine && TEST_ALL_STRATEGIES=true ./scripts/test lib/queues/units-of-work/Render/tests/smoke/
 ```
 
-## When to Use
+To test a specific strategy:
 
-- **During development**: Use smoke tests for TDD and quick validation
-- **Before commits**: Run smoke tests to catch obvious regressions
-- **Before push**: Run full integration test suite (see parent directory)
+```bash
+cd telecine && RENDER_STRATEGY=browser-full-video-foreignObject ./scripts/test lib/queues/units-of-work/Render/tests/smoke/
+```
 
-## Integration Tests
+## Running Tests
 
-For comprehensive testing with longer videos and more edge cases, see the full integration test suite in:
-- `../core/` - Core functionality tests
-- `../audio/` - Audio-related tests
-- `../visual/` - Visual regression tests
-- `../performance/` - Performance benchmarks
+```bash
+# Run all smoke tests (server-only, ~30 seconds)
+cd telecine && ./scripts/test lib/queues/units-of-work/Render/tests/smoke/
 
-The integration tests use longer videos (1-2 seconds) and test more edge cases, but take several minutes to run.
+# Run all strategies (~2 minutes)
+cd telecine && TEST_ALL_STRATEGIES=true ./scripts/test lib/queues/units-of-work/Render/tests/smoke/
+
+# Run specific element test
+cd telecine && ./scripts/test lib/queues/units-of-work/Render/tests/smoke/ -t "ef-video"
+
+# Run specific element with all strategies
+cd telecine && TEST_ALL_STRATEGIES=true ./scripts/test lib/queues/units-of-work/Render/tests/smoke/ -t "ef-text"
+```
+
+## Test Output
+
+Videos are saved to a shared output directory with descriptive filenames that indicate:
+- The element being tested
+- The rendering strategy used (e.g., `elements-smoke-ef-text-server.mp4`)
+
+Check the console output for the exact path to test outputs.
+
+## Performance
+
+- **Server-only** (default): All 8 tests complete in ~30 seconds
+- **All strategies**: All 40 tests (8 tests × 5 strategies) complete in ~2 minutes
+
+## Audio Track Limitations
+
+**Note**: Browser frame-by-frame rendering (`browser-frame-by-frame-*`) does not support audio encoding. Audio track assertions are automatically skipped for these strategies.

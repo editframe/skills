@@ -8,6 +8,9 @@ import { makeTestAgent } from "TEST/util/test";
 import type { Selectable } from "kysely";
 import type { TestAgent } from "TEST/util/test";
 
+export type RenderMode = "server" | "browser-full-video" | "browser-frame-by-frame";
+export type CanvasMode = "native" | "foreignObject";
+
 export interface RenderResult {
   videoBuffer: Buffer;
   videoPath: string;
@@ -17,6 +20,8 @@ export interface RenderResult {
   fps: number;
   renderTimeMs: number;
   templateHash: string;
+  renderMode: RenderMode;
+  canvasMode?: CanvasMode;
 }
 
 export interface RenderOptions {
@@ -26,6 +31,9 @@ export interface RenderOptions {
   outputDir?: string;
   testAgent?: Selectable<TestAgent>;
   testName?: string;
+  renderMode?: RenderMode;
+  canvasMode?: CanvasMode;
+  electronRpc?: ElectronRPC;
 }
 
 /**
@@ -41,19 +49,123 @@ const SHARED_OUTPUT_DIR = path.join(
 /**
  * Simple, focused render function for tests.
  * Takes HTML, renders to video, returns result.
- * No modes, no complexity - just render.
+ * 
+ * Supports multiple rendering strategies:
+ * - server (default): Electron offscreen rendering (fastest, most reliable)
+ * - browser-full-video: Browser-based rendering with mediabunny encoder
+ * - browser-frame-by-frame: Browser captures frames, FFmpeg encodes
+ * 
+ * Canvas modes (for browser strategies):
+ * - native: Uses native canvas 2D rendering
+ * - foreignObject: Uses SVG foreignObject (supports CSS better)
  */
 export async function render(
   html: string,
   options: RenderOptions = {},
 ): Promise<RenderResult> {
   const startTime = performance.now();
+  const renderMode = options.renderMode ?? "server";
+  const canvasMode = options.canvasMode ?? "foreignObject";
+  
+  // Route to appropriate render function based on mode
+  if (renderMode === "browser-full-video" || renderMode === "browser-frame-by-frame") {
+    return renderWithBrowser(html, options, renderMode, canvasMode);
+  }
+  
+  // Default server rendering (Electron offscreen)
+  return renderWithServer(html, options);
+}
+
+/**
+ * Render using browser-based strategies (full-video or frame-by-frame)
+ */
+async function renderWithBrowser(
+  html: string,
+  options: RenderOptions,
+  renderMode: "browser-full-video" | "browser-frame-by-frame",
+  canvasMode: CanvasMode,
+): Promise<RenderResult> {
+  const startTime = performance.now();
+  const width = options.width ?? 640;
+  const height = options.height ?? 360;
+  const fps = options.fps ?? 30;
+  const testAgent = options.testAgent ?? await getOrCreateTestAgent();
+  
+  // Use provided electronRpc or create a new one
+  const electronRpc = options.electronRpc;
+  if (!electronRpc) {
+    throw new Error("electronRpc is required for browser rendering strategies. Create it in beforeAll() and pass it to render().");
+  }
+  
+  // Dynamically import browser render functions to avoid initialization errors
+  const { renderWithBrowserFullVideo, renderWithBrowserFrameByFrame } = await import("../../full-render/browser-render");
+  
+  try {
+    const renderFn = renderMode === "browser-full-video" 
+      ? renderWithBrowserFullVideo
+      : renderWithBrowserFrameByFrame;
+    
+    const result = await renderFn({
+      html,
+      testAgent,
+      electronRpc,
+      renderOptions: { width, height, fps },
+      canvasMode,
+      testFilePath: __filename,
+      testTitle: options.testName ?? "smoke-test",
+    });
+    
+    // Save to shared output directory with descriptive filename
+    const outputDir = options.outputDir || SHARED_OUTPUT_DIR;
+    await mkdir(outputDir, { recursive: true });
+    
+    const modeSuffix = `${renderMode}-${canvasMode}`;
+    const filename = options.testName
+      ? `${sanitizeFilename(options.testName)}-${modeSuffix}.mp4`
+      : `output-${modeSuffix}.mp4`;
+    const videoPath = path.join(outputDir, filename);
+    await writeFile(videoPath, result.finalVideoBuffer);
+    
+    const renderTimeMs = performance.now() - startTime;
+
+    return {
+      videoBuffer: result.finalVideoBuffer,
+      videoPath,
+      width,
+      height,
+      durationMs: result.renderInfo.durationMs,
+      fps,
+      renderTimeMs,
+      templateHash: result.renderInfo.templateHash,
+      renderMode,
+      canvasMode,
+    };
+  } catch (error) {
+    // Don't close electronRpc on error - it's shared across tests
+    throw error;
+  }
+}
+
+/**
+ * Render using server strategy (Electron offscreen)
+ */
+async function renderWithServer(
+  html: string,
+  options: RenderOptions,
+): Promise<RenderResult> {
+  const startTime = performance.now();
 
   // Use provided test agent or create default one
   const testAgent = options.testAgent ?? await getOrCreateTestAgent();
 
-  // Create Electron RPC connection
-  const electronRpc = await createElectronRPC();
+  // Use provided electronRpc or create a new one (for backward compatibility)
+  let electronRpc = options.electronRpc;
+  let shouldCloseRpc = false;
+  
+  if (!electronRpc) {
+    electronRpc = await createElectronRPC();
+    shouldCloseRpc = true;
+  }
 
   try {
     // Bundle HTML template
@@ -115,10 +227,13 @@ export async function render(
       fps,
       renderTimeMs,
       templateHash: bundleInfo.templateHash,
+      renderMode: "server",
     };
   } finally {
-    // Clean up Electron RPC
-    await electronRpc.rpc.call("terminate");
+    // Only shut down RPC if we created it locally (not shared)
+    if (shouldCloseRpc) {
+      await electronRpc.rpc.call("terminate");
+    }
   }
 }
 
