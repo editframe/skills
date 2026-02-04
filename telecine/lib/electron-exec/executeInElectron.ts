@@ -148,9 +148,14 @@ const spawnElectronBootloader = async (script: string) => {
                 "http://tracing:4318",
               OTEL_TRACE_CONTEXT: JSON.stringify(traceContext),
               ELECTRON_SPAWN_TIME: String(spawnTime),
-              // Ensure FFmpeg libraries are found and preloaded by native module
+              // Ensure FFmpeg libraries are found by native module
               LD_LIBRARY_PATH: `/usr/local/lib:${process.env.LD_LIBRARY_PATH || ""}`,
-              LD_PRELOAD: `/usr/local/lib/libavcodec.so.61:/usr/local/lib/libavformat.so.61:/usr/local/lib/libavutil.so.59:/usr/local/lib/libavfilter.so.10:/usr/local/lib/libswscale.so.8`,
+              // NOTE: LD_PRELOAD was removed because it causes Chromium's WebCodecs
+              // VideoDecoder to crash with SIGABRT when decoding H.264 video.
+              // The FFmpeg libraries being preloaded interfere with Chromium's
+              // internal video decoding. Native FFmpeg functionality may need
+              // an alternative approach if required.
+              // LD_PRELOAD: `/usr/local/lib/libavcodec.so.61:/usr/local/lib/libavformat.so.61:/usr/local/lib/libavutil.so.59:/usr/local/lib/libavfilter.so.10:/usr/local/lib/libswscale.so.8`,
             },
           },
         );
