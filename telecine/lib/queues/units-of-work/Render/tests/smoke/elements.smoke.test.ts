@@ -1,19 +1,21 @@
 import { describe, test, expect, beforeAll } from "vitest";
 import { render } from "../utils/render";
 import { validateMP4 } from "../utils/video-validator";
-import { processTestVideoAsset } from "../../test-utils/processTestAssets";
+import { processTestVideoAsset, processTestImageAsset } from "../../test-utils/processTestAssets";
 import { makeTestAgent } from "TEST/util/test";
 import type { Selectable } from "kysely";
 import type { TestAgent } from "TEST/util/test";
-import type { Video2IsobmffFiles } from "@/sql-client.server/kysely-codegen";
+import type { Video2IsobmffFiles, Video2ImageFiles } from "@/sql-client.server/kysely-codegen";
 
 describe("Elements Smoke Tests", { timeout: 60000 }, () => {
   let testAgent: Selectable<TestAgent>;
   let barsNTone: Selectable<Video2IsobmffFiles>;
+  let testImage: Selectable<Video2ImageFiles>;
 
   beforeAll(async () => {
     testAgent = await makeTestAgent("elements-smoke@example.org");
     barsNTone = await processTestVideoAsset("bars-n-tone.mp4", testAgent);
+    testImage = await processTestImageAsset("test.jpg", testAgent);
   });
   test("ef-timegroup renders", async () => {
     const result = await render(
@@ -33,17 +35,13 @@ describe("Elements Smoke Tests", { timeout: 60000 }, () => {
   });
 
   test("ef-image renders", async () => {
-    // 2x2 checkerboard pattern (red, green, blue, yellow pixels)
-    const checkerboard =
-      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFklEQVQIW2P8z8DwHwMM/GfABuA4AABMMQP/l/6YgQAAAABJRU5ErkJggg==";
-
     const result = await render(
       `
       <ef-timegroup class="w-[640px] h-[360px]" mode="fixed" duration="100ms">
-        <ef-image src="${checkerboard}" class="w-full h-full" style="image-rendering: pixelated;" />
+        <ef-image asset-id="${testImage.id}" class="w-full h-full object-cover" />
       </ef-timegroup>
     `,
-      { testName: "elements-smoke-ef-image" },
+      { testAgent, testName: "elements-smoke-ef-image" },
     );
 
     expect(result.durationMs).toBeCloseTo(100, 20);
@@ -92,20 +90,16 @@ describe("Elements Smoke Tests", { timeout: 60000 }, () => {
   });
 
   test("multiple elements render together", async () => {
-    // 2x2 checkerboard pattern
-    const checkerboard =
-      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFklEQVQIW2P8z8DwHwMM/GfABuA4AABMMQP/l/6YgQAAAABJRU5ErkJggg==";
-
     const result = await render(
       `
       <ef-timegroup class="w-[640px] h-[360px]" mode="fixed" duration="100ms">
         <div class="w-full h-full bg-gray-900 flex items-center justify-center gap-4">
-          <ef-image src="${checkerboard}" class="w-24 h-24" style="image-rendering: pixelated;" />
+          <ef-image asset-id="${testImage.id}" class="w-24 h-24 object-cover" />
           <ef-text class="text-white text-4xl">Hello</ef-text>
         </div>
       </ef-timegroup>
     `,
-      { testName: "elements-smoke-multiple-elements" },
+      { testAgent, testName: "elements-smoke-multiple-elements" },
     );
 
     expect(result.durationMs).toBeCloseTo(100, 20);
@@ -120,7 +114,7 @@ describe("Elements Smoke Tests", { timeout: 60000 }, () => {
     const result = await render(
       `
       <ef-timegroup class="w-[480px] h-[270px]" mode="fixed" duration="200ms">
-        <ef-video asset-id="${barsNTone.id}" class="w-full"></ef-video>
+        <ef-video asset-id="${barsNTone.id}" class="w-full" source-out="200ms"></ef-video>
       </ef-timegroup>
     `,
       { testAgent, testName: "elements-smoke-ef-video" },

@@ -56,18 +56,18 @@ export async function processTestImageAsset(
   } else {
     const filePath = join(ASSETS_DIR, filenameOrUrl);
     const stats = await stat(filePath);
+    const { v4: uuidv4 } = await import("uuid");
 
-    return await processImageFile(
-      filePath,
-      testAgent.org.id,
-      testAgent.user.user_id,
-      testAgent.apiKey.id,
-      {
-        filename: filenameOrUrl,
-        byte_size: stats.size,
-        next_byte: stats.size,
-      },
-    );
+    return await processImageFile(filePath, {
+      id: uuidv4(),
+      md5: null,
+      org_id: testAgent.org.id,
+      creator_id: testAgent.user.user_id,
+      api_key_id: testAgent.apiKey.id,
+      filename: filenameOrUrl,
+      byte_size: stats.size,
+      next_byte: stats.size,
+    });
   }
 }
 
