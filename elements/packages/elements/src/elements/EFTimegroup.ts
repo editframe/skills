@@ -2085,6 +2085,13 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     const workbench = document.createElement("ef-workbench");
     const parent = this.parentElement;
     
+    // When in rendering mode, set rendering=true immediately to prevent
+    // the workbench UI (toolbar, hierarchy, timeline) from being captured
+    // in the video output. Only the canvas slot should be rendered.
+    if (EF_RENDERING()) {
+      workbench.rendering = true;
+    }
+    
     // Only apply viewport sizing when the workbench will be a direct child of body.
     // This ensures the workbench fills the screen regardless of the document's CSS
     // setup (e.g., missing `html, body { height: 100% }`).
