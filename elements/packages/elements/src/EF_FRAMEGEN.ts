@@ -319,6 +319,15 @@ export class EFFramegen {
     const startingTimeMs = renderOptions.encoderOptions.fromMs;
     await firstGroup.waitForMediaDurations();
     
+    // CRITICAL: Manually wire up rootTimegroup references since Lit Context doesn't work in Electron rendering
+    // Find all temporal elements and set their rootTimegroup to firstGroup
+    const allTemporalElements = searchRoot.querySelectorAll('ef-video, ef-audio, ef-image, ef-text, ef-waveform, ef-timegroup');
+    for (const el of allTemporalElements) {
+      if (el !== firstGroup && 'rootTimegroup' in el) {
+        (el as any).rootTimegroup = firstGroup;
+      }
+    }
+    
     // Use seekForRender for proper time seeking during rendering
     await firstGroup.seekForRender(startingTimeMs);
 

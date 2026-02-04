@@ -1083,10 +1083,13 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
     }
 
     didBecomeRoot() {
-      // Don't create PlaybackController if explicitly disabled (e.g., for render clones)
-      // or if one already exists
+      // Don't create PlaybackController if:
+      // 1. Explicitly disabled via attribute (e.g., for render clones)
+      // 2. Already exists
+      // 3. In headless rendering mode (EF_FRAMEGEN active)
       const noPlayback = (this as any).hasAttribute?.('data-no-playback-controller');
-      if (noPlayback || this.playbackController) {
+      const isRendering = typeof window !== 'undefined' && 'FRAMEGEN_BRIDGE' in window;
+      if (noPlayback || this.playbackController || isRendering) {
         return;
       }
       
