@@ -63,12 +63,15 @@ tests/
 - ✅ Visual regression (baselines, comparison)
 - ✅ Performance benchmarking
 
-### Blocked Coverage (See BLOCKING_ISSUES.md)
-- 🚫 ef-video (12 tests created, blocked by renderer bug)
-- 🚫 ef-audio (9 tests created, blocked by renderer bug)
-- 🚫 ef-waveform (8 tests created, blocked by renderer bug)
+### ✅ Media Elements (All Working)
+- ✅ ef-video - 12 tests, all passing
+- ✅ ef-audio - 9 tests, all passing  
+- ✅ ef-waveform - 9 tests, all passing
 
-**Issue:** All media element tests fail with "Failed to execute 'text' on 'Response': body stream already read". This is a bug in the elements framework's asset fetching code, not the test suite. Approximately 30% of test coverage is blocked until this is resolved.
+**Fixed Issues:**
+1. Response body cloning in error paths (AssetIdMediaEngine, BaseMediaEngine)
+2. Test agent org ID consistency between asset setup and rendering
+3. Audio rendering enabled by default (was hardcoded to noAudio: true)
 
 ### Future Coverage (Optional)
 - 🔮 Browser rendering modes (experimental)
