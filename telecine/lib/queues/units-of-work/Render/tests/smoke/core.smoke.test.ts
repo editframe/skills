@@ -4,13 +4,16 @@ import { validateMP4 } from "../utils/video-validator";
 
 describe("Core Smoke Tests", { timeout: 30000 }, () => {
   test("produces valid MP4 structure", async () => {
-    const result = await render(`
+    const result = await render(
+      `
       <ef-timegroup class="w-[640px] h-[360px]" mode="fixed" duration="100ms">
         <div class="w-full h-full bg-blue-500 flex items-center justify-center">
           <span class="text-white text-4xl font-bold">Test</span>
         </div>
       </ef-timegroup>
-    `);
+    `,
+      { testName: "core-smoke-valid-mp4-structure" },
+    );
 
     expect(result.durationMs).toBeCloseTo(100, 20);
     expect(result.videoBuffer.length).toBeGreaterThan(1000);
@@ -23,11 +26,14 @@ describe("Core Smoke Tests", { timeout: 30000 }, () => {
   });
 
   test("renders with custom dimensions", async () => {
-    const result = await render(`
+    const result = await render(
+      `
       <ef-timegroup class="w-[1280px] h-[720px]" mode="fixed" duration="100ms">
         <div class="w-full h-full bg-red-500"></div>
       </ef-timegroup>
-    `);
+    `,
+      { testName: "core-smoke-custom-dimensions" },
+    );
 
     expect(result.durationMs).toBeCloseTo(100, 20);
     expect(result.width).toBe(1280);
@@ -44,7 +50,7 @@ describe("Core Smoke Tests", { timeout: 30000 }, () => {
         <div class="w-full h-full bg-green-500"></div>
       </ef-timegroup>
     `,
-      { fps: 60 },
+      { fps: 60, testName: "core-smoke-custom-fps" },
     );
 
     expect(result.durationMs).toBeCloseTo(100, 20);

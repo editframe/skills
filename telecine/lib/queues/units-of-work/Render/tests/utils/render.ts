@@ -25,7 +25,18 @@ export interface RenderOptions {
   fps?: number;
   outputDir?: string;
   testAgent?: Selectable<TestAgent>;
+  testName?: string;
 }
+
+/**
+ * Shared output directory for all tests in this run.
+ * Created once at module load time.
+ */
+const SHARED_OUTPUT_DIR = path.join(
+  process.cwd(),
+  "lib/queues/units-of-work/Render/tests/.test-output",
+  `run-${Date.now()}`,
+);
 
 /**
  * Simple, focused render function for tests.
@@ -46,7 +57,7 @@ export async function render(
 
   try {
     // Bundle HTML template
-    const testTitle = `render-${Date.now()}`;
+    const testTitle = options.testName || `render-${Date.now()}`;
     const bundleInfo = await bundleTestTemplate(
       html,
       import.meta.url,
@@ -85,17 +96,12 @@ export async function render(
       assetsBundle,
     });
 
-    // Save to output directory
-    const outputDir =
-      options.outputDir ||
-      path.join(
-        process.cwd(),
-        "lib/queues/units-of-work/Render/tests/.test-output",
-        testTitle,
-      );
+    // Save to shared output directory with descriptive filename
+    const outputDir = options.outputDir || SHARED_OUTPUT_DIR;
     await mkdir(outputDir, { recursive: true });
 
-    const videoPath = path.join(outputDir, "output.mp4");
+    const filename = options.testName ? `${sanitizeFilename(options.testName)}.mp4` : "output.mp4";
+    const videoPath = path.join(outputDir, filename);
     await writeFile(videoPath, videoBuffer);
 
     const renderTimeMs = performance.now() - startTime;
@@ -114,6 +120,16 @@ export async function render(
     // Clean up Electron RPC
     await electronRpc.rpc.call("terminate");
   }
+}
+
+/**
+ * Sanitize test name to be filesystem-safe.
+ */
+function sanitizeFilename(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 /**
@@ -145,7 +161,7 @@ export async function renderStill(
   const electronRpc = await createElectronRPC();
 
   try {
-    const testTitle = `still-${Date.now()}`;
+    const testTitle = options.testName || `still-${Date.now()}`;
     const bundleInfo = await bundleTestTemplate(
       html,
       import.meta.url,
@@ -178,16 +194,13 @@ export async function renderStill(
       assetsBundle,
     });
 
-    const outputDir =
-      options.outputDir ||
-      path.join(
-        process.cwd(),
-        "lib/queues/units-of-work/Render/tests/.test-output",
-        testTitle,
-      );
+    const outputDir = options.outputDir || SHARED_OUTPUT_DIR;
     await mkdir(outputDir, { recursive: true });
 
-    const imagePath = path.join(outputDir, `still.${format}`);
+    const filename = options.testName 
+      ? `${sanitizeFilename(options.testName)}.${format}` 
+      : `still.${format}`;
+    const imagePath = path.join(outputDir, filename);
     await writeFile(imagePath, imageBuffer);
 
     return {
