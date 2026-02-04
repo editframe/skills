@@ -1,0 +1,32 @@
+
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <script type="module" src="./index.ts"></script>
+            <link rel="stylesheet" href="./styles.css">
+          </head>
+          <body>
+            <ef-configuration api-host="http://localhost:3000">
+              
+        <style>
+          @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateY(-20%); }
+            20%, 40%, 60%, 80% { transform: translateY(0); }
+          }
+        </style>
+        <ef-timegroup class="w-[1920px] h-[1080px]" mode="fixed" duration="3s">
+          <div class="w-full h-full bg-green-500 flex items-center justify-center">
+            <div 
+              class="text-white text-9xl font-bold"
+              style="animation: bounce 2s 500ms both;"
+            >
+              BOUNCE
+            </div>
+          </div>
+        </ef-timegroup>
+      
+            </ef-configuration>
+          </body>
+          </html>
+        

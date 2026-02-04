@@ -1,0 +1,29 @@
+
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <script type="module" src="./index.ts"></script>
+            <link rel="stylesheet" href="./styles.css">
+          </head>
+          <body>
+            <ef-configuration api-host="http://localhost:3000">
+              
+        <style>
+          @keyframes zoom-out {
+            from { transform: scale(1); opacity: 1; }
+            to { transform: scale(3); opacity: 0; }
+          }
+        </style>
+        <ef-timegroup class="w-[1920px] h-[1080px]" mode="fixed" duration="2s">
+          <div 
+            class="w-full h-full bg-gradient-to-br from-purple-900 to-pink-900 flex items-center justify-center"
+            style="animation: zoom-out 1s 500ms forwards;"
+          >
+            <span class="text-white text-8xl font-bold">EXPLODE</span>
+          </div>
+        </ef-timegroup>
+      
+            </ef-configuration>
+          </body>
+          </html>
+        

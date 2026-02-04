@@ -1,0 +1,31 @@
+
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <script type="module" src="./index.ts"></script>
+            <link rel="stylesheet" href="./styles.css">
+          </head>
+          <body>
+            <ef-configuration api-host="http://localhost:3000">
+              
+        <style>
+          @keyframes disappear {
+            from { opacity: 1; transform: scale(1); }
+            to { opacity: 0; transform: scale(0); }
+          }
+        </style>
+        <ef-timegroup class="w-[1920px] h-[1080px]" mode="fixed" duration="3s">
+          <div class="w-full h-full bg-black flex items-center justify-center">
+            <div 
+              class="text-white text-8xl font-bold"
+              style="animation: disappear 1s 1.5s forwards;"
+            >
+              STAYS GONE
+            </div>
+          </div>
+        </ef-timegroup>
+      
+            </ef-configuration>
+          </body>
+          </html>
+        

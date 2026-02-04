@@ -1,0 +1,29 @@
+
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <script type="module" src="./index.ts"></script>
+            <link rel="stylesheet" href="./styles.css">
+          </head>
+          <body>
+            <ef-configuration api-host="http://localhost:3000">
+              
+        <style>
+          @keyframes fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+        </style>
+        <ef-timegroup class="w-[1920px] h-[1080px]" mode="fixed" duration="4s">
+          <div class="w-full h-full bg-gray-900 flex flex-col items-center justify-center gap-8">
+            <div class="text-white text-5xl" style="animation: fade-in 500ms 0ms backwards;">First</div>
+            <div class="text-white text-5xl" style="animation: fade-in 500ms 500ms backwards;">Second</div>
+            <div class="text-white text-5xl" style="animation: fade-in 500ms 1000ms backwards;">Third</div>
+            <div class="text-white text-5xl" style="animation: fade-in 500ms 1500ms backwards;">Fourth</div>
+          </div>
+        </ef-timegroup>
+      
+            </ef-configuration>
+          </body>
+          </html>
+        

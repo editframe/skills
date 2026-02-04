@@ -1,0 +1,32 @@
+
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <script type="module" src="./index.ts"></script>
+            <link rel="stylesheet" href="./styles.css">
+          </head>
+          <body>
+            <ef-configuration api-host="http://localhost:3000">
+              
+        <style>
+          @keyframes fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          @keyframes zoom-in {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+          }
+        </style>
+        <ef-timegroup class="w-[1920px] h-[1080px]" mode="fixed" duration="3s">
+          <div class="w-full h-full bg-black flex items-center justify-center">
+            <div style="animation: fade-in 1s backwards, zoom-in 800ms 200ms backwards;">
+              <span class="text-white text-9xl font-bold">LAYERED</span>
+            </div>
+          </div>
+        </ef-timegroup>
+      
+            </ef-configuration>
+          </body>
+          </html>
+        

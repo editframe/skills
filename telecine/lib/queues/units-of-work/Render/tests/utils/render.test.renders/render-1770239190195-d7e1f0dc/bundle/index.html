@@ -1,0 +1,29 @@
+
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <script type="module" src="./index.ts"></script>
+            <link rel="stylesheet" href="./styles.css">
+          </head>
+          <body>
+            <ef-configuration api-host="http://localhost:3000">
+              
+        <style>
+          @keyframes slide-in-top {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+          }
+        </style>
+        <ef-timegroup class="w-[1920px] h-[1080px]" mode="fixed" duration="2s">
+          <div 
+            class="w-full h-full bg-gradient-to-b from-cyan-500 to-blue-500 flex items-center justify-center"
+            style="animation: slide-in-top 800ms backwards;"
+          >
+            <span class="text-white text-6xl font-bold">SLIDE TOP</span>
+          </div>
+        </ef-timegroup>
+      
+            </ef-configuration>
+          </body>
+          </html>
+        

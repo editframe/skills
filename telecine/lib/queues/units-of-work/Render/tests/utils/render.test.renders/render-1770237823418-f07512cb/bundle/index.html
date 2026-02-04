@@ -1,0 +1,37 @@
+
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <script type="module" src="./index.ts"></script>
+            <link rel="stylesheet" href="./styles.css">
+          </head>
+          <body>
+            <ef-configuration api-host="http://localhost:3000">
+              
+        <style>
+          @keyframes fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          @keyframes fade-out {
+            from { opacity: 1; }
+            to { opacity: 0; }
+          }
+          @keyframes slide-in-left {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(0); }
+          }
+        </style>
+        <ef-timegroup class="w-[1920px] h-[1080px]" mode="fixed" duration="5s">
+          <div 
+            class="w-full h-full bg-gradient-to-r from-teal-500 to-blue-500 flex items-center justify-center"
+            style="animation: fade-in 1s backwards, slide-in-left 800ms backwards, fade-out 1s 4s forwards;"
+          >
+            <span class="text-white text-7xl font-bold">COMBO</span>
+          </div>
+        </ef-timegroup>
+      
+            </ef-configuration>
+          </body>
+          </html>
+        

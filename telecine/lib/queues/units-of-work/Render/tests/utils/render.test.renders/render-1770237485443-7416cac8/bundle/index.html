@@ -1,0 +1,29 @@
+
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <script type="module" src="./index.ts"></script>
+            <link rel="stylesheet" href="./styles.css">
+          </head>
+          <body>
+            <ef-configuration api-host="http://localhost:3000">
+              
+        <style>
+          @keyframes slide-in-left {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+          }
+        </style>
+        <ef-timegroup class="w-[1920px] h-[1080px]" mode="fixed" duration="3s">
+          <div class="w-full h-full bg-blue-900 flex flex-col items-start justify-center gap-4 p-16">
+            <div class="text-white text-4xl w-full bg-blue-700 p-4" style="animation: slide-in-left 400ms 0ms backwards;">Item 1</div>
+            <div class="text-white text-4xl w-full bg-blue-700 p-4" style="animation: slide-in-left 400ms 200ms backwards;">Item 2</div>
+            <div class="text-white text-4xl w-full bg-blue-700 p-4" style="animation: slide-in-left 400ms 400ms backwards;">Item 3</div>
+            <div class="text-white text-4xl w-full bg-blue-700 p-4" style="animation: slide-in-left 400ms 600ms backwards;">Item 4</div>
+          </div>
+        </ef-timegroup>
+      
+            </ef-configuration>
+          </body>
+          </html>
+        
