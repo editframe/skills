@@ -1,8 +1,20 @@
-import { describe, test, expect } from "vitest";
+import { describe, test, expect, beforeAll } from "vitest";
 import { render } from "../utils/render";
 import { validateMP4 } from "../utils/video-validator";
+import { processTestVideoAsset } from "../../test-utils/processTestAssets";
+import { makeTestAgent } from "TEST/util/test";
+import type { Selectable } from "kysely";
+import type { TestAgent } from "TEST/util/test";
+import type { Video2IsobmffFiles } from "@/sql-client.server/kysely-codegen";
 
-describe("Elements Smoke Tests", { timeout: 30000 }, () => {
+describe("Elements Smoke Tests", { timeout: 60000 }, () => {
+  let testAgent: Selectable<TestAgent>;
+  let barsNTone: Selectable<Video2IsobmffFiles>;
+
+  beforeAll(async () => {
+    testAgent = await makeTestAgent("elements-smoke@example.org");
+    barsNTone = await processTestVideoAsset("bars-n-tone.mp4", testAgent);
+  });
   test("ef-timegroup renders", async () => {
     const result = await render(
       `
@@ -99,5 +111,64 @@ describe("Elements Smoke Tests", { timeout: 30000 }, () => {
 
     const validation = validateMP4(result.videoBuffer);
     expect(validation.isValid).toBe(true);
+  });
+
+  test("ef-video renders", async () => {
+    const result = await render(
+      `
+      <ef-timegroup class="w-[480px] h-[270px]" mode="fixed" duration="100ms">
+        <ef-video asset-id="${barsNTone.id}" class="w-full"></ef-video>
+      </ef-timegroup>
+    `,
+      { testAgent, testName: "elements-smoke-ef-video" },
+    );
+
+    expect(result.durationMs).toBeCloseTo(100, 20);
+    expect(result.videoBuffer.length).toBeGreaterThan(1000);
+
+    const validation = validateMP4(result.videoPath);
+    expect(validation.isValid).toBe(true);
+    expect(validation.hasVideoTrack).toBe(true);
+  });
+
+  test("ef-audio renders", async () => {
+    const result = await render(
+      `
+      <ef-timegroup class="w-[640px] h-[360px]" mode="fixed" duration="100ms">
+        <ef-audio asset-id="${barsNTone.id}"></ef-audio>
+        <div class="w-full h-full bg-green-500 flex items-center justify-center">
+          <div class="text-white text-2xl">Audio Test</div>
+        </div>
+      </ef-timegroup>
+    `,
+      { testAgent, testName: "elements-smoke-ef-audio" },
+    );
+
+    expect(result.durationMs).toBeCloseTo(100, 20);
+    expect(result.videoBuffer.length).toBeGreaterThan(1000);
+
+    const validation = validateMP4(result.videoPath);
+    expect(validation.isValid).toBe(true);
+    expect(validation.hasAudioTrack).toBe(true);
+  });
+
+  test("ef-waveform renders", async () => {
+    const result = await render(
+      `
+      <ef-timegroup class="w-[640px] h-[360px]" mode="fixed" duration="100ms">
+        <ef-audio asset-id="${barsNTone.id}" id="test-audio"></ef-audio>
+        <ef-waveform target="test-audio" mode="bars" class="color-blue-500 bg-white w-full h-full"></ef-waveform>
+      </ef-timegroup>
+    `,
+      { testAgent, testName: "elements-smoke-ef-waveform" },
+    );
+
+    expect(result.durationMs).toBeCloseTo(100, 20);
+    expect(result.videoBuffer.length).toBeGreaterThan(1000);
+
+    const validation = validateMP4(result.videoPath);
+    expect(validation.isValid).toBe(true);
+    expect(validation.hasVideoTrack).toBe(true);
+    expect(validation.hasAudioTrack).toBe(true);
   });
 });
