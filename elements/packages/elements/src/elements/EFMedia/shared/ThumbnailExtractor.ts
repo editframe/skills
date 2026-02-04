@@ -5,6 +5,7 @@ import type {
 } from "../../../transcoding/types/index.js";
 import type { BaseMediaEngine } from "../BaseMediaEngine.js";
 import { globalInputCache } from "./GlobalInputCache.js";
+import { withTimeout, DEFAULT_MEDIABUNNY_TIMEOUT_MS } from "./timeoutUtils.js";
 
 /**
  * Shared thumbnail extraction logic for all MediaEngine implementations
@@ -169,7 +170,12 @@ export class ThumbnailExtractor {
       }
 
       // Set up CanvasSink for batched extraction
-      const videoTrack = await input.getPrimaryVideoTrack();
+      const videoTrack = await withTimeout(
+        input.getPrimaryVideoTrack(),
+        5000,
+        'ThumbnailExtractor.getPrimaryVideoTrack',
+        signal,
+      );
       if (!videoTrack) {
         // No video track - return nulls for all timestamps
         for (const timestamp of timestamps) {
@@ -193,10 +199,16 @@ export class ThumbnailExtractor {
 
       // Batch extract all thumbnails for this segment (in sorted order)
       const timestampResults = [];
-      for await (const result of sink.canvasesAtTimestamps(
-        relativeTimestamps,
-      )) {
-        timestampResults.push(result);
+      const canvasIterator = sink.canvasesAtTimestamps(relativeTimestamps);
+      for await (const result of canvasIterator) {
+        // Wrap each iteration with timeout to prevent hangs
+        const canvasResult = await withTimeout(
+          Promise.resolve(result),
+          DEFAULT_MEDIABUNNY_TIMEOUT_MS,
+          'ThumbnailExtractor canvasesAtTimestamps iteration',
+          signal,
+        );
+        timestampResults.push(canvasResult);
       }
 
       // Map results back to original (sorted) timestamps

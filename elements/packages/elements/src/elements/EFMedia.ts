@@ -444,7 +444,7 @@ export class EFMedia extends EFTargetable(
         throw new Error("API host is required for AssetID mode");
       }
       const { AssetIdMediaEngine } = await import("./EFMedia/AssetIdMediaEngine.js");
-      return AssetIdMediaEngine.fetchByAssetId(
+      const engine = await AssetIdMediaEngine.fetchByAssetId(
         this,
         urlGenerator,
         assetId,
@@ -452,6 +452,7 @@ export class EFMedia extends EFTargetable(
         requiredTracks,
         signal,
       );
+      return engine;
     }
 
     // Check for null/undefined/empty/whitespace src

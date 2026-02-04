@@ -57,7 +57,7 @@ export class AssetIdMediaEngine
     
     const engine = new AssetIdMediaEngine(host, assetId, data, apiHost, _urlGenerator);
     
-    // Check for abort after engine construction
+    // Check for abort after engine construction  
     signal?.throwIfAborted();
     
     // Validate that segments are accessible by trying to fetch the first init segment

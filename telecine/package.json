@@ -157,7 +157,7 @@
     "lit": "^3.1.2",
     "lodash": "^4.17.21",
     "mdx-bundler": "^10.0.2",
-    "mediabunny": "^1.1.1",
+    "mediabunny": "^1.31.1",
     "mime": "^4.0.1",
     "mime-types": "^2.1.35",
     "minisearch": "^7.2.0",

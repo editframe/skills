@@ -11,6 +11,7 @@ import {
 import { withSpan } from "../../otel/tracingHelpers.js";
 import { type MediaSample, SampleBuffer } from "../SampleBuffer";
 import { roundToMilliseconds } from "./shared/PrecisionUtils";
+import { withTimeout, DEFAULT_MEDIABUNNY_TIMEOUT_MS } from "./shared/timeoutUtils";
 
 interface BufferedSeekingInputOptions {
   videoBufferSize?: number;
@@ -86,7 +87,11 @@ export class BufferedSeekingInput {
   }
 
   async getTrack(trackId: number) {
-    const tracks = await this.input.getTracks();
+    const tracks = await withTimeout(
+      this.input.getTracks(),
+      5000,
+      'BufferedSeekingInput.getTracks',
+    );
     const track = tracks.find((track) => track.id === trackId);
     if (!track) {
       throw new Error(`Track ${trackId} not found`);
@@ -95,7 +100,11 @@ export class BufferedSeekingInput {
   }
 
   async getAudioTrack(trackId: number) {
-    const tracks = await this.input.getAudioTracks();
+    const tracks = await withTimeout(
+      this.input.getAudioTracks(),
+      5000,
+      'BufferedSeekingInput.getAudioTracks',
+    );
     const track = tracks.find(
       (track) => track.id === trackId && track.type === "audio",
     );
@@ -106,7 +115,11 @@ export class BufferedSeekingInput {
   }
 
   async getVideoTrack(trackId: number) {
-    const tracks = await this.input.getVideoTracks();
+    const tracks = await withTimeout(
+      this.input.getVideoTracks(),
+      5000,
+      'BufferedSeekingInput.getVideoTracks',
+    );
     const track = tracks.find(
       (track) => track.id === trackId && track.type === "video",
     );
@@ -117,12 +130,20 @@ export class BufferedSeekingInput {
   }
 
   async getFirstVideoTrack() {
-    const tracks = await this.input.getVideoTracks();
+    const tracks = await withTimeout(
+      this.input.getVideoTracks(),
+      5000,
+      'BufferedSeekingInput.getFirstVideoTrack',
+    );
     return tracks[0];
   }
 
   async getFirstAudioTrack() {
-    const tracks = await this.input.getAudioTracks();
+    const tracks = await withTimeout(
+      this.input.getAudioTracks(),
+      5000,
+      'BufferedSeekingInput.getFirstAudioTrack',
+    );
     return tracks[0];
   }
 
@@ -205,7 +226,8 @@ export class BufferedSeekingInput {
         this.trackSeekPromises.set(trackId, seekPromise);
 
         try {
-          return await seekPromise;
+          const result = await seekPromise;
+          return result;
         } finally {
           this.trackSeekPromises.delete(trackId);
         }
@@ -260,19 +282,24 @@ export class BufferedSeekingInput {
           const trackBuffer = this.getTrackBuffer(track);
 
           const roundedTimeMs = roundToMilliseconds(timeMs);
-          const firstTimestampMs = roundToMilliseconds(
-            (await track.getFirstTimestamp()) * 1000,
-          );
+          
+          // Add timeout to detect if getFirstTimestamp hangs
+          const timeoutMs = 5000;
+          const firstTimestamp = await Promise.race([
+            track.getFirstTimestamp(),
+            new Promise<number>((_, reject) => 
+              setTimeout(() => reject(new Error(`getFirstTimestamp timeout after ${timeoutMs}ms`)), timeoutMs)
+            )
+          ]);
+          const firstTimestampMs = roundToMilliseconds(firstTimestamp * 1000);
+          
           span.setAttribute("firstTimestampMs", firstTimestampMs);
 
           // Use tolerance for floating point comparison (0.01ms tolerance)
           // This handles rounding errors like 20916.666 vs 20916.667
           const PRECISION_TOLERANCE_MS = 0.01;
           if (roundedTimeMs < firstTimestampMs - PRECISION_TOLERANCE_MS) {
-            console.error("Seeking outside bounds of input", {
-              roundedTimeMs,
-              firstTimestampMs,
-            });
+            console.error(`[BufferedSeekingInput.seekSafe] OUT_OF_BOUNDS trackId=${trackId} roundedTimeMs=${roundedTimeMs} firstTimestampMs=${firstTimestampMs}`);
             throw new NoSample(
               `Seeking outside bounds of input ${roundedTimeMs} < ${firstTimestampMs}`,
             );
@@ -344,7 +371,11 @@ export class BufferedSeekingInput {
           while (true) {
             iterationCount++;
             const iterStart = performance.now();
-            const { done, value: decodedSample } = await iterator.next();
+            const { done, value: decodedSample } = await withTimeout(
+              iterator.next(),
+              DEFAULT_MEDIABUNNY_TIMEOUT_MS,
+              `iterator.next() for ${track.type} track ${trackId} iteration ${iterationCount}`,
+            );
             const iterEnd = performance.now();
 
             // Record individual iteration timing for first 5 iterations

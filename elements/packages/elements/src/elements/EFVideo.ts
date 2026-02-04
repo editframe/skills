@@ -261,6 +261,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     desiredSeekTimeMs: number,
     signal: AbortSignal
   ): Promise<VideoSample | undefined> {
+    
     // FIRST: Check if main quality content is already cached - use it if so
     // This avoids redundant lower-quality fetches when main is already loaded
     const mainRendition = mediaEngine.videoRendition;
@@ -453,7 +454,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
 
         const { BufferedSeekingInput } = await import("./EFMedia/BufferedSeekingInput.js");
         
-        return new BufferedSeekingInput(
+        const input = new BufferedSeekingInput(
           arrayBuffer,
           {
             videoBufferSize: EFMedia.VIDEO_SAMPLE_BUFFER_SIZE,
@@ -461,6 +462,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
             startTimeOffsetMs: videoRendition.startTimeOffsetMs,
           },
         );
+        return input;
       }
     );
 
@@ -478,7 +480,8 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     signal.throwIfAborted();
 
     // Cast MediaSample to VideoSample (it's a video track, so it's a VideoSample)
-    return mainInput.seek(videoTrack.id, desiredSeekTimeMs) as Promise<VideoSample | undefined>;
+    const sample = await mainInput.seek(videoTrack.id, desiredSeekTimeMs) as Promise<VideoSample | undefined>;
+    return sample;
   }
 
   // ============================================================================
