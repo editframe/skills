@@ -14,4 +14,5 @@ export-profile.cpuprofile
 
 # Test reports from test-runner subagent
 .cursor/test-reports/*.md
+.cursor/test-reports/*.log
 !.cursor/test-reports/README.md

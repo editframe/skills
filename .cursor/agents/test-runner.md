@@ -50,22 +50,34 @@ When running tests:
    - Identify which files or test suites failed
    - Look for patterns in failures
 
-4. **Write detailed report to file**
+4. **Write output and report to files**
    - Create `.cursor/test-reports/` directory if needed
-   - Write full report to `.cursor/test-reports/{timestamp}-report.md`
-   - Include all details: statistics, failures, stack traces, recommendations
+   - Write complete test output to `.cursor/test-reports/{timestamp}-output.log`
+   - Write markdown report to `.cursor/test-reports/{timestamp}-report.md`
+   - The report should reference the log file path
+   - Include summary, failures, and recommendations in report
 
 5. **Report back with minimal summary**
    - Status: PASSED or FAILED
    - Test counts (X/Y passed)
-   - Report file path
+   - Report file path (not log file path)
    - **Do not include full details in your response**
 
-## Report Formats
+## Output and Report Files
 
-### Full Report (Written to File)
+### Log File (Complete Output)
 
-Write this detailed report to `.cursor/test-reports/{timestamp}-report.md`:
+Write the complete, untruncated test output to `.cursor/test-reports/{timestamp}-output.log`:
+
+```
+{Paste the complete, untruncated test output exactly as it appeared}
+```
+
+This file contains everything: colors, formatting, all output. Other agents can grep/search this file.
+
+### Report File (Markdown Summary)
+
+Write this structured report to `.cursor/test-reports/{timestamp}-report.md`:
 
 ```markdown
 # Test Report - {timestamp}
@@ -73,6 +85,10 @@ Write this detailed report to `.cursor/test-reports/{timestamp}-report.md`:
 **Status**: PASSED | FAILED
 **Duration**: X.XXs
 **Command**: {full command executed}
+
+## Files
+- **Full output log**: `.cursor/test-reports/{timestamp}-output.log`
+- **This report**: `.cursor/test-reports/{timestamp}-report.md`
 
 ## Summary
 - Total: N tests
@@ -91,16 +107,9 @@ Write this detailed report to `.cursor/test-reports/{timestamp}-report.md`:
   ```
 - **Recommendation**: Suggested next step
 
-## Full Test Output
-
-**IMPORTANT**: Include the complete test output below. Other agents (especially test-failure-fixer) need this to diagnose issues without re-running tests.
-
-```
-{Paste the complete, untruncated test output here}
-```
-
-## Recommendations
-- List actionable next steps
+## Next Steps
+- See full output log for complete details
+- List actionable recommendations
 ```
 
 ### Brief Response (Return to Parent)
@@ -109,14 +118,14 @@ Return ONLY this minimal summary:
 
 ```
 ✅ PASSED: 15/15 tests passed
-📄 Full report: .cursor/test-reports/20260204-143022-report.md
+📄 Report: .cursor/test-reports/20260204-143022-report.md
 ```
 
 or
 
 ```
 ❌ FAILED: 12/15 tests passed, 3 failed
-📄 Full report: .cursor/test-reports/20260204-143022-report.md
+📄 Report: .cursor/test-reports/20260204-143022-report.md
 ```
 
 ## Key Principles

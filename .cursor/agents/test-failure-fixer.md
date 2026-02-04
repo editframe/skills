@@ -71,6 +71,8 @@ Provide a structured report:
 ```
 ## Fix Summary
 
+**Original Report**: [path to report file you read]
+**Original Log**: [path to log file you analyzed]
 **Test**: [test name]
 **File**: [test file path]
 **Status**: FIXED | PARTIALLY FIXED | NEEDS MORE WORK
@@ -101,15 +103,20 @@ Provide a structured report:
 
 ### Reading Test Reports (Step 1)
 
-The report file from test-runner contains everything you need to diagnose failures:
-- Complete test output
-- Error messages and stack traces
-- Failed test names and locations
+test-runner creates TWO files:
+1. **Report file** (`.md`): Markdown summary with failures and recommendations
+2. **Log file** (`.log`): Complete, untruncated test output
 
-Use Read and Grep tools on the report file:
+**Start with the report file** to understand what failed:
 ```
-Read the report file to see all failures
-Use Grep to search for specific error patterns in the report
+Read the report file (.md) to see summary and failures
+```
+
+The report will tell you the path to the log file. **For detailed diagnosis**, read/grep the log file:
+```
+Read the log file path from the report
+Use Grep on the log file to search for specific error patterns
+Read sections of the log file for context
 ```
 
 **DO NOT run tests to understand failures.**
