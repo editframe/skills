@@ -317,20 +317,10 @@ export class EFFramegen {
       throw new Error("No temporal elements found");
     }
     const startingTimeMs = renderOptions.encoderOptions.fromMs;
-    console.log("[EF_FRAMEGEN.initialize] About to wait for media durations");
     await firstGroup.waitForMediaDurations();
-    console.log("[EF_FRAMEGEN.initialize] Media durations loaded");
     
-    // Wait for any pending Lit updates before rendering
-    await firstGroup.updateComplete;
-    console.log("[EF_FRAMEGEN.initialize] Lit updates complete");
-    
-    // Use FrameController for centralized frame rendering
-    console.log("[EF_FRAMEGEN.initialize] About to call frameController.renderFrame at", startingTimeMs);
-    await firstGroup.frameController.renderFrame(startingTimeMs, {
-      onAnimationsUpdate: (root) => updateAnimations(root as typeof firstGroup),
-    });
-    console.log("[EF_FRAMEGEN.initialize] frameController.renderFrame complete");
+    // Use seekForRender for proper time seeking during rendering
+    await firstGroup.seekForRender(startingTimeMs);
 
     this.frameDurationMs = 1000 / renderOptions.encoderOptions.video.framerate;
 
@@ -381,11 +371,9 @@ export class EFFramegen {
       this.renderOptions.encoderOptions.fromMs +
       frameNumber * this.frameDurationMs;
     const frameTimeMs = Number(Number(frameTime).toFixed(5));
-    firstGroup.currentTimeMs = frameTimeMs;
-    // Use FrameController for centralized frame rendering
-    await firstGroup.frameController.renderFrame(frameTimeMs, {
-      onAnimationsUpdate: (root) => updateAnimations(root as typeof firstGroup),
-    });
+    
+    // Use seekForRender for proper time seeking during rendering
+    await firstGroup.seekForRender(frameTimeMs);
     if (this.showFrameBox) {
       this.frameBox.innerHTML = `
         <div>🖼️   Frame: ${frameNumber}</div>
