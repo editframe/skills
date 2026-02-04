@@ -76,9 +76,10 @@ You MUST delegate all test execution to keep your context lean.
    ```
    Use the test-runner subagent to run [test file path]
    ```
-   - If tests fail, delegate to test-failure-fixer:
+   - test-runner returns brief summary with report file path
+   - If tests fail, delegate to test-failure-fixer with report path:
    ```
-   Use the test-failure-fixer subagent to fix failures in [test file path]
+   Use the test-failure-fixer subagent to fix failures in [report file path]
    ```
 
 ### Phase 4: Verify Coverage Improvement
@@ -144,9 +145,11 @@ You MUST delegate all test execution to keep your context lean.
 ## Delegation Pattern
 
 ```
-You (Coverage) → test-runner → [runs tests] → reports results → You analyze
-You (Coverage) → test-failure-fixer → [fixes issues] → reports results → You continue
+You (Coverage) → test-runner → [runs tests, writes report] → returns path → You read if needed
+You (Coverage) → test-failure-fixer → [reads report, fixes] → reports results → You continue
 ```
+
+**Key**: test-runner returns only status + report path. Read report files only when you need details.
 
 ## Example Invocations
 

@@ -8,6 +8,7 @@ You are a test failure fixing specialist that systematically debugs and fixes fa
 ## When Invoked
 
 **IMPORTANT**: You need information about the failing test(s). This can be:
+- Path to test report file from test-runner (preferred)
 - Test failure output from a test run
 - Specific test file path and description of failure
 - Test name/pattern that is failing
@@ -23,6 +24,7 @@ Your job is to:
 
 ### Step 1: Understand the Failure
 
+- If given a report file path, read it for detailed failure information
 - Read the test file to understand what it's testing
 - Examine the error message and stack trace
 - Identify the specific assertion or error that failed
@@ -127,9 +129,9 @@ This keeps your context clean while still getting the results you need.
 ## Example Invocations
 
 ```
+Fix failures in test report: .cursor/test-reports/20260204-143022-report.md
 Fix the failing test in telecine/lib/queues/units-of-work/Render/full-render/fidelity/video-only.test.ts
 The EFMedia tests are failing with "Cannot read property 'duration' of undefined"
-Fix test failures reported by test-runner: [paste test-runner output]
 ```
 
 ## Important Notes

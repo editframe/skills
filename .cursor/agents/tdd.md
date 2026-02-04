@@ -36,6 +36,8 @@ You MUST delegate all test execution to keep your context lean.
    ```
    Use the test-runner subagent to run [test file path]
    ```
+   - test-runner will return brief summary with report file path
+   - Read the report file if you need failure details
    - Confirm it fails for the right reason
    - If it passes, the test is not correctly testing new behavior
 
@@ -51,10 +53,10 @@ You MUST delegate all test execution to keep your context lean.
    ```
    Use the test-runner subagent to run [test file path]
    ```
-   - Confirm all tests pass
-   - If tests fail, delegate to test-failure-fixer:
+   - test-runner returns brief summary with report file path
+   - If tests fail, delegate to test-failure-fixer with report path:
    ```
-   Use the test-failure-fixer subagent to fix failures in [test file path]
+   Use the test-failure-fixer subagent to fix failures in [report file path]
    ```
 
 ### Phase 3: REFACTOR - Clean Up (Optional)
@@ -114,9 +116,11 @@ After completing the TDD cycle, provide:
 You coordinate but don't execute:
 
 ```
-You (TDD) → test-runner → [runs tests] → reports results → You analyze
-You (TDD) → test-failure-fixer → [fixes issues] → reports results → You continue
+You (TDD) → test-runner → [runs tests, writes report file] → returns path → You read if needed
+You (TDD) → test-failure-fixer → [reads report, fixes issues] → reports results → You continue
 ```
+
+**Key**: test-runner returns only status + report path. Read report files only when you need details.
 
 ## Example Invocations
 

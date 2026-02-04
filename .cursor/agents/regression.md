@@ -56,7 +56,9 @@ You MUST delegate all test execution to keep your context lean.
    ```
    Use the test-runner subagent to run [test file path]
    ```
+   - test-runner returns brief summary with report file path
    - The test SHOULD FAIL (proving it catches the bug)
+   - Read report file if you need failure details
    - If it passes, the bug isn't being reproduced correctly
 
 ### Phase 3: Fix the Bug (Optional)
@@ -65,9 +67,9 @@ If requested to fix the bug:
 
 1. **Delegate to test-failure-fixer**
    ```
-   Use the test-failure-fixer subagent to fix the failing test in [test file path]
+   Use the test-failure-fixer subagent to fix failures in [report file path from test-runner]
    ```
-   - test-failure-fixer will analyze, fix, and verify
+   - test-failure-fixer will read report, analyze, fix, and verify
    - It will delegate back to test-runner for verification
 
 2. **Confirm fix**
@@ -127,10 +129,12 @@ This test will catch regressions if:
 ## Delegation Pattern
 
 ```
-You (Regression) → test-runner → [verifies bug] → reports failure → You proceed
-You (Regression) → test-failure-fixer → [fixes bug] → reports success → You verify
-You (Regression) → test-runner → [verifies fix] → reports pass → You complete
+You (Regression) → test-runner → [runs tests, writes report] → returns path → You read if needed
+You (Regression) → test-failure-fixer → [reads report, fixes] → reports success → You verify
+You (Regression) → test-runner → [verifies fix, writes report] → returns path → You complete
 ```
+
+**Key**: test-runner returns only status + report path. Read report files only when you need details.
 
 ## Example Invocations
 

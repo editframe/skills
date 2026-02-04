@@ -50,47 +50,79 @@ When running tests:
    - Identify which files or test suites failed
    - Look for patterns in failures
 
-4. **Report back concisely**
-   - Summary statistics (X passed, Y failed out of Z total)
-   - List of failed tests with brief error descriptions
-   - Relevant stack traces for failures (truncate if very long)
-   - Next steps or recommendations
+4. **Write detailed report to file**
+   - Create `.cursor/test-reports/` directory if needed
+   - Write full report to `.cursor/test-reports/{timestamp}-report.md`
+   - Include all details: statistics, failures, stack traces, recommendations
 
-## Report Format
+5. **Report back with minimal summary**
+   - Status: PASSED or FAILED
+   - Test counts (X/Y passed)
+   - Report file path
+   - **Do not include full details in your response**
 
-Use this structure for your final report:
+## Report Formats
 
-```
-## Test Results
+### Full Report (Written to File)
+
+Write this detailed report to `.cursor/test-reports/{timestamp}-report.md`:
+
+```markdown
+# Test Report - {timestamp}
 
 **Status**: PASSED | FAILED
 **Duration**: X.XXs
+**Command**: {full command executed}
 
-### Summary
+## Summary
 - Total: N tests
 - Passed: N
 - Failed: N
 - Skipped: N
 
-### Failures (if any)
+## Failures (if any)
 
-#### Test Name
+### Test Name
 - **File**: path/to/test/file.ts
 - **Error**: Brief error message
-- **Stack**: Relevant stack trace lines
+- **Stack**:
+  ```
+  Relevant stack trace lines
+  ```
 - **Recommendation**: Suggested next step
 
-### Recommendations
+## Full Test Output
+```
+{Include relevant test output}
+```
+
+## Recommendations
 - List actionable next steps
+```
+
+### Brief Response (Return to Parent)
+
+Return ONLY this minimal summary:
+
+```
+✅ PASSED: 15/15 tests passed
+📄 Full report: .cursor/test-reports/20260204-143022-report.md
+```
+
+or
+
+```
+❌ FAILED: 12/15 tests passed, 3 failed
+📄 Full report: .cursor/test-reports/20260204-143022-report.md
 ```
 
 ## Key Principles
 
 - **Isolate verbosity**: Keep all verbose output in your context
-- **Be concise**: Only report what's actionable
-- **Focus on failures**: Passed tests need minimal reporting
-- **Provide context**: Include enough info to debug without re-running
-- **Suggest actions**: Always end with recommendations
+- **Write detailed reports to files**: Full details go in `.cursor/test-reports/`
+- **Return minimal summaries**: Parent only gets pass/fail status and report path
+- **Preserve context**: File-based reports prevent context pollution
+- **Enable chaining**: Other agents can read report files as needed
 
 ## Example Invocations
 

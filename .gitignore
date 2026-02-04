@@ -11,3 +11,7 @@ debug.log
 export-profile.cpuprofile
 **.cpuprofile
 **/.ef-sessions/**
+
+# Test reports from test-runner subagent
+.cursor/test-reports/*.md
+!.cursor/test-reports/README.md
