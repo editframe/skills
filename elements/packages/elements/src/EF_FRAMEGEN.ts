@@ -320,8 +320,10 @@ export class EFFramegen {
     const startingTimeMs = renderOptions.encoderOptions.fromMs;
     await firstGroup.waitForMediaDurations();
     
-    // CRITICAL: Manually wire up temporal hierarchy since Lit Context doesn't work in Electron rendering
-    // See setupTemporalHierarchy.ts for detailed explanation
+    // CRITICAL: Manually wire up temporal hierarchy since Lit Context fails with our connection order
+    // When loading via loadURL(), elements connect depth-first (children before parents), causing
+    // children to miss the context-request event since parents aren't listening yet.
+    // See setupTemporalHierarchy.ts for detailed explanation.
     setupTemporalHierarchy(searchRoot, firstGroup);
     
     // Use seekForRender for proper time seeking during rendering

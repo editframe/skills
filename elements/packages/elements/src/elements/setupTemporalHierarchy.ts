@@ -3,10 +3,16 @@
  * 
  * ## Why this is needed
  * 
- * Lit Context uses DOM events (`context-request`) to propagate context values from providers
- * to consumers. In normal browser environments, these events bubble up the DOM tree properly.
- * However, in Electron's offscreen rendering environment, these events don't fire correctly,
- * causing `@consume` decorators to never receive their context values.
+ * Lit Context (`@provide`/`@consume`) relies on `context-request` DOM events. When a consumer
+ * connects, it dispatches a `context-request` event that bubbles up to find a provider.
+ * 
+ * **The problem:** When HTML is loaded via `loadURL()` (our rendering path), custom elements 
+ * connect in depth-first order - children BEFORE parents. This means:
+ * 1. `ef-video` connects → dispatches `context-request` event
+ * 2. `ef-timegroup` hasn't connected yet → no provider listening → event is lost  
+ * 3. `ef-timegroup` connects → creates provider → but too late
+ * 
+ * DOM events are point-in-time; once missed, they're gone. There's no retroactive discovery.
  * 
  * Without proper parent/root timegroup references:
  * - Child temporal elements can't compute their `ownCurrentTimeMs` (stays at 0)
@@ -26,8 +32,8 @@
  * - `parentTimegroup`: The immediate parent timegroup (used for start time calculations)
  * - `rootTimegroup`: The root timegroup (used for ownCurrentTimeMs calculations)
  * 
- * This replicates what Lit Context's `@provide`/`@consume` decorators would do automatically
- * in a normal environment.
+ * This replicates what Lit Context's `@provide`/`@consume` decorators would do if elements
+ * connected in parent-first order (as happens with declarative HTML parsing).
  * 
  * @param searchRoot - The root element to search within (typically document.body or ef-workbench)
  * @param rootTimegroup - The root timegroup element that should be the hierarchy root
