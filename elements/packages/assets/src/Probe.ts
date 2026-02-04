@@ -525,6 +525,10 @@ abstract class ProbeBase {
         ? this.ffmpegAudioOutputOptions
         : ["-c", "copy"];
 
+    // Filter out SEI NAL units (type 6) for video tracks
+    // These can cause WebCodecs VideoDecoder to hang or crash in some browsers/Electron
+    const bitstreamFilter = isVideoTrack ? ["-bsf:v", "filter_units=remove_types=6"] : [];
+
     const ffmpegArgs = [
       ...this.ffmpegAudioInputOptions,
       ...this.ffmpegVideoInputOptions,
@@ -533,6 +537,7 @@ abstract class ProbeBase {
       "-map",
       `0:${trackIndex}`, // Select only this track
       ...codecOptions, // Use conforming stream codec options
+      ...bitstreamFilter, // Remove SEI NAL units that cause WebCodecs issues
       "-f",
       "mp4",
       "-bitexact", // Ensure deterministic output
