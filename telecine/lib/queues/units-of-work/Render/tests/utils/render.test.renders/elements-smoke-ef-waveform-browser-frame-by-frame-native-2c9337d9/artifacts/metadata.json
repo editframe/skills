@@ -1,0 +1,35 @@
+{
+  "renderInfo": {
+    "width": 640,
+    "height": 360,
+    "durationMs": 100
+  },
+  "segmentPaths": [
+    "/app/lib/queues/units-of-work/Render/tests/utils/render.test.renders/elements-smoke-ef-waveform-browser-frame-by-frame-native-2c9337d9/artifacts/segment_init.mp4",
+    "/app/lib/queues/units-of-work/Render/tests/utils/render.test.renders/elements-smoke-ef-waveform-browser-frame-by-frame-native-2c9337d9/artifacts/segment_0.mp4"
+  ],
+  "fragmentCount": 2,
+  "renderMode": "browser-frame-by-frame",
+  "canvasMode": "native",
+  "timing": {
+    "totalMs": 2726,
+    "bundleMs": 1727,
+    "renderInfoMs": 134,
+    "renderMs": 860,
+    "segments": [
+      {
+        "fragmentId": "init",
+        "timeMs": 420,
+        "sizeBytes": 822
+      },
+      {
+        "fragmentId": 0,
+        "timeMs": 439,
+        "sizeBytes": 16411
+      }
+    ],
+    "avgSegmentMs": 430
+  },
+  "outputSizeBytes": 17233,
+  "timestamp": "2026-02-04T23:16:07.787Z"
+}

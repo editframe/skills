@@ -312,51 +312,32 @@ async function getOrCreateTestAgent(): Promise<Selectable<TestAgent>> {
 }
 
 /**
- * Check if bundle files exist on disk
- */
-async function bundleExists(bundleInfo: TestBundleInfo): Promise<boolean> {
-  try {
-    await access(bundleInfo.indexPath);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
  * Bundle HTML template with caching.
  * 
- * Uses content-based hashing to avoid re-bundling identical HTML.
- * Checks cache first, then validates files exist on disk.
- * Falls back to bundling if cache miss or files deleted.
+ * Computes hash once, checks cache, bundles if needed.
+ * Passes pre-computed hash to bundleTestTemplate to avoid double-hashing.
  */
 async function getCachedOrBundleTemplate(
   html: string,
   testFilePath?: string,
   testTitle?: string,
 ): Promise<TestBundleInfo> {
-  // Compute hash for cache key
+  // Compute hash once (same algorithm as bundleTestTemplate)
   const templateHash = createHash("sha256")
     .update(html)
     .digest("hex")
     .substring(0, 16);
   
-  // Check cache
+  // Check cache - simple Map lookup, no file I/O
   const cached = bundleCache.get(templateHash);
   if (cached) {
-    // Verify files still exist on disk
-    if (await bundleExists(cached)) {
-      bundleCacheHits++;
-      return cached;
-    } else {
-      // Cache entry is stale, remove it
-      bundleCache.delete(templateHash);
-    }
+    bundleCacheHits++;
+    return cached;
   }
   
-  // Cache miss or stale entry - bundle now
+  // Cache miss - bundle with pre-computed hash to avoid re-hashing
   bundleCacheMisses++;
-  const bundleInfo = await bundleTestTemplate(html, testFilePath, testTitle);
+  const bundleInfo = await bundleTestTemplate(html, testFilePath, testTitle, templateHash);
   bundleCache.set(templateHash, bundleInfo);
   
   return bundleInfo;

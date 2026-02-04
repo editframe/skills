@@ -1,0 +1,35 @@
+{
+  "renderInfo": {
+    "width": 640,
+    "height": 360,
+    "durationMs": 100
+  },
+  "segmentPaths": [
+    "/app/lib/queues/units-of-work/Render/tests/utils/render.test.renders/elements-smoke-ef-timegroup-browser-frame-by-frame-foreignobject-bde8164f/artifacts/segment_init.mp4",
+    "/app/lib/queues/units-of-work/Render/tests/utils/render.test.renders/elements-smoke-ef-timegroup-browser-frame-by-frame-foreignobject-bde8164f/artifacts/segment_0.mp4"
+  ],
+  "fragmentCount": 2,
+  "renderMode": "browser-frame-by-frame",
+  "canvasMode": "foreignObject",
+  "timing": {
+    "totalMs": 2431,
+    "bundleMs": 1739,
+    "renderInfoMs": 150,
+    "renderMs": 540,
+    "segments": [
+      {
+        "fragmentId": "init",
+        "timeMs": 270,
+        "sizeBytes": 822
+      },
+      {
+        "fragmentId": 0,
+        "timeMs": 268,
+        "sizeBytes": 1717
+      }
+    ],
+    "avgSegmentMs": 270
+  },
+  "outputSizeBytes": 2539,
+  "timestamp": "2026-02-04T23:15:27.079Z"
+}

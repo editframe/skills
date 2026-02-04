@@ -264,3 +264,48 @@ From Electron SegmentEncoder logs, the rendering pipeline for 3 frames (100ms vi
 - Single test with reused HTML: **78% faster** (2.3s → 0.5s)
 - Test suite with unique HTML: No improvement (each test has different HTML)
 - Development workflow: Significant improvement when re-running tests during development
+
+## Hash Optimization (Feb 4, 2026)
+
+### Problem Identified
+Initial cache implementation had **double-hashing** overhead:
+- Hash computed in `getCachedOrBundleTemplate` (for cache key)
+- Hash computed again in `bundleTestTemplate` (for directory naming)
+- Unnecessary file I/O check (`access()`) on every cache lookup
+
+### Solution
+1. Compute hash **once** in cache layer
+2. Pass pre-computed hash to `bundleTestTemplate` via optional parameter
+3. Removed file existence check (trust the Map cache)
+
+### Impact
+- Hash computation: ~0.02-0.04ms (negligible)
+- Eliminated redundant SHA-256 computation
+- Removed I/O overhead on cache checks
+- Cache performance unchanged: **0.5-0.6s (hit) vs 2.4-2.6s (miss)**
+
+## Asset Processing Optimization (Feb 4, 2026)
+
+### Problem Identified  
+Assets were checked by `filename` + `org_id` only:
+- Same file content with different names would be reprocessed
+- No content-based deduplication
+- MD5 column populated with UUID instead of actual checksum
+
+### Solution
+Implemented **MD5-based asset caching**:
+1. Compute MD5 checksum of file content
+2. Check database by MD5 first (content-based deduplication)
+3. Fallback to filename-based check
+4. Store actual MD5 in database (not UUID)
+
+### Files Modified
+- `processTestAssets.ts`: Added `computeMD5()` function
+- `processTestVideoAsset()`: MD5 check before filename check
+- `processTestImageAsset()`: Same MD5-first strategy
+
+### Impact
+- Deduplicates assets with different filenames but same content
+- Provides proper asset tracking with real checksums
+- Asset processing already fast (~200ms for 2 assets in beforeAll)
+- Main benefit: Correctness and preventing duplicate processing

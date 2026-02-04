@@ -75,9 +75,11 @@ export const bundleTestTemplate = async (
   html: string,
   testFilePath?: string,
   testTitle?: string,
+  precomputedHash?: string,
 ): Promise<TestBundleInfo> => {
   return executeSpan("bundleTestTemplate", async () => {
-    const templateHash = createHash("sha256")
+    // Use pre-computed hash if provided (for caching optimization)
+    const templateHash = precomputedHash ?? createHash("sha256")
       .update(html)
       .digest("hex")
       .substring(0, 16);

@@ -1,6 +1,7 @@
 import { join, dirname } from "node:path";
-import { stat } from "node:fs/promises";
+import { stat, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
+import { createHash } from "node:crypto";
 
 import type { Selectable } from "kysely";
 import { v4 } from "uuid";
@@ -21,12 +22,42 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ASSETS_DIR = join(__dirname, "../../../../process-file/test-files");
 
 /**
+ * Compute MD5 checksum of a file
+ */
+async function computeMD5(filePath: string): Promise<string> {
+  const content = await readFile(filePath);
+  return createHash("md5").update(content).digest("hex");
+}
+
+/**
  * Process a test image file through the image processing pipeline
  */
 export async function processTestImageAsset(
   filenameOrUrl: string,
   testAgent: TestAgent,
 ): Promise<Selectable<Video2ImageFiles>> {
+  // For local files, compute MD5 and check by content hash first
+  let md5Hash: string | null = null;
+  if (
+    !filenameOrUrl.startsWith("http://") &&
+    !filenameOrUrl.startsWith("https://")
+  ) {
+    const filePath = join(ASSETS_DIR, filenameOrUrl);
+    md5Hash = await computeMD5(filePath);
+    
+    // Check if we already processed this exact file content
+    const existingByHash = await db
+      .selectFrom("video2.image_files")
+      .where("md5", "=", md5Hash)
+      .where("org_id", "=", testAgent.org.id)
+      .selectAll()
+      .executeTakeFirst();
+    
+    if (existingByHash) {
+      return existingByHash;
+    }
+  }
+
   const existingFile = await db
     .selectFrom("video2.image_files")
     .where("filename", "=", filenameOrUrl)
@@ -60,7 +91,7 @@ export async function processTestImageAsset(
 
     return await processImageFile(filePath, {
       id: uuidv4(),
-      md5: null,
+      md5: md5Hash, // Use computed MD5 checksum
       org_id: testAgent.org.id,
       creator_id: testAgent.user.user_id,
       api_key_id: testAgent.apiKey.id,
@@ -97,6 +128,29 @@ export async function processTestVideoAsset(
         .execute();
     }
 
+    // For local files, compute MD5 and check by content hash first
+    let md5Hash: string | null = null;
+    if (
+      !filenameOrUrl.startsWith("http://") &&
+      !filenameOrUrl.startsWith("https://")
+    ) {
+      const filePath = join(ASSETS_DIR, filenameOrUrl);
+      md5Hash = await computeMD5(filePath);
+      
+      // Check if we already processed this exact file content
+      const existingByHash = await db
+        .selectFrom("video2.isobmff_files")
+        .where("md5", "=", md5Hash)
+        .where("org_id", "=", testAgent.org.id)
+        .where("fragment_index_complete", "=", true)
+        .selectAll()
+        .executeTakeFirst();
+      
+    if (existingByHash) {
+      return existingByHash;
+    }
+  }
+
     const existingFile = await db
       .selectFrom("video2.isobmff_files")
       .where("filename", "=", filenameOrUrl)
@@ -116,6 +170,7 @@ export async function processTestVideoAsset(
         .where("id", "=", existingFile.id)
         .execute();
     }
+
 
     if (
       filenameOrUrl.startsWith("http://") ||
@@ -138,7 +193,7 @@ export async function processTestVideoAsset(
         new TestProgressTracker(),
       );
     } else {
-      // Local file - resolve path and get size
+      // Local file - resolve path, get size, use pre-computed MD5
       const filePath = join(ASSETS_DIR, filenameOrUrl);
       const stats = await stat(filePath);
 
@@ -146,7 +201,7 @@ export async function processTestVideoAsset(
         filePath,
         {
           id: v4(),
-          md5: v4(),
+          md5: md5Hash!, // Use pre-computed MD5 from cache check
           org_id: testAgent.org.id,
           creator_id: testAgent.user.user_id,
           filename: filenameOrUrl,
