@@ -513,6 +513,12 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
 
   connectedCallback(): void {
     super.connectedCallback();
+    
+    // Check if we're in rendering mode and set rendering=true before first render
+    if (!this.hasAttribute("rendering") && typeof window !== "undefined" && "FRAMEGEN_BRIDGE" in window) {
+      this.rendering = true;
+    }
+    
     // Listen for pan-zoom transform changes
     this.addEventListener("transform-changed", this.boundHandleTransformChanged as EventListener);
     

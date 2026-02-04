@@ -214,7 +214,8 @@ export class ElectronEngine {
       ) {
         if (location.startsWith("file://")) {
           const fs = await import("node:fs/promises");
-          const filePath = location.replace("file://", "");
+          // Strip query params and hash from file path for stat check
+          const filePath = location.replace("file://", "").split(/[?#]/)[0];
           const stats = await fs.stat(filePath);
           span.setAttribute("fileSize", stats.size);
         }

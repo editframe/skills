@@ -66,7 +66,7 @@ export async function render(
 
     // Get render info from template
     const renderInfo = await electronRpc.rpc.call("getRenderInfo", {
-      location: `file://${bundleInfo.indexPath}`,
+      location: `file://${bundleInfo.indexPath}?noWorkbench=true`,
       orgId: testAgent.org.id,
     });
 
@@ -85,7 +85,7 @@ export async function render(
     const videoBuffer = await electronRpc.rpc.call("renderFragment", {
       width,
       height,
-      location: `file://${bundleInfo.indexPath}`,
+      location: `file://${bundleInfo.indexPath}?noWorkbench=true`,
       orgId: testAgent.org.id,
       renderId: `test-${bundleInfo.templateHash}`,
       segmentDurationMs: renderInfo.durationMs,
@@ -169,7 +169,7 @@ export async function renderStill(
     );
 
     const renderInfo = await electronRpc.rpc.call("getRenderInfo", {
-      location: `file://${bundleInfo.indexPath}`,
+      location: `file://${bundleInfo.indexPath}?noWorkbench=true`,
       orgId: testAgent.org.id,
     });
 
@@ -185,7 +185,7 @@ export async function renderStill(
     const imageBuffer = await electronRpc.rpc.call("renderStill", {
       width,
       height,
-      location: `file://${bundleInfo.indexPath}`,
+      location: `file://${bundleInfo.indexPath}?noWorkbench=true`,
       orgId: testAgent.org.id,
       renderId: `test-still-${bundleInfo.templateHash}`,
       durationMs: renderInfo.durationMs,

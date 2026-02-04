@@ -302,13 +302,16 @@ export class EFFramegen {
   async initialize(renderOptions: VideoRenderOptions) {
     this.renderOptions = renderOptions;
 
+    // Workbench is optional - look for it but don't require it
     const workbench = document.querySelector("ef-workbench");
-    if (!workbench) {
-      throw new Error("No workbench found");
+    if (workbench) {
+      this.setWorkbenchRendering(true);
+      workbench.playing = false;
     }
-    this.setWorkbenchRendering(true);
-    workbench.playing = false;
-    const timegroups = shallowGetTimegroups(workbench);
+    
+    // Find timegroups either in workbench or directly in document
+    const searchRoot = workbench || document.body;
+    const timegroups = shallowGetTimegroups(searchRoot);
     const firstGroup = timegroups[0];
     if (!firstGroup) {
       throw new Error("No temporal elements found");
@@ -363,11 +366,11 @@ export class EFFramegen {
       throw new Error("No renderOptions");
     }
     const workbench = document.querySelector("ef-workbench");
-    if (!workbench) {
-      throw new Error("No workbench found");
+    if (workbench) {
+      this.setWorkbenchRendering(true);
     }
-    this.setWorkbenchRendering(true);
-    const timegroups = shallowGetTimegroups(workbench);
+    const searchRoot = workbench || document.body;
+    const timegroups = shallowGetTimegroups(searchRoot);
     const firstGroup = timegroups[0];
     if (!firstGroup) {
       throw new Error("No temporal elements found");

@@ -2070,10 +2070,18 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
       return false;
     }
 
-    // During rendering, always wrap with workbench (needed by EF_FRAMEGEN)
+    // During rendering, never wrap with workbench - timegroups can seek without it
     const isRendering = EF_RENDERING?.() === true;
     if (isRendering) {
-      return true;
+      return false;
+    }
+
+    // Check URL param to disable workbench (only applies in non-rendering mode)
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("noWorkbench") === "true" || params.get("no-workbench") === "true") {
+        return false;
+      }
     }
 
     // Respect the explicit workbench property
@@ -2082,13 +2090,14 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
 
   /** @internal */
   wrapWithWorkbench() {
-    const workbench = document.createElement("ef-workbench");
+    const workbench = document.createElement("ef-workbench") as any;
     const parent = this.parentElement;
     
-    // When in rendering mode, set rendering=true immediately to prevent
-    // the workbench UI (toolbar, hierarchy, timeline) from being captured
-    // in the video output. Only the canvas slot should be rendered.
+    // When in rendering mode, immediately set rendering=true before insertion
+    // This prevents the workbench UI from ever being visible in rendered frames
     if (EF_RENDERING()) {
+      // Use setAttribute to ensure it's set before the element connects and renders
+      workbench.setAttribute("rendering", "");
       workbench.rendering = true;
     }
     
