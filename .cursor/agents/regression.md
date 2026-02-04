@@ -65,12 +65,13 @@ You MUST delegate all test execution to keep your context lean.
 
 If requested to fix the bug:
 
-1. **Delegate to test-failure-fixer**
+1. **Delegate to test-failure-fixer with report path**
    ```
    Use the test-failure-fixer subagent to fix failures in [report file path from test-runner]
    ```
-   - test-failure-fixer will read report, analyze, fix, and verify
-   - It will delegate back to test-runner for verification
+   - Pass the report file path so test-failure-fixer can read the full output
+   - test-failure-fixer will NOT re-run tests to diagnose
+   - test-failure-fixer will analyze report, implement fix, then verify via test-runner
 
 2. **Confirm fix**
    - Review the fix implemented by test-failure-fixer

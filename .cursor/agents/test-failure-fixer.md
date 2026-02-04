@@ -24,9 +24,12 @@ Your job is to:
 
 ### Step 1: Understand the Failure
 
-- If given a report file path, read it for detailed failure information
+**CRITICAL**: DO NOT re-run tests to understand the failure. All information you need is in the report file.
+
+- Read the report file (contains full test output from test-runner)
+- Use grep/search on the report file to find specific error patterns
 - Read the test file to understand what it's testing
-- Examine the error message and stack trace
+- Examine the error message and stack trace from the report
 - Identify the specific assertion or error that failed
 - Note: Is this a test bug or a code bug?
 
@@ -52,14 +55,14 @@ Your job is to:
 
 ### Step 5: Verify the Fix
 
-**CRITICAL**: Use the test-runner subagent to verify your fix.
+**CRITICAL**: Only NOW should you run tests - to verify your fix works.
 
 Delegate to test-runner with specific instructions:
 ```
 Use the test-runner subagent to run [specific test file/pattern]
 ```
 
-This keeps verbose test output isolated from your context.
+This is the ONLY time you should run tests. Do not run tests in Step 1 to understand failures - use the report file.
 
 ### Step 6: Report Results
 
@@ -94,15 +97,31 @@ Provide a structured report:
 - **Create tests first**: If implementing new features, create failing tests first
 - **Measure performance**: Don't assume performance improvements - measure them
 
-## Working with Test Runner
+## Working with Test Reports and Test Runner
 
-You should delegate test execution to the test-runner subagent:
+### Reading Test Reports (Step 1)
 
+The report file from test-runner contains everything you need to diagnose failures:
+- Complete test output
+- Error messages and stack traces
+- Failed test names and locations
+
+Use Read and Grep tools on the report file:
+```
+Read the report file to see all failures
+Use Grep to search for specific error patterns in the report
+```
+
+**DO NOT run tests to understand failures.**
+
+### Running Tests (Step 5 Only)
+
+Only after implementing your fix, delegate to test-runner:
 ```
 Use the test-runner subagent to run elements/scripts/test path/to/test.test.ts
 ```
 
-This keeps your context clean while still getting the results you need.
+This is the ONLY time you should execute tests.
 
 ## Common Test Failure Patterns
 
@@ -136,9 +155,11 @@ The EFMedia tests are failing with "Cannot read property 'duration' of undefined
 
 ## Important Notes
 
+- **NEVER re-run tests to diagnose failures** - all output is in the report file
+- Use grep/search tools on the report file to find patterns
+- The report file contains the complete test output - use it
+- Only run tests AFTER implementing fixes (via test-runner)
 - Always read the test file before attempting fixes
-- Don't skip the verification step
 - If multiple tests fail, fix them one at a time
 - Document your reasoning in the report
 - Ask for clarification if the failure is ambiguous
-- Use test-runner subagent for running tests (keeps context clean)

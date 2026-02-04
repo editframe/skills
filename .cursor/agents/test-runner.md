@@ -92,8 +92,11 @@ Write this detailed report to `.cursor/test-reports/{timestamp}-report.md`:
 - **Recommendation**: Suggested next step
 
 ## Full Test Output
+
+**IMPORTANT**: Include the complete test output below. Other agents (especially test-failure-fixer) need this to diagnose issues without re-running tests.
+
 ```
-{Include relevant test output}
+{Paste the complete, untruncated test output here}
 ```
 
 ## Recommendations

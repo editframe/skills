@@ -54,10 +54,11 @@ You MUST delegate all test execution to keep your context lean.
    Use the test-runner subagent to run [test file path]
    ```
    - test-runner returns brief summary with report file path
-   - If tests fail, delegate to test-failure-fixer with report path:
+   - If tests fail, pass the report file path to test-failure-fixer:
    ```
    Use the test-failure-fixer subagent to fix failures in [report file path]
    ```
+   - test-failure-fixer will read the report (not re-run tests) to understand the failure
 
 ### Phase 3: REFACTOR - Clean Up (Optional)
 
