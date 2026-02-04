@@ -28,18 +28,26 @@ export async function createOrgSession(
   });
 
   if (orgSession.protocol.isProtocolHandled(PROTOCOL)) {
-    logger.debug("Protocol already handled");
+    logger.debug({ PROTOCOL, orgId }, "[CREATE_ORG_SESSION] Protocol already handled");
     return orgSession;
   }
+  
+  logger.debug({ PROTOCOL, orgId, WEB_HOST, hasBundle: !!assetsBundle }, "[CREATE_ORG_SESSION] Registering protocol handler");
 
   // Register protocol handler for /api/* URLs
   orgSession.protocol.handle(PROTOCOL, async (request: Request) => {
     const requestUrl = new URL(request.url);
     const isApiRequest = requestUrl.pathname.startsWith("/api/");
-    const isWebHostRequest = requestUrl.host === webHostUrl.host;
 
-    // Only handle /api/* requests from WEB_HOST
-    if (!isApiRequest || !isWebHostRequest) {
+    logger.debug(
+      { url: request.url, isApiRequest, pathname: requestUrl.pathname },
+      "[PROTOCOL_HANDLER] Request received",
+    );
+
+    // Only handle /api/* requests
+    // Accept requests to any host (localhost, web, etc.) to support different environments
+    if (!isApiRequest) {
+      logger.debug({ url: request.url }, "[PROTOCOL_HANDLER] Not an API request, returning 404");
       return new Response(null, { status: 404 });
     }
 
@@ -47,16 +55,25 @@ export async function createOrgSession(
     const fragmentIndexMatch = requestUrl.pathname.match(
       /^\/api\/v1\/isobmff_files\/([^/]+)\/index$/,
     );
+    logger.debug(
+      { fragmentIndexMatch: !!fragmentIndexMatch, hasBundle: !!assetsBundle },
+      "[PROTOCOL_HANDLER] Checking for fragment index match",
+    );
     if (fragmentIndexMatch && assetsBundle) {
       const assetId = fragmentIndexMatch[1] ?? null;
       const fragmentIndex = assetId
         ? assetsBundle.fragmentIndexes[assetId]
         : null;
 
+      logger.debug(
+        { assetId, hasFragmentIndex: !!fragmentIndex, bundleKeys: Object.keys(assetsBundle.fragmentIndexes) },
+        "[PROTOCOL_HANDLER] Fragment index lookup in bundle",
+      );
+
       if (fragmentIndex) {
         logger.debug(
           { assetId, requestUrl: request.url },
-          "Serving fragment index from bundle",
+          "[PROTOCOL_HANDLER] Serving fragment index from bundle",
         );
 
         return new Response(JSON.stringify(fragmentIndex), {
@@ -71,6 +88,11 @@ export async function createOrgSession(
 
     // Fall back to storage file lookup
     const filePath = getStorageKeyForPath(requestUrl.pathname, orgId);
+    
+    logger.debug(
+      { pathname: requestUrl.pathname, filePath, orgId },
+      "[PROTOCOL_HANDLER] Falling back to storage lookup",
+    );
 
     logger.trace(
       { requestUrl: request.url, filePath },
@@ -78,36 +100,47 @@ export async function createOrgSession(
     );
 
     if (!filePath) {
+      logger.warn({ pathname: requestUrl.pathname }, "[PROTOCOL_HANDLER] No file path found for request");
       return new Response(JSON.stringify({ message: "Bad URL" }), {
         status: 404,
         statusText: "Not Found (bad URL)",
       });
     }
 
-    const rangeHeader = request.headers.get("Range");
+    try {
+      const rangeHeader = request.headers.get("Range");
 
-    if (rangeHeader) {
-      const range = RangeHeader.parse(rangeHeader);
-      const readStream = await assetProvider.createReadStream(filePath, range);
+      if (rangeHeader) {
+        logger.debug({ filePath, range: rangeHeader }, "[PROTOCOL_HANDLER] Serving range request from storage");
+        const range = RangeHeader.parse(rangeHeader);
+        const readStream = await assetProvider.createReadStream(filePath, range);
+        const mimeType = getMimeTypeFromPath(filePath) || "application/octet-stream";
+        return new Response(createReadableStreamFromReadable(readStream), {
+          status: 206,
+          headers: {
+            "Content-Type": mimeType,
+            "Content-Range": range.toHeader(),
+          },
+        });
+      }
+
+      logger.debug({ filePath }, "[PROTOCOL_HANDLER] Serving from storage");
+      const readStream = await assetProvider.createReadStream(filePath);
       const mimeType = getMimeTypeFromPath(filePath) || "application/octet-stream";
+
       return new Response(createReadableStreamFromReadable(readStream), {
-        status: 206,
+        status: 200,
         headers: {
           "Content-Type": mimeType,
-          "Content-Range": range.toHeader(),
         },
       });
+    } catch (error) {
+      logger.error({ error, filePath, requestUrl: request.url }, "[PROTOCOL_HANDLER] Error reading from storage");
+      return new Response(JSON.stringify({ message: "Internal server error", error: String(error) }), {
+        status: 500,
+        statusText: "Internal Server Error",
+      });
     }
-
-    const readStream = await assetProvider.createReadStream(filePath);
-    const mimeType = getMimeTypeFromPath(filePath) || "application/octet-stream";
-
-    return new Response(createReadableStreamFromReadable(readStream), {
-      status: 200,
-      headers: {
-        "Content-Type": mimeType,
-      },
-    });
   });
 
   return orgSession;

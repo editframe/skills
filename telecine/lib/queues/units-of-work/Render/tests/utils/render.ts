@@ -24,6 +24,7 @@ export interface RenderOptions {
   height?: number;
   fps?: number;
   outputDir?: string;
+  testAgent?: Selectable<TestAgent>;
 }
 
 /**
@@ -37,8 +38,8 @@ export async function render(
 ): Promise<RenderResult> {
   const startTime = performance.now();
 
-  // Create test agent if needed (cached per test run)
-  const testAgent = await getOrCreateTestAgent();
+  // Use provided test agent or create default one
+  const testAgent = options.testAgent ?? await getOrCreateTestAgent();
 
   // Create Electron RPC connection
   const electronRpc = await createElectronRPC();
@@ -140,7 +141,7 @@ export async function renderStill(
   height: number;
   templateHash: string;
 }> {
-  const testAgent = await getOrCreateTestAgent();
+  const testAgent = options.testAgent ?? await getOrCreateTestAgent();
   const electronRpc = await createElectronRPC();
 
   try {
