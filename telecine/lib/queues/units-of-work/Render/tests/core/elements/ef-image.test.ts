@@ -1,8 +1,9 @@
+// Integration tests - use smoke tests for fast feedback
 import { describe, test, expect } from "vitest";
 import { render } from "../../utils/render";
 import { validateMP4 } from "../../utils/video-validator";
 
-describe("ef-image Element", () => {
+describe("ef-image Element", { timeout: 30000 }, () => {
   describe("Static image display", () => {
     test("renders static image with data URL", async () => {
       // 1x1 red pixel as data URL

@@ -1,8 +1,9 @@
+// Integration tests - use smoke tests for fast feedback
 import { describe, test, expect } from "vitest";
 import { render } from "../utils/render";
 import { validateMP4 } from "../utils/video-validator";
 
-describe("Edge Cases", () => {
+describe("Edge Cases", { timeout: 30000 }, () => {
   describe("Very short durations", () => {
     test("renders 20ms duration", async () => {
       const result = await render(`

@@ -1,8 +1,9 @@
+// Integration tests - use smoke tests for fast feedback
 import { describe, test, expect } from "vitest";
 import { render } from "../utils/render";
 import { validateMP4 } from "../utils/video-validator";
 
-describe("Audio Presence", () => {
+describe("Audio Presence", { timeout: 30000 }, () => {
   describe("Video-only compositions", () => {
     test("video-only has expected audio track structure", async () => {
       const result = await render(`

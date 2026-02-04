@@ -1,3 +1,4 @@
+// Integration tests - use smoke tests for fast feedback
 import { describe, test, expect, beforeAll } from "vitest";
 import { render } from "../../utils/render";
 import { validateMP4 } from "../../utils/video-validator";

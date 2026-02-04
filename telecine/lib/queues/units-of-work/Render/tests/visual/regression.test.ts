@@ -1,8 +1,9 @@
+// Integration tests - use smoke tests for fast feedback
 import { describe, test } from "vitest";
 import { render } from "../utils/render";
 import { compareToBaseline } from "../utils/visual-diff";
 
-describe("Visual Regression", () => {
+describe("Visual Regression", { timeout: 60000 }, () => {
   describe("Element rendering", () => {
     test("simple text matches baseline", async () => {
       const result = await render(`

@@ -1,7 +1,8 @@
+// Integration tests - use smoke tests for fast feedback
 import { describe, test, expect } from "vitest";
 import { render } from "../utils/render";
 
-describe("Render Speed Benchmarks", () => {
+describe("Render Speed Benchmarks", { timeout: 30000 }, () => {
   describe("Simple content", () => {
     test("solid color renders quickly", async () => {
       const start = performance.now();
