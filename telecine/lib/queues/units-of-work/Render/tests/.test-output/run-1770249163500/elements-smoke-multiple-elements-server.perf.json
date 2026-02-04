@@ -1,0 +1,19 @@
+{
+  "testName": "elements-smoke-multiple-elements-server",
+  "renderMode": "server",
+  "totalRenderTimeMs": 6489.749959999997,
+  "videoDurationMs": 100,
+  "fps": 30,
+  "numFrames": 3,
+  "avgFrameTimeMs": 133.6704736666652,
+  "timing": {
+    "total": 6489.749959999997,
+    "electronRpcCreate": 4076.5787839999975,
+    "bundleHtml": 1822.2097880000001,
+    "getRenderInfo": 188.02737999999954,
+    "createAssetsBundle": 0.78665799999726,
+    "renderFragment": 401.0114209999956,
+    "writeFile": 1.1213040000002366
+  },
+  "timestamp": "2026-02-04T23:53:16.877Z"
+}

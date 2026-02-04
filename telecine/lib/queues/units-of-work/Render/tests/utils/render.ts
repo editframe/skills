@@ -162,6 +162,25 @@ async function renderWithBrowser(
     const renderTimeMs = performance.now() - startTime;
     timing.total = renderTimeMs;
 
+    // Write performance data alongside video
+    const numFrames = Math.ceil((result.renderInfo.durationMs / 1000) * fps);
+    const avgFrameTimeMs = timing.renderFragment ? timing.renderFragment / numFrames : 0;
+    const perfData = {
+      testName: options.testName,
+      renderMode,
+      canvasMode,
+      totalRenderTimeMs: renderTimeMs,
+      videoDurationMs: result.renderInfo.durationMs,
+      fps,
+      numFrames,
+      avgFrameTimeMs,
+      timing,
+      timestamp: new Date().toISOString(),
+    };
+    const perfPath = videoPath.replace('.mp4', '.perf.json');
+    await writeFile(perfPath, JSON.stringify(perfData, null, 2));
+    timing.writeFile = performance.now() - writeStart;
+
     return {
       videoBuffer: result.finalVideoBuffer,
       videoPath,
@@ -266,6 +285,25 @@ async function renderWithServer(
 
     const renderTimeMs = performance.now() - startTime;
     timing.total = renderTimeMs;
+
+    // Write performance data alongside video
+    const numFrames = Math.ceil((renderInfo.durationMs / 1000) * fps);
+    const avgFrameTimeMs = timing.renderFragment ? timing.renderFragment / numFrames : 0;
+    const perfData = {
+      testName: options.testName,
+      renderMode: "server",
+      canvasMode: undefined,
+      totalRenderTimeMs: renderTimeMs,
+      videoDurationMs: renderInfo.durationMs,
+      fps,
+      numFrames,
+      avgFrameTimeMs,
+      timing,
+      timestamp: new Date().toISOString(),
+    };
+    const perfPath = videoPath.replace('.mp4', '.perf.json');
+    await writeFile(perfPath, JSON.stringify(perfData, null, 2));
+    timing.writeFile = performance.now() - writeStart;
 
     return {
       videoBuffer: Buffer.from(videoBuffer),
