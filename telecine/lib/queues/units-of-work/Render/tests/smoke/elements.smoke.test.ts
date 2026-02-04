@@ -33,13 +33,14 @@ describe("Elements Smoke Tests", { timeout: 60000 }, () => {
   });
 
   test("ef-image renders", async () => {
-    const redPixel =
-      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==";
+    // 2x2 checkerboard pattern (red, green, blue, yellow pixels)
+    const checkerboard =
+      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFklEQVQIW2P8z8DwHwMM/GfABuA4AABMMQP/l/6YgQAAAABJRU5ErkJggg==";
 
     const result = await render(
       `
       <ef-timegroup class="w-[640px] h-[360px]" mode="fixed" duration="100ms">
-        <ef-image src="${redPixel}" class="w-full h-full object-cover" />
+        <ef-image src="${checkerboard}" class="w-full h-full" style="image-rendering: pixelated;" />
       </ef-timegroup>
     `,
       { testName: "elements-smoke-ef-image" },
@@ -91,14 +92,15 @@ describe("Elements Smoke Tests", { timeout: 60000 }, () => {
   });
 
   test("multiple elements render together", async () => {
-    const redPixel =
-      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==";
+    // 2x2 checkerboard pattern
+    const checkerboard =
+      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFklEQVQIW2P8z8DwHwMM/GfABuA4AABMMQP/l/6YgQAAAABJRU5ErkJggg==";
 
     const result = await render(
       `
       <ef-timegroup class="w-[640px] h-[360px]" mode="fixed" duration="100ms">
         <div class="w-full h-full bg-gray-900 flex items-center justify-center gap-4">
-          <ef-image src="${redPixel}" class="w-24 h-24 object-cover" />
+          <ef-image src="${checkerboard}" class="w-24 h-24" style="image-rendering: pixelated;" />
           <ef-text class="text-white text-4xl">Hello</ef-text>
         </div>
       </ef-timegroup>
@@ -113,17 +115,18 @@ describe("Elements Smoke Tests", { timeout: 60000 }, () => {
     expect(validation.isValid).toBe(true);
   });
 
-  test("ef-video renders", async () => {
+  test("ef-video renders and seeks through frames", async () => {
+    // Render 200ms to get ~6 frames, ensuring we see the video playing through multiple frames
     const result = await render(
       `
-      <ef-timegroup class="w-[480px] h-[270px]" mode="fixed" duration="100ms">
+      <ef-timegroup class="w-[480px] h-[270px]" mode="fixed" duration="200ms">
         <ef-video asset-id="${barsNTone.id}" class="w-full"></ef-video>
       </ef-timegroup>
     `,
       { testAgent, testName: "elements-smoke-ef-video" },
     );
 
-    expect(result.durationMs).toBeCloseTo(100, 20);
+    expect(result.durationMs).toBeCloseTo(200, 20);
     expect(result.videoBuffer.length).toBeGreaterThan(1000);
 
     const validation = validateMP4(result.videoPath);
