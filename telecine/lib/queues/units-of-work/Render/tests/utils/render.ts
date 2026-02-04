@@ -11,6 +11,17 @@ import type { TestAgent } from "TEST/util/test";
 export type RenderMode = "server" | "browser-full-video" | "browser-frame-by-frame";
 export type CanvasMode = "native" | "foreignObject";
 
+export interface RenderTimingBreakdown {
+  bundleHtml?: number;
+  getRenderInfo?: number;
+  createAssetsBundle?: number;
+  renderFragment?: number;
+  writeFile?: number;
+  electronRpcCreate?: number;
+  electronRpcTerminate?: number;
+  total: number;
+}
+
 export interface RenderResult {
   videoBuffer: Buffer;
   videoPath: string;
@@ -22,6 +33,7 @@ export interface RenderResult {
   templateHash: string;
   renderMode: RenderMode;
   canvasMode?: CanvasMode;
+  timing: RenderTimingBreakdown;
 }
 
 export interface RenderOptions {
@@ -86,6 +98,7 @@ async function renderWithBrowser(
   canvasMode: CanvasMode,
 ): Promise<RenderResult> {
   const startTime = performance.now();
+  const timing: RenderTimingBreakdown = { total: 0 };
   const width = options.width ?? 640;
   const height = options.height ?? 360;
   const fps = options.fps ?? 30;
@@ -105,6 +118,7 @@ async function renderWithBrowser(
       ? renderWithBrowserFullVideo
       : renderWithBrowserFrameByFrame;
     
+    const renderFnStart = performance.now();
     const result = await renderFn({
       html,
       testAgent,
@@ -114,8 +128,10 @@ async function renderWithBrowser(
       testFilePath: __filename,
       testTitle: options.testName ?? "smoke-test",
     });
+    timing.renderFragment = performance.now() - renderFnStart;
     
     // Save to shared output directory with descriptive filename
+    const writeStart = performance.now();
     const outputDir = options.outputDir || SHARED_OUTPUT_DIR;
     await mkdir(outputDir, { recursive: true });
     
@@ -125,8 +141,10 @@ async function renderWithBrowser(
       : `output-${modeSuffix}.mp4`;
     const videoPath = path.join(outputDir, filename);
     await writeFile(videoPath, result.finalVideoBuffer);
+    timing.writeFile = performance.now() - writeStart;
     
     const renderTimeMs = performance.now() - startTime;
+    timing.total = renderTimeMs;
 
     return {
       videoBuffer: result.finalVideoBuffer,
@@ -139,6 +157,7 @@ async function renderWithBrowser(
       templateHash: result.renderInfo.templateHash,
       renderMode,
       canvasMode,
+      timing,
     };
   } catch (error) {
     // Don't close electronRpc on error - it's shared across tests
@@ -154,6 +173,7 @@ async function renderWithServer(
   options: RenderOptions,
 ): Promise<RenderResult> {
   const startTime = performance.now();
+  const timing: RenderTimingBreakdown = { total: 0 };
 
   // Use provided test agent or create default one
   const testAgent = options.testAgent ?? await getOrCreateTestAgent();
@@ -163,24 +183,30 @@ async function renderWithServer(
   let shouldCloseRpc = false;
   
   if (!electronRpc) {
+    const rpcStart = performance.now();
     electronRpc = await createElectronRPC();
+    timing.electronRpcCreate = performance.now() - rpcStart;
     shouldCloseRpc = true;
   }
 
   try {
     // Bundle HTML template
+    const bundleStart = performance.now();
     const testTitle = options.testName || `render-${Date.now()}`;
     const bundleInfo = await bundleTestTemplate(
       html,
       import.meta.url,
       testTitle,
     );
+    timing.bundleHtml = performance.now() - bundleStart;
 
     // Get render info from template
+    const getRenderInfoStart = performance.now();
     const renderInfo = await electronRpc.rpc.call("getRenderInfo", {
       location: `file://${bundleInfo.indexPath}?noWorkbench=true`,
       orgId: testAgent.org.id,
     });
+    timing.getRenderInfo = performance.now() - getRenderInfoStart;
 
     // Use provided dimensions or fall back to template dimensions
     const width = options.width ?? renderInfo.width;
@@ -188,12 +214,15 @@ async function renderWithServer(
     const fps = options.fps ?? 30;
 
     // Create assets metadata bundle
+    const assetsBundleStart = performance.now();
     const assetsBundle = await createAssetsMetadataBundle(
       renderInfo.assets,
       testAgent.org.id,
     );
+    timing.createAssetsBundle = performance.now() - assetsBundleStart;
 
     // Render single fragment (full video)
+    const renderFragmentStart = performance.now();
     const videoBuffer = await electronRpc.rpc.call("renderFragment", {
       width,
       height,
@@ -207,16 +236,20 @@ async function renderWithServer(
       fileType: "standalone",
       assetsBundle,
     });
+    timing.renderFragment = performance.now() - renderFragmentStart;
 
     // Save to shared output directory with descriptive filename
+    const writeStart = performance.now();
     const outputDir = options.outputDir || SHARED_OUTPUT_DIR;
     await mkdir(outputDir, { recursive: true });
 
     const filename = options.testName ? `${sanitizeFilename(options.testName)}.mp4` : "output.mp4";
     const videoPath = path.join(outputDir, filename);
     await writeFile(videoPath, videoBuffer);
+    timing.writeFile = performance.now() - writeStart;
 
     const renderTimeMs = performance.now() - startTime;
+    timing.total = renderTimeMs;
 
     return {
       videoBuffer: Buffer.from(videoBuffer),
@@ -228,11 +261,14 @@ async function renderWithServer(
       renderTimeMs,
       templateHash: bundleInfo.templateHash,
       renderMode: "server",
+      timing,
     };
   } finally {
     // Only shut down RPC if we created it locally (not shared)
     if (shouldCloseRpc) {
+      const terminateStart = performance.now();
       await electronRpc.rpc.call("terminate");
+      timing.electronRpcTerminate = performance.now() - terminateStart;
     }
   }
 }
