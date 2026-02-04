@@ -63,11 +63,12 @@ tests/
 - ✅ Visual regression (baselines, comparison)
 - ✅ Performance benchmarking
 
-### Pending Coverage (Needs Test Assets)
-- ⚠️ ef-audio (requires test audio files)
-- ⚠️ ef-waveform (requires test audio files)
-- ⚠️ ef-video with sourceIn/sourceOut (requires test video files)
-- ⚠️ Audio continuity analysis (needs audio analysis tools)
+### Blocked Coverage (See BLOCKING_ISSUES.md)
+- 🚫 ef-video (12 tests created, blocked by renderer bug)
+- 🚫 ef-audio (9 tests created, blocked by renderer bug)
+- 🚫 ef-waveform (8 tests created, blocked by renderer bug)
+
+**Issue:** All media element tests fail with "Failed to execute 'text' on 'Response': body stream already read". This is a bug in the elements framework's asset fetching code, not the test suite. Approximately 30% of test coverage is blocked until this is resolved.
 
 ### Future Coverage (Optional)
 - 🔮 Browser rendering modes (experimental)
