@@ -56,7 +56,7 @@ export function getStrategy(name: string): RenderStrategy | undefined {
 
 /**
  * Get strategies to test based on environment or filter
- * Defaults to server-only for fast feedback, run all in CI
+ * Always tests all strategies to ensure output consistency
  */
 export function getStrategiesToTest(): RenderStrategy[] {
   // If running with specific filter, only test matching strategies
@@ -70,13 +70,7 @@ export function getStrategiesToTest(): RenderStrategy[] {
     return [strategy];
   }
   
-  // In CI or when explicitly requested, test all strategies
-  if (process.env.CI === "true" || process.env.TEST_ALL_STRATEGIES === "true") {
-    console.log(`[getStrategiesToTest] Testing ALL strategies (${ALL_STRATEGIES.length})`);
-    return ALL_STRATEGIES;
-  }
-  
-  // Default: server-only for fast local feedback
-  console.log(`[getStrategiesToTest] Testing server-only (default for fast feedback)`);
-  return [ALL_STRATEGIES[0]];
+  // Default: test all strategies to ensure lockstep consistency
+  console.log(`[getStrategiesToTest] Testing ALL strategies (${ALL_STRATEGIES.length}) for output consistency`);
+  return ALL_STRATEGIES;
 }

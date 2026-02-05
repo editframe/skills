@@ -261,3 +261,135 @@ export async function extractFrame(
 
   return outputPath;
 }
+
+export interface StrategyComparisonResult {
+  strategy1: string;
+  strategy2: string;
+  frameIndex: number;
+  diffPercentage: number;
+  diffPixels: number;
+  diffImagePath: string;
+  passed: boolean;
+}
+
+/**
+ * Compare frames using odiff (faster, more accurate than ImageMagick)
+ */
+export async function compareFramesWithOdiff(
+  frame1Path: string,
+  frame2Path: string,
+  diffOutputPath: string,
+  options: { threshold?: number } = {},
+): Promise<{ passed: boolean; diffPercentage: number; diffPixels: number }> {
+  const threshold = options.threshold ?? 0.1; // 10% tolerance by default
+
+  if (!existsSync(frame1Path)) {
+    throw new Error(`Frame 1 not found: ${frame1Path}`);
+  }
+
+  if (!existsSync(frame2Path)) {
+    throw new Error(`Frame 2 not found: ${frame2Path}`);
+  }
+
+  await mkdir(path.dirname(diffOutputPath), { recursive: true });
+
+  try {
+    // Use odiff for comparison
+    // odiff exits with 0 if images match, non-zero if they differ
+    const result = execSync(
+      `odiff --threshold ${threshold} --diff-image "${diffOutputPath}" "${frame1Path}" "${frame2Path}"`,
+      { encoding: "utf8", stdio: "pipe" },
+    );
+
+    // Parse odiff output: "Pixel difference: 1234 (0.5%)"
+    const match = result.match(/Pixel difference: (\d+) \(([\d.]+)%\)/);
+    const diffPixels = match ? parseInt(match[1]) : 0;
+    const diffPercentage = match ? parseFloat(match[2]) : 0;
+
+    return {
+      passed: true,
+      diffPercentage,
+      diffPixels,
+    };
+  } catch (error: any) {
+    // odiff exits with non-zero when differences exceed threshold
+    const output = error.stdout?.toString() || error.stderr?.toString() || "";
+    const match = output.match(/Pixel difference: (\d+) \(([\d.]+)%\)/);
+    const diffPixels = match ? parseInt(match[1]) : 0;
+    const diffPercentage = match ? parseFloat(match[2]) : 0;
+
+    return {
+      passed: false,
+      diffPercentage,
+      diffPixels,
+    };
+  }
+}
+
+/**
+ * Compare render outputs across all strategies for a given test
+ */
+export async function compareStrategies(
+  testOutputDir: string,
+  strategies: string[],
+  options: { threshold?: number; framesPerSecond?: number } = {},
+): Promise<StrategyComparisonResult[]> {
+  const threshold = options.threshold ?? 0.1; // 10% default
+  const fps = options.framesPerSecond ?? 1;
+  const results: StrategyComparisonResult[] = [];
+
+  // Use first strategy as reference
+  const referenceStrategy = strategies[0];
+  const referenceVideoPath = path.join(testOutputDir, referenceStrategy, "output.mp4");
+
+  if (!existsSync(referenceVideoPath)) {
+    throw new Error(`Reference video not found: ${referenceVideoPath}`);
+  }
+
+  // Extract frames from reference
+  const referenceFramesDir = path.join(testOutputDir, referenceStrategy, "frames");
+  const referenceFrames = await extractFrames(referenceVideoPath, referenceFramesDir, { framesPerSecond: fps });
+
+  // Compare each other strategy against reference
+  for (let i = 1; i < strategies.length; i++) {
+    const compareStrategy = strategies[i];
+    const compareVideoPath = path.join(testOutputDir, compareStrategy, "output.mp4");
+
+    if (!existsSync(compareVideoPath)) {
+      console.warn(`⚠️  Video not found for ${compareStrategy}: ${compareVideoPath}`);
+      continue;
+    }
+
+    // Extract frames from comparison video
+    const compareFramesDir = path.join(testOutputDir, compareStrategy, "frames");
+    const compareFrames = await extractFrames(compareVideoPath, compareFramesDir, { framesPerSecond: fps });
+
+    // Compare frame by frame
+    for (let frameIdx = 0; frameIdx < Math.min(referenceFrames.length, compareFrames.length); frameIdx++) {
+      const referenceFrame = referenceFrames[frameIdx];
+      const compareFrame = compareFrames[frameIdx];
+
+      const diffDir = path.join(testOutputDir, "diffs", `${referenceStrategy}-vs-${compareStrategy}`);
+      const diffPath = path.join(diffDir, `frame-${(frameIdx + 1).toString().padStart(3, "0")}.png`);
+
+      const comparison = await compareFramesWithOdiff(
+        referenceFrame,
+        compareFrame,
+        diffPath,
+        { threshold },
+      );
+
+      results.push({
+        strategy1: referenceStrategy,
+        strategy2: compareStrategy,
+        frameIndex: frameIdx,
+        diffPercentage: comparison.diffPercentage,
+        diffPixels: comparison.diffPixels,
+        diffImagePath: diffPath,
+        passed: comparison.passed,
+      });
+    }
+  }
+
+  return results;
+}

@@ -1,9 +1,11 @@
 import { describe, test, expect, beforeAll, afterAll } from "vitest";
-import { render } from "../utils/render";
+import path from "node:path";
+import { render, getSharedOutputDir } from "../utils/render";
 import { validateMP4 } from "../utils/video-validator";
 import { processTestVideoAsset, processTestImageAsset } from "../../test-utils/processTestAssets";
 import { createElectronRPC, type ElectronRPC } from "../../ElectronRPCClient";
-import { getStrategiesToTest } from "./strategies";
+import { getStrategiesToTest, ALL_STRATEGIES } from "./strategies";
+import { compareStrategies } from "../utils/visual-diff";
 import { makeTestAgent } from "TEST/util/test";
 import type { Selectable } from "kysely";
 import type { TestAgent } from "TEST/util/test";
@@ -204,4 +206,59 @@ describe("Elements Smoke Tests", { timeout: 60000 }, () => {
       }
     });
   });
+
+  // Only run strategy comparisons if we're testing multiple strategies
+  if (strategies.length > 1) {
+    describe("Strategy Consistency", () => {
+      const testNames = [
+        "ef-timegroup",
+        "ef-image",
+        "ef-text",
+        "nested-timegroups",
+        "multiple-elements",
+        "ef-video",
+        "ef-audio",
+        "ef-waveform",
+      ];
+
+      testNames.forEach((testName) => {
+        test(`${testName} outputs match across strategies`, async () => {
+          // Get the output directory for this test
+          const testOutputDir = path.join(getSharedOutputDir(), testName);
+
+          // Compare all strategies
+          const strategyNames = ALL_STRATEGIES.map(s => 
+            s.canvasMode ? `${s.renderMode}-${s.canvasMode}` : s.renderMode
+          );
+
+          const results = await compareStrategies(
+            testOutputDir,
+            strategyNames,
+            { threshold: 0.1, framesPerSecond: 1 }
+          );
+
+          // Check for failures
+          const failures = results.filter(r => !r.passed);
+          
+          if (failures.length > 0) {
+            const summary = failures.map(f =>
+              `  ${f.strategy1} vs ${f.strategy2} frame ${f.frameIndex}: ${f.diffPercentage.toFixed(2)}% diff (${f.diffPixels} pixels)\n` +
+              `    Diff image: ${f.diffImagePath}`
+            ).join("\n");
+
+            console.warn(
+              `⚠️  Visual differences detected in ${testName}:\n` +
+              `${failures.length} frame(s) exceeded 10% threshold\n` +
+              summary
+            );
+          } else {
+            console.log(`✅ All strategies match for ${testName} (${results.length} comparisons)`);
+          }
+
+          // For now, just warn about differences - don't fail the test
+          // Later we can make this strict once we verify consistency
+        }, 60000); // 60s timeout for comparison
+      });
+    });
+  }
 });

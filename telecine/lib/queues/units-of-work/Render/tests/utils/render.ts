@@ -59,6 +59,13 @@ const SHARED_OUTPUT_DIR = path.join(
 );
 
 /**
+ * Get the shared output directory for this test run
+ */
+export function getSharedOutputDir(): string {
+  return SHARED_OUTPUT_DIR;
+}
+
+/**
  * Cache for bundled HTML templates.
  * Key: template hash
  * Value: bundle info
@@ -146,16 +153,17 @@ async function renderWithBrowser(
     });
     timing.renderFragment = performance.now() - renderFnStart;
     
-    // Save to shared output directory with descriptive filename
+    // Save to nested output directory: testName/strategyName/output.mp4
     const writeStart = performance.now();
-    const outputDir = options.outputDir || SHARED_OUTPUT_DIR;
+    const baseOutputDir = options.outputDir || SHARED_OUTPUT_DIR;
+    
+    // Extract test name and create strategy-specific subdirectory
+    const testName = extractTestName(options.testName);
+    const strategyName = canvasMode ? `${renderMode}-${canvasMode}` : renderMode;
+    const outputDir = path.join(baseOutputDir, testName, strategyName);
     await mkdir(outputDir, { recursive: true });
     
-    const modeSuffix = `${renderMode}-${canvasMode}`;
-    const filename = options.testName
-      ? `${sanitizeFilename(options.testName)}-${modeSuffix}.mp4`
-      : `output-${modeSuffix}.mp4`;
-    const videoPath = path.join(outputDir, filename);
+    const videoPath = path.join(outputDir, "output.mp4");
     await writeFile(videoPath, result.finalVideoBuffer);
     timing.writeFile = performance.now() - writeStart;
     
@@ -177,7 +185,7 @@ async function renderWithBrowser(
       timing,
       timestamp: new Date().toISOString(),
     };
-    const perfPath = videoPath.replace('.mp4', '.perf.json');
+    const perfPath = path.join(outputDir, "perf.json");
     await writeFile(perfPath, JSON.stringify(perfData, null, 2));
     timing.writeFile = performance.now() - writeStart;
 
@@ -273,13 +281,17 @@ async function renderWithServer(
     });
     timing.renderFragment = performance.now() - renderFragmentStart;
 
-    // Save to shared output directory with descriptive filename
+    // Save to nested output directory: testName/strategyName/output.mp4
     const writeStart = performance.now();
-    const outputDir = options.outputDir || SHARED_OUTPUT_DIR;
+    const baseOutputDir = options.outputDir || SHARED_OUTPUT_DIR;
+    
+    // Extract test name and create strategy-specific subdirectory
+    const testName = extractTestName(options.testName);
+    const strategyName = "server";
+    const outputDir = path.join(baseOutputDir, testName, strategyName);
     await mkdir(outputDir, { recursive: true });
-
-    const filename = options.testName ? `${sanitizeFilename(options.testName)}.mp4` : "output.mp4";
-    const videoPath = path.join(outputDir, filename);
+    
+    const videoPath = path.join(outputDir, "output.mp4");
     await writeFile(videoPath, videoBuffer);
     timing.writeFile = performance.now() - writeStart;
 
@@ -301,7 +313,7 @@ async function renderWithServer(
       timing,
       timestamp: new Date().toISOString(),
     };
-    const perfPath = videoPath.replace('.mp4', '.perf.json');
+    const perfPath = path.join(outputDir, "perf.json");
     await writeFile(perfPath, JSON.stringify(perfData, null, 2));
     timing.writeFile = performance.now() - writeStart;
 
@@ -335,6 +347,21 @@ function sanitizeFilename(name: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+/**
+ * Extract clean test name from full test name (e.g., "elements-smoke-ef-timegroup-server" -> "ef-timegroup")
+ */
+function extractTestName(fullTestName?: string): string {
+  if (!fullTestName) return "test";
+  
+  // Remove common prefixes and suffixes
+  const cleaned = fullTestName
+    .replace(/^elements-smoke-/, "")
+    .replace(/-server$/, "")
+    .replace(/-browser-.*$/, "");
+  
+  return sanitizeFilename(cleaned);
 }
 
 /**
