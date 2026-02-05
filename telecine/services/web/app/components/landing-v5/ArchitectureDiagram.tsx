@@ -396,16 +396,23 @@ function FanOutDiagram() {
       }
 
       // ── Render clones: initializer creates a separate scene ──
+      // Use currentTimeMs (raw seek time) instead of ownCurrentTimeMs
+      // because the clone's OwnCurrentTimeController may not update
+      // between seekForRender calls.
       tg.initializer = (instance: HTMLElement & {
+        currentTimeMs?: number;
         ownCurrentTimeMs?: number;
         durationMs?: number;
-        addFrameTask?: (cb: (info: { ownCurrentTimeMs: number; durationMs: number }) => void) => () => void;
+        addFrameTask?: (cb: (info: {
+          currentTimeMs: number;
+          ownCurrentTimeMs: number;
+          durationMs: number;
+        }) => void) => () => void;
       }) => {
-        // Skip if this is the prime instance (already set up above)
         if (instance === tg) return;
 
         let cloneScene: SceneHandle | null = null;
-        instance.addFrameTask?.(({ ownCurrentTimeMs, durationMs }) => {
+        instance.addFrameTask?.(({ currentTimeMs, durationMs }) => {
           if (!cloneScene) {
             const cloneCvs = instance.querySelector("canvas") as HTMLCanvasElement | null;
             if (!cloneCvs) return;
@@ -413,7 +420,7 @@ function FanOutDiagram() {
             const rect = cloneCvs.getBoundingClientRect();
             cloneScene.resize(rect.width || cloneCvs.clientWidth || 800, rect.height || cloneCvs.clientHeight || 500);
           }
-          cloneScene.update(ownCurrentTimeMs, durationMs);
+          cloneScene.update(currentTimeMs, durationMs);
         });
       };
 
@@ -464,6 +471,21 @@ function FanOutDiagram() {
               width: "100%",
               height: "100%",
               display: "block",
+            }}
+          />
+          {/* Render capture: foreignObject can't serialize WebGL canvas bitmaps.
+              The clone's frame task copies canvas.toDataURL() to this img so
+              the SVG serializer captures the rendered 3D frame. */}
+          <img
+            className="scene-capture"
+            alt=""
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              display: "block",
+              pointerEvents: "none",
             }}
           />
 

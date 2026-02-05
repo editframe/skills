@@ -283,15 +283,19 @@ export function RenderQueuePanel() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-0.5">
                         <span className="text-[11px] font-medium text-white/80 truncate flex-1 mr-2">{job.name}</span>
-                        <span className="text-[10px] text-[var(--poster-blue)] font-mono tabular-nums">
-                          {(job.progress * 100).toFixed(0)}%
-                        </span>
+                        {job.progress >= 0.99 ? (
+                          <span className="text-[10px] text-[var(--poster-gold)] font-semibold animate-pulse">Finishing...</span>
+                        ) : (
+                          <span className="text-[10px] text-[var(--poster-blue)] font-mono tabular-nums">
+                            {(job.progress * 100).toFixed(0)}%
+                          </span>
+                        )}
                       </div>
                       <div className="text-[9px] text-white/30 truncate mb-1">{job.fileName}</div>
                       <div className="flex items-center gap-2">
                         <div className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-[var(--poster-blue)] rounded-full transition-all duration-200"
+                            className={`h-full rounded-full transition-all duration-200 ${job.progress >= 0.99 ? "bg-[var(--poster-gold)]" : "bg-[var(--poster-blue)]"}`}
                             style={{ width: `${job.progress * 100}%` }}
                           />
                         </div>
