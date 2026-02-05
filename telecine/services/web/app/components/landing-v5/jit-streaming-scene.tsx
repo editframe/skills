@@ -36,6 +36,13 @@ function clamp01(t: number) { return Math.max(0, Math.min(1, t)); }
 function prog(ms: number, s: number, e: number) { return clamp01((ms - s) / (e - s)); }
 function lerp(a: number, b: number, t: number) { return a + (b - a) * t; }
 
+/* ━━ Seeded pseudo-random number generator ━━━━━━━━━━━━━━━━━━━━━━━ */
+// Simple hash function for deterministic "random" numbers
+function seededRandom(seed: number): number {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
+
 /* ━━ Camera animation controller ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function CameraRig({ currentTimeMs }: { currentTimeMs: number }) {
   const { camera } = useThree();
@@ -98,12 +105,15 @@ function RemoteURL({ currentTimeMs }: { currentTimeMs: number }) {
     mat.emissiveIntensity = lerp(0, 0.4, p1);
     meshRef.current.castShadow = p1 > 0.1;
 
-    // Pulse during active phase
+    // Pulse during active phase with seeded variation
     if (currentTimeMs >= P3_START && currentTimeMs < P4_END) {
-      const pulse = Math.sin((currentTimeMs - P3_START) * 0.003) * 0.15;
-      mat.emissiveIntensity = 0.4 + pulse;
+      const phase = (currentTimeMs - P3_START) * 0.003;
+      const pulse = Math.sin(phase) * 0.15;
+      // Add subtle deterministic variation
+      const variation = seededRandom(Math.floor(phase * 10) + 100) * 0.05;
+      mat.emissiveIntensity = 0.4 + pulse + variation;
       if (glowRef.current) {
-        glowRef.current.intensity = 2 + pulse * 3;
+        glowRef.current.intensity = 2 + pulse * 3 + variation * 2;
       }
     }
   });
@@ -143,15 +153,17 @@ function JITService({ currentTimeMs }: { currentTimeMs: number }) {
     mat.emissiveIntensity = lerp(0, 0.6, appear);
     meshRef.current.castShadow = appear > 0.1;
 
-    // Heavy pulse during processing (phase 3-4)
+    // Heavy pulse during processing (phase 3-4) with seeded variation
     if (currentTimeMs >= P3_START && currentTimeMs < P4_END) {
       const processing = prog(currentTimeMs, P3_START, P4_END);
       const pulse = Math.sin(processing * Math.PI * 8) * 0.25;
-      mat.emissiveIntensity = 0.6 + pulse;
+      // Add organic variation to the pulse
+      const variation = seededRandom(Math.floor(processing * 100) + 200) * 0.08;
+      mat.emissiveIntensity = 0.6 + pulse + variation;
       meshRef.current.rotation.y = Math.sin(processing * Math.PI * 4) * 0.1;
 
       if (glowRef.current) {
-        glowRef.current.intensity = 4 + pulse * 4;
+        glowRef.current.intensity = 4 + pulse * 4 + variation * 3;
       }
     }
   });
@@ -230,16 +242,10 @@ function DataFlow({ currentTimeMs }: { currentTimeMs: number }) {
   const pointsRef = useRef<THREE.Points>(null);
   const PARTICLE_COUNT = 200;
 
-  // Initialize particle data with deterministic random offsets
-  const particleData = useRef<{
-    speeds: Float32Array;
-    offsetsX: Float32Array;
-    offsetsZ: Float32Array;
-  }>({
-    speeds: new Float32Array(PARTICLE_COUNT).map(() => 0.3 + Math.random() * 0.7),
-    offsetsX: new Float32Array(PARTICLE_COUNT).map(() => (Math.random() - 0.5) * 0.2),
-    offsetsZ: new Float32Array(PARTICLE_COUNT).map(() => (Math.random() - 0.5) * 0.3),
-  });
+  // Initialize particle speeds (only need to generate once)
+  const particleSpeeds = useRef<Float32Array>(
+    new Float32Array(PARTICLE_COUNT).map((_, i) => 0.3 + seededRandom(i * 100) * 0.7)
+  );
 
   useFrame(() => {
     if (!pointsRef.current) return;
@@ -250,17 +256,21 @@ function DataFlow({ currentTimeMs }: { currentTimeMs: number }) {
       mat.opacity = 0.8;
 
       const positions = pointsRef.current.geometry.attributes.position!.array as Float32Array;
-      const { speeds, offsetsX, offsetsZ } = particleData.current;
+      const speeds = particleSpeeds.current;
 
       // Two paths: URL → JIT and JIT → Renderer
       for (let i = 0; i < PARTICLE_COUNT; i++) {
         const speed = speeds[i]!;
-        const offsetX = offsetsX[i]!;
-        const offsetZ = offsetsZ[i]!;
         const isFirstPath = i < PARTICLE_COUNT / 2;
 
         // Progress along path - purely deterministic based on currentTimeMs
         const t = ((currentTimeMs - P3_START) * speed * 0.0008 + i * 0.05) % 1;
+
+        // Deterministic offsets using seeded random based on particle index and time
+        // Use different seeds for different axes to avoid correlation
+        const wobbleFreq = 0.002; // How fast the wobble changes
+        const offsetX = (seededRandom(i * 1000 + currentTimeMs * wobbleFreq) - 0.5) * 0.2;
+        const offsetZ = (seededRandom(i * 2000 + currentTimeMs * wobbleFreq) - 0.5) * 0.3;
 
         if (isFirstPath) {
           // URL (-4, 0.5) → JIT (0, 0.5)
