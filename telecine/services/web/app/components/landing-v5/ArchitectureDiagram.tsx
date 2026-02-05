@@ -1,4 +1,12 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import {
+  Preview,
+  Timegroup,
+  Text as EFText,
+  Scrubber,
+  TogglePlay,
+  TimeDisplay,
+} from "@editframe/react";
 
 /* ━━ Shared animation CSS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 const STYLES = `
@@ -321,124 +329,265 @@ function JitDiagram() {
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   5. PARALLEL FRAGMENTS — the timeline gets sliced, processed
-   simultaneously, and reassembled. The punchline is the time
-   comparison at the bottom: 4× faster.
+   5. PARALLEL FRAGMENTS — an actual Editframe composition that
+   sequences the reveal: timeline → split → workers → reassemble →
+   time-comparison punchline.  Scrubable.  Eating our own dogfood.
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+const COMP_KEYFRAMES = `
+  @keyframes efFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes efSlideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes efGrowRight {
+    from { transform: scaleX(0); opacity: 0.6; }
+    to   { transform: scaleX(1); opacity: 1; }
+  }
+`;
+
+const FRAGS = [
+  { range: "0\u201315s", left: "6%",  opa: 1 },
+  { range: "15\u201330s", left: "28%", opa: 0.85 },
+  { range: "30\u201345s", left: "50%", opa: 0.7 },
+  { range: "45\u201360s", left: "72%", opa: 0.55 },
+] as const;
+
+const DUR = "10s";
+
 function FanOutDiagram() {
-  const { ref, on } = useDiagramAnim();
+  const uid = useId();
+  const rootId = `fanout-${uid}`;
+  const [isClient, setIsClient] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const FRAGS = [
-    { x: 35,  w: 76, cx: 73,  range: "0\u201315s" },
-    { x: 113, w: 76, cx: 151, range: "15\u201330s" },
-    { x: 191, w: 76, cx: 229, range: "30\u201345s" },
-    { x: 269, w: 76, cx: 307, range: "45\u201360s" },
-  ] as const;
+  useEffect(() => { setIsClient(true); }, []);
 
-  const SY = 28;   // segment Y
-  const SH = 24;   // segment height
-  const WY = 92;   // worker Y
-  const WH = 38;   // worker height
-  const OY = 166;  // output Y
-  const OH = 24;   // output height
+  useEffect(() => {
+    if (!isClient) return;
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          const tg = el.querySelector("ef-timegroup") as HTMLElement & { play?: () => void };
+          if (tg?.play) tg.play();
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.3 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [isClient]);
+
+  if (!isClient) {
+    return (
+      <div
+        className="w-full flex items-center justify-center bg-[var(--card-bg)]"
+        style={{ aspectRatio: "19/14" }}
+      >
+        <span className="text-xs text-[var(--warm-gray)]">Loading composition\u2026</span>
+      </div>
+    );
+  }
+
+  const abs = (extra: Record<string, string | number>): React.CSSProperties => ({
+    position: "absolute" as const,
+    ...extra,
+  });
+
+  const seg = (i: number): React.CSSProperties => ({
+    ...abs({ top: "11%", left: FRAGS[i]!.left, width: "20%", height: "8%" }),
+    background: "var(--poster-blue)",
+    opacity: FRAGS[i]!.opa,
+    display: "flex", alignItems: "center", justifyContent: "center",
+    color: "white", fontSize: "11px", fontWeight: 700,
+    animation: `efSlideUp 350ms ${200 + i * 150}ms backwards`,
+  });
+
+  const worker = (i: number): React.CSSProperties => ({
+    ...abs({ top: "34%", left: FRAGS[i]!.left, width: "20%", height: "11%" }),
+    background: "var(--poster-blue)",
+    display: "flex", alignItems: "center", justifyContent: "center",
+    color: "white", fontSize: "11px", fontWeight: 700,
+    animation: `efSlideUp 350ms ${1800 + i * 150}ms backwards`,
+  });
 
   return (
-    <svg ref={ref} data-on={on ? "1" : "0"} viewBox="0 0 380 268" className="w-full h-auto">
-      <defs><style>{STYLES}</style></defs>
+    <div ref={containerRef}>
+      <style>{COMP_KEYFRAMES}</style>
 
-      {/* ── Input: the video timeline, sliced into 4 segments ──── */}
-      <text x={35} y={16} dominantBaseline="central"
-        fill="var(--warm-gray)" fontSize={7.5} fontWeight={600}
-        style={ls}>60 second composition</text>
+      <Preview id={rootId} loop>
+        <Timegroup
+          mode="fixed"
+          duration={DUR}
+          className="relative w-full overflow-hidden"
+          style={{ aspectRatio: "19/14" }}
+        >
+          {/* ── Phase 1: The composition timeline (0–1s) ────────── */}
+          <EFText
+            duration={DUR}
+            style={abs({
+              top: "3%", left: "6%",
+              fontSize: "11px", color: "var(--warm-gray)",
+              fontWeight: 600, letterSpacing: "0.05em",
+              animation: "efFadeIn 400ms 0ms backwards",
+            })}
+          >
+            60 second composition
+          </EFText>
 
-      {FRAGS.map((f, i) => (
-        <g key={f.x}>
-          <rect x={f.x} y={SY} width={f.w} height={SH}
-            fill="var(--poster-blue)" fillOpacity={1 - i * 0.15}
-            stroke="var(--ink-black)" strokeWidth={1} />
-          <text x={f.cx} y={SY + SH / 2} textAnchor="middle" dominantBaseline="central"
-            fill="white" fontSize={7.5} fontWeight={700}>{f.range}</text>
-        </g>
-      ))}
+          {FRAGS.map((f, i) => (
+            <EFText key={f.range} duration={DUR} style={seg(i)}>
+              {f.range}
+            </EFText>
+          ))}
 
-      {/* Time markers */}
-      <g fill="var(--warm-gray)" fontSize={6} fontWeight={600}>
-        <text x={35} y={SY + SH + 10}>0s</text>
-        <text x={113} y={SY + SH + 10} textAnchor="middle">15s</text>
-        <text x={191} y={SY + SH + 10} textAnchor="middle">30s</text>
-        <text x={269} y={SY + SH + 10} textAnchor="middle">45s</text>
-        <text x={345} y={SY + SH + 10} textAnchor="end">60s</text>
-      </g>
+          {/* ── Phase 2: Workers appear below segments (1.8–2.5s) ─ */}
+          {FRAGS.map((_, i) => (
+            <EFText key={`w${i}`} duration={DUR} style={worker(i)}>
+              {`Worker ${i + 1}`}
+            </EFText>
+          ))}
 
-      {/* ── Fan-out: each segment drops to its worker ─────────── */}
-      <g stroke="var(--warm-gray)" strokeWidth={1} opacity={0.2} fill="none">
-        {FRAGS.map((f) => <path key={`fo${f.x}`} d={`M${f.cx},${SY + SH} V${WY}`} />)}
-      </g>
-      <g stroke="var(--poster-blue)" strokeWidth={2}>
-        {FRAGS.map((f) => <path key={`fof${f.x}`} className="arch-fr" d={`M${f.cx},${SY + SH} V${WY}`} />)}
-      </g>
+          {/* ── Phase 3: Output bar reassembles (3.5s) ──────────── */}
+          <EFText
+            duration={DUR}
+            style={{
+              ...abs({ top: "56%", left: "6%", width: "88%", height: "8%" }),
+              background: "var(--poster-blue)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "white", fontSize: "11px", fontWeight: 700,
+              letterSpacing: "0.06em",
+              animation: "efFadeIn 500ms 3500ms backwards",
+            }}
+          >
+            Complete video
+          </EFText>
 
-      {/* ── Workers: aligned below their segments ─────────────── */}
-      {FRAGS.map((f, i) => (
-        <g key={`w${i}`}>
-          <rect x={f.x} y={WY} width={f.w} height={WH}
-            fill="var(--poster-blue)" stroke="var(--ink-black)" strokeWidth={1.5} />
-          <text x={f.cx} y={WY + 14} textAnchor="middle" dominantBaseline="central"
-            fill="white" fontSize={8.5} fontWeight={700}>Worker {i + 1}</text>
-          <text x={f.cx} y={WY + 28} textAnchor="middle" dominantBaseline="central"
-            fill="white" fillOpacity={0.6} fontSize={7} fontWeight={600}>{f.range}</text>
-        </g>
-      ))}
+          {/* ── Phase 4: The punchline (5–7s) ───────────────────── */}
+          <EFText
+            duration={DUR}
+            style={abs({
+              top: "72%", left: "6%",
+              fontSize: "11px", color: "var(--ink-black)",
+              fontWeight: 700, letterSpacing: "0.06em",
+              animation: "efFadeIn 400ms 5000ms backwards",
+            })}
+          >
+            Render time
+          </EFText>
 
-      {/* ── Fan-in: workers deliver back to a single output ───── */}
-      <g stroke="var(--warm-gray)" strokeWidth={1} opacity={0.2} fill="none">
-        {FRAGS.map((f) => <path key={`fi${f.x}`} d={`M${f.cx},${WY + WH} V${OY}`} />)}
-      </g>
-      <g stroke="var(--poster-blue)" strokeWidth={2}>
-        {FRAGS.map((f) => <path key={`fif${f.x}`} className="arch-fr" d={`M${f.cx},${WY + WH} V${OY}`} />)}
-      </g>
+          {/* Sequential bar */}
+          <EFText
+            duration={DUR}
+            style={{
+              ...abs({ top: "79%", left: "6%", width: "88%", height: "5.5%" }),
+              background: "var(--warm-gray)", opacity: 0.15,
+              transformOrigin: "left",
+              animation: "efGrowRight 600ms 5500ms backwards",
+            }}
+          >
+            {"\u00A0"}
+          </EFText>
+          <EFText
+            duration={DUR}
+            style={abs({
+              top: "80%", left: "30%",
+              fontSize: "10px", color: "var(--warm-gray)",
+              fontWeight: 600,
+              animation: "efFadeIn 300ms 5800ms backwards",
+            })}
+          >
+            Sequential \u2014 one worker
+          </EFText>
+          <EFText
+            duration={DUR}
+            style={abs({
+              top: "80%", left: "88%",
+              fontSize: "11px", color: "var(--warm-gray)",
+              fontWeight: 700,
+              animation: "efFadeIn 300ms 5800ms backwards",
+            })}
+          >
+            60s
+          </EFText>
 
-      {/* ── Output: reassembled, no gaps ──────────────────────── */}
-      <rect x={35} y={OY} width={310} height={OH}
-        fill="var(--poster-blue)" stroke="var(--ink-black)" strokeWidth={1} />
-      <text x={190} y={OY + OH / 2} textAnchor="middle" dominantBaseline="central"
-        fill="white" fontSize={8} fontWeight={700} style={ls}>Complete video</text>
+          {/* Parallel bar */}
+          <EFText
+            duration={DUR}
+            style={{
+              ...abs({ top: "88%", left: "6%", width: "22%", height: "5.5%" }),
+              background: "var(--poster-blue)",
+              transformOrigin: "left",
+              animation: "efGrowRight 500ms 6500ms backwards",
+            }}
+          >
+            {"\u00A0"}
+          </EFText>
+          <EFText
+            duration={DUR}
+            style={abs({
+              top: "89%", left: "8%",
+              fontSize: "10px", color: "white",
+              fontWeight: 700,
+              animation: "efFadeIn 300ms 6800ms backwards",
+            })}
+          >
+            15s
+          </EFText>
 
-      {/* ── The punchline: time comparison ────────────────────── */}
-      <text x={35} y={210} dominantBaseline="central"
-        fill="var(--ink-black)" fontSize={8} fontWeight={700} style={ls}>Render time</text>
+          {/* 4× faster callout */}
+          <EFText
+            duration={DUR}
+            style={abs({
+              top: "87%", left: "30%",
+              fontSize: "18px", color: "var(--poster-blue)",
+              fontWeight: 900,
+              animation: "efSlideUp 400ms 7000ms backwards",
+            })}
+          >
+            4\u00d7 faster
+          </EFText>
+        </Timegroup>
+      </Preview>
 
-      {/* Sequential: full bar, gray, slow */}
-      <rect x={35} y={222} width={310} height={14}
-        fill="var(--warm-gray)" fillOpacity={0.15}
-        stroke="var(--warm-gray)" strokeWidth={0.5} />
-      <text x={190} y={229} textAnchor="middle" dominantBaseline="central"
-        fill="var(--warm-gray)" fontSize={7} fontWeight={600}>Sequential \u2014 one worker</text>
-      <text x={350} y={229} dominantBaseline="central"
-        fill="var(--warm-gray)" fontSize={8} fontWeight={700}>60s</text>
+      {/* ── Playback controls ──────────────────────────────────── */}
+      <div className="flex items-center gap-0 mt-1 bg-[var(--ink-black)] dark:bg-[#111] overflow-hidden" style={{ borderRadius: "0 0 3px 3px" }}>
+        <TogglePlay target={rootId}>
+          <button
+            slot="play"
+            className="w-9 h-9 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+          </button>
+          <button
+            slot="pause"
+            className="w-9 h-9 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" /></svg>
+          </button>
+        </TogglePlay>
 
-      {/* Parallel: quarter bar, blue, fast */}
-      <rect x={35} y={244} width={77} height={14}
-        fill="var(--poster-blue)" />
-      <text x={73} y={251} textAnchor="middle" dominantBaseline="central"
-        fill="white" fontSize={7} fontWeight={700}>15s</text>
-
-      {/* 4x callout */}
-      <text x={124} y={251} dominantBaseline="central"
-        fill="var(--poster-blue)" fontSize={14} fontWeight={900}>4\u00d7 faster</text>
-
-      {/* ── Particles ────────────────────────────────────────── */}
-      {FRAGS.map((f, i) => (
-        <rect key={`p${i}`} className="arch-pt" x={-3} y={-3} width={6} height={6} fill="var(--poster-blue)">
-          <animateMotion
-            dur="2.5s" repeatCount="indefinite" calcMode="linear" begin={`${i * 0.15}s`}
-            path={`M${f.cx},${SY + SH} V${WY} V${WY + WH} V${OY}`}
+        <div className="flex-1 px-3 h-9 flex items-center border-l border-white/10">
+          <Scrubber
+            target={rootId}
+            className="w-full h-1 bg-white/20 rounded-full cursor-pointer [&::part(progress)]:bg-[var(--poster-blue)] [&::part(progress)]:rounded-full [&::part(thumb)]:bg-white [&::part(thumb)]:w-2.5 [&::part(thumb)]:h-2.5 [&::part(thumb)]:rounded-full"
           />
-          <animate attributeName="opacity" dur="2.5s" repeatCount="indefinite" begin={`${i * 0.15}s`}
-            values="0;1;1;0" keyTimes="0;0.05;0.9;1" />
-        </rect>
-      ))}
-    </svg>
+        </div>
+
+        <div className="px-3 border-l border-white/10 h-9 flex items-center">
+          <TimeDisplay
+            target={rootId}
+            className="text-[10px] text-white/60 font-mono tabular-nums"
+          />
+        </div>
+      </div>
+    </div>
   );
 }
 
