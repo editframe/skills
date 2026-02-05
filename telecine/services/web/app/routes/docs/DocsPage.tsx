@@ -314,43 +314,49 @@ export default function DocsPage() {
               className={clsx(
                 "md:pr-6",
                 "markdown",
-                "prose prose-slate max-w-none dark:prose-invert",
-                // Base typography using centralized system
-                "prose-base prose-slate",
-                // Paragraphs - consistent spacing and line height
-                "prose-p:text-slate-700 prose-p:leading-loose dark:prose-p:text-slate-200",
-                "prose-p:mb-6",
-                // Headings - professional hierarchy with centralized spacing
+                "prose max-w-none dark:prose-invert",
+                // Base typography - Swiss/Bauhaus inspired
+                "prose-base",
+                // Paragraphs - warm gray, good leading
+                "prose-p:text-[var(--warm-gray)] prose-p:leading-relaxed",
+                "prose-p:mb-5",
+                // Headings - bold hierarchy with tight tracking
                 "prose-headings:scroll-mt-20 sm:prose-headings:scroll-mt-24 lg:prose-headings:scroll-mt-[8.5rem]",
-                "prose-headings:font-display prose-headings:tracking-tight",
-                "prose-h1:text-slate-900 prose-h1:text-4xl prose-h1:font-bold prose-h1:mb-4 prose-h1:mt-8 prose-h1:leading-snug dark:prose-h1:text-white",
-                "prose-h2:text-slate-900 prose-h2:text-3xl prose-h2:font-semibold prose-h2:mt-10 prose-h2:mb-4 prose-h2:leading-snug prose-h2:border-b prose-h2:border-slate-200 prose-h2:pb-3 dark:prose-h2:text-white dark:prose-h2:border-slate-700",
-                "prose-h3:text-slate-900 prose-h3:text-2xl prose-h3:font-semibold prose-h3:mt-8 prose-h3:mb-3 prose-h3:leading-snug dark:prose-h3:text-slate-100",
-                "prose-h4:text-slate-700 prose-h4:text-xl prose-h4:font-semibold prose-h4:mt-6 prose-h4:mb-2 prose-h4:leading-snug dark:prose-h4:text-slate-200",
+                "prose-headings:tracking-tight prose-headings:text-[var(--ink-black)] dark:prose-headings:text-white",
+                // H1 - Bold, large, with accent underline
+                "prose-h1:text-4xl prose-h1:font-bold prose-h1:mb-6 prose-h1:mt-8 prose-h1:leading-[1.1]",
+                // H2 - Bold with 2px bottom border
+                "prose-h2:text-2xl prose-h2:font-bold prose-h2:mt-12 prose-h2:mb-4 prose-h2:leading-tight prose-h2:border-b-2 prose-h2:border-[var(--ink-black)]/10 dark:prose-h2:border-white/10 prose-h2:pb-3",
+                // H3 - Bold, clean
+                "prose-h3:text-xl prose-h3:font-bold prose-h3:mt-8 prose-h3:mb-3 prose-h3:leading-tight",
+                // H4 - Semibold with accent color
+                "prose-h4:text-lg prose-h4:font-semibold prose-h4:mt-6 prose-h4:mb-2 prose-h4:leading-tight prose-h4:text-[var(--accent-blue)]",
                 // Lead text
-                "prose-lead:text-slate-600 prose-lead:text-lg prose-lead:leading-loose dark:prose-lead:text-slate-400",
-                // Links
-                "prose-a:text-blue-600 prose-a:font-medium prose-a:no-underline hover:prose-a:underline dark:prose-a:text-blue-400",
+                "prose-lead:text-[var(--warm-gray)] prose-lead:text-lg prose-lead:leading-relaxed",
+                // Links - accent blue, bold on hover
+                "prose-a:text-[var(--accent-blue)] prose-a:font-semibold prose-a:no-underline hover:prose-a:text-[var(--accent-red)]",
                 "prose-a:transition-colors",
+                // Strong - ink black
+                "prose-strong:text-[var(--ink-black)] dark:prose-strong:text-white prose-strong:font-bold",
                 // Lists
-                "prose-ul:my-6 prose-ol:my-6",
-                "prose-li:text-slate-700 prose-li:leading-loose dark:prose-li:text-slate-200",
-                "prose-li:my-2",
-                // Code blocks
-                "prose-pre:bg-slate-50 prose-pre:rounded-lg prose-pre:border prose-pre:border-slate-200 prose-pre:overflow-hidden",
-                "dark:prose-pre:bg-slate-900/50 dark:prose-pre:border-slate-800 dark:prose-pre:ring-1 dark:prose-pre:ring-slate-300/10",
-                "prose-code:text-slate-900 prose-code:font-mono prose-code:font-normal dark:prose-code:text-slate-100",
-                // HR
-                "prose-hr:border-slate-200 dark:prose-hr:border-slate-800 prose-hr:my-8",
-                // Blockquotes
-                "prose-blockquote:border-l-4 prose-blockquote:border-blue-500 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-slate-600 dark:prose-blockquote:text-slate-400",
-                // Tables
+                "prose-ul:my-5 prose-ol:my-5",
+                "prose-li:text-[var(--warm-gray)] prose-li:leading-relaxed",
+                "prose-li:my-1.5",
+                // Code blocks - dark with 2px border
+                "prose-pre:bg-[#1a1a1a] prose-pre:border-2 prose-pre:border-[var(--ink-black)]/10 dark:prose-pre:border-white/10 prose-pre:overflow-hidden",
+                "prose-code:text-white prose-code:font-mono",
+                // Inline code - accent background
+                "prose-code:before:content-none prose-code:after:content-none",
+                // HR - 2px rule
+                "prose-hr:border-t-2 prose-hr:border-[var(--ink-black)]/10 dark:prose-hr:border-white/10 prose-hr:my-10",
+                // Blockquotes - accent left border
+                "prose-blockquote:border-l-2 prose-blockquote:border-[var(--accent-blue)] prose-blockquote:pl-4 prose-blockquote:not-italic prose-blockquote:text-[var(--warm-gray)] prose-blockquote:font-medium",
+                // Tables - clean with 2px header border
                 "prose-table:text-sm",
-                "prose-th:text-slate-900 prose-th:font-semibold dark:prose-th:text-slate-100",
-                "prose-td:text-slate-700 dark:prose-td:text-slate-200",
+                "prose-th:text-[var(--ink-black)] dark:prose-th:text-white prose-th:font-bold prose-th:uppercase prose-th:tracking-wider prose-th:text-xs prose-th:border-b-2 prose-th:border-[var(--ink-black)] dark:prose-th:border-white",
+                "prose-td:text-[var(--warm-gray)] prose-td:border-b prose-td:border-[var(--ink-black)]/10 dark:prose-td:border-white/10",
                 // Selection style
-                "selection:bg-blue-100 dark:selection:bg-blue-900/30",
-                "prose-code:selection:bg-blue-200 dark:prose-code:selection:bg-blue-800/50",
+                "selection:bg-[var(--accent-gold)]/20",
               )}
             >
               <MDXAsComponent
