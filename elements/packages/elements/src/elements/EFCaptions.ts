@@ -43,7 +43,7 @@ const stopWords = new Set(["", ".", "!", "?", ","]);
  * Uses light DOM for simplicity - parent sets textContent directly.
  */
 @customElement("ef-captions-active-word")
-export class EFCaptionsActiveWord extends HTMLElement {
+export class EFCaptionsActiveWord extends LitElement {
   #wordText = "";
   #wordIndex = 0;
   
@@ -82,7 +82,7 @@ export class EFCaptionsActiveWord extends HTMLElement {
  * Uses light DOM for simplicity - parent sets textContent directly.
  */
 @customElement("ef-captions-segment")
-export class EFCaptionsSegment extends HTMLElement {
+export class EFCaptionsSegment extends LitElement {
   #segmentText = "";
   
   set segmentText(text: string) {
