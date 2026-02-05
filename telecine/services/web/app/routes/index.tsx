@@ -242,118 +242,182 @@ export default function IndexPage() {
       {/* AI Skills Section - STACKING BLOCKS (lego-brick composable skills) - THE CORE PITCH */}
       <section className="relative py-24 bg-[var(--poster-green)] text-white overflow-hidden">
         {/* Stacked blocks pattern - composable, modular, building */}
-        <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/4 w-[400px] h-[400px] opacity-[0.1]">
+        <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/4 w-[500px] h-[500px] opacity-[0.08]">
           <svg viewBox="0 0 100 100" className="w-full h-full">
-            {/* Stacked rectangles like building blocks */}
-            <rect x="20" y="60" width="60" height="20" fill="white" />
-            <rect x="30" y="40" width="50" height="20" fill="white" />
-            <rect x="25" y="20" width="40" height="20" fill="white" />
-            <rect x="35" y="0" width="30" height="20" fill="white" />
+            <rect x="10" y="70" width="80" height="15" fill="white" />
+            <rect x="20" y="55" width="60" height="15" fill="white" />
+            <rect x="15" y="40" width="50" height="15" fill="white" />
+            <rect x="25" y="25" width="40" height="15" fill="white" />
+            <rect x="30" y="10" width="30" height="15" fill="white" />
           </svg>
         </div>
 
         <div className="relative max-w-7xl mx-auto px-6">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div>
-              <h2 className="text-5xl md:text-6xl font-black tracking-tighter uppercase mb-4">
-                Prompt it
-              </h2>
-              {/* Stacking blocks echo */}
-              <div className="flex flex-col items-start gap-1 mb-6">
-                <div className="w-24 h-3 bg-white" />
-                <div className="w-20 h-3 bg-white/80" />
-                <div className="w-16 h-3 bg-white/60" />
-              </div>
-              <p className="text-xl text-white/80 mb-8 max-w-md">
-                Agent skills for video composition, branded content, and common editing tasks. Describe what you want, get production-ready video.
-              </p>
-              
-              <div className="space-y-4 mb-10">
-                {[
-                  { 
-                    title: 'Video Composition', 
-                    desc: 'Layouts, transitions, timing, text overlays - describe the structure.',
-                    icon: '▶'
-                  },
-                  { 
-                    title: 'Branded Content', 
-                    desc: 'Apply brand guidelines, colors, logos, fonts automatically.',
-                    icon: '◆'
-                  },
-                  { 
-                    title: 'Editor Components', 
-                    desc: 'Lego-brick GUI: timeline, scrubber, filmstrip, preview - snap together.',
-                    icon: '▦'
-                  },
-                  { 
-                    title: 'Cloud & Rendering', 
-                    desc: 'Skills for batch rendering, webhooks, CDN delivery, encoding.',
-                    icon: '☁'
-                  },
-                ].map((skill, i) => (
-                  <div key={i} className="flex gap-4 items-start">
-                    <div className="flex-shrink-0 w-10 h-10 bg-white text-[var(--poster-green)] flex items-center justify-center font-bold text-lg">
-                      {skill.icon}
-                    </div>
-                    <div>
-                      <h3 className="font-bold uppercase tracking-wider text-sm mb-1">{skill.title}</h3>
-                      <p className="text-sm text-white/70">{skill.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <Link
-                to="/docs/skills"
-                className="inline-flex items-center px-6 py-3 bg-white text-[var(--poster-green)] font-bold text-sm uppercase tracking-wider hover:bg-[var(--poster-gold)] hover:text-[var(--ink-black)] transition-colors"
-              >
-                Explore skills
-                <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </Link>
+          {/* Header */}
+          <div className="text-center mb-16">
+            <h2 className="text-5xl md:text-7xl font-black tracking-tighter uppercase mb-4">
+              Prompt it
+            </h2>
+            <div className="flex justify-center items-center gap-2 mb-6">
+              <div className="w-16 h-2 bg-white" />
+              <div className="w-12 h-2 bg-white/70" />
+              <div className="w-8 h-2 bg-white/40" />
             </div>
+            <p className="text-xl text-white/80 max-w-2xl mx-auto">
+              Agent skills for building video editors, editing workflows, and complete applications. 
+              Describe what you want to build, get production-ready code.
+            </p>
+          </div>
 
-            {/* Prompt example card */}
+          {/* Skill Categories Grid */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+            {[
+              { 
+                title: 'Video Composition', 
+                desc: 'Layouts, transitions, timing, text overlays, animations.',
+                icon: '▶',
+                example: '@video-composition'
+              },
+              { 
+                title: 'Editor GUI', 
+                desc: 'Timeline, scrubber, filmstrip, preview, playback controls.',
+                icon: '▦',
+                example: '@editor-gui'
+              },
+              { 
+                title: 'Editing Workflows', 
+                desc: 'Trim, split, merge, reorder, batch operations.',
+                icon: '⚡',
+                example: '@editing-workflow'
+              },
+              { 
+                title: 'Branded Templates', 
+                desc: 'Apply brand colors, logos, fonts, intros, outros.',
+                icon: '◆',
+                example: '@brand-template'
+              },
+              { 
+                title: 'Full Applications', 
+                desc: 'Complete video apps with upload, edit, export, share.',
+                icon: '⬡',
+                example: '@video-app'
+              },
+              { 
+                title: 'Cloud Pipeline', 
+                desc: 'Rendering, webhooks, CDN delivery, encoding presets.',
+                icon: '☁',
+                example: '@cloud-render'
+              },
+            ].map((skill, i) => (
+              <div key={i} className="bg-white/10 backdrop-blur-sm border border-white/20 p-5">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 bg-white text-[var(--poster-green)] flex items-center justify-center font-bold text-lg">
+                    {skill.icon}
+                  </div>
+                  <h3 className="font-bold uppercase tracking-wider text-sm">{skill.title}</h3>
+                </div>
+                <p className="text-sm text-white/70 mb-3">{skill.desc}</p>
+                <code className="text-xs text-[var(--poster-gold)] font-mono">{skill.example}</code>
+              </div>
+            ))}
+          </div>
+
+          {/* Prompt Examples - Three Cards */}
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Example 1: Build a Video Editor */}
             <div className="relative">
-              <div className="absolute -bottom-4 -right-4 w-full h-full bg-[var(--poster-gold)]" />
-              <div className="relative bg-[var(--ink-black)] border-4 border-white p-6">
-                {/* Fake prompt interface */}
-                <div className="flex items-center gap-2 mb-4 pb-4 border-b border-white/20">
-                  <div className="w-3 h-3 rounded-full bg-[var(--poster-red)]" />
-                  <div className="w-3 h-3 rounded-full bg-[var(--poster-gold)]" />
-                  <div className="w-3 h-3 rounded-full bg-[var(--poster-green)]" />
-                  <span className="ml-2 text-white/40 text-xs font-mono">skills.editframe.com</span>
+              <div className="absolute -bottom-3 -right-3 w-full h-full bg-[var(--poster-gold)]" />
+              <div className="relative bg-[var(--ink-black)] border-4 border-white p-5 h-full">
+                <div className="flex items-center gap-2 mb-3 pb-3 border-b border-white/20">
+                  <div className="w-2 h-2 rounded-full bg-[var(--poster-red)]" />
+                  <div className="w-2 h-2 rounded-full bg-[var(--poster-gold)]" />
+                  <div className="w-2 h-2 rounded-full bg-[var(--poster-green)]" />
+                  <span className="ml-2 text-white/40 text-xs font-mono">editor-gui</span>
                 </div>
-                
-                <div className="space-y-4 font-mono text-sm">
-                  <div className="text-white/50">
-                    <span className="text-[var(--poster-gold)]">@video-composition</span>
+                <div className="space-y-3 font-mono text-xs">
+                  <div className="text-[var(--poster-gold)]">@editor-gui</div>
+                  <div className="text-white text-sm">
+                    Build a video editor with timeline, preview, and trim controls. 
+                    Support drag-to-reorder clips.
                   </div>
-                  <div className="text-white">
-                    Create a 16:9 promo video with our logo centered, 
-                    fade in the tagline "Build video with code" below it, 
-                    add a subtle particle background, 
-                    end with a CTA button animation.
-                  </div>
-                  <div className="pt-4 border-t border-white/20 text-white/50">
-                    <span className="text-[var(--poster-blue)]">→</span> Generating composition with 4 layers...
-                  </div>
-                  <div className="text-white/50">
-                    <span className="text-[var(--poster-green)]">✓</span> Logo layer (center, fade-in 0-1s)
-                  </div>
-                  <div className="text-white/50">
-                    <span className="text-[var(--poster-green)]">✓</span> Text layer (below logo, fade-in 1-2s)
-                  </div>
-                  <div className="text-white/50">
-                    <span className="text-[var(--poster-green)]">✓</span> Particle background (looping)
-                  </div>
-                  <div className="text-white/50">
-                    <span className="text-[var(--poster-green)]">✓</span> CTA button (slide-in 3-4s)
+                  <div className="pt-3 border-t border-white/20 space-y-1 text-white/50">
+                    <div><span className="text-[var(--poster-green)]">✓</span> Preview component</div>
+                    <div><span className="text-[var(--poster-green)]">✓</span> Timeline with tracks</div>
+                    <div><span className="text-[var(--poster-green)]">✓</span> Scrubber + playhead</div>
+                    <div><span className="text-[var(--poster-green)]">✓</span> Trim handles</div>
+                    <div><span className="text-[var(--poster-green)]">✓</span> Drag-to-reorder</div>
                   </div>
                 </div>
               </div>
             </div>
+
+            {/* Example 2: Editing Workflow */}
+            <div className="relative">
+              <div className="absolute -bottom-3 -right-3 w-full h-full bg-[var(--poster-blue)]" />
+              <div className="relative bg-[var(--ink-black)] border-4 border-white p-5 h-full">
+                <div className="flex items-center gap-2 mb-3 pb-3 border-b border-white/20">
+                  <div className="w-2 h-2 rounded-full bg-[var(--poster-red)]" />
+                  <div className="w-2 h-2 rounded-full bg-[var(--poster-gold)]" />
+                  <div className="w-2 h-2 rounded-full bg-[var(--poster-green)]" />
+                  <span className="ml-2 text-white/40 text-xs font-mono">workflow</span>
+                </div>
+                <div className="space-y-3 font-mono text-xs">
+                  <div className="text-[var(--poster-gold)]">@editing-workflow</div>
+                  <div className="text-white text-sm">
+                    Create a social clip workflow: auto-detect highlights, 
+                    crop to 9:16, add captions, apply brand intro.
+                  </div>
+                  <div className="pt-3 border-t border-white/20 space-y-1 text-white/50">
+                    <div><span className="text-[var(--poster-green)]">✓</span> Highlight detection</div>
+                    <div><span className="text-[var(--poster-green)]">✓</span> Aspect ratio crop</div>
+                    <div><span className="text-[var(--poster-green)]">✓</span> Auto captions</div>
+                    <div><span className="text-[var(--poster-green)]">✓</span> Brand overlay</div>
+                    <div><span className="text-[var(--poster-green)]">✓</span> Export pipeline</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Example 3: Full Application */}
+            <div className="relative">
+              <div className="absolute -bottom-3 -right-3 w-full h-full bg-[var(--poster-red)]" />
+              <div className="relative bg-[var(--ink-black)] border-4 border-white p-5 h-full">
+                <div className="flex items-center gap-2 mb-3 pb-3 border-b border-white/20">
+                  <div className="w-2 h-2 rounded-full bg-[var(--poster-red)]" />
+                  <div className="w-2 h-2 rounded-full bg-[var(--poster-gold)]" />
+                  <div className="w-2 h-2 rounded-full bg-[var(--poster-green)]" />
+                  <span className="ml-2 text-white/40 text-xs font-mono">video-app</span>
+                </div>
+                <div className="space-y-3 font-mono text-xs">
+                  <div className="text-[var(--poster-gold)]">@video-app</div>
+                  <div className="text-white text-sm">
+                    Build a testimonial video app: record webcam, 
+                    add questions overlay, auto-edit pauses, 
+                    export with branding.
+                  </div>
+                  <div className="pt-3 border-t border-white/20 space-y-1 text-white/50">
+                    <div><span className="text-[var(--poster-green)]">✓</span> Webcam recorder</div>
+                    <div><span className="text-[var(--poster-green)]">✓</span> Question prompts</div>
+                    <div><span className="text-[var(--poster-green)]">✓</span> Silence removal</div>
+                    <div><span className="text-[var(--poster-green)]">✓</span> Brand template</div>
+                    <div><span className="text-[var(--poster-green)]">✓</span> Share link</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* CTA */}
+          <div className="text-center mt-16">
+            <Link
+              to="/docs/skills"
+              className="inline-flex items-center px-8 py-4 bg-white text-[var(--poster-green)] font-bold text-sm uppercase tracking-wider hover:bg-[var(--poster-gold)] hover:text-[var(--ink-black)] transition-colors shadow-poster-hard"
+            >
+              Explore all skills
+              <svg className="ml-3 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </Link>
           </div>
         </div>
       </section>
