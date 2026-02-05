@@ -218,6 +218,29 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
     makeNode(PAR_X + (i - 1.5) * LANE_SPREAD, NODE_Z),
   );
 
+  /* ── Progress bars ──────────────────────────────────────────────── */
+  const PROG_H = 0.06;
+  function makeProgressBar(x: number, z: number, w: number) {
+    const bgMat = new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.8, transparent: true, opacity: 0 });
+    const bg = new THREE.Mesh(new THREE.BoxGeometry(w, PROG_H, 0.12), bgMat);
+    bg.position.set(x, -0.57, z);
+    scene.add(bg);
+    const fillMat = new THREE.MeshStandardMaterial({
+      color: COL_VIDEO, roughness: 0.3, metalness: 0.4, transparent: true, opacity: 0,
+      emissive: new THREE.Color(COL_BLUE_LT), emissiveIntensity: 0.15,
+    });
+    const fill = new THREE.Mesh(new THREE.BoxGeometry(w, PROG_H + 0.02, 0.13), fillMat);
+    fill.position.set(x, -0.57, z);
+    fill.scale.x = 0;
+    scene.add(fill);
+    return { bg, bgMat, fill, fillMat, width: w, baseX: x };
+  }
+
+  const seqBar = makeProgressBar(SEQ_X, NODE_Z + 0.7, TOTAL_W * 0.7);
+  const parBars = parNodes.map((n) =>
+    makeProgressBar(n.mesh.position.x, NODE_Z + 0.7, SEG_W * 0.85),
+  );
+
   /* ── Particles ─────────────────────────────────────────────────── */
   const particleGeo = new THREE.BufferGeometry();
   const pPos = new Float32Array(PARTICLE_COUNT * 3);
@@ -295,6 +318,8 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
     particleMat.opacity = 0;
     for (const m of cutMats) m.opacity = 0;
     cutFlash.intensity = 0;
+    seqBar.bgMat.opacity = 0; seqBar.fillMat.opacity = 0; seqBar.fill.scale.x = 0;
+    for (const b of parBars) { b.bgMat.opacity = 0; b.fillMat.opacity = 0; b.fill.scale.x = 0; }
 
     // ── PHASE 2: Duplicate + laser split ──────────────────────────
     if (timeMs >= P2_START) {
@@ -337,15 +362,17 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
       }
     }
 
-    // ── PHASE 3: Workers reveal (camera pull-back handles itself) ─
+    // ── PHASE 3: Workers + progress bars reveal ────────────────────
     if (timeMs >= P3_START) {
       const nodeFade = easeOut(prog(timeMs, P3_START + 500, P3_END));
       seqNode.mat.opacity = nodeFade * 0.7;
       seqNode.edgeMat.opacity = nodeFade * 0.4;
+      seqBar.bgMat.opacity = nodeFade * 0.25;
       for (const n of parNodes) {
         n.mat.opacity = nodeFade * 0.7;
         n.edgeMat.opacity = nodeFade * 0.4;
       }
+      for (const b of parBars) b.bgMat.opacity = nodeFade * 0.25;
     }
 
     // ── PHASE 4: Fly to workers + processing ──────────────────────
@@ -365,6 +392,14 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
       seqNode.mat.emissiveIntensity = 0.08 + seqPulse;
       seqNode.mesh.rotation.y = Math.sin(processing * Math.PI * 2) * 0.03;
 
+      // Sequential progress — slow, takes the full remaining time
+      const seqElapsed = timeMs - P4_START;
+      const seqTotalTime = (P5_END - P4_START); // seq never finishes in our animation
+      const seqFill = clamp01(seqElapsed / seqTotalTime);
+      seqBar.fillMat.opacity = flyIn * 0.85;
+      seqBar.fill.scale.x = easeOut(seqFill);
+      seqBar.fill.position.x = seqBar.baseX - seqBar.width / 2 * (1 - easeOut(seqFill));
+
       // Parallel segments fly to their worker nodes
       for (let s = 0; s < NUM_SEGS; s++) {
         const laneX = PAR_X + (s - 1.5) * LANE_SPREAD;
@@ -378,6 +413,13 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
         parNodes[s]!.mat.emissiveIntensity = processing > 0 ? 0.25 + pulse : 0;
         parNodes[s]!.edgeMat.opacity = 0.4 + processing * 0.4;
         parNodes[s]!.mesh.rotation.y = Math.sin(processing * Math.PI * 4 + s) * 0.06;
+      }
+
+      // Parallel progress bars — all fill simultaneously, fast
+      for (const b of parBars) {
+        b.fillMat.opacity = flyIn * 0.9;
+        b.fill.scale.x = easeOut(processing);
+        b.fill.position.x = b.baseX - b.width / 2 * (1 - easeOut(processing));
       }
 
       // Particles around parallel workers
