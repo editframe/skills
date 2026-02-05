@@ -19,7 +19,8 @@ export const buildViteConfig = () => {
         stringify: true,
       },
       ssr: {
-        noExternal: ["@editframe/elements"],
+        // Don't bundle @editframe packages during SSR - they contain browser-only code
+        external: ["@editframe/elements", "@editframe/react"],
         resolve: {
           conditions: ["import", "module", "browser", "default"],
         },
