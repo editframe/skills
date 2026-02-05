@@ -489,6 +489,11 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
 
     rimLight.intensity = 0.5 + Math.sin(timeMs * 0.0015) * 0.1;
     renderer.render(scene, camera);
+
+    // Force GL pipeline to complete so the canvas buffer is ready
+    // for frame capture. Without this, renderToVideo reads stale content.
+    const gl = renderer.getContext();
+    gl.finish();
   }
 
   function resize(w: number, h: number) {
