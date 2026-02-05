@@ -280,7 +280,9 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
   /* ── Helper: set opacity on all meshes in a track mesh array ───── */
   function setTrackOpacity(meshes: THREE.Mesh[], bgOpa: number, clipOpa: number) {
     for (let m = 0; m < meshes.length; m++) {
-      (meshes[m]!.material as THREE.MeshStandardMaterial).opacity = m === 0 ? bgOpa : clipOpa;
+      const opa = m === 0 ? bgOpa : clipOpa;
+      (meshes[m]!.material as THREE.MeshStandardMaterial).opacity = opa;
+      meshes[m]!.castShadow = opa > 0.1;
     }
   }
   function setTrackEmissive(meshes: THREE.Mesh[], intensity: number) {
@@ -321,10 +323,10 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
     seqGroup.scale.setScalar(1);
     for (const meshes of seqTrackMeshes) setTrackOpacity(meshes, 0, 0);
 
-    // Hide everything else initially
-    seqNode.mat.opacity = 0; seqNode.edgeMat.opacity = 0;
-    for (const n of parNodes) { n.mat.opacity = 0; n.edgeMat.opacity = 0; }
-    completeMat.opacity = 0;
+    // Hide everything else initially (disable shadows when transparent)
+    seqNode.mat.opacity = 0; seqNode.edgeMat.opacity = 0; seqNode.mesh.castShadow = false;
+    for (const n of parNodes) { n.mat.opacity = 0; n.edgeMat.opacity = 0; n.mesh.castShadow = false; }
+    completeMat.opacity = 0; completeBlock.castShadow = false;
     particleMat.opacity = 0;
     for (const m of cutMats) m.opacity = 0;
     cutFlash.intensity = 0;
@@ -377,10 +379,12 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
       const nodeFade = easeOut(prog(timeMs, P3_START + 500, P3_END));
       seqNode.mat.opacity = nodeFade * 0.7;
       seqNode.edgeMat.opacity = nodeFade * 0.4;
+      seqNode.mesh.castShadow = nodeFade > 0.1;
       seqBar.bgMat.opacity = nodeFade * 0.25;
       for (const n of parNodes) {
         n.mat.opacity = nodeFade * 0.7;
         n.edgeMat.opacity = nodeFade * 0.4;
+        n.mesh.castShadow = nodeFade > 0.1;
       }
       for (const b of parBars) b.bgMat.opacity = nodeFade * 0.25;
     }
@@ -459,6 +463,7 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
         completeMat.opacity = doneFade * 0.9;
         completeMat.emissiveIntensity = doneFade * 0.5;
         completeBlock.scale.y = lerp(0.2, 1, doneFade);
+        completeBlock.castShadow = doneFade > 0.1;
       }
     }
 
