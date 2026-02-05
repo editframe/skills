@@ -194,7 +194,7 @@ export default function DocsPage() {
           <ThemeToggle />
           <button
             onClick={() => setIsMobileMenuOpen(true)}
-            className="rounded-md p-2 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 touch-manipulation"
+            className="p-2 text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:hover:text-white hover:bg-[var(--accent-gold)]/20 touch-manipulation transition-colors"
             aria-label="Open documentation menu"
           >
             <svg
@@ -226,11 +226,11 @@ export default function DocsPage() {
           <button
             ref={tocButtonRef}
             onClick={() => setIsMobileTocOpen(!isMobileTocOpen)}
-            className="md:hidden fixed bottom-4 right-4 z-30 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full p-3 shadow-lg hover:shadow-xl transition-shadow touch-manipulation"
+            className="md:hidden fixed bottom-4 right-4 z-30 bg-[var(--paper-white)] dark:bg-[#111] border-2 border-[var(--ink-black)] dark:border-white p-3 shadow-[2px_2px_0_rgba(0,0,0,0.1)] dark:shadow-[2px_2px_0_rgba(255,255,255,0.1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all touch-manipulation"
             aria-label="Toggle table of contents"
           >
             <svg
-              className="h-5 w-5 text-gray-600 dark:text-gray-300"
+              className="h-5 w-5 text-[var(--ink-black)] dark:text-white"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -254,7 +254,7 @@ export default function DocsPage() {
               />
               <div
                 className={clsx(
-                  "md:hidden fixed z-50 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 w-64 max-h-[60vh] overflow-hidden transition-all duration-200",
+                  "md:hidden fixed z-50 bg-[var(--paper-white)] dark:bg-[#111] border-2 border-[var(--ink-black)] dark:border-white w-64 max-h-[60vh] overflow-hidden transition-all duration-200 shadow-[4px_4px_0_rgba(0,0,0,0.1)] dark:shadow-[4px_4px_0_rgba(255,255,255,0.1)]",
                   isMobileTocOpen
                     ? "opacity-100 scale-100 translate-y-0"
                     : "opacity-0 scale-95 translate-y-2",
@@ -264,13 +264,13 @@ export default function DocsPage() {
                   right: "1rem",
                 }}
               >
-                <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 px-4 py-3">
-                  <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                <div className="flex items-center justify-between border-b-2 border-[var(--ink-black)]/10 dark:border-white/10 px-4 py-3">
+                  <h2 className="text-xs font-bold text-[var(--ink-black)] dark:text-white uppercase tracking-wider">
                     On this page
                   </h2>
                   <button
                     onClick={() => setIsMobileTocOpen(false)}
-                    className="rounded-md p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200 touch-manipulation"
+                    className="p-1 text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:hover:text-white touch-manipulation transition-colors"
                     aria-label="Close"
                   >
                     <svg
@@ -522,8 +522,8 @@ function MobileOnThisPage({
             to={`#${heading.id}`}
             onClick={onLinkClick}
             className={clsx(
-              "group relative block py-0.5 text-xs leading-5 transition-colors touch-manipulation",
-              "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300",
+              "group relative block py-1 text-sm leading-5 transition-colors touch-manipulation",
+              "text-[var(--warm-gray)] hover:text-[var(--accent-blue)]",
               heading.level === 2 ? "font-medium" : "font-normal",
             )}
           >
@@ -585,8 +585,8 @@ function LargeOnThisPage({ headings }: { headings: Heading[] }) {
   }, [headings]);
 
   return (
-    <div className="order-1 w-56 flex-shrink-0 self-start overflow-y-auto pb-10 xl:block sticky top-0 pt-8">
-      <nav className="mb-3 text-[10px] font-medium uppercase tracking-wider text-slate-400 dark:text-slate-500">
+    <div className="order-1 w-56 flex-shrink-0 self-start overflow-y-auto pb-10 xl:block sticky top-0 pt-8 border-l-2 border-[var(--ink-black)]/10 dark:border-white/10 pl-4">
+      <nav className="mb-3 text-xs font-bold uppercase tracking-wider text-[var(--ink-black)] dark:text-white">
         On this page
       </nav>
       <ul className="md-toc flex flex-col gap-0.5">
@@ -597,10 +597,10 @@ function LargeOnThisPage({ headings }: { headings: Heading[] }) {
               <Link
                 to={`#${heading.id}`}
                 className={clsx(
-                  "group relative block py-0.5 text-xs leading-5 transition-colors",
+                  "group relative block py-1 text-sm leading-5 transition-colors",
                   isActive
-                    ? "font-medium text-slate-900 dark:text-slate-100"
-                    : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300",
+                    ? "font-medium text-[var(--accent-blue)]"
+                    : "text-[var(--warm-gray)] hover:text-[var(--accent-blue)]",
                   heading.level === 2 ? "font-medium" : "font-normal",
                 )}
               >

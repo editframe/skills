@@ -2,7 +2,6 @@ import { Link, NavLink, useLocation } from "react-router";
 import clsx from "clsx";
 import { useEffect, useState } from "react";
 import { ThemeToggle } from "~/components/ThemeToggle";
-import { themeClasses } from "~/utils/theme-classes";
 import { SearchInput } from "~/components/docs/SearchInput";
 
 const navigation = [
@@ -38,20 +37,8 @@ export const Header = ({
   hideMobileMenu?: boolean;
 }) => {
   const location = useLocation();
-  const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const isDocsPage = location.pathname.startsWith("/docs");
-
-  useEffect(() => {
-    function onScroll() {
-      setIsScrolled(window.scrollY > 10);
-    }
-    onScroll();
-    window.addEventListener("scroll", onScroll);
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-    };
-  }, []);
 
   useEffect(() => {
     if (!isMenuOpen) return;
@@ -71,23 +58,15 @@ export const Header = ({
   return (
     <header
       className={clsx(
-        "z-1000 w-full transition-all duration-300 ease-in-out",
-        themeClasses.pageText,
+        "z-1000 w-full border-b-2 border-[var(--ink-black)] dark:border-white bg-[var(--paper-white)] dark:bg-[#0a0a0a]",
         className,
-        {
-          [clsx(themeClasses.pageBg, themeClasses.pageBorder, "border-b")]:
-            isScrolled,
-        },
       )}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-20">
-        <div className="flex justify-between items-center min-h-[64px] py-3">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="flex justify-between items-center h-16">
           <div className="flex-shrink-0 flex items-center">
             <Link
-              className={clsx(
-                "flex items-center text-base font-semibold",
-                themeClasses.pageText,
-              )}
+              className="flex items-center text-[var(--ink-black)] dark:text-white"
               to="/"
             >
               <img
@@ -95,65 +74,58 @@ export const Header = ({
                 src="/images/logo/dark.svg"
                 alt="Editframe logo"
               />
-              <span className="hidden sm:block text-sm sm:text-base">
+              <span className="hidden sm:block text-base font-bold tracking-tight">
                 Editframe
               </span>
             </Link>
           </div>
           <div
-            className={`hidden lg:-ml-24 ${hideMobileMenu ? "lg:flex" : "md:flex"} items-center space-x-4`}
+            className={`hidden lg:-ml-24 ${hideMobileMenu ? "lg:flex" : "md:flex"} items-center gap-1`}
           >
-            <nav className="flex space-x-4 text-sm font-medium items-center">
+            <nav className="flex items-center gap-1">
               {/* Search Input - only show on docs pages */}
               {isDocsPage && <SearchInput />}
-              {isLoggedIn ? (
-                <Link
-                  to="/welcome"
-                  className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors"
-                >
-                  Dashboard
-                </Link>
-              ) : (
-                <Link
-                  to="/auth/login"
-                  className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors"
-                >
-                  Login
-                </Link>
-              )}
               {navigation.map((item) => (
                 <NavLink
                   key={item.label}
                   to={item.to}
                   className={({ isActive }) =>
                     clsx(
-                      "text-sm font-medium",
+                      "px-4 py-2 text-sm font-bold tracking-wider transition-colors",
                       isActive
-                        ? "text-blue-600 dark:text-blue-400"
-                        : clsx(
-                            themeClasses.pageTextSecondary,
-                            "hover:text-slate-900 dark:hover:text-white",
-                          ),
+                        ? "text-[var(--ink-black)] dark:text-white bg-[var(--accent-blue)]/10"
+                        : "text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:hover:text-white hover:bg-[var(--accent-gold)]/20",
                     )
                   }
                 >
                   {item.label}
                 </NavLink>
               ))}
+              {isLoggedIn ? (
+                <Link
+                  to="/welcome"
+                  className="inline-flex items-center px-4 py-2 text-sm font-bold text-white bg-[var(--ink-black)] dark:bg-white dark:text-[var(--ink-black)] hover:bg-[var(--accent-blue)] dark:hover:bg-[var(--accent-blue)] dark:hover:text-white transition-colors"
+                >
+                  Dashboard
+                </Link>
+              ) : (
+                <Link
+                  to="/auth/login"
+                  className="inline-flex items-center px-4 py-2 text-sm font-bold text-white bg-[var(--ink-black)] dark:bg-white dark:text-[var(--ink-black)] hover:bg-[var(--accent-blue)] dark:hover:bg-[var(--accent-blue)] dark:hover:text-white transition-colors"
+                >
+                  Login
+                </Link>
+              )}
             </nav>
-            <div className={clsx("border-l h-4", themeClasses.pageBorder)} />
-            <div className="flex items-center space-x-2">
+            <div className="w-px h-5 bg-[var(--ink-black)]/20 dark:bg-white/20 mx-2" />
+            <div className="flex items-center gap-2">
               <ThemeToggle />
               <a
                 href="https://x.com/editframe"
                 aria-label="x"
                 target="_blank"
                 rel="noopener noreferrer"
-                className={clsx(
-                  "flex items-center transition-colors",
-                  themeClasses.pageTextMuted,
-                  "hover:text-slate-700 dark:hover:text-slate-200",
-                )}
+                className="flex items-center text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:hover:text-white transition-colors"
               >
                 <svg
                   className="h-4 w-4"
@@ -169,16 +141,12 @@ export const Header = ({
                 aria-label="github"
                 target="_blank"
                 rel="noopener noreferrer"
-                className={clsx(
-                  "transition-colors",
-                  themeClasses.pageTextMuted,
-                  "hover:text-slate-700 dark:hover:text-slate-200",
-                )}
+                className="text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:hover:text-white transition-colors"
               >
                 <svg
                   fill="currentColor"
                   viewBox="0 0 24 24"
-                  className="h-6 w-6"
+                  className="h-5 w-5"
                 >
                   <path
                     fillRule="evenodd"
@@ -193,11 +161,7 @@ export const Header = ({
             <div className="md:hidden">
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className={clsx(
-                  "inline-flex items-center justify-center p-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-600 dark:focus:ring-blue-400",
-                  themeClasses.pageTextSecondary,
-                  "hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800",
-                )}
+                className="inline-flex items-center justify-center p-2 text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:hover:text-white hover:bg-[var(--accent-gold)]/20 transition-colors"
                 aria-label="Open main menu"
               >
                 {isMenuOpen ? (
@@ -239,18 +203,12 @@ export const Header = ({
         </div>
       </div>
       {isMenuOpen && !hideMobileMenu && (
-        <div
-          className={clsx(
-            "md:hidden border-t",
-            themeClasses.pageBg,
-            themeClasses.pageBorder,
-          )}
-        >
+        <div className="md:hidden border-t-2 border-[var(--ink-black)] dark:border-white bg-[var(--paper-white)] dark:bg-[#0a0a0a]">
           <div className="px-4 pt-4 pb-3 space-y-1">
             {isLoggedIn ? (
               <Link
                 to="/welcome"
-                className="block w-full text-center px-4 py-2.5 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors mb-3"
+                className="block w-full text-center px-4 py-3 text-sm font-bold text-white bg-[var(--ink-black)] dark:bg-white dark:text-[var(--ink-black)] hover:bg-[var(--accent-blue)] transition-colors mb-3"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Dashboard
@@ -258,7 +216,7 @@ export const Header = ({
             ) : (
               <Link
                 to="/auth/login"
-                className="block w-full text-center px-4 py-2.5 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors mb-3"
+                className="block w-full text-center px-4 py-3 text-sm font-bold text-white bg-[var(--ink-black)] dark:bg-white dark:text-[var(--ink-black)] hover:bg-[var(--accent-blue)] transition-colors mb-3"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Login
@@ -270,13 +228,10 @@ export const Header = ({
                 to={item.to}
                 className={({ isActive }) =>
                   clsx(
-                    "block px-3 py-2.5 rounded-md text-base font-medium transition-colors",
+                    "block px-3 py-3 text-base font-bold transition-colors border-l-2",
                     isActive
-                      ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30"
-                      : clsx(
-                          themeClasses.pageTextSecondary,
-                          "hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800",
-                        ),
+                      ? "text-[var(--ink-black)] dark:text-white border-[var(--accent-blue)] bg-[var(--accent-blue)]/5"
+                      : "text-[var(--warm-gray)] border-transparent hover:text-[var(--ink-black)] dark:hover:text-white hover:border-[var(--ink-black)]/20",
                   )
                 }
                 onClick={() => setIsMenuOpen(false)}
@@ -285,16 +240,11 @@ export const Header = ({
               </NavLink>
             ))}
           </div>
-          <div className={clsx("pt-4 pb-4 border-t", themeClasses.pageBorder)}>
+          <div className="pt-4 pb-4 border-t-2 border-[var(--ink-black)]/10 dark:border-white/10">
             <div className="px-4 space-y-1">
-              <div className="flex items-center px-3 py-2.5">
-                <ThemeToggle className="text-slate-700 hover:text-slate-900 hover:bg-slate-50 dark:text-slate-300 dark:hover:text-slate-100 dark:hover:bg-slate-800" />
-                <span
-                  className={clsx(
-                    "ml-3 text-base font-medium",
-                    themeClasses.pageTextSecondary,
-                  )}
-                >
+              <div className="flex items-center px-3 py-3">
+                <ThemeToggle />
+                <span className="ml-3 text-base font-medium text-[var(--warm-gray)]">
                   Theme
                 </span>
               </div>
@@ -302,11 +252,7 @@ export const Header = ({
                 href="https://x.com/editframe"
                 target="_blank"
                 rel="noopener noreferrer"
-                className={clsx(
-                  "flex items-center px-3 py-2.5 rounded-md text-base font-medium transition-colors",
-                  themeClasses.pageTextSecondary,
-                  "hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800",
-                )}
+                className="flex items-center px-3 py-3 text-base font-medium text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:hover:text-white transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
                 <svg
@@ -323,11 +269,7 @@ export const Header = ({
                 href="https://github.com/editframe"
                 target="_blank"
                 rel="noopener noreferrer"
-                className={clsx(
-                  "flex items-center px-3 py-2.5 rounded-md text-base font-medium transition-colors",
-                  themeClasses.pageTextSecondary,
-                  "hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800",
-                )}
+                className="flex items-center px-3 py-3 text-base font-medium text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:hover:text-white transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
                 <svg
