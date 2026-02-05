@@ -665,44 +665,83 @@ export const rpcServerReady = (async () => {
             },
             captureFrame: async (frameNumber: number, fps: number) => {
               ctx.sendKeepalive();
+              const captureStartMs = performance.now();
               logger.debug("🔧 [RPC_SERVER] captureFrame() called", { frameNumber, fps });
 
               const frameDurationMs = 1000 / fps;
               const timeMs = renderOptions.encoderOptions.fromMs + frameNumber * frameDurationMs;
 
-              // Capture frame using captureTimegroupAtTime
-              const jpegArray = await renderContext.webContents.executeJavaScript(`
+              // Capture frame with detailed timing collection
+              const ipcStartMs = performance.now();
+              const result = await renderContext.webContents.executeJavaScript(`
                 (async () => {
+                  const t0 = performance.now();
                   const rootTimegroup = document.querySelector('ef-timegroup');
                   if (!rootTimegroup) {
                     throw new Error('No root timegroup found');
                   }
 
+                  // Time the capture operation
+                  const captureStart = performance.now();
                   const imageSource = await window.captureTimegroupAtTime(rootTimegroup, {
                     timeMs: ${timeMs},
                     scale: 1,
                     canvasMode: '${canvasMode}',
                   });
+                  const captureMs = performance.now() - captureStart;
 
-                  // Create a canvas and draw the image source to it
+                  // Time canvas operations
+                  const canvasStart = performance.now();
                   const canvas = document.createElement('canvas');
                   canvas.width = ${width};
                   canvas.height = ${height};
                   const ctx = canvas.getContext('2d');
                   ctx.drawImage(imageSource, 0, 0, ${width}, ${height});
+                  const canvasMs = performance.now() - canvasStart;
 
-                  // Convert canvas to JPEG blob
+                  // Time JPEG encoding
+                  const blobStart = performance.now();
                   const blob = await new Promise((resolve) => {
                     canvas.toBlob(resolve, 'image/jpeg', 0.95);
                   });
+                  const blobMs = performance.now() - blobStart;
                   
-                  // Convert blob to array buffer
+                  // Time array buffer conversion
+                  const serializeStart = performance.now();
                   const arrayBuffer = await blob.arrayBuffer();
-                  return Array.from(new Uint8Array(arrayBuffer));
+                  const jpegData = Array.from(new Uint8Array(arrayBuffer));
+                  const serializeMs = performance.now() - serializeStart;
+
+                  const totalBrowserMs = performance.now() - t0;
+
+                  return {
+                    jpegData,
+                    timing: {
+                      captureMs,
+                      canvasMs,
+                      blobMs,
+                      serializeMs,
+                      totalBrowserMs,
+                    },
+                  };
                 })();
               `);
+              const ipcMs = performance.now() - ipcStartMs;
 
-              return Buffer.from(jpegArray);
+              const totalCaptureMs = performance.now() - captureStartMs;
+
+              logger.debug(`🔧 [RPC_SERVER] Frame ${frameNumber} timing:`, {
+                browserTotal: result.timing.totalBrowserMs.toFixed(1),
+                capture: result.timing.captureMs.toFixed(1),
+                canvas: result.timing.canvasMs.toFixed(1),
+                blob: result.timing.blobMs.toFixed(1),
+                serialize: result.timing.serializeMs.toFixed(1),
+                ipcTransfer: ipcMs.toFixed(1),
+                totalCapture: totalCaptureMs.toFixed(1),
+                dataSize: result.jpegData.length,
+              });
+
+              return Buffer.from(result.jpegData);
             },
           };
 

@@ -1,0 +1,16 @@
+{
+  "testName": "elements-smoke-multiple-elements-browser-frame-by-frame-foreignObject",
+  "renderMode": "browser-frame-by-frame",
+  "canvasMode": "foreignObject",
+  "totalRenderTimeMs": 2737.6426190000057,
+  "videoDurationMs": 100,
+  "fps": 30,
+  "numFrames": 3,
+  "avgFrameTimeMs": 912.2628046666699,
+  "timing": {
+    "total": 2737.6426190000057,
+    "renderFragment": 2736.7884140000097,
+    "writeFile": 0.7841259999986505
+  },
+  "timestamp": "2026-02-05T00:40:59.785Z"
+}

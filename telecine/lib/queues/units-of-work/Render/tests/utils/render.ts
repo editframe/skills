@@ -11,14 +11,63 @@ import type { TestAgent } from "TEST/util/test";
 export type RenderMode = "server" | "browser-full-video" | "browser-frame-by-frame";
 export type CanvasMode = "native" | "foreignObject";
 
+export interface DetailedFrameTiming {
+  seekMs: number;
+  renderMs: number;
+  captureMs: number;
+  serializeMs?: number; // ForeignObject: DOM serialization time
+  blobMs?: number; // Time to create JPEG blob
+  ipcTransferMs?: number; // Time to transfer data across IPC
+  encodeMs?: number; // FFmpeg encoding time
+  totalMs: number;
+}
+
 export interface RenderTimingBreakdown {
+  // Setup phase
   bundleHtml?: number;
   getRenderInfo?: number;
   createAssetsBundle?: number;
-  renderFragment?: number;
-  writeFile?: number;
   electronRpcCreate?: number;
   electronRpcTerminate?: number;
+  
+  // Rendering phase
+  renderFragment?: number;
+  
+  // Detailed per-frame timing (for frame-by-frame mode)
+  perFrameTiming?: {
+    count: number;
+    avgSeekMs: number;
+    avgRenderMs: number;
+    avgCaptureMs: number;
+    avgSerializeMs?: number;
+    avgBlobMs?: number;
+    avgIpcTransferMs?: number;
+    avgEncodeMs?: number;
+    minFrameMs: number;
+    maxFrameMs: number;
+    totalFramesMs: number;
+  };
+  
+  // Browser-side timing (for browser modes)
+  browserSideTiming?: {
+    seekTotal?: number;
+    renderTotal?: number;
+    captureTotal?: number;
+    serializeTotal?: number;
+    encodeTotal?: number;
+  };
+  
+  // IPC overhead
+  ipcOverhead?: {
+    calls: number;
+    totalMs: number;
+    avgMs: number;
+    totalBytesTransferred?: number;
+  };
+  
+  // Cleanup phase
+  writeFile?: number;
+  
   total: number;
 }
 

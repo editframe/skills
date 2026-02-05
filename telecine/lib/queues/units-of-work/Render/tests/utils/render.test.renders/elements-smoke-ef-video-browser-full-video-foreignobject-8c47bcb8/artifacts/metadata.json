@@ -7,11 +7,11 @@
   "renderMode": "browser-full-video",
   "canvasMode": "foreignObject",
   "timing": {
-    "totalMs": 3206,
-    "bundleMs": 2340,
-    "renderInfoMs": 180,
-    "renderMs": 680
+    "totalMs": 3161,
+    "bundleMs": 2253,
+    "renderInfoMs": 210,
+    "renderMs": 692
   },
   "outputSizeBytes": 27568,
-  "timestamp": "2026-02-05T07:40:35.500Z"
+  "timestamp": "2026-02-05T08:00:38.219Z"
 }
