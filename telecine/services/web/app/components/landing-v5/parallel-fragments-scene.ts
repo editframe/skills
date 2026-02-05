@@ -10,11 +10,11 @@ function lerpV3(out: THREE.Vector3, a: THREE.Vector3, b: THREE.Vector3, t: numbe
   out.set(lerp(a.x, b.x, t), lerp(a.y, b.y, t), lerp(a.z, b.z, t));
 }
 
-/* ━━ Colors ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-const COL_VIDEO = 0x1565c0;
-const COL_AUDIO = 0x00897b;
-const COL_TEXT = 0xffb300;
-const COL_BLUE_LT = 0x42a5f5;
+/* ━━ Colors (brighter for visibility) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const COL_VIDEO = 0x2979ff;
+const COL_AUDIO = 0x00bfa5;
+const COL_TEXT = 0xffc107;
+const COL_BLUE_LT = 0x64b5f6;
 const COL_DONE = 0x2e7d32;
 
 /* ━━ Sizing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
@@ -71,38 +71,44 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.4;
+  renderer.toneMappingExposure = 1.6;
 
   const scene = new THREE.Scene();
-  // Medium blue-gray background with fog for depth/horizon feel
-  const BG_COLOR = 0x252a3a;
+  // Lighter blue-gray background with fog for horizon
+  const BG_COLOR = 0x303548;
   scene.background = new THREE.Color(BG_COLOR);
-  scene.fog = new THREE.Fog(BG_COLOR, 12, 30);
+  scene.fog = new THREE.Fog(BG_COLOR, 14, 32);
 
   const camera = new THREE.PerspectiveCamera(50, 2, 0.1, 100);
   const camPos = new THREE.Vector3();
   const camTar = new THREE.Vector3();
 
-  /* ── Lighting (bright, clear visibility) ─────────────────────── */
-  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-  const keyLight = new THREE.DirectionalLight(0xffffff, 1.3);
+  /* ── Lighting (strong, with specular-producing spot) ────────── */
+  scene.add(new THREE.AmbientLight(0xc8d0e8, 0.8));
+  const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
   keyLight.position.set(3, 7, 5);
   keyLight.castShadow = true;
   keyLight.shadow.mapSize.set(1024, 1024);
   const sc = keyLight.shadow.camera;
   sc.left = -8; sc.right = 8; sc.top = 6; sc.bottom = -6; sc.near = 0.5; sc.far = 25;
   scene.add(keyLight);
-  const fillLight = new THREE.DirectionalLight(0x99bbff, 0.45);
+  const fillLight = new THREE.DirectionalLight(0xaaccff, 0.5);
   fillLight.position.set(-3, 4, -2);
   scene.add(fillLight);
-  const rimLight = new THREE.PointLight(COL_BLUE_LT, 0.7, 20);
+  const rimLight = new THREE.PointLight(COL_BLUE_LT, 0.8, 20);
   rimLight.position.set(0, 2, -3);
   scene.add(rimLight);
+  // Spot light from above-front for specular highlights on glossy surfaces
+  const spotLight = new THREE.SpotLight(0xffffff, 1.5, 20, Math.PI / 6, 0.5, 1);
+  spotLight.position.set(0, 5, 4);
+  spotLight.target.position.set(0, 0, 1);
+  scene.add(spotLight);
+  scene.add(spotLight.target);
 
-  /* ── Floor — lighter, fades into fog/horizon ───────────────────── */
+  /* ── Floor — lighter, slightly reflective ──────────────────────── */
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(40, 30),
-    new THREE.MeshStandardMaterial({ color: 0x2a2e40, roughness: 0.8, metalness: 0.05 }),
+    new THREE.MeshStandardMaterial({ color: 0x343850, roughness: 0.7, metalness: 0.15 }),
   );
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = -0.6;
@@ -115,7 +121,7 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
     // Container backdrop
     const bg = new THREE.Mesh(
       new THREE.BoxGeometry(SEG_W, 0.32, TRACK_D + 0.02),
-      new THREE.MeshStandardMaterial({ color: 0x2a2a35, roughness: 0.9, transparent: true, opacity: 0 }),
+      new THREE.MeshStandardMaterial({ color: 0x3a3d50, roughness: 0.8, transparent: true, opacity: 0 }),
     );
     bg.position.set(xOffset, 0.02, 0);
     bg.receiveShadow = true;
@@ -127,10 +133,12 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
       const clip = layout[t]!;
       const clipW = SEG_W * clip.wPct;
       const clipX = xOffset - SEG_W / 2 + SEG_W * clip.xPct + clipW / 2;
+      // Physical material with clearcoat for glossy specular highlights
       const mesh = new THREE.Mesh(
         new THREE.BoxGeometry(clipW, TRACK_H[t]!, TRACK_D),
-        new THREE.MeshStandardMaterial({
-          color: TRACK_COLOR[t]!, roughness: 0.35, metalness: 0.3,
+        new THREE.MeshPhysicalMaterial({
+          color: TRACK_COLOR[t]!, roughness: 0.15, metalness: 0.1,
+          clearcoat: 0.8, clearcoatRoughness: 0.2,
           transparent: true, opacity: 0,
           emissive: new THREE.Color(TRACK_COLOR[t]!), emissiveIntensity: 0,
         }),
@@ -200,8 +208,9 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
   const edgeGeo = new THREE.EdgesGeometry(nodeGeo);
 
   function makeNode(x: number, z: number) {
-    const mat = new THREE.MeshStandardMaterial({
-      color: 0x333844, roughness: 0.5, metalness: 0.5,
+    const mat = new THREE.MeshPhysicalMaterial({
+      color: 0x444a5c, roughness: 0.25, metalness: 0.3,
+      clearcoat: 0.6, clearcoatRoughness: 0.3,
       transparent: true, opacity: 0,
       emissive: new THREE.Color(COL_BLUE_LT), emissiveIntensity: 0,
     });

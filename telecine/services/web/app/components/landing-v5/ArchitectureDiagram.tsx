@@ -477,7 +477,7 @@ function FanOutDiagram() {
           mode="fixed"
           duration={SCENE_DUR}
           className="relative w-full overflow-hidden"
-          style={{ aspectRatio: "16/10", background: "#252a3a" }}
+          style={{ aspectRatio: "16/10", background: "#303548" }}
         >
           <canvas
             ref={canvasRef}
