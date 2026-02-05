@@ -369,23 +369,23 @@ export const MyVideo = () => (
           <div className="text-center mb-20">
             <h2 className="text-5xl font-bold mb-6">What you can build</h2>
             <p className="text-xl opacity-80 max-w-2xl mx-auto">
-              From social media automation to enterprise video workflows
+              From AI-generated content to enterprise video workflows
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
             {[
               {
+                title: "AI Video Generation",
+                description: "Power your AI agents to generate broadcast-quality video from text, data, or prompts. The execution layer for generative video."
+              },
+              {
                 title: "Social Media Automation",
                 description: "Generate unique videos for each user with dynamic data, images, and personalized content at scale."
               },
               {
-                title: "Video Reports",
-                description: "Transform data into visual stories with charts, graphs, and narration. Automated and branded."
-              },
-              {
-                title: "E-Learning Content",
-                description: "Create course videos with synchronized slides, animations, and transcripts. Update instantly."
+                title: "Automated Reporting",
+                description: "Transform data into visual stories with charts, graphs, and narration. Automated, branded, and delivered instantly."
               }
             ].map((useCase, i) => (
               <div key={i} className="bg-[#0F0F23] border border-[#1E1B4B] rounded-2xl p-8">
