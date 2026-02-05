@@ -36,9 +36,11 @@ export interface RenderTimingBreakdown {
   // Detailed per-frame timing (for frame-by-frame mode)
   perFrameTiming?: {
     count: number;
+    avgCloneMs: number;
     avgSeekMs: number;
     avgRenderMs: number;
     avgCaptureMs: number;
+    avgCanvasMs: number;
     avgSerializeMs?: number;
     avgBlobMs?: number;
     avgIpcTransferMs?: number;
@@ -50,9 +52,11 @@ export interface RenderTimingBreakdown {
   
   // Browser-side timing (for browser modes)
   browserSideTiming?: {
+    cloneTotal?: number;
     seekTotal?: number;
     renderTotal?: number;
     captureTotal?: number;
+    canvasTotal?: number;
     serializeTotal?: number;
     encodeTotal?: number;
   };
@@ -220,6 +224,9 @@ async function renderWithBrowser(
         if (detailedTiming && detailedTiming.length > 0) {
           const allFrames = detailedTiming.flatMap((seg: any) => seg.frames);
           if (allFrames.length > 0) {
+            const avgClone = allFrames.reduce((sum: number, f: any) => sum + f.cloneMs, 0) / allFrames.length;
+            const avgSeek = allFrames.reduce((sum: number, f: any) => sum + f.seekMs, 0) / allFrames.length;
+            const avgRender = allFrames.reduce((sum: number, f: any) => sum + f.renderMs, 0) / allFrames.length;
             const avgCapture = allFrames.reduce((sum: number, f: any) => sum + f.captureMs, 0) / allFrames.length;
             const avgCanvas = allFrames.reduce((sum: number, f: any) => sum + f.canvasMs, 0) / allFrames.length;
             const avgBlob = allFrames.reduce((sum: number, f: any) => sum + f.blobMs, 0) / allFrames.length;
@@ -230,9 +237,11 @@ async function renderWithBrowser(
             
             timing.perFrameTiming = {
               count: allFrames.length,
-              avgSeekMs: 0, // Not measured in current implementation
-              avgRenderMs: 0, // Not measured separately
+              avgCloneMs: avgClone,
+              avgSeekMs: avgSeek,
+              avgRenderMs: avgRender,
               avgCaptureMs: avgCapture,
+              avgCanvasMs: avgCanvas,
               avgSerializeMs: avgSerialize,
               avgBlobMs: avgBlob,
               avgIpcTransferMs: avgIpcOverhead,
@@ -249,8 +258,11 @@ async function renderWithBrowser(
             };
             
             timing.browserSideTiming = {
+              cloneTotal: allFrames.reduce((sum: number, f: any) => sum + f.cloneMs, 0),
+              seekTotal: allFrames.reduce((sum: number, f: any) => sum + f.seekMs, 0),
+              renderTotal: allFrames.reduce((sum: number, f: any) => sum + f.renderMs, 0),
               captureTotal: allFrames.reduce((sum: number, f: any) => sum + f.captureMs, 0),
-              renderTotal: 0, // Not measured separately in current implementation
+              canvasTotal: allFrames.reduce((sum: number, f: any) => sum + f.canvasMs, 0),
               serializeTotal: allFrames.reduce((sum: number, f: any) => sum + f.serializeMs, 0),
             };
           }

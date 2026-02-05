@@ -15,6 +15,9 @@ logger.debug("🔧 [RPC_SERVER] All imports complete");
 // Store per-frame timing data for browser frame-by-frame renders
 export interface FrameTimingData {
   frameNumber: number;
+  cloneMs: number;
+  seekMs: number;
+  renderMs: number;
   captureMs: number;
   canvasMs: number;
   blobMs: number;
@@ -646,17 +649,7 @@ export const rpcServerReady = (async () => {
           });
 
           // Storage for per-frame timing data
-          let frameTiming: Array<{
-            frameNumber: number;
-            captureMs: number;
-            canvasMs: number;
-            blobMs: number;
-            serializeMs: number;
-            ipcRoundTripMs: number;
-            ipcOverheadMs: number;
-            totalCaptureMs: number;
-            jpegSize: number;
-          }> = [];
+          let frameTiming: FrameTimingData[] = [];
 
           // Create a custom engine adapter that captures frames via browser executeJavaScript
           const browserFrameEngine = {
@@ -724,13 +717,21 @@ export const rpcServerReady = (async () => {
                   }
 
                   // Time the capture operation
+                  // Skip clone creation for headless server rendering (saves ~40ms per frame!)
                   const captureStart = performance.now();
                   const imageSource = await window.captureTimegroupAtTime(rootTimegroup, {
                     timeMs: ${timeMs},
                     scale: 1,
                     canvasMode: '${canvasMode}',
+                    skipClone: true,
                   });
                   const captureMs = performance.now() - captureStart;
+                  
+                  // Extract granular timing from imageSource if available
+                  const perfTiming = imageSource.__perfTiming || {};
+                  const cloneMs = perfTiming.cloneMs || 0;
+                  const seekMs = perfTiming.seekMs || 0;
+                  const renderMs = perfTiming.renderMs || 0;
 
                   // Time canvas operations
                   const canvasStart = performance.now();
@@ -760,6 +761,9 @@ export const rpcServerReady = (async () => {
                     jpegData,
                     jpegSize: jpegData.length,
                     timing: {
+                      cloneMs,
+                      seekMs,
+                      renderMs,
                       captureMs,
                       canvasMs,
                       blobMs,
@@ -782,6 +786,9 @@ export const rpcServerReady = (async () => {
               }
               frameTiming.push({
                 frameNumber,
+                cloneMs: result.timing.cloneMs,
+                seekMs: result.timing.seekMs,
+                renderMs: result.timing.renderMs,
                 captureMs: result.timing.captureMs,
                 canvasMs: result.timing.canvasMs,
                 blobMs: result.timing.blobMs,
@@ -792,7 +799,7 @@ export const rpcServerReady = (async () => {
                 jpegSize: result.jpegSize,
               });
 
-              logger.debug(`🔧 [RPC_SERVER] Frame ${frameNumber} timing: capture=${result.timing.captureMs.toFixed(1)}ms canvas=${result.timing.canvasMs.toFixed(1)}ms blob=${result.timing.blobMs.toFixed(1)}ms serialize=${result.timing.serializeMs.toFixed(1)}ms ipcRoundTrip=${ipcRoundTripMs.toFixed(1)}ms ipcOverhead=${ipcOverheadMs.toFixed(1)}ms total=${totalCaptureMs.toFixed(1)}ms size=${result.jpegSize}b`);
+              logger.debug(`🔧 [RPC_SERVER] Frame ${frameNumber} timing: clone=${result.timing.cloneMs.toFixed(1)}ms seek=${result.timing.seekMs.toFixed(1)}ms render=${result.timing.renderMs.toFixed(1)}ms canvas=${result.timing.canvasMs.toFixed(1)}ms blob=${result.timing.blobMs.toFixed(1)}ms serialize=${result.timing.serializeMs.toFixed(1)}ms ipcRoundTrip=${ipcRoundTripMs.toFixed(1)}ms ipcOverhead=${ipcOverheadMs.toFixed(1)}ms total=${totalCaptureMs.toFixed(1)}ms size=${result.jpegSize}b`);
 
               return Buffer.from(result.jpegData);
             },
@@ -847,6 +854,9 @@ export const rpcServerReady = (async () => {
 
             // Log aggregated timing stats
             if (frameTiming.length > 0) {
+              const avgClone = frameTiming.reduce((sum, f) => sum + f.cloneMs, 0) / frameTiming.length;
+              const avgSeek = frameTiming.reduce((sum, f) => sum + f.seekMs, 0) / frameTiming.length;
+              const avgRender = frameTiming.reduce((sum, f) => sum + f.renderMs, 0) / frameTiming.length;
               const avgCapture = frameTiming.reduce((sum, f) => sum + f.captureMs, 0) / frameTiming.length;
               const avgCanvas = frameTiming.reduce((sum, f) => sum + f.canvasMs, 0) / frameTiming.length;
               const avgBlob = frameTiming.reduce((sum, f) => sum + f.blobMs, 0) / frameTiming.length;
@@ -855,7 +865,7 @@ export const rpcServerReady = (async () => {
               const avgIpcOverhead = frameTiming.reduce((sum, f) => sum + f.ipcOverheadMs, 0) / frameTiming.length;
               const totalDataSize = frameTiming.reduce((sum, f) => sum + f.jpegSize, 0);
               
-              logger.info(`🔧 [RPC_SERVER] Segment ${segmentIndex} timing summary: ${frameTiming.length} frames, avgCapture=${avgCapture.toFixed(1)}ms avgCanvas=${avgCanvas.toFixed(1)}ms avgBlob=${avgBlob.toFixed(1)}ms avgSerialize=${avgSerialize.toFixed(1)}ms avgIpcRoundTrip=${avgIpcRoundTrip.toFixed(1)}ms avgIpcOverhead=${avgIpcOverhead.toFixed(1)}ms totalDataSize=${(totalDataSize / 1024 / 1024).toFixed(2)}MB segmentTotal=${segmentTotalMs.toFixed(0)}ms`);
+              logger.info(`🔧 [RPC_SERVER] Segment ${segmentIndex} timing summary: ${frameTiming.length} frames, avgClone=${avgClone.toFixed(1)}ms avgSeek=${avgSeek.toFixed(1)}ms avgRender=${avgRender.toFixed(1)}ms avgCanvas=${avgCanvas.toFixed(1)}ms avgBlob=${avgBlob.toFixed(1)}ms avgSerialize=${avgSerialize.toFixed(1)}ms avgIpcRoundTrip=${avgIpcRoundTrip.toFixed(1)}ms avgIpcOverhead=${avgIpcOverhead.toFixed(1)}ms totalDataSize=${(totalDataSize / 1024 / 1024).toFixed(2)}MB segmentTotal=${segmentTotalMs.toFixed(0)}ms`);
             }
 
             return new Uint8Array(fragmentBuffer);

@@ -64,6 +64,8 @@ export interface CaptureOptions {
   blockingTimeoutMs?: number;
   /** Canvas rendering mode: native drawElementImage or foreignObject serialization (default: auto-detect) */
   canvasMode?: "native" | "foreignObject";
+  /** Skip clone creation and render directly from prime timeline (for headless server rendering) */
+  skipClone?: boolean;
 }
 
 /**
@@ -461,28 +463,73 @@ export async function captureTimegroupAtTime(
     contentReadyMode = "immediate",
     blockingTimeoutMs = DEFAULT_BLOCKING_TIMEOUT_MS,
     canvasMode,
+    skipClone = false,
   } = options;
+
+  if (skipClone) {
+    // DIRECT RENDERING: Skip clone creation for headless server rendering
+    // Seek prime timeline directly and capture from it
+    // WARNING: This modifies the prime timeline! Only use in headless contexts.
+    
+    const seekStart = performance.now();
+    await timegroup.seekForRender(timeMs);
+    const seekMs = performance.now() - seekStart;
+    
+    const renderStart = performance.now();
+    // Use timegroup's actual container (parentElement or document.body as fallback)
+    const container = (timegroup.parentElement || document.body) as HTMLElement;
+    const result = await captureFromClone(timegroup, container, {
+      scale,
+      contentReadyMode,
+      blockingTimeoutMs,
+      originalTimegroup: undefined, // No original since we're rendering the prime
+      canvasMode,
+      timeMs, // Pass explicit time since we're not using a clone
+    });
+    const renderMs = performance.now() - renderStart;
+    
+    // Store timing (no clone time since we skipped it)
+    if (typeof result === 'object' && result !== null) {
+      (result as any).__perfTiming = { cloneMs: 0, seekMs, renderMs };
+    }
+    
+    return result;
+  }
 
   // CLONE-TIMELINE: Create a short-lived render clone for this capture
   // Prime-timeline is NEVER seeked - clone is fully independent
+  const cloneStart = performance.now();
   const { clone: renderClone, container: renderContainer, cleanup: cleanupRenderClone } = 
     await timegroup.createRenderClone();
+  const cloneMs = performance.now() - cloneStart;
   
   try {
     // Seek the clone to target time (Prime stays at user position)
     // Use seekForRender which bypasses duration clamping - render clones may have
     // zero duration initially until media durations are computed, but we still
     // want to seek to the requested time for capture purposes.
+    const seekStart = performance.now();
     await renderClone.seekForRender(timeMs);
+    const seekMs = performance.now() - seekStart;
     
     // Use the shared capture helper
-    return await captureFromClone(renderClone, renderContainer, {
+    const renderStart = performance.now();
+    const result = await captureFromClone(renderClone, renderContainer, {
       scale,
       contentReadyMode,
       blockingTimeoutMs,
       originalTimegroup: timegroup,
       canvasMode,
     });
+    const renderMs = performance.now() - renderStart;
+    
+    // Store timing on the result for access by callers (if they need it)
+    // Note: CanvasImageSource doesn't support custom properties, but we can attach them anyway
+    if (typeof result === 'object' && result !== null) {
+      (result as any).__perfTiming = { cloneMs, seekMs, renderMs };
+    }
+    
+    return result;
   } finally {
     // Clean up the render clone
     cleanupRenderClone();
