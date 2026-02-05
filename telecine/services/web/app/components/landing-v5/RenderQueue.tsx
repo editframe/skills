@@ -164,6 +164,7 @@ export function RenderQueueProvider({ children }: { children: ReactNode }) {
       scale: 1,
       filename: internal.fileName,
       returnBuffer: true,
+      streaming: false,
       signal: internal.abortController.signal,
       progressPreviewInterval: 15,
       onProgress: (p: { progress: number; framePreviewCanvas?: HTMLCanvasElement }) => {
