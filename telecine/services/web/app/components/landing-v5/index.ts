@@ -19,3 +19,6 @@ export { TextOverlayTool } from './tools/TextOverlayTool.tsx';
 
 // Client-side rendering demo
 export { ClientRenderDemo } from './ClientRenderDemo.tsx';
+
+// Templated rendering demo
+export { TemplatedRenderingDemo } from './TemplatedRenderingDemo.tsx';
