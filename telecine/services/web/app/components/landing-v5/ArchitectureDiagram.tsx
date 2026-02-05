@@ -380,34 +380,28 @@ function FanOutDiagram() {
       };
       if (!tg) return;
 
-      // Use initializer so the scene is created on BOTH the prime
-      // timeline AND any clones produced by renderToVideo().
+      // Initializer must be fast (<100ms). Register a frame task that
+      // lazily creates the Three.js scene on first invocation.
       tg.initializer = (instance: HTMLElement & {
         ownCurrentTimeMs?: number;
         durationMs?: number;
         addFrameTask?: (cb: (info: { ownCurrentTimeMs: number; durationMs: number }) => void) => () => void;
       }) => {
-        const cvs = instance.querySelector("canvas") as HTMLCanvasElement | null;
-        if (!cvs) return;
-
-        const scene = createParallelFragmentsScene(cvs);
-
-        // Size from layout, or fall back to reasonable defaults for render clones
-        const rect = cvs.getBoundingClientRect();
-        const w = rect.width || cvs.clientWidth || 800;
-        const h = rect.height || cvs.clientHeight || 500;
-        scene.resize(w, h);
-
-        scene.update(instance.ownCurrentTimeMs ?? 0, instance.durationMs ?? 18000);
+        let localScene: SceneHandle | null = null;
 
         instance.addFrameTask?.(({ ownCurrentTimeMs, durationMs }) => {
-          scene.update(ownCurrentTimeMs, durationMs);
+          if (!localScene) {
+            const cvs = instance.querySelector("canvas") as HTMLCanvasElement | null;
+            if (!cvs) return;
+            localScene = createParallelFragmentsScene(cvs);
+            const rect = cvs.getBoundingClientRect();
+            const w = rect.width || cvs.clientWidth || 800;
+            const h = rect.height || cvs.clientHeight || 500;
+            localScene.resize(w, h);
+            if (instance === tg) primeScene = localScene;
+          }
+          localScene.update(ownCurrentTimeMs, durationMs);
         });
-
-        // Track the prime instance's scene for resize + cleanup
-        if (instance === tg) {
-          primeScene = scene;
-        }
       };
 
       // ResizeObserver for the live (non-clone) instance
