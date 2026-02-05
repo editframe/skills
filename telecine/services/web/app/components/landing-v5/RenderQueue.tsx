@@ -249,86 +249,110 @@ export function RenderQueuePanel() {
       {!minimized && (
         <div className="border-t border-white/10">
           {jobs.map((job) => (
-            <div key={job.id} className="px-3 py-2 border-b border-white/5 last:border-b-0">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] font-medium text-white/80 truncate flex-1 mr-2">
-                  {job.name}
-                </span>
-                {job.status === "queued" && (
-                  <span className="text-[10px] text-white/40">Queued</span>
-                )}
-                {job.status === "rendering" && (
-                  <span className="text-[10px] text-[var(--poster-blue)] font-mono tabular-nums">
-                    {(job.progress * 100).toFixed(0)}%
-                  </span>
-                )}
-                {job.status === "complete" && (
-                  <button
-                    onClick={() => download(job.id)}
-                    className="text-[10px] font-semibold text-[var(--poster-green)] hover:brightness-125 transition-colors flex items-center gap-1"
-                  >
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
-                    </svg>
-                    Save
-                  </button>
-                )}
-                {job.status === "error" && (
-                  <span className="text-[10px] text-red-400">Failed</span>
-                )}
-              </div>
+            <div key={job.id} className={`px-3 py-2.5 border-b border-white/5 last:border-b-0 ${job.status === "complete" ? "bg-[#4CAF50]/10" : ""}`}>
 
-              {/* Progress bar */}
-              {(job.status === "rendering" || job.status === "queued") && (
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-[var(--poster-blue)] rounded-full transition-all duration-200"
-                      style={{ width: `${job.progress * 100}%` }}
-                    />
+              {/* ── Queued ─────────────────────────────────────────── */}
+              {job.status === "queued" && (
+                <>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[11px] font-medium text-white/80 truncate flex-1 mr-2">{job.name}</span>
+                    <span className="text-[10px] text-white/40">Queued</span>
                   </div>
-                  <button
-                    onClick={() => cancel(job.id)}
-                    className="text-white/30 hover:text-white/70 transition-colors"
-                    title="Cancel"
-                  >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
+                  <div className="h-1 bg-white/10 rounded-full" />
+                </>
               )}
 
-              {/* Complete: file name + remove */}
+              {/* ── Rendering ──────────────────────────────────────── */}
+              {job.status === "rendering" && (
+                <>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[11px] font-medium text-white/80 truncate flex-1 mr-2">{job.name}</span>
+                    <span className="text-[10px] text-[var(--poster-blue)] font-mono tabular-nums">
+                      {(job.progress * 100).toFixed(0)}%
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-[var(--poster-blue)] rounded-full transition-all duration-200"
+                        style={{ width: `${job.progress * 100}%` }}
+                      />
+                    </div>
+                    <button
+                      onClick={() => cancel(job.id)}
+                      className="text-white/30 hover:text-white/70 transition-colors"
+                      title="Cancel"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* ── Complete — prominent success state ─────────────── */}
               {job.status === "complete" && (
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-white/30 truncate">{job.fileName}</span>
-                  <button
-                    onClick={() => remove(job.id)}
-                    className="text-white/20 hover:text-white/50 transition-colors ml-2"
-                    title="Remove"
-                  >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <>
+                  <div className="flex items-center gap-2 mb-2">
+                    <svg className="w-4 h-4 text-[#4CAF50] flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
                     </svg>
-                  </button>
-                </div>
+                    <span className="text-[11px] font-semibold text-[#4CAF50] truncate flex-1">{job.name}</span>
+                    <button
+                      onClick={() => remove(job.id)}
+                      className="text-white/20 hover:text-white/50 transition-colors flex-shrink-0"
+                      title="Remove"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {/* Play in browser */}
+                    {job.downloadUrl && (
+                      <a
+                        href={job.downloadUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded bg-white/10 hover:bg-white/15 transition-colors text-[10px] font-semibold text-white/80"
+                      >
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                        Play
+                      </a>
+                    )}
+                    {/* Download */}
+                    <button
+                      onClick={() => download(job.id)}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded bg-[#4CAF50] hover:bg-[#43A047] transition-colors text-[10px] font-bold text-white"
+                    >
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
+                      </svg>
+                      Download .mp4
+                    </button>
+                  </div>
+                </>
               )}
 
-              {/* Error: message + remove */}
+              {/* ── Error ──────────────────────────────────────────── */}
               {job.status === "error" && (
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-red-400/60 truncate">{job.error}</span>
-                  <button
-                    onClick={() => remove(job.id)}
-                    className="text-white/20 hover:text-white/50 transition-colors ml-2"
-                    title="Remove"
-                  >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
+                <>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[11px] font-medium text-red-400 truncate flex-1 mr-2">{job.name}</span>
+                    <button
+                      onClick={() => remove(job.id)}
+                      className="text-white/20 hover:text-white/50 transition-colors"
+                      title="Remove"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  <span className="text-[10px] text-red-400/60">{job.error}</span>
+                </>
               )}
             </div>
           ))}
