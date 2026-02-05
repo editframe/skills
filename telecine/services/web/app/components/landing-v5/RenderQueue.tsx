@@ -230,7 +230,7 @@ export function RenderQueuePanel() {
           <svg className="w-4 h-4 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4" />
           </svg>
-          <span className="text-xs font-semibold text-white/90 tracking-wide">Renders</span>
+          <span className="text-xs font-semibold text-white/90 tracking-wide">Browser Renders</span>
           {activeCount > 0 && (
             <span className="text-[10px] font-bold text-white bg-[var(--poster-blue)] px-1.5 py-0.5 rounded-full leading-none">
               {activeCount}
@@ -370,6 +370,24 @@ export function RenderQueuePanel() {
               </button>
             </div>
           )}
+
+          {/* Browser indicator + cloud upsell */}
+          <div className="px-3 py-2 border-t border-white/10">
+            <div className="flex items-center gap-1.5 mb-2">
+              <svg className="w-3 h-3 text-white/30 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              <span className="text-[9px] text-white/30 leading-tight">
+                Rendering locally in your browser via WebCodecs
+              </span>
+            </div>
+            <a
+              href="/docs"
+              className="block w-full text-center py-1.5 rounded text-[10px] font-semibold bg-[var(--poster-blue)]/20 text-[var(--poster-blue)] hover:bg-[var(--poster-blue)]/30 transition-colors"
+            >
+              {"Upgrade to cloud \u2192 10,000+ renders/hr"}
+            </a>
+          </div>
         </div>
       )}
     </div>
