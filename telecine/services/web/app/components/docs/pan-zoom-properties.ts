@@ -34,6 +34,18 @@ export const panZoomElementProperties: PropertyDefinition[] = [
     htmlAttribute: "scale",
     defaultValue: "1",
   },
+  {
+    name: "autoFit",
+    type: "boolean",
+    access: "R/W",
+    useCase:
+      "When true, automatically fits content to view on first render. Centers content and scales it to fit within the container with padding.",
+    category: "Behavior",
+    domReadable: true,
+    domWritable: true,
+    htmlAttribute: "auto-fit",
+    defaultValue: "false",
+  },
 ];
 
 
