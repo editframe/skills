@@ -341,11 +341,46 @@ function JitDiagram() {
 const SCENE_DUR = "14s";
 const JIT_SCENE_DUR = "22s";
 
+/**
+ * Self-contained timeline content for the parallel fragments scene.
+ * Rendered by TimelineRoot on both the prime instance and render clones.
+ * On clones, React re-mounts this component so R3F works natively.
+ */
+function FanOutContent() {
+  const [timeMs, setTimeMs] = useState(0);
+  const tgRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = tgRef.current;
+    if (!el) return;
+    // Find the ef-timegroup (might be the ref itself or a parent)
+    const tg = el.closest("ef-timegroup") ?? el.querySelector("ef-timegroup");
+    if (!tg) return;
+    (tg as HTMLElement & {
+      addFrameTask?: (cb: (info: { ownCurrentTimeMs: number }) => void) => () => void;
+    }).addFrameTask?.(({ ownCurrentTimeMs }) => {
+      setTimeMs(ownCurrentTimeMs);
+    });
+  }, []);
+
+  return (
+    <Timegroup
+      mode="fixed"
+      duration={SCENE_DUR}
+      className="relative w-full overflow-hidden"
+      style={{ aspectRatio: "16/10", background: "#1e2233" }}
+    >
+      <div ref={tgRef} style={{ position: "absolute", inset: 0 }}>
+        <ParallelFragmentsCanvas timeMs={timeMs} />
+      </div>
+    </Timegroup>
+  );
+}
+
 function FanOutDiagram() {
   const uid = useId();
   const rootId = `fanout-${uid}`;
   const [isClient, setIsClient] = useState(false);
-  const [timeMs, setTimeMs] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const { enqueue } = useRenderQueue();
 
@@ -362,64 +397,13 @@ function FanOutDiagram() {
     }
   };
 
-  // Bridge: addFrameTask feeds composition time → React state → R3F scene
-  useEffect(() => {
-    if (!isClient) return;
-    const container = containerRef.current;
-    if (!container) return;
-
-    let disposed = false;
-
-    const setup = async () => {
-      // Dynamic import vanilla scene for render clones only
-      const { createParallelFragmentsScene } = await import("./parallel-fragments-scene");
-      if (disposed) return;
-
-      const tg = container.querySelector("ef-timegroup") as HTMLElement & {
-        initializer?: (instance: HTMLElement) => void;
-        addFrameTask?: (cb: (info: { ownCurrentTimeMs: number; durationMs: number }) => void) => () => void;
-      };
-      if (!tg) return;
-
-      // Prime: feed time to React state (R3F reads it)
-      tg.addFrameTask?.(({ ownCurrentTimeMs }) => {
-        setTimeMs(ownCurrentTimeMs);
-      });
-
-      // Render clones: vanilla Three.js fallback (R3F doesn't survive cloning)
-      type SceneHandle = { update: (t: number, d: number) => void; resize: (w: number, h: number) => void; dispose: () => void };
-      tg.initializer = (instance: HTMLElement & {
-        ownCurrentTimeMs?: number;
-        durationMs?: number;
-        addFrameTask?: (cb: (info: { ownCurrentTimeMs: number; durationMs: number }) => void) => () => void;
-      }) => {
-        if (instance === tg) return;
-        let cloneScene: SceneHandle | null = null;
-        instance.addFrameTask?.(({ ownCurrentTimeMs, durationMs }) => {
-          if (!cloneScene) {
-            // Target the dedicated render-fallback canvas, not the R3F canvas
-            const cloneCvs = instance.querySelector("canvas[data-render-fallback]") as HTMLCanvasElement | null;
-            if (!cloneCvs) return;
-            cloneScene = createParallelFragmentsScene(cloneCvs);
-            const rect = cloneCvs.getBoundingClientRect();
-            cloneScene.resize(rect.width || cloneCvs.clientWidth || 800, rect.height || cloneCvs.clientHeight || 500);
-          }
-          cloneScene.update(ownCurrentTimeMs, durationMs);
-        });
-      };
-    };
-
-    setup();
-    return () => { disposed = true; };
-  }, [isClient]);
-
   if (!isClient) {
     return (
       <div
         className="w-full flex items-center justify-center"
-        style={{ aspectRatio: "16/10", background: "#252a3a" }}
+        style={{ aspectRatio: "16/10", background: "#1e2233" }}
       >
-        <span className="text-xs text-[var(--warm-gray)]">Loading\u2026</span>
+        <span className="text-xs text-[var(--warm-gray)]">Loading{"\u2026"}</span>
       </div>
     );
   }
@@ -427,28 +411,9 @@ function FanOutDiagram() {
   return (
     <div ref={containerRef}>
       <Preview id={rootId} loop>
-        <Timegroup
-          mode="fixed"
-          duration={SCENE_DUR}
-          className="relative w-full overflow-hidden"
-          style={{ aspectRatio: "16/10", background: "#1e2233" }}
-        >
-          {/* Dedicated canvas for render clones (vanilla Three.js fallback).
-              Hidden behind R3F in live view; the clone's initializer targets
-              this canvas specifically since R3F doesn't survive DOM cloning. */}
-          <canvas
-            data-render-fallback
-            style={{
-              position: "absolute",
-              inset: 0,
-              width: "100%",
-              height: "100%",
-              display: "block",
-            }}
-          />
-          {/* R3F scene for live playback (renders on top of fallback canvas) */}
-          <ParallelFragmentsCanvas timeMs={timeMs} />
-        </Timegroup>
+        {/* TimelineRoot re-renders FanOutContent via React on render clones,
+            so the R3F scene works natively — no vanilla fallback needed. */}
+        <TimelineRoot id={rootId} component={FanOutContent} />
       </Preview>
 
       {/* ── Playback + render controls ────────────────────────── */}
@@ -482,7 +447,7 @@ function FanOutDiagram() {
           />
         </div>
 
-        {/* Enqueue render — progress/download handled by RenderQueuePanel */}
+        {/* Enqueue render */}
         <div className="border-l border-white/10 h-9 flex items-center">
           <button
             onClick={handleRender}
