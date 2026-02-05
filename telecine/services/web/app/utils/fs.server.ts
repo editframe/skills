@@ -41,35 +41,60 @@ interface DocIndexFile {
   children: DocIndexFile[];
 }
 
+const extractTitleFromMeta = (attributes: any): string => {
+  if (!attributes?.meta || !Array.isArray(attributes.meta)) {
+    return "";
+  }
+  return attributes.meta.find((attr: any) => attr.title)?.title || "";
+};
+
+const extractDescriptionFromMeta = (attributes: any): string => {
+  if (!attributes?.meta || !Array.isArray(attributes.meta)) {
+    return "";
+  }
+  return (
+    attributes.meta.find((attr: any) => attr.name === "description")?.content ||
+    ""
+  );
+};
+
+const deriveNameFromPath = (name: string): string => {
+  // Remove numeric prefix (e.g., "010-elements" -> "elements")
+  const cleanName = name.replace(/^\d+-/, "").replace(/\.mdx$/, "");
+  // Convert kebab-case to Title Case (e.g., "aspect-ratio-preservation" -> "Aspect Ratio Preservation")
+  return cleanName
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
 const getDocIndexFile = async (directory: string): Promise<DocIndexFile> => {
   const data = await fs.readFile(join(directory, "index.mdx"), "utf8");
   const { attributes } = fm<any>(data);
   const entries = (await readdir(directory)).filter(
     (entry) => entry !== "index.mdx",
   );
+  const dirName = directory.split("/").pop() || "";
   return {
-    title: attributes.meta.find((attr: any) => attr.title).title,
-    description: attributes.meta.find(
-      (attr: any) => attr.name === "description",
-    ).content,
+    title: extractTitleFromMeta(attributes) || deriveNameFromPath(dirName),
+    description: extractDescriptionFromMeta(attributes),
     slug: "/docs",
-    featured: attributes.featured || false,
-    featuredImage: attributes.featured_image || "",
-    publishedDate: attributes.published_date || "",
+    featured: attributes?.featured || false,
+    featuredImage: attributes?.featured_image || "",
+    publishedDate: attributes?.published_date || "",
     children: await Promise.all(
       entries.map(async (entry) => {
         if (entry.endsWith(".mdx")) {
           const data = await fs.readFile(join(directory, entry), "utf8");
           const { attributes } = fm<any>(data);
           return {
-            title: attributes.meta.find((attr: any) => attr.title).title,
-            description: attributes.meta.find(
-              (attr: any) => attr.name === "description",
-            ).content,
+            title:
+              extractTitleFromMeta(attributes) || deriveNameFromPath(entry),
+            description: extractDescriptionFromMeta(attributes),
             slug: `/docs/${entry.replace(".mdx", "")}`,
-            featured: attributes.featured || false,
-            featuredImage: attributes.featured_image || "",
-            publishedDate: attributes.published_date || "",
+            featured: attributes?.featured || false,
+            featuredImage: attributes?.featured_image || "",
+            publishedDate: attributes?.published_date || "",
             children: [],
           } as DocIndexFile;
         }
@@ -138,7 +163,7 @@ const buildDocMenuItem = async (
   if (hasIndex) {
     const data = await fs.readFile(indexPath, "utf8");
     const { attributes } = fm<any>(data);
-    title = attributes.meta.find((attr: any) => attr.title)?.title || "";
+    title = extractTitleFromMeta(attributes);
   }
 
   const entries = await readdir(directory, { withFileTypes: true });
@@ -151,12 +176,11 @@ const buildDocMenuItem = async (
       if (entry.isFile() && entry.name.endsWith(".mdx")) {
         const data = await fs.readFile(join(directory, entry.name), "utf8");
         const { attributes } = fm<any>(data);
-        const titleAttr = attributes.meta.find((attr: any) => attr.title);
+        const titleFromMeta = extractTitleFromMeta(attributes);
         return {
           attrs: {
-            title:
-              (titleAttr?.title as string) || entry.name.replace(".mdx", ""),
-            new: attributes.new || false,
+            title: titleFromMeta || deriveNameFromPath(entry.name),
+            new: attributes?.new || false,
           },
           slug: `/docs/${join(prefix, entry.name.replace(".mdx", ""))
             .replace(/(\/?\d+-)/g, "/")
