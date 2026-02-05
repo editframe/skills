@@ -187,7 +187,7 @@ async function renderWithBrowser(
   }
   
   // Dynamically import browser render functions to avoid initialization errors
-  const { renderWithBrowserFullVideo, renderWithBrowserFrameByFrame } = await import("../../full-render/browser-render");
+  const { renderWithBrowserFullVideo, renderWithBrowserFrameByFrame } = await import("../../test-utils/browser-render");
   
   try {
     const renderFn = renderMode === "browser-full-video" 

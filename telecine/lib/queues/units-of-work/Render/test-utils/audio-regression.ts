@@ -490,3 +490,112 @@ export const performBoundaryDiscontinuityTest = async (
     );
   }
 };
+
+/**
+ * Analyze zero-crossing timing for audio discontinuity detection
+ * Detects timing anomalies in periodic audio signals (e.g., sine waves)
+ * by measuring intervals between zero-crossings
+ */
+export async function analyzeZeroCrossingTiming(
+  videoPath: string,
+  templateHash: string,
+  startTime: number,
+  duration: number,
+  options?: {
+    expectedInterval?: number;
+    deviationThreshold?: number;
+    label?: string;
+  },
+): Promise<{
+  hasDiscontinuity: boolean;
+  mean: number;
+  stdDev: number;
+  anomalies: Array<{ interval: number; deviation: number; timeSec: number }>;
+}> {
+  const expectedInterval = options?.expectedInterval ?? 109;
+  const deviationThreshold = options?.deviationThreshold ?? 20;
+  const label = options?.label ?? "Zero-Crossing Analysis";
+
+  console.log(`\n=== ${label} ===`);
+  console.log(`Analyzing ${startTime.toFixed(1)}s to ${(startTime + duration).toFixed(1)}s`);
+
+  const samples = await extractAudioSamplesAtTime(
+    videoPath,
+    startTime,
+    duration,
+    templateHash,
+  );
+
+  // Find zero-crossings
+  const zeroCrossings: number[] = [];
+  for (let i = 1; i < samples.length; i++) {
+    const current = samples[i];
+    const previous = samples[i - 1];
+    if (current !== undefined && previous !== undefined) {
+      if (current >= 0 !== previous >= 0) {
+        zeroCrossings.push(i);
+      }
+    }
+  }
+
+  // Calculate intervals between zero-crossings
+  const intervals: number[] = [];
+  for (let i = 1; i < zeroCrossings.length; i++) {
+    const current = zeroCrossings[i];
+    const previous = zeroCrossings[i - 1];
+    if (current !== undefined && previous !== undefined) {
+      intervals.push(current - previous);
+    }
+  }
+
+  if (intervals.length === 0) {
+    console.log(`❌ No zero-crossing intervals found`);
+    return { hasDiscontinuity: true, mean: 0, stdDev: 0, anomalies: [] };
+  }
+
+  const mean =
+    intervals.reduce((sum, interval) => sum + interval, 0) / intervals.length;
+  const stdDev = Math.sqrt(
+    intervals.reduce(
+      (sum, interval) => sum + Math.pow(interval - mean, 2),
+      0,
+    ) / intervals.length,
+  );
+
+  // Find anomalous intervals
+  const anomalies = intervals
+    .map((interval, i) => ({
+      interval,
+      deviation: Math.abs(interval - expectedInterval),
+      timeSec: startTime + (zeroCrossings[i] || 0) / 48000,
+    }))
+    .filter((anomaly) => anomaly.deviation > deviationThreshold);
+
+  console.log(`Zero-crossings found: ${zeroCrossings.length}`);
+  console.log(
+    `Mean interval: ${mean.toFixed(2)} samples (expected: ${expectedInterval})`,
+  );
+  console.log(`Standard deviation: ${stdDev.toFixed(2)} samples`);
+  console.log(`Anomalous intervals: ${anomalies.length}`);
+
+  if (anomalies.length > 0) {
+    console.log(`🚨 Timing anomalies detected:`);
+    anomalies.slice(0, 5).forEach((anomaly) => {
+      console.log(
+        `   At ${anomaly.timeSec.toFixed(3)}s: ${anomaly.interval} samples (deviation: ${anomaly.deviation.toFixed(1)})`,
+      );
+    });
+    if (anomalies.length > 5) {
+      console.log(`   ... and ${anomalies.length - 5} more`);
+    }
+  } else {
+    console.log(`✅ No timing anomalies detected`);
+  }
+
+  return {
+    hasDiscontinuity: anomalies.length > 0,
+    mean,
+    stdDev,
+    anomalies,
+  };
+}
