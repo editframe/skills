@@ -66,7 +66,7 @@ function TextOverlayTool() {
   ];
 
   return (
-    <div className="border-4 border-black bg-white">
+    <div className="border-4 border-black dark:border-white bg-white dark:bg-[#1a1a1a]">
       {/* Header */}
       <div className="px-4 py-3 bg-black">
         <h3 className="text-xs font-bold tracking-widest text-white uppercase">
@@ -98,7 +98,7 @@ function TextOverlayTool() {
       </div>
       
       {/* Playback Controls */}
-      <div className="border-t-4 border-black">
+      <div className="border-t-4 border-black dark:border-white">
         {isClient ? (
           <div className="flex items-center">
             <TogglePlay target={previewId}>
@@ -120,17 +120,17 @@ function TextOverlayTool() {
               </button>
             </TogglePlay>
             
-            <div className="flex-1 px-4 h-12 flex items-center border-l-4 border-black bg-neutral-100">
+            <div className="flex-1 px-4 h-12 flex items-center border-l-4 border-black dark:border-white bg-neutral-100 dark:bg-[#252525]">
               <Scrubber 
                 target={previewId}
                 className="w-full h-2 bg-neutral-300 cursor-pointer [&::part(progress)]:bg-black [&::part(thumb)]:bg-black [&::part(thumb)]:w-4 [&::part(thumb)]:h-4 [&::part(thumb)]:rounded-none"
               />
             </div>
             
-            <div className="px-3 border-l-4 border-black h-12 flex items-center bg-neutral-100">
+            <div className="px-3 border-l-4 border-black dark:border-white h-12 flex items-center bg-neutral-100 dark:bg-[#252525]">
               <TimeDisplay 
                 target={previewId} 
-                className="text-xs text-black font-mono font-bold tabular-nums"
+                className="text-xs text-black dark:text-white font-mono font-bold tabular-nums"
               />
             </div>
           </div>
@@ -141,21 +141,21 @@ function TextOverlayTool() {
                 <path d="M8 5v14l11-7z" />
               </svg>
             </div>
-            <div className="flex-1 px-4 border-l-4 border-black h-12 flex items-center bg-neutral-100">
-              <div className="w-full h-2 bg-neutral-300" />
+            <div className="flex-1 px-4 border-l-4 border-black dark:border-white h-12 flex items-center bg-neutral-100 dark:bg-[#252525]">
+              <div className="w-full h-2 bg-neutral-300 dark:bg-white/20" />
             </div>
-            <div className="px-3 border-l-4 border-black h-12 flex items-center bg-neutral-100">
-              <span className="text-xs text-black font-mono font-bold">0:00</span>
+            <div className="px-3 border-l-4 border-black dark:border-white h-12 flex items-center bg-neutral-100 dark:bg-[#252525]">
+              <span className="text-xs text-black dark:text-white font-mono font-bold">0:00</span>
             </div>
           </div>
         )}
       </div>
       
       {/* Controls */}
-      <div className="border-t-4 border-black p-4 space-y-4">
+      <div className="border-t-4 border-black dark:border-white p-4 space-y-4">
         {/* Text Input */}
         <div>
-          <label className="block text-[10px] font-bold tracking-widest text-black uppercase mb-2">
+          <label className="block text-[10px] font-bold tracking-widest text-black dark:text-white uppercase mb-2">
             Text Content
           </label>
           <input
@@ -163,13 +163,13 @@ function TextOverlayTool() {
             value={textContent}
             onChange={(e) => setTextContent(e.target.value)}
             placeholder="Enter your text"
-            className="w-full px-3 py-2 border-2 border-black bg-white text-black font-medium text-sm focus:outline-none focus:ring-2 focus:ring-[#1E88E5] focus:ring-offset-2"
+            className="w-full px-3 py-2 border-2 border-black dark:border-white bg-white dark:bg-[#111] text-black dark:text-white font-medium text-sm focus:outline-none focus:ring-2 focus:ring-[#1E88E5] focus:ring-offset-2"
           />
         </div>
         
         {/* Font Size */}
         <div>
-          <label className="block text-[10px] font-bold tracking-widest text-black uppercase mb-2">
+          <label className="block text-[10px] font-bold tracking-widest text-black dark:text-white uppercase mb-2">
             Font Size
           </label>
           <div className="flex gap-1">
@@ -179,8 +179,8 @@ function TextOverlayTool() {
                 onClick={() => setFontSize(size.id)}
                 className={`flex-1 py-2 text-sm font-bold border-2 transition-colors ${
                   fontSize === size.id
-                    ? 'bg-black text-white border-black'
-                    : 'bg-white text-black border-black hover:bg-neutral-100'
+                    ? 'bg-black dark:bg-white text-white dark:text-black border-black dark:border-white'
+                    : 'bg-white dark:bg-[#111] text-black dark:text-white border-black dark:border-white hover:bg-neutral-100 dark:hover:bg-[#222]'
                 }`}
               >
                 {size.label}
@@ -191,7 +191,7 @@ function TextOverlayTool() {
         
         {/* Position Grid */}
         <div>
-          <label className="block text-[10px] font-bold tracking-widest text-black uppercase mb-2">
+          <label className="block text-[10px] font-bold tracking-widest text-black dark:text-white uppercase mb-2">
             Position
           </label>
           <div className="grid grid-cols-3 gap-1 max-w-[120px]">
@@ -201,8 +201,8 @@ function TextOverlayTool() {
                 onClick={() => setPosition(pos.id)}
                 className={`aspect-square flex items-center justify-center text-sm font-bold border-2 transition-colors ${
                   position === pos.id
-                    ? 'bg-[#FFC107] text-black border-black'
-                    : 'bg-white text-black border-black hover:bg-neutral-100'
+                    ? 'bg-[#FFC107] text-black border-black dark:border-white'
+                    : 'bg-white dark:bg-[#111] text-black dark:text-white border-black dark:border-white hover:bg-neutral-100 dark:hover:bg-[#222]'
                 }`}
               >
                 {pos.label}

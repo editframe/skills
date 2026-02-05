@@ -47,7 +47,7 @@ export function ThumbnailPicker() {
 
   return (
     <div className="w-full max-w-lg">
-      <div className="border-4 border-black bg-white">
+      <div className="border-4 border-black dark:border-white bg-white dark:bg-[#1a1a1a]">
         {/* Header */}
         <div className="bg-black px-4 py-2">
           <span className="text-xs font-bold uppercase tracking-wider text-white">
@@ -56,7 +56,7 @@ export function ThumbnailPicker() {
         </div>
 
         {/* Video Preview */}
-        <div className="border-b-4 border-black bg-[#1a1a1a]">
+        <div className="border-b-4 border-black dark:border-white bg-[#1a1a1a]">
           {isClient ? (
             <Preview
               id={previewId}
@@ -91,7 +91,7 @@ export function ThumbnailPicker() {
         </div>
 
         {/* Scrubber */}
-        <div className="border-b-4 border-black bg-[#252525] p-4">
+        <div className="border-b-4 border-black dark:border-white bg-[#252525] p-4">
           {isClient ? (
             <div className="flex items-center gap-4">
               <TogglePlay target={previewId}>
@@ -135,24 +135,24 @@ export function ThumbnailPicker() {
         </div>
 
         {/* Select Button */}
-        <div className="border-b-4 border-black bg-white p-4">
+        <div className="border-b-4 border-black dark:border-white bg-white dark:bg-[#1a1a1a] p-4">
           <button
             onClick={handleSelectThumbnail}
             disabled={!isClient}
-            className="w-full py-3 bg-[var(--accent-red,#e63946)] border-4 border-black text-white font-bold uppercase tracking-wider text-sm hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 bg-[var(--accent-red,#e63946)] border-4 border-black dark:border-white text-white font-bold uppercase tracking-wider text-sm hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Select Thumbnail
           </button>
         </div>
 
         {/* Selected Thumbnail Preview */}
-        <div className="bg-[#f8f8f8] p-4">
-          <div className="text-xs font-bold uppercase tracking-wider text-black mb-3">
+        <div className="bg-[#f8f8f8] dark:bg-[#111] p-4">
+          <div className="text-xs font-bold uppercase tracking-wider text-black dark:text-white mb-3">
             Selected Thumbnail
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="w-24 h-14 bg-black border-2 border-black flex items-center justify-center overflow-hidden">
+            <div className="w-24 h-14 bg-black border-2 border-black dark:border-white flex items-center justify-center overflow-hidden">
               {selectedTime !== null && isClient ? (
                 <Preview id={`${previewId}-selected`} className="w-full h-full">
                   <Timegroup
@@ -176,11 +176,11 @@ export function ThumbnailPicker() {
 
             <div className="flex-1">
               {selectedTime !== null ? (
-                <div className="font-mono text-sm font-bold">
+                <div className="font-mono text-sm font-bold text-black dark:text-white">
                   {formatTime(selectedTime)}
                 </div>
               ) : (
-                <div className="text-xs text-black/50 uppercase">
+                <div className="text-xs text-black/50 dark:text-white/50 uppercase">
                   Scrub to frame, then select
                 </div>
               )}

@@ -77,7 +77,7 @@ export function TrimTool() {
 
   return (
     <div className="w-full max-w-xl">
-      <div className="border-4 border-black bg-white overflow-hidden">
+      <div className="border-4 border-black dark:border-white bg-white dark:bg-[#1a1a1a] overflow-hidden">
         {/* Header */}
         <div className="bg-black px-4 py-2 flex items-center justify-between">
           <span className="text-white text-xs font-bold uppercase tracking-widest">
@@ -164,7 +164,7 @@ export function TrimTool() {
         </div>
 
         {/* Scrubber + Controls */}
-        <div className="border-t-4 border-black bg-[#1a1a1a]">
+        <div className="border-t-4 border-black dark:border-white bg-[#1a1a1a]">
           {isClient ? (
             <div className="flex items-center">
               <TogglePlay target={previewId}>
@@ -194,14 +194,14 @@ export function TrimTool() {
                 </button>
               </TogglePlay>
 
-              <div className="flex-1 px-4 h-12 flex items-center border-l-4 border-black">
+              <div className="flex-1 px-4 h-12 flex items-center border-l-4 border-black dark:border-white">
                 <Scrubber
                   target={previewId}
                   className="w-full h-1.5 bg-white/20 rounded-full cursor-pointer [&::part(progress)]:bg-[var(--accent-red)] [&::part(progress)]:rounded-full [&::part(thumb)]:bg-white [&::part(thumb)]:w-3 [&::part(thumb)]:h-3 [&::part(thumb)]:rounded-full"
                 />
               </div>
 
-              <div className="px-4 border-l-4 border-black h-12 flex items-center">
+              <div className="px-4 border-l-4 border-black dark:border-white h-12 flex items-center">
                 <TimeDisplay
                   target={previewId}
                   className="text-xs text-white/70 font-mono tabular-nums"
@@ -219,10 +219,10 @@ export function TrimTool() {
                   <path d="M8 5v14l11-7z" />
                 </svg>
               </div>
-              <div className="flex-1 px-4 border-l-4 border-black h-12 flex items-center">
+              <div className="flex-1 px-4 border-l-4 border-black dark:border-white h-12 flex items-center">
                 <div className="w-full h-1.5 bg-white/20 rounded-full" />
               </div>
-              <div className="px-4 border-l-4 border-black h-12 flex items-center">
+              <div className="px-4 border-l-4 border-black dark:border-white h-12 flex items-center">
                 <span className="text-xs text-white/70 font-mono">
                   0:00 / 0:00
                 </span>
@@ -232,10 +232,10 @@ export function TrimTool() {
         </div>
 
         {/* Trim Info Panel */}
-        <div className="border-t-4 border-black bg-[#f5f5f5] px-4 py-3">
+        <div className="border-t-4 border-black dark:border-white bg-[#f5f5f5] dark:bg-[#111] px-4 py-3">
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-black/50 mb-1">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-black/50 dark:text-white/50 mb-1">
                 In Point
               </div>
               <div className="text-sm font-mono font-bold text-[var(--accent-blue)]">
@@ -243,15 +243,15 @@ export function TrimTool() {
               </div>
             </div>
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-black/50 mb-1">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-black/50 dark:text-white/50 mb-1">
                 Duration
               </div>
-              <div className="text-sm font-mono font-bold text-black">
+              <div className="text-sm font-mono font-bold text-black dark:text-white">
                 {formatTime(selectedDuration)}
               </div>
             </div>
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-black/50 mb-1">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-black/50 dark:text-white/50 mb-1">
                 Out Point
               </div>
               <div className="text-sm font-mono font-bold text-[var(--accent-red)]">
