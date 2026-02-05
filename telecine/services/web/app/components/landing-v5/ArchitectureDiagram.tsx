@@ -396,7 +396,8 @@ function FanOutDiagram() {
         let cloneScene: SceneHandle | null = null;
         instance.addFrameTask?.(({ ownCurrentTimeMs, durationMs }) => {
           if (!cloneScene) {
-            const cloneCvs = instance.querySelector("canvas") as HTMLCanvasElement | null;
+            // Target the dedicated render-fallback canvas, not the R3F canvas
+            const cloneCvs = instance.querySelector("canvas[data-render-fallback]") as HTMLCanvasElement | null;
             if (!cloneCvs) return;
             cloneScene = createParallelFragmentsScene(cloneCvs);
             const rect = cloneCvs.getBoundingClientRect();
@@ -431,10 +432,21 @@ function FanOutDiagram() {
           className="relative w-full overflow-hidden"
           style={{ aspectRatio: "16/10", background: "#1e2233" }}
         >
-          {/* R3F scene for live playback; vanilla fallback for render clones */}
+          {/* Dedicated canvas for render clones (vanilla Three.js fallback).
+              Hidden behind R3F in live view; the clone's initializer targets
+              this canvas specifically since R3F doesn't survive DOM cloning. */}
+          <canvas
+            data-render-fallback
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              display: "block",
+            }}
+          />
+          {/* R3F scene for live playback (renders on top of fallback canvas) */}
           <ParallelFragmentsCanvas timeMs={timeMs} />
-
-          {/* Text is now in 3D space via drei Text components */}
         </Timegroup>
       </Preview>
 
