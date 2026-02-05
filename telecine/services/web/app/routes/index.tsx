@@ -26,7 +26,7 @@ export default function IndexPage() {
 
   return (
     <div className="min-h-screen bg-[#000000] text-[#F8FAFC]">
-      <style>{`
+      <style dangerouslySetInnerHTML={{__html: `
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
         
         body {
@@ -44,7 +44,7 @@ export default function IndexPage() {
             transition-duration: 0.01ms !important;
           }
         }
-      `}</style>
+      `}} />
 
       {/* Navigation */}
       <nav className="fixed top-4 left-4 right-4 z-50">
