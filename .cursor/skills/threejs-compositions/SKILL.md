@@ -276,3 +276,7 @@ Dynamic import in the component avoids SSR issues:
 ```typescript
 const { createMyScene } = await import("./my-scene");
 ```
+
+## React Three Fiber (R3F)
+
+For component-based 3D scenes with better developer experience, see [r3f.md](r3f.md). R3F wraps Three.js in React components with hooks, declarative scene construction, and drei helpers. Use the vanilla approach (this file) for render clones; use R3F for the live interactive version.
