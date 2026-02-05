@@ -98,10 +98,11 @@ export const videoElementProperties: PropertyDefinition[] = [
   {
     name: "currentTimeMs",
     type: "number",
-    access: "R",
+    access: "R/W",
     useCase: "Current time in root timeline",
     category: "Time Coordinates",
     domReadable: true,
+    domWritable: true,
   },
   {
     name: "ownCurrentTimeMs",
@@ -280,7 +281,7 @@ export const videoElementProperties: PropertyDefinition[] = [
   },
   {
     name: "startOffsetMs",
-    type: "number",
+    type: "timestring",
     access: "R/W",
     useCase: "Start offset in milliseconds",
     category: "Time Coordinates",
