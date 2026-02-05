@@ -39,6 +39,7 @@ interface RenderQueueContextValue {
 
 interface InternalJob {
   id: string;
+  fileName: string;
   timegroupEl: HTMLElement;
   renderOpts: Record<string, unknown>;
   abortController: AbortController;
@@ -74,6 +75,7 @@ export function RenderQueueProvider({ children }: { children: ReactNode }) {
 
     internalsRef.current.set(id, {
       id,
+      fileName: opts.fileName,
       timegroupEl: opts.timegroupEl,
       renderOpts: opts.renderOpts ?? {},
       abortController,
@@ -158,6 +160,7 @@ export function RenderQueueProvider({ children }: { children: ReactNode }) {
       codec: "avc",
       bitrate: 4_000_000,
       scale: 1,
+      filename: internal.fileName,
       returnBuffer: true,
       signal: internal.abortController.signal,
       onProgress: (p: { progress: number }) => {
