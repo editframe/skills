@@ -526,17 +526,6 @@ export default function IndexPage() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left - Content */}
             <div>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-white flex items-center justify-center">
-                  <svg className="w-6 h-6 text-[var(--poster-red)]" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-                  </svg>
-                </div>
-                <span className="text-sm font-bold uppercase tracking-widest text-white/80">
-                  New Capability
-                </span>
-              </div>
-              
               <h2 className="text-5xl md:text-6xl font-black tracking-tighter uppercase mb-6">
                 Render in<br />the browser
               </h2>
@@ -586,7 +575,6 @@ export default function IndexPage() {
             
             {/* Right - Demo */}
             <div className="relative">
-              <div className="absolute -top-4 -left-4 w-full h-full bg-[var(--poster-gold)]" />
               <ClientRenderDemo />
             </div>
           </div>
