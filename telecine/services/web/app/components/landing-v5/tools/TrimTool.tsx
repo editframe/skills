@@ -2,7 +2,8 @@
    COMPONENT: TrimTool
    
    Purpose: Minimal video trim tool demonstrating Editframe GUI components.
-   Shows a video preview with scrubber and visual trim handles.
+   Shows a video preview with scrubber and visual trim handles that control
+   the actual video playback range via sourcein/sourceout.
    
    Design: Swissted poster aesthetic - bold borders, strong colors, uppercase labels
    ============================================================================== */
@@ -17,6 +18,9 @@ import {
   TimeDisplay,
 } from "@editframe/react";
 
+const VIDEO_SRC = "/assets/video.mp4";
+const SOURCE_DURATION_MS = 10000;
+
 function formatTime(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000);
   const minutes = Math.floor(totalSeconds / 60);
@@ -30,9 +34,8 @@ export function TrimTool() {
   const previewId = `trim-tool-${id}`;
 
   const [isClient, setIsClient] = useState(false);
-  const [duration] = useState(10000); // 10 seconds in ms
-  const [inPoint, setInPoint] = useState(2000); // 2 seconds
-  const [outPoint, setOutPoint] = useState(8000); // 8 seconds
+  const [inPoint, setInPoint] = useState(2000);
+  const [outPoint, setOutPoint] = useState(8000);
 
   const trackRef = useRef<HTMLDivElement>(null);
   const draggingRef = useRef<"in" | "out" | null>(null);
@@ -56,7 +59,7 @@ export function TrimTool() {
 
       const rect = trackRef.current.getBoundingClientRect();
       const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
-      const time = Math.round((x / rect.width) * duration);
+      const time = Math.round((x / rect.width) * SOURCE_DURATION_MS);
 
       if (draggingRef.current === "in") {
         setInPoint(Math.min(time, outPoint - 500));
@@ -64,16 +67,17 @@ export function TrimTool() {
         setOutPoint(Math.max(time, inPoint + 500));
       }
     },
-    [duration, inPoint, outPoint]
+    [inPoint, outPoint]
   );
 
   const handlePointerUp = useCallback(() => {
     draggingRef.current = null;
   }, []);
 
-  const inPercent = (inPoint / duration) * 100;
-  const outPercent = (outPoint / duration) * 100;
+  const inPercent = (inPoint / SOURCE_DURATION_MS) * 100;
+  const outPercent = (outPoint / SOURCE_DURATION_MS) * 100;
   const selectedDuration = outPoint - inPoint;
+  const trimmedDurationStr = `${selectedDuration}ms`;
 
   return (
     <div className="w-full max-w-xl">
@@ -91,11 +95,12 @@ export function TrimTool() {
         {/* Video Preview */}
         <div className="bg-[#111] aspect-video relative">
           {isClient ? (
-            <Preview id={previewId} loop className="size-full">
-              <Timegroup mode="fixed" duration="10s" className="size-full">
+            <Preview id={previewId} loop className="size-full" key={`${inPoint}-${outPoint}`}>
+              <Timegroup mode="fixed" duration={trimmedDurationStr} className="size-full">
                 <Video
-                  src="/samples/demo.mp4"
-                  duration="10s"
+                  src={VIDEO_SRC}
+                  sourcein={`${inPoint}ms`}
+                  sourceout={`${outPoint}ms`}
                   className="size-full object-contain"
                 />
               </Timegroup>

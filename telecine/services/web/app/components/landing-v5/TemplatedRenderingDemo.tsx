@@ -1,9 +1,19 @@
-import { useState, useEffect, useId } from "react";
+/* ==============================================================================
+   COMPONENT: TemplatedRenderingDemo
+   
+   Purpose: Show data-driven video generation. One template, multiple data sets,
+   different output videos. Real Monaco code editor, real Editframe preview.
+   
+   Design: Swissted poster aesthetic
+   ============================================================================== */
+
+import { useState, useEffect, useId, useCallback } from "react";
 import {
   Preview,
   Timegroup,
   Text,
 } from "@editframe/react";
+import { CodeEditor } from "~/components/CodeEditor";
 
 interface UserData {
   name: string;
@@ -19,6 +29,36 @@ const SAMPLE_DATA: UserData[] = [
   { name: "Emma Williams", role: "CEO", company: "DataFlow", metric: "+89%", color: "#2E7D32" },
 ];
 
+function generateCode(data: UserData): string {
+  return `import { Timegroup, Text } from '@editframe/react';
+import { getRenderData } from '@editframe/elements';
+
+interface VideoData {
+  name: string;
+  role: string;
+  company: string;
+  metric: string;
+}
+
+export function WelcomeVideo() {
+  const data = getRenderData<VideoData>();
+  // Current: { name: "${data.name}", metric: "${data.metric}" }
+
+  return (
+    <Timegroup mode="fixed" duration="5s">
+      <Text>Welcome</Text>
+      <Text>{data.name}!</Text>
+      <Text>{data.role} at {data.company}</Text>
+      <Text>{data.metric} growth</Text>
+    </Timegroup>
+  );
+}`;
+}
+
+const CLI_CODE = `$ npx editframe render \\
+    --data-file users.json \\
+    -o welcome-videos/`;
+
 export function TemplatedRenderingDemo() {
   const id = useId();
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -29,6 +69,12 @@ export function TemplatedRenderingDemo() {
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  const handleSelect = useCallback((index: number) => {
+    setSelectedIndex(index);
+  }, []);
+
+  const currentCode = generateCode(selectedData);
 
   return (
     <div className="grid lg:grid-cols-2 gap-8">
@@ -43,106 +89,16 @@ export function TemplatedRenderingDemo() {
             <span className="ml-3 text-white/40 text-xs font-mono">welcome-video.tsx</span>
           </div>
           
-          {/* Code Content */}
-          <div className="p-4 overflow-x-auto">
-            <pre className="text-xs font-mono leading-relaxed">
-              <code>
-                <span className="text-[#C586C0]">import</span>
-                <span className="text-white"> {'{'} getRenderData {'}'} </span>
-                <span className="text-[#C586C0]">from</span>
-                <span className="text-[#CE9178]"> "@editframe/elements"</span>
-                <span className="text-white">;</span>
-                {'\n\n'}
-                <span className="text-[#C586C0]">interface</span>
-                <span className="text-[#4EC9B0]"> VideoData</span>
-                <span className="text-white"> {'{'}</span>
-                {'\n'}
-                <span className="text-white">  name: </span>
-                <span className="text-[#4EC9B0]">string</span>
-                <span className="text-white">;</span>
-                {'\n'}
-                <span className="text-white">  role: </span>
-                <span className="text-[#4EC9B0]">string</span>
-                <span className="text-white">;</span>
-                {'\n'}
-                <span className="text-white">  company: </span>
-                <span className="text-[#4EC9B0]">string</span>
-                <span className="text-white">;</span>
-                {'\n'}
-                <span className="text-white">  metric: </span>
-                <span className="text-[#4EC9B0]">string</span>
-                <span className="text-white">;</span>
-                {'\n'}
-                <span className="text-white">{'}'}</span>
-                {'\n\n'}
-                <span className="text-[#C586C0]">export function</span>
-                <span className="text-[#DCDCAA]"> WelcomeVideo</span>
-                <span className="text-white">() {'{'}</span>
-                {'\n'}
-                <span className="text-[#C586C0]">  const</span>
-                <span className="text-[#9CDCFE]"> data</span>
-                <span className="text-white"> = </span>
-                <span className="text-[#DCDCAA]">getRenderData</span>
-                <span className="text-white">{'<'}</span>
-                <span className="text-[#4EC9B0]">VideoData</span>
-                <span className="text-white">{'>'}();</span>
-                {'\n\n'}
-                <span className="text-[#C586C0]">  return</span>
-                <span className="text-white"> (</span>
-                {'\n'}
-                <span className="text-[#808080]">    {'<'}</span>
-                <span className="text-[#4EC9B0]">Timegroup</span>
-                <span className="text-[#9CDCFE]"> mode</span>
-                <span className="text-white">=</span>
-                <span className="text-[#CE9178]">"fixed"</span>
-                <span className="text-[#9CDCFE]"> duration</span>
-                <span className="text-white">=</span>
-                <span className="text-[#CE9178]">"5s"</span>
-                <span className="text-[#808080]">{'>'}</span>
-                {'\n'}
-                <span className="text-[#808080]">      {'<'}</span>
-                <span className="text-[#4EC9B0]">Text</span>
-                <span className="text-[#808080]">{'>'}</span>
-                <span className="text-white">Welcome, </span>
-                <span className="text-white">{'{'}</span>
-                <span className="text-[#9CDCFE]">data</span>
-                <span className="text-white">.name{'}'}</span>
-                <span className="text-white">!</span>
-                <span className="text-[#808080]">{'</'}</span>
-                <span className="text-[#4EC9B0]">Text</span>
-                <span className="text-[#808080]">{'>'}</span>
-                {'\n'}
-                <span className="text-[#808080]">      {'<'}</span>
-                <span className="text-[#4EC9B0]">Text</span>
-                <span className="text-[#808080]">{'>'}</span>
-                <span className="text-white">{'{'}</span>
-                <span className="text-[#9CDCFE]">data</span>
-                <span className="text-white">.role{'}'} at {'{'}</span>
-                <span className="text-[#9CDCFE]">data</span>
-                <span className="text-white">.company{'}'}</span>
-                <span className="text-[#808080]">{'</'}</span>
-                <span className="text-[#4EC9B0]">Text</span>
-                <span className="text-[#808080]">{'>'}</span>
-                {'\n'}
-                <span className="text-[#808080]">      {'<'}</span>
-                <span className="text-[#4EC9B0]">Text</span>
-                <span className="text-[#808080]">{'>'}</span>
-                <span className="text-white">{'{'}</span>
-                <span className="text-[#9CDCFE]">data</span>
-                <span className="text-white">.metric{'}'} growth</span>
-                <span className="text-[#808080]">{'</'}</span>
-                <span className="text-[#4EC9B0]">Text</span>
-                <span className="text-[#808080]">{'>'}</span>
-                {'\n'}
-                <span className="text-[#808080]">    {'</'}</span>
-                <span className="text-[#4EC9B0]">Timegroup</span>
-                <span className="text-[#808080]">{'>'}</span>
-                {'\n'}
-                <span className="text-white">  );</span>
-                {'\n'}
-                <span className="text-white">{'}'}</span>
-              </code>
-            </pre>
+          {/* Real Code Editor */}
+          <div className="h-[360px]">
+            <CodeEditor
+              code={currentCode}
+              language="typescript"
+              onChange={() => {}}
+              readOnly
+              height={360}
+              className="w-full h-full"
+            />
           </div>
         </div>
         
@@ -152,16 +108,15 @@ export function TemplatedRenderingDemo() {
             <span className="text-[#4CAF50] font-mono text-sm">$</span>
             <span className="text-white/50 text-xs font-mono uppercase">Terminal</span>
           </div>
-          <div className="p-4">
-            <pre className="text-xs font-mono text-white/90 leading-relaxed whitespace-pre-wrap">
-              <span className="text-[#4CAF50]">npx editframe render</span>
-              {' \\\n  '}
-              <span className="text-[#9CDCFE]">--data-file</span>
-              <span className="text-[#CE9178]"> users.json</span>
-              {' \\\n  '}
-              <span className="text-[#9CDCFE]">-o</span>
-              <span className="text-[#CE9178]"> welcome-videos/</span>
-            </pre>
+          <div className="h-[80px]">
+            <CodeEditor
+              code={CLI_CODE}
+              language="shell"
+              onChange={() => {}}
+              readOnly
+              height={80}
+              className="w-full h-full"
+            />
           </div>
         </div>
       </div>
@@ -179,7 +134,7 @@ export function TemplatedRenderingDemo() {
             {SAMPLE_DATA.map((data, i) => (
               <button
                 key={i}
-                onClick={() => setSelectedIndex(i)}
+                onClick={() => handleSelect(i)}
                 className={`w-full text-left px-3 py-2 text-xs font-mono transition-colors border-2 ${
                   selectedIndex === i
                     ? "bg-[var(--poster-blue)] text-white border-[var(--poster-blue)]"
@@ -199,10 +154,6 @@ export function TemplatedRenderingDemo() {
             {/* Video Header */}
             <div className="px-4 py-2 border-b border-white/20 flex items-center justify-between">
               <span className="text-white/50 text-xs font-mono">welcome-{selectedData.name.split(' ')[0]?.toLowerCase()}.mp4</span>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-[#4CAF50]" />
-                <span className="text-[#4CAF50] text-xs font-mono">Rendered</span>
-              </div>
             </div>
             
             {/* Live Preview */}
@@ -243,14 +194,6 @@ export function TemplatedRenderingDemo() {
                 <p className="text-white/70 text-lg mt-1">growth</p>
               </div>
             )}
-            
-            {/* Video Footer */}
-            <div className="px-4 py-3 border-t border-white/20 bg-black/50">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-white/50 font-mono">1920×1080 • 30fps • H.264</span>
-                <span className="text-white/50 font-mono">5.2 MB</span>
-              </div>
-            </div>
           </div>
         </div>
         
@@ -259,7 +202,7 @@ export function TemplatedRenderingDemo() {
           {SAMPLE_DATA.map((data, i) => (
             <button
               key={i}
-              onClick={() => setSelectedIndex(i)}
+              onClick={() => handleSelect(i)}
               className={`aspect-video border-2 transition-all ${
                 selectedIndex === i 
                   ? "border-white scale-105" 

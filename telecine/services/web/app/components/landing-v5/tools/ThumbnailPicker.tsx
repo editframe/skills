@@ -1,4 +1,13 @@
-import { useId, useEffect, useState, useRef } from "react";
+/* ==============================================================================
+   COMPONENT: ThumbnailPicker
+   
+   Purpose: Thumbnail picker tool demonstrating frame selection from video.
+   Uses a single Preview and captures the canvas for the selected frame.
+   
+   Design: Swissted poster aesthetic - bold borders, strong colors, uppercase labels
+   ============================================================================== */
+
+import { useId, useEffect, useState, useRef, useCallback } from "react";
 import {
   Preview,
   Timegroup,
@@ -8,42 +17,52 @@ import {
   TogglePlay,
 } from "@editframe/react";
 
+const VIDEO_SRC = "/assets/video.mp4";
+
 export function ThumbnailPicker() {
   const id = useId();
   const previewId = `thumbnail-picker-${id}`;
 
   const [isClient, setIsClient] = useState(false);
-  const [selectedTime, setSelectedTime] = useState<number | null>(null);
+  const [thumbnailDataUrl, setThumbnailDataUrl] = useState<string | null>(null);
+  const [selectedTimeLabel, setSelectedTimeLabel] = useState<string | null>(null);
   const previewRef = useRef<HTMLElement>(null);
-  const selectedTimegroupRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
-
-  useEffect(() => {
-    if (selectedTime !== null && selectedTimegroupRef.current) {
-      const tg = selectedTimegroupRef.current as any;
-      tg.pause?.();
-      tg.seek?.(selectedTime);
-    }
-  }, [selectedTime]);
-
-  const handleSelectThumbnail = () => {
-    const preview = previewRef.current;
-    if (preview) {
-      const timegroup = preview.querySelector("ef-timegroup");
-      if (timegroup) {
-        setSelectedTime((timegroup as any).currentTimeMs ?? 0);
-      }
-    }
-  };
 
   const formatTime = (ms: number) => {
     const seconds = Math.floor(ms / 1000);
     const frames = Math.floor((ms % 1000) / (1000 / 30));
     return `${seconds}:${frames.toString().padStart(2, "0")}`;
   };
+
+  const handleSelectThumbnail = useCallback(() => {
+    const preview = previewRef.current;
+    if (!preview) return;
+
+    const timegroup = preview.querySelector("ef-timegroup") as any;
+    if (!timegroup) return;
+
+    const currentTimeMs = timegroup.currentTimeMs ?? 0;
+    setSelectedTimeLabel(formatTime(currentTimeMs));
+
+    timegroup.pause?.();
+
+    const canvas = preview.querySelector("canvas");
+    if (canvas) {
+      setThumbnailDataUrl(canvas.toDataURL("image/jpeg", 0.9));
+    }
+  }, []);
+
+  const handleDownload = useCallback(() => {
+    if (!thumbnailDataUrl) return;
+    const a = document.createElement("a");
+    a.href = thumbnailDataUrl;
+    a.download = `thumbnail-${selectedTimeLabel?.replace(":", "-")}.jpg`;
+    a.click();
+  }, [thumbnailDataUrl, selectedTimeLabel]);
 
   return (
     <div className="w-full max-w-lg">
@@ -70,7 +89,7 @@ export function ThumbnailPicker() {
                   className="w-full h-full"
                 >
                   <Video
-                    src="/samples/demo.mp4"
+                    src={VIDEO_SRC}
                     className="size-full object-contain"
                   />
                 </Timegroup>
@@ -141,7 +160,7 @@ export function ThumbnailPicker() {
             disabled={!isClient}
             className="w-full py-3 bg-[var(--accent-red,#e63946)] border-4 border-black dark:border-white text-white font-bold uppercase tracking-wider text-sm hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Select Thumbnail
+            Capture Thumbnail
           </button>
         </div>
 
@@ -153,20 +172,8 @@ export function ThumbnailPicker() {
 
           <div className="flex items-center gap-4">
             <div className="w-24 h-14 bg-black border-2 border-black dark:border-white flex items-center justify-center overflow-hidden">
-              {selectedTime !== null && isClient ? (
-                <Preview id={`${previewId}-selected`} className="w-full h-full">
-                  <Timegroup
-                    ref={selectedTimegroupRef as any}
-                    mode="fixed"
-                    duration="10s"
-                    className="w-full h-full"
-                  >
-                    <Video
-                      src="/samples/demo.mp4"
-                      className="size-full object-contain"
-                    />
-                  </Timegroup>
-                </Preview>
+              {thumbnailDataUrl ? (
+                <img src={thumbnailDataUrl} alt="Selected thumbnail" className="w-full h-full object-contain" />
               ) : (
                 <span className="text-white/50 text-[10px] uppercase">
                   None
@@ -175,13 +182,23 @@ export function ThumbnailPicker() {
             </div>
 
             <div className="flex-1">
-              {selectedTime !== null ? (
-                <div className="font-mono text-sm font-bold text-black dark:text-white">
-                  {formatTime(selectedTime)}
+              {selectedTimeLabel ? (
+                <div className="space-y-2">
+                  <div className="font-mono text-sm font-bold text-black dark:text-white">
+                    {selectedTimeLabel}
+                  </div>
+                  {thumbnailDataUrl && (
+                    <button
+                      onClick={handleDownload}
+                      className="text-xs font-bold uppercase tracking-wider text-[var(--accent-blue)] hover:underline"
+                    >
+                      Download
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="text-xs text-black/50 dark:text-white/50 uppercase">
-                  Scrub to frame, then select
+                  Scrub to frame, then capture
                 </div>
               )}
             </div>

@@ -2,7 +2,8 @@
    COMPONENT: ClientRenderDemo
    
    Purpose: Demonstrate client-side video rendering capabilities.
-   Shows composition preview with real-time export to MP4 in the browser.
+   Shows composition preview with animated text overlay and real-time
+   export to MP4 in the browser.
    ============================================================================== */
 
 import { useState, useEffect, useRef, useCallback, useId } from "react";
@@ -15,6 +16,8 @@ import {
   Scrubber,
   TimeDisplay,
 } from "@editframe/react";
+
+const VIDEO_SRC = "/assets/video.mp4";
 
 interface RenderProgress {
   progress: number;
@@ -146,11 +149,16 @@ export function ClientRenderDemo() {
             >
               <Timegroup mode="fixed" duration="5s" className="w-full h-full relative">
                 <Video
-                  src="/samples/demo.mp4"
+                  src={VIDEO_SRC}
                   duration="5s"
                   className="w-full h-full object-cover"
                 />
-                <Text className="absolute bottom-6 inset-x-4 text-white text-xl font-bold text-center drop-shadow-lg">
+                <Text
+                  split="word"
+                  staggerMs={150}
+                  easing="ease-out"
+                  className="absolute bottom-6 inset-x-4 text-white text-xl font-bold text-center drop-shadow-lg"
+                >
                   RENDERED IN BROWSER
                 </Text>
               </Timegroup>

@@ -1,3 +1,12 @@
+/* ==============================================================================
+   COMPONENT: TextOverlayTool
+   
+   Purpose: Text overlay tool demonstrating Editframe text animation features.
+   Supports position, font size, split mode, stagger, and animation presets.
+   
+   Design: Swissted poster aesthetic - bold borders, strong colors, uppercase labels
+   ============================================================================== */
+
 import { useState, useEffect, useId } from "react";
 import {
   Preview,
@@ -9,12 +18,16 @@ import {
   TimeDisplay,
 } from "@editframe/react";
 
+const VIDEO_SRC = "/assets/video.mp4";
+
 type Position = 
   | 'top-left' | 'top-center' | 'top-right'
   | 'center-left' | 'center' | 'center-right'
   | 'bottom-left' | 'bottom-center' | 'bottom-right';
 
 type FontSize = 'small' | 'medium' | 'large';
+type SplitMode = 'word' | 'char' | 'line';
+type AnimationPreset = 'none' | 'fade-in' | 'slide-up' | 'typewriter';
 
 const POSITION_STYLES: Record<Position, string> = {
   'top-left': 'top-4 left-4 text-left',
@@ -34,6 +47,35 @@ const FONT_SIZES: Record<FontSize, string> = {
   large: 'text-3xl',
 };
 
+const ANIMATION_PRESETS: Record<AnimationPreset, { label: string; staggerMs: number }> = {
+  'none': { label: 'None', staggerMs: 0 },
+  'fade-in': { label: 'Fade In', staggerMs: 120 },
+  'slide-up': { label: 'Slide Up', staggerMs: 100 },
+  'typewriter': { label: 'Typewriter', staggerMs: 60 },
+};
+
+const ANIMATION_STYLES = `
+  @keyframes ef-landing-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes ef-landing-slide-up {
+    from { opacity: 0; transform: translateY(100%); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes ef-landing-typewriter {
+    from { opacity: 0; transform: scale(0.5); }
+    to { opacity: 1; transform: scale(1); }
+  }
+`;
+
+const ANIMATION_CLASSES: Record<AnimationPreset, string> = {
+  'none': '',
+  'fade-in': '[animation:ef-landing-fade-in_0.4s_ease-out_both]',
+  'slide-up': '[animation:ef-landing-slide-up_0.4s_ease-out_both]',
+  'typewriter': '[animation:ef-landing-typewriter_0.2s_ease-out_both]',
+};
+
 function TextOverlayTool() {
   const id = useId();
   const previewId = `text-overlay-${id}`;
@@ -42,6 +84,8 @@ function TextOverlayTool() {
   const [textContent, setTextContent] = useState('YOUR TEXT HERE');
   const [position, setPosition] = useState<Position>('bottom-center');
   const [fontSize, setFontSize] = useState<FontSize>('medium');
+  const [splitMode, setSplitMode] = useState<SplitMode>('word');
+  const [animationPreset, setAnimationPreset] = useState<AnimationPreset>('fade-in');
   
   useEffect(() => {
     setIsClient(true);
@@ -65,8 +109,19 @@ function TextOverlayTool() {
     { id: 'large', label: 'L' },
   ];
 
+  const splitModes: { id: SplitMode; label: string }[] = [
+    { id: 'word', label: 'Word' },
+    { id: 'char', label: 'Char' },
+    { id: 'line', label: 'Line' },
+  ];
+
+  const currentPreset = ANIMATION_PRESETS[animationPreset];
+  const animClass = ANIMATION_CLASSES[animationPreset];
+
   return (
     <div className="border-4 border-black dark:border-white bg-white dark:bg-[#1a1a1a]">
+      <style dangerouslySetInnerHTML={{ __html: ANIMATION_STYLES }} />
+      
       {/* Header */}
       <div className="px-4 py-3 bg-black">
         <h3 className="text-xs font-bold tracking-widest text-white uppercase">
@@ -77,14 +132,17 @@ function TextOverlayTool() {
       {/* Preview */}
       <div className="bg-neutral-900">
         {isClient ? (
-          <Preview id={previewId} loop className="aspect-video">
+          <Preview id={previewId} loop className="aspect-video" key={`${animationPreset}-${splitMode}`}>
             <Timegroup mode="contain" className="w-full h-full relative">
               <Video 
-                src="/samples/demo.mp4" 
+                src={VIDEO_SRC}
                 className="size-full object-cover"
               />
               <Text 
-                className={`absolute ${POSITION_STYLES[position]} ${FONT_SIZES[fontSize]} font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]`}
+                split={animationPreset !== 'none' ? splitMode : undefined}
+                staggerMs={animationPreset !== 'none' ? currentPreset.staggerMs : undefined}
+                easing={animationPreset !== 'none' ? "ease-out" : undefined}
+                className={`absolute ${POSITION_STYLES[position]} ${FONT_SIZES[fontSize]} font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] ${animClass}`}
               >
                 {textContent || 'YOUR TEXT HERE'}
               </Text>
@@ -167,47 +225,95 @@ function TextOverlayTool() {
           />
         </div>
         
-        {/* Font Size */}
+        {/* Animation Preset */}
         <div>
           <label className="block text-[10px] font-bold tracking-widest text-black dark:text-white uppercase mb-2">
-            Font Size
+            Animation
           </label>
           <div className="flex gap-1">
-            {fontSizes.map((size) => (
+            {(Object.entries(ANIMATION_PRESETS) as [AnimationPreset, { label: string; staggerMs: number }][]).map(([presetId, preset]) => (
               <button
-                key={size.id}
-                onClick={() => setFontSize(size.id)}
-                className={`flex-1 py-2 text-sm font-bold border-2 transition-colors ${
-                  fontSize === size.id
-                    ? 'bg-black dark:bg-white text-white dark:text-black border-black dark:border-white'
-                    : 'bg-white dark:bg-[#111] text-black dark:text-white border-black dark:border-white hover:bg-neutral-100 dark:hover:bg-[#222]'
-                }`}
-              >
-                {size.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        
-        {/* Position Grid */}
-        <div>
-          <label className="block text-[10px] font-bold tracking-widest text-black dark:text-white uppercase mb-2">
-            Position
-          </label>
-          <div className="grid grid-cols-3 gap-1 max-w-[120px]">
-            {positions.map((pos) => (
-              <button
-                key={pos.id}
-                onClick={() => setPosition(pos.id)}
-                className={`aspect-square flex items-center justify-center text-sm font-bold border-2 transition-colors ${
-                  position === pos.id
+                key={presetId}
+                onClick={() => setAnimationPreset(presetId)}
+                className={`flex-1 py-2 text-xs font-bold border-2 transition-colors ${
+                  animationPreset === presetId
                     ? 'bg-[#FFC107] text-black border-black dark:border-white'
                     : 'bg-white dark:bg-[#111] text-black dark:text-white border-black dark:border-white hover:bg-neutral-100 dark:hover:bg-[#222]'
                 }`}
               >
-                {pos.label}
+                {preset.label}
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* Split Mode (only when animation is active) */}
+        {animationPreset !== 'none' && (
+          <div>
+            <label className="block text-[10px] font-bold tracking-widest text-black dark:text-white uppercase mb-2">
+              Split By
+            </label>
+            <div className="flex gap-1">
+              {splitModes.map((mode) => (
+                <button
+                  key={mode.id}
+                  onClick={() => setSplitMode(mode.id)}
+                  className={`flex-1 py-2 text-xs font-bold border-2 transition-colors ${
+                    splitMode === mode.id
+                      ? 'bg-black dark:bg-white text-white dark:text-black border-black dark:border-white'
+                      : 'bg-white dark:bg-[#111] text-black dark:text-white border-black dark:border-white hover:bg-neutral-100 dark:hover:bg-[#222]'
+                  }`}
+                >
+                  {mode.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="flex gap-4">
+          {/* Font Size */}
+          <div className="flex-1">
+            <label className="block text-[10px] font-bold tracking-widest text-black dark:text-white uppercase mb-2">
+              Font Size
+            </label>
+            <div className="flex gap-1">
+              {fontSizes.map((size) => (
+                <button
+                  key={size.id}
+                  onClick={() => setFontSize(size.id)}
+                  className={`flex-1 py-2 text-sm font-bold border-2 transition-colors ${
+                    fontSize === size.id
+                      ? 'bg-black dark:bg-white text-white dark:text-black border-black dark:border-white'
+                      : 'bg-white dark:bg-[#111] text-black dark:text-white border-black dark:border-white hover:bg-neutral-100 dark:hover:bg-[#222]'
+                  }`}
+                >
+                  {size.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          {/* Position Grid */}
+          <div>
+            <label className="block text-[10px] font-bold tracking-widest text-black dark:text-white uppercase mb-2">
+              Position
+            </label>
+            <div className="grid grid-cols-3 gap-1 max-w-[90px]">
+              {positions.map((pos) => (
+                <button
+                  key={pos.id}
+                  onClick={() => setPosition(pos.id)}
+                  className={`aspect-square flex items-center justify-center text-xs font-bold border-2 transition-colors ${
+                    position === pos.id
+                      ? 'bg-[#FFC107] text-black border-black dark:border-white'
+                      : 'bg-white dark:bg-[#111] text-black dark:text-white border-black dark:border-white hover:bg-neutral-100 dark:hover:bg-[#222]'
+                  }`}
+                >
+                  {pos.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>

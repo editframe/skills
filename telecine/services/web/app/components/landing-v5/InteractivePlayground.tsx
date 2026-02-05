@@ -1,179 +1,128 @@
-import { useState, useEffect, useId } from "react";
+/* ==============================================================================
+   COMPONENT: InteractivePlayground
+   
+   Purpose: Let visitors experience the development flow. Editable code in
+   Monaco editor, live preview via EFPlayer pattern (dangerouslySetInnerHTML
+   into a Preview). Template switching for different aspect ratios.
+   
+   Design: Clean editor/preview split with subtle styling
+   ============================================================================== */
+
+import { useState, useEffect, useId, useCallback } from "react";
 import { Link } from "react-router";
 import {
   Preview,
-  Timegroup,
-  Video,
-  Text,
   Scrubber,
   TogglePlay,
   TimeDisplay,
   Filmstrip,
 } from "@editframe/react";
+import { CodeEditor } from "~/components/CodeEditor";
 
-/* ==============================================================================
-   COMPONENT: InteractivePlayground
-   
-   Purpose: Let visitors experience the development flow using actual
-   Editframe components with working playback controls.
-   
-   Design: Clean editor/preview split with subtle styling
-   ============================================================================== */
+const VIDEO_SRC = "/assets/video.mp4";
 
-function highlightCode(code: string): string {
-  let highlighted = code;
-  
-  const stringPlaceholders: string[] = [];
-  highlighted = highlighted.replace(/("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)/g, (match) => {
-    const placeholder = `__STRING_${stringPlaceholders.length}__`;
-    stringPlaceholders.push(`<span class="text-emerald-400">${match}</span>`);
-    return placeholder;
-  });
-
-  const commentPlaceholders: string[] = [];
-  highlighted = highlighted.replace(/(\/\/[^\n]*|\/\*[\s\S]*?\*\/|\{\/\*[\s\S]*?\*\/\})/g, (match) => {
-    const placeholder = `__COMMENT_${commentPlaceholders.length}__`;
-    commentPlaceholders.push(`<span class="opacity-50">${match}</span>`);
-    return placeholder;
-  });
-
-  highlighted = highlighted.replace(
-    /\b(import|export|from|function|return|const|let|var|if|else|for|while|class|extends|new|this|typeof|instanceof)\b/g,
-    '<span class="text-[var(--accent-red)]">$1</span>'
-  );
-
-  highlighted = highlighted.replace(
-    /(<\/?)([\w.]+)/g,
-    '<span class="opacity-50">$1</span><span class="text-[var(--accent-blue)]">$2</span>'
-  );
-
-  highlighted = highlighted.replace(
-    /\s(className|src|name|target|duration|style|volume|barColor|barWidth|barGap|start|id|loop|mode)=/g,
-    ' <span class="text-[var(--accent-gold)]">$1</span>='
-  );
-
-  highlighted = highlighted.replace(
-    /\b(\d+(?:\.\d+)?)\b/g,
-    '<span class="text-[var(--accent-gold)]">$1</span>'
-  );
-
-  stringPlaceholders.forEach((str, i) => {
-    highlighted = highlighted.replace(`__STRING_${i}__`, str);
-  });
-  commentPlaceholders.forEach((comment, i) => {
-    highlighted = highlighted.replace(`__COMMENT_${i}__`, comment);
-  });
-
-  return highlighted;
+interface Template {
+  name: string;
+  dimensions: string;
+  containerClass: string;
+  description: string;
+  code: string;
 }
+
+const templates: Record<string, Template> = {
+  landscape: {
+    name: '16:9',
+    dimensions: '1920 × 1080',
+    containerClass: 'aspect-video max-w-[480px]',
+    description: 'YouTube, presentations',
+    code: `<ef-timegroup mode="contain" style="width:100%;height:100%;position:relative">
+  <ef-video
+    src="${VIDEO_SRC}"
+    style="width:100%;height:100%;object-fit:contain"
+  ></ef-video>
+  <ef-text
+    style="position:absolute;bottom:1rem;left:1rem;right:1rem;
+           color:white;font-size:1.2rem;font-weight:700;
+           text-align:center;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.8))"
+  >16:9 Landscape Format</ef-text>
+</ef-timegroup>`,
+  },
+  portrait: {
+    name: '9:16',
+    dimensions: '1080 × 1920',
+    containerClass: 'aspect-[9/16] max-w-[200px]',
+    description: 'TikTok, Reels, Shorts',
+    code: `<ef-timegroup mode="contain" style="width:100%;height:100%;position:relative">
+  <ef-video
+    src="${VIDEO_SRC}"
+    style="width:100%;height:100%;object-fit:cover"
+  ></ef-video>
+  <ef-text
+    style="position:absolute;top:2rem;left:0.75rem;right:0.75rem;
+           color:white;font-size:1.4rem;font-weight:900;
+           text-align:center;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.8))"
+  >9:16 Portrait</ef-text>
+</ef-timegroup>`,
+  },
+  square: {
+    name: '1:1',
+    dimensions: '1080 × 1080',
+    containerClass: 'aspect-square max-w-[300px]',
+    description: 'Instagram, LinkedIn',
+    code: `<ef-timegroup mode="contain" style="width:100%;height:100%;position:relative">
+  <ef-video
+    src="${VIDEO_SRC}"
+    style="width:100%;height:100%;object-fit:cover"
+  ></ef-video>
+  <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.6),transparent)"></div>
+  <ef-text
+    style="position:absolute;bottom:1rem;left:0.75rem;right:0.75rem;
+           color:white;font-size:1.1rem;font-weight:600;
+           text-align:center"
+  >1:1 Square Format</ef-text>
+</ef-timegroup>`,
+  },
+};
 
 function InteractivePlayground() {
   const id = useId();
-  const [selectedTemplate, setSelectedTemplate] = useState<'landscape' | 'portrait' | 'square'>('landscape');
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('landscape');
+  const [code, setCode] = useState(templates.landscape!.code);
+  const [liveCode, setLiveCode] = useState(templates.landscape!.code);
   const [copied, setCopied] = useState(false);
-  const [isTransitioning, setIsTransitioning] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  
+  const previewId = `playground-preview-${id}`;
   
   useEffect(() => {
     setIsClient(true);
   }, []);
   
-  const previewId = `playground-preview-${id}-${selectedTemplate}`;
+  const currentTemplate = templates[selectedTemplate]!;
   
-  const templates = {
-    landscape: {
-      name: '16:9',
-      dimensions: '1920 × 1080',
-      containerClass: 'aspect-video max-w-[480px]',
-      videoSrc: 'https://assets.editframe.com/bars-n-tone.mp4',
-      description: 'YouTube, presentations',
-      code: `import { Timegroup, Video, Text } from '@editframe/react';
-
-export function LandscapeVideo() {
-  return (
-    <Timegroup mode="contain" className="w-[1920px] h-[1080px]">
-      <Video 
-        src="bars-n-tone.mp4"
-        className="size-full object-contain"
-      />
-      <Text className="absolute bottom-8 inset-x-8
-                       text-white text-4xl font-bold
-                       text-center drop-shadow-lg">
-        16:9 Landscape Format
-      </Text>
-    </Timegroup>
-  );
-}`,
-    },
-    portrait: {
-      name: '9:16',
-      dimensions: '1080 × 1920',
-      containerClass: 'aspect-[9/16] max-w-[200px]',
-      videoSrc: 'https://assets.editframe.com/bars-n-tone.mp4',
-      description: 'TikTok, Reels, Shorts',
-      code: `import { Timegroup, Video, Text } from '@editframe/react';
-
-export function PortraitVideo() {
-  return (
-    <Timegroup mode="contain" className="w-[1080px] h-[1920px]">
-      <Video 
-        src="bars-n-tone.mp4"
-        className="size-full object-cover"
-      />
-      <Text className="absolute top-16 inset-x-6
-                       text-white text-5xl font-black
-                       text-center drop-shadow-lg">
-        9:16 Portrait
-      </Text>
-    </Timegroup>
-  );
-}`,
-    },
-    square: {
-      name: '1:1',
-      dimensions: '1080 × 1080',
-      containerClass: 'aspect-square max-w-[300px]',
-      videoSrc: 'https://assets.editframe.com/bars-n-tone.mp4',
-      description: 'Instagram, LinkedIn',
-      code: `import { Timegroup, Video, Text } from '@editframe/react';
-
-export function SquareVideo() {
-  return (
-    <Timegroup mode="contain" className="w-[1080px] h-[1080px]">
-      <Video 
-        src="bars-n-tone.mp4"
-        className="size-full object-cover"
-      />
-      <Text className="absolute bottom-8 inset-x-6
-                       text-white text-3xl font-bold
-                       text-center">
-        1:1 Square Format
-      </Text>
-    </Timegroup>
-  );
-}`,
-    },
-  };
-  
-  const currentTemplate = templates[selectedTemplate];
-  
-  const handleTemplateChange = (templateId: 'landscape' | 'portrait' | 'square') => {
+  const handleTemplateChange = useCallback((templateId: string) => {
     if (templateId === selectedTemplate) return;
-    setIsTransitioning(true);
-    setTimeout(() => {
-      setSelectedTemplate(templateId);
-      setTimeout(() => setIsTransitioning(false), 50);
-    }, 150);
-  };
+    setSelectedTemplate(templateId);
+    const newCode = templates[templateId]!.code;
+    setCode(newCode);
+    setLiveCode(newCode);
+  }, [selectedTemplate]);
   
-  const handleCopyCode = async () => {
+  const handleCodeChange = useCallback((value: string | undefined) => {
+    if (value !== undefined) {
+      setCode(value);
+      setLiveCode(value);
+    }
+  }, []);
+  
+  const handleCopyCode = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(currentTemplate.code);
+      await navigator.clipboard.writeText(code);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
       const textarea = document.createElement('textarea');
-      textarea.value = currentTemplate.code;
+      textarea.value = code;
       document.body.appendChild(textarea);
       textarea.select();
       document.execCommand('copy');
@@ -181,14 +130,14 @@ export function SquareVideo() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
-  };
+  }, [code]);
   
   return (
     <div>
       {/* Format selector */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex gap-2">
-          {(Object.keys(templates) as Array<keyof typeof templates>).map((templateId) => (
+          {Object.entries(templates).map(([templateId, tmpl]) => (
             <button
               key={templateId}
               onClick={() => handleTemplateChange(templateId)}
@@ -198,7 +147,7 @@ export function SquareVideo() {
                   : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
-              {templates[templateId].name}
+              {tmpl.name}
             </button>
           ))}
         </div>
@@ -217,71 +166,49 @@ export function SquareVideo() {
           <div className="w-3 h-3 rounded-full bg-[var(--poster-red)]" />
           <div className="w-3 h-3 rounded-full bg-[var(--poster-gold)]" />
           <div className="w-3 h-3 rounded-full bg-[var(--poster-green)]" />
-          <span className="ml-4 text-xs text-white/50">composition.tsx</span>
+          <span className="ml-4 text-xs text-white/50">composition.html</span>
           <span className="mx-2 text-white/30">|</span>
           <span className="text-xs text-white/50">preview</span>
+          <div className="flex-1" />
+          <button
+            onClick={handleCopyCode}
+            className="p-2 text-white/50 hover:text-white transition-colors"
+            title="Copy code"
+          >
+            {copied ? (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            )}
+          </button>
         </div>
         
         <div className="grid md:grid-cols-2 min-h-[450px]">
-          {/* Code editor */}
-          <div className="relative p-4 font-mono text-sm overflow-auto border-r border-white/10">
-            <button
-              onClick={handleCopyCode}
-              className="absolute top-4 right-4 p-2 text-white/50 hover:text-white transition-colors z-10"
-              title="Copy code"
-            >
-              {copied ? (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              ) : (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-              )}
-            </button>
-            
-            <pre 
-              className={`text-white/90 leading-relaxed transition-opacity duration-150 ${
-                isTransitioning ? 'opacity-0' : 'opacity-100'
-              }`}
-            >
-              <code dangerouslySetInnerHTML={{ __html: highlightCode(currentTemplate.code) }} />
-            </pre>
+          {/* Code editor - real Monaco */}
+          <div className="border-r border-white/10">
+            <CodeEditor
+              code={code}
+              language="html"
+              onChange={handleCodeChange}
+              height={450}
+              className="w-full h-[450px]"
+            />
           </div>
           
           {/* Live Preview */}
-          <div className={`bg-[#111] flex flex-col transition-opacity duration-150 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
+          <div className="bg-[#111] flex flex-col">
             {isClient ? (
-              <Preview id={previewId} loop className="flex-1 flex flex-col">
+              <Preview id={previewId} loop className="flex-1 flex flex-col" key={liveCode}>
                 <div className="flex-1 flex items-center justify-center p-4 bg-black min-h-[280px]">
                   <div className={`${currentTemplate.containerClass} w-full`}>
-                    <Timegroup mode="contain" className="w-full h-full relative bg-black">
-                      <Video src={currentTemplate.videoSrc} className="size-full object-contain" />
-                      {selectedTemplate === 'landscape' && (
-                        <Text className="absolute bottom-4 inset-x-4 text-white text-lg font-semibold text-center">
-                          16:9 Landscape
-                        </Text>
-                      )}
-                      {selectedTemplate === 'portrait' && (
-                        <>
-                          <Text className="absolute top-6 inset-x-3 text-white text-base font-bold text-center">
-                            9:16 Portrait
-                          </Text>
-                          <Text className="absolute bottom-6 inset-x-3 text-[var(--accent-gold)] text-sm font-medium text-center">
-                            Swipe up
-                          </Text>
-                        </>
-                      )}
-                      {selectedTemplate === 'square' && (
-                        <>
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                          <Text className="absolute bottom-4 inset-x-3 text-white text-base font-semibold text-center">
-                            1:1 Square
-                          </Text>
-                        </>
-                      )}
-                    </Timegroup>
+                    <div
+                      className="w-full h-full"
+                      dangerouslySetInnerHTML={{ __html: liveCode }}
+                    />
                   </div>
                 </div>
                 

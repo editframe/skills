@@ -2,7 +2,8 @@
    COMPONENT: HeroDemo
    
    Purpose: The centerpiece of the hero. Shows the product in action using
-   actual Editframe components with working playback controls.
+   actual Editframe components with working playback controls, paired with
+   a real syntax-highlighted code display via Monaco (read-only).
    
    Design: Clean editor/preview split with subtle shadows
    ============================================================================== */
@@ -18,6 +19,25 @@ import {
   TimeDisplay,
   Filmstrip,
 } from "@editframe/react";
+import { CodeEditor } from "~/components/CodeEditor";
+
+const VIDEO_SRC = "/assets/video.mp4";
+
+const HERO_CODE = `import { Timegroup, Video, Text } from '@editframe/react';
+
+export function Welcome() {
+  return (
+    <Timegroup mode="contain">
+      <Video src="video.mp4" />
+
+      <Text className="absolute bottom-3 inset-x-3
+                       text-white text-sm font-semibold
+                       text-center">
+        Build video with code
+      </Text>
+    </Timegroup>
+  );
+}`;
 
 export function HeroDemo() {
   const id = useId();
@@ -29,22 +49,6 @@ export function HeroDemo() {
   useEffect(() => {
     setIsClient(true);
   }, []);
-
-  const codeLines = [
-    { num: 1, content: <><span className="text-[var(--accent-red)]">import</span> {'{'} Timegroup, Video, Text {'}'} <span className="text-[var(--accent-red)]">from</span> <span className="text-[var(--accent-blue)]">'@editframe/react'</span>;</> },
-    { num: 2, content: '' },
-    { num: 3, content: <><span className="text-[var(--accent-red)]">export function</span> <span className="text-[var(--accent-gold)]">Welcome</span>() {'{'}</> },
-    { num: 4, content: <>&nbsp;&nbsp;<span className="text-[var(--accent-red)]">return</span> (</> },
-    { num: 5, content: <>&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-[var(--accent-blue)]">{'<Timegroup'}</span> <span className="opacity-60">mode</span>=<span className="text-[var(--accent-blue)]">"contain"</span><span className="text-[var(--accent-blue)]">{'>'}</span></> },
-    { num: 6, content: <>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-[var(--accent-blue)]">{'<Video'}</span> <span className="opacity-60">src</span>=<span className="text-[var(--accent-blue)]">"bars.mp4"</span> <span className="text-[var(--accent-blue)]">{'/>'}</span></> },
-    { num: 7, content: '' },
-    { num: 8, content: <>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-[var(--accent-blue)]">{'<Text'}</span> <span className="opacity-60">className</span>=<span className="text-[var(--accent-blue)]">"..."</span><span className="text-[var(--accent-blue)]">{'>'}</span></> },
-    { num: 9, content: <>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Build video with code</> },
-    { num: 10, content: <>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-[var(--accent-blue)]">{'</Text>'}</span></> },
-    { num: 11, content: <>&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-[var(--accent-blue)]">{'</Timegroup>'}</span></> },
-    { num: 12, content: <>&nbsp;&nbsp;);</> },
-    { num: 13, content: <>{'}'}<span className="animate-pulse text-[var(--accent-red)]">|</span></> },
-  ];
 
   return (
     <div className="w-full">
@@ -59,27 +63,16 @@ export function HeroDemo() {
         
         {/* Demo content */}
         <div className="grid md:grid-cols-2">
-          {/* Code panel */}
-          <div className="text-white font-mono text-xs overflow-hidden border-r border-white/10">
-            <div className="flex text-[11px] leading-[1.7]">
-              {/* Line numbers */}
-              <div className="flex-shrink-0 select-none border-r border-white/10 bg-white/5 pr-3 pl-4 py-4">
-                {codeLines.map((line) => (
-                  <div key={line.num} className="text-right text-white/30 h-[1.7em]">
-                    {line.num}
-                  </div>
-                ))}
-              </div>
-              
-              {/* Code */}
-              <div className="flex-1 py-4 px-4 min-w-0 overflow-x-auto">
-                {codeLines.map((line) => (
-                  <div key={line.num} className="text-white/90 h-[1.7em] whitespace-pre">
-                    {line.content}
-                  </div>
-                ))}
-              </div>
-            </div>
+          {/* Code panel - real Monaco editor (read-only) */}
+          <div className="border-r border-white/10 min-h-[280px]">
+            <CodeEditor
+              code={HERO_CODE}
+              language="typescript"
+              onChange={() => {}}
+              readOnly
+              height={280}
+              className="w-full h-[280px]"
+            />
           </div>
           
           {/* Live Preview panel */}
@@ -93,10 +86,10 @@ export function HeroDemo() {
                   >
                     <Video
                       id={videoId}
-                      src="https://assets.editframe.com/bars-n-tone.mp4"
+                      src={VIDEO_SRC}
                       className="size-full object-contain"
                     />
-                    <Text className="absolute bottom-3 inset-x-3 text-white text-sm font-semibold text-center [animation:fadeIn_0.5s_backwards]">
+                    <Text className="absolute bottom-3 inset-x-3 text-white text-sm font-semibold text-center">
                       Build video with code
                     </Text>
                   </Timegroup>
