@@ -22,12 +22,21 @@ const NUM_SEGS = 4;
 const SEG_W = 0.8;
 const SEG_GAP = 0.05;
 const TRACK_D = 0.25;
-const TRACKS = [
-  { h: 0.16, color: COL_VIDEO, yOff: 0.12 },
-  { h: 0.09, color: COL_AUDIO, yOff: 0 },
-  { h: 0.05, color: COL_TEXT,  yOff: -0.08 },
-] as const;
+const TRACK_H = [0.13, 0.08, 0.045] as const;
+const TRACK_COLOR = [COL_VIDEO, COL_AUDIO, COL_TEXT] as const;
+const TRACK_Y = [0.12, 0.0, -0.07] as const;
 const TOTAL_W = SEG_W * NUM_SEGS + SEG_GAP * (NUM_SEGS - 1);
+
+const CLIP_LAYOUTS = [
+  // Segment 0: full video, most of audio, short centered text
+  [ { wPct: 1.0, xPct: 0 }, { wPct: 0.85, xPct: 0.05 }, { wPct: 0.35, xPct: 0.32 } ],
+  // Segment 1: full video, offset audio, wide text at start
+  [ { wPct: 1.0, xPct: 0 }, { wPct: 0.65, xPct: 0.20 }, { wPct: 0.50, xPct: 0.05 } ],
+  // Segment 2: full video, nearly full audio, text at end
+  [ { wPct: 1.0, xPct: 0 }, { wPct: 0.90, xPct: 0 },    { wPct: 0.30, xPct: 0.55 } ],
+  // Segment 3: full video, short audio, wider text centered
+  [ { wPct: 1.0, xPct: 0 }, { wPct: 0.55, xPct: 0.25 }, { wPct: 0.45, xPct: 0.28 } ],
+] as const;
 
 const NODE_SIZE = 0.4;
 const PROGRESS_H = 0.06;
@@ -90,24 +99,42 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
   for (let s = 0; s < NUM_SEGS; s++) {
     const group = new THREE.Group();
     const trackMeshes: THREE.Mesh[] = [];
-    for (const tr of TRACKS) {
-      const geo = new THREE.BoxGeometry(SEG_W, tr.h, TRACK_D);
+
+    // Container backdrop — the "track lane" background
+    const bgGeo = new THREE.BoxGeometry(SEG_W, 0.32, TRACK_D + 0.02);
+    const bgMat = new THREE.MeshStandardMaterial({
+      color: 0x1a1a1a, roughness: 0.9, transparent: true, opacity: 0,
+    });
+    const bg = new THREE.Mesh(bgGeo, bgMat);
+    bg.position.y = 0.02;
+    bg.receiveShadow = true;
+    group.add(bg);
+    trackMeshes.push(bg); // index 0 = backdrop
+
+    // Individual clips per track, with varied widths and positions
+    const layout = CLIP_LAYOUTS[s]!;
+    for (let t = 0; t < 3; t++) {
+      const clip = layout[t]!;
+      const clipW = SEG_W * clip.wPct;
+      const clipX = -SEG_W / 2 + SEG_W * clip.xPct + clipW / 2;
+      const geo = new THREE.BoxGeometry(clipW, TRACK_H[t]!, TRACK_D);
       const mat = new THREE.MeshStandardMaterial({
-        color: tr.color,
+        color: TRACK_COLOR[t]!,
         roughness: 0.35,
         metalness: 0.3,
         transparent: true,
         opacity: 0,
-        emissive: new THREE.Color(tr.color),
+        emissive: new THREE.Color(TRACK_COLOR[t]!),
         emissiveIntensity: 0,
       });
       const mesh = new THREE.Mesh(geo, mat);
-      mesh.position.y = tr.yOff;
+      mesh.position.set(clipX, TRACK_Y[t]!, 0);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       group.add(mesh);
-      trackMeshes.push(mesh);
+      trackMeshes.push(mesh); // indices 1,2,3 = video, audio, text clips
     }
+
     scene.add(group);
     segGroups.push(group);
     allTrackMeshes.push(trackMeshes);
@@ -228,9 +255,10 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
       segGroups[s]!.position.set(bx, lerp(1.5, 0.5, p1), 0);
       segGroups[s]!.rotation.set(0, 0, 0);
       segGroups[s]!.scale.setScalar(1);
-      for (const mesh of allTrackMeshes[s]!) {
-        const mat = mesh.material as THREE.MeshStandardMaterial;
-        mat.opacity = lerp(0, 0.95, p1);
+      const meshes = allTrackMeshes[s]!;
+      for (let m = 0; m < meshes.length; m++) {
+        const mat = meshes[m]!.material as THREE.MeshStandardMaterial;
+        mat.opacity = lerp(0, m === 0 ? 0.5 : 0.95, p1); // backdrop subtler
         mat.emissiveIntensity = 0;
       }
     }
@@ -241,8 +269,9 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
       for (let s = 0; s < NUM_SEGS; s++) {
         const spread = (s - 1.5) * SEG_GAP * 4 * p2;
         segGroups[s]!.position.x = segJoinedX(s) + spread;
-        for (const mesh of allTrackMeshes[s]!) {
-          (mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = p2 * 0.15;
+        const meshes = allTrackMeshes[s]!;
+        for (let m = 1; m < meshes.length; m++) { // skip backdrop
+          (meshes[m]!.material as THREE.MeshStandardMaterial).emissiveIntensity = p2 * 0.15;
         }
       }
     }
