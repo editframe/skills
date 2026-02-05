@@ -415,11 +415,14 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
         parNodes[s]!.mesh.rotation.y = Math.sin(processing * Math.PI * 4 + s) * 0.06;
       }
 
-      // Parallel progress bars — all fill simultaneously, fast
-      for (const b of parBars) {
+      // Parallel progress bars — slightly independent speeds, finish close together
+      const barJitter = [0, 0.06, -0.04, 0.03] as const;
+      for (let bi = 0; bi < parBars.length; bi++) {
+        const b = parBars[bi]!;
+        const barProg = clamp01(processing + barJitter[bi]! * Math.sin(processing * Math.PI));
         b.fillMat.opacity = flyIn * 0.9;
-        b.fill.scale.x = easeOut(processing);
-        b.fill.position.x = b.baseX - b.width / 2 * (1 - easeOut(processing));
+        b.fill.scale.x = easeOut(barProg);
+        b.fill.position.x = b.baseX - b.width / 2 * (1 - easeOut(barProg));
       }
 
       // Particles around parallel workers
