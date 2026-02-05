@@ -1,5 +1,5 @@
 // @ts-nocheck - React Three Fiber JSX intrinsics
-import { Suspense, useRef } from "react";
+import { Suspense, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import * as THREE from "three";
@@ -510,8 +510,9 @@ function Lights() {
 }
 
 /* ━━ SCENE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-function Scene({ currentTimeMs }: { currentTimeMs: number }) {
-  const { camera } = useThree();
+function Scene() {
+  const { camera, gl } = useThree();
+  const [currentTimeMs, setCurrentTimeMs] = useState(0);
 
   /* ── Layout is vertical: each step flows downward ── 
      Y positions (top to bottom):
@@ -524,6 +525,15 @@ function Scene({ currentTimeMs }: { currentTimeMs: number }) {
 
   // ── Camera ──
   useFrame(() => {
+    // Read live time from parent ef-timegroup (works in both preview and render clones)
+    const timegroup = gl.domElement.closest('ef-timegroup') as any;
+    const liveTimeMs = timegroup?.currentTimeMs ?? 0;
+    
+    // Update React state to trigger re-render with new time
+    if (liveTimeMs !== currentTimeMs) {
+      setCurrentTimeMs(liveTimeMs);
+    }
+
     // Acts 1 & 2: looking at the vertical flow, slightly angled
     const basePos = new THREE.Vector3(0, 0, 6);
     const baseTar = new THREE.Vector3(0, -0.5, 0);
@@ -532,7 +542,7 @@ function Scene({ currentTimeMs }: { currentTimeMs: number }) {
     const widePos = new THREE.Vector3(0, 0.5, 9);
     const wideTar = new THREE.Vector3(0, -0.5, 0);
 
-    const compareProg = easeInOut(prog(currentTimeMs, C_START, C_START + 1500));
+    const compareProg = easeInOut(prog(liveTimeMs, C_START, C_START + 1500));
 
     const pos = basePos.clone().lerp(widePos, compareProg);
     const tar = baseTar.clone().lerp(wideTar, compareProg);
@@ -736,6 +746,8 @@ function Scene({ currentTimeMs }: { currentTimeMs: number }) {
 
 /* ━━ Canvas wrapper ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 export function JITStreamingCanvas({ currentTimeMs }: { currentTimeMs: number }) {
+  // currentTimeMs prop kept for backward compatibility but not used
+  // Scene reads time directly from parent ef-timegroup via DOM query
   return (
     <Canvas
       shadows
@@ -749,7 +761,7 @@ export function JITStreamingCanvas({ currentTimeMs }: { currentTimeMs: number })
     >
       <Suspense fallback={null}>
         <fog attach="fog" args={[0x1e2233, 20, 45]} />
-        <Scene currentTimeMs={currentTimeMs} />
+        <Scene />
       </Suspense>
     </Canvas>
   );
