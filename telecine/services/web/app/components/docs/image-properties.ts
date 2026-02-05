@@ -1,6 +1,7 @@
 import type { PropertyDefinition } from "./PropertyReference";
 
 export const imageElementProperties: PropertyDefinition[] = [
+  // Media Source
   {
     name: "assetId",
     type: "string",
@@ -20,7 +21,9 @@ export const imageElementProperties: PropertyDefinition[] = [
     domReadable: true,
     domWritable: true,
     htmlAttribute: "src",
+    defaultValue: '""',
   },
+  // Temporal Composition
   {
     name: "duration",
     type: "timestring",
@@ -30,8 +33,71 @@ export const imageElementProperties: PropertyDefinition[] = [
     domReadable: true,
     domWritable: true,
     htmlAttribute: "duration",
-    defaultValue: "",
   },
+  {
+    name: "offset",
+    type: "timestring",
+    access: "R/W",
+    useCase: "Offset from natural start position in parent timegroup",
+    category: "Temporal Composition",
+    domReadable: true,
+    domWritable: true,
+    htmlAttribute: "offset",
+    defaultValue: "0",
+  },
+  {
+    name: "loop",
+    type: "boolean",
+    access: "R/W",
+    useCase: "Enable looping playback (only applies to root elements)",
+    category: "Temporal Composition",
+    domReadable: true,
+    domWritable: true,
+    htmlAttribute: "loop",
+    defaultValue: "false",
+  },
+  // Trimming
+  {
+    name: "trimStartMs",
+    type: "number",
+    access: "R/W",
+    useCase: "Trim amount from start in milliseconds",
+    category: "Trimming",
+    domReadable: true,
+    domWritable: true,
+    htmlAttribute: "trimstart",
+  },
+  {
+    name: "trimEndMs",
+    type: "number",
+    access: "R/W",
+    useCase: "Trim amount from end in milliseconds",
+    category: "Trimming",
+    domReadable: true,
+    domWritable: true,
+    htmlAttribute: "trimend",
+  },
+  {
+    name: "sourceInMs",
+    type: "number",
+    access: "R/W",
+    useCase: "Source in-point in milliseconds (alternative to trimStart)",
+    category: "Trimming",
+    domReadable: true,
+    domWritable: true,
+    htmlAttribute: "sourcein",
+  },
+  {
+    name: "sourceOutMs",
+    type: "number",
+    access: "R/W",
+    useCase: "Source out-point in milliseconds (alternative to trimEnd)",
+    category: "Trimming",
+    domReadable: true,
+    domWritable: true,
+    htmlAttribute: "sourceout",
+  },
+  // Time Coordinates
   {
     name: "startTimeMs",
     type: "number",
@@ -52,26 +118,37 @@ export const imageElementProperties: PropertyDefinition[] = [
     name: "durationMs",
     type: "number",
     access: "R",
-    useCase: "Element duration",
+    useCase: "Computed element duration in milliseconds",
     category: "Time Coordinates",
     domReadable: true,
   },
   {
     name: "currentTimeMs",
     type: "number",
-    access: "R",
-    useCase: "Current time in root timeline",
+    access: "R/W",
+    useCase: "Current time in root timeline (writable on root elements)",
     category: "Time Coordinates",
     domReadable: true,
+    domWritable: true,
   },
   {
     name: "ownCurrentTimeMs",
     type: "number",
     access: "R",
-    useCase: "Current time in element scope",
+    useCase: "Current time relative to element's own start",
     category: "Time Coordinates",
     domReadable: true,
   },
+  // Playback
+  {
+    name: "playing",
+    type: "boolean",
+    access: "R",
+    useCase: "Whether element is currently playing (root elements only)",
+    category: "Playback",
+    domReadable: true,
+  },
+  // Hierarchy
   {
     name: "parentTimegroup",
     type: "<ef-timegroup> | null",
