@@ -37,10 +37,10 @@ function ComparisonTable() {
   return (
     <div className="relative">
       <div className="absolute -bottom-3 -right-3 w-full h-full bg-[var(--poster-green)]" />
-      <div className="relative bg-white dark:bg-[#111] border-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
+      <div className="relative bg-[var(--card-bg)] border-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="bg-[#1a1a1a] dark:bg-[#1a1a1a] text-white">
+            <tr className="bg-[var(--card-dark-bg)] text-white">
               <th className="text-left py-4 px-6 font-bold text-sm uppercase tracking-wider">Feature</th>
               <th className="text-center py-4 px-6 font-bold text-sm uppercase tracking-wider">Editframe</th>
               <th className="text-center py-4 px-6 font-bold text-sm uppercase tracking-wider">Remotion</th>
@@ -49,7 +49,7 @@ function ComparisonTable() {
           </thead>
           <tbody>
             {features.map((feature, i) => (
-              <tr key={i} className="border-b-2 border-[var(--ink-black)]/10 dark:border-white/10 last:border-0">
+              <tr key={i} className="border-b-2 border-[var(--ink-black)]/10 dark:border-white/10 last:border-0 hover:bg-black/[0.03] dark:hover:bg-white/[0.04] transition-colors">
                 <td className="py-4 px-6 text-sm font-semibold">{feature.name}</td>
                 <td className="py-4 px-6">
                   <div className="flex justify-center">

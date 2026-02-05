@@ -1,11 +1,9 @@
-/* ==============================================================================
-   COMPONENT: TemplatedRenderingDemo
-   
-   Purpose: Showcase the CLI's templated rendering capability.
-   One template + data = infinite personalized videos.
-   ============================================================================== */
-
-import { useState } from "react";
+import { useState, useEffect, useId } from "react";
+import {
+  Preview,
+  Timegroup,
+  Text,
+} from "@editframe/react";
 
 interface UserData {
   name: string;
@@ -22,8 +20,15 @@ const SAMPLE_DATA: UserData[] = [
 ];
 
 export function TemplatedRenderingDemo() {
+  const id = useId();
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [isClient, setIsClient] = useState(false);
   const selectedData = SAMPLE_DATA[selectedIndex]!;
+  const previewId = `templated-demo-${id}-${selectedIndex}`;
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   return (
     <div className="grid lg:grid-cols-2 gap-8">
@@ -32,9 +37,9 @@ export function TemplatedRenderingDemo() {
         <div className="border-4 border-black dark:border-white bg-[#1a1a1a] overflow-hidden">
           {/* Code Header */}
           <div className="flex items-center gap-2 px-4 py-3 border-b border-white/20">
-            <div className="w-3 h-3 rounded-full bg-[#EF5350]" />
-            <div className="w-3 h-3 rounded-full bg-[#FFCA28]" />
-            <div className="w-3 h-3 rounded-full bg-[#4CAF50]" />
+            <div className="w-3 h-3 rounded-full bg-[var(--poster-red)]" />
+            <div className="w-3 h-3 rounded-full bg-[var(--poster-gold)]" />
+            <div className="w-3 h-3 rounded-full bg-[var(--poster-green)]" />
             <span className="ml-3 text-white/40 text-xs font-mono">welcome-video.tsx</span>
           </div>
           
@@ -187,7 +192,7 @@ export function TemplatedRenderingDemo() {
           </div>
         </div>
         
-        {/* Video Preview */}
+        {/* Video Preview - Real Editframe Components */}
         <div className="relative">
           <div className="absolute -bottom-3 -right-3 w-full h-full" style={{ backgroundColor: selectedData.color }} />
           <div className="relative border-4 border-black dark:border-white bg-[#1a1a1a] overflow-hidden">
@@ -200,31 +205,44 @@ export function TemplatedRenderingDemo() {
               </div>
             </div>
             
-            {/* Video Content */}
-            <div 
-              className="aspect-video flex flex-col items-center justify-center p-8 text-center transition-colors duration-300"
-              style={{ backgroundColor: selectedData.color }}
-            >
-              <div className="space-y-4">
-                <p className="text-white/80 text-sm uppercase tracking-wider">
-                  Welcome
-                </p>
-                <h3 className="text-white text-3xl font-black uppercase tracking-tight">
-                  {selectedData.name}!
-                </h3>
-                <p className="text-white/70 text-sm">
-                  {selectedData.role} at {selectedData.company}
-                </p>
-                <div className="pt-4">
-                  <span className="text-white text-5xl font-black">
+            {/* Live Preview */}
+            {isClient ? (
+              <Preview id={previewId} key={previewId}>
+                <Timegroup
+                  mode="fixed"
+                  duration="5s"
+                  className="aspect-video w-full flex flex-col items-center justify-center p-8 text-center"
+                  style={{ backgroundColor: selectedData.color }}
+                >
+                  <Text className="text-white/80 text-sm uppercase tracking-wider">
+                    Welcome
+                  </Text>
+                  <Text className="text-white text-3xl font-black uppercase tracking-tight mt-2">
+                    {selectedData.name}!
+                  </Text>
+                  <Text className="text-white/70 text-sm mt-2">
+                    {selectedData.role} at {selectedData.company}
+                  </Text>
+                  <Text className="text-white text-5xl font-black mt-4">
                     {selectedData.metric}
-                  </span>
-                  <span className="text-white/70 text-lg ml-2">
+                  </Text>
+                  <Text className="text-white/70 text-lg mt-1">
                     growth
-                  </span>
-                </div>
+                  </Text>
+                </Timegroup>
+              </Preview>
+            ) : (
+              <div
+                className="aspect-video flex flex-col items-center justify-center p-8 text-center"
+                style={{ backgroundColor: selectedData.color }}
+              >
+                <p className="text-white/80 text-sm uppercase tracking-wider">Welcome</p>
+                <h3 className="text-white text-3xl font-black uppercase tracking-tight mt-2">{selectedData.name}!</h3>
+                <p className="text-white/70 text-sm mt-2">{selectedData.role} at {selectedData.company}</p>
+                <p className="text-white text-5xl font-black mt-4">{selectedData.metric}</p>
+                <p className="text-white/70 text-lg mt-1">growth</p>
               </div>
-            </div>
+            )}
             
             {/* Video Footer */}
             <div className="px-4 py-3 border-t border-white/20 bg-black/50">

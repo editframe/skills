@@ -3,10 +3,41 @@ import {
   type MetaFunction,
   useLoaderData,
 } from "react-router";
+import { useRef, useEffect, useState, type ReactNode } from "react";
 import { parseRequestSession } from "@/util/session";
 import { Link } from "react-router";
 import { useTheme } from "~/hooks/useTheme";
 import { ThemeToggle } from "~/components/ThemeToggle";
+
+function FadeInSection({ children, className = "" }: { children: ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setIsVisible(true);
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className={`${className} ${isVisible ? "animate-fadeInUp" : "opacity-0 translate-y-8"}`}
+    >
+      {children}
+    </div>
+  );
+}
 import {
   SocialProofBar,
   HeroDemo,
@@ -45,10 +76,11 @@ export const meta: MetaFunction = () => {
 
 export default function IndexPage() {
   const { isLoggedIn } = useLoaderData<typeof loader>();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   useTheme();
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5]">
+    <div className="min-h-screen bg-[var(--paper-cream)] text-[var(--ink-black)]">
       <style dangerouslySetInnerHTML={{__html: `
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
@@ -139,6 +171,20 @@ export default function IndexPage() {
           border-color: rgba(255,255,255,0.15);
         }
 
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(2rem);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fadeInUp {
+          animation: fadeInUp 0.6s ease-out forwards;
+        }
+
         @media (prefers-reduced-motion: reduce) {
           * {
             animation-duration: 0.01ms !important;
@@ -148,7 +194,7 @@ export default function IndexPage() {
       `}} />
 
       {/* Navigation - Bold, confident */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-[var(--paper-cream)] dark:bg-[#0a0a0a] border-b-2 border-[var(--ink-black)] dark:border-white">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[var(--paper-cream)] border-b-2 border-[var(--ink-black)] dark:border-white">
         <div className="max-w-7xl mx-auto flex items-center justify-between h-16 px-6">
           <Link to="/" className="flex items-center">
             <span className="text-xl font-black tracking-tighter uppercase">editframe</span>
@@ -175,23 +221,62 @@ export default function IndexPage() {
               </Link>
             ) : (
               <>
-                <Link to="/login" className="px-4 py-2 text-sm font-bold uppercase tracking-wider hover:bg-[var(--poster-gold)] transition-colors">
+                <Link to="/login" className="hidden md:inline-flex px-4 py-2 text-sm font-bold uppercase tracking-wider hover:bg-[var(--poster-gold)] transition-colors">
                   Sign in
                 </Link>
                 <Link
                   to="/welcome"
-                  className="px-5 py-2 bg-[var(--poster-red)] text-white text-sm font-bold uppercase tracking-wider hover:bg-[var(--poster-blue)] transition-colors"
+                  className="hidden md:inline-flex px-5 py-2 bg-[var(--poster-red)] text-white text-sm font-bold uppercase tracking-wider hover:bg-[var(--poster-blue)] transition-colors"
                 >
                   Get Started
                 </Link>
               </>
             )}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden flex flex-col gap-1.5 p-2"
+              aria-label="Toggle menu"
+            >
+              <div className={`w-5 h-0.5 bg-[var(--ink-black)] dark:bg-white transition-transform ${mobileMenuOpen ? "translate-y-[4px] rotate-45" : ""}`} />
+              <div className={`w-5 h-0.5 bg-[var(--ink-black)] dark:bg-white transition-opacity ${mobileMenuOpen ? "opacity-0" : ""}`} />
+              <div className={`w-5 h-0.5 bg-[var(--ink-black)] dark:bg-white transition-transform ${mobileMenuOpen ? "-translate-y-[4px] -rotate-45" : ""}`} />
+            </button>
           </div>
         </div>
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t-2 border-[var(--ink-black)] dark:border-white bg-[var(--paper-cream)]">
+            <div className="px-6 py-4 flex flex-col gap-2">
+              <Link to="/docs" onClick={() => setMobileMenuOpen(false)} className="px-4 py-3 text-sm font-bold uppercase tracking-wider hover:bg-[var(--poster-gold)] transition-colors">
+                Docs
+              </Link>
+              <Link to="/examples" onClick={() => setMobileMenuOpen(false)} className="px-4 py-3 text-sm font-bold uppercase tracking-wider hover:bg-[var(--poster-gold)] transition-colors">
+                Examples
+              </Link>
+              <Link to="/pricing" onClick={() => setMobileMenuOpen(false)} className="px-4 py-3 text-sm font-bold uppercase tracking-wider hover:bg-[var(--poster-gold)] transition-colors">
+                Pricing
+              </Link>
+              {!isLoggedIn && (
+                <>
+                  <div className="border-t-2 border-[var(--ink-black)]/10 dark:border-white/10 mt-2 pt-2" />
+                  <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="px-4 py-3 text-sm font-bold uppercase tracking-wider hover:bg-[var(--poster-gold)] transition-colors">
+                    Sign in
+                  </Link>
+                  <Link
+                    to="/welcome"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-4 py-3 bg-[var(--poster-red)] text-white text-sm font-bold uppercase tracking-wider text-center hover:bg-[var(--poster-blue)] transition-colors"
+                  >
+                    Get Started
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Hero Section - PLAY BUTTON as the bold choice (we make video) */}
-      <section className="relative pt-32 pb-24 bg-[var(--paper-cream)] dark:bg-[#0a0a0a] texture-paper overflow-hidden">
+      <section className="relative pt-32 pb-24 bg-[var(--paper-cream)] texture-paper overflow-hidden">
         {/* Giant play button triangle - THE motivated shape (we make video play) */}
         <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/3 w-[700px] h-[700px] opacity-[0.07] dark:opacity-[0.05]">
           <svg viewBox="0 0 100 100" className="w-full h-full">
@@ -202,7 +287,7 @@ export default function IndexPage() {
         <div className="relative max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left - Typography */}
-            <div>
+            <FadeInSection>
               <SocialProofBar />
 
               <h1 className="text-6xl md:text-7xl lg:text-8xl font-black leading-[0.9] tracking-tighter mb-6">
@@ -239,14 +324,14 @@ export default function IndexPage() {
                   Documentation
                 </Link>
               </div>
-            </div>
+            </FadeInSection>
 
             {/* Right - Demo framed like a screen/monitor */}
             <div className="relative">
               {/* Stacked frames like film/video layers */}
               <div className="absolute -top-4 -right-4 w-full h-full bg-[var(--poster-blue)]" />
               <div className="absolute -top-2 -right-2 w-full h-full bg-[var(--poster-gold)]" />
-              <div className="relative bg-white dark:bg-[#111] border-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
+              <div className="relative bg-[var(--card-bg)] border-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
                 <HeroDemo />
               </div>
             </div>
@@ -285,15 +370,15 @@ export default function IndexPage() {
           </div>
 
           {/* Single Prompt Example - Cleaner, Focused */}
-          <div className="max-w-3xl mx-auto">
+          <FadeInSection className="max-w-3xl mx-auto">
             <div className="relative">
               <div className="absolute -bottom-4 -right-4 w-full h-full bg-[var(--poster-gold)]" />
-              <div className="relative bg-[#1a1a1a] border-4 border-white overflow-hidden">
+              <div className="relative bg-[var(--card-dark-bg)] border-4 border-white overflow-hidden">
                 {/* Terminal Header */}
                 <div className="flex items-center gap-2 px-4 py-3 border-b border-white/20">
-                  <div className="w-3 h-3 rounded-full bg-[#EF5350]" />
-                  <div className="w-3 h-3 rounded-full bg-[#FFCA28]" />
-                  <div className="w-3 h-3 rounded-full bg-[#4CAF50]" />
+                  <div className="w-3 h-3 rounded-full bg-[var(--poster-red)]" />
+                  <div className="w-3 h-3 rounded-full bg-[var(--poster-gold)]" />
+                  <div className="w-3 h-3 rounded-full bg-[var(--poster-green)]" />
                   <span className="ml-3 text-white/40 text-xs font-mono uppercase tracking-wider">prompt</span>
                 </div>
                 
@@ -309,7 +394,7 @@ export default function IndexPage() {
                 {/* Output Preview */}
                 <div className="border-t border-white/20 bg-white/5 p-6">
                   <div className="flex items-center gap-2 text-xs text-white/50 uppercase tracking-wider mb-4">
-                    <svg className="w-4 h-4 text-[#4CAF50]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-[var(--poster-green)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     Generated
@@ -324,7 +409,7 @@ export default function IndexPage() {
                 </div>
               </div>
             </div>
-          </div>
+          </FadeInSection>
 
           {/* CTA */}
           <div className="text-center mt-12">
@@ -342,7 +427,7 @@ export default function IndexPage() {
       </section>
 
       {/* Tools Built From Prompts - LIVE EXAMPLES */}
-      <section className="relative py-24 bg-[var(--paper-cream)] dark:bg-[#0a0a0a] border-t-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
+      <section className="relative py-24 bg-[var(--paper-cream)] border-t-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
         {/* Grid pattern - modular, component-based */}
         <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.02]">
           <svg width="100%" height="100%">
@@ -374,7 +459,7 @@ export default function IndexPage() {
           </div>
 
           {/* Tools Grid - 2x2 */}
-          <div className="grid md:grid-cols-2 gap-8">
+          <FadeInSection className="grid md:grid-cols-2 gap-8">
             {/* Trim Tool */}
             <div>
               <div className="flex items-center gap-2 mb-3">
@@ -418,7 +503,7 @@ export default function IndexPage() {
               </div>
               <CaptionEditor />
             </div>
-          </div>
+          </FadeInSection>
 
           {/* Footer note */}
           <div className="mt-12 pt-8 border-t-2 border-[var(--ink-black)]/10 dark:border-white/10">
@@ -441,7 +526,7 @@ export default function IndexPage() {
           </svg>
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-6">
+        <FadeInSection className="relative max-w-7xl mx-auto px-6">
           <div className="flex items-center gap-6 mb-16">
             <h2 className="text-5xl md:text-6xl font-black tracking-tighter uppercase">
               Before
@@ -454,7 +539,7 @@ export default function IndexPage() {
           </div>
           
           <BeforeAfterComparison />
-        </div>
+        </FadeInSection>
       </section>
 
       {/* Interactive Playground Section - REFRESH/LOOP showing instant feedback cycle */}
@@ -485,7 +570,7 @@ export default function IndexPage() {
           </svg>
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-6">
+        <FadeInSection className="relative max-w-7xl mx-auto px-6">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <h2 className="text-5xl md:text-6xl font-black tracking-tighter uppercase mb-6">
               Edit code,<br />see video
@@ -509,7 +594,7 @@ export default function IndexPage() {
               <InteractivePlayground />
             </div>
           </div>
-        </div>
+        </FadeInSection>
       </section>
 
       {/* Client-Side Rendering Section - DOWNLOAD ARROW (export without upload) */}
@@ -522,7 +607,7 @@ export default function IndexPage() {
           </svg>
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-6">
+        <FadeInSection className="relative max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left - Content */}
             <div>
@@ -563,11 +648,11 @@ export default function IndexPage() {
               
               <div className="flex items-center gap-4 text-sm">
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-[#4CAF50]" />
+                  <div className="w-2 h-2 rounded-full bg-[var(--poster-green)]" />
                   <span className="text-white/70">H.264, H.265, VP9, AV1</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-[#4CAF50]" />
+                  <div className="w-2 h-2 rounded-full bg-[var(--poster-green)]" />
                   <span className="text-white/70">Up to 4K</span>
                 </div>
               </div>
@@ -578,11 +663,11 @@ export default function IndexPage() {
               <ClientRenderDemo />
             </div>
           </div>
-        </div>
+        </FadeInSection>
       </section>
 
       {/* Architecture Section - PARALLEL LINES for parallel processing */}
-      <section className="relative py-24 bg-[var(--paper-cream)] dark:bg-[#0a0a0a] border-t-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
+      <section className="relative py-24 bg-[var(--paper-cream)] border-t-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
         {/* Parallel horizontal lines - representing parallel rendering/processing */}
         <div className="absolute top-0 left-0 w-full h-full opacity-[0.04] dark:opacity-[0.03] pointer-events-none">
           <svg className="w-full h-full" preserveAspectRatio="none">
@@ -599,7 +684,7 @@ export default function IndexPage() {
           </svg>
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-6">
+        <FadeInSection className="relative max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-3 gap-16">
             <div>
               <h2 className="text-4xl md:text-5xl font-black tracking-tighter uppercase mb-4">
@@ -623,13 +708,13 @@ export default function IndexPage() {
             <div className="lg:col-span-2">
               <div className="relative">
                 <div className="absolute -bottom-4 -right-4 w-full h-full bg-[var(--poster-gold)]" />
-                <div className="relative bg-white dark:bg-[#111] border-4 border-[var(--ink-black)] dark:border-white p-6">
+                <div className="relative bg-[var(--card-bg)] border-4 border-[var(--ink-black)] dark:border-white p-6">
                   <ArchitectureDiagram />
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </FadeInSection>
       </section>
 
       {/* Templated Rendering Section - MULTIPLY SYMBOL (one template, many outputs) */}
@@ -647,7 +732,7 @@ export default function IndexPage() {
           </svg>
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-6">
+        <FadeInSection className="relative max-w-7xl mx-auto px-6">
           {/* Header */}
           <div className="mb-12">
             <div className="flex items-center gap-3 mb-4">
@@ -699,11 +784,11 @@ export default function IndexPage() {
               </svg>
             </Link>
           </div>
-        </div>
+        </FadeInSection>
       </section>
 
       {/* Code Examples Section - CURLY BRACES as the bold choice (it's code) */}
-      <section className="relative py-24 bg-[#1a1a1a] dark:bg-[#0a0a0a] text-white overflow-hidden">
+      <section className="relative py-24 bg-[var(--card-dark-bg)] text-white overflow-hidden">
         {/* Giant curly braces - THE code symbol */}
         <div className="absolute top-1/2 left-0 -translate-y-1/2 -translate-x-1/4 text-[400px] font-black text-white/[0.03] leading-none select-none pointer-events-none">
           {'{'}
@@ -712,7 +797,7 @@ export default function IndexPage() {
           {'}'}
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-6">
+        <FadeInSection className="relative max-w-7xl mx-auto px-6">
           <div className="flex items-start gap-6 mb-16">
             {/* Opening brace as accent */}
             <div className="hidden md:block text-8xl font-black text-[var(--poster-gold)] leading-none -mt-4">
@@ -729,11 +814,11 @@ export default function IndexPage() {
           </div>
           
           <CodeExamples />
-        </div>
+        </FadeInSection>
       </section>
 
       {/* Video Showcase Section - FILM STRIP PERFORATIONS (it's a video gallery) */}
-      <section className="relative py-24 bg-[var(--paper-cream)] dark:bg-[#0a0a0a] border-t-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
+      <section className="relative py-24 bg-[var(--paper-cream)] border-t-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
         {/* Film strip perforations running down the side - this IS video */}
         <div className="absolute top-0 left-8 bottom-0 w-6 opacity-[0.08] dark:opacity-[0.05]">
           {Array.from({ length: 20 }).map((_, i) => (
@@ -773,7 +858,7 @@ export default function IndexPage() {
       </section>
 
       {/* Comparison Section - EQUALS/BALANCE showing fair comparison */}
-      <section className="relative py-24 bg-white dark:bg-[#111] border-t-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
+      <section className="relative py-24 bg-[var(--card-bg)] border-t-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
         {/* Stacked equals signs - comparing, measuring, weighing */}
         <div className="absolute top-1/2 right-12 -translate-y-1/2 opacity-[0.05] dark:opacity-[0.03]">
           <div className="flex flex-col gap-6">
@@ -805,7 +890,7 @@ export default function IndexPage() {
       </section>
 
       {/* Social Proof Section - QUOTATION MARKS (these are quotes/testimonials) */}
-      <section className="relative py-24 bg-[var(--paper-cream)] dark:bg-[#0a0a0a] border-t-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
+      <section className="relative py-24 bg-[var(--paper-cream)] border-t-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
         {/* Giant quotation mark - these are quotes, people talking */}
         <div className="absolute top-8 left-8 text-[300px] font-black text-[var(--poster-gold)] opacity-[0.08] dark:opacity-[0.05] leading-none select-none pointer-events-none">
           "
@@ -820,7 +905,7 @@ export default function IndexPage() {
       </section>
 
       {/* Getting Started Section - CLOCK/TIME showing speed (2 minutes) */}
-      <section className="relative py-24 bg-white dark:bg-[#111] border-t-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
+      <section className="relative py-24 bg-[var(--card-bg)] border-t-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
         {/* Clock shape - it's about TIME, speed */}
         <div className="absolute top-1/2 left-0 -translate-y-1/2 -translate-x-1/3 w-[400px] h-[400px] opacity-[0.05] dark:opacity-[0.03]">
           <svg viewBox="0 0 100 100" className="w-full h-full">
@@ -832,7 +917,7 @@ export default function IndexPage() {
           </svg>
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-6">
+        <FadeInSection className="relative max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
               <h2 className="text-5xl md:text-6xl font-black tracking-tighter uppercase mb-2">
@@ -884,7 +969,7 @@ export default function IndexPage() {
               </div>
             </div>
           </div>
-        </div>
+        </FadeInSection>
       </section>
 
       {/* Final CTA Section - ARROW/LAUNCH pointing right (start, go, begin) */}
@@ -940,7 +1025,7 @@ export default function IndexPage() {
       </section>
 
       {/* Footer - Bold, confident */}
-      <footer className="py-16 bg-[#1a1a1a] dark:bg-[#111] text-white border-t-4 border-[var(--poster-gold)]">
+      <footer className="py-16 bg-[var(--card-dark-bg)] text-white border-t-4 border-[var(--poster-gold)]">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid md:grid-cols-5 gap-12 mb-12">
             {/* Logo column */}

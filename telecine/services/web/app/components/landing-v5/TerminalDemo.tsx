@@ -267,9 +267,9 @@ function TerminalDemo() {
       <div className="bg-[#1a1a1a] rounded-lg overflow-hidden shadow-print-lg">
         {/* Window chrome */}
         <div className="flex items-center gap-2 px-4 py-3 bg-[#252525] border-b border-white/10">
-          <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
-          <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
-          <div className="w-3 h-3 rounded-full bg-[#28c840]" />
+          <div className="w-3 h-3 rounded-full bg-[var(--poster-red)]" />
+          <div className="w-3 h-3 rounded-full bg-[var(--poster-gold)]" />
+          <div className="w-3 h-3 rounded-full bg-[var(--poster-green)]" />
           <span className="ml-4 text-xs text-white/50">Terminal</span>
         </div>
         
