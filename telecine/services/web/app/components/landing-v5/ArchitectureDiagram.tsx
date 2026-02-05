@@ -361,47 +361,68 @@ function FanOutDiagram() {
   useEffect(() => {
     if (!isClient) return;
     const container = containerRef.current;
-    const canvas = canvasRef.current;
-    if (!container || !canvas) return;
+    if (!container) return;
 
-    let sceneHandle: { update: (t: number, d: number) => void; resize: (w: number, h: number) => void; dispose: () => void } | null = null;
+    type SceneHandle = { update: (t: number, d: number) => void; resize: (w: number, h: number) => void; dispose: () => void };
+    let primeScene: SceneHandle | null = null;
     let ro: ResizeObserver | null = null;
     let disposed = false;
 
-    const loadScene = async () => {
+    const setup = async () => {
       const { createParallelFragmentsScene } = await import("./parallel-fragments-scene");
       if (disposed) return;
 
-      sceneHandle = createParallelFragmentsScene(canvas);
-
-      const { width, height } = container.getBoundingClientRect();
-      sceneHandle.resize(width, height);
-
       const tg = container.querySelector("ef-timegroup") as HTMLElement & {
         play?: () => void;
-        addFrameTask?: (cb: (info: { ownCurrentTimeMs: number; durationMs: number }) => void) => () => void;
+        initializer?: (instance: HTMLElement) => void;
         ownCurrentTimeMs?: number;
         durationMs?: number;
       };
+      if (!tg) return;
 
-      if (tg) {
-        sceneHandle.update(tg.ownCurrentTimeMs ?? 0, tg.durationMs ?? 10000);
-        tg.addFrameTask?.(({ ownCurrentTimeMs, durationMs }) => {
-          sceneHandle?.update(ownCurrentTimeMs, durationMs);
+      // Use initializer so the scene is created on BOTH the prime
+      // timeline AND any clones produced by renderToVideo().
+      tg.initializer = (instance: HTMLElement & {
+        ownCurrentTimeMs?: number;
+        durationMs?: number;
+        addFrameTask?: (cb: (info: { ownCurrentTimeMs: number; durationMs: number }) => void) => () => void;
+      }) => {
+        const cvs = instance.querySelector("canvas") as HTMLCanvasElement | null;
+        if (!cvs) return;
+
+        const scene = createParallelFragmentsScene(cvs);
+
+        // Size from layout, or fall back to reasonable defaults for render clones
+        const rect = cvs.getBoundingClientRect();
+        const w = rect.width || cvs.clientWidth || 800;
+        const h = rect.height || cvs.clientHeight || 500;
+        scene.resize(w, h);
+
+        scene.update(instance.ownCurrentTimeMs ?? 0, instance.durationMs ?? 18000);
+
+        instance.addFrameTask?.(({ ownCurrentTimeMs, durationMs }) => {
+          scene.update(ownCurrentTimeMs, durationMs);
         });
-      }
 
+        // Track the prime instance's scene for resize + cleanup
+        if (instance === tg) {
+          primeScene = scene;
+        }
+      };
+
+      // ResizeObserver for the live (non-clone) instance
       ro = new ResizeObserver(([entry]) => {
-        if (entry) {
+        if (entry && primeScene) {
           const { width: w, height: h } = entry.contentRect;
-          sceneHandle?.resize(w, h);
+          primeScene.resize(w, h);
         }
       });
       ro.observe(container);
     };
 
-    loadScene();
+    setup();
 
+    // Auto-play on scroll
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry?.isIntersecting) {
@@ -416,7 +437,7 @@ function FanOutDiagram() {
 
     return () => {
       disposed = true;
-      sceneHandle?.dispose();
+      primeScene?.dispose();
       ro?.disconnect();
       observer.disconnect();
     };
