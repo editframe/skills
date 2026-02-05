@@ -112,6 +112,8 @@ export interface DocsMenuItem {
   };
   children: DocsMenuItem[];
   slug?: string;
+  /** When true, this item is a visual group label, not a navigable item */
+  isGroupLabel?: boolean;
 }
 
 export const buildDocSlugMap = async (
@@ -152,6 +154,12 @@ export const buildDocSlugMap = async (
   return map;
 };
 
+/** Extended type for sorting during menu building */
+type DocsMenuItemWithMeta = DocsMenuItem & {
+  _originalName?: string;
+  _navFlat?: boolean;
+};
+
 const buildDocMenuItem = async (
   directory: string,
   prefix: string,
@@ -188,16 +196,22 @@ const buildDocMenuItem = async (
           hasContent: true,
           children: [],
           _originalName: entry.name, // Store original name for sorting (file or directory)
-        } as DocsMenuItem & { _originalName?: string };
+        } as DocsMenuItemWithMeta;
       }
       if (entry.isDirectory()) {
-        const childItem = await buildDocMenuItem(
+        const childItem = (await buildDocMenuItem(
           join(directory, entry.name),
           join(prefix, entry.name),
-        );
+        )) as DocsMenuItemWithMeta;
         // Store original directory name for sorting
-        (childItem as DocsMenuItem & { _originalName?: string })._originalName =
-          entry.name;
+        childItem._originalName = entry.name;
+        // Check if this child directory has navFlat
+        const childIndexPath = join(directory, entry.name, "index.mdx");
+        if (existsSync(childIndexPath)) {
+          const childData = await fs.readFile(childIndexPath, "utf8");
+          const { attributes: childAttrs } = fm<any>(childData);
+          childItem._navFlat = childAttrs?.navFlat === true;
+        }
         return childItem;
       }
       return null;
@@ -205,21 +219,19 @@ const buildDocMenuItem = async (
   );
 
   const validChildren = children.filter(
-    (child): child is DocsMenuItem => child !== null,
+    (child): child is DocsMenuItemWithMeta => child !== null,
   );
 
   // Sort children by numerical prefix extracted from original name (file or directory)
   validChildren.sort((a, b) => {
-    const nameA =
-      (a as DocsMenuItem & { _originalName?: string })._originalName || "";
-    const nameB =
-      (b as DocsMenuItem & { _originalName?: string })._originalName || "";
+    const nameA = a._originalName || "";
+    const nameB = b._originalName || "";
 
     // Extract numerical prefix
     const prefixMatchA = nameA.match(/^(\d+)-/);
     const prefixMatchB = nameB.match(/^(\d+)-/);
-    const prefixA = prefixMatchA ? parseInt(prefixMatchA[1], 10) : Infinity;
-    const prefixB = prefixMatchB ? parseInt(prefixMatchB[1], 10) : Infinity;
+    const prefixA = prefixMatchA?.[1] ? parseInt(prefixMatchA[1], 10) : Infinity;
+    const prefixB = prefixMatchB?.[1] ? parseInt(prefixMatchB[1], 10) : Infinity;
 
     // Sort by numerical prefix first
     if (prefixA !== prefixB) {
@@ -230,9 +242,32 @@ const buildDocMenuItem = async (
     return a.attrs.title.localeCompare(b.attrs.title);
   });
 
-  // Remove the temporary _originalName property
-  validChildren.forEach((child) => {
-    delete (child as DocsMenuItem & { _originalName?: string })._originalName;
+  // Flatten children that have navFlat: true
+  // Instead of nesting them, convert to group labels and hoist their children
+  const flattenedChildren: DocsMenuItemWithMeta[] = [];
+  for (const child of validChildren) {
+    if (child._navFlat && child.children.length > 0) {
+      // This child is a flat group - add a group label, then hoist its children
+      flattenedChildren.push({
+        hasContent: false,
+        attrs: {
+          title: child.attrs.title,
+          new: false,
+        },
+        children: [],
+        isGroupLabel: true,
+      });
+      // Hoist all grandchildren up
+      flattenedChildren.push(...child.children);
+    } else {
+      flattenedChildren.push(child);
+    }
+  }
+
+  // Remove the temporary metadata properties
+  flattenedChildren.forEach((child) => {
+    delete child._originalName;
+    delete child._navFlat;
   });
 
   if (!hasIndex) {
@@ -248,7 +283,7 @@ const buildDocMenuItem = async (
 
     // Find first child with a slug (first page in section)
     // This will be the first actual page, whether it's a .mdx file or a directory's first page
-    const firstChildWithSlug = validChildren.find((child) => child.slug);
+    const firstChildWithSlug = flattenedChildren.find((child) => child.slug);
     const sectionSlug = firstChildWithSlug?.slug;
 
     return {
@@ -258,7 +293,7 @@ const buildDocMenuItem = async (
         new: false,
       },
       slug: sectionSlug, // Link to first child page
-      children: validChildren,
+      children: flattenedChildren,
     } as DocsMenuItem;
   }
 
@@ -269,7 +304,7 @@ const buildDocMenuItem = async (
       new: false,
     },
     slug: `/docs/${prefix.replace(/(\/?\d+-)/g, "/").replace(/^\//, "")}`,
-    children: validChildren,
+    children: flattenedChildren,
   } as DocsMenuItem;
 };
 

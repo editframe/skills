@@ -221,6 +221,27 @@ const getIconForTitle = (title: string, href?: string): React.ElementType => {
   return FileText;
 };
 
+/** Renders a group label (non-clickable visual separator) */
+const GroupLabel: FC<{ title: string; level: number }> = ({ title, level }) => {
+  const ItemIcon = getIconForTitle(title);
+  const indentLevel = level * 12;
+  
+  return (
+    <li>
+      <div
+        className={clsx(
+          "flex items-center px-2 py-1.5 mt-3 first:mt-0 text-xs leading-5 gap-2",
+          "font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider"
+        )}
+        style={level > 0 ? { paddingLeft: `${indentLevel}px` } : undefined}
+      >
+        <ItemIcon className="h-3 w-3 flex-shrink-0" />
+        <span className="truncate text-[10px]">{title}</span>
+      </div>
+    </li>
+  );
+};
+
 const MenuItem: FC<{ 
   item: DocsMenuItem; 
   level?: number;
@@ -230,6 +251,12 @@ const MenuItem: FC<{
   isActivePath?: boolean;
 }> = ({ item, level = 0, expandedItems = new Set(), collapsedItems = new Set(), onToggle, isActivePath = false }) => {
   const location = useLocation();
+  
+  // Group labels are rendered differently - just a visual separator
+  if (item.isGroupLabel) {
+    return <GroupLabel title={item.attrs.title} level={level} />;
+  }
+  
   const hasChildren = item.children.length > 0;
   const ItemIcon = getIconForTitle(item.attrs.title, item.slug);
   const isManuallyExpanded = expandedItems.has(item.slug || "");
