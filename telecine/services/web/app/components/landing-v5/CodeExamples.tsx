@@ -7,68 +7,149 @@ import { useState } from "react";
    Developers evaluate tools by reading code.
    
    Implementation notes:
-   - Tabbed interface with 3-4 examples
-   - Syntax highlighting (use Prism or highlight.js)
+   - Tabbed interface with 4 examples
+   - Custom syntax highlighting
    - Copy button on each example
    - Examples should show progressively complex features
    ============================================================================== */
 
-/**
- * Simple syntax highlighting using regex patterns.
- * Highlights keywords, strings, comments, JSX tags, attributes, and numbers.
- */
-function highlightCode(code: string): string {
-  let highlighted = code;
+interface Token {
+  type: 'string' | 'comment' | 'keyword' | 'tag' | 'attr' | 'number' | 'text' | 'bracket';
+  value: string;
+}
+
+function tokenize(code: string): Token[] {
+  const tokens: Token[] = [];
+  let i = 0;
   
-  // Process string patterns first to avoid highlighting inside strings
-  const stringPlaceholders: string[] = [];
-  highlighted = highlighted.replace(/("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)/g, (match) => {
-    const placeholder = `__STRING_${stringPlaceholders.length}__`;
-    stringPlaceholders.push(`<span class="text-emerald-400">${match}</span>`);
-    return placeholder;
-  });
+  while (i < code.length) {
+    // Comments: // or /* */ or {/* */}
+    if (code.slice(i, i + 2) === '//') {
+      const end = code.indexOf('\n', i);
+      const value = end === -1 ? code.slice(i) : code.slice(i, end);
+      tokens.push({ type: 'comment', value });
+      i += value.length;
+      continue;
+    }
+    if (code.slice(i, i + 2) === '/*') {
+      const end = code.indexOf('*/', i);
+      const value = end === -1 ? code.slice(i) : code.slice(i, end + 2);
+      tokens.push({ type: 'comment', value });
+      i += value.length;
+      continue;
+    }
+    if (code.slice(i, i + 3) === '{/*') {
+      const end = code.indexOf('*/}', i);
+      const value = end === -1 ? code.slice(i) : code.slice(i, end + 3);
+      tokens.push({ type: 'comment', value });
+      i += value.length;
+      continue;
+    }
+    
+    // Strings: ", ', or `
+    if (code[i] === '"' || code[i] === "'" || code[i] === '`') {
+      const quote = code[i];
+      let j = i + 1;
+      while (j < code.length && (code[j] !== quote || code[j - 1] === '\\')) {
+        j++;
+      }
+      tokens.push({ type: 'string', value: code.slice(i, j + 1) });
+      i = j + 1;
+      continue;
+    }
+    
+    // JSX tags: <ComponentName or </ComponentName or />
+    if (code[i] === '<') {
+      // Check for closing tag or self-closing
+      const isClosing = code[i + 1] === '/';
+      const start = isClosing ? i + 2 : i + 1;
+      let j = start;
+      while (j < code.length && /[\w.]/.test(code[j]!)) {
+        j++;
+      }
+      if (j > start) {
+        tokens.push({ type: 'bracket', value: isClosing ? '</' : '<' });
+        tokens.push({ type: 'tag', value: code.slice(start, j) });
+        i = j;
+        continue;
+      }
+      tokens.push({ type: 'bracket', value: '<' });
+      i++;
+      continue;
+    }
+    
+    // Closing brackets
+    if (code[i] === '>' || code.slice(i, i + 2) === '/>') {
+      const value = code.slice(i, i + 2) === '/>' ? '/>' : '>';
+      tokens.push({ type: 'bracket', value });
+      i += value.length;
+      continue;
+    }
+    
+    // JSX attributes (word followed by =)
+    const attrMatch = code.slice(i).match(/^([a-zA-Z_][\w]*)(?==)/);
+    if (attrMatch) {
+      tokens.push({ type: 'attr', value: attrMatch[1]! });
+      i += attrMatch[1]!.length;
+      continue;
+    }
+    
+    // Keywords and identifiers
+    const wordMatch = code.slice(i).match(/^[a-zA-Z_$][\w$]*/);
+    if (wordMatch) {
+      const word = wordMatch[0];
+      const keywords = ['import', 'export', 'from', 'function', 'return', 'const', 'let', 'var', 'if', 'else', 'for', 'while', 'class', 'extends', 'new', 'this', 'typeof', 'instanceof', 'default'];
+      if (keywords.includes(word)) {
+        tokens.push({ type: 'keyword', value: word });
+      } else {
+        tokens.push({ type: 'text', value: word });
+      }
+      i += word.length;
+      continue;
+    }
+    
+    // Numbers
+    const numMatch = code.slice(i).match(/^\d+(\.\d+)?/);
+    if (numMatch) {
+      tokens.push({ type: 'number', value: numMatch[0] });
+      i += numMatch[0].length;
+      continue;
+    }
+    
+    // Everything else
+    tokens.push({ type: 'text', value: code[i]! });
+    i++;
+  }
+  
+  return tokens;
+}
 
-  // Process comments
-  const commentPlaceholders: string[] = [];
-  highlighted = highlighted.replace(/(\/\/[^\n]*|\/\*[\s\S]*?\*\/|\{\/\*[\s\S]*?\*\/\})/g, (match) => {
-    const placeholder = `__COMMENT_${commentPlaceholders.length}__`;
-    commentPlaceholders.push(`<span class="text-slate-500">${match}</span>`);
-    return placeholder;
-  });
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
 
-  // Keywords
-  highlighted = highlighted.replace(
-    /\b(import|export|from|function|return|const|let|var|if|else|for|while|class|extends|new|this|typeof|instanceof)\b/g,
-    '<span class="text-purple-400">$1</span>'
-  );
-
-  // JSX tags
-  highlighted = highlighted.replace(
-    /(<\/?)([\w.]+)/g,
-    '<span class="text-slate-500">$1</span><span class="text-blue-400">$2</span>'
-  );
-
-  // JSX attributes
-  highlighted = highlighted.replace(
-    /\s(className|src|name|target|duration|style|volume)=/g,
-    ' <span class="text-amber-400">$1</span>='
-  );
-
-  // Numbers
-  highlighted = highlighted.replace(
-    /\b(\d+)\b/g,
-    '<span class="text-orange-400">$1</span>'
-  );
-
-  // Restore strings and comments
-  stringPlaceholders.forEach((str, i) => {
-    highlighted = highlighted.replace(`__STRING_${i}__`, str);
-  });
-  commentPlaceholders.forEach((comment, i) => {
-    highlighted = highlighted.replace(`__COMMENT_${i}__`, comment);
-  });
-
-  return highlighted;
+function highlightCode(code: string): string {
+  const tokens = tokenize(code);
+  const colorMap: Record<Token['type'], string> = {
+    string: 'text-[var(--destijl-blue)]',
+    comment: 'opacity-50',
+    keyword: 'text-[var(--destijl-red)]',
+    tag: 'text-[var(--destijl-blue)]',
+    attr: 'text-[var(--destijl-yellow)]',
+    number: 'text-[var(--destijl-yellow)]',
+    bracket: 'opacity-50',
+    text: '',
+  };
+  
+  return tokens.map(token => {
+    const escaped = escapeHtml(token.value);
+    const color = colorMap[token.type];
+    return color ? `<span class="${color}">${escaped}</span>` : escaped;
+  }).join('');
 }
 
 /**
@@ -85,14 +166,17 @@ export function CodeExamples() {
       name: 'Basic Composition',
       code: `import { Timegroup, Video, Text } from '@editframe/react';
 
-export function Welcome() {
+export default function Welcome() {
   return (
     <Timegroup className="w-[1920px] h-[1080px] bg-slate-900">
       <Video 
-        src="background.mp4" 
-        className="absolute inset-0 opacity-50" 
+        src="/assets/background.mp4"
+        name="bg"
+        className="absolute inset-0 opacity-60"
+        volume={0.3}
       />
-      <Text className="text-white text-6xl font-bold text-center">
+      <Text className="absolute inset-0 flex items-center justify-center
+                       text-white text-7xl font-bold drop-shadow-lg">
         Welcome to the future
       </Text>
     </Timegroup>
@@ -104,17 +188,21 @@ export function Welcome() {
       name: 'Auto Captions',
       code: `import { Timegroup, Video, Captions } from '@editframe/react';
 
-export function Interview() {
+export default function Interview() {
   return (
-    <Timegroup className="w-[1080px] h-[1920px]">
-      <Video src="interview.mp4" name="speaker" />
-      
-      {/* Auto-generated, word-level captions */}
+    <Timegroup className="w-[1080px] h-[1920px] bg-black">
+      <Video
+        src="/assets/interview.mp4"
+        name="speaker"
+        className="absolute inset-0 object-cover"
+      />
+      {/* Word-level captions auto-synced to audio */}
       <Captions 
         target="speaker"
-        className="absolute bottom-20 inset-x-8
-                   text-white text-2xl font-semibold
-                   [&_.active]:text-yellow-400"
+        className="absolute bottom-24 inset-x-8 text-center
+                   text-white text-3xl font-semibold
+                   [&_.word]:transition-colors
+                   [&_.word.active]:text-yellow-400"
       />
     </Timegroup>
   );
@@ -123,31 +211,33 @@ export function Interview() {
     {
       id: 'animations',
       name: 'CSS Animations',
-      code: `import { Timegroup, Sequence, Text } from '@editframe/react';
+      code: `import { Timegroup, Text } from '@editframe/react';
 
-export function Intro() {
+export default function Intro() {
   return (
-    <Timegroup className="w-[1920px] h-[1080px] bg-black">
-      <Sequence>
-        <Text 
-          duration={2}
-          className="text-white text-8xl animate-[fadeIn_0.5s_ease-out]"
-        >
-          First
-        </Text>
-        <Text 
-          duration={2}
-          className="text-emerald-400 text-8xl animate-[slideUp_0.3s_ease-out]"
-        >
-          Then this
-        </Text>
-        <Text 
-          duration={2}
-          className="text-white text-8xl animate-[scale_0.4s_ease-out]"
-        >
-          Finally
-        </Text>
-      </Sequence>
+    <Timegroup mode="sequence" className="w-[1920px] h-[1080px] bg-black">
+      {/* Use fill-mode 'backwards' for fade-in to prevent flash */}
+      <Text 
+        duration={2}
+        className="text-white text-8xl text-center
+                   animate-[fadeIn_0.5s_ease-out_backwards]"
+      >
+        First
+      </Text>
+      <Text 
+        duration={2}
+        className="text-emerald-400 text-8xl text-center
+                   animate-[slideUp_0.4s_ease-out_backwards]"
+      >
+        Then this
+      </Text>
+      <Text 
+        duration={2}
+        className="text-white text-8xl text-center
+                   animate-[scale_0.3s_ease-out_backwards]"
+      >
+        Finally
+      </Text>
     </Timegroup>
   );
 }`,
@@ -157,19 +247,25 @@ export function Intro() {
       name: 'Data-Driven',
       code: `import { Timegroup, Image, Text } from '@editframe/react';
 
-// Generate thousands of unique videos from data
-export function ProductAd({ product }) {
+interface Product {
+  name: string;
+  price: number;
+  imageUrl: string;
+}
+
+export default function ProductAd({ product }: { product: Product }) {
   return (
     <Timegroup className="w-[1080px] h-[1080px] bg-white">
       <Image 
         src={product.imageUrl}
         className="absolute inset-0 object-cover"
       />
-      <div className="absolute bottom-0 inset-x-0 p-8 bg-gradient-to-t from-black">
-        <Text className="text-white text-4xl font-bold">
+      <div className="absolute bottom-0 inset-x-0 p-8
+                      bg-gradient-to-t from-black/80 to-transparent">
+        <Text className="text-white text-5xl font-bold">
           {product.name}
         </Text>
-        <Text className="text-emerald-400 text-2xl mt-2">
+        <Text className="text-emerald-400 text-3xl font-semibold mt-3">
           \${product.price}
         </Text>
       </div>
@@ -201,17 +297,19 @@ export function ProductAd({ product }) {
   };
   
   return (
-    <div className="bg-slate-900 rounded-2xl overflow-hidden">
-      {/* Tabs */}
-      <div className="flex border-b border-slate-800">
-        {examples.map((example) => (
+    <div className="border-4 border-black dark:border-white bg-black">
+      {/* Tabs - Bauhaus style */}
+      <div className="flex border-b-4 border-black dark:border-white">
+        {examples.map((example, index) => (
           <button
             key={example.id}
             onClick={() => setActiveTab(example.id)}
-            className={`px-6 py-4 text-sm font-medium transition-colors ${
+            className={`px-6 py-4 text-xs font-bold uppercase tracking-wider transition-colors ${
+              index > 0 ? 'border-l-4 border-black dark:border-white' : ''
+            } ${
               example.id === activeTab
-                ? 'text-white bg-slate-800 border-b-2 border-emerald-500'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                ? 'bg-[var(--destijl-blue)] text-white'
+                : 'bg-white dark:bg-[#0a0a0a] text-black dark:text-white hover:bg-[var(--destijl-yellow)] hover:text-black'
             }`}
           >
             {example.name}
@@ -223,25 +321,22 @@ export function ProductAd({ product }) {
       <div className="relative">
         <button 
           onClick={handleCopy}
-          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-2"
+          className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center bg-white/10 hover:bg-[var(--destijl-red)] transition-colors"
           title="Copy to clipboard"
         >
           {copied ? (
-            <>
-              <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span className="text-xs text-emerald-400">Copied!</span>
-            </>
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+              <path strokeLinecap="square" strokeLinejoin="miter" d="M5 13l4 4L19 7" />
+            </svg>
           ) : (
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="square" strokeLinejoin="miter" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
           )}
         </button>
-        <pre className="p-6 overflow-x-auto text-sm">
+        <pre className="p-6 overflow-x-auto text-sm font-mono">
           <code 
-            className="text-slate-300"
+            className="text-white/90"
             dangerouslySetInnerHTML={{ __html: highlightCode(activeExample.code) }}
           />
         </pre>

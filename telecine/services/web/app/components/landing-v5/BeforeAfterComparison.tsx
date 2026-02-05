@@ -4,11 +4,10 @@
    Purpose: Show the transformation. This is emotional - developers feel
    the pain of the "before" and desire the "after".
    
-   Implementation notes:
-   - Side-by-side panels
-   - "Before" shows: complex pipeline, multiple tools, manual processes
-   - "After" shows: simple code, instant feedback, one tool
-   - Use visual weight to make "After" feel lighter/better
+   Design: International Typographic Style / Bauhaus / De Stijl
+   - Bold geometric layout with grid structure
+   - Primary colors (red/blue) for visual contrast
+   - Strong black borders and clean typography
    ============================================================================== */
 
 /**
@@ -17,105 +16,125 @@
  */
 export function BeforeAfterComparison() {
   return (
-    <div className="grid md:grid-cols-2 gap-8">
+    <div className="grid md:grid-cols-2 gap-0">
       {/* Before */}
-      <div className="relative">
-        <div className="absolute -top-3 left-6 px-3 py-1 bg-slate-200 dark:bg-slate-800 rounded-full text-xs font-semibold text-slate-600 dark:text-slate-400">
-          Traditional approach
+      <div className="border-4 border-black dark:border-white">
+        <div className="bg-[var(--destijl-red)] text-white p-4" style={{boxShadow: 'inset 0 0 40px rgba(0,0,0,0.1)'}}>
+          <span className="text-xs font-bold uppercase tracking-[0.2em]" style={{textShadow: '0 0 0.5px currentColor'}}>Traditional Approach</span>
         </div>
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 h-full">
-          <div className="space-y-4">
-            <div className="flex items-start gap-3 text-slate-600 dark:text-slate-400">
-              <svg className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+        <div className="p-8 bg-white dark:bg-[#0a0a0a]">
+          <div className="space-y-6">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-8 h-8 bg-[var(--destijl-red)] flex items-center justify-center" style={{boxShadow: 'inset 0 0 12px rgba(0,0,0,0.15)'}}>
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                  <path strokeLinecap="square" strokeLinejoin="miter" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </div>
               <div>
-                <p className="font-medium text-slate-900 dark:text-white">Write FFmpeg scripts</p>
-                <p className="text-sm">Learn arcane flags. Debug cryptic errors. Pray it works.</p>
+                <p className="font-bold uppercase tracking-wider text-sm mb-1" style={{textShadow: '0 0 0.5px currentColor'}}>Write FFmpeg scripts</p>
+                <p className="text-sm opacity-70">Learn arcane flags. Debug cryptic errors.</p>
               </div>
             </div>
-            <div className="flex items-start gap-3 text-slate-600 dark:text-slate-400">
-              <svg className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-8 h-8 bg-[var(--destijl-red)] flex items-center justify-center" style={{boxShadow: 'inset 0 0 12px rgba(0,0,0,0.15)'}}>
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                  <path strokeLinecap="square" strokeLinejoin="miter" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </div>
               <div>
-                <p className="font-medium text-slate-900 dark:text-white">Wait for renders</p>
-                <p className="text-sm">Change one parameter. Render for 5 minutes. Repeat forever.</p>
+                <p className="font-bold uppercase tracking-wider text-sm mb-1" style={{textShadow: '0 0 0.5px currentColor'}}>Wait for renders</p>
+                <p className="text-sm opacity-70">Change one parameter. Render 5 minutes. Repeat.</p>
               </div>
             </div>
-            <div className="flex items-start gap-3 text-slate-600 dark:text-slate-400">
-              <svg className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-8 h-8 bg-[var(--destijl-red)] flex items-center justify-center" style={{boxShadow: 'inset 0 0 12px rgba(0,0,0,0.15)'}}>
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                  <path strokeLinecap="square" strokeLinejoin="miter" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </div>
               <div>
-                <p className="font-medium text-slate-900 dark:text-white">Manage infrastructure</p>
-                <p className="text-sm">Provision GPU servers. Handle encoding queues. Monitor everything.</p>
+                <p className="font-bold uppercase tracking-wider text-sm mb-1" style={{textShadow: '0 0 0.5px currentColor'}}>Manage infrastructure</p>
+                <p className="text-sm opacity-70">Provision GPU servers. Handle encoding queues.</p>
               </div>
             </div>
-            <div className="flex items-start gap-3 text-slate-600 dark:text-slate-400">
-              <svg className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-8 h-8 bg-[var(--destijl-red)] flex items-center justify-center" style={{boxShadow: 'inset 0 0 12px rgba(0,0,0,0.15)'}}>
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                  <path strokeLinecap="square" strokeLinejoin="miter" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </div>
               <div>
-                <p className="font-medium text-slate-900 dark:text-white">Count frames manually</p>
-                <p className="text-sm">Calculate timestamps. Convert between formats. Make math errors.</p>
+                <p className="font-bold uppercase tracking-wider text-sm mb-1" style={{textShadow: '0 0 0.5px currentColor'}}>Count frames manually</p>
+                <p className="text-sm opacity-70">Calculate timestamps. Convert formats. Make errors.</p>
               </div>
             </div>
           </div>
           
-          <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800">
-            <p className="text-sm text-slate-500">Typical timeline: <span className="font-semibold text-red-500">2-4 weeks</span></p>
+          <div className="mt-8 pt-6 border-t-4 border-black dark:border-white">
+            <p className="text-sm font-bold uppercase tracking-wider">
+              Timeline: <span className="text-[var(--destijl-red)]">2-4 weeks</span>
+            </p>
           </div>
         </div>
       </div>
       
       {/* After */}
-      <div className="relative">
-        <div className="absolute -top-3 left-6 px-3 py-1 bg-emerald-100 dark:bg-emerald-500/20 rounded-full text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-          With Editframe
+      <div className="border-4 border-l-0 border-black dark:border-white">
+        <div className="bg-[var(--destijl-blue)] text-white p-4" style={{boxShadow: 'inset 0 0 40px rgba(0,0,0,0.1)'}}>
+          <span className="text-xs font-bold uppercase tracking-[0.2em]" style={{textShadow: '0 0 0.5px currentColor'}}>With Editframe</span>
         </div>
-        <div className="bg-white dark:bg-slate-900 border-2 border-emerald-200 dark:border-emerald-500/30 rounded-2xl p-8 h-full">
-          <div className="space-y-4">
-            <div className="flex items-start gap-3 text-slate-600 dark:text-slate-400">
-              <svg className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+        <div className="p-8 bg-white dark:bg-[#0a0a0a]">
+          <div className="space-y-6">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-8 h-8 bg-[var(--destijl-blue)] flex items-center justify-center" style={{boxShadow: 'inset 0 0 12px rgba(0,0,0,0.15)'}}>
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                  <path strokeLinecap="square" strokeLinejoin="miter" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
               <div>
-                <p className="font-medium text-slate-900 dark:text-white">Write React components</p>
-                <p className="text-sm">Use the skills you already have. JSX, CSS, any animation library.</p>
+                <p className="font-bold uppercase tracking-wider text-sm mb-1" style={{textShadow: '0 0 0.5px currentColor'}}>Write React components</p>
+                <p className="text-sm opacity-70">Use skills you have. JSX, CSS, any animation library.</p>
               </div>
             </div>
-            <div className="flex items-start gap-3 text-slate-600 dark:text-slate-400">
-              <svg className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-8 h-8 bg-[var(--destijl-blue)] flex items-center justify-center" style={{boxShadow: 'inset 0 0 12px rgba(0,0,0,0.15)'}}>
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                  <path strokeLinecap="square" strokeLinejoin="miter" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
               <div>
-                <p className="font-medium text-slate-900 dark:text-white">Preview instantly</p>
-                <p className="text-sm">Edit code, see video update in milliseconds. Scrub the timeline freely.</p>
+                <p className="font-bold uppercase tracking-wider text-sm mb-1" style={{textShadow: '0 0 0.5px currentColor'}}>Preview instantly</p>
+                <p className="text-sm opacity-70">Edit code, see video update in milliseconds.</p>
               </div>
             </div>
-            <div className="flex items-start gap-3 text-slate-600 dark:text-slate-400">
-              <svg className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-8 h-8 bg-[var(--destijl-blue)] flex items-center justify-center" style={{boxShadow: 'inset 0 0 12px rgba(0,0,0,0.15)'}}>
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                  <path strokeLinecap="square" strokeLinejoin="miter" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
               <div>
-                <p className="font-medium text-slate-900 dark:text-white">Render on our infrastructure</p>
-                <p className="text-sm">Push to cloud. We handle scaling, encoding, and delivery.</p>
+                <p className="font-bold uppercase tracking-wider text-sm mb-1" style={{textShadow: '0 0 0.5px currentColor'}}>Render on our infrastructure</p>
+                <p className="text-sm opacity-70">Push to cloud. We handle scaling and delivery.</p>
               </div>
             </div>
-            <div className="flex items-start gap-3 text-slate-600 dark:text-slate-400">
-              <svg className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-8 h-8 bg-[var(--destijl-blue)] flex items-center justify-center" style={{boxShadow: 'inset 0 0 12px rgba(0,0,0,0.15)'}}>
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                  <path strokeLinecap="square" strokeLinejoin="miter" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
               <div>
-                <p className="font-medium text-slate-900 dark:text-white">Time is just a prop</p>
-                <p className="text-sm">start, duration, offset. Declarative timing that makes sense.</p>
+                <p className="font-bold uppercase tracking-wider text-sm mb-1" style={{textShadow: '0 0 0.5px currentColor'}}>Time is just a prop</p>
+                <p className="text-sm opacity-70">start, duration, offset. Declarative timing.</p>
               </div>
             </div>
           </div>
           
-          <div className="mt-8 pt-6 border-t border-emerald-200 dark:border-emerald-500/30">
-            <p className="text-sm text-slate-500">Typical timeline: <span className="font-semibold text-emerald-600 dark:text-emerald-400">2-4 hours</span></p>
+          <div className="mt-8 pt-6 border-t-4 border-black dark:border-white">
+            <p className="text-sm font-bold uppercase tracking-wider">
+              Timeline: <span className="text-[var(--destijl-blue)]">2-4 hours</span>
+            </p>
           </div>
         </div>
       </div>
