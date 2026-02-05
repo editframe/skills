@@ -528,6 +528,7 @@ export const rpcServerReady = (async () => {
                 codec: 'avc',
                 returnBuffer: true,
                 includeAudio: true,
+                canvasMode: '${canvasMode}',
               });
 
               // Convert Uint8Array to regular Array so it can cross IPC boundary
@@ -680,6 +681,7 @@ export const rpcServerReady = (async () => {
                   const imageSource = await window.captureTimegroupAtTime(rootTimegroup, {
                     timeMs: ${timeMs},
                     scale: 1,
+                    canvasMode: '${canvasMode}',
                   });
 
                   // Create a canvas and draw the image source to it

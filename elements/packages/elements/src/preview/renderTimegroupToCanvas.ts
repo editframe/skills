@@ -62,6 +62,8 @@ export interface CaptureOptions {
   contentReadyMode?: ContentReadyMode;
   /** Max wait time for blocking mode before throwing (default: 5000ms) */
   blockingTimeoutMs?: number;
+  /** Canvas rendering mode: native drawElementImage or foreignObject serialization (default: auto-detect) */
+  canvasMode?: "native" | "foreignObject";
 }
 
 /**
@@ -458,6 +460,7 @@ export async function captureTimegroupAtTime(
     // skipRestore is deprecated with Clone-timeline (Prime is never seeked)
     contentReadyMode = "immediate",
     blockingTimeoutMs = DEFAULT_BLOCKING_TIMEOUT_MS,
+    canvasMode,
   } = options;
 
   // CLONE-TIMELINE: Create a short-lived render clone for this capture
@@ -478,6 +481,7 @@ export async function captureTimegroupAtTime(
       contentReadyMode,
       blockingTimeoutMs,
       originalTimegroup: timegroup,
+      canvasMode,
     });
   } finally {
     // Clean up the render clone

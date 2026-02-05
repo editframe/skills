@@ -34,6 +34,8 @@ import {
   type ContentReadyMode,
 } from "./renderTimegroupToCanvas.js";
 import { serializeTimelineToDataUri } from "./rendering/serializeTimelineDirect.js";
+import { renderToImageNative } from "./rendering/renderToImageNative.js";
+import { isNativeCanvasApiAvailable } from "./previewSettings.js";
 import { createPreviewContainer } from "./previewTypes.js";
 import { RenderContext } from "./RenderContext.js";
 
@@ -128,6 +130,7 @@ interface ResolvedConfig {
   preferredAudioCodecs: AudioCodec[];
   benchmarkMode: boolean;
   progressPreviewInterval: number;
+  canvasMode: "native" | "foreignObject";
 }
 
 function resolveConfig(
@@ -192,6 +195,19 @@ function resolveConfig(
   const totalFrames = Math.ceil(renderDurationMs / frameDurationMs);
   const frameDurationS = frameDurationMs / 1000;
 
+  // Determine effective canvas mode:
+  // 1. If explicitly specified, use that (with fallback if native not available)
+  // 2. If not specified, default to foreignObject for compatibility
+  const canvasMode = (() => {
+    const requested = options.canvasMode;
+    if (!requested) return "foreignObject";
+    if (requested === "native" && !isNativeCanvasApiAvailable()) {
+      logger.debug("[renderTimegroupToVideo] Native canvas mode requested but not available, falling back to foreignObject");
+      return "foreignObject";
+    }
+    return requested;
+  })();
+
   return {
     fps,
     codec,
@@ -218,6 +234,7 @@ function resolveConfig(
     preferredAudioCodecs,
     benchmarkMode,
     progressPreviewInterval,
+    canvasMode,
   };
 }
 
@@ -515,34 +532,49 @@ export async function renderTimegroupToVideo(
           // 2. Awaited #executeCustomFrameTasks() so frame tasks are complete
           // Clone's DOM now reflects all changes from frame tasks
           
-          // Direct serialization: serialize timeline to data URI in one pass
-          const syncStart = performance.now();
-          const dataUri = await serializeTimelineToDataUri(renderClone, config.width, config.height, {
-            renderContext,
-            canvasScale: config.scale,
-            timeMs: renderTimeMs,
-          });
-          const syncTime = performance.now() - syncStart;
-          totalSyncMs += syncTime;
-          
-          // Create image from data URI
-          const renderStart = performance.now();
-          const image = new Image();
-          await new Promise<void>((resolve, reject) => {
-            image.onload = () => resolve();
-            image.onerror = (e) => {
-              logger.error(`[Frame ${renderFrameIndex}] Image load error:`, e);
-              logger.error(`[Frame ${renderFrameIndex}] Data URI preview:`, dataUri.substring(0, 200) + '...');
-              reject(new Error(`Failed to load image from data URI`));
-            };
-            image.src = dataUri;
-          });
-          const renderTime = performance.now() - renderStart;
-          totalRenderMs += renderTime;
-          
-          logger.debug(`[Frame ${renderFrameIndex}] Image loaded: ${image.width}x${image.height}, serialize=${syncTime.toFixed(1)}ms`);
-          
-          return image;
+          if (config.canvasMode === "native") {
+            // NATIVE PATH: Use drawElementImage API (~1.76x faster)
+            const renderStart = performance.now();
+            const canvas = await renderToImageNative(renderClone, config.width, config.height, {
+              skipDprScaling: true, // Use 1x DPR for video export (4x fewer pixels!)
+            });
+            const renderTime = performance.now() - renderStart;
+            totalRenderMs += renderTime;
+            
+            logger.debug(`[Frame ${renderFrameIndex}] Native render: ${canvas.width}x${canvas.height}, time=${renderTime.toFixed(1)}ms`);
+            
+            // Return canvas directly (it's a CanvasImageSource, compatible with Image)
+            return canvas as any as HTMLImageElement;
+          } else {
+            // FOREIGNOBJECT PATH: Serialize DOM → SVG → Image → Canvas
+            const syncStart = performance.now();
+            const dataUri = await serializeTimelineToDataUri(renderClone, config.width, config.height, {
+              renderContext,
+              canvasScale: config.scale,
+              timeMs: renderTimeMs,
+            });
+            const syncTime = performance.now() - syncStart;
+            totalSyncMs += syncTime;
+            
+            // Create image from data URI
+            const renderStart = performance.now();
+            const image = new Image();
+            await new Promise<void>((resolve, reject) => {
+              image.onload = () => resolve();
+              image.onerror = (e) => {
+                logger.error(`[Frame ${renderFrameIndex}] Image load error:`, e);
+                logger.error(`[Frame ${renderFrameIndex}] Data URI preview:`, dataUri.substring(0, 200) + '...');
+                reject(new Error(`Failed to load image from data URI`));
+              };
+              image.src = dataUri;
+            });
+            const renderTime = performance.now() - renderStart;
+            totalRenderMs += renderTime;
+            
+            logger.debug(`[Frame ${renderFrameIndex}] ForeignObject: ${image.width}x${image.height}, serialize=${syncTime.toFixed(1)}ms, load=${renderTime.toFixed(1)}ms`);
+            
+            return image;
+          }
         });
         
         renderTasks.push({
