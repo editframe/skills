@@ -56,6 +56,8 @@ import {
   TextOverlayTool,
   ClientRenderDemo,
   TemplatedRenderingDemo,
+  RenderQueueProvider,
+  RenderQueuePanel,
 } from "~/components/landing-v5/index.ts";
 
 export const loader = async (args: LoaderFunctionArgs) => {
@@ -79,6 +81,7 @@ export default function IndexPage() {
   useTheme();
 
   return (
+    <RenderQueueProvider>
     <div className="min-h-screen bg-[var(--paper-cream)] text-[var(--ink-black)]">
       <style dangerouslySetInnerHTML={{__html: `
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -1083,6 +1086,8 @@ export default function IndexPage() {
           </div>
         </div>
       </footer>
+      <RenderQueuePanel />
     </div>
+    </RenderQueueProvider>
   );
 }

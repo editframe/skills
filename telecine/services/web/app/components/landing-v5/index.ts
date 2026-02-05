@@ -22,3 +22,6 @@ export { ClientRenderDemo } from './ClientRenderDemo.tsx';
 
 // Templated rendering demo
 export { TemplatedRenderingDemo } from './TemplatedRenderingDemo.tsx';
+
+// Render queue
+export { RenderQueueProvider, RenderQueuePanel } from './RenderQueue.tsx';
