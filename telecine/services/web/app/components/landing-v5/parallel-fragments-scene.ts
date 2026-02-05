@@ -73,30 +73,35 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
   renderer.toneMappingExposure = 1.1;
 
   const scene = new THREE.Scene();
+  // Dark blue-gray background with fog for depth/horizon feel
+  const BG_COLOR = 0x181c28;
+  scene.background = new THREE.Color(BG_COLOR);
+  scene.fog = new THREE.Fog(BG_COLOR, 10, 28);
+
   const camera = new THREE.PerspectiveCamera(50, 2, 0.1, 100);
   const camPos = new THREE.Vector3();
   const camTar = new THREE.Vector3();
 
-  /* ── Lighting ──────────────────────────────────────────────────── */
-  scene.add(new THREE.AmbientLight(0xffffff, 0.35));
-  const keyLight = new THREE.DirectionalLight(0xffffff, 1.0);
+  /* ── Lighting (brighter overall) ───────────────────────────────── */
+  scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+  const keyLight = new THREE.DirectionalLight(0xffffff, 1.1);
   keyLight.position.set(3, 7, 5);
   keyLight.castShadow = true;
   keyLight.shadow.mapSize.set(1024, 1024);
   const sc = keyLight.shadow.camera;
   sc.left = -8; sc.right = 8; sc.top = 6; sc.bottom = -6; sc.near = 0.5; sc.far = 25;
   scene.add(keyLight);
-  const fillLight = new THREE.DirectionalLight(0x88aaff, 0.25);
+  const fillLight = new THREE.DirectionalLight(0x88aaff, 0.35);
   fillLight.position.set(-3, 4, -2);
   scene.add(fillLight);
-  const rimLight = new THREE.PointLight(COL_BLUE_LT, 0.5, 20);
+  const rimLight = new THREE.PointLight(COL_BLUE_LT, 0.6, 20);
   rimLight.position.set(0, 2, -3);
   scene.add(rimLight);
 
-  /* ── Floor ─────────────────────────────────────────────────────── */
+  /* ── Floor — lighter, fades into fog/horizon ───────────────────── */
   const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(24, 16),
-    new THREE.MeshStandardMaterial({ color: 0x0e0e0e, roughness: 0.9, metalness: 0.05 }),
+    new THREE.PlaneGeometry(40, 30),
+    new THREE.MeshStandardMaterial({ color: 0x1e2030, roughness: 0.85, metalness: 0.05 }),
   );
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = -0.6;
@@ -140,6 +145,11 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
   function segJoinedX(i: number) {
     return -TOTAL_W / 2 + SEG_W / 2 + i * (SEG_W + SEG_GAP);
   }
+  // Tight position with NO gaps — one solid piece
+  function segTightX(i: number) {
+    const totalTight = SEG_W * NUM_SEGS;
+    return -totalTight / 2 + SEG_W / 2 + i * SEG_W;
+  }
 
   /* ── Parallel segments (will separate) ─────────────────────────── */
   const parSegGroups: THREE.Group[] = [];
@@ -161,6 +171,28 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
   }
   seqGroup.visible = false;
   scene.add(seqGroup);
+
+  /* ── Laser cut lines (flash at split boundaries) ────────────────── */
+  const cutLines: THREE.Mesh[] = [];
+  const cutMats: THREE.MeshBasicMaterial[] = [];
+  for (let i = 1; i < NUM_SEGS; i++) {
+    const mat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+    });
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(0.03, 0.55), mat);
+    mesh.position.set(0, 0.4, 0.01);
+    scene.add(mesh);
+    cutLines.push(mesh);
+    cutMats.push(mat);
+  }
+  // Bright flash point light for the cut moment
+  const cutFlash = new THREE.PointLight(0xffffff, 0, 6);
+  cutFlash.position.set(0, 0.6, 0.3);
+  scene.add(cutFlash);
 
   /* ── Render nodes ──────────────────────────────────────────────── */
   const nodeGeo = new THREE.BoxGeometry(NODE_SIZE, NODE_SIZE, NODE_SIZE);
@@ -241,10 +273,11 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
     camera.position.copy(camPos);
     camera.lookAt(camTar);
 
-    // ── PHASE 1: Close-up, timeline assembles ─────────────────────
+    // ── PHASE 1: Close-up, one solid timeline ──────────────────────
     const p1 = easeOut(prog(timeMs, 0, P1_END));
     for (let s = 0; s < NUM_SEGS; s++) {
-      parSegGroups[s]!.position.set(segJoinedX(s), lerp(1.2, 0.4, p1), 0);
+      // Tight positions — no gaps, one continuous piece
+      parSegGroups[s]!.position.set(segTightX(s), lerp(1.2, 0.4, p1), 0);
       parSegGroups[s]!.rotation.set(0, 0, 0);
       parSegGroups[s]!.scale.setScalar(1);
       setTrackOpacity(parTrackMeshes[s]!, lerp(0, 0.5, p1), lerp(0, 0.95, p1));
@@ -260,26 +293,45 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
     for (const n of parNodes) { n.mat.opacity = 0; n.edgeMat.opacity = 0; }
     completeMat.opacity = 0;
     particleMat.opacity = 0;
+    for (const m of cutMats) m.opacity = 0;
+    cutFlash.intensity = 0;
 
-    // ── PHASE 2: Duplicate + split ────────────────────────────────
+    // ── PHASE 2: Duplicate + laser split ──────────────────────────
     if (timeMs >= P2_START) {
       const p2 = easeInOut(prog(timeMs, P2_START, P2_END));
 
-      // Sequential copy appears and slides left
-      seqGroup.visible = true;
-      seqGroup.position.x = lerp(0, SEQ_X, p2);
-      seqGroup.position.y = 0.4;
-      seqGroup.position.z = lerp(0, 0.5, p2);
-      for (const meshes of seqTrackMeshes) {
-        setTrackOpacity(meshes, p2 * 0.5, p2 * 0.7);
+      // Laser cut flash — brief bright burst at the split moment
+      const cutProg = prog(timeMs, P2_START, P2_START + 300);
+      const cutFade = prog(timeMs, P2_START + 200, P2_START + 700);
+      const cutBrightness = cutProg * (1 - cutFade);
+      cutFlash.intensity = cutBrightness * 4;
+      for (let c = 0; c < cutLines.length; c++) {
+        // Position cut lines at boundaries between tight-packed segments
+        const boundaryX = segTightX(c) + SEG_W / 2;
+        cutLines[c]!.position.x = boundaryX;
+        cutMats[c]!.opacity = cutBrightness;
       }
 
-      // Parallel segments separate and slide right
+      // Sequential copy appears and slides left
+      seqGroup.visible = true;
+      const seqAppear = easeOut(prog(timeMs, P2_START + 200, P2_END));
+      seqGroup.position.x = lerp(0, SEQ_X, seqAppear);
+      seqGroup.position.y = 0.4;
+      seqGroup.position.z = lerp(0, 0.5, seqAppear);
+      for (const meshes of seqTrackMeshes) {
+        setTrackOpacity(meshes, seqAppear * 0.5, seqAppear * 0.7);
+      }
+
+      // Parallel segments: first open gaps (split apart), then slide right
+      const gapOpen = easeOut(prog(timeMs, P2_START + 100, P2_START + 800));
+      const slideRight = easeInOut(prog(timeMs, P2_START + 500, P2_END));
       for (let s = 0; s < NUM_SEGS; s++) {
-        const joinX = segJoinedX(s);
+        const tightX = segTightX(s);
+        const gappedX = segJoinedX(s);
         const parLaneX = PAR_X + (s - 1.5) * LANE_SPREAD;
-        const spread = (s - 1.5) * SEG_GAP * 6 * p2;
-        parSegGroups[s]!.position.x = lerp(joinX + spread, parLaneX, p2 * p2);
+        // First open gaps, then slide to parallel positions
+        const currentX = lerp(lerp(tightX, gappedX, gapOpen), parLaneX, slideRight);
+        parSegGroups[s]!.position.x = currentX;
         parSegGroups[s]!.position.z = lerp(0, 0.5, p2);
         setTrackEmissive(parTrackMeshes[s]!, p2 * 0.15);
       }

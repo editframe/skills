@@ -413,7 +413,7 @@ function FanOutDiagram() {
     return (
       <div
         className="w-full flex items-center justify-center"
-        style={{ aspectRatio: "16/10", background: "#111" }}
+        style={{ aspectRatio: "16/10", background: "#181c28" }}
       >
         <span className="text-xs text-[var(--warm-gray)]">Loading\u2026</span>
       </div>
@@ -427,7 +427,7 @@ function FanOutDiagram() {
           mode="fixed"
           duration={SCENE_DUR}
           className="relative w-full overflow-hidden"
-          style={{ aspectRatio: "16/10", background: "#0a0a0a" }}
+          style={{ aspectRatio: "16/10", background: "#181c28" }}
         >
           <canvas
             ref={canvasRef}
