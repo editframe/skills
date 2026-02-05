@@ -339,30 +339,14 @@ function JitDiagram() {
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 const SCENE_DUR = "14s";
-const JIT_SCENE_DUR = "22s";
+const JIT_SCENE_DUR = "42s";
 
 /**
  * Self-contained timeline content for the parallel fragments scene.
  * Rendered by TimelineRoot on both the prime instance and render clones.
- * On clones, React re-mounts this component so R3F works natively.
+ * CompositionCanvas handles the addFrameTask → R3F bridge automatically.
  */
 function FanOutContent() {
-  const [timeMs, setTimeMs] = useState(0);
-  const tgRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = tgRef.current;
-    if (!el) return;
-    // Find the ef-timegroup (might be the ref itself or a parent)
-    const tg = el.closest("ef-timegroup") ?? el.querySelector("ef-timegroup");
-    if (!tg) return;
-    (tg as HTMLElement & {
-      addFrameTask?: (cb: (info: { ownCurrentTimeMs: number }) => void) => () => void;
-    }).addFrameTask?.(({ ownCurrentTimeMs }) => {
-      setTimeMs(ownCurrentTimeMs);
-    });
-  }, []);
-
   return (
     <Timegroup
       mode="fixed"
@@ -370,9 +354,7 @@ function FanOutContent() {
       className="relative w-full overflow-hidden"
       style={{ aspectRatio: "16/10", background: "#1e2233" }}
     >
-      <div ref={tgRef} style={{ position: "absolute", inset: 0 }}>
-        <ParallelFragmentsCanvas timeMs={timeMs} />
-      </div>
+      <ParallelFragmentsCanvas />
     </Timegroup>
   );
 }
@@ -489,7 +471,7 @@ function JITStreamingDiagram() {
 
   // State to pass to React Three Fiber
   const [sceneTime, setSceneTime] = useState(0);
-  const [sceneDuration, setSceneDuration] = useState(22000);
+  const [sceneDuration, setSceneDuration] = useState(42000);
 
   useEffect(() => {
     if (!isClient) return;
@@ -570,31 +552,86 @@ function JITStreamingDiagram() {
             )}
           </div>
 
-          {/* ── Text overlays ── */}
+          {/* ── Text overlays — narration pace ── */}
 
-          {/* ACT 1: Traditional */}
-          <div className="ef-caption ef-caption-dim" style={{ top: "4%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 500ms 300ms backwards, efCaptionOut 400ms 9200ms forwards" }}>
+          {/* ACT 1 title */}
+          <div className="ef-caption ef-caption-dim" style={{ top: "4%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 500ms 300ms backwards, efCaptionOut 400ms 2800ms forwards" }}>
             The traditional way
           </div>
 
-          {/* ACT 2: Transition */}
-          <div className="ef-caption ef-caption-lg" style={{ top: "4%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 9500ms backwards, efCaptionOut 400ms 10800ms forwards" }}>
-            What if you skip all that?
+          {/* Step: You have a file */}
+          <div className="ef-caption ef-caption-sub" style={{ bottom: "5%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 500ms backwards, efCaptionOut 400ms 2800ms forwards" }}>
+            You have a video file.
           </div>
 
-          {/* ACT 2: Editframe */}
-          <div className="ef-caption ef-caption-brand" style={{ top: "4%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 11000ms backwards, efCaptionOut 400ms 17800ms forwards" }}>
+          {/* Step: Upload */}
+          <div className="ef-caption ef-caption-sub" style={{ bottom: "5%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 3000ms backwards, efCaptionOut 400ms 7500ms forwards" }}>
+            Upload the entire thing to their servers.
+          </div>
+
+          {/* Step: Transcode */}
+          <div className="ef-caption ef-caption-sub" style={{ bottom: "5%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 8000ms backwards, efCaptionOut 400ms 12000ms forwards" }}>
+            Transcode every frame, every bitrate.
+          </div>
+
+          {/* Step: Variants */}
+          <div className="ef-caption ef-caption-sub" style={{ bottom: "5%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 12500ms backwards, efCaptionOut 400ms 14500ms forwards" }}>
+            1080p. 720p. 480p. Three complete copies, stored.
+          </div>
+
+          {/* Step: Play */}
+          <div className="ef-caption ef-caption-sub" style={{ bottom: "5%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 15000ms backwards, efCaptionOut 400ms 16800ms forwards" }}>
+            Only now can someone press play.
+          </div>
+
+          {/* TRANSITION */}
+          <div className="ef-caption ef-caption-lg" style={{ top: "4%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 500ms 17200ms backwards, efCaptionOut 400ms 19200ms forwards" }}>
+            What if you could skip all of that?
+          </div>
+
+          {/* ACT 2 title */}
+          <div className="ef-caption ef-caption-brand" style={{ top: "4%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 500ms 19500ms backwards, efCaptionOut 400ms 21200ms forwards" }}>
             Editframe JIT
           </div>
 
+          {/* Step: Same file, your server */}
+          <div className="ef-caption ef-caption-sub" style={{ bottom: "5%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 19700ms backwards, efCaptionOut 400ms 21200ms forwards" }}>
+            Same file. But it stays on your server.
+          </div>
+
+          {/* Step: Player needs a frame */}
+          <div className="ef-caption ef-caption-sub" style={{ bottom: "5%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 21500ms backwards, efCaptionOut 400ms 23800ms forwards" }}>
+            When the player needs a frame...
+          </div>
+
+          {/* Step: Highlight */}
+          <div className="ef-caption ef-caption-sub" style={{ bottom: "5%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 23000ms backwards, efCaptionOut 400ms 26000ms forwards" }}>
+            ...it highlights just the bytes it needs.
+          </div>
+
+          {/* Step: Fetch + transcode */}
+          <div className="ef-caption ef-caption-sub" style={{ bottom: "5%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 26500ms backwards, efCaptionOut 400ms 29500ms forwards" }}>
+            Same transcode. But just this piece.
+          </div>
+
+          {/* Step: Playing */}
+          <div className="ef-caption ef-caption-lg" style={{ bottom: "5%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 30000ms backwards, efCaptionOut 400ms 31500ms forwards" }}>
+            Already playing.
+          </div>
+
+          {/* Step: More segments */}
+          <div className="ef-caption ef-caption-sub" style={{ bottom: "5%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 32000ms backwards, efCaptionOut 400ms 36000ms forwards" }}>
+            Next segment. Different bitrate. Streamed on demand.
+          </div>
+
           {/* ACT 3: Comparison */}
-          <div className="ef-caption ef-caption-dim" style={{ top: "3%", left: "12%", animation: "efCaptionIn 400ms 18200ms backwards" }}>
+          <div className="ef-caption ef-caption-dim" style={{ top: "3%", left: "12%", animation: "efCaptionIn 400ms 37500ms backwards" }}>
             Traditional
           </div>
-          <div className="ef-caption ef-caption-brand" style={{ top: "3%", right: "12%", animation: "efCaptionIn 400ms 18200ms backwards" }}>
+          <div className="ef-caption ef-caption-brand" style={{ top: "3%", right: "12%", animation: "efCaptionIn 400ms 37500ms backwards" }}>
             Editframe
           </div>
-          <div className="ef-caption ef-caption-sub" style={{ bottom: "5%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 19000ms backwards" }}>
+          <div className="ef-caption ef-caption-sub" style={{ bottom: "5%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 38500ms backwards" }}>
             Same transcode. No upload. No ingest delay.
           </div>
         </Timegroup>

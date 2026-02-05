@@ -40,31 +40,63 @@ const BAR_D = 0.15;       // Depth (thin — this is fundamentally 2D)
 const NUM_SEGS = 6;        // Visible segments in the bar
 const SEG_W = BAR_W / NUM_SEGS;
 
-/* ━━ Timing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* ━━ Timing — narration pace ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Each beat gets 2-3s to land + breathe before the next one.
+   Imagined narration in comments.
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+// ACT 1: Traditional
+// "You have a video file."
 const A_IN = 500;
-const A_UPLOAD_START = 2000;
-const A_UPLOAD_END = 4500;
-const A_TRANSCODE_START = 4500;
-const A_TRANSCODE_END = 7500;
-const A_PLAY = 8500;
-const A_END = 9500;
+//                              ... let it sit for a beat ...
+// "To use it, you upload the entire thing to their servers."
+const A_UPLOAD_START = 3000;
+const A_UPLOAD_END = 6500;      // 3.5s of slow upload flow
+//                              ... copy appears ...
+// "Then they transcode it — every frame, every bitrate."
+const A_TRANSCODE_START = 8000;
+const A_TRANSCODE_END = 12000;  // 4s of grinding
+//                              ... variants land one by one ...
+// "1080p. 720p. 480p. Three complete copies, stored."
+const A_VARIANTS_START = 12500;
+//                              ... breathe ...
+// "Only now can someone press play."
+const A_PLAY = 15000;
+const A_END = 17000;
 
-const TRANSITION_START = 9500;
-const TRANSITION_END = 11000;
+// TRANSITION
+// "What if you could skip all of that?"
+const TRANSITION_START = 17000;
+const TRANSITION_END = 19500;
 
-const B_IN = 11000;
-const B_HIGHLIGHT = 12000;
-const B_FETCH_START = 12500;
-const B_FETCH_END = 13500;
-const B_TRANSCODE_START = 13500;
-const B_TRANSCODE_END = 14500;
-const B_PLAY = 14800;
-const B_NEXT_START = 15500;
-const B_NEXT_END = 17000;
-const B_END = 18000;
+// ACT 2: Editframe JIT
+// "Same file. But it stays where it is — on your server."
+const B_IN = 19500;
+//                              ... let the URL bar sit ...
+// "When the player needs a frame..."
+const B_PLAYER_IN = 21500;
+// "...it highlights just the bytes it needs."
+const B_HIGHLIGHT = 23000;
+//                              ... hold the highlight ...
+// "A byte-range request fetches just that slice."
+const B_FETCH_START = 24500;
+const B_FETCH_END = 26500;      // 2s travel
+// "Same transcode — but just this piece."
+const B_TRANSCODE_START = 27000;
+const B_TRANSCODE_END = 29000;  // 2s processing
+//                              ... output streams to player ...
+// "Already playing."
+const B_PLAY = 30000;
+//                              ... let it breathe ...
+// "Next segment. Different bitrate. Streamed on demand."
+const B_NEXT_START = 32000;
+const B_NEXT_END = 35000;       // 3s staggered flow
+const B_END = 36000;
 
-const C_START = 18000;
-const DURATION = 22000;
+// ACT 3: Side-by-side comparison
+// "Same transcode work. No upload. No ingest delay."
+const C_START = 37000;
+const DURATION = 42000;
 
 /* ━━ Colors ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 const COL_BAR = 0x7e57c2;       // Purple — file segments
@@ -510,41 +542,66 @@ function Scene({ currentTimeMs }: { currentTimeMs: number }) {
   });
 
   // ── Act 1: Traditional ──
-  const aBarOpa = easeOut(prog(currentTimeMs, A_IN, A_IN + 800));
-  const aUploadArrow = easeOut(prog(currentTimeMs, A_UPLOAD_START - 300, A_UPLOAD_START));
-  const aUploadProg = easeInOut(prog(currentTimeMs, A_UPLOAD_START, A_UPLOAD_END));
-  const aCopyOpa = easeOut(prog(currentTimeMs, A_UPLOAD_END - 500, A_UPLOAD_END));
-  const aTransArrow = easeOut(prog(currentTimeMs, A_TRANSCODE_START - 300, A_TRANSCODE_START));
-  const aTransActive = currentTimeMs >= A_TRANSCODE_START && currentTimeMs < A_TRANSCODE_END;
-  const aTransBoxOpa = easeOut(prog(currentTimeMs, A_TRANSCODE_START - 500, A_TRANSCODE_START));
-  const aVariantOpa = easeOut(prog(currentTimeMs, A_TRANSCODE_END - 300, A_TRANSCODE_END + 500));
-  const aServeArrow = easeOut(prog(currentTimeMs, A_PLAY - 600, A_PLAY - 200));
-  const aPlayerOpa = easeOut(prog(currentTimeMs, A_PLAY - 400, A_PLAY));
-  const aPlaying = easeOut(prog(currentTimeMs, A_PLAY, A_PLAY + 600));
 
-  // Upload particles
+  // "You have a video file."
+  const aBarOpa = easeOut(prog(currentTimeMs, A_IN, A_IN + 1000));
+
+  // "You upload the entire thing."
+  const aUploadArrow = easeOut(prog(currentTimeMs, A_UPLOAD_START - 500, A_UPLOAD_START));
   const aUploadParticles = currentTimeMs >= A_UPLOAD_START && currentTimeMs < A_UPLOAD_END;
   const aUploadTime = currentTimeMs - A_UPLOAD_START;
 
-  // ── Act 2: Editframe JIT ──
-  const bBarOpa = easeOut(prog(currentTimeMs, B_IN, B_IN + 800));
-  const bHighlightOn = currentTimeMs >= B_HIGHLIGHT;
-  const bFetchArrow = easeOut(prog(currentTimeMs, B_FETCH_START - 300, B_FETCH_START));
-  const bSegOpa = easeOut(prog(currentTimeMs, B_FETCH_START, B_FETCH_START + 300));
-  const bSegTravel = easeInOut(prog(currentTimeMs, B_FETCH_START, B_FETCH_END));
-  const bTransBoxOpa = easeOut(prog(currentTimeMs, B_TRANSCODE_START - 400, B_TRANSCODE_START));
-  const bTransActive = currentTimeMs >= B_TRANSCODE_START && currentTimeMs < B_TRANSCODE_END;
-  const bOutputOpa = easeOut(prog(currentTimeMs, B_TRANSCODE_END - 200, B_TRANSCODE_END + 200));
-  const bOutputTravel = easeInOut(prog(currentTimeMs, B_TRANSCODE_END, B_PLAY));
-  const bServeArrow = easeOut(prog(currentTimeMs, B_TRANSCODE_END - 200, B_TRANSCODE_END));
-  const bPlayerOpa = easeOut(prog(currentTimeMs, B_IN + 300, B_IN + 800));
-  const bPlaying = easeOut(prog(currentTimeMs, B_PLAY, B_PLAY + 400));
+  // Server copy materializes as upload completes
+  const aCopyOpa = easeOut(prog(currentTimeMs, A_UPLOAD_END - 800, A_UPLOAD_END));
 
-  // "Next" segment animation
-  const bNext1Opa = easeOut(prog(currentTimeMs, B_NEXT_START, B_NEXT_START + 300));
+  // "Then they transcode it."
+  const aTransArrow = easeOut(prog(currentTimeMs, A_TRANSCODE_START - 600, A_TRANSCODE_START));
+  const aTransBoxOpa = easeOut(prog(currentTimeMs, A_TRANSCODE_START - 800, A_TRANSCODE_START));
+  const aTransActive = currentTimeMs >= A_TRANSCODE_START && currentTimeMs < A_TRANSCODE_END;
+
+  // "1080p. 720p. 480p." — staggered, each lands individually
+  const aVar1080 = easeOut(prog(currentTimeMs, A_VARIANTS_START, A_VARIANTS_START + 600));
+  const aVar720 = easeOut(prog(currentTimeMs, A_VARIANTS_START + 800, A_VARIANTS_START + 1400));
+  const aVar480 = easeOut(prog(currentTimeMs, A_VARIANTS_START + 1600, A_VARIANTS_START + 2200));
+
+  // "Only now can someone press play."
+  const aServeArrow = easeOut(prog(currentTimeMs, A_PLAY - 800, A_PLAY - 200));
+  const aPlayerOpa = easeOut(prog(currentTimeMs, A_PLAY - 600, A_PLAY));
+  const aPlaying = easeOut(prog(currentTimeMs, A_PLAY, A_PLAY + 800));
+
+  // ── Act 2: Editframe JIT ──
+
+  // "Same file. But it stays on your server."
+  const bBarOpa = easeOut(prog(currentTimeMs, B_IN, B_IN + 1000));
+
+  // "When the player needs a frame..."
+  const bPlayerOpa = easeOut(prog(currentTimeMs, B_PLAYER_IN, B_PLAYER_IN + 800));
+
+  // "...it highlights just the bytes it needs."
+  const bHighlightOn = currentTimeMs >= B_HIGHLIGHT;
+
+  // "A byte-range request fetches just that slice."
+  const bFetchArrow = easeOut(prog(currentTimeMs, B_FETCH_START - 500, B_FETCH_START));
+  const bSegOpa = easeOut(prog(currentTimeMs, B_FETCH_START, B_FETCH_START + 400));
+  const bSegTravel = easeInOut(prog(currentTimeMs, B_FETCH_START, B_FETCH_END));
+
+  // "Same transcode — but just this piece."
+  const bTransBoxOpa = easeOut(prog(currentTimeMs, B_TRANSCODE_START - 600, B_TRANSCODE_START));
+  const bTransActive = currentTimeMs >= B_TRANSCODE_START && currentTimeMs < B_TRANSCODE_END;
+
+  // Output segment streams to player
+  const bOutputOpa = easeOut(prog(currentTimeMs, B_TRANSCODE_END - 300, B_TRANSCODE_END + 300));
+  const bOutputTravel = easeInOut(prog(currentTimeMs, B_TRANSCODE_END, B_PLAY - 200));
+  const bServeArrow = easeOut(prog(currentTimeMs, B_TRANSCODE_END - 300, B_TRANSCODE_END));
+
+  // "Already playing."
+  const bPlaying = easeOut(prog(currentTimeMs, B_PLAY, B_PLAY + 600));
+
+  // "Next segment. Different bitrate."
+  const bNext1Opa = easeOut(prog(currentTimeMs, B_NEXT_START, B_NEXT_START + 400));
   const bNext1Travel = easeInOut(prog(currentTimeMs, B_NEXT_START, B_NEXT_END));
-  const bNext2Opa = easeOut(prog(currentTimeMs, B_NEXT_START + 400, B_NEXT_START + 700));
-  const bNext2Travel = easeInOut(prog(currentTimeMs, B_NEXT_START + 400, B_NEXT_END + 400));
+  const bNext2Opa = easeOut(prog(currentTimeMs, B_NEXT_START + 1000, B_NEXT_START + 1400));
+  const bNext2Travel = easeInOut(prog(currentTimeMs, B_NEXT_START + 1000, B_NEXT_END + 500));
 
   // Particles
   const bParticlesActive = currentTimeMs >= B_FETCH_START && currentTimeMs < B_END;
@@ -594,11 +651,11 @@ function Scene({ currentTimeMs }: { currentTimeMs: number }) {
           <Arrow opacity={aTransArrow * tradFadeIn} position={[0, -0.15, 0.1]} color={COL_MACHINE} />
           <TranscodeBox opacity={aTransBoxOpa * tradFadeIn} active={aTransActive} scale={1} position={[0, -0.8, 0]} />
 
-          {/* Output variants */}
+          {/* Output variants — staggered, each lands individually */}
           <group position={[0, -1.6, 0]}>
-            <VariantBar opacity={aVariantOpa * tradFadeIn} color={COL_1080} width={BAR_W * 0.95} position={[0, 0.25, 0]} label="1080p" />
-            <VariantBar opacity={aVariantOpa * tradFadeIn * 0.85} color={COL_720} width={BAR_W * 0.7} position={[0, 0, 0]} label="720p" />
-            <VariantBar opacity={aVariantOpa * tradFadeIn * 0.7} color={COL_480} width={BAR_W * 0.45} position={[0, -0.25, 0]} label="480p" />
+            <VariantBar opacity={aVar1080 * tradFadeIn} color={COL_1080} width={BAR_W * 0.95} position={[0, 0.25, 0]} label="1080p" />
+            <VariantBar opacity={aVar720 * tradFadeIn} color={COL_720} width={BAR_W * 0.7} position={[0, 0, 0]} label="720p" />
+            <VariantBar opacity={aVar480 * tradFadeIn} color={COL_480} width={BAR_W * 0.45} position={[0, -0.25, 0]} label="480p" />
           </group>
 
           {/* ↓ Serve */}
