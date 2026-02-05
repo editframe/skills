@@ -102,10 +102,23 @@ For element `{{ELEMENT}}`:
 ### Structural Fixes
 
 **S1 Fix (Too Deep):**
-- Flatten folder structure by removing intermediate category folders
-- Move content files up to parent directory
-- Use frontmatter `docType: tutorial|howto|explanation|reference` for categorization
-- Update any navigation config to group by frontmatter instead of folder
+
+⚠️ **ESCALATE TO USER** - This requires code changes, not just doc edits.
+
+The navigation builder (`telecine/services/web/app/utils/fs.server.ts`) is folder-based.
+To flatten, you must:
+
+1. **First:** Modify `buildDocMenuItem()` to support frontmatter-based grouping
+2. **Then:** Restructure doc files and add `docType` frontmatter
+3. **Choose strategy:** Element-centric, doc-type-centric, or hybrid (see SKILL.md)
+
+Generate a concrete remediation plan showing:
+- Which code files need changes
+- What the new folder structure should look like
+- Sample frontmatter for affected files
+- Expected navigation output
+
+Do NOT attempt to restructure docs without the code changes - it will break navigation.
 
 **S2 Fix (Taxonomy-Only):**
 - Option A: Add substantive overview content (when to use, how sections relate, key concepts)

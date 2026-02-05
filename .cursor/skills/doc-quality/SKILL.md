@@ -299,14 +299,63 @@ Only evaluate AFTER all requirements pass. Each dimension has **concrete, measur
    - Prioritize dimensions scoring 0
 
 ### Fix: Navigation Too Deep (S1)
-1. Identify paths at depth 4+
-2. Flatten by merging category folders with content
-3. Use frontmatter `docType` field for categorization instead of folders
-4. Update navigation builder to group by frontmatter, not folder structure
+
+**This requires code changes, not just doc restructuring.**
+
+The navigation is built from folder structure in `telecine/services/web/app/utils/fs.server.ts`. 
+To flatten docs, you must:
+
+1. **Change the navigation builder** to support frontmatter-based grouping:
+   - Modify `buildDocMenuItem()` to read `docType` from frontmatter
+   - Group items by `docType` instead of by folder
+   - Keep folders for organization but don't expose them as nav levels
+
+2. **Restructure docs files** (only after code change):
+   - Move content files up, eliminating intermediate folders
+   - Add `docType: tutorial|howto|explanation|reference` to frontmatter
+   - Add `order: N` to frontmatter for sorting within groups
+
+3. **Choose a flattening strategy:**
+
+   **Option A: Element-centric (recommended for API docs)**
+   ```
+   /elements/video.mdx          ← Single page with tabs/sections
+   /elements/audio.mdx
+   /elements/captions.mdx
+   ```
+   Navigation: Elements → Video (one level)
+
+   **Option B: Doc-type-centric (recommended for learning paths)**
+   ```
+   /tutorials/video.mdx
+   /tutorials/audio.mdx
+   /concepts/jit-transcoding.mdx
+   /concepts/time-coordinates.mdx
+   /reference/video.mdx
+   ```
+   Navigation: Tutorials → Video Tutorial (one level)
+
+   **Option C: Hybrid with frontmatter grouping**
+   ```
+   /elements/video/tutorial.mdx        (docType: tutorial)
+   /elements/video/visual-effects.mdx  (docType: howto)
+   /elements/video/jit-transcoding.mdx (docType: explanation)
+   /elements/video/reference.mdx       (docType: reference)
+   ```
+   Navigation: Elements → Video → [grouped by docType from frontmatter]
+   Max depth: 3 (element → page, with visual grouping by docType)
+
+**Key insight:** Don't nest by BOTH element AND doc-type as folders. Either:
+- Organize by element (all doc types in one page/tabs), OR
+- Organize by doc-type (all elements within each type), OR
+- Flat files with frontmatter controlling visual grouping
 
 ### Fix: Taxonomy-Only Folders (S2)
-1. Add substantive overview content to empty index pages, OR
-2. Eliminate the folder level entirely by flattening
+
+If folder exists only to group children:
+
+1. **Preferred:** Eliminate the folder, move content up one level
+2. **Alternative:** Add substantive overview content (>200 words explaining when/why to use this section)
 
 ### Fix: Missing Properties (P1)
 1. Add property to documentation
@@ -327,9 +376,16 @@ Only evaluate AFTER all requirements pass. Each dimension has **concrete, measur
 - Quality score ≥ 4/6
 
 **STOP and escalate when:**
+- S1 fails (navigation too deep) → Requires code changes to navigation builder
+- S2 fails with many violations → May require restructuring approach decision
 - Source code unclear
-- Structural changes require navigation system changes
-- Changes would require code changes
+- Changes would require application code changes
+
+**When escalating S1/S2 violations:**
+1. Report the violations with concrete measurements
+2. Propose a flattening strategy (element-centric, doc-type-centric, or hybrid)
+3. List specific code files that need modification
+4. Do NOT attempt to restructure docs without navigation code changes
 
 ---
 
