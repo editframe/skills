@@ -491,32 +491,43 @@ function FanOutDiagram() {
           />
 
           {/* ── Timed text overlays ──────────────────────────────── */}
-          {/* Phase 1: introduce the composition (0.4s–2.2s) */}
-          <div className="ef-caption" style={{ top: "6%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 600ms 400ms backwards, efCaptionOut 500ms 2200ms forwards" }}>
-            Your composition
+
+          {/* Phase 1: introduce the composition (0.4s–2s) */}
+          <div className="ef-caption" style={{ top: "6%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 600ms 400ms backwards, efCaptionOut 500ms 2000ms forwards" }}>
+            A 60-second video composition
           </div>
 
-          {/* Phase 2: the cut (3.6s–5.5s, after camera has pulled back) */}
-          <div className="ef-caption" style={{ top: "6%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 500ms 3600ms backwards, efCaptionOut 500ms 5500ms forwards" }}>
-            Split into fragments
+          {/* Phase 2: set up the question (2.5s–3.4s) */}
+          <div className="ef-caption" style={{ top: "6%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 500ms 2500ms backwards, efCaptionOut 500ms 3400ms forwards" }}>
+            How do you render it?
           </div>
 
-          {/* Phase 3: side labels (6s+, persistent) */}
-          <div className="ef-caption ef-caption-dim" style={{ top: "6%", left: "18%", animation: "efCaptionIn 500ms 6000ms backwards" }}>
-            Sequential
+          {/* Phase 3: label the two approaches (3.8s+, persistent) */}
+          <div className="ef-caption ef-caption-dim" style={{ top: "4%", left: "12%", animation: "efCaptionIn 500ms 3800ms backwards" }}>
+            Traditional
           </div>
-          <div className="ef-caption" style={{ top: "6%", left: "68%", animation: "efCaptionIn 500ms 6000ms backwards" }}>
-            Parallel
-          </div>
-
-          {/* Phase 4: processing (8s–10.5s) */}
-          <div className="ef-caption ef-caption-sm" style={{ bottom: "8%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 500ms 8000ms backwards, efCaptionOut 500ms 10500ms forwards" }}>
-            All workers process simultaneously
+          <div className="ef-caption ef-caption-sm" style={{ top: "10%", left: "12%", animation: "efCaptionIn 400ms 4200ms backwards" }}>
+            One worker, start to finish
           </div>
 
-          {/* Phase 5: punchline (12s+) */}
-          <div className="ef-caption ef-caption-hero" style={{ bottom: "10%", right: "8%", animation: "efCaptionIn 600ms 12000ms backwards" }}>
+          <div className="ef-caption" style={{ top: "4%", right: "12%", animation: "efCaptionIn 500ms 3800ms backwards" }}>
+            Editframe
+          </div>
+          <div className="ef-caption ef-caption-sm" style={{ top: "10%", right: "12%", animation: "efCaptionIn 400ms 4200ms backwards" }}>
+            Split into fragments, render in parallel
+          </div>
+
+          {/* Phase 4: narrate what's happening (8s–10.5s) */}
+          <div className="ef-caption ef-caption-sm" style={{ bottom: "6%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 500ms 8500ms backwards, efCaptionOut 500ms 10500ms forwards" }}>
+            Every worker processes its fragment at the same time
+          </div>
+
+          {/* Phase 5: the punchline (12s+) */}
+          <div className="ef-caption ef-caption-hero" style={{ bottom: "12%", right: "10%", animation: "efCaptionIn 600ms 12000ms backwards" }}>
             {"4\u00d7 faster"}
+          </div>
+          <div className="ef-caption ef-caption-sm" style={{ bottom: "6%", right: "10%", animation: "efCaptionIn 400ms 12800ms backwards" }}>
+            Same quality. A fraction of the time.
           </div>
         </Timegroup>
       </Preview>
