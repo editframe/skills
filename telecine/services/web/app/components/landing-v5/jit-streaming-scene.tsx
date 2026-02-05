@@ -120,9 +120,10 @@ function MediaCard({ opacity, emissiveIntensity, position }: {
 }
 
 /** Upload funnel — cone that narrows, representing bandwidth bottleneck */
-function UploadFunnel({ opacity, active, position }: {
+function UploadFunnel({ opacity, active, currentTimeMs, position }: {
   opacity: number;
   active: boolean;
+  currentTimeMs: number;
   position: [number, number, number];
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -133,9 +134,7 @@ function UploadFunnel({ opacity, active, position }: {
     mat.opacity = opacity;
     mat.emissiveIntensity = active ? 0.3 : 0.05;
     meshRef.current.castShadow = opacity > 0.1;
-    if (active) {
-      meshRef.current.rotation.y += 0.003;
-    }
+    meshRef.current.rotation.y = active ? currentTimeMs * 0.0003 : 0;
   });
 
   return (
@@ -272,26 +271,28 @@ function StorageSilo({ opacity, fillLevel, position }: {
 
 /** JIT Prism — octahedron that refracts incoming data into multiple quality streams.
     Represents instant, on-demand transformation without storage. */
-function JITPrism({ opacity, active, position }: {
+function JITPrism({ opacity, active, currentTimeMs, position }: {
   opacity: number;
   active: boolean;
+  currentTimeMs: number;
   position: [number, number, number];
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const glowRef = useRef<THREE.PointLight>(null);
 
-  useFrame(({ clock }) => {
+  useFrame(() => {
     if (!meshRef.current) return;
     const mat = meshRef.current.material as THREE.MeshPhysicalMaterial;
     mat.opacity = opacity;
     meshRef.current.castShadow = opacity > 0.1;
 
     if (active) {
-      mat.emissiveIntensity = 0.5 + Math.sin(clock.getElapsedTime() * 3) * 0.15;
-      meshRef.current.rotation.y += 0.008;
+      mat.emissiveIntensity = 0.5 + Math.sin(currentTimeMs * 0.003) * 0.15;
+      meshRef.current.rotation.y = currentTimeMs * 0.0008;
       if (glowRef.current) glowRef.current.intensity = 5;
     } else {
       mat.emissiveIntensity = opacity * 0.2;
+      meshRef.current.rotation.y = currentTimeMs * 0.0002;
       if (glowRef.current) glowRef.current.intensity = opacity * 2;
     }
   });
@@ -703,7 +704,7 @@ function Scene({ currentTimeMs }: { currentTimeMs: number }) {
       <MediaCard opacity={tradMediaOpa * 0.6} emissiveIntensity={0.1} position={[TRAD_X, 0.3, 0]} />
 
       {/* Upload funnel */}
-      <UploadFunnel opacity={tradUploadOpa} active={tradUploadProg > 0 && tradUploadProg < 1} position={[TRAD_X, 0, PIPELINE_Z * 0.5]} />
+      <UploadFunnel opacity={tradUploadOpa} active={tradUploadProg > 0 && tradUploadProg < 1} currentTimeMs={currentTimeMs} position={[TRAD_X, 0, PIPELINE_Z * 0.5]} />
 
       {/* Ingest machine */}
       <IngestMachine opacity={tradIngestOpa} processing={tradIngestProg} position={[TRAD_X, 0, PIPELINE_Z]} />
@@ -738,7 +739,7 @@ function Scene({ currentTimeMs }: { currentTimeMs: number }) {
       <MediaCard opacity={efMediaOpa} emissiveIntensity={0.35} position={[EF_X, 0.3, 0]} />
 
       {/* JIT Prism */}
-      <JITPrism opacity={efPrismOpa} active={efJitActive} position={[EF_X, 0, PIPELINE_Z * 0.6]} />
+      <JITPrism opacity={efPrismOpa} active={efJitActive} currentTimeMs={currentTimeMs} position={[EF_X, 0, PIPELINE_Z * 0.6]} />
 
       {/* Quality ribbons — three bitrate streams fanning out from prism */}
       <QualityRibbon
