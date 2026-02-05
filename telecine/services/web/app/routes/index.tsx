@@ -293,18 +293,18 @@ export default function IndexPage() {
                   <span className="ml-2 opacity-50">infrastructure.ts</span>
                 </div>
                 <div className="space-y-2 opacity-80">
-                  <div className="text-green-400">// Private transcription pipeline</div>
-                  <div>const transcript = await transcribe(audioFile, {</div>
-                  <div className="pl-4">model: "whisper-large-v3",</div>
-                  <div className="pl-4">privacy: "private-cloud"</div>
-                  <div>});</div>
+                  <div className="text-green-400">{'// Private transcription pipeline'}</div>
+                  <div>{'const transcript = await transcribe(audioFile, {'}</div>
+                  <div className="pl-4">{'model: "whisper-large-v3",'}</div>
+                  <div className="pl-4">{'privacy: "private-cloud"'}</div>
+                  <div>{'});'}</div>
                   <br />
-                  <div className="text-green-400">// Telemetry trace</div>
-                  <div>trace.span("render_frame", {</div>
-                  <div className="pl-4">frame: 142,</div>
-                  <div className="pl-4">seek_ms: 12.4,</div>
-                  <div className="pl-4">render_ms: 45.1</div>
-                  <div>});</div>
+                  <div className="text-green-400">{'// Telemetry trace'}</div>
+                  <div>{'trace.span("render_frame", {'}</div>
+                  <div className="pl-4">{'frame: 142,'}</div>
+                  <div className="pl-4">{'seek_ms: 12.4,'}</div>
+                  <div className="pl-4">{'render_ms: 45.1'}</div>
+                  <div>{'});'}</div>
                 </div>
               </div>
             </div>
