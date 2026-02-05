@@ -15,7 +15,6 @@ const COL_VIDEO = 0x1565c0;
 const COL_AUDIO = 0x00897b;
 const COL_TEXT = 0xffb300;
 const COL_BLUE_LT = 0x42a5f5;
-const COL_NODE = 0x222222;
 const COL_DONE = 0x2e7d32;
 
 /* ━━ Sizing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
@@ -41,10 +40,12 @@ const LANE_SPREAD = 0.85;
 
 /* ━━ Phase timing (ms) — paced for explainer narration ━━━━━━━━━━━━ */
 const P1_END = 2500;       // close-up: timeline assembled
-const P2_START = 2500;     // duplicate + laser split
-const P2_END = 5000;
-const P3_START = 4500;     // camera pull-back (overlaps P2 end)
-const P3_END = 7500;       // wide shot, workers visible
+const P_PULLBACK_START = 2000; // camera pull-back begins BEFORE split
+const P_PULLBACK_END = 4000;   // camera reaches wide shot
+const P2_START = 3500;     // duplicate + laser split (camera already wide)
+const P2_END = 6000;
+const P3_START = 5500;     // workers reveal
+const P3_END = 7500;       // workers fully visible
 const P4_START = 7500;     // fly to workers + processing
 const P4_PAR_DONE = 11000; // parallel finishes
 const P5_START = 11500;    // orbit toward parallel winner
@@ -53,9 +54,9 @@ const P5_END = 18000;
 /* ━━ Camera key-poses ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 const CAM_CLOSE_POS = new THREE.Vector3(0, 1.2, 3.8);
 const CAM_CLOSE_TAR = new THREE.Vector3(0, 0.35, 0);
-const CAM_WIDE_POS = new THREE.Vector3(0, 3.8, 8.5);
+const CAM_WIDE_POS = new THREE.Vector3(0, 3.5, 9.5);
 const CAM_WIDE_TAR = new THREE.Vector3(0, -0.1, 1.0);
-const CAM_WIN_POS = new THREE.Vector3(1.8, 3.2, 7);
+const CAM_WIN_POS = new THREE.Vector3(1.8, 3.0, 8);
 const CAM_WIN_TAR = new THREE.Vector3(1.5, 0, 1.8);
 
 /* ━━ Layout positions ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
@@ -70,38 +71,38 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.1;
+  renderer.toneMappingExposure = 1.4;
 
   const scene = new THREE.Scene();
-  // Dark blue-gray background with fog for depth/horizon feel
-  const BG_COLOR = 0x181c28;
+  // Medium blue-gray background with fog for depth/horizon feel
+  const BG_COLOR = 0x252a3a;
   scene.background = new THREE.Color(BG_COLOR);
-  scene.fog = new THREE.Fog(BG_COLOR, 10, 28);
+  scene.fog = new THREE.Fog(BG_COLOR, 12, 30);
 
   const camera = new THREE.PerspectiveCamera(50, 2, 0.1, 100);
   const camPos = new THREE.Vector3();
   const camTar = new THREE.Vector3();
 
-  /* ── Lighting (brighter overall) ───────────────────────────────── */
-  scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-  const keyLight = new THREE.DirectionalLight(0xffffff, 1.1);
+  /* ── Lighting (bright, clear visibility) ─────────────────────── */
+  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+  const keyLight = new THREE.DirectionalLight(0xffffff, 1.3);
   keyLight.position.set(3, 7, 5);
   keyLight.castShadow = true;
   keyLight.shadow.mapSize.set(1024, 1024);
   const sc = keyLight.shadow.camera;
   sc.left = -8; sc.right = 8; sc.top = 6; sc.bottom = -6; sc.near = 0.5; sc.far = 25;
   scene.add(keyLight);
-  const fillLight = new THREE.DirectionalLight(0x88aaff, 0.35);
+  const fillLight = new THREE.DirectionalLight(0x99bbff, 0.45);
   fillLight.position.set(-3, 4, -2);
   scene.add(fillLight);
-  const rimLight = new THREE.PointLight(COL_BLUE_LT, 0.6, 20);
+  const rimLight = new THREE.PointLight(COL_BLUE_LT, 0.7, 20);
   rimLight.position.set(0, 2, -3);
   scene.add(rimLight);
 
   /* ── Floor — lighter, fades into fog/horizon ───────────────────── */
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(40, 30),
-    new THREE.MeshStandardMaterial({ color: 0x1e2030, roughness: 0.85, metalness: 0.05 }),
+    new THREE.MeshStandardMaterial({ color: 0x2a2e40, roughness: 0.8, metalness: 0.05 }),
   );
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = -0.6;
@@ -114,7 +115,7 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
     // Container backdrop
     const bg = new THREE.Mesh(
       new THREE.BoxGeometry(SEG_W, 0.32, TRACK_D + 0.02),
-      new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.9, transparent: true, opacity: 0 }),
+      new THREE.MeshStandardMaterial({ color: 0x2a2a35, roughness: 0.9, transparent: true, opacity: 0 }),
     );
     bg.position.set(xOffset, 0.02, 0);
     bg.receiveShadow = true;
@@ -200,7 +201,7 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
 
   function makeNode(x: number, z: number) {
     const mat = new THREE.MeshStandardMaterial({
-      color: COL_NODE, roughness: 0.5, metalness: 0.6,
+      color: 0x333844, roughness: 0.5, metalness: 0.5,
       transparent: true, opacity: 0,
       emissive: new THREE.Color(COL_BLUE_LT), emissiveIntensity: 0,
     });
@@ -282,8 +283,8 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
   /* ━━ UPDATE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
   function update(timeMs: number, _durationMs: number) {
 
-    // ── CAMERA ────────────────────────────────────────────────────
-    const camPullBack = easeInOut(prog(timeMs, P3_START, P3_END));
+    // ── CAMERA — pull back BEFORE split so everything stays in frame
+    const camPullBack = easeInOut(prog(timeMs, P_PULLBACK_START, P_PULLBACK_END));
     const camOrbit = easeOut(prog(timeMs, P5_START, P5_END));
 
     // Blend: close → wide → orbit toward parallel winner

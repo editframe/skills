@@ -413,7 +413,7 @@ function FanOutDiagram() {
     return (
       <div
         className="w-full flex items-center justify-center"
-        style={{ aspectRatio: "16/10", background: "#181c28" }}
+        style={{ aspectRatio: "16/10", background: "#252a3a" }}
       >
         <span className="text-xs text-[var(--warm-gray)]">Loading\u2026</span>
       </div>
@@ -427,7 +427,7 @@ function FanOutDiagram() {
           mode="fixed"
           duration={SCENE_DUR}
           className="relative w-full overflow-hidden"
-          style={{ aspectRatio: "16/10", background: "#181c28" }}
+          style={{ aspectRatio: "16/10", background: "#252a3a" }}
         >
           <canvas
             ref={canvasRef}
@@ -441,30 +441,30 @@ function FanOutDiagram() {
           />
 
           {/* ── Timed text overlays ──────────────────────────────── */}
-          {/* Phase 1: introduce the composition */}
+          {/* Phase 1: introduce the composition (0.4s–2.2s) */}
           <div className="ef-caption" style={{ top: "6%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 600ms 400ms backwards, efCaptionOut 500ms 2200ms forwards" }}>
             Your composition
           </div>
 
-          {/* Phase 2: the cut */}
-          <div className="ef-caption" style={{ top: "6%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 500ms 2600ms backwards, efCaptionOut 500ms 4200ms forwards" }}>
+          {/* Phase 2: the cut (3.6s–5.5s, after camera has pulled back) */}
+          <div className="ef-caption" style={{ top: "6%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 500ms 3600ms backwards, efCaptionOut 500ms 5500ms forwards" }}>
             Split into fragments
           </div>
 
-          {/* Phase 3: side labels */}
-          <div className="ef-caption ef-caption-dim" style={{ top: "6%", left: "18%", animation: "efCaptionIn 500ms 5500ms backwards" }}>
+          {/* Phase 3: side labels (6s+, persistent) */}
+          <div className="ef-caption ef-caption-dim" style={{ top: "6%", left: "18%", animation: "efCaptionIn 500ms 6000ms backwards" }}>
             Sequential
           </div>
-          <div className="ef-caption" style={{ top: "6%", left: "68%", animation: "efCaptionIn 500ms 5500ms backwards" }}>
+          <div className="ef-caption" style={{ top: "6%", left: "68%", animation: "efCaptionIn 500ms 6000ms backwards" }}>
             Parallel
           </div>
 
-          {/* Phase 4: processing */}
+          {/* Phase 4: processing (8s–10.5s) */}
           <div className="ef-caption ef-caption-sm" style={{ bottom: "8%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 500ms 8000ms backwards, efCaptionOut 500ms 10500ms forwards" }}>
             All workers process simultaneously
           </div>
 
-          {/* Phase 5: punchline */}
+          {/* Phase 5: punchline (12s+) */}
           <div className="ef-caption ef-caption-hero" style={{ bottom: "10%", right: "8%", animation: "efCaptionIn 600ms 12000ms backwards" }}>
             {"4\u00d7 faster"}
           </div>
