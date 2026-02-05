@@ -6,13 +6,21 @@ Clean, focused test suite for Editframe video rendering with clear separation of
 
 ```
 tests/
-├── core/                       # Basic functionality (fast, runs every commit)
+├── smoke/                     # Smoke tests (quick validation)
+│   ├── elements.smoke.test.ts
+│   ├── audio-quality.smoke.test.ts
+│   ├── mp4-structure.smoke.test.ts
+│   ├── core.smoke.test.ts
+│   ├── cache-benefit.test.ts
+│   └── timing-analysis.test.ts
+├── core/                      # Basic functionality (fast, runs every commit)
 │   ├── elements/              # Individual element tests
 │   │   ├── ef-timegroup.test.ts
 │   │   ├── ef-image.test.ts
 │   │   ├── ef-text.test.ts
 │   │   ├── css-animations.test.ts
 │   │   ├── ef-audio.test.ts
+│   │   ├── ef-video.test.ts
 │   │   └── ef-waveform.test.ts
 │   ├── mp4-structure.test.ts  # MP4 format validation
 │   └── edge-cases.test.ts     # Edge case handling
@@ -49,16 +57,29 @@ npm test tests/
 npm test tests/core/
 ```
 
+### Smoke Tests Only (Fastest)
+
+```bash
+npm test tests/smoke/
+```
+
 ### Specific Test File
 
 ```bash
 npm test tests/core/elements/ef-timegroup.test.ts
+npm test tests/smoke/elements.smoke.test.ts
 ```
 
 ### Visual Regression Only
 
 ```bash
 npm test tests/visual/
+```
+
+### Audio Tests Only
+
+```bash
+npm test tests/audio/
 ```
 
 ### Performance Benchmarks
@@ -75,12 +96,26 @@ npm test tests/experimental/
 
 ## Test Categories
 
+### Smoke Tests (<30 seconds total)
+
+**Purpose:** Quick validation of critical functionality. Fastest test suite.
+
+**Tests:**
+- Elements smoke test (elements.smoke.test.ts)
+- Audio quality smoke test (audio-quality.smoke.test.ts)
+- MP4 structure smoke test (mp4-structure.smoke.test.ts)
+- Core smoke test (core.smoke.test.ts)
+- Cache benefit analysis (cache-benefit.test.ts)
+- Timing analysis (timing-analysis.test.ts)
+
+**When they fail:** Critical rendering functionality is broken.
+
 ### Core Tests (<30 seconds total)
 
 **Purpose:** Validate basic functionality. Fast, reliable, no flakes.
 
 **Tests:**
-- Element rendering (ef-timegroup, ef-image, ef-text, ef-audio, ef-waveform)
+- Element rendering (ef-timegroup, ef-image, ef-text, ef-audio, ef-video, ef-waveform)
 - CSS animations with proper fill-mode
 - MP4 structure validation
 - Edge cases (short/long durations, special characters)
@@ -327,11 +362,17 @@ await compareToBaseline(result.videoPath, "my-test", {
 ### GitHub Actions
 
 ```yaml
+- name: Run smoke tests
+  run: cd telecine && npm test tests/smoke/
+
 - name: Run core tests
   run: cd telecine && npm test tests/core/
 
 - name: Run visual regression
   run: cd telecine && npm test tests/visual/
+
+- name: Run audio tests
+  run: cd telecine && npm test tests/audio/
 
 - name: Upload test artifacts
   if: failure()
@@ -356,13 +397,14 @@ await compareToBaseline(result.videoPath, "my-test", {
 
 ## Performance Expectations
 
+- **Smoke tests:** <30 seconds
 - **Core tests:** <30 seconds
 - **Visual regression:** ~2 minutes
 - **Audio tests:** ~1 minute
 - **Performance benchmarks:** ~5 minutes (on-demand)
 - **Experimental tests:** Variable (non-blocking)
 
-**Total CI time:** ~3 minutes (core + visual + audio)
+**Total CI time:** ~3 minutes (smoke + core + visual + audio)
 
 ## Key Principles
 
