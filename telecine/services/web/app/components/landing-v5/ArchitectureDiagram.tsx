@@ -2,7 +2,6 @@ import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import {
   Preview,
   Timegroup,
-  Text as EFText,
   Scrubber,
   TogglePlay,
   TimeDisplay,
@@ -329,235 +328,147 @@ function JitDiagram() {
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   5. PARALLEL FRAGMENTS — an actual Editframe composition that
-   sequences the reveal: timeline → split → workers → reassemble →
-   time-comparison punchline.  Scrubable.  Eating our own dogfood.
+   5. PARALLEL FRAGMENTS — Three.js 3D visualization driven by an
+   Editframe composition via addFrameTask.  Film strip fractures
+   into illuminated blocks, parallel particle processing, reassembly,
+   and a time-comparison punchline.  Fully scrubable.
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
-const COMP_KEYFRAMES = `
-  @keyframes efFadeIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-  }
-  @keyframes efSlideUp {
-    from { opacity: 0; transform: translateY(10px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes efGrowRight {
-    from { transform: scaleX(0); opacity: 0.6; }
-    to   { transform: scaleX(1); opacity: 1; }
-  }
-`;
-
-const FRAGS = [
-  { range: "0\u201315s", left: "6%",  opa: 1 },
-  { range: "15\u201330s", left: "28%", opa: 0.85 },
-  { range: "30\u201345s", left: "50%", opa: 0.7 },
-  { range: "45\u201360s", left: "72%", opa: 0.55 },
-] as const;
-
-const DUR = "10s";
+const SCENE_DUR = "10s";
 
 function FanOutDiagram() {
   const uid = useId();
   const rootId = `fanout-${uid}`;
   const [isClient, setIsClient] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => { setIsClient(true); }, []);
 
   useEffect(() => {
     if (!isClient) return;
-    const el = containerRef.current;
-    if (!el) return;
+    const container = containerRef.current;
+    const canvas = canvasRef.current;
+    if (!container || !canvas) return;
+
+    let sceneHandle: { update: (t: number, d: number) => void; resize: (w: number, h: number) => void; dispose: () => void } | null = null;
+    let ro: ResizeObserver | null = null;
+    let disposed = false;
+
+    const loadScene = async () => {
+      const { createParallelFragmentsScene } = await import("./parallel-fragments-scene");
+      if (disposed) return;
+
+      sceneHandle = createParallelFragmentsScene(canvas);
+
+      const { width, height } = container.getBoundingClientRect();
+      sceneHandle.resize(width, height);
+
+      const tg = container.querySelector("ef-timegroup") as HTMLElement & {
+        play?: () => void;
+        addFrameTask?: (cb: (info: { ownCurrentTimeMs: number; durationMs: number }) => void) => () => void;
+        ownCurrentTimeMs?: number;
+        durationMs?: number;
+      };
+
+      if (tg) {
+        sceneHandle.update(tg.ownCurrentTimeMs ?? 0, tg.durationMs ?? 10000);
+        tg.addFrameTask?.(({ ownCurrentTimeMs, durationMs }) => {
+          sceneHandle?.update(ownCurrentTimeMs, durationMs);
+        });
+      }
+
+      ro = new ResizeObserver(([entry]) => {
+        if (entry) {
+          const { width: w, height: h } = entry.contentRect;
+          sceneHandle?.resize(w, h);
+        }
+      });
+      ro.observe(container);
+    };
+
+    loadScene();
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry?.isIntersecting) {
-          const tg = el.querySelector("ef-timegroup") as HTMLElement & { play?: () => void };
-          if (tg?.play) tg.play();
-          observer.unobserve(el);
+          const tg = container.querySelector("ef-timegroup") as HTMLElement & { play?: () => void };
+          tg?.play?.();
+          observer.unobserve(container);
         }
       },
       { threshold: 0.3 },
     );
-    observer.observe(el);
-    return () => observer.disconnect();
+    observer.observe(container);
+
+    return () => {
+      disposed = true;
+      sceneHandle?.dispose();
+      ro?.disconnect();
+      observer.disconnect();
+    };
   }, [isClient]);
 
   if (!isClient) {
     return (
       <div
-        className="w-full flex items-center justify-center bg-[var(--card-bg)]"
-        style={{ aspectRatio: "19/14" }}
+        className="w-full flex items-center justify-center"
+        style={{ aspectRatio: "16/10", background: "#111" }}
       >
-        <span className="text-xs text-[var(--warm-gray)]">Loading composition\u2026</span>
+        <span className="text-xs text-[var(--warm-gray)]">Loading\u2026</span>
       </div>
     );
   }
 
-  const abs = (extra: Record<string, string | number>): React.CSSProperties => ({
-    position: "absolute" as const,
-    ...extra,
-  });
-
-  const seg = (i: number): React.CSSProperties => ({
-    ...abs({ top: "11%", left: FRAGS[i]!.left, width: "20%", height: "8%" }),
-    background: "var(--poster-blue)",
-    opacity: FRAGS[i]!.opa,
-    display: "flex", alignItems: "center", justifyContent: "center",
-    color: "white", fontSize: "11px", fontWeight: 700,
-    animation: `efSlideUp 350ms ${200 + i * 150}ms backwards`,
-  });
-
-  const worker = (i: number): React.CSSProperties => ({
-    ...abs({ top: "34%", left: FRAGS[i]!.left, width: "20%", height: "11%" }),
-    background: "var(--poster-blue)",
-    display: "flex", alignItems: "center", justifyContent: "center",
-    color: "white", fontSize: "11px", fontWeight: 700,
-    animation: `efSlideUp 350ms ${1800 + i * 150}ms backwards`,
-  });
-
   return (
     <div ref={containerRef}>
-      <style>{COMP_KEYFRAMES}</style>
-
       <Preview id={rootId} loop>
         <Timegroup
           mode="fixed"
-          duration={DUR}
+          duration={SCENE_DUR}
           className="relative w-full overflow-hidden"
-          style={{ aspectRatio: "19/14" }}
+          style={{ aspectRatio: "16/10", background: "#0a0a0a" }}
         >
-          {/* ── Phase 1: The composition timeline (0–1s) ────────── */}
-          <EFText
-            duration={DUR}
-            style={abs({
-              top: "3%", left: "6%",
-              fontSize: "11px", color: "var(--warm-gray)",
-              fontWeight: 600, letterSpacing: "0.05em",
-              animation: "efFadeIn 400ms 0ms backwards",
-            })}
-          >
-            60 second composition
-          </EFText>
-
-          {FRAGS.map((f, i) => (
-            <EFText key={f.range} duration={DUR} style={seg(i)}>
-              {f.range}
-            </EFText>
-          ))}
-
-          {/* ── Phase 2: Workers appear below segments (1.8–2.5s) ─ */}
-          {FRAGS.map((_, i) => (
-            <EFText key={`w${i}`} duration={DUR} style={worker(i)}>
-              {`Worker ${i + 1}`}
-            </EFText>
-          ))}
-
-          {/* ── Phase 3: Output bar reassembles (3.5s) ──────────── */}
-          <EFText
-            duration={DUR}
+          <canvas
+            ref={canvasRef}
             style={{
-              ...abs({ top: "56%", left: "6%", width: "88%", height: "8%" }),
-              background: "var(--poster-blue)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              color: "white", fontSize: "11px", fontWeight: 700,
-              letterSpacing: "0.06em",
-              animation: "efFadeIn 500ms 3500ms backwards",
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              display: "block",
+            }}
+          />
+
+          {/* HTML overlay labels that appear during Phase 5 (punchline) */}
+          <div
+            style={{
+              position: "absolute",
+              bottom: "8%",
+              left: "8%",
+              right: "8%",
+              pointerEvents: "none",
+              opacity: 0,
+              animation: "efOverlayFadeIn 600ms 7800ms backwards",
             }}
           >
-            Complete video
-          </EFText>
-
-          {/* ── Phase 4: The punchline (5–7s) ───────────────────── */}
-          <EFText
-            duration={DUR}
-            style={abs({
-              top: "72%", left: "6%",
-              fontSize: "11px", color: "var(--ink-black)",
-              fontWeight: 700, letterSpacing: "0.06em",
-              animation: "efFadeIn 400ms 5000ms backwards",
-            })}
-          >
-            Render time
-          </EFText>
-
-          {/* Sequential bar */}
-          <EFText
-            duration={DUR}
-            style={{
-              ...abs({ top: "79%", left: "6%", width: "88%", height: "5.5%" }),
-              background: "var(--warm-gray)", opacity: 0.15,
-              transformOrigin: "left",
-              animation: "efGrowRight 600ms 5500ms backwards",
-            }}
-          >
-            {"\u00A0"}
-          </EFText>
-          <EFText
-            duration={DUR}
-            style={abs({
-              top: "80%", left: "30%",
-              fontSize: "10px", color: "var(--warm-gray)",
-              fontWeight: 600,
-              animation: "efFadeIn 300ms 5800ms backwards",
-            })}
-          >
-            Sequential \u2014 one worker
-          </EFText>
-          <EFText
-            duration={DUR}
-            style={abs({
-              top: "80%", left: "88%",
-              fontSize: "11px", color: "var(--warm-gray)",
-              fontWeight: 700,
-              animation: "efFadeIn 300ms 5800ms backwards",
-            })}
-          >
-            60s
-          </EFText>
-
-          {/* Parallel bar */}
-          <EFText
-            duration={DUR}
-            style={{
-              ...abs({ top: "88%", left: "6%", width: "22%", height: "5.5%" }),
-              background: "var(--poster-blue)",
-              transformOrigin: "left",
-              animation: "efGrowRight 500ms 6500ms backwards",
-            }}
-          >
-            {"\u00A0"}
-          </EFText>
-          <EFText
-            duration={DUR}
-            style={abs({
-              top: "89%", left: "8%",
-              fontSize: "10px", color: "white",
-              fontWeight: 700,
-              animation: "efFadeIn 300ms 6800ms backwards",
-            })}
-          >
-            15s
-          </EFText>
-
-          {/* 4× faster callout */}
-          <EFText
-            duration={DUR}
-            style={abs({
-              top: "87%", left: "30%",
-              fontSize: "18px", color: "var(--poster-blue)",
-              fontWeight: 900,
-              animation: "efSlideUp 400ms 7000ms backwards",
-            })}
-          >
-            4\u00d7 faster
-          </EFText>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+              <div style={{ width: "100%", height: "10px", background: "rgba(107,107,107,0.3)", borderRadius: "2px" }} />
+              <span style={{ fontSize: "10px", color: "#999", fontWeight: 700, whiteSpace: "nowrap" }}>Sequential: 60s</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <div style={{ width: "25%", height: "12px", background: "#1565C0", borderRadius: "2px", boxShadow: "0 0 12px rgba(66,165,245,0.4)" }} />
+              <span style={{ fontSize: "14px", color: "#42A5F5", fontWeight: 900, whiteSpace: "nowrap" }}>4\u00d7 faster</span>
+              <span style={{ fontSize: "10px", color: "#999", fontWeight: 600, whiteSpace: "nowrap" }}>\u2014 15s</span>
+            </div>
+          </div>
         </Timegroup>
       </Preview>
 
+      <style>{`@keyframes efOverlayFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+
       {/* ── Playback controls ──────────────────────────────────── */}
-      <div className="flex items-center gap-0 mt-1 bg-[var(--ink-black)] dark:bg-[#111] overflow-hidden" style={{ borderRadius: "0 0 3px 3px" }}>
+      <div className="flex items-center gap-0 bg-[#111] overflow-hidden" style={{ borderRadius: "0 0 3px 3px" }}>
         <TogglePlay target={rootId}>
           <button
             slot="play"
