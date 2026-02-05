@@ -594,47 +594,65 @@ function JITStreamingDiagram() {
 
           {/* ── Timed text overlays ──── */}
 
-          {/* Phase 1: hero moment (0.3s–2s) */}
-          <div className="ef-caption ef-caption-lg" style={{ top: "5%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 600ms 300ms backwards, efCaptionOut 400ms 1800ms forwards" }}>
-            Any video. Any URL. Any format.
+          {/* ━━ ACT 1: Traditional Platform ━━ */}
+
+          {/* Step 1: Hero — you have a file */}
+          <div className="ef-caption ef-caption-dim" style={{ top: "5%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 600ms 300ms backwards, efCaptionOut 400ms 1300ms forwards" }}>
+            The traditional way
           </div>
 
-          {/* Phase 2: the question (2.2s–3.2s) */}
-          <div className="ef-caption ef-caption-lg" style={{ top: "5%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 2200ms backwards, efCaptionOut 400ms 3200ms forwards" }}>
-            What happens when you hit play?
+          {/* Step 2: Upload */}
+          <div className="ef-caption ef-caption-sub" style={{ bottom: "6%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 1500ms backwards, efCaptionOut 400ms 3800ms forwards" }}>
+            Upload the entire file first
           </div>
 
-          {/* Phase 3: side labels (3.5s+) */}
-          <div className="ef-caption ef-caption-dim" style={{ top: "3%", left: "8%", animation: "efCaptionIn 400ms 3800ms backwards" }}>
-            Traditional
-          </div>
-          <div className="ef-caption ef-caption-sub" style={{ top: "9%", left: "8%", animation: "efCaptionIn 400ms 4200ms backwards" }}>
-            Upload → Ingest → Transcode → Store
+          {/* Step 3: Ingest/Transcode */}
+          <div className="ef-caption ef-caption-sub" style={{ bottom: "6%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 4000ms backwards, efCaptionOut 400ms 6800ms forwards" }}>
+            Ingest and transcode into every bitrate variant
           </div>
 
-          <div className="ef-caption ef-caption-brand" style={{ top: "3%", right: "8%", animation: "efCaptionIn 400ms 3800ms backwards" }}>
+          {/* Step 4: Store + Play */}
+          <div className="ef-caption ef-caption-sub" style={{ bottom: "6%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 7000ms backwards, efCaptionOut 400ms 8800ms forwards" }}>
+            Store all variants. Now you can play.
+          </div>
+
+          {/* ━━ TRANSITION ━━ */}
+          <div className="ef-caption ef-caption-lg" style={{ top: "5%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 9200ms backwards, efCaptionOut 400ms 10300ms forwards" }}>
+            What if you didn't have to wait?
+          </div>
+
+          {/* ━━ ACT 2: Editframe JIT ━━ */}
+
+          <div className="ef-caption ef-caption-brand" style={{ top: "5%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 10500ms backwards, efCaptionOut 400ms 11300ms forwards" }}>
             Editframe
           </div>
-          <div className="ef-caption ef-caption-sub" style={{ top: "9%", right: "8%", animation: "efCaptionIn 400ms 4200ms backwards" }}>
-            Just a URL. JIT does the rest.
+
+          {/* Step 2: Player asks */}
+          <div className="ef-caption ef-caption-sub" style={{ bottom: "6%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 11500ms backwards, efCaptionOut 400ms 12500ms forwards" }}>
+            Player requests a frame
           </div>
 
-          {/* Phase 4: narrate mechanism (5.5s–8s) */}
-          <div className="ef-caption ef-caption-sub" style={{ bottom: "5%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 5500ms backwards, efCaptionOut 400ms 8000ms forwards" }}>
-            Adaptive multi-bitrate streams generated on demand
+          {/* Step 3: Byte-range + transcode */}
+          <div className="ef-caption ef-caption-sub" style={{ bottom: "6%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 12000ms backwards, efCaptionOut 400ms 14200ms forwards" }}>
+            Fetch a byte range. Same transcode — just one slice.
           </div>
 
-          {/* Phase 5: punchline (10s+) */}
-          <div className="ef-caption ef-caption-hero" style={{ bottom: "16%", right: "6%", animation: "efCaptionIn 500ms 10000ms backwards" }}>
-            Already playing
-          </div>
-          <div className="ef-caption ef-caption-sub" style={{ bottom: "9%", right: "6%", animation: "efCaptionIn 400ms 10500ms backwards" }}>
-            No upload. No ingestion. No waiting.
+          {/* Step 4: Playing */}
+          <div className="ef-caption ef-caption-sub" style={{ bottom: "6%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 14500ms backwards, efCaptionOut 400ms 16500ms forwards" }}>
+            Already playing. More slices stream as needed.
           </div>
 
-          {/* Traditional side still-going callout */}
-          <div className="ef-caption ef-caption-sub" style={{ bottom: "16%", left: "8%", animation: "efCaptionIn 400ms 10800ms backwards" }}>
-            Still uploading…
+          {/* ━━ ACT 3: Comparison ━━ */}
+
+          <div className="ef-caption ef-caption-dim" style={{ top: "3%", left: "12%", animation: "efCaptionIn 400ms 17200ms backwards" }}>
+            Traditional
+          </div>
+          <div className="ef-caption ef-caption-brand" style={{ top: "3%", right: "12%", animation: "efCaptionIn 400ms 17200ms backwards" }}>
+            Editframe
+          </div>
+
+          <div className="ef-caption ef-caption-sub" style={{ bottom: "6%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 17800ms backwards" }}>
+            Same transcode work. No upload. No ingestion delay.
           </div>
         </Timegroup>
       </Preview>
