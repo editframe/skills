@@ -1,5 +1,5 @@
 // @ts-nocheck - React Three Fiber JSX intrinsics
-import { useRef } from "react";
+import { Suspense, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import * as THREE from "three";
@@ -747,8 +747,10 @@ export function JITStreamingCanvas({ currentTimeMs }: { currentTimeMs: number })
         gl.toneMappingExposure = 1.8;
       }}
     >
-      <fog attach="fog" args={[0x1e2233, 20, 45]} />
-      <Scene currentTimeMs={currentTimeMs} />
+      <Suspense fallback={null}>
+        <fog attach="fog" args={[0x1e2233, 20, 45]} />
+        <Scene currentTimeMs={currentTimeMs} />
+      </Suspense>
     </Canvas>
   );
 }
