@@ -336,14 +336,64 @@ function JitDiagram() {
 
 const SCENE_DUR = "18s";
 
+type RenderState = "idle" | "rendering" | "complete";
+
 function FanOutDiagram() {
   const uid = useId();
   const rootId = `fanout-${uid}`;
   const [isClient, setIsClient] = useState(false);
+  const [renderState, setRenderState] = useState<RenderState>("idle");
+  const [renderProgress, setRenderProgress] = useState(0);
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => { setIsClient(true); }, []);
+
+  useEffect(() => {
+    return () => { if (downloadUrl) URL.revokeObjectURL(downloadUrl); };
+  }, [downloadUrl]);
+
+  const handleRender = async () => {
+    const container = containerRef.current;
+    if (!container) return;
+    const tg = container.querySelector("ef-timegroup") as HTMLElement & {
+      pause?: () => void;
+      renderToVideo?: (opts: Record<string, unknown>) => Promise<ArrayBuffer | null>;
+    };
+    if (!tg?.renderToVideo) return;
+
+    tg.pause?.();
+    setRenderState("rendering");
+    setRenderProgress(0);
+    if (downloadUrl) { URL.revokeObjectURL(downloadUrl); setDownloadUrl(null); }
+
+    try {
+      const buffer = await tg.renderToVideo({
+        fps: 30,
+        codec: "avc",
+        bitrate: 4_000_000,
+        scale: 1,
+        returnBuffer: true,
+        onProgress: (p: { progress: number }) => setRenderProgress(p.progress),
+      });
+      if (buffer) {
+        const url = URL.createObjectURL(new Blob([buffer], { type: "video/mp4" }));
+        setDownloadUrl(url);
+        setRenderState("complete");
+      }
+    } catch {
+      setRenderState("idle");
+    }
+  };
+
+  const handleDownload = () => {
+    if (!downloadUrl) return;
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = "editframe-parallel-rendering.mp4";
+    a.click();
+  };
 
   useEffect(() => {
     if (!isClient) return;
@@ -496,7 +546,7 @@ function FanOutDiagram() {
         }
       `}</style>
 
-      {/* ── Playback controls ──────────────────────────────────── */}
+      {/* ── Playback + render controls ────────────────────────── */}
       <div className="flex items-center gap-0 bg-[#111] overflow-hidden" style={{ borderRadius: "0 0 3px 3px" }}>
         <TogglePlay target={rootId}>
           <button
@@ -514,17 +564,58 @@ function FanOutDiagram() {
         </TogglePlay>
 
         <div className="flex-1 px-3 h-9 flex items-center border-l border-white/10">
-          <Scrubber
-            target={rootId}
-            className="w-full h-1 bg-white/20 rounded-full cursor-pointer [&::part(progress)]:bg-[var(--poster-blue)] [&::part(progress)]:rounded-full [&::part(thumb)]:bg-white [&::part(thumb)]:w-2.5 [&::part(thumb)]:h-2.5 [&::part(thumb)]:rounded-full"
-          />
+          {renderState === "rendering" ? (
+            <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
+              <div className="h-full bg-[var(--poster-blue)] rounded-full transition-all duration-200" style={{ width: `${renderProgress * 100}%` }} />
+            </div>
+          ) : (
+            <Scrubber
+              target={rootId}
+              className="w-full h-1 bg-white/20 rounded-full cursor-pointer [&::part(progress)]:bg-[var(--poster-blue)] [&::part(progress)]:rounded-full [&::part(thumb)]:bg-white [&::part(thumb)]:w-2.5 [&::part(thumb)]:h-2.5 [&::part(thumb)]:rounded-full"
+            />
+          )}
         </div>
 
         <div className="px-3 border-l border-white/10 h-9 flex items-center">
-          <TimeDisplay
-            target={rootId}
-            className="text-[10px] text-white/60 font-mono tabular-nums"
-          />
+          {renderState === "rendering" ? (
+            <span className="text-[10px] text-white/60 font-mono tabular-nums">
+              {(renderProgress * 100).toFixed(0)}%
+            </span>
+          ) : (
+            <TimeDisplay
+              target={rootId}
+              className="text-[10px] text-white/60 font-mono tabular-nums"
+            />
+          )}
+        </div>
+
+        {/* Render / Download button */}
+        <div className="border-l border-white/10 h-9 flex items-center">
+          {renderState === "idle" && (
+            <button
+              onClick={handleRender}
+              className="h-9 px-3 flex items-center gap-1.5 text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+              title="Export MP4"
+            >
+              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" /></svg>
+              <span className="text-[10px] font-semibold tracking-wide">MP4</span>
+            </button>
+          )}
+          {renderState === "rendering" && (
+            <div className="h-9 px-3 flex items-center">
+              <div className="w-3.5 h-3.5 border-2 border-[var(--poster-blue)] border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
+          {renderState === "complete" && (
+            <button
+              onClick={handleDownload}
+              className="h-9 px-3 flex items-center gap-1.5 text-[var(--poster-green)] hover:brightness-125 transition-colors"
+              title="Download editframe-parallel-rendering.mp4"
+            >
+              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" /></svg>
+              <span className="text-[10px] font-semibold tracking-wide">Save</span>
+            </button>
+          )}
         </div>
       </div>
     </div>
