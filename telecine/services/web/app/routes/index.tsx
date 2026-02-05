@@ -704,7 +704,7 @@ export default function IndexPage() {
             </p>
           </div>
 
-          <div className="max-w-3xl mx-auto">
+          <div className="max-w-5xl mx-auto">
             <ArchitectureDiagram />
           </div>
         </FadeInSection>
