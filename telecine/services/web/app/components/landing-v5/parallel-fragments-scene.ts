@@ -19,9 +19,9 @@ const COL_DONE = 0x2e7d32;
 
 /* ━━ Track & segment sizing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 const NUM_SEGS = 4;
-const SEG_W = 1.1;
-const SEG_GAP = 0.06;
-const TRACK_D = 0.3;
+const SEG_W = 0.8;
+const SEG_GAP = 0.05;
+const TRACK_D = 0.25;
 const TRACKS = [
   { h: 0.16, color: COL_VIDEO, yOff: 0.12 },
   { h: 0.09, color: COL_AUDIO, yOff: 0 },
@@ -29,7 +29,7 @@ const TRACKS = [
 ] as const;
 const TOTAL_W = SEG_W * NUM_SEGS + SEG_GAP * (NUM_SEGS - 1);
 
-const NODE_SIZE = 0.5;
+const NODE_SIZE = 0.4;
 const PROGRESS_H = 0.06;
 const PARTICLE_COUNT = 400;
 
@@ -55,9 +55,9 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
   renderer.toneMappingExposure = 1.1;
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(42, 2, 0.1, 100);
-  camera.position.set(0, 4.5, 9);
-  camera.lookAt(0, 0, 0.5);
+  const camera = new THREE.PerspectiveCamera(50, 2, 0.1, 100);
+  camera.position.set(0, 4, 8.5);
+  camera.lookAt(0, -0.1, 0.8);
 
   /* ── Lighting ──────────────────────────────────────────────────── */
   scene.add(new THREE.AmbientLight(0xffffff, 0.35));
@@ -138,13 +138,13 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
     return { mesh, mat, edgeMat };
   }
 
-  const SEQ_X = -3.2;
-  const PAR_X = 3.2;
-  const NODE_Z = 1.8;
+  const SEQ_X = -2.2;
+  const PAR_X = 2.2;
+  const NODE_Z = 1.6;
 
   const seqNode = makeNode(SEQ_X, NODE_Z);
   const parNodes = Array.from({ length: NUM_SEGS }, (_, i) => {
-    const laneX = PAR_X + (i - 1.5) * 1.3;
+    const laneX = PAR_X + (i - 1.5) * 0.85;
     return makeNode(laneX, NODE_Z);
   });
 
@@ -169,9 +169,9 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
     return { bg, bgMat, fill, fillMat, width: w };
   }
 
-  const seqBar = makeProgressBar(SEQ_X, NODE_Z + 1.0, TOTAL_W * 0.8);
+  const seqBar = makeProgressBar(SEQ_X, NODE_Z + 0.8, TOTAL_W * 0.8);
   const parBars = parNodes.map((n) =>
-    makeProgressBar(n.mesh.position.x, NODE_Z + 1.0, SEG_W * 0.9),
+    makeProgressBar(n.mesh.position.x, NODE_Z + 0.8, SEG_W * 0.9),
   );
 
   /* ── "Complete" output block ───────────────────────────────────── */
@@ -183,7 +183,7 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
     new THREE.BoxGeometry(TOTAL_W * 0.8, 0.2, 0.3),
     completeMat,
   );
-  completeBlock.position.set(PAR_X, -0.55, NODE_Z + 2.2);
+  completeBlock.position.set(PAR_X, -0.55, NODE_Z + 1.6);
   completeBlock.castShadow = true;
   scene.add(completeBlock);
 
@@ -252,7 +252,7 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
       const p3 = easeInOut(prog(timeMs, T_SPLIT_START, T_SPLIT_END));
       for (let s = 0; s < NUM_SEGS; s++) {
         const fromX = segJoinedX(s) + (s - 1.5) * SEG_GAP * 4;
-        const parLaneX = PAR_X + (s - 1.5) * 1.3;
+        const parLaneX = PAR_X + (s - 1.5) * 0.85;
         const toX = parLaneX;
         const toY = lerp(0.5, 0.15, p3);
         const toZ = lerp(0, NODE_Z - 0.5, p3);
@@ -295,7 +295,7 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
       const parProcess = prog(timeMs, T_RACE_START + 600, T_PAR_DONE);
 
       for (let s = 0; s < NUM_SEGS; s++) {
-        const laneX = PAR_X + (s - 1.5) * 1.3;
+        const laneX = PAR_X + (s - 1.5) * 0.85;
         segGroups[s]!.position.x = laneX;
         segGroups[s]!.position.y = lerp(0.15, -0.1, parArrive);
         segGroups[s]!.position.z = lerp(NODE_Z - 0.5, NODE_Z, parArrive);
@@ -321,7 +321,7 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
         for (let p = 0; p < PARTICLE_COUNT; p++) {
           const lane = pLanes[p]!;
           const speed = pSpeeds[p]!;
-          const lx = PAR_X + (lane - 1.5) * 1.3;
+          const lx = PAR_X + (lane - 1.5) * 0.85;
           const t = ((timeMs - T_RACE_START) * speed * 0.001 + p * 0.1) % 3 - 1.5;
           positions[p * 3] = lx + (Math.random() - 0.5) * 0.35;
           positions[p * 3 + 1] = -0.6 + Math.sin(t * 2) * 0.25 + (Math.random() - 0.5) * 0.1;
@@ -360,15 +360,15 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
     if (timeMs >= T_RESULT_START) {
       const p5 = easeOut(prog(timeMs, T_RESULT_START, T_END));
       // Camera pulls back slightly
-      camera.position.y = lerp(4.5, 5, p5);
-      camera.position.z = lerp(9, 10, p5);
-      camera.lookAt(0, lerp(0, 0.1, p5), lerp(0.5, 1.2, p5));
+      camera.position.y = lerp(4, 4.5, p5);
+      camera.position.z = lerp(8.5, 9.5, p5);
+      camera.lookAt(0, lerp(-0.1, 0, p5), lerp(0.8, 1.4, p5));
 
       // Complete block pulses
       completeMat.emissiveIntensity = 0.4 + Math.sin(p5 * Math.PI * 3) * 0.15;
     } else {
-      camera.position.set(0, 4.5, 9);
-      camera.lookAt(0, 0, 0.5);
+      camera.position.set(0, 4, 8.5);
+      camera.lookAt(0, -0.1, 0.8);
     }
 
     rimLight.intensity = 0.5 + Math.sin(timeMs * 0.0015) * 0.1;
