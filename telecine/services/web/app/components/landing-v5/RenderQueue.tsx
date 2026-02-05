@@ -254,10 +254,11 @@ export function RenderQueuePanel() {
               {/* ── Queued ─────────────────────────────────────────── */}
               {job.status === "queued" && (
                 <>
-                  <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center justify-between mb-0.5">
                     <span className="text-[11px] font-medium text-white/80 truncate flex-1 mr-2">{job.name}</span>
                     <span className="text-[10px] text-white/40">Queued</span>
                   </div>
+                  <div className="text-[9px] text-white/30 truncate mb-1">{job.fileName}</div>
                   <div className="h-1 bg-white/10 rounded-full" />
                 </>
               )}
@@ -265,12 +266,13 @@ export function RenderQueuePanel() {
               {/* ── Rendering ──────────────────────────────────────── */}
               {job.status === "rendering" && (
                 <>
-                  <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center justify-between mb-0.5">
                     <span className="text-[11px] font-medium text-white/80 truncate flex-1 mr-2">{job.name}</span>
                     <span className="text-[10px] text-[var(--poster-blue)] font-mono tabular-nums">
                       {(job.progress * 100).toFixed(0)}%
                     </span>
                   </div>
+                  <div className="text-[9px] text-white/30 truncate mb-1">{job.fileName}</div>
                   <div className="flex items-center gap-2">
                     <div className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
                       <div
