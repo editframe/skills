@@ -97,6 +97,16 @@ export const imageElementProperties: PropertyDefinition[] = [
     domWritable: true,
     htmlAttribute: "sourceout",
   },
+  {
+    name: "startOffsetMs",
+    type: "number",
+    access: "R",
+    useCase: "Initial time offset when element starts playing",
+    category: "Temporal Composition",
+    domReadable: true,
+    htmlAttribute: "startoffset",
+    defaultValue: "0",
+  },
   // Time Coordinates
   {
     name: "startTimeMs",
