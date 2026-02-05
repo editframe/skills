@@ -215,11 +215,98 @@ export default function IndexPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
-              <h3 className="text-2xl font-bold mb-4">Lightning Fast</h3>
+              <h3 className="text-2xl font-bold mb-4">Hyperscale Rendering</h3>
               <p className="opacity-80 leading-relaxed">
                 Render 20-minute 4K videos in ~30 seconds. Generate thousands of videos 
                 in parallel. Zero infrastructure to manage.
               </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Infrastructure Section */}
+      <section className="relative py-32 bg-[#0F0F23]">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div>
+              <h2 className="text-4xl font-bold mb-6">Enterprise-Grade Infrastructure</h2>
+              <p className="text-xl opacity-80 mb-8 leading-relaxed">
+                We've solved the hard engineering problems so you don't have to.
+              </p>
+              
+              <div className="space-y-8">
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#1E1B4B] flex items-center justify-center text-[#E11D48]">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold mb-2">Private Transcription Engine</h3>
+                    <p className="opacity-70">
+                      Built-in Whisper-based transcription runs in your private cloud. 
+                      Word-level timestamps, zero data leakage to third parties.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#1E1B4B] flex items-center justify-center text-[#E11D48]">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold mb-2">Deep Observability</h3>
+                    <p className="opacity-70">
+                      Millisecond-level telemetry for every frame. Trace exactly where time is spent—
+                      from seek to render to encode.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#1E1B4B] flex items-center justify-center text-[#E11D48]">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold mb-2">Hybrid Rendering Core</h3>
+                    <p className="opacity-70">
+                      Dual-pipeline architecture supports both high-fidelity server-side rendering 
+                      and distributed browser-side rendering via WebCodecs.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative">
+              <div className="absolute -inset-4 bg-gradient-to-r from-[#E11D48] to-purple-600 rounded-2xl blur-xl opacity-20" />
+              <div className="relative bg-[#000000] border border-[#1E1B4B] rounded-2xl p-6 font-mono text-sm overflow-hidden">
+                <div className="flex items-center gap-2 mb-4 border-b border-[#1E1B4B] pb-4">
+                  <div className="w-3 h-3 rounded-full bg-red-500" />
+                  <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                  <div className="w-3 h-3 rounded-full bg-green-500" />
+                  <span className="ml-2 opacity-50">infrastructure.ts</span>
+                </div>
+                <div className="space-y-2 opacity-80">
+                  <div className="text-green-400">// Private transcription pipeline</div>
+                  <div>const transcript = await transcribe(audioFile, {</div>
+                  <div className="pl-4">model: "whisper-large-v3",</div>
+                  <div className="pl-4">privacy: "private-cloud"</div>
+                  <div>});</div>
+                  <br />
+                  <div className="text-green-400">// Telemetry trace</div>
+                  <div>trace.span("render_frame", {</div>
+                  <div className="pl-4">frame: 142,</div>
+                  <div className="pl-4">seek_ms: 12.4,</div>
+                  <div className="pl-4">render_ms: 45.1</div>
+                  <div>});</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
