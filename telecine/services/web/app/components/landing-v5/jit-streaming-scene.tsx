@@ -4,96 +4,80 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import * as THREE from "three";
 
-/* ━━ Visual Thinking Design ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   TWO ANALOGIES sharing a common internal component:
+/* ━━ Design: Whiteboard first, then 3D ━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Everything here starts from what you'd draw on a whiteboard:
+   flat horizontal bars, arrows, highlighted regions. The 3D adds
+   camera, lighting, and depth — it doesn't replace legibility.
 
-   ANALOGY A — Traditional Platform (left side)
-   ─────────────────────────────────────────────
-   Step 1: "You have a file" — media block appears
-   Step 2: "Upload the whole thing" — block travels through a pipe
-           (the pipe has a bottleneck — it narrows)
-   Step 3: "Ingest" — the TRANSCODE MACHINE chews through it
-           (torus rings spin, the full block feeds in, variants come out)
-   Step 4: "Store variants" — 3 variant blocks (1080/720/480) stack up
-   Step 5: "Now you can play" — player screen lights up (finally)
+   TRADITIONAL:
+   [████████████████████████████]  "video.mp4"
+                |  upload whole file
+   [████████████████████████████]  copy on server
+                |  transcode all of it
+   [████████████] 1080p
+   [████████]     720p
+   [█████]        480p
+                |  store, then serve
+           [ PLAYER ]
 
-   ANALOGY B — Editframe JIT (right side)
-   ─────────────────────────────────────────────
-   Step 1: "You have a URL" — same media block, but with a link icon
-   Step 2: "Player asks for a frame" — player screen pulses (request)
-   Step 3: "JIT fetches a byte range" — a thin slice peels off the
-           media block and travels to…
-   Step 4: "The SAME transcode machine" — REUSED from Analogy A,
-           but smaller, processing just the slice (not the whole file)
-   Step 5: "Stream to player" — the transcoded slice flies to the
-           screen, which lights up immediately
-   Step 6: "More slices follow" — additional slices peel and flow,
-           each for a different bitrate, building up a cache
+   EDITFRAME JIT:
+   [░░░░██████░░░░░░░░░░░░░░░░]  file stays on YOUR server
+          ↑ fetch bytes 0:10–0:20
+          |
+      [transcode]  just this piece
+          |
+      [ PLAYER ]  already playing
+          next: 0:20–0:30 ...
 
-   THE SHARED ELEMENT: The "transcode machine" (torus rings)
-   appears in both paths. In A it's large and grinds the whole file.
-   In B it's compact and processes slivers instantly. Same work,
-   radically different scale and timing.
+   The shapes are flat bars. The highlight is transparency.
+   The 3D adds polish. Nothing requires interpretation.
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
-   STRUCTURAL INSIGHT: "The transcode work is the same — but done
-   lazily on tiny pieces, proxied from the source."
-
-   ARC: Show A first (3-8s), then B (8-16s), then compare (16-20s)
-   Total: ~20s. Not a race — a sequential reveal where B's
-   efficiency is understood because you already saw what A requires.
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* ━━ Sizing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const BAR_W = 4.5;        // Total width of the filmstrip bar
+const BAR_H = 0.25;       // Height of each bar
+const BAR_D = 0.15;       // Depth (thin — this is fundamentally 2D)
+const NUM_SEGS = 6;        // Visible segments in the bar
+const SEG_W = BAR_W / NUM_SEGS;
 
 /* ━━ Timing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-// Act 1: Traditional platform
-const A_START = 0;
-const A_FILE_IN = 500;       // Media block appears
-const A_UPLOAD_START = 1500;  // Block enters upload pipe
-const A_UPLOAD_END = 4000;    // Block exits pipe
-const A_INGEST_START = 4000;  // Transcode machine starts
-const A_INGEST_END = 7000;    // Variants emerge
-const A_STORE = 7000;         // Variants stack up
-const A_PLAY = 8000;          // Player lights up
-const A_END = 9000;
+const A_IN = 500;
+const A_UPLOAD_START = 2000;
+const A_UPLOAD_END = 4500;
+const A_TRANSCODE_START = 4500;
+const A_TRANSCODE_END = 7500;
+const A_PLAY = 8500;
+const A_END = 9500;
 
-// Transition: camera shifts right
-const TRANSITION_START = 9000;
-const TRANSITION_END = 10500;
+const TRANSITION_START = 9500;
+const TRANSITION_END = 11000;
 
-// Act 2: Editframe JIT
-const B_START = 10500;
-const B_URL_IN = 10500;       // Media block (with URL) appears
-const B_REQUEST = 11500;      // Player pulses — "give me a frame"
-const B_SLICE_START = 12000;  // Slice peels off
-const B_TRANSCODE = 12800;    // Slice enters mini transcode machine
-const B_TRANSCODE_END = 13800; // Transcoded slice emerges
-const B_STREAM = 14000;       // Slice flies to player
-const B_PLAY = 14500;         // Player lights up (fast!)
-const B_MORE_SLICES = 15000;  // Additional slices for other bitrates
-const B_END = 17000;
+const B_IN = 11000;
+const B_HIGHLIGHT = 12000;
+const B_FETCH_START = 12500;
+const B_FETCH_END = 13500;
+const B_TRANSCODE_START = 13500;
+const B_TRANSCODE_END = 14500;
+const B_PLAY = 14800;
+const B_NEXT_START = 15500;
+const B_NEXT_END = 17000;
+const B_END = 18000;
 
-// Act 3: Side-by-side reveal
-const C_START = 17000;
-const C_END = 20000;
-const DURATION = 20000;
-
-/* ━━ Layout ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-const TRAD_X = 0;      // Traditional (centered during Act 1, then shifts left)
-const EF_X = 0;        // Editframe (centered during Act 2, then shifts right)
-const SIDE_OFFSET = 4;  // How far apart in Act 3
+const C_START = 18000;
+const DURATION = 22000;
 
 /* ━━ Colors ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-const COL_FILE = 0x9575cd;      // Purple — source media
-const COL_TRAD = 0xff8a65;      // Warm amber — traditional pipeline
-const COL_PIPE = 0x78909c;      // Gray — upload pipe
-const COL_MACHINE = 0xffab91;   // Salmon — transcode rings
-const COL_VARIANT_HI = 0x448aff; // Blue — 1080p
-const COL_VARIANT_MD = 0x64b5f6; // Light blue — 720p
-const COL_VARIANT_LO = 0x90caf9; // Pale blue — 480p
-const COL_EF = 0x82b1ff;        // Cool blue — editframe
-const COL_JIT = 0xff5252;       // Red — JIT accent
-const COL_SLICE = 0x69f0ae;     // Green — byte-range slice
-const COL_SCREEN = 0x37474f;    // Dark — player frame
-const COL_SCREEN_ON = 0x82b1ff; // Blue — screen playing
+const COL_BAR = 0x7e57c2;       // Purple — file segments
+const COL_BAR_DIM = 0x5c3d99;   // Darker purple — dimmed segments
+const COL_HIGHLIGHT = 0x69f0ae; // Green — highlighted byte range
+const COL_TRAD = 0xff8a65;      // Amber — traditional accent
+const COL_1080 = 0x448aff;      // Blue — 1080p
+const COL_720 = 0x64b5f6;       // Light blue — 720p
+const COL_480 = 0x90caf9;       // Pale blue — 480p
+const COL_MACHINE = 0xffab91;   // Salmon — transcode machine
+const COL_EF = 0x82b1ff;        // Editframe blue
+const COL_BG = 0x3d4158;        // Background bar
+const COL_PLAYER_ON = 0x82b1ff; // Player screen glow
 
 /* ━━ Easing & helpers ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function easeOut(t: number) { return 1 - Math.pow(1 - t, 3); }
@@ -108,306 +92,176 @@ function seededRandom(seed: number): number {
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   SHARED REUSABLE COMPONENTS
+   COMPONENTS
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
-const SEGMENT_COUNT = 6;
-const FILE_W = 2.0;
-const FILE_H = 1.0;
-const FILE_D = 0.18;
-const SEG_W = FILE_W / SEGMENT_COUNT;
-const SEG_GAP = 0.02;
-
-/** 3D label — wraps drei Text with scene-appropriate defaults */
-function Label({ text, position, color, fontSize, opacity, anchorX, anchorY }: {
-  text: string;
+/** 3D label using drei Text */
+function Label({ children, position, color, fontSize, opacity, anchorX }: {
+  children: string;
   position: [number, number, number];
   color?: string;
   fontSize?: number;
   opacity?: number;
   anchorX?: "left" | "center" | "right";
-  anchorY?: "top" | "middle" | "bottom";
 }) {
   return (
     <Text
       position={position}
-      fontSize={fontSize ?? 0.1}
-      color={color ?? "#ffffff"}
+      fontSize={fontSize ?? 0.12}
+      color={color ?? "#aaaacc"}
       anchorX={anchorX ?? "center"}
-      anchorY={anchorY ?? "middle"}
+      anchorY="middle"
       fillOpacity={opacity ?? 1}
-      font={undefined}
     >
-      {text}
+      {children}
     </Text>
   );
 }
 
-/** The video file — a multi-segment bar representing actual file structure.
-    Each segment is a visible block. Can highlight a region with a glow
-    overlay to show which byte range is being accessed.
+/** The filmstrip bar — a horizontal bar divided into visible segments.
+    This is THE core visual: a video file represented as a segmented bar.
     
-    Used in both analogies:
-    - Traditional: the whole file, shown in full opacity
-    - JIT: same file, with a highlighted region showing the byte range */
-function VideoFile({ opacity, position, scale, highlightSegment, label }: {
+    `dimSegments` makes non-highlighted segments translucent.
+    `highlightRange` glows a range of segments green.
+    `label` floats above. */
+function FilmstripBar({ opacity, position, label, dimSegments, highlightRange }: {
   opacity: number;
   position: [number, number, number];
-  scale?: number;
-  highlightSegment?: number; // -1 = none, 0-5 = which segment to glow
   label?: string;
+  dimSegments?: boolean;
+  highlightRange?: [number, number]; // [startSeg, endSeg] inclusive
 }) {
   const segRefs = useRef<(THREE.Mesh | null)[]>([]);
-  const glowRef = useRef<THREE.Mesh>(null);
-  const s = scale ?? 1;
-  const hl = highlightSegment ?? -1;
+  const hlStart = highlightRange?.[0] ?? -1;
+  const hlEnd = highlightRange?.[1] ?? -1;
+  const dim = dimSegments ?? false;
 
   useFrame(() => {
-    for (let i = 0; i < SEGMENT_COUNT; i++) {
+    for (let i = 0; i < NUM_SEGS; i++) {
       const mesh = segRefs.current[i];
       if (!mesh) continue;
       const mat = mesh.material as THREE.MeshPhysicalMaterial;
-      const isHighlighted = i === hl;
-      mat.opacity = isHighlighted ? opacity : opacity * 0.6;
-      mat.emissiveIntensity = isHighlighted ? 0.5 : 0.08;
-      mesh.castShadow = opacity > 0.1;
-    }
-    // Highlight glow overlay
-    if (glowRef.current) {
-      const gMat = glowRef.current.material as THREE.MeshBasicMaterial;
-      gMat.opacity = hl >= 0 ? opacity * 0.35 : 0;
-      // Position the glow over the highlighted segment
-      if (hl >= 0) {
-        const segX = -FILE_W / 2 + SEG_W / 2 + hl * SEG_W;
-        glowRef.current.position.x = segX;
+      const highlighted = i >= hlStart && i <= hlEnd;
+
+      if (highlighted) {
+        mat.color.setHex(COL_HIGHLIGHT);
+        mat.emissive.setHex(COL_HIGHLIGHT);
+        mat.opacity = opacity;
+        mat.emissiveIntensity = 0.4;
+      } else {
+        mat.color.setHex(dim ? COL_BAR_DIM : COL_BAR);
+        mat.emissive.setHex(COL_BAR);
+        mat.opacity = dim ? opacity * 0.35 : opacity * 0.85;
+        mat.emissiveIntensity = 0.06;
       }
+      mesh.castShadow = opacity > 0.1;
     }
   });
 
-  // Segment colors alternate slightly for visual rhythm
-  const segColors = [0x7e57c2, 0x9575cd, 0x7e57c2, 0x9575cd, 0x7e57c2, 0x9575cd];
+  const segGap = 0.03;
 
   return (
-    <group position={position} scale={[s, s, s]}>
-      {/* File segments */}
-      {Array.from({ length: SEGMENT_COUNT }, (_, i) => {
-        const segX = -FILE_W / 2 + SEG_W / 2 + i * SEG_W;
+    <group position={position}>
+      {/* Background bar */}
+      <mesh>
+        <boxGeometry args={[BAR_W + 0.06, BAR_H + 0.06, BAR_D * 0.5]} />
+        <meshStandardMaterial color={COL_BG} roughness={0.8} transparent opacity={opacity * 0.4} />
+      </mesh>
+
+      {/* Segments */}
+      {Array.from({ length: NUM_SEGS }, (_, i) => {
+        const x = -BAR_W / 2 + SEG_W / 2 + i * SEG_W;
         return (
           <mesh
             key={i}
             ref={(el) => { segRefs.current[i] = el; }}
-            position={[segX, 0, 0]}
-            castShadow
+            position={[x, 0, BAR_D * 0.3]}
           >
-            <boxGeometry args={[SEG_W - SEG_GAP, FILE_H, FILE_D]} />
+            <boxGeometry args={[SEG_W - segGap, BAR_H, BAR_D]} />
             <meshPhysicalMaterial
-              color={segColors[i]}
-              roughness={0.2}
+              color={COL_BAR}
+              roughness={0.15}
               metalness={0.15}
               clearcoat={0.7}
-              clearcoatRoughness={0.15}
               transparent
               opacity={0}
-              emissive={new THREE.Color(segColors[i]!)}
-              emissiveIntensity={0.08}
+              emissive={new THREE.Color(COL_BAR)}
+              emissiveIntensity={0.06}
             />
           </mesh>
         );
       })}
 
-      {/* Highlight glow overlay (additive) */}
-      <mesh ref={glowRef} position={[0, 0, FILE_D / 2 + 0.01]}>
-        <boxGeometry args={[SEG_W + 0.04, FILE_H + 0.04, 0.01]} />
-        <meshBasicMaterial
-          color={COL_SLICE}
-          transparent
-          opacity={0}
-          blending={THREE.AdditiveBlending}
-        />
-      </mesh>
+      {/* Time labels below */}
+      <Label position={[-BAR_W / 2, -BAR_H / 2 - 0.12, BAR_D]} fontSize={0.07} opacity={opacity * 0.5}>
+        0:00
+      </Label>
+      <Label position={[0, -BAR_H / 2 - 0.12, BAR_D]} fontSize={0.07} opacity={opacity * 0.5}>
+        0:30
+      </Label>
+      <Label position={[BAR_W / 2, -BAR_H / 2 - 0.12, BAR_D]} fontSize={0.07} opacity={opacity * 0.5}>
+        1:00
+      </Label>
 
-      {/* Time markers along the bottom */}
-      {Array.from({ length: SEGMENT_COUNT + 1 }, (_, i) => {
-        const x = -FILE_W / 2 + i * SEG_W;
-        const sec = i * 10;
-        return (
-          <Label
-            key={`t${i}`}
-            text={`${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`}
-            position={[x, -FILE_H / 2 - 0.12, FILE_D / 2 + 0.01]}
-            fontSize={0.06}
-            color="#8888aa"
-            opacity={opacity * 0.7}
-          />
-        );
-      })}
-
-      {/* File label */}
+      {/* Label above */}
       {label && (
-        <Label
-          text={label}
-          position={[0, FILE_H / 2 + 0.14, FILE_D / 2 + 0.01]}
-          fontSize={0.09}
-          color="#bbbbdd"
-          opacity={opacity * 0.85}
-        />
+        <Label position={[0, BAR_H / 2 + 0.14, BAR_D]} fontSize={0.1} opacity={opacity * 0.8}>
+          {label}
+        </Label>
       )}
     </group>
   );
 }
 
-/** A single segment extracted from the file — represents a byte-range fragment.
-    Visually matches a single segment from VideoFile but can be positioned
-    independently (it "peels off" and travels). */
-function FileSegment({ opacity, emissive, color, position, scale, label }: {
+/** A single segment that has been extracted from a filmstrip bar.
+    Used to show a byte-range chunk traveling through the pipeline.
+    Visually identical to one segment of the FilmstripBar. */
+function Segment({ opacity, color, position, label }: {
   opacity: number;
-  emissive: number;
-  color?: number;
+  color: number;
   position: [number, number, number];
-  scale?: number;
   label?: string;
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
-  const s = scale ?? 1;
-  const c = color ?? COL_SLICE;
 
   useFrame(() => {
     if (!meshRef.current) return;
     const mat = meshRef.current.material as THREE.MeshPhysicalMaterial;
     mat.opacity = opacity;
-    mat.emissiveIntensity = emissive;
+    mat.emissiveIntensity = opacity > 0 ? 0.3 : 0;
     meshRef.current.castShadow = opacity > 0.1;
   });
 
   return (
-    <group position={position} scale={[s, s, s]}>
+    <group position={position}>
       <mesh ref={meshRef} castShadow>
-        <boxGeometry args={[SEG_W - SEG_GAP, FILE_H, FILE_D]} />
+        <boxGeometry args={[SEG_W * 0.9, BAR_H, BAR_D]} />
         <meshPhysicalMaterial
-          color={c}
+          color={color}
           roughness={0.15}
-          metalness={0.2}
-          clearcoat={0.6}
+          metalness={0.15}
+          clearcoat={0.7}
           transparent
           opacity={0}
-          emissive={new THREE.Color(c)}
+          emissive={new THREE.Color(color)}
           emissiveIntensity={0}
         />
       </mesh>
       {label && (
-        <Label
-          text={label}
-          position={[0, -FILE_H / 2 - 0.12, FILE_D / 2 + 0.01]}
-          fontSize={0.07}
-          color="#aaddaa"
-          opacity={opacity * 0.8}
-        />
+        <Label position={[0, -BAR_H / 2 - 0.1, BAR_D * 0.5]} fontSize={0.08} color="#88ddaa" opacity={opacity * 0.8}>
+          {label}
+        </Label>
       )}
     </group>
   );
 }
 
-/** The transcode machine — spinning torus rings.
-    REUSED in both analogies at different scales.
-    In traditional: large, grinds through the whole file.
-    In JIT: compact, processes a single slice instantly. */
-function TranscodeMachine({ opacity, processing, scale, position }: {
-  opacity: number;
-  processing: number; // 0-1, drives spin and glow
-  scale: number;      // 1.0 for traditional, ~0.6 for JIT
-  position: [number, number, number];
-}) {
-  const outerRef = useRef<THREE.Mesh>(null);
-  const innerRef = useRef<THREE.Mesh>(null);
-
-  useFrame(() => {
-    if (!outerRef.current || !innerRef.current) return;
-    const oMat = outerRef.current.material as THREE.MeshPhysicalMaterial;
-    const iMat = innerRef.current.material as THREE.MeshPhysicalMaterial;
-    oMat.opacity = opacity;
-    iMat.opacity = opacity * 0.8;
-    outerRef.current.castShadow = opacity > 0.1;
-
-    // Spin is deterministic from processing progress
-    const spin = processing * Math.PI * 8;
-    outerRef.current.rotation.x = spin;
-    outerRef.current.rotation.z = spin * 0.6;
-    innerRef.current.rotation.y = -spin * 1.4;
-    innerRef.current.rotation.x = spin * 0.3;
-
-    const active = processing > 0 && processing < 1;
-    oMat.emissiveIntensity = active ? 0.2 + Math.sin(processing * Math.PI * 6) * 0.1 : opacity * 0.03;
-    iMat.emissiveIntensity = active ? 0.25 + Math.sin(processing * Math.PI * 8) * 0.12 : opacity * 0.03;
-  });
-
-  return (
-    <group position={position} scale={[scale, scale, scale]}>
-      <mesh ref={outerRef} castShadow>
-        <torusGeometry args={[0.55, 0.1, 12, 24]} />
-        <meshPhysicalMaterial
-          color={COL_MACHINE}
-          roughness={0.25}
-          metalness={0.5}
-          clearcoat={0.6}
-          transparent
-          opacity={0}
-          emissive={new THREE.Color(COL_MACHINE)}
-          emissiveIntensity={0.03}
-        />
-      </mesh>
-      <mesh ref={innerRef}>
-        <torusGeometry args={[0.35, 0.07, 8, 18]} />
-        <meshPhysicalMaterial
-          color={COL_TRAD}
-          roughness={0.3}
-          metalness={0.4}
-          transparent
-          opacity={0}
-          emissive={new THREE.Color(COL_TRAD)}
-          emissiveIntensity={0.03}
-        />
-      </mesh>
-    </group>
-  );
-}
-
-/** Upload pipe — a cylinder representing the upload channel.
-    Has a visible bottleneck (narrowing). */
-function UploadPipe({ opacity, position }: {
-  opacity: number;
-  position: [number, number, number];
-}) {
-  const meshRef = useRef<THREE.Mesh>(null);
-
-  useFrame(() => {
-    if (!meshRef.current) return;
-    const mat = meshRef.current.material as THREE.MeshPhysicalMaterial;
-    mat.opacity = opacity * 0.4;
-    meshRef.current.castShadow = opacity > 0.1;
-  });
-
-  return (
-    <group position={position} rotation={[0, 0, Math.PI / 2]}>
-      <mesh ref={meshRef}>
-        <cylinderGeometry args={[0.15, 0.35, 2.5, 12]} />
-        <meshPhysicalMaterial
-          color={COL_PIPE}
-          roughness={0.5}
-          metalness={0.3}
-          transparent
-          opacity={0}
-        />
-      </mesh>
-    </group>
-  );
-}
-
-/** Variant block — one of the output bitrate variants.
-    Height encodes quality level. Label shows resolution. */
-function VariantBlock({ opacity, color, height, position, label }: {
+/** Output variant bar — a shorter filmstrip bar for a single bitrate.
+    Width encodes that it's a complete transcode of the full file. */
+function VariantBar({ opacity, color, width, position, label }: {
   opacity: number;
   color: number;
-  height: number;
+  width: number;
   position: [number, number, number];
   label: string;
 }) {
@@ -417,96 +271,151 @@ function VariantBlock({ opacity, color, height, position, label }: {
     if (!meshRef.current) return;
     const mat = meshRef.current.material as THREE.MeshPhysicalMaterial;
     mat.opacity = opacity;
-    mat.emissiveIntensity = opacity * 0.2;
+    mat.emissiveIntensity = opacity * 0.15;
     meshRef.current.castShadow = opacity > 0.1;
   });
 
   return (
     <group position={position}>
       <mesh ref={meshRef} castShadow>
-        <boxGeometry args={[0.9, height, 0.15]} />
+        <boxGeometry args={[width, BAR_H * 0.8, BAR_D]} />
         <meshPhysicalMaterial
           color={color}
           roughness={0.15}
           metalness={0.2}
-          clearcoat={0.7}
+          clearcoat={0.6}
           transparent
           opacity={0}
           emissive={new THREE.Color(color)}
           emissiveIntensity={0}
         />
       </mesh>
-      <Label
-        text={label}
-        position={[0.55, 0, 0.01]}
-        fontSize={0.08}
-        color="#ccddff"
-        opacity={opacity * 0.8}
-        anchorX="left"
-      />
+      <Label position={[width / 2 + 0.15, 0, BAR_D * 0.5]} fontSize={0.09} color="#ccddff" opacity={opacity * 0.8} anchorX="left">
+        {label}
+      </Label>
     </group>
   );
 }
 
-/** Player screen — the destination display. Screen glows when content arrives. */
-function PlayerScreen({ opacity, playing, position, scale }: {
+/** The transcode process — shown as a labeled box.
+    REUSED in both analogies at different scales.
+    Not a spinning torus — just a clear labeled box with a glow. */
+function TranscodeBox({ opacity, active, scale, position }: {
   opacity: number;
-  playing: number; // 0-1
+  active: boolean;
+  scale: number;
   position: [number, number, number];
-  scale?: number;
 }) {
-  const frameRef = useRef<THREE.Mesh>(null);
-  const screenRef = useRef<THREE.Mesh>(null);
-  const s = scale ?? 1;
+  const meshRef = useRef<THREE.Mesh>(null);
 
   useFrame(() => {
-    if (!frameRef.current || !screenRef.current) return;
-    const fMat = frameRef.current.material as THREE.MeshPhysicalMaterial;
-    const sMat = screenRef.current.material as THREE.MeshStandardMaterial;
-    fMat.opacity = opacity;
-    frameRef.current.castShadow = opacity > 0.1;
-    sMat.opacity = opacity * 0.9;
-    sMat.emissiveIntensity = playing * 0.8;
+    if (!meshRef.current) return;
+    const mat = meshRef.current.material as THREE.MeshPhysicalMaterial;
+    mat.opacity = opacity;
+    mat.emissiveIntensity = active ? 0.35 : opacity * 0.05;
+    meshRef.current.castShadow = opacity > 0.1;
   });
 
   return (
-    <group position={position} scale={[s, s, s]}>
-      <mesh ref={frameRef} castShadow>
-        <boxGeometry args={[1.6, 1.0, 0.08]} />
+    <group position={position} scale={[scale, scale, scale]}>
+      <mesh ref={meshRef} castShadow>
+        <boxGeometry args={[1.2, 0.5, 0.3]} />
         <meshPhysicalMaterial
-          color={COL_SCREEN}
-          roughness={0.3}
-          metalness={0.6}
+          color={COL_MACHINE}
+          roughness={0.2}
+          metalness={0.3}
+          clearcoat={0.5}
           transparent
           opacity={0}
+          emissive={new THREE.Color(COL_MACHINE)}
+          emissiveIntensity={0.05}
         />
       </mesh>
-      <mesh ref={screenRef} position={[0, 0, 0.05]}>
-        <boxGeometry args={[1.45, 0.85, 0.02]} />
-        <meshStandardMaterial
-          color={COL_SCREEN_ON}
-          transparent
-          opacity={0}
-          emissive={new THREE.Color(COL_SCREEN_ON)}
-          emissiveIntensity={0}
-        />
+      <Label position={[0, 0, 0.16]} fontSize={0.12 * (1 / scale)} color="#ffffff" opacity={opacity * 0.9}>
+        transcode
+      </Label>
+      <pointLight color={COL_MACHINE} intensity={active ? 3 : 0} distance={4} />
+    </group>
+  );
+}
+
+/** Arrow — a flat arrow shape pointing down (positive Y to negative Y).
+    Represents data flow direction. The most basic whiteboard element. */
+function Arrow({ opacity, position, length, color }: {
+  opacity: number;
+  position: [number, number, number];
+  length?: number;
+  color?: number;
+}) {
+  const shaftRef = useRef<THREE.Mesh>(null);
+  const headRef = useRef<THREE.Mesh>(null);
+  const len = length ?? 0.6;
+  const col = color ?? 0x666688;
+
+  useFrame(() => {
+    if (!shaftRef.current || !headRef.current) return;
+    (shaftRef.current.material as THREE.MeshBasicMaterial).opacity = opacity * 0.5;
+    (headRef.current.material as THREE.MeshBasicMaterial).opacity = opacity * 0.5;
+  });
+
+  return (
+    <group position={position}>
+      <mesh ref={shaftRef}>
+        <boxGeometry args={[0.04, len, 0.02]} />
+        <meshBasicMaterial color={col} transparent opacity={0} />
       </mesh>
-      {/* Stand */}
-      <mesh position={[0, -0.6, -0.02]}>
-        <cylinderGeometry args={[0.05, 0.15, 0.2, 8]} />
-        <meshStandardMaterial color={0x546e7a} roughness={0.5} transparent opacity={opacity * 0.5} />
+      <mesh ref={headRef} position={[0, -len / 2 - 0.06, 0]} rotation={[0, 0, Math.PI]}>
+        <coneGeometry args={[0.07, 0.12, 3]} />
+        <meshBasicMaterial color={col} transparent opacity={0} />
       </mesh>
     </group>
   );
 }
 
-/** Particle stream — deterministic flow between two 3D points */
-function ParticleStream({ from, to, count, color, size, opacity, timeMs, seed }: {
+/** Player screen */
+function PlayerScreen({ opacity, playing, position }: {
+  opacity: number;
+  playing: number;
+  position: [number, number, number];
+}) {
+  const frameRef = useRef<THREE.Mesh>(null);
+  const screenRef = useRef<THREE.Mesh>(null);
+
+  useFrame(() => {
+    if (!frameRef.current || !screenRef.current) return;
+    (frameRef.current.material as THREE.MeshPhysicalMaterial).opacity = opacity;
+    frameRef.current.castShadow = opacity > 0.1;
+    const sMat = screenRef.current.material as THREE.MeshStandardMaterial;
+    sMat.opacity = opacity * 0.9;
+    sMat.emissiveIntensity = playing * 0.7;
+  });
+
+  return (
+    <group position={position}>
+      <mesh ref={frameRef} castShadow>
+        <boxGeometry args={[1.4, 0.85, 0.06]} />
+        <meshPhysicalMaterial color={0x37474f} roughness={0.3} metalness={0.6} transparent opacity={0} />
+      </mesh>
+      <mesh ref={screenRef} position={[0, 0, 0.04]}>
+        <boxGeometry args={[1.25, 0.7, 0.02]} />
+        <meshStandardMaterial
+          color={COL_PLAYER_ON}
+          transparent
+          opacity={0}
+          emissive={new THREE.Color(COL_PLAYER_ON)}
+          emissiveIntensity={0}
+        />
+      </mesh>
+    </group>
+  );
+}
+
+/** Particle stream */
+function ParticleStream({ from, to, count, color, opacity, timeMs, seed }: {
   from: [number, number, number];
   to: [number, number, number];
   count: number;
   color: number;
-  size: number;
   opacity: number;
   timeMs: number;
   seed: number;
@@ -518,8 +427,7 @@ function ParticleStream({ from, to, count, color, size, opacity, timeMs, seed }:
 
   useFrame(() => {
     if (!pointsRef.current) return;
-    const mat = pointsRef.current.material as THREE.PointsMaterial;
-    mat.opacity = opacity;
+    (pointsRef.current.material as THREE.PointsMaterial).opacity = opacity;
     if (opacity <= 0) return;
 
     const positions = pointsRef.current.geometry.attributes.position!.array as Float32Array;
@@ -527,32 +435,21 @@ function ParticleStream({ from, to, count, color, size, opacity, timeMs, seed }:
 
     for (let i = 0; i < count; i++) {
       const t = (timeMs * speeds[i]! * 0.0005 + i * 0.07) % 1;
-      const wobbleX = (seededRandom(seed + i * 1000 + timeMs * 0.002) - 0.5) * 0.12;
-      const wobbleY = (seededRandom(seed + i * 2000 + timeMs * 0.002) - 0.5) * 0.12;
-
-      positions[i * 3] = lerp(from[0], to[0], t) + wobbleX;
-      positions[i * 3 + 1] = lerp(from[1], to[1], t) + wobbleY + Math.sin(t * Math.PI) * 0.15;
+      const wx = (seededRandom(seed + i * 1000 + timeMs * 0.002) - 0.5) * 0.08;
+      const wy = (seededRandom(seed + i * 2000 + timeMs * 0.002) - 0.5) * 0.08;
+      positions[i * 3] = lerp(from[0], to[0], t) + wx;
+      positions[i * 3 + 1] = lerp(from[1], to[1], t) + wy;
       positions[i * 3 + 2] = lerp(from[2], to[2], t);
     }
     pointsRef.current.geometry.attributes.position!.needsUpdate = true;
   });
 
-  const positions = new Float32Array(count * 3);
-
   return (
     <points ref={pointsRef}>
       <bufferGeometry>
-        <bufferAttribute attach="attributes-position" count={count} array={positions} itemSize={3} />
+        <bufferAttribute attach="attributes-position" count={count} array={new Float32Array(count * 3)} itemSize={3} />
       </bufferGeometry>
-      <pointsMaterial
-        color={color}
-        size={size}
-        transparent
-        opacity={0}
-        sizeAttenuation
-        blending={THREE.AdditiveBlending}
-        depthWrite={false}
-      />
+      <pointsMaterial color={color} size={0.06} transparent opacity={0} sizeAttenuation blending={THREE.AdditiveBlending} depthWrite={false} />
     </points>
   );
 }
@@ -561,16 +458,11 @@ function ParticleStream({ from, to, count, color, size, opacity, timeMs, seed }:
 function Floor() {
   return (
     <>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.5, 0]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -3.5, 0]} receiveShadow>
         <planeGeometry args={[50, 30]} />
         <meshStandardMaterial color={0x2a2e42} roughness={0.75} metalness={0.1} />
       </mesh>
-      <gridHelper
-        args={[30, 30, 0x3a3f58, 0x3a3f58]}
-        position={[0, -1.49, 0]}
-        material-transparent
-        material-opacity={0.2}
-      />
+      <gridHelper args={[30, 30, 0x3a3f58, 0x3a3f58]} position={[0, -3.49, 0]} material-transparent material-opacity={0.15} />
     </>
   );
 }
@@ -578,346 +470,206 @@ function Floor() {
 function Lights() {
   return (
     <>
-      <ambientLight intensity={0.9} color={0xd0d8f0} />
-      <directionalLight
-        position={[4, 10, 6]}
-        intensity={1.8}
-        castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
-        shadow-camera-left={-14}
-        shadow-camera-right={14}
-        shadow-camera-top={10}
-        shadow-camera-bottom={-10}
-      />
-      <directionalLight position={[-4, 5, -3]} intensity={0.5} color={0xaaccff} />
-      <pointLight position={[0, 3, -4]} intensity={0.7} color={COL_EF} distance={20} />
+      <ambientLight intensity={1.0} color={0xd0d8f0} />
+      <directionalLight position={[3, 8, 5]} intensity={1.6} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
+      <directionalLight position={[-3, 4, -2]} intensity={0.4} color={0xaaccff} />
     </>
   );
 }
 
-/* ━━ SCENE ORCHESTRATOR ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* ━━ SCENE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function Scene({ currentTimeMs }: { currentTimeMs: number }) {
   const { camera } = useThree();
 
-  // ── Camera choreography ──
+  /* ── Layout is vertical: each step flows downward ── 
+     Y positions (top to bottom):
+     y=2    source file
+     y=1    arrow
+     y=0    server copy / transcode box
+     y=-1   arrow
+     y=-2   variant bars / player
+  */
+
+  // ── Camera ──
   useFrame(() => {
-    // Act 1: Traditional — centered, medium close
-    const actAPos = new THREE.Vector3(0, 1.5, 5.5);
-    const actATar = new THREE.Vector3(0, 0, 1);
+    // Acts 1 & 2: looking at the vertical flow, slightly angled
+    const basePos = new THREE.Vector3(0, 0, 6);
+    const baseTar = new THREE.Vector3(0, -0.5, 0);
 
-    // Transition: pull back and prepare to shift right
-    const actBPos = new THREE.Vector3(0, 1.5, 5.5);
-    const actBTar = new THREE.Vector3(0, 0, 1);
+    // Act 3: pull back to see both side by side
+    const widePos = new THREE.Vector3(0, 0.5, 9);
+    const wideTar = new THREE.Vector3(0, -0.5, 0);
 
-    // Act 3: Wide shot showing both side by side
-    const actCPos = new THREE.Vector3(0, 3.5, 10);
-    const actCTar = new THREE.Vector3(0, 0, 1.5);
-
-    const transitionProg = easeInOut(prog(currentTimeMs, TRANSITION_START, TRANSITION_END));
     const compareProg = easeInOut(prog(currentTimeMs, C_START, C_START + 1500));
 
-    let pos = actAPos.clone();
-    let tar = actATar.clone();
-
-    // During transition, the camera stays centered
-    if (transitionProg > 0) {
-      pos.lerp(actBPos, transitionProg);
-      tar.lerp(actBTar, transitionProg);
-    }
-
-    // During comparison, pull back to wide
-    if (compareProg > 0) {
-      pos.lerp(actCPos, compareProg);
-      tar.lerp(actCTar, compareProg);
-    }
-
-    // Subtle shake during ingest processing
-    if (currentTimeMs >= A_INGEST_START && currentTimeMs < A_INGEST_END) {
-      const shake = 0.01;
-      pos.x += Math.sin(currentTimeMs * 0.007) * shake;
-      pos.y += Math.cos(currentTimeMs * 0.011) * shake;
-    }
+    const pos = basePos.clone().lerp(widePos, compareProg);
+    const tar = baseTar.clone().lerp(wideTar, compareProg);
 
     camera.position.copy(pos);
     camera.lookAt(tar);
   });
 
-  // ── Derived state: Act 1 — Traditional ──
-
-  // File appearance
-  const aFileOpa = easeOut(prog(currentTimeMs, A_FILE_IN, A_FILE_IN + 800));
-
-  // Upload: file travels through pipe
-  const aUploadPipeOpa = easeOut(prog(currentTimeMs, A_UPLOAD_START - 300, A_UPLOAD_START + 200));
-  // File fades out as it enters the pipe, reappears at the machine
-  const aFileInPipeOpa = currentTimeMs >= A_UPLOAD_START
-    ? lerp(aFileOpa, 0, easeOut(prog(currentTimeMs, A_UPLOAD_START, A_UPLOAD_START + 600)))
-    : aFileOpa;
-  const aFileAtMachineOpa = easeOut(prog(currentTimeMs, A_UPLOAD_END - 400, A_UPLOAD_END));
-  // File shrinks into machine
-  const aFileIntoMachine = easeInOut(prog(currentTimeMs, A_INGEST_START, A_INGEST_START + 800));
-
-  // Ingest: transcode machine processes
-  const aMachineOpa = easeOut(prog(currentTimeMs, A_UPLOAD_END - 500, A_UPLOAD_END));
-  const aIngestProg = prog(currentTimeMs, A_INGEST_START, A_INGEST_END);
-
-  // Variants emerge
-  const aVariantHiOpa = easeOut(prog(currentTimeMs, A_INGEST_END - 500, A_INGEST_END + 200));
-  const aVariantMdOpa = easeOut(prog(currentTimeMs, A_INGEST_END - 200, A_INGEST_END + 400));
-  const aVariantLoOpa = easeOut(prog(currentTimeMs, A_INGEST_END + 100, A_INGEST_END + 600));
-
-  // Player lights up (finally)
-  const aPlayerOpa = easeOut(prog(currentTimeMs, A_STORE - 500, A_STORE + 200));
-  const aPlaying = easeOut(prog(currentTimeMs, A_PLAY, A_PLAY + 800));
+  // ── Act 1: Traditional ──
+  const aBarOpa = easeOut(prog(currentTimeMs, A_IN, A_IN + 800));
+  const aUploadArrow = easeOut(prog(currentTimeMs, A_UPLOAD_START - 300, A_UPLOAD_START));
+  const aUploadProg = easeInOut(prog(currentTimeMs, A_UPLOAD_START, A_UPLOAD_END));
+  const aCopyOpa = easeOut(prog(currentTimeMs, A_UPLOAD_END - 500, A_UPLOAD_END));
+  const aTransArrow = easeOut(prog(currentTimeMs, A_TRANSCODE_START - 300, A_TRANSCODE_START));
+  const aTransActive = currentTimeMs >= A_TRANSCODE_START && currentTimeMs < A_TRANSCODE_END;
+  const aTransBoxOpa = easeOut(prog(currentTimeMs, A_TRANSCODE_START - 500, A_TRANSCODE_START));
+  const aVariantOpa = easeOut(prog(currentTimeMs, A_TRANSCODE_END - 300, A_TRANSCODE_END + 500));
+  const aServeArrow = easeOut(prog(currentTimeMs, A_PLAY - 600, A_PLAY - 200));
+  const aPlayerOpa = easeOut(prog(currentTimeMs, A_PLAY - 400, A_PLAY));
+  const aPlaying = easeOut(prog(currentTimeMs, A_PLAY, A_PLAY + 600));
 
   // Upload particles
   const aUploadParticles = currentTimeMs >= A_UPLOAD_START && currentTimeMs < A_UPLOAD_END;
+  const aUploadTime = currentTimeMs - A_UPLOAD_START;
 
-  // ── Derived state: Act 2 — Editframe JIT ──
+  // ── Act 2: Editframe JIT ──
+  const bBarOpa = easeOut(prog(currentTimeMs, B_IN, B_IN + 800));
+  const bHighlightOn = currentTimeMs >= B_HIGHLIGHT;
+  const bFetchArrow = easeOut(prog(currentTimeMs, B_FETCH_START - 300, B_FETCH_START));
+  const bSegOpa = easeOut(prog(currentTimeMs, B_FETCH_START, B_FETCH_START + 300));
+  const bSegTravel = easeInOut(prog(currentTimeMs, B_FETCH_START, B_FETCH_END));
+  const bTransBoxOpa = easeOut(prog(currentTimeMs, B_TRANSCODE_START - 400, B_TRANSCODE_START));
+  const bTransActive = currentTimeMs >= B_TRANSCODE_START && currentTimeMs < B_TRANSCODE_END;
+  const bOutputOpa = easeOut(prog(currentTimeMs, B_TRANSCODE_END - 200, B_TRANSCODE_END + 200));
+  const bOutputTravel = easeInOut(prog(currentTimeMs, B_TRANSCODE_END, B_PLAY));
+  const bServeArrow = easeOut(prog(currentTimeMs, B_TRANSCODE_END - 200, B_TRANSCODE_END));
+  const bPlayerOpa = easeOut(prog(currentTimeMs, B_IN + 300, B_IN + 800));
+  const bPlaying = easeOut(prog(currentTimeMs, B_PLAY, B_PLAY + 400));
 
-  const bUrlOpa = easeOut(prog(currentTimeMs, B_URL_IN, B_URL_IN + 800));
+  // "Next" segment animation
+  const bNext1Opa = easeOut(prog(currentTimeMs, B_NEXT_START, B_NEXT_START + 300));
+  const bNext1Travel = easeInOut(prog(currentTimeMs, B_NEXT_START, B_NEXT_END));
+  const bNext2Opa = easeOut(prog(currentTimeMs, B_NEXT_START + 400, B_NEXT_START + 700));
+  const bNext2Travel = easeInOut(prog(currentTimeMs, B_NEXT_START + 400, B_NEXT_END + 400));
 
-  // Player request pulse
-  const bRequestPulse = easeOut(prog(currentTimeMs, B_REQUEST, B_REQUEST + 400)) *
-    (1 - easeOut(prog(currentTimeMs, B_REQUEST + 400, B_REQUEST + 800)));
+  // Particles
+  const bParticlesActive = currentTimeMs >= B_FETCH_START && currentTimeMs < B_END;
+  const bParticleTime = currentTimeMs - B_FETCH_START;
 
-  // Slice peels off
-  const bSliceOpa = easeOut(prog(currentTimeMs, B_SLICE_START, B_SLICE_START + 300));
-  const bSliceTravel = easeInOut(prog(currentTimeMs, B_SLICE_START, B_TRANSCODE));
-
-  // Mini transcode machine
-  const bMachineOpa = easeOut(prog(currentTimeMs, B_SLICE_START - 200, B_SLICE_START + 300));
-  const bTranscodeProg = prog(currentTimeMs, B_TRANSCODE, B_TRANSCODE_END);
-
-  // Transcoded slice to player
-  const bStreamProg = easeInOut(prog(currentTimeMs, B_STREAM, B_STREAM + 400));
-  const bStreamOpa = easeOut(prog(currentTimeMs, B_STREAM, B_STREAM + 200)) *
-    (1 - easeOut(prog(currentTimeMs, B_PLAY, B_PLAY + 300)));
-
-  // Player lights up (immediately!)
-  const bPlayerOpa = easeOut(prog(currentTimeMs, B_REQUEST - 300, B_REQUEST + 200));
-  const bPlaying = easeOut(prog(currentTimeMs, B_PLAY, B_PLAY + 500));
-
-  // More slices — show 2 additional slices for different bitrates
-  const bSlice2Prog = easeInOut(prog(currentTimeMs, B_MORE_SLICES, B_MORE_SLICES + 1200));
-  const bSlice2Opa = easeOut(prog(currentTimeMs, B_MORE_SLICES, B_MORE_SLICES + 300));
-  const bSlice3Prog = easeInOut(prog(currentTimeMs, B_MORE_SLICES + 400, B_MORE_SLICES + 1600));
-  const bSlice3Opa = easeOut(prog(currentTimeMs, B_MORE_SLICES + 400, B_MORE_SLICES + 700));
-
-  // Stream particles
-  const bParticlesActive = currentTimeMs >= B_STREAM && currentTimeMs < B_END;
-  const bParticleTime = currentTimeMs >= B_STREAM ? currentTimeMs - B_STREAM : 0;
-
-  // ── Act 3: Side-by-side shift ──
+  // ── Act 3: Side-by-side ──
   const sideProg = easeInOut(prog(currentTimeMs, C_START, C_START + 1500));
-  const tradShift = -SIDE_OFFSET * sideProg;
-  const efShift = SIDE_OFFSET * sideProg;
+  const tradShift = -3.2 * sideProg;
+  const efShift = 3.2 * sideProg;
 
-  // During act 3, dim traditional, brighten editframe
-  const tradDim = currentTimeMs >= C_START ? lerp(1, 0.4, sideProg) : 1;
-  const efBright = 1;
-
-  // Which act are we in? (for positioning)
-  // Acts 1 & 3: traditional visible. Acts 2 & 3: editframe visible.
   const tradVisible = currentTimeMs < TRANSITION_END || currentTimeMs >= C_START;
-  const efVisible = currentTimeMs >= B_START;
+  const efVisible = currentTimeMs >= B_IN;
 
-  // Act 1 fade-out during transition
-  const tradActFade = currentTimeMs >= TRANSITION_START && currentTimeMs < C_START
+  // Fade traditional out during transition, back in during comparison
+  const tradFadeOut = currentTimeMs >= TRANSITION_START && currentTimeMs < C_START
     ? 1 - easeOut(prog(currentTimeMs, TRANSITION_START, TRANSITION_END))
-    : (currentTimeMs >= C_START ? 1 : 1);
-
-  // Act 3 traditional re-appearance
-  const tradAct3Opa = currentTimeMs >= C_START ? easeOut(prog(currentTimeMs, C_START, C_START + 800)) : 0;
-  const tradFinalOpa = currentTimeMs >= C_START ? tradAct3Opa * tradDim : tradActFade;
+    : 1;
+  const tradFadeIn = currentTimeMs >= C_START
+    ? easeOut(prog(currentTimeMs, C_START, C_START + 800)) * lerp(1, 0.4, sideProg)
+    : tradFadeOut;
 
   return (
     <>
       <Lights />
       <Floor />
 
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          ACT 1: TRADITIONAL PLATFORM
-          Shown centered, then fades during transition, reappears
-          shifted left in Act 3.
-         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/* ━━ ACT 1: TRADITIONAL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {tradVisible && (
         <group position={[tradShift, 0, 0]}>
-          {/* Step 1: "You have a file" — multi-segment video file */}
-          <VideoFile
-            opacity={aFileInPipeOpa * tradFinalOpa}
-            position={[0, 0.3, 0]}
-            label="source.mp4 — 1080p, 60s"
-          />
 
-          {/* Step 2: Upload pipe (bottleneck shape) */}
-          <UploadPipe
-            opacity={aUploadPipeOpa * tradFinalOpa}
-            position={[0, 0.3, 1.25]}
-          />
+          {/* Source file */}
+          <FilmstripBar opacity={aBarOpa * tradFadeIn} position={[0, 2, 0]} label="video.mp4" />
 
-          {/* Upload particles */}
+          {/* ↓ Upload */}
+          <Arrow opacity={aUploadArrow * tradFadeIn} position={[0, 1.35, 0.1]} color={COL_TRAD} />
+          <Label position={[0.4, 1.35, 0.1]} fontSize={0.09} color="#ff8a65" opacity={aUploadArrow * tradFadeIn * 0.7} anchorX="left">
+            upload entire file
+          </Label>
           {aUploadParticles && (
-            <ParticleStream
-              from={[0, 0.3, 0.2]}
-              to={[0, 0.3, 2.3]}
-              count={60}
-              color={COL_TRAD}
-              size={0.05}
-              opacity={0.6 * tradFinalOpa}
-              timeMs={currentTimeMs - A_UPLOAD_START}
-              seed={1000}
-            />
+            <ParticleStream from={[0, 1.9, 0.1]} to={[0, 0.6, 0.1]} count={40} color={COL_TRAD} opacity={0.5 * tradFadeIn} timeMs={aUploadTime} seed={1000} />
           )}
 
-          {/* File arriving at transcode machine (shrinks into it) */}
-          <VideoFile
-            opacity={aFileAtMachineOpa * (1 - aFileIntoMachine) * tradFinalOpa}
-            scale={lerp(1, 0.3, aFileIntoMachine)}
-            position={[0, 0.3, 2.5]}
-          />
+          {/* Copy on server */}
+          <FilmstripBar opacity={aCopyOpa * tradFadeIn} position={[0, 0.5, 0]} label="copy on server" />
 
-          {/* Step 3: Transcode machine (THE SHARED COMPONENT — large scale) */}
-          <TranscodeMachine
-            opacity={aMachineOpa * tradFinalOpa}
-            processing={aIngestProg}
-            scale={1.0}
-            position={[0, 0.3, 3.2]}
-          />
-          {/* Machine label */}
-          <Label
-            text="Transcode"
-            position={[0, -0.5, 3.2]}
-            fontSize={0.1}
-            color="#ffab91"
-            opacity={aMachineOpa * tradFinalOpa * 0.7}
-          />
+          {/* ↓ Transcode */}
+          <Arrow opacity={aTransArrow * tradFadeIn} position={[0, -0.15, 0.1]} color={COL_MACHINE} />
+          <TranscodeBox opacity={aTransBoxOpa * tradFadeIn} active={aTransActive} scale={1} position={[0, -0.8, 0]} />
 
-          {/* Step 4: Variant blocks emerge with resolution labels */}
-          <group position={[0, 0, 4.2]}>
-            <VariantBlock opacity={aVariantHiOpa * tradFinalOpa} color={COL_VARIANT_HI} height={0.5} position={[0, 0.55, 0]} label="1080p" />
-            <VariantBlock opacity={aVariantMdOpa * tradFinalOpa} color={COL_VARIANT_MD} height={0.35} position={[0, 0.15, 0]} label="720p" />
-            <VariantBlock opacity={aVariantLoOpa * tradFinalOpa} color={COL_VARIANT_LO} height={0.2} position={[0, -0.15, 0]} label="480p" />
+          {/* Output variants */}
+          <group position={[0, -1.6, 0]}>
+            <VariantBar opacity={aVariantOpa * tradFadeIn} color={COL_1080} width={BAR_W * 0.95} position={[0, 0.25, 0]} label="1080p" />
+            <VariantBar opacity={aVariantOpa * tradFadeIn * 0.85} color={COL_720} width={BAR_W * 0.7} position={[0, 0, 0]} label="720p" />
+            <VariantBar opacity={aVariantOpa * tradFadeIn * 0.7} color={COL_480} width={BAR_W * 0.45} position={[0, -0.25, 0]} label="480p" />
           </group>
 
-          {/* Step 5: Player screen */}
-          <PlayerScreen
-            opacity={aPlayerOpa * tradFinalOpa}
-            playing={aPlaying * tradFinalOpa}
-            position={[0, 0.2, 5.2]}
-          />
+          {/* ↓ Serve */}
+          <Arrow opacity={aServeArrow * tradFadeIn} position={[0, -2.2, 0.1]} />
+
+          {/* Player */}
+          <PlayerScreen opacity={aPlayerOpa * tradFadeIn} playing={aPlaying * tradFadeIn} position={[0, -2.8, 0]} />
         </group>
       )}
 
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          ACT 2: EDITFRAME JIT
-          Shown centered, then shifts right in Act 3.
-         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/* ━━ ACT 2: EDITFRAME JIT ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {efVisible && (
         <group position={[efShift, 0, 0]}>
-          {/* Step 1: "You have a URL" — same VideoFile with highlight */}
-          <VideoFile
-            opacity={bUrlOpa * efBright}
-            position={[0, 0.3, 0]}
-            label="https://cdn.example.com/video.mp4"
-            highlightSegment={currentTimeMs >= B_SLICE_START ? 1 : -1}
+
+          {/* Source file — stays on YOUR server, with highlighted region */}
+          <FilmstripBar
+            opacity={bBarOpa}
+            position={[0, 2, 0]}
+            label="https://your-cdn.com/video.mp4"
+            dimSegments={bHighlightOn}
+            highlightRange={bHighlightOn ? [1, 1] : undefined}
           />
 
-          {/* Step 2: Player requests a frame — screen pulses */}
-          <PlayerScreen
-            opacity={bPlayerOpa * efBright}
-            playing={bPlaying}
-            position={[0, 0.2, 4.5]}
-          />
+          {/* ↓ Fetch byte range */}
+          <Arrow opacity={bFetchArrow} position={[0, 1.35, 0.1]} color={COL_HIGHLIGHT} />
+          <Label position={[0.4, 1.35, 0.1]} fontSize={0.09} color="#69f0ae" opacity={bFetchArrow * 0.7} anchorX="left">
+            fetch bytes 0:10–0:20
+          </Label>
 
-          {/* Request pulse glow */}
-          <pointLight
-            position={[0, 0.2, 4.5]}
-            color={COL_SCREEN_ON}
-            intensity={bRequestPulse * 8}
-            distance={4}
-          />
-
-          {/* Step 3: Byte-range segment peels off and travels to machine */}
-          <FileSegment
-            opacity={bSliceOpa}
-            emissive={0.4}
-            color={COL_SLICE}
+          {/* The segment traveling down */}
+          <Segment
+            opacity={bSegOpa}
+            color={COL_HIGHLIGHT}
             label="0:10–0:20"
-            position={[
-              0,
-              0.3,
-              lerp(0.3, 2.0, bSliceTravel)
-            ]}
+            position={[0, lerp(1.6, 0.6, bSegTravel), 0.1]}
           />
 
-          {/* Step 4: THE SAME TRANSCODE MACHINE — but smaller (compact) */}
-          <TranscodeMachine
-            opacity={bMachineOpa * efBright}
-            processing={bTranscodeProg}
-            scale={0.6}
-            position={[0, 0.3, 2.2]}
-          />
-          <Label
-            text="Transcode"
-            position={[0, -0.25, 2.2]}
-            fontSize={0.08}
-            color="#ffab91"
-            opacity={bMachineOpa * efBright * 0.7}
-          />
+          {/* Transcode box — same component, smaller */}
+          <TranscodeBox opacity={bTransBoxOpa} active={bTransActive} scale={0.7} position={[0, -0.1, 0]} />
 
-          {/* Step 5: Transcoded segment streams to player */}
-          <FileSegment
-            opacity={bStreamOpa}
-            emissive={0.5}
+          {/* ↓ Output */}
+          <Arrow opacity={bServeArrow} position={[0, -0.7, 0.1]} color={COL_EF} />
+
+          {/* Transcoded segment traveling to player */}
+          <Segment
+            opacity={bOutputOpa * (1 - bPlaying)}
             color={COL_EF}
             label="1080p"
-            position={[
-              0,
-              0.3,
-              lerp(2.6, 4.3, bStreamProg)
-            ]}
+            position={[0, lerp(-0.5, -1.5, bOutputTravel), 0.1]}
           />
 
-          {/* Streaming particles */}
+          {/* Particles flowing */}
           {bParticlesActive && (
-            <ParticleStream
-              from={[0, 0.3, 2.5]}
-              to={[0, 0.2, 4.3]}
-              count={100}
-              color={COL_EF}
-              size={0.06}
-              opacity={0.7 * efBright}
-              timeMs={bParticleTime}
-              seed={5000}
-            />
+            <ParticleStream from={[0, 1.6, 0.1]} to={[0, -1.8, 0.1]} count={60} color={COL_EF} opacity={0.5} timeMs={bParticleTime} seed={5000} />
           )}
 
-          {/* Step 6: More segments for different bitrates (staggered) */}
-          <FileSegment
-            opacity={bSlice2Opa * 0.7}
-            emissive={0.25}
-            color={COL_VARIANT_MD}
+          {/* Player */}
+          <PlayerScreen opacity={bPlayerOpa} playing={bPlaying} position={[0, -2.0, 0]} />
+
+          {/* "Next" segments — additional fetches staggered */}
+          <Segment
+            opacity={bNext1Opa * 0.6}
+            color={COL_720}
             label="720p"
-            position={[
-              0.3,
-              0.1,
-              lerp(0.3, 4.3, bSlice2Prog)
-            ]}
-            scale={0.8}
+            position={[0.4, lerp(1.6, -1.8, bNext1Travel), 0.1]}
           />
-          <FileSegment
-            opacity={bSlice3Opa * 0.6}
-            emissive={0.2}
-            color={COL_VARIANT_LO}
+          <Segment
+            opacity={bNext2Opa * 0.5}
+            color={COL_480}
             label="480p"
-            position={[
-              -0.3,
-              -0.1,
-              lerp(0.3, 4.3, bSlice3Prog)
-            ]}
-            scale={0.6}
+            position={[-0.4, lerp(1.6, -1.8, bNext2Travel), 0.1]}
           />
         </group>
       )}
@@ -931,7 +683,7 @@ export function JITStreamingCanvas({ currentTimeMs }: { currentTimeMs: number })
     <Canvas
       shadows
       gl={{ preserveDrawingBuffer: true, antialias: true, alpha: true }}
-      camera={{ position: [0, 1.5, 5.5], fov: 50 }}
+      camera={{ position: [0, 0, 6], fov: 50 }}
       style={{ background: "#1e2233", width: "100%", height: "100%" }}
       onCreated={({ gl }: { gl: THREE.WebGLRenderer }) => {
         gl.toneMapping = THREE.ACESFilmicToneMapping;
