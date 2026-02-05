@@ -335,7 +335,7 @@ function JitDiagram() {
    and a time-comparison punchline.  Fully scrubable.
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
-const SCENE_DUR = "18s";
+const SCENE_DUR = "14s";
 
 function FanOutDiagram() {
   const uid = useId();
@@ -453,7 +453,7 @@ function FanOutDiagram() {
           mode="fixed"
           duration={SCENE_DUR}
           className="relative w-full overflow-hidden"
-          style={{ aspectRatio: "16/10", background: "#303548" }}
+          style={{ aspectRatio: "16/10", background: "#1e2233" }}
         >
           <canvas
             ref={canvasRef}
@@ -481,43 +481,43 @@ function FanOutDiagram() {
             }}
           />
 
-          {/* ── Timed text overlays ──────────────────────────────── */}
+          {/* ── Timed text overlays (bigger, stronger shadows) ──── */}
 
-          {/* Phase 1: introduce the composition (0.4s–2s) */}
-          <div className="ef-caption" style={{ top: "6%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 600ms 400ms backwards, efCaptionOut 500ms 2000ms forwards" }}>
+          {/* Phase 1: hero moment (0.3s–1.8s) */}
+          <div className="ef-caption ef-caption-lg" style={{ top: "5%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 600ms 300ms backwards, efCaptionOut 400ms 1800ms forwards" }}>
             A 60-second video composition
           </div>
 
-          {/* Phase 2: set up the question (2.5s–3.4s) */}
-          <div className="ef-caption" style={{ top: "6%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 500ms 2500ms backwards, efCaptionOut 500ms 3400ms forwards" }}>
+          {/* Phase 2: the question (2.2s–2.9s) */}
+          <div className="ef-caption ef-caption-lg" style={{ top: "5%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 2200ms backwards, efCaptionOut 400ms 2900ms forwards" }}>
             How do you render it?
           </div>
 
-          {/* Phase 3: label the two approaches (3.8s+, persistent) */}
-          <div className="ef-caption ef-caption-dim" style={{ top: "4%", left: "12%", animation: "efCaptionIn 500ms 3800ms backwards" }}>
+          {/* Phase 3: side labels (3.2s+) */}
+          <div className="ef-caption ef-caption-dim" style={{ top: "3%", left: "10%", animation: "efCaptionIn 400ms 3200ms backwards" }}>
             Traditional
           </div>
-          <div className="ef-caption ef-caption-sm" style={{ top: "10%", left: "12%", animation: "efCaptionIn 400ms 4200ms backwards" }}>
+          <div className="ef-caption ef-caption-sub" style={{ top: "9%", left: "10%", animation: "efCaptionIn 400ms 3600ms backwards" }}>
             One worker, start to finish
           </div>
 
-          <div className="ef-caption" style={{ top: "4%", right: "12%", animation: "efCaptionIn 500ms 3800ms backwards" }}>
+          <div className="ef-caption ef-caption-brand" style={{ top: "3%", right: "10%", animation: "efCaptionIn 400ms 3200ms backwards" }}>
             Editframe
           </div>
-          <div className="ef-caption ef-caption-sm" style={{ top: "10%", right: "12%", animation: "efCaptionIn 400ms 4200ms backwards" }}>
+          <div className="ef-caption ef-caption-sub" style={{ top: "9%", right: "10%", animation: "efCaptionIn 400ms 3600ms backwards" }}>
             Split into fragments, render in parallel
           </div>
 
-          {/* Phase 4: narrate what's happening (8s–10.5s) */}
-          <div className="ef-caption ef-caption-sm" style={{ bottom: "6%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 500ms 8500ms backwards, efCaptionOut 500ms 10500ms forwards" }}>
+          {/* Phase 4: narrate (7s–8.5s) */}
+          <div className="ef-caption ef-caption-sub" style={{ bottom: "5%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 7000ms backwards, efCaptionOut 400ms 8500ms forwards" }}>
             Every worker processes its fragment at the same time
           </div>
 
-          {/* Phase 5: the punchline (12s+) */}
-          <div className="ef-caption ef-caption-hero" style={{ bottom: "12%", right: "10%", animation: "efCaptionIn 600ms 12000ms backwards" }}>
+          {/* Phase 5: punchline (9.5s+) */}
+          <div className="ef-caption ef-caption-hero" style={{ bottom: "14%", right: "8%", animation: "efCaptionIn 500ms 9500ms backwards" }}>
             {"4\u00d7 faster"}
           </div>
-          <div className="ef-caption ef-caption-sm" style={{ bottom: "6%", right: "10%", animation: "efCaptionIn 400ms 12800ms backwards" }}>
+          <div className="ef-caption ef-caption-sub" style={{ bottom: "7%", right: "8%", animation: "efCaptionIn 400ms 10200ms backwards" }}>
             Same quality. A fraction of the time.
           </div>
         </Timegroup>
@@ -527,19 +527,21 @@ function FanOutDiagram() {
         .ef-caption {
           position: absolute;
           pointer-events: none;
-          color: rgba(255,255,255,0.9);
-          font-size: 13px;
+          color: rgba(255,255,255,0.95);
+          font-size: 15px;
           font-weight: 700;
-          letter-spacing: 0.04em;
-          text-shadow: 0 1px 8px rgba(0,0,0,0.6);
+          letter-spacing: 0.03em;
+          text-shadow: 0 2px 12px rgba(0,0,0,0.8), 0 0 4px rgba(0,0,0,0.5);
           white-space: nowrap;
           opacity: 0;
         }
-        .ef-caption-dim { color: rgba(255,255,255,0.45); }
-        .ef-caption-sm { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.6); }
-        .ef-caption-hero { font-size: 22px; font-weight: 900; color: #42A5F5; text-shadow: 0 0 20px rgba(66,165,245,0.5); }
+        .ef-caption-lg { font-size: 18px; font-weight: 800; }
+        .ef-caption-dim { color: rgba(255,255,255,0.4); font-size: 16px; }
+        .ef-caption-brand { font-size: 16px; font-weight: 800; color: #82b1ff; }
+        .ef-caption-sub { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.55); }
+        .ef-caption-hero { font-size: 28px; font-weight: 900; color: #82b1ff; text-shadow: 0 0 30px rgba(130,177,255,0.6), 0 2px 12px rgba(0,0,0,0.8); }
         @keyframes efCaptionIn {
-          from { opacity: 0; transform: translateY(8px); }
+          from { opacity: 0; transform: translateY(10px); }
           to   { opacity: 1; transform: translateY(0); }
         }
         @keyframes efCaptionOut {
