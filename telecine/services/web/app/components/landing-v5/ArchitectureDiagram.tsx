@@ -702,7 +702,7 @@ function ArchitectureDiagram() {
         <JitDiagram />
       </DiagramCard>
 
-      <DiagramCard title="PARALLEL FRAGMENTS" subtitle="Split, process, recombine" color="var(--poster-blue)">
+      <DiagramCard title="PARALLEL FRAGMENTS" subtitle="Split, process, recombine" color="var(--poster-blue)" span>
         <FanOutDiagram />
       </DiagramCard>
 
