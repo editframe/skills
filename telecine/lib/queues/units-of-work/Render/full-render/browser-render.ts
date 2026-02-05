@@ -213,7 +213,7 @@ export async function renderWithBrowserFrameByFrame({
         height: renderInfo.height,
         location: `file://${bundleInfo.indexPath}`,
         orgId: testAgent.org.id,
-        renderId: `test-${bundleInfo.templateHash}`,
+        renderId: `test-${bundleInfo.templateHash}-${canvasMode}`,
         segmentDurationMs: parsedOptions.renderSliceMs,
         segmentIndex: fragmentId,
         durationMs: renderInfo.durationMs,

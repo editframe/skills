@@ -202,6 +202,64 @@ async function renderWithBrowser(
     });
     timing.renderFragment = performance.now() - renderFnStart;
     
+    // Retrieve detailed timing data for frame-by-frame mode
+    if (renderMode === "browser-frame-by-frame") {
+      try {
+        // Include canvasMode in renderId to make it unique per render strategy
+        const renderId = `test-${result.templateHash}-${canvasMode}`;
+        const detailedTiming = await electronRpc.rpc.call("getBrowserFrameTiming", {
+          renderId,
+        });
+        
+        // Clear the timing data from RPC server's memory
+        await electronRpc.rpc.call("clearBrowserFrameTiming", {
+          renderId,
+        });
+        
+        // Aggregate timing statistics
+        if (detailedTiming && detailedTiming.length > 0) {
+          const allFrames = detailedTiming.flatMap((seg: any) => seg.frames);
+          if (allFrames.length > 0) {
+            const avgCapture = allFrames.reduce((sum: number, f: any) => sum + f.captureMs, 0) / allFrames.length;
+            const avgCanvas = allFrames.reduce((sum: number, f: any) => sum + f.canvasMs, 0) / allFrames.length;
+            const avgBlob = allFrames.reduce((sum: number, f: any) => sum + f.blobMs, 0) / allFrames.length;
+            const avgSerialize = allFrames.reduce((sum: number, f: any) => sum + f.serializeMs, 0) / allFrames.length;
+            const avgIpcRoundTrip = allFrames.reduce((sum: number, f: any) => sum + f.ipcRoundTripMs, 0) / allFrames.length;
+            const avgIpcOverhead = allFrames.reduce((sum: number, f: any) => sum + f.ipcOverheadMs, 0) / allFrames.length;
+            const totalDataSize = allFrames.reduce((sum: number, f: any) => sum + f.jpegSize, 0);
+            
+            timing.perFrameTiming = {
+              count: allFrames.length,
+              avgSeekMs: 0, // Not measured in current implementation
+              avgRenderMs: 0, // Not measured separately
+              avgCaptureMs: avgCapture,
+              avgSerializeMs: avgSerialize,
+              avgBlobMs: avgBlob,
+              avgIpcTransferMs: avgIpcOverhead,
+              minFrameMs: Math.min(...allFrames.map((f: any) => f.totalCaptureMs)),
+              maxFrameMs: Math.max(...allFrames.map((f: any) => f.totalCaptureMs)),
+              totalFramesMs: allFrames.reduce((sum: number, f: any) => sum + f.totalCaptureMs, 0),
+            };
+            
+            timing.ipcOverhead = {
+              calls: allFrames.length,
+              totalMs: allFrames.reduce((sum: number, f: any) => sum + f.ipcOverheadMs, 0),
+              avgMs: avgIpcOverhead,
+              totalBytesTransferred: totalDataSize,
+            };
+            
+            timing.browserSideTiming = {
+              captureTotal: allFrames.reduce((sum: number, f: any) => sum + f.captureMs, 0),
+              renderTotal: 0, // Not measured separately in current implementation
+              serializeTotal: allFrames.reduce((sum: number, f: any) => sum + f.serializeMs, 0),
+            };
+          }
+        }
+      } catch (error) {
+        console.warn("Failed to retrieve detailed timing data:", error);
+      }
+    }
+    
     // Save to nested output directory: testName/strategyName/output.mp4
     const writeStart = performance.now();
     const baseOutputDir = options.outputDir || SHARED_OUTPUT_DIR;
