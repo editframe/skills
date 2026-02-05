@@ -24,7 +24,7 @@ import {
 } from "@editframe/react";
 import type { EFTimegroup } from "@editframe/elements";
 
-const VIDEO_SRC = "/assets/video.mp4";
+const VIDEO_SRC = "https://assets.editframe.com/bars-n-tone.mp4";
 
 interface CaptionEntry {
   id: string;

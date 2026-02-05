@@ -1,5 +1,4 @@
 import type { EFTimegroup } from "@editframe/elements";
-import type { Task } from "@lit/task";
 import type { ReactiveController, ReactiveControllerHost } from "lit";
 import { useEffect, useRef, useState } from "react";
 
@@ -10,14 +9,14 @@ interface TimeInfo {
 }
 
 class CurrentTimeController implements ReactiveController {
-  #lastTaskPromise: Promise<unknown> | null = null;
   #isConnected = false;
+  #lastOwnCurrentTimeMs = Number.NaN;
+  #lastDurationMs = Number.NaN;
 
   constructor(
     private host: {
       ownCurrentTimeMs: number;
       durationMs: number;
-      frameTask: Task<readonly unknown[], unknown>;
     } & ReactiveControllerHost,
     private setCurrentTime: React.Dispatch<React.SetStateAction<TimeInfo>>,
   ) {
@@ -30,42 +29,33 @@ class CurrentTimeController implements ReactiveController {
 
   hostDisconnected(): void {
     this.#isConnected = false;
-    this.#lastTaskPromise = null;
     this.host.removeController(this);
   }
 
   hostUpdated(): void {
-    const currentTaskPromise = this.host.frameTask.taskComplete;
+    if (!this.#isConnected) return;
 
-    // Detect if a new frame task has started (promise reference changed)
-    if (currentTaskPromise !== this.#lastTaskPromise) {
-      this.#lastTaskPromise = currentTaskPromise;
+    const { ownCurrentTimeMs, durationMs } = this.host;
 
-      // Wait for this specific task to complete, then update React
-      // This is async so it doesn't block the update cycle
-      currentTaskPromise
-        .then(() => {
-          // Only update if still connected
-          if (this.#isConnected) {
-            this.#updateReactState();
-          }
-        })
-        .catch(() => {
-          // Ignore task errors - we'll continue observing
-        });
+    if (
+      ownCurrentTimeMs !== this.#lastOwnCurrentTimeMs ||
+      durationMs !== this.#lastDurationMs
+    ) {
+      this.#lastOwnCurrentTimeMs = ownCurrentTimeMs;
+      this.#lastDurationMs = durationMs;
+      this.#updateReactState();
     }
   }
 
   #updateReactState(): void {
-    // Always update to ensure React has the latest state
+    const { ownCurrentTimeMs, durationMs } = this.host;
     this.setCurrentTime({
-      ownCurrentTimeMs: this.host.ownCurrentTimeMs,
-      durationMs: this.host.durationMs,
-      percentComplete: this.host.ownCurrentTimeMs / this.host.durationMs,
+      ownCurrentTimeMs,
+      durationMs,
+      percentComplete: durationMs > 0 ? ownCurrentTimeMs / durationMs : 0,
     });
   }
 
-  // Public method to manually trigger sync (for initialization)
   syncNow(): void {
     this.#updateReactState();
   }
@@ -90,14 +80,11 @@ export const useTimingInfo = (
       setTimeInfo,
     );
 
-    // Trigger initial update if the timegroup is already connected
     if (timegroupRef.current.isConnected) {
       controller.hostConnected();
-      // Sync initial state immediately
       controller.syncNow();
     }
 
-    // Cleanup function
     return () => {
       controller.hostDisconnected();
     };

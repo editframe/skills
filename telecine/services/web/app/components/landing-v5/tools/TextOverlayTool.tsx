@@ -18,7 +18,7 @@ import {
   TimeDisplay,
 } from "@editframe/react";
 
-const VIDEO_SRC = "/assets/video.mp4";
+const VIDEO_SRC = "https://assets.editframe.com/bars-n-tone.mp4";
 
 type Position = 
   | 'top-left' | 'top-center' | 'top-right'

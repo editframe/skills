@@ -19,7 +19,7 @@ import {
 } from "@editframe/react";
 import { CodeEditor } from "~/components/CodeEditor";
 
-const VIDEO_SRC = "/assets/video.mp4";
+const VIDEO_SRC = "https://assets.editframe.com/bars-n-tone.mp4";
 
 interface Template {
   name: string;
