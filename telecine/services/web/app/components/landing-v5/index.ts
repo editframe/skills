@@ -10,3 +10,9 @@ export { ComparisonTable } from './ComparisonTable.tsx';
 export { CustomerLogos } from './CustomerLogos.tsx';
 export { Testimonials } from './Testimonials.tsx';
 export { TerminalDemo } from './TerminalDemo.tsx';
+
+// Tools built from prompts
+export { TrimTool } from './tools/TrimTool.tsx';
+export { CaptionEditor } from './tools/CaptionEditor.tsx';
+export { ThumbnailPicker } from './tools/ThumbnailPicker.tsx';
+export { TextOverlayTool } from './tools/TextOverlayTool.tsx';

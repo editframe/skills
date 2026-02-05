@@ -20,6 +20,10 @@ import {
   CustomerLogos,
   Testimonials,
   TerminalDemo,
+  TrimTool,
+  CaptionEditor,
+  ThumbnailPicker,
+  TextOverlayTool,
 } from "~/components/landing-v5/index.ts";
 
 export const loader = async (args: LoaderFunctionArgs) => {
@@ -273,143 +277,47 @@ export default function IndexPage() {
               <div className="w-8 h-2 bg-white/40" />
             </div>
             <p className="text-xl text-white/80 max-w-2xl mx-auto">
-              Agent skills for building video editors, editing workflows, and complete applications. 
-              Describe what you want to build, get production-ready code.
+              Agent skills turn natural language into production-ready video tools.
+              Describe what you want. Get working code.
             </p>
           </div>
 
-          {/* Skill Categories Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
-            {[
-              { 
-                title: 'Video Composition', 
-                desc: 'Layouts, transitions, timing, text overlays, animations.',
-                icon: '▶',
-                example: '@video-composition'
-              },
-              { 
-                title: 'Editor GUI', 
-                desc: 'Timeline, scrubber, filmstrip, preview, playback controls.',
-                icon: '▦',
-                example: '@editor-gui'
-              },
-              { 
-                title: 'Editing Workflows', 
-                desc: 'Trim, split, merge, reorder, batch operations.',
-                icon: '⚡',
-                example: '@editing-workflow'
-              },
-              { 
-                title: 'Branded Templates', 
-                desc: 'Apply brand colors, logos, fonts, intros, outros.',
-                icon: '◆',
-                example: '@brand-template'
-              },
-              { 
-                title: 'Full Applications', 
-                desc: 'Complete video apps with upload, edit, export, share.',
-                icon: '⬡',
-                example: '@video-app'
-              },
-              { 
-                title: 'Cloud Pipeline', 
-                desc: 'Rendering, webhooks, CDN delivery, encoding presets.',
-                icon: '☁',
-                example: '@cloud-render'
-              },
-            ].map((skill, i) => (
-              <div key={i} className="bg-white/10 backdrop-blur-sm border border-white/20 p-5">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 bg-white text-[var(--poster-green)] flex items-center justify-center font-bold text-lg">
-                    {skill.icon}
-                  </div>
-                  <h3 className="font-bold uppercase tracking-wider text-sm">{skill.title}</h3>
-                </div>
-                <p className="text-sm text-white/70 mb-3">{skill.desc}</p>
-                <code className="text-xs text-[var(--poster-gold)] font-mono">{skill.example}</code>
-              </div>
-            ))}
-          </div>
-
-          {/* Prompt Examples - Three Cards */}
-          <div className="grid lg:grid-cols-3 gap-6">
-            {/* Example 1: Build a Video Editor */}
+          {/* Single Prompt Example - Cleaner, Focused */}
+          <div className="max-w-3xl mx-auto">
             <div className="relative">
-              <div className="absolute -bottom-3 -right-3 w-full h-full bg-[var(--poster-gold)]" />
-              <div className="relative bg-[#1a1a1a] border-4 border-white p-5 h-full">
-                <div className="flex items-center gap-2 mb-3 pb-3 border-b border-white/20">
-                  <div className="w-2 h-2 rounded-full bg-[#EF5350]" />
-                  <div className="w-2 h-2 rounded-full bg-[#FFCA28]" />
-                  <div className="w-2 h-2 rounded-full bg-[#4CAF50]" />
-                  <span className="ml-2 text-white/40 text-xs font-mono">editor-gui</span>
+              <div className="absolute -bottom-4 -right-4 w-full h-full bg-[var(--poster-gold)]" />
+              <div className="relative bg-[#1a1a1a] border-4 border-white overflow-hidden">
+                {/* Terminal Header */}
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-white/20">
+                  <div className="w-3 h-3 rounded-full bg-[#EF5350]" />
+                  <div className="w-3 h-3 rounded-full bg-[#FFCA28]" />
+                  <div className="w-3 h-3 rounded-full bg-[#4CAF50]" />
+                  <span className="ml-3 text-white/40 text-xs font-mono uppercase tracking-wider">prompt</span>
                 </div>
-                <div className="space-y-3 font-mono text-xs">
-                  <div className="text-[#FFCA28]">@editor-gui</div>
-                  <div className="text-white text-sm">
-                    Build a video editor with timeline, preview, and trim controls. 
-                    Support drag-to-reorder clips.
-                  </div>
-                  <div className="pt-3 border-t border-white/20 space-y-1 text-white/50">
-                    <div><span className="text-[#4CAF50]">✓</span> Preview component</div>
-                    <div><span className="text-[#4CAF50]">✓</span> Timeline with tracks</div>
-                    <div><span className="text-[#4CAF50]">✓</span> Scrubber + playhead</div>
-                    <div><span className="text-[#4CAF50]">✓</span> Trim handles</div>
-                    <div><span className="text-[#4CAF50]">✓</span> Drag-to-reorder</div>
+                
+                {/* Prompt Content */}
+                <div className="p-6 font-mono text-sm">
+                  <div className="text-[var(--poster-gold)] mb-4">@editor-gui</div>
+                  <div className="text-white text-lg leading-relaxed">
+                    Build a video trim tool with preview, playback controls, 
+                    and draggable in/out markers.
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Example 2: Editing Workflow */}
-            <div className="relative">
-              <div className="absolute -bottom-3 -right-3 w-full h-full bg-[var(--poster-blue)]" />
-              <div className="relative bg-[#1a1a1a] border-4 border-white p-5 h-full">
-                <div className="flex items-center gap-2 mb-3 pb-3 border-b border-white/20">
-                  <div className="w-2 h-2 rounded-full bg-[#EF5350]" />
-                  <div className="w-2 h-2 rounded-full bg-[#FFCA28]" />
-                  <div className="w-2 h-2 rounded-full bg-[#4CAF50]" />
-                  <span className="ml-2 text-white/40 text-xs font-mono">workflow</span>
-                </div>
-                <div className="space-y-3 font-mono text-xs">
-                  <div className="text-[#FFCA28]">@editing-workflow</div>
-                  <div className="text-white text-sm">
-                    Create a social clip workflow: auto-detect highlights, 
-                    crop to 9:16, add captions, apply brand intro.
+                {/* Output Preview */}
+                <div className="border-t border-white/20 bg-white/5 p-6">
+                  <div className="flex items-center gap-2 text-xs text-white/50 uppercase tracking-wider mb-4">
+                    <svg className="w-4 h-4 text-[#4CAF50]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Generated
                   </div>
-                  <div className="pt-3 border-t border-white/20 space-y-1 text-white/50">
-                    <div><span className="text-[#4CAF50]">✓</span> Highlight detection</div>
-                    <div><span className="text-[#4CAF50]">✓</span> Aspect ratio crop</div>
-                    <div><span className="text-[#4CAF50]">✓</span> Auto captions</div>
-                    <div><span className="text-[#4CAF50]">✓</span> Brand overlay</div>
-                    <div><span className="text-[#4CAF50]">✓</span> Export pipeline</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Example 3: Full Application */}
-            <div className="relative">
-              <div className="absolute -bottom-3 -right-3 w-full h-full bg-[var(--poster-red)]" />
-              <div className="relative bg-[#1a1a1a] border-4 border-white p-5 h-full">
-                <div className="flex items-center gap-2 mb-3 pb-3 border-b border-white/20">
-                  <div className="w-2 h-2 rounded-full bg-[#EF5350]" />
-                  <div className="w-2 h-2 rounded-full bg-[#FFCA28]" />
-                  <div className="w-2 h-2 rounded-full bg-[#4CAF50]" />
-                  <span className="ml-2 text-white/40 text-xs font-mono">video-app</span>
-                </div>
-                <div className="space-y-3 font-mono text-xs">
-                  <div className="text-[#FFCA28]">@video-app</div>
-                  <div className="text-white text-sm">
-                    Build a testimonial video app: record webcam, 
-                    add questions overlay, auto-edit pauses, 
-                    export with branding.
-                  </div>
-                  <div className="pt-3 border-t border-white/20 space-y-1 text-white/50">
-                    <div><span className="text-[#4CAF50]">✓</span> Webcam recorder</div>
-                    <div><span className="text-[#4CAF50]">✓</span> Question prompts</div>
-                    <div><span className="text-[#4CAF50]">✓</span> Silence removal</div>
-                    <div><span className="text-[#4CAF50]">✓</span> Brand template</div>
-                    <div><span className="text-[#4CAF50]">✓</span> Share link</div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                    {['Preview', 'Scrubber', 'TogglePlay', 'TrimHandles'].map((comp) => (
+                      <div key={comp} className="bg-white/10 px-3 py-2 text-center font-mono text-white/70">
+                        {`<${comp} />`}
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -417,16 +325,107 @@ export default function IndexPage() {
           </div>
 
           {/* CTA */}
-          <div className="text-center mt-16">
+          <div className="text-center mt-12">
             <Link
               to="/docs/skills"
               className="inline-flex items-center px-8 py-4 bg-white text-[var(--poster-green)] font-bold text-sm uppercase tracking-wider hover:bg-[var(--poster-gold)] hover:text-[var(--ink-black)] transition-colors shadow-poster-hard"
             >
-              Explore all skills
+              Explore skills
               <svg className="ml-3 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Tools Built From Prompts - LIVE EXAMPLES */}
+      <section className="relative py-24 bg-[var(--paper-cream)] dark:bg-[#0a0a0a] border-t-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
+        {/* Grid pattern - modular, component-based */}
+        <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.02]">
+          <svg width="100%" height="100%">
+            <defs>
+              <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+                <path d="M 60 0 L 0 0 0 60" fill="none" stroke="var(--poster-green)" strokeWidth="1"/>
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
+          </svg>
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-6">
+          {/* Header */}
+          <div className="mb-16">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-[var(--poster-green)] flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-black tracking-tighter uppercase">
+                Built from prompts
+              </h2>
+            </div>
+            <p className="text-lg text-[var(--warm-gray)] max-w-xl">
+              Real tools generated with agent skills. Interactive, production-ready.
+            </p>
+          </div>
+
+          {/* Tools Grid - 2x2 */}
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Trim Tool */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-1 bg-[var(--poster-blue)]" />
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--warm-gray)]">
+                  Video Trimmer
+                </span>
+              </div>
+              <TrimTool />
+            </div>
+
+            {/* Text Overlay */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-1 bg-[var(--poster-gold)]" />
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--warm-gray)]">
+                  Text Overlay
+                </span>
+              </div>
+              <TextOverlayTool />
+            </div>
+
+            {/* Thumbnail Picker */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-1 bg-[var(--poster-red)]" />
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--warm-gray)]">
+                  Thumbnail Picker
+                </span>
+              </div>
+              <ThumbnailPicker />
+            </div>
+
+            {/* Caption Editor */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-1 bg-[var(--poster-green)]" />
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--warm-gray)]">
+                  Caption Editor
+                </span>
+              </div>
+              <CaptionEditor />
+            </div>
+          </div>
+
+          {/* Footer note */}
+          <div className="mt-12 pt-8 border-t-2 border-[var(--ink-black)]/10 dark:border-white/10">
+            <p className="text-sm text-[var(--warm-gray)] flex items-center gap-2">
+              <svg className="w-4 h-4 text-[var(--poster-green)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Each tool above was generated from a single prompt using Editframe agent skills.
+            </p>
           </div>
         </div>
       </section>
