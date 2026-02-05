@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import React, { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import {
   Preview,
   Timegroup,
@@ -7,6 +7,7 @@ import {
   TimeDisplay,
 } from "@editframe/react";
 import { useRenderQueue } from "./RenderQueue";
+import { JITStreamingCanvas } from "./jit-streaming-scene";
 
 /* ━━ Shared animation CSS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 const STYLES = `
@@ -336,6 +337,7 @@ function JitDiagram() {
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 const SCENE_DUR = "14s";
+const JIT_SCENE_DUR = "12s";
 
 function FanOutDiagram() {
   const uid = useId();
@@ -598,7 +600,226 @@ function FanOutDiagram() {
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   6. CLIENT-SIDE RENDERING — export video without a server
+   6. JIT STREAMING PLAYBACK — React Three Fiber visualization showing
+   on-demand transcoding with zero ingestion delay
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function JITStreamingDiagram() {
+  const uid = useId();
+  const rootId = `jit-streaming-${uid}`;
+  const [isClient, setIsClient] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { enqueue } = useRenderQueue();
+
+  useEffect(() => { setIsClient(true); }, []);
+
+  const handleRender = () => {
+    const tg = containerRef.current?.querySelector("ef-timegroup");
+    if (tg) {
+      enqueue({
+        name: "JIT Streaming",
+        fileName: "editframe-jit-streaming.mp4",
+        timegroupEl: tg as HTMLElement,
+      });
+    }
+  };
+
+  // State to pass to React Three Fiber
+  const [sceneTime, setSceneTime] = useState(0);
+  const [sceneDuration, setSceneDuration] = useState(12000);
+
+  useEffect(() => {
+    if (!isClient) return;
+    const container = containerRef.current;
+    if (!container) return;
+
+    let disposed = false;
+
+    const setup = async () => {
+      const tg = container.querySelector("ef-timegroup") as HTMLElement & {
+        ownCurrentTimeMs?: number;
+        durationMs?: number;
+        addFrameTask?: (cb: (info: { ownCurrentTimeMs: number; durationMs: number }) => void) => () => void;
+        initializer?: (instance: HTMLElement) => void;
+      };
+      if (!tg || disposed) return;
+
+      // Update scene time on every frame
+      tg.addFrameTask?.(({ ownCurrentTimeMs, durationMs }) => {
+        setSceneTime(ownCurrentTimeMs);
+        setSceneDuration(durationMs);
+      });
+
+      // For render clones
+      tg.initializer = (instance: HTMLElement & {
+        ownCurrentTimeMs?: number;
+        durationMs?: number;
+        addFrameTask?: (cb: (info: { ownCurrentTimeMs: number; durationMs: number }) => void) => () => void;
+      }) => {
+        if (instance === tg) return;
+
+        // React Three Fiber will be re-created in the clone
+        instance.addFrameTask?.(() => {
+          // Scene state updates will be handled by React in the cloned tree
+        });
+      };
+    };
+
+    setup();
+
+    return () => {
+      disposed = true;
+    };
+  }, [isClient]);
+
+  if (!isClient) {
+    return (
+      <div
+        className="w-full flex items-center justify-center"
+        style={{ aspectRatio: "16/10", background: "#1e2233" }}
+      >
+        <span className="text-xs text-[var(--warm-gray)]">Loading\u2026</span>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={containerRef}>
+      <Preview id={rootId} loop>
+        <Timegroup
+          mode="fixed"
+          duration={JIT_SCENE_DUR}
+          className="relative w-full overflow-hidden"
+          style={{ aspectRatio: "16/10", background: "#1e2233" }}
+        >
+          {/* React Three Fiber scene */}
+          <div style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+          }}>
+            {/* Lazy load the scene to avoid SSR issues */}
+            {isClient && (
+              <React.Suspense fallback={<div>Loading scene...</div>}>
+                <JITStreamingCanvas currentTimeMs={sceneTime} />
+              </React.Suspense>
+            )}
+          </div>
+
+          {/* ── Timed text overlays ──── */}
+
+          {/* Phase 1: hero moment (0.3s–2s) */}
+          <div className="ef-caption ef-caption-lg" style={{ top: "5%", left: "10%", animation: "efCaptionIn 600ms 300ms backwards, efCaptionOut 400ms 2000ms forwards" }}>
+            A remote video URL
+          </div>
+
+          {/* Phase 2: the question (2.2s–3s) */}
+          <div className="ef-caption ef-caption-lg" style={{ top: "5%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 2200ms backwards, efCaptionOut 400ms 3000ms forwards" }}>
+            How do you play it instantly?
+          </div>
+
+          {/* Phase 3: labels (3.2s+) */}
+          <div className="ef-caption ef-caption-sub" style={{ top: "70%", left: "10%", animation: "efCaptionIn 400ms 3200ms backwards" }}>
+            Remote URL
+          </div>
+          <div className="ef-caption ef-caption-brand" style={{ top: "70%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 3400ms backwards" }}>
+            JIT Transcode
+          </div>
+          <div className="ef-caption ef-caption-sub" style={{ top: "70%", right: "10%", animation: "efCaptionIn 400ms 3600ms backwards" }}>
+            Instant Playback
+          </div>
+
+          {/* Phase 3: mechanism description (4s–6.5s) */}
+          <div className="ef-caption ef-caption-sub" style={{ bottom: "8%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 4000ms backwards, efCaptionOut 400ms 6500ms forwards" }}>
+            Byte-range requests stream directly to the JIT service
+          </div>
+
+          {/* Phase 4: punchline (7s+) */}
+          <div className="ef-caption ef-caption-hero" style={{ bottom: "18%", right: "8%", animation: "efCaptionIn 500ms 7000ms backwards" }}>
+            Zero Wait
+          </div>
+          <div className="ef-caption ef-caption-sub" style={{ bottom: "12%", right: "8%", animation: "efCaptionIn 400ms 7500ms backwards" }}>
+            No upload. No ingestion. Just stream.
+          </div>
+        </Timegroup>
+      </Preview>
+
+      {/* Reuse caption styles from parallel fragments */}
+      <style>{`
+        .ef-caption {
+          position: absolute;
+          pointer-events: none;
+          color: rgba(255,255,255,0.95);
+          font-size: 15px;
+          font-weight: 700;
+          letter-spacing: 0.03em;
+          text-shadow: 0 2px 12px rgba(0,0,0,0.8), 0 0 4px rgba(0,0,0,0.5);
+          white-space: nowrap;
+          opacity: 0;
+        }
+        .ef-caption-lg { font-size: 18px; font-weight: 800; }
+        .ef-caption-dim { color: rgba(255,255,255,0.4); font-size: 16px; }
+        .ef-caption-brand { font-size: 16px; font-weight: 800; color: #ff5252; }
+        .ef-caption-sub { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.55); }
+        .ef-caption-hero { font-size: 28px; font-weight: 900; color: #ff5252; text-shadow: 0 0 30px rgba(255,82,82,0.6), 0 2px 12px rgba(0,0,0,0.8); }
+        @keyframes efCaptionIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes efCaptionOut {
+          from { opacity: 1; }
+          to   { opacity: 0; }
+        }
+      `}</style>
+
+      {/* ── Playback + render controls ────────────────────────── */}
+      <div className="flex items-center gap-0 bg-[#111] overflow-hidden" style={{ borderRadius: "0 0 3px 3px" }}>
+        <TogglePlay target={rootId}>
+          <button
+            slot="play"
+            className="w-9 h-9 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+          </button>
+          <button
+            slot="pause"
+            className="w-9 h-9 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" /></svg>
+          </button>
+        </TogglePlay>
+
+        <div className="flex-1 px-3 h-9 flex items-center border-l border-white/10">
+          <Scrubber
+            target={rootId}
+            className="w-full h-1 bg-white/20 rounded-full cursor-pointer [&::part(progress)]:bg-[var(--poster-red)] [&::part(progress)]:rounded-full [&::part(thumb)]:bg-white [&::part(thumb)]:w-2.5 [&::part(thumb)]:h-2.5 [&::part(thumb)]:rounded-full"
+          />
+        </div>
+
+        <div className="px-3 border-l border-white/10 h-9 flex items-center">
+          <TimeDisplay
+            target={rootId}
+            className="text-[10px] text-white/60 font-mono tabular-nums"
+          />
+        </div>
+
+        <div className="border-l border-white/10 h-9 flex items-center">
+          <button
+            onClick={handleRender}
+            className="h-9 px-3 flex items-center gap-1.5 text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+            title="Export MP4"
+          >
+            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" /></svg>
+            <span className="text-[10px] font-semibold tracking-wide">MP4</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   7. CLIENT-SIDE RENDERING — export video without a server
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function ClientRenderDiagram() {
   const { ref, on } = useDiagramAnim();
@@ -679,6 +900,10 @@ function ArchitectureDiagram() {
 
       <DiagramCard title="PARALLEL FRAGMENTS" subtitle="Split, process, recombine" color="var(--poster-blue)" span>
         <FanOutDiagram />
+      </DiagramCard>
+
+      <DiagramCard title="JIT STREAMING PLAYBACK" subtitle="On-demand transcoding, zero wait" color="var(--poster-red)" span>
+        <JITStreamingDiagram />
       </DiagramCard>
 
       <DiagramCard title="CLIENT-SIDE RENDERING" subtitle="Export video without a server" color="var(--poster-green)" span>
