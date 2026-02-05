@@ -440,26 +440,26 @@ function FanOutDiagram() {
             }}
           />
 
-          {/* HTML overlay labels that appear during Phase 5 (punchline) */}
+          {/* HTML overlay — comparison labels */}
           <div
             style={{
               position: "absolute",
-              bottom: "8%",
-              left: "8%",
-              right: "8%",
+              bottom: "5%",
+              left: "4%",
+              right: "4%",
               pointerEvents: "none",
+              display: "flex",
+              justifyContent: "space-between",
               opacity: 0,
               animation: "efOverlayFadeIn 600ms 7800ms backwards",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
-              <div style={{ width: "100%", height: "10px", background: "rgba(107,107,107,0.3)", borderRadius: "2px" }} />
-              <span style={{ fontSize: "10px", color: "#999", fontWeight: 700, whiteSpace: "nowrap" }}>Sequential: 60s</span>
+            <div style={{ flex: 1, textAlign: "center" }}>
+              <span style={{ fontSize: "10px", color: "#888", fontWeight: 600, letterSpacing: "0.05em" }}>SEQUENTIAL</span>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <div style={{ width: "25%", height: "12px", background: "#1565C0", borderRadius: "2px", boxShadow: "0 0 12px rgba(66,165,245,0.4)" }} />
-              <span style={{ fontSize: "14px", color: "#42A5F5", fontWeight: 900, whiteSpace: "nowrap" }}>4\u00d7 faster</span>
-              <span style={{ fontSize: "10px", color: "#999", fontWeight: 600, whiteSpace: "nowrap" }}>\u2014 15s</span>
+            <div style={{ flex: 1, textAlign: "center" }}>
+              <span style={{ fontSize: "13px", color: "#42A5F5", fontWeight: 900 }}>{"4\u00d7 faster"}</span>
+              <span style={{ fontSize: "10px", color: "#888", fontWeight: 600, marginLeft: "6px" }}>PARALLEL</span>
             </div>
           </div>
         </Timegroup>
