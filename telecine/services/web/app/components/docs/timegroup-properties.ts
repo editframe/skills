@@ -91,6 +91,14 @@ export const timegroupProperties: PropertyDefinition[] = [
     domReadable: true,
   },
   {
+    name: "userTimeMs",
+    type: "number",
+    access: "R",
+    useCase: "Time user last requested via seek/scrub (for preview display, avoids intermediate times during batch operations)",
+    category: "Time Coordinates",
+    domReadable: true,
+  },
+  {
     name: "startTimeMs",
     type: "number",
     access: "R",
@@ -185,6 +193,16 @@ export const timegroupProperties: PropertyDefinition[] = [
     defaultValue: "false",
   },
   {
+    name: "playing",
+    type: "boolean",
+    access: "R/W",
+    useCase: "Whether playback is currently active (root timegroups only)",
+    category: "Playback",
+    domReadable: true,
+    domWritable: true,
+    defaultValue: "false",
+  },
+  {
     name: "autoInit",
     type: "boolean",
     access: "R/W",
@@ -217,6 +235,29 @@ export const timegroupProperties: PropertyDefinition[] = [
     domWritable: true,
     htmlAttribute: "fit",
     defaultValue: "none",
+  },
+
+  // ============================================================================
+  // Frame Callbacks & Initialization
+  // ============================================================================
+  {
+    name: "initializer",
+    type: "TimegroupInitializer",
+    access: "R/W",
+    useCase: "Function for setting up JS behavior (frame callbacks, event listeners). Runs once on prime timeline and each render clone. Must be synchronous and complete in <100ms.",
+    category: "Initialization",
+    domReadable: true,
+    domWritable: true,
+  },
+  {
+    name: "onFrame",
+    type: "FrameTaskCallback",
+    access: "R/W",
+    useCase: "Property-based frame task callback for React integration. Automatically registers/unregisters when set.",
+    category: "Initialization",
+    domReadable: true,
+    domWritable: true,
+    defaultValue: "null",
   },
 
   // ============================================================================
