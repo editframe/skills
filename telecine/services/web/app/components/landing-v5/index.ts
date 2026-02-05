@@ -16,3 +16,6 @@ export { TrimTool } from './tools/TrimTool.tsx';
 export { CaptionEditor } from './tools/CaptionEditor.tsx';
 export { ThumbnailPicker } from './tools/ThumbnailPicker.tsx';
 export { TextOverlayTool } from './tools/TextOverlayTool.tsx';
+
+// Client-side rendering demo
+export { ClientRenderDemo } from './ClientRenderDemo.tsx';

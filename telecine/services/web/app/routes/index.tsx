@@ -24,6 +24,7 @@ import {
   CaptionEditor,
   ThumbnailPicker,
   TextOverlayTool,
+  ClientRenderDemo,
 } from "~/components/landing-v5/index.ts";
 
 export const loader = async (args: LoaderFunctionArgs) => {
@@ -505,6 +506,87 @@ export default function IndexPage() {
             <div className="absolute -top-4 -left-4 w-full h-full bg-[var(--poster-gold)]" />
             <div className="relative border-4 border-[var(--ink-black)] overflow-hidden">
               <InteractivePlayground />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Client-Side Rendering Section - DOWNLOAD ARROW (export without upload) */}
+      <section className="relative py-24 bg-[var(--poster-red)] text-white overflow-hidden">
+        {/* Download arrow pattern - export/download, no upload needed */}
+        <div className="absolute top-1/2 left-0 -translate-y-1/2 -translate-x-1/4 w-[500px] h-[500px] opacity-[0.08]">
+          <svg viewBox="0 0 100 100" className="w-full h-full">
+            <path d="M50,10 L50,70 M30,50 L50,70 L70,50" fill="none" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+            <rect x="20" y="80" width="60" height="8" fill="white" rx="2" />
+          </svg>
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-6">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left - Content */}
+            <div>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 bg-white flex items-center justify-center">
+                  <svg className="w-6 h-6 text-[var(--poster-red)]" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                  </svg>
+                </div>
+                <span className="text-sm font-bold uppercase tracking-widest text-white/80">
+                  New Capability
+                </span>
+              </div>
+              
+              <h2 className="text-5xl md:text-6xl font-black tracking-tighter uppercase mb-6">
+                Render in<br />the browser
+              </h2>
+              
+              {/* Feature highlights */}
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-8 h-1 bg-white" />
+                <div className="w-6 h-1 bg-white/70" />
+                <div className="w-4 h-1 bg-white/40" />
+              </div>
+              
+              <p className="text-xl text-white/80 mb-8 leading-relaxed">
+                Export video directly in the browser. No upload. No server queue. 
+                Full quality MP4 rendered on the client using WebCodecs.
+              </p>
+              
+              {/* Benefits */}
+              <div className="space-y-4 mb-10">
+                {[
+                  { icon: '⚡', title: 'Instant', desc: 'No upload wait. Start rendering immediately.' },
+                  { icon: '🔒', title: 'Private', desc: 'Video never leaves the browser. Complete privacy.' },
+                  { icon: '💰', title: 'Free', desc: 'No server costs for rendering. Scale infinitely.' },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-start gap-4">
+                    <div className="w-10 h-10 bg-white text-black flex items-center justify-center font-bold shrink-0">
+                      {item.icon}
+                    </div>
+                    <div>
+                      <h3 className="font-bold uppercase tracking-wider text-sm">{item.title}</h3>
+                      <p className="text-sm text-white/70">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[#4CAF50]" />
+                  <span className="text-white/70">H.264, H.265, VP9, AV1</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[#4CAF50]" />
+                  <span className="text-white/70">Up to 4K</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Right - Demo */}
+            <div className="relative">
+              <div className="absolute -top-4 -left-4 w-full h-full bg-[var(--poster-gold)]" />
+              <ClientRenderDemo />
             </div>
           </div>
         </div>
