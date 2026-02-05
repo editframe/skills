@@ -44,7 +44,6 @@ import {
   BeforeAfterComparison,
   InteractivePlayground,
   ArchitectureDiagram,
-  PerformanceMetrics,
   CodeExamples,
   VideoShowcase,
   ComparisonTable,
@@ -685,34 +684,28 @@ export default function IndexPage() {
         </div>
 
         <FadeInSection className="relative max-w-7xl mx-auto px-6">
-          <div className="grid lg:grid-cols-3 gap-16">
-            <div>
-              <h2 className="text-4xl md:text-5xl font-black tracking-tighter uppercase mb-4">
-                Parallel
-              </h2>
-              {/* Small parallel lines echoing the concept */}
-              <div className="flex flex-col gap-1 mb-4">
-                <div className="w-32 h-1 bg-[var(--poster-gold)]" />
-                <div className="w-32 h-1 bg-[var(--poster-gold)]" />
-                <div className="w-32 h-1 bg-[var(--poster-gold)]" />
-              </div>
-              <h2 className="text-4xl md:text-5xl font-black tracking-tighter uppercase text-[var(--poster-gold)] mb-6">
-                Processing
-              </h2>
-              <p className="text-lg text-[var(--warm-gray)] leading-relaxed mb-8">
-                Dual pipeline: instant preview for development, parallel rendering for production.
-              </p>
-              <PerformanceMetrics />
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <h2 className="text-5xl md:text-6xl font-black tracking-tighter uppercase mb-4">
+              Dual
+            </h2>
+            {/* Parallel lines echoing the concept */}
+            <div className="flex justify-center gap-1 mb-4">
+              <div className="w-24 h-1 bg-[var(--poster-gold)]" />
+              <div className="w-24 h-1 bg-[var(--poster-blue)]" />
             </div>
-            
-            <div className="lg:col-span-2">
-              <div className="relative">
-                <div className="absolute -bottom-4 -right-4 w-full h-full bg-[var(--poster-gold)]" />
-                <div className="relative bg-[var(--card-bg)] border-4 border-[var(--ink-black)] dark:border-white p-6">
-                  <ArchitectureDiagram />
-                </div>
-              </div>
-            </div>
+            <h2 className="text-5xl md:text-6xl font-black tracking-tighter uppercase mb-6">
+              <span className="text-[var(--poster-gold)]">Preview</span>
+              {" + "}
+              <span className="text-[var(--poster-blue)]">Render</span>
+            </h2>
+            <p className="text-lg text-[var(--warm-gray)] leading-relaxed">
+              Same code, two execution paths. Instant preview in the browser for development.
+              Parallel fragment rendering in the cloud for production at scale.
+            </p>
+          </div>
+
+          <div className="max-w-3xl mx-auto">
+            <ArchitectureDiagram />
           </div>
         </FadeInSection>
       </section>
