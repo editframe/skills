@@ -20,6 +20,7 @@ export const waveformProperties: PropertyDefinition[] = [
     domReadable: true,
     domWritable: true,
     htmlAttribute: "target",
+    defaultValue: '""',
   },
   {
     name: "mode",
