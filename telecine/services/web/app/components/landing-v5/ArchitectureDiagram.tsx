@@ -7,6 +7,7 @@ import {
   TimeDisplay,
 } from "@editframe/react";
 import { useRenderQueue } from "./RenderQueue";
+import { ParallelFragmentsCanvas } from "./parallel-fragments-r3f";
 import { JITStreamingCanvas } from "./jit-streaming-scene";
 
 /* ━━ Shared animation CSS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
@@ -343,8 +344,8 @@ function FanOutDiagram() {
   const uid = useId();
   const rootId = `fanout-${uid}`;
   const [isClient, setIsClient] = useState(false);
+  const [timeMs, setTimeMs] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const { enqueue } = useRenderQueue();
 
   useEffect(() => { setIsClient(true); }, []);
@@ -360,51 +361,38 @@ function FanOutDiagram() {
     }
   };
 
+  // Bridge: addFrameTask feeds composition time → React state → R3F scene
   useEffect(() => {
     if (!isClient) return;
     const container = containerRef.current;
     if (!container) return;
 
-    type SceneHandle = { update: (t: number, d: number) => void; resize: (w: number, h: number) => void; dispose: () => void };
-    let primeScene: SceneHandle | null = null;
-    let ro: ResizeObserver | null = null;
     let disposed = false;
 
     const setup = async () => {
+      // Dynamic import vanilla scene for render clones only
       const { createParallelFragmentsScene } = await import("./parallel-fragments-scene");
       if (disposed) return;
 
       const tg = container.querySelector("ef-timegroup") as HTMLElement & {
-        play?: () => void;
-        pause?: () => void;
         initializer?: (instance: HTMLElement) => void;
-        ownCurrentTimeMs?: number;
-        durationMs?: number;
         addFrameTask?: (cb: (info: { ownCurrentTimeMs: number; durationMs: number }) => void) => () => void;
       };
       if (!tg) return;
 
-      // ── Prime instance: set up directly (no initializer disruption) ──
-      const cvs = container.querySelector("canvas") as HTMLCanvasElement | null;
-      if (cvs) {
-        primeScene = createParallelFragmentsScene(cvs);
-        const { width: w, height: h } = container.getBoundingClientRect();
-        primeScene.resize(w || 800, h || 500);
-        primeScene.update(tg.ownCurrentTimeMs ?? 0, tg.durationMs ?? 18000);
+      // Prime: feed time to React state (R3F reads it)
+      tg.addFrameTask?.(({ ownCurrentTimeMs }) => {
+        setTimeMs(ownCurrentTimeMs);
+      });
 
-        tg.addFrameTask?.(({ ownCurrentTimeMs, durationMs }) => {
-          primeScene?.update(ownCurrentTimeMs, durationMs);
-        });
-      }
-
-      // ── Render clones: initializer creates a separate scene ──
+      // Render clones: vanilla Three.js fallback (R3F doesn't survive cloning)
+      type SceneHandle = { update: (t: number, d: number) => void; resize: (w: number, h: number) => void; dispose: () => void };
       tg.initializer = (instance: HTMLElement & {
         ownCurrentTimeMs?: number;
         durationMs?: number;
         addFrameTask?: (cb: (info: { ownCurrentTimeMs: number; durationMs: number }) => void) => () => void;
       }) => {
         if (instance === tg) return;
-
         let cloneScene: SceneHandle | null = null;
         instance.addFrameTask?.(({ ownCurrentTimeMs, durationMs }) => {
           if (!cloneScene) {
@@ -417,24 +405,10 @@ function FanOutDiagram() {
           cloneScene.update(ownCurrentTimeMs, durationMs);
         });
       };
-
-      // ResizeObserver for the live instance
-      ro = new ResizeObserver(([entry]) => {
-        if (entry && primeScene) {
-          const { width: w, height: h } = entry.contentRect;
-          primeScene.resize(w, h);
-        }
-      });
-      ro.observe(container);
     };
 
     setup();
-
-    return () => {
-      disposed = true;
-      primeScene?.dispose();
-      ro?.disconnect();
-    };
+    return () => { disposed = true; };
   }, [isClient]);
 
   if (!isClient) {
@@ -457,31 +431,8 @@ function FanOutDiagram() {
           className="relative w-full overflow-hidden"
           style={{ aspectRatio: "16/10", background: "#1e2233" }}
         >
-          <canvas
-            ref={canvasRef}
-            style={{
-              position: "absolute",
-              inset: 0,
-              width: "100%",
-              height: "100%",
-              display: "block",
-            }}
-          />
-          {/* Render capture: foreignObject can't serialize WebGL canvas bitmaps.
-              The clone's frame task copies canvas.toDataURL() to this img so
-              the SVG serializer captures the rendered 3D frame. */}
-          <img
-            className="scene-capture"
-            alt=""
-            style={{
-              position: "absolute",
-              inset: 0,
-              width: "100%",
-              height: "100%",
-              display: "block",
-              pointerEvents: "none",
-            }}
-          />
+          {/* R3F scene for live playback; vanilla fallback for render clones */}
+          <ParallelFragmentsCanvas timeMs={timeMs} />
 
           {/* ── Timed text overlays (bigger, stronger shadows) ──── */}
 
