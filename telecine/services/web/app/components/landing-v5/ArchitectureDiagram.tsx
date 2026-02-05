@@ -334,7 +334,7 @@ function JitDiagram() {
    and a time-comparison punchline.  Fully scrubable.
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
-const SCENE_DUR = "10s";
+const SCENE_DUR = "18s";
 
 function FanOutDiagram() {
   const uid = useId();
@@ -440,32 +440,61 @@ function FanOutDiagram() {
             }}
           />
 
-          {/* HTML overlay — comparison labels */}
-          <div
-            style={{
-              position: "absolute",
-              bottom: "5%",
-              left: "4%",
-              right: "4%",
-              pointerEvents: "none",
-              display: "flex",
-              justifyContent: "space-between",
-              opacity: 0,
-              animation: "efOverlayFadeIn 600ms 7800ms backwards",
-            }}
-          >
-            <div style={{ flex: 1, textAlign: "center" }}>
-              <span style={{ fontSize: "10px", color: "#888", fontWeight: 600, letterSpacing: "0.05em" }}>SEQUENTIAL</span>
-            </div>
-            <div style={{ flex: 1, textAlign: "center" }}>
-              <span style={{ fontSize: "13px", color: "#42A5F5", fontWeight: 900 }}>{"4\u00d7 faster"}</span>
-              <span style={{ fontSize: "10px", color: "#888", fontWeight: 600, marginLeft: "6px" }}>PARALLEL</span>
-            </div>
+          {/* ── Timed text overlays ──────────────────────────────── */}
+          {/* Phase 1: introduce the composition */}
+          <div className="ef-caption" style={{ top: "6%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 600ms 400ms backwards, efCaptionOut 500ms 2200ms forwards" }}>
+            Your composition
+          </div>
+
+          {/* Phase 2: the cut */}
+          <div className="ef-caption" style={{ top: "6%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 500ms 2600ms backwards, efCaptionOut 500ms 4200ms forwards" }}>
+            Split into fragments
+          </div>
+
+          {/* Phase 3: side labels */}
+          <div className="ef-caption ef-caption-dim" style={{ top: "6%", left: "18%", animation: "efCaptionIn 500ms 5500ms backwards" }}>
+            Sequential
+          </div>
+          <div className="ef-caption" style={{ top: "6%", left: "68%", animation: "efCaptionIn 500ms 5500ms backwards" }}>
+            Parallel
+          </div>
+
+          {/* Phase 4: processing */}
+          <div className="ef-caption ef-caption-sm" style={{ bottom: "8%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 500ms 8000ms backwards, efCaptionOut 500ms 10500ms forwards" }}>
+            All workers process simultaneously
+          </div>
+
+          {/* Phase 5: punchline */}
+          <div className="ef-caption ef-caption-hero" style={{ bottom: "10%", right: "8%", animation: "efCaptionIn 600ms 12000ms backwards" }}>
+            {"4\u00d7 faster"}
           </div>
         </Timegroup>
       </Preview>
 
-      <style>{`@keyframes efOverlayFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+      <style>{`
+        .ef-caption {
+          position: absolute;
+          pointer-events: none;
+          color: rgba(255,255,255,0.9);
+          font-size: 13px;
+          font-weight: 700;
+          letter-spacing: 0.04em;
+          text-shadow: 0 1px 8px rgba(0,0,0,0.6);
+          white-space: nowrap;
+          opacity: 0;
+        }
+        .ef-caption-dim { color: rgba(255,255,255,0.45); }
+        .ef-caption-sm { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.6); }
+        .ef-caption-hero { font-size: 22px; font-weight: 900; color: #42A5F5; text-shadow: 0 0 20px rgba(66,165,245,0.5); }
+        @keyframes efCaptionIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes efCaptionOut {
+          from { opacity: 1; }
+          to   { opacity: 0; }
+        }
+      `}</style>
 
       {/* ── Playback controls ──────────────────────────────────── */}
       <div className="flex items-center gap-0 bg-[#111] overflow-hidden" style={{ borderRadius: "0 0 3px 3px" }}>

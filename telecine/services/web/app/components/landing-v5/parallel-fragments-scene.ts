@@ -39,16 +39,16 @@ const NODE_SIZE = 0.4;
 const PARTICLE_COUNT = 400;
 const LANE_SPREAD = 0.85;
 
-/* ━━ Phase timing (ms) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-const P1_END = 1500;       // close-up: timeline assembled
-const P2_START = 1500;     // duplicate + split
-const P2_END = 3200;
-const P3_START = 2800;     // camera pull-back (overlaps P2 end)
-const P3_END = 4500;       // wide shot, workers visible
-const P4_START = 4500;     // fly to workers + processing
-const P4_PAR_DONE = 6500;  // parallel finishes
-const P5_START = 6800;     // orbit toward parallel winner
-const P5_END = 10000;
+/* ━━ Phase timing (ms) — paced for explainer narration ━━━━━━━━━━━━ */
+const P1_END = 2500;       // close-up: timeline assembled
+const P2_START = 2500;     // duplicate + laser split
+const P2_END = 5000;
+const P3_START = 4500;     // camera pull-back (overlaps P2 end)
+const P3_END = 7500;       // wide shot, workers visible
+const P4_START = 7500;     // fly to workers + processing
+const P4_PAR_DONE = 11000; // parallel finishes
+const P5_START = 11500;    // orbit toward parallel winner
+const P5_END = 18000;
 
 /* ━━ Camera key-poses ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 const CAM_CLOSE_POS = new THREE.Vector3(0, 1.2, 3.8);
