@@ -425,29 +425,14 @@ function FanOutDiagram() {
         }
       });
       ro.observe(container);
-
-      // Auto-play now that the scene is ready
-      const scrollObserver = new IntersectionObserver(
-        ([entry]) => {
-          if (entry?.isIntersecting) {
-            tg.play?.();
-            scrollObserver.unobserve(container);
-          }
-        },
-        { threshold: 0.3 },
-      );
-      scrollObserver.observe(container);
-      cleanupScrollObserver = () => scrollObserver.disconnect();
     };
 
-    let cleanupScrollObserver: (() => void) | null = null;
     setup();
 
     return () => {
       disposed = true;
       primeScene?.dispose();
       ro?.disconnect();
-      cleanupScrollObserver?.();
     };
   }, [isClient]);
 
