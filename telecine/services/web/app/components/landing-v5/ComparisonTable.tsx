@@ -40,7 +40,7 @@ function ComparisonTable() {
       <div className="relative bg-white dark:bg-[#111] border-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="bg-[var(--ink-black)] dark:bg-white text-white dark:text-black">
+            <tr className="bg-[#1a1a1a] dark:bg-[#1a1a1a] text-white">
               <th className="text-left py-4 px-6 font-bold text-sm uppercase tracking-wider">Feature</th>
               <th className="text-center py-4 px-6 font-bold text-sm uppercase tracking-wider">Editframe</th>
               <th className="text-center py-4 px-6 font-bold text-sm uppercase tracking-wider">Remotion</th>

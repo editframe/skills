@@ -57,16 +57,21 @@ export default function IndexPage() {
           --ink-black: #1a1a1a;
           --paper-cream: #FAF8F5;
           --warm-gray: #6B6B6B;
+          --card-bg: #ffffff;
+          --card-dark-bg: #1a1a1a;
         }
         
         .dark {
           --poster-red: #EF5350;
           --poster-blue: #42A5F5;
           --poster-gold: #FFCA28;
-          --poster-green: #66BB6A;
+          --poster-green: #4CAF50;
           --poster-pink: #F06292;
           --paper-cream: #0a0a0a;
           --ink-black: #FAFAFA;
+          --warm-gray: #9CA3AF;
+          --card-bg: #111111;
+          --card-dark-bg: #0a0a0a;
         }
         
         body {
@@ -107,7 +112,11 @@ export default function IndexPage() {
         }
         .shadow-poster-hard {
           box-shadow: 
-            6px 6px 0 var(--ink-black);
+            6px 6px 0 #1a1a1a;
+        }
+        .dark .shadow-poster-hard {
+          box-shadow: 
+            6px 6px 0 rgba(255,255,255,0.3);
         }
         
         /* Accent backgrounds - solid, bold */
@@ -133,7 +142,7 @@ export default function IndexPage() {
       `}} />
 
       {/* Navigation - Bold, confident */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-[var(--paper-cream)]/95 dark:bg-[#0a0a0a]/95 backdrop-blur-sm border-b-2 border-[var(--ink-black)] dark:border-white">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[var(--paper-cream)] dark:bg-[#0a0a0a] border-b-2 border-[var(--ink-black)] dark:border-white">
         <div className="max-w-7xl mx-auto flex items-center justify-between h-16 px-6">
           <Link to="/" className="flex items-center">
             <span className="text-xl font-black tracking-tighter uppercase">editframe</span>
@@ -327,25 +336,25 @@ export default function IndexPage() {
             {/* Example 1: Build a Video Editor */}
             <div className="relative">
               <div className="absolute -bottom-3 -right-3 w-full h-full bg-[var(--poster-gold)]" />
-              <div className="relative bg-[var(--ink-black)] border-4 border-white p-5 h-full">
+              <div className="relative bg-[#1a1a1a] border-4 border-white p-5 h-full">
                 <div className="flex items-center gap-2 mb-3 pb-3 border-b border-white/20">
-                  <div className="w-2 h-2 rounded-full bg-[var(--poster-red)]" />
-                  <div className="w-2 h-2 rounded-full bg-[var(--poster-gold)]" />
-                  <div className="w-2 h-2 rounded-full bg-[var(--poster-green)]" />
+                  <div className="w-2 h-2 rounded-full bg-[#EF5350]" />
+                  <div className="w-2 h-2 rounded-full bg-[#FFCA28]" />
+                  <div className="w-2 h-2 rounded-full bg-[#4CAF50]" />
                   <span className="ml-2 text-white/40 text-xs font-mono">editor-gui</span>
                 </div>
                 <div className="space-y-3 font-mono text-xs">
-                  <div className="text-[var(--poster-gold)]">@editor-gui</div>
+                  <div className="text-[#FFCA28]">@editor-gui</div>
                   <div className="text-white text-sm">
                     Build a video editor with timeline, preview, and trim controls. 
                     Support drag-to-reorder clips.
                   </div>
                   <div className="pt-3 border-t border-white/20 space-y-1 text-white/50">
-                    <div><span className="text-[var(--poster-green)]">✓</span> Preview component</div>
-                    <div><span className="text-[var(--poster-green)]">✓</span> Timeline with tracks</div>
-                    <div><span className="text-[var(--poster-green)]">✓</span> Scrubber + playhead</div>
-                    <div><span className="text-[var(--poster-green)]">✓</span> Trim handles</div>
-                    <div><span className="text-[var(--poster-green)]">✓</span> Drag-to-reorder</div>
+                    <div><span className="text-[#4CAF50]">✓</span> Preview component</div>
+                    <div><span className="text-[#4CAF50]">✓</span> Timeline with tracks</div>
+                    <div><span className="text-[#4CAF50]">✓</span> Scrubber + playhead</div>
+                    <div><span className="text-[#4CAF50]">✓</span> Trim handles</div>
+                    <div><span className="text-[#4CAF50]">✓</span> Drag-to-reorder</div>
                   </div>
                 </div>
               </div>
@@ -354,25 +363,25 @@ export default function IndexPage() {
             {/* Example 2: Editing Workflow */}
             <div className="relative">
               <div className="absolute -bottom-3 -right-3 w-full h-full bg-[var(--poster-blue)]" />
-              <div className="relative bg-[var(--ink-black)] border-4 border-white p-5 h-full">
+              <div className="relative bg-[#1a1a1a] border-4 border-white p-5 h-full">
                 <div className="flex items-center gap-2 mb-3 pb-3 border-b border-white/20">
-                  <div className="w-2 h-2 rounded-full bg-[var(--poster-red)]" />
-                  <div className="w-2 h-2 rounded-full bg-[var(--poster-gold)]" />
-                  <div className="w-2 h-2 rounded-full bg-[var(--poster-green)]" />
+                  <div className="w-2 h-2 rounded-full bg-[#EF5350]" />
+                  <div className="w-2 h-2 rounded-full bg-[#FFCA28]" />
+                  <div className="w-2 h-2 rounded-full bg-[#4CAF50]" />
                   <span className="ml-2 text-white/40 text-xs font-mono">workflow</span>
                 </div>
                 <div className="space-y-3 font-mono text-xs">
-                  <div className="text-[var(--poster-gold)]">@editing-workflow</div>
+                  <div className="text-[#FFCA28]">@editing-workflow</div>
                   <div className="text-white text-sm">
                     Create a social clip workflow: auto-detect highlights, 
                     crop to 9:16, add captions, apply brand intro.
                   </div>
                   <div className="pt-3 border-t border-white/20 space-y-1 text-white/50">
-                    <div><span className="text-[var(--poster-green)]">✓</span> Highlight detection</div>
-                    <div><span className="text-[var(--poster-green)]">✓</span> Aspect ratio crop</div>
-                    <div><span className="text-[var(--poster-green)]">✓</span> Auto captions</div>
-                    <div><span className="text-[var(--poster-green)]">✓</span> Brand overlay</div>
-                    <div><span className="text-[var(--poster-green)]">✓</span> Export pipeline</div>
+                    <div><span className="text-[#4CAF50]">✓</span> Highlight detection</div>
+                    <div><span className="text-[#4CAF50]">✓</span> Aspect ratio crop</div>
+                    <div><span className="text-[#4CAF50]">✓</span> Auto captions</div>
+                    <div><span className="text-[#4CAF50]">✓</span> Brand overlay</div>
+                    <div><span className="text-[#4CAF50]">✓</span> Export pipeline</div>
                   </div>
                 </div>
               </div>
@@ -381,26 +390,26 @@ export default function IndexPage() {
             {/* Example 3: Full Application */}
             <div className="relative">
               <div className="absolute -bottom-3 -right-3 w-full h-full bg-[var(--poster-red)]" />
-              <div className="relative bg-[var(--ink-black)] border-4 border-white p-5 h-full">
+              <div className="relative bg-[#1a1a1a] border-4 border-white p-5 h-full">
                 <div className="flex items-center gap-2 mb-3 pb-3 border-b border-white/20">
-                  <div className="w-2 h-2 rounded-full bg-[var(--poster-red)]" />
-                  <div className="w-2 h-2 rounded-full bg-[var(--poster-gold)]" />
-                  <div className="w-2 h-2 rounded-full bg-[var(--poster-green)]" />
+                  <div className="w-2 h-2 rounded-full bg-[#EF5350]" />
+                  <div className="w-2 h-2 rounded-full bg-[#FFCA28]" />
+                  <div className="w-2 h-2 rounded-full bg-[#4CAF50]" />
                   <span className="ml-2 text-white/40 text-xs font-mono">video-app</span>
                 </div>
                 <div className="space-y-3 font-mono text-xs">
-                  <div className="text-[var(--poster-gold)]">@video-app</div>
+                  <div className="text-[#FFCA28]">@video-app</div>
                   <div className="text-white text-sm">
                     Build a testimonial video app: record webcam, 
                     add questions overlay, auto-edit pauses, 
                     export with branding.
                   </div>
                   <div className="pt-3 border-t border-white/20 space-y-1 text-white/50">
-                    <div><span className="text-[var(--poster-green)]">✓</span> Webcam recorder</div>
-                    <div><span className="text-[var(--poster-green)]">✓</span> Question prompts</div>
-                    <div><span className="text-[var(--poster-green)]">✓</span> Silence removal</div>
-                    <div><span className="text-[var(--poster-green)]">✓</span> Brand template</div>
-                    <div><span className="text-[var(--poster-green)]">✓</span> Share link</div>
+                    <div><span className="text-[#4CAF50]">✓</span> Webcam recorder</div>
+                    <div><span className="text-[#4CAF50]">✓</span> Question prompts</div>
+                    <div><span className="text-[#4CAF50]">✓</span> Silence removal</div>
+                    <div><span className="text-[#4CAF50]">✓</span> Brand template</div>
+                    <div><span className="text-[#4CAF50]">✓</span> Share link</div>
                   </div>
                 </div>
               </div>
@@ -554,7 +563,7 @@ export default function IndexPage() {
       </section>
 
       {/* Code Examples Section - CURLY BRACES as the bold choice (it's code) */}
-      <section className="relative py-24 bg-[var(--ink-black)] text-white overflow-hidden">
+      <section className="relative py-24 bg-[#1a1a1a] dark:bg-[#0a0a0a] text-white overflow-hidden">
         {/* Giant curly braces - THE code symbol */}
         <div className="absolute top-1/2 left-0 -translate-y-1/2 -translate-x-1/4 text-[400px] font-black text-white/[0.03] leading-none select-none pointer-events-none">
           {'{'}
@@ -791,7 +800,7 @@ export default function IndexPage() {
       </section>
 
       {/* Footer - Bold, confident */}
-      <footer className="py-16 bg-[var(--ink-black)] dark:bg-[#111] text-white border-t-4 border-[var(--poster-gold)]">
+      <footer className="py-16 bg-[#1a1a1a] dark:bg-[#111] text-white border-t-4 border-[var(--poster-gold)]">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid md:grid-cols-5 gap-12 mb-12">
             {/* Logo column */}
