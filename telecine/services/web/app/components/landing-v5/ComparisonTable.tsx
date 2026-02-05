@@ -1,95 +1,68 @@
 /* ==============================================================================
    COMPONENT: ComparisonTable
    
-   Purpose: Honest comparison with alternatives. Technical evaluators will
-   compare anyway - better we control the narrative with facts.
+   Purpose: Honest feature comparison. Helps developers make informed decisions.
    
-   Design: International Typographic Style / Bauhaus / De Stijl
-   - Grid-based table with bold borders
-   - Primary colors for yes/no indicators
-   - Strong typographic hierarchy
+   Design: Clean table with subtle styling
    ============================================================================== */
 
-/**
- * ComparisonTable displays a feature comparison between Editframe and alternatives
- * like Remotion and FFmpeg.
- */
-export function ComparisonTable() {
+function ComparisonTable() {
+  const features = [
+    { name: 'React components', editframe: true, remotion: true, ffmpeg: false },
+    { name: 'Instant preview', editframe: true, remotion: false, ffmpeg: false },
+    { name: 'Cloud rendering', editframe: true, remotion: true, ffmpeg: false },
+    { name: 'Parallel encoding', editframe: true, remotion: true, ffmpeg: false },
+    { name: 'Managed infrastructure', editframe: true, remotion: false, ffmpeg: false },
+    { name: 'No bundle required', editframe: true, remotion: false, ffmpeg: true },
+    { name: 'Sub-second preview', editframe: true, remotion: false, ffmpeg: false },
+    { name: 'TypeScript support', editframe: true, remotion: true, ffmpeg: false },
+  ];
+  
+  const CheckIcon = () => (
+    <div className="w-6 h-6 rounded-full bg-[var(--accent-blue)]/10 flex items-center justify-center">
+      <svg className="w-3.5 h-3.5 text-[var(--accent-blue)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+      </svg>
+    </div>
+  );
+  
+  const CrossIcon = () => (
+    <div className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+      <svg className="w-3.5 h-3.5 text-[var(--warm-gray)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </div>
+  );
+  
   return (
-    <div className="border-4 border-black dark:border-white overflow-x-auto">
+    <div className="bg-white dark:bg-[#111] rounded shadow-print overflow-hidden">
       <table className="w-full">
         <thead>
-          <tr>
-            <th className="text-left py-4 px-6 font-bold uppercase tracking-wider text-xs border-b-4 border-r-4 border-black dark:border-white">Feature</th>
-            <th className="text-center py-4 px-6 font-bold uppercase tracking-wider text-xs border-b-4 border-r-4 border-black dark:border-white bg-[var(--destijl-blue)] text-white">Editframe</th>
-            <th className="text-center py-4 px-6 font-bold uppercase tracking-wider text-xs border-b-4 border-r-4 border-black dark:border-white">Remotion</th>
-            <th className="text-center py-4 px-6 font-bold uppercase tracking-wider text-xs border-b-4 border-black dark:border-white">FFmpeg</th>
+          <tr className="border-b border-rule">
+            <th className="text-left py-4 px-6 font-semibold text-sm">Feature</th>
+            <th className="text-center py-4 px-6 font-semibold text-sm text-[var(--accent-blue)]">Editframe</th>
+            <th className="text-center py-4 px-6 font-semibold text-sm text-[var(--warm-gray)]">Remotion</th>
+            <th className="text-center py-4 px-6 font-semibold text-sm text-[var(--warm-gray)]">FFmpeg</th>
           </tr>
         </thead>
         <tbody>
-          {[
-            { feature: 'React components', editframe: true, remotion: true, ffmpeg: false },
-            { feature: 'Web Components', editframe: true, remotion: false, ffmpeg: false },
-            { feature: 'Instant preview', editframe: true, remotion: 'Partial', ffmpeg: false },
-            { feature: 'Cloud rendering', editframe: true, remotion: 'Self-host', ffmpeg: 'Self-host' },
-            { feature: 'Auto captions', editframe: true, remotion: false, ffmpeg: false },
-            { feature: 'Timeline GUI', editframe: true, remotion: false, ffmpeg: false },
-            { feature: 'Managed infrastructure', editframe: true, remotion: false, ffmpeg: false },
-          ].map((row, i, arr) => (
-            <tr key={i}>
-              <td className={`py-4 px-6 font-medium text-sm border-r-4 border-black dark:border-white ${i < arr.length - 1 ? 'border-b-2 border-b-black/20 dark:border-b-white/20' : ''}`}>
-                {row.feature}
+          {features.map((feature, i) => (
+            <tr key={i} className="border-b border-rule last:border-0">
+              <td className="py-4 px-6 text-sm">{feature.name}</td>
+              <td className="py-4 px-6">
+                <div className="flex justify-center">
+                  {feature.editframe ? <CheckIcon /> : <CrossIcon />}
+                </div>
               </td>
-              <td className={`py-4 px-6 text-center border-r-4 border-black dark:border-white bg-[var(--destijl-blue)]/5 ${i < arr.length - 1 ? 'border-b-2 border-b-black/20 dark:border-b-white/20' : ''}`}>
-                {row.editframe === true ? (
-                  <div className="w-6 h-6 bg-[var(--destijl-blue)] flex items-center justify-center mx-auto">
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                      <path strokeLinecap="square" strokeLinejoin="miter" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                ) : row.editframe === false ? (
-                  <div className="w-6 h-6 bg-black/10 dark:bg-white/10 flex items-center justify-center mx-auto">
-                    <svg className="w-4 h-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                      <path strokeLinecap="square" strokeLinejoin="miter" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </div>
-                ) : (
-                  <span className="text-xs font-bold uppercase tracking-wider opacity-70">{row.editframe}</span>
-                )}
+              <td className="py-4 px-6">
+                <div className="flex justify-center">
+                  {feature.remotion ? <CheckIcon /> : <CrossIcon />}
+                </div>
               </td>
-              <td className={`py-4 px-6 text-center border-r-4 border-black dark:border-white ${i < arr.length - 1 ? 'border-b-2 border-b-black/20 dark:border-b-white/20' : ''}`}>
-                {row.remotion === true ? (
-                  <div className="w-6 h-6 bg-[var(--destijl-blue)] flex items-center justify-center mx-auto">
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                      <path strokeLinecap="square" strokeLinejoin="miter" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                ) : row.remotion === false ? (
-                  <div className="w-6 h-6 bg-black/10 dark:bg-white/10 flex items-center justify-center mx-auto">
-                    <svg className="w-4 h-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                      <path strokeLinecap="square" strokeLinejoin="miter" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </div>
-                ) : (
-                  <span className="text-xs font-bold uppercase tracking-wider opacity-70">{row.remotion}</span>
-                )}
-              </td>
-              <td className={`py-4 px-6 text-center ${i < arr.length - 1 ? 'border-b-2 border-b-black/20 dark:border-b-white/20' : ''}`}>
-                {row.ffmpeg === true ? (
-                  <div className="w-6 h-6 bg-[var(--destijl-blue)] flex items-center justify-center mx-auto">
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                      <path strokeLinecap="square" strokeLinejoin="miter" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                ) : row.ffmpeg === false ? (
-                  <div className="w-6 h-6 bg-black/10 dark:bg-white/10 flex items-center justify-center mx-auto">
-                    <svg className="w-4 h-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                      <path strokeLinecap="square" strokeLinejoin="miter" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </div>
-                ) : (
-                  <span className="text-xs font-bold uppercase tracking-wider opacity-70">{row.ffmpeg}</span>
-                )}
+              <td className="py-4 px-6">
+                <div className="flex justify-center">
+                  {feature.ffmpeg ? <CheckIcon /> : <CrossIcon />}
+                </div>
               </td>
             </tr>
           ))}
@@ -99,4 +72,5 @@ export function ComparisonTable() {
   );
 }
 
+export { ComparisonTable };
 export default ComparisonTable;

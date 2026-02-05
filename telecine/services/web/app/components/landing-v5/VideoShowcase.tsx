@@ -4,65 +4,48 @@
    Purpose: Show real outputs. Videos made with Editframe. Proof that the
    tool produces professional results.
    
-   Design: International Typographic Style / Bauhaus / De Stijl
-   - Grid layout with bold borders
-   - Primary color accents
-   - Geometric play buttons
+   Design: Clean grid with subtle shadows and hover effects
    ============================================================================== */
 
 function VideoShowcase() {
   const videos = [
-    { id: 1, title: 'Product Launch', category: 'Marketing', duration: '0:30', color: 'red' as const },
-    { id: 2, title: 'Podcast Clip', category: 'Social', duration: '0:45', color: 'blue' as const },
-    { id: 3, title: 'Q3 Results', category: 'Data', duration: '1:15', color: 'yellow' as const },
-    { id: 4, title: 'Tutorial Intro', category: 'Education', duration: '0:20', color: 'blue' as const },
-    { id: 5, title: 'Event Recap', category: 'Marketing', duration: '0:55', color: 'red' as const },
-    { id: 6, title: 'Quote Card', category: 'Social', duration: '0:10', color: 'yellow' as const },
+    { id: 1, title: 'Product Launch', category: 'Marketing', duration: '0:30' },
+    { id: 2, title: 'Podcast Clip', category: 'Social', duration: '0:45' },
+    { id: 3, title: 'Q3 Results', category: 'Data', duration: '1:15' },
+    { id: 4, title: 'Tutorial Intro', category: 'Education', duration: '0:20' },
+    { id: 5, title: 'Event Recap', category: 'Marketing', duration: '0:55' },
+    { id: 6, title: 'Quote Card', category: 'Social', duration: '0:10' },
   ];
   
-  const colorMap = {
-    red: 'bg-[var(--destijl-red)]',
-    blue: 'bg-[var(--destijl-blue)]',
-    yellow: 'bg-[var(--destijl-yellow)]',
-  };
-  
   return (
-    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-0">
-      {videos.map((video, i) => (
+    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {videos.map((video) => (
         <div 
           key={video.id} 
-          className={`group cursor-pointer border-4 border-black dark:border-white ${
-            i % 3 !== 0 ? 'lg:border-l-0' : ''
-          } ${
-            i >= 3 ? 'border-t-0' : ''
-          } ${
-            i % 2 !== 0 && i < 3 ? 'md:border-l-0 lg:border-l-4' : ''
-          } ${
-            i >= 2 && i < 3 ? 'md:border-t-0 lg:border-t-4' : ''
-          }`}
+          className="group cursor-pointer bg-white dark:bg-[#111] rounded shadow-print hover:shadow-print-lg transition-shadow overflow-hidden"
         >
-          <div className={`relative aspect-video ${colorMap[video.color]} flex items-center justify-center`} style={{boxShadow: 'inset 0 0 60px rgba(0,0,0,0.1)'}}>
-            {/* Geometric play button */}
-            <div className="w-16 h-16 bg-white flex items-center justify-center group-hover:bg-black transition-colors" style={{boxShadow: 'inset 0 0 15px rgba(0,0,0,0.05)'}}>
-              <svg className="w-6 h-6 text-black group-hover:text-white ml-1 transition-colors" fill="currentColor" viewBox="0 0 24 24">
+          <div className="relative aspect-video bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center">
+            {/* Play button */}
+            <div className="w-14 h-14 rounded-full bg-white/90 dark:bg-black/80 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+              <svg className="w-5 h-5 text-[var(--ink-black)] dark:text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z" />
               </svg>
             </div>
             
             {/* Duration badge */}
-            <div className="absolute bottom-0 right-0 px-3 py-2 bg-black text-white text-xs font-bold font-mono uppercase tracking-wider" style={{textShadow: '0 0 0.5px currentColor'}}>
+            <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/70 text-white text-xs font-mono rounded">
               {video.duration}
             </div>
           </div>
           
-          <div className="p-4 bg-white dark:bg-[#0a0a0a] flex items-start justify-between">
+          <div className="p-4 flex items-start justify-between">
             <div>
-              <h3 className="font-bold uppercase tracking-wider text-xs mb-1 group-hover:text-[var(--destijl-red)] transition-colors">
+              <h3 className="font-semibold text-sm group-hover:text-[var(--accent-red)] transition-colors">
                 {video.title}
               </h3>
-              <p className="text-[10px] uppercase tracking-wider opacity-60">{video.category}</p>
+              <p className="text-xs text-[var(--warm-gray)]">{video.category}</p>
             </div>
-            <a href="#" className="text-[10px] font-bold uppercase tracking-wider hover:text-[var(--destijl-blue)] transition-colors border-b-2 border-current">
+            <a href="#" className="text-xs font-medium text-[var(--accent-blue)] hover:underline">
               Code
             </a>
           </div>

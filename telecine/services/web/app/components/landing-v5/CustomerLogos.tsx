@@ -1,26 +1,21 @@
 /* ==============================================================================
    COMPONENT: CustomerLogos
    
-   Purpose: Third-party validation. Show who uses this.
+   Purpose: Social proof through recognizable brands.
    
-   Design: International Typographic Style / Bauhaus / De Stijl
-   - Bold borders and geometric layout
-   - Primary color accents
+   Design: Clean, minimal logo bar
    ============================================================================== */
 
-export function CustomerLogos() {
+function CustomerLogos() {
   return (
-    <div className="border-b-4 border-black dark:border-white pb-16">
-      <div className="flex items-center gap-6 mb-8">
-        <div className="w-4 h-4 bg-[var(--destijl-yellow)]" />
-        <p className="text-xs font-bold uppercase tracking-[0.2em]">
-          Trusted by developers at
-        </p>
-      </div>
-      <div className="flex items-center justify-start gap-8 flex-wrap">
+    <div>
+      <p className="text-sm font-medium text-[var(--warm-gray)] text-center mb-8">
+        Trusted by teams at
+      </p>
+      <div className="flex items-center justify-center gap-12 flex-wrap opacity-60">
         {['Company A', 'Company B', 'Company C', 'Company D', 'Company E'].map((name, i) => (
-          <div key={i} className="h-12 px-6 flex items-center justify-center border-4 border-black/20 dark:border-white/20 hover:border-black dark:hover:border-white hover:bg-[var(--destijl-yellow)] hover:text-black transition-colors">
-            <span className="text-sm font-bold uppercase tracking-wider">{name}</span>
+          <div key={i} className="text-lg font-semibold text-[var(--warm-gray)]">
+            {name}
           </div>
         ))}
       </div>
@@ -28,4 +23,5 @@ export function CustomerLogos() {
   );
 }
 
+export { CustomerLogos };
 export default CustomerLogos;

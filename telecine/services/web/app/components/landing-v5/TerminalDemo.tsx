@@ -5,18 +5,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
    
    Purpose: Show the getting started flow. Make it feel fast and easy.
    
-   Animation sequence:
-   1. Type: npm create @editframe@latest
-   2. Show prompts and answers appearing
-   3. Show success messages
-   4. Type: cd my-video-app && npm run dev
-   5. Show server ready message
-   6. Loop after 5 second pause
-   
-   Technical approach:
-   - CSS transitions for fade-in effects
-   - requestAnimationFrame for smooth typing
-   - Respects prefers-reduced-motion
+   Design: Clean terminal with subtle styling
    ============================================================================== */
 
 type AnimationStep = 
@@ -54,8 +43,8 @@ const ANIMATION_STEPS: AnimationStep[] = [
   {
     type: 'output',
     lines: [
-      { text: '✓ Created my-video-app/', className: 'text-slate-400 [&>span:first-child]:text-emerald-400', delay: 0 },
-      { text: '✓ Installed dependencies', className: 'text-slate-400 [&>span:first-child]:text-emerald-400', delay: 400 },
+      { text: '✓ Created my-video-app/', delay: 0 },
+      { text: '✓ Installed dependencies', delay: 400 },
     ],
     delay: 100
   },
@@ -66,7 +55,7 @@ const ANIMATION_STEPS: AnimationStep[] = [
     type: 'output',
     lines: [
       { text: '', className: 'h-2', delay: 0 },
-      { text: '✓ Dev server ready', className: 'text-emerald-400', delay: 0 },
+      { text: '✓ Dev server ready', delay: 0 },
       { text: '', className: 'h-1', delay: 200 },
       { text: 'Local:   http://localhost:3000', className: 'text-slate-500', delay: 400 },
       { text: 'Preview: http://localhost:3000/preview', className: 'text-slate-500', delay: 200 },
@@ -83,11 +72,9 @@ function TerminalDemo() {
   const [visibleOutputs, setVisibleOutputs] = useState<{ stepIndex: number; lineIndex: number }[]>([]);
   const [commands, setCommands] = useState<{ text: string; complete: boolean }[]>([]);
   
-  const animationRef = useRef<number | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTypingRef = useRef(false);
 
-  // Check for reduced motion preference
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     setPrefersReducedMotion(mediaQuery.matches);
@@ -105,10 +92,8 @@ function TerminalDemo() {
     isTypingRef.current = false;
   }, []);
 
-  // Main animation loop
   useEffect(() => {
     if (prefersReducedMotion) {
-      // Show everything immediately for reduced motion
       const allCommands: { text: string; complete: boolean }[] = [];
       const allOutputs: { stepIndex: number; lineIndex: number }[] = [];
       
@@ -129,7 +114,6 @@ function TerminalDemo() {
 
     const step = ANIMATION_STEPS[currentStepIndex];
     if (!step) {
-      // Animation complete, restart after brief pause
       timeoutRef.current = setTimeout(resetAnimation, 100);
       return;
     }
@@ -158,7 +142,6 @@ function TerminalDemo() {
           });
         }, speed);
       } else {
-        // Typing complete for this command
         setCommands(prev => {
           const newCommands = [...prev];
           const lastCommand = newCommands[newCommands.length - 1];
@@ -193,11 +176,9 @@ function TerminalDemo() {
 
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
   }, [currentStepIndex, typedText, visibleOutputs, prefersReducedMotion, resetAnimation]);
 
-  // Build the rendered content
   const renderContent = () => {
     const elements: React.ReactNode[] = [];
     let commandIndex = 0;
@@ -208,11 +189,11 @@ function TerminalDemo() {
         if (command) {
           elements.push(
             <div key={`cmd-${stepIndex}`} className="flex items-center">
-              <span className="text-[var(--destijl-red)] font-bold">$</span>
+              <span className="text-[var(--accent-gold)] font-semibold">$</span>
               <span className="text-white ml-2">
                 {command.text}
                 {!command.complete && (
-                  <span className="inline-block w-2 h-4 bg-[var(--destijl-red)] ml-0.5 animate-[blink_1s_step-end_infinite]" />
+                  <span className="inline-block w-2 h-4 bg-white ml-0.5 animate-pulse" />
                 )}
               </span>
             </div>
@@ -232,57 +213,42 @@ function TerminalDemo() {
                   return <div key={lineIndex} className={line.className} />;
                 }
                 
-                // Handle checkmark prefix specially
                 if (line.text.startsWith('✓')) {
                   return (
-                    <p 
-                      key={lineIndex} 
-                      className={`text-white/70 animate-[fadeIn_0.2s_ease-out]`}
-                    >
-                      <span className="text-[var(--destijl-blue)] font-bold">✓</span>
+                    <p key={lineIndex} className="text-white/70">
+                      <span className="text-emerald-400">✓</span>
                       {line.text.slice(1)}
                     </p>
                   );
                 }
                 
-                // Handle URLs
                 if (line.text.includes('http://')) {
                   const parts = line.text.split(/(http:\/\/[^\s]+)/);
                   return (
-                    <p 
-                      key={lineIndex} 
-                      className={`text-white/70 animate-[fadeIn_0.2s_ease-out]`}
-                    >
+                    <p key={lineIndex} className="text-white/70">
                       {parts.map((part, i) => 
                         part.startsWith('http://') 
-                          ? <span key={i} className="text-[var(--destijl-blue)]">{part}</span>
+                          ? <span key={i} className="text-[var(--accent-blue)]">{part}</span>
                           : part
                       )}
                     </p>
                   );
                 }
                 
-                // Handle prompt lines with answers
                 if (line.text.startsWith('?')) {
                   const colonIndex = line.text.indexOf(':');
                   if (colonIndex > -1) {
                     return (
-                      <p 
-                        key={lineIndex} 
-                        className={`text-white/70 animate-[fadeIn_0.2s_ease-out]`}
-                      >
+                      <p key={lineIndex} className="text-white/70">
                         {line.text.slice(0, colonIndex + 1)}
-                        <span className="text-white font-bold">{line.text.slice(colonIndex + 1)}</span>
+                        <span className="text-white font-medium">{line.text.slice(colonIndex + 1)}</span>
                       </p>
                     );
                   }
                 }
                 
                 return (
-                  <p 
-                    key={lineIndex} 
-                    className={`text-white/70 animate-[fadeIn_0.2s_ease-out]`}
-                  >
+                  <p key={lineIndex} className="text-white/70">
                     {line.text}
                   </p>
                 );
@@ -298,49 +264,19 @@ function TerminalDemo() {
 
   return (
     <div className="w-full">
-      <style dangerouslySetInnerHTML={{__html: `
-        @keyframes blink {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0; }
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(2px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .animate-\\[blink_1s_step-end_infinite\\] {
-            animation: none;
-            opacity: 1;
-          }
-          .animate-\\[fadeIn_0\\.2s_ease-out\\] {
-            animation: none;
-          }
-        }
-      `}} />
-      <div className="border-4 border-black dark:border-white bg-black relative">
-        {/* Window chrome - Bauhaus geometric with ink texture */}
-        <div className="flex items-center border-b-4 border-black dark:border-white">
-          <div className="flex">
-            <div className="w-4 h-4 bg-[var(--destijl-red)]" style={{boxShadow: 'inset 0 0 8px rgba(0,0,0,0.15)'}} />
-            <div className="w-4 h-4 bg-[var(--destijl-yellow)]" style={{boxShadow: 'inset 0 0 8px rgba(0,0,0,0.1)'}} />
-            <div className="w-4 h-4 bg-[var(--destijl-blue)]" style={{boxShadow: 'inset 0 0 8px rgba(0,0,0,0.15)'}} />
-          </div>
-          <span className="text-[10px] text-white font-bold uppercase tracking-[0.2em] px-4 py-2" style={{textShadow: '0 0 0.5px currentColor'}}>Terminal</span>
+      <div className="bg-[#1a1a1a] rounded-lg overflow-hidden shadow-print-lg">
+        {/* Window chrome */}
+        <div className="flex items-center gap-2 px-4 py-3 bg-[#252525] border-b border-white/10">
+          <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+          <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
+          <div className="w-3 h-3 rounded-full bg-[#28c840]" />
+          <span className="ml-4 text-xs text-white/50">Terminal</span>
         </div>
         
-        {/* Terminal content with subtle grain */}
-        <div className="p-6 font-mono text-sm space-y-3 min-h-[280px] text-white" style={{textShadow: '0 0 0.5px rgba(255,255,255,0.5)'}}>
+        {/* Terminal content */}
+        <div className="p-6 font-mono text-sm space-y-2 min-h-[280px] text-white">
           {renderContent()}
         </div>
-        
-        {/* Subtle noise overlay for screen texture */}
-        <div 
-          className="absolute inset-0 pointer-events-none opacity-[0.03]"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-            mixBlendMode: 'soft-light'
-          }}
-        />
       </div>
     </div>
   );

@@ -42,23 +42,28 @@ export default function IndexPage() {
   useTheme();
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0a0a0a] text-black dark:text-white texture-paper">
+    <div className="min-h-screen bg-[#FAFAFA] dark:bg-[#0a0a0a] text-[#1a1a1a] dark:text-[#e5e5e5]">
       <style dangerouslySetInnerHTML={{__html: `
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
         
         :root {
-          --destijl-red: #E53935;
-          --destijl-blue: #1565C0;
-          --destijl-yellow: #FFD600;
-          --destijl-black: #000000;
-          --destijl-white: #FFFFFF;
+          /* Richer, more sophisticated palette */
+          --accent-red: #C41E3A;
+          --accent-blue: #1E3A8A;
+          --accent-gold: #B8860B;
+          --accent-cream: #F5F5DC;
+          --ink-black: #1a1a1a;
+          --paper-white: #FAFAFA;
+          --warm-gray: #78716C;
         }
         
         .dark {
-          --destijl-red: #EF5350;
-          --destijl-blue: #42A5F5;
-          --destijl-yellow: #FFEE58;
+          --accent-red: #DC2626;
+          --accent-blue: #3B82F6;
+          --accent-gold: #F59E0B;
+          --paper-white: #0a0a0a;
+          --ink-black: #e5e5e5;
         }
         
         body {
@@ -69,185 +74,93 @@ export default function IndexPage() {
           font-family: 'JetBrains Mono', monospace;
         }
         
-        .destijl-red { color: var(--destijl-red); }
-        .destijl-blue { color: var(--destijl-blue); }
-        .destijl-yellow { color: var(--destijl-yellow); }
-        .bg-destijl-red { background-color: var(--destijl-red); }
-        .bg-destijl-blue { background-color: var(--destijl-blue); }
-        .bg-destijl-yellow { background-color: var(--destijl-yellow); }
-        .border-destijl-red { border-color: var(--destijl-red); }
-        .border-destijl-blue { border-color: var(--destijl-blue); }
-        .border-destijl-yellow { border-color: var(--destijl-yellow); }
-        
-        /* === ANALOG PRINT TEXTURES === */
-        
-        /* Paper grain texture for backgrounds */
+        /* Paper texture - subtle */
         .texture-paper {
-          position: relative;
-        }
-        .texture-paper::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-          opacity: 0.035;
-          pointer-events: none;
-          mix-blend-mode: multiply;
-        }
-        .dark .texture-paper::before {
-          mix-blend-mode: soft-light;
-          opacity: 0.08;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.02'/%3E%3C/svg%3E");
         }
         
-        /* Ink spread texture for colored blocks */
-        .texture-ink {
-          box-shadow: inset 0 0 60px rgba(0,0,0,0.08);
-        }
-        .texture-ink-heavy {
-          box-shadow: inset 0 0 80px rgba(0,0,0,0.12);
-        }
-        
-        /* Letterpress effect for headlines */
-        .text-letterpress {
-          text-shadow: 
-            0 1px 0 rgba(255,255,255,0.2),
-            0 -1px 0 rgba(0,0,0,0.15);
-        }
-        .dark .text-letterpress {
-          text-shadow: 
-            0 1px 0 rgba(255,255,255,0.08),
-            0 -1px 0 rgba(0,0,0,0.3);
-        }
-        
-        /* Slight misregistration for print feel */
-        .text-misregister {
-          text-shadow: 
-            -0.5px -0.5px 0 rgba(229, 57, 53, 0.12),
-            0.5px 0.5px 0 rgba(21, 101, 192, 0.08);
-        }
-        
-        /* Halftone pattern overlay */
-        .texture-halftone::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: radial-gradient(circle, transparent 45%, currentColor 46%);
-          background-size: 3px 3px;
-          opacity: 0.02;
-          pointer-events: none;
-        }
-        
-        /* Print ink bleed on text */
+        /* Ink effect for text - subtle blur */
         .text-ink {
-          text-shadow: 0 0 0.5px currentColor;
+          text-shadow: 0 0 0.3px currentColor;
         }
         
-        /* Worn/rough border effect */
-        .border-worn {
-          border-image: repeating-linear-gradient(
-            90deg,
-            currentColor 0px,
-            currentColor 4px,
-            transparent 4px,
-            transparent 5px,
-            currentColor 5px
-          ) 1;
+        /* Print-style shadows - soft, like ink bleeding */
+        .shadow-print {
+          box-shadow: 
+            0 1px 2px rgba(0,0,0,0.04),
+            0 4px 8px rgba(0,0,0,0.04),
+            0 8px 16px rgba(0,0,0,0.02);
+        }
+        .shadow-print-lg {
+          box-shadow: 
+            0 2px 4px rgba(0,0,0,0.03),
+            0 8px 16px rgba(0,0,0,0.05),
+            0 16px 32px rgba(0,0,0,0.03);
         }
         
-        /* Subtle grain overlay for sections */
-        .texture-grain {
-          position: relative;
-        }
-        .texture-grain::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
-          opacity: 0.025;
-          pointer-events: none;
-          mix-blend-mode: multiply;
+        /* Subtle gradient for depth */
+        .gradient-subtle {
+          background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.02) 100%);
         }
         
-        /* Color block with slight variation (screen print) */
-        .color-block-red {
-          background: linear-gradient(
-            165deg,
-            var(--destijl-red) 0%,
-            color-mix(in srgb, var(--destijl-red), black 4%) 50%,
-            var(--destijl-red) 100%
-          );
+        /* Accent backgrounds with print texture */
+        .bg-accent-red {
+          background: linear-gradient(135deg, var(--accent-red) 0%, color-mix(in srgb, var(--accent-red), black 15%) 100%);
         }
-        .color-block-blue {
-          background: linear-gradient(
-            165deg,
-            var(--destijl-blue) 0%,
-            color-mix(in srgb, var(--destijl-blue), black 5%) 50%,
-            var(--destijl-blue) 100%
-          );
-        }
-        .color-block-yellow {
-          background: linear-gradient(
-            165deg,
-            var(--destijl-yellow) 0%,
-            color-mix(in srgb, var(--destijl-yellow), black 3%) 50%,
-            var(--destijl-yellow) 100%
-          );
+        .bg-accent-blue {
+          background: linear-gradient(135deg, var(--accent-blue) 0%, color-mix(in srgb, var(--accent-blue), black 10%) 100%);
         }
         
+        /* Border that looks like printed rule lines */
+        .border-rule {
+          border-color: rgba(0,0,0,0.12);
+        }
+        .dark .border-rule {
+          border-color: rgba(255,255,255,0.12);
+        }
+
         @media (prefers-reduced-motion: reduce) {
           * {
             animation-duration: 0.01ms !important;
-            animation-iteration-count: 1 !important;
             transition-duration: 0.01ms !important;
           }
         }
-
-        @keyframes blink-cursor {
-          0%, 50% { opacity: 1; }
-          51%, 100% { opacity: 0; }
-        }
-
-        .animate-blink-cursor {
-          animation: blink-cursor 1s step-end infinite;
-        }
       `}} />
 
-      {/* Navigation - Bauhaus geometric style */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b-4 border-black dark:border-white bg-white dark:bg-[#0a0a0a]">
-        <div className="flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center h-full border-r-4 border-black dark:border-white px-8">
-            <span className="text-2xl font-black tracking-tighter uppercase">editframe</span>
+      {/* Navigation - Clean, sophisticated */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-[#0a0a0a]/95 backdrop-blur-sm border-b border-rule">
+        <div className="max-w-7xl mx-auto flex items-center justify-between h-16 px-6">
+          <Link to="/" className="flex items-center">
+            <span className="text-xl font-extrabold tracking-tight">editframe</span>
           </Link>
-          <div className="hidden md:flex items-center h-full">
-            <Link to="/docs" className="h-full flex items-center px-6 border-l-4 border-black dark:border-white text-sm font-bold uppercase tracking-wider hover:bg-destijl-yellow hover:text-black transition-colors">
+          <div className="hidden md:flex items-center gap-8">
+            <Link to="/docs" className="text-sm font-medium text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:hover:text-white transition-colors">
               Docs
             </Link>
-            <Link to="/examples" className="h-full flex items-center px-6 border-l-4 border-black dark:border-white text-sm font-bold uppercase tracking-wider hover:bg-destijl-yellow hover:text-black transition-colors">
+            <Link to="/examples" className="text-sm font-medium text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:hover:text-white transition-colors">
               Examples
             </Link>
-            <Link to="/pricing" className="h-full flex items-center px-6 border-l-4 border-black dark:border-white text-sm font-bold uppercase tracking-wider hover:bg-destijl-yellow hover:text-black transition-colors">
+            <Link to="/pricing" className="text-sm font-medium text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:hover:text-white transition-colors">
               Pricing
             </Link>
           </div>
-          <div className="flex items-center h-full">
-            <div className="h-full flex items-center px-4 border-l-4 border-black dark:border-white">
-              <ThemeToggle />
-            </div>
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
             {isLoggedIn ? (
               <Link
                 to="/dashboard"
-                className="h-full flex items-center px-8 bg-black dark:bg-white text-white dark:text-black text-sm font-bold uppercase tracking-wider hover:bg-destijl-blue hover:text-white transition-colors"
+                className="px-5 py-2 bg-[var(--ink-black)] dark:bg-white text-white dark:text-black text-sm font-semibold rounded hover:opacity-90 transition-opacity"
               >
                 Dashboard
               </Link>
             ) : (
               <>
-                <Link to="/login" className="h-full flex items-center px-6 border-l-4 border-black dark:border-white text-sm font-bold uppercase tracking-wider hover:bg-destijl-yellow hover:text-black transition-colors">
+                <Link to="/login" className="text-sm font-medium text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:hover:text-white transition-colors">
                   Sign in
                 </Link>
                 <Link
                   to="/welcome"
-                  className="h-full flex items-center px-8 bg-destijl-red text-white text-sm font-bold uppercase tracking-wider hover:bg-destijl-blue transition-colors"
+                  className="px-5 py-2 bg-accent-red text-white text-sm font-semibold rounded hover:opacity-90 transition-opacity"
                 >
                   Get Started
                 </Link>
@@ -257,375 +170,347 @@ export default function IndexPage() {
         </div>
       </nav>
 
-      {/* Hero Section - De Stijl / Mondrian composition */}
-      <section className="relative min-h-screen pt-16">
-        <div className="grid grid-cols-12 min-h-[calc(100vh-4rem)]">
-          {/* Left geometric accent */}
-          <div className="hidden lg:block col-span-1 color-block-blue texture-ink border-r-4 border-black dark:border-white" />
-          
-          {/* Main hero content */}
-          <div className="col-span-12 lg:col-span-7 flex flex-col justify-center px-8 lg:px-16 py-24 border-r-0 lg:border-r-4 border-black dark:border-white">
-            <SocialProofBar />
+      {/* Hero Section - Generous space, dramatic typography */}
+      <section className="relative pt-32 pb-24 texture-paper">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            {/* Left - Typography focused */}
+            <div>
+              <SocialProofBar />
 
-            <h1 className="text-6xl md:text-8xl lg:text-9xl font-black leading-[0.85] tracking-tighter uppercase mb-8 text-letterpress text-misregister">
-              Build<br />
-              <span className="destijl-red">video</span><br />
-              with code
-            </h1>
-            
-            <div className="w-24 h-2 bg-black dark:bg-white mb-8" />
-            
-            <p className="text-xl md:text-2xl mb-12 max-w-xl font-medium leading-relaxed">
-              React components that render to video. Instant preview. Parallel rendering at scale.
-            </p>
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-black leading-[0.95] tracking-tight mb-8 text-ink">
+                Build video<br />
+                <span className="text-[var(--accent-red)]">with code</span>
+              </h1>
+              
+              {/* Accent line - subtle, not overwhelming */}
+              <div className="w-16 h-1 bg-[var(--accent-gold)] mb-8" />
+              
+              <p className="text-xl text-[var(--warm-gray)] mb-10 max-w-md leading-relaxed">
+                React components that render to video. Instant preview. Parallel rendering at scale.
+              </p>
 
-            <div className="flex flex-col sm:flex-row gap-0">
-              <Link
-                to="/welcome"
-                className="inline-flex items-center justify-center px-10 py-5 bg-black dark:bg-white text-white dark:text-black font-bold uppercase tracking-wider text-sm hover:bg-destijl-red hover:text-white transition-colors border-4 border-black dark:border-white"
-              >
-                Start building
-                <svg className="ml-3 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </Link>
-              <Link
-                to="/docs"
-                className="inline-flex items-center justify-center px-10 py-5 bg-white dark:bg-[#0a0a0a] text-black dark:text-white font-bold uppercase tracking-wider text-sm hover:bg-destijl-yellow hover:text-black transition-colors border-4 border-black dark:border-white border-l-0"
-              >
-                Documentation
-              </Link>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link
+                  to="/welcome"
+                  className="inline-flex items-center justify-center px-8 py-4 bg-[var(--ink-black)] dark:bg-white text-white dark:text-black font-semibold text-sm rounded shadow-print hover:shadow-print-lg transition-shadow"
+                >
+                  Start building
+                  <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </Link>
+                <Link
+                  to="/docs"
+                  className="inline-flex items-center justify-center px-8 py-4 border border-rule font-semibold text-sm rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                >
+                  Documentation
+                </Link>
+              </div>
+            </div>
+
+            {/* Right - Demo */}
+            <div className="relative">
+              {/* Subtle geometric accent - not overwhelming */}
+              <div className="absolute -top-8 -right-8 w-32 h-32 bg-[var(--accent-gold)] opacity-10 rounded-sm" />
+              <div className="relative shadow-print-lg rounded overflow-hidden">
+                <HeroDemo />
+              </div>
             </div>
           </div>
-
-          {/* Right side - Geometric composition */}
-          <div className="hidden lg:grid col-span-4 grid-rows-6">
-            <div className="row-span-2 color-block-yellow texture-ink border-b-4 border-black dark:border-white" />
-            <div className="row-span-3 bg-white dark:bg-[#0a0a0a] border-b-4 border-black dark:border-white p-8 flex items-center justify-center texture-grain">
-              <HeroDemo />
-            </div>
-            <div className="row-span-1 color-block-red texture-ink-heavy" />
-          </div>
-        </div>
-        
-        {/* Mobile hero demo */}
-        <div className="lg:hidden border-t-4 border-black dark:border-white p-8 bg-gray-50 dark:bg-[#111]">
-          <HeroDemo />
         </div>
       </section>
 
-      {/* Before/After Section - Grid composition */}
-      <section className="border-t-4 border-black dark:border-white">
-        <div className="grid grid-cols-12">
-          {/* Section header */}
-          <div className="col-span-12 lg:col-span-4 color-block-blue texture-ink text-white p-12 lg:p-16 border-b-4 lg:border-b-0 lg:border-r-4 border-black dark:border-white">
-            <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter leading-[0.9] mb-6 text-letterpress">
-              Before<br />& After
+      {/* Before/After Section - Clean comparison */}
+      <section className="py-24 border-t border-rule">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="max-w-2xl mb-16">
+            <p className="text-sm font-semibold text-[var(--accent-red)] uppercase tracking-wider mb-4">
+              The difference
+            </p>
+            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
+              Before & after
             </h2>
-            <div className="w-16 h-1 bg-white mb-6" />
-            <p className="text-lg font-medium opacity-90 text-ink">
+            <p className="text-lg text-[var(--warm-gray)] leading-relaxed">
               FFmpeg scripts and frame counting vs. React components and instant preview.
             </p>
           </div>
           
-          {/* Comparison content */}
-          <div className="col-span-12 lg:col-span-8 p-8 lg:p-16">
-            <BeforeAfterComparison />
-          </div>
+          <BeforeAfterComparison />
         </div>
       </section>
 
       {/* Interactive Playground Section */}
-      <section className="border-t-4 border-black dark:border-white">
-        <div className="grid grid-cols-12">
-          <div className="col-span-12 lg:col-span-3 color-block-yellow texture-ink border-b-4 lg:border-b-0 lg:border-r-4 border-black dark:border-white p-12">
-            <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter leading-[0.9] text-black mb-6 text-letterpress">
-              Try it<br />yourself
+      <section className="py-24 bg-white dark:bg-[#111] border-t border-rule">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <p className="text-sm font-semibold text-[var(--accent-blue)] uppercase tracking-wider mb-4">
+              Try it now
+            </p>
+            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
+              Edit code, see video
             </h2>
-            <div className="w-16 h-1 bg-black mb-6" />
-            <p className="text-lg font-medium text-black/80 text-ink">
-              Edit code. Watch video update instantly.
+            <p className="text-lg text-[var(--warm-gray)] leading-relaxed">
+              Experience instant preview. No account required.
             </p>
           </div>
           
-          <div className="col-span-12 lg:col-span-9 p-8 lg:p-12 bg-gray-50 dark:bg-[#111]">
+          <div className="shadow-print-lg rounded overflow-hidden">
             <InteractivePlayground />
           </div>
         </div>
       </section>
 
-      {/* Architecture Section */}
-      <section className="border-t-4 border-black dark:border-white">
-        <div className="grid grid-cols-12">
-          <div className="col-span-12 border-b-4 border-black dark:border-white">
-            <div className="grid grid-cols-12">
-              <div className="col-span-2 lg:col-span-1 color-block-red texture-ink-heavy h-32" />
-              <div className="col-span-10 lg:col-span-11 p-8 flex items-center texture-grain">
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-[0.2em] destijl-blue mb-2 text-ink">Infrastructure</p>
-                  <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tighter text-letterpress">
-                    Production-Grade
-                  </h2>
-                </div>
-              </div>
+      {/* Architecture Section - Technical credibility */}
+      <section className="py-24 border-t border-rule">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid lg:grid-cols-3 gap-16">
+            <div>
+              <p className="text-sm font-semibold text-[var(--accent-gold)] uppercase tracking-wider mb-4">
+                Infrastructure
+              </p>
+              <h2 className="text-4xl font-bold tracking-tight mb-6">
+                Production-grade
+              </h2>
+              <p className="text-lg text-[var(--warm-gray)] leading-relaxed mb-8">
+                Dual pipeline architecture: instant preview for development, parallel rendering for production.
+              </p>
+              <PerformanceMetrics />
             </div>
-          </div>
-          
-          <div className="col-span-12 lg:col-span-8 p-8 lg:p-12 border-r-0 lg:border-r-4 border-black dark:border-white">
-            <ArchitectureDiagram />
-          </div>
-          
-          <div className="col-span-12 lg:col-span-4 p-8 lg:p-12 bg-gray-50 dark:bg-[#111]">
-            <PerformanceMetrics />
+            
+            <div className="lg:col-span-2">
+              <ArchitectureDiagram />
+            </div>
           </div>
         </div>
       </section>
 
       {/* Code Examples Section */}
-      <section className="border-t-4 border-black dark:border-white">
-        <div className="grid grid-cols-12">
-          <div className="col-span-12 lg:col-span-2 bg-black dark:bg-white texture-ink border-b-4 lg:border-b-0 lg:border-r-4 border-black dark:border-white p-8 lg:p-12 flex flex-col justify-center">
-            <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tighter leading-[0.9] text-white dark:text-black [writing-mode:horizontal-tb] lg:[writing-mode:vertical-rl] lg:rotate-180 text-letterpress">
-              Code<br />Examples
+      <section className="py-24 bg-[var(--ink-black)] dark:bg-[#111] text-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="max-w-2xl mb-16">
+            <p className="text-sm font-semibold text-[var(--accent-gold)] uppercase tracking-wider mb-4">
+              Developer experience
+            </p>
+            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
+              Code examples
             </h2>
-          </div>
-          
-          <div className="col-span-12 lg:col-span-10 p-8 lg:p-12">
-            <p className="text-xl font-medium mb-8 max-w-2xl">
+            <p className="text-lg text-white/70 leading-relaxed">
               If you know React, you know Editframe. Familiar patterns, predictable behavior, excellent TypeScript support.
             </p>
-            <CodeExamples />
           </div>
+          
+          <CodeExamples />
         </div>
       </section>
 
       {/* Video Showcase Section */}
-      <section className="border-t-4 border-black dark:border-white bg-gray-50 dark:bg-[#111]">
-        <div className="grid grid-cols-12">
-          <div className="col-span-12 border-b-4 border-black dark:border-white p-8 lg:p-12 texture-grain">
-            <div className="flex items-center gap-6">
-              <div className="w-4 h-4 color-block-red texture-ink" />
-              <div className="w-4 h-4 color-block-yellow texture-ink" />
-              <div className="w-4 h-4 color-block-blue texture-ink" />
-              <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tighter text-letterpress">
+      <section className="py-24 border-t border-rule">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex items-end justify-between mb-16">
+            <div>
+              <p className="text-sm font-semibold text-[var(--accent-red)] uppercase tracking-wider mb-4">
+                Gallery
+              </p>
+              <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
                 Built with Editframe
               </h2>
             </div>
+            <Link 
+              to="/examples" 
+              className="hidden md:flex items-center text-sm font-semibold text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:hover:text-white"
+            >
+              View all examples
+              <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </Link>
           </div>
           
-          <div className="col-span-12 p-8 lg:p-12">
-            <VideoShowcase />
-          </div>
+          <VideoShowcase />
         </div>
       </section>
 
       {/* Comparison Section */}
-      <section className="border-t-4 border-black dark:border-white">
-        <div className="grid grid-cols-12">
-          <div className="col-span-12 lg:col-span-3 color-block-blue texture-ink text-white border-b-4 lg:border-b-0 lg:border-r-4 border-black dark:border-white p-8 lg:p-12 flex flex-col justify-center">
-            <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tighter leading-[0.9] mb-6 text-letterpress">
-              How we<br />compare
+      <section className="py-24 bg-white dark:bg-[#111] border-t border-rule">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <p className="text-sm font-semibold text-[var(--accent-blue)] uppercase tracking-wider mb-4">
+              Comparison
+            </p>
+            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
+              How we compare
             </h2>
-            <div className="w-16 h-1 bg-white mb-6" />
-            <p className="text-lg font-medium opacity-90 text-ink">
+            <p className="text-lg text-[var(--warm-gray)] leading-relaxed">
               An honest comparison to help you decide.
             </p>
           </div>
           
-          <div className="col-span-12 lg:col-span-9 p-8 lg:p-12">
-            <ComparisonTable />
-          </div>
+          <ComparisonTable />
         </div>
       </section>
 
       {/* Social Proof Section */}
-      <section className="border-t-4 border-black dark:border-white bg-gray-50 dark:bg-[#111]">
-        <div className="p-8 lg:p-16">
+      <section className="py-24 border-t border-rule">
+        <div className="max-w-7xl mx-auto px-6">
           <CustomerLogos />
-          <div className="mt-16">
+          <div className="mt-20">
             <Testimonials />
           </div>
         </div>
       </section>
 
       {/* Getting Started Section */}
-      <section className="border-t-4 border-black dark:border-white">
-        <div className="grid grid-cols-12">
-          <div className="col-span-12 lg:col-span-5 p-8 lg:p-16 border-b-4 lg:border-b-0 lg:border-r-4 border-black dark:border-white texture-grain">
-            <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter leading-[0.9] mb-8 text-letterpress text-misregister">
-              Zero to video<br />
-              <span className="destijl-red">2 minutes</span>
-            </h2>
-            
-            <div className="w-24 h-2 bg-black dark:bg-white mb-8" />
-            
-            <p className="text-xl font-medium mb-10 text-ink">
-              One command to scaffold. One command to develop. Hot reload that works.
-            </p>
-            
-            <div className="space-y-6">
-              <div className="flex items-start gap-6">
-                <div className="flex-shrink-0 w-12 h-12 color-block-yellow texture-ink flex items-center justify-center text-black font-black text-xl">
-                  1
-                </div>
-                <div>
-                  <h3 className="font-bold uppercase tracking-wider mb-1 text-ink">Create project</h3>
-                  <p className="text-sm opacity-70">
-                    CLI scaffolds TypeScript, ESLint, and your chosen template.
-                  </p>
-                </div>
+      <section className="py-24 bg-white dark:bg-[#111] border-t border-rule">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div>
+              <p className="text-sm font-semibold text-[var(--accent-gold)] uppercase tracking-wider mb-4">
+                Quickstart
+              </p>
+              <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
+                Zero to video in<br />
+                <span className="text-[var(--accent-red)]">2 minutes</span>
+              </h2>
+              
+              <p className="text-lg text-[var(--warm-gray)] mb-10 leading-relaxed">
+                One command to scaffold. One command to develop. Hot reload that works.
+              </p>
+              
+              <div className="space-y-6 mb-10">
+                {[
+                  { num: '01', title: 'Create project', desc: 'CLI scaffolds TypeScript, ESLint, and your chosen template.' },
+                  { num: '02', title: 'Start developing', desc: 'Dev server with instant preview. Edit code, see video update.' },
+                  { num: '03', title: 'Render & deploy', desc: 'Render locally or push to cloud. Scale to ten thousand.' },
+                ].map((step, i) => (
+                  <div key={i} className="flex gap-6">
+                    <div className="flex-shrink-0 text-3xl font-black text-[var(--accent-gold)] opacity-50">
+                      {step.num}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold mb-1">{step.title}</h3>
+                      <p className="text-sm text-[var(--warm-gray)]">{step.desc}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="flex items-start gap-6">
-                <div className="flex-shrink-0 w-12 h-12 color-block-blue texture-ink text-white flex items-center justify-center font-black text-xl">
-                  2
-                </div>
-                <div>
-                  <h3 className="font-bold uppercase tracking-wider mb-1 text-ink">Start developing</h3>
-                  <p className="text-sm opacity-70">
-                    Dev server with instant preview. Edit code, see video update.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-6">
-                <div className="flex-shrink-0 w-12 h-12 color-block-red texture-ink text-white flex items-center justify-center font-black text-xl">
-                  3
-                </div>
-                <div>
-                  <h3 className="font-bold uppercase tracking-wider mb-1 text-ink">Render & deploy</h3>
-                  <p className="text-sm opacity-70">
-                    Render locally or push to cloud. Scale to ten thousand.
-                  </p>
-                </div>
-              </div>
-            </div>
 
-            <div className="mt-10">
               <Link
                 to="/docs/quickstart"
-                className="inline-flex items-center font-bold uppercase tracking-wider text-sm hover:destijl-red transition-colors"
+                className="inline-flex items-center text-sm font-semibold hover:text-[var(--accent-red)] transition-colors"
               >
                 Read quickstart guide
-                <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
               </Link>
             </div>
-          </div>
 
-          <div className="col-span-12 lg:col-span-7 p-8 lg:p-12 bg-gray-50 dark:bg-[#111] flex items-center">
-            <TerminalDemo />
+            <div className="shadow-print-lg rounded overflow-hidden">
+              <TerminalDemo />
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Final CTA Section - Bold geometric */}
-      <section className="border-t-4 border-black dark:border-white">
-        <div className="grid grid-cols-12">
-          <div className="col-span-2 lg:col-span-1 color-block-red texture-ink-heavy" />
-          <div className="col-span-10 lg:col-span-7 p-12 lg:p-24 border-r-0 lg:border-r-4 border-black dark:border-white texture-grain">
-            <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tighter leading-[0.85] mb-8 text-letterpress text-misregister">
-              Ready to<br />
-              <span className="destijl-blue">build?</span>
-            </h2>
-            
-            <p className="text-xl font-medium mb-12 max-w-lg">
-              Start free with generous limits. No credit card. Upgrade when you scale.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-0">
-              <Link
-                to="/welcome"
-                className="inline-flex items-center justify-center px-12 py-6 bg-black dark:bg-white text-white dark:text-black font-bold uppercase tracking-wider hover:bg-destijl-red hover:text-white transition-colors border-4 border-black dark:border-white"
-              >
-                Start building free
-                <svg className="ml-3 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </Link>
-              <Link
-                to="/docs"
-                className="inline-flex items-center justify-center px-12 py-6 bg-transparent font-bold uppercase tracking-wider hover:bg-destijl-yellow hover:text-black transition-colors border-4 border-black dark:border-white border-l-0"
-              >
-                Read docs
-              </Link>
-            </div>
-
-            <p className="mt-8 text-sm font-medium opacity-70">
-              Need enterprise features?{' '}
-              <Link to="/contact" className="underline hover:destijl-blue">
-                Talk to sales
-              </Link>
-            </p>
-          </div>
-          
-          <div className="hidden lg:grid col-span-4 grid-rows-3">
-            <div className="color-block-yellow texture-ink" />
-            <div className="color-block-blue texture-ink" />
-            <div className="bg-white dark:bg-[#0a0a0a] texture-grain" />
-          </div>
-        </div>
-      </section>
-
-      {/* Footer - Minimal Swiss style */}
-      <footer className="border-t-4 border-black dark:border-white">
-        <div className="grid grid-cols-12">
-          {/* Logo column */}
-          <div className="col-span-12 lg:col-span-3 p-8 lg:p-12 border-b-4 lg:border-b-0 lg:border-r-4 border-black dark:border-white">
-            <Link to="/" className="text-2xl font-black uppercase tracking-tighter">editframe</Link>
-            <p className="mt-4 text-sm font-medium opacity-70 max-w-xs">
-              Build video with code. React components, instant preview, hyperscale rendering.
-            </p>
-          </div>
-          
-          {/* Links */}
-          <div className="col-span-6 lg:col-span-2 p-8 lg:p-12 border-b-4 lg:border-b-0 lg:border-r-4 border-black dark:border-white">
-            <h3 className="font-bold uppercase tracking-wider text-xs mb-6">Product</h3>
-            <ul className="space-y-3">
-              <li><Link to="/docs" className="text-sm font-medium hover:destijl-red transition-colors">Documentation</Link></li>
-              <li><Link to="/examples" className="text-sm font-medium hover:destijl-red transition-colors">Examples</Link></li>
-              <li><Link to="/pricing" className="text-sm font-medium hover:destijl-red transition-colors">Pricing</Link></li>
-              <li><Link to="/changelog" className="text-sm font-medium hover:destijl-red transition-colors">Changelog</Link></li>
-            </ul>
-          </div>
-          <div className="col-span-6 lg:col-span-2 p-8 lg:p-12 border-b-4 lg:border-b-0 lg:border-r-4 border-black dark:border-white">
-            <h3 className="font-bold uppercase tracking-wider text-xs mb-6">Resources</h3>
-            <ul className="space-y-3">
-              <li><a href="https://discord.gg/editframe" target="_blank" rel="noopener noreferrer" className="text-sm font-medium hover:destijl-red transition-colors">Discord</a></li>
-              <li><Link to="/blog" className="text-sm font-medium hover:destijl-red transition-colors">Blog</Link></li>
-              <li><Link to="/contact" className="text-sm font-medium hover:destijl-red transition-colors">Contact</Link></li>
-            </ul>
-          </div>
-          <div className="col-span-6 lg:col-span-2 p-8 lg:p-12 border-b-4 lg:border-b-0 lg:border-r-4 border-black dark:border-white">
-            <h3 className="font-bold uppercase tracking-wider text-xs mb-6">Legal</h3>
-            <ul className="space-y-3">
-              <li><Link to="/privacy" className="text-sm font-medium hover:destijl-red transition-colors">Privacy</Link></li>
-              <li><Link to="/terms" className="text-sm font-medium hover:destijl-red transition-colors">Terms</Link></li>
-            </ul>
-          </div>
-          
-          {/* Geometric accent */}
-          <div className="col-span-6 lg:col-span-3 grid grid-cols-2">
-            <div className="color-block-red texture-ink-heavy" />
-            <div className="color-block-blue texture-ink-heavy" />
-          </div>
-        </div>
+      {/* Final CTA Section - Single accent, not overwhelming */}
+      <section className="relative py-32 bg-accent-blue text-white overflow-hidden">
+        {/* Subtle geometric accent */}
+        <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-white/5 to-transparent" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-[var(--accent-gold)] opacity-10 rounded-full -translate-x-1/2 translate-y-1/2" />
         
-        {/* Bottom bar */}
-        <div className="border-t-4 border-black dark:border-white p-6 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-xs font-bold uppercase tracking-wider">
-            © 2026 Editframe, Inc.
+        <div className="relative max-w-7xl mx-auto px-6 text-center">
+          <h2 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
+            Ready to build?
+          </h2>
+          
+          <p className="text-xl text-white/80 mb-10 max-w-lg mx-auto">
+            Start free with generous limits. No credit card. Upgrade when you scale.
           </p>
-          <div className="flex items-center gap-6">
-            <a href="https://twitter.com/editframe" target="_blank" rel="noopener noreferrer" className="hover:destijl-red transition-colors" aria-label="Twitter">
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              to="/welcome"
+              className="inline-flex items-center justify-center px-10 py-4 bg-white text-[var(--accent-blue)] font-semibold rounded shadow-print hover:shadow-print-lg transition-shadow"
+            >
+              Start building free
+              <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
-            </a>
-            <a href="https://discord.gg/editframe" target="_blank" rel="noopener noreferrer" className="hover:destijl-red transition-colors" aria-label="Discord">
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z" />
-              </svg>
-            </a>
+            </Link>
+            <Link
+              to="/docs"
+              className="inline-flex items-center justify-center px-10 py-4 border border-white/30 text-white font-semibold rounded hover:bg-white/10 transition-colors"
+            >
+              Read docs
+            </Link>
+          </div>
+
+          <p className="mt-10 text-sm text-white/60">
+            Need enterprise features?{' '}
+            <Link to="/contact" className="underline hover:text-white">
+              Talk to sales
+            </Link>
+          </p>
+        </div>
+      </section>
+
+      {/* Footer - Clean, minimal */}
+      <footer className="py-16 border-t border-rule">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid md:grid-cols-5 gap-12 mb-12">
+            {/* Logo column */}
+            <div className="md:col-span-2">
+              <Link to="/" className="text-xl font-extrabold tracking-tight">editframe</Link>
+              <p className="mt-4 text-sm text-[var(--warm-gray)] max-w-xs leading-relaxed">
+                Build video with code. React components, instant preview, hyperscale rendering.
+              </p>
+            </div>
+            
+            {/* Links */}
+            <div>
+              <h3 className="font-semibold text-sm mb-4">Product</h3>
+              <ul className="space-y-3">
+                <li><Link to="/docs" className="text-sm text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:hover:text-white transition-colors">Documentation</Link></li>
+                <li><Link to="/examples" className="text-sm text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:hover:text-white transition-colors">Examples</Link></li>
+                <li><Link to="/pricing" className="text-sm text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:hover:text-white transition-colors">Pricing</Link></li>
+                <li><Link to="/changelog" className="text-sm text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:hover:text-white transition-colors">Changelog</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm mb-4">Resources</h3>
+              <ul className="space-y-3">
+                <li><a href="https://discord.gg/editframe" target="_blank" rel="noopener noreferrer" className="text-sm text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:hover:text-white transition-colors">Discord</a></li>
+                <li><Link to="/blog" className="text-sm text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:hover:text-white transition-colors">Blog</Link></li>
+                <li><Link to="/contact" className="text-sm text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:hover:text-white transition-colors">Contact</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm mb-4">Legal</h3>
+              <ul className="space-y-3">
+                <li><Link to="/privacy" className="text-sm text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:hover:text-white transition-colors">Privacy</Link></li>
+                <li><Link to="/terms" className="text-sm text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:hover:text-white transition-colors">Terms</Link></li>
+              </ul>
+            </div>
+          </div>
+          
+          {/* Bottom bar */}
+          <div className="pt-8 border-t border-rule flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-sm text-[var(--warm-gray)]">
+              © 2026 Editframe, Inc.
+            </p>
+            <div className="flex items-center gap-6">
+              <a href="https://twitter.com/editframe" target="_blank" rel="noopener noreferrer" className="text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:hover:text-white transition-colors" aria-label="Twitter">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
+              </a>
+              <a href="https://discord.gg/editframe" target="_blank" rel="noopener noreferrer" className="text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:hover:text-white transition-colors" aria-label="Discord">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z" />
+                </svg>
+              </a>
+            </div>
           </div>
         </div>
       </footer>
