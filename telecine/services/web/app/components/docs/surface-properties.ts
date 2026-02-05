@@ -13,7 +13,7 @@ export const surfaceElementProperties: PropertyDefinition[] = [
   },
   {
     name: "targetElement",
-    type: "Element | null",
+    type: "ContextMixinInterface | null",
     access: "R",
     useCase: "The resolved target element that this surface is copying from",
     category: "Target",
@@ -53,7 +53,7 @@ export const surfaceElementProperties: PropertyDefinition[] = [
   },
   {
     name: "rootTimegroup",
-    type: "<ef-timegroup> | null",
+    type: "any",
     access: "R",
     useCase: "Root timeline timegroup (prefers target element's root timegroup if available)",
     category: "Hierarchy",
