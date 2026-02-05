@@ -175,44 +175,32 @@ export default function IndexPage() {
         </div>
       </nav>
 
-      {/* Hero Section - Bold geometric composition like Swissted posters */}
+      {/* Hero Section - PLAY BUTTON as the bold choice (we make video) */}
       <section className="relative pt-32 pb-24 bg-[var(--paper-cream)] dark:bg-[#0a0a0a] texture-paper overflow-hidden">
-        {/* Geometric accent - bold radiating pattern (like Television poster) */}
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] -translate-y-1/4 translate-x-1/4">
-          <svg viewBox="0 0 400 400" className="w-full h-full opacity-[0.12] dark:opacity-[0.08]">
-            {/* Radiating lines pattern */}
-            {Array.from({ length: 36 }).map((_, i) => (
-              <line
-                key={i}
-                x1="200"
-                y1="200"
-                x2={200 + 200 * Math.cos((i * 10 * Math.PI) / 180)}
-                y2={200 + 200 * Math.sin((i * 10 * Math.PI) / 180)}
-                stroke="var(--poster-red)"
-                strokeWidth={i % 2 === 0 ? "3" : "1"}
-              />
-            ))}
+        {/* Giant play button triangle - THE motivated shape (we make video play) */}
+        <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/3 w-[700px] h-[700px] opacity-[0.07] dark:opacity-[0.05]">
+          <svg viewBox="0 0 100 100" className="w-full h-full">
+            <polygon points="20,10 20,90 85,50" fill="var(--poster-red)" />
           </svg>
         </div>
 
         <div className="relative max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Left - Typography as design element */}
+            {/* Left - Typography */}
             <div>
               <SocialProofBar />
 
-              {/* Bold type treatment - stacked with color accent */}
               <h1 className="text-6xl md:text-7xl lg:text-8xl font-black leading-[0.9] tracking-tighter mb-6">
                 <span className="block">Build</span>
                 <span className="block">video</span>
                 <span className="block text-[var(--poster-red)]">with code</span>
               </h1>
               
-              {/* Bold geometric divider */}
-              <div className="flex items-center gap-3 mb-8">
-                <div className="w-12 h-3 bg-[var(--poster-gold)]" />
-                <div className="w-6 h-3 bg-[var(--poster-blue)]" />
-                <div className="w-3 h-3 bg-[var(--poster-red)]" />
+              {/* Play button echo as divider - reinforces the concept */}
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-0 h-0 border-l-[16px] border-l-[var(--poster-red)] border-y-[10px] border-y-transparent" />
+                <div className="w-0 h-0 border-l-[12px] border-l-[var(--poster-gold)] border-y-[7px] border-y-transparent" />
+                <div className="w-0 h-0 border-l-[8px] border-l-[var(--poster-blue)] border-y-[5px] border-y-transparent" />
               </div>
               
               <p className="text-xl text-[var(--warm-gray)] mb-10 max-w-md leading-relaxed">
@@ -238,11 +226,11 @@ export default function IndexPage() {
               </div>
             </div>
 
-            {/* Right - Demo with bold frame */}
+            {/* Right - Demo framed like a screen/monitor */}
             <div className="relative">
-              {/* Geometric composition behind demo */}
-              <div className="absolute -top-6 -right-6 w-full h-full bg-[var(--poster-blue)] dark:bg-[var(--poster-blue)]" />
-              <div className="absolute -top-3 -right-3 w-full h-full bg-[var(--poster-gold)]" />
+              {/* Stacked frames like film/video layers */}
+              <div className="absolute -top-4 -right-4 w-full h-full bg-[var(--poster-blue)]" />
+              <div className="absolute -top-2 -right-2 w-full h-full bg-[var(--poster-gold)]" />
               <div className="relative bg-white dark:bg-[#111] border-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
                 <HeroDemo />
               </div>
@@ -251,51 +239,56 @@ export default function IndexPage() {
         </div>
       </section>
 
-      {/* Before/After Section - Bold contrast */}
+      {/* Before/After Section - TRANSFORMATION ARROW as the bold choice */}
       <section className="relative py-24 border-t-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
-        {/* Geometric pattern - repeating arrows (like Velvet Underground poster) */}
-        <div className="absolute bottom-0 left-0 w-64 h-64 opacity-[0.06] dark:opacity-[0.04]">
-          <svg viewBox="0 0 100 100" className="w-full h-full">
-            {Array.from({ length: 5 }).map((_, row) =>
-              Array.from({ length: 5 }).map((_, col) => (
-                <polygon
-                  key={`${row}-${col}`}
-                  points={`${col * 20 + 10},${row * 20 + 5} ${col * 20 + 5},${row * 20 + 15} ${col * 20 + 15},${row * 20 + 15}`}
-                  fill="var(--poster-green)"
-                />
-              ))
-            )}
+        {/* Giant arrow pointing right - transformation, progress, the change */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] opacity-[0.04] dark:opacity-[0.03] pointer-events-none">
+          <svg viewBox="0 0 200 100" className="w-full h-full">
+            <polygon points="0,25 140,25 140,0 200,50 140,100 140,75 0,75" fill="var(--poster-green)" />
           </svg>
         </div>
 
         <div className="relative max-w-7xl mx-auto px-6">
-          <div className="flex items-start gap-6 mb-16">
-            {/* Bold color block accent */}
-            <div className="hidden md:block w-4 h-32 bg-[var(--poster-red)] flex-shrink-0" />
-            <div>
-              <h2 className="text-5xl md:text-6xl font-black tracking-tighter uppercase mb-4">
-                Before & After
-              </h2>
-              <p className="text-xl text-[var(--warm-gray)] max-w-xl">
-                FFmpeg scripts and frame counting vs. React components and instant preview.
-              </p>
-            </div>
+          <div className="flex items-center gap-6 mb-16">
+            <h2 className="text-5xl md:text-6xl font-black tracking-tighter uppercase">
+              Before
+            </h2>
+            {/* Arrow between words - the transformation */}
+            <div className="hidden md:block w-0 h-0 border-l-[24px] border-l-[var(--poster-green)] border-y-[14px] border-y-transparent" />
+            <h2 className="text-5xl md:text-6xl font-black tracking-tighter uppercase text-[var(--poster-green)]">
+              After
+            </h2>
           </div>
           
           <BeforeAfterComparison />
         </div>
       </section>
 
-      {/* Interactive Playground Section - Full bleed with bold color */}
+      {/* Interactive Playground Section - REFRESH/LOOP showing instant feedback cycle */}
       <section className="relative py-24 bg-[var(--poster-blue)] text-white overflow-hidden">
-        {/* Concentric circles pattern (like Public Enemy poster) */}
-        <div className="absolute top-1/2 right-0 w-[500px] h-[500px] -translate-y-1/2 translate-x-1/4 opacity-10">
-          <svg viewBox="0 0 200 200" className="w-full h-full">
-            <circle cx="100" cy="100" r="90" fill="none" stroke="white" strokeWidth="4" />
-            <circle cx="100" cy="100" r="70" fill="none" stroke="white" strokeWidth="4" />
-            <circle cx="100" cy="100" r="50" fill="none" stroke="white" strokeWidth="4" />
-            <circle cx="100" cy="100" r="30" fill="none" stroke="white" strokeWidth="4" />
-            <circle cx="100" cy="100" r="10" fill="white" />
+        {/* Circular arrows / refresh cycle - edit→preview→edit→preview */}
+        <div className="absolute top-1/2 right-0 w-[500px] h-[500px] -translate-y-1/2 translate-x-1/4 opacity-[0.08]">
+          <svg viewBox="0 0 100 100" className="w-full h-full">
+            {/* Circular arrow suggesting continuous loop */}
+            <path 
+              d="M50,15 A35,35 0 1,1 15,50" 
+              fill="none" 
+              stroke="white" 
+              strokeWidth="8"
+              strokeLinecap="round"
+            />
+            {/* Arrow head */}
+            <polygon points="15,35 15,55 5,50" fill="white" />
+            {/* Second partial arc */}
+            <path 
+              d="M50,85 A35,35 0 0,1 85,50" 
+              fill="none" 
+              stroke="white" 
+              strokeWidth="8"
+              strokeLinecap="round"
+            />
+            {/* Second arrow head */}
+            <polygon points="85,45 85,65 95,50" fill="white" />
           </svg>
         </div>
 
@@ -304,6 +297,14 @@ export default function IndexPage() {
             <h2 className="text-5xl md:text-6xl font-black tracking-tighter uppercase mb-6">
               Edit code,<br />see video
             </h2>
+            {/* Small loop icon echoing the concept */}
+            <div className="flex justify-center gap-2 mb-6">
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M1 4v6h6M23 20v-6h-6" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <span className="text-white/60 text-sm uppercase tracking-wider font-bold">Instant feedback loop</span>
+            </div>
             <p className="text-xl text-white/80">
               Experience instant preview. No account required.
             </p>
@@ -318,27 +319,48 @@ export default function IndexPage() {
         </div>
       </section>
 
-      {/* Architecture Section - Technical credibility with geometric accent */}
-      <section className="relative py-24 bg-[var(--paper-cream)] dark:bg-[#0a0a0a] border-t-4 border-[var(--ink-black)] dark:border-white">
-        <div className="max-w-7xl mx-auto px-6">
+      {/* Architecture Section - PARALLEL LINES for parallel processing */}
+      <section className="relative py-24 bg-[var(--paper-cream)] dark:bg-[#0a0a0a] border-t-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
+        {/* Parallel horizontal lines - representing parallel rendering/processing */}
+        <div className="absolute top-0 left-0 w-full h-full opacity-[0.04] dark:opacity-[0.03] pointer-events-none">
+          <svg className="w-full h-full" preserveAspectRatio="none">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <rect 
+                key={i} 
+                x="0" 
+                y={`${i * 8.33}%`} 
+                width="100%" 
+                height="2%" 
+                fill="var(--poster-gold)" 
+              />
+            ))}
+          </svg>
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-3 gap-16">
             <div>
-              {/* Bold number as design element */}
-              <div className="text-[120px] font-black leading-none text-[var(--poster-gold)] opacity-30 -mb-8">
-                02
+              <h2 className="text-4xl md:text-5xl font-black tracking-tighter uppercase mb-4">
+                Parallel
+              </h2>
+              {/* Small parallel lines echoing the concept */}
+              <div className="flex flex-col gap-1 mb-4">
+                <div className="w-32 h-1 bg-[var(--poster-gold)]" />
+                <div className="w-32 h-1 bg-[var(--poster-gold)]" />
+                <div className="w-32 h-1 bg-[var(--poster-gold)]" />
               </div>
-              <h2 className="text-4xl md:text-5xl font-black tracking-tighter uppercase mb-6">
-                Production<br />Grade
+              <h2 className="text-4xl md:text-5xl font-black tracking-tighter uppercase text-[var(--poster-gold)] mb-6">
+                Processing
               </h2>
               <p className="text-lg text-[var(--warm-gray)] leading-relaxed mb-8">
-                Dual pipeline architecture: instant preview for development, parallel rendering for production.
+                Dual pipeline: instant preview for development, parallel rendering for production.
               </p>
               <PerformanceMetrics />
             </div>
             
             <div className="lg:col-span-2">
               <div className="relative">
-                <div className="absolute -bottom-4 -right-4 w-full h-full bg-[var(--poster-green)] dark:bg-[var(--poster-green)]" />
+                <div className="absolute -bottom-4 -right-4 w-full h-full bg-[var(--poster-gold)]" />
                 <div className="relative bg-white dark:bg-[#111] border-4 border-[var(--ink-black)] dark:border-white p-6">
                   <ArchitectureDiagram />
                 </div>
@@ -348,31 +370,25 @@ export default function IndexPage() {
         </div>
       </section>
 
-      {/* Code Examples Section - Dark with geometric pattern */}
+      {/* Code Examples Section - CURLY BRACES as the bold choice (it's code) */}
       <section className="relative py-24 bg-[var(--ink-black)] text-white overflow-hidden">
-        {/* Diagonal stripes pattern */}
-        <div className="absolute inset-0 opacity-[0.03]">
-          <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="diagonals" patternUnits="userSpaceOnUse" width="40" height="40" patternTransform="rotate(45)">
-                <line x1="0" y1="0" x2="0" y2="40" stroke="white" strokeWidth="20"/>
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#diagonals)"/>
-          </svg>
+        {/* Giant curly braces - THE code symbol */}
+        <div className="absolute top-1/2 left-0 -translate-y-1/2 -translate-x-1/4 text-[400px] font-black text-white/[0.03] leading-none select-none pointer-events-none">
+          {'{'}
+        </div>
+        <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/4 text-[400px] font-black text-white/[0.03] leading-none select-none pointer-events-none">
+          {'}'}
         </div>
 
         <div className="relative max-w-7xl mx-auto px-6">
-          <div className="flex items-start gap-8 mb-16">
-            {/* Stacked color blocks */}
-            <div className="hidden md:flex flex-col gap-2 flex-shrink-0">
-              <div className="w-8 h-8 bg-[var(--poster-red)]" />
-              <div className="w-8 h-8 bg-[var(--poster-gold)]" />
-              <div className="w-8 h-8 bg-[var(--poster-blue)]" />
+          <div className="flex items-start gap-6 mb-16">
+            {/* Opening brace as accent */}
+            <div className="hidden md:block text-8xl font-black text-[var(--poster-gold)] leading-none -mt-4">
+              {'{'}
             </div>
             <div>
               <h2 className="text-5xl md:text-6xl font-black tracking-tighter uppercase mb-4">
-                Code<br />Examples
+                Just<br />Code
               </h2>
               <p className="text-xl text-white/70 max-w-xl">
                 If you know React, you know Editframe. Familiar patterns, predictable behavior.
@@ -384,14 +400,26 @@ export default function IndexPage() {
         </div>
       </section>
 
-      {/* Video Showcase Section */}
-      <section className="relative py-24 bg-[var(--paper-cream)] dark:bg-[#0a0a0a] border-t-4 border-[var(--ink-black)] dark:border-white">
-        <div className="max-w-7xl mx-auto px-6">
+      {/* Video Showcase Section - FILM STRIP PERFORATIONS (it's a video gallery) */}
+      <section className="relative py-24 bg-[var(--paper-cream)] dark:bg-[#0a0a0a] border-t-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
+        {/* Film strip perforations running down the side - this IS video */}
+        <div className="absolute top-0 left-8 bottom-0 w-6 opacity-[0.08] dark:opacity-[0.05]">
+          {Array.from({ length: 20 }).map((_, i) => (
+            <div key={i} className="w-6 h-8 bg-[var(--poster-pink)] mb-4 rounded-sm" />
+          ))}
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-6">
           <div className="flex items-end justify-between mb-16">
-            <div className="flex items-start gap-6">
-              {/* Bold number accent */}
-              <div className="hidden md:block text-[100px] font-black leading-none text-[var(--poster-pink)] opacity-30 -mt-4">
-                03
+            <div>
+              {/* Film frame icon */}
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex gap-1">
+                  <div className="w-2 h-3 bg-[var(--poster-pink)]" />
+                  <div className="w-2 h-3 bg-[var(--poster-pink)]" />
+                  <div className="w-2 h-3 bg-[var(--poster-pink)]" />
+                </div>
+                <span className="text-sm font-bold uppercase tracking-wider text-[var(--poster-pink)]">Gallery</span>
               </div>
               <h2 className="text-5xl md:text-6xl font-black tracking-tighter uppercase">
                 Built with<br />Editframe
@@ -399,7 +427,7 @@ export default function IndexPage() {
             </div>
             <Link 
               to="/examples" 
-              className="hidden md:flex items-center px-6 py-3 bg-[var(--ink-black)] dark:bg-white text-white dark:text-black font-bold text-sm uppercase tracking-wider hover:bg-[var(--poster-red)] transition-colors"
+              className="hidden md:flex items-center px-6 py-3 bg-[var(--ink-black)] dark:bg-white text-white dark:text-black font-bold text-sm uppercase tracking-wider hover:bg-[var(--poster-pink)] transition-colors"
             >
               View all
               <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -412,17 +440,28 @@ export default function IndexPage() {
         </div>
       </section>
 
-      {/* Comparison Section */}
-      <section className="py-24 bg-white dark:bg-[#111] border-t-4 border-[var(--ink-black)] dark:border-white">
+      {/* Comparison Section - EQUALS/BALANCE showing fair comparison */}
+      <section className="relative py-24 bg-white dark:bg-[#111] border-t-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
+        {/* Stacked equals signs - comparing, measuring, weighing */}
+        <div className="absolute top-1/2 right-12 -translate-y-1/2 opacity-[0.05] dark:opacity-[0.03]">
+          <div className="flex flex-col gap-6">
+            <div className="w-32 h-4 bg-[var(--poster-blue)]" />
+            <div className="w-32 h-4 bg-[var(--poster-blue)]" />
+          </div>
+        </div>
+
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <h2 className="text-5xl md:text-6xl font-black tracking-tighter uppercase mb-6">
               How we compare
             </h2>
-            <div className="flex justify-center gap-2 mb-6">
-              <div className="w-16 h-2 bg-[var(--poster-blue)]" />
-              <div className="w-8 h-2 bg-[var(--poster-red)]" />
-              <div className="w-4 h-2 bg-[var(--poster-gold)]" />
+            {/* Equals sign as visual metaphor */}
+            <div className="flex justify-center items-center gap-4 mb-6">
+              <div className="flex flex-col gap-2">
+                <div className="w-12 h-2 bg-[var(--poster-blue)]" />
+                <div className="w-12 h-2 bg-[var(--poster-blue)]" />
+              </div>
+              <span className="text-sm font-bold uppercase tracking-wider text-[var(--warm-gray)]">Fair comparison</span>
             </div>
             <p className="text-lg text-[var(--warm-gray)]">
               An honest comparison to help you decide.
@@ -433,10 +472,12 @@ export default function IndexPage() {
         </div>
       </section>
 
-      {/* Social Proof Section */}
+      {/* Social Proof Section - QUOTATION MARKS (these are quotes/testimonials) */}
       <section className="relative py-24 bg-[var(--paper-cream)] dark:bg-[#0a0a0a] border-t-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
-        {/* Large geometric accent */}
-        <div className="absolute -top-32 -left-32 w-64 h-64 border-[32px] border-[var(--poster-gold)] opacity-10 rounded-full" />
+        {/* Giant quotation mark - these are quotes, people talking */}
+        <div className="absolute top-8 left-8 text-[300px] font-black text-[var(--poster-gold)] opacity-[0.08] dark:opacity-[0.05] leading-none select-none pointer-events-none">
+          "
+        </div>
         
         <div className="relative max-w-7xl mx-auto px-6">
           <CustomerLogos />
@@ -446,30 +487,43 @@ export default function IndexPage() {
         </div>
       </section>
 
-      {/* Getting Started Section */}
-      <section className="py-24 bg-white dark:bg-[#111] border-t-4 border-[var(--ink-black)] dark:border-white">
-        <div className="max-w-7xl mx-auto px-6">
+      {/* Getting Started Section - CLOCK/TIME showing speed (2 minutes) */}
+      <section className="relative py-24 bg-white dark:bg-[#111] border-t-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
+        {/* Clock shape - it's about TIME, speed */}
+        <div className="absolute top-1/2 left-0 -translate-y-1/2 -translate-x-1/3 w-[400px] h-[400px] opacity-[0.05] dark:opacity-[0.03]">
+          <svg viewBox="0 0 100 100" className="w-full h-full">
+            <circle cx="50" cy="50" r="45" fill="none" stroke="var(--poster-red)" strokeWidth="4" />
+            {/* Clock hands pointing to 2 (minutes) */}
+            <line x1="50" y1="50" x2="50" y2="15" stroke="var(--poster-red)" strokeWidth="4" strokeLinecap="round" />
+            <line x1="50" y1="50" x2="70" y2="35" stroke="var(--poster-red)" strokeWidth="3" strokeLinecap="round" />
+            <circle cx="50" cy="50" r="4" fill="var(--poster-red)" />
+          </svg>
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
               <h2 className="text-5xl md:text-6xl font-black tracking-tighter uppercase mb-2">
                 Zero to video
               </h2>
-              <h2 className="text-5xl md:text-6xl font-black tracking-tighter uppercase text-[var(--poster-red)] mb-8">
-                in 2 minutes
-              </h2>
+              {/* Bold "2" as design element - THE time claim */}
+              <div className="flex items-baseline gap-4 mb-8">
+                <span className="text-[120px] font-black text-[var(--poster-red)] leading-none">2</span>
+                <span className="text-4xl font-black tracking-tighter uppercase text-[var(--poster-red)]">min</span>
+              </div>
               
               <p className="text-lg text-[var(--warm-gray)] mb-10">
                 One command to scaffold. One command to develop. Hot reload that works.
               </p>
               
-              <div className="space-y-0 mb-10 border-l-4 border-[var(--poster-gold)]">
+              <div className="space-y-0 mb-10">
                 {[
-                  { num: '01', title: 'Create project', desc: 'CLI scaffolds TypeScript, ESLint, and your chosen template.' },
-                  { num: '02', title: 'Start developing', desc: 'Dev server with instant preview. Edit code, see video update.' },
-                  { num: '03', title: 'Render & deploy', desc: 'Render locally or push to cloud. Scale to ten thousand.' },
+                  { num: '1', title: 'Create project', desc: 'CLI scaffolds TypeScript, ESLint, and your chosen template.' },
+                  { num: '2', title: 'Start developing', desc: 'Dev server with instant preview. Edit code, see video update.' },
+                  { num: '3', title: 'Render & deploy', desc: 'Render locally or push to cloud. Scale to ten thousand.' },
                 ].map((step, i) => (
-                  <div key={i} className="flex gap-4 pl-6 py-4 border-b border-rule last:border-b-0">
-                    <div className="flex-shrink-0 text-2xl font-black text-[var(--poster-gold)]">
+                  <div key={i} className="flex gap-4 py-4 border-b-2 border-[var(--ink-black)]/10 dark:border-white/10 last:border-b-0">
+                    <div className="flex-shrink-0 w-10 h-10 bg-[var(--poster-red)] flex items-center justify-center text-white font-black">
                       {step.num}
                     </div>
                     <div>
@@ -501,17 +555,26 @@ export default function IndexPage() {
         </div>
       </section>
 
-      {/* Final CTA Section - Bold poster-style composition */}
+      {/* Final CTA Section - ARROW/LAUNCH pointing right (start, go, begin) */}
       <section className="relative py-32 bg-[var(--poster-red)] text-white overflow-hidden">
-        {/* Bold geometric shapes */}
-        <div className="absolute top-0 right-0 w-1/3 h-full bg-[var(--poster-blue)]" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-[var(--poster-gold)] -translate-x-1/2 translate-y-1/2" />
-        <div className="absolute top-1/4 right-1/4 w-32 h-32 border-8 border-white opacity-20" />
+        {/* Giant arrow pointing right - GO, START, LAUNCH */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[500px] opacity-[0.08]">
+          <svg viewBox="0 0 200 100" className="w-full h-full">
+            <polygon points="0,30 150,30 150,10 200,50 150,90 150,70 0,70" fill="white" />
+          </svg>
+        </div>
+        
+        {/* Solid color block accent */}
+        <div className="absolute top-0 right-0 w-24 h-full bg-[var(--poster-gold)]" />
         
         <div className="relative max-w-7xl mx-auto px-6 text-center">
-          <h2 className="text-6xl md:text-8xl font-black tracking-tighter uppercase mb-6">
-            Ready to<br />build?
+          <h2 className="text-6xl md:text-8xl font-black tracking-tighter uppercase mb-4">
+            Ready?
           </h2>
+          {/* Arrow pointing to action - GO! */}
+          <div className="flex justify-center mb-8">
+            <div className="w-0 h-0 border-l-[40px] border-l-white border-y-[24px] border-y-transparent" />
+          </div>
           
           <p className="text-xl text-white/90 mb-10 max-w-lg mx-auto">
             Start free with generous limits. No credit card. Upgrade when you scale.
@@ -522,7 +585,7 @@ export default function IndexPage() {
               to="/welcome"
               className="inline-flex items-center justify-center px-10 py-4 bg-white text-[var(--ink-black)] font-bold uppercase tracking-wider shadow-poster-hard hover:translate-x-[3px] hover:translate-y-[3px] hover:shadow-none transition-all"
             >
-              Start building free
+              Start building
               <svg className="ml-3 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
