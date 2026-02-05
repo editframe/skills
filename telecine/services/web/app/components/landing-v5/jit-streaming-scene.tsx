@@ -1,6 +1,7 @@
 // @ts-nocheck - React Three Fiber JSX intrinsics
 import { useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Text } from "@react-three/drei";
 import * as THREE from "three";
 
 /* ━━ Visual Thinking Design ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -110,59 +111,161 @@ function seededRandom(seed: number): number {
    SHARED REUSABLE COMPONENTS
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
-/** A video file / media source. Rounded box that looks like a thumbnail.
-    Used in both analogies as the starting point. */
-function MediaBlock({ opacity, emissive, scale, position, rotation }: {
-  opacity: number;
-  emissive: number;
-  scale?: number;
+const SEGMENT_COUNT = 6;
+const FILE_W = 2.0;
+const FILE_H = 1.0;
+const FILE_D = 0.18;
+const SEG_W = FILE_W / SEGMENT_COUNT;
+const SEG_GAP = 0.02;
+
+/** 3D label — wraps drei Text with scene-appropriate defaults */
+function Label({ text, position, color, fontSize, opacity, anchorX, anchorY }: {
+  text: string;
   position: [number, number, number];
-  rotation?: [number, number, number];
+  color?: string;
+  fontSize?: number;
+  opacity?: number;
+  anchorX?: "left" | "center" | "right";
+  anchorY?: "top" | "middle" | "bottom";
 }) {
-  const meshRef = useRef<THREE.Mesh>(null);
+  return (
+    <Text
+      position={position}
+      fontSize={fontSize ?? 0.1}
+      color={color ?? "#ffffff"}
+      anchorX={anchorX ?? "center"}
+      anchorY={anchorY ?? "middle"}
+      fillOpacity={opacity ?? 1}
+      font={undefined}
+    >
+      {text}
+    </Text>
+  );
+}
+
+/** The video file — a multi-segment bar representing actual file structure.
+    Each segment is a visible block. Can highlight a region with a glow
+    overlay to show which byte range is being accessed.
+    
+    Used in both analogies:
+    - Traditional: the whole file, shown in full opacity
+    - JIT: same file, with a highlighted region showing the byte range */
+function VideoFile({ opacity, position, scale, highlightSegment, label }: {
+  opacity: number;
+  position: [number, number, number];
+  scale?: number;
+  highlightSegment?: number; // -1 = none, 0-5 = which segment to glow
+  label?: string;
+}) {
+  const segRefs = useRef<(THREE.Mesh | null)[]>([]);
+  const glowRef = useRef<THREE.Mesh>(null);
   const s = scale ?? 1;
+  const hl = highlightSegment ?? -1;
 
   useFrame(() => {
-    if (!meshRef.current) return;
-    const mat = meshRef.current.material as THREE.MeshPhysicalMaterial;
-    mat.opacity = opacity;
-    mat.emissiveIntensity = emissive;
-    meshRef.current.castShadow = opacity > 0.1;
+    for (let i = 0; i < SEGMENT_COUNT; i++) {
+      const mesh = segRefs.current[i];
+      if (!mesh) continue;
+      const mat = mesh.material as THREE.MeshPhysicalMaterial;
+      const isHighlighted = i === hl;
+      mat.opacity = isHighlighted ? opacity : opacity * 0.6;
+      mat.emissiveIntensity = isHighlighted ? 0.5 : 0.08;
+      mesh.castShadow = opacity > 0.1;
+    }
+    // Highlight glow overlay
+    if (glowRef.current) {
+      const gMat = glowRef.current.material as THREE.MeshBasicMaterial;
+      gMat.opacity = hl >= 0 ? opacity * 0.35 : 0;
+      // Position the glow over the highlighted segment
+      if (hl >= 0) {
+        const segX = -FILE_W / 2 + SEG_W / 2 + hl * SEG_W;
+        glowRef.current.position.x = segX;
+      }
+    }
   });
 
+  // Segment colors alternate slightly for visual rhythm
+  const segColors = [0x7e57c2, 0x9575cd, 0x7e57c2, 0x9575cd, 0x7e57c2, 0x9575cd];
+
   return (
-    <group position={position} rotation={rotation ?? [0, 0, 0]} scale={[s, s, s]}>
-      <mesh ref={meshRef} castShadow>
-        <boxGeometry args={[1.4, 0.9, 0.2]} />
-        <meshPhysicalMaterial
-          color={COL_FILE}
-          roughness={0.2}
-          metalness={0.15}
-          clearcoat={0.8}
-          clearcoatRoughness={0.15}
+    <group position={position} scale={[s, s, s]}>
+      {/* File segments */}
+      {Array.from({ length: SEGMENT_COUNT }, (_, i) => {
+        const segX = -FILE_W / 2 + SEG_W / 2 + i * SEG_W;
+        return (
+          <mesh
+            key={i}
+            ref={(el) => { segRefs.current[i] = el; }}
+            position={[segX, 0, 0]}
+            castShadow
+          >
+            <boxGeometry args={[SEG_W - SEG_GAP, FILE_H, FILE_D]} />
+            <meshPhysicalMaterial
+              color={segColors[i]}
+              roughness={0.2}
+              metalness={0.15}
+              clearcoat={0.7}
+              clearcoatRoughness={0.15}
+              transparent
+              opacity={0}
+              emissive={new THREE.Color(segColors[i]!)}
+              emissiveIntensity={0.08}
+            />
+          </mesh>
+        );
+      })}
+
+      {/* Highlight glow overlay (additive) */}
+      <mesh ref={glowRef} position={[0, 0, FILE_D / 2 + 0.01]}>
+        <boxGeometry args={[SEG_W + 0.04, FILE_H + 0.04, 0.01]} />
+        <meshBasicMaterial
+          color={COL_SLICE}
           transparent
           opacity={0}
-          emissive={new THREE.Color(COL_FILE)}
-          emissiveIntensity={0}
+          blending={THREE.AdditiveBlending}
         />
       </mesh>
-      {/* Play triangle */}
-      <mesh position={[0, 0, 0.11]} rotation={[0, 0, -Math.PI / 2]}>
-        <coneGeometry args={[0.18, 0.3, 3]} />
-        <meshBasicMaterial color={0xffffff} transparent opacity={opacity * 0.7} />
-      </mesh>
+
+      {/* Time markers along the bottom */}
+      {Array.from({ length: SEGMENT_COUNT + 1 }, (_, i) => {
+        const x = -FILE_W / 2 + i * SEG_W;
+        const sec = i * 10;
+        return (
+          <Label
+            key={`t${i}`}
+            text={`${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`}
+            position={[x, -FILE_H / 2 - 0.12, FILE_D / 2 + 0.01]}
+            fontSize={0.06}
+            color="#8888aa"
+            opacity={opacity * 0.7}
+          />
+        );
+      })}
+
+      {/* File label */}
+      {label && (
+        <Label
+          text={label}
+          position={[0, FILE_H / 2 + 0.14, FILE_D / 2 + 0.01]}
+          fontSize={0.09}
+          color="#bbbbdd"
+          opacity={opacity * 0.85}
+        />
+      )}
     </group>
   );
 }
 
-/** A thin slice of the media — represents a byte-range fragment.
-    Visually a narrow sliver of the MediaBlock. */
-function MediaSlice({ opacity, emissive, color, position, scale }: {
+/** A single segment extracted from the file — represents a byte-range fragment.
+    Visually matches a single segment from VideoFile but can be positioned
+    independently (it "peels off" and travels). */
+function FileSegment({ opacity, emissive, color, position, scale, label }: {
   opacity: number;
   emissive: number;
   color?: number;
   position: [number, number, number];
   scale?: number;
+  label?: string;
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const s = scale ?? 1;
@@ -179,7 +282,7 @@ function MediaSlice({ opacity, emissive, color, position, scale }: {
   return (
     <group position={position} scale={[s, s, s]}>
       <mesh ref={meshRef} castShadow>
-        <boxGeometry args={[0.15, 0.9, 0.2]} />
+        <boxGeometry args={[SEG_W - SEG_GAP, FILE_H, FILE_D]} />
         <meshPhysicalMaterial
           color={c}
           roughness={0.15}
@@ -191,6 +294,15 @@ function MediaSlice({ opacity, emissive, color, position, scale }: {
           emissiveIntensity={0}
         />
       </mesh>
+      {label && (
+        <Label
+          text={label}
+          position={[0, -FILE_H / 2 - 0.12, FILE_D / 2 + 0.01]}
+          fontSize={0.07}
+          color="#aaddaa"
+          opacity={opacity * 0.8}
+        />
+      )}
     </group>
   );
 }
@@ -290,13 +402,14 @@ function UploadPipe({ opacity, position }: {
   );
 }
 
-/** Variant block — one of the output bitrate variants (1080p, 720p, 480p).
-    Height encodes quality level. */
-function VariantBlock({ opacity, color, height, position }: {
+/** Variant block — one of the output bitrate variants.
+    Height encodes quality level. Label shows resolution. */
+function VariantBlock({ opacity, color, height, position, label }: {
   opacity: number;
   color: number;
   height: number;
   position: [number, number, number];
+  label: string;
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
 
@@ -309,19 +422,29 @@ function VariantBlock({ opacity, color, height, position }: {
   });
 
   return (
-    <mesh ref={meshRef} position={position} castShadow>
-      <boxGeometry args={[0.9, height, 0.15]} />
-      <meshPhysicalMaterial
-        color={color}
-        roughness={0.15}
-        metalness={0.2}
-        clearcoat={0.7}
-        transparent
-        opacity={0}
-        emissive={new THREE.Color(color)}
-        emissiveIntensity={0}
+    <group position={position}>
+      <mesh ref={meshRef} castShadow>
+        <boxGeometry args={[0.9, height, 0.15]} />
+        <meshPhysicalMaterial
+          color={color}
+          roughness={0.15}
+          metalness={0.2}
+          clearcoat={0.7}
+          transparent
+          opacity={0}
+          emissive={new THREE.Color(color)}
+          emissiveIntensity={0}
+        />
+      </mesh>
+      <Label
+        text={label}
+        position={[0.55, 0, 0.01]}
+        fontSize={0.08}
+        color="#ccddff"
+        opacity={opacity * 0.8}
+        anchorX="left"
       />
-    </mesh>
+    </group>
   );
 }
 
@@ -525,8 +648,7 @@ function Scene({ currentTimeMs }: { currentTimeMs: number }) {
   // File appearance
   const aFileOpa = easeOut(prog(currentTimeMs, A_FILE_IN, A_FILE_IN + 800));
 
-  // Upload: file travels through pipe (interpolate position)
-  const aUploadProg = easeInOut(prog(currentTimeMs, A_UPLOAD_START, A_UPLOAD_END));
+  // Upload: file travels through pipe
   const aUploadPipeOpa = easeOut(prog(currentTimeMs, A_UPLOAD_START - 300, A_UPLOAD_START + 200));
   // File fades out as it enters the pipe, reappears at the machine
   const aFileInPipeOpa = currentTimeMs >= A_UPLOAD_START
@@ -622,11 +744,11 @@ function Scene({ currentTimeMs }: { currentTimeMs: number }) {
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {tradVisible && (
         <group position={[tradShift, 0, 0]}>
-          {/* Step 1: "You have a file" */}
-          <MediaBlock
+          {/* Step 1: "You have a file" — multi-segment video file */}
+          <VideoFile
             opacity={aFileInPipeOpa * tradFinalOpa}
-            emissive={0.3}
             position={[0, 0.3, 0]}
+            label="source.mp4 — 1080p, 60s"
           />
 
           {/* Step 2: Upload pipe (bottleneck shape) */}
@@ -649,10 +771,9 @@ function Scene({ currentTimeMs }: { currentTimeMs: number }) {
             />
           )}
 
-          {/* File arriving at transcode machine */}
-          <MediaBlock
+          {/* File arriving at transcode machine (shrinks into it) */}
+          <VideoFile
             opacity={aFileAtMachineOpa * (1 - aFileIntoMachine) * tradFinalOpa}
-            emissive={0.15}
             scale={lerp(1, 0.3, aFileIntoMachine)}
             position={[0, 0.3, 2.5]}
           />
@@ -664,12 +785,20 @@ function Scene({ currentTimeMs }: { currentTimeMs: number }) {
             scale={1.0}
             position={[0, 0.3, 3.2]}
           />
+          {/* Machine label */}
+          <Label
+            text="Transcode"
+            position={[0, -0.5, 3.2]}
+            fontSize={0.1}
+            color="#ffab91"
+            opacity={aMachineOpa * tradFinalOpa * 0.7}
+          />
 
-          {/* Step 4: Variant blocks emerge */}
+          {/* Step 4: Variant blocks emerge with resolution labels */}
           <group position={[0, 0, 4.2]}>
-            <VariantBlock opacity={aVariantHiOpa * tradFinalOpa} color={COL_VARIANT_HI} height={0.5} position={[0, 0.55, 0]} />
-            <VariantBlock opacity={aVariantMdOpa * tradFinalOpa} color={COL_VARIANT_MD} height={0.35} position={[0, 0.15, 0]} />
-            <VariantBlock opacity={aVariantLoOpa * tradFinalOpa} color={COL_VARIANT_LO} height={0.2} position={[0, -0.15, 0]} />
+            <VariantBlock opacity={aVariantHiOpa * tradFinalOpa} color={COL_VARIANT_HI} height={0.5} position={[0, 0.55, 0]} label="1080p" />
+            <VariantBlock opacity={aVariantMdOpa * tradFinalOpa} color={COL_VARIANT_MD} height={0.35} position={[0, 0.15, 0]} label="720p" />
+            <VariantBlock opacity={aVariantLoOpa * tradFinalOpa} color={COL_VARIANT_LO} height={0.2} position={[0, -0.15, 0]} label="480p" />
           </group>
 
           {/* Step 5: Player screen */}
@@ -687,11 +816,12 @@ function Scene({ currentTimeMs }: { currentTimeMs: number }) {
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {efVisible && (
         <group position={[efShift, 0, 0]}>
-          {/* Step 1: "You have a URL" (same MediaBlock!) */}
-          <MediaBlock
+          {/* Step 1: "You have a URL" — same VideoFile with highlight */}
+          <VideoFile
             opacity={bUrlOpa * efBright}
-            emissive={0.35}
             position={[0, 0.3, 0]}
+            label="https://cdn.example.com/video.mp4"
+            highlightSegment={currentTimeMs >= B_SLICE_START ? 1 : -1}
           />
 
           {/* Step 2: Player requests a frame — screen pulses */}
@@ -709,10 +839,12 @@ function Scene({ currentTimeMs }: { currentTimeMs: number }) {
             distance={4}
           />
 
-          {/* Step 3: Byte-range slice peels off and travels to machine */}
-          <MediaSlice
+          {/* Step 3: Byte-range segment peels off and travels to machine */}
+          <FileSegment
             opacity={bSliceOpa}
-            emissive={0.3}
+            emissive={0.4}
+            color={COL_SLICE}
+            label="0:10–0:20"
             position={[
               0,
               0.3,
@@ -720,19 +852,27 @@ function Scene({ currentTimeMs }: { currentTimeMs: number }) {
             ]}
           />
 
-          {/* Step 4: THE SAME TRANSCODE MACHINE — but smaller */}
+          {/* Step 4: THE SAME TRANSCODE MACHINE — but smaller (compact) */}
           <TranscodeMachine
             opacity={bMachineOpa * efBright}
             processing={bTranscodeProg}
             scale={0.6}
             position={[0, 0.3, 2.2]}
           />
+          <Label
+            text="Transcode"
+            position={[0, -0.25, 2.2]}
+            fontSize={0.08}
+            color="#ffab91"
+            opacity={bMachineOpa * efBright * 0.7}
+          />
 
-          {/* Step 5: Transcoded slice streams to player */}
-          <MediaSlice
+          {/* Step 5: Transcoded segment streams to player */}
+          <FileSegment
             opacity={bStreamOpa}
             emissive={0.5}
             color={COL_EF}
+            label="1080p"
             position={[
               0,
               0.3,
@@ -754,11 +894,12 @@ function Scene({ currentTimeMs }: { currentTimeMs: number }) {
             />
           )}
 
-          {/* Step 6: More slices for different bitrates (staggered) */}
-          <MediaSlice
+          {/* Step 6: More segments for different bitrates (staggered) */}
+          <FileSegment
             opacity={bSlice2Opa * 0.7}
             emissive={0.25}
             color={COL_VARIANT_MD}
+            label="720p"
             position={[
               0.3,
               0.1,
@@ -766,10 +907,11 @@ function Scene({ currentTimeMs }: { currentTimeMs: number }) {
             ]}
             scale={0.8}
           />
-          <MediaSlice
+          <FileSegment
             opacity={bSlice3Opa * 0.6}
             emissive={0.2}
             color={COL_VARIANT_LO}
+            label="480p"
             position={[
               -0.3,
               -0.1,
