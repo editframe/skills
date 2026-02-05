@@ -374,37 +374,50 @@ function FanOutDiagram() {
 
       const tg = container.querySelector("ef-timegroup") as HTMLElement & {
         play?: () => void;
+        pause?: () => void;
         initializer?: (instance: HTMLElement) => void;
         ownCurrentTimeMs?: number;
         durationMs?: number;
+        addFrameTask?: (cb: (info: { ownCurrentTimeMs: number; durationMs: number }) => void) => () => void;
       };
       if (!tg) return;
 
-      // Initializer must be fast (<100ms). Register a frame task that
-      // lazily creates the Three.js scene on first invocation.
+      // ── Prime instance: set up directly (no initializer disruption) ──
+      const cvs = container.querySelector("canvas") as HTMLCanvasElement | null;
+      if (cvs) {
+        primeScene = createParallelFragmentsScene(cvs);
+        const { width: w, height: h } = container.getBoundingClientRect();
+        primeScene.resize(w || 800, h || 500);
+        primeScene.update(tg.ownCurrentTimeMs ?? 0, tg.durationMs ?? 18000);
+
+        tg.addFrameTask?.(({ ownCurrentTimeMs, durationMs }) => {
+          primeScene?.update(ownCurrentTimeMs, durationMs);
+        });
+      }
+
+      // ── Render clones: initializer creates a separate scene ──
       tg.initializer = (instance: HTMLElement & {
         ownCurrentTimeMs?: number;
         durationMs?: number;
         addFrameTask?: (cb: (info: { ownCurrentTimeMs: number; durationMs: number }) => void) => () => void;
       }) => {
-        let localScene: SceneHandle | null = null;
+        // Skip if this is the prime instance (already set up above)
+        if (instance === tg) return;
 
+        let cloneScene: SceneHandle | null = null;
         instance.addFrameTask?.(({ ownCurrentTimeMs, durationMs }) => {
-          if (!localScene) {
-            const cvs = instance.querySelector("canvas") as HTMLCanvasElement | null;
-            if (!cvs) return;
-            localScene = createParallelFragmentsScene(cvs);
-            const rect = cvs.getBoundingClientRect();
-            const w = rect.width || cvs.clientWidth || 800;
-            const h = rect.height || cvs.clientHeight || 500;
-            localScene.resize(w, h);
-            if (instance === tg) primeScene = localScene;
+          if (!cloneScene) {
+            const cloneCvs = instance.querySelector("canvas") as HTMLCanvasElement | null;
+            if (!cloneCvs) return;
+            cloneScene = createParallelFragmentsScene(cloneCvs);
+            const rect = cloneCvs.getBoundingClientRect();
+            cloneScene.resize(rect.width || cloneCvs.clientWidth || 800, rect.height || cloneCvs.clientHeight || 500);
           }
-          localScene.update(ownCurrentTimeMs, durationMs);
+          cloneScene.update(ownCurrentTimeMs, durationMs);
         });
       };
 
-      // ResizeObserver for the live (non-clone) instance
+      // ResizeObserver for the live instance
       ro = new ResizeObserver(([entry]) => {
         if (entry && primeScene) {
           const { width: w, height: h } = entry.contentRect;
@@ -412,28 +425,29 @@ function FanOutDiagram() {
         }
       });
       ro.observe(container);
+
+      // Auto-play now that the scene is ready
+      const scrollObserver = new IntersectionObserver(
+        ([entry]) => {
+          if (entry?.isIntersecting) {
+            tg.play?.();
+            scrollObserver.unobserve(container);
+          }
+        },
+        { threshold: 0.3 },
+      );
+      scrollObserver.observe(container);
+      cleanupScrollObserver = () => scrollObserver.disconnect();
     };
 
+    let cleanupScrollObserver: (() => void) | null = null;
     setup();
-
-    // Auto-play on scroll
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          const tg = container.querySelector("ef-timegroup") as HTMLElement & { play?: () => void };
-          tg?.play?.();
-          observer.unobserve(container);
-        }
-      },
-      { threshold: 0.3 },
-    );
-    observer.observe(container);
 
     return () => {
       disposed = true;
       primeScene?.dispose();
       ro?.disconnect();
-      observer.disconnect();
+      cleanupScrollObserver?.();
     };
   }, [isClient]);
 
