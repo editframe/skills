@@ -106,7 +106,7 @@
     "@opentelemetry/sdk-trace-web": "^2.0.1",
     "@opentelemetry/semantic-conventions": "^1.37.0",
     "@phosphor-icons/react": "^2.1.10",
-    "@react-email/components": "^0.0.21",
+    "@react-email/components": "^1.0.7",
     "@react-hook/resize-observer": "^1.2.6",
     "@react-hook/size": "^2.1.2",
     "@react-router/dev": "^7.7.1",
