@@ -16,6 +16,7 @@ interface RenderJob {
   fileName: string;
   status: "queued" | "rendering" | "complete" | "error";
   progress: number;
+  previewFrame: string | null;
   downloadUrl: string | null;
   error: string | null;
 }
@@ -89,6 +90,7 @@ export function RenderQueueProvider({ children }: { children: ReactNode }) {
         fileName: opts.fileName,
         status: "queued",
         progress: 0,
+        previewFrame: null,
         downloadUrl: null,
         error: null,
       },
@@ -163,8 +165,13 @@ export function RenderQueueProvider({ children }: { children: ReactNode }) {
       filename: internal.fileName,
       returnBuffer: true,
       signal: internal.abortController.signal,
-      onProgress: (p: { progress: number }) => {
-        updateJob(jobId, { progress: p.progress });
+      progressPreviewInterval: 15,
+      onProgress: (p: { progress: number; framePreviewCanvas?: HTMLCanvasElement }) => {
+        const patch: Partial<RenderJob> = { progress: p.progress };
+        if (p.framePreviewCanvas) {
+          patch.previewFrame = p.framePreviewCanvas.toDataURL("image/jpeg", 0.5);
+        }
+        updateJob(jobId, patch);
       },
       ...internal.renderOpts,
     })
@@ -266,29 +273,39 @@ export function RenderQueuePanel() {
               {/* ── Rendering ──────────────────────────────────────── */}
               {job.status === "rendering" && (
                 <>
-                  <div className="flex items-center justify-between mb-0.5">
-                    <span className="text-[11px] font-medium text-white/80 truncate flex-1 mr-2">{job.name}</span>
-                    <span className="text-[10px] text-[var(--poster-blue)] font-mono tabular-nums">
-                      {(job.progress * 100).toFixed(0)}%
-                    </span>
-                  </div>
-                  <div className="text-[9px] text-white/30 truncate mb-1">{job.fileName}</div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-[var(--poster-blue)] rounded-full transition-all duration-200"
-                        style={{ width: `${job.progress * 100}%` }}
-                      />
+                  <div className="flex gap-2.5">
+                    {/* Thumbnail preview */}
+                    {job.previewFrame && (
+                      <div className="flex-shrink-0 w-16 h-10 rounded overflow-hidden bg-black/30">
+                        <img src={job.previewFrame} alt="" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="text-[11px] font-medium text-white/80 truncate flex-1 mr-2">{job.name}</span>
+                        <span className="text-[10px] text-[var(--poster-blue)] font-mono tabular-nums">
+                          {(job.progress * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                      <div className="text-[9px] text-white/30 truncate mb-1">{job.fileName}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-[var(--poster-blue)] rounded-full transition-all duration-200"
+                            style={{ width: `${job.progress * 100}%` }}
+                          />
+                        </div>
+                        <button
+                          onClick={() => cancel(job.id)}
+                          className="text-white/30 hover:text-white/70 transition-colors"
+                          title="Cancel"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
-                    <button
-                      onClick={() => cancel(job.id)}
-                      className="text-white/30 hover:text-white/70 transition-colors"
-                      title="Cancel"
-                    >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
                   </div>
                 </>
               )}
@@ -387,7 +404,7 @@ export function RenderQueuePanel() {
               href="/docs"
               className="block w-full text-center py-1.5 rounded text-[10px] font-semibold bg-[var(--poster-blue)]/20 text-[var(--poster-blue)] hover:bg-[var(--poster-blue)]/30 transition-colors"
             >
-              {"Upgrade to cloud \u2192 10,000+ renders/hr"}
+              {"Upgrade to cloud \u2192 render in parallel"}
             </a>
           </div>
         </div>
