@@ -321,68 +321,120 @@ function JitDiagram() {
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   5. FAN-OUT / FAN-IN — split, process, recombine
+   5. PARALLEL FRAGMENTS — the timeline gets sliced, processed
+   simultaneously, and reassembled. The punchline is the time
+   comparison at the bottom: 4× faster.
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function FanOutDiagram() {
   const { ref, on } = useDiagramAnim();
-  const WK = [50, 123, 217, 290] as const;
+
+  const FRAGS = [
+    { x: 35,  w: 76, cx: 73,  range: "0\u201315s" },
+    { x: 113, w: 76, cx: 151, range: "15\u201330s" },
+    { x: 191, w: 76, cx: 229, range: "30\u201345s" },
+    { x: 269, w: 76, cx: 307, range: "45\u201360s" },
+  ] as const;
+
+  const SY = 28;   // segment Y
+  const SH = 24;   // segment height
+  const WY = 92;   // worker Y
+  const WH = 38;   // worker height
+  const OY = 166;  // output Y
+  const OH = 24;   // output height
+
   return (
-    <svg ref={ref} data-on={on ? "1" : "0"} viewBox="0 0 340 195" className="w-full h-auto">
+    <svg ref={ref} data-on={on ? "1" : "0"} viewBox="0 0 380 268" className="w-full h-auto">
       <defs><style>{STYLES}</style></defs>
 
-      {/* Static lines */}
-      <g stroke="var(--warm-gray)" strokeWidth={1.5} opacity={0.25} fill="none">
-        <path d="M170,35 V55" />
-        {WK.map((x) => <path key={`fo${x}`} d={`M170,55 L${x},84`} />)}
-        {WK.map((x) => <path key={`fi${x}`} d={`M${x},106 L170,132`} />)}
-        <path d="M170,132 V155" />
-      </g>
+      {/* ── Input: the video timeline, sliced into 4 segments ──── */}
+      <text x={35} y={16} dominantBaseline="central"
+        fill="var(--warm-gray)" fontSize={7.5} fontWeight={600}
+        style={ls}>60 second composition</text>
 
-      {/* Diamond highlight */}
-      <polygon
-        points={`170,55 ${WK[0]},84 ${WK[0]},106 170,132 ${WK[3]},106 ${WK[3]},84`}
-        fill="var(--poster-blue)" opacity={0.06} stroke="none"
-      />
-
-      {/* Flow (blue) */}
-      <g stroke="var(--poster-blue)" strokeWidth={2}>
-        <path className="arch-fr" d="M170,35 V55" />
-        {WK.map((x) => <path key={`fof${x}`} className="arch-fr" d={`M170,55 L${x},84`} />)}
-        {WK.map((x) => <path key={`fif${x}`} className="arch-fr" d={`M${x},106 L170,132`} />)}
-        <path className="arch-fr" d="M170,132 V155" />
-      </g>
-
-      {/* Labels */}
-      <text x={22} y={55} textAnchor="end" dominantBaseline="central" fill="var(--warm-gray)" fontSize={7} fontWeight={700} style={ls}>SPLIT</text>
-      <text x={22} y={132} textAnchor="end" dominantBaseline="central" fill="var(--warm-gray)" fontSize={7} fontWeight={700} style={ls}>CONCAT</text>
-
-      {/* Input */}
-      <rect x={110} y={9} width={120} height={26} fill="var(--card-bg)" stroke="var(--ink-black)" strokeWidth={2} />
-      <text x={170} y={22} textAnchor="middle" dominantBaseline="central" fill="var(--ink-black)" fontSize={9} fontWeight={800} style={ls}>COMPOSITION</text>
-
-      {/* Workers */}
-      {(["F\u2081", "F\u2082", "F\u2083", "F\u2084"] as const).map((label, i) => (
-        <g key={label}>
-          <rect x={WK[i]! - 24} y={84} width={48} height={22} fill="var(--poster-blue)" stroke="var(--ink-black)" strokeWidth={2} />
-          <text x={WK[i]} y={95} textAnchor="middle" dominantBaseline="central" fill="white" fontSize={9} fontWeight={800}>
-            {label}
-          </text>
+      {FRAGS.map((f, i) => (
+        <g key={f.x}>
+          <rect x={f.x} y={SY} width={f.w} height={SH}
+            fill="var(--poster-blue)" fillOpacity={1 - i * 0.15}
+            stroke="var(--ink-black)" strokeWidth={1} />
+          <text x={f.cx} y={SY + SH / 2} textAnchor="middle" dominantBaseline="central"
+            fill="white" fontSize={7.5} fontWeight={700}>{f.range}</text>
         </g>
       ))}
 
-      {/* Output */}
-      <rect x={110} y={155} width={120} height={26} fill="var(--card-bg)" stroke="var(--ink-black)" strokeWidth={2} />
-      <text x={170} y={168} textAnchor="middle" dominantBaseline="central" fill="var(--ink-black)" fontSize={9} fontWeight={800} style={ls}>FINAL VIDEO</text>
+      {/* Time markers */}
+      <g fill="var(--warm-gray)" fontSize={6} fontWeight={600}>
+        <text x={35} y={SY + SH + 10}>0s</text>
+        <text x={113} y={SY + SH + 10} textAnchor="middle">15s</text>
+        <text x={191} y={SY + SH + 10} textAnchor="middle">30s</text>
+        <text x={269} y={SY + SH + 10} textAnchor="middle">45s</text>
+        <text x={345} y={SY + SH + 10} textAnchor="end">60s</text>
+      </g>
 
-      {/* Particles — one per worker lane */}
-      {WK.map((x, i) => (
+      {/* ── Fan-out: each segment drops to its worker ─────────── */}
+      <g stroke="var(--warm-gray)" strokeWidth={1} opacity={0.2} fill="none">
+        {FRAGS.map((f) => <path key={`fo${f.x}`} d={`M${f.cx},${SY + SH} V${WY}`} />)}
+      </g>
+      <g stroke="var(--poster-blue)" strokeWidth={2}>
+        {FRAGS.map((f) => <path key={`fof${f.x}`} className="arch-fr" d={`M${f.cx},${SY + SH} V${WY}`} />)}
+      </g>
+
+      {/* ── Workers: aligned below their segments ─────────────── */}
+      {FRAGS.map((f, i) => (
+        <g key={`w${i}`}>
+          <rect x={f.x} y={WY} width={f.w} height={WH}
+            fill="var(--poster-blue)" stroke="var(--ink-black)" strokeWidth={1.5} />
+          <text x={f.cx} y={WY + 14} textAnchor="middle" dominantBaseline="central"
+            fill="white" fontSize={8.5} fontWeight={700}>Worker {i + 1}</text>
+          <text x={f.cx} y={WY + 28} textAnchor="middle" dominantBaseline="central"
+            fill="white" fillOpacity={0.6} fontSize={7} fontWeight={600}>{f.range}</text>
+        </g>
+      ))}
+
+      {/* ── Fan-in: workers deliver back to a single output ───── */}
+      <g stroke="var(--warm-gray)" strokeWidth={1} opacity={0.2} fill="none">
+        {FRAGS.map((f) => <path key={`fi${f.x}`} d={`M${f.cx},${WY + WH} V${OY}`} />)}
+      </g>
+      <g stroke="var(--poster-blue)" strokeWidth={2}>
+        {FRAGS.map((f) => <path key={`fif${f.x}`} className="arch-fr" d={`M${f.cx},${WY + WH} V${OY}`} />)}
+      </g>
+
+      {/* ── Output: reassembled, no gaps ──────────────────────── */}
+      <rect x={35} y={OY} width={310} height={OH}
+        fill="var(--poster-blue)" stroke="var(--ink-black)" strokeWidth={1} />
+      <text x={190} y={OY + OH / 2} textAnchor="middle" dominantBaseline="central"
+        fill="white" fontSize={8} fontWeight={700} style={ls}>Complete video</text>
+
+      {/* ── The punchline: time comparison ────────────────────── */}
+      <text x={35} y={210} dominantBaseline="central"
+        fill="var(--ink-black)" fontSize={8} fontWeight={700} style={ls}>Render time</text>
+
+      {/* Sequential: full bar, gray, slow */}
+      <rect x={35} y={222} width={310} height={14}
+        fill="var(--warm-gray)" fillOpacity={0.15}
+        stroke="var(--warm-gray)" strokeWidth={0.5} />
+      <text x={190} y={229} textAnchor="middle" dominantBaseline="central"
+        fill="var(--warm-gray)" fontSize={7} fontWeight={600}>Sequential \u2014 one worker</text>
+      <text x={350} y={229} dominantBaseline="central"
+        fill="var(--warm-gray)" fontSize={8} fontWeight={700}>60s</text>
+
+      {/* Parallel: quarter bar, blue, fast */}
+      <rect x={35} y={244} width={77} height={14}
+        fill="var(--poster-blue)" />
+      <text x={73} y={251} textAnchor="middle" dominantBaseline="central"
+        fill="white" fontSize={7} fontWeight={700}>15s</text>
+
+      {/* 4x callout */}
+      <text x={124} y={251} dominantBaseline="central"
+        fill="var(--poster-blue)" fontSize={14} fontWeight={900}>4\u00d7 faster</text>
+
+      {/* ── Particles ────────────────────────────────────────── */}
+      {FRAGS.map((f, i) => (
         <rect key={`p${i}`} className="arch-pt" x={-3} y={-3} width={6} height={6} fill="var(--poster-blue)">
           <animateMotion
-            dur="2s" repeatCount="indefinite" calcMode="linear"
-            begin={`${i * 0.2}s`}
-            path={`M170,35 L170,55 L${x},84 V106 L170,132 V155`}
+            dur="2.5s" repeatCount="indefinite" calcMode="linear" begin={`${i * 0.15}s`}
+            path={`M${f.cx},${SY + SH} V${WY} V${WY + WH} V${OY}`}
           />
-          <animate attributeName="opacity" dur="2s" repeatCount="indefinite" begin={`${i * 0.2}s`}
+          <animate attributeName="opacity" dur="2.5s" repeatCount="indefinite" begin={`${i * 0.15}s`}
             values="0;1;1;0" keyTimes="0;0.05;0.9;1" />
         </rect>
       ))}
