@@ -337,7 +337,7 @@ function JitDiagram() {
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 const SCENE_DUR = "14s";
-const JIT_SCENE_DUR = "12s";
+const JIT_SCENE_DUR = "14s";
 
 function FanOutDiagram() {
   const uid = useId();
@@ -625,7 +625,7 @@ function JITStreamingDiagram() {
 
   // State to pass to React Three Fiber
   const [sceneTime, setSceneTime] = useState(0);
-  const [sceneDuration, setSceneDuration] = useState(12000);
+  const [sceneDuration, setSceneDuration] = useState(14000);
 
   useEffect(() => {
     if (!isClient) return;
@@ -709,37 +709,46 @@ function JITStreamingDiagram() {
           {/* ── Timed text overlays ──── */}
 
           {/* Phase 1: hero moment (0.3s–2s) */}
-          <div className="ef-caption ef-caption-lg" style={{ top: "5%", left: "10%", animation: "efCaptionIn 600ms 300ms backwards, efCaptionOut 400ms 2000ms forwards" }}>
-            A remote video URL
+          <div className="ef-caption ef-caption-lg" style={{ top: "5%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 600ms 300ms backwards, efCaptionOut 400ms 1800ms forwards" }}>
+            Any video. Any URL. Any format.
           </div>
 
-          {/* Phase 2: the question (2.2s–3s) */}
-          <div className="ef-caption ef-caption-lg" style={{ top: "5%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 2200ms backwards, efCaptionOut 400ms 3000ms forwards" }}>
-            How do you play it instantly?
+          {/* Phase 2: the question (2.2s–3.2s) */}
+          <div className="ef-caption ef-caption-lg" style={{ top: "5%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 2200ms backwards, efCaptionOut 400ms 3200ms forwards" }}>
+            What happens when you hit play?
           </div>
 
-          {/* Phase 3: labels (3.2s+) */}
-          <div className="ef-caption ef-caption-sub" style={{ top: "70%", left: "10%", animation: "efCaptionIn 400ms 3200ms backwards" }}>
-            Remote URL
+          {/* Phase 3: side labels (3.5s+) */}
+          <div className="ef-caption ef-caption-dim" style={{ top: "3%", left: "8%", animation: "efCaptionIn 400ms 3800ms backwards" }}>
+            Traditional
           </div>
-          <div className="ef-caption ef-caption-brand" style={{ top: "70%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 3400ms backwards" }}>
-            JIT Transcode
-          </div>
-          <div className="ef-caption ef-caption-sub" style={{ top: "70%", right: "10%", animation: "efCaptionIn 400ms 3600ms backwards" }}>
-            Instant Playback
+          <div className="ef-caption ef-caption-sub" style={{ top: "9%", left: "8%", animation: "efCaptionIn 400ms 4200ms backwards" }}>
+            Upload → Ingest → Transcode → Store
           </div>
 
-          {/* Phase 3: mechanism description (4s–6.5s) */}
-          <div className="ef-caption ef-caption-sub" style={{ bottom: "8%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 4000ms backwards, efCaptionOut 400ms 6500ms forwards" }}>
-            Byte-range requests stream directly to the JIT service
+          <div className="ef-caption ef-caption-brand" style={{ top: "3%", right: "8%", animation: "efCaptionIn 400ms 3800ms backwards" }}>
+            Editframe
+          </div>
+          <div className="ef-caption ef-caption-sub" style={{ top: "9%", right: "8%", animation: "efCaptionIn 400ms 4200ms backwards" }}>
+            Just a URL. JIT does the rest.
           </div>
 
-          {/* Phase 4: punchline (7s+) */}
-          <div className="ef-caption ef-caption-hero" style={{ bottom: "18%", right: "8%", animation: "efCaptionIn 500ms 7000ms backwards" }}>
-            Zero Wait
+          {/* Phase 4: narrate mechanism (5.5s–8s) */}
+          <div className="ef-caption ef-caption-sub" style={{ bottom: "5%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 5500ms backwards, efCaptionOut 400ms 8000ms forwards" }}>
+            Adaptive multi-bitrate streams generated on demand
           </div>
-          <div className="ef-caption ef-caption-sub" style={{ bottom: "12%", right: "8%", animation: "efCaptionIn 400ms 7500ms backwards" }}>
-            No upload. No ingestion. Just stream.
+
+          {/* Phase 5: punchline (10s+) */}
+          <div className="ef-caption ef-caption-hero" style={{ bottom: "16%", right: "6%", animation: "efCaptionIn 500ms 10000ms backwards" }}>
+            Already playing
+          </div>
+          <div className="ef-caption ef-caption-sub" style={{ bottom: "9%", right: "6%", animation: "efCaptionIn 400ms 10500ms backwards" }}>
+            No upload. No ingestion. No waiting.
+          </div>
+
+          {/* Traditional side still-going callout */}
+          <div className="ef-caption ef-caption-sub" style={{ bottom: "16%", left: "8%", animation: "efCaptionIn 400ms 10800ms backwards" }}>
+            Still uploading…
           </div>
         </Timegroup>
       </Preview>
