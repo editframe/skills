@@ -85,12 +85,18 @@ export class EFImage extends EFTemporal(
   }
 
   private isDirectUrl(src: string): boolean {
+    // For asset-id based URLs (via apiHost), always use fetch+canvas instead of img element
+    // This ensures proper rendering in all contexts (server, browser-full-video, browser-frame-by-frame)
+    if (this.assetId) {
+      return false;
+    }
     return src.startsWith("http://") || src.startsWith("https://") || src.startsWith("data:");
   }
 
   assetPath() {
     if (this.assetId) {
-      return `${this.apiHost}/api/v1/image_files/${this.assetId}`;
+      const path = `${this.apiHost}/api/v1/image_files/${this.assetId}`;
+      return path;
     }
     if (this.isDirectUrl(this.src)) {
       return this.src;
@@ -138,10 +144,23 @@ export class EFImage extends EFTemporal(
       return this.#imageLoadPromise;
     }
 
-    // For direct URLs, the img element handles loading
+    // For direct URLs, wait for the img element to load
     if (this.isDirectUrl(assetPath)) {
-      this.#imageLoaded = true;
       this.#lastLoadedPath = assetPath;
+      this.#imageLoadPromise = this.#waitForImageElement(signal);
+      
+      try {
+        await this.#imageLoadPromise;
+        this.#imageLoaded = true;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          throw error;
+        }
+        console.error("EFImage img element load error", error);
+        throw error;
+      } finally {
+        this.#imageLoadPromise = null;
+      }
       return;
     }
 
@@ -163,6 +182,40 @@ export class EFImage extends EFTemporal(
     } finally {
       this.#imageLoadPromise = null;
     }
+  }
+
+  async #waitForImageElement(signal?: AbortSignal): Promise<void> {
+    if (!this.imageRef.value) {
+      throw new Error("Image element not ready");
+    }
+    
+    const img = this.imageRef.value;
+    
+    // If already loaded (cached), return immediately
+    if (img.complete && img.naturalHeight !== 0) {
+      return;
+    }
+    
+    return new Promise<void>((resolve, reject) => {
+      if (signal?.aborted) {
+        reject(new DOMException("Aborted", "AbortError"));
+        return;
+      }
+      
+      const abortHandler = () => {
+        reject(new DOMException("Aborted", "AbortError"));
+      };
+      signal?.addEventListener("abort", abortHandler, { once: true });
+      
+      img.onload = () => {
+        signal?.removeEventListener("abort", abortHandler);
+        resolve();
+      };
+      img.onerror = (error) => {
+        signal?.removeEventListener("abort", abortHandler);
+        reject(error);
+      };
+    });
   }
 
   async #doLoadImage(assetPath: string, signal?: AbortSignal): Promise<void> {
