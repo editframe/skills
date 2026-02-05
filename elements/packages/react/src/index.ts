@@ -39,3 +39,7 @@ export { Workbench } from "./gui/Workbench.js";
 export { useTimingInfo } from "./hooks/useTimingInfo.js";
 export { usePanZoomTransform } from "./hooks/usePanZoomTransform.js";
 export { needsFitScale, elementNeedsFitScale } from "@editframe/elements";
+
+// React Three Fiber integration
+export { CompositionCanvas, useCompositionTime } from "./r3f/CompositionCanvas.js";
+export type { CompositionCanvasProps } from "./r3f/CompositionCanvas.js";

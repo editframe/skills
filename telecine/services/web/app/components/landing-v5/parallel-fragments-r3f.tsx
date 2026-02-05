@@ -4,9 +4,10 @@
  * as render-clone fallback (R3F doesn't survive DOM cloning).
  */
 
-import { useRef, useEffect, useMemo, type ReactNode } from "react";
-import { Canvas, useThree, useFrame } from "@react-three/fiber";
+import { useRef, useMemo, type ReactNode } from "react";
+import { useThree, useFrame } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
+import { CompositionCanvas, useCompositionTime } from "@editframe/react";
 import * as THREE from "three";
 
 /* ━━ Easing & helpers ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
@@ -442,17 +443,9 @@ function DurationLabel({ x, y, z, opacity, text }: {
   );
 }
 
-/* ━━ GL Sync (for renderToVideo) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-function GLSync() {
-  const { gl } = useThree();
-  useFrame(() => { gl.getContext().finish(); });
-  return null;
-}
-
-/* ━━ Main Scene — reads timeMs and renders everything ━━━━━━━━━━━━━ */
-export function ParallelFragmentsR3FScene({ timeMs }: { timeMs: number }) {
-  const { invalidate } = useThree();
-  useEffect(() => { invalidate(); }, [timeMs, invalidate]);
+/* ━━ Main Scene — reads time from CompositionCanvas context ━━━━━━━ */
+export function ParallelFragmentsR3FScene() {
+  const { timeMs } = useCompositionTime();
 
   // ── Compute all animation state from timeMs ──────────────────
   const p1 = easeOut(prog(timeMs, 0, P1_END));
@@ -522,7 +515,6 @@ export function ParallelFragmentsR3FScene({ timeMs }: { timeMs: number }) {
       <CameraController timeMs={timeMs} />
       <Lighting timeMs={timeMs} />
       <Floor />
-      <GLSync />
 
       {/* ── 3D Text Labels ──────────────────────────────────────── */}
       {/* Phase 1: Hero title */}
@@ -690,27 +682,21 @@ export function ParallelFragmentsR3FScene({ timeMs }: { timeMs: number }) {
   );
 }
 
-/* ━━ Canvas wrapper — embeds in Editframe composition ━━━━━━━━━━━━━ */
-export function ParallelFragmentsCanvas({ timeMs, children }: {
-  timeMs: number;
-  children?: ReactNode;
-}) {
+/* ━━ Canvas wrapper — just configure and drop in ━━━━━━━━━━━━━━━━━━ */
+export function ParallelFragmentsCanvas({ children }: { children?: ReactNode }) {
   return (
-    <Canvas
-      frameloop="demand"
+    <CompositionCanvas
       shadows
       dpr={[1, 2]}
       gl={{
-        preserveDrawingBuffer: true,
         toneMapping: THREE.ACESFilmicToneMapping,
         toneMappingExposure: 1.8,
       }}
       camera={{ fov: 50, near: 0.1, far: 100 }}
-      style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
       scene={{ background: new THREE.Color(0x1e2233), fog: new THREE.Fog(0x1e2233, 16, 35) }}
     >
-      <ParallelFragmentsR3FScene timeMs={timeMs} />
+      <ParallelFragmentsR3FScene />
       {children}
-    </Canvas>
+    </CompositionCanvas>
   );
 }
