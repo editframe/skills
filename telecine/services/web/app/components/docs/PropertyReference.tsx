@@ -13,24 +13,24 @@ interface PropertyReferenceTableProps {
 
 export const PropertyReferenceTable: FC<PropertyReferenceTableProps> = ({
   properties,
-  elementName = "video",
+  elementName: _elementName = "video",
   className,
 }) => {
   return (
     <div className={clsx("overflow-x-auto my-6", className)}>
       <table className="w-full border-collapse">
         <thead>
-          <tr className="border-b border-slate-200 dark:border-slate-700">
-            <th className="text-left py-3 px-4 font-semibold text-sm text-slate-700 dark:text-slate-300">
+          <tr className="border-b-2 border-[var(--ink-black)] dark:border-white">
+            <th className="text-left py-3 px-4 font-bold text-sm text-[var(--ink-black)] dark:text-white uppercase tracking-wider">
               Property
             </th>
-            <th className="text-left py-3 px-4 font-semibold text-sm text-slate-700 dark:text-slate-300">
+            <th className="text-left py-3 px-4 font-bold text-sm text-[var(--ink-black)] dark:text-white uppercase tracking-wider">
               Type
             </th>
-            <th className="text-left py-3 px-4 font-semibold text-sm text-slate-700 dark:text-slate-300">
+            <th className="text-left py-3 px-4 font-bold text-sm text-[var(--ink-black)] dark:text-white uppercase tracking-wider">
               R/W
             </th>
-            <th className="text-left py-3 px-4 font-semibold text-sm text-slate-700 dark:text-slate-300">
+            <th className="text-left py-3 px-4 font-bold text-sm text-[var(--ink-black)] dark:text-white uppercase tracking-wider">
               Primary Use Case
             </th>
           </tr>
@@ -39,27 +39,27 @@ export const PropertyReferenceTable: FC<PropertyReferenceTableProps> = ({
           {properties.map((prop) => (
             <tr
               key={prop.name}
-              className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
+              className="border-b border-[var(--ink-black)]/10 dark:border-white/10 hover:bg-[var(--accent-blue)]/5 transition-colors"
             >
               <td className="py-3 px-4">
                 <Link
                   to={`#attr-${prop.name}`}
-                  className="font-mono text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                  className="font-mono text-sm font-semibold text-[var(--accent-blue)] hover:text-[var(--accent-red)] transition-colors"
                 >
                   {prop.name}
                 </Link>
               </td>
               <td className="py-3 px-4">
-                <code className="font-mono text-xs text-slate-600 dark:text-slate-400">
+                <code className="font-mono text-xs text-[var(--warm-gray)]">
                   {prop.type}
                 </code>
               </td>
               <td className="py-3 px-4">
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                <span className="inline-flex items-center px-2 py-0.5 text-xs font-semibold bg-[var(--accent-blue)]/10 text-[var(--accent-blue)]">
                   {prop.access}
                 </span>
               </td>
-              <td className="py-3 px-4 text-sm text-slate-600 dark:text-slate-400">
+              <td className="py-3 px-4 text-sm text-[var(--warm-gray)]">
                 {prop.useCase}
               </td>
             </tr>

@@ -230,12 +230,12 @@ const GroupLabel: FC<{ title: string; level: number }> = ({ title, level }) => {
     <li>
       <div
         className={clsx(
-          "flex items-center px-2 py-1.5 mt-3 first:mt-0 text-xs leading-5 gap-2",
-          "font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider"
+          "flex items-center px-3 py-2 mt-4 first:mt-0 text-xs leading-5 gap-2",
+          "font-bold text-[var(--ink-black)] dark:text-white uppercase tracking-wider"
         )}
         style={level > 0 ? { paddingLeft: `${indentLevel}px` } : undefined}
       >
-        <ItemIcon className="h-3 w-3 flex-shrink-0" />
+        <ItemIcon className="h-3.5 w-3.5 flex-shrink-0 text-[var(--accent-blue)]" />
         <span className="truncate text-[10px]">{title}</span>
       </div>
     </li>
@@ -297,8 +297,8 @@ const MenuItem: FC<{
           <button
             onClick={handleToggle}
             className={clsx(
-              "flex-shrink-0 p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors",
-              "text-slate-400 dark:text-slate-500"
+              "flex-shrink-0 p-0.5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors",
+              "text-[var(--warm-gray)]"
             )}
             aria-label={shouldBeExpanded ? "Collapse" : "Expand"}
           >
@@ -315,18 +315,14 @@ const MenuItem: FC<{
             to={item.slug}
             className={({ isActive }) =>
               clsx(
-                "flex items-center px-2 py-1 rounded-md cursor-pointer w-full text-xs leading-5 transition-all flex-1",
+                "flex items-center px-3 py-1.5 cursor-pointer w-full text-xs leading-5 transition-all flex-1 border-l-2",
                 level <= 2 ? "gap-2" : "gap-0",
                 level === 0
-                  ? "font-semibold"
-                  : "font-normal",
+                  ? "font-bold"
+                  : "font-medium",
                 isActive
-                  ? level === 0
-                    ? "text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800"
-                    : "font-medium text-slate-900 bg-slate-100 dark:text-slate-100 dark:bg-slate-800"
-                  : level === 0
-                    ? "text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-900/50"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-900/50",
+                  ? "text-[var(--ink-black)] dark:text-white border-[var(--accent-blue)] bg-[var(--accent-blue)]/5"
+                  : "text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:hover:text-white border-transparent hover:border-[var(--ink-black)]/20 dark:hover:border-white/20",
               )
             }
             style={level > 0 ? { paddingLeft: `${indentLevel}px` } : undefined}
@@ -337,9 +333,9 @@ const MenuItem: FC<{
         ) : (
           <div
             className={clsx(
-              "flex items-center px-2 py-1 rounded-md text-xs leading-5 flex-1",
+              "flex items-center px-3 py-1.5 text-xs leading-5 flex-1 border-l-2 border-transparent",
               level <= 2 ? "gap-2" : "gap-0",
-              level === 0 ? "font-semibold text-slate-700 dark:text-slate-300" : "font-normal text-slate-600 dark:text-slate-400"
+              level === 0 ? "font-bold text-[var(--ink-black)] dark:text-white" : "font-medium text-[var(--warm-gray)]"
             )}
             style={level > 0 ? { paddingLeft: `${indentLevel}px` } : undefined}
           >
@@ -351,7 +347,7 @@ const MenuItem: FC<{
       {hasChildren && shouldBeExpanded && (
         <ul className={clsx(
           "mt-0.5 space-y-0.5 ml-4",
-          level === 0 ? "border-l border-slate-200 dark:border-slate-800 pl-3" : ""
+          level === 0 ? "border-l-2 border-[var(--ink-black)]/10 dark:border-white/10 pl-2" : ""
         )}>
           {item.children.map((child) => {
             // Check if this child or any descendant is active

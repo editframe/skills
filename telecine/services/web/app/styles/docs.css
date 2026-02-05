@@ -1,6 +1,15 @@
 /*****************************************************************************/
-/* syntax highlighting */
+/* Design system variables - Swiss/Bauhaus inspired */
 :root {
+    /* Accent colors - sophisticated, not primary-school */
+    --accent-red: #C41E3A;
+    --accent-blue: #1E3A8A;
+    --accent-gold: #B8860B;
+    --ink-black: #1a1a1a;
+    --paper-white: #FAFAFA;
+    --warm-gray: #78716C;
+    
+    /* syntax highlighting */
     --base00: theme("colors.gray.50");
     --base01: theme("colors.gray.200");
     --base02: theme("colors.gray.300");
@@ -9,17 +18,24 @@
     --base05: theme("colors.gray.600");
     --base06: theme("colors.gray.700");
     --base07: theme("colors.gray.800");
-    --base08: theme("colors.red.700");
+    --base08: #C41E3A;
     --base09: theme("colors.pink.brand");
-    --base0A: theme("colors.blue.500");
+    --base0A: #1E3A8A;
     --base0B: theme("colors.green.500");
     --base0C: theme("colors.aqua.400");
-    --base0D: theme("colors.blue.700");
+    --base0D: #1E3A8A;
     --base0E: theme("colors.pink.brand");
     --base0F: theme("colors.gray.700");
     --header-height: 64px;
   
     &:where(.dark) {
+      --accent-red: #DC2626;
+      --accent-blue: #3B82F6;
+      --accent-gold: #F59E0B;
+      --paper-white: #0a0a0a;
+      --ink-black: #e5e5e5;
+      --warm-gray: #9CA3AF;
+      
       --base00: theme("colors.gray.800");
       --base01: theme("colors.gray.700");
       --base02: theme("colors.gray.600");
@@ -28,12 +44,12 @@
       --base05: theme("colors.gray.300");
       --base06: theme("colors.gray.200");
       --base07: theme("colors.gray.100");
-      --base08: theme("colors.red.300");
+      --base08: #DC2626;
       --base09: theme("colors.pink.brand");
-      --base0A: theme("colors.blue.300");
+      --base0A: #3B82F6;
       --base0B: theme("colors.yellow.brand");
       --base0C: theme("colors.aqua.300");
-      --base0D: theme("colors.blue.300");
+      --base0D: #3B82F6;
       --base0E: theme("colors.pink.300");
       --base0F: theme("colors.gray.300");
     }

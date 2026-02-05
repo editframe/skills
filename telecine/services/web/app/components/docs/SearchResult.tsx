@@ -27,7 +27,7 @@ function highlightText(text: string, query: string): React.ReactNode {
       return (
         <mark
           key={index}
-          className="bg-yellow-200 dark:bg-yellow-900/50 px-0.5 rounded"
+          className="bg-[var(--accent-gold)]/20 text-[var(--ink-black)] dark:text-white px-0.5"
         >
           {part}
         </mark>
@@ -95,25 +95,25 @@ export function SearchResult({
       onClick={onClick}
       className={clsx(
         "block search-result-item transition-colors",
-        "hover:bg-gray-50 dark:hover:bg-gray-800",
-        isSelected && "bg-gray-100 dark:bg-gray-800",
-        "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+        "hover:bg-[var(--accent-blue)]/5",
+        isSelected && "bg-[var(--accent-blue)]/5 border-l-2 border-[var(--accent-blue)]",
+        "focus:outline-none"
       )}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            <h3 className="text-sm font-bold text-[var(--ink-black)] dark:text-white">
               {highlightText(result.title, query)}
             </h3>
             {result.category && (
-              <span className="text-xs px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+              <span className="text-xs px-2 py-0.5 bg-[var(--accent-blue)]/10 text-[var(--accent-blue)] font-semibold">
                 {result.category}
               </span>
             )}
           </div>
           {descriptionSnippet && (
-            <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+            <p className="text-xs text-[var(--warm-gray)] line-clamp-2">
               {highlightText(descriptionSnippet, query)}
             </p>
           )}
@@ -122,7 +122,7 @@ export function SearchResult({
               {result.headings.slice(0, 2).map((heading, index) => (
                 <span
                   key={index}
-                  className="text-xs text-gray-500 dark:text-gray-500"
+                  className="text-xs text-[var(--warm-gray)]/70"
                 >
                   {heading}
                 </span>
@@ -130,7 +130,7 @@ export function SearchResult({
             </div>
           )}
         </div>
-        <div className="flex-shrink-0 text-gray-400 dark:text-gray-600">
+        <div className="flex-shrink-0 text-[var(--warm-gray)]">
           <svg
             className="w-4 h-4"
             fill="none"

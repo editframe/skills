@@ -24,30 +24,30 @@ export const DocSectionIndex: FC<DocSectionIndexProps> = ({
   className,
 }) => {
   return (
-    <div className={clsx("space-y-6", className)}>
+    <div className={clsx("space-y-8", className)}>
       <div>
-        <h2 className="text-2xl font-bold mb-3">{title}</h2>
+        <h2 className="text-2xl font-bold text-[var(--ink-black)] dark:text-white mb-3">{title}</h2>
         {introText && (
-          <p className="text-slate-600 dark:text-slate-400 mb-6">{introText}</p>
+          <p className="text-[var(--warm-gray)] mb-6">{introText}</p>
         )}
       </div>
 
       <div>
-        <h3 className="text-lg font-semibold mb-3">
+        <h3 className="text-xs font-bold text-[var(--ink-black)] dark:text-white uppercase tracking-wider mb-4">
           Available {title === "Reference" ? "Documentation" : "Items"}
         </h3>
-        <ul className="space-y-2">
+        <ul className="space-y-2 border-l-2 border-[var(--ink-black)]/10 dark:border-white/10 pl-4">
           {links.map((link) => (
             <li key={link.href}>
               <Link
                 to={link.href}
-                className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                className="text-[var(--accent-blue)] hover:text-[var(--accent-red)] font-semibold transition-colors"
               >
                 {link.title}
               </Link>
               {link.description && (
-                <span className="text-slate-600 dark:text-slate-400 ml-2">
-                  - {link.description}
+                <span className="text-[var(--warm-gray)] ml-2">
+                  — {link.description}
                 </span>
               )}
             </li>
@@ -57,13 +57,13 @@ export const DocSectionIndex: FC<DocSectionIndexProps> = ({
 
       {relatedSections && relatedSections.length > 0 && (
         <div>
-          <h3 className="text-lg font-semibold mb-3">Related Documentation</h3>
-          <ul className="space-y-2">
+          <h3 className="text-xs font-bold text-[var(--ink-black)] dark:text-white uppercase tracking-wider mb-4">Related Documentation</h3>
+          <ul className="space-y-2 border-l-2 border-[var(--accent-gold)]/30 pl-4">
             {relatedSections.map((section) => (
               <li key={section.href}>
                 <Link
                   to={section.href}
-                  className="text-blue-600 dark:text-blue-400 hover:underline"
+                  className="text-[var(--accent-blue)] hover:text-[var(--accent-red)] transition-colors"
                 >
                   {section.name}
                 </Link>
@@ -89,19 +89,19 @@ export const DocLinkList: FC<DocLinkListProps> = ({
 }) => {
   return (
     <div className={clsx("space-y-3", className)}>
-      {title && <h3 className="text-lg font-semibold">{title}</h3>}
+      {title && <h3 className="text-sm font-bold text-[var(--ink-black)] dark:text-white uppercase tracking-wider">{title}</h3>}
       <ul className="space-y-2">
         {links.map((link) => (
           <li key={link.href}>
             <Link
               to={link.href}
-              className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+              className="text-[var(--accent-blue)] hover:text-[var(--accent-red)] font-medium transition-colors"
             >
               {link.title}
             </Link>
             {link.description && (
-              <span className="text-slate-600 dark:text-slate-400 ml-2">
-                - {link.description}
+              <span className="text-[var(--warm-gray)] ml-2">
+                — {link.description}
               </span>
             )}
           </li>
@@ -124,7 +124,7 @@ export const DocNavSection: FC<DocNavSectionProps> = ({
 }) => {
   return (
     <div className={clsx("space-y-4", className)}>
-      <h2 className="text-2xl font-bold">{title}</h2>
+      <h2 className="text-2xl font-bold text-[var(--ink-black)] dark:text-white">{title}</h2>
       {children}
     </div>
   );

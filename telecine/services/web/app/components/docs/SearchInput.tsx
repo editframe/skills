@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, Link } from "react-router";
-import clsx from "clsx";
 import { useSearch } from "~/hooks/useSearch";
 import { useKeyboardShortcut } from "~/hooks/useKeyboardShortcut";
 import { SearchResult } from "./SearchResult";
@@ -255,14 +254,14 @@ export function SearchInput() {
                 ))}
               </div>
               {query.trim() && (
-                <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-2">
+                <div className="border-t-2 border-[var(--ink-black)]/10 dark:border-white/10 px-4 py-3">
                   <Link
                     to={`/docs/search?q=${encodeURIComponent(query)}`}
                     onClick={() => {
                       setIsOpen(false);
                       setQuery("");
                     }}
-                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center justify-center"
+                    className="text-sm font-semibold text-[var(--accent-blue)] hover:text-[var(--accent-red)] flex items-center justify-center transition-colors"
                   >
                     View all results →
                   </Link>

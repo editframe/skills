@@ -15,14 +15,14 @@ function ArrowIcon(props: React.ComponentProps<"svg">) {
 
 const variantStyles = {
   primary:
-    "rounded-full bg-zinc-900 py-1 px-3 text-white hover:bg-zinc-700 dark:bg-martinique-400/10 dark:text-martinique-400 dark:ring-1 dark:ring-inset dark:ring-martinique-400/20 dark:hover:bg-martinique-400/10 dark:hover:text-martinique-300 dark:hover:ring-martinique-300",
+    "bg-[var(--ink-black)] py-2 px-4 text-white font-semibold hover:bg-[var(--accent-blue)] dark:bg-white dark:text-[var(--ink-black)] dark:hover:bg-[var(--accent-blue)] dark:hover:text-white transition-colors",
   secondary:
-    "rounded-full bg-zinc-100 py-1 px-3 text-zinc-900 hover:bg-zinc-200 dark:bg-zinc-800/40 dark:text-zinc-400 dark:ring-1 dark:ring-inset dark:ring-zinc-800 dark:hover:bg-zinc-800 dark:hover:text-zinc-300",
+    "bg-[var(--paper-white)] py-2 px-4 text-[var(--ink-black)] font-semibold border-2 border-[var(--ink-black)]/10 hover:border-[var(--ink-black)]/20 dark:bg-[#111] dark:text-white dark:border-white/10 dark:hover:border-white/20 transition-colors",
   filled:
-    "rounded-full bg-zinc-900 py-1 px-3 text-white hover:bg-zinc-700 dark:bg-martinique-500 dark:text-white dark:hover:bg-martinique-400",
+    "bg-[var(--accent-blue)] py-2 px-4 text-white font-semibold hover:bg-[var(--ink-black)] dark:hover:bg-white dark:hover:text-[var(--ink-black)] transition-colors",
   outline:
-    "rounded-full py-1 px-3 text-zinc-700 ring-1 ring-inset ring-zinc-900/10 hover:bg-zinc-900/2.5 hover:text-zinc-900 dark:text-zinc-400 dark:ring-white/10 dark:hover:bg-white/5 dark:hover:text-white",
-  text: "text-martinique-500 hover:text-martinique-600 dark:text-martinique-400 dark:hover:text-martinique-500",
+    "py-2 px-4 text-[var(--ink-black)] font-semibold border-2 border-[var(--ink-black)] hover:bg-[var(--ink-black)] hover:text-white dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-[var(--ink-black)] transition-colors",
+  text: "text-[var(--accent-blue)] hover:text-[var(--accent-red)] dark:text-[var(--accent-blue)] dark:hover:text-[var(--accent-red)] font-medium",
 };
 
 export function Button({
