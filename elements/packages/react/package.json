@@ -9,6 +9,12 @@
         "default": "./dist/index.js"
       }
     },
+    "./server": {
+      "import": {
+        "types": "./dist/server.d.ts",
+        "default": "./dist/server.js"
+      }
+    },
     "./package.json": "./package.json",
     "./types.json": "./types.json"
   },
@@ -46,6 +52,12 @@
         "import": {
           "types": "./dist/index.d.ts",
           "default": "./dist/index.js"
+        }
+      },
+      "./server": {
+        "import": {
+          "types": "./dist/server.d.ts",
+          "default": "./dist/server.js"
         }
       },
       "./package.json": "./package.json",

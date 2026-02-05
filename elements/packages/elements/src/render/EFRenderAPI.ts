@@ -8,11 +8,11 @@
 import type { EFTimegroup } from "../elements/EFTimegroup.js";
 import type { EFWorkbench } from "../gui/EFWorkbench.js";
 import { getRenderInfo, type RenderInfo } from "../getRenderInfo.js";
-import {
-  renderTimegroupToVideo,
-  type RenderToVideoOptions,
-  type RenderProgress,
-} from "../preview/renderTimegroupToVideo.js";
+// Import only types - actual function loaded dynamically
+import type {
+  RenderToVideoOptions,
+  RenderProgress,
+} from "../preview/renderTimegroupToVideo.types.js";
 
 // ============================================================================
 // Types
@@ -189,6 +189,8 @@ const api: IEFRenderAPI = {
       const onProgress = options.onProgress || window.onRenderProgress;
 
       // Render with custom stream
+      // Dynamic import to avoid loading render utilities during module initialization
+      const { renderTimegroupToVideo } = await import("../preview/renderTimegroupToVideo.js");
       await renderTimegroupToVideo(timegroup, {
         ...options,
         customWritableStream: chunkWriter,
@@ -220,6 +222,8 @@ const api: IEFRenderAPI = {
       // Merge progress callback if window.onRenderProgress is set
       const onProgress = options.onProgress || window.onRenderProgress;
 
+      // Dynamic import to avoid loading render utilities during module initialization
+      const { renderTimegroupToVideo } = await import("../preview/renderTimegroupToVideo.js");
       const buffer = await renderTimegroupToVideo(timegroup, {
         ...options,
         returnBuffer: true,

@@ -45,6 +45,12 @@
         "default": "./dist/index.js"
       }
     },
+    "./server": {
+      "import": {
+        "types": "./dist/server.d.ts",
+        "default": "./dist/server.js"
+      }
+    },
     "./node": {
       "import": {
         "types": "./dist/node.d.ts",
@@ -61,6 +67,12 @@
         "import": {
           "types": "./dist/index.d.ts",
           "default": "./dist/index.js"
+        }
+      },
+      "./server": {
+        "import": {
+          "types": "./dist/server.d.ts",
+          "default": "./dist/server.js"
         }
       },
       "./node": {

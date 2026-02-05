@@ -29,9 +29,10 @@ import {
 } from "mediabunny";
 import type { EFTimegroup } from "../elements/EFTimegroup.js";
 import type { EFVideo } from "../elements/EFVideo.js";
+import type { RenderProgress, RenderToVideoOptions } from "./renderTimegroupToVideo.types.js";
+import type { ContentReadyMode } from "./renderTimegroupToCanvas.types.js";
 import {
   resetRenderState,
-  type ContentReadyMode,
 } from "./renderTimegroupToCanvas.js";
 import { serializeTimelineToDataUri } from "./rendering/serializeTimelineDirect.js";
 import { renderToImageNative } from "./rendering/renderToImageNative.js";
@@ -43,41 +44,11 @@ import { RenderContext } from "./RenderContext.js";
 // Types
 // ============================================================================
 
-export interface RenderProgress {
-  progress: number;
-  currentFrame: number;
-  totalFrames: number;
-  renderedMs: number;
-  totalDurationMs: number;
-  elapsedMs: number;
-  estimatedRemainingMs: number;
-  speedMultiplier: number;
-  framePreviewCanvas?: HTMLCanvasElement; // Canvas with current frame (updated async, no encoding cost)
-}
-
-export interface RenderToVideoOptions {
-  fps?: number;
-  codec?: "avc" | "hevc" | "vp9" | "av1" | "vp8";
-  bitrate?: number;
-  filename?: string;
-  scale?: number;
-  keyFrameInterval?: number;
-  fromMs?: number;
-  toMs?: number;
-  onProgress?: (progress: RenderProgress) => void;
-  streaming?: boolean;
-  signal?: AbortSignal;
-  includeAudio?: boolean;
-  audioBitrate?: number;
-  contentReadyMode?: ContentReadyMode;
-  blockingTimeoutMs?: number;
-  returnBuffer?: boolean;
-  preferredAudioCodecs?: AudioCodec[];
-  benchmarkMode?: boolean;
-  customWritableStream?: WritableStream<Uint8Array>; // For programmatic streaming (CLI/Playwright)
-  progressPreviewInterval?: number; // How often to generate preview thumbnails (default: 60 frames, 0 = disabled)
-  canvasMode?: "native" | "foreignObject"; // Rendering mode: native drawElementImage or foreignObject serialization
-}
+// Re-export types from type-only module (zero side effects)
+export type {
+  RenderProgress,
+  RenderToVideoOptions,
+} from "./renderTimegroupToVideo.types.js";
 
 // ============================================================================
 // Errors
@@ -135,7 +106,7 @@ interface ResolvedConfig {
 
 function resolveConfig(
   timegroup: EFTimegroup,
-  options: RenderToVideoOptions,
+  options: RenderToVideoOptions = {},
 ): ResolvedConfig {
   const fps = options.fps ?? timegroup.effectiveFps ?? 30;
   const codec = options.codec ?? "avc";

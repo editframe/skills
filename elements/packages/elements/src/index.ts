@@ -233,10 +233,17 @@ import "./render/EFRenderAPI.js";
 
 export { getRenderInfo, RenderInfo } from "./getRenderInfo.js";
 export { getRenderData } from "./render/getRenderData.js";
+// Export types only - actual render functions are loaded dynamically by EFTimegroup
 export type {
   RenderToVideoOptions,
   RenderProgress,
-} from "./preview/renderTimegroupToVideo.js";
+} from "./preview/renderTimegroupToVideo.types.js";
+export type {
+  ContentReadyMode,
+  CaptureOptions,
+  CanvasPreviewOptions,
+  CanvasPreviewResult,
+} from "./preview/renderTimegroupToCanvas.types.js";
 export type { TraceContext } from "./otel/tracingHelpers.js";
 
 // Element-to-canvas rendering

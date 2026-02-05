@@ -658,7 +658,7 @@ export const rpcServerReady = (async () => {
               renderContext.onError(handler);
             },
             initialize: async (renderOptions: VideoRenderOptions) => {
-              logger.debug("🔧 [RPC_SERVER] Browser frame engine initialize() called", { renderOptions });
+              logger.debug("🔧 [RPC_SERVER] Browser frame engine initialize() called", { renderOptions, canvasMode });
               // Initialize the timegroup in the browser
               await renderContext.webContents.executeJavaScript(`
                 (async () => {
@@ -718,12 +718,13 @@ export const rpcServerReady = (async () => {
 
                   // Time the capture operation
                   // Skip clone creation for headless server rendering (saves ~40ms per frame!)
+                  // However, native canvas mode moves elements in the DOM, so we must use clones
                   const captureStart = performance.now();
                   const imageSource = await window.captureTimegroupAtTime(rootTimegroup, {
                     timeMs: ${timeMs},
                     scale: 1,
                     canvasMode: '${canvasMode}',
-                    skipClone: true,
+                    skipClone: '${canvasMode}' === 'foreignObject', // Only skip clone for foreignObject mode
                   });
                   const captureMs = performance.now() - captureStart;
                   

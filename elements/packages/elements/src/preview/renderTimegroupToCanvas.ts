@@ -1,4 +1,14 @@
 import type { EFTimegroup } from "../elements/EFTimegroup.js";
+import type {
+  ContentReadyMode,
+  CaptureOptions,
+  CaptureFromCloneOptions,
+  GeneratedThumbnail,
+  GenerateThumbnailsOptions,
+  ThumbnailQueue,
+  CanvasPreviewResult,
+  CanvasPreviewOptions,
+} from "./renderTimegroupToCanvas.types.js";
 import { getEffectiveRenderMode } from "./renderers.js";
 import { RenderContext } from "./RenderContext.js";
 import { FrameController } from "./FrameController.js";
@@ -41,32 +51,17 @@ const CANVAS_SAMPLE_STRIP_HEIGHT = 4;
 // Types
 // ============================================================================
 
-/**
- * Content readiness strategy for capture operations.
- * - "immediate": Capture NOW, skip all waits. May have blank video frames.
- * - "blocking": Wait for video content to be ready. Throws on timeout.
- */
-export type ContentReadyMode = "immediate" | "blocking";
-
-/**
- * Options for capturing a timegroup frame.
- */
-export interface CaptureOptions {
-  /** Time to capture at in milliseconds (required) */
-  timeMs: number;
-  /** Scale factor (default: 0.25) */
-  scale?: number;
-  /** Skip restoring original time after capture (for batch operations) */
-  skipRestore?: boolean;
-  /** Content readiness strategy (default: "immediate") */
-  contentReadyMode?: ContentReadyMode;
-  /** Max wait time for blocking mode before throwing (default: 5000ms) */
-  blockingTimeoutMs?: number;
-  /** Canvas rendering mode: native drawElementImage or foreignObject serialization (default: auto-detect) */
-  canvasMode?: "native" | "foreignObject";
-  /** Skip clone creation and render directly from prime timeline (for headless server rendering) */
-  skipClone?: boolean;
-}
+// Re-export types from type-only module (zero side effects)
+export type {
+  ContentReadyMode,
+  CaptureOptions,
+  CaptureFromCloneOptions,
+  GeneratedThumbnail,
+  GenerateThumbnailsOptions,
+  ThumbnailQueue,
+  CanvasPreviewResult,
+  CanvasPreviewOptions,
+} from "./renderTimegroupToCanvas.types.js";
 
 /**
  * Error thrown when video content is not ready within the blocking timeout.
@@ -159,39 +154,41 @@ export { clearInlineImageCache, getInlineImageCacheSize };
  * DEBUG: Capture a single thumbnail at the current time.
  * Call from console: window.debugCaptureThumbnail()
  */
-(window as any).debugCaptureThumbnail = async function() {
-  const timegroup = document.querySelector('ef-timegroup') as any;
-  if (!timegroup) {
-    console.error('No timegroup found');
-    return;
-  }
-  
-  const currentTime = timegroup.currentTimeMs ?? 0;
-  
-  try {
-    const result = await captureTimegroupAtTime(timegroup, {
-      timeMs: currentTime,
-      scale: 0.25,
-      contentReadyMode: 'blocking',
-      blockingTimeoutMs: 1000,
-    });
-    
-    // Create a temporary img element to display the result
-    const img = document.createElement('img');
-    if (result instanceof HTMLCanvasElement) {
-      img.src = result.toDataURL();
-    } else if (result instanceof HTMLImageElement) {
-      img.src = result.src;
+if (typeof window !== "undefined") {
+  (window as any).debugCaptureThumbnail = async function() {
+    const timegroup = document.querySelector('ef-timegroup') as any;
+    if (!timegroup) {
+      console.error('No timegroup found');
+      return;
     }
-    img.style.cssText = 'position:fixed;top:10px;right:10px;border:2px solid red;z-index:99999;';
-    document.body.appendChild(img);
     
-    return result;
-  } catch (err) {
-    console.error('[DEBUG] Capture failed:', err);
-    throw err;
-  }
-};
+    const currentTime = timegroup.currentTimeMs ?? 0;
+    
+    try {
+      const result = await captureTimegroupAtTime(timegroup, {
+        timeMs: currentTime,
+        scale: 0.25,
+        contentReadyMode: 'blocking',
+        blockingTimeoutMs: 1000,
+      });
+      
+      // Create a temporary img element to display the result
+      const img = document.createElement('img');
+      if (result instanceof HTMLCanvasElement) {
+        img.src = result.toDataURL();
+      } else if (result instanceof HTMLImageElement) {
+        img.src = result.src;
+      }
+      img.style.cssText = 'position:fixed;top:10px;right:10px;border:2px solid red;z-index:99999;';
+      document.body.appendChild(img);
+      
+      return result;
+    } catch (err) {
+      console.error('[DEBUG] Capture failed:', err);
+      throw err;
+    }
+  };
+}
 
 // ============================================================================
 // Internal Helpers
@@ -308,23 +305,6 @@ async function waitForVideoContent(
   return { ready: false, blankVideos: getBlankVideoNames() };
 }
 
-/**
- * Options for capturing from an existing render clone.
- */
-export interface CaptureFromCloneOptions {
-  /** Scale factor for the output canvas (default: 0.25) */
-  scale?: number;
-  /** Content readiness strategy (default: "immediate") */
-  contentReadyMode?: ContentReadyMode;
-  /** Max wait time for blocking mode before throwing (default: 5000ms) */
-  blockingTimeoutMs?: number;
-  /** Original timegroup (for dimension and background reference) */
-  originalTimegroup?: EFTimegroup;
-  /** Explicit time for temporal visibility checks (if not provided, uses renderClone.currentTimeMs) */
-  timeMs?: number;
-  /** Canvas rendering mode: native drawElementImage or foreignObject serialization (default: auto-detect) */
-  canvasMode?: "native" | "foreignObject";
-}
 
 /**
  * Captures a frame from an already-seeked render clone.
@@ -536,32 +516,6 @@ export async function captureTimegroupAtTime(
   }
 }
 
-/**
- * Result from thumbnail generator
- */
-export interface GeneratedThumbnail {
-  timeMs: number;
-  canvas: CanvasImageSource;
-}
-
-/**
- * Options for thumbnail generation (subset of CaptureOptions without timeMs)
- */
-export interface GenerateThumbnailsOptions {
-  scale?: number;
-  contentReadyMode?: ContentReadyMode;
-  blockingTimeoutMs?: number;
-  signal?: AbortSignal;
-}
-
-/**
- * Mutable queue interface for timestamp generation.
- * Allows updating the queue while generator is consuming it.
- */
-export interface ThumbnailQueue {
-  /** Get next timestamp (removes from front) */
-  shift(): number | undefined;
-}
 
 /**
  * Generate thumbnails using an existing render clone and mutable queue.
@@ -707,55 +661,6 @@ function toAbsoluteTime(timegroup: EFTimegroup, relativeTimeMs: number): number 
   return relativeTimeMs + (timegroup.startTimeMs ?? 0);
 }
 
-export interface CanvasPreviewResult {
-  /**
-   * Canvas element to append to your DOM.
-   */
-  container: HTMLCanvasElement;
-  canvas: HTMLCanvasElement;
-  /**
-   * Call this to re-render the timegroup to canvas at current visual state.
-   * Returns a promise that resolves when rendering is complete.
-   */
-  refresh: () => Promise<void>;
-  /**
-   * Dynamically change the resolution scale without rebuilding the clone structure.
-   * This is nearly instant - just updates CSS and internal variables.
-   * The next refresh() call will render at the new resolution.
-   */
-  setResolutionScale: (scale: number) => void;
-  /**
-   * Get the current resolution scale.
-   */
-  getResolutionScale: () => number;
-  /**
-   * Dispose the preview and release resources.
-   * Call this when the preview is no longer needed.
-   */
-  dispose: () => void;
-}
-
-/**
- * Options for canvas preview rendering.
- */
-export interface CanvasPreviewOptions {
-  /**
-   * Output scale factor (default: 1).
-   * Scales the final canvas size.
-   */
-  scale?: number;
-  
-  /**
-   * Resolution scale for internal rendering (default: 1).
-   * Reduces the internal render resolution for better performance.
-   * The canvas CSS size remains the same (browser upscales).
-   * - 1: Full resolution
-   * - 0.75: 3/4 resolution
-   * - 0.5: Half resolution
-   * - 0.25: Quarter resolution
-   */
-  resolutionScale?: number;
-}
 
 /**
  * Renders a timegroup preview to a canvas using SVG foreignObject.
@@ -788,7 +693,7 @@ export function renderTimegroupToCanvas(
   
   const width = timegroup.offsetWidth || DEFAULT_WIDTH;
   const height = timegroup.offsetHeight || DEFAULT_HEIGHT;
-  const dpr = window.devicePixelRatio || 1;
+  const dpr = (typeof window !== "undefined" ? window.devicePixelRatio : 1) || 1;
   
   // Calculate effective render dimensions (internal resolution) - mutable
   let renderWidth = Math.floor(width * currentResolutionScale);

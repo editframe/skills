@@ -6,9 +6,10 @@ import { ContextMixin } from "./ContextMixin.js";
 import { TWMixin } from "./TWMixin.js";
 import { EFTimegroup } from "../elements/EFTimegroup.js";
 import { findRootTemporal } from "../elements/findRootTemporal.js";
-import { renderTimegroupToCanvas, type CanvasPreviewResult } from "../preview/renderTimegroupToCanvas.js";
+// Import only types - actual functions loaded dynamically to avoid SSR issues
+import type { CanvasPreviewResult } from "../preview/renderTimegroupToCanvas.types.js";
+import type { RenderToVideoOptions, RenderProgress } from "../preview/renderTimegroupToVideo.types.js";
 import { updateAnimations } from "../elements/updateAnimations.js";
-import { renderTimegroupToVideo, type RenderToVideoOptions, type RenderProgress, RenderCancelledError } from "../preview/renderTimegroupToVideo.js";
 import { 
   isNativeCanvasApiAvailable, 
   getPreviewPresentationMode,
@@ -1137,6 +1138,8 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       updateAnimations(timegroup);
       
       // Create canvas preview - this builds the clone structure ONCE
+      // Dynamic import to avoid loading render utilities during SSR
+      const { renderTimegroupToCanvas } = await import("../preview/renderTimegroupToCanvas.js");
       const result = renderTimegroupToCanvas(timegroup, {
         scale: 1,
         resolutionScale: initialResolutionScale,
@@ -1222,11 +1225,13 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   }
   
   // Canvas renderer - kept for thumbnail generation
-  initCanvasRenderer(): { canvas: HTMLCanvasElement; refresh: () => Promise<void> } | null {
+  async initCanvasRenderer(): Promise<{ canvas: HTMLCanvasElement; refresh: () => Promise<void> } | null> {
     const timegroup = this.getTimegroup();
     if (!timegroup) return null;
     
     try {
+      // Dynamic import to avoid loading render utilities during SSR
+      const { renderTimegroupToCanvas } = await import("../preview/renderTimegroupToCanvas.js");
       const { canvas, refresh } = renderTimegroupToCanvas(timegroup, 1);
       this.canvasRefresh = refresh;
       return { canvas, refresh };
@@ -1255,6 +1260,8 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     this.exportStatus = "rendering";
     
     try {
+      // Dynamic import to avoid loading render utilities during SSR
+      const { renderTimegroupToVideo, RenderCancelledError } = await import("../preview/renderTimegroupToVideo.js");
       await renderTimegroupToVideo(timegroup, {
         ...options,
         signal: this.exportAbortController.signal,
@@ -1271,6 +1278,8 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         this.exportAbortController = null;
       }, 2000);
     } catch (e) {
+      // Need to re-import to check error type
+      const { RenderCancelledError } = await import("../preview/renderTimegroupToVideo.js");
       if (e instanceof RenderCancelledError) {
         console.log("Export cancelled by user");
         this.exportStatus = "cancelled";

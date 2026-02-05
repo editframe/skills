@@ -1,0 +1,16 @@
+{
+  "testName": "audio-spectrum-browser-full-video-native",
+  "renderMode": "browser-full-video",
+  "canvasMode": "native",
+  "totalRenderTimeMs": 2272.7117020000005,
+  "videoDurationMs": 1000,
+  "fps": 30,
+  "numFrames": 30,
+  "avgFrameTimeMs": 75.71935240000009,
+  "timing": {
+    "total": 2272.7117020000005,
+    "renderFragment": 2271.5805720000026,
+    "writeFile": 1.0376329999999143
+  },
+  "timestamp": "2026-02-05T09:40:32.273Z"
+}

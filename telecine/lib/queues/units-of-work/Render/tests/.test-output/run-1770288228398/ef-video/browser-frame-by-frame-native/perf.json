@@ -1,0 +1,44 @@
+{
+  "testName": "elements-smoke-ef-video-browser-frame-by-frame-native",
+  "renderMode": "browser-frame-by-frame",
+  "canvasMode": "native",
+  "totalRenderTimeMs": 3389.7202350000007,
+  "videoDurationMs": 200,
+  "fps": 30,
+  "numFrames": 6,
+  "avgFrameTimeMs": 564.5832324999986,
+  "timing": {
+    "total": 3389.7202350000007,
+    "renderFragment": 3387.4993949999916,
+    "perFrameTiming": {
+      "count": 11,
+      "avgCloneMs": 59.02727273377505,
+      "avgSeekMs": 10.93636365370317,
+      "avgRenderMs": 0.9727272553877397,
+      "avgCaptureMs": 70.98181819915771,
+      "avgCanvasMs": 0.6363636255264282,
+      "avgSerializeMs": 0.6727272705598311,
+      "avgBlobMs": 1.3545454740524292,
+      "avgIpcTransferMs": 3.0904693376280856,
+      "minFrameMs": 71.96403299999656,
+      "maxFrameMs": 83.60003800000413,
+      "totalFramesMs": 846.0711849999934
+    },
+    "ipcOverhead": {
+      "calls": 11,
+      "totalMs": 33.99516271390894,
+      "avgMs": 3.0904693376280856,
+      "totalBytesTransferred": 172748
+    },
+    "browserSideTiming": {
+      "cloneTotal": 649.3000000715256,
+      "seekTotal": 120.30000019073486,
+      "renderTotal": 10.699999809265137,
+      "captureTotal": 780.8000001907349,
+      "canvasTotal": 6.9999998807907104,
+      "serializeTotal": 7.399999976158142
+    },
+    "writeFile": 0.463052000006428
+  },
+  "timestamp": "2026-02-05T10:45:30.708Z"
+}

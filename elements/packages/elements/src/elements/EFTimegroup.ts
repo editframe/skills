@@ -37,10 +37,8 @@ import {
   type ElementPositionInfo,
   getPositionInfoFromElement,
 } from "./ElementPositionInfo.js";
-import {
-  renderTimegroupToVideo,
-  type RenderToVideoOptions,
-} from "../preview/renderTimegroupToVideo.js";
+// Import only types - actual function loaded dynamically
+import type { RenderToVideoOptions } from "../preview/renderTimegroupToVideo.types.js";
 import type { PlaybackControllerUpdateEvent } from "../gui/PlaybackController.js";
 
 // Side-effect imports for workbench wrapping
@@ -1252,11 +1250,15 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
    * Captures each frame at the specified fps, encodes using WebCodecs via
    * MediaBunny, and downloads the resulting video.
    * 
+   * Uses dynamic import to only load render utilities in browser context.
+   * 
    * @param options - Rendering options (fps, codec, bitrate, filename, etc.)
    * @returns Promise that resolves when video is downloaded
    * @public
    */
   async renderToVideo(options?: RenderToVideoOptions): Promise<Uint8Array | undefined> {
+    // Dynamic import - only loads in browser context when actually called
+    const { renderTimegroupToVideo } = await import("../preview/renderTimegroupToVideo.js");
     return renderTimegroupToVideo(this, options);
   }
 
