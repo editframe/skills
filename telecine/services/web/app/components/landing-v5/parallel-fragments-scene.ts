@@ -162,11 +162,11 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
     parTrackMeshes.push(meshes);
   }
 
-  /* ── Sequential timeline copy (stays whole) ────────────────────── */
+  /* ── Sequential timeline copy (stays whole, no gaps) ─────────── */
   const seqGroup = new THREE.Group();
   const seqTrackMeshes: THREE.Mesh[][] = [];
   for (let s = 0; s < NUM_SEGS; s++) {
-    const meshes = buildTrackMeshes(seqGroup, s, segJoinedX(s));
+    const meshes = buildTrackMeshes(seqGroup, s, segTightX(s));
     seqTrackMeshes.push(meshes);
   }
   seqGroup.visible = false;
