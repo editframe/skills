@@ -1,0 +1,18 @@
+{
+  "testName": "audio-discontinuity-server",
+  "renderMode": "server",
+  "totalRenderTimeMs": 7695.744418000001,
+  "videoDurationMs": 2000,
+  "fps": 30,
+  "numFrames": 60,
+  "avgFrameTimeMs": 76.94977193333334,
+  "timing": {
+    "total": 7695.744418000001,
+    "bundleHtml": 2681.707835000001,
+    "getRenderInfo": 390.3592470000003,
+    "createAssetsBundle": 4.885930000000371,
+    "renderFragment": 4616.986316,
+    "writeFile": 1.7719630000010511
+  },
+  "timestamp": "2026-02-05T09:05:58.020Z"
+}

@@ -1,0 +1,16 @@
+{
+  "testName": "mp4-duration-browser-full-video-native",
+  "renderMode": "browser-full-video",
+  "canvasMode": "native",
+  "totalRenderTimeMs": 2639.129839000001,
+  "videoDurationMs": 2000,
+  "fps": 30,
+  "numFrames": 60,
+  "avgFrameTimeMs": 43.97517786666661,
+  "timing": {
+    "total": 2639.129839000001,
+    "renderFragment": 2638.5106719999967,
+    "writeFile": 0.541627000005974
+  },
+  "timestamp": "2026-02-05T09:02:36.010Z"
+}

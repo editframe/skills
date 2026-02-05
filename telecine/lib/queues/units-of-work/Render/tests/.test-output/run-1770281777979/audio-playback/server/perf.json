@@ -1,0 +1,18 @@
+{
+  "testName": "audio-playback-server",
+  "renderMode": "server",
+  "totalRenderTimeMs": 4973.447866999999,
+  "videoDurationMs": 1000,
+  "fps": 30,
+  "numFrames": 30,
+  "avgFrameTimeMs": 74.77510653333326,
+  "timing": {
+    "total": 4973.447866999999,
+    "bundleHtml": 2398.988623000001,
+    "getRenderInfo": 326.64048999999795,
+    "createAssetsBundle": 2.146091000002343,
+    "renderFragment": 2243.253195999998,
+    "writeFile": 2.407758000001195
+  },
+  "timestamp": "2026-02-05T08:56:46.475Z"
+}

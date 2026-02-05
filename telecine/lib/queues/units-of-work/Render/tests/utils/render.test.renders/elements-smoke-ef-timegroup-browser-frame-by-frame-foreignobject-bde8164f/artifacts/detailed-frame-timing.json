@@ -1,0 +1,102 @@
+[
+  {
+    "frames": [
+      {
+        "frameNumber": 1,
+        "captureMs": 37.60000002384186,
+        "canvasMs": 2.6999999284744263,
+        "blobMs": 15.800000071525574,
+        "serializeMs": 0.2999999523162842,
+        "ipcRoundTripMs": 57.48739299999943,
+        "ipcOverheadMs": 0.9873929999994289,
+        "totalCaptureMs": 57.59393799999816,
+        "jpegSize": 2142
+      },
+      {
+        "frameNumber": 0,
+        "captureMs": 50.89999997615814,
+        "canvasMs": 0.30000007152557373,
+        "blobMs": 5.100000023841858,
+        "serializeMs": 0.3999999761581421,
+        "ipcRoundTripMs": 57.65335600000253,
+        "ipcOverheadMs": 0.953355952318816,
+        "totalCaptureMs": 57.73110900000029,
+        "jpegSize": 2142
+      },
+      {
+        "frameNumber": 1,
+        "captureMs": 46,
+        "canvasMs": 0.19999992847442627,
+        "blobMs": 6.700000047683716,
+        "serializeMs": 0.6000000238418579,
+        "ipcRoundTripMs": 54.33949500000017,
+        "ipcOverheadMs": 0.83949500000017,
+        "totalCaptureMs": 54.3944969999975,
+        "jpegSize": 2142
+      },
+      {
+        "frameNumber": 2,
+        "captureMs": 45.10000002384186,
+        "canvasMs": 0.3999999761581421,
+        "blobMs": 6.799999952316284,
+        "serializeMs": 0.5,
+        "ipcRoundTripMs": 53.60376200000246,
+        "ipcOverheadMs": 0.8037620476861775,
+        "totalCaptureMs": 53.64088900000206,
+        "jpegSize": 2142
+      }
+    ],
+    "segmentIndex": "init",
+    "totalMs": 308.5431329999992
+  },
+  {
+    "frames": [
+      {
+        "frameNumber": 1,
+        "captureMs": 40.39999997615814,
+        "canvasMs": 1.7999999523162842,
+        "blobMs": 1.8000000715255737,
+        "serializeMs": 0.2999999523162842,
+        "ipcRoundTripMs": 45.36090100000001,
+        "ipcOverheadMs": 1.0609010476837284,
+        "totalCaptureMs": 45.414778000002116,
+        "jpegSize": 2142
+      },
+      {
+        "frameNumber": 0,
+        "captureMs": 46.39999997615814,
+        "canvasMs": 0.30000007152557373,
+        "blobMs": 6.299999952316284,
+        "serializeMs": 0.3999999761581421,
+        "ipcRoundTripMs": 54.20957500000077,
+        "ipcOverheadMs": 0.8095750238426263,
+        "totalCaptureMs": 54.25011699999959,
+        "jpegSize": 2142
+      },
+      {
+        "frameNumber": 1,
+        "captureMs": 44.299999952316284,
+        "canvasMs": 0.2999999523162842,
+        "blobMs": 7.200000047683716,
+        "serializeMs": 0.5,
+        "ipcRoundTripMs": 53.043367999998736,
+        "ipcOverheadMs": 0.743368047682452,
+        "totalCaptureMs": 53.08366099999694,
+        "jpegSize": 2142
+      },
+      {
+        "frameNumber": 2,
+        "captureMs": 44.699999928474426,
+        "canvasMs": 0.40000009536743164,
+        "blobMs": 6.899999976158142,
+        "serializeMs": 0.3999999761581421,
+        "ipcRoundTripMs": 53.288126999999804,
+        "ipcOverheadMs": 0.8881270238416619,
+        "totalCaptureMs": 53.37125500000184,
+        "jpegSize": 2142
+      }
+    ],
+    "segmentIndex": 0,
+    "totalMs": 290.3390209999998
+  }
+]

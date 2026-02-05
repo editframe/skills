@@ -1,9 +1,0 @@
-{
-  "renderInfo": {
-    "width": 540,
-    "height": 960,
-    "durationMs": 1000
-  },
-  "renderMode": "browser-full-video",
-  "canvasMode": "native"
-}

@@ -1,0 +1,16 @@
+{
+  "testName": "audio-discontinuity-browser-full-video-native",
+  "renderMode": "browser-full-video",
+  "canvasMode": "native",
+  "totalRenderTimeMs": 2908.757078999999,
+  "videoDurationMs": 2000,
+  "fps": 30,
+  "numFrames": 60,
+  "avgFrameTimeMs": 48.15240731666666,
+  "timing": {
+    "total": 2908.757078999999,
+    "renderFragment": 2889.1444389999997,
+    "writeFile": 1.1227120000039577
+  },
+  "timestamp": "2026-02-05T09:08:24.977Z"
+}

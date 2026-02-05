@@ -1,0 +1,17 @@
+{
+  "renderInfo": {
+    "width": 640,
+    "height": 360,
+    "durationMs": 2000
+  },
+  "renderMode": "browser-full-video",
+  "canvasMode": "native",
+  "timing": {
+    "totalMs": 2674,
+    "bundleMs": 1912,
+    "renderInfoMs": 168,
+    "renderMs": 588
+  },
+  "outputSizeBytes": 37610,
+  "timestamp": "2026-02-05T09:02:33.362Z"
+}
