@@ -513,11 +513,24 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
   }
 
   /**
-   * Async preparation - fetches frequency data from target.
+   * Async preparation - fetches frequency data from target and initializes canvas.
    * @implements FrameRenderable
    */
   async prepareFrame(timeMs: number, signal: AbortSignal): Promise<void> {
     if (!this.targetElement) return;
+
+    // Ensure canvas is initialized before rendering
+    // This must happen in prepareFrame (not renderFrame) to ensure layout is stable
+    if (!this.ctx) {
+      // Force layout computation
+      void this.offsetWidth;
+      
+      // Wait for next frame to ensure layout is fully stable
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      signal.throwIfAborted();
+      
+      this.ctx = this.initCanvas();
+    }
 
     // Get audio analysis data directly from target
     const [frequencyData, timeDomainData] = await Promise.all([
@@ -540,7 +553,12 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
   renderFrame(_timeMs: number): void {
     if (!this.targetElement) return;
 
-    this.ctx ||= this.initCanvas();
+    // Canvas should already be initialized in prepareFrame
+    // Fall back to lazy initialization for compatibility with non-FrameController contexts
+    if (!this.ctx) {
+      this.ctx = this.initCanvas();
+    }
+    
     const ctx = this.ctx;
     if (!ctx) return;
 

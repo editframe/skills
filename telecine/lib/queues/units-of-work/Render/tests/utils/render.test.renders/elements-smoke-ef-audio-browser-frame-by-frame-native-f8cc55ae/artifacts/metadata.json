@@ -12,24 +12,24 @@
   "renderMode": "browser-frame-by-frame",
   "canvasMode": "native",
   "timing": {
-    "totalMs": 2578,
-    "bundleMs": 1762,
-    "renderInfoMs": 149,
-    "renderMs": 663,
+    "totalMs": 3368,
+    "bundleMs": 2436,
+    "renderInfoMs": 179,
+    "renderMs": 748,
     "segments": [
       {
         "fragmentId": "init",
-        "timeMs": 331,
+        "timeMs": 369,
         "sizeBytes": 822
       },
       {
         "fragmentId": 0,
-        "timeMs": 331,
+        "timeMs": 377,
         "sizeBytes": 3992
       }
     ],
-    "avgSegmentMs": 331
+    "avgSegmentMs": 374
   },
   "outputSizeBytes": 4814,
-  "timestamp": "2026-02-05T00:13:54.981Z"
+  "timestamp": "2026-02-05T07:41:56.502Z"
 }
