@@ -6,6 +6,7 @@
 
 import { useRef, useEffect, useMemo, type ReactNode } from "react";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
+import { Text } from "@react-three/drei";
 import * as THREE from "three";
 
 /* ━━ Easing & helpers ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
@@ -390,6 +391,57 @@ function Floor() {
   );
 }
 
+/* ━━ 3D Text Labels (drei Text) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+function SceneLabel({ children, position, opacity, color = "white", fontSize = 0.18, bold, anchorX = "center" }: {
+  children: string;
+  position: [number, number, number];
+  opacity: number;
+  color?: string;
+  fontSize?: number;
+  bold?: boolean;
+  anchorX?: "left" | "center" | "right";
+}) {
+  if (opacity < 0.01) return null;
+  return (
+    <Text
+      position={position}
+      fontSize={fontSize}
+      color={color}
+      anchorX={anchorX}
+      anchorY="middle"
+      fontWeight={bold ? "bold" : "normal"}
+      fillOpacity={opacity}
+      outlineWidth={fontSize * 0.08}
+      outlineColor="#000000"
+      outlineOpacity={opacity * 0.6}
+    >
+      {children}
+    </Text>
+  );
+}
+
+function DurationLabel({ x, y, z, opacity, text }: {
+  x: number; y: number; z: number; opacity: number; text: string;
+}) {
+  if (opacity < 0.01) return null;
+  return (
+    <Text
+      position={[x, y, z]}
+      fontSize={0.12}
+      color={COL_BLUE_LT}
+      anchorX="center"
+      anchorY="middle"
+      fillOpacity={opacity}
+      outlineWidth={0.008}
+      outlineColor="#000000"
+      outlineOpacity={opacity * 0.5}
+    >
+      {text}
+    </Text>
+  );
+}
+
 /* ━━ GL Sync (for renderToVideo) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function GLSync() {
   const { gl } = useThree();
@@ -455,12 +507,77 @@ export function ParallelFragmentsR3FScene({ timeMs }: { timeMs: number }) {
 
   const barJitter = [0, 0.06, -0.04, 0.03] as const;
 
+  // ── 3D text opacity calculations ──
+  const titleOpacity = easeOut(prog(timeMs, 300, 800)) * (1 - easeOut(prog(timeMs, 1800, 2200)));
+  const questionOpacity = easeOut(prog(timeMs, 2200, 2600)) * (1 - easeOut(prog(timeMs, 2900, 3200)));
+  const sideLabelsOpacity = easeOut(prog(timeMs, P2_START + 400, P2_START + 800));
+  const subLabelsOpacity = easeOut(prog(timeMs, P2_START + 700, P2_START + 1100));
+  const segDurationOpacity = inP2 ? easeOut(prog(timeMs, P2_START + 600, P2_START + 1000)) : 0;
+  const processingOpacity = easeOut(prog(timeMs, P4_START + 1000, P4_START + 1400)) * (1 - easeOut(prog(timeMs, P4_PAR_DONE - 500, P4_PAR_DONE)));
+  const punchlineOpacity = easeOut(prog(timeMs, P5_START + 200, P5_START + 600));
+  const taglineOpacity = easeOut(prog(timeMs, P5_START + 800, P5_START + 1200));
+
   return (
     <>
       <CameraController timeMs={timeMs} />
       <Lighting timeMs={timeMs} />
       <Floor />
       <GLSync />
+
+      {/* ── 3D Text Labels ──────────────────────────────────────── */}
+      {/* Phase 1: Hero title */}
+      <SceneLabel position={[0, 0.7, 0.2]} opacity={titleOpacity} fontSize={0.22} bold>
+        A 60-second video composition
+      </SceneLabel>
+
+      {/* Phase 2 intro: The question */}
+      <SceneLabel position={[0, 0.7, 0.2]} opacity={questionOpacity} fontSize={0.22} bold>
+        How do you render it?
+      </SceneLabel>
+
+      {/* Side labels: Traditional vs Editframe */}
+      <SceneLabel position={[SEQ_X, 0.7, 0.5]} opacity={sideLabelsOpacity * (inP5 ? lerp(1, 0.2, p5) : 1)} color="#888888" fontSize={0.2} bold>
+        Traditional
+      </SceneLabel>
+      <SceneLabel position={[SEQ_X, 0.55, 0.5]} opacity={subLabelsOpacity * (inP5 ? lerp(1, 0.15, p5) : 1)} color="#777777" fontSize={0.11}>
+        One worker, start to finish
+      </SceneLabel>
+
+      <SceneLabel position={[PAR_X, 0.7, 0.5]} opacity={sideLabelsOpacity} color={COL_BLUE_LT} fontSize={0.2} bold>
+        Editframe
+      </SceneLabel>
+      <SceneLabel position={[PAR_X, 0.55, 0.5]} opacity={subLabelsOpacity} color="#aaaaaa" fontSize={0.11}>
+        Split into fragments, render in parallel
+      </SceneLabel>
+
+      {/* Duration labels on each segment after split */}
+      {Array.from({ length: NUM_SEGS }, (_, s) => {
+        const parLaneX = PAR_X + (s - 1.5) * LANE_SPREAD;
+        const segZ = inP4 ? lerp(0.5, NODE_Z, flyIn) : lerp(0, 0.5, p2);
+        return (
+          <DurationLabel
+            key={`dur-${s}`}
+            x={inP4 ? parLaneX : lerp(lerp(segTightX(s), segJoinedX(s), gapOpen), parLaneX, slideRight)}
+            y={-0.15}
+            z={segZ + 0.2}
+            opacity={segDurationOpacity * (inP4 ? lerp(1, 0.5, flyIn) : 1)}
+            text="15s"
+          />
+        );
+      })}
+
+      {/* Processing narration */}
+      <SceneLabel position={[PAR_X, -1.1, NODE_Z + 1.2]} opacity={processingOpacity} color="#aaaaaa" fontSize={0.12}>
+        All workers process simultaneously
+      </SceneLabel>
+
+      {/* Punchline */}
+      <SceneLabel position={[PAR_X + 0.3, -0.2, NODE_Z + 2.0 + (inP5 ? p5 * 0.6 : 0)]} opacity={punchlineOpacity} color={COL_BLUE_LT} fontSize={0.35} bold>
+        {"4\u00d7 faster"}
+      </SceneLabel>
+      <SceneLabel position={[PAR_X + 0.3, -0.5, NODE_Z + 2.0 + (inP5 ? p5 * 0.6 : 0)]} opacity={taglineOpacity} color="#aaaaaa" fontSize={0.12}>
+        Same quality. A fraction of the time.
+      </SceneLabel>
 
       {/* Phase 1: Unified timeline */}
       <UnifiedTimeline opacity={unifiedOpacity} emissive={lerp(0, 0.1, p1)} y={unifiedY} />

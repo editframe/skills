@@ -338,7 +338,7 @@ function JitDiagram() {
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 const SCENE_DUR = "14s";
-const JIT_SCENE_DUR = "14s";
+const JIT_SCENE_DUR = "20s";
 
 function FanOutDiagram() {
   const uid = useId();
@@ -434,74 +434,9 @@ function FanOutDiagram() {
           {/* R3F scene for live playback; vanilla fallback for render clones */}
           <ParallelFragmentsCanvas timeMs={timeMs} />
 
-          {/* ── Timed text overlays (bigger, stronger shadows) ──── */}
-
-          {/* Phase 1: hero moment (0.3s–1.8s) */}
-          <div className="ef-caption ef-caption-lg" style={{ top: "5%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 600ms 300ms backwards, efCaptionOut 400ms 1800ms forwards" }}>
-            A 60-second video composition
-          </div>
-
-          {/* Phase 2: the question (2.2s–2.9s) */}
-          <div className="ef-caption ef-caption-lg" style={{ top: "5%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 2200ms backwards, efCaptionOut 400ms 2900ms forwards" }}>
-            How do you render it?
-          </div>
-
-          {/* Phase 3: side labels (3.2s+) */}
-          <div className="ef-caption ef-caption-dim" style={{ top: "3%", left: "10%", animation: "efCaptionIn 400ms 3200ms backwards" }}>
-            Traditional
-          </div>
-          <div className="ef-caption ef-caption-sub" style={{ top: "9%", left: "10%", animation: "efCaptionIn 400ms 3600ms backwards" }}>
-            One worker, start to finish
-          </div>
-
-          <div className="ef-caption ef-caption-brand" style={{ top: "3%", right: "10%", animation: "efCaptionIn 400ms 3200ms backwards" }}>
-            Editframe
-          </div>
-          <div className="ef-caption ef-caption-sub" style={{ top: "9%", right: "10%", animation: "efCaptionIn 400ms 3600ms backwards" }}>
-            Split into fragments, render in parallel
-          </div>
-
-          {/* Phase 4: narrate (7s–8.5s) */}
-          <div className="ef-caption ef-caption-sub" style={{ bottom: "5%", left: "50%", transform: "translateX(-50%)", animation: "efCaptionIn 400ms 7000ms backwards, efCaptionOut 400ms 8500ms forwards" }}>
-            Every worker processes its fragment at the same time
-          </div>
-
-          {/* Phase 5: punchline (9.5s+) */}
-          <div className="ef-caption ef-caption-hero" style={{ bottom: "14%", right: "8%", animation: "efCaptionIn 500ms 9500ms backwards" }}>
-            {"4\u00d7 faster"}
-          </div>
-          <div className="ef-caption ef-caption-sub" style={{ bottom: "7%", right: "8%", animation: "efCaptionIn 400ms 10200ms backwards" }}>
-            Same quality. A fraction of the time.
-          </div>
+          {/* Text is now in 3D space via drei Text components */}
         </Timegroup>
       </Preview>
-
-      <style>{`
-        .ef-caption {
-          position: absolute;
-          pointer-events: none;
-          color: rgba(255,255,255,0.95);
-          font-size: 15px;
-          font-weight: 700;
-          letter-spacing: 0.03em;
-          text-shadow: 0 2px 12px rgba(0,0,0,0.8), 0 0 4px rgba(0,0,0,0.5);
-          white-space: nowrap;
-          opacity: 0;
-        }
-        .ef-caption-lg { font-size: 18px; font-weight: 800; }
-        .ef-caption-dim { color: rgba(255,255,255,0.4); font-size: 16px; }
-        .ef-caption-brand { font-size: 16px; font-weight: 800; color: #82b1ff; }
-        .ef-caption-sub { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.55); }
-        .ef-caption-hero { font-size: 28px; font-weight: 900; color: #82b1ff; text-shadow: 0 0 30px rgba(130,177,255,0.6), 0 2px 12px rgba(0,0,0,0.8); }
-        @keyframes efCaptionIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes efCaptionOut {
-          from { opacity: 1; }
-          to   { opacity: 0; }
-        }
-      `}</style>
 
       {/* ── Playback + render controls ────────────────────────── */}
       <div className="flex items-center gap-0 bg-[#111] overflow-hidden" style={{ borderRadius: "0 0 3px 3px" }}>
@@ -576,7 +511,7 @@ function JITStreamingDiagram() {
 
   // State to pass to React Three Fiber
   const [sceneTime, setSceneTime] = useState(0);
-  const [sceneDuration, setSceneDuration] = useState(14000);
+  const [sceneDuration, setSceneDuration] = useState(20000);
 
   useEffect(() => {
     if (!isClient) return;
