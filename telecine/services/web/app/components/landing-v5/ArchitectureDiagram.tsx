@@ -396,23 +396,15 @@ function FanOutDiagram() {
       }
 
       // ── Render clones: initializer creates a separate scene ──
-      // Use currentTimeMs (raw seek time) instead of ownCurrentTimeMs
-      // because the clone's OwnCurrentTimeController may not update
-      // between seekForRender calls.
       tg.initializer = (instance: HTMLElement & {
-        currentTimeMs?: number;
         ownCurrentTimeMs?: number;
         durationMs?: number;
-        addFrameTask?: (cb: (info: {
-          currentTimeMs: number;
-          ownCurrentTimeMs: number;
-          durationMs: number;
-        }) => void) => () => void;
+        addFrameTask?: (cb: (info: { ownCurrentTimeMs: number; durationMs: number }) => void) => () => void;
       }) => {
         if (instance === tg) return;
 
         let cloneScene: SceneHandle | null = null;
-        instance.addFrameTask?.(({ currentTimeMs, durationMs }) => {
+        instance.addFrameTask?.(({ ownCurrentTimeMs, durationMs }) => {
           if (!cloneScene) {
             const cloneCvs = instance.querySelector("canvas") as HTMLCanvasElement | null;
             if (!cloneCvs) return;
@@ -420,7 +412,7 @@ function FanOutDiagram() {
             const rect = cloneCvs.getBoundingClientRect();
             cloneScene.resize(rect.width || cloneCvs.clientWidth || 800, rect.height || cloneCvs.clientHeight || 500);
           }
-          cloneScene.update(currentTimeMs, durationMs);
+          cloneScene.update(ownCurrentTimeMs, durationMs);
         });
       };
 

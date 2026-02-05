@@ -437,6 +437,13 @@ export declare class TemporalMixinInterface {
   get ownCurrentTimeMs(): number;
 
   /**
+   * Set the base local time (ms) used by ownCurrentTimeMs when no playback
+   * controller is present. Used by seekForRender() on render clones.
+   * @internal
+   */
+  _setLocalTimeMs(value: number): void;
+
+  /**
    * Element's current time for progress calculation.
    * For timegroups: their timeline currentTimeMs
    * For other temporal elements: their ownCurrentTimeMs
@@ -1021,6 +1028,16 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
     }
 
     #currentTimeMs = 0;
+
+    /**
+     * Set the base local time (ms) used by ownCurrentTimeMs when no playback
+     * controller is present. Called by EFTimegroup.seekForRender() to keep the
+     * mixin's internal time in sync with the timegroup's own time state.
+     * @internal
+     */
+    _setLocalTimeMs(value: number) {
+      this.#currentTimeMs = value;
+    }
 
     /**
      * The current time of the element within itself.
