@@ -1,0 +1,18 @@
+{
+  "testName": "elements-smoke-multiple-elements-server",
+  "renderMode": "server",
+  "totalRenderTimeMs": 2621.5648409999994,
+  "videoDurationMs": 100,
+  "fps": 30,
+  "numFrames": 3,
+  "avgFrameTimeMs": 144.9699959999998,
+  "timing": {
+    "total": 2621.5648409999994,
+    "bundleHtml": 1891.301077,
+    "getRenderInfo": 289.4704590000001,
+    "createAssetsBundle": 0.6511140000002342,
+    "renderFragment": 434.90998799999943,
+    "writeFile": 5.212745000000723
+  },
+  "timestamp": "2026-02-05T00:12:31.581Z"
+}

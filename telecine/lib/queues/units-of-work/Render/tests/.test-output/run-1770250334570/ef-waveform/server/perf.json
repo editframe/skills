@@ -1,0 +1,18 @@
+{
+  "testName": "elements-smoke-ef-waveform-server",
+  "renderMode": "server",
+  "totalRenderTimeMs": 2329.5781019999995,
+  "videoDurationMs": 100,
+  "fps": 30,
+  "numFrames": 3,
+  "avgFrameTimeMs": 152.4402859999997,
+  "timing": {
+    "total": 2329.5781019999995,
+    "bundleHtml": 1723.3409400000019,
+    "getRenderInfo": 145.78839900000094,
+    "createAssetsBundle": 1.6454720000001544,
+    "renderFragment": 457.32085799999913,
+    "writeFile": 1.4708500000015192
+  },
+  "timestamp": "2026-02-05T00:12:38.874Z"
+}

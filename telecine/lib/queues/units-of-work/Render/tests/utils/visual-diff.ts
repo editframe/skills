@@ -273,7 +273,7 @@ export interface StrategyComparisonResult {
 }
 
 /**
- * Compare frames using odiff (faster, more accurate than ImageMagick)
+ * Compare frames using ImageMagick compare
  */
 export async function compareFramesWithOdiff(
   frame1Path: string,
@@ -294,35 +294,58 @@ export async function compareFramesWithOdiff(
   await mkdir(path.dirname(diffOutputPath), { recursive: true });
 
   try {
-    // Use odiff for comparison
-    // odiff exits with 0 if images match, non-zero if they differ
+    // Use ImageMagick compare with AE (Absolute Error) metric
+    // compare exits with non-zero when images differ
     const result = execSync(
-      `odiff --threshold ${threshold} --diff-image "${diffOutputPath}" "${frame1Path}" "${frame2Path}"`,
-      { encoding: "utf8", stdio: "pipe" },
+      `compare -metric AE -fuzz ${threshold * 100}% "${frame1Path}" "${frame2Path}" "${diffOutputPath}" 2>&1`,
+      { encoding: "utf8" },
     );
 
-    // Parse odiff output: "Pixel difference: 1234 (0.5%)"
-    const match = result.match(/Pixel difference: (\d+) \(([\d.]+)%\)/);
-    const diffPixels = match ? parseInt(match[1]) : 0;
-    const diffPercentage = match ? parseFloat(match[2]) : 0;
+    // If we got here, images match within threshold
+    const diffPixels = parseInt(result.trim()) || 0;
+    
+    // Get image dimensions to calculate percentage
+    const identifyResult = execSync(
+      `identify -format "%w %h" "${frame1Path}"`,
+      { encoding: "utf8" },
+    );
+    const [width, height] = identifyResult.trim().split(" ").map(Number);
+    const totalPixels = width * height;
+    const diffPercentage = totalPixels > 0 ? (diffPixels / totalPixels) * 100 : 0;
 
     return {
-      passed: true,
+      passed: diffPercentage <= threshold * 100,
       diffPercentage,
       diffPixels,
     };
   } catch (error: any) {
-    // odiff exits with non-zero when differences exceed threshold
-    const output = error.stdout?.toString() || error.stderr?.toString() || "";
-    const match = output.match(/Pixel difference: (\d+) \(([\d.]+)%\)/);
-    const diffPixels = match ? parseInt(match[1]) : 0;
-    const diffPercentage = match ? parseFloat(match[2]) : 0;
+    // ImageMagick exits with non-zero when differences found
+    const stderr = error.stderr?.toString() || error.stdout?.toString() || "";
+    const diffPixels = parseInt(stderr.trim()) || 0;
 
-    return {
-      passed: false,
-      diffPercentage,
-      diffPixels,
-    };
+    // Get image dimensions to calculate percentage
+    try {
+      const identifyResult = execSync(
+        `identify -format "%w %h" "${frame1Path}"`,
+        { encoding: "utf8" },
+      );
+      const [width, height] = identifyResult.trim().split(" ").map(Number);
+      const totalPixels = width * height;
+      const diffPercentage = totalPixels > 0 ? (diffPixels / totalPixels) * 100 : 0;
+
+      return {
+        passed: diffPercentage <= threshold * 100,
+        diffPercentage,
+        diffPixels,
+      };
+    } catch {
+      // If we can't get dimensions, just return the raw pixel count
+      return {
+        passed: false,
+        diffPercentage: 100,
+        diffPixels,
+      };
+    }
   }
 }
 

@@ -1,0 +1,18 @@
+{
+  "testName": "elements-smoke-nested-timegroups-server",
+  "renderMode": "server",
+  "totalRenderTimeMs": 2517.5175440000003,
+  "videoDurationMs": 100,
+  "fps": 30,
+  "numFrames": 3,
+  "avgFrameTimeMs": 172.6549233333335,
+  "timing": {
+    "total": 2517.5175440000003,
+    "bundleHtml": 1831.3510509999996,
+    "getRenderInfo": 163.52451699999983,
+    "createAssetsBundle": 1.1422509999993053,
+    "renderFragment": 517.9647700000005,
+    "writeFile": 3.505803999998534
+  },
+  "timestamp": "2026-02-05T00:01:49.886Z"
+}

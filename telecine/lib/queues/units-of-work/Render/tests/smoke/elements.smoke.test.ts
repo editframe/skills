@@ -234,7 +234,7 @@ describe("Elements Smoke Tests", { timeout: 60000 }, () => {
           const results = await compareStrategies(
             testOutputDir,
             strategyNames,
-            { threshold: 0.1, framesPerSecond: 1 }
+            { threshold: 0.1, framesPerSecond: 30 }
           );
 
           // Check for failures

@@ -7,11 +7,11 @@
   "renderMode": "browser-full-video",
   "canvasMode": "native",
   "timing": {
-    "totalMs": 2106,
-    "bundleMs": 1733,
-    "renderInfoMs": 148,
-    "renderMs": 221
+    "totalMs": 2045,
+    "bundleMs": 1690,
+    "renderInfoMs": 146,
+    "renderMs": 207
   },
   "outputSizeBytes": 2018,
-  "timestamp": "2026-02-04T23:15:17.897Z"
+  "timestamp": "2026-02-05T00:13:07.912Z"
 }

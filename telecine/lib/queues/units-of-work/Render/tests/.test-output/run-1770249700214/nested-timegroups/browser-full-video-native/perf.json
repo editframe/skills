@@ -1,0 +1,16 @@
+{
+  "testName": "elements-smoke-nested-timegroups-browser-full-video-native",
+  "renderMode": "browser-full-video",
+  "canvasMode": "native",
+  "totalRenderTimeMs": 2054.558169,
+  "videoDurationMs": 100,
+  "fps": 30,
+  "numFrames": 3,
+  "avgFrameTimeMs": 684.4704023333337,
+  "timing": {
+    "total": 2054.558169,
+    "renderFragment": 2053.411207000001,
+    "writeFile": 1.0628790000009758
+  },
+  "timestamp": "2026-02-05T00:01:58.968Z"
+}
