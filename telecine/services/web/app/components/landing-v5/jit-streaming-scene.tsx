@@ -230,9 +230,15 @@ function DataFlow({ currentTimeMs }: { currentTimeMs: number }) {
   const pointsRef = useRef<THREE.Points>(null);
   const PARTICLE_COUNT = 200;
 
-  // Initialize particle data
-  const particleData = useRef<{ speeds: Float32Array }>({
+  // Initialize particle data with deterministic random offsets
+  const particleData = useRef<{
+    speeds: Float32Array;
+    offsetsX: Float32Array;
+    offsetsZ: Float32Array;
+  }>({
     speeds: new Float32Array(PARTICLE_COUNT).map(() => 0.3 + Math.random() * 0.7),
+    offsetsX: new Float32Array(PARTICLE_COUNT).map(() => (Math.random() - 0.5) * 0.2),
+    offsetsZ: new Float32Array(PARTICLE_COUNT).map(() => (Math.random() - 0.5) * 0.3),
   });
 
   useFrame(() => {
@@ -244,26 +250,28 @@ function DataFlow({ currentTimeMs }: { currentTimeMs: number }) {
       mat.opacity = 0.8;
 
       const positions = pointsRef.current.geometry.attributes.position!.array as Float32Array;
-      const speeds = particleData.current.speeds;
+      const { speeds, offsetsX, offsetsZ } = particleData.current;
 
       // Two paths: URL → JIT and JIT → Renderer
       for (let i = 0; i < PARTICLE_COUNT; i++) {
         const speed = speeds[i]!;
+        const offsetX = offsetsX[i]!;
+        const offsetZ = offsetsZ[i]!;
         const isFirstPath = i < PARTICLE_COUNT / 2;
 
-        // Progress along path
+        // Progress along path - purely deterministic based on currentTimeMs
         const t = ((currentTimeMs - P3_START) * speed * 0.0008 + i * 0.05) % 1;
 
         if (isFirstPath) {
           // URL (-4, 0.5) → JIT (0, 0.5)
-          positions[i * 3] = lerp(-4, 0, t) + (Math.random() - 0.5) * 0.2;
+          positions[i * 3] = lerp(-4, 0, t) + offsetX;
           positions[i * 3 + 1] = 0.5 + Math.sin(t * Math.PI * 2) * 0.3;
-          positions[i * 3 + 2] = (Math.random() - 0.5) * 0.3;
+          positions[i * 3 + 2] = offsetZ;
         } else {
           // JIT (0, 0.5) → Renderer (4, 0.5)
-          positions[i * 3] = lerp(0, 4, t) + (Math.random() - 0.5) * 0.2;
+          positions[i * 3] = lerp(0, 4, t) + offsetX;
           positions[i * 3 + 1] = 0.5 + Math.sin(t * Math.PI * 2) * 0.3;
-          positions[i * 3 + 2] = (Math.random() - 0.5) * 0.3;
+          positions[i * 3 + 2] = offsetZ;
         }
       }
 
