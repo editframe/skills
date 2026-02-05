@@ -28,11 +28,26 @@ const TRACK_COLOR = [COL_VIDEO, COL_AUDIO, COL_TEXT] as const;
 const TRACK_Y = [0.15, 0.0, -0.09] as const;
 const TOTAL_W = SEG_W * NUM_SEGS + SEG_GAP * (NUM_SEGS - 1);
 
+// Per-segment clip layouts (used after splitting)
 const CLIP_LAYOUTS = [
   [{ wPct: 1.0, xPct: 0 }, { wPct: 0.85, xPct: 0.05 }, { wPct: 0.35, xPct: 0.32 }],
   [{ wPct: 1.0, xPct: 0 }, { wPct: 0.65, xPct: 0.20 }, { wPct: 0.50, xPct: 0.05 }],
   [{ wPct: 1.0, xPct: 0 }, { wPct: 0.90, xPct: 0 },    { wPct: 0.30, xPct: 0.55 }],
   [{ wPct: 1.0, xPct: 0 }, { wPct: 0.55, xPct: 0.25 }, { wPct: 0.45, xPct: 0.28 }],
+] as const;
+
+// Full-width clip layouts for the unified (pre-split) timeline
+// These span across what will become segment boundaries
+const UNIFIED_CLIPS = [
+  // Video: one continuous clip
+  { track: 0, startPct: 0, endPct: 1.0 },
+  // Audio: spans segments 0-2, then another in segment 3
+  { track: 1, startPct: 0.02, endPct: 0.68 },
+  { track: 1, startPct: 0.74, endPct: 0.98 },
+  // Text/captions: three short clips scattered
+  { track: 2, startPct: 0.05, endPct: 0.22 },
+  { track: 2, startPct: 0.38, endPct: 0.58 },
+  { track: 2, startPct: 0.72, endPct: 0.92 },
 ] as const;
 
 const NODE_SIZE = 0.45;
@@ -159,7 +174,46 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
     return -totalTight / 2 + SEG_W / 2 + i * SEG_W;
   }
 
-  /* ── Parallel segments ─────────────────────────────────────────── */
+  /* ── Build unified (pre-split) timeline ─────────────────────────── */
+  function buildUnifiedTimeline(parent: THREE.Group) {
+    const meshes: THREE.Mesh[] = [];
+    const totalTight = SEG_W * NUM_SEGS;
+    // Full-width container backdrop
+    const bg = new THREE.Mesh(
+      new THREE.BoxGeometry(totalTight, 0.40, TRACK_D + 0.02),
+      new THREE.MeshStandardMaterial({ color: 0x3d4158, roughness: 0.8, transparent: true, opacity: 0 }),
+    );
+    bg.position.set(0, 0.02, 0);
+    bg.receiveShadow = true;
+    parent.add(bg);
+    meshes.push(bg);
+
+    for (const clip of UNIFIED_CLIPS) {
+      const clipW = totalTight * (clip.endPct - clip.startPct);
+      const clipX = -totalTight / 2 + totalTight * clip.startPct + clipW / 2;
+      const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(clipW, TRACK_H[clip.track]!, TRACK_D),
+        new THREE.MeshPhysicalMaterial({
+          color: TRACK_COLOR[clip.track]!, roughness: 0.12, metalness: 0.15,
+          clearcoat: 1.0, clearcoatRoughness: 0.15,
+          transparent: true, opacity: 0,
+          emissive: new THREE.Color(TRACK_COLOR[clip.track]!), emissiveIntensity: 0.1,
+        }),
+      );
+      mesh.position.set(clipX, TRACK_Y[clip.track]!, 0);
+      mesh.castShadow = true;
+      parent.add(mesh);
+      meshes.push(mesh);
+    }
+    return meshes;
+  }
+
+  /* ── Unified timeline (shown in Phase 1, before split) ──────────── */
+  const unifiedGroup = new THREE.Group();
+  const unifiedMeshes = buildUnifiedTimeline(unifiedGroup);
+  scene.add(unifiedGroup);
+
+  /* ── Parallel segments (shown after split) ──────────────────────── */
   const parSegGroups: THREE.Group[] = [];
   const parTrackMeshes: THREE.Mesh[][] = [];
   for (let s = 0; s < NUM_SEGS; s++) {
@@ -169,14 +223,12 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
     parSegGroups.push(group);
     parTrackMeshes.push(meshes);
   }
+  // Start hidden — only appear after the split
+  for (const g of parSegGroups) g.visible = false;
 
-  /* ── Sequential timeline (no gaps) ─────────────────────────────── */
+  /* ── Sequential timeline (unified look, never split) ────────────── */
   const seqGroup = new THREE.Group();
-  const seqTrackMeshes: THREE.Mesh[][] = [];
-  for (let s = 0; s < NUM_SEGS; s++) {
-    const meshes = buildTrackMeshes(seqGroup, s, segTightX(s));
-    seqTrackMeshes.push(meshes);
-  }
+  const seqMeshes = buildUnifiedTimeline(seqGroup);
   seqGroup.visible = false;
   scene.add(seqGroup);
 
@@ -318,21 +370,28 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
     camera.position.copy(camPos);
     camera.lookAt(camTar);
 
-    // ── PHASE 1: Close-up, one solid timeline ──────────────────────
+    // ── PHASE 1: Close-up, unified timeline (no visible splits) ────
     const p1 = easeOut(prog(timeMs, 0, P1_END));
+    unifiedGroup.visible = true;
+    unifiedGroup.position.set(0, lerp(1.0, 0.3, p1), 0);
+    unifiedGroup.scale.setScalar(1);
+    setTrackOpacity(unifiedMeshes, lerp(0, 0.6, p1), lerp(0, 1.0, p1));
+    setTrackEmissive(unifiedMeshes, lerp(0, 0.1, p1));
+
+    // Segments hidden until split
+    for (const g of parSegGroups) g.visible = false;
     for (let s = 0; s < NUM_SEGS; s++) {
-      parSegGroups[s]!.position.set(segTightX(s), lerp(1.0, 0.3, p1), 0);
       parSegGroups[s]!.rotation.set(0, 0, 0);
       parSegGroups[s]!.scale.setScalar(1);
-      setTrackOpacity(parTrackMeshes[s]!, lerp(0, 0.6, p1), lerp(0, 1.0, p1));
-      setTrackEmissive(parTrackMeshes[s]!, lerp(0, 0.1, p1));
+      setTrackOpacity(parTrackMeshes[s]!, 0, 0);
     }
+
     seqGroup.visible = false;
     seqGroup.position.set(0, 0.3, 0);
     seqGroup.scale.setScalar(1);
-    for (const meshes of seqTrackMeshes) setTrackOpacity(meshes, 0, 0);
+    setTrackOpacity(seqMeshes, 0, 0);
 
-    // Reset
+    // Reset everything else
     seqNode.mat.opacity = 0; seqNode.edgeMat.opacity = 0; seqNode.mesh.castShadow = false;
     for (const n of parNodes) { n.mat.opacity = 0; n.edgeMat.opacity = 0; n.mesh.castShadow = false; }
     completeMat.opacity = 0; completeBlock.castShadow = false;
@@ -342,11 +401,11 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
     seqBar.bgMat.opacity = 0; seqBar.fillMat.opacity = 0; seqBar.fill.scale.x = 0;
     for (const b of parBars) { b.bgMat.opacity = 0; b.fillMat.opacity = 0; b.fill.scale.x = 0; }
 
-    // ── PHASE 2: Laser cut + duplicate ──────────────────────────
+    // ── PHASE 2: Laser cut, crossfade unified→segments, duplicate ─
     if (timeMs >= P2_START) {
       const p2 = easeInOut(prog(timeMs, P2_START, P2_END));
 
-      // Sequential sweep: each cut line flashes at a staggered time
+      // Laser sweep L→R
       for (let c = 0; c < cutLines.length; c++) {
         const sweepDelay = c * 120;
         const cutProg = prog(timeMs, P2_START + sweepDelay, P2_START + sweepDelay + 200);
@@ -354,31 +413,36 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
         const brightness = cutProg * (1 - cutFade);
         cutMats[c]!.opacity = brightness;
         cutLines[c]!.position.x = segTightX(c) + SEG_W / 2;
+        cutLines[c]!.position.y = 0.3;
       }
       cutFlash.intensity = prog(timeMs, P2_START, P2_START + 200) * (1 - prog(timeMs, P2_START + 150, P2_START + 500)) * 8;
 
-      // Sequential copy
+      // Crossfade: unified fades out, segments fade in
+      const crossfade = easeOut(prog(timeMs, P2_START + 200, P2_START + 600));
+      setTrackOpacity(unifiedMeshes, (1 - crossfade) * 0.6, (1 - crossfade) * 1.0);
+      if (crossfade >= 1) unifiedGroup.visible = false;
+
+      // Segments appear and separate
+      for (const g of parSegGroups) g.visible = true;
+      for (let s = 0; s < NUM_SEGS; s++) {
+        setTrackOpacity(parTrackMeshes[s]!, crossfade * 0.6, crossfade * 1.0);
+        const tightX = segTightX(s);
+        const gappedX = segJoinedX(s);
+        const parLaneX = PAR_X + (s - 1.5) * LANE_SPREAD;
+        const gapOpen = easeOut(prog(timeMs, P2_START + 200, P2_START + 700));
+        const slideRight = easeInOut(prog(timeMs, P2_START + 500, P2_END));
+        const currentX = lerp(lerp(tightX, gappedX, gapOpen), parLaneX, slideRight);
+        parSegGroups[s]!.position.set(currentX, 0.3, lerp(0, 0.5, p2));
+        setTrackEmissive(parTrackMeshes[s]!, lerp(0.1, 0.2, p2));
+      }
+
+      // Sequential copy slides left (unified look)
       seqGroup.visible = true;
       const seqAppear = easeOut(prog(timeMs, P2_START + 300, P2_END));
       seqGroup.position.x = lerp(0, SEQ_X, seqAppear);
       seqGroup.position.y = 0.3;
       seqGroup.position.z = lerp(0, 0.5, seqAppear);
-      for (const meshes of seqTrackMeshes) {
-        setTrackOpacity(meshes, seqAppear * 0.4, seqAppear * 0.55);
-      }
-
-      // Parallel segments split and slide
-      const gapOpen = easeOut(prog(timeMs, P2_START + 100, P2_START + 700));
-      const slideRight = easeInOut(prog(timeMs, P2_START + 400, P2_END));
-      for (let s = 0; s < NUM_SEGS; s++) {
-        const tightX = segTightX(s);
-        const gappedX = segJoinedX(s);
-        const parLaneX = PAR_X + (s - 1.5) * LANE_SPREAD;
-        const currentX = lerp(lerp(tightX, gappedX, gapOpen), parLaneX, slideRight);
-        parSegGroups[s]!.position.x = currentX;
-        parSegGroups[s]!.position.z = lerp(0, 0.5, p2);
-        setTrackEmissive(parTrackMeshes[s]!, lerp(0.1, 0.2, p2));
-      }
+      setTrackOpacity(seqMeshes, seqAppear * 0.4, seqAppear * 0.55);
     }
 
     // ── PHASE 3: Workers reveal ────────────────────────────────
@@ -405,10 +469,8 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
       seqGroup.position.y = lerp(0.3, 0, flyIn);
       seqGroup.position.z = lerp(0.5, NODE_Z - 0.3, flyIn);
       seqGroup.scale.setScalar(lerp(1, 0.50, flyIn));
-      for (const meshes of seqTrackMeshes) {
-        setTrackOpacity(meshes, 0.25, lerp(0.55, 0.3, processing));
-        setTrackEmissive(meshes, 0.02);
-      }
+      setTrackOpacity(seqMeshes, 0.25, lerp(0.55, 0.3, processing));
+      setTrackEmissive(seqMeshes, 0.02);
       seqNode.mat.emissiveIntensity = 0.05 + Math.sin(processing * Math.PI * 3) * 0.03;
       seqNode.mesh.rotation.y = Math.sin(processing * Math.PI * 2) * 0.02;
 
@@ -490,9 +552,7 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
       seqGroup.position.z = (NODE_Z - 0.3) - p5 * 1.5;
       seqGroup.scale.setScalar(lerp(0.50, 0.35, p5));
       seqNode.mesh.position.z = NODE_Z - p5 * 1.5;
-      for (const meshes of seqTrackMeshes) {
-        setTrackOpacity(meshes, lerp(0.25, 0.08, p5), lerp(0.3, 0.12, p5));
-      }
+      setTrackOpacity(seqMeshes, lerp(0.25, 0.08, p5), lerp(0.3, 0.12, p5));
       seqNode.mat.opacity = lerp(0.6, 0.15, p5);
     }
 
