@@ -32,7 +32,7 @@ export const videoElementProperties: PropertyDefinition[] = [
     htmlAttribute: "src",
   },
   {
-    name: "trimStart",
+    name: "trimStartMs",
     type: "timestring",
     access: "R/W",
     useCase: "Relative trimming from start",
@@ -42,7 +42,7 @@ export const videoElementProperties: PropertyDefinition[] = [
     htmlAttribute: "trimstart",
   },
   {
-    name: "trimEnd",
+    name: "trimEndMs",
     type: "timestring",
     access: "R/W",
     useCase: "Relative trimming from end",
@@ -52,7 +52,7 @@ export const videoElementProperties: PropertyDefinition[] = [
     htmlAttribute: "trimend",
   },
   {
-    name: "sourceIn",
+    name: "sourceInMs",
     type: "timestring",
     access: "R/W",
     useCase: "Absolute source start time",
@@ -62,7 +62,7 @@ export const videoElementProperties: PropertyDefinition[] = [
     htmlAttribute: "sourcein",
   },
   {
-    name: "sourceOut",
+    name: "sourceOutMs",
     type: "timestring",
     access: "R/W",
     useCase: "Absolute source end time",
