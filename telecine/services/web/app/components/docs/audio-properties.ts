@@ -11,6 +11,7 @@ export interface PropertyDefinition {
 }
 
 export const audioElementProperties: PropertyDefinition[] = [
+  // Media Source
   {
     name: "assetId",
     type: "string",
@@ -30,9 +31,34 @@ export const audioElementProperties: PropertyDefinition[] = [
     domReadable: true,
     domWritable: true,
     htmlAttribute: "src",
+    defaultValue: '""',
+  },
+  // Audio Control
+  {
+    name: "volume",
+    type: "number",
+    access: "R/W",
+    useCase: "Audio volume level (0.0 to 1.0)",
+    category: "Audio Control",
+    domReadable: true,
+    domWritable: true,
+    htmlAttribute: "volume",
+    defaultValue: "1.0",
   },
   {
-    name: "trimStart",
+    name: "mute",
+    type: "boolean",
+    access: "R/W",
+    useCase: "Mute audio output",
+    category: "Audio Control",
+    domReadable: true,
+    domWritable: true,
+    htmlAttribute: "mute",
+    defaultValue: "false",
+  },
+  // Trimming & Editing
+  {
+    name: "trimStartMs",
     type: "timestring",
     access: "R/W",
     useCase: "Relative trimming from start",
@@ -42,7 +68,7 @@ export const audioElementProperties: PropertyDefinition[] = [
     htmlAttribute: "trimstart",
   },
   {
-    name: "trimEnd",
+    name: "trimEndMs",
     type: "timestring",
     access: "R/W",
     useCase: "Relative trimming from end",
@@ -52,7 +78,7 @@ export const audioElementProperties: PropertyDefinition[] = [
     htmlAttribute: "trimend",
   },
   {
-    name: "sourceIn",
+    name: "sourceInMs",
     type: "timestring",
     access: "R/W",
     useCase: "Absolute source start time",
@@ -62,7 +88,7 @@ export const audioElementProperties: PropertyDefinition[] = [
     htmlAttribute: "sourcein",
   },
   {
-    name: "sourceOut",
+    name: "sourceOutMs",
     type: "timestring",
     access: "R/W",
     useCase: "Absolute source end time",
@@ -71,6 +97,7 @@ export const audioElementProperties: PropertyDefinition[] = [
     domWritable: true,
     htmlAttribute: "sourceout",
   },
+  // Time Coordinates
   {
     name: "startTimeMs",
     type: "number",
@@ -91,17 +118,50 @@ export const audioElementProperties: PropertyDefinition[] = [
     name: "durationMs",
     type: "number",
     access: "R",
-    useCase: "Element duration",
+    useCase: "Computed element duration",
     category: "Time Coordinates",
     domReadable: true,
   },
   {
+    name: "duration",
+    type: "timestring",
+    access: "R/W",
+    useCase: "Explicit duration override",
+    category: "Time Coordinates",
+    domReadable: true,
+    domWritable: true,
+    htmlAttribute: "duration",
+  },
+  {
+    name: "offset",
+    type: "timestring",
+    access: "R/W",
+    useCase: "Offset from parent start time",
+    category: "Time Coordinates",
+    domReadable: true,
+    domWritable: true,
+    htmlAttribute: "offset",
+    defaultValue: "0",
+  },
+  {
+    name: "startOffsetMs",
+    type: "number",
+    access: "R/W",
+    useCase: "Start offset in milliseconds",
+    category: "Time Coordinates",
+    domReadable: true,
+    domWritable: true,
+    htmlAttribute: "startoffset",
+    defaultValue: "0",
+  },
+  {
     name: "currentTimeMs",
     type: "number",
-    access: "R",
+    access: "R/W",
     useCase: "Current time in root timeline",
     category: "Time Coordinates",
     domReadable: true,
+    domWritable: true,
   },
   {
     name: "ownCurrentTimeMs",
@@ -119,6 +179,19 @@ export const audioElementProperties: PropertyDefinition[] = [
     category: "Time Coordinates",
     domReadable: true,
   },
+  // Playback
+  {
+    name: "loop",
+    type: "boolean",
+    access: "R/W",
+    useCase: "Loop playback when reaching end",
+    category: "Playback",
+    domReadable: true,
+    domWritable: true,
+    htmlAttribute: "loop",
+    defaultValue: "false",
+  },
+  // Hierarchy
   {
     name: "parentTimegroup",
     type: "<ef-timegroup> | null",
@@ -135,6 +208,41 @@ export const audioElementProperties: PropertyDefinition[] = [
     category: "Hierarchy",
     domReadable: true,
   },
+  // Performance & Buffering
+  {
+    name: "audioBufferDurationMs",
+    type: "number",
+    access: "R/W",
+    useCase: "Audio buffer duration (ms)",
+    category: "Performance & Buffering",
+    domReadable: true,
+    domWritable: true,
+    htmlAttribute: "audio-buffer-duration",
+    defaultValue: "10000",
+  },
+  {
+    name: "maxAudioBufferFetches",
+    type: "number",
+    access: "R/W",
+    useCase: "Parallel audio segment fetch limit",
+    category: "Performance & Buffering",
+    domReadable: true,
+    domWritable: true,
+    htmlAttribute: "max-audio-buffer-fetches",
+    defaultValue: "2",
+  },
+  {
+    name: "enableAudioBuffering",
+    type: "boolean",
+    access: "R/W",
+    useCase: "Enable/disable audio buffering",
+    category: "Performance & Buffering",
+    domReadable: true,
+    domWritable: true,
+    htmlAttribute: "enable-audio-buffering",
+    defaultValue: "true",
+  },
+  // Audio Analysis
   {
     name: "fftSize",
     type: "number",
@@ -144,7 +252,7 @@ export const audioElementProperties: PropertyDefinition[] = [
     domReadable: true,
     domWritable: true,
     htmlAttribute: "fft-size",
-    defaultValue: "512",
+    defaultValue: "128",
   },
   {
     name: "fftDecay",
@@ -166,7 +274,7 @@ export const audioElementProperties: PropertyDefinition[] = [
     domReadable: true,
     domWritable: true,
     htmlAttribute: "fft-gain",
-    defaultValue: "3",
+    defaultValue: "3.0",
   },
   {
     name: "interpolateFrequencies",
@@ -177,17 +285,6 @@ export const audioElementProperties: PropertyDefinition[] = [
     domReadable: true,
     domWritable: true,
     htmlAttribute: "interpolate-frequencies",
-    defaultValue: "false",
-  },
-  {
-    name: "mute",
-    type: "boolean",
-    access: "R/W",
-    useCase: "Mute audio output",
-    category: "Audio Analysis",
-    domReadable: true,
-    domWritable: true,
-    htmlAttribute: "mute",
     defaultValue: "false",
   },
 ];
