@@ -18,10 +18,17 @@ electronApp.commandLine.appendSwitch("disable-dev-shm-usage");
 // Additional synchronization flags to improve timing accuracy
 electronApp.commandLine.appendSwitch("disable-backgrounding-occluded-windows");
 electronApp.commandLine.appendSwitch("disable-background-timer-throttling");
-// electronApp.commandLine.appendSwitch("disable-frame-rate-limit");
+electronApp.commandLine.appendSwitch("disable-frame-rate-limit");
 electronApp.commandLine.appendSwitch("disable-gpu-vsync");
 electronApp.commandLine.appendSwitch("disable-software-vsync");
 electronApp.commandLine.appendSwitch("disable-accelerated-video-decode");
+
+// Enable native canvas mode (drawElementImage API)
+// Requires Chrome Canary or Chromium with experimental features enabled
+// This provides ~1.76x faster rendering vs foreignObject serialization
+electronApp.commandLine.appendSwitch("enable-features", "CanvasDrawElement");
+electronApp.commandLine.appendSwitch("enable-accelerated-2d-canvas");
+electronApp.commandLine.appendSwitch("use-angle", "default");
 
 // Curent debugging flags
 

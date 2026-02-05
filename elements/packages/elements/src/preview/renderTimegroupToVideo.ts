@@ -74,6 +74,7 @@ export interface RenderToVideoOptions {
   benchmarkMode?: boolean;
   customWritableStream?: WritableStream<Uint8Array>; // For programmatic streaming (CLI/Playwright)
   progressPreviewInterval?: number; // How often to generate preview thumbnails (default: 60 frames, 0 = disabled)
+  canvasMode?: "native" | "foreignObject"; // Rendering mode: native drawElementImage or foreignObject serialization
 }
 
 // ============================================================================

@@ -21,8 +21,9 @@ import { logger } from "./logger.js";
 
 // Import rendering modules
 import { loadImageFromDataUri } from "./rendering/loadImage.js";
-import { createDprCanvas } from "./rendering/renderToImageNative.js";
+import { createDprCanvas, renderToImageNative } from "./rendering/renderToImageNative.js";
 import { clearInlineImageCache, getInlineImageCacheSize } from "./rendering/inlineImages.js";
+import { isNativeCanvasApiAvailable } from "./previewSettings.js";
 
 // Re-export rendering types and functions for external use
 export {
@@ -317,6 +318,8 @@ export interface CaptureFromCloneOptions {
   originalTimegroup?: EFTimegroup;
   /** Explicit time for temporal visibility checks (if not provided, uses renderClone.currentTimeMs) */
   timeMs?: number;
+  /** Canvas rendering mode: native drawElementImage or foreignObject serialization (default: auto-detect) */
+  canvasMode?: "native" | "foreignObject";
 }
 
 /**
@@ -339,6 +342,7 @@ export async function captureFromClone(
     blockingTimeoutMs = DEFAULT_BLOCKING_TIMEOUT_MS,
     originalTimegroup,
     timeMs: explicitTimeMs,
+    canvasMode,
   } = options;
 
   // Use explicit time if provided, otherwise fall back to clone's currentTimeMs
@@ -366,40 +370,66 @@ export async function captureFromClone(
     }
   }
 
-  // Create RenderContext for caching during this capture operation
+  // Determine effective canvas mode:
+  // 1. If explicitly specified, use that
+  // 2. If "native" is requested but not available, fall back to foreignObject
+  // 3. If not specified, default to foreignObject for compatibility
+  const effectiveCanvasMode = (() => {
+    if (!canvasMode) return "foreignObject";
+    if (canvasMode === "native" && !isNativeCanvasApiAvailable()) {
+      logger.debug("[captureFromClone] Native canvas mode requested but not available, falling back to foreignObject");
+      return "foreignObject";
+    }
+    return canvasMode;
+  })();
+
+  // Create RenderContext for caching during this capture operation (only needed for foreignObject)
   const renderContext = new RenderContext();
   
   try {
-    // UNIFIED PATH: Always use foreignObject serialization (same as video rendering)
-    // This ensures consistency - thumbnails, video export, and preview all use the same code path
-    // The native path had reliability issues with scaling and content rendering
-    
-    // CRITICAL: Force browser to compute styles before serialization
-  // getComputedStyle() may return empty strings if called before cascade is computed
-  // Accessing offsetWidth triggers synchronous style computation
-  void renderClone.offsetWidth;
-  
-  // Wait one more frame to ensure styles are fully computed
-  // This is necessary because some browsers don't compute styles synchronously
-  await new Promise(resolve => requestAnimationFrame(resolve));
-    
-    const t0 = performance.now();
-    const dataUri = await serializeTimelineToDataUri(renderClone, width, height, {
-      renderContext,
-      canvasScale: scale,
-      timeMs,
-    });
-    const serializeTime = performance.now() - t0;
-    
-    
-    const t1 = performance.now();
-    const image = await loadImageFromDataUri(dataUri);
-    const loadTime = performance.now() - t1;
-    
-    logger.debug(`[captureFromClone] serialize=${serializeTime.toFixed(0)}ms, load=${loadTime.toFixed(0)}ms (canvasScale=${scale})`);
-    
-    // Return image directly - no copy needed!
-    return image;
+    if (effectiveCanvasMode === "native") {
+      // NATIVE PATH: Use drawElementImage API (~1.76x faster than foreignObject)
+      // No DOM serialization, no canvas-to-dataURL encoding, no image loading
+      // Direct browser-native rendering
+      
+      const t0 = performance.now();
+      const canvas = await renderToImageNative(renderClone, width, height, {
+        skipDprScaling: true, // Use 1x DPR for video export (4x fewer pixels!)
+      });
+      const renderTime = performance.now() - t0;
+      
+      logger.debug(`[captureFromClone] native render=${renderTime.toFixed(0)}ms (canvasScale=${scale})`);
+      
+      return canvas;
+    } else {
+      // FOREIGNOBJECT PATH: Serialize DOM → SVG → Image → Canvas
+      // More compatible but slower than native path
+      
+      // NOTE: seekForRender() has already ensured rendering is complete, including:
+      // - Lit updates propagated
+      // - All LitElement descendants updated
+      // - frameController.renderFrame() called for FrameRenderable elements
+      // - Layout stabilization complete
+      // No additional RAF wait needed - can serialize immediately
+      
+      const t0 = performance.now();
+      const dataUri = await serializeTimelineToDataUri(renderClone, width, height, {
+        renderContext,
+        canvasScale: scale,
+        timeMs,
+      });
+      const serializeTime = performance.now() - t0;
+      
+      
+      const t1 = performance.now();
+      const image = await loadImageFromDataUri(dataUri);
+      const loadTime = performance.now() - t1;
+      
+      logger.debug(`[captureFromClone] foreignObject serialize=${serializeTime.toFixed(0)}ms, load=${loadTime.toFixed(0)}ms (canvasScale=${scale})`);
+      
+      // Return image directly - no copy needed!
+      return image;
+    }
   } finally {
     // Ensure RenderContext is disposed even if an error occurs
     renderContext.dispose();
