@@ -67,7 +67,7 @@ export function JITStreamingTimeline() {
     <Timegroup
       ref={timegroupRef}
       mode="fixed"
-      duration="42s"
+      duration="30s"
       className="relative w-full overflow-hidden"
       style={{ aspectRatio: "16/10", background: "#1e2233" }}
     >
@@ -75,18 +75,19 @@ export function JITStreamingTimeline() {
         <Canvas
           shadows
           frameloop="demand"
-          gl={{ preserveDrawingBuffer: true, antialias: true, alpha: true }}
-          camera={{ position: [0, 0, 6], fov: 50 }}
-          style={{ background: "#1e2233", width: "100%", height: "100%" }}
-          onCreated={({ gl }: { gl: THREE.WebGLRenderer }) => {
-            gl.toneMapping = THREE.ACESFilmicToneMapping;
-            gl.toneMappingExposure = 1.8;
+          dpr={[1, 2]}
+          gl={{
+            preserveDrawingBuffer: true,
+            toneMapping: THREE.ACESFilmicToneMapping,
+            toneMappingExposure: 1.8,
           }}
+          camera={{ fov: 50, near: 0.1, far: 100 }}
+          scene={{ background: new THREE.Color(0x1e2233), fog: new THREE.Fog(0x1e2233, 20, 45) }}
+          style={{ width: "100%", height: "100%" }}
         >
           <Suspense fallback={null}>
             <GLSync />
             <InvalidateOnTimeChange timeMs={timeMs} />
-            <fog attach="fog" args={[0x1e2233, 20, 45]} />
             <JITStreamingScene currentTimeMs={timeMs} />
           </Suspense>
         </Canvas>

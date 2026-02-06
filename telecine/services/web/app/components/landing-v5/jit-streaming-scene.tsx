@@ -5,942 +5,792 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import * as THREE from "three";
 
-/* ━━ Sizing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-const BAR_W = 4.5;
-const BAR_H = 0.25;
-const BAR_D = 0.15;
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   JIT STREAMING SCENE
+
+   X-axis layout: Traditional (left) vs Editframe JIT (right).
+   Sequential acts — one at a time so the viewer can track the process.
+
+   Phase 1 (0–2.2s):  Hero — the file appears center stage.
+   Phase 2 (2.4–4.5s): Question — "How do you stream it?"
+                        Laser cut. Two copies slide apart.
+   Phase 3 (5–13s):   Traditional (left side, full attention):
+                        Upload chunks → service → transcode → variants →
+                        serve 1080p to player. Right side: dormant bar.
+   Transition (13–14.5s): "What if you didn't need all that?"
+                        Left side dims. Camera shifts right.
+   Phase 4 (15–25.4s): JIT (right side, full attention):
+                        Player sends request beam → ghost variant lights up →
+                        proxy fetches source chunk → transcodes → streams to
+                        player scrub bar. Repeat × 3, non-sequential segments.
+   Phase 5 (26–30s):  Punchline — "Instant playback"
+
+   Total: 30s
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* ━━ Sizing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const BAR_W = 3.6;
+const BAR_H = 0.20;
+const BAR_D = 0.28;
 const NUM_SEGS = 6;
 const SEG_W = BAR_W / NUM_SEGS;
+const SEG_GAP = 0.04;
 
-/* ━━ Timing — compressed Act 1, expanded Act 2 ━━━━━━━━━━━━━━━━━━
-   Act 1 (0-6s): Quick traditional pipeline — establish the pain fast.
-   Transition (6-8s): "What if you could skip all of that?"
-   Act 2 (8-30s): Editframe JIT — the main event.
-   Act 3 (30-36s): Gantt comparison — visual proof.
-   Outro (36-42s): Closing statement.
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* ━━ Layout ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Z-depth layers (camera at +Z looking into -Z direction via tz):
+     0.5   source bars (after split)
+     3.0   traditional: service copy
+     4.5   traditional: transcode box
+     6.5   traditional: variant bars / JIT: ghost variant bars
+     9.0   traditional: player / JIT: proxy
+     12.0  JIT: player
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const TRAD_X = -3.2;
+const JIT_X = 3.2;
+const SERVICE_Z = 3.0;
+const TRANSCODE_Z = 4.5;
+const VARIANT_Z = 6.5;
+const PLAYER_Z = 9.0;
+const PROXY_Z = 9.0;
+const JIT_PLAYER_Z = 12.0;
+const SIDE_Y = 0.3;
 
-// ACT 1: Traditional (compressed to ~6s)
-const A_IN = 200;
-const A_UPLOAD_START = 1200;
-const A_UPLOAD_END = 2800;
-const A_TRANSCODE_START = 3200;
-const A_TRANSCODE_END = 4400;
-const A_VARIANTS_START = 4500;
-const A_PLAY = 5200;
-const A_END = 6000;
+/* ━━ Timing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
-// TRANSITION
-const TRANSITION_START = 6000;
-const TRANSITION_END = 8000;
+// Phase 1: Hero
+const P1_END = 2200;
+const P_PULLBACK_START = 1800;
+const P_PULLBACK_END = 3500;
 
-// ACT 2: Editframe JIT (expanded — 8s to 30s)
-const B_IN = 8000;
-const B_PLAYER_IN = 9500;
-const B_HIGHLIGHT = 11000;
-const B_FETCH_START = 12500;
-const B_FETCH_END = 14500;
-const B_TRANSCODE_START = 15000;
-const B_TRANSCODE_END = 17000;
-const B_PLAY = 18000;
-const B_NEXT_START = 20000;
-const B_NEXT_END = 23000;
-// Cache-hit beat
-const B_CACHE_START = 24000;
-const B_CACHE_END = 27500;
-const B_END = 28000;
+// Phase 2: Question + split
+const P2_START = 2400;
+const P2_SPLIT = 3200;
+const P2_END = 4500;
 
-// ACT 3: Gantt comparison
-const C_START = 30000;
-const C_END = 36000;
+// Phase 3: Traditional (left)
+const TRAD_START = 5000;
+const TRAD_UPLOAD_END = 8000;
+const TRAD_TRANSCODE_START = 8500;
+const TRAD_TRANSCODE_END = 10500;
+const TRAD_VARIANTS_IN = 11000;
+const TRAD_SERVE_START = 11800;
+const TRAD_PLAY = 12800;
 
-// OUTRO
-const OUTRO_START = 36000;
-const DURATION = 42000;
+// Transition
+const TRANS_START = 13200;
+const TRANS_END = 14500;
 
-/* ━━ Colors — increased contrast ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-const COL_BAR = 0x9575cd;       // Brighter purple — file segments
-const COL_BAR_DIM = 0x5c3d99;   // Darker purple — dimmed segments
-const COL_HIGHLIGHT = 0x69f0ae; // Green — highlighted byte range
-const COL_TRAD = 0xff8a65;      // Amber — traditional accent
-const COL_1080 = 0x448aff;      // Blue — 1080p
-const COL_720 = 0x64b5f6;       // Light blue — 720p
-const COL_480 = 0x90caf9;       // Pale blue — 480p
-const COL_MACHINE = 0x80cbc4;   // Teal — transcode compute
-const COL_EF = 0x82b1ff;        // Editframe blue
-const COL_BG = 0x2d3148;        // Darker background bar
-const COL_PLAYER_ON = 0x82b1ff; // Player screen glow
-const COL_CACHE = 0x69f0ae;     // Green — cache hit
+// Phase 4: JIT (right)
+// Each cycle: request (beam from player → ghost) → fetch (chunk from source → proxy) → stream (proxy → player)
+const JIT_START = 15000;
+const JIT_GHOST_IN = 15000;
+const JIT_PROXY_IN = 15500;
+const JIT_PLAYER_IN = 16000;
 
-/* ━━ Easing & helpers ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+// Cycle 1: segment 0
+const JIT_REQ1_START = 17000;
+const JIT_REQ1_END = 17800;
+const JIT_FETCH1_START = 17800;
+const JIT_FETCH1_END = 18800;
+const JIT_STREAM1_START = 19000;
+const JIT_STREAM1_END = 19600;
+const JIT_PLAY = 19800;
+
+// Cycle 2: segment 4 (non-sequential — skip ahead)
+const JIT_REQ2_START = 20400;
+const JIT_REQ2_END = 21000;
+const JIT_FETCH2_START = 21000;
+const JIT_FETCH2_END = 21800;
+const JIT_STREAM2_START = 22000;
+const JIT_STREAM2_END = 22600;
+
+// Cycle 3: segment 2 (back-fill)
+const JIT_REQ3_START = 23200;
+const JIT_REQ3_END = 23800;
+const JIT_FETCH3_START = 23800;
+const JIT_FETCH3_END = 24600;
+const JIT_STREAM3_START = 24800;
+const JIT_STREAM3_END = 25400;
+
+// Phase 5: Punchline
+const P5_START = 26000;
+const DURATION = 30000;
+
+/* ━━ Colors ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const COL_FILE = "#7e57c2";
+const COL_HIGHLIGHT = "#69f0ae";
+const COL_TRAD = "#ff8a65";
+const COL_1080 = "#448aff";
+const COL_720 = "#64b5f6";
+const COL_480 = "#90caf9";
+const COL_MACHINE = "#ffab91";
+const COL_EF = "#82b1ff";
+const COL_BG = "#3d4158";
+const COL_DONE = "#69f0ae";
+
+/* ━━ Easing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function easeOut(t: number) { return 1 - Math.pow(1 - t, 3); }
 function easeInOut(t: number) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
 function clamp01(t: number) { return Math.max(0, Math.min(1, t)); }
 function prog(ms: number, s: number, e: number) { return clamp01((ms - s) / (e - s)); }
 function lerp(a: number, b: number, t: number) { return a + (b - a) * t; }
 
-function snapEaseOut(t: number) {
-  if (t <= 0) return 0;
-  if (t >= 1) return 1;
-  const overshoot = 1.0 + Math.sin(t * Math.PI) * 0.08;
-  return overshoot * (1 - Math.pow(1 - t, 4));
-}
+function segX(i: number) { return -BAR_W / 2 + SEG_W / 2 + i * SEG_W; }
 
-function seededRandom(seed: number): number {
-  const x = Math.sin(seed) * 10000;
-  return x - Math.floor(x);
-}
-
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    COMPONENTS
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
-function Label({ children, position, color, fontSize, opacity, anchorX }: {
-  children: string;
-  position: [number, number, number];
-  color?: string;
-  fontSize?: number;
-  opacity?: number;
-  anchorX?: "left" | "center" | "right";
+function SceneLabel({ children, position, opacity, color, fontSize, bold, anchorX }: {
+  children: string; position: [number, number, number]; opacity: number;
+  color?: string; fontSize?: number; bold?: boolean; anchorX?: "left" | "center" | "right";
 }) {
+  if (opacity < 0.01) return null;
+  const fs = fontSize ?? 0.18;
   return (
-    <Text
-      position={position}
-      fontSize={fontSize ?? 0.16}
-      color={color ?? "#aaaacc"}
-      anchorX={anchorX ?? "center"}
-      anchorY="middle"
-      fillOpacity={opacity ?? 1}
-    >
+    <Text position={position} fontSize={fs} color={color ?? "white"} anchorX={anchorX ?? "center"} anchorY="middle" fillOpacity={opacity} fontWeight={bold ? "bold" : "normal"} outlineWidth={fs * 0.08} outlineColor="#000000" outlineOpacity={opacity * 0.6}>
       {children}
     </Text>
   );
 }
 
-function FilmstripBar({ opacity, position, label, dimSegments, highlightRange }: {
-  opacity: number;
-  position: [number, number, number];
-  label?: string;
-  dimSegments?: boolean;
-  highlightRange?: [number, number];
+function BarBackdrop({ width, opacity }: { width: number; opacity: number }) {
+  if (opacity < 0.01) return null;
+  return (
+    <mesh>
+      <boxGeometry args={[width + 0.06, BAR_H + 0.06, BAR_D * 0.5]} />
+      <meshStandardMaterial color={COL_BG} roughness={0.8} transparent opacity={opacity * 0.5} depthWrite={false} />
+    </mesh>
+  );
+}
+
+function BarSegment({ position, color, opacity, emissive }: {
+  position: [number, number, number]; color: string; opacity: number; emissive?: number;
 }) {
-  const segRefs = useRef<(THREE.Mesh | null)[]>([]);
-  const hlStart = highlightRange?.[0] ?? -1;
-  const hlEnd = highlightRange?.[1] ?? -1;
-  const dim = dimSegments ?? false;
+  if (opacity < 0.01) return null;
+  return (
+    <mesh position={position} castShadow>
+      <boxGeometry args={[SEG_W - SEG_GAP, BAR_H, BAR_D]} />
+      <meshPhysicalMaterial color={color} roughness={0.12} metalness={0.15} clearcoat={0.8} transparent opacity={opacity} emissive={color} emissiveIntensity={emissive ?? 0.06} />
+    </mesh>
+  );
+}
 
-  useFrame(() => {
-    for (let i = 0; i < NUM_SEGS; i++) {
-      const mesh = segRefs.current[i];
-      if (!mesh) continue;
-      const mat = mesh.material as THREE.MeshPhysicalMaterial;
-      const highlighted = i >= hlStart && i <= hlEnd;
+function FilmstripBar({ opacity, position, label, scale }: {
+  opacity: number; position: [number, number, number]; label?: string; scale?: number;
+}) {
+  if (opacity < 0.01) return null;
+  const s = scale ?? 1;
+  return (
+    <group position={position} scale={[s, s, s]}>
+      <BarBackdrop width={BAR_W} opacity={opacity} />
+      {Array.from({ length: NUM_SEGS }, (_, i) => (
+        <BarSegment key={i} position={[segX(i), 0, BAR_D * 0.3]} color={COL_FILE} opacity={opacity * 0.85} />
+      ))}
+      {label && <SceneLabel position={[0, BAR_H / 2 + 0.14, BAR_D]} fontSize={0.09} opacity={opacity * 0.8}>{label}</SceneLabel>}
+    </group>
+  );
+}
 
-      if (highlighted) {
-        mat.color.setHex(COL_HIGHLIGHT);
-        mat.emissive.setHex(COL_HIGHLIGHT);
-        mat.opacity = opacity;
-        mat.emissiveIntensity = 0.4;
-      } else {
-        mat.color.setHex(dim ? COL_BAR_DIM : COL_BAR);
-        mat.emissive.setHex(COL_BAR);
-        mat.opacity = dim ? opacity * 0.35 : opacity * 0.95;
-        mat.emissiveIntensity = 0.08;
-      }
-      mesh.castShadow = opacity > 0.1;
-    }
-  });
+function SegmentedBar({ opacity, position, label, scale, missingSegs, highlightSeg, dimOthers }: {
+  opacity: number; position: [number, number, number]; label?: string; scale?: number;
+  missingSegs?: number[]; highlightSeg?: number; dimOthers?: boolean;
+}) {
+  if (opacity < 0.01) return null;
+  const s = scale ?? 1;
+  const missing = missingSegs ?? [];
+  const hl = highlightSeg ?? -1;
+  const dim = dimOthers ?? false;
+  return (
+    <group position={position} scale={[s, s, s]}>
+      <BarBackdrop width={BAR_W} opacity={opacity} />
+      {Array.from({ length: NUM_SEGS }, (_, i) => {
+        if (missing.includes(i)) return null;
+        const isHl = i === hl;
+        const col = isHl ? COL_HIGHLIGHT : COL_FILE;
+        const segOpa = isHl ? opacity : (dim && hl >= 0 ? opacity * 0.3 : opacity * 0.85);
+        return <BarSegment key={i} position={[segX(i), 0, BAR_D * 0.3]} color={col} opacity={segOpa} emissive={isHl ? 0.4 : 0.06} />;
+      })}
+      {label && <SceneLabel position={[0, BAR_H / 2 + 0.14, BAR_D]} fontSize={0.09} opacity={opacity * 0.8}>{label}</SceneLabel>}
+    </group>
+  );
+}
 
-  const segGap = 0.03;
+function Chunk({ opacity, color, position }: {
+  opacity: number; color: string; position: [number, number, number];
+}) {
+  if (opacity < 0.01) return null;
+  return (
+    <mesh position={position} castShadow>
+      <boxGeometry args={[SEG_W - SEG_GAP, BAR_H, BAR_D]} />
+      <meshPhysicalMaterial color={color} roughness={0.12} metalness={0.15} clearcoat={0.8} transparent opacity={opacity} emissive={color} emissiveIntensity={0.25} />
+    </mesh>
+  );
+}
 
+function VariantBar({ opacity, color, position, label, scale }: {
+  opacity: number; color: string; position: [number, number, number]; label: string; scale?: number;
+}) {
+  if (opacity < 0.01) return null;
+  const s = scale ?? 1;
+  return (
+    <group position={position} scale={[s, s, s]}>
+      <BarBackdrop width={BAR_W} opacity={opacity * 0.3} />
+      {Array.from({ length: NUM_SEGS }, (_, i) => (
+        <BarSegment key={i} position={[segX(i), 0, BAR_D * 0.25]} color={color} opacity={opacity} emissive={0.15} />
+      ))}
+      <SceneLabel position={[BAR_W / 2 + 0.12, 0, BAR_D * 0.3]} fontSize={0.08} color="#ccddff" opacity={opacity * 0.8} anchorX="left">{label}</SceneLabel>
+    </group>
+  );
+}
+
+function GhostVariantBar({ opacity, color, position, label, scale, filledSegs }: {
+  opacity: number; color: string; position: [number, number, number]; label: string;
+  scale?: number; filledSegs?: number[];
+}) {
+  if (opacity < 0.01) return null;
+  const s = scale ?? 1;
+  const filled = filledSegs ?? [];
+  return (
+    <group position={position} scale={[s, s, s]}>
+      <BarBackdrop width={BAR_W} opacity={opacity * 0.15} />
+      {Array.from({ length: NUM_SEGS }, (_, i) => {
+        const isFilled = filled.includes(i);
+        return (
+          <BarSegment
+            key={i}
+            position={[segX(i), 0, BAR_D * 0.25]}
+            color={color}
+            opacity={isFilled ? opacity * 0.85 : opacity * 0.08}
+            emissive={isFilled ? 0.3 : 0.02}
+          />
+        );
+      })}
+      <SceneLabel position={[BAR_W / 2 + 0.12, 0, BAR_D * 0.3]} fontSize={0.08} color="#ccddff" opacity={opacity * 0.5} anchorX="left">{label}</SceneLabel>
+    </group>
+  );
+}
+
+function TranscodeBox({ opacity, active, position, scale }: {
+  opacity: number; active: boolean; position: [number, number, number]; scale?: number;
+}) {
+  if (opacity < 0.01) return null;
+  const s = scale ?? 1;
+  return (
+    <group position={position} scale={[s, s, s]}>
+      <mesh castShadow>
+        <boxGeometry args={[1.0, 0.45, 0.35]} />
+        <meshPhysicalMaterial color={COL_MACHINE} roughness={0.2} metalness={0.3} clearcoat={0.5} transparent opacity={opacity} emissive={COL_MACHINE} emissiveIntensity={active ? 0.4 : 0.05} />
+      </mesh>
+      <SceneLabel position={[0, 0, 0.2]} fontSize={0.09 * (1 / s)} color="#ffffff" opacity={opacity * 0.9}>transcode</SceneLabel>
+      {active && <pointLight color={COL_MACHINE} intensity={3} distance={4} />}
+    </group>
+  );
+}
+
+function ProxyBox({ opacity, active, position }: {
+  opacity: number; active: boolean; position: [number, number, number];
+}) {
+  if (opacity < 0.01) return null;
   return (
     <group position={position}>
-      <mesh>
-        <boxGeometry args={[BAR_W + 0.06, BAR_H + 0.06, BAR_D * 0.5]} />
-        <meshStandardMaterial color={COL_BG} roughness={0.8} transparent opacity={opacity * 0.4} />
+      <mesh castShadow>
+        <boxGeometry args={[1.8, 0.8, 0.4]} />
+        <meshPhysicalMaterial color={COL_EF} roughness={0.3} metalness={0.2} clearcoat={0.4} transparent opacity={opacity * 0.15} emissive={COL_EF} emissiveIntensity={active ? 0.15 : 0.03} />
       </mesh>
+      <SceneLabel position={[0, 0.28, 0.22]} fontSize={0.09} color="#82b1ff" opacity={opacity * 0.9}>editframe proxy</SceneLabel>
+      <TranscodeBox opacity={opacity * 0.8} active={active} position={[0, -0.08, 0.04]} scale={0.5} />
+    </group>
+  );
+}
 
+const PLAYER_W = 1.3;
+const PLAYER_SCREEN_W = 1.14;
+const SCRUB_H = 0.05;
+const SCRUB_SEG_W = PLAYER_SCREEN_W / NUM_SEGS;
+const SCRUB_GAP = 0.01;
+
+function scrubSegX(i: number) {
+  return -PLAYER_SCREEN_W / 2 + SCRUB_SEG_W / 2 + i * SCRUB_SEG_W;
+}
+
+function VideoPlayer({ opacity, playing, position, bufferedSegs, bufferColor }: {
+  opacity: number; playing: number; position: [number, number, number];
+  bufferedSegs?: number[]; bufferColor?: string;
+}) {
+  if (opacity < 0.01) return null;
+  const playBtnOpa = opacity * (1 - playing * 0.8);
+  const buffered = bufferedSegs ?? [];
+  const bCol = bufferColor ?? COL_EF;
+  return (
+    <group position={position}>
+      <mesh castShadow>
+        <boxGeometry args={[PLAYER_W, 0.8, 0.06]} />
+        <meshPhysicalMaterial color="#1a1a2e" roughness={0.4} metalness={0.5} transparent opacity={opacity} />
+      </mesh>
+      <mesh position={[0, 0, 0.04]}>
+        <boxGeometry args={[PLAYER_SCREEN_W, 0.64, 0.02]} />
+        <meshStandardMaterial color="#0a0a18" transparent opacity={opacity * 0.95} emissive={COL_EF} emissiveIntensity={playing * 0.35} />
+      </mesh>
+      {playBtnOpa > 0.01 && (
+        <mesh position={[0, 0, 0.06]} rotation={[0, 0, -Math.PI / 2]}>
+          <coneGeometry args={[0.12, 0.16, 3]} />
+          <meshBasicMaterial color="#ffffff" transparent opacity={playBtnOpa * 0.5} depthWrite={false} />
+        </mesh>
+      )}
+      {/* Scrub bar background */}
+      <mesh position={[0, -0.30, 0.04]}>
+        <boxGeometry args={[PLAYER_SCREEN_W, SCRUB_H, 0.02]} />
+        <meshBasicMaterial color="#333355" transparent opacity={opacity * 0.4} depthWrite={false} />
+      </mesh>
+      {/* Buffered segments — individual slots that light up */}
       {Array.from({ length: NUM_SEGS }, (_, i) => {
-        const x = -BAR_W / 2 + SEG_W / 2 + i * SEG_W;
+        const isBuffered = buffered.includes(i);
+        if (!isBuffered) return null;
         return (
-          <mesh
-            key={i}
-            ref={(el) => { segRefs.current[i] = el; }}
-            position={[x, 0, BAR_D * 0.3]}
-          >
-            <boxGeometry args={[SEG_W - segGap, BAR_H, BAR_D]} />
-            <meshPhysicalMaterial
-              color={COL_BAR}
-              roughness={0.15}
-              metalness={0.15}
-              clearcoat={0.7}
-              transparent
-              opacity={0}
-              emissive={new THREE.Color(COL_BAR)}
-              emissiveIntensity={0.08}
-            />
+          <mesh key={i} position={[scrubSegX(i), -0.30, 0.05]}>
+            <boxGeometry args={[SCRUB_SEG_W - SCRUB_GAP, SCRUB_H + 0.01, 0.02]} />
+            <meshBasicMaterial color={bCol} transparent opacity={opacity * 0.8} depthWrite={false} />
           </mesh>
         );
       })}
-
-      <Label position={[-BAR_W / 2, -BAR_H / 2 - 0.14, BAR_D]} fontSize={0.10} opacity={opacity * 0.5}>
-        0:00
-      </Label>
-      <Label position={[0, -BAR_H / 2 - 0.14, BAR_D]} fontSize={0.10} opacity={opacity * 0.5}>
-        0:30
-      </Label>
-      <Label position={[BAR_W / 2, -BAR_H / 2 - 0.14, BAR_D]} fontSize={0.10} opacity={opacity * 0.5}>
-        1:00
-      </Label>
-
-      {label && (
-        <Label position={[0, BAR_H / 2 + 0.16, BAR_D]} fontSize={0.13} opacity={opacity * 0.85}>
-          {label}
-        </Label>
+      {/* Playhead */}
+      {playing > 0.01 && (
+        <mesh position={[-PLAYER_SCREEN_W / 2 + PLAYER_SCREEN_W * playing, -0.30, 0.06]}>
+          <boxGeometry args={[0.02, SCRUB_H + 0.03, 0.02]} />
+          <meshBasicMaterial color="#ffffff" transparent opacity={opacity * 0.9} depthWrite={false} />
+        </mesh>
       )}
+      <SceneLabel position={[0, -0.48, 0.04]} fontSize={0.07} color="#666688" opacity={opacity * 0.4}>player</SceneLabel>
     </group>
   );
 }
 
-function Segment({ opacity, color, position, label }: {
-  opacity: number;
-  color: number;
-  position: [number, number, number];
-  label?: string;
-}) {
-  const meshRef = useRef<THREE.Mesh>(null);
-
-  useFrame(() => {
-    if (!meshRef.current) return;
-    const mat = meshRef.current.material as THREE.MeshPhysicalMaterial;
-    mat.opacity = opacity;
-    mat.emissiveIntensity = opacity > 0 ? 0.3 : 0;
-    meshRef.current.castShadow = opacity > 0.1;
-  });
-
+function LaserCutLine({ x, y, opacity }: { x: number; y: number; opacity: number }) {
+  if (opacity < 0.01) return null;
   return (
-    <group position={position}>
-      <mesh ref={meshRef} castShadow>
-        <boxGeometry args={[SEG_W * 0.9, BAR_H, BAR_D]} />
-        <meshPhysicalMaterial
-          color={color}
-          roughness={0.15}
-          metalness={0.15}
-          clearcoat={0.7}
-          transparent
-          opacity={0}
-          emissive={new THREE.Color(color)}
-          emissiveIntensity={0}
-        />
-      </mesh>
-      {label && (
-        <Label position={[0, -BAR_H / 2 - 0.12, BAR_D * 0.5]} fontSize={0.10} color="#88ddaa" opacity={opacity * 0.8}>
-          {label}
-        </Label>
-      )}
-    </group>
+    <mesh position={[x, y, 0.01]}>
+      <planeGeometry args={[0.03, 0.8]} />
+      <meshBasicMaterial color="white" transparent opacity={opacity} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} depthWrite={false} />
+    </mesh>
   );
 }
 
-function VariantBar({ opacity, color, width, position, label }: {
-  opacity: number;
-  color: number;
-  width: number;
-  position: [number, number, number];
-  label: string;
+/** A thin beam that travels from point A to point B, showing a request in flight.
+ *  `progress` 0→1 controls how far the beam has extended. */
+function RequestBeam({ from, to, progress, opacity, color }: {
+  from: [number, number, number]; to: [number, number, number];
+  progress: number; opacity: number; color: string;
 }) {
-  const meshRef = useRef<THREE.Mesh>(null);
+  if (opacity < 0.01 || progress <= 0) return null;
+  const p = clamp01(progress);
+  const midX = lerp(from[0], to[0], p);
+  const midY = lerp(from[1], to[1], p);
+  const midZ = lerp(from[2], to[2], p);
+  const dx = midX - from[0];
+  const dy = midY - from[1];
+  const dz = midZ - from[2];
+  const len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+  if (len < 0.01) return null;
 
-  useFrame(() => {
-    if (!meshRef.current) return;
-    const mat = meshRef.current.material as THREE.MeshPhysicalMaterial;
-    mat.opacity = opacity;
-    mat.emissiveIntensity = opacity * 0.15;
-    meshRef.current.castShadow = opacity > 0.1;
-  });
+  // Position at midpoint of the drawn portion
+  const cx = (from[0] + midX) / 2;
+  const cy = (from[1] + midY) / 2;
+  const cz = (from[2] + midZ) / 2;
+
+  const dir = new THREE.Vector3(dx, dy, dz).normalize();
+  const quat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
 
   return (
-    <group position={position}>
-      <mesh ref={meshRef} castShadow>
-        <boxGeometry args={[width, BAR_H * 0.8, BAR_D]} />
-        <meshPhysicalMaterial
-          color={color}
-          roughness={0.15}
-          metalness={0.2}
-          clearcoat={0.6}
-          transparent
-          opacity={0}
-          emissive={new THREE.Color(color)}
-          emissiveIntensity={0}
-        />
-      </mesh>
-      <Label position={[width / 2 + 0.15, 0, BAR_D * 0.5]} fontSize={0.11} color="#ccddff" opacity={opacity * 0.8} anchorX="left">
-        {label}
-      </Label>
-    </group>
+    <mesh position={[cx, cy, cz]} quaternion={quat}>
+      <cylinderGeometry args={[0.012, 0.012, len, 4]} />
+      <meshBasicMaterial color={color} transparent opacity={opacity} depthWrite={false} />
+    </mesh>
   );
 }
 
-/** Transcode process — wireframe-style with internal glow when active */
-function TranscodeBox({ opacity, active, scale, position }: {
-  opacity: number;
-  active: boolean;
-  scale: number;
-  position: [number, number, number];
-}) {
-  const meshRef = useRef<THREE.Mesh>(null);
-  const edgesRef = useRef<THREE.LineSegments>(null);
-
-  useFrame(() => {
-    if (!meshRef.current) return;
-    const mat = meshRef.current.material as THREE.MeshPhysicalMaterial;
-    mat.opacity = active ? opacity * 0.4 : opacity * 0.15;
-    mat.emissiveIntensity = active ? 0.5 : opacity * 0.05;
-    meshRef.current.castShadow = opacity > 0.1;
-
-    if (edgesRef.current) {
-      (edgesRef.current.material as THREE.LineBasicMaterial).opacity = opacity * 0.6;
-    }
-  });
-
-  return (
-    <group position={position} scale={[scale, scale, scale]}>
-      <mesh ref={meshRef} castShadow>
-        <boxGeometry args={[1.2, 0.5, 0.3]} />
-        <meshPhysicalMaterial
-          color={COL_MACHINE}
-          roughness={0.2}
-          metalness={0.3}
-          clearcoat={0.5}
-          transparent
-          opacity={0}
-          emissive={new THREE.Color(COL_MACHINE)}
-          emissiveIntensity={0.05}
-        />
-      </mesh>
-      <lineSegments ref={edgesRef}>
-        <edgesGeometry args={[new THREE.BoxGeometry(1.22, 0.52, 0.32)]} />
-        <lineBasicMaterial color={COL_MACHINE} transparent opacity={0} />
-      </lineSegments>
-      <Label position={[0, 0, 0.16]} fontSize={0.12 * (1 / scale)} color="#ffffff" opacity={opacity * 0.9}>
-        transcode
-      </Label>
-      <pointLight color={COL_MACHINE} intensity={active ? 4 : 0} distance={4} />
-    </group>
-  );
-}
-
-/** Edge proxy — thin, pipeline-style. Visually distinct from a storage server. */
-function ProxyBox({ opacity, active, position, showPipeline, cached }: {
-  opacity: number;
-  active: boolean;
-  position: [number, number, number];
-  showPipeline?: number;
-  cached?: boolean;
-}) {
-  const frameRef = useRef<THREE.Mesh>(null);
-  const edgesRef = useRef<THREE.LineSegments>(null);
-
-  useFrame(() => {
-    if (!frameRef.current) return;
-    const mat = frameRef.current.material as THREE.MeshPhysicalMaterial;
-    mat.opacity = opacity * 0.5;
-    mat.emissiveIntensity = active ? 0.2 : (cached ? 0.25 : opacity * 0.05);
-    frameRef.current.castShadow = opacity > 0.1;
-
-    if (edgesRef.current) {
-      (edgesRef.current.material as THREE.LineBasicMaterial).opacity = opacity * 0.5;
-    }
-  });
-
-  const pipeOpa = showPipeline ?? 0;
-
-  return (
-    <group position={position}>
-      <mesh ref={frameRef} castShadow>
-        <boxGeometry args={[2.6, 1.4, 0.15]} />
-        <meshPhysicalMaterial
-          color={cached ? COL_CACHE : COL_EF}
-          roughness={0.3}
-          metalness={0.2}
-          clearcoat={0.4}
-          transparent
-          opacity={0}
-          emissive={new THREE.Color(cached ? COL_CACHE : COL_EF)}
-          emissiveIntensity={0.05}
-        />
-      </mesh>
-      <lineSegments ref={edgesRef}>
-        <edgesGeometry args={[new THREE.BoxGeometry(2.62, 1.42, 0.17)]} />
-        <lineBasicMaterial color={cached ? COL_CACHE : COL_EF} transparent opacity={0} />
-      </lineSegments>
-
-      <Label position={[0, 0.55, 0.1]} fontSize={0.11} color="#82b1ff" opacity={opacity * 0.9}>
-        editframe edge proxy
-      </Label>
-
-      {pipeOpa > 0 && !cached && (
-        <group position={[0, 0.25, 0.1]}>
-          <Label position={[-0.7, 0, 0]} fontSize={0.08} color="#69f0ae" opacity={pipeOpa * 0.7}>
-            moov
-          </Label>
-          <Label position={[-0.2, 0, 0]} fontSize={0.08} color="#69f0ae" opacity={pipeOpa * 0.6}>
-            sidx
-          </Label>
-          <Label position={[0.4, 0, 0]} fontSize={0.08} color="#69f0ae" opacity={pipeOpa * 0.5}>
-            byte offset
-          </Label>
-        </group>
-      )}
-
-      {cached && (
-        <Label position={[0, 0.2, 0.1]} fontSize={0.14} color="#69f0ae" opacity={opacity * 0.9}>
-          cached
-        </Label>
-      )}
-
-      {!cached && (
-        <TranscodeBox opacity={opacity} active={active} scale={0.65} position={[0, -0.15, 0.05]} />
-      )}
-    </group>
-  );
-}
-
-function Arrow({ opacity, position, length, color, up }: {
-  opacity: number;
-  position: [number, number, number];
-  length?: number;
-  color?: number;
-  up?: boolean;
-}) {
-  const shaftRef = useRef<THREE.Mesh>(null);
-  const headRef = useRef<THREE.Mesh>(null);
-  const len = length ?? 0.6;
-  const col = color ?? 0x666688;
-  const dir = up ? 1 : -1;
-
-  useFrame(() => {
-    if (!shaftRef.current || !headRef.current) return;
-    (shaftRef.current.material as THREE.MeshBasicMaterial).opacity = opacity * 0.6;
-    (headRef.current.material as THREE.MeshBasicMaterial).opacity = opacity * 0.6;
-  });
-
-  return (
-    <group position={position}>
-      <mesh ref={shaftRef}>
-        <boxGeometry args={[0.04, len, 0.02]} />
-        <meshBasicMaterial color={col} transparent opacity={0} />
-      </mesh>
-      <mesh ref={headRef} position={[0, dir * (len / 2 + 0.06), 0]} rotation={[0, 0, up ? 0 : Math.PI]}>
-        <coneGeometry args={[0.07, 0.12, 3]} />
-        <meshBasicMaterial color={col} transparent opacity={0} />
-      </mesh>
-    </group>
-  );
-}
-
-function PlayerScreen({ opacity, playing, position }: {
-  opacity: number;
-  playing: number;
-  position: [number, number, number];
-}) {
-  const frameRef = useRef<THREE.Mesh>(null);
-  const screenRef = useRef<THREE.Mesh>(null);
-  const btnRef = useRef<THREE.Mesh>(null);
-
-  useFrame(() => {
-    if (!frameRef.current || !screenRef.current) return;
-    (frameRef.current.material as THREE.MeshPhysicalMaterial).opacity = opacity;
-    frameRef.current.castShadow = opacity > 0.1;
-    const sMat = screenRef.current.material as THREE.MeshStandardMaterial;
-    sMat.opacity = opacity * 0.9;
-    sMat.emissiveIntensity = playing * 0.7;
-
-    if (btnRef.current) {
-      (btnRef.current.material as THREE.MeshBasicMaterial).opacity = opacity * (1 - playing) * 0.6;
-    }
-  });
-
-  return (
-    <group position={position}>
-      <mesh ref={frameRef} castShadow>
-        <boxGeometry args={[1.4, 0.85, 0.06]} />
-        <meshPhysicalMaterial color={0x37474f} roughness={0.3} metalness={0.6} transparent opacity={0} />
-      </mesh>
-      <mesh ref={screenRef} position={[0, 0, 0.04]}>
-        <boxGeometry args={[1.25, 0.7, 0.02]} />
-        <meshStandardMaterial
-          color={COL_PLAYER_ON}
-          transparent
-          opacity={0}
-          emissive={new THREE.Color(COL_PLAYER_ON)}
-          emissiveIntensity={0}
-        />
-      </mesh>
-      {/* Play button triangle */}
-      <mesh ref={btnRef} position={[0, 0, 0.06]} rotation={[0, 0, -Math.PI / 2]}>
-        <coneGeometry args={[0.12, 0.2, 3]} />
-        <meshBasicMaterial color={0xffffff} transparent opacity={0} />
-      </mesh>
-      {/* Progress bar */}
-      <mesh position={[0, -0.3, 0.04]}>
-        <boxGeometry args={[1.1, 0.03, 0.01]} />
-        <meshBasicMaterial color={0x556677} transparent opacity={opacity * 0.4} />
-      </mesh>
-    </group>
-  );
-}
-
-function ParticleStream({ from, to, count, color, opacity, timeMs, seed, size, wobble }: {
-  from: [number, number, number];
-  to: [number, number, number];
-  count: number;
-  color: number;
-  opacity: number;
-  timeMs: number;
-  seed: number;
-  size?: number;
-  wobble?: number;
-}) {
-  const pointsRef = useRef<THREE.Points>(null);
-  const speedsRef = useRef<Float32Array>(
-    new Float32Array(count).map((_, i) => 0.3 + seededRandom(seed + i * 100) * 0.7)
-  );
-
-  const particleSize = size ?? 0.06;
-  const wobbleAmount = wobble ?? 0.08;
-
-  useFrame(() => {
-    if (!pointsRef.current) return;
-    (pointsRef.current.material as THREE.PointsMaterial).opacity = opacity;
-    if (opacity <= 0) return;
-
-    const positions = pointsRef.current.geometry.attributes.position!.array as Float32Array;
-    const speeds = speedsRef.current;
-
-    for (let i = 0; i < count; i++) {
-      const t = (timeMs * speeds[i]! * 0.0005 + i * 0.07) % 1;
-      const wx = (seededRandom(seed + i * 1000 + timeMs * 0.002) - 0.5) * wobbleAmount;
-      const wy = (seededRandom(seed + i * 2000 + timeMs * 0.002) - 0.5) * wobbleAmount;
-      positions[i * 3] = lerp(from[0], to[0], t) + wx;
-      positions[i * 3 + 1] = lerp(from[1], to[1], t) + wy;
-      positions[i * 3 + 2] = lerp(from[2], to[2], t);
-    }
-    pointsRef.current.geometry.attributes.position!.needsUpdate = true;
-  });
-
-  return (
-    <points ref={pointsRef}>
-      <bufferGeometry>
-        <bufferAttribute attach="attributes-position" count={count} array={new Float32Array(count * 3)} itemSize={3} />
-      </bufferGeometry>
-      <pointsMaterial color={color} size={particleSize} transparent opacity={0} sizeAttenuation blending={THREE.AdditiveBlending} depthWrite={false} />
-    </points>
-  );
-}
-
-/** Gantt-style comparison bar for Act 3 */
-function GanttBar({ opacity, position, label, segments, totalWidth }: {
-  opacity: number;
-  position: [number, number, number];
-  label: string;
-  segments: Array<{ width: number; color: number; label: string; opacity: number }>;
-  totalWidth: number;
-}) {
-  return (
-    <group position={position}>
-      {/* Background track */}
-      <mesh>
-        <boxGeometry args={[totalWidth, 0.35, 0.05]} />
-        <meshStandardMaterial color={COL_BG} roughness={0.8} transparent opacity={opacity * 0.3} />
-      </mesh>
-      {/* Label on left */}
-      <Label position={[-totalWidth / 2 - 0.2, 0, 0.05]} fontSize={0.13} color="#aaaacc" opacity={opacity * 0.9} anchorX="right">
-        {label}
-      </Label>
-      {/* Segments */}
-      {segments.map((seg, i) => {
-        let x = -totalWidth / 2;
-        for (let j = 0; j < i; j++) x += segments[j].width;
-        x += seg.width / 2;
-        return (
-          <group key={i} position={[x, 0, 0.03]}>
-            <mesh>
-              <boxGeometry args={[seg.width, 0.3, 0.06]} />
-              <meshPhysicalMaterial
-                color={seg.color}
-                roughness={0.2}
-                metalness={0.2}
-                clearcoat={0.5}
-                transparent
-                opacity={opacity * seg.opacity}
-                emissive={new THREE.Color(seg.color)}
-                emissiveIntensity={0.15}
-              />
-            </mesh>
-            <Label position={[0, 0, 0.04]} fontSize={0.09} color="#ffffff" opacity={opacity * seg.opacity * 0.9}>
-              {seg.label}
-            </Label>
-          </group>
-        );
-      })}
-    </group>
-  );
-}
-
-/* ━━ Narration captions ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-
-type CaptionDef = {
-  text: string;
-  inMs: number;
-  outMs: number;
-  position: [number, number, number];
-  fontSize: number;
-  color: string;
-  bold?: boolean;
-};
-
-const CAPTIONS: CaptionDef[] = [
-  // ACT 1 title
-  { text: "The traditional way", inMs: 100, outMs: 1000, position: [0, 3.2, 0], fontSize: 0.18, color: "rgba(255,255,255,0.4)" },
-  // Step: You have a file
-  { text: "You have a video file.", inMs: 200, outMs: 1100, position: [0, -3.2, 0], fontSize: 0.15, color: "rgba(255,255,255,0.55)" },
-  // Step: Upload
-  { text: "Upload. Transcode. Wait.", inMs: 1200, outMs: 3000, position: [0, -3.2, 0], fontSize: 0.15, color: "rgba(255,255,255,0.55)" },
-  // Step: Variants
-  { text: "Three complete copies, stored.", inMs: 3200, outMs: 4800, position: [0, -3.2, 0], fontSize: 0.15, color: "rgba(255,255,255,0.55)" },
-  // Step: Play
-  { text: "Only now can someone press play.", inMs: 5000, outMs: 5900, position: [0, -3.2, 0], fontSize: 0.15, color: "rgba(255,255,255,0.55)" },
-
-  // TRANSITION
-  { text: "What if you could skip all of that?", inMs: 6200, outMs: 7800, position: [0, 0, 1], fontSize: 0.26, color: "#ffffff", bold: true },
-
-  // ACT 2 title
-  { text: "Editframe JIT", inMs: 8000, outMs: 9300, position: [0, 3.2, 0], fontSize: 0.22, color: "#ff5252", bold: true },
-  // Step: Same file, your server
-  { text: "Same file. But it stays on your server.", inMs: 8200, outMs: 9300, position: [0, -3.2, 0], fontSize: 0.15, color: "rgba(255,255,255,0.55)" },
-  // Step: Player needs a frame
-  { text: "When the player needs a frame...", inMs: 9500, outMs: 10800, position: [0, -3.2, 0], fontSize: 0.15, color: "rgba(255,255,255,0.55)" },
-  // Step: Highlight bytes
-  { text: "...it highlights just the bytes it needs.", inMs: 11000, outMs: 12300, position: [0, -3.2, 0], fontSize: 0.15, color: "rgba(255,255,255,0.55)" },
-  // Step: Byte-range request
-  { text: "A byte-range request fetches just that slice.", inMs: 12500, outMs: 14300, position: [0, -3.2, 0], fontSize: 0.15, color: "rgba(255,255,255,0.55)" },
-  // Step: Transcode piece
-  { text: "Same transcode — but just this piece.", inMs: 15000, outMs: 16800, position: [0, -3.2, 0], fontSize: 0.15, color: "rgba(255,255,255,0.55)" },
-  // Step: Already playing
-  { text: "Already playing.", inMs: 18000, outMs: 19500, position: [0, -3.2, 0], fontSize: 0.15, color: "rgba(255,255,255,0.55)" },
-  // Step: Next segment
-  { text: "Next segment. Different bitrate. On demand.", inMs: 20000, outMs: 23000, position: [0, -3.2, 0], fontSize: 0.15, color: "rgba(255,255,255,0.55)" },
-  // Step: Cache hit
-  { text: "Second viewer? Already cached.", inMs: 24200, outMs: 27000, position: [0, -3.2, 0], fontSize: 0.15, color: "#69f0ae" },
-
-  // ACT 3: Gantt comparison
-  { text: "Time to first frame", inMs: 30500, outMs: 35500, position: [0, 2.2, 1], fontSize: 0.2, color: "#ffffff", bold: true },
-
-  // OUTRO
-  { text: "Same transcode work.", inMs: 36500, outMs: 41000, position: [0, 1.0, 1], fontSize: 0.3, color: "#ff5252", bold: true },
-  { text: "No upload. No ingest delay.", inMs: 37000, outMs: 41000, position: [0, 0.2, 1], fontSize: 0.3, color: "#ff5252", bold: true },
-  { text: "Zero infrastructure to maintain.", inMs: 37500, outMs: 41000, position: [0, -0.6, 1], fontSize: 0.22, color: "rgba(255,255,255,0.6)" },
-];
-
-const CAPTION_FADE_IN_MS = 400;
-const CAPTION_FADE_OUT_MS = 400;
-
-function Captions({ currentTimeMs }: { currentTimeMs: number }) {
+/* ━━ Environment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function Floor() {
   return (
     <>
-      {CAPTIONS.map((c, i) => {
-        const fadeIn = easeOut(prog(currentTimeMs, c.inMs, c.inMs + CAPTION_FADE_IN_MS));
-        const fadeOut = 1 - easeOut(prog(currentTimeMs, c.outMs, c.outMs + CAPTION_FADE_OUT_MS));
-        const opacity = Math.min(fadeIn, fadeOut);
-        if (opacity <= 0) return null;
-        return (
-          <Text
-            key={i}
-            position={c.position}
-            fontSize={c.fontSize}
-            color={c.color}
-            anchorX="center"
-            anchorY="middle"
-            fillOpacity={opacity}
-            fontWeight={c.bold ? 800 : 600}
-          >
-            {c.text}
-          </Text>
-        );
-      })}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.7, 0]} receiveShadow>
+        <planeGeometry args={[60, 50]} />
+        <meshStandardMaterial color="#2a2e42" roughness={0.75} metalness={0.1} />
+      </mesh>
+      <gridHelper args={[40, 40, "#3a3f58", "#3a3f58"]} position={[0, -0.69, 0]}>
+        {/* @ts-expect-error gridHelper material access */}
+        <meshBasicMaterial transparent opacity={0.25} />
+      </gridHelper>
     </>
   );
 }
 
-/* ━━ Environment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-function Lights() {
+function Lighting({ timeMs }: { timeMs: number }) {
+  const rimRef = useRef<THREE.PointLight>(null);
+  useFrame(() => {
+    if (rimRef.current) rimRef.current.intensity = 0.9 + Math.sin(timeMs * 0.0015) * 0.15;
+  });
   return (
     <>
-      <ambientLight intensity={1.0} color={0xd0d8f0} />
-      <directionalLight position={[3, 8, 5]} intensity={1.6} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
-      <directionalLight position={[-3, 4, -2]} intensity={0.4} color={0xaaccff} />
+      <ambientLight color="#d0d8f0" intensity={0.9} />
+      <directionalLight position={[3, 10, 8]} intensity={1.8} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-camera-left={-10} shadow-camera-right={10} shadow-camera-top={15} shadow-camera-bottom={-8} />
+      <directionalLight position={[-3, 6, 4]} color="#aaccff" intensity={0.6} />
+      <pointLight ref={rimRef} position={[0, 3, 6]} color={COL_EF} intensity={0.9} distance={30} />
+      <spotLight position={[0, 8, 10]} intensity={2.0} distance={30} angle={Math.PI / 4} penumbra={0.4} decay={1} />
     </>
   );
 }
 
-/* ━━ SCENE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-export function JITStreamingScene({ currentTimeMs }: { currentTimeMs: number }) {
+/* ━━ Camera ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Simple camera: close on bar → pull back → pan left → pan right → settle.
+   No orbit, no snap zoom, no shake. Let the objects tell the story. */
+function CameraController({ timeMs }: { timeMs: number }) {
   const { camera } = useThree();
 
-  // ── Camera with Act 2 moves ──
   useFrame(() => {
-    const basePos = new THREE.Vector3(0, 0, 7.5);
-    const baseTar = new THREE.Vector3(0, -0.2, 0);
+    // Phase 1→2: pull back from close-up to wide shot showing both sides
+    const pullback = easeInOut(prog(timeMs, P_PULLBACK_START, P_PULLBACK_END));
 
-    // Act 2 camera moves: dolly in on highlight, pull back on play
-    const dollyIn = snapEaseOut(prog(currentTimeMs, B_HIGHLIGHT, B_HIGHLIGHT + 1500));
-    const dollyOut = snapEaseOut(prog(currentTimeMs, B_PLAY - 500, B_PLAY + 1000));
-    const dollyZ = 7.5 - dollyIn * 1.0 + dollyOut * 1.0;
-    const dollyY = -0.2 + dollyIn * 0.3 - dollyOut * 0.3;
+    let cx = 0;
+    let cy = lerp(0.8, 5.0, pullback);
+    let cz = lerp(3.2, 16, pullback);
+    let tx = 0;
+    let ty = lerp(0.15, -0.2, pullback);
+    let tz = lerp(0, 5, pullback);
 
-    // Act 3: pull back to see Gantt bars
-    const ganttProg = easeInOut(prog(currentTimeMs, C_START, C_START + 1500));
-    const ganttPos = new THREE.Vector3(0, 0.5, 9);
-    const ganttTar = new THREE.Vector3(0, 0, 0);
+    // Phase 3: gently pan left to follow traditional side
+    const tradFocus = easeInOut(prog(timeMs, TRAD_START, TRAD_START + 1500));
+    const tradRelease = easeInOut(prog(timeMs, TRANS_START, TRANS_END));
+    const tradPan = tradFocus * (1 - tradRelease);
+    cx += tradPan * -1.0;
+    tx += tradPan * -0.8;
 
-    // Outro: center on text
-    const outroProg = easeInOut(prog(currentTimeMs, OUTRO_START, OUTRO_START + 1500));
-    const outroPos = new THREE.Vector3(0, 0.2, 7);
-    const outroTar = new THREE.Vector3(0, 0.2, 0);
+    // Transition → Phase 4: pan right to follow JIT side
+    const jitPan = easeInOut(prog(timeMs, TRANS_START, JIT_START));
+    cx += jitPan * 2.0;
+    tx += jitPan * 1.6;
 
-    let pos: THREE.Vector3;
-    let tar: THREE.Vector3;
-
-    if (currentTimeMs >= OUTRO_START) {
-      pos = ganttPos.clone().lerp(outroPos, outroProg);
-      tar = ganttTar.clone().lerp(outroTar, outroProg);
-    } else if (currentTimeMs >= C_START) {
-      const prePos = new THREE.Vector3(0, dollyY, dollyZ);
-      pos = prePos.clone().lerp(ganttPos, ganttProg);
-      tar = baseTar.clone().lerp(ganttTar, ganttProg);
-    } else {
-      pos = new THREE.Vector3(0, dollyY, dollyZ);
-      tar = new THREE.Vector3(0, dollyY + 0.1, 0);
+    // Phase 5: settle to center, slightly favoring JIT side
+    const settle = easeInOut(prog(timeMs, P5_START, P5_START + 1500));
+    if (settle > 0) {
+      cx = lerp(cx, 0.8, settle);
+      ty = lerp(ty, 0, settle);
     }
 
-    camera.position.copy(pos);
-    camera.lookAt(tar);
+    camera.position.set(cx, cy, cz);
+    camera.lookAt(tx, ty, tz);
   });
 
-  // ── Act 1: Traditional (compressed) ──
-  const aBarOpa = easeOut(prog(currentTimeMs, A_IN, A_IN + 500));
-  const aUploadArrow = easeOut(prog(currentTimeMs, A_UPLOAD_START - 300, A_UPLOAD_START));
-  const aUploadParticles = currentTimeMs >= A_UPLOAD_START && currentTimeMs < A_UPLOAD_END;
-  const aUploadTime = currentTimeMs - A_UPLOAD_START;
-  const aCopyOpa = easeOut(prog(currentTimeMs, A_UPLOAD_END - 400, A_UPLOAD_END));
-  const aTransArrow = easeOut(prog(currentTimeMs, A_TRANSCODE_START - 300, A_TRANSCODE_START));
-  const aTransBoxOpa = easeOut(prog(currentTimeMs, A_TRANSCODE_START - 400, A_TRANSCODE_START));
-  const aTransActive = currentTimeMs >= A_TRANSCODE_START && currentTimeMs < A_TRANSCODE_END;
-  const aVar1080 = easeOut(prog(currentTimeMs, A_VARIANTS_START, A_VARIANTS_START + 300));
-  const aVar720 = easeOut(prog(currentTimeMs, A_VARIANTS_START + 300, A_VARIANTS_START + 600));
-  const aVar480 = easeOut(prog(currentTimeMs, A_VARIANTS_START + 600, A_VARIANTS_START + 900));
-  const aServeArrow = easeOut(prog(currentTimeMs, A_PLAY - 400, A_PLAY - 100));
-  const aPlayerOpa = easeOut(prog(currentTimeMs, A_PLAY - 300, A_PLAY));
-  const aPlaying = easeOut(prog(currentTimeMs, A_PLAY, A_PLAY + 400));
+  return null;
+}
 
-  // ── Act 2: Editframe JIT (expanded, with snap easing) ──
-  const bBarOpa = snapEaseOut(prog(currentTimeMs, B_IN, B_IN + 800));
-  const bPlayerOpa = snapEaseOut(prog(currentTimeMs, B_PLAYER_IN, B_PLAYER_IN + 600));
-  const bHighlightOn = currentTimeMs >= B_HIGHLIGHT;
-  const bFetchArrow = snapEaseOut(prog(currentTimeMs, B_FETCH_START - 400, B_FETCH_START));
-  const bSegOpa = snapEaseOut(prog(currentTimeMs, B_FETCH_START, B_FETCH_START + 300));
-  const bSegTravel = easeInOut(prog(currentTimeMs, B_FETCH_START, B_FETCH_END));
+/* ━━ SCENE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+export function JITStreamingScene({ currentTimeMs: timeMs }: { currentTimeMs: number }) {
 
-  const bProxyOpa = snapEaseOut(prog(currentTimeMs, B_FETCH_START - 200, B_FETCH_START + 400));
-  const bPipelineFlash = prog(currentTimeMs, B_FETCH_END - 500, B_FETCH_END + 500);
-  const bPipelineOpa = bPipelineFlash > 0 && bPipelineFlash < 1 ? easeOut(bPipelineFlash < 0.5 ? bPipelineFlash * 2 : 2 - bPipelineFlash * 2) : 0;
+  // ── Global dimming: traditional side dims after transition ──
+  const tradDim = 1 - easeOut(prog(timeMs, TRANS_START, TRANS_END)) * 0.7;
 
-  const bTransActive = currentTimeMs >= B_TRANSCODE_START && currentTimeMs < B_TRANSCODE_END;
-  const bOutputOpa = snapEaseOut(prog(currentTimeMs, B_TRANSCODE_END - 200, B_TRANSCODE_END + 200));
-  const bOutputTravel = easeInOut(prog(currentTimeMs, B_TRANSCODE_END, B_PLAY - 200));
-  const bServeArrow = snapEaseOut(prog(currentTimeMs, B_TRANSCODE_END - 200, B_TRANSCODE_END));
-  const bPlaying = snapEaseOut(prog(currentTimeMs, B_PLAY, B_PLAY + 500));
+  // ── Phase 1: hero ──
+  const p1 = easeOut(prog(timeMs, 0, P1_END));
+  const heroY = lerp(0.8, 0.3, p1);
+  const titleOpa = easeOut(prog(timeMs, 300, 800)) * (1 - easeOut(prog(timeMs, 1800, 2200)));
+  const questionOpa = easeOut(prog(timeMs, 2200, 2600)) * (1 - easeOut(prog(timeMs, 2900, 3200)));
 
-  const bNext1Opa = snapEaseOut(prog(currentTimeMs, B_NEXT_START, B_NEXT_START + 300));
-  const bNext1Travel = easeInOut(prog(currentTimeMs, B_NEXT_START, B_NEXT_END));
-  const bNext2Opa = snapEaseOut(prog(currentTimeMs, B_NEXT_START + 800, B_NEXT_START + 1100));
-  const bNext2Travel = easeInOut(prog(currentTimeMs, B_NEXT_START + 800, B_NEXT_END + 400));
+  // ── Phase 2: split ──
+  const inP2 = timeMs >= P2_START;
+  const splitProg = easeInOut(prog(timeMs, P2_SPLIT, P2_END));
+  const crossfade = easeOut(prog(timeMs, P2_START + 200, P2_START + 600));
+  const unifiedOpa = inP2 ? (1 - crossfade) : p1;
 
-  // Cache-hit beat
-  const bCacheSegOpa = snapEaseOut(prog(currentTimeMs, B_CACHE_START, B_CACHE_START + 300));
-  const bCacheTravel = easeInOut(prog(currentTimeMs, B_CACHE_START, B_CACHE_END - 1000));
-  const bCacheProxyActive = currentTimeMs >= B_CACHE_START && currentTimeMs < B_CACHE_END;
-  const bCachePlaying = snapEaseOut(prog(currentTimeMs, B_CACHE_END - 1000, B_CACHE_END));
+  const cutBrightness = (c: number) => {
+    if (!inP2) return 0;
+    const delay = c * 100;
+    const cp = prog(timeMs, P2_START + delay, P2_START + delay + 200);
+    const cf = prog(timeMs, P2_START + delay + 150, P2_START + delay + 500);
+    return cp * (1 - cf);
+  };
 
-  // Particles — differentiated between acts
-  const bParticlesActive = currentTimeMs >= B_FETCH_START && currentTimeMs < B_END;
-  const bParticleTime = currentTimeMs - B_FETCH_START;
+  const sideLabelOpa = easeOut(prog(timeMs, P2_SPLIT, P2_END));
+  const subLabelOpa = easeOut(prog(timeMs, P2_SPLIT + 300, P2_END + 300));
 
-  // ── Visibility & transitions ──
-  const tradFadeOut = currentTimeMs >= TRANSITION_START && currentTimeMs < C_START
-    ? 1 - easeOut(prog(currentTimeMs, TRANSITION_START, TRANSITION_END))
-    : 1;
-  const tradVisible = currentTimeMs < TRANSITION_END;
-  const efVisible = currentTimeMs >= B_IN && currentTimeMs < C_START;
+  // ── Phase 3: Traditional ──
+  const inTrad = timeMs >= TRAD_START;
+  const tradUploadDur = TRAD_UPLOAD_END - TRAD_START;
+  const tradChunkDelay = tradUploadDur / NUM_SEGS;
+  const tradChunkTravel = tradChunkDelay * 1.5;
 
-  // ── Act 3: Gantt comparison ──
-  const ganttVisible = currentTimeMs >= C_START && currentTimeMs < OUTRO_START;
-  const ganttOpa = easeOut(prog(currentTimeMs, C_START, C_START + 1000));
-  const ganttTradFill = easeInOut(prog(currentTimeMs, C_START + 500, C_START + 2500));
-  const ganttEfFill = easeInOut(prog(currentTimeMs, C_START + 1500, C_START + 2500));
+  const tradUploaded: number[] = [];
+  const tradChunkProgs: number[] = [];
+  for (let i = 0; i < NUM_SEGS; i++) {
+    const t0 = TRAD_START + i * tradChunkDelay;
+    const p = easeInOut(prog(timeMs, t0, t0 + tradChunkTravel));
+    tradChunkProgs.push(p);
+    if (p >= 1) tradUploaded.push(i);
+  }
 
-  // ── Outro ──
-  const outroVisible = currentTimeMs >= OUTRO_START;
-  const outroFadeGantt = 1 - easeOut(prog(currentTimeMs, OUTRO_START, OUTRO_START + 800));
+  const tradCopyOpa = tradUploaded.length > 0 ? easeOut(tradUploaded.length / NUM_SEGS) : 0;
+  const tradTransOpa = easeOut(prog(timeMs, TRAD_TRANSCODE_START - 400, TRAD_TRANSCODE_START));
+  const tradTransActive = timeMs >= TRAD_TRANSCODE_START && timeMs < TRAD_TRANSCODE_END;
+
+  const tradVar1080 = easeOut(prog(timeMs, TRAD_VARIANTS_IN, TRAD_VARIANTS_IN + 400));
+  const tradVar720 = easeOut(prog(timeMs, TRAD_VARIANTS_IN + 400, TRAD_VARIANTS_IN + 800));
+  const tradVar480 = easeOut(prog(timeMs, TRAD_VARIANTS_IN + 800, TRAD_VARIANTS_IN + 1200));
+
+  const tradServeDur = TRAD_PLAY - TRAD_SERVE_START;
+  const tradServeDelay = tradServeDur / 3;
+  const tradServeTravel = tradServeDelay * 1.4;
+  const tradServeProgs: number[] = [];
+  const tradBufferedSegs: number[] = [];
+  for (let i = 0; i < 3; i++) {
+    const t0 = TRAD_SERVE_START + i * tradServeDelay;
+    const p = easeInOut(prog(timeMs, t0, t0 + tradServeTravel));
+    tradServeProgs.push(p);
+    if (p >= 0.95) tradBufferedSegs.push(i);
+  }
+  const tradPlayerOpa = easeOut(prog(timeMs, TRAD_SERVE_START - 500, TRAD_SERVE_START));
+  const tradPlaying = easeOut(prog(timeMs, TRAD_PLAY, TRAD_PLAY + 500));
+
+  // ── Transition text ──
+  const transOpa = easeOut(prog(timeMs, TRANS_START + 200, TRANS_START + 600)) * (1 - easeOut(prog(timeMs, TRANS_END - 300, TRANS_END)));
+
+  // ── Phase 4: JIT ──
+  const inJit = timeMs >= JIT_START;
+  const jitGhostOpa = easeOut(prog(timeMs, JIT_GHOST_IN, JIT_GHOST_IN + 800));
+  const jitProxyOpa = easeOut(prog(timeMs, JIT_PROXY_IN, JIT_PROXY_IN + 500));
+  const jitPlayerOpa = easeOut(prog(timeMs, JIT_PLAYER_IN, JIT_PLAYER_IN + 500));
+
+  // Segments fetched out of order: 0, 4, 2 — skipping around to show
+  // the JIT approach doesn't need sequential access.
+  // Each cycle: request → fetch → stream
+  type Cycle = { rs: number; re: number; fs: number; fe: number; ss: number; se: number; seg: number };
+  const jitCycles: Cycle[] = [
+    { rs: JIT_REQ1_START, re: JIT_REQ1_END, fs: JIT_FETCH1_START, fe: JIT_FETCH1_END, ss: JIT_STREAM1_START, se: JIT_STREAM1_END, seg: 0 },
+    { rs: JIT_REQ2_START, re: JIT_REQ2_END, fs: JIT_FETCH2_START, fe: JIT_FETCH2_END, ss: JIT_STREAM2_START, se: JIT_STREAM2_END, seg: 4 },
+    { rs: JIT_REQ3_START, re: JIT_REQ3_END, fs: JIT_FETCH3_START, fe: JIT_FETCH3_END, ss: JIT_STREAM3_START, se: JIT_STREAM3_END, seg: 2 },
+  ];
+
+  const jitHighlight = jitCycles.find(c => timeMs >= c.rs && timeMs < c.se)?.seg ?? -1;
+  const jitTransActive = jitCycles.some(c => timeMs >= c.fe && timeMs < c.ss);
+  const jitPlaying = easeOut(prog(timeMs, JIT_PLAY, JIT_PLAY + 500));
+  const jitFilledSegs = jitCycles.filter(c => timeMs >= c.se).map(c => c.seg);
+
+  // Phase 5
+  const punchOpa = easeOut(prog(timeMs, P5_START + 200, P5_START + 600));
+  const tagOpa = easeOut(prog(timeMs, P5_START + 800, P5_START + 1200));
 
   return (
     <>
-      <Lights />
-      <Captions currentTimeMs={currentTimeMs} />
+      <CameraController timeMs={timeMs} />
+      <Lighting timeMs={timeMs} />
+      <Floor />
 
-      {/* ━━ ACT 1: TRADITIONAL (compressed) ━━━━━━━━━━━━━━━━━━━━━ */}
-      {tradVisible && (
-        <group>
-          <FilmstripBar opacity={aBarOpa * tradFadeOut} position={[-1.2, -2.2, 0]} label="video.mp4" />
+      {/* ── Phase 1: Hero ── */}
+      <SceneLabel position={[0, 0.65, 0.2]} opacity={titleOpa} fontSize={0.22} bold>
+        A video file on a remote URL.
+      </SceneLabel>
 
-          <Arrow opacity={aUploadArrow * tradFadeOut} position={[-1.2, -1.2, 0.1]} length={1.2} color={COL_TRAD} up />
-          <Label position={[-1.2 + BAR_W / 2 + 0.15, -1.2, 0.1]} fontSize={0.13} color="#ff8a65" opacity={aUploadArrow * tradFadeOut * 0.7} anchorX="left">
-            upload entire file
-          </Label>
-          {aUploadParticles && (
-            <ParticleStream from={[-1.2, -2.0, 0.1]} to={[-1.2, 0.2, 0.1]} count={80} color={COL_TRAD} opacity={0.5 * tradFadeOut} timeMs={aUploadTime} seed={1000} size={0.08} wobble={0.12} />
-          )}
+      <SceneLabel position={[0, 0.65, 0.2]} opacity={questionOpa} fontSize={0.22} bold>
+        How do you stream it?
+      </SceneLabel>
 
-          <FilmstripBar opacity={aCopyOpa * tradFadeOut} position={[0, 1.8, 0]} label="copy on remote server" />
-          <Arrow opacity={aTransArrow * tradFadeOut} position={[0, 1.1, 0.1]} color={COL_MACHINE} />
-          <TranscodeBox opacity={aTransBoxOpa * tradFadeOut} active={aTransActive} scale={1} position={[0, 0.4, 0]} />
+      {/* Unified bar (pre-split) */}
+      <FilmstripBar opacity={unifiedOpa} position={[0, heroY, 0]} label="video.mp4" />
 
-          <group position={[0, -0.5, 0]}>
-            <VariantBar opacity={aVar1080 * tradFadeOut} color={COL_1080} width={BAR_W * 0.95} position={[0, 0.25, 0]} label="1080p" />
-            <VariantBar opacity={aVar720 * tradFadeOut} color={COL_720} width={BAR_W * 0.7} position={[0, 0, 0]} label="720p" />
-            <VariantBar opacity={aVar480 * tradFadeOut} color={COL_480} width={BAR_W * 0.45} position={[0, -0.25, 0]} label="480p" />
+      {/* Laser cuts */}
+      {Array.from({ length: NUM_SEGS - 1 }, (_, c) => (
+        <LaserCutLine key={c} x={segX(c) + SEG_W / 2} y={0.3} opacity={cutBrightness(c)} />
+      ))}
+      {inP2 && (
+        <pointLight
+          position={[0, 0.8, 0.5]}
+          intensity={prog(timeMs, P2_START, P2_START + 200) * (1 - prog(timeMs, P2_START + 150, P2_START + 500)) * 8}
+          distance={8}
+        />
+      )}
+
+      {/* ── Side labels ── */}
+      <SceneLabel position={[TRAD_X, 0.65, 0.5]} opacity={sideLabelOpa * tradDim} color="#888888" fontSize={0.18} bold>
+        Traditional
+      </SceneLabel>
+      <SceneLabel position={[TRAD_X, 0.50, 0.5]} opacity={subLabelOpa * tradDim} color="#777777" fontSize={0.10}>
+        Upload everything, then stream
+      </SceneLabel>
+
+      <SceneLabel position={[JIT_X, 0.65, 0.5]} opacity={sideLabelOpa} color={COL_EF} fontSize={0.18} bold>
+        Editframe
+      </SceneLabel>
+      <SceneLabel position={[JIT_X, 0.50, 0.5]} opacity={subLabelOpa} color="#aaaaaa" fontSize={0.10}>
+        Stream on demand, no upload
+      </SceneLabel>
+
+      {/* ── Traditional bar (left) — loses chunks as they upload ── */}
+      {inP2 && (
+        <SegmentedBar
+          opacity={crossfade * tradDim}
+          position={[lerp(0, TRAD_X, splitProg), SIDE_Y, lerp(0, 0.5, splitProg)]}
+          label="video.mp4"
+          missingSegs={tradUploaded}
+        />
+      )}
+
+      {/* ── JIT bar (right) — stays whole, highlights fetched chunk ── */}
+      {inP2 && (
+        <SegmentedBar
+          opacity={crossfade}
+          position={[lerp(0, JIT_X, splitProg), SIDE_Y, lerp(0, 0.5, splitProg)]}
+          label="video.mp4 — same URL"
+          highlightSeg={jitHighlight}
+          dimOthers
+        />
+      )}
+
+      {/* ━━ TRADITIONAL SIDE (Phase 3) ━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {inTrad && (
+        <>
+          {/* Chunks uploading from bar → service depth */}
+          {tradChunkProgs.map((p, i) => {
+            if (p <= 0 || p >= 1) return null;
+            return (
+              <Chunk key={`tup-${i}`} opacity={0.85 * tradDim} color={COL_TRAD}
+                position={[TRAD_X + segX(i), SIDE_Y + Math.sin(p * Math.PI) * 0.25, lerp(0.5, SERVICE_Z, p)]} />
+            );
+          })}
+
+          {/* Server copy */}
+          <FilmstripBar opacity={tradCopyOpa * tradDim} position={[TRAD_X, SIDE_Y, SERVICE_Z]} label="copy on service" scale={0.9} />
+
+          {/* Transcode box */}
+          <TranscodeBox opacity={tradTransOpa * tradDim} active={tradTransActive} position={[TRAD_X, -0.1, TRANSCODE_Z]} />
+
+          {/* Variant bars */}
+          <group position={[TRAD_X, -0.1, VARIANT_Z]}>
+            <VariantBar opacity={tradVar1080 * tradDim} color={COL_1080} position={[0, 0.28, 0]} label="1080p" scale={0.75} />
+            <VariantBar opacity={tradVar720 * tradDim} color={COL_720} position={[0, 0, 0]} label="720p" scale={0.75} />
+            <VariantBar opacity={tradVar480 * tradDim} color={COL_480} position={[0, -0.28, 0]} label="480p" scale={0.75} />
           </group>
 
-          <Arrow opacity={aServeArrow * tradFadeOut} position={[1.2, -1.2, 0.1]} length={1.2} color={0x666688} />
-          <Label position={[1.2 + BAR_W / 2 + 0.15, -1.2, 0.1]} fontSize={0.13} color="#aaaacc" opacity={aServeArrow * tradFadeOut * 0.7} anchorX="left">
-            download for playback
-          </Label>
+          {/* Chunks from 1080p → player */}
+          {tradServeProgs.map((p, i) => {
+            if (p <= 0 || p >= 1) return null;
+            return (
+              <Chunk key={`tsrv-${i}`} opacity={0.8 * tradDim} color={COL_1080}
+                position={[TRAD_X + segX(i) * 0.75, lerp(-0.1, -0.35, p) + Math.sin(p * Math.PI) * 0.2, lerp(VARIANT_Z, PLAYER_Z, p)]} />
+            );
+          })}
 
-          <PlayerScreen opacity={aPlayerOpa * tradFadeOut} playing={aPlaying * tradFadeOut} position={[1.2, -2.2, 0]} />
-        </group>
+          {/* Player — scrub bar fills sequentially as chunks arrive */}
+          <VideoPlayer opacity={tradPlayerOpa * tradDim} playing={tradPlaying} position={[TRAD_X, -0.35, PLAYER_Z]} bufferedSegs={tradBufferedSegs} bufferColor={COL_1080} />
+
+          {/* Summary text */}
+          <SceneLabel position={[TRAD_X, -0.75, PLAYER_Z + 0.5]} opacity={easeOut(prog(timeMs, TRAD_PLAY + 200, TRAD_PLAY + 600)) * tradDim} color="#888888" fontSize={0.10}>
+            Upload. Transcode. Store. Then play.
+          </SceneLabel>
+        </>
       )}
 
-      {/* ━━ ACT 2: EDITFRAME JIT (expanded, snappy motion) ━━━━━━━━━━ */}
-      {efVisible && (
-        <group>
-          <FilmstripBar
-            opacity={bBarOpa}
-            position={[0, 2, 0]}
-            label="https://your-cdn.com/video.mp4"
-            dimSegments={bHighlightOn}
-            highlightRange={bHighlightOn ? [1, 1] : undefined}
-          />
+      {/* ── Transition text ── */}
+      <SceneLabel position={[0, 0.65, 1.5]} opacity={transOpa} fontSize={0.22} bold>
+        What if you didn't need all that?
+      </SceneLabel>
 
-          <Arrow opacity={bFetchArrow} position={[0, 1.35, 0.1]} color={COL_HIGHLIGHT} />
-          <Label position={[0.4, 1.35, 0.1]} fontSize={0.13} color="#69f0ae" opacity={bFetchArrow * 0.7} anchorX="left">
-            byte-range request
-          </Label>
+      {/* ━━ JIT SIDE (Phase 4) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {inJit && (
+        <>
+          {/* Ghost variant grid — the available bitrate space, instantly visible.
+              Segments light up as the proxy fetches and transcodes them. */}
+          <group position={[JIT_X, -0.1, VARIANT_Z]}>
+            <GhostVariantBar opacity={jitGhostOpa} color={COL_1080} position={[0, 0.28, 0]} label="1080p" scale={0.75} filledSegs={jitFilledSegs} />
+            <GhostVariantBar opacity={jitGhostOpa * 0.7} color={COL_720} position={[0, 0, 0]} label="720p" scale={0.75} />
+            <GhostVariantBar opacity={jitGhostOpa * 0.5} color={COL_480} position={[0, -0.28, 0]} label="480p" scale={0.75} />
+          </group>
 
-          <Segment
-            opacity={bSegOpa}
-            color={COL_HIGHLIGHT}
-            label="0:10-0:20"
-            position={[0, lerp(1.6, 0.5, bSegTravel), 0.1]}
-          />
+          {/* Proxy */}
+          <ProxyBox opacity={jitProxyOpa} active={jitTransActive} position={[JIT_X, -0.15, PROXY_Z]} />
 
-          <ProxyBox
-            opacity={bProxyOpa}
-            active={bTransActive}
-            position={[0, 0, 0]}
-            showPipeline={bPipelineOpa}
-            cached={bCacheProxyActive && currentTimeMs >= B_CACHE_START + 500}
-          />
+          {/* Player — scrub bar fills non-contiguously as chunks arrive out of order */}
+          <VideoPlayer opacity={jitPlayerOpa} playing={jitPlaying} position={[JIT_X, -0.35, JIT_PLAYER_Z]} bufferedSegs={jitFilledSegs} bufferColor={COL_1080} />
 
-          <Arrow opacity={bServeArrow} position={[0, -1.0, 0.1]} color={COL_EF} />
-          <Label position={[0.4, -1.0, 0.1]} fontSize={0.13} color="#82b1ff" opacity={bServeArrow * 0.7} anchorX="left">
-            stream to player
-          </Label>
+          {/* Request → Fetch → Stream cycles */}
+          {jitCycles.map((c, ci) => {
+            // Phase A: request beam from player → ghost variant segment
+            const reqP = easeInOut(prog(timeMs, c.rs, c.re));
+            const requesting = timeMs >= c.rs && timeMs < c.re;
 
-          <Segment
-            opacity={bOutputOpa * (1 - bPlaying)}
-            color={COL_EF}
-            label="1080p"
-            position={[0, lerp(-0.7, -1.7, bOutputTravel), 0.1]}
-          />
+            // Phase B: chunk fetched from source bar → proxy
+            const fetchP = easeInOut(prog(timeMs, c.fs, c.fe));
+            const fetching = timeMs >= c.fs && timeMs < c.fe;
 
-          {bParticlesActive && (
-            <ParticleStream from={[0, 1.6, 0.1]} to={[0, -2.0, 0.1]} count={30} color={COL_EF} opacity={0.5} timeMs={bParticleTime} seed={5000} size={0.04} wobble={0.03} />
-          )}
+            // Phase C: chunk streamed from proxy → player
+            const streamP = easeInOut(prog(timeMs, c.ss, c.se));
+            const streaming = timeMs >= c.ss && timeMs < c.se;
 
-          <PlayerScreen opacity={bPlayerOpa} playing={bPlaying} position={[0, -2.2, 0]} />
+            // Target position: the specific segment in the 1080p ghost bar
+            const ghostSegY = -0.1 + 0.28; // ghost group Y + 1080p row offset
+            const ghostSegX = JIT_X + segX(c.seg) * 0.75; // scaled by ghost bar scale
 
-          {/* Next segments */}
-          <Segment
-            opacity={bNext1Opa * 0.6}
-            color={COL_720}
-            label="720p"
-            position={[0.4, lerp(1.6, -2.0, bNext1Travel), 0.1]}
-          />
-          <Segment
-            opacity={bNext2Opa * 0.5}
-            color={COL_480}
-            label="480p"
-            position={[-0.4, lerp(1.6, -2.0, bNext2Travel), 0.1]}
-          />
+            return (
+              <React.Fragment key={ci}>
+                {/* Request beam: player → ghost variant segment */}
+                {requesting && (
+                  <RequestBeam
+                    from={[JIT_X, -0.35, JIT_PLAYER_Z]}
+                    to={[ghostSegX, ghostSegY, VARIANT_Z]}
+                    progress={reqP}
+                    opacity={0.7}
+                    color={COL_EF}
+                  />
+                )}
+                {/* Small pulse at the target ghost segment when request arrives */}
+                {reqP > 0.85 && timeMs < c.fe + 200 && (
+                  <pointLight
+                    position={[ghostSegX, ghostSegY, VARIANT_Z]}
+                    color={COL_EF}
+                    intensity={3 * (1 - prog(timeMs, c.re, c.re + 300))}
+                    distance={2}
+                  />
+                )}
+                {/* Fetch: chunk travels from source bar → proxy */}
+                {fetching && (
+                  <Chunk opacity={0.9} color={COL_HIGHLIGHT}
+                    position={[
+                      lerp(JIT_X + segX(c.seg), JIT_X, fetchP),
+                      SIDE_Y + Math.sin(fetchP * Math.PI) * 0.3,
+                      lerp(0.5, PROXY_Z, fetchP),
+                    ]} />
+                )}
+                {/* Stream: chunk travels from proxy → player */}
+                {streaming && (
+                  <Chunk opacity={0.9} color={COL_1080}
+                    position={[
+                      JIT_X,
+                      lerp(-0.15, -0.35, streamP) + Math.sin(streamP * Math.PI) * 0.15,
+                      lerp(PROXY_Z, JIT_PLAYER_Z, streamP),
+                    ]} />
+                )}
+              </React.Fragment>
+            );
+          })}
 
-          {/* Cache-hit segment — bypasses transcode */}
-          <Segment
-            opacity={bCacheSegOpa * 0.7}
-            color={COL_CACHE}
-            label="cached"
-            position={[0, lerp(1.6, -2.0, bCacheTravel), 0.15]}
-          />
-        </group>
+          {/* Summary text */}
+          <SceneLabel position={[JIT_X, -0.75, JIT_PLAYER_Z + 0.5]} opacity={easeOut(prog(timeMs, JIT_PLAY + 200, JIT_PLAY + 600))} color={COL_EF} fontSize={0.10}>
+            Already playing.
+          </SceneLabel>
+        </>
       )}
 
-      {/* ━━ ACT 3: GANTT COMPARISON ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {ganttVisible && (
-        <group position={[0, 0, 0]}>
-          <GanttBar
-            opacity={ganttOpa * (outroVisible ? outroFadeGantt : 1)}
-            position={[0, 0.8, 0]}
-            label="Traditional"
-            totalWidth={6}
-            segments={[
-              { width: 2.0 * ganttTradFill, color: COL_TRAD, label: "upload", opacity: ganttTradFill },
-              { width: 2.5 * ganttTradFill, color: COL_MACHINE, label: "transcode all", opacity: ganttTradFill },
-              { width: 1.0 * ganttTradFill, color: 0x666688, label: "deliver", opacity: ganttTradFill },
-            ]}
-          />
-          <GanttBar
-            opacity={ganttOpa * (outroVisible ? outroFadeGantt : 1)}
-            position={[0, -0.2, 0]}
-            label="Editframe"
-            totalWidth={6}
-            segments={[
-              { width: 0.3 * ganttEfFill, color: COL_HIGHLIGHT, label: "fetch", opacity: ganttEfFill },
-              { width: 0.4 * ganttEfFill, color: COL_MACHINE, label: "transcode", opacity: ganttEfFill },
-              { width: 0.15 * ganttEfFill, color: COL_EF, label: "stream", opacity: ganttEfFill },
-            ]}
-          />
-          {/* Time axis */}
-          <Label position={[-3, -1.2, 0]} fontSize={0.10} color="rgba(255,255,255,0.3)" opacity={ganttOpa * (outroVisible ? outroFadeGantt : 1)}>
-            0s
-          </Label>
-          <Label position={[0, -1.2, 0]} fontSize={0.10} color="rgba(255,255,255,0.3)" opacity={ganttOpa * (outroVisible ? outroFadeGantt : 1)}>
-            minutes
-          </Label>
-          <Label position={[3, -1.2, 0]} fontSize={0.10} color="rgba(255,255,255,0.3)" opacity={ganttOpa * (outroVisible ? outroFadeGantt : 1)}>
-            15+ min
-          </Label>
-        </group>
-      )}
+      {/* ── Phase 5: Punchline ── */}
+      <SceneLabel
+        position={[JIT_X + 0.3, -0.15, JIT_PLAYER_Z + 1.5 + punchOpa * 0.6]}
+        opacity={punchOpa} color={COL_DONE} fontSize={0.30} bold
+      >
+        Instant playback
+      </SceneLabel>
+      <SceneLabel
+        position={[JIT_X + 0.3, -0.42, JIT_PLAYER_Z + 1.5 + tagOpa * 0.6]}
+        opacity={tagOpa} color="#aaaaaa" fontSize={0.11}
+      >
+        No upload. No transcoding queue. Just the chunks you need.
+      </SceneLabel>
     </>
   );
 }
