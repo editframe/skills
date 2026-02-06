@@ -56,6 +56,13 @@ export function InvalidateOnTimeChange({ timeMs }: { timeMs: number }) {
  * - Is capped at display refresh rate (typically 60fps)
  * - Renders asynchronously, breaking deterministic frame capture
  * 
+ * **CRITICAL LIMITATION**: Chrome suspends WebGL rendering in hidden tabs.
+ * Even though we call gl.render() directly, Chrome's renderer process is suspended
+ * when the tab is not visible, causing WebGL commands to not execute. This means:
+ * - Video exports will capture stale/frozen frames if the tab is hidden
+ * - Users MUST keep the rendering tab visible during export
+ * - No reliable workaround exists without --disable-renderer-backgrounding flag
+ * 
  * @param canvasContainer - The container element that holds the R3F canvas
  * 
  * @example
@@ -80,6 +87,14 @@ export function flushR3F(canvasContainer: HTMLElement | null): void {
   if (r3fStore) {
     const state = r3fStore.store?.getState?.();
     if (state?.gl && state?.scene && state?.camera) {
+      // Warn if tab is hidden during rendering (WebGL commands won't execute)
+      if (document.hidden) {
+        console.warn(
+          '[flushR3F] Tab is hidden - WebGL rendering is suspended by Chrome. ' +
+          'Video frames will be frozen. Keep the tab visible during export.'
+        );
+      }
+      
       // Direct synchronous WebGL render - bypasses RAF entirely
       state.gl.render(state.scene, state.camera);
       // Force GPU sync to ensure pixels are ready for capture
