@@ -1472,6 +1472,34 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
   }
   
   /**
+   * Wait for all LitElement descendants to update and for text segments to be ready.
+   * This ensures the clone is fully initialized before rendering.
+   * @internal
+   */
+  async #waitForDescendants(actualClone: EFTimegroup): Promise<void> {
+    // Wait for all LitElement descendants
+    const allLitElements = Array.from(actualClone.querySelectorAll('*')).filter(
+      (el) => el instanceof LitElement
+    ) as LitElement[];
+    await Promise.all(allLitElements.map((el) => el.updateComplete));
+    
+    // Wait for text segments
+    const textElements = allLitElements.filter((el) => el.tagName === "EF-TEXT");
+    if (textElements.length > 0) {
+      await Promise.all(
+        textElements.map((el) => {
+          if ("whenSegmentsReady" in el && typeof el.whenSegmentsReady === "function") {
+            return (el as any).whenSegmentsReady();
+          }
+          return Promise.resolve();
+        }),
+      );
+      void actualClone.offsetHeight;
+      await new Promise(resolve => requestAnimationFrame(resolve));
+    }
+  }
+
+  /**
    * Factory path: mount a fresh component tree (React, etc.) to produce
    * a fully functional clone. The factory is responsible for rendering
    * the component into the container and returning the root ef-timegroup.
@@ -1525,26 +1553,8 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     customElements.upgrade(container);
     await actualClone.updateComplete;
     
-    // Wait for all LitElement descendants
-    const allLitElements = Array.from(actualClone.querySelectorAll('*')).filter(
-      (el) => el instanceof LitElement
-    ) as LitElement[];
-    await Promise.all(allLitElements.map((el) => el.updateComplete));
-    
-    // Wait for text segments
-    const textElements = allLitElements.filter((el) => el.tagName === "EF-TEXT");
-    if (textElements.length > 0) {
-      await Promise.all(
-        textElements.map((el) => {
-          if ("whenSegmentsReady" in el && typeof el.whenSegmentsReady === "function") {
-            return (el as any).whenSegmentsReady();
-          }
-          return Promise.resolve();
-        }),
-      );
-      void actualClone.offsetHeight;
-      await new Promise(resolve => requestAnimationFrame(resolve));
-    }
+    // Wait for all descendants to be ready
+    await this.#waitForDescendants(actualClone);
     
     // Finalize clone: parent-child relationships, lock root, remove PlaybackController
     await this.#finalizeRenderClone(actualClone);
@@ -1634,25 +1644,8 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     // Wait for LitElement updates
     await actualClone.updateComplete;
     
-    const allLitElements = Array.from(actualClone.querySelectorAll('*')).filter(
-      (el) => el instanceof LitElement
-    ) as LitElement[];
-    await Promise.all(allLitElements.map((el) => el.updateComplete));
-    
-    // Wait for text segments
-    const textElements = allLitElements.filter((el) => el.tagName === "EF-TEXT");
-    if (textElements.length > 0) {
-      await Promise.all(
-        textElements.map((el) => {
-          if ("whenSegmentsReady" in el && typeof el.whenSegmentsReady === "function") {
-            return (el as any).whenSegmentsReady();
-          }
-          return Promise.resolve();
-        }),
-      );
-      void actualClone.offsetHeight;
-      await new Promise(resolve => requestAnimationFrame(resolve));
-    }
+    // Wait for all descendants to be ready
+    await this.#waitForDescendants(actualClone);
     
     // Copy text segment data again after initializer may have replaced DOM
     await this.#copyTextSegmentData(this, actualClone);
