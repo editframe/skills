@@ -76,6 +76,8 @@ self.onmessage = (event: MessageEvent) => {
   if (type === "init") {
     const { canvas, width, height, pixelRatio } = data;
 
+    try {
+
     // Shim OffscreenCanvas → HTMLCanvasElement interface for R3F
     Object.assign(canvas, {
       style: { touchAction: "none" },
@@ -163,6 +165,11 @@ self.onmessage = (event: MessageEvent) => {
     };
 
     postMessage({ type: "ready" });
+
+    } catch (err: any) {
+      console.error("[jit-streaming-worker] Init failed:", err);
+      postMessage({ type: "error", message: err?.message || String(err) });
+    }
   }
 
   if (type === "setTime") {

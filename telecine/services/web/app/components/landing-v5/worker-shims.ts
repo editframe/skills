@@ -8,10 +8,13 @@
 
 const _self = typeof self !== "undefined" ? self : globalThis;
 
+// R3F / Three.js check `typeof window` to detect SSR vs browser.
 if (typeof (_self as any).window === "undefined") {
   (_self as any).window = _self;
 }
 
+// Three.js and troika-three-text use document.createElement('canvas') for
+// font metrics and SDF generation.
 if (typeof (_self as any).document === "undefined") {
   (_self as any).document = {
     createElement(tag: string) {
@@ -38,4 +41,18 @@ if (typeof (_self as any).Image === "undefined") {
     }
     set onerror(_cb: any) {}
   };
+}
+
+// Workers don't have requestAnimationFrame in their global scope.
+// R3F and Three.js's WebGLRenderer.setAnimationLoop use it for the render loop.
+// Even with frameloop="demand", R3F calls RAF to schedule renders after invalidate().
+if (typeof (_self as any).requestAnimationFrame === "undefined") {
+  (_self as any).requestAnimationFrame = (cb: (time: number) => void) =>
+    setTimeout(() => cb(performance.now()), 16) as unknown as number;
+  (_self as any).cancelAnimationFrame = (id: number) => clearTimeout(id);
+}
+
+// Some Three.js internals check for `navigator`
+if (typeof (_self as any).navigator === "undefined") {
+  (_self as any).navigator = { userAgent: "", language: "en" };
 }

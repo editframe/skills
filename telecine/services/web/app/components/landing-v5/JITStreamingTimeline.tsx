@@ -41,6 +41,15 @@ export function JITStreamingTimeline() {
       { type: "module" },
     );
 
+    w.onerror = (e) => {
+      console.error("[JITStreamingTimeline] Worker error:", e);
+    };
+    w.onmessage = (e) => {
+      if (e.data.type === "error") {
+        console.error("[JITStreamingTimeline] Worker init error:", e.data.message);
+      }
+    };
+
     const { width, height } = canvas.getBoundingClientRect();
 
     w.postMessage(
