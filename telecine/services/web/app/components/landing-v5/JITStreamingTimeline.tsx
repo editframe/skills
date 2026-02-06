@@ -82,7 +82,7 @@ export function JITStreamingTimeline() {
             toneMappingExposure: 1.8,
           }}
           camera={{ fov: 50, near: 0.1, far: 100 }}
-          scene={{ background: new THREE.Color(0x1e2233), fog: new THREE.Fog(0x1e2233, 20, 45) }}
+          scene={{ background: new THREE.Color(0x1e2233), fog: new THREE.Fog(0x1e2233, 12, 28) }}
           style={{ width: "100%", height: "100%" }}
         >
           <Suspense fallback={null}>
