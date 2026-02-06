@@ -5,119 +5,72 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import * as THREE from "three";
 
-/* ━━ Design: Whiteboard first, then 3D ━━━━━━━━━━━━━━━━━━━━━━━━━━
-   Everything here starts from what you'd draw on a whiteboard:
-   flat horizontal bars, arrows, highlighted regions. The 3D adds
-   camera, lighting, and depth — it doesn't replace legibility.
-
-   TRADITIONAL (up/down arc — file leaves you, gets processed remotely, comes back):
-
-                  ╭── REMOTE SERVER ──╮
-                  │                   │
-   [████████████████████████████]  copy on server
-                  │  transcode all    │
-   [████████████] 1080p               │
-   [████████]     720p                │
-   [█████]        480p                │
-                  ╰───────────────────╯
-            ↑ upload              ↓ download
-            |                     |
-   [████████████████████████████]  "video.mp4"
-                           [ PLAYER ]
-
-   EDITFRAME JIT (flat — file never leaves, proxy fetches on demand):
-
-   [░░░░██████░░░░░░░░░░░░░░░░]  file stays on YOUR server
-          ↑ byte-range request
-          |
-   ╭─ EDITFRAME CLOUD PROXY ─╮
-   │  [transcode] just this   │
-   ╰──────────────────────────╯
-          |
-      [ PLAYER ]  already playing
-          next: 0:20–0:30 ...
-
-   The shapes are flat bars. The highlight is transparency.
-   The 3D adds polish. Nothing requires interpretation.
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-
 /* ━━ Sizing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-const BAR_W = 4.5;        // Total width of the filmstrip bar
-const BAR_H = 0.25;       // Height of each bar
-const BAR_D = 0.15;       // Depth (thin — this is fundamentally 2D)
-const NUM_SEGS = 6;        // Visible segments in the bar
+const BAR_W = 4.5;
+const BAR_H = 0.25;
+const BAR_D = 0.15;
+const NUM_SEGS = 6;
 const SEG_W = BAR_W / NUM_SEGS;
 
-/* ━━ Timing — narration pace ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   Each beat gets 2-3s to land + breathe before the next one.
-   Imagined narration in comments.
+/* ━━ Timing — compressed Act 1, expanded Act 2 ━━━━━━━━━━━━━━━━━━
+   Act 1 (0-6s): Quick traditional pipeline — establish the pain fast.
+   Transition (6-8s): "What if you could skip all of that?"
+   Act 2 (8-30s): Editframe JIT — the main event.
+   Act 3 (30-36s): Gantt comparison — visual proof.
+   Outro (36-42s): Closing statement.
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
-// ACT 1: Traditional
-// "You have a video file."
-const A_IN = 500;
-//                              ... let it sit for a beat ...
-// "To use it, you upload the entire thing to their servers."
-const A_UPLOAD_START = 3000;
-const A_UPLOAD_END = 6500;      // 3.5s of slow upload flow
-//                              ... copy appears ...
-// "Then they transcode it — every frame, every bitrate."
-const A_TRANSCODE_START = 8000;
-const A_TRANSCODE_END = 12000;  // 4s of grinding
-//                              ... variants land one by one ...
-// "1080p. 720p. 480p. Three complete copies, stored."
-const A_VARIANTS_START = 12500;
-//                              ... breathe ...
-// "Only now can someone press play."
-const A_PLAY = 15000;
-const A_END = 17000;
+// ACT 1: Traditional (compressed to ~6s)
+const A_IN = 200;
+const A_UPLOAD_START = 1200;
+const A_UPLOAD_END = 2800;
+const A_TRANSCODE_START = 3200;
+const A_TRANSCODE_END = 4400;
+const A_VARIANTS_START = 4500;
+const A_PLAY = 5200;
+const A_END = 6000;
 
 // TRANSITION
-// "What if you could skip all of that?"
-const TRANSITION_START = 17000;
-const TRANSITION_END = 19500;
+const TRANSITION_START = 6000;
+const TRANSITION_END = 8000;
 
-// ACT 2: Editframe JIT
-// "Same file. But it stays where it is — on your server."
-const B_IN = 19500;
-//                              ... let the URL bar sit ...
-// "When the player needs a frame..."
-const B_PLAYER_IN = 21500;
-// "...it highlights just the bytes it needs."
-const B_HIGHLIGHT = 23000;
-//                              ... hold the highlight ...
-// "A byte-range request fetches just that slice."
-const B_FETCH_START = 24500;
-const B_FETCH_END = 26500;      // 2s travel
-// "Same transcode — but just this piece."
-const B_TRANSCODE_START = 27000;
-const B_TRANSCODE_END = 29000;  // 2s processing
-//                              ... output streams to player ...
-// "Already playing."
-const B_PLAY = 30000;
-//                              ... let it breathe ...
-// "Next segment. Different bitrate. Streamed on demand."
-const B_NEXT_START = 32000;
-const B_NEXT_END = 35000;       // 3s staggered flow
-const B_END = 36000;
+// ACT 2: Editframe JIT (expanded — 8s to 30s)
+const B_IN = 8000;
+const B_PLAYER_IN = 9500;
+const B_HIGHLIGHT = 11000;
+const B_FETCH_START = 12500;
+const B_FETCH_END = 14500;
+const B_TRANSCODE_START = 15000;
+const B_TRANSCODE_END = 17000;
+const B_PLAY = 18000;
+const B_NEXT_START = 20000;
+const B_NEXT_END = 23000;
+// Cache-hit beat
+const B_CACHE_START = 24000;
+const B_CACHE_END = 27500;
+const B_END = 28000;
 
-// ACT 3: Side-by-side comparison
-// "Same transcode work. No upload. No ingest delay."
-const C_START = 37000;
+// ACT 3: Gantt comparison
+const C_START = 30000;
+const C_END = 36000;
+
+// OUTRO
+const OUTRO_START = 36000;
 const DURATION = 42000;
 
-/* ━━ Colors ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-const COL_BAR = 0x7e57c2;       // Purple — file segments
+/* ━━ Colors — increased contrast ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const COL_BAR = 0x9575cd;       // Brighter purple — file segments
 const COL_BAR_DIM = 0x5c3d99;   // Darker purple — dimmed segments
 const COL_HIGHLIGHT = 0x69f0ae; // Green — highlighted byte range
 const COL_TRAD = 0xff8a65;      // Amber — traditional accent
 const COL_1080 = 0x448aff;      // Blue — 1080p
 const COL_720 = 0x64b5f6;       // Light blue — 720p
 const COL_480 = 0x90caf9;       // Pale blue — 480p
-const COL_MACHINE = 0xffab91;   // Salmon — transcode machine
+const COL_MACHINE = 0x80cbc4;   // Teal — transcode compute
 const COL_EF = 0x82b1ff;        // Editframe blue
-const COL_BG = 0x3d4158;        // Background bar
+const COL_BG = 0x2d3148;        // Darker background bar
 const COL_PLAYER_ON = 0x82b1ff; // Player screen glow
+const COL_CACHE = 0x69f0ae;     // Green — cache hit
 
 /* ━━ Easing & helpers ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function easeOut(t: number) { return 1 - Math.pow(1 - t, 3); }
@@ -125,6 +78,13 @@ function easeInOut(t: number) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2
 function clamp01(t: number) { return Math.max(0, Math.min(1, t)); }
 function prog(ms: number, s: number, e: number) { return clamp01((ms - s) / (e - s)); }
 function lerp(a: number, b: number, t: number) { return a + (b - a) * t; }
+
+function snapEaseOut(t: number) {
+  if (t <= 0) return 0;
+  if (t >= 1) return 1;
+  const overshoot = 1.0 + Math.sin(t * Math.PI) * 0.08;
+  return overshoot * (1 - Math.pow(1 - t, 4));
+}
 
 function seededRandom(seed: number): number {
   const x = Math.sin(seed) * 10000;
@@ -135,7 +95,6 @@ function seededRandom(seed: number): number {
    COMPONENTS
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
-/** 3D label using drei Text */
 function Label({ children, position, color, fontSize, opacity, anchorX }: {
   children: string;
   position: [number, number, number];
@@ -147,7 +106,7 @@ function Label({ children, position, color, fontSize, opacity, anchorX }: {
   return (
     <Text
       position={position}
-      fontSize={fontSize ?? 0.12}
+      fontSize={fontSize ?? 0.16}
       color={color ?? "#aaaacc"}
       anchorX={anchorX ?? "center"}
       anchorY="middle"
@@ -158,18 +117,12 @@ function Label({ children, position, color, fontSize, opacity, anchorX }: {
   );
 }
 
-/** The filmstrip bar — a horizontal bar divided into visible segments.
-    This is THE core visual: a video file represented as a segmented bar.
-    
-    `dimSegments` makes non-highlighted segments translucent.
-    `highlightRange` glows a range of segments green.
-    `label` floats above. */
 function FilmstripBar({ opacity, position, label, dimSegments, highlightRange }: {
   opacity: number;
   position: [number, number, number];
   label?: string;
   dimSegments?: boolean;
-  highlightRange?: [number, number]; // [startSeg, endSeg] inclusive
+  highlightRange?: [number, number];
 }) {
   const segRefs = useRef<(THREE.Mesh | null)[]>([]);
   const hlStart = highlightRange?.[0] ?? -1;
@@ -191,8 +144,8 @@ function FilmstripBar({ opacity, position, label, dimSegments, highlightRange }:
       } else {
         mat.color.setHex(dim ? COL_BAR_DIM : COL_BAR);
         mat.emissive.setHex(COL_BAR);
-        mat.opacity = dim ? opacity * 0.35 : opacity * 0.85;
-        mat.emissiveIntensity = 0.06;
+        mat.opacity = dim ? opacity * 0.35 : opacity * 0.95;
+        mat.emissiveIntensity = 0.08;
       }
       mesh.castShadow = opacity > 0.1;
     }
@@ -202,13 +155,11 @@ function FilmstripBar({ opacity, position, label, dimSegments, highlightRange }:
 
   return (
     <group position={position}>
-      {/* Background bar */}
       <mesh>
         <boxGeometry args={[BAR_W + 0.06, BAR_H + 0.06, BAR_D * 0.5]} />
         <meshStandardMaterial color={COL_BG} roughness={0.8} transparent opacity={opacity * 0.4} />
       </mesh>
 
-      {/* Segments */}
       {Array.from({ length: NUM_SEGS }, (_, i) => {
         const x = -BAR_W / 2 + SEG_W / 2 + i * SEG_W;
         return (
@@ -226,26 +177,24 @@ function FilmstripBar({ opacity, position, label, dimSegments, highlightRange }:
               transparent
               opacity={0}
               emissive={new THREE.Color(COL_BAR)}
-              emissiveIntensity={0.06}
+              emissiveIntensity={0.08}
             />
           </mesh>
         );
       })}
 
-      {/* Time labels below */}
-      <Label position={[-BAR_W / 2, -BAR_H / 2 - 0.12, BAR_D]} fontSize={0.07} opacity={opacity * 0.5}>
+      <Label position={[-BAR_W / 2, -BAR_H / 2 - 0.14, BAR_D]} fontSize={0.10} opacity={opacity * 0.5}>
         0:00
       </Label>
-      <Label position={[0, -BAR_H / 2 - 0.12, BAR_D]} fontSize={0.07} opacity={opacity * 0.5}>
+      <Label position={[0, -BAR_H / 2 - 0.14, BAR_D]} fontSize={0.10} opacity={opacity * 0.5}>
         0:30
       </Label>
-      <Label position={[BAR_W / 2, -BAR_H / 2 - 0.12, BAR_D]} fontSize={0.07} opacity={opacity * 0.5}>
+      <Label position={[BAR_W / 2, -BAR_H / 2 - 0.14, BAR_D]} fontSize={0.10} opacity={opacity * 0.5}>
         1:00
       </Label>
 
-      {/* Label above */}
       {label && (
-        <Label position={[0, BAR_H / 2 + 0.14, BAR_D]} fontSize={0.1} opacity={opacity * 0.8}>
+        <Label position={[0, BAR_H / 2 + 0.16, BAR_D]} fontSize={0.13} opacity={opacity * 0.85}>
           {label}
         </Label>
       )}
@@ -253,9 +202,6 @@ function FilmstripBar({ opacity, position, label, dimSegments, highlightRange }:
   );
 }
 
-/** A single segment that has been extracted from a filmstrip bar.
-    Used to show a byte-range chunk traveling through the pipeline.
-    Visually identical to one segment of the FilmstripBar. */
 function Segment({ opacity, color, position, label }: {
   opacity: number;
   color: number;
@@ -288,7 +234,7 @@ function Segment({ opacity, color, position, label }: {
         />
       </mesh>
       {label && (
-        <Label position={[0, -BAR_H / 2 - 0.1, BAR_D * 0.5]} fontSize={0.08} color="#88ddaa" opacity={opacity * 0.8}>
+        <Label position={[0, -BAR_H / 2 - 0.12, BAR_D * 0.5]} fontSize={0.10} color="#88ddaa" opacity={opacity * 0.8}>
           {label}
         </Label>
       )}
@@ -296,8 +242,6 @@ function Segment({ opacity, color, position, label }: {
   );
 }
 
-/** Output variant bar — a shorter filmstrip bar for a single bitrate.
-    Width encodes that it's a complete transcode of the full file. */
 function VariantBar({ opacity, color, width, position, label }: {
   opacity: number;
   color: number;
@@ -330,16 +274,14 @@ function VariantBar({ opacity, color, width, position, label }: {
           emissiveIntensity={0}
         />
       </mesh>
-      <Label position={[width / 2 + 0.15, 0, BAR_D * 0.5]} fontSize={0.09} color="#ccddff" opacity={opacity * 0.8} anchorX="left">
+      <Label position={[width / 2 + 0.15, 0, BAR_D * 0.5]} fontSize={0.11} color="#ccddff" opacity={opacity * 0.8} anchorX="left">
         {label}
       </Label>
     </group>
   );
 }
 
-/** The transcode process — shown as a labeled box.
-    REUSED in both analogies at different scales.
-    Not a spinning torus — just a clear labeled box with a glow. */
+/** Transcode process — wireframe-style with internal glow when active */
 function TranscodeBox({ opacity, active, scale, position }: {
   opacity: number;
   active: boolean;
@@ -347,13 +289,18 @@ function TranscodeBox({ opacity, active, scale, position }: {
   position: [number, number, number];
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
+  const edgesRef = useRef<THREE.LineSegments>(null);
 
   useFrame(() => {
     if (!meshRef.current) return;
     const mat = meshRef.current.material as THREE.MeshPhysicalMaterial;
-    mat.opacity = opacity;
-    mat.emissiveIntensity = active ? 0.35 : opacity * 0.05;
+    mat.opacity = active ? opacity * 0.4 : opacity * 0.15;
+    mat.emissiveIntensity = active ? 0.5 : opacity * 0.05;
     meshRef.current.castShadow = opacity > 0.1;
+
+    if (edgesRef.current) {
+      (edgesRef.current.material as THREE.LineBasicMaterial).opacity = opacity * 0.6;
+    }
   });
 
   return (
@@ -371,59 +318,94 @@ function TranscodeBox({ opacity, active, scale, position }: {
           emissiveIntensity={0.05}
         />
       </mesh>
+      <lineSegments ref={edgesRef}>
+        <edgesGeometry args={[new THREE.BoxGeometry(1.22, 0.52, 0.32)]} />
+        <lineBasicMaterial color={COL_MACHINE} transparent opacity={0} />
+      </lineSegments>
       <Label position={[0, 0, 0.16]} fontSize={0.12 * (1 / scale)} color="#ffffff" opacity={opacity * 0.9}>
         transcode
       </Label>
-      <pointLight color={COL_MACHINE} intensity={active ? 3 : 0} distance={4} />
+      <pointLight color={COL_MACHINE} intensity={active ? 4 : 0} distance={4} />
     </group>
   );
 }
 
-/** Cloud proxy box — shows the Editframe proxy that sits between origin and player.
-    Contains its own transcode step inside. Visually distinct from the bare TranscodeBox. */
-function ProxyBox({ opacity, active, position }: {
+/** Edge proxy — thin, pipeline-style. Visually distinct from a storage server. */
+function ProxyBox({ opacity, active, position, showPipeline, cached }: {
   opacity: number;
   active: boolean;
   position: [number, number, number];
+  showPipeline?: number;
+  cached?: boolean;
 }) {
   const frameRef = useRef<THREE.Mesh>(null);
+  const edgesRef = useRef<THREE.LineSegments>(null);
 
   useFrame(() => {
     if (!frameRef.current) return;
     const mat = frameRef.current.material as THREE.MeshPhysicalMaterial;
-    mat.opacity = opacity * 0.25;
-    mat.emissiveIntensity = active ? 0.15 : opacity * 0.03;
+    mat.opacity = opacity * 0.5;
+    mat.emissiveIntensity = active ? 0.2 : (cached ? 0.25 : opacity * 0.05);
     frameRef.current.castShadow = opacity > 0.1;
+
+    if (edgesRef.current) {
+      (edgesRef.current.material as THREE.LineBasicMaterial).opacity = opacity * 0.5;
+    }
   });
+
+  const pipeOpa = showPipeline ?? 0;
 
   return (
     <group position={position}>
-      {/* Enclosing box */}
       <mesh ref={frameRef} castShadow>
-        <boxGeometry args={[2.4, 1.2, 0.2]} />
+        <boxGeometry args={[2.6, 1.4, 0.15]} />
         <meshPhysicalMaterial
-          color={COL_EF}
+          color={cached ? COL_CACHE : COL_EF}
           roughness={0.3}
           metalness={0.2}
           clearcoat={0.4}
           transparent
           opacity={0}
-          emissive={new THREE.Color(COL_EF)}
-          emissiveIntensity={0.03}
+          emissive={new THREE.Color(cached ? COL_CACHE : COL_EF)}
+          emissiveIntensity={0.05}
         />
       </mesh>
-      {/* Label at top */}
-      <Label position={[0, 0.45, 0.12]} fontSize={0.1} color="#82b1ff" opacity={opacity * 0.9}>
-        editframe cloud proxy
+      <lineSegments ref={edgesRef}>
+        <edgesGeometry args={[new THREE.BoxGeometry(2.62, 1.42, 0.17)]} />
+        <lineBasicMaterial color={cached ? COL_CACHE : COL_EF} transparent opacity={0} />
+      </lineSegments>
+
+      <Label position={[0, 0.55, 0.1]} fontSize={0.11} color="#82b1ff" opacity={opacity * 0.9}>
+        editframe edge proxy
       </Label>
-      {/* Inner transcode box */}
-      <TranscodeBox opacity={opacity} active={active} scale={0.65} position={[0, -0.1, 0.05]} />
+
+      {pipeOpa > 0 && !cached && (
+        <group position={[0, 0.25, 0.1]}>
+          <Label position={[-0.7, 0, 0]} fontSize={0.08} color="#69f0ae" opacity={pipeOpa * 0.7}>
+            moov
+          </Label>
+          <Label position={[-0.2, 0, 0]} fontSize={0.08} color="#69f0ae" opacity={pipeOpa * 0.6}>
+            sidx
+          </Label>
+          <Label position={[0.4, 0, 0]} fontSize={0.08} color="#69f0ae" opacity={pipeOpa * 0.5}>
+            byte offset
+          </Label>
+        </group>
+      )}
+
+      {cached && (
+        <Label position={[0, 0.2, 0.1]} fontSize={0.14} color="#69f0ae" opacity={opacity * 0.9}>
+          cached
+        </Label>
+      )}
+
+      {!cached && (
+        <TranscodeBox opacity={opacity} active={active} scale={0.65} position={[0, -0.15, 0.05]} />
+      )}
     </group>
   );
 }
 
-/** Arrow — a flat arrow shape. Default points down; set `up` to point up.
-    Represents data flow direction. The most basic whiteboard element. */
 function Arrow({ opacity, position, length, color, up }: {
   opacity: number;
   position: [number, number, number];
@@ -439,8 +421,8 @@ function Arrow({ opacity, position, length, color, up }: {
 
   useFrame(() => {
     if (!shaftRef.current || !headRef.current) return;
-    (shaftRef.current.material as THREE.MeshBasicMaterial).opacity = opacity * 0.5;
-    (headRef.current.material as THREE.MeshBasicMaterial).opacity = opacity * 0.5;
+    (shaftRef.current.material as THREE.MeshBasicMaterial).opacity = opacity * 0.6;
+    (headRef.current.material as THREE.MeshBasicMaterial).opacity = opacity * 0.6;
   });
 
   return (
@@ -457,7 +439,6 @@ function Arrow({ opacity, position, length, color, up }: {
   );
 }
 
-/** Player screen */
 function PlayerScreen({ opacity, playing, position }: {
   opacity: number;
   playing: number;
@@ -465,6 +446,7 @@ function PlayerScreen({ opacity, playing, position }: {
 }) {
   const frameRef = useRef<THREE.Mesh>(null);
   const screenRef = useRef<THREE.Mesh>(null);
+  const btnRef = useRef<THREE.Mesh>(null);
 
   useFrame(() => {
     if (!frameRef.current || !screenRef.current) return;
@@ -473,6 +455,10 @@ function PlayerScreen({ opacity, playing, position }: {
     const sMat = screenRef.current.material as THREE.MeshStandardMaterial;
     sMat.opacity = opacity * 0.9;
     sMat.emissiveIntensity = playing * 0.7;
+
+    if (btnRef.current) {
+      (btnRef.current.material as THREE.MeshBasicMaterial).opacity = opacity * (1 - playing) * 0.6;
+    }
   });
 
   return (
@@ -491,12 +477,21 @@ function PlayerScreen({ opacity, playing, position }: {
           emissiveIntensity={0}
         />
       </mesh>
+      {/* Play button triangle */}
+      <mesh ref={btnRef} position={[0, 0, 0.06]} rotation={[0, 0, -Math.PI / 2]}>
+        <coneGeometry args={[0.12, 0.2, 3]} />
+        <meshBasicMaterial color={0xffffff} transparent opacity={0} />
+      </mesh>
+      {/* Progress bar */}
+      <mesh position={[0, -0.3, 0.04]}>
+        <boxGeometry args={[1.1, 0.03, 0.01]} />
+        <meshBasicMaterial color={0x556677} transparent opacity={opacity * 0.4} />
+      </mesh>
     </group>
   );
 }
 
-/** Particle stream */
-function ParticleStream({ from, to, count, color, opacity, timeMs, seed }: {
+function ParticleStream({ from, to, count, color, opacity, timeMs, seed, size, wobble }: {
   from: [number, number, number];
   to: [number, number, number];
   count: number;
@@ -504,11 +499,16 @@ function ParticleStream({ from, to, count, color, opacity, timeMs, seed }: {
   opacity: number;
   timeMs: number;
   seed: number;
+  size?: number;
+  wobble?: number;
 }) {
   const pointsRef = useRef<THREE.Points>(null);
   const speedsRef = useRef<Float32Array>(
     new Float32Array(count).map((_, i) => 0.3 + seededRandom(seed + i * 100) * 0.7)
   );
+
+  const particleSize = size ?? 0.06;
+  const wobbleAmount = wobble ?? 0.08;
 
   useFrame(() => {
     if (!pointsRef.current) return;
@@ -520,8 +520,8 @@ function ParticleStream({ from, to, count, color, opacity, timeMs, seed }: {
 
     for (let i = 0; i < count; i++) {
       const t = (timeMs * speeds[i]! * 0.0005 + i * 0.07) % 1;
-      const wx = (seededRandom(seed + i * 1000 + timeMs * 0.002) - 0.5) * 0.08;
-      const wy = (seededRandom(seed + i * 2000 + timeMs * 0.002) - 0.5) * 0.08;
+      const wx = (seededRandom(seed + i * 1000 + timeMs * 0.002) - 0.5) * wobbleAmount;
+      const wy = (seededRandom(seed + i * 2000 + timeMs * 0.002) - 0.5) * wobbleAmount;
       positions[i * 3] = lerp(from[0], to[0], t) + wx;
       positions[i * 3 + 1] = lerp(from[1], to[1], t) + wy;
       positions[i * 3 + 2] = lerp(from[2], to[2], t);
@@ -534,16 +534,61 @@ function ParticleStream({ from, to, count, color, opacity, timeMs, seed }: {
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" count={count} array={new Float32Array(count * 3)} itemSize={3} />
       </bufferGeometry>
-      <pointsMaterial color={color} size={0.06} transparent opacity={0} sizeAttenuation blending={THREE.AdditiveBlending} depthWrite={false} />
+      <pointsMaterial color={color} size={particleSize} transparent opacity={0} sizeAttenuation blending={THREE.AdditiveBlending} depthWrite={false} />
     </points>
   );
 }
 
-/* ━━ Narration captions ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   Each caption is a drei Text that fades in and out based on
-   currentTimeMs. Replaces the HTML overlay divs so everything
-   lives in 3D space and can move with the camera.
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/** Gantt-style comparison bar for Act 3 */
+function GanttBar({ opacity, position, label, segments, totalWidth }: {
+  opacity: number;
+  position: [number, number, number];
+  label: string;
+  segments: Array<{ width: number; color: number; label: string; opacity: number }>;
+  totalWidth: number;
+}) {
+  return (
+    <group position={position}>
+      {/* Background track */}
+      <mesh>
+        <boxGeometry args={[totalWidth, 0.35, 0.05]} />
+        <meshStandardMaterial color={COL_BG} roughness={0.8} transparent opacity={opacity * 0.3} />
+      </mesh>
+      {/* Label on left */}
+      <Label position={[-totalWidth / 2 - 0.2, 0, 0.05]} fontSize={0.13} color="#aaaacc" opacity={opacity * 0.9} anchorX="right">
+        {label}
+      </Label>
+      {/* Segments */}
+      {segments.map((seg, i) => {
+        let x = -totalWidth / 2;
+        for (let j = 0; j < i; j++) x += segments[j].width;
+        x += seg.width / 2;
+        return (
+          <group key={i} position={[x, 0, 0.03]}>
+            <mesh>
+              <boxGeometry args={[seg.width, 0.3, 0.06]} />
+              <meshPhysicalMaterial
+                color={seg.color}
+                roughness={0.2}
+                metalness={0.2}
+                clearcoat={0.5}
+                transparent
+                opacity={opacity * seg.opacity}
+                emissive={new THREE.Color(seg.color)}
+                emissiveIntensity={0.15}
+              />
+            </mesh>
+            <Label position={[0, 0, 0.04]} fontSize={0.09} color="#ffffff" opacity={opacity * seg.opacity * 0.9}>
+              {seg.label}
+            </Label>
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
+/* ━━ Narration captions ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 type CaptionDef = {
   text: string;
@@ -557,38 +602,45 @@ type CaptionDef = {
 
 const CAPTIONS: CaptionDef[] = [
   // ACT 1 title
-  { text: "The traditional way", inMs: 300, outMs: 2800, position: [0, 3.2, 0], fontSize: 0.18, color: "rgba(255,255,255,0.4)" },
+  { text: "The traditional way", inMs: 100, outMs: 1000, position: [0, 3.2, 0], fontSize: 0.18, color: "rgba(255,255,255,0.4)" },
   // Step: You have a file
-  { text: "You have a video file.", inMs: 500, outMs: 2800, position: [0, -3.2, 0], fontSize: 0.14, color: "rgba(255,255,255,0.55)" },
+  { text: "You have a video file.", inMs: 200, outMs: 1100, position: [0, -3.2, 0], fontSize: 0.15, color: "rgba(255,255,255,0.55)" },
   // Step: Upload
-  { text: "Upload the entire thing to their servers.", inMs: 3000, outMs: 7500, position: [0, -3.2, 0], fontSize: 0.14, color: "rgba(255,255,255,0.55)" },
-  // Step: Transcode
-  { text: "Transcode every frame, every bitrate.", inMs: 8000, outMs: 12000, position: [0, -3.2, 0], fontSize: 0.14, color: "rgba(255,255,255,0.55)" },
+  { text: "Upload. Transcode. Wait.", inMs: 1200, outMs: 3000, position: [0, -3.2, 0], fontSize: 0.15, color: "rgba(255,255,255,0.55)" },
   // Step: Variants
-  { text: "1080p. 720p. 480p. Three complete copies, stored.", inMs: 12500, outMs: 14500, position: [0, -3.2, 0], fontSize: 0.14, color: "rgba(255,255,255,0.55)" },
+  { text: "Three complete copies, stored.", inMs: 3200, outMs: 4800, position: [0, -3.2, 0], fontSize: 0.15, color: "rgba(255,255,255,0.55)" },
   // Step: Play
-  { text: "Only now can someone press play.", inMs: 15000, outMs: 16800, position: [0, -3.2, 0], fontSize: 0.14, color: "rgba(255,255,255,0.55)" },
+  { text: "Only now can someone press play.", inMs: 5000, outMs: 5900, position: [0, -3.2, 0], fontSize: 0.15, color: "rgba(255,255,255,0.55)" },
+
   // TRANSITION
-  { text: "What if you could skip all of that?", inMs: 17200, outMs: 19200, position: [0, 3.2, 0], fontSize: 0.22, color: "#ffffff", bold: true },
+  { text: "What if you could skip all of that?", inMs: 6200, outMs: 7800, position: [0, 0, 1], fontSize: 0.26, color: "#ffffff", bold: true },
+
   // ACT 2 title
-  { text: "Editframe JIT", inMs: 19500, outMs: 21200, position: [0, 3.2, 0], fontSize: 0.2, color: "#ff5252", bold: true },
+  { text: "Editframe JIT", inMs: 8000, outMs: 9300, position: [0, 3.2, 0], fontSize: 0.22, color: "#ff5252", bold: true },
   // Step: Same file, your server
-  { text: "Same file. But it stays on your server.", inMs: 19700, outMs: 21200, position: [0, -3.2, 0], fontSize: 0.14, color: "rgba(255,255,255,0.55)" },
+  { text: "Same file. But it stays on your server.", inMs: 8200, outMs: 9300, position: [0, -3.2, 0], fontSize: 0.15, color: "rgba(255,255,255,0.55)" },
   // Step: Player needs a frame
-  { text: "When the player needs a frame...", inMs: 21500, outMs: 22800, position: [0, -3.2, 0], fontSize: 0.14, color: "rgba(255,255,255,0.55)" },
+  { text: "When the player needs a frame...", inMs: 9500, outMs: 10800, position: [0, -3.2, 0], fontSize: 0.15, color: "rgba(255,255,255,0.55)" },
   // Step: Highlight bytes
-  { text: "...it highlights just the bytes it needs.", inMs: 23000, outMs: 24200, position: [0, -3.2, 0], fontSize: 0.14, color: "rgba(255,255,255,0.55)" },
+  { text: "...it highlights just the bytes it needs.", inMs: 11000, outMs: 12300, position: [0, -3.2, 0], fontSize: 0.15, color: "rgba(255,255,255,0.55)" },
   // Step: Byte-range request
-  { text: "A byte-range request fetches just that slice.", inMs: 24500, outMs: 26300, position: [0, -3.2, 0], fontSize: 0.14, color: "rgba(255,255,255,0.55)" },
+  { text: "A byte-range request fetches just that slice.", inMs: 12500, outMs: 14300, position: [0, -3.2, 0], fontSize: 0.15, color: "rgba(255,255,255,0.55)" },
   // Step: Transcode piece
-  { text: "Same transcode — but just this piece.", inMs: 27000, outMs: 28800, position: [0, -3.2, 0], fontSize: 0.14, color: "rgba(255,255,255,0.55)" },
+  { text: "Same transcode — but just this piece.", inMs: 15000, outMs: 16800, position: [0, -3.2, 0], fontSize: 0.15, color: "rgba(255,255,255,0.55)" },
   // Step: Already playing
-  { text: "Already playing.", inMs: 30000, outMs: 31800, position: [0, -3.2, 0], fontSize: 0.14, color: "rgba(255,255,255,0.55)" },
+  { text: "Already playing.", inMs: 18000, outMs: 19500, position: [0, -3.2, 0], fontSize: 0.15, color: "rgba(255,255,255,0.55)" },
   // Step: Next segment
-  { text: "Next segment. Different bitrate. Streamed on demand.", inMs: 32000, outMs: 34800, position: [0, -3.2, 0], fontSize: 0.14, color: "rgba(255,255,255,0.55)" },
-  // ACT 3: Comparison hero
-  { text: "Same transcode work.", inMs: 37500, outMs: 41000, position: [0, 0.8, 1], fontSize: 0.3, color: "#ff5252", bold: true },
-  { text: "No upload. No ingest delay.", inMs: 37800, outMs: 41000, position: [0, 0.1, 1], fontSize: 0.3, color: "#ff5252", bold: true },
+  { text: "Next segment. Different bitrate. On demand.", inMs: 20000, outMs: 23000, position: [0, -3.2, 0], fontSize: 0.15, color: "rgba(255,255,255,0.55)" },
+  // Step: Cache hit
+  { text: "Second viewer? Already cached.", inMs: 24200, outMs: 27000, position: [0, -3.2, 0], fontSize: 0.15, color: "#69f0ae" },
+
+  // ACT 3: Gantt comparison
+  { text: "Time to first frame", inMs: 30500, outMs: 35500, position: [0, 2.2, 1], fontSize: 0.2, color: "#ffffff", bold: true },
+
+  // OUTRO
+  { text: "Same transcode work.", inMs: 36500, outMs: 41000, position: [0, 1.0, 1], fontSize: 0.3, color: "#ff5252", bold: true },
+  { text: "No upload. No ingest delay.", inMs: 37000, outMs: 41000, position: [0, 0.2, 1], fontSize: 0.3, color: "#ff5252", bold: true },
+  { text: "Zero infrastructure to maintain.", inMs: 37500, outMs: 41000, position: [0, -0.6, 1], fontSize: 0.22, color: "rgba(255,255,255,0.6)" },
 ];
 
 const CAPTION_FADE_IN_MS = 400;
@@ -622,18 +674,6 @@ function Captions({ currentTimeMs }: { currentTimeMs: number }) {
 }
 
 /* ━━ Environment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-function Floor() {
-  return (
-    <>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -3.5, 0]} receiveShadow>
-        <planeGeometry args={[50, 30]} />
-        <meshStandardMaterial color={0x2a2e42} roughness={0.75} metalness={0.1} />
-      </mesh>
-      <gridHelper args={[30, 30, 0x3a3f58, 0x3a3f58]} position={[0, -3.49, 0]} material-transparent material-opacity={0.15} />
-    </>
-  );
-}
-
 function Lights() {
   return (
     <>
@@ -648,178 +688,152 @@ function Lights() {
 export function JITStreamingScene({ currentTimeMs }: { currentTimeMs: number }) {
   const { camera } = useThree();
 
-  /* ── Act 1 layout: up/down arc ──
-     Y positions:
-     y=-2   source file (your machine) + player (at end)
-     y=-1   ↑ upload arrow          ↓ download arrow
-     y=0.5  server copy
-     y=-0.3 transcode box (on server)
-     y=-1.2 variant bars (on server)
-
-     Act 2 layout: flat, with proxy
-     y=2    source file (your server / CDN)
-     y=1    ↓ byte-range through proxy
-     y=0    proxy box (contains transcode)
-     y=-1   ↓ output
-     y=-2   player
-  */
-
-  // ── Camera ──
+  // ── Camera with Act 2 moves ──
   useFrame(() => {
-    // Acts 1 & 2: looking at the full arc, slightly pulled back
     const basePos = new THREE.Vector3(0, 0, 7.5);
     const baseTar = new THREE.Vector3(0, -0.2, 0);
 
-    // Act 3: pull back further to see both side by side
-    const widePos = new THREE.Vector3(0, 0.5, 11);
-    const wideTar = new THREE.Vector3(0, -0.2, 0);
+    // Act 2 camera moves: dolly in on highlight, pull back on play
+    const dollyIn = snapEaseOut(prog(currentTimeMs, B_HIGHLIGHT, B_HIGHLIGHT + 1500));
+    const dollyOut = snapEaseOut(prog(currentTimeMs, B_PLAY - 500, B_PLAY + 1000));
+    const dollyZ = 7.5 - dollyIn * 1.0 + dollyOut * 1.0;
+    const dollyY = -0.2 + dollyIn * 0.3 - dollyOut * 0.3;
 
-    const compareProg = easeInOut(prog(currentTimeMs, C_START, C_START + 1500));
+    // Act 3: pull back to see Gantt bars
+    const ganttProg = easeInOut(prog(currentTimeMs, C_START, C_START + 1500));
+    const ganttPos = new THREE.Vector3(0, 0.5, 9);
+    const ganttTar = new THREE.Vector3(0, 0, 0);
 
-    const pos = basePos.clone().lerp(widePos, compareProg);
-    const tar = baseTar.clone().lerp(wideTar, compareProg);
+    // Outro: center on text
+    const outroProg = easeInOut(prog(currentTimeMs, OUTRO_START, OUTRO_START + 1500));
+    const outroPos = new THREE.Vector3(0, 0.2, 7);
+    const outroTar = new THREE.Vector3(0, 0.2, 0);
+
+    let pos: THREE.Vector3;
+    let tar: THREE.Vector3;
+
+    if (currentTimeMs >= OUTRO_START) {
+      pos = ganttPos.clone().lerp(outroPos, outroProg);
+      tar = ganttTar.clone().lerp(outroTar, outroProg);
+    } else if (currentTimeMs >= C_START) {
+      const prePos = new THREE.Vector3(0, dollyY, dollyZ);
+      pos = prePos.clone().lerp(ganttPos, ganttProg);
+      tar = baseTar.clone().lerp(ganttTar, ganttProg);
+    } else {
+      pos = new THREE.Vector3(0, dollyY, dollyZ);
+      tar = new THREE.Vector3(0, dollyY + 0.1, 0);
+    }
 
     camera.position.copy(pos);
     camera.lookAt(tar);
   });
 
-  // ── Act 1: Traditional ──
-
-  // "You have a video file."
-  const aBarOpa = easeOut(prog(currentTimeMs, A_IN, A_IN + 1000));
-
-  // "You upload the entire thing."
-  const aUploadArrow = easeOut(prog(currentTimeMs, A_UPLOAD_START - 500, A_UPLOAD_START));
+  // ── Act 1: Traditional (compressed) ──
+  const aBarOpa = easeOut(prog(currentTimeMs, A_IN, A_IN + 500));
+  const aUploadArrow = easeOut(prog(currentTimeMs, A_UPLOAD_START - 300, A_UPLOAD_START));
   const aUploadParticles = currentTimeMs >= A_UPLOAD_START && currentTimeMs < A_UPLOAD_END;
   const aUploadTime = currentTimeMs - A_UPLOAD_START;
-
-  // Server copy materializes as upload completes
-  const aCopyOpa = easeOut(prog(currentTimeMs, A_UPLOAD_END - 800, A_UPLOAD_END));
-
-  // "Then they transcode it."
-  const aTransArrow = easeOut(prog(currentTimeMs, A_TRANSCODE_START - 600, A_TRANSCODE_START));
-  const aTransBoxOpa = easeOut(prog(currentTimeMs, A_TRANSCODE_START - 800, A_TRANSCODE_START));
+  const aCopyOpa = easeOut(prog(currentTimeMs, A_UPLOAD_END - 400, A_UPLOAD_END));
+  const aTransArrow = easeOut(prog(currentTimeMs, A_TRANSCODE_START - 300, A_TRANSCODE_START));
+  const aTransBoxOpa = easeOut(prog(currentTimeMs, A_TRANSCODE_START - 400, A_TRANSCODE_START));
   const aTransActive = currentTimeMs >= A_TRANSCODE_START && currentTimeMs < A_TRANSCODE_END;
+  const aVar1080 = easeOut(prog(currentTimeMs, A_VARIANTS_START, A_VARIANTS_START + 300));
+  const aVar720 = easeOut(prog(currentTimeMs, A_VARIANTS_START + 300, A_VARIANTS_START + 600));
+  const aVar480 = easeOut(prog(currentTimeMs, A_VARIANTS_START + 600, A_VARIANTS_START + 900));
+  const aServeArrow = easeOut(prog(currentTimeMs, A_PLAY - 400, A_PLAY - 100));
+  const aPlayerOpa = easeOut(prog(currentTimeMs, A_PLAY - 300, A_PLAY));
+  const aPlaying = easeOut(prog(currentTimeMs, A_PLAY, A_PLAY + 400));
 
-  // "1080p. 720p. 480p." — staggered, each lands individually
-  const aVar1080 = easeOut(prog(currentTimeMs, A_VARIANTS_START, A_VARIANTS_START + 600));
-  const aVar720 = easeOut(prog(currentTimeMs, A_VARIANTS_START + 800, A_VARIANTS_START + 1400));
-  const aVar480 = easeOut(prog(currentTimeMs, A_VARIANTS_START + 1600, A_VARIANTS_START + 2200));
-
-  // "Only now can someone press play."
-  const aServeArrow = easeOut(prog(currentTimeMs, A_PLAY - 800, A_PLAY - 200));
-  const aPlayerOpa = easeOut(prog(currentTimeMs, A_PLAY - 600, A_PLAY));
-  const aPlaying = easeOut(prog(currentTimeMs, A_PLAY, A_PLAY + 800));
-
-  // ── Act 2: Editframe JIT ──
-
-  // "Same file. But it stays on your server."
-  const bBarOpa = easeOut(prog(currentTimeMs, B_IN, B_IN + 1000));
-
-  // "When the player needs a frame..."
-  const bPlayerOpa = easeOut(prog(currentTimeMs, B_PLAYER_IN, B_PLAYER_IN + 800));
-
-  // "...it highlights just the bytes it needs."
+  // ── Act 2: Editframe JIT (expanded, with snap easing) ──
+  const bBarOpa = snapEaseOut(prog(currentTimeMs, B_IN, B_IN + 800));
+  const bPlayerOpa = snapEaseOut(prog(currentTimeMs, B_PLAYER_IN, B_PLAYER_IN + 600));
   const bHighlightOn = currentTimeMs >= B_HIGHLIGHT;
-
-  // "A byte-range request fetches just that slice."
-  const bFetchArrow = easeOut(prog(currentTimeMs, B_FETCH_START - 500, B_FETCH_START));
-  const bSegOpa = easeOut(prog(currentTimeMs, B_FETCH_START, B_FETCH_START + 400));
+  const bFetchArrow = snapEaseOut(prog(currentTimeMs, B_FETCH_START - 400, B_FETCH_START));
+  const bSegOpa = snapEaseOut(prog(currentTimeMs, B_FETCH_START, B_FETCH_START + 300));
   const bSegTravel = easeInOut(prog(currentTimeMs, B_FETCH_START, B_FETCH_END));
 
-  // Proxy box fades in as the fetch begins — it's the destination
-  const bProxyOpa = easeOut(prog(currentTimeMs, B_FETCH_START - 300, B_FETCH_START + 500));
+  const bProxyOpa = snapEaseOut(prog(currentTimeMs, B_FETCH_START - 200, B_FETCH_START + 400));
+  const bPipelineFlash = prog(currentTimeMs, B_FETCH_END - 500, B_FETCH_END + 500);
+  const bPipelineOpa = bPipelineFlash > 0 && bPipelineFlash < 1 ? easeOut(bPipelineFlash < 0.5 ? bPipelineFlash * 2 : 2 - bPipelineFlash * 2) : 0;
 
-  // "Same transcode — but just this piece."
   const bTransActive = currentTimeMs >= B_TRANSCODE_START && currentTimeMs < B_TRANSCODE_END;
-
-  // Output segment streams to player
-  const bOutputOpa = easeOut(prog(currentTimeMs, B_TRANSCODE_END - 300, B_TRANSCODE_END + 300));
+  const bOutputOpa = snapEaseOut(prog(currentTimeMs, B_TRANSCODE_END - 200, B_TRANSCODE_END + 200));
   const bOutputTravel = easeInOut(prog(currentTimeMs, B_TRANSCODE_END, B_PLAY - 200));
-  const bServeArrow = easeOut(prog(currentTimeMs, B_TRANSCODE_END - 300, B_TRANSCODE_END));
+  const bServeArrow = snapEaseOut(prog(currentTimeMs, B_TRANSCODE_END - 200, B_TRANSCODE_END));
+  const bPlaying = snapEaseOut(prog(currentTimeMs, B_PLAY, B_PLAY + 500));
 
-  // "Already playing."
-  const bPlaying = easeOut(prog(currentTimeMs, B_PLAY, B_PLAY + 600));
-
-  // "Next segment. Different bitrate."
-  const bNext1Opa = easeOut(prog(currentTimeMs, B_NEXT_START, B_NEXT_START + 400));
+  const bNext1Opa = snapEaseOut(prog(currentTimeMs, B_NEXT_START, B_NEXT_START + 300));
   const bNext1Travel = easeInOut(prog(currentTimeMs, B_NEXT_START, B_NEXT_END));
-  const bNext2Opa = easeOut(prog(currentTimeMs, B_NEXT_START + 1000, B_NEXT_START + 1400));
-  const bNext2Travel = easeInOut(prog(currentTimeMs, B_NEXT_START + 1000, B_NEXT_END + 500));
+  const bNext2Opa = snapEaseOut(prog(currentTimeMs, B_NEXT_START + 800, B_NEXT_START + 1100));
+  const bNext2Travel = easeInOut(prog(currentTimeMs, B_NEXT_START + 800, B_NEXT_END + 400));
 
-  // Particles
+  // Cache-hit beat
+  const bCacheSegOpa = snapEaseOut(prog(currentTimeMs, B_CACHE_START, B_CACHE_START + 300));
+  const bCacheTravel = easeInOut(prog(currentTimeMs, B_CACHE_START, B_CACHE_END - 1000));
+  const bCacheProxyActive = currentTimeMs >= B_CACHE_START && currentTimeMs < B_CACHE_END;
+  const bCachePlaying = snapEaseOut(prog(currentTimeMs, B_CACHE_END - 1000, B_CACHE_END));
+
+  // Particles — differentiated between acts
   const bParticlesActive = currentTimeMs >= B_FETCH_START && currentTimeMs < B_END;
   const bParticleTime = currentTimeMs - B_FETCH_START;
 
-  // ── Act 3: Side-by-side ──
-  const sideProg = easeInOut(prog(currentTimeMs, C_START, C_START + 1500));
-  const tradShift = -3.8 * sideProg;
-  const efShift = 3.8 * sideProg;
-
-  const tradVisible = currentTimeMs < TRANSITION_END || currentTimeMs >= C_START;
-  const efVisible = currentTimeMs >= B_IN;
-
-  // Fade traditional out during transition, back in during comparison
+  // ── Visibility & transitions ──
   const tradFadeOut = currentTimeMs >= TRANSITION_START && currentTimeMs < C_START
     ? 1 - easeOut(prog(currentTimeMs, TRANSITION_START, TRANSITION_END))
     : 1;
-  const tradFadeIn = currentTimeMs >= C_START
-    ? easeOut(prog(currentTimeMs, C_START, C_START + 800)) * lerp(1, 0.4, sideProg)
-    : tradFadeOut;
+  const tradVisible = currentTimeMs < TRANSITION_END;
+  const efVisible = currentTimeMs >= B_IN && currentTimeMs < C_START;
+
+  // ── Act 3: Gantt comparison ──
+  const ganttVisible = currentTimeMs >= C_START && currentTimeMs < OUTRO_START;
+  const ganttOpa = easeOut(prog(currentTimeMs, C_START, C_START + 1000));
+  const ganttTradFill = easeInOut(prog(currentTimeMs, C_START + 500, C_START + 2500));
+  const ganttEfFill = easeInOut(prog(currentTimeMs, C_START + 1500, C_START + 2500));
+
+  // ── Outro ──
+  const outroVisible = currentTimeMs >= OUTRO_START;
+  const outroFadeGantt = 1 - easeOut(prog(currentTimeMs, OUTRO_START, OUTRO_START + 800));
 
   return (
     <>
       <Lights />
-      <Floor />
       <Captions currentTimeMs={currentTimeMs} />
 
-      {/* ━━ ACT 1: TRADITIONAL (up/down arc) ━━━━━━━━━━━━━━━━━━━━━ */}
+      {/* ━━ ACT 1: TRADITIONAL (compressed) ━━━━━━━━━━━━━━━━━━━━━ */}
       {tradVisible && (
-        <group position={[tradShift, 0, 0]}>
+        <group>
+          <FilmstripBar opacity={aBarOpa * tradFadeOut} position={[-1.2, -2.2, 0]} label="video.mp4" />
 
-          {/* ── BOTTOM: Source file (your machine) ── */}
-          <FilmstripBar opacity={aBarOpa * tradFadeIn} position={[-1.2, -2.2, 0]} label="video.mp4" />
-
-          {/* ↑ Upload — goes UP to remote server */}
-          <Arrow opacity={aUploadArrow * tradFadeIn} position={[-1.2, -1.2, 0.1]} length={1.2} color={COL_TRAD} up />
-          <Label position={[-1.2 + BAR_W / 2 + 0.15, -1.2, 0.1]} fontSize={0.09} color="#ff8a65" opacity={aUploadArrow * tradFadeIn * 0.7} anchorX="left">
+          <Arrow opacity={aUploadArrow * tradFadeOut} position={[-1.2, -1.2, 0.1]} length={1.2} color={COL_TRAD} up />
+          <Label position={[-1.2 + BAR_W / 2 + 0.15, -1.2, 0.1]} fontSize={0.13} color="#ff8a65" opacity={aUploadArrow * tradFadeOut * 0.7} anchorX="left">
             upload entire file
           </Label>
           {aUploadParticles && (
-            <ParticleStream from={[-1.2, -2.0, 0.1]} to={[-1.2, 0.2, 0.1]} count={40} color={COL_TRAD} opacity={0.5 * tradFadeIn} timeMs={aUploadTime} seed={1000} />
+            <ParticleStream from={[-1.2, -2.0, 0.1]} to={[-1.2, 0.2, 0.1]} count={80} color={COL_TRAD} opacity={0.5 * tradFadeOut} timeMs={aUploadTime} seed={1000} size={0.08} wobble={0.12} />
           )}
 
-          {/* ── TOP: Remote server zone ── */}
-          {/* Copy on server */}
-          <FilmstripBar opacity={aCopyOpa * tradFadeIn} position={[0, 1.8, 0]} label="copy on remote server" />
+          <FilmstripBar opacity={aCopyOpa * tradFadeOut} position={[0, 1.8, 0]} label="copy on remote server" />
+          <Arrow opacity={aTransArrow * tradFadeOut} position={[0, 1.1, 0.1]} color={COL_MACHINE} />
+          <TranscodeBox opacity={aTransBoxOpa * tradFadeOut} active={aTransActive} scale={1} position={[0, 0.4, 0]} />
 
-          {/* Transcode (on server) */}
-          <Arrow opacity={aTransArrow * tradFadeIn} position={[0, 1.1, 0.1]} color={COL_MACHINE} />
-          <TranscodeBox opacity={aTransBoxOpa * tradFadeIn} active={aTransActive} scale={1} position={[0, 0.4, 0]} />
-
-          {/* Output variants (stored on server) */}
           <group position={[0, -0.5, 0]}>
-            <VariantBar opacity={aVar1080 * tradFadeIn} color={COL_1080} width={BAR_W * 0.95} position={[0, 0.25, 0]} label="1080p" />
-            <VariantBar opacity={aVar720 * tradFadeIn} color={COL_720} width={BAR_W * 0.7} position={[0, 0, 0]} label="720p" />
-            <VariantBar opacity={aVar480 * tradFadeIn} color={COL_480} width={BAR_W * 0.45} position={[0, -0.25, 0]} label="480p" />
+            <VariantBar opacity={aVar1080 * tradFadeOut} color={COL_1080} width={BAR_W * 0.95} position={[0, 0.25, 0]} label="1080p" />
+            <VariantBar opacity={aVar720 * tradFadeOut} color={COL_720} width={BAR_W * 0.7} position={[0, 0, 0]} label="720p" />
+            <VariantBar opacity={aVar480 * tradFadeOut} color={COL_480} width={BAR_W * 0.45} position={[0, -0.25, 0]} label="480p" />
           </group>
 
-          {/* ↓ Download — comes back DOWN to player */}
-          <Arrow opacity={aServeArrow * tradFadeIn} position={[1.2, -1.2, 0.1]} length={1.2} color={0x666688} />
-          <Label position={[1.2 + BAR_W / 2 + 0.15, -1.2, 0.1]} fontSize={0.09} color="#aaaacc" opacity={aServeArrow * tradFadeIn * 0.7} anchorX="left">
+          <Arrow opacity={aServeArrow * tradFadeOut} position={[1.2, -1.2, 0.1]} length={1.2} color={0x666688} />
+          <Label position={[1.2 + BAR_W / 2 + 0.15, -1.2, 0.1]} fontSize={0.13} color="#aaaacc" opacity={aServeArrow * tradFadeOut * 0.7} anchorX="left">
             download for playback
           </Label>
 
-          {/* ── BOTTOM: Player (back on your machine) ── */}
-          <PlayerScreen opacity={aPlayerOpa * tradFadeIn} playing={aPlaying * tradFadeIn} position={[1.2, -2.2, 0]} />
+          <PlayerScreen opacity={aPlayerOpa * tradFadeOut} playing={aPlaying * tradFadeOut} position={[1.2, -2.2, 0]} />
         </group>
       )}
 
-      {/* ━━ ACT 2: EDITFRAME JIT ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/* ━━ ACT 2: EDITFRAME JIT (expanded, snappy motion) ━━━━━━━━━━ */}
       {efVisible && (
-        <group position={[efShift, 0, 0]}>
-
-          {/* Source file — stays on YOUR server, with highlighted region */}
+        <group>
           <FilmstripBar
             opacity={bBarOpa}
             position={[0, 2, 0]}
@@ -828,30 +842,31 @@ export function JITStreamingScene({ currentTimeMs }: { currentTimeMs: number }) 
             highlightRange={bHighlightOn ? [1, 1] : undefined}
           />
 
-          {/* ↓ Byte-range request goes through proxy */}
           <Arrow opacity={bFetchArrow} position={[0, 1.35, 0.1]} color={COL_HIGHLIGHT} />
-          <Label position={[0.4, 1.35, 0.1]} fontSize={0.09} color="#69f0ae" opacity={bFetchArrow * 0.7} anchorX="left">
+          <Label position={[0.4, 1.35, 0.1]} fontSize={0.13} color="#69f0ae" opacity={bFetchArrow * 0.7} anchorX="left">
             byte-range request
           </Label>
 
-          {/* The segment traveling down to proxy */}
           <Segment
             opacity={bSegOpa}
             color={COL_HIGHLIGHT}
-            label="0:10–0:20"
+            label="0:10-0:20"
             position={[0, lerp(1.6, 0.5, bSegTravel), 0.1]}
           />
 
-          {/* Editframe cloud proxy — contains transcode */}
-          <ProxyBox opacity={bProxyOpa} active={bTransActive} position={[0, 0, 0]} />
+          <ProxyBox
+            opacity={bProxyOpa}
+            active={bTransActive}
+            position={[0, 0, 0]}
+            showPipeline={bPipelineOpa}
+            cached={bCacheProxyActive && currentTimeMs >= B_CACHE_START + 500}
+          />
 
-          {/* ↓ Output streams to player */}
           <Arrow opacity={bServeArrow} position={[0, -1.0, 0.1]} color={COL_EF} />
-          <Label position={[0.4, -1.0, 0.1]} fontSize={0.09} color="#82b1ff" opacity={bServeArrow * 0.7} anchorX="left">
+          <Label position={[0.4, -1.0, 0.1]} fontSize={0.13} color="#82b1ff" opacity={bServeArrow * 0.7} anchorX="left">
             stream to player
           </Label>
 
-          {/* Transcoded segment traveling to player */}
           <Segment
             opacity={bOutputOpa * (1 - bPlaying)}
             color={COL_EF}
@@ -859,15 +874,13 @@ export function JITStreamingScene({ currentTimeMs }: { currentTimeMs: number }) 
             position={[0, lerp(-0.7, -1.7, bOutputTravel), 0.1]}
           />
 
-          {/* Particles flowing through the whole pipeline */}
           {bParticlesActive && (
-            <ParticleStream from={[0, 1.6, 0.1]} to={[0, -2.0, 0.1]} count={60} color={COL_EF} opacity={0.5} timeMs={bParticleTime} seed={5000} />
+            <ParticleStream from={[0, 1.6, 0.1]} to={[0, -2.0, 0.1]} count={30} color={COL_EF} opacity={0.5} timeMs={bParticleTime} seed={5000} size={0.04} wobble={0.03} />
           )}
 
-          {/* Player */}
           <PlayerScreen opacity={bPlayerOpa} playing={bPlaying} position={[0, -2.2, 0]} />
 
-          {/* "Next" segments — additional fetches staggered through proxy */}
+          {/* Next segments */}
           <Segment
             opacity={bNext1Opa * 0.6}
             color={COL_720}
@@ -880,9 +893,54 @@ export function JITStreamingScene({ currentTimeMs }: { currentTimeMs: number }) 
             label="480p"
             position={[-0.4, lerp(1.6, -2.0, bNext2Travel), 0.1]}
           />
+
+          {/* Cache-hit segment — bypasses transcode */}
+          <Segment
+            opacity={bCacheSegOpa * 0.7}
+            color={COL_CACHE}
+            label="cached"
+            position={[0, lerp(1.6, -2.0, bCacheTravel), 0.15]}
+          />
+        </group>
+      )}
+
+      {/* ━━ ACT 3: GANTT COMPARISON ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {ganttVisible && (
+        <group position={[0, 0, 0]}>
+          <GanttBar
+            opacity={ganttOpa * (outroVisible ? outroFadeGantt : 1)}
+            position={[0, 0.8, 0]}
+            label="Traditional"
+            totalWidth={6}
+            segments={[
+              { width: 2.0 * ganttTradFill, color: COL_TRAD, label: "upload", opacity: ganttTradFill },
+              { width: 2.5 * ganttTradFill, color: COL_MACHINE, label: "transcode all", opacity: ganttTradFill },
+              { width: 1.0 * ganttTradFill, color: 0x666688, label: "deliver", opacity: ganttTradFill },
+            ]}
+          />
+          <GanttBar
+            opacity={ganttOpa * (outroVisible ? outroFadeGantt : 1)}
+            position={[0, -0.2, 0]}
+            label="Editframe"
+            totalWidth={6}
+            segments={[
+              { width: 0.3 * ganttEfFill, color: COL_HIGHLIGHT, label: "fetch", opacity: ganttEfFill },
+              { width: 0.4 * ganttEfFill, color: COL_MACHINE, label: "transcode", opacity: ganttEfFill },
+              { width: 0.15 * ganttEfFill, color: COL_EF, label: "stream", opacity: ganttEfFill },
+            ]}
+          />
+          {/* Time axis */}
+          <Label position={[-3, -1.2, 0]} fontSize={0.10} color="rgba(255,255,255,0.3)" opacity={ganttOpa * (outroVisible ? outroFadeGantt : 1)}>
+            0s
+          </Label>
+          <Label position={[0, -1.2, 0]} fontSize={0.10} color="rgba(255,255,255,0.3)" opacity={ganttOpa * (outroVisible ? outroFadeGantt : 1)}>
+            minutes
+          </Label>
+          <Label position={[3, -1.2, 0]} fontSize={0.10} color="rgba(255,255,255,0.3)" opacity={ganttOpa * (outroVisible ? outroFadeGantt : 1)}>
+            15+ min
+          </Label>
         </group>
       )}
     </>
   );
 }
-
