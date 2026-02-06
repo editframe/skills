@@ -144,7 +144,7 @@ function SceneLabel({ children, position, opacity, color, fontSize, bold, anchor
   if (opacity < 0.01) return null;
   const fs = fontSize ?? 0.18;
   return (
-    <Text position={position} fontSize={fs} color={color ?? "white"} anchorX={anchorX ?? "center"} anchorY="middle" fillOpacity={opacity} fontWeight={bold ? "bold" : "normal"} outlineWidth={fs * 0.08} outlineColor="#000000" outlineOpacity={opacity * 0.6}>
+    <Text position={position} rotation={[-0.35, 0, 0]} fontSize={fs} color={color ?? "white"} anchorX={anchorX ?? "center"} anchorY="middle" fillOpacity={opacity} fontWeight={bold ? "bold" : "normal"} outlineWidth={fs * 0.08} outlineColor="#000000" outlineOpacity={opacity * 0.6}>
       {children}
     </Text>
   );
@@ -404,19 +404,20 @@ function CameraController({ timeMs }: { timeMs: number }) {
   const { camera } = useThree();
 
   useFrame(() => {
-    // Phase 1: centered on the hero bar at Z=0, looking nearly top-down
-    let cx = 0;
+    // Phase 1: centered on the hero bar, pan to TRAD_X before chunks move
+    // Camera settles on the traditional side by HERO_HOLD so it's
+    // already in position when the transfer animation starts.
+    const panToTrad = easeInOut(prog(timeMs, 1000, HERO_HOLD));
+    let cx = lerp(0, TRAD_X, panToTrad);
     let cy = 3.5;
     let cz = 3.0;
-    let tx = 0;
+    let tx = lerp(0, TRAD_X, panToTrad);
     let ty = 0;
     let tz = 0;
 
-    // Phase 2: track forward, center on traditional side
+    // Phase 2: track forward as chunks transfer (camera X already at TRAD_X)
     const transferTrack = easeInOut(prog(timeMs, TRAD_TRANSFER_START, TRAD_TRANSFER_END));
-    cx = lerp(0, TRAD_X, transferTrack);
     cz = lerp(3.0, PIPELINE_Z + 3.0, transferTrack);
-    tx = lerp(0, TRAD_X, transferTrack);
     tz = lerp(0, PIPELINE_Z, transferTrack);
 
     // Phase 3: continue forward to variants
@@ -445,31 +446,18 @@ function CameraController({ timeMs }: { timeMs: number }) {
       tz = lerp(tz, PIPELINE_Z, pullback);
     }
 
-    // Phase 6: pan right to JIT side, center directly on it
+    // Phase 6: pan right to JIT side, settle and hold
     const jitZoom = easeInOut(prog(timeMs, JIT_SETUP_START, JIT_SETUP_START + 2500));
     if (timeMs >= JIT_SETUP_START) {
       cx = lerp(cx, JIT_X, jitZoom);
       cy = lerp(cy, 3.5, jitZoom);
-      cz = lerp(cz, PLAYER_Z + 3.5, jitZoom);
+      cz = lerp(cz, PLAYER_Z + 3.0, jitZoom);
       tx = lerp(tx, JIT_X, jitZoom);
       ty = lerp(ty, 0, jitZoom);
-      tz = lerp(tz, VARIANT_Z - 0.5, jitZoom);
+      tz = lerp(tz, VARIANT_Z - 1.0, jitZoom);
     }
 
-    // Phase 7: JIT cycles — subtle drift backward toward source
-    const jitDrift = easeInOut(prog(timeMs, JIT_CYC1_START, JIT_CYC3_END));
-    if (timeMs >= JIT_CYC1_START) {
-      tz = lerp(tz, PIPELINE_Z, jitDrift * 0.4);
-      cy = lerp(cy, 4.0, jitDrift * 0.3);
-    }
-
-    // Phase 8: settle
-    const settle = easeInOut(prog(timeMs, P8_START, P8_START + 1500));
-    if (settle > 0) {
-      cx = lerp(cx, JIT_X, settle);
-      cy = lerp(cy, 3.5, settle);
-      ty = lerp(ty, 0, settle);
-    }
+    // Phase 7+8: camera holds still on JIT side — no drift, no tilt
 
     camera.position.set(cx, cy, cz);
     camera.lookAt(tx, ty, tz);
@@ -659,7 +647,6 @@ export function JITStreamingScene({ currentTimeMs: timeMs }: { currentTimeMs: nu
         <FilmstripBar
           opacity={tradDim}
           position={[TRAD_X, SIDE_Y, SOURCE_Z]}
-          label="source"
           missingSegs={tradTransferred}
         />
       )}
@@ -682,7 +669,6 @@ export function JITStreamingScene({ currentTimeMs: timeMs }: { currentTimeMs: nu
         <FilmstripBar
           opacity={pipelineOpa * tradDim}
           position={[TRAD_X, SIDE_Y, PIPELINE_Z]}
-          label="copy on service"
           color={COL_TRAD}
           scale={0.9}
         />
@@ -784,12 +770,11 @@ export function JITStreamingScene({ currentTimeMs: timeMs }: { currentTimeMs: nu
 
       {/* ═══ JIT SIDE ═══════════════════════════════════════════════ */}
 
-      {/* JIT source bar — stays whole, highlights active segment */}
+      {/* JIT source bar — stays whole */}
       {timeMs >= JIT_SETUP_START && (
         <FilmstripBar
           opacity={jitSourceOpa}
           position={[JIT_X, SIDE_Y, SOURCE_Z]}
-          label="video.mp4 — same URL"
         />
       )}
 
@@ -878,11 +863,6 @@ export function JITStreamingScene({ currentTimeMs: timeMs }: { currentTimeMs: nu
           </React.Fragment>
         );
       })}
-
-      {/* JIT summary */}
-      <SceneLabel position={[JIT_X, -0.75, PLAYER_Z + 0.5]} opacity={easeOut(prog(timeMs, JIT_PLAY + 200, JIT_PLAY + 600))} color={COL_EF} fontSize={0.10}>
-        Already playing.
-      </SceneLabel>
 
       {/* ── Phase 8: Punchline ── */}
       <SceneLabel
