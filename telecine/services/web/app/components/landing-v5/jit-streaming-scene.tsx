@@ -1,7 +1,7 @@
 // @ts-nocheck - React Three Fiber JSX intrinsics
 import * as React from "react";
-import { Suspense, useRef, useEffect } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { useRef } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import * as THREE from "three";
 
@@ -10,22 +10,29 @@ import * as THREE from "three";
    flat horizontal bars, arrows, highlighted regions. The 3D adds
    camera, lighting, and depth — it doesn't replace legibility.
 
-   TRADITIONAL:
-   [████████████████████████████]  "video.mp4"
-                |  upload whole file
-   [████████████████████████████]  copy on server
-                |  transcode all of it
-   [████████████] 1080p
-   [████████]     720p
-   [█████]        480p
-                |  store, then serve
-           [ PLAYER ]
+   TRADITIONAL (up/down arc — file leaves you, gets processed remotely, comes back):
 
-   EDITFRAME JIT:
+                  ╭── REMOTE SERVER ──╮
+                  │                   │
+   [████████████████████████████]  copy on server
+                  │  transcode all    │
+   [████████████] 1080p               │
+   [████████]     720p                │
+   [█████]        480p                │
+                  ╰───────────────────╯
+            ↑ upload              ↓ download
+            |                     |
+   [████████████████████████████]  "video.mp4"
+                           [ PLAYER ]
+
+   EDITFRAME JIT (flat — file never leaves, proxy fetches on demand):
+
    [░░░░██████░░░░░░░░░░░░░░░░]  file stays on YOUR server
-          ↑ fetch bytes 0:10–0:20
+          ↑ byte-range request
           |
-      [transcode]  just this piece
+   ╭─ EDITFRAME CLOUD PROXY ─╮
+   │  [transcode] just this   │
+   ╰──────────────────────────╯
           |
       [ PLAYER ]  already playing
           next: 0:20–0:30 ...
@@ -372,18 +379,63 @@ function TranscodeBox({ opacity, active, scale, position }: {
   );
 }
 
-/** Arrow — a flat arrow shape pointing down (positive Y to negative Y).
+/** Cloud proxy box — shows the Editframe proxy that sits between origin and player.
+    Contains its own transcode step inside. Visually distinct from the bare TranscodeBox. */
+function ProxyBox({ opacity, active, position }: {
+  opacity: number;
+  active: boolean;
+  position: [number, number, number];
+}) {
+  const frameRef = useRef<THREE.Mesh>(null);
+
+  useFrame(() => {
+    if (!frameRef.current) return;
+    const mat = frameRef.current.material as THREE.MeshPhysicalMaterial;
+    mat.opacity = opacity * 0.25;
+    mat.emissiveIntensity = active ? 0.15 : opacity * 0.03;
+    frameRef.current.castShadow = opacity > 0.1;
+  });
+
+  return (
+    <group position={position}>
+      {/* Enclosing box */}
+      <mesh ref={frameRef} castShadow>
+        <boxGeometry args={[2.4, 1.2, 0.2]} />
+        <meshPhysicalMaterial
+          color={COL_EF}
+          roughness={0.3}
+          metalness={0.2}
+          clearcoat={0.4}
+          transparent
+          opacity={0}
+          emissive={new THREE.Color(COL_EF)}
+          emissiveIntensity={0.03}
+        />
+      </mesh>
+      {/* Label at top */}
+      <Label position={[0, 0.45, 0.12]} fontSize={0.1} color="#82b1ff" opacity={opacity * 0.9}>
+        editframe cloud proxy
+      </Label>
+      {/* Inner transcode box */}
+      <TranscodeBox opacity={opacity} active={active} scale={0.65} position={[0, -0.1, 0.05]} />
+    </group>
+  );
+}
+
+/** Arrow — a flat arrow shape. Default points down; set `up` to point up.
     Represents data flow direction. The most basic whiteboard element. */
-function Arrow({ opacity, position, length, color }: {
+function Arrow({ opacity, position, length, color, up }: {
   opacity: number;
   position: [number, number, number];
   length?: number;
   color?: number;
+  up?: boolean;
 }) {
   const shaftRef = useRef<THREE.Mesh>(null);
   const headRef = useRef<THREE.Mesh>(null);
   const len = length ?? 0.6;
   const col = color ?? 0x666688;
+  const dir = up ? 1 : -1;
 
   useFrame(() => {
     if (!shaftRef.current || !headRef.current) return;
@@ -397,7 +449,7 @@ function Arrow({ opacity, position, length, color }: {
         <boxGeometry args={[0.04, len, 0.02]} />
         <meshBasicMaterial color={col} transparent opacity={0} />
       </mesh>
-      <mesh ref={headRef} position={[0, -len / 2 - 0.06, 0]} rotation={[0, 0, Math.PI]}>
+      <mesh ref={headRef} position={[0, dir * (len / 2 + 0.06), 0]} rotation={[0, 0, up ? 0 : Math.PI]}>
         <coneGeometry args={[0.07, 0.12, 3]} />
         <meshBasicMaterial color={col} transparent opacity={0} />
       </mesh>
@@ -511,32 +563,34 @@ function Lights() {
 }
 
 /* ━━ SCENE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-function Scene({ currentTimeMs }: { currentTimeMs: number }) {
-  const { camera, invalidate } = useThree();
-  
-  // Trigger R3F render when time changes (must be in useEffect to avoid render loop)
-  useEffect(() => {
-    invalidate();
-  }, [currentTimeMs, invalidate]);
+export function JITStreamingScene({ currentTimeMs }: { currentTimeMs: number }) {
+  const { camera } = useThree();
 
-  /* ── Layout is vertical: each step flows downward ── 
-     Y positions (top to bottom):
-     y=2    source file
-     y=1    arrow
-     y=0    server copy / transcode box
-     y=-1   arrow
-     y=-2   variant bars / player
+  /* ── Act 1 layout: up/down arc ──
+     Y positions:
+     y=-2   source file (your machine) + player (at end)
+     y=-1   ↑ upload arrow          ↓ download arrow
+     y=0.5  server copy
+     y=-0.3 transcode box (on server)
+     y=-1.2 variant bars (on server)
+
+     Act 2 layout: flat, with proxy
+     y=2    source file (your server / CDN)
+     y=1    ↓ byte-range through proxy
+     y=0    proxy box (contains transcode)
+     y=-1   ↓ output
+     y=-2   player
   */
 
   // ── Camera ──
   useFrame(() => {
-    // Acts 1 & 2: looking at the vertical flow, slightly angled
-    const basePos = new THREE.Vector3(0, 0, 6);
-    const baseTar = new THREE.Vector3(0, -0.5, 0);
+    // Acts 1 & 2: looking at the full arc, slightly pulled back
+    const basePos = new THREE.Vector3(0, 0, 7.5);
+    const baseTar = new THREE.Vector3(0, -0.2, 0);
 
-    // Act 3: pull back to see both side by side
-    const widePos = new THREE.Vector3(0, 0.5, 9);
-    const wideTar = new THREE.Vector3(0, -0.5, 0);
+    // Act 3: pull back further to see both side by side
+    const widePos = new THREE.Vector3(0, 0.5, 11);
+    const wideTar = new THREE.Vector3(0, -0.2, 0);
 
     const compareProg = easeInOut(prog(currentTimeMs, C_START, C_START + 1500));
 
@@ -591,8 +645,10 @@ function Scene({ currentTimeMs }: { currentTimeMs: number }) {
   const bSegOpa = easeOut(prog(currentTimeMs, B_FETCH_START, B_FETCH_START + 400));
   const bSegTravel = easeInOut(prog(currentTimeMs, B_FETCH_START, B_FETCH_END));
 
+  // Proxy box fades in as the fetch begins — it's the destination
+  const bProxyOpa = easeOut(prog(currentTimeMs, B_FETCH_START - 300, B_FETCH_START + 500));
+
   // "Same transcode — but just this piece."
-  const bTransBoxOpa = easeOut(prog(currentTimeMs, B_TRANSCODE_START - 600, B_TRANSCODE_START));
   const bTransActive = currentTimeMs >= B_TRANSCODE_START && currentTimeMs < B_TRANSCODE_END;
 
   // Output segment streams to player
@@ -615,8 +671,8 @@ function Scene({ currentTimeMs }: { currentTimeMs: number }) {
 
   // ── Act 3: Side-by-side ──
   const sideProg = easeInOut(prog(currentTimeMs, C_START, C_START + 1500));
-  const tradShift = -3.2 * sideProg;
-  const efShift = 3.2 * sideProg;
+  const tradShift = -3.8 * sideProg;
+  const efShift = 3.8 * sideProg;
 
   const tradVisible = currentTimeMs < TRANSITION_END || currentTimeMs >= C_START;
   const efVisible = currentTimeMs >= B_IN;
@@ -634,41 +690,45 @@ function Scene({ currentTimeMs }: { currentTimeMs: number }) {
       <Lights />
       <Floor />
 
-      {/* ━━ ACT 1: TRADITIONAL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/* ━━ ACT 1: TRADITIONAL (up/down arc) ━━━━━━━━━━━━━━━━━━━━━ */}
       {tradVisible && (
         <group position={[tradShift, 0, 0]}>
 
-          {/* Source file */}
-          <FilmstripBar opacity={aBarOpa * tradFadeIn} position={[0, 2, 0]} label="video.mp4" />
+          {/* ── BOTTOM: Source file (your machine) ── */}
+          <FilmstripBar opacity={aBarOpa * tradFadeIn} position={[-1.2, -2.2, 0]} label="video.mp4" />
 
-          {/* ↓ Upload */}
-          <Arrow opacity={aUploadArrow * tradFadeIn} position={[0, 1.35, 0.1]} color={COL_TRAD} />
-          <Label position={[0.4, 1.35, 0.1]} fontSize={0.09} color="#ff8a65" opacity={aUploadArrow * tradFadeIn * 0.7} anchorX="left">
+          {/* ↑ Upload — goes UP to remote server */}
+          <Arrow opacity={aUploadArrow * tradFadeIn} position={[-1.2, -1.2, 0.1]} length={1.2} color={COL_TRAD} up />
+          <Label position={[-1.2 + BAR_W / 2 + 0.15, -1.2, 0.1]} fontSize={0.09} color="#ff8a65" opacity={aUploadArrow * tradFadeIn * 0.7} anchorX="left">
             upload entire file
           </Label>
           {aUploadParticles && (
-            <ParticleStream from={[0, 1.9, 0.1]} to={[0, 0.6, 0.1]} count={40} color={COL_TRAD} opacity={0.5 * tradFadeIn} timeMs={aUploadTime} seed={1000} />
+            <ParticleStream from={[-1.2, -2.0, 0.1]} to={[-1.2, 0.2, 0.1]} count={40} color={COL_TRAD} opacity={0.5 * tradFadeIn} timeMs={aUploadTime} seed={1000} />
           )}
 
+          {/* ── TOP: Remote server zone ── */}
           {/* Copy on server */}
-          <FilmstripBar opacity={aCopyOpa * tradFadeIn} position={[0, 0.5, 0]} label="copy on server" />
+          <FilmstripBar opacity={aCopyOpa * tradFadeIn} position={[0, 1.8, 0]} label="copy on remote server" />
 
-          {/* ↓ Transcode */}
-          <Arrow opacity={aTransArrow * tradFadeIn} position={[0, -0.15, 0.1]} color={COL_MACHINE} />
-          <TranscodeBox opacity={aTransBoxOpa * tradFadeIn} active={aTransActive} scale={1} position={[0, -0.8, 0]} />
+          {/* Transcode (on server) */}
+          <Arrow opacity={aTransArrow * tradFadeIn} position={[0, 1.1, 0.1]} color={COL_MACHINE} />
+          <TranscodeBox opacity={aTransBoxOpa * tradFadeIn} active={aTransActive} scale={1} position={[0, 0.4, 0]} />
 
-          {/* Output variants — staggered, each lands individually */}
-          <group position={[0, -1.6, 0]}>
+          {/* Output variants (stored on server) */}
+          <group position={[0, -0.5, 0]}>
             <VariantBar opacity={aVar1080 * tradFadeIn} color={COL_1080} width={BAR_W * 0.95} position={[0, 0.25, 0]} label="1080p" />
             <VariantBar opacity={aVar720 * tradFadeIn} color={COL_720} width={BAR_W * 0.7} position={[0, 0, 0]} label="720p" />
             <VariantBar opacity={aVar480 * tradFadeIn} color={COL_480} width={BAR_W * 0.45} position={[0, -0.25, 0]} label="480p" />
           </group>
 
-          {/* ↓ Serve */}
-          <Arrow opacity={aServeArrow * tradFadeIn} position={[0, -2.2, 0.1]} />
+          {/* ↓ Download — comes back DOWN to player */}
+          <Arrow opacity={aServeArrow * tradFadeIn} position={[1.2, -1.2, 0.1]} length={1.2} color={0x666688} />
+          <Label position={[1.2 + BAR_W / 2 + 0.15, -1.2, 0.1]} fontSize={0.09} color="#aaaacc" opacity={aServeArrow * tradFadeIn * 0.7} anchorX="left">
+            download for playback
+          </Label>
 
-          {/* Player */}
-          <PlayerScreen opacity={aPlayerOpa * tradFadeIn} playing={aPlaying * tradFadeIn} position={[0, -2.8, 0]} />
+          {/* ── BOTTOM: Player (back on your machine) ── */}
+          <PlayerScreen opacity={aPlayerOpa * tradFadeIn} playing={aPlaying * tradFadeIn} position={[1.2, -2.2, 0]} />
         </group>
       )}
 
@@ -685,54 +745,57 @@ function Scene({ currentTimeMs }: { currentTimeMs: number }) {
             highlightRange={bHighlightOn ? [1, 1] : undefined}
           />
 
-          {/* ↓ Fetch byte range */}
+          {/* ↓ Byte-range request goes through proxy */}
           <Arrow opacity={bFetchArrow} position={[0, 1.35, 0.1]} color={COL_HIGHLIGHT} />
           <Label position={[0.4, 1.35, 0.1]} fontSize={0.09} color="#69f0ae" opacity={bFetchArrow * 0.7} anchorX="left">
-            fetch bytes 0:10–0:20
+            byte-range request
           </Label>
 
-          {/* The segment traveling down */}
+          {/* The segment traveling down to proxy */}
           <Segment
             opacity={bSegOpa}
             color={COL_HIGHLIGHT}
             label="0:10–0:20"
-            position={[0, lerp(1.6, 0.6, bSegTravel), 0.1]}
+            position={[0, lerp(1.6, 0.5, bSegTravel), 0.1]}
           />
 
-          {/* Transcode box — same component, smaller */}
-          <TranscodeBox opacity={bTransBoxOpa} active={bTransActive} scale={0.7} position={[0, -0.1, 0]} />
+          {/* Editframe cloud proxy — contains transcode */}
+          <ProxyBox opacity={bProxyOpa} active={bTransActive} position={[0, 0, 0]} />
 
-          {/* ↓ Output */}
-          <Arrow opacity={bServeArrow} position={[0, -0.7, 0.1]} color={COL_EF} />
+          {/* ↓ Output streams to player */}
+          <Arrow opacity={bServeArrow} position={[0, -1.0, 0.1]} color={COL_EF} />
+          <Label position={[0.4, -1.0, 0.1]} fontSize={0.09} color="#82b1ff" opacity={bServeArrow * 0.7} anchorX="left">
+            stream to player
+          </Label>
 
           {/* Transcoded segment traveling to player */}
           <Segment
             opacity={bOutputOpa * (1 - bPlaying)}
             color={COL_EF}
             label="1080p"
-            position={[0, lerp(-0.5, -1.5, bOutputTravel), 0.1]}
+            position={[0, lerp(-0.7, -1.7, bOutputTravel), 0.1]}
           />
 
-          {/* Particles flowing */}
+          {/* Particles flowing through the whole pipeline */}
           {bParticlesActive && (
-            <ParticleStream from={[0, 1.6, 0.1]} to={[0, -1.8, 0.1]} count={60} color={COL_EF} opacity={0.5} timeMs={bParticleTime} seed={5000} />
+            <ParticleStream from={[0, 1.6, 0.1]} to={[0, -2.0, 0.1]} count={60} color={COL_EF} opacity={0.5} timeMs={bParticleTime} seed={5000} />
           )}
 
           {/* Player */}
-          <PlayerScreen opacity={bPlayerOpa} playing={bPlaying} position={[0, -2.0, 0]} />
+          <PlayerScreen opacity={bPlayerOpa} playing={bPlaying} position={[0, -2.2, 0]} />
 
-          {/* "Next" segments — additional fetches staggered */}
+          {/* "Next" segments — additional fetches staggered through proxy */}
           <Segment
             opacity={bNext1Opa * 0.6}
             color={COL_720}
             label="720p"
-            position={[0.4, lerp(1.6, -1.8, bNext1Travel), 0.1]}
+            position={[0.4, lerp(1.6, -2.0, bNext1Travel), 0.1]}
           />
           <Segment
             opacity={bNext2Opa * 0.5}
             color={COL_480}
             label="480p"
-            position={[-0.4, lerp(1.6, -1.8, bNext2Travel), 0.1]}
+            position={[-0.4, lerp(1.6, -2.0, bNext2Travel), 0.1]}
           />
         </group>
       )}
@@ -740,24 +803,3 @@ function Scene({ currentTimeMs }: { currentTimeMs: number }) {
   );
 }
 
-/* ━━ Canvas wrapper ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-export function JITStreamingCanvas({ currentTimeMs }: { currentTimeMs: number }) {
-  return (
-    <Canvas
-      shadows
-      frameloop="demand"
-      gl={{ preserveDrawingBuffer: true, antialias: true, alpha: true }}
-      camera={{ position: [0, 0, 6], fov: 50 }}
-      style={{ background: "#1e2233", width: "100%", height: "100%" }}
-      onCreated={({ gl }: { gl: THREE.WebGLRenderer }) => {
-        gl.toneMapping = THREE.ACESFilmicToneMapping;
-        gl.toneMappingExposure = 1.8;
-      }}
-    >
-      <Suspense fallback={null}>
-        <fog attach="fog" args={[0x1e2233, 20, 45]} />
-        <Scene currentTimeMs={currentTimeMs} />
-      </Suspense>
-    </Canvas>
-  );
-}
