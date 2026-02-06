@@ -491,10 +491,20 @@ function JITStreamingDiagram() {
 
       // Update scene time on every frame - works for both prime and clones
       // For clones: TimelineRoot.initializer re-renders React tree, this useEffect runs, addFrameTask connects
-      console.log('[ArchitectureDiagram] Setting up addFrameTask, isClone:', tg.hasAttribute('data-no-playback-controller'));
+      const isClone = tg.hasAttribute('data-no-playback-controller');
+      const hasNoWorkbench = tg.hasAttribute('data-no-workbench');
+      console.log('[ArchitectureDiagram] Setting up addFrameTask', {
+        isClone,
+        hasNoWorkbench,
+        id: tg.id,
+        element: tg,
+      });
       
       tg.addFrameTask?.(({ ownCurrentTimeMs, durationMs }) => {
-        console.log('[ArchitectureDiagram] Frame task:', ownCurrentTimeMs, 'isClone:', tg.hasAttribute('data-no-playback-controller'));
+        // Don't log every frame in production
+        if (ownCurrentTimeMs % 1000 < 50) { // Log roughly once per second
+          console.log('[ArchitectureDiagram] Frame task:', ownCurrentTimeMs, 'isClone:', tg.hasAttribute('data-no-playback-controller'));
+        }
         setSceneTime(ownCurrentTimeMs);
         setSceneDuration(durationMs);
       });

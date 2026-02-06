@@ -1,5 +1,6 @@
 // @ts-nocheck - React Three Fiber JSX intrinsics
-import { Suspense, useRef } from "react";
+import * as React from "react";
+import { Suspense, useRef, useEffect } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import * as THREE from "three";
@@ -512,14 +513,11 @@ function Lights() {
 /* ━━ SCENE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function Scene({ currentTimeMs }: { currentTimeMs: number }) {
   const { camera, invalidate } = useThree();
-  const prevTimeRef = useRef(currentTimeMs);
   
-  // Trigger R3F render when time changes
-  if (prevTimeRef.current !== currentTimeMs) {
-    console.log('[Scene] Time changed, invalidating:', currentTimeMs);
-    prevTimeRef.current = currentTimeMs;
+  // Trigger R3F render when time changes (must be in useEffect to avoid render loop)
+  useEffect(() => {
     invalidate();
-  }
+  }, [currentTimeMs, invalidate]);
 
   /* ── Layout is vertical: each step flows downward ── 
      Y positions (top to bottom):
@@ -744,8 +742,6 @@ function Scene({ currentTimeMs }: { currentTimeMs: number }) {
 
 /* ━━ Canvas wrapper ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 export function JITStreamingCanvas({ currentTimeMs }: { currentTimeMs: number }) {
-  console.log('[JITStreamingCanvas] Render with time:', currentTimeMs);
-  
   return (
     <Canvas
       shadows

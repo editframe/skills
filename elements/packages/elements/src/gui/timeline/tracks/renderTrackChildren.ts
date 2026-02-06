@@ -25,6 +25,7 @@ export function renderTrackChildren(
   showSelectors?: string[],
   skipRootFiltering = false,
   enableTrim = false,
+  useAbsolutePosition = false,
 ): Array<TemplateResult<1> | typeof nothing> {
   return children.map((child) => {
     if (
@@ -39,6 +40,7 @@ export function renderTrackChildren(
         .element=${child}
         pixels-per-ms=${pixelsPerMs}
         ?enable-trim=${enableTrim}
+        ?use-absolute-position=${useAbsolutePosition}
         .hideSelectors=${hideSelectors}
         .showSelectors=${showSelectors}
       >
@@ -49,6 +51,7 @@ export function renderTrackChildren(
         .element=${child}
         pixels-per-ms=${pixelsPerMs}
         ?enable-trim=${enableTrim}
+        ?use-absolute-position=${useAbsolutePosition}
         .hideSelectors=${hideSelectors}
         .showSelectors=${showSelectors}
       ></ef-image-track>`;
@@ -58,6 +61,7 @@ export function renderTrackChildren(
         .element=${child}
         pixels-per-ms=${pixelsPerMs}
         ?enable-trim=${enableTrim}
+        ?use-absolute-position=${useAbsolutePosition}
         .hideSelectors=${hideSelectors}
         .showSelectors=${showSelectors}
       ></ef-audio-track>`;
@@ -67,6 +71,7 @@ export function renderTrackChildren(
         .element=${child}
         pixels-per-ms=${pixelsPerMs}
         ?enable-trim=${enableTrim}
+        ?use-absolute-position=${useAbsolutePosition}
         .hideSelectors=${hideSelectors}
         .showSelectors=${showSelectors}
       ></ef-video-track>`;
@@ -76,6 +81,7 @@ export function renderTrackChildren(
         .element=${child}
         pixels-per-ms=${pixelsPerMs}
         ?enable-trim=${enableTrim}
+        ?use-absolute-position=${useAbsolutePosition}
         .hideSelectors=${hideSelectors}
         .showSelectors=${showSelectors}
       ></ef-captions-track>`;
@@ -85,6 +91,7 @@ export function renderTrackChildren(
         .element=${child}
         pixels-per-ms=${pixelsPerMs}
         ?enable-trim=${enableTrim}
+        ?use-absolute-position=${useAbsolutePosition}
         .hideSelectors=${hideSelectors}
         .showSelectors=${showSelectors}
       ></ef-captions-active-word-track>`;
@@ -94,6 +101,7 @@ export function renderTrackChildren(
         .element=${child}
         pixels-per-ms=${pixelsPerMs}
         ?enable-trim=${enableTrim}
+        ?use-absolute-position=${useAbsolutePosition}
         .hideSelectors=${hideSelectors}
         .showSelectors=${showSelectors}
       ></ef-text-track>`;
@@ -103,6 +111,7 @@ export function renderTrackChildren(
         .element=${child}
         pixels-per-ms=${pixelsPerMs}
         ?enable-trim=${enableTrim}
+        ?use-absolute-position=${useAbsolutePosition}
         .hideSelectors=${hideSelectors}
         .showSelectors=${showSelectors}
       ></ef-text-segment-track>`;
@@ -112,6 +121,7 @@ export function renderTrackChildren(
         .element=${child}
         pixels-per-ms=${pixelsPerMs}
         ?enable-trim=${enableTrim}
+        ?use-absolute-position=${useAbsolutePosition}
         .hideSelectors=${hideSelectors}
         .showSelectors=${showSelectors}
       ></ef-captions-segment-track>`;
@@ -121,6 +131,7 @@ export function renderTrackChildren(
         .element=${child}
         pixels-per-ms=${pixelsPerMs}
         ?enable-trim=${enableTrim}
+        ?use-absolute-position=${useAbsolutePosition}
         .hideSelectors=${hideSelectors}
         .showSelectors=${showSelectors}
       ></ef-captions-before-word-track>`;
@@ -130,6 +141,7 @@ export function renderTrackChildren(
         .element=${child}
         pixels-per-ms=${pixelsPerMs}
         ?enable-trim=${enableTrim}
+        ?use-absolute-position=${useAbsolutePosition}
         .hideSelectors=${hideSelectors}
         .showSelectors=${showSelectors}
       ></ef-captions-after-word-track>`;
@@ -139,6 +151,7 @@ export function renderTrackChildren(
         .element=${child}
         pixels-per-ms=${pixelsPerMs}
         ?enable-trim=${enableTrim}
+        ?use-absolute-position=${useAbsolutePosition}
         .hideSelectors=${hideSelectors}
         .showSelectors=${showSelectors}
       ></ef-waveform-track>`;

@@ -71,6 +71,10 @@ export default defineSandbox({
         
         const trackElement = ctx.querySelector<EFTimegroupTrack>("ef-timegroup-track")!;
         ctx.expect(trackElement).toBeDefined();
+        
+        const shadowRoot = trackElement.shadowRoot;
+        const thumbnailStrip = shadowRoot?.querySelector("ef-thumbnail-strip");
+        ctx.expect(thumbnailStrip).toBeDefined();
       },
     },
     
@@ -382,7 +386,9 @@ export default defineSandbox({
         ctx.expect(nestedTimegroup.isRootTimegroup).toBe(false);
         
         const trackElement = ctx.querySelector<EFTimegroupTrack>("ef-timegroup-track")!;
-        ctx.expect(trackElement).toBeDefined();
+        const shadowRoot = trackElement.shadowRoot;
+        const thumbnailStrip = shadowRoot?.querySelector("ef-thumbnail-strip");
+        ctx.expect(thumbnailStrip).toBeNull();
       },
     },
     
@@ -412,7 +418,9 @@ export default defineSandbox({
         await ctx.frame();
         
         const trackElement = ctx.querySelector<EFTimegroupTrack>("ef-timegroup-track")!;
-        ctx.expect(trackElement).toBeDefined();
+        const shadowRoot = trackElement.shadowRoot;
+        const thumbnailStrip = shadowRoot?.querySelector("ef-thumbnail-strip");
+        ctx.expect(thumbnailStrip).toBeNull();
       },
     },
     
@@ -442,7 +450,9 @@ export default defineSandbox({
         await ctx.frame();
         
         const trackElement = ctx.querySelector<EFTimegroupTrack>("ef-timegroup-track")!;
-        ctx.expect(trackElement).toBeDefined();
+        const shadowRoot = trackElement.shadowRoot;
+        const thumbnailStrip = shadowRoot?.querySelector("ef-thumbnail-strip");
+        ctx.expect(thumbnailStrip).toBeNull();
       },
     },
     
@@ -472,7 +482,9 @@ export default defineSandbox({
         await ctx.frame();
         
         const trackElement = ctx.querySelector<EFTimegroupTrack>("ef-timegroup-track")!;
-        ctx.expect(trackElement).toBeDefined();
+        const shadowRoot = trackElement.shadowRoot;
+        const thumbnailStrip = shadowRoot?.querySelector("ef-thumbnail-strip");
+        ctx.expect(thumbnailStrip).toBeNull();
       },
     },
     
@@ -506,8 +518,12 @@ export default defineSandbox({
         ctx.expect(rootTimegroup.id).toBe("root-tg-all-conditions");
         
         const trackElement = ctx.querySelector<EFTimegroupTrack>("ef-timegroup-track")!;
-        ctx.expect(trackElement.skipChildren).toBe(true);        
+        ctx.expect(trackElement.skipChildren).toBe(true);
         ctx.expect(trackElement.showFilmstrip).toBe(true);
+        
+        const shadowRoot = trackElement.shadowRoot;
+        const thumbnailStrip = shadowRoot?.querySelector("ef-thumbnail-strip");
+        ctx.expect(thumbnailStrip).toBeDefined();
       },
     },
     
@@ -522,7 +538,7 @@ export default defineSandbox({
         {
           type: "maxSelfTime",
           functionName: "drawThumbnails",
-          fileName: "TimegroupTrack",
+          fileName: "EFThumbnailStrip",
           maxSelfTimeMs: 50, // Should render quickly with virtualization
         },
       ],
@@ -554,6 +570,9 @@ export default defineSandbox({
         await ctx.wait(500);
         
         const trackElement = ctx.querySelector<EFTimegroupTrack>("ef-timegroup-track")!;
+        const shadowRoot = trackElement.shadowRoot;
+        const thumbnailStrip = shadowRoot?.querySelector("ef-thumbnail-strip");
+        ctx.expect(thumbnailStrip).toBeDefined();
       },
     },
   },

@@ -19,6 +19,7 @@ export const transformHandlesProperties: PropertyDefinition[] = [
     category: "Transform",
     domReadable: true,
     domWritable: true,
+    htmlAttribute: "bounds",
     defaultValue: "{ x: 0, y: 0, width: 100, height: 100 }",
   },
   {
