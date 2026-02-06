@@ -6,8 +6,8 @@
  * and render clones.
  */
 
-import { useEffect } from "react";
-import { useThree, useFrame, _roots, flushSync as r3fFlushSync } from "@react-three/fiber";
+import { useLayoutEffect } from "react";
+import { useThree, _roots, flushSync as r3fFlushSync } from "@react-three/fiber";
 import type { RootState } from "@react-three/fiber";
 
 /**
@@ -28,10 +28,15 @@ export function yieldToScheduler(): Promise<void> {
 /**
  * Triggers an R3F render when time changes.
  * Use with frameloop="demand" to invalidate the canvas when timeline time updates.
+ *
+ * Uses useLayoutEffect (not useEffect) so the invalidate() call fires
+ * synchronously during flushSync rather than scheduling a deferred macrotask
+ * via React's scheduler. This eliminates a ~4ms MessageChannel gap per frame
+ * during video rendering.
  */
 export function InvalidateOnTimeChange({ timeMs }: { timeMs: number }) {
   const { invalidate } = useThree();
-  useEffect(() => {
+  useLayoutEffect(() => {
     invalidate();
   }, [timeMs, invalidate]);
   return null;
