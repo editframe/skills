@@ -227,9 +227,56 @@ function findCaptureProxy(canvas: HTMLCanvasElement): HTMLCanvasElement | null {
 }
 
 /**
+ * Read pixels directly from a WebGL canvas's drawing buffer via gl.readPixels().
+ *
+ * drawImage(webglCanvas) reads from the compositor's "presented" surface, which
+ * is only refreshed during requestAnimationFrame / compositing cycles. In hidden
+ * browser tabs, compositing is suspended, so drawImage returns stale pixels even
+ * though gl.render() produced new content in the drawing buffer.
+ *
+ * readPixels() reads from the drawing buffer directly, bypassing the compositor.
+ *
+ * Returns null for non-WebGL canvases (getContext returns null when a different
+ * context type is already active).
+ */
+function readWebGLPixels(canvas: HTMLCanvasElement): Uint8ClampedArray | null {
+  const gl = (
+    canvas.getContext('webgl2') ?? canvas.getContext('webgl')
+  ) as WebGLRenderingContext | null;
+  if (!gl) return null;
+
+  const width = canvas.width;
+  const height = canvas.height;
+  if (width === 0 || height === 0) return null;
+
+  // Ensure we read from the drawing buffer, not a leftover FBO
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+  const pixels = new Uint8Array(width * height * 4);
+  gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+
+  // readPixels returns rows bottom-to-top; flip to top-to-bottom for ImageData
+  const rowSize = width * 4;
+  const halfHeight = Math.floor(height / 2);
+  const temp = new Uint8Array(rowSize);
+  for (let y = 0; y < halfHeight; y++) {
+    const topOffset = y * rowSize;
+    const bottomOffset = (height - 1 - y) * rowSize;
+    temp.set(pixels.subarray(topOffset, topOffset + rowSize));
+    pixels.set(pixels.subarray(bottomOffset, bottomOffset + rowSize), topOffset);
+    pixels.set(temp, bottomOffset);
+  }
+
+  return new Uint8ClampedArray(pixels.buffer);
+}
+
+/**
  * Create a snapshot copy of a canvas's current pixels.
  * This captures the pixels synchronously before any async encoding,
  * preventing race conditions where the source canvas is modified.
+ * 
+ * For WebGL canvases, uses gl.readPixels() to bypass the compositor's
+ * presentation layer (which is suspended in hidden browser tabs).
  * 
  * For offscreen-rendered canvases, this automatically uses the capture proxy
  * canvas instead of the transferred display canvas.
@@ -256,8 +303,27 @@ function snapshotCanvas(
   
   const ctx = copy.getContext('2d');
   if (ctx && sourceCanvas.width > 0 && sourceCanvas.height > 0) {
-    // drawImage with scaling is SYNCHRONOUS - pixels are copied immediately
-    ctx.drawImage(sourceCanvas, 0, 0, targetWidth, targetHeight);
+    // Try reading directly from WebGL drawing buffer (bypasses compositor)
+    const glPixels = readWebGLPixels(sourceCanvas);
+    if (glPixels) {
+      const srcW = sourceCanvas.width;
+      const srcH = sourceCanvas.height;
+      const imageData = new ImageData(glPixels, srcW, srcH);
+
+      if (targetWidth === srcW && targetHeight === srcH) {
+        ctx.putImageData(imageData, 0, 0);
+      } else {
+        // putImageData doesn't scale — bounce through a temp canvas
+        const temp = document.createElement('canvas');
+        temp.width = srcW;
+        temp.height = srcH;
+        temp.getContext('2d')!.putImageData(imageData, 0, 0);
+        ctx.drawImage(temp, 0, 0, targetWidth, targetHeight);
+      }
+    } else {
+      // Non-WebGL canvas: drawImage is synchronous and correct
+      ctx.drawImage(sourceCanvas, 0, 0, targetWidth, targetHeight);
+    }
   }
   
   return copy;

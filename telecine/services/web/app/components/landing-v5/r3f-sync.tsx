@@ -39,44 +39,22 @@ export function InvalidateOnTimeChange({ timeMs }: { timeMs: number }) {
 
 /**
  * Imperatively flush R3F rendering pipeline with synchronous WebGL rendering.
- * 
- * This function bypasses R3F's requestAnimationFrame-based render loop and directly
- * calls the WebGL render function. This is critical for timeline-driven rendering where:
- * - Frames must render deterministically regardless of tab visibility
- * - Export rendering happens faster than display refresh rate
- * - Multiple frames may be rendered in background tabs
- * 
- * The function:
- * 1. Accesses the R3F store via the undocumented __r3f property on the canvas
- * 2. Directly calls gl.render(scene, camera) to render synchronously
- * 3. Calls gl.finish() to force GPU sync (ensures pixels are ready for capture)
- * 
- * This avoids the RAF-based advance() method which:
- * - Gets throttled/paused in hidden browser tabs
- * - Is capped at display refresh rate (typically 60fps)
- * - Renders asynchronously, breaking deterministic frame capture
- * 
- * **CRITICAL LIMITATION**: Chrome suspends WebGL rendering in hidden tabs.
- * Even though we call gl.render() directly, Chrome's renderer process is suspended
- * when the tab is not visible, causing WebGL commands to not execute. This means:
- * - Video exports will capture stale/frozen frames if the tab is hidden
- * - Users MUST keep the rendering tab visible during export
- * - No reliable workaround exists without --disable-renderer-backgrounding flag
- * 
+ *
+ * Replaces R3F's rAF-driven advance() cycle entirely so that timeline-driven
+ * rendering works regardless of tab visibility. The three steps mirror what
+ * advance() does internally:
+ *
+ *   1. Invoke useFrame subscribers — updates camera, lights, and any other
+ *      objects that derive state inside useFrame callbacks.
+ *   2. gl.render(scene, camera) — synchronous WebGL draw.
+ *   3. gl.finish() — GPU sync so pixels are ready for readback.
+ *
+ * Pixel capture from the WebGL canvas is handled separately by
+ * readWebGLPixels() in serializeTimelineDirect.ts (uses gl.readPixels to
+ * bypass the compositor's presentation layer, which is suspended in hidden
+ * browser tabs).
+ *
  * @param canvasContainer - The container element that holds the R3F canvas
- * 
- * @example
- * ```tsx
- * useLayoutEffect(() => {
- *   const tg = timegroupRef.current;
- *   if (!tg?.addFrameTask) return;
- *   
- *   return tg.addFrameTask(({ currentTimeMs }) => {
- *     flushSync(() => setTimeMs(currentTimeMs));
- *     flushR3F(canvasContainerRef.current);
- *   });
- * }, []);
- * ```
  */
 export function flushR3F(canvasContainer: HTMLElement | null): void {
   if (!canvasContainer) return;
@@ -87,17 +65,23 @@ export function flushR3F(canvasContainer: HTMLElement | null): void {
   if (r3fStore) {
     const state = r3fStore.store?.getState?.();
     if (state?.gl && state?.scene && state?.camera) {
-      // Warn if tab is hidden during rendering (WebGL commands won't execute)
-      if (document.hidden) {
-        console.warn(
-          '[flushR3F] Tab is hidden - WebGL rendering is suspended by Chrome. ' +
-          'Video frames will be frozen. Keep the tab visible during export.'
-        );
+      // 1. Run useFrame subscribers (camera, lights, etc.)
+      //    Without this, objects that update in useFrame are frozen when
+      //    advance() doesn't fire (hidden tabs, faster-than-realtime export).
+      if (state.internal?.subscribers) {
+        for (const sub of state.internal.subscribers) {
+          try {
+            sub.ref.current(state, 0);
+          } catch (e) {
+            console.warn('[flushR3F] useFrame subscriber error:', e);
+          }
+        }
       }
-      
-      // Direct synchronous WebGL render - bypasses RAF entirely
+
+      // 2. Synchronous WebGL render
       state.gl.render(state.scene, state.camera);
-      // Force GPU sync to ensure pixels are ready for capture
+
+      // 3. GPU sync — ensures drawing buffer is complete for readPixels
       state.gl.getContext().finish();
     }
   }

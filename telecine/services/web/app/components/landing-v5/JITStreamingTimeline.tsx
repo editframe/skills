@@ -1,5 +1,5 @@
 // @ts-nocheck - React Three Fiber JSX intrinsics
-import React, { Suspense, useState, useLayoutEffect, useRef, useEffect } from "react";
+import React, { Suspense, useState, useLayoutEffect, useRef } from "react";
 import { flushSync } from "react-dom";
 import { Timegroup } from "@editframe/react";
 import { Canvas } from "@react-three/fiber";
@@ -24,62 +24,6 @@ export function JITStreamingTimeline() {
 
       flushR3F(canvasContainerRef.current);
     });
-  }, []);
-
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden && canvasContainerRef.current) {
-        flushR3F(canvasContainerRef.current);
-      }
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, []);
-
-  // Listen for WebGL context loss to confirm Chrome is actually killing it
-  useEffect(() => {
-    const container = canvasContainerRef.current;
-    if (!container) return;
-
-    const observer = new MutationObserver(() => {
-      const canvas = container.querySelector("canvas");
-      if (canvas) {
-        observer.disconnect();
-        canvas.addEventListener("webglcontextlost", (e) => {
-          console.error(
-            "[JITStreamingTimeline] WebGL context LOST.",
-            "document.hidden:", document.hidden,
-            "visibilityState:", document.visibilityState,
-            "event:", e,
-          );
-        });
-        canvas.addEventListener("webglcontextrestored", () => {
-          console.warn("[JITStreamingTimeline] WebGL context restored.");
-        });
-      }
-    });
-
-    observer.observe(container, { childList: true, subtree: true });
-
-    // Also check if canvas already exists
-    const existing = container.querySelector("canvas");
-    if (existing) {
-      observer.disconnect();
-      existing.addEventListener("webglcontextlost", (e) => {
-        console.error(
-          "[JITStreamingTimeline] WebGL context LOST.",
-          "document.hidden:", document.hidden,
-          "visibilityState:", document.visibilityState,
-          "event:", e,
-        );
-      });
-      existing.addEventListener("webglcontextrestored", () => {
-        console.warn("[JITStreamingTimeline] WebGL context restored.");
-      });
-    }
-
-    return () => observer.disconnect();
   }, []);
 
   return (
