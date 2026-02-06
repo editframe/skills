@@ -10,6 +10,21 @@ import { useEffect } from "react";
 import { useThree, useFrame } from "@react-three/fiber";
 
 /**
+ * Yield one macrotask via MessageChannel.
+ *
+ * React's scheduler (used by R3F's reconciler) also uses MessageChannel,
+ * so yielding a macrotask gives it a chance to commit pending fiber work.
+ * Unlike setTimeout(0), MessageChannel is NOT throttled in hidden tabs.
+ */
+export function yieldToScheduler(): Promise<void> {
+  return new Promise(resolve => {
+    const ch = new MessageChannel();
+    ch.port1.onmessage = () => resolve();
+    ch.port2.postMessage(null);
+  });
+}
+
+/**
  * Forces GPU sync (gl.finish()) on every R3F frame.
  * This ensures pixels are ready for capture in render clones.
  * 

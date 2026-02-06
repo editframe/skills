@@ -5,7 +5,7 @@ import { Timegroup } from "@editframe/react";
 import { Canvas } from "@react-three/fiber";
 import * as THREE from "three";
 import { JITStreamingScene } from "./jit-streaming-scene";
-import { InvalidateOnTimeChange, flushR3F } from "./r3f-sync";
+import { InvalidateOnTimeChange, flushR3F, yieldToScheduler } from "./r3f-sync";
 
 
 export function JITStreamingTimeline() {
@@ -17,10 +17,18 @@ export function JITStreamingTimeline() {
     const tg = timegroupRef.current;
     if (!tg?.addFrameTask) return;
 
-    return tg.addFrameTask(({ currentTimeMs }: { currentTimeMs: number }) => {
+    return tg.addFrameTask(async ({ currentTimeMs }: { currentTimeMs: number }) => {
       flushSync(() => {
         setTimeMs(currentTimeMs);
       });
+
+      // R3F uses a separate react-reconciler from react-dom. flushSync only
+      // flushes react-dom's tree. R3F's Canvas bridges children to its own
+      // reconciler via useLayoutEffect → updateContainer, but the reconciler
+      // commits asynchronously via React's scheduler (MessageChannel).
+      // Yielding a macrotask lets the scheduler commit the new props to
+      // THREE.js objects before we render.
+      await yieldToScheduler();
 
       flushR3F(canvasContainerRef.current);
     });
