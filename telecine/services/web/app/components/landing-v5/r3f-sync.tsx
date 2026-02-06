@@ -38,16 +38,23 @@ export function InvalidateOnTimeChange({ timeMs }: { timeMs: number }) {
 }
 
 /**
- * Imperatively flush R3F rendering pipeline.
+ * Imperatively flush R3F rendering pipeline with synchronous WebGL rendering.
  * 
- * This function:
+ * This function bypasses R3F's requestAnimationFrame-based render loop and directly
+ * calls the WebGL render function. This is critical for timeline-driven rendering where:
+ * - Frames must render deterministically regardless of tab visibility
+ * - Export rendering happens faster than display refresh rate
+ * - Multiple frames may be rendered in background tabs
+ * 
+ * The function:
  * 1. Accesses the R3F store via the undocumented __r3f property on the canvas
- * 2. Invalidates the scene to trigger a render
- * 3. Advances the render loop with the current timestamp
- * 4. Calls gl.finish() to force GPU sync (ensures pixels are ready for capture)
+ * 2. Directly calls gl.render(scene, camera) to render synchronously
+ * 3. Calls gl.finish() to force GPU sync (ensures pixels are ready for capture)
  * 
- * Call this from addFrameTask callbacks to ensure R3F content is rendered
- * synchronously before frame capture in render clones.
+ * This avoids the RAF-based advance() method which:
+ * - Gets throttled/paused in hidden browser tabs
+ * - Is capped at display refresh rate (typically 60fps)
+ * - Renders asynchronously, breaking deterministic frame capture
  * 
  * @param canvasContainer - The container element that holds the R3F canvas
  * 
@@ -72,10 +79,11 @@ export function flushR3F(canvasContainer: HTMLElement | null): void {
 
   if (r3fStore) {
     const state = r3fStore.store?.getState?.();
-    if (state) {
-      state.invalidate();
-      state.advance(performance.now(), true);
-      state.gl?.getContext?.()?.finish?.();
+    if (state?.gl && state?.scene && state?.camera) {
+      // Direct synchronous WebGL render - bypasses RAF entirely
+      state.gl.render(state.scene, state.camera);
+      // Force GPU sync to ensure pixels are ready for capture
+      state.gl.getContext().finish();
     }
   }
 }
