@@ -1,13 +1,14 @@
+// @ts-nocheck - React Three Fiber JSX intrinsics
 /**
  * React Three Fiber version of the parallel fragments 3D scene.
- * Componentized for easier iteration. Uses the vanilla scene module
- * as render-clone fallback (R3F doesn't survive DOM cloning).
+ * Componentized for easier iteration.
  */
 
-import { useRef, useMemo, type ReactNode } from "react";
-import { useThree, useFrame } from "@react-three/fiber";
+import { Suspense, useRef, useMemo, useState, useLayoutEffect, useEffect, type ReactNode } from "react";
+import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
-import { CompositionCanvas, useCompositionTime } from "@editframe/react";
+import { flushSync } from "react-dom";
+import { Timegroup } from "@editframe/react";
 import * as THREE from "three";
 
 /* ━━ Easing & helpers ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
@@ -443,9 +444,8 @@ function DurationLabel({ x, y, z, opacity, text }: {
   );
 }
 
-/* ━━ Main Scene — reads time from CompositionCanvas context ━━━━━━━ */
-export function ParallelFragmentsR3FScene() {
-  const { timeMs } = useCompositionTime();
+/* ━━ Main Scene ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+export function ParallelFragmentsR3FScene({ currentTimeMs: timeMs }: { currentTimeMs: number }) {
 
   // ── Compute all animation state from timeMs ──────────────────
   const p1 = easeOut(prog(timeMs, 0, P1_END));
@@ -682,21 +682,78 @@ export function ParallelFragmentsR3FScene() {
   );
 }
 
+/* ━━ R3F helpers for render-clone compatibility ━━━━━━━━━━━━━━━━━━━ */
+
+function GLSync() {
+  const { gl } = useThree();
+  useFrame(() => { gl.getContext().finish(); });
+  return null;
+}
+
+function InvalidateOnTimeChange({ timeMs }: { timeMs: number }) {
+  const { invalidate } = useThree();
+  useEffect(() => { invalidate(); }, [timeMs, invalidate]);
+  return null;
+}
+
 /* ━━ Canvas wrapper — just configure and drop in ━━━━━━━━━━━━━━━━━━ */
 export function ParallelFragmentsCanvas({ children }: { children?: ReactNode }) {
+  const timegroupRef = useRef(null);
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const [timeMs, setTimeMs] = useState(0);
+
+  useLayoutEffect(() => {
+    const tg = timegroupRef.current;
+    if (!tg?.addFrameTask) return;
+
+    return tg.addFrameTask(({ currentTimeMs }: { currentTimeMs: number }) => {
+      flushSync(() => {
+        setTimeMs(currentTimeMs);
+      });
+
+      const canvas = canvasContainerRef.current?.querySelector('canvas');
+      const r3fStore = (canvas as any)?.__r3f;
+      if (r3fStore) {
+        const state = r3fStore.store?.getState?.();
+        if (state) {
+          state.invalidate();
+          state.advance(performance.now(), true);
+          state.gl?.getContext?.()?.finish?.();
+        }
+      }
+    });
+  }, []);
+
   return (
-    <CompositionCanvas
-      shadows
-      dpr={[1, 2]}
-      gl={{
-        toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 1.8,
-      }}
-      camera={{ fov: 50, near: 0.1, far: 100 }}
-      scene={{ background: new THREE.Color(0x1e2233), fog: new THREE.Fog(0x1e2233, 16, 35) }}
+    <Timegroup
+      ref={timegroupRef}
+      mode="fixed"
+      duration="14s"
+      className="relative w-full overflow-hidden"
+      style={{ aspectRatio: "16/10", background: "#1e2233" }}
     >
-      <ParallelFragmentsR3FScene />
-      {children}
-    </CompositionCanvas>
+      <div ref={canvasContainerRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
+        <Canvas
+          shadows
+          frameloop="demand"
+          dpr={[1, 2]}
+          gl={{
+            preserveDrawingBuffer: true,
+            toneMapping: THREE.ACESFilmicToneMapping,
+            toneMappingExposure: 1.8,
+          }}
+          camera={{ fov: 50, near: 0.1, far: 100 }}
+          scene={{ background: new THREE.Color(0x1e2233), fog: new THREE.Fog(0x1e2233, 16, 35) }}
+          style={{ width: "100%", height: "100%" }}
+        >
+          <Suspense fallback={null}>
+            <GLSync />
+            <InvalidateOnTimeChange timeMs={timeMs} />
+            <ParallelFragmentsR3FScene currentTimeMs={timeMs} />
+            {children}
+          </Suspense>
+        </Canvas>
+      </div>
+    </Timegroup>
   );
 }

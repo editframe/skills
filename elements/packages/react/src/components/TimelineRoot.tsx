@@ -2,7 +2,11 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { useEffect, useRef } from 'react';
-import type { EFTimegroup } from '@editframe/elements';
+import {
+  registerCloneFactory,
+  unregisterCloneFactory,
+  type EFTimegroup,
+} from '@editframe/elements';
 
 interface TimelineRootProps {
   /** Unique identifier for the root timegroup */
@@ -23,23 +27,25 @@ interface TimelineRootProps {
 /**
  * TimelineRoot - Factory wrapper for React-based timelines.
  * 
- * This component enables proper clone rendering by providing a factory pattern
- * for creating fully functional timeline instances. When render clones are created
- * (for exports, thumbnails, etc.), the initializer re-renders the React component
- * tree to ensure all JavaScript state and React lifecycle methods work correctly.
+ * This component enables proper clone rendering by registering a clone factory
+ * for the managed ef-timegroup element. When render clones are needed
+ * (for exports, thumbnails, etc.), the factory mounts a fresh React component
+ * tree — producing a fully functional second instance with all hooks, state,
+ * and effects running.
+ * 
+ * This is necessary because React DOM cannot be cloned via cloneNode() —
+ * cloned elements are dead HTML without React's fiber tree behind them.
+ * The factory pattern ensures each clone is a real React mount.
  * 
  * @example
  * ```tsx
- * const MyTimelineContent = () => (
+ * const MyTimeline = () => (
  *   <Timegroup mode="sequence">
  *     <MyScenes />
  *   </Timegroup>
  * );
  * 
- * // Wrap with Configuration if needed
- * <Configuration apiHost="...">
- *   <TimelineRoot id="root" component={MyTimelineContent} />
- * </Configuration>
+ * <TimelineRoot id="root" component={MyTimeline} />
  * ```
  */
 export const TimelineRoot: React.FC<TimelineRootProps> = ({
@@ -62,43 +68,35 @@ export const TimelineRoot: React.FC<TimelineRootProps> = ({
       return;
     }
     
-    // Register factory initializer - MUST be synchronous
-    // Uses flushSync to force React to render synchronously
-    timegroup.initializer = (cloneEl: EFTimegroup) => {
-      const cloneContainer = cloneEl.parentElement;
-      if (!cloneContainer) {
-        console.error('[TimelineRoot] No parent container for clone');
-        return;
-      }
-      
-      // Remove the cloned DOM - React will render a fresh component tree
-      // The cloned DOM doesn't have React bindings, so we need to replace it
-      cloneEl.remove();
-      
-      // Create React root for the clone container
+    // Register a clone factory for this element.
+    // When createRenderClone is called, it will use this factory
+    // to mount a fresh React tree instead of cloning dead DOM.
+    registerCloneFactory(timegroup, (cloneContainer: HTMLElement) => {
       const root = ReactDOM.createRoot(cloneContainer);
-      
-      // Use flushSync to render synchronously (required by initializer contract)
-      // This ensures the component tree is fully rendered before initializer returns
       flushSync(() => {
         root.render(<Component id={id} />);
       });
       
-      // Find the new timegroup rendered by React and store the React root on it
-      // This is needed for cleanup in createRenderClone
-      const newTimegroup = cloneContainer.querySelector('ef-timegroup');
-      if (newTimegroup) {
-        (newTimegroup as any)._reactRoot = root;
-      } else {
-        // Store root on container so we can still clean up
-        (cloneContainer as any)._reactRoot = root;
-        console.error('[TimelineRoot] No ef-timegroup found after React render');
+      const newTimegroup = cloneContainer.querySelector('ef-timegroup') as EFTimegroup | null;
+      if (!newTimegroup) {
+        throw new Error(
+          '[TimelineRoot] Clone factory did not produce an ef-timegroup. ' +
+          'Ensure your component renders a Timegroup.'
+        );
       }
-    };
+      
+      return {
+        timegroup: newTimegroup,
+        cleanup: () => {
+          queueMicrotask(() => {
+            root.unmount();
+          });
+        },
+      };
+    });
     
-    // Cleanup: remove initializer when component unmounts
     return () => {
-      timegroup.initializer = undefined;
+      unregisterCloneFactory(timegroup);
     };
   }, [id, Component]);
   
@@ -113,4 +111,3 @@ export const TimelineRoot: React.FC<TimelineRootProps> = ({
     </div>
   );
 };
-

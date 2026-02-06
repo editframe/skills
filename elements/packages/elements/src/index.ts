@@ -2,6 +2,13 @@ import "./elements/EFTimegroup.js";
 import "./sandbox/index.js";
 
 export { EFTimegroup } from "./elements/EFTimegroup.js";
+export {
+  registerCloneFactory,
+  unregisterCloneFactory,
+  getCloneFactory,
+  type CloneFactory,
+  type CloneFactoryResult,
+} from "./elements/cloneFactoryRegistry.js";
 export type { ContainerInfo } from "./elements/ContainerInfo.js";
 export { getContainerInfoFromElement } from "./elements/ContainerInfo.js";
 export type { ElementPositionInfo } from "./elements/ElementPositionInfo.js";

@@ -615,7 +615,7 @@ export async function serializeElementToXHTML(
   
   // Close wrapper
   parts.push('</div>');
-  
+
   // Wait for all canvas encodings to complete
   const resolvedParts = await Promise.all(parts);
   

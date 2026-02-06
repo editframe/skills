@@ -1,7 +1,6 @@
 import React, { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import {
   Preview,
-  Timegroup,
   TimelineRoot,
   Scrubber,
   TogglePlay,
@@ -338,25 +337,14 @@ function JitDiagram() {
    and a time-comparison punchline.  Fully scrubable.
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
-const SCENE_DUR = "14s";
-const JIT_SCENE_DUR = "42s";
-
 /**
  * Self-contained timeline content for the parallel fragments scene.
  * Rendered by TimelineRoot on both the prime instance and render clones.
- * CompositionCanvas handles the addFrameTask → R3F bridge automatically.
+ * ParallelFragmentsCanvas includes its own Timegroup and manages time
+ * via addFrameTask + flushSync.
  */
 function FanOutContent() {
-  return (
-    <Timegroup
-      mode="fixed"
-      duration={SCENE_DUR}
-      className="relative w-full overflow-hidden"
-      style={{ aspectRatio: "16/10", background: "#1e2233" }}
-    >
-      <ParallelFragmentsCanvas />
-    </Timegroup>
-  );
+  return <ParallelFragmentsCanvas />;
 }
 
 function FanOutDiagram() {

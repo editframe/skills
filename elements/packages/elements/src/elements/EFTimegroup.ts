@@ -4,6 +4,7 @@ import { css, html, LitElement, type PropertyValues } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 import { quantizeToFrameTimeS } from "../utils/frameTime.js";
+import { getCloneFactory } from "./cloneFactoryRegistry.js";
 import { EF_RENDERING } from "../EF_RENDERING.js";
 import { isContextMixin } from "../gui/ContextMixin.js";
 import { efContext } from "../gui/efContext.js";
@@ -526,15 +527,9 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
   
   set initializer(fn: TimegroupInitializer | undefined) {
     this.#initializer = fn;
-    
-    // If element is already connected and initializer hasn't run, run it now
-    // This handles the case where initializer is set after connectedCallback
-    if (fn && this.isConnected && !this.#initializerHasRun) {
-      // Create promise that resolves when initializer completes
-      this.#initializerComplete = this.updateComplete.then(() => {
-        this.#runInitializer();
-      });
-    }
+    // Just store the function. Execution is handled by:
+    // - connectedCallback (for elements that have initializer before connection)
+    // - #copyInitializersToClone (explicitly triggers for render clones)
   }
   
   /**
@@ -542,22 +537,6 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
    * @internal
    */
   #initializerHasRun = false;
-  
-  /**
-   * Promise that resolves when initializer completes.
-   * Used by createRenderClone to ensure frame tasks are registered before rendering.
-   * @internal
-   */
-  #initializerComplete?: Promise<void>;
-  
-  /**
-   * Public accessor for initializer completion promise.
-   * Allows createRenderClone to wait for initializer before rendering.
-   * @internal
-   */
-  get initializerComplete(): Promise<void> | undefined {
-    return this.#initializerComplete;
-  }
 
   /** @public */
   @property({ type: Number })
@@ -1440,14 +1419,13 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
    * @internal
    */
   async #copyInitializersToClone(original: EFTimegroup, clone: EFTimegroup): Promise<void> {
-    const initializerPromises: Promise<void>[] = [];
-    
-    // Copy initializer from this level
+    // Copy and execute initializer at this level
     if (original.initializer) {
       clone.initializer = original.initializer;
-      if (clone.initializerComplete) {
-        initializerPromises.push(clone.initializerComplete);
-      }
+      // Explicitly run the initializer on the clone
+      // Wait for Lit update cycle to complete first so the element is stable
+      await clone.updateComplete;
+      clone.#runInitializer();
     }
     
     // Find all nested timegroups in both original and clone
@@ -1461,15 +1439,9 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
       
       if (origNested.initializer) {
         cloneNestedItem.initializer = origNested.initializer;
-        if (cloneNestedItem.initializerComplete) {
-          initializerPromises.push(cloneNestedItem.initializerComplete);
-        }
+        await cloneNestedItem.updateComplete;
+        cloneNestedItem.#runInitializer();
       }
-    }
-    
-    // Wait for all initializers to complete
-    if (initializerPromises.length > 0) {
-      await Promise.all(initializerPromises);
     }
   }
 
@@ -1491,11 +1463,98 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
    * @public
    */
   async createRenderClone(): Promise<RenderCloneResult> {
-    // 1. Create offscreen container positioned off-screen but in the DOM
-    // The clone needs to be in the DOM for:
-    // - Custom elements to upgrade (connectedCallback)
-    // - CSS to compute correctly
-    // - Animations to work
+    const factory = getCloneFactory(this);
+    
+    if (factory) {
+      return this.#createRenderCloneFromFactory(factory);
+    }
+    return this.#createRenderCloneFromDOM();
+  }
+  
+  /**
+   * Factory path: mount a fresh component tree (React, etc.) to produce
+   * a fully functional clone. The factory is responsible for rendering
+   * the component into the container and returning the root ef-timegroup.
+   */
+  async #createRenderCloneFromFactory(factory: NonNullable<ReturnType<typeof getCloneFactory>>): Promise<RenderCloneResult> {
+    const width = this.offsetWidth || 1920;
+    const height = this.offsetHeight || 1080;
+    
+    const container = document.createElement("div");
+    container.className = "ef-render-clone-container";
+    container.style.cssText = `
+      position: fixed;
+      left: -9999px;
+      top: 0;
+      width: ${width}px;
+      height: ${height}px;
+      pointer-events: none;
+      overflow: hidden;
+    `;
+    document.body.appendChild(container);
+    
+    // Mount the component tree — this produces a live ef-timegroup
+    const { timegroup: actualClone, cleanup: factoryCleanup } = factory(container);
+    
+    if (!actualClone) {
+      throw new Error(
+        'Clone factory did not produce an ef-timegroup. ' +
+        'Ensure the factory renders a component containing a Timegroup.'
+      );
+    }
+    
+    // Mark as render clone
+    actualClone.setAttribute("data-no-workbench", "true");
+    actualClone.setAttribute("data-no-playback-controller", "true");
+    actualClone.style.width = `${width}px`;
+    actualClone.style.height = `${height}px`;
+    actualClone.style.display = 'block';
+    
+    // Wait for custom elements to upgrade and Lit to update
+    await customElements.whenDefined('ef-timegroup');
+    customElements.upgrade(container);
+    await actualClone.updateComplete;
+    
+    // Wait for all LitElement descendants
+    const allLitElements = Array.from(actualClone.querySelectorAll('*')).filter(
+      (el) => el instanceof LitElement
+    ) as LitElement[];
+    await Promise.all(allLitElements.map((el) => el.updateComplete));
+    
+    // Wait for text segments
+    const textElements = allLitElements.filter((el) => el.tagName === "EF-TEXT");
+    if (textElements.length > 0) {
+      await Promise.all(
+        textElements.map((el) => {
+          if ("whenSegmentsReady" in el && typeof el.whenSegmentsReady === "function") {
+            return (el as any).whenSegmentsReady();
+          }
+          return Promise.resolve();
+        }),
+      );
+      void actualClone.offsetHeight;
+      await new Promise(resolve => requestAnimationFrame(resolve));
+    }
+    
+    // Finalize clone: parent-child relationships, lock root, remove PlaybackController
+    await this.#finalizeRenderClone(actualClone);
+    
+    return {
+      clone: actualClone,
+      container,
+      cleanup: () => {
+        container.remove();
+        factoryCleanup();
+      },
+    };
+  }
+  
+  /**
+   * DOM path: deep clone the DOM tree and copy JavaScript properties.
+   * Used for vanilla HTML/JS timelines that don't have a factory registered.
+   */
+  async #createRenderCloneFromDOM(): Promise<RenderCloneResult> {
+    // 1. Create offscreen container
     const container = document.createElement("div");
     container.className = "ef-render-clone-container";
     container.style.cssText = `
@@ -1508,46 +1567,25 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
       overflow: hidden;
     `;
     
-    // 2. Deep clone the DOM - this clones the entire subtree
+    // 2. Deep clone the DOM
     const cloneEl = this.cloneNode(true) as EFTimegroup;
-    
-    // CRITICAL: Clear the clone's id to prevent localStorage conflicts
-    // The original timegroup and clone would share the same localStorage key otherwise,
-    // which causes time to be loaded from storage during connectedCallback.
     cloneEl.removeAttribute("id");
-    
-    // Mark clone as not needing workbench wrapping or playback controller
-    // Clones are offscreen and used only for rendering, not for user interaction
-    // Time control is done via seekForRender, not via PlaybackController
     cloneEl.setAttribute("data-no-workbench", "true");
     cloneEl.setAttribute("data-no-playback-controller", "true");
     
-    // CRITICAL: Set explicit dimensions on the clone element itself
-    // The container has dimensions, but the timegroup element needs them too
-    // for correct layout of child elements (text wrapping, etc.)
     const width = this.offsetWidth || 1920;
     const height = this.offsetHeight || 1080;
     cloneEl.style.width = `${width}px`;
     cloneEl.style.height = `${height}px`;
-    cloneEl.style.display = 'block'; // Ensure block layout
+    cloneEl.style.display = 'block';
     
     // 2b. Copy JavaScript properties that aren't cloned by cloneNode()
     this.#copyCaptionsData(this, cloneEl);
-    
-    // 2c. Copy ef-text _textContent BEFORE elements upgrade
-    // This is critical because splitText() runs in connectedCallback and will
-    // clear segments if _textContent is empty
     this.#copyTextContent(this, cloneEl);
     
-    // Note: We'll copy the initializer AFTER the clone is connected to DOM
-    // so that the setter's isConnected check passes and schedules execution
-    
-    // 3. Preserve ef-configuration context for the clone
-    // Media elements use closest("ef-configuration") to determine settings like media-engine.
-    // Without this, clones would lose configuration and use wrong media engine types.
+    // 3. Preserve ef-configuration context
     const originalConfig = this.closest("ef-configuration");
     if (originalConfig) {
-      // Shallow clone the configuration element (just the element, not children)
       const configClone = originalConfig.cloneNode(false) as HTMLElement;
       configClone.appendChild(cloneEl);
       container.appendChild(configClone);
@@ -1557,27 +1595,16 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     
     document.body.appendChild(container);
     
-    // 3. Wait for custom elements to upgrade
+    // Wait for custom elements to upgrade
     await cloneEl.updateComplete;
     
-    // 3a. Copy initializers from this timegroup and all nested timegroups
-    // The initializer setter only schedules execution if this.isConnected is true
-    // Setting it before connection would skip the automatic scheduling
+    // Copy initializers and run them on clones
     await this.#copyInitializersToClone(this, cloneEl);
     
-    // 3b. Copy ef-text-segment properties AFTER elements have upgraded
-    // segmentText is a JS property, so we need to wait for custom elements to define it
-    // Wait for segments to update their shadow DOM with the copied text
+    // Copy text segment data
     await this.#copyTextSegmentData(this, cloneEl);
     
-    // 4. Initializer has already run via connectedCallback (scheduled in updateComplete)
-    // No need to call it manually - it runs automatically when the clone was appended to DOM.
-    // NOTE: For React, the initializer may REPLACE cloneEl with a fresh React-rendered tree,
-    // so we need to find the actual timegroup element in the container after this point.
-    
-    // 5. Find the actual timegroup after initializer runs
-    // React initializers replace the cloned DOM with a fresh render, so we need to find
-    // the actual ef-timegroup in the container (may be different from cloneEl)
+    // Find the actual timegroup (initializer may have replaced the DOM)
     let actualClone = container.querySelector('ef-timegroup') as EFTimegroup;
     if (!actualClone) {
       throw new Error(
@@ -1586,32 +1613,23 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
       );
     }
     
-    // 6. Wait for custom elements to upgrade
-    // React renders DOM synchronously via flushSync, but custom elements upgrade asynchronously.
-    // We need to ensure the element has been upgraded to its class before accessing Lit properties.
+    // Wait for custom elements to upgrade
     await customElements.whenDefined('ef-timegroup');
-    
-    // Force upgrade of all custom elements in the container (in case they haven't upgraded yet)
     customElements.upgrade(container);
-    
-    // Re-query in case the element reference changed during upgrade
     actualClone = container.querySelector('ef-timegroup') as EFTimegroup;
     if (!actualClone) {
       throw new Error('ef-timegroup element lost after upgrade');
     }
     
-    // 7. Wait for LitElement updates and media durations
+    // Wait for LitElement updates
     await actualClone.updateComplete;
     
-    // 7a. Wait for all LitElement descendants to complete their updates
     const allLitElements = Array.from(actualClone.querySelectorAll('*')).filter(
       (el) => el instanceof LitElement
     ) as LitElement[];
     await Promise.all(allLitElements.map((el) => el.updateComplete));
     
-    // 7b. Wait for ef-text elements to have their segments ready
-    // ef-text creates segments asynchronously via requestAnimationFrame
-    // This ensures segments exist before we serialize the clone
+    // Wait for text segments
     const textElements = allLitElements.filter((el) => el.tagName === "EF-TEXT");
     if (textElements.length > 0) {
       await Promise.all(
@@ -1622,57 +1640,63 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
           return Promise.resolve();
         }),
       );
-      
-      // CRITICAL: Force layout stabilization after text segments are created
-      // The browser needs time to reflow and compute final text layout (line wrapping, etc.)
-      // Access offsetHeight to trigger synchronous layout computation
       void actualClone.offsetHeight;
-      
-      // Wait one more frame to ensure layout is fully stable
-      // Some browsers need an additional frame after forced reflow
       await new Promise(resolve => requestAnimationFrame(resolve));
     }
     
-    // 7c. Copy ef-text-segment properties from original to actualClone
-    // IMPORTANT: This must happen AFTER the initializer runs (which may replace the DOM for React)
-    // segmentText is a JS property that needs to be copied, then we wait for shadow DOM updates
+    // Copy text segment data again after initializer may have replaced DOM
     await this.#copyTextSegmentData(this, actualClone);
     
-    // 7d. CRITICAL: Manually set up parent-child relationships for cloned elements
-    // Lit Context doesn't automatically propagate to cloned children because the
-    // context consumer decorator runs before the element is in the DOM tree.
-    // We need to explicitly walk the tree and set parentTimegroup/rootTimegroup on each element.
+    // Finalize clone
+    await this.#finalizeRenderClone(actualClone);
+    
+    return {
+      clone: actualClone,
+      container,
+      cleanup: () => {
+        container.remove();
+        const reactRoot = (actualClone as any)._reactRoot;
+        if (reactRoot) {
+          queueMicrotask(() => {
+            reactRoot.unmount();
+          });
+        }
+      },
+    };
+  }
+  
+  /**
+   * Shared finalization for both factory and DOM clone paths:
+   * - Set up parent-child temporal relationships
+   * - Lock root timegroup references
+   * - Wait for media durations and captions
+   * - Remove PlaybackController
+   * - Initial seek to frame 0
+   */
+  async #finalizeRenderClone(actualClone: EFTimegroup): Promise<void> {
+    // Set up parent-child relationships for temporal elements
     const setupParentChildRelationships = (parent: EFTimegroup, root: EFTimegroup) => {
       for (const child of parent.children) {
-        // Handle nested timegroups
         if (child.tagName === 'EF-TIMEGROUP') {
           const childTG = child as EFTimegroup;
-          // Use the public setter to trigger proper initialization
           childTG.parentTimegroup = parent;
           childTG.rootTimegroup = root;
-          // Lock to prevent Lit Context from overriding our manually set root
           (childTG as any).lockRootTimegroup();
-          // Recursively process children
           setupParentChildRelationships(childTG, root);
-        }
-        // Handle temporal elements (videos, audio, captions, etc.)
-        else if ('parentTimegroup' in child && 'rootTimegroup' in child) {
+        } else if ('parentTimegroup' in child && 'rootTimegroup' in child) {
           const temporal = child as TemporalMixinInterface & HTMLElement;
           temporal.parentTimegroup = parent;
           temporal.rootTimegroup = root;
-          // Lock to prevent Lit Context from overriding our manually set root
           if ('lockRootTimegroup' in temporal && typeof temporal.lockRootTimegroup === 'function') {
             temporal.lockRootTimegroup();
           }
-        }
-        // Recursively check non-timegroup containers (divs, etc.)
-        else if (child instanceof Element) {
-          setupParentChildRelationshipsInContainer(child, parent, root);
+        } else if (child instanceof Element) {
+          setupInContainer(child, parent, root);
         }
       }
     };
     
-    const setupParentChildRelationshipsInContainer = (container: Element, nearestParentTG: EFTimegroup, root: EFTimegroup) => {
+    const setupInContainer = (container: Element, nearestParentTG: EFTimegroup, root: EFTimegroup) => {
       for (const child of container.children) {
         if (child.tagName === 'EF-TIMEGROUP') {
           const childTG = child as EFTimegroup;
@@ -1688,21 +1712,17 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
             temporal.lockRootTimegroup();
           }
         } else if (child instanceof Element) {
-          setupParentChildRelationshipsInContainer(child, nearestParentTG, root);
+          setupInContainer(child, nearestParentTG, root);
         }
       }
     };
     
-    // Set up the root clone itself (it's its own root, no parent)
-    // Note: This must happen BEFORE lockRootTimegroup to set the correct value
     actualClone.rootTimegroup = actualClone;
     setupParentChildRelationships(actualClone, actualClone);
     
-    // Wait for updates to propagate
     await actualClone.updateComplete;
     
-    // CRITICAL: Lock AFTER all updates are complete to prevent further context changes
-    // Also re-set rootTimegroup in case Lit Context overwrote it during updates
+    // Lock root references to prevent Lit Context from overwriting
     actualClone.rootTimegroup = actualClone;
     (actualClone as any).lockRootTimegroup();
     const finalizeRootTimegroup = (el: Element) => {
@@ -1717,41 +1737,16 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     finalizeRootTimegroup(actualClone);
     
     await actualClone.waitForMediaDurations();
-    
-    // 7b. Wait for captions data to load (ef-captions elements need to fetch their data)
-    // This is separate from waitForMediaDurations because EFCaptions is not an EFMedia.
     await this.#waitForCaptionsData(actualClone);
     
-    // 8. CRITICAL: Remove PlaybackController from clone
-    // Clones get a PlaybackController when they become root (in didBecomeRoot callback).
-    // But render clones need direct seeking without the UI/context machinery.
-    // Remove it to enable direct seekTask execution.
+    // Remove PlaybackController — render clones use seekForRender directly
     if (actualClone.playbackController) {
       actualClone.playbackController.remove();
       actualClone.playbackController = undefined;
     }
     
-    // 9. Initial seek to frame 0 to ensure animations are at correct state
+    // Initial seek to frame 0
     await actualClone.seek(0);
-    
-    return {
-      clone: actualClone,
-      container,
-      cleanup: () => {
-        // Remove container from DOM immediately
-        container.remove();
-        
-        // Unmount React root if present (set by TimelineRoot component)
-        // Defer to next microtask to avoid "unmount during render" warning
-        // when cleanup is called rapidly during batch operations
-        const reactRoot = (actualClone as any)._reactRoot;
-        if (reactRoot) {
-          queueMicrotask(() => {
-            reactRoot.unmount();
-          });
-        }
-      },
-    };
   }
 
   /** @internal */
