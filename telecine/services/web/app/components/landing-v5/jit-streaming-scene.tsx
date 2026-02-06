@@ -395,78 +395,80 @@ function Lighting({ timeMs }: { timeMs: number }) {
 }
 
 /* ━━ Camera ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   Stays close and tracks with the content.
-   Traditional: drifts forward in Z as stages complete.
-   JIT: drifts backward in Z as requests are fulfilled.
-   Only pulls back once for the transition shot. */
+   Stays moderately close and tracks with the content.
+   Traditional: drifts forward in Z as stages complete, slight left bias.
+   Transition: pulls back to show whole pipeline.
+   JIT: recenters on right side, tracks content.
+   Camera offset from content X keeps things centered in frame. */
 function CameraController({ timeMs }: { timeMs: number }) {
   const { camera } = useThree();
 
   useFrame(() => {
-    // Phase 1: close on the bar at Z=0
+    // Phase 1: centered on the hero bar at Z=0
     let cx = 0;
-    let cy = 1.5;
-    let cz = 3.5;
+    let cy = 2.0;
+    let cz = 4.0;
     let tx = 0;
-    let ty = 0.2;
+    let ty = 0.1;
     let tz = 0;
 
-    // Phase 2: gently track forward as chunks move to PIPELINE_Z
+    // Phase 2: track forward as chunks transfer. Slight left bias but
+    // keep camera mostly centered so the traditional side stays in frame.
     const transferTrack = easeInOut(prog(timeMs, TRAD_TRANSFER_START, TRAD_TRANSFER_END));
-    cz = lerp(3.5, 5.5, transferTrack);
+    cz = lerp(4.0, 6.0, transferTrack);
     tz = lerp(0, PIPELINE_Z, transferTrack);
-    // Slight pan left to follow traditional side
-    const tradShift = easeInOut(prog(timeMs, TRAD_TRANSFER_START + 500, TRAD_TRANSFER_END));
-    cx = lerp(0, TRAD_X * 0.3, tradShift);
-    tx = lerp(0, TRAD_X * 0.2, tradShift);
+    cx = lerp(0, TRAD_X * 0.15, transferTrack);
+    tx = lerp(0, TRAD_X * 0.25, transferTrack);
 
     // Phase 3: continue forward to variants
     const transcodeTrack = easeInOut(prog(timeMs, TRAD_TRANSCODE_START, TRAD_TRANSCODE_END));
     if (timeMs >= TRAD_TRANSCODE_START) {
-      cz = lerp(5.5, 7.5, transcodeTrack);
+      cz = lerp(6.0, 8.0, transcodeTrack);
       tz = lerp(PIPELINE_Z, VARIANT_Z, transcodeTrack);
+      cy = lerp(2.0, 2.5, transcodeTrack);
     }
 
     // Phase 4: arrive at player
     const requestTrack = easeInOut(prog(timeMs, TRAD_REQUEST_START, TRAD_REQUEST_END));
     if (timeMs >= TRAD_REQUEST_START) {
-      cz = lerp(7.5, 9.5, requestTrack);
+      cz = lerp(8.0, 10.0, requestTrack);
       tz = lerp(VARIANT_Z, PLAYER_Z, requestTrack);
     }
 
-    // Phase 5: pull back to show whole pipeline
+    // Phase 5: pull back to show whole traditional pipeline
     const pullback = easeInOut(prog(timeMs, TRANS_START, TRANS_END));
     if (timeMs >= TRANS_START) {
-      cx = lerp(cx, 0, pullback);
-      cy = lerp(cy, 4.5, pullback);
-      cz = lerp(cz, 12, pullback);
-      tx = lerp(tx, TRAD_X * 0.3, pullback);
+      cx = lerp(cx, TRAD_X * 0.2, pullback);
+      cy = lerp(cy, 4.0, pullback);
+      cz = lerp(cz, 13, pullback);
+      tx = lerp(tx, TRAD_X * 0.15, pullback);
       ty = lerp(ty, -0.1, pullback);
-      tz = lerp(tz, PIPELINE_Z + 1, pullback);
+      tz = lerp(tz, PIPELINE_Z, pullback);
     }
 
-    // Phase 6: pan right to JIT source bar, zoom in
-    const jitZoom = easeInOut(prog(timeMs, JIT_SETUP_START, JIT_SETUP_START + 2000));
+    // Phase 6: pan right to JIT side, zoom back in
+    const jitZoom = easeInOut(prog(timeMs, JIT_SETUP_START, JIT_SETUP_START + 2500));
     if (timeMs >= JIT_SETUP_START) {
-      cx = lerp(cx, JIT_X * 0.4, jitZoom);
-      cy = lerp(cy, 1.8, jitZoom);
-      cz = lerp(cz, PLAYER_Z + 3.5, jitZoom);
-      tx = lerp(tx, JIT_X * 0.3, jitZoom);
-      ty = lerp(ty, 0.1, jitZoom);
-      tz = lerp(tz, VARIANT_Z - 0.5, jitZoom);
+      cx = lerp(cx, JIT_X * 0.2, jitZoom);
+      cy = lerp(cy, 2.5, jitZoom);
+      cz = lerp(cz, PLAYER_Z + 4.0, jitZoom);
+      tx = lerp(tx, JIT_X * 0.25, jitZoom);
+      ty = lerp(ty, 0.05, jitZoom);
+      tz = lerp(tz, VARIANT_Z, jitZoom);
     }
 
-    // Phase 7: JIT cycles — camera drifts backward (from player toward source)
+    // Phase 7: JIT cycles — subtle drift backward toward source
     const jitDrift = easeInOut(prog(timeMs, JIT_CYC1_START, JIT_CYC3_END));
     if (timeMs >= JIT_CYC1_START) {
-      tz = lerp(tz, PIPELINE_Z, jitDrift * 0.5);
+      tz = lerp(tz, PIPELINE_Z + 0.5, jitDrift * 0.4);
+      cy = lerp(cy, 2.8, jitDrift * 0.3);
     }
 
     // Phase 8: settle
     const settle = easeInOut(prog(timeMs, P8_START, P8_START + 1500));
     if (settle > 0) {
-      cx = lerp(cx, JIT_X * 0.3, settle);
-      cy = lerp(cy, 2.0, settle);
+      cx = lerp(cx, JIT_X * 0.15, settle);
+      cy = lerp(cy, 2.2, settle);
       ty = lerp(ty, 0, settle);
     }
 
