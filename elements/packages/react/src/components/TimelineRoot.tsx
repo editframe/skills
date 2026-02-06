@@ -7,8 +7,11 @@ import type { EFTimegroup } from '@editframe/elements';
 interface TimelineRootProps {
   /** Unique identifier for the root timegroup */
   id: string;
-  /** React component that renders the timeline content (must include a Timegroup at root) */
-  component: React.ComponentType;
+  /** 
+   * React component that renders the timeline content (must include a Timegroup at root).
+   * The component will receive { id: string } as a prop, which should be passed to the Timegroup.
+   */
+  component: React.ComponentType<{ id?: string }>;
   /** Optional CSS class name for the container */
   className?: string;
   /** Optional inline styles for the container */
@@ -59,9 +62,6 @@ export const TimelineRoot: React.FC<TimelineRootProps> = ({
       return;
     }
     
-    // Ensure the timegroup has the specified ID
-    timegroup.id = id;
-    
     // Register factory initializer - MUST be synchronous
     // Uses flushSync to force React to render synchronously
     timegroup.initializer = (cloneEl: EFTimegroup) => {
@@ -81,7 +81,7 @@ export const TimelineRoot: React.FC<TimelineRootProps> = ({
       // Use flushSync to render synchronously (required by initializer contract)
       // This ensures the component tree is fully rendered before initializer returns
       flushSync(() => {
-        root.render(<Component />);
+        root.render(<Component id={id} />);
       });
       
       // Find the new timegroup rendered by React and store the React root on it
@@ -109,7 +109,7 @@ export const TimelineRoot: React.FC<TimelineRootProps> = ({
       style={{ display: 'contents', ...style }}
     >
       {children}
-      <Component />
+      <Component id={id} />
     </div>
   );
 };

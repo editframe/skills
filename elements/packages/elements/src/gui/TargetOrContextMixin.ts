@@ -135,7 +135,7 @@ export function TargetOrContextMixin<T extends Constructor<LitElement>>(
       if (changedProperties.has("targetElement") && this.targetElement) {
         if (
           isEFTemporal(this.targetElement) &&
-          !isControllable(this.targetElement)
+          !controllable
         ) {
           console.warn(
             "Control element is targeting a non-root temporal element without playbackController. " +

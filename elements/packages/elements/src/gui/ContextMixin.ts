@@ -117,15 +117,18 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
       return null;
     }
 
+    #subscribedController: any = null;
+
     set targetTemporal(value: TemporalMixinInterface | null) {
-      if (this.#targetTemporal === value) return;
+      if (this.#targetTemporal === value && value?.playbackController === this.#subscribedController && this.#controllerSubscribed) return;
 
       // Unsubscribe from old controller updates
-      if (this.#targetTemporal?.playbackController) {
-        this.#targetTemporal.playbackController.removeListener(
+      if (this.#subscribedController) {
+        this.#subscribedController.removeListener(
           this.#onControllerUpdate,
         );
         this.#controllerSubscribed = false;
+        this.#subscribedController = null;
       }
 
       this.#targetTemporal = value;
@@ -511,11 +514,12 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
       this.#timegroupObserver.disconnect();
 
       // Unsubscribe from controller
-      if (this.#targetTemporal?.playbackController) {
-        this.#targetTemporal.playbackController.removeListener(
+      if (this.#subscribedController) {
+        this.#subscribedController.removeListener(
           this.#onControllerUpdate,
         );
         this.#controllerSubscribed = false;
+        this.#subscribedController = null;
       }
 
       this.pause();
@@ -524,15 +528,21 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
     updated(changedProperties: Map<string | number | symbol, unknown>) {
       super.updated?.(changedProperties);
 
-      // Subscribe to controller when it becomes available
+      // Subscribe to controller when it becomes available or changes
+      const currentController = this.#targetTemporal?.playbackController;
       if (
-        !this.#controllerSubscribed &&
-        this.#targetTemporal?.playbackController
+        currentController &&
+        (!this.#controllerSubscribed || this.#subscribedController !== currentController)
       ) {
+        // Unsubscribe from old controller if it changed
+        if (this.#subscribedController && this.#subscribedController !== currentController) {
+          this.#subscribedController.removeListener(this.#onControllerUpdate);
+        }
         this.#targetTemporal.playbackController.addListener(
           this.#onControllerUpdate,
         );
         this.#controllerSubscribed = true;
+        this.#subscribedController = this.#targetTemporal.playbackController;
 
         // Apply stored loop value when playbackController becomes available
         if (this.#loop) {
