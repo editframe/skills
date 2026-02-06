@@ -156,7 +156,6 @@ describe("TimelineRoot", () => {
         
         // Log some debug info
         console.log("[Test] Timegroup duration:", timegroup.durationMs);
-        console.log("[Test] Timegroup has initializer:", !!timegroup.initializer);
         
         // Capture at two different times: 100ms (should be red) and 600ms (should be blue)
         const timestamps = [100, 600];
@@ -500,7 +499,6 @@ describe("TimelineRoot", () => {
         
         console.log("[Video Export Test] Timegroup duration:", timegroup.durationMs);
         console.log("[Video Export Test] Native API available:", isNativeCanvasApiAvailable());
-        console.log("[Video Export Test] Timegroup has initializer:", !!timegroup.initializer);
         
         // Attempt video export with native rendering
         // This should NOT throw "Failed to execute 'drawElementImage'... must have been laid out"
