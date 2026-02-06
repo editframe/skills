@@ -269,6 +269,12 @@ export default defineConfig(async () => {
         TEST: path.resolve(__dirname, "test"),
       },
     },
+    // Pre-bundle Three.js and other deps that get discovered late and cause reloads
+    optimizeDeps: {
+      include: [
+        "three",
+      ],
+    },
     // Use single test-assets directory for all test media
     publicDir: "test-assets",
     server: {
