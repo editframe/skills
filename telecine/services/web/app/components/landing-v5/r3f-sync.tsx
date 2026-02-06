@@ -71,33 +71,58 @@ export function InvalidateOnTimeChange({ timeMs }: { timeMs: number }) {
  *
  * @param canvasContainer - The container element that holds the R3F canvas
  */
+let _flushSeq = 0;
+
 export function flushR3F(canvasContainer: HTMLElement | null): void {
   if (!canvasContainer) return;
 
+  const seq = _flushSeq++;
   const canvas = canvasContainer.querySelector('canvas');
   const r3fStore = (canvas as any)?.__r3f;
 
-  if (r3fStore) {
-    const state = r3fStore.store?.getState?.();
-    if (state?.gl && state?.scene && state?.camera) {
-      // 1. Run useFrame subscribers (camera, lights, etc.)
-      //    Without this, objects that update in useFrame are frozen when
-      //    advance() doesn't fire (hidden tabs, faster-than-realtime export).
-      if (state.internal?.subscribers) {
-        for (const sub of state.internal.subscribers) {
-          try {
-            sub.ref.current(state, 0);
-          } catch (e) {
-            console.warn('[flushR3F] useFrame subscriber error:', e);
-          }
-        }
+  if (!r3fStore) {
+    console.log('[R3F_DIAG] flushR3F:noStore', JSON.stringify({ seq, hasCanvas: !!canvas }));
+    return;
+  }
+
+  const state = r3fStore.store?.getState?.();
+  if (!state?.gl || !state?.scene || !state?.camera) {
+    console.log('[R3F_DIAG] flushR3F:incompleteState', JSON.stringify({ seq, gl: !!state?.gl, scene: !!state?.scene, camera: !!state?.camera }));
+    return;
+  }
+
+  // 1. Run useFrame subscribers (camera, lights, etc.)
+  const subCount = state.internal?.subscribers?.size ?? 0;
+  if (state.internal?.subscribers) {
+    for (const sub of state.internal.subscribers) {
+      try {
+        sub.ref.current(state, 0);
+      } catch (e) {
+        console.warn('[flushR3F] useFrame subscriber error:', e);
       }
-
-      // 2. Synchronous WebGL render
-      state.gl.render(state.scene, state.camera);
-
-      // 3. GPU sync — ensures drawing buffer is complete for readPixels
-      state.gl.getContext().finish();
     }
   }
+
+  // 2. Synchronous WebGL render
+  state.gl.render(state.scene, state.camera);
+
+  // 3. GPU sync — ensures drawing buffer is complete for readPixels
+  const glCtx = state.gl.getContext();
+  glCtx.finish();
+
+  // 4. Probe drawing buffer to verify render produced new pixels
+  const probe = new Uint8Array(4);
+  const cw = state.gl.domElement.width;
+  const ch = state.gl.domElement.height;
+  glCtx.readPixels(Math.floor(cw / 2), Math.floor(ch / 2), 1, 1, glCtx.RGBA, glCtx.UNSIGNED_BYTE, probe);
+
+  console.log('[R3F_DIAG] flushR3F:done', JSON.stringify({
+    seq,
+    subCount,
+    cam: { x: +state.camera.position.x.toFixed(3), y: +state.camera.position.y.toFixed(3), z: +state.camera.position.z.toFixed(3) },
+    sceneChildren: state.scene.children.length,
+    centerPixel: `rgba(${probe[0]},${probe[1]},${probe[2]},${probe[3]})`,
+    canvasSize: `${cw}x${ch}`,
+    hidden: document.hidden,
+  }));
 }

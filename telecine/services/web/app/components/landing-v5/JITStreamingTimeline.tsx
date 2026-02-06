@@ -17,20 +17,65 @@ export function JITStreamingTimeline() {
     const tg = timegroupRef.current;
     if (!tg?.addFrameTask) return;
 
+    let prevFramePixelHash = 0;
+    let frameSeq = 0;
+
     return tg.addFrameTask(async ({ currentTimeMs }: { currentTimeMs: number }) => {
+      const seq = frameSeq++;
+      const hidden = document.hidden;
+
+      console.log('[R3F_DIAG] frameTask:start', JSON.stringify({ seq, currentTimeMs, hidden }));
+
       flushSync(() => {
         setTimeMs(currentTimeMs);
       });
 
-      // R3F uses a separate react-reconciler from react-dom. flushSync only
-      // flushes react-dom's tree. R3F's Canvas bridges children to its own
-      // reconciler via useLayoutEffect → updateContainer, but the reconciler
-      // commits asynchronously via React's scheduler (MessageChannel).
-      // Yielding a macrotask lets the scheduler commit the new props to
-      // THREE.js objects before we render.
+      console.log('[R3F_DIAG] frameTask:afterFlushSync', JSON.stringify({ seq, currentTimeMs }));
+
       await yieldToScheduler();
 
-      flushR3F(canvasContainerRef.current);
+      console.log('[R3F_DIAG] frameTask:afterYield', JSON.stringify({ seq, currentTimeMs }));
+
+      const container = canvasContainerRef.current;
+      const canvas = container?.querySelector('canvas') as HTMLCanvasElement | null;
+      const r3fStore = (canvas as any)?.__r3f;
+      const state = r3fStore?.store?.getState?.();
+
+      // Camera position before flushR3F (captures useFrame state)
+      const camBefore = state?.camera
+        ? { x: +state.camera.position.x.toFixed(3), y: +state.camera.position.y.toFixed(3), z: +state.camera.position.z.toFixed(3) }
+        : null;
+
+      flushR3F(container);
+
+      // Camera position after flushR3F (after useFrame ran)
+      const camAfter = state?.camera
+        ? { x: +state.camera.position.x.toFixed(3), y: +state.camera.position.y.toFixed(3), z: +state.camera.position.z.toFixed(3) }
+        : null;
+
+      // Sample 4 pixels from the drawing buffer to detect change
+      let pixelHash = 0;
+      if (canvas) {
+        const gl = (canvas.getContext('webgl2') ?? canvas.getContext('webgl')) as WebGLRenderingContext | null;
+        if (gl) {
+          const probe = new Uint8Array(4);
+          // Center pixel
+          gl.readPixels(Math.floor(canvas.width / 2), Math.floor(canvas.height / 2), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, probe);
+          pixelHash = (probe[0]! << 24) | (probe[1]! << 16) | (probe[2]! << 8) | probe[3]!;
+        }
+      }
+
+      const pixelChanged = pixelHash !== prevFramePixelHash;
+      console.log('[R3F_DIAG] frameTask:afterFlushR3F', JSON.stringify({
+        seq, currentTimeMs, hidden,
+        camBefore, camAfter,
+        pixelHash: '0x' + (pixelHash >>> 0).toString(16).padStart(8, '0'),
+        pixelChanged,
+        subscriberCount: state?.internal?.subscribers?.size ?? 0,
+        canvasSize: canvas ? `${canvas.width}x${canvas.height}` : null,
+      }));
+
+      prevFramePixelHash = pixelHash;
     });
   }, []);
 

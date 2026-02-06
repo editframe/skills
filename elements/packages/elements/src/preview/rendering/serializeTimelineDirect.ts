@@ -239,11 +239,17 @@ function findCaptureProxy(canvas: HTMLCanvasElement): HTMLCanvasElement | null {
  * Returns null for non-WebGL canvases (getContext returns null when a different
  * context type is already active).
  */
+let _readWebGLSeq = 0;
+
 function readWebGLPixels(canvas: HTMLCanvasElement): Uint8ClampedArray | null {
+  const seq = _readWebGLSeq++;
   const gl = (
     canvas.getContext('webgl2') ?? canvas.getContext('webgl')
   ) as WebGLRenderingContext | null;
-  if (!gl) return null;
+  if (!gl) {
+    console.log('[R3F_DIAG] readWebGLPixels:noContext', JSON.stringify({ seq, tag: canvas.tagName, width: canvas.width, height: canvas.height }));
+    return null;
+  }
 
   const width = canvas.width;
   const height = canvas.height;
@@ -254,6 +260,17 @@ function readWebGLPixels(canvas: HTMLCanvasElement): Uint8ClampedArray | null {
 
   const pixels = new Uint8Array(width * height * 4);
   gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+
+  // Quick hash: sum center row to detect change between frames
+  const centerRow = Math.floor(height / 2) * width * 4;
+  let rowSum = 0;
+  for (let i = centerRow; i < centerRow + width * 4; i++) rowSum += pixels[i]!;
+
+  console.log('[R3F_DIAG] readWebGLPixels:read', JSON.stringify({
+    seq, width, height,
+    centerRowSum: rowSum,
+    hidden: typeof document !== 'undefined' ? document.hidden : null,
+  }));
 
   // readPixels returns rows bottom-to-top; flip to top-to-bottom for ImageData
   const rowSize = width * 4;
@@ -281,11 +298,15 @@ function readWebGLPixels(canvas: HTMLCanvasElement): Uint8ClampedArray | null {
  * For offscreen-rendered canvases, this automatically uses the capture proxy
  * canvas instead of the transferred display canvas.
  */
+let _snapshotSeq = 0;
+let _prevSnapshotHash = 0;
+
 function snapshotCanvas(
   canvas: HTMLCanvasElement,
   scale: number,
   preserveAlpha: boolean
 ): HTMLCanvasElement {
+  const seq = _snapshotSeq++;
   // If this canvas was transferred to offscreen, use its capture proxy
   const captureProxy = findCaptureProxy(canvas);
   const sourceCanvas = captureProxy ?? canvas;
@@ -320,9 +341,24 @@ function snapshotCanvas(
         temp.getContext('2d')!.putImageData(imageData, 0, 0);
         ctx.drawImage(temp, 0, 0, targetWidth, targetHeight);
       }
+
+      // Hash center row of the SNAPSHOT to verify data landed
+      const centerY = Math.floor(targetHeight / 2);
+      const snapData = ctx.getImageData(0, centerY, targetWidth, 1).data;
+      let snapSum = 0;
+      for (let i = 0; i < snapData.length; i++) snapSum += snapData[i]!;
+      const changed = snapSum !== _prevSnapshotHash;
+      console.log('[R3F_DIAG] snapshotCanvas:webgl', JSON.stringify({
+        seq, srcW, srcH, targetWidth, targetHeight,
+        snapCenterRowSum: snapSum,
+        changed,
+        hidden: typeof document !== 'undefined' ? document.hidden : null,
+      }));
+      _prevSnapshotHash = snapSum;
     } else {
       // Non-WebGL canvas: drawImage is synchronous and correct
       ctx.drawImage(sourceCanvas, 0, 0, targetWidth, targetHeight);
+      console.log('[R3F_DIAG] snapshotCanvas:drawImage', JSON.stringify({ seq, sourceWidth: sourceCanvas.width, sourceHeight: sourceCanvas.height }));
     }
   }
   
