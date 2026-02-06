@@ -21,12 +21,15 @@ export const buildViteConfig = () => {
       ssr: {
         // Don't bundle @editframe packages during SSR - they contain browser-only code
         external: ["@editframe/elements", "@editframe/react"],
+        // But allow R3F dependencies to be bundled
+        noExternal: ["@react-three/offscreen", "@react-three/fiber", "three", "mitt"],
         resolve: {
           conditions: ["import", "module", "browser", "default"],
         },
       },
       optimizeDeps: {
         exclude: ["@editframe/elements"],
+        include: ["@react-three/offscreen", "@react-three/fiber", "three", "mitt"],
       },
       server: {
         allowedHosts: process.env.NODE_ENV === "production" ? undefined : true,
@@ -69,7 +72,11 @@ export const buildViteConfig = () => {
             }
           : {}),
       },
-      resolve: { alias: viteAliases },
+      resolve: { 
+        alias: viteAliases,
+        // Ensure Vite can find dependencies when resolving from elements package source files
+        dedupe: ['@react-three/fiber', '@react-three/offscreen', 'three', 'mitt']
+      },
       esbuild: {
         target: "es2022",
         include: /\.(m?[jt]s|[jt]sx)$/,

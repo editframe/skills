@@ -4,13 +4,12 @@
  * Componentized for easier iteration.
  */
 
-import { Suspense, useRef, useMemo, useState, useLayoutEffect, useEffect, type ReactNode } from "react";
-import { Canvas, useThree, useFrame } from "@react-three/fiber";
+import { Suspense, useRef, useMemo, useState, useEffect, type ReactNode } from "react";
+import { useThree, useFrame } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
-import { flushSync } from "react-dom";
 import { Timegroup } from "@editframe/react";
+import { OffscreenCompositionCanvas, useCompositionTime } from "@editframe/react/r3f";
 import * as THREE from "three";
-import { InvalidateOnTimeChange, flushR3F } from "./r3f-sync";
 
 /* ━━ Easing & helpers ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function easeOut(t: number) { return 1 - Math.pow(1 - t, 3); }
@@ -446,7 +445,10 @@ function DurationLabel({ x, y, z, opacity, text }: {
 }
 
 /* ━━ Main Scene ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-export function ParallelFragmentsR3FScene({ currentTimeMs: timeMs }: { currentTimeMs: number }) {
+export function ParallelFragmentsR3FScene({ currentTimeMs }: { currentTimeMs?: number } = {}) {
+  // Use composition time from worker context, or fallback to prop for main-thread rendering
+  const { timeMs: workerTimeMs } = useCompositionTime();
+  const timeMs = currentTimeMs ?? workerTimeMs;
 
   // ── Compute all animation state from timeMs ──────────────────
   const p1 = easeOut(prog(timeMs, 0, P1_END));
@@ -684,68 +686,67 @@ export function ParallelFragmentsR3FScene({ currentTimeMs: timeMs }: { currentTi
 }
 
 /* ━━ Canvas wrapper — just configure and drop in ━━━━━━━━━━━━━━━━━━ */
+
 export function ParallelFragmentsCanvas({ children }: { children?: ReactNode }) {
-  const timegroupRef = useRef(null);
-  const canvasContainerRef = useRef<HTMLDivElement>(null);
-  const [timeMs, setTimeMs] = useState(0);
+  const [worker, setWorker] = useState<Worker | null>(null);
 
-  useLayoutEffect(() => {
-    const tg = timegroupRef.current;
-    if (!tg?.addFrameTask) return;
-
-    return tg.addFrameTask(({ currentTimeMs }: { currentTimeMs: number }) => {
-      flushSync(() => {
-        setTimeMs(currentTimeMs);
-      });
-
-      flushR3F(canvasContainerRef.current);
-    });
-  }, []);
-
-  // Force re-render when tab becomes visible again
-  // Chrome suspends canvas/WebGL rendering in hidden tabs, so we need to
-  // explicitly re-render at the current timeline position when visibility returns
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden && canvasContainerRef.current) {
-        // Tab became visible - force R3F to render current state
-        flushR3F(canvasContainerRef.current);
-      }
-    };
+    // Create worker only on client side
+    const w = new Worker(
+      new URL('./parallel-fragments-worker.ts', import.meta.url),
+      { type: 'module' }
+    );
+    setWorker(w);
     
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    return () => w.terminate();
   }, []);
+
+  // During SSR or before worker is ready, show nothing (will hydrate on client)
+  if (!worker) {
+    return (
+      <Timegroup
+        mode="fixed"
+        duration="14s"
+        className="relative w-full overflow-hidden"
+        style={{ aspectRatio: "16/10", background: "#1e2233" }}
+      />
+    );
+  }
 
   return (
     <Timegroup
-      ref={timegroupRef}
       mode="fixed"
       duration="14s"
       className="relative w-full overflow-hidden"
       style={{ aspectRatio: "16/10", background: "#1e2233" }}
     >
-      <div ref={canvasContainerRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
-        <Canvas
-          shadows
-          frameloop="demand"
-          dpr={[1, 2]}
-          gl={{
+      <OffscreenCompositionCanvas
+        worker={worker}
+        fallback={
+          <div style={{ 
+            position: 'absolute', 
+            inset: 0, 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            color: 'white',
+            background: '#1e2233'
+          }}>
+            OffscreenCanvas not supported
+          </div>
+        }
+        canvasProps={{
+          shadows: true,
+          dpr: [1, 2],
+          gl: {
             preserveDrawingBuffer: true,
             toneMapping: THREE.ACESFilmicToneMapping,
             toneMappingExposure: 1.8,
-          }}
-          camera={{ fov: 50, near: 0.1, far: 100 }}
-          scene={{ background: new THREE.Color(0x1e2233), fog: new THREE.Fog(0x1e2233, 16, 35) }}
-          style={{ width: "100%", height: "100%" }}
-        >
-          <Suspense fallback={null}>
-            <InvalidateOnTimeChange timeMs={timeMs} />
-            <ParallelFragmentsR3FScene currentTimeMs={timeMs} />
-            {children}
-          </Suspense>
-        </Canvas>
-      </div>
+          },
+          camera: { fov: 50, near: 0.1, far: 100 },
+          scene: { background: new THREE.Color(0x1e2233), fog: new THREE.Fog(0x1e2233, 16, 35) },
+        }}
+      />
     </Timegroup>
   );
 }

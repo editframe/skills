@@ -214,17 +214,37 @@ function shouldPreserveAlpha(sourceElement: Element): boolean {
 }
 
 /**
+ * Find the capture proxy canvas for an offscreen-rendered canvas.
+ * When a canvas is transferred to offscreen via transferControlToOffscreen(),
+ * the main thread can no longer read pixels from it. OffscreenCompositionCanvas
+ * creates a hidden capture canvas (marked with data-offscreen-capture) that
+ * receives ImageBitmap frames from the worker.
+ */
+function findCaptureProxy(canvas: HTMLCanvasElement): HTMLCanvasElement | null {
+  const container = canvas.parentElement;
+  if (!container) return null;
+  return container.querySelector('canvas[data-offscreen-capture="true"]');
+}
+
+/**
  * Create a snapshot copy of a canvas's current pixels.
  * This captures the pixels synchronously before any async encoding,
  * preventing race conditions where the source canvas is modified.
+ * 
+ * For offscreen-rendered canvases, this automatically uses the capture proxy
+ * canvas instead of the transferred display canvas.
  */
 function snapshotCanvas(
   canvas: HTMLCanvasElement,
   scale: number,
   preserveAlpha: boolean
 ): HTMLCanvasElement {
-  const targetWidth = Math.max(1, Math.floor(canvas.width * scale));
-  const targetHeight = Math.max(1, Math.floor(canvas.height * scale));
+  // If this canvas was transferred to offscreen, use its capture proxy
+  const captureProxy = findCaptureProxy(canvas);
+  const sourceCanvas = captureProxy ?? canvas;
+  
+  const targetWidth = Math.max(1, Math.floor(sourceCanvas.width * scale));
+  const targetHeight = Math.max(1, Math.floor(sourceCanvas.height * scale));
   
   const copy = document.createElement('canvas');
   copy.width = targetWidth;
@@ -235,9 +255,9 @@ function snapshotCanvas(
   }
   
   const ctx = copy.getContext('2d');
-  if (ctx && canvas.width > 0 && canvas.height > 0) {
+  if (ctx && sourceCanvas.width > 0 && sourceCanvas.height > 0) {
     // drawImage with scaling is SYNCHRONOUS - pixels are copied immediately
-    ctx.drawImage(canvas, 0, 0, targetWidth, targetHeight);
+    ctx.drawImage(sourceCanvas, 0, 0, targetWidth, targetHeight);
   }
   
   return copy;
@@ -259,9 +279,13 @@ function serializeCanvas(
   canvasJobs: CanvasJob[],
   options: SerializationOptions
 ): void {
+  // If this canvas was transferred to offscreen, use its capture proxy
+  const captureProxy = findCaptureProxy(canvas);
+  const sourceCanvas = captureProxy ?? canvas;
+  
   // Use intrinsic canvas dimensions, not computed styles (which may be zoom-affected)
-  const width = canvas.width;
-  const height = canvas.height;
+  const width = sourceCanvas.width;
+  const height = sourceCanvas.height;
   
   // Skip empty canvases
   if (width === 0 || height === 0) {
@@ -311,12 +335,12 @@ function serializeCanvas(
   const qualityMultiplier = 1.5; // Encode at 1.5x display size for quality
   
   try {
-    const cssWidth = parseFloat(computedWidth) || canvas.width;
-    const cssHeight = parseFloat(computedHeight) || canvas.height;
+    const cssWidth = parseFloat(computedWidth) || sourceCanvas.width;
+    const cssHeight = parseFloat(computedHeight) || sourceCanvas.height;
     
     // Calculate how much smaller the display is vs natural size
-    const displayScaleX = cssWidth / canvas.width;
-    const displayScaleY = cssHeight / canvas.height;
+    const displayScaleX = cssWidth / sourceCanvas.width;
+    const displayScaleY = cssHeight / sourceCanvas.height;
     const displayScale = Math.min(displayScaleX, displayScaleY);
     
     // Combine display scale, video scale, and quality multiplier
@@ -330,6 +354,7 @@ function serializeCanvas(
   // CRITICAL: Create a snapshot of canvas pixels SYNCHRONOUSLY before any async work.
   // This prevents race conditions where concurrent renders overwrite the shared
   // shadow canvas while encoding is in progress.
+  // Note: snapshotCanvas already handles finding the capture proxy internally
   const snapshot = snapshotCanvas(canvas, optimalScale, preserveAlpha);
   
   // Open img tag with all styles from source element

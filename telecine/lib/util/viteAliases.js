@@ -15,6 +15,8 @@ export const viteAliases =
         "@editframe/assets/EncodedAsset.js":
           "/app/lib/packages/packages/assets/src/EncodedAsset.ts",
         "@editframe/assets": "/app/lib/packages/packages/assets/src/index.ts",
+        // More specific alias must come before general one
+        "@editframe/react/r3f": "/app/lib/packages/packages/react/src/r3f/index.ts",
         "@editframe/react": "/app/lib/packages/packages/react/src/index.ts",
         "@editframe/elements/styles.css":
           "/app/node_modules/@editframe/elements/dist/style.css",
@@ -22,4 +24,9 @@ export const viteAliases =
           "/app/lib/packages/packages/elements/src/index.ts",
         "@editframe/vite-plugin":
           "/app/lib/packages/packages/vite-plugin/src/index.ts",
+        // R3F dependencies - point to telecine's node_modules
+        "@react-three/offscreen": "/app/node_modules/@react-three/offscreen",
+        "@react-three/fiber": "/app/node_modules/@react-three/fiber",
+        "three": "/app/node_modules/three",
+        "mitt": "/app/node_modules/mitt",
       };

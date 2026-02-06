@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import * as THREE from "three";
+import { useCompositionTime } from "@editframe/react/r3f";
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    JIT STREAMING SCENE — Directional Narratives
@@ -452,7 +453,10 @@ function CameraController({ timeMs }: { timeMs: number }) {
 }
 
 /* ━━ SCENE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-export function JITStreamingScene({ currentTimeMs: timeMs }: { currentTimeMs: number }) {
+export function JITStreamingScene({ currentTimeMs }: { currentTimeMs?: number } = {}) {
+  // Use composition time from worker context, or fallback to prop for main-thread rendering
+  const { timeMs: workerTimeMs } = useCompositionTime();
+  const timeMs = currentTimeMs ?? workerTimeMs;
 
   // ── Dimming: traditional side dims after transition ──
   const tradDim = 1 - easeOut(prog(timeMs, TRANS_START, TRANS_END)) * 0.7;

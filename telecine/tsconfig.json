@@ -68,6 +68,7 @@
       "@editframe/api": ["./lib/packages/packages/api/src/index.ts"],
       "@editframe/assets": ["./lib/packages/packages/assets/src/index.ts"],
       "@editframe/react": ["./lib/packages/packages/react/src/index.ts"],
+      "@editframe/react/r3f": ["./lib/packages/packages/react/src/r3f/index.ts"],
       "@editframe/elements": ["./lib/packages/packages/elements/src/index.ts"],
       "@editframe/vite-plugin": [
         "./lib/packages/packages/vite-plugin/src/index.ts"
