@@ -5,7 +5,7 @@
  */
 
 import { Suspense, useRef, useMemo, useState, useLayoutEffect, type ReactNode } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import { flushSync } from "react-dom";
 import { Timegroup } from "@editframe/react";
