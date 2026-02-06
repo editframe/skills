@@ -26,22 +26,6 @@ export function yieldToScheduler(): Promise<void> {
 }
 
 /**
- * Forces GPU sync (gl.finish()) on every R3F frame.
- * This ensures pixels are ready for capture in render clones.
- * 
- * Note: This component is kept for reference but should generally not be used.
- * The flushR3F function handles GPU sync more efficiently by only calling
- * finish() when needed (during addFrameTask callbacks).
- */
-export function GLSync() {
-  const { gl } = useThree();
-  useFrame(() => {
-    gl.getContext().finish();
-  });
-  return null;
-}
-
-/**
  * Triggers an R3F render when time changes.
  * Use with frameloop="demand" to invalidate the canvas when timeline time updates.
  */
@@ -88,28 +72,16 @@ export { r3fFlushSync };
  *
  * @param canvasContainer - The container element that holds the R3F canvas
  */
-let _flushSeq = 0;
-
 export function flushR3F(canvasContainer: HTMLElement | null): void {
   if (!canvasContainer) return;
 
-  const seq = _flushSeq++;
   const canvas = canvasContainer.querySelector('canvas') as HTMLCanvasElement | null;
   const state = getR3FState(canvas);
 
-  if (!state) {
-    console.log('[R3F_DIAG] flushR3F:noStore', JSON.stringify({ seq, hasCanvas: !!canvas, inRoots: canvas ? _roots.has(canvas) : false }));
-    return;
-  }
-
-  if (!state.gl || !state.scene || !state.camera) {
-    console.log('[R3F_DIAG] flushR3F:incompleteState', JSON.stringify({ seq, gl: !!state.gl, scene: !!state.scene, camera: !!state.camera }));
-    return;
-  }
+  if (!state?.gl || !state?.scene || !state?.camera) return;
 
   // 1. Run useFrame subscribers (camera, lights, etc.)
   const subs = state.internal?.subscribers;
-  const subCount = subs?.length ?? 0;
   if (subs) {
     for (let i = 0; i < subs.length; i++) {
       try {
@@ -125,22 +97,5 @@ export function flushR3F(canvasContainer: HTMLElement | null): void {
   state.gl.render(state.scene, state.camera);
 
   // 3. GPU sync — ensures drawing buffer is complete for readPixels
-  const glCtx = state.gl.getContext();
-  glCtx.finish();
-
-  // 4. Probe drawing buffer to verify render produced new pixels
-  const probe = new Uint8Array(4);
-  const cw = state.gl.domElement.width;
-  const ch = state.gl.domElement.height;
-  glCtx.readPixels(Math.floor(cw / 2), Math.floor(ch / 2), 1, 1, glCtx.RGBA, glCtx.UNSIGNED_BYTE, probe);
-
-  console.log('[R3F_DIAG] flushR3F:done', JSON.stringify({
-    seq,
-    subCount,
-    cam: { x: +state.camera.position.x.toFixed(3), y: +state.camera.position.y.toFixed(3), z: +state.camera.position.z.toFixed(3) },
-    sceneChildren: state.scene.children.length,
-    centerPixel: `rgba(${probe[0]},${probe[1]},${probe[2]},${probe[3]})`,
-    canvasSize: `${cw}x${ch}`,
-    hidden: document.hidden,
-  }));
+  state.gl.getContext().finish();
 }

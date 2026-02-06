@@ -17,75 +17,39 @@ export function JITStreamingTimeline() {
     const tg = timegroupRef.current;
     if (!tg?.addFrameTask) return;
 
-    let prevFramePixelHash = 0;
-    let frameSeq = 0;
+    let r3fReady = false;
 
     return tg.addFrameTask(async ({ currentTimeMs }: { currentTimeMs: number }) => {
-      const seq = frameSeq++;
-      const hidden = document.hidden;
-
-      console.log('[R3F_DIAG] frameTask:start', JSON.stringify({ seq, currentTimeMs, hidden }));
-
       // 1. Flush react-dom: updates timeMs state, re-renders Canvas component.
       //    Canvas layout effect starts async run() → await configure() yields microtask.
       flushSync(() => {
         setTimeMs(currentTimeMs);
       });
 
-      // 2. Macrotask yield: lets microtasks execute (Canvas run() → render()),
-      //    and lets ResizeObserver fire (needed for first-frame R3F init).
-      await yieldToScheduler();
+      // 2. On first frame, R3F Canvas needs a macrotask for ResizeObserver to fire
+      //    and useMeasure to report size, which triggers R3F initialization.
+      //    After R3F is ready, only a microtask yield is needed (for Canvas's
+      //    async run() → render() to execute after await configure()).
+      if (!r3fReady) {
+        await yieldToScheduler();
+        flushSync(() => {});
+      }
 
-      // 3. Process any pending react-dom updates (e.g. useMeasure size report
-      //    from ResizeObserver, which triggers R3F Canvas initialization).
-      flushSync(() => {});
-
-      // 4. Microtask yield: lets Canvas async run() call render(children)
+      // 3. Microtask yield: lets Canvas async run() call render(children)
       //    after configure() resolves.
       await Promise.resolve();
 
-      // 5. Flush R3F's reconciler synchronously so the Three.js scene graph
+      // 4. Flush R3F's reconciler synchronously so the Three.js scene graph
       //    reflects the latest React props (currentTimeMs, etc).
       r3fFlushSync(() => {});
 
-      console.log('[R3F_DIAG] frameTask:afterFlush', JSON.stringify({ seq, currentTimeMs }));
-
-      const container = canvasContainerRef.current;
-      const canvas = container?.querySelector('canvas') as HTMLCanvasElement | null;
-      const state = getR3FState(canvas);
-
-      const camBefore = state?.camera
-        ? { x: +state.camera.position.x.toFixed(3), y: +state.camera.position.y.toFixed(3), z: +state.camera.position.z.toFixed(3) }
-        : null;
-
-      // 6. Imperatively render: runs useFrame subscribers + gl.render + gl.finish
-      flushR3F(container);
-
-      const camAfter = state?.camera
-        ? { x: +state.camera.position.x.toFixed(3), y: +state.camera.position.y.toFixed(3), z: +state.camera.position.z.toFixed(3) }
-        : null;
-
-      let pixelHash = 0;
-      if (canvas) {
-        const gl = (canvas.getContext('webgl2') ?? canvas.getContext('webgl')) as WebGLRenderingContext | null;
-        if (gl) {
-          const probe = new Uint8Array(4);
-          gl.readPixels(Math.floor(canvas.width / 2), Math.floor(canvas.height / 2), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, probe);
-          pixelHash = (probe[0]! << 24) | (probe[1]! << 16) | (probe[2]! << 8) | probe[3]!;
-        }
+      if (!r3fReady) {
+        const canvas = canvasContainerRef.current?.querySelector('canvas') as HTMLCanvasElement | null;
+        if (getR3FState(canvas)?.gl) r3fReady = true;
       }
 
-      const pixelChanged = pixelHash !== prevFramePixelHash;
-      console.log('[R3F_DIAG] frameTask:afterFlushR3F', JSON.stringify({
-        seq, currentTimeMs, hidden,
-        camBefore, camAfter,
-        pixelHash: '0x' + (pixelHash >>> 0).toString(16).padStart(8, '0'),
-        pixelChanged,
-        subscriberCount: state?.internal?.subscribers?.length ?? 0,
-        canvasSize: canvas ? `${canvas.width}x${canvas.height}` : null,
-      }));
-
-      prevFramePixelHash = pixelHash;
+      // 5. Imperatively render: runs useFrame subscribers + gl.render + gl.finish
+      flushR3F(canvasContainerRef.current);
     });
   }, []);
 
