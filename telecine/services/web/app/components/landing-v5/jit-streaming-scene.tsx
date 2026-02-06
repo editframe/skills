@@ -539,6 +539,88 @@ function ParticleStream({ from, to, count, color, opacity, timeMs, seed }: {
   );
 }
 
+/* ━━ Narration captions ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Each caption is a drei Text that fades in and out based on
+   currentTimeMs. Replaces the HTML overlay divs so everything
+   lives in 3D space and can move with the camera.
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+type CaptionDef = {
+  text: string;
+  inMs: number;
+  outMs: number;
+  position: [number, number, number];
+  fontSize: number;
+  color: string;
+  bold?: boolean;
+};
+
+const CAPTIONS: CaptionDef[] = [
+  // ACT 1 title
+  { text: "The traditional way", inMs: 300, outMs: 2800, position: [0, 3.2, 0], fontSize: 0.18, color: "rgba(255,255,255,0.4)" },
+  // Step: You have a file
+  { text: "You have a video file.", inMs: 500, outMs: 2800, position: [0, -3.2, 0], fontSize: 0.14, color: "rgba(255,255,255,0.55)" },
+  // Step: Upload
+  { text: "Upload the entire thing to their servers.", inMs: 3000, outMs: 7500, position: [0, -3.2, 0], fontSize: 0.14, color: "rgba(255,255,255,0.55)" },
+  // Step: Transcode
+  { text: "Transcode every frame, every bitrate.", inMs: 8000, outMs: 12000, position: [0, -3.2, 0], fontSize: 0.14, color: "rgba(255,255,255,0.55)" },
+  // Step: Variants
+  { text: "1080p. 720p. 480p. Three complete copies, stored.", inMs: 12500, outMs: 14500, position: [0, -3.2, 0], fontSize: 0.14, color: "rgba(255,255,255,0.55)" },
+  // Step: Play
+  { text: "Only now can someone press play.", inMs: 15000, outMs: 16800, position: [0, -3.2, 0], fontSize: 0.14, color: "rgba(255,255,255,0.55)" },
+  // TRANSITION
+  { text: "What if you could skip all of that?", inMs: 17200, outMs: 19200, position: [0, 3.2, 0], fontSize: 0.22, color: "#ffffff", bold: true },
+  // ACT 2 title
+  { text: "Editframe JIT", inMs: 19500, outMs: 21200, position: [0, 3.2, 0], fontSize: 0.2, color: "#ff5252", bold: true },
+  // Step: Same file, your server
+  { text: "Same file. But it stays on your server.", inMs: 19700, outMs: 21200, position: [0, -3.2, 0], fontSize: 0.14, color: "rgba(255,255,255,0.55)" },
+  // Step: Player needs a frame
+  { text: "When the player needs a frame...", inMs: 21500, outMs: 22800, position: [0, -3.2, 0], fontSize: 0.14, color: "rgba(255,255,255,0.55)" },
+  // Step: Highlight bytes
+  { text: "...it highlights just the bytes it needs.", inMs: 23000, outMs: 24200, position: [0, -3.2, 0], fontSize: 0.14, color: "rgba(255,255,255,0.55)" },
+  // Step: Byte-range request
+  { text: "A byte-range request fetches just that slice.", inMs: 24500, outMs: 26300, position: [0, -3.2, 0], fontSize: 0.14, color: "rgba(255,255,255,0.55)" },
+  // Step: Transcode piece
+  { text: "Same transcode — but just this piece.", inMs: 27000, outMs: 28800, position: [0, -3.2, 0], fontSize: 0.14, color: "rgba(255,255,255,0.55)" },
+  // Step: Already playing
+  { text: "Already playing.", inMs: 30000, outMs: 31800, position: [0, -3.2, 0], fontSize: 0.14, color: "rgba(255,255,255,0.55)" },
+  // Step: Next segment
+  { text: "Next segment. Different bitrate. Streamed on demand.", inMs: 32000, outMs: 34800, position: [0, -3.2, 0], fontSize: 0.14, color: "rgba(255,255,255,0.55)" },
+  // ACT 3: Comparison hero
+  { text: "Same transcode work.", inMs: 37500, outMs: 41000, position: [0, 0.8, 1], fontSize: 0.3, color: "#ff5252", bold: true },
+  { text: "No upload. No ingest delay.", inMs: 37800, outMs: 41000, position: [0, 0.1, 1], fontSize: 0.3, color: "#ff5252", bold: true },
+];
+
+const CAPTION_FADE_IN_MS = 400;
+const CAPTION_FADE_OUT_MS = 400;
+
+function Captions({ currentTimeMs }: { currentTimeMs: number }) {
+  return (
+    <>
+      {CAPTIONS.map((c, i) => {
+        const fadeIn = easeOut(prog(currentTimeMs, c.inMs, c.inMs + CAPTION_FADE_IN_MS));
+        const fadeOut = 1 - easeOut(prog(currentTimeMs, c.outMs, c.outMs + CAPTION_FADE_OUT_MS));
+        const opacity = Math.min(fadeIn, fadeOut);
+        if (opacity <= 0) return null;
+        return (
+          <Text
+            key={i}
+            position={c.position}
+            fontSize={c.fontSize}
+            color={c.color}
+            anchorX="center"
+            anchorY="middle"
+            fillOpacity={opacity}
+            fontWeight={c.bold ? 800 : 600}
+          >
+            {c.text}
+          </Text>
+        );
+      })}
+    </>
+  );
+}
+
 /* ━━ Environment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function Floor() {
   return (
@@ -689,6 +771,7 @@ export function JITStreamingScene({ currentTimeMs }: { currentTimeMs: number }) 
     <>
       <Lights />
       <Floor />
+      <Captions currentTimeMs={currentTimeMs} />
 
       {/* ━━ ACT 1: TRADITIONAL (up/down arc) ━━━━━━━━━━━━━━━━━━━━━ */}
       {tradVisible && (
