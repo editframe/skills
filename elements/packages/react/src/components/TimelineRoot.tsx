@@ -9,13 +9,15 @@ import {
 } from '@editframe/elements';
 
 interface TimelineRootProps {
-  /** Unique identifier for the root timegroup */
+  /** 
+   * Unique identifier used for playback control targeting (Preview, Scrubber, TogglePlay).
+   * Also passed as `id` prop to the component for clone rendering.
+   */
   id: string;
   /** 
    * React component that renders the timeline content (must include a Timegroup at root).
-   * The component will receive { id: string } as a prop, which should be passed to the Timegroup.
    */
-  component: React.ComponentType<{ id?: string }>;
+  component: React.ComponentType<Record<string, unknown>>;
   /** Optional CSS class name for the container */
   className?: string;
   /** Optional inline styles for the container */
