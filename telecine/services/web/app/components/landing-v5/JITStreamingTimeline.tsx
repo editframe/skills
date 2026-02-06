@@ -1,28 +1,12 @@
 // @ts-nocheck - React Three Fiber JSX intrinsics
-import React, { Suspense, useState, useLayoutEffect, useRef, useEffect } from "react";
+import React, { Suspense, useState, useLayoutEffect, useRef } from "react";
 import { flushSync } from "react-dom";
 import { Timegroup } from "@editframe/react";
-import { Canvas, useThree, useFrame } from "@react-three/fiber";
+import { Canvas } from "@react-three/fiber";
 import * as THREE from "three";
 import { JITStreamingScene } from "./jit-streaming-scene";
+import { GLSync, InvalidateOnTimeChange, flushR3F } from "./r3f-sync";
 
-/** Forces gl.finish() every R3F frame so pixels are ready for capture. */
-function GLSync() {
-  const { gl } = useThree();
-  useFrame(() => {
-    gl.getContext().finish();
-  });
-  return null;
-}
-
-/** Triggers an R3F render when time changes (frameloop="demand"). */
-function InvalidateOnTimeChange({ timeMs }: { timeMs: number }) {
-  const { invalidate } = useThree();
-  useEffect(() => {
-    invalidate();
-  }, [timeMs, invalidate]);
-  return null;
-}
 
 export function JITStreamingTimeline() {
   const timegroupRef = useRef(null);
@@ -49,17 +33,7 @@ export function JITStreamingTimeline() {
       // InvalidateOnTimeChange uses useEffect (async), so we must imperatively
       // force R3F to render a frame now. This is required for render clones
       // where requestAnimationFrame may not fire.
-      const canvas = canvasContainerRef.current?.querySelector('canvas');
-      const r3fStore = (canvas as any)?.__r3f;
-
-      if (r3fStore) {
-        const state = r3fStore.store?.getState?.();
-        if (state) {
-          state.invalidate();
-          state.advance(performance.now(), true);
-          state.gl?.getContext?.()?.finish?.();
-        }
-      }
+      flushR3F(canvasContainerRef.current);
     });
   }, []);
 

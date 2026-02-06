@@ -4,12 +4,13 @@
  * Componentized for easier iteration.
  */
 
-import { Suspense, useRef, useMemo, useState, useLayoutEffect, useEffect, type ReactNode } from "react";
-import { Canvas, useThree, useFrame } from "@react-three/fiber";
+import { Suspense, useRef, useMemo, useState, useLayoutEffect, type ReactNode } from "react";
+import { Canvas } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import { flushSync } from "react-dom";
 import { Timegroup } from "@editframe/react";
 import * as THREE from "three";
+import { GLSync, InvalidateOnTimeChange, flushR3F } from "./r3f-sync";
 
 /* ━━ Easing & helpers ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function easeOut(t: number) { return 1 - Math.pow(1 - t, 3); }
@@ -682,20 +683,6 @@ export function ParallelFragmentsR3FScene({ currentTimeMs: timeMs }: { currentTi
   );
 }
 
-/* ━━ R3F helpers for render-clone compatibility ━━━━━━━━━━━━━━━━━━━ */
-
-function GLSync() {
-  const { gl } = useThree();
-  useFrame(() => { gl.getContext().finish(); });
-  return null;
-}
-
-function InvalidateOnTimeChange({ timeMs }: { timeMs: number }) {
-  const { invalidate } = useThree();
-  useEffect(() => { invalidate(); }, [timeMs, invalidate]);
-  return null;
-}
-
 /* ━━ Canvas wrapper — just configure and drop in ━━━━━━━━━━━━━━━━━━ */
 export function ParallelFragmentsCanvas({ children }: { children?: ReactNode }) {
   const timegroupRef = useRef(null);
@@ -711,16 +698,7 @@ export function ParallelFragmentsCanvas({ children }: { children?: ReactNode }) 
         setTimeMs(currentTimeMs);
       });
 
-      const canvas = canvasContainerRef.current?.querySelector('canvas');
-      const r3fStore = (canvas as any)?.__r3f;
-      if (r3fStore) {
-        const state = r3fStore.store?.getState?.();
-        if (state) {
-          state.invalidate();
-          state.advance(performance.now(), true);
-          state.gl?.getContext?.()?.finish?.();
-        }
-      }
+      flushR3F(canvasContainerRef.current);
     });
   }, []);
 
