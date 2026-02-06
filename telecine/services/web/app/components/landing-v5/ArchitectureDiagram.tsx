@@ -489,25 +489,15 @@ function JITStreamingDiagram() {
       };
       if (!tg || disposed) return;
 
-      // Update scene time on every frame
+      // Update scene time on every frame - works for both prime and clones
+      // For clones: TimelineRoot.initializer re-renders React tree, this useEffect runs, addFrameTask connects
+      console.log('[ArchitectureDiagram] Setting up addFrameTask, isClone:', tg.hasAttribute('data-no-playback-controller'));
+      
       tg.addFrameTask?.(({ ownCurrentTimeMs, durationMs }) => {
+        console.log('[ArchitectureDiagram] Frame task:', ownCurrentTimeMs, 'isClone:', tg.hasAttribute('data-no-playback-controller'));
         setSceneTime(ownCurrentTimeMs);
         setSceneDuration(durationMs);
       });
-
-      // For render clones
-      tg.initializer = (instance: HTMLElement & {
-        ownCurrentTimeMs?: number;
-        durationMs?: number;
-        addFrameTask?: (cb: (info: { ownCurrentTimeMs: number; durationMs: number }) => void) => () => void;
-      }) => {
-        if (instance === tg) return;
-
-        // React Three Fiber will be re-created in the clone
-        instance.addFrameTask?.(() => {
-          // Scene state updates will be handled by React in the cloned tree
-        });
-      };
     };
 
     setup();
