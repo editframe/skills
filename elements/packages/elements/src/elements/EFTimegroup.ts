@@ -1491,10 +1491,20 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
       pointer-events: none;
       overflow: hidden;
     `;
+    
+    // Preserve ef-configuration context
+    let renderTarget: HTMLElement = container;
+    const originalConfig = this.closest("ef-configuration");
+    if (originalConfig) {
+      const configClone = originalConfig.cloneNode(false) as HTMLElement;
+      container.appendChild(configClone);
+      renderTarget = configClone;
+    }
+    
     document.body.appendChild(container);
     
     // Mount the component tree — this produces a live ef-timegroup
-    const { timegroup: actualClone, cleanup: factoryCleanup } = factory(container);
+    const { timegroup: actualClone, cleanup: factoryCleanup } = factory(renderTarget);
     
     if (!actualClone) {
       throw new Error(
