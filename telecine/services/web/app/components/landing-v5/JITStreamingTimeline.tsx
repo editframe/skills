@@ -5,7 +5,7 @@ import { Timegroup } from "@editframe/react";
 import { Canvas } from "@react-three/fiber";
 import * as THREE from "three";
 import { JITStreamingScene } from "./jit-streaming-scene";
-import { InvalidateOnTimeChange, flushR3F, yieldToScheduler } from "./r3f-sync";
+import { InvalidateOnTimeChange, flushR3F, yieldToScheduler, getR3FState, r3fFlushSync } from "./r3f-sync";
 
 
 export function JITStreamingTimeline() {
@@ -26,40 +26,50 @@ export function JITStreamingTimeline() {
 
       console.log('[R3F_DIAG] frameTask:start', JSON.stringify({ seq, currentTimeMs, hidden }));
 
+      // 1. Flush react-dom: updates timeMs state, re-renders Canvas component.
+      //    Canvas layout effect starts async run() → await configure() yields microtask.
       flushSync(() => {
         setTimeMs(currentTimeMs);
       });
 
-      console.log('[R3F_DIAG] frameTask:afterFlushSync', JSON.stringify({ seq, currentTimeMs }));
-
+      // 2. Macrotask yield: lets microtasks execute (Canvas run() → render()),
+      //    and lets ResizeObserver fire (needed for first-frame R3F init).
       await yieldToScheduler();
 
-      console.log('[R3F_DIAG] frameTask:afterYield', JSON.stringify({ seq, currentTimeMs }));
+      // 3. Process any pending react-dom updates (e.g. useMeasure size report
+      //    from ResizeObserver, which triggers R3F Canvas initialization).
+      flushSync(() => {});
+
+      // 4. Microtask yield: lets Canvas async run() call render(children)
+      //    after configure() resolves.
+      await Promise.resolve();
+
+      // 5. Flush R3F's reconciler synchronously so the Three.js scene graph
+      //    reflects the latest React props (currentTimeMs, etc).
+      r3fFlushSync(() => {});
+
+      console.log('[R3F_DIAG] frameTask:afterFlush', JSON.stringify({ seq, currentTimeMs }));
 
       const container = canvasContainerRef.current;
       const canvas = container?.querySelector('canvas') as HTMLCanvasElement | null;
-      const r3fStore = (canvas as any)?.__r3f;
-      const state = r3fStore?.store?.getState?.();
+      const state = getR3FState(canvas);
 
-      // Camera position before flushR3F (captures useFrame state)
       const camBefore = state?.camera
         ? { x: +state.camera.position.x.toFixed(3), y: +state.camera.position.y.toFixed(3), z: +state.camera.position.z.toFixed(3) }
         : null;
 
+      // 6. Imperatively render: runs useFrame subscribers + gl.render + gl.finish
       flushR3F(container);
 
-      // Camera position after flushR3F (after useFrame ran)
       const camAfter = state?.camera
         ? { x: +state.camera.position.x.toFixed(3), y: +state.camera.position.y.toFixed(3), z: +state.camera.position.z.toFixed(3) }
         : null;
 
-      // Sample 4 pixels from the drawing buffer to detect change
       let pixelHash = 0;
       if (canvas) {
         const gl = (canvas.getContext('webgl2') ?? canvas.getContext('webgl')) as WebGLRenderingContext | null;
         if (gl) {
           const probe = new Uint8Array(4);
-          // Center pixel
           gl.readPixels(Math.floor(canvas.width / 2), Math.floor(canvas.height / 2), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, probe);
           pixelHash = (probe[0]! << 24) | (probe[1]! << 16) | (probe[2]! << 8) | probe[3]!;
         }
@@ -71,7 +81,7 @@ export function JITStreamingTimeline() {
         camBefore, camAfter,
         pixelHash: '0x' + (pixelHash >>> 0).toString(16).padStart(8, '0'),
         pixelChanged,
-        subscriberCount: state?.internal?.subscribers?.size ?? 0,
+        subscriberCount: state?.internal?.subscribers?.length ?? 0,
         canvasSize: canvas ? `${canvas.width}x${canvas.height}` : null,
       }));
 

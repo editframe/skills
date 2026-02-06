@@ -7,7 +7,8 @@
  */
 
 import { useEffect } from "react";
-import { useThree, useFrame } from "@react-three/fiber";
+import { useThree, useFrame, _roots, flushSync as r3fFlushSync } from "@react-three/fiber";
+import type { RootState } from "@react-three/fiber";
 
 /**
  * Yield one macrotask via MessageChannel.
@@ -53,6 +54,27 @@ export function InvalidateOnTimeChange({ timeMs }: { timeMs: number }) {
 }
 
 /**
+ * Look up the R3F root state for a canvas element.
+ *
+ * R3F v9 stores root state in a module-level Map (`_roots`), keyed by the
+ * canvas DOM element. The legacy `canvas.__r3f` property does not exist in v9.
+ */
+export function getR3FState(canvas: HTMLCanvasElement | null): RootState | undefined {
+  if (!canvas) return undefined;
+  return _roots.get(canvas)?.store?.getState?.();
+}
+
+/**
+ * Flush R3F's reconciler synchronously.
+ *
+ * After react-dom's flushSync processes a state update (e.g. setTimeMs),
+ * R3F's separate reconciler still has pending work (updated props for
+ * Three.js scene objects). This call forces R3F to commit those updates
+ * synchronously so the scene graph is up to date before we render.
+ */
+export { r3fFlushSync };
+
+/**
  * Imperatively flush R3F rendering pipeline with synchronous WebGL rendering.
  *
  * Replaces R3F's rAF-driven advance() cycle entirely so that timeline-driven
@@ -64,11 +86,6 @@ export function InvalidateOnTimeChange({ timeMs }: { timeMs: number }) {
  *   2. gl.render(scene, camera) — synchronous WebGL draw.
  *   3. gl.finish() — GPU sync so pixels are ready for readback.
  *
- * Pixel capture from the WebGL canvas is handled separately by
- * readWebGLPixels() in serializeTimelineDirect.ts (uses gl.readPixels to
- * bypass the compositor's presentation layer, which is suspended in hidden
- * browser tabs).
- *
  * @param canvasContainer - The container element that holds the R3F canvas
  */
 let _flushSeq = 0;
@@ -77,26 +94,27 @@ export function flushR3F(canvasContainer: HTMLElement | null): void {
   if (!canvasContainer) return;
 
   const seq = _flushSeq++;
-  const canvas = canvasContainer.querySelector('canvas');
-  const r3fStore = (canvas as any)?.__r3f;
+  const canvas = canvasContainer.querySelector('canvas') as HTMLCanvasElement | null;
+  const state = getR3FState(canvas);
 
-  if (!r3fStore) {
-    console.log('[R3F_DIAG] flushR3F:noStore', JSON.stringify({ seq, hasCanvas: !!canvas }));
+  if (!state) {
+    console.log('[R3F_DIAG] flushR3F:noStore', JSON.stringify({ seq, hasCanvas: !!canvas, inRoots: canvas ? _roots.has(canvas) : false }));
     return;
   }
 
-  const state = r3fStore.store?.getState?.();
-  if (!state?.gl || !state?.scene || !state?.camera) {
-    console.log('[R3F_DIAG] flushR3F:incompleteState', JSON.stringify({ seq, gl: !!state?.gl, scene: !!state?.scene, camera: !!state?.camera }));
+  if (!state.gl || !state.scene || !state.camera) {
+    console.log('[R3F_DIAG] flushR3F:incompleteState', JSON.stringify({ seq, gl: !!state.gl, scene: !!state.scene, camera: !!state.camera }));
     return;
   }
 
   // 1. Run useFrame subscribers (camera, lights, etc.)
-  const subCount = state.internal?.subscribers?.size ?? 0;
-  if (state.internal?.subscribers) {
-    for (const sub of state.internal.subscribers) {
+  const subs = state.internal?.subscribers;
+  const subCount = subs?.length ?? 0;
+  if (subs) {
+    for (let i = 0; i < subs.length; i++) {
       try {
-        sub.ref.current(state, 0);
+        const sub = subs[i]!;
+        sub.ref.current(sub.store.getState(), 0);
       } catch (e) {
         console.warn('[flushR3F] useFrame subscriber error:', e);
       }
