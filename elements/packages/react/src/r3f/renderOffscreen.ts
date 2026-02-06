@@ -15,7 +15,7 @@ import * as THREE from 'three';
 import mitt, { Emitter } from 'mitt';
 import { extend, createRoot, createEvents, ReconcilerRoot, Dpr, Size, RootState, EventManager, Events } from '@react-three/fiber';
 import type { UseBoundStore } from 'zustand';
-import { DomEvent } from '@react-three/fiber/dist/declarations/src/core/events';
+import type { DomEvent } from '@react-three/fiber/dist/declarations/src/core/events';
 import type { RenderFramePayload } from './worker-protocol';
 
 /* ━━ Event handling (from @react-three/offscreen) ━━━━━━━━━━━━━━━━━━━━━ */
@@ -139,18 +139,6 @@ export function useCompositionTime() {
  * ```
  */
 export function renderOffscreen(children: React.ReactNode) {
-  console.log('[renderOffscreen] Worker started');
-  
-  // First, call the base render() from @react-three/offscreen
-  // This sets up the R3F root and message handlers
-  baseRender(children);
-  
-  console.log('[renderOffscreen] Base render complete, adding custom handlers');
-  
-  // Now we need to get access to the R3F root that was created
-  // The base render() sets up self.onmessage, so we need to wrap it
-  const originalOnMessage = self.onmessage;
-  
   let root: ReconcilerRoot<HTMLCanvasElement> | null = null;
   let offscreenCanvas: OffscreenCanvas | null = null;
 

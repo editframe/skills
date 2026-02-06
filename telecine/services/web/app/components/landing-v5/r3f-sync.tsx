@@ -1,17 +1,9 @@
 /**
  * React Three Fiber synchronization utilities for Editframe timeline integration.
  * 
- * @deprecated These utilities are for main-thread R3F rendering only.
- * For new code, use OffscreenCompositionCanvas from @editframe/react/r3f which
- * renders in a web worker and continues working even when the browser tab is hidden.
- * 
  * These utilities handle the coordination between R3F's render loop and Editframe's
  * timeline system, ensuring that 3D content renders correctly in both live playback
  * and render clones.
- * 
- * LIMITATION: Main-thread rendering is suspended by Chrome when the tab is hidden,
- * causing video exports to capture frozen frames. Use OffscreenCompositionCanvas
- * to avoid this issue.
  */
 
 import { useEffect } from "react";

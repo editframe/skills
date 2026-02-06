@@ -29,7 +29,7 @@ export const buildViteConfig = () => {
       },
       optimizeDeps: {
         exclude: ["@editframe/elements"],
-        include: ["@react-three/offscreen", "@react-three/fiber", "three", "mitt"],
+        include: ["@react-three/offscreen", "@react-three/fiber", "@react-three/drei", "three", "mitt"],
       },
       server: {
         allowedHosts: process.env.NODE_ENV === "production" ? undefined : true,
@@ -75,7 +75,7 @@ export const buildViteConfig = () => {
       resolve: { 
         alias: viteAliases,
         // Ensure Vite can find dependencies when resolving from elements package source files
-        dedupe: ['@react-three/fiber', '@react-three/offscreen', 'three', 'mitt']
+        dedupe: ['@react-three/fiber', '@react-three/offscreen', '@react-three/drei', 'three', 'mitt']
       },
       esbuild: {
         target: "es2022",
