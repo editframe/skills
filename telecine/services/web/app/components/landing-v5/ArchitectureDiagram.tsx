@@ -452,7 +452,8 @@ function FanOutDiagram() {
 function JITStreamingDiagram() {
   const uid = useId();
   const rootId = `jit-streaming-${uid}`;
-  const [isClient, setIsClient] = useState(false);
+  // Initialize to true in browser (for render clones), false in SSR
+  const [isClient, setIsClient] = useState(() => typeof window !== 'undefined');
   const containerRef = useRef<HTMLDivElement>(null);
   const { enqueue } = useRenderQueue();
 
