@@ -122,6 +122,11 @@ export function useCompositionTime() {
 /**
  * Render a React Three Fiber scene in a web worker with offscreen canvas.
  * 
+ * This extends @react-three/offscreen's render() with Editframe-specific features:
+ * - Time synchronization via timeStore and useCompositionTime hook
+ * - Frame-by-frame rendering on demand (renderFrame message)
+ * - Pixel capture and transfer back to main thread via ImageBitmap
+ * 
  * @param children - React node containing the R3F scene
  * 
  * @example
@@ -134,16 +139,20 @@ export function useCompositionTime() {
  * ```
  */
 export function renderOffscreen(children: React.ReactNode) {
-  console.log('[renderOffscreen] Worker started, extending THREE');
-  extend(THREE);
-
+  console.log('[renderOffscreen] Worker started');
+  
+  // First, call the base render() from @react-three/offscreen
+  // This sets up the R3F root and message handlers
+  baseRender(children);
+  
+  console.log('[renderOffscreen] Base render complete, adding custom handlers');
+  
+  // Now we need to get access to the R3F root that was created
+  // The base render() sets up self.onmessage, so we need to wrap it
+  const originalOnMessage = self.onmessage;
+  
   let root: ReconcilerRoot<HTMLCanvasElement> | null = null;
   let offscreenCanvas: OffscreenCanvas | null = null;
-  let dpr: Dpr = [1, 2];
-  let size: Size = { width: 0, height: 0, top: 0, left: 0, updateStyle: false };
-  const emitter = mitt();
-  
-  console.log('[renderOffscreen] Ready to receive messages');
 
   /* ━━ Init handler ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
   

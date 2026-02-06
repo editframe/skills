@@ -7,8 +7,8 @@
  */
 
 import * as React from 'react';
-import { renderOffscreen } from '@editframe/react/r3f';
+import { render } from '@react-three/offscreen';
 import { JITStreamingScene } from './jit-streaming-scene';
 
-// Render the scene in the worker
-renderOffscreen(React.createElement(JITStreamingScene));
+// Render the scene in the worker using @react-three/offscreen
+render(React.createElement(JITStreamingScene));
