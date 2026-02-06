@@ -95,19 +95,19 @@ const JIT_PLAYER_IN = 19000;
 const JIT_SETUP_CAPTION_IN = 18500;
 const JIT_SETUP_CAPTION_OUT = 21500;
 
-// Phase 7: JIT cycles — request line → fetch → deliver
+// Phase 7: JIT cycles — two-phase request + delivery
+// Each cycle: beam1 (player→ghost, 300ms) → beam2 (ghost→source, 300ms) →
+//             chunk source→ghost (400ms) → beat (200ms) → chunk ghost→player (400ms)
+// Total per cycle ~1600ms, with 200ms gap between cycles
 const JIT_CYC1_START = 22000;
-const JIT_CYC1_ARRIVE = 23200;
-const JIT_CYC1_END = 23500;
-const JIT_PLAY = 23500;
+const JIT_CYC1_END = 23600;
+const JIT_PLAY = 23600;
 
-const JIT_CYC2_START = 24000;
-const JIT_CYC2_ARRIVE = 25200;
-const JIT_CYC2_END = 25500;
+const JIT_CYC2_START = 23800;
+const JIT_CYC2_END = 25400;
 
-const JIT_CYC3_START = 25800;
-const JIT_CYC3_ARRIVE = 27000;
-const JIT_CYC3_END = 27300;
+const JIT_CYC3_START = 25600;
+const JIT_CYC3_END = 27200;
 
 // Phase 8: Punchline
 const P8_START = 28000;
@@ -172,39 +172,24 @@ function BarSegment({ position, color, opacity, emissive }: {
   );
 }
 
-/** Solid bar — no segment gaps. Used for the hero file before chunks peel off. */
-function SolidBar({ opacity, position, label, color }: {
+/** Solid bar — always renders as a single continuous block.
+ *  progressOut (0→1) subtly dims the bar as content is being extracted,
+ *  but the shape stays whole — never shows segment gaps. */
+function SolidBar({ opacity, position, label, color, progressOut }: {
   opacity: number; position: [number, number, number]; label?: string; color?: string;
+  progressOut?: number;
 }) {
   if (opacity < 0.01) return null;
   const c = color ?? COL_FILE;
+  // Subtle dim as content departs, but bar stays solid
+  const dimFactor = 1 - (progressOut ?? 0) * 0.3;
   return (
     <group position={position}>
       <BarBackdrop width={BAR_W} opacity={opacity} />
       <mesh castShadow>
         <boxGeometry args={[BAR_W, BAR_H, BAR_D]} />
-        <meshPhysicalMaterial color={c} roughness={0.12} metalness={0.15} clearcoat={0.8} transparent opacity={opacity * 0.85} emissive={c} emissiveIntensity={0.06} />
+        <meshPhysicalMaterial color={c} roughness={0.12} metalness={0.15} clearcoat={0.8} transparent opacity={opacity * 0.85 * dimFactor} emissive={c} emissiveIntensity={0.06} />
       </mesh>
-      {label && <SceneLabel position={[0, BAR_H / 2 + 0.14, BAR_D]} fontSize={0.09} opacity={opacity * 0.8}>{label}</SceneLabel>}
-    </group>
-  );
-}
-
-function FilmstripBar({ opacity, position, label, scale, missingSegs, color }: {
-  opacity: number; position: [number, number, number]; label?: string; scale?: number;
-  missingSegs?: number[]; color?: string;
-}) {
-  if (opacity < 0.01) return null;
-  const s = scale ?? 1;
-  const missing = missingSegs ?? [];
-  const col = color ?? COL_FILE;
-  return (
-    <group position={position} scale={[s, s, s]}>
-      <BarBackdrop width={BAR_W} opacity={opacity} />
-      {Array.from({ length: NUM_SEGS }, (_, i) => {
-        if (missing.includes(i)) return null;
-        return <BarSegment key={i} position={[segX(i), 0, BAR_D * 0.3]} color={col} opacity={opacity * 0.85} />;
-      })}
       {label && <SceneLabel position={[0, BAR_H / 2 + 0.14, BAR_D]} fontSize={0.09} opacity={opacity * 0.8}>{label}</SceneLabel>}
     </group>
   );
@@ -519,9 +504,11 @@ export function JITStreamingScene({ currentTimeMs: timeMs }: { currentTimeMs: nu
     { color: COL_480, label: "480p", yOff: -0.28 },
   ];
 
-  // Track which segments are filled in each row
+  // Track which segments are filled in each row AND which have departed from pipeline
   const variantFilled: number[][] = [[], [], []];
   const transcodeChunks: { row: number; seg: number; p: number }[] = [];
+  // A segment departs from the pipeline bar when its FIRST transcode (row 0) begins
+  const pipelineDepartedSegs = new Set<number>();
 
   for (let row = 0; row < 3; row++) {
     for (let seg = 0; seg < NUM_SEGS; seg++) {
@@ -530,12 +517,14 @@ export function JITStreamingScene({ currentTimeMs: timeMs }: { currentTimeMs: nu
       const p = easeInOut(prog(timeMs, t0, t0 + transcodeChunkTravel));
       if (p > 0) {
         transcodeChunks.push({ row, seg, p });
+        if (row === 0) pipelineDepartedSegs.add(seg);
       }
       if (p >= 1) {
         variantFilled[row].push(seg);
       }
     }
   }
+
 
   const transcodeCaptionOpa =
     easeOut(prog(timeMs, TRAD_TRANSCODE_CAPTION_IN, TRAD_TRANSCODE_CAPTION_IN + 500)) *
@@ -598,18 +587,42 @@ export function JITStreamingScene({ currentTimeMs: timeMs }: { currentTimeMs: nu
     (1 - easeOut(prog(timeMs, JIT_SETUP_CAPTION_OUT, JIT_SETUP_CAPTION_OUT + 500)));
 
   /* ═══════════════════════════════════════════════════════════════
-     PHASE 7: JIT cycles
-     Request line: player → ghost segment → source bar.
-     Line persists until chunk arrives. Chunk travels source → player.
+     PHASE 7: JIT cycles — two-phase beams + chunk delivery
+     Timeline per cycle (1600ms total):
+       0–300ms:    Beam 1 draws: player → ghost rendition segment
+       300–600ms:  Beam 2 draws: ghost segment → source segment
+       600–1000ms: Chunk travels source → ghost segment (fills ghost)
+       1000–1200ms: Beat — chunk sits in ghost
+       1200–1600ms: Chunk travels ghost → player (fills scrub bar)
      ═══════════════════════════════════════════════════════════════ */
-  type JitCycle = { start: number; arrive: number; end: number; seg: number };
+  type JitCycle = { start: number; end: number; seg: number };
   const jitCycles: JitCycle[] = [
-    { start: JIT_CYC1_START, arrive: JIT_CYC1_ARRIVE, end: JIT_CYC1_END, seg: 0 },
-    { start: JIT_CYC2_START, arrive: JIT_CYC2_ARRIVE, end: JIT_CYC2_END, seg: 4 },
-    { start: JIT_CYC3_START, arrive: JIT_CYC3_ARRIVE, end: JIT_CYC3_END, seg: 2 },
+    { start: JIT_CYC1_START, end: JIT_CYC1_END, seg: 0 },
+    { start: JIT_CYC2_START, end: JIT_CYC2_END, seg: 4 },
+    { start: JIT_CYC3_START, end: JIT_CYC3_END, seg: 2 },
   ];
 
-  const jitFilledSegs = jitCycles.filter(c => timeMs >= c.arrive).map(c => c.seg);
+  // A segment is "filled" in the ghost grid once the chunk arrives at the ghost (source→ghost done)
+  // A segment is "delivered" to the player once ghost→player is done
+  const jitGhostFilledSegs: number[] = [];
+  const jitDeliveredSegs: number[] = [];
+  for (const c of jitCycles) {
+    if (timeMs < c.start) continue;
+    const ghostArriveTime = c.start + 1000;
+    const deliverTime = c.start + 1600;
+    if (timeMs >= ghostArriveTime) jitGhostFilledSegs.push(c.seg);
+    if (timeMs >= deliverTime) jitDeliveredSegs.push(c.seg);
+  }
+  const jitFilledSegs = jitDeliveredSegs;
+
+  // Track which source segments have had their chunk depart (leg 1 started)
+  const jitSourceDeparted: number[] = [];
+  for (const c of jitCycles) {
+    if (timeMs < c.start) continue;
+    const t = timeMs - c.start;
+    // Chunk departs source at t=600 and arrives at ghost at t=1000
+    if (t >= 600) jitSourceDeparted.push(c.seg);
+  }
   const jitPlaying = easeOut(prog(timeMs, JIT_PLAY, JIT_PLAY + 500));
 
   /* ═══════════════════════════════════════════════════════════════
@@ -642,35 +655,40 @@ export function JITStreamingScene({ currentTimeMs: timeMs }: { currentTimeMs: nu
         File must be transferred into a processing pipeline
       </SceneLabel>
 
-      {/* Source bar (traditional) — segments disappear as they peel off */}
+      {/* Source bar (traditional) — stays solid, dims as chunks depart */}
       {timeMs >= TRAD_TRANSFER_START && (
-        <FilmstripBar
+        <SolidBar
           opacity={tradDim}
           position={[TRAD_X, SIDE_Y, SOURCE_Z]}
-          missingSegs={tradTransferred}
+          progressOut={tradTransferred.length / NUM_SEGS}
         />
       )}
 
-      {/* Chunks in flight: source → pipeline */}
+      {/* Chunks in flight: source → pipeline. Color transitions from purple to orange during travel. */}
       {tradChunkProgs.map((p, i) => {
         if (p <= 0 || p >= 1) return null;
+        // Chunk starts as the purple source color and transitions to orange
+        const r = Math.round(lerp(0x7e, 0xff, p));
+        const g = Math.round(lerp(0x57, 0x8a, p));
+        const b = Math.round(lerp(0xc2, 0x65, p));
+        const chunkColor = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
         return (
-          <Chunk key={`xfer-${i}`} opacity={0.85 * tradDim} color={COL_TRAD}
+          <Chunk key={`xfer-${i}`} opacity={0.85 * tradDim} color={chunkColor}
             position={[
               TRAD_X + segX(i),
-              SIDE_Y + Math.sin(p * Math.PI) * 0.3,
+              SIDE_Y + Math.sin(p * Math.PI) * 0.25,
               lerp(SOURCE_Z, PIPELINE_Z, p),
             ]} />
         );
       })}
 
-      {/* Pipeline copy — orange bar at PIPELINE_Z */}
+      {/* Pipeline copy — solid orange bar at PIPELINE_Z */}
       {pipelineOpa > 0.01 && (
-        <FilmstripBar
+        <SolidBar
           opacity={pipelineOpa * tradDim}
           position={[TRAD_X, SIDE_Y, PIPELINE_Z]}
           color={COL_TRAD}
-          scale={0.9}
+          progressOut={pipelineDepartedSegs.size / NUM_SEGS}
         />
       )}
 
@@ -692,18 +710,33 @@ export function JITStreamingScene({ currentTimeMs: timeMs }: { currentTimeMs: nu
         />
       ))}
 
-      {/* Transcode chunks in flight: pipeline → variant rows */}
+      {/* Transcode chunks in flight: pipeline → variant rows.
+          Each chunk starts at the pipeline bar segment's exact position
+          and ends at the variant bar segment's exact position. Color
+          transitions from orange to the variant color during travel. */}
       {transcodeChunks.map(({ row, seg, p }) => {
         if (p <= 0 || p >= 1) return null;
         const rowData = VARIANT_ROWS[row];
+        // Color interpolation: orange (COL_TRAD) → variant color
+        const srcR = 0xff, srcG = 0x8a, srcB = 0x65;
+        const dstCol = new THREE.Color(rowData.color);
+        const dstR = Math.round(dstCol.r * 255), dstG = Math.round(dstCol.g * 255), dstB = Math.round(dstCol.b * 255);
+        const cr = Math.round(lerp(srcR, dstR, p));
+        const cg = Math.round(lerp(srcG, dstG, p));
+        const cb = Math.round(lerp(srcB, dstB, p));
+        const tcColor = `#${cr.toString(16).padStart(2, '0')}${cg.toString(16).padStart(2, '0')}${cb.toString(16).padStart(2, '0')}`;
+        // Start X: full-scale segment position on pipeline bar
+        // End X: 0.75-scale segment position on variant bar
+        const startX = TRAD_X + segX(seg);
+        const endX = TRAD_X + segX(seg) * 0.75;
         return (
           <Chunk
             key={`tc-${row}-${seg}`}
-            opacity={0.7 * tradDim}
-            color={rowData.color}
+            opacity={0.8 * tradDim}
+            color={tcColor}
             position={[
-              TRAD_X + segX(seg) * 0.75,
-              SIDE_Y + lerp(0, rowData.yOff, p) + Math.sin(p * Math.PI) * 0.15,
+              lerp(startX, endX, p),
+              SIDE_Y + lerp(0, rowData.yOff, p) + Math.sin(p * Math.PI) * 0.12,
               lerp(PIPELINE_Z, VARIANT_Z, p),
             ]}
           />
@@ -770,18 +803,19 @@ export function JITStreamingScene({ currentTimeMs: timeMs }: { currentTimeMs: nu
 
       {/* ═══ JIT SIDE ═══════════════════════════════════════════════ */}
 
-      {/* JIT source bar — stays whole */}
+      {/* JIT source bar — stays solid, dims as chunks depart */}
       {timeMs >= JIT_SETUP_START && (
-        <FilmstripBar
+        <SolidBar
           opacity={jitSourceOpa}
           position={[JIT_X, SIDE_Y, SOURCE_Z]}
+          progressOut={jitSourceDeparted.length / NUM_SEGS}
         />
       )}
 
-      {/* Ghost variant grid */}
+      {/* Ghost variant grid — 1080p row fills as chunks arrive from source */}
       {jitGhostOpa > 0.01 && (
         <group position={[JIT_X, SIDE_Y, VARIANT_Z]}>
-          <GhostVariantBar opacity={jitGhostOpa} color={COL_1080} position={[0, 0.28, 0]} label="1080p" scale={0.75} filledSegs={jitFilledSegs} />
+          <GhostVariantBar opacity={jitGhostOpa} color={COL_1080} position={[0, 0.28, 0]} label="1080p" scale={0.75} filledSegs={jitGhostFilledSegs} />
           <GhostVariantBar opacity={jitGhostOpa * 0.7} color={COL_720} position={[0, 0, 0]} label="720p" scale={0.75} />
           <GhostVariantBar opacity={jitGhostOpa * 0.5} color={COL_480} position={[0, -0.28, 0]} label="480p" scale={0.75} />
         </group>
@@ -801,62 +835,109 @@ export function JITStreamingScene({ currentTimeMs: timeMs }: { currentTimeMs: nu
         Client requests before content is processed
       </SceneLabel>
 
-      {/* JIT cycles: request beam + chunk delivery */}
+      {/* JIT cycles: two-phase beams + staged chunk delivery */}
       {jitCycles.map((c, ci) => {
-        const active = timeMs >= c.start;
-        if (!active) return null;
+        if (timeMs < c.start) return null;
 
-        // Request beam draw-in: player → ghost → source
-        const beamDrawP = easeInOut(prog(timeMs, c.start, c.start + 600));
-        // Beam stays visible until chunk arrives, then fades
-        const fadeAfterArrive = easeOut(prog(timeMs, c.arrive, c.end));
-        const beamOpa = beamDrawP > 0 ? (1 - fadeAfterArrive) * 0.6 : 0;
-
-        // Ghost segment position (1080p row)
+        // Positions
         const ghostSegX = JIT_X + segX(c.seg) * 0.75;
         const ghostSegY = SIDE_Y + 0.28;
-
-        // Source segment position
         const sourceSegX = JIT_X + segX(c.seg);
         const sourceSegY = SIDE_Y;
 
-        // Chunk travels from source → player along the line
-        const chunkP = easeInOut(prog(timeMs, c.start + 500, c.arrive));
-        const chunkInFlight = chunkP > 0 && chunkP < 1;
-        const delivered = timeMs >= c.arrive;
+        // Timeline offsets within cycle
+        const t = timeMs - c.start;
+
+        // Beam 1: player → ghost (0–300ms)
+        const beam1P = easeInOut(clamp01(t / 300));
+        // Beam 2: ghost → source (300–600ms)
+        const beam2P = easeInOut(clamp01((t - 300) / 300));
+
+        // Beams fade out after chunk is delivered to player
+        const beamFade = 1 - easeOut(clamp01((t - 1600) / 200));
+
+        // Chunk leg 1: source → ghost (600–1000ms)
+        const chunkToGhostP = easeInOut(clamp01((t - 600) / 400));
+        // Beat: 1000–1200ms (chunk sits at ghost)
+        // Chunk leg 2: ghost → player (1200–1600ms)
+        const chunkToPlayerP = easeInOut(clamp01((t - 1200) / 400));
+
+        const ghostArrived = t >= 1000;
+        const delivered = t >= 1600;
+        const chunkInLeg1 = chunkToGhostP > 0 && !ghostArrived;
+        const chunkInBeat = ghostArrived && chunkToPlayerP <= 0;
+        const chunkInLeg2 = chunkToPlayerP > 0 && !delivered;
 
         return (
           <React.Fragment key={`jcyc-${ci}`}>
-            {/* Beam: player → source (through ghost) */}
-            {beamOpa > 0.01 && (
+            {/* Beam 1: player → ghost rendition segment */}
+            {beam1P > 0 && beamFade > 0.01 && (
               <RequestBeam
                 from={[JIT_X, -0.35, PLAYER_Z]}
-                to={[sourceSegX, sourceSegY, SOURCE_Z]}
-                progress={beamDrawP}
-                opacity={beamOpa}
+                to={[ghostSegX, ghostSegY, VARIANT_Z]}
+                progress={beam1P}
+                opacity={0.5 * beamFade}
                 color={COL_EF}
               />
             )}
 
-            {/* Pulse at ghost segment when beam passes through */}
-            {beamDrawP > 0.3 && beamDrawP < 0.8 && (
+            {/* Beam 2: ghost → source segment */}
+            {beam2P > 0 && beamFade > 0.01 && (
+              <RequestBeam
+                from={[ghostSegX, ghostSegY, VARIANT_Z]}
+                to={[sourceSegX, sourceSegY, SOURCE_Z]}
+                progress={beam2P}
+                opacity={0.5 * beamFade}
+                color={COL_EF}
+              />
+            )}
+
+            {/* Pulse at ghost when beam 1 arrives */}
+            {beam1P > 0.7 && beam2P < 0.3 && (
               <pointLight
                 position={[ghostSegX, ghostSegY, VARIANT_Z]}
                 color={COL_EF}
-                intensity={3 * (1 - Math.abs(beamDrawP - 0.5) * 4)}
+                intensity={3 * (1 - Math.abs(beam1P - 0.85) * 7)}
                 distance={2}
               />
             )}
 
-            {/* Chunk in flight: source → player */}
-            {chunkInFlight && (
+            {/* Chunk leg 1: source → ghost. Color transitions purple → blue */}
+            {chunkInLeg1 && (
+              <Chunk
+                opacity={0.9}
+                color={(() => {
+                  const r = Math.round(lerp(0x7e, 0x44, chunkToGhostP));
+                  const g = Math.round(lerp(0x57, 0x8a, chunkToGhostP));
+                  const b = Math.round(lerp(0xc2, 0xff, chunkToGhostP));
+                  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+                })()}
+                position={[
+                  lerp(sourceSegX, ghostSegX, chunkToGhostP),
+                  lerp(sourceSegY, ghostSegY, chunkToGhostP) + Math.sin(chunkToGhostP * Math.PI) * 0.12,
+                  lerp(SOURCE_Z, VARIANT_Z, chunkToGhostP),
+                ]}
+              />
+            )}
+
+            {/* Chunk beat: sitting at ghost position (visible briefly before moving to player) */}
+            {chunkInBeat && !jitGhostFilledSegs.includes(c.seg) && (
+              <Chunk
+                opacity={0.9}
+                color={COL_1080}
+                position={[ghostSegX, ghostSegY, VARIANT_Z]}
+              />
+            )}
+
+            {/* Chunk leg 2: ghost → player */}
+            {chunkInLeg2 && (
               <Chunk
                 opacity={0.9}
                 color={COL_1080}
                 position={[
-                  lerp(sourceSegX, JIT_X, chunkP),
-                  lerp(sourceSegY, -0.35, chunkP) + Math.sin(chunkP * Math.PI) * 0.2,
-                  lerp(SOURCE_Z, PLAYER_Z, chunkP),
+                  lerp(ghostSegX, JIT_X, chunkToPlayerP),
+                  lerp(ghostSegY, -0.35, chunkToPlayerP) + Math.sin(chunkToPlayerP * Math.PI) * 0.12,
+                  lerp(VARIANT_Z, PLAYER_Z, chunkToPlayerP),
                 ]}
               />
             )}
