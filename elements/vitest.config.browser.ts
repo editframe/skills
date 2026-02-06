@@ -296,6 +296,143 @@ export default defineConfig(async () => {
         enabled: true,
         provider: "playwright",
         headless: config.headless,
+        commands: {
+          /**
+           * Prove Worker + OffscreenCanvas continues rendering while the main
+           * thread is halted. Uses CDP Debugger.pause to truly stop the main
+           * thread V8 isolate — Workers have their own isolates and keep running.
+           *
+           * Returns timestamped frame data proving:
+           * - Worker frames have timestamps DURING the pause (active rendering)
+           * - Main thread frames have timestamps AFTER resume (timer catch-up)
+           */
+          async testWorkerRendersWhileMainThreadFrozen(context: any) {
+            const page = context.page;
+            const cdp = await page.context().newCDPSession(page);
+
+            // Inject batch rendering infrastructure
+            await page.evaluate(() => {
+              // Worker that renders frames autonomously with timestamps
+              const workerSrc = `
+                let results = [];
+                self.onmessage = async (e) => {
+                  if (e.data.type === 'renderBatch') {
+                    results = [];
+                    for (const frame of e.data.frames) {
+                      const canvas = new OffscreenCanvas(64, 64);
+                      const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+                      if (!gl) { results.push({ frameId: frame.id, error: 'no webgl' }); continue; }
+                      gl.clearColor(frame.color[0], frame.color[1], frame.color[2], 1.0);
+                      gl.clear(gl.COLOR_BUFFER_BIT);
+                      gl.finish();
+                      const px = new Uint8Array(4);
+                      gl.readPixels(32, 32, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+                      results.push({
+                        frameId: frame.id,
+                        pixel: { r: px[0], g: px[1], b: px[2], a: px[3] },
+                        timestamp: Date.now(),
+                      });
+                      await new Promise(r => setTimeout(r, 200));
+                    }
+                    self.postMessage({ type: 'batchComplete', results });
+                  }
+                };
+              `;
+              const blob = new Blob([workerSrc], { type: 'application/javascript' });
+              (window as any)._testWorker = new Worker(URL.createObjectURL(blob));
+              (window as any)._workerResults = null;
+              (window as any)._workerDone = false;
+              (window as any)._testWorker.onmessage = (e: any) => {
+                if (e.data.type === 'batchComplete') {
+                  (window as any)._workerResults = e.data.results;
+                  (window as any)._workerDone = true;
+                }
+              };
+
+              // Main-thread batch rendering with timestamps
+              (window as any)._mainResults = [];
+              (window as any)._mainDone = false;
+              (window as any)._mainRenderBatch = (frames: any[]) => {
+                (window as any)._mainResults = [];
+                (window as any)._mainDone = false;
+                let i = 0;
+                function renderNext() {
+                  if (i >= frames.length) { (window as any)._mainDone = true; return; }
+                  const frame = frames[i++];
+                  const canvas = document.createElement('canvas');
+                  canvas.width = 64; canvas.height = 64;
+                  const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true })
+                           || canvas.getContext('webgl', { preserveDrawingBuffer: true });
+                  if (!gl) return;
+                  gl.clearColor(frame.color[0], frame.color[1], frame.color[2], 1.0);
+                  gl.clear(gl.COLOR_BUFFER_BIT);
+                  gl.finish();
+                  const px = new Uint8Array(4);
+                  gl.readPixels(32, 32, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+                  (window as any)._mainResults.push({
+                    frameId: frame.id,
+                    pixel: { r: px[0], g: px[1], b: px[2], a: px[3] },
+                    timestamp: Date.now(),
+                  });
+                  setTimeout(renderNext, 200);
+                }
+                renderNext();
+              };
+            });
+
+            const frames = [
+              { id: 1, color: [1, 0, 0] },
+              { id: 2, color: [0, 1, 0] },
+              { id: 3, color: [0, 0, 1] },
+              { id: 4, color: [1, 1, 0] },
+              { id: 5, color: [1, 0, 1] },
+            ];
+
+            // Enable the debugger
+            await cdp.send("Debugger.enable" as any);
+
+            // Start both batch renders
+            const freezeStartTime = await page.evaluate((f: any) => {
+              const ts = Date.now();
+              (window as any)._testWorker.postMessage({ type: 'renderBatch', frames: f });
+              (window as any)._mainRenderBatch(f);
+              return ts;
+            }, frames);
+
+            // PAUSE the main thread V8 isolate
+            await cdp.send("Debugger.pause" as any);
+
+            // Wait for Worker to finish (5 * 200ms = 1s + margin)
+            await new Promise(r => setTimeout(r, 3000));
+
+            // RESUME the main thread
+            await cdp.send("Debugger.resume" as any);
+            await cdp.send("Debugger.disable" as any);
+
+            const unfreezeTime = await page.evaluate(() => Date.now());
+
+            // Wait for main-thread catch-up
+            await new Promise(r => setTimeout(r, 2000));
+
+            const workerResults = await page.evaluate(() => (window as any)._workerResults);
+            const mainResults = await page.evaluate(() => (window as any)._mainResults);
+
+            // Cleanup
+            await page.evaluate(() => {
+              (window as any)._testWorker?.terminate();
+            });
+
+            await cdp.detach();
+
+            return {
+              freezeStartTime,
+              unfreezeTime,
+              pauseDuration: unfreezeTime - freezeStartTime,
+              workerResults,
+              mainResults,
+            };
+          },
+        },
         // Configure the browser API server port
         // In Vitest browser mode, the /__vitest_test__/ endpoint is served by the Vite dev server
         // So browser.api.port should match server.port
