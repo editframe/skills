@@ -5,7 +5,7 @@ import { Timegroup } from "@editframe/react";
 import { Canvas } from "@react-three/fiber";
 import * as THREE from "three";
 import { JITStreamingScene } from "./jit-streaming-scene";
-import { GLSync, InvalidateOnTimeChange, flushR3F } from "./r3f-sync";
+import { InvalidateOnTimeChange, flushR3F } from "./r3f-sync";
 
 
 export function JITStreamingTimeline() {
@@ -60,7 +60,6 @@ export function JITStreamingTimeline() {
           style={{ width: "100%", height: "100%" }}
         >
           <Suspense fallback={null}>
-            <GLSync />
             <InvalidateOnTimeChange timeMs={timeMs} />
             <JITStreamingScene currentTimeMs={timeMs} />
           </Suspense>

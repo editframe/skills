@@ -10,7 +10,7 @@ import { Text } from "@react-three/drei";
 import { flushSync } from "react-dom";
 import { Timegroup } from "@editframe/react";
 import * as THREE from "three";
-import { GLSync, InvalidateOnTimeChange, flushR3F } from "./r3f-sync";
+import { InvalidateOnTimeChange, flushR3F } from "./r3f-sync";
 
 /* ━━ Easing & helpers ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function easeOut(t: number) { return 1 - Math.pow(1 - t, 3); }
@@ -725,7 +725,6 @@ export function ParallelFragmentsCanvas({ children }: { children?: ReactNode }) 
           style={{ width: "100%", height: "100%" }}
         >
           <Suspense fallback={null}>
-            <GLSync />
             <InvalidateOnTimeChange timeMs={timeMs} />
             <ParallelFragmentsR3FScene currentTimeMs={timeMs} />
             {children}
