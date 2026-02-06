@@ -4,7 +4,7 @@
  * Componentized for easier iteration.
  */
 
-import { Suspense, useRef, useMemo, useState, useLayoutEffect, type ReactNode } from "react";
+import { Suspense, useRef, useMemo, useState, useLayoutEffect, useEffect, type ReactNode } from "react";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import { flushSync } from "react-dom";
@@ -700,6 +700,21 @@ export function ParallelFragmentsCanvas({ children }: { children?: ReactNode }) 
 
       flushR3F(canvasContainerRef.current);
     });
+  }, []);
+
+  // Force re-render when tab becomes visible again
+  // Chrome suspends canvas/WebGL rendering in hidden tabs, so we need to
+  // explicitly re-render at the current timeline position when visibility returns
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && canvasContainerRef.current) {
+        // Tab became visible - force R3F to render current state
+        flushR3F(canvasContainerRef.current);
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
   return (

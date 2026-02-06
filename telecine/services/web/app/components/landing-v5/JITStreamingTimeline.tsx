@@ -1,5 +1,5 @@
 // @ts-nocheck - React Three Fiber JSX intrinsics
-import React, { Suspense, useState, useLayoutEffect, useRef } from "react";
+import React, { Suspense, useState, useLayoutEffect, useRef, useEffect } from "react";
 import { flushSync } from "react-dom";
 import { Timegroup } from "@editframe/react";
 import { Canvas } from "@react-three/fiber";
@@ -35,6 +35,21 @@ export function JITStreamingTimeline() {
       // where requestAnimationFrame may not fire.
       flushR3F(canvasContainerRef.current);
     });
+  }, []);
+
+  // Force re-render when tab becomes visible again
+  // Chrome suspends canvas/WebGL rendering in hidden tabs, so we need to
+  // explicitly re-render at the current timeline position when visibility returns
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && canvasContainerRef.current) {
+        // Tab became visible - force R3F to render current state
+        flushR3F(canvasContainerRef.current);
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
   return (
