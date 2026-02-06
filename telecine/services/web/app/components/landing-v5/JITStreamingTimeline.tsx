@@ -1,95 +1,86 @@
 // @ts-nocheck - React Three Fiber JSX intrinsics
-import React, { useRef, useEffect, useState, useLayoutEffect } from "react";
+import React, { Suspense, useState, useLayoutEffect, useRef, useEffect } from "react";
+import { flushSync } from "react-dom";
 import { Timegroup } from "@editframe/react";
+import { Canvas } from "@react-three/fiber";
+import * as THREE from "three";
+import { JITStreamingScene } from "./jit-streaming-scene";
+import { InvalidateOnTimeChange, flushR3F } from "./r3f-sync";
 
-/**
- * JIT Streaming Timeline — 30-second 3D animation rendered on an OffscreenCanvas
- * via a Web Worker so that Chrome's hidden-tab renderer suspension doesn't freeze
- * the 3D content.
- *
- * Architecture:
- *   Main thread: Timegroup → addFrameTask → worker.postMessage({ timeMs })
- *   Worker:      Receives timeMs → R3F scene updates → gl.render() on OffscreenCanvas
- *   Browser:     Composites OffscreenCanvas to the visible <canvas> element
- *
- * Because the Worker has its own V8 isolate and WebGL context, rendering continues
- * even when the main thread's renderer is suspended (hidden/background tab).
- */
 
 export function JITStreamingTimeline() {
   const timegroupRef = useRef(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [worker, setWorker] = useState<Worker | null>(null);
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const [timeMs, setTimeMs] = useState(0);
 
-  // ── Create Worker and transfer canvas ────────────────────────────
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    let offscreen: OffscreenCanvas;
-    try {
-      offscreen = canvas.transferControlToOffscreen();
-    } catch {
-      console.error(
-        "[JITStreamingTimeline] transferControlToOffscreen() not supported",
-      );
-      return;
-    }
-
-    const w = new Worker(
-      new URL("./jit-streaming-worker.tsx", import.meta.url),
-      { type: "module" },
-    );
-
-    w.onerror = (e) => {
-      console.error("[JITStreamingTimeline] Worker error:", e);
-    };
-    w.onmessage = (e) => {
-      if (e.data.type === "error") {
-        console.error("[JITStreamingTimeline] Worker init error:", e.data.message);
-      }
-    };
-
-    const { width, height } = canvas.getBoundingClientRect();
-
-    w.postMessage(
-      {
-        type: "init",
-        canvas: offscreen,
-        width: width || 800,
-        height: height || 500,
-        pixelRatio: window.devicePixelRatio,
-      },
-      [offscreen],
-    );
-
-    setWorker(w);
-
-    // Resize observer — keep Worker's viewport in sync
-    const ro = new ResizeObserver(([entry]) => {
-      const { width: rw, height: rh } = entry.contentRect;
-      if (rw > 0 && rh > 0) {
-        w.postMessage({ type: "resize", width: rw, height: rh });
-      }
-    });
-    ro.observe(canvas);
-
-    return () => {
-      ro.disconnect();
-      w.terminate();
-      setWorker(null);
-    };
-  }, []);
-
-  // ── Drive the Worker from the Editframe timeline ─────────────────
   useLayoutEffect(() => {
     const tg = timegroupRef.current;
-    if (!tg?.addFrameTask || !worker) return;
+    if (!tg?.addFrameTask) return;
 
     return tg.addFrameTask(({ currentTimeMs }: { currentTimeMs: number }) => {
-      worker.postMessage({ type: "setTime", timeMs: currentTimeMs });
+      flushSync(() => {
+        setTimeMs(currentTimeMs);
+      });
+
+      flushR3F(canvasContainerRef.current);
     });
-  }, [worker]);
+  }, []);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && canvasContainerRef.current) {
+        flushR3F(canvasContainerRef.current);
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+  // Listen for WebGL context loss to confirm Chrome is actually killing it
+  useEffect(() => {
+    const container = canvasContainerRef.current;
+    if (!container) return;
+
+    const observer = new MutationObserver(() => {
+      const canvas = container.querySelector("canvas");
+      if (canvas) {
+        observer.disconnect();
+        canvas.addEventListener("webglcontextlost", (e) => {
+          console.error(
+            "[JITStreamingTimeline] WebGL context LOST.",
+            "document.hidden:", document.hidden,
+            "visibilityState:", document.visibilityState,
+            "event:", e,
+          );
+        });
+        canvas.addEventListener("webglcontextrestored", () => {
+          console.warn("[JITStreamingTimeline] WebGL context restored.");
+        });
+      }
+    });
+
+    observer.observe(container, { childList: true, subtree: true });
+
+    // Also check if canvas already exists
+    const existing = container.querySelector("canvas");
+    if (existing) {
+      observer.disconnect();
+      existing.addEventListener("webglcontextlost", (e) => {
+        console.error(
+          "[JITStreamingTimeline] WebGL context LOST.",
+          "document.hidden:", document.hidden,
+          "visibilityState:", document.visibilityState,
+          "event:", e,
+        );
+      });
+      existing.addEventListener("webglcontextrestored", () => {
+        console.warn("[JITStreamingTimeline] WebGL context restored.");
+      });
+    }
+
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <Timegroup
@@ -99,16 +90,26 @@ export function JITStreamingTimeline() {
       className="relative w-full overflow-hidden"
       style={{ aspectRatio: "16/10", background: "#1e2233" }}
     >
-      <canvas
-        ref={canvasRef}
-        style={{
-          position: "absolute",
-          inset: 0,
-          width: "100%",
-          height: "100%",
-          display: "block",
-        }}
-      />
+      <div ref={canvasContainerRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
+        <Canvas
+          shadows
+          frameloop="demand"
+          dpr={[1, 2]}
+          gl={{
+            preserveDrawingBuffer: true,
+            toneMapping: THREE.ACESFilmicToneMapping,
+            toneMappingExposure: 1.8,
+          }}
+          camera={{ fov: 50, near: 0.1, far: 100 }}
+          scene={{ background: new THREE.Color(0x1e2233), fog: new THREE.Fog(0x1e2233, 12, 28) }}
+          style={{ width: "100%", height: "100%" }}
+        >
+          <Suspense fallback={null}>
+            <InvalidateOnTimeChange timeMs={timeMs} />
+            <JITStreamingScene currentTimeMs={timeMs} />
+          </Suspense>
+        </Canvas>
+      </div>
     </Timegroup>
   );
 }
