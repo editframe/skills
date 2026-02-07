@@ -617,13 +617,13 @@ export class OwnCurrentTimeController implements ReactiveController {
     }
     this.#lastKnownTimeMs = currentTimeMs;
     
-    // Defer update using setTimeout(0) to avoid Lit warning about scheduling updates after update completed.
-    // This batches updates and ensures we're completely outside any Lit update cycle.
-    // Using setTimeout instead of Promise.resolve() because microtasks run before Lit's
-    // change detection completes.
-    setTimeout(() => {
+    // Defer update via queueMicrotask to avoid Lit warning about scheduling
+    // updates during hostUpdated. Unlike setTimeout(0) this fires as a microtask,
+    // so it resolves between await points without yielding a full macrotask turn
+    // (eliminating 4-16ms dead time per frame in the render pipeline).
+    queueMicrotask(() => {
       this.temporal.requestUpdate("ownCurrentTimeMs");
-    }, 0);
+    });
   }
 
   remove() {

@@ -651,6 +651,74 @@ function isTemporallyVisible(element: Element, timeMs: number): boolean {
 }
 
 /**
+ * Encode SVG string to a base64 data URI using TextEncoder.
+ *
+ * TextEncoder.encode() converts the string to UTF-8 bytes in a single
+ * native call, then we base64-encode the bytes. This avoids the O(n)
+ * character-by-character inspection that encodeURIComponent performs
+ * and produces a shorter output (~33% overhead vs ~200% for percent-encoding).
+ */
+const _encoder = new TextEncoder();
+function encodeSVGToBase64DataUri(svg: string): string {
+  const bytes = _encoder.encode(svg);
+  // Convert Uint8Array to binary string in chunks (avoid stack overflow)
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 8192) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192) as unknown as number[]);
+  }
+  return `data:image/svg+xml;base64,${btoa(binary)}`;
+}
+
+/**
+ * Synchronous DOM capture phase. Walks the element tree, snapshots canvas
+ * pixels, and kicks off async encoding. Returns parts array containing
+ * string fragments and encoding promises.
+ *
+ * After this function returns, the source element's DOM is no longer
+ * referenced — the clone can safely be seeked to the next frame.
+ */
+function captureElementParts(
+  element: Element,
+  width: number,
+  height: number,
+  options: SerializationOptions
+): Array<string | Promise<string>> {
+  const parts: Array<string | Promise<string>> = [];
+  const canvasJobs: CanvasJob[] = [];
+  
+  const documentStyles = collectDocumentStyles();
+  
+  parts.push(
+    `<div xmlns="http://www.w3.org/1999/xhtml" ` +
+    `style="width:${width}px;height:${height}px;overflow:hidden;position:relative;">`
+  );
+  
+  if (documentStyles) {
+    parts.push(`<style type="text/css"><![CDATA[${documentStyles}]]></style>`);
+  }
+  
+  const needsScaling = options.canvasScale < 1;
+  if (needsScaling) {
+    const originalWidth = Math.floor(width / options.canvasScale);
+    const originalHeight = Math.floor(height / options.canvasScale);
+    parts.push(
+      `<div style="transform:scale(${options.canvasScale});transform-origin:0 0;` +
+      `width:${originalWidth}px;height:${originalHeight}px;">`
+    );
+  }
+  
+  serializeElement(element, parts, canvasJobs, options);
+  
+  if (needsScaling) {
+    parts.push('</div>');
+  }
+  
+  parts.push('</div>');
+  
+  return parts;
+}
+
+/**
  * Serialize any element directly to XHTML string.
  * 
  * @param element - The element to serialize (timegroup, temporal element, or plain DOM)
@@ -665,65 +733,75 @@ export async function serializeElementToXHTML(
   height: number,
   options: SerializationOptions
 ): Promise<string> {
-  // Note: Temporal visibility is checked non-destructively during serialization
-  // We do NOT modify the source DOM - this allows serializing the main timeline safely
-  
-  const parts: Array<string | Promise<string>> = [];
-  const canvasJobs: CanvasJob[] = [];
-  
-  // Collect document styles for proper CSS cascade
-  const documentStyles = collectDocumentStyles();
-  
-  // Open wrapper div with embedded styles
-  parts.push(
-    `<div xmlns="http://www.w3.org/1999/xhtml" ` +
-    `style="width:${width}px;height:${height}px;overflow:hidden;position:relative;">`
-  );
-  
-  // Inject document styles (CSS content is wrapped in CDATA to avoid XML escaping issues)
-  if (documentStyles) {
-    parts.push(`<style type="text/css"><![CDATA[${documentStyles}]]></style>`);
-  }
-  
-  // Apply scale transform if canvasScale is specified and < 1
-  // This scales the content while keeping the container at the target dimensions
-  const needsScaling = options.canvasScale < 1;
-  if (needsScaling) {
-    const originalWidth = Math.floor(width / options.canvasScale);
-    const originalHeight = Math.floor(height / options.canvasScale);
-    parts.push(
-      `<div style="transform:scale(${options.canvasScale});transform-origin:0 0;` +
-      `width:${originalWidth}px;height:${originalHeight}px;">`
-    );
-  }
-  // Recursively serialize element
-  serializeElement(element, parts, canvasJobs, options);
-  
-  // Close scaling wrapper if applied
-  if (needsScaling) {
-    parts.push('</div>');
-  }
-  
-  // Close wrapper
-  parts.push('</div>');
-
-  // Wait for all canvas encodings to complete
+  const parts = captureElementParts(element, width, height, options);
   const resolvedParts = await Promise.all(parts);
+  return resolvedParts.join('');
+}
+
+/**
+ * Synchronous capture with deferred data URI encoding.
+ *
+ * Walks the DOM and snapshots canvas pixels synchronously, then returns
+ * a promise that resolves to the SVG data URI once async canvas-to-base64
+ * encoding completes. The source element is NOT referenced after this
+ * function returns — the caller can immediately mutate/seek the clone.
+ */
+export function captureTimelineToDataUri(
+  element: Element,
+  width: number,
+  height: number,
+  options: SerializationOptions
+): Promise<string> {
+  const scaledWidth = Math.floor(width * options.canvasScale);
+  const scaledHeight = Math.floor(height * options.canvasScale);
   
-  // Join into final XHTML string
-  const xhtml = resolvedParts.join('');
+  const parts = captureElementParts(element, scaledWidth, scaledHeight, options);
   
-  return xhtml;
+  return Promise.all(parts).then(resolvedParts => {
+    const xhtml = resolvedParts.join('');
+    const svg = 
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${scaledWidth}" height="${scaledHeight}">` +
+      `<foreignObject x="0" y="0" width="${scaledWidth}" height="${scaledHeight}">${xhtml}</foreignObject>` +
+      `</svg>`;
+    return encodeSVGToBase64DataUri(svg);
+  });
+}
+
+/**
+ * Synchronous capture with deferred blob URL creation.
+ *
+ * Same as captureTimelineToDataUri but returns a blob: URL instead of a
+ * data: URI. Avoids the expensive encodeURIComponent() percent-encoding
+ * and the browser's corresponding percent-decoding when loading the image.
+ *
+ * IMPORTANT: The caller MUST call URL.revokeObjectURL() on the returned
+ * URL after the image has loaded to prevent memory leaks.
+ */
+export function captureTimelineToBlobUrl(
+  element: Element,
+  width: number,
+  height: number,
+  options: SerializationOptions
+): Promise<string> {
+  const scaledWidth = Math.floor(width * options.canvasScale);
+  const scaledHeight = Math.floor(height * options.canvasScale);
+  
+  const parts = captureElementParts(element, scaledWidth, scaledHeight, options);
+  
+  return Promise.all(parts).then(resolvedParts => {
+    const xhtml = resolvedParts.join('');
+    const svg = 
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${scaledWidth}" height="${scaledHeight}">` +
+      `<foreignObject x="0" y="0" width="${scaledWidth}" height="${scaledHeight}">${xhtml}</foreignObject>` +
+      `</svg>`;
+    const blob = new Blob([svg], { type: 'image/svg+xml' });
+    return URL.createObjectURL(blob);
+  });
 }
 
 /**
  * Serialize element to SVG foreignObject data URI (ready for rendering).
- * 
- * @param element - The element to serialize
- * @param width - Output width
- * @param height - Output height
- * @param options - Serialization options
- * @returns SVG data URI
+ * Async convenience wrapper around captureTimelineToDataUri.
  */
 export async function serializeTimelineToDataUri(
   element: Element,
@@ -731,21 +809,5 @@ export async function serializeTimelineToDataUri(
   height: number,
   options: SerializationOptions
 ): Promise<string> {
-  // Apply canvas scale to output dimensions
-  const scaledWidth = Math.floor(width * options.canvasScale);
-  const scaledHeight = Math.floor(height * options.canvasScale);
-  
-  
-  const xhtml = await serializeElementToXHTML(element, scaledWidth, scaledHeight, options);
-  
-  // Wrap in SVG foreignObject
-  // Use explicit pixel dimensions for foreignObject to match SVG viewport exactly
-  const svg = 
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${scaledWidth}" height="${scaledHeight}">` +
-    `<foreignObject x="0" y="0" width="${scaledWidth}" height="${scaledHeight}">${xhtml}</foreignObject>` +
-    `</svg>`;
-  
-  // Use percent-encoding instead of base64 for faster encoding
-  // encodeURIComponent is faster than btoa(unescape(encodeURIComponent()))
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  return captureTimelineToDataUri(element, width, height, options);
 }

@@ -910,11 +910,10 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     // This is critical for elements like ef-text and ef-captions that don't have frameTask
     await Promise.all(allLitElements.map((el) => el.updateComplete));
     
-    // CRITICAL: For nested timegroups, ensure ownCurrentTimeMs is updated
-    // OwnCurrentTimeController uses setTimeout(0) to schedule updates, so we need to
-    // yield to the event loop before proceeding. Without this, child timegroups have
-    // stale ownCurrentTimeMs values, causing animation times to be calculated incorrectly.
-    await new Promise(resolve => setTimeout(resolve, 0));
+    // OwnCurrentTimeController defers child updates via queueMicrotask.
+    // Those microtasks have fired by this point (between await boundaries).
+    // Await a second pass of updateComplete to catch those deferred updates.
+    await Promise.all(allLitElements.map((el) => el.updateComplete));
     
     // Wait for ef-text elements to have their segments ready
     // ef-text creates segments asynchronously via requestAnimationFrame
@@ -929,14 +928,10 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
         }),
       );
       
-      // CRITICAL: Force layout stabilization after text segments are created
-      // The browser needs time to reflow and compute final text layout (line wrapping, etc.)
-      // Access offsetHeight to trigger synchronous layout computation
+      // Force synchronous layout reflow after text segments are created/updated.
+      // offsetHeight triggers layout computation — no need to yield a full rAF
+      // (which costs 16-40ms and is throttled in hidden tabs).
       void this.offsetHeight;
-      
-      // Wait one more frame to ensure layout is fully stable
-      // Some browsers need an additional frame after forced reflow
-      await new Promise(resolve => requestAnimationFrame(resolve));
     }
     
     // Use FrameController for centralized element coordination

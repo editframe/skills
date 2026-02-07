@@ -8,7 +8,27 @@ import {
   type ReactNode,
 } from "react";
 
+/* ━━ Helpers ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+function formatTime(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  if (minutes > 0) return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  return `${seconds}s`;
+}
+
 /* ━━ Types ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+interface RenderStats {
+  currentFrame: number;
+  totalFrames: number;
+  renderedMs: number;
+  totalDurationMs: number;
+  speedMultiplier: number;
+  estimatedRemainingMs: number;
+  elapsedMs: number;
+}
 
 interface RenderJob {
   id: string;
@@ -16,6 +36,7 @@ interface RenderJob {
   fileName: string;
   status: "queued" | "rendering" | "complete" | "error";
   progress: number;
+  stats: RenderStats | null;
   previewFrame: string | null;
   downloadUrl: string | null;
   error: string | null;
@@ -90,6 +111,7 @@ export function RenderQueueProvider({ children }: { children: ReactNode }) {
         fileName: opts.fileName,
         status: "queued",
         progress: 0,
+        stats: null,
         previewFrame: null,
         downloadUrl: null,
         error: null,
@@ -157,6 +179,27 @@ export function RenderQueueProvider({ children }: { children: ReactNode }) {
     tg.pause?.();
 
     const jobId = nextQueued.id;
+    let lastProgressFlush = 0;
+    let pendingPatch: Partial<RenderJob> | null = null;
+    let pendingPreviewCanvas: HTMLCanvasElement | null = null;
+    let flushTimer: ReturnType<typeof setTimeout> | null = null;
+    const PROGRESS_THROTTLE_MS = 200;
+
+    const flushProgress = () => {
+      flushTimer = null;
+      if (pendingPatch) {
+        // Only encode thumbnail when actually flushing to React state
+        // (toDataURL is expensive — avoid calling it 30x/sec)
+        if (pendingPreviewCanvas) {
+          pendingPatch.previewFrame = pendingPreviewCanvas.toDataURL("image/jpeg", 0.5);
+          pendingPreviewCanvas = null;
+        }
+        updateJob(jobId, pendingPatch);
+        pendingPatch = null;
+        lastProgressFlush = performance.now();
+      }
+    };
+
     tg.renderToVideo({
       fps: 30,
       codec: "avc",
@@ -167,22 +210,52 @@ export function RenderQueueProvider({ children }: { children: ReactNode }) {
       streaming: false,
       signal: internal.abortController.signal,
       progressPreviewInterval: 15,
-      onProgress: (p: { progress: number; framePreviewCanvas?: HTMLCanvasElement }) => {
-        const patch: Partial<RenderJob> = { progress: p.progress };
+      onProgress: (p: {
+        progress: number;
+        currentFrame: number;
+        totalFrames: number;
+        renderedMs: number;
+        totalDurationMs: number;
+        elapsedMs: number;
+        estimatedRemainingMs: number;
+        speedMultiplier: number;
+        framePreviewCanvas?: HTMLCanvasElement;
+      }) => {
+        const patch: Partial<RenderJob> = {
+          progress: p.progress,
+          stats: {
+            currentFrame: p.currentFrame,
+            totalFrames: p.totalFrames,
+            renderedMs: p.renderedMs,
+            totalDurationMs: p.totalDurationMs,
+            speedMultiplier: p.speedMultiplier,
+            estimatedRemainingMs: p.estimatedRemainingMs,
+            elapsedMs: p.elapsedMs,
+          },
+        };
         if (p.framePreviewCanvas) {
-          patch.previewFrame = p.framePreviewCanvas.toDataURL("image/jpeg", 0.5);
+          pendingPreviewCanvas = p.framePreviewCanvas;
         }
-        updateJob(jobId, patch);
+        pendingPatch = patch;
+
+        const now = performance.now();
+        if (now - lastProgressFlush >= PROGRESS_THROTTLE_MS) {
+          flushProgress();
+        } else if (!flushTimer) {
+          flushTimer = setTimeout(flushProgress, PROGRESS_THROTTLE_MS - (now - lastProgressFlush));
+        }
       },
       ...internal.renderOpts,
     })
       .then((buffer) => {
+        if (flushTimer) clearTimeout(flushTimer);
         if (buffer) {
           const url = URL.createObjectURL(new Blob([buffer], { type: "video/mp4" }));
           updateJob(jobId, { status: "complete", progress: 1, downloadUrl: url });
         }
       })
       .catch((err: Error) => {
+        if (flushTimer) clearTimeout(flushTimer);
         if (err.name !== "AbortError") {
           updateJob(jobId, { status: "error", error: err.message || "Render failed" });
         }
@@ -274,43 +347,62 @@ export function RenderQueuePanel() {
               {/* ── Rendering ──────────────────────────────────────── */}
               {job.status === "rendering" && (
                 <>
-                  <div className="flex gap-2.5">
-                    {/* Thumbnail preview */}
-                    {job.previewFrame && (
-                      <div className="flex-shrink-0 w-16 h-10 rounded overflow-hidden bg-black/30">
-                        <img src={job.previewFrame} alt="" className="w-full h-full object-cover" />
-                      </div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[11px] font-medium text-white/80 truncate flex-1 mr-2">{job.name}</span>
+                    {job.progress >= 0.99 ? (
+                      <span className="text-[10px] text-[var(--poster-gold)] font-semibold animate-pulse">Finishing...</span>
+                    ) : (
+                      <span className="text-[10px] text-[var(--poster-blue)] font-mono tabular-nums">
+                        {(job.progress * 100).toFixed(0)}%
+                      </span>
                     )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-0.5">
-                        <span className="text-[11px] font-medium text-white/80 truncate flex-1 mr-2">{job.name}</span>
-                        {job.progress >= 0.99 ? (
-                          <span className="text-[10px] text-[var(--poster-gold)] font-semibold animate-pulse">Finishing...</span>
-                        ) : (
-                          <span className="text-[10px] text-[var(--poster-blue)] font-mono tabular-nums">
-                            {(job.progress * 100).toFixed(0)}%
-                          </span>
-                        )}
+                  </div>
+
+                  {job.previewFrame && (
+                    <div className="mb-1.5 rounded overflow-hidden bg-black/30">
+                      <img src={job.previewFrame} alt="" className="w-full h-auto object-cover" />
+                    </div>
+                  )}
+
+                  {job.stats && (
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-1 mb-1.5 font-mono text-[10px] tabular-nums">
+                      <div>
+                        <div className="text-white/30">Frames</div>
+                        <div className="text-white/70">{job.stats.currentFrame} / {job.stats.totalFrames}</div>
                       </div>
-                      <div className="text-[9px] text-white/30 truncate mb-1">{job.fileName}</div>
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all duration-200 ${job.progress >= 0.99 ? "bg-[var(--poster-gold)]" : "bg-[var(--poster-blue)]"}`}
-                            style={{ width: `${job.progress * 100}%` }}
-                          />
+                      <div>
+                        <div className="text-white/30">Time</div>
+                        <div className="text-white/70">{formatTime(job.stats.renderedMs)} / {formatTime(job.stats.totalDurationMs)}</div>
+                      </div>
+                      <div>
+                        <div className="text-white/30">Speed</div>
+                        <div className={job.stats.speedMultiplier >= 1 ? "text-green-400" : "text-amber-400"}>
+                          {job.stats.speedMultiplier.toFixed(2)}x
                         </div>
-                        <button
-                          onClick={() => cancel(job.id)}
-                          className="text-white/30 hover:text-white/70 transition-colors"
-                          title="Cancel"
-                        >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
+                      </div>
+                      <div>
+                        <div className="text-white/30">ETA</div>
+                        <div className="text-white/70">{formatTime(job.stats.estimatedRemainingMs)}</div>
                       </div>
                     </div>
+                  )}
+
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-200 ${job.progress >= 0.99 ? "bg-[var(--poster-gold)]" : "bg-[var(--poster-blue)]"}`}
+                        style={{ width: `${job.progress * 100}%` }}
+                      />
+                    </div>
+                    <button
+                      onClick={() => cancel(job.id)}
+                      className="text-white/30 hover:text-white/70 transition-colors"
+                      title="Cancel"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                   </div>
                 </>
               )}

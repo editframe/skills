@@ -34,7 +34,7 @@ import type { ContentReadyMode } from "./renderTimegroupToCanvas.types.js";
 import {
   resetRenderState,
 } from "./renderTimegroupToCanvas.js";
-import { serializeTimelineToDataUri } from "./rendering/serializeTimelineDirect.js";
+import { captureTimelineToDataUri } from "./rendering/serializeTimelineDirect.js";
 import { renderToImageNative } from "./rendering/renderToImageNative.js";
 import { isNativeCanvasApiAvailable } from "./previewSettings.js";
 import { createPreviewContainer } from "./previewTypes.js";
@@ -444,136 +444,146 @@ export async function renderTimegroupToVideo(
   
   let totalSeekMs = 0;
   let totalSyncMs = 0;
-  let totalRenderMs = 0;
   let totalEncodeMs = 0;
+  let totalImageWaitMs = 0; // time spent blocked waiting for image.onload
   
   try {
     // ========================================================================
-    // DEEP PIPELINE: 3-4 frames ahead with operation queues
+    // OVERLAPPED PIPELINE: image loading runs parallel with seek+serialize
     // ========================================================================
-    // Maintain queues of in-flight work (like the reference architecture)
-    type RenderTask = { frameIndex: number; timeMs: number; timestampS: number; promise: Promise<HTMLImageElement> };
-    const seekQueue: Promise<void>[] = [];
-    const renderTasks: RenderTask[] = [];
+    // The clone can only seek one frame at a time, and serialization must
+    // capture the DOM before the next seek. But image loading (data URI →
+    // Image) is independent of the clone and runs in the background.
+    //
+    // Per-frame timeline:
+    //   [seek(N)] → [serialize(N)] → [image.load(N) in background...]
+    //                                  └─ [seek(N+1)] → [serialize(N+1)] → ...
+    //                                  └─ encode(N) when image resolves
     
-    // Pipeline depth configuration
-    // MAX_SEEK must be 1: Only one clone exists, so seeks must be sequential
-    // MAX_RENDER can be higher: serializeElement captures DOM state synchronously,
-    // then canvas encoding and image loading happen async and don't touch the clone
-    const MAX_SEEK = 1;
-    const MAX_RENDER = 4; // Allow 4 frames to encode/load in parallel (seek, serialize, encode, load)
+    type PendingFrame = {
+      frameIndex: number;
+      timeMs: number;
+      timestampS: number;
+      resolved: HTMLImageElement | null;
+      promise: Promise<HTMLImageElement>;
+    };
     
+    const MAX_AHEAD = 2;
+    const pendingFrames: PendingFrame[] = [];
     let nextSeekFrame = 0;
-    let nextRenderFrame = 0;
+    let encodedFrames = 0;
+    let pipelineHits = 0;  // image was ready when we needed it
+    let pipelineMisses = 0; // had to await image load
     
-    for (let completedFrames = 0; completedFrames < config.totalFrames; completedFrames++) {
+    console.log(
+      `[Render] starting ${config.totalFrames} frames, ` +
+      `${config.width}x${config.height} @ ${config.fps}fps, ` +
+      `mode=${config.canvasMode}, pipeline=${MAX_AHEAD}`
+    );
+    
+    while (encodedFrames < config.totalFrames) {
       checkCancelled();
       
-      const frameIndex = completedFrames;
-      const timeMs = timestamps[frameIndex]!;
-      const timestampS = (frameIndex * config.frameDurationMs) / 1000;
-      
-      // =====================================================================
-      // STAGE 1: Fill seek queue (don't block!)
-      // =====================================================================
-      while (seekQueue.length < MAX_SEEK && nextSeekFrame < config.totalFrames) {
-        const seekFrameIndex = nextSeekFrame;
-        const seekTimeMs = timestamps[seekFrameIndex]!;
+      // ==================================================================
+      // PHASE 1: Fill pipeline — seek+serialize ahead while images load
+      // ==================================================================
+      while (nextSeekFrame < config.totalFrames && pendingFrames.length < MAX_AHEAD) {
+        const fi = nextSeekFrame;
+        const timeMs = timestamps[fi]!;
+        const timestampS = (fi * config.frameDurationMs) / 1000;
         
         const seekStart = performance.now();
-        const seekPromise = renderClone.seekForRender(seekTimeMs).then(() => {
-          totalSeekMs += performance.now() - seekStart;
-        });
-        seekQueue.push(seekPromise);
-        nextSeekFrame++;
-      }
-      
-      // =====================================================================
-      // STAGE 2: Fill render queue (don't block!)
-      // =====================================================================
-      while (renderTasks.length < MAX_RENDER && seekQueue.length > 0 && nextRenderFrame < config.totalFrames) {
-        const renderFrameIndex = nextRenderFrame;
-        const renderTimeMs = timestamps[renderFrameIndex]!;
-        const renderTimestampS = (renderFrameIndex * config.frameDurationMs) / 1000;
-        const seekPromise = seekQueue.shift()!;
+        await renderClone.seekForRender(timeMs);
+        const seekTime = performance.now() - seekStart;
+        totalSeekMs += seekTime;
         
-        const renderPromise = seekPromise.then(async () => {
-          // NOTE: seekForRender() has already:
-          // 1. Called frameController.renderFrame() to coordinate FrameRenderable elements
-          // 2. Awaited #executeCustomFrameTasks() so frame tasks are complete
-          // Clone's DOM now reflects all changes from frame tasks
+        const entry: PendingFrame = {
+          frameIndex: fi,
+          timeMs,
+          timestampS,
+          resolved: null,
+          promise: null!,
+        };
+        
+        if (config.canvasMode === "native") {
+          const renderStart = performance.now();
+          const canvas = await renderToImageNative(renderClone, config.width, config.height, {
+            skipDprScaling: true,
+          });
+          const renderTime = performance.now() - renderStart;
+          totalSyncMs += renderTime;
+          console.log(`[Render] frame ${fi}: seek=${seekTime.toFixed(1)}ms native=${renderTime.toFixed(1)}ms`);
+          entry.resolved = canvas as any as HTMLImageElement;
+          entry.promise = Promise.resolve(entry.resolved);
+        } else {
+          // Synchronous capture: walks DOM + snapshots canvas pixels.
+          // Returns immediately — clone is free for next seek.
+          // Encoding (canvas→base64, SVG assembly) and image loading
+          // all resolve in the background.
+          const captureStart = performance.now();
+          const dataUriPromise = captureTimelineToDataUri(renderClone, config.width, config.height, {
+            renderContext,
+            canvasScale: config.scale,
+            timeMs,
+          });
+          const captureTime = performance.now() - captureStart;
+          totalSyncMs += captureTime;
           
-          if (config.canvasMode === "native") {
-            // NATIVE PATH: Use drawElementImage API (~1.76x faster)
-            const renderStart = performance.now();
-            const canvas = await renderToImageNative(renderClone, config.width, config.height, {
-              skipDprScaling: true, // Use 1x DPR for video export (4x fewer pixels!)
-            });
-            const renderTime = performance.now() - renderStart;
-            totalRenderMs += renderTime;
-            
-            logger.debug(`[Frame ${renderFrameIndex}] Native render: ${canvas.width}x${canvas.height}, time=${renderTime.toFixed(1)}ms`);
-            
-            // Return canvas directly (it's a CanvasImageSource, compatible with Image)
-            return canvas as any as HTMLImageElement;
-          } else {
-            // FOREIGNOBJECT PATH: Serialize DOM → SVG → Image → Canvas
-            const syncStart = performance.now();
-            const dataUri = await serializeTimelineToDataUri(renderClone, config.width, config.height, {
-              renderContext,
-              canvasScale: config.scale,
-              timeMs: renderTimeMs,
-            });
-            const syncTime = performance.now() - syncStart;
-            totalSyncMs += syncTime;
-            
-            // Create image from data URI
-            const renderStart = performance.now();
-            const image = new Image();
-            await new Promise<void>((resolve, reject) => {
-              image.onload = () => resolve();
+          entry.promise = dataUriPromise.then(dataUri => {
+            return new Promise<HTMLImageElement>((resolve, reject) => {
+              const image = new Image();
+              image.onload = () => {
+                entry.resolved = image;
+                resolve(image);
+              };
               image.onerror = (e) => {
-                logger.error(`[Frame ${renderFrameIndex}] Image load error:`, e);
-                logger.error(`[Frame ${renderFrameIndex}] Data URI preview:`, dataUri.substring(0, 200) + '...');
+                console.error(`[Render] frame ${fi} image load error:`, e);
                 reject(new Error(`Failed to load image from data URI`));
               };
               image.src = dataUri;
             });
-            const renderTime = performance.now() - renderStart;
-            totalRenderMs += renderTime;
-            
-            logger.debug(`[Frame ${renderFrameIndex}] ForeignObject: ${image.width}x${image.height}, serialize=${syncTime.toFixed(1)}ms, load=${renderTime.toFixed(1)}ms`);
-            
-            return image;
-          }
-        });
+          });
+          
+          console.log(
+            `[Render] frame ${fi}: seek=${seekTime.toFixed(1)}ms capture=${captureTime.toFixed(1)}ms ` +
+            `queue=${pendingFrames.length + 1}/${MAX_AHEAD}`
+          );
+        }
         
-        renderTasks.push({
-          frameIndex: renderFrameIndex,
-          timeMs: renderTimeMs,
-          timestampS: renderTimestampS,
-          promise: renderPromise,
-        });
-        nextRenderFrame++;
+        pendingFrames.push(entry);
+        nextSeekFrame++;
       }
       
-      // =====================================================================
-      // STAGE 3: Await the render for THIS frame (in strict order)
-      // =====================================================================
-      const taskIndex = renderTasks.findIndex((t) => t.frameIndex === frameIndex);
-      if (taskIndex === -1) {
-        throw new Error(`No render task found for frame ${frameIndex}`);
+      // ==================================================================
+      // PHASE 2: Encode next frame in order (await if not yet loaded)
+      // ==================================================================
+      const head = pendingFrames.shift()!;
+      const preloaded = head.resolved !== null;
+      if (preloaded) pipelineHits++; else pipelineMisses++;
+      let encodeWaitMs = 0;
+      let image: HTMLImageElement;
+      if (preloaded) {
+        image = head.resolved!;
+      } else {
+        const waitStart = performance.now();
+        image = await head.promise;
+        encodeWaitMs = performance.now() - waitStart;
+        totalImageWaitMs += encodeWaitMs;
       }
       
-      const task = renderTasks[taskIndex]!;
-      const image = await task.promise;
-      renderTasks.splice(taskIndex, 1);
+      if (encodedFrames % 30 === 0 || encodeWaitMs > 50) {
+        const total = pipelineHits + pipelineMisses;
+        const hitRate = total > 0 ? ((pipelineHits / total) * 100).toFixed(0) : "0";
+        console.log(
+          `[Pipeline] frame=${encodedFrames}/${config.totalFrames} ` +
+          `depth=${pendingFrames.length + 1}/${MAX_AHEAD} ` +
+          `preloaded=${preloaded}${encodeWaitMs > 0 ? ` waited=${encodeWaitMs.toFixed(1)}ms` : ""} ` +
+          `hitRate=${hitRate}% (${pipelineHits}/${total})`
+        );
+      }
       
-      // =====================================================================
-      // STAGE 4: Render audio chunk if needed
-      // =====================================================================
-      if (audioSource && timeMs >= lastRenderedAudioEndMs + audioChunkDurationMs) {
-        const chunkEndMs = Math.min(timeMs + audioChunkDurationMs, config.endMs);
+      if (audioSource && head.timeMs >= lastRenderedAudioEndMs + audioChunkDurationMs) {
+        const chunkEndMs = Math.min(head.timeMs + audioChunkDurationMs, config.endMs);
         try {
           const audioBuffer = await timegroup.renderAudio(lastRenderedAudioEndMs, chunkEndMs);
           if (audioBuffer && audioBuffer.length > 0) {
@@ -583,9 +593,6 @@ export async function renderTimegroupToVideo(
         lastRenderedAudioEndMs = chunkEndMs;
       }
       
-      // =====================================================================
-      // STAGE 5: Encode frame (sequential, maintains order)
-      // =====================================================================
       if (videoSource && output && encodingCtx) {
         const encodeStart = performance.now();
         encodingCtx.drawImage(
@@ -593,14 +600,15 @@ export async function renderTimegroupToVideo(
           0, 0, image.width, image.height,
           0, 0, config.videoWidth, config.videoHeight,
         );
-        await videoSource.add(timestampS, config.frameDurationS);
+        await videoSource.add(head.timestampS, config.frameDurationS);
         totalEncodeMs += performance.now() - encodeStart;
       }
       
-      // =====================================================================
-      // STAGE 6: Progress reporting
-      // =====================================================================
-      const currentFrame = frameIndex + 1;
+      // ==================================================================
+      // Progress reporting
+      // ==================================================================
+      encodedFrames++;
+      const currentFrame = encodedFrames;
       const progress = currentFrame / config.totalFrames;
       const renderedMs = currentFrame * config.frameDurationMs;
       const elapsedMs = performance.now() - renderStartTime;
@@ -609,9 +617,7 @@ export async function renderTimegroupToVideo(
       const estimatedRemainingMs = remainingFrames * msPerFrame;
       const speedMultiplier = renderedMs / elapsedMs;
       
-      // Update preview canvas if enabled (just draw, no encoding - super fast!)
-      // The canvas reference is passed to onProgress and can be displayed directly in UI
-      if (thumbCanvas && thumbCtx && frameIndex % config.progressPreviewInterval === 0) {
+      if (thumbCanvas && thumbCtx && head.frameIndex % config.progressPreviewInterval === 0) {
         thumbCtx.drawImage(image, 0, 0, thumbCanvas.width, thumbCanvas.height);
       }
       
@@ -624,7 +630,7 @@ export async function renderTimegroupToVideo(
         elapsedMs,
         estimatedRemainingMs,
         speedMultiplier,
-        framePreviewCanvas: thumbCanvas || undefined, // Pass canvas reference (no encoding!)
+        framePreviewCanvas: thumbCanvas || undefined,
       });
     }
     
@@ -643,32 +649,29 @@ export async function renderTimegroupToVideo(
     // Calculate percentages and averages for performance analysis
     const avgSeek = totalSeekMs / config.totalFrames;
     const avgSync = totalSyncMs / config.totalFrames;
-    const avgRender = totalRenderMs / config.totalFrames;
     const avgEncode = totalEncodeMs / config.totalFrames;
+    const avgWait = totalImageWaitMs / config.totalFrames;
     const avgTotal = totalTime / config.totalFrames;
     
-    const tracked = totalSeekMs + totalSyncMs + totalRenderMs + totalEncodeMs;
+    const tracked = totalSeekMs + totalSyncMs + totalImageWaitMs + totalEncodeMs;
     const untracked = totalTime - tracked;
     
-    logger.debug(
+    const pipelineTotal = pipelineHits + pipelineMisses;
+    console.log(
       `\n=== Video Export Performance Breakdown ===\n` +
       `Mode: Direct Serialization\n` +
       `Total frames: ${config.totalFrames}\n` +
       `Total time: ${totalTime.toFixed(0)}ms (${avgTotal.toFixed(1)}ms/frame)\n` +
-      `\nPer-stage totals:\n` +
-      `  Seek:      ${totalSeekMs.toFixed(0)}ms (${(totalSeekMs/totalTime*100).toFixed(1)}%) - avg ${avgSeek.toFixed(1)}ms/frame\n` +
-      `  Serialize: ${totalSyncMs.toFixed(0)}ms (${(totalSyncMs/totalTime*100).toFixed(1)}%) - avg ${avgSync.toFixed(1)}ms/frame\n` +
-      `  Render: ${totalRenderMs.toFixed(0)}ms (${(totalRenderMs/totalTime*100).toFixed(1)}%) - avg ${avgRender.toFixed(1)}ms/frame\n` +
-      `  Encode: ${totalEncodeMs.toFixed(0)}ms (${(totalEncodeMs/totalTime*100).toFixed(1)}%) - avg ${avgEncode.toFixed(1)}ms/frame\n` +
-      `  Other:  ${untracked.toFixed(0)}ms (${(untracked/totalTime*100).toFixed(1)}%)\n` +
+      `\nPer-stage totals (sequential — these should sum to ~100%):\n` +
+      `  Seek:       ${totalSeekMs.toFixed(0)}ms (${(totalSeekMs/totalTime*100).toFixed(1)}%) - avg ${avgSeek.toFixed(1)}ms/frame\n` +
+      `  Capture:    ${totalSyncMs.toFixed(0)}ms (${(totalSyncMs/totalTime*100).toFixed(1)}%) - avg ${avgSync.toFixed(1)}ms/frame\n` +
+      `  Image wait: ${totalImageWaitMs.toFixed(0)}ms (${(totalImageWaitMs/totalTime*100).toFixed(1)}%) - avg ${avgWait.toFixed(1)}ms/frame\n` +
+      `  Encode:     ${totalEncodeMs.toFixed(0)}ms (${(totalEncodeMs/totalTime*100).toFixed(1)}%) - avg ${avgEncode.toFixed(1)}ms/frame\n` +
+      `  Other:      ${untracked.toFixed(0)}ms (${(untracked/totalTime*100).toFixed(1)}%)\n` +
+      `\nPipeline (MAX_AHEAD=${MAX_AHEAD}):\n` +
+      `  Preloaded: ${pipelineHits}/${pipelineTotal} (${((pipelineHits / Math.max(1, pipelineTotal)) * 100).toFixed(0)}% hit rate)\n` +
+      `  Awaited:   ${pipelineMisses}\n` +
       `==========================================`
-    );
-    
-    logger.debug(
-      `[renderTimegroupToVideo] ${config.totalFrames} frames: ` +
-      `seek=${totalSeekMs.toFixed(0)}ms, sync=${totalSyncMs.toFixed(0)}ms, ` +
-      `render=${totalRenderMs.toFixed(0)}ms, encode=${totalEncodeMs.toFixed(0)}ms, ` +
-      `total=${totalTime.toFixed(0)}ms`
     );
     
     if (config.benchmarkMode) {
