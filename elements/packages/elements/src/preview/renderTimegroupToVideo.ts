@@ -423,6 +423,20 @@ export async function renderTimegroupToVideo(
   void renderClone.offsetHeight;
   logger.debug(`[renderTimegroupToVideo] Attached previewContainer to document.body (off-screen) for style computation`);
   
+  // Suppress rendering of the rest of the page during export.
+  // content-visibility:hidden tells the browser to skip layout, paint, and
+  // compositing for every top-level element except the render clone container.
+  // This eliminates main-thread contention from the host page (animations,
+  // layout, paint, intersection observers, etc.).
+  const suppressionStyle = document.createElement('style');
+  suppressionStyle.textContent = `
+    body > *:not(.ef-render-clone-container) {
+      content-visibility: hidden !important;
+      contain: strict !important;
+    }
+  `;
+  document.head.appendChild(suppressionStyle);
+  
   // =========================================================================
   // Frame loop - DEEP PIPELINE: overlap encode + render + prepare
   // =========================================================================
@@ -700,6 +714,7 @@ export async function renderTimegroupToVideo(
     }
     
   } finally {
+    suppressionStyle.remove();
     renderContext.dispose();
     cleanupRenderClone();
     // Remove preview container if it was attached to document
