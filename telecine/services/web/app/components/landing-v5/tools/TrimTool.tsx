@@ -29,14 +29,14 @@ export function TrimTool() {
 
   useEffect(() => setIsClient(true), []);
 
-  // Seek to start when dragging region and trim points change
+  // WORKAROUND: When dragging the entire trim region, both sourcein and sourceout
+  // change together. The timegroup stays at its current time, which means the user
+  // doesn't see the video update. We explicitly seek to time 0 to show the new in-point.
+  // See: EFVideo-sourcein-sourceout-seeking.browsertest.ts for API improvement proposals.
   useEffect(() => {
     if (draggingRef.current === "region") {
       const tg = previewRef.current?.querySelector("ef-timegroup") as any;
-      if (tg) {
-        console.log('[EFFECT] Seeking to 0 after region drag state update');
-        tg.currentTimeMs = 0;
-      }
+      if (tg) tg.currentTimeMs = 0;
     }
   }, [inPoint, outPoint]);
 
@@ -61,16 +61,10 @@ export function TrimTool() {
       const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
       const time = Math.round((x / rect.width) * VIDEO_DURATION_MS);
 
-      const tg = previewRef.current?.querySelector("ef-timegroup") as any;
-
       if (draggingRef.current === "in") {
-        const newInPoint = Math.min(time, outPoint - MIN_DURATION_MS);
-        console.log('[IN DRAG] Before setState - tg.currentTimeMs:', tg?.currentTimeMs, 'newInPoint:', newInPoint, 'outPoint:', outPoint);
-        setInPoint(newInPoint);
+        setInPoint(Math.min(time, outPoint - MIN_DURATION_MS));
       } else if (draggingRef.current === "out") {
-        const newOutPoint = Math.max(time, inPoint + MIN_DURATION_MS);
-        console.log('[OUT DRAG] Before setState - tg.currentTimeMs:', tg?.currentTimeMs, 'inPoint:', inPoint, 'newOutPoint:', newOutPoint);
-        setOutPoint(newOutPoint);
+        setOutPoint(Math.max(time, inPoint + MIN_DURATION_MS));
       } else if (draggingRef.current === "region" && dragStartRef.current) {
         const deltaX = e.clientX - dragStartRef.current.mouseX;
         const deltaTime = Math.round((deltaX / rect.width) * VIDEO_DURATION_MS);
@@ -87,7 +81,6 @@ export function TrimTool() {
           newInPoint = VIDEO_DURATION_MS - duration;
         }
         
-        console.log('[REGION DRAG] Before setState - tg.currentTimeMs:', tg?.currentTimeMs, 'newInPoint:', newInPoint, 'newOutPoint:', newOutPoint);
         setInPoint(newInPoint);
         setOutPoint(newOutPoint);
       }
