@@ -25,24 +25,15 @@ export class EFHierarchy extends TWMixin(LitElement) {
         height: 100%;
         font-size: 12px;
         
-        --hierarchy-bg: rgb(30 41 59);
-        --hierarchy-border: rgb(71 85 105);
-        --hierarchy-text: rgb(226 232 240);
-        --hierarchy-hover-bg: rgba(148, 163, 184, 0.2);
-        --hierarchy-selected-bg: rgba(59, 130, 246, 0.3);
-        --hierarchy-ancestor-selected-bg: rgba(59, 130, 246, 0.15);
-        --hierarchy-focused-bg: rgba(148, 163, 184, 0.4);
-        --hierarchy-drop-indicator: #3b82f6;
-      }
-      
-      :host(.light) {
-        --hierarchy-bg: rgb(241 245 249);
-        --hierarchy-border: rgb(203 213 225);
-        --hierarchy-text: rgb(30 41 59);
-        --hierarchy-hover-bg: rgba(100, 116, 139, 0.15);
-        --hierarchy-selected-bg: rgba(59, 130, 246, 0.2);
-        --hierarchy-ancestor-selected-bg: rgba(59, 130, 246, 0.1);
-        --hierarchy-focused-bg: rgba(100, 116, 139, 0.25);
+        /* Component tokens (reference globals from ef-theme.css) */
+        --hierarchy-bg: var(--ef-color-bg);
+        --hierarchy-border: var(--ef-color-border);
+        --hierarchy-text: var(--ef-color-text);
+        --hierarchy-hover-bg: var(--ef-color-hover);
+        --hierarchy-selected-bg: var(--ef-color-selected);
+        --hierarchy-ancestor-selected-bg: var(--ef-color-selected-subtle);
+        --hierarchy-focused-bg: var(--ef-color-focused);
+        --hierarchy-drop-indicator: var(--ef-color-primary);
       }
       
       .hierarchy-container {
@@ -58,7 +49,7 @@ export class EFHierarchy extends TWMixin(LitElement) {
         font-size: 11px;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: rgba(148, 163, 184, 0.8);
+        color: var(--ef-color-text-muted);
         border-bottom: 1px solid var(--hierarchy-border);
         margin-bottom: 4px;
       }
@@ -66,7 +57,7 @@ export class EFHierarchy extends TWMixin(LitElement) {
       .empty {
         padding: 16px;
         text-align: center;
-        color: rgba(148, 163, 184, 0.6);
+        color: var(--ef-color-text-subtle);
         font-style: italic;
       }
     `,
@@ -466,8 +457,8 @@ export class EFHierarchy extends TWMixin(LitElement) {
     const roots = this.getRootElements();
 
     return html`
-      <div class="hierarchy-container">
-        ${this.showHeader ? html`<div class="header">${this.header}</div>` : nothing}
+      <div class="hierarchy-container" part="list">
+        ${this.showHeader ? html`<div class="header" part="header">${this.header}</div>` : nothing}
         ${
           roots.length > 0
             ? renderHierarchyChildren(

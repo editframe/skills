@@ -17,6 +17,7 @@ import { isEFTemporal } from "../../elements/EFTemporal.js";
 import { TWMixin } from "../TWMixin.js";
 import { phosphorIcon, ICONS } from "../icons.js";
 import { type HierarchyContext, hierarchyContext } from "./hierarchyContext.js";
+import { getElementTypeColor } from "../theme.js";
 
 const DEFAULT_HIDDEN_TAGS = new Set([
   "SPAN",
@@ -300,7 +301,7 @@ export class EFHierarchyItem<
   }
 
   get typeColor(): string {
-    return "rgb(148, 163, 184)"; // Default gray
+    return getElementTypeColor("timegroup", this);
   }
 
   get isFocused(): boolean {
@@ -522,6 +523,7 @@ export class EFHierarchyItem<
       ${this.dropPosition === "before" ? html`<div class="drop-indicator"></div>` : nothing}
       <div
         class="item-row ${this.dropPosition === "inside" ? "drop-inside" : ""}"
+        part="row"
         style=${styleMap({ borderLeftColor: this.typeColor })}
         ?data-focused=${this.isFocused}
         ?data-selected=${this.isSelected}
@@ -552,8 +554,8 @@ export class EFHierarchyItem<
             `
             : html`<span class="expand-icon"></span>`
         }
-        <span class="icon">${this.icon}</span>
-        <span class="label">${this.displayLabel()}</span>
+        <span class="icon" part="icon">${this.icon}</span>
+        <span class="label" part="label">${this.displayLabel()}</span>
       </div>
       ${
         this.hasChildren
@@ -615,7 +617,7 @@ export class EFTimegroupHierarchyItem extends EFHierarchyItem<EFTimegroup> {
   }
 
   get typeColor(): string {
-    return "rgb(148, 163, 184)"; // Gray for compositions
+    return getElementTypeColor("timegroup", this);
   }
 
   displayLabel(): string | TemplateResult<1> | typeof nothing {
