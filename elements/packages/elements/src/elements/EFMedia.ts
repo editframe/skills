@@ -936,8 +936,10 @@ export class EFMedia extends EFTargetable(
       },
       undefined,
       async () => {
+        // Create a default signal if not provided (public API convenience)
+        const effectiveSignal = signal ?? new AbortController().signal;
         const { fetchAudioSpanningTime } = await import("./EFMedia/shared/AudioSpanUtils.js");
-        return fetchAudioSpanningTime(this, fromMs, toMs, signal);
+        return fetchAudioSpanningTime(this, fromMs, toMs, effectiveSignal);
       },
     );
   }
