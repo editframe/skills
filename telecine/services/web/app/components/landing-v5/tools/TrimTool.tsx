@@ -1,5 +1,5 @@
 import { useId, useEffect, useLayoutEffect, useState, useRef, useCallback } from "react";
-import { Preview, Timegroup, Video, Scrubber, TogglePlay, TimeDisplay } from "@editframe/react";
+import { Preview, Timegroup, Video, Filmstrip, TogglePlay } from "@editframe/react";
 import type { EFTimegroup } from "@editframe/elements";
 import { useRenderQueue } from "../RenderQueue";
 
@@ -18,6 +18,7 @@ function formatTime(ms: number): string {
 export function TrimTool() {
   const id = useId();
   const previewId = `trim-tool-${id}`;
+  const timegroupId = `trim-tg-${id}`;
   const [isClient, setIsClient] = useState(false);
   const [inPoint, setInPoint] = useState(2000);
   const [outPoint, setOutPoint] = useState(8000);
@@ -30,12 +31,8 @@ export function TrimTool() {
 
   useEffect(() => setIsClient(true), []);
 
-  // Seek the timegroup AFTER React has applied new props to the DOM.
-  // This avoids the race where an imperative seek gets clamped to the
-  // old duration before React updates it.
   useLayoutEffect(() => {
     if (!isClient || !draggingRef.current || !timegroupRef.current) return;
-
     if (draggingRef.current === "out") {
       timegroupRef.current.currentTimeMs = outPoint - inPoint;
     } else {
@@ -127,14 +124,16 @@ export function TrimTool() {
   return (
     <div className="w-full max-w-xl">
       <div className="border-4 border-black dark:border-white bg-white dark:bg-[#1a1a1a] overflow-hidden">
+        {/* Header */}
         <div className="bg-black px-4 py-2 flex items-center justify-between">
           <span className="text-white text-xs font-bold uppercase tracking-widest">Trim Tool</span>
           <span className="text-white/50 text-[10px] font-mono uppercase">Demo</span>
         </div>
 
+        {/* Video Preview */}
         <div className="bg-[#111] aspect-video relative">
           <Preview id={previewId} loop className="size-full">
-            <Timegroup ref={timegroupRef} mode="fixed" duration={`${duration}ms`} className="size-full">
+            <Timegroup ref={timegroupRef} id={timegroupId} mode="fixed" duration={`${duration}ms`} className="size-full">
               <Video
                 src={VIDEO_SRC}
                 sourcein={`${inPoint}ms`}
@@ -145,78 +144,97 @@ export function TrimTool() {
           </Preview>
         </div>
 
-        <div className="bg-[#1a1a1a] px-4 py-3 border-t-4 border-black dark:border-white">
-          <div
-            ref={trackRef}
-            className="relative h-10 bg-[#2a2a2a] border border-white/20 cursor-crosshair overflow-visible"
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerLeave={handlePointerUp}
-          >
-            <div className="absolute top-0 bottom-0 left-0 bg-black/50" style={{ width: `${inPercent}%` }} />
-            <div className="absolute top-0 bottom-0 right-0 bg-black/50" style={{ width: `${100 - outPercent}%` }} />
-            
-            <div
-              className="absolute top-0 bottom-0 bg-[var(--poster-blue)]/20 border-y border-[var(--poster-blue)] cursor-move hover:bg-[var(--poster-blue)]/30 transition-colors"
-              style={{ left: `${inPercent}%`, width: `${outPercent - inPercent}%` }}
-              onPointerDown={handlePointerDown("region")}
-            />
-
-            {["in", "out"].map((handle) => {
-              const percent = handle === "in" ? inPercent : outPercent;
-              return (
-                <div
-                  key={handle}
-                  className="absolute top-0 bottom-0 w-3 -ml-1.5 cursor-ew-resize group z-10"
-                  style={{ left: `${percent}%` }}
-                  onPointerDown={handlePointerDown(handle as "in" | "out")}
-                >
-                  <div className="size-full bg-[var(--poster-gold)] group-hover:bg-[var(--poster-red)] transition-colors" />
-                  <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-[var(--poster-gold)] group-hover:bg-[var(--poster-red)] text-black text-[8px] font-bold uppercase px-1 py-0.5 whitespace-nowrap transition-colors">
-                    {handle === "in" ? "In" : "Out"}
-                  </div>
-                </div>
-              );
-            })}
-
-            <div className="absolute inset-x-0 bottom-0 h-2 flex">
-              {Array.from({ length: 11 }).map((_, i) => (
-                <div key={i} className="flex-1 border-l border-white/10 first:border-l-0" />
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="border-t-4 border-black dark:border-white bg-[#1a1a1a]">
+        {/* Unified Trim Bar: filmstrip + handles + scrubber */}
+        <div className="border-t-4 border-black dark:border-white bg-[#111]">
           <div className="flex items-center">
+            {/* Play/Pause */}
             <TogglePlay target={previewId}>
-              <button slot="pause" className="w-12 h-12 flex items-center justify-center bg-[var(--accent-red)] hover:brightness-110 transition-all">
+              <button slot="pause" className="w-10 h-16 flex items-center justify-center bg-black/80 hover:bg-black transition-colors">
                 <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
                 </svg>
               </button>
-              <button slot="play" className="w-12 h-12 flex items-center justify-center bg-[var(--accent-blue)] hover:brightness-110 transition-all">
+              <button slot="play" className="w-10 h-16 flex items-center justify-center bg-black/80 hover:bg-black transition-colors">
                 <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z" />
                 </svg>
               </button>
             </TogglePlay>
 
-            <div className="flex-1 px-4 h-12 flex items-center border-l-4 border-black dark:border-white">
-              <Scrubber
-                target={previewId}
-                className="w-full h-1.5 bg-white/20 rounded-full cursor-pointer"
-                style={{ '--ef-scrubber-progress-color': 'var(--poster-red)', '--ef-scrubber-handle-size': '12px' } as React.CSSProperties}
+            {/* Trim track with filmstrip */}
+            <div
+              ref={trackRef}
+              className="relative flex-1 h-16 cursor-crosshair overflow-hidden"
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerLeave={handlePointerUp}
+            >
+              {/* Filmstrip background */}
+              <Filmstrip
+                target={timegroupId}
+                hide-playhead
+                className="absolute inset-0 pointer-events-none"
+                style={{ '--ef-thumbnail-strip-height': '64px' } as React.CSSProperties}
               />
-            </div>
 
-            <div className="px-4 border-l-4 border-black dark:border-white h-12 flex items-center">
-              <TimeDisplay target={previewId} className="text-xs text-white/70 font-mono tabular-nums" />
+              {/* Dimmed regions outside trim */}
+              <div
+                className="absolute top-0 bottom-0 left-0 bg-black/70 z-10"
+                style={{ width: `${inPercent}%` }}
+              />
+              <div
+                className="absolute top-0 bottom-0 right-0 bg-black/70 z-10"
+                style={{ width: `${100 - outPercent}%` }}
+              />
+
+              {/* Top/bottom border on selected region */}
+              <div
+                className="absolute top-0 h-[3px] bg-[var(--poster-gold)] z-20"
+                style={{ left: `${inPercent}%`, width: `${outPercent - inPercent}%` }}
+              />
+              <div
+                className="absolute bottom-0 h-[3px] bg-[var(--poster-gold)] z-20"
+                style={{ left: `${inPercent}%`, width: `${outPercent - inPercent}%` }}
+              />
+
+              {/* Draggable selected region (invisible, over filmstrip) */}
+              <div
+                className="absolute top-0 bottom-0 cursor-move z-20"
+                style={{ left: `${inPercent}%`, width: `${outPercent - inPercent}%` }}
+                onPointerDown={handlePointerDown("region")}
+              />
+
+              {/* In handle */}
+              <div
+                className="absolute top-0 bottom-0 w-4 cursor-ew-resize z-30 flex items-center justify-center"
+                style={{ left: `${inPercent}%`, transform: 'translateX(-100%)' }}
+                onPointerDown={handlePointerDown("in")}
+              >
+                <div className="size-full bg-[var(--poster-gold)] rounded-l-[4px] flex items-center justify-center">
+                  <svg className="w-2 h-6 text-black/60" viewBox="0 0 8 24" fill="currentColor">
+                    <path d="M6 4L2 12L6 20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Out handle */}
+              <div
+                className="absolute top-0 bottom-0 w-4 cursor-ew-resize z-30 flex items-center justify-center"
+                style={{ left: `${outPercent}%` }}
+                onPointerDown={handlePointerDown("out")}
+              >
+                <div className="size-full bg-[var(--poster-gold)] rounded-r-[4px] flex items-center justify-center">
+                  <svg className="w-2 h-6 text-black/60" viewBox="0 0 8 24" fill="currentColor">
+                    <path d="M2 4L6 12L2 20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" />
+                  </svg>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="border-t-4 border-black dark:border-white bg-[#f5f5f5] dark:bg-[#111] px-4 py-2.5">
+        {/* Info Bar */}
+        <div className="border-t-4 border-black dark:border-white bg-[#f5f5f5] dark:bg-[#111] px-4 py-2">
           <div className="flex items-center justify-between gap-3 mb-2">
             {[
               { label: "In", value: inPoint, color: "text-[var(--poster-blue)]" },
