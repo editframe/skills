@@ -1,6 +1,6 @@
 import { useId, useEffect, useLayoutEffect, useState, useRef, useCallback } from "react";
-import { Preview, Timegroup, Video, Filmstrip, TogglePlay } from "@editframe/react";
-import type { EFTimegroup, EFFilmstrip as EFFilmstripType } from "@editframe/elements";
+import { Preview, Timegroup, Video, ThumbnailStrip, TogglePlay } from "@editframe/react";
+import type { EFTimegroup } from "@editframe/elements";
 import { useRenderQueue } from "../RenderQueue";
 
 const VIDEO_SRC = "https://assets.editframe.com/bars-n-tone.mp4";
@@ -19,7 +19,7 @@ export function TrimTool() {
   const id = useId();
   const previewId = `trim-tool-${id}`;
   const timegroupId = `trim-tg-${id}`;
-  const filmstripTgId = `trim-filmstrip-tg-${id}`;
+  const thumbVideoId = `trim-thumbs-${id}`;
   const [isClient, setIsClient] = useState(false);
   const [inPoint, setInPoint] = useState(2000);
   const [outPoint, setOutPoint] = useState(8000);
@@ -29,17 +29,11 @@ export function TrimTool() {
   const draggingRef = useRef<"in" | "out" | "region" | null>(null);
   const dragStartRef = useRef<{ inPoint: number; outPoint: number; mouseX: number } | null>(null);
   const timegroupRef = useRef<EFTimegroup>(null);
-  const filmstripRef = useRef<EFFilmstripType>(null);
   const { enqueue } = useRenderQueue();
 
   useEffect(() => setIsClient(true), []);
 
-  useEffect(() => {
-    const el = filmstripRef.current as any;
-    if (el) el.hidePlayhead = true;
-  }, [isClient]);
-
-  // Measure track width so we can compute pixels-per-ms for the filmstrip
+  // Measure track width for pixels-per-ms calculation
   useEffect(() => {
     const el = trackRef.current;
     if (!el) return;
@@ -51,6 +45,7 @@ export function TrimTool() {
     return () => ro.disconnect();
   }, []);
 
+  // Seek during drag operations
   useLayoutEffect(() => {
     if (!isClient || !draggingRef.current || !timegroupRef.current) return;
     if (draggingRef.current === "out") {
@@ -127,7 +122,7 @@ export function TrimTool() {
   const inPercent = (inPoint / VIDEO_DURATION_MS) * 100;
   const outPercent = (outPoint / VIDEO_DURATION_MS) * 100;
   const duration = outPoint - inPoint;
-  const filmstripPxPerMs = trackWidth > 0 ? trackWidth / VIDEO_DURATION_MS : 0.04;
+  const thumbPxPerMs = trackWidth > 0 ? trackWidth / VIDEO_DURATION_MS : 0.04;
 
   if (!isClient) {
     return (
@@ -151,7 +146,7 @@ export function TrimTool() {
           <span className="text-white/50 text-[10px] font-mono uppercase">Demo</span>
         </div>
 
-        {/* Video Preview */}
+        {/* Video Preview (timegroup kept for playback coordination + export) */}
         <div className="bg-[#111] aspect-video relative">
           <Preview id={previewId} loop className="size-full">
             <Timegroup ref={timegroupRef} id={timegroupId} mode="fixed" duration={`${duration}ms`} className="size-full">
@@ -165,11 +160,9 @@ export function TrimTool() {
           </Preview>
         </div>
 
-        {/* Full-duration timegroup for filmstrip thumbnails (off-screen, not display:none so video has dimensions) */}
+        {/* Bare video for thumbnail extraction (off-screen, full source duration) */}
         <div style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden', pointerEvents: 'none' }}>
-          <Timegroup id={filmstripTgId} mode="fixed" duration={`${VIDEO_DURATION_MS}ms`} style={{ width: '320px', height: '180px' }}>
-            <Video src={VIDEO_SRC} style={{ width: '320px', height: '180px' }} />
-          </Timegroup>
+          <Video id={thumbVideoId} src={VIDEO_SRC} style={{ width: '320px', height: '180px' }} />
         </div>
 
         {/* Unified Trim Bar */}
@@ -189,7 +182,7 @@ export function TrimTool() {
               </button>
             </TogglePlay>
 
-            {/* Trim track with filmstrip */}
+            {/* Trim track */}
             <div
               ref={trackRef}
               className="relative flex-1 h-16 cursor-crosshair overflow-hidden"
@@ -197,13 +190,13 @@ export function TrimTool() {
               onPointerUp={handlePointerUp}
               onPointerLeave={handlePointerUp}
             >
-              {/* Filmstrip background - full source video duration */}
-              <Filmstrip
-                ref={filmstripRef}
-                target={filmstripTgId}
-                pixels-per-ms={filmstripPxPerMs}
+              {/* Thumbnail strip - targets bare video directly, no timeline wrapper */}
+              <ThumbnailStrip
+                target={thumbVideoId}
+                pixels-per-ms={thumbPxPerMs}
+                thumbnail-height={64}
+                thumbnail-spacing-px={32}
                 className="absolute inset-0 pointer-events-none"
-                style={{ '--ef-thumbnail-strip-height': '64px' } as React.CSSProperties}
               />
 
               {/* Dimmed regions outside trim */}
