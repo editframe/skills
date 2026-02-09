@@ -53,10 +53,16 @@ export function TrimTool() {
       const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
       const time = Math.round((x / rect.width) * VIDEO_DURATION_MS);
 
+      const tg = previewRef.current?.querySelector("ef-timegroup") as any;
+
       if (draggingRef.current === "in") {
-        setInPoint(Math.min(time, outPoint - MIN_DURATION_MS));
+        const newInPoint = Math.min(time, outPoint - MIN_DURATION_MS);
+        console.log('[IN DRAG] Before setState - tg.currentTimeMs:', tg?.currentTimeMs, 'newInPoint:', newInPoint, 'outPoint:', outPoint);
+        setInPoint(newInPoint);
       } else if (draggingRef.current === "out") {
-        setOutPoint(Math.max(time, inPoint + MIN_DURATION_MS));
+        const newOutPoint = Math.max(time, inPoint + MIN_DURATION_MS);
+        console.log('[OUT DRAG] Before setState - tg.currentTimeMs:', tg?.currentTimeMs, 'inPoint:', inPoint, 'newOutPoint:', newOutPoint);
+        setOutPoint(newOutPoint);
       } else if (draggingRef.current === "region" && dragStartRef.current) {
         const deltaX = e.clientX - dragStartRef.current.mouseX;
         const deltaTime = Math.round((deltaX / rect.width) * VIDEO_DURATION_MS);
@@ -73,6 +79,7 @@ export function TrimTool() {
           newInPoint = VIDEO_DURATION_MS - duration;
         }
         
+        console.log('[REGION DRAG] Before setState - tg.currentTimeMs:', tg?.currentTimeMs, 'newInPoint:', newInPoint, 'newOutPoint:', newOutPoint);
         setInPoint(newInPoint);
         setOutPoint(newOutPoint);
       }
