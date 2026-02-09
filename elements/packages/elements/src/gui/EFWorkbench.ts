@@ -2298,7 +2298,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     return html`
       <div
         class="grid overflow-hidden"
-        style="flex: 1; min-height: 0; width: 100%; grid-template-rows: auto 1fr 280px; grid-template-columns: 280px 1fr; background-color: var(--workbench-bg);"
+        style="height: 100%; width: 100%; grid-template-rows: auto 1fr 280px; grid-template-columns: 280px 1fr; background-color: var(--workbench-bg);"
       >
         <!-- Top: Full-width Toolbar -->
         <div style="grid-row: 1 / 2; grid-column: 1 / -1;">
@@ -2307,7 +2307,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         
         <!-- Left: Hierarchy Panel -->
         <div
-          style="grid-row: 2 / 3; grid-column: 1 / 2; background: rgb(30 41 59); border-right: 1px solid rgba(148, 163, 184, 0.2); min-height: 0; max-height: 100%; display: flex; flex-direction: column; overflow: hidden;"
+          style="grid-row: 2 / 3; grid-column: 1 / 2; background: var(--ef-color-bg-panel); border-right: 1px solid var(--ef-color-border); min-height: 0; display: flex; flex-direction: column; overflow: hidden;"
         >
           <slot name="hierarchy"></slot>
         </div>
@@ -2336,7 +2336,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         <!-- Bottom: Timeline -->
         <div
           class="overflow-hidden"
-          style="grid-row: 3 / 4; grid-column: 1 / -1; width: 100%; border-top: 1px solid rgba(148, 163, 184, 0.2);"
+          style="grid-row: 3 / 4; grid-column: 1 / -1; width: 100%; border-top: 1px solid var(--ef-color-border);"
         >
           <slot name="timeline"></slot>
         </div>
