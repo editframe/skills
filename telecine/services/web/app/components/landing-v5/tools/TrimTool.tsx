@@ -36,6 +36,9 @@ export function TrimTool() {
       draggingRef.current = handle;
       if (handle === "region") {
         dragStartRef.current = { inPoint, outPoint, mouseX: e.clientX };
+        // Seek to start when beginning to drag the region
+        const tg = previewRef.current?.querySelector("ef-timegroup") as any;
+        if (tg) tg.currentTimeMs = 0;
       }
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
     },
@@ -72,12 +75,6 @@ export function TrimTool() {
         
         setInPoint(newInPoint);
         setOutPoint(newOutPoint);
-        
-        // Seek AFTER React updates the props
-        queueMicrotask(() => {
-          const tg = previewRef.current?.querySelector("ef-timegroup") as any;
-          if (tg) tg.currentTimeMs = 0;
-        });
       }
     },
     [inPoint, outPoint]
