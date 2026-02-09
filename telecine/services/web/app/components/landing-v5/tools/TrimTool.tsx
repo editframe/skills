@@ -1,6 +1,6 @@
 import { useId, useEffect, useLayoutEffect, useState, useRef, useCallback } from "react";
 import { Preview, Timegroup, Video, Filmstrip, TogglePlay } from "@editframe/react";
-import type { EFTimegroup } from "@editframe/elements";
+import type { EFTimegroup, EFFilmstrip as EFFilmstripType } from "@editframe/elements";
 import { useRenderQueue } from "../RenderQueue";
 
 const VIDEO_SRC = "https://assets.editframe.com/bars-n-tone.mp4";
@@ -29,9 +29,15 @@ export function TrimTool() {
   const draggingRef = useRef<"in" | "out" | "region" | null>(null);
   const dragStartRef = useRef<{ inPoint: number; outPoint: number; mouseX: number } | null>(null);
   const timegroupRef = useRef<EFTimegroup>(null);
+  const filmstripRef = useRef<EFFilmstripType>(null);
   const { enqueue } = useRenderQueue();
 
   useEffect(() => setIsClient(true), []);
+
+  useEffect(() => {
+    const el = filmstripRef.current as any;
+    if (el) el.hidePlayhead = true;
+  }, [isClient]);
 
   // Measure track width so we can compute pixels-per-ms for the filmstrip
   useEffect(() => {
@@ -193,8 +199,8 @@ export function TrimTool() {
             >
               {/* Filmstrip background - full source video duration */}
               <Filmstrip
+                ref={filmstripRef}
                 target={filmstripTgId}
-                hide-playhead
                 pixels-per-ms={filmstripPxPerMs}
                 className="absolute inset-0 pointer-events-none"
                 style={{ '--ef-thumbnail-strip-height': '64px' } as React.CSSProperties}

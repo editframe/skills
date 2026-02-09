@@ -99,6 +99,14 @@ export class EFFilmstrip extends TWMixin(LitElement) {
     const currentTargetTemporal = this.targetTemporal;
     if (this.#lastTargetTemporal !== currentTargetTemporal) {
       this.#lastTargetTemporal = currentTargetTemporal;
+
+      // The inner ef-timeline lives in our shadow root and can't resolve
+      // targets from the document registry. Force it to re-render when
+      // our own target resolution succeeds or changes.
+      const timeline = this.timelineRef.value as any;
+      if (timeline) {
+        timeline.requestUpdate();
+      }
     }
 
     super.willUpdate(changedProperties);
