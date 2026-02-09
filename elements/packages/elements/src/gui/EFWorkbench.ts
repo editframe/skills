@@ -1485,27 +1485,37 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   }
   
   /**
-   * Apply the current theme to the document
+   * Apply the current theme to the document and host element
    */
   private applyTheme(): void {
     const root = document.documentElement;
+    let shouldBeDark = false;
     
     if (this.themeMode === 'light') {
-      root.classList.add('light');
-      root.classList.remove('dark');
+      shouldBeDark = false;
     } else if (this.themeMode === 'dark') {
+      shouldBeDark = true;
+    } else {
+      // System mode - check system preference
+      shouldBeDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    
+    // Apply to document root (for light DOM elements)
+    if (shouldBeDark) {
       root.classList.add('dark');
       root.classList.remove('light');
     } else {
-      // System mode - check system preference
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (prefersDark) {
-        root.classList.add('dark');
-        root.classList.remove('light');
-      } else {
-        root.classList.add('light');
-        root.classList.remove('dark');
-      }
+      root.classList.add('light');
+      root.classList.remove('dark');
+    }
+    
+    // Apply to host element (for shadow DOM and :host-context)
+    if (shouldBeDark) {
+      this.classList.add('dark');
+      this.classList.remove('light');
+    } else {
+      this.classList.add('light');
+      this.classList.remove('dark');
     }
   }
   

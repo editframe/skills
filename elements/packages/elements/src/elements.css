@@ -1,3 +1,6 @@
+/* Import theme tokens first so they're available to all components */
+@import "./gui/ef-theme.css";
+
 /* biome-ignore lint/suspicious/noUnknownAtRules: @tailwind is a valid Tailwind CSS directive */
 @tailwind base;
 /* biome-ignore lint/suspicious/noUnknownAtRules: @tailwind is a valid Tailwind CSS directive */
