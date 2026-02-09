@@ -120,6 +120,11 @@ export class EFTimelineRow extends TWMixin(LitElement) {
         transition: background-color 0.1s ease;
       }
 
+      /* Hide label column when hierarchy is disabled */
+      :host([hide-label]) .row-label {
+        display: none;
+      }
+
       .row-label:hover {
         background: color-mix(in srgb, var(--ef-color-bg-panel) 70%, var(--ef-color-hover) 30%);
       }
@@ -176,6 +181,9 @@ export class EFTimelineRow extends TWMixin(LitElement) {
 
   @property({ type: Boolean, attribute: "enable-trim" })
   enableTrim = false;
+
+  @property({ type: Boolean, attribute: "hide-label", reflect: true })
+  hideLabel = false;
 
   @property({ type: Array, attribute: false })
   hideSelectors?: string[];

@@ -964,6 +964,17 @@ export class EFTimeline extends TWMixin(LitElement) {
   protected updated(changedProperties: PropertyValues): void {
     super.updated(changedProperties);
 
+    // Sync CSS variable and attribute when hierarchy visibility changes
+    if (changedProperties.has("showHierarchy")) {
+      if (this.showHierarchy) {
+        this.style.removeProperty("--timeline-hierarchy-width");
+        this.removeAttribute("hide-hierarchy");
+      } else {
+        this.style.setProperty("--timeline-hierarchy-width", "0px");
+        this.setAttribute("hide-hierarchy", "");
+      }
+    }
+
     // Subscribe to playback controller when targetTemporal changes
     if (changedProperties.has("targetTemporal") || changedProperties.has("controlTarget")) {
       this.subscribeToPlaybackController();
@@ -1957,6 +1968,7 @@ export class EFTimeline extends TWMixin(LitElement) {
               depth=${row.depth}
               pixels-per-ms=${this.pixelsPerMs}
               ?enable-trim=${this.enableTrim}
+              ?hide-label=${!this.showHierarchy}
               .hideSelectors=${this.hideSelectors}
               .showSelectors=${this.showSelectors}
               .highlightedElement=${highlightedElement}
