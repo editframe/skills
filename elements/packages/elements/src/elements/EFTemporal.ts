@@ -914,9 +914,13 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
       // This ensures users see the new starting frame, avoiding confusion
       // when both properties change together (e.g., dragging a trim region)
       if (changedProperties.has("_sourceInMs") || changedProperties.has("_sourceOutMs")) {
+        console.log('[EFTemporal willUpdate] sourcein/sourceout changed, rootTimegroup:', this.rootTimegroup, 'currentTimeMs:', this.rootTimegroup?.currentTimeMs);
         // Reset the root timegroup's currentTime (whether we're the root or a child)
         if (this.rootTimegroup && this.rootTimegroup.currentTimeMs !== 0) {
+          console.log('[EFTemporal] Resetting timegroup currentTimeMs to 0');
           this.rootTimegroup.currentTimeMs = 0;
+        } else {
+          console.log('[EFTemporal] Not resetting - already at 0 or no rootTimegroup');
         }
       }
     }
