@@ -12,43 +12,44 @@
 
 :root,
 :host {
-  /* Backgrounds — named by role in the editor */
-  --ef-color-bg: rgb(30 41 59); /* slate-800 — workspace background */
-  --ef-color-bg-panel: rgb(51 65 85); /* slate-700 — headers, toolbars, panels */
-  --ef-color-bg-elevated: rgb(15 23 42); /* slate-900 — dropdowns, popovers */
-  --ef-color-bg-inset: rgb(51 65 85); /* slate-700 — track wells, input backgrounds */
+  /* Backgrounds — Strong hierarchy with deep blacks */
+  --ef-color-bg: #0a0a0a; /* Deep black workspace */
+  --ef-color-bg-panel: #111111; /* Elevated panels (hierarchy, timeline header) */
+  --ef-color-bg-elevated: #1a1a1a; /* Dropdowns, popovers */
+  --ef-color-bg-inset: #050505; /* Track wells (darker than workspace) */
 
-  /* Borders */
-  --ef-color-border: rgb(71 85 105); /* slate-600 — default border between sections */
-  --ef-color-border-subtle: rgba(148, 163, 184, 0.2); /* translucent dividers */
+  /* Borders — Visible but refined */
+  --ef-color-border: rgba(255, 255, 255, 0.15); /* More visible borders */
+  --ef-color-border-subtle: rgba(255, 255, 255, 0.08); /* Subtle dividers */
 
-  /* Text */
-  --ef-color-text: rgb(226 232 240); /* slate-200 — primary text */
-  --ef-color-text-muted: rgb(148 163 184); /* slate-400 — labels, timestamps, hints */
-  --ef-color-text-subtle: rgb(100 116 139); /* slate-500 — empty states, placeholders */
+  /* Text — High contrast */
+  --ef-color-text: #FAFAFA; /* Primary text */
+  --ef-color-text-muted: #9CA3AF; /* Labels, timestamps, hints */
+  --ef-color-text-subtle: #6B7280; /* Empty states, placeholders */
 
-  /* Interactive states */
-  --ef-color-primary: rgb(59 130 246); /* blue-500 — accent/brand color */
-  --ef-color-primary-hover: rgb(96 165 250); /* blue-400 — accent hover */
-  --ef-color-primary-subtle: rgba(59, 130, 246, 0.3); /* low-opacity accent */
-  --ef-color-hover: rgba(148, 163, 184, 0.2); /* generic hover overlay */
-  --ef-color-selected: rgba(59, 130, 246, 0.3); /* selected state background */
-  --ef-color-selected-subtle: rgba(59, 130, 246, 0.15); /* ancestor/related selection */
-  --ef-color-focused: rgba(148, 163, 184, 0.4); /* keyboard focus indicator */
+  /* Interactive states — Bold poster red accent */
+  --ef-color-primary: #E53935; /* Poster red — playhead, focus */
+  --ef-color-primary-hover: #EF5350; /* Lighter red */
+  --ef-color-primary-subtle: rgba(229, 57, 53, 0.2); /* Low-opacity accent */
+  --ef-color-hover: rgba(255, 255, 255, 0.08); /* Generic hover overlay */
+  --ef-color-selected: rgba(229, 57, 53, 0.25); /* Selected state background */
+  --ef-color-selected-subtle: rgba(229, 57, 53, 0.12); /* Ancestor/related selection */
+  --ef-color-focused: rgba(229, 57, 53, 0.3); /* Keyboard focus indicator */
 
-  /* Semantic colors */
-  --ef-color-danger: rgb(239 68 68); /* red-500 — errors, destructive actions */
-  --ef-color-success: rgb(34 197 94); /* green-500 — positive indicators */
-  --ef-color-warning: rgb(251 191 36); /* amber-400 — warnings */
-  --ef-color-playhead: rgb(239 68 68); /* red-500 — playhead indicator */
+  /* Semantic colors — Vibrant */
+  --ef-color-danger: #EF5350; /* Red-400 */
+  --ef-color-success: #4CAF50; /* Green-500 (brighter) */
+  --ef-color-warning: #FFCA28; /* Gold-400 */
+  --ef-color-playhead: #E53935; /* Poster red */
+  --ef-color-error: #EF5350; /* Error state */
 
-  /* Element type colors */
-  --ef-color-type-video: rgb(59 130 246); /* blue-500 */
-  --ef-color-type-audio: rgb(34 197 94); /* green-500 */
-  --ef-color-type-image: rgb(168 85 247); /* purple-500 */
-  --ef-color-type-text: rgb(249 115 22); /* orange-500 */
-  --ef-color-type-captions: rgb(34 197 94); /* green-500 */
-  --ef-color-type-timegroup: rgb(148 163 184); /* slate-400 */
+  /* Element type colors — Bold, distinct */
+  --ef-color-type-video: #42A5F5; /* Blue-400 (brighter) */
+  --ef-color-type-audio: #4CAF50; /* Green-500 */
+  --ef-color-type-image: #AB47BC; /* Purple-400 */
+  --ef-color-type-text: #FF7043; /* Deep orange-400 */
+  --ef-color-type-captions: #66BB6A; /* Green-400 */
+  --ef-color-type-timegroup: #78909C; /* Blue gray-400 */
 
   /* Typography */
   --ef-font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -65,18 +66,18 @@
 
   /* Filmstrip component tokens (reference globals) */
   --filmstrip-bg: var(--ef-color-bg-inset);
-  --filmstrip-item-bg: rgba(30, 41, 59, 0.8);
-  --filmstrip-item-focused: rgba(59, 130, 246, 0.25);
+  --filmstrip-item-bg: rgba(17, 17, 17, 0.9); /* Darker */
+  --filmstrip-item-focused: rgba(229, 57, 53, 0.3); /* Poster red */
   --filmstrip-border: var(--ef-color-border);
-  --filmstrip-caption-bg: rgba(34, 197, 94, 0.1);
-  --filmstrip-caption-border: rgba(34, 197, 94, 0.4);
-  --filmstrip-segment-bg: rgba(34, 197, 94, 0.3);
-  --filmstrip-segment-border: rgba(34, 197, 94, 0.5);
-  --filmstrip-waveform-bg: rgba(0, 0, 0, 0.3);
-  --filmstrip-waveform-border: rgba(255, 255, 255, 0.1);
+  --filmstrip-caption-bg: rgba(76, 175, 80, 0.15); /* Green with more opacity */
+  --filmstrip-caption-border: rgba(76, 175, 80, 0.5);
+  --filmstrip-segment-bg: rgba(76, 175, 80, 0.3);
+  --filmstrip-segment-border: rgba(76, 175, 80, 0.6);
+  --filmstrip-waveform-bg: rgba(0, 0, 0, 0.4);
+  --filmstrip-waveform-border: rgba(255, 255, 255, 0.15);
   --filmstrip-timegroup-focused: var(--ef-color-focused);
-  --filmstrip-animation-bg: rgba(59, 130, 246, 0.2);
-  --filmstrip-keyframe-bg: rgba(59, 130, 246, 0.4);
+  --filmstrip-animation-bg: rgba(229, 57, 53, 0.2); /* Poster red */
+  --filmstrip-keyframe-bg: rgba(229, 57, 53, 0.4); /* Poster red */
 
   /* Trim handle tokens */
   --trim-handle-color: rgba(255, 255, 255, 0.7);
@@ -84,42 +85,43 @@
   --trim-overlay-color: rgba(0, 0, 0, 0.4);
 }
 
-/* Light mode theme */
+/* Light mode theme — Paper cream aesthetic */
 .light,
 :host(.light),
 :host-context(.light) {
-  /* Backgrounds */
-  --ef-color-bg: rgb(241 245 249); /* slate-100 */
-  --ef-color-bg-panel: rgb(226 232 240); /* slate-200 */
-  --ef-color-bg-elevated: white; /* floating surfaces */
-  --ef-color-bg-inset: rgb(226 232 240); /* slate-200 */
+  /* Backgrounds — Paper cream */
+  --ef-color-bg: #FAF8F5; /* Paper cream */
+  --ef-color-bg-panel: #F5F3F0; /* Slightly darker cream */
+  --ef-color-bg-elevated: #FFFFFF; /* Pure white */
+  --ef-color-bg-inset: #EDEAE6; /* Darker inset */
 
   /* Borders */
-  --ef-color-border: rgb(203 213 225); /* slate-300 */
-  --ef-color-border-subtle: rgba(100, 116, 139, 0.2);
+  --ef-color-border: rgba(0, 0, 0, 0.12); /* Subtle rule lines */
+  --ef-color-border-subtle: rgba(0, 0, 0, 0.06);
 
-  /* Text */
-  --ef-color-text: rgb(30 41 59); /* slate-800 */
-  --ef-color-text-muted: rgb(100 116 139); /* slate-500 */
-  --ef-color-text-subtle: rgb(148 163 184); /* slate-400 */
+  /* Text — Ink black */
+  --ef-color-text: #1a1a1a; /* Ink black */
+  --ef-color-text-muted: #78716C; /* Warm gray */
+  --ef-color-text-subtle: #A8A29E; /* Lighter warm gray */
 
-  /* Interactive states */
-  --ef-color-primary: rgb(59 130 246); /* blue-500 */
-  --ef-color-primary-hover: rgb(37 99 235); /* blue-600 */
-  --ef-color-primary-subtle: rgba(59, 130, 246, 0.2);
-  --ef-color-hover: rgba(100, 116, 139, 0.15);
-  --ef-color-selected: rgba(59, 130, 246, 0.2);
-  --ef-color-selected-subtle: rgba(59, 130, 246, 0.1);
-  --ef-color-focused: rgba(100, 116, 139, 0.25);
+  /* Interactive states — Keep bold red */
+  --ef-color-primary: #E53935; /* Poster red */
+  --ef-color-primary-hover: #C62828; /* Darker red */
+  --ef-color-primary-subtle: rgba(229, 57, 53, 0.15);
+  --ef-color-hover: rgba(0, 0, 0, 0.05);
+  --ef-color-selected: rgba(229, 57, 53, 0.2);
+  --ef-color-selected-subtle: rgba(229, 57, 53, 0.1);
+  --ef-color-focused: rgba(229, 57, 53, 0.25);
 
   /* Semantic colors */
-  --ef-color-danger: rgb(185 28 28); /* red-700 */
-  --ef-color-success: rgb(22 163 74); /* green-600 */
-  --ef-color-warning: rgb(245 158 11); /* amber-500 */
-  --ef-color-playhead: rgb(185 28 28); /* red-700 */
+  --ef-color-danger: #C62828; /* Red-800 */
+  --ef-color-success: #2E7D32; /* Green-800 */
+  --ef-color-warning: #F57C00; /* Orange-700 */
+  --ef-color-playhead: #E53935; /* Poster red */
+  --ef-color-error: #C62828;
 
   /* Filmstrip light mode adjustments */
-  --filmstrip-item-bg: rgba(226, 232, 240, 0.8);
-  --filmstrip-waveform-bg: rgba(0, 0, 0, 0.05);
-  --filmstrip-waveform-border: rgba(0, 0, 0, 0.1);
+  --filmstrip-item-bg: rgba(245, 243, 240, 0.9);
+  --filmstrip-waveform-bg: rgba(0, 0, 0, 0.04);
+  --filmstrip-waveform-border: rgba(0, 0, 0, 0.08);
 }

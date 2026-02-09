@@ -126,7 +126,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         border-radius: 6px;
         color: var(--ef-color-text);
         font-size: 12px;
-        font-weight: 500;
+        font-weight: 600;
         cursor: pointer;
         transition: all 0.15s ease;
       }
@@ -193,15 +193,15 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       }
       
       .mode-indicator.dom {
-        background: rgba(34, 197, 94, 0.2);
+        background: rgba(76, 175, 80, 0.2);
         color: var(--ef-color-success);
-        border: 1px solid rgba(34, 197, 94, 0.3);
+        border: 1px solid rgba(76, 175, 80, 0.4);
       }
       
       .mode-indicator.canvas {
-        background: rgba(168, 85, 247, 0.2);
-        color: #c084fc;
-        border: 1px solid rgba(168, 85, 247, 0.3);
+        background: rgba(171, 71, 188, 0.2);
+        color: #BA68C8;
+        border: 1px solid rgba(171, 71, 188, 0.4);
       }
       
       .canvas-container {
@@ -212,6 +212,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         grid-template-columns: 100%;
         grid-template-rows: 100%;
         min-height: 0;
+        background: var(--ef-color-bg);
       }
       
       .canvas-container ::slotted(*) {
