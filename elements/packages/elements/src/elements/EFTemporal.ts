@@ -907,6 +907,20 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
       this._sourceOutMs = value;
     }
 
+    override willUpdate(changedProperties: Map<PropertyKey, unknown>): void {
+      super.willUpdate?.(changedProperties);
+      
+      // When sourcein or sourceout change, reset currentTime to 0
+      // This ensures users see the new starting frame, avoiding confusion
+      // when both properties change together (e.g., dragging a trim region)
+      if (changedProperties.has("_sourceInMs") || changedProperties.has("_sourceOutMs")) {
+        // Reset the root timegroup's currentTime (whether we're the root or a child)
+        if (this.rootTimegroup && this.rootTimegroup.currentTimeMs !== 0) {
+          this.rootTimegroup.currentTimeMs = 0;
+        }
+      }
+    }
+
     @property({
       type: Number,
       attribute: "startoffset",

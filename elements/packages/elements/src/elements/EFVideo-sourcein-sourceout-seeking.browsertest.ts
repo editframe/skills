@@ -60,7 +60,7 @@ const test = baseTest.extend<{
 });
 
 describe("EFVideo sourcein/sourceout seeking behavior", () => {
-  test("documents current behavior: timegroup stays at time 0 when sourcein changes", async ({ 
+  test("timegroup resets to 0 when sourcein changes", async ({ 
     timegroup, 
     video 
   }) => {
@@ -74,12 +74,11 @@ describe("EFVideo sourcein/sourceout seeking behavior", () => {
     await video.updateComplete;
     await timegroup.updateComplete;
     
-    // CURRENT BEHAVIOR: timegroup stays at 0
-    // This means we're now showing frame at 3000ms from source video
+    // FIXED BEHAVIOR: timegroup resets to 0 to show the new in-point
     expect(timegroup.currentTimeMs).toBe(0);
   });
 
-  test("documents current behavior: timegroup stays at time 0 when sourceout changes", async ({ 
+  test("timegroup resets to 0 when sourceout changes", async ({ 
     timegroup, 
     video 
   }) => {
@@ -91,11 +90,11 @@ describe("EFVideo sourcein/sourceout seeking behavior", () => {
     await video.updateComplete;
     await timegroup.updateComplete;
     
-    // CURRENT BEHAVIOR: timegroup stays at 0
+    // FIXED BEHAVIOR: timegroup resets to 0 to show the new in-point
     expect(timegroup.currentTimeMs).toBe(0);
   });
 
-  test("documents current behavior: timegroup stays at time 0 when both sourcein and sourceout change", async ({ 
+  test("timegroup resets to 0 when both sourcein and sourceout change", async ({ 
     timegroup, 
     video 
   }) => {
@@ -108,12 +107,12 @@ describe("EFVideo sourcein/sourceout seeking behavior", () => {
     await video.updateComplete;
     await timegroup.updateComplete;
     
-    // CURRENT BEHAVIOR: timegroup stays at 0
-    // This is confusing because the user expects to see the new in-point
+    // FIXED BEHAVIOR: timegroup resets to 0 to show the new in-point
+    // This was the confusing case - now it works correctly!
     expect(timegroup.currentTimeMs).toBe(0);
   });
 
-  test("documents expected behavior: should timegroup reset to 0 when sourcein changes?", async ({ 
+  test("timegroup resets to 0 even when already at a different time", async ({ 
     timegroup, 
     video 
   }) => {
@@ -127,16 +126,9 @@ describe("EFVideo sourcein/sourceout seeking behavior", () => {
     await video.updateComplete;
     await timegroup.updateComplete;
     
-    // QUESTION: Should this reset to 0, or maintain position?
-    // Option A: Reset to 0 (show new in-point)
-    // Option B: Maintain 3000ms (stay at same relative position if possible)
-    // Option C: Maintain absolute source time (complex, probably not desired)
-    
-    // For now, document current behavior
-    const currentTime = timegroup.currentTimeMs;
-    console.log("Current behavior: timegroup.currentTimeMs =", currentTime);
-    
-    // This test is intentionally not asserting - it's documenting the question
+    // FIXED BEHAVIOR: Resets to 0 (show new in-point)
+    // This is the "principle of least surprise" - users expect to see the new trim point
+    expect(timegroup.currentTimeMs).toBe(0);
   });
 
   test.skip("proposed behavior: sourcein/sourceout changes should emit an event", async ({ 

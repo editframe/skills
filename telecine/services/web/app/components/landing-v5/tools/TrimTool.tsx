@@ -29,17 +29,6 @@ export function TrimTool() {
 
   useEffect(() => setIsClient(true), []);
 
-  // WORKAROUND: When dragging the entire trim region, both sourcein and sourceout
-  // change together. The timegroup stays at its current time, which means the user
-  // doesn't see the video update. We explicitly seek to time 0 to show the new in-point.
-  // See: EFVideo-sourcein-sourceout-seeking.browsertest.ts for API improvement proposals.
-  useEffect(() => {
-    if (draggingRef.current === "region") {
-      const tg = previewRef.current?.querySelector("ef-timegroup") as any;
-      if (tg) tg.currentTimeMs = 0;
-    }
-  }, [inPoint, outPoint]);
-
   const handlePointerDown = useCallback(
     (handle: "in" | "out" | "region") => (e: React.PointerEvent) => {
       e.preventDefault();
