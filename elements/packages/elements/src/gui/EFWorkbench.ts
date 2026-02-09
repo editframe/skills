@@ -45,11 +45,13 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   static styles = [
     css`
       :host {
-        display: flex;
-        flex-direction: column;
+        display: grid;
+        grid-template-rows: auto 1fr 280px;
+        grid-template-columns: 280px 1fr;
         width: 100%;
         height: 100%;
         overflow: hidden;
+        background-color: var(--ef-color-bg);
         
         /* Component tokens (reference globals from ef-theme.css) */
         --workbench-bg: var(--ef-color-bg);
@@ -2294,50 +2296,45 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       `;
     }
     return html`
+      <!-- Top: Full-width Toolbar -->
+      <div style="grid-row: 1 / 2; grid-column: 1 / -1;">
+        ${this.renderToolbar()}
+      </div>
+      
+      <!-- Left: Hierarchy Panel -->
       <div
-        class="grid overflow-hidden"
-        style="flex: 1 1 100%; min-height: 0; width: 100%; grid-template-rows: auto 1fr 280px; grid-template-columns: 280px 1fr; background-color: var(--workbench-bg);"
+        style="grid-row: 2 / 3; grid-column: 1 / 2; background: var(--ef-color-bg-panel); border-right: 1px solid var(--ef-color-border); min-height: 0; overflow: hidden;"
       >
-        <!-- Top: Full-width Toolbar -->
-        <div style="grid-row: 1 / 2; grid-column: 1 / -1;">
-          ${this.renderToolbar()}
-        </div>
+        <slot name="hierarchy"></slot>
+      </div>
+
+      <!-- Center: Canvas area -->
+      <div
+        class="canvas-container"
+        part="canvas"
+        style="grid-row: 2 / 3; grid-column: 2 / 3; min-height: 0; overflow: hidden;"
+        @wheel=${this.handleStageWheel}
+      >
+        <!-- Original timegroup (hidden in clone/canvas mode, visible in dom mode) -->
+        <slot name="canvas"></slot>
         
-        <!-- Left: Hierarchy Panel -->
-        <div
-          style="grid-row: 2 / 3; grid-column: 1 / 2; background: var(--ef-color-bg-panel); border-right: 1px solid var(--ef-color-border); min-height: 0; display: flex; flex-direction: column; overflow: hidden;"
-        >
-          <slot name="hierarchy"></slot>
-        </div>
+        <!-- Canvas preview (visible in canvas mode only) -->
+        <div 
+          class="canvas-overlay" 
+          ${ref(this.canvasPreviewRef)}
+          style="display: ${this.presentationMode === "canvas" ? "block" : "none"}"
+        ></div>
+        
+        <!-- Playback stats overlay (visible in canvas mode only) -->
+        ${this.renderPlaybackStats()}
+      </div>
 
-        <!-- Center: Canvas area -->
-        <div
-          class="canvas-container"
-          part="canvas"
-          style="grid-row: 2 / 3; grid-column: 2 / 3; min-height: 0;"
-          @wheel=${this.handleStageWheel}
-        >
-          <!-- Original timegroup (hidden in clone/canvas mode, visible in dom mode) -->
-          <slot name="canvas"></slot>
-          
-          <!-- Canvas preview (visible in canvas mode only) -->
-          <div 
-            class="canvas-overlay" 
-            ${ref(this.canvasPreviewRef)}
-            style="display: ${this.presentationMode === "canvas" ? "block" : "none"}"
-          ></div>
-          
-          <!-- Playback stats overlay (visible in canvas mode only) -->
-          ${this.renderPlaybackStats()}
-        </div>
-
-        <!-- Bottom: Timeline -->
-        <div
-          class="overflow-hidden"
-          style="grid-row: 3 / 4; grid-column: 1 / -1; width: 100%; border-top: 1px solid var(--ef-color-border);"
-        >
-          <slot name="timeline"></slot>
-        </div>
+      <!-- Bottom: Timeline -->
+      <div
+        class="overflow-hidden"
+        style="grid-row: 3 / 4; grid-column: 1 / -1; border-top: 1px solid var(--ef-color-border);"
+      >
+        <slot name="timeline"></slot>
       </div>
     `;
   }
