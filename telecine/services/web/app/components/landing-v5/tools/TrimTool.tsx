@@ -1,8 +1,9 @@
-import { useId, useEffect, useLayoutEffect, useState, useRef, useCallback } from "react";
+import { useId, useEffect, useState, useRef, useCallback } from "react";
 import { Preview, Timegroup, Video, Scrubber, TogglePlay, TimeDisplay } from "@editframe/react";
 import { useRenderQueue } from "../RenderQueue";
 
 const VIDEO_SRC = "https://assets.editframe.com/bars-n-tone.mp4";
+const VIDEO_DURATION_MS = 10000; // Known duration of bars-n-tone.mp4
 const MIN_DURATION_MS = 500;
 
 function formatTime(ms: number): string {
@@ -16,12 +17,9 @@ function formatTime(ms: number): string {
 export function TrimTool() {
   const id = useId();
   const previewId = `trim-tool-${id}`;
-
   const [isClient, setIsClient] = useState(false);
-  const [videoDuration, setVideoDuration] = useState<number | null>(null);
   const [inPoint, setInPoint] = useState(2000);
   const [outPoint, setOutPoint] = useState(8000);
-  const [currentTime, setCurrentTime] = useState(0);
 
   const trackRef = useRef<HTMLDivElement>(null);
   const draggingRef = useRef<"in" | "out" | "region" | null>(null);
@@ -30,26 +28,6 @@ export function TrimTool() {
   const { enqueue } = useRenderQueue();
 
   useEffect(() => setIsClient(true), []);
-
-  // Detect video duration
-  useEffect(() => {
-    if (!isClient) return;
-    const interval = setInterval(() => {
-      const video = previewRef.current?.querySelector("ef-video") as any;
-      if (video?.mediaDurationMs) {
-        setVideoDuration(video.mediaDurationMs);
-        clearInterval(interval);
-      }
-    }, 100);
-    return () => clearInterval(interval);
-  }, [isClient]);
-
-  // Sync currentTime to timegroup
-  useLayoutEffect(() => {
-    if (!isClient) return;
-    const tg = previewRef.current?.querySelector("ef-timegroup") as any;
-    if (tg) tg.currentTimeMs = currentTime;
-  }, [isClient, currentTime]);
 
   const handlePointerDown = useCallback(
     (handle: "in" | "out" | "region") => (e: React.PointerEvent) => {
@@ -66,27 +44,19 @@ export function TrimTool() {
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
-      if (!draggingRef.current || !trackRef.current || !videoDuration) return;
+      if (!draggingRef.current || !trackRef.current) return;
 
       const rect = trackRef.current.getBoundingClientRect();
       const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
-      const time = Math.round((x / rect.width) * videoDuration);
+      const time = Math.round((x / rect.width) * VIDEO_DURATION_MS);
 
       if (draggingRef.current === "in") {
-        const newInPoint = Math.min(time, outPoint - MIN_DURATION_MS);
-        if (newInPoint !== inPoint) {
-          setInPoint(newInPoint);
-          setCurrentTime(0);
-        }
+        setInPoint(Math.min(time, outPoint - MIN_DURATION_MS));
       } else if (draggingRef.current === "out") {
-        const newOutPoint = Math.max(time, inPoint + MIN_DURATION_MS);
-        if (newOutPoint !== outPoint) {
-          setOutPoint(newOutPoint);
-          setCurrentTime(newOutPoint - inPoint);
-        }
+        setOutPoint(Math.max(time, inPoint + MIN_DURATION_MS));
       } else if (draggingRef.current === "region" && dragStartRef.current) {
         const deltaX = e.clientX - dragStartRef.current.mouseX;
-        const deltaTime = Math.round((deltaX / rect.width) * videoDuration);
+        const deltaTime = Math.round((deltaX / rect.width) * VIDEO_DURATION_MS);
         const duration = dragStartRef.current.outPoint - dragStartRef.current.inPoint;
         
         let newInPoint = dragStartRef.current.inPoint + deltaTime;
@@ -95,17 +65,16 @@ export function TrimTool() {
         if (newInPoint < 0) {
           newInPoint = 0;
           newOutPoint = duration;
-        } else if (newOutPoint > videoDuration) {
-          newOutPoint = videoDuration;
-          newInPoint = videoDuration - duration;
+        } else if (newOutPoint > VIDEO_DURATION_MS) {
+          newOutPoint = VIDEO_DURATION_MS;
+          newInPoint = VIDEO_DURATION_MS - duration;
         }
         
         setInPoint(newInPoint);
         setOutPoint(newOutPoint);
-        setCurrentTime(0);
       }
     },
-    [inPoint, outPoint, videoDuration]
+    [inPoint, outPoint]
   );
 
   const handlePointerUp = useCallback(() => {
@@ -125,8 +94,8 @@ export function TrimTool() {
     }
   }, [enqueue, inPoint, outPoint]);
 
-  const inPercent = videoDuration ? (inPoint / videoDuration) * 100 : 0;
-  const outPercent = videoDuration ? (outPoint / videoDuration) * 100 : 0;
+  const inPercent = (inPoint / VIDEO_DURATION_MS) * 100;
+  const outPercent = (outPoint / VIDEO_DURATION_MS) * 100;
   const duration = outPoint - inPoint;
 
   if (!isClient) {
@@ -151,7 +120,7 @@ export function TrimTool() {
         </div>
 
         <div className="bg-[#111] aspect-video relative">
-          <Preview id={previewId} ref={previewRef as any} className="size-full">
+          <Preview id={previewId} ref={previewRef as any} loop className="size-full">
             <Timegroup mode="fixed" duration={`${duration}ms`} className="size-full">
               <Video
                 src={VIDEO_SRC}
