@@ -27,6 +27,7 @@ import {
   timelineEditingContext,
   type TimelineEditingContext,
 } from "./timelineEditingContext.js";
+import { getElementTypeColor } from "../theme.js";
 // NOTE: Track components (ef-timegroup-track, etc.) are NOT imported here
 // to avoid circular dependencies with TrackItem. They must be registered before
 // EFTimelineRow is used. See preloadTracks.ts for the registration sequence.
@@ -49,7 +50,7 @@ export class EFTimelineRow extends TWMixin(LitElement) {
       :host {
         display: flex;
         min-height: var(--timeline-row-height, 28px);
-        border-bottom: 1px solid rgba(71, 85, 105, 0.4);
+        border-bottom: 1px solid var(--ef-color-border-subtle);
       }
 
       /* Root timegroup row with filmstrip - taller to show thumbnails */
@@ -61,8 +62,8 @@ export class EFTimelineRow extends TWMixin(LitElement) {
         top: 24px;
         /* Higher z-index than regular row labels (z-index: 8) so everything scrolls underneath */
         z-index: 15;
-        background: var(--timeline-bg, rgb(30 41 59));
-        border-bottom: 1px solid rgba(71, 85, 105, 0.6);
+        background: var(--timeline-bg, var(--ef-color-bg));
+        border-bottom: 1px solid var(--ef-color-border);
       }
 
       /* Root timegroup label needs higher z-index to stay above other labels when scrolling */
@@ -72,22 +73,22 @@ export class EFTimelineRow extends TWMixin(LitElement) {
 
       /* Hover state - this row is directly hovered */
       :host(.hovered) {
-        background: rgba(59, 130, 246, 0.1);
+        background: var(--ef-color-hover);
       }
 
       /* Ancestor hovered - a descendant of this row is hovered */
       :host(.ancestor-hovered) {
-        background: rgba(59, 130, 246, 0.05);
+        background: var(--ef-color-selected-subtle);
       }
 
       /* Descendant hovered - an ancestor of this row is hovered */
       :host(.descendant-hovered) {
-        background: rgba(59, 130, 246, 0.03);
+        background: var(--ef-color-selected-subtle);
       }
 
       /* Selected state */
       :host(.selected) {
-        background: rgba(59, 130, 246, 0.2);
+        background: var(--ef-color-selected);
       }
       
       :host(.selected) .row-label {
@@ -96,7 +97,7 @@ export class EFTimelineRow extends TWMixin(LitElement) {
 
       /* Ancestor has selected descendant */
       :host(.ancestor-selected) {
-        background: rgba(59, 130, 246, 0.1);
+        background: var(--ef-color-selected-subtle);
       }
 
       .row-label {
@@ -106,30 +107,30 @@ export class EFTimelineRow extends TWMixin(LitElement) {
         z-index: 8;
         width: var(--timeline-hierarchy-width, 200px);
         flex-shrink: 0;
-        background: rgb(38, 50, 68);
-        border-right: 1px solid rgba(71, 85, 105, 0.5);
+        background: var(--ef-color-bg-panel);
+        border-right: 1px solid var(--ef-color-border-subtle);
         display: flex;
         align-items: center;
         font-size: 11px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        color: rgba(226, 232, 240, 0.9);
+        color: var(--ef-color-text);
         cursor: pointer;
         transition: background-color 0.1s ease;
       }
 
       .row-label:hover {
-        background: rgb(51, 65, 85);
+        background: var(--ef-color-hover);
       }
 
       :host(.hovered) .row-label {
-        background: rgb(55, 90, 150);
+        background: var(--ef-color-primary);
         color: white;
       }
 
       :host(.selected) .row-label {
-        background: rgb(45, 85, 140);
+        background: var(--ef-color-primary);
         color: white;
       }
 
@@ -321,18 +322,8 @@ export class EFTimelineRow extends TWMixin(LitElement) {
     return "unknown";
   }
 
-  private getElementTypeColor(type: string): string {
-    const colors: Record<string, string> = {
-      video: "rgb(59, 130, 246)",     // Blue
-      audio: "rgb(34, 197, 94)",      // Green
-      image: "rgb(168, 85, 247)",     // Purple
-      text: "rgb(249, 115, 22)",      // Orange
-      captions: "rgb(34, 197, 94)",   // Green (like audio/subtitles)
-      timegroup: "rgb(148, 163, 184)", // Gray
-      unknown: "rgb(148, 163, 184)",
-    };
-    return colors[type] || colors.unknown!;
-  }
+  // Use shared type color utility from theme.ts
+  // This reads from CSS variables (--ef-color-type-video, etc.) defined in ef-theme.css
 
   private getElementIcon(type: string): TemplateResult {
     const iconMap: Record<string, TemplateResult> = {
@@ -462,13 +453,14 @@ export class EFTimelineRow extends TWMixin(LitElement) {
     const type = this.getElementType(this.element);
     const label = this.getElementLabel(this.element);
     const detail = this.getElementDetail(this.element);
-    const typeColor = this.getElementTypeColor(type);
+    const typeColor = getElementTypeColor(type, this);
     const icon = this.getElementIcon(type);
     const indentPx = this.depth * INDENT_PX;
 
     return html`
       <div
         class="row-label"
+        part="label"
         style=${styleMap({ 
           paddingLeft: `${indentPx}px`,
           borderLeftColor: typeColor,
@@ -486,7 +478,7 @@ export class EFTimelineRow extends TWMixin(LitElement) {
           </span>
         ` : nothing}
       </div>
-      <div class="row-track">${this.renderTrack()}</div>
+      <div class="row-track" part="track">${this.renderTrack()}</div>
     `;
   }
 }
