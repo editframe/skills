@@ -29,6 +29,17 @@ export function TrimTool() {
 
   useEffect(() => setIsClient(true), []);
 
+  // Seek to start when dragging region and trim points change
+  useEffect(() => {
+    if (draggingRef.current === "region") {
+      const tg = previewRef.current?.querySelector("ef-timegroup") as any;
+      if (tg) {
+        console.log('[EFFECT] Seeking to 0 after region drag state update');
+        tg.currentTimeMs = 0;
+      }
+    }
+  }, [inPoint, outPoint]);
+
   const handlePointerDown = useCallback(
     (handle: "in" | "out" | "region") => (e: React.PointerEvent) => {
       e.preventDefault();
@@ -36,9 +47,6 @@ export function TrimTool() {
       draggingRef.current = handle;
       if (handle === "region") {
         dragStartRef.current = { inPoint, outPoint, mouseX: e.clientX };
-        // Seek to start when beginning to drag the region
-        const tg = previewRef.current?.querySelector("ef-timegroup") as any;
-        if (tg) tg.currentTimeMs = 0;
       }
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
     },
