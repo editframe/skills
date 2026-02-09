@@ -2099,18 +2099,23 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
       workbench.rendering = true;
     }
     
-    // Only apply viewport sizing when the workbench will be a direct child of body.
-    // This ensures the workbench fills the screen regardless of the document's CSS
-    // setup (e.g., missing `html, body { height: 100% }`).
-    // When embedded in another container, use default sizing and let the container
-    // control the workbench dimensions.
+    // Apply explicit sizing to ensure workbench fills its container
     if (parent === document.body) {
+      // Direct child of body: use viewport units with fixed positioning
       workbench.style.position = "fixed";
       workbench.style.top = "0";
       workbench.style.left = "0";
       workbench.style.width = "100vw";
       workbench.style.height = "100vh";
       workbench.style.zIndex = "0";
+    } else {
+      // Embedded in container: ensure it fills the container
+      // Use absolute positioning to prevent content-based sizing
+      workbench.style.position = "absolute";
+      workbench.style.top = "0";
+      workbench.style.left = "0";
+      workbench.style.width = "100%";
+      workbench.style.height = "100%";
     }
     
     parent?.append(workbench);
