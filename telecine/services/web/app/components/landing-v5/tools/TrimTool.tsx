@@ -72,6 +72,10 @@ export function TrimTool() {
         
         setInPoint(newInPoint);
         setOutPoint(newOutPoint);
+        
+        // Seek to start of trimmed region when dragging the whole bar
+        const tg = previewRef.current?.querySelector("ef-timegroup") as any;
+        if (tg) tg.currentTimeMs = 0;
       }
     },
     [inPoint, outPoint]
