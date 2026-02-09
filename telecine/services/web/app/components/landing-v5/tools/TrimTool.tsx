@@ -53,7 +53,11 @@ export function TrimTool() {
       if (draggingRef.current === "in") {
         setInPoint(Math.min(time, outPoint - MIN_DURATION_MS));
       } else if (draggingRef.current === "out") {
-        setOutPoint(Math.max(time, inPoint + MIN_DURATION_MS));
+        const newOutPoint = Math.max(time, inPoint + MIN_DURATION_MS);
+        setOutPoint(newOutPoint);
+        // Seek to the out-point so the user sees where they're trimming to
+        const tg = previewRef.current?.querySelector("ef-timegroup") as any;
+        if (tg) tg.currentTimeMs = newOutPoint - inPoint;
       } else if (draggingRef.current === "region" && dragStartRef.current) {
         const deltaX = e.clientX - dragStartRef.current.mouseX;
         const deltaTime = Math.round((deltaX / rect.width) * VIDEO_DURATION_MS);
