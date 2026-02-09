@@ -1,4 +1,4 @@
-import { useId, useEffect, useState, useRef, useCallback } from "react";
+import { useId, useEffect, useLayoutEffect, useState, useRef, useCallback } from "react";
 import { Preview, Timegroup, Video, Scrubber, TogglePlay, TimeDisplay } from "@editframe/react";
 import { useRenderQueue } from "../RenderQueue";
 
@@ -29,6 +29,21 @@ export function TrimTool() {
 
   useEffect(() => setIsClient(true), []);
 
+  // Seek the timegroup AFTER React has applied new props to the DOM.
+  // This avoids the race where an imperative seek gets clamped to the
+  // old duration before React updates it.
+  useLayoutEffect(() => {
+    if (!isClient || !draggingRef.current) return;
+    const tg = previewRef.current?.querySelector("ef-timegroup") as any;
+    if (!tg) return;
+
+    if (draggingRef.current === "out") {
+      tg.currentTimeMs = outPoint - inPoint;
+    } else {
+      tg.currentTimeMs = 0;
+    }
+  }, [isClient, inPoint, outPoint]);
+
   const handlePointerDown = useCallback(
     (handle: "in" | "out" | "region") => (e: React.PointerEvent) => {
       e.preventDefault();
@@ -53,11 +68,7 @@ export function TrimTool() {
       if (draggingRef.current === "in") {
         setInPoint(Math.min(time, outPoint - MIN_DURATION_MS));
       } else if (draggingRef.current === "out") {
-        const newOutPoint = Math.max(time, inPoint + MIN_DURATION_MS);
-        setOutPoint(newOutPoint);
-        // Seek to the out-point so the user sees where they're trimming to
-        const tg = previewRef.current?.querySelector("ef-timegroup") as any;
-        if (tg) tg.currentTimeMs = newOutPoint - inPoint;
+        setOutPoint(Math.max(time, inPoint + MIN_DURATION_MS));
       } else if (draggingRef.current === "region" && dragStartRef.current) {
         const deltaX = e.clientX - dragStartRef.current.mouseX;
         const deltaTime = Math.round((deltaX / rect.width) * VIDEO_DURATION_MS);
