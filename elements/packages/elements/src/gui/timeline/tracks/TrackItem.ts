@@ -26,6 +26,7 @@ import { TWMixin } from "../../TWMixin.js";
 import { phosphorIcon, ICONS } from "../../icons.js";
 import "../TrimHandles.js";
 import type { TrimChangeDetail } from "../TrimHandles.js";
+import { getElementTypeColor } from "../../theme.js";
 
 class ElementTrackController implements ReactiveController {
   private lastDuration = 0;
@@ -99,11 +100,11 @@ export class TrackItem extends TWMixin(LitElement) {
       }
       
       :host(:hover) .trim-container {
-        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+        box-shadow: inset 0 0 0 1px var(--ef-color-hover);
       }
       
       :host([data-focused]) .trim-container {
-        box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.6);
+        box-shadow: inset 0 0 0 1px var(--ef-color-primary);
       }
     `,
   ];
@@ -136,9 +137,17 @@ export class TrackItem extends TWMixin(LitElement) {
   }
 
   /**
-   * Get color for element type
+   * Get color for element type using shared theme utility
    */
   protected getElementTypeColor(): string {
+    const type = this.getElementType();
+    return getElementTypeColor(type, this);
+  }
+
+  /**
+   * @deprecated Use getElementTypeColor() instead
+   */
+  protected getElementTypeColorOld(): string {
     const type = this.getElementType();
     switch (type) {
       case "video":

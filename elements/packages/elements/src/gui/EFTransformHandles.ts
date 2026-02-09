@@ -97,11 +97,11 @@ export class EFTransformHandles extends LitElement {
     }
     .overlay {
       position: absolute;
-      border: 2px solid var(--ef-transform-handles-border-color, #3b82f6);
+      border: 2px solid var(--ef-transform-handles-border-color, var(--ef-color-primary));
       pointer-events: none;
     }
     .overlay.dragging {
-      border-color: var(--ef-transform-handles-dragging-border-color, #2563eb);
+      border-color: var(--ef-transform-handles-dragging-border-color, var(--ef-color-primary));
     }
     .drag-area {
       position: absolute;
@@ -117,8 +117,8 @@ export class EFTransformHandles extends LitElement {
       position: absolute;
       width: 8px;
       height: 8px;
-      background: var(--ef-transform-handles-handle-color, white);
-      border: 1px solid var(--ef-transform-handles-handle-border-color, #3b82f6);
+      background: var(--ef-transform-handles-handle-color, var(--ef-color-bg-elevated));
+      border: 1px solid var(--ef-transform-handles-handle-border-color, var(--ef-color-primary));
       pointer-events: auto;
       /* Only capture pointer events, allow wheel events to pass through */
       touch-action: none;
@@ -144,8 +144,8 @@ export class EFTransformHandles extends LitElement {
     .rotate-handle-circle {
       width: 24px;
       height: 24px;
-      background: var(--ef-transform-handles-rotate-handle-color, #10b981);
-      border: 2px solid white;
+      background: var(--ef-transform-handles-rotate-handle-color, var(--ef-color-success));
+      border: 2px solid var(--ef-color-bg-elevated);
       border-radius: 50%;
       display: flex;
       align-items: center;

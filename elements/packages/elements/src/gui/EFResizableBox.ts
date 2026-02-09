@@ -57,17 +57,17 @@ export class EFResizableBox extends LitElement {
   static styles = css`
     .box {
       position: absolute;
-      border: 2px solid var(--ef-resizable-box-border-color, #3b82f6);
-      background-color: var(--ef-resizable-box-bg-color, rgba(59, 130, 246, 0.2));
+      border: 2px solid var(--ef-resizable-box-border-color, var(--ef-color-primary));
+      background-color: var(--ef-resizable-box-bg-color, color-mix(in srgb, var(--ef-color-primary) 20%, transparent));
       cursor: grab;
     }
     .box.dragging {
-      border-color: var(--ef-resizable-box-dragging-border-color, #2563eb);
-      background-color: var(--ef-resizable-box-dragging-bg-color, rgba(37, 99, 235, 0.3));
+      border-color: var(--ef-resizable-box-dragging-border-color, var(--ef-color-primary));
+      background-color: var(--ef-resizable-box-dragging-bg-color, color-mix(in srgb, var(--ef-color-primary) 30%, transparent));
     }
     .handle {
       position: absolute;
-      background-color: var(--ef-resizable-box-handle-color, #3b82f6);
+      background-color: var(--ef-resizable-box-handle-color, var(--ef-color-primary));
       touch-action: none;
     }
     .handle.nw { top: -4px; left: -4px; width: 8px; height: 8px; cursor: nwse-resize; }

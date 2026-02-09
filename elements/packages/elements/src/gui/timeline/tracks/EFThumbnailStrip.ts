@@ -122,9 +122,9 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
         width: 100%;
         height: 100%;
         padding: 8px;
-        color: rgb(239, 68, 68);
+        color: var(--ef-color-error);
         font-size: 12px;
-        background: rgba(239, 68, 68, 0.1);
+        background: color-mix(in srgb, var(--ef-color-error) 10%, transparent);
       }
 
       canvas {
@@ -742,7 +742,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
         
         // Draw timestamp overlay if enabled
         if (this.previewSettings?.showThumbnailTimestamps) {
-          ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+          ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
           ctx.fillRect(2, 2, 95, 16);
           ctx.fillStyle = "yellow";
           ctx.font = "11px monospace";
@@ -752,10 +752,12 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
         }
       } else {
         // Draw placeholder with timestamp text
-        ctx.fillStyle = "rgba(100, 100, 100, 0.3)";
+        const bgColor = getComputedStyle(this).getPropertyValue("--ef-color-bg-inset").trim() || "rgba(100, 100, 100, 0.3)";
+        ctx.fillStyle = bgColor;
         ctx.fillRect(0, 0, thumbnail.width, thumbnail.height);
         
-        ctx.strokeStyle = "rgba(150, 150, 150, 0.5)";
+        const borderColor = getComputedStyle(this).getPropertyValue("--ef-color-border-subtle").trim() || "rgba(150, 150, 150, 0.5)";
+        ctx.strokeStyle = borderColor;
         ctx.lineWidth = 1;
         ctx.strokeRect(0, 0, thumbnail.width, thumbnail.height);
         

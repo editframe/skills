@@ -106,7 +106,7 @@ export class EFTimelineRuler extends LitElement {
         position: absolute;
         top: 50%;
         font-size: 10px;
-        color: rgb(156, 163, 175);
+        color: var(--ef-color-text-muted);
         font-family: ui-monospace, monospace;
         white-space: nowrap;
         pointer-events: none;
@@ -338,8 +338,8 @@ export class EFTimelineRuler extends LitElement {
     const pixelsPerMs = this.pixelsPerMs;
     const canvasLeft = viewport.left;
 
-    // Time label ticks - more prominent (gray-400)
-    ctx.strokeStyle = "rgb(156, 163, 175)";
+    // Time label ticks - more prominent
+    ctx.strokeStyle = getComputedStyle(this).getPropertyValue("--ef-color-text-muted").trim() || "rgb(156, 163, 175)";
     ctx.lineWidth = 1;
 
     const labelIntervalMs = this.calculateLabelInterval();
@@ -374,8 +374,8 @@ export class EFTimelineRuler extends LitElement {
     const pixelsPerFrame = frameIntervalMs * pixelsPerMs;
 
     if (pixelsPerFrame >= MIN_FRAME_SPACING_PX) {
-      // Frame markers should be lighter than background (gray-500) to be visible
-      ctx.strokeStyle = "rgb(107, 114, 128)";
+      // Frame markers should be lighter than background to be visible
+      ctx.strokeStyle = getComputedStyle(this).getPropertyValue("--ef-color-border-subtle").trim() || "rgb(107, 114, 128)";
       ctx.lineWidth = 1;
 
       const firstFrameIndex = Math.floor(visibleStartTimeMs / frameIntervalMs);

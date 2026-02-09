@@ -36,17 +36,11 @@ export class EFTree extends LitElement {
       overflow: auto;
       font-size: 12px;
 
-      --tree-bg: rgb(30 41 59);
-      --tree-text: rgb(226 232 240);
-      --tree-hover-bg: rgba(148, 163, 184, 0.2);
-      --tree-selected-bg: rgba(59, 130, 246, 0.3);
-    }
-
-    :host(.light) {
-      --tree-bg: rgb(241 245 249);
-      --tree-text: rgb(30 41 59);
-      --tree-hover-bg: rgba(100, 116, 139, 0.15);
-      --tree-selected-bg: rgba(59, 130, 246, 0.2);
+      --tree-bg: var(--ef-color-bg);
+      --tree-text: var(--ef-color-text);
+      --tree-hover-bg: var(--ef-color-hover);
+      --tree-selected-bg: var(--ef-color-selected);
+      --tree-border: var(--ef-color-border);
     }
 
     .tree-container {
@@ -62,15 +56,15 @@ export class EFTree extends LitElement {
       font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      color: rgba(148, 163, 184, 0.8);
-      border-bottom: 1px solid var(--tree-border, rgb(71 85 105));
+      color: var(--ef-color-text-muted);
+      border-bottom: 1px solid var(--tree-border);
       margin-bottom: 4px;
     }
 
     .empty {
       padding: 16px;
       text-align: center;
-      color: rgba(148, 163, 184, 0.6);
+      color: var(--ef-color-text-subtle);
       font-style: italic;
     }
   `;

@@ -40,14 +40,14 @@ export class EFVideoTrack extends TrackItem {
         position: relative;
         flex: 0 0 ${THUMBNAIL_HEIGHT}px;
         height: ${THUMBNAIL_HEIGHT}px;
-        background: rgba(30, 41, 59, 0.6);
+        background: var(--ef-color-bg-inset);
       }
       .audio-section {
         position: relative;
         flex: 0 0 ${AUDIO_SECTION_HEIGHT}px;
         height: ${AUDIO_SECTION_HEIGHT}px;
-        background: rgba(0, 0, 0, 0.3);
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        background: var(--ef-color-bg-elevated);
+        border-top: 1px solid var(--ef-color-border-subtle);
         overflow: hidden;
       }
       .audio-section-canvas {
@@ -218,7 +218,7 @@ export class EFVideoTrack extends TrackItem {
     const pixelsPerSample = width / sampleCount;
 
     // Draw filled waveform
-    ctx.fillStyle = "rgb(74, 222, 128)";
+    ctx.fillStyle = getComputedStyle(this).getPropertyValue("--ef-color-success").trim() || "rgb(74, 222, 128)";
     ctx.globalAlpha = 0.9;
     ctx.beginPath();
 
@@ -257,7 +257,7 @@ export class EFVideoTrack extends TrackItem {
 
     // Draw center line
     ctx.globalAlpha = 0.3;
-    ctx.strokeStyle = "rgb(74, 222, 128)";
+    ctx.strokeStyle = getComputedStyle(this).getPropertyValue("--ef-color-success").trim() || "rgb(74, 222, 128)";
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(0, centerY);
@@ -344,8 +344,8 @@ export class EFVideoTrack extends TrackItem {
             ...this.trimPortionStyles,
             height: `${trackHeight}px`,
             backgroundColor: this.isFocused
-              ? "rgba(59, 130, 246, 0.25)"
-              : "rgba(30, 41, 59, 0.8)",
+              ? "color-mix(in srgb, var(--ef-color-primary) 25%, transparent)"
+              : "var(--ef-color-bg-inset)",
             borderLeft: `3px solid ${typeColor}`,
             borderRadius: "3px",
           })}

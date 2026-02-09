@@ -51,16 +51,16 @@ export class EFTimegroupTrack extends TrackItem {
       .trim-container {
         background: linear-gradient(
           135deg,
-          rgba(148, 163, 184, 0.1) 0%,
-          rgba(148, 163, 184, 0.05) 100%
+          color-mix(in srgb, var(--ef-color-type-timegroup) 10%, transparent) 0%,
+          color-mix(in srgb, var(--ef-color-type-timegroup) 5%, transparent) 100%
         ) !important;
       }
       
       :host(:hover) .trim-container {
         background: linear-gradient(
           135deg,
-          rgba(148, 163, 184, 0.15) 0%,
-          rgba(148, 163, 184, 0.08) 100%
+          color-mix(in srgb, var(--ef-color-type-timegroup) 15%, transparent) 0%,
+          color-mix(in srgb, var(--ef-color-type-timegroup) 8%, transparent) 100%
         ) !important;
       }
     `,

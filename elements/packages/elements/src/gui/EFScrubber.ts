@@ -46,18 +46,13 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
     css`
     :host {
       --ef-scrubber-height: 4px;
-      --ef-scrubber-background: rgb(209 213 219);
-      --ef-scrubber-progress-color: rgb(37 99 235);
+      --ef-scrubber-background: var(--ef-color-border);
+      --ef-scrubber-progress-color: var(--ef-color-primary);
       --ef-scrubber-handle-size: 12px;
       width: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
-    }
-    
-    :host(.dark), :host-context(.dark) {
-      --ef-scrubber-background: rgb(75 85 99);
-      --ef-scrubber-progress-color: rgb(96 165 250);
     }
     
     :host([orientation="vertical"]) {
@@ -143,7 +138,7 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
       top: 0;
       bottom: 0;
       width: 2px;
-      background: rgba(37, 99, 235, 0.2);
+      background: color-mix(in srgb, var(--ef-color-primary) 20%, transparent);
       pointer-events: none;
       z-index: 20;
     }

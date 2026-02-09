@@ -71,11 +71,11 @@ export class EFTextTrack extends TrackItem {
         padding: 0 4px;
         border-radius: 2px;
         overflow: hidden;
-        background: rgba(249, 115, 22, 0.15);
+        background: color-mix(in srgb, var(--ef-color-type-text) 15%, transparent);
       }
       
       .text-segment-block.active {
-        background: rgba(249, 115, 22, 0.35);
+        background: color-mix(in srgb, var(--ef-color-type-text) 35%, transparent);
       }
       
       .text-segment-block:hover {
@@ -83,7 +83,7 @@ export class EFTextTrack extends TrackItem {
         overflow: visible;
         width: max-content !important;
         min-width: max-content;
-        background: rgba(80, 50, 30, 0.95);
+        background: var(--ef-color-bg-elevated);
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
       }
       
@@ -92,7 +92,7 @@ export class EFTextTrack extends TrackItem {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        color: rgba(255, 255, 255, 0.85);
+        color: var(--ef-color-text);
       }
       
       .text-segment-block:hover .segment-text {
@@ -117,14 +117,14 @@ export class EFTextTrack extends TrackItem {
         padding: 0 4px;
         overflow: hidden;
         border-radius: 2px;
-        background: rgba(249, 115, 22, 0.1);
+        background: color-mix(in srgb, var(--ef-color-type-text) 10%, transparent);
       }
       
       .text-compact-block:hover {
         overflow: visible;
         z-index: 100;
         width: max-content;
-        background: rgba(80, 50, 30, 0.95);
+        background: var(--ef-color-bg-elevated);
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
       }
     `,

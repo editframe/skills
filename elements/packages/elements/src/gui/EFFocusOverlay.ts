@@ -16,9 +16,9 @@ export class EFFocusOverlay extends LitElement {
     }
     .overlay {
       position: fixed;
-      outline: 2px solid var(--ef-focus-overlay-color, rgb(59, 130, 246));
-      background: var(--ef-focus-overlay-background, rgb(59, 130, 246));
-      outline: 2px solid var(--ef-focus-overlay-color, rgb(59, 130, 246));
+      outline: 2px solid var(--ef-focus-overlay-color, var(--ef-color-primary));
+      background: var(--ef-focus-overlay-background, var(--ef-color-primary));
+      outline: 2px solid var(--ef-focus-overlay-color, var(--ef-color-primary));
       mix-blend-mode: multiply;
       opacity: 0.4;
       display: none;

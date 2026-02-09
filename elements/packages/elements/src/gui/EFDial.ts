@@ -40,26 +40,28 @@ export class EFDial extends LitElement {
         display: inline-block;
         width: 200px; /* Default size, can be overridden by CSS */
         height: 200px; /* Default size, can be overridden by CSS */
+        --dial-stroke: var(--ef-color-border);
+        --dial-tick: var(--ef-color-border-subtle);
     }
     .dial-container {
       position: relative;
       width: 100%;
       height: 100%;
       border-radius: 50%;
-      background-color: #f3f4f6;
-      border: 2px solid #d1d5db;
+      background-color: var(--ef-color-bg-panel);
+      border: 2px solid var(--ef-color-border);
     }
     .handle {
         position: absolute;
         width: 16px;
         height: 16px;
         border-radius: 50%;
-        border: 2px solid #3b82f6;
-        background-color: white;
+        border: 2px solid var(--ef-color-primary);
+        background-color: var(--ef-color-bg-elevated);
         cursor: grab;
     }
     .handle.dragging {
-        background-color: #3b82f6;
+        background-color: var(--ef-color-primary);
         cursor: grabbing;
     }
     .center-text {
@@ -67,12 +69,13 @@ export class EFDial extends LitElement {
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        background-color: white;
-        border: 1px solid #d1d5db;
+        background-color: var(--ef-color-bg-elevated);
+        border: 1px solid var(--ef-color-border);
         padding: 2px 4px;
         border-radius: 4px;
         font-family: monospace;
         font-size: 12px;
+        color: var(--ef-color-text);
     }
   `;
 
@@ -157,7 +160,7 @@ export class EFDial extends LitElement {
             cy=${center}
             r=${radius}
             fill="none"
-            stroke="#94a3b8"
+            stroke="var(--dial-stroke)"
             stroke-width="2"
             stroke-dasharray="4 4"
           />
@@ -167,7 +170,7 @@ export class EFDial extends LitElement {
             const y1 = center + Math.sin(angle) * (radius - 8);
             const x2 = center + Math.cos(angle) * (radius + 8);
             const y2 = center + Math.sin(angle) * (radius + 8);
-            return html`<line x1=${x1} y1=${y1} x2=${x2} y2=${y2} stroke="#64748b" stroke-width="2" />`;
+            return html`<line x1=${x1} y1=${y1} x2=${x2} y2=${y2} stroke="var(--dial-tick)" stroke-width="2" />`;
           })}
         </svg>
         <div class="handle ${this.isDragging ? "dragging" : ""}" style=${styleMap(handleStyles)}></div>

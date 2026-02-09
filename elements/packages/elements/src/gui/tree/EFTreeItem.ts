@@ -32,15 +32,15 @@ export class EFTreeItem extends LitElement {
       font-size: var(--tree-item-font-size, 0.75rem);
       cursor: pointer;
       user-select: none;
-      color: var(--tree-text, rgb(226 232 240));
+      color: var(--tree-text);
     }
 
     .item-row:hover {
-      background: var(--tree-hover-bg, rgba(148, 163, 184, 0.2));
+      background: var(--tree-hover-bg);
     }
 
     .item-row[data-selected] {
-      background: var(--tree-selected-bg, rgba(59, 130, 246, 0.3));
+      background: var(--tree-selected-bg);
     }
 
     .expand-icon {

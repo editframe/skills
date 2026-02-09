@@ -13,6 +13,7 @@ import { currentTimeContext } from "../../currentTimeContext.js";
 // TrackItem must be pre-loaded before this module is imported
 // See preloadTracks.ts for the initialization sequence
 import { TrackItem } from "./TrackItem.js";
+import { getElementTypeColor } from "../../theme.js";
 
 // Shared canvas context for text measurement (avoids creating new canvas each time)
 let measurementCanvas: HTMLCanvasElement | null = null;
@@ -240,13 +241,13 @@ export class EFCaptionsTrack extends TrackItem {
         padding: 2px 4px;
         border-radius: 2px;
         transition: all 0.1s ease;
-        background: rgba(30, 41, 59, 0.9);
-        color: rgb(226, 232, 240);
+        background: var(--ef-color-bg-elevated);
+        color: var(--ef-color-text);
         z-index: 1;
       }
       
       .word-element.active {
-        background: rgb(74, 222, 128);
+        background: var(--ef-color-success);
         color: rgb(20, 30, 20);
         font-weight: 700;
         font-size: 10px;
@@ -255,14 +256,14 @@ export class EFCaptionsTrack extends TrackItem {
       }
       
       .word-element.future {
-        background: rgba(51, 65, 85, 0.8);
-        color: rgb(226, 232, 240);
+        background: var(--ef-color-bg-inset);
+        color: var(--ef-color-text);
         z-index: 5;
       }
       
       .segment-block.active .word-element:not(.active):not(.future) {
-        color: rgb(203, 213, 225);
-        background: rgba(30, 41, 59, 0.9);
+        color: var(--ef-color-text-muted);
+        background: var(--ef-color-bg-elevated);
       }
       
       /* Compact text mode - when words are too small to position individually */
@@ -281,7 +282,7 @@ export class EFCaptionsTrack extends TrackItem {
         /* Expand to fit content on hover */
         width: max-content !important;
         min-width: max-content;
-        background: rgba(34, 60, 40, 0.95) !important;
+        background: var(--ef-color-bg-elevated) !important;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
       }
       
@@ -291,7 +292,7 @@ export class EFCaptionsTrack extends TrackItem {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        color: rgb(226, 232, 240);
+        color: var(--ef-color-text);
         width: 100%;
       }
       
@@ -302,7 +303,7 @@ export class EFCaptionsTrack extends TrackItem {
       }
       
       .segment-block.compact-text.active .segment-text-compact {
-        color: rgb(203, 213, 225);
+        color: var(--ef-color-text-muted);
         font-weight: 500;
       }
       
@@ -327,12 +328,12 @@ export class EFCaptionsTrack extends TrackItem {
         bottom: 0;
         width: 1px;
         height: 30%;
-        background: rgba(255, 255, 255, 0.3);
+        background: var(--ef-color-border-subtle);
         pointer-events: none;
       }
       
       .word-marker.active {
-        background: rgba(255, 255, 255, 0.8);
+        background: var(--ef-color-text);
         height: 50%;
         width: 2px;
       }
@@ -429,8 +430,8 @@ export class EFCaptionsTrack extends TrackItem {
     const captionsLocalTimeMs = currentTimeMs - captions.startTimeMs;
     const captionsLocalTimeSec = captionsLocalTimeMs / 1000;
 
-    // Get element type color for captions
-    const captionColor = "rgb(34, 197, 94)"; // Green for captions
+    // Get element type color for captions using shared theme utility
+    const captionColor = getElementTypeColor("captions", this);
     
     // Find active word for highlighting
     const activeWord = captionsData.word_segments.find(
@@ -571,11 +572,11 @@ export class EFCaptionsTrack extends TrackItem {
           height: "100%",
           top: "0px",
           backgroundColor: isActiveSegment
-            ? `rgba(34, 197, 94, ${0.3 + density * 0.2})`
-            : `rgba(34, 197, 94, ${0.1 + density * 0.1})`,
+            ? `color-mix(in srgb, var(--ef-color-type-captions) ${30 + density * 20}%, transparent)`
+            : `color-mix(in srgb, var(--ef-color-type-captions) ${10 + density * 10}%, transparent)`,
           borderColor: isActiveSegment
             ? captionColor
-            : `rgba(34, 197, 94, 0.4)`,
+            : `color-mix(in srgb, var(--ef-color-type-captions) 40%, transparent)`,
           minWidth: segmentWidth < 20 ? "20px" : "auto",
         })}
         title=${useCompactText 

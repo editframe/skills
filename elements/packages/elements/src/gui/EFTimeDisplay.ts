@@ -14,7 +14,7 @@ export class EFTimeDisplay extends TargetOrContextMixin(LitElement, efContext) {
       align-items: center;
       font-family: var(--ef-font-family, system-ui);
       font-size: var(--ef-font-size-xs, 0.75rem);
-      color: var(--ef-text-color, rgb(75 85 99));
+      color: var(--ef-text-color, var(--ef-color-text));
       white-space: nowrap;
     }
 
