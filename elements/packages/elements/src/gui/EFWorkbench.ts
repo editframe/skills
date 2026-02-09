@@ -464,10 +464,22 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   private showStats: boolean = this.previewSettings.showStats;
   
   /**
+   * Theme mode: 'light', 'dark', or 'system'
+   */
+  @state()
+  private themeMode: 'light' | 'dark' | 'system' = this.getInitialTheme();
+  
+  /**
    * Always-on render statistics collection for canvas mode.
    * Collects data regardless of whether stats are visible.
    */
   private renderStats: RenderStats | null = null;
+  
+  /**
+   * Media query for system theme preference
+   */
+  private systemThemeMediaQuery: MediaQueryList | null = null;
+  private systemThemeListener: (() => void) | null = null;
   
   /**
    * DOM mode stats strategy (has its own animation loop).
@@ -507,6 +519,9 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   connectedCallback(): void {
     super.connectedCallback();
     
+    // Apply initial theme
+    this.applyTheme();
+    
     // Check if we're in rendering mode and set rendering=true before first render
     if (!this.hasAttribute("rendering") && typeof window !== "undefined" && "FRAMEGEN_BRIDGE" in window) {
       this.rendering = true;
@@ -539,6 +554,16 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     // Initialize render stats (always-on collection)
     this.renderStats = new RenderStats(this.adaptiveTracker);
     
+    // Listen for system theme changes when in system mode
+    if (typeof window !== 'undefined') {
+      this.systemThemeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      this.systemThemeListener = () => {
+        if (this.themeMode === 'system') {
+          this.applyTheme();
+        }
+      };
+      this.systemThemeMediaQuery.addEventListener('change', this.systemThemeListener);
+    }
   }
 
   disconnectedCallback(): void {
@@ -559,6 +584,11 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     }
     
     this.removeEventListener("transform-changed", this.boundHandleTransformChanged as EventListener);
+    
+    // Clean up theme listener
+    if (this.systemThemeMediaQuery && this.systemThemeListener) {
+      this.systemThemeMediaQuery.removeEventListener('change', this.systemThemeListener);
+    }
     
     // Clean up motion state tracking
     this.stopMotionStateTracking();
@@ -1433,6 +1463,53 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   }
   
   /**
+   * Get initial theme from localStorage or default to 'dark'
+   */
+  private getInitialTheme(): 'light' | 'dark' | 'system' {
+    if (typeof window === 'undefined') return 'dark';
+    const stored = localStorage.getItem('ef-theme');
+    if (stored === 'light' || stored === 'dark' || stored === 'system') {
+      return stored;
+    }
+    return 'dark';
+  }
+  
+  /**
+   * Cycle through theme modes: light → dark → system → light
+   */
+  private handleThemeToggle(): void {
+    const nextTheme = this.themeMode === 'light' ? 'dark' : this.themeMode === 'dark' ? 'system' : 'light';
+    this.themeMode = nextTheme;
+    localStorage.setItem('ef-theme', nextTheme);
+    this.applyTheme();
+  }
+  
+  /**
+   * Apply the current theme to the document
+   */
+  private applyTheme(): void {
+    const root = document.documentElement;
+    
+    if (this.themeMode === 'light') {
+      root.classList.add('light');
+      root.classList.remove('dark');
+    } else if (this.themeMode === 'dark') {
+      root.classList.add('dark');
+      root.classList.remove('light');
+    } else {
+      // System mode - check system preference
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (prefersDark) {
+        root.classList.add('dark');
+        root.classList.remove('light');
+      } else {
+        root.classList.add('light');
+        root.classList.remove('dark');
+      }
+    }
+  }
+  
+  /**
    * Reset and fit the preview to show all content centered.
    * Finds the pan-zoom element and calls fitToContent() on it.
    */
@@ -2019,6 +2096,37 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
                 : phosphorIcon(ICONS.code, 12)}
             `}
           </span>
+          
+          <!-- Theme toggle button -->
+          <button 
+            class="toolbar-icon-btn"
+            @click=${this.handleThemeToggle}
+            title="${this.themeMode === 'light' ? 'Light mode' : this.themeMode === 'dark' ? 'Dark mode' : 'System preference'}"
+          >
+            ${this.themeMode === 'light' ? html`
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+              </svg>
+            ` : this.themeMode === 'dark' ? html`
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              </svg>
+            ` : html`
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+            `}
+          </button>
           
           <!-- Settings button -->
           <button 
