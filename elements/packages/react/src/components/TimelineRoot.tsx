@@ -58,6 +58,8 @@ export const TimelineRoot: React.FC<TimelineRootProps> = ({
   children,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const componentRef = useRef(Component);
+  componentRef.current = Component;
   
   useEffect(() => {
     const container = containerRef.current;
@@ -66,8 +68,10 @@ export const TimelineRoot: React.FC<TimelineRootProps> = ({
     // Find the root timegroup rendered by Component
     const timegroup = container.querySelector('ef-timegroup') as EFTimegroup;
     if (!timegroup) {
-      console.warn('[TimelineRoot] No ef-timegroup found in component. Ensure your component renders a Timegroup.');
-      return;
+      throw new Error(
+        '[TimelineRoot] No ef-timegroup found in component. ' +
+        'Ensure your component renders a Timegroup.'
+      );
     }
     
     // Register a clone factory for this element.
@@ -75,8 +79,9 @@ export const TimelineRoot: React.FC<TimelineRootProps> = ({
     // to mount a fresh React tree instead of cloning dead DOM.
     registerCloneFactory(timegroup, (cloneContainer: HTMLElement) => {
       const root = ReactDOM.createRoot(cloneContainer);
+      const Comp = componentRef.current;
       flushSync(() => {
-        root.render(<Component id={id} />);
+        root.render(<Comp id={id} />);
       });
       
       const newTimegroup = cloneContainer.querySelector('ef-timegroup') as EFTimegroup | null;
@@ -100,7 +105,7 @@ export const TimelineRoot: React.FC<TimelineRootProps> = ({
     return () => {
       unregisterCloneFactory(timegroup);
     };
-  }, [id, Component]);
+  }, [id]);
   
   return (
     <div 

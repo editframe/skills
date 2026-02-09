@@ -39,7 +39,8 @@ export function TrimTool() {
   const [outPoint, setOutPoint] = useState(8000);
 
   const trackRef = useRef<HTMLDivElement>(null);
-  const draggingRef = useRef<"in" | "out" | null>(null);
+  const draggingRef = useRef<"in" | "out" | "region" | null>(null);
+  const dragStartRef = useRef<{ inPoint: number; outPoint: number; mouseX: number } | null>(null);
   const previewRef = useRef<HTMLElement>(null);
   const { enqueue } = useRenderQueue();
 
@@ -48,12 +49,20 @@ export function TrimTool() {
   }, []);
 
   const handlePointerDown = useCallback(
-    (handle: "in" | "out") => (e: React.PointerEvent) => {
+    (handle: "in" | "out" | "region") => (e: React.PointerEvent) => {
       e.preventDefault();
+      e.stopPropagation();
       draggingRef.current = handle;
+      if (handle === "region" && trackRef.current) {
+        dragStartRef.current = {
+          inPoint,
+          outPoint,
+          mouseX: e.clientX,
+        };
+      }
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
     },
-    []
+    [inPoint, outPoint]
   );
 
   const handlePointerMove = useCallback(
@@ -65,9 +74,39 @@ export function TrimTool() {
       const time = Math.round((x / rect.width) * SOURCE_DURATION_MS);
 
       if (draggingRef.current === "in") {
-        setInPoint(Math.min(time, outPoint - 500));
-      } else {
-        setOutPoint(Math.max(time, inPoint + 500));
+        const newInPoint = Math.min(time, outPoint - 500);
+        setInPoint(newInPoint);
+        // Seek to the new in-point
+        const tg = previewRef.current?.querySelector("ef-timegroup") as any;
+        if (tg) tg.currentTimeMs = 0; // Relative to trimmed duration
+      } else if (draggingRef.current === "out") {
+        const newOutPoint = Math.max(time, inPoint + 500);
+        setOutPoint(newOutPoint);
+        // Seek to the end of the new out-point
+        const tg = previewRef.current?.querySelector("ef-timegroup") as any;
+        if (tg) {
+          const duration = newOutPoint - inPoint;
+          tg.currentTimeMs = duration;
+        }
+      } else if (draggingRef.current === "region" && dragStartRef.current) {
+        const deltaX = e.clientX - dragStartRef.current.mouseX;
+        const deltaTime = Math.round((deltaX / rect.width) * SOURCE_DURATION_MS);
+        const duration = dragStartRef.current.outPoint - dragStartRef.current.inPoint;
+        
+        let newInPoint = dragStartRef.current.inPoint + deltaTime;
+        let newOutPoint = dragStartRef.current.outPoint + deltaTime;
+        
+        // Clamp to boundaries
+        if (newInPoint < 0) {
+          newInPoint = 0;
+          newOutPoint = duration;
+        } else if (newOutPoint > SOURCE_DURATION_MS) {
+          newOutPoint = SOURCE_DURATION_MS;
+          newInPoint = SOURCE_DURATION_MS - duration;
+        }
+        
+        setInPoint(newInPoint);
+        setOutPoint(newOutPoint);
       }
     },
     [inPoint, outPoint]
@@ -75,6 +114,7 @@ export function TrimTool() {
 
   const handlePointerUp = useCallback(() => {
     draggingRef.current = null;
+    dragStartRef.current = null;
   }, []);
 
   const inPercent = (inPoint / SOURCE_DURATION_MS) * 100;
@@ -83,16 +123,47 @@ export function TrimTool() {
   const trimmedDurationStr = `${selectedDuration}ms`;
 
   const handleExport = useCallback(() => {
-    const tg = previewRef.current?.querySelector("ef-timegroup");
-    if (tg) {
+    // Create a hidden timegroup specifically for rendering
+    const renderContainer = document.createElement("div");
+    renderContainer.style.cssText = `
+      position: fixed;
+      left: -9999px;
+      top: 0;
+      width: 640px;
+      height: 360px;
+      pointer-events: none;
+    `;
+    
+    const tg = document.createElement("ef-timegroup") as any;
+    tg.setAttribute("mode", "fixed");
+    tg.setAttribute("duration", trimmedDurationStr);
+    tg.style.cssText = "width: 640px; height: 360px;";
+    
+    const video = document.createElement("ef-video");
+    video.setAttribute("src", VIDEO_SRC);
+    video.setAttribute("sourcein", `${inPoint}ms`);
+    video.setAttribute("sourceout", `${outPoint}ms`);
+    video.className = "size-full object-contain";
+    
+    tg.appendChild(video);
+    renderContainer.appendChild(tg);
+    document.body.appendChild(renderContainer);
+    
+    // Wait for the element to be ready, then enqueue
+    requestAnimationFrame(() => {
       enqueue({
         name: "Trimmed Video",
         fileName: `trimmed-${formatTime(inPoint)}-${formatTime(outPoint)}.mp4`,
-        timegroupEl: tg as HTMLElement,
+        timegroupEl: tg,
         renderOpts: { includeAudio: true },
       });
-    }
-  }, [enqueue, inPoint, outPoint]);
+      
+      // Clean up after render completes (the render queue will handle this)
+      setTimeout(() => {
+        renderContainer.remove();
+      }, 1000);
+    });
+  }, [enqueue, inPoint, outPoint, trimmedDurationStr]);
 
   return (
     <div className="w-full max-w-xl">
@@ -110,7 +181,7 @@ export function TrimTool() {
         {/* Video Preview */}
         <div className="bg-[#111] aspect-video relative">
           {isClient ? (
-            <Preview id={previewId} ref={previewRef as any} loop className="size-full">
+            <Preview id={previewId} ref={previewRef as any} className="size-full">
               <Timegroup mode="fixed" duration={trimmedDurationStr} className="size-full">
                 <Video
                   src={VIDEO_SRC}
@@ -130,21 +201,36 @@ export function TrimTool() {
         </div>
 
         {/* Trim Track */}
-        <div className="bg-[#1a1a1a] px-4 py-4 border-t-4 border-black">
+        <div className="bg-[#1a1a1a] px-4 py-3 border-t-4 border-black dark:border-white">
           <div
             ref={trackRef}
-            className="relative h-12 bg-[#333] rounded cursor-crosshair"
+            className="relative h-10 bg-[#2a2a2a] border border-white/20 cursor-crosshair overflow-visible"
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerLeave={handlePointerUp}
           >
-            {/* Selected region */}
+            {/* Unselected regions (grayed out) */}
             <div
-              className="absolute top-0 bottom-0 bg-[var(--accent-blue)]/30 border-y-2 border-[var(--accent-blue)]"
+              className="absolute top-0 bottom-0 left-0 bg-black/50"
+              style={{
+                width: `${inPercent}%`,
+              }}
+            />
+            <div
+              className="absolute top-0 bottom-0 right-0 bg-black/50"
+              style={{
+                width: `${100 - outPercent}%`,
+              }}
+            />
+
+            {/* Selected region - draggable */}
+            <div
+              className="absolute top-0 bottom-0 bg-[var(--poster-blue)]/20 border-y border-[var(--poster-blue)] cursor-move hover:bg-[var(--poster-blue)]/30 transition-colors"
               style={{
                 left: `${inPercent}%`,
                 width: `${outPercent - inPercent}%`,
               }}
+              onPointerDown={handlePointerDown("region")}
             />
 
             {/* In handle */}
@@ -153,8 +239,8 @@ export function TrimTool() {
               style={{ left: `${inPercent}%` }}
               onPointerDown={handlePointerDown("in")}
             >
-              <div className="size-full bg-[var(--accent-gold)] group-hover:bg-[var(--accent-red)] transition-colors" />
-              <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-[var(--accent-gold)] group-hover:bg-[var(--accent-red)] text-black text-[9px] font-bold uppercase px-1.5 py-0.5 whitespace-nowrap transition-colors">
+              <div className="size-full bg-[var(--poster-gold)] group-hover:bg-[var(--poster-red)] transition-colors" />
+              <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-[var(--poster-gold)] group-hover:bg-[var(--poster-red)] text-black text-[8px] font-bold uppercase px-1 py-0.5 whitespace-nowrap transition-colors">
                 In
               </div>
             </div>
@@ -165,8 +251,8 @@ export function TrimTool() {
               style={{ left: `${outPercent}%` }}
               onPointerDown={handlePointerDown("out")}
             >
-              <div className="size-full bg-[var(--accent-gold)] group-hover:bg-[var(--accent-red)] transition-colors" />
-              <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-[var(--accent-gold)] group-hover:bg-[var(--accent-red)] text-black text-[9px] font-bold uppercase px-1.5 py-0.5 whitespace-nowrap transition-colors">
+              <div className="size-full bg-[var(--poster-gold)] group-hover:bg-[var(--poster-red)] transition-colors" />
+              <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-[var(--poster-gold)] group-hover:bg-[var(--poster-red)] text-black text-[8px] font-bold uppercase px-1 py-0.5 whitespace-nowrap transition-colors">
                 Out
               </div>
             </div>
@@ -176,7 +262,7 @@ export function TrimTool() {
               {Array.from({ length: 11 }).map((_, i) => (
                 <div
                   key={i}
-                  className="flex-1 border-l border-white/20 first:border-l-0"
+                  className="flex-1 border-l border-white/10 first:border-l-0"
                 />
               ))}
             </div>
@@ -217,7 +303,11 @@ export function TrimTool() {
               <div className="flex-1 px-4 h-12 flex items-center border-l-4 border-black dark:border-white">
                 <Scrubber
                   target={previewId}
-                  className="w-full h-1.5 bg-white/20 rounded-full cursor-pointer [&::part(progress)]:bg-[var(--accent-red)] [&::part(progress)]:rounded-full [&::part(thumb)]:bg-white [&::part(thumb)]:w-3 [&::part(thumb)]:h-3 [&::part(thumb)]:rounded-full"
+                  className="w-full h-1.5 bg-white/20 rounded-full cursor-pointer"
+                  style={{
+                    '--ef-scrubber-progress-color': 'var(--poster-red)',
+                    '--ef-scrubber-handle-size': '12px',
+                  } as React.CSSProperties}
                 />
               </div>
 
@@ -252,29 +342,29 @@ export function TrimTool() {
         </div>
 
         {/* Trim Info Panel */}
-        <div className="border-t-4 border-black dark:border-white bg-[#f5f5f5] dark:bg-[#111] px-4 py-3">
-          <div className="grid grid-cols-3 gap-4 text-center mb-3">
-            <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-black/50 dark:text-white/50 mb-1">
-                In Point
+        <div className="border-t-4 border-black dark:border-white bg-[#f5f5f5] dark:bg-[#111] px-4 py-2.5">
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <div className="flex-1 text-center">
+              <div className="text-[8px] font-bold uppercase tracking-wider text-black/40 dark:text-white/40 mb-0.5">
+                In
               </div>
-              <div className="text-sm font-mono font-bold text-[var(--accent-blue)]">
+              <div className="text-xs font-mono font-bold text-[var(--poster-blue)]">
                 {formatTime(inPoint)}
               </div>
             </div>
-            <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-black/50 dark:text-white/50 mb-1">
+            <div className="flex-1 text-center">
+              <div className="text-[8px] font-bold uppercase tracking-wider text-black/40 dark:text-white/40 mb-0.5">
                 Duration
               </div>
-              <div className="text-sm font-mono font-bold text-black dark:text-white">
+              <div className="text-xs font-mono font-bold text-black dark:text-white">
                 {formatTime(selectedDuration)}
               </div>
             </div>
-            <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-black/50 dark:text-white/50 mb-1">
-                Out Point
+            <div className="flex-1 text-center">
+              <div className="text-[8px] font-bold uppercase tracking-wider text-black/40 dark:text-white/40 mb-0.5">
+                Out
               </div>
-              <div className="text-sm font-mono font-bold text-[var(--accent-red)]">
+              <div className="text-xs font-mono font-bold text-[var(--poster-red)]">
                 {formatTime(outPoint)}
               </div>
             </div>
@@ -284,9 +374,9 @@ export function TrimTool() {
           <button
             onClick={handleExport}
             disabled={!isClient}
-            className="w-full py-2 bg-[var(--accent-red)] border-2 border-black dark:border-white text-white font-bold uppercase tracking-wider text-xs hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-1.5 bg-[var(--poster-red)] border-2 border-black dark:border-white text-white font-bold uppercase tracking-wider text-[10px] hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Export Trimmed Clip
+            Export Clip
           </button>
         </div>
       </div>

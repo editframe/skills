@@ -12,7 +12,7 @@ import type {
 import { getEffectiveRenderMode } from "./renderers.js";
 import { RenderContext } from "./RenderContext.js";
 import { FrameController } from "./FrameController.js";
-import { serializeTimelineToDataUri } from "./rendering/serializeTimelineDirect.js";
+import { captureTimelineToDataUri } from "./rendering/serializeTimelineDirect.js";
 import { updateAnimations } from "../elements/updateAnimations.js";
 
 // Re-export renderer types for external use
@@ -397,7 +397,7 @@ export async function captureFromClone(
       // No additional RAF wait needed - can serialize immediately
       
       const t0 = performance.now();
-      const dataUri = await serializeTimelineToDataUri(renderClone, width, height, {
+      const dataUri = await captureTimelineToDataUri(renderClone, width, height, {
         renderContext,
         canvasScale: scale,
         timeMs,
@@ -821,10 +821,10 @@ export function renderTimegroupToCanvas(
       const absoluteTimeMs = toAbsoluteTime(timegroup, userTimeMs);
       
       
-      // Pass FULL dimensions to serializeTimelineToDataUri, let canvasScale handle internal scaling
+      // Pass FULL dimensions to captureTimelineToDataUri, let canvasScale handle internal scaling
       // This matches video rendering: full dimensions + canvasScale, not pre-scaled dimensions
       const t0 = performance.now();
-      const dataUri = await serializeTimelineToDataUri(timegroup, width, height, {
+      const dataUri = await captureTimelineToDataUri(timegroup, width, height, {
         renderContext,
         canvasScale: currentResolutionScale,
         timeMs: absoluteTimeMs,

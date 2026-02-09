@@ -10,7 +10,7 @@
 import { getEffectiveRenderMode } from "./renderers.js";
 import type { RenderMode } from "./previewSettings.js";
 import { RenderContext } from "./RenderContext.js";
-import { serializeTimelineToDataUri } from "./rendering/serializeTimelineDirect.js";
+import { captureTimelineToDataUri } from "./rendering/serializeTimelineDirect.js";
 import { loadImageFromDataUri } from "./rendering/loadImage.js";
 import { renderToImageNative } from "./rendering/renderToImageNative.js";
 import { DEFAULT_WIDTH, DEFAULT_HEIGHT } from "./previewTypes.js";
@@ -108,7 +108,7 @@ async function renderElementToImage(
       }
     } else {
       // FOREIGNOBJECT PATH: Direct serialization
-      const dataUri = await serializeTimelineToDataUri(element, width, height, {
+      const dataUri = await captureTimelineToDataUri(element, width, height, {
         renderContext,
         canvasScale: scale,
         timeMs,

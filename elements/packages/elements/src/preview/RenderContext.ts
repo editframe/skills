@@ -85,6 +85,9 @@ export class RenderContext {
   /** Cache for video frames by source timestamp */
   #videoFrameCache: LRUCache<string, CapturedFrame>;
   
+  /** Cache for document styles (computed once per render session) */
+  #documentStylesCache: string | null = null;
+  
   /** Whether this context has been disposed */
   #disposed = false;
   
@@ -243,6 +246,27 @@ export class RenderContext {
   }
 
   // ============================================================================
+  // Document Styles Cache
+  // ============================================================================
+
+  /**
+   * Get cached document styles.
+   * Returns undefined if not cached.
+   */
+  getCachedDocumentStyles(): string | undefined {
+    if (this.#disposed) return undefined;
+    return this.#documentStylesCache ?? undefined;
+  }
+
+  /**
+   * Cache document styles.
+   */
+  setCachedDocumentStyles(styles: string): void {
+    if (this.#disposed) return;
+    this.#documentStylesCache = styles;
+  }
+
+  // ============================================================================
   // Cleanup
   // ============================================================================
 
@@ -255,6 +279,7 @@ export class RenderContext {
     
     this.#canvasCache.clear();
     this.#videoFrameCache.clear();
+    this.#documentStylesCache = null;
     this.#disposed = true;
   }
 

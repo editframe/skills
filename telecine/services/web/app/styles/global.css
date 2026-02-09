@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 @import "./typography.css";
+@import "@editframe/elements/elements.css";
 
 @layer base {
   :root {

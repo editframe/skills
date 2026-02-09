@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { serializeElementToXHTML, serializeTimelineToDataUri } from "./serializeTimelineDirect.js";
+import { serializeElementToXHTML, captureTimelineToDataUri } from "./serializeTimelineDirect.js";
 import type { EFTimegroup } from "../../elements/EFTimegroup.js";
 import type { EFText } from "../../elements/EFText.js";
 
@@ -60,7 +60,7 @@ describe("serializeTimelineDirect", () => {
       await text.whenSegmentsReady();
       
       // Serialize to data URI (full SVG)
-      const dataUri = await serializeTimelineToDataUri(text, 800, 600, {
+      const dataUri = await captureTimelineToDataUri(text, 800, 600, {
         canvasScale: 1,
         timeMs: 0,
       });

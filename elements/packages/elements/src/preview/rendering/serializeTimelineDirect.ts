@@ -15,6 +15,7 @@
 import { encodeCanvasesInParallel } from "../encoding/canvasEncoder.js";
 import type { RenderContext } from "../RenderContext.js";
 import { isVisibleAtTime } from "../previewTypes.js";
+import { ScaleConfig } from "./ScaleConfig.js";
 
 /**
  * Collect document styles for shadow DOM injection.
@@ -29,9 +30,13 @@ function collectDocumentStyles(): string {
             rules.push(rule.cssText);
           }
         }
-      } catch {}
+      } catch {
+        // Expected: cross-origin stylesheets block cssRules access
+      }
     }
-  } catch {}
+  } catch (e) {
+    console.warn('[collectDocumentStyles] Failed to access document.styleSheets:', e);
+  }
   return rules.join("\n");
 }
 
@@ -99,6 +104,13 @@ interface SerializationOptions {
   timeMs: number;
 }
 
+interface InternalSerializationOptions {
+  renderContext?: RenderContext;
+  timeMs: number;
+  scaleConfig: ScaleConfig;
+  sourceMap: WeakMap<HTMLCanvasElement, Element>;
+}
+
 interface CanvasJob {
   canvas: HTMLCanvasElement;
   sourceElement: Element;
@@ -122,16 +134,21 @@ function escapeXML(str: string): string {
  * Serialize computed styles as inline style string.
  * Handles display:none → block conversion for non-caption elements
  * (temporal visibility is handled separately).
+ * @param element - The element to serialize styles for
+ * @param styles - Optional pre-computed CSSStyleDeclaration (avoids redundant getComputedStyle calls)
  */
-function serializeComputedStyles(element: Element): string {
-  const styles = getComputedStyle(element);
+function serializeComputedStyles(element: Element, styles?: CSSStyleDeclaration): string {
+  const computed = styles ?? getComputedStyle(element);
   const styleParts: string[] = [];
   const tagName = element.tagName;
   const isCaptionChild = CAPTION_CHILD_TAGS.has(tagName);
   
   
   for (const prop of SERIALIZED_STYLE_PROPERTIES) {
-    const value = styles[prop as any];
+    // Convert camelCase to kebab-case first
+    const kebab = prop.replace(/[A-Z]/g, m => `-${m.toLowerCase()}`);
+    const value = computed.getPropertyValue(kebab);
+    
     // Skip only truly empty values
     if (!value || value === '') {
       continue;
@@ -168,8 +185,6 @@ function serializeComputedStyles(element: Element): string {
       continue;
     }
     
-    // Convert camelCase to kebab-case
-    const kebab = prop.replace(/[A-Z]/g, m => `-${m.toLowerCase()}`);
     styleParts.push(`${kebab}:${finalValue}`);
   }
   
@@ -304,7 +319,9 @@ function snapshotCanvas(
   const ctx = copy.getContext('2d');
   if (ctx && sourceCanvas.width > 0 && sourceCanvas.height > 0) {
     // Try reading directly from WebGL drawing buffer (bypasses compositor)
-    const glPixels = readWebGLPixels(sourceCanvas);
+    // Only needed when page is hidden - compositor is suspended in hidden tabs
+    const useGlBypass = document.hidden;
+    const glPixels = useGlBypass ? readWebGLPixels(sourceCanvas) : null;
     if (glPixels) {
       const srcW = sourceCanvas.width;
       const srcH = sourceCanvas.height;
@@ -343,7 +360,7 @@ function serializeCanvas(
   canvas: HTMLCanvasElement,
   parts: Array<string | Promise<string>>,
   canvasJobs: CanvasJob[],
-  options: SerializationOptions
+  options: InternalSerializationOptions
 ): void {
   // If this canvas was transferred to offscreen, use its capture proxy
   const captureProxy = findCaptureProxy(canvas);
@@ -358,11 +375,11 @@ function serializeCanvas(
     return;
   }
   
-  // Get all computed styles from source element
-  const styleStr = serializeComputedStyles(sourceElement);
+  // Get computed style once and reuse
+  const computedStyle = getComputedStyle(sourceElement);
+  const styleStr = serializeComputedStyles(sourceElement, computedStyle);
   
   // Get computed dimensions from source element (respects CSS like w-[420px])
-  const computedStyle = getComputedStyle(sourceElement);
   const computedWidth = computedStyle.width;
   const computedHeight = computedStyle.height;
   
@@ -397,23 +414,21 @@ function serializeCanvas(
   
   // CRITICAL: Calculate optimal encoding scale BEFORE creating snapshot.
   // This prevents encoding at full resolution when CSS display size is much smaller.
-  let optimalScale = options.canvasScale; // Start with video export scale
-  const qualityMultiplier = 1.5; // Encode at 1.5x display size for quality
+  let optimalScale = options.scaleConfig.exportScale; // Start with export scale as fallback
   
   try {
     const cssWidth = parseFloat(computedWidth) || sourceCanvas.width;
     const cssHeight = parseFloat(computedHeight) || sourceCanvas.height;
     
-    // Calculate how much smaller the display is vs natural size
-    const displayScaleX = cssWidth / sourceCanvas.width;
-    const displayScaleY = cssHeight / sourceCanvas.height;
-    const displayScale = Math.min(displayScaleX, displayScaleY);
-    
-    // Combine display scale, video scale, and quality multiplier
-    // Clamp to 1.0 max (never upscale beyond natural resolution)
-    optimalScale = Math.min(1.0, displayScale * options.canvasScale * qualityMultiplier);
+    // Use ScaleConfig to compute optimal canvas scale
+    optimalScale = options.scaleConfig.computeCanvasScale({
+      naturalWidth: sourceCanvas.width,
+      naturalHeight: sourceCanvas.height,
+      displayWidth: cssWidth,
+      displayHeight: cssHeight,
+    });
   } catch (e) {
-    // Fallback to just video scale if we can't get computed style
+    // Fallback to export scale if we can't get computed style
     console.warn(`[serializeCanvas] Failed to get computed style for ${sourceElement.tagName}:`, e);
   }
   
@@ -428,14 +443,13 @@ function serializeCanvas(
   
   // Kick off async encoding of the SNAPSHOT (not the live canvas)
   const promiseIndex = parts.length;
-  const sourceMap = new WeakMap<HTMLCanvasElement, Element>();
-  sourceMap.set(snapshot, sourceElement);
+  options.sourceMap.set(snapshot, sourceElement);
   
   // Snapshot is already scaled, so encode at 1.0 scale
   const encodePromise = encodeCanvasesInParallel([snapshot], {
     scale: 1.0,
     renderContext: options.renderContext,
-    sourceMap,
+    sourceMap: options.sourceMap,
   }).then(results => results[0]?.dataUrl || '');
   
   parts.push(encodePromise);
@@ -453,7 +467,7 @@ function serializeImageAsCanvas(
   img: HTMLImageElement,
   parts: Array<string | Promise<string>>,
   canvasJobs: CanvasJob[],
-  options: SerializationOptions
+  options: InternalSerializationOptions
 ): void {
   // Convert img to canvas for serialization
   const canvas = document.createElement('canvas');
@@ -480,7 +494,7 @@ function serializeSlottedContent(
   slotHost: Element,
   parts: Array<string | Promise<string>>,
   canvasJobs: CanvasJob[],
-  options: SerializationOptions,
+  options: InternalSerializationOptions,
   parentIsSVG: boolean
 ): void {
   for (const slottedChild of slotHost.childNodes) {
@@ -503,7 +517,7 @@ function serializeElement(
   element: Element,
   parts: Array<string | Promise<string>>,
   canvasJobs: CanvasJob[],
-  options: SerializationOptions,
+  options: InternalSerializationOptions,
   parentIsSVG = false,
   slotHost: Element | null = null
 ): void {
@@ -523,7 +537,9 @@ function serializeElement(
   // NOTE: We do NOT check CSS visibility/display here because:
   // 1. The container may have visibility:hidden for off-screen rendering
   // 2. Temporal elements control their own visibility via time bounds
-  if (!isTemporallyVisible(element, options.timeMs)) {
+  // NOTE: Ancestor checking is unnecessary - serializeElement walks top-down,
+  // so if a parent is temporally invisible, its children are never visited
+  if (!isVisibleAtTime(element, options.timeMs)) {
     return;
   }
   
@@ -545,11 +561,12 @@ function serializeElement(
     
     // Serialize custom element with its styles, then shadow DOM content inside
     // Use span for inline/inline-block/inline-flex elements to preserve inline behavior
-    const computedDisplay = getComputedStyle(element).display;
+    const computedStyle = getComputedStyle(element);
+    const computedDisplay = computedStyle.display;
     const isInline = computedDisplay === 'inline' || computedDisplay === 'inline-block' || computedDisplay === 'inline-flex';
     const containerTag = isInline ? 'span' : 'div';
     
-    let styleStr = serializeComputedStyles(element);
+    let styleStr = serializeComputedStyles(element, computedStyle);
     
     
     parts.push(`<${containerTag}`);
@@ -638,17 +655,6 @@ function serializeElement(
   parts.push(`</${tagName}>`);
 }
 
-/**
- * Check if an element is temporally visible at the given time.
- * Returns false if the element or any ancestor is outside its temporal bounds.
- */
-function isTemporallyVisible(element: Element, timeMs: number): boolean {
-  // Check this element's temporal bounds
-  if (!isVisibleAtTime(element, timeMs)) {
-    return false;
-  }
-  return true;
-}
 
 /**
  * Encode SVG string to a base64 data URI using TextEncoder.
@@ -658,10 +664,11 @@ function isTemporallyVisible(element: Element, timeMs: number): boolean {
  * character-by-character inspection that encodeURIComponent performs
  * and produces a shorter output (~33% overhead vs ~200% for percent-encoding).
  */
-const _encoder = new TextEncoder();
+const textEncoder = new TextEncoder();
 function encodeSVGToBase64DataUri(svg: string): string {
-  const bytes = _encoder.encode(svg);
-  // Convert Uint8Array to binary string in chunks (avoid stack overflow)
+  const bytes = textEncoder.encode(svg);
+  // Convert Uint8Array to binary string in chunks to avoid stack overflow
+  // Process in 8KB chunks to avoid exceeding Function.prototype.apply() argument limit
   let binary = '';
   for (let i = 0; i < bytes.length; i += 8192) {
     binary += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192) as unknown as number[]);
@@ -676,6 +683,26 @@ function encodeSVGToBase64DataUri(svg: string): string {
  *
  * After this function returns, the source element's DOM is no longer
  * referenced — the clone can safely be seeked to the next frame.
+ * 
+ * SCALING ARCHITECTURE (unified via ScaleConfig):
+ * 
+ * ScaleConfig centralizes all scaling logic and provides:
+ * 1. Output SVG dimensions (width * exportScale, height * exportScale)
+ * 2. DOM scaling wrapper (CSS transform:scale when exportScale < 1)
+ * 3. Per-canvas optimal encoding scale via computeCanvasScale()
+ * 
+ * Canvas scaling is independent from DOM scaling because:
+ * - Canvas elements have intrinsic pixel dimensions and can be downsampled
+ *   efficiently before encoding (prevents encoding 1920px at full resolution
+ *   when displayed at 420px)
+ * - DOM content has no intrinsic resolution and must be scaled via CSS
+ *   transforms, which the browser handles during SVG foreignObject rendering
+ * 
+ * Example: 1920x1080 @ 0.5 export scale
+ * - Output SVG: 960x540
+ * - DOM wrapper: transform:scale(0.5) on 1920x1080 content
+ * - Canvas (1920px displayed at 420px): encoded at ~0.16x (315px)
+ *   via computeCanvasScale(420/1920 * 0.5 * 1.5 quality = 0.164)
  */
 function captureElementParts(
   element: Element,
@@ -685,31 +712,47 @@ function captureElementParts(
 ): Array<string | Promise<string>> {
   const parts: Array<string | Promise<string>> = [];
   const canvasJobs: CanvasJob[] = [];
+  const sourceMap = new WeakMap<HTMLCanvasElement, Element>();
   
-  const documentStyles = collectDocumentStyles();
+  // Create ScaleConfig to centralize all scaling logic
+  const scaleConfig = ScaleConfig.fromOptions(width, height, options.canvasScale);
+  
+  const documentStyles = options.renderContext?.getCachedDocumentStyles()
+    ?? collectDocumentStyles();
+  if (options.renderContext && documentStyles) {
+    options.renderContext.setCachedDocumentStyles(documentStyles);
+  }
   
   parts.push(
     `<div xmlns="http://www.w3.org/1999/xhtml" ` +
-    `style="width:${width}px;height:${height}px;overflow:hidden;position:relative;">`
+    `style="width:${scaleConfig.outputWidth}px;height:${scaleConfig.outputHeight}px;overflow:hidden;position:relative;">`
   );
   
   if (documentStyles) {
     parts.push(`<style type="text/css"><![CDATA[${documentStyles}]]></style>`);
   }
   
-  const needsScaling = options.canvasScale < 1;
-  if (needsScaling) {
-    const originalWidth = Math.floor(width / options.canvasScale);
-    const originalHeight = Math.floor(height / options.canvasScale);
+  // Apply DOM scaling wrapper if needed
+  const domTransform = scaleConfig.getDOMTransform();
+  if (domTransform) {
+    const wrapperDims = scaleConfig.getDOMWrapperDimensions();
     parts.push(
-      `<div style="transform:scale(${options.canvasScale});transform-origin:0 0;` +
-      `width:${originalWidth}px;height:${originalHeight}px;">`
+      `<div style="transform:${domTransform};transform-origin:0 0;` +
+      `width:${wrapperDims.width}px;height:${wrapperDims.height}px;">`
     );
   }
   
-  serializeElement(element, parts, canvasJobs, options);
+  // Create internal options with ScaleConfig
+  const internalOptions: InternalSerializationOptions = {
+    renderContext: options.renderContext,
+    timeMs: options.timeMs,
+    scaleConfig,
+    sourceMap,
+  };
   
-  if (needsScaling) {
+  serializeElement(element, parts, canvasJobs, internalOptions);
+  
+  if (domTransform) {
     parts.push('</div>');
   }
   
@@ -752,62 +795,18 @@ export function captureTimelineToDataUri(
   height: number,
   options: SerializationOptions
 ): Promise<string> {
-  const scaledWidth = Math.floor(width * options.canvasScale);
-  const scaledHeight = Math.floor(height * options.canvasScale);
+  // Create ScaleConfig to compute scaled dimensions
+  const scaleConfig = ScaleConfig.fromOptions(width, height, options.canvasScale);
   
-  const parts = captureElementParts(element, scaledWidth, scaledHeight, options);
+  const parts = captureElementParts(element, width, height, options);
   
   return Promise.all(parts).then(resolvedParts => {
     const xhtml = resolvedParts.join('');
     const svg = 
-      `<svg xmlns="http://www.w3.org/2000/svg" width="${scaledWidth}" height="${scaledHeight}">` +
-      `<foreignObject x="0" y="0" width="${scaledWidth}" height="${scaledHeight}">${xhtml}</foreignObject>` +
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${scaleConfig.outputWidth}" height="${scaleConfig.outputHeight}">` +
+      `<foreignObject x="0" y="0" width="${scaleConfig.outputWidth}" height="${scaleConfig.outputHeight}">${xhtml}</foreignObject>` +
       `</svg>`;
     return encodeSVGToBase64DataUri(svg);
   });
 }
 
-/**
- * Synchronous capture with deferred blob URL creation.
- *
- * Same as captureTimelineToDataUri but returns a blob: URL instead of a
- * data: URI. Avoids the expensive encodeURIComponent() percent-encoding
- * and the browser's corresponding percent-decoding when loading the image.
- *
- * IMPORTANT: The caller MUST call URL.revokeObjectURL() on the returned
- * URL after the image has loaded to prevent memory leaks.
- */
-export function captureTimelineToBlobUrl(
-  element: Element,
-  width: number,
-  height: number,
-  options: SerializationOptions
-): Promise<string> {
-  const scaledWidth = Math.floor(width * options.canvasScale);
-  const scaledHeight = Math.floor(height * options.canvasScale);
-  
-  const parts = captureElementParts(element, scaledWidth, scaledHeight, options);
-  
-  return Promise.all(parts).then(resolvedParts => {
-    const xhtml = resolvedParts.join('');
-    const svg = 
-      `<svg xmlns="http://www.w3.org/2000/svg" width="${scaledWidth}" height="${scaledHeight}">` +
-      `<foreignObject x="0" y="0" width="${scaledWidth}" height="${scaledHeight}">${xhtml}</foreignObject>` +
-      `</svg>`;
-    const blob = new Blob([svg], { type: 'image/svg+xml' });
-    return URL.createObjectURL(blob);
-  });
-}
-
-/**
- * Serialize element to SVG foreignObject data URI (ready for rendering).
- * Async convenience wrapper around captureTimelineToDataUri.
- */
-export async function serializeTimelineToDataUri(
-  element: Element,
-  width: number,
-  height: number,
-  options: SerializationOptions
-): Promise<string> {
-  return captureTimelineToDataUri(element, width, height, options);
-}
