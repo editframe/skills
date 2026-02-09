@@ -53,21 +53,12 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         min-height: 0;
         overflow: hidden;
         
-        /* Light mode colors */
-        --workbench-bg: rgb(30 41 59); /* slate-800 */
-        --workbench-overlay-border: rgb(59 130 246); /* blue-500 */
-        --workbench-overlay-bg: rgb(191 219 254); /* blue-200 */
-        --toolbar-bg: rgb(15 23 42); /* slate-900 */
-        --toolbar-border: rgba(148, 163, 184, 0.2);
-      }
-      
-      :host(.dark), :host-context(.dark) {
-        /* Dark mode colors */
-        --workbench-bg: rgb(2 6 23); /* slate-950 */
-        --workbench-overlay-border: rgb(96 165 250); /* blue-400 */
-        --workbench-overlay-bg: rgb(30 58 138); /* blue-900 */
-        --toolbar-bg: rgb(2 6 23);
-        --toolbar-border: rgba(148, 163, 184, 0.15);
+        /* Component tokens (reference globals from ef-theme.css) */
+        --workbench-bg: var(--ef-color-bg);
+        --workbench-overlay-border: var(--ef-color-primary);
+        --workbench-overlay-bg: var(--ef-color-primary-subtle);
+        --toolbar-bg: var(--ef-color-bg-elevated);
+        --toolbar-border: var(--ef-color-border-subtle);
       }
       
       /* Utility classes (not relying on external Tailwind) */
@@ -130,10 +121,10 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         justify-content: center;
         gap: 6px;
         padding: 6px 12px;
-        background: rgba(51, 65, 85, 0.6);
-        border: 1px solid rgba(148, 163, 184, 0.2);
+        background: var(--ef-color-bg-inset);
+        border: 1px solid var(--ef-color-border-subtle);
         border-radius: 6px;
-        color: #e2e8f0;
+        color: var(--ef-color-text);
         font-size: 12px;
         font-weight: 500;
         cursor: pointer;
@@ -141,25 +132,25 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       }
       
       .toolbar-btn:hover {
-        background: rgba(51, 65, 85, 0.9);
-        border-color: rgba(148, 163, 184, 0.3);
+        background: var(--ef-color-hover);
+        border-color: var(--ef-color-border);
       }
       
       .toolbar-btn.active {
-        background: rgba(59, 130, 246, 0.2);
-        border-color: rgba(59, 130, 246, 0.4);
-        color: #60a5fa;
+        background: var(--ef-color-primary-subtle);
+        border-color: var(--ef-color-primary);
+        color: var(--ef-color-primary-hover);
       }
       
       .toolbar-btn.primary {
-        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        background: var(--ef-color-primary);
         border-color: transparent;
         color: white;
         font-weight: 600;
       }
       
       .toolbar-btn.primary:hover {
-        background: linear-gradient(135deg, #60a5fa, #3b82f6);
+        background: var(--ef-color-primary-hover);
       }
       
       .toolbar-icon-btn {
@@ -169,23 +160,23 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         width: 32px;
         height: 32px;
         padding: 0;
-        background: rgba(51, 65, 85, 0.6);
-        border: 1px solid rgba(148, 163, 184, 0.2);
+        background: var(--ef-color-bg-inset);
+        border: 1px solid var(--ef-color-border-subtle);
         border-radius: 6px;
-        color: #e2e8f0;
+        color: var(--ef-color-text);
         cursor: pointer;
         transition: all 0.15s ease;
       }
       
       .toolbar-icon-btn:hover {
-        background: rgba(51, 65, 85, 0.9);
-        border-color: rgba(148, 163, 184, 0.3);
+        background: var(--ef-color-hover);
+        border-color: var(--ef-color-border);
       }
       
       .toolbar-icon-btn.active {
-        background: rgba(59, 130, 246, 0.2);
-        border-color: rgba(59, 130, 246, 0.4);
-        color: #60a5fa;
+        background: var(--ef-color-primary-subtle);
+        border-color: var(--ef-color-primary);
+        color: var(--ef-color-primary-hover);
       }
       
       .mode-indicator {
@@ -203,7 +194,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       
       .mode-indicator.dom {
         background: rgba(34, 197, 94, 0.2);
-        color: #4ade80;
+        color: var(--ef-color-success);
         border: 1px solid rgba(34, 197, 94, 0.3);
       }
       
@@ -253,7 +244,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         padding: 8px 12px;
         font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
         font-size: 11px;
-        color: #e2e8f0;
+        color: var(--ef-color-text);
         z-index: 10;
         pointer-events: none;
         line-height: 1.5;
@@ -266,7 +257,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       }
       
       .playback-stats .stat-label {
-        color: #94a3b8;
+        color: var(--ef-color-text-muted);
         flex-shrink: 0;
         width: 85px;
       }
@@ -279,15 +270,15 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       }
       
       .playback-stats .stat-value.good {
-        color: #4ade80;
+        color: var(--ef-color-success);
       }
       
       .playback-stats .stat-value.warning {
-        color: #fbbf24;
+        color: var(--ef-color-warning);
       }
       
       .playback-stats .stat-value.bad {
-        color: #f87171;
+        color: var(--ef-color-danger);
       }
       
       .pressure-histogram {
@@ -297,7 +288,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         height: 24px;
         margin-top: 8px;
         padding-top: 8px;
-        border-top: 1px solid rgba(148, 163, 184, 0.2);
+        border-top: 1px solid var(--ef-color-border-subtle);
       }
       
       .pressure-histogram .bar {
@@ -309,7 +300,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       }
       
       .pressure-histogram .bar.nominal {
-        background: #4ade80;
+        background: var(--ef-color-success);
         height: 25%;
       }
       
@@ -319,12 +310,12 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       }
       
       .pressure-histogram .bar.serious {
-        background: #fbbf24;
+        background: var(--ef-color-warning);
         height: 75%;
       }
       
       .pressure-histogram .bar.critical {
-        background: #f87171;
+        background: var(--ef-color-danger);
         height: 100%;
       }
       
@@ -333,7 +324,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         justify-content: space-between;
         margin-top: 4px;
         font-size: 9px;
-        color: #64748b;
+        color: var(--ef-color-text-subtle);
       }
       
       .dropdown-panel {
@@ -342,8 +333,8 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         padding: 14px 16px;
         min-width: 260px;
         max-width: calc(100vw - 32px);
-        background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.98));
-        border: 1px solid rgba(148, 163, 184, 0.3);
+        background: var(--ef-color-bg-elevated);
+        border: 1px solid var(--ef-color-border);
         border-radius: 10px;
         backdrop-filter: blur(12px);
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
@@ -375,11 +366,11 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         justify-content: space-between;
         margin-bottom: 12px;
         padding-bottom: 10px;
-        border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+        border-bottom: 1px solid var(--ef-color-border-subtle);
       }
       
       .dropdown-title {
-        color: #e2e8f0;
+        color: var(--ef-color-text);
         font-size: 13px;
         font-weight: 600;
       }
@@ -387,7 +378,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       .dropdown-close {
         background: transparent;
         border: none;
-        color: #64748b;
+        color: var(--ef-color-text-subtle);
         cursor: pointer;
         padding: 2px;
         line-height: 1;
@@ -396,7 +387,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       }
       
       .dropdown-close:hover {
-        color: #94a3b8;
+        color: var(--ef-color-text-muted);
       }
     `,
   ];
@@ -1468,12 +1459,12 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         
         <!-- Presentation Mode Setting -->
         <div style="
-          background: rgba(51, 65, 85, 0.4);
+          background: var(--ef-color-bg-inset);
           border-radius: 8px;
           padding: 12px;
           margin-bottom: 10px;
         ">
-          <div style="color: #e2e8f0; font-size: 12px; font-weight: 500; margin-bottom: 10px;">Presentation Mode</div>
+          <div style="color: var(--ef-color-text); font-size: 12px; font-weight: 500; margin-bottom: 10px;">Presentation Mode</div>
           
           <div style="display: flex; gap: 4px; background: rgba(30, 41, 59, 0.6); border-radius: 6px; padding: 3px;">
             <button
@@ -2003,7 +1994,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   
   private renderToolbar() {
     return html`
-      <div class="toolbar">
+      <div class="toolbar" part="toolbar">
         <div class="toolbar-left">
           <!-- Fit to content button -->
           <button 
@@ -2331,6 +2322,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         <!-- Center: Canvas area -->
         <div
           class="canvas-container"
+          part="canvas"
           style="grid-row: 2 / 3; grid-column: 2 / 3; min-height: 0;"
           @wheel=${this.handleStageWheel}
         >

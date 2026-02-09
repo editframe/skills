@@ -86,30 +86,19 @@ export class EFTimeline extends TWMixin(LitElement) {
         min-height: 100px;
         
         /* Layout coordination via CSS custom properties */
-        --timeline-hierarchy-width: 200px;
-        --timeline-row-height: 24px;
-        --timeline-track-height: 24px;
+        --timeline-hierarchy-width: var(--ef-hierarchy-width, 200px);
+        --timeline-row-height: var(--ef-row-height, 24px);
+        --timeline-track-height: var(--ef-track-height, 24px);
         
-        /* Theme */
-        --timeline-bg: rgb(30 41 59);
-        --timeline-border: rgb(71 85 105);
-        --timeline-header-bg: rgb(51 65 85);
-        --timeline-text: rgb(226 232 240);
-        --timeline-ruler-bg: rgb(51 65 85);
-        --timeline-track-bg: rgb(51 65 85);
-        --timeline-track-hover: rgb(71 85 105);
-        --timeline-playhead: rgb(239 68 68);
-      }
-      
-      :host(.light) {
-        --timeline-bg: rgb(241 245 249);
-        --timeline-border: rgb(203 213 225);
-        --timeline-header-bg: rgb(226 232 240);
-        --timeline-text: rgb(30 41 59);
-        --timeline-ruler-bg: rgb(226 232 240);
-        --timeline-track-bg: rgb(226 232 240);
-        --timeline-track-hover: rgb(203 213 225);
-        --timeline-playhead: rgb(185 28 28);
+        /* Component tokens (reference globals from ef-theme.css) */
+        --timeline-bg: var(--ef-color-bg);
+        --timeline-border: var(--ef-color-border);
+        --timeline-header-bg: var(--ef-color-bg-panel);
+        --timeline-text: var(--ef-color-text);
+        --timeline-ruler-bg: var(--ef-color-bg-panel);
+        --timeline-track-bg: var(--ef-color-bg-inset);
+        --timeline-track-hover: var(--ef-color-hover);
+        --timeline-playhead: var(--ef-color-playhead);
       }
       
       .timeline-container {
@@ -152,8 +141,8 @@ export class EFTimeline extends TWMixin(LitElement) {
         min-width: 32px;
         height: 32px;
         padding: 6px 10px;
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: var(--ef-color-bg-inset);
+        border: 1px solid var(--ef-color-border-subtle);
         border-radius: 6px;
         color: inherit;
         font-size: 14px;
@@ -165,8 +154,8 @@ export class EFTimeline extends TWMixin(LitElement) {
       }
       
       .control-btn:hover:not(:disabled) {
-        background: rgba(255, 255, 255, 0.2);
-        border-color: rgba(255, 255, 255, 0.3);
+        background: var(--ef-color-hover);
+        border-color: var(--ef-color-border);
       }
       
       .control-btn:disabled {
@@ -175,8 +164,8 @@ export class EFTimeline extends TWMixin(LitElement) {
       }
       
       .control-btn.active {
-        background: rgba(59, 130, 246, 0.6);
-        border-color: rgba(59, 130, 246, 0.8);
+        background: var(--ef-color-primary-subtle);
+        border-color: var(--ef-color-primary);
       }
       
       .time-display {
@@ -184,7 +173,7 @@ export class EFTimeline extends TWMixin(LitElement) {
         font-size: 13px;
         font-weight: 500;
         padding: 6px 12px;
-        background: rgba(0, 0, 0, 0.3);
+        background: var(--ef-color-bg-elevated);
         border-radius: 6px;
         letter-spacing: 0.5px;
       }
@@ -201,8 +190,8 @@ export class EFTimeline extends TWMixin(LitElement) {
         display: flex;
         align-items: center;
         justify-content: center;
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: var(--ef-color-bg-inset);
+        border: 1px solid var(--ef-color-border-subtle);
         border-radius: 6px;
         color: inherit;
         font-size: 18px;
@@ -212,8 +201,8 @@ export class EFTimeline extends TWMixin(LitElement) {
       }
       
       .zoom-btn:hover {
-        background: rgba(255, 255, 255, 0.2);
-        border-color: rgba(255, 255, 255, 0.3);
+        background: var(--ef-color-hover);
+        border-color: var(--ef-color-border);
         transform: scale(1.05);
       }
       
@@ -379,8 +368,8 @@ export class EFTimeline extends TWMixin(LitElement) {
         position: absolute;
         top: 0;
         bottom: 0;
-        background: rgba(59, 130, 246, 0.3);
-        border-left: 2px solid rgba(59, 130, 246, 0.7);
+        background: var(--ef-color-primary-subtle);
+        border-left: 2px solid var(--ef-color-primary);
         pointer-events: none;
       }
       
@@ -389,7 +378,7 @@ export class EFTimeline extends TWMixin(LitElement) {
         align-items: center;
         justify-content: center;
         height: 100%;
-        color: rgba(148, 163, 184, 0.6);
+        color: var(--ef-color-text-subtle);
         font-style: italic;
       }
     `,
@@ -1874,7 +1863,7 @@ export class EFTimeline extends TWMixin(LitElement) {
   private renderControls() {
     if (!this.showControls) return nothing;
     return html`
-      <div class="header">
+      <div class="header" part="header">
         <div class="controls">
           ${this.renderPlaybackControls()}
           ${this.renderTimeDisplay()}
@@ -1992,7 +1981,7 @@ export class EFTimeline extends TWMixin(LitElement) {
         ${this.renderControls()}
         <div class="timeline-area">
           <!-- Tracks Viewport - Single scrollable container -->
-          <div class="tracks-viewport">
+          <div class="tracks-viewport" part="tracks">
             <div 
               class="tracks-scroll" 
               ${ref(this.tracksScrollRef)} 
@@ -2005,7 +1994,8 @@ export class EFTimeline extends TWMixin(LitElement) {
                 <div class="ruler-row" style="width: ${this.contentWidthPx + hierarchyWidth}px;">
                   ${this.showHierarchy ? html`<div class="ruler-spacer"></div>` : nothing}
                   <div 
-                    class="ruler-content" 
+                    class="ruler-content"
+                    part="ruler"
                     @pointerdown=${this.handleRulerPointerDown}
                   >
                     <ef-timeline-ruler
@@ -2036,7 +2026,7 @@ export class EFTimeline extends TWMixin(LitElement) {
                 <div class="playhead-layer">
                   ${this.renderFrameHighlight()}
                   ${this.showPlayhead ? html`
-                    <div ${ref(this.playheadRef)} class="playhead" style="left: ${playheadLeft - 1}px;">
+                    <div ${ref(this.playheadRef)} class="playhead" part="playhead" style="left: ${playheadLeft - 1}px;">
                       <div class="playhead-drag-target" @pointerdown=${this.handlePlayheadPointerDown}></div>
                     </div>
                   ` : nothing}

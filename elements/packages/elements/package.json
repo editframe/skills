@@ -59,6 +59,7 @@
     },
     "./package.json": "./package.json",
     "./styles.css": "./dist/style.css",
+    "./theme.css": "./dist/gui/ef-theme.css",
     "./types.json": "./types.json"
   },
   "publishConfig": {
@@ -83,6 +84,7 @@
       },
       "./package.json": "./package.json",
       "./styles.css": "./dist/style.css",
+      "./theme.css": "./dist/gui/ef-theme.css",
       "./types.json": "./types.json"
     }
   }

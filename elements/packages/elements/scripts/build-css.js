@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync, cpSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import autoprefixer from "autoprefixer";
@@ -14,6 +14,7 @@ const configPath = join(__dirname, "..", "tailwind.config.ts");
 
 // Ensure dist directory exists
 mkdirSync(distDir, { recursive: true });
+mkdirSync(join(distDir, "gui"), { recursive: true });
 
 // Read source CSS
 const cssPath = join(srcDir, "elements.css");
@@ -30,6 +31,12 @@ postcss([tailwindcss({ config: configPath }), autoprefixer()])
       writeFileSync(join(distDir, "style.css.map"), result.map.toString());
     }
     console.log("✅ CSS processed and written to dist/style.css");
+    
+    // Copy theme CSS file
+    const themeCssPath = join(srcDir, "gui", "ef-theme.css");
+    const themeDistPath = join(distDir, "gui", "ef-theme.css");
+    cpSync(themeCssPath, themeDistPath);
+    console.log("✅ Theme CSS copied to dist/gui/ef-theme.css");
   })
   .catch((error) => {
     console.error("❌ CSS processing failed:", error);
