@@ -50,7 +50,9 @@ export function ThumbnailPicker() {
 
     timegroup.pause?.();
 
-    const canvas = preview.querySelector("canvas");
+    // Canvas is inside the shadow DOM of ef-video
+    const video = preview.querySelector("ef-video");
+    const canvas = video?.shadowRoot?.querySelector("canvas");
     if (canvas) {
       setThumbnailDataUrl(canvas.toDataURL("image/jpeg", 0.9));
     }

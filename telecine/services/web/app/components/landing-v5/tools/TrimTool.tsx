@@ -17,6 +17,7 @@ import {
   TogglePlay,
   TimeDisplay,
 } from "@editframe/react";
+import { useRenderQueue } from "../RenderQueue";
 
 const VIDEO_SRC = "https://assets.editframe.com/bars-n-tone.mp4";
 const SOURCE_DURATION_MS = 10000;
@@ -39,6 +40,8 @@ export function TrimTool() {
 
   const trackRef = useRef<HTMLDivElement>(null);
   const draggingRef = useRef<"in" | "out" | null>(null);
+  const previewRef = useRef<HTMLElement>(null);
+  const { enqueue } = useRenderQueue();
 
   useEffect(() => {
     setIsClient(true);
@@ -79,6 +82,18 @@ export function TrimTool() {
   const selectedDuration = outPoint - inPoint;
   const trimmedDurationStr = `${selectedDuration}ms`;
 
+  const handleExport = useCallback(() => {
+    const tg = previewRef.current?.querySelector("ef-timegroup");
+    if (tg) {
+      enqueue({
+        name: "Trimmed Video",
+        fileName: `trimmed-${formatTime(inPoint)}-${formatTime(outPoint)}.mp4`,
+        timegroupEl: tg as HTMLElement,
+        renderOpts: { includeAudio: true },
+      });
+    }
+  }, [enqueue, inPoint, outPoint]);
+
   return (
     <div className="w-full max-w-xl">
       <div className="border-4 border-black dark:border-white bg-white dark:bg-[#1a1a1a] overflow-hidden">
@@ -95,7 +110,7 @@ export function TrimTool() {
         {/* Video Preview */}
         <div className="bg-[#111] aspect-video relative">
           {isClient ? (
-            <Preview id={previewId} loop className="size-full" key={`${inPoint}-${outPoint}`}>
+            <Preview id={previewId} ref={previewRef as any} loop className="size-full">
               <Timegroup mode="fixed" duration={trimmedDurationStr} className="size-full">
                 <Video
                   src={VIDEO_SRC}
@@ -238,7 +253,7 @@ export function TrimTool() {
 
         {/* Trim Info Panel */}
         <div className="border-t-4 border-black dark:border-white bg-[#f5f5f5] dark:bg-[#111] px-4 py-3">
-          <div className="grid grid-cols-3 gap-4 text-center">
+          <div className="grid grid-cols-3 gap-4 text-center mb-3">
             <div>
               <div className="text-[10px] font-bold uppercase tracking-wider text-black/50 dark:text-white/50 mb-1">
                 In Point
@@ -264,6 +279,15 @@ export function TrimTool() {
               </div>
             </div>
           </div>
+          
+          {/* Export Button */}
+          <button
+            onClick={handleExport}
+            disabled={!isClient}
+            className="w-full py-2 bg-[var(--accent-red)] border-2 border-black dark:border-white text-white font-bold uppercase tracking-wider text-xs hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Export Trimmed Clip
+          </button>
         </div>
       </div>
     </div>

@@ -130,9 +130,9 @@ function TextOverlayTool() {
       </div>
       
       {/* Preview */}
-      <div className="bg-neutral-900">
+      <div className="bg-neutral-900 aspect-video">
         {isClient ? (
-          <Preview id={previewId} loop className="aspect-video" key={`${animationPreset}-${splitMode}`}>
+          <Preview id={previewId} loop className="w-full h-full">
             <Timegroup mode="contain" className="w-full h-full relative">
               <Video 
                 src={VIDEO_SRC}
@@ -149,7 +149,7 @@ function TextOverlayTool() {
             </Timegroup>
           </Preview>
         ) : (
-          <div className="aspect-video bg-neutral-800 flex items-center justify-center">
+          <div className="w-full h-full bg-neutral-800 flex items-center justify-center">
             <span className="text-neutral-500 text-xs uppercase tracking-wider">Loading...</span>
           </div>
         )}
@@ -210,7 +210,7 @@ function TextOverlayTool() {
       </div>
       
       {/* Controls */}
-      <div className="border-t-4 border-black dark:border-white p-4 space-y-4">
+      <div className="border-t-4 border-black dark:border-white p-4 space-y-4 min-h-[280px]">
         {/* Text Input */}
         <div>
           <label className="block text-[10px] font-bold tracking-widest text-black dark:text-white uppercase mb-2">

@@ -380,7 +380,13 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
       
       // Update capture queue
       if (this.targetElement instanceof EFVideo) {
-        this.#updateVideoCapture(requiredTimestamps, signal);
+        this.#updateVideoCapture(requiredTimestamps, signal).catch((error) => {
+          // Ignore AbortErrors - these are expected when renders are cancelled
+          if (error instanceof DOMException && error.name === "AbortError") {
+            return;
+          }
+          console.error("Thumbnail capture error:", error);
+        });
       } else if (this.targetElement instanceof EFTimegroup) {
         this.#updateTimegroupCapture(requiredTimestamps);
       }
