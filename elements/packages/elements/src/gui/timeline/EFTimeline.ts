@@ -1777,10 +1777,24 @@ export class EFTimeline extends TWMixin(LitElement) {
       <div class="playback-controls">
         ${
           this.isPlaying
-            ? html`<button class="control-btn" @click=${this.handlePause} title="Pause">⏸</button>`
-            : html`<button class="control-btn" @click=${this.handlePlay} title="Play">▶</button>`
+            ? html`<button class="control-btn" @click=${this.handlePause} title="Pause">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                  <rect x="4" y="3" width="3" height="10" rx="0.5"/>
+                  <rect x="9" y="3" width="3" height="10" rx="0.5"/>
+                </svg>
+              </button>`
+            : html`<button class="control-btn" @click=${this.handlePlay} title="Play">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M5 3.5v9l7-4.5z"/>
+                </svg>
+              </button>`
         }
-        <button class="control-btn ${this.isLooping ? "active" : ""}" @click=${this.handleToggleLoop} title="Loop">🔁</button>
+        <button class="control-btn ${this.isLooping ? "active" : ""}" @click=${this.handleToggleLoop} title="Loop">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M13.5 7.5H4.707l2.147-2.146a.5.5 0 0 0-.708-.708l-3 3a.5.5 0 0 0 0 .708l3 3a.5.5 0 0 0 .708-.708L4.707 8.5H13.5a1.5 1.5 0 0 1 0 3h-2a.5.5 0 0 0 0 1h2a2.5 2.5 0 0 0 0-5z"/>
+            <path d="M2.5 8.5a1.5 1.5 0 0 1 1.5-1.5h2a.5.5 0 0 0 0-1H4a2.5 2.5 0 0 0 0 5h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L12.793 9.5H4a1.5 1.5 0 0 1-1.5-1.5z"/>
+          </svg>
+        </button>
       </div>
     `;
   }

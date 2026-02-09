@@ -193,15 +193,15 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       }
       
       .mode-indicator.dom {
-        background: rgba(76, 175, 80, 0.2);
+        background: color-mix(in srgb, var(--ef-color-success) 15%, transparent);
         color: var(--ef-color-success);
-        border: 1px solid rgba(76, 175, 80, 0.4);
+        border: 1px solid color-mix(in srgb, var(--ef-color-success) 30%, transparent);
       }
       
       .mode-indicator.canvas {
-        background: rgba(171, 71, 188, 0.2);
-        color: #BA68C8;
-        border: 1px solid rgba(171, 71, 188, 0.4);
+        background: color-mix(in srgb, var(--ef-color-type-image) 15%, transparent);
+        color: var(--ef-color-type-image);
+        border: 1px solid color-mix(in srgb, var(--ef-color-type-image) 30%, transparent);
       }
       
       .canvas-container {
@@ -239,7 +239,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         top: 8px;
         left: 8px;
         width: 200px;
-        background: rgba(0, 0, 0, 0.75);
+        background: color-mix(in srgb, var(--ef-color-bg-elevated) 90%, transparent);
         backdrop-filter: blur(4px);
         border-radius: 6px;
         padding: 8px 12px;
@@ -306,7 +306,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       }
       
       .pressure-histogram .bar.fair {
-        background: #a3e635;
+        background: var(--ef-color-warning);
         height: 50%;
       }
       
@@ -338,7 +338,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         border: 1px solid var(--ef-color-border);
         border-radius: 10px;
         backdrop-filter: blur(12px);
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 8px 32px color-mix(in srgb, var(--ef-color-bg) 50%, transparent);
       }
       
       .dropdown-panel::backdrop {
@@ -381,6 +381,98 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         border: none;
         color: var(--ef-color-text-subtle);
         cursor: pointer;
+      }
+      
+      .dropdown-section {
+        background: var(--ef-color-bg-inset);
+        border-radius: 8px;
+        padding: 12px;
+        margin-top: 10px;
+      }
+      
+      .dropdown-label {
+        color: var(--ef-color-text);
+        font-size: 11px;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+      
+      .dropdown-description {
+        margin-top: 8px;
+        color: var(--ef-color-text-subtle);
+        font-size: 10px;
+        line-height: 1.4;
+      }
+      
+      .button-group {
+        display: flex;
+        gap: 6px;
+        margin-top: 6px;
+      }
+      
+      .button-group-btn {
+        flex: 1;
+        padding: 6px 8px;
+        border: 1px solid transparent;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        background: transparent;
+        color: var(--ef-color-text-muted);
+      }
+      
+      .button-group-btn.active {
+        background: var(--ef-color-selected);
+        color: var(--ef-color-primary);
+        border-color: var(--ef-color-primary-subtle);
+      }
+      
+      .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+      }
+      
+      .checkbox-label input[type="checkbox"] {
+        width: 14px;
+        height: 14px;
+        accent-color: var(--ef-color-primary);
+        cursor: pointer;
+      }
+      
+      .checkbox-label span {
+        color: var(--ef-color-text);
+        font-size: 12px;
+        font-weight: 500;
+      }
+      
+      .dropdown-select {
+        width: 100%;
+        padding: 6px 8px;
+        background: var(--ef-color-bg-inset);
+        border: 1px solid var(--ef-color-border);
+        border-radius: 6px;
+        color: var(--ef-color-text);
+        font-size: 11px;
+        cursor: pointer;
+      }
+      
+      .dropdown-input {
+        width: 100%;
+        padding: 5px 7px;
+        background: var(--ef-color-bg-inset);
+        border: 1px solid var(--ef-color-border);
+        border-radius: 4px;
+        color: var(--ef-color-text);
+        font-size: 11px;
+      }
+      
+      .dropdown-input:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
         padding: 2px;
         line-height: 1;
         font-size: 14px;
@@ -1552,44 +1644,20 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
           padding: 12px;
           margin-bottom: 10px;
         ">
-          <div style="color: var(--ef-color-text); font-size: 12px; font-weight: 500; margin-bottom: 10px;">Presentation Mode</div>
+          <div class="dropdown-label" style="margin-bottom: 10px;">Presentation Mode</div>
           
-          <div style="display: flex; gap: 4px; background: rgba(30, 41, 59, 0.6); border-radius: 6px; padding: 3px;">
+          <div class="button-group">
             <button
               @click=${() => this.handlePresentationModeChange("dom")}
-              style="
-                flex: 1;
-                padding: 6px 10px;
-                border: none;
-                border-radius: 4px;
-                font-size: 11px;
-                font-weight: 500;
-                cursor: pointer;
-                transition: all 0.15s ease;
-                background: ${this.presentationMode === "dom" ? "rgba(34, 197, 94, 0.3)" : "transparent"};
-                color: ${this.presentationMode === "dom" ? "#4ade80" : "#94a3b8"};
-                border: 1px solid ${this.presentationMode === "dom" ? "rgba(34, 197, 94, 0.4)" : "transparent"};
-              "
+              class="button-group-btn ${this.presentationMode === "dom" ? "active" : ""}"
             >DOM</button>
             <button
               @click=${() => this.handlePresentationModeChange("canvas")}
-              style="
-                flex: 1;
-                padding: 6px 10px;
-                border: none;
-                border-radius: 4px;
-                font-size: 11px;
-                font-weight: 500;
-                cursor: pointer;
-                transition: all 0.15s ease;
-                background: ${this.presentationMode === "canvas" ? "rgba(168, 85, 247, 0.3)" : "transparent"};
-                color: ${this.presentationMode === "canvas" ? "#c084fc" : "#94a3b8"};
-                border: 1px solid ${this.presentationMode === "canvas" ? "rgba(168, 85, 247, 0.4)" : "transparent"};
-              "
+              class="button-group-btn ${this.presentationMode === "canvas" ? "active" : ""}"
             >Canvas</button>
           </div>
           
-          <div style="margin-top: 8px; color: #64748b; font-size: 10px; line-height: 1.4;">
+          <div class="dropdown-description">
             ${this.presentationMode === "dom" 
               ? "Default. Shows the real timegroup DOM directly." 
               : "Renders to canvas each frame."}
@@ -1597,13 +1665,9 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         </div>
         
         <!-- Render Mode Setting -->
-        <div style="
-          background: rgba(51, 65, 85, 0.4);
-          border-radius: 8px;
-          padding: 12px;
-        ">
+        <div class="dropdown-section">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-            <span style="color: #e2e8f0; font-size: 12px; font-weight: 500;">Render Mode</span>
+            <span class="dropdown-label">Render Mode</span>
             ${isAvailable ? html`
               <div style="display: flex; align-items: center; gap: 5px;">
                 <span style="
@@ -1611,231 +1675,68 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
                   width: 7px;
                   height: 7px;
                   border-radius: 50%;
-                  background: #4ade80;
+                  background: var(--ef-color-success);
                 "></span>
-                <span style="color: #4ade80; font-size: 10px; font-weight: 500;">
+                <span style="color: var(--ef-color-success); font-size: 10px; font-weight: 500;">
                   Native Available
                 </span>
               </div>
             ` : ''}
           </div>
           
-          <div style="display: flex; gap: 4px; background: rgba(30, 41, 59, 0.6); border-radius: 6px; padding: 3px;">
+          <div class="button-group">
             <button
               @click=${() => this.handleRenderModeChange("foreignObject")}
-              style="
-                flex: 1;
-                padding: 6px 8px;
-                border: none;
-                border-radius: 4px;
-                font-size: 10px;
-                font-weight: 500;
-                cursor: pointer;
-                transition: all 0.15s ease;
-                background: ${this.renderMode === "foreignObject" ? "rgba(59, 130, 246, 0.3)" : "transparent"};
-                color: ${this.renderMode === "foreignObject" ? "#60a5fa" : "#94a3b8"};
-                border: 1px solid ${this.renderMode === "foreignObject" ? "rgba(59, 130, 246, 0.4)" : "transparent"};
-              "
+              class="button-group-btn ${this.renderMode === "foreignObject" ? "active" : ""}"
             >foreignObject</button>
             <button
               @click=${() => this.handleRenderModeChange("native")}
               ?disabled=${!isAvailable}
+              class="button-group-btn ${this.renderMode === "native" ? "active" : ""}"
               style="
-                flex: 1;
-                padding: 6px 8px;
-                border: none;
-                border-radius: 4px;
-                font-size: 10px;
-                font-weight: 500;
                 cursor: ${isAvailable ? 'pointer' : 'not-allowed'};
-                transition: all 0.15s ease;
-                background: ${this.renderMode === "native" ? "rgba(34, 197, 94, 0.3)" : "transparent"};
-                color: ${this.renderMode === "native" ? "#4ade80" : isAvailable ? "#94a3b8" : "#64748b"};
-                border: 1px solid ${this.renderMode === "native" ? "rgba(34, 197, 94, 0.4)" : "transparent"};
                 opacity: ${isAvailable ? '1' : '0.5'};
               "
             >native</button>
           </div>
           
-          <div style="margin-top: 8px; color: #64748b; font-size: 10px; line-height: 1.4;">
+          <div class="dropdown-description">
             ${this.renderMode === "foreignObject" 
               ? "SVG foreignObject serialization. Works everywhere but slower." 
               : "Chrome's drawElementImage API. Fastest, requires chrome://flags/#canvas-draw-element."}
           </div>
         </div>
         
-        <!-- Preview Resolution Setting -->
-        <div style="
-          background: rgba(51, 65, 85, 0.4);
-          border-radius: 8px;
-          padding: 12px;
-          margin-top: 10px;
-        ">
-          <div style="color: #e2e8f0; font-size: 12px; font-weight: 500; margin-bottom: 10px;">Preview Resolution</div>
-          
-          <div style="display: flex; gap: 4px; background: rgba(30, 41, 59, 0.6); border-radius: 6px; padding: 3px;">
-            <button
-              @click=${() => this.handleResolutionScaleChange("auto")}
-              style="
-                flex: 1;
-                padding: 6px 8px;
-                border: none;
-                border-radius: 4px;
-                font-size: 10px;
-                font-weight: 500;
-                cursor: pointer;
-                transition: all 0.15s ease;
-                background: ${this.previewResolutionScale === "auto" ? "rgba(34, 197, 94, 0.3)" : "transparent"};
-                color: ${this.previewResolutionScale === "auto" ? "#4ade80" : "#94a3b8"};
-                border: 1px solid ${this.previewResolutionScale === "auto" ? "rgba(34, 197, 94, 0.4)" : "transparent"};
-              "
-            >Auto</button>
-            <button
-              @click=${() => this.handleResolutionScaleChange(1)}
-              style="
-                flex: 1;
-                padding: 6px 8px;
-                border: none;
-                border-radius: 4px;
-                font-size: 10px;
-                font-weight: 500;
-                cursor: pointer;
-                transition: all 0.15s ease;
-                background: ${this.previewResolutionScale === 1 ? "rgba(59, 130, 246, 0.3)" : "transparent"};
-                color: ${this.previewResolutionScale === 1 ? "#60a5fa" : "#94a3b8"};
-                border: 1px solid ${this.previewResolutionScale === 1 ? "rgba(59, 130, 246, 0.4)" : "transparent"};
-              "
-            >Full</button>
-            <button
-              @click=${() => this.handleResolutionScaleChange(0.75)}
-              style="
-                flex: 1;
-                padding: 6px 8px;
-                border: none;
-                border-radius: 4px;
-                font-size: 10px;
-                font-weight: 500;
-                cursor: pointer;
-                transition: all 0.15s ease;
-                background: ${this.previewResolutionScale === 0.75 ? "rgba(59, 130, 246, 0.3)" : "transparent"};
-                color: ${this.previewResolutionScale === 0.75 ? "#60a5fa" : "#94a3b8"};
-                border: 1px solid ${this.previewResolutionScale === 0.75 ? "rgba(59, 130, 246, 0.4)" : "transparent"};
-              "
-            >3/4</button>
-            <button
-              @click=${() => this.handleResolutionScaleChange(0.5)}
-              style="
-                flex: 1;
-                padding: 6px 8px;
-                border: none;
-                border-radius: 4px;
-                font-size: 10px;
-                font-weight: 500;
-                cursor: pointer;
-                transition: all 0.15s ease;
-                background: ${this.previewResolutionScale === 0.5 ? "rgba(59, 130, 246, 0.3)" : "transparent"};
-                color: ${this.previewResolutionScale === 0.5 ? "#60a5fa" : "#94a3b8"};
-                border: 1px solid ${this.previewResolutionScale === 0.5 ? "rgba(59, 130, 246, 0.4)" : "transparent"};
-              "
-            >1/2</button>
-            <button
-              @click=${() => this.handleResolutionScaleChange(0.25)}
-              style="
-                flex: 1;
-                padding: 6px 8px;
-                border: none;
-                border-radius: 4px;
-                font-size: 10px;
-                font-weight: 500;
-                cursor: pointer;
-                transition: all 0.15s ease;
-                background: ${this.previewResolutionScale === 0.25 ? "rgba(59, 130, 246, 0.3)" : "transparent"};
-                color: ${this.previewResolutionScale === 0.25 ? "#60a5fa" : "#94a3b8"};
-                border: 1px solid ${this.previewResolutionScale === 0.25 ? "rgba(59, 130, 246, 0.4)" : "transparent"};
-              "
-            >1/4</button>
-          </div>
-          
-          <div style="margin-top: 8px; color: #64748b; font-size: 10px; line-height: 1.4;">
-            ${this.previewResolutionScale === "auto" 
-              ? `Auto: Full resolution at rest, adaptive during playback/scrub.${!this.isAtRest ? ` Currently: ${Math.round(this.currentAdaptiveScale * 100)}%` : ""}`
-              : this.previewResolutionScale === 1 
-                ? "Full: Matches display resolution (1:1 pixels, adapts to zoom)." 
-                : `${Math.round((this.previewResolutionScale as number) * 100)}%: Reduced quality for faster rendering.`}
-            Canvas mode only.
-          </div>
-        </div>
+        <!-- This section was already updated earlier in the dropdown-section refactor -->
         
         <!-- Show Performance Stats Setting -->
-        <div style="
-          background: rgba(51, 65, 85, 0.4);
-          border-radius: 8px;
-          padding: 12px;
-          margin-top: 10px;
-        ">
-          <label style="
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-          ">
+        <div class="dropdown-section">
+          <label class="checkbox-label">
             <input
               type="checkbox"
               ?checked=${this.showStats}
               @change=${(e: Event) => this.handleShowStatsToggle((e.target as HTMLInputElement).checked)}
-              style="
-                width: 14px;
-                height: 14px;
-                accent-color: #3b82f6;
-                cursor: pointer;
-              "
             />
-            <span style="color: #e2e8f0; font-size: 12px; font-weight: 500;">Show Performance Stats</span>
+            <span>Show Performance Stats</span>
           </label>
           
-          <div style="
-            margin-top: 8px;
-            color: #64748b;
-            font-size: 10px;
-            line-height: 1.4;
-          ">
+          <div class="dropdown-description">
             Display FPS, CPU pressure, and performance metrics overlay.
           </div>
         </div>
         
         <!-- Thumbnail Timestamps -->
-        <div style="
-          background: rgba(51, 65, 85, 0.4);
-          border-radius: 8px;
-          padding: 12px;
-          margin-top: 10px;
-        ">
-          <label style="
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-          ">
+        <div class="dropdown-section">
+          <label class="checkbox-label">
             <input
               type="checkbox"
               ?checked=${this.previewSettings.showThumbnailTimestamps}
               @change=${(e: Event) => this.handleShowThumbnailTimestampsToggle((e.target as HTMLInputElement).checked)}
-              style="
-                width: 14px;
-                height: 14px;
-                accent-color: #3b82f6;
-                cursor: pointer;
-              "
             />
-            <span style="color: #e2e8f0; font-size: 12px; font-weight: 500;">Show Thumbnail Timestamps</span>
+            <span>Show Thumbnail Timestamps</span>
           </label>
           
-          <div style="
-            margin-top: 8px;
-            color: #64748b;
-            font-size: 10px;
-            line-height: 1.4;
-          ">
+          <div class="dropdown-description">
             Display timestamp overlay on timeline thumbnails for debugging.
           </div>
         </div>
@@ -1861,18 +1762,9 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         
         <!-- Scale -->
         <div style="margin-bottom: 10px;">
-          <label style="display: block; color: #94a3b8; font-size: 11px; margin-bottom: 4px;">Scale</label>
+          <label class="dropdown-label" style="display: block; margin-bottom: 4px;">Scale</label>
           <select
-            style="
-              width: 100%;
-              padding: 6px 10px;
-              background: rgba(51, 65, 85, 0.8);
-              border: 1px solid rgba(148, 163, 184, 0.2);
-              border-radius: 5px;
-              color: #e2e8f0;
-              font-size: 12px;
-              cursor: pointer;
-            "
+            class="dropdown-select"
             .value=${String(this.exportOptions.scale)}
             @change=${(e: Event) => this.updateExportOption("scale", Number((e.target as HTMLSelectElement).value))}
           >
@@ -1885,77 +1777,59 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         
         <!-- Audio -->
         <div style="margin-bottom: 10px;">
-          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+          <label class="checkbox-label">
             <input
               type="checkbox"
               ?checked=${this.exportOptions.includeAudio}
               @change=${(e: Event) => this.updateExportOption("includeAudio", (e.target as HTMLInputElement).checked)}
-              style="width: 14px; height: 14px; accent-color: #3b82f6;"
             />
-            <span style="color: #e2e8f0; font-size: 12px;">Include Audio</span>
+            <span>Include Audio</span>
           </label>
         </div>
         
         <!-- In/Out Range -->
         <div style="margin-bottom: 12px;">
-          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 6px;">
+          <label class="checkbox-label" style="margin-bottom: 6px;">
             <input
               type="checkbox"
               ?checked=${this.exportOptions.useInOut}
               @change=${(e: Event) => this.updateExportOption("useInOut", (e.target as HTMLInputElement).checked)}
-              style="width: 14px; height: 14px; accent-color: #3b82f6;"
             />
-            <span style="color: #e2e8f0; font-size: 12px;">Custom Range</span>
+            <span>Custom Range</span>
           </label>
           
           ${this.exportOptions.useInOut ? html`
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
               <div>
-                <label style="display: block; color: #94a3b8; font-size: 10px; margin-bottom: 2px;">In (ms)</label>
+                <label class="dropdown-label" style="display: block; margin-bottom: 2px; font-size: 10px;">In (ms)</label>
                 <input
                   type="number"
+                  class="dropdown-input"
+                  style="font-family: ui-monospace, monospace;"
                   min="0"
                   max=${durationMs}
                   .value=${String(this.exportOptions.inMs)}
                   @change=${(e: Event) => this.updateExportOption("inMs", Number((e.target as HTMLInputElement).value))}
-                  style="
-                    width: 100%;
-                    padding: 5px 7px;
-                    background: rgba(51, 65, 85, 0.8);
-                    border: 1px solid rgba(148, 163, 184, 0.2);
-                    border-radius: 4px;
-                    color: #e2e8f0;
-                    font-size: 11px;
-                    font-family: ui-monospace, monospace;
-                  "
                 />
               </div>
               <div>
-                <label style="display: block; color: #94a3b8; font-size: 10px; margin-bottom: 2px;">Out (ms)</label>
+                <label class="dropdown-label" style="display: block; margin-bottom: 2px; font-size: 10px;">Out (ms)</label>
                 <input
                   type="number"
+                  class="dropdown-input"
+                  style="font-family: ui-monospace, monospace;"
                   min="0"
                   max=${durationMs}
                   .value=${String(this.exportOptions.outMs)}
                   @change=${(e: Event) => this.updateExportOption("outMs", Number((e.target as HTMLInputElement).value))}
-                  style="
-                    width: 100%;
-                    padding: 5px 7px;
-                    background: rgba(51, 65, 85, 0.8);
-                    border: 1px solid rgba(148, 163, 184, 0.2);
-                    border-radius: 4px;
-                    color: #e2e8f0;
-                    font-size: 11px;
-                    font-family: ui-monospace, monospace;
-                  "
                 />
               </div>
             </div>
-            <div style="color: #64748b; font-size: 10px; margin-top: 4px;">
+            <div class="dropdown-description" style="margin-top: 4px;">
               Duration: ${this.formatTime(this.exportOptions.outMs - this.exportOptions.inMs)} / ${this.formatTime(durationMs)}
             </div>
           ` : html`
-            <div style="color: #64748b; font-size: 10px;">
+            <div class="dropdown-description">
               Full duration: ${this.formatTime(durationMs)}
             </div>
           `}
@@ -1991,16 +1865,16 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     let statusText: string;
     
     if (isComplete) {
-      statusColor = "#4ade80";
+      statusColor = "var(--ef-color-success)";
       statusText = "Complete!";
     } else if (isError) {
-      statusColor = "#f87171";
+      statusColor = "var(--ef-color-danger)";
       statusText = "Failed";
     } else if (isCancelled) {
-      statusColor = "#fbbf24";
+      statusColor = "var(--ef-color-warning)";
       statusText = "Cancelled";
     } else {
-      statusColor = "#60a5fa";
+      statusColor = "var(--ef-color-primary)";
       statusText = `${progressPercent}%`;
     }
     
@@ -2016,7 +1890,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
           ${isRendering ? html`
             <button 
               class="dropdown-close" 
-              style="color: #f87171;"
+              style="color: var(--ef-color-danger);"
               @click=${this.handleCancelClick}
             >Cancel</button>
           ` : null}
@@ -2030,7 +1904,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
             <style>
               ef-workbench canvas {
                 border-radius: 4px;
-                border: 1px solid rgba(148, 163, 184, 0.2);
+                border: 1px solid var(--ef-color-border);
                 max-width: 100%;
                 height: auto;
               }
@@ -2039,25 +1913,25 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
           
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; margin-bottom: 10px; font-family: ui-monospace, monospace; font-size: 10px;">
             <div>
-              <div style="color: #64748b;">Frames</div>
-              <div style="color: #e2e8f0;">${p.currentFrame} / ${p.totalFrames}</div>
+              <div style="color: var(--ef-color-text-subtle);">Frames</div>
+              <div style="color: var(--ef-color-text);">${p.currentFrame} / ${p.totalFrames}</div>
             </div>
             <div>
-              <div style="color: #64748b;">Time</div>
-              <div style="color: #e2e8f0;">${this.formatTime(p.renderedMs)} / ${this.formatTime(p.totalDurationMs)}</div>
+              <div style="color: var(--ef-color-text-subtle);">Time</div>
+              <div style="color: var(--ef-color-text);">${this.formatTime(p.renderedMs)} / ${this.formatTime(p.totalDurationMs)}</div>
             </div>
             <div>
-              <div style="color: #64748b;">Speed</div>
-              <div style="color: ${p.speedMultiplier >= 1 ? "#4ade80" : "#fbbf24"};">${p.speedMultiplier.toFixed(2)}x</div>
+              <div style="color: var(--ef-color-text-subtle);">Speed</div>
+              <div style="color: ${p.speedMultiplier >= 1 ? "var(--ef-color-success)" : "var(--ef-color-warning)"};">${p.speedMultiplier.toFixed(2)}x</div>
             </div>
             <div>
-              <div style="color: #64748b;">ETA</div>
-              <div style="color: #e2e8f0;">${this.formatTime(p.estimatedRemainingMs)}</div>
+              <div style="color: var(--ef-color-text-subtle);">ETA</div>
+              <div style="color: var(--ef-color-text);">${this.formatTime(p.estimatedRemainingMs)}</div>
             </div>
           </div>
         ` : null}
         
-        <div style="height: 4px; background: rgba(51, 65, 85, 0.8); border-radius: 2px; overflow: hidden;">
+        <div style="height: 4px; background: var(--ef-color-bg-inset); border-radius: 2px; overflow: hidden;">
           <div style="
             height: 100%;
             width: ${progressPercent}%;
@@ -2156,7 +2030,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
               style="min-width: 100px;"
               popovertarget="export-progress-popover"
             >
-              <div style="width: 12px; height: 12px; border: 2px solid rgba(96, 165, 250, 0.3); border-top-color: #60a5fa; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+              <div style="width: 12px; height: 12px; border: 2px solid var(--ef-color-primary-subtle); border-top-color: var(--ef-color-primary); border-radius: 50%; animation: spin 1s linear infinite;"></div>
               Exporting...
             </button>
           ` : html`
@@ -2327,7 +2201,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     // Render pressure histogram bars
     const renderPressureHistogram = () => {
       if (stats.pressureHistory.length === 0) {
-        return html`<div style="color: #64748b; font-size: 9px;">No pressure data (API not available)</div>`;
+        return html`<div style="color: var(--ef-color-text-subtle); font-size: 9px;">No pressure data (API not available)</div>`;
       }
       
       return html`
@@ -2386,7 +2260,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
           <span class="stat-value">${motionState}</span>
         </div>
         ${showAdaptiveResolution && stats.samplesAtCurrentScale !== undefined ? html`
-          <div style="margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(148, 163, 184, 0.2);">
+          <div style="margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--ef-color-border-subtle);">
             <div class="stat-row">
               <span class="stat-label">Mode</span>
               <span class="stat-value good">Auto</span>
