@@ -27,7 +27,7 @@ export function EFSourceMixin<T extends Constructor<LitElement>>(
       return apiHost;
     }
 
-    @property({ type: String })
+    @property({ type: String, reflect: true })
     src = "";
 
     #md5Value: string | undefined = undefined;
