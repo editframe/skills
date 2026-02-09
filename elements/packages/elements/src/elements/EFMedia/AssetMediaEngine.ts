@@ -287,7 +287,7 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
 
   async fetchInitSegment(
     rendition: { id?: RenditionId; trackId: number | undefined; src: string },
-    signal?: AbortSignal,
+    signal: AbortSignal,
   ) {
     return withSpan(
       "assetEngine.fetchInitSegment",
@@ -316,7 +316,7 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
   async fetchMediaSegment(
     segmentId: number,
     rendition: { id?: RenditionId; trackId: number | undefined; src: string },
-    signal?: AbortSignal,
+    signal: AbortSignal,
   ) {
     return withSpan(
       "assetEngine.fetchMediaSegment",

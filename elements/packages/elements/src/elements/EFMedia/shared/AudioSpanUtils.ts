@@ -12,7 +12,7 @@ import type { EFMedia } from "../../EFMedia";
 const fetchAudioSegmentData = async (
   segmentIds: number[],
   mediaEngine: MediaEngine,
-  signal?: AbortSignal,
+  signal: AbortSignal,
 ): Promise<Map<number, ArrayBuffer>> => {
   const audioRendition = mediaEngine.audioRendition;
   if (!audioRendition) {
@@ -32,7 +32,7 @@ const fetchAudioSegmentData = async (
   });
 
   const fetchedSegments = await Promise.all(fetchPromises);
-  signal?.throwIfAborted();
+  signal.throwIfAborted();
 
   for (const [segmentId, arrayBuffer] of fetchedSegments) {
     segmentData.set(segmentId, arrayBuffer);
@@ -61,7 +61,7 @@ export const fetchAudioSpanningTime = async (
   host: EFMedia,
   fromMs: number,
   toMs: number,
-  signal?: AbortSignal,
+  signal: AbortSignal,
 ): Promise<AudioSpan | undefined> => {
   // Validate inputs
   if (fromMs >= toMs || fromMs < 0) {
@@ -70,7 +70,7 @@ export const fetchAudioSpanningTime = async (
 
   // Get media engine using the new async method
   const mediaEngine = await host.getMediaEngine(signal);
-  signal?.throwIfAborted();
+  signal.throwIfAborted();
 
   // Return undefined if no audio rendition available
   if (!mediaEngine?.audioRendition) {
@@ -80,9 +80,9 @@ export const fetchAudioSpanningTime = async (
   // Fetch the init segment directly from media engine
   const initSegment = await mediaEngine.fetchInitSegment(
     mediaEngine.audioRendition,
-    signal!,
+    signal,
   );
-  signal?.throwIfAborted();
+  signal.throwIfAborted();
 
   if (!initSegment) {
     return undefined;

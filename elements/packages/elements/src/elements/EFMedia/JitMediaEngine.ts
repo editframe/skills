@@ -111,7 +111,7 @@ export class JitMediaEngine extends BaseMediaEngine implements MediaEngine {
 
   async fetchInitSegment(
     rendition: { id?: RenditionId; trackId: number | undefined; src: string },
-    signal?: AbortSignal,
+    signal: AbortSignal,
   ) {
     if (!rendition.id) {
       throw new Error("Rendition ID is required for JIT metadata");
@@ -129,7 +129,7 @@ export class JitMediaEngine extends BaseMediaEngine implements MediaEngine {
   async fetchMediaSegment(
     segmentId: number,
     rendition: { id?: RenditionId; trackId: number | undefined; src: string },
-    signal?: AbortSignal,
+    signal: AbortSignal,
   ) {
     if (!rendition.id) {
       throw new Error("Rendition ID is required for JIT metadata");

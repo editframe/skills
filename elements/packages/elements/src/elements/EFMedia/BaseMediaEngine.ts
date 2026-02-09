@@ -295,12 +295,12 @@ export abstract class BaseMediaEngine {
   abstract fetchMediaSegment(
     segmentId: number,
     rendition: { trackId: number | undefined; src: string },
-    signal?: AbortSignal,
+    signal: AbortSignal,
   ): Promise<ArrayBuffer>;
 
   abstract fetchInitSegment(
     rendition: { trackId: number | undefined; src: string },
-    signal?: AbortSignal,
+    signal: AbortSignal,
   ): Promise<ArrayBuffer>;
 
   abstract computeSegmentId(

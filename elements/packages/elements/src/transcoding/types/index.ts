@@ -228,7 +228,7 @@ export interface MediaEngine {
   fetchMediaSegment: (
     segmentId: number,
     rendition: { id?: RenditionId; trackId: number | undefined; src: string },
-    signal?: AbortSignal,
+    signal: AbortSignal,
   ) => Promise<ArrayBuffer>;
   computeSegmentId: (
     desiredSeekTimeMs: number,

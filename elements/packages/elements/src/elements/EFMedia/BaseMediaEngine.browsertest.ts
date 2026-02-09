@@ -137,10 +137,11 @@ describe.skip("BaseMediaEngine deduplication", () => {
     engine.fetchMediaSegment.mockResolvedValue(new ArrayBuffer(1024));
 
     const rendition = { trackId: 1, src: "test.mp4" };
-    const result = await engine.fetchMediaSegment(1, rendition);
+    const signal = new AbortController().signal;
+    const result = await engine.fetchMediaSegment(1, rendition, signal);
 
     expect(result).toEqual(new ArrayBuffer(1024));
-    expect(engine.fetchMediaSegment).toHaveBeenCalledWith(1, rendition);
+    expect(engine.fetchMediaSegment).toHaveBeenCalledWith(1, rendition, signal);
     expect(engine.fetchMediaSegment).toHaveBeenCalledTimes(1);
   });
 

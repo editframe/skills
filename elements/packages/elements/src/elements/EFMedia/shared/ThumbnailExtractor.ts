@@ -21,7 +21,7 @@ export class ThumbnailExtractor {
     timestamps: number[],
     rendition: VideoRendition,
     durationMs: number,
-    signal?: AbortSignal,
+    signal: AbortSignal,
   ): Promise<(ThumbnailResult | null)[]> {
     if (timestamps.length === 0) {
       return [];
@@ -50,7 +50,7 @@ export class ThumbnailExtractor {
 
     for (const [segmentId, segmentTimestamps] of segmentGroups) {
       // Check abort before processing each segment
-      signal?.throwIfAborted();
+      signal.throwIfAborted();
       
       try {
         const segmentResults = await this.extractSegmentThumbnails(
@@ -129,25 +129,13 @@ export class ThumbnailExtractor {
     segmentId: number,
     timestamps: number[],
     rendition: VideoRendition,
-    signal?: AbortSignal,
+    signal: AbortSignal,
   ): Promise<Map<number, ThumbnailResult | null>> {
     const results = new Map<number, ThumbnailResult | null>();
 
     try {
       // Check abort before starting segment fetch
-      signal?.throwIfAborted();
-      
-      // Get segment data through existing media engine methods (uses caches)
-      // Note: fetchInitSegment requires a signal, so signal must be provided
-      // If no signal provided, we cannot abort the operation, so skip it
-      if (!signal) {
-        // Return nulls for all timestamps when signal is not provided
-        // This ensures we don't create orphan signals that can never be aborted
-        for (const timestamp of timestamps) {
-          results.set(timestamp, null);
-        }
-        return results;
-      }
+      signal.throwIfAborted();
       
       const [initSegment, mediaSegment] = await Promise.all([
         this.mediaEngine.fetchInitSegment(rendition, signal),
@@ -155,7 +143,7 @@ export class ThumbnailExtractor {
       ]);
       
       // Check abort after potentially slow network operations
-      signal?.throwIfAborted();
+      signal.throwIfAborted();
 
       // Create Input for this segment using global shared cache
       const segmentBlob = new Blob([initSegment, mediaSegment]);

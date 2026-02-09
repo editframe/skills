@@ -380,7 +380,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
       
       // Update capture queue
       if (this.targetElement instanceof EFVideo) {
-        this.#updateVideoCapture(requiredTimestamps);
+        this.#updateVideoCapture(requiredTimestamps, signal);
       } else if (this.targetElement instanceof EFTimegroup) {
         this.#updateTimegroupCapture(requiredTimestamps);
       }
@@ -419,7 +419,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
   /**
    * Update video thumbnail capture
    */
-  async #updateVideoCapture(timestamps: number[]): Promise<void> {
+  async #updateVideoCapture(timestamps: number[], signal: AbortSignal): Promise<void> {
     const video = this.targetElement as EFVideo;
     if (!video) return;
 
@@ -443,6 +443,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
       sourceTimestamps,
       scrubRendition,
       video.durationMs ?? 0,
+      signal,
     );
 
     // Store in cache and trigger redraw

@@ -585,7 +585,7 @@ export async function renderTimegroupToVideo(
       if (audioSource && head.timeMs >= lastRenderedAudioEndMs + audioChunkDurationMs) {
         const chunkEndMs = Math.min(head.timeMs + audioChunkDurationMs, config.endMs);
         try {
-          const audioBuffer = await timegroup.renderAudio(lastRenderedAudioEndMs, chunkEndMs);
+          const audioBuffer = await timegroup.renderAudio(lastRenderedAudioEndMs, chunkEndMs, signal);
           if (audioBuffer && audioBuffer.length > 0) {
             await audioSource.add(audioBuffer);
           }
@@ -637,7 +637,7 @@ export async function renderTimegroupToVideo(
     // Render remaining audio
     if (audioSource && lastRenderedAudioEndMs < config.endMs) {
       try {
-        const audioBuffer = await timegroup.renderAudio(lastRenderedAudioEndMs, config.endMs);
+        const audioBuffer = await timegroup.renderAudio(lastRenderedAudioEndMs, config.endMs, signal);
         if (audioBuffer && audioBuffer.length > 0) {
           await audioSource.add(audioBuffer);
         }
