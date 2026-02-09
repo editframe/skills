@@ -121,17 +121,19 @@ export class EFTimelineRow extends TWMixin(LitElement) {
       }
 
       .row-label:hover {
-        background: var(--ef-color-hover);
+        background: color-mix(in srgb, var(--ef-color-bg-panel) 70%, var(--ef-color-hover) 30%);
       }
 
       :host(.hovered) .row-label {
-        background: var(--ef-color-primary);
-        color: white;
+        background: var(--ef-color-bg-elevated);
+        border-left: 3px solid var(--ef-color-primary);
+        padding-left: calc(var(--indent, 0px) - 3px);
       }
 
       :host(.selected) .row-label {
-        background: var(--ef-color-primary);
-        color: white;
+        background: var(--ef-color-bg-elevated);
+        border-left: 3px solid var(--ef-color-primary);
+        padding-left: calc(var(--indent, 0px) - 3px);
       }
 
       .row-track {

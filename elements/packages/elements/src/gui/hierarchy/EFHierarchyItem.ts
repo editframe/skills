@@ -208,18 +208,21 @@ export class EFHierarchyItem<
         cursor: pointer;
         user-select: none;
         border-left: 3px solid transparent;
+        transition: background-color 0.1s ease;
       }
       .item-row:hover {
-        background: var(--hierarchy-hover-bg, rgba(148, 163, 184, 0.2));
+        background: var(--ef-color-hover);
       }
       .item-row[data-selected] {
-        background: var(--hierarchy-selected-bg, rgba(59, 130, 246, 0.3));
+        background: var(--ef-color-selected);
+        border-left-color: var(--ef-color-primary);
       }
       .item-row[data-ancestor-selected] {
-        background: var(--hierarchy-ancestor-selected-bg, rgba(59, 130, 246, 0.15));
+        background: var(--ef-color-selected-subtle);
       }
       .item-row[data-focused] {
-        background: var(--hierarchy-focused-bg, var(--filmstrip-timegroup-focused, rgba(148, 163, 184, 0.4)));
+        background: var(--ef-color-focused);
+        border-left-color: var(--ef-color-primary);
       }
       .item-row[data-dragging] {
         opacity: 0.5;

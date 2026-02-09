@@ -85,43 +85,51 @@
   --trim-overlay-color: rgba(0, 0, 0, 0.4);
 }
 
-/* Light mode theme — Paper cream aesthetic with strong contrast */
+/* Light mode theme — High contrast, clean professional */
 .light,
 :host(.light),
 :host-context(.light) {
-  /* Backgrounds — Clear hierarchy */
-  --ef-color-bg: #FAFAFA; /* Clean white workspace */
-  --ef-color-bg-panel: #F5F5F5; /* Light gray panels */
+  /* Backgrounds — Clear hierarchy with strong separation */
+  --ef-color-bg: #FFFFFF; /* Pure white workspace */
+  --ef-color-bg-panel: #F8F8F8; /* Very light gray panels */
   --ef-color-bg-elevated: #FFFFFF; /* Pure white elevated */
-  --ef-color-bg-inset: #E5E5E5; /* Darker inset (track wells) */
+  --ef-color-bg-inset: #EEEEEE; /* Light gray inset (track wells) */
 
-  /* Borders — More visible */
-  --ef-color-border: rgba(0, 0, 0, 0.15); /* Visible borders */
-  --ef-color-border-subtle: rgba(0, 0, 0, 0.08); /* Subtle dividers */
+  /* Borders — Strong, visible */
+  --ef-color-border: rgba(0, 0, 0, 0.20); /* Clearly visible borders */
+  --ef-color-border-subtle: rgba(0, 0, 0, 0.10); /* Subtle but visible dividers */
 
-  /* Text — Strong contrast */
-  --ef-color-text: #171717; /* Near black (neutral-900) */
-  --ef-color-text-muted: #525252; /* Neutral-600 */
-  --ef-color-text-subtle: #737373; /* Neutral-500 */
+  /* Text — Maximum contrast */
+  --ef-color-text: #0A0A0A; /* Near black (neutral-950) */
+  --ef-color-text-muted: #404040; /* Neutral-700 */
+  --ef-color-text-subtle: #666666; /* Neutral-600 */
 
   /* Interactive states — Neutral hover, blue for selection */
   --ef-color-primary: #2563EB; /* Blue-600 — primary actions */
   --ef-color-primary-hover: #1D4ED8; /* Blue-700 — primary hover */
-  --ef-color-primary-subtle: rgba(37, 99, 235, 0.1);
-  --ef-color-hover: rgba(0, 0, 0, 0.04); /* Neutral gray hover */
-  --ef-color-selected: rgba(37, 99, 235, 0.15); /* Selected state (blue) */
-  --ef-color-selected-subtle: rgba(37, 99, 235, 0.08); /* Ancestor selection */
-  --ef-color-focused: rgba(37, 99, 235, 0.2); /* Keyboard focus (blue) */
+  --ef-color-primary-subtle: rgba(37, 99, 235, 0.12);
+  --ef-color-hover: rgba(0, 0, 0, 0.06); /* Visible neutral hover */
+  --ef-color-selected: rgba(37, 99, 235, 0.18); /* Stronger selected state */
+  --ef-color-selected-subtle: rgba(37, 99, 235, 0.10); /* Visible ancestor selection */
+  --ef-color-focused: rgba(37, 99, 235, 0.25); /* Strong keyboard focus */
 
-  /* Semantic colors — Desaturated */
+  /* Semantic colors — Desaturated but visible */
   --ef-color-danger: #DC2626; /* Red-600 */
   --ef-color-success: #059669; /* Emerald-600 */
   --ef-color-warning: #D97706; /* Amber-600 */
   --ef-color-playhead: #DC2626; /* Red-600 for playhead */
   --ef-color-error: #DC2626;
 
+  /* Element type colors — More saturated for light mode visibility */
+  --ef-color-type-video: #2563EB; /* Blue-600 */
+  --ef-color-type-audio: #059669; /* Emerald-600 */
+  --ef-color-type-image: #7C3AED; /* Violet-600 */
+  --ef-color-type-text: #EA580C; /* Orange-600 */
+  --ef-color-type-captions: #0891B2; /* Cyan-600 */
+  --ef-color-type-timegroup: #475569; /* Slate-600 */
+
   /* Filmstrip light mode adjustments */
-  --filmstrip-item-bg: rgba(229, 229, 229, 0.9);
-  --filmstrip-waveform-bg: rgba(0, 0, 0, 0.05);
-  --filmstrip-waveform-border: rgba(0, 0, 0, 0.1);
+  --filmstrip-item-bg: rgba(238, 238, 238, 0.95);
+  --filmstrip-waveform-bg: rgba(0, 0, 0, 0.06);
+  --filmstrip-waveform-border: rgba(0, 0, 0, 0.12);
 }
