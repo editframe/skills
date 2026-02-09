@@ -1,9 +1,10 @@
 import { useId, useEffect, useLayoutEffect, useState, useRef, useCallback } from "react";
 import { Preview, Timegroup, Video, Scrubber, TogglePlay, TimeDisplay } from "@editframe/react";
+import type { EFTimegroup } from "@editframe/elements";
 import { useRenderQueue } from "../RenderQueue";
 
 const VIDEO_SRC = "https://assets.editframe.com/bars-n-tone.mp4";
-const VIDEO_DURATION_MS = 10000; // Known duration of bars-n-tone.mp4
+const VIDEO_DURATION_MS = 10000;
 const MIN_DURATION_MS = 500;
 
 function formatTime(ms: number): string {
@@ -24,7 +25,7 @@ export function TrimTool() {
   const trackRef = useRef<HTMLDivElement>(null);
   const draggingRef = useRef<"in" | "out" | "region" | null>(null);
   const dragStartRef = useRef<{ inPoint: number; outPoint: number; mouseX: number } | null>(null);
-  const previewRef = useRef<HTMLElement>(null);
+  const timegroupRef = useRef<EFTimegroup>(null);
   const { enqueue } = useRenderQueue();
 
   useEffect(() => setIsClient(true), []);
@@ -33,14 +34,12 @@ export function TrimTool() {
   // This avoids the race where an imperative seek gets clamped to the
   // old duration before React updates it.
   useLayoutEffect(() => {
-    if (!isClient || !draggingRef.current) return;
-    const tg = previewRef.current?.querySelector("ef-timegroup") as any;
-    if (!tg) return;
+    if (!isClient || !draggingRef.current || !timegroupRef.current) return;
 
     if (draggingRef.current === "out") {
-      tg.currentTimeMs = outPoint - inPoint;
+      timegroupRef.current.currentTimeMs = outPoint - inPoint;
     } else {
-      tg.currentTimeMs = 0;
+      timegroupRef.current.currentTimeMs = 0;
     }
   }, [isClient, inPoint, outPoint]);
 
@@ -98,12 +97,11 @@ export function TrimTool() {
   }, []);
 
   const handleExport = useCallback(() => {
-    const tg = previewRef.current?.querySelector("ef-timegroup");
-    if (tg) {
+    if (timegroupRef.current) {
       enqueue({
         name: "Trimmed Video",
         fileName: `trimmed-${formatTime(inPoint)}-${formatTime(outPoint)}.mp4`,
-        timegroupEl: tg as HTMLElement,
+        timegroupEl: timegroupRef.current as unknown as HTMLElement,
         renderOpts: { includeAudio: true },
       });
     }
@@ -135,8 +133,8 @@ export function TrimTool() {
         </div>
 
         <div className="bg-[#111] aspect-video relative">
-          <Preview id={previewId} ref={previewRef as any} loop className="size-full">
-            <Timegroup mode="fixed" duration={`${duration}ms`} className="size-full">
+          <Preview id={previewId} loop className="size-full">
+            <Timegroup ref={timegroupRef} mode="fixed" duration={`${duration}ms`} className="size-full">
               <Video
                 src={VIDEO_SRC}
                 sourcein={`${inPoint}ms`}
