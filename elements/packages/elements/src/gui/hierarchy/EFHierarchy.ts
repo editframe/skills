@@ -39,7 +39,6 @@ export class EFHierarchy extends TWMixin(LitElement) {
       .hierarchy-container {
         background: var(--hierarchy-bg);
         color: var(--hierarchy-text);
-        min-height: 100%;
         padding: 4px 0;
       }
       

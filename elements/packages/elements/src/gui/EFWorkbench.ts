@@ -45,8 +45,8 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   static styles = [
     css`
       :host {
-        display: block;
-        position: relative;
+        display: flex;
+        flex-direction: column;
         width: 100%;
         height: 100%;
         overflow: hidden;
@@ -2296,7 +2296,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     return html`
       <div
         class="grid overflow-hidden"
-        style="position: absolute; inset: 0; grid-template-rows: auto 1fr 280px; grid-template-columns: 280px 1fr; background-color: var(--workbench-bg);"
+        style="flex: 1 1 100%; min-height: 0; width: 100%; grid-template-rows: auto 1fr 280px; grid-template-columns: 280px 1fr; background-color: var(--workbench-bg);"
       >
         <!-- Top: Full-width Toolbar -->
         <div style="grid-row: 1 / 2; grid-column: 1 / -1;">
