@@ -37,8 +37,9 @@ export function TrimTool() {
   useEffect(() => {
     const el = trackRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(([entry]) => {
-      setTrackWidth(entry.contentRect.width);
+    const ro = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) setTrackWidth(entry.contentRect.width);
     });
     ro.observe(el);
     return () => ro.disconnect();
@@ -158,10 +159,12 @@ export function TrimTool() {
           </Preview>
         </div>
 
-        {/* Hidden full-duration timegroup for filmstrip thumbnails */}
-        <Timegroup id={filmstripTgId} mode="fixed" duration={`${VIDEO_DURATION_MS}ms`} style={{ display: 'none' }}>
-          <Video src={VIDEO_SRC} />
-        </Timegroup>
+        {/* Full-duration timegroup for filmstrip thumbnails (off-screen, not display:none so video has dimensions) */}
+        <div style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+          <Timegroup id={filmstripTgId} mode="fixed" duration={`${VIDEO_DURATION_MS}ms`} style={{ width: '320px', height: '180px' }}>
+            <Video src={VIDEO_SRC} style={{ width: '320px', height: '180px' }} />
+          </Timegroup>
+        </div>
 
         {/* Unified Trim Bar */}
         <div className="border-t-4 border-black dark:border-white bg-[#111]">

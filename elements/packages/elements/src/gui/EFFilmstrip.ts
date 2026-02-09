@@ -1,5 +1,5 @@
 import { consume } from "@lit/context";
-import { html, LitElement, nothing } from "lit";
+import { html, LitElement } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { createRef, ref } from "lit/directives/ref.js";
 
@@ -115,13 +115,13 @@ export class EFFilmstrip extends TWMixin(LitElement) {
         target=${targetId}
         control-target=${targetId}
         pixels-per-ms=${this.pixelsPerMs}
-        ?show-playhead=${!this.hidePlayhead}
-        ?show-controls=${false}
-        ?show-ruler=${false}
-        ?show-hierarchy=${true}
-        ?show-playback-controls=${false}
-        ?show-zoom-controls=${false}
-        ?show-time-display=${false}
+        .showPlayhead=${!this.hidePlayhead}
+        .showControls=${false}
+        .showRuler=${false}
+        .showHierarchy=${false}
+        .showPlaybackControls=${false}
+        .showZoomControls=${false}
+        .showTimeDisplay=${false}
         hide=${this.hide}
         show=${this.show}
       ></ef-timeline>
