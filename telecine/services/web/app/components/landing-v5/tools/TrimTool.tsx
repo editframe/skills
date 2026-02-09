@@ -19,9 +19,11 @@ export function TrimTool() {
   const id = useId();
   const previewId = `trim-tool-${id}`;
   const timegroupId = `trim-tg-${id}`;
+  const filmstripTgId = `trim-filmstrip-tg-${id}`;
   const [isClient, setIsClient] = useState(false);
   const [inPoint, setInPoint] = useState(2000);
   const [outPoint, setOutPoint] = useState(8000);
+  const [trackWidth, setTrackWidth] = useState(0);
 
   const trackRef = useRef<HTMLDivElement>(null);
   const draggingRef = useRef<"in" | "out" | "region" | null>(null);
@@ -30,6 +32,17 @@ export function TrimTool() {
   const { enqueue } = useRenderQueue();
 
   useEffect(() => setIsClient(true), []);
+
+  // Measure track width so we can compute pixels-per-ms for the filmstrip
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      setTrackWidth(entry.contentRect.width);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   useLayoutEffect(() => {
     if (!isClient || !draggingRef.current || !timegroupRef.current) return;
@@ -69,10 +82,10 @@ export function TrimTool() {
         const deltaX = e.clientX - dragStartRef.current.mouseX;
         const deltaTime = Math.round((deltaX / rect.width) * VIDEO_DURATION_MS);
         const duration = dragStartRef.current.outPoint - dragStartRef.current.inPoint;
-        
+
         let newInPoint = dragStartRef.current.inPoint + deltaTime;
         let newOutPoint = dragStartRef.current.outPoint + deltaTime;
-        
+
         if (newInPoint < 0) {
           newInPoint = 0;
           newOutPoint = duration;
@@ -80,7 +93,7 @@ export function TrimTool() {
           newOutPoint = VIDEO_DURATION_MS;
           newInPoint = VIDEO_DURATION_MS - duration;
         }
-        
+
         setInPoint(newInPoint);
         setOutPoint(newOutPoint);
       }
@@ -107,6 +120,7 @@ export function TrimTool() {
   const inPercent = (inPoint / VIDEO_DURATION_MS) * 100;
   const outPercent = (outPoint / VIDEO_DURATION_MS) * 100;
   const duration = outPoint - inPoint;
+  const filmstripPxPerMs = trackWidth > 0 ? trackWidth / VIDEO_DURATION_MS : 0.04;
 
   if (!isClient) {
     return (
@@ -144,17 +158,22 @@ export function TrimTool() {
           </Preview>
         </div>
 
-        {/* Unified Trim Bar: filmstrip + handles + scrubber */}
+        {/* Hidden full-duration timegroup for filmstrip thumbnails */}
+        <Timegroup id={filmstripTgId} mode="fixed" duration={`${VIDEO_DURATION_MS}ms`} style={{ display: 'none' }}>
+          <Video src={VIDEO_SRC} />
+        </Timegroup>
+
+        {/* Unified Trim Bar */}
         <div className="border-t-4 border-black dark:border-white bg-[#111]">
           <div className="flex items-center">
             {/* Play/Pause */}
             <TogglePlay target={previewId}>
-              <button slot="pause" className="w-10 h-16 flex items-center justify-center bg-black/80 hover:bg-black transition-colors">
+              <button slot="pause" className="w-10 h-16 flex items-center justify-center bg-black/80 hover:bg-black transition-colors border-r border-white/10">
                 <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
                 </svg>
               </button>
-              <button slot="play" className="w-10 h-16 flex items-center justify-center bg-black/80 hover:bg-black transition-colors">
+              <button slot="play" className="w-10 h-16 flex items-center justify-center bg-black/80 hover:bg-black transition-colors border-r border-white/10">
                 <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z" />
                 </svg>
@@ -169,49 +188,50 @@ export function TrimTool() {
               onPointerUp={handlePointerUp}
               onPointerLeave={handlePointerUp}
             >
-              {/* Filmstrip background */}
+              {/* Filmstrip background - full source video duration */}
               <Filmstrip
-                target={timegroupId}
+                target={filmstripTgId}
                 hide-playhead
+                pixels-per-ms={filmstripPxPerMs}
                 className="absolute inset-0 pointer-events-none"
                 style={{ '--ef-thumbnail-strip-height': '64px' } as React.CSSProperties}
               />
 
               {/* Dimmed regions outside trim */}
               <div
-                className="absolute top-0 bottom-0 left-0 bg-black/70 z-10"
+                className="absolute top-0 bottom-0 left-0 bg-black/70 z-10 pointer-events-none"
                 style={{ width: `${inPercent}%` }}
               />
               <div
-                className="absolute top-0 bottom-0 right-0 bg-black/70 z-10"
+                className="absolute top-0 bottom-0 right-0 bg-black/70 z-10 pointer-events-none"
                 style={{ width: `${100 - outPercent}%` }}
               />
 
               {/* Top/bottom border on selected region */}
               <div
-                className="absolute top-0 h-[3px] bg-[var(--poster-gold)] z-20"
+                className="absolute top-0 h-[3px] bg-[var(--poster-gold)] z-20 pointer-events-none"
                 style={{ left: `${inPercent}%`, width: `${outPercent - inPercent}%` }}
               />
               <div
-                className="absolute bottom-0 h-[3px] bg-[var(--poster-gold)] z-20"
+                className="absolute bottom-0 h-[3px] bg-[var(--poster-gold)] z-20 pointer-events-none"
                 style={{ left: `${inPercent}%`, width: `${outPercent - inPercent}%` }}
               />
 
-              {/* Draggable selected region (invisible, over filmstrip) */}
+              {/* Draggable selected region */}
               <div
                 className="absolute top-0 bottom-0 cursor-move z-20"
-                style={{ left: `${inPercent}%`, width: `${outPercent - inPercent}%` }}
+                style={{ left: `calc(${inPercent}% + 16px)`, width: `calc(${outPercent - inPercent}% - 32px)` }}
                 onPointerDown={handlePointerDown("region")}
               />
 
               {/* In handle */}
               <div
-                className="absolute top-0 bottom-0 w-4 cursor-ew-resize z-30 flex items-center justify-center"
-                style={{ left: `${inPercent}%`, transform: 'translateX(-100%)' }}
+                className="absolute top-0 bottom-0 w-4 cursor-ew-resize z-30"
+                style={{ left: `${inPercent}%` }}
                 onPointerDown={handlePointerDown("in")}
               >
                 <div className="size-full bg-[var(--poster-gold)] rounded-l-[4px] flex items-center justify-center">
-                  <svg className="w-2 h-6 text-black/60" viewBox="0 0 8 24" fill="currentColor">
+                  <svg className="w-2 h-6 text-black/60" viewBox="0 0 8 24">
                     <path d="M6 4L2 12L6 20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" />
                   </svg>
                 </div>
@@ -219,12 +239,12 @@ export function TrimTool() {
 
               {/* Out handle */}
               <div
-                className="absolute top-0 bottom-0 w-4 cursor-ew-resize z-30 flex items-center justify-center"
-                style={{ left: `${outPercent}%` }}
+                className="absolute top-0 bottom-0 w-4 cursor-ew-resize z-30"
+                style={{ left: `${outPercent}%`, transform: 'translateX(-100%)' }}
                 onPointerDown={handlePointerDown("out")}
               >
                 <div className="size-full bg-[var(--poster-gold)] rounded-r-[4px] flex items-center justify-center">
-                  <svg className="w-2 h-6 text-black/60" viewBox="0 0 8 24" fill="currentColor">
+                  <svg className="w-2 h-6 text-black/60" viewBox="0 0 8 24">
                     <path d="M2 4L6 12L2 20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" />
                   </svg>
                 </div>
@@ -251,7 +271,7 @@ export function TrimTool() {
               </div>
             ))}
           </div>
-          
+
           <button
             onClick={handleExport}
             disabled={!isClient}
