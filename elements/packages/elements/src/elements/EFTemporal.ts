@@ -880,7 +880,17 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
     }
 
     set sourceInMs(value: number | undefined) {
+      const oldValue = this._sourceInMs;
       this._sourceInMs = value;
+      
+      // When sourcein changes, adjust timeline position to maintain visual continuity
+      // Store the old value for use in willUpdate
+      if (oldValue !== undefined && value !== undefined && oldValue !== value && this.rootTimegroup) {
+        // Calculate what source time we're currently showing
+        const currentSourceTime = (this.rootTimegroup.currentTimeMs || 0) + oldValue;
+        // Store it so willUpdate can adjust the timeline position
+        (this as any)._pendingSourceTimeAdjustment = currentSourceTime;
+      }
     }
 
     @property({
@@ -904,26 +914,40 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
     }
 
     set sourceOutMs(value: number | undefined) {
+      const oldValue = this._sourceOutMs;
       this._sourceOutMs = value;
+      
+      // When sourceout changes, adjust timeline position to maintain visual continuity
+      if (oldValue !== undefined && value !== undefined && oldValue !== value && this.rootTimegroup) {
+        const currentSourceTime = (this.rootTimegroup.currentTimeMs || 0) + (this._sourceInMs || 0);
+        (this as any)._pendingSourceTimeAdjustment = currentSourceTime;
+      }
     }
 
     override willUpdate(changedProperties: Map<PropertyKey, unknown>): void {
       super.willUpdate?.(changedProperties);
       
-      // When sourcein or sourceout change, reset currentTime to 0
-      // This ensures users see the new starting frame, avoiding confusion
-      // when both properties change together (e.g., dragging a trim region)
-      if (changedProperties.has("_sourceInMs") || changedProperties.has("_sourceOutMs")) {
-        console.log('[EFTemporal willUpdate] sourcein/sourceout changed, rootTimegroup:', this.rootTimegroup, 'currentTimeMs:', this.rootTimegroup?.currentTimeMs);
-        // Reset the root timegroup's currentTime (whether we're the root or a child)
-        if (this.rootTimegroup && this.rootTimegroup.currentTimeMs !== 0) {
-          console.log('[EFTemporal] Resetting timegroup currentTimeMs to 0');
-          this.rootTimegroup.currentTimeMs = 0;
-        } else {
-          console.log('[EFTemporal] Not resetting - already at 0 or no rootTimegroup');
+      // When sourcein or sourceout change, adjust timeline position to show the same source frame
+      if ((changedProperties.has("_sourceInMs") || changedProperties.has("_sourceOutMs")) && 
+          (this as any)._pendingSourceTimeAdjustment !== undefined) {
+        const targetSourceTime = (this as any)._pendingSourceTimeAdjustment;
+        delete (this as any)._pendingSourceTimeAdjustment;
+        
+        if (this.rootTimegroup) {
+          // Calculate new timeline position that shows the same source frame
+          const newSourceIn = this._sourceInMs || 0;
+          const newTimelineTime = targetSourceTime - newSourceIn;
+          
+          // Clamp to valid range [0, duration]
+          const clampedTime = Math.max(0, Math.min(newTimelineTime, this.rootTimegroup.durationMs));
+          
+          if (this.rootTimegroup.currentTimeMs !== clampedTime) {
+            this.rootTimegroup.currentTimeMs = clampedTime;
+          }
         }
       }
     }
+
 
     @property({
       type: Number,
