@@ -704,6 +704,19 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     this.#contentEpoch++;
   }
 
+  /**
+   * Request a frame re-render at the current time.
+   * 
+   * Use this when the source-to-timeline mapping has changed (e.g., sourcein/sourceout)
+   * but currentTimeMs hasn't. The FrameController only re-renders when currentTimeMs
+   * or durationMs change, so this provides a way for child elements to request a
+   * re-render when their internal state changes the visual output.
+   * @public
+   */
+  requestFrameRender(): void {
+    this.#runThrottledFrameTask();
+  }
+
   async #runThrottledFrameTask(): Promise<void> {
     if (this.playbackController) {
       return this.playbackController.runThrottledFrameTask();

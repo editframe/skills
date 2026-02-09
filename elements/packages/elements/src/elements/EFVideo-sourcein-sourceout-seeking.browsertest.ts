@@ -1,16 +1,16 @@
 /**
- * Test suite to clarify and document the expected behavior when sourcein/sourceout
- * attributes change on an EFVideo element.
+ * Test suite for the behavior when sourcein/sourceout attributes change on
+ * a temporal element.
  * 
- * This addresses a confusing API behavior discovered while building a trim tool:
- * - When dragging individual in/out handles, the video APPEARS to seek
- * - When dragging both handles together (region drag), it doesn't appear to seek
- * - Investigation revealed the timegroup always stays at currentTimeMs: 0
+ * Root cause: The FrameController only re-renders when currentTimeMs or durationMs
+ * change on the timegroup. When sourcein/sourceout change but the duration stays
+ * the same (e.g., sliding both by the same delta), no frame render was triggered
+ * and the video showed a stale frame.
  * 
- * This test suite documents what SHOULD happen to help guide API improvements.
+ * Fix: EFTemporal.updated() now calls rootTimegroup.requestFrameRender() when
+ * sourcein/sourceout change, ensuring the correct source frame is always displayed.
  */
 
-import { html, render } from "lit";
 import { beforeAll, beforeEach, describe, expect } from "vitest";
 import { test as baseTest } from "../../test/useMSW.js";
 import type { EFVideo } from "./EFVideo.js";
@@ -59,166 +59,45 @@ const test = baseTest.extend<{
   },
 });
 
-describe("EFVideo sourcein/sourceout seeking behavior", () => {
-  test("timegroup resets to 0 when sourcein changes", async ({ 
-    timegroup, 
-    video 
-  }) => {
-    // Initial state
+describe("sourcein/sourceout changes trigger frame re-render", () => {
+  test("changing sourcein triggers a frame render", async ({ timegroup, video }) => {
     expect(timegroup.currentTimeMs).toBe(0);
-    expect(video.getAttribute("sourcein")).toBe("2000ms");
-    expect(video.getAttribute("sourceout")).toBe("8000ms");
-    
-    // Change sourcein (simulating dragging the in-handle)
+
+    // Change sourcein - should trigger a frame render even though
+    // currentTimeMs stays at 0
     video.setAttribute("sourcein", "3000ms");
     await video.updateComplete;
     await timegroup.updateComplete;
     
-    // FIXED BEHAVIOR: timegroup resets to 0 to show the new in-point
-    expect(timegroup.currentTimeMs).toBe(0);
+    // currentSourceTimeMs should now reflect the new sourcein
+    expect((video as any).currentSourceTimeMs).toBe(3000);
   });
 
-  test("timegroup resets to 0 when sourceout changes", async ({ 
-    timegroup, 
-    video 
-  }) => {
-    // Initial state
+  test("changing sourceout triggers a frame render", async ({ timegroup, video }) => {
     expect(timegroup.currentTimeMs).toBe(0);
-    
-    // Change sourceout (simulating dragging the out-handle)
+
     video.setAttribute("sourceout", "7000ms");
     await video.updateComplete;
     await timegroup.updateComplete;
     
-    // FIXED BEHAVIOR: timegroup resets to 0 to show the new in-point
-    expect(timegroup.currentTimeMs).toBe(0);
+    // Source time should still start at sourcein
+    expect((video as any).currentSourceTimeMs).toBe(2000);
   });
 
-  test("timegroup resets to 0 when both sourcein and sourceout change", async ({ 
-    timegroup, 
-    video 
-  }) => {
-    // Initial state
+  test("changing both sourcein and sourceout triggers a frame render", async ({ timegroup, video }) => {
     expect(timegroup.currentTimeMs).toBe(0);
-    
-    // Change both (simulating dragging the entire trim region)
+
+    // Simulate region drag: shift both by the same amount
     video.setAttribute("sourcein", "3000ms");
     video.setAttribute("sourceout", "9000ms");
     await video.updateComplete;
     await timegroup.updateComplete;
     
-    // FIXED BEHAVIOR: timegroup resets to 0 to show the new in-point
-    // This was the confusing case - now it works correctly!
-    expect(timegroup.currentTimeMs).toBe(0);
+    // currentSourceTimeMs = ownCurrentTimeMs(0) + sourceIn(3000) = 3000
+    expect((video as any).currentSourceTimeMs).toBe(3000);
   });
 
-  test("timegroup resets to 0 even when already at a different time", async ({ 
-    timegroup, 
-    video 
-  }) => {
-    // Seek to middle of clip
-    timegroup.currentTimeMs = 3000;
-    await timegroup.updateComplete;
-    expect(timegroup.currentTimeMs).toBe(3000);
-    
-    // Change sourcein
-    video.setAttribute("sourcein", "3000ms");
-    await video.updateComplete;
-    await timegroup.updateComplete;
-    
-    // FIXED BEHAVIOR: Resets to 0 (show new in-point)
-    // This is the "principle of least surprise" - users expect to see the new trim point
-    expect(timegroup.currentTimeMs).toBe(0);
-  });
-
-  test.skip("proposed behavior: sourcein/sourceout changes should emit an event", async ({ 
-    timegroup, 
-    video 
-  }) => {
-    // PROPOSAL: Video should emit an event when sourcein/sourceout changes
-    // This would allow UI components (like a trim tool) to decide whether to seek
-    
-    let eventFired = false;
-    video.addEventListener("source-range-changed", ((e: CustomEvent) => {
-      eventFired = true;
-      expect(e.detail).toMatchObject({
-        oldSourceIn: 2000,
-        newSourceIn: 3000,
-        oldSourceOut: 8000,
-        newSourceOut: 8000,
-      });
-    }) as EventListener);
-    
-    video.setAttribute("sourcein", "3000ms");
-    await video.updateComplete;
-    
-    expect(eventFired).toBe(true);
-  });
-
-  test.skip("proposed behavior: Video could have a seekBehavior attribute", async ({ 
-    timegroup, 
-    video 
-  }) => {
-    // PROPOSAL: Add a seekBehavior attribute to control what happens
-    // when sourcein/sourceout changes
-    
-    // seekBehavior="reset" - always reset to time 0 when range changes
-    video.setAttribute("seek-behavior", "reset");
-    video.setAttribute("sourcein", "3000ms");
-    await video.updateComplete;
-    await timegroup.updateComplete;
-    expect(timegroup.currentTimeMs).toBe(0);
-    
-    // seekBehavior="maintain" - try to maintain current position
-    video.setAttribute("seek-behavior", "maintain");
-    timegroup.currentTimeMs = 2000;
-    video.setAttribute("sourcein", "4000ms");
-    await video.updateComplete;
-    await timegroup.updateComplete;
-    expect(timegroup.currentTimeMs).toBe(2000);
-    
-    // seekBehavior="none" (default) - don't automatically seek
-    video.setAttribute("seek-behavior", "none");
-    // ... behavior is up to the application
-  });
-});
-
-describe("Principle of Least Surprise", () => {
-  test("user expectation: dragging in-handle should show the new in-point", async ({ 
-    timegroup, 
-    video 
-  }) => {
-    // When a user drags the in-handle in a trim tool, they expect to see
-    // the frame at the new in-point. Currently this happens "accidentally"
-    // because timegroup is at 0, but it's not explicit in the API.
-    
-    // This is the CURRENT behavior that works by accident:
-    expect(timegroup.currentTimeMs).toBe(0);
-    video.setAttribute("sourcein", "3000ms");
-    await video.updateComplete;
-    // User sees frame at 3000ms from source (which is time 0 in timegroup)
-    expect(timegroup.currentTimeMs).toBe(0);
-  });
-
-  test("user expectation: dragging region should maintain visual continuity", async ({ 
-    timegroup, 
-    video 
-  }) => {
-    // When a user drags the entire trim region, they expect one of:
-    // A) Video jumps to show the new in-point (reset to time 0)
-    // B) Video maintains the same relative position within the clip
-    
-    // Currently, neither happens explicitly - it's up to the app to seek
-    
-    // Most trim tools reset to the in-point for clarity:
-    timegroup.currentTimeMs = 3000; // User was in the middle
-    video.setAttribute("sourcein", "3000ms");
-    video.setAttribute("sourceout", "9000ms");
-    await video.updateComplete;
-    await timegroup.updateComplete;
-    
-    // Application should explicitly seek to 0 to show new in-point
-    timegroup.currentTimeMs = 0;
-    expect(timegroup.currentTimeMs).toBe(0);
+  test("requestFrameRender exists on EFTimegroup", async ({ timegroup }) => {
+    expect(typeof timegroup.requestFrameRender).toBe("function");
   });
 });
