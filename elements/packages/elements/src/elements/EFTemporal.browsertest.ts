@@ -202,3 +202,107 @@ describe("Temporal Lifecycle", () => {
     expect(childTimegroup.rootTimegroup).toBe(parentTimegroup);
   });
 });
+
+describe("contentReadyState protocol", () => {
+  test("unconnected element starts as idle", () => {
+    const element = document.createElement("ten-seconds");
+    expect(element.contentReadyState).toBe("idle");
+  });
+
+  test("connected element transitions to ready after updateComplete", async () => {
+    const element = document.createElement("ten-seconds");
+    document.body.append(element);
+    await element.updateComplete;
+    expect(element.contentReadyState).toBe("ready");
+    element.remove();
+  });
+
+  test("contentReadyState reflects to attribute", async () => {
+    const element = document.createElement("ten-seconds");
+    document.body.append(element);
+    // First updateComplete triggers the idle→ready transition;
+    // wait for the second cycle to let Lit reflect the attribute.
+    await element.updateComplete;
+    await element.updateComplete;
+    expect(element.getAttribute("content-ready-state")).toBe("ready");
+    element.remove();
+  });
+
+  test("readystatechange fires on transition to ready", async () => {
+    const element = document.createElement("ten-seconds");
+    const states: string[] = [];
+    element.addEventListener("readystatechange", ((e: CustomEvent) => {
+      states.push(e.detail.state);
+    }) as EventListener);
+    document.body.append(element);
+    await element.updateComplete;
+    expect(states).toContain("ready");
+    element.remove();
+  });
+
+  test("readystatechange does not fire when state is set to current value", async () => {
+    const element = document.createElement("ten-seconds");
+    document.body.append(element);
+    await element.updateComplete;
+    expect(element.contentReadyState).toBe("ready");
+    const states: string[] = [];
+    element.addEventListener("readystatechange", ((e: CustomEvent) => {
+      states.push(e.detail.state);
+    }) as EventListener);
+    // Setting to same value should not fire
+    element.setContentReadyState("ready");
+    expect(states).toHaveLength(0);
+    element.remove();
+  });
+
+  test("readystatechange does not bubble", async () => {
+    const container = document.createElement("div");
+    const element = document.createElement("ten-seconds");
+    container.append(element);
+    const bubbled: string[] = [];
+    container.addEventListener("readystatechange", ((e: CustomEvent) => {
+      bubbled.push(e.detail.state);
+    }) as EventListener);
+    document.body.append(container);
+    await element.updateComplete;
+    expect(bubbled).toHaveLength(0);
+    container.remove();
+  });
+
+  test("contentchange does not bubble", async () => {
+    const container = document.createElement("div");
+    const element = document.createElement("ten-seconds");
+    container.append(element);
+    document.body.append(container);
+    await element.updateComplete;
+    const bubbled: string[] = [];
+    container.addEventListener("contentchange", ((e: CustomEvent) => {
+      bubbled.push(e.detail.reason);
+    }) as EventListener);
+    element.emitContentChange("bounds");
+    expect(bubbled).toHaveLength(0);
+    container.remove();
+  });
+
+  test("contentchange fires with correct reason", async () => {
+    const element = document.createElement("ten-seconds");
+    document.body.append(element);
+    await element.updateComplete;
+    const reasons: string[] = [];
+    element.addEventListener("contentchange", ((e: CustomEvent) => {
+      reasons.push(e.detail.reason);
+    }) as EventListener);
+    element.emitContentChange("bounds");
+    expect(reasons).toEqual(["bounds"]);
+    element.remove();
+  });
+
+  test("contentReadyState is queryable without event subscription (late subscriber)", async () => {
+    const element = document.createElement("ten-seconds");
+    document.body.append(element);
+    await element.updateComplete;
+    // No event listener attached — just read the property
+    expect(element.contentReadyState).toBe("ready");
+    element.remove();
+  });
+});

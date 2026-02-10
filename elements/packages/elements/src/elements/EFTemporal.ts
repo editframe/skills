@@ -56,6 +56,20 @@ export const timegroupContext = createContext<EFTimegroup>(
 // (delegates playback to its root timegroup). This is the fundamental invariant.
 // ============================================================================
 
+// ============================================================================
+// Core Concept 0: Content Readiness Protocol
+// ============================================================================
+// Every temporal element exposes a contentReadyState property and two events:
+//   readystatechange — fires on state transitions (idle, loading, ready, error)
+//   contentchange   — fires when renderable output is invalidated
+//
+// The property solves late-subscriber: consumers check it on subscribe.
+// Events are non-bubbling: containers (timegroups) explicitly aggregate.
+// ============================================================================
+
+export type ContentReadyState = "idle" | "loading" | "ready" | "error";
+export type ContentChangeReason = "source" | "bounds" | "structure" | "content";
+
 type TemporalRole = "root" | "child";
 
 function determineTemporalRole(
@@ -505,6 +519,29 @@ export declare class TemporalMixinInterface {
   didBecomeRoot(): void;
   didBecomeChild(): void;
 
+  /**
+   * The readiness state of this element's content.
+   * "idle" — no content / not connected
+   * "loading" — async resources are loading
+   * "ready" — element can render / extract frames
+   * "error" — resource loading failed
+   *
+   * @domAttribute "content-ready-state"
+   */
+  contentReadyState: ContentReadyState;
+
+  /**
+   * Transition to a new readiness state.
+   * Dispatches a non-bubbling `readystatechange` CustomEvent if the state changed.
+   */
+  setContentReadyState(state: ContentReadyState): void;
+
+  /**
+   * Dispatch a non-bubbling `contentchange` CustomEvent.
+   * Signals that cached renderable output is stale.
+   */
+  emitContentChange(reason: ContentChangeReason): void;
+
   updateComplete: Promise<boolean>;
 }
 
@@ -658,6 +695,45 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
   superClass: T,
 ) => {
   class TemporalMixinClass extends superClass {
+    // ---- Content Readiness Protocol ----
+
+    #contentReadyState: ContentReadyState = "idle";
+
+    @property({ type: String, reflect: true, attribute: "content-ready-state" })
+    get contentReadyState(): ContentReadyState {
+      return this.#contentReadyState;
+    }
+
+    set contentReadyState(value: ContentReadyState) {
+      this.setContentReadyState(value);
+    }
+
+    setContentReadyState(state: ContentReadyState): void {
+      if (state === this.#contentReadyState) return;
+      const old = this.#contentReadyState;
+      this.#contentReadyState = state;
+      this.requestUpdate("contentReadyState", old);
+      this.dispatchEvent(
+        new CustomEvent("readystatechange", {
+          detail: { state },
+          bubbles: false,
+          composed: false,
+        }),
+      );
+    }
+
+    emitContentChange(reason: ContentChangeReason): void {
+      this.dispatchEvent(
+        new CustomEvent("contentchange", {
+          detail: { reason },
+          bubbles: false,
+          composed: false,
+        }),
+      );
+    }
+
+    // ---- End Content Readiness Protocol ----
+
     #ownCurrentTimeController?: OwnCurrentTimeController;
 
     #parentTimegroup?: EFTimegroup;
@@ -751,6 +827,17 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
       // For elements WITH ancestors, the parentTimegroup setter will be called
       // when Lit Context propagates, and if the role changes, didBecomeRoot/didBecomeChild
       // will be called appropriately.
+
+      // Default readiness: trivially-ready elements (no async loading)
+      // transition to "ready" after first update. Subclasses with async
+      // loading (EFMedia, EFCaptions) override this by calling
+      // setContentReadyState themselves before this resolves.
+      this.updateComplete.then(() => {
+        if (!this.isConnected) return;
+        if (this.#contentReadyState === "idle") {
+          this.setContentReadyState("ready");
+        }
+      });
     }
 
     get parentTimegroup() {
