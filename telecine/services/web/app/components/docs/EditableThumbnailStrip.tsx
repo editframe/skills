@@ -50,12 +50,8 @@ export const EditableThumbnailStrip = () => {
                 <Video
                   id={`${id}-video`}
                   src="https://assets.editframe.com/bars-n-tone.mp4"
-                  trimstart={
-                    videoTrimStartMs > 0 ? `${videoTrimStartMs}ms` : undefined
-                  }
-                  trimend={
-                    videoTrimEndMs > 0 ? `${videoTrimEndMs}ms` : undefined
-                  }
+                  trimStartMs={videoTrimStartMs > 0 ? videoTrimStartMs : undefined}
+                  trimEndMs={videoTrimEndMs > 0 ? videoTrimEndMs : undefined}
                   className="size-full object-contain"
                 />
               </Timegroup>
@@ -66,10 +62,7 @@ export const EditableThumbnailStrip = () => {
             <div style={{ width: `${stripWidthPercent}%` }}>
               <ThumbnailStrip
                 target={`${id}-video`}
-                thumbnail-width={thumbnailWidth}
-                start-time-ms={useIntrinsicDuration ? undefined : startTimeMs}
-                end-time-ms={useIntrinsicDuration ? undefined : endTimeMs}
-                use-intrinsic-duration={useIntrinsicDuration}
+                useIntrinsicDuration={useIntrinsicDuration}
                 style={{ width: "100%", height: `${stripHeight}px` }}
               />
             </div>

@@ -81,8 +81,8 @@ export function TrimTool() {
             ref={videoRef}
             src={VIDEO_SRC}
             loop
-            trimstart={`${trim.startMs}ms`}
-            trimend={`${trim.endMs}ms`}
+            trimStartMs={trim.startMs}
+            trimEndMs={trim.endMs}
             className="size-full object-contain"
           />
         </div>
@@ -102,8 +102,8 @@ export function TrimTool() {
             <div className="relative flex-1 h-16 overflow-hidden">
               <ThumbnailStrip
                 targetElement={videoRef.current}
-                use-intrinsic-duration
-                thumbnail-height={64}
+                useIntrinsicDuration
+                thumbnailHeight={64}
                 className="absolute inset-0 pointer-events-none"
               />
 
