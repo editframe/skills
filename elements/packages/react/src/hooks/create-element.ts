@@ -123,8 +123,10 @@ export function createComponent<
           reactProps[k === "className" ? "class" : k] = v;
           continue;
         }
-        if (eventProps.has(k) || k in elementClass.prototype)
+        if (eventProps.has(k) || k in elementClass.prototype) {
           elementProps[k] = v;
+          continue;
+        }
         reactProps[k] = v;
       }
 
