@@ -20,15 +20,15 @@ export class EFImage extends EFTemporal(
     css`
       :host {
         display: block;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        position: relative;
+        object-fit: contain;
+        object-position: center;
       }
       canvas, img {
         width: 100%;
         height: 100%;
-        object-fit: var(--object-fit, contain);
-        object-position: var(--object-position, center);
+        object-fit: inherit;
+        object-position: inherit;
       }
     `,
   ];
@@ -368,9 +368,6 @@ export class EFImage extends EFTemporal(
   protected updated(changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
     super.updated(changedProperties);
     
-    // Sync object-fit styles from host element
-    this.#syncObjectFitStyles();
-    
     if (changedProperties.has("src") || changedProperties.has("assetId")) {
       this.#imageLoaded = false;
       if (changedProperties.get("src") !== undefined || changedProperties.get("assetId") !== undefined) {
@@ -387,19 +384,6 @@ export class EFImage extends EFTemporal(
     if (this.#currentObjectUrl) {
       URL.revokeObjectURL(this.#currentObjectUrl);
       this.#currentObjectUrl = null;
-    }
-  }
-
-  #syncObjectFitStyles() {
-    const computedStyle = getComputedStyle(this);
-    const objectFit = computedStyle.objectFit;
-    const objectPosition = computedStyle.objectPosition;
-    
-    if (objectFit && objectFit !== 'fill') {
-      this.style.setProperty('--object-fit', objectFit);
-    }
-    if (objectPosition) {
-      this.style.setProperty('--object-position', objectPosition);
     }
   }
 

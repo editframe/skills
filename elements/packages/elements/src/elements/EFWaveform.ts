@@ -30,6 +30,8 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
         left: 0;
         width: 100%;
         height: 100%;
+        object-fit: inherit;
+        object-position: inherit;
       }
     `;
 

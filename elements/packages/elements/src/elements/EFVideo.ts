@@ -58,15 +58,18 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       :host {
         display: block;
         position: relative;
+        object-fit: contain;
+        object-position: center;
       }
       canvas {
         overflow: hidden;
         position: static;
         width: 100%;
         height: 100%;
+        object-fit: inherit;
+        object-position: inherit;
         margin: 0;
         padding: 0;
-        overflow: hidden;
         border: none;
         outline: none;
         box-shadow: none;
@@ -730,16 +733,18 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
 
         let resized = false;
         if (frame?.codedWidth && frame?.codedHeight) {
-          if (
-            this.canvasElement.width !== frame.codedWidth ||
-            this.canvasElement.height !== frame.codedHeight
-          ) {
+          const needsResize =
+            frame.codedWidth > this.canvasElement.width ||
+            frame.codedHeight > this.canvasElement.height;
+          if (needsResize) {
+            const newWidth = Math.max(this.canvasElement.width, frame.codedWidth);
+            const newHeight = Math.max(this.canvasElement.height, frame.codedHeight);
             log("trace: updating canvas dimensions", {
-              width: frame.codedWidth,
-              height: frame.codedHeight,
+              width: newWidth,
+              height: newHeight,
             });
-            this.canvasElement.width = frame.codedWidth;
-            this.canvasElement.height = frame.codedHeight;
+            this.canvasElement.width = newWidth;
+            this.canvasElement.height = newHeight;
             resized = true;
             const t3 = performance.now();
             span.setAttribute("resizeMs", Math.round((t3 - t2) * 100) / 100);
