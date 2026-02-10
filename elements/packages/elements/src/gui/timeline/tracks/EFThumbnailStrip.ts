@@ -300,8 +300,10 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     const thumbnails: ThumbnailDescriptor[] = [];
     const { width, height } = this.#thumbnailDimensions;
     
-    // Stride must be at least the thumbnail width to prevent overlap
-    const thumbnailStride = Math.max(this.thumbnailSpacingPx, width);
+    // Read minimum gap from CSS variable (--ef-thumbnail-gap, default 2px)
+    const gapPx = parseFloat(getComputedStyle(this).getPropertyValue('--ef-thumbnail-gap')) || 2;
+    // Stride must be at least thumbnail width + gap to prevent overlap
+    const thumbnailStride = Math.max(this.thumbnailSpacingPx, width + gapPx);
     
     // Detect zoom by checking if pixelsPerMs changed
     const isZoom = this.#previousPixelsPerMs !== null && this.#previousPixelsPerMs !== pixelsPerMs;
