@@ -148,6 +148,9 @@ export class EFTrimHandles extends TWMixin(LitElement) {
   @property({ type: Boolean, attribute: "show-overlays" })
   showOverlays = true;
 
+  @property({ type: String, attribute: "seek-target" })
+  seekTarget = "";
+
   @consume({ context: timelineEditingContext, subscribe: true })
   editingContext?: TimelineEditingContext;
 
@@ -164,6 +167,18 @@ export class EFTrimHandles extends TWMixin(LitElement) {
   #regionDragStartTrimEnd = 0;
   #resizeObserver: ResizeObserver | null = null;
   #hostWidth = 0;
+
+  #seekToTarget(type: "start" | "end" | "region", trimStartMs: number, trimEndMs: number): void {
+    if (!this.seekTarget) return;
+    const target = (this.getRootNode() as Document | ShadowRoot).getElementById(this.seekTarget) as any;
+    if (!target || !("currentTimeMs" in target)) return;
+
+    if (type === "end") {
+      target.currentTimeMs = this.intrinsicDurationMs - trimStartMs - trimEndMs;
+    } else {
+      target.currentTimeMs = 0;
+    }
+  }
 
   get #effectivePixelsPerMs(): number {
     if (this.pixelsPerMs != null) {
@@ -273,6 +288,7 @@ export class EFTrimHandles extends TWMixin(LitElement) {
           composed: true,
         }),
       );
+      this.#seekToTarget("region", newTrimStart, newTrimEnd);
       return;
     }
 
@@ -298,6 +314,7 @@ export class EFTrimHandles extends TWMixin(LitElement) {
           composed: true,
         }),
       );
+      this.#seekToTarget("start", newValueMs, this.trimEndMs);
     } else {
       newValueMs = Math.max(0, this.dragStartValue - deltaMs);
       newValueMs = Math.min(
@@ -318,6 +335,7 @@ export class EFTrimHandles extends TWMixin(LitElement) {
           composed: true,
         }),
       );
+      this.#seekToTarget("end", this.trimStartMs, newValueMs);
     }
   };
 

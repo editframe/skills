@@ -354,6 +354,99 @@ describe("EFTrimHandles", () => {
     expect(detail.trimStartMs).toBe(4000); // original kept = 6000, so trimStart = 10000 - 6000 = 4000
   }, 1000);
 
+  // ============================================================================
+  // SEEK TARGET
+  // ============================================================================
+
+  test("seeks target to 0 when dragging start handle", async () => {
+    const container = createContainer(1000);
+
+    // Create a mock seek target with a currentTimeMs property
+    const seekTarget = document.createElement("div") as HTMLElement & { currentTimeMs: number };
+    seekTarget.id = "seek-target-start";
+    (seekTarget as any).currentTimeMs = 5000;
+    container.appendChild(seekTarget);
+
+    const trimHandles = createTrimHandles(container, {
+      pixelsPerMs: 0.1,
+      trimStartMs: 1000,
+      trimEndMs: 1000,
+      intrinsicDurationMs: 10000,
+    });
+    trimHandles.seekTarget = seekTarget.id;
+    await trimHandles.updateComplete;
+
+    const startHandle = trimHandles.shadowRoot?.querySelector(".handle-start") as HTMLElement;
+    await simulateDrag(startHandle, container, 100, 200, trimHandles.updateComplete);
+
+    expect((seekTarget as any).currentTimeMs).toBe(0);
+  }, 1000);
+
+  test("seeks target to end of kept duration when dragging end handle", async () => {
+    const container = createContainer(1000);
+
+    const seekTarget = document.createElement("div") as HTMLElement & { currentTimeMs: number };
+    seekTarget.id = "seek-target-end";
+    (seekTarget as any).currentTimeMs = 0;
+    container.appendChild(seekTarget);
+
+    const trimHandles = createTrimHandles(container, {
+      pixelsPerMs: 0.1,
+      trimStartMs: 1000,
+      trimEndMs: 1000,
+      intrinsicDurationMs: 10000,
+    });
+    trimHandles.seekTarget = seekTarget.id;
+    await trimHandles.updateComplete;
+
+    const endHandle = trimHandles.shadowRoot?.querySelector(".handle-end") as HTMLElement;
+    const rect = container.getBoundingClientRect();
+    await simulateDrag(endHandle, container, rect.width - 100, rect.width - 200, trimHandles.updateComplete);
+
+    // Should seek to the kept duration (intrinsic - trimStart - new trimEnd)
+    expect((seekTarget as any).currentTimeMs).toBeGreaterThan(0);
+  }, 1000);
+
+  test("seeks target to 0 when dragging region", async () => {
+    const container = createContainer(1000);
+
+    const seekTarget = document.createElement("div") as HTMLElement & { currentTimeMs: number };
+    seekTarget.id = "seek-target-region";
+    (seekTarget as any).currentTimeMs = 5000;
+    container.appendChild(seekTarget);
+
+    const trimHandles = createTrimHandles(container, {
+      pixelsPerMs: 0.1,
+      trimStartMs: 2000,
+      trimEndMs: 2000,
+      intrinsicDurationMs: 10000,
+    });
+    trimHandles.seekTarget = seekTarget.id;
+    await trimHandles.updateComplete;
+
+    const region = trimHandles.shadowRoot?.querySelector(".region") as HTMLElement;
+    await simulateDrag(region, container, 500, 600, trimHandles.updateComplete);
+
+    expect((seekTarget as any).currentTimeMs).toBe(0);
+  }, 1000);
+
+  test("does not seek when no seek-target is set", async () => {
+    const container = createContainer(1000);
+
+    // No seekTarget — just verify no error occurs
+    const trimHandles = createTrimHandles(container, {
+      pixelsPerMs: 0.1,
+      trimStartMs: 1000,
+      trimEndMs: 1000,
+      intrinsicDurationMs: 10000,
+    });
+    await trimHandles.updateComplete;
+
+    const startHandle = trimHandles.shadowRoot?.querySelector(".handle-start") as HTMLElement;
+    // Should not throw
+    await simulateDrag(startHandle, container, 100, 200, trimHandles.updateComplete);
+  }, 1000);
+
   test("region zone is not rendered in track mode", async () => {
     const container = createContainer();
     const trimHandles = createTrimHandles(container, {

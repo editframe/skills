@@ -1,4 +1,4 @@
-import { useId, useState, useRef, useCallback } from "react";
+import { useId, useState, useRef } from "react";
 import {
   Preview, Timegroup, Video, ThumbnailStrip, TrimHandles, TogglePlay, useMediaInfo,
   type TrimChangeDetail,
@@ -41,7 +41,8 @@ const trimHandleStyles = {
 
 export function TrimTool() {
   const id = useId();
-  const previewId = `trim-tool-${id}`;
+  const previewId = `trim-preview-${id}`;
+  const timegroupId = `trim-timegroup-${id}`;
   const videoRef = useRef<EFVideo>(null);
   const timegroupRef = useRef<EFTimegroup>(null);
   const { enqueue } = useRenderQueue();
@@ -55,32 +56,6 @@ export function TrimTool() {
   const inPoint = trimStart;
   const outPoint = totalDuration - trimEnd;
 
-  const handleTrimChange = useCallback((e: CustomEvent<TrimChangeDetail>) => {
-    const { type, trimStartMs, trimEndMs } = e.detail;
-    setTrimStart(trimStartMs);
-    setTrimEnd(trimEndMs);
-
-    if (timegroupRef.current) {
-      if (type === "end") {
-        const duration = totalDuration - trimStartMs - trimEndMs;
-        timegroupRef.current.currentTimeMs = duration;
-      } else {
-        timegroupRef.current.currentTimeMs = 0;
-      }
-    }
-  }, [totalDuration]);
-
-  const handleExport = useCallback(() => {
-    if (timegroupRef.current) {
-      enqueue({
-        name: "Trimmed Video",
-        fileName: `trimmed-${formatTime(inPoint)}-${formatTime(outPoint)}.mp4`,
-        timegroupEl: timegroupRef.current as unknown as HTMLElement,
-        renderOpts: { includeAudio: true },
-      });
-    }
-  }, [enqueue, inPoint, outPoint]);
-
   return (
     <div className="w-full max-w-xl">
       <div className="border-4 border-black dark:border-white bg-white dark:bg-[#1a1a1a] overflow-hidden">
@@ -93,7 +68,7 @@ export function TrimTool() {
         {/* Video Preview */}
         <div className="bg-[#111] aspect-video relative">
           <Preview id={previewId} loop className="size-full">
-            <Timegroup ref={timegroupRef} mode="fixed" duration={`${keptDuration}ms`} className="size-full">
+            <Timegroup id={timegroupId} ref={timegroupRef} mode="fixed" duration={`${keptDuration}ms`} className="size-full">
               <Video
                 ref={videoRef}
                 src={VIDEO_SRC}
@@ -133,7 +108,12 @@ export function TrimTool() {
                 trimStartMs={trimStart}
                 trimEndMs={trimEnd}
                 intrinsicDurationMs={totalDuration}
-                onTrimChange={handleTrimChange}
+                seekTarget={timegroupId}
+                onTrimChange={(e: Event) => {
+                  const { trimStartMs, trimEndMs } = (e as CustomEvent<TrimChangeDetail>).detail;
+                  setTrimStart(trimStartMs);
+                  setTrimEnd(trimEndMs);
+                }}
                 className="absolute inset-0"
                 style={trimHandleStyles}
               >
@@ -147,24 +127,31 @@ export function TrimTool() {
         {/* Info Bar */}
         <div className="border-t-4 border-black dark:border-white bg-[#f5f5f5] dark:bg-[#111] px-4 py-2">
           <div className="flex items-center justify-between gap-3 mb-2">
-            {[
-              { label: "In", value: inPoint, color: "text-[var(--poster-blue)]" },
-              { label: "Duration", value: keptDuration, color: "text-black dark:text-white" },
-              { label: "Out", value: outPoint, color: "text-[var(--poster-red)]" },
-            ].map(({ label, value, color }) => (
-              <div key={label} className="flex-1 text-center">
-                <div className="text-[8px] font-bold uppercase tracking-wider text-black/40 dark:text-white/40 mb-0.5">
-                  {label}
-                </div>
-                <div className={`text-xs font-mono font-bold ${color}`}>
-                  {formatTime(value)}
-                </div>
-              </div>
-            ))}
+            <div className="flex-1 text-center">
+              <div className="text-[8px] font-bold uppercase tracking-wider text-black/40 dark:text-white/40 mb-0.5">In</div>
+              <div className="text-xs font-mono font-bold text-[var(--poster-blue)]">{formatTime(inPoint)}</div>
+            </div>
+            <div className="flex-1 text-center">
+              <div className="text-[8px] font-bold uppercase tracking-wider text-black/40 dark:text-white/40 mb-0.5">Duration</div>
+              <div className="text-xs font-mono font-bold text-black dark:text-white">{formatTime(keptDuration)}</div>
+            </div>
+            <div className="flex-1 text-center">
+              <div className="text-[8px] font-bold uppercase tracking-wider text-black/40 dark:text-white/40 mb-0.5">Out</div>
+              <div className="text-xs font-mono font-bold text-[var(--poster-red)]">{formatTime(outPoint)}</div>
+            </div>
           </div>
 
           <button
-            onClick={handleExport}
+            onClick={() => {
+              if (timegroupRef.current) {
+                enqueue({
+                  name: "Trimmed Video",
+                  fileName: `trimmed-${formatTime(inPoint)}-${formatTime(outPoint)}.mp4`,
+                  timegroupEl: timegroupRef.current as unknown as HTMLElement,
+                  renderOpts: { includeAudio: true },
+                });
+              }
+            }}
             className="w-full py-1.5 bg-[var(--poster-red)] border-2 border-black dark:border-white text-white font-bold uppercase tracking-wider text-[10px] hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Export Clip
