@@ -283,39 +283,43 @@ export class PlaybackController implements ReactiveController {
         if (this.#playing) {
           this.startPlayback();
         } else {
-          // Wait for media durations then restore from localStorage
-          this.#host.waitForMediaDurations?.().then(() => {
-            // Check again after async operation - controller could have been removed
-            if (this.#removed || this.#host.playbackController !== this) {
-              return;
-            }
-            
-            const maybeLoadedTime = this.#host.loadTimeFromLocalStorage?.();
-            if (maybeLoadedTime !== undefined) {
-              // Set restoration flag to prevent seek from saving back to localStorage
-              (this.#host as any).setRestoringFromLocalStorage?.(true);
-              this.currentTime = maybeLoadedTime;
-              // Flag is cleared by runSeek after seek finishes
-            } else if (this.#currentTime === undefined) {
-              this.#currentTime = 0;
-            }
-          }).catch(err => {
-            // Don't log AbortError - these are intentional cancellations when element is disconnected
-            const isAbortError = 
-              err instanceof DOMException && err.name === "AbortError" ||
-              err instanceof Error && (
-                err.name === "AbortError" ||
-                err.message.includes("signal is aborted") ||
-                err.message.includes("The user aborted a request")
-              );
-            
-            if (!isAbortError) {
-              console.error("Error in PlaybackController hostConnected:", err);
-            }
-          });
+          this.#initializeTime();
         }
       });
     });
+  }
+
+  async #initializeTime(): Promise<void> {
+    try {
+      const waitPromise = this.#host.waitForMediaDurations?.();
+      if (waitPromise) {
+        await waitPromise;
+      }
+    } catch (err) {
+      const isAbortError =
+        err instanceof DOMException && err.name === "AbortError" ||
+        err instanceof Error && (
+          err.name === "AbortError" ||
+          err.message.includes("signal is aborted") ||
+          err.message.includes("The user aborted a request")
+        );
+      if (!isAbortError) {
+        console.error("Error in PlaybackController hostConnected:", err);
+      }
+      return;
+    }
+
+    if (this.#removed || this.#host.playbackController !== this) {
+      return;
+    }
+
+    const maybeLoadedTime = this.#host.loadTimeFromLocalStorage?.();
+    if (maybeLoadedTime !== undefined) {
+      (this.#host as any).setRestoringFromLocalStorage?.(true);
+      this.currentTime = maybeLoadedTime;
+    } else if (this.#currentTime === undefined) {
+      this.currentTime = 0;
+    }
   }
 
   hostDisconnected(): void {
@@ -331,6 +335,8 @@ export class PlaybackController implements ReactiveController {
    * Run frame rendering via FrameController.
    */
   async runThrottledFrameTask(): Promise<void> {
+    // Guard: standalone temporal elements (e.g. bare ef-video) have no FrameController
+    if (!this.#host.frameController) return;
     // FrameController handles its own cancellation and queuing internally
     // Animation updates are centralized via the onAnimationsUpdate callback
     try {

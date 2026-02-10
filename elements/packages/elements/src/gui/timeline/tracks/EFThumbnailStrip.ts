@@ -252,9 +252,11 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     if (!target) return;
 
     this.#targetReadyStateHandler = () => {
+      this.requestUpdate();
       this.#scheduleRender();
     };
     this.#targetContentChangeHandler = () => {
+      this.requestUpdate();
       this.#scheduleRender();
     };
     target.addEventListener("readystatechange", this.#targetReadyStateHandler);
@@ -264,6 +266,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     // we attached, the event was missed. The contentReadyState property
     // serves exactly this purpose — check it and render if needed.
     if ((target as any).contentReadyState === "ready") {
+      this.requestUpdate();
       this.#scheduleRender();
     }
   }
