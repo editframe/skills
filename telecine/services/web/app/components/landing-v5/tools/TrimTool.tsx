@@ -43,7 +43,7 @@ export function TrimTool() {
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [isClient]);
 
   // Seek during drag operations
   useLayoutEffect(() => {
