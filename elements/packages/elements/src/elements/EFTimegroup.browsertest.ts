@@ -1317,3 +1317,106 @@ describe.skip("Dynamic content updates", () => {
     });
   });
 });
+
+describe("contentReadyState aggregation", () => {
+  test("timegroup with trivially-ready children transitions to ready", async () => {
+    const tg = document.createElement("ef-timegroup");
+    const child1 = document.createElement("test-temporal");
+    const child2 = document.createElement("test-temporal");
+    child1.setAttribute("duration", "5s");
+    child2.setAttribute("duration", "5s");
+    tg.append(child1, child2);
+    document.body.append(tg);
+    await tg.updateComplete;
+    await child1.updateComplete;
+    await child2.updateComplete;
+    // Allow aggregation to settle
+    await tg.updateComplete;
+
+    assert.equal(tg.contentReadyState, "ready");
+    tg.remove();
+  });
+
+  test("timegroup with a loading child reports loading", async () => {
+    const tg = document.createElement("ef-timegroup");
+    const child1 = document.createElement("test-temporal");
+    child1.setAttribute("duration", "5s");
+    tg.append(child1);
+    document.body.append(tg);
+    await tg.updateComplete;
+    await child1.updateComplete;
+
+    // Force one child to loading
+    child1.setContentReadyState("loading");
+    // Allow aggregation
+    await tg.updateComplete;
+
+    assert.equal(tg.contentReadyState, "loading");
+    tg.remove();
+  });
+
+  test("timegroup transitions to ready when last loading child becomes ready", async () => {
+    const tg = document.createElement("ef-timegroup");
+    const child1 = document.createElement("test-temporal");
+    child1.setAttribute("duration", "5s");
+    tg.append(child1);
+    document.body.append(tg);
+    await tg.updateComplete;
+    await child1.updateComplete;
+    await tg.updateComplete;
+
+    // Force to loading
+    child1.setContentReadyState("loading");
+    await tg.updateComplete;
+    assert.equal(tg.contentReadyState, "loading");
+
+    // Transition back to ready
+    child1.setContentReadyState("ready");
+    await tg.updateComplete;
+    assert.equal(tg.contentReadyState, "ready");
+    tg.remove();
+  });
+
+  test("timegroup emits contentchange(structure) on child add", async () => {
+    const tg = document.createElement("ef-timegroup") as EFTimegroup;
+    document.body.append(tg);
+    await tg.updateComplete;
+
+    const reasons: string[] = [];
+    tg.addEventListener("contentchange", ((e: CustomEvent) => {
+      reasons.push(e.detail.reason);
+    }) as EventListener);
+
+    const child = document.createElement("test-temporal");
+    child.setAttribute("duration", "5s");
+    tg.append(child);
+    await tg.updateComplete;
+
+    assert.include(reasons, "structure");
+    tg.remove();
+  });
+
+  test("timegroup re-emits child contentchange", async () => {
+    const tg = document.createElement("ef-timegroup");
+    const child = document.createElement("test-temporal");
+    child.setAttribute("duration", "5s");
+    tg.append(child);
+    document.body.append(tg);
+    await tg.updateComplete;
+    await child.updateComplete;
+    await tg.updateComplete;
+
+    const reasons: string[] = [];
+    tg.addEventListener("contentchange", ((e: CustomEvent) => {
+      reasons.push(e.detail.reason);
+    }) as EventListener);
+
+    child.emitContentChange("bounds");
+    // Allow debounced re-emit
+    await new Promise(r => requestAnimationFrame(r));
+    await tg.updateComplete;
+
+    assert.include(reasons, "bounds");
+    tg.remove();
+  });
+});

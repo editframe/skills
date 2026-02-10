@@ -20,9 +20,11 @@ import { deepGetMediaElements, type EFMedia } from "./EFMedia.js";
 import {
   EFTemporal,
   flushStartTimeMsCache,
+  isEFTemporal,
   resetTemporalCache,
   shallowGetTemporalElements,
   timegroupContext,
+  type ContentReadyState,
   type TemporalMixinInterface,
 } from "./EFTemporal.js";
 import { parseTimeToMs } from "./parseTimeToMs.js";
@@ -483,6 +485,79 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
   /** @internal */
   @provide({ context: efContext })
   efContext = this;
+
+  // ---- Content Readiness Aggregation ----
+
+  #trackedChildren = new Set<TemporalMixinInterface & HTMLElement>();
+
+  override shouldAutoReady(): boolean {
+    return false;
+  }
+
+  #childReadyStateHandler = () => {
+    this.#recomputeAggregateReadyState();
+  };
+
+  #childContentChangeHandler = (e: Event) => {
+    const detail = (e as CustomEvent).detail;
+    this.emitContentChange(detail?.reason ?? "content");
+  };
+
+  #recomputeAggregateReadyState(): void {
+    const children = shallowGetTemporalElements(this);
+    if (children.length === 0) {
+      this.setContentReadyState("ready");
+      return;
+    }
+
+    let hasLoading = false;
+    let hasError = false;
+    let hasIdle = false;
+
+    for (const child of children) {
+      const state = child.contentReadyState;
+      if (state === "loading") hasLoading = true;
+      else if (state === "error") hasError = true;
+      else if (state === "idle") hasIdle = true;
+    }
+
+    if (hasError) {
+      this.setContentReadyState("error");
+    } else if (hasLoading) {
+      this.setContentReadyState("loading");
+    } else if (hasIdle) {
+      this.setContentReadyState("loading");
+    } else {
+      this.setContentReadyState("ready");
+    }
+  }
+
+  #syncChildListeners(): void {
+    const currentChildren = new Set(
+      shallowGetTemporalElements(this),
+    );
+
+    // Remove listeners from children that left
+    for (const child of this.#trackedChildren) {
+      if (!currentChildren.has(child)) {
+        child.removeEventListener("readystatechange", this.#childReadyStateHandler);
+        child.removeEventListener("contentchange", this.#childContentChangeHandler);
+      }
+    }
+
+    // Add listeners to new children
+    for (const child of currentChildren) {
+      if (!this.#trackedChildren.has(child)) {
+        child.addEventListener("readystatechange", this.#childReadyStateHandler);
+        child.addEventListener("contentchange", this.#childContentChangeHandler);
+      }
+    }
+
+    this.#trackedChildren = currentChildren;
+    this.#recomputeAggregateReadyState();
+  }
+
+  // ---- End Content Readiness Aggregation ----
 
   /** @public */
   mode: TimeMode = "contain";
@@ -1103,13 +1178,13 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
   }
 
   #handleSlotChange = () => {
-    // Invalidate caches when slot content changes
     resetTemporalCache();
     flushSequenceDurationCache();
     flushStartTimeMsCache();
 
-    // Request update to trigger recalculation of dependent properties
     this.requestUpdate();
+    this.#syncChildListeners();
+    this.emitContentChange("structure");
   };
 
   /** @internal */
@@ -1232,6 +1307,11 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     super.disconnectedCallback();
     this.#resizeObserver?.disconnect();
     this.#removePlaybackListener();
+    for (const child of this.#trackedChildren) {
+      child.removeEventListener("readystatechange", this.#childReadyStateHandler);
+      child.removeEventListener("contentchange", this.#childContentChangeHandler);
+    }
+    this.#trackedChildren.clear();
   }
 
 
