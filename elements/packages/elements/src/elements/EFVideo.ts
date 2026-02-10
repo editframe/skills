@@ -731,14 +731,17 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
           );
         }
 
+        const frameWidth = frame.displayWidth;
+        const frameHeight = frame.displayHeight;
+
         let resized = false;
-        if (frame?.codedWidth && frame?.codedHeight) {
+        if (frameWidth && frameHeight) {
           const needsResize =
-            frame.codedWidth > this.canvasElement.width ||
-            frame.codedHeight > this.canvasElement.height;
+            frameWidth > this.canvasElement.width ||
+            frameHeight > this.canvasElement.height;
           if (needsResize) {
-            const newWidth = Math.max(this.canvasElement.width, frame.codedWidth);
-            const newHeight = Math.max(this.canvasElement.height, frame.codedHeight);
+            const newWidth = Math.max(this.canvasElement.width, frameWidth);
+            const newHeight = Math.max(this.canvasElement.height, frameHeight);
             log("trace: updating canvas dimensions", {
               width: newWidth,
               height: newHeight,
