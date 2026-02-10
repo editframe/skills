@@ -542,6 +542,12 @@ export declare class TemporalMixinInterface {
    */
   emitContentChange(reason: ContentChangeReason): void;
 
+  /**
+   * Whether this element should auto-transition to "ready" after first update.
+   * Override to return false for elements with async loading (EFMedia, EFCaptions).
+   */
+  shouldAutoReady(): boolean;
+
   updateComplete: Promise<boolean>;
 }
 
@@ -732,6 +738,10 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
       );
     }
 
+    shouldAutoReady(): boolean {
+      return true;
+    }
+
     // ---- End Content Readiness Protocol ----
 
     #ownCurrentTimeController?: OwnCurrentTimeController;
@@ -830,14 +840,16 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
 
       // Default readiness: trivially-ready elements (no async loading)
       // transition to "ready" after first update. Subclasses with async
-      // loading (EFMedia, EFCaptions) override this by calling
-      // setContentReadyState themselves before this resolves.
-      this.updateComplete.then(() => {
-        if (!this.isConnected) return;
-        if (this.#contentReadyState === "idle") {
-          this.setContentReadyState("ready");
-        }
-      });
+      // loading (EFMedia, EFCaptions) override shouldAutoReady() to return
+      // false and manage their own readiness lifecycle.
+      if (this.shouldAutoReady()) {
+        this.updateComplete.then(() => {
+          if (!this.isConnected) return;
+          if (this.#contentReadyState === "idle") {
+            this.setContentReadyState("ready");
+          }
+        });
+      }
     }
 
     get parentTimegroup() {

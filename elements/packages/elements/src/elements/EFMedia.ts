@@ -225,6 +225,10 @@ export class EFMedia extends EFTargetable(
     return this.rootTimegroup ?? this;
   }
 
+  override shouldAutoReady(): boolean {
+    return false;
+  }
+
   // Sample buffer size configuration
   static readonly VIDEO_SAMPLE_BUFFER_SIZE = 30;
   static readonly AUDIO_SAMPLE_BUFFER_SIZE = 120;
@@ -391,6 +395,7 @@ export class EFMedia extends EFTargetable(
     
     // Return cached if src hasn't changed
     if (this.#mediaEngineSrcKey === srcKey && this.#mediaEngine) {
+      this.setContentReadyState("ready");
       return this.#mediaEngine;
     }
 
@@ -402,6 +407,7 @@ export class EFMedia extends EFTargetable(
     // Start new load
     this.#mediaEngineSrcKey = srcKey;
     this.mediaEngineTask.startPending();
+    this.setContentReadyState("loading");
 
     this.#mediaEnginePromise = this.#createMediaEngine(signal);
     
@@ -411,11 +417,16 @@ export class EFMedia extends EFTargetable(
       if (this.#mediaEngine) {
         this.mediaEngineTask.setValue(this.#mediaEngine);
         this.#handleMediaEngineComplete();
+        this.setContentReadyState("ready");
+      } else {
+        // No engine (empty/invalid src) — return to idle
+        this.setContentReadyState("idle");
       }
       return this.#mediaEngine;
     } catch (error) {
       this.#mediaEngineError = error instanceof Error ? error : new Error(String(error));
       this.mediaEngineTask.setError(this.#mediaEngineError);
+      this.setContentReadyState("error");
       
       // Don't throw for expected errors
       const isExpectedError = error instanceof DOMException && error.name === "AbortError" ||

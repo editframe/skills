@@ -873,3 +873,87 @@ describe("EFMedia", () => {
   //   });
   // });
 });
+
+describe("contentReadyState lifecycle", () => {
+  test("ef-video starts as idle before src is set", () => {
+    const video = document.createElement("ef-video");
+    expect(video.contentReadyState).toBe("idle");
+  });
+
+  test("ef-video transitions idle → loading → ready", async ({ configuration, expect }) => {
+    const video = document.createElement("ef-video");
+    const states: string[] = [];
+    video.addEventListener("readystatechange", ((e: CustomEvent) => {
+      states.push(e.detail.state);
+    }) as EventListener);
+
+    video.src = "http://web:3000/head-moov-480p.mp4";
+    configuration.append(video);
+
+    // Wait for engine to load (getMediaEngine is fire-and-forget from updated())
+    await video.getMediaEngine();
+    await video.updateComplete;
+
+    expect(states).toContain("loading");
+    expect(states).toContain("ready");
+    expect(video.contentReadyState).toBe("ready");
+    expect(states.indexOf("loading")).toBeLessThan(states.indexOf("ready"));
+    video.remove();
+  });
+
+  test("ef-video with no src stays idle (does not auto-ready)", async () => {
+    const video = document.createElement("ef-video");
+    document.body.append(video);
+    await video.updateComplete;
+    // EFMedia overrides default auto-ready: stays idle when no src
+    expect(video.contentReadyState).toBe("idle");
+    video.remove();
+  });
+
+  test("source swap: ready → loading → ready", async ({ configuration, expect }) => {
+    const video = document.createElement("ef-video");
+    video.src = "http://web:3000/head-moov-480p.mp4";
+    configuration.append(video);
+
+    await video.getMediaEngine();
+    await video.updateComplete;
+    expect(video.contentReadyState).toBe("ready");
+
+    // Now change source
+    const states: string[] = [];
+    video.addEventListener("readystatechange", ((e: CustomEvent) => {
+      states.push(e.detail.state);
+    }) as EventListener);
+
+    video.src = "http://web:3000/head-moov-480p.mp4?v=2";
+    // Trigger the update cycle that detects the src change
+    await video.updateComplete;
+    // Wait for the new engine to load
+    await video.getMediaEngine();
+    await video.updateComplete;
+
+    expect(states).toContain("loading");
+    expect(states).toContain("ready");
+    expect(video.contentReadyState).toBe("ready");
+    video.remove();
+  });
+
+  test("readystatechange event does not bubble from ef-video", async ({ configuration, expect }) => {
+    const container = document.createElement("div");
+    const video = document.createElement("ef-video");
+    container.append(video);
+    configuration.append(container);
+
+    const bubbled: string[] = [];
+    container.addEventListener("readystatechange", ((e: CustomEvent) => {
+      bubbled.push(e.detail.state);
+    }) as EventListener);
+
+    video.src = "http://web:3000/head-moov-480p.mp4";
+    await video.mediaEngineTask.taskComplete;
+    await video.updateComplete;
+
+    expect(bubbled).toHaveLength(0);
+    container.remove();
+  });
+});
