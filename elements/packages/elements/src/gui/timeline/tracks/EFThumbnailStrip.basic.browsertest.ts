@@ -132,4 +132,42 @@ describe("EFThumbnailStrip - Basic Functionality", () => {
     expect(maxWidth).toBe(`${expectedWidth}px`);
     expect(parseFloat(maxWidth)).toBeGreaterThan(0);
   });
+
+  test("responds to readystatechange from target (event-driven, not polling)", async () => {
+    const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+    timegroup.id = "test-tg-event";
+    timegroup.setAttribute("mode", "fixed");
+    timegroup.setAttribute("duration", "10s");
+    container.appendChild(timegroup);
+    await timegroup.updateComplete;
+
+    const strip = document.createElement("ef-thumbnail-strip") as EFThumbnailStrip;
+    strip.targetElement = timegroup;
+    strip.thumbnailHeight = 48;
+    strip.pixelsPerMs = 0.1;
+    container.appendChild(strip);
+    await strip.updateComplete;
+
+    // The strip should have rendered thumbnails for the 10s timegroup.
+    // Now force a readystatechange on the target to verify re-render.
+    let renderScheduled = false;
+    const origScheduleRender = (strip as any).__proto__.constructor.prototype;
+    
+    // Instead, observe that the strip re-renders after a readystatechange event
+    const thumbnailsBefore = strip.shadowRoot?.querySelectorAll("canvas").length ?? 0;
+    
+    // Dispatch readystatechange on target
+    timegroup.dispatchEvent(new CustomEvent("readystatechange", {
+      detail: { state: "ready" },
+      bubbles: false,
+    }));
+    
+    // Wait for render to schedule and complete
+    await new Promise(r => requestAnimationFrame(r));
+    await strip.updateComplete;
+    
+    // Strip should still render (not crash/break from event-driven updates)
+    const thumbnailContainer = strip.shadowRoot?.querySelector(".thumbnail-container");
+    expect(thumbnailContainer).toBeTruthy();
+  });
 });

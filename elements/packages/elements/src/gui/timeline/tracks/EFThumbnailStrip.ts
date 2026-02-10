@@ -180,7 +180,8 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
   #retryScheduled = false; // Flag to prevent duplicate retry schedules
   #thumbnailPhase: number = 0; // Phase offset for thumbnail grid
   #previousPixelsPerMs: number | null = null; // Track zoom changes
-  #lastTargetDurationMs: number = 0; // Track target duration for metadata load detection
+  #targetReadyStateHandler: (() => void) | null = null;
+  #targetContentChangeHandler: (() => void) | null = null;
 
   /**
    * Check if target is valid (EFVideo or root EFTimegroup)
@@ -219,6 +220,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     super.disconnectedCallback();
     this.#abortController?.abort();
     this.#cleanupTimegroupGenerator();
+    this.#detachTargetListeners(this.targetElement);
   }
 
   protected willUpdate(
@@ -237,12 +239,43 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     if (changedProperties.has("targetElement") || changedProperties.has("thumbnailHeight")) {
       this.thumbnailDimensions = this.#calculateThumbnailDimensions();
     }
+
+    // Manage event listeners when target changes
+    if (changedProperties.has("targetElement")) {
+      const oldTarget = changedProperties.get("targetElement") as Element | null;
+      this.#detachTargetListeners(oldTarget);
+      this.#attachTargetListeners(this.targetElement);
+    }
+  }
+
+  #attachTargetListeners(target: Element | null): void {
+    if (!target) return;
+
+    this.#targetReadyStateHandler = () => {
+      this.#scheduleRender();
+    };
+    this.#targetContentChangeHandler = () => {
+      this.#scheduleRender();
+    };
+    target.addEventListener("readystatechange", this.#targetReadyStateHandler);
+    target.addEventListener("contentchange", this.#targetContentChangeHandler);
+  }
+
+  #detachTargetListeners(target: Element | null): void {
+    if (!target) return;
+    if (this.#targetReadyStateHandler) {
+      target.removeEventListener("readystatechange", this.#targetReadyStateHandler);
+      this.#targetReadyStateHandler = null;
+    }
+    if (this.#targetContentChangeHandler) {
+      target.removeEventListener("contentchange", this.#targetContentChangeHandler);
+      this.#targetContentChangeHandler = null;
+    }
   }
 
   updated(changedProperties: Map<string | number | symbol, unknown>): void {
     super.updated(changedProperties);
 
-    // Trigger render when relevant properties change
     if (
       changedProperties.has("targetElement") ||
       changedProperties.has("thumbnailSpacingPx") ||
@@ -250,15 +283,6 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
       changedProperties.has("thumbnailHeight") ||
       changedProperties.has("timelineState")
     ) {
-      this.#scheduleRender();
-    }
-
-    // Detect target duration changes (e.g., video metadata load).
-    // TargetUpdateController triggers requestUpdate() when the target
-    // updates, but none of the watched properties above change.
-    const targetDuration = (this.targetElement as any)?.durationMs ?? 0;
-    if (targetDuration !== this.#lastTargetDurationMs) {
-      this.#lastTargetDurationMs = targetDuration;
       this.#scheduleRender();
     }
   }
