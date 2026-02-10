@@ -134,25 +134,8 @@ export const EFTargetable = <T extends Constructor<LitElement>>(
   return TargetableElement as T;
 };
 
-class TargetUpdateController implements ReactiveController {
-  constructor(private host: LitElement) {}
-
-  hostConnected() {
-    this.host.requestUpdate();
-  }
-
-  hostDisconnected() {
-    this.host.requestUpdate();
-  }
-
-  hostUpdate() {
-    this.host.requestUpdate();
-  }
-}
-
 export class TargetController implements ReactiveController {
   private host: LitElement & { targetElement: Element | null; target: string };
-  private targetController: ReactiveController | null = null;
   private currentTargetString: string | null = null;
 
   constructor(
@@ -171,55 +154,28 @@ export class TargetController implements ReactiveController {
   };
 
   private updateTarget() {
-    // Only look up by ID if target string is non-empty
-    // This preserves direct object bindings via .targetElement=${obj}
     if (!this.host.target) {
       return;
     }
 
-    // First try the local registry (same root node)
     let newTarget = this.registry.get(this.host.target);
 
-    // If not in registry, search within our subtree first
     if (!newTarget) {
-      // Find the nearest timegroup or configuration container
       const container = (this.host as Element).closest('ef-timegroup, ef-configuration') 
         || (this.host as Element).getRootNode();
       
-      // Search within the container's subtree
       if (container && 'querySelector' in container) {
         newTarget = (container as Element).querySelector(`#${CSS.escape(this.host.target)}`) as LitElement | undefined;
       }
     }
     
-    // Last resort: document.getElementById (for truly global references)
-    // This should rarely be needed and may find wrong element in clone scenarios
     if (!newTarget) {
       newTarget = document.getElementById(this.host.target) as LitElement | undefined;
     }
 
     if (this.host.targetElement !== newTarget) {
-      this.disconnectFromTarget();
       this.host.targetElement = newTarget ?? (null as Element | null);
-      this.connectToTarget();
       this.host.requestUpdate("targetElement");
-    }
-  }
-
-  private connectToTarget() {
-    if (this.host.targetElement instanceof LitElement) {
-      this.targetController = new TargetUpdateController(this.host);
-      this.host.targetElement.addController(this.targetController);
-    }
-  }
-
-  private disconnectFromTarget() {
-    if (
-      this.host.targetElement instanceof LitElement &&
-      this.targetController
-    ) {
-      this.host.targetElement.removeController(this.targetController);
-      this.targetController = null;
     }
   }
 
@@ -228,9 +184,7 @@ export class TargetController implements ReactiveController {
     return getRegistry(root);
   }
 
-  hostDisconnected() {
-    this.disconnectFromTarget();
-  }
+  hostDisconnected() {}
 
   hostConnected() {
     this.updateTarget();

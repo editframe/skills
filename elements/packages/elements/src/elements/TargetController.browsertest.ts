@@ -223,6 +223,42 @@ describe.skip("target", () => {
   });
 });
 
+describe("TargetUpdateController opt-in", () => {
+  afterEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  test("target updates do NOT trigger host requestUpdate by default", async () => {
+    const target = document.createElement("targetable-test");
+    const element = document.createElement("targeter-test");
+    document.body.appendChild(target);
+    document.body.appendChild(element);
+
+    const targetId = nextId();
+    target.id = targetId;
+    element.target = targetId;
+    await element.updateComplete;
+    expect(element.targetElement).toBe(target);
+
+    // Count host updates
+    let updateCount = 0;
+    const origRequestUpdate = element.requestUpdate.bind(element);
+    element.requestUpdate = (...args: any) => {
+      updateCount++;
+      return origRequestUpdate(...args);
+    };
+
+    // Trigger multiple target updates
+    target.value = "changed-1";
+    await target.updateComplete;
+    target.value = "changed-2";
+    await target.updateComplete;
+
+    // Host should NOT have been updated by TargetUpdateController
+    expect(updateCount).toBe(0);
+  });
+});
+
 declare global {
   interface HTMLElementTagNameMap {
     "targetable-test": TargetableTest & Element;
