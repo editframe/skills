@@ -726,6 +726,17 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
           composed: false,
         }),
       );
+
+      // When a standalone root temporal becomes ready, render the initial frame.
+      // The PlaybackController's self-render path handles hosts that implement
+      // FrameRenderable (prepareFrame/renderFrame) but have no FrameController.
+      // Must wait for Lit update to complete so the canvas element in the
+      // shadow DOM is stable before painting to it.
+      if (state === "ready" && this.playbackController) {
+        this.updateComplete.then(() => {
+          this.playbackController?.runThrottledFrameTask();
+        });
+      }
     }
 
     emitContentChange(reason: ContentChangeReason): void {

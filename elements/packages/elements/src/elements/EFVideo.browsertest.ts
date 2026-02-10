@@ -1561,3 +1561,43 @@ describe.skip("EFVideo", () => {
     );
   });
 });
+
+describe("standalone ef-video (no Timegroup)", () => {
+  test("renders initial frame to canvas when used as bare root temporal", { timeout: 15000 }, async ({ expect }) => {
+    const container = document.createElement("div");
+    const apiHost = getApiHost();
+    container.style.width = "640px";
+    container.style.height = "360px";
+    render(
+      html`
+      <ef-configuration api-host="${apiHost}" signing-url="">
+        <ef-video src="bars-n-tone.mp4" mode="asset" id="standalone-bare-video" style="width:640px;height:360px;"></ef-video>
+      </ef-configuration>
+    `,
+      container,
+    );
+    document.body.appendChild(container);
+
+    const video = container.querySelector("ef-video") as EFVideo;
+    await video.updateComplete;
+
+    // Wait for media engine to finish loading
+    await video.mediaEngineTask.taskComplete;
+
+    // Video should be a root temporal with its own PlaybackController
+    expect(video.playbackController).toBeDefined();
+
+    // Wait for Lit rendering to stabilize, then trigger frame render.
+    await video.updateComplete;
+    await video.playbackController!.runThrottledFrameTask();
+
+    const canvas = video.canvasElement!;
+    expect(canvas).toBeDefined();
+
+    // Canvas should have been resized from default 300x150 to match the video dimensions
+    expect(canvas.width).toBeGreaterThan(300);
+    expect(canvas.height).toBeGreaterThan(150);
+
+    container.remove();
+  });
+});

@@ -4,14 +4,14 @@ import { currentTimeContext } from "./currentTimeContext.js";
 import { durationContext } from "./durationContext.js";
 import { loopContext, playingContext } from "./playingContext.js";
 import { updateAnimations, type AnimatableElement } from "../elements/updateAnimations.js";
-import type { RenderFrameOptions } from "../preview/FrameController.js";
+import type { RenderFrameOptions, FrameRenderable } from "../preview/FrameController.js";
 
 interface PlaybackHost extends HTMLElement, ReactiveControllerHost {
   currentTimeMs: number;
   durationMs: number;
   endTimeMs: number;
-  /** Centralized frame controller */
-  frameController: { 
+  /** Centralized frame controller (present on EFTimegroup) */
+  frameController?: { 
     renderFrame(timeMs: number, options?: RenderFrameOptions): Promise<void>; 
     abort(): void;
   };
@@ -331,29 +331,65 @@ export class PlaybackController implements ReactiveController {
     this.#currentTimeMsProvider.setValue(this.currentTimeMs);
   }
 
+  #selfRenderAbortController?: AbortController;
+  #selfRenderPromise?: Promise<void>;
+  #selfRenderTimeMs?: number;
+
   /**
-   * Run frame rendering via FrameController.
+   * Run frame rendering via FrameController, or directly on the host if it
+   * implements FrameRenderable (standalone media element without a Timegroup).
    */
   async runThrottledFrameTask(): Promise<void> {
-    // Guard: standalone temporal elements (e.g. bare ef-video) have no FrameController
-    if (!this.#host.frameController) return;
-    // FrameController handles its own cancellation and queuing internally
-    // Animation updates are centralized via the onAnimationsUpdate callback
-    try {
-      await this.#host.frameController.renderFrame(this.currentTimeMs, {
-        onAnimationsUpdate: (root: Element) => {
-          // Update CSS visibility and animation synchronization after frame renders
-          // This sets display:none on elements outside their time range
-          updateAnimations(root as unknown as AnimatableElement);
-        },
-      });
-    } catch (error) {
-      // Silently ignore AbortErrors (expected during cancellation)
-      if (error instanceof DOMException && error.name === "AbortError") {
-        return;
+    const timeMs = this.currentTimeMs;
+
+    if (this.#host.frameController) {
+      try {
+        await this.#host.frameController.renderFrame(timeMs, {
+          onAnimationsUpdate: (root: Element) => {
+            updateAnimations(root as unknown as AnimatableElement);
+          },
+        });
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        console.error("FrameController error:", error);
       }
-      console.error("FrameController error:", error);
+      return;
     }
+
+    // Standalone FrameRenderable host (e.g. bare ef-video without a Timegroup)
+    const host = this.#host as unknown as Partial<FrameRenderable>;
+    if (!host.prepareFrame || !host.renderFrame) return;
+
+    // If a render is already in progress for the same time, coalesce.
+    // If time changed (seek), abort and re-render at the new time.
+    if (this.#selfRenderPromise) {
+      if (this.#selfRenderTimeMs === timeMs) {
+        return this.#selfRenderPromise;
+      }
+      this.#selfRenderAbortController?.abort();
+    }
+
+    this.#selfRenderAbortController = new AbortController();
+    const signal = this.#selfRenderAbortController.signal;
+    this.#selfRenderTimeMs = timeMs;
+
+    this.#selfRenderPromise = (async () => {
+      try {
+        await host.prepareFrame!(timeMs, signal);
+        signal.throwIfAborted();
+        host.renderFrame!(timeMs);
+        updateAnimations(this.#host as unknown as AnimatableElement);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        if ((error as any)?.name === "AbortError") return;
+        console.error("Standalone frame render error:", error);
+      } finally {
+        this.#selfRenderPromise = undefined;
+        this.#selfRenderTimeMs = undefined;
+      }
+    })();
+
+    return this.#selfRenderPromise;
   }
 
   addListener(listener: (event: PlaybackControllerUpdateEvent) => void): void {
