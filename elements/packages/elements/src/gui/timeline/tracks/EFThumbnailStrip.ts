@@ -182,6 +182,8 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
   #previousPixelsPerMs: number | null = null; // Track zoom changes
   #targetReadyStateHandler: (() => void) | null = null;
   #targetContentChangeHandler: (() => void) | null = null;
+  #resizeObserver: ResizeObserver | null = null;
+  #hostWidth = 0;
 
   /**
    * Check if target is valid (EFVideo or root EFTimegroup)
@@ -214,6 +216,17 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     if (this.target && !this.targetElement) {
       this.#targetController = new TargetController(this);
     }
+    this.#resizeObserver = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      const width = entry.contentRect.width;
+      if (width !== this.#hostWidth) {
+        this.#hostWidth = width;
+        this.requestUpdate();
+        this.#scheduleRender();
+      }
+    });
+    this.#resizeObserver.observe(this);
   }
 
   disconnectedCallback(): void {
@@ -221,6 +234,8 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     this.#abortController?.abort();
     this.#cleanupTimegroupGenerator();
     this.#detachTargetListeners(this.targetElement);
+    this.#resizeObserver?.disconnect();
+    this.#resizeObserver = null;
   }
 
   protected willUpdate(
@@ -327,7 +342,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     if (!element) return [];
 
     const scrollLeft = this.#timelineState?.viewportScrollLeft ?? 0;
-    const viewportWidth = this.#timelineState?.viewportWidth ?? 800;
+    const viewportWidth = this.#timelineState?.viewportWidth ?? (this.#hostWidth || 800);
     const pixelsPerMs = this.#timelineState?.pixelsPerMs ?? this.pixelsPerMs;
 
     const durationMs = (element as any).durationMs ?? 0;
