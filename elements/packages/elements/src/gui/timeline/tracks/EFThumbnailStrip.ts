@@ -148,7 +148,10 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
   thumbnailSpacingPx = 48;
 
   @property({ type: Number, attribute: "pixels-per-ms" })
-  pixelsPerMs = 0.04;
+  pixelsPerMs: number | null = null;
+
+  @property({ type: Boolean, attribute: "use-intrinsic-duration" })
+  useIntrinsicDuration = false;
 
   @consume({ context: timelineStateContext, subscribe: true })
   @state()
@@ -208,6 +211,29 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
 
   get #thumbnailDimensions() {
     return this.thumbnailDimensions;
+  }
+
+  get #effectiveDurationMs(): number {
+    const element = this.targetElement;
+    if (!element) return 0;
+    if (this.useIntrinsicDuration) {
+      return (element as any).intrinsicDurationMs ?? (element as any).durationMs ?? 0;
+    }
+    return (element as any).durationMs ?? 0;
+  }
+
+  get #effectivePixelsPerMs(): number {
+    if (this.#timelineState?.pixelsPerMs != null) {
+      return this.#timelineState.pixelsPerMs;
+    }
+    if (this.pixelsPerMs != null) {
+      return this.pixelsPerMs;
+    }
+    const durationMs = this.#effectiveDurationMs;
+    if (this.#hostWidth > 0 && durationMs > 0) {
+      return this.#hostWidth / durationMs;
+    }
+    return 0.04;
   }
 
   connectedCallback(): void {
@@ -343,9 +369,9 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
 
     const scrollLeft = this.#timelineState?.viewportScrollLeft ?? 0;
     const viewportWidth = this.#timelineState?.viewportWidth ?? (this.#hostWidth || 800);
-    const pixelsPerMs = this.#timelineState?.pixelsPerMs ?? this.pixelsPerMs;
+    const pixelsPerMs = this.#effectivePixelsPerMs;
 
-    const durationMs = (element as any).durationMs ?? 0;
+    const durationMs = this.#effectiveDurationMs;
     if (durationMs === 0) return [];
 
     const trackWidthPx = durationMs * pixelsPerMs;
@@ -864,9 +890,8 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     }
 
     // Calculate track width to clip thumbnails at track end
-    const element = this.targetElement;
-    const durationMs = element ? (element as any).durationMs ?? 0 : 0;
-    const pixelsPerMs = this.#timelineState?.pixelsPerMs ?? this.pixelsPerMs;
+    const durationMs = this.#effectiveDurationMs;
+    const pixelsPerMs = this.#effectivePixelsPerMs;
     const trackWidthPx = durationMs * pixelsPerMs;
 
     // Render canvas container with explicit width clipping

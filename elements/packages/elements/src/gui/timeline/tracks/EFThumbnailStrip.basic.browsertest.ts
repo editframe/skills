@@ -209,4 +209,76 @@ describe("EFThumbnailStrip - Basic Functionality", () => {
     const thumbnailContainer = strip.shadowRoot?.querySelector(".thumbnail-container");
     expect(thumbnailContainer).toBeTruthy();
   });
+
+  test("auto-fits to container width when no explicit pixels-per-ms is set", async () => {
+    container.style.width = "500px";
+
+    const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+    timegroup.id = "test-tg-autofit";
+    timegroup.setAttribute("mode", "fixed");
+    timegroup.setAttribute("duration", "10s");
+    const child = document.createElement("ef-text");
+    child.textContent = "Test";
+    child.setAttribute("duration", "10s");
+    timegroup.appendChild(child);
+    container.appendChild(timegroup);
+    await timegroup.updateComplete;
+    await child.updateComplete;
+    await new Promise(r => requestAnimationFrame(r));
+
+    const strip = document.createElement("ef-thumbnail-strip") as EFThumbnailStrip;
+    strip.targetElement = timegroup;
+    strip.thumbnailHeight = 48;
+    // Do NOT set pixelsPerMs — should auto-fit to container width
+    container.appendChild(strip);
+    await strip.updateComplete;
+
+    // Wait for ResizeObserver to fire
+    await new Promise(r => requestAnimationFrame(r));
+    await strip.updateComplete;
+
+    const thumbnailContainer = strip.shadowRoot?.querySelector(".thumbnail-container") as HTMLElement;
+    expect(thumbnailContainer).toBeTruthy();
+    // Auto-fit: 500px container / 10000ms = 0.05px/ms → track width ≈ 500px
+    const maxWidth = parseFloat(thumbnailContainer?.style.maxWidth || "0");
+    expect(maxWidth).toBeCloseTo(500, -1); // within ~10px
+  });
+
+  test("explicit pixels-per-ms overrides auto-fit", async () => {
+    container.style.width = "500px";
+
+    const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+    timegroup.id = "test-tg-explicit";
+    timegroup.setAttribute("mode", "fixed");
+    timegroup.setAttribute("duration", "10s");
+    const child = document.createElement("ef-text");
+    child.textContent = "Test";
+    child.setAttribute("duration", "10s");
+    timegroup.appendChild(child);
+    container.appendChild(timegroup);
+    await timegroup.updateComplete;
+    await child.updateComplete;
+    await new Promise(r => requestAnimationFrame(r));
+
+    const strip = document.createElement("ef-thumbnail-strip") as EFThumbnailStrip;
+    strip.targetElement = timegroup;
+    strip.thumbnailHeight = 48;
+    strip.pixelsPerMs = 0.2; // Explicit: 0.2px/ms → 10000ms * 0.2 = 2000px
+    container.appendChild(strip);
+    await strip.updateComplete;
+
+    await new Promise(r => requestAnimationFrame(r));
+    await strip.updateComplete;
+
+    const thumbnailContainer = strip.shadowRoot?.querySelector(".thumbnail-container") as HTMLElement;
+    const maxWidth = parseFloat(thumbnailContainer?.style.maxWidth || "0");
+    expect(maxWidth).toBe(2000);
+  });
+
+  test("useIntrinsicDuration defaults to false", async () => {
+    const strip = document.createElement("ef-thumbnail-strip") as EFThumbnailStrip;
+    container.appendChild(strip);
+    await strip.updateComplete;
+    expect(strip.useIntrinsicDuration).toBe(false);
+  });
 });
