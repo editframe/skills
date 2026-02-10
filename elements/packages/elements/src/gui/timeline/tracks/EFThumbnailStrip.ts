@@ -794,6 +794,9 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
    * Translate composition time to source time for videos (handles trim)
    */
   #getSourceTimeMs(compositionTimeMs: number): number {
+    if (this.useIntrinsicDuration) {
+      return compositionTimeMs;
+    }
     const el = this.targetElement;
     if (el instanceof EFVideo) {
       return compositionTimeMs + (el.sourceStartMs ?? 0);
