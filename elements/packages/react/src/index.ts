@@ -33,7 +33,7 @@ export { Scrubber } from "./gui/Scrubber.jsx";
 export type { ScrubberProps } from "./gui/Scrubber.jsx";
 export { ThumbnailStrip } from "./gui/ThumbnailStrip.js";
 export { TrimHandles } from "./gui/TrimHandles.js";
-export type { TrimChangeDetail } from "@editframe/elements";
+export type { TrimValue, TrimChangeDetail } from "@editframe/elements";
 export { TimelineRuler } from "./gui/TimelineRuler.js";
 export { ToggleLoop } from "./gui/ToggleLoop.js";
 export { TogglePlay } from "./gui/TogglePlay.js";

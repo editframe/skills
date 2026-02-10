@@ -8,12 +8,15 @@ import {
   type TimelineEditingContext,
 } from "./timelineEditingContext.js";
 
+export interface TrimValue {
+  startMs: number;
+  endMs: number;
+}
+
 export interface TrimChangeDetail {
   elementId: string;
   type: "start" | "end" | "region";
-  deltaMs: number;
-  trimStartMs: number;
-  trimEndMs: number;
+  value: TrimValue;
 }
 
 @customElement("ef-trim-handles")
@@ -136,14 +139,17 @@ export class EFTrimHandles extends TWMixin(LitElement) {
   @property({ type: Number, attribute: "pixels-per-ms" })
   pixelsPerMs: number | null = null;
 
-  @property({ type: Number, attribute: "trim-start-ms" })
-  trimStartMs = 0;
-
-  @property({ type: Number, attribute: "trim-end-ms" })
-  trimEndMs = 0;
+  @property({ attribute: false })
+  value: TrimValue = { startMs: 0, endMs: 0 };
 
   @property({ type: Number, attribute: "intrinsic-duration-ms" })
   intrinsicDurationMs = 0;
+
+  get trimStartMs(): number { return this.value.startMs; }
+  set trimStartMs(v: number) { this.value = { ...this.value, startMs: v }; }
+
+  get trimEndMs(): number { return this.value.endMs; }
+  set trimEndMs(v: number) { this.value = { ...this.value, endMs: v }; }
 
   @property({ type: Boolean, attribute: "show-overlays" })
   showOverlays = true;
@@ -168,13 +174,24 @@ export class EFTrimHandles extends TWMixin(LitElement) {
   #resizeObserver: ResizeObserver | null = null;
   #hostWidth = 0;
 
-  #seekToTarget(type: "start" | "end" | "region", trimStartMs: number, trimEndMs: number): void {
+  #emitChange(type: "start" | "end" | "region", value: TrimValue): void {
+    this.dispatchEvent(
+      new CustomEvent<TrimChangeDetail>("trim-change", {
+        detail: { elementId: this.elementId, type, value },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+    this.#seekToTarget(type, value);
+  }
+
+  #seekToTarget(type: "start" | "end" | "region", value: TrimValue): void {
     if (!this.seekTarget) return;
     const target = (this.getRootNode() as Document | ShadowRoot).getElementById(this.seekTarget) as any;
     if (!target || !("currentTimeMs" in target)) return;
 
     if (type === "end") {
-      target.currentTimeMs = this.intrinsicDurationMs - trimStartMs - trimEndMs;
+      target.currentTimeMs = this.intrinsicDurationMs - value.startMs - value.endMs;
     } else {
       target.currentTimeMs = 0;
     }
@@ -272,23 +289,12 @@ export class EFTrimHandles extends TWMixin(LitElement) {
         Math.min(this.#regionDragStartTrimEnd, deltaMs),
       );
 
-      const newTrimStart = this.#regionDragStartTrimStart + clampedDelta;
-      const newTrimEnd = this.#regionDragStartTrimEnd - clampedDelta;
+      const newValue: TrimValue = {
+        startMs: this.#regionDragStartTrimStart + clampedDelta,
+        endMs: this.#regionDragStartTrimEnd - clampedDelta,
+      };
 
-      this.dispatchEvent(
-        new CustomEvent<TrimChangeDetail>("trim-change", {
-          detail: {
-            elementId: this.elementId,
-            type: "region",
-            deltaMs: clampedDelta,
-            trimStartMs: newTrimStart,
-            trimEndMs: newTrimEnd,
-          },
-          bubbles: true,
-          composed: true,
-        }),
-      );
-      this.#seekToTarget("region", newTrimStart, newTrimEnd);
+      this.#emitChange("region", newValue);
       return;
     }
 
@@ -301,20 +307,7 @@ export class EFTrimHandles extends TWMixin(LitElement) {
         this.intrinsicDurationMs - (this.trimEndMs || 0),
       );
 
-      this.dispatchEvent(
-        new CustomEvent<TrimChangeDetail>("trim-change", {
-          detail: {
-            elementId: this.elementId,
-            type: "start",
-            deltaMs,
-            trimStartMs: newValueMs,
-            trimEndMs: this.trimEndMs,
-          },
-          bubbles: true,
-          composed: true,
-        }),
-      );
-      this.#seekToTarget("start", newValueMs, this.trimEndMs);
+      this.#emitChange("start", { startMs: newValueMs, endMs: this.trimEndMs });
     } else {
       newValueMs = Math.max(0, this.dragStartValue - deltaMs);
       newValueMs = Math.min(
@@ -322,20 +315,7 @@ export class EFTrimHandles extends TWMixin(LitElement) {
         this.intrinsicDurationMs - this.trimStartMs,
       );
 
-      this.dispatchEvent(
-        new CustomEvent<TrimChangeDetail>("trim-change", {
-          detail: {
-            elementId: this.elementId,
-            type: "end",
-            deltaMs,
-            trimStartMs: this.trimStartMs,
-            trimEndMs: newValueMs,
-          },
-          bubbles: true,
-          composed: true,
-        }),
-      );
-      this.#seekToTarget("end", this.trimStartMs, newValueMs);
+      this.#emitChange("end", { startMs: this.trimStartMs, endMs: newValueMs });
     }
   };
 

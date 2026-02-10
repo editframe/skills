@@ -1,7 +1,7 @@
 import { useId, useState, useRef } from "react";
 import {
   Preview, Timegroup, Video, ThumbnailStrip, TrimHandles, TogglePlay, useMediaInfo,
-  type TrimChangeDetail,
+  type TrimValue,
 } from "@editframe/react";
 import type { EFTimegroup, EFVideo } from "@editframe/elements";
 import { useRenderQueue } from "../RenderQueue";
@@ -28,6 +28,18 @@ const chevronEnd = (
   </svg>
 );
 
+const playIcon = (
+  <svg slot="play" className="w-4 h-4 text-white" viewBox="0 0 24 24">
+    <path d="M8 5v14l11-7z" />
+  </svg>
+);
+
+const pauseIcon = (
+  <svg slot="pause" className="w-4 h-4 text-white" viewBox="0 0 24 24">
+    <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+  </svg>
+);
+
 const trimHandleStyles = {
   '--trim-handle-width': '16px',
   '--trim-handle-color': 'var(--poster-gold)',
@@ -48,13 +60,12 @@ export function TrimTool() {
   const { enqueue } = useRenderQueue();
   const { intrinsicDurationMs } = useMediaInfo(videoRef);
 
-  const [trimStart, setTrimStart] = useState(2000);
-  const [trimEnd, setTrimEnd] = useState(2000);
+  const [trim, setTrim] = useState<TrimValue>({ startMs: 2000, endMs: 2000 });
 
   const totalDuration = intrinsicDurationMs ?? 0;
-  const keptDuration = totalDuration - trimStart - trimEnd;
-  const inPoint = trimStart;
-  const outPoint = totalDuration - trimEnd;
+  const keptDuration = totalDuration - trim.startMs - trim.endMs;
+  const inPoint = trim.startMs;
+  const outPoint = totalDuration - trim.endMs;
 
   return (
     <div className="w-full max-w-xl">
@@ -72,8 +83,8 @@ export function TrimTool() {
               <Video
                 ref={videoRef}
                 src={VIDEO_SRC}
-                trimstart={`${trimStart}ms`}
-                trimend={`${trimEnd}ms`}
+                trimstart={`${trim.startMs}ms`}
+                trimend={`${trim.endMs}ms`}
                 className="size-full object-contain"
               />
             </Timegroup>
@@ -85,14 +96,10 @@ export function TrimTool() {
           <div className="flex items-center">
             <TogglePlay target={previewId}>
               <button slot="pause" className="w-10 h-16 flex items-center justify-center bg-black/80 hover:bg-black transition-colors border-r border-white/10">
-                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-                </svg>
+                {pauseIcon}
               </button>
               <button slot="play" className="w-10 h-16 flex items-center justify-center bg-black/80 hover:bg-black transition-colors border-r border-white/10">
-                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
+                {playIcon}
               </button>
             </TogglePlay>
 
@@ -105,15 +112,10 @@ export function TrimTool() {
               />
 
               <TrimHandles
-                trimStartMs={trimStart}
-                trimEndMs={trimEnd}
+                value={trim}
                 intrinsicDurationMs={totalDuration}
                 seekTarget={timegroupId}
-                onTrimChange={(e: Event) => {
-                  const { trimStartMs, trimEndMs } = (e as CustomEvent<TrimChangeDetail>).detail;
-                  setTrimStart(trimStartMs);
-                  setTrimEnd(trimEndMs);
-                }}
+                onTrimChange={(e: Event) => setTrim((e as CustomEvent).detail.value)}
                 className="absolute inset-0"
                 style={trimHandleStyles}
               >

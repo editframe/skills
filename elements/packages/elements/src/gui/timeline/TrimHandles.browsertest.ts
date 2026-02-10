@@ -85,7 +85,7 @@ describe("EFTrimHandles", () => {
   // EVENT DETAIL SHAPE
   // ============================================================================
 
-  test("trim-change event includes trimStartMs and trimEndMs for start handle", async () => {
+  test("trim-change event includes value for start handle", async () => {
     const container = createContainer();
     const trimHandles = createTrimHandles(container, { trimStartMs: 0, trimEndMs: 2000 });
     await trimHandles.updateComplete;
@@ -99,11 +99,11 @@ describe("EFTrimHandles", () => {
     const detail = changes[changes.length - 1];
     expect(detail.type).toBe("start");
     expect(detail.elementId).toBe(trimHandles.elementId);
-    expect(detail.trimStartMs).toBeGreaterThanOrEqual(0);
-    expect(detail.trimEndMs).toBe(2000); // unchanged
+    expect(detail.value.startMs).toBeGreaterThanOrEqual(0);
+    expect(detail.value.endMs).toBe(2000); // unchanged
   }, 1000);
 
-  test("trim-change event includes trimStartMs and trimEndMs for end handle", async () => {
+  test("trim-change event includes value for end handle", async () => {
     const container = createContainer();
     const trimHandles = createTrimHandles(container, { trimStartMs: 2000, trimEndMs: 0 });
     await trimHandles.updateComplete;
@@ -117,8 +117,8 @@ describe("EFTrimHandles", () => {
     expect(changes.length).toBeGreaterThan(0);
     const detail = changes[changes.length - 1];
     expect(detail.type).toBe("end");
-    expect(detail.trimStartMs).toBe(2000); // unchanged
-    expect(detail.trimEndMs).toBeGreaterThanOrEqual(0);
+    expect(detail.value.startMs).toBe(2000); // unchanged
+    expect(detail.value.endMs).toBeGreaterThanOrEqual(0);
   }, 1000);
 
   // ============================================================================
@@ -137,7 +137,7 @@ describe("EFTrimHandles", () => {
 
     expect(changes.length).toBeGreaterThan(0);
     const lastChange = changes[changes.length - 1];
-    expect(lastChange.trimStartMs).toBeLessThanOrEqual(
+    expect(lastChange.value.startMs).toBeLessThanOrEqual(
       trimHandles.intrinsicDurationMs - trimHandles.trimEndMs,
     );
   }, 1000);
@@ -155,7 +155,7 @@ describe("EFTrimHandles", () => {
 
     expect(changes.length).toBeGreaterThan(0);
     const lastChange = changes[changes.length - 1];
-    expect(lastChange.trimEndMs).toBeLessThanOrEqual(
+    expect(lastChange.value.endMs).toBeLessThanOrEqual(
       trimHandles.intrinsicDurationMs - trimHandles.trimStartMs,
     );
   }, 1000);
@@ -172,7 +172,7 @@ describe("EFTrimHandles", () => {
 
     expect(changes.length).toBeGreaterThan(0);
     const lastChange = changes[changes.length - 1];
-    expect(lastChange.trimStartMs).toBeGreaterThanOrEqual(0);
+    expect(lastChange.value.startMs).toBeGreaterThanOrEqual(0);
   }, 1000);
 
   // ============================================================================
@@ -302,11 +302,11 @@ describe("EFTrimHandles", () => {
     const detail = changes[changes.length - 1];
     expect(detail.type).toBe("region");
     // Dragging right: trimStart increases, trimEnd decreases
-    expect(detail.trimStartMs).toBeGreaterThan(2000);
-    expect(detail.trimEndMs).toBeLessThan(2000);
+    expect(detail.value.startMs).toBeGreaterThan(2000);
+    expect(detail.value.endMs).toBeLessThan(2000);
     // Kept duration should remain the same
     const originalKept = 10000 - 2000 - 2000;
-    const newKept = 10000 - detail.trimStartMs - detail.trimEndMs;
+    const newKept = 10000 - detail.value.startMs - detail.value.endMs;
     expect(newKept).toBeCloseTo(originalKept, 0);
   }, 1000);
 
@@ -328,8 +328,8 @@ describe("EFTrimHandles", () => {
 
     expect(changes.length).toBeGreaterThan(0);
     const detail = changes[changes.length - 1];
-    expect(detail.trimStartMs).toBe(0);
-    expect(detail.trimEndMs).toBe(4000); // original kept = 6000, so trimEnd = 10000 - 6000 = 4000
+    expect(detail.value.startMs).toBe(0);
+    expect(detail.value.endMs).toBe(4000); // original kept = 6000, so trimEnd = 10000 - 6000 = 4000
   }, 1000);
 
   test("region drag clamps at end boundary", async () => {
@@ -350,8 +350,8 @@ describe("EFTrimHandles", () => {
 
     expect(changes.length).toBeGreaterThan(0);
     const detail = changes[changes.length - 1];
-    expect(detail.trimEndMs).toBe(0);
-    expect(detail.trimStartMs).toBe(4000); // original kept = 6000, so trimStart = 10000 - 6000 = 4000
+    expect(detail.value.endMs).toBe(0);
+    expect(detail.value.startMs).toBe(4000); // original kept = 6000, so trimStart = 10000 - 6000 = 4000
   }, 1000);
 
   // ============================================================================
