@@ -1903,14 +1903,11 @@ export class EFTimeline extends TWMixin(LitElement) {
   // ============================================================================
 
   private handleTrimChange(e: CustomEvent<TrimChangeDetail>): void {
-    const { elementId, type, newValueMs } = e.detail;
+    const { elementId, trimStartMs, trimEndMs } = e.detail;
     const element = this.targetElement?.querySelector(`#${elementId}`) as TemporalMixinInterface & HTMLElement;
     if (element) {
-      if (type === "start") {
-        element.trimStartMs = newValueMs;
-      } else {
-        element.trimEndMs = newValueMs;
-      }
+      element.trimStartMs = trimStartMs;
+      element.trimEndMs = trimEndMs;
     }
   }
 

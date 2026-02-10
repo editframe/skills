@@ -265,20 +265,18 @@ export class TrackItem extends TWMixin(LitElement) {
   }
 
   protected handleTrimChange(e: CustomEvent<TrimChangeDetail>): void {
-    const { type, newValueMs } = e.detail;
+    const { type, trimStartMs, trimEndMs } = e.detail;
 
-    if (type === "start") {
-      this.element.trimStartMs = newValueMs;
-    } else {
-      this.element.trimEndMs = newValueMs;
-    }
+    this.element.trimStartMs = trimStartMs;
+    this.element.trimEndMs = trimEndMs;
 
     this.dispatchEvent(
       new CustomEvent("track-trim-change", {
         detail: {
           elementId: this.element.id || "",
           type,
-          newValueMs,
+          trimStartMs,
+          trimEndMs,
         },
         bubbles: true,
         composed: true,
@@ -385,6 +383,7 @@ export class TrackItem extends TWMixin(LitElement) {
           ${
             this.enableTrim
               ? html`<ef-trim-handles
+                mode="track"
                 element-id=${elementId}
                 pixels-per-ms=${this.pixelsPerMs}
                 trim-start-ms=${trimStartMs}
