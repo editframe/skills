@@ -133,6 +133,45 @@ describe("EFThumbnailStrip - Basic Functionality", () => {
     expect(parseFloat(maxWidth)).toBeGreaterThan(0);
   });
 
+  test("schedules render when target is already ready (late subscriber)", async () => {
+    // Simulate the TrimTool scenario: a bare timegroup (as proxy for a bare video)
+    // transitions to "ready" BEFORE the strip attaches listeners.
+    // Use a timegroup with a child so slotchange fires and it goes to "ready".
+    const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+    timegroup.id = "test-tg-late";
+    timegroup.setAttribute("mode", "fixed");
+    timegroup.setAttribute("duration", "10s");
+    const child = document.createElement("ef-text");
+    child.textContent = "Test";
+    child.setAttribute("duration", "10s");
+    timegroup.appendChild(child);
+    container.appendChild(timegroup);
+    // Wait until fully ready
+    await timegroup.updateComplete;
+    await child.updateComplete;
+    await new Promise(r => requestAnimationFrame(r));
+    await timegroup.updateComplete;
+    expect(timegroup.contentReadyState).toBe("ready");
+
+    // Now create and attach the thumbnail strip AFTER target is ready
+    const strip = document.createElement("ef-thumbnail-strip") as EFThumbnailStrip;
+    strip.targetElement = timegroup;
+    strip.thumbnailHeight = 48;
+    strip.pixelsPerMs = 0.1;
+    container.appendChild(strip);
+    await strip.updateComplete;
+
+    // Wait for scheduled render
+    await new Promise(r => requestAnimationFrame(r));
+    await strip.updateComplete;
+
+    const thumbnailContainer = strip.shadowRoot?.querySelector(".thumbnail-container") as HTMLElement;
+    expect(thumbnailContainer).toBeTruthy();
+    const maxWidth = parseFloat(thumbnailContainer?.style.maxWidth || "0");
+    // With 10s duration at 0.1px/ms = 1000px
+    expect(maxWidth).toBe(1000);
+  });
+
   test("responds to readystatechange from target (event-driven, not polling)", async () => {
     const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
     timegroup.id = "test-tg-event";

@@ -1230,6 +1230,8 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     // This ensures the element is in a stable state before user code runs
     this.updateComplete.then(() => {
       this.#runInitializer();
+      // slotchange may not fire for empty timegroups, so run initial aggregation
+      this.#syncChildListeners();
     });
 
     // Defer TimegroupController creation and workbench wrapping to next frame

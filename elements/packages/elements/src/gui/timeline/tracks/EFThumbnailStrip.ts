@@ -259,6 +259,13 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     };
     target.addEventListener("readystatechange", this.#targetReadyStateHandler);
     target.addEventListener("contentchange", this.#targetContentChangeHandler);
+
+    // Late-subscriber: if the target already transitioned to "ready" before
+    // we attached, the event was missed. The contentReadyState property
+    // serves exactly this purpose — check it and render if needed.
+    if ((target as any).contentReadyState === "ready") {
+      this.#scheduleRender();
+    }
   }
 
   #detachTargetListeners(target: Element | null): void {
