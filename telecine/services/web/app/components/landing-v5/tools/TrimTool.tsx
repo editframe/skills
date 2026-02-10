@@ -16,6 +16,29 @@ function formatTime(ms: number): string {
   return `${minutes}:${seconds.toString().padStart(2, "0")}.${hundredths.toString().padStart(2, "0")}`;
 }
 
+const chevronStart = (
+  <svg slot="handle-start" className="w-2 h-6 text-black/60" viewBox="0 0 8 24">
+    <path d="M6 4L2 12L6 20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" />
+  </svg>
+);
+
+const chevronEnd = (
+  <svg slot="handle-end" className="w-2 h-6 text-black/60" viewBox="0 0 8 24">
+    <path d="M2 4L6 12L2 20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" />
+  </svg>
+);
+
+const trimHandleStyles = {
+  '--trim-handle-width': '16px',
+  '--trim-handle-color': 'var(--poster-gold)',
+  '--trim-handle-active-color': 'var(--poster-gold)',
+  '--trim-handle-border-radius-start': '4px 0 0 4px',
+  '--trim-handle-border-radius-end': '0 4px 4px 0',
+  '--trim-overlay-color': 'rgba(0, 0, 0, 0.7)',
+  '--trim-selected-border-color': 'var(--poster-gold)',
+  '--trim-selected-border-width': '3px',
+} as React.CSSProperties;
+
 export function TrimTool() {
   const id = useId();
   const previewId = `trim-tool-${id}`;
@@ -112,12 +135,11 @@ export function TrimTool() {
                 intrinsicDurationMs={totalDuration}
                 onTrimChange={handleTrimChange}
                 className="absolute inset-0"
-                style={{
-                  '--trim-handle-color': 'var(--poster-gold)',
-                  '--trim-handle-active-color': 'var(--poster-gold)',
-                  '--trim-overlay-color': 'rgba(0, 0, 0, 0.7)',
-                } as React.CSSProperties}
-              />
+                style={trimHandleStyles}
+              >
+                {chevronStart}
+                {chevronEnd}
+              </TrimHandles>
             </div>
           </div>
         </div>

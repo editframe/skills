@@ -34,51 +34,44 @@ export class EFTrimHandles extends TWMixin(LitElement) {
         position: absolute;
         top: 0;
         bottom: 0;
-        width: 8px;
+        width: var(--trim-handle-width, 8px);
         cursor: ew-resize;
         pointer-events: auto;
         z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
-      .handle::before {
-        content: "";
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 4px;
-        height: 60%;
-        min-height: 12px;
-        max-height: 24px;
+      .handle-inner {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         background: var(--trim-handle-color, rgba(255, 255, 255, 0.7));
-        border-radius: 2px;
         transition: background 0.15s ease;
       }
 
-      .handle:hover::before,
-      .handle.dragging::before {
+      .handle:hover .handle-inner,
+      .handle.dragging .handle-inner {
         background: var(--trim-handle-active-color, #3b82f6);
+      }
+
+      .handle-start .handle-inner {
+        border-radius: var(--trim-handle-border-radius-start, 2px 0 0 2px);
+      }
+
+      .handle-end .handle-inner {
+        border-radius: var(--trim-handle-border-radius-end, 0 2px 2px 0);
       }
 
       /* Track mode: handles pinned at container edges */
       :host([mode="track"]) .handle-start {
         left: -4px;
       }
-      :host([mode="track"]) .handle-start::before {
-        left: 2px;
-      }
       :host([mode="track"]) .handle-end {
         right: -4px;
-      }
-      :host([mode="track"]) .handle-end::before {
-        right: 2px;
-      }
-
-      /* Standalone mode (default): handles positioned via inline style */
-      .handle-start::before {
-        left: 2px;
-      }
-      .handle-end::before {
-        right: 2px;
       }
 
       .handle.dragging {
@@ -113,6 +106,24 @@ export class EFTrimHandles extends TWMixin(LitElement) {
       .region.dragging {
         cursor: grabbing;
       }
+
+      .selected-border {
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: var(--trim-selected-border-width, 0px);
+        background: var(--trim-selected-border-color, transparent);
+        pointer-events: none;
+        z-index: 15;
+      }
+
+      .selected-border-top {
+        top: 0;
+      }
+
+      .selected-border-bottom {
+        bottom: 0;
+      }
     `,
   ];
 
@@ -123,7 +134,7 @@ export class EFTrimHandles extends TWMixin(LitElement) {
   elementId = "";
 
   @property({ type: Number, attribute: "pixels-per-ms" })
-  pixelsPerMs = 0.04;
+  pixelsPerMs: number | null = null;
 
   @property({ type: Number, attribute: "trim-start-ms" })
   trimStartMs = 0;
@@ -151,6 +162,38 @@ export class EFTrimHandles extends TWMixin(LitElement) {
 
   #regionDragStartTrimStart = 0;
   #regionDragStartTrimEnd = 0;
+  #resizeObserver: ResizeObserver | null = null;
+  #hostWidth = 0;
+
+  get #effectivePixelsPerMs(): number {
+    if (this.pixelsPerMs != null) {
+      return this.pixelsPerMs;
+    }
+    if (this.#hostWidth > 0 && this.intrinsicDurationMs > 0) {
+      return this.#hostWidth / this.intrinsicDurationMs;
+    }
+    return 0.04;
+  }
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    this.#resizeObserver = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      const width = entry.contentRect.width;
+      if (width !== this.#hostWidth) {
+        this.#hostWidth = width;
+        this.requestUpdate();
+      }
+    });
+    this.#resizeObserver.observe(this);
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this.#resizeObserver?.disconnect();
+    this.#resizeObserver = null;
+  }
 
   private handlePointerDown(e: PointerEvent, type: "start" | "end"): void {
     e.preventDefault();
@@ -204,11 +247,11 @@ export class EFTrimHandles extends TWMixin(LitElement) {
   private handlePointerMove = (e: PointerEvent): void => {
     if (!this.draggingHandle) return;
 
+    const pxPerMs = this.#effectivePixelsPerMs;
     const deltaX = e.clientX - this.dragStartX;
-    const deltaMs = deltaX / this.pixelsPerMs;
+    const deltaMs = deltaX / pxPerMs;
 
     if (this.draggingHandle === "region") {
-      // Clamp deltaMs so neither trimStart nor trimEnd goes below 0
       const clampedDelta = Math.max(
         -this.#regionDragStartTrimStart,
         Math.min(this.#regionDragStartTrimEnd, deltaMs),
@@ -306,10 +349,11 @@ export class EFTrimHandles extends TWMixin(LitElement) {
   };
 
   render() {
-    const trimStartPx = this.trimStartMs * this.pixelsPerMs;
-    const trimEndPx = (this.trimEndMs || 0) * this.pixelsPerMs;
+    const pxPerMs = this.#effectivePixelsPerMs;
+    const trimStartPx = this.trimStartMs * pxPerMs;
+    const trimEndPx = (this.trimEndMs || 0) * pxPerMs;
     const isStandalone = this.mode === "standalone";
-    const handleWidth = 8;
+    const handleWidthPx = parseFloat(getComputedStyle(this).getPropertyValue('--trim-handle-width')) || 8;
 
     return html`
       ${
@@ -331,14 +375,28 @@ export class EFTrimHandles extends TWMixin(LitElement) {
 
       ${
         isStandalone
-          ? html`<div
-              class="region ${this.draggingHandle === "region" ? "dragging" : ""}"
-              style=${styleMap({
-                left: `${trimStartPx + handleWidth}px`,
-                right: `${trimEndPx + handleWidth}px`,
-              })}
-              @pointerdown=${(e: PointerEvent) => this.handleRegionPointerDown(e)}
-            ></div>`
+          ? html`
+              <div
+                class="region ${this.draggingHandle === "region" ? "dragging" : ""}"
+                style=${styleMap({
+                  left: `${trimStartPx + handleWidthPx}px`,
+                  right: `${trimEndPx + handleWidthPx}px`,
+                })}
+                @pointerdown=${(e: PointerEvent) => this.handleRegionPointerDown(e)}
+              ></div>
+              <div class="selected-border selected-border-top"
+                style=${styleMap({
+                  left: `${trimStartPx}px`,
+                  right: `${trimEndPx}px`,
+                })}
+              ></div>
+              <div class="selected-border selected-border-bottom"
+                style=${styleMap({
+                  left: `${trimStartPx}px`,
+                  right: `${trimEndPx}px`,
+                })}
+              ></div>
+            `
           : nothing
       }
 
@@ -346,12 +404,20 @@ export class EFTrimHandles extends TWMixin(LitElement) {
         class="handle handle-start ${this.draggingHandle === "start" ? "dragging" : ""}"
         style=${isStandalone ? styleMap({ left: `${trimStartPx}px` }) : nothing}
         @pointerdown=${(e: PointerEvent) => this.handlePointerDown(e, "start")}
-      ></div>
+      >
+        <div class="handle-inner">
+          <slot name="handle-start"></slot>
+        </div>
+      </div>
       <div
         class="handle handle-end ${this.draggingHandle === "end" ? "dragging" : ""}"
         style=${isStandalone ? styleMap({ right: `${trimEndPx}px` }) : nothing}
         @pointerdown=${(e: PointerEvent) => this.handlePointerDown(e, "end")}
-      ></div>
+      >
+        <div class="handle-inner">
+          <slot name="handle-end"></slot>
+        </div>
+      </div>
     `;
   }
 }
