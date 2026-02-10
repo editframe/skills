@@ -853,8 +853,11 @@ export class EFMedia extends EFTargetable(
 
     // Trigger media engine load when src or assetId changes
     if (changedProperties.has("src") || changedProperties.has("assetId")) {
-      // Start loading media engine asynchronously
       this.getMediaEngine().catch(() => {});
+      // Source identity changed — cached renderable output is stale
+      if (changedProperties.get("src") !== undefined || changedProperties.get("assetId") !== undefined) {
+        this.emitContentChange("source");
+      }
     }
 
     // Check if our timeline position has actually changed, even if ownCurrentTimeMs isn't tracked as a property
@@ -880,7 +883,7 @@ export class EFMedia extends EFTargetable(
     );
 
     if (hasDurationChange) {
-      // Notify parent timegroup to recalculate its duration (same pattern as EFCaptions)
+      this.emitContentChange("bounds");
       if (this.parentTimegroup) {
         this.parentTimegroup.requestUpdate("durationMs");
         this.parentTimegroup.requestUpdate("currentTime");

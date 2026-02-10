@@ -938,6 +938,83 @@ describe("contentReadyState lifecycle", () => {
     video.remove();
   });
 
+  test("contentchange fires with reason 'source' on src change", async ({ configuration, expect }) => {
+    const video = document.createElement("ef-video");
+    video.src = "http://web:3000/head-moov-480p.mp4";
+    configuration.append(video);
+    await video.getMediaEngine();
+    await video.updateComplete;
+
+    const reasons: string[] = [];
+    video.addEventListener("contentchange", ((e: CustomEvent) => {
+      reasons.push(e.detail.reason);
+    }) as EventListener);
+
+    video.src = "http://web:3000/head-moov-480p.mp4?v=2";
+    await video.updateComplete;
+
+    expect(reasons).toContain("source");
+    video.remove();
+  });
+
+  test("contentchange fires with reason 'bounds' on sourcein change", async ({ configuration, expect }) => {
+    const video = document.createElement("ef-video");
+    video.src = "http://web:3000/head-moov-480p.mp4";
+    configuration.append(video);
+    await video.getMediaEngine();
+    await video.updateComplete;
+
+    const reasons: string[] = [];
+    video.addEventListener("contentchange", ((e: CustomEvent) => {
+      reasons.push(e.detail.reason);
+    }) as EventListener);
+
+    video.sourceInMs = 1000;
+    await video.updateComplete;
+
+    expect(reasons).toContain("bounds");
+    video.remove();
+  });
+
+  test("contentchange fires with reason 'bounds' on sourceout change", async ({ configuration, expect }) => {
+    const video = document.createElement("ef-video");
+    video.src = "http://web:3000/head-moov-480p.mp4";
+    configuration.append(video);
+    await video.getMediaEngine();
+    await video.updateComplete;
+
+    const reasons: string[] = [];
+    video.addEventListener("contentchange", ((e: CustomEvent) => {
+      reasons.push(e.detail.reason);
+    }) as EventListener);
+
+    video.sourceOutMs = 5000;
+    await video.updateComplete;
+
+    expect(reasons).toContain("bounds");
+    video.remove();
+  });
+
+  test("no contentchange on playback tick", async ({ configuration, expect }) => {
+    const video = document.createElement("ef-video");
+    video.src = "http://web:3000/head-moov-480p.mp4";
+    configuration.append(video);
+    await video.getMediaEngine();
+    await video.updateComplete;
+
+    const reasons: string[] = [];
+    video.addEventListener("contentchange", ((e: CustomEvent) => {
+      reasons.push(e.detail.reason);
+    }) as EventListener);
+
+    // Simulate a time update (not a content change)
+    video.requestUpdate("ownCurrentTimeMs");
+    await video.updateComplete;
+
+    expect(reasons).toHaveLength(0);
+    video.remove();
+  });
+
   test("readystatechange event does not bubble from ef-video", async ({ configuration, expect }) => {
     const container = document.createElement("div");
     const video = document.createElement("ef-video");
