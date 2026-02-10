@@ -180,6 +180,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
   #retryScheduled = false; // Flag to prevent duplicate retry schedules
   #thumbnailPhase: number = 0; // Phase offset for thumbnail grid
   #previousPixelsPerMs: number | null = null; // Track zoom changes
+  #lastTargetDurationMs: number = 0; // Track target duration for metadata load detection
 
   /**
    * Check if target is valid (EFVideo or root EFTimegroup)
@@ -249,6 +250,15 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
       changedProperties.has("thumbnailHeight") ||
       changedProperties.has("timelineState")
     ) {
+      this.#scheduleRender();
+    }
+
+    // Detect target duration changes (e.g., video metadata load).
+    // TargetUpdateController triggers requestUpdate() when the target
+    // updates, but none of the watched properties above change.
+    const targetDuration = (this.targetElement as any)?.durationMs ?? 0;
+    if (targetDuration !== this.#lastTargetDurationMs) {
+      this.#lastTargetDurationMs = targetDuration;
       this.#scheduleRender();
     }
   }
