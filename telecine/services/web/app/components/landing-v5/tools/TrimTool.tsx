@@ -1,9 +1,9 @@
 import { useId, useState, useRef } from "react";
 import {
-  Preview, Timegroup, Video, ThumbnailStrip, TrimHandles, TogglePlay, useMediaInfo,
+  Video, ThumbnailStrip, TrimHandles, TogglePlay, useMediaInfo,
   type TrimValue,
 } from "@editframe/react";
-import type { EFTimegroup, EFVideo } from "@editframe/elements";
+import type { EFVideo } from "@editframe/elements";
 import { useRenderQueue } from "../RenderQueue";
 
 const VIDEO_SRC = "https://assets.editframe.com/bars-n-tone.mp4";
@@ -53,10 +53,8 @@ const trimHandleStyles = {
 
 export function TrimTool() {
   const id = useId();
-  const previewId = `trim-preview-${id}`;
-  const timegroupId = `trim-timegroup-${id}`;
+  const videoId = `trim-video-${id}`;
   const videoRef = useRef<EFVideo>(null);
-  const timegroupRef = useRef<EFTimegroup>(null);
   const { enqueue } = useRenderQueue();
   const { intrinsicDurationMs } = useMediaInfo(videoRef);
 
@@ -76,25 +74,23 @@ export function TrimTool() {
           <span className="text-white/50 text-[10px] font-mono uppercase">Demo</span>
         </div>
 
-        {/* Video Preview */}
+        {/* Video */}
         <div className="bg-[#111] aspect-video relative">
-          <Preview id={previewId} loop className="size-full">
-            <Timegroup id={timegroupId} ref={timegroupRef} mode="fixed" duration={`${keptDuration}ms`} className="size-full">
-              <Video
-                ref={videoRef}
-                src={VIDEO_SRC}
-                trimstart={`${trim.startMs}ms`}
-                trimend={`${trim.endMs}ms`}
-                className="size-full object-contain"
-              />
-            </Timegroup>
-          </Preview>
+          <Video
+            id={videoId}
+            ref={videoRef}
+            src={VIDEO_SRC}
+            loop
+            trimstart={`${trim.startMs}ms`}
+            trimend={`${trim.endMs}ms`}
+            className="size-full object-contain"
+          />
         </div>
 
         {/* Trim Bar */}
         <div className="border-t-4 border-black dark:border-white bg-[#111]">
           <div className="flex items-center">
-            <TogglePlay target={previewId}>
+            <TogglePlay target={videoId}>
               <button slot="pause" className="w-10 h-16 flex items-center justify-center bg-black/80 hover:bg-black transition-colors border-r border-white/10">
                 {pauseIcon}
               </button>
@@ -114,7 +110,7 @@ export function TrimTool() {
               <TrimHandles
                 value={trim}
                 intrinsicDurationMs={totalDuration}
-                seekTarget={timegroupId}
+                seekTarget={videoId}
                 onTrimChange={(e: Event) => setTrim((e as CustomEvent).detail.value)}
                 className="absolute inset-0"
                 style={trimHandleStyles}
@@ -145,11 +141,11 @@ export function TrimTool() {
 
           <button
             onClick={() => {
-              if (timegroupRef.current) {
+              if (videoRef.current) {
                 enqueue({
                   name: "Trimmed Video",
                   fileName: `trimmed-${formatTime(inPoint)}-${formatTime(outPoint)}.mp4`,
-                  timegroupEl: timegroupRef.current as unknown as HTMLElement,
+                  timegroupEl: videoRef.current as unknown as HTMLElement,
                   renderOpts: { includeAudio: true },
                 });
               }

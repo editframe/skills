@@ -1,9 +1,15 @@
 import { type Context, consume } from "@lit/context";
 import type { LitElement } from "lit";
 import { property, state } from "lit/decorators.js";
-import { isEFTemporal } from "../elements/EFTemporal.js";
+import { isEFTemporal, type TemporalMixinInterface } from "../elements/EFTemporal.js";
 import { TargetController } from "../elements/TargetController.js";
-import { type ControllableInterface, isControllable } from "./Controllable.js";
+import {
+  type ControllableInterface,
+  type ControllableSubscription,
+  isControllable,
+  determineTargetType,
+  createDirectTemporalSubscription,
+} from "./Controllable.js";
 import { currentTimeContext } from "./currentTimeContext.js";
 import { durationContext } from "./durationContext.js";
 import { loopContext, playingContext } from "./playingContext.js";
@@ -49,6 +55,7 @@ export function TargetOrContextMixin<T extends Constructor<LitElement>>(
     #contextUnsubscribe?: () => void;
     #contextRequestHandler?: (event: Event) => void;
     #additionalContextUnsubscribes = new Map<Context<any, any>, () => void>();
+    #directTemporalSubscription?: ControllableSubscription;
 
     get effectiveContext(): ControllableInterface | null {
       return this.targetElement ?? this.contextFromParent;
@@ -81,18 +88,60 @@ export function TargetOrContextMixin<T extends Constructor<LitElement>>(
       );
     }
 
-    #subscribeToTargetContext() {
-      if (!this.targetElement) return;
-
+    #unsubscribeAll() {
       this.#contextUnsubscribe?.();
-
-      // Unsubscribe from all additional contexts
+      this.#contextUnsubscribe = undefined;
       for (const unsubscribe of this.#additionalContextUnsubscribes.values()) {
         unsubscribe();
       }
       this.#additionalContextUnsubscribes.clear();
+      this.#directTemporalSubscription?.unsubscribe();
+      this.#directTemporalSubscription = undefined;
+    }
 
-      // Subscribe to efContext
+    #tryDirectTemporalSubscription(): boolean {
+      if (!this.targetElement) return false;
+
+      const targetType = determineTargetType(this.targetElement);
+      if (targetType !== "direct-temporal") return false;
+
+      this.#directTemporalSubscription = createDirectTemporalSubscription(
+        this.targetElement as unknown as TemporalMixinInterface & HTMLElement,
+        {
+          onPlayingChange: (value) => { (this as any).playing = value; },
+          onLoopChange: (value) => { if ("loop" in this) (this as any).loop = value; },
+          onCurrentTimeMsChange: (value) => { if ("currentTimeMs" in this) (this as any).currentTimeMs = value; },
+          onDurationMsChange: (value) => { if ("durationMs" in this) (this as any).durationMs = value; },
+          onTargetTemporalChange: () => {},
+        },
+      );
+      return true;
+    }
+
+    #subscribeToTargetContext() {
+      if (!this.targetElement) return;
+
+      this.#unsubscribeAll();
+
+      if (this.#tryDirectTemporalSubscription()) return;
+
+      // Temporal target without PlaybackController yet — wait for initialization
+      if (isEFTemporal(this.targetElement)) {
+        const target = this.targetElement as unknown as TemporalMixinInterface & HTMLElement;
+        target.updateComplete.then(() => {
+          if (this.targetElement !== target) return;
+          if (!this.#tryDirectTemporalSubscription()) {
+            // Still not ready — one more cycle (PlaybackController created in updateComplete.then)
+            target.updateComplete.then(() => {
+              if (this.targetElement !== target) return;
+              this.#tryDirectTemporalSubscription();
+            });
+          }
+        });
+        return;
+      }
+
+      // Context-provider path (EFPreview, etc.)
       const event = new ContextRequestEvent(
         contextToProxy,
         this,
@@ -104,7 +153,6 @@ export function TargetOrContextMixin<T extends Constructor<LitElement>>(
       );
       this.targetElement.dispatchEvent(event);
 
-      // Subscribe to additional contexts that controls commonly need
       const additionalContexts: Array<[Context<any, any>, string]> = [
         [playingContext, "playing"],
         [loopContext, "loop"],
@@ -117,7 +165,6 @@ export function TargetOrContextMixin<T extends Constructor<LitElement>>(
           context,
           this,
           (value, unsubscribe) => {
-            // Update the control's property if it exists
             if (propertyName in this) {
               (this as any)[propertyName] = value;
             }
@@ -135,7 +182,7 @@ export function TargetOrContextMixin<T extends Constructor<LitElement>>(
       if (changedProperties.has("targetElement") && this.targetElement) {
         if (
           isEFTemporal(this.targetElement) &&
-          !controllable
+          !isControllable(this.targetElement)
         ) {
           console.warn(
             "Control element is targeting a non-root temporal element without playbackController. " +
@@ -161,11 +208,7 @@ export function TargetOrContextMixin<T extends Constructor<LitElement>>(
 
     disconnectedCallback() {
       super.disconnectedCallback();
-      this.#contextUnsubscribe?.();
-      for (const unsubscribe of this.#additionalContextUnsubscribes.values()) {
-        unsubscribe();
-      }
-      this.#additionalContextUnsubscribes.clear();
+      this.#unsubscribeAll();
       if (this.#contextRequestHandler) {
         this.removeEventListener(
           "context-request",

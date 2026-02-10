@@ -227,11 +227,7 @@ describe("Controllable Interface", () => {
   });
 
   describe("Bidirectional state sync: temporal → control", () => {
-    // NOTE: These tests document the REGRESSION - temporal → control sync is broken
-    // When we fix EFControls/TargetOrContextMixin to subscribe to playbackController
-    // updates directly (not via context dispatch), these tests should pass.
-
-    test.fails(
+    test(
       "playing state changes on temporal propagate to toggle-play control",
       { timeout: 2000 },
       async () => {
@@ -263,8 +259,6 @@ describe("Controllable Interface", () => {
         // Change state directly on temporal element
         timegroup.playbackController!.setPlaying(true);
 
-        // Observable behavior: control's playing state should update
-        // REGRESSION: This doesn't work because temporal elements don't provide contexts
         await vi.waitUntil(() => togglePlay.playing === true, {
           timeout: 1000,
         });
@@ -283,7 +277,7 @@ describe("Controllable Interface", () => {
     );
 
     test.fails(
-      "loop state changes on temporal propagate to toggle-loop control",
+      "loop state changes on temporal propagate to toggle-loop control (EFToggleLoop lacks loop property)",
       { timeout: 2000 },
       async () => {
         container = createTestContainer();
@@ -310,8 +304,6 @@ describe("Controllable Interface", () => {
         // Change loop state directly on temporal
         timegroup.playbackController!.setLoop(true);
 
-        // Observable behavior: control should reflect loop state
-        // REGRESSION: This doesn't work because temporal elements don't provide contexts
         await vi.waitUntil(() => (toggleLoop as any).loop === true, {
           timeout: 1000,
         });
@@ -501,10 +493,9 @@ describe("Controllable Interface", () => {
     );
 
     test.fails(
-      "EFControls syncs currentTimeMs with targeted ef-timegroup",
+      "EFControls syncs currentTimeMs with targeted ef-timegroup (async seek notification)",
       { timeout: 2000 },
       async () => {
-        // REGRESSION: currentTimeMs context propagation from temporal → controls is broken
         container = createTestContainer();
         container.innerHTML = `
           <ef-timegroup id="tg" duration="10s"></ef-timegroup>
@@ -528,8 +519,6 @@ describe("Controllable Interface", () => {
         // Set time on timegroup
         timegroup.currentTimeMs = 5000;
 
-        // Observable behavior: time display should show updated time
-        // REGRESSION: This doesn't work because temporal elements don't provide contexts
         await vi.waitUntil(
           () => timeDisplay.shadowRoot?.textContent?.includes("0:05"),
           { timeout: 1000 },
