@@ -195,7 +195,6 @@ export function TrimTool() {
                 target={thumbVideoId}
                 pixels-per-ms={thumbPxPerMs}
                 thumbnail-height={64}
-                thumbnail-spacing-px={32}
                 className="absolute inset-0 pointer-events-none"
               />
 
