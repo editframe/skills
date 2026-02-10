@@ -259,12 +259,17 @@ export class EFCaptions extends EFSourceMixin(
    */
   unifiedCaptionsDataTask = new AsyncValue<Caption | null>();
 
+  override shouldAutoReady(): boolean {
+    return false;
+  }
+
   /**
    * Load captions data from all possible sources
    */
   async loadCaptionsData(signal?: AbortSignal): Promise<Caption | null> {
     // Return cached if already loaded
     if (this.#captionsDataLoaded && this.#captionsDataValue) {
+      this.setContentReadyState("ready");
       return this.#captionsDataValue;
     }
 
@@ -274,6 +279,7 @@ export class EFCaptions extends EFSourceMixin(
     }
 
     this.unifiedCaptionsDataTask.startPending();
+    this.setContentReadyState("loading");
     this.#captionsDataPromise = this.#doLoadCaptionsData(signal);
 
     try {
@@ -282,12 +288,14 @@ export class EFCaptions extends EFSourceMixin(
       if (this.#captionsDataValue) {
         this.unifiedCaptionsDataTask.setValue(this.#captionsDataValue);
       }
+      this.setContentReadyState("ready");
       return this.#captionsDataValue;
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
         throw error;
       }
       console.error("Failed to load captions data:", error);
+      this.setContentReadyState("error");
       return null;
     } finally {
       this.#captionsDataPromise = null;
@@ -513,7 +521,7 @@ export class EFCaptions extends EFSourceMixin(
       changedProperties.has("captionsSrc") ||
       changedProperties.has("captionsScript")
     ) {
-      // Invalidate caches and reload
+      this.emitContentChange("source");
       this.#cachedIntrinsicDurationMs = null;
       this.#captionsDataLoaded = false;
       this.#captionsDataValue = null;

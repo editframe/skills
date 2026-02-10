@@ -123,6 +123,10 @@ export class EFImage extends EFTemporal(
   #lastLoadedPath: string | null = null;
   #currentObjectUrl: string | null = null;
 
+  override shouldAutoReady(): boolean {
+    return !this.src && !this.assetId;
+  }
+
   /**
    * Load image from the configured source
    */
@@ -136,6 +140,7 @@ export class EFImage extends EFTemporal(
 
     // Return cached if path hasn't changed
     if (this.#imageLoaded && this.#lastLoadedPath === assetPath) {
+      this.setContentReadyState("ready");
       return;
     }
 
@@ -143,6 +148,8 @@ export class EFImage extends EFTemporal(
     if (this.#imageLoadPromise && this.#lastLoadedPath === assetPath) {
       return this.#imageLoadPromise;
     }
+
+    this.setContentReadyState("loading");
 
     // For direct URLs, wait for the img element to load
     if (this.isDirectUrl(assetPath)) {
@@ -152,11 +159,13 @@ export class EFImage extends EFTemporal(
       try {
         await this.#imageLoadPromise;
         this.#imageLoaded = true;
+        this.setContentReadyState("ready");
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") {
           throw error;
         }
         console.error("EFImage img element load error", error);
+        this.setContentReadyState("error");
         throw error;
       } finally {
         this.#imageLoadPromise = null;
@@ -170,6 +179,7 @@ export class EFImage extends EFTemporal(
     try {
       await this.#imageLoadPromise;
       this.#imageLoaded = true;
+      this.setContentReadyState("ready");
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
         throw error;
@@ -179,6 +189,7 @@ export class EFImage extends EFTemporal(
         return;
       }
       console.error("EFImage load error", error);
+      this.setContentReadyState("error");
     } finally {
       this.#imageLoadPromise = null;
     }
@@ -360,11 +371,12 @@ export class EFImage extends EFTemporal(
     // Sync object-fit styles from host element
     this.#syncObjectFitStyles();
     
-    // Trigger image load when src or assetId changes
     if (changedProperties.has("src") || changedProperties.has("assetId")) {
       this.#imageLoaded = false;
+      if (changedProperties.get("src") !== undefined || changedProperties.get("assetId") !== undefined) {
+        this.emitContentChange("source");
+      }
       this.loadImage().catch(() => {});
-      // Increment render version only when actual image content changes
       this.#renderVersion++;
     }
   }

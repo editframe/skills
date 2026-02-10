@@ -149,4 +149,52 @@ describe("EFImage", () => {
       document.body.removeChild(image);
     });
   });
+
+  describe("contentReadyState", () => {
+    test("image with no src auto-readies (trivially ready)", async () => {
+      const image = document.createElement("ef-image");
+      document.body.append(image);
+      await image.updateComplete;
+      expect(image.contentReadyState).toBe("ready");
+      image.remove();
+    });
+
+    test("image with src transitions to ready after load", async () => {
+      const image = document.createElement("ef-image");
+      const src = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="red"/></svg>');
+
+      image.src = src;
+      image.style.width = "100px";
+      image.style.height = "100px";
+      document.body.append(image);
+      await image.updateComplete;
+      await image.loadImage();
+
+      expect(image.contentReadyState).toBe("ready");
+      image.remove();
+    });
+
+    test("emits contentchange on src change", async () => {
+      const image = document.createElement("ef-image");
+      const src1 = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="red"/></svg>');
+      image.src = src1;
+      image.style.width = "100px";
+      image.style.height = "100px";
+      document.body.append(image);
+      await image.updateComplete;
+      await image.loadImage();
+
+      const reasons: string[] = [];
+      image.addEventListener("contentchange", ((e: CustomEvent) => {
+        reasons.push(e.detail.reason);
+      }) as EventListener);
+
+      const src2 = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="blue"/></svg>');
+      image.src = src2;
+      await image.updateComplete;
+
+      expect(reasons).toContain("source");
+      image.remove();
+    });
+  });
 });

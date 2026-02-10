@@ -1398,4 +1398,31 @@ describe("EFText", () => {
       expect(uniqueOffsets.size).toBe(9);
     });
   });
+
+  describe("contentReadyState", () => {
+    test("text element auto-readies after connection", async () => {
+      const text = document.createElement("ef-text") as any;
+      text.textContent = "Hello World";
+      document.body.append(text);
+      testElements.push(text);
+      await text.updateComplete;
+      expect(text.contentReadyState).toBe("ready");
+    });
+
+    test("emits contentchange when textContent changes", async () => {
+      const text = document.createElement("ef-text") as any;
+      text.textContent = "Hello";
+      document.body.append(text);
+      testElements.push(text);
+      await text.updateComplete;
+
+      const reasons: string[] = [];
+      text.addEventListener("contentchange", ((e: CustomEvent) => {
+        reasons.push(e.detail.reason);
+      }) as EventListener);
+
+      text.textContent = "World";
+      expect(reasons).toContain("content");
+    });
+  });
 });

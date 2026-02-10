@@ -109,8 +109,8 @@ export class EFText extends EFTemporal(LitElement) {
         const textNode = document.createTextNode(newValue);
         this.appendChild(textNode);
       }
-      // Trigger re-split
       if (this.isConnected) {
+        this.emitContentChange("content");
         this.splitText();
       }
     }
@@ -232,6 +232,7 @@ export class EFText extends EFTemporal(LitElement) {
       changedProperties.has("easing") ||
       changedProperties.has("durationMs")
     ) {
+      this.emitContentChange("content");
       this.splitText();
     }
   }
