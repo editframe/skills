@@ -727,16 +727,6 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
         }),
       );
 
-      // When a standalone root temporal becomes ready, render the initial frame.
-      // The PlaybackController's self-render path handles hosts that implement
-      // FrameRenderable (prepareFrame/renderFrame) but have no FrameController.
-      // Must wait for Lit update to complete so the canvas element in the
-      // shadow DOM is stable before painting to it.
-      if (state === "ready" && this.playbackController) {
-        this.updateComplete.then(() => {
-          this.playbackController?.runThrottledFrameTask();
-        });
-      }
     }
 
     emitContentChange(reason: ContentChangeReason): void {
@@ -1020,16 +1010,22 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
     override updated(changedProperties: Map<PropertyKey, unknown>): void {
       super.updated?.(changedProperties);
 
-      // When sourcein or sourceout change, the mapping between timeline time
-      // and source media time changes. The root timegroup must re-render
-      // the current frame so the video shows the correct source frame.
-      //
-      // Without this, changes that don't affect the timegroup's duration
-      // (e.g., sliding both sourcein and sourceout by the same amount)
-      // would show a stale frame because the FrameController only re-renders
-      // when currentTimeMs or durationMs change.
-      if (changedProperties.has("_sourceInMs") || changedProperties.has("_sourceOutMs")) {
-        this.rootTimegroup?.requestFrameRender();
+      // Re-render the current frame when source-mapping or trim properties
+      // change (the timeline-to-source mapping is different, so the visible
+      // frame changes even though currentTimeMs hasn't).
+      // Also render the initial frame when a standalone root becomes ready.
+      const sourceChanged = changedProperties.has("_sourceInMs") || changedProperties.has("_sourceOutMs");
+      const trimChanged = changedProperties.has("_trimStartMs") || changedProperties.has("_trimEndMs");
+      const becameReady = changedProperties.has("contentReadyState") &&
+        changedProperties.get("contentReadyState") !== "ready" &&
+        this.contentReadyState === "ready";
+
+      if (sourceChanged || trimChanged || becameReady) {
+        if (this.rootTimegroup) {
+          this.rootTimegroup.requestFrameRender();
+        } else if (this.playbackController) {
+          this.playbackController.runThrottledFrameTask();
+        }
       }
     }
 

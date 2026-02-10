@@ -1600,4 +1600,41 @@ describe("standalone ef-video (no Timegroup)", () => {
 
     container.remove();
   });
+
+  test("trim change triggers re-render via updated() lifecycle", { timeout: 15000 }, async ({ expect }) => {
+    const container = document.createElement("div");
+    const apiHost = getApiHost();
+    render(
+      html`
+      <ef-configuration api-host="${apiHost}" signing-url="">
+        <ef-video src="bars-n-tone.mp4" mode="asset" id="trim-rerender-video" style="width:640px;height:360px;"></ef-video>
+      </ef-configuration>
+    `,
+      container,
+    );
+    document.body.appendChild(container);
+
+    const video = container.querySelector("ef-video") as EFVideo;
+    await video.updateComplete;
+    await video.mediaEngineTask.taskComplete;
+    await video.updateComplete;
+    await video.playbackController!.runThrottledFrameTask();
+
+    // Verify initial source time mapping
+    expect((video as any).currentSourceTimeMs).toBe(0);
+
+    // Change trimStartMs — shifts the source frame at timeline time 0
+    video.trimStartMs = 3000;
+    await video.updateComplete;
+    await video.playbackController!.runThrottledFrameTask();
+
+    // currentSourceTimeMs should now reflect the trim offset
+    expect((video as any).currentSourceTimeMs).toBe(3000);
+
+    // Canvas should still have video dimensions (not reset)
+    const canvas = video.canvasElement!;
+    expect(canvas.width).toBeGreaterThan(300);
+
+    container.remove();
+  });
 });

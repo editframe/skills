@@ -333,7 +333,7 @@ export class PlaybackController implements ReactiveController {
 
   #selfRenderAbortController?: AbortController;
   #selfRenderPromise?: Promise<void>;
-  #selfRenderTimeMs?: number;
+  #selfRenderDirty = false;
 
   /**
    * Run frame rendering via FrameController, or directly on the host if it
@@ -360,18 +360,21 @@ export class PlaybackController implements ReactiveController {
     const host = this.#host as unknown as Partial<FrameRenderable>;
     if (!host.prepareFrame || !host.renderFrame) return;
 
-    // If a render is already in progress for the same time, coalesce.
-    // If time changed (seek), abort and re-render at the new time.
+    // If a render is in-flight, mark dirty so we re-render after it
+    // completes (source mapping may have changed due to trim drag).
     if (this.#selfRenderPromise) {
-      if (this.#selfRenderTimeMs === timeMs) {
-        return this.#selfRenderPromise;
-      }
-      this.#selfRenderAbortController?.abort();
+      this.#selfRenderDirty = true;
+      return this.#selfRenderPromise;
     }
 
+    return this.#startSelfRender(host, timeMs);
+  }
+
+  #startSelfRender(host: Partial<FrameRenderable>, timeMs: number): Promise<void> {
+    this.#selfRenderAbortController?.abort();
     this.#selfRenderAbortController = new AbortController();
     const signal = this.#selfRenderAbortController.signal;
-    this.#selfRenderTimeMs = timeMs;
+    this.#selfRenderDirty = false;
 
     this.#selfRenderPromise = (async () => {
       try {
@@ -385,7 +388,10 @@ export class PlaybackController implements ReactiveController {
         console.error("Standalone frame render error:", error);
       } finally {
         this.#selfRenderPromise = undefined;
-        this.#selfRenderTimeMs = undefined;
+        // Re-render if source mapping changed while we were rendering
+        if (this.#selfRenderDirty) {
+          this.#startSelfRender(host, this.currentTimeMs);
+        }
       }
     })();
 
