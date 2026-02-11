@@ -1660,4 +1660,207 @@ describe("EFText", () => {
       }
     });
   });
+
+  describe("split mode layout consistency", () => {
+    for (const splitMode of ["word", "char"] as const) {
+      test(`${splitMode} split does not alter vertical position vs unsplit text`, async () => {
+        // Create a reference text element without splitting
+        const container = document.createElement("div");
+        container.style.cssText = "position:relative;width:400px;height:300px;";
+
+        const refText = document.createElement("ef-text");
+        refText.textContent = "HELLO WORLD";
+        refText.style.cssText = "position:absolute;bottom:16px;left:16px;font-size:20px;font-weight:bold;";
+        container.appendChild(refText);
+
+        document.body.appendChild(container);
+        testElements.push(container);
+
+        await refText.updateComplete;
+        await refText.whenSegmentsReady();
+        await new Promise((r) => requestAnimationFrame(r));
+        const refRect = refText.getBoundingClientRect();
+
+        // Create the same text with explicit split mode
+        const splitText = document.createElement("ef-text");
+        splitText.split = splitMode;
+        splitText.textContent = "HELLO WORLD";
+        splitText.style.cssText = "position:absolute;bottom:16px;left:16px;font-size:20px;font-weight:bold;";
+        container.appendChild(splitText);
+
+        await splitText.updateComplete;
+        await splitText.whenSegmentsReady();
+        await new Promise((r) => requestAnimationFrame(r));
+        const splitRect = splitText.getBoundingClientRect();
+
+        // Vertical position should be within 1px of reference
+        expect(
+          Math.abs(splitRect.top - refRect.top),
+          `${splitMode} split shifted by ${splitRect.top - refRect.top}px`,
+        ).toBeLessThanOrEqual(1);
+      });
+    }
+
+    test("word and char splits produce same bounding box dimensions", async () => {
+      const container = document.createElement("div");
+      container.style.cssText = "position:relative;width:400px;height:300px;";
+
+      const wordText = document.createElement("ef-text");
+      wordText.split = "word";
+      wordText.textContent = "HELLO WORLD";
+      wordText.style.cssText = "position:absolute;top:16px;left:16px;font-size:20px;font-weight:bold;";
+      container.appendChild(wordText);
+
+      const charText = document.createElement("ef-text");
+      charText.split = "char";
+      charText.textContent = "HELLO WORLD";
+      charText.style.cssText = "position:absolute;top:100px;left:16px;font-size:20px;font-weight:bold;";
+      container.appendChild(charText);
+
+      document.body.appendChild(container);
+      testElements.push(container);
+
+      await wordText.updateComplete;
+      await charText.updateComplete;
+      await wordText.whenSegmentsReady();
+      await charText.whenSegmentsReady();
+      await new Promise((r) => requestAnimationFrame(r));
+
+      const wordRect = wordText.getBoundingClientRect();
+      const charRect = charText.getBoundingClientRect();
+
+      expect(
+        Math.abs(wordRect.height - charRect.height),
+        `height diff: word=${wordRect.height} char=${charRect.height}`,
+      ).toBeLessThanOrEqual(1);
+    });
+  });
+
+  describe("segment visibility across timeline", () => {
+    for (const splitMode of ["word", "char", "line"] as const) {
+      test(`${splitMode} segments remain visible throughout parent duration (explicit duration)`, async () => {
+        createTestStyle(`
+          @keyframes vis-fade {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+        `);
+
+        const timegroup = document.createElement("ef-timegroup");
+        timegroup.duration = "5s";
+        const text = document.createElement("ef-text");
+        text.split = splitMode;
+        text.textContent = "HELLO WORLD";
+        text.setAttribute("stagger", "100ms");
+        text.duration = "5s";
+
+        text.style.animationName = "vis-fade";
+        text.style.animationDuration = "0.4s";
+        text.style.animationFillMode = "both";
+
+        timegroup.appendChild(text);
+        document.body.appendChild(timegroup);
+        testElements.push(timegroup);
+
+        await text.updateComplete;
+        const segments = await text.whenSegmentsReady();
+        await Promise.all(segments.map((s) => s.updateComplete));
+        await new Promise((r) => requestAnimationFrame(r));
+
+        const wordSegments = segments.filter(
+          (s) => !/^\s+$/.test(s.segmentText),
+        );
+        expect(wordSegments.length).toBeGreaterThan(0);
+
+        // Seek to various points through the timeline
+        const seekPoints = [0, 500, 1000, 2000, 3000, 4000, 4900];
+        for (const seekMs of seekPoints) {
+          timegroup.currentTimeMs = seekMs;
+          await new Promise((r) => requestAnimationFrame(r));
+
+          for (const seg of wordSegments) {
+            const display = seg.style.display;
+            const isHidden = display === "none";
+            expect(
+              isHidden,
+              `${splitMode} segment "${seg.segmentText}" hidden at ${seekMs}ms (display: ${display})`,
+            ).toBe(false);
+          }
+        }
+      });
+    }
+
+    for (const splitMode of ["word", "char", "line"] as const) {
+      test(`${splitMode} segments track parent duration dynamically via endTimeMs getter`, async () => {
+        createTestStyle(`
+          @keyframes vis-fade {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+        `);
+
+        // Use a fixed-duration timegroup with an explicit duration on text
+        // to confirm segments derive endTimeMs from the live parent, not a snapshot.
+        const timegroup = document.createElement("ef-timegroup");
+        timegroup.duration = "5s";
+
+        const text = document.createElement("ef-text");
+        text.split = splitMode;
+        text.textContent = "HELLO WORLD";
+        text.setAttribute("stagger", "100ms");
+        text.duration = "3s";
+
+        text.style.animationName = "vis-fade";
+        text.style.animationDuration = "0.4s";
+        text.style.animationFillMode = "both";
+
+        timegroup.appendChild(text);
+        document.body.appendChild(timegroup);
+        testElements.push(timegroup);
+
+        await text.updateComplete;
+        const segments = await text.whenSegmentsReady();
+        await Promise.all(segments.map((s) => s.updateComplete));
+        await new Promise((r) => requestAnimationFrame(r));
+        await new Promise((r) => requestAnimationFrame(r));
+
+        const wordSegments = segments.filter(
+          (s) => !/^\s+$/.test(s.segmentText),
+        );
+        expect(wordSegments.length).toBeGreaterThan(0);
+
+        // Verify initial endTimeMs matches text duration
+        for (const seg of wordSegments) {
+          expect(seg.endTimeMs).toBe(3000);
+        }
+
+        // Now change the text's duration. Segments should track live.
+        text.duration = "5s";
+        await text.updateComplete;
+        await new Promise((r) => requestAnimationFrame(r));
+
+        for (const seg of wordSegments) {
+          expect(
+            seg.endTimeMs,
+            `${splitMode} segment endTimeMs should update when parent duration changes`,
+          ).toBe(5000);
+        }
+
+        // Verify segments stay visible throughout the updated duration
+        const seekPoints = [0, 1500, 3500, 4900];
+        for (const seekMs of seekPoints) {
+          timegroup.currentTimeMs = seekMs;
+          await new Promise((r) => requestAnimationFrame(r));
+
+          for (const seg of wordSegments) {
+            const display = seg.style.display;
+            expect(
+              display !== "none",
+              `${splitMode} segment "${seg.segmentText}" hidden at ${seekMs}ms`,
+            ).toBe(true);
+          }
+        }
+      });
+    }
+  });
 });

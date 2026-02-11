@@ -27,15 +27,12 @@ export class EFText extends EFTemporal(LitElement) {
     css`
       :host {
         display: inline-flex;
+        flex-wrap: wrap;
         white-space: normal;
         line-height: 1;
         gap: 0;
       }
-      :host([split="char"]) {
-        white-space: pre;
-      }
       :host([split="line"]) {
-        display: flex;
         flex-direction: column;
       }
       ::slotted(*) {

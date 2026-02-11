@@ -136,19 +136,27 @@ export class EFTextSegment extends EFTemporal(LitElement) {
   hidden = false;
 
   get startTimeMs() {
-    // Get parent text element's absolute start time, then add our local offset
     const parentText = this.closest("ef-text") as EFText;
     const parentStartTime = parentText?.startTimeMs || 0;
     return parentStartTime + (this.segmentStartMs || 0);
   }
 
   get endTimeMs() {
+    // Derive from parent's live durationMs rather than the snapshot stored in segmentEndMs.
+    // This ensures segments track changes when the parent's duration updates
+    // (e.g., a contain-mode timegroup whose duration changes after a video loads).
     const parentText = this.closest("ef-text") as EFText;
-    const parentStartTime = parentText?.startTimeMs || 0;
-    return parentStartTime + (this.segmentEndMs || 0);
+    if (parentText) {
+      return parentText.startTimeMs + parentText.durationMs;
+    }
+    return (this.segmentEndMs || 0);
   }
 
   get durationMs(): number {
+    const parentText = this.closest("ef-text") as EFText;
+    if (parentText) {
+      return parentText.durationMs;
+    }
     return this.segmentEndMs - this.segmentStartMs;
   }
 }
