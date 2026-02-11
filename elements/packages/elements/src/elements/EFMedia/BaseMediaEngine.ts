@@ -380,45 +380,12 @@ export abstract class BaseMediaEngine {
 
   /**
    * Check if a segment is cached for a given rendition
-   * This needs to check the URL-based cache since that's where segments are actually stored
+   * Each engine implements its own cache key strategy
    */
-  isSegmentCached(
+  abstract isSegmentCached(
     segmentId: number,
     rendition: AudioRendition | VideoRendition,
-  ): boolean {
-    try {
-      // Check if this is a JIT engine by looking for urlGenerator property
-      const maybeJitEngine = this as any;
-      if (
-        maybeJitEngine.urlGenerator &&
-        typeof maybeJitEngine.urlGenerator.generateSegmentUrl === "function"
-      ) {
-        // This is a JIT engine - generate the URL and check URL-based cache
-        if (!rendition.id) {
-          return false;
-        }
-
-        const segmentUrl = maybeJitEngine.urlGenerator.generateSegmentUrl(
-          segmentId,
-          rendition.id,
-          maybeJitEngine,
-        );
-        const urlIsCached = mediaCache.has(segmentUrl);
-
-        return urlIsCached;
-      }
-      // For other engine types, fall back to the old segment-based key approach
-      const cacheKey = `${rendition.src}-${rendition.id || "default"}-${segmentId}-${rendition.trackId}`;
-      const isCached = mediaCache.has(cacheKey);
-      return isCached;
-    } catch (error) {
-      console.warn(
-        `🎬 BaseMediaEngine: Error checking if segment ${segmentId} is cached:`,
-        error,
-      );
-      return false;
-    }
-  }
+  ): boolean;
 
 
   /**

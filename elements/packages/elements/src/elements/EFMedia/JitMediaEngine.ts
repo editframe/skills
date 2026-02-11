@@ -8,7 +8,7 @@ import type {
 import type { ManifestResponse } from "../../transcoding/types/index.js";
 import type { UrlGenerator } from "../../transcoding/utils/UrlGenerator";
 import type { EFMedia } from "../EFMedia.js";
-import { BaseMediaEngine } from "./BaseMediaEngine";
+import { BaseMediaEngine, mediaCache } from "./BaseMediaEngine";
 import { ThumbnailExtractor } from "./shared/ThumbnailExtractor.js";
 
 export class JitMediaEngine extends BaseMediaEngine implements MediaEngine {
@@ -228,6 +228,22 @@ export class JitMediaEngine extends BaseMediaEngine implements MediaEngine {
       segmentDurationMs: scrubManifestRendition.segmentDurationMs,
       segmentDurationsMs: scrubManifestRendition.segmentDurationsMs,
     };
+  }
+
+  isSegmentCached(
+    segmentId: number,
+    rendition: AudioRendition | VideoRendition,
+  ): boolean {
+    if (!rendition.id) {
+      return false;
+    }
+
+    const segmentUrl = this.urlGenerator.generateSegmentUrl(
+      segmentId,
+      rendition.id,
+      this,
+    );
+    return mediaCache.has(segmentUrl);
   }
 
 

@@ -1,13 +1,13 @@
-import { EFTrimHandles as EFTrimHandlesElement } from "@editframe/elements";
+import { EFTrimHandles as EFTrimHandlesElement, type TrimChangeDetail } from "@editframe/elements";
 import React from "react";
-import { createComponent } from "../hooks/create-element";
+import { createComponent, type EventName } from "../hooks/create-element";
 
 export const TrimHandles = createComponent({
   tagName: "ef-trim-handles",
   elementClass: EFTrimHandlesElement,
   react: React,
   events: {
-    onTrimChange: "trim-change",
-    onTrimChangeEnd: "trim-change-end",
+    onTrimChange: "trim-change" as EventName<CustomEvent<TrimChangeDetail>>,
+    onTrimChangeEnd: "trim-change-end" as EventName<CustomEvent<TrimChangeDetail>>,
   },
 });

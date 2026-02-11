@@ -19,10 +19,17 @@ const reservedReactProperties = new Set([
 const listenedEvents = new WeakMap<Element, Map<string, EventListenerObject>>();
 
 type Constructor<T> = { new (): T };
-type EventNames = Record<string, string>;
+
+/**
+ * Branded string that carries the DOM event type at the type level.
+ * At runtime it's just a string (the DOM event name).
+ */
+export type EventName<T extends Event = Event> = string & { __eventType?: T };
+
+type EventNames = Record<string, EventName>;
 
 type EventListeners<E extends EventNames> = {
-  [K in keyof E]?: (e: Event) => void;
+  [K in keyof E]?: (e: E[K] extends EventName<infer T> ? T : Event) => void;
 };
 
 type ElementProps<I> = Partial<Omit<I, keyof HTMLElement>>;

@@ -7,7 +7,7 @@ import {
   useMediaInfo,
   type TrimValue,
 } from "@editframe/react";
-import type { EFVideo, TrimChangeDetail } from "@editframe/elements";
+import type { EFVideo } from "@editframe/elements";
 import { useRenderQueue } from "../RenderQueue";
 
 const VIDEO_SRC = "https://assets.editframe.com/bars-n-tone.mp4";
@@ -21,8 +21,7 @@ function formatTime(ms: number): string {
 }
 
 export function TrimTool() {
-  const id = useId();
-  const videoId = `trim-video-${id}`;
+  const videoId = useId();;
   const videoRef = useRef<EFVideo>(null);
   const { enqueue } = useRenderQueue();
   const { intrinsicDurationMs } = useMediaInfo(videoRef);
