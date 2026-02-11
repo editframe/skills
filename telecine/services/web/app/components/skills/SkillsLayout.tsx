@@ -8,10 +8,10 @@ interface SkillsLayoutProps {
 
 export function SkillsLayout({ children }: SkillsLayoutProps) {
   return (
-    <div className="grid grid-rows-[auto_minmax(0,1fr)] h-screen bg-[var(--paper-cream)] texture-paper">
-      {/* Header */}
-      <header className="border-b-4 border-[var(--ink-black)] dark:border-white bg-white dark:bg-[var(--card-dark-bg)]">
-        <div className="max-w-7xl mx-auto px-6 py-4 md:py-6">
+    <div className="grid grid-rows-[auto_minmax(0,1fr)] h-screen bg-white dark:bg-[#0a0a0a]">
+      {/* Header - branded, bold, stays punchy */}
+      <header className="border-b-2 border-[var(--ink-black)] dark:border-white/20 bg-white dark:bg-[#0a0a0a]">
+        <div className="max-w-7xl mx-auto px-6 py-4 md:py-5">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2 md:gap-4 min-w-0">
               <Link
@@ -47,7 +47,6 @@ export function SkillsLayout({ children }: SkillsLayoutProps) {
         </div>
       </header>
 
-      {/* Content grid - children provide the sidebar and main content */}
       {children}
     </div>
   );
