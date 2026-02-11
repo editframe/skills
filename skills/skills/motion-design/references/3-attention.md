@@ -1,3 +1,10 @@
+---
+title: Attention
+description: Sequential attention flow, stagger patterns, and choreography for animation
+type: explanation
+order: 3
+---
+
 # Attention Flow
 
 ## Core Concept

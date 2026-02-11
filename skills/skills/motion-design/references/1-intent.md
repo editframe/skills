@@ -1,3 +1,10 @@
+---
+title: Intent
+description: Map message and emotion to motion characteristics before choosing timing or easing
+type: explanation
+order: 1
+---
+
 # Intent → Strategy
 
 ## Core Concept

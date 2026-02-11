@@ -1,3 +1,10 @@
+---
+title: Process
+description: Four-phase iteration process from broad strokes to polish for animation
+type: explanation
+order: 4
+---
+
 # Systematic Iteration
 
 ## Core Concept

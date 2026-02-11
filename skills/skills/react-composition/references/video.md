@@ -1,3 +1,11 @@
+---
+title: Video Component
+description: Display video clips with optional trimming and volume control in React
+type: reference
+topic: video
+order: 20
+---
+
 # Video
 
 Display video clips with optional trimming.

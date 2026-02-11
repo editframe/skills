@@ -1,3 +1,10 @@
+---
+title: Video Archetypes
+description: Common video patterns and structures organized by industry and objective
+type: reference
+order: 2
+---
+
 # Video Archetypes by Industry
 
 Quick reference for common video patterns and structures.

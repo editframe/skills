@@ -1,3 +1,10 @@
+---
+title: Visual Metaphors
+description: Quick reference for representing abstract concepts visually in video
+type: reference
+order: 8
+---
+
 # Visual Metaphors
 
 Quick reference for representing abstract concepts visually.

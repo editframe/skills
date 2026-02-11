@@ -1,3 +1,10 @@
+---
+title: Emotional Arcs
+description: Proven narrative structures that guide viewer emotions through video content
+type: explanation
+order: 5
+---
+
 # Emotional Arcs for Video
 
 Proven narrative structures that guide viewer emotions through video content.

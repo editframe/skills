@@ -1,3 +1,10 @@
+---
+title: Transition Styles
+description: Types of transitions, their emotional impact, and when to use them in video
+type: reference
+order: 4
+---
+
 # Transition Styles
 
 Types of transitions, their emotional impact, and when to use them in video.

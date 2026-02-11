@@ -1,15 +1,25 @@
+---
+title: Timegroup Element
+description: Container element for sequencing and grouping composition elements
+type: reference
+topic: timegroup
+order: 10
+---
+
 # ef-timegroup
 
 Container for sequencing and grouping elements.
 
-## Props
+## Attributes
 
-- `mode` - `"fixed"` | `"sequence"` | `"contain"` | `"fit"`
-- `duration` - Explicit duration (for fixed mode)
-- `overlap` - Overlap time between sequence items (e.g., `"1s"`)
-- `fps` - Frame rate for rendering (default: 30)
-- `auto-init` - Auto-seek to frame 0 on load (root only)
-- `workbench` - Enable timeline/hierarchy UI (root only)
+| Attribute | Type | Default | Description |
+|-----------|------|---------|-------------|
+| mode | string | - | `"fixed"` \| `"sequence"` \| `"contain"` \| `"fit"` |
+| duration | timestring | - | Explicit duration (for fixed mode) |
+| overlap | timestring | - | Overlap time between sequence items (e.g., `"1s"`) |
+| fps | number | 30 | Frame rate for rendering |
+| auto-init | boolean | false | Auto-seek to frame 0 on load (root only) |
+| workbench | boolean | false | Enable timeline/hierarchy UI (root only) |
 
 ## Modes
 
@@ -20,9 +30,14 @@ Container for sequencing and grouping elements.
 
 ## Root Timegroup
 
-```html
-<ef-timegroup mode="sequence" workbench class="relative h-[500px] w-[800px]">
-  <!-- scenes here -->
+```html live
+<ef-timegroup mode="sequence" workbench class="w-[720px] h-[480px] bg-black">
+  <ef-timegroup mode="fixed" duration="3s" class="absolute w-full h-full flex items-center justify-center">
+    <ef-text duration="3s" class="text-white text-3xl">Scene 1</ef-text>
+  </ef-timegroup>
+  <ef-timegroup mode="fixed" duration="3s" class="absolute w-full h-full flex items-center justify-center">
+    <ef-text duration="3s" class="text-white text-3xl">Scene 2</ef-text>
+  </ef-timegroup>
 </ef-timegroup>
 ```
 

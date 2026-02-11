@@ -1,3 +1,10 @@
+---
+title: Composition Patterns
+description: Common structural patterns for video composition with Editframe Elements
+type: reference
+order: 3
+---
+
 # Video Composition Patterns
 
 Common structural patterns for video composition with Editframe Elements.

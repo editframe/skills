@@ -1,16 +1,28 @@
+---
+title: Audio Element
+description: Audio element for music, voiceover, and sound effects with trimming and volume control
+type: reference
+topic: audio
+order: 30
+---
+
 # ef-audio
 
 Audio element for music, voiceover, sound effects.
 
-## Props
+## Attributes
 
-- `src` - URL or path
-- `sourcein` / `sourceout` - Absolute trim
-- `trimstart` / `trimend` - Relative trim
-- `duration` - Override duration
-- `volume` - 0.0 to 1.0 (default: 1.0)
-- `mute` - Silence audio
-- `fft-size` - Required for waveform visualization (e.g., `"256"`)
+| Attribute | Type | Default | Description |
+|-----------|------|---------|-------------|
+| src | string | - | URL or path to audio source |
+| sourcein | timestring | - | Absolute start time in source media |
+| sourceout | timestring | - | Absolute end time in source media |
+| trimstart | timestring | - | Duration to trim from start |
+| trimend | timestring | - | Duration to trim from end |
+| duration | timestring | - | Override element duration |
+| volume | number | 1.0 | Audio volume (0.0 to 1.0) |
+| mute | boolean | false | Silence the audio |
+| fft-size | string | - | FFT size for waveform visualization (e.g., `"256"`) |
 
 ## Basic Usage
 

@@ -1,3 +1,10 @@
+---
+title: Typography Personalities
+description: What font choices signal about brand personality and how to use them in video
+type: reference
+order: 7
+---
+
 # Typography Personalities
 
 What font choices signal about brand personality and how to use them in video.

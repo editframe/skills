@@ -1,3 +1,11 @@
+---
+title: Waveform Component
+description: Audio visualization component for React compositions
+type: reference
+topic: waveform
+order: 70
+---
+
 # Waveform
 
 Audio visualization component.

@@ -1,3 +1,10 @@
+---
+title: Getting Started
+description: Create a new React-based Editframe project with templates and configuration
+type: tutorial
+order: 1
+---
+
 # Getting Started
 
 Create a new React-based Editframe project.

@@ -1,3 +1,10 @@
+---
+title: Color Psychology
+description: Emotional associations and strategic use of colors in video content
+type: explanation
+order: 6
+---
+
 # Color Psychology for Video
 
 Emotional associations and strategic use of colors in video content.

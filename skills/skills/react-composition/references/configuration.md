@@ -1,3 +1,10 @@
+---
+title: Configuration
+description: Configure the Editframe environment settings for API and media engine
+type: reference
+order: 5
+---
+
 # Configuration
 
 Configure the Editframe environment settings.

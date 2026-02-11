@@ -1,10 +1,20 @@
+---
+title: Surface Element
+description: Mirror/duplicate of another element's canvas output
+type: reference
+topic: surface
+order: 80
+---
+
 # ef-surface
 
 Mirror/duplicate of another element's canvas output.
 
-## Props
+## Attributes
 
-- `target` - ID of element to mirror (e.g., `ef-video`)
+| Attribute | Type | Default | Description |
+|-----------|------|---------|-------------|
+| target | string | - | ID of element to mirror (e.g., `ef-video`) |
 
 ## Basic Usage
 
@@ -15,9 +25,9 @@ Mirror/duplicate of another element's canvas output.
 
 ## Multiple Mirrors
 
-```html
-<ef-timegroup mode="fixed" duration="5s" class="absolute w-full h-full">
-  <ef-video id="source" src="video.mp4" class="size-full object-cover"></ef-video>
+```html live
+<ef-timegroup mode="contain" workbench class="w-[720px] h-[480px] bg-black">
+  <ef-video id="source" src="https://assets.editframe.com/bars-n-tone.mp4" class="size-full object-cover"></ef-video>
   
   <!-- Corner thumbnails showing same video -->
   <ef-surface target="source" class="absolute top-4 left-4 w-24 h-16 rounded border border-white/50"></ef-surface>

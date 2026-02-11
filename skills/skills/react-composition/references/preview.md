@@ -1,3 +1,10 @@
+---
+title: Preview Component
+description: Video preview player component for viewing compositions
+type: reference
+order: 85
+---
+
 # Preview
 
 Video preview player component for viewing compositions.

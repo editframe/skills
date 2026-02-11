@@ -1,3 +1,10 @@
+---
+title: Workbench
+description: Full timeline editor UI with hierarchy and timeline views
+type: reference
+order: 95
+---
+
 # Workbench
 
 Full timeline editor UI with hierarchy and timeline views.

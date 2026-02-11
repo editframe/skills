@@ -5,6 +5,19 @@ import rehypeHeadings from "./parseHeadings";
 import type { Heading } from "~/types";
 import rehypeReact from "rehype-react";
 
+const remarkCodeMeta = () => {
+  return async (tree: any) => {
+    const { visit } = await import("unist-util-visit");
+    visit(tree, "code", (node: any) => {
+      if (node.meta) {
+        node.data = node.data || {};
+        node.data.hProperties = node.data.hProperties || {};
+        node.data.hProperties["data-meta"] = node.meta;
+      }
+    });
+  };
+};
+
 type Frontmatter = {
   meta: {
     name: string;
@@ -25,7 +38,7 @@ export async function parseMdx(mdx: string) {
   const { frontmatter, code } = await bundleMDX<Frontmatter>({
     source: mdx,
     mdxOptions(options) {
-      options.remarkPlugins = [...(options.remarkPlugins ?? [])];
+      options.remarkPlugins = [...(options.remarkPlugins ?? []), remarkCodeMeta];
       options.rehypePlugins = [
         ...(options.rehypePlugins ?? []),
         rehypeSlug,

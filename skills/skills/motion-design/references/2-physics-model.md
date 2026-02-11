@@ -1,3 +1,10 @@
+---
+title: Physics Model
+description: Material, weight, and force determine motion profiles for animation
+type: explanation
+order: 2
+---
+
 # Physics Model
 
 ## Core Concept
