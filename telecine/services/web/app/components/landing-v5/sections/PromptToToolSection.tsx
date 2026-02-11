@@ -105,7 +105,7 @@ export function PromptToToolSection() {
         {/* CTA */}
         <div className="text-center mt-16">
           <Link
-            to="/docs/skills"
+            to="/skills"
             className="inline-flex items-center px-8 py-4 bg-white text-[var(--poster-green)] font-bold text-sm uppercase tracking-wider hover:bg-[var(--poster-gold)] hover:text-[var(--ink-black)] transition-colors shadow-poster-hard"
           >
             Explore skills

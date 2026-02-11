@@ -99,29 +99,35 @@ export function SkillSidebar({
 
       {/* Grouped navigation */}
       {nav.length > 0 && (
-        <nav className="space-y-4">
+        <nav className="space-y-0">
           {nav.map((group) => {
             // Check if all items in this group are the same type
             const allTypes = group.items.flatMap(tg => tg.items.map(i => i.type));
             const uniqueTypes = new Set(allTypes);
             const showTypeBadges = uniqueTypes.size > 1;
+            
+            // Count total items in this group
+            const totalItems = group.items.reduce((sum, tg) => sum + tg.items.length, 0);
+            const showTopicHeader = totalItems > 1;
 
             return (
-              <div key={group.label}>
-                {/* Topic label - smaller, less prominent */}
-                <h3 className="text-[9px] font-bold uppercase tracking-[0.2em] mb-1.5 text-[var(--warm-gray)] px-3">
-                  {group.label}
-                </h3>
+              <div key={group.label} className="mb-3">
+                {/* Topic label - only show if multiple items */}
+                {showTopicHeader && (
+                  <h3 className="text-[9px] font-bold uppercase tracking-[0.2em] mb-0.5 text-[var(--warm-gray)] px-3">
+                    {group.label}
+                  </h3>
+                )}
 
                 {/* Type sub-groups */}
                 {group.items.map((typeGroup) => (
-                  <div key={typeGroup.type} className="space-y-0.5">
+                  <div key={typeGroup.type}>
                     {typeGroup.items.map((ref) => (
                       <Link
                         key={ref.name}
                         to={`/skills/${skillName}/${ref.name}`}
                         className={clsx(
-                          "block px-3 py-1 text-sm transition-all border-l-2",
+                          "block px-3 py-1 text-sm leading-tight transition-all border-l-2",
                           referenceName === ref.name
                             ? "border-[var(--ink-black)] dark:border-white text-[var(--ink-black)] dark:text-white bg-[var(--accent-gold)]/10 font-semibold"
                             : "border-transparent text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:hover:text-white hover:border-[var(--warm-gray)]",

@@ -2,7 +2,6 @@
 title: Audio Component
 description: Add audio tracks with volume control and trimming in React
 type: reference
-topic: audio
 order: 30
 ---
 
