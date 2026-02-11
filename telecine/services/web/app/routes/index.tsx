@@ -20,6 +20,9 @@ import {
   GettingStartedSection,
   FinalCtaSection,
   FooterSection,
+  DogfoodCallout,
+  WorksWithSection,
+  CompositionModelSection,
 } from "~/components/landing-v5/sections";
 import {
   RenderQueueProvider,
@@ -57,16 +60,22 @@ export default function IndexPage() {
   return (
     <RenderQueueProvider>
       <div className="min-h-screen bg-[var(--paper-cream)] text-[var(--ink-black)]">
+        <a href="#main-content" className="skip-to-content">
+          Skip to content
+        </a>
         <Navigation isLoggedIn={isLoggedIn} />
         
-        <main>
+        <main id="main-content">
           <HeroSection />
+          <WorksWithSection />
           <SkillsSection />
           <ToolsGridSection />
+          <DogfoodCallout />
           <BeforeAfterSection />
           <PlaygroundSection />
           <ClientRenderSection />
           <ArchitectureSection />
+          <CompositionModelSection />
           <TemplatedRenderingSection />
           <CodeExamplesSection />
           <GettingStartedSection />

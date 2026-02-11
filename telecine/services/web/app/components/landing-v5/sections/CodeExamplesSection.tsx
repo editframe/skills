@@ -1,4 +1,5 @@
 import { CodeExamples } from "../index";
+import { CodeBlock } from "~/components/CodeBlock";
 
 export function CodeExamplesSection() {
   return (
@@ -24,6 +25,37 @@ export function CodeExamplesSection() {
             <p className="text-xl text-white/70 max-w-xl">
               If you know React, you know Editframe. Familiar patterns, predictable behavior.
             </p>
+          </div>
+        </div>
+
+        {/* End-to-end example */}
+        <div className="max-w-3xl mx-auto mb-16">
+          <div className="mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-1 bg-[var(--poster-gold)]" />
+              <span className="text-xs font-bold uppercase tracking-wider text-white/50">
+                Complete Example
+              </span>
+            </div>
+          </div>
+          <div className="relative">
+            <div className="absolute -bottom-3 -right-3 w-full h-full bg-[var(--poster-gold)]" />
+            <div className="relative border-4 border-white overflow-hidden">
+              <CodeBlock>
+                {`import { Composition, Video, Text } from '@editframe/react'
+import { renderToVideo } from '@editframe/elements'
+
+const MyVideo = () => (
+  <Composition width={1920} height={1080} duration={5000}>
+    <Video src="background.mp4" />
+    <Text style={{ fontSize: 72 }}>Hello World</Text>
+  </Composition>
+)
+
+// Preview: instant in browser
+// Production: editframe render my-video.tsx`}
+              </CodeBlock>
+            </div>
           </div>
         </div>
         

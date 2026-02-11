@@ -84,6 +84,29 @@ body {
   border-color: rgba(255,255,255,0.15);
 }
 
+/* Focus-visible styles for accessibility */
+*:focus-visible {
+  outline: 2px solid var(--poster-blue);
+  outline-offset: 2px;
+}
+
+/* Skip to content link */
+.skip-to-content {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--ink-black);
+  color: var(--paper-cream);
+  padding: 8px 16px;
+  text-decoration: none;
+  font-weight: bold;
+  z-index: 100;
+}
+
+.skip-to-content:focus {
+  top: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;

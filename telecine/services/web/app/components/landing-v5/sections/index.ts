@@ -10,3 +10,6 @@ export { CodeExamplesSection } from "./CodeExamplesSection";
 export { GettingStartedSection } from "./GettingStartedSection";
 export { FinalCtaSection } from "./FinalCtaSection";
 export { FooterSection } from "./FooterSection";
+export { DogfoodCallout } from "./DogfoodCallout";
+export { WorksWithSection } from "./WorksWithSection";
+export { CompositionModelSection } from "./CompositionModelSection";
