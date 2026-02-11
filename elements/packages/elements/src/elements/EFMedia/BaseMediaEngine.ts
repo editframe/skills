@@ -269,25 +269,6 @@ export abstract class BaseMediaEngine {
     });
   }
 
-  // Legacy methods for backward compatibility
-  async fetchMediaCache(
-    url: string,
-    signal?: AbortSignal,
-  ): Promise<ArrayBuffer> {
-    return this.fetchMedia(url, signal);
-  }
-
-  async fetchManifestCache(url: string, signal?: AbortSignal): Promise<any> {
-    return this.fetchManifest(url, signal);
-  }
-
-  async fetchMediaCacheWithHeaders(
-    url: string,
-    headers: Record<string, string>,
-    signal?: AbortSignal,
-  ): Promise<ArrayBuffer> {
-    return this.fetchMediaWithHeaders(url, headers, signal);
-  }
 
   /**
    * Abstract method for actual segment fetching - implemented by subclasses
@@ -308,46 +289,6 @@ export abstract class BaseMediaEngine {
     rendition: MediaRendition,
   ): number | undefined;
 
-  /**
-   * Fetch media segment with built-in deduplication
-   * Now uses global deduplication for all requests
-   */
-  async fetchMediaSegmentWithDeduplication(
-    segmentId: number,
-    rendition: { trackId: number | undefined; src: string },
-    signal?: AbortSignal,
-  ): Promise<ArrayBuffer> {
-    const cacheKey = this.getSegmentCacheKey(segmentId, rendition);
-
-    return globalRequestDeduplicator.executeRequest(cacheKey, async () => {
-      return this.fetchMediaSegment(segmentId, rendition, signal);
-    });
-  }
-
-  /**
-   * Check if a segment is currently being fetched
-   */
-  isSegmentBeingFetched(
-    segmentId: number,
-    rendition: { src: string; trackId: number | undefined },
-  ): boolean {
-    const cacheKey = this.getSegmentCacheKey(segmentId, rendition);
-    return globalRequestDeduplicator.isPending(cacheKey);
-  }
-
-  /**
-   * Get count of active segment requests (for debugging/monitoring)
-   */
-  getActiveSegmentRequestCount(): number {
-    return globalRequestDeduplicator.getPendingCount();
-  }
-
-  /**
-   * Cancel all active segment requests (for cleanup)
-   */
-  cancelAllSegmentRequests(): void {
-    globalRequestDeduplicator.clear();
-  }
 
   /**
    * Calculate audio segments needed for a time range
@@ -479,17 +420,6 @@ export abstract class BaseMediaEngine {
     }
   }
 
-  /**
-   * Get cached segment IDs from a list for a given rendition
-   */
-  getCachedSegments(
-    segmentIds: number[],
-    rendition: AudioRendition | VideoRendition,
-  ): Set<number> {
-    return new Set(
-      segmentIds.filter((id) => this.isSegmentCached(id, rendition)),
-    );
-  }
 
   /**
    * Extract thumbnail canvases at multiple timestamps efficiently
@@ -514,24 +444,4 @@ export abstract class BaseMediaEngine {
     segmentId: number,
     rendition: VideoRendition,
   ): number[];
-
-  /**
-   * Get buffer configuration for this media engine
-   * Can be overridden by subclasses to provide custom buffer settings
-   */
-  getBufferConfig(): {
-    videoBufferDurationMs: number;
-    audioBufferDurationMs: number;
-    maxVideoBufferFetches: number;
-    maxAudioBufferFetches: number;
-    bufferThresholdMs: number;
-  } {
-    return {
-      videoBufferDurationMs: 10000, // 10 seconds
-      audioBufferDurationMs: 10000, // 10 seconds
-      maxVideoBufferFetches: 3,
-      maxAudioBufferFetches: 3,
-      bufferThresholdMs: 30000, // 30 seconds - timeline-aware buffering threshold
-    };
-  }
 }

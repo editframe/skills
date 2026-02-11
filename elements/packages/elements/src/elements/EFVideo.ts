@@ -118,27 +118,6 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
   ];
   canvasRef = createRef<HTMLCanvasElement>();
 
-  /**
-   * Duration in milliseconds for video buffering ahead of current time
-   * @domAttribute "video-buffer-duration"
-   */
-  @property({ type: Number, attribute: "video-buffer-duration" })
-  videoBufferDurationMs = 10000; // 10 seconds - reasonable for JIT encoding
-
-  /**
-   * Maximum number of concurrent video segment fetches for buffering
-   * @domAttribute "max-video-buffer-fetches"
-   */
-  @property({ type: Number, attribute: "max-video-buffer-fetches" })
-  maxVideoBufferFetches = 2;
-
-  /**
-   * Enable/disable video buffering system
-   * @domAttribute "enable-video-buffering"
-   */
-  @property({ type: Boolean, attribute: "enable-video-buffering" })
-  enableVideoBuffering = true;
-
   // ============================================================================
   // FrameRenderable Implementation
   // Centralized frame control - no more Lit Tasks

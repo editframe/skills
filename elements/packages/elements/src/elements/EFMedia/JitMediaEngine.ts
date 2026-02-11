@@ -230,20 +230,6 @@ export class JitMediaEngine extends BaseMediaEngine implements MediaEngine {
     };
   }
 
-  /**
-   * Get preferred buffer configuration for JIT transcoding
-   * Uses higher buffering since transcoding introduces latency
-   */
-  getBufferConfig() {
-    return {
-      // Buffer more aggressively for JIT transcoding to smooth over latency
-      videoBufferDurationMs: 8000,
-      audioBufferDurationMs: 8000,
-      maxVideoBufferFetches: 3,
-      maxAudioBufferFetches: 3,
-      bufferThresholdMs: 30000, // Timeline-aware buffering threshold
-    };
-  }
 
   /**
    * Extract thumbnail canvases using same rendition priority as video playback for frame alignment
