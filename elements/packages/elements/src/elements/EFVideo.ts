@@ -864,40 +864,31 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
   }
 
   /**
-   * Capture a video frame directly at a source media timestamp.
-   * Designed for export/rendering.
-   * Does NOT paint to the element's internal canvas.
+   * Get a decoded VideoFrame at a specific source media timestamp.
+   * Returns a standard WebCodecs VideoFrame — caller MUST call .close() when done.
    * 
-   * Uses the same routing logic as unified video system:
+   * Uses the same routing logic as the unified video system:
    * - "auto": main track for production rendering, follows normal routing otherwise
    * - "scrub": force low-res scrub track (for thumbnails)
    * - "main": force full-quality main track
    * 
    * @param sourceTimeMs - Timestamp in source media coordinates (not timeline)
-   * @param options - Capture options including quality and abort signal
-   * @returns Frame data for serialization
+   * @param options - Quality and abort signal
+   * @returns VideoFrame that the caller must close()
    * @public
    */
-  async captureFrameAtSourceTime(
+  async getVideoFrameAtSourceTime(
     sourceTimeMs: number,
     options: {
       quality?: "auto" | "scrub" | "main";
       signal?: AbortSignal;
     } = {}
-  ): Promise<{
-    dataUrl: string;
-    width: number;
-    height: number;
-  }> {
+  ): Promise<VideoFrame> {
     const { quality = "auto", signal: providedSignal } = options;
     
-    // Create a signal if not provided (public API convenience)
     const signal = providedSignal ?? new AbortController().signal;
-    
-    // Check abort before starting
     signal.throwIfAborted();
 
-    // 1. Get media engine
     const mediaEngine = await this.getMediaEngine(signal);
     signal.throwIfAborted();
     
@@ -905,21 +896,15 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       throw new Error("No media engine available for frame capture");
     }
 
-    // 2. Determine which track to use
     const useMainTrack = quality === "main" || 
       (quality === "auto" && this.isInProductionRenderingMode());
 
-    // 3. Get video sample using the same logic as frame preparation
-    // NOTE: BufferedSeekingInput is created per-call. This is intentional for now
-    // as caching would require careful lifecycle management.
     let videoSample: any;
     
-    // Import BufferedSeekingInput upfront for use in cache factory functions
     const { BufferedSeekingInput } = await import("./EFMedia/BufferedSeekingInput.js");
     signal.throwIfAborted();
     
     if (useMainTrack) {
-      // Use main video track with caching
       const videoRendition = mediaEngine.getVideoRendition?.() || mediaEngine.videoRendition;
       if (!videoRendition) {
         throw new Error("No video rendition available");
@@ -930,7 +915,6 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         throw new Error(`Cannot compute segment ID for time ${sourceTimeMs}ms`);
       }
 
-      // Use shared cache for BufferedSeekingInput - avoids recreating for same segment
       const seekingInput = await mainVideoInputCache.getOrCreateInput(
         mediaEngine.src,
         segmentId,
@@ -971,11 +955,9 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       videoSample = await seekingInput.seek(videoTrack.id, sourceTimeMs);
       signal.throwIfAborted();
     } else {
-      // Use scrub track for thumbnails/preview with caching
       const scrubRendition = mediaEngine.getScrubVideoRendition?.();
       if (!scrubRendition) {
-        // Fall back to main track if no scrub available
-        return this.captureFrameAtSourceTime(sourceTimeMs, { quality: "main", signal });
+        return this.getVideoFrameAtSourceTime(sourceTimeMs, { quality: "main", signal });
       }
 
       const scrubRenditionWithSrc = { ...scrubRendition, src: mediaEngine.src };
@@ -985,8 +967,6 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         throw new Error(`Cannot compute scrub segment ID for time ${sourceTimeMs}ms`);
       }
 
-      // Use shared cache for BufferedSeekingInput
-      // Include mediaEngine.src in cache key to prevent collisions between different videos
       const seekingInput = await scrubInputCache.getOrCreateInput(
         mediaEngine.src,
         segmentId,
@@ -1013,16 +993,14 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       signal.throwIfAborted();
 
       if (!seekingInput) {
-        // Fall back to main track
-        return this.captureFrameAtSourceTime(sourceTimeMs, { quality: "main", signal });
+        return this.getVideoFrameAtSourceTime(sourceTimeMs, { quality: "main", signal });
       }
 
       const videoTrack = await seekingInput.getFirstVideoTrack();
       signal.throwIfAborted();
       
       if (!videoTrack) {
-        // Fall back to main track
-        return this.captureFrameAtSourceTime(sourceTimeMs, { quality: "main", signal });
+        return this.getVideoFrameAtSourceTime(sourceTimeMs, { quality: "main", signal });
       }
 
       videoSample = await seekingInput.seek(videoTrack.id, sourceTimeMs);
@@ -1033,13 +1011,40 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       throw new Error(`No video sample found at ${sourceTimeMs}ms`);
     }
 
-    // 4. Convert to VideoFrame
-    const videoFrame = videoSample.toVideoFrame();
+    return videoSample.toVideoFrame();
+  }
+
+  /**
+   * Capture a video frame directly at a source media timestamp.
+   * Designed for export/rendering.
+   * Does NOT paint to the element's internal canvas.
+   * 
+   * Uses the same routing logic as unified video system:
+   * - "auto": main track for production rendering, follows normal routing otherwise
+   * - "scrub": force low-res scrub track (for thumbnails)
+   * - "main": force full-quality main track
+   * 
+   * @param sourceTimeMs - Timestamp in source media coordinates (not timeline)
+   * @param options - Capture options including quality and abort signal
+   * @returns Frame data for serialization
+   * @public
+   */
+  async captureFrameAtSourceTime(
+    sourceTimeMs: number,
+    options: {
+      quality?: "auto" | "scrub" | "main";
+      signal?: AbortSignal;
+    } = {}
+  ): Promise<{
+    dataUrl: string;
+    width: number;
+    height: number;
+  }> {
+    const videoFrame = await this.getVideoFrameAtSourceTime(sourceTimeMs, options);
 
     try {
-      signal.throwIfAborted();
+      options.signal?.throwIfAborted();
       
-      // 5. Draw to OffscreenCanvas and encode to dataURL
       const canvas = new OffscreenCanvas(videoFrame.codedWidth, videoFrame.codedHeight);
       const ctx = canvas.getContext("2d");
       if (!ctx) {
@@ -1047,20 +1052,18 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       }
       ctx.drawImage(videoFrame, 0, 0);
 
-      signal.throwIfAborted();
+      options.signal?.throwIfAborted();
 
-      // Encode to JPEG blob
       const blob = await canvas.convertToBlob({ type: "image/jpeg", quality: 0.92 });
-      signal.throwIfAborted();
+      options.signal?.throwIfAborted();
       
-      // Convert blob to dataURL
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result as string);
         reader.onerror = reject;
         reader.readAsDataURL(blob);
       });
-      signal.throwIfAborted();
+      options.signal?.throwIfAborted();
 
       return {
         dataUrl,
@@ -1343,6 +1346,20 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       width: canvas.width,
       height: canvas.height,
     };
+  }
+
+  /**
+   * Render this video element to an MP4 using the direct video-to-video fast path.
+   * Bypasses DOM serialization — decodes frames directly and re-encodes to MP4.
+   * Respects trim, CSS filter, and opacity.
+   * 
+   * @param options - Rendering options (fps, codec, bitrate, etc.)
+   * @returns Promise resolving to video buffer (if returnBuffer), or undefined
+   * @public
+   */
+  async renderToVideo(options?: import("../preview/renderTimegroupToVideo.types.js").RenderToVideoOptions): Promise<Uint8Array | undefined> {
+    const { renderVideoToVideo } = await import("../preview/renderVideoToVideo.js");
+    return renderVideoToVideo(this, options);
   }
 }
 

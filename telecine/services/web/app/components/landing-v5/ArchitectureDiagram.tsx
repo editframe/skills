@@ -362,7 +362,7 @@ function FanOutDiagram() {
       enqueue({
         name: "Parallel Rendering",
         fileName: "editframe-parallel-rendering.mp4",
-        timegroupEl: tg as HTMLElement,
+        target: tg as HTMLElement,
       });
     }
   };
@@ -449,7 +449,7 @@ function JITStreamingDiagram() {
       enqueue({
         name: "JIT Streaming",
         fileName: "editframe-jit-streaming.mp4",
-        timegroupEl: tg as HTMLElement,
+        target: tg as HTMLElement,
       });
     }
   };

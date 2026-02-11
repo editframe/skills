@@ -35,7 +35,7 @@ export function ClientRenderDemo() {
       enqueue({
         name: "Client Export",
         fileName: "editframe-client-export.mp4",
-        timegroupEl: tg as HTMLElement,
+        target: tg as HTMLElement,
         renderOpts: { includeAudio: true },
       });
     }

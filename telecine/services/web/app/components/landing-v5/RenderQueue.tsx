@@ -45,7 +45,7 @@ interface RenderJob {
 interface EnqueueOpts {
   name: string;
   fileName: string;
-  timegroupEl: HTMLElement;
+  target: HTMLElement & { renderToVideo?: (opts: Record<string, unknown>) => Promise<Uint8Array | null> };
   renderOpts?: Record<string, unknown>;
 }
 
@@ -62,7 +62,7 @@ interface RenderQueueContextValue {
 interface InternalJob {
   id: string;
   fileName: string;
-  timegroupEl: HTMLElement;
+  target: HTMLElement & { renderToVideo?: (opts: Record<string, unknown>) => Promise<Uint8Array | null> };
   renderOpts: Record<string, unknown>;
   abortController: AbortController;
 }
@@ -98,7 +98,7 @@ export function RenderQueueProvider({ children }: { children: ReactNode }) {
     internalsRef.current.set(id, {
       id,
       fileName: opts.fileName,
-      timegroupEl: opts.timegroupEl,
+      target: opts.target,
       renderOpts: opts.renderOpts ?? {},
       abortController,
     });
@@ -165,13 +165,16 @@ export function RenderQueueProvider({ children }: { children: ReactNode }) {
     processingRef.current = true;
     updateJob(nextQueued.id, { status: "rendering", progress: 0 });
 
-    const tg = internal.timegroupEl as HTMLElement & {
+    const tg = internal.target as HTMLElement & {
       pause?: () => void;
       renderToVideo?: (opts: Record<string, unknown>) => Promise<ArrayBuffer | null>;
     };
 
     if (!tg?.renderToVideo) {
-      updateJob(nextQueued.id, { status: "error", error: "Rendering not supported" });
+      updateJob(nextQueued.id, {
+        status: "error",
+        error: "Element does not support rendering. Expected an <ef-timegroup> or <ef-video> element.",
+      });
       processingRef.current = false;
       return;
     }

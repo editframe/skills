@@ -176,7 +176,7 @@ export function TrimTool() {
                 enqueue({
                   name: "Trimmed Video",
                   fileName: `trimmed-${formatTime(inPoint)}-${formatTime(outPoint)}.mp4`,
-                  timegroupEl: videoRef.current as unknown as HTMLElement,
+                  target: videoRef.current as unknown as HTMLElement,
                   renderOpts: { includeAudio: true },
                 });
               }
