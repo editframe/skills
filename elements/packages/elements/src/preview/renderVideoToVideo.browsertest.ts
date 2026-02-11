@@ -57,7 +57,6 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
           expect(frame.displayHeight).toBeGreaterThan(0);
           expect(frame.codedWidth).toBeGreaterThan(0);
           expect(frame.codedHeight).toBeGreaterThan(0);
-          console.log(`[getVideoFrameAtSourceTime] frame: ${frame.codedWidth}x${frame.codedHeight}`);
         } finally {
           frame.close();
         }
@@ -81,8 +80,6 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
           expect(frame0.codedWidth).toBe(frame1000.codedWidth);
           expect(frame0.codedHeight).toBe(frame1000.codedHeight);
 
-          console.log(`[getVideoFrameAtSourceTime] frame@0ms: ${frame0.codedWidth}x${frame0.codedHeight}`);
-          console.log(`[getVideoFrameAtSourceTime] frame@1000ms: ${frame1000.codedWidth}x${frame1000.codedHeight}`);
         } finally {
           frame0.close();
           frame1000.close();
@@ -106,7 +103,6 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
 
         expect(buffer).toBeTruthy();
         expect(buffer!.byteLength).toBeGreaterThan(0);
-        console.log(`[renderToVideo] untrimmed: ${buffer!.byteLength} bytes`);
       } finally {
         cleanup();
       }
@@ -120,7 +116,6 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
       try {
         const intrinsic = video.intrinsicDurationMs;
         const effective = video.durationMs;
-        console.log(`[renderToVideo] intrinsic=${intrinsic}ms, effective=${effective}ms, trimStart=2000ms, trimEnd=2000ms`);
 
         expect(effective).toBeLessThan(intrinsic!);
 
@@ -132,7 +127,6 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
 
         expect(buffer).toBeTruthy();
         expect(buffer!.byteLength).toBeGreaterThan(0);
-        console.log(`[renderToVideo] trimmed: ${buffer!.byteLength} bytes`);
       } finally {
         cleanup();
       }
@@ -152,7 +146,6 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
 
         expect(buffer).toBeTruthy();
         expect(buffer!.byteLength).toBeGreaterThan(0);
-        console.log(`[renderToVideo] with audio: ${buffer!.byteLength} bytes`);
       } finally {
         cleanup();
       }
@@ -178,7 +171,6 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
         // Progress should start low and end at 1
         expect(progressReports[0]).toBeLessThan(1);
         expect(progressReports[progressReports.length - 1]).toBe(1);
-        console.log(`[renderToVideo] progress reports: ${progressReports.length}, final=${progressReports[progressReports.length - 1]}`);
       } finally {
         cleanup();
       }
@@ -227,25 +219,21 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
 
     it("baseline (no effects)", async () => {
       baseline = await renderWithStyle("");
-      console.log(`[CSS] baseline: ${baseline.byteLength} bytes`);
     }, { timeout: 5000 });
 
     it("should render with filter", async () => {
       const buffer = await renderWithStyle("filter: grayscale(1) brightness(1.2);");
       expect(buffer.byteLength).not.toBe(baseline.byteLength);
-      console.log(`[CSS] filter: ${buffer.byteLength} bytes`);
     }, { timeout: 5000 });
 
     it("should render with opacity", async () => {
       const buffer = await renderWithStyle("opacity: 0.5;");
       expect(buffer.byteLength).not.toBe(baseline.byteLength);
-      console.log(`[CSS] opacity: ${buffer.byteLength} bytes`);
     }, { timeout: 5000 });
 
     it("should render with combined filter and opacity", async () => {
       const buffer = await renderWithStyle("filter: brightness(1.3); opacity: 0.8;");
       expect(buffer.byteLength).not.toBe(baseline.byteLength);
-      console.log(`[CSS] combined: ${buffer.byteLength} bytes`);
     }, { timeout: 5000 });
   });
 });
