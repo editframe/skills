@@ -557,14 +557,6 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
     );
   }
 
-  isSegmentCached(
-    segmentId: number,
-    rendition: AudioRendition | VideoRendition,
-  ): boolean {
-    const cacheKey = `${rendition.src}-${rendition.id || "default"}-${segmentId}-${rendition.trackId}`;
-    return mediaCache.has(cacheKey);
-  }
-
   convertToSegmentRelativeTimestamps(
     globalTimestamps: number[],
     _segmentId: number,
