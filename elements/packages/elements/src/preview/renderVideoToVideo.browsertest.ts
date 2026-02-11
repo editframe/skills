@@ -10,7 +10,7 @@ import "../elements/EFVideo.js";
 
 const VIDEO_SRC = "http://host.docker.internal:3000/bars-n-tone.mp4";
 
-describe("renderVideoToVideo — direct fast path", () => {
+describe.sequential("renderVideoToVideo — direct fast path", () => {
   beforeAll(async () => {
     await customElements.whenDefined("ef-video");
   });
@@ -199,5 +199,59 @@ describe("renderVideoToVideo — direct fast path", () => {
         cleanup();
       }
     }, { timeout: 30000 });
+  });
+
+  describe("CSS effects", () => {
+    it("should render with transform, filter, clip-path, and combined effects", async () => {
+      const { video, cleanup } = await createVideo();
+      const renderOpts = { fps: 5, scale: 0.25, returnBuffer: true, includeAudio: false, toMs: 500 };
+
+      try {
+        // Transform
+        video.style.transform = "rotate(15deg) scale(0.8)";
+        video.style.transformOrigin = "center center";
+        void video.offsetHeight;
+        let buffer = await video.renderToVideo(renderOpts);
+        expect(buffer).toBeTruthy();
+        console.log(`[renderToVideo] transform: ${buffer!.byteLength} bytes`);
+
+        // Reset, apply filter
+        video.style.cssText = "width: 384px; height: 224px; display: block; filter: grayscale(1) brightness(1.2);";
+        void video.offsetHeight;
+        buffer = await video.renderToVideo(renderOpts);
+        expect(buffer).toBeTruthy();
+        console.log(`[renderToVideo] filter: ${buffer!.byteLength} bytes`);
+
+        // Clip-path circle
+        video.style.cssText = "width: 384px; height: 224px; display: block; clip-path: circle(40% at 50% 50%);";
+        void video.offsetHeight;
+        buffer = await video.renderToVideo(renderOpts);
+        expect(buffer).toBeTruthy();
+        console.log(`[renderToVideo] clip-path circle: ${buffer!.byteLength} bytes`);
+
+        // Clip-path polygon
+        video.style.cssText = "width: 384px; height: 224px; display: block; clip-path: polygon(50% 0%, 100% 100%, 0% 100%);";
+        void video.offsetHeight;
+        buffer = await video.renderToVideo(renderOpts);
+        expect(buffer).toBeTruthy();
+        console.log(`[renderToVideo] clip-path polygon: ${buffer!.byteLength} bytes`);
+
+        // Clip-path inset
+        video.style.cssText = "width: 384px; height: 224px; display: block; clip-path: inset(10% 20% 10% 20%);";
+        void video.offsetHeight;
+        buffer = await video.renderToVideo(renderOpts);
+        expect(buffer).toBeTruthy();
+        console.log(`[renderToVideo] clip-path inset: ${buffer!.byteLength} bytes`);
+
+        // Combined: transform + filter + opacity + clip-path
+        video.style.cssText = "width: 384px; height: 224px; display: block; transform: scale(0.9); filter: brightness(1.3); opacity: 0.8; clip-path: inset(5%);";
+        void video.offsetHeight;
+        buffer = await video.renderToVideo(renderOpts);
+        expect(buffer).toBeTruthy();
+        console.log(`[renderToVideo] combined: ${buffer!.byteLength} bytes`);
+      } finally {
+        cleanup();
+      }
+    }, { timeout: 60000 });
   });
 });
