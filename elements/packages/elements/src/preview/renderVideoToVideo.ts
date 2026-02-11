@@ -543,21 +543,8 @@ export async function renderVideoToVideo(
     throw new Error("Failed to get encoding canvas context");
   }
 
-  // When CSS effects are active, all draw + compositing operations happen on a
-  // separate staging canvas. Chromium's OffscreenCanvas has a GPU pipeline bug
-  // where complex canvas operations (filter, transform, clip, globalCompositeOperation)
-  // combined with VideoFrame drawImage causes subsequent frames to deadlock. By staging
-  // on a separate canvas and copying the final pixels to the encoding canvas, the encoder
-  // only ever sees plain drawImage(canvas) calls.
-  let stageCanvas: OffscreenCanvas | null = null;
-  let stageCtx: OffscreenCanvasRenderingContext2D | null = null;
-  if (hasCssEffects) {
-    stageCanvas = new OffscreenCanvas(config.videoWidth, config.videoHeight);
-    stageCtx = stageCanvas.getContext("2d");
-    if (!stageCtx) {
-      throw new Error("Failed to get staging canvas context");
-    }
-  }
+  // Note: CSS effects (filter, transform, opacity, clip-path) are applied directly
+  // to the encoding canvas. We reset canvas state between frames to avoid accumulation.
 
 
 
@@ -659,47 +646,45 @@ export async function renderVideoToVideo(
       try {
         const drawStart = performance.now();
 
-        if (hasCssEffects) {
-          // Stage all CSS effects on a separate canvas to avoid Chromium GPU deadlock.
-          // VideoFrame → ImageBitmap decouples the GPU-backed frame from canvas ops.
-          const bitmap = await createImageBitmap(videoFrame);
-          videoFrame.close();
+        // Clear and reset canvas state for each frame
+        encodingCtx.clearRect(0, 0, config.videoWidth, config.videoHeight);
+        encodingCtx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform
+        encodingCtx.filter = "none"; // Reset filter
+        encodingCtx.globalAlpha = 1; // Reset opacity
+        encodingCtx.globalCompositeOperation = "source-over"; // Reset composite
 
-          stageCtx!.clearRect(0, 0, config.videoWidth, config.videoHeight);
-          stageCtx!.save();
+        if (hasCssEffects) {
+          encodingCtx.save();
 
           if (parsedTransform) {
             const { matrix, originX, originY } = parsedTransform;
-            stageCtx!.translate(originX, originY);
-            stageCtx!.transform(matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f);
-            stageCtx!.translate(-originX, -originY);
+            encodingCtx.translate(originX, originY);
+            encodingCtx.transform(matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f);
+            encodingCtx.translate(-originX, -originY);
           }
           if (hasFilter) {
-            stageCtx!.filter = cssFilter;
+            encodingCtx.filter = cssFilter;
           }
           if (hasOpacity) {
-            stageCtx!.globalAlpha = cssOpacity;
+            encodingCtx.globalAlpha = cssOpacity;
           }
 
-          stageCtx!.drawImage(bitmap, 0, 0, config.videoWidth, config.videoHeight);
-          stageCtx!.restore();
-          bitmap.close();
+          encodingCtx.drawImage(
+            videoFrame,
+            0, 0, videoFrame.displayWidth, videoFrame.displayHeight,
+            0, 0, config.videoWidth, config.videoHeight,
+          );
 
-          // If clip-path is active, mask via compositing: keep only pixels inside the clip shape
+          encodingCtx.restore();
+
+          // If clip-path is active, mask via compositing
           if (parsedClipPath) {
-            stageCtx!.save();
-            stageCtx!.globalCompositeOperation = "destination-in";
-            stageCtx!.fillStyle = "white";
-            stageCtx!.fill(parsedClipPath.path);
-            stageCtx!.restore();
+            encodingCtx.save();
+            encodingCtx.globalCompositeOperation = "destination-in";
+            encodingCtx.fillStyle = "white";
+            encodingCtx.fill(parsedClipPath.path);
+            encodingCtx.restore();
           }
-
-          // Copy clean result to encoding canvas
-          encodingCtx.clearRect(0, 0, config.videoWidth, config.videoHeight);
-          encodingCtx.drawImage(stageCanvas!, 0, 0);
-          
-          // Force GPU sync to ensure pixels are ready before encoding
-          encodingCtx.getImageData(0, 0, 1, 1);
         } else {
           encodingCtx.drawImage(
             videoFrame,
@@ -710,7 +695,7 @@ export async function renderVideoToVideo(
 
         totalDrawMs += performance.now() - drawStart;
       } finally {
-        try { videoFrame.close(); } catch { /* may be closed in hasCssEffects branch */ }
+        videoFrame.close();
       }
 
       // Encode frame

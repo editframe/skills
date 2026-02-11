@@ -202,10 +202,10 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
   });
 
   describe("CSS effects", () => {
-    // TODO: Re-enable once MediaBunny finalization hang is resolved
-    // The GPU deadlock is fixed (frames render successfully), but output.finalize()
-    // hangs when rendering multiple videos in quick succession with staging canvas.
-    // This is a MediaBunny encoder issue, not a CSS rendering issue.
+    // TODO: CSS effects cause output.finalize() to hang
+    // All frames render and encode successfully, but finalization never completes.
+    // This happens with or without staging canvas, suggesting the issue is in how
+    // MediaBunny's encoder handles frames that were drawn with CSS effects applied.
     it.skip("should render with transform, filter, clip-path, and combined effects", async () => {
       const { video, cleanup } = await createVideo();
       const renderOpts = { fps: 5, scale: 0.25, returnBuffer: true, includeAudio: false, toMs: 500 };
