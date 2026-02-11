@@ -49,9 +49,10 @@ export function PromptToToolSection() {
               <div className="p-6 font-mono text-sm">
                 <div className="text-[var(--poster-gold)] mb-4">@editor-gui</div>
                 <div className="text-white text-lg leading-relaxed">
-                  Build a video trim tool. Video preview with adjustable trim, 
-                  thumbnail filmstrip with draggable trim handles, play/pause, 
-                  and in/out/duration timecodes.
+                  Build a video trim tool. Video preview on top that respects 
+                  trim bounds. Below it a trim bar: play/pause toggle on the 
+                  left, thumbnail strip with overlaid draggable trim handles 
+                  on the right. Info bar with in/out/duration timecodes.
                 </div>
               </div>
 
