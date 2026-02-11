@@ -1425,4 +1425,239 @@ describe("EFText", () => {
       expect(reasons).toContain("content");
     });
   });
+
+  describe("animation propagation to segments", () => {
+    test("inline style animation properties on ef-text propagate to segments", async () => {
+      createTestStyle(`
+        @keyframes test-fade {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      `);
+
+      const timegroup = document.createElement("ef-timegroup");
+      timegroup.duration = "5s";
+      const text = document.createElement("ef-text");
+      text.split = "word";
+      text.textContent = "ONE TWO THREE";
+      text.setAttribute("stagger", "100ms");
+      text.duration = "3s";
+      
+      text.style.animationName = "test-fade";
+      text.style.animationDuration = "0.4s";
+      text.style.animationTimingFunction = "ease-out";
+      text.style.animationFillMode = "both";
+      
+      timegroup.appendChild(text);
+      document.body.appendChild(timegroup);
+      testElements.push(timegroup);
+
+      await text.updateComplete;
+      const segments = await text.whenSegmentsReady();
+      await Promise.all(segments.map((seg) => seg.updateComplete));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      const wordSegments = segments.filter(seg => !/^\s+$/.test(seg.segmentText));
+      expect(wordSegments.length).toBe(3);
+
+      // Each segment should have the animation applied
+      for (const seg of wordSegments) {
+        const anims = seg.getAnimations();
+        expect(anims.length).toBeGreaterThan(0);
+        expect(seg.style.animationName).toBe("test-fade");
+        expect(seg.style.animationDuration).toBe("0.4s");
+        expect(seg.style.animationFillMode).toBe("both");
+      }
+    });
+
+    test("class-based animation on ef-text propagates to segments", async () => {
+      createTestStyle(`
+        @keyframes test-slide {
+          from { opacity: 0; transform: translateY(100%); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .slide-anim {
+          animation-name: test-slide;
+          animation-duration: 0.4s;
+          animation-timing-function: ease-out;
+          animation-fill-mode: both;
+        }
+      `);
+
+      const timegroup = document.createElement("ef-timegroup");
+      timegroup.duration = "5s";
+      const text = document.createElement("ef-text");
+      text.split = "char";
+      text.textContent = "ABC";
+      text.setAttribute("stagger", "50ms");
+      text.duration = "3s";
+      text.classList.add("slide-anim");
+      
+      timegroup.appendChild(text);
+      document.body.appendChild(timegroup);
+      testElements.push(timegroup);
+
+      await text.updateComplete;
+      const segments = await text.whenSegmentsReady();
+      await Promise.all(segments.map((seg) => seg.updateComplete));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      expect(segments.length).toBe(3);
+
+      for (const seg of segments) {
+        const anims = seg.getAnimations();
+        expect(anims.length).toBeGreaterThan(0);
+      }
+    });
+
+    test("animation propagation does not copy animation-delay", async () => {
+      createTestStyle(`
+        @keyframes test-fade {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      `);
+
+      const timegroup = document.createElement("ef-timegroup");
+      timegroup.duration = "5s";
+      const text = document.createElement("ef-text");
+      text.split = "word";
+      text.textContent = "A B";
+      text.setAttribute("stagger", "100ms");
+      text.duration = "3s";
+      
+      text.style.animationName = "test-fade";
+      text.style.animationDuration = "0.4s";
+      text.style.animationFillMode = "both";
+      text.style.animationDelay = "500ms";
+      
+      timegroup.appendChild(text);
+      document.body.appendChild(timegroup);
+      testElements.push(timegroup);
+
+      await text.updateComplete;
+      const segments = await text.whenSegmentsReady();
+      await Promise.all(segments.map((seg) => seg.updateComplete));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      const wordSegments = segments.filter(seg => !/^\s+$/.test(seg.segmentText));
+      expect(wordSegments.length).toBe(2);
+
+      // Segments should NOT have the parent's animation-delay copied
+      // The stagger system manages delay independently
+      for (const seg of wordSegments) {
+        expect(seg.style.animationDelay).toBe("");
+      }
+    });
+
+    test("changing animation class re-propagates to segments", async () => {
+      createTestStyle(`
+        @keyframes test-fade {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes test-scale {
+          from { opacity: 0; transform: scale(0.5); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        .fade-anim {
+          animation-name: test-fade;
+          animation-duration: 0.4s;
+          animation-fill-mode: both;
+        }
+        .scale-anim {
+          animation-name: test-scale;
+          animation-duration: 0.3s;
+          animation-fill-mode: both;
+        }
+      `);
+
+      const timegroup = document.createElement("ef-timegroup");
+      timegroup.duration = "5s";
+      const text = document.createElement("ef-text");
+      text.split = "word";
+      text.textContent = "HELLO WORLD";
+      text.setAttribute("stagger", "80ms");
+      text.duration = "3s";
+      text.classList.add("fade-anim");
+      
+      timegroup.appendChild(text);
+      document.body.appendChild(timegroup);
+      testElements.push(timegroup);
+
+      await text.updateComplete;
+      let segments = await text.whenSegmentsReady();
+      await Promise.all(segments.map((seg) => seg.updateComplete));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      // Verify initial animation
+      const wordSegments = segments.filter(seg => !/^\s+$/.test(seg.segmentText));
+      for (const seg of wordSegments) {
+        expect(seg.style.animationName).toBe("test-fade");
+      }
+
+      // Switch animation class
+      text.classList.remove("fade-anim");
+      text.classList.add("scale-anim");
+
+      // Wait for mutation observer and re-propagation
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      // Segments should now have the new animation
+      for (const seg of wordSegments) {
+        expect(seg.style.animationName).toBe("test-scale");
+      }
+    });
+
+    test("new segments from content change get current animation", async () => {
+      createTestStyle(`
+        @keyframes test-fade {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      `);
+
+      const timegroup = document.createElement("ef-timegroup");
+      timegroup.duration = "5s";
+      const text = document.createElement("ef-text");
+      text.split = "word";
+      text.textContent = "HELLO";
+      text.setAttribute("stagger", "80ms");
+      text.duration = "3s";
+      text.style.animationName = "test-fade";
+      text.style.animationDuration = "0.4s";
+      text.style.animationFillMode = "both";
+      
+      timegroup.appendChild(text);
+      document.body.appendChild(timegroup);
+      testElements.push(timegroup);
+
+      await text.updateComplete;
+      let segments = await text.whenSegmentsReady();
+      await Promise.all(segments.map((seg) => seg.updateComplete));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      // Change content
+      text.textContent = "NEW CONTENT HERE";
+      
+      await text.updateComplete;
+      segments = await text.whenSegmentsReady();
+      await Promise.all(segments.map((seg) => seg.updateComplete));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      const wordSegments = segments.filter(seg => !/^\s+$/.test(seg.segmentText));
+      expect(wordSegments.length).toBe(3);
+
+      // New segments should have the animation
+      for (const seg of wordSegments) {
+        expect(seg.style.animationName).toBe("test-fade");
+      }
+    });
+  });
 });

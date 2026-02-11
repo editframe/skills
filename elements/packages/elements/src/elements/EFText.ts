@@ -10,6 +10,17 @@ import type { AnimatableElement } from "./updateAnimations.js";
 
 export type SplitMode = "line" | "word" | "char";
 
+// Animation properties to propagate from ef-text to its segments.
+// animation-delay is intentionally excluded -- the stagger system manages delay per segment.
+const animationPropsToPropagate = [
+  "animation-name",
+  "animation-duration",
+  "animation-timing-function",
+  "animation-fill-mode",
+  "animation-iteration-count",
+  "animation-direction",
+] as const;
+
 @customElement("ef-text")
 export class EFText extends EFTemporal(LitElement) {
   static styles = [
@@ -72,11 +83,13 @@ export class EFText extends EFTemporal(LitElement) {
   easing = "linear";
 
   private mutationObserver?: MutationObserver;
+  private animationObserver?: MutationObserver;
   private lastTextContent = "";
   private _textContent: string | null = null; // null means not initialized, "" means explicitly empty
   private _templateElement: HTMLTemplateElement | null = null;
   private _segmentsReadyResolvers: Array<() => void> = [];
   #segmentsInitialized = false;
+  #lastPropagatedAnimation = "";
 
   render() {
     return html`<slot></slot>`;
@@ -214,6 +227,7 @@ export class EFText extends EFTemporal(LitElement) {
     // Callers that need segments immediately (e.g., render clones) should await whenSegmentsReady()
     requestAnimationFrame(() => {
       this.setupMutationObserver();
+      this.setupAnimationObserver();
       this.splitText();
     });
   }
@@ -221,6 +235,7 @@ export class EFText extends EFTemporal(LitElement) {
   disconnectedCallback() {
     super.disconnectedCallback();
     this.mutationObserver?.disconnect();
+    this.animationObserver?.disconnect();
   }
 
   protected updated(
@@ -253,6 +268,47 @@ export class EFText extends EFTemporal(LitElement) {
       characterData: true,
       subtree: true,
     });
+  }
+
+  private setupAnimationObserver() {
+    this.animationObserver = new MutationObserver(() => {
+      this.propagateAnimationToSegments();
+    });
+
+    this.animationObserver.observe(this, {
+      attributes: true,
+      attributeFilter: ["class", "style"],
+    });
+  }
+
+  private propagateAnimationToSegments() {
+    const segments = this.segments;
+    if (segments.length === 0) return;
+
+    const computed = window.getComputedStyle(this);
+    const animationName = computed.animationName;
+
+    // Build a fingerprint to avoid redundant work
+    const fingerprint = animationPropsToPropagate
+      .map((prop) => computed.getPropertyValue(prop))
+      .join("|");
+
+    if (fingerprint === this.#lastPropagatedAnimation) return;
+    this.#lastPropagatedAnimation = fingerprint;
+
+    const hasAnimation = animationName && animationName !== "none";
+
+    for (const segment of segments) {
+      if (hasAnimation) {
+        for (const prop of animationPropsToPropagate) {
+          segment.style.setProperty(prop, computed.getPropertyValue(prop));
+        }
+      } else {
+        for (const prop of animationPropsToPropagate) {
+          segment.style.removeProperty(prop);
+        }
+      }
+    }
   }
 
   private getTextContent(): string {
@@ -569,6 +625,10 @@ export class EFText extends EFTemporal(LitElement) {
     if (templateToPreserve) {
       this.appendChild(templateToPreserve);
     }
+
+    // Propagate animation properties from this element to newly created segments
+    this.#lastPropagatedAnimation = "";
+    this.propagateAnimationToSegments();
 
     // Segments will pause their own animations in connectedCallback
     // Lit will automatically update them when they're connected to the DOM
