@@ -263,7 +263,9 @@ export async function renderVideoToVideo(
   let useStreaming = false;
 
   const encodingCanvas = new OffscreenCanvas(config.videoWidth, config.videoHeight);
-  const encodingCtx = encodingCanvas.getContext("2d", { willReadFrequently: true });
+  const encodingCtx = encodingCanvas.getContext("2d",
+    hasFilter || hasOpacity ? { willReadFrequently: true } : undefined
+  );
   if (!encodingCtx) {
     throw new Error("Failed to get encoding canvas context");
   }
