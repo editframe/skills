@@ -2,7 +2,8 @@
 title: Captions Element
 description: Synchronized captions with word-level highlighting
 type: reference
-order: 60
+topic: components
+order: 64
 ---
 
 # ef-captions

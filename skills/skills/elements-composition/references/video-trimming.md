@@ -3,7 +3,7 @@ title: Trimming Video
 description: How to trim video clips using absolute or relative approaches
 type: how-to
 topic: video
-order: 12
+order: 17
 ---
 
 # Trimming Video

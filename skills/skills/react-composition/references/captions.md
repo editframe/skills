@@ -2,7 +2,8 @@
 title: Captions Component
 description: Display subtitles with word-level highlighting in React
 type: reference
-order: 60
+topic: components
+order: 64
 ---
 
 # Captions

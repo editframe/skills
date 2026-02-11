@@ -2,7 +2,8 @@
 title: Audio Element
 description: Audio element for music, voiceover, and sound effects with trimming and volume control
 type: reference
-order: 30
+topic: components
+order: 61
 ---
 
 # ef-audio

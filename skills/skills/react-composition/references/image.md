@@ -2,7 +2,8 @@
 title: Image Component
 description: Display static images in React compositions with CSS positioning
 type: reference
-order: 40
+topic: components
+order: 62
 ---
 
 # Image

@@ -24,10 +24,25 @@ function getSkillsBasePath(): string {
   return path1;
 }
 
+const TOPIC_LABELS: Record<string, string> = {
+  "core-concepts": "Core Concepts",
+  "video": "Video",
+  "timegroup": "Timegroup",
+  "guides": "How-to Guides",
+  "components": "Components",
+  "tools": "Tools & UI",
+  "advanced": "Advanced",
+};
+
 function humanize(slug: string): string {
   return slug
     .replace(/-/g, " ")
     .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function getTopicLabel(topic: string | null): string {
+  if (!topic) return "Getting Started";
+  return TOPIC_LABELS[topic] || humanize(topic);
 }
 
 interface SkillFrontmatter {
@@ -90,6 +105,17 @@ const TYPE_ORDER: Record<string, number> = {
   reference: 3,
 };
 
+const TOPIC_ORDER: Record<string, number> = {
+  // Learning path order
+  "core-concepts": 10,
+  "video": 15,
+  "timegroup": 16,
+  "guides": 30,
+  "components": 60,
+  "tools": 100,
+  "advanced": 120,
+};
+
 export const getSkillReferencesMeta = (skillName: string): SkillReference[] => {
   const skillsBasePath = getSkillsBasePath();
   const referencesPath = join(skillsBasePath, skillName, "references");
@@ -134,11 +160,14 @@ export const getSkillNav = (skillName: string): NavGroup[] => {
 
   const groups: NavGroup[] = [];
 
-  // Named topics first, then null (General) last
+  // Sort topics by learning path order
   const sortedKeys = [...topicMap.keys()].sort((a, b) => {
-    if (a === null) return 1;
+    if (a === null) return 1; // General last
     if (b === null) return -1;
-    return a.localeCompare(b);
+    const orderA = TOPIC_ORDER[a] ?? 999;
+    const orderB = TOPIC_ORDER[b] ?? 999;
+    if (orderA !== orderB) return orderA - orderB;
+    return a.localeCompare(b); // Fallback to alphabetical
   });
 
   for (const topic of sortedKeys) {
@@ -165,7 +194,7 @@ export const getSkillNav = (skillName: string): NavGroup[] => {
 
     groups.push({
       topic,
-      label: topic ? humanize(topic) : "General",
+      label: getTopicLabel(topic),
       items: typeGroups,
     });
   }

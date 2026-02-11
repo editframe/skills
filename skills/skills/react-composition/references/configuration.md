@@ -2,7 +2,8 @@
 title: Configuration
 description: Configure the Editframe environment settings for API and media engine
 type: reference
-order: 5
+topic: core-concepts
+order: 10
 ---
 
 # Configuration

@@ -2,7 +2,8 @@
 title: Preview Component
 description: Video preview player component for viewing compositions
 type: reference
-order: 85
+topic: tools
+order: 100
 ---
 
 # Preview

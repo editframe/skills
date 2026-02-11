@@ -2,7 +2,8 @@
 title: Transitions
 description: Create smooth transitions between sequence items using overlap and CSS animations
 type: how-to
-order: 100
+topic: guides
+order: 30
 ---
 
 # Transitions

@@ -2,7 +2,8 @@
 title: Transcription
 description: Generate caption data for ef-captions using the Editframe CLI
 type: how-to
-order: 130
+topic: guides
+order: 32
 ---
 
 # Generating Captions

@@ -2,7 +2,8 @@
 title: Time Model
 description: How time propagation and duration calculation work in compositions
 type: explanation
-order: 150
+topic: core-concepts
+order: 20
 ---
 
 # Time Model

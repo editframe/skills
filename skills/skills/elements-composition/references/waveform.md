@@ -2,7 +2,8 @@
 title: Waveform Element
 description: Audio waveform visualization with multiple display modes
 type: reference
-order: 70
+topic: components
+order: 65
 ---
 
 # ef-waveform

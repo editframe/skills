@@ -2,7 +2,8 @@
 title: Image Element
 description: Static image element with duration control and CSS positioning
 type: reference
-order: 40
+topic: components
+order: 62
 ---
 
 # ef-image

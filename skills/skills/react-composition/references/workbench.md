@@ -2,7 +2,8 @@
 title: Workbench
 description: Full timeline editor UI with hierarchy and timeline views
 type: reference
-order: 95
+topic: tools
+order: 102
 ---
 
 # Workbench

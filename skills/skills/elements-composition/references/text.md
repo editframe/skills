@@ -2,7 +2,8 @@
 title: Text Element
 description: Animated text with character, word, and line splitting
 type: reference
-order: 50
+topic: components
+order: 63
 ---
 
 # ef-text

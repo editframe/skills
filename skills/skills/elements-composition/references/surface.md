@@ -2,7 +2,8 @@
 title: Surface Element
 description: Mirror/duplicate of another element's canvas output
 type: reference
-order: 80
+topic: components
+order: 66
 ---
 
 # ef-surface

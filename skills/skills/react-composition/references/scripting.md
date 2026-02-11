@@ -2,7 +2,8 @@
 title: Scripting
 description: Add dynamic JavaScript behavior to timegroups using React refs and initializers
 type: reference
-order: 130
+topic: advanced
+order: 122
 ---
 
 # Scripting

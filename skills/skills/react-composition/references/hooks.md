@@ -2,7 +2,8 @@
 title: Hooks
 description: React hooks for accessing timing information and pan/zoom transforms
 type: reference
-order: 100
+topic: advanced
+order: 120
 ---
 
 # Hooks

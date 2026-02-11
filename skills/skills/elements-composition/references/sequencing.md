@@ -2,7 +2,8 @@
 title: Sequencing Scenes
 description: How to create sequential scene playback with cuts and transitions
 type: how-to
-order: 101
+topic: guides
+order: 31
 ---
 
 # Sequencing Scenes

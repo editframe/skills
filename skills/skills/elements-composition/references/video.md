@@ -3,7 +3,7 @@ title: Video Element
 description: Video element with source trimming, volume control, and muting
 type: reference
 topic: video
-order: 10
+order: 15
 ---
 
 # ef-video

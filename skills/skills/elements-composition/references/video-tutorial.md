@@ -3,7 +3,7 @@ title: Video Tutorial
 description: Step-by-step guide to working with the video element
 type: tutorial
 topic: video
-order: 11
+order: 16
 ---
 
 # Video Tutorial

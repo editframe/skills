@@ -2,7 +2,8 @@
 title: Timeline Root
 description: Wrapper component required for React-based timelines to ensure proper rendering
 type: reference
-order: 8
+topic: core-concepts
+order: 11
 ---
 
 # TimelineRoot

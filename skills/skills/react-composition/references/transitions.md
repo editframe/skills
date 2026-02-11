@@ -2,7 +2,8 @@
 title: Transitions
 description: Create smooth transitions between sequence items using overlap and CSS animations in React
 type: how-to
-order: 110
+topic: guides
+order: 30
 ---
 
 # Transitions

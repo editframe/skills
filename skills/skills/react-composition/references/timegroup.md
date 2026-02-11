@@ -2,7 +2,8 @@
 title: Timegroup Component
 description: Container component for sequencing and grouping elements in React
 type: reference
-order: 10
+topic: core-concepts
+order: 12
 ---
 
 # Timegroup

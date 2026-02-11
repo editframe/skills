@@ -2,7 +2,8 @@
 title: Text Component
 description: Animated text with word-level control in React
 type: reference
-order: 50
+topic: components
+order: 63
 ---
 
 # Text

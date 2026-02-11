@@ -2,7 +2,8 @@
 title: Scripting
 description: Add dynamic JavaScript behavior to timegroups with initializers and frame tasks
 type: reference
-order: 120
+topic: advanced
+order: 121
 ---
 
 # Scripting

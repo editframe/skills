@@ -2,7 +2,8 @@
 title: Surface Component
 description: Mirror/reflect another element's content in React compositions
 type: reference
-order: 80
+topic: components
+order: 66
 ---
 
 # Surface

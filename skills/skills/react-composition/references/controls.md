@@ -2,7 +2,8 @@
 title: Controls
 description: Playback controls for timeline navigation including play, pause, scrubber, and loop
 type: reference
-order: 90
+topic: tools
+order: 101
 ---
 
 # Controls
