@@ -139,10 +139,19 @@ When enriching or creating skill reference files:
 
 ## When Working on the Renderer
 
-When building convention-based rendering:
-1. The MDX component mapping in skill-detail.tsx is the integration point
-2. The `pre` component handler should detect `html live` info strings
-3. The `table` component handler should detect attribute table headers
-4. The `blockquote` component handler should detect Note/Warning prefixes
-5. Reuse existing docs components (Demonstration, etc.) -- don't rebuild from scratch
-6. The existing skill-detail.tsx already has prose styling classes -- extend, don't replace
+The convention-based rendering is implemented in `telecine/services/web/app/utils/skills-mdx-components.tsx`:
+- `getSkillsMDXComponents(skillName)` returns the full MDX component mapping
+- `SkillsPreBlock` detects `html live` via `data-meta` attribute (set by `remarkCodeMeta` plugin)
+- `LiveDemo` renders raw HTML inside Preview/FitScale/FocusOverlay/Filmstrip from @editframe/react
+- `SkillsTable` detects Attribute/Type/Description column headers for enhanced styling
+- `SkillsBlockquote` detects Note/Warning prefixes for callout boxes
+- Both `skill-detail.tsx` and `reference-detail.tsx` use the shared component mapping
+- `SkillSidebar` is exported from `skill-detail.tsx` and shared with `reference-detail.tsx`
+
+## Sidebar Navigation
+
+Implemented in `skills.server.ts`:
+- `getSkillReferencesMeta(skillName)` parses frontmatter from all reference .md files
+- `getSkillNav(skillName)` builds NavGroup[] grouped by topic then type
+- Type ordering: tutorial -> how-to -> explanation -> reference
+- Files without frontmatter default to type "reference", order 999, humanized filename as title
