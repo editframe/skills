@@ -41,6 +41,27 @@ async function main() {
   const targetRoot = findTargetRoot();
   const wsEndpointPath = path.join(targetRoot, ".wsEndpoint.json");
 
+  // Playwright adds these flags by default, which prevent Chrome from treating
+  // hidden/background tabs differently. For background rendering tests, we need
+  // Chrome to behave like production: suspending renderer for hidden tabs.
+  //
+  // ALLOW_RENDERER_BACKGROUNDING=1 removes these protective flags so we can
+  // test that Worker+OffscreenCanvas continues rendering while main-thread WebGL
+  // gets suspended in hidden tabs.
+  const allowRendererBackgrounding = process.env.ALLOW_RENDERER_BACKGROUNDING === "1";
+  const ignoreDefaultArgs = allowRendererBackgrounding
+    ? [
+        "--disable-renderer-backgrounding",
+        "--disable-backgrounding-occluded-windows",
+        "--disable-background-timer-throttling",
+      ]
+    : [];
+
+  if (allowRendererBackgrounding) {
+    console.log("⚠️  ALLOW_RENDERER_BACKGROUNDING=1: Chrome will suspend renderer for hidden tabs");
+    console.log("   Flags removed:", ignoreDefaultArgs.join(", "));
+  }
+
   // Launch a Playwright browser server, not just Chrome
   // Default to headless for ef run compatibility (containers connect to this)
   const browserServer = await chromium.launchServer({
@@ -51,6 +72,7 @@ async function main() {
       "--autoplay-policy=no-user-gesture-required", // Allow AudioContext without user interaction
       "--enable-features=CanvasDrawElement", // allow drawing of HTML elements to canvas with new API (for tests)
     ],
+    ...(ignoreDefaultArgs.length > 0 ? { ignoreDefaultArgs } : {}),
   });
 
   const wsEndpoint = browserServer

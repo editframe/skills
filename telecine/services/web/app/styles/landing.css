@@ -1,0 +1,92 @@
+/* Swissted-inspired color palette */
+:root {
+  --poster-red: #E53935;
+  --poster-blue: #1565C0;
+  --poster-gold: #FFB300;
+  --poster-green: #2E7D32;
+  --poster-pink: #EC407A;
+  --ink-black: #1a1a1a;
+  --paper-cream: #FAF8F5;
+  --warm-gray: #6B6B6B;
+  --card-bg: #ffffff;
+  --card-dark-bg: #1a1a1a;
+}
+
+.dark {
+  --poster-red: #EF5350;
+  --poster-blue: #42A5F5;
+  --poster-gold: #FFCA28;
+  --poster-green: #4CAF50;
+  --poster-pink: #F06292;
+  --paper-cream: #0a0a0a;
+  --ink-black: #FAFAFA;
+  --warm-gray: #9CA3AF;
+  --card-bg: #111111;
+  --card-dark-bg: #0a0a0a;
+}
+
+body {
+  font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Geometric pattern - radiating lines (Television poster) */
+.pattern-radiate {
+  background-image: repeating-conic-gradient(
+    from 0deg,
+    var(--poster-red) 0deg 5deg,
+    transparent 5deg 10deg
+  );
+}
+
+/* Geometric pattern - concentric circles (Public Enemy poster) */
+.pattern-concentric {
+  background: 
+    radial-gradient(circle, transparent 20%, var(--poster-gold) 20%, var(--poster-gold) 25%, transparent 25%),
+    radial-gradient(circle, transparent 40%, var(--poster-gold) 40%, var(--poster-gold) 45%, transparent 45%),
+    radial-gradient(circle, transparent 60%, var(--poster-gold) 60%, var(--poster-gold) 65%, transparent 65%),
+    radial-gradient(circle, transparent 80%, var(--poster-gold) 80%, var(--poster-gold) 85%, transparent 85%);
+}
+
+/* Paper texture */
+.texture-paper {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+}
+
+/* Bold shadows for poster effect */
+.shadow-poster {
+  box-shadow: 8px 8px 0 rgba(0,0,0,0.1);
+}
+
+.shadow-poster-hard {
+  box-shadow: 6px 6px 0 #1a1a1a;
+}
+
+.dark .shadow-poster-hard {
+  box-shadow: 6px 6px 0 rgba(255,255,255,0.3);
+}
+
+/* Accent backgrounds - solid, bold */
+.bg-poster-red { background-color: var(--poster-red); }
+.bg-poster-blue { background-color: var(--poster-blue); }
+.bg-poster-gold { background-color: var(--poster-gold); }
+.bg-poster-green { background-color: var(--poster-green); }
+
+/* Border that looks like printed rule lines */
+.border-rule {
+  border-color: rgba(0,0,0,0.15);
+}
+
+.dark .border-rule {
+  border-color: rgba(255,255,255,0.15);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

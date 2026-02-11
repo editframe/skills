@@ -1,14 +1,9 @@
-export { SocialProofBar } from './SocialProofBar.tsx';
 export { HeroDemo } from './HeroDemo.tsx';
 export { BeforeAfterComparison } from './BeforeAfterComparison.tsx';
 export { InteractivePlayground } from './InteractivePlayground.tsx';
 export { ArchitectureDiagram } from './ArchitectureDiagram.tsx';
 export { PerformanceMetrics } from './PerformanceMetrics.tsx';
 export { CodeExamples } from './CodeExamples.tsx';
-export { VideoShowcase } from './VideoShowcase.tsx';
-export { ComparisonTable } from './ComparisonTable.tsx';
-export { CustomerLogos } from './CustomerLogos.tsx';
-export { Testimonials } from './Testimonials.tsx';
 export { TerminalDemo } from './TerminalDemo.tsx';
 
 // Tools built from prompts
