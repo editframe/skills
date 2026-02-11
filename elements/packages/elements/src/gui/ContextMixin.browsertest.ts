@@ -26,6 +26,141 @@ declare global {
   }
 }
 
+describe("ContextMixin.fetch CORS behavior", () => {
+  let element: TestContext & { fetch: typeof fetch };
+  let mockFetch: ReturnType<typeof vi.fn>;
+  let originalFetch: typeof window.fetch;
+
+  const createJWTToken = (expirationMs: number): string => {
+    const header = btoa(JSON.stringify({ typ: "JWT", alg: "HS256" }));
+    const payload = btoa(
+      JSON.stringify({
+        type: "url",
+        url: "test-url",
+        exp: Math.floor(expirationMs / 1000),
+        iat: Math.floor(Date.now() / 1000),
+      }),
+    );
+    return `${header}.${payload}.mock-signature`;
+  };
+
+  beforeEach(() => {
+    originalFetch = window.fetch;
+    mockFetch = vi.fn();
+    window.fetch = mockFetch;
+
+    element = document.createElement("test-context") as TestContext & {
+      fetch: typeof fetch;
+    };
+    document.body.appendChild(element);
+  });
+
+  afterEach(() => {
+    if (element.parentNode) {
+      document.body.removeChild(element);
+    }
+    window.fetch = originalFetch;
+  });
+
+  test("does not set Content-Type on requests without a body", async () => {
+    element.signingURL = "https://test.com/sign";
+
+    const futureTime = Date.now() + 60 * 60 * 1000;
+    const token = createJWTToken(futureTime);
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ token }),
+    });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: () => Promise.resolve("ok"),
+    });
+
+    await element.fetch("https://example.com/media.mp4");
+
+    // The actual media request (second call) should NOT have Content-Type
+    const mediaCall = mockFetch.mock.calls[1]!;
+    const headers = mediaCall[1]?.headers ?? {};
+    expect(headers).not.toHaveProperty("Content-Type");
+  });
+
+  test("sets Content-Type on requests with a body", async () => {
+    element.signingURL = "https://test.com/sign";
+
+    const futureTime = Date.now() + 60 * 60 * 1000;
+    const token = createJWTToken(futureTime);
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ token }),
+    });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: () => Promise.resolve("ok"),
+    });
+
+    await element.fetch("https://example.com/api", {
+      method: "POST",
+      body: JSON.stringify({ data: 1 }),
+    });
+
+    const apiCall = mockFetch.mock.calls[1]!;
+    const headers = apiCall[1]?.headers ?? {};
+    expect(headers).toHaveProperty("Content-Type", "application/json");
+  });
+
+  test("does not set credentials on cross-origin requests when signingURL is empty", async () => {
+    element.signingURL = "";
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: () => Promise.resolve("ok"),
+    });
+
+    await element.fetch("https://editframe.dev/api/v1/transcode/manifest.json?url=test");
+
+    const call = mockFetch.mock.calls[0]!;
+    expect(call[1]?.credentials).toBeUndefined();
+  });
+
+  test("sets credentials on same-origin requests when signingURL is empty", async () => {
+    element.signingURL = "";
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: () => Promise.resolve("ok"),
+    });
+
+    // Same-origin request (window.location.origin in tests is typically http://localhost:...)
+    await element.fetch(`${window.location.origin}/api/data`);
+
+    const call = mockFetch.mock.calls[0]!;
+    expect(call[1]?.credentials).toBe("include");
+  });
+
+  test("warns when request targets editframe domain without signingURL", async () => {
+    element.signingURL = "";
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: () => Promise.resolve("ok"),
+    });
+
+    await element.fetch("https://editframe.dev/api/v1/transcode/manifest.json?url=test");
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("editframe.dev"),
+    );
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("signing"),
+    );
+
+    warnSpy.mockRestore();
+  });
+});
+
 // Skip all ContextMixin tests - failing tests need investigation
 describe.skip("ContextMixin", () => {
   test("should be defined", () => {

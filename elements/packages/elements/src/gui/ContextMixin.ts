@@ -183,10 +183,12 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
 
     @provide({ context: fetchContext })
     fetch = async (url: string, init: RequestInit = {}) => {
-      init.headers ||= {};
-      Object.assign(init.headers, {
-        "Content-Type": "application/json",
-      });
+      if (init.body) {
+        init.headers ||= {};
+        Object.assign(init.headers, {
+          "Content-Type": "application/json",
+        });
+      }
 
       // Check if this is a local @ef-* endpoint that doesn't need authentication
       // These endpoints are handled by the Vite plugin locally and don't require signing
@@ -220,11 +222,24 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
           (token: string) => this.#parseTokenExpiration(token),
         );
 
+        init.headers ||= {};
         Object.assign(init.headers, {
           authorization: `Bearer ${urlToken}`,
         });
       } else {
-        init.credentials = "include";
+        // Only include credentials for same-origin requests where session cookies
+        // are relevant. For cross-origin requests without a signing URL, credentials
+        // cause CORS failures when the server responds with Access-Control-Allow-Origin: *
+        if (!this.#isCrossOrigin(url)) {
+          init.credentials = "include";
+        }
+
+        if (this.#isEditframeDomain(url)) {
+          console.warn(
+            `[Editframe] Request to ${new URL(url).hostname} has no signing URL configured. ` +
+              `Ensure <ef-configuration signing-url="..."> is an ancestor of your <ef-preview> or <ef-workbench>.`,
+          );
+        }
       }
 
       try {
@@ -282,6 +297,25 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
      * - All validation uses prefix matching + exhaustive parameter matching
      * - Multiple transcode segments with same source share one token (reduces round-trips)
      */
+    #isCrossOrigin(url: string): boolean {
+      try {
+        const targetUrl = new URL(url, window.location.origin);
+        return targetUrl.origin !== window.location.origin;
+      } catch {
+        return false;
+      }
+    }
+
+    #isEditframeDomain(url: string): boolean {
+      try {
+        const hostname = new URL(url).hostname;
+        return hostname === "editframe.dev" || hostname === "editframe.com" ||
+          hostname.endsWith(".editframe.dev") || hostname.endsWith(".editframe.com");
+      } catch {
+        return false;
+      }
+    }
+
     #getTokenCacheKey(url: string): {
       cacheKey: string;
       signingPayload: { url: string; params?: Record<string, string> };
