@@ -19,8 +19,6 @@ import {
   BufferTarget,
   StreamTarget,
   CanvasSource,
-  VideoSampleSource,
-  VideoSample,
   AudioBufferSource,
   canEncodeAudio,
   getEncodableAudioCodecs,
@@ -35,9 +33,6 @@ import {
 } from "./renderTimegroupToVideo.js";
 import type { RenderToVideoOptions } from "./renderTimegroupToVideo.types.js";
 import { logger } from "./logger.js";
-
-// ============================================================================
-// Configuration
 
 // ============================================================================
 // Configuration
@@ -235,7 +230,6 @@ export async function renderVideoToVideo(
   video: EFVideo,
   options: RenderToVideoOptions = {},
 ): Promise<Uint8Array | undefined> {
-  console.log("[renderVideoToVideo] ENTRY");
   const { signal, onProgress } = options;
 
   const checkCancelled = () => {
@@ -243,11 +237,9 @@ export async function renderVideoToVideo(
   };
 
   // Ensure media engine is loaded
-  console.log("[renderVideoToVideo] waiting for media");
   await video.waitForMediaDurations(signal);
   checkCancelled();
 
-  console.log("[renderVideoToVideo] resolving config");
   const config = await resolveVideoConfig(video, options);
 
   // Read CSS effects once before the frame loop (values don't change during rendering)
@@ -270,23 +262,25 @@ export async function renderVideoToVideo(
   // =========================================================================
   // Set up video encoding
   // =========================================================================
-  console.log("[renderVideoToVideo] setting up encoding");
   let output: Output | null = null;
-  let videoSource: CanvasSource | VideoSampleSource | null = null;
+  let videoSource: CanvasSource | null = null;
   let audioSource: AudioBufferSource | null = null;
   let target: BufferTarget | StreamTarget | null = null;
   let fileStream: { writable: WritableStream<Uint8Array>; close: () => Promise<void> } | null = null;
   let useStreaming = false;
 
   const encodingCanvas = new OffscreenCanvas(config.videoWidth, config.videoHeight);
-  const encodingCtx = encodingCanvas.getContext("2d");
+  const encodingCtx = encodingCanvas.getContext("2d", { willReadFrequently: true });
   if (!encodingCtx) {
     throw new Error("Failed to get encoding canvas context");
   }
-  console.log("[renderVideoToVideo] encoding canvas created");
 
-  // Note: CSS effects (filter, transform, opacity, clip-path) are applied directly
-  // to the encoding canvas. We reset canvas state between frames to avoid accumulation.
+  if (hasFilter) {
+    encodingCtx.filter = cssFilter;
+  }
+  if (hasOpacity) {
+    encodingCtx.globalAlpha = cssOpacity;
+  }
 
 
 
@@ -389,23 +383,6 @@ export async function renderVideoToVideo(
 
       try {
         const drawStart = performance.now();
-
-        // Clear and reset canvas state for each frame
-        encodingCtx.clearRect(0, 0, config.videoWidth, config.videoHeight);
-        encodingCtx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform
-        encodingCtx.filter = "none"; // Reset filter
-        encodingCtx.globalAlpha = 1; // Reset opacity
-        encodingCtx.globalCompositeOperation = "source-over"; // Reset composite
-
-        if (hasCssEffects) {
-          // Apply filter and/or opacity
-          if (hasFilter) {
-            encodingCtx.filter = cssFilter;
-          }
-          if (hasOpacity) {
-            encodingCtx.globalAlpha = cssOpacity;
-          }
-        }
 
         encodingCtx.drawImage(
           videoFrame,

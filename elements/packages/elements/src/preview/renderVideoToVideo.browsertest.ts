@@ -202,34 +202,49 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
   });
 
   describe("CSS effects", () => {
-    it("should render with filter, opacity, and combined effects", async () => {
+    it("should render with filter", async () => {
       const { video, cleanup } = await createVideo();
       const renderOpts = { fps: 5, scale: 0.25, returnBuffer: true, includeAudio: false, toMs: 500 };
 
       try {
-        // Filter
         video.style.cssText = "width: 384px; height: 224px; display: block; filter: grayscale(1) brightness(1.2);";
         void video.offsetHeight;
-        let buffer = await video.renderToVideo(renderOpts);
+        const buffer = await video.renderToVideo(renderOpts);
         expect(buffer).toBeTruthy();
-        console.log(`[renderVideoToVideo] filter: ${buffer!.byteLength} bytes`);
-
-        // Opacity
-        video.style.cssText = "width: 384px; height: 224px; display: block; opacity: 0.5;";
-        void video.offsetHeight;
-        buffer = await video.renderToVideo(renderOpts);
-        expect(buffer).toBeTruthy();
-        console.log(`[renderVideoToVideo] opacity: ${buffer!.byteLength} bytes`);
-
-        // Combined: filter + opacity
-        video.style.cssText = "width: 384px; height: 224px; display: block; filter: brightness(1.3); opacity: 0.8;";
-        void video.offsetHeight;
-        buffer = await video.renderToVideo(renderOpts);
-        expect(buffer).toBeTruthy();
-        console.log(`[renderVideoToVideo] combined: ${buffer!.byteLength} bytes`);
+        console.log(`[CSS] filter: ${buffer!.byteLength} bytes`);
       } finally {
         cleanup();
       }
-    }, { timeout: 30000 });
+    }, { timeout: 5000 });
+
+    it("should render with opacity", async () => {
+      const { video, cleanup } = await createVideo();
+      const renderOpts = { fps: 5, scale: 0.25, returnBuffer: true, includeAudio: false, toMs: 500 };
+
+      try {
+        video.style.cssText = "width: 384px; height: 224px; display: block; opacity: 0.5;";
+        void video.offsetHeight;
+        const buffer = await video.renderToVideo(renderOpts);
+        expect(buffer).toBeTruthy();
+        console.log(`[CSS] opacity: ${buffer!.byteLength} bytes`);
+      } finally {
+        cleanup();
+      }
+    }, { timeout: 5000 });
+
+    it("should render with combined filter and opacity", async () => {
+      const { video, cleanup } = await createVideo();
+      const renderOpts = { fps: 5, scale: 0.25, returnBuffer: true, includeAudio: false, toMs: 500 };
+
+      try {
+        video.style.cssText = "width: 384px; height: 224px; display: block; filter: brightness(1.3); opacity: 0.8;";
+        void video.offsetHeight;
+        const buffer = await video.renderToVideo(renderOpts);
+        expect(buffer).toBeTruthy();
+        console.log(`[CSS] combined: ${buffer!.byteLength} bytes`);
+      } finally {
+        cleanup();
+      }
+    }, { timeout: 5000 });
   });
 });
