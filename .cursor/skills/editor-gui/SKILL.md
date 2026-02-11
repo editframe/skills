@@ -90,7 +90,7 @@ GUI components are **lego bricks**. They don't contain content—they provide co
 <ef-trim-handles></ef-trim-handles>
 ```
 
-### Filmstrip
+### Filmstrip & Thumbnail Strip
 
 ```html
 <!-- Thumbnail strip navigation -->
@@ -99,6 +99,51 @@ GUI components are **lego bricks**. They don't contain content—they provide co
 <!-- Thumbnail strip visualization (for tracks) -->
 <ef-thumbnail-strip></ef-thumbnail-strip>
 ```
+
+ThumbnailStrip standalone props (for use outside timeline):
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `targetElement` | `Element \| null` | Direct ref to an EFVideo or EFTimegroup |
+| `target` | `string` | ID-based target (alternative to targetElement) |
+| `useIntrinsicDuration` | `boolean` | Use media's intrinsic duration instead of timeline duration |
+| `thumbnailHeight` | `number` | Thumbnail height in px (default 24) |
+
+### Trim
+
+TrimHandles in standalone mode overlays on any container (e.g. a ThumbnailStrip):
+
+```html
+<ef-trim-handles
+  value='{"startMs": 0, "endMs": 0}'
+  intrinsic-duration-ms="10000"
+  seek-target="my-video"
+></ef-trim-handles>
+```
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `value` | `TrimValue` | `{ startMs, endMs }` — ms trimmed from each end |
+| `intrinsicDurationMs` | `number` | Total media duration in ms |
+| `seekTarget` | `string` | ID of element to seek during drag |
+| `showOverlays` | `boolean` | Show dimmed overlay on trimmed regions (default true) |
+
+**Slots**: `handle-start`, `handle-end` — custom handle content (e.g. SVG icons).
+
+**CSS custom properties**:
+
+```css
+--trim-handle-width: 16px;
+--trim-handle-color: gold;
+--trim-handle-active-color: gold;
+--trim-handle-border-radius-start: 4px 0 0 4px;
+--trim-handle-border-radius-end: 0 4px 4px 0;
+--trim-overlay-color: rgba(0, 0, 0, 0.7);
+--trim-selected-border-color: gold;
+--trim-selected-border-width: 3px;
+```
+
+**Events**: `onTrimChange` — fires `CustomEvent<TrimChangeDetail>` where `TrimChangeDetail = { elementId, type, value: TrimValue }`.
 
 ### Hierarchy Panel
 
@@ -140,9 +185,15 @@ import {
   TogglePlay, 
   TimeDisplay,
   Filmstrip,
+  ThumbnailStrip,
+  TrimHandles,
   Hierarchy,
-  Workbench 
+  Workbench,
+  Video,
+  useMediaInfo,
+  type TrimValue,
 } from '@editframe/react';
+import type { EFVideo } from '@editframe/elements';
 
 function SimplePlayer({ timegroupId }) {
   return (
@@ -154,6 +205,31 @@ function SimplePlayer({ timegroupId }) {
   );
 }
 ```
+
+## Hooks
+
+### useMediaInfo
+
+Returns intrinsic duration and loading state for a media element ref.
+
+```tsx
+const videoRef = useRef<EFVideo>(null);
+const { intrinsicDurationMs, loading } = useMediaInfo(videoRef);
+```
+
+## Video Trim Props
+
+Video (and all temporal elements) support trim props that clip playback:
+
+```tsx
+<Video
+  src="/video.mp4"
+  trimStartMs={2000}  // trim 2s from start
+  trimEndMs={1500}    // trim 1.5s from end
+/>
+```
+
+`trimStartMs` and `trimEndMs` are in milliseconds, trimmed from each end of the intrinsic duration.
 
 ## Composition Patterns
 
@@ -231,21 +307,59 @@ export function FilmstripViewer({ src }) {
 ### Pattern 4: Trim Tool
 
 ```tsx
-import { Canvas, Timegroup, Video, Timeline, TrimHandles } from '@editframe/react';
+import { useId, useState, useRef } from "react";
+import {
+  Video,
+  ThumbnailStrip,
+  TrimHandles,
+  TogglePlay,
+  useMediaInfo,
+  type TrimValue,
+} from "@editframe/react";
+import type { EFVideo } from "@editframe/elements";
 
-export function TrimTool({ src, onTrim }) {
+export function TrimTool({ src }: { src: string }) {
+  const videoId = useId();
+  const videoRef = useRef<EFVideo>(null);
+  const { intrinsicDurationMs } = useMediaInfo(videoRef);
+  const [trim, setTrim] = useState<TrimValue>({ startMs: 0, endMs: 0 });
+  const totalDuration = intrinsicDurationMs ?? 0;
+
   return (
-    <div className="flex flex-col">
-      <Canvas id="trim-canvas" className="aspect-video bg-black">
-        <Timegroup id="trim-root" mode="fixed" duration="10s">
-          <Video src={src} duration="10s" />
-        </Timegroup>
-      </Canvas>
-      
-      <div className="relative">
-        <Timeline target="trim-canvas" showRuler />
-        <TrimHandles />
+    <div>
+      <Video
+        id={videoId}
+        ref={videoRef}
+        src={src}
+        loop
+        trimStartMs={trim.startMs}
+        trimEndMs={trim.endMs}
+        className="aspect-video w-full object-contain"
+      />
+
+      <div className="relative" style={{ height: 64 }}>
+        <ThumbnailStrip
+          targetElement={videoRef.current}
+          useIntrinsicDuration
+          thumbnailHeight={64}
+          className="pointer-events-none absolute inset-0"
+        />
+        <TrimHandles
+          value={trim}
+          intrinsicDurationMs={totalDuration}
+          seekTarget={videoId}
+          onTrimChange={(e) => setTrim(e.detail.value)}
+          className="absolute inset-0"
+        >
+          <svg slot="handle-start" viewBox="0 0 8 24"><path d="M6 4L2 12L6 20" stroke="currentColor" strokeWidth="2" fill="none" /></svg>
+          <svg slot="handle-end" viewBox="0 0 8 24"><path d="M2 4L6 12L2 20" stroke="currentColor" strokeWidth="2" fill="none" /></svg>
+        </TrimHandles>
       </div>
+
+      <TogglePlay target={videoId}>
+        <button slot="play">▶</button>
+        <button slot="pause">⏸</button>
+      </TogglePlay>
     </div>
   );
 }

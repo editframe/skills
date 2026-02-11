@@ -49,8 +49,9 @@ export function PromptToToolSection() {
               <div className="p-6 font-mono text-sm">
                 <div className="text-[var(--poster-gold)] mb-4">@editor-gui</div>
                 <div className="text-white text-lg leading-relaxed">
-                  Build a video trim tool with preview, playback controls, 
-                  and draggable in/out markers.
+                  Build a video trim tool. Video preview with adjustable trim, 
+                  thumbnail filmstrip with draggable trim handles, play/pause, 
+                  and in/out/duration timecodes.
                 </div>
               </div>
 
@@ -63,7 +64,7 @@ export function PromptToToolSection() {
                   Generated
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                  {['Preview', 'Scrubber', 'TogglePlay', 'TrimHandles'].map((comp) => (
+                  {['Video', 'ThumbnailStrip', 'TogglePlay', 'TrimHandles'].map((comp) => (
                     <div key={comp} className="bg-white/10 px-3 py-2 text-center font-mono text-white/70">
                       {`<${comp} />`}
                     </div>
