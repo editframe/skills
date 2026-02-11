@@ -351,8 +351,8 @@ export function TrimTool({ src }: { src: string }) {
           onTrimChange={(e) => setTrim(e.detail.value)}
           className="absolute inset-0"
         >
-          <svg slot="handle-start" viewBox="0 0 8 24"><path d="M6 4L2 12L6 20" stroke="currentColor" strokeWidth="2" fill="none" /></svg>
-          <svg slot="handle-end" viewBox="0 0 8 24"><path d="M2 4L6 12L2 20" stroke="currentColor" strokeWidth="2" fill="none" /></svg>
+          <span slot="handle-start">⟨</span>
+          <span slot="handle-end">⟩</span>
         </TrimHandles>
       </div>
 
