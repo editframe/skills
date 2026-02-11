@@ -16,6 +16,7 @@ import {
   Scrubber,
   TogglePlay,
 } from "@editframe/react";
+import { useRenderQueue } from "../RenderQueue";
 
 const VIDEO_SRC = "https://assets.editframe.com/bars-n-tone.mp4";
 
@@ -27,6 +28,7 @@ export function ThumbnailPicker() {
   const [thumbnailDataUrl, setThumbnailDataUrl] = useState<string | null>(null);
   const [selectedTimeLabel, setSelectedTimeLabel] = useState<string | null>(null);
   const previewRef = useRef<HTMLElement>(null);
+  const { enqueue } = useRenderQueue();
 
   useEffect(() => {
     setIsClient(true);
@@ -205,6 +207,26 @@ export function ThumbnailPicker() {
               )}
             </div>
           </div>
+        </div>
+
+        <div className="border-t-4 border-black dark:border-white p-4 bg-white dark:bg-[#1a1a1a]">
+          <button
+            onClick={() => {
+              const tg = previewRef.current?.querySelector("ef-timegroup");
+              if (tg) {
+                enqueue({
+                  name: "Thumbnail Video",
+                  fileName: "thumbnail-video.mp4",
+                  target: tg as HTMLElement,
+                  renderOpts: { includeAudio: true },
+                });
+              }
+            }}
+            disabled={!isClient}
+            className="w-full py-3 bg-[var(--poster-red)] border-4 border-black dark:border-white text-white font-bold uppercase tracking-wider text-sm hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Export MP4
+          </button>
         </div>
       </div>
     </div>

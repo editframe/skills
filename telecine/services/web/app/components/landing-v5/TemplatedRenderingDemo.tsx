@@ -7,13 +7,14 @@
    Design: Swissted poster aesthetic
    ============================================================================== */
 
-import { useState, useEffect, useId, useCallback } from "react";
+import { useState, useEffect, useId, useCallback, useRef } from "react";
 import {
   Preview,
   Timegroup,
   Text,
 } from "@editframe/react";
 import { CodeEditor } from "~/components/CodeEditor";
+import { useRenderQueue } from "./RenderQueue";
 
 interface UserData {
   name: string;
@@ -63,6 +64,8 @@ export function TemplatedRenderingDemo() {
   const id = useId();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isClient, setIsClient] = useState(false);
+  const previewRef = useRef<HTMLElement>(null);
+  const { enqueue } = useRenderQueue();
   const selectedData = SAMPLE_DATA[selectedIndex]!;
   const previewId = `templated-demo-${id}-${selectedIndex}`;
 
@@ -158,7 +161,7 @@ export function TemplatedRenderingDemo() {
             
             {/* Live Preview */}
             {isClient ? (
-              <Preview id={previewId} key={previewId}>
+              <Preview id={previewId} ref={previewRef as any} key={previewId}>
                 <Timegroup
                   mode="fixed"
                   duration="5s"
@@ -195,6 +198,26 @@ export function TemplatedRenderingDemo() {
               </div>
             )}
           </div>
+        </div>
+        
+        {/* Export Button */}
+        <div className="mt-4">
+          <button
+            onClick={() => {
+              const tg = previewRef.current?.querySelector("ef-timegroup");
+              if (tg) {
+                enqueue({
+                  name: `Welcome — ${selectedData.name}`,
+                  fileName: `welcome-${selectedData.name.split(' ')[0]?.toLowerCase()}.mp4`,
+                  target: tg as HTMLElement,
+                });
+              }
+            }}
+            disabled={!isClient}
+            className="w-full py-3 bg-black text-white font-bold uppercase tracking-wider text-sm border-4 border-black hover:bg-[var(--poster-red)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Export MP4
+          </button>
         </div>
         
         {/* Output Summary */}

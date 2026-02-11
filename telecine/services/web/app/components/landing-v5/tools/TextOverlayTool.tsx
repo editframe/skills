@@ -8,7 +8,7 @@
    Design: Swissted poster aesthetic - bold borders, strong colors, uppercase labels
    ============================================================================== */
 
-import { useState, useId } from "react";
+import { useState, useId, useRef } from "react";
 import {
   Preview,
   Timegroup,
@@ -18,6 +18,7 @@ import {
   TogglePlay,
   TimeDisplay,
 } from "@editframe/react";
+import { useRenderQueue } from "../RenderQueue";
 
 const VIDEO_SRC = "https://assets.editframe.com/bars-n-tone.mp4";
 
@@ -70,6 +71,8 @@ const btnClass = (active: boolean, accent?: boolean) =>
 function TextOverlayTool() {
   const id = useId();
   const previewId = `title-card-${id}`;
+  const previewRef = useRef<HTMLElement>(null);
+  const { enqueue } = useRenderQueue();
   
   const [textContent, setTextContent] = useState('YOUR TEXT HERE');
   const [position, setPosition] = useState('bottom-center');
@@ -118,7 +121,7 @@ function TextOverlayTool() {
       
       {/* Preview */}
       <div className="bg-neutral-900 aspect-video">
-        <Preview id={previewId} loop className="w-full h-full">
+        <Preview id={previewId} ref={previewRef as any} loop className="w-full h-full">
           <Timegroup mode="contain" className="w-full h-full relative">
             <Video 
               src={VIDEO_SRC}
@@ -287,6 +290,23 @@ function TextOverlayTool() {
             </div>
           </div>
         </div>
+        
+        <button
+          onClick={() => {
+            const tg = previewRef.current?.querySelector("ef-timegroup");
+            if (tg) {
+              enqueue({
+                name: "Text Overlay",
+                fileName: "text-overlay.mp4",
+                target: tg as HTMLElement,
+                renderOpts: { includeAudio: true },
+              });
+            }
+          }}
+          className="w-full border-t-4 border-black dark:border-white bg-[var(--poster-red)] py-2.5 text-[10px] font-bold uppercase tracking-wider text-white transition-all hover:brightness-110"
+        >
+          Export MP4
+        </button>
       </div>
     </div>
   );

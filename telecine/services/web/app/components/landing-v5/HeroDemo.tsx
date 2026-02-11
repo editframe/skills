@@ -8,7 +8,7 @@
    Design: Clean editor/preview split with subtle shadows
    ============================================================================== */
 
-import { useId, useEffect, useState } from "react";
+import { useId, useEffect, useState, useRef } from "react";
 import {
   Preview,
   Timegroup,
@@ -20,6 +20,7 @@ import {
   Filmstrip,
 } from "@editframe/react";
 import { CodeEditor } from "~/components/CodeEditor";
+import { useRenderQueue } from "./RenderQueue";
 
 const VIDEO_SRC = "https://assets.editframe.com/bars-n-tone.mp4";
 
@@ -43,12 +44,26 @@ export function HeroDemo() {
   const id = useId();
   const previewId = `hero-demo-${id}`;
   const videoId = `hero-video-${id}`;
+  const previewRef = useRef<HTMLElement>(null);
+  const { enqueue } = useRenderQueue();
   
   const [isClient, setIsClient] = useState(false);
   
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  const handleExport = () => {
+    const tg = previewRef.current?.querySelector("ef-timegroup");
+    if (tg) {
+      enqueue({
+        name: "Hero Demo",
+        fileName: "hero-demo.mp4",
+        target: tg as HTMLElement,
+        renderOpts: { includeAudio: true },
+      });
+    }
+  };
 
   return (
     <div className="w-full">
@@ -78,7 +93,7 @@ export function HeroDemo() {
           {/* Live Preview panel */}
           <div className="bg-[#111] flex flex-col min-h-[280px]">
             {isClient ? (
-              <Preview id={previewId} loop className="flex-1 flex flex-col">
+              <Preview id={previewId} ref={previewRef as any} loop className="flex-1 flex flex-col">
                 <div className="flex-1 flex items-center justify-center p-4 bg-black">
                   <Timegroup 
                     mode="contain" 
@@ -143,6 +158,17 @@ export function HeroDemo() {
                   className="text-xs text-white/70 font-mono tabular-nums"
                 />
               </div>
+              
+              <button
+                onClick={handleExport}
+                className="px-4 h-12 flex items-center gap-2 border-l border-white/10 bg-[var(--poster-red)] hover:brightness-110 transition-all text-white text-xs font-bold uppercase tracking-wider"
+                title="Export MP4"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                </svg>
+                Export
+              </button>
             </div>
           ) : (
             <div className="flex items-center">
