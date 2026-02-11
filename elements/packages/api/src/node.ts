@@ -1,7 +1,7 @@
 import { stat } from "node:fs/promises";
 import { basename } from "node:path";
 import { md5FilePath } from "@editframe/assets";
-import mime from "mime";
+import { lookup } from "mime-types";
 
 import type { Client } from "./client.js";
 import {
@@ -23,7 +23,7 @@ export const createImageFileFromPath = async (client: Client, path: string) => {
 
   const md5 = await md5FilePath(path);
 
-  const mime_type = mime.getType(path);
+  const mime_type = lookup(path) || null;
 
   return createImageFile(client, {
     ...CreateImageFilePayload.parse({

@@ -8,6 +8,7 @@ export const createTsdownConfig = (
   options: {
     entry?: string[];
     platform?: "browser" | "node" | "neutral";
+    cjs?: boolean;
     dts?: UserConfig["dts"] | false;
     plugins?: UserConfig["plugins"];
     hooks?: UserConfig["hooks"];
@@ -20,6 +21,7 @@ export const createTsdownConfig = (
   const {
     entry = ["src/index.ts"],
     platform = "browser",
+    cjs = false,
     dts = true,
     plugins = [],
     hooks = {},
@@ -31,7 +33,7 @@ export const createTsdownConfig = (
 
   return {
     entry,
-    format: ["esm"],
+    format: cjs ? ["esm", "cjs"] : ["esm"],
     platform,
     target: "es2022",
     outDir: "dist",
@@ -69,12 +71,33 @@ export const createTsdownConfig = (
 
           // For code entry points, create proper conditional exports
           if (typeof value === "string" && value.endsWith(".js")) {
+            // ESM-only: tsdown passes a string path
             const dtsPath = value.replace(/\.js$/, ".d.ts");
 
             enhanced[key] = {
               import: {
                 types: dtsPath,
                 default: value,
+              },
+            };
+          } else if (
+            typeof value === "object" &&
+            value !== null &&
+            "import" in value &&
+            "require" in value
+          ) {
+            // Dual format: tsdown passes {import: "...", require: "..."}
+            const importPath = (value as Record<string, string>).import;
+            const requirePath = (value as Record<string, string>).require;
+
+            enhanced[key] = {
+              import: {
+                types: importPath.replace(/\.js$/, ".d.ts"),
+                default: importPath,
+              },
+              require: {
+                types: requirePath.replace(/\.cjs$/, ".d.cts"),
+                default: requirePath,
               },
             };
           } else {

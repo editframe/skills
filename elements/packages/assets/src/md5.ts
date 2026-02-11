@@ -2,12 +2,15 @@ import { type ReadStream, createReadStream } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import crypto from "node:crypto";
-import ora, { type Ora } from "ora";
+import type { Ora } from "ora";
 
 // Recursively calculate the MD5 hash of all files in a directory
 export async function md5Directory(directory: string, spinner?: Ora) {
   const shouldEndSpinner = !spinner;
-  spinner ||= ora("⚡️ Calculating MD5").start();
+  if (!spinner) {
+    const { default: ora } = await import("ora");
+    spinner = ora("⚡️ Calculating MD5").start();
+  }
   spinner.suffixText = directory;
   const files = await readdir(directory, { withFileTypes: true });
   const hashes = await Promise.all(

@@ -23,7 +23,6 @@
     "@vitejs/plugin-react": "^4.3.4",
     "debug": "^4.3.5",
     "eventsource-parser": "^3.0.0",
-    "mime": "^4.0.4",
     "mime-types": "^2.1.35",
     "tar": "^7.4.3",
     "vite": "npm:rolldown-vite@^7.1.15",
@@ -31,26 +30,38 @@
     "vite-tsconfig-paths": "^4.3.2",
     "zod": "^3.23.8"
   },
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
   "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "types": "./dist/index.d.cts",
   "exports": {
     ".": {
       "import": {
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
       }
     },
     "./node": {
       "import": {
         "types": "./dist/node.d.ts",
         "default": "./dist/node.js"
+      },
+      "require": {
+        "types": "./dist/node.d.cts",
+        "default": "./dist/node.cjs"
       }
     },
     "./resources/renders.bundle": {
       "import": {
         "types": "./dist/resources/renders.bundle.d.ts",
         "default": "./dist/resources/renders.bundle.js"
+      },
+      "require": {
+        "types": "./dist/resources/renders.bundle.d.cts",
+        "default": "./dist/resources/renders.bundle.cjs"
       }
     },
     "./package.json": "./package.json",
@@ -62,18 +73,30 @@
         "import": {
           "types": "./dist/index.d.ts",
           "default": "./dist/index.js"
+        },
+        "require": {
+          "types": "./dist/index.d.cts",
+          "default": "./dist/index.cjs"
         }
       },
       "./node": {
         "import": {
           "types": "./dist/node.d.ts",
           "default": "./dist/node.js"
+        },
+        "require": {
+          "types": "./dist/node.d.cts",
+          "default": "./dist/node.cjs"
         }
       },
       "./resources/renders.bundle": {
         "import": {
           "types": "./dist/resources/renders.bundle.d.ts",
           "default": "./dist/resources/renders.bundle.js"
+        },
+        "require": {
+          "types": "./dist/resources/renders.bundle.d.cts",
+          "default": "./dist/resources/renders.bundle.cjs"
         }
       },
       "./package.json": "./package.json",
