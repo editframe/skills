@@ -202,10 +202,12 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
   });
 
   describe("CSS effects", () => {
-    // TODO: CSS effects cause output.finalize() to hang
-    // All frames render and encode successfully, but finalization never completes.
-    // This happens with or without staging canvas, suggesting the issue is in how
-    // MediaBunny's encoder handles frames that were drawn with CSS effects applied.
+    // TODO: MediaBunny encoder hangs at output.finalize() with CSS effects
+    // - All frames render and encode successfully
+    // - Hang occurs during finalization (MP4 muxing)
+    // - Happens with: staging canvas, direct drawing, GPU flush attempts
+    // - Only affects renders with CSS effects (filter/transform/clip-path)
+    // - Likely a MediaBunny encoder bug where it waits for a resource that's never released
     it.skip("should render with transform, filter, clip-path, and combined effects", async () => {
       const { video, cleanup } = await createVideo();
       const renderOpts = { fps: 5, scale: 0.25, returnBuffer: true, includeAudio: false, toMs: 500 };

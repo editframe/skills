@@ -767,6 +767,12 @@ export async function renderVideoToVideo(
       `speed=${(config.renderDurationMs / totalElapsed).toFixed(1)}x`
     );
 
+    // Force GPU flush before finalization to ensure all canvas operations complete
+    // This is critical when CSS effects (filter, transform, clip-path) were applied
+    if (hasCssEffects) {
+      encodingCtx.getImageData(0, 0, 1, 1);
+    }
+
     await output.finalize();
 
     if (useStreaming) {
