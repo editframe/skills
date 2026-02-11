@@ -2,7 +2,6 @@
 title: Surface Element
 description: Mirror/duplicate of another element's canvas output
 type: reference
-topic: surface
 order: 80
 ---
 

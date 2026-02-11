@@ -2,7 +2,6 @@
 title: Captions Element
 description: Synchronized captions with word-level highlighting
 type: reference
-topic: captions
 order: 60
 ---
 

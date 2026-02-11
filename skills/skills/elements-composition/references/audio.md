@@ -2,7 +2,6 @@
 title: Audio Element
 description: Audio element for music, voiceover, and sound effects with trimming and volume control
 type: reference
-topic: audio
 order: 30
 ---
 

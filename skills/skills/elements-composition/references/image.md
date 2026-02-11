@@ -2,7 +2,6 @@
 title: Image Element
 description: Static image element with duration control and CSS positioning
 type: reference
-topic: image
 order: 40
 ---
 

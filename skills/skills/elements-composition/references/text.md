@@ -2,7 +2,6 @@
 title: Text Element
 description: Animated text with character, word, and line splitting
 type: reference
-topic: text
 order: 50
 ---
 

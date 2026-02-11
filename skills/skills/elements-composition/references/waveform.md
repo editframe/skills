@@ -2,7 +2,6 @@
 title: Waveform Element
 description: Audio waveform visualization with multiple display modes
 type: reference
-topic: waveform
 order: 70
 ---
 
