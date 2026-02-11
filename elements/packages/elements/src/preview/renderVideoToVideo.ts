@@ -7,10 +7,6 @@
  * Supports CSS effects via canvas 2D context:
  * - filter (ctx.filter)
  * - opacity (ctx.globalAlpha)
- * 
- * NOT SUPPORTED (use full rendering pipeline instead):
- * - transform (causes MediaBunny encoder issues)
- * - clip-path (causes MediaBunny encoder issues)
  */
 
 import {
@@ -243,14 +239,11 @@ export async function renderVideoToVideo(
   const config = await resolveVideoConfig(video, options);
 
   // Read CSS effects once before the frame loop (values don't change during rendering)
-  // Only filter and opacity are supported in direct rendering
   const computedStyle = getComputedStyle(video);
   const cssFilter = computedStyle.filter;
   const cssOpacity = parseFloat(computedStyle.opacity);
   const hasFilter = cssFilter && cssFilter !== "none";
   const hasOpacity = cssOpacity < 1;
-
-  const hasCssEffects = hasFilter || hasOpacity;
 
   logger.debug(
     `[renderVideoToVideo] starting: ${config.totalFrames} frames, ` +
@@ -281,7 +274,6 @@ export async function renderVideoToVideo(
   if (hasOpacity) {
     encodingCtx.globalAlpha = cssOpacity;
   }
-
 
 
   if (options.customWritableStream) {
