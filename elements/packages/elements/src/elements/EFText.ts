@@ -285,16 +285,17 @@ export class EFText extends EFTemporal(LitElement) {
 
     for (const segment of segments) {
       if (hasAnimation) {
-        // Segments default to display:inline for zero layout impact. Promote to
-        // inline-block so CSS transforms (slide, scale) have a box to operate on.
+        // Mark segment so shadow DOM rule promotes it to inline-block for transform support.
+        // Using an attribute (not inline style) so it survives the visibility system's
+        // removeProperty("display") calls.
         if (!isLineMode) {
-          segment.style.display = "inline-block";
+          segment.setAttribute("data-animated", "");
         }
         for (const prop of animationPropsToPropagate) {
           segment.style.setProperty(prop, computed.getPropertyValue(prop));
         }
       } else {
-        segment.style.removeProperty("display");
+        segment.removeAttribute("data-animated");
         for (const prop of animationPropsToPropagate) {
           segment.style.removeProperty(prop);
         }

@@ -13,6 +13,9 @@ export class EFTextSegment extends EFTemporal(LitElement) {
       :host {
         display: inline;
       }
+      :host([data-animated]) {
+        display: inline-block;
+      }
       :host([data-line-segment]) {
         display: block;
       }
