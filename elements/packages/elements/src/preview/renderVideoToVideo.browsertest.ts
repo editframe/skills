@@ -32,12 +32,17 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
 
     await video.updateComplete;
     await video.waitForMediaDurations();
-    // Allow media engine to fully initialize
-    await new Promise(resolve => setTimeout(resolve, 2000));
 
     return {
       video,
-      cleanup: () => document.body.removeChild(video),
+      cleanup: () => {
+        const swallowAbort = (e: PromiseRejectionEvent) => {
+          if (e.reason?.name === "AbortError") e.preventDefault();
+        };
+        window.addEventListener("unhandledrejection", swallowAbort);
+        document.body.removeChild(video);
+        setTimeout(() => window.removeEventListener("unhandledrejection", swallowAbort), 500);
+      },
     };
   }
 
