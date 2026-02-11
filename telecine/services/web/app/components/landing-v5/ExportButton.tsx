@@ -46,7 +46,7 @@ export function ExportButton({
       disabled={disabled || queued}
       className={`
         group relative flex items-center justify-center gap-2 transition-all
-        ${compact ? "px-3 h-12" : "w-full py-3"}
+        ${compact ? "px-3" : "w-full py-3"}
         ${queued
           ? "bg-[var(--poster-blue)]"
           : "hover:brightness-125"

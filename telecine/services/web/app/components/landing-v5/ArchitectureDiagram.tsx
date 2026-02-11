@@ -6,7 +6,7 @@ import {
   TogglePlay,
   TimeDisplay,
 } from "@editframe/react";
-import { useRenderQueue } from "./RenderQueue";
+import { ExportButton } from "./ExportButton";
 import { ParallelFragmentsCanvas } from "./parallel-fragments-r3f";
 import { JITStreamingTimeline } from "./JITStreamingTimeline";
 
@@ -352,20 +352,8 @@ function FanOutDiagram() {
   const rootId = `fanout-${uid}`;
   const [isClient, setIsClient] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const { enqueue } = useRenderQueue();
 
   useEffect(() => { setIsClient(true); }, []);
-
-  const handleRender = () => {
-    const tg = containerRef.current?.querySelector("ef-timegroup");
-    if (tg) {
-      enqueue({
-        name: "Parallel Rendering",
-        fileName: "editframe-parallel-rendering.mp4",
-        target: tg as HTMLElement,
-      });
-    }
-  };
 
   if (!isClient) {
     return (
@@ -417,17 +405,13 @@ function FanOutDiagram() {
           />
         </div>
 
-        {/* Enqueue render */}
-        <div className="border-l border-white/10 h-9 flex items-center">
-          <button
-            onClick={handleRender}
-            className="h-9 px-3 flex items-center gap-1.5 text-white/70 hover:text-white hover:bg-white/10 transition-colors"
-            title="Export MP4"
-          >
-            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" /></svg>
-            <span className="text-[10px] font-semibold tracking-wide">MP4</span>
-          </button>
-        </div>
+        <ExportButton
+          compact
+          getTarget={() => containerRef.current?.querySelector("ef-timegroup") as HTMLElement}
+          name="Parallel Rendering"
+          fileName="editframe-parallel-rendering.mp4"
+          className="border-l border-white/10"
+        />
       </div>
     </div>
   );
@@ -441,18 +425,6 @@ function JITStreamingDiagram() {
   const uid = useId();
   const rootId = `jit-streaming-${uid}`;
   const containerRef = useRef<HTMLDivElement>(null);
-  const { enqueue } = useRenderQueue();
-
-  const handleRender = () => {
-    const tg = containerRef.current?.querySelector("ef-timegroup");
-    if (tg) {
-      enqueue({
-        name: "JIT Streaming",
-        fileName: "editframe-jit-streaming.mp4",
-        target: tg as HTMLElement,
-      });
-    }
-  };
 
   return (
     <div ref={containerRef}>
@@ -491,16 +463,13 @@ function JITStreamingDiagram() {
           />
         </div>
 
-        <div className="border-l border-white/10 h-9 flex items-center">
-          <button
-            onClick={handleRender}
-            className="h-9 px-3 flex items-center gap-1.5 text-white/70 hover:text-white hover:bg-white/10 transition-colors"
-            title="Export MP4"
-          >
-            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" /></svg>
-            <span className="text-[10px] font-semibold tracking-wide">MP4</span>
-          </button>
-        </div>
+        <ExportButton
+          compact
+          getTarget={() => containerRef.current?.querySelector("ef-timegroup") as HTMLElement}
+          name="JIT Streaming"
+          fileName="editframe-jit-streaming.mp4"
+          className="border-l border-white/10"
+        />
       </div>
     </div>
   );
