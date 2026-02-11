@@ -26,23 +26,10 @@ export class EFText extends EFTemporal(LitElement) {
   static styles = [
     css`
       :host {
-        display: inline-flex;
-        flex-wrap: wrap;
-        white-space: normal;
-        line-height: 1;
-        gap: 0;
+        display: inline;
       }
       :host([split="line"]) {
-        flex-direction: column;
-      }
-      ::slotted(*) {
         display: inline-block;
-        margin: 0;
-        padding: 0;
-      }
-      .ef-word-wrapper {
-        display: inline-block;
-        white-space: nowrap;
       }
     `,
   ];
@@ -294,13 +281,20 @@ export class EFText extends EFTemporal(LitElement) {
     this.#lastPropagatedAnimation = fingerprint;
 
     const hasAnimation = animationName && animationName !== "none";
+    const isLineMode = this.split === "line";
 
     for (const segment of segments) {
       if (hasAnimation) {
+        // Segments default to display:inline for zero layout impact. Promote to
+        // inline-block so CSS transforms (slide, scale) have a box to operate on.
+        if (!isLineMode) {
+          segment.style.display = "inline-block";
+        }
         for (const prop of animationPropsToPropagate) {
           segment.style.setProperty(prop, computed.getPropertyValue(prop));
         }
       } else {
+        segment.style.removeProperty("display");
         for (const prop of animationPropsToPropagate) {
           segment.style.removeProperty(prop);
         }
@@ -513,7 +507,7 @@ export class EFText extends EFTemporal(LitElement) {
                 }
                 currentWordIndex = wordIndex;
                 currentWordSpan = document.createElement("span");
-                currentWordSpan.className = "ef-word-wrapper";
+                currentWordSpan.style.whiteSpace = "nowrap";
               }
               if (currentWordSpan) {
                 currentWordSpan.appendChild(segment);
@@ -568,7 +562,7 @@ export class EFText extends EFTemporal(LitElement) {
               // Start new word span
               currentWordIndex = wordIndex;
               currentWordSpan = document.createElement("span");
-              currentWordSpan.className = "ef-word-wrapper";
+              currentWordSpan.style.whiteSpace = "nowrap";
             }
             // Append segment to current word span
             if (currentWordSpan) {

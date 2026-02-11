@@ -146,7 +146,9 @@ describe("EFText", () => {
       expect(segments.length).toBe(11);
 
       // Check that characters within words are wrapped in spans
-      const wordWrappers = text.querySelectorAll(".ef-word-wrapper");
+      const wordWrappers = Array.from(text.querySelectorAll("span")).filter(
+        (s) => s.style.whiteSpace === "nowrap",
+      );
       // Should have 2 word wrappers: one for "Hello" and one for "world"
       expect(wordWrappers.length).toBe(2);
 
@@ -181,8 +183,10 @@ describe("EFText", () => {
         (seg) => seg.segmentText === " ",
       );
       expect(spaceSegment).toBeTruthy();
-      // Space should not be inside a word wrapper
-      expect(spaceSegment?.closest(".ef-word-wrapper")).toBeNull();
+      // Space should not be inside a word wrapper span
+      const parentSpan = spaceSegment?.parentElement;
+      const isInWordWrapper = parentSpan?.tagName === "SPAN" && parentSpan?.style.whiteSpace === "nowrap";
+      expect(isInWordWrapper).toBe(false);
     });
 
     test("does not create blank character segments from leading/trailing whitespace", async () => {
@@ -1662,76 +1666,97 @@ describe("EFText", () => {
   });
 
   describe("split mode layout consistency", () => {
-    for (const splitMode of ["word", "char"] as const) {
-      test(`${splitMode} split does not alter vertical position vs unsplit text`, async () => {
-        // Create a reference text element without splitting
+    // Splitting text into segments must have zero impact on layout.
+    // The rendered text should be pixel-identical to unsplit text.
+    for (const splitMode of ["word", "char", "line"] as const) {
+      test(`${splitMode} split produces identical bounding box to unsplit text`, async () => {
         const container = document.createElement("div");
-        container.style.cssText = "position:relative;width:400px;height:300px;";
+        container.style.cssText = "position:relative;width:400px;height:300px;font:bold 20px/1.4 sans-serif;";
 
-        const refText = document.createElement("ef-text");
-        refText.textContent = "HELLO WORLD";
-        refText.style.cssText = "position:absolute;bottom:16px;left:16px;font-size:20px;font-weight:bold;";
-        container.appendChild(refText);
+        // Reference: unsplit ef-text (default split=word but no stagger so no animation)
+        const ref = document.createElement("ef-text");
+        ref.textContent = "HELLO WORLD TEST";
+        ref.style.cssText = "position:absolute;bottom:16px;left:16px;right:16px;text-align:center;";
+        container.appendChild(ref);
 
         document.body.appendChild(container);
         testElements.push(container);
 
-        await refText.updateComplete;
-        await refText.whenSegmentsReady();
+        await ref.updateComplete;
+        await ref.whenSegmentsReady();
         await new Promise((r) => requestAnimationFrame(r));
-        const refRect = refText.getBoundingClientRect();
+        const refRect = ref.getBoundingClientRect();
 
-        // Create the same text with explicit split mode
-        const splitText = document.createElement("ef-text");
-        splitText.split = splitMode;
-        splitText.textContent = "HELLO WORLD";
-        splitText.style.cssText = "position:absolute;bottom:16px;left:16px;font-size:20px;font-weight:bold;";
-        container.appendChild(splitText);
+        // Split version
+        const split = document.createElement("ef-text");
+        split.split = splitMode;
+        split.textContent = "HELLO WORLD TEST";
+        split.style.cssText = "position:absolute;bottom:16px;left:16px;right:16px;text-align:center;";
+        container.appendChild(split);
 
-        await splitText.updateComplete;
-        await splitText.whenSegmentsReady();
+        await split.updateComplete;
+        await split.whenSegmentsReady();
         await new Promise((r) => requestAnimationFrame(r));
-        const splitRect = splitText.getBoundingClientRect();
+        const splitRect = split.getBoundingClientRect();
 
-        // Vertical position should be within 1px of reference
+        expect(
+          Math.abs(splitRect.width - refRect.width),
+          `${splitMode} width differs by ${splitRect.width - refRect.width}px (ref=${refRect.width}, split=${splitRect.width})`,
+        ).toBeLessThanOrEqual(1);
+        expect(
+          Math.abs(splitRect.height - refRect.height),
+          `${splitMode} height differs by ${splitRect.height - refRect.height}px (ref=${refRect.height}, split=${splitRect.height})`,
+        ).toBeLessThanOrEqual(1);
         expect(
           Math.abs(splitRect.top - refRect.top),
-          `${splitMode} split shifted by ${splitRect.top - refRect.top}px`,
+          `${splitMode} top differs by ${splitRect.top - refRect.top}px`,
+        ).toBeLessThanOrEqual(1);
+        expect(
+          Math.abs(splitRect.left - refRect.left),
+          `${splitMode} left differs by ${splitRect.left - refRect.left}px`,
         ).toBeLessThanOrEqual(1);
       });
     }
 
-    test("word and char splits produce same bounding box dimensions", async () => {
+    test("all split modes produce identical layout to each other", async () => {
       const container = document.createElement("div");
-      container.style.cssText = "position:relative;width:400px;height:300px;";
+      container.style.cssText = "position:relative;width:400px;height:300px;font:bold 20px/1.4 sans-serif;";
 
-      const wordText = document.createElement("ef-text");
-      wordText.split = "word";
-      wordText.textContent = "HELLO WORLD";
-      wordText.style.cssText = "position:absolute;top:16px;left:16px;font-size:20px;font-weight:bold;";
-      container.appendChild(wordText);
+      const modes = ["word", "char", "line"] as const;
+      const rects: Record<string, DOMRect> = {};
 
-      const charText = document.createElement("ef-text");
-      charText.split = "char";
-      charText.textContent = "HELLO WORLD";
-      charText.style.cssText = "position:absolute;top:100px;left:16px;font-size:20px;font-weight:bold;";
-      container.appendChild(charText);
+      for (let i = 0; i < modes.length; i++) {
+        const el = document.createElement("ef-text");
+        el.split = modes[i]!;
+        el.textContent = "HELLO WORLD";
+        el.style.cssText = `position:absolute;top:${i * 50}px;left:16px;`;
+        container.appendChild(el);
 
-      document.body.appendChild(container);
-      testElements.push(container);
+        document.body.appendChild(container);
+        testElements.push(container);
 
-      await wordText.updateComplete;
-      await charText.updateComplete;
-      await wordText.whenSegmentsReady();
-      await charText.whenSegmentsReady();
-      await new Promise((r) => requestAnimationFrame(r));
+        await el.updateComplete;
+        await el.whenSegmentsReady();
+        await new Promise((r) => requestAnimationFrame(r));
+        rects[modes[i]!] = el.getBoundingClientRect();
+      }
 
-      const wordRect = wordText.getBoundingClientRect();
-      const charRect = charText.getBoundingClientRect();
-
+      // All modes should produce same width and height
       expect(
-        Math.abs(wordRect.height - charRect.height),
-        `height diff: word=${wordRect.height} char=${charRect.height}`,
+        Math.abs(rects["word"]!.width - rects["char"]!.width),
+        `word vs char width: ${rects["word"]!.width} vs ${rects["char"]!.width}`,
+      ).toBeLessThanOrEqual(1);
+      expect(
+        Math.abs(rects["word"]!.height - rects["char"]!.height),
+        `word vs char height: ${rects["word"]!.height} vs ${rects["char"]!.height}`,
+      ).toBeLessThanOrEqual(1);
+      expect(
+        Math.abs(rects["word"]!.width - rects["line"]!.width),
+        `word vs line width: ${rects["word"]!.width} vs ${rects["line"]!.width}`,
+      ).toBeLessThanOrEqual(1);
+      expect(
+        Math.abs(rects["word"]!.height - rects["line"]!.height),
+        `word vs line height: ${rects["word"]!.height} vs ${rects["line"]!.height}`,
       ).toBeLessThanOrEqual(1);
     });
   });
