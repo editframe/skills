@@ -285,10 +285,13 @@ export class EFText extends EFTemporal(LitElement) {
 
     for (const segment of segments) {
       if (hasAnimation) {
-        // Mark segment so shadow DOM rule promotes it to inline-block for transform support.
-        // Using an attribute (not inline style) so it survives the visibility system's
-        // removeProperty("display") calls.
-        if (!isLineMode) {
+        // Mark non-whitespace segments so shadow DOM rule promotes them to inline-block
+        // for transform support. Using an attribute (not inline style) so it survives the
+        // visibility system's removeProperty("display") calls.
+        // Whitespace-only segments must stay inline — inline-block creates a new block
+        // formatting context that collapses the space to zero width.
+        const isWhitespace = /^\s+$/.test(segment.segmentText || "");
+        if (!isLineMode && !isWhitespace) {
           segment.setAttribute("data-animated", "");
         }
         for (const prop of animationPropsToPropagate) {
