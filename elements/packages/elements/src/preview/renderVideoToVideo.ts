@@ -697,6 +697,9 @@ export async function renderVideoToVideo(
           // Copy clean result to encoding canvas
           encodingCtx.clearRect(0, 0, config.videoWidth, config.videoHeight);
           encodingCtx.drawImage(stageCanvas!, 0, 0);
+          
+          // Force GPU sync to ensure pixels are ready before encoding
+          encodingCtx.getImageData(0, 0, 1, 1);
         } else {
           encodingCtx.drawImage(
             videoFrame,
