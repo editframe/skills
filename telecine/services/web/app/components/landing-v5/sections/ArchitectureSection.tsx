@@ -1,4 +1,4 @@
-import { ArchitectureDiagram } from "../index";
+import { FanOutDiagram, JITStreamingDiagram } from "../index";
 
 export function ArchitectureSection() {
   return (
@@ -39,12 +39,37 @@ export function ArchitectureSection() {
             Parallel fragment rendering in the cloud for production at scale.
           </p>
           <div className="inline-block bg-[var(--card-bg)] border-2 border-[var(--ink-black)] dark:border-white px-4 py-2 font-mono text-sm">
-            <span className="text-[var(--warm-gray)]">$</span> <span className="text-[var(--ink-black)] dark:text-[var(--ink-black)]">editframe render</span>
+            <span className="text-[var(--warm-gray)]">$</span> <span className="text-[var(--ink-black)] dark:text-white">editframe render</span>
           </div>
         </div>
 
-        <div className="max-w-5xl mx-auto">
-          <ArchitectureDiagram />
+        {/* 3D Explainer Demos */}
+        <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+          <div>
+            <div className="mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-1 bg-[var(--poster-blue)]" />
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--warm-gray)]">
+                  Parallel Fragments
+                </span>
+              </div>
+              <p className="text-xs text-[var(--warm-gray)] mt-1">Split, process, recombine</p>
+            </div>
+            <FanOutDiagram />
+          </div>
+
+          <div>
+            <div className="mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-1 bg-[var(--poster-red)]" />
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--warm-gray)]">
+                  JIT Streaming
+                </span>
+              </div>
+              <p className="text-xs text-[var(--warm-gray)] mt-1">On-demand transcoding, zero wait</p>
+            </div>
+            <JITStreamingDiagram />
+          </div>
         </div>
       </div>
     </section>

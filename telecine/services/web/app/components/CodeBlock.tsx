@@ -71,10 +71,22 @@ export const CodeBlock: FC<CodeBlockProps> = ({ children, className = "" }) => {
   }, []);
 
   const childrenArray = Children.toArray(children);
-  const codeElement = childrenArray[0] as ReactElement;
-  const code = removeCommonIndentation(codeElement.props.children.trim());
-  const language =
-    codeElement.props.className?.replace("language-", "") || "text";
+  const firstChild = childrenArray[0];
+  
+  // Handle both direct string children and wrapped <code> elements
+  let code: string;
+  let language: string;
+  
+  if (typeof firstChild === 'string') {
+    // Direct string child
+    code = removeCommonIndentation(firstChild.trim());
+    language = className?.replace("language-", "") || "typescript";
+  } else {
+    // Wrapped in code element (from markdown)
+    const codeElement = firstChild as ReactElement;
+    code = removeCommonIndentation(codeElement.props.children.trim());
+    language = codeElement.props.className?.replace("language-", "") || "text";
+  }
 
   return (
     <SyntaxHighlighter

@@ -1,15 +1,11 @@
 export { HeroSection } from "./HeroSection";
-export { SkillsSection } from "./SkillsSection";
+export { PromptToToolSection } from "./PromptToToolSection";
 export { ToolsGridSection } from "./ToolsGridSection";
 export { BeforeAfterSection } from "./BeforeAfterSection";
 export { PlaygroundSection } from "./PlaygroundSection";
-export { ClientRenderSection } from "./ClientRenderSection";
+export { RenderAnywhereSection } from "./RenderAnywhereSection";
 export { ArchitectureSection } from "./ArchitectureSection";
 export { TemplatedRenderingSection } from "./TemplatedRenderingSection";
 export { CodeExamplesSection } from "./CodeExamplesSection";
 export { GettingStartedSection } from "./GettingStartedSection";
-export { FinalCtaSection } from "./FinalCtaSection";
 export { FooterSection } from "./FooterSection";
-export { DogfoodCallout } from "./DogfoodCallout";
-export { WorksWithSection } from "./WorksWithSection";
-export { CompositionModelSection } from "./CompositionModelSection";

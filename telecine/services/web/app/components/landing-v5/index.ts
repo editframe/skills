@@ -1,7 +1,7 @@
 export { HeroDemo } from './HeroDemo.tsx';
 export { BeforeAfterComparison } from './BeforeAfterComparison.tsx';
 export { InteractivePlayground } from './InteractivePlayground.tsx';
-export { ArchitectureDiagram } from './ArchitectureDiagram.tsx';
+export { ArchitectureDiagram, FanOutDiagram, JITStreamingDiagram } from './ArchitectureDiagram.tsx';
 export { PerformanceMetrics } from './PerformanceMetrics.tsx';
 export { CodeExamples } from './CodeExamples.tsx';
 export { TerminalDemo } from './TerminalDemo.tsx';

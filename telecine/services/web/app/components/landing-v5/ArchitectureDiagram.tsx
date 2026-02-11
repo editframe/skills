@@ -570,5 +570,5 @@ function ArchitectureDiagram() {
   );
 }
 
-export { ArchitectureDiagram };
+export { ArchitectureDiagram, FanOutDiagram, JITStreamingDiagram };
 export default ArchitectureDiagram;

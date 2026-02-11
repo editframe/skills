@@ -9,20 +9,16 @@ import { Navigation } from "~/components/landing-v5/Navigation";
 import "~/styles/landing.css";
 import {
   HeroSection,
-  SkillsSection,
+  PromptToToolSection,
   ToolsGridSection,
   BeforeAfterSection,
   PlaygroundSection,
-  ClientRenderSection,
+  RenderAnywhereSection,
   ArchitectureSection,
   TemplatedRenderingSection,
   CodeExamplesSection,
   GettingStartedSection,
-  FinalCtaSection,
   FooterSection,
-  DogfoodCallout,
-  WorksWithSection,
-  CompositionModelSection,
 } from "~/components/landing-v5/sections";
 import {
   RenderQueueProvider,
@@ -67,19 +63,15 @@ export default function IndexPage() {
         
         <main id="main-content">
           <HeroSection />
-          <WorksWithSection />
-          <SkillsSection />
+          <GettingStartedSection />
+          <PromptToToolSection />
           <ToolsGridSection />
-          <DogfoodCallout />
           <BeforeAfterSection />
           <PlaygroundSection />
-          <ClientRenderSection />
+          <RenderAnywhereSection />
           <ArchitectureSection />
-          <CompositionModelSection />
           <TemplatedRenderingSection />
           <CodeExamplesSection />
-          <GettingStartedSection />
-          <FinalCtaSection />
         </main>
 
         <FooterSection />

@@ -1,4 +1,4 @@
-import { TrimTool, TextOverlayTool, ThumbnailPicker, CaptionEditor } from "../index";
+import { TrimTool, TextOverlayTool } from "../index";
 
 export function ToolsGridSection() {
   return (
@@ -33,7 +33,7 @@ export function ToolsGridSection() {
           </p>
         </div>
 
-        {/* Tools Grid - 2x2 */}
+        {/* Tools Grid - 2 tools */}
         <div className="grid md:grid-cols-2 gap-8">
           {/* Trim Tool */}
           <div>
@@ -55,44 +55,6 @@ export function ToolsGridSection() {
               </span>
             </div>
             <TextOverlayTool />
-          </div>
-
-          {/* Thumbnail Picker */}
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-6 h-1 bg-[var(--poster-red)]" />
-              <span className="text-xs font-bold uppercase tracking-wider text-[var(--warm-gray)]">
-                Thumbnail Picker
-              </span>
-            </div>
-            <ThumbnailPicker />
-          </div>
-
-          {/* Caption Editor */}
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-6 h-1 bg-[var(--poster-green)]" />
-              <span className="text-xs font-bold uppercase tracking-wider text-[var(--warm-gray)]">
-                Caption Editor
-              </span>
-            </div>
-            <CaptionEditor />
-          </div>
-        </div>
-
-        {/* Prominent callout */}
-        <div className="mt-16 relative">
-          <div className="absolute -bottom-3 -right-3 w-full h-full bg-[var(--poster-green)]" />
-          <div className="relative bg-[var(--card-bg)] border-4 border-[var(--ink-black)] dark:border-white p-8 text-center">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <svg className="w-8 h-8 text-[var(--poster-green)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              <h3 className="text-2xl md:text-3xl font-black tracking-tighter uppercase">AI-Generated</h3>
-            </div>
-            <p className="text-lg font-bold text-[var(--warm-gray)] max-w-2xl mx-auto">
-              Each tool above was generated from a single prompt using Editframe agent skills.
-            </p>
           </div>
         </div>
       </div>

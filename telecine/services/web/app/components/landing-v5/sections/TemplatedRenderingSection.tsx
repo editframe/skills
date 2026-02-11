@@ -58,6 +58,72 @@ export function TemplatedRenderingSection() {
             </div>
           ))}
         </div>
+
+        {/* Visualization: One template → Many videos */}
+        <div className="mb-12">
+          <div className="max-w-5xl mx-auto">
+            {/* Template */}
+            <div className="mb-8">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-1 bg-black" />
+                <span className="text-xs font-bold uppercase tracking-wider text-black/60">The Template</span>
+              </div>
+              <div className="relative">
+                <div className="absolute -bottom-3 -right-3 w-full h-full bg-black" />
+                <div className="relative bg-white border-4 border-black p-6">
+                  <div className="font-mono text-xs text-[var(--ink-black)]">
+                    <div className="mb-2"><span className="text-[var(--poster-red)]">const</span> WelcomeVideo = ({"{"}<span className="text-[var(--poster-blue)]">user</span>{"}"}) ={">"} (</div>
+                    <div className="ml-4 mb-2">{"<"}Composition width={"{"}1920{"}"} height={"{"}1080{"}"} duration={"{"}5000{"}"}{">"}</div>
+                    <div className="ml-8 mb-2">{"<"}Video src="bg.mp4" /{">"}  </div>
+                    <div className="ml-8 mb-2">{"<"}Text{">"}<span className="text-[var(--poster-green)]">Welcome, {"{"}user.name{"}"}</span>!{"<"}/Text{">"}</div>
+                    <div className="ml-4 mb-2">{"<"}/Composition{">"}</div>
+                    <div>)</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Arrow */}
+            <div className="flex justify-center mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-1 bg-black" />
+                <svg className="w-8 h-8 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
+                <div className="w-12 h-1 bg-black" />
+              </div>
+            </div>
+
+            {/* Grid of videos */}
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-1 bg-black" />
+                <span className="text-xs font-bold uppercase tracking-wider text-black/60">The Output</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                { name: 'Alex', color: 'var(--poster-red)' },
+                { name: 'Jordan', color: 'var(--poster-blue)' },
+                { name: 'Sam', color: 'var(--poster-green)' },
+                { name: 'Taylor', color: 'var(--poster-gold)' },
+                { name: 'Morgan', color: 'var(--poster-pink)' },
+                { name: 'Casey', color: 'var(--poster-red)' },
+              ].map((user, i) => (
+                <div key={i} className="relative">
+                  <div className="absolute -bottom-2 -right-2 w-full h-full" style={{ backgroundColor: user.color }} />
+                  <div className="relative bg-black border-2 border-black aspect-video flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="text-white/40 text-xs mb-2">▶</div>
+                      <div className="text-white font-bold text-sm">Welcome, {user.name}!</div>
+                      <div className="text-white/60 text-xs mt-1">{user.name.toLowerCase()}.mp4</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
         
         {/* Demo */}
         <TemplatedRenderingDemo />
