@@ -1,5 +1,4 @@
 import { ArchitectureDiagram } from "../index";
-import { LazySection } from "../LazySection";
 
 export function ArchitectureSection() {
   return (
@@ -44,11 +43,9 @@ export function ArchitectureSection() {
           </div>
         </div>
 
-        <LazySection>
-          <div className="max-w-5xl mx-auto">
-            <ArchitectureDiagram />
-          </div>
-        </LazySection>
+        <div className="max-w-5xl mx-auto">
+          <ArchitectureDiagram />
+        </div>
       </div>
     </section>
   );

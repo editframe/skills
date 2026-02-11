@@ -1,5 +1,4 @@
 import { InteractivePlayground } from "../index";
-import { LazySection } from "../LazySection";
 
 export function PlaygroundSection() {
   return (
@@ -48,14 +47,12 @@ export function PlaygroundSection() {
           </p>
         </div>
         
-        <LazySection>
-          <div className="relative">
-            <div className="absolute -top-4 -left-4 w-full h-full bg-[var(--poster-gold)]" />
-            <div className="relative border-4 border-[var(--ink-black)] overflow-hidden">
-              <InteractivePlayground />
-            </div>
+        <div className="relative">
+          <div className="absolute -top-4 -left-4 w-full h-full bg-[var(--poster-gold)]" />
+          <div className="relative border-4 border-[var(--ink-black)] overflow-hidden">
+            <InteractivePlayground />
           </div>
-        </LazySection>
+        </div>
       </div>
     </section>
   );

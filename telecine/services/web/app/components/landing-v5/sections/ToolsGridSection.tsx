@@ -1,5 +1,4 @@
 import { TrimTool, TextOverlayTool, ThumbnailPicker, CaptionEditor } from "../index";
-import { LazySection } from "../LazySection";
 
 export function ToolsGridSection() {
   return (
@@ -35,8 +34,7 @@ export function ToolsGridSection() {
         </div>
 
         {/* Tools Grid - 2x2 */}
-        <LazySection>
-          <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid md:grid-cols-2 gap-8">
           {/* Trim Tool */}
           <div>
             <div className="flex items-center gap-2 mb-3">
@@ -80,8 +78,7 @@ export function ToolsGridSection() {
             </div>
             <CaptionEditor />
           </div>
-          </div>
-        </LazySection>
+        </div>
 
         {/* Prominent callout */}
         <div className="mt-16 relative">

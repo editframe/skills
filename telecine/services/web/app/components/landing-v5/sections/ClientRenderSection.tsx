@@ -1,5 +1,4 @@
 import { ClientRenderDemo } from "../index";
-import { LazySection } from "../LazySection";
 
 export function ClientRenderSection() {
   return (
@@ -73,11 +72,9 @@ export function ClientRenderSection() {
           </div>
           
           {/* Right - Demo */}
-          <LazySection>
-            <div className="relative">
-              <ClientRenderDemo />
-            </div>
-          </LazySection>
+          <div className="relative">
+            <ClientRenderDemo />
+          </div>
         </div>
       </div>
     </section>

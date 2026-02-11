@@ -1,6 +1,5 @@
 import { Link } from "react-router";
 import { TemplatedRenderingDemo } from "../index";
-import { LazySection } from "../LazySection";
 
 export function TemplatedRenderingSection() {
   return (
@@ -61,9 +60,7 @@ export function TemplatedRenderingSection() {
         </div>
         
         {/* Demo */}
-        <LazySection>
-          <TemplatedRenderingDemo />
-        </LazySection>
+        <TemplatedRenderingDemo />
         
         {/* CTA */}
         <div className="mt-12 text-center">
