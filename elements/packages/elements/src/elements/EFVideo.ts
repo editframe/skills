@@ -131,6 +131,35 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
   #cachedVideoSampleTimeMs: number | undefined = undefined;
 
   /**
+   * Quality upgrade intent tracking.
+   * Tracks what upgrade tasks were last submitted to avoid redundant scheduler calls.
+   */
+  #upgradeState: {
+    sourceTimeMs: number;
+    segmentId: number;
+    startTimeMs: number;
+    submittedKeys: Set<string>;
+  } | null = null;
+
+  /**
+   * Standalone upgrade controller for elements without a timegroup.
+   */
+  #standaloneUpgradeController: AbortController | null = null;
+
+  /**
+   * Current rendition being displayed (for observability).
+   */
+  #currentRenditionId: "main" | "scrub" | undefined = undefined;
+
+  /**
+   * Get the current rendition being displayed.
+   * @public
+   */
+  get currentRenditionId(): "main" | "scrub" | undefined {
+    return this.#currentRenditionId;
+  }
+
+  /**
    * Query readiness state for a given time.
    * @implements FrameRenderable
    * 
@@ -256,12 +285,14 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         mainSegmentId !== undefined &&
         mediaEngine.isSegmentCached(mainSegmentId, mainRendition)
       ) {
+        this.#currentRenditionId = "main";
         return this.#getMainVideoSampleForFrame(mediaEngine, desiredSeekTimeMs, signal);
       }
     }
 
     // SECOND: In production rendering mode, always use main (full quality) track
     if (this.isInProductionRenderingMode()) {
+      this.#currentRenditionId = "main";
       return this.#getMainVideoSampleForFrame(mediaEngine, desiredSeekTimeMs, signal);
     }
 
@@ -274,12 +305,16 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         signal
       );
       if (scrubSample) {
+        this.#currentRenditionId = "scrub";
+        // Got scrub - schedule background quality upgrade
+        this.#maybeScheduleQualityUpgrade(mediaEngine, desiredSeekTimeMs);
         return scrubSample;
       }
       // Scrub track failed, fall through to main track
     }
 
     // FOURTH: Fall back to main video path
+    this.#currentRenditionId = "main";
     return this.#getMainVideoSampleForFrame(mediaEngine, desiredSeekTimeMs, signal);
   }
 
@@ -462,7 +497,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     signal.throwIfAborted();
 
     // Cast MediaSample to VideoSample (it's a video track, so it's a VideoSample)
-    const sample = await mainInput.seek(videoTrack.id, desiredSeekTimeMs) as Promise<VideoSample | undefined>;
+    const sample = (await mainInput.seek(videoTrack.id, desiredSeekTimeMs)) as VideoSample | undefined;
     return sample;
   }
 
@@ -501,6 +536,25 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>,
   ): void {
     super.updated(changedProperties);
+
+    // Invalidate upgrade state on src/assetId change
+    if (changedProperties.has("src") || changedProperties.has("assetId")) {
+      this.#invalidateUpgradeState("src-change");
+    }
+
+    // Invalidate upgrade state on trim/source changes
+    const durationAffectingProps = [
+      "_trimStartMs",
+      "_trimEndMs",
+      "_sourceInMs",
+      "_sourceOutMs",
+    ];
+    const hasDurationChange = durationAffectingProps.some((prop) =>
+      changedProperties.has(prop),
+    );
+    if (hasDurationChange) {
+      this.#invalidateUpgradeState("bounds-change");
+    }
 
     // No need to clear canvas - displayFrame() overwrites it completely
     // and clearing creates blank frame gaps during transitions
@@ -1125,6 +1179,134 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
   }
 
   /**
+   * Maybe schedule quality upgrade tasks for this element.
+   * Called when returning a scrub sample - checks if state has changed and submits tasks.
+   */
+  #maybeScheduleQualityUpgrade(mediaEngine: any, sourceTimeMs: number): void {
+    const mainRendition = mediaEngine.videoRendition;
+    if (!mainRendition) return;
+
+    const segmentId = mediaEngine.computeSegmentId(sourceTimeMs, mainRendition);
+    if (segmentId === undefined) return;
+
+    const startTimeMs = this.startTimeMs;
+
+    // Check: has anything changed since last submission?
+    const stateChanged =
+      this.#upgradeState === null ||
+      this.#upgradeState.segmentId !== segmentId ||
+      this.#upgradeState.startTimeMs !== startTimeMs;
+
+    if (!stateChanged) return; // Nothing changed - O(1) early exit
+
+    const segments = this.#computeLookaheadSegments(mediaEngine, sourceTimeMs, mainRendition);
+    if (segments.length === 0) return; // All segments already cached
+
+    const tasks = segments.map((seg) => ({
+      key: `${this.id}:${seg.segmentId}:${mainRendition.id}`,
+      fetch: async (signal: AbortSignal) => {
+        await mediaEngine.fetchInitSegment(mainRendition, signal);
+        await mediaEngine.fetchMediaSegment(seg.segmentId, mainRendition, signal);
+      },
+      deadlineMs: seg.deadlineMs,
+      owner: this.id,
+    }));
+
+    const scheduler = this.rootTimegroup?.qualityUpgradeScheduler;
+    if (scheduler) {
+      scheduler.replaceForOwner(this.id, tasks);
+    } else {
+      // Standalone mode: fire-and-forget
+      this.#fetchStandalone(tasks);
+    }
+
+    // Update intent state
+    this.#upgradeState = {
+      sourceTimeMs,
+      segmentId,
+      startTimeMs,
+      submittedKeys: new Set(tasks.map((t) => t.key)),
+    };
+  }
+
+  /**
+   * Compute lookahead segments with deadlines in timeline space.
+   */
+  #computeLookaheadSegments(
+    mediaEngine: any,
+    currentSourceTimeMs: number,
+    rendition: any,
+    maxLookahead: number = 5,
+  ): { segmentId: number; deadlineMs: number }[] {
+    const segmentCount = rendition.segmentDurationsMs?.length
+      ?? Math.ceil(mediaEngine.durationMs / (rendition.segmentDurationMs || 1000));
+
+    const currentSegmentId = mediaEngine.computeSegmentId(currentSourceTimeMs, rendition);
+    if (currentSegmentId === undefined) return [];
+
+    const results: { segmentId: number; deadlineMs: number }[] = [];
+    const playheadMs = this.rootTimegroup?.currentTimeMs ?? 0;
+
+    // Walk segment IDs directly (1-based), bounded by actual segment count
+    let cumulativeSourceMs = currentSourceTimeMs;
+    for (let id = currentSegmentId; id <= Math.min(currentSegmentId + maxLookahead, segmentCount); id++) {
+      if (mediaEngine.isSegmentCached(id, rendition)) continue;
+
+      // Deadline = current playhead + offset from current source time
+      const offsetFromCurrentMs = cumulativeSourceMs - currentSourceTimeMs;
+      const deadlineMs = playheadMs + offsetFromCurrentMs;
+
+      results.push({ segmentId: id, deadlineMs });
+
+      // Advance cumulative time by this segment's duration
+      const segDuration = rendition.segmentDurationsMs?.[id - 1]
+        ?? rendition.segmentDurationMs ?? 2000;
+      cumulativeSourceMs += segDuration;
+    }
+
+    return results;
+  }
+
+  /**
+   * Standalone mode: fetch tasks sequentially without scheduler.
+   */
+  #fetchStandalone(tasks: any[]): void {
+    // Abort any previous standalone batch (e.g., after seek)
+    this.#standaloneUpgradeController?.abort();
+    this.#standaloneUpgradeController = new AbortController();
+    const signal = this.#standaloneUpgradeController.signal;
+
+    // Process sequentially
+    (async () => {
+      for (const task of tasks) {
+        if (signal.aborted) break;
+        try {
+          await task.fetch(signal);
+        } catch {
+          // Continue on error
+        }
+      }
+      // After all tasks complete, trigger re-render
+      if (!signal.aborted) {
+        this.playbackController?.runThrottledFrameTask();
+      }
+    })();
+  }
+
+  /**
+   * Invalidate upgrade state and optionally cancel queued tasks.
+   */
+  #invalidateUpgradeState(reason: "src-change" | "bounds-change" | "disconnect"): void {
+    if (reason === "src-change" || reason === "disconnect") {
+      // Full cancel - old tasks reference a stale media engine
+      this.rootTimegroup?.qualityUpgradeScheduler?.cancelForOwner(this.id);
+    }
+    // For bounds-change, don't cancel - old tasks may still be valid segments,
+    // just with stale deadlines. replaceForOwner on next prepareFrame handles it.
+    this.#upgradeState = null;
+  }
+
+  /**
    * Clean up resources when component is disconnected
    */
   disconnectedCallback(): void {
@@ -1132,6 +1314,11 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
 
     // Clean up delayed loading state
     this.#delayedLoadingState.clearAllLoading();
+
+    // Cancel upgrade tasks (centralized or standalone)
+    this.#invalidateUpgradeState("disconnect");
+    this.#standaloneUpgradeController?.abort();
+    this.#standaloneUpgradeController = null;
   }
 
   didBecomeRoot() {

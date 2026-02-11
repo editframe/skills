@@ -16,6 +16,7 @@ import {
   type FrameState,
   PRIORITY_DEFAULT,
 } from "../preview/FrameController.js";
+import { QualityUpgradeScheduler } from "../preview/QualityUpgradeScheduler.js";
 import { deepGetMediaElements, type EFMedia } from "./EFMedia.js";
 import {
   EFTemporal,
@@ -701,6 +702,22 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     return this.#frameController;
   }
 
+  /**
+   * Centralized quality upgrade scheduler for coordinating main-quality segment fetching.
+   * Lives alongside FrameController to manage background quality upgrades.
+   */
+  #qualityUpgradeScheduler: QualityUpgradeScheduler = new QualityUpgradeScheduler({
+    requestFrameRender: () => this.requestFrameRender(),
+  });
+
+  /**
+   * Get the quality upgrade scheduler for background segment fetching.
+   * @public
+   */
+  get qualityUpgradeScheduler(): QualityUpgradeScheduler {
+    return this.#qualityUpgradeScheduler;
+  }
+
   // ============================================================================
   // FrameRenderable Interface Implementation
   // ============================================================================
@@ -1314,6 +1331,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
       child.removeEventListener("contentchange", this.#childContentChangeHandler);
     }
     this.#trackedChildren.clear();
+    this.#qualityUpgradeScheduler.dispose();
   }
 
 
