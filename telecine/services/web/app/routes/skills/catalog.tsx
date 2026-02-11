@@ -1,14 +1,15 @@
 import { Link } from "react-router";
 import type { Route } from "./+types/catalog";
+import type { SkillReference } from "~/utils/skills.server";
 import { getSkillCatalog } from "~/utils/skills.server";
 
 export const meta = () => {
   return [
-    { title: "Skills - Editframe" },
+    { title: "Documentation - Editframe" },
     {
       name: "description",
       content:
-        "Agent skills for video composition with Editframe Elements. Build video tools with natural language prompts.",
+        "Everything you need to build with Editframe — skills for AI agents, documentation for developers, from the same source.",
     },
   ];
 };
@@ -33,8 +34,51 @@ const getCategoryInfo = (skillName: string) => {
   );
 };
 
+const TYPE_LABELS: Record<string, string> = {
+  tutorial: "Tutorials",
+  "how-to": "How-tos",
+  explanation: "Explanations",
+  reference: "References",
+};
+
+const TYPE_COLORS: Record<string, string> = {
+  tutorial: "var(--poster-green)",
+  "how-to": "var(--poster-blue)",
+  explanation: "var(--poster-gold)",
+  reference: "var(--warm-gray)",
+};
+
+function getTypeCounts(refs: SkillReference[]): { type: string; label: string; count: number; color: string }[] {
+  const counts = new Map<string, number>();
+  for (const ref of refs) {
+    counts.set(ref.type, (counts.get(ref.type) || 0) + 1);
+  }
+  const order = ["tutorial", "how-to", "explanation", "reference"];
+  return order
+    .filter((t) => counts.has(t))
+    .map((t) => ({
+      type: t,
+      label: TYPE_LABELS[t] || t,
+      count: counts.get(t)!,
+      color: TYPE_COLORS[t] || "var(--warm-gray)",
+    }));
+}
+
+interface SkillData {
+  name: string;
+  description: string;
+  referenceCount: number;
+  referencesMeta: SkillReference[];
+}
+
 export default function SkillsCatalog({ loaderData }: Route.ComponentProps) {
   const { skills } = loaderData;
+
+  const tutorials = (skills as SkillData[]).flatMap((skill) =>
+    skill.referencesMeta
+      .filter((ref) => ref.type === "tutorial")
+      .map((ref) => ({ ...ref, skillName: skill.name }))
+  );
 
   return (
     <div className="min-h-screen bg-[var(--paper-cream)] texture-paper">
@@ -86,7 +130,7 @@ export default function SkillsCatalog({ loaderData }: Route.ComponentProps) {
         <div className="relative max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <h1 className="text-6xl md:text-8xl font-black tracking-tighter uppercase mb-6">
-              Agent Skills
+              Documentation
             </h1>
             <div className="flex justify-center items-center gap-2 mb-8">
               <div className="w-16 h-2 bg-[var(--poster-red)]" />
@@ -94,8 +138,8 @@ export default function SkillsCatalog({ loaderData }: Route.ComponentProps) {
               <div className="w-8 h-2 bg-[var(--poster-blue)]" />
             </div>
             <p className="text-xl text-[var(--warm-gray)] max-w-3xl mx-auto leading-relaxed">
-              Turn natural language into production-ready video tools. These
-              skills teach AI agents how to build with Editframe Elements.
+              Everything you need to build with Editframe — skills for AI
+              agents, documentation for developers, from the same source.
             </p>
           </div>
 
@@ -123,9 +167,9 @@ export default function SkillsCatalog({ loaderData }: Route.ComponentProps) {
                       Transparency Layer
                     </h3>
                     <p className="text-sm text-[var(--warm-gray)] leading-relaxed">
-                      This explorer shows the exact content your AI agent reads
-                      when using these skills. No marketing spin — just the
-                      actual skill definitions and reference documentation.
+                      This documentation is authored as agent skills. What you
+                      see here is the exact content your AI agent reads — same
+                      source, same truth.
                     </p>
                   </div>
                 </div>
@@ -135,8 +179,9 @@ export default function SkillsCatalog({ loaderData }: Route.ComponentProps) {
 
           {/* Skills grid */}
           <div className="grid md:grid-cols-2 gap-8 mb-24">
-            {skills.map((skill: { name: string; description: string; referenceCount: number }) => {
+            {(skills as SkillData[]).map((skill) => {
               const category = getCategoryInfo(skill.name);
+              const typeCounts = getTypeCounts(skill.referencesMeta);
               return (
                 <Link
                   key={skill.name}
@@ -157,7 +202,7 @@ export default function SkillsCatalog({ loaderData }: Route.ComponentProps) {
                         {category.label}
                       </span>
                       <span className="text-xs font-mono text-[var(--warm-gray)]">
-                        {skill.referenceCount} references
+                        {skill.referenceCount} total
                       </span>
                     </div>
 
@@ -170,6 +215,21 @@ export default function SkillsCatalog({ loaderData }: Route.ComponentProps) {
                     <p className="text-sm text-[var(--warm-gray)] leading-relaxed mb-4">
                       {skill.description}
                     </p>
+
+                    {/* Type breakdown badges */}
+                    {typeCounts.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {typeCounts.map((tc) => (
+                          <span
+                            key={tc.type}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider border-2"
+                            style={{ borderColor: tc.color, color: tc.color }}
+                          >
+                            {tc.count} {tc.count === 1 ? tc.label.replace(/s$/, "") : tc.label}
+                          </span>
+                        ))}
+                      </div>
+                    )}
 
                     {/* Arrow */}
                     <div className="flex items-center text-xs font-bold uppercase tracking-wider group-hover:translate-x-1 transition-transform">
@@ -193,6 +253,54 @@ export default function SkillsCatalog({ loaderData }: Route.ComponentProps) {
               );
             })}
           </div>
+
+          {/* Quick Links - Tutorials */}
+          {tutorials.length > 0 && (
+            <div className="mb-24">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-3 h-3 bg-[var(--poster-green)]" />
+                <h2 className="text-3xl md:text-4xl font-black tracking-tighter uppercase">
+                  Getting Started
+                </h2>
+              </div>
+              <p className="text-sm text-[var(--warm-gray)] mb-8 max-w-2xl">
+                Step-by-step tutorials to get you building with Editframe.
+              </p>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {tutorials.map((tutorial) => {
+                  const category = getCategoryInfo(tutorial.skillName);
+                  return (
+                    <Link
+                      key={`${tutorial.skillName}-${tutorial.name}`}
+                      to={`/skills/${tutorial.skillName}/${tutorial.name}`}
+                      className="group relative block bg-white dark:bg-[var(--card-dark-bg)] border-2 border-[var(--ink-black)] dark:border-white/20 p-5 hover:border-[var(--poster-green)] transition-colors"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <span
+                          className="inline-block w-2 h-2 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: category.color }}
+                        />
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--warm-gray)]">
+                          {category.label}
+                        </span>
+                      </div>
+                      <h3 className="text-sm font-bold mb-1 group-hover:text-[var(--poster-green)] transition-colors">
+                        {tutorial.title}
+                      </h3>
+                      {tutorial.description && (
+                        <p className="text-xs text-[var(--warm-gray)] leading-relaxed line-clamp-2">
+                          {tutorial.description}
+                        </p>
+                      )}
+                      <div className="mt-3 text-[10px] font-bold uppercase tracking-wider text-[var(--poster-green)]">
+                        Tutorial
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Installation section */}
           <div className="max-w-4xl mx-auto">
