@@ -16,7 +16,7 @@ import {
   Scrubber,
   TimeDisplay,
 } from "@editframe/react";
-import { useRenderQueue } from "./RenderQueue";
+import { ExportButton } from "./ExportButton";
 
 const VIDEO_SRC = "https://assets.editframe.com/bars-n-tone.mp4";
 
@@ -25,21 +25,8 @@ export function ClientRenderDemo() {
   const previewId = `client-render-${id}`;
   const [isClient, setIsClient] = useState(false);
   const previewRef = useRef<HTMLElement>(null);
-  const { enqueue } = useRenderQueue();
   
   useEffect(() => { setIsClient(true); }, []);
-
-  const handleExport = () => {
-    const tg = previewRef.current?.querySelector("ef-timegroup");
-    if (tg) {
-      enqueue({
-        name: "Client Export",
-        fileName: "editframe-client-export.mp4",
-        target: tg as HTMLElement,
-        renderOpts: { includeAudio: true },
-      });
-    }
-  };
 
   return (
     <div className="w-full max-w-lg">
@@ -122,18 +109,13 @@ export function ClientRenderDemo() {
         </div>
         
         {/* Export Button — enqueues to shared render queue */}
-        <div className="border-t-4 border-black dark:border-white p-4 bg-white dark:bg-[#1a1a1a]">
-          <button
-            onClick={handleExport}
-            disabled={!isClient}
-            className="w-full py-3 bg-[var(--poster-red)] text-white font-bold uppercase tracking-wider text-sm hover:brightness-110 transition-all disabled:opacity-50 flex items-center justify-center gap-3"
-          >
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-            </svg>
-            Export MP4
-          </button>
-        </div>
+        <ExportButton
+          getTarget={() => previewRef.current?.querySelector("ef-timegroup") as HTMLElement}
+          name="Client Export"
+          fileName="editframe-client-export.mp4"
+          renderOpts={{ includeAudio: true }}
+          disabled={!isClient}
+        />
         
         {/* Specs Footer */}
         <div className="border-t border-black/10 dark:border-white/10 px-4 py-2 bg-black/5 dark:bg-white/5">

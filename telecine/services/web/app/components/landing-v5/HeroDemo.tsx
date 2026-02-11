@@ -20,7 +20,7 @@ import {
   Filmstrip,
 } from "@editframe/react";
 import { CodeEditor } from "~/components/CodeEditor";
-import { useRenderQueue } from "./RenderQueue";
+import { ExportButton } from "./ExportButton";
 
 const VIDEO_SRC = "https://assets.editframe.com/bars-n-tone.mp4";
 
@@ -45,25 +45,12 @@ export function HeroDemo() {
   const previewId = `hero-demo-${id}`;
   const videoId = `hero-video-${id}`;
   const previewRef = useRef<HTMLElement>(null);
-  const { enqueue } = useRenderQueue();
   
   const [isClient, setIsClient] = useState(false);
   
   useEffect(() => {
     setIsClient(true);
   }, []);
-
-  const handleExport = () => {
-    const tg = previewRef.current?.querySelector("ef-timegroup");
-    if (tg) {
-      enqueue({
-        name: "Hero Demo",
-        fileName: "hero-demo.mp4",
-        target: tg as HTMLElement,
-        renderOpts: { includeAudio: true },
-      });
-    }
-  };
 
   return (
     <div className="w-full">
@@ -159,16 +146,14 @@ export function HeroDemo() {
                 />
               </div>
               
-              <button
-                onClick={handleExport}
-                className="px-4 h-12 flex items-center gap-2 border-l border-white/10 bg-[var(--poster-red)] hover:brightness-110 transition-all text-white text-xs font-bold uppercase tracking-wider"
-                title="Export MP4"
-              >
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-                </svg>
-                Export
-              </button>
+              <ExportButton
+                compact
+                getTarget={() => previewRef.current?.querySelector("ef-timegroup") as HTMLElement}
+                name="Hero Demo"
+                fileName="hero-demo.mp4"
+                renderOpts={{ includeAudio: true }}
+                className="border-l border-white/10"
+              />
             </div>
           ) : (
             <div className="flex items-center">

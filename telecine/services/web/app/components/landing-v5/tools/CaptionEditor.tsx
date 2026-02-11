@@ -23,7 +23,7 @@ import {
   useTimingInfo,
 } from "@editframe/react";
 import type { EFTimegroup } from "@editframe/elements";
-import { useRenderQueue } from "../RenderQueue";
+import { ExportButton } from "../ExportButton";
 
 const VIDEO_SRC = "https://assets.editframe.com/bars-n-tone.mp4";
 
@@ -65,7 +65,6 @@ function formatTime(seconds: number): string {
 function CaptionEditorInner({ previewId }: { previewId: string }) {
   const timegroupRef = useRef<EFTimegroup>(null);
   const { ownCurrentTimeMs } = useTimingInfo(timegroupRef);
-  const { enqueue } = useRenderQueue();
 
   const [captions, setCaptions] = useState<CaptionEntry[]>(INITIAL_CAPTIONS);
   const [selectedId, setSelectedId] = useState<string>("1");
@@ -95,19 +94,8 @@ function CaptionEditorInner({ previewId }: { previewId: string }) {
     });
   }, []);
 
-  const handleExport = useCallback(() => {
-    if (timegroupRef.current) {
-      enqueue({
-        name: "Captioned Video",
-        fileName: "captioned-video.mp4",
-        target: timegroupRef.current as unknown as HTMLElement,
-        renderOpts: { includeAudio: true },
-      });
-    }
-  }, [enqueue]);
-
   return (
-    <div>
+    <>
     <div className="grid md:grid-cols-2">
       {/* Video Preview */}
       <div className="border-r-4 border-black dark:border-white bg-black">
@@ -266,13 +254,13 @@ function CaptionEditorInner({ previewId }: { previewId: string }) {
         </div>
       </div>
     </div>
-    <button
-      onClick={handleExport}
-      className="w-full border-t-4 border-black dark:border-white bg-[var(--poster-red)] py-2.5 text-[10px] font-bold uppercase tracking-wider text-white transition-all hover:brightness-110"
-    >
-      Export MP4
-    </button>
-    </div>
+    <ExportButton
+      getTarget={() => timegroupRef.current as unknown as HTMLElement}
+      name="Captioned Video"
+      fileName="captioned-video.mp4"
+      renderOpts={{ includeAudio: true }}
+    />
+    </>
   );
 }
 

@@ -14,7 +14,7 @@ import {
   Text,
 } from "@editframe/react";
 import { CodeEditor } from "~/components/CodeEditor";
-import { useRenderQueue } from "./RenderQueue";
+import { ExportButton } from "./ExportButton";
 
 interface UserData {
   name: string;
@@ -65,7 +65,6 @@ export function TemplatedRenderingDemo() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isClient, setIsClient] = useState(false);
   const previewRef = useRef<HTMLElement>(null);
-  const { enqueue } = useRenderQueue();
   const selectedData = SAMPLE_DATA[selectedIndex]!;
   const previewId = `templated-demo-${id}-${selectedIndex}`;
 
@@ -202,22 +201,12 @@ export function TemplatedRenderingDemo() {
         
         {/* Export Button */}
         <div className="mt-4">
-          <button
-            onClick={() => {
-              const tg = previewRef.current?.querySelector("ef-timegroup");
-              if (tg) {
-                enqueue({
-                  name: `Welcome — ${selectedData.name}`,
-                  fileName: `welcome-${selectedData.name.split(' ')[0]?.toLowerCase()}.mp4`,
-                  target: tg as HTMLElement,
-                });
-              }
-            }}
+          <ExportButton
+            getTarget={() => previewRef.current?.querySelector("ef-timegroup") as HTMLElement}
+            name={`Welcome — ${selectedData.name}`}
+            fileName={`welcome-${selectedData.name.split(' ')[0]?.toLowerCase()}.mp4`}
             disabled={!isClient}
-            className="w-full py-3 bg-black text-white font-bold uppercase tracking-wider text-sm border-4 border-black hover:bg-[var(--poster-red)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Export MP4
-          </button>
+          />
         </div>
         
         {/* Output Summary */}

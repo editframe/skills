@@ -8,7 +8,7 @@ import {
   type TrimValue,
 } from "@editframe/react";
 import type { EFVideo } from "@editframe/elements";
-import { useRenderQueue } from "../RenderQueue";
+import { ExportButton } from "../ExportButton";
 
 const VIDEO_SRC = "https://assets.editframe.com/bars-n-tone.mp4";
 
@@ -23,7 +23,6 @@ function formatTime(ms: number): string {
 export function TrimTool() {
   const videoId = useId();;
   const videoRef = useRef<EFVideo>(null);
-  const { enqueue } = useRenderQueue();
   const { intrinsicDurationMs } = useMediaInfo(videoRef);
 
   const [trim, setTrim] = useState<TrimValue>({ startMs: 2000, endMs: 2000 });
@@ -170,21 +169,13 @@ export function TrimTool() {
             </div>
           </div>
 
-          <button
-            onClick={() => {
-              if (videoRef.current) {
-                enqueue({
-                  name: "Trimmed Video",
-                  fileName: `trimmed-${formatTime(inPoint)}-${formatTime(outPoint)}.mp4`,
-                  target: videoRef.current as unknown as HTMLElement,
-                  renderOpts: { includeAudio: true },
-                });
-              }
-            }}
-            className="w-full border-2 border-black bg-[var(--poster-red)] py-1.5 text-[10px] font-bold uppercase tracking-wider text-white transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white"
-          >
-            Export Clip
-          </button>
+          <ExportButton
+            getTarget={() => videoRef.current as unknown as HTMLElement}
+            name="Trimmed Video"
+            fileName={`trimmed-${formatTime(inPoint)}-${formatTime(outPoint)}.mp4`}
+            renderOpts={{ includeAudio: true }}
+            label="Export Clip"
+          />
         </div>
       </div>
     </div>

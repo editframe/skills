@@ -18,7 +18,7 @@ import {
   TogglePlay,
   TimeDisplay,
 } from "@editframe/react";
-import { useRenderQueue } from "../RenderQueue";
+import { ExportButton } from "../ExportButton";
 
 const VIDEO_SRC = "https://assets.editframe.com/bars-n-tone.mp4";
 
@@ -72,7 +72,6 @@ function TextOverlayTool() {
   const id = useId();
   const previewId = `title-card-${id}`;
   const previewRef = useRef<HTMLElement>(null);
-  const { enqueue } = useRenderQueue();
   
   const [textContent, setTextContent] = useState('YOUR TEXT HERE');
   const [position, setPosition] = useState('bottom-center');
@@ -291,22 +290,12 @@ function TextOverlayTool() {
           </div>
         </div>
         
-        <button
-          onClick={() => {
-            const tg = previewRef.current?.querySelector("ef-timegroup");
-            if (tg) {
-              enqueue({
-                name: "Text Overlay",
-                fileName: "text-overlay.mp4",
-                target: tg as HTMLElement,
-                renderOpts: { includeAudio: true },
-              });
-            }
-          }}
-          className="w-full border-t-4 border-black dark:border-white bg-[var(--poster-red)] py-2.5 text-[10px] font-bold uppercase tracking-wider text-white transition-all hover:brightness-110"
-        >
-          Export MP4
-        </button>
+        <ExportButton
+          getTarget={() => previewRef.current?.querySelector("ef-timegroup") as HTMLElement}
+          name="Text Overlay"
+          fileName="text-overlay.mp4"
+          renderOpts={{ includeAudio: true }}
+        />
       </div>
     </div>
   );
