@@ -2,7 +2,6 @@ import { Link, NavLink, useLocation } from "react-router";
 import clsx from "clsx";
 import { useEffect, useState } from "react";
 import { ThemeToggle } from "~/components/ThemeToggle";
-import { SearchInput } from "~/components/docs/SearchInput";
 
 const navigation = [
   // {
@@ -10,7 +9,7 @@ const navigation = [
   //   label: "Blog",
   // },
   {
-    to: "/docs",
+    to: "/skills",
     label: "Documentation",
   },
   // {
@@ -38,7 +37,7 @@ export const Header = ({
 }) => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const isDocsPage = location.pathname.startsWith("/docs");
+  const isDocsPage = location.pathname.startsWith("/skills");
 
   useEffect(() => {
     if (!isMenuOpen) return;
@@ -83,8 +82,6 @@ export const Header = ({
             className={`hidden lg:-ml-24 ${hideMobileMenu ? "lg:flex" : "md:flex"} items-center gap-1`}
           >
             <nav className="flex items-center gap-1">
-              {/* Search Input - only show on docs pages */}
-              {isDocsPage && <SearchInput />}
               {navigation.map((item) => (
                 <NavLink
                   key={item.label}

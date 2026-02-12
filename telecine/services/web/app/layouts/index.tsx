@@ -2,7 +2,6 @@ import { MarketingLayout } from "~/components/layouts/MarketingLayout";
 import { FeaturesList } from "~/components/marketing/FeaturesList";
 import { Hero } from "~/components/marketing/Hero";
 import { Playground } from "~/components/marketing/Playground";
-import { PreviewVideo } from "~/components/docs/PreviewVideo";
 
 export const Layout = ({
   features,
@@ -37,9 +36,6 @@ export const Layout = ({
             presetCode={playground.presetCode}
           />
         )}
-      </div>
-      <div className="mt-12 lg:mt-16">
-        <PreviewVideo />
       </div>
     </MarketingLayout>
   );

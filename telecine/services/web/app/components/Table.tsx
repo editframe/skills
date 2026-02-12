@@ -17,9 +17,6 @@ export const TableHead = (
           "border-slate-300/75 dark:border-slate-700/75",
           "bg-gradient-to-br from-slate-50/95 via-slate-50/85 to-slate-50/95",
           "dark:from-slate-800/95 dark:via-slate-800/85 dark:to-slate-800/95",
-          "before:absolute before:inset-0 before:bg-gradient-to-br before:from-amber-50/30 before:via-transparent before:to-transparent",
-          "dark:before:from-blue-950/20 dark:before:via-transparent dark:before:to-transparent",
-          "before:pointer-events-none",
         )}
       >
         {props.children}
@@ -147,7 +144,7 @@ export const Table = <
         "before:pointer-events-none before:rounded-lg",
       )}
     >
-      <table className="w-full border-collapse">
+      <table className="w-full border-collapse table-fixed">
         <TableHead>
           {columns.map((column) => (
             <ColumnHead key={column.name}>{column.name}</ColumnHead>

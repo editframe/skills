@@ -11,14 +11,10 @@ import invariant from "tiny-invariant";
 import type { LoaderFunctionArgs } from "react-router";
 import cx from "classnames";
 import { Video } from "~/components/marketing/Video";
-import { CustomCode, CustomLink } from "~/components/docs/Markdown";
+import { CustomCode, CustomLink } from "~/components/shared/Markdown";
 import { CodeBlock } from "~/components/CodeBlock";
-import { Playground } from "~/components/docs/Playground";
-import { Prose } from "~/components/docs/Prose";
-import { Preview } from "~/components/docs/Preview";
-import { PreviewVideo } from "~/components/docs/PreviewVideo";
 import { Audio } from "~/components/marketing/Audio";
-import { Libraries } from "~/components/docs/Libraries";
+import { Prose } from "~/components/marketing/Prose";
 import { formatDate } from "~/ui/formatDate";
 import { typographyClasses } from "~/utils/typography";
 
@@ -155,13 +151,9 @@ export default function GuidePage() {
                           h1: ({ children, ...props }) => (
                             <h1 {...props}>{children}</h1>
                           ),
-                          Libraries,
-                          Playground: (props) => <Playground {...props} />,
                           pre: ({ children, ...props }) => (
                             <CodeBlock {...props}>{children}</CodeBlock>
                           ),
-                          Preview: (props) => <Preview {...props} />,
-                          PreviewVideo: (props) => <PreviewVideo {...props} />,
                           Audio: Audio,
                           Video: Video,
                           code: CustomCode,

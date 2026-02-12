@@ -10,9 +10,9 @@ import { CacheControl } from "~/utils/cache-control.server";
 import invariant from "tiny-invariant";
 import type { LoaderFunctionArgs } from "react-router";
 import cx from "classnames";
-import { CustomCode, CustomLink } from "~/components/docs/Markdown";
+import { CustomCode, CustomLink } from "~/components/shared/Markdown";
 import { formatDate } from "~/ui/formatDate";
-import { Prose } from "~/components/docs/Prose";
+import { Prose } from "~/components/marketing/Prose";
 import { typographyClasses } from "~/utils/typography";
 
 export const loader = async (request: LoaderFunctionArgs) => {

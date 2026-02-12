@@ -6,24 +6,8 @@ import {
   getAllGuidesContent,
   getAllBlogsContent,
 } from "~/utils/doc.server";
-import { buildDocsMenu } from "~/utils/fs.server";
-import type { DocsMenuItem } from "~/utils/fs.server";
 
 export const siteUrl = 'https://www.editframe.com';
-
-// Helper function to recursively extract all slugs from docs menu structure
-function extractDocsSlugs(menu: DocsMenuItem[]): string[] {
-  const slugs: string[] = [];
-  for (const item of menu) {
-    if (item.slug && item.hasContent) {
-      slugs.push(item.slug);
-    }
-    if (item.children && item.children.length > 0) {
-      slugs.push(...extractDocsSlugs(item.children));
-    }
-  }
-  return slugs;
-}
 
 // Tools array - extracted from tools_._index.tsx
 const tools = [
@@ -75,30 +59,21 @@ function generateUrlEntry(
 
 export const loader: LoaderFunction = async () => {
   // Fetch all content
-  const [changelogs, guides, blogs, docsMenu] = await Promise.all([
+  const [changelogs, guides, blogs] = await Promise.all([
     getAllChangelogsContent(),
     getAllGuidesContent(),
     getAllBlogsContent(),
-    buildDocsMenu(),
   ]);
-
-  // Extract docs slugs
-  const docsSlugs = extractDocsSlugs(docsMenu);
 
   // Build sitemap entries
   const urlEntries: string[] = [];
 
   // Static index pages
   urlEntries.push(generateUrlEntry('/', undefined, 'daily', '1.0')); // Home page
-  urlEntries.push(generateUrlEntry('/docs', undefined, 'weekly', '0.9')); // Docs index
+  urlEntries.push(generateUrlEntry('/skills', undefined, 'weekly', '0.9')); // Skills/docs index
   urlEntries.push(generateUrlEntry('/guides', undefined, 'weekly', '0.9')); // Guides index
   urlEntries.push(generateUrlEntry('/blog', undefined, 'weekly', '0.9')); // Blog index
   urlEntries.push(generateUrlEntry('/tools', undefined, 'weekly', '0.9')); // Tools index
-
-  // Docs pages
-  for (const slug of docsSlugs) {
-    urlEntries.push(generateUrlEntry(slug, undefined, 'weekly', '0.7'));
-  }
 
   // Guides pages
   for (const guide of guides) {

@@ -4,7 +4,7 @@ import { useLoaderData } from "react-router";
 import "@editframe/elements";
 import "@editframe/elements/styles.css";
 import "prismjs/themes/prism-tomorrow.css";
-import { TimelineControls } from "../docs/examples/shared/TimelineControls";
+import { TimelineControls } from "~/components/shared/TimelineControls";
 import { Header } from "~/components/marketing/Header";
 import { Footer } from "~/components/marketing/Footer";
 import { parseRequestSession } from "@/util/session";
