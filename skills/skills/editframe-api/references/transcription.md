@@ -1,78 +1,62 @@
 ---
 title: Transcription
-description: Generate audio transcriptions from ISOBMFF files and monitor transcription progress
+description: Generate audio transcriptions from processed video files
 type: reference
 nav:
   parent: "API Reference"
   priority: 30
 api:
   functions:
-    - name: createTranscription
-      signature: "createTranscription(client, payload)"
-      description: Create transcription job for ISOBMFF file
-      returns: CreateTranscriptionResult
-    - name: getTranscriptionProgress
-      signature: "getTranscriptionProgress(client, id)"
-      description: Stream transcription progress via SSE
-      returns: CompletionIterator
-    - name: getTranscriptionInfo
-      signature: "getTranscriptionInfo(client, id)"
-      description: Get transcription metadata
-      returns: TranscriptionInfoResult
+    - name: transcribeISOBMFFFile
+      signature: "transcribeISOBMFFFile(client, id, payload)"
+      description: Start audio transcription for processed file
+      returns: TranscribeISOBMFFFileResult
+    - name: getISOBMFFFileTranscription
+      signature: "getISOBMFFFileTranscription(client, id)"
+      description: Get transcription metadata for processed file
+      returns: GetISOBMFFFileTranscriptionResult | null
 ---
 
 # Transcription
 
-Generate audio transcriptions from ISOBMFF files.
+Generate audio transcriptions from processed video files.
 
-## createTranscription
+## transcribeISOBMFFFile
 
-Create a transcription job for an ISOBMFF file.
+Start audio transcription for a processed file.
 
 ```typescript
-import { createTranscription } from "@editframe/api";
+import { transcribeISOBMFFFile } from "@editframe/api";
 
-const transcription = await createTranscription(client, {
-  file_id: isobmffFile.id,
-  track_id: 2,  // Audio track ID
+// After uploading and processing a video file
+const transcription = await transcribeISOBMFFFile(client, processedFile.id, {
+  trackId: "2", // Optional: specify audio track ID
 });
 
-console.log(transcription.id);     // Transcription job ID
-console.log(transcription.status); // "created" | "pending" | "transcribing" | "complete" | "failed"
+console.log(transcription.id);       // Transcription job ID
+console.log(transcription.file_id);  // Processed file ID
+console.log(transcription.track_id); // Audio track ID
 ```
 
-The `track_id` specifies which audio track to transcribe.
+If you don't specify `trackId`, Editframe uses the first audio track in the file.
 
-## getTranscriptionProgress
+## getISOBMFFFileTranscription
 
-Monitor transcription progress.
+Get transcription metadata for a processed file.
 
 ```typescript
-import { getTranscriptionProgress } from "@editframe/api";
+import { getISOBMFFFileTranscription } from "@editframe/api";
 
-for await (const event of await getTranscriptionProgress(client, transcription.id)) {
-  if (event.type === "progress") {
-    console.log(`Progress: ${event.progress.toFixed(1)}%`);
-  } else if (event.type === "complete") {
-    console.log("Transcription complete!");
-    break;
-  }
+const transcription = await getISOBMFFFileTranscription(client, processedFile.id);
+
+if (transcription) {
+  console.log(transcription.id);
+  console.log(transcription.work_slice_ms);
+  console.log(transcription.isobmff_track.duration_ms);
 }
 ```
 
-The iterator yields progress events until transcription completes or fails.
-
-## getTranscriptionInfo
-
-Get transcription metadata.
-
-```typescript
-import { getTranscriptionInfo } from "@editframe/api";
-
-const info = await getTranscriptionInfo(client, transcription.id);
-
-console.log(info.status); // "complete" | "transcribing" | "failed"
-```
+Returns `null` if the file has no transcription.
 
 ## Complete Workflow
 

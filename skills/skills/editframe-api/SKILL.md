@@ -49,20 +49,14 @@ const buffer = await response.arrayBuffer();
 - `lookupRenderByMd5(client, md5)` → `LookupRenderByMd5Result | null` — Find existing render by hash
 - `downloadRender(client, id)` → `Response` — Download completed render
 
-### Unprocessed Files
+### Video Files
 - `createUnprocessedFile(client, payload)` → `CreateUnprocessedFileResult` — Register a raw media file
 - `uploadUnprocessedReadableStream(client, uploadDetails, fileStream)` → `IteratorWithPromise<UploadChunkEvent>` — Upload raw file content
 - `lookupUnprocessedFileByMd5(client, md5)` → `LookupUnprocessedFileByMd5Result | null` — Find existing file by hash
-- `processIsobmffFile(client, id)` → `ProcessIsobmffFileResult` — Process raw file into ISOBMFF format
-
-### ISOBMFF Files
-- `createISOBMFFFile(client, payload)` → `CreateISOBMFFFileResult` — Register processed ISOBMFF file
-- `uploadFragmentIndex(client, fileId, fileStream, fileSize)` → `Promise<void>` — Upload fragment index for seeking
-- `lookupISOBMFFFileByMd5(client, md5)` → `LookupISOBMFFFileByMd5Result | null` — Find existing ISOBMFF file
+- `processIsobmffFile(client, id)` → `ProcessIsobmffFileResult` — Process raw file for streaming
+- `lookupISOBMFFFileByMd5(client, md5)` → `LookupISOBMFFFileByMd5Result | null` — Find existing processed file
 - `getISOBMFFFileTranscription(client, id)` → `GetISOBMFFFileTranscriptionResult | null` — Get transcription metadata
 - `transcribeISOBMFFFile(client, id, payload)` → `TranscribeISOBMFFFileResult` — Start audio transcription
-- `createISOBMFFTrack(client, payload)` → `CreateISOBMFFTrackResult` — Register video/audio track
-- `uploadISOBMFFTrack(client, fileId, trackId, fileStream, trackSize)` → `IteratorWithPromise<UploadChunkEvent>` — Upload track data
 
 ### Image Files
 - `createImageFile(client, payload)` → `CreateImageFileResult` — Register image file

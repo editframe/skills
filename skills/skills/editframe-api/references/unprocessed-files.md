@@ -135,4 +135,4 @@ Processing converts the raw file to ISOBMFF format, which enables:
 - Adaptive bitrate streaming
 - Efficient composition rendering
 
-See [isobmff-files.md](isobmff-files.md) for working with processed files.
+Once processing completes, the file is ready to use in compositions. See [media-pipeline.md](media-pipeline.md) for the complete workflow.
