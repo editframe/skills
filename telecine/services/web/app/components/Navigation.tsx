@@ -14,6 +14,8 @@ import {
   ChartBar,
   WebhooksLogo,
   File,
+  Image,
+  ClosedCaptioning,
 } from "@phosphor-icons/react";
 import { NavLink } from "./Link";
 import clsx from "clsx";
@@ -24,15 +26,19 @@ interface SidebarItemProps {
   to: string;
   children: React.ReactNode;
   Icon: React.ElementType;
+  end?: boolean;
 }
 
-const SidebarItem = ({ to, children, Icon }: SidebarItemProps) => {
+const SidebarItem = ({ to, children, Icon, end }: SidebarItemProps) => {
   const location = useLocation();
-  const isActive = location.pathname.startsWith(to);
+  const isActive = end
+    ? location.pathname === to
+    : location.pathname.startsWith(to);
   return (
     <li>
       <NavLink
         to={to}
+        end={end}
         className={({ isActive }) =>
           clsx(
             "flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs transition-all duration-150 group",
@@ -73,6 +79,7 @@ interface NavGroup {
         to: string;
         label: string;
         Icon: React.ElementType;
+        end?: boolean;
       }
     | false
   >;
@@ -85,7 +92,23 @@ const userNavGroups: NavGroup[] = [
       {
         to: "/resource/files",
         Icon: File,
-        label: "Files",
+        label: "All Files",
+        end: true,
+      },
+      {
+        to: "/resource/files/videos",
+        Icon: VideoCamera,
+        label: "Videos",
+      },
+      {
+        to: "/resource/files/images",
+        Icon: Image,
+        label: "Images",
+      },
+      {
+        to: "/resource/files/captions",
+        Icon: ClosedCaptioning,
+        label: "Captions",
       },
     ],
   },
@@ -287,7 +310,7 @@ export const Navigation = ({
                     return null;
                   }
                   return (
-                    <SidebarItem key={item.to} to={item.to} Icon={item.Icon}>
+                    <SidebarItem key={item.to} to={item.to} Icon={item.Icon} end={item.end}>
                       {item.label}
                     </SidebarItem>
                   );

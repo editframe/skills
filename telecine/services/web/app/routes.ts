@@ -88,6 +88,19 @@ const routes = [
       // because "files" is a resourceType and would collide with /:resourceType/:id)
       route("/upload-file", "routes/resource/files/upload.tsx"),
 
+      // Pre-filtered file type pages
+      ...prefix("/files", [
+        route("/videos", "routes/resource/files/videos.tsx", [
+          route(":id", "routes/resource/files/fileDetail.tsx"),
+        ]),
+        route("/images", "routes/resource/files/images.tsx", [
+          route(":id", "routes/resource/files/fileDetail.tsx"),
+        ]),
+        route("/captions", "routes/resource/files/captions.tsx", [
+          route(":id", "routes/resource/files/fileDetail.tsx"),
+        ]),
+      ]),
+
       route("/:resourceType", "routes/resource/Listing.tsx", [
         route(":id", "routes/resource/Detail.tsx", [
           route(":relatedType/:relId", "routes/resource/Related.tsx"),
@@ -158,7 +171,8 @@ const routes = [
     ]),
   ]),
 
-  ...v1.prefix("/api/v1", [
+  layout("api/v1/layout.ts", [
+    ...v1.prefix("/api/v1", [
     v1.route("/organization", "organization.ts"),
     v1.route("/test_webhook", "test_webhook.ts"),
 
@@ -240,6 +254,7 @@ const routes = [
     ]),
 
     v1.route("/url-token", "url-token.ts"),
+  ]),
   ]),
 
   ...hdb.prefix("/hdb", [

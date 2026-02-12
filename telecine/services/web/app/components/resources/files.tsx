@@ -31,7 +31,7 @@ import {
   ListboxOptions,
 } from "@headlessui/react";
 
-const IndexQuery = progressiveQuery(
+export const IndexQuery = progressiveQuery(
   "org-reader",
   graphql(`
     query Files(
@@ -68,7 +68,7 @@ const IndexQuery = progressiveQuery(
   `),
 );
 
-const DetailQuery = progressiveQuery(
+export const DetailQuery = progressiveQuery(
   "org-reader",
   graphql(`
     query File($id: uuid!, $orgId: uuid!) {
@@ -295,6 +295,85 @@ const TableHeader = () => (
   </div>
 );
 
+const StatusFilter = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const status = searchParams.get("status") ?? "all";
+
+  const updateFilter = (key: string, value: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (value === "all" || !value) {
+      next.delete(key);
+    } else {
+      next.set(key, value);
+    }
+    next.set("page", "0");
+    setSearchParams(next, { preventScrollReset: true });
+  };
+
+  return (
+    <div className="flex items-center gap-2 text-xs">
+      <span className="font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
+        Status:
+      </span>
+      <Listbox
+        value={status}
+        onChange={(v) => updateFilter("status", v)}
+        name="status"
+      >
+        <ListboxButton className={listboxButtonClass}>
+          {statusOptions.find((o) => o.id === status)?.label ?? "All statuses"}
+        </ListboxButton>
+        <ListboxOptions anchor="bottom start" className={listboxOptionsClass}>
+          {statusOptions.map((opt) => (
+            <ListboxOption key={opt.id} value={opt.id}>
+              {({ selected, focus }) => (
+                <div
+                  className={clsx(
+                    "flex items-center px-2 py-1 cursor-pointer transition-colors",
+                    focus && "bg-slate-100 dark:bg-slate-700",
+                    selected && "font-medium",
+                  )}
+                >
+                  <span
+                    className={clsx(
+                      "mr-2",
+                      selected
+                        ? "text-blue-600 dark:text-blue-400"
+                        : "text-slate-400 dark:text-slate-500",
+                    )}
+                  >
+                    {selected ? "✓" : "○"}
+                  </span>
+                  <span className="text-slate-900 dark:text-white">
+                    {opt.label}
+                  </span>
+                </div>
+              )}
+            </ListboxOption>
+          ))}
+        </ListboxOptions>
+      </Listbox>
+    </div>
+  );
+};
+
+const fileDetailFields = [
+  { name: "Preview", content: Preview, noHighlight: true, vertical: true },
+  { name: "Progress", content: Progress, noHighlight: true, vertical: true },
+  { name: "Type", content: Type },
+  { name: "Status", content: Status },
+  { name: "Filename", content: Filename },
+  { name: "Dimensions", content: Dimensions },
+  { name: "File Size", content: FileSize },
+  { name: "MIME Type", content: MimeType },
+  { name: "MD5", content: MD5 },
+  { name: "Created At", content: CreatedAt },
+  { name: "Completed At", content: CompletedAt },
+  { name: "Expires At", content: ExpiresAt },
+  { name: "ID", content: ID },
+  { name: "", content: Actions, noHighlight: true, vertical: true },
+] as const;
+
 export const Files: ResourceView<typeof IndexQuery, typeof DetailQuery> = {
   index: {
     query: IndexQuery,
@@ -312,21 +391,56 @@ export const Files: ResourceView<typeof IndexQuery, typeof DetailQuery> = {
   },
   detail: {
     query: DetailQuery,
-    fields: [
-      { name: "Preview", content: Preview, noHighlight: true, vertical: true },
-      { name: "Progress", content: Progress, noHighlight: true, vertical: true },
-      { name: "Type", content: Type },
-      { name: "Status", content: Status },
-      { name: "Filename", content: Filename },
-      { name: "Dimensions", content: Dimensions },
-      { name: "File Size", content: FileSize },
-      { name: "MIME Type", content: MimeType },
-      { name: "MD5", content: MD5 },
-      { name: "Created At", content: CreatedAt },
-      { name: "Completed At", content: CompletedAt },
-      { name: "Expires At", content: ExpiresAt },
-      { name: "ID", content: ID },
-      { name: "", content: Actions, noHighlight: true, vertical: true },
-    ],
+    fields: [...fileDetailFields],
   },
 };
+
+export function createFileTypeView(
+  fileType: string,
+  uploadPath: string,
+): ResourceView<typeof IndexQuery, typeof DetailQuery> {
+  const SubtypeTableHeader = () => (
+    <div className="flex items-center justify-between pb-2">
+      <StatusFilter />
+      <Link to={uploadPath}>
+        <Button mode="creative" icon={Upload}>
+          Upload File
+        </Button>
+      </Link>
+    </div>
+  );
+
+  return {
+    index: {
+      query: IndexQuery,
+      TableHeader: SubtypeTableHeader,
+      buildWhereClause(searchParams: URLSearchParams) {
+        const status = searchParams.get("status")?.trim();
+        const whereClause: {
+          type: { _eq: string };
+          status?: { _eq: string };
+        } = { type: { _eq: fileType } };
+        if (status) {
+          whereClause.status = { _eq: status };
+        }
+        return whereClause;
+      },
+      columns: [
+        { name: "Status", content: Status },
+        { name: "Filename", content: Filename },
+        { name: "Progress", content: Progress },
+        { name: "Created At", content: CreatedAt },
+        { name: "File Size", content: FileSize },
+        { name: "", content: Actions },
+      ],
+    },
+    detail: {
+      query: DetailQuery,
+      fields: [...fileDetailFields],
+    },
+  };
+}
+
+export const VideoFiles = createFileTypeView("video", "/resource/upload-file");
+export const ImageFiles = createFileTypeView("image", "/resource/upload-file");
+export const CaptionFiles = createFileTypeView("caption", "/resource/upload-file");
