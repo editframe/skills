@@ -344,37 +344,36 @@ describe("verifyJwtForSession", () => {
     });
   });
 
-  describe("decode-before-verify attack surface", () => {
-    test("attacker-crafted token with type:url and valid cid is rejected if signed with APP_JWT_SECRET instead of API key hash", async () => {
-      // An attacker who knows APP_JWT_SECRET but not the API key hash
-      // crafts a token with type: "url" to try to get a URL session.
-      // The decode step reads the unverified type/cid, looks up the API key hash,
-      // and uses it for verification — which should fail since it was signed
-      // with APP_JWT_SECRET.
-      const realApiKeyHash = crypto.randomBytes(64);
-
-      const maliciousToken = jwt.sign(
+  describe("verify-first security model", () => {
+    test("type:url token signed with APP_JWT_SECRET is accepted via primary verification (server-created)", async () => {
+      // APP_JWT_SECRET is a server-only secret. A type:url token signed
+      // with it is a valid server-created session — it verifies in the
+      // first step and never hits the DB fallback path.
+      const token = jwt.sign(
         {
           type: "url",
           url: "https://example.com/api",
-          cid: "victim-key-456",
-          oid: "victim-org",
-          uid: "attacker-uid",
+          cid: "key-456",
+          oid: "org-789",
+          uid: "user-123",
         },
         APP_JWT_SECRET,
         { algorithm: "HS256" },
       );
 
-      mockDb.executeTakeFirst.mockResolvedValue({ hash: realApiKeyHash });
-
-      await expect(verifyJwtForSession(maliciousToken)).rejects.toThrow();
+      const result = await verifyJwtForSession(token);
+      expect(result).toMatchObject({
+        type: "url",
+        cid: "key-456",
+        oid: "org-789",
+      });
+      // DB was NOT queried — verification succeeded without it
+      expect(mockDb.where).not.toHaveBeenCalled();
     });
 
-    test("attacker cannot forge anonymous_url token with type:url to bypass URL validation", async () => {
-      // Attacker tries to create a token with type: "url" using a key
-      // they don't have. The decode step will extract the cid from
-      // the unverified payload and look it up — but verification will
-      // fail because the token isn't signed with that API key's hash.
+    test("attacker with arbitrary key cannot forge url token", async () => {
+      // Token signed with an unknown key fails APP_JWT_SECRET verification,
+      // falls through to URL fallback, but API key hash verification also fails.
       const attackerKey = crypto.randomBytes(32);
       const realApiKeyHash = crypto.randomBytes(64);
 
@@ -395,32 +394,48 @@ describe("verifyJwtForSession", () => {
       await expect(verifyJwtForSession(token)).rejects.toThrow();
     });
 
-    test("DB lookup uses unverified cid from decoded payload", async () => {
-      // Pin the behavior: verifyJwtForSession calls db.selectFrom
-      // with the cid from the UNVERIFIED decoded payload.
-      // This is the confused-deputy pattern we want to track.
+    test("DB fallback only triggers after APP_JWT_SECRET verification fails", async () => {
+      // A token signed with a random key won't verify with APP_JWT_SECRET,
+      // then falls through to the URL decode-and-verify path.
       const token = jwt.sign(
         {
           type: "url",
           url: "https://example.com/api",
-          cid: "attacker-chosen-cid",
+          cid: "some-cid",
           oid: "org",
           uid: "user",
         },
-        "any-key",
+        "unknown-key",
         { algorithm: "HS256" },
       );
 
       mockDb.executeTakeFirst.mockResolvedValue(null);
 
-      // It will throw because API key not found, but the important
-      // thing is that the DB was queried with the unverified cid
       await expect(verifyJwtForSession(token)).rejects.toThrow();
-      expect(mockDb.where).toHaveBeenCalledWith(
-        "id",
-        "=",
-        "attacker-chosen-cid",
+      // DB WAS queried as a fallback after primary verification failed
+      expect(mockDb.where).toHaveBeenCalledWith("id", "=", "some-cid");
+    });
+
+    test("non-url token signed with wrong key is rejected without DB query", async () => {
+      // A token with type:email_passwords signed with a wrong key
+      // fails APP_JWT_SECRET, and since type !== "url", the fallback
+      // path rejects immediately without touching the DB.
+      const token = jwt.sign(
+        {
+          type: "email_passwords",
+          uid: "user-123",
+          cid: "cred-456",
+          email: "user@example.com",
+          confirmed: true,
+        },
+        "wrong-secret",
+        { algorithm: "HS256" },
       );
+
+      await expect(verifyJwtForSession(token)).rejects.toThrow(
+        "Invalid token",
+      );
+      expect(mockDb.where).not.toHaveBeenCalled();
     });
   });
 

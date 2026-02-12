@@ -82,57 +82,61 @@ export const signJwtForSession = (sessionInfo: SessionInfo) => {
 };
 
 export const verifyJwtForSession = async (token: string) => {
+  // Try APP_JWT_SECRET first — covers email_passwords, api, and anonymous_url tokens.
+  // This avoids making DB queries driven by unverified JWT claims.
+  try {
+    const verified = jwt.verify(token, APP_JWT_SECRET_KEY) as jwt.JwtPayload;
+
+    if (verified.type === "anonymous_url") {
+      return {
+        type: "anonymous_url" as const,
+        url: verified.url,
+        params: verified.params,
+        cid: null,
+        oid: null,
+        uid: null,
+      };
+    }
+
+    return verified;
+  } catch {
+    // APP_JWT_SECRET verification failed — may be a URL token signed with an API key hash
+  }
+
+  // Fallback: decode without verification to check if this is a URL token.
+  // Only URL tokens use per-API-key signing keys.
   const decoded = jwt.decode(token);
-  if (typeof decoded === "string") {
+  if (typeof decoded === "string" || decoded === null) {
     throw new Error("Invalid token");
   }
 
-  if (
-    decoded !== null &&
-    typeof decoded === "object" &&
-    decoded.type === "url"
-  ) {
-    const apiTokenId = decoded.cid;
-    const apiKey = await db
-      .selectFrom("identity.api_keys")
-      .where("id", "=", apiTokenId)
-      .select("hash")
-      .executeTakeFirst();
-
-    if (!apiKey) {
-      logger.error({ apiTokenId }, "Failed to find API key");
-      throw new Response("Failed to find API key", { status: 401 });
-    }
-    jwt.verify(token, crypto.createSecretKey(apiKey.hash));
-    return {
-      type: "url",
-      url: decoded.url,
-      params: decoded.params,
-      cid: decoded.cid,
-      oid: decoded.oid,
-      uid: decoded.uid,
-    };
+  if (decoded.type !== "url") {
+    throw new Error("Invalid token");
   }
 
-  if (
-    decoded !== null &&
-    typeof decoded === "object" &&
-    decoded.type === "anonymous_url"
-  ) {
-    // For anonymous URL tokens, verify with APPLICATION_JWT_SECRET
-    // No database lookup required
-    jwt.verify(token, APP_JWT_SECRET_KEY);
-    return {
-      type: "anonymous_url",
-      url: decoded.url,
-      params: decoded.params,
-      // Anonymous tokens don't have user context
-      cid: null,
-      oid: null,
-      uid: null,
-    };
+  const apiTokenId = decoded.cid;
+  if (typeof apiTokenId !== "string") {
+    throw new Error("Invalid token: missing cid");
   }
 
-  jwt.verify(token, APP_JWT_SECRET_KEY);
-  return decoded;
+  const apiKey = await db
+    .selectFrom("identity.api_keys")
+    .where("id", "=", apiTokenId)
+    .select("hash")
+    .executeTakeFirst();
+
+  if (!apiKey) {
+    logger.error({ apiTokenId }, "Failed to find API key");
+    throw new Response("Failed to find API key", { status: 401 });
+  }
+
+  jwt.verify(token, crypto.createSecretKey(apiKey.hash));
+  return {
+    type: "url" as const,
+    url: decoded.url,
+    params: decoded.params,
+    cid: decoded.cid,
+    oid: decoded.oid,
+    uid: decoded.uid,
+  };
 };

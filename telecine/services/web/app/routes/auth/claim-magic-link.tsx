@@ -1,16 +1,20 @@
-import { requireNoSession } from "@/util/requireNoSession";
+import { requireNoSession } from "@/util/requireSession.server";
 import { createEmailPasswordSessionCookie } from "@/util/session";
 import { redirect } from "react-router";
 import type { MetaFunction } from "react-router";
 import { ErrorMessage } from "~/components/ErrorMessage";
 import { getUserEmailAndPasswordByMagicToken } from "~/loginUserWithMagicLink";
-export const loader = requireNoSession(async (args) => {
-  if (!args.params.token) {
+
+import type { Route } from "./+types/claim-magic-link";
+
+export const loader = async ({ request, params }: Route.LoaderArgs) => {
+  await requireNoSession(request);
+  if (!params.token) {
     return null;
   }
   try {
     const sessionInfo = await getUserEmailAndPasswordByMagicToken(
-      args.params.token,
+      params.token,
     );
     return redirect("/welcome", {
       headers: {
@@ -20,7 +24,7 @@ export const loader = requireNoSession(async (args) => {
   } catch (e) {
     return { error: e };
   }
-});
+};
 export const meta: MetaFunction = () => {
   return [{ title: "Login with magic link | Editframe" }];
 };

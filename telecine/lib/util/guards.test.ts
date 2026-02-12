@@ -33,12 +33,11 @@ const mockSelectFrom = (
 import { createSessionCookie, createApiTokenSessionCookie } from "./session";
 import {
   requireSession,
-  requireNoSession as requireNoSessionFromServer,
+  requireNoSession,
   maybeSession,
   requireCookieOrTokenSession,
 } from "./requireSession.server";
 import { requireAdminSession } from "./requireAdminSession";
-import { requireNoSession as requireNoSessionHOF } from "./requireNoSession";
 import { requireAPIToken } from "./requireAPIToken";
 
 function makeRequest(
@@ -147,10 +146,10 @@ describe("requireSession (requireSession.server.ts)", () => {
   });
 });
 
-describe("requireNoSession (requireSession.server.ts version)", () => {
+describe("requireNoSession", () => {
   test("returns sessionCookie for unauthenticated request", async () => {
     const request = makeRequest();
-    const result = await requireNoSessionFromServer(request);
+    const result = await requireNoSession(request);
 
     expect(result.sessionCookie).toBeDefined();
   });
@@ -162,7 +161,7 @@ describe("requireNoSession (requireSession.server.ts version)", () => {
     const request = makeRequest({ Cookie: cookie });
 
     try {
-      await requireNoSessionFromServer(request);
+      await requireNoSession(request);
       expect.fail("Should have thrown");
     } catch (error) {
       expect(error).toBeInstanceOf(Response);
@@ -170,75 +169,6 @@ describe("requireNoSession (requireSession.server.ts version)", () => {
       expect(response.status).toBe(302);
       expect(response.headers.get("Location")).toBe("/welcome");
     }
-  });
-});
-
-describe("requireNoSession (requireNoSession.ts HOF version)", () => {
-  test("returns HOF that calls inner loader when no session", async () => {
-    const innerLoader = vi.fn().mockResolvedValue({ data: "inner" });
-    const wrapped = requireNoSessionHOF(innerLoader);
-
-    const args = {
-      request: makeRequest(),
-      params: {},
-      context: {},
-    } as any;
-
-    const result = await wrapped(args);
-    expect(result).toEqual({ data: "inner" });
-    expect(innerLoader).toHaveBeenCalled();
-  });
-
-  test("returns HOF that redirects to /welcome when session exists", async () => {
-    const cookie = await createAuthenticatedCookie();
-    mockDbChain.executeTakeFirst!.mockResolvedValue({ id: "user-123" });
-
-    const innerLoader = vi.fn();
-    const wrapped = requireNoSessionHOF(innerLoader);
-
-    const args = {
-      request: makeRequest({ Cookie: cookie }),
-      params: {},
-      context: {},
-    } as any;
-
-    const result = await wrapped(args);
-    expect(result).toBeInstanceOf(Response);
-    const response = result as Response;
-    expect(response.status).toBe(302);
-    expect(response.headers.get("Location")).toBe("/welcome");
-    expect(innerLoader).not.toHaveBeenCalled();
-  });
-
-  test("returns null when no loader provided and no session", async () => {
-    const wrapped = requireNoSessionHOF();
-
-    const args = {
-      request: makeRequest(),
-      params: {},
-      context: {},
-    } as any;
-
-    const result = await wrapped(args);
-    expect(result).toBeNull();
-  });
-
-  test("provides sessionCookie to inner loader", async () => {
-    const innerLoader = vi.fn().mockResolvedValue(null);
-    const wrapped = requireNoSessionHOF(innerLoader);
-
-    const args = {
-      request: makeRequest(),
-      params: {},
-      context: {},
-    } as any;
-
-    await wrapped(args);
-    expect(innerLoader).toHaveBeenCalledWith(
-      expect.objectContaining({
-        sessionCookie: expect.objectContaining({ id: expect.any(String) }),
-      }),
-    );
   });
 });
 
@@ -293,20 +223,16 @@ describe("requireCookieOrTokenSession", () => {
     });
   });
 
-  test("throws 401 for unauthenticated request (DataWithResponseInit leaks through — missing await bug)", async () => {
-    // BUG: requireCookieOrTokenSession has `return requireAPIToken(request)`
-    // without `await`, so the catch block never fires for the API token path.
-    // The DataWithResponseInit from requireAPIToken leaks through instead of
-    // being wrapped in Response("Unauthorized").
+  test("throws 401 Response for unauthenticated request", async () => {
     const request = makeRequest();
 
     try {
       await requireCookieOrTokenSession(request);
       expect.fail("Should have thrown");
-    } catch (error: any) {
-      // This is DataWithResponseInit, not Response, because of the missing await
-      expect(error).not.toBeInstanceOf(Response);
-      expect(error.init?.status).toBe(401);
+    } catch (error) {
+      expect(error).toBeInstanceOf(Response);
+      const response = error as Response;
+      expect(response.status).toBe(401);
     }
   });
 

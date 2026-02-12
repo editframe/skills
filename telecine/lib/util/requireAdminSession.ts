@@ -1,17 +1,5 @@
-import {
-  type LoaderFunction,
-  type LoaderFunctionArgs,
-  redirect,
-} from "react-router";
-import { type SessionInfo, parseRequestSession } from "./session";
-
-export type LoaderFunctionArgsWithSession = LoaderFunctionArgs & {
-  session: SessionInfo;
-};
-
-export type LoaderWithSession = (
-  args: LoaderFunctionArgsWithSession,
-) => ReturnType<LoaderFunction>;
+import { redirect } from "react-router";
+import { parseRequestSession } from "./session";
 
 export async function requireAdminSession(request: Request) {
   const session = await parseRequestSession(request);
