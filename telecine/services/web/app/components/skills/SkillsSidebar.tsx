@@ -22,28 +22,116 @@ export function TypeBadge({ type }: { type: string }) {
   );
 }
 
-function NavTreeNode({
+const SIDEBAR_BG = "bg-[#FAFAF9] dark:bg-[#1a1a1a]";
+
+function NavTreeItems({
+  items,
+  skillName,
+  referenceName,
+  showTypeBadges,
+}: {
+  items: NavNode["items"];
+  skillName: string;
+  referenceName: string | null;
+  showTypeBadges: boolean;
+}) {
+  return (
+    <div className="space-y-px">
+      {items.map((ref) => (
+        <Link
+          key={ref.name}
+          to={`/skills/${skillName}/${ref.name}`}
+          className={clsx(
+            "block px-3 py-1.5 text-[13px] leading-tight transition-all rounded-md",
+            referenceName === ref.name
+              ? "text-gray-900 dark:text-white bg-blue-600/[0.12] dark:bg-blue-500/[0.2] font-bold border-l-2 border-blue-600 dark:border-blue-400"
+              : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-black/[0.03] dark:hover:bg-white/[0.08] font-medium border-l-2 border-transparent",
+          )}
+        >
+          <div className="flex items-center gap-2">
+            <span className="flex-1 min-w-0">{ref.title}</span>
+            {showTypeBadges && <TypeBadge type={ref.type} />}
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+function NavTreeSubNode({
   node,
   skillName,
   referenceName,
-  depth = 0,
 }: {
   node: NavNode;
   skillName: string;
   referenceName: string | null;
-  depth?: number;
 }) {
   const hasChildren = node.children.length > 0;
   const hasItems = node.items.length > 0;
-
   const allTypes = node.items.map((i) => i.type);
   const uniqueTypes = new Set(allTypes);
   const showTypeBadges = uniqueTypes.size > 1;
 
   return (
-    <div className={depth === 0 ? "mb-4" : "mb-0"}>
-      {depth === 0 ? (
-        <div className="flex items-center gap-2 px-3 py-1.5 mb-2">
+    <div>
+      <div className="mb-1.5 ml-3 pl-0 py-0.5">
+        <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-gray-400 dark:text-gray-600 select-none">
+          {node.label}
+        </span>
+      </div>
+
+      <div className="ml-3 pl-3 border-l border-black/[0.06] dark:border-white/[0.15]">
+        {hasItems && (
+          <NavTreeItems
+            items={node.items}
+            skillName={skillName}
+            referenceName={referenceName}
+            showTypeBadges={showTypeBadges}
+          />
+        )}
+        {hasChildren && (
+          <div className="space-y-2 mt-2">
+            {node.children.map((child) => (
+              <NavTreeSubNode
+                key={child.path}
+                node={child}
+                skillName={skillName}
+                referenceName={referenceName}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function NavTreeSection({
+  node,
+  skillName,
+  referenceName,
+}: {
+  node: NavNode;
+  skillName: string;
+  referenceName: string | null;
+}) {
+  const hasChildren = node.children.length > 0;
+  const hasItems = node.items.length > 0;
+  const allTypes = node.items.map((i) => i.type);
+  const uniqueTypes = new Set(allTypes);
+  const showTypeBadges = uniqueTypes.size > 1;
+
+  return (
+    <div className="mb-4">
+      {/* Sticky section header — sticks below the skill name */}
+      <div
+        className={clsx(
+          "sticky top-[37px] z-[9] -mx-4 px-4 pb-1 pt-1",
+          SIDEBAR_BG,
+        )}
+      >
+        <div className="flex items-center gap-2 px-3 py-1.5">
           {node.icon && (
             <span className="text-base leading-none">{node.icon}</span>
           )}
@@ -51,52 +139,26 @@ function NavTreeNode({
             {node.label}
           </span>
         </div>
-      ) : (
-        <div className="mb-1.5 ml-3 pl-0 py-0.5">
-          <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-gray-400 dark:text-gray-600 select-none">
-            {node.label}
-          </span>
-        </div>
-      )}
+      </div>
 
-      <div
-        className={
-          depth === 0
-            ? ""
-            : "ml-3 pl-3 border-l border-black/[0.06] dark:border-white/[0.15]"
-        }
-      >
+      {/* Section content */}
+      <div>
         {hasItems && (
-          <div className="space-y-px">
-            {node.items.map((ref) => (
-              <Link
-                key={ref.name}
-                to={`/skills/${skillName}/${ref.name}`}
-                className={clsx(
-                  "block px-3 py-1.5 text-[13px] leading-tight transition-all rounded-md",
-                  referenceName === ref.name
-                    ? "text-gray-900 dark:text-white bg-blue-600/[0.12] dark:bg-blue-500/[0.2] font-bold border-l-2 border-blue-600 dark:border-blue-400"
-                    : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-black/[0.03] dark:hover:bg-white/[0.08] font-medium border-l-2 border-transparent",
-                )}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="flex-1 min-w-0">{ref.title}</span>
-                  {showTypeBadges && <TypeBadge type={ref.type} />}
-                </div>
-              </Link>
-            ))}
-          </div>
+          <NavTreeItems
+            items={node.items}
+            skillName={skillName}
+            referenceName={referenceName}
+            showTypeBadges={showTypeBadges}
+          />
         )}
-
         {hasChildren && (
           <div className="space-y-2 mt-2">
             {node.children.map((child) => (
-              <NavTreeNode
+              <NavTreeSubNode
                 key={child.path}
                 node={child}
                 skillName={skillName}
                 referenceName={referenceName}
-                depth={depth + 1}
               />
             ))}
           </div>
@@ -120,37 +182,44 @@ export function SkillsSidebar({
   navTree,
 }: SkillsSidebarProps) {
   return (
-    <aside className="hidden lg:block overflow-y-auto pt-6 pb-20 px-4 bg-[#FAFAF9] dark:bg-[#1a1a1a] border-r border-black/[0.06] dark:border-white/[0.12]">
-      <nav>
+    <aside className="hidden lg:block overflow-y-auto pb-20 bg-[#FAFAF9] dark:bg-[#1a1a1a] border-r border-black/[0.06] dark:border-white/[0.12]">
+      <nav className="px-4 pt-6">
         {allSkills.map((skill) => {
           const isActive = skill.name === currentSkill;
           const isExpanded = isActive && navTree.length > 0;
 
           return (
             <div key={skill.name} className="mb-1">
-              <Link
-                to={`/skills/${skill.name}`}
+              {/* Sticky skill name when expanded */}
+              <div
                 className={clsx(
-                  "block px-3 py-2 text-[13px] leading-tight rounded-md transition-colors",
-                  isActive
-                    ? "text-gray-900 dark:text-white font-bold bg-blue-600/[0.08] dark:bg-blue-500/[0.12]"
-                    : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-black/[0.03] dark:hover:bg-white/[0.06] font-medium",
+                  isExpanded && "sticky top-0 z-10 -mx-4 px-4 pt-1 pb-0.5",
+                  isExpanded && SIDEBAR_BG,
                 )}
               >
-                {skill.name
-                  .replace(/-/g, " ")
-                  .replace(/\b\w/g, (c) => c.toUpperCase())}
-              </Link>
+                <Link
+                  to={`/skills/${skill.name}`}
+                  className={clsx(
+                    "block px-3 py-2 text-[13px] leading-tight rounded-md transition-colors",
+                    isActive
+                      ? "text-gray-900 dark:text-white font-bold bg-blue-600/[0.08] dark:bg-blue-500/[0.12]"
+                      : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-black/[0.03] dark:hover:bg-white/[0.06] font-medium",
+                  )}
+                >
+                  {skill.name
+                    .replace(/-/g, " ")
+                    .replace(/\b\w/g, (c) => c.toUpperCase())}
+                </Link>
+              </div>
 
               {isExpanded && (
-                <div className="mt-2 mb-3 ml-3 pl-3 border-l border-black/[0.06] dark:border-white/[0.12]">
+                <div className="mt-2 mb-3">
                   {navTree.map((node) => (
-                    <NavTreeNode
+                    <NavTreeSection
                       key={node.path}
                       node={node}
                       skillName={skill.name}
                       referenceName={currentReference}
-                      depth={0}
                     />
                   ))}
                 </div>
@@ -160,7 +229,7 @@ export function SkillsSidebar({
         })}
       </nav>
 
-      <p className="text-[10px] font-medium text-gray-400 dark:text-gray-500 mt-6 px-3">
+      <p className="text-[10px] font-medium text-gray-400 dark:text-gray-500 mt-6 px-7">
         AI agent reads these skills
       </p>
     </aside>
