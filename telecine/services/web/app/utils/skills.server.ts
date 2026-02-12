@@ -462,6 +462,29 @@ export const getSkillNavTree = (skillName: string): NavNode[] => {
   return buildNavTree(refs);
 };
 
+export const getSkillNames = (): { name: string; description: string }[] => {
+  const skillsBasePath = getSkillsBasePath();
+
+  if (!existsSync(skillsBasePath)) {
+    return [];
+  }
+
+  const skillDirs = readdirSync(skillsBasePath).filter((entry) => {
+    const fullPath = join(skillsBasePath, entry);
+    return statSync(fullPath).isDirectory();
+  });
+
+  return skillDirs
+    .map((skillDir) => {
+      const skillPath = join(skillsBasePath, skillDir, "SKILL.md");
+      if (!existsSync(skillPath)) return null;
+      const content = readFileSync(skillPath, "utf8");
+      const { attributes } = fm<SkillFrontmatter>(content);
+      return { name: attributes.name, description: attributes.description };
+    })
+    .filter((s): s is { name: string; description: string } => s !== null);
+};
+
 export const getSkillCatalog = (): SkillSummary[] => {
   const skillsBasePath = getSkillsBasePath();
   

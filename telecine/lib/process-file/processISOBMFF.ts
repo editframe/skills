@@ -299,8 +299,14 @@ export async function processISOBMFF(
           filename: unprocessedFile.filename,
           type: "video",
           status: "ready",
+          completed_at: new Date(),
         })
-        .onConflict((oc) => oc.column("id").doUpdateSet({ status: "ready" }))
+        .onConflict((oc) =>
+          oc.column("id").doUpdateSet({
+            status: "ready",
+            completed_at: new Date(),
+          }),
+        )
         .execute();
 
       progressTracker.writeProgress(1); // 100% complete

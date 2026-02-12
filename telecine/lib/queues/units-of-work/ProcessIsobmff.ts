@@ -68,7 +68,10 @@ export const ProcessISOBMFFQueue = new Queue<ProcessISOBMFFPayload>({
 
     await db
       .updateTable("video2.files")
-      .set({ status: "failed" })
+      .set({
+        status: "failed",
+        completed_at: new Date(),
+      })
       .where("id", "in", jobIds)
       .execute();
   },
@@ -84,7 +87,10 @@ export const ProcessISOBMFFQueue = new Queue<ProcessISOBMFFPayload>({
 
     await db
       .updateTable("video2.files")
-      .set({ status: "ready" })
+      .set({
+        status: "ready",
+        completed_at: new Date(),
+      })
       .where("id", "in", jobIds)
       .execute();
   },
@@ -378,6 +384,19 @@ class ProcessISOBMFFExecutor {
         },
         tracker,
       );
+
+      // Explicit status update to ensure video2.files reflects completion.
+      // processISOBMFF does an upsert internally, but we also do a direct
+      // UPDATE here as a belt-and-suspenders measure since this is cross-row.
+      await db
+        .updateTable("video2.files")
+        .set({
+          status: "ready",
+          completed_at: new Date(),
+        })
+        .where("id", "=", this.payload.id)
+        .execute();
+
       return {
         isobmff_file_id: isobmffFileId,
       };
