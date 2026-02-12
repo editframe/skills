@@ -501,7 +501,7 @@ export function RenderQueuePanel() {
               </span>
             </div>
             <a
-              href="/docs"
+              href="/skills"
               className="block w-full text-center py-1.5 rounded text-[10px] font-semibold bg-[var(--poster-blue)]/20 text-[var(--poster-blue)] hover:bg-[var(--poster-blue)]/30 transition-colors"
             >
               {"Upgrade to cloud \u2192 render in parallel"}

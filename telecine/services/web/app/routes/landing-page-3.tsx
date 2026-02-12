@@ -37,8 +37,7 @@ export default function LandingPage3() {
           installCommand="npm install @editframe/react"
           primaryCTA={{ label: "Get Started", href: "/welcome" }}
           secondaryCTAs={[
-            { label: "API Reference", href: "/docs" },
-            { label: "Examples", href: "/docs/examples" },
+            { label: "Documentation", href: "/skills" },
           ]}
           badges={[
             "TypeScript native",

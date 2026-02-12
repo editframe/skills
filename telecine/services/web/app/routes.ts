@@ -16,18 +16,6 @@ const routes = [
   route("/landing-page-3", "routes/landing-page-3.tsx"),
   route("/landing-page-4", "routes/landing-page-4.tsx"),
   route("/sitemap.xml", "routes/sitemap.tsx"),
-  route("/docs/examples/crop", "routes/docs/examples/crop.tsx"),
-  route("/docs/examples/rotation", "routes/docs/examples/rotation.tsx"),
-  route("/docs/examples/filters", "routes/docs/examples/filters.tsx"),
-  route("/docs/examples/keyframes", "routes/docs/examples/keyframes.tsx"),
-  route("/docs/examples/motion", "routes/docs/examples/motion.tsx"),
-  route(
-    "/docs/examples/portrait-fill",
-    "routes/docs/examples/portrait-fill.tsx",
-  ),
-  route("/docs/examples/trim", "routes/docs/examples/trim.tsx"),
-  route("/docs/examples/watermark", "routes/docs/examples/watermark.tsx"),
-  route("/docs/*", "routes/docs/DocsPage.tsx"),
   route("/skills", "routes/skills/catalog.tsx"),
   route("/skills/:skill", "routes/skills/skill-detail.tsx"),
   route("/skills/:skill/:reference", "routes/skills/reference-detail.tsx"),
@@ -40,11 +28,6 @@ const routes = [
   route("/:uploadType/:id/chunks", "routes/receiveUploadChunk.ts"),
   // route("/jit-preview", "routes/jit-preview.tsx"),
   route("/ef-sign-url", "routes/ef-sign-url.ts"),
-
-  route(
-    "/reference/@editframe/:package/:symbol",
-    "routes/docs/SymbolReference.tsx",
-  ),
 
   layout("routes/resource/Layout.tsx", [
     route("/welcome", "routes/welcome.tsx"),
