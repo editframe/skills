@@ -1,6 +1,7 @@
 ---
 name: react-composition
 description: Create video compositions with @editframe/react React wrappers. Use when working with React components like Timegroup, Video, Audio, Image, Text, Captions, Waveform, Surface, Configuration, Preview, Controls, or building React-based video compositions with TypeScript.
+order: 20
 license: MIT
 metadata:
   author: editframe
@@ -49,7 +50,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 
 ## Getting Started
 
-- [references/getting-started.md](references/getting-started.md) - Create a React project
+Create a project: `npm create @editframe -- react` (see the `editframe-create` skill)
+
+- [references/getting-started.md](references/getting-started.md) - Your first React composition
 - [references/timeline-root.md](references/timeline-root.md) - TimelineRoot wrapper (required for rendering)
 - [references/configuration.md](references/configuration.md) - Configuration component
 
@@ -113,6 +116,14 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <TimelineRoot id="root" component={VideoComposition} />
 );
 ```
+
+## Rendering
+
+```bash
+npx editframe render -o output.mp4
+```
+
+See the `editframe-cli` skill for full CLI command reference.
 
 ## Styling
 

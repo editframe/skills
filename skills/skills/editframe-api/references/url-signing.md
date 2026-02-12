@@ -97,7 +97,7 @@ In your Editframe Elements project, configure the signing endpoint:
 </ef-timegroup>
 ```
 
-Set up an Elements project with `npm create @editframe/elements` if you haven't already. See the elements-composition skill for complete setup instructions.
+Set up an Elements project with `npm create @editframe` if you haven't already. See the `editframe-create` skill for setup instructions.
 
 When `<ef-video>` loads, it:
 1. Detects the `src` requires authentication

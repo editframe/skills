@@ -1,68 +1,49 @@
 ---
 title: Getting Started
-description: Create a new Editframe Elements project with templates and asset setup
+description: Build your first HTML video composition with Editframe Elements
 type: tutorial
 nav:
   parent: "Quick Start"
   priority: 1
 track: "getting-started"
 track_step: 1
-track_title: "Create Your First Project"
+track_title: "Your First Composition"
 next_steps: ["video"]
 ---
 
 # Getting Started
 
-Create a new Editframe Elements project.
+Build your first video composition with Editframe Elements.
 
-## Create Project
+> **Note:** Need a project? Run `npm create @editframe -- html -d my-project -y` — see the `editframe-create` skill.
 
-```bash
-npm create @editframe/elements
+## Composition Structure
+
+Every composition starts with an `ef-timegroup` root:
+
+```html
+<ef-timegroup workbench mode="sequence" class="w-[1920px] h-[1080px] bg-black">
+  <!-- scenes go here -->
+</ef-timegroup>
 ```
 
-## Available Templates
+The `workbench` attribute enables the preview player. The `mode` controls how child elements are timed.
 
-- `html` - Minimal HTML/CSS/JS project
-- `react` - Minimal React/TypeScript project
-- `simple-demo` - HTML demo with sample assets
-- `react-demo` - React demo with sample assets
+### Step 1: Create a Scene
 
-## Quick Start (HTML)
+Add a fixed-duration scene with text:
 
-```bash
-npm create @editframe/elements -- html -d my-project
-cd my-project
-npm install
-npm start
+```html
+<ef-timegroup workbench mode="sequence" class="w-[1920px] h-[1080px] bg-black">
+  <ef-timegroup mode="fixed" duration="5s" class="absolute w-full h-full">
+    <ef-text class="text-white text-4xl">Hello, Editframe!</ef-text>
+  </ef-timegroup>
+</ef-timegroup>
 ```
 
-## Quick Start (React)
+### Step 2: Add Media
 
-```bash
-npm create @editframe/elements -- react -d my-project
-cd my-project
-npm install
-npm start
-```
-
-## Project Structure
-
-```
-my-project/
-├── index.html          # Main HTML file
-├── src/
-│   ├── index.js        # (HTML) or main.tsx (React)
-│   ├── styles.css      # Tailwind CSS
-│   └── assets/         # Media files
-├── package.json
-├── vite.config.ts
-└── tailwind.config.js
-```
-
-## Add Elements
-
-After creating a project, add elements inside the root `ef-timegroup`:
+Add video and audio to your scene:
 
 ```html
 <ef-timegroup workbench mode="sequence" class="w-[1920px] h-[1080px] bg-black">
@@ -73,22 +54,36 @@ After creating a project, add elements inside the root `ef-timegroup`:
 </ef-timegroup>
 ```
 
-## Add Assets
+### Step 3: Add More Scenes
 
-Place media files in `src/assets/`:
+Chain scenes in a sequence with overlap for transitions:
 
+```html
+<ef-timegroup workbench mode="sequence" overlap="1s" class="w-[1920px] h-[1080px] bg-black">
+  <ef-timegroup mode="fixed" duration="5s" class="absolute w-full h-full">
+    <ef-video src="/assets/intro.mp4" class="size-full object-cover"></ef-video>
+  </ef-timegroup>
+  <ef-timegroup mode="fixed" duration="5s" class="absolute w-full h-full">
+    <ef-video src="/assets/main.mp4" class="size-full object-cover"></ef-video>
+    <ef-audio src="/assets/music.mp3" volume="0.3"></ef-audio>
+  </ef-timegroup>
+</ef-timegroup>
 ```
-src/assets/
-├── video.mp4
-├── music.mp3
-├── logo.png
-└── captions.json
-```
 
-Reference with `/assets/filename`:
+## Assets
+
+Place media files in `src/assets/` and reference with `/assets/filename`:
 
 ```html
 <ef-video src="/assets/video.mp4"></ef-video>
 <ef-audio src="/assets/music.mp3"></ef-audio>
 <ef-image src="/assets/logo.png"></ef-image>
 ```
+
+## Render to Video
+
+```bash
+npx editframe render -o output.mp4
+```
+
+See the `editframe-cli` skill for full render options.

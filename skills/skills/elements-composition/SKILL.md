@@ -1,6 +1,7 @@
 ---
 name: elements-composition
 description: Create video compositions with Editframe Elements. Use when working with ef-timegroup, ef-video, ef-audio, ef-image, ef-text, ef-captions, ef-waveform, ef-surface, building timelines, or generating captions/transcriptions.
+order: 10
 license: MIT
 metadata:
   author: editframe
@@ -25,7 +26,9 @@ metadata:
 
 ## Getting Started
 
-- [references/getting-started.md](references/getting-started.md) - Create a new project
+Create a project: `npm create @editframe -- html` (see the `editframe-create` skill)
+
+- [references/getting-started.md](references/getting-started.md) - Your first composition
 
 ## Elements
 
@@ -48,9 +51,11 @@ metadata:
 
 - [references/transcription.md](references/transcription.md) - Generate captions with WhisperX
 
-## Programmatic Rendering
+## Rendering
 
-- [references/render-api.md](references/render-api.md) - Render via CLI or Playwright with custom data
+- [references/render-api.md](references/render-api.md) - Render to video and custom render data
+
+See the `editframe-cli` skill for full CLI command reference.
 
 ## Scene Structure
 

@@ -1,6 +1,6 @@
 ---
 title: Getting Started
-description: Create a new React-based Editframe project with templates and configuration
+description: Build your first React video composition with @editframe/react
 type: tutorial
 nav:
   parent: "Quick Start"
@@ -9,48 +9,13 @@ nav:
 
 # Getting Started
 
-Create a new React-based Editframe project.
+Build your first video composition with React.
 
-## Create Project
-
-```bash
-npm create @editframe/elements -- react
-```
-
-Follow the prompts to name your project.
-
-## Available React Templates
-
-- `react` - Minimal React/TypeScript project
-- `react-demo` - React demo with sample assets and animations
-
-## Quick Start
-
-```bash
-npm create @editframe/elements -- react -d my-project
-cd my-project
-npm install
-npm start
-```
-
-## Project Structure
-
-```
-my-project/
-├── index.html
-├── src/
-│   ├── main.tsx          # Entry point
-│   ├── Video.tsx         # Composition component
-│   ├── styles.css        # Tailwind CSS
-│   └── assets/           # Media files
-├── package.json
-├── vite.config.ts
-└── tailwind.config.js
-```
+> **Note:** Need a project? Run `npm create @editframe -- react -d my-project -y` — see the `editframe-create` skill.
 
 ## Basic Video Component
 
-The main composition is in `src/Video.tsx`:
+Create your composition in `src/Video.tsx`:
 
 ```tsx
 import { Timegroup, Text } from "@editframe/react";
@@ -72,7 +37,7 @@ export const Video = () => {
 };
 ```
 
-And `src/main.tsx` wraps it with `TimelineRoot`:
+Wrap it with `TimelineRoot` in `src/main.tsx`:
 
 ```tsx
 import React from "react";
@@ -89,21 +54,11 @@ ReactDOM.createRoot(root).render(
 );
 ```
 
-**Important**: `TimelineRoot` is required for proper rendering. It ensures React hooks and state work correctly during video rendering. See [timeline-root.md](timeline-root.md) for details.
+**Important**: `TimelineRoot` is required for rendering. It ensures React hooks and state work correctly during video rendering. See [timeline-root.md](timeline-root.md) for details.
 
-## Add Assets
+## Add Media
 
-Place media files in `src/assets/`:
-
-```
-src/assets/
-├── video.mp4
-├── music.mp3
-├── logo.png
-└── captions.json
-```
-
-Reference with `/assets/filename`:
+Place media files in `src/assets/` and reference with `/assets/filename`:
 
 ```tsx
 import { Video, Audio, Image } from "@editframe/react";
@@ -113,15 +68,33 @@ import { Video, Audio, Image } from "@editframe/react";
 <Image src="/assets/logo.png" />
 ```
 
-## TimelineRoot Requirement
+## Add Scenes
 
-All React projects must use `TimelineRoot` to wrap the composition component. This ensures:
-- React hooks work during rendering
-- State and effects are present during rendering
-- Consistent behavior between preview and render
+Chain scenes in a sequence:
 
-See [timeline-root.md](timeline-root.md) for complete documentation.
+```tsx
+import { Timegroup, Video, Text, Audio } from "@editframe/react";
 
-## Rendering
+export const VideoComposition = () => {
+  return (
+    <Timegroup workbench mode="sequence" overlap="1s" className="w-[1920px] h-[1080px]">
+      <Timegroup mode="fixed" duration="5s" className="absolute w-full h-full">
+        <Video src="/assets/intro.mp4" className="size-full object-cover" />
+        <Text className="absolute top-8 text-white text-3xl">Title</Text>
+      </Timegroup>
+      <Timegroup mode="fixed" duration="5s" className="absolute w-full h-full">
+        <Video src="/assets/main.mp4" className="size-full" />
+        <Audio src="/assets/music.mp3" volume={0.3} />
+      </Timegroup>
+    </Timegroup>
+  );
+};
+```
 
-See the `elements-composition` skill for information about rendering via CLI or Playwright.
+## Render to Video
+
+```bash
+npx editframe render -o output.mp4
+```
+
+See the `editframe-cli` skill for full render options.
