@@ -1,72 +1,59 @@
-import { z } from "zod";
-
-import { db } from "@/sql-client.server";
-import { dataFilePath } from "@/util/filePaths";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
 import { storageProvider } from "@/util/storageProvider.server";
-import { v4 } from "uuid";
+import { isobmffIndexFilePath } from "@/util/filePaths";
+import { db } from "@/sql-client.server";
+import { requireCookieOrTokenSession } from "@/util/requireSession.server";
 
 import type { Route } from "./+types/index";
 
-const FileType = z.enum(["video", "image", "caption"]);
-
-const CreateFilePayload = z.object({
-  filename: z.string(),
-  type: FileType,
-  byte_size: z.number().int().positive(),
-  md5: z.string().optional(),
-  mime_type: z.string().optional(),
-});
-
-export interface CreateFileResult {
-  id: string;
-  filename: string;
-  type: string;
-  status: string;
-  byte_size: number | null;
-  md5: string | null;
-  next_byte: number;
-}
-
-export const action = async ({
-  request,
-}: Route.ActionArgs): Promise<CreateFileResult> => {
-  const payload = CreateFilePayload.parse(await request.json());
+export const loader = async ({ params: { id }, request }: Route.LoaderArgs) => {
   const session = await requireCookieOrTokenSession(request);
-  const id = v4();
 
-  const filePath = dataFilePath({
-    org_id: session.oid,
-    id,
+  const file = await db
+    .selectFrom("video2.files")
+    .select(["id", "org_id", "type", "status"])
+    .where("id", "=", id)
+    .where("org_id", "=", session.oid)
+    .executeTakeFirst();
+
+  if (!file) {
+    throw new Response("File not found", { status: 404 });
+  }
+
+  if (file.type !== "video") {
+    throw new Response("Fragment index only available for video files", {
+      status: 400,
+    });
+  }
+
+  if (file.status !== "ready") {
+    throw new Response("File not ready", { status: 409 });
+  }
+
+  const filePath = isobmffIndexFilePath({
+    org_id: file.org_id,
+    id: file.id,
   });
 
-  const remoteUri = await storageProvider.createResumableUploadURI(filePath);
+  try {
+    const readStream = await storageProvider.createReadStream(filePath);
+    const chunks: Buffer[] = [];
 
-  const created = await db
-    .insertInto("video2.files")
-    .values({
-      id,
-      org_id: session.oid,
-      creator_id: session.uid,
-      api_key_id: session.cid,
-      filename: payload.filename,
-      type: payload.type,
-      byte_size: payload.byte_size,
-      md5: payload.md5 ?? null,
-      mime_type: payload.mime_type ?? null,
-      remote_uri: remoteUri,
-      status: "created",
-    })
-    .returning([
-      "id",
-      "filename",
-      "type",
-      "status",
-      "byte_size",
-      "md5",
-      "next_byte",
-    ])
-    .executeTakeFirstOrThrow();
+    for await (const chunk of readStream) {
+      chunks.push(Buffer.from(chunk));
+    }
 
-  return created;
+    const buffer = Buffer.concat(chunks);
+    const jsonString = buffer.toString("utf-8");
+
+    return new Response(jsonString, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "max-age=3600",
+        etag: file.id,
+      },
+    });
+  } catch (error) {
+    throw new Response("Fragment index not found", { status: 404 });
+  }
 };

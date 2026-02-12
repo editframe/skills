@@ -38,15 +38,20 @@ export const Preview: ContentBlock<{
         }
       >
         {() => (
-          <ef-preview className="block max-w-md max-h-[32rem]">
-            <ef-video
-              id={id}
-              file-id={id}
-              className="w-full h-full rounded-lg shadow-sm"
-              style={{ maxWidth: "28rem", maxHeight: "32rem" }}
-            />
-            <ef-controls target={id} className="mt-2" />
-          </ef-preview>
+          <ef-configuration
+            api-host={window.location.origin}
+            signing-url="/ef-sign-url"
+          >
+            <ef-preview className="block max-w-md max-h-[32rem]">
+              <ef-video
+                id={id}
+                file-id={id}
+                className="w-full h-full rounded-lg shadow-sm"
+                style={{ maxWidth: "28rem", maxHeight: "32rem" }}
+              />
+              <ef-controls target={id} className="mt-2" />
+            </ef-preview>
+          </ef-configuration>
         )}
       </ClientOnly>
     );
