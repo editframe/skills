@@ -6,6 +6,7 @@ import {
   getAllGuidesContent,
   getAllBlogsContent,
 } from "~/utils/doc.server";
+import { getSkillNames, getSkillReferences } from "~/utils/skills.server";
 
 export const siteUrl = 'https://www.editframe.com';
 
@@ -65,6 +66,9 @@ export const loader: LoaderFunction = async () => {
     getAllBlogsContent(),
   ]);
 
+  // Get skills
+  const skills = getSkillNames();
+
   // Build sitemap entries
   const urlEntries: string[] = [];
 
@@ -74,6 +78,18 @@ export const loader: LoaderFunction = async () => {
   urlEntries.push(generateUrlEntry('/guides', undefined, 'weekly', '0.9')); // Guides index
   urlEntries.push(generateUrlEntry('/blog', undefined, 'weekly', '0.9')); // Blog index
   urlEntries.push(generateUrlEntry('/tools', undefined, 'weekly', '0.9')); // Tools index
+
+  // Skills pages
+  for (const skill of skills) {
+    // Add skill overview page
+    urlEntries.push(generateUrlEntry(`/skills/${skill.name}`, undefined, 'weekly', '0.8'));
+    
+    // Add skill reference pages
+    const references = getSkillReferences(skill.name);
+    for (const reference of references) {
+      urlEntries.push(generateUrlEntry(`/skills/${skill.name}/${reference}`, undefined, 'weekly', '0.7'));
+    }
+  }
 
   // Guides pages
   for (const guide of guides) {
