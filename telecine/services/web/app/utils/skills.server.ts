@@ -84,7 +84,9 @@ function getTopicLabel(topic: string | null): string {
 
 interface SkillFrontmatter {
   name: string;
+  title?: string;
   description: string;
+  order?: number;
   license: string;
   metadata: {
     author: string;
@@ -186,11 +188,13 @@ export interface NavNode {
 
 interface SkillSummary {
   name: string;
+  title: string;
   description: string;
   metadata: {
     author: string;
     version: string;
   };
+  order: number;
   referenceCount: number;
   references: string[];
   referencesMeta: SkillReference[];
@@ -462,7 +466,7 @@ export const getSkillNavTree = (skillName: string): NavNode[] => {
   return buildNavTree(refs);
 };
 
-export const getSkillNames = (): { name: string; description: string }[] => {
+export const getSkillNames = (): { name: string; title: string; description: string }[] => {
   const skillsBasePath = getSkillsBasePath();
 
   if (!existsSync(skillsBasePath)) {
@@ -480,9 +484,15 @@ export const getSkillNames = (): { name: string; description: string }[] => {
       if (!existsSync(skillPath)) return null;
       const content = readFileSync(skillPath, "utf8");
       const { attributes } = fm<SkillFrontmatter>(content);
-      return { name: attributes.name, description: attributes.description };
+      return {
+        name: attributes.name,
+        title: attributes.title || humanize(attributes.name),
+        description: attributes.description,
+        order: attributes.order ?? 999,
+      };
     })
-    .filter((s): s is { name: string; description: string } => s !== null);
+    .filter((s): s is { name: string; title: string; description: string; order: number } => s !== null)
+    .sort((a, b) => a.order - b.order);
 };
 
 export const getSkillCatalog = (): SkillSummary[] => {
@@ -512,13 +522,17 @@ export const getSkillCatalog = (): SkillSummary[] => {
 
     return {
       name: attributes.name,
+      title: attributes.title || humanize(attributes.name),
       description: attributes.description,
       metadata: attributes.metadata,
+      order: attributes.order ?? 999,
       referenceCount: references.length,
       references,
       referencesMeta,
     };
-  }).filter((skill): skill is SkillSummary => skill !== null);
+  })
+  .filter((skill): skill is SkillSummary => skill !== null)
+  .sort((a, b) => a.order - b.order);
 };
 
 export const getSkillContent = (skillName: string): SkillContent | null => {

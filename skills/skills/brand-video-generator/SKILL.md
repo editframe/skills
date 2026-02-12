@@ -1,6 +1,8 @@
 ---
 name: brand-video-generator
+title: Brand Video Generator
 description: Generate video compositions from brand websites. Analyzes visual identity, messaging, content hierarchy, and creates scene-by-scene video plans with asset requirements. Use when creating branded video content from a company website URL.
+order: 50
 license: MIT
 metadata:
   author: editframe

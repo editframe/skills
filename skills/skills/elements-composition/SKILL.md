@@ -1,5 +1,6 @@
 ---
 name: elements-composition
+title: HTML Elements
 description: Create video compositions with Editframe Elements. Use when working with ef-timegroup, ef-video, ef-audio, ef-image, ef-text, ef-captions, ef-waveform, ef-surface, building timelines, or generating captions/transcriptions.
 order: 10
 license: MIT

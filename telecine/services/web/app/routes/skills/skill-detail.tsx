@@ -14,7 +14,7 @@ import { getSkillsMDXComponents } from "~/utils/skills-mdx-components";
 import clsx from "clsx";
 import { useTheme } from "~/hooks/useTheme";
 import { SkillsLayout } from "~/components/skills/SkillsLayout";
-import { SkillsSidebar, TypeBadge } from "~/components/skills/SkillsSidebar";
+import { SkillPicker, ReferenceNav, TypeBadge } from "~/components/skills/SkillsSidebar";
 import { OnThisPage } from "~/components/skills/OnThisPage";
 
 export const meta = ({ data }: Route.MetaArgs) => {
@@ -146,6 +146,8 @@ export default function SkillDetail({ loaderData }: Route.ComponentProps) {
     loaderData;
   const { code } = content;
   const MDXAsComponent = React.useMemo(() => getMDXComponent(code), [code]);
+  const skillTitle = allSkills.find((s: { name: string }) => s.name === skillName)?.title || skillName;
+  const referenceTitle = referenceName ? referencesMeta.find((r: SkillReference) => r.name === referenceName)?.title || referenceName : null;
 
   // Scroll to top when navigating between pages
   React.useEffect(() => {
@@ -157,11 +159,10 @@ export default function SkillDetail({ loaderData }: Route.ComponentProps) {
 
   return (
     <SkillsLayout>
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] xl:grid-cols-[280px_1fr_auto] overflow-hidden">
-        {/* Sidebar */}
-        <SkillsSidebar
-          allSkills={allSkills}
-          currentSkill={skillName}
+      <div className="grid grid-cols-1 lg:grid-cols-[180px_240px_1fr] xl:grid-cols-[180px_240px_1fr_auto] overflow-hidden">
+        <SkillPicker allSkills={allSkills} currentSkill={skillName} />
+        <ReferenceNav
+          skillName={skillName}
           currentReference={referenceName}
           navTree={navTree}
         />
@@ -185,13 +186,13 @@ export default function SkillDetail({ loaderData }: Route.ComponentProps) {
                   isReference ? "" : "text-gray-900 dark:text-gray-100 font-medium"
                 )}
               >
-                {skillName.replace(/-/g, " ")}
+                {skillTitle}
               </Link>
               {isReference && (
                 <>
                   <span className="text-gray-400 dark:text-gray-600">/</span>
                   <span className="text-gray-900 dark:text-gray-100 font-medium">
-                    {referenceName?.replace(/-/g, " ")}
+                    {referenceTitle}
                   </span>
                 </>
               )}
@@ -211,11 +212,11 @@ export default function SkillDetail({ loaderData }: Route.ComponentProps) {
                   to={`/skills/${skillName}`}
                   className="hover:text-gray-900 dark:hover:text-white transition-colors"
                 >
-                  {skillName.replace(/-/g, " ")}
+                  {skillTitle}
                 </Link>
                 <span className="text-gray-400 dark:text-gray-600">/</span>
                 <span className="text-gray-900 dark:text-gray-100 font-medium">
-                  {referenceName?.replace(/-/g, " ")}
+                  {referenceTitle}
                 </span>
               </div>
             )}

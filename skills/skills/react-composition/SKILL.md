@@ -1,5 +1,6 @@
 ---
 name: react-composition
+title: React Components
 description: Create video compositions with @editframe/react React wrappers. Use when working with React components like Timegroup, Video, Audio, Image, Text, Captions, Waveform, Surface, Configuration, Preview, Controls, or building React-based video compositions with TypeScript.
 order: 20
 license: MIT

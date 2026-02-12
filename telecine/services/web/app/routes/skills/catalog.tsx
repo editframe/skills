@@ -3,7 +3,7 @@ import type { Route } from "./+types/catalog";
 import type { SkillReference } from "~/utils/skills.server";
 import { getSkillCatalog, getSkillNames } from "~/utils/skills.server";
 import { SkillsLayout } from "~/components/skills/SkillsLayout";
-import { SkillsSidebar, TypeBadge } from "~/components/skills/SkillsSidebar";
+import { SkillPicker, TypeBadge } from "~/components/skills/SkillsSidebar";
 import { useTheme } from "~/hooks/useTheme";
 
 export const meta = () => {
@@ -25,6 +25,7 @@ export const loader = async () => {
 
 interface SkillData {
   name: string;
+  title: string;
   description: string;
   referenceCount: number;
   referencesMeta: SkillReference[];
@@ -37,18 +38,13 @@ export default function SkillsCatalog({ loaderData }: Route.ComponentProps) {
   const tutorials = (skills as SkillData[]).flatMap((skill) =>
     skill.referencesMeta
       .filter((ref) => ref.type === "tutorial")
-      .map((ref) => ({ ...ref, skillName: skill.name })),
+      .map((ref) => ({ ...ref, skillName: skill.name, skillTitle: skill.title })),
   );
 
   return (
     <SkillsLayout>
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] overflow-hidden">
-        <SkillsSidebar
-          allSkills={allSkills}
-          currentSkill={null}
-          currentReference={null}
-          navTree={[]}
-        />
+      <div className="grid grid-cols-1 lg:grid-cols-[180px_1fr] overflow-hidden">
+        <SkillPicker allSkills={allSkills} currentSkill={null} />
 
         <main className="overflow-y-auto bg-white dark:bg-[#0a0a0a]">
           <div className="max-w-4xl mx-auto px-6 lg:px-10 py-10 pb-24">
@@ -91,7 +87,7 @@ export default function SkillsCatalog({ loaderData }: Route.ComponentProps) {
                     >
                       <div className="flex items-center gap-2 mb-1.5">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                          {tutorial.skillName.replace(/-/g, " ")}
+                          {tutorial.skillTitle}
                         </span>
                         <TypeBadge type="tutorial" />
                       </div>

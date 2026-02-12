@@ -1,5 +1,6 @@
 ---
 name: editframe-cli
+title: CLI Tools
 description: Command-line tools for Editframe video development. Render compositions to MP4 locally, preview projects, generate captions from audio/video, deploy to cloud rendering, and manage assets. Use when rendering, previewing, transcribing, or deploying video compositions.
 order: 5
 license: MIT
