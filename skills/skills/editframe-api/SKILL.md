@@ -17,7 +17,7 @@ JavaScript/TypeScript client for Editframe's video rendering API. Render videos 
 import { Client, createRender, getRenderProgress, downloadRender } from "@editframe/api";
 
 // Initialize client with API key
-const client = new Client("ef_yoursecret_yourkeyid");
+const client = new Client(process.env.EDITFRAME_API_KEY);
 
 // Create a render from HTML composition
 const render = await createRender(client, {
@@ -43,43 +43,41 @@ const buffer = await response.arrayBuffer();
 
 ### Renders
 - `createRender(client, payload)` → `CreateRenderResult` — Create a render job from HTML composition
-- `uploadRender(client, renderId, fileStream)` — Upload pre-rendered video file
+- `uploadRender(client, renderId, fileStream)` → `Promise<void>` — Upload pre-rendered video file
 - `getRenderProgress(client, id)` → `CompletionIterator` — Stream render progress via SSE
 - `getRenderInfo(client, id)` → `LookupRenderByMd5Result` — Get render metadata
 - `lookupRenderByMd5(client, md5)` → `LookupRenderByMd5Result | null` — Find existing render by hash
 - `downloadRender(client, id)` → `Response` — Download completed render
 
-### Files - Unprocessed
+### Unprocessed Files
 - `createUnprocessedFile(client, payload)` → `CreateUnprocessedFileResult` — Register a raw media file
-- `uploadUnprocessedReadableStream(client, uploadDetails, fileStream)` — Upload raw file content
+- `uploadUnprocessedReadableStream(client, uploadDetails, fileStream)` → `IteratorWithPromise<UploadChunkEvent>` — Upload raw file content
 - `lookupUnprocessedFileByMd5(client, md5)` → `LookupUnprocessedFileByMd5Result | null` — Find existing file by hash
 - `processIsobmffFile(client, id)` → `ProcessIsobmffFileResult` — Process raw file into ISOBMFF format
 
-### Files - ISOBMFF
+### ISOBMFF Files
 - `createISOBMFFFile(client, payload)` → `CreateISOBMFFFileResult` — Register processed ISOBMFF file
-- `uploadFragmentIndex(client, fileId, fileStream, fileSize)` — Upload fragment index for seeking
+- `uploadFragmentIndex(client, fileId, fileStream, fileSize)` → `Promise<void>` — Upload fragment index for seeking
 - `lookupISOBMFFFileByMd5(client, md5)` → `LookupISOBMFFFileByMd5Result | null` — Find existing ISOBMFF file
 - `getISOBMFFFileTranscription(client, id)` → `GetISOBMFFFileTranscriptionResult | null` — Get transcription metadata
 - `transcribeISOBMFFFile(client, id, payload)` → `TranscribeISOBMFFFileResult` — Start audio transcription
-
-### Files - ISOBMFF Tracks
 - `createISOBMFFTrack(client, payload)` → `CreateISOBMFFTrackResult` — Register video/audio track
-- `uploadISOBMFFTrack(client, fileId, trackId, fileStream)` — Upload track data
+- `uploadISOBMFFTrack(client, fileId, trackId, fileStream, trackSize)` → `IteratorWithPromise<UploadChunkEvent>` — Upload track data
 
-### Files - Images
+### Image Files
 - `createImageFile(client, payload)` → `CreateImageFileResult` — Register image file
-- `uploadImageFile(client, fileId, fileStream)` — Upload image data
-- `getImageFileMetadata(client, id)` → `GetImageFileMetadataResult` — Get image dimensions and format
+- `uploadImageFile(client, uploadDetails, fileStream, chunkSizeBytes?)` → `IteratorWithPromise<UploadChunkEvent>` — Upload image data
+- `getImageFileMetadata(client, id)` → `GetImageFileMetadataResult | null` — Get image dimensions and format
 - `lookupImageFileByMd5(client, md5)` → `LookupImageFileByMd5Result | null` — Find existing image
 
-### Files - Captions
+### Caption Files
 - `createCaptionFile(client, payload)` → `CreateCaptionFileResult` — Register caption file (VTT/SRT)
-- `uploadCaptionFile(client, fileId, fileStream)` — Upload caption data
+- `uploadCaptionFile(client, fileId, fileStream, fileSize)` → `Promise<void>` — Upload caption data
 - `lookupCaptionFileByMd5(client, md5)` → `LookupCaptionFileByMd5Result | null` — Find existing captions
 
 ### Transcription
-- `createTranscription(client, payload)` → `CreateTranscriptionResult` — Create transcription job
-- `getTranscriptionProgress(client, id)` → `ProgressIterator` — Stream transcription progress
+- `createTranscription(client, payload)` → `CreateTranscriptionResult` — Create transcription job for ISOBMFF file
+- `getTranscriptionProgress(client, id)` → `CompletionIterator` — Stream transcription progress
 - `getTranscriptionInfo(client, id)` → `TranscriptionInfoResult` — Get transcription metadata
 
 ### URL Signing
@@ -87,7 +85,7 @@ const buffer = await response.arrayBuffer();
 
 ### Process Monitoring
 - `getIsobmffProcessInfo(client, id)` → `IsobmffProcessInfoResult` — Get file processing metadata
-- `getIsobmffProcessProgress(client, id)` → `ProgressIterator` — Stream processing progress
+- `getIsobmffProcessProgress(client, id)` → `CompletionIterator` — Stream processing progress
 
 ## URL Signing
 

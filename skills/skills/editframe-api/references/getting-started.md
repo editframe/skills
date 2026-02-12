@@ -22,7 +22,7 @@ npm install @editframe/api
 1. Sign in to [editframe.com](https://editframe.com)
 2. Navigate to Settings → API Keys
 3. Create a new API key
-4. Copy the key — it looks like `ef_abc123_def456`
+4. Copy the key and store it securely
 
 Keep your API key secure. Never commit it to version control or expose it in client-side code.
 
@@ -32,7 +32,7 @@ Keep your API key secure. Never commit it to version control or expose it in cli
 import { Client, createRender, getRenderProgress, downloadRender } from "@editframe/api";
 import { writeFileSync } from "node:fs";
 
-const client = new Client("ef_yoursecret_yourkeyid");
+const client = new Client(process.env.EDITFRAME_API_KEY);
 
 // Create a render job
 const render = await createRender(client, {

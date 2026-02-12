@@ -238,6 +238,9 @@ File size limit: 1GB for unprocessed files.
 
 ## Next Steps
 
-- [Files Reference](references/files.md) — complete file API documentation
+- [Unprocessed Files](references/unprocessed-files.md) — raw file upload API
+- [ISOBMFF Files](references/isobmff-files.md) — processed file API
+- [Image Files](references/image-files.md) — image upload API
+- [Caption Files](references/caption-files.md) — caption upload API
 - [Transcription](references/transcription.md) — add captions to uploaded videos
 - Elements Composition skill — composition syntax and element reference

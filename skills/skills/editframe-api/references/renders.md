@@ -2,9 +2,8 @@
 title: Renders
 description: Create render jobs, monitor progress, and download completed videos or images
 type: reference
-topic: renders
 nav:
-  parent: "API Reference"
+  parent: "API Reference / Renders"
   priority: 10
 api:
   functions:
@@ -45,7 +44,7 @@ Create a render job from an HTML composition.
 ```typescript
 import { Client, createRender } from "@editframe/api";
 
-const client = new Client("ef_yoursecret_yourkeyid");
+const client = new Client(process.env.EDITFRAME_API_KEY);
 
 const render = await createRender(client, {
   html: `
@@ -214,7 +213,6 @@ Upload a pre-rendered video file instead of rendering from HTML.
 ```typescript
 import { createRender, uploadRender } from "@editframe/api";
 import { createReadStream } from "node:fs";
-import { stat } from "node:fs/promises";
 
 // Create render record
 const render = await createRender(client, {

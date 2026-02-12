@@ -11,18 +11,6 @@ nav:
 
 The Editframe API uses API keys for server-side authentication and URL tokens for browser-based media access.
 
-## API Key Format
-
-API keys follow the format `ef_{apiSecret}_{apiKeyId}`:
-
-```
-ef_abc123def456_ghi789jkl012
-   ↑              ↑
-   secret         key ID
-```
-
-The secret portion is used to sign requests. The key ID identifies which API key is being used. Both parts are required for authentication.
-
 ## Client Class
 
 The `Client` class handles authentication for all API requests:
@@ -31,7 +19,7 @@ The `Client` class handles authentication for all API requests:
 import { Client } from "@editframe/api";
 
 // With API key (server-side)
-const client = new Client("ef_yoursecret_yourkeyid");
+const client = new Client(process.env.EDITFRAME_API_KEY);
 
 // Without API key (browser with session cookies)
 const client = new Client();
@@ -42,13 +30,15 @@ const client = new Client();
 When you provide an API key, the Client adds a Bearer token to all requests:
 
 ```typescript
-const client = new Client("ef_yoursecret_yourkeyid");
+const client = new Client(process.env.EDITFRAME_API_KEY);
 
-// This request includes: Authorization: Bearer ef_yoursecret_yourkeyid
+// This request includes: Authorization: Bearer <your-api-key>
 const render = await createRender(client, { html: "..." });
 ```
 
 The API key is validated on every request. Invalid or expired keys return a 401 Unauthorized response.
+
+Get your API key from the Editframe dashboard at Settings → API Keys.
 
 ### Browser-Based Authentication
 
